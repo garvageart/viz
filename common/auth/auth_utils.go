@@ -1,0 +1,42 @@
+package auth
+
+import "crypto/rand"
+
+const (
+	APIKeyPrefix = "img"
+***REMOVED***
+
+var (
+	// Choose a random horse name because why not
+	HorseNames = [...]string{
+		"RainstormPockets",
+		"Azur",
+		"Lindsay",
+		"Dawson",
+		"Tricks",
+		"Eclipse",
+		"Chesterfield",
+		"Flint",
+		"Karma",
+		"Wind Chaser",
+		"Hally",
+		"Bellator",
+		"Paladen",
+		"Cash",
+		"Hazel",
+		"Chip",
+		"Summoner",
+		"Lightning",
+		"Tempest"***REMOVED***
+***REMOVED***
+
+func GenerateRandomBytes(n int***REMOVED*** ([]byte, error***REMOVED*** {
+	b := make([]byte, n***REMOVED***
+	_, err := rand.Read(b***REMOVED***
+
+***REMOVED***
+	***REMOVED***, err
+***REMOVED***
+
+	return b, nil
+***REMOVED***
