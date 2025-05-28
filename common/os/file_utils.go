@@ -6,7 +6,7 @@ package libos
 ***REMOVED***
 
 type File struct {
-	path string
+	Path string
 ***REMOVED***
 
 type OsPerm struct {
@@ -15,7 +15,7 @@ type OsPerm struct {
 ***REMOVED***
 
 func (fl File***REMOVED*** Open(date string***REMOVED*** (file *os.File, err error***REMOVED*** {
-	path := fl.path
+	path := fl.Path
 
 	err = os.MkdirAll(filepath.Dir(path***REMOVED***, os.ModePerm***REMOVED***
 
@@ -28,7 +28,7 @@ func (fl File***REMOVED*** Open(date string***REMOVED*** (file *os.File, err err
 ***REMOVED***
 
 func (fl File***REMOVED*** Write(data []byte***REMOVED*** (n int, err error***REMOVED*** {
-	file, err := fl.Open(fl.path***REMOVED***
+	file, err := fl.Open(fl.Path***REMOVED***
 
 ***REMOVED***
 		return 0, err
@@ -40,5 +40,5 @@ func (fl File***REMOVED*** Write(data []byte***REMOVED*** (n int, err error***RE
 ***REMOVED***
 
 func (fl File***REMOVED*** Read(***REMOVED*** ([]byte, error***REMOVED*** {
-	return os.ReadFile(fl.path***REMOVED***
+	return os.ReadFile(fl.Path***REMOVED***
 ***REMOVED***
