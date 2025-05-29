@@ -22,7 +22,6 @@ func SetupLogHandlers(***REMOVED*** []slog.Handler {
 	consoleHandlerOpts := slog.HandlerOptions{
 		AddSource:   shouldAddSource,
 		Level:       slog.LevelDebug,
-		ReplaceAttr: SuppressDefaults(nil***REMOVED***,
 ***REMOVED***
 
 	fileHandlerOpts := slog.HandlerOptions{
