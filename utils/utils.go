@@ -1,6 +1,7 @@
 package utils
 
 ***REMOVED***
+	"encoding/json"
 ***REMOVED***
 	"log"
 	"maps"
@@ -83,4 +84,16 @@ func IsEnvironment(env string***REMOVED*** bool {
 	return os.Getenv("env"***REMOVED*** == env ||
 		os.Getenv("ENV"***REMOVED*** == env ||
 		os.Getenv("environment"***REMOVED*** == env
+***REMOVED***
+
+func JsonToMap(jsonString string***REMOVED*** (map[string]any, error***REMOVED*** {
+	result := make(map[string]any***REMOVED***
+
+	err := json.Unmarshal([]byte(jsonString***REMOVED***, &result***REMOVED***
+
+***REMOVED***
+	***REMOVED***, err
+***REMOVED***
+
+***REMOVED***
 ***REMOVED***
