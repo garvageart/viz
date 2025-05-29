@@ -41,9 +41,11 @@ type LogFormat struct {
 ***REMOVED***
 
 type ImalogHandlerOptions struct {
-	ShowRecord bool
-	Format     LogFormat
-	Writer     io.Writer
+	// Not yet implemented
+	ShowSource       bool
+	Format           LogFormat
+	Writer           io.Writer
+	OutputEmptyAttrs bool
 	*slog.HandlerOptions
 ***REMOVED***
 

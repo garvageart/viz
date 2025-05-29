@@ -2,17 +2,13 @@ package http
 
 ***REMOVED***
 	"log/slog"
+***REMOVED***
 
 	imalog "imagine/log"
-
 	"go.les-is.online/imagine/utils"
 ***REMOVED***
 
-func setupChiLogHandler(opts *imalog.ImalogHandlerOptions***REMOVED*** []slog.Handler {
-	if opts == nil {
-		opts = &imalog.ImalogHandlerOptions{***REMOVED***
-***REMOVED***
-
+func setupChiLogHandler(***REMOVED*** []slog.Handler {
 	httpLogFileDefaults := imalog.LogFileDefaults
 	logLevel := func(***REMOVED*** slog.Level {
 	***REMOVED***
@@ -26,7 +22,7 @@ func setupChiLogHandler(opts *imalog.ImalogHandlerOptions***REMOVED*** []slog.Ha
 			Directory: httpLogFileDefaults.Directory + "/http",
 			Filename:  httpLogFileDefaults.Filename + "-http",
 ***REMOVED***
-		ShowRecord: true,
+		ShowSource: true,
 		HandlerOptions: &slog.HandlerOptions{
 			Level: logLevel,
 			// Strip all ANSI codes from the log output set by the
@@ -42,11 +38,12 @@ func setupChiLogHandler(opts *imalog.ImalogHandlerOptions***REMOVED*** []slog.Ha
 ***REMOVED******REMOVED***
 
 	consoleHandler := imalog.NewColourLogger(&imalog.ImalogHandlerOptions{
-		ShowRecord: false,
 		HandlerOptions: &slog.HandlerOptions{
 			Level:     logLevel,
-			AddSource: true,
+			AddSource: false,
 ***REMOVED***
+		Writer:           os.Stderr,
+		OutputEmptyAttrs: true,
 ***REMOVED******REMOVED***
 
 	return []slog.Handler{
@@ -56,11 +53,8 @@ func setupChiLogHandler(opts *imalog.ImalogHandlerOptions***REMOVED*** []slog.Ha
 ***REMOVED***
 
 func SetupChiLogger(***REMOVED*** *slog.Logger {
-	handlers := setupChiLogHandler(nil***REMOVED***
+	handlers := setupChiLogHandler(***REMOVED***
 
 	logger := imalog.CreateLogger(handlers***REMOVED***
-
-	httpLogger := logger.With(imalog.LoggerProgramInfoGroup***REMOVED***
-
-	return httpLogger
+	return logger
 ***REMOVED***
