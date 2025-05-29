@@ -1,6 +1,6 @@
 package gcp
 
-type CredentialsFile struct {
+type CredentialsFileJSON struct {
 	Type                    string `json:"type"`
 	ProjectID               string `json:"project_id"`
 	PrivateKeyID            string `json:"private_key_id"`
