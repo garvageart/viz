@@ -8,6 +8,8 @@ package gcp
 	"path"
 
 	"cloud.google.com/go/storage"
+	"github.com/fullstorydev/emulators/storage/gcsemu"
+	"go.les-is.online/imagine/utils"
 	"google.golang.org/api/option"
 
 	liberrors "imagine/common/errors"
@@ -49,30 +51,53 @@ func ReadCredentials(path string***REMOVED*** ([]byte, error***REMOVED*** {
 	return credentials, nil
 ***REMOVED***
 
-func CredentialsJSON(***REMOVED*** (CredentialsFile, error***REMOVED*** {
-	var credentialsJSON CredentialsFile
+func CredentialsJSON(***REMOVED*** (CredentialsFileJSON, error***REMOVED*** {
+	var credentialsJSON CredentialsFileJSON
 	credsJsonMarBytes, err := json.RawMessage.MarshalJSON(CredentialsBytes***REMOVED***
 
 ***REMOVED***
-		return CredentialsFile{***REMOVED***, liberrors.NewErrorf("Failed to marshal raw JSON message: %w", err***REMOVED***
+		return CredentialsFileJSON{***REMOVED***, liberrors.NewErrorf("Failed to marshal raw JSON message: %w", err***REMOVED***
 ***REMOVED***
 
 	err = json.Unmarshal(credsJsonMarBytes, &credentialsJSON***REMOVED***
 
 ***REMOVED***
-		return CredentialsFile{***REMOVED***, liberrors.NewErrorf("Failed to unmarshal raw JSON message: %w", err***REMOVED***
+		return CredentialsFileJSON{***REMOVED***, liberrors.NewErrorf("Failed to unmarshal raw JSON message: %w", err***REMOVED***
 ***REMOVED***
 
 	return credentialsJSON, nil
 ***REMOVED***
 
-func SetupClient(***REMOVED*** (*storage.Client, error***REMOVED*** {
-	storageClientCtx := context.Background(***REMOVED***
-	storageClient, err := storage.NewClient(storageClientCtx, option.WithCredentialsJSON(CredentialsBytes***REMOVED******REMOVED***
+func setupGCSEmuClient(ctx context.Context, addr string***REMOVED*** (*storage.Client, error***REMOVED*** {
+	_ = os.Setenv("GCS_EMULATOR_HOST", addr***REMOVED***
+
+	client, err := gcsemu.NewClient(ctx***REMOVED***
+***REMOVED***
+	***REMOVED***, fmt.Errorf("failed to setup GCS emulator client: %w", err***REMOVED***
+***REMOVED***
+	defer client.Close(***REMOVED***
+
+	return client, nil
+***REMOVED***
+func setupGCSClient(ctx context.Context***REMOVED*** (*storage.Client, error***REMOVED*** {
+	storageClient, err := storage.NewClient(ctx, option.WithCredentialsJSON(CredentialsBytes***REMOVED******REMOVED***
 
 ***REMOVED***
-	***REMOVED***, err
+	***REMOVED***, fmt.Errorf("failed to create storage client: %w", err***REMOVED***
 ***REMOVED***
 
 	return storageClient, nil
+***REMOVED***
+
+func SetupClient(ctx context.Context***REMOVED*** (*storage.Client, error***REMOVED*** {
+	var client *storage.Client
+	var err error
+
+***REMOVED***
+		client, err = setupGCSEmuClient(ctx, "127.0.0.1:9000"***REMOVED***
+***REMOVED*** else {
+		client, err = setupGCSClient(ctx***REMOVED***
+***REMOVED***
+
+***REMOVED***
 ***REMOVED***
