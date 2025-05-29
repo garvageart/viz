@@ -14,6 +14,10 @@ package main
 	libhttp "imagine/common/http"
 ***REMOVED***
 
+type ImagineMediaServer struct {
+	*libhttp.ImagineServer
+***REMOVED***
+
 func setupImageRouter(***REMOVED*** *chi.Mux {
 	imageRouter := chi.NewRouter(***REMOVED***
 
@@ -28,8 +32,7 @@ func setupImageRouter(***REMOVED*** *chi.Mux {
 	return imageRouter
 ***REMOVED***
 
-func main(***REMOVED*** {
-	router := chi.NewRouter(***REMOVED***
+func (server ImagineMediaServer***REMOVED*** Launch(router *chi.Mux***REMOVED*** {
 	imageRouter := setupImageRouter(***REMOVED***
 
 	logger := libhttp.SetupChiLogger(***REMOVED***
@@ -42,17 +45,36 @@ func main(***REMOVED*** {
 	router.Use(middleware.AllowContentEncoding("deflate", "gzip"***REMOVED******REMOVED***
 	router.Use(middleware.RequestID***REMOVED***
 
+	// Mount image router to main router
+	router.Mount("/image", imageRouter***REMOVED***
+
 	router.Get("/ping", func(res http.ResponseWriter, req *http.Request***REMOVED*** {
 		jsonResponse := map[string]any{"message": "pong"***REMOVED***
 		render.JSON(res, req, jsonResponse***REMOVED***
 ***REMOVED******REMOVED***
 
-	router.Mount("/image", imageRouter***REMOVED***
-
-	logger.Info("Starting Server on :8080"***REMOVED***
-	err := http.ListenAndServe(":8080", router***REMOVED***
+	logger.Info(fmt.Sprint("Starting server on port ", server.Port***REMOVED******REMOVED***
+	err := http.ListenAndServe(server.Host+":"+fmt.Sprint(server.Port***REMOVED***, router***REMOVED***
 
 ***REMOVED***
 		logger.Error(fmt.Sprintf("failed to start server: %s", err***REMOVED******REMOVED***
 ***REMOVED***
+***REMOVED***
+
+func main(***REMOVED*** {
+	router := chi.NewRouter(***REMOVED***
+	var server = &ImagineMediaServer{
+		ImagineServer: &libhttp.ImagineServer{
+			Host: "localhost",
+			Key:  "media-server",
+***REMOVED***
+***REMOVED***
+
+	config, err := server.ReadConfig(server.Key***REMOVED***
+***REMOVED***
+		panic("Unable to read config file"***REMOVED***
+***REMOVED***
+
+	server.Port = config.GetInt(fmt.Sprintf("servers.%s.port", server.Key***REMOVED******REMOVED***
+	server.Launch(router***REMOVED***
 ***REMOVED***
