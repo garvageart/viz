@@ -1,9 +1,10 @@
 import { svelteTesting ***REMOVED*** from '@testing-library/svelte/vite';
 import { sveltekit ***REMOVED*** from '@sveltejs/kit/vite';
 import { defineConfig ***REMOVED*** from 'vite';
+import devtoolsJson from "vite-plugin-devtools-json";
 
 export default defineConfig({
-	plugins: [sveltekit(***REMOVED***],
+	plugins: [devtoolsJson(***REMOVED***, sveltekit(***REMOVED***],
 	test: {
 		workspace: [
 			{
@@ -28,5 +29,13 @@ export default defineConfig({
 			***REMOVED***
 		***REMOVED***
 		]
+***REMOVED***,
+	server: {
+		port: 7777,
+		cors: true
+***REMOVED***,
+	preview: {
+		port: 7777,
+		cors: true
 ***REMOVED***
 ***REMOVED******REMOVED***;
