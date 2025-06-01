@@ -1,0 +1,1 @@
+export { default as component ***REMOVED*** from "../../../../src/routes/signup/+page.svelte";
