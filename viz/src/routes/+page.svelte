@@ -3,7 +3,6 @@
 	import { cookieMethods } from "../lib/utils";
 
 	let loginState = cookieMethods.get("img-state");
-	console.log(loginState);
 </script>
 
 <h1>Welcome to <code>viz</code></h1>
