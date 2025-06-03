@@ -2,9 +2,8 @@ package auth
 
 import (
 	"crypto/sha256"
-	"encoding/base64"
+	"encoding/hex"
 	"fmt"
-
 	"math/rand/v2"
 	"strings"
 )
@@ -18,7 +17,7 @@ func HashSecret(secret string) (string, error) {
 	}
 
 	hashedSecret := shaHash.Sum(nil)
-	return base64.StdEncoding.EncodeToString(hashedSecret), nil
+	return hex.EncodeToString(hashedSecret), nil
 }
 
 func GenerateAPIKey() (map[string]string, error) {
@@ -34,7 +33,7 @@ func GenerateAPIKey() (map[string]string, error) {
 
 	bytesCombined := append(keyBytes, randomHorseBytesFilledToMax...)
 
-	finalConsumerKey := fmt.Sprint(APIKeyPrefix, "_", base64.StdEncoding.EncodeToString(bytesCombined))
+	finalConsumerKey := fmt.Sprint(APIKeyPrefix, "_", hex.EncodeToString(bytesCombined))
 	hashedKey, _ := HashSecret(finalConsumerKey)
 
 	return map[string]string{
