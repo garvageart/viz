@@ -3,10 +3,8 @@ package utils
 import (
 	"encoding/json"
 	"os"
-
 	"log"
 	"maps"
-
 	"slices"
 	"strings"
 
