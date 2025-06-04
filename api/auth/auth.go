@@ -104,15 +104,16 @@ func (server ImagineAuthServer) Launch(router *chi.Mux) {
 	mongoCtx, cancelMongo := context.WithTimeout(context.Background(), time.Second*60)
 	defer cancelMongo()
 
-	var database db.DBClient = db.DB{
-		Address:      "localhost",
-		Port:         27017,
-		User:         os.Getenv("MONGO_USER"),
-		Password:     os.Getenv("MONGO_PASSWORD"),
-		AppName:      utils.AppName,
-		DatabaseName: "imagine-dev",
-		Collection:   "images",
-		Context:      mongoCtx,
+	var database = &db.DB{
+		Address:        "localhost",
+		Port:           27017,
+		User:           os.Getenv("MONGO_USER"),
+		Password:       os.Getenv("MONGO_PASSWORD"),
+		AppName:        utils.AppName,
+		DatabaseName:   "imagine-dev",
+		CollectionName: "api",
+		Context:        mongoCtx,
+		Logger:         logger,
 	}
 
 	client, mongoErr := database.Connect()
