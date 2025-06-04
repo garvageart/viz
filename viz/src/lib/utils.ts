@@ -37,7 +37,7 @@ export function readConfig(): any {
 }
 
 export function createServerURL(serverURL: ServerURLConfig): string {
-    if (CLIENT_IS_PRODUCTION) {
+    if (!CLIENT_IS_PRODUCTION) {
         return serverURL.url;
     } else {
         return serverURL.prod;
