@@ -8,12 +8,12 @@
 	let loginState = cookieMethods.get("imag-state");
 </script>
 
-<h1>Welcome to <code>viz</code></h1>
-<p>
-	<code>viz</code> is the in-browser GUI for using <code>imagine</code>.
-	<code>viz</code> is built using SvelteKit
-</p>
-<p>The repo for this project can be found on <a href="https://github.com/garvageart/imagine">GitHub</a></p>
+<main>
+	<Sidebar></Sidebar>
+	<div id="viz-content">
+		<DevWelcomeText></DevWelcomeText>
+	</div>
+</main>
 
 {#if !loginState}
 	<Button
@@ -33,3 +33,21 @@
 		Sign in with GitHub
 	</Button>
 {/if}
+
+<style>
+	main {
+		display: flex;
+		flex-direction: row;
+		align-items: center;
+		height: 100%;
+		width: 100%;
+	}
+
+	#viz-content {
+		display: flex;
+		flex-direction: column;
+		align-items: center;
+		width: 100%;
+		height: 100%;
+	}
+</style>
