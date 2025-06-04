@@ -132,7 +132,7 @@ func (server ImagineAuthServer) Launch(router *chi.Mux) {
 		render.JSON(res, req, jsonResponse)
 	})
 
-	router.Get("/generateApiKey", func(res http.ResponseWriter, req *http.Request) {
+	router.Get("/apikey", func(res http.ResponseWriter, req *http.Request) {
 		keys, err := auth.GenerateAPIKey()
 		if err != nil {
 			libhttp.ServerError(res, req, err, logger, nil,
