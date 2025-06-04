@@ -54,21 +54,28 @@ type ImagineAuthPasswordFlow struct {
 }
 
 type ImagineUser struct {
-	UUID          string `json:"uuid"`
-	ID            string `json:"id"`
-	Username      string `json:"username"`
-	FirstName     string `json:"first_name"`
-	LastName      string `json:"last_name"`
-	DisplayName   string `json:"display_name"`
-	Email         string `json:"email"`
-	Password      string `json:"password"`
-	CreatedAt     string `json:"created_at"`
-	UpdatedAt     string `json:"updated_at"`
-	DeletedAt     string `json:"deleted_at"`
-	UsedOAuth     bool   `json:"used_oauth"`
-	OAuthProvider string `json:"oauth_provider"`
-	OAuthState    string `json:"oauth_state"`
-	UserToken     string `json:"user_token"`
+	UUID          string `json:"uuid" bson:"uuid"`
+	ID            string `json:"id" bson:"id"`
+	Username      string `json:"username" bson:"username"`
+	FirstName     string `json:"first_name" bson:"first_name"`
+	LastName      string `json:"last_name" bson:"last_name"`
+	DisplayName   string `json:"display_name" bson:"display_name"`
+	Email         string `json:"email" bson:"email"`
+	Password      string `json:"password" bson:"password"`
+	CreatedAt     string `json:"created_at" bson:"created_at"`
+	UpdatedAt     string `json:"updated_at" bson:"updated_at"`
+	DeletedAt     string `json:"deleted_at" bson:"deleted_at"`
+	UsedOAuth     bool   `json:"used_oauth" bson:"used_oauth"`
+	OAuthProvider string `json:"oauth_provider" bson:"oauth_provider"`
+	OAuthState    string `json:"oauth_state" bson:"oauth_state"`
+	UserToken     string `json:"user_token" bson:"user_token"`
+}
+
+type ImagineAPIData struct {
+	APIKeyHashed    string    `json:"api_key_hashed" bson:"api_key_hashed"`
+	GeneratedAt     time.Time `json:"generated_at" bson:"generated_at"`
+	ApplicationID   string    `json:"application_id" bson:"application_id"`
+	ApplicationName string    `json:"application_name" bson:"application_name"`
 }
 
 func (server ImagineAuthServer) Launch(router *chi.Mux) {
