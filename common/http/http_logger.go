@@ -4,30 +4,22 @@ import (
 	"fmt"
 	"log/slog"
 	"os"
-
 	"strings"
 
-	"imagine/utils"
 	imalog "imagine/log"
 )
 
 func setupChiLogHandler(name string) []slog.Handler {
 	httpLogFileDefaults := imalog.LogFileDefaults
-	logLevel := func() slog.Level {
-		if !utils.IsProduction {
-			return slog.LevelDebug
-		}
-		return slog.LevelInfo
-	}()
+	logLevel := imalog.DefaultLogLevel
 
-	// Setup file logger
 	logFileWriter := imalog.FileLog{
 		Directory: httpLogFileDefaults.Directory + "/http",
-		Filename:  fmt.Sprintf("%s-http-%s", utils.AppName, strings.ReplaceAll(name, "-", "_")),
+		Filename:  fmt.Sprintf("%s-http-%s", imalog.LogFileFormatDefault, strings.ReplaceAll(name, "-", "_")),
 	}
 
 	fileHandler := imalog.NewFileLogger(&imalog.ImalogHandlerOptions{
-		Writer:     logFileWriter, 
+		Writer: logFileWriter,
 		HandlerOptions: &slog.HandlerOptions{
 			AddSource: true,
 			Level:     logLevel,
