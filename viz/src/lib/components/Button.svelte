@@ -13,10 +13,11 @@
 		color: var(--imag-text-colour);
 		font-weight: 500;
 		font-size: 1em;
+		height: max-content;
 		background-color: var(--imag-button-colour);
 		border: none;
 		margin: 0.5em;
-		padding: 0.7em 2em;
+		padding: 0.5em 1em;
 		display: inline-block;
 		text-align: center;
 		position: relative;
@@ -24,7 +25,7 @@
 		cursor: pointer;
 
 		&:hover {
-			background-color: hsl(209, 50%, 39%);
+			background-color: #326595;
 		}
 	}
 </style>
