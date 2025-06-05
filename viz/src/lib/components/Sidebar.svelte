@@ -6,7 +6,7 @@
 	let sidebarOpen = $derived(sidebar.open);
 </script>
 
-<aside bind:this={sidebarEl} id="viz-sidebar" class="border {sidebarOpen ? '' : 'closed'}">
+<nav bind:this={sidebarEl} id="viz-sidebar" class="border {sidebarOpen ? '' : 'closed'}">
 	<span id="close-sidebar">
 		<CloseIcon
 			onclick={() => {
@@ -14,7 +14,7 @@
 			}}
 		/>
 	</span>
-</aside>
+</nav>
 
 <style lang="scss">
 	#viz-sidebar {
