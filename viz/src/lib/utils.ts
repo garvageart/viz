@@ -44,3 +44,16 @@ export function createServerURL(serverURL: ServerURLConfig): string {
     }
 }
 
+export const fullscreen = {
+    enter: () => {
+        const documentEl = document.documentElement;
+        if (documentEl.requestFullscreen && !document.fullscreenElement) {
+            documentEl.requestFullscreen();
+        }
+    },
+    exit: () => {
+        if (document.exitFullscreen && document.fullscreenElement) {
+            document.exitFullscreen();
+        }
+    }
+};
