@@ -29,8 +29,6 @@ declare module '$env/static/private' {
 	export const ALLUSERSPROFILE: string;
 	export const ANDROID_HOME: string;
 	export const APPDATA: string;
-	export const BuildLab: string;
-	export const BuildLabEx: string;
 	export const BUN_INSPECT_CONNECT_TO: string;
 	export const ChocolateyInstall: string;
 	export const ChocolateyLastPathUpdate: string;
@@ -43,7 +41,11 @@ declare module '$env/static/private' {
 	export const ComSpec: string;
 	export const CONDA_PROMPT_MODIFIER: string;
 	export const DriverData: string;
-	export const EFC_10728_1592913036: string;
+	export const EFC_12184_1262719628: string;
+	export const EFC_12184_1592913036: string;
+	export const EFC_12184_2283032206: string;
+	export const EFC_12184_2775293581: string;
+	export const EFC_12184_3789132940: string;
 	export const GIT_ASKPASS: string;
 	export const GOPATH: string;
 	export const HADRONPATH: string;
@@ -168,8 +170,6 @@ declare module '$env/dynamic/private' {
 		ALLUSERSPROFILE: string;
 		ANDROID_HOME: string;
 		APPDATA: string;
-		BuildLab: string;
-		BuildLabEx: string;
 		BUN_INSPECT_CONNECT_TO: string;
 		ChocolateyInstall: string;
 		ChocolateyLastPathUpdate: string;
@@ -182,7 +182,11 @@ declare module '$env/dynamic/private' {
 		ComSpec: string;
 		CONDA_PROMPT_MODIFIER: string;
 		DriverData: string;
-		EFC_10728_1592913036: string;
+		EFC_12184_1262719628: string;
+		EFC_12184_1592913036: string;
+		EFC_12184_2283032206: string;
+		EFC_12184_2775293581: string;
+		EFC_12184_3789132940: string;
 		GIT_ASKPASS: string;
 		GOPATH: string;
 		HADRONPATH: string;
