@@ -81,9 +81,9 @@ type ImagineAPIData struct {
 func (server ImagineAuthServer) Launch(router *chi.Mux) {
 	// Setup logger
 	logger := server.Logger
-	correctLogger := slog.NewLogLogger(logger.Handler(), slog.LevelDebug)
+	httpMiddlewareLogger := slog.NewLogLogger(logger.Handler(), imalog.DefaultLogLevel)
 	router.Use(middleware.RequestLogger(&middleware.DefaultLogFormatter{
-		Logger: correctLogger,
+		Logger: httpMiddlewareLogger,
 	}))
 
 	// Setup general middleware
