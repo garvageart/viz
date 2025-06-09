@@ -1,4 +1,4 @@
-@import url('../../static/css/general-sans.css');
+@import url('../../../../static/css/general-sans.css');
 @import 'material-symbols/sharp.css';
 @import './sassflexboxgrid/main.scss';
 
@@ -17,7 +17,7 @@
 }
 /* Fonts */
 :root {
-    --imag-display-font: "General Sans", sans-serif;
+    --imag-display-font: "General Sans Variable", sans-serif;
     --imag-code-font: "Roboto Mono", monospace;
 }
 
