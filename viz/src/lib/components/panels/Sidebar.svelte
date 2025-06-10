@@ -1,5 +1,5 @@
 <script lang="ts">
-	import CloseIcon from "./CloseIcon.svelte";
+	import SidebarCloseIcon from "../SidebarCloseIcon.svelte";
 	import { sidebar } from "$lib/states/index.svelte";
 
 	let sidebarEl: HTMLElement;
@@ -8,7 +8,7 @@
 
 <nav bind:this={sidebarEl} id="viz-sidebar" class="border {sidebarOpen ? '' : 'closed'}">
 	<span id="close-sidebar">
-		<CloseIcon
+		<SidebarCloseIcon
 			onclick={() => {
 				sidebar.open = !sidebar.open;
 			}}
@@ -19,7 +19,7 @@
 <style lang="scss">
 	#viz-sidebar {
 		background-color: var(--imag-blue-100);
-		border-left: 1px solid var(--imag-blue-20);
+		border-right: 1px solid var(--imag-blue-20);
 		height: 100%;
 		min-width: 15%;
 		display: flex;
@@ -52,14 +52,14 @@
 		);
 
 		&.closed {
-			min-width: 0;
-			border-left: 0;
+			min-width: 3%;
+			justify-content: center;
 		}
 	}
 
 	#close-sidebar {
 		position: absolute;
-		left: 0;
+		right: 0;
 		margin: 0.2em;
 	}
 </style>
