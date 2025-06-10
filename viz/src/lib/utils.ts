@@ -1,6 +1,4 @@
-import fs from 'fs';
 import { CLIENT_IS_PRODUCTION, type ServerURLConfig } from "./constants";
-import { browser } from "$app/environment";
 
 /**
  * Reads a URL's hash and returns an object containing the query key/pair values as a properties
@@ -19,13 +17,9 @@ export const cookieMethods = {
     set: (key: string, value: string, expiresDate?: Date | string) => {
         document.cookie = `${key}=${value}; expires=${expiresDate}; Secure; path =/`;
     },
-    get: (key: string): string | null => {
-        if (!browser) {
-            return null;
-        }
-
+    get: (key: string): string | undefined => {
         const allCookies = document?.cookie;
-        const cookieValue = allCookies.split("; ").find(cookie => cookie.startsWith(`${key}`))?.split("=")[1]!;
+        const cookieValue = allCookies.split("; ").find(cookie => cookie.startsWith(`${key}`))?.split("=")[1];
 
         return cookieValue;
     },
@@ -47,16 +41,11 @@ export function generateRandomString(length: number): string {
     return result;
 }
 
-export function readConfig(): any {
-    const fileData = fs.readFileSync('../../../config/imagine.json');
-    return JSON.parse(fileData.toString());
-}
-
 export function createServerURL(serverURL: ServerURLConfig): string {
     if (!CLIENT_IS_PRODUCTION) {
         return serverURL.url;
     } else {
-        return serverURL.prod;
+        return serverURL.subdomain;
     }
 }
 
