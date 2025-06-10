@@ -4,9 +4,15 @@ references
 logs
 var
 resources/test
+auth
 
 # Misc files
 auth/*.json
+
+#Security
+.crt
+.key
+.pem
 
 # Platform-specific
 # ---
