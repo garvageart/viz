@@ -1,31 +1,37 @@
 import { browser } from "$app/environment";
 
+const IS_BROWSER_ENV = {
+    production: (location.port === '') || (location.hostname !== 'localhost'),
+    development: (location.port !== '') || (location.hostname === 'localhost')
+};
+
+export const IS_MOBILE = /iPhone|iPad|iPod|Android/i.test(navigator.userAgent) || screen.orientation.type === 'portrait-primary';
+export const CLIENT_IS_PRODUCTION = IS_BROWSER_ENV?.production;
+export const BROWSER_BASE_URL = window.location.hostname;
+
 export class ServerURLConfig {
     host: string;
     port: number;
     url: string;
-    prod: string;
+    subdomain: string;
 
     constructor(
-        host: string,
-        port: number,
-        prod: string
+        subdomain: string,
+        port: number
     ) {
-        this.host = host;
         this.port = port;
-        this.url = `${host}:${port}`;
-        this.prod = prod;
+        this.subdomain = subdomain;
+
+        if (browser && IS_BROWSER_ENV.production) {
+            this.host = `https://${subdomain}.imagine.${BROWSER_BASE_URL}`;
+        } else {
+            this.host = `http://localhost:${port}`;
+        }
+
+        this.url = this.host;
     }
 }
 
-export const MEDIA_SERVER = new ServerURLConfig("http://localhost", 7770, "https://media.imagine.les-is.online");
-export const AUTH_SERVER = new ServerURLConfig("http://localhost", 7771, "https://auth.imagine.les-is.online");
-export const UI_SERVER = new ServerURLConfig("http://localhost", 7777, "https://imagine.les-is.online");
-
-
-const IS_BROWSER_ENV = {
-    production: browser ? (location.port === '') || (location.hostname !== 'localhost') : false
-};
-
-export const IS_MOBILE = browser ? /iPhone|iPad|iPod|Android/i.test(navigator.userAgent) || screen.orientation.type === 'portrait-primary' : false
-export const CLIENT_IS_PRODUCTION = IS_BROWSER_ENV.production;
+export const MEDIA_SERVER = new ServerURLConfig("media", 7770);
+export const AUTH_SERVER = new ServerURLConfig("auth", 7771);
+export const UI_SERVER = new ServerURLConfig("viz", 7777);
