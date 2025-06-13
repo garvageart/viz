@@ -4,7 +4,7 @@
 	let { iconName, ...props }: { iconName: string } & SvelteHTMLElements["span"] = $props();
 </script>
 
-<span class="material-symbols-sharp" {...props}> {iconName} </span>
+<span class="material-symbols-sharp {props.class}" {...props}> {iconName} </span>
 
 <style lang="scss">
 	.material-symbols-sharp {
