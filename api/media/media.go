@@ -14,7 +14,7 @@ import (
 	libhttp "imagine/common/http"
 )
 
-const(
+const (
 	serverKey = "media-server"
 )
 
@@ -70,11 +70,15 @@ func (server ImagineMediaServer) Launch(router *chi.Mux) {
 		render.JSON(res, req, jsonResponse)
 	})
 
-	logger.Info(fmt.Sprint("Starting server on port ", server.Port))
 	address := fmt.Sprintf("%s:%d", server.Host, server.Port)
+
+	logger.Info(fmt.Sprintf("Hey, you want some pics? 👀 - %s: %s", serverKey, address))
 	err := http.ListenAndServe(address, router)
-	// This line will only be reached if ListenAndServe returns, usually with an error.
-	logger.Error(fmt.Sprintf("failed to start server: %s", err.Error()))
+	if err != nil {
+		errMsg := fmt.Sprintf("failed to start server: %s", err)
+		logger.Error(errMsg)
+		panic(errMsg)
+	}
 }
 
 func main() {
