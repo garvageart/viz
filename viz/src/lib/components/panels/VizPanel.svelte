@@ -1,5 +1,5 @@
 <script>
-	import { Splitpanes as Panel } from "svelte-splitpanes";
+	import { Splitpanes as Panel } from "$lib/third-party/svelte-splitpanes";
 	import SubPanel from "./SubPanel.svelte";
 
 	const theme = "viz-theme";

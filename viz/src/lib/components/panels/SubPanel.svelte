@@ -1,6 +1,6 @@
 <script lang="ts">
 	import type { ComponentProps, Snippet } from "svelte";
-	import { Pane } from "svelte-splitpanes";
+	import { Pane } from "$lib/third-party/svelte-splitpanes";
 	import MaterialIcon from "../MaterialIcon.svelte";
 
 	let { children, name, ...props }: { name: string } & ComponentProps<typeof Pane> = $props();
@@ -26,9 +26,9 @@
 		padding: 0.3em 0.7em;
 	}
 
-    .viz-sub_panel-name-container {
-        display: flex;
-        align-items: center;
-        position: relative;
-    }
+	.viz-sub_panel-name-container {
+		display: flex;
+		align-items: center;
+		position: relative;
+	}
 </style>
