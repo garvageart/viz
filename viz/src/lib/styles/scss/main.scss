@@ -14,8 +14,9 @@
     --imag-blue-60: #7D8592;
     --imag-blue-40: #A9ADB7;
     --imag-blue-20: #D4D6DB;
-    --imag-button-colour: #0766BE;
+    --imag-outline-colour: #1885df;
 }
+
 /* Fonts */
 :root {
     --imag-display-font: 'Manrope Variable', sans-serif;
@@ -86,5 +87,11 @@ body {
 .material-symbols-sharp {
     font-variation-settings: 'FILL' 0, 'wght' 600, 'GRAD' 0, 'opsz' 48;
     font-size: inherit;
+    user-select: none;
+}
+
+.no-select {
+    -webkit-user-select: none;
+    -ms-user-select: none;
     user-select: none;
 }
