@@ -1,10 +1,22 @@
 <script lang="ts">
 	import type { SvelteHTMLElements } from "svelte/elements";
 
-	let { iconName, ...props }: { iconName: string } & SvelteHTMLElements["span"] = $props();
+	let { iconName, showHoverBG, ...props }: { iconName: string; showHoverBG?: boolean } & SvelteHTMLElements["span"] = $props();
+	let showHover: boolean = $state(false);
 </script>
 
-<span class="material-symbols-sharp {props.class}" {...props}> {iconName} </span>
+<span
+	class="material-symbols-sharp {props.class} {showHoverBG && showHover ? 'hover' : ''}"
+	{...props}
+	onmouseover={() => {
+		showHover = true;
+	}}
+	onmouseout={() => {
+		showHover = false;
+	}}
+>
+	{iconName}
+</span>
 
 <style lang="scss">
 	.material-symbols-sharp {
@@ -14,12 +26,12 @@
 		display: inline-block;
 		border-radius: 100%;
 
-		&:hover {
-			background-color: var(--imag-blue-90);
-		}
-
 		&:active {
 			background-color: var(--imag-blue-80);
 		}
+	}
+
+	.hover {
+		background-color: var(--imag-blue-90);
 	}
 </style>

@@ -12,7 +12,7 @@
 		padding: 0.5em 1.5em;
 		display: flex;
 		align-items: center;
-		border-bottom: 1px solid var(--imag-blue-20);
+		border-bottom: 1px solid var(--imag-blue-60);
 		position: relative;
 	}
 
