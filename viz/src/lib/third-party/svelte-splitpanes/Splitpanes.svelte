@@ -55,6 +55,9 @@
 	} from "./internal/utils/position.js";
 	import { forEachPartial, sumPartial } from "./internal/utils/array.js";
 	import { calcComputedStyle } from "./internal/utils/styling.js";
+	import { generateRandomString, VizStoreValue } from "$lib/utils";
+	import { dev } from "$app/environment";
+	import { allSplitpanes } from "./state";
 
 	// TYPE DECLARATIONS ----------------
 
@@ -163,8 +166,6 @@
 
 	// PROPS ----------------
 
-	//@ts-expect-error undefined not assigned to string
-	export let id: string = undefined;
 	// horiz or verti?
 	export let horizontal = false;
 	/**
@@ -247,6 +248,29 @@
 	$: $isHorizontal = horizontal;
 	$: $showFirstSplitter = firstSplitter;
 
+	function isSplitpanes(element: Element): boolean {
+		return element.classList.contains("splitpanes");
+	}
+
+	function isPane(element: Element): boolean {
+		return element.classList.contains("splitpanes__pane");
+	}
+
+	// Determines if this is the very first splitpanes element in the DOM,
+	// the root element in the tree. Anything else is nested
+	function isSplitpanesRoot(element: Element): boolean {
+		const parent = element.parentElement;
+		if (!parent) {
+			return true;
+		}
+
+		const parentIsPane = isPane(parent);
+		const parentIsSplitpanes = isSplitpanes(parent);
+		const isSplitpanesElement = isSplitpanes(element);
+
+		return isSplitpanesElement && parentIsPane === false && parentIsSplitpanes === false;
+	}
+
 	// used to complete rendering service side (SSR mode)
 	function ssrRegisterPaneSize(size: number | null) {
 		if (size === null) {
@@ -281,12 +305,17 @@
 			: undefined
 	});
 
+	setContext<ITree>("tree", $splitpanes);
+
 	function onPaneAdd(pane: IPane): ClientCallbacks {
 		// 1. Add pane to array at the same index it was inserted in the <splitpanes> tag.
 		let index = -1;
 		if (pane.element.parentNode) {
 			Array.from(pane.element.parentNode.children).some((el: Element) => {
-				if (el.className.includes("splitpanes__pane")) index++;
+				if (el.className.includes("splitpanes__pane")) {
+					index++;
+				}
+
 				return el === pane.element;
 			});
 		}
@@ -367,6 +396,20 @@
 
 	// called by sub-panes
 	function onPaneClick(_event: MouseEvent, pane: IPane) {
+		const element = pane.element;
+		if (currentFocusedPane && currentFocusedPane !== element) {
+			currentFocusedPane.classList.remove("splitpanes__pane__active");
+		}
+
+		currentFocusedPane = element as HTMLElement;
+
+		if (!element.classList.contains("splitpanes__pane__active")) {
+			element.classList.add("splitpanes__pane__active");
+		} else {
+			element.classList.remove("splitpanes__pane__active");
+		}
+
+		pane.isActive.set(!get(pane.isActive));
 		dispatch("pane-click", pane);
 	}
 
@@ -380,10 +423,45 @@
 		resetPaneSizes();
 
 		for (let i = 0; i < panes.length; i++) {
-			panes[i].isReady = true;
+			const pane = panes[i];
+			pane.isReady = true;
+			pane.parent = usedKeyId;
+
+			panes[i] = pane;
 		}
+
+		// initialize values
+		$splitpanes = {
+			id,
+			keyId: usedKeyId,
+			element: container,
+			panes,
+			horizontal: $isHorizontal,
+			theme,
+			firstSplitter: $showFirstSplitter,
+			rtl,
+			pushOtherPanes,
+			dblClickSplitter,
+			class: clazz,
+			style,
+			isRoot: false,
+			childs: []
+		};
+
+		if (isSplitpanesRoot(container)) {
+			isRoot = true;
+			$splitpanes.isRoot = isRoot;
+		}
+
+		for (const pane of panes) {
+			const childrenElements = Array.from(pane.element.children).filter((el) => isSplitpanes(el));
+			for (const child of childrenElements) {
+				$splitpanes.childs?.push(child.getAttribute("data-viz-sp-id") as string);
+			}
+		}
+
 		isReady = true;
-		dispatch("ready");
+		dispatch("ready", calculateTree());
 
 		setTimeout(() => {
 			isAfterInitialTimeoutZero = true;
@@ -400,6 +478,7 @@
 
 			// Prevent emitting console warnings on hot reloading.
 			isReady = false;
+			$allSplitpanes.delete(usedKeyId);
 		});
 	}
 
@@ -564,6 +643,28 @@
 
 			const maxExtendedSize = Math.min(Math.max(0, 100 - totalMinSizes), splitterPane.max());
 
+			// Resets to default size if the splitter pane is already maximized
+			if (splitterPane.sz() >= maxExtendedSize) {
+				// Reset all panes to their default (given) size or equal share if not defined
+				const defaultTotal = panes.reduce((acc, p) => acc + (typeof p.givenSize === "number" ? p.givenSize : 0), 0);
+				const undefinedCount = panes.filter((p) => typeof p.givenSize !== "number").length;
+				const fallbackSize = undefinedCount > 0 ? (100 - defaultTotal) / undefinedCount : 0;
+
+				for (let i = 0; i < panes.length; i++) {
+					const pane = panes[i];
+					if (typeof pane.givenSize === "number") {
+						pane.setSz(pane.givenSize);
+					} else {
+						pane.setSz(fallbackSize);
+					}
+				}
+				dispatch("pane-reset", splitterPane);
+				dispatch("resized", calculateTree());
+
+				isMouseDown = false;
+				return;
+			}
+
 			const totalMaxExtendedPlusMinSizes = totalMinSizes + maxExtendedSize;
 			if (totalMaxExtendedPlusMinSizes >= 100) {
 				// put everything to the minimum, and in the splitterPane put the rest of the size
@@ -663,7 +764,7 @@
 			for (let [key, value] of Object.entries(pane.element)) {
 				let newKey = key.startsWith("__") ? key.replace("__", "") : key;
 				(pane.element as Record<string, any>)[newKey] = value;
-				
+
 				delete (pane.element as Record<string, any>)[key];
 			}
 
@@ -916,7 +1017,7 @@
 	function resetPaneSizes() {
 		equalize();
 
-		if (isReady) dispatch("resized", prepareSizeEvent());
+		if (isReady) dispatch("resized", calculateTree());
 	}
 
 	function equalize() {
@@ -1002,7 +1103,7 @@
 		if (!isFinite(leftToAllocate)) {
 			console.warn("Splitpanes: Internal error, sizes might be NaN as a result.");
 		} else if (Math.abs(leftToAllocate) > 0.1) {
-			console.warn("Splitpanes: Could not resize panes correctly due to their constraints.");
+			console.warn("Splitpanes: Could not resize panes correctly due to their constraints.", Math.abs(leftToAllocate));
 		}
 	}
 
@@ -1043,7 +1144,7 @@
 
 	/**
 	 * Checks that <Splitpanes> is composed of <Pane>, and verify that the panes are still in the right order,
-		and if not update the internal order.
+	 * and if not update the internal order.
 	 */
 	function verifyAndUpdatePanesOrder() {
 		if (!container) {
@@ -1099,6 +1200,7 @@
 
 <div
 	{id}
+	data-viz-sp-id={usedKeyId}
 	bind:this={container}
 	class={`splitpanes ${theme || ""} ${clazz || ""}`}
 	class:splitpanes--horizontal={horizontal}

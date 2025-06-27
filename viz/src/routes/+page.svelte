@@ -2,8 +2,10 @@
 	import DevWelcomeText from "$lib/components/DevWelcomeText.svelte";
 	import LoginButtons from "$lib/components/LoginButtons.svelte";
 	import VizPanel from "$lib/components/panels/VizPanel.svelte";
+	import { login } from "$lib/states/index.svelte";
 
-	let vizContent: HTMLDivElement;
+	let vizContentContainer: HTMLDivElement;
+	const loginState = login.state;
 </script>
 
 <svelte:head>
@@ -11,10 +13,13 @@
 </svelte:head>
 
 <main>
-	<div bind:this={vizContent} id="viz-content">
+	<div class="viz-content-container" bind:this={vizContentContainer}>
 		<!-- <DevWelcomeText></DevWelcomeText> -->
-		<!-- <LoginButtons /> -->
-		<VizPanel />
+		{#if !loginState}
+			<LoginButtons />
+		{:else}
+			<VizPanel id="viz-content" />
+		{/if}
 	</div>
 </main>
 
@@ -27,7 +32,7 @@
 		width: 100%;
 	}
 
-	#viz-content {
+	.viz-content-container {
 		display: flex;
 		flex-direction: column;
 		align-items: center;

@@ -30,6 +30,39 @@
 	let clazz = "";
 	export { clazz as class };
 
+	// FOR VIZ ONLY
+	// PROPS
+	export let smoothExpand = false;
+	export let id: string;
+	export let paneKeyId: string = "";
+
+	// VARIABLES
+	let usedKeyId = paneKeyId ?? generateRandomString(10);
+	let usedId = id;
+	let isActive: Writable<boolean> = writable(false);
+	let tabs = $allTabs.get(paneKeyId);
+
+	// NBBBBBBB: MAKE SURE that elements/panes with the same ID don't happen, like ever
+	const storedLayout = new VizStoreValue<Record<string, IPaneSerialized[]>>("layout").get();
+	let allPanes = Object.values(storedLayout ?? {}).flat();
+	let duplicateAnswer = arrayHasDuplicates(allPanes.map((pane) => pane.id));
+
+	if (duplicateAnswer.hasDuplicates) {
+		console.error("The following panes have duplicate IDs. Please check the DOM", duplicateAnswer.duplicates);
+		if (duplicateAnswer.duplicates.includes(usedId)) {
+			throw Error(`Pane element with id "${usedId}" already exists`);
+		}
+	}
+
+	let paneInfo: IPaneSerialized | undefined = allPanes.find((pane) => pane.id === usedId);
+	if (paneInfo) {
+		usedKeyId = paneInfo.keyId;
+
+		size = paneInfo.size;
+		minSize = paneInfo.min;
+		maxSize = paneInfo.max;
+		snapSize = paneInfo.snap;
+	}
 	// VARIABLES
 
 	const key = {};
@@ -69,8 +102,14 @@
 		}
 	}
 
+	let transitionClass = smoothExpand ? `transition: ${$isHorizontal ? "height" : "width"} 0.2s ease-out;` : "";
 	$: dimension = getDimensionName($isHorizontal);
-	$: style = `${dimension}: ${sz}%;`;
+	$: style = `${dimension}: ${sz}%; ${transitionClass}`;
+	$: {
+		if (!$isActive) {
+			element?.classList.remove("splitpanes__pane__active");
+		}
+	}
 
 	if (gathering && ssrRegisterPaneSize) {
 		ssrRegisterPaneSize(size);
@@ -109,6 +148,31 @@
 		onDestroy(() => {
 			clientOnlyContext?.onPaneRemove(key);
 		});
+
+		onMount(() => {
+			document.addEventListener("click", (event) => {
+				const target = event.target as HTMLElement;
+				if (!target) {
+					return;
+				}
+
+				if (!element) {
+					return;
+				}
+
+				if (element.contains(target)) {
+					$isActive = true;
+				} else {
+					$isActive = false;
+				}
+			});
+
+			return () => {
+				document.removeEventListener("click", () => {
+					$isActive = false;
+				});
+			};
+		});
 	}
 </script>
 
@@ -146,3 +210,13 @@
 		<slot />
 	</div>
 {/if}
+
+<style global lang="scss">
+	.transition-vertical {
+		transition: width 0.2s ease-out;
+	}
+
+	.transition-horizontal {
+		transition: height 0.2s ease-out;
+	}
+</style>
