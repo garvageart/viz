@@ -112,6 +112,9 @@ export class VizStoreValue<V = string> {
     }
 
     get = (): V | null => {
+        if (window.debug) {
+            console.info(`getting "viz:${this.key}" from local storage`);
+        }
         const item = localStorage.getItem("viz:" + this.key);
 
         if (!item || item === "undefined") {
@@ -126,6 +129,10 @@ export class VizStoreValue<V = string> {
     };
 
     set = (value: V) => {
+        if (window.debug) {
+            console.info(`saving "viz:${this.key}" to local storage`);
+        }
+
         this.value = value;
         let tempStr: string;
 
