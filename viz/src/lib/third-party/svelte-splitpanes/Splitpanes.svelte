@@ -34,15 +34,7 @@
 <script lang="ts">
 	import { onMount, onDestroy, setContext, createEventDispatcher, tick, afterUpdate } from "svelte";
 	import { get, writable, type Writable } from "svelte/store";
-	import type {
-		IPane,
-		IPaneSizingEvent,
-		SplitContext,
-		PaneInitFunction,
-		ClientCallbacks,
-		ITree,
-		IPaneSerialized
-	} from "./index.js";
+	import type { IPane, IPaneSizingEvent, SplitContext, PaneInitFunction, ClientCallbacks, ITree } from "./index.js";
 	import GatheringRound from "./internal/GatheringRound.svelte";
 	import { browser } from "./internal/env.js";
 	import { getDimensionName } from "./internal/utils/sizing.js";
@@ -56,8 +48,8 @@
 	import { forEachPartial, sumPartial } from "./internal/utils/array.js";
 	import { calcComputedStyle } from "./internal/utils/styling.js";
 	import { generateRandomString, VizStoreValue } from "$lib/utils";
-	import { dev } from "$app/environment";
-	import { allSplitpanes } from "./state";
+	import { allSplitpanes, layoutState } from "./state";
+	import type { VizSubPanel } from "$lib/components/panels/SubPanel.svelte";
 
 	// TYPE DECLARATIONS ----------------
 
@@ -109,7 +101,7 @@
 		/**
 		 * Fires when splitpanes is ready.
 		 */
-		ready: CustomEvent<Map<string, IPaneSerialized[]>>;
+		ready: CustomEvent<VizSubPanel[]>;
 
 		/**
 		 * Fires while resizing (on mousemove/touchmove).
@@ -123,7 +115,7 @@
 		 *
 		 * Returns the clicked pane object with its dimensions.
 		 */
-		resized: CustomEvent<Map<string, IPaneSerialized[]>>;
+		resized: CustomEvent<VizSubPanel[]>;
 
 		/**
 		 * Fires when a pane is added.
@@ -190,22 +182,21 @@
 	export { clazz as class };
 
 	// FOR VIZ ONLY ----------------
-	const storedLayout = new VizStoreValue<Record<string, IPaneSerialized[]>>("layout").get();
+	const storedLayout = new VizStoreValue<VizSubPanel[]>("layout").get();
 
 	export let id: string;
-	// let splitpaneId: string | undefined = Object.keys(storedLayout ?? {}).find((splitpaneId) => splitpaneId === id);
+	export let keyId: string = "";
 
 	if (!id || id === "") {
 		throw new Error("Splitpanes: id is required");
 	}
 
-	let splitpanesKeyId = storedLayout?.[id].map((pane) => pane.parent)[0];
-	export let keyId: string = "";
-	const usedKeyId = splitpanesKeyId ?? keyId ?? generateRandomString(10);
-
 	let isRoot: boolean;
 	let splitpanes: Writable<ITree> = writable({ id });
 	let currentFocusedPane: HTMLElement;
+
+	let splitpanesKeyId = storedLayout?.flat().find((sp) => sp.id === id)?.paneKeyId;
+	const usedKeyId = splitpanesKeyId ?? keyId ?? generateRandomString(10);
 
 	// VARIABLES ----------------
 
@@ -737,46 +728,46 @@
 
 	function calculateTree() {
 		findPanesChildren();
-		// this seems computationally expensive so idk about this rn
-		const panesStr = JSON.stringify(
-			panes.map((pane) => {
-				return {
-					id: pane.id,
-					keyId: pane.keyId,
-					index: pane.index,
-					givenSize: pane.givenSize,
-					parent: pane.parent,
-					element: pane.element,
-					size: pane.sz(),
-					min: pane.min(),
-					max: pane.max(),
-					snap: pane.snap(),
-					childs: pane.childs,
-					tabs: pane.tabs,
-					isActive: get(pane.isActive)
+		const currentLayout = $layoutState;
+
+		function updatePanelSize(panel: VizSubPanel) {
+			const pane = panes.find((p) => p.keyId === panel.paneKeyId);
+			let updatedPanel = { ...panel };
+
+			if (pane) {
+				updatedPanel.size = pane.sz();
+			}
+
+			if (panel.childs && panel.childs.subPanel && Array.isArray(panel.childs.subPanel)) {
+				updatedPanel.childs = {
+					...panel.childs,
+					subPanel: panel.childs.subPanel.map(updatePanelSize)
 				};
-			})
-		);
-
-		// Still worried about performance but we will see lolz
-		const panesParsed = JSON.parse(panesStr) as IPaneSerialized[];
-		for (const pane of panesParsed) {
-			for (let [key, value] of Object.entries(pane.element)) {
-				let newKey = key.startsWith("__") ? key.replace("__", "") : key;
-				(pane.element as Record<string, any>)[newKey] = value;
-
-				delete (pane.element as Record<string, any>)[key];
 			}
 
-			// unnecessary to keep svelte metadata in prod (if it even shows up then)
-			if (!dev) {
-				delete (pane.element as Record<string, any>)["svelte_meta"];
+			if (panel.childs && panel.childs.parentPanel) {
+				updatedPanel.childs = {
+					...updatedPanel.childs,
+					parentPanel: updatePanelSize(panel.childs.parentPanel),
+					parentSubPanel: updatedPanel.childs?.parentSubPanel ?? ({} as any),
+					subPanel: updatedPanel.childs?.subPanel ?? []
+				};
 			}
+
+			if (panel.childs && panel.childs.parentSubPanel) {
+				updatedPanel.childs = {
+					...updatedPanel.childs,
+					parentSubPanel: updatePanelSize(panel.childs.parentSubPanel),
+					parentPanel: updatedPanel.childs?.parentPanel ?? ({} as any),
+					subPanel: updatedPanel.childs?.subPanel ?? []
+				};
+			}
+			return updatedPanel;
 		}
 
-		$allSplitpanes.set(id, panesParsed);
+		const updatedLayout = currentLayout.map(updatePanelSize);
 
-		return $allSplitpanes;
+		return updatedLayout;
 	}
 
 	/**
