@@ -60,7 +60,7 @@
     .splitpanes--vertical>.splitpanes__splitter {
         width: 1px;
         background-color: var(--imag-blue-60);
-        cursor: col-resize;
+        cursor: ew-resize;
         
         &:before,
         &:after {
@@ -77,7 +77,7 @@
     .splitpanes--horizontal>.splitpanes__splitter {
         height: 1px;
         background-color: var(--imag-blue-60);
-        cursor: row-resize;
+        cursor: ns-resize;
         
         &:before,
         &:after {
