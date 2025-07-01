@@ -79,7 +79,7 @@ export interface IPane {
   isActive: Writable<boolean>;
   parent: string | null;
   childs: string[];
-  tabs: VizTab[];
+  tabs: VizTab[] | null;
 }
 
 interface SerializedElement {
@@ -107,7 +107,7 @@ export interface IPaneSerialized {
   max: number;
   snap: number;
   childs: string[];
-  tabs: VizTab[];
+  tabs: VizTab[] | null;
 }
 
 type ISplitpanes = ComponentProps<typeof Splitpanes> & {
