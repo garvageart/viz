@@ -1,9 +1,32 @@
-import type { VizSubPanel } from "$lib/components/panels/SubPanel.svelte";
-import SomeContent from "$lib/components/panels/workspace/SomeContent.svelte";
-import DifferentContent from "$lib/components/panels/workspace/DifferentContent.svelte";
+import type { VizSubPanel, VizTab } from "$lib/components/panels/SubPanel.svelte";
 import { generateKeyId } from "$lib/utils";
 import { DEFAULT_THEME } from "$lib/constants";
-import EvenMoreDifferent from "$lib/components/panels/workspace/EvenMoreDifferent.svelte";
+import DifferentContent from "$lib/components/panels/workspace/generic/DifferentContent.svelte";
+import SomeContent from "$lib/components/panels/workspace/generic/SomeContent.svelte";
+import EvenMoreDifferent from "$lib/components/panels/workspace/generic/EvenMoreDifferent.svelte";
+
+// Only one instance of a view/panel and its component
+// can exist in the layout so we declare all of them here
+export const views: VizTab[] = [
+    {
+        name: "View 1",
+        component: SomeContent,
+        id: 1,
+        opticalCenterFix: 0.2
+    },
+    {
+        name: "View 2",
+        component: DifferentContent,
+        id: 2,
+        opticalCenterFix: 0.2
+    },
+    {
+        name: "View 3",
+        component: EvenMoreDifferent,
+        id: 3,
+        opticalCenterFix: 0.2
+    }
+];
 
 const theme = DEFAULT_THEME;
 // this seems so..... complex?? 
@@ -11,20 +34,7 @@ const theme = DEFAULT_THEME;
 export const panels: VizSubPanel[] = [
     {
         id: "viz-test-content",
-        tabs: [
-            {
-                name: "Tab 1",
-                component: SomeContent,
-                id: 1,
-                opticalCenterFix: 0.2
-            },
-            {
-                name: "Tab 2",
-                component: DifferentContent,
-                id: 2,
-                opticalCenterFix: 0.2
-            }
-        ],
+        tabs: views.filter(tab => tab.id === 2),
         header: true,
         maxSize: 100,
         minSize: 10,
@@ -50,40 +60,14 @@ export const panels: VizSubPanel[] = [
                     id: "viz-test-again",
                     maxSize: 100,
                     paneKeyId: generateKeyId(),
-                    tabs: [
-                        {
-                            name: "Tab 4",
-                            component: SomeContent,
-                            id: 5,
-                            opticalCenterFix: 0.2
-                        },
-                        {
-                            name: "Tab 5",
-                            component: EvenMoreDifferent,
-                            id: 6,
-                            opticalCenterFix: 0.2
-                        }
-                    ]
+                    tabs: views.filter(tab => tab.id === 3)
                 }
             ]
         }
     },
     {
         id: "viz-test-something-else",
-        tabs: [
-            {
-                name: "Tab 7",
-                component: SomeContent,
-                id: 7,
-                opticalCenterFix: 0.2
-            },
-            {
-                name: "Tab 8",
-                component: DifferentContent,
-                id: 8,
-                opticalCenterFix: 0.2
-            }
-        ],
+        tabs: views.filter(tab => tab.id === 1),
         header: true,
         maxSize: 100,
         minSize: 10,
