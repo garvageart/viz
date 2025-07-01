@@ -66,7 +66,7 @@
 	if (duplicateAnswer.hasDuplicates) {
 		console.error("The following panes have duplicate IDs. Please check the DOM", duplicateAnswer.duplicates);
 		if (duplicateAnswer.duplicates.includes(usedId)) {
-			throw Error(`Pane element with id "${usedId}" already exists`);
+			throw new Error(`Pane element with id "${usedId}" already exists`);
 		}
 	}
 
