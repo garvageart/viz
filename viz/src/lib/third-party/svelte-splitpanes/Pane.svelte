@@ -1,14 +1,15 @@
 <script lang="ts">
 	import { getContext, onMount, onDestroy, hasContext } from "svelte";
 	import { KEY } from "./Splitpanes.svelte";
-	import type { ClientCallbacks, IPane, IPaneSerialized, PaneInitFunction, SplitContext } from "./index.js";
+	import type { ClientCallbacks, IPane, PaneInitFunction, SplitContext } from "./index.js";
 	import { browser } from "./internal/env.js";
 	import { gatheringKey } from "./internal/GatheringRound.svelte";
 	import { getDimensionName } from "./internal/utils/sizing.js";
 	import { carefullCallbackSource } from "./internal/utils/functions";
 	import { writable, type Writable } from "svelte/store";
 	import { arrayHasDuplicates, generateRandomString, VizStoreValue } from "$lib/utils";
-	import { allTabs } from "./state";
+	import { allTabs, layoutState } from "./state";
+	import type { VizSubPanel } from "$lib/components/panels/SubPanel.svelte";
 
 	const {
 		ssrRegisterPaneSize,
@@ -53,11 +54,15 @@
 	let isActive: Writable<boolean> = writable(false);
 	let tabs = $allTabs.get(paneKeyId);
 
-	// NBBBBBBB: MAKE SURE that elements/panes with the same ID don't happen, like ever
-	const storedLayout = new VizStoreValue<Record<string, IPaneSerialized[]>>("layout").get();
-	let allPanes = Object.values(storedLayout ?? {}).flat();
+	let allPanes = $layoutState.flat() ?? new VizStoreValue<VizSubPanel[]>("layout").get()?.flat();
+	allPanes =
+		allPanes
+			?.concat(allPanes.flatMap((panel) => panel.childs?.subPanel ?? []))
+			.concat(allPanes.flatMap((panel) => panel.childs?.parentSubPanel ?? [])) ?? [];
+
 	let duplicateAnswer = arrayHasDuplicates(allPanes.map((pane) => pane.id));
 
+	// NBBBBBBB: MAKE SURE that elements/panes with the same ID don't happen, like ever
 	if (duplicateAnswer.hasDuplicates) {
 		console.error("The following panes have duplicate IDs. Please check the DOM", duplicateAnswer.duplicates);
 		if (duplicateAnswer.duplicates.includes(usedId)) {
@@ -65,19 +70,18 @@
 		}
 	}
 
-	let paneInfo: IPaneSerialized | undefined = allPanes.find((pane) => pane.id === usedId);
+	let paneInfo: VizSubPanel | undefined = allPanes.find((pane) => pane.id === usedId);
 	if (paneInfo) {
-		usedKeyId = paneInfo.keyId;
+		usedKeyId = paneInfo.paneKeyId!;
 
-		size = paneInfo.size;
-		minSize = paneInfo.min;
-		maxSize = paneInfo.max;
-		snapSize = paneInfo.snap;
+		size = paneInfo.size ?? size;
+		minSize = paneInfo.minSize ?? minSize;
+		maxSize = paneInfo.maxSize ?? maxSize;
+		snapSize = paneInfo.snapSize ?? snapSize;
 	}
+
 	// VARIABLES
-
 	const key = {};
-
 	const gathering = !browser && hasContext(gatheringKey);
 	const { undefinedPaneInitSize } = (!gathering ? onPaneInit(key) : {}) as ReturnType<PaneInitFunction>;
 
