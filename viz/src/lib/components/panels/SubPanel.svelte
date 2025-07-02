@@ -26,10 +26,15 @@
 <script lang="ts">
 	import type { ComponentProps, Snippet } from "svelte";
 	import { Pane } from "$lib/third-party/svelte-splitpanes";
-	import { generateKeyId, swapArrayElements } from "$lib/utils";
+	import { generateKeyId, resetAndReloadLayout, swapArrayElements } from "$lib/utils";
 	import MaterialIcon from "../MaterialIcon.svelte";
 	import { allTabs, layoutState } from "$lib/third-party/svelte-splitpanes/state";
 	import { views } from "$lib/layouts/test";
+	import { dev } from "$app/environment";
+
+	if (dev) {
+		window.resetAndReloadLayout = resetAndReloadLayout;
+	}
 
 	interface Props {
 		id: string;
