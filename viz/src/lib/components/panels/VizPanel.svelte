@@ -23,7 +23,7 @@
 		return result;
 	}) as VizSubPanel[];
 
-	if (window.debug) {
+	if (window.debug === true) {
 		$inspect("global state", $layoutState);
 		$inspect("internal layout state", internalLayoutState);
 	}
