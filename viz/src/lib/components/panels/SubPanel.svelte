@@ -15,7 +15,7 @@
 
 	export type VizSubPanel = Props &
 		ComponentProps<typeof Pane> & {
-			childs: {
+			childs?: {
 				parentSubPanel: Omit<VizSubPanel, "childs" | "children" | "$$events" | "$$slots" | "header" | "tabs">;
 				parentPanel: Omit<ComponentProps<typeof Splitpanes>, "children" | "$$events" | "$$slots">;
 				subPanel: Omit<VizSubPanel, "childs">[];
@@ -71,7 +71,7 @@
 		className = allProps.class;
 	}
 
-	if (header === true && panelTabs?.length === 0) {
+	if (header === true && panelTabs.length === 0) {
 		throw Error("Viz: Header is showing, but no tabs are provided for: " + keyId);
 	}
 
@@ -174,7 +174,7 @@
 
 						for (const sub of panel.childs.subPanel) {
 							if (sub.paneKeyId === paneKeyId) {
-								return sub.paneKeyId;
+								return panel.paneKeyId;
 							}
 						}
 					}
@@ -187,48 +187,98 @@
 
 				if (parentIndex === -1) {
 					// Try to find the parent panel that contains the child subpanel with paneKeyId === state.data.parent
-					parentIndex = currentLayout.findIndex((panel) =>
-						panel.childs?.subPanel?.some((sub) => sub.paneKeyId === state.data.parent)
+					parentIndex = currentLayout.findIndex(
+						(panel) => panel.childs && panel.childs.subPanel?.some((sub) => sub.paneKeyId === state.data.parent)
 					);
 				}
 
-				const hasChildSubPanel =
-					currentLayout[parentIndex]?.childs?.subPanel && currentLayout[parentIndex]?.childs?.subPanel?.length > 0;
-				const childPanel = currentLayout[parentIndex]?.childs?.subPanel?.find((panel) => panel.paneKeyId === nodeParentId);
-				const childPanelIndex = currentLayout[parentIndex]?.childs?.subPanel?.findIndex(
-					(panel) => panel.paneKeyId === nodeParentId
-				);
+				const childs = currentLayout[parentIndex]?.childs;
+
+				if (!childs) {
+					return;
+				}
+
+				const hasChildSubPanel = childs.subPanel && childs.subPanel?.length > 0;
+				const childPanel = childs.subPanel?.find((panel) => panel.paneKeyId === nodeParentId);
+				const childPanelIndex = childs.subPanel?.findIndex((panel) => panel.paneKeyId === nodeParentId);
 
 				const sourceSubPanelParent = getSubPanelParent(state.data.parent!);
 				const destSubPanelParent = getSubPanelParent(nodeParentId);
-				const isMovingBetweenChildSubpanels = sourceSubPanelParent === destSubPanelParent && state.data.parent !== nodeParentId;
+				const isMovingBetweenChildSubpanels =
+					sourceSubPanelParent &&
+					destSubPanelParent &&
+					sourceSubPanelParent === destSubPanelParent &&
+					state.data.parent !== nodeParentId;
 
 				if (isMovingBetweenChildSubpanels) {
 					// Remove tab from source child subpanel
-					const sourceChildIdx = currentLayout[parentIndex]?.childs?.subPanel?.findIndex(
-						(sub) => sub.paneKeyId === state.data.parent
-					)!;
-					const destChildIdx = currentLayout[parentIndex]?.childs?.subPanel?.findIndex((sub) => sub.paneKeyId === nodeParentId)!;
+					const sourceChildIdx = childs.subPanel?.findIndex((sub) => sub.paneKeyId === state.data.parent)!;
+					const destChildIdx = childs.subPanel?.findIndex((sub) => sub.paneKeyId === nodeParentId)!;
 					if (sourceChildIdx !== -1 && destChildIdx !== -1) {
 						// Remove tab from source child
-						const tabIdx = currentLayout[parentIndex].childs?.subPanel[sourceChildIdx].tabs?.findIndex(
-							(tab) => tab.id === state.data.id
-						);
+						const tabIdx = childs.subPanel[sourceChildIdx].tabs.findIndex((tab) => tab.id === state.data.id);
 						if (tabIdx !== -1) {
-							const movedTab = currentLayout[parentIndex].childs?.subPanel[sourceChildIdx]?.tabs?.splice(tabIdx!, 1)[0];
+							const movedTab = childs.subPanel[sourceChildIdx]?.tabs.splice(tabIdx!, 1)[0];
 							// Add tab to destination
-							currentLayout[parentIndex].childs?.subPanel[destChildIdx].tabs.push(movedTab!);
+							childs.subPanel[destChildIdx].tabs.push(movedTab!);
 							// Update parent reference
 							movedTab.parent = nodeParentId;
 
-							if (currentLayout[parentIndex].childs?.subPanel[sourceChildIdx].tabs?.length === 0) {
-								currentLayout[parentIndex].childs?.subPanel.splice(sourceChildIdx, 1);
+							if (childs.subPanel[sourceChildIdx].tabs.length === 0) {
+								childs.subPanel.splice(sourceChildIdx, 1);
 							}
 						}
+					} else {
 					}
 
 					// Update layout state
 					$layoutState = [...currentLayout];
+				} else if (
+					parentIndex !== -1 &&
+					state.data.parent !== nodeParentId &&
+					currentLayout.findIndex((panel) => panel.paneKeyId === nodeParentId) !== -1
+				) {
+					// Moving a tab from one parent subpanel to a different parent subpanel (or its child)
+					const sourceParentIdx = currentLayout.findIndex((panel) => panel.paneKeyId === state.data.parent);
+					const destParentIdx = currentLayout.findIndex((panel) => panel.paneKeyId === nodeParentId);
+					if (sourceParentIdx !== -1 && destParentIdx !== -1) {
+						// Remove tab from source parent
+						const sourceTabs = currentLayout[sourceParentIdx].tabs;
+						const tabIdx = sourceTabs.findIndex((tab) => tab.id === state.data.id);
+						let movedTab;
+						if (tabIdx !== -1) {
+							movedTab = sourceTabs.splice(tabIdx, 1)[0];
+							movedTab.parent = nodeParentId;
+						}
+						// Add tab to destination parent
+						if (movedTab) {
+							if (!currentLayout[destParentIdx].tabs) {
+								currentLayout[destParentIdx].tabs = [];
+							}
+							currentLayout[destParentIdx].tabs.push(movedTab);
+						}
+						// If source parent has no more tabs, promote only the first child subpanel to parent and remove it from subPanel
+						if (sourceTabs.length === 0 && currentLayout[sourceParentIdx].childs?.subPanel?.length) {
+							const firstChild = currentLayout[sourceParentIdx].childs.subPanel[0];
+							// Copy properties from firstChild to the parent panel
+							Object.assign(currentLayout[sourceParentIdx], {
+								id: firstChild.id,
+								maxSize: firstChild.maxSize,
+								minSize: firstChild.minSize,
+								paneKeyId: firstChild.paneKeyId,
+								tabs: firstChild.tabs,
+								// If you want to keep the rest of the childs.subPanel (minus the promoted one)
+								childs: {
+									...currentLayout[sourceParentIdx].childs,
+									subPanel: currentLayout[sourceParentIdx].childs.subPanel.slice(1)
+								}
+							});
+						} else if (sourceTabs.length === 0) {
+							// Just remove the empty panel
+							currentLayout.splice(sourceParentIdx, 1);
+						}
+						$layoutState = [...currentLayout];
+					}
 				} else if (parentIndex !== -1 && childPanel) {
 					// Detect if moving a parent tab to its own child subpanel
 					// check if current subpanel has a specific tab
@@ -247,13 +297,11 @@
 					newParentPanel.tabs!.push(state.data);
 
 					// Remove the child from the parent's subPanel array
-					if (currentLayout[parentIndex].childs && currentLayout[parentIndex].childs.subPanel) {
-						currentLayout[parentIndex].childs.subPanel = currentLayout[parentIndex].childs.subPanel.filter(
-							(panel) => panel.paneKeyId !== nodeParentId
-						);
+					if (childs && childs.subPanel) {
+						childs.subPanel = childs.subPanel.filter((panel) => panel.paneKeyId !== nodeParentId);
 					}
 
-					newParentPanel.childs = currentLayout[parentIndex].childs;
+					newParentPanel.childs = childs;
 					// Replace the parent with the promoted child
 					currentLayout.splice(parentIndex, 1, newParentPanel);
 
@@ -261,20 +309,70 @@
 					$layoutState = [...currentLayout];
 				} else if (
 					parentIndex !== -1 &&
+					state.data.parent !== nodeParentId &&
+					// nodeParentId is a child subpanel of a different parent
+					currentLayout.some((panel) => panel.childs?.subPanel?.some((sub) => sub.paneKeyId === nodeParentId))
+				) {
+					// Find the source parent and the destination parent/child
+					const sourceParentIdx = currentLayout.findIndex((panel) => panel.paneKeyId === state.data.parent);
+					const destParentIdx = currentLayout.findIndex((panel) =>
+						panel.childs?.subPanel?.some((sub) => sub.paneKeyId === nodeParentId)
+					);
+					if (sourceParentIdx !== -1 && destParentIdx !== -1) {
+						// Remove tab from source parent
+						const sourceTabs = currentLayout[sourceParentIdx].tabs;
+						const tabIdx = sourceTabs.findIndex((tab) => tab.id === state.data.id);
+						let movedTab;
+						if (tabIdx !== -1) {
+							movedTab = sourceTabs.splice(tabIdx, 1)[0];
+							movedTab.parent = nodeParentId;
+						}
+						// Add tab to destination child subpanel
+						const destChildIdx = currentLayout[destParentIdx].childs?.subPanel?.findIndex(
+							(sub) => sub.paneKeyId === nodeParentId
+						);
+						if (
+							movedTab &&
+							typeof destChildIdx === "number" &&
+							destChildIdx !== -1 &&
+							currentLayout[destParentIdx].childs?.subPanel
+						) {
+							currentLayout[destParentIdx].childs.subPanel[destChildIdx].tabs.push(movedTab);
+						}
+						// If source parent has no more tabs, promote only the first child subpanel to parent and remove it from subPanel
+						if (sourceTabs.length === 0 && currentLayout[sourceParentIdx].childs?.subPanel?.length) {
+							const firstChild = currentLayout[sourceParentIdx].childs.subPanel[0];
+							Object.assign(currentLayout[sourceParentIdx], {
+								id: firstChild.id,
+								maxSize: firstChild.maxSize,
+								minSize: firstChild.minSize,
+								paneKeyId: firstChild.paneKeyId,
+								tabs: firstChild.tabs,
+								childs: {
+									...currentLayout[sourceParentIdx].childs,
+									subPanel: currentLayout[sourceParentIdx].childs.subPanel.slice(1)
+								}
+							});
+						} else if (sourceTabs.length === 0) {
+							currentLayout.splice(sourceParentIdx, 1);
+						}
+						$layoutState = [...currentLayout];
+					}
+				} else if (
+					parentIndex !== -1 &&
 					hasChildSubPanel &&
 					keyId === nodeParentId && // Moving to the parent subpanel
 					state.data.parent !== keyId // Only if coming from a child subpanel
 				) {
-
 					// Find the source parent panel (the one containing the subpanel with state.data.parent)
 					let sourceParentIndex = currentLayout.findIndex((panel) =>
 						panel.childs?.subPanel?.some((sub) => sub.paneKeyId === state.data.parent)
 					);
 					let sourceChildSubPanelIdx = -1;
 					if (sourceParentIndex !== -1) {
-						sourceChildSubPanelIdx = currentLayout[sourceParentIndex].childs.subPanel.findIndex(
-							(sub) => sub.paneKeyId === state.data.parent
-						);
+						sourceChildSubPanelIdx =
+							currentLayout[sourceParentIndex].childs?.subPanel.findIndex((sub) => sub.paneKeyId === state.data.parent) ??
+							sourceChildSubPanelIdx;
 					}
 
 					// Find the destination parent panel (the one containing the subpanel with nodeParentId)
@@ -289,12 +387,16 @@
 						(sourceParentIndex !== destParentIndex || state.data.parent !== nodeParentId)
 					) {
 						// Remove the tab from the source child subpanel
-						const sourceChildSubPanel = currentLayout[sourceParentIndex].childs.subPanel[sourceChildSubPanelIdx];
-						const movedTab = sourceChildSubPanel.tabs.splice(state.index, 1)[0];
+						const sourceChildSubPanel = currentLayout[sourceParentIndex].childs?.subPanel[sourceChildSubPanelIdx];
+						const movedTab = sourceChildSubPanel?.tabs.splice(state.index, 1)[0];
+
+						if (!movedTab) {
+							throw new Error("idk man");
+						}
 
 						// Remove the source child subpanel if empty
-						if (sourceChildSubPanel.tabs.length === 0) {
-							currentLayout[sourceParentIndex].childs.subPanel.splice(sourceChildSubPanelIdx, 1);
+						if (sourceChildSubPanel?.tabs.length === 0) {
+							currentLayout[sourceParentIndex].childs?.subPanel.splice(sourceChildSubPanelIdx, 1);
 						}
 
 						// Add the tab to the destination
@@ -305,48 +407,42 @@
 							movedTab.parent = nodeParentId;
 						} else {
 							// Move to child subpanel
-							const destChildSubPanelIdx = currentLayout[destParentIndex].childs.subPanel.findIndex(
+							const destChildSubPanelIdx = currentLayout[destParentIndex].childs?.subPanel.findIndex(
 								(sub) => sub.paneKeyId === nodeParentId
 							);
-							if (destChildSubPanelIdx !== -1) {
-								currentLayout[destParentIndex].childs.subPanel[destChildSubPanelIdx].tabs.push(movedTab);
+							if (typeof destChildSubPanelIdx === "number" && destChildSubPanelIdx !== -1) {
+								currentLayout[destParentIndex].childs?.subPanel[destChildSubPanelIdx].tabs.push(movedTab);
 								movedTab.parent = nodeParentId;
 							}
 						}
-
+						// Update layout state
 						$layoutState = [...currentLayout];
 					}
-
-					// ...existing code...
-					// Update the layout state
-					$layoutState = [...currentLayout];
 				} else {
 					let panelToRemoveFrom: VizSubPanel;
 
 					if (childPanelIndex !== -1) {
-						const currentTabParent = currentLayout[parentIndex].childs?.subPanel.find(
-							(panel) => panel.paneKeyId === state.data.parent
-						)!;
+						const currentTabParent = childs.subPanel.find((panel) => panel.paneKeyId === state.data.parent)!;
 
-						if (currentTabParent && currentTabParent.tabs?.length === 1) {
-							panelToRemoveFrom = currentLayout[parentIndex].childs?.subPanel.splice(childParentIndex, 1)[0] as VizSubPanel;
+						if (currentTabParent && currentTabParent.tabs.length === 1) {
+							panelToRemoveFrom = childs.subPanel.splice(childParentIndex, 1)[0] as VizSubPanel;
 						} else {
 							panelToRemoveFrom = currentTabParent as VizSubPanel;
 						}
 					} else {
 						const currentTabParent = currentLayout.find((panel) => panel.paneKeyId === state.data.parent);
 
-						if (currentTabParent && currentTabParent.tabs?.length === 1) {
+						if (currentTabParent && currentTabParent.tabs.length === 1) {
 							panelToRemoveFrom = currentLayout.splice(parentIndex, 1)[0] as VizSubPanel;
 						} else {
 							panelToRemoveFrom = currentTabParent as VizSubPanel;
 						}
 					}
 
-					const normalMovedTabs = panelToRemoveFrom.tabs?.splice(state.index, 1)[0];
+					const normalMovedTabs = panelToRemoveFrom.tabs.splice(state.index, 1)[0];
 					const subPanelToUpdate = currentLayout.find((panel) => panel.paneKeyId === keyId);
 
-					subPanelToUpdate?.tabs?.push(normalMovedTabs!);
+					subPanelToUpdate?.tabs.push(normalMovedTabs!);
 
 					// Update layout state
 					$layoutState = [...currentLayout];
@@ -456,7 +552,7 @@
 </script>
 
 <Pane class={className} {minSize} {...allProps} {id} paneKeyId={keyId}>
-	{#if header && panelTabs?.length > 0}
+	{#if header && panelTabs.length > 0}
 		<!--
 	TODO:
 	Make the header draggable too. Use the same drag functions. If we're dragging
