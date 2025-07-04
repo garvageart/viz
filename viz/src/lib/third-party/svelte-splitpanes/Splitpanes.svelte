@@ -192,7 +192,6 @@
 	}
 
 	let isRoot: boolean;
-	let splitpanes: Writable<ITree> = writable({ id });
 	let currentFocusedPane: HTMLElement;
 
 	let splitpanesKeyId = storedLayout?.flat().find((sp) => sp.id === id)?.paneKeyId;
@@ -295,8 +294,6 @@
 				}
 			: undefined
 	});
-
-	setContext<ITree>("tree", $splitpanes);
 
 	function onPaneAdd(pane: IPane): ClientCallbacks {
 		// 1. Add pane to array at the same index it was inserted in the <splitpanes> tag.
@@ -420,36 +417,6 @@
 			pane.parent = usedKeyId;
 
 			panes[i] = pane;
-		}
-
-		// initialize values
-		$splitpanes = {
-			id,
-			keyId: usedKeyId,
-			element: container,
-			panes,
-			horizontal: $isHorizontal,
-			theme,
-			firstSplitter: $showFirstSplitter,
-			rtl,
-			pushOtherPanes,
-			dblClickSplitter,
-			class: clazz,
-			style,
-			isRoot: false,
-			childs: []
-		};
-
-		if (isSplitpanesRoot(container)) {
-			isRoot = true;
-			$splitpanes.isRoot = isRoot;
-		}
-
-		for (const pane of panes) {
-			const childrenElements = Array.from(pane.element.children).filter((el) => isSplitpanes(el));
-			for (const child of childrenElements) {
-				$splitpanes.childs?.push(child.getAttribute("data-viz-sp-id") as string);
-			}
 		}
 
 		isReady = true;
