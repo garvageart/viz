@@ -14,7 +14,7 @@
 
 	if (storedLayout?.length === 0) {
 		console.warn("No layout found in localStorage, using default layout");
-		
+
 		saveLayout.set(panels);
 		storedLayout = panels;
 	}
@@ -43,7 +43,7 @@
 
 		if (result.length === 1 && result[0].childs) {
 			if (window.debug === true) {
-				console.log("one pane left, setting maximum size to 100");
+				console.log(`one panel ${result[0].paneKeyId} left, setting maximum size to 100`);
 			}
 
 			result[0].childs.parentSubPanel.size = 100;
@@ -52,7 +52,7 @@
 		saveLayout.set(result);
 
 		return result;
-	}) as VizSubPanel[];
+	});
 
 	if (window.debug === true) {
 		$inspect("global state", $layoutState);
