@@ -3,15 +3,37 @@
 	import { panels } from "$lib/layouts/test";
 	import { Splitpanes as Panel } from "$lib/third-party/svelte-splitpanes";
 	import { layoutState } from "$lib/third-party/svelte-splitpanes/state";
-	import { debugEvent, generateKeyId, VizStoreValue } from "$lib/utils";
+	import { arrayHasDuplicates, debugEvent, generateKeyId, VizStoreValue } from "$lib/utils";
+	import { onMount } from "svelte";
 	import SubPanel, { type VizSubPanel } from "./SubPanel.svelte";
 
 	let { id }: { id: string } = $props();
 	const theme = DEFAULT_THEME;
 	const saveLayout = new VizStoreValue<VizSubPanel[]>("layout");
-	const storedLayout = saveLayout.get();
+	let storedLayout = saveLayout.get();
 
-	$layoutState = storedLayout ?? panels;
+	if (storedLayout?.length === 0) {
+		console.warn("No layout found in localStorage, using default layout");
+		
+		saveLayout.set(panels);
+		storedLayout = panels;
+	}
+
+	const duplicateAnswer = arrayHasDuplicates(
+		panels
+			.flatMap((panel) => panel.tabs.map((tab) => tab.id))
+			.concat(
+				panels.flatMap((panel) =>
+					panel.childs?.subPanel ? panel.childs.subPanel.flatMap((subPanel) => subPanel.tabs.map((tab) => tab.id)) : []
+				)
+			)
+	);
+
+	if (duplicateAnswer.hasDuplicates) {
+		console.error("The following tabs have duplicate IDs. Please check the panels loaded", duplicateAnswer.duplicates);
+	}
+
+	onMount(() => ($layoutState = storedLayout ?? panels));
 	// This derived value was initially used to do
 	// further layout calculations like checking if a single pane
 	// needs to be used but that seems to have just fixed itself?
@@ -54,7 +76,6 @@
 		on:resized={(event) => {
 			debugEvent(event);
 			$layoutState = event.detail;
-			saveLayout.set(event.detail);
 		}}
 	>
 		<!--
@@ -88,20 +109,19 @@ component yet which is a bit of a problem I guess
 				<SubPanel {...panel}></SubPanel>
 			{:else}
 				{@const subpanel = panel.childs.parentSubPanel}
-				{@const subPanelKeyId = generateKeyId(16)}
-				{@const internalParentId = panel.id + "-" + panel.paneKeyId}
+				{@const internalParentKeyId = generateKeyId(16)}
+				{@const internalSubPanelKeyId = generateKeyId(16)}
 				<!-- Setting the `id` for the <SubPanel> component breaks the layout for some reason
 				 I cannot explain or figure out so I will remove it for now
 				 Like, I tried `id={subpanel.id + "-" + subPanelKeyId}` and the layout would snap every time you drag it
 				 -->
-				<SubPanel {...subpanel} paneKeyId={subPanelKeyId} header={false} tabs={[]}>
+				<SubPanel {...subpanel} paneKeyId={internalSubPanelKeyId} header={false} tabs={[]}>
 					<Panel
 						{...panel.childs.parentPanel}
-						id={internalParentId}
+						keyId={internalParentKeyId}
 						on:resized={(event) => {
 							debugEvent(event);
 							$layoutState = event.detail;
-							saveLayout.set(internalLayoutState);
 						}}
 					>
 						<SubPanel {...panel} />
