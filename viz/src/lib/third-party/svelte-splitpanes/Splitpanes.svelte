@@ -47,7 +47,7 @@
 	} from "./internal/utils/position.js";
 	import { forEachPartial, sumPartial } from "./internal/utils/array.js";
 	import { calcComputedStyle } from "./internal/utils/styling.js";
-	import { generateRandomString, VizStoreValue } from "$lib/utils";
+	import { generateKeyId, VizStoreValue } from "$lib/utils";
 	import { allSplitpanes, layoutState } from "./state";
 	import type { VizSubPanel } from "$lib/components/panels/SubPanel.svelte";
 
@@ -196,7 +196,7 @@
 	let currentFocusedPane: HTMLElement;
 
 	let splitpanesKeyId = storedLayout?.flat().find((sp) => sp.id === id)?.paneKeyId;
-	const usedKeyId = splitpanesKeyId ?? keyId ?? generateRandomString(10);
+	const usedKeyId = splitpanesKeyId?.trim() ?? keyId ?? generateKeyId(16);
 
 	// VARIABLES ----------------
 
@@ -785,9 +785,10 @@
 			if (panel.childs && panel.childs.parentPanel) {
 				updatedPanel.childs = {
 					...updatedPanel.childs,
-					parentPanel: (panel.childs.parentPanel && 'paneKeyId' in panel.childs.parentPanel)
-						? updatePanelSize(panel.childs.parentPanel as VizSubPanel)
-						: panel.childs.parentPanel,
+					parentPanel:
+						panel.childs.parentPanel && "paneKeyId" in panel.childs.parentPanel
+							? updatePanelSize(panel.childs.parentPanel as VizSubPanel)
+							: panel.childs.parentPanel,
 					parentSubPanel: updatedPanel.childs?.parentSubPanel ?? ({} as any),
 					subPanel: updatedPanel.childs?.subPanel ?? []
 				};
