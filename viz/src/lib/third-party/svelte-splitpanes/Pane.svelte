@@ -7,7 +7,7 @@
 	import { getDimensionName } from "./internal/utils/sizing.js";
 	import { carefullCallbackSource } from "./internal/utils/functions";
 	import { writable, type Writable } from "svelte/store";
-	import { arrayHasDuplicates, generateRandomString, VizStoreValue } from "$lib/utils";
+	import { arrayHasDuplicates, generateRandomString } from "$lib/utils";
 	import { allTabs, layoutState } from "./state";
 	import type { VizSubPanel } from "$lib/components/panels/SubPanel.svelte";
 
