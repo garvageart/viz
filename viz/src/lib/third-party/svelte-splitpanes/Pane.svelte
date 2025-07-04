@@ -54,6 +54,10 @@
 	let isActive: Writable<boolean> = writable(false);
 	let tabs = $allTabs.get(paneKeyId);
 
+	if (!usedId || usedId.trim() === "") {
+		throw new Error("Splitpanes: id is required");
+	}
+
 	let allPanes = $layoutState.flat();
 
 	// I hate this so much
