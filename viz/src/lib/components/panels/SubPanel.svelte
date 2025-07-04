@@ -23,6 +23,7 @@
 		};
 </script>
 
+<!-- svelte-ignore non_reactive_update -->
 <script lang="ts">
 	import type { ComponentProps, Snippet } from "svelte";
 	import { Pane } from "$lib/third-party/svelte-splitpanes";
@@ -61,6 +62,8 @@
 	const keyId = allProps.paneKeyId ?? generateKeyId();
 	const minSize = allProps.minSize ?? 10;
 
+	id = !panelTabs.length ? id + `-${keyId}` : id;
+
 	// inject parent id into tabs
 	for (const tab of panelTabs) {
 		tab.parent = keyId;
@@ -72,7 +75,7 @@
 	}
 
 	if (header === true && panelTabs.length === 0) {
-		throw Error("Viz: Header is showing, but no tabs are provided for: " + keyId);
+		throw new Error("Viz: Header is showing, but no tabs are provided for: " + keyId);
 	}
 
 	const storedActiveTab = $allTabs.get(keyId)?.find((tab) => tab.isActive === true);
@@ -87,7 +90,6 @@
 
 	if (window.debug === true) {
 		$inspect("panel tabs " + keyId, panelTabs);
-		$inspect("all tabs " + keyId, $allTabs);
 	}
 
 	function draggable(node: HTMLElement, data: TabData) {
@@ -140,6 +142,10 @@
 		} else {
 			currentLayout.splice(parentIndex, 1);
 		}
+
+		if (window.debug === true) {
+			console.log(`Promoting child ${parentPanel.paneKeyId}`, parentPanel);
+		}
 	}
 
 	function findPanelIndex(layout: VizSubPanel[], paneKeyId: string | undefined) {
@@ -160,13 +166,22 @@
 	}
 
 	function getSubPanelParent(layout: VizSubPanel[], paneKeyId: string | undefined) {
-		if (!paneKeyId) return null;
+		if (!paneKeyId) {
+			return null;
+		}
+
 		for (const panel of layout) {
-			if (!panel.childs?.subPanel) continue;
+			if (!panel.childs?.subPanel) {
+				continue;
+			}
+
 			for (const sub of panel.childs.subPanel) {
-				if (sub.paneKeyId === paneKeyId) return panel.paneKeyId;
+				if (sub.paneKeyId === paneKeyId) {
+					return panel.paneKeyId;
+				}
 			}
 		}
+
 		return null;
 	}
 
@@ -188,6 +203,10 @@
 
 		if (state.data.id === parseInt(tabKeyId)) {
 			return;
+		}
+
+		if (window.debug) {
+			console.log(`Attempting to move ${state.data.name} to ${nodeParentId}`);
 		}
 
 		if (!panelTabs.some((tab) => tab.id === state.data.id)) {
@@ -241,6 +260,7 @@
 						// Remove the source child subpanel if it is now empty
 						if (!childs.subPanel[srcIdx].tabs.length) {
 							childs.subPanel.splice(srcIdx, 1);
+							layout[parentIdx].childs = childs;
 						}
 					}
 				}
@@ -266,7 +286,10 @@
 					}
 
 					if (movedTab) {
-						if (!layout[dstIdx].tabs) layout[dstIdx].tabs = [];
+						if (!layout[dstIdx].tabs) {
+							layout[dstIdx].tabs = [];
+						}
+
 						layout[dstIdx].tabs.push(movedTab);
 					}
 
@@ -389,7 +412,10 @@
 					}
 
 					if (layout[dstParentIdx].paneKeyId === nodeParentId) {
-						if (!layout[dstParentIdx].tabs) layout[dstParentIdx].tabs = [];
+						if (!layout[dstParentIdx].tabs) {
+							layout[dstParentIdx].tabs = [];
+						}
+
 						layout[dstParentIdx].tabs.push(movedTab);
 						movedTab.parent = nodeParentId;
 					} else {
@@ -402,11 +428,11 @@
 				}
 			}
 
-			$layoutState = [...layout];
-
 			state.data.parent = nodeParentId;
 			state.index = panelTabs.length - 1;
 			activeTab = state.data;
+
+			$layoutState = [...layout];
 			return;
 		}
 
