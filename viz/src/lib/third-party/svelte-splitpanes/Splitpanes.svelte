@@ -33,7 +33,7 @@
 
 <script lang="ts">
 	import { onMount, onDestroy, setContext, createEventDispatcher, tick, afterUpdate } from "svelte";
-	import { get, writable, type Writable } from "svelte/store";
+	import { get, writable } from "svelte/store";
 	import type { IPane, IPaneSizingEvent, SplitContext, PaneInitFunction, ClientCallbacks, ITree } from "./index.js";
 	import GatheringRound from "./internal/GatheringRound.svelte";
 	import { browser } from "./internal/env.js";
@@ -187,15 +187,14 @@
 	export let id: string;
 	export let keyId: string = "";
 
-	if (!id || id === "") {
+	if (!id || id.trim() === "") {
 		throw new Error("Splitpanes: id is required");
 	}
 
-	let isRoot: boolean;
 	let currentFocusedPane: HTMLElement;
-
 	let splitpanesKeyId = storedLayout?.flat().find((sp) => sp.id === id)?.paneKeyId;
 	const usedKeyId = splitpanesKeyId?.trim() ?? keyId ?? generateKeyId(16);
+	id += `-${usedKeyId}`;
 
 	// VARIABLES ----------------
 
