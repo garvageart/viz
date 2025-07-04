@@ -48,14 +48,15 @@ export const panels: VizSubPanel[] = [
         paneKeyId: generateKeyId(),
         childs: {
             parentSubPanel: {
-                id: "viz-test-content-container",
+                id: "viz-internal-subpanel-sp-xBdVNtbU5nx60sZ1",
                 paneKeyId: generateKeyId(16),
                 smoothExpand: false,
                 minSize: 10,
-                size: 25
+                size: 25,
+                maxSize: 100
             },
             parentPanel: {
-                id: "viz-internal",
+                id: "viz-internal-panel-sp-3jaetpKK8Tc0F8iB",
                 horizontal: true,
                 keyId: generateKeyId(16),
                 theme,
@@ -81,12 +82,13 @@ export const panels: VizSubPanel[] = [
         paneKeyId: generateKeyId(),
         childs: {
             parentSubPanel: {
-                id: "viz-test-content-container-2",
+                id: "viz-internal-subpanel-sp-6H9DnoBrjh8fCEGy",
                 smoothExpand: false,
                 minSize: 10,
+                maxSize: 100
             },
             parentPanel: {
-                id: "viz-internal-2",
+                id: "viz-internal-panel-sp-Q4AYXfRIaHmchHmX",
                 horizontal: true,
                 theme,
                 style: "height: 100%",
