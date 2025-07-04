@@ -54,13 +54,22 @@
 	let isActive: Writable<boolean> = writable(false);
 	let tabs = $allTabs.get(paneKeyId);
 
-	let allPanes = $layoutState.flat() ?? new VizStoreValue<VizSubPanel[]>("layout").get()?.flat();
-	allPanes =
-		allPanes
-			?.concat(allPanes.flatMap((panel) => panel.childs?.subPanel ?? []))
-			.concat(allPanes.flatMap((panel) => panel.childs?.parentSubPanel ?? [])) ?? [];
+	let allPanes = $layoutState.flat();
 
-	let duplicateAnswer = arrayHasDuplicates(allPanes.map((pane) => pane.id));
+	// I hate this so much
+	if (allPanes.flatMap((panel) => panel.childs).length > 0) {
+		allPanes = allPanes?.concat(allPanes.flatMap((panel) => panel.childs?.subPanel ?? []));
+
+		if (allPanes.flatMap((panel) => panel.childs?.parentSubPanel).length > 0) {
+			allPanes = allPanes.concat(
+				allPanes
+					.flatMap((panel) => panel.childs?.parentSubPanel ?? [])
+					.filter((pane): pane is VizSubPanel => !!pane && typeof pane === "object" && "id" in pane)
+			);
+		}
+	}
+
+	const duplicateAnswer = arrayHasDuplicates(allPanes.map((pane) => pane.id));
 
 	// NBBBBBBB: MAKE SURE that elements/panes with the same ID don't happen, like ever
 	if (duplicateAnswer.hasDuplicates) {
@@ -155,7 +164,7 @@
 				},
 				isReady: false,
 				isActive,
-				tabs: tabs ?? null
+				tabs: tabs ?? []
 			};
 
 			if (!inst.tabs) {
