@@ -1,4 +1,4 @@
-<script context="module" lang="ts">
+<script module lang="ts">
 	import "./internal/default-theme.scss";
 	export const KEY = {};
 
@@ -32,7 +32,7 @@
 </script>
 
 <script lang="ts">
-	import { onMount, onDestroy, setContext, createEventDispatcher, tick, afterUpdate } from "svelte";
+	import { onMount, onDestroy, setContext, createEventDispatcher, tick } from "svelte";
 	import { get, writable } from "svelte/store";
 	import type { IPane, IPaneSizingEvent, SplitContext, PaneInitFunction, ClientCallbacks, ITree } from "./index.js";
 	import GatheringRound from "./internal/GatheringRound.svelte";
@@ -156,36 +156,50 @@
 		nextReachedMinPanes: number;
 	}
 
-	// PROPS ----------------
-
-	// horiz or verti?
-	export let horizontal = false;
-	/**
-	 * NOTE: The library default is true, but a Viz `SubPanel` size should only
-	 * be able to be changed by the user, not by other panes
-	 *
-	 * when true, moving a splitter can push other panes
-	 */
-	export let pushOtherPanes = false;
-	// open/close on double click
-	export let dblClickSplitter = true;
-	// true if RTL
-	export let rtl: boolean | "auto" = "auto";
-	// true to display the first splitter
-	export let firstSplitter = false;
-	// css style
-	export let style: string | null = null;
-	// the splitter theme to use
-	export let theme = "default-theme";
 	// css class
-	let clazz = "";
-	export { clazz as class };
 
 	// FOR VIZ ONLY ----------------
 	const storedLayout = new VizLocalStorage<VizSubPanel[]>("layout").get();
 
-	export let id: string;
-	export let keyId: string = "";
+	interface Props {
+		// horiz or verti?
+		horizontal?: boolean;
+		/**
+		 * NOTE: The library default is true, but a Viz `SubPanel` size should only
+		 * be able to be changed by the user, not by other panes
+		 *
+		 * when true, moving a splitter can push other panes
+		 */
+		pushOtherPanes?: boolean;
+		// open/close on double click
+		dblClickSplitter?: boolean;
+		// true if RTL
+		rtl?: boolean | "auto";
+		// true to display the first splitter
+		firstSplitter?: boolean;
+		// css style
+		style?: string | null;
+		// the splitter theme to use
+		theme?: string;
+		class?: string;
+		id: string;
+		keyId?: string;
+		children?: import("svelte").Snippet;
+	}
+
+	let {
+		horizontal = false,
+		pushOtherPanes = false,
+		dblClickSplitter = true,
+		rtl = "auto",
+		firstSplitter = false,
+		style = null,
+		theme = "default-theme",
+		class: clazz = "",
+		id = $bindable(),
+		keyId = "",
+		children
+	}: Props = $props();
 
 	if (!id || id.trim() === "") {
 		throw new Error("Splitpanes: id is required");
@@ -202,17 +216,17 @@
 	const dispatch = createEventDispatcher();
 
 	// the splitpane component
-	let container: HTMLElement;
+	let container: HTMLElement | undefined = $state(undefined);
 	// true when component is ready, prevents emitting console warnings on hot reloading.
 	let isReady = false;
 	// true when pane reset is awaiting for the next tick, to avoid double call to pane reset.
 	let isAwaitingPaneReset = false;
 	// true after the initial timeout 0 waiting, prevents CSS transitions until then.
-	let isAfterInitialTimeoutZero = false;
+	let isAfterInitialTimeoutZero = $state(false);
 	// true when mouse is down
-	let isMouseDown = false;
+	let isMouseDown = $state(false);
 	// true when a splitter is being dragged
-	let isDragging = false;
+	let isDragging = $state(false);
 	// that's the splitter than is being dragged
 	let activeSplitter = -1;
 	// that's well the clicked splitter!
@@ -234,8 +248,12 @@
 
 	// REACTIVE ----------------
 
-	$: $isHorizontal = horizontal;
-	$: $showFirstSplitter = firstSplitter;
+	$effect(() => {
+		$isHorizontal = horizontal;
+	});
+	$effect(() => {
+		$showFirstSplitter = firstSplitter;
+	});
 
 	function isSplitpanes(element: Element): boolean {
 		return element.classList.contains("splitpanes");
@@ -440,16 +458,12 @@
 		});
 	}
 
-	afterUpdate(() => {
-		verifyAndUpdatePanesOrder();
-	});
-
 	// Tells in the current DOM state if we are in RTL direction or not.
 	function isRTL(containerComputedStyle?: CSSStyleDeclaration) {
 		if (rtl === "auto") {
 			// the try catch is to support old browser, flag is preset to false
 			try {
-				return (containerComputedStyle ?? calcComputedStyle(container)).direction === "rtl";
+				return (containerComputedStyle ?? calcComputedStyle(container!)).direction === "rtl";
 			} catch (_err) {
 				// We want application to not crush, but don't care about the message
 			}
@@ -460,7 +474,7 @@
 	}
 
 	function bindEvents() {
-		document.body.style.cursor = isHorizontal ? "col-resize" : "row-resize";
+		document.body.style.cursor = isHorizontal ? "ns-resize" : "ew-resize";
 
 		document.addEventListener("mousemove", onMouseMove, thirdEventArg);
 		document.addEventListener("mouseup", onMouseUp);
@@ -532,8 +546,8 @@
 			isDragging = true;
 
 			const globalMousePosition = getGlobalMousePosition(event);
-			const containerComputedStyle = calcComputedStyle(container);
-			const containerRectWithoutBorder = elementRectWithoutBorder(container, containerComputedStyle);
+			const containerComputedStyle = calcComputedStyle(container!);
+			const containerRectWithoutBorder = elementRectWithoutBorder(container!, containerComputedStyle);
 			const containerSizeWithoutBorder: number = containerRectWithoutBorder[getCurrentDimensionName()];
 			const _isRTL = isRTL(containerComputedStyle);
 
@@ -1141,7 +1155,7 @@
 	}
 
 	/**
-	 * Checks that <Splitpanes> is composed of <Pane>, and verify that the panes are still in the right order,
+	 * Checks that Splitpanes is composed of Pane, and verify that the panes are still in the right order,
 	 * and if not update the internal order.
 	 */
 	function verifyAndUpdatePanesOrder() {
@@ -1208,7 +1222,7 @@
 	{style}
 >
 	{#if !browser}
-		<GatheringRound><slot /></GatheringRound>
+		<GatheringRound>{@render children?.()}</GatheringRound>
 	{/if}
-	<slot />
+	{@render children?.()}
 </div>
