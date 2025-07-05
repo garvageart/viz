@@ -43,9 +43,9 @@
 		children?: Snippet;
 	}
 
-	interface ViewData {
+	interface TabData {
 		index: number;
-		data: VizView;
+		view: VizView;
 	}
 
 	const defaultClass = "viz-panel";
@@ -88,7 +88,7 @@
 		$inspect("panel view", keyId, panelViews);
 	}
 
-	function draggable(node: HTMLElement, data: ViewData) {
+	function draggable(node: HTMLElement, data: TabData) {
 		let state = JSON.stringify(data);
 
 		node.draggable = true;
@@ -98,7 +98,7 @@
 		});
 
 		return {
-			update(data: ViewData) {
+			update(data: TabData) {
 				state = JSON.stringify(data);
 			},
 			destroy() {
@@ -189,7 +189,7 @@
 		}
 
 		const data = event.dataTransfer.getData("text/json");
-		const state = JSON.parse(data) as ViewData;
+		const state = JSON.parse(data) as TabData;
 		const tabKeyId = node.getAttribute("data-tab-id")!;
 		const nodeParentId = node.parentElement?.getAttribute("data-viz-sp-id");
 		const nodeIsPanelHeader = node.classList.contains("viz-sub_panel-header");
@@ -203,29 +203,29 @@
 			return;
 		}
 
-		if (state.data.id === parseInt(tabKeyId)) {
+		if (state.view.id === parseInt(tabKeyId)) {
 			return;
 		}
 
 		if (window.debug) {
-			console.log(`Attempting to move ${state.data.name} to ${nodeParentId}`);
+			console.log(`Attempting to move ${state.view.name} to ${nodeParentId}`);
 		}
 
-		if (!panelViews.some((view) => view.id === state.data.id)) {
-			const tab = allViews.find((view) => view.id === state.data.id);
+		if (!panelViews.some((view) => view.id === state.view.id)) {
+			const tab = allViews.find((view) => view.id === state.view.id);
 
 			if (!tab) {
 				return;
 			}
 
 			const layout = layoutState.tree;
-			const parentIdx = findPanelIndex(layout, state.data.parent);
+			const parentIdx = findPanelIndex(layout, state.view.parent);
 			const childs = layout[parentIdx]?.childs;
 
 			const childIdx = findChildIndex(childs, nodeParentId);
 			const childPanel = childs?.subPanel?.[childIdx];
 
-			const srcParent = getSubPanelParent(layout, state.data.parent);
+			const srcParent = getSubPanelParent(layout, state.view.parent);
 			const dstParent = getSubPanelParent(layout, nodeParentId);
 
 			// --- All move logic below ---
@@ -234,7 +234,7 @@
 				srcParent &&
 				dstParent &&
 				srcParent === dstParent &&
-				state.data.parent !== nodeParentId &&
+				state.view.parent !== nodeParentId &&
 				childs &&
 				Array.isArray(childs.subPanel)
 			) {
@@ -242,11 +242,11 @@
 					console.log("Move tab between child subpanels of the same parent");
 				}
 
-				const srcIdx = findChildIndex(childs, state.data.parent);
+				const srcIdx = findChildIndex(childs, state.view.parent);
 				const dstIdx = childIdx;
 
 				if (srcIdx !== -1 && dstIdx !== -1) {
-					const tabIdx = childs.subPanel[srcIdx].views.findIndex((tab) => tab.id === state.data.id);
+					const tabIdx = childs.subPanel[srcIdx].views.findIndex((tab) => tab.id === state.view.id);
 
 					if (tabIdx !== -1) {
 						const movedTab = childs.subPanel[srcIdx].views.splice(tabIdx, 1)[0];
@@ -263,17 +263,17 @@
 			}
 
 			// 2. Move tab from one parent subpanel to a different parent subpanel (or its child)
-			else if (parentIdx !== -1 && state.data.parent !== nodeParentId && findPanelIndex(layout, nodeParentId) !== -1) {
+			else if (parentIdx !== -1 && state.view.parent !== nodeParentId && findPanelIndex(layout, nodeParentId) !== -1) {
 				if (window.debug === true) {
 					console.log("Move tab from one parent subpanel to a different parent subpanel (or its child)");
 				}
 
-				const srcIdx = findPanelIndex(layout, state.data.parent);
+				const srcIdx = findPanelIndex(layout, state.view.parent);
 				const dstIdx = findPanelIndex(layout, nodeParentId);
 
 				if (srcIdx !== -1 && dstIdx !== -1) {
 					const srcTabs = layout[srcIdx].views;
-					const tabIdx = srcTabs.findIndex((tab) => tab.id === state.data.id);
+					const tabIdx = srcTabs.findIndex((tab) => tab.id === state.view.id);
 					let movedTab;
 
 					if (tabIdx !== -1) {
@@ -327,7 +327,7 @@
 					views: childPanel.views
 				};
 
-				newParent.views!.push(state.data);
+				newParent.views!.push(state.view);
 
 				if (childs && childs.subPanel) {
 					childs.subPanel = childs.subPanel.filter((panel: any) => panel.paneKeyId !== nodeParentId);
@@ -340,19 +340,19 @@
 			// 4. Move tab from parent to a child subpanel of a different parent
 			else if (
 				parentIdx !== -1 &&
-				state.data.parent !== nodeParentId &&
+				state.view.parent !== nodeParentId &&
 				layout.some((panel) => panel.childs?.subPanel?.some((sub: any) => sub.paneKeyId === nodeParentId))
 			) {
 				if (window.debug === true) {
 					console.log("Move tab from parent to a child subpanel of a different parent");
 				}
 
-				const srcIdx = findPanelIndex(layout, state.data.parent);
+				const srcIdx = findPanelIndex(layout, state.view.parent);
 				const dstIdx = layout.findIndex((panel) => panel.childs?.subPanel?.some((sub: any) => sub.paneKeyId === nodeParentId));
 
 				if (srcIdx !== -1 && dstIdx !== -1) {
 					const srcViews = layout[srcIdx].views;
-					const viewIdx = srcViews.findIndex((view) => view.id === state.data.id);
+					const viewIdx = srcViews.findIndex((view) => view.id === state.view.id);
 					let movedView;
 
 					if (viewIdx !== -1) {
@@ -389,18 +389,18 @@
 			}
 
 			// 5. Move tab from child subpanel to parent subpanel (and remove empty child subpanel)
-			else if (keyId === nodeParentId && state.data.parent !== keyId) {
+			else if (keyId === nodeParentId && state.view.parent !== keyId) {
 				if (window.debug === true) {
 					console.log("Move tab from child subpanel to parent subpanel (and remove empty child subpanel)");
 				}
 
 				let srcParentIdx = layout.findIndex((panel) =>
-					panel.childs?.subPanel?.some((sub: any) => sub.paneKeyId === state.data.parent)
+					panel.childs?.subPanel?.some((sub: any) => sub.paneKeyId === state.view.parent)
 				);
 				let srcChildIdx = -1;
 
 				if (srcParentIdx !== -1) {
-					srcChildIdx = findChildIndex(layout[srcParentIdx].childs, state.data.parent);
+					srcChildIdx = findChildIndex(layout[srcParentIdx].childs, state.view.parent);
 				}
 
 				let dstParentIdx = layout.findIndex(
@@ -415,7 +415,7 @@
 						throw new Error("Viz: No source child subpanel found");
 					}
 
-					const viewIdx = srcChild.views.findIndex((view) => view.id === state.data.id);
+					const viewIdx = srcChild.views.findIndex((view) => view.id === state.view.id);
 					if (viewIdx === -1) {
 						throw new Error("Viz: Tab not found in source child subpanel");
 					}
@@ -459,12 +459,12 @@
 			return;
 		}
 
-		const originalView = views.find((view) => view.id === state.data.id);
+		const originalView = views.find((view) => view.id === state.view.id);
 		if (!originalView) {
 			return;
 		}
 
-		const viewIndex = panelViews.findIndex((view) => view.id === state.data.id);
+		const viewIndex = panelViews.findIndex((view) => view.id === state.view.id);
 
 		if (viewIndex === panelViews.length - 1) {
 			activeView = originalView;
@@ -474,7 +474,7 @@
 		// if we're dropping on the header, add it to the end of the header and
 		// remove it from it's old position
 		if (node.classList.contains("viz-sub_panel-header") && viewIndex === state.index) {
-			panelViews.push(state.data);
+			panelViews.push(state.view);
 			if (state.index === 0) {
 				panelViews.splice(state.index, 1);
 			} else {
@@ -561,7 +561,7 @@
 				{#each panelViews as view, i}
 					{#if view.name.trim() != ""}
 						{@const tabNameId = view.name.toLowerCase().replaceAll(" ", "-")}
-						{@const data = { index: i, data: view }}
+						{@const data = { index: i, view: view }}
 						<button
 							id={tabNameId + "-tab"}
 							class="viz-tab-button {activeView.id === view.id ? 'active-tab' : ''}"
