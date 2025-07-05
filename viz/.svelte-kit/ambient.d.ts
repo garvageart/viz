@@ -29,6 +29,7 @@ declare module '$env/static/private' {
 	export const ALLUSERSPROFILE: string;
 	export const ANDROID_HOME: string;
 	export const APPDATA: string;
+	export const BUNDLED_DEBUGPY_PATH: string;
 	export const BUN_INSPECT_CONNECT_TO: string;
 	export const ChocolateyInstall: string;
 	export const ChocolateyLastPathUpdate: string;
@@ -41,13 +42,7 @@ declare module '$env/static/private' {
 	export const ComSpec: string;
 	export const CONDA_PROMPT_MODIFIER: string;
 	export const DriverData: string;
-	export const EFC_11080_1262719628: string;
-	export const EFC_11080_1592913036: string;
-	export const EFC_11080_2283032206: string;
-	export const EFC_11080_2775293581: string;
-	export const EFC_11080_3789132940: string;
-	export const FPS_BROWSER_APP_PROFILE_STRING: string;
-	export const FPS_BROWSER_USER_PROFILE_STRING: string;
+	export const EFC_11432_1592913036: string;
 	export const GIT_ASKPASS: string;
 	export const GOPATH: string;
 	export const HADRONPATH: string;
@@ -120,6 +115,7 @@ declare module '$env/static/private' {
 	export const PROMPT: string;
 	export const PSModulePath: string;
 	export const PUBLIC: string;
+	export const PYDEVD_DISABLE_FILE_VALIDATION: string;
 	export const QTJAVA: string;
 	export const SESSIONNAME: string;
 	export const SystemDrive: string;
@@ -132,6 +128,7 @@ declare module '$env/static/private' {
 	export const USERDOMAIN_ROAMINGPROFILE: string;
 	export const USERNAME: string;
 	export const USERPROFILE: string;
+	export const VSCODE_DEBUGPY_ADAPTER_ENDPOINTS: string;
 	export const VSCODE_GIT_ASKPASS_EXTRA_ARGS: string;
 	export const VSCODE_GIT_ASKPASS_MAIN: string;
 	export const VSCODE_GIT_ASKPASS_NODE: string;
@@ -173,6 +170,7 @@ declare module '$env/dynamic/private' {
 		ALLUSERSPROFILE: string;
 		ANDROID_HOME: string;
 		APPDATA: string;
+		BUNDLED_DEBUGPY_PATH: string;
 		BUN_INSPECT_CONNECT_TO: string;
 		ChocolateyInstall: string;
 		ChocolateyLastPathUpdate: string;
@@ -185,13 +183,7 @@ declare module '$env/dynamic/private' {
 		ComSpec: string;
 		CONDA_PROMPT_MODIFIER: string;
 		DriverData: string;
-		EFC_11080_1262719628: string;
-		EFC_11080_1592913036: string;
-		EFC_11080_2283032206: string;
-		EFC_11080_2775293581: string;
-		EFC_11080_3789132940: string;
-		FPS_BROWSER_APP_PROFILE_STRING: string;
-		FPS_BROWSER_USER_PROFILE_STRING: string;
+		EFC_11432_1592913036: string;
 		GIT_ASKPASS: string;
 		GOPATH: string;
 		HADRONPATH: string;
@@ -264,6 +256,7 @@ declare module '$env/dynamic/private' {
 		PROMPT: string;
 		PSModulePath: string;
 		PUBLIC: string;
+		PYDEVD_DISABLE_FILE_VALIDATION: string;
 		QTJAVA: string;
 		SESSIONNAME: string;
 		SystemDrive: string;
@@ -276,6 +269,7 @@ declare module '$env/dynamic/private' {
 		USERDOMAIN_ROAMINGPROFILE: string;
 		USERNAME: string;
 		USERPROFILE: string;
+		VSCODE_DEBUGPY_ADAPTER_ENDPOINTS: string;
 		VSCODE_GIT_ASKPASS_EXTRA_ARGS: string;
 		VSCODE_GIT_ASKPASS_MAIN: string;
 		VSCODE_GIT_ASKPASS_NODE: string;
