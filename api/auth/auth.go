@@ -252,18 +252,6 @@ func (server ImagineAuthServer) Launch(router *chi.Mux) {
 			return
 		}
 
-		stateHash := crypto.CreateHash([]byte(state))
-		encryptedState := base64.URLEncoding.EncodeToString(stateHash)
-
-		http.SetCookie(res, &http.Cookie{
-			Name:     "imag-state",
-			Value:    encryptedState,
-			Expires:  carbon.Now().AddYear().StdTime(),
-			Path:     "/",
-			Secure:   true,
-			SameSite: http.SameSiteNoneMode,
-		})
-
 		oauthUrl, err := oauth.SetupOAuthURL(res, req, oauthConfig, provider, state)
 		if err != nil {
 
@@ -279,6 +267,7 @@ func (server ImagineAuthServer) Launch(router *chi.Mux) {
 
 	router.Post("/oauth/{provider}", func(res http.ResponseWriter, req *http.Request) {
 		provider := strings.ToLower(chi.URLParam(req, "provider"))
+		state := req.FormValue("state")
 		var actualUserData any // To store the user data struct
 		var userEmail string
 
@@ -350,6 +339,18 @@ func (server ImagineAuthServer) Launch(router *chi.Mux) {
 			return
 		}
 
+		stateHash := crypto.CreateHash([]byte(state))
+		encryptedStateB64 := base64.URLEncoding.EncodeToString(stateHash)
+
+		http.SetCookie(res, &http.Cookie{
+			Name:     "imag-state",
+			Value:    encryptedStateB64,
+			Expires:  carbon.Now().AddYear().StdTime(),
+			Path:     "/",
+			Secure:   true,
+			SameSite: http.SameSiteNoneMode,
+		})
+		
 		http.SetCookie(res, &http.Cookie{
 			Name:     "imag-auth_token",
 			Value:    tokenString,
