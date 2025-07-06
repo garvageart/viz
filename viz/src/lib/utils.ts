@@ -100,6 +100,10 @@ export function debounce(func: () => any, wait: number | undefined) {
     };
 };
 
+export function isObject(obj: any) {
+    return obj !== null && typeof obj === 'object';
+}
+
 export class VizLocalStorage<V = string> {
     key: string;
     value: V | null = null;
@@ -137,7 +141,7 @@ export class VizLocalStorage<V = string> {
         this.value = value;
         let tempStr: string;
 
-        if (typeof value === 'object' && value !== null) {
+        if (isObject(value)) {
             tempStr = JSON.stringify(value);
         } else {
             tempStr = value as unknown as string;
