@@ -17,7 +17,7 @@
 		// from the referenced tsconfig.json - TypeScript does not merge them in]
 		"module": "esnext",
 		"lib": [
-			"es2024"
+			"ESNext"
 		]
 	}
 }
