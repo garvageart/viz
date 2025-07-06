@@ -762,23 +762,23 @@
 				};
 			}
 
-			if (panel.childs && panel.childs.parentPanel) {
+			if (panel.childs && panel.childs.internalPanelContainer) {
 				updatedPanel.childs = {
 					...updatedPanel.childs,
-					parentPanel:
-						panel.childs.parentPanel && "paneKeyId" in panel.childs.parentPanel
-							? updatePanelSize(panel.childs.parentPanel as VizSubPanel)
-							: panel.childs.parentPanel,
-					parentSubPanel: updatedPanel.childs?.parentSubPanel ?? ({} as any),
+					internalPanelContainer:
+						panel.childs.internalPanelContainer && "paneKeyId" in panel.childs.internalPanelContainer
+							? updatePanelSize(panel.childs.internalPanelContainer as VizSubPanel)
+							: panel.childs.internalPanelContainer,
+					internalSubPanelContainer: updatedPanel.childs?.internalSubPanelContainer ?? ({} as any),
 					subPanel: updatedPanel.childs?.subPanel ?? []
 				};
 			}
 
-			if (panel.childs && panel.childs.parentSubPanel) {
+			if (panel.childs && panel.childs.internalSubPanelContainer) {
 				updatedPanel.childs = {
 					...updatedPanel.childs,
-					parentSubPanel: updatePanelSize(panel.childs.parentSubPanel as VizSubPanel),
-					parentPanel: updatedPanel.childs?.parentPanel ?? ({} as any),
+					internalSubPanelContainer: updatePanelSize(panel.childs.internalSubPanelContainer as VizSubPanel),
+					internalPanelContainer: updatedPanel.childs?.internalPanelContainer ?? ({} as any),
 					subPanel: updatedPanel.childs?.subPanel ?? []
 				};
 			}

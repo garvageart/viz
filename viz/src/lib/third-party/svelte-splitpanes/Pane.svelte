@@ -64,10 +64,10 @@
 	if (allPanes.flatMap((panel) => panel.childs).length > 0) {
 		allPanes = allPanes?.concat(allPanes.flatMap((panel) => panel.childs?.subPanel ?? []));
 
-		if (allPanes.flatMap((panel) => panel.childs?.parentSubPanel).length > 0) {
+		if (allPanes.flatMap((panel) => panel.childs?.internalSubPanelContainer).length > 0) {
 			allPanes = allPanes.concat(
 				allPanes
-					.flatMap((panel) => panel.childs?.parentSubPanel ?? [])
+					.flatMap((panel) => panel.childs?.internalSubPanelContainer ?? [])
 					.filter((pane): pane is VizSubPanel => !!pane && typeof pane === "object" && "id" in pane)
 			);
 		}

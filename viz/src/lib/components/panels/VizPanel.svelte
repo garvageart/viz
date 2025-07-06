@@ -98,12 +98,12 @@ component yet which is a bit of a problem I guess
 		{#if !panel.childs}
 			<SubPanel {...panel}></SubPanel>
 		{:else}
-			{@const subpanel = panel.childs.parentSubPanel}
+			{@const subpanel = panel.childs.internalSubPanelContainer}
 			{@const internalParentKeyId = generateKeyId(16)}
 			{@const internalSubPanelKeyId = generateKeyId(16)}
 			<SubPanel {...subpanel} paneKeyId={internalSubPanelKeyId} header={false} views={[]}>
 				<Panel
-					{...panel.childs.parentPanel}
+					{...panel.childs.internalPanelContainer}
 					keyId={internalParentKeyId}
 					on:resized={(event) => {
 						debugEvent(event);

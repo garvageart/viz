@@ -16,8 +16,8 @@
 	export type VizSubPanel = Props &
 		ComponentProps<typeof Pane> & {
 			childs?: {
-				parentSubPanel: Omit<VizSubPanel, "childs" | "children" | "$$events" | "$$slots" | "header" | "views">;
-				parentPanel: Omit<ComponentProps<typeof Splitpanes>, "children" | "$$events" | "$$slots">;
+				internalSubPanelContainer: Omit<VizSubPanel, "childs" | "children" | "$$events" | "$$slots" | "header" | "views">;
+				internalPanelContainer: Omit<ComponentProps<typeof Splitpanes>, "children" | "$$events" | "$$slots">;
 				subPanel: Omit<VizSubPanel, "childs">[];
 			};
 		};
@@ -151,14 +151,14 @@
 	function findChildIndex(
 		childs:
 			| {
-					parentSubPanel: Omit<VizSubPanel, "childs" | "children" | "$$events" | "$$slots" | "header" | "views">;
-					parentPanel: Omit<ComponentProps<typeof Splitpanes>, "children" | "$$events" | "$$slots">;
+					internalSubPanelContainer: Omit<VizSubPanel, "childs" | "children" | "$$events" | "$$slots" | "header" | "views">;
+					internalPanelContainer: Omit<ComponentProps<typeof Splitpanes>, "children" | "$$events" | "$$slots">;
 					subPanel: Omit<VizSubPanel, "childs">[];
 			  }
 			| undefined,
 		paneKeyId: string | undefined
 	) {
-		return childs?.subPanel?.findIndex((sub: any) => sub.paneKeyId === paneKeyId) ?? -1;
+		return childs?.subPanel?.findIndex((sub) => sub.paneKeyId === paneKeyId) ?? -1;
 	}
 
 	function getSubPanelParent(layout: VizSubPanel[], paneKeyId: string | undefined) {
@@ -306,7 +306,7 @@
 							console.log(`one panel ${layout[0].paneKeyId} left, setting maximum size to 100`);
 						}
 
-						layout[0].childs.parentSubPanel.size = 100;
+						layout[0].childs.internalSubPanelContainer.size = 100;
 					}
 				}
 			}
@@ -383,7 +383,7 @@
 							console.log(`one panel ${layout[0].paneKeyId} left, setting maximum size to 100`);
 						}
 
-						layout[0].childs.parentSubPanel.size = 100;
+						layout[0].childs.internalSubPanelContainer.size = 100;
 					}
 				}
 			}

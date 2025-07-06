@@ -17,10 +17,10 @@ export const getAllSubPanels = () => {
     if (subPanels.flatMap((panel) => panel.childs).length > 0) {
         subPanels = subPanels?.concat(subPanels.flatMap((panel) => panel.childs?.subPanel ?? []));
 
-        if (subPanels.flatMap((panel) => panel.childs?.parentSubPanel).length > 0) {
+        if (subPanels.flatMap((panel) => panel.childs?.internalSubPanelContainer).length > 0) {
             subPanels = subPanels.concat(
                 subPanels
-                    .flatMap((panel) => panel.childs?.parentSubPanel ?? [])
+                    .flatMap((panel) => panel.childs?.internalSubPanelContainer ?? [])
                     .filter((pane): pane is VizSubPanel => !!pane && typeof pane === "object" && "id" in pane)
             );
         }
