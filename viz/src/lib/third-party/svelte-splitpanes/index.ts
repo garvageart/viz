@@ -2,7 +2,7 @@ import type { ComponentProps } from "svelte";
 import type { Readable, Writable } from 'svelte/store';
 
 import Splitpanes from './Splitpanes.svelte';
-import type { VizSubPanel, VizView } from "$lib/components/panels/SubPanel.svelte";
+import type { VizSubPanel } from "$lib/components/panels/SubPanel.svelte";
 export { default as Splitpanes } from './Splitpanes.svelte';
 export { default as Pane } from './Pane.svelte';
 
@@ -106,7 +106,6 @@ export interface IPaneSerialized {
   max: number;
   snap: number;
   childs: string[];
-  views: VizView[];
 }
 
 type ISplitpanes = ComponentProps<typeof Splitpanes> & {
