@@ -2,9 +2,13 @@ package main
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"log/slog"
 	"net/http"
+	"os"
+	"os/signal"
+	"syscall"
 
 	"github.com/go-chi/chi/v5"
 	"github.com/go-chi/chi/v5/middleware"
@@ -24,6 +28,7 @@ type ImagineMediaServer struct {
 
 func (server ImagineMediaServer) setupImageRouter() *chi.Mux {
 	imageRouter := chi.NewRouter()
+	
 	logger := server.Logger
 
 	gcsContext, gcsContextCancel := context.WithCancel(context.Background())
@@ -79,6 +84,36 @@ func (server ImagineMediaServer) Launch(router *chi.Mux) {
 		logger.Error(errMsg)
 		panic(errMsg)
 	}
+
+	go func() {
+		logger.Info(fmt.Sprintf("Hey, you want some pics? 👀 - %s: %s", serverKey, address))
+		
+		err := http.ListenAndServe(address, router)
+		if err != nil {
+			if !errors.Is(err, http.ErrServerClosed) {
+				logger.Error(fmt.Sprintf("failed to start server: %s", err))
+			}
+
+			panic("")
+		}
+	}()
+
+	// Taken and adjusted from https://github.com/bluesky-social/social-app/blob/main/bskyweb/cmd/bskyweb/server.go
+	// Wait for a signal to exit.
+	logger.Info("registering OS exit signal handler")
+	quit := make(chan struct{})
+	exitSignals := make(chan os.Signal, 1)
+	signal.Notify(exitSignals, syscall.SIGINT, syscall.SIGTERM)
+
+	go func() {
+		sig := <-exitSignals
+		logger.Info(fmt.Sprintf("received OS exit signal: %s", sig))
+
+		// Trigger the return that causes an exit.
+		close(quit)
+	}()
+	<-quit
+	logger.Info("graceful shutdown complete")
 }
 
 func main() {

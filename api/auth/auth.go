@@ -11,7 +11,9 @@ import (
 	"log/slog"
 	"net/http"
 	"os"
+	"os/signal"
 	"strings"
+	"syscall"
 	"time"
 
 	"github.com/dromara/carbon/v2"
@@ -119,8 +121,12 @@ func (server ImagineAuthServer) Launch(router *chi.Mux) {
 
 	client, mongoErr := database.Connect()
 	defer func() {
-		database.Disconnect(client)
-		logger.Error("Disconnected from MongoDB")
+		err := database.Disconnect(client)
+		if err != nil {
+			logger.Error("error disconnecting from mongodb", slog.Any("error", err))
+		}
+
+		logger.Info("Disconnected from MongoDB")
 	}()
 
 	if mongoErr != nil {
@@ -445,13 +451,36 @@ func (server ImagineAuthServer) Launch(router *chi.Mux) {
 
 	address := fmt.Sprintf("%s:%d", server.Host, server.Port)
 
-	logger.Info(fmt.Sprintf("Hellooooooo! It is I, the protector of secrets - %s: %s", serverKey, address))
-	err := http.ListenAndServe(address, router)
-	if err != nil {
-		errMsg := fmt.Sprintf("failed to start server: %s", err)
-		logger.Error(errMsg)
-		panic(errMsg)
-	}
+	go func() {
+		logger.Info(fmt.Sprintf("Hellooooooo! It is I, the protector of secrets - %s: %s", serverKey, address))
+		err := http.ListenAndServe(address, router)
+		if err != nil {
+			if !errors.Is(err, http.ErrServerClosed) {
+				logger.Error(fmt.Sprintf("failed to start server: %s", err))
+			}
+
+			errMsg := fmt.Sprintf("failed to start server: %s", err)
+			logger.Error(errMsg)
+			panic("")
+		}
+	}()
+
+	// Taken and adjusted from https://github.com/bluesky-social/social-app/blob/main/bskyweb/cmd/bskyweb/server.go
+	// Wait for a signal to exit.
+	logger.Info("registering OS exit signal handler")
+	quit := make(chan struct{})
+	exitSignals := make(chan os.Signal, 1)
+	signal.Notify(exitSignals, syscall.SIGINT, syscall.SIGTERM)
+
+	go func() {
+		sig := <-exitSignals
+		logger.Info(fmt.Sprintf("received OS exit signal: %s", sig))
+
+		// Trigger the return that causes an exit.
+		close(quit)
+	}()
+	<-quit
+	logger.Info("graceful shutdown complete")
 }
 
 func main() {
