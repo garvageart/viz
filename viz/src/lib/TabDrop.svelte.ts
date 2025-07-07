@@ -114,6 +114,215 @@ class TabDropper {
         return null;
     }
 
+    private moveTabDifferentParent(layout: VizSubPanel[], state: TabData, nodeParentId: string) {
+        const srcIdx = this.findPanelIndex(layout, state.view.parent);
+        const dstIdx = this.findPanelIndex(layout, nodeParentId);
+
+        if (srcIdx !== -1 && dstIdx !== -1) {
+            const srcTabs = layout[srcIdx].views;
+            const tabIdx = srcTabs.findIndex((tab) => tab.id === state.view.id);
+            let movedTab;
+
+            if (tabIdx !== -1) {
+                movedTab = srcTabs.splice(tabIdx, 1)[0];
+                movedTab.parent = nodeParentId;
+            }
+
+            if (movedTab) {
+                if (!layout[dstIdx].views) {
+                    layout[dstIdx].views = [];
+                }
+
+                layout[dstIdx].views.push(movedTab);
+            }
+
+            if (!srcTabs.length) {
+                // Only promote if there are child subpanels, otherwise just remove the panel
+                const srcPanel = layout[srcIdx];
+                if (srcPanel.childs?.subPanel?.length) {
+                    this.promoteChildToParent(layout, srcIdx);
+                } else {
+                    layout.splice(srcIdx, 1);
+                }
+            }
+
+            // explicitly set the size of the one and only subpanel to 100
+            // splitpanes doesn't necessarily understand that to recalculate automatically oops
+            if (layout.length === 1 && layout[0].childs) {
+                if (window.debug === true) {
+                    console.log(`one panel ${layout[0].paneKeyId} left, setting maximum size to 100`);
+                }
+
+                layout[0].childs.internalSubPanelContainer.size = 100;
+            }
+        }
+    }
+    /**
+     * Adds a tab to an existing parent subpanel.
+     *
+     * @param {VizSubPanel[]} layout - The layout of the subpanels.
+     * @param {TabData} state - The state of the tab.
+     * @param {number} parentIdx - The index of the parent subpanel.
+     * @param {string} nodeParentId - The ID of the parent node.
+     * @param {number} childIdx - The index of the child subpanel.
+     */
+    private addTabToExistingParent(layout: VizSubPanel[], state: TabData, parentIdx: number, nodeParentId: string, childIdx: number) {
+        const childs = layout[parentIdx].childs;
+        const srcIdx = this.findChildIndex(childs, state.view.parent);
+        const dstIdx = childIdx;
+
+        if (childs && srcIdx !== -1 && dstIdx !== -1) {
+            const tabIdx = childs.subPanel[srcIdx].views.findIndex((tab) => tab.id === state.view.id);
+
+            if (tabIdx !== -1) {
+                const movedTab = childs.subPanel[srcIdx].views.splice(tabIdx, 1)[0];
+                childs.subPanel[dstIdx].views.push(movedTab);
+                movedTab.parent = nodeParentId;
+
+                // Remove the source child subpanel if it is now empty
+                if (!childs.subPanel[srcIdx].views.length) {
+                    childs.subPanel.splice(srcIdx, 1);
+                    layout[parentIdx].childs = childs;
+                }
+            }
+        }
+    }
+    /**
+     * Adds a tab to a new parent subpanel.
+     *
+     * @param {VizSubPanel[]} layout - The layout of the subpanels.
+     * @param {TabData} state - The state of the tab.
+     * @param {number} parentIdx - The index of the parent subpanel.
+     * @param {string} nodeParentId - The ID of the parent node.
+     * @param {number} childIdx - The index of the child subpanel.
+     */
+    private addTabToNewParent(layout: VizSubPanel[], state: TabData, parentIdx: number, nodeParentId: string, childIdx: number) {
+        const parentPanel = layout[parentIdx];
+        const tabIndex = parentPanel.views.findIndex((view) => view.id === state.view.id);
+        const childs = parentPanel?.childs;
+        const childPanel = childs?.subPanel?.[childIdx];
+
+        if (childPanel && tabIndex !== -1) {
+            const movedTab = parentPanel.views.splice(tabIndex, 1)[0];
+            childPanel.views.push(movedTab);
+            movedTab.parent = nodeParentId;
+
+            // If parent has no more tabs, promote its first child.
+            if (parentPanel.views.length === 0) {
+                if (window.debug === true) {
+                    console.log("Parent has no more tabs, promoting child");
+                }
+                this.promoteChildToParent(layout, parentIdx);
+            }
+        }
+    }
+
+    /**
+     * Moves a tab within the same parent subpanel.
+     * @param {VizSubPanel[]} layout - The layout of the subpanels.
+     * @param {TabData} state - The state of the tab.
+     * @param {string} nodeParentId - The ID of the parent node.
+     */
+    private moveTabToSameParent(layout: VizSubPanel[], state: TabData, nodeParentId: string) {
+        const srcIdx = this.findPanelIndex(layout, state.view.parent);
+        const dstIdx = layout.findIndex((panel) => panel.childs?.subPanel?.some((sub: any) => sub.paneKeyId === nodeParentId));
+
+        if (srcIdx !== -1 && dstIdx !== -1) {
+            const srcViews = layout[srcIdx].views;
+            const viewIdx = srcViews.findIndex((view) => view.id === state.view.id);
+            let movedView;
+
+            if (viewIdx !== -1) {
+                movedView = srcViews.splice(viewIdx, 1)[0];
+                movedView.parent = nodeParentId;
+            }
+
+            const destChildIdx = this.findChildIndex(layout[dstIdx].childs, nodeParentId);
+
+            if (movedView && destChildIdx !== -1 && layout[dstIdx].childs?.subPanel) {
+                layout[dstIdx].childs.subPanel[destChildIdx].views.push(movedView);
+            }
+
+            if (!srcViews.length) {
+                // Only promote if there are child subpanels, otherwise just remove the panel
+                const srcPanel = layout[srcIdx];
+                if (srcPanel.childs?.subPanel?.length) {
+                    this.promoteChildToParent(layout, srcIdx);
+                } else {
+                    layout.splice(srcIdx, 1);
+                }
+            }
+
+            // explicitly set the size of the one and only subpanel to 100
+            // splitpanes doesn't necessarily understand that to recalculate automatically oops
+            if (layout.length === 1 && layout[0].childs) {
+                if (window.debug === true) {
+                    console.log(`one panel ${layout[0].paneKeyId} left, setting maximum size to 100`);
+                }
+
+                layout[0].childs.internalSubPanelContainer.size = 100;
+            }
+        }
+    }
+    /**
+     * Moves a tab to a new child subpanel.
+     * @param {VizSubPanel[]} layout - The layout of the subpanels.
+     * @param {TabData} state - The state of the tab.
+     * @param {string} nodeParentId - The ID of the parent node.
+     */
+    private moveTabToNewChild(layout: VizSubPanel[], state: TabData, nodeParentId: string) {
+        let srcParentIdx = layout.findIndex((panel) =>
+            panel.childs?.subPanel?.some((sub) => sub.paneKeyId === state.view.parent)
+        );
+        let srcChildIdx = -1;
+
+        if (srcParentIdx !== -1) {
+            srcChildIdx = this.findChildIndex(layout[srcParentIdx].childs, state.view.parent);
+        }
+
+        let dstParentIdx = layout.findIndex(
+            (panel) => panel.paneKeyId === nodeParentId || panel.childs?.subPanel?.some((sub) => sub.paneKeyId === nodeParentId)
+        );
+
+        // FIX: Only check that both indices are valid
+        if (srcParentIdx !== -1 && dstParentIdx !== -1) {
+            const srcChild = layout[srcParentIdx].childs?.subPanel[srcChildIdx];
+            if (!srcChild) {
+                throw new Error("Viz: No source child subpanel found");
+            }
+
+            const viewIdx = srcChild.views.findIndex((view) => view.id === state.view.id);
+            if (viewIdx === -1) {
+                throw new Error("Viz: Tab not found in source child subpanel");
+            }
+
+            const movedView = srcChild.views.splice(viewIdx, 1)[0];
+
+            // Remove the source child subpanel if it is now empty
+            if (srcChild.views.length === 0) {
+                layout[srcParentIdx].childs?.subPanel.splice(srcChildIdx, 1);
+            }
+
+            if (layout[dstParentIdx].paneKeyId === nodeParentId) {
+                if (!layout[dstParentIdx].views) {
+                    layout[dstParentIdx].views = [];
+                }
+
+                layout[dstParentIdx].views.push(movedView);
+                movedView.parent = nodeParentId;
+            } else {
+                const dstChildIdx = this.findChildIndex(layout[dstParentIdx].childs, nodeParentId);
+                if (dstChildIdx !== -1) {
+                    layout[dstParentIdx].childs?.subPanel[dstChildIdx].views.push(movedView);
+                }
+            }
+
+            if (!layout[srcChildIdx].childs?.subPanel.length) {
+                delete layout[srcChildIdx].childs;
+            }
+        }
+    }
+
     /**
      * Handles the drop event of a draggable element.
      * @param {DragEvent} event The drop event.
@@ -178,25 +387,7 @@ class TabDropper {
                 if (window.debug === true) {
                     console.log("Move tab between child subpanels of the same parent");
                 }
-
-                const srcIdx = this.findChildIndex(childs, state.view.parent);
-                const dstIdx = childIdx;
-
-                if (srcIdx !== -1 && dstIdx !== -1) {
-                    const tabIdx = childs.subPanel[srcIdx].views.findIndex((tab) => tab.id === state.view.id);
-
-                    if (tabIdx !== -1) {
-                        const movedTab = childs.subPanel[srcIdx].views.splice(tabIdx, 1)[0];
-                        childs.subPanel[dstIdx].views.push(movedTab);
-                        movedTab.parent = nodeParentId;
-
-                        // Remove the source child subpanel if it is now empty
-                        if (!childs.subPanel[srcIdx].views.length) {
-                            childs.subPanel.splice(srcIdx, 1);
-                            layout[parentIdx].childs = childs;
-                        }
-                    }
-                }
+                this.addTabToExistingParent(layout, state, parentIdx, nodeParentId, childIdx);
             }
 
             // 2. Move tab from one parent subpanel to a different parent subpanel (or its child)
@@ -205,47 +396,7 @@ class TabDropper {
                     console.log("Move tab from one parent subpanel to a different parent subpanel (or its child)");
                 }
 
-                const srcIdx = this.findPanelIndex(layout, state.view.parent);
-                const dstIdx = this.findPanelIndex(layout, nodeParentId);
-
-                if (srcIdx !== -1 && dstIdx !== -1) {
-                    const srcTabs = layout[srcIdx].views;
-                    const tabIdx = srcTabs.findIndex((tab) => tab.id === state.view.id);
-                    let movedTab;
-
-                    if (tabIdx !== -1) {
-                        movedTab = srcTabs.splice(tabIdx, 1)[0];
-                        movedTab.parent = nodeParentId;
-                    }
-
-                    if (movedTab) {
-                        if (!layout[dstIdx].views) {
-                            layout[dstIdx].views = [];
-                        }
-
-                        layout[dstIdx].views.push(movedTab);
-                    }
-
-                    if (!srcTabs.length) {
-                        // Only promote if there are child subpanels, otherwise just remove the panel
-                        const srcPanel = layout[srcIdx];
-                        if (srcPanel.childs?.subPanel?.length) {
-                            this.promoteChildToParent(layout, srcIdx);
-                        } else {
-                            layout.splice(srcIdx, 1);
-                        }
-                    }
-
-                    // explicitly set the size of the one and only subpanel to 100
-                    // splitpanes doesn't necessarily understand that to recalculate automatically oops
-                    if (layout.length === 1 && layout[0].childs) {
-                        if (window.debug === true) {
-                            console.log(`one panel ${layout[0].paneKeyId} left, setting maximum size to 100`);
-                        }
-
-                        layout[0].childs.internalSubPanelContainer.size = 100;
-                    }
-                }
+                this.moveTabDifferentParent(layout, state, nodeParentId);
             }
 
             // 3. Move tab from parent to its own child subpanel (promote child to parent if no more tabs)
@@ -254,22 +405,7 @@ class TabDropper {
                     console.log("Move tab from parent to its own child subpanel");
                 }
 
-                const parentPanel = layout[parentIdx];
-                const tabIndex = parentPanel.views.findIndex((view) => view.id === state.view.id);
-
-                if (tabIndex !== -1) {
-                    const movedTab = parentPanel.views.splice(tabIndex, 1)[0];
-                    childPanel.views.push(movedTab);
-                    movedTab.parent = nodeParentId;
-
-                    // If parent has no more tabs, promote its first child.
-                    if (parentPanel.views.length === 0) {
-                        if (window.debug === true) {
-                            console.log("Parent has no more tabs, promoting child");
-                        }
-                        this.promoteChildToParent(layout, parentIdx);
-                    }
-                }
+                this.addTabToNewParent(layout, state, parentIdx, nodeParentId, childIdx);
             }
 
             // 4. Move tab from parent to a child subpanel of a different parent
@@ -282,45 +418,7 @@ class TabDropper {
                     console.log("Move tab from parent to a child subpanel of a different parent");
                 }
 
-                const srcIdx = this.findPanelIndex(layout, state.view.parent);
-                const dstIdx = layout.findIndex((panel) => panel.childs?.subPanel?.some((sub: any) => sub.paneKeyId === nodeParentId));
-
-                if (srcIdx !== -1 && dstIdx !== -1) {
-                    const srcViews = layout[srcIdx].views;
-                    const viewIdx = srcViews.findIndex((view) => view.id === state.view.id);
-                    let movedView;
-
-                    if (viewIdx !== -1) {
-                        movedView = srcViews.splice(viewIdx, 1)[0];
-                        movedView.parent = nodeParentId;
-                    }
-
-                    const destChildIdx = this.findChildIndex(layout[dstIdx].childs, nodeParentId);
-
-                    if (movedView && destChildIdx !== -1 && layout[dstIdx].childs?.subPanel) {
-                        layout[dstIdx].childs.subPanel[destChildIdx].views.push(movedView);
-                    }
-
-                    if (!srcViews.length) {
-                        // Only promote if there are child subpanels, otherwise just remove the panel
-                        const srcPanel = layout[srcIdx];
-                        if (srcPanel.childs?.subPanel?.length) {
-                            this.promoteChildToParent(layout, srcIdx);
-                        } else {
-                            layout.splice(srcIdx, 1);
-                        }
-                    }
-
-                    // explicitly set the size of the one and only subpanel to 100
-                    // splitpanes doesn't necessarily understand that to recalculate automatically oops
-                    if (layout.length === 1 && layout[0].childs) {
-                        if (window.debug === true) {
-                            console.log(`one panel ${layout[0].paneKeyId} left, setting maximum size to 100`);
-                        }
-
-                        layout[0].childs.internalSubPanelContainer.size = 100;
-                    }
-                }
+                this.moveTabToSameParent(layout, state, nodeParentId);
             }
 
             // 5. Move tab from child subpanel to parent subpanel (and remove empty child subpanel)
@@ -329,56 +427,7 @@ class TabDropper {
                     console.log("Move tab from child subpanel to parent subpanel (and remove empty child subpanel)");
                 }
 
-                let srcParentIdx = layout.findIndex((panel) =>
-                    panel.childs?.subPanel?.some((sub: any) => sub.paneKeyId === state.view.parent)
-                );
-                let srcChildIdx = -1;
-
-                if (srcParentIdx !== -1) {
-                    srcChildIdx = this.findChildIndex(layout[srcParentIdx].childs, state.view.parent);
-                }
-
-                let dstParentIdx = layout.findIndex(
-                    (panel) => panel.paneKeyId === nodeParentId || panel.childs?.subPanel?.some((sub) => sub.paneKeyId === nodeParentId)
-                );
-
-                // FIX: Only check that both indices are valid
-                if (srcParentIdx !== -1 && dstParentIdx !== -1) {
-                    const srcChild = layout[srcParentIdx].childs?.subPanel[srcChildIdx];
-                    if (!srcChild) {
-                        throw new Error("Viz: No source child subpanel found");
-                    }
-
-                    const viewIdx = srcChild.views.findIndex((view) => view.id === state.view.id);
-                    if (viewIdx === -1) {
-                        throw new Error("Viz: Tab not found in source child subpanel");
-                    }
-
-                    const movedView = srcChild.views.splice(viewIdx, 1)[0];
-
-                    // Remove the source child subpanel if it is now empty
-                    if (srcChild.views.length === 0) {
-                        layout[srcParentIdx].childs?.subPanel.splice(srcChildIdx, 1);
-                    }
-
-                    if (layout[dstParentIdx].paneKeyId === nodeParentId) {
-                        if (!layout[dstParentIdx].views) {
-                            layout[dstParentIdx].views = [];
-                        }
-
-                        layout[dstParentIdx].views.push(movedView);
-                        movedView.parent = nodeParentId;
-                    } else {
-                        const dstChildIdx = this.findChildIndex(layout[dstParentIdx].childs, nodeParentId);
-                        if (dstChildIdx !== -1) {
-                            layout[dstParentIdx].childs?.subPanel[dstChildIdx].views.push(movedView);
-                        }
-                    }
-
-                    if (!layout[srcChildIdx].childs?.subPanel.length) {
-                        delete layout[srcChildIdx].childs;
-                    }
-                }
+                this.moveTabToNewChild(layout, state, nodeParentId);
             } else {
                 console.error(tab);
                 throw new Error("Viz: Invalid tab movement");
