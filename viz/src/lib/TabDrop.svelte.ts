@@ -47,6 +47,10 @@ class TabDropper {
         }
 
         if (parentPanel.childs?.subPanel?.length === 0) {
+            parentPanel.size = parentPanel.childs.internalSubPanelContainer.size;
+            parentPanel.minSize = parentPanel.childs.internalSubPanelContainer.minSize;
+            parentPanel.maxSize = parentPanel.childs.internalSubPanelContainer.maxSize;
+
             delete parentPanel.childs;
         }
 
@@ -318,7 +322,11 @@ class TabDropper {
             }
 
             if (!layout[srcChildIdx].childs?.subPanel.length) {
-                delete layout[srcChildIdx].childs;
+                layout[srcParentIdx].size = layout[srcParentIdx].childs?.internalSubPanelContainer.size;
+                layout[srcParentIdx].minSize = layout[srcParentIdx].childs?.internalSubPanelContainer.minSize;
+                layout[srcParentIdx].maxSize = layout[srcParentIdx].childs?.internalSubPanelContainer.maxSize;
+
+                delete layout[srcParentIdx].childs;
             }
         }
     }
