@@ -79,7 +79,6 @@ export interface IPane {
   isActive: Writable<boolean>;
   parent: string | null;
   childs: string[];
-  views: VizView[];
 }
 
 export interface HTMLSerializedElement {

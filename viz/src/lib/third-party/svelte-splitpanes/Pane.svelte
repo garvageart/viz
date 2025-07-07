@@ -8,7 +8,7 @@
 	import { carefullCallbackSource } from "./internal/utils/functions";
 	import { writable, type Writable } from "svelte/store";
 	import { arrayHasDuplicates, generateRandomString } from "$lib/utils";
-	import { allTabs, layoutState } from "./state.svelte";
+	import { layoutState } from "./state.svelte";
 	import type { VizSubPanel } from "$lib/components/panels/SubPanel.svelte";
 
 	const {
@@ -52,7 +52,6 @@
 	let usedKeyId = $state(paneKeyId ?? generateRandomString(10));
 	let usedId = id;
 	let isActive: Writable<boolean> = writable(false);
-	let views = $allTabs.get(paneKeyId);
 
 	if (!usedId || usedId.trim() === "") {
 		throw new Error("Splitpanes: id is required");
@@ -168,13 +167,7 @@
 				},
 				isReady: false,
 				isActive,
-				views: views ?? []
 			};
-
-			if (!inst.views) {
-				// @ts-ignore
-				delete inst.views;
-			}
 
 			clientCallbacks = clientOnlyContext?.onPaneAdd(inst);
 		});
