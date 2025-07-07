@@ -214,5 +214,6 @@ export function arrayHasDuplicates(arr: any[]): { hasDuplicates: boolean, duplic
 
 export function resetAndReloadLayout() {
     localStorage.removeItem("viz:layout");
+    localStorage.removeItem("viz:tree");
     location.reload();
 }
