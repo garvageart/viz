@@ -311,30 +311,28 @@
 				}
 			}
 
-			// 3. Move tab from parent to its own child subpanel (promote child to parent)
+			// 3. Move tab from parent to its own child subpanel (promote child to parent if no more tabs)
 			else if (parentIdx !== -1 && childPanel) {
 				if (window.debug === true) {
-					console.log("Move tab from parent to its own child subpanel (promote child to parent)");
+					console.log("Move tab from parent to its own child subpanel");
 				}
 
 				const parentPanel = layout[parentIdx];
-				const newParent = {
-					...parentPanel,
-					id: childPanel.id,
-					maxSize: childPanel.maxSize,
-					minSize: childPanel.minSize,
-					paneKeyId: childPanel.paneKeyId,
-					views: childPanel.views
-				};
+				const tabIndex = parentPanel.views.findIndex((view) => view.id === state.view.id);
 
-				newParent.views!.push(state.view);
+				if (tabIndex !== -1) {
+					const movedTab = parentPanel.views.splice(tabIndex, 1)[0];
+					childPanel.views.push(movedTab);
+					movedTab.parent = nodeParentId;
 
-				if (childs && childs.subPanel) {
-					childs.subPanel = childs.subPanel.filter((panel: any) => panel.paneKeyId !== nodeParentId);
+					// If parent has no more tabs, promote its first child.
+					if (parentPanel.views.length === 0) {
+						if (window.debug === true) {
+							console.log("Parent has no more tabs, promoting child");
+						}
+						promoteChildToParent(layout, parentIdx);
+					}
 				}
-
-				newParent.childs = childs;
-				layout.splice(parentIdx, 1, newParent);
 			}
 
 			// 4. Move tab from parent to a child subpanel of a different parent
