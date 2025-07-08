@@ -124,7 +124,6 @@ component yet which is a bit of a problem I guess
 			<!-- empty array for views to supress typescript errors about required views -->
 			<SubPanel
 				{...subpanel}
-				id="viz-internal-subpanel-{internalSubPanelKeyId}"
 				paneKeyId={internalSubPanelKeyId}
 				header={false}
 				maxSize={100}
@@ -132,7 +131,6 @@ component yet which is a bit of a problem I guess
 			>
 				<Panel
 					{...panel.childs.internalPanelContainer}
-					id="viz-internal-panel-{internalParentKeyId}"
 					keyId={internalParentKeyId}
 					on:resized={(event) => {
 						debugEvent(event);
