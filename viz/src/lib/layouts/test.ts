@@ -31,7 +31,7 @@ export const views: VizView[] = [
         name: "Welcome Text",
         component: DevWelcomeText,
         id: 4,
-        opticalCenterFix: 0.2
+        opticalCenterFix: 0.4
     },
 ];
 
