@@ -109,3 +109,19 @@
 .splitpanes__pane > :is(.splitpanes, .splitpanes__pane) {
     padding: 0em
 }
+
+.viz-sub_panel-dropzone_overlay {
+    position: absolute;
+    width: 100%;
+    height: calc(100% - 1.8em);
+    opacity: 100%;
+    box-sizing: border-box;
+    -moz-box-sizing: border-box;
+    -webkit-box-sizing: border-box;
+    outline: 3px;
+    outline-offset: -3px;
+    outline-style: dashed;
+    outline-color: var(--imag-outline-colour);
+    background-color: rgba(212, 214, 219, 0.2);
+    z-index: 899;
+}
