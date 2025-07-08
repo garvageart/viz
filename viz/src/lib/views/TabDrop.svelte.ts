@@ -1,9 +1,9 @@
 import type { ComponentProps } from "svelte";
-import type { VizSubPanel, VizView } from "./components/panels/SubPanel.svelte";
-import { views } from "./layouts/test";
-import type { Splitpanes } from "./third-party/svelte-splitpanes";
-import { getAllSubPanels, layoutState } from "./third-party/svelte-splitpanes/state.svelte";
-import { debounce, sleep, swapArrayElements } from "./utils";
+import type { VizSubPanel, VizView } from "../components/panels/SubPanel.svelte";
+import { views } from "../layouts/test";
+import type { Splitpanes } from "../third-party/svelte-splitpanes";
+import { getAllSubPanels, layoutState } from "../third-party/svelte-splitpanes/state.svelte";
+import { debounce, sleep, swapArrayElements } from "../utils";
 
 export interface TabData {
     index: number;

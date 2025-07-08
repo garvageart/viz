@@ -30,8 +30,8 @@
 	import MaterialIcon from "../MaterialIcon.svelte";
 	import { views } from "$lib/layouts/test";
 	import { dev } from "$app/environment";
-	import type { TabData } from "$lib/TabDrop.svelte";
-	import TabDropper from "$lib/TabDrop.svelte";
+	import type { TabData } from "$lib/views/TabDrop.svelte";
+	import TabDropper from "$lib/views/TabDrop.svelte";
 
 	if (dev) {
 		window.resetAndReloadLayout = resetAndReloadLayout;
