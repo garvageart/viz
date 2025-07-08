@@ -3,7 +3,7 @@ import type { VizSubPanel, VizView } from "./components/panels/SubPanel.svelte";
 import { views } from "./layouts/test";
 import type { Splitpanes } from "./third-party/svelte-splitpanes";
 import { getAllSubPanels, layoutState } from "./third-party/svelte-splitpanes/state.svelte";
-import { swapArrayElements } from "./utils";
+import { debounce, sleep, swapArrayElements } from "./utils";
 
 export interface TabData {
     index: number;
@@ -578,6 +578,68 @@ class TabDropper {
 
                 node.removeEventListener("dragend", (e) => {
                     node.classList.remove("drop-hover-above");
+                });
+            }
+        };
+    }
+
+    // TODO: When dragging over the subpanel, determine the coordinates of where
+    // in the subpanel we're hovering a create the dropzone within those bounds, usually half
+    // note: probably debounce it a lil to avoid sudden layout shifts
+    subPanelDropInside(node: HTMLElement) {
+        node.addEventListener("dragenter", (e) => {
+            sleep(200).then(() => {
+                if (Array.from(node.children)?.length > 1) {
+                    return;
+                }
+
+                const overlayDiv = document.createElement("div");
+                overlayDiv.classList.add("viz-sub_panel-dropzone_overlay");
+                node.insertBefore(overlayDiv, node.firstElementChild!);
+            });
+        });
+
+
+        node.addEventListener("dragend", (e) => {
+            Array.from(node.getElementsByClassName("viz-sub_panel-dropzone_overlay")).forEach(element => element.remove());
+        });
+
+
+        node.addEventListener("dragleave", (e) => {
+            const target = e.target as HTMLElement;
+            if (node === target) {
+                return;
+            }
+
+            Array.from(node.getElementsByClassName("viz-sub_panel-dropzone_overlay")).forEach(element => element.remove());
+        });
+
+        return {
+            destroy: () => {
+                node.removeEventListener("dragenter", (e) => {
+                    sleep(200).then(() => {
+                        if (Array.from(node.children)?.length > 1) {
+                            return;
+                        }
+
+                        const overlayDiv = document.createElement("div");
+                        overlayDiv.classList.add("viz-sub_panel-dropzone_overlay");
+                        node.insertBefore(overlayDiv, node.firstElementChild!);
+                    });
+                });
+
+                node.removeEventListener("dragend", (e) => {
+                    Array.from(node.getElementsByClassName("viz-sub_panel-dropzone_overlay")).forEach(element => element.remove());
+                });
+
+
+                node.removeEventListener("dragleave", (e) => {
+                    const target = e.target as HTMLElement;
+                    if (node === target) {
+                        return;
+                    }
+
+                    Array.from(node.getElementsByClassName("viz-sub_panel-dropzone_overlay")).forEach(element => element.remove());
                 });
             }
         };
