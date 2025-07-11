@@ -4,14 +4,19 @@
 	export type InternalSubPanelContainer = Omit<VizSubPanel, "childs" | "children" | "$$events" | "$$slots" | "header" | "views">;
 	export type InternalPanelContainer = Omit<ComponentProps<typeof Splitpanes>, "children" | "$$events" | "$$slots">;
 	export type SubPanel = Omit<VizSubPanel, "childs">;
+	export type SubPanelChilds = {
+		internalSubPanelContainer: InternalSubPanelContainer;
+		internalPanelContainer: InternalPanelContainer;
+		subPanel: SubPanel[];
+	};
 
+	/**
+	 * @todo Rename this (to something like VizSubPanelComponent)
+	 * to avoid confusion with class name for creating panel
+	 */
 	export type VizSubPanel = Props &
 		ComponentProps<typeof Pane> & {
-			childs?: {
-				internalSubPanelContainer: InternalSubPanelContainer;
-				internalPanelContainer: InternalPanelContainer;
-				subPanel: SubPanel[];
-			};
+			childs?: SubPanelChilds;
 		};
 </script>
 
