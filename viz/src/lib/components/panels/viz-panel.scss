@@ -7,11 +7,18 @@
         box-sizing: border-box;
         -moz-box-sizing: border-box;
         -webkit-box-sizing: border-box;
-        box-shadow: 0 30.5px 0 var(--imag-outline-colour) inset,
+        box-shadow: 0 1.5px 0 var(--imag-outline-colour) inset,
                 1.5px 0 0 var(--imag-outline-colour) inset,
                 -1.5px 0 0 var(--imag-outline-colour) inset,
                 0 -1.5px 0 var(--imag-outline-colour) inset;
         z-index: 10;
+
+        &.with__scrollbar {
+            box-shadow: 0 1.5px 0 var(--imag-outline-colour) inset,
+                1.5px 0 0 var(--imag-outline-colour) inset,
+                -15.5px 0 0 var(--imag-outline-colour) inset,
+                0 -1.5px 0 var(--imag-outline-colour) inset;
+        }
     }
 
     .splitpanes__splitter {
@@ -100,20 +107,9 @@
     }
 }
 
-// All last children inside the panel/pane by default have some padding
-// instead of setting each ones padding individually  
-.splitpanes__pane > *:last-child {
-    padding: 0.5em;
-}
-
-.splitpanes__pane > :is(.splitpanes, .splitpanes__pane) {
-    padding: 0em
-}
-
 .viz-sub_panel-dropzone_overlay {
     position: absolute;
     width: 100%;
-    height: calc(100% - 1.8em);
     opacity: 100%;
     box-sizing: border-box;
     -moz-box-sizing: border-box;
