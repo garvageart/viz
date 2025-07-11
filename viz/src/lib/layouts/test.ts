@@ -1,38 +1,38 @@
-import type { VizSubPanel, VizView } from "$lib/components/panels/SubPanel.svelte";
+import type { VizSubPanel } from "$lib/components/panels/SubPanel.svelte";
 import { generateKeyId } from "$lib/utils";
 import { DEFAULT_THEME } from "$lib/constants";
 import DifferentContent from "$lib/components/panels/workspace/generic/DifferentContent.svelte";
 import SomeContent from "$lib/components/panels/workspace/generic/SomeContent.svelte";
 import EvenMoreDifferent from "$lib/components/panels/workspace/generic/EvenMoreDifferent.svelte";
 import DevWelcomeText from "$lib/components/DevWelcomeText.svelte";
+import VizView from "$lib/views/views.svelte";
+import Collections from "../../routes/collections/+page.svelte";
+import type { Collection } from "$lib/types/images";
 
 // Only one instance of a view/panel and its component
 // can exist in the layout so we declare all of them here
 export const views: VizView[] = [
-    {
-        name: "View 1",
-        component: SomeContent,
-        id: 1,
-        opticalCenterFix: 0.2
-    },
-    {
-        name: "View 2",
-        component: DifferentContent,
-        id: 2,
-        opticalCenterFix: 0.2
-    },
-    {
-        name: "View 3",
-        component: EvenMoreDifferent,
-        id: 3,
-        opticalCenterFix: 0.2
-    },
-    {
+    new VizView({
+        name: "Clock",
+        component: SomeContent as any
+    }),
+    new VizView({
+        name: "What Day Is It?",
+        component: DifferentContent as any
+    }),
+    new VizView({
+        name: "Timezone",
+        component: EvenMoreDifferent as any
+    }),
+    new VizView({
         name: "Welcome Text",
-        component: DevWelcomeText,
-        id: 4,
-        opticalCenterFix: 0.4
-    },
+        component: DevWelcomeText as any
+    }),
+    new VizView<Collection[]>({
+        name: "Collections",
+        component: Collections as any,
+        path: "/collections"
+    })
 ];
 
 const theme = DEFAULT_THEME;
@@ -96,10 +96,10 @@ export const panels: VizSubPanel[] = [
             },
             subPanel: [
                 {
-                    id: "viz-welcome-text-3",
+                    id: "viz-collections",
                     maxSize: 100,
                     paneKeyId: generateKeyId(),
-                    views: views.filter(view => view.id === 4)
+                    views: views.filter(view => view.path === "/collections")
                 }
             ]
         }
