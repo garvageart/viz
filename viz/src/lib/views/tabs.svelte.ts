@@ -1,20 +1,20 @@
 import type { ComponentProps } from "svelte";
-import type { VizSubPanel, VizView } from "../components/panels/SubPanel.svelte";
+import type { VizSubPanel } from "../components/panels/SubPanel.svelte";
 import { views } from "../layouts/test";
 import type { Splitpanes } from "../third-party/svelte-splitpanes";
-import { getAllSubPanels, layoutState } from "../third-party/svelte-splitpanes/state.svelte";
-import { debounce, sleep, swapArrayElements } from "../utils";
+import { findSubPanel, getAllSubPanels, layoutState } from "../third-party/svelte-splitpanes/state.svelte";
+import { swapArrayElements } from "../utils";
+import VizView from "./views.svelte";
 
 export interface TabData {
     index: number;
     view: VizView;
 }
 
-class TabDropper {
+class TabOps {
     private panelViews: VizView[];
-    private allViews: VizView[] = getAllSubPanels().flatMap((subpanel) => subpanel.views ?? []);
     private keyId: string;
-    activeView: VizView | null = $state(null);
+    public activeView: VizView | null = $state(null);
 
     constructor(keyId: string, panelViews: VizView[]) {
         this.keyId = keyId;
@@ -118,6 +118,13 @@ class TabDropper {
         return null;
     }
 
+    /**
+     * Moves a tab to a different parent panel.
+     *
+     * @param {VizSubPanel[]} layout - The layout of the subpanels.
+     * @param {TabData} state - The state of the tab.
+     * @param {string} nodeParentId - The pane key ID of the new parent panel.
+     */
     private moveTabDifferentParent(layout: VizSubPanel[], state: TabData, nodeParentId: string) {
         const srcIdx = this.findPanelIndex(layout, state.view.parent);
         const dstIdx = this.findPanelIndex(layout, nodeParentId);
@@ -161,6 +168,7 @@ class TabDropper {
             }
         }
     }
+
     /**
      * Adds a tab to an existing parent subpanel.
      *
@@ -191,6 +199,7 @@ class TabDropper {
             }
         }
     }
+
     /**
      * Adds a tab to a new parent subpanel.
      *
@@ -268,6 +277,7 @@ class TabDropper {
             }
         }
     }
+
     /**
      * Moves a tab to a new child subpanel.
      * @param {VizSubPanel[]} layout - The layout of the subpanels.
@@ -366,7 +376,7 @@ class TabDropper {
         }
 
         if (!this.panelViews.some((view) => view.id === state.view.id)) {
-            const tab = this.allViews.find((view) => view.id === state.view.id);
+            const tab = getAllSubPanels().flatMap((subpanel) => subpanel.views ?? []).find((view) => view.id === state.view.id);
 
             if (!tab) {
                 return;
@@ -395,6 +405,7 @@ class TabDropper {
                 if (window.debug === true) {
                     console.log("Move tab between child subpanels of the same parent");
                 }
+
                 this.addTabToExistingParent(layout, state, parentIdx, nodeParentId, childIdx);
             }
 
@@ -443,10 +454,9 @@ class TabDropper {
 
             tab.parent = nodeParentId;
             tab.isActive = true;
-            tab.component = tab.component;
             this.activeView = tab;
 
-            return tab;
+            return;
         }
 
         // No tabs to reconfigure if it's the only one in the subpanel
@@ -587,63 +597,60 @@ class TabDropper {
     // in the subpanel we're hovering a create the dropzone within those bounds, usually half
     // note: probably debounce it a lil to avoid sudden layout shifts
     subPanelDropInside(node: HTMLElement) {
-        node.addEventListener("dragenter", (e) => {
-            sleep(200).then(() => {
-                if (Array.from(node.children)?.length > 1) {
-                    return;
-                }
-
-                const overlayDiv = document.createElement("div");
-                overlayDiv.classList.add("viz-sub_panel-dropzone_overlay");
-                node.insertBefore(overlayDiv, node.firstElementChild!);
-            });
-        });
-
-
-        node.addEventListener("dragend", (e) => {
-            Array.from(node.getElementsByClassName("viz-sub_panel-dropzone_overlay")).forEach(element => element.remove());
-        });
-
-
-        node.addEventListener("dragleave", (e) => {
-            const target = e.target as HTMLElement;
-            if (node === target) {
+        node.addEventListener("dragenter", async (e) => {
+            // console.log(Array.from(node.children)?.length > 1, node !== e.target);
+            if (Array.from(node.children)?.length > 1) {
                 return;
             }
 
-            Array.from(node.getElementsByClassName("viz-sub_panel-dropzone_overlay")).forEach(element => element.remove());
+
+            const elChildren = Array.from(node.children) as HTMLElement[];
+            elChildren.forEach((el) => el.style.pointerEvents = "none");
+
+            node.setAttribute("style", "height: calc(100% - 1.8em);");
+            node.classList.add("viz-sub_panel-dropzone_overlay");
+        });
+
+        node.addEventListener("dragleave", (e) => {
+            if (node !== e.target) {
+                return;
+            }
+
+            node.removeAttribute("style");
+            node.classList.remove("viz-sub_panel-dropzone_overlay");
+            const elChildren = Array.from(node.children) as HTMLElement[];
+            elChildren.forEach((el) => el.style.pointerEvents = "auto");
         });
 
         return {
             destroy: () => {
-                node.removeEventListener("dragenter", (e) => {
-                    sleep(200).then(() => {
-                        if (Array.from(node.children)?.length > 1) {
-                            return;
-                        }
-
-                        const overlayDiv = document.createElement("div");
-                        overlayDiv.classList.add("viz-sub_panel-dropzone_overlay");
-                        node.insertBefore(overlayDiv, node.firstElementChild!);
-                    });
-                });
-
-                node.removeEventListener("dragend", (e) => {
-                    Array.from(node.getElementsByClassName("viz-sub_panel-dropzone_overlay")).forEach(element => element.remove());
-                });
-
-
-                node.removeEventListener("dragleave", (e) => {
-                    const target = e.target as HTMLElement;
-                    if (node === target) {
+                node.removeEventListener("dragenter", async (e) => {
+                    // console.log(Array.from(node.children)?.length > 1, node !== e.target);
+                    if (Array.from(node.children)?.length > 1) {
                         return;
                     }
 
-                    Array.from(node.getElementsByClassName("viz-sub_panel-dropzone_overlay")).forEach(element => element.remove());
+
+                    const elChildren = Array.from(node.children) as HTMLElement[];
+                    elChildren.forEach((el) => el.style.pointerEvents = "none");
+
+                    node.setAttribute("style", "height: calc(100% - 1.8em);");
+                    node.classList.add("viz-sub_panel-dropzone_overlay");
+                });
+
+                node.removeEventListener("dragleave", (e) => {
+                    if (node !== e.target) {
+                        return;
+                    }
+
+                    node.removeAttribute("style");
+                    node.classList.remove("viz-sub_panel-dropzone_overlay");
+                    const elChildren = Array.from(node.children) as HTMLElement[];
+                    elChildren.forEach((el) => el.style.pointerEvents = "auto");
                 });
             }
         };
     }
 }
 
-export default TabDropper;
+export default TabOps;
