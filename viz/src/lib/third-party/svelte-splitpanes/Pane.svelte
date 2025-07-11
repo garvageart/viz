@@ -6,7 +6,6 @@
 	import { gatheringKey } from "./internal/GatheringRound.svelte";
 	import { getDimensionName } from "./internal/utils/sizing.js";
 	import { carefullCallbackSource } from "./internal/utils/functions";
-	import { writable, type Writable } from "svelte/store";
 	import { arrayHasDuplicates, generateRandomString } from "$lib/utils";
 	import { layoutState } from "./state.svelte";
 	import type { VizSubPanel } from "$lib/components/panels/SubPanel.svelte";
@@ -51,7 +50,7 @@
 	// VARIABLES
 	let usedKeyId = $state(paneKeyId ?? generateRandomString(10));
 	let usedId = id;
-	let isActive: Writable<boolean> = writable(false);
+	let isActive = $state(false);
 
 	if (!usedId || usedId.trim() === "") {
 		throw new Error("Splitpanes: id is required");
@@ -133,12 +132,6 @@
 	let dimension = $derived(getDimensionName($isHorizontal));
 	let style = $derived(`${dimension}: ${sz}%; ${transitionClass}`);
 
-	$effect(() => {
-		if (!$isActive) {
-			element?.classList.remove("splitpanes__pane__active");
-		}
-	});
-
 	if (gathering && ssrRegisterPaneSize) {
 		ssrRegisterPaneSize(size);
 	} else if (browser) {
@@ -166,7 +159,7 @@
 					isSplitterActive = isActive;
 				},
 				isReady: false,
-				isActive,
+				isActive
 			};
 
 			clientCallbacks = clientOnlyContext?.onPaneAdd(inst);
@@ -175,39 +168,31 @@
 		onDestroy(() => {
 			clientOnlyContext?.onPaneRemove(key);
 		});
-
-		onMount(() => {
-			document.addEventListener("click", (event) => {
-				const target = event.target as HTMLElement;
-
-				if (!element) {
-					return;
-				}
-
-				if (element.contains(target)) {
-					$isActive = true;
-				} else {
-					$isActive = false;
-				}
-			});
-
-			return () => {
-				document.removeEventListener("click", () => {
-					$isActive = false;
-				});
-			};
-		});
 	}
 </script>
+
+<svelte:document
+	on:click={(event) => {
+		const target = event.target as HTMLElement;
+
+		if (!element) {
+			return;
+		}
+
+		if (!element.contains(target)) {
+			isActive = false;
+		}
+	}}
+/>
 
 {#if !gathering}
 	<!-- Splitter -->
 	{#if $veryFirstPaneKey !== key || $showFirstSplitter}
 		<!-- this a11y issue is known, and will be taken care of as part of the a11y feature issue in #11 -->
 		<!-- svelte-ignore a11y_click_events_have_key_events -->
-		<!-- svelte-ignore a11y_no_static_element_interactions -->
-		<!-- svelte-ignore element_invalid_self_closing_tag -->
+		<!-- svelte-ignore a11y_no_noninteractive_element_interactions -->
 		<div
+			role="separator"
 			class="splitpanes__splitter {isSplitterActive ? 'splitpanes__splitter__active' : ''}"
 			onmousedown={carefullClientCallbacks?.("onSplitterDown")}
 			ontouchstart={carefullClientCallbacks?.("onSplitterDown")}
@@ -229,11 +214,14 @@
 			carefullClientCallbacks?.("onPaneClick")(event);
 			const target = event.target as HTMLElement;
 
-			if (target.classList.contains("viz-sub_panel-header")) {
+			if (
+				target.classList.contains("viz-sub_panel-header") ||
+				!Array.from(element?.children as HTMLCollection).some((child) => child.contains(target))
+			) {
 				return;
 			}
 
-			$isActive = true;
+			isActive = true;
 		}}
 		{style}
 	>

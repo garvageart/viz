@@ -205,7 +205,6 @@
 		throw new Error("Splitpanes: id is required");
 	}
 
-	let currentFocusedPane: HTMLElement;
 	let splitpanesKeyId = storedLayout?.flat().find((sp) => sp.id === id)?.paneKeyId;
 	const usedKeyId = splitpanesKeyId?.trim() ?? keyId ?? generateKeyId(16);
 
@@ -405,19 +404,6 @@
 
 	// called by sub-panes
 	function onPaneClick(_event: MouseEvent, pane: IPane) {
-		const element = pane.element;
-		if (currentFocusedPane && currentFocusedPane !== element) {
-			currentFocusedPane.classList.remove("splitpanes__pane__active");
-		}
-
-		currentFocusedPane = element as HTMLElement;
-
-		if (!element.classList.contains("splitpanes__pane__active")) {
-			element.classList.add("splitpanes__pane__active");
-		}
-
-		// TODO: this is wrong, pls fix
-		pane.isActive.set(!get(pane.isActive));
 		dispatch("pane-click", pane);
 	}
 
