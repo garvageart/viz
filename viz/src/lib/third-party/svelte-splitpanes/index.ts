@@ -1,5 +1,5 @@
 import type { ComponentProps } from "svelte";
-import type { Readable, Writable } from 'svelte/store';
+import type { Readable } from 'svelte/store';
 
 import Splitpanes from './Splitpanes.svelte';
 import type { VizSubPanel } from "$lib/components/panels/SubPanel.svelte";
@@ -76,7 +76,7 @@ export interface IPane {
   setSplitterActive: (isActive: boolean) => void;
   givenSize: number | null;
   isReady: boolean;
-  isActive: Writable<boolean>;
+  isActive: boolean;
   parent: string | null;
   childs: string[];
 }
