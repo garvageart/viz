@@ -36,4 +36,4 @@ export const MEDIA_SERVER = new ServerURLConfig("media", 7770);
 export const AUTH_SERVER = new ServerURLConfig("auth", 7771);
 export const UI_SERVER = new ServerURLConfig("viz", 7777);
 
-export const DEFAULT_THEME = "viz-theme"
+export const DEFAULT_THEME = "viz-theme";
