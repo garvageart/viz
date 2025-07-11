@@ -177,10 +177,9 @@
 	 * The views array in the subpanel is updated to ensure that the new
 	 * active view is correctly reflected.
 	 *
-	 * @param keyId - The unique identifier of the subpanel.
-	 * @param newActiveView - The view to be set as the active view.
+	 * @param view - The view to be set as the active view.
 	 */
-	function updateSubPanelActiveView(v: VizView) {
+	function updateSubPanelActiveView(view: VizView) {
 		let subPanel = findSubPanel("paneKeyId", keyId)?.subPanel;
 
 		if (!subPanel) {
@@ -193,9 +192,9 @@
 		}
 
 		subPanel.views.splice(
-			subPanel.views.findIndex((view) => view.id === v.id),
+			subPanel.views.findIndex((spview) => spview.id === view.id),
 			1,
-			v
+			view
 		);
 	}
 </script>
