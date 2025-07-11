@@ -3,7 +3,7 @@
 	import LoginButtons from "$lib/components/LoginButtons.svelte";
 	import VizPanel from "$lib/components/panels/VizPanel.svelte";
 	import { login } from "$lib/states/index.svelte";
-	
+
 	let vizContentContainer: HTMLDivElement | undefined = $state();
 	const loginState = login.state;
 </script>
@@ -12,7 +12,11 @@
 	<title>viz</title>
 </svelte:head>
 
-<main>
+<a href="#main" class="skip-to-main" aria-label="Skip to main content">
+	<p>Skip to main content</p>
+</a>
+
+<main id="main">
 	<div class="viz-content-container" bind:this={vizContentContainer}>
 		{#if !loginState}
 			<DevWelcomeText />
@@ -23,13 +27,39 @@
 	</div>
 </main>
 
-<style>
+<style lang="scss">
 	main {
 		display: flex;
 		flex-direction: row;
 		align-items: center;
-		height: 100%;
+		// css was a mistake.
+		// this keeps the layout at ~100% without any dramatic layout shifts
+		height: calc(100% - 2.16em);
 		width: 100%;
+	}
+
+	.skip-to-main {
+		left: -999px;
+		position: absolute;
+		top: 0;
+		width: 1px;
+		height: 1px;
+		overflow: hidden;
+		z-index: -999;
+		display: block;
+
+		&:focus,
+		&:focus-visible {
+			color: var(--imag-text-color);
+			background: var(--imag-outline-colour);
+			left: auto;
+			height: auto;
+			width: auto;
+			padding: 0.2em 3em;
+			outline: var(--imag-text-color) dashed 2px;
+			outline-offset: -2px;
+			z-index: 999;
+		}
 	}
 
 	.viz-content-container {
