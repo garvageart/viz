@@ -1,37 +1,32 @@
 <script module lang="ts">
-	import { type Component } from "svelte";
 	import Splitpanes from "$lib/third-party/svelte-splitpanes/Splitpanes.svelte";
 
-	// TODO: Reorganise and clean up component
-	// e.g. move types to seperate file, clean up props etc etc
-	export interface VizView {
-		name: string;
-		opticalCenterFix?: number;
-		component: Component;
-		id: number;
-		parent?: string;
-		isActive?: boolean;
-	}
+	export type InternalSubPanelContainer = Omit<VizSubPanel, "childs" | "children" | "$$events" | "$$slots" | "header" | "views">;
+	export type InternalPanelContainer = Omit<ComponentProps<typeof Splitpanes>, "children" | "$$events" | "$$slots">;
+	export type SubPanel = Omit<VizSubPanel, "childs">;
 
 	export type VizSubPanel = Props &
 		ComponentProps<typeof Pane> & {
 			childs?: {
-				internalSubPanelContainer: Omit<VizSubPanel, "childs" | "children" | "$$events" | "$$slots" | "header" | "views">;
-				internalPanelContainer: Omit<ComponentProps<typeof Splitpanes>, "children" | "$$events" | "$$slots">;
-				subPanel: Omit<VizSubPanel, "childs">[];
+				internalSubPanelContainer: InternalSubPanelContainer;
+				internalPanelContainer: InternalPanelContainer;
+				subPanel: SubPanel[];
 			};
 		};
 </script>
 
 <script lang="ts">
-	import type { ComponentProps, Snippet } from "svelte";
+	import { untrack, type ComponentProps, type Snippet } from "svelte";
 	import { Pane } from "$lib/third-party/svelte-splitpanes";
-	import { generateKeyId, resetAndReloadLayout } from "$lib/utils";
+	import { generateKeyId, isElementScrollable, resetAndReloadLayout } from "$lib/utils";
 	import MaterialIcon from "../MaterialIcon.svelte";
 	import { views } from "$lib/layouts/test";
 	import { dev } from "$app/environment";
-	import type { TabData } from "$lib/views/TabDrop.svelte";
-	import TabDropper from "$lib/views/TabDrop.svelte";
+	import type { TabData } from "$lib/views/tabs.svelte";
+	import TabOps from "$lib/views/tabs.svelte";
+	import VizView from "$lib/views/views.svelte";
+	import { findSubPanel, layoutState } from "$lib/third-party/svelte-splitpanes/state.svelte";
+	import LoadingSpinner from "../LoadingSpinner.svelte";
 
 	if (dev) {
 		window.resetAndReloadLayout = resetAndReloadLayout;
@@ -43,6 +38,9 @@
 		views: VizView[];
 		children?: Snippet;
 	}
+
+	// CSS was a mistake (or I'm an idiot)
+	let mainHeaderHeight = $state(document.querySelector("header")?.clientHeight ?? 0);
 
 	const defaultClass = "viz-panel";
 	let className: string = $state(defaultClass);
@@ -58,10 +56,17 @@
 
 	let panelViews = $state(allProps.views ?? []);
 
-	// inject parent id into tabs
-	for (const v of panelViews) {
-		v.parent = keyId;
-		v.component = views.find((view) => view.id === v.id)?.component!;
+	// construct the views from the stored data
+	for (let i = 0; i < panelViews.length; i++) {
+		const panelViewId = panelViews[i].id;
+		const v = new VizView({
+			...panelViews[i],
+			parent: keyId,
+			component: views.find((view) => view.id === panelViewId)?.component!
+		});
+
+		v.isActive = panelViews[i].isActive;
+		panelViews[i] = v;
 	}
 
 	if (allProps.class) {
@@ -72,24 +77,54 @@
 		throw new Error("Viz: Header is showing, but no tabs are provided for: " + keyId);
 	}
 
-	const storedActiveView = panelViews?.find((view) => view.isActive === true);
+	const storedActiveView = panelViews.find((view) => view.isActive === true);
 	let activeView = $state(storedActiveView ?? panelViews[0]);
+	let panelData = $derived(activeView?.getComponentData());
+
+	let subPanelContentElement: HTMLDivElement | undefined = $state();
+	let subPanelContentFocused = $state(false);
 
 	if (window.debug === true) {
+		$inspect("active view", keyId, activeView);
+		$inspect("active view data", keyId, panelData);
 		if (panelViews.length) {
-			$inspect("active view", keyId, activeView);
+			$inspect("panel views", keyId, panelViews);
 		}
-
-		$inspect("panel views", keyId, panelViews);
 	}
 
-	const tabDropper = new TabDropper(keyId, panelViews);
+	let tabDropper: TabOps;
+
+	if (panelViews.length) {
+		tabDropper = new TabOps(keyId, panelViews);
+		$effect(() => {
+			const element = subPanelContentElement;
+			if (!element) {
+				return;
+			}
+			if (subPanelContentFocused) {
+				if (isElementScrollable(element.lastElementChild! as HTMLElement)) {
+					element.classList.add("with__scrollbar");
+				}
+				element.classList.add("splitpanes__pane__active");
+			} else {
+				element.classList.remove("with__scrollbar");
+				element.classList.remove("splitpanes__pane__active");
+			}
+		});
+	}
+	$effect(() => {
+		if (tabDropper?.activeView) {
+			activeView = tabDropper?.activeView;
+			updateSubPanelActiveView(tabDropper?.activeView);
+		}
+	});
 
 	$effect(() => {
-		if (tabDropper.activeView) {
-			activeView.isActive = false;
-			tabDropper.activeView.isActive = true;
-			activeView = tabDropper.activeView;
+		if (activeView) {
+			// will loop endlessly without it
+			untrack(() => {
+				updateSubPanelActiveView(activeView);
+			});
 		}
 	});
 
@@ -116,11 +151,59 @@
 			return;
 		}
 
-		activeView.isActive = false;
 		view.isActive = true;
+		activeView.isActive = false;
 		activeView = view;
+
+		updateSubPanelActiveView(view);
+	}
+
+	/**
+	 * Updates the active view of a subpanel based on the given key ID.
+	 *
+	 * Finds the subpanel associated with the provided key ID
+	 * and sets the specified view as the active view. If there is a current
+	 * active view, it is deactivated before activating the new view.
+	 * The views array in the subpanel is updated to ensure that the new
+	 * active view is correctly reflected.
+	 *
+	 * @param keyId - The unique identifier of the subpanel.
+	 * @param newActiveView - The view to be set as the active view.
+	 */
+	function updateSubPanelActiveView(v: VizView) {
+		let subPanel = findSubPanel("paneKeyId", keyId)?.subPanel;
+
+		if (!subPanel) {
+			if (dev) {
+				throw new Error("Viz: Subpanel not found");
+			}
+
+			console.error("Viz: Subpanel not found");
+			return;
+		}
+
+		subPanel.views.splice(
+			subPanel.views.findIndex((view) => view.id === v.id),
+			1,
+			v
+		);
 	}
 </script>
+
+<svelte:document
+	on:click={(event) => {
+		const target = event.target as HTMLElement;
+		const element = subPanelContentElement;
+
+		if (!element) {
+			return;
+		}
+
+		if (!element.contains(target)) {
+			subPanelContentFocused = false;
+		}
+	}}
+/>
 
 <Pane class={className} {minSize} {...allProps} {id} paneKeyId={keyId}>
 	<!--
@@ -149,7 +232,7 @@ for Splitpanes
 						role="tab"
 						title={view.name}
 						aria-label={view.name}
-						onclick={() => makeViewActive(view)}
+						onclick={() => makeViewActive(new VizView(view))}
 						use:tabDragable={data}
 						use:tabDrop
 						ondragover={(event) => onDropOver(event)}
@@ -184,12 +267,34 @@ for Splitpanes
 	{/if}
 	{#if activeView?.component}
 		{@const Comp = activeView.component}
-		<div class="viz-sub_panel-content" use:subPanelDrop>
-			<Comp />
+		<div
+			role="none"
+			class="viz-sub_panel-content"
+			style="height: calc(100% - {mainHeaderHeight + -4 - 1}px); width: 100%;"
+			onclick={() => (subPanelContentFocused = true)}
+			onkeydown={() => (subPanelContentFocused = true)}
+			bind:this={subPanelContentElement}
+			use:subPanelDrop
+		>
+			{#await panelData}
+				<div style="height: 100%; width: 100%; display: flex; justify-content: center; align-items: center;">
+					<div style="height: 2em; width: 2em">
+						<LoadingSpinner />
+					</div>
+				</div>
+			{:then panelData}
+				{#if panelData}
+					<Comp data={panelData.data} />
+				{:else}
+					<Comp />
+				{/if}
+			{:catch error}
+				<p style="color: red;">{error}</p>
+			{/await}
 		</div>
 	{/if}
 	{#if children}
-		<div class="viz-sub_panel-content" data-pane-key={keyId}>
+		<div class="viz-sub_panel-content" style="white-space: nowrap;" data-pane-key={keyId}>
 			{@render children()}
 		</div>
 	{/if}
@@ -211,11 +316,12 @@ for Splitpanes
 	}
 
 	.viz-sub_panel-content {
-		height: 100%;
-		white-space: nowrap;
-		overflow: hidden;
 		text-overflow: clip;
 		position: relative;
+		display: flex;
+		flex-direction: column;
+		height: 100%;
+		max-height: 100%;
 	}
 
 	.viz-tab-button {
