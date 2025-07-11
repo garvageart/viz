@@ -212,12 +212,6 @@ export function arrayHasDuplicates(arr: any[]): { hasDuplicates: boolean, duplic
     };
 }
 
-export function resetAndReloadLayout() {
-    localStorage.removeItem("viz:layout");
-    localStorage.removeItem("viz:tree");
-    location.reload();
-}
-
 // Taken from here: https://stackoverflow.com/a/29956714
 export function isElementScrollable(element: HTMLElement) {
     return element.scrollHeight > element.clientHeight || element.scrollWidth > element.clientWidth;

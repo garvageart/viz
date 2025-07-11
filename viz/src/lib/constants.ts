@@ -1,8 +1,8 @@
-import { browser } from "$app/environment";
+import { browser, dev } from "$app/environment";
 
 const IS_BROWSER_ENV = {
-    production: (location.port === '') || (location.hostname !== 'localhost'),
-    development: (location.port !== '') || (location.hostname === 'localhost')
+    production: (location.port === '') || (location.hostname === '127.0.0.1' || location.hostname === 'localhost') || !dev,
+    development: (location.port !== '') || (location.hostname === 'localhost') || dev || (location.hostname === '127.0.0.1'),
 };
 
 export const IS_MOBILE = /iPhone|iPad|iPod|Android/i.test(navigator.userAgent) || screen.orientation.type === 'portrait-primary';
@@ -37,3 +37,4 @@ export const AUTH_SERVER = new ServerURLConfig("auth", 7771);
 export const UI_SERVER = new ServerURLConfig("viz", 7777);
 
 export const DEFAULT_THEME = "viz-theme";
+export const CAN_DEBUG = IS_BROWSER_ENV.development && localStorage.getItem("viz:debugMode") === "true";
