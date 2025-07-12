@@ -159,6 +159,7 @@ class TabOps {
         const nodeParentId = node.parentElement?.getAttribute("data-viz-sp-id");
         const nodeIsPanelHeader = node.classList.contains("viz-sub_panel-header");
         const nodeIsTab = node.classList.contains("viz-tab-button") && node.hasAttribute("data-tab-id");
+        const panelContainsTab = this.panelViews.some((view) => view.id === state.view.id);
 
         if (!nodeParentId && nodeIsPanelHeader) {
             throw new Error("Viz: Node parent ID is missing");
@@ -176,7 +177,7 @@ class TabOps {
             console.log(`Attempting to move ${state.view.name} to ${nodeParentId}`);
         }
 
-        if (!this.panelViews.some((view) => view.id === state.view.id)) {
+        if (!panelContainsTab) {
             const layout = layoutState.tree;
 
             const srcParent = this.getSubPanelParent(layout, state.view.parent);
