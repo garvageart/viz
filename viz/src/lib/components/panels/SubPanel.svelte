@@ -96,7 +96,10 @@
 
 	if (window.debug === true) {
 		$inspect("active view", keyId, activeView);
-		$inspect("active view data", keyId, panelData);
+		() => {
+			// lmaooooo???? fucked up language. avoiding the state_referenced_locally error
+			panelData.then((data) => $inspect("panel data", keyId, data));
+		};
 		if (panelViews.length) {
 			$inspect("panel views", keyId, panelViews);
 		}
