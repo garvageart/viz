@@ -253,7 +253,7 @@ for Splitpanes
 						shifting the layout  
 						-->
 						<MaterialIcon
-							showHoverBG={true}
+							showHoverBG={false}
 							style={`transform: translateY(${view.opticalCenterFix ?? 0.5}px);`}
 							iconName="menu"
 						/>
@@ -342,7 +342,7 @@ for Splitpanes
 		height: 100%;
 
 		&:hover {
-			background-color: hsl(219 31% 20% / 1);
+			background-color: hsl(219, 26%, 15%);
 		}
 	}
 

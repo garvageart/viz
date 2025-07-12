@@ -6,13 +6,16 @@
 </script>
 
 <span
-	class="material-symbols-sharp {props.class} {showHoverBG && showHover ? 'hover' : ''}"
+	class="material-symbols-sharp {props.class} {showHoverBG === true && showHover ? 'hover' : ''}"
 	{...props}
 	onmouseover={() => {
 		showHover = true;
 	}}
 	onmouseout={() => {
 		showHover = false;
+	}}
+	onclick={() => {
+		showHover = true;
 	}}
 >
 	{iconName}
@@ -25,10 +28,6 @@
 		margin: 0.2em;
 		display: inline-block;
 		border-radius: 100%;
-
-		&:active {
-			background-color: var(--imag-80);
-		}
 	}
 
 	.hover {
