@@ -1,4 +1,3 @@
-import { DEFAULT_THEME } from "$lib/constants";
 import DifferentContent from "$lib/components/panels/workspace/generic/DifferentContent.svelte";
 import SomeContent from "$lib/components/panels/workspace/generic/SomeContent.svelte";
 import EvenMoreDifferent from "$lib/components/panels/workspace/generic/EvenMoreDifferent.svelte";
@@ -6,7 +5,6 @@ import DevWelcomeText from "$lib/components/DevWelcomeText.svelte";
 import VizView from "$lib/views/views.svelte";
 import Collections from "../../routes/collections/+page.svelte";
 import type { Collection } from "$lib/types/images";
-import VizSubPanelData from "./subpanel.svelte";
 
 // Only one instance of a view/panel and its component
 // can exist in the layout so we declare all of them here
@@ -32,37 +30,4 @@ export const views: VizView[] = [
         component: Collections as any,
         path: "/collections"
     })
-];
-
-export const testLayout: VizSubPanelData[] = [
-    new VizSubPanelData({
-        id: "viz-test",
-        size: 30,
-        minSize: 10,
-        maxSize: 100,
-        subPanels: [
-            {
-                id: "viz-test-4365763",
-                views: views.filter(view => view.id === 2),
-            },
-            {
-                id: "viz-test-again",
-                views: views.filter(view => view.id === 3)
-            }
-        ]
-    }),
-    new VizSubPanelData({
-        id: "viz-test-2",
-        subPanels: [
-            {
-                id: "viz-clock",
-                views: views.filter(view => view.id === 1),
-            },
-            {
-                id: "viz-collections",
-                views: views.filter(view => view.path === "/collections")
-            }
-        ]
-    })
-
 ];
