@@ -1,4 +1,4 @@
-import type { InternalPanelContainer, InternalSubPanelContainer, Content, SubPanelChilds } from "$lib/components/panels/SubPanel.svelte";
+import type { Content, SubPanelChilds } from "$lib/components/panels/SubPanel.svelte";
 import { DEFAULT_THEME } from "$lib/constants";
 import type { Pane } from "$lib/third-party/svelte-splitpanes";
 import { generateKeyId } from "$lib/utils";
