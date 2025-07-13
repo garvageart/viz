@@ -34,7 +34,7 @@
 	.coll-card {
 		min-width: 100%;
 		max-width: 100%;
-		height: 30em;
+		height: 25em;
 		border: 1px solid var(--imag-20);
 	}
 
