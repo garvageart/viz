@@ -311,6 +311,7 @@ for Splitpanes
 					<Comp />
 				{/if}
 			{:catch error}
+				<h2>Something has gone wrong:</h2>
 				<p style="color: red;">{error}</p>
 			{/await}
 		</div>
