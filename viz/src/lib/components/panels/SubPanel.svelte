@@ -254,7 +254,7 @@ for Splitpanes
 						role="tab"
 						title={view.name}
 						aria-label={view.name}
-						onclick={() => makeViewActive(new VizView(view))}
+						onclick={() => makeViewActive(view instanceof VizView ? view : new VizView(view))}
 						use:tabDragable={data}
 						use:tabDrop
 						ondragover={(event) => onDropOver(event)}
