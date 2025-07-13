@@ -16,6 +16,7 @@
 		};
 </script>
 
+<!-- svelte-ignore state_referenced_locally -->
 <script lang="ts">
 	import { untrack, type ComponentProps, type Snippet } from "svelte";
 	import { Pane } from "$lib/third-party/svelte-splitpanes";
@@ -96,13 +97,16 @@
 
 	if (window.debug === true) {
 		$inspect("active view", keyId, activeView);
-		() => {
-			// lmaooooo???? fucked up language. avoiding the state_referenced_locally error
-			panelData.then((data) => $inspect("panel data", keyId, data));
-		};
 		if (panelViews.length) {
-			$inspect("panel views", keyId, panelViews);
+			// lmaooooo???? fucked up language. avoiding the state_referenced_locally error
+			$effect(() => {
+				(async () => {
+					const data = await panelData;
+					console.log("panel data", keyId, $state.snapshot(data));
+				})();
+			});
 		}
+		$inspect("panel views", keyId, panelViews);
 	}
 
 	let tabDropper: TabOps;
