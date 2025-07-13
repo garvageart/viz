@@ -28,25 +28,25 @@
 		width: 100%;
 		text-overflow: clip;
 		justify-content: center;
-		grid-template-columns: repeat(auto-fit, minmax(20em, 1fr));
+		grid-template-columns: repeat(auto-fit, minmax(15em, 1fr));
 	}
 
 	.coll-card {
 		min-width: 100%;
 		max-width: 100%;
-		height: 25em;
+		height: auto;
 		border: 1px solid var(--imag-20);
 	}
 
 	.image-container {
-		height: 70%;
+		height: 13em;
 		background-color: var(--imag-80);
 	}
 
 	.metadata {
-		height: 30%;
 		background-color: var(--imag-60);
 		display: flex;
 		flex-direction: column;
+		padding: 1em;
 	}
 </style>
