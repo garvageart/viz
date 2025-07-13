@@ -16,7 +16,6 @@
 		};
 </script>
 
-<!-- svelte-ignore state_referenced_locally -->
 <script lang="ts">
 	import { untrack, type ComponentProps, type Snippet } from "svelte";
 	import { Pane } from "$lib/third-party/svelte-splitpanes";
