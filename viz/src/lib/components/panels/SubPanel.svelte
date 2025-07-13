@@ -129,10 +129,16 @@
 		});
 	}
 
+	// make the last view in the panel active if the current active view is removed
+	$effect(() => {
+		if (!panelViews.find((view) => view.id === activeView?.id)) {
+			activeView = panelViews[panelViews.length - 1];
+		}
+	});
+
 	$effect(() => {
 		if (tabDropper?.activeView) {
 			activeView = tabDropper?.activeView;
-			// updateSubPanelActiveView(tabDropper?.activeView);
 		}
 	});
 
