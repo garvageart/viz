@@ -118,21 +118,11 @@ component yet which is a bit of a problem I guess
 	-->
 	{#each internalLayoutState as panel, i}
 		{@const subpanel = panel.childs.internalSubPanelContainer}
-		{@const internalParentKeyId = generateKeyId(16)}
-		{@const internalSubPanelKeyId = generateKeyId(16)}
 		<!-- empty array for views to supress typescript errors about required views -->
-		<SubPanel
-			{...subpanel}
-			class="viz-internal-subpanel-{internalSubPanelKeyId}"
-			paneKeyId={internalSubPanelKeyId}
-			header={false}
-			maxSize={100}
-			views={[]}
-		>
+		<SubPanel {...subpanel} class="viz-internal-subpanel" header={false} maxSize={100} views={[]}>
 			<Panel
 				{...panel.childs.internalPanelContainer}
-				class="viz-internal-panel-{internalParentKeyId}"
-				keyId={internalParentKeyId}
+				class="viz-internal-panel"
 				on:resized={(event) => {
 					debugEvent(event);
 					layoutState.tree = event.detail;

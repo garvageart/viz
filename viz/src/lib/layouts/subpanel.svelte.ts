@@ -34,6 +34,8 @@ class VizSubPanelData implements Omit<ComponentProps<typeof Pane>, "children" | 
         this.maxSize = opts.maxSize ?? 100;
         this.class = opts.class;
 
+        const internalPanelKeyId = generateKeyId(16);
+
         this.childs = {
             internalSubPanelContainer: {
                 id: "viz-internal-subpanel-" + this.paneKeyId,
@@ -44,9 +46,9 @@ class VizSubPanelData implements Omit<ComponentProps<typeof Pane>, "children" | 
                 maxSize: opts.maxSize ?? 100
             },
             internalPanelContainer: {
-                id: "viz-internal-panel-" + this.paneKeyId,
+                id: "viz-internal-panel-" + internalPanelKeyId,
                 horizontal: true,
-                keyId: generateKeyId(16),
+                keyId: internalPanelKeyId,
                 theme,
                 style: "height: 100%",
                 pushOtherPanes: true,
