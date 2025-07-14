@@ -4,7 +4,6 @@ import { swapArrayElements } from "../utils";
 import VizView from "./views.svelte";
 import { dev } from "$app/environment";
 import { views } from "$lib/layouts/views";
-import type { M } from "vitest/dist/chunks/environment.d.Dmw5ulng.js";
 
 export interface TabData {
     index: number;
