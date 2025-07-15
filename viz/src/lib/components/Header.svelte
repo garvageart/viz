@@ -50,16 +50,18 @@
 			</button>
 		{/if}
 	</div>
-	{#if dev || !CLIENT_IS_PRODUCTION}
-		<button type="button" class="debug-button" aria-label="Toggle Debug Mode" onclick={() => (devEnabled = !devEnabled)}>
-			{#if devEnabled}
-				<span class="debug-mode-text">ON</span>
-			{:else}
-				<span class="debug-mode-text">OFF</span>
-			{/if}
-			<MaterialIcon iconName="bug_report" showHoverBG />
-		</button>
-	{/if}
+	<div class="header-button-container">
+		{#if dev || !CLIENT_IS_PRODUCTION}
+			<button type="button" class="header-button" aria-label="Toggle Debug Mode" onclick={() => (devEnabled = !devEnabled)}>
+				{#if devEnabled}
+					<span class="debug-mode-text">ON</span>
+				{:else}
+					<span class="debug-mode-text">OFF</span>
+				{/if}
+				<MaterialIcon iconName="bug_report" showHoverBG />
+			</button>
+		{/if}
+	</div>
 </header>
 
 <style lang="scss">
@@ -169,7 +171,14 @@
 		}
 	}
 
-	.debug-button {
+	.header-button-container {
+		position: absolute;
+		right: 1em;
+		display: flex;
+		align-items: center;
+	}
+
+	:global(.header-button) {
 		display: flex;
 		align-items: center;
 		justify-content: center;
@@ -180,9 +189,8 @@
 		padding: 0.2em 0.5em;
 		font-size: 1rem;
 		color: var(--imag-text-color);
+		margin-right: 1em;
 		cursor: pointer;
-		position: absolute;
-		right: 1em;
 
 		&:hover {
 			background-color: var(--imag-90);
