@@ -480,8 +480,6 @@
 	}
 
 	function bindEvents() {
-		document.body.style.cursor = isHorizontal ? "ns-resize" : "ew-resize";
-
 		document.addEventListener("mousemove", onMouseMove, thirdEventArg);
 		document.addEventListener("mouseup", onMouseUp);
 
@@ -492,8 +490,6 @@
 	}
 
 	function unbindEvents() {
-		document.body.style.cursor = "";
-
 		document.removeEventListener("mousemove", onMouseMove);
 		document.removeEventListener("mouseup", onMouseUp);
 

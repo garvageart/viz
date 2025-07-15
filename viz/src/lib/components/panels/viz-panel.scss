@@ -26,32 +26,47 @@
         box-sizing: border-box;
         position: relative;
         flex-shrink: 0;
-        
-        &:before,
-        &:after {
+        z-index: 1;
+        /* Make the visible splitter thin, but the grab zone larger */
+        &::before {
             content: "";
             position: absolute;
-            left: 0;
-            top: 0;
+            left: 50%;
+            top: 50%;
+            transform: translate(-50%, -50%);
+            background: transparent;
+            z-index: 2;
+            pointer-events: auto;
+        }
+        /* Vertical splitter: wide grab zone, thin look */
+        .splitpanes--vertical > &,
+        &.splitpanes--vertical {
+            width: 1px;
+            &::before {
+                width: 16px;
+                height: 100%;
+            }
+        }
+        /* Horizontal splitter: tall grab zone, thin look */
+        .splitpanes--horizontal > &,
+        &.splitpanes--horizontal {
+            height: 1px;
+            &::before {
+                width: 100%;
+                height: 16px;
+            }
+        }
+        /* Hide pointer events on the splitter itself, only allow on ::before */
+        pointer-events: none;
+        &:before {
             transition: opacity 0.20s;
             opacity: 0;
-            z-index: 1;
         }
-
         &:hover:before,
-        &:hover:after,
-        &:active {
+        &:active:before {
             background-color: var(--imag-primary);
+            opacity: 0.1;
         }
-    
-        &:hover:before {
-            opacity: 100%;
-        }
-
-        &:hover:after {
-            width: 2px;
-        }
-        
         &:first-child {
             cursor: auto;
         }
