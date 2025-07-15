@@ -20,105 +20,71 @@
                 0 -1.5px 0 var(--imag-primary) inset;
         }
     }
+}
 
-    .splitpanes__splitter {
-        background-color: var(--imag-60);
-        box-sizing: border-box;
-        position: relative;
-        flex-shrink: 0;
-        z-index: 1;
-        /* Make the visible splitter thin, but the grab zone larger */
-        &::before {
-            content: "";
-            position: absolute;
-            left: 50%;
-            top: 50%;
-            transform: translate(-50%, -50%);
-            background: transparent;
-            z-index: 2;
-            pointer-events: auto;
-        }
-        /* Vertical splitter: wide grab zone, thin look */
-        .splitpanes--vertical > &,
-        &.splitpanes--vertical {
-            width: 1px;
-            &::before {
-                width: 16px;
-                height: 100%;
-            }
-        }
-        /* Horizontal splitter: tall grab zone, thin look */
-        .splitpanes--horizontal > &,
-        &.splitpanes--horizontal {
-            height: 1px;
-            &::before {
-                width: 100%;
-                height: 16px;
-            }
-        }
-        /* Hide pointer events on the splitter itself, only allow on ::before */
-        pointer-events: none;
-        &:before {
-            transition: opacity 0.20s;
-            opacity: 0;
-        }
-        &:hover:before,
-        &:active:before {
-            background-color: var(--imag-primary);
-            opacity: 0.1;
-        }
-        &:first-child {
-            cursor: auto;
-        }
+.splitpanes__splitter {
+    position: relative;
+    z-index: 1;
+    background-color: var(--imag-60);
+    box-sizing: border-box;
+    flex-shrink: 0;
+    pointer-events: auto;
+    transition: background-color 0.2s, width 0.15s, height 0.15s;
+
+    // s grab zone
+    &::before {
+        content: "";
+        position: absolute;
+        left: 50%;
+        top: 50%;
+        transform: translate(-50%, -50%);
+        background: transparent;
+        pointer-events: auto;
+        z-index: 2;
+        transition: background-color 0.2s, opacity 0.2s;
+        opacity: 0;
+    }
+
+    &:hover::before,
+    &:active::before {
+        background-color: var(--imag-primary);
+        opacity: 0.08;
+    }
+
+    &:active {
+        background-color: var(--imag-primary);
     }
 }
 
-.viz-theme {    
-    &.splitpanes .splitpanes .splitpanes__splitter {
-        z-index: 1;
-    }
-    
-    &.splitpanes--vertical>.splitpanes__splitter,
-    .splitpanes--vertical>.splitpanes__splitter {
-        width: 1px;
-        background-color: var(--imag-60);
-        cursor: ew-resize;
-        
-        &:before,
-        &:after {
-            width: 3px;
-            height: 100%;
-        }
+.splitpanes--vertical>.splitpanes__splitter,
+.splitpanes--vertical .splitpanes__splitter {
+    width: 1px;
+    height: 100%;
+    cursor: ew-resize;
 
-        &:active {
-            width: 2px;
-        }
+    &::before {
+        width: 24px;
+        height: 100%;
     }
-    
-    &.splitpanes--horizontal>.splitpanes__splitter,
-    .splitpanes--horizontal>.splitpanes__splitter {
-        height: 1px;
-        background-color: var(--imag-60);
-        cursor: ns-resize;
-        
-        &:before,
-        &:after {
-            width: 100%;
-            height: 3px;
-        }
 
-        &:active {
-            height: 2px;
-        }
+    &:active {
+        width: 2px;
     }
-    
-    .splitpanes__splitter {
-        position: relative;
-        
-        &.splitpanes__splitter__active {
-            z-index: 2;
-            /* Fix an issue of overlap fighting with a near hovered splitter */
-        }
+}
+
+.splitpanes--horizontal>.splitpanes__splitter,
+.splitpanes--horizontal .splitpanes__splitter {
+    height: 1px;
+    width: 100%;
+    cursor: ns-resize;
+
+    &::before {
+        width: 100%;
+        height: 24px;
+    }
+
+    &:active {
+        height: 2px;
     }
 }
 
