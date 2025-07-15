@@ -3,9 +3,17 @@
 	import LoginButtons from "$lib/components/LoginButtons.svelte";
 	import VizPanel from "$lib/components/panels/VizPanel.svelte";
 	import { login } from "$lib/states/index.svelte";
+	import { onMount } from "svelte";
 
 	let vizContentContainer: HTMLDivElement | undefined = $state();
 	const loginState = login.state;
+
+	// CSS was a mistake (or I'm an idiot)
+	let mainHeaderHeight: number = $state(0);
+
+	onMount(() => {
+		mainHeaderHeight = document.querySelector("header")!.clientHeight;
+	});
 </script>
 
 <svelte:head>
@@ -16,7 +24,7 @@
 	<p>Skip to main content</p>
 </a>
 
-<main id="main">
+<main id="main" style="height: calc(100% - {mainHeaderHeight + 2}px);">
 	<div class="viz-content-container" bind:this={vizContentContainer}>
 		{#if !loginState}
 			<DevWelcomeText />
@@ -32,9 +40,6 @@
 		display: flex;
 		flex-direction: row;
 		align-items: center;
-		// css was a mistake.
-		// this keeps the layout at ~100% without any dramatic layout shifts
-		height: calc(100% - 2.16em);
 		width: 100%;
 	}
 
