@@ -3,7 +3,7 @@
 
 	export type InternalSubPanelContainer = Omit<VizSubPanel, "childs" | "children" | "$$events" | "$$slots" | "header" | "views">;
 	export type InternalPanelContainer = Omit<ComponentProps<typeof Splitpanes>, "children" | "$$events" | "$$slots">;
-	export type Content = Omit<VizSubPanel, "childs"> & { views: VizView[] };
+	export type Content = Omit<VizSubPanel, "childs" | "id"> & { id?: string; views: VizView[] };
 	export type SubPanelChilds = {
 		internalSubPanelContainer: InternalSubPanelContainer;
 		internalPanelContainer: InternalPanelContainer;
@@ -165,8 +165,8 @@
 
 	function headerDraggable(node: HTMLElement) {}
 
-	function subPanelDrop(node: HTMLElement) {
-		return tabDropper.subPanelDropInside(node);
+	function subPanelDrop(node: HTMLElement, data: TabData) {
+		return tabDropper.subPanelDropInside(node, data);
 	}
 
 	function makeViewActive(view: VizView) {
@@ -289,6 +289,7 @@ for Splitpanes
 	{/if}
 	{#if activeView?.component}
 		{@const Comp = activeView.component}
+		{@const data = { index: panelViews.findIndex((view) => view.id === activeView.id), view: activeView }}
 		<div
 			role="none"
 			class="viz-sub_panel-content"
@@ -296,7 +297,7 @@ for Splitpanes
 			onclick={() => (subPanelContentFocused = true)}
 			onkeydown={() => (subPanelContentFocused = true)}
 			bind:this={subPanelContentElement}
-			use:subPanelDrop
+			use:subPanelDrop={data}
 		>
 			{#await panelData}
 				<div style="height: 100%; width: 100%; display: flex; justify-content: center; align-items: center;">

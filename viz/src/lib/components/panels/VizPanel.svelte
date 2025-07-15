@@ -4,7 +4,7 @@
 	import { Splitpanes as Panel, type ITree } from "$lib/third-party/svelte-splitpanes";
 	import { layoutState, layoutTree } from "$lib/third-party/svelte-splitpanes/state.svelte";
 	import { arrayHasDuplicates, debugEvent, generateKeyId, VizLocalStorage } from "$lib/utils";
-	import { onMount } from "svelte";
+	import { onMount, untrack } from "svelte";
 	import SubPanel, { type VizSubPanel } from "./SubPanel.svelte";
 	import VizSubPanelData from "$lib/layouts/subpanel.svelte";
 
@@ -19,12 +19,7 @@
 		storedLayout = testLayout;
 	}
 
-	if (storedLayout && storedLayout?.length === 0) {
-		console.warn("No layout found in localStorage, using default layout");
-		resetLayoutToDefault();
-	}
-
-	onMount(() => {
+	function intializeLayoutStructures() {
 		layoutState.tree ??= [];
 		layoutState.tree = storedLayout ?? testLayout;
 		layoutTree.childs = layoutState.tree;
@@ -44,6 +39,15 @@
 		layoutTree.pushOtherPanes = storedTree.pushOtherPanes;
 		layoutTree.horizontal = storedTree.horizontal;
 		layoutTree.firstSplitter = storedTree.firstSplitter;
+	}
+
+	if (storedLayout && storedLayout?.length === 0) {
+		console.warn("No layout found in localStorage, using default layout");
+		resetLayoutToDefault();
+	}
+
+	onMount(() => {
+		intializeLayoutStructures();
 	});
 	// This derived value was initially used to do
 	// further layout calculations like checking if a single pane
@@ -69,7 +73,6 @@
 
 	if (window.debug === true) {
 		$inspect("global state", layoutState.tree);
-		// $inspect("global tree", layoutTree);
 	}
 
 	$effect(() => {
@@ -117,28 +120,29 @@ We can soooort of generate layouts at the moment (like those stored in localStor
 component yet which is a bit of a problem I guess
 	-->
 	{#each internalLayoutState as panel, i}
-		{@const subpanel = panel.childs.internalSubPanelContainer}
-		<!-- empty array for views to supress typescript errors about required views -->
-		<SubPanel {...subpanel} class="viz-internal-subpanel" header={false} maxSize={100} views={[]}>
-			<Panel
-				{...panel.childs.internalPanelContainer}
-				class="viz-internal-panel"
-				on:resized={(event) => {
-					debugEvent(event);
-					layoutState.tree = event.detail;
-				}}
-			>
-				<!-- TODO: Document and explain what the hell is going on -->
-				<!-- ---------------------------------------------------- -->
-				<!-- DO NOT MOVE THIS {#key}: THIS ONLY RE-RENDERS ANY CHILD SUBPANELS THAT HAVE NEW VIEWS -->
-				<!-- MOVING THIS ANYWHERE ELSE FURTHER UP THE LAYOUT HIERACHY, USING ANY OTHER VALUE, RE-RENDERS EVERYTHING WHICH IS UNNCESSARILY EXPENSIVE OR IT DOESN'T RENDER THE TABS/HEADER OF SOME SUBPANELS AT ALL -->
-				<!-- ONLY, AND ONLY CHANGE THIS IF YOU CAN PROVE IT IS BETTER TO DO SO THAN THIS, THIS TOOK ME AGES AND DROVE ME CRAZY FOR 2 DAYS STRAIGHT -->
-				{#key panel.childs.content.length}
+		{#key panel.childs.content.length}
+			<!-- empty array for views to supress typescript errors about required views -->
+			<SubPanel {...panel.childs.internalSubPanelContainer} class="viz-internal-subpanel" header={false} maxSize={100} views={[]}>
+				<Panel
+					{...panel.childs.internalPanelContainer}
+					class="viz-internal-panel"
+					on:resized={(event) => {
+						debugEvent(event);
+						layoutState.tree = event.detail;
+					}}
+				>
+					<!-- TODO: Document and explain what the hell is going on -->
+					<!-- ---------------------------------------------------- -->
+					<!-- DO NOT MOVE THIS {#key}: THIS ONLY RE-RENDERS ANY CHILD SUBPANELS THAT HAVE NEW VIEWS -->
+					<!-- MOVING THIS ANYWHERE ELSE FURTHER UP THE LAYOUT HIERACHY, USING ANY OTHER VALUE, RE-RENDERS EVERYTHING WHICH IS UNNCESSARILY EXPENSIVE OR IT DOESN'T RENDER THE TABS/HEADER OF SOME SUBPANELS AT ALL -->
+					<!-- ONLY, AND ONLY CHANGE THIS IF YOU CAN PROVE IT IS BETTER TO DO SO THAN THIS, THIS TOOK ME AGES AND DROVE ME CRAZY FOR 2 DAYS STRAIGHT -->
 					{#each panel.childs.content as subPanel}
-						<SubPanel {...subPanel} />
+						{#key subPanel.views}
+							<SubPanel {...subPanel} id={subPanel.id ?? ""} />
+						{/key}
 					{/each}
-				{/key}
-			</Panel>
-		</SubPanel>
+				</Panel>
+			</SubPanel>
+		{/key}
 	{/each}
 </Panel>

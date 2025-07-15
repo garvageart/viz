@@ -4,7 +4,6 @@ import { views } from "./views";
 export const testLayout: VizSubPanelData[] = [
     new VizSubPanelData({
         id: "viz-test",
-        size: 30,
         minSize: 10,
         maxSize: 100,
         content: [

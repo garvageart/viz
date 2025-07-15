@@ -1,9 +1,12 @@
-import type { SubPanelChilds, VizSubPanel } from "../components/panels/SubPanel.svelte";
+import type { VizSubPanel } from "../components/panels/SubPanel.svelte";
 import { layoutState } from "../third-party/svelte-splitpanes/state.svelte";
-import { swapArrayElements } from "../utils";
+import { sleep, swapArrayElements } from "../utils";
 import VizView from "./views.svelte";
 import { dev } from "$app/environment";
 import { views } from "$lib/layouts/views";
+import { cleanupSubPanels, findChildIndex, findPanelIndex, getSubPanelParent } from "./utils";
+import type { DropPosition } from "./types";
+import VizSubPanelData, { Content } from "$lib/layouts/subpanel.svelte";
 
 export interface TabData {
     index: number;
@@ -25,9 +28,7 @@ class TabOps {
      * @param {string|undefined} paneKeyId The pane key ID to search for.
      * @returns {number} The index of the panel in the layout, or -1 if not found.
      */
-    findPanelIndex(layout: VizSubPanel[], paneKeyId: string | undefined): number {
-        return layout.findIndex((panel) => panel.paneKeyId === paneKeyId);
-    }
+    private _findPanelIndex = findPanelIndex;
 
     /**
      * Finds the index of a child subpanel in the given child structure by its pane key ID.
@@ -36,12 +37,7 @@ class TabOps {
      * @param {string|undefined} paneKeyId The pane key ID to search for.
      * @returns {number} The index of the child subpanel in the child structure, or -1 if not found.
      */
-    findChildIndex(
-        childs: SubPanelChilds,
-        paneKeyId: string | undefined
-    ): number {
-        return childs.content.findIndex((sub) => sub.paneKeyId === paneKeyId) ?? -1;
-    }
+    private _findChildIndex = findChildIndex;
 
 
     /**
@@ -51,25 +47,9 @@ class TabOps {
      * @param {string | undefined} paneKeyId - The pane key ID of the subpanel to find the parent for.
      * @returns {string | null} The pane key ID of the parent panel, or null if not found.
      */
-    getSubPanelParent(layout: VizSubPanel[], paneKeyId: string | undefined): string | null {
-        if (!paneKeyId) {
-            return null;
-        }
+    private _getSubPanelParent = getSubPanelParent;
 
-        for (const panel of layout) {
-            if (!panel.childs.content) {
-                continue;
-            }
-
-            for (const sub of panel.childs.content) {
-                if (sub.paneKeyId === paneKeyId) {
-                    return panel.paneKeyId ?? null;;
-                }
-            }
-        }
-
-        return null;
-    }
+    private _cleanupSubPanels = cleanupSubPanels;
 
     /**
      * Moves a tab to a new child subpanel.
@@ -84,7 +64,7 @@ class TabOps {
         let srcChildIdx = -1;
 
         if (srcParentIdx !== -1) {
-            srcChildIdx = this.findChildIndex(layout[srcParentIdx].childs, state.view.parent);
+            srcChildIdx = this._findChildIndex(layout[srcParentIdx].childs, state.view.parent);
         }
 
         let dstParentIdx = layout.findIndex(
@@ -114,7 +94,7 @@ class TabOps {
                 layout[srcParentIdx].childs.content.splice(srcChildIdx, 1);
             }
 
-            const dstChildIdx = this.findChildIndex(layout[dstParentIdx].childs, nodeParentId);
+            const dstChildIdx = this._findChildIndex(layout[dstParentIdx].childs, nodeParentId);
             if (dstChildIdx !== -1) {
                 layout[dstParentIdx].childs.content[dstChildIdx].views.push(movedView);
             }
@@ -162,17 +142,17 @@ class TabOps {
             return;
         }
 
-        if (window.debug) {
-            console.log(`Attempting to move ${state.view.name} to ${nodeParentId}`);
-        }
-
         if (!panelContainsTab) {
+            if (window.debug) {
+                console.log(`Attempting to move ${state.view.name} to ${nodeParentId}`);
+            }
+
             const layout = layoutState.tree;
 
-            const srcParent = this.getSubPanelParent(layout, state.view.parent);
-            const dstParent = this.getSubPanelParent(layout, nodeParentId);
+            const srcParent = this._getSubPanelParent(layout, state.view.parent);
+            const dstParent = this._getSubPanelParent(layout, nodeParentId);
 
-            const parentIdx = this.findPanelIndex(layout, srcParent!);
+            const parentIdx = this._findPanelIndex(layout, srcParent!);
             const childs = layout[parentIdx]?.childs;
 
             const tab = childs.content.find(panel => panel.views.find(view => view.id === state.view.id))?.views.find(view => view.id === state.view.id);
@@ -300,6 +280,91 @@ class TabOps {
         });
     }
 
+    private handleTabDropInside(node: HTMLElement, event: DragEvent, activeViewData: TabData) {
+        const data = event.dataTransfer!.getData("text/json");
+        const state = JSON.parse(data) as TabData;
+
+        const layout = layoutState.tree;
+        const dstParentKeyId = this._getSubPanelParent(layout, activeViewData.view.parent!)!;
+        const srcParentKeyId = this._getSubPanelParent(layout, state.view.parent!);
+        const srcSubPanelIdx = layoutState.tree.find(p => p.paneKeyId === srcParentKeyId)?.childs.content.findIndex(sub => sub.paneKeyId === state.view.parent!)!;
+        const srcSubPanel = layoutState.tree.find(p => p.paneKeyId === srcParentKeyId)?.childs.content[srcSubPanelIdx]!;
+
+        const views = srcSubPanel.views!;
+        const viewToMove = views.findIndex((view) => view.id === state.view.id);
+        const dropZone = this.calculateDropZone(node, event);
+
+        const cleanUpSubPanels = () => {
+            views.splice(viewToMove!, 1);
+            if (views.length === 0) {
+                if (window.debug === true) {
+                    console.log(`empty subpanel ${srcSubPanel.paneKeyId}. removing it`);
+                }
+
+                layoutState.tree.find(p => p.paneKeyId === srcParentKeyId)?.childs.content.splice(srcSubPanelIdx, 1);
+            }
+
+            if (layout.find(p => p.paneKeyId === srcParentKeyId)!.childs.content.length === 0) {
+                layout.splice(layout.findIndex(p => p.paneKeyId === srcParentKeyId), 1);
+
+                if (layout.length === 1) {
+                    if (window.debug === true) {
+                        console.log(`one panel ${layout[0].paneKeyId} left, setting maximum size to 100`);
+                    }
+
+                    layout[0].childs.internalSubPanelContainer.size = 100;
+                }
+            }
+        };
+
+        switch (dropZone.dropPosition) {
+            case "left":
+                const newSubPanel = new VizSubPanelData({
+                    content: [new Content({ views: [state.view] })]
+                });
+                layoutState.tree.splice(
+                    this._findPanelIndex(layoutState.tree, dstParentKeyId),
+                    0,
+                    newSubPanel
+                );
+
+                break;
+            case "right":
+                const newSubPanelRight = new VizSubPanelData({
+                    content: [new Content({ views: [state.view] })]
+                });
+                const index = this._findPanelIndex(layoutState.tree, dstParentKeyId);
+
+                if (index === layoutState.tree.length - 1) {
+                    layoutState.tree.push(newSubPanelRight);
+                } else {
+                    layoutState.tree.splice(
+                        index,
+                        0,
+                        newSubPanelRight
+                    );
+                }
+
+                break;
+            case "top":
+                layoutState.tree.find((panel) => panel.paneKeyId === dstParentKeyId)?.childs.content.splice(0, 0, new Content({ views: [state.view] }));
+                break;
+            case "bottom":
+                layoutState.tree.find((panel) => panel.paneKeyId === dstParentKeyId)?.childs.content.push(new Content({ views: [state.view] }));
+                break;
+            default:
+                console.error("Viz: Invalid drop position", dropZone.dropPosition);
+                return;
+        }
+
+        cleanUpSubPanels();
+
+        if (window.debug) {
+            console.log("Creating panel from:", srcParentKeyId);
+            console.log("Dropzone:", dropZone);
+        }
+    }
+
     /**
      * Attaches drag-and-drop event listeners to an HTML element to handle
      * visual feedback and drop actions for draggable elements.
@@ -370,18 +435,34 @@ class TabOps {
         });
     }
 
-    private calculateDropZone(node: HTMLElement, event: DragEvent) {
-        if (node !== event.target) {
-            return;
-        }
-
-        const dropzoneMargin = 30;
-        const target = event.target as HTMLElement;
+    private calculateDropZone(node: HTMLElement, event: DragEvent | MouseEvent) {
+        let dropPosition: DropPosition | null = null;
         const rect = node.getBoundingClientRect();
 
-        const x = event.clientX - rect.left; //x position within the element.
-        const y = event.clientY - rect.top;  //y position within the element.
-        console.log(target, "Left: " + x + "; Top: " + y);
+        const x = event.clientX - rect.left;
+        const y = event.clientY - rect.top;
+
+        const widthPercentage = (x / rect.width) * 100;
+        const heightPercentage = (y / rect.height) * 100;
+
+        const edgeThreshold = 40; // percent
+
+        // Only allow left, right, top, or bottom
+        if (widthPercentage < edgeThreshold) {
+            dropPosition = "left";
+        } else if (widthPercentage > 100 - edgeThreshold) {
+            dropPosition = "right";
+        } else if (heightPercentage < edgeThreshold) {
+            dropPosition = "top";
+        } else {
+            dropPosition = "bottom";
+        }
+
+        return {
+            x,
+            y,
+            dropPosition
+        };
     }
 
     private handleDropInsideEnter(node: HTMLElement) {
@@ -400,9 +481,45 @@ class TabOps {
         node.insertBefore(overlayDiv, node.firstElementChild);
     }
 
-    private handleDropInside(node: HTMLElement, event: MouseEvent) {
-        const overlayDiv = node.querySelector(".viz-sub_panel-dropzone_overlay");
+    private drawDropzone(node: HTMLElement, e: MouseEvent) {
+        const overlayDiv = node.querySelector(".viz-sub_panel-dropzone_overlay") as HTMLElement;
+        if (!overlayDiv) {
+            return;
+        }
 
+        const dropZone = this.calculateDropZone(node, e);
+        overlayDiv.style.position = "absolute";
+
+        switch (dropZone.dropPosition) {
+            case "left":
+                overlayDiv.style.left = `0px`;
+                overlayDiv.style.top = `0px`;
+                overlayDiv.style.width = `${node.clientWidth / 2}px`;
+                overlayDiv.style.height = `${node.clientHeight}px`;
+                break;
+            case "right":
+                overlayDiv.style.left = `${node.clientWidth / 2}px`;
+                overlayDiv.style.top = `0px`;
+                overlayDiv.style.width = `${node.clientWidth / 2}px`;
+                overlayDiv.style.height = `${node.clientHeight}px`;
+                break;
+            case "top":
+                overlayDiv.style.left = `0px`;
+                overlayDiv.style.top = `0px`;
+                overlayDiv.style.width = `${node.clientWidth}px`;
+                overlayDiv.style.height = `${node.clientHeight / 2}px`;
+                break;
+            case "bottom":
+                overlayDiv.style.left = `0px`;
+                overlayDiv.style.top = `${node.clientHeight / 2}px`;
+                overlayDiv.style.width = `${node.clientWidth}px`;
+                overlayDiv.style.height = `${node.clientHeight / 2}px`;
+                break;
+        }
+    }
+
+    private removeDropzoneOverlay(node: HTMLElement, event: MouseEvent) {
+        const overlayDiv = node.querySelector(".viz-sub_panel-dropzone_overlay");
         if (!overlayDiv) {
             return;
         }
@@ -419,7 +536,7 @@ class TabOps {
     // TODO: When dragging over the subpanel, determine the coordinates of where
     // in the subpanel we're hovering a create the dropzone within those bounds, usually half
     // note: probably debounce it a lil to avoid sudden layout shifts
-    subPanelDropInside(node: HTMLElement) {
+    subPanelDropInside(node: HTMLElement, data: TabData) {
         $effect(() => {
             node.addEventListener("dragenter", (e) => {
                 this.handleDropInsideEnter(node);
@@ -427,15 +544,35 @@ class TabOps {
 
             node.addEventListener("drop", (e) => {
                 e.preventDefault();
-                this.handleDropInside(node, e);
-            });
+                console.log();
 
-            node.addEventListener("dragover", (event) => {
-                event.preventDefault();
+                this.handleTabDropInside(node, e, data);
+                this.removeDropzoneOverlay(node, e);
             });
 
             node.addEventListener("dragover", (e) => {
-                this.calculateDropZone(node, e);
+                e.preventDefault();
+                this.drawDropzone(node, e);
+            });
+
+            node.addEventListener("dragleave", (e) => {
+                e.preventDefault();
+                const overlayDiv = node.querySelector(".viz-sub_panel-dropzone_overlay") as HTMLElement;
+                if (overlayDiv !== e.target) {
+                    return;
+                }
+
+                overlayDiv.style.width = "0px";
+                overlayDiv.style.height = "0px";
+                overlayDiv.style.left = "0px";
+                overlayDiv.style.top = "0px";
+
+                // TODO: adjust timings of the transition to stop flickering
+                overlayDiv.style.transition = "width 0.2s ease-in-out, height 0.2s ease-in-out, left 0.2s ease-in-out, top 0.2s ease-in-out";
+
+                sleep(250).then(() => {
+                    this.removeDropzoneOverlay(node, e);
+                });
             });
 
 
@@ -446,14 +583,11 @@ class TabOps {
 
                 node.removeEventListener("drop", (e) => {
                     e.preventDefault();
-                    this.handleDropInside(node, e);
-                });
-
-                node.removeEventListener("dragover", (event) => {
-                    event.preventDefault();
+                    this.removeDropzoneOverlay(node, e);
                 });
 
                 node.removeEventListener("dragover", (e) => {
+                    e.preventDefault();
                     this.calculateDropZone(node, e);
                 });
             };

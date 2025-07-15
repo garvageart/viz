@@ -1,0 +1,1 @@
+export type DropPosition = "left" | "right" | "top" | "bottom";
