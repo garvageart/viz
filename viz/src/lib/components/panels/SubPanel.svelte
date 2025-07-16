@@ -293,7 +293,7 @@ for Splitpanes
 		<div
 			role="none"
 			class="viz-sub_panel-content"
-			style="height: calc(100% - {mainHeaderHeight - 28}px); width: 100%;"
+			style="height: calc(100% - {mainHeaderHeight - 27.5}px); width: 100%;"
 			onclick={() => (subPanelContentFocused = true)}
 			onkeydown={() => (subPanelContentFocused = true)}
 			bind:this={subPanelContentElement}
