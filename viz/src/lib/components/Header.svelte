@@ -67,7 +67,7 @@
 <style lang="scss">
 	header {
 		background-color: var(--imag-bg-color);
-		// height: 1.5em;
+		max-height: 2.5em;
 		padding: 0.7em 1em;
 		display: flex;
 		align-items: center;
