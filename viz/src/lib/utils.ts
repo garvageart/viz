@@ -126,7 +126,7 @@ export class VizLocalStorage<V = string> {
             return null;
         }
 
-        if (item?.startsWith("{") || item?.startsWith("[")) {
+        if ((item?.startsWith("{") && item?.endsWith("}")) || (item?.startsWith("[") && item?.endsWith("]"))) {
             return JSON.parse(item) as V;
         }
 
