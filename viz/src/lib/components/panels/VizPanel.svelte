@@ -50,7 +50,27 @@
 
 	onMount(() => {
 		intializeLayoutStructures();
+		const duplicateAnswer = arrayHasDuplicates(
+			layoutState.tree
+				.flatMap((panel) => {
+					if (panel.views) {
+						return panel.views.map((tab) => tab.id);
+					} else {
+						return [];
+					}
+				})
+				.concat(
+					testLayout.flatMap((panel) =>
+						panel.childs?.content ? panel.childs.content.flatMap((subPanel) => subPanel.views.map((tab) => tab.id)) : []
+					)
+				)
+		);
+
+		if (duplicateAnswer.hasDuplicates) {
+			console.error("The following tabs have duplicate IDs. Please check the panels loaded", duplicateAnswer.duplicates);
+		}
 	});
+
 	// This derived value was initially used to do
 	// further layout calculations like checking if a single pane
 	// needs to be used but that seems to have just fixed itself?
@@ -58,20 +78,6 @@
 	const internalLayoutState = $derived.by(() => {
 		return layoutState.tree;
 	});
-
-	const duplicateAnswer = arrayHasDuplicates(
-		layoutState.tree
-			.flatMap((panel) => panel.views.map((tab) => tab.id))
-			.concat(
-				testLayout.flatMap((panel) =>
-					panel.childs?.content ? panel.childs.content.flatMap((subPanel) => subPanel.views.map((tab) => tab.id)) : []
-				)
-			)
-	);
-
-	if (duplicateAnswer.hasDuplicates) {
-		console.error("The following tabs have duplicate IDs. Please check the panels loaded", duplicateAnswer.duplicates);
-	}
 
 	if (window.debug === true) {
 		$inspect("global state", layoutState.tree);
