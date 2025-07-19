@@ -6,7 +6,7 @@
 	import Button from "$lib/components/Button.svelte";
 	import { sendAPIRequest } from "$lib/utils/http";
 	import type { Collection } from "$lib/types/images";
-	import ModalOverlay from "$lib/components/Modal/ModalOverlay.svelte";
+	import ModalOverlay from "$lib/components/modal/ModalOverlay.svelte";
 	import { modal } from "$lib/states/index.svelte";
 	import { goto, invalidateAll } from "$app/navigation";
 	import type { ActionResult } from "@sveltejs/kit";
