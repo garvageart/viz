@@ -1,5 +1,6 @@
 <!-- Modified from here: https://svelte.dev/playground/d65a4e9f0ae74d1eb1b08d13e428af32?version=5.36.8 -->
 <script lang="ts">
+	import { generateRandomString } from "$lib/utils/misc";
 	import type { SvelteHTMLElements } from "svelte/elements";
 
 	interface Props {
@@ -10,7 +11,7 @@
 	let { label, value = $bindable(), ...props }: Props & SvelteHTMLElements["div"] = $props();
 
 	let checked = $state(true);
-	const uniqueID = Math.floor(Math.random() * 100);
+	const uniqueID = generateRandomString(6);
 
 	$effect(() => {
 		checked = value === "on" ? true : false;
