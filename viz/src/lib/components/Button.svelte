@@ -18,9 +18,10 @@
 		height: max-content;
 		background-color: var(--imag-90);
 		border: none;
-		margin: 0.5em 1em;
-		padding: 0.8em 1em;
-		display: inline-block;
+		padding: 0.5em 1em;
+		display: inline-flex;
+		align-items: center;
+		flex-direction: row;
 		text-align: center;
 		position: relative;
 		transition: background-color 150ms cubic-bezier(0.4, 0, 0.2, 1) 0ms;

@@ -3,9 +3,17 @@
 	import type { Snippet } from "svelte";
 	import LoadingContainer from "../LoadingContainer.svelte";
 	import { dev } from "$app/environment";
+	import type { SvelteHTMLElements } from "svelte/elements";
 
-	let { children, name, style }: { children: Snippet; name: string; style?: string } = $props();
+	interface Props {
+		children: Snippet;
+		name: string;
+		style?: string;
+	}
+
+	let { children, name, style, ...props }: SvelteHTMLElements["div"] & Props = $props();
 	let isLoading = $state(true);
+	const initStyle = $derived(`${isLoading ? "height: 100%;" : ""} ${style}`);
 	const pageData = $derived.by(() => {
 		if (dev) {
 			const randomLatency = dev ? Math.floor(Math.random() * 2000) + 500 : 0; // Random latency between 1 and 3 seconds in dev mode
@@ -30,7 +38,7 @@
 		<title>{name}</title>
 	{/if}
 </svelte:head>
-<div class="viz-view-container" style="padding: 1em 3em; {isLoading ? 'height: 100%;' : ''} {style}" data-view-name={name}>
+<div {...props} class="viz-view-container" style={initStyle} data-view-name={name}>
 	{#if page.url.pathname === "/"}
 		{@render children()}
 	{:else}
@@ -52,8 +60,9 @@
 	.viz-view-container {
 		white-space: wrap;
 		display: flex;
-		align-items: flex-start;
+		align-items: center;
 		flex-direction: column;
 		overflow-y: auto;
+		max-width: 100%;
 	}
 </style>

@@ -1,8 +1,12 @@
 <script lang="ts">
 	import { dev } from "$app/environment";
 	import { CLIENT_IS_PRODUCTION } from "$lib/constants";
+	import { search } from "$lib/states/index.svelte";
 	import { VizLocalStorage } from "$lib/utils";
+	import { onMount } from "svelte";
+	import { performSearch } from "$lib/search/execute";
 	import MaterialIcon from "./MaterialIcon.svelte";
+	import { page } from "$app/state";
 
 	// eventually this will move to a different page with a different way of enabling, this is just temporary
 	const storeDebug = new VizLocalStorage<boolean>("debugMode");
@@ -19,14 +23,36 @@
 		});
 	}
 
-	let searchValue = $state("");
+	onMount(() => {
+		if (page.url.pathname !== "/search") {
+			return;
+		}
+
+		// If URL has search params, perform search automatically
+		const urlParams = new URLSearchParams(window.location.search);
+		const q = urlParams.get("q");
+		if (q) {
+			search.value = q;
+		}
+	});
+
 	let searchInputHasFocus = $state(false);
 </script>
 
 <header>
 	<a id="viz-title" href="/">viz</a>
 	<div class="search-container{searchInputHasFocus ? ' has-focus' : ''}">
-		<button id="search-button" type="button" class="material-icon-button" aria-label="Search">
+		<button
+			id="search-button"
+			type="button"
+			aria-label="Search"
+			aria-disabled={search.loading}
+			aria-pressed={search.loading}
+			title="Search"
+			onclick={performSearch}
+			onkeydown={(e) => e.key === "Enter" && performSearch()}
+			disabled={search.loading}
+		>
 			<MaterialIcon iconName="search" />
 		</button>
 		<input
@@ -34,17 +60,23 @@
 			class="search-input"
 			placeholder="Search"
 			aria-label="Search"
+			aria-disabled={search.loading}
+			disabled={search.loading}
+			onkeydown={(e) => e.key === "Enter" && performSearch()}
 			onfocus={() => (searchInputHasFocus = true)}
 			onblur={() => (searchInputHasFocus = false)}
-			bind:value={searchValue}
+			bind:value={search.value}
 		/>
-		{#if searchValue}
+		{#if search.value}
 			<button
 				id="clear-search-button"
 				type="button"
-				class="material-icon-button"
 				aria-label="Clear Search"
-				onclick={() => (searchValue = "")}
+				title="Clear Search"
+				aria-disabled={search.loading}
+				aria-pressed={search.loading}
+				disabled={search.loading}
+				onclick={() => (search.value = "")}
 			>
 				<MaterialIcon iconName="close" />
 			</button>

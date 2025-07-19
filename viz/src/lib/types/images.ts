@@ -57,7 +57,7 @@ export const SUPPORTED_RAW_FILES: SupportedRAWFiles[] = [
     "x3f"
 ];
 
-export interface ImageObjectData {
+export interface IImageObjectData {
     id: string;
     name: string;
     uploaded_on: Date;
@@ -67,6 +67,13 @@ export interface ImageObjectData {
     collection_id: string;
     private?: boolean;
     dupes?: ImageDupes[];
+    thumbhash: string;
+    urls: {
+        original: string;
+        thumbnail: string;
+        preview: string;
+        raw?: string;
+    };
 }
 
 export interface ImageData {
@@ -77,6 +84,7 @@ export interface ImageData {
     keywords: string[];
     width: number;
     height: number;
+    colorSpace: string;
 };
 
 export interface Collection {
@@ -84,18 +92,18 @@ export interface Collection {
     name: string;
     image_count: number;
     private?: boolean;
-    images: ImageObjectData[];
+    images: IImageObjectData[];
     created_on: Date;
     updated_on: Date;
     created_by: User;
     description: string;
     owner: User;
-    thumbnail?: ImageObjectData;
+    thumbnail?: IImageObjectData;
 };
 
 export interface ImageDupes {
     id: string;
     original_image_id: string;
-    properties: ImageObjectData;
+    properties: IImageObjectData;
     created_on: Date;
 }

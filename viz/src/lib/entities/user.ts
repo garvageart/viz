@@ -10,14 +10,14 @@ class UserData implements User {
     updated_on: Date;
     role: UserRole;
 
-    constructor(data: Partial<UserData>) {
-        this.id = data.id || '';
-        this.first_name = data.first_name || '';
-        this.last_name = data.last_name || '';
-        this.username = data.username || '';
-        this.email = data.email || '';
-        this.created_on = data.created_on || new Date();
-        this.updated_on = data.updated_on || new Date();
+    constructor(data: UserData) {
+        this.id = data.id;
+        this.first_name = data.first_name;
+        this.last_name = data.last_name;
+        this.username = data.username;
+        this.email = data.email;
+        this.created_on = data.created_on;
+        this.updated_on = data.updated_on;
         this.role = data.role || 'user';
 
         for (const [key, value] of Object.entries(data)) {

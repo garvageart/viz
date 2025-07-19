@@ -42,6 +42,7 @@
 		"@fontsource-variable/manrope": "^5.2.6",
 		"esm-env-robust": "^0.0.3",
 		"hotkeys-js": "^3.13.15",
+		"idb": "^8.0.3",
 		"luxon": "^3.7.1",
 		"material-symbols": "^0.31.9"
 	}

@@ -117,8 +117,14 @@
 			if (!element) {
 				return;
 			}
+
+			const lastChild = element.lastElementChild as HTMLElement;
+			if (!lastChild) {
+				return;
+			}
+
 			if (subPanelContentFocused) {
-				if (isElementScrollable(element.lastElementChild! as HTMLElement)) {
+				if (isElementScrollable(lastChild)) {
 					element.classList.add("with__scrollbar");
 				}
 				element.classList.add("splitpanes__pane__active");
@@ -293,7 +299,7 @@ for Splitpanes
 		<div
 			role="none"
 			class="viz-sub_panel-content"
-			style="height: calc(100% - {mainHeaderHeight - 27.5}px); width: 100%;"
+			style="height: calc((100vh - {mainHeaderHeight}px - {0.7 * 2}em - 8px) + 1px); width: 100%;"
 			onclick={() => (subPanelContentFocused = true)}
 			onkeydown={() => (subPanelContentFocused = true)}
 			bind:this={subPanelContentElement}
@@ -359,7 +365,7 @@ for Splitpanes
 
 	:global(
 			.splitpanes__pane > *:last-child,
-			.viz-sub_panel-content > :last-child:not(.splitpanes--horizontal, .splitpanes--vertical)
+			.viz-sub_panel-content > :last-child:not(.splitpanes--horizontal, .splitpanes--vertical, .viz-view-container)
 		) {
 		padding: 0.5em;
 	}
