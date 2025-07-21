@@ -1,7 +1,6 @@
 package main
 
 import (
-	"context"
 	"crypto/sha256"
 	"encoding/base64"
 	"encoding/hex"
@@ -23,6 +22,7 @@ import (
 	"github.com/go-chi/render"
 	"github.com/golang-jwt/jwt/v5"
 	_ "github.com/joho/godotenv/autoload"
+	"gorm.io/gorm"
 
 	"github.com/google/uuid"
 	gonanoid "github.com/matoous/go-nanoid/v2"
@@ -56,30 +56,37 @@ type ImagineAuthPasswordFlow struct {
 	State string
 }
 
-type ImagineUser struct {
-	UUID          string `json:"uuid" bson:"uuid"`
-	ID            string `json:"id" bson:"id"`
-	Username      string `json:"username" bson:"username"`
-	FirstName     string `json:"first_name" bson:"first_name"`
-	LastName      string `json:"last_name" bson:"last_name"`
-	DisplayName   string `json:"display_name" bson:"display_name"`
-	Email         string `json:"email" bson:"email"`
-	Password      string `json:"password" bson:"password"`
-	CreatedAt     string `json:"created_at" bson:"created_at"`
-	UpdatedAt     string `json:"updated_at" bson:"updated_at"`
-	DeletedAt     string `json:"deleted_at" bson:"deleted_at"`
-	UsedOAuth     bool   `json:"used_oauth" bson:"used_oauth"`
-	OAuthProvider string `json:"oauth_provider" bson:"oauth_provider"`
-	OAuthState    string `json:"oauth_state" bson:"oauth_state"`
-	UserToken     string `json:"user_token" bson:"user_token"`
+type Tabler interface {
+	TableName() string
 }
 
-type ImagineAPIData struct {
-	APIKeyHashed    string    `json:"api_key_hashed" bson:"api_key_hashed"`
-	GeneratedAt     time.Time `json:"generated_at" bson:"generated_at"`
-	ApplicationID   string    `json:"application_id" bson:"application_id"`
-	ApplicationName string    `json:"application_name" bson:"application_name"`
+type ImagineUser struct {
+	gorm.Model
+	UUID          string `json:"uuid"`
+	ID            string `json:"id" gorm:"primary_key"`
+	Username      string `json:"username"`
+	FirstName     string `json:"first_name"`
+	LastName      string `json:"last_name"`
+	DisplayName   string `json:"display_name"`
+	Email         string `json:"email"`
+	Password      string `json:"password"`
+	UsedOAuth     bool   `json:"used_oauth"`
+	OAuthProvider string `json:"oauth_provider"`
+	OAuthState    string `json:"oauth_state"`
+	UserToken     string `json:"user_token"`
 }
+
+func (user ImagineUser) TableName() string { return "users" }
+
+type ImagineAPIKeyData struct {
+	gorm.Model
+	ID              string `json:"id" gorm:"primary_key"`
+	APIKeyHashed    string `json:"api_key_hashed"`
+	ApplicationID   string `json:"application_id"`
+	ApplicationName string `json:"application_name"`
+}
+
+func (a ImagineAPIKeyData) TableName() string { return "auth" }
 
 func (server ImagineAuthServer) Launch(router *chi.Mux) {
 	// Setup logger
@@ -90,9 +97,11 @@ func (server ImagineAuthServer) Launch(router *chi.Mux) {
 	}))
 
 	// Setup general middleware
+	// router.Use(libhttp.AuthTokenMiddleware)
 	router.Use(middleware.AllowContentEncoding("deflate", "gzip"))
 	router.Use(middleware.RequestID)
 	router.Use(cors.Handler(cors.Options{
+		// TODO: Replace with config addresses instead of the hardcoded values
 		AllowedOrigins:   []string{"https://localhost:7777", "http://localhost:7777"},
 		AllowedMethods:   []string{"GET", "POST", "PUT", "OPTIONS"},
 		AllowedHeaders:   []string{"Accept", "Authorization", "Content-Type", "X-CSRF-Token", "set-cookie"},
@@ -100,37 +109,38 @@ func (server ImagineAuthServer) Launch(router *chi.Mux) {
 	}))
 
 	// Set up auth
-	jwtSecret := os.Getenv("JWT_SECRET")
-	jwtSecretBytes := []byte(jwtSecret)
+	jwtSecret := []byte(os.Getenv("JWT_SECRET"))
 
-	// Setup DB
-	mongoCtx, cancelMongo := context.WithTimeout(context.Background(), time.Second*60)
-	defer cancelMongo()
-
+	// Setup DB (lmao I promise this wasn't AI)
 	var database = &db.DB{
-		Address:        "localhost",
-		Port:           27017,
-		User:           os.Getenv("MONGO_USER"),
-		Password:       os.Getenv("MONGO_PASSWORD"),
-		AppName:        utils.AppName,
-		DatabaseName:   "imagine-dev",
-		CollectionName: "api",
-		Context:        mongoCtx,
-		Logger:         logger,
+		Address:      "localhost",
+		Port:         5432,
+		User:         os.Getenv("DB_USER"),
+		Password:     os.Getenv("DB_PASSWORD"),
+		AppName:      utils.AppName,
+		DatabaseName: "imagine-dev",
+		Logger:       logger,
 	}
 
-	client, mongoErr := database.Connect()
+	client, dbError := database.Connect()
+	if dbError != nil {
+		logger.Error("error connecting to postgres", slog.Any("error", dbError))
+		panic("")
+	}
+
 	defer func() {
 		err := database.Disconnect(client)
 		if err != nil {
-			logger.Error("error disconnecting from mongodb", slog.Any("error", err))
+			logger.Error("error disconnecting from postgres", slog.Any("error", err))
 		}
 
-		logger.Info("Disconnected from MongoDB")
+		logger.Info("Disconnected from Postgres")
 	}()
 
-	if mongoErr != nil {
-		logger.Error("error connecting to mongodb", slog.Any("error", mongoErr))
+	logger.Info("Running auto-migration for auth server")
+	dbError = client.AutoMigrate(&ImagineUser{}, &ImagineAPIKeyData{})
+	if dbError != nil {
+		logger.Error("error running auto-migration for auth server", slog.Any("error", dbError))
 		panic("")
 	}
 
@@ -147,28 +157,30 @@ func (server ImagineAuthServer) Launch(router *chi.Mux) {
 				"error generating api key",
 				"There was an error generating your API key",
 			)
-
 			return
 		}
 
 		consumerKey := keys["consumer_key"]
-		generatedAt := carbon.Now()
-
-		apiDataDocument, err := db.ToBSONDocument(
-			&ImagineAPIData{
-				APIKeyHashed: keys["hashed_key"],
-				GeneratedAt:  generatedAt.StdTime(),
-			},
-		)
+		apiKeyId, err := gonanoid.New(32)
 		if err != nil {
-			libhttp.ServerError(res, req, err, logger, nil, "error marshaling api key to BSON into database", "Something went wrong on our side, please try again later")
+			libhttp.ServerError(res, req, err, logger, nil,
+				"error generating id for api key",
+				"There was an error generating your API key",
+			)
 			return
 		}
 
-		_, err = database.Insert(apiDataDocument)
-		if err != nil {
-			// Return the key
-			libhttp.ServerError(res, req, err, logger, nil, "error inserting api key into database", "Something went wrong on our side, please try again later")
+		apiDataDocument := &ImagineAPIKeyData{
+			ID:           apiKeyId,
+			APIKeyHashed: keys["hashed_key"],
+		}
+
+		tx := client.Create(apiDataDocument)
+		if tx.Error != nil {
+			if (tx.Error == gorm.ErrDuplicatedKey) || (tx.Error == gorm.ErrInvalidData) {
+				// Return the key
+				libhttp.ServerError(res, req, err, logger, nil, "error inserting api key into database", "Something went wrong on our side, please try again later")
+			}
 			return
 		}
 
@@ -185,7 +197,7 @@ func (server ImagineAuthServer) Launch(router *chi.Mux) {
 		if len(authTokenCookie) > 0 {
 			authTokenVal := authTokenCookie[0].Value
 			authToken, err := jwt.Parse(authTokenVal, func(token *jwt.Token) (interface{}, error) {
-				return jwtSecretBytes, nil
+				return jwtSecret, nil
 			})
 
 			switch {
@@ -249,8 +261,7 @@ func (server ImagineAuthServer) Launch(router *chi.Mux) {
 			}
 		}
 
-		// idk just seems better to use 48
-		state, err := gonanoid.New(48)
+		state, err := gonanoid.New(32)
 		if err != nil {
 			libhttp.ServerError(res, req, err, logger, nil,
 				"error generating oauth state",
@@ -334,18 +345,20 @@ func (server ImagineAuthServer) Launch(router *chi.Mux) {
 
 		expiryTime := carbon.Now().AddYear().StdTime()
 
+		// TODO: Generate a refresh token as well
+		// Note: did I just reimplement oauth lmao????
 		// Create a new JWT token with claims
 		claims := jwt.NewWithClaims(jwt.SigningMethodHS256, jwt.MapClaims{
 			// This probably bad and maybe we should generate an ID here instead
-			"sub": userEmail, // Subject (user identifier)
-			"aud": "viz",
+			"sub": userEmail,         // Subject (user identifier)
+			"aud": "viz",             // TODO: change this to the actual audience/browser/server URL idk
 			"iss": serverKey,         // Issuer
 			"iat": time.Now().Unix(), // Issued at
 			"exp": expiryTime,        // Expiration time
 			"fgp": hashString,        // Fingerprint
 		})
 
-		tokenString, err := claims.SignedString(jwtSecretBytes)
+		tokenString, err := claims.SignedString(jwtSecret)
 		if err != nil {
 			libhttp.ServerError(res, req, err, logger, nil,
 				"Failed to sign JWT token",
@@ -417,29 +430,20 @@ func (server ImagineAuthServer) Launch(router *chi.Mux) {
 			ID:            userId,
 			Email:         email,
 			Username:      name,
-			CreatedAt:     carbon.Now().String(),
 			UsedOAuth:     usedOAuth,
 			OAuthState:    oauthState.Value,
 			OAuthProvider: oauthRedirect,
 		}
 
-		userDocument, err := db.ToBSONDocument(userStruct)
-		if err != nil {
-			libhttp.ServerError(res, req, err, logger, nil,
-				"error marshalling user document",
-				"Error creating your account, please try again later",
-			)
-		}
-
-		_, err = database.Insert(userDocument)
-		if err != nil {
+		tx := client.Create(userStruct)
+		if tx.Error != nil {
 			libhttp.ServerError(res, req, err, logger, nil,
 				"err creating user account on database",
 				"Error creating your account, please try again later",
 			)
 		}
 
-		time.Sleep(2000)
+		// time.Sleep(2000)
 		if continueUrl != "" {
 			continueUrl = "/"
 		}

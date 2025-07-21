@@ -8,202 +8,97 @@ import (
 	"time"
 
 	_ "github.com/joho/godotenv/autoload"
-	"go.mongodb.org/mongo-driver/v2/bson"
-	"go.mongodb.org/mongo-driver/v2/mongo"
-	"go.mongodb.org/mongo-driver/v2/mongo/options"
+	"gorm.io/driver/postgres"
+	"gorm.io/gorm"
 
 	imaglog "imagine/log"
 	"imagine/utils"
 )
 
-func (db *DB) Connect() (*mongo.Client, error) {
+func (db *DB) Connect() (*gorm.DB, error) {
 	if db.Logger == nil {
-		db.Logger = SetupMongoLogger()
+		db.Logger = SetupDatabaseLogger()
 	}
 
 	logger := db.Logger
+	logger.Info("Connecting to Postgres...")
 
-	host := fmt.Sprintf("%s:%d", db.Address, db.Port)
-	logger.Info("Connecting to MongoDB...")
-
-	clientOpts := options.ClientOptions{
-		AppName: &db.AppName,
-		Auth: &options.Credential{
-			Username:   db.User,
-			Password:   db.Password,
-			AuthSource: "admin",
-		},
-		Hosts: []string{host},
-	}
-
-	client, err := mongo.Connect(&clientOpts)
+	dsn := fmt.Sprintf("host=%s user=%s password=%s dbname=%s port=%d sslmode=disable", db.Address, db.User, db.Password, db.DatabaseName, db.Port)
+	client, err := gorm.Open(postgres.Open(dsn), &gorm.Config{})
 	if err != nil {
 		return client, err
 	}
 
-	err = client.Ping(db.Context, nil)
-	if err != nil {
-		return client, fmt.Errorf("error pinging mongo: %w", err)
-	}
-
-	if db.DatabaseName != "" {
-		client.Database(db.DatabaseName)
-		dbOptions := options.Database().SetBSONOptions(&options.BSONOptions{
-			// Useless bc it doesn't do the underscore properly so it's whatever
-			// Maybe it'll magically start working one day
-			UseJSONStructTags: true,
-		})
-
-		db.Database = client.Database(db.DatabaseName, dbOptions)
-	} else {
-		logger.Warn("No database name provided, consider providing a database name or use the SetDatabase() method to avoid errors")
-	}
-
-	if db.CollectionName != "" {
-		db.Collection = db.Database.Collection(db.CollectionName)
-	} else {
-		logger.Warn("No collection name provided, consider providing a collection name or use the SetCollection() method to avoid errors")
-	}
-
-	logger.Info("Successfully connected to MongoDB", slog.Group("connection",
+	logger.Info("Successfully connected to PostgresSQL", slog.Group("connection",
 		slog.String("address", db.Address),
 		slog.Int("port", db.Port),
 		slog.String("database", db.DatabaseName),
-		slog.String("collection", db.CollectionName),
+		slog.String("table", db.TableNameString),
 	))
+
+	if db.TableNameString != "" {
+		db.Table = client.Table(db.TableNameString)
+	} else {
+		logger.Warn("No table name provided, consider providing a table name or use the SetTable() method to avoid errors")
+	}
 
 	// Set the client to the `Client` field on the receiver to be used else where
 	db.Client = client
 	return client, nil
 }
 
-func (db *DB) SetCollection(collectionName string, opts *options.CollectionOptions) *mongo.Collection {
-	db.CollectionName = collectionName
-	options := options.Collection().
-		SetBSONOptions(opts.BSONOptions)
-
-	db.Collection = db.Database.Collection(collectionName, options)
-	return db.Collection
+func (db *DB) TableName() string {
+	return db.TableNameString
 }
 
-func (db *DB) SetDatabase(databaseName string, opts *options.DatabaseOptions) *mongo.Database {
-	db.DatabaseName = databaseName
-	options := options.Database().
-		SetBSONOptions(opts.BSONOptions)
+func (db *DB) SetTable(tableName string) *gorm.DB {
+	db.TableNameString = tableName
 
-	db.Database = db.Client.Database(databaseName, options)
-	return db.Database
+	db.Table = db.Client.Table(db.TableNameString)
+	return db.Table
 }
 
-func (db *DB) Disconnect(client *mongo.Client) error {
-	err := client.Disconnect(db.Context)
+func (db *DB) Disconnect(client *gorm.DB) error {
+	sqlDB, err := client.DB()
 	if err != nil {
-		return err
+		return fmt.Errorf("failed to return sql.DB: %v", err)
 	}
-	return nil
+
+	return sqlDB.Close()
 }
 
-func (db *DB) Delete(document bson.D) (*mongo.DeleteResult, error) {
-	result, err := db.Database.Collection(db.CollectionName).DeleteOne(db.Context, document)
-	if err != nil {
-		return nil, err
+func (db *DB) Delete(value interface{}, conds ...interface{}) (*gorm.DB, error) {
+	result := db.Client.Delete(value, conds...)
+
+	if result.Error != nil {
+		return result, fmt.Errorf("failed to delete document: %v", result.Error)
 	}
 
 	return result, nil
 }
 
-func (db *DB) Exists(filter bson.D) (bool, error) {
-	err := db.Database.Collection(db.CollectionName).FindOne(db.Context, filter).Err()
-	if err != nil {
-		if err == mongo.ErrNoDocuments {
+func (db *DB) Exists(dest interface{}, conds ...interface{}) (bool, error) {
+	result := db.Client.Take(dest, conds...)
+
+	if result.Error != nil {
+		if result.Error == gorm.ErrRecordNotFound {
 			return false, nil
 		}
-		return false, err
+
+		return false, fmt.Errorf("failed to get document: %v", result.Error)
 	}
+
 	return true, nil
 }
 
-func (db *DB) Find(filter bson.D, result any) (*mongo.Cursor, error) {
-	cursor, err := db.Database.Collection(db.CollectionName).Find(db.Context, filter)
-	if err != nil {
-		return nil, err
-	}
-
-	defer cursor.Close(db.Context)
-	cursorErr := cursor.All(db.Context, result)
-	if cursorErr != nil {
-		return nil, cursorErr
-	}
-
-	return cursor, nil
-}
-
-func (db *DB) FindOne(filter bson.D, result any) error {
-	err := db.Database.Collection(db.CollectionName).FindOne(db.Context, filter).Decode(result)
-	if err != nil {
-		return err
-	}
-	return nil
-}
-
-func (db DB) Insert(document bson.D) (*mongo.InsertOneResult, error) {
-	result, err := db.Database.Collection(db.CollectionName).InsertOne(db.Context, document)
-	if err != nil {
-		return nil, err
-	}
-	return result, nil
-}
-
-func (db *DB) Update(filter bson.D, document bson.D) (*mongo.UpdateResult, error) {
-	result, err := db.Database.Collection(db.CollectionName).UpdateOne(db.Context, filter, document)
-	if err != nil {
-		return nil, err
-	}
-	return result, nil
-}
-
-func (db *DB) UpdateMany(filter bson.D, documents []bson.D) (*mongo.UpdateResult, error) {
-	result, err := db.Database.Collection(db.CollectionName).UpdateMany(db.Context, filter, documents)
-	if err != nil {
-		return nil, err
-	}
-	return result, nil
-}
-
-func (db *DB) DeleteMany(documents []bson.D) (*mongo.DeleteResult, error) {
-	result, err := db.Database.Collection(db.CollectionName).DeleteMany(db.Context, documents)
-	if err != nil {
-		return nil, err
-	}
-	return result, nil
-}
-
-func (db *DB) InsertMany(documents []bson.D) (*mongo.InsertManyResult, error) {
-	result, err := db.Database.Collection(db.CollectionName).InsertMany(db.Context, documents)
-	if err != nil {
-		return nil, err
-	}
-	return result, nil
-}
-
-func (db *DB) ReplaceOne(filter bson.D, replacement bson.D) (*mongo.UpdateResult, error) {
-	result, err := db.Database.Collection(db.CollectionName).ReplaceOne(db.Context, filter, replacement)
-
-	if err != nil {
-		return nil, err
-	}
-
-	return result, nil
-}
-
-func SetupMongoLogger() *slog.Logger {
+func SetupDatabaseLogger() *slog.Logger {
 	httpLogFileDefaults := imaglog.LogFileDefaults
 	logLevel := imaglog.DefaultLogLevel
 
 	// Setup file logger
 	logFileWriter := imaglog.FileLog{
-		Directory: httpLogFileDefaults.Directory + "/mongo",
-		Filename:  fmt.Sprintf("%s-%s", httpLogFileDefaults.Filename, "mongodb"),
+		Directory: httpLogFileDefaults.Directory + "/postgres",
+		Filename:  fmt.Sprintf("%s-%s", httpLogFileDefaults.Filename, "postgresdb"),
 	}
 
 	fileHandler := imaglog.NewFileLogger(&imaglog.ImalogHandlerOptions{
@@ -232,15 +127,15 @@ func Initis() error {
 	mongoCtx, cancelMongo := context.WithTimeout(context.Background(), 60*time.Second)
 	defer cancelMongo()
 
-	var db DBClient = &DB{
-		Address:        "localhost",
-		Port:           27017,
-		User:           os.Getenv("MONGO_USER"),
-		Password:       os.Getenv("MONGO_PASSWORD"),
-		AppName:        utils.AppName,
-		DatabaseName:   "imagine-dev",
-		CollectionName: "images",
-		Context:        mongoCtx,
+	var db = &DB{
+		Address:         "localhost",
+		Port:            27017,
+		User:            os.Getenv("MONGO_USER"),
+		Password:        os.Getenv("MONGO_PASSWORD"),
+		AppName:         utils.AppName,
+		DatabaseName:    "imagine-dev",
+		TableNameString: "images",
+		Context:         mongoCtx,
 	}
 
 	client, err := db.Connect()
