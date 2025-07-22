@@ -3,7 +3,7 @@ import SomeContent from "$lib/components/panels/workspace/generic/SomeContent.sv
 import EvenMoreDifferent from "$lib/components/panels/workspace/generic/EvenMoreDifferent.svelte";
 import DevWelcomeText from "$lib/components/DevWelcomeText.svelte";
 import VizView from "$lib/views/views.svelte";
-import Collections from "../../routes/collections/+page.svelte";
+import Collections from "../../routes/(app)/collections/+page.svelte";
 import type { Collection } from "$lib/types/images";
 
 // Only one instance of a view/panel and its component

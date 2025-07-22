@@ -1,6 +1,4 @@
 <script lang="ts">
-	import DevWelcomeText from "$lib/components/DevWelcomeText.svelte";
-	import LoginButtons from "$lib/components/LoginButtons.svelte";
 	import VizPanel from "$lib/components/panels/VizPanel.svelte";
 	import { login } from "$lib/states/index.svelte";
 	import { onMount } from "svelte";
@@ -26,12 +24,7 @@
 
 <main id="main" style="height: calc(100% - {mainHeaderHeight + 2}px);">
 	<div class="viz-content-container" bind:this={vizContentContainer}>
-		{#if !loginState}
-			<DevWelcomeText />
-			<LoginButtons />
-		{:else}
-			<VizPanel id="viz-content" />
-		{/if}
+		<VizPanel id="viz-content" />
 	</div>
 </main>
 

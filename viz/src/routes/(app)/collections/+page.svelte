@@ -98,12 +98,14 @@
 	</div>
 	<div id="viz-card-container" style="padding: 0em {page.url.pathname === '/' ? '1em' : '3em'};">
 		{#each collectionsData as collection}
-			<CollectionCard {collection} />
+			<CollectionCard style={page.url.pathname === "/" ? "font-size: 0.9rem;" : ""} {collection} />
 		{/each}
 	</div>
 </VizViewContainer>
 
 <style lang="scss">
+	@use "sass:color";
+
 	#viz-collections-toolbar {
 		font-size: 1em;
 		width: 100%;
@@ -116,7 +118,7 @@
 		position: sticky;
 		top: 0;
 		z-index: 1;
-		background-color: change-color($color: #0f1726, $alpha: 0.95);
+		background-color: color.change($color: #0f1726, $alpha: 0.95);
 		backdrop-filter: blur(5px);
 		border-bottom: 1px solid var(--imag-60);
 
@@ -234,5 +236,9 @@
 		text-overflow: clip;
 		justify-content: center;
 		grid-template-columns: repeat(auto-fit, minmax(15em, 1fr));
+
+		& :global(.metadata) {
+			font-size: 0.9rem;
+		}
 	}
 </style>

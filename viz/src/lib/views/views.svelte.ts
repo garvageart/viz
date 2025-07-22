@@ -1,5 +1,5 @@
 import type { Component } from "svelte";
-import type { PageProps } from "../../routes/$types";
+import type { PageProps } from "../../routes/(app)/$types";
 import { preloadData } from "$app/navigation";
 
 // usually this would be bad but the app is client only

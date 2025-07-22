@@ -5,17 +5,18 @@
 	import { addViewToContent } from "$lib/utils/layout";
 	import VizView from "$lib/views/views.svelte";
 	import { DateTime } from "luxon";
-	import CollectionPage from "../../routes/collections/[id]/+page.svelte";
+	import CollectionPage from "../../routes/(app)/collections/[id]/+page.svelte";
 	import { getContext } from "svelte";
 	import { Content } from "$lib/layouts/subpanel.svelte";
 	import { layoutState } from "$lib/third-party/svelte-splitpanes/state.svelte";
 	import { findPanelIndex, getSubPanelParent } from "$lib/views/utils";
+	import type { SvelteHTMLElements } from "svelte/elements";
 
 	interface Props {
 		collection: CollectionData;
 	}
 
-	let { collection }: Props = $props();
+	let { collection, ...props }: Props & SvelteHTMLElements["button"] = $props();
 
 	const currentContent = getContext<Content>("content");
 	function openCollection() {
@@ -51,7 +52,7 @@
 	}
 </script>
 
-<button type="button" class="coll-card" onclick={() => openCollection()} data-collection-id={collection.id}>
+<button {...props} type="button" class="coll-card" onclick={() => openCollection()} data-collection-id={collection.id}>
 	<div class="image-container">
 		<img src={collection.thumbnail?.urls.thumbnail} alt={collection.name} class="collection-image" />
 	</div>
@@ -105,6 +106,7 @@
 	.image-container {
 		height: 13em;
 		background-color: var(--imag-60);
+		pointer-events: none;
 	}
 
 	.collection-image {

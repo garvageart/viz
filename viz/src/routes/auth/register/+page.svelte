@@ -9,5 +9,6 @@
 	}
 </script>
 
-<a href="/"> Home </a>
-<h1>Finish Imagine account setup</h1>
+<main>
+	<h1>Register</h1>
+</main>
