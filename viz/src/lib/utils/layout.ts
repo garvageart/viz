@@ -1,6 +1,7 @@
 import type { Content, VizSubPanel } from "$lib/components/panels/SubPanel.svelte";
 import VizSubPanelData from "$lib/layouts/subpanel.svelte";
 import { layoutState } from "$lib/third-party/svelte-splitpanes/state.svelte";
+import type { TabData } from "$lib/views/tabs.svelte";
 import type VizView from "$lib/views/views.svelte";
 import { generateRandomString } from "./misc";
 
@@ -77,4 +78,15 @@ export function findSubPanel(key: keyof VizSubPanelData, value: VizSubPanelData[
 
 export function addViewToContent(view: VizView, parentIndex: number, contentIndex: number) {
     layoutState.tree[parentIndex].childs.content[contentIndex].views.push(view);
+}
+
+export function removeViewFromContent(view: VizView, parentIndex: number, contentIndex: number) {
+    layoutState.tree[parentIndex].childs.content[contentIndex].views = layoutState.tree[parentIndex].childs.content[contentIndex].views.filter((v) => v !== view);
+}
+
+export function isTabData(obj: any): obj is TabData {
+    const objKeys = Object.keys(obj);
+    const hasValidAttrs = objKeys.includes("view") && objKeys.includes("index");
+    return obj !== null && typeof obj === 'object' && hasValidAttrs;
+
 }
