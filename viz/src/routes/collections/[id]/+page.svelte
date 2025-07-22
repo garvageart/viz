@@ -1,6 +1,5 @@
 <script lang="ts">
 	import { page } from "$app/state";
-	import Button from "$lib/components/Button.svelte";
 	import Lightbox from "$lib/components/Lightbox.svelte";
 	import LoadingContainer from "$lib/components/LoadingContainer.svelte";
 	import MaterialIcon from "$lib/components/MaterialIcon.svelte";
@@ -11,18 +10,19 @@
 	import { SvelteSet } from "svelte/reactivity";
 	import type { PageData } from "./$types.js";
 	import hotkeys from "hotkeys-js";
-	import { buildGridArray } from "$lib/utils/dom.js";
+	import { blurOnEsc, buildGridArray } from "$lib/utils/dom.js";
 	import { dev } from "$app/environment";
-	import { onDestroy } from "svelte";
-
+	
 	let { data = $bindable(page.data as PageData) } = $props();
 
 	// Types
 	type ImageGridArray = {
 		image: IImageObjectData;
 		row: number;
+		rowSize: number;
 		column: number;
 		columnSize: number;
+		size: number;
 	}[][];
 
 	// Keyboard events
@@ -174,7 +174,9 @@
 					image,
 					row: j.row,
 					column: j.column,
-					columnSize: j.columnSize
+					columnSize: j.columnSize,
+					size: j.size,
+					rowSize: j.rowSize
 				};
 			});
 		});
@@ -281,6 +283,7 @@
 			title={loadedData.name}
 			value={loadedData.name}
 			oninput={(e) => (loadedData.name = e.currentTarget.value)}
+			onkeydown={blurOnEsc}
 		/>
 		<span id="coll-details-floating"
 			>{DateTime.fromJSDate(loadedData.created_on).toFormat("dd.MM.yyyy")} - {loadedData.image_count}
@@ -317,6 +320,7 @@
 			placeholder="Add a title"
 			value={loadedData.name}
 			oninput={(e) => (loadedData.name = e.currentTarget.value)}
+			onkeydown={blurOnEsc}
 		/>
 		<textarea
 			name="description"
@@ -328,12 +332,14 @@
 			oninput={(e) => {
 				loadedData.description = e.currentTarget.value;
 			}}
+			onkeydown={blurOnEsc}
 		></textarea>
 	</div>
 	<div
 		bind:this={imagesGridEl}
 		class="images-grid"
 		style="padding: 0em {page.url.pathname === '/' ? '1em' : '2em'};"
+		data-collection-id={loadedData.id}
 		use:unselectImagesOnClickOutsideGrid
 	>
 		{#each imagesData as image, i}
@@ -544,6 +550,7 @@
 		height: auto;
 		object-fit: contain;
 		display: block;
+		pointer-events: none; // prevent clicks on image (right clicking should show the to be made context menu)
 	}
 
 	.image-card-meta {
