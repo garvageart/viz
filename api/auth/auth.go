@@ -4,7 +4,6 @@ import (
 	"crypto/sha256"
 	"encoding/base64"
 	"encoding/hex"
-	"encoding/json"
 	"errors"
 	"fmt"
 	"log/slog"
@@ -24,14 +23,15 @@ import (
 	_ "github.com/joho/godotenv/autoload"
 	"gorm.io/gorm"
 
-	"github.com/google/uuid"
 	gonanoid "github.com/matoous/go-nanoid/v2"
 	"golang.org/x/oauth2"
 
 	"imagine/common/auth"
 	oauth "imagine/common/auth/oauth"
 	"imagine/common/crypto"
+	"imagine/common/entities"
 	libhttp "imagine/common/http"
+	"imagine/common/uid"
 	"imagine/db"
 	imalog "imagine/log"
 	"imagine/utils"
@@ -56,24 +56,18 @@ type ImagineAuthPasswordFlow struct {
 	State string
 }
 
-type Tabler interface {
-	TableName() string
-}
-
 type ImagineUser struct {
 	gorm.Model
-	UUID          string `json:"uuid"`
-	ID            string `json:"id" gorm:"primary_key"`
-	Username      string `json:"username"`
-	FirstName     string `json:"first_name"`
-	LastName      string `json:"last_name"`
-	DisplayName   string `json:"display_name"`
-	Email         string `json:"email"`
-	Password      string `json:"password"`
-	UsedOAuth     bool   `json:"used_oauth"`
-	OAuthProvider string `json:"oauth_provider"`
-	OAuthState    string `json:"oauth_state"`
-	UserToken     string `json:"user_token"`
+	UID           string  `json:"uid"`
+	FirstName     *string `json:"first_name"`
+	LastName      *string `json:"last_name"`
+	Name          string  `json:"name"`
+	Email         string  `json:"email"`
+	Password      string  `json:"password"`
+	UsedOAuth     *bool   `json:"used_oauth"`
+	OAuthProvider *string `json:"oauth_provider"`
+	OAuthState    *string `json:"oauth_state"`
+	UserToken     *string `json:"user_token"`
 }
 
 func (user ImagineUser) TableName() string { return "users" }
@@ -88,6 +82,7 @@ type ImagineAPIKeyData struct {
 
 func (a ImagineAPIKeyData) TableName() string { return "auth" }
 
+// TODO: Migrate to central API file/route
 func (server ImagineAuthServer) Launch(router *chi.Mux) {
 	// Setup logger
 	logger := server.Logger
@@ -97,7 +92,7 @@ func (server ImagineAuthServer) Launch(router *chi.Mux) {
 	}))
 
 	// Setup general middleware
-	// router.Use(libhttp.AuthTokenMiddleware)
+	router.Use(libhttp.AuthedMiddleware)
 	router.Use(middleware.AllowContentEncoding("deflate", "gzip"))
 	router.Use(middleware.RequestID)
 	router.Use(cors.Handler(cors.Options{
@@ -112,21 +107,8 @@ func (server ImagineAuthServer) Launch(router *chi.Mux) {
 	jwtSecret := []byte(os.Getenv("JWT_SECRET"))
 
 	// Setup DB (lmao I promise this wasn't AI)
-	var database = &db.DB{
-		Address:      "localhost",
-		Port:         5432,
-		User:         os.Getenv("DB_USER"),
-		Password:     os.Getenv("DB_PASSWORD"),
-		AppName:      utils.AppName,
-		DatabaseName: "imagine-dev",
-		Logger:       logger,
-	}
-
-	client, dbError := database.Connect()
-	if dbError != nil {
-		logger.Error("error connecting to postgres", slog.Any("error", dbError))
-		panic("")
-	}
+	database := server.Database
+	client := database.Client
 
 	defer func() {
 		err := database.Disconnect(client)
@@ -136,13 +118,6 @@ func (server ImagineAuthServer) Launch(router *chi.Mux) {
 
 		logger.Info("Disconnected from Postgres")
 	}()
-
-	logger.Info("Running auto-migration for auth server")
-	dbError = client.AutoMigrate(&ImagineUser{}, &ImagineAPIKeyData{})
-	if dbError != nil {
-		logger.Error("error running auto-migration for auth server", slog.Any("error", dbError))
-		panic("")
-	}
 
 	router.Get("/ping", func(res http.ResponseWriter, req *http.Request) {
 		jsonResponse := map[string]any{"message": "You have been PONGED by the auth server. What do you want here? 🤨"}
@@ -161,7 +136,7 @@ func (server ImagineAuthServer) Launch(router *chi.Mux) {
 		}
 
 		consumerKey := keys["consumer_key"]
-		apiKeyId, err := gonanoid.New(32)
+		apiKeyId, err := uid.Generate()
 		if err != nil {
 			libhttp.ServerError(res, req, err, logger, nil,
 				"error generating id for api key",
@@ -198,7 +173,7 @@ func (server ImagineAuthServer) Launch(router *chi.Mux) {
 			authTokenVal := authTokenCookie[0].Value
 			authToken, err := jwt.Parse(authTokenVal, func(token *jwt.Token) (interface{}, error) {
 				return jwtSecret, nil
-			})
+			}, jwt.WithValidMethods([]string{jwt.SigningMethodHS256.Alg()}))
 
 			switch {
 			case authToken.Valid:
@@ -229,11 +204,33 @@ func (server ImagineAuthServer) Launch(router *chi.Mux) {
 				http.Redirect(res, req, "localhost:7777/", http.StatusTemporaryRedirect)
 				render.JSON(res, req, jsonResponse)
 				return
+			case errors.Is(err, jwt.ErrTokenNotValidYet):
+				logger.Info("token not valid yet", slog.String("request_id", libhttp.GetRequestID(req)))
+				jsonResponse := map[string]any{"error": "token not valid yet"}
+
+				res.WriteHeader(http.StatusBadRequest)
+				render.JSON(res, req, jsonResponse)
+				return
+			case errors.Is(err, jwt.ErrTokenExpired):
+				logger.Info("token expired", slog.String("request_id", libhttp.GetRequestID(req)))
+				jsonResponse := map[string]any{"error": "token expired"}
+
+				res.WriteHeader(http.StatusForbidden)
+				render.JSON(res, req, jsonResponse)
+				return
+			case errors.Is(err, jwt.ErrTokenInvalidClaims):
+				logger.Info("token invalid claims", slog.String("request_id", libhttp.GetRequestID(req)))
+				jsonResponse := map[string]any{"error": "token invalid claims"}
+
+				res.WriteHeader(http.StatusBadRequest)
+				render.JSON(res, req, jsonResponse)
+				return
 			default:
 				libhttp.ServerError(res, req, err, logger, nil,
-					"couldn't handle token error",
+					"",
 					"Something went wrong on our side, please try again later",
 				)
+				return
 			}
 		}
 
@@ -367,21 +364,15 @@ func (server ImagineAuthServer) Launch(router *chi.Mux) {
 			return
 		}
 
-		jsonBytes, err := json.Marshal(actualUserData)
-		if err != nil {
-			libhttp.ServerError(res, req, err, logger, nil, "Failed to marshal user data to JSON", "Could not process your login information.")
-			return
-		}
-
 		// at this point, the state has been validated to be correct
 		// and unmodified to use that
 		http.SetCookie(res, &http.Cookie{
 			Name:     "imag-state",
 			Value:    state,
-			Expires:  carbon.Now().AddYear().StdTime(),
+			Expires:  expiryTime,
 			Path:     "/",
 			Secure:   true,
-			SameSite: http.SameSiteNoneMode,
+			SameSite: http.SameSiteNoneMode, //FIXME: this needs to change to same site
 		})
 
 		// delete the temporary redirect state from the browser
@@ -400,57 +391,55 @@ func (server ImagineAuthServer) Launch(router *chi.Mux) {
 			HttpOnly: true,
 			Path:     "/",
 			Secure:   true,
-			SameSite: http.SameSiteNoneMode,
+			SameSite: http.SameSiteNoneMode, //FIXME: this needs to change to same site
 		})
 
 		logger.Info("User logged in with OAuth", slog.String("provider", provider))
-		render.JSON(res, req, jsonBytes)
+		render.JSON(res, req, actualUserData)
 	})
 
-	router.Put("/user/create", func(res http.ResponseWriter, req *http.Request) {
-		oauthRedirect := req.FormValue("oauth_redirect")
-		continueUrl := req.FormValue("continue")
-		oauthState := req.CookiesNamed("imag-state")[0]
-		email := req.FormValue("email")
-		name := req.FormValue("name")
-		userUUID := uuid.New()
-		userIdBytes, err := userUUID.MarshalBinary()
-		usedOAuth := oauthRedirect != ""
+	router.Post("/user", func(res http.ResponseWriter, req *http.Request) {
+		var createdUser entities.User
 
+		err := render.DecodeJSON(req.Body, &createdUser)
+		if err != nil {
+			res.WriteHeader(http.StatusBadRequest)
+			render.JSON(res, req, map[string]string{"error": "invalid request body"})
+			return
+		}
+
+		if createdUser.Name == "" || createdUser.Password == "" || createdUser.Email == "" {
+			res.WriteHeader(http.StatusBadRequest)
+			render.JSON(res, req, map[string]string{"error": "required fields are missing"})
+			return
+		}
+
+		createdUser.UID, err = uid.Generate()
 		if err != nil {
 			libhttp.ServerError(res, req, err, logger, nil,
-				"error marshaling uuid for user id",
-				"Error creating your account, please try again later",
+				"Failed to generate user ID",
+				"Something went wrong, please try again later",
 			)
 		}
 
-		userId := hex.EncodeToString(userIdBytes)
-		userStruct := &ImagineUser{
-			UUID:          userUUID.String(),
-			ID:            userId,
-			Email:         email,
-			Username:      name,
-			UsedOAuth:     usedOAuth,
-			OAuthState:    oauthState.Value,
-			OAuthProvider: oauthRedirect,
-		}
+		//todo: fix this mess. get a string from the salt and hash seperately
+		argon := crypto.CreateArgon2Hash(3, 32, 2, 32, 16)
+		hashedPass := argon.Hash([]byte(createdUser.Password), argon.GenerateSalt())
+		createdUser.Password = hex.EncodeToString(hashedPass)
 
-		tx := client.Create(userStruct)
-		if tx.Error != nil {
+		err = client.Create(&createdUser).Error
+		if err != nil {
 			libhttp.ServerError(res, req, err, logger, nil,
-				"err creating user account on database",
-				"Error creating your account, please try again later",
+				"Failed to create user",
+				"Something went wrong, please try again later",
 			)
+
+			return
 		}
 
-		// time.Sleep(2000)
-		if continueUrl != "" {
-			continueUrl = "/"
-		}
-
-		http.Redirect(res, req, continueUrl, http.StatusTemporaryRedirect)
+		res.WriteHeader(http.StatusCreated)
+		render.JSON(res, req, createdUser)
 	})
-
 	address := fmt.Sprintf("%s:%d", server.Host, server.Port)
 
 	go func() {
@@ -491,6 +480,18 @@ func main() {
 
 	server := ImagineAuthServer{ImagineServer: libhttp.ImagineServers[serverKey]}
 	server.ImagineServer.Logger = logger
+	server.Database = &db.DB{
+		Address:      "localhost",
+		Port:         5432,
+		User:         os.Getenv("DB_USER"),
+		Password:     os.Getenv("DB_PASSWORD"),
+		AppName:      utils.AppName,
+		DatabaseName: "imagine-dev",
+		Logger:       logger,
+	}
 
+	// Lmao I hate this
+	client := server.ConnectToDatabase(&ImagineUser{}, &ImagineAPIKeyData{})
+	server.ImagineServer.Database.Client = client
 	server.Launch(router)
 }
