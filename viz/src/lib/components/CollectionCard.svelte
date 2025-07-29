@@ -21,7 +21,6 @@
 	const currentContent = getContext<Content>("content");
 	function openCollection() {
 		if (page.url.pathname !== "/") {
-			goto(`/collections/${collection.id}`, { state: { from: page.url.pathname } });
 			return;
 		}
 
