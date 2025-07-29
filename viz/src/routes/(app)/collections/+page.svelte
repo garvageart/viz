@@ -98,7 +98,14 @@
 	</div>
 	<div id="viz-card-container" style="padding: 0em {page.url.pathname === '/' ? '1em' : '3em'};">
 		{#each collectionsData as collection}
-			<CollectionCard style={page.url.pathname === "/" ? "font-size: 0.9rem;" : ""} {collection} />
+			{#if page.url.pathname !== "/"}
+				<a data-sveltekit-preload-data class="collection-card-link" href="/collections/{collection.id}">
+					<CollectionCard style={page.url.pathname === "/" ? "font-size: 0.9rem;" : ""} {collection} />
+				</a>
+			{:else}
+				<CollectionCard style={page.url.pathname === "/" ? "font-size: 0.9rem;" : ""} {collection} />
+			{/if}
+			
 		{/each}
 	</div>
 </VizViewContainer>
