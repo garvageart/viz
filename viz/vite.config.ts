@@ -6,14 +6,19 @@ import { fileURLToPath } from 'url';
 import devtoolsJson from "vite-plugin-devtools-json";
 
 const file = fileURLToPath(new URL('package.json', import.meta.url));
-const json = fs.readFileSync(file, 'utf8');
-const pkg = JSON.parse(json);
+const pkg = JSON.parse(fs.readFileSync(file, 'utf8'));
+const config = JSON.parse(fs.readFileSync('../config/imagine.json', 'utf8'));
+const define = {
+	'__APP_VERSION__': JSON.stringify(pkg.version)
+};
+
+if (process.env.NODE_ENV !== 'production') {
+	(define as any).__servers = config.servers;
+}
 
 export default defineConfig({
 	plugins: [devtoolsJson(), sveltekit()],
-	define: {
-		'__APP_VERSION__': JSON.stringify(pkg.version),
-	},
+	define: define,
 	test: {
 		workspace: [
 			{
@@ -40,11 +45,11 @@ export default defineConfig({
 		],
 	},
 	server: {
-		port: 7777,
+		port: config.servers.viz.port,
 		cors: true
 	},
 	preview: {
-		port: 7777,
+		port: config.servers.viz.port,
 		cors: true
 	}
 });
