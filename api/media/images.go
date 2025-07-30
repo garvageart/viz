@@ -268,7 +268,7 @@ func ImagesRouter(db *gorm.DB, logger *slog.Logger) *chi.Mux {
 
 				fileLogger.Info("uploading image to storage", slog.String("path", value.(string)))
 
-				imageObject := imageBucket.Object(fmt.Sprintf("%s.%s", value, metadata.Format.FileExt()))
+				imageObject := imageBucket.Object(fmt.Sprintf("%s%s", value, metadata.Format.FileExt()))
 				objWriter := imageObject.NewWriter(ctx)
 				_, _ = objWriter.Write(imageData)
 
