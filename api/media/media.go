@@ -28,34 +28,6 @@ type ImagineMediaServer struct {
 	*libhttp.ImagineServer
 }
 
-// func (server ImagineMediaServer) setupImageRouter() *chi.Mux {
-// 	imageRouter := chi.NewRouter()
-
-// 	logger := server.Logger
-
-// 	gcsContext, gcsContextCancel := context.WithCancel(context.Background())
-// 	defer gcsContextCancel()
-
-// 	storageClient, err := gcp.SetupClient(gcsContext)
-// 	if err != nil {
-// 		panic("Failed to setup GCP Storage client" + err.Error())
-// 	}
-
-// 	imageRouter.Get("/download", func(res http.ResponseWriter, req *http.Request) {
-// 		res.WriteHeader(http.StatusNotImplemented)
-// 		res.Header().Add("Content-Type", "text/plain")
-// 		res.Write([]byte("not implemented"))
-// 	})
-
-// 	imageRouter.Get("/upload", func(res http.ResponseWriter, req *http.Request) {
-// 		res.WriteHeader(http.StatusNotImplemented)
-// 		res.Header().Add("Content-Type", "text/plain")
-// 		res.Write([]byte("not implemented"))
-// 	})
-
-// 	return imageRouter
-// }
-
 // TODO: This will be the main API server and therefore will have a lot of routes.
 // This file and directory will be renamed to "api" and the parent directory to "servers" :)
 // Split the different routes into their own files depending on what they server
@@ -63,29 +35,69 @@ type ImagineMediaServer struct {
 
 // TODO TODO: Create a `createServer/Router` function that returns a router
 // with common defaults for each server type
-
 func (server ImagineMediaServer) Launch(router *chi.Mux) {
-	// imageRouter := server.setupImageRouter()
 	logger := server.Logger
 
-	correctLogger := slog.NewLogLogger(logger.Handler(), slog.LevelDebug)
+	serverLogger := slog.NewLogLogger(logger.Handler(), slog.LevelDebug)
 
 	router.Use(middleware.RequestLogger(&middleware.DefaultLogFormatter{
-		Logger: correctLogger,
+		Logger: serverLogger,
 	}))
 
 	router.Use(middleware.AllowContentEncoding("deflate", "gzip"))
 	router.Use(middleware.RequestID)
 
-	libvips.Startup(nil)
+	database := server.Database
+	dbClient := database.Client
+
+	var libvipsLogLevel libvips.LogLevel = libvips.LogLevelInfo
+	if os.Getenv("LIBVIPS_LOG_LEVEL") != "" {
+		switch os.Getenv("LIBVIPS_LOG_LEVEL") {
+		case "critical":
+			libvipsLogLevel = libvips.LogLevelCritical
+		case "error":
+			libvipsLogLevel = libvips.LogLevelError
+		case "warning":
+			libvipsLogLevel = libvips.LogLevelWarning
+		case "message":
+			libvipsLogLevel = libvips.LogLevelMessage
+		case "info":
+			libvipsLogLevel = libvips.LogLevelInfo
+		case "debug":
+			libvipsLogLevel = libvips.LogLevelDebug
+		}
+	}
+
+	libvips.LoggingSettings(func(messageDomain string, messageLevel libvips.LogLevel, message string) {
+		switch messageLevel {
+		case libvips.LogLevelCritical:
+			logger.Error(fmt.Sprintf("%s: %s", messageDomain, message))
+		case libvips.LogLevelError:
+			logger.Error(fmt.Sprintf("%s: %s", messageDomain, message))
+		case libvips.LogLevelWarning:
+			logger.Warn(fmt.Sprintf("%s: %s", messageDomain, message))
+		case libvips.LogLevelMessage:
+			logger.Info(fmt.Sprintf("%s: %s", messageDomain, message))
+		case libvips.LogLevelInfo:
+			logger.Info(fmt.Sprintf("%s: %s", messageDomain, message))
+		case libvips.LogLevelDebug:
+			logger.Debug(fmt.Sprintf("%s: %s", messageDomain, message))
+		}
+	}, libvipsLogLevel)
+
+	// TODO: Migrate to https://github.com/cshum/vipsgen
+	libvips.Startup(&libvips.Config{
+		ConcurrencyLevel: 4,
+		MaxCacheFiles:    100,
+		MaxCacheMem:      500 * 1024 * 1024,
+		MaxCacheSize:     1000,
+		ReportLeaks:      true,
+	})
 	defer libvips.Shutdown()
 
-	database := server.Database
-	client := database.Client
-
 	// Mount image router to main router
-	router.Mount("/collections", CollectionsRouter(client, logger))
-	router.Mount("/images", ImagesRouter(client, logger))
+	router.Mount("/collections", CollectionsRouter(dbClient, logger))
+	router.Mount("/images", ImagesRouter(dbClient, logger))
 
 	router.Get("/ping", func(res http.ResponseWriter, req *http.Request) {
 		jsonResponse := map[string]any{"message": "pong"}
@@ -94,15 +106,24 @@ func (server ImagineMediaServer) Launch(router *chi.Mux) {
 
 	// TODO: only admin can do a healthcheck
 	router.Post("/healthcheck", func(res http.ResponseWriter, req *http.Request) {
-		result := client.Exec("SELECT 1")
+		result := dbClient.Exec("SELECT 1")
 		if result.Error != nil {
 			res.WriteHeader(http.StatusInternalServerError)
 			render.JSON(res, req, map[string]string{"error": "healthcheck failed"})
 			return
 		}
 
+		randomPositiveMessage := []string{
+			"all love and peace ",
+			"take care of yourself",
+			"love is in the air",
+			"support open source <3",
+		}
+
+		loveMessage := randomPositiveMessage[utils.RandomInt(0, len(randomPositiveMessage)-1)]
+
 		res.WriteHeader(http.StatusOK)
-		render.JSON(res, req, map[string]string{"message": "ok", "status": "all love and peace 🤍"})
+		render.JSON(res, req, map[string]string{"message": "ok", "status": loveMessage})
 	})
 
 	address := fmt.Sprintf("%s:%d", server.Host, server.Port)
