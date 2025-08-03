@@ -398,6 +398,19 @@ func ImagesRouter(db *gorm.DB, logger *slog.Logger) *chi.Mux {
 			return
 		}
 
+		logger.Info("adding images to database", slog.String("id", imageEntity.UID))
+		dbCreateTx := db.Create(&imageEntity)
+
+		if dbCreateTx.Error != nil {
+			libhttp.ServerError(res, req, dbCreateTx.Error, logger, nil,
+				"",
+				"Failed to create image",
+			)
+			return
+		}
+
+		logger.Info("upload images success", slog.String("id", imageEntity.UID))
+
 		res.WriteHeader(http.StatusCreated)
 		render.JSON(res, req, map[string]string{"id": imageEntity.UID})
 	})
