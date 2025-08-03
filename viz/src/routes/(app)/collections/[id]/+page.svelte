@@ -541,6 +541,10 @@
 		flex-direction: column;
 		justify-content: flex-start;
 
+		&:focus {
+			outline: 2px solid var(--imag-primary);
+		}
+
 		&:hover {
 			background-color: var(--imag-90);
 		}
