@@ -197,6 +197,7 @@
 				const imageCard = target.closest(".image-card") as HTMLElement | undefined;
 				const isGridButNotImageCard = target === element && !imageCard;
 				if (!element.contains(target) || isGridButNotImageCard) {
+					singleSelectedImage = undefined;
 					selectedImages.clear();
 				}
 			});
@@ -207,6 +208,7 @@
 					const imageCard = target.closest(".image-card") as HTMLElement | undefined;
 					const isGridButNotImageCard = target === element && !imageCard;
 					if (!element.contains(target) || isGridButNotImageCard) {
+						singleSelectedImage = undefined;
 						selectedImages.clear();
 					}
 				});
@@ -482,7 +484,7 @@
 		border: none;
 		font-family: var(--imag-font-family);
 		font-weight: bold;
-		padding: 0.5rem 2rem;
+		padding: 0.75rem 2rem;
 
 		&::placeholder {
 			color: var(--imag-40);
@@ -542,7 +544,7 @@
 		justify-content: flex-start;
 
 		&:focus {
-			outline: 2px solid var(--imag-primary);
+			outline: none;
 		}
 
 		&:hover {
@@ -551,7 +553,7 @@
 	}
 
 	.selected-card {
-		outline: 2px solid var(--imag-primary);
+		box-shadow: 0 0 0 2px var(--imag-primary) inset;
 	}
 
 	.image-container {
