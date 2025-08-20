@@ -2,6 +2,7 @@ package crypto
 
 import (
 	"bytes"
+	"errors"
 	"imagine/common/auth"
 
 	"golang.org/x/crypto/argon2"
@@ -26,19 +27,18 @@ func (a Argon2Hash) GenerateSalt() []byte {
 	return auth.GenerateRandomBytes(a.saltLen)
 }
 
-func (a Argon2Hash) Hash(password, salt []byte) []byte {
-	data := append(salt, []byte(":")...)
+func (a Argon2Hash) Hash(password, salt []byte) (hash []byte, err error) {
 	if len(salt) == 0 {
-		salt = a.GenerateSalt()
+		return nil, errors.New("empty salt")
 	}
 
-	hash := argon2.IDKey(password, salt, a.time, a.memory, a.threads, a.keyLen)
-	return append(data, hash...)
+	hash = argon2.IDKey(password, salt, a.time, a.memory, a.threads, a.keyLen)
+	return hash, nil
 }
 
 func (a Argon2Hash) Verify(hashedValue []byte, password string) bool {
 	salt := hashedValue[a.saltLen+len(":") : a.saltLen+len(":")+int(a.keyLen)]
-	hash := a.Hash([]byte(password), salt)
+	hash, _ := a.Hash([]byte(password), salt)
 
 	return bytes.Equal(hashedValue[a.saltLen+len(":")+int(a.keyLen):], hash)
 }
