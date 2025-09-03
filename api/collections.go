@@ -11,9 +11,9 @@ import (
 	"github.com/go-chi/render"
 	"gorm.io/gorm"
 
-	"imagine/common/entities"
-	libhttp "imagine/common/http"
-	"imagine/common/uid"
+	"imagine/internal/entities"
+	libhttp "imagine/internal/http"
+	"imagine/internal/uid"
 )
 
 type ImagesResponse struct {

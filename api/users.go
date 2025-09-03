@@ -2,10 +2,10 @@ package main
 
 import (
 	"encoding/hex"
-	"imagine/common/crypto"
-	"imagine/common/entities"
-	libhttp "imagine/common/http"
-	"imagine/common/uid"
+	"imagine/internal/crypto"
+	"imagine/internal/entities"
+	libhttp "imagine/internal/http"
+	"imagine/internal/uid"
 	"log/slog"
 	"net/http"
 

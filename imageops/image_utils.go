@@ -7,7 +7,7 @@ import (
 	"log/slog"
 	"os"
 
-	libos "imagine/common/os"
+	libos "imagine/internal/os"
 
 	libvips "github.com/davidbyttow/govips/v2/vips"
 	exif "github.com/dsoprea/go-exif/v3"

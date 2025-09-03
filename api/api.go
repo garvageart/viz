@@ -15,9 +15,9 @@ import (
 	"github.com/go-chi/cors"
 	"github.com/go-chi/render"
 
-	"imagine/common/entities"
-	libhttp "imagine/common/http"
 	"imagine/db"
+	"imagine/internal/entities"
+	libhttp "imagine/internal/http"
 	"imagine/utils"
 )
 

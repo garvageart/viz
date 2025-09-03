@@ -17,12 +17,12 @@ import (
 	gonanoid "github.com/matoous/go-nanoid/v2"
 	"golang.org/x/oauth2"
 
-	"imagine/common/auth"
-	oauth "imagine/common/auth/oauth"
-	"imagine/common/crypto"
-	"imagine/common/entities"
-	libhttp "imagine/common/http"
-	"imagine/common/uid"
+	"imagine/internal/auth"
+	oauth "imagine/internal/auth/oauth"
+	"imagine/internal/crypto"
+	"imagine/internal/entities"
+	libhttp "imagine/internal/http"
+	"imagine/internal/uid"
 )
 
 type ImagineAuthCodeFlow struct {

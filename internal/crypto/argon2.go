@@ -3,7 +3,7 @@ package crypto
 import (
 	"bytes"
 	"errors"
-	"imagine/common/auth"
+	"imagine/internal/auth"
 
 	"golang.org/x/crypto/argon2"
 )

@@ -1,14 +1,14 @@
 package http
 
 import (
-	"log/slog"
 	"fmt"
+	"log/slog"
 
 	"github.com/spf13/viper"
 	"gorm.io/gorm"
 
-	libos "imagine/common/os"
 	"imagine/db"
+	libos "imagine/internal/os"
 	"imagine/utils"
 
 	_ "github.com/joho/godotenv/autoload"

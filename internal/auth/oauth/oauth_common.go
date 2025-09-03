@@ -13,8 +13,8 @@ import (
 	"github.com/go-chi/render"
 	"golang.org/x/oauth2"
 
-	"imagine/common/crypto"
-	libhttp "imagine/common/http"
+	"imagine/internal/crypto"
+	libhttp "imagine/internal/http"
 )
 
 type ImagineOAuth struct {

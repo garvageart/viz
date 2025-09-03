@@ -2,9 +2,10 @@ package config
 
 import (
 	"fmt"
-	"github.com/spf13/viper"
-	libos "imagine/common/os"
+	libos "imagine/internal/os"
 	"imagine/utils"
+
+	"github.com/spf13/viper"
 )
 
 type Config[T any] interface {

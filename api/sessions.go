@@ -10,9 +10,9 @@ import (
 	gocache "github.com/patrickmn/go-cache"
 	"gorm.io/gorm"
 
-	"imagine/common/entities"
-	libhttp "imagine/common/http"
-	"imagine/common/uid"
+	"imagine/internal/entities"
+	libhttp "imagine/internal/http"
+	"imagine/internal/uid"
 )
 
 var SessionCacheDefaultDuration = 30 * time.Minute

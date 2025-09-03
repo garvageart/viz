@@ -9,7 +9,7 @@ import (
 	"path/filepath"
 	"strings"
 
-	libos "imagine/common/os"
+	libos "imagine/internal/os"
 	"imagine/utils"
 )
 

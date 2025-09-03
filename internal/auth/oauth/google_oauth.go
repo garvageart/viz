@@ -13,7 +13,7 @@ import (
 	googleapi "google.golang.org/api/oauth2/v2"
 	"google.golang.org/api/option"
 
-	libhttp "imagine/common/http"
+	libhttp "imagine/internal/http"
 )
 
 type OAuthServerSetup struct {

@@ -14,8 +14,8 @@ import (
 
 	_ "github.com/joho/godotenv/autoload"
 
-	liberrors "imagine/common/errors"
-	libos "imagine/common/os"
+	liberrors "imagine/internal/errors"
+	libos "imagine/internal/os"
 	"imagine/utils"
 )
 
