@@ -3,7 +3,6 @@ package http
 import (
 	"fmt"
 	"log/slog"
-	"os"
 	"strings"
 
 	imalog "imagine/log"
@@ -36,13 +35,9 @@ func setupChiLogHandler(name string) []slog.Handler {
 	})
 
 	// Setup console logger
-	consoleHandler := imalog.NewColourLogger(&imalog.ImalogHandlerOptions{
-		HandlerOptions: &slog.HandlerOptions{
-			Level:     logLevel,
-			AddSource: false,
-		},
-		Writer:           os.Stderr,
-		OutputEmptyAttrs: true,
+	consoleHandler := imalog.NewColourHandler(&slog.HandlerOptions{
+		Level:     logLevel,
+		AddSource: false,
 	})
 
 	return []slog.Handler{
