@@ -1,4 +1,4 @@
-package main
+package routes
 
 import (
 	"fmt"
@@ -27,7 +27,9 @@ type Images struct {
 	Items []ImagesResponse `json:"items"`
 }
 
-func findCollectionImages(db *gorm.DB, imgUIDs []string, images []entities.Image, collection entities.Collection, limit, offset int) ([]entities.Image, error) {
+func findCollectionImages(db *gorm.DB, imgUIDs []string, collection entities.Collection, limit, offset int) ([]ImagesResponse, error) {
+	var images []entities.Image
+
 	if err := db.Where("uid IN ?", imgUIDs).
 		Limit(limit).Offset(offset).
 		Find(&images).Error; err != nil {
@@ -43,7 +45,7 @@ func findCollectionImages(db *gorm.DB, imgUIDs []string, images []entities.Image
 		}
 	}
 
-	return images, nil
+	return imgResponse, nil
 }
 
 func CollectionsRouter(db *gorm.DB, logger *slog.Logger) *chi.Mux {
@@ -160,12 +162,12 @@ func CollectionsRouter(db *gorm.DB, logger *slog.Logger) *chi.Mux {
 				imageUIDs[i] = img.UID
 			}
 
-			allColImages, err := findCollectionImages(tx, imageUIDs, images, collection, defaultImageLimit, defaultImageOffset)
+			allColImages, err := findCollectionImages(tx, imageUIDs, collection, defaultImageLimit, defaultImageOffset)
 			if err != nil {
 				return err
 			}
 
-			images = allColImages
+			imgResponse = allColImages
 			return nil
 		})
 
@@ -216,7 +218,6 @@ func CollectionsRouter(db *gorm.DB, logger *slog.Logger) *chi.Mux {
 			offset = 0
 		}
 
-		var images []entities.Image
 		var imgResponse []ImagesResponse
 		var collection entities.Collection
 
@@ -230,12 +231,11 @@ func CollectionsRouter(db *gorm.DB, logger *slog.Logger) *chi.Mux {
 				imageUIDs[i] = img.UID
 			}
 
-			allColImages, err := findCollectionImages(tx, imageUIDs, images, collection, limit, offset)
+			imgResponse, err = findCollectionImages(tx, imageUIDs, collection, limit, offset)
 			if err != nil {
 				return err
 			}
 
-			images = allColImages
 			return nil
 		})
 
@@ -260,7 +260,7 @@ func CollectionsRouter(db *gorm.DB, logger *slog.Logger) *chi.Mux {
 				Next:   fmt.Sprintf("/collections/%s/images/?offset=%d&limit=%d", uid, offset+limit, limit),
 				Limit:  limit,
 				Offset: offset,
-				Count:  len(images),
+				Count:  len(imgResponse),
 			},
 			Items: imgResponse,
 		}

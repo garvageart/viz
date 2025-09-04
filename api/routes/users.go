@@ -1,4 +1,4 @@
-package main
+package routes
 
 import (
 	"encoding/hex"
@@ -14,7 +14,7 @@ import (
 	"gorm.io/gorm"
 )
 
-func UsersRouter(db *gorm.DB, logger *slog.Logger) *chi.Mux {
+func AccountsRouter(db *gorm.DB, logger *slog.Logger) *chi.Mux {
 	router := chi.NewRouter()
 
 	router.Post("/", func(res http.ResponseWriter, req *http.Request) {

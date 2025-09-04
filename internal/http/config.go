@@ -16,9 +16,9 @@ import (
 
 var (
 	ServerKeys = map[string]string{
-		"auth":  "auth-server",
-		"media": "media-server",
-		"viz":   "viz",
+		"auth": "auth-server",
+		"api":  "api-server",
+		"viz":  "viz",
 	}
 
 	ImagineServers = func() map[string]*ImagineServer {

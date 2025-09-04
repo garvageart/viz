@@ -15,14 +15,15 @@ import (
 	"github.com/go-chi/cors"
 	"github.com/go-chi/render"
 
+	"imagine/api/routes"
 	"imagine/db"
 	"imagine/internal/entities"
 	libhttp "imagine/internal/http"
 	"imagine/utils"
 )
 
-const (
-	serverKey = "media-server"
+var (
+	ServerKey = libhttp.ServerKeys["api"]
 )
 
 type ImagineMediaServer struct {
@@ -106,9 +107,9 @@ func (server ImagineMediaServer) Launch(router *chi.Mux) {
 	defer libvips.Shutdown()
 
 	// Mount image router to main router
-	router.Mount("/collections", CollectionsRouter(dbClient, logger))
-	router.Mount("/images", ImagesRouter(dbClient, logger))
-	router.Mount("/accounts", UsersRouter(dbClient, logger))
+	router.Mount("/collections", routes.CollectionsRouter(dbClient, logger))
+	router.Mount("/images", routes.ImagesRouter(dbClient, logger))
+	router.Mount("/accounts", routes.AccountsRouter(dbClient, logger))
 
 	router.Get("/ping", func(res http.ResponseWriter, req *http.Request) {
 		jsonResponse := map[string]any{"message": "pong"}
@@ -140,7 +141,7 @@ func (server ImagineMediaServer) Launch(router *chi.Mux) {
 	address := fmt.Sprintf("%s:%d", server.Host, server.Port)
 
 	go func() {
-		logger.Info(fmt.Sprintf("Hey, you want some pics? 👀 - %s: %s", serverKey, address))
+		logger.Info(fmt.Sprintf("Hey, you want some pics? 👀 - %s: %s", ServerKey, address))
 
 		err := http.ListenAndServe(address, router)
 		if err != nil {
@@ -172,9 +173,9 @@ func (server ImagineMediaServer) Launch(router *chi.Mux) {
 
 func main() {
 	router := chi.NewRouter()
-	logger := libhttp.SetupChiLogger(serverKey)
+	logger := libhttp.SetupChiLogger(ServerKey)
 
-	server := ImagineMediaServer{ImagineServer: libhttp.ImagineServers[serverKey]}
+	server := ImagineMediaServer{ImagineServer: libhttp.ImagineServers[ServerKey]}
 	server.ImagineServer.Logger = logger
 	server.Database = &db.DB{
 		Address:      "localhost",
