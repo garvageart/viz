@@ -8,7 +8,7 @@ import (
 	"gorm.io/driver/postgres"
 	"gorm.io/gorm"
 
-	imalog "imagine/log"
+	imalog "imagine/internal/logger"
 )
 
 func (db *DB) Connect() (*gorm.DB, error) {

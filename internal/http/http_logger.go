@@ -5,7 +5,7 @@ import (
 	"log/slog"
 	"strings"
 
-	imalog "imagine/log"
+	imalog "imagine/internal/logger"
 )
 
 func setupChiLogHandler(name string) []slog.Handler {

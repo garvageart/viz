@@ -1,4 +1,4 @@
-package log
+package logger
 
 // Modified from https://github.com/dusted-go/logging/blob/main/prettylog/prettylog.go
 // Apache 2.0 License https://github.com/dusted-go/logging/blob/main/LICENSE
