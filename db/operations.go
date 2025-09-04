@@ -3,13 +3,12 @@ package db
 import (
 	"fmt"
 	"log/slog"
-	"os"
 
 	slogGorm "github.com/orandin/slog-gorm"
 	"gorm.io/driver/postgres"
 	"gorm.io/gorm"
 
-	imaglog "imagine/log"
+	imalog "imagine/log"
 )
 
 func (db *DB) Connect() (*gorm.DB, error) {
@@ -94,16 +93,16 @@ func (db *DB) Exists(dest interface{}, conds ...interface{}) (bool, error) {
 }
 
 func SetupDatabaseLogger() *slog.Logger {
-	httpLogFileDefaults := imaglog.LogFileDefaults
-	logLevel := imaglog.DefaultLogLevel
+	httpLogFileDefaults := imalog.LogFileDefaults
+	logLevel := imalog.DefaultLogLevel
 
 	// Setup file logger
-	logFileWriter := imaglog.FileLog{
+	logFileWriter := imalog.FileLog{
 		Directory: httpLogFileDefaults.Directory + "/postgres",
 		Filename:  fmt.Sprintf("%s-%s", httpLogFileDefaults.Filename, "postgresdb"),
 	}
 
-	fileHandler := imaglog.NewFileLogger(&imaglog.ImalogHandlerOptions{
+	fileHandler := imalog.NewFileLogger(&imalog.ImalogHandlerOptions{
 		Writer: logFileWriter,
 		HandlerOptions: &slog.HandlerOptions{
 			AddSource: true,
@@ -111,14 +110,7 @@ func SetupDatabaseLogger() *slog.Logger {
 		},
 	})
 
-	consoleHandler := imaglog.NewColourLogger(&imaglog.ImalogHandlerOptions{
-		HandlerOptions: &slog.HandlerOptions{
-			Level:     logLevel,
-			AddSource: false,
-		},
-		Writer:           os.Stderr,
-		OutputEmptyAttrs: true,
-	})
+	consoleHandler := imalog.NewColourHandler(&slog.HandlerOptions{Level: slog.LevelDebug, ReplaceAttr: nil})
 
-	return imaglog.CreateLogger([]slog.Handler{fileHandler, consoleHandler})
+	return imalog.CreateLogger([]slog.Handler{fileHandler, consoleHandler})
 }
