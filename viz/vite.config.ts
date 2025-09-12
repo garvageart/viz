@@ -7,7 +7,7 @@ import devtoolsJson from "vite-plugin-devtools-json";
 
 const file = fileURLToPath(new URL('package.json', import.meta.url));
 const pkg = JSON.parse(fs.readFileSync(file, 'utf8'));
-const config = JSON.parse(fs.readFileSync('../config/imagine.json', 'utf8'));
+const config = JSON.parse(fs.readFileSync('../imagine.json', 'utf8'));
 const define = {
 	'__APP_VERSION__': JSON.stringify(pkg.version)
 };
