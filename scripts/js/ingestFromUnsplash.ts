@@ -2,6 +2,8 @@ import { createApi } from 'unsplash-js';
 import dotenv from "dotenv";
 import path from "path";
 
+const sleep = (ms: number) => new Promise(resolve => setTimeout(resolve, ms));
+
 async function main() {
     const dotEnvPath = path.resolve(__dirname, "..", "..", ".env");
 
@@ -31,23 +33,44 @@ async function main() {
         return img.urls.full;
     });
 
-    console.log("Ingesting random images from Unsplash...");
-    const ingestResponse = await fetch("http://localhost:7770/images/urls", {
-        method: "POST",
-        headers: {
-            "Content-Type": "application/json",
-            "Authorization": `Bearer tes`
-        },
-        body: JSON.stringify({ urls: randomURLs })
-    });
+    const promises: Promise<Response>[] = [];
 
-    if (!ingestResponse.ok || ingestResponse.status !== 201) {
-        const errorText = await ingestResponse.text();
-        throw new Error(`Failed to ingest images. Status: ${ingestResponse.status}. Body: ${errorText}`);
+    console.log("Ingesting random images from Unsplash...");
+    for (let i = 0; i < randomURLs.length; i++) {
+        const url = randomURLs[i];
+
+        await sleep(500);
+
+        promises.push(fetch("http://localhost:7770/images/url", {
+            method: "POST",
+            headers: {
+                "Content-Type": "application/json",
+                "Authorization": `Bearer tes`
+            },
+            body: url
+        }));
     }
 
-    console.log("All images have been ingested");
-    console.log(await ingestResponse.json());
+    await Promise.all(promises)
+        .then(async responses => {
+            console.log("All images ingested.");
+            for (const res of responses) {
+                if (!res.ok || res.status !== 201) {
+                    const errorText = await res.text();
+                    throw new Error(`Failed to ingest image. Status: ${res.status}. Body: ${errorText}`);
+                }
+
+                console.log(await res.json());
+            }
+        }).catch(error => {
+            console.error("An error occurred image ingestion:");
+            if (error instanceof Error) {
+                console.error(error.message);
+            } else {
+                console.error(error);
+            }
+            process.exit(1);
+        });
 
     // Track a photo download
     // https://help.unsplash.com/api-guidelines/guideline-triggering-a-download
