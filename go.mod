@@ -7,7 +7,7 @@ require github.com/davidbyttow/govips/v2 v2.16.0
 require (
 	github.com/ajg/form v1.5.1 // indirect
 	github.com/barasher/go-exiftool v1.10.0
-	github.com/go-chi/chi/v5 v5.2.1
+	github.com/go-chi/chi/v5 v5.2.2
 	github.com/go-chi/render v1.0.3
 	go.uber.org/multierr v1.11.0 // indirect
 	go.uber.org/zap v1.27.0
@@ -29,8 +29,9 @@ require (
 )
 
 require (
+	github.com/ThreeDotsLabs/watermill v1.5.1 // indirect
 	github.com/boxes-ltd/imaging v1.6.11 // indirect
-	github.com/cshum/vipsgen v1.1.1 // indirect
+	github.com/cshum/vipsgen v1.1.2 // indirect
 	github.com/dsoprea/go-exif/v3 v3.0.1 // indirect
 	github.com/dsoprea/go-heic-exif-extractor/v2 v2.0.0-20210512044107-62067e44c235 // indirect
 	github.com/dsoprea/go-iptc v0.0.0-20200609062250-162ae6b44feb // indirect
@@ -43,6 +44,9 @@ require (
 	github.com/go-xmlfmt/xmlfmt v0.0.0-20191208150333-d5b6f63a941b // indirect
 	github.com/golang/geo v0.0.0-20210211234256-740aa86cb551 // indirect
 	github.com/jonboulle/clockwork v0.5.0 // indirect
+	github.com/kovidgoyal/imaging v1.6.4 // indirect
+	github.com/lithammer/shortuuid/v3 v3.0.7 // indirect
+	github.com/oklog/ulid v1.3.1 // indirect
 	github.com/orandin/slog-gorm v1.4.0 // indirect
 	github.com/patrickmn/go-cache v2.1.0+incompatible // indirect
 	github.com/robfig/cron/v3 v3.0.1 // indirect
@@ -119,12 +123,12 @@ require (
 	go.opentelemetry.io/otel/sdk/metric v1.35.0 // indirect
 	go.opentelemetry.io/otel/trace v1.35.0 // indirect
 	golang.org/x/oauth2 v0.30.0
-	golang.org/x/sys v0.34.0 // indirect
+	golang.org/x/sys v0.35.0 // indirect
 	golang.org/x/time v0.11.0 // indirect
 	google.golang.org/genproto v0.0.0-20250303144028-a0af3efb3deb // indirect
 	google.golang.org/genproto/googleapis/api v0.0.0-20250505200425-f936aa4a68b2 // indirect
 	google.golang.org/genproto/googleapis/rpc v0.0.0-20250505200425-f936aa4a68b2 // indirect
 	google.golang.org/grpc v1.72.0 // indirect
-	google.golang.org/protobuf v1.36.6 // indirect
+	google.golang.org/protobuf v1.36.8 // indirect
 	gopkg.in/yaml.v3 v3.0.1 // indirect
 )
