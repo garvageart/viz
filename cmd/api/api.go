@@ -1,7 +1,6 @@
 package main
 
 import (
-	"context"
 	"errors"
 	"fmt"
 	"log/slog"
@@ -18,7 +17,6 @@ import (
 	"imagine/api/routes"
 	"imagine/internal/db"
 	"imagine/internal/entities"
-	gcp "imagine/internal/gcp/storage"
 	libhttp "imagine/internal/http"
 	"imagine/internal/jobs"
 	"imagine/internal/jobs/workers"
@@ -171,19 +169,7 @@ func main() {
 	client := server.ConnectToDatabase(entities.Image{}, entities.Collection{})
 	server.ImagineServer.Database.Client = client
 
-	gcpCtx := context.Background()
-
-	// TODO: create a writer interface that any writer can
-	// implement besides Google Cloud Storage. This is just my
-	// personal writer and choice right now
-	storageClient, err := gcp.SetupClient(gcpCtx)
-	if err != nil {
-		panic(err)
-	}
-
-	ImageBucket = storageClient.Bucket("imagine-test-dev")
-
 	server.Launch(router)
-	workers := workers.NewImageWorker(ImageBucket, client)
-	jobs.RunJobQueue(workers)
+	job_workers := workers.NewImageWorker(client)
+	jobs.RunJobQueue(job_workers)
 }

@@ -1,8 +1,11 @@
 import { createApi } from 'unsplash-js';
 import dotenv from "dotenv";
 import path from "path";
+import fs from "fs";
 
 const sleep = (ms: number) => new Promise(resolve => setTimeout(resolve, ms));
+const config = JSON.parse(fs.readFileSync('../imagine.json', 'utf8'));
+const serverPort = parseInt(config.servers["api-server"].port);
 
 async function main() {
     const dotEnvPath = path.resolve(__dirname, "..", "..", ".env");
@@ -29,25 +32,30 @@ async function main() {
     }
 
     const randomImgs = Array.isArray(result.response) ? result.response : [result.response];
-    const randomURLs = randomImgs.map(img => {
-        return img.urls.full;
-    });
 
     const promises: Promise<Response>[] = [];
 
     console.log("Ingesting random images from Unsplash...");
-    for (let i = 0; i < randomURLs.length; i++) {
-        const url = randomURLs[i];
+    for (let i = 0; i < randomImgs.length; i++) {
+        const url = randomImgs[i].urls.full;
+        const photoTaker = randomImgs[i].user.name;
+        const photoTakerPortfolio = randomImgs[i].user.links.portfolio;
 
         await sleep(500);
 
-        promises.push(fetch("http://localhost:7770/images/url", {
+        promises.push(fetch(`http://localhost:${serverPort}/images/url`, {
             method: "POST",
             headers: {
                 "Content-Type": "application/json",
-                "Authorization": `Bearer tes`
+                "Authorization": `Bearer ${process.env.IMAGINE_API_KEY}`
             },
-            body: url
+            body: JSON.stringify({
+                url: url,
+                photoTaker: photoTaker,
+                photoTakerPortfolio: photoTakerPortfolio,
+                source: "unsplash",
+                exif: randomImgs[i].exif
+            })
         }));
     }
 
