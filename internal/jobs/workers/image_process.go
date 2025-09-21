@@ -2,10 +2,8 @@ package workers
 
 import (
 	"context"
-	"encoding/base64"
 	"encoding/json"
 	"fmt"
-	"io"
 	"time"
 
 	"github.com/ThreeDotsLabs/watermill"
@@ -13,9 +11,9 @@ import (
 
 	"imagine/internal/entities"
 	"imagine/internal/imageops"
+	"imagine/internal/images"
 	"imagine/internal/jobs"
 
-	"cloud.google.com/go/storage"
 	"gorm.io/gorm"
 )
 
@@ -29,7 +27,7 @@ type ImageProcessJob struct {
 }
 
 // NewImageWorker now requires bucket and db injection
-func NewImageWorker(bucket *storage.BucketHandle, db *gorm.DB) *jobs.Worker {
+func NewImageWorker(db *gorm.DB) *jobs.Worker {
 	return &jobs.Worker{
 		Name:  JobTypeImageProcess,
 		Topic: TopicImageProcess,
@@ -40,7 +38,7 @@ func NewImageWorker(bucket *storage.BucketHandle, db *gorm.DB) *jobs.Worker {
 				return fmt.Errorf("%s: %w", JobTypeImageProcess, err)
 			}
 
-			return ImageProcess(msg.Context(), db, job.Image, bucket)
+			return ImageProcess(msg.Context(), db, job.Image)
 		},
 	}
 }
@@ -55,27 +53,8 @@ func EnqueueImageProcessJob(job *ImageProcessJob) error {
 	return jobs.PubSub.Publish(TopicImageProcess, msg)
 }
 
-func ImageProcess(ctx context.Context, db *gorm.DB, imgEnt entities.Image, bucket *storage.BucketHandle) error {
-	// Validate bucket handle
-	if bucket == nil {
-		return fmt.Errorf("bucket handle is nil")
-	}
-
-	// Download the original image file from the bucket
-	imageFile := bucket.Object(fmt.Sprintf("images/%s/%s.%s", imgEnt.UID, imgEnt.FileName, imgEnt.FileType))
-	fileDataReader, err := imageFile.NewReader(context.Background())
-	if err != nil {
-		return fmt.Errorf("failed to get object reader: %w", err)
-	}
-
-	fileBytes, err := io.ReadAll(fileDataReader)
-	if err != nil {
-		return fmt.Errorf("failed to get object reader: %w", err)
-	}
-	defer fileDataReader.Close()
-
-	// Decode the image bytes into an image object
-	img, _, err := imageops.ReadToImage(fileBytes)
+func ImageProcess(ctx context.Context, db *gorm.DB, imgEnt entities.Image) error {
+	img, _, err := images.ReadFileAsGoImage(imgEnt.UID, imgEnt.FileName, imgEnt.FileType)
 	if err != nil {
 		return fmt.Errorf("failed to read image: %w", err)
 	}
@@ -99,18 +78,15 @@ func ImageProcess(ctx context.Context, db *gorm.DB, imgEnt entities.Image, bucke
 
 	jobs.Logger.Info("saving thumbnail to disk", loggerFields)
 
-	// Save the thumbnail back to the bucket
-	imageObject := bucket.Object(fmt.Sprintf("images/%s/%s-thumb.%s", imgEnt.UID, imgEnt.FileName, imgEnt.FileType))
-	objWriter := imageObject.NewWriter(ctx)
-	_, _ = objWriter.Write(thumbData)
-
-	err = objWriter.Close()
+	// Save the thumbnail to disk
+	err = images.SaveImage(thumbData, imgEnt.UID, "thumbnail", "jpg")
 	if err != nil {
-		return fmt.Errorf("failed to close object writer: %w", err)
+		return fmt.Errorf("failed to save thumbnail: %w", err)
 	}
 
 	// Decode the thumbnail bytes to an image and generate the thumbhash from it
 	jobs.Logger.Info("generating thumbhash", loggerFields)
+
 	thumbhashTimeStart := time.Now()
 	// Generate a thumbhash from the small thumbnail
 	smallThumbImg, _, err := imageops.ReadToImage(smallThumbData)
@@ -127,7 +103,7 @@ func ImageProcess(ctx context.Context, db *gorm.DB, imgEnt entities.Image, bucke
 	}))
 
 	// Update the database with the generated thumbhash
-	err = db.Model(&entities.Image{}).Where("uid = ?", imgEnt.UID).Update("thumbhash", base64.StdEncoding.EncodeToString(thumbhash)).Error
+	err = db.Model(&entities.Image{}).Where("uid = ?", imgEnt.UID).Update("thumbhash", images.EncodeThumbhashToString(thumbhash)).Error
 	if err != nil {
 		return fmt.Errorf("failed to update db image thumbhash: %w", err)
 	}

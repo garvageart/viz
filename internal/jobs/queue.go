@@ -2,8 +2,6 @@ package jobs
 
 import (
 	"context"
-	"sync"
-	"sync/atomic"
 	"time"
 
 	"github.com/ThreeDotsLabs/watermill"
@@ -16,8 +14,7 @@ import (
 )
 
 var (
-	runningJobs     int64
-	runningJobsLock sync.Mutex
+	allJobs = make(map[string]*Job)
 )
 
 var (
@@ -26,44 +23,42 @@ var (
 	Logger = watermill.NewSlogLogger(imalog.CreateLogger(imalog.SetupDefaultLogHandlers()))
 )
 
-// IncrementRunningJobs increases the running jobs counter.
-func IncrementRunningJobs() {
-	runningJobsLock.Lock()
-	defer runningJobsLock.Unlock()
-
-	runningJobs++
-}
-
-// DecrementRunningJobs decreases the running jobs counter.
-func DecrementRunningJobs() {
-	runningJobsLock.Lock()
-	defer runningJobsLock.Unlock()
-
-	runningJobs--
-}
-
 // GetRunningJobs returns the current number of running jobs.
-func GetRunningJobs() int64 {
-	return atomic.LoadInt64(&runningJobs)
+func GetRunningJobs() int {
+	return len(allJobs)
+}
+
+func GetAllJobs() map[string]*Job {
+	return allJobs
 }
 
 // RegisterWorkers registers all JobWorkers with the router.
 // Call this after initializing Router and PubSub, but before Router.Run().
 func RegisterWorkers(workers ...*Worker) {
+
 	for _, worker := range workers {
 		handler := worker.Handler
 		topic := worker.Topic
 
-		// Subscribe the router to the worker's topic
 		Router.AddConsumerHandler(
 			worker.Name,
 			topic,
 			PubSub,
 			func(msg *message.Message) error {
-				IncrementRunningJobs()
 				worker.Start()
+				job := &Job{
+					ctx:   msg.Context(),
+					ID:    msg.UUID,
+					topic: topic,
+				}
+
+				if job.ID == "" {
+					job.ID = watermill.NewUUID()
+				}
+
+				allJobs[job.ID] = job
+
 				defer func() {
-					DecrementRunningJobs()
 					worker.Stop()
 				}()
 
@@ -89,6 +84,8 @@ func RunJobQueue(workers ...*Worker) {
 	Router.AddMiddleware(
 		// CorrelationID will copy the correlation id from the incoming message's metadata to the produced messages
 		middleware.CorrelationID,
+
+		NewConcurrencyManager().Middleware,
 
 		// The handler function is retried if it returns an error.
 		// After MaxRetries, the message is Nacked and it's up to the PubSub to resend it.
