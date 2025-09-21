@@ -19,7 +19,7 @@
 	"gcloud": {
 		"storageBuckets": ["image-thumbs", "image-origin", "image-optimized", "image-raw", "image-publishing"]
 	},
-	"base_directory": "/var",
+	"base_directory": "./var",
 	"upload": {
 		"location": "library"
 	},

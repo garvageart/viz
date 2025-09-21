@@ -8,12 +8,8 @@ import (
 	"github.com/spf13/viper"
 )
 
-type Config[T any] interface {
-	ReadConfig() (map[string]T, error)
-}
-
 func ReadConfig() (viper.Viper, error) {
-	configPath := libos.CurrentWorkingDirectory + "/config"
+	configPath := libos.CurrentWorkingDirectory
 
 	v := viper.New() // Create a new viper instance to avoid global state issues
 	v.SetConfigName(utils.AppName)

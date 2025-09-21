@@ -4,11 +4,10 @@ import (
 	"fmt"
 	"log/slog"
 
-	"github.com/spf13/viper"
 	"gorm.io/gorm"
 
+	"imagine/internal/config"
 	"imagine/internal/db"
-	libos "imagine/internal/os"
 	"imagine/internal/utils"
 
 	_ "github.com/joho/godotenv/autoload"
@@ -29,7 +28,7 @@ var (
 			host = "localhost"
 		}
 
-		config, err := ReadConfig()
+		config, err := config.ReadConfig()
 		if err != nil {
 			panic("Unable to read config file " + err.Error())
 		}
@@ -77,23 +76,4 @@ func (server ImagineServer) ConnectToDatabase(dst ...any) *gorm.DB {
 	}
 
 	return client
-}
-
-func ReadConfig() (viper.Viper, error) {
-	configPath := libos.CurrentWorkingDirectory + "/config"
-
-	viper.SetConfigName(utils.AppName)
-	viper.SetConfigType("json")
-	viper.AddConfigPath(configPath)
-
-	err := viper.ReadInConfig()
-	if err != nil {
-		if _, ok := err.(viper.ConfigFileNotFoundError); ok {
-			return viper.Viper{}, fmt.Errorf("can't find config file: %w", err)
-		}
-		// For other errors when reading the config
-		return viper.Viper{}, fmt.Errorf("error reading config file: %w", err)
-	}
-
-	return *viper.GetViper(), nil
 }
