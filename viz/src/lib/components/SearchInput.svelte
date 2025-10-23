@@ -71,6 +71,9 @@
 	#search-button {
 		background-color: var(--imag-100);
 		border: none;
+		border-radius: 2em;
+		border-top-right-radius: 0%;
+		border-bottom-right-radius: 0%;
 		height: 100%;
 		padding: 0.2em 0.5em;
 		font-size: 1rem;
@@ -81,7 +84,7 @@
 		cursor: pointer;
 
 		&:focus {
-			/* box-shadow: 0px 0px 0px 3px inset var(--imag-primary); */
+			box-shadow: 0px 0px 0px 1.5px inset var(--imag-60);
 			outline: none;
 			background-color: var(--imag-80);
 		}

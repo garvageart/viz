@@ -4,7 +4,7 @@
 	import AssetGrid from "./AssetGrid.svelte";
 	import AssetToolbar from "./AssetToolbar.svelte";
 	import MaterialIcon from "./MaterialIcon.svelte";
-	import { getContext, untrack, type ComponentProps, type Snippet } from "svelte";
+	import { type ComponentProps, type Snippet } from "svelte";
 	import type { HTMLButtonAttributes } from "svelte/elements";
 	import { type MaterialSymbol } from "material-symbols";
 	import type { IPagination } from "$lib/types/asset";
@@ -13,8 +13,8 @@
 
 	type Props = {
 		grid: ComponentProps<typeof AssetGrid<T>>;
-		pagination: IPagination;
-		children: Snippet;
+		pagination?: IPagination;
+		children?: Snippet;
 		selectionToolbarSnippet?: Snippet;
 		toolbarSnippet?: Snippet;
 		toolbarProps?: Omit<ComponentProps<typeof AssetToolbar>, "children">;
@@ -30,7 +30,10 @@
 
 	let {
 		grid = $bindable(),
-		pagination = $bindable(),
+		pagination = $bindable({
+			limit: 25,
+			offset: 0
+		}),
 		children,
 		toolbarSnippet,
 		toolbarProps,
@@ -144,6 +147,8 @@
 							sort.by = "created_at";
 						} else if (option.title === "Oldest") {
 							sort.by = "oldest";
+						} else if (option.title === "Most Recent") {
+							sort.by = "most_recent";
 						}
 					}
 				}
@@ -160,7 +165,7 @@
 	</AssetToolbar>
 {/if}
 
-{@render children()}
+{@render children?.()}
 
 <AssetGrid {...grid} bind:assetGridArray bind:data={gridData} bind:columnCount />
 
@@ -172,6 +177,11 @@
 
 		& > button {
 			margin: 0em 0.5em;
+
+			&:focus {
+				outline: 2px solid var(--imag-60);
+				background-color: var(--imag-80);
+			}
 		}
 	}
 
@@ -184,12 +194,6 @@
 		align-items: center;
 		justify-content: center;
 		text-wrap: nowrap;
-
-		&:focus {
-			box-shadow: 0px 0px 0px 1.5px inset var(--imag-primary);
-			outline: none;
-			background-color: var(--imag-80);
-		}
 
 		&:hover {
 			background-color: var(--imag-90);

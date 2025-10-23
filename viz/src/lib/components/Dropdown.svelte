@@ -126,8 +126,7 @@
 		cursor: pointer;
 
 		&:focus {
-			box-shadow: 0px 0px 0px 1.5px inset var(--imag-primary);
-			outline: none;
+			outline: 2px solid var(--imag-60);
 			background-color: var(--imag-80);
 		}
 

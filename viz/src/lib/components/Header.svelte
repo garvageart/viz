@@ -10,6 +10,8 @@
 	import type { SvelteHTMLElements } from "svelte/elements";
 	import MaterialIcon from "./MaterialIcon.svelte";
 	import SearchInput from "./SearchInput.svelte";
+	import UploadManager from "$lib/upload/manager.svelte";
+	import { SUPPORTED_IMAGE_TYPES, SUPPORTED_RAW_FILES, type SupportedImageTypes } from "$lib/types/images";
 
 	let { ...props }: SvelteHTMLElements["header"] = $props();
 
@@ -41,9 +43,20 @@
 		}
 	});
 
-	let searchInputHasFocus = $state(false);
+	let searchInputHasFocus = $state(search.element && document.activeElement === search.element);
 
-	hotkeys("meta+k", (e) => {
+	// If URL has search params, perform search automatically (only on client)
+	if (page.url.pathname === "/search") {
+		const urlParams = new URLSearchParams(window.location.search);
+		const q = urlParams.get("q");
+		if (q) {
+			search.value = q;
+		}
+	}
+
+	// Register hotkeys only in the browser/runtime. Keep hotkeys-js as requested.
+	// Ctrl/Cmd+K toggles focus on the search input.
+	hotkeys("ctrl+k, command+k", (e) => {
 		e.preventDefault();
 		if (!searchInputHasFocus) {
 			search.element?.focus();
@@ -52,23 +65,38 @@
 		}
 	});
 
-	hotkeys("esc", (e) => {
-		e.preventDefault();
-		search.element?.blur();
+	// Escape blurs the search input only when it is focused.
+	hotkeys("esc, escape", (e) => {
+		if (searchInputHasFocus) {
+			e.preventDefault();
+			search.element?.blur();
+		}
 	});
+
+	function handleUpload(e: MouseEvent) {
+		e.preventDefault();
+		// allowed image types will come from the config but for now just hardcode
+		const controller = new UploadManager([...SUPPORTED_RAW_FILES, ...SUPPORTED_IMAGE_TYPES] as SupportedImageTypes[]);
+		controller.openFileHolder();
+		controller.uploadImage();
+	}
 </script>
 
 <header {...props} class="{props.class} no-select">
 	<a id="viz-title" href="/">viz</a>
 	<SearchInput
-		loading={search.loading}
 		placeholder="Search (Ctrl/Cmd + K)"
-		value={search.value}
-		element={search.element}
+		bind:loading={search.loading}
+		bind:value={search.value}
+		bind:element={search.element}
 		{performSearch}
 		style="width: 30%;"
 	/>
 	<div class="header-button-container">
+		<button id="upload-button" class="header-button" aria-label="Upload" onclick={handleUpload}>
+			<MaterialIcon iconName="upload" iconStyle="sharp" />
+			<span style="font-size: 0.9rem; font-weight: 500;"> Upload </span>
+		</button>
 		{#if dev || !CLIENT_IS_PRODUCTION}
 			<button class="header-button" aria-label="Toggle Debug Mode" onclick={() => (devEnabled = !devEnabled)}>
 				{#if devEnabled}
@@ -123,6 +151,13 @@
 		margin-inline-start: 0px;
 		margin-inline-end: 0px;
 		unicode-bidi: isolate;
+	}
+
+	#upload-button {
+		margin-right: 2em;
+		color: var(--imag-text-color);
+		font-size: 0.9rem;
+		padding: 0.3em 0.6em;
 	}
 
 	.header-button-container {
