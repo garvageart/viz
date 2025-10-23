@@ -2,16 +2,23 @@
 	import type { Snippet } from "svelte";
 	import type { SvelteHTMLElements } from "svelte/elements";
 
-	let { children, ...props }: { children: Snippet } & SvelteHTMLElements["div"] = $props();
+	let {
+		children,
+		stickyToolbar = true,
+		...props
+	}: { children: Snippet; stickyToolbar?: boolean } & SvelteHTMLElements["div"] = $props();
 </script>
 
-<div {...props} id="viz-toolbar-container" style="top: {0}px; {props.style}">
+<div
+	{...props}
+	class="viz-toolbar-container"
+	style={`${props.style} ${stickyToolbar === true ? "position: sticky; top: 0px;" : "position: relative;"}`}
+>
 	{@render children?.()}
 </div>
 
 <style lang="scss">
-	#viz-toolbar-container {
-		position: sticky;
+	.viz-toolbar-container {
 		z-index: 1;
 		padding: 0.5em 2em;
 		background-color: rgba(39, 51, 74, 0.9);

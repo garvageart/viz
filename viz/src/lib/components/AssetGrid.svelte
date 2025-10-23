@@ -107,8 +107,8 @@
 		}
 
 		const imageInGridArray = assetGridArray
-			.find((i) => i.find((j) => j.asset.id === asset.id))
-			?.find((j) => j.asset.id === asset.id);
+			.find((i) => i.find((j) => j.asset?.id === asset.id))
+			?.find((j) => j.asset?.id === asset.id);
 
 		if (!imageInGridArray) {
 			if (dev) {
@@ -173,8 +173,16 @@
 	function buildAssetGridArray(element: HTMLElement) {
 		const array = buildGridArray(element).map((i) => {
 			return i.map((j) => {
-				const assetId = j.element?.firstElementChild?.getAttribute("data-asset-id")!;
+				// first try the element itself, then fallback to firstElementChild (older components)
+				const assetId = (j.element?.getAttribute("data-asset-id") ??
+					j.element?.firstElementChild?.getAttribute("data-asset-id"))!;
 				const asset = allAssetsData.find((i: T) => i.id === assetId)!;
+
+				if (!assetId || !asset) {
+					if (dev) {
+						console.warn(`AssetGrid: failed to resolve asset for element at row ${j.row}, column ${j.column}`);
+					}
+				}
 
 				return {
 					asset,
