@@ -17,6 +17,7 @@
 		children?: Snippet;
 		selectionToolbarSnippet?: Snippet;
 		toolbarSnippet?: Snippet;
+		noAssetsSnippet?: Snippet;
 		toolbarProps?: Omit<ComponentProps<typeof AssetToolbar>, "children">;
 		selectionToolbarProps?: Omit<ComponentProps<typeof AssetToolbar>, "children">;
 	};
@@ -36,6 +37,7 @@
 		}),
 		children,
 		toolbarSnippet,
+		noAssetsSnippet,
 		toolbarProps,
 		selectionToolbarSnippet,
 		selectionToolbarProps
@@ -167,7 +169,17 @@
 
 {@render children?.()}
 
-<AssetGrid {...grid} bind:assetGridArray bind:data={gridData} bind:columnCount />
+{#if gridData.length === 0}
+	<div id="viz-no_assets">
+		{#if noAssetsSnippet}
+			{@render noAssetsSnippet()}
+		{:else}
+			<p style="text-align: center; margin: 2em; color: var(--imag-20);">No assets to display.</p>
+		{/if}
+	</div>
+{:else}
+	<AssetGrid {...grid} bind:assetGridArray bind:data={gridData} bind:columnCount />
+{/if}
 
 <style lang="scss">
 	#asset-tools {
@@ -202,5 +214,13 @@
 		&:active {
 			background-color: var(--imag-80);
 		}
+	}
+
+	#viz-no_assets {
+		width: 100%;
+		height: 100%;
+		display: flex;
+		justify-content: center;
+		align-items: center;
 	}
 </style>

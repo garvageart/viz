@@ -38,7 +38,7 @@ export class UploadImage implements UploadImageStats {
         this.progress = event.loaded / event.total;
     };
 
-    async upload() {
+    async upload(): Promise<ImageUploadSuccess | undefined> {
         try {
             this.state = UploadState.STARTED;
             const responseData = await uploadRequest<ImageUploadSuccess>({
@@ -48,9 +48,12 @@ export class UploadImage implements UploadImageStats {
             });
 
             this.state = (responseData.status === 200) || (responseData.status === 201) ? UploadState.DONE : UploadState.INVALID;
+
+            return responseData.data;
         } catch (error) {
             this.state = UploadState.ERROR;
             console.error(error);
+            return undefined;
         }
     }
 }

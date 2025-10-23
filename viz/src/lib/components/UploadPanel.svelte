@@ -1,15 +1,9 @@
 <script lang="ts">
 	import { upload } from "$lib/states/index.svelte";
 	import { fade } from "svelte/transition";
-
-	for (const file of upload.files) {
-		file.upload().then(() => {
-			upload.files.splice(upload.files.indexOf(file), 1);
-		});
-	}
 </script>
 
-<div in:fade={{ duration: 250 }} out:fade={{ duration: 250 }} id="viz-upload-panel">
+<div in:fade={{ duration: 250 }} out:fade={{ delay: 3000, duration: 250 }} id="viz-upload-panel">
 	<div id="viz-upload-panel-header">
 		<p>Uploading {upload.files.length} file{upload.files.length === 1 ? "" : "s"}</p>
 	</div>
@@ -17,8 +11,8 @@
 		{#each upload.files as file}
 			<div class="viz-upload-panel-file-info" data-checksum={file.data.checksum}>
 				<div class="viz-upload-panel-file-info-metadata">
-					<span>{file.data.filename}</span>
-					<span>{file.progress}%</span>
+					<span class="viz-upload-file-name">{file.data.filename}</span>
+					<span class="viz-upload-progress-text">{file.progress}%</span>
 				</div>
 				<span class="viz-upload-panel-file-info-progress" style="width: {file.progress}%;"></span>
 			</div>
@@ -51,10 +45,29 @@
 	}
 
 	.viz-upload-panel-file-info {
-		width: 100%;
 		padding: 0.5rem 1rem;
+		margin-bottom: 0.5rem;
 		position: relative;
 		border-bottom: 1px solid var(--imag-60);
 		overflow: hidden;
+	}
+
+	.viz-upload-panel-file-info-metadata {
+		font-size: 0.8rem;
+		margin-bottom: 0.4rem;
+	}
+
+	.viz-upload-file-name {
+		margin-right: 0.5rem;
+	}
+
+	.viz-upload-progress-text {
+		font-weight: 600;
+	}
+
+	.viz-upload-panel-file-info-progress {
+		height: 0.1rem;
+		background-color: var(--imag-20);
+		position: absolute;
 	}
 </style>

@@ -21,7 +21,7 @@
 	import SearchInput from "$lib/components/SearchInput.svelte";
 	import { lightbox, sort } from "$lib/states/index.svelte";
 	import type { AssetGridArray } from "$lib/types/asset.js";
-	import type { IImageObjectData } from "$lib/types/images";
+	import { SUPPORTED_IMAGE_TYPES, SUPPORTED_RAW_FILES, type IImageObjectData, type SupportedImageTypes } from "$lib/types/images";
 	import { blurOnEsc, loadImage } from "$lib/utils/dom.js";
 	import hotkeys from "hotkeys-js";
 	import { DateTime } from "luxon";
@@ -30,6 +30,9 @@
 	import { sortCollectionImages } from "$lib/sort/sort.js";
 	import { ImageObjectData } from "$lib/entities/image.js";
 	import ImageCard from "$lib/components/ImageCard.svelte";
+	import Button from "$lib/components/Button.svelte";
+	import MaterialIcon from "$lib/components/MaterialIcon.svelte";
+	import UploadManager from "$lib/upload/manager.svelte.js";
 
 	let { data } = $props();
 	// Keyboard events
@@ -92,6 +95,9 @@
 		}
 	});
 
+	displayData = [];
+	shouldUpdate = false;
+
 	hotkeys("esc", (e) => {
 		lightboxImage = undefined;
 	});
@@ -133,7 +139,27 @@
 {/snippet}
 
 {#snippet searchInputSnippet()}
-	<SearchInput style="margin: 0em 1em;" bind:value={searchValue} />
+	{#if displayData.length > 0}
+		<SearchInput style="margin: 0em 1em;" bind:value={searchValue} />
+	{/if}
+{/snippet}
+
+{#snippet noAssetsSnippet()}
+	<Button
+		id="add-to-collection"
+		style="padding: 2em 2em;"
+		title="Add to Collection"
+		aria-label="Add to Collection"
+		onclick={() => {
+			// allowed image types will come from the config but for now just hardcode
+			const controller = new UploadManager([...SUPPORTED_RAW_FILES, ...SUPPORTED_IMAGE_TYPES] as SupportedImageTypes[]);
+			controller.openFileHolder();
+			controller.uploadImage();
+		}}
+	>
+		Add Images to Collection
+		<MaterialIcon iconName="add" style="font-size: 2em;" />
+	</Button>
 {/snippet}
 
 <VizViewContainer
@@ -158,6 +184,7 @@
 	<AssetsShell
 		bind:grid
 		{pagination}
+		{noAssetsSnippet}
 		toolbarSnippet={searchInputSnippet}
 		toolbarProps={{
 			style: "justify-content: center; "

@@ -9,9 +9,8 @@ export interface ImageUploadFileData {
 }
 
 export interface ImageUploadSuccess {
-    url: string;
     id: string;
-    metadata: any;
+    metadata?: any;
 }
 
 export default class UploadManager {
@@ -62,34 +61,59 @@ export default class UploadManager {
     }
 
     async uploadImage() {
-        this.fileHolder.addEventListener("change", async () => {
-            if (!this.fileHolder.files) {
-                return;
-            }
+        return await new Promise<ImageUploadSuccess[]>((resolve, reject) => {
+            this.fileHolder.addEventListener("change", async () => {
+                try {
+                    if (!this.fileHolder.files) {
+                        resolve([]);
+                        return;
+                    }
 
-            const allFileData = await this.readFile(this.fileHolder.files);
-            this.fileHolder.remove();
+                    const allFileData = await this.readFile(this.fileHolder.files);
+                    this.fileHolder.remove();
 
-            for (const fileData of allFileData) {
-                if (!this.allowedTypes.includes(fileData.file.type.split("/")[1])) {
-                    return;
+                    const uploadFiles = [];
+
+                    for (const fileData of allFileData) {
+                        if (!this.allowedTypes.includes(fileData.file.type.split("/")[1])) {
+                            resolve([]);
+                            return;
+                        }
+
+                        const fileInformation: ImageUploadFileData = {
+                            filename: fileData.file.name,
+                            data: fileData.file
+                        };
+
+                        // Checking for duplicates should be optional maybe but just do it now anyways
+                        if (crypto?.subtle?.digest) {
+                            const hashBuffer = await crypto.subtle.digest("SHA-1", await fileData.file.arrayBuffer());
+                            const hashArray = Array.from(new Uint8Array(hashBuffer));
+                            fileInformation.checksum = hashArray.map((b) => b.toString(16).padStart(2, "0")).join("");
+                        }
+
+                        uploadFiles.push(new UploadImage(fileInformation));
+                        upload.stats.total += 1;
+                    }
+
+                    upload.files.push(...uploadFiles);
+                    const results = await Promise.all(uploadFiles.map((uploadFile) => uploadFile.upload()));
+                    const successfulUploads = results.filter((r) => r !== undefined);
+                    upload.stats.success = successfulUploads.length;
+                    upload.stats.errors = upload.stats.total - successfulUploads.length;
+
+                    for (const file of uploadFiles) {
+                        const index = upload.files.indexOf(file);
+                        if (index > -1) {
+                            upload.files.splice(index, 1);
+                        }
+                    }
+
+                    resolve(successfulUploads);
+                } catch (error) {
+                    reject(error);
                 }
-
-                const fileInformation: ImageUploadFileData = {
-                    filename: fileData.file.name,
-                    data: fileData.file
-                };
-
-                // Checking for duplicates should be optional maybe but just do it now anyways
-                if (crypto?.subtle?.digest) {
-                    const hashBuffer = await crypto.subtle.digest("SHA-1", await fileData.file.arrayBuffer());
-                    const hashArray = Array.from(new Uint8Array(hashBuffer));
-                    fileInformation.checksum = hashArray.map((b) => b.toString(16).padStart(2, "0")).join("");
-                }
-
-                upload.files.push(new UploadImage(fileInformation));
-                upload.stats.total = upload.files.length;
-            }
+            });
         });
     }
 
