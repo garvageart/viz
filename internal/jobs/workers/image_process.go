@@ -54,19 +54,19 @@ func EnqueueImageProcessJob(job *ImageProcessJob) error {
 }
 
 func ImageProcess(ctx context.Context, db *gorm.DB, imgEnt entities.Image) error {
-	img, _, err := images.ReadFileAsGoImage(imgEnt.UID, imgEnt.FileName, imgEnt.FileType)
+	originalData, err := images.ReadImage(imgEnt.UID, imgEnt.FileName, imgEnt.FileType)
 	if err != nil {
 		return fmt.Errorf("failed to read image: %w", err)
 	}
 
 	// Create a display thumbnail from the image
-	thumbData, err := imageops.CreateThumbnailWithSize(img, 200, 0)
+	thumbData, err := imageops.CreateThumbnailWithSize(originalData, 200, 0)
 	if err != nil {
 		return fmt.Errorf("failed to create thumbnail: %w", err)
 	}
 
 	// Create a very small thumbnail for thumbhash (e.g., 32x32)
-	smallThumbData, err := imageops.CreateThumbnailWithSize(img, 32, 32)
+	smallThumbData, err := imageops.CreateThumbnailWithSize(originalData, 32, 32)
 	if err != nil {
 		return fmt.Errorf("failed to create small thumbnail for thumbhash: %w", err)
 	}

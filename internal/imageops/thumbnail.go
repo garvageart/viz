@@ -1,21 +1,37 @@
 package imageops
 
 import (
-	"bytes"
 	"fmt"
-	"image"
 
-	"github.com/kovidgoyal/imaging"
+	libvips "imagine/internal/imageops/vips"
 )
 
-// CreateThumbnailWithSize creates a thumbnail of the specified width and height.
-func CreateThumbnailWithSize(img image.Image, width, height int) ([]byte, error) {
-	imgData := imaging.Resize(img, width, height, imaging.Lanczos)
-	imageWriter := bytes.NewBuffer([]byte{})
-
-	err := imaging.Encode(imageWriter, imgData, imaging.PNG)
-	if err != nil {
-		return nil, fmt.Errorf("Failed to encode image: %w", err)
+// CreateThumbnailWithSize creates a thumbnail using libvips from the input image bytes.
+//
+// Behaviour:
+// - Respects EXIF orientation (auto-rotate) via libvips thumbnail operation.
+// - If height is 0, only width is constrained and aspect ratio is preserved.
+// - If both width and height are provided (>0), libvips will fit within bounds; cropping is not enabled by default.
+// - Output encoding is JPEG (binary bytes), suitable for saving with .jpeg extension.
+func CreateThumbnailWithSize(imgBytes []byte, width, height int) ([]byte, error) {
+	if len(imgBytes) == 0 {
+		return nil, fmt.Errorf("no image data provided")
 	}
-	return imageWriter.Bytes(), nil
+
+	opts := libvips.DefaultThumbnailBufferOptions()
+	opts.NoRotate = false
+	opts.Height = height
+
+	thumb, err := libvips.NewThumbnailBuffer(imgBytes, width, opts)
+	if err != nil {
+		return nil, fmt.Errorf("thumbnail generation failed: %w", err)
+	}
+	defer thumb.Close()
+
+	jpegOpts := libvips.DefaultJpegsaveBufferOptions()
+	data, err := thumb.JpegsaveBuffer(jpegOpts)
+	if err != nil {
+		return nil, fmt.Errorf("thumbnail encode failed: %w", err)
+	}
+	return data, nil
 }
