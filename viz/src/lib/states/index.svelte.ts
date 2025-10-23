@@ -1,5 +1,7 @@
+import type { ImageObjectData } from "$lib/entities/image";
 import type { AssetSort } from "$lib/types/asset";
-import type { Collection, IImageObjectData } from "$lib/types/images";
+import type { Collection } from "$lib/types/images";
+import type { UploadImage } from "$lib/upload/asset.svelte";
 import { cookieMethods } from "$lib/utils/cookie";
 import { writable } from "svelte/store";
 
@@ -17,10 +19,15 @@ export let search = $state({
     loading: false,
     executed: false,
     data: {
-        collections: [] as unknown as Collection[],
-        images: [] as unknown as IImageObjectData[]
+        collections: {
+            data: [] as unknown as Collection[]
+        },
+        images: {
+            data: [] as unknown as ImageObjectData[]
+        }
     },
     value: "",
+    enableHomePageSearch: false,
     element: undefined as unknown as HTMLInputElement | undefined
 });
 
@@ -43,4 +50,15 @@ export let sort: AssetSort = $state({
     },
     by: "name",
     order: "asc",
+});
+
+export let upload = $state({
+    files: [] as UploadImage[],
+    concurrency: 2,
+    stats: {
+        errors: 0,
+        duplicates: 0,
+        success: 0,
+        total: 0
+    }
 });

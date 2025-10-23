@@ -1,3 +1,4 @@
+import type { ImageObjectData } from "$lib/entities/image";
 import type { User } from "./users";
 
 export type SupportedImageTypes = "jpeg" | "jpg" | "png" | "tiff";

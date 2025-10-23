@@ -40,7 +40,7 @@ export async function performSearch() {
         await sleep(randomLatency);
 
         updateURLParameter("q", search.value);
-        search.data.collections = Array.from(
+        search.data.collections.data = Array.from(
             { length: Math.floor(Math.random() * 45) + 15 },
             (_, i) =>
                 new CollectionData({
@@ -96,7 +96,7 @@ export async function performSearch() {
                 })
         );
 
-        search.data.images = Array.from(
+        search.data.images.data = Array.from(
             { length: Math.floor(Math.random() * 90) + 54 },
             (_, i) =>
                 new ImageObjectData({
