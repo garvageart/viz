@@ -1,17 +1,26 @@
-import type { Collection } from "$lib/types/images";
+import type { Collection, CollectionResponse } from "$lib/types/images";
 import type { PageLoad } from "./$types";
-import { createTestCollection } from "$lib/data/test";
+import { sendAPIRequest } from "$lib/utils/http";
+import CollectionData from "$lib/entities/collection";
 
-export const load: PageLoad = ({ fetch }) => {
-    let allCollections: Collection[] = [];
-    const randomCollectionCount = Math.floor(Math.random() * 70) + 70; // Random number between 5 and 25
-    for (let i = 0; i < randomCollectionCount; i++) {
-        const testData = createTestCollection();
+export const load: PageLoad = async ({ fetch }) => {
+    let allCollections: CollectionResponse | undefined = undefined;
 
-        allCollections.push(testData);
+    const res = await sendAPIRequest<CollectionResponse>("collections", { fetch });
+    allCollections = {
+        ...res,
+        items: res.items.map(item => new CollectionData({
+            ...item,
+            // @ts-ignore
+            "created_on": new Date(item["CreatedAt"]),
+            // @ts-ignore
+            "updated_on": new Date(item["UpdatedAt"]),
+            images: item.images ?? [],
+
+        }))
     };
 
-    return {
-        response: allCollections
-    };
+
+
+    return allCollections;
 };

@@ -29,9 +29,12 @@
 		limit: 10,
 		offset: 0
 	});
-	let shouldUpdate = $derived(data.response.length > pagination.limit * pagination.offset);
 
-	let displayData = $derived(sortCollections(data.response, sort));
+	let collectionData = data.items;
+	$inspect("collection data", data);
+
+	let shouldUpdate = $derived(collectionData.length > pagination.limit * pagination.offset);
+	let displayData = $derived(sortCollections(collectionData, sort));
 
 	let fadeOpacity = false;
 	let toolbarOpacity = $state(1);
@@ -64,26 +67,19 @@
 				event.preventDefault();
 
 				const data = new FormData(event.currentTarget);
-				const formObject = Object.fromEntries(data.entries());
 				const toggleSwitch = event.currentTarget.querySelector("#create_collection-private")
 					?.lastElementChild as HTMLButtonElement;
-				formObject["private"] = `${toggleSwitch.getAttribute("data-checked") === "true"}`;
 
-				const response = (await sendAPIRequest<CollectionData>(
-					"/collections",
-					{
-						method: "POST",
-						body: JSON.stringify(formObject)
+				const response = await sendAPIRequest<CollectionData>("/collections", {
+					method: "POST",
+					headers: {
+						"Content-Type": "application/json"
 					},
-					true
-				)) as Response;
+					body: JSON.stringify({ ...Object.fromEntries(data), private: toggleSwitch.getAttribute("data-checked") === "true" })
+				});
 
-				if (response) {
-					const data = (await response.json()) as CollectionData;
-
-					modal.show = false;
-					goto(`/collections/${data.uid}`);
-				}
+				modal.show = false;
+				goto(`/collections/${response.uid}`);
 			}}
 		>
 			<input id="create_collection-name" name="name" placeholder="Name" type="text" required />
@@ -129,7 +125,29 @@
 				<MaterialIcon iconName="add" />
 			</Button>
 		</div>
-		<span id="coll-details-floating">{data.response.length} {data.response.length === 1 ? "collection" : "collections"}</span>
+		<span id="coll-details-floating">{collectionData.length} {collectionData.length === 1 ? "collection" : "collections"}</span>
+	</div>
+{/snippet}
+
+{#snippet noAssetsSnippet()}
+	<div id="no-collections-container">
+		<div id="no-collections-text">
+			<MaterialIcon iconName="folder_open" style="font-size: 2rem; margin: 0rem 0.5rem; color: var(--imag-20);" />
+			<span style="color: var(--imag-20); font-size: 1.2rem;">Add your first collection</span>
+		</div>
+
+		<Button
+			id="create_collection-button"
+			style="padding: 2em 8em; display: flex; align-items: center; justify-content: center;"
+			title="Create Collection"
+			aria-label="Create Collection"
+			onclick={() => {
+				modal.show = true;
+			}}
+		>
+			Create a New Collection
+			<MaterialIcon iconName="add" style="font-size: 2em;" />
+		</Button>
 	</div>
 {/snippet}
 
@@ -161,6 +179,7 @@
 		bind:grid
 		{pagination}
 		{toolbarSnippet}
+		{noAssetsSnippet}
 		toolbarProps={{
 			style: `justify-content: space-between;` + (fadeOpacity ? `opacity: ${toolbarOpacity};` : "")
 		}}
@@ -274,6 +293,20 @@
 		cursor: pointer;
 		width: 100%;
 		height: 100%;
+	}
+
+	#no-collections-container {
+		display: flex;
+		flex-direction: column;
+		align-items: flex-start;
+	}
+
+	#no-collections-text {
+		display: flex;
+		flex-direction: row;
+		justify-content: center;
+		align-items: center;
+		margin-bottom: 1rem;
 	}
 
 	#viz-collection-modal {
