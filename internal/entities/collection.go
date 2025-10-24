@@ -20,5 +20,5 @@ type Collection struct {
 	Private     *bool             `json:"private"`
 	Images      []CollectionImage `json:"images" gorm:"type:JSONB"`
 	CreatedBy   string            `json:"created_by"`
-	Description string            `json:"description,omitempty"`
+	Description string            `json:"description"`
 }

@@ -56,11 +56,13 @@ func CollectionsRouter(db *gorm.DB, logger *slog.Logger) *chi.Mux {
 
 		err := render.DecodeJSON(req.Body, &collection)
 		if err != nil {
+			res.WriteHeader(http.StatusBadRequest)
 			render.JSON(res, req, map[string]string{"error": "invalid request body"})
 			return
 		}
 
 		if collection.Name == "" {
+			res.WriteHeader(http.StatusBadRequest)
 			render.JSON(res, req, map[string]string{"error": "name is required"})
 			return
 		}
@@ -107,11 +109,6 @@ func CollectionsRouter(db *gorm.DB, logger *slog.Logger) *chi.Mux {
 			return
 		}
 
-		if len(collections) == 0 {
-			res.WriteHeader(http.StatusNoContent)
-			return
-		}
-
 		nextOffset := min(offset+limit, len(collections))
 
 		prevOffset := new(int)
@@ -122,13 +119,13 @@ func CollectionsRouter(db *gorm.DB, logger *slog.Logger) *chi.Mux {
 		}
 
 		result := struct {
-			Href   string `json:"href"`
-			Prev   string `json:"prev"`
-			Next   string `json:"next"`
-			Limit  int    `json:"limit"`
-			Offset int    `json:"offset"`
-			Count  int    `json:"count"`
-			Items  []entities.Collection
+			Href   string                `json:"href"`
+			Prev   string                `json:"prev"`
+			Next   string                `json:"next"`
+			Limit  int                   `json:"limit"`
+			Offset int                   `json:"offset"`
+			Count  int                   `json:"count"`
+			Items  []entities.Collection `json:"items"`
 		}{
 			Href:   fmt.Sprintf("/collections/?offset=%d&limit=%d", offset, limit),
 			Prev:   fmt.Sprintf("/collections/?offset=%d&limit=%d", prevOffset, limit),
@@ -266,6 +263,58 @@ func CollectionsRouter(db *gorm.DB, logger *slog.Logger) *chi.Mux {
 		}
 
 		render.JSON(res, req, result)
+	})
+
+	router.Put("/{uid}/images", func(res http.ResponseWriter, req *http.Request) {
+		uid := chi.URLParam(req, "uid")
+		var colImage struct {
+			UIDs []string `json:"uids"`
+		}
+
+		err := render.DecodeJSON(req.Body, &colImage)
+		if err != nil {
+			render.JSON(res, req, map[string]any{"error": "invalid request body", "added": false})
+			return
+		}
+
+		err = db.Transaction(func(tx *gorm.DB) error {
+			var collection entities.Collection
+			if err := tx.First(&collection, "uid = ?", uid).Error; err != nil {
+				return err
+			}
+
+			for _, imgUID := range colImage.UIDs {
+				var img entities.Image
+				var colImageEnt entities.CollectionImage
+
+				if err := tx.First(&img, "uid = ?", imgUID).Error; err != nil {
+					return err
+				}
+
+				colImageEnt.UID = imgUID
+				colImageEnt.AddedAt = time.Now()
+				collection.Images = append(collection.Images, colImageEnt)
+			}
+
+			return tx.Save(&collection).Error
+		})
+
+		if err != nil {
+			if err == gorm.ErrRecordNotFound {
+				res.WriteHeader(http.StatusNotFound)
+				render.JSON(res, req, map[string]any{"error": "collection or image not found", "added": false})
+				return
+			}
+
+			libhttp.ServerError(res, req, err, logger, nil,
+				"",
+				"Something went wrong, please try again later",
+			)
+			return
+		}
+
+		res.WriteHeader(http.StatusNoContent)
+		render.JSON(res, req, map[string]any{"added": true})
 	})
 
 	return router
