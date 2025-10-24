@@ -192,8 +192,6 @@ func ImagesRouter(db *gorm.DB, logger *slog.Logger) *chi.Mux {
 			return
 		}
 
-		fileBytes := []byte{}
-
 		goimg, _, err := images.ReadFileAsGoImage(imgEnt.UID, imgEnt.FileName, imgEnt.FileType)
 		if err != nil {
 			res.WriteHeader(http.StatusInternalServerError)
@@ -202,7 +200,7 @@ func ImagesRouter(db *gorm.DB, logger *slog.Logger) *chi.Mux {
 		}
 
 		newImage := imaging.Resize(goimg, int(width), int(height), imaging.Lanczos)
-		fileBytes = newImage.Pix
+		fileBytes := newImage.Pix
 		libvipsImg, err := libvips.NewImageFromBuffer(fileBytes, libvips.DefaultLoadOptions())
 
 		if err != nil {
