@@ -51,7 +51,7 @@
 	import { addViewToContent, findSubPanel } from "$lib/utils/layout";
 	import VizView from "$lib/views/views.svelte";
 	import { DateTime } from "luxon";
-	import CollectionPage from "../../routes/(app)/collections/[id]/+page.svelte";
+	import CollectionPage from "../../routes/(app)/collections/[uid]/+page.svelte";
 	import VizSubPanelData, { Content } from "$lib/layouts/subpanel.svelte";
 	import { layoutState } from "$lib/third-party/svelte-splitpanes/state.svelte";
 	import { findPanelIndex, getSubPanelParent } from "$lib/views/utils";

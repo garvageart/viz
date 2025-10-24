@@ -1,20 +1,20 @@
-import type { Collection, IImageObjectData } from "$lib/types/images";
 import type { User } from "$lib/types/users";
+import type { ImageObjectData } from "./image";
 
-class CollectionData implements Collection {
+class CollectionData {
     uid: string;
     name: string;
     image_count: number;
     private: boolean;
-    images: IImageObjectData[];
+    images: ImageObjectData[];
     created_on: Date;
     updated_on: Date;
     created_by: User;
     description: string;
     owner: User;
-    thumbnail?: IImageObjectData;
+    thumbnail?: ImageObjectData;
 
-    constructor(data: Collection) {
+    constructor(data: CollectionData) {
         this.uid = data.uid;
         this.name = data.name;
         this.image_count = data.image_count;

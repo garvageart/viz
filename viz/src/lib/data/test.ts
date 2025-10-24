@@ -31,7 +31,7 @@ export function createTestImageObject() {
     const randomImageNumber = Math.floor(Math.random() * 100);
     const name = `${faker.word.adjective()} ${faker.word.noun()}`;
     return new ImageObjectData({
-        id: generateRandomString(16),
+        uid: generateRandomString(16),
         name,
         collection_id: generateRandomString(16),
         uploaded_on: faker.date.past({ years: 2 }),

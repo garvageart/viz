@@ -9,7 +9,6 @@
 	import MaterialIcon from "$lib/components/MaterialIcon.svelte";
 	import Button from "$lib/components/Button.svelte";
 	import { sendAPIRequest } from "$lib/utils/http";
-	import type { Collection } from "$lib/types/images";
 	import ModalOverlay from "$lib/components/modal/ModalOverlay.svelte";
 	import { modal, sort } from "$lib/states/index.svelte";
 	import { goto } from "$app/navigation";
@@ -22,6 +21,7 @@
 	import type { AssetGridArray } from "$lib/types/asset";
 	import AssetsShell from "$lib/components/AssetsShell.svelte";
 	import { sortCollections } from "$lib/sort/sort";
+	import type CollectionData from "$lib/entities/collection";
 
 	let { data }: PageProps = $props();
 
@@ -40,8 +40,8 @@
 	let selectedAssets = $state<SvelteSet<any>>(new SvelteSet());
 	let singleSelectedAsset: any | undefined = $state();
 
-	let collectionGridArray: AssetGridArray<Collection> | undefined = $state();
-	let grid: ComponentProps<typeof AssetGrid<Collection>> = $derived({
+	let collectionGridArray: AssetGridArray<CollectionData> | undefined = $state();
+	let grid: ComponentProps<typeof AssetGrid<CollectionData>> = $derived({
 		assetDblClick: (_, asset) => {
 			openCollection(asset, currentPanelContent);
 		},
@@ -69,7 +69,7 @@
 					?.lastElementChild as HTMLButtonElement;
 				formObject["private"] = `${toggleSwitch.getAttribute("data-checked") === "true"}`;
 
-				const response = (await sendAPIRequest<Collection>(
+				const response = (await sendAPIRequest<CollectionData>(
 					"/collections",
 					{
 						method: "POST",
@@ -79,7 +79,7 @@
 				)) as Response;
 
 				if (response) {
-					const data = (await response.json()) as Collection;
+					const data = (await response.json()) as CollectionData;
 
 					modal.show = false;
 					goto(`/collections/${data.uid}`);
@@ -97,7 +97,7 @@
 	</div>
 </ModalOverlay>
 
-{#snippet collectionCard(collectionData: Collection)}
+{#snippet collectionCard(collectionData: CollectionData)}
 	{#if page.url.pathname !== "/"}
 		<a
 			data-sveltekit-preload-data

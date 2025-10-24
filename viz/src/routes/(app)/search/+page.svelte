@@ -19,7 +19,7 @@
 	import SearchInput from "$lib/components/SearchInput.svelte";
 	import { sortCollectionImages } from "$lib/sort/sort";
 	import type { AssetGridArray } from "$lib/types/asset";
-	import { searchForData } from "../collections/[id]/+page.svelte";
+	import { searchForData } from "../collections/[uid]/+page.svelte";
 
 	export class SelectedAssets<T> {
 		selectedAssets = $state<SvelteSet<T>>(new SvelteSet());
