@@ -1,0 +1,144 @@
+#!/usr/bin/env node
+import { spawnSync } from 'node:child_process';
+import { existsSync } from 'node:fs';
+import { join, dirname } from 'node:path';
+import { fileURLToPath } from 'node:url';
+
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = dirname(__filename);
+
+interface Options {
+    installTools?: boolean;
+    build?: boolean;
+}
+
+const args = process.argv.slice(2);
+const options: Options = {
+    installTools: args.includes('--install-tools'),
+    build: args.includes('--build'),
+};
+
+const root = join(__dirname, '..', '..');
+const specPath = join(root, 'api', 'openapi', 'openapi.yaml');
+const dtoOutPath = join(root, 'internal', 'dto', 'types.gen.go');
+const vizDir = join(root, 'viz');
+
+console.log('Repo root:', root);
+
+if (!existsSync(specPath)) {
+    console.error(`OpenAPI spec not found at ${specPath}`);
+    process.exit(1);
+}
+
+function run(command: string, args: string[], cwd?: string, silent = false) {
+    const result = spawnSync(command, args, {
+        cwd: cwd || root,
+        stdio: silent ? 'pipe' : 'inherit',
+        shell: true,
+    });
+    return result.status === 0;
+}
+
+function commandExists(cmd: string): boolean {
+    const result = spawnSync(process.platform === 'win32' ? 'where' : 'which', [cmd], {
+        stdio: 'pipe',
+        shell: true,
+    });
+    return result.status === 0;
+}
+
+// Optionally install tools
+if (options.installTools) {
+    console.log('Ensuring oapi-codegen is installed...');
+    if (!commandExists('oapi-codegen')) {
+        console.log('Installing oapi-codegen...');
+        run('go', ['install', 'github.com/oapi-codegen/oapi-codegen/v2/cmd/oapi-codegen@latest']);
+    }
+
+    console.log('Ensuring pnpm dev dep openapi-typescript is installed...');
+    if (existsSync(vizDir) && commandExists('pnpm')) {
+        console.log('Adding openapi-typescript to viz...');
+        run('pnpm', ['add', '-D', 'openapi-typescript@^7.5.0'], vizDir, true);
+    } else if (!commandExists('pnpm')) {
+        console.warn('pnpm not found. Skipping TS generator install; assuming it\'s available in PATH.');
+    }
+}
+
+// Ensure oapi runtime dependency exists
+console.log('Ensuring Go runtime dependency for oapi-codegen is present...');
+const hasRuntime = run('go', ['list', '-m', 'github.com/oapi-codegen/runtime'], root, true);
+if (!hasRuntime) {
+    console.log('Adding oapi-codegen runtime dependency...');
+    run('go', ['get', 'github.com/oapi-codegen/runtime/types@v1.1.0']);
+}
+
+// Generate Go DTOs
+console.log(`Generating Go DTOs from ${specPath} -> ${dtoOutPath}`);
+const goGenSuccess = run('oapi-codegen', [
+    '-generate',
+    'types',
+    '-package',
+    'dto',
+    '-o',
+    dtoOutPath,
+    specPath,
+]);
+
+if (!goGenSuccess) {
+    console.error('Failed to generate Go DTOs');
+    process.exit(1);
+}
+
+// Tidy modules
+console.log('Running go mod tidy...');
+run('go', ['mod', 'tidy']);
+
+// Generate TS interfaces
+if (existsSync(vizDir)) {
+    console.log('Generating TS interfaces in viz...');
+    const pkgJsonPath = join(vizDir, 'package.json');
+
+    if (existsSync(pkgJsonPath)) {
+        if (commandExists('pnpm')) {
+            const tsGenSuccess = run('pnpm', ['run', 'gen:api:ts'], vizDir);
+            if (!tsGenSuccess) {
+                console.warn('pnpm run gen:api:ts failed; trying npx fallback...');
+                run('npx', [
+                    '--yes',
+                    'openapi-typescript',
+                    join('..', 'api', 'openapi', 'openapi.yaml'),
+                    '-o',
+                    join('src', 'lib', 'types', 'api.gen.ts'),
+                ], vizDir);
+            }
+        } else {
+            console.warn('pnpm not found; trying npx openapi-typescript...');
+            run('npx', [
+                '--yes',
+                'openapi-typescript',
+                join('..', 'api', 'openapi', 'openapi.yaml'),
+                '-o',
+                join('src', 'lib', 'types', 'api.gen.ts'),
+            ], vizDir);
+        }
+    }
+}
+
+// Optional build checks
+if (options.build) {
+    console.log('Running Go build...');
+    const goBuildSuccess = run('go', ['build', './...']);
+    if (!goBuildSuccess) {
+        console.warn('Go build failed.');
+    }
+
+    if (existsSync(vizDir) && commandExists('pnpm')) {
+        console.log('Running Svelte/TS check...');
+        const checkSuccess = run('pnpm', ['run', 'check'], vizDir);
+        if (!checkSuccess) {
+            console.warn('viz check failed (this may be unrelated to API types).');
+        }
+    }
+}
+
+console.log('Done.');

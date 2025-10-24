@@ -3,7 +3,10 @@
 	"version": "0.0.1",
 	"description": "",
 	"scripts": {
-		"test": "echo \"Error: no test specified\" && exit 1"
+		"test": "echo \"Error: no test specified\" && exit 1",
+		"gen:api": "tsx gen-api.ts",
+		"gen:api:install": "tsx gen-api.ts --install-tools",
+		"gen:api:build": "tsx gen-api.ts --build"
 	},
 	"keywords": [],
 	"author": "Les <hello@lesis.online>",
@@ -15,7 +18,8 @@
 	"type": "module",
 	"devDependencies": {
 		"@types/node": "^22.15.21",
-		"@types/semver": "^7.7.1"
+		"@types/semver": "^7.7.1",
+		"tsx": "^4.20.6"
 	},
 	"dependencies": {
 		"dotenv": "^17.2.1",
