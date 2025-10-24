@@ -5,7 +5,7 @@ import type { ImageObjectData } from "$lib/entities/image";
 export const load: PageLoad = ({ fetch, params, url }) => {
     const collection = createTestCollection();
     const images: ImageObjectData[] = [];
-    collection.id = params.id;
+    collection.uid = params.uid;
 
     for (let i = 0; i < collection.image_count; i++) {
         images.push(createTestImageObject());

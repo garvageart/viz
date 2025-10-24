@@ -74,7 +74,7 @@
 		singleSelectedAsset: collectionSelectedAssets.singleSelectedAsset,
 		data: collections,
 		assetDblClick(_, asset) {
-			goto(`/collections/${asset.id}`);
+			goto(`/collections/${asset.uid}`);
 		},
 		assetSnippet: collectionCard
 	});
@@ -116,7 +116,7 @@
 				alt="{lightboxImage.name} by {lightboxImage.uploaded_by.username}"
 				title="{lightboxImage.name} by {lightboxImage.uploaded_by.username}"
 				loading="eager"
-				data-image-id={lightboxImage.id}
+				data-image-id={lightboxImage.uid}
 			/>
 		{:catch error}
 			<p>Failed to load image</p>

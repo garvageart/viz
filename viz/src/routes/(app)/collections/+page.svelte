@@ -82,7 +82,7 @@
 					const data = (await response.json()) as Collection;
 
 					modal.show = false;
-					goto(`/collections/${data.id}`);
+					goto(`/collections/${data.uid}`);
 				}
 			}}
 		>
@@ -101,9 +101,9 @@
 	{#if page.url.pathname !== "/"}
 		<a
 			data-sveltekit-preload-data
-			data-asset-id={collectionData.id}
+			data-asset-id={collectionData.uid}
 			class="collection-card-link"
-			href="/collections/{collectionData.id}"
+			href="/collections/{collectionData.uid}"
 		>
 			<CollectionCard collection={collectionData} />
 		</a>

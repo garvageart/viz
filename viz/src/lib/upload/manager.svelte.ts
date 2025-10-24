@@ -9,7 +9,7 @@ export interface ImageUploadFileData {
 }
 
 export interface ImageUploadSuccess {
-    id: string;
+    uid: string;
     metadata?: any;
 }
 

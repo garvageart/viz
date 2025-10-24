@@ -1,8 +1,8 @@
-import type { IImageObjectData, ImageData, ImageDupes } from "$lib/types/images";
+import type { ImageData, ImageDupes } from "$lib/types/images";
 import type { User } from "$lib/types/users";
 
-export class ImageObjectData implements IImageObjectData {
-    id: string;
+export class ImageObjectData {
+    uid: string;
     name: string;
     uploaded_on: Date;
     uploaded_by: User;
@@ -19,8 +19,8 @@ export class ImageObjectData implements IImageObjectData {
         raw?: string;
     };
 
-    constructor(data: IImageObjectData) {
-        this.id = data.id;
+    constructor(data: ImageObjectData) {
+        this.uid = data.uid;
         this.name = data.name;
         this.uploaded_on = data.uploaded_on;
         this.updated_on = data.updated_on;

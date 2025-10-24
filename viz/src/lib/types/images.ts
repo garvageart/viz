@@ -59,7 +59,7 @@ export const SUPPORTED_RAW_FILES: SupportedRAWFiles[] = [
 ];
 
 export interface IImageObjectData {
-    id: string;
+    uid: string;
     name: string;
     uploaded_on: Date;
     uploaded_by: User;
@@ -89,7 +89,7 @@ export interface ImageData {
 };
 
 export interface Collection {
-    id: string;
+    uid: string;
     name: string;
     image_count: number;
     private: boolean;
@@ -103,7 +103,7 @@ export interface Collection {
 };
 
 export interface ImageDupes {
-    id: string;
+    uid: string;
     original_image_id: string;
     properties: IImageObjectData;
     created_on: Date;

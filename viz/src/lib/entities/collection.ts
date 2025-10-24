@@ -2,7 +2,7 @@ import type { Collection, IImageObjectData } from "$lib/types/images";
 import type { User } from "$lib/types/users";
 
 class CollectionData implements Collection {
-    id: string;
+    uid: string;
     name: string;
     image_count: number;
     private: boolean;
@@ -15,7 +15,7 @@ class CollectionData implements Collection {
     thumbnail?: IImageObjectData;
 
     constructor(data: Collection) {
-        this.id = data.id;
+        this.uid = data.uid;
         this.name = data.name;
         this.image_count = data.image_count;
         this.private = data.private;

@@ -44,7 +44,7 @@ export async function performSearch() {
             { length: Math.floor(Math.random() * 45) + 15 },
             (_, i) =>
                 new CollectionData({
-                    id: generateRandomString(16),
+                    uid: generateRandomString(16),
                     name: `${faker.word.adjective()} ${faker.word.noun()} Photos`
                         .split(" ")
                         .map((word) => word.charAt(0).toUpperCase() + word.slice(1))
@@ -55,7 +55,7 @@ export async function performSearch() {
                     images: [],
                     private: faker.datatype.boolean(),
                     created_by: {
-                        id: generateRandomString(8),
+                        uid: generateRandomString(8),
                         first_name: faker.person.firstName(),
                         last_name: faker.person.lastName(),
                         username: faker.internet.username(),

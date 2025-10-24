@@ -33,6 +33,7 @@
 	import Button from "$lib/components/Button.svelte";
 	import MaterialIcon from "$lib/components/MaterialIcon.svelte";
 	import UploadManager from "$lib/upload/manager.svelte.js";
+	import { sendAPIRequest } from "$lib/utils/http";
 
 	let { data } = $props();
 	// Keyboard events
@@ -125,7 +126,7 @@
 				alt="{lightboxImage.name} by {lightboxImage.uploaded_by.username}"
 				title="{lightboxImage.name} by {lightboxImage.uploaded_by.username}"
 				loading="eager"
-				data-image-id={lightboxImage.id}
+				data-image-uid={lightboxImage.uid}
 			/>
 		{:catch error}
 			<p>Failed to load image</p>
@@ -145,21 +146,31 @@
 {/snippet}
 
 {#snippet noAssetsSnippet()}
-	<Button
-		id="add-to-collection"
-		style="padding: 2em 2em;"
-		title="Add to Collection"
-		aria-label="Add to Collection"
-		onclick={() => {
-			// allowed image types will come from the config but for now just hardcode
-			const controller = new UploadManager([...SUPPORTED_RAW_FILES, ...SUPPORTED_IMAGE_TYPES] as SupportedImageTypes[]);
-			controller.openFileHolder();
-			controller.uploadImage();
-		}}
-	>
-		Add Images to Collection
-		<MaterialIcon iconName="add" style="font-size: 2em;" />
-	</Button>
+	<div id="add_to_collection-container">
+		<span style="margin: 1em; color: var(--imag-20);">Add images to this collection</span>
+		<Button
+			id="add_to_collection-button"
+			style="padding: 2em 8em; display: flex; align-items: center; justify-content: center;"
+			title="Select Photos"
+			aria-label="Select Photos"
+			onclick={async () => {
+				// allowed image types will come from the config but for now just hardcode
+				const controller = new UploadManager([...SUPPORTED_RAW_FILES, ...SUPPORTED_IMAGE_TYPES] as SupportedImageTypes[]);
+				controller.openFileHolder();
+				const uploadedImages = await controller.uploadImage();
+
+				sendAPIRequest("collection/images", {
+					method: "PUT",
+					body: JSON.stringify({
+						uids: uploadedImages.map((img) => img.uid)
+					})
+				});
+			}}
+		>
+			Select Photos
+			<MaterialIcon iconName="add" style="font-size: 2em;" />
+		</Button>
+	</div>
 {/snippet}
 
 <VizViewContainer
@@ -233,6 +244,12 @@
 <style lang="scss">
 	:global(#create-collection) {
 		margin: 0em 1rem;
+	}
+
+	#add_to_collection-container {
+		display: flex;
+		flex-direction: column;
+		justify-content: left;
 	}
 
 	#viz-info-container {

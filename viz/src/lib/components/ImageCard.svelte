@@ -6,7 +6,7 @@
 	const imageDate = DateTime.fromJSDate(asset.uploaded_on);
 </script>
 
-<div class="image-card" data-asset-id={asset.id}>
+<div class="image-card" data-asset-id={asset.uid}>
 	<div class="image-container">
 		<img
 			class="image-card-image"

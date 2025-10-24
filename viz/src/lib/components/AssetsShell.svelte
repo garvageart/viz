@@ -1,4 +1,4 @@
-<script lang="ts" generics="T extends { id: string } & Record<string, any>">
+<script lang="ts" generics="T extends { uid: string } & Record<string, any>">
 	import { dev } from "$app/environment";
 	import { DateTime } from "luxon";
 	import AssetGrid from "./AssetGrid.svelte";
@@ -99,7 +99,7 @@
 			`%cGrid Array at ${DateTime.now().toFormat("dd.MM.yyyy HH:mm:ss")}`,
 			"font-weight: bold; color: var(--imag-100); font-size: 18px;"
 		);
-		console.table(assetGridArray?.map((i) => i.map((j) => j.asset?.name ?? j.asset?.id)));
+		console.table(assetGridArray?.map((i) => i.map((j) => j.asset?.name ?? j.asset?.uid)));
 	}
 </script>
 
@@ -116,55 +116,57 @@
 	{/if}
 {/snippet}
 
-{#if grid.selectedAssets.size > 1}
-	<AssetToolbar class="selection-toolbar" {...selectionToolbarProps}>
-		<button
-			id="coll-clear-selection"
-			class="toolbar-button"
-			title="Clear selection"
-			aria-label="Clear selection"
-			style="margin-right: 1em;"
-			onclick={() => grid.selectedAssets.clear()}
-		>
-			<MaterialIcon iconName="close" />
-		</button>
-		<span style="font-weight: 600;">{grid.selectedAssets.size} selected</span>
-		{@render selectionToolbarSnippet?.()}
-	</AssetToolbar>
-{:else}
-	<AssetToolbar {...toolbarProps}>
-		{@render toolbarSnippet?.()}
-		<div id="asset-tools">
-			{@render toolbarButton({
-				iconName: "sort",
-				text: "Sort by",
-				title: "Sort by",
-				dropdown: {
-					options: sortOptions,
-					selectedOption: findCurrentSortOption(sortOptions),
-					onSelect: (option) => {
-						if (option.title === "Name") {
-							sort.by = "name";
-						} else if (option.title === "Created At") {
-							sort.by = "created_at";
-						} else if (option.title === "Oldest") {
-							sort.by = "oldest";
-						} else if (option.title === "Most Recent") {
-							sort.by = "most_recent";
+{#if gridData.length > 0}
+	{#if grid.selectedAssets.size > 1}
+		<AssetToolbar class="selection-toolbar" {...selectionToolbarProps}>
+			<button
+				id="coll-clear-selection"
+				class="toolbar-button"
+				title="Clear selection"
+				aria-label="Clear selection"
+				style="margin-right: 1em;"
+				onclick={() => grid.selectedAssets.clear()}
+			>
+				<MaterialIcon iconName="close" />
+			</button>
+			<span style="font-weight: 600;">{grid.selectedAssets.size} selected</span>
+			{@render selectionToolbarSnippet?.()}
+		</AssetToolbar>
+	{:else}
+		<AssetToolbar {...toolbarProps}>
+			{@render toolbarSnippet?.()}
+			<div id="asset-tools">
+				{@render toolbarButton({
+					iconName: "sort",
+					text: "Sort by",
+					title: "Sort by",
+					dropdown: {
+						options: sortOptions,
+						selectedOption: findCurrentSortOption(sortOptions),
+						onSelect: (option) => {
+							if (option.title === "Name") {
+								sort.by = "name";
+							} else if (option.title === "Created At") {
+								sort.by = "created_at";
+							} else if (option.title === "Oldest") {
+								sort.by = "oldest";
+							} else if (option.title === "Most Recent") {
+								sort.by = "most_recent";
+							}
 						}
 					}
-				}
-			})}
-			{#if dev}
-				{@render toolbarButton({
-					iconName: "grid_view",
-					text: "Print Grid",
-					title: "Print Grid to Console",
-					onclick: printGridAsTable
 				})}
-			{/if}
-		</div>
-	</AssetToolbar>
+				{#if dev}
+					{@render toolbarButton({
+						iconName: "grid_view",
+						text: "Print Grid",
+						title: "Print Grid to Console",
+						onclick: printGridAsTable
+					})}
+				{/if}
+			</div>
+		</AssetToolbar>
+	{/if}
 {/if}
 
 {@render children?.()}

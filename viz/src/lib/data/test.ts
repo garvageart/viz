@@ -11,7 +11,7 @@ import { faker } from "@faker-js/faker";
  */
 export function createTestUser() {
     return new UserData({
-        id: generateRandomString(8),
+        uid: generateRandomString(8),
         first_name: faker.person.firstName(),
         last_name: faker.person.lastName(),
         username: faker.internet.username(),
@@ -68,7 +68,7 @@ export function createTestCollection() {
     const testUser = createTestUser();
 
     return new CollectionData({
-        id: generateRandomString(16),
+        uid: generateRandomString(16),
         name: `${faker.word.adjective()} ${faker.word.noun()} Photos`
             .split(" ")
             .map((word) => word.charAt(0).toUpperCase() + word.slice(1))

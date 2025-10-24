@@ -1,4 +1,4 @@
-<script lang="ts" generics="T extends { id: string } & Record<string, any>">
+<script lang="ts" generics="T extends { uid: string } & Record<string, any>">
 	import { dev } from "$app/environment";
 	import { page } from "$app/state";
 	import { buildGridArray } from "$lib/utils/dom";
@@ -62,12 +62,12 @@
 		if (e.shiftKey) {
 			selectedAssets.clear();
 
-			const ids = allAssetsData.map((i: T) => i.id);
+			const ids = allAssetsData.map((i: T) => i.uid);
 			let startIndex = 0;
-			const endIndex = ids.indexOf(asset.id);
+			const endIndex = ids.indexOf(asset.uid);
 
 			if (singleSelectedAsset) {
-				startIndex = ids.indexOf(singleSelectedAsset.id);
+				startIndex = ids.indexOf(singleSelectedAsset.uid);
 			}
 
 			const start = Math.min(startIndex, endIndex);
@@ -107,12 +107,12 @@
 		}
 
 		const imageInGridArray = assetGridArray
-			.find((i) => i.find((j) => j.asset?.id === asset.id))
-			?.find((j) => j.asset?.id === asset.id);
+			.find((i) => i.find((j) => j.asset?.uid === asset.uid))
+			?.find((j) => j.asset?.uid === asset.uid);
 
 		if (!imageInGridArray) {
 			if (dev) {
-				console.warn(`Can't find asset ${asset.id} in grid array`);
+				console.warn(`Can't find asset ${asset.uid} in grid array`);
 			}
 
 			return;
@@ -176,7 +176,7 @@
 				// first try the element itself, then fallback to firstElementChild (older components)
 				const assetId = (j.element?.getAttribute("data-asset-id") ??
 					j.element?.firstElementChild?.getAttribute("data-asset-id"))!;
-				const asset = allAssetsData.find((i: T) => i.id === assetId)!;
+				const asset = allAssetsData.find((i: T) => i.uid === assetId)!;
 
 				if (!assetId || !asset) {
 					if (dev) {
@@ -238,7 +238,7 @@
 </script>
 
 {#snippet assetComponentCard(assetData: T)}
-	{@const isSelected = selectedAssets.values().some((i) => i.id === assetData.id) || singleSelectedAsset === assetData}
+	{@const isSelected = selectedAssets.values().some((i) => i.uid === assetData.uid) || singleSelectedAsset === assetData}
 	<div
 		class="asset-card"
 		class:max-width-column={columnCount !== undefined && columnCount > 1}
@@ -277,7 +277,7 @@
 {/snippet}
 
 {#snippet assetComponentListOption(assetData: T)}
-	{@const isSelected = selectedAssets.values().some((i) => i.id === assetData.id) || singleSelectedAsset === assetData}
+	{@const isSelected = selectedAssets.values().some((i) => i.uid === assetData.uid) || singleSelectedAsset === assetData}
 	<tr
 		class="asset-card"
 		class:selected-card={isSelected}

@@ -1,14 +1,14 @@
 <script lang="ts" module>
 	export function openCollection(collection: CollectionData, currentContent: Content) {
 		if (page.url.pathname !== "/") {
-			goto(`/collections/${collection.id}`, { state: { from: page.url.pathname, data: collection } });
+			goto(`/collections/${collection.uid}`, { state: { from: page.url.pathname, data: collection } });
 			return;
 		}
 
 		const currentParentIdx = findPanelIndex(layoutState.tree, getSubPanelParent(layoutState.tree, currentContent.paneKeyId)!);
 		if (currentParentIdx === -1) {
 			console.warn("Can't find panel in layout, navigating to collection page");
-			goto(`/collections/${collection.id}`, { state: { from: page.url.pathname, data: collection } });
+			goto(`/collections/${collection.uid}`, { state: { from: page.url.pathname, data: collection } });
 			return;
 		}
 
@@ -17,18 +17,18 @@
 
 		if (childIndex === -1) {
 			console.warn(`Can't find child inside panel ${currentParent.paneKeyId}, navigating to collection page`);
-			goto(`/collections/${collection.id}`, { state: { from: page.url.pathname, data: collection } });
+			goto(`/collections/${collection.uid}`, { state: { from: page.url.pathname, data: collection } });
 			return;
 		}
 
 		const existingView = layoutState.tree
 			.flatMap((panel) => panel.childs.content)
-			.find((subPanel) => subPanel.views.some((view) => view.path === `/collections/${collection.id}`));
+			.find((subPanel) => subPanel.views.some((view) => view.path === `/collections/${collection.uid}`));
 
 		if (existingView) {
 			const parent = findSubPanel("paneKeyId", existingView.paneKeyId)?.subPanel as VizSubPanelData | undefined;
 			if (parent) {
-				parent.makeViewActive(existingView.views.find((view) => view.path === `/collections/${collection.id}`)!);
+				parent.makeViewActive(existingView.views.find((view) => view.path === `/collections/${collection.uid}`)!);
 			}
 			return;
 		}
@@ -36,7 +36,7 @@
 		const view = new VizView({
 			name: collection.name,
 			component: CollectionPage as any,
-			path: `/collections/${collection.id}`
+			path: `/collections/${collection.uid}`
 		});
 
 		addViewToContent(view, currentParentIdx, childIndex);
@@ -64,7 +64,7 @@
 	let { collection, ...props }: Props & SvelteHTMLElements["div"] = $props();
 </script>
 
-<div {...props} class="coll-card" data-asset-id={collection.id}>
+<div {...props} class="coll-card" data-asset-id={collection.uid}>
 	<div class="image-container">
 		<img src={collection.thumbnail?.urls.thumbnail} alt={collection.name} class="collection-image" />
 	</div>

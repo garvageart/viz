@@ -1,7 +1,7 @@
-import type { User, UserRole } from "$lib/types/users";
+import type { UserRole } from "$lib/types/users";
 
-class UserData implements User {
-    id: string;
+class UserData {
+    uid: string;
     first_name: string;
     last_name: string;
     username: string;
@@ -11,7 +11,7 @@ class UserData implements User {
     role: UserRole;
 
     constructor(data: UserData) {
-        this.id = data.id;
+        this.uid = data.uid;
         this.first_name = data.first_name;
         this.last_name = data.last_name;
         this.username = data.username;
