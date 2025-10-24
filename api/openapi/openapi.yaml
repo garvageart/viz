@@ -1,0 +1,413 @@
+# yaml-language-server: $schema=https://spec.openapis.org/oas/3.0/schema/2021-09-28
+openapi: 3.0.3
+info:
+  title: Imagine Media API
+  version: 0.1.0
+  description: OpenAPI specification for the Imagine API (chi-based)
+servers:
+  - url: http://localhost:5373
+    description: Local API
+paths:
+  /ping:
+    get:
+      summary: Health ping
+      operationId: ping
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message:
+                    type: string
+                required: [message]
+
+  /images:
+    post:
+      summary: Upload an image (multipart)
+      operationId: uploadImage
+      requestBody:
+        required: true
+        content:
+          multipart/form-data:
+            schema:
+              type: object
+              properties:
+                filename:
+                  type: string
+                data:
+                  type: string
+                  format: binary
+              required: [filename, data]
+      responses:
+        "201":
+          description: Created
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  id:
+                    type: string
+                required: [id]
+
+  /images/url:
+    post:
+      summary: Upload an image by URL
+      operationId: uploadImageByUrl
+      requestBody:
+        required: true
+        content:
+          text/plain:
+            schema:
+              type: string
+              description: The URL of the image to fetch
+      responses:
+        "201":
+          description: Created
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  id:
+                    type: string
+                required: [id]
+
+  /images/{uid}/file:
+    get:
+      summary: Get a processed image file
+      operationId: getImageFile
+      parameters:
+        - in: path
+          name: uid
+          required: true
+          schema:
+            type: string
+        - in: query
+          name: format
+          schema:
+            type: string
+            enum: [webp, png, jpg, jpeg, avif, heif]
+        - in: query
+          name: w
+          schema:
+            type: integer
+            minimum: 0
+        - in: query
+          name: h
+          schema:
+            type: integer
+            minimum: 0
+        - in: query
+          name: quality
+          schema:
+            type: integer
+            minimum: 0
+            maximum: 100
+      responses:
+        "200":
+          description: Image bytes
+          content:
+            image/*:
+              schema:
+                type: string
+                format: binary
+
+  /collections:
+    get:
+      summary: List collections
+      operationId: listCollections
+      parameters:
+        - in: query
+          name: limit
+          schema:
+            type: integer
+            default: 20
+        - in: query
+          name: offset
+          schema:
+            type: integer
+            default: 0
+      responses:
+        "200":
+          description: Collections page
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/CollectionListResponse"
+    post:
+      summary: Create a collection
+      operationId: createCollection
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CollectionCreate"
+      responses:
+        "201":
+          description: Created
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Collection"
+
+  /collections/{uid}:
+    get:
+      summary: Get collection detail
+      operationId: getCollection
+      parameters:
+        - in: path
+          name: uid
+          required: true
+          schema:
+            type: string
+      responses:
+        "200":
+          description: Collection detail
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/CollectionDetailResponse"
+
+  /collections/{uid}/images:
+    get:
+      summary: List images in a collection
+      operationId: listCollectionImages
+      parameters:
+        - in: path
+          name: uid
+          required: true
+          schema:
+            type: string
+        - in: query
+          name: limit
+          schema:
+            type: integer
+            default: 100
+        - in: query
+          name: offset
+          schema:
+            type: integer
+            default: 0
+      responses:
+        "200":
+          description: Images page
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ImagesPage"
+    put:
+      summary: Add images to a collection
+      operationId: addCollectionImages
+      parameters:
+        - in: path
+          name: uid
+          required: true
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                uids:
+                  type: array
+                  items:
+                    type: string
+              required: [uids]
+      responses:
+        "200":
+          description: Images added
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  added:
+                    type: boolean
+                required: [added]
+
+components:
+  schemas:
+    Pagination:
+      type: object
+      properties:
+        href:
+          type: string
+        prev:
+          type: string
+        next:
+          type: string
+        limit:
+          type: integer
+        offset:
+          type: integer
+        count:
+          type: integer
+      required: [href, limit, offset, count]
+
+    ImageEXIF:
+      type: object
+      properties:
+        exif_version: { type: string }
+        make: { type: string }
+        model: { type: string }
+        date_time: { type: string }
+        date_time_original: { type: string }
+        iso: { type: string }
+        focal_length: { type: string }
+        exposure_time: { type: string }
+        aperture: { type: string }
+        flash: { type: string }
+        white_balance: { type: string }
+        lens_model: { type: string }
+        modify_date: { type: string }
+        rating: { type: string }
+        orientation: { type: string }
+        resolution: { type: string }
+        software: { type: string }
+        longitude: { type: string }
+        latitude: { type: string }
+
+    ImagePaths:
+      type: object
+      properties:
+        original_path: { type: string }
+        thumbnail_path: { type: string }
+        preview_path: { type: string }
+        raw_path: { type: string }
+      required: [original_path, thumbnail_path, preview_path]
+
+    ImageMetadata:
+      type: object
+      properties:
+        file_name: { type: string }
+        file_size: { type: integer, format: int64 }
+        original_file_name: { type: string }
+        file_type: { type: string }
+        keywords:
+          type: array
+          items: { type: string }
+        color_space: { type: string }
+        file_modified_at: { type: string, format: date-time }
+        file_created_at: { type: string, format: date-time }
+        thumbhash: { type: string }
+        label: { type: string }
+        checksum: { type: string }
+      required:
+        [
+          file_name,
+          file_type,
+          color_space,
+          file_modified_at,
+          file_created_at,
+          checksum,
+        ]
+
+    Image:
+      type: object
+      properties:
+        uid: { type: string }
+        name: { type: string }
+        uploaded_by: { type: string }
+        description: { type: string }
+        exif:
+          $ref: "#/components/schemas/ImageEXIF"
+        private: { type: boolean }
+        width: { type: integer, format: int32 }
+        height: { type: integer, format: int32 }
+        processed: { type: boolean }
+        image_metadata:
+          $ref: "#/components/schemas/ImageMetadata"
+        image_paths:
+          $ref: "#/components/schemas/ImagePaths"
+      required: [uid, name, private, width, height, processed]
+
+    CollectionImage:
+      type: object
+      properties:
+        uid: { type: string }
+        added_at: { type: string, format: date-time }
+        added_by: { type: string }
+      required: [uid, added_at]
+
+    Collection:
+      type: object
+      properties:
+        uid: { type: string }
+        name: { type: string }
+        image_count: { type: integer }
+        private: { type: boolean, nullable: true }
+        images:
+          type: array
+          items:
+            $ref: "#/components/schemas/CollectionImage"
+        created_by: { type: string }
+        description: { type: string }
+      required: [uid, name, image_count]
+
+    CollectionCreate:
+      type: object
+      properties:
+        name: { type: string }
+        private: { type: boolean, nullable: true }
+        description: { type: string }
+      required: [name]
+
+    ImagesResponse:
+      type: object
+      properties:
+        added_at: { type: string, format: date-time }
+        added_by: { type: string }
+        image:
+          $ref: "#/components/schemas/Image"
+      required: [added_at, image]
+
+    ImagesPage:
+      type: object
+      properties:
+        href: { type: string }
+        prev: { type: string }
+        next: { type: string }
+        limit: { type: integer }
+        offset: { type: integer }
+        count: { type: integer }
+        items:
+          type: array
+          items:
+            $ref: "#/components/schemas/ImagesResponse"
+      required: [limit, offset, items]
+
+    CollectionListResponse:
+      type: object
+      properties:
+        href: { type: string }
+        prev: { type: string }
+        next: { type: string }
+        limit: { type: integer }
+        offset: { type: integer }
+        count: { type: integer }
+        items:
+          type: array
+          items:
+            $ref: "#/components/schemas/Collection"
+      required: [limit, offset, items]
+
+    CollectionDetailResponse:
+      type: object
+      properties:
+        uid: { type: string }
+        name: { type: string }
+        image_count: { type: integer }
+        private: { type: boolean, nullable: true }
+        images:
+          $ref: "#/components/schemas/ImagesPage"
+        created_by: { type: string }
+        description: { type: string }
+      required: [uid, name, images]
