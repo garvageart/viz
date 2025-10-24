@@ -27,7 +27,7 @@
 
 <div class="search-container" class:has-focus={searchInputHasFocus} {...props}>
 	<button
-		id="search-button"
+		class="search-button"
 		aria-label="Search"
 		aria-disabled={loading}
 		aria-pressed={loading}
@@ -53,7 +53,7 @@
 	/>
 	{#if value}
 		<button
-			id="clear-search-button"
+			class="clear-search-button"
 			type="button"
 			aria-label="Clear Search"
 			title="Clear Search"
@@ -68,7 +68,7 @@
 </div>
 
 <style lang="scss">
-	#search-button {
+	.search-button {
 		background-color: var(--imag-100);
 		border: none;
 		border-radius: 2em;
@@ -141,7 +141,7 @@
 		border: 1.5px solid var(--imag-primary);
 	}
 
-	#clear-search-button {
+	.clear-search-button {
 		border: none;
 		outline: none;
 		height: 100%;
