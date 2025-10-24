@@ -12,6 +12,7 @@
 </script>
 
 <script lang="ts">
+	import { invalidate } from "$app/navigation";
 	import { page } from "$app/state";
 	import AssetGrid from "$lib/components/AssetGrid.svelte";
 	import AssetsShell from "$lib/components/AssetsShell.svelte";
@@ -96,9 +97,6 @@
 		}
 	});
 
-	displayData = [];
-	shouldUpdate = false;
-
 	hotkeys("esc", (e) => {
 		lightboxImage = undefined;
 	});
@@ -147,7 +145,7 @@
 
 {#snippet noAssetsSnippet()}
 	<div id="add_to_collection-container">
-		<span style="margin: 1em; color: var(--imag-20);">Add images to this collection</span>
+		<span style="margin: 1em; color: var(--imag-20); font-size: 1.2rem;">Add images to this collection</span>
 		<Button
 			id="add_to_collection-button"
 			style="padding: 2em 8em; display: flex; align-items: center; justify-content: center;"
@@ -159,12 +157,16 @@
 				controller.openFileHolder();
 				const uploadedImages = await controller.uploadImage();
 
-				sendAPIRequest("collection/images", {
+				const response = await sendAPIRequest<{ added: true }>(`collection/${loadedData.uid}/images`, {
 					method: "PUT",
 					body: JSON.stringify({
 						uids: uploadedImages.map((img) => img.uid)
 					})
 				});
+
+				if (response.added) {
+					await invalidate(page.url.pathname);
+				}
 			}}
 		>
 			Select Photos
