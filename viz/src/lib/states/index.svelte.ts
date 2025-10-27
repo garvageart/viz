@@ -1,6 +1,6 @@
 import type { ImageObjectData } from "$lib/entities/image";
+import type CollectionData from "$lib/entities/collection";
 import type { AssetSort } from "$lib/types/asset";
-import type { Collection } from "$lib/types/images";
 import type { UploadImage } from "$lib/upload/asset.svelte";
 import { cookieMethods } from "$lib/utils/cookie";
 import { writable } from "svelte/store";
@@ -20,10 +20,10 @@ export let search = $state({
     executed: false,
     data: {
         collections: {
-            data: [] as unknown as Collection[]
+            data: [] as CollectionData[]
         },
         images: {
-            data: [] as unknown as ImageObjectData[]
+            data: [] as ImageObjectData[]
         }
     },
     value: "",

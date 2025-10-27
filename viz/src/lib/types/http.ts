@@ -1,8 +1,2 @@
-export interface Pagination {
-    href: string;
-    prev: string;
-    next: string;
-    limit: number;
-    offset: number;
-    count: number;
-}
+// Re-export the correct API type
+export type { APIPagination } from './api-adapters';
