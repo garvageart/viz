@@ -327,7 +327,10 @@ components:
           $ref: "#/components/schemas/ImageMetadata"
         image_paths:
           $ref: "#/components/schemas/ImagePaths"
-      required: [uid, name, private, width, height, processed]
+        created_at: { type: string, format: date-time }
+        updated_at: { type: string, format: date-time }
+      required:
+        [uid, name, private, width, height, processed, created_at, updated_at]
 
     CollectionImage:
       type: object
@@ -350,7 +353,9 @@ components:
             $ref: "#/components/schemas/CollectionImage"
         created_by: { type: string }
         description: { type: string }
-      required: [uid, name, image_count]
+        created_at: { type: string, format: date-time }
+        updated_at: { type: string, format: date-time }
+      required: [uid, name, image_count, created_at, updated_at]
 
     CollectionCreate:
       type: object

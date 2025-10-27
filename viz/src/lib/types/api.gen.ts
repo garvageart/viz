@@ -194,6 +194,10 @@ export interface components {
             processed: boolean;
             image_metadata?: components["schemas"]["ImageMetadata"];
             image_paths?: components["schemas"]["ImagePaths"];
+            /** Format: date-time */
+            created_at: string;
+            /** Format: date-time */
+            updated_at: string;
         };
         CollectionImage: {
             uid: string;
@@ -209,6 +213,10 @@ export interface components {
             images?: components["schemas"]["CollectionImage"][];
             created_by?: string;
             description?: string;
+            /** Format: date-time */
+            created_at: string;
+            /** Format: date-time */
+            updated_at: string;
         };
         CollectionCreate: {
             name: string;

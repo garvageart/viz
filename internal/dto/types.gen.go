@@ -21,6 +21,7 @@ const (
 
 // Collection defines model for Collection.
 type Collection struct {
+	CreatedAt   time.Time          `json:"created_at"`
 	CreatedBy   *string            `json:"created_by,omitempty"`
 	Description *string            `json:"description,omitempty"`
 	ImageCount  int                `json:"image_count"`
@@ -28,6 +29,7 @@ type Collection struct {
 	Name        string             `json:"name"`
 	Private     *bool              `json:"private"`
 	Uid         string             `json:"uid"`
+	UpdatedAt   time.Time          `json:"updated_at"`
 }
 
 // CollectionCreate defines model for CollectionCreate.
@@ -68,6 +70,7 @@ type CollectionListResponse struct {
 
 // Image defines model for Image.
 type Image struct {
+	CreatedAt     time.Time      `json:"created_at"`
 	Description   *string        `json:"description,omitempty"`
 	Exif          *ImageEXIF     `json:"exif,omitempty"`
 	Height        int32          `json:"height"`
@@ -77,6 +80,7 @@ type Image struct {
 	Private       bool           `json:"private"`
 	Processed     bool           `json:"processed"`
 	Uid           string         `json:"uid"`
+	UpdatedAt     time.Time      `json:"updated_at"`
 	UploadedBy    *string        `json:"uploaded_by,omitempty"`
 	Width         int32          `json:"width"`
 }
