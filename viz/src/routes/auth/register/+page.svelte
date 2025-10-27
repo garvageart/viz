@@ -2,8 +2,8 @@
 	import { page } from "$app/state";
 	import Button from "$lib/components/Button.svelte";
 	import InputText from "$lib/components/dom/InputText.svelte";
-	import type { User } from "$lib/types/users";
-	import { sendAPIRequest } from "$lib/utils/http";
+	import { registerUser } from "$lib/api";
+	import { goto } from "$app/navigation";
 
 	let pageState = page.state as typeof registerData;
 	let registerData = $state({
@@ -14,15 +14,13 @@
 
 	let notifMessage = $state("");
 
-	function showNotif(message: string) {
+	function showRegNotif(message: string) {
 		notifMessage = message;
 		setTimeout(() => (notifMessage = ""), 3000);
 	}
-
-	const randomNumber = Math.floor(Math.random() * 300);
 </script>
 
-<main style="background-image: url('https://picsum.photos/1920/1080/?random={randomNumber}');">
+<main style="background-image: url('https://picsum.photos/1920/1080/?random={Math.floor(Math.random() * 300)}');">
 	<span id="viz-title">viz</span>
 	<div id="reg-container">
 		<h1 id="reg-heading">Register</h1>
@@ -36,33 +34,36 @@
 				const formObject = Object.fromEntries(data.entries());
 
 				if (!formObject.email || !formObject.password || !formObject.name) {
-					showNotif("Please fill in all fields");
+					showRegNotif("Please fill in all fields");
 					return;
 				}
 
 				if (!formObject.passwordConfirm) {
-					showNotif("Please confirm your password");
+					showRegNotif("Please confirm your password");
 					return;
 				}
 
 				if (formObject.password !== formObject.passwordConfirm) {
-					showNotif("Passwords do not match");
+					showRegNotif("Passwords do not match");
 					return;
 				}
 
-				const response = (await sendAPIRequest<User>(
-					"/user",
-					{
-						method: "POST",
-						body: JSON.stringify(formObject),
-						headers: {
-							"Content-Type": "application/json"
-						},
-						credentials: "include",
-						mode: "cors"
-					},
-					true
-				)) as Response;
+				try {
+					const response = await registerUser({
+						name: formObject.name as string,
+						email: formObject.email as string,
+						password: formObject.password as string,
+						passwordConfirm: formObject.passwordConfirm as string
+					});
+
+					if (response.status === 201) {
+						showRegNotif("Registration successful!");
+						goto("/auth/login");
+					}
+				} catch (error) {
+					showRegNotif("Registration failed. Please try again.");
+					console.error("Registration error:", error);
+				}
 			}}
 		>
 			<InputText

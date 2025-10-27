@@ -1,14 +1,13 @@
-import type { APICollectionListResponse } from "$lib/types/api-adapters";
 import type { PageLoad } from "./$types";
-import { sendAPIRequest } from "$lib/utils/http";
+import { listCollections, type Collection } from "$lib/api";
 import CollectionData from "$lib/entities/collection";
 
-export const load: PageLoad = async ({ fetch }) => {
-    const res = await sendAPIRequest<APICollectionListResponse>("collections", { fetch });
+export const load: PageLoad = async () => {
+    const response = await listCollections({});
 
     const allCollections = {
-        ...res,
-        items: res.items.map(item => CollectionData.fromAPI(item))
+        ...response.data,
+        items: response.data.items.map((item: Collection) => CollectionData.fromAPI(item))
     };
 
     return allCollections;

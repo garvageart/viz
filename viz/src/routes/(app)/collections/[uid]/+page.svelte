@@ -35,7 +35,7 @@
 	import Button from "$lib/components/Button.svelte";
 	import MaterialIcon from "$lib/components/MaterialIcon.svelte";
 	import UploadManager from "$lib/upload/manager.svelte.js";
-	import { sendAPIRequest } from "$lib/utils/http";
+	import { addCollectionImages } from "$lib/api";
 
 	let { data } = $props();
 	// Keyboard events
@@ -104,7 +104,7 @@
 </script>
 
 {#if lightboxImage}
-	{@const imageToLoad = lightboxImage.image_paths?.original_path ?? ''}
+	{@const imageToLoad = lightboxImage.image_paths?.original_path ?? ""}
 	<Lightbox
 		onclick={() => {
 			lightboxImage = undefined;
@@ -158,14 +158,11 @@
 				controller.openFileHolder();
 				const uploadedImages = await controller.uploadImage();
 
-				const response = await sendAPIRequest<{ added: true }>(`collection/${loadedData.uid}/images`, {
-					method: "PUT",
-					body: JSON.stringify({
-						uids: uploadedImages.map((img) => img.uid)
-					})
+				const response = await addCollectionImages(loadedData.uid, {
+					uids: uploadedImages.map((img) => img.uid)
 				});
 
-				if (response.added) {
+				if (response.data.added) {
 					await invalidate(page.url.pathname);
 				}
 			}}
@@ -206,7 +203,9 @@
 	>
 		<div id="viz-info-container">
 			<div id="coll-metadata">
-				<span id="coll-details">
+				<span id="coll-details"
+					>{DateTime.fromJSDate(loadedData.created_at).toFormat("dd.MM.yyyy")}
+					•
 					{#if searchValue.trim()}
 						{searchData.length} {searchData.length === 1 ? "image" : "images"} of {loadedData.image_count}
 					{:else}

@@ -8,7 +8,7 @@
 	import CollectionCard, { openCollection } from "$lib/components/CollectionCard.svelte";
 	import MaterialIcon from "$lib/components/MaterialIcon.svelte";
 	import Button from "$lib/components/Button.svelte";
-	import { sendAPIRequest } from "$lib/utils/http";
+	import { createCollection } from "$lib/api";
 	import ModalOverlay from "$lib/components/modal/ModalOverlay.svelte";
 	import { modal, sort } from "$lib/states/index.svelte";
 	import { goto } from "$app/navigation";
@@ -70,16 +70,14 @@
 				const toggleSwitch = event.currentTarget.querySelector("#create_collection-private")
 					?.lastElementChild as HTMLButtonElement;
 
-				const response = await sendAPIRequest<CollectionData>("/collections", {
-					method: "POST",
-					headers: {
-						"Content-Type": "application/json"
-					},
-					body: JSON.stringify({ ...Object.fromEntries(data), private: toggleSwitch.getAttribute("data-checked") === "true" })
+				const response = await createCollection({
+					name: data.get("name") as string,
+					description: (data.get("description") as string) || undefined,
+					private: toggleSwitch.getAttribute("data-checked") === "true"
 				});
 
 				modal.show = false;
-				goto(`/collections/${response.uid}`);
+				goto(`/collections/${response.data.uid}`);
 			}}
 		>
 			<input id="create_collection-name" name="name" placeholder="Name" type="text" required />
