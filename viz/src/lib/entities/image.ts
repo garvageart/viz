@@ -12,12 +12,8 @@ export class ImageObjectData {
     height: number;
     processed: boolean;
     thumbhash?: string;
-    // Extended properties for UI/local use
     created_at: Date;
     updated_at: Date;
-    added_at?: Date; // From ImagesResponse when in collection context
-    added_by?: string; // From ImagesResponse when in collection context
-    collection_id?: string; // Local tracking, not from API
 
     constructor(data: Partial<ImageObjectData> & Pick<ImageObjectData, 'uid' | 'name' | 'created_at' | 'updated_at'>) {
         this.uid = data.uid;
@@ -33,9 +29,6 @@ export class ImageObjectData {
         this.thumbhash = data.thumbhash;
         this.created_at = data.created_at;
         this.updated_at = data.updated_at;
-        this.added_at = data.added_at;
-        this.added_by = data.added_by;
-        this.collection_id = data.collection_id;
     }
 
     /**
@@ -57,15 +50,5 @@ export class ImageObjectData {
             created_at: new Date(apiImage.created_at),
             updated_at: new Date(apiImage.updated_at),
         });
-    }
-
-    /**
-     * Create ImageObjectData from API ImagesResponse (includes added_at timestamp)
-     */
-    static fromImagesResponse(response: APIImagesResponse): ImageObjectData {
-        const imageData = ImageObjectData.fromAPI(response.image);
-        imageData.added_at = new Date(response.added_at);
-        imageData.added_by = response.added_by;
-        return imageData;
     }
 }

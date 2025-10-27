@@ -35,7 +35,6 @@ export function createTestImageObject() {
     return new ImageObjectData({
         uid: generateRandomString(16),
         name,
-        collection_id: generateRandomString(16),
         uploaded_by: testUser.uid,
         private: false,
         width: Math.floor(Math.random() * 1920) + 800,
@@ -44,8 +43,6 @@ export function createTestImageObject() {
         thumbhash: generateRandomString(16),
         created_at: faker.date.past({ years: 2 }),
         updated_at: faker.date.recent({ days: 30 }),
-        added_at: faker.date.past({ years: 2 }),
-        added_by: testUser.uid,
         image_metadata: {
             file_name: `${name.replace(/\s/g, "_")}.jpg`,
             file_size: Math.floor(Math.random() * 1000000) + 100000,

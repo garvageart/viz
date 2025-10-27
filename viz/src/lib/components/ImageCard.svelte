@@ -3,7 +3,7 @@
 	import type { ImageObjectData } from "$lib/entities/image";
 
 	let { asset }: { asset: ImageObjectData } = $props();
-	const imageDate = asset.added_at ? DateTime.fromJSDate(asset.added_at) : null;
+	const imageDate = DateTime.fromJSDate(asset.created_at);
 </script>
 
 <div class="image-card" data-asset-id={asset.uid}>
@@ -18,13 +18,11 @@
 	</div>
 	<div class="image-card-meta">
 		<span class="image-card-name" title={asset.image_metadata?.file_name}>{asset.image_metadata?.file_name ?? asset.name}</span>
-		{#if imageDate}
-			<div class="image-card-date_time" title="Photo taken at {imageDate.toFormat('dd/MM/yyyy - HH:mm')}">
-				<span class="image-card-date">{imageDate.toFormat("dd/MM/yyyy")}</span>
-				<span class="image-card-divider">•</span>
-				<span class="image-card-time">{imageDate.toFormat("HH:mm")}</span>
-			</div>
-		{/if}
+		<div class="image-card-date_time" title="Photo taken at {imageDate.toFormat('dd/MM/yyyy - HH:mm')}">
+			<span class="image-card-date">{imageDate.toFormat("dd/MM/yyyy")}</span>
+			<span class="image-card-divider">•</span>
+			<span class="image-card-time">{imageDate.toFormat("HH:mm")}</span>
+		</div>
 	</div>
 </div>
 
