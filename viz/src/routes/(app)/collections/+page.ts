@@ -1,26 +1,15 @@
-import type { Collection, CollectionResponse } from "$lib/types/images";
+import type { APICollectionListResponse } from "$lib/types/api-adapters";
 import type { PageLoad } from "./$types";
 import { sendAPIRequest } from "$lib/utils/http";
 import CollectionData from "$lib/entities/collection";
 
 export const load: PageLoad = async ({ fetch }) => {
-    let allCollections: CollectionResponse | undefined = undefined;
+    const res = await sendAPIRequest<APICollectionListResponse>("collections", { fetch });
 
-    const res = await sendAPIRequest<CollectionResponse>("collections", { fetch });
-    allCollections = {
+    const allCollections = {
         ...res,
-        items: res.items.map(item => new CollectionData({
-            ...item,
-            // @ts-ignore
-            "created_on": new Date(item["CreatedAt"]),
-            // @ts-ignore
-            "updated_on": new Date(item["UpdatedAt"]),
-            images: item.images ?? [],
-
-        }))
+        items: res.items.map(item => CollectionData.fromAPI(item))
     };
-
-
 
     return allCollections;
 };

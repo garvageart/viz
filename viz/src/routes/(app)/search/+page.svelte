@@ -13,7 +13,7 @@
 	import { SvelteSet } from "svelte/reactivity";
 	import { collectionCard } from "../collections/+page.svelte";
 	import { ImageObjectData } from "$lib/entities/image";
-	import type { Collection, IImageObjectData } from "$lib/types/images";
+	import type CollectionData from "$lib/entities/collection";
 	import AssetsShell from "$lib/components/AssetsShell.svelte";
 	import ImageCard from "$lib/components/ImageCard.svelte";
 	import SearchInput from "$lib/components/SearchInput.svelte";
@@ -43,7 +43,7 @@
 	});
 
 	// Selection
-	let collectionSelectedAssets = $state(new SelectedAssets<Collection>());
+	let collectionSelectedAssets = $state(new SelectedAssets<CollectionData>());
 	let imageSelectedAssets = $state(new SelectedAssets<ImageObjectData>());
 
 	// Images Stuff
@@ -53,7 +53,7 @@
 	let searchData = $derived(searchForData(collectionSearchValue, images));
 
 	// - Display Data
-	let imageGridArray: AssetGridArray<IImageObjectData> | undefined = $state();
+	let imageGridArray: AssetGridArray<ImageObjectData> | undefined = $state();
 	let imageDisplayData = $derived(
 		collectionSearchValue.trim() ? sortCollectionImages(searchData, sort) : sortCollectionImages(images, sort)
 	);
@@ -69,7 +69,7 @@
 		assetSnippet: imageCard
 	});
 
-	let collectionsGrid: ComponentProps<AssetGrid<Collection>> = $derived({
+	let collectionsGrid: ComponentProps<AssetGrid<CollectionData>> = $derived({
 		selectedAssets: collectionSelectedAssets.selectedAssets,
 		singleSelectedAsset: collectionSelectedAssets.singleSelectedAsset,
 		data: collections,
@@ -99,7 +99,7 @@
 </svelte:head>
 
 {#if lightboxImage}
-	{@const imageToLoad = lightboxImage.urls.original}
+	{@const imageToLoad = lightboxImage.originalUrl}
 	<Lightbox
 		onclick={() => {
 			lightboxImage = undefined;
@@ -113,8 +113,8 @@
 			<img
 				src={imageToLoad}
 				class="lightbox-image"
-				alt="{lightboxImage.name} by {lightboxImage.uploaded_by.username}"
-				title="{lightboxImage.name} by {lightboxImage.uploaded_by.username}"
+				alt={lightboxImage.name}
+				title={lightboxImage.name}
 				loading="eager"
 				data-image-id={lightboxImage.uid}
 			/>

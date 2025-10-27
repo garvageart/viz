@@ -155,7 +155,6 @@
 	bind:data={displayData}
 	bind:hasMore={shouldUpdate}
 	name="Collections"
-	style="padding: 0em {page.url.pathname === '/' ? '1em' : '0em'};"
 	paginate={() => {
 		pagination.offset++;
 	}}

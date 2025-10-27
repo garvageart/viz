@@ -1,4 +1,6 @@
 <script module>
+	import { ImageObjectData } from "$lib/entities/image.js";
+
 	export { searchForData };
 
 	function searchForData(searchValue: string, images: ImageObjectData[]) {
@@ -22,14 +24,13 @@
 	import SearchInput from "$lib/components/SearchInput.svelte";
 	import { lightbox, sort } from "$lib/states/index.svelte";
 	import type { AssetGridArray } from "$lib/types/asset.js";
-	import { SUPPORTED_IMAGE_TYPES, SUPPORTED_RAW_FILES, type IImageObjectData, type SupportedImageTypes } from "$lib/types/images";
+	import { SUPPORTED_IMAGE_TYPES, SUPPORTED_RAW_FILES, type SupportedImageTypes } from "$lib/types/images";
 	import { blurOnEsc, loadImage } from "$lib/utils/dom.js";
 	import hotkeys from "hotkeys-js";
 	import { DateTime } from "luxon";
 	import { SvelteSet } from "svelte/reactivity";
 	import type { ComponentProps } from "svelte";
 	import { sortCollectionImages } from "$lib/sort/sort.js";
-	import { ImageObjectData } from "$lib/entities/image.js";
 	import ImageCard from "$lib/components/ImageCard.svelte";
 	import Button from "$lib/components/Button.svelte";
 	import MaterialIcon from "$lib/components/MaterialIcon.svelte";
@@ -72,10 +73,10 @@
 	let shouldUpdate = $derived(loadedData.images.length > pagination.limit * pagination.offset && searchValue.trim() === "");
 
 	// Selection
-	let selectedAssets = $state<SvelteSet<IImageObjectData>>(new SvelteSet());
-	let singleSelectedAsset: IImageObjectData | undefined = $state();
+	let selectedAssets = $state<SvelteSet<ImageObjectData>>(new SvelteSet());
+	let singleSelectedAsset: ImageObjectData | undefined = $state();
 
-	let imageGridArray: AssetGridArray<IImageObjectData> | undefined = $state();
+	let imageGridArray: AssetGridArray<ImageObjectData> | undefined = $state();
 
 	// Toolbar stuff
 	let toolbarOpacity = $state(0);
@@ -103,7 +104,7 @@
 </script>
 
 {#if lightboxImage}
-	{@const imageToLoad = lightboxImage.urls.original}
+	{@const imageToLoad = lightboxImage.originalUrl}
 	<Lightbox
 		onclick={() => {
 			lightboxImage = undefined;
@@ -121,8 +122,8 @@
 			<img
 				src={imageToLoad}
 				class="lightbox-image"
-				alt="{lightboxImage.name} by {lightboxImage.uploaded_by.username}"
-				title="{lightboxImage.name} by {lightboxImage.uploaded_by.username}"
+				alt={lightboxImage.name}
+				title={lightboxImage.name}
 				loading="eager"
 				data-image-uid={lightboxImage.uid}
 			/>
@@ -205,9 +206,7 @@
 	>
 		<div id="viz-info-container">
 			<div id="coll-metadata">
-				<span id="coll-details"
-					>{DateTime.fromJSDate(loadedData.created_on).toFormat("dd.MM.yyyy")}
-					•
+				<span id="coll-details">
 					{#if searchValue.trim()}
 						{searchData.length} {searchData.length === 1 ? "image" : "images"} of {loadedData.image_count}
 					{:else}
