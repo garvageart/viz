@@ -1,19 +1,12 @@
 import type { PageLoad } from "./$types";
-import { listCollections, type Collection } from "$lib/api";
-import CollectionData from "$lib/entities/collection";
+import { listCollections } from "$lib/api";
 
 export const load: PageLoad = async () => {
     const response = await listCollections();
 
-    if (response.data && 'items' in response.data) {
-        const allCollections = {
-            ...response.data,
-            items: response.data.items.map((item: Collection) => CollectionData.fromAPI(item))
-        };
-
-        return allCollections;
+    if (response.status !== 200) {
+        throw new Error(`Failed to load collections: ${response.status}`);
     }
 
-    // API returned an error shape - return it so the caller can handle it
     return response.data;
 };

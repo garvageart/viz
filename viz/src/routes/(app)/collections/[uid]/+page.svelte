@@ -1,9 +1,7 @@
 <script module>
-	import { ImageObjectData } from "$lib/entities/image.js";
-
 	export { searchForData };
 
-	function searchForData(searchValue: string, images: ImageObjectData[]) {
+	function searchForData(searchValue: string, images: Image[]) {
 		if (searchValue.trim() === "") {
 			return [];
 		}
@@ -14,7 +12,7 @@
 </script>
 
 <script lang="ts">
-	import { invalidate } from "$app/navigation";
+	import { invalidateAll } from "$app/navigation";
 	import { page } from "$app/state";
 	import AssetGrid from "$lib/components/AssetGrid.svelte";
 	import AssetsShell from "$lib/components/AssetsShell.svelte";
@@ -29,13 +27,15 @@
 	import hotkeys from "hotkeys-js";
 	import { DateTime } from "luxon";
 	import { SvelteSet } from "svelte/reactivity";
-	import type { ComponentProps } from "svelte";
+	import { onMount, type ComponentProps } from "svelte";
 	import { sortCollectionImages } from "$lib/sort/sort.js";
 	import ImageCard from "$lib/components/ImageCard.svelte";
 	import Button from "$lib/components/Button.svelte";
 	import MaterialIcon from "$lib/components/MaterialIcon.svelte";
 	import UploadManager from "$lib/upload/manager.svelte.js";
-	import { addCollectionImages } from "$lib/api";
+	import { addCollectionImages, getFullImagePath, type Image } from "$lib/api";
+	import { thumbHashToDataURL } from "thumbhash";
+	import { fade } from "svelte/transition";
 
 	let { data } = $props();
 	// Keyboard events
@@ -45,10 +45,18 @@
 	permittedKeys.push(...selectKeys, ...moveKeys);
 
 	// Data
-	let loadedData = $state(data.response);
+	let loadedData = $derived.by(() => ({
+		...data,
+		name: localName ?? data.name,
+		description: localDescription ?? data.description
+	}));
+	// Track local edits separately to avoid clobbering them on refresh
+	let localName: string | undefined = $state();
+	let localDescription: string | undefined = $state();
+	let loadedImages = $derived(loadedData.images.items.map((img) => img.image));
 
 	// Lightbox
-	let lightboxImage: ImageObjectData | undefined = $state();
+	let lightboxImage: Image | undefined = $state();
 	let currentImageEl: HTMLImageElement | undefined = $derived(lightboxImage ? document.createElement("img") : undefined);
 
 	$effect(() => {
@@ -59,7 +67,7 @@
 
 	// Search stuff
 	let searchValue = $state("");
-	let searchData = $derived(searchForData(searchValue, loadedData.images));
+	let searchData = $derived(searchForData(searchValue, loadedImages));
 
 	// Pagination
 	// NOTE: This might be moved to a settings thing and this could just be default
@@ -70,24 +78,46 @@
 
 	// the searchValue hides the loading indicator when searching since we're
 	// already searching through *all* the data that is available on the client
-	let shouldUpdate = $derived(loadedData.images.length > pagination.limit * pagination.offset && searchValue.trim() === "");
+	let shouldUpdate = $derived(loadedImages.length > pagination.limit * pagination.offset && searchValue.trim() === "");
 
 	// Selection
-	let selectedAssets = $state<SvelteSet<ImageObjectData>>(new SvelteSet());
-	let singleSelectedAsset: ImageObjectData | undefined = $state();
+	let selectedAssets = $state<SvelteSet<Image>>(new SvelteSet());
+	let singleSelectedAsset: Image | undefined = $state();
 
-	let imageGridArray: AssetGridArray<ImageObjectData> | undefined = $state();
+	let imageGridArray: AssetGridArray<Image> | undefined = $state();
 
 	// Toolbar stuff
 	let toolbarOpacity = $state(0);
 
+	// Thumbhash placeholder
+	let placeholderDataURL = $derived.by(() => {
+		if (lightboxImage?.image_metadata?.thumbhash) {
+			try {
+				// Convert base64 thumbhash to Uint8Array
+				const binaryString = atob(lightboxImage.image_metadata.thumbhash);
+				const bytes = new Uint8Array(binaryString.length);
+				for (let i = 0; i < binaryString.length; i++) {
+					bytes[i] = binaryString.charCodeAt(i);
+				}
+				return thumbHashToDataURL(bytes);
+			} catch (error) {
+				console.warn("Failed to decode thumbhash:", error);
+			}
+		}
+	});
+
 	// Display Data
 	let displayData = $derived(
-		searchValue.trim() ? sortCollectionImages(searchData, sort) : sortCollectionImages(loadedData.images, sort)
+		searchValue.trim()
+			? sortCollectionImages(searchData, sort)
+			: sortCollectionImages(
+					loadedData.images.items.map((img) => img.image),
+					sort
+				)
 	);
 
 	// Grid props
-	let grid: ComponentProps<typeof AssetGrid<ImageObjectData>> = $derived({
+	let grid: ComponentProps<typeof AssetGrid<Image>> = $derived({
 		assetSnippet: imageCard,
 		assetGridArray: imageGridArray,
 		selectedAssets,
@@ -104,7 +134,7 @@
 </script>
 
 {#if lightboxImage}
-	{@const imageToLoad = lightboxImage.image_paths?.original_path ?? ""}
+	{@const imageToLoad = getFullImagePath(lightboxImage.image_paths?.preview) ?? ""}
 	<Lightbox
 		onclick={() => {
 			lightboxImage = undefined;
@@ -115,13 +145,19 @@
 	 It's small but annoying enough where I want to find a different way to load an image
 	  -->
 		{#await loadImage(imageToLoad, currentImageEl!)}
-			<div style="width: 3em; height: 3em">
-				<LoadingContainer />
-			</div>
+			<img
+				src={placeholderDataURL}
+				class="lightbox-image"
+				style="height: 90%; position: absolute;"
+				out:fade={{ duration: 300 }}
+				alt=""
+				aria-hidden="true"
+			/>
 		{:then _}
 			<img
 				src={imageToLoad}
 				class="lightbox-image"
+				in:fade={{ duration: 300 }}
 				alt={lightboxImage.name}
 				title={lightboxImage.name}
 				loading="eager"
@@ -134,7 +170,7 @@
 	</Lightbox>
 {/if}
 
-{#snippet imageCard(asset: ImageObjectData)}
+{#snippet imageCard(asset: Image)}
 	<ImageCard {asset} />
 {/snippet}
 
@@ -163,7 +199,7 @@
 				});
 
 				if (response.data.added) {
-					await invalidate(page.url.pathname);
+					await invalidateAll();
 				}
 			}}
 		>
@@ -177,7 +213,7 @@
 	bind:data={displayData}
 	bind:hasMore={shouldUpdate}
 	name="{loadedData.name} - Collection"
-	style="padding: 0em {page.url.pathname === '/' ? '1em' : '0em'};"
+	style="font-size: {page.url.pathname === '/' ? '0.9em' : 'inherit'};"
 	paginate={() => {
 		pagination.offset++;
 	}}
@@ -204,7 +240,7 @@
 		<div id="viz-info-container">
 			<div id="coll-metadata">
 				<span id="coll-details"
-					>{DateTime.fromJSDate(loadedData.created_at).toFormat("dd.MM.yyyy")}
+					>{DateTime.fromJSDate(new Date(loadedData.created_at)).toFormat("dd.MM.yyyy")}
 					•
 					{#if searchValue.trim()}
 						{searchData.length} {searchData.length === 1 ? "image" : "images"} of {loadedData.image_count}
@@ -222,7 +258,7 @@
 				autocorrect="off"
 				spellcheck="false"
 				value={loadedData.name}
-				oninput={(e) => (loadedData.name = e.currentTarget.value)}
+				oninput={(e) => (localName = e.currentTarget.value)}
 				onkeydown={blurOnEsc}
 			/>
 			<textarea
@@ -233,7 +269,7 @@
 				rows="1"
 				value={loadedData.description}
 				oninput={(e) => {
-					loadedData.description = e.currentTarget.value;
+					localDescription = e.currentTarget.value;
 				}}
 				onkeydown={blurOnEsc}
 			></textarea>
@@ -271,14 +307,14 @@
 	input:not([type="submit"]),
 	textarea {
 		max-width: 100%;
-		min-height: 3rem;
+		min-height: 2rem;
 		color: var(--imag-text-color);
 		background-color: var(--imag-bg-color);
 		outline: none;
 		border: none;
 		font-family: var(--imag-font-family);
 		font-weight: bold;
-		padding: 0.75rem 2rem;
+		padding: 0.5rem 2rem;
 
 		&::placeholder {
 			color: var(--imag-40);
@@ -305,12 +341,12 @@
 	}
 
 	#coll-name {
-		font-size: 3rem;
+		font-size: 3em;
 		font-weight: bold;
 	}
 
 	#coll-description {
-		font-size: 1.2rem;
+		font-size: 1.2em;
 		resize: none;
 		font-weight: 400;
 		height: 2rem;
@@ -318,7 +354,7 @@
 	}
 
 	:global(.lightbox-image) {
-		max-width: 70%;
-		max-height: 70%;
+		max-width: 80%;
+		max-height: 90%;
 	}
 </style>

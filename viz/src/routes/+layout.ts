@@ -1,13 +1,13 @@
 import { login, user, fetchCurrentUser } from "$lib/states/index.svelte.js";
 import { redirect } from '@sveltejs/kit';
-import { setFetch } from "$lib/api/fetch-context.svelte.js";
+import { initApi } from "$lib/api/client";
 
 export const ssr = false;
 export const csr = true;
 
 export async function load({ url, fetch }) {
-    // Store SvelteKit's fetch for global use
-    setFetch(fetch);
+    // Initialize API client with SvelteKit's enhanced fetch
+    initApi(fetch);
 
     // Prefer API-backed auth over cookie when available
     if (!user.fetched && !url.pathname.startsWith('/auth')) {

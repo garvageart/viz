@@ -1,18 +1,11 @@
 import type { PageLoad } from "./$types";
-import { createTestCollection, createTestImageObject } from "$lib/data/test";
-import { ImageObjectData } from "$lib/entities/image";
+import { getCollection } from "$lib/api";
 
-export const load: PageLoad = ({ fetch, params, url }) => {
-    const collection = createTestCollection();
-    const images: ImageObjectData[] = [];
-    collection.uid = params.uid;
-
-    for (let i = 0; i < collection.image_count; i++) {
-        images.push(createTestImageObject());
+export const load: PageLoad = async ({ params }) => {
+    const collectionImages = await getCollection(params.uid);
+    if (collectionImages.status !== 200) {
+        throw new Error(`Failed to load collection images: ${collectionImages.status}`);
     }
-    collection.images = images;
 
-    return {
-        response: collection
-    };
+    return collectionImages.data;
 };

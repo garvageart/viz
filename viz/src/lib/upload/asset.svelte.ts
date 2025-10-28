@@ -1,4 +1,5 @@
-import { uploadImageWithProgress } from "$lib/api";
+import { uploadImageWithProgress, type UploadImageResult } from "$lib/api";
+import { toastState } from "$lib/toast-notifcations/notif-state.svelte";
 import type { ImageUploadFileData, ImageUploadSuccess } from "./manager.svelte";
 
 export enum UploadState {
@@ -35,10 +36,10 @@ export class UploadImage implements UploadImageStats {
     }
 
     private updateProgress = (event: ProgressEvent<XMLHttpRequestEventTarget>) => {
-        this.progress = event.loaded / event.total;
+        this.progress = (event.loaded / event.total) * 100;
     };
 
-    async upload(): Promise<ImageUploadSuccess | undefined> {
+    async upload(): Promise<UploadImageResult | undefined> {
         try {
             this.state = UploadState.STARTED;
             const responseData = await uploadImageWithProgress({
@@ -48,10 +49,22 @@ export class UploadImage implements UploadImageStats {
 
             this.state = (responseData.status === 200) || (responseData.status === 201) ? UploadState.DONE : UploadState.INVALID;
 
-            return responseData.data as ImageUploadSuccess;
+            toastState.addToast({
+                message: this.state === UploadState.DONE ? `Uploaded ${this.data.filename} successfully.` : `Failed to upload ${this.data.filename}.`,
+                type: this.state === UploadState.DONE ? 'success' : 'error',
+                dismissible: true,
+                timeout: 5000
+            });
+
+            return responseData.data;
         } catch (error) {
             this.state = UploadState.ERROR;
-            console.error(error);
+            toastState.addToast({
+                message: `Error uploading ${this.data.filename}.`,
+                type: 'error',
+                dismissible: true,
+                timeout: 5000
+            });
             return undefined;
         }
     }

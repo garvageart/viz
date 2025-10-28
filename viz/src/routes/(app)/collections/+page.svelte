@@ -8,7 +8,7 @@
 	import CollectionCard, { openCollection } from "$lib/components/CollectionCard.svelte";
 	import MaterialIcon from "$lib/components/MaterialIcon.svelte";
 	import Button from "$lib/components/Button.svelte";
-	import { createCollection } from "$lib/api";
+	import { createCollection, type Collection } from "$lib/api";
 	import ModalOverlay from "$lib/components/modal/ModalOverlay.svelte";
 	import { modal, sort } from "$lib/states/index.svelte";
 	import { goto } from "$app/navigation";
@@ -21,7 +21,7 @@
 	import type { AssetGridArray } from "$lib/types/asset";
 	import AssetsShell from "$lib/components/AssetsShell.svelte";
 	import { sortCollections } from "$lib/sort/sort";
-	import type CollectionData from "$lib/entities/collection";
+	import { toastState } from "$lib/toast-notifcations/notif-state.svelte";
 
 	let { data }: PageProps = $props();
 
@@ -31,7 +31,6 @@
 	});
 
 	let collectionData = data.items;
-	$inspect("collection data", data);
 
 	let shouldUpdate = $derived(collectionData.length > pagination.limit * pagination.offset);
 	let displayData = $derived(sortCollections(collectionData, sort));
@@ -43,8 +42,8 @@
 	let selectedAssets = $state<SvelteSet<any>>(new SvelteSet());
 	let singleSelectedAsset: any | undefined = $state();
 
-	let collectionGridArray: AssetGridArray<CollectionData> | undefined = $state();
-	let grid: ComponentProps<typeof AssetGrid<CollectionData>> = $derived({
+	let collectionGridArray: AssetGridArray<Collection> | undefined = $state();
+	let grid: ComponentProps<typeof AssetGrid<Collection>> = $derived({
 		assetDblClick: (_, asset) => {
 			openCollection(asset, currentPanelContent);
 		},
@@ -77,6 +76,14 @@
 				});
 
 				modal.show = false;
+				if (response.status !== 201) {
+					toastState.addToast({
+						type: "error",
+						message: `Failed to create collection: ${response.data || "Unknown error"}`
+					});
+					return;
+				}
+
 				goto(`/collections/${response.data.uid}`);
 			}}
 		>
@@ -91,7 +98,7 @@
 	</div>
 </ModalOverlay>
 
-{#snippet collectionCard(collectionData: CollectionData)}
+{#snippet collectionCard(collectionData: Collection)}
 	{#if page.url.pathname !== "/"}
 		<a
 			data-sveltekit-preload-data

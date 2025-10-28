@@ -4,30 +4,35 @@ import EvenMoreDifferent from "$lib/components/panels/workspace/generic/EvenMore
 import DevWelcomeText from "$lib/components/DevWelcomeText.svelte";
 import VizView from "$lib/views/views.svelte";
 import Collections from "../../routes/(app)/collections/+page.svelte";
-import type { Collection } from "$lib/types/images";
+import CollectionPage from "../../routes/(app)/collections/[uid]/+page.svelte";
 
 // Only one instance of a view/panel and its component
 // can exist in the layout so we declare all of them here
 export const views: VizView[] = [
     new VizView({
         name: "Clock",
-        component: SomeContent as any
+        component: SomeContent
     }),
     new VizView({
         name: "What Day Is It?",
-        component: DifferentContent as any
+        component: DifferentContent
     }),
     new VizView({
         name: "Timezone",
-        component: EvenMoreDifferent as any
+        component: EvenMoreDifferent
     }),
     new VizView({
         name: "Welcome Text",
-        component: DevWelcomeText as any
+        component: DevWelcomeText
     }),
-    new VizView<Collection[]>({
+    new VizView({
         name: "Collections",
-        component: Collections as any,
+        component: Collections,
         path: "/collections"
+    }),
+    new VizView({
+        name: "Collection",
+        component: CollectionPage,
+        path: "/collections/[uid]"
     })
 ];

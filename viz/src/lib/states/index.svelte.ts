@@ -28,7 +28,6 @@ export async function fetchCurrentUser(): Promise<User | null> {
     user.loading = true;
     try {
         const result = await getCurrentUser();
-        console.log(result);
 
         if (result.status === 200) {
             user.data = result.data;

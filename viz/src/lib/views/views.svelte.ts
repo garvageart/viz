@@ -5,23 +5,24 @@ import { preloadData } from "$app/navigation";
 // usually this would be bad but the app is client only
 // and doesn't share state with anyone i guess??
 let idCount = 1;
-class VizView<T = {}> {
+
+class VizView<C extends Component<any, any, any> = Component<any, any, any>> {
     name: string;
     opticalCenterFix?: number;
-    component: Component<PageProps | {}, {}, "">;;
+    component: C;
     id: number;
     parent?: string;
     isActive?: boolean = false;
     public viewData?: {
         type: "loaded";
         status: number;
-        data: T | Record<string, any>;
+        data: C extends Component<infer P, any, any> ? (P extends { data: infer D; } ? D : any) : any;
     } = $state(undefined);
     path?: string;
 
     constructor(opts: {
         name: string;
-        component: Component<PageProps | {}, {}, "">;
+        component: C;
         parent?: string;
         opticalCenterFix?: number;
         path?: string;
@@ -45,7 +46,7 @@ class VizView<T = {}> {
         this.isActive = active;
     }
 
-    async getComponentData(): Promise<void | { type: "loaded"; status: number; data: T | Record<string, any>; }> {
+    async getComponentData(): Promise<void | { type: "loaded"; status: number; data: any; }> {
         if (!this.path) {
             return;
         }
@@ -56,7 +57,7 @@ class VizView<T = {}> {
 
         const result = await preloadData(this.path);
         if (result.type === 'loaded' && result.status === 200) {
-            this.viewData = result;
+            this.viewData = result as any;
             return result;
         }
     }

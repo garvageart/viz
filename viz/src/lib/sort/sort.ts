@@ -1,9 +1,8 @@
-import type CollectionData from "$lib/entities/collection";
-import type { ImageObjectData } from "$lib/entities/image";
+import type { Collection, Image } from "$lib/api";
 import type { AssetSort } from "$lib/types/asset";
 import { orderBy } from "lodash-es";
 
-export function sortCollectionImages(assets: ImageObjectData[], sort: AssetSort) {
+export function sortCollectionImages(assets: Image[], sort: AssetSort) {
     switch (sort.by) {
         case "name":
             return orderBy(assets, "name", sort.order);
@@ -18,7 +17,7 @@ export function sortCollectionImages(assets: ImageObjectData[], sort: AssetSort)
     }
 }
 
-export function sortCollections(collections: CollectionData[], sort: AssetSort) {
+export function sortCollections(collections: Collection[], sort: AssetSort) {
     switch (sort.by) {
         case "name":
             return orderBy(collections, "name", sort.order);
@@ -29,7 +28,6 @@ export function sortCollections(collections: CollectionData[], sort: AssetSort) 
         case "oldest":
             return orderBy(collections, "created_at", "asc");
         case "most_recent":
-            return orderBy(collections, "updated_at", sort.order);
             return orderBy(collections, (col) => col.updated_at || col.created_at, "desc");
         default:
             return collections;
