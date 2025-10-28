@@ -5,6 +5,8 @@
 import { createServerURL } from "$lib/utils/url";
 import { MEDIA_SERVER } from "$lib/constants";
 import type { ImageUploadFileData } from "$lib/upload/manager.svelte";
+import { user } from "$lib/states/index.svelte";
+import { type User, getCurrentUser } from "./client.gen";
 
 export interface UploadImageOptions {
     data: ImageUploadFileData;

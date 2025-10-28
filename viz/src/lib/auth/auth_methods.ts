@@ -1,8 +1,7 @@
 import { goto } from "$app/navigation";
-import { AUTH_SERVER } from "$lib/constants";
 import { sleep } from "$lib/utils/misc";
 import { cookieMethods } from "$lib/utils/cookie";
-import { createServerURL } from "$lib/utils/url";
+import { defaults } from "$lib/api/client.gen";
 
 interface AuthorizationCodeFlowResponse {
     code: string;
@@ -18,15 +17,13 @@ interface AuthorizationCodeGrantResponse {
 }
 
 interface OAuthResponseUserData {
-    id: string;
+    id?: string;
     email: string;
-    verified_email: boolean;
     name: string;
     picture: string;
-    hd: string;
 }
 
-export const authServerURL = createServerURL(AUTH_SERVER);
+export const authServerURL = defaults.baseUrl;
 
 export async function sendOAuthParams(provider: string | null): Promise<boolean> {
     const queryParams = Object.fromEntries(new URLSearchParams(location.search).entries());
@@ -35,52 +32,49 @@ export async function sendOAuthParams(provider: string | null): Promise<boolean>
         return false;
     }
 
-
     if (!provider) {
         await sleep(3000);
         goto("/");
-
         return false;
     }
 
-    const fetchURL = new URL(`${authServerURL}/oauth/${provider}`);
+    const fetchURL = new URL(`${authServerURL}/auth/oauth/${provider}`);
     for (const [key, value] of Object.entries(queryParams)) {
         fetchURL.searchParams.set(key, value);
     }
 
-    const authData: OAuthResponseUserData = await fetch(fetchURL, {
-        method: "POST",
-        mode: "cors",
-        credentials: "include"
-    }).then(async (res) => {
-        if (res.status !== 200) {
-            console.error(res.statusText);
-            // random temp error code, these will be defined
-            // later in the future
-            // these will be used to show a notification with the error code and message
+    try {
+        const response = await fetch(fetchURL, {
+            method: "POST",
+            mode: "cors",
+            credentials: "include"
+        });
+
+        if (response.status !== 200) {
+            console.error(response.statusText);
             goto("/?error=40");
-            return null;
+            return false;
         }
 
-        return await res.json();
-    }).catch((err) => {
-        console.error(err);
-        return null;
-    });
+        const authData: OAuthResponseUserData = await response.json();
 
-
-    if (authData.email) {
-        goto("/auth/register", {
-            state: {
-                email: authData.email,
-                name: authData.name,
-                picture: authData.picture,
-                provider: provider
-            }
-        });
-        return true;
-    } else {
-        cookieMethods.delete("imag-state");
+        if (authData.email) {
+            goto("/auth/register", {
+                state: {
+                    email: authData.email,
+                    name: authData.name,
+                    picture: authData.picture,
+                    provider: provider
+                }
+            });
+            return true;
+        } else {
+            cookieMethods.delete("imag-state");
+            return false;
+        }
+    } catch (err) {
+        console.error("OAuth error:", err);
+        goto("/?error=40");
         return false;
     }
 }
