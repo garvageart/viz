@@ -92,9 +92,13 @@ if (!goGenSuccess) {
     process.exit(1);
 }
 
-// Tidy modules
-console.log('Running go mod tidy...');
-run('go', ['mod', 'tidy']);
+// Tidy modules (optional, only if new dependencies were added)
+if (options.installTools || !hasRuntime) {
+    console.log('Running go mod tidy...');
+    run('go', ['mod', 'tidy']);
+} else {
+    console.log('Skipping go mod tidy (use --install-tools to force)');
+}
 
 // Generate GORM entities that embed DTOs
 console.log('Generating GORM entities from DTOs (go run ./tools/genentities)...');

@@ -49,32 +49,7 @@ export type ImageUploadResponse = {
 export type CollectionImage = {
     uid: string;
     added_at: string;
-    added_by?: string;
-};
-export type Collection = {
-    uid: string;
-    name: string;
-    image_count: number;
-    "private"?: boolean | null;
-    images?: CollectionImage[];
-    created_by?: string;
-    description?: string;
-    created_at: string;
-    updated_at: string;
-};
-export type CollectionListResponse = {
-    href?: string;
-    prev?: string;
-    next?: string;
-    limit: number;
-    offset: number;
-    count?: number;
-    items: Collection[];
-};
-export type CollectionCreate = {
-    name: string;
-    "private"?: boolean | null;
-    description?: string;
+    added_by?: User;
 };
 export type ImageExif = {
     exif_version?: string;
@@ -111,15 +86,15 @@ export type ImageMetadata = {
     checksum: string;
 };
 export type ImagePaths = {
-    original_path: string;
-    thumbnail_path: string;
-    preview_path: string;
-    raw_path?: string;
+    original: string;
+    thumbnail: string;
+    preview: string;
+    raw?: string;
 };
 export type Image = {
     uid: string;
     name: string;
-    uploaded_by?: string;
+    uploaded_by?: User;
     description?: string;
     exif?: ImageExif;
     "private": boolean;
@@ -127,13 +102,39 @@ export type Image = {
     height: number;
     processed: boolean;
     image_metadata?: ImageMetadata;
-    image_paths?: ImagePaths;
+    image_paths: ImagePaths;
     created_at: string;
     updated_at: string;
 };
+export type Collection = {
+    uid: string;
+    name: string;
+    image_count: number;
+    "private"?: boolean | null;
+    images?: CollectionImage[];
+    created_by?: User;
+    description?: string;
+    thumbnail?: Image;
+    created_at: string;
+    updated_at: string;
+};
+export type CollectionListResponse = {
+    href?: string;
+    prev?: string;
+    next?: string;
+    limit: number;
+    offset: number;
+    count?: number;
+    items: Collection[];
+};
+export type CollectionCreate = {
+    name: string;
+    "private"?: boolean | null;
+    description?: string;
+};
 export type ImagesResponse = {
     added_at: string;
-    added_by?: string;
+    added_by?: User;
     image: Image;
 };
 export type ImagesPage = {
@@ -151,8 +152,11 @@ export type CollectionDetailResponse = {
     image_count?: number;
     "private"?: boolean | null;
     images: ImagesPage;
-    created_by?: string;
+    created_by?: User;
     description?: string;
+    thumbnail?: Image;
+    created_at: string;
+    updated_at: string;
 };
 export type AddImagesResponse = {
     added: boolean;

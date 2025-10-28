@@ -5,8 +5,6 @@
 import { createServerURL } from "$lib/utils/url";
 import { MEDIA_SERVER } from "$lib/constants";
 import type { ImageUploadFileData } from "$lib/upload/manager.svelte";
-import { user } from "$lib/states/index.svelte";
-import { type User, getCurrentUser } from "./client.gen";
 
 export interface UploadImageOptions {
     data: ImageUploadFileData;
@@ -60,7 +58,12 @@ export async function uploadImageWithProgress(
         }
 
         xhr.open('POST', `${createServerURL(MEDIA_SERVER)}/images`);
+        xhr.withCredentials = true;
         xhr.responseType = 'json';
         xhr.send(formData);
     });
+}
+
+export function getFullImagePath(path: string): string {
+    return `${createServerURL(MEDIA_SERVER)}${path}`;
 }
