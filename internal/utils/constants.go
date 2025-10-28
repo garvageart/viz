@@ -26,8 +26,8 @@ var (
 )
 
 const (
-	AuthTokenCookie    = "imag-auth-token"
+	AuthTokenCookie    = "imag-auth_token"
 	StateCookie        = "imag-state"
-	RedirectCookie     = "imag-redirect-state"
-	RefreshTokenCookie = "imag-refresh-token"
+	RedirectCookie     = "imag-redirect_state"
+	RefreshTokenCookie = "imag-refresh_token"
 )

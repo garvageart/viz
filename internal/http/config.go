@@ -13,6 +13,10 @@ import (
 	_ "github.com/joho/godotenv/autoload"
 )
 
+const (
+	APIKeyName = "x-imagine-key"
+)
+
 var (
 	ServerKeys = map[string]string{
 		"auth": "auth-server",
@@ -71,7 +75,7 @@ func (server ImagineServer) ConnectToDatabase(dst ...any) *gorm.DB {
 	logger.Info("Running auto-migration for auth server")
 	dbError = client.AutoMigrate(dst...)
 	if dbError != nil {
-		logger.Error("error running auto-migration for auth server", slog.Any("error", dbError))
+		logger.Error("error running auto-migration", slog.Any("error", dbError))
 		panic("")
 	}
 
