@@ -20,7 +20,7 @@ import (
 func findCollectionImages(db *gorm.DB, imgUIDs []string, collection entities.Collection, limit, offset int) ([]dto.ImagesResponse, error) {
 	var images []entities.Image
 
-	if err := db.Where("uid IN ?", imgUIDs).
+	if err := db.Preload("UploadedBy").Where("uid IN ?", imgUIDs).
 		Limit(limit).Offset(offset).
 		Find(&images).Error; err != nil {
 		return nil, err
@@ -82,12 +82,15 @@ func CollectionsRouter(db *gorm.DB, logger *slog.Logger) *chi.Mux {
 			)
 		}
 
+		authUser, _ := libhttp.UserFromContext(req)
+
 		// Map request -> entity for persistence
 		collection := entities.Collection{
 			Uid:         colUid,
 			Name:        create.Name,
 			Private:     create.Private,
 			Description: create.Description,
+			CreatedByID: &authUser.Uid,
 		}
 
 		err = db.Create(&collection).Error
@@ -113,7 +116,7 @@ func CollectionsRouter(db *gorm.DB, logger *slog.Logger) *chi.Mux {
 
 		var collections []entities.Collection
 
-		err = db.Limit(limit).Offset(offset).Find(&collections).Error
+		err = db.Preload("Thumbnail").Preload("CreatedBy").Limit(limit).Offset(offset).Find(&collections).Error
 		if err != nil {
 			libhttp.ServerError(res, req, err, logger, nil,
 				"Failed to get collections",
@@ -165,7 +168,7 @@ func CollectionsRouter(db *gorm.DB, logger *slog.Logger) *chi.Mux {
 		var imgResponse []dto.ImagesResponse
 
 		err := db.Transaction(func(tx *gorm.DB) error {
-			if err := tx.First(&collection, "uid = ?", uid).Error; err != nil {
+			if err := tx.Preload("Thumbnail").Preload("CreatedBy").First(&collection, "uid = ?", uid).Error; err != nil {
 				return err
 			}
 
@@ -217,14 +220,20 @@ func CollectionsRouter(db *gorm.DB, logger *slog.Logger) *chi.Mux {
 			Items:  imgResponse,
 		}
 
+		// Use the entity's DTO() method which handles Thumbnail conversion
+		collectionDTO := collection.DTO()
+
 		result := dto.CollectionDetailResponse{
-			Uid:         collection.Uid,
-			Name:        collection.Name,
-			ImageCount:  &collection.ImageCount,
-			Private:     collection.Private,
+			Uid:         collectionDTO.Uid,
+			Name:        collectionDTO.Name,
+			ImageCount:  &collectionDTO.ImageCount,
+			Private:     collectionDTO.Private,
 			Images:      imagesPage,
-			CreatedBy:   collection.CreatedBy,
-			Description: collection.Description,
+			CreatedBy:   collectionDTO.CreatedBy,
+			CreatedAt:   collectionDTO.CreatedAt,
+			UpdatedAt:   collectionDTO.UpdatedAt,
+			Description: collectionDTO.Description,
+			Thumbnail:   collectionDTO.Thumbnail,
 		}
 
 		render.JSON(res, req, result)
@@ -339,6 +348,8 @@ func CollectionsRouter(db *gorm.DB, logger *slog.Logger) *chi.Mux {
 				images = append(images, colImageEnt)
 				collection.Images = &images
 			}
+
+			collection.ImageCount = len(*collection.Images)
 
 			return tx.Save(&collection).Error
 		})

@@ -28,3 +28,14 @@ func ClearCookie(name string, w http.ResponseWriter) {
 		Expires:  time.Unix(0, 0),
 	})
 }
+
+func CreateAuthTokenCookie(expireTime time.Time, token string) *http.Cookie {
+	return &http.Cookie{
+		Name:     AuthTokenCookie,
+		Value:    token,
+		Expires:  expireTime,
+		HttpOnly: true,
+		SameSite: http.SameSiteLaxMode,
+		Path:     "/",
+	}
+}

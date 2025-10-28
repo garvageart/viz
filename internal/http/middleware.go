@@ -13,7 +13,6 @@ import (
 	imaAuth "imagine/internal/auth"
 	"imagine/internal/dto"
 	"imagine/internal/entities"
-	"imagine/internal/utils"
 )
 
 // context keys
@@ -62,7 +61,7 @@ func AuthMiddleware(db *gorm.DB, logger *slog.Logger) func(next http.Handler) ht
 				return
 			}
 
-			cookie, err := r.Cookie(utils.AuthTokenCookie)
+			cookie, err := r.Cookie(AuthTokenCookie)
 			if err != nil || cookie == nil || cookie.Value == "" {
 				w.WriteHeader(http.StatusUnauthorized)
 				render.JSON(w, r, dto.ErrorResponse{Error: "token missing"})

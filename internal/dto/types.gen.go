@@ -53,12 +53,13 @@ type AddImagesResponse struct {
 // Collection defines model for Collection.
 type Collection struct {
 	CreatedAt   time.Time          `json:"created_at"`
-	CreatedBy   *string            `json:"created_by,omitempty"`
+	CreatedBy   *User              `json:"created_by,omitempty"`
 	Description *string            `json:"description,omitempty"`
 	ImageCount  int                `json:"image_count"`
 	Images      *[]CollectionImage `json:"images,omitempty"`
 	Name        string             `json:"name"`
 	Private     *bool              `json:"private"`
+	Thumbnail   *Image             `json:"thumbnail,omitempty"`
 	Uid         string             `json:"uid"`
 	UpdatedAt   time.Time          `json:"updated_at"`
 }
@@ -72,19 +73,22 @@ type CollectionCreate struct {
 
 // CollectionDetailResponse defines model for CollectionDetailResponse.
 type CollectionDetailResponse struct {
-	CreatedBy   *string    `json:"created_by,omitempty"`
+	CreatedAt   time.Time  `json:"created_at"`
+	CreatedBy   *User      `json:"created_by,omitempty"`
 	Description *string    `json:"description,omitempty"`
 	ImageCount  *int       `json:"image_count,omitempty"`
 	Images      ImagesPage `json:"images"`
 	Name        string     `json:"name"`
 	Private     *bool      `json:"private"`
+	Thumbnail   *Image     `json:"thumbnail,omitempty"`
 	Uid         string     `json:"uid"`
+	UpdatedAt   time.Time  `json:"updated_at"`
 }
 
 // CollectionImage defines model for CollectionImage.
 type CollectionImage struct {
 	AddedAt time.Time `json:"added_at"`
-	AddedBy *string   `json:"added_by,omitempty"`
+	AddedBy *User     `json:"added_by,omitempty"`
 	Uid     string    `json:"uid"`
 }
 
@@ -111,13 +115,13 @@ type Image struct {
 	Exif          *ImageEXIF     `json:"exif,omitempty"`
 	Height        int32          `json:"height"`
 	ImageMetadata *ImageMetadata `json:"image_metadata,omitempty"`
-	ImagePaths    *ImagePaths    `json:"image_paths,omitempty"`
+	ImagePaths    ImagePaths     `json:"image_paths"`
 	Name          string         `json:"name"`
 	Private       bool           `json:"private"`
 	Processed     bool           `json:"processed"`
 	Uid           string         `json:"uid"`
 	UpdatedAt     time.Time      `json:"updated_at"`
-	UploadedBy    *string        `json:"uploaded_by,omitempty"`
+	UploadedBy    *User          `json:"uploaded_by,omitempty"`
 	Width         int32          `json:"width"`
 }
 
@@ -161,10 +165,10 @@ type ImageMetadata struct {
 
 // ImagePaths defines model for ImagePaths.
 type ImagePaths struct {
-	OriginalPath  string  `json:"original_path"`
-	PreviewPath   string  `json:"preview_path"`
-	RawPath       *string `json:"raw_path,omitempty"`
-	ThumbnailPath string  `json:"thumbnail_path"`
+	Original  string  `json:"original"`
+	Preview   string  `json:"preview"`
+	Raw       *string `json:"raw,omitempty"`
+	Thumbnail string  `json:"thumbnail"`
 }
 
 // ImageUploadResponse defines model for ImageUploadResponse.
@@ -186,7 +190,7 @@ type ImagesPage struct {
 // ImagesResponse defines model for ImagesResponse.
 type ImagesResponse struct {
 	AddedAt time.Time `json:"added_at"`
-	AddedBy *string   `json:"added_by,omitempty"`
+	AddedBy *User     `json:"added_by,omitempty"`
 	Image   Image     `json:"image"`
 }
 

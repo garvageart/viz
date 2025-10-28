@@ -38,19 +38,6 @@ type ImagineAuthPasswordFlow struct {
 	State string
 }
 
-type ImagineAPIKeyData struct {
-	gorm.Model
-	UID       string    `json:"uid" gorm:"primary_key"`
-	Key       string    `json:"key"`
-	CreatedAt time.Time `json:"created_at"`
-	UserID    string    `json:"user_id"`
-	Scopes    []string  `json:"scopes"`
-	RevokedAt time.Time `json:"revoked_at"`
-	Revoked   bool      `json:"revoked"`
-}
-
-func (a ImagineAPIKeyData) TableName() string { return "api_keys" }
-
 func AuthRouter(db *gorm.DB, logger *slog.Logger) *chi.Mux {
 	router := chi.NewRouter()
 
@@ -74,9 +61,13 @@ func AuthRouter(db *gorm.DB, logger *slog.Logger) *chi.Mux {
 			return
 		}
 
-		apiDataDocument := &ImagineAPIKeyData{
-			UID: apiKeyId,
-			Key: keys["hashed_key"],
+		authUser, _ := libhttp.UserFromContext(req)
+
+		apiDataDocument := &entities.APIKey{
+			UID:       apiKeyId,
+			KeyHashed: keys["hashed_key"],
+			UserUID:   authUser.Uid,
+			Revoked:   false,
 		}
 
 		tx := db.Create(apiDataDocument)
@@ -167,7 +158,7 @@ func AuthRouter(db *gorm.DB, logger *slog.Logger) *chi.Mux {
 		// Create auth token and persistent session
 		authToken := auth.GenerateAuthToken()
 		expiryTime := carbon.Now().AddYear().StdTime()
-		http.SetCookie(res, auth.CreateAuthTokenCookie(expiryTime, authToken))
+		http.SetCookie(res, libhttp.CreateAuthTokenCookie(expiryTime, authToken))
 
 		// Persist session for server-side validation
 		sess := entities.Session{
@@ -233,7 +224,7 @@ func AuthRouter(db *gorm.DB, logger *slog.Logger) *chi.Mux {
 
 		// 5 minute max window to login using the generated state
 		http.SetCookie(res, &http.Cookie{
-			Name:     "imag-redirect-state",
+			Name:     libhttp.RedirectCookie,
 			Value:    encryptedStateB64,
 			Expires:  carbon.Now().AddMinutes(5).StdTime(),
 			Path:     "/",
@@ -305,7 +296,7 @@ func AuthRouter(db *gorm.DB, logger *slog.Logger) *chi.Mux {
 		// at this point, the state has been validated to be correct
 		// and unmodified to use that
 		http.SetCookie(res, &http.Cookie{
-			Name:     "imag-state",
+			Name:     libhttp.StateCookie,
 			Value:    state,
 			Expires:  expiryTime,
 			Path:     "/",
@@ -315,14 +306,14 @@ func AuthRouter(db *gorm.DB, logger *slog.Logger) *chi.Mux {
 
 		// delete the temporary redirect state from the browser
 		http.SetCookie(res, &http.Cookie{
-			Name:     "imag-redirect-state",
+			Name:     libhttp.RedirectCookie,
 			Value:    "",
 			Path:     "/",
 			Expires:  time.Unix(0, 0),
 			HttpOnly: true,
 		})
 
-		http.SetCookie(res, auth.CreateAuthTokenCookie(expiryTime, tokenString))
+		http.SetCookie(res, libhttp.CreateAuthTokenCookie(expiryTime, tokenString))
 
 		logger.Info("User logged in with OAuth", slog.String("provider", provider))
 		render.JSON(res, req, actualUserData)

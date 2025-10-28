@@ -20,7 +20,6 @@ import (
 	"github.com/go-chi/chi/v5"
 	"github.com/go-chi/render"
 	_ "github.com/joho/godotenv/autoload"
-	"github.com/kovidgoyal/imaging"
 	"gorm.io/gorm"
 
 	"imagine/internal/dto"
@@ -77,34 +76,35 @@ func createNewImageEntity(logger *slog.Logger, fileName string, libvipsImg *libv
 		logger.Debug("exif data", slog.Any("data", exifData), slog.Int("length", len(exifData)))
 	}
 
-	// Helper to convert string to *string, handling empty strings
-	toStringPtr := func(s string) *string {
-		if s == "" {
-			return nil
-		}
-		return &s
+	// Build ImageEXIF using normalized keys and cleaned values
+	// Try common aliases where applicable (e.g., ISO vs ISOSpeedRatings)
+	exif := dto.ImageEXIF{
+		Model:            imageops.FindExif(exifData, "Model"),
+		Make:             imageops.FindExif(exifData, "Make"),
+		ExifVersion:      imageops.FindExif(exifData, "ExifVersion"),
+		DateTime:         imageops.FindExif(exifData, "DateTime", "ModifyDate"),
+		DateTimeOriginal: imageops.FindExif(exifData, "DateTimeOriginal"),
+		ModifyDate:       imageops.FindExif(exifData, "ModifyDate", "DateTime"),
+		Iso:              imageops.FindExif(exifData, "ISO", "ISOSpeedRatings"),
+		FocalLength:      imageops.FindExif(exifData, "FocalLength"),
+		ExposureTime:     imageops.FindExif(exifData, "ExposureTime"),
+		Aperture:         imageops.FindExif(exifData, "ApertureValue", "FNumber", "Aperture"),
+		Flash:            imageops.FindExif(exifData, "Flash"),
+		WhiteBalance:     imageops.FindExif(exifData, "WhiteBalance"),
+		LensModel:        imageops.FindExif(exifData, "LensModel"),
+		Rating:           imageops.FindExif(exifData, "Rating"),
+		Orientation:      imageops.FindExif(exifData, "Orientation"),
+		Software:         imageops.FindExif(exifData, "Software"),
+		Longitude:        imageops.FindExif(exifData, "GPSLongitude", "Longitude"),
+		Latitude:         imageops.FindExif(exifData, "GPSLatitude", "Latitude"),
 	}
 
-	exif := dto.ImageEXIF{
-		Model:            toStringPtr(exifData["Model"]),
-		Make:             toStringPtr(exifData["Make"]),
-		ExifVersion:      toStringPtr(exifData["ExifVersion"]),
-		DateTime:         toStringPtr(exifData["DateTime"]),
-		DateTimeOriginal: toStringPtr(exifData["DateTimeOriginal"]),
-		ModifyDate:       toStringPtr(exifData["ModifyDate"]),
-		Iso:              toStringPtr(exifData["ISO"]),
-		FocalLength:      toStringPtr(exifData["FocalLength"]),
-		ExposureTime:     toStringPtr(exifData["ExposureTime"]),
-		Aperture:         toStringPtr(exifData["Aperture"]),
-		Flash:            toStringPtr(exifData["Flash"]),
-		WhiteBalance:     toStringPtr(exifData["WhiteBalance"]),
-		LensModel:        toStringPtr(exifData["LensModel"]),
-		Rating:           toStringPtr(exifData["Rating"]),
-		Orientation:      toStringPtr(exifData["Orientation"]),
-		Resolution:       toStringPtr(exifData["Resolution"]),
-		Software:         toStringPtr(exifData["Software"]),
-		Longitude:        toStringPtr(exifData["Longitude"]),
-		Latitude:         toStringPtr(exifData["Latitude"]),
+	// Derive a simple Resolution (e.g., "300x300 DPI") from X/YResolution if available
+	xRes := imageops.FindExif(exifData, "XResolution")
+	yRes := imageops.FindExif(exifData, "YResolution")
+	if xRes != nil && yRes != nil {
+		resStr := fmt.Sprintf("%sx%s DPI", *xRes, *yRes)
+		exif.Resolution = &resStr
 	}
 
 	createdDate := exif.DateTimeOriginal
@@ -117,10 +117,6 @@ func createNewImageEntity(logger *slog.Logger, fileName string, libvipsImg *libv
 	}
 
 	logger.Info("generating file name for saving")
-	fileNameHash := md5.New()
-	fileNameHash.Write([]byte(fileName))
-	hexEncodedString := hex.EncodeToString(fileNameHash.Sum(nil))
-	fileNameForSaving := id + "-" + hexEncodedString
 
 	fileCreatedAt := carbon.Parse(*createdDate).StdTime()
 	fileModifiedAt := carbon.Parse(*modDate).StdTime()
@@ -139,16 +135,17 @@ func createNewImageEntity(logger *slog.Logger, fileName string, libvipsImg *libv
 		Checksum:         "", // Will be set later
 	}
 
-	originalPath := fmt.Sprintf("/images/%s/%s", id, fileNameForSaving)
-	thumbnailPath := fmt.Sprintf("/images/%s/%s", id, fileNameForSaving+"-thumbnail")
-	previewPath := fmt.Sprintf("/images/%s/%s", id, fileNameForSaving+"-preview")
-	rawPath := fmt.Sprintf("/images/%s/%s", id, fileNameForSaving+"-raw")
+	// Construct paths with reasonable defaults matching the {uid}/file route params
+	originalPath := fmt.Sprintf("/images/%s/file", id)
+	// Thumbnail: 400px wide, maintain aspect, webp, good quality for small previews
+	thumbnailPath := fmt.Sprintf("/images/%s/file?format=webp&w=400&h=400&quality=85", id)
+	// Preview: 1920px wide, maintain aspect, webp, balanced quality
+	previewPath := fmt.Sprintf("/images/%s/file?format=webp&w=1920&h=1920&quality=90", id)
 
 	paths := dto.ImagePaths{
-		OriginalPath:  originalPath,
-		ThumbnailPath: thumbnailPath,
-		PreviewPath:   previewPath,
-		RawPath:       &rawPath,
+		Original:  originalPath,
+		Thumbnail: thumbnailPath,
+		Preview:   previewPath,
 	}
 
 	allImageData := entities.Image{
@@ -158,7 +155,7 @@ func createNewImageEntity(logger *slog.Logger, fileName string, libvipsImg *libv
 		Processed:     false,
 		Exif:          &exif,
 		ImageMetadata: &metadata,
-		ImagePaths:    &paths,
+		ImagePaths:    paths,
 		Width:         int32(libvipsImg.Width()),
 		Height:        int32(libvipsImg.Height()),
 		Description:   nil, //TODO: evaluate if necessary, blank for now
@@ -177,15 +174,49 @@ func ImagesRouter(db *gorm.DB, logger *slog.Logger) *chi.Mux {
 	// TODO TODO: Finalize route name. "/file/" isn't exactly honest in my opinion
 	router.Get("/{uid}/file", func(res http.ResponseWriter, req *http.Request) {
 		uid := chi.URLParam(req, "uid")
-		format := chi.URLParam(req, "format")
-		width, wErr := strconv.ParseInt(chi.URLParam(req, "w"), 10, 64)
-		height, hErr := strconv.ParseInt(chi.URLParam(req, "h"), 10, 64)
-		quality, qErr := strconv.ParseInt(chi.URLParam(req, "quality"), 10, 64)
+
+		formatParam := req.FormValue("format")
+		widthParam := req.FormValue("w")
+		heightParam := req.FormValue("h")
+		qualityParam := req.FormValue("quality")
+
+		tx := db.Model(&entities.Image{}).Where("uid = ?", uid)
+		var imgEnt entities.Image
+		result := tx.Preload("UploadedBy").First(&imgEnt)
+		if result.Error != nil {
+			if result.Error == gorm.ErrRecordNotFound {
+				render.Status(req, http.StatusNotFound)
+				render.JSON(res, req, dto.ErrorResponse{Error: "image not found"})
+				return
+			}
+			render.Status(req, http.StatusInternalServerError)
+			render.JSON(res, req, dto.ErrorResponse{Error: "failed to fetch image from database"})
+			return
+		}
+
+		if len(req.Form) == 0 {
+			imageData, err := images.ReadImage(imgEnt.Uid, imgEnt.ImageMetadata.FileName)
+			if err != nil {
+				render.Status(req, http.StatusInternalServerError)
+				render.JSON(res, req, dto.ErrorResponse{Error: err.Error()})
+				return
+			}
+
+			res.Header().Set("Content-Type", "image/"+imgEnt.ImageMetadata.FileType)
+			res.Header().Set("Content-Length", strconv.Itoa(len(imageData)))
+			res.WriteHeader(http.StatusOK)
+			res.Write(imageData)
+			return
+		}
+
+		width, wErr := strconv.ParseInt(widthParam, 10, 64)
+		height, hErr := strconv.ParseInt(heightParam, 10, 64)
+		quality, qErr := strconv.ParseInt(qualityParam, 10, 64)
 
 		// Convert quality to 0-10 instead of 0-100 for the Compression option
 		// NOTE: This is not final, depending on if this idea is understandable
 		// and accepted by the community/users on release
-		if format == "png" {
+		if formatParam == "png" {
 			quality = int64(math.Round(float64(quality/100) * 10))
 		}
 
@@ -201,42 +232,44 @@ func ImagesRouter(db *gorm.DB, logger *slog.Logger) *chi.Mux {
 			return
 		}
 
-		tx := db.Model(&entities.Image{}).Where("uid = ?", uid)
-		var imgEnt entities.Image
-		result := tx.First(&imgEnt)
-		if result.Error != nil {
-			if result.Error == gorm.ErrRecordNotFound {
-				render.Status(req, http.StatusNotFound)
-				render.JSON(res, req, dto.ErrorResponse{Error: "image not found"})
-				return
-			}
-			render.Status(req, http.StatusInternalServerError)
-			render.JSON(res, req, dto.ErrorResponse{Error: "failed to fetch image from database"})
-			return
-		}
-
-		goimg, _, err := images.ReadFileAsGoImage(imgEnt.Uid, imgEnt.ImageMetadata.FileName, imgEnt.ImageMetadata.FileType)
+		// Read the original image file directly
+		originalData, err := images.ReadImage(imgEnt.Uid, imgEnt.ImageMetadata.FileName)
 		if err != nil {
+			logger.Error("failed to read image data", slog.Any("error", err))
 			render.Status(req, http.StatusInternalServerError)
-			render.JSON(res, req, dto.ErrorResponse{Error: err.Error()})
+			render.JSON(res, req, dto.ErrorResponse{Error: "failed to read image data"})
 			return
 		}
 
-		newImage := imaging.Resize(goimg, int(width), int(height), imaging.Lanczos)
-		fileBytes := newImage.Pix
-		libvipsImg, err := libvips.NewImageFromBuffer(fileBytes, libvips.DefaultLoadOptions())
-
+		// Load into libvips
+		libvipsImg, err := libvips.NewImageFromBuffer(originalData, libvips.DefaultLoadOptions())
 		if err != nil {
+			logger.Error("failed to create libvips image", slog.Any("error", err))
 			render.Status(req, http.StatusInternalServerError)
-			render.JSON(res, req, dto.ErrorResponse{Error: err.Error()})
+			render.JSON(res, req, dto.ErrorResponse{Error: "failed to create libvips image"})
 			return
 		}
-
 		defer libvipsImg.Close()
+
+		err = libvipsImg.Autorot()
+		if err != nil {
+			logger.Error("failed to auto-rotate image", slog.Any("error", err))
+		}
+
+		// Resize with libvips
+		err = libvipsImg.Resize(float64(width)/float64(libvipsImg.Width()), &libvips.ResizeOptions{
+			Kernel: libvips.KernelLanczos3,
+		})
+		if err != nil {
+			logger.Error("failed to resize image", slog.Any("error", err))
+			render.Status(req, http.StatusInternalServerError)
+			render.JSON(res, req, dto.ErrorResponse{Error: "failed to resize image"})
+			return
+		}
 
 		var imageData []byte
 
-		switch format {
+		switch formatParam {
 		case "webp":
 			imageData, err = libvipsImg.WebpsaveBuffer(&libvips.WebpsaveBufferOptions{
 				Q: int(quality),
@@ -267,14 +300,15 @@ func ImagesRouter(db *gorm.DB, logger *slog.Logger) *chi.Mux {
 				Keep: libvips.KeepAll,
 			})
 
-			format = string(libvipsImg.Format())
+			formatParam = string(libvipsImg.Format())
 		}
 
-		res.Header().Set("Content-Type", "image/"+format)
+		res.Header().Set("Content-Type", "image/"+formatParam)
 
 		if err != nil {
+			logger.Error("failed to encode image", slog.Any("error", err))
 			render.Status(req, http.StatusInternalServerError)
-			render.JSON(res, req, dto.ErrorResponse{Error: err.Error()})
+			render.JSON(res, req, dto.ErrorResponse{Error: "failed to encode image"})
 			return
 		}
 
@@ -318,18 +352,16 @@ func ImagesRouter(db *gorm.DB, logger *slog.Logger) *chi.Mux {
 			return
 		}
 
-		// fileImageUpload.Checksum = req.FormValue("checksum")
-
-		// if fileImageUpload.Checksum != "" {
-		// 	hasher := sha1.New()
-		// 	hasher.Write(fileImageUpload.Data)
-		// 	calculatedChecksum := hex.EncodeToString(hasher.Sum(nil))
-		// 	if fileImageUpload.Checksum != calculatedChecksum {
-		// 		res.WriteHeader(http.StatusBadRequest)
-		// 		render.JSON(res, req, dto.ErrorResponse{Error: "checksum mismatch"})
-		// 		return
-		// 	}
-		// }
+		if fileImageUpload.Checksum != "" {
+			hasher := sha1.New()
+			hasher.Write(fileImageUpload.Data)
+			calculatedChecksum := hex.EncodeToString(hasher.Sum(nil))
+			if fileImageUpload.Checksum != calculatedChecksum {
+				res.WriteHeader(http.StatusBadRequest)
+				render.JSON(res, req, dto.ErrorResponse{Error: "checksum mismatch"})
+				return
+			}
+		}
 
 		libvipsImg, err := libvips.NewImageFromBuffer(fileImageUpload.Data, libvips.DefaultLoadOptions())
 		if err != nil {
@@ -349,6 +381,10 @@ func ImagesRouter(db *gorm.DB, logger *slog.Logger) *chi.Mux {
 			return
 		}
 
+		// Set the uploader
+		authUser, _ := libhttp.UserFromContext(req)
+		imageEntity.UploadedByID = &authUser.Uid
+
 		hasher := md5.New()
 		if _, err := io.Copy(hasher, req.Body); err != nil {
 			libhttp.ServerError(res, req, err, logger, nil,
@@ -360,7 +396,7 @@ func ImagesRouter(db *gorm.DB, logger *slog.Logger) *chi.Mux {
 
 		fileSize := int64(len(fileImageUpload.Data))
 		imageEntity.ImageMetadata.FileSize = &fileSize
-		imageEntity.ImageMetadata.Checksum = hex.EncodeToString(hasher.Sum(nil))
+		imageEntity.ImageMetadata.Checksum = fileImageUpload.Checksum
 
 		logger.Info("adding images to database", slog.String("id", imageEntity.Uid))
 		dbCreateTx := db.Create(&imageEntity)
@@ -378,8 +414,7 @@ func ImagesRouter(db *gorm.DB, logger *slog.Logger) *chi.Mux {
 			Image: *imageEntity,
 		}
 
-		imageEntity.ImageMetadata.FileName = strings.Split(imageEntity.ImageMetadata.FileName, ".")[0] // remove extension for saving
-		err = images.SaveImage(fileImageUpload.Data, imageEntity.Uid, imageEntity.ImageMetadata.FileName, imageEntity.ImageMetadata.FileType)
+		err = images.SaveImage(fileImageUpload.Data, imageEntity.Uid, imageEntity.ImageMetadata.FileName)
 		if err != nil {
 			libhttp.ServerError(res, req, err, logger, nil,
 				"",
@@ -464,6 +499,10 @@ func ImagesRouter(db *gorm.DB, logger *slog.Logger) *chi.Mux {
 			return
 		}
 
+		// Set the uploader
+		authUser, _ := libhttp.UserFromContext(req)
+		imageEntity.UploadedByID = &authUser.Uid
+
 		hasher := sha1.New()
 		if _, err := io.Copy(hasher, bytes.NewReader(fileBytes)); err != nil {
 			libhttp.ServerError(res, req, err, logger, nil,
@@ -493,7 +532,7 @@ func ImagesRouter(db *gorm.DB, logger *slog.Logger) *chi.Mux {
 			Image: *imageEntity,
 		}
 
-		err = images.SaveImage(fileBytes, imageEntity.Uid, imageEntity.ImageMetadata.FileName, imageEntity.ImageMetadata.FileType)
+		err = images.SaveImage(fileBytes, imageEntity.Uid, imageEntity.ImageMetadata.FileName)
 		if err != nil {
 			libhttp.ServerError(res, req, err, logger, nil,
 				"",
