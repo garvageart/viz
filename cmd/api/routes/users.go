@@ -3,6 +3,7 @@ package routes
 import (
 	"encoding/hex"
 	"imagine/internal/crypto"
+	"imagine/internal/dto"
 	"imagine/internal/entities"
 	libhttp "imagine/internal/http"
 	"imagine/internal/uid"
@@ -18,21 +19,22 @@ func AccountsRouter(db *gorm.DB, logger *slog.Logger) *chi.Mux {
 	router := chi.NewRouter()
 
 	router.Post("/", func(res http.ResponseWriter, req *http.Request) {
-		var createdUser entities.User
+		var create dto.UserCreate
 
-		err := render.DecodeJSON(req.Body, &createdUser)
+		err := render.DecodeJSON(req.Body, &create)
 		if err != nil {
-			render.JSON(res, req, map[string]string{"error": "invalid request body"})
+			render.Status(req, http.StatusBadRequest)
+			render.JSON(res, req, dto.ErrorResponse{Error: "invalid request body"})
 			return
 		}
 
-		if createdUser.Name == "" || createdUser.Password == "" || createdUser.Email == "" {
-			res.WriteHeader(http.StatusBadRequest)
-			render.JSON(res, req, map[string]string{"error": "required fields are missing"})
+		if create.Name == "" || create.Password == "" || string(create.Email) == "" {
+			render.Status(req, http.StatusBadRequest)
+			render.JSON(res, req, dto.ErrorResponse{Error: "required fields are missing"})
 			return
 		}
 
-		createdUser.UID, err = uid.Generate()
+		id, err := uid.Generate()
 		if err != nil {
 			libhttp.ServerError(res, req, err, logger, nil,
 				"Failed to generate user ID",
@@ -40,24 +42,41 @@ func AccountsRouter(db *gorm.DB, logger *slog.Logger) *chi.Mux {
 			)
 		}
 
-		//todo: fix this mess. get a string from the salt and hash seperately
+		userEnt := entities.User{
+			Uid:       id,
+			Email:     string(create.Email),
+			Username:  create.Name,
+			FirstName: "",
+			LastName:  "",
+		}
+
 		argon := crypto.CreateArgon2Hash(3, 32, 2, 32, 16)
 		salt := argon.GenerateSalt()
-		hashedPass, _ := argon.Hash([]byte(createdUser.Password), salt)
-		createdUser.Password = hex.EncodeToString(salt) + ":" + hex.EncodeToString(hashedPass)
+		hashedPass, _ := argon.Hash([]byte(create.Password), salt)
+		hashed := hex.EncodeToString(salt) + ":" + hex.EncodeToString(hashedPass)
 
-		err = db.Create(&createdUser).Error
-		if err != nil {
-			libhttp.ServerError(res, req, err, logger, nil,
+		txErr := db.Transaction(func(tx *gorm.DB) error {
+			if err := tx.Create(&userEnt).Error; err != nil {
+				return err
+			}
+
+			if err := tx.Table("users").Where("uid = ?", id).Update("password", hashed).Error; err != nil {
+				return err
+			}
+
+			return nil
+		})
+
+		if txErr != nil {
+			libhttp.ServerError(res, req, txErr, logger, nil,
 				"Failed to create user",
 				"Something went wrong, please try again later",
 			)
-
 			return
 		}
 
-		res.WriteHeader(http.StatusCreated)
-		render.JSON(res, req, createdUser)
+		render.Status(req, http.StatusCreated)
+		render.JSON(res, req, userEnt.DTO())
 	})
 
 	router.Get("/{id}", func(res http.ResponseWriter, req *http.Request) {
@@ -68,8 +87,8 @@ func AccountsRouter(db *gorm.DB, logger *slog.Logger) *chi.Mux {
 		err := db.Where("uid = ?", userID).First(&user).Error
 		if err != nil {
 			if err == gorm.ErrRecordNotFound {
-				res.WriteHeader(http.StatusNotFound)
-				render.JSON(res, req, map[string]string{"error": "user not found"})
+				render.Status(req, http.StatusNotFound)
+				render.JSON(res, req, dto.ErrorResponse{Error: "user not found"})
 				return
 			}
 
@@ -81,6 +100,23 @@ func AccountsRouter(db *gorm.DB, logger *slog.Logger) *chi.Mux {
 		}
 
 		render.JSON(res, req, user)
+	})
+
+	// Authenticated routes
+	router.Group(func(r chi.Router) {
+		r.Use(libhttp.AuthMiddleware(db, logger))
+
+		// GET /accounts/me - return the currently authenticated user
+		r.Get("/me", func(res http.ResponseWriter, req *http.Request) {
+			user, ok := libhttp.UserFromContext(req)
+			if !ok || user == nil {
+				render.Status(req, http.StatusUnauthorized)
+				render.JSON(res, req, dto.ErrorResponse{Error: "not authenticated"})
+				return
+			}
+
+			render.JSON(res, req, user.DTO())
+		})
 	})
 
 	return router

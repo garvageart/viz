@@ -23,6 +23,7 @@ import (
 	"github.com/kovidgoyal/imaging"
 	"gorm.io/gorm"
 
+	"imagine/internal/dto"
 	"imagine/internal/entities"
 	libhttp "imagine/internal/http"
 	"imagine/internal/imageops"
@@ -76,34 +77,43 @@ func createNewImageEntity(logger *slog.Logger, fileName string, libvipsImg *libv
 		logger.Debug("exif data", slog.Any("data", exifData), slog.Int("length", len(exifData)))
 	}
 
-	exif := entities.ImageEXIF{
-		Model:            exifData["Model"],
-		Make:             exifData["Make"],
-		ExifVersion:      exifData["ExifVersion"],
-		DateTime:         exifData["DateTime"],
-		DateTimeOriginal: exifData["DateTimeOriginal"],
-		ModifyDate:       exifData["ModifyDate"],
-		ISO:              exifData["ISO"],
-		FocalLength:      exifData["FocalLength"],
-		ExposureTime:     exifData["ExposureTime"],
-		Aperture:         exifData["Aperture"],
-		Flash:            exifData["Flash"],
-		WhiteBalance:     exifData["WhiteBalance"],
-		LensModel:        exifData["LensModel"],
-		Rating:           exifData["Rating"],
-		Orientation:      exifData["Orientation"],
-		Resolution:       exifData["Resolution"],
-		Software:         exifData["Software"],
-		Longitude:        exifData["Longitude"],
-		Latitude:         exifData["Latitude"],
+	// Helper to convert string to *string, handling empty strings
+	toStringPtr := func(s string) *string {
+		if s == "" {
+			return nil
+		}
+		return &s
+	}
+
+	exif := dto.ImageEXIF{
+		Model:            toStringPtr(exifData["Model"]),
+		Make:             toStringPtr(exifData["Make"]),
+		ExifVersion:      toStringPtr(exifData["ExifVersion"]),
+		DateTime:         toStringPtr(exifData["DateTime"]),
+		DateTimeOriginal: toStringPtr(exifData["DateTimeOriginal"]),
+		ModifyDate:       toStringPtr(exifData["ModifyDate"]),
+		Iso:              toStringPtr(exifData["ISO"]),
+		FocalLength:      toStringPtr(exifData["FocalLength"]),
+		ExposureTime:     toStringPtr(exifData["ExposureTime"]),
+		Aperture:         toStringPtr(exifData["Aperture"]),
+		Flash:            toStringPtr(exifData["Flash"]),
+		WhiteBalance:     toStringPtr(exifData["WhiteBalance"]),
+		LensModel:        toStringPtr(exifData["LensModel"]),
+		Rating:           toStringPtr(exifData["Rating"]),
+		Orientation:      toStringPtr(exifData["Orientation"]),
+		Resolution:       toStringPtr(exifData["Resolution"]),
+		Software:         toStringPtr(exifData["Software"]),
+		Longitude:        toStringPtr(exifData["Longitude"]),
+		Latitude:         toStringPtr(exifData["Latitude"]),
 	}
 
 	createdDate := exif.DateTimeOriginal
 	modDate := exif.ModifyDate
 
-	if createdDate == "" || modDate == "" {
-		createdDate = time.Now().UTC().String()
-		modDate = time.Now().UTC().String()
+	if createdDate == nil || modDate == nil || *createdDate == "" || *modDate == "" {
+		now := time.Now().UTC().String()
+		createdDate = &now
+		modDate = &now
 	}
 
 	logger.Info("generating file name for saving")
@@ -112,35 +122,48 @@ func createNewImageEntity(logger *slog.Logger, fileName string, libvipsImg *libv
 	hexEncodedString := hex.EncodeToString(fileNameHash.Sum(nil))
 	fileNameForSaving := id + "-" + hexEncodedString
 
-	metadata := entities.ImageMetadata{
+	fileCreatedAt := carbon.Parse(*createdDate).StdTime()
+	fileModifiedAt := carbon.Parse(*modDate).StdTime()
+	keywords := []string{}
+	label := ""
+
+	metadata := dto.ImageMetadata{
 		FileName:         fileName,
-		OriginalFileName: fileName,
+		OriginalFileName: &fileName,
 		FileType:         string(libvipsImg.Format()),
 		ColorSpace:       imageops.GetColourSpaceString(libvipsImg),
-		FileModifiedAt:   carbon.Parse(modDate).StdTime(),
-		FileCreatedAt:    carbon.Parse(createdDate).StdTime(),
-		Keywords:         []string{},
-		Label:            "",
+		FileModifiedAt:   fileModifiedAt,
+		FileCreatedAt:    fileCreatedAt,
+		Keywords:         &keywords,
+		Label:            &label,
+		Checksum:         "", // Will be set later
 	}
 
-	paths := entities.ImagePaths{
-		OriginalPath:  fmt.Sprintf("/images/%s/%s", id, fileNameForSaving),
-		ThumbnailPath: fmt.Sprintf("/images/%s/%s", id, fileNameForSaving+"-thumbnail"),
-		PreviewPath:   fmt.Sprintf("/images/%s/%s", id, fileNameForSaving+"-preview"),
-		RawPath:       fmt.Sprintf("/images/%s/%s", id, fileNameForSaving+"-raw"),
+	originalPath := fmt.Sprintf("/images/%s/%s", id, fileNameForSaving)
+	thumbnailPath := fmt.Sprintf("/images/%s/%s", id, fileNameForSaving+"-thumbnail")
+	previewPath := fmt.Sprintf("/images/%s/%s", id, fileNameForSaving+"-preview")
+	rawPath := fmt.Sprintf("/images/%s/%s", id, fileNameForSaving+"-raw")
+
+	paths := dto.ImagePaths{
+		OriginalPath:  originalPath,
+		ThumbnailPath: thumbnailPath,
+		PreviewPath:   previewPath,
+		RawPath:       &rawPath,
 	}
 
 	allImageData := entities.Image{
-		UID:           id,
+		Uid:           id,
 		Name:          fileName,
 		Private:       false,
 		Processed:     false,
-		EXIF:          exif,
+		Exif:          &exif,
 		ImageMetadata: &metadata,
 		ImagePaths:    &paths,
-		Width:         uint32(libvipsImg.Width()),
-		Height:        uint32(libvipsImg.Height()),
-		Description:   "", //TODO: evaluate if necessary, blank for now
+		Width:         int32(libvipsImg.Width()),
+		Height:        int32(libvipsImg.Height()),
+		Description:   nil, //TODO: evaluate if necessary, blank for now
+		CreatedAt:     time.Now(),
+		UpdatedAt:     time.Now(),
 	}
 
 	return &allImageData, nil
@@ -167,14 +190,14 @@ func ImagesRouter(db *gorm.DB, logger *slog.Logger) *chi.Mux {
 		}
 
 		if wErr != nil || hErr != nil || qErr != nil {
-			res.WriteHeader(http.StatusBadRequest)
-			render.JSON(res, req, map[string]string{"error": "invalid request parameters"})
+			render.Status(req, http.StatusBadRequest)
+			render.JSON(res, req, dto.ErrorResponse{Error: "invalid request parameters"})
 			return
 		}
 
 		if width < 0 || height < 0 {
-			res.WriteHeader(http.StatusBadRequest)
-			render.JSON(res, req, map[string]string{"error": "width/height cannot be negative"})
+			render.Status(req, http.StatusBadRequest)
+			render.JSON(res, req, dto.ErrorResponse{Error: "width/height cannot be negative"})
 			return
 		}
 
@@ -183,19 +206,19 @@ func ImagesRouter(db *gorm.DB, logger *slog.Logger) *chi.Mux {
 		result := tx.First(&imgEnt)
 		if result.Error != nil {
 			if result.Error == gorm.ErrRecordNotFound {
-				res.WriteHeader(http.StatusNotFound)
-				render.JSON(res, req, map[string]string{"error": "image not found"})
+				render.Status(req, http.StatusNotFound)
+				render.JSON(res, req, dto.ErrorResponse{Error: "image not found"})
 				return
 			}
-			res.WriteHeader(http.StatusInternalServerError)
-			render.JSON(res, req, map[string]string{"error": "failed to fetch image from database"})
+			render.Status(req, http.StatusInternalServerError)
+			render.JSON(res, req, dto.ErrorResponse{Error: "failed to fetch image from database"})
 			return
 		}
 
-		goimg, _, err := images.ReadFileAsGoImage(imgEnt.UID, imgEnt.FileName, imgEnt.FileType)
+		goimg, _, err := images.ReadFileAsGoImage(imgEnt.Uid, imgEnt.ImageMetadata.FileName, imgEnt.ImageMetadata.FileType)
 		if err != nil {
-			res.WriteHeader(http.StatusInternalServerError)
-			render.JSON(res, req, map[string]string{"error": err.Error()})
+			render.Status(req, http.StatusInternalServerError)
+			render.JSON(res, req, dto.ErrorResponse{Error: err.Error()})
 			return
 		}
 
@@ -204,8 +227,8 @@ func ImagesRouter(db *gorm.DB, logger *slog.Logger) *chi.Mux {
 		libvipsImg, err := libvips.NewImageFromBuffer(fileBytes, libvips.DefaultLoadOptions())
 
 		if err != nil {
-			res.WriteHeader(http.StatusInternalServerError)
-			render.JSON(res, req, map[string]string{"error": err.Error()})
+			render.Status(req, http.StatusInternalServerError)
+			render.JSON(res, req, dto.ErrorResponse{Error: err.Error()})
 			return
 		}
 
@@ -250,8 +273,8 @@ func ImagesRouter(db *gorm.DB, logger *slog.Logger) *chi.Mux {
 		res.Header().Set("Content-Type", "image/"+format)
 
 		if err != nil {
-			res.WriteHeader(http.StatusInternalServerError)
-			render.JSON(res, req, map[string]string{"error": err.Error()})
+			render.Status(req, http.StatusInternalServerError)
+			render.JSON(res, req, dto.ErrorResponse{Error: err.Error()})
 			return
 		}
 
@@ -266,7 +289,8 @@ func ImagesRouter(db *gorm.DB, logger *slog.Logger) *chi.Mux {
 		// Parse the multipart form in the request
 		err := req.ParseMultipartForm(10 << 20) // limit your max input length!
 		if err != nil {
-			render.JSON(res, req, map[string]string{"error": "invalid request body"})
+			render.Status(req, http.StatusBadRequest)
+			render.JSON(res, req, dto.ErrorResponse{Error: "invalid request body"})
 			return
 		}
 
@@ -276,19 +300,21 @@ func ImagesRouter(db *gorm.DB, logger *slog.Logger) *chi.Mux {
 		// Get the file from the request
 		file, _, err := req.FormFile("data")
 		if err != nil {
-			render.JSON(res, req, map[string]string{"error": err.Error()})
+			render.Status(req, http.StatusBadRequest)
+			render.JSON(res, req, dto.ErrorResponse{Error: err.Error()})
 			return
 		}
 		defer file.Close()
 		fileImageUpload.Data, err = io.ReadAll(file)
 		if err != nil {
-			render.JSON(res, req, map[string]string{"error": "invalid file data"})
+			render.Status(req, http.StatusBadRequest)
+			render.JSON(res, req, dto.ErrorResponse{Error: "invalid file data"})
 			return
 		}
 
 		if fileImageUpload.FileName == "" || len(fileImageUpload.Data) == 0 {
-			res.WriteHeader(http.StatusBadRequest)
-			render.JSON(res, req, map[string]string{"error": "invalid request body"})
+			render.Status(req, http.StatusBadRequest)
+			render.JSON(res, req, dto.ErrorResponse{Error: "invalid request body"})
 			return
 		}
 
@@ -300,15 +326,15 @@ func ImagesRouter(db *gorm.DB, logger *slog.Logger) *chi.Mux {
 		// 	calculatedChecksum := hex.EncodeToString(hasher.Sum(nil))
 		// 	if fileImageUpload.Checksum != calculatedChecksum {
 		// 		res.WriteHeader(http.StatusBadRequest)
-		// 		render.JSON(res, req, map[string]string{"error": "checksum mismatch"})
+		// 		render.JSON(res, req, dto.ErrorResponse{Error: "checksum mismatch"})
 		// 		return
 		// 	}
 		// }
 
 		libvipsImg, err := libvips.NewImageFromBuffer(fileImageUpload.Data, libvips.DefaultLoadOptions())
 		if err != nil {
-			res.WriteHeader(http.StatusBadRequest)
-			render.JSON(res, req, map[string]string{"error": "invalid request body"})
+			render.Status(req, http.StatusBadRequest)
+			render.JSON(res, req, dto.ErrorResponse{Error: "invalid request body"})
 			return
 		}
 
@@ -332,10 +358,11 @@ func ImagesRouter(db *gorm.DB, logger *slog.Logger) *chi.Mux {
 			return
 		}
 
-		imageEntity.FileSize = int64(len(fileImageUpload.Data))
-		imageEntity.Checksum = hex.EncodeToString(hasher.Sum(nil))
+		fileSize := int64(len(fileImageUpload.Data))
+		imageEntity.ImageMetadata.FileSize = &fileSize
+		imageEntity.ImageMetadata.Checksum = hex.EncodeToString(hasher.Sum(nil))
 
-		logger.Info("adding images to database", slog.String("id", imageEntity.UID))
+		logger.Info("adding images to database", slog.String("id", imageEntity.Uid))
 		dbCreateTx := db.Create(&imageEntity)
 
 		if dbCreateTx.Error != nil {
@@ -346,13 +373,13 @@ func ImagesRouter(db *gorm.DB, logger *slog.Logger) *chi.Mux {
 			return
 		}
 
-		logger.Info("starting image processing", slog.String("id", imageEntity.UID))
+		logger.Info("starting image processing", slog.String("id", imageEntity.Uid))
 		workerJob := &workers.ImageProcessJob{
 			Image: *imageEntity,
 		}
 
-		imageEntity.FileName = strings.Split(imageEntity.FileName, ".")[0] // remove extension for saving
-		err = images.SaveImage(fileImageUpload.Data, imageEntity.UID, imageEntity.FileName, imageEntity.FileType)
+		imageEntity.ImageMetadata.FileName = strings.Split(imageEntity.ImageMetadata.FileName, ".")[0] // remove extension for saving
+		err = images.SaveImage(fileImageUpload.Data, imageEntity.Uid, imageEntity.ImageMetadata.FileName, imageEntity.ImageMetadata.FileType)
 		if err != nil {
 			libhttp.ServerError(res, req, err, logger, nil,
 				"",
@@ -371,10 +398,10 @@ func ImagesRouter(db *gorm.DB, logger *slog.Logger) *chi.Mux {
 			return
 		}
 
-		logger.Info("upload images success", slog.String("id", imageEntity.UID))
+		logger.Info("upload images success", slog.String("id", imageEntity.Uid))
 
-		res.WriteHeader(http.StatusCreated)
-		render.JSON(res, req, map[string]string{"id": imageEntity.UID})
+		render.Status(req, http.StatusCreated)
+		render.JSON(res, req, dto.ImageUploadResponse{Id: imageEntity.Uid})
 	})
 
 	// TODO: either this should be a config option or removed entirely.
@@ -382,16 +409,16 @@ func ImagesRouter(db *gorm.DB, logger *slog.Logger) *chi.Mux {
 	// cool idea in theory i guess tho
 	router.Post("/url", func(res http.ResponseWriter, req *http.Request) {
 		if os.Getenv("ENABLE_URL_UPLOAD") == "false" {
-			res.WriteHeader(http.StatusForbidden)
-			render.JSON(res, req, map[string]string{"error": "url uploads are disabled"})
+			render.Status(req, http.StatusForbidden)
+			render.JSON(res, req, dto.ErrorResponse{Error: "url uploads are disabled"})
 			return
 		}
 
 		imageUrlBytes, err := io.ReadAll(req.Body)
 
 		if err != nil {
-			res.WriteHeader(http.StatusBadRequest)
-			render.JSON(res, req, map[string]string{"error": "invalid request body"})
+			render.Status(req, http.StatusBadRequest)
+			render.JSON(res, req, dto.ErrorResponse{Error: "invalid request body"})
 			return
 		}
 
@@ -422,8 +449,8 @@ func ImagesRouter(db *gorm.DB, logger *slog.Logger) *chi.Mux {
 		fileName, _ := strings.CutPrefix(urlParsed.Path, "/")
 		libvipsImg, err := libvips.NewImageFromBuffer(fileBytes, libvips.DefaultLoadOptions())
 		if err != nil {
-			res.WriteHeader(http.StatusBadRequest)
-			render.JSON(res, req, map[string]string{"error": "invalid request body"})
+			render.Status(req, http.StatusBadRequest)
+			render.JSON(res, req, dto.ErrorResponse{Error: "invalid request body"})
 			return
 		}
 		defer libvipsImg.Close()
@@ -446,10 +473,11 @@ func ImagesRouter(db *gorm.DB, logger *slog.Logger) *chi.Mux {
 			return
 		}
 
-		imageEntity.FileSize = int64(len(fileBytes))
-		imageEntity.Checksum = hex.EncodeToString(hasher.Sum(nil))
+		fileSize := int64(len(fileBytes))
+		imageEntity.ImageMetadata.FileSize = &fileSize
+		imageEntity.ImageMetadata.Checksum = hex.EncodeToString(hasher.Sum(nil))
 
-		logger.Info("adding image to database", slog.String("id", imageEntity.UID))
+		logger.Info("adding image to database", slog.String("id", imageEntity.Uid))
 		dbCreateTx := db.Create(&imageEntity)
 
 		if dbCreateTx.Error != nil {
@@ -460,12 +488,12 @@ func ImagesRouter(db *gorm.DB, logger *slog.Logger) *chi.Mux {
 			return
 		}
 
-		logger.Info("starting image processing", slog.String("id", imageEntity.UID))
+		logger.Info("starting image processing", slog.String("id", imageEntity.Uid))
 		workerJob := &workers.ImageProcessJob{
 			Image: *imageEntity,
 		}
 
-		err = images.SaveImage(fileBytes, imageEntity.UID, imageEntity.FileName, imageEntity.FileType)
+		err = images.SaveImage(fileBytes, imageEntity.Uid, imageEntity.ImageMetadata.FileName, imageEntity.ImageMetadata.FileType)
 		if err != nil {
 			libhttp.ServerError(res, req, err, logger, nil,
 				"",
@@ -483,10 +511,10 @@ func ImagesRouter(db *gorm.DB, logger *slog.Logger) *chi.Mux {
 			return
 		}
 
-		logger.Info("upload images success", slog.String("id", imageEntity.UID))
+		logger.Info("upload images success", slog.String("id", imageEntity.Uid))
 
-		res.WriteHeader(http.StatusCreated)
-		render.JSON(res, req, map[string]string{"id": imageEntity.UID})
+		render.Status(req, http.StatusCreated)
+		render.JSON(res, req, dto.ImageUploadResponse{Id: imageEntity.Uid})
 	})
 
 	return router

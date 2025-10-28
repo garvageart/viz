@@ -13,6 +13,7 @@ import (
 	"github.com/go-chi/render"
 
 	"imagine/api/routes"
+	"imagine/internal/config"
 	"imagine/internal/db"
 	"imagine/internal/entities"
 	libhttp "imagine/internal/http"
@@ -47,17 +48,20 @@ func (server ImagineMediaServer) Launch(router *chi.Mux) {
 		Logger: serverLogger,
 	}))
 
-	// Setup general middleware
-	// router.Use(libhttp.AuthedMiddleware)
+	// Setup general middleware - CORS must be first!
+	router.Use(cors.Handler(cors.Options{
+		AllowOriginFunc: func(r *http.Request, origin string) bool {
+			return true
+		},
+		AllowedMethods:   []string{"GET", "POST", "PUT", "OPTIONS", "DELETE"},
+		AllowedHeaders:   []string{"Accept", "Authorization", "Content-Type", "X-CSRF-Token", "x-imagine-key"},
+		ExposedHeaders:   []string{"Set-Cookie"},
+		AllowCredentials: true,
+		MaxAge:           300,
+	}))
 	router.Use(middleware.AllowContentEncoding("deflate", "gzip"))
 	router.Use(middleware.RequestID)
-	router.Use(cors.Handler(cors.Options{
-		// TODO: Replace with config addresses instead of the hardcoded values
-		AllowedOrigins:   []string{"https://localhost:7777", "http://localhost:7777"},
-		AllowedMethods:   []string{"GET", "POST", "PUT", "OPTIONS"},
-		AllowedHeaders:   []string{"Accept", "Authorization", "Content-Type", "X-CSRF-Token", "set-cookie"},
-		AllowCredentials: true,
-	}))
+	// Note: AuthMiddleware is applied per-route, not globally
 
 	database := server.Database
 	dbClient := database.Client
@@ -99,14 +103,19 @@ func (server ImagineMediaServer) Launch(router *chi.Mux) {
 
 	libvips.SetLogging(libvipsLogHandler, libvipsLogLevel)
 
-	// Mount image router to main router
-	router.Mount("/collections", routes.CollectionsRouter(dbClient, logger))
-	router.Mount("/images", routes.ImagesRouter(dbClient, logger))
+	// Public routes (no auth required)
+	router.Mount("/auth", routes.AuthRouter(dbClient, logger))
 	router.Mount("/accounts", routes.AccountsRouter(dbClient, logger))
-
 	router.Get("/ping", func(res http.ResponseWriter, req *http.Request) {
 		jsonResponse := map[string]any{"message": "pong"}
 		render.JSON(res, req, jsonResponse)
+	})
+
+	// Protected routes (auth required)
+	router.Group(func(r chi.Router) {
+		r.Use(libhttp.AuthMiddleware(server.Database.Client, logger))
+		r.Mount("/collections", routes.CollectionsRouter(dbClient, logger))
+		r.Mount("/images", routes.ImagesRouter(dbClient, logger))
 	})
 
 	// TODO: only admin can do a healthcheck
@@ -151,20 +160,54 @@ func main() {
 	router := chi.NewRouter()
 	logger := imalog.CreateDefaultLogger()
 
+	cfg, err := config.ReadConfig()
+	if err != nil {
+		errorMsg := fmt.Sprintf("failed to read config file: %v", err)
+		logger.Error(errorMsg, slog.String("error", err.Error()))
+		panic(errorMsg)
+	}
+
 	server := ImagineMediaServer{ImagineServer: ServerConfig}
 	server.ImagineServer.Logger = logger
 	server.Database = &db.DB{
-		Address:      "localhost",
-		Port:         5432,
-		User:         os.Getenv("DB_USER"),
-		Password:     os.Getenv("DB_PASSWORD"),
-		AppName:      utils.AppName,
-		DatabaseName: "imagine-dev",
-		Logger:       logger,
+		Address: "localhost",
+		Port: func() int {
+			if os.Getenv("DB_PORT") != "" {
+				var port int
+				if cfgPort := cfg.GetInt("database.port"); cfgPort != 0 {
+					port = cfgPort
+				} else if envPort := os.Getenv("DB_PORT"); envPort != "" {
+					fmt.Sscanf(envPort, "%d", &port)
+				}
+
+				return port
+			}
+
+			return 5432
+		}(),
+		User:     os.Getenv("DB_USER"),
+		Password: os.Getenv("DB_PASSWORD"),
+		AppName:  utils.AppName,
+		DatabaseName: func() string {
+			if os.Getenv("DB_NAME") != "" {
+				return os.Getenv("DB_NAME")
+			}
+
+			dbName := cfg.GetString("database.name")
+			if dbName != "" {
+				if utils.IsDevelopment {
+					return dbName + "-dev"
+				}
+				return dbName
+			}
+
+			return "imagine"
+		}(),
+		Logger: logger,
 	}
 
 	// Lmao I hate this
-	client := server.ConnectToDatabase(entities.Image{}, entities.Collection{})
+	client := server.ConnectToDatabase(entities.Image{}, entities.Collection{}, entities.Session{}, entities.User{})
 	server.ImagineServer.Database.Client = client
 
 	server.Launch(router)

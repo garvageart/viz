@@ -11,23 +11,13 @@ import (
 	"github.com/go-chi/render"
 	"gorm.io/gorm"
 
+	"imagine/internal/dto"
 	"imagine/internal/entities"
 	libhttp "imagine/internal/http"
 	"imagine/internal/uid"
 )
 
-type ImagesResponse struct {
-	AddedAt time.Time `json:"added_at"`
-	AddedBy string    `json:"added_by"`
-	entities.Image
-}
-
-type Images struct {
-	*Pagination
-	Items []ImagesResponse `json:"items"`
-}
-
-func findCollectionImages(db *gorm.DB, imgUIDs []string, collection entities.Collection, limit, offset int) ([]ImagesResponse, error) {
+func findCollectionImages(db *gorm.DB, imgUIDs []string, collection entities.Collection, limit, offset int) ([]dto.ImagesResponse, error) {
 	var images []entities.Image
 
 	if err := db.Where("uid IN ?", imgUIDs).
@@ -36,12 +26,25 @@ func findCollectionImages(db *gorm.DB, imgUIDs []string, collection entities.Col
 		return nil, err
 	}
 
-	imgResponse := make([]ImagesResponse, len(collection.Images))
+	// Build a lookup map to safely pair metadata by UID regardless of DB row order.
+	// collection.Images is *[]dto.CollectionImage
+	var collectionImages []dto.CollectionImage
+	if collection.Images != nil {
+		collectionImages = *collection.Images
+	}
+
+	meta := make(map[string]dto.CollectionImage, len(collectionImages))
+	for _, m := range collectionImages {
+		meta[m.Uid] = m
+	}
+
+	imgResponse := make([]dto.ImagesResponse, len(images))
 	for i, img := range images {
-		imgResponse[i] = ImagesResponse{
-			AddedAt: collection.Images[i].AddedAt,
-			AddedBy: collection.Images[i].AddedBy,
-			Image:   img,
+		m := meta[img.Uid]
+		imgResponse[i] = dto.ImagesResponse{
+			AddedAt: m.AddedAt,
+			AddedBy: m.AddedBy,
+			Image:   img.DTO(),
 		}
 	}
 
@@ -52,18 +55,22 @@ func CollectionsRouter(db *gorm.DB, logger *slog.Logger) *chi.Mux {
 	router := chi.NewRouter()
 
 	router.Post("/", func(res http.ResponseWriter, req *http.Request) {
-		var collection entities.Collection
+		var create struct {
+			Description *string `json:"description,omitempty"`
+			Name        string  `json:"name"`
+			Private     *bool   `json:"private"`
+		}
 
-		err := render.DecodeJSON(req.Body, &collection)
+		err := render.DecodeJSON(req.Body, &create)
 		if err != nil {
-			res.WriteHeader(http.StatusBadRequest)
-			render.JSON(res, req, map[string]string{"error": "invalid request body"})
+			render.Status(req, http.StatusBadRequest)
+			render.JSON(res, req, dto.ErrorResponse{Error: "invalid request body"})
 			return
 		}
 
-		if collection.Name == "" {
-			res.WriteHeader(http.StatusBadRequest)
-			render.JSON(res, req, map[string]string{"error": "name is required"})
+		if create.Name == "" {
+			render.Status(req, http.StatusBadRequest)
+			render.JSON(res, req, dto.ErrorResponse{Error: "name is required"})
 			return
 		}
 
@@ -75,16 +82,22 @@ func CollectionsRouter(db *gorm.DB, logger *slog.Logger) *chi.Mux {
 			)
 		}
 
-		collection.UID = colUid
+		// Map request -> entity for persistence
+		collection := entities.Collection{
+			Uid:         colUid,
+			Name:        create.Name,
+			Private:     create.Private,
+			Description: create.Description,
+		}
 
 		err = db.Create(&collection).Error
 		if err != nil {
-			render.JSON(res, req, map[string]string{"error": "failed to create collection"})
+			render.JSON(res, req, dto.ErrorResponse{Error: "failed to create collection"})
 			return
 		}
 
-		res.WriteHeader(http.StatusCreated)
-		render.JSON(res, req, collection)
+		render.Status(req, http.StatusCreated)
+		render.JSON(res, req, collection.DTO())
 	})
 
 	router.Get("/", func(res http.ResponseWriter, req *http.Request) {
@@ -118,25 +131,28 @@ func CollectionsRouter(db *gorm.DB, logger *slog.Logger) *chi.Mux {
 			prevOffset = nil
 		}
 
-		result := struct {
-			Href   string                `json:"href"`
-			Prev   string                `json:"prev"`
-			Next   string                `json:"next"`
-			Limit  int                   `json:"limit"`
-			Offset int                   `json:"offset"`
-			Count  int                   `json:"count"`
-			Items  []entities.Collection `json:"items"`
-		}{
-			Href:   fmt.Sprintf("/collections/?offset=%d&limit=%d", offset, limit),
-			Prev:   fmt.Sprintf("/collections/?offset=%d&limit=%d", prevOffset, limit),
-			Next:   fmt.Sprintf("/collections/?offset=%d&limit=%d", nextOffset, limit),
-			Limit:  limit,
-			Offset: offset,
-			Count:  len(collections),
-			Items:  collections,
+		// Convert entities to DTOs for response
+		items := make([]dto.Collection, len(collections))
+		for i := range collections {
+			items[i] = collections[i].DTO()
 		}
 
-		res.WriteHeader(http.StatusOK)
+		href := fmt.Sprintf("/collections/?offset=%d&limit=%d", offset, limit)
+		prev := fmt.Sprintf("/collections/?offset=%d&limit=%d", prevOffset, limit)
+		next := fmt.Sprintf("/collections/?offset=%d&limit=%d", nextOffset, limit)
+		count := len(collections)
+
+		result := dto.CollectionListResponse{
+			Href:   &href,
+			Prev:   &prev,
+			Next:   &next,
+			Limit:  limit,
+			Offset: offset,
+			Count:  &count,
+			Items:  items,
+		}
+
+		render.Status(req, http.StatusOK)
 		render.JSON(res, req, result)
 	})
 
@@ -146,17 +162,21 @@ func CollectionsRouter(db *gorm.DB, logger *slog.Logger) *chi.Mux {
 		defaultImageOffset := 0
 
 		var collection entities.Collection
-		var images []entities.Image
-		var imgResponse []ImagesResponse
+		var imgResponse []dto.ImagesResponse
 
 		err := db.Transaction(func(tx *gorm.DB) error {
 			if err := tx.First(&collection, "uid = ?", uid).Error; err != nil {
 				return err
 			}
 
-			imageUIDs := make([]string, len(collection.Images))
-			for i, img := range collection.Images {
-				imageUIDs[i] = img.UID
+			var collectionImages []dto.CollectionImage
+			if collection.Images != nil {
+				collectionImages = *collection.Images
+			}
+
+			imageUIDs := make([]string, len(collectionImages))
+			for i, img := range collectionImages {
+				imageUIDs[i] = img.Uid
 			}
 
 			allColImages, err := findCollectionImages(tx, imageUIDs, collection, defaultImageLimit, defaultImageOffset)
@@ -170,8 +190,8 @@ func CollectionsRouter(db *gorm.DB, logger *slog.Logger) *chi.Mux {
 
 		if err != nil {
 			if err == gorm.ErrRecordNotFound {
-				res.WriteHeader(http.StatusNotFound)
-				render.JSON(res, req, map[string]string{"error": "collection not found"})
+				render.Status(req, http.StatusNotFound)
+				render.JSON(res, req, dto.ErrorResponse{Error: "collection not found"})
 				return
 			}
 
@@ -182,22 +202,29 @@ func CollectionsRouter(db *gorm.DB, logger *slog.Logger) *chi.Mux {
 			return
 		}
 
-		result := struct {
-			entities.Collection
-			Images Images `json:"images"`
-		}{
-			Collection: collection,
-			Images: Images{
-				Pagination: &Pagination{
-					Href:   fmt.Sprintf("/collections/%s/images/?offset=%d&limit=%d", uid, defaultImageOffset, defaultImageLimit),
-					Prev:   fmt.Sprintf("/collections/%s/images/?offset=%d&limit=%d", uid, defaultImageOffset-defaultImageLimit, defaultImageLimit),
-					Next:   fmt.Sprintf("/collections/%s/images/?offset=%d&limit=%d", uid, defaultImageOffset+defaultImageLimit, defaultImageLimit),
-					Limit:  defaultImageLimit,
-					Offset: defaultImageOffset,
-					Count:  len(images),
-				},
-				Items: imgResponse,
-			},
+		href := fmt.Sprintf("/collections/%s/images/?offset=%d&limit=%d", uid, defaultImageOffset, defaultImageLimit)
+		prev := fmt.Sprintf("/collections/%s/images/?offset=%d&limit=%d", uid, defaultImageOffset-defaultImageLimit, defaultImageLimit)
+		next := fmt.Sprintf("/collections/%s/images/?offset=%d&limit=%d", uid, defaultImageOffset+defaultImageLimit, defaultImageLimit)
+		count := len(imgResponse)
+
+		imagesPage := dto.ImagesPage{
+			Href:   &href,
+			Prev:   &prev,
+			Next:   &next,
+			Limit:  defaultImageLimit,
+			Offset: defaultImageOffset,
+			Count:  &count,
+			Items:  imgResponse,
+		}
+
+		result := dto.CollectionDetailResponse{
+			Uid:         collection.Uid,
+			Name:        collection.Name,
+			ImageCount:  &collection.ImageCount,
+			Private:     collection.Private,
+			Images:      imagesPage,
+			CreatedBy:   collection.CreatedBy,
+			Description: collection.Description,
 		}
 
 		render.JSON(res, req, result)
@@ -215,7 +242,7 @@ func CollectionsRouter(db *gorm.DB, logger *slog.Logger) *chi.Mux {
 			offset = 0
 		}
 
-		var imgResponse []ImagesResponse
+		var imgResponse []dto.ImagesResponse
 		var collection entities.Collection
 
 		err = db.Transaction(func(tx *gorm.DB) error {
@@ -223,9 +250,14 @@ func CollectionsRouter(db *gorm.DB, logger *slog.Logger) *chi.Mux {
 				return err
 			}
 
-			imageUIDs := make([]string, len(collection.Images))
-			for i, img := range collection.Images {
-				imageUIDs[i] = img.UID
+			var collectionImages []dto.CollectionImage
+			if collection.Images != nil {
+				collectionImages = *collection.Images
+			}
+
+			imageUIDs := make([]string, len(collectionImages))
+			for i, img := range collectionImages {
+				imageUIDs[i] = img.Uid
 			}
 
 			imgResponse, err = findCollectionImages(tx, imageUIDs, collection, limit, offset)
@@ -238,8 +270,8 @@ func CollectionsRouter(db *gorm.DB, logger *slog.Logger) *chi.Mux {
 
 		if err != nil {
 			if err == gorm.ErrRecordNotFound {
-				res.WriteHeader(http.StatusNotFound)
-				render.JSON(res, req, map[string]string{"error": "collection not found"})
+				render.Status(req, http.StatusNotFound)
+				render.JSON(res, req, dto.ErrorResponse{Error: "collection not found"})
 				return
 			}
 
@@ -250,16 +282,19 @@ func CollectionsRouter(db *gorm.DB, logger *slog.Logger) *chi.Mux {
 			return
 		}
 
-		result := Images{
-			Pagination: &Pagination{
-				Href:   fmt.Sprintf("/collections/%s/images/?offset=%d&limit=%d", uid, offset, limit),
-				Prev:   fmt.Sprintf("/collections/%s/images/?offset=%d&limit=%d", uid, offset-limit, limit),
-				Next:   fmt.Sprintf("/collections/%s/images/?offset=%d&limit=%d", uid, offset+limit, limit),
-				Limit:  limit,
-				Offset: offset,
-				Count:  len(imgResponse),
-			},
-			Items: imgResponse,
+		href := fmt.Sprintf("/collections/%s/images/?offset=%d&limit=%d", uid, offset, limit)
+		prev := fmt.Sprintf("/collections/%s/images/?offset=%d&limit=%d", uid, offset-limit, limit)
+		next := fmt.Sprintf("/collections/%s/images/?offset=%d&limit=%d", uid, offset+limit, limit)
+		count := len(imgResponse)
+
+		result := dto.ImagesPage{
+			Href:   &href,
+			Prev:   &prev,
+			Next:   &next,
+			Limit:  limit,
+			Offset: offset,
+			Count:  &count,
+			Items:  imgResponse,
 		}
 
 		render.JSON(res, req, result)
@@ -273,7 +308,8 @@ func CollectionsRouter(db *gorm.DB, logger *slog.Logger) *chi.Mux {
 
 		err := render.DecodeJSON(req.Body, &colImage)
 		if err != nil {
-			render.JSON(res, req, map[string]any{"error": "invalid request body", "added": false})
+			render.Status(req, http.StatusBadRequest)
+			render.JSON(res, req, dto.AddImagesResponse{Added: false, Error: ptrString("invalid request body")})
 			return
 		}
 
@@ -285,15 +321,23 @@ func CollectionsRouter(db *gorm.DB, logger *slog.Logger) *chi.Mux {
 
 			for _, imgUID := range colImage.UIDs {
 				var img entities.Image
-				var colImageEnt entities.CollectionImage
 
 				if err := tx.First(&img, "uid = ?", imgUID).Error; err != nil {
 					return err
 				}
 
-				colImageEnt.UID = imgUID
-				colImageEnt.AddedAt = time.Now()
-				collection.Images = append(collection.Images, colImageEnt)
+				colImageEnt := dto.CollectionImage{
+					Uid:     imgUID,
+					AddedAt: time.Now(),
+				}
+
+				// Append to the slice
+				var images []dto.CollectionImage
+				if collection.Images != nil {
+					images = *collection.Images
+				}
+				images = append(images, colImageEnt)
+				collection.Images = &images
 			}
 
 			return tx.Save(&collection).Error
@@ -301,8 +345,8 @@ func CollectionsRouter(db *gorm.DB, logger *slog.Logger) *chi.Mux {
 
 		if err != nil {
 			if err == gorm.ErrRecordNotFound {
-				res.WriteHeader(http.StatusNotFound)
-				render.JSON(res, req, map[string]any{"error": "collection or image not found", "added": false})
+				render.Status(req, http.StatusNotFound)
+				render.JSON(res, req, dto.AddImagesResponse{Added: false, Error: ptrString("collection or image not found")})
 				return
 			}
 
@@ -313,9 +357,14 @@ func CollectionsRouter(db *gorm.DB, logger *slog.Logger) *chi.Mux {
 			return
 		}
 
-		res.WriteHeader(http.StatusNoContent)
-		render.JSON(res, req, map[string]any{"added": true})
+		render.Status(req, http.StatusOK)
+		render.JSON(res, req, dto.AddImagesResponse{Added: true})
 	})
 
 	return router
+}
+
+// Helper function to create a string pointer
+func ptrString(s string) *string {
+	return &s
 }

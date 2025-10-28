@@ -1,6 +1,7 @@
 package routes
 
 import (
+	"imagine/internal/dto"
 	"log/slog"
 	"net/http"
 	"time"
@@ -26,12 +27,14 @@ func SessionsRouter(db *gorm.DB, logger *slog.Logger) *chi.Mux {
 
 		err := render.DecodeJSON(req.Body, &session)
 		if err != nil {
-			render.JSON(res, req, map[string]string{"error": "invalid request body"})
+			render.Status(req, http.StatusBadRequest)
+			render.JSON(res, req, dto.ErrorResponse{Error: "invalid request body"})
 			return
 		}
 
 		if session.Token == "" {
-			render.JSON(res, req, map[string]string{"error": "token is required"})
+			render.Status(req, http.StatusBadRequest)
+			render.JSON(res, req, dto.ErrorResponse{Error: "token is required"})
 			return
 		}
 
@@ -48,13 +51,14 @@ func SessionsRouter(db *gorm.DB, logger *slog.Logger) *chi.Mux {
 
 		err = db.Create(&session).Error
 		if err != nil {
-			render.JSON(res, req, map[string]string{"error": "failed to create session"})
+			render.Status(req, http.StatusInternalServerError)
+			render.JSON(res, req, dto.ErrorResponse{Error: "failed to create session"})
 			return
 		}
 
 		SessionCache.Add(session.UID, session, SessionCacheDefaultDuration)
 
-		res.WriteHeader(http.StatusCreated)
+		render.Status(req, http.StatusCreated)
 		render.JSON(res, req, session)
 	})
 

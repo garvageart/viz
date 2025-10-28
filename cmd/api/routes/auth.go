@@ -1,7 +1,9 @@
 package routes
 
 import (
+	"bytes"
 	"encoding/base64"
+	"encoding/hex"
 	"errors"
 	"log/slog"
 	"net/http"
@@ -20,6 +22,7 @@ import (
 	"imagine/internal/auth"
 	oauth "imagine/internal/auth/oauth"
 	"imagine/internal/crypto"
+	"imagine/internal/dto"
 	"imagine/internal/entities"
 	libhttp "imagine/internal/http"
 	"imagine/internal/uid"
@@ -86,15 +89,17 @@ func AuthRouter(db *gorm.DB, logger *slog.Logger) *chi.Mux {
 		}
 
 		logger.Info("Generated an API key", slog.String("request_id", libhttp.GetRequestID(req)))
-		jsonResponse := map[string]any{"consumer_key": consumerKey}
-
-		res.WriteHeader(http.StatusOK)
-		render.JSON(res, req, jsonResponse)
+		render.Status(req, http.StatusOK)
+		render.JSON(res, req, dto.APIKeyResponse{ConsumerKey: consumerKey})
 	})
 
 	router.Post("/login", func(res http.ResponseWriter, req *http.Request) {
-		var user entities.User
-		err := render.DecodeJSON(req.Body, &user)
+		// Accept minimal login payload to avoid coupling to entities
+		var login struct {
+			Email    string `json:"email"`
+			Password string `json:"password"`
+		}
+		err := render.DecodeJSON(req.Body, &login)
 		if err != nil {
 			libhttp.ServerError(res, req, err, logger, nil,
 				"invalid request body",
@@ -103,44 +108,90 @@ func AuthRouter(db *gorm.DB, logger *slog.Logger) *chi.Mux {
 			return
 		}
 
-		// user.Password gets binded in the db request later
-		// so store it here
-		inputPass := user.Password
-
-		if user.Email == "" || user.Password == "" {
-			res.WriteHeader(http.StatusBadRequest)
-			render.JSON(res, req, map[string]string{"error": "Required fields are missing"})
+		if login.Email == "" || login.Password == "" {
+			render.Status(req, http.StatusBadRequest)
+			render.JSON(res, req, dto.ErrorResponse{Error: "Required fields are missing"})
 			return
 		}
 
-		tx := db.Select("email", "password").Where("email = ?", user.Email).First(&user)
-		if tx.Error != nil {
-			if tx.Error == gorm.ErrRecordNotFound {
-				res.WriteHeader(http.StatusNotFound)
-				render.JSON(res, req, map[string]string{"error": "Cannot find user with provided email"})
+		// Fetch password hash and uid directly from users table by email
+		var row struct {
+			UID      string
+			Password string
+		}
+		tx := db.Table("users").Select("uid, password").Where("email = ?", login.Email).Scan(&row)
+		if tx.Error != nil || row.Password == "" {
+			if tx.Error == gorm.ErrRecordNotFound || row.Password == "" {
+				render.Status(req, http.StatusNotFound)
+				render.JSON(res, req, dto.ErrorResponse{Error: "Cannot find user with provided email"})
 				return
 			}
 			return
 		}
 
 		argon := crypto.CreateArgon2Hash(3, 32, 2, 32, 16)
-		dbPass := strings.Split(user.Password, ":")
-
-		hashedInputPassword, _ := argon.Hash([]byte(inputPass), []byte(dbPass[0]))
-		isValidPass := argon.Verify(hashedInputPassword, dbPass[1])
-
-		if !isValidPass {
-			res.WriteHeader(http.StatusUnauthorized)
-			render.JSON(res, req, map[string]string{"error": "Invalid password"})
+		dbPass := strings.Split(row.Password, ":")
+		if len(dbPass) != 2 {
+			render.Status(req, http.StatusInternalServerError)
+			render.JSON(res, req, dto.ErrorResponse{Error: "Invalid password format"})
 			return
 		}
 
+		salt, err := hex.DecodeString(dbPass[0])
+		if err != nil {
+			libhttp.ServerError(res, req, err, logger, nil,
+				"Failed to decode salt",
+				"Something went wrong, please try again later",
+			)
+			return
+		}
+
+		storedHash, err := hex.DecodeString(dbPass[1])
+		if err != nil {
+			libhttp.ServerError(res, req, err, logger, nil,
+				"Failed to decode hash",
+				"Something went wrong, please try again later",
+			)
+			return
+		}
+
+		inputHash, _ := argon.Hash([]byte(login.Password), salt)
+		isValidPass := bytes.Equal(inputHash, storedHash)
+
+		if !isValidPass {
+			render.Status(req, http.StatusUnauthorized)
+			render.JSON(res, req, dto.ErrorResponse{Error: "Invalid password"})
+			return
+		}
+
+		// Create auth token and persistent session
 		authToken := auth.GenerateAuthToken()
 		expiryTime := carbon.Now().AddYear().StdTime()
 		http.SetCookie(res, auth.CreateAuthTokenCookie(expiryTime, authToken))
 
+		// Persist session for server-side validation
+		sess := entities.Session{
+			Token:      authToken,
+			UID:        uid.MustGenerate(),
+			UserUID:    row.UID,
+			ClientIP:   req.RemoteAddr,
+			UserAgent:  req.UserAgent(),
+			CreatedAt:  time.Now(),
+			LastActive: time.Now(),
+			ExpiresAt:  expiryTime,
+		}
+
+		if err := db.Create(&sess).Error; err != nil {
+			libhttp.ServerError(res, req, err, logger, nil,
+				"failed to create session",
+				"Something went wrong while signing you in. Please try again.",
+			)
+			return
+		}
+
 		logger.Info("user authenticated", slog.String("request_id", libhttp.GetRequestID(req)))
-		render.JSON(res, req, map[string]string{"message": "User authenticated"})
+		render.Status(req, http.StatusOK)
+		render.JSON(res, req, dto.MessageResponse{Message: "User authenticated"})
 	})
 
 	router.Get("/oauth", func(res http.ResponseWriter, req *http.Request) {

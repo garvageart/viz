@@ -24,7 +24,7 @@ paths:
                     type: string
                 required: [message]
 
-  /user:
+  /accounts/:
     post:
       summary: Register a new user
       operationId: registerUser
@@ -41,6 +41,169 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/User"
+        "400":
+          description: Bad request
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+
+  /auth/apikey:
+    get:
+      summary: Generate an API key
+      operationId: generateApiKey
+      responses:
+        "200":
+          description: API key generated
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/APIKeyResponse"
+        "500":
+          description: Server error
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+
+  /auth/login:
+    post:
+      summary: Login with email and password
+      operationId: login
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                email:
+                  type: string
+                  format: email
+                password:
+                  type: string
+              required: [email, password]
+      responses:
+        "200":
+          description: Login successful
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/MessageResponse"
+        "400":
+          description: Bad request
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "401":
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "404":
+          description: Not found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "500":
+          description: Server error
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+
+  /auth/oauth:
+    get:
+      summary: Initiate OAuth flow
+      operationId: initiateOAuth
+      parameters:
+        - name: provider
+          in: query
+          required: true
+          schema:
+            type: string
+            enum: [google, github]
+          description: OAuth provider (google or github)
+      responses:
+        "307":
+          description: Redirect to OAuth provider
+        "400":
+          description: Bad request
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "500":
+          description: Server error
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+
+  /auth/oauth/{provider}:
+    post:
+      summary: Complete OAuth flow
+      operationId: completeOAuth
+      parameters:
+        - name: provider
+          in: path
+          required: true
+          schema:
+            type: string
+            enum: [google, github]
+          description: OAuth provider (google or github)
+        - name: code
+          in: query
+          required: true
+          schema:
+            type: string
+          description: Authorization code from OAuth provider
+        - name: state
+          in: query
+          required: true
+          schema:
+            type: string
+          description: State parameter for CSRF protection
+      responses:
+        "200":
+          description: OAuth successful
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/OAuthUserData"
+        "400":
+          description: Bad request
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "500":
+          description: Server error
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+
+  /accounts/me:
+    get:
+      summary: Get current authenticated user
+      operationId: getCurrentUser
+      responses:
+        "200":
+          description: Authenticated user
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/User"
+        "401":
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
 
   /images:
     post:
@@ -65,11 +228,19 @@ paths:
           content:
             application/json:
               schema:
-                type: object
-                properties:
-                  id:
-                    type: string
-                required: [id]
+                $ref: "#/components/schemas/ImageUploadResponse"
+        "400":
+          description: Bad request
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "500":
+          description: Server error
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
 
   /images/url:
     post:
@@ -88,11 +259,19 @@ paths:
           content:
             application/json:
               schema:
-                type: object
-                properties:
-                  id:
-                    type: string
-                required: [id]
+                $ref: "#/components/schemas/ImageUploadResponse"
+        "400":
+          description: Bad request
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "500":
+          description: Server error
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
 
   /images/{uid}/file:
     get:
@@ -156,6 +335,18 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/CollectionListResponse"
+        "400":
+          description: Bad request
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "500":
+          description: Server error
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
     post:
       summary: Create a collection
       operationId: createCollection
@@ -172,6 +363,18 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/Collection"
+        "400":
+          description: Bad request
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "500":
+          description: Server error
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
 
   /collections/{uid}:
     get:
@@ -190,6 +393,18 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/CollectionDetailResponse"
+        "404":
+          description: Not found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "500":
+          description: Server error
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
 
   /collections/{uid}/images:
     get:
@@ -218,6 +433,18 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/ImagesPage"
+        "404":
+          description: Not found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "500":
+          description: Server error
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
     put:
       summary: Add images to a collection
       operationId: addCollectionImages
@@ -245,14 +472,73 @@ paths:
           content:
             application/json:
               schema:
-                type: object
-                properties:
-                  added:
-                    type: boolean
-                required: [added]
+                $ref: "#/components/schemas/AddImagesResponse"
+        "400":
+          description: Bad request
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AddImagesResponse"
+        "404":
+          description: Not found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AddImagesResponse"
 
 components:
   schemas:
+    # Common response types
+    ErrorResponse:
+      type: object
+      properties:
+        error:
+          type: string
+      required: [error]
+
+    MessageResponse:
+      type: object
+      properties:
+        message:
+          type: string
+      required: [message]
+
+    ImageUploadResponse:
+      type: object
+      properties:
+        id:
+          type: string
+      required: [id]
+
+    AddImagesResponse:
+      type: object
+      properties:
+        added:
+          type: boolean
+        error:
+          type: string
+      required: [added]
+
+    APIKeyResponse:
+      type: object
+      properties:
+        consumer_key:
+          type: string
+      required: [consumer_key]
+
+    OAuthUserData:
+      type: object
+      properties:
+        email:
+          type: string
+          format: email
+        name:
+          type: string
+        picture:
+          type: string
+          format: uri
+      required: [email, name, picture]
+
     Pagination:
       type: object
       properties:
@@ -466,5 +752,4 @@ components:
         name: { type: string }
         email: { type: string, format: email }
         password: { type: string }
-        passwordConfirm: { type: string }
-      required: [name, email, password, passwordConfirm]
+      required: [name, email, password]
