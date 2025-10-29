@@ -52,6 +52,7 @@
 		"idb": "^8.0.3",
 		"lodash-es": "^4.17.21",
 		"luxon": "^3.7.2",
-		"material-symbols": "^0.31.9"
+		"material-symbols": "^0.31.9",
+		"thumbhash": "^0.1.1"
 	}
 }
