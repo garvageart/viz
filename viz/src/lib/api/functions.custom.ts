@@ -9,6 +9,7 @@ import type { ImageUploadFileData } from "$lib/upload/manager.svelte";
 export interface UploadImageOptions {
     data: ImageUploadFileData;
     onUploadProgress?: (event: ProgressEvent<XMLHttpRequestEventTarget>) => void;
+    request?: XMLHttpRequest;
 }
 
 export interface UploadImageResponse {
@@ -29,10 +30,13 @@ export interface UploadImageResult {
 export async function uploadImageWithProgress(
     options: UploadImageOptions
 ): Promise<{ data: UploadImageResult; status: number; }> {
-    const { onUploadProgress, data } = options;
+    let { onUploadProgress, data, request } = options;
 
+    const xhr = new XMLHttpRequest();
+    if (request) {
+        request = xhr;
+    }
     return new Promise((resolve, reject) => {
-        const xhr = new XMLHttpRequest();
 
         xhr.addEventListener('error', (error) => reject(error));
         xhr.addEventListener('load', () => {

@@ -24,6 +24,7 @@ export class UploadImage implements UploadImageStats {
     startTime?: Date = $state(new Date());
     checksum?: string;
     data: ImageUploadFileData;
+    request: XMLHttpRequest | undefined = $state(undefined);
 
     constructor(data: ImageUploadFileData) {
         this.checksum = data.checksum;
@@ -35,6 +36,13 @@ export class UploadImage implements UploadImageStats {
         this.state = UploadState.PENDING;
     }
 
+    cancelRequest() {
+        this.state = UploadState.CANCELED;
+        if (this.request) {
+            this.request.abort();
+        }
+    }
+
     private updateProgress = (event: ProgressEvent<XMLHttpRequestEventTarget>) => {
         this.progress = (event.loaded / event.total) * 100;
     };
@@ -44,7 +52,8 @@ export class UploadImage implements UploadImageStats {
             this.state = UploadState.STARTED;
             const responseData = await uploadImageWithProgress({
                 data: this.data,
-                onUploadProgress: this.updateProgress
+                onUploadProgress: this.updateProgress,
+                request: this.request
             });
 
             this.state = (responseData.status === 200) || (responseData.status === 201) ? UploadState.DONE : UploadState.INVALID;

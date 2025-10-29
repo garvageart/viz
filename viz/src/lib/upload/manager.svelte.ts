@@ -56,6 +56,41 @@ export default class UploadManager {
         this.fileHolder.setAttribute("accept", allowedMimeTypesString);
     }
 
+    /**
+     * Upload files with controlled concurrency
+     * @param files Array of UploadImage instances to upload
+     * @param concurrency Maximum number of simultaneous uploads
+     * @returns Promise resolving to array of upload results
+     */
+    private async uploadWithConcurrency(files: UploadImage[], concurrency: number): Promise<(ImageUploadSuccess | undefined)[]> {
+        const results: (ImageUploadSuccess | undefined)[] = [];
+        const executing: Promise<void>[] = [];
+
+        for (let i = 0; i < files.length; i++) {
+            const file = files[i];
+
+            // Create a promise for this upload
+            const uploadPromise = (async () => {
+                const result = await file.upload();
+                results[i] = result;
+            })();
+
+            executing.push(uploadPromise);
+
+            // When concurrency limit is reached, wait for one to finish
+            if (executing.length >= concurrency) {
+                await Promise.race(executing);
+                // Remove completed promises
+                executing.splice(0, executing.findIndex(p => p === uploadPromise) + 1);
+            }
+        }
+
+        // Wait for remaining uploads to complete
+        await Promise.all(executing);
+
+        return results;
+    }
+
     openFileHolder() {
         this.fileHolder.click();
     }
@@ -97,7 +132,10 @@ export default class UploadManager {
                     }
 
                     upload.files.push(...uploadFiles);
-                    const results = await Promise.all(uploadFiles.map((uploadFile) => uploadFile.upload()));
+
+                    // Upload files with concurrency control
+                    const results = await this.uploadWithConcurrency(uploadFiles, upload.concurrency);
+
                     const successfulUploads = results.filter((r) => r !== undefined);
                     upload.stats.success = successfulUploads.length;
                     upload.stats.errors = upload.stats.total - successfulUploads.length;
