@@ -1,14 +1,15 @@
 <script lang="ts" module>
 	export function openCollection(collection: Collection, currentContent: Content) {
+		const collectionPath = `/collections/${collection.uid}`;
 		if (page.url.pathname !== "/") {
-			goto(`/collections/${collection.uid}`, { state: { from: page.url.pathname, data: collection } });
+			goto(collectionPath, { state: { from: page.url.pathname, data: collection } });
 			return;
 		}
 
 		const currentParentIdx = findPanelIndex(layoutState.tree, getSubPanelParent(layoutState.tree, currentContent.paneKeyId)!);
 		if (currentParentIdx === -1) {
 			console.warn("Can't find panel in layout, navigating to collection page");
-			goto(`/collections/${collection.uid}`, { state: { from: page.url.pathname, data: collection } });
+			goto(collectionPath, { state: { from: page.url.pathname, data: collection } });
 			return;
 		}
 
@@ -17,26 +18,44 @@
 
 		if (childIndex === -1) {
 			console.warn(`Can't find child inside panel ${currentParent.paneKeyId}, navigating to collection page`);
-			goto(`/collections/${collection.uid}`, { state: { from: page.url.pathname, data: collection } });
+			goto(collectionPath, { state: { from: page.url.pathname, data: collection } });
 			return;
 		}
 
-		const existingView = layoutState.tree
-			.flatMap((panel) => panel.childs.content)
-			.find((subPanel) => subPanel.views.some((view) => view.path === `/collections/${collection.uid}`));
+		// Check if a view with this collection path already exists
+		let existingView: VizView | undefined;
+		let existingContent: Content | undefined;
+		let existingParentPanel: VizSubPanelData | undefined;
 
-		if (existingView) {
-			const parent = findSubPanel("paneKeyId", existingView.paneKeyId)?.subPanel as VizSubPanelData | undefined;
-			if (parent) {
-				parent.makeViewActive(existingView.views.find((view) => view.path === `/collections/${collection.uid}`)!);
+		for (let i = 0; i < layoutState.tree.length; i++) {
+			const panel = layoutState.tree[i];
+			for (const content of panel.childs.content) {
+				const view = content.views.find((v) => v.path === collectionPath);
+				if (view) {
+					existingView = view;
+					existingContent = content;
+					existingParentPanel = panel;
+					break;
+				}
 			}
+			if (existingView) {
+				break;
+			}
+		}
+
+		console.log(existingView, existingContent, existingParentPanel);
+
+		if (existingView && existingContent && existingParentPanel) {
+			// Deactivate all views in the content and activate the existing one
+			existingContent.views.forEach((v) => v.setActive(false));
+			existingView.setActive(true);
 			return;
 		}
 
 		const view = new VizView({
 			name: collection.name,
 			component: CollectionPage as any,
-			path: `/collections/${collection.uid}`
+			path: collectionPath
 		});
 
 		addViewToContent(view, currentParentIdx, childIndex);

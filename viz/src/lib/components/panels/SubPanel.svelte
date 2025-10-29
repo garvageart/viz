@@ -114,7 +114,7 @@
 
 	const storedActiveView = $derived(panelViews.find((view) => view.isActive === true));
 	let activeView = $derived(storedActiveView ?? panelViews[0]);
-	let panelData = $derived(activeView?.getComponentData());
+	let panelData = $derived(activeView.viewData ?? activeView?.getComponentData());
 
 	let subPanelContentElement: HTMLDivElement | undefined = $state();
 	let subPanelContentFocused = $state(false);
@@ -209,9 +209,8 @@
 			return;
 		}
 
-		view.isActive = true;
 		activeView.isActive = false;
-		activeView = view;
+		view.isActive = true;
 
 		updateSubPanelActiveView(view);
 	}
@@ -299,6 +298,11 @@ for Splitpanes
 								}
 							}
 
+							if (activeView.id === view.id) {
+								// show context menu or maybe add an onclick
+								// property to the class
+							}
+
 							makeViewActive(view instanceof VizView ? view : new VizView(view));
 						}}
 						use:tabDragable={data}
@@ -312,7 +316,8 @@ for Splitpanes
 						shifting the layout  
 						-->
 						<MaterialIcon
-							style={`transform: translateY(${view.opticalCenterFix ?? 0.5}px); margin-left: 0.5em;`}
+							style={`transform: translateY(${view.opticalCenterFix}px); margin-left: 0.25em;`}
+							weight={200}
 							iconName="menu"
 						/>
 					</button>

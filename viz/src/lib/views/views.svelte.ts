@@ -12,7 +12,7 @@ class VizView<C extends Component<any, any, any> = Component<any, any, any>> {
     component: C;
     id: number;
     parent?: string;
-    isActive?: boolean = false;
+    isActive = $state(false);
     public viewData?: {
         type: "loaded";
         status: number;
@@ -32,7 +32,7 @@ class VizView<C extends Component<any, any, any> = Component<any, any, any>> {
         this.component = opts.component;
         this.path = opts.path;
         this.parent = opts.parent;
-        this.opticalCenterFix = opts.opticalCenterFix ?? 0.2;
+        this.opticalCenterFix = opts.opticalCenterFix ?? 0.5;
         this.id = opts.id !== undefined ? opts.id : idCount++;
 
         if (this.path) {

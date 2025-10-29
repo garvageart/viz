@@ -103,6 +103,18 @@
 	$effect(() => {
 		// looool proxies don't save properly in JSON.stringify lmao
 		const layoutToSave = layoutState.tree.map((panel) => {
+			// Access deep properties to ensure reactivity tracks them
+			const childsCopy = {
+				...panel.childs,
+				content: panel.childs.content.map((content) => ({
+					...content,
+					views: content.views.map((view) => ({
+						...view,
+						isActive: view.isActive // explicitly access to track changes
+					}))
+				}))
+			};
+
 			return Object.assign(
 				{},
 				{
@@ -112,7 +124,7 @@
 					minSize: panel.minSize,
 					maxSize: panel.maxSize,
 					class: panel.class,
-					childs: panel.childs,
+					childs: childsCopy,
 					views: panel.views
 				}
 			);
