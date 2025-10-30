@@ -1,11 +1,21 @@
+<script module lang="ts">
+	export function getAssetDate(asset: Image): Date {
+		return asset.exif?.date_time_original
+			? new Date(convertEXIFDateTime(asset.exif?.date_time_original))
+			: new Date(asset.image_metadata?.file_created_at ?? asset.created_at);
+	}
+</script>
+
 <script lang="ts">
 	import { DateTime } from "luxon";
 	import { getFullImagePath, type Image } from "$lib/api";
 	import { thumbHashToDataURL } from "thumbhash";
 	import { onMount } from "svelte";
+	import { convertEXIFDateTime } from "$lib/utils/images";
+	import { normalizeBase64 } from "$lib/utils/misc";
 
 	let { asset }: { asset: Image } = $props();
-	const imageDate = DateTime.fromISO(asset.created_at);
+	const imageDate = DateTime.fromJSDate(getAssetDate(asset));
 
 	let placeholderDataURL = $state<string | undefined>();
 	let imageLoaded = $state(false);
@@ -14,8 +24,8 @@
 	onMount(() => {
 		if (asset.image_metadata?.thumbhash) {
 			try {
-				// Convert base64 thumbhash to Uint8Array
-				const binaryString = atob(asset.image_metadata.thumbhash);
+				const normalizedThumbhash = normalizeBase64(asset.image_metadata.thumbhash);
+				const binaryString = atob(normalizedThumbhash);
 				const bytes = new Uint8Array(binaryString.length);
 				for (let i = 0; i < binaryString.length; i++) {
 					bytes[i] = binaryString.charCodeAt(i);

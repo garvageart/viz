@@ -3,7 +3,11 @@ package imageops
 import (
 	"bytes"
 	"image"
+	_ "image/gif"
+	_ "image/jpeg"
+	_ "image/png"
 	"os"
+	"time"
 
 	libvips "imagine/internal/imageops/vips"
 	libos "imagine/internal/os"
@@ -105,4 +109,19 @@ func ReadToImage(imgBytes []byte) (image.Image, string, error) {
 func GenerateThumbhash(img image.Image) (hash []byte, err error) {
 	hashBytes := thumbhash.EncodeImage(img)
 	return hashBytes, nil
+}
+
+func ConvertEXIFDateTime(exifDateTime string) *time.Time {
+	if exifDateTime == "" {
+		return nil
+	}
+
+	const exifLayout = "2006:01:02 15:04:05"
+
+	t, err := time.Parse(exifLayout, exifDateTime)
+	if err != nil {
+		return nil
+	}
+
+	return &t
 }

@@ -16,7 +16,6 @@ import (
 	"strings"
 	"time"
 
-	"github.com/dromara/carbon/v2"
 	"github.com/go-chi/chi/v5"
 	"github.com/go-chi/render"
 	_ "github.com/joho/godotenv/autoload"
@@ -107,32 +106,29 @@ func createNewImageEntity(logger *slog.Logger, fileName string, libvipsImg *libv
 		exif.Resolution = &resStr
 	}
 
-	createdDate := exif.DateTimeOriginal
-	modDate := exif.ModifyDate
+	createdDate := imageops.FindExif(exifData, "DateTimeOriginal")
+	modDate := imageops.FindExif(exifData, "ModifyDate")
 
-	if createdDate == nil || modDate == nil || *createdDate == "" || *modDate == "" {
-		now := time.Now().UTC().String()
-		createdDate = &now
-		modDate = &now
+	fileCreatedAt := imageops.ConvertEXIFDateTime(*createdDate)
+	fileModifiedAt := imageops.ConvertEXIFDateTime(*modDate)
+
+	var keywords []string
+	keywordsPtr := imageops.FindExif(exifData, "Keywords", "Subject")
+	if keywordsPtr != nil {
+		keywords = strings.Split(*keywordsPtr, ",")
 	}
 
-	logger.Info("generating file name for saving")
-
-	fileCreatedAt := carbon.Parse(*createdDate).StdTime()
-	fileModifiedAt := carbon.Parse(*modDate).StdTime()
-	keywords := []string{}
-	label := ""
+	label := "None"
 
 	metadata := dto.ImageMetadata{
 		FileName:         fileName,
 		OriginalFileName: &fileName,
 		FileType:         string(libvipsImg.Format()),
 		ColorSpace:       imageops.GetColourSpaceString(libvipsImg),
-		FileModifiedAt:   fileModifiedAt,
-		FileCreatedAt:    fileCreatedAt,
+		FileModifiedAt:   *fileModifiedAt,
+		FileCreatedAt:    *fileCreatedAt,
 		Keywords:         &keywords,
 		Label:            &label,
-		Checksum:         "", // Will be set later
 	}
 
 	// Construct paths with reasonable defaults matching the {uid}/file route params
@@ -158,9 +154,7 @@ func createNewImageEntity(logger *slog.Logger, fileName string, libvipsImg *libv
 		ImagePaths:    paths,
 		Width:         int32(libvipsImg.Width()),
 		Height:        int32(libvipsImg.Height()),
-		Description:   nil, //TODO: evaluate if necessary, blank for now
-		CreatedAt:     time.Now(),
-		UpdatedAt:     time.Now(),
+		Description:   nil, // TODO: evaluate if necessary, blank for now
 	}
 
 	return &allImageData, nil
@@ -202,8 +196,18 @@ func ImagesRouter(db *gorm.DB, logger *slog.Logger) *chi.Mux {
 				return
 			}
 
+			// Set cache headers for browser caching (1 year)
+			res.Header().Set("Cache-Control", "public, max-age=31536000, immutable")
+			res.Header().Set("ETag", imgEnt.ImageMetadata.Checksum) // Use checksum as ETag
 			res.Header().Set("Content-Type", "image/"+imgEnt.ImageMetadata.FileType)
 			res.Header().Set("Content-Length", strconv.Itoa(len(imageData)))
+
+			// Check if client has cached version
+			if match := req.Header.Get("If-None-Match"); match == imgEnt.ImageMetadata.Checksum {
+				res.WriteHeader(http.StatusNotModified)
+				return
+			}
+
 			res.WriteHeader(http.StatusOK)
 			res.Write(imageData)
 			return
@@ -303,7 +307,18 @@ func ImagesRouter(db *gorm.DB, logger *slog.Logger) *chi.Mux {
 			formatParam = string(libvipsImg.Format())
 		}
 
+		// Generate ETag for transformed image based on params
+		transformETag := fmt.Sprintf("%s-%dx%d-%s-%d", imgEnt.ImageMetadata.Checksum, width, height, formatParam, quality)
+
 		res.Header().Set("Content-Type", "image/"+formatParam)
+		res.Header().Set("Cache-Control", fmt.Sprintf("public, max-age=%d, immutable", time.Hour*24*365/time.Second))
+		res.Header().Set("ETag", transformETag)
+
+		// Check if client has cached version
+		if match := req.Header.Get("If-None-Match"); match == transformETag {
+			res.WriteHeader(http.StatusNotModified)
+			return
+		}
 
 		if err != nil {
 			logger.Error("failed to encode image", slog.Any("error", err))
@@ -328,10 +343,8 @@ func ImagesRouter(db *gorm.DB, logger *slog.Logger) *chi.Mux {
 			return
 		}
 
-		// Get the form fields
 		fileImageUpload.FileName = req.FormValue("filename")
 
-		// Get the file from the request
 		file, _, err := req.FormFile("data")
 		if err != nil {
 			render.Status(req, http.StatusBadRequest)
@@ -381,7 +394,6 @@ func ImagesRouter(db *gorm.DB, logger *slog.Logger) *chi.Mux {
 			return
 		}
 
-		// Set the uploader
 		authUser, _ := libhttp.UserFromContext(req)
 		imageEntity.UploadedByID = &authUser.Uid
 
