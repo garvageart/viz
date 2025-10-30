@@ -242,7 +242,7 @@
 		});
 	}
 
-	hotkeys("meta+a", (e) => {
+	hotkeys("ctrl+a", (e) => {
 		e.preventDefault();
 		selectedAssets.clear();
 		allAssetsData.forEach((i) => selectedAssets.add(i));
@@ -393,7 +393,7 @@
 		box-sizing: border-box;
 		margin: 2em 0em;
 		display: grid;
-		gap: 0.5em;
+		gap: 1em;
 		width: 100%;
 		max-width: 100%;
 		text-overflow: clip;
@@ -409,9 +409,9 @@
 		overflow: hidden;
 	}
 
-	.asset-card.max-width-column {
-		max-width: 15em;
-	}
+	// .asset-card.max-width-column {
+	// 	max-width: 15em;
+	// }
 
 	.selected-card {
 		outline: 2px solid var(--imag-primary);

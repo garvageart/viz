@@ -74,6 +74,9 @@
 			title: "Created At"
 		},
 		{
+			title: "Updated At"
+		},
+		{
 			title: "Oldest"
 		},
 		{
@@ -87,10 +90,12 @@
 				return options.find((o) => o.title === "Name");
 			case "created_at":
 				return options.find((o) => o.title === "Created At");
-			case "most_recent":
-				return options.find((o) => o.title === "Most Recent");
+			case "updated_at":
+				return options.find((o) => o.title === "Updated At");
 			case "oldest":
 				return options.find((o) => o.title === "Oldest");
+			case "most_recent":
+				return options.find((o) => o.title === "Most Recent");
 		}
 	}
 
@@ -148,6 +153,8 @@
 								sort.by = "name";
 							} else if (option.title === "Created At") {
 								sort.by = "created_at";
+							} else if (option.title === "Updated At") {
+								sort.by = "updated_at";
 							} else if (option.title === "Oldest") {
 								sort.by = "oldest";
 							} else if (option.title === "Most Recent") {

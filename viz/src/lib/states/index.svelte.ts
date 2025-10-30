@@ -5,6 +5,7 @@ import type { UploadImage } from "$lib/upload/asset.svelte";
 import { cookieMethods } from "$lib/utils/cookie";
 import { writable } from "svelte/store";
 import { type User, getCurrentUser } from "$lib/api/client";
+import { VizLocalStorage } from "$lib/utils/misc";
 
 export let login = $state({
     state: cookieMethods.get("imag-state")
@@ -78,18 +79,30 @@ export let lightbox = $state({
     show: false
 });
 
-/**
- * @todo Get sort options from saved settings by these are the defaults for now
- */
-export let sort: AssetSort = $state({
-    display: "cover",
-    group: {
-        by: "year",
-        order: "asc",
-    },
-    by: "name",
-    order: "asc",
-});
+class SortState {
+    private storage = new VizLocalStorage<AssetSort>("sort");
+
+    value: AssetSort = $state(
+        this.storage.get() ?? {
+            display: "cover",
+            group: {
+                by: "year",
+                order: "asc",
+            },
+            by: "name",
+            order: "asc",
+        }
+    );
+
+    constructor() { }
+
+    save() {
+        this.storage.set(this.value);
+    }
+}
+
+export const sortState = new SortState();
+export let sort = sortState.value;
 
 export let upload = $state({
     files: [] as UploadImage[],

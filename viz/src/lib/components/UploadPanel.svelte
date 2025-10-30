@@ -35,7 +35,7 @@
 						minimized = true;
 					}}
 				>
-					<MaterialIcon iconName="close" />
+					<MaterialIcon iconName="arrow_downward_alt" />
 				</Button>
 				<p>Uploading {upload.files.length} file{upload.files.length === 1 ? "" : "s"}</p>
 			</div>
