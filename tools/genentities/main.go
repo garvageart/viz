@@ -73,6 +73,22 @@ func (e {{.Name}}) DTO() dto.{{.Name}} {
 	}
 }
 
+func {{.Name}}FromDTO(d dto.{{.Name}}) {{.Name}} {
+	return {{.Name}}{
+		CreatedAt: d.CreatedAt,
+		UpdatedAt: d.UpdatedAt,
+		{{- range .Fields}}
+		{{- if not .IsFKField}}
+		{{- if .IsEntityRef}}
+		{{.Name}}ID: func() *string { if d.{{.Name}} != nil { return &d.{{.Name}}.Uid }; return nil }(),
+		{{- else}}
+		{{.Name}}: d.{{.Name}},
+		{{- end}}
+		{{- end}}
+		{{- end}}
+	}
+}
+
 {{end}}
 `
 
@@ -325,13 +341,13 @@ func populateEntityFields(dtoPath string, entities []EntityConfig) ([]EntityConf
 			if strings.HasPrefix(tStr, "dto.") || strings.HasPrefix(tStr, "[]") || strings.HasPrefix(tStr, "map[") {
 				simple = false
 			}
-			
+
 			// Check if this field needs a unique index
 			gormTag := ""
 			if slices.Contains(e.UniqueIndexes, name) {
-					gormTag = "gorm:\"uniqueIndex\""
-				}
-			
+				gormTag = "gorm:\"uniqueIndex\""
+			}
+
 			fields = append(fields, FieldConfig{Name: name, TypeExpr: tStr, IsSimple: simple, GormTag: gormTag})
 		}
 		entities[i].Fields = fields

@@ -161,15 +161,15 @@ func AuthRouter(db *gorm.DB, logger *slog.Logger) *chi.Mux {
 		http.SetCookie(res, libhttp.CreateAuthTokenCookie(expiryTime, authToken))
 
 		// Persist session for server-side validation
+		lastActive := time.Now()
 		sess := entities.Session{
 			Token:      authToken,
-			UID:        uid.MustGenerate(),
-			UserUID:    row.UID,
-			ClientIP:   req.RemoteAddr,
-			UserAgent:  req.UserAgent(),
-			CreatedAt:  time.Now(),
-			LastActive: time.Now(),
-			ExpiresAt:  expiryTime,
+			Uid:        uid.MustGenerate(),
+			UserUid:    row.UID,
+			ClientIp:   &req.RemoteAddr,
+			UserAgent:  ptrString(req.UserAgent()),
+			LastActive: &lastActive,
+			ExpiresAt:  &expiryTime,
 		}
 
 		if err := db.Create(&sess).Error; err != nil {

@@ -52,6 +52,31 @@ func (e Collection) DTO() dto.Collection {
 	}
 }
 
+func CollectionFromDTO(d dto.Collection) Collection {
+	return Collection{
+		CreatedAt: d.CreatedAt,
+		UpdatedAt: d.UpdatedAt,
+		CreatedByID: func() *string {
+			if d.CreatedBy != nil {
+				return &d.CreatedBy.Uid
+			}
+			return nil
+		}(),
+		Description: d.Description,
+		ImageCount:  d.ImageCount,
+		Images:      d.Images,
+		Name:        d.Name,
+		Private:     d.Private,
+		ThumbnailID: func() *string {
+			if d.Thumbnail != nil {
+				return &d.Thumbnail.Uid
+			}
+			return nil
+		}(),
+		Uid: d.Uid,
+	}
+}
+
 // CollectionDetailResponse is a GORM entity inferred from dto.CollectionDetailResponse
 type CollectionDetailResponse struct {
 	ID          uint           `gorm:"primarykey" json:"-"`
@@ -94,6 +119,31 @@ func (e CollectionDetailResponse) DTO() dto.CollectionDetailResponse {
 			return nil
 		}(),
 		Uid: e.Uid,
+	}
+}
+
+func CollectionDetailResponseFromDTO(d dto.CollectionDetailResponse) CollectionDetailResponse {
+	return CollectionDetailResponse{
+		CreatedAt: d.CreatedAt,
+		UpdatedAt: d.UpdatedAt,
+		CreatedByID: func() *string {
+			if d.CreatedBy != nil {
+				return &d.CreatedBy.Uid
+			}
+			return nil
+		}(),
+		Description: d.Description,
+		ImageCount:  d.ImageCount,
+		Images:      d.Images,
+		Name:        d.Name,
+		Private:     d.Private,
+		ThumbnailID: func() *string {
+			if d.Thumbnail != nil {
+				return &d.Thumbnail.Uid
+			}
+			return nil
+		}(),
+		Uid: d.Uid,
 	}
 }
 
@@ -141,6 +191,108 @@ func (e Image) DTO() dto.Image {
 	}
 }
 
+func ImageFromDTO(d dto.Image) Image {
+	return Image{
+		CreatedAt:     d.CreatedAt,
+		UpdatedAt:     d.UpdatedAt,
+		Description:   d.Description,
+		Exif:          d.Exif,
+		Height:        d.Height,
+		ImageMetadata: d.ImageMetadata,
+		ImagePaths:    d.ImagePaths,
+		Name:          d.Name,
+		Private:       d.Private,
+		Processed:     d.Processed,
+		Uid:           d.Uid,
+		UploadedByID: func() *string {
+			if d.UploadedBy != nil {
+				return &d.UploadedBy.Uid
+			}
+			return nil
+		}(),
+		Width: d.Width,
+	}
+}
+
+// Session is a GORM entity inferred from dto.Session
+type Session struct {
+	ID         uint           `gorm:"primarykey" json:"-"`
+	DeletedAt  gorm.DeletedAt `gorm:"index" json:"-"`
+	CreatedAt  time.Time
+	UpdatedAt  time.Time
+	ClientId   *string
+	ClientIp   *string
+	ClientName *string
+	ExpiresAt  *time.Time
+	LastActive *time.Time
+	LoginAt    *time.Time
+	LoginIp    *string
+	RefId      *string
+	Status     *int
+	Timeout    *int64
+	Token      string
+	Uid        string `gorm:"uniqueIndex"`
+	UserID     *string
+	User       *User `gorm:"foreignKey:UserID;references:Uid"`
+	UserAgent  *string
+	UserUid    string
+}
+
+func (e Session) DTO() dto.Session {
+	return dto.Session{
+		CreatedAt:  e.CreatedAt,
+		UpdatedAt:  e.UpdatedAt,
+		ClientId:   e.ClientId,
+		ClientIp:   e.ClientIp,
+		ClientName: e.ClientName,
+		ExpiresAt:  e.ExpiresAt,
+		LastActive: e.LastActive,
+		LoginAt:    e.LoginAt,
+		LoginIp:    e.LoginIp,
+		RefId:      e.RefId,
+		Status:     e.Status,
+		Timeout:    e.Timeout,
+		Token:      e.Token,
+		Uid:        e.Uid,
+		User: func() *dto.User {
+			if e.User != nil {
+				d := e.User.DTO()
+				return &d
+			}
+			return nil
+		}(),
+		UserAgent: e.UserAgent,
+		UserUid:   e.UserUid,
+	}
+}
+
+func SessionFromDTO(d dto.Session) Session {
+	return Session{
+		CreatedAt:  d.CreatedAt,
+		UpdatedAt:  d.UpdatedAt,
+		ClientId:   d.ClientId,
+		ClientIp:   d.ClientIp,
+		ClientName: d.ClientName,
+		ExpiresAt:  d.ExpiresAt,
+		LastActive: d.LastActive,
+		LoginAt:    d.LoginAt,
+		LoginIp:    d.LoginIp,
+		RefId:      d.RefId,
+		Status:     d.Status,
+		Timeout:    d.Timeout,
+		Token:      d.Token,
+		Uid:        d.Uid,
+		UserID: func() *string {
+			if d.User != nil {
+				return &d.User.Uid
+			}
+			return nil
+		}(),
+		UserAgent: d.UserAgent,
+		UserUid:   d.UserUid,
+	}
+}
+
 // User is a GORM entity inferred from dto.User
 type User struct {
 	ID        uint           `gorm:"primarykey" json:"-"`
@@ -165,5 +317,18 @@ func (e User) DTO() dto.User {
 		Role:      e.Role,
 		Uid:       e.Uid,
 		Username:  e.Username,
+	}
+}
+
+func UserFromDTO(d dto.User) User {
+	return User{
+		CreatedAt: d.CreatedAt,
+		UpdatedAt: d.UpdatedAt,
+		Email:     d.Email,
+		FirstName: d.FirstName,
+		LastName:  d.LastName,
+		Role:      d.Role,
+		Uid:       d.Uid,
+		Username:  d.Username,
 	}
 }

@@ -38,7 +38,7 @@ func SessionsRouter(db *gorm.DB, logger *slog.Logger) *chi.Mux {
 			return
 		}
 
-		session.UID, err = uid.Generate()
+		session.Uid, err = uid.Generate()
 		if err != nil {
 			libhttp.ServerError(res, req, err, logger, nil,
 				"Failed to generate session ID",
@@ -47,7 +47,8 @@ func SessionsRouter(db *gorm.DB, logger *slog.Logger) *chi.Mux {
 		}
 
 		session.CreatedAt = time.Now()
-		session.ExpiresAt = time.Now().Add(SessionCacheDefaultDuration)
+		t := time.Now().Add(SessionCacheDefaultDuration)
+		session.ExpiresAt = &t
 
 		err = db.Create(&session).Error
 		if err != nil {
@@ -56,7 +57,7 @@ func SessionsRouter(db *gorm.DB, logger *slog.Logger) *chi.Mux {
 			return
 		}
 
-		SessionCache.Add(session.UID, session, SessionCacheDefaultDuration)
+		SessionCache.Add(session.Uid, session, SessionCacheDefaultDuration)
 
 		render.Status(req, http.StatusCreated)
 		render.JSON(res, req, session)
