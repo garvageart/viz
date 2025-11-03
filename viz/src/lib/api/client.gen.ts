@@ -188,6 +188,76 @@ export type AddImagesResponse = {
     added: boolean;
     error?: string;
 };
+export type JobInfo = {
+    id: string;
+    topic: string;
+    status: string;
+};
+export type JobListResponse = {
+    items: JobInfo[];
+};
+export type JobCreateRequest = {
+    /** Job type (e.g., thumbnailGeneration, imageProcessing) */
+    "type": string;
+    /** Command to execute (all=process all, missing=process missing, single=process one image) */
+    command?: "all" | "missing" | "single";
+    /** Image UID (required when command=single) */
+    image_uid?: string;
+};
+export type JobEnqueueResponse = {
+    message: string;
+    count?: number;
+};
+export type EnqueueImageProcessRequest = {
+    image_uid: string;
+};
+export type JobCountResponse = {
+    running: number;
+};
+export type JobStatsResponse = {
+    running: number;
+    running_by_topic: {
+        [key: string]: number;
+    };
+    queued_by_topic: {
+        [key: string]: number;
+    };
+};
+export type SseStatsResponse = {
+    connectedClients: number;
+    clientIds: string[];
+    timestamp: string;
+};
+export type SseMetricsResponse = {
+    connectedClients: number;
+    totalEvents: number;
+    eventsByType: {
+        [key: string]: number;
+    };
+    timestamp: string;
+};
+export type EventRecord = {
+    timestamp: string;
+    event: string;
+    data: {
+        [key: string]: any;
+    };
+};
+export type EventHistoryResponse = {
+    events: EventRecord[];
+    count: number;
+};
+export type SseBroadcastRequest = {
+    event: string;
+    data: {
+        [key: string]: any;
+    };
+};
+export type SseBroadcastResponse = {
+    success: boolean;
+    message: string;
+    clients: number;
+};
 /**
  * Health ping
  */
@@ -511,5 +581,321 @@ export function addCollectionImages(uid: string, body: {
         ...opts,
         method: "PUT",
         body
+    }));
+}
+/**
+ * Admin-only healthcheck
+ */
+export function adminHealthcheck(opts?: Oazapfts.RequestOpts) {
+    return oazapfts.fetchJson<{
+        status: 200;
+        data: MessageResponse;
+    } | {
+        status: 401;
+        data: ErrorResponse;
+    } | {
+        status: 403;
+        data: ErrorResponse;
+    } | {
+        status: 500;
+        data: ErrorResponse;
+    }>("/admin/healthcheck", {
+        ...opts,
+        method: "POST"
+    });
+}
+/**
+ * List jobs
+ */
+export function listJobs(opts?: Oazapfts.RequestOpts) {
+    return oazapfts.fetchJson<{
+        status: 200;
+        data: JobListResponse;
+    } | {
+        status: 401;
+        data: ErrorResponse;
+    }>("/jobs", {
+        ...opts
+    });
+}
+/**
+ * Create/enqueue a job
+ */
+export function createJob(jobCreateRequest: JobCreateRequest, opts?: Oazapfts.RequestOpts) {
+    return oazapfts.fetchJson<{
+        status: 202;
+        data: JobEnqueueResponse;
+    } | {
+        status: 400;
+        data: ErrorResponse;
+    } | {
+        status: 500;
+        data: ErrorResponse;
+    }>("/jobs", oazapfts.json({
+        ...opts,
+        method: "POST",
+        body: jobCreateRequest
+    }));
+}
+/**
+ * Get job detail
+ */
+export function getJob(id: string, opts?: Oazapfts.RequestOpts) {
+    return oazapfts.fetchJson<{
+        status: 200;
+        data: JobInfo;
+    } | {
+        status: 404;
+        data: ErrorResponse;
+    }>(`/jobs/${encodeURIComponent(id)}`, {
+        ...opts
+    });
+}
+/**
+ * Cancel job
+ */
+export function cancelJob(id: string, opts?: Oazapfts.RequestOpts) {
+    return oazapfts.fetchJson<{
+        status: 200;
+        data: MessageResponse;
+    } | {
+        status: 404;
+        data: ErrorResponse;
+    }>(`/jobs/${encodeURIComponent(id)}`, {
+        ...opts,
+        method: "DELETE"
+    });
+}
+/**
+ * Retry job
+ */
+export function retryJob(id: string, opts?: Oazapfts.RequestOpts) {
+    return oazapfts.fetchJson<{
+        status: 501;
+        data: ErrorResponse;
+    }>(`/jobs/${encodeURIComponent(id)}`, {
+        ...opts,
+        method: "POST"
+    });
+}
+/**
+ * Start job scheduler
+ */
+export function startScheduler(opts?: Oazapfts.RequestOpts) {
+    return oazapfts.fetchJson<{
+        status: 200;
+        data: MessageResponse;
+    } | {
+        status: 500;
+        data: ErrorResponse;
+    }>("/jobs/scheduler/start", {
+        ...opts,
+        method: "POST"
+    });
+}
+/**
+ * Shutdown job scheduler
+ */
+export function shutdownScheduler(opts?: Oazapfts.RequestOpts) {
+    return oazapfts.fetchJson<{
+        status: 200;
+        data: MessageResponse;
+    } | {
+        status: 500;
+        data: ErrorResponse;
+    }>("/jobs/scheduler/shutdown", {
+        ...opts,
+        method: "POST"
+    });
+}
+/**
+ * Enqueue an image processing job (admin only)
+ */
+export function enqueueImageProcess(enqueueImageProcessRequest: EnqueueImageProcessRequest, opts?: Oazapfts.RequestOpts) {
+    return oazapfts.fetchJson<{
+        status: 202;
+        data: MessageResponse;
+    } | {
+        status: 400;
+        data: ErrorResponse;
+    } | {
+        status: 500;
+        data: ErrorResponse;
+    }>("/jobs/enqueue-image-process", oazapfts.json({
+        ...opts,
+        method: "POST",
+        body: enqueueImageProcessRequest
+    }));
+}
+/**
+ * Get running jobs count
+ */
+export function getJobsCount(opts?: Oazapfts.RequestOpts) {
+    return oazapfts.fetchJson<{
+        status: 200;
+        data: JobCountResponse;
+    }>("/jobs/count", {
+        ...opts
+    });
+}
+/**
+ * Get job stats by topic
+ */
+export function getJobStats(opts?: Oazapfts.RequestOpts) {
+    return oazapfts.fetchJson<{
+        status: 200;
+        data: JobStatsResponse;
+    }>("/jobs/stats", {
+        ...opts
+    });
+}
+/**
+ * Stop a job type
+ */
+export function stopJobType($type: string, opts?: Oazapfts.RequestOpts) {
+    return oazapfts.fetchJson<{
+        status: 200;
+        data: MessageResponse;
+    } | {
+        status: 400;
+        data: ErrorResponse;
+    } | {
+        status: 500;
+        data: ErrorResponse;
+    }>(`/jobs/types/${encodeURIComponent($type)}/stop`, {
+        ...opts,
+        method: "POST"
+    });
+}
+/**
+ * Update job type concurrency
+ */
+export function updateJobTypeConcurrency($type: string, body: {
+    concurrency: number;
+}, opts?: Oazapfts.RequestOpts) {
+    return oazapfts.fetchJson<{
+        status: 200;
+        data: MessageResponse;
+    } | {
+        status: 400;
+        data: ErrorResponse;
+    } | {
+        status: 500;
+        data: ErrorResponse;
+    }>(`/jobs/types/${encodeURIComponent($type)}/concurrency`, oazapfts.json({
+        ...opts,
+        method: "PUT",
+        body
+    }));
+}
+/**
+ * Server-Sent Events stream for real-time updates
+ */
+export function connectSse(opts?: Oazapfts.RequestOpts) {
+    return oazapfts.fetchText("/events", {
+        ...opts
+    });
+}
+/**
+ * Get SSE connection statistics
+ */
+export function getSseStats(opts?: Oazapfts.RequestOpts) {
+    return oazapfts.fetchJson<{
+        status: 200;
+        data: SseStatsResponse;
+    } | {
+        status: 401;
+        data: ErrorResponse;
+    }>("/events/stats", {
+        ...opts
+    });
+}
+/**
+ * Get SSE event metrics
+ */
+export function getSseMetrics(opts?: Oazapfts.RequestOpts) {
+    return oazapfts.fetchJson<{
+        status: 200;
+        data: SseMetricsResponse;
+    } | {
+        status: 401;
+        data: ErrorResponse;
+    }>("/events/metrics", {
+        ...opts
+    });
+}
+/**
+ * Get recent event history
+ */
+export function getEventHistory({ limit }: {
+    limit?: number;
+} = {}, opts?: Oazapfts.RequestOpts) {
+    return oazapfts.fetchJson<{
+        status: 200;
+        data: EventHistoryResponse;
+    } | {
+        status: 401;
+        data: ErrorResponse;
+    }>(`/events/history${QS.query(QS.explode({
+        limit
+    }))}`, {
+        ...opts
+    });
+}
+/**
+ * Clear event history
+ */
+export function clearEventHistory(opts?: Oazapfts.RequestOpts) {
+    return oazapfts.fetchJson<{
+        status: 200;
+        data: MessageResponse;
+    } | {
+        status: 401;
+        data: ErrorResponse;
+    }>("/events/history", {
+        ...opts,
+        method: "DELETE"
+    });
+}
+/**
+ * Broadcast event to all connected clients
+ */
+export function broadcastSseEvent(sseBroadcastRequest: SseBroadcastRequest, opts?: Oazapfts.RequestOpts) {
+    return oazapfts.fetchJson<{
+        status: 200;
+        data: SseBroadcastResponse;
+    } | {
+        status: 400;
+        data: ErrorResponse;
+    } | {
+        status: 500;
+        data: ErrorResponse;
+    }>("/events/broadcast", oazapfts.json({
+        ...opts,
+        method: "POST",
+        body: sseBroadcastRequest
+    }));
+}
+/**
+ * Send event to specific client
+ */
+export function sendToSseClient(clientId: string, sseBroadcastRequest: SseBroadcastRequest, opts?: Oazapfts.RequestOpts) {
+    return oazapfts.fetchJson<{
+        status: 200;
+        data: {
+            success: boolean;
+            message: string;
+            clientId: string;
+        };
+    } | {
+        status: 400;
+        data: ErrorResponse;
+    } | {
+        status: 500;
+        data: ErrorResponse;
+    }>(`/events/send/${encodeURIComponent(clientId)}`, oazapfts.json({
+        ...opts,
+        method: "POST",
+        body: sseBroadcastRequest
     }));
 }
