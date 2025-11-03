@@ -13,7 +13,19 @@ export function generateKeyId(length = 10): string {
  * Type guard for VizSubPanelData instances returned by findSubPanel().
  */
 export function isVizSubPanelData(obj: any): obj is VizSubPanelData {
-    return obj instanceof VizSubPanelData;
+    if (!obj) return false;
+    // Prefer real class instances when available
+    try {
+        if (obj instanceof VizSubPanelData) return true;
+    } catch (e) {
+        // instanceof may throw if VizSubPanelData isn't a constructor in this runtime context
+    }
+
+    // Support plain-objects (deserialized/state-wrapped) that look like a VizSubPanelData
+    const looksLike = typeof obj === "object" && typeof obj.paneKeyId === "string" && Array.isArray(obj.childs?.content);
+    if (looksLike) return true;
+
+    return false;
 }
 /**
  * Returns a flattened array of all subpanels in the layout. This is useful if you want to iterate over all subpanels

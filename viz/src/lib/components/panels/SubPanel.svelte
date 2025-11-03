@@ -41,12 +41,13 @@
 		splitPanelHorizontally,
 		splitPanelVertically
 	} from "$lib/layouts/panel-operations";
+	import { buildLayoutContextMenu, buildPanelContextMenu, buildTabContextMenu, type TabHandlers } from "./subpanel-context";
 
 	if (dev) {
 		window.resetAndReloadLayout = resetAndReloadLayout;
 	}
 
-	if (dev || window.debug) {
+	if (window.debug) {
 		measureComponentRenderTimes();
 	}
 
@@ -75,21 +76,6 @@
 	// pane size overrides when locked to prevent resizing
 	let paneMinSize: number | undefined = $state(minSize);
 	let paneMaxSize: number | undefined = $state(allProps.maxSize);
-
-	$effect(() => {
-		const res = findSubPanel("paneKeyId", keyId);
-		if (res && isVizSubPanelData(res.subPanel) && res.subPanel.locked) {
-			// Prefer the internalSubPanelContainer.size, fallback to panel size, then minSize
-			const lockedSize = res.subPanel.childs?.internalSubPanelContainer?.size ?? res.subPanel.size ?? minSize;
-			paneMinSize = lockedSize ?? minSize;
-			paneMaxSize = lockedSize ?? paneMinSize;
-			console.debug("[Viz] panel", keyId, "locked -> size", paneMinSize);
-		} else {
-			paneMinSize = minSize;
-			paneMaxSize = allProps.maxSize;
-			console.debug("[Viz] panel", keyId, "unlocked -> min", paneMinSize, "max", paneMaxSize);
-		}
-	});
 
 	// Helper: match svelte-kit style dynamic routes like "/collections/[uid]" to concrete paths
 	function pathMatches(pattern: string | undefined, actual: string | undefined): boolean {
@@ -158,10 +144,43 @@
 	let panelData = $derived(activeView.viewData ?? activeView?.getComponentData());
 
 	function isPanelLocked(): boolean {
-		const result = findSubPanel("paneKeyId", keyId)?.subPanel;
+		// Resolve the subpanel data from the global layout and respect its locked flag
+		const result = findSubPanel("paneKeyId", keyId);
 		if (!result) return false;
-		if (isVizSubPanelData(result)) return result.locked;
-		return false;
+		const sp = result.subPanel as any;
+		if (!sp) return false;
+		return !!sp.locked;
+	}
+
+	// When a panel is locked, override min/max sizes to prevent resizing.
+	$effect(() => {
+		const result = findSubPanel("paneKeyId", keyId);
+		const sp = result?.subPanel as any;
+		if (sp && sp.locked) {
+			// Try to use stored size, fallback to configured minSize
+			const lockedSize = typeof sp.size === "number" && sp.size !== null ? sp.size : minSize;
+			paneMinSize = lockedSize;
+			paneMaxSize = lockedSize;
+		} else {
+			paneMinSize = minSize;
+			paneMaxSize = allProps.maxSize;
+		}
+	});
+
+	function togglePanelLock() {
+		const result = findSubPanel("paneKeyId", keyId);
+		if (!result) return;
+		const { parentIndex, childIndex, isChild, subPanel } = result as any;
+		if (!subPanel) return;
+		// Toggle locked state on the underlying data model
+		subPanel.locked = !subPanel.locked;
+		// If this was a top-level panel, ensure the layoutState.tree entry is updated
+		if (!isChild) {
+			layoutState.tree[parentIndex].locked = subPanel.locked;
+		} else {
+			// If this is a child content entry, bubble up to the parent panel where appropriate
+			(layoutState.tree[parentIndex].childs.content[childIndex] as any).locked = subPanel.locked;
+		}
 	}
 
 	let subPanelContentElement: HTMLDivElement | undefined = $state();
@@ -171,6 +190,11 @@
 	let contextMenuItems = $state<MenuItem[]>([]);
 	let contextMenuAnchor = $state<{ x: number; y: number } | null>(null);
 	let contextMenuTargetView: VizView | null = $state(null);
+
+	// Layout-level context menu (for locking the entire splitpanes)
+	let showLayoutContextMenu = $state(false);
+	let layoutContextMenuItems = $state<MenuItem[]>([]);
+	let layoutContextMenuAnchor = $state<{ x: number; y: number } | null>(null);
 
 	if (window.debug === true) {
 		$inspect("active view", keyId, activeView);
@@ -242,8 +266,8 @@
 	});
 
 	function tabDragable(node: HTMLElement, data: TabData) {
-		// Prevent tab dragging when panel is locked
-		if (isPanelLocked()) {
+		// Prevent tab dragging when panel is locked, layout is globally locked, or when the specific tab is locked
+		if (isPanelLocked() || layoutTree.locked || (data && data.view && data.view.locked)) {
 			return { destroy: () => {} };
 		}
 
@@ -316,7 +340,7 @@
 	 * Closes a specific tab/view
 	 */
 	function closeTab(view: VizView) {
-		if (isPanelLocked()) return;
+		if (isPanelLocked() || view.locked) return;
 		const index = panelViews.findIndex((v) => v.id === view.id);
 		if (index === -1) {
 			return;
@@ -360,7 +384,8 @@
 	 */
 	function closeOtherTabs(exceptView: VizView) {
 		if (isPanelLocked()) return;
-		panelViews = panelViews.filter((v) => v.id === exceptView.id);
+		// Do not close locked tabs. Keep the exceptView and any locked tabs.
+		panelViews = panelViews.filter((v) => v.id === exceptView.id || v.locked);
 
 		const subPanel = findSubPanel("paneKeyId", keyId)?.subPanel;
 		if (subPanel) {
@@ -376,11 +401,14 @@
 	 * Closes all tabs to the right of the specified tab
 	 */
 	function closeTabsToRight(view: VizView) {
-		if (isPanelLocked()) return;
+		if (isPanelLocked() || view.locked) return;
 		const index = panelViews.findIndex((v) => v.id === view.id);
 		if (index === -1 || index === panelViews.length - 1) return;
 
-		const viewsToKeep = panelViews.slice(0, index + 1);
+		// Keep everything up to the specified index, but never remove locked tabs to the right.
+		const viewsToRight = panelViews.slice(index + 1);
+		const nonLockedRight = viewsToRight.filter((v) => !v.locked);
+		const viewsToKeep = panelViews.slice(0, index + 1).concat(viewsToRight.filter((v) => v.locked));
 		const closedActiveView = !viewsToKeep.some((v) => v.id === activeView.id);
 
 		panelViews = viewsToKeep;
@@ -401,7 +429,8 @@
 	 */
 	function closeAllTabs() {
 		if (isPanelLocked()) return;
-		panelViews = [];
+		// Close all tabs except those that are locked
+		panelViews = panelViews.filter((v) => v.locked);
 
 		const subPanel = findSubPanel("paneKeyId", keyId)?.subPanel;
 		if (subPanel) {
@@ -409,11 +438,31 @@
 		}
 	}
 
+	// Handlers object passed to the context menu builder so the menu logic
+	// stays in a separate module and this file remains tidy.
+	const menuHandlers: TabHandlers = {
+		closeTab,
+		closeOtherTabs,
+		closeTabsToRight,
+		splitRight,
+		splitDown,
+		moveToPanel,
+		closeAllTabs,
+		toggleTabLock: (v: VizView) => {
+			v.locked = !v.locked;
+			const sp = findSubPanel("paneKeyId", keyId)?.subPanel;
+			if (sp) {
+				const idx = sp.views.findIndex((x) => x.id === v.id);
+				if (idx !== -1) sp.views[idx] = v;
+			}
+		}
+	};
+
 	/**
 	 * Splits the current panel and moves a view to a new panel on the right
 	 */
 	function splitRight(view: VizView) {
-		if (isPanelLocked()) return;
+		if (isPanelLocked() || view.locked) return;
 		const result = findSubPanel("paneKeyId", keyId);
 		if (!result) return;
 
@@ -432,7 +481,7 @@
 	 * Splits the current panel and moves a view to a new content group below within the same parent
 	 */
 	function splitDown(view: VizView) {
-		if (isPanelLocked()) return;
+		if (isPanelLocked() || view.locked) return;
 		const result = findSubPanel("paneKeyId", keyId);
 		if (!result) return;
 
@@ -451,19 +500,27 @@
 	/**
 	 * Moves a view to an existing panel group
 	 */
-	function moveToPanel(view: VizView, direction: "left" | "right" | "up" | "down") {
-		if (isPanelLocked()) return;
+	function moveToPanel(view: VizView, direction: string) {
+		if (isPanelLocked() || view.locked) return;
+
+		// Validate direction and cast to the narrower union for internal logic
+		if (!["left", "right", "up", "down"].includes(direction)) {
+			console.warn(`moveToPanel called with invalid direction: ${direction}`);
+			return;
+		}
+		const dir = direction as "left" | "right" | "up" | "down";
+
 		// Resolve the location of the view by its parent id to be precise
 		const viewParentId = view.parent ?? keyId;
 		const result = findSubPanel("paneKeyId", viewParentId);
 		if (!result) return;
 
-		if (dev || window.debug) {
+		if (window.debug) {
 			const layoutSummary = layoutState.tree.map((p) => ({
 				paneKeyId: p.paneKeyId,
 				contentCount: p.childs?.content?.length ?? 0
 			}));
-			console.debug("[Viz] moveToPanel start", { viewId: view.id, viewParent: view.parent, result, layoutSummary, direction });
+			console.debug("[Viz] moveToPanel start", { viewId: view.id, viewParent: view.parent, result, layoutSummary, dir });
 		}
 
 		let { parentIndex, isChild, childIndex } = result;
@@ -490,7 +547,7 @@
 			}
 		}
 
-		if (dev || window.debug) {
+		if (window.debug) {
 			const layoutSummary2 = layoutState.tree.map((p) => ({
 				paneKeyId: p.paneKeyId,
 				contentCount: p.childs?.content?.length ?? 0
@@ -513,7 +570,7 @@
 			? childIndex
 			: (currentPanel.childs?.content?.findIndex((c) => c.views.some((v) => v.id === view.id)) ?? -1);
 
-		if (direction === "left") {
+		if (dir === "left") {
 			if (resolvedChildIndex > 0) {
 				targetPanelIndex = parentIndex;
 				targetContentIndex = resolvedChildIndex - 1;
@@ -523,7 +580,7 @@
 				const prevPanel = layoutState.tree[targetPanelIndex];
 				targetContentIndex = Math.max(0, (prevPanel.childs?.content?.length ?? 1) - 1);
 			}
-		} else if (direction === "right") {
+		} else if (dir === "right") {
 			if (resolvedChildIndex !== -1 && resolvedChildIndex < (currentPanel.childs?.content?.length ?? 0) - 1) {
 				targetPanelIndex = parentIndex;
 				targetContentIndex = resolvedChildIndex + 1;
@@ -532,10 +589,10 @@
 				targetPanelIndex = parentIndex + 1;
 				targetContentIndex = 0;
 			}
-		} else if (direction === "up" && parentIndex > 0) {
+		} else if (dir === "up" && parentIndex > 0) {
 			targetPanelIndex = parentIndex - 1;
 			targetContentIndex = 0;
-		} else if (direction === "down" && parentIndex < layoutState.tree.length - 1) {
+		} else if (dir === "down" && parentIndex < layoutState.tree.length - 1) {
 			targetPanelIndex = parentIndex + 1;
 			targetContentIndex = 0;
 		}
@@ -602,112 +659,25 @@
 			canMoveDown = panelsAreStacked && parentIndex < layoutState.tree.length - 1;
 		}
 
-		contextMenuItems = [
-			{
-				id: isPanelLocked() ? "unlock-panel" : "lock-panel",
-				label: isPanelLocked() ? "Unlock Panel" : "Lock Panel",
-				action: () => {
-					const result = findSubPanel("paneKeyId", keyId)?.subPanel;
-					if (result && isVizSubPanelData(result)) {
-						result.locked = !result.locked;
-						console.debug("[Viz] toggled lock for", keyId, "now", result.locked);
-					}
-					showContextMenu = false;
-				},
-				icon: isPanelLocked() ? "lock_open" : "lock",
-				danger: false
-			},
-			{
-				id: "separator-lock",
-				label: "",
-				separator: true
-			},
-			{
-				id: "close",
-				label: "Close Tab",
-				action: () => closeTab(view),
-				icon: "close",
-				shortcut: "Ctrl+W"
-			},
-			{
-				id: "close-others",
-				label: "Close Other Tabs",
-				action: () => closeOtherTabs(view),
-				icon: "tab_close",
-				disabled: isOnlyTab
-			},
-			{
-				id: "close-right",
-				label: "Close Tabs to the Right",
-				action: () => closeTabsToRight(view),
-				icon: "close_fullscreen",
-				disabled: isLastTab || isOnlyTab
-			},
-			{
-				id: "separator1",
-				label: "",
-				separator: true
-			},
-			{
-				id: "split-right",
-				label: "Split Right",
-				action: () => splitRight(view),
-				icon: "vertical_split"
-			},
-			{
-				id: "split-down",
-				label: "Split Down",
-				action: () => splitDown(view),
-				icon: "horizontal_split"
-			},
-			{
-				id: "separator2",
-				label: "",
-				separator: true
-			},
-			{
-				id: "move-left",
-				label: "Move to Left Group",
-				action: () => moveToPanel(view, "left"),
-				icon: "arrow_back",
-				disabled: !canMoveLeft
-			},
-			{
-				id: "move-right",
-				label: "Move to Right Group",
-				action: () => moveToPanel(view, "right"),
-				icon: "arrow_forward",
-				disabled: !canMoveRight
-			},
-			{
-				id: "move-up",
-				label: "Move to Above Group",
-				action: () => moveToPanel(view, "up"),
-				icon: "arrow_upward",
-				disabled: !canMoveUp
-			},
-			{
-				id: "move-down",
-				label: "Move to Below Group",
-				action: () => moveToPanel(view, "down"),
-				icon: "arrow_downward",
-				disabled: !canMoveDown
-			},
-			{
-				id: "separator3",
-				label: "",
-				separator: true
-			},
-			{
-				id: "close-all",
-				label: "Close All Tabs",
-				action: () => closeAllTabs(),
-				icon: "cancel_presentation",
-				danger: true
-			}
-		];
+		// Use centralised builder for tab context menu
+		contextMenuItems = buildTabContextMenu(view, panelViews, keyId, menuHandlers);
 
 		showContextMenu = true;
+	}
+
+	/**
+	 * Shows the context menu for the panel header (layout-level actions)
+	 */
+	function showHeaderContextMenu(event: MouseEvent) {
+		event.preventDefault();
+		event.stopPropagation();
+
+		layoutContextMenuAnchor = { x: event.clientX, y: event.clientY };
+
+		// Compose the global layout menu with panel-specific actions (lock/unlock all tabs)
+		layoutContextMenuItems = [...buildLayoutContextMenu(), ...buildPanelContextMenu(keyId, panelViews)];
+
+		showLayoutContextMenu = true;
 	}
 </script>
 
@@ -727,8 +697,16 @@
 />
 
 <ContextMenu bind:showMenu={showContextMenu} items={contextMenuItems} anchor={contextMenuAnchor} />
+<ContextMenu bind:showMenu={showLayoutContextMenu} items={layoutContextMenuItems} anchor={layoutContextMenuAnchor} />
 
-<Pane class={className} {...allProps} {id} paneKeyId={keyId} minSize={paneMinSize} maxSize={paneMaxSize}>
+<Pane
+	class={className + (isPanelLocked() ? " locked" : "")}
+	{...allProps}
+	{id}
+	paneKeyId={keyId}
+	minSize={paneMinSize}
+	maxSize={paneMaxSize}
+>
 	<!--
 TODO:
 Make the header draggable too. Use the same drag functions. If we're dragging
@@ -741,6 +719,7 @@ for Splitpanes
 			role="tablist"
 			tabindex="0"
 			use:headerDraggable
+			oncontextmenu={(e) => showHeaderContextMenu(e)}
 			use:tabDrop
 			ondragover={(event) => onDropOver(event)}
 		>
@@ -784,6 +763,9 @@ for Splitpanes
 					-->
 						<MaterialIcon style={`transform: translateY(${view.opticalCenterFix}px);`} weight={200} iconName="menu" />
 						<span class="viz-sub_panel-name">{view.name}</span>
+						{#if view.locked}
+							<MaterialIcon class="viz-tab-lock" iconName="lock" />
+						{/if}
 					</button>
 				{/if}
 			{/each}
@@ -800,8 +782,13 @@ for Splitpanes
 				</button>
 			{/if}
 			{#if isPanelLocked()}
-				<button class="viz-lock-indicator" aria-label="Panel locked" title="Panel is locked">
-					<MaterialIcon iconName="lock" />
+				<button
+					class="viz-lock-indicator"
+					aria-label="Toggle panel lock"
+					title={isPanelLocked() ? "Unlock Panel" : "Lock Panel"}
+					onclick={() => togglePanelLock()}
+				>
+					<MaterialIcon iconName={isPanelLocked() ? "lock" : "lock_open"} />
 				</button>
 			{/if}
 		</div>
@@ -845,6 +832,16 @@ for Splitpanes
 		pointer-events: auto; /* still accept clicks for context menu */
 	}
 
+	/* Dim and disable adjacent split resizers for locked panes (UI-only enforcement).
+   The svelte-splitpanes implementation uses sibling resizer elements; target the
+   resizer that is immediately before or after a locked pane. */
+	:global(.splitpanes__pane.locked) + :global(.splitpanes__resizer),
+	:global(.splitpanes__resizer) + :global(.splitpanes__pane.locked) {
+		pointer-events: none;
+		opacity: 0.45;
+		cursor: default;
+	}
+
 	.viz-lock-indicator {
 		position: absolute;
 		right: 0.5em;
@@ -855,7 +852,7 @@ for Splitpanes
 		align-items: center;
 		justify-content: center;
 		padding: 0.25em;
-		cursor: default;
+		cursor: pointer;
 	}
 	#viz-debug-button {
 		position: absolute;
@@ -895,6 +892,14 @@ for Splitpanes
 		&:hover {
 			background-color: hsl(219, 26%, 15%);
 		}
+	}
+
+	:global(.viz-tab-lock) {
+		width: 1em;
+		height: 1em;
+		opacity: 0.9;
+		margin-left: 0.25em;
+		font-size: 0.9em;
 	}
 
 	.viz-sub_panel-name {

@@ -2,14 +2,14 @@
 	export function openCollection(collection: Collection, currentContent: Content) {
 		const collectionPath = `/collections/${collection.uid}`;
 		if (page.url.pathname !== "/") {
-			goto(collectionPath, { state: { from: page.url.pathname, data: collection } });
+			goto(collectionPath, { state: { from: page.url.pathname } });
 			return;
 		}
 
 		const currentParentIdx = findPanelIndex(layoutState.tree, getSubPanelParent(layoutState.tree, currentContent.paneKeyId)!);
 		if (currentParentIdx === -1) {
 			console.warn("Can't find panel in layout, navigating to collection page");
-			goto(collectionPath, { state: { from: page.url.pathname, data: collection } });
+			goto(collectionPath, { state: { from: page.url.pathname } });
 			return;
 		}
 
@@ -18,7 +18,7 @@
 
 		if (childIndex === -1) {
 			console.warn(`Can't find child inside panel ${currentParent.paneKeyId}, navigating to collection page`);
-			goto(collectionPath, { state: { from: page.url.pathname, data: collection } });
+			goto(collectionPath, { state: { from: page.url.pathname } });
 			return;
 		}
 

@@ -2,12 +2,10 @@
 	Context Menu (accessible, typed, keyboard navigable)
 	Inspiration: https://www.w3.org/WAI/ARIA/apg/patterns/menu/
 -->
-<script lang="ts">
-	import { tick } from "svelte";
-	import ContextMenuItem from "./ContextMenuItem.svelte";
+<script module lang="ts">
+	// Exported types must live in the module script so other TS files can import them
 	import type { MaterialSymbol } from "material-symbols";
 
-	// Public item model
 	export type MenuItem = {
 		id: string;
 		label: string;
@@ -17,13 +15,20 @@
 		separator?: boolean;
 		icon?: MaterialSymbol; // optional icon name/class
 		shortcut?: string; // optional keyboard shortcut label
+		children?: MenuItem[]; // optional submenu
 	};
+</script>
+
+<script lang="ts">
+	import { tick } from "svelte";
+	import ContextMenuItem from "./ContextMenuItem.svelte";
 
 	type Anchor = { x: number; y: number } | HTMLElement | null;
 
 	let contextMenu: HTMLDivElement | undefined = $state();
 	let activeIndex = $state(0);
 	let position = $state<{ top: number; left: number }>({ top: 0, left: 0 });
+	let cssPosition = $state("");
 
 	interface Props {
 		// Backward-compatible prop; bind:showMenu still works
@@ -60,26 +65,27 @@
 	}
 
 	function computePosition() {
-		// Use fixed coordinates to avoid clipping
-		if (!contextMenu) {
+		// If no anchor is provided, render in-place (no coordinates)
+		if (!contextMenu) return;
+
+		if (!anchor) {
+			position = { top: 0, left: 0 };
 			return;
 		}
 
+		cssPosition = "fixed";
 		let x = 0;
 		let y = 0;
 
 		if (anchor instanceof HTMLElement) {
 			const rect = anchor.getBoundingClientRect();
-			x = rect.left + rect.width; // to the right of anchor
-			y = rect.top; // aligned to top
+			// Typical dropdown: left-aligned, below the anchor
+			x = rect.left;
+			y = rect.bottom;
 		} else if (anchor && typeof (anchor as any).x === "number") {
 			const a = anchor as { x: number; y: number };
 			x = a.x;
 			y = a.y;
-		} else {
-			// Default to top-right
-			x = window.innerWidth - 16;
-			y = 16;
 		}
 
 		// Collision handling: keep within viewport
@@ -214,7 +220,7 @@
 		class="context-menu"
 		role="menu"
 		bind:this={contextMenu}
-		style={`z-index: 990; position: fixed; top:${position.top}px; left:${position.left}px;`}
+		style="z-index: 990; {cssPosition === '' ? '' : `position: ${cssPosition}; top:${position.top}px; left:${position.left}px;`}"
 	>
 		<div class="context-menu-options">
 			<ul role="menu" aria-orientation="vertical">
@@ -233,13 +239,15 @@
 <style>
 	.context-menu {
 		min-width: 10rem;
+		list-style: none;
 	}
 
 	.context-menu-options {
 		display: inline-flex;
 		background-color: var(--imag-100);
 		color: var(--imag-text-color);
-		overflow: hidden;
+		/* allow submenus to overflow the parent container */
+		overflow: visible;
 		flex-direction: column;
 		border-radius: 0.3em;
 		box-shadow:
@@ -250,6 +258,7 @@
 	ul {
 		margin: 0;
 		padding: 0px;
+		list-style: none;
 	}
 
 	.separator {

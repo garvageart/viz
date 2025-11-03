@@ -1,5 +1,4 @@
 import type { Component } from "svelte";
-import type { PageProps } from "../../routes/(app)/$types";
 import { preloadData } from "$app/navigation";
 
 // usually this would be bad but the app is client only
@@ -12,6 +11,7 @@ export interface SerializedVizView {
     id: number;
     parent?: string;
     isActive: boolean;
+    locked?: boolean;
     path?: string;
 }
 
@@ -22,6 +22,7 @@ class VizView<C extends Component<any, any, any> = Component<any, any, any>> {
     id = $state<number>(0);
     parent = $state<string | undefined>(undefined);
     isActive = $state<boolean>(false);
+    locked = $state<boolean>(false);
     public viewData?: {
         type: "loaded";
         status: number;
@@ -37,6 +38,7 @@ class VizView<C extends Component<any, any, any> = Component<any, any, any>> {
         path?: string;
         id?: number;
         isActive?: boolean;
+        locked?: boolean;
     }) {
         this.name = opts.name;
         this.component = opts.component;
@@ -45,6 +47,7 @@ class VizView<C extends Component<any, any, any> = Component<any, any, any>> {
         this.opticalCenterFix = opts.opticalCenterFix ?? 0.5;
         this.id = opts.id !== undefined ? opts.id : idCount++;
         this.isActive = opts.isActive ?? false;
+        this.locked = (opts as any).locked ?? false;
 
         if (this.path) {
             if (this.viewData) {
@@ -84,6 +87,7 @@ class VizView<C extends Component<any, any, any> = Component<any, any, any>> {
             id: this.id,
             parent: this.parent,
             isActive: this.isActive,
+            locked: this.locked,
             path: this.path
         };
     }
@@ -104,7 +108,8 @@ class VizView<C extends Component<any, any, any> = Component<any, any, any>> {
             opticalCenterFix: serialized.opticalCenterFix,
             path: serialized.path,
             id: serialized.id,
-            isActive: serialized.isActive
+            isActive: serialized.isActive,
+            locked: serialized.locked ?? false
         });
     }
 }

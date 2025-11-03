@@ -11,16 +11,32 @@
 
 	let { item, index = 0, active = false, onselect }: Props = $props();
 
+	// submenu visibility on hover/focus
+	let showSubmenu = $state(false);
+
 	function onClick(e: MouseEvent) {
 		if (item.disabled || item.separator) {
 			return;
 		}
 
+		// If the item has children, clicking the parent shouldn't immediately activate
+		if (item.children && item.children.length > 0) {
+			showSubmenu = true;
+			return;
+		}
+
 		onselect?.({ item, index, event: e });
+	}
+
+	function onChildClick(child: MenuItem, childIndex: number, e: MouseEvent) {
+		if (child.disabled || child.separator) return;
+		child.action?.(e);
+		onselect?.({ item: child, index: childIndex, event: e });
+		showSubmenu = false;
 	}
 </script>
 
-<li role="none">
+<li role="none" onmouseenter={() => (showSubmenu = true)} onmouseleave={() => (showSubmenu = false)}>
 	<button
 		role="menuitem"
 		aria-disabled={item.disabled ? "true" : undefined}
@@ -36,12 +52,40 @@
 		{#if item.shortcut}
 			<span class="shortcut" aria-hidden="true">{item.shortcut}</span>
 		{/if}
+		{#if item.children}
+			<span class="submenu-arrow" aria-hidden="true">▸</span>
+		{/if}
 	</button>
-	{#if item.danger}
-		<!-- Optional visual hook for danger styling via parent CSS -->
-	{/if}
-	{#if item.separator}
-		<!-- Not rendered here; separators handled by parent list -->
+	{#if item.children && item.children.length > 0}
+		{#if showSubmenu}
+			<div class="submenu" role="menu">
+				<ul>
+					{#each item.children as child, ci}
+						{#if child.separator}
+							<li class="separator" role="separator" aria-hidden="true"></li>
+						{:else}
+							<li role="none">
+								<button
+									role="menuitem"
+									aria-disabled={child.disabled ? "true" : undefined}
+									class:disabled={!!child.disabled}
+									tabindex={-1}
+									onclick={(e) => onChildClick(child, ci, e)}
+								>
+									{#if child.icon}
+										<MaterialIcon class="icon" iconName={child.icon} weight={300} />
+									{/if}
+									<span class="label">{child.label}</span>
+									{#if child.shortcut}
+										<span class="shortcut" aria-hidden="true">{child.shortcut}</span>
+									{/if}
+								</button>
+							</li>
+						{/if}
+					{/each}
+				</ul>
+			</div>
+		{/if}
 	{/if}
 </li>
 
@@ -63,7 +107,7 @@
 		align-items: center;
 		font-size: 0.9rem;
 		font-weight: 500;
-		padding: 0.1rem 0.6rem;
+		padding: 0.2rem 0.6rem;
 		text-align: left;
 		width: 100%;
 		border: 0px;
@@ -84,5 +128,58 @@
 	.shortcut {
 		opacity: 0.6;
 		font-size: 0.8em;
+	}
+
+	.submenu {
+		position: absolute;
+		/* overlap slightly with parent to avoid hover gap */
+		left: calc(100% - 6px);
+		top: 0.15rem;
+		background: var(--imag-100);
+		box-shadow: 0 6px 18px rgba(0, 0, 0, 0.18);
+		border-radius: 0.2rem;
+		z-index: 995;
+		box-sizing: border-box;
+		/* ensure submenu has a sensible minimum width matching the parent menu */
+		min-width: 10rem;
+	}
+
+	/* Reset list styles inside submenu to remove bullets and gaps */
+	.submenu ul {
+		margin: 0;
+		padding: 0;
+		list-style: none;
+	}
+
+	.submenu ul li {
+		width: 100%;
+		list-style: none;
+	}
+
+	/* Make submenu buttons stretch to full submenu width and match parent button styles */
+	.submenu ul li > button {
+		display: grid;
+		grid-template-columns: auto 1fr auto;
+		gap: 0.5rem;
+		align-items: center;
+		font-size: 0.9rem;
+		font-weight: 500;
+		padding: 0.2rem 0.6rem;
+		text-align: left;
+		width: 100%;
+		border: 0px;
+		color: var(--imag-text-color);
+		background-color: var(--imag-100);
+		cursor: pointer;
+		box-sizing: border-box;
+	}
+
+	.submenu-arrow {
+		opacity: 0.7;
+		margin-left: 0.5rem;
+	}
+
+	li {
+		position: relative;
 	}
 </style>

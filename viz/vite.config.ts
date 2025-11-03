@@ -46,7 +46,19 @@ export default defineConfig({
 	},
 	server: {
 		port: config.servers.viz.port,
-		cors: true
+		cors: true,
+		// Proxy API requests during development so the browser sees the API as same-origin.
+		// This is especially useful for SSE (EventSource) since cookies and SameSite rules
+		// work reliably when the resource appears same-origin to the browser.
+		proxy: {
+			// Forward any /jobs requests to the API server running locally
+			'/jobs': {
+				target: `http://localhost:${config.servers['api-server'].port}`,
+				changeOrigin: true,
+				secure: false,
+				ws: false
+			}
+		}
 	},
 	preview: {
 		port: config.servers.viz.port,

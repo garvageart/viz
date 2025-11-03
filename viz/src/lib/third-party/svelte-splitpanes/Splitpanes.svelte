@@ -50,7 +50,7 @@
 	import { VizLocalStorage } from "$lib/utils/misc";
 	import { allSplitpanes, layoutState, layoutTree } from "./state.svelte";
 	import VizSubPanelData, { Content } from "$lib/layouts/subpanel.svelte";
-	import { generateKeyId } from "$lib/utils/layout";
+	import { generateKeyId, findSubPanel } from "$lib/utils/layout";
 
 	// TYPE DECLARATIONS ----------------
 
@@ -513,8 +513,47 @@
 	const getCurrentDimensionName = () => getDimensionName(horizontal);
 
 	function onMouseDown(event: TouchEvent | MouseEvent, splitterPane: IPane) {
+		// If the entire layout is locked, do not allow any splitter dragging
+		if (layoutTree.locked) {
+			return;
+		}
+
 		isMouseDown = true;
 		activeSplitter = splitterPane.index;
+
+		// Prevent dragging if either adjacent pane (left or right of the splitter)
+		// contains a locked subpanel. Use the pane.childs array which contains
+		// `data-viz-sp-id` ids for child subpanels.
+		const leftIdx = activeSplitter - 1;
+		const rightIdx = activeSplitter;
+		let adjacentLocked = false;
+		if (leftIdx >= 0) {
+			const leftChildIds = panes[leftIdx].childs ?? [];
+			for (const cid of leftChildIds) {
+				const found = findSubPanel("paneKeyId", cid as any);
+				if (found?.subPanel && (found.subPanel as any).locked) {
+					adjacentLocked = true;
+					break;
+				}
+			}
+		}
+		if (!adjacentLocked && rightIdx < panes.length) {
+			const rightChildIds = panes[rightIdx].childs ?? [];
+			for (const cid of rightChildIds) {
+				const found = findSubPanel("paneKeyId", cid as any);
+				if (found?.subPanel && (found.subPanel as any).locked) {
+					adjacentLocked = true;
+					break;
+				}
+			}
+		}
+
+		if (adjacentLocked) {
+			// cancel dragging
+			isMouseDown = false;
+			activeSplitter = -1;
+			return;
+		}
 
 		splitterPane.setSplitterActive(true);
 		const paneElement = splitterPane.element;

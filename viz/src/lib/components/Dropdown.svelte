@@ -8,9 +8,9 @@
 
 <script lang="ts" generics="T">
 	import { isEqual } from "lodash-es";
-	import { fly } from "svelte/transition";
 	import MaterialIcon from "./MaterialIcon.svelte";
 	import type { MaterialSymbol } from "material-symbols";
+	import ContextMenu, { type MenuItem } from "$lib/context-menu/ContextMenu.svelte";
 
 	interface Props {
 		class?: string;
@@ -24,6 +24,23 @@
 	}
 
 	let { options, selectedOption = $bindable(options[0]), showMenu = $bindable(false), title, icon, onSelect }: Props = $props();
+
+	let buttonEl: HTMLElement | null = $state(null);
+	let menuAnchor: HTMLElement | { x: number; y: number } | null = $state(null);
+
+	// Build MenuItem array for ContextMenu
+	function buildMenuItems(): MenuItem[] {
+		return options.map((opt, idx) => ({
+			id: `opt-${idx}`,
+			label: opt.title,
+			// prefer explicit option icon, otherwise show a check for the selected option
+			icon: opt.icon ?? (isEqual(selectedOption, opt) ? ("check" as any) : undefined),
+			disabled: opt.disabled,
+			action: (e) => handleOptionSelect(opt as any)
+		}));
+	}
+
+	let menuItems: MenuItem[] = $state([]);
 
 	function handleOptionSelect(option: DropdownOption<T>) {
 		onSelect?.(option);
@@ -46,7 +63,19 @@
 />
 
 <div class="viz-dropdown-container">
-	<button class="viz-dropdown-button" onclick={() => (showMenu = !showMenu)} {title}>
+	<button
+		class="viz-dropdown-button"
+		bind:this={buttonEl}
+		onclick={() => {
+			menuItems = buildMenuItems();
+			if (showMenu) {
+				showMenu = false;
+			} else {
+				showMenu = true;
+			}
+		}}
+		{title}
+	>
 		{#if selectedOption}
 			<span class="viz-dropdown-icon">
 				{#if selectedOption.icon}
@@ -65,37 +94,9 @@
 		{/if}
 	</button>
 
-	{#if showMenu}
-		<div transition:fly={{ y: -30, duration: 250 }} class="viz-dropdown">
-			{#each options as option}
-				<button
-					class="viz-dropdown-option"
-					disabled={option.disabled}
-					class:selected-option={isEqual(selectedOption, option)}
-					title={option.title}
-					onclick={() => !option.disabled && handleOptionSelect(option)}
-				>
-					{#if isEqual(selectedOption, option)}
-						<span class="viz-dropdown-icon">
-							<MaterialIcon iconName={option.icon ?? "check"} />
-						</span>
-						<p class="viz-dropdown-title">
-							{option.title}
-						</p>
-					{:else}
-						<span class="viz-dropdown-icon">
-							{#if option.icon}
-								<MaterialIcon iconName={option.icon} />
-							{/if}
-						</span>
-						<p class="viz-dropdown-title">
-							{option.title}
-						</p>
-					{/if}
-				</button>
-			{/each}
-		</div>
-	{/if}
+	<div class="dropdown-menu-container">
+		<ContextMenu bind:showMenu items={menuItems} />
+	</div>
 </div>
 
 <style lang="scss">
@@ -104,12 +105,11 @@
 		display: inline-block;
 	}
 
-	.selected-option {
-		background-color: var(--imag-90);
-
-		&:hover {
-			background-color: var(--imag-80);
-		}
+	.dropdown-menu-container {
+		position: absolute;
+		top: 100%;
+		left: 0;
+		z-index: 1000;
 	}
 
 	.viz-dropdown-title {
@@ -127,43 +127,6 @@
 
 		&:focus {
 			outline: 2px solid var(--imag-60);
-			background-color: var(--imag-80);
-		}
-
-		&:hover {
-			background-color: var(--imag-90);
-		}
-
-		&:active {
-			background-color: var(--imag-80);
-		}
-	}
-
-	.viz-dropdown {
-		position: absolute;
-		z-index: 1;
-		top: 100%;
-		left: 0;
-		border-radius: 0.5rem;
-		background-color: var(--imag-100);
-		box-shadow: 0 0.5em 1em rgba(0, 0, 0, 0.1);
-		min-width: 10em;
-		max-width: 30em;
-		max-height: 20em;
-		overflow: auto;
-	}
-
-	.viz-dropdown button {
-		display: flex;
-		align-items: center;
-		padding: 0.5em 1em;
-		width: 100%;
-		flex-direction: row;
-		justify-content: flex-start;
-
-		&:focus {
-			box-shadow: 0px 0px 0px 1.5px inset var(--imag-primary);
-			outline: none;
 			background-color: var(--imag-80);
 		}
 

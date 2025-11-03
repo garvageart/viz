@@ -126,6 +126,7 @@
 				{
 					id: panel.id,
 					keyId: panel.paneKeyId,
+					locked: (panel as any).locked,
 					size: panel.size,
 					minSize: panel.minSize,
 					maxSize: panel.maxSize,

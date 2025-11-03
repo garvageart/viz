@@ -144,6 +144,7 @@
 				return thumbHashToDataURL(bytes);
 			} catch (error) {
 				console.warn("Failed to decode thumbhash:", error);
+				return null;
 			}
 		}
 	});
@@ -225,6 +226,37 @@
 	hotkeys("esc", (e) => {
 		lightboxImage = undefined;
 	});
+
+	function getDisplayArray(): Image[] {
+		return Array.isArray(displayData) ? displayData : (displayData ?? []);
+	}
+
+	function prevLightboxImage() {
+		if (!lightboxImage) return;
+		const arr = getDisplayArray();
+		if (!arr.length) return;
+		const idx = arr.findIndex((i) => i.uid === lightboxImage!.uid);
+		if (idx === -1) return;
+		const next = (idx - 1 + arr.length) % arr.length;
+		lightboxImage = arr[next];
+	}
+
+	function nextLightboxImage() {
+		if (!lightboxImage) return;
+		const arr = getDisplayArray();
+		if (!arr.length) return;
+		const idx = arr.findIndex((i) => i.uid === lightboxImage!.uid);
+		if (idx === -1) return;
+		const next = (idx + 1) % arr.length;
+		lightboxImage = arr[next];
+	}
+
+	hotkeys("left,right", (e, handler) => {
+		if (!lightbox.show) return;
+		e.preventDefault();
+		if (handler.key === "left") prevLightboxImage();
+		else if (handler.key === "right") nextLightboxImage();
+	});
 </script>
 
 <CollectionModal
@@ -248,14 +280,20 @@
 	 It's small but annoying enough where I want to find a different way to load an image
 	  -->
 		{#await loadImage(imageToLoad, currentImageEl!)}
-			<img
-				src={placeholderDataURL}
-				class="lightbox-image"
-				style="height: 90%; position: absolute;"
-				out:fade={{ duration: 300 }}
-				alt="Placeholder image for {lightboxImage.name}"
-				aria-hidden="true"
-			/>
+			{#if !placeholderDataURL}
+				<div style="width: 3em; height: 3em">
+					<LoadingContainer />
+				</div>
+			{:else}
+				<img
+					src={placeholderDataURL}
+					class="lightbox-image"
+					style="height: 90%; position: absolute;"
+					out:fade={{ duration: 300 }}
+					alt="Placeholder image for {lightboxImage.name}"
+					aria-hidden="true"
+				/>
+			{/if}
 		{:then _}
 			<img
 				src={imageToLoad}
@@ -266,6 +304,30 @@
 				loading="eager"
 				data-image-uid={lightboxImage.uid}
 			/>
+
+			<!-- Navigation buttons (prev/next) -->
+			<div class="lightbox-nav">
+				<button
+					class="lightbox-nav-btn prev"
+					aria-label="Previous image"
+					onclick={(e) => {
+						e.stopPropagation();
+						prevLightboxImage();
+					}}
+				>
+					<MaterialIcon iconName="arrow_back" />
+				</button>
+				<button
+					class="lightbox-nav-btn next"
+					aria-label="Next image"
+					onclick={(e) => {
+						e.stopPropagation();
+						nextLightboxImage();
+					}}
+				>
+					<MaterialIcon iconName="arrow_forward" />
+				</button>
+			</div>
 		{:catch error}
 			<p>Failed to load image</p>
 			<p>{error}</p>
@@ -434,5 +496,29 @@
 	:global(.lightbox-image) {
 		max-width: 80%;
 		max-height: 90%;
+	}
+
+	/* Lightbox nav buttons */
+	.lightbox-nav {
+		position: absolute;
+		top: 50%;
+		right: 2em;
+		display: flex;
+		flex-direction: column;
+		transform: translateY(-50%);
+		pointer-events: none; /* allow clicks only on buttons */
+	}
+
+	.lightbox-nav-btn {
+		border: none;
+		color: var(--imag-10);
+		width: 3rem;
+		height: 3rem;
+		display: inline-flex;
+		align-items: center;
+		justify-content: center;
+		border-radius: 0.3rem;
+		cursor: pointer;
+		pointer-events: auto;
 	}
 </style>

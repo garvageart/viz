@@ -24,6 +24,7 @@ interface ContentOptions {
     size?: number;
     minSize?: number;
     maxSize?: number;
+    locked?: boolean;
 }
 
 class Content implements IContent {
@@ -33,6 +34,7 @@ class Content implements IContent {
     size?: number | null = null;
     minSize?: number;
     maxSize?: number;
+    locked?: boolean;
 
 
     constructor(opts: ContentOptions) {
@@ -45,6 +47,7 @@ class Content implements IContent {
         this.size = opts.size;
         this.minSize = opts.minSize ?? 10;
         this.maxSize = opts.maxSize ?? 100;
+        this.locked = opts.locked ?? false;
 
         if (!this.views.length) {
             throw new Error("Viz: No views provided in subpanel content. Please provide at least one view");
@@ -124,7 +127,7 @@ class VizSubPanelData implements Omit<ComponentProps<typeof Pane>, "children" | 
     minSize: number;
     maxSize: number;
     class?: string | undefined;
-    locked: boolean = false;
+    locked: boolean = $state(false);
 
     constructor(opts: VizSubPanelDataOptions) {
         this.paneKeyId = opts.keyId ?? generateKeyId(16);

@@ -10,4 +10,4 @@ export const layoutState: { tree: VizSubPanelData[]; } = $state({
     tree: []
 });
 export const allTabs = writable(new SvelteMap<string, VizView[]>());
-export const layoutTree = $state({}) as ITree;
+export const layoutTree = $state({ locked: false }) as ITree;
