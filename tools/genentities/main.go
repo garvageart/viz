@@ -246,6 +246,23 @@ func populateEntityFields(dtoPath string, entities []EntityConfig) ([]EntityConf
 		}
 	}
 
+	// Discover simple type aliases (e.g. `type UserRole string`) so we can treat them as simple/basic
+	aliasMap := map[string]string{}
+	for _, decl := range node.Decls {
+		gen, ok := decl.(*ast.GenDecl)
+		if !ok || gen.Tok != token.TYPE {
+			continue
+		}
+		for _, spec := range gen.Specs {
+			tspec := spec.(*ast.TypeSpec)
+			if ident, ok := tspec.Type.(*ast.Ident); ok {
+				if isBasic(ident.Name) {
+					aliasMap[tspec.Name.Name] = ident.Name
+				}
+			}
+		}
+	}
+
 	var renderType func(expr ast.Expr) (string, bool)
 	renderType = func(expr ast.Expr) (typeStr string, simple bool) {
 		switch t := expr.(type) {
@@ -302,6 +319,16 @@ func populateEntityFields(dtoPath string, entities []EntityConfig) ([]EntityConf
 
 			tStr, simple := renderType(f.Type)
 
+			// If this field is an identifier that is an alias to a basic type (e.g. UserRole -> string),
+			// treat it as simple and prefer a text GORM column instead of JSONB.
+			if ident, ok := f.Type.(*ast.Ident); ok {
+				if base, exists := aliasMap[ident.Name]; exists {
+					if base == "string" {
+						simple = true
+					}
+				}
+			}
+
 			// Special handling for references to other entities
 			// If field type is *dto.SomeType and SomeType has a uid field, treat it as a foreign key
 			if strings.HasPrefix(tStr, "*dto.") {
@@ -346,6 +373,16 @@ func populateEntityFields(dtoPath string, entities []EntityConfig) ([]EntityConf
 			gormTag := ""
 			if slices.Contains(e.UniqueIndexes, name) {
 				gormTag = "gorm:\"uniqueIndex\""
+			}
+
+			// If this is a simple alias-to-string type and no explicit gorm tag was set,
+			// set a text column to avoid JSONB serialization for enums/aliases.
+			if ident, ok := f.Type.(*ast.Ident); ok {
+				if base, exists := aliasMap[ident.Name]; exists && base == "string" {
+					if gormTag == "" {
+						gormTag = "gorm:\"type:text\""
+					}
+				}
 			}
 
 			fields = append(fields, FieldConfig{Name: name, TypeExpr: tStr, IsSimple: simple, GormTag: gormTag})

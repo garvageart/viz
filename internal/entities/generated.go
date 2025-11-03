@@ -302,7 +302,7 @@ type User struct {
 	Email     string
 	FirstName string
 	LastName  string
-	Role      dto.UserRole `gorm:"serializer:json;type:JSONB"`
+	Role      dto.UserRole `gorm:"type:text"`
 	Uid       string       `gorm:"uniqueIndex"`
 	Username  string
 }
