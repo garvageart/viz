@@ -545,6 +545,474 @@ paths:
               schema:
                 $ref: "#/components/schemas/AddImagesResponse"
 
+  /admin/healthcheck:
+    post:
+      summary: Admin-only healthcheck
+      operationId: adminHealthcheck
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/MessageResponse"
+        "401":
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "403":
+          description: Forbidden
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "500":
+          description: Server error
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+
+  /jobs:
+    get:
+      summary: List jobs
+      operationId: listJobs
+      responses:
+        "200":
+          description: Jobs list
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/JobListResponse"
+        "401":
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+    post:
+      summary: Create/enqueue a job
+      operationId: createJob
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/JobCreateRequest"
+      responses:
+        "202":
+          description: Accepted
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/JobEnqueueResponse"
+        "400":
+          description: Bad request
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "500":
+          description: Server error
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+
+  /jobs/{id}:
+    get:
+      summary: Get job detail
+      operationId: getJob
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema:
+            type: string
+      responses:
+        "200":
+          description: Job detail
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/JobInfo"
+        "404":
+          description: Not found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+    delete:
+      summary: Cancel job
+      operationId: cancelJob
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema:
+            type: string
+      responses:
+        "200":
+          description: Cancelled
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/MessageResponse"
+        "404":
+          description: Not found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+    post:
+      summary: Retry job
+      operationId: retryJob
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema:
+            type: string
+      responses:
+        "501":
+          description: Not implemented
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+
+  /jobs/scheduler/start:
+    post:
+      summary: Start job scheduler
+      operationId: startScheduler
+      responses:
+        "200":
+          description: Started
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/MessageResponse"
+        "500":
+          description: Server error
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+
+  /jobs/scheduler/shutdown:
+    post:
+      summary: Shutdown job scheduler
+      operationId: shutdownScheduler
+      responses:
+        "200":
+          description: Shutdown
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/MessageResponse"
+        "500":
+          description: Server error
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+
+  /jobs/enqueue-image-process:
+    post:
+      summary: Enqueue an image processing job (admin only)
+      operationId: enqueueImageProcess
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/EnqueueImageProcessRequest"
+      responses:
+        "202":
+          description: Accepted
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/MessageResponse"
+        "400":
+          description: Bad request
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "500":
+          description: Server error
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+
+  /jobs/count:
+    get:
+      summary: Get running jobs count
+      operationId: getJobsCount
+      responses:
+        "200":
+          description: Running jobs count
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/JobCountResponse"
+
+  /jobs/stats:
+    get:
+      summary: Get job stats by topic
+      operationId: getJobStats
+      responses:
+        "200":
+          description: Job stats (running and queued by topic)
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/JobStatsResponse"
+
+  /jobs/types/{type}/stop:
+    post:
+      summary: Stop a job type
+      operationId: stopJobType
+      parameters:
+        - in: path
+          name: type
+          required: true
+          schema:
+            type: string
+          description: Job type to stop
+      responses:
+        "200":
+          description: Job type stopped
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/MessageResponse"
+        "400":
+          description: Bad request
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "500":
+          description: Server error
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+
+  /jobs/types/{type}/concurrency:
+    put:
+      summary: Update job type concurrency
+      operationId: updateJobTypeConcurrency
+      parameters:
+        - in: path
+          name: type
+          required: true
+          schema:
+            type: string
+          description: Job type to update
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                concurrency:
+                  type: integer
+                  minimum: 1
+                  maximum: 100
+              required: [concurrency]
+      responses:
+        "200":
+          description: Concurrency updated
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/MessageResponse"
+        "400":
+          description: Bad request
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "500":
+          description: Server error
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+
+  /events:
+    get:
+      summary: Server-Sent Events stream for real-time updates
+      operationId: connectSSE
+      description: Opens a persistent connection for server-sent events. Use EventSource API in JavaScript.
+      responses:
+        "200":
+          description: SSE stream established
+          content:
+            text/event-stream:
+              schema:
+                type: string
+                description: Server-sent events stream
+
+  /events/stats:
+    get:
+      summary: Get SSE connection statistics
+      operationId: getSSEStats
+      responses:
+        "200":
+          description: Connection statistics
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/SSEStatsResponse"
+        "401":
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+
+  /events/metrics:
+    get:
+      summary: Get SSE event metrics
+      operationId: getSSEMetrics
+      responses:
+        "200":
+          description: Event metrics
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/SSEMetricsResponse"
+        "401":
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+
+  /events/history:
+    get:
+      summary: Get recent event history
+      operationId: getEventHistory
+      parameters:
+        - in: query
+          name: limit
+          schema:
+            type: integer
+            default: 50
+            maximum: 100
+          description: Maximum number of events to return
+      responses:
+        "200":
+          description: Event history
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/EventHistoryResponse"
+        "401":
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+    delete:
+      summary: Clear event history
+      operationId: clearEventHistory
+      responses:
+        "200":
+          description: History cleared
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/MessageResponse"
+        "401":
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+
+  /events/broadcast:
+    post:
+      summary: Broadcast event to all connected clients
+      operationId: broadcastSSEEvent
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/SSEBroadcastRequest"
+      responses:
+        "200":
+          description: Event broadcasted
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/SSEBroadcastResponse"
+        "400":
+          description: Bad request
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "500":
+          description: Server error
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+
+  /events/send/{clientId}:
+    post:
+      summary: Send event to specific client
+      operationId: sendToSSEClient
+      parameters:
+        - in: path
+          name: clientId
+          required: true
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/SSEBroadcastRequest"
+      responses:
+        "200":
+          description: Event sent
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                  message:
+                    type: string
+                  clientId:
+                    type: string
+                required: [success, message, clientId]
+        "400":
+          description: Bad request
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "500":
+          description: Server error
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+
 components:
   schemas:
     # Common response types
@@ -568,6 +1036,156 @@ components:
         id:
           type: string
       required: [id]
+
+    # Job-related schemas (used by admin endpoints)
+    JobInfo:
+      type: object
+      properties:
+        id:
+          type: string
+        topic:
+          type: string
+        status:
+          type: string
+      required: [id, topic, status]
+
+    JobListResponse:
+      type: object
+      properties:
+        items:
+          type: array
+          items:
+            $ref: "#/components/schemas/JobInfo"
+      required: [items]
+
+    JobCreateRequest:
+      type: object
+      properties:
+        type:
+          type: string
+          description: "Job type (e.g., thumbnailGeneration, imageProcessing)"
+        command:
+          type: string
+          enum: [all, missing, single]
+          description: "Command to execute (all=process all, missing=process missing, single=process one image)"
+        image_uid:
+          type: string
+          description: "Image UID (required when command=single)"
+      required: [type]
+
+    JobEnqueueResponse:
+      type: object
+      properties:
+        message:
+          type: string
+        count:
+          type: integer
+      required: [message]
+
+    JobCountResponse:
+      type: object
+      properties:
+        running:
+          type: integer
+      required: [running]
+
+    JobStatsResponse:
+      type: object
+      properties:
+        running:
+          type: integer
+        running_by_topic:
+          type: object
+          additionalProperties:
+            type: integer
+        queued_by_topic:
+          type: object
+          additionalProperties:
+            type: integer
+      required: [running, running_by_topic, queued_by_topic]
+
+    EnqueueImageProcessRequest:
+      type: object
+      properties:
+        image_uid:
+          type: string
+      required: [image_uid]
+
+    # SSE-related schemas
+    SSEStatsResponse:
+      type: object
+      properties:
+        connectedClients:
+          type: integer
+        clientIds:
+          type: array
+          items:
+            type: string
+        timestamp:
+          type: string
+          format: date-time
+      required: [connectedClients, clientIds, timestamp]
+
+    SSEMetricsResponse:
+      type: object
+      properties:
+        connectedClients:
+          type: integer
+        totalEvents:
+          type: integer
+        eventsByType:
+          type: object
+          additionalProperties:
+            type: integer
+        timestamp:
+          type: string
+          format: date-time
+      required: [connectedClients, totalEvents, eventsByType, timestamp]
+
+    EventRecord:
+      type: object
+      properties:
+        timestamp:
+          type: string
+          format: date-time
+        event:
+          type: string
+        data:
+          type: object
+          additionalProperties: true
+      required: [timestamp, event, data]
+
+    EventHistoryResponse:
+      type: object
+      properties:
+        events:
+          type: array
+          items:
+            $ref: "#/components/schemas/EventRecord"
+        count:
+          type: integer
+      required: [events, count]
+
+    SSEBroadcastRequest:
+      type: object
+      properties:
+        event:
+          type: string
+        data:
+          type: object
+          additionalProperties: true
+      required: [event, data]
+
+    SSEBroadcastResponse:
+      type: object
+      properties:
+        success:
+          type: boolean
+        message:
+          type: string
+        clients:
+          type: integer
+      required: [success, message, clients]
 
     AddImagesResponse:
       type: object

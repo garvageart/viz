@@ -9,6 +9,13 @@ import (
 	openapi_types "github.com/oapi-codegen/runtime/types"
 )
 
+// Defines values for JobCreateRequestCommand.
+const (
+	All     JobCreateRequestCommand = "all"
+	Missing JobCreateRequestCommand = "missing"
+	Single  JobCreateRequestCommand = "single"
+)
+
 // Defines values for UserRole.
 const (
 	UserRoleAdmin      UserRole = "admin"
@@ -112,9 +119,27 @@ type CollectionUpdate struct {
 	ThumbnailUID *string `json:"thumbnailUID,omitempty"`
 }
 
+// EnqueueImageProcessRequest defines model for EnqueueImageProcessRequest.
+type EnqueueImageProcessRequest struct {
+	ImageUid string `json:"image_uid"`
+}
+
 // ErrorResponse defines model for ErrorResponse.
 type ErrorResponse struct {
 	Error string `json:"error"`
+}
+
+// EventHistoryResponse defines model for EventHistoryResponse.
+type EventHistoryResponse struct {
+	Count  int           `json:"count"`
+	Events []EventRecord `json:"events"`
+}
+
+// EventRecord defines model for EventRecord.
+type EventRecord struct {
+	Data      map[string]interface{} `json:"data"`
+	Event     string                 `json:"event"`
+	Timestamp time.Time              `json:"timestamp"`
 }
 
 // Image defines model for Image.
@@ -203,6 +228,51 @@ type ImagesResponse struct {
 	Image   Image     `json:"image"`
 }
 
+// JobCountResponse defines model for JobCountResponse.
+type JobCountResponse struct {
+	Running int `json:"running"`
+}
+
+// JobCreateRequest defines model for JobCreateRequest.
+type JobCreateRequest struct {
+	// Command Command to execute (all=process all, missing=process missing, single=process one image)
+	Command *JobCreateRequestCommand `json:"command,omitempty"`
+
+	// ImageUid Image UID (required when command=single)
+	ImageUid *string `json:"image_uid,omitempty"`
+
+	// Type Job type (e.g., thumbnailGeneration, imageProcessing)
+	Type string `json:"type"`
+}
+
+// JobCreateRequestCommand Command to execute (all=process all, missing=process missing, single=process one image)
+type JobCreateRequestCommand string
+
+// JobEnqueueResponse defines model for JobEnqueueResponse.
+type JobEnqueueResponse struct {
+	Count   *int   `json:"count,omitempty"`
+	Message string `json:"message"`
+}
+
+// JobInfo defines model for JobInfo.
+type JobInfo struct {
+	Id     string `json:"id"`
+	Status string `json:"status"`
+	Topic  string `json:"topic"`
+}
+
+// JobListResponse defines model for JobListResponse.
+type JobListResponse struct {
+	Items []JobInfo `json:"items"`
+}
+
+// JobStatsResponse defines model for JobStatsResponse.
+type JobStatsResponse struct {
+	QueuedByTopic  map[string]int `json:"queued_by_topic"`
+	Running        int            `json:"running"`
+	RunningByTopic map[string]int `json:"running_by_topic"`
+}
+
 // MessageResponse defines model for MessageResponse.
 type MessageResponse struct {
 	Message string `json:"message"`
@@ -213,6 +283,34 @@ type OAuthUserData struct {
 	Email   openapi_types.Email `json:"email"`
 	Name    string              `json:"name"`
 	Picture string              `json:"picture"`
+}
+
+// SSEBroadcastRequest defines model for SSEBroadcastRequest.
+type SSEBroadcastRequest struct {
+	Data  map[string]interface{} `json:"data"`
+	Event string                 `json:"event"`
+}
+
+// SSEBroadcastResponse defines model for SSEBroadcastResponse.
+type SSEBroadcastResponse struct {
+	Clients int    `json:"clients"`
+	Message string `json:"message"`
+	Success bool   `json:"success"`
+}
+
+// SSEMetricsResponse defines model for SSEMetricsResponse.
+type SSEMetricsResponse struct {
+	ConnectedClients int            `json:"connectedClients"`
+	EventsByType     map[string]int `json:"eventsByType"`
+	Timestamp        time.Time      `json:"timestamp"`
+	TotalEvents      int            `json:"totalEvents"`
+}
+
+// SSEStatsResponse defines model for SSEStatsResponse.
+type SSEStatsResponse struct {
+	ClientIds        []string  `json:"clientIds"`
+	ConnectedClients int       `json:"connectedClients"`
+	Timestamp        time.Time `json:"timestamp"`
 }
 
 // Session defines model for Session.
@@ -302,6 +400,12 @@ type AddCollectionImagesJSONBody struct {
 	Uids []string `json:"uids"`
 }
 
+// GetEventHistoryParams defines parameters for GetEventHistory.
+type GetEventHistoryParams struct {
+	// Limit Maximum number of events to return
+	Limit *int `form:"limit,omitempty" json:"limit,omitempty"`
+}
+
 // UploadImageMultipartBody defines parameters for UploadImage.
 type UploadImageMultipartBody struct {
 	Data     openapi_types.File `json:"data"`
@@ -322,6 +426,11 @@ type GetImageFileParams struct {
 // GetImageFileParamsFormat defines parameters for GetImageFile.
 type GetImageFileParamsFormat string
 
+// UpdateJobTypeConcurrencyJSONBody defines parameters for UpdateJobTypeConcurrency.
+type UpdateJobTypeConcurrencyJSONBody struct {
+	Concurrency int `json:"concurrency"`
+}
+
 // RegisterUserJSONRequestBody defines body for RegisterUser for application/json ContentType.
 type RegisterUserJSONRequestBody = UserCreate
 
@@ -337,8 +446,23 @@ type UpdateCollectionJSONRequestBody = CollectionUpdate
 // AddCollectionImagesJSONRequestBody defines body for AddCollectionImages for application/json ContentType.
 type AddCollectionImagesJSONRequestBody AddCollectionImagesJSONBody
 
+// BroadcastSSEEventJSONRequestBody defines body for BroadcastSSEEvent for application/json ContentType.
+type BroadcastSSEEventJSONRequestBody = SSEBroadcastRequest
+
+// SendToSSEClientJSONRequestBody defines body for SendToSSEClient for application/json ContentType.
+type SendToSSEClientJSONRequestBody = SSEBroadcastRequest
+
 // UploadImageMultipartRequestBody defines body for UploadImage for multipart/form-data ContentType.
 type UploadImageMultipartRequestBody UploadImageMultipartBody
 
 // UploadImageByUrlTextRequestBody defines body for UploadImageByUrl for text/plain ContentType.
 type UploadImageByUrlTextRequestBody = UploadImageByUrlTextBody
+
+// CreateJobJSONRequestBody defines body for CreateJob for application/json ContentType.
+type CreateJobJSONRequestBody = JobCreateRequest
+
+// EnqueueImageProcessJSONRequestBody defines body for EnqueueImageProcess for application/json ContentType.
+type EnqueueImageProcessJSONRequestBody = EnqueueImageProcessRequest
+
+// UpdateJobTypeConcurrencyJSONRequestBody defines body for UpdateJobTypeConcurrency for application/json ContentType.
+type UpdateJobTypeConcurrencyJSONRequestBody UpdateJobTypeConcurrencyJSONBody
