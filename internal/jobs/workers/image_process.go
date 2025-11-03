@@ -10,6 +10,7 @@ import (
 	"github.com/ThreeDotsLabs/watermill/message"
 
 	"imagine/internal/entities"
+	libhttp "imagine/internal/http"
 	"imagine/internal/imageops"
 	"imagine/internal/images"
 	"imagine/internal/jobs"
@@ -26,8 +27,8 @@ type ImageProcessJob struct {
 	Image entities.Image
 }
 
-// NewImageWorker now requires bucket and db injection
-func NewImageWorker(db *gorm.DB) *jobs.Worker {
+// NewImageWorker creates a worker that processes images and sends SSE updates
+func NewImageWorker(db *gorm.DB, sseBroker *libhttp.SSEBroker) *jobs.Worker {
 	return &jobs.Worker{
 		Name:  JobTypeImageProcess,
 		Topic: TopicImageProcess,
@@ -38,7 +39,47 @@ func NewImageWorker(db *gorm.DB) *jobs.Worker {
 				return fmt.Errorf("%s: %w", JobTypeImageProcess, err)
 			}
 
-			return ImageProcess(msg.Context(), db, job.Image)
+			if sseBroker != nil {
+				sseBroker.Broadcast("job-started", map[string]any{
+					"jobId":    msg.UUID,
+					"type":     JobTypeImageProcess,
+					"imageId":  job.Image.Uid,
+					"filename": job.Image.ImageMetadata.FileName,
+				})
+			}
+
+			// Create reusable progress reporter and process
+			onProgress := jobs.NewProgressCallback(
+				sseBroker,
+				msg.UUID,
+				JobTypeImageProcess,
+				job.Image.Uid,
+				job.Image.ImageMetadata.FileName,
+			)
+
+			err = ImageProcess(msg.Context(), db, job.Image, onProgress)
+
+			if err != nil {
+				if sseBroker != nil {
+					sseBroker.Broadcast("job-failed", map[string]any{
+						"jobId":   msg.UUID,
+						"type":    JobTypeImageProcess,
+						"imageId": job.Image.Uid,
+						"error":   err.Error(),
+					})
+				}
+				return err
+			}
+
+			if sseBroker != nil {
+				sseBroker.Broadcast("job-completed", map[string]any{
+					"jobId":   msg.UUID,
+					"type":    JobTypeImageProcess,
+					"imageId": job.Image.Uid,
+				})
+			}
+
+			return nil
 		},
 	}
 }
@@ -50,19 +91,27 @@ func EnqueueImageProcessJob(job *ImageProcessJob) error {
 		return fmt.Errorf("%s: %w", JobTypeImageProcess, err)
 	}
 	msg := message.NewMessage(watermill.NewUUID(), payload)
-	return jobs.PubSub.Publish(TopicImageProcess, msg)
+	return jobs.Publish(TopicImageProcess, msg)
 }
 
-func ImageProcess(ctx context.Context, db *gorm.DB, imgEnt entities.Image) error {
+func ImageProcess(ctx context.Context, db *gorm.DB, imgEnt entities.Image, onProgress func(step string, progress int)) error {
 	originalData, err := images.ReadImage(imgEnt.Uid, imgEnt.ImageMetadata.FileName)
 	if err != nil {
 		return fmt.Errorf("failed to read image: %w", err)
+	}
+
+	if onProgress != nil {
+		onProgress("Creating display thumbnail", 25)
 	}
 
 	// Create a display thumbnail from the image
 	thumbData, err := imageops.CreateThumbnailWithSize(originalData, 200, 0)
 	if err != nil {
 		return fmt.Errorf("failed to create thumbnail: %w", err)
+	}
+
+	if onProgress != nil {
+		onProgress("Creating thumbnail for thumbhash", 40)
 	}
 
 	// Create a very small thumbnail for thumbhash (e.g., 32x32)
@@ -78,6 +127,10 @@ func ImageProcess(ctx context.Context, db *gorm.DB, imgEnt entities.Image) error
 
 	jobs.Logger.Info("saving thumbnail to disk", loggerFields)
 
+	if onProgress != nil {
+		onProgress("Saving thumbnail to disk", 55)
+	}
+
 	// Save the thumbnail to disk
 	err = images.SaveImage(thumbData, imgEnt.Uid, fmt.Sprintf("%s-thumbnail", imgEnt.Uid)+".jpeg")
 	if err != nil {
@@ -86,6 +139,10 @@ func ImageProcess(ctx context.Context, db *gorm.DB, imgEnt entities.Image) error
 
 	// Decode the thumbnail bytes to an image and generate the thumbhash from it
 	jobs.Logger.Info("generating thumbhash", loggerFields)
+
+	if onProgress != nil {
+		onProgress("Generating thumbhash", 70)
+	}
 
 	thumbhashTimeStart := time.Now()
 	// Generate a thumbhash from the small thumbnail
@@ -101,6 +158,10 @@ func ImageProcess(ctx context.Context, db *gorm.DB, imgEnt entities.Image) error
 	jobs.Logger.Debug("finished generating thumbhash", loggerFields.Add(watermill.LogFields{
 		"duration": time.Since(thumbhashTimeStart).Milliseconds(),
 	}))
+
+	if onProgress != nil {
+		onProgress("Updating database", 90)
+	}
 
 	// Update the database with the generated thumbhash (stored inside image_metadata JSON)
 	encoded := images.EncodeThumbhashToString(thumbhash)
