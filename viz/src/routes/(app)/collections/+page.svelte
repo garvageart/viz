@@ -22,6 +22,7 @@
 	import AssetsShell from "$lib/components/AssetsShell.svelte";
 	import { sortCollections } from "$lib/sort/sort";
 	import { toastState } from "$lib/toast-notifcations/notif-state.svelte";
+	import CollectionModal from "$lib/components/CollectionModal.svelte";
 
 	let { data }: PageProps = $props();
 
@@ -57,46 +58,31 @@
 	const currentPanelContent = getContext<Content>("content");
 </script>
 
-<ModalOverlay>
-	<div id="viz-collection-modal">
-		<h1>Create Collection</h1>
-		<form
-			id="create_collection-form"
-			onsubmit={async (event) => {
-				event.preventDefault();
+<CollectionModal
+	heading="Create Collection"
+	buttonText="Create"
+	data={undefined as any}
+	modalAction={async (event) => {
+		const formData = new FormData(event.currentTarget);
+		const name = formData.get("name") as string;
+		const description = formData.get("description") as string;
+		const isPrivate = formData.get("isPrivate") === "on";
 
-				const data = new FormData(event.currentTarget);
-				const toggleSwitch = event.currentTarget.querySelector("#create_collection-private")
-					?.lastElementChild as HTMLButtonElement;
-
-				const response = await createCollection({
-					name: data.get("name") as string,
-					description: (data.get("description") as string) || undefined,
-					private: toggleSwitch.getAttribute("data-checked") === "true"
-				});
-
+		try {
+			const res = await createCollection({ name, description, private: isPrivate });
+			if (res.status === 201) {
+				listOfCollectionsData = [res.data as Collection, ...listOfCollectionsData];
 				modal.show = false;
-				if (response.status !== 201) {
-					toastState.addToast({
-						type: "error",
-						message: `Failed to create collection: ${response.data || "Unknown error"}`
-					});
-					return;
-				}
-
-				goto(`/collections/${response.data.uid}`);
-			}}
-		>
-			<input id="create_collection-name" name="name" placeholder="Name" type="text" required />
-			<!-- svelte-ignore element_invalid_self_closing_tag -->
-			<textarea id="create_collection-description" name="description" rows="1" placeholder="Description (optional)" />
-			<SliderToggle id="create_collection-private" style="margin-bottom: 1rem;" label="Private" value="off" />
-			<Button style="margin-top: 1rem;">
-				<input id="create_collection-submit" type="submit" value="Create" />
-			</Button>
-		</form>
-	</div>
-</ModalOverlay>
+				toastState.addToast({ message: "Collection created", type: "success" });
+				goto(`/collections/${(res.data as Collection).uid}`);
+			} else {
+				toastState.addToast({ message: (res as any).data?.error ?? `Creation failed (${res.status})`, type: "error" });
+			}
+		} catch (e) {
+			toastState.addToast({ message: "Creation failed: " + (e as Error).message, type: "error" });
+		}
+	}}
+/>
 
 {#snippet collectionCard(collectionData: Collection)}
 	{#if page.url.pathname !== "/"}
@@ -230,97 +216,11 @@
 		height: 100%;
 	}
 
-	form {
-		width: 60%;
-		display: flex;
-		flex-direction: column;
-		justify-content: flex-start;
-		align-items: flex-start;
-		height: 80%;
-		max-height: 100%;
-		margin-top: 1em;
-		position: relative;
-	}
-
-	textarea {
-		width: 100%;
-		max-width: 100%;
-		min-width: 100%;
-		min-height: 2rem;
-		color: var(--imag-text-color);
-		background-color: var(--imag-bg-color);
-		outline: none;
-		border: none;
-		box-shadow: 0 -1.5px 0 var(--imag-60) inset;
-		font-size: 2rem;
-		font-family: var(--imag-font-family);
-		font-weight: bold;
-		padding: 0.5rem 1rem;
-		margin-bottom: 1em;
-
-		&::placeholder {
-			color: var(--imag-40);
-			font-family: var(--imag-font-family);
-		}
-
-		&:focus::placeholder {
-			color: var(--imag-60);
-		}
-
-		&:focus {
-			background-color: var(--imag-100);
-			box-shadow: 0 -2px 0 var(--imag-primary) inset;
-		}
-
-		&:-webkit-autofill,
-		&:-webkit-autofill:focus {
-			-webkit-text-fill-color: var(--imag-text-color);
-			-webkit-box-shadow: 0 0 0px 1000px var(--imag-100) inset;
-			-webkit-box-shadow: 0 -5px 0 var(--imag-primary) inset;
-			transition:
-				background-color 0s 600000s,
-				color 0s 600000s !important;
-		}
-	}
-
-	#create_collection-description {
-		font-size: 1.2rem;
-		resize: none;
-		font-weight: 400;
-	}
-
-	#create_collection-submit {
-		border: inherit;
-		background-color: transparent;
-		color: inherit;
-		font-family: inherit;
-		font-weight: bold;
-		font-size: inherit;
-		cursor: pointer;
-		width: 100%;
-		height: 100%;
-	}
-
-	#no-collections-container {
-		display: flex;
-		flex-direction: column;
-		align-items: flex-start;
-	}
-
 	#no-collections-text {
 		display: flex;
 		flex-direction: row;
 		justify-content: center;
 		align-items: center;
 		margin-bottom: 1rem;
-	}
-
-	#viz-collection-modal {
-		width: 100%;
-		height: 100%;
-		display: flex;
-		flex-direction: column;
-		justify-content: flex-start;
-		align-items: center;
 	}
 </style>

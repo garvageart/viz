@@ -12,7 +12,7 @@
 </script>
 
 <script lang="ts">
-	import { invalidateAll } from "$app/navigation";
+	import { goto, invalidateAll } from "$app/navigation";
 	import { page } from "$app/state";
 	import AssetGrid from "$lib/components/AssetGrid.svelte";
 	import AssetsShell from "$lib/components/AssetsShell.svelte";
@@ -33,13 +33,32 @@
 	import Button from "$lib/components/Button.svelte";
 	import MaterialIcon from "$lib/components/MaterialIcon.svelte";
 	import UploadManager from "$lib/upload/manager.svelte.js";
-	import { addCollectionImages, getFullImagePath, updateCollection, type CollectionUpdate, type Image } from "$lib/api";
+	import {
+		addCollectionImages,
+		getFullImagePath,
+		updateCollection,
+		deleteCollection,
+		deleteCollectionImages,
+		type CollectionUpdate,
+		type Image
+	} from "$lib/api";
 	import { thumbHashToDataURL } from "thumbhash";
 	import { fade } from "svelte/transition";
 	import { toastState } from "$lib/toast-notifcations/notif-state.svelte.js";
 	import CollectionModal from "$lib/components/CollectionModal.svelte";
 	import InputText from "$lib/components/dom/InputText.svelte";
 	import { layoutState } from "$lib/third-party/svelte-splitpanes/state.svelte";
+	import Dropdown, { type DropdownOption } from "$lib/components/Dropdown.svelte";
+	import { signDownload, downloadImagesBlob } from "$lib/api/client";
+	import { servers } from "$lib/api/client.gen";
+	import ContextMenu from "$lib/context-menu/ContextMenu.svelte";
+	import { createServerURL } from "$lib/utils/url.js";
+	import { MEDIA_SERVER } from "$lib/constants.js";
+
+	// Context menu state
+	let ctxShowMenu = $state(false);
+	let ctxItems = $state([] as any[]);
+	let ctxAnchor: { x: number; y: number } | HTMLElement | null = $state(null as any);
 
 	let { data } = $props();
 	// Keyboard events
@@ -121,7 +140,14 @@
 
 	// the searchValue hides the loading indicator when searching since we're
 	// already searching through *all* the data that is available on the client
-	let shouldUpdate = $derived(loadedImages.length > pagination.limit * pagination.offset && searchValue.trim() === "");
+	// hasMore should be true only if we've loaded at least one full page of
+	// results for the current offset (i.e. there may be more pages). Previously
+	// the logic used `> pagination.limit * pagination.offset` which made the
+	// first page (offset=0) always truthy when any images existed. Use >= and
+	// (offset+1) so a partial final page won't show the loader.
+	let shouldUpdate = $derived(
+		pagination.offset * pagination.limit + pagination.limit < loadedData.image_count! && searchValue.trim() === ""
+	);
 
 	// Selection
 	let selectedAssets = $state<SvelteSet<Image>>(new SvelteSet());
@@ -133,7 +159,7 @@
 	let toolbarOpacity = $state(0);
 
 	// Thumbhash placeholder
-	let placeholderDataURL = $derived.by(() => {
+	let thumbhashURL = $derived.by(() => {
 		if (lightboxImage?.image_metadata?.thumbhash) {
 			try {
 				const binaryString = atob(lightboxImage.image_metadata.thumbhash);
@@ -165,6 +191,100 @@
 		data: displayData,
 		assetDblClick: (_, asset) => {
 			lightboxImage = asset;
+		},
+		// Context menu event from AssetGrid: { asset, anchor }
+		onassetcontext: (detail: { asset: Image; anchor: { x: number; y: number } | HTMLElement }) => {
+			const { asset, anchor } = detail as any;
+			// Make sure this asset is the only selected one for context actions
+			if (!selectedAssets.has(asset) || selectedAssets.size <= 1) {
+				singleSelectedAsset = asset;
+				selectedAssets.clear();
+				selectedAssets.add(asset);
+			}
+
+			// Build context menu items for this asset
+			ctxItems = [
+				{
+					id: `download-${asset.uid}`,
+					label: "Download",
+					icon: "download",
+					action: async () => {
+						try {
+							// Use the server download route so the server can create a short-lived
+							// token and redirect the request to the actual file endpoint. The
+							// browser will follow the redirect and return the file blob.
+							// Build the download URL using the OpenAPI-generated servers value
+							// and open it in a new tab so the browser follows redirects and
+							// receives the file from the server with proper Content-Disposition.
+							const base = servers.localApi || createServerURL(MEDIA_SERVER);
+							const dlUrl = new URL(`/images/${asset.uid}/download`, base);
+
+							const a = document.createElement("a");
+							a.href = dlUrl.toString();
+							a.target = "_blank";
+							document.body.appendChild(a);
+							a.click();
+							a.remove();
+						} catch (err) {
+							console.error("Context menu download error", err);
+							toastState.addToast({ type: "error", message: `Download failed: ${err}` });
+						}
+					}
+				},
+				{
+					id: `remove-${asset.uid}`,
+					label: "Remove from collection",
+					icon: "remove_circle",
+					action: async () => {
+						if (!confirm(`Remove "${asset.name || asset.uid}" from collection "${loadedData.name}"?`)) return;
+						try {
+							const r = await deleteCollectionImages(loadedData.uid, { uids: [asset.uid] });
+							if (r.status === 200) {
+								toastState.addToast({ type: "success", message: `Removed from collection` });
+								selectedAssets.clear();
+								await invalidateAll();
+							} else {
+								toastState.addToast({ type: "error", message: r.data?.error ?? "Failed to remove" });
+							}
+						} catch (err) {
+							console.error("remove from collection error", err);
+							toastState.addToast({ type: "error", message: `Failed to remove: ${err}` });
+						}
+					}
+				},
+				{
+					id: `copy-${asset.uid}`,
+					label: "Copy link",
+					icon: "link",
+					action: async () => {
+						try {
+							const url = getFullImagePath(asset.image_paths?.original) ?? "";
+							if (url) {
+								await navigator.clipboard.writeText(url);
+								toastState.addToast({ type: "success", message: "Link copied to clipboard" });
+							} else {
+								toastState.addToast({ type: "error", message: "No URL available" });
+							}
+						} catch (err) {
+							console.error("copy link error", err);
+							toastState.addToast({ type: "error", message: "Failed to copy link" });
+						}
+					}
+				},
+				{
+					id: `share-${asset.uid}`,
+					label: "Share",
+					icon: "share",
+					action: () => {
+						// Placeholder - open share dialog or implement later
+						console.log("Share not implemented");
+						toastState.addToast({ type: "info", message: "Share not implemented" });
+					}
+				}
+			];
+
+			ctxAnchor = anchor as any;
+			ctxShowMenu = true;
 		}
 	});
 
@@ -223,9 +343,120 @@
 		});
 	}
 
-	hotkeys("esc", (e) => {
-		lightboxImage = undefined;
-	});
+	async function handleDeleteCollection() {
+		const ok = confirm(
+			`Delete collection "${loadedData.name}"? This will remove the collection record. This action cannot be undone.`
+		);
+
+		if (!ok) {
+			return;
+		}
+
+		try {
+			const res = await deleteCollection(loadedData.uid);
+			if (res.status === 204) {
+				toastState.addToast({
+					type: "success",
+					message: `Deleted collection ${loadedData.name}`,
+					timeout: 3000
+				});
+				goto("/collections");
+			} else {
+				const errMsg = (res as any).data?.error ?? (res as any).data?.message ?? "Unknown error";
+				toastState.addToast({ type: "error", message: `Failed to delete collection: ${errMsg}` });
+			}
+		} catch (err) {
+			console.error("deleteCollection error", err);
+			toastState.addToast({ type: "error", message: `Failed to delete collection: ${err}` });
+		}
+	}
+
+	async function handleExportPhotos() {
+		// Gather all UIDs from the collection and create a download token
+		try {
+			const uids = loadedImages.map((img) => img.uid);
+
+			if (uids.length === 0) {
+				toastState.addToast({ type: "info", message: "No images to export" });
+				return;
+			}
+
+			// Create a download token (5 minute expiry)
+			const signRes = await signDownload({
+				uids,
+				expires_in: 300,
+				allow_download: true,
+				allow_embed: false,
+				show_metadata: true
+			});
+
+			if (signRes.status !== 200) {
+				const errMsg = signRes.data?.error ?? "Failed to create download token";
+				toastState.addToast({ type: "error", message: errMsg });
+				return;
+			}
+
+			const token = signRes.data.uid;
+			const collectionNameClean = loadedData.name.replace(/[^a-z0-9]/gi, "_").toLowerCase();
+
+			const filename = `${collectionNameClean}-${DateTime.now().toFormat("ddMMyyyy_HHmmss")}.zip`;
+
+			// Use custom downloadImagesBlob function (properly handles binary responses)
+			const res = await downloadImagesBlob(token, { uids, filename });
+
+			if (res.status !== 200) {
+				const errMsg = res.data?.error ?? "Failed to download images";
+				toastState.addToast({ type: "error", message: errMsg });
+				return;
+			}
+
+			const blob = res.data;
+			const url = URL.createObjectURL(blob);
+			const a = document.createElement("a");
+			a.href = url;
+			a.download = filename;
+			document.body.appendChild(a);
+			a.click();
+			a.remove();
+			URL.revokeObjectURL(url);
+
+			toastState.addToast({ type: "success", message: `Exporting ${loadedData.name}`, timeout: 3000 });
+		} catch (err) {
+			console.error("Export collection error", err);
+			toastState.addToast({ type: "error", message: `Failed to export collection: ${err}` });
+		}
+	}
+
+	async function handleDeleteSelected() {
+		// Delete selected images from this collection (client-side selection)
+		const items = Array.from(selectedAssets ?? []);
+		if (!items || items.length === 0) {
+			toastState.addToast({ type: "info", message: "No images selected" });
+			return;
+		}
+
+		const ok = confirm(`Remove ${items.length} selected image(s) from collection "${loadedData.name}"?`);
+		if (!ok) {
+			return;
+		}
+
+		const uids = items.map((i: Image) => i.uid);
+		try {
+			const res = await deleteCollectionImages(loadedData.uid, { uids });
+			if (res.status === 200 && (res.data?.deleted ?? true)) {
+				toastState.addToast({ type: "success", message: `Removed ${uids.length} image(s) from collection`, timeout: 2500 });
+				// Clear selection and refresh data
+				selectedAssets.clear();
+				await invalidateAll();
+			} else {
+				const errMsg = (res as any).data?.error ?? "Failed to remove images";
+				toastState.addToast({ type: "error", message: errMsg });
+			}
+		} catch (err) {
+			console.error("deleteCollectionImages error", err);
+			toastState.addToast({ type: "error", message: `Failed to remove images: ${err}` });
+		}
+	}
 
 	function getDisplayArray(): Image[] {
 		return Array.isArray(displayData) ? displayData : (displayData ?? []);
@@ -251,12 +482,29 @@
 		lightboxImage = arr[next];
 	}
 
-	hotkeys("left,right", (e, handler) => {
-		if (!lightbox.show) return;
-		e.preventDefault();
-		if (handler.key === "left") prevLightboxImage();
-		else if (handler.key === "right") nextLightboxImage();
+	hotkeys("esc", (e) => {
+		lightboxImage = undefined;
 	});
+
+	hotkeys("left,right", (e, handler) => {
+		if (!lightbox.show) {
+			return;
+		}
+
+		e.preventDefault();
+		if (handler.key === "left") {
+			prevLightboxImage();
+		} else if (handler.key === "right") {
+			nextLightboxImage();
+		}
+	});
+
+	const dropdownOptions: DropdownOption[] = [
+		{ title: "Export Photos", icon: "download" },
+		{ title: "Share Collection", icon: "share" },
+		{ title: "Duplicate Collection", icon: "content_copy" },
+		{ title: "Delete Collection", icon: "delete" }
+	];
 </script>
 
 <CollectionModal
@@ -280,13 +528,13 @@
 	 It's small but annoying enough where I want to find a different way to load an image
 	  -->
 		{#await loadImage(imageToLoad, currentImageEl!)}
-			{#if !placeholderDataURL}
+			{#if !thumbhashURL}
 				<div style="width: 3em; height: 3em">
 					<LoadingContainer />
 				</div>
 			{:else}
 				<img
-					src={placeholderDataURL}
+					src={thumbhashURL}
 					class="lightbox-image"
 					style="height: 90%; position: absolute;"
 					out:fade={{ duration: 300 }}
@@ -305,7 +553,6 @@
 				data-image-uid={lightboxImage.uid}
 			/>
 
-			<!-- Navigation buttons (prev/next) -->
 			<div class="lightbox-nav">
 				<button
 					class="lightbox-nav-btn prev"
@@ -368,6 +615,28 @@
 			Edit
 			<MaterialIcon iconName="edit" />
 		</Button>
+		<Dropdown
+			class="toolbar-button"
+			icon="more_horiz"
+			showSelectionIndicator={false}
+			options={dropdownOptions}
+			onSelect={(o) => {
+				switch (o.title) {
+					case "Delete Collection":
+						handleDeleteCollection();
+						break;
+					case "Export Photos":
+						handleExportPhotos();
+						break;
+					case "Share Collection":
+						console.log("Not implemented yet");
+						break;
+					case "Duplicate Collection":
+						console.log("Maybe won't implement");
+						break;
+				}
+			}}
+		></Dropdown>
 	</div>
 {/snippet}
 
@@ -385,6 +654,16 @@
 			<MaterialIcon iconName="add" style="font-size: 2em;" />
 		</Button>
 	</div>
+{/snippet}
+
+{#snippet selectionToolbarSnippet()}
+	<Button
+		title="Delete Selected"
+		style="position: absolute; right: 1em; background-color: var(--imag-100);"
+		onclick={handleDeleteSelected}
+	>
+		<MaterialIcon iconName="delete" />
+	</Button>
 {/snippet}
 
 <VizViewContainer
@@ -410,6 +689,7 @@
 		bind:grid
 		{pagination}
 		{noAssetsSnippet}
+		{selectionToolbarSnippet}
 		toolbarSnippet={searchInputSnippet}
 		toolbarProps={{
 			style: "justify-content: center; "
@@ -448,6 +728,8 @@
 			</div>
 		</div>
 	</AssetsShell>
+	<!-- Context menu for right-click on assets -->
+	<ContextMenu bind:showMenu={ctxShowMenu} items={ctxItems} anchor={ctxAnchor} offsetY={4} />
 </VizViewContainer>
 
 <style lang="scss">
