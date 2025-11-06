@@ -1,8 +1,6 @@
 <script lang="ts">
 	import { onMount, onDestroy } from "svelte";
-	import { MEDIA_SERVER } from "$lib/constants";
-	import { createServerURL } from "$lib/utils/url";
-	import { createSSEConnection } from "$lib/api/sse";
+	import { createSSEConnection, getSSEStats, getEventHistory } from "$lib/api/sse";
 
 	interface Props {
 		autoConnect?: boolean;
@@ -48,22 +46,22 @@
 			(event, data) => {
 				switch (event) {
 					case "connected":
-						handleConnected({ data: JSON.stringify(data) } as MessageEvent);
+						handleConnected(data);
 						break;
 					case "job-started":
-						handleJobStarted({ data: JSON.stringify(data) } as MessageEvent);
+						handleJobStarted(data);
 						break;
 					case "job-progress":
-						handleJobProgress({ data: JSON.stringify(data) } as MessageEvent);
+						handleJobProgress(data);
 						break;
 					case "job-completed":
-						handleJobCompleted({ data: JSON.stringify(data) } as MessageEvent);
+						handleJobCompleted(data);
 						break;
 					case "job-failed":
-						handleJobFailed({ data: JSON.stringify(data) } as MessageEvent);
+						handleJobFailed(data);
 						break;
 					case "test":
-						handleTestEvent({ data: JSON.stringify(data) } as MessageEvent);
+						handleTestEvent(data);
 						break;
 				}
 			},
@@ -99,22 +97,19 @@
 		stats.totalEvents++;
 	}
 
-	function handleConnected(e: MessageEvent) {
-		const data = JSON.parse(e.data);
+	function handleConnected(data: any) {
 		connected = true;
 		addEvent("connected", data);
 	}
 
-	function handleJobStarted(e: MessageEvent) {
-		const data = JSON.parse(e.data);
+	function handleJobStarted(data: any) {
 		currentJob = data.filename || data.imageId || "Unknown";
 		currentProgress = 0;
 		currentStep = "Job started";
 		addEvent("job-started", data);
 	}
 
-	function handleJobCompleted(e: MessageEvent) {
-		const data = JSON.parse(e.data);
+	function handleJobCompleted(data: any) {
 		stats.jobsProcessed++;
 		addEvent("job-completed", data);
 		setTimeout(() => {
@@ -124,21 +119,18 @@
 		}, 3000);
 	}
 
-	function handleJobFailed(e: MessageEvent) {
-		const data = JSON.parse(e.data);
+	function handleJobFailed(data: any) {
 		currentStep = `Error: ${data.error}`;
 		addEvent("job-failed", data);
 	}
 
-	function handleJobProgress(e: MessageEvent) {
-		const data = JSON.parse(e.data);
+	function handleJobProgress(data: any) {
 		currentProgress = data.progress || 0;
 		currentStep = data.step || "";
 		addEvent("job-progress", data);
 	}
 
-	function handleTestEvent(e: MessageEvent) {
-		const data = JSON.parse(e.data);
+	function handleTestEvent(data: any) {
 		addEvent("test", data);
 	}
 
@@ -149,11 +141,9 @@
 
 	async function loadStats() {
 		try {
-			const url = createServerURL(MEDIA_SERVER) + "/api/events/stats";
-			const response = await fetch(url);
-			if (response.ok) {
-				const data = await response.json();
-				stats.connectedClients = data.connectedClients || 0;
+			const response = await getSSEStats();
+			if (response.status === 200 && response.data) {
+				stats.connectedClients = response.data.connectedClients || 0;
 			}
 		} catch (e) {
 			console.error("Failed to load stats:", e);
@@ -162,17 +152,13 @@
 
 	async function loadHistory() {
 		try {
-			const url = createServerURL(MEDIA_SERVER) + "/api/events/history?limit=20";
-			const response = await fetch(url);
-			if (response.ok) {
-				const data = await response.json();
-				if (data.events && Array.isArray(data.events)) {
-					events = data.events.map((e: any) => ({
-						timestamp: new Date(e.timestamp),
-						event: e.event,
-						data: e.data
-					}));
-				}
+			const response = await getEventHistory(20);
+			if (response.status === 200 && response.data?.events) {
+				events = response.data.events.map((e) => ({
+					timestamp: new Date(e.timestamp),
+					event: e.event,
+					data: e.data
+				}));
 			}
 		} catch (e) {
 			console.error("Failed to load history:", e);

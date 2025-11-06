@@ -69,5 +69,28 @@ export async function uploadImageWithProgress(
 }
 
 export function getFullImagePath(path: string): string {
+    // If path is already a full URL (starts with http:// or https://), return as-is
+    if (path.startsWith('http://') || path.startsWith('https://')) {
+        return path;
+    }
     return `${createServerURL(MEDIA_SERVER)}${path}`;
+}
+
+// --- Realtime helpers (custom) ---
+
+export async function getJobsSnapshot(): Promise<{ data: any; status: number; }> {
+    const res = await fetch(`${createServerURL(MEDIA_SERVER)}/jobs/snapshot`, {
+        credentials: "include"
+    });
+    const data = await res.json().catch(() => ({}));
+    return { data, status: res.status };
+}
+
+export async function getEventsSince(cursor: number, limit: number = 200): Promise<{ data: any; status: number; }> {
+    const url = new URL(`${createServerURL(MEDIA_SERVER)}/events/since`);
+    url.searchParams.set("cursor", String(cursor));
+    url.searchParams.set("limit", String(limit));
+    const res = await fetch(url, { credentials: "include" });
+    const data = await res.json().catch(() => ({}));
+    return { data, status: res.status };
 }

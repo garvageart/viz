@@ -83,6 +83,12 @@ export function createSSEConnection(
         eventSource.addEventListener(eventType, (e: MessageEvent) => {
             try {
                 const data = JSON.parse(e.data);
+                // Attach SSE cursor id if present; consumers can ignore
+                const anyEvt: any = e as any;
+                const id = anyEvt?.lastEventId ?? "";
+                if (data && typeof data === "object") {
+                    (data as any).__id = id;
+                }
                 onEvent(eventType, data);
             } catch (error) {
                 console.error(`Failed to parse ${eventType} event:`, error);
