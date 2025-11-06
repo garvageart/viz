@@ -7,7 +7,7 @@
 
 	interface Props {
 		heading: string;
-		data: {
+		data?: {
 			name: string;
 			description?: string;
 			isPrivate?: boolean | null;
@@ -16,7 +16,16 @@
 		modalAction: EventHandler<SubmitEvent, HTMLFormElement> | null | undefined;
 	}
 
-	let { heading, data = $bindable(), buttonText, modalAction }: Props = $props();
+	let {
+		heading,
+		data = $bindable({
+			name: "",
+			description: "",
+			isPrivate: false
+		}),
+		buttonText,
+		modalAction
+	}: Props = $props();
 
 	let allData = $state({ ...data, isPrivate: data.isPrivate ? "on" : "off" });
 </script>
@@ -40,7 +49,6 @@
 				type="text"
 				bind:value={allData.name}
 				required
-				autocomplete="on"
 			/>
 			<!-- svelte-ignore element_invalid_self_closing_tag -->
 			<textarea

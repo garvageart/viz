@@ -66,7 +66,7 @@
 	});
 
 	// Sorting
-	let sortOptions: DropdownOption<string>[] = [
+	let sortOptions: DropdownOption[] = [
 		{
 			title: "Name"
 		},
@@ -84,7 +84,7 @@
 		}
 	];
 
-	function findCurrentSortOption(options: DropdownOption<string>[]) {
+	function findCurrentSortOption(options: DropdownOption[]) {
 		switch (sort.by) {
 			case "name":
 				return options.find((o) => o.title === "Name");

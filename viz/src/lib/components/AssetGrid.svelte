@@ -24,6 +24,9 @@
 			},
 			asset: T
 		) => void;
+		/** Disable clearing selection when clicking in other grids (useful when multiple grids share one selection set) */
+		disableOutsideUnselect?: boolean;
+		onassetcontext?: (detail: { asset: T; anchor: { x: number; y: number } }) => void;
 	}
 
 	let {
@@ -35,8 +38,12 @@
 		noAssetsMessage = "No assets found",
 		singleSelectedAsset = $bindable(),
 		selectedAssets = $bindable(new SvelteSet<T>()),
-		assetDblClick
+		assetDblClick,
+		disableOutsideUnselect = $bindable(false),
+		onassetcontext = $bindable()
 	}: Props = $props();
+
+	// Svelte 5: prefer function-prop events — parent can pass `onassetcontext={...}`
 
 	// HTML Elements
 	let assetGridEl: HTMLDivElement | undefined = $state();
@@ -216,6 +223,10 @@
 	}
 
 	function unselectImagesOnClickOutsideAssetContainer(element: HTMLElement) {
+		if (disableOutsideUnselect) {
+			return;
+		}
+
 		const clickHandler = (e: MouseEvent) => {
 			const target = e.target as HTMLElement;
 			const selectionToolbar = target.closest(".selection-toolbar") as HTMLElement | undefined;
@@ -225,12 +236,16 @@
 				return;
 			}
 
-			const imageCard = target.closest(".image-card") as HTMLElement | undefined;
-			const isGridButNotImageCard = target === element && !imageCard;
-			if (!element.contains(target) || isGridButNotImageCard) {
-				singleSelectedAsset = undefined;
-				selectedAssets.clear();
+			// If click is inside ANY grid container, don't clear (supports multiple grids sharing one selection)
+			const allGrids = Array.from(document.querySelectorAll(".viz-asset-grid-container")) as HTMLElement[];
+			const insideAnyGrid = allGrids.some((g) => g.contains(target));
+			if (insideAnyGrid) {
+				return;
 			}
+
+			// Otherwise clear selection
+			singleSelectedAsset = undefined;
+			selectedAssets.clear();
 		};
 
 		$effect(() => {
@@ -287,6 +302,15 @@
 			}
 
 			assetDblClick?.(e, assetData);
+		}}
+		oncontextmenu={(e: MouseEvent & { currentTarget: HTMLElement }) => {
+			e.preventDefault();
+			if (!selectedAssets.has(assetData) || selectedAssets.size <= 1) {
+				singleSelectedAsset = assetData;
+				selectedAssets.clear();
+				selectedAssets.add(assetData);
+			}
+			onassetcontext?.({ asset: assetData, anchor: { x: e.clientX, y: e.clientY } });
 		}}
 	>
 		{@render assetSnippet(assetData)}

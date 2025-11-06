@@ -12,7 +12,7 @@
 <div
 	{...props}
 	class="viz-toolbar-container"
-	style={`${props.style} ${stickyToolbar === true ? "position: sticky; top: 0px;" : "position: relative;"}`}
+	style={`${stickyToolbar === true ? "position: sticky; top: 0px;" : "position: relative;"} ${props.style ?? ""}`}
 >
 	{@render children?.()}
 </div>
