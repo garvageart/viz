@@ -2,48 +2,27 @@
 	import { onMount, onDestroy } from "svelte";
 	import Button from "$lib/components/Button.svelte";
 	import MaterialIcon from "$lib/components/MaterialIcon.svelte";
-	import { MEDIA_SERVER } from "$lib/constants";
-	import { createServerURL } from "$lib/utils/url";
+	import { createSSEConnection } from "$lib/api/sse";
 	import {
-		startScheduler as apiStartScheduler,
-		shutdownScheduler as apiShutdownScheduler,
-		enqueueImageProcess as apiEnqueueImageProcess,
 		listJobs,
 		createJob,
 		stopJobType,
 		updateJobTypeConcurrency,
-		type JobInfo
+		getJobStats,
+		startScheduler as apiStartScheduler,
+		shutdownScheduler as apiShutdownScheduler
 	} from "$lib/api";
-	import { createSSEConnection } from "$lib/api/sse";
+	import { getJobsSnapshot, getEventsSince } from "$lib/api";
 	import { toastState } from "$lib/toast-notifcations/notif-state.svelte";
-	import type { PageData } from "./$types";
-	import { SvelteMap } from "svelte/reactivity";
 
-	let { data }: { data: PageData } = $props();
-
-	let eventSource: EventSource | null = null;
+	// Connection state
 	let connected = $state(false);
+	let eventSource: EventSource | null = null;
+	let backfilledOnce = $state(false);
+	let lastCursor = $state(0);
+	let statsSyncInterval: ReturnType<typeof setInterval> | null = null;
 
-	let jobTracking = $state({
-		active: new SvelteMap<string, any>(),
-		completed: [] as any[],
-		failed: [] as any[]
-	});
-
-	let jobMgmt = $state({
-		types: (data.jobTypes || []) as JobInfo[],
-		concurrency: {} as Record<string, number>,
-		loading: false
-	});
-
-	$effect(() => {
-		jobMgmt.types.forEach((job) => {
-			if (!jobMgmt.concurrency[job.id]) {
-				jobMgmt.concurrency[job.id] = 5; // Default concurrency
-			}
-		});
-	});
-
+	// Stats
 	let stats = $state({
 		activeCount: 0,
 		completedCount: 0,
@@ -51,13 +30,125 @@
 		totalProcessed: 0
 	});
 
-	let runningByTopic: Record<string, number> = $state({});
-	let queuedByTopic: Record<string, number> = $state({});
+	// Job tracking
+	let jobTracking = $state({
+		active: new Map<string, any>(),
+		completed: [] as any[],
+		failed: [] as any[]
+	});
+
+	// Correlation helpers
+	const imageToJobId = new Map<string, string>();
+
+	// Topic counters
+	let runningByTopic = $state({} as Record<string, number>);
+	let queuedByTopic = $state({} as Record<string, number>);
+
+	// Job management UI state
+	let jobMgmt = $state({
+		loading: false,
+		types: [] as any[],
+		concurrency: {} as Record<string, number>
+	});
 
 	function showMessage(message: string, type: "success" | "error" | "info" = "info") {
 		toastState.addToast({ message, type });
 	}
 
+	// -------- Helpers (shared by live handling and backfill) --------
+	function getTopicForJobId(jobId: string): string {
+		switch (jobId) {
+			case "thumbnailGeneration":
+				return "image_process";
+			case "xmpGeneration":
+				return "xmp_generation";
+			default:
+				return jobId;
+		}
+	}
+
+	function resolveActiveJobId(data: any): string | null {
+		if (data?.jobId && jobTracking.active.has(data.jobId)) return data.jobId;
+		const img = data?.imageId as string | undefined;
+		if (img) {
+			const mapped = imageToJobId.get(img);
+			if (mapped && jobTracking.active.has(mapped)) return mapped;
+			for (const [jid, job] of jobTracking.active.entries()) {
+				if (job.imageId === img) {
+					imageToJobId.set(img, jid);
+					return jid;
+				}
+			}
+		}
+		return null;
+	}
+
+	function ensurePlaceholderFrom(data: any, ts?: Date) {
+		if (!data?.jobId) return;
+		const placeholder = {
+			jobId: data.jobId,
+			imageId: data.imageId,
+			type: data.type || "unknown",
+			filename: data.filename,
+			startTime: ts ? new Date(ts) : new Date(),
+			progress: typeof data.progress === "number" ? data.progress : 0,
+			step: data.step || "In progress"
+		};
+		jobTracking.active.set(data.jobId, placeholder);
+		if (data.imageId) imageToJobId.set(data.imageId, data.jobId);
+		stats.activeCount = jobTracking.active.size;
+	}
+
+	function applyProgressUpdate(data: any) {
+		const id = resolveActiveJobId(data);
+		if (id) {
+			const job = jobTracking.active.get(id)!;
+			const nextProg = typeof data.progress === "number" ? Math.max(data.progress, job.progress ?? 0) : (job.progress ?? 0);
+			jobTracking.active.set(id, { ...job, progress: nextProg, step: data.step ?? job.step });
+			return;
+		}
+		if (data?.jobId) ensurePlaceholderFrom(data);
+	}
+
+	function removeActiveFor(data: any) {
+		const id = resolveActiveJobId(data);
+		if (!id) return null;
+		const job = jobTracking.active.get(id);
+		jobTracking.active.delete(id);
+		if (job?.imageId) imageToJobId.delete(job.imageId);
+		return job || null;
+	}
+
+	let statsSyncTimer: ReturnType<typeof setTimeout> | null = null;
+	function scheduleStatsSync(delay = 300) {
+		if (statsSyncTimer) clearTimeout(statsSyncTimer);
+		statsSyncTimer = setTimeout(() => void loadJobStats(), delay);
+	}
+
+	function afterTerminalUpdate(data: any, removed: boolean) {
+		stats.activeCount = jobTracking.active.size;
+		const topic = getTopicForJobId(data.type);
+
+		if (removed) {
+			// Job was in our active map, so decrement running
+			runningByTopic[topic] = Math.max(0, (runningByTopic[topic] || 0) - 1);
+		} else {
+			// Job completed without being in active map (very fast or missed start)
+			// Try decrementing running first, then queued
+			if ((runningByTopic[topic] || 0) > 0) {
+				runningByTopic[topic] = Math.max(0, (runningByTopic[topic] || 0) - 1);
+			} else if ((queuedByTopic[topic] || 0) > 0) {
+				queuedByTopic[topic] = Math.max(0, (queuedByTopic[topic] || 0) - 1);
+			}
+		}
+
+		// If everything quiets down quickly (fast jobs), ask server for the truth shortly after.
+		if (jobTracking.active.size === 0) {
+			scheduleStatsSync(250);
+		}
+	}
+
+	// -------- Scheduler controls --------
 	async function startScheduler() {
 		try {
 			const res = await apiStartScheduler();
@@ -84,67 +175,77 @@
 		}
 	}
 
+	// -------- SSE wiring --------
 	function connectSSE() {
 		if (eventSource) return;
-
-		// Use shared SSE helper to centralize connection behavior
 		eventSource = createSSEConnection(
-			(event, data) => {
+			async (event, data) => {
 				switch (event) {
 					case "connected": {
 						connected = true;
 						if (data?.clientId) {
 							showMessage(`Connected to SSE (Client: ${String(data.clientId).substring(0, 8)})`, "success");
 						}
+						if (!backfilledOnce) await bootstrapState();
 						break;
 					}
 					case "job-started": {
+						const idNum = Number((data as any)?.__id ?? 0);
+						if (idNum && idNum <= lastCursor) break;
+						if (idNum) lastCursor = idNum;
+						if (!data?.jobId) break;
 						jobTracking.active.set(data.jobId, {
 							...data,
 							startTime: new Date(),
 							progress: 0,
 							step: "Starting..."
 						});
+						if (data.imageId) imageToJobId.set(data.imageId, data.jobId);
 						stats.activeCount = jobTracking.active.size;
-						const topic: string = getTopicForJobId(data.type);
+						const topic = getTopicForJobId(data.type);
 						runningByTopic[topic] = (runningByTopic[topic] || 0) + 1;
-						if ((queuedByTopic[topic] || 0) > 0) {
-							queuedByTopic[topic] = (queuedByTopic[topic] || 0) - 1;
-						}
+						if ((queuedByTopic[topic] || 0) > 0) queuedByTopic[topic] = (queuedByTopic[topic] || 0) - 1;
 						break;
 					}
 					case "job-progress": {
-						for (const [jobId, job] of jobTracking.active.entries()) {
-							if (job.imageId === data.imageId) {
-								jobTracking.active.set(jobId, { ...job, progress: data.progress, step: data.step });
-								break;
-							}
-						}
+						const idNum = Number((data as any)?.__id ?? 0);
+						if (idNum && idNum <= lastCursor) break;
+						if (idNum) lastCursor = idNum;
+						applyProgressUpdate(data);
 						break;
 					}
 					case "job-completed": {
-						const job = jobTracking.active.get(data.jobId);
-						if (job) {
-							jobTracking.active.delete(data.jobId);
-							jobTracking.completed = [{ ...job, ...data, endTime: new Date() }, ...jobTracking.completed].slice(0, 50);
-							stats.completedCount++;
-							stats.totalProcessed++;
+						const idNum = Number((data as any)?.__id ?? 0);
+						if (idNum && idNum <= lastCursor) break;
+						if (idNum) lastCursor = idNum;
+						const removedJob = removeActiveFor(data);
+						if (removedJob) {
+							jobTracking.completed = [{ ...removedJob, ...data, endTime: new Date() }, ...jobTracking.completed].slice(0, 50);
+						} else {
+							jobTracking.completed = [{ ...data, endTime: new Date(), startTime: new Date() }, ...jobTracking.completed].slice(
+								0,
+								50
+							);
 						}
-						stats.activeCount = jobTracking.active.size;
-						const topic: string = getTopicForJobId(data.type);
-						runningByTopic[topic] = Math.max(0, (runningByTopic[topic] || 0) - 1);
+						stats.completedCount++;
+						stats.totalProcessed++;
+						if (!removedJob && data.imageId) imageToJobId.delete(data.imageId);
+						afterTerminalUpdate(data, !!removedJob);
 						break;
 					}
 					case "job-failed": {
-						const job = jobTracking.active.get(data.jobId);
-						if (job) {
-							jobTracking.active.delete(data.jobId);
-							jobTracking.failed = [{ ...job, ...data, endTime: new Date() }, ...jobTracking.failed].slice(0, 50);
-							stats.failedCount++;
+						const idNum = Number((data as any)?.__id ?? 0);
+						if (idNum && idNum <= lastCursor) break;
+						if (idNum) lastCursor = idNum;
+						const removedJob = removeActiveFor(data);
+						if (removedJob) {
+							jobTracking.failed = [{ ...removedJob, ...data, endTime: new Date() }, ...jobTracking.failed].slice(0, 50);
+						} else {
+							jobTracking.failed = [{ ...data, endTime: new Date(), startTime: new Date() }, ...jobTracking.failed].slice(0, 50);
 						}
-						stats.activeCount = jobTracking.active.size;
-						const topic: string = getTopicForJobId(data.type);
-						runningByTopic[topic] = Math.max(0, (runningByTopic[topic] || 0) - 1);
+						stats.failedCount++;
+						if (!removedJob && data.imageId) imageToJobId.delete(data.imageId);
+						afterTerminalUpdate(data, !!removedJob);
 						break;
 					}
 				}
@@ -156,7 +257,6 @@
 			}
 		);
 
-		// Also reflect connection open immediately for UX
 		eventSource.onopen = () => {
 			connected = true;
 		};
@@ -171,11 +271,43 @@
 		}
 	}
 
+	onMount(() => {
+		connectSSE();
+		// Load initial server state for consistent counters
+		void loadJobStats();
+		// Ensure job types are loaded on first render
+		void fetchJobTypes();
+		// Periodic light resync to prevent drift during bursts of ultra-fast jobs
+		statsSyncInterval = setInterval(() => {
+			if (connected) void loadJobStats();
+		}, 10000);
+	});
+
+	onDestroy(() => {
+		disconnectSSE();
+		if (statsSyncInterval) clearInterval(statsSyncInterval);
+	});
+
 	function formatDuration(start: Date, end: Date) {
 		const ms = end.getTime() - start.getTime();
 		if (ms < 1000) return `${ms}ms`;
 		if (ms < 60000) return `${(ms / 1000).toFixed(1)}s`;
 		return `${Math.floor(ms / 60000)}m ${Math.floor((ms % 60000) / 1000)}s`;
+	}
+
+	async function loadJobStats() {
+		try {
+			const res = await getJobStats();
+			if (res.status === 200) {
+				// Initialize topic counters from server
+				runningByTopic = res.data.running_by_topic || {};
+				queuedByTopic = res.data.queued_by_topic || {};
+				// Note: we keep stats.activeCount based on our local tracking map
+				// since it reflects what we're actually showing in the UI
+			}
+		} catch (e) {
+			console.warn("Failed to load job stats:", e);
+		}
 	}
 
 	async function fetchJobTypes() {
@@ -184,11 +316,8 @@
 			const res = await listJobs();
 			if (res.status === 200) {
 				jobMgmt.types = res.data.items || [];
-				// Initialize concurrency values
 				jobMgmt.types.forEach((job) => {
-					if (!jobMgmt.concurrency[job.id]) {
-						jobMgmt.concurrency[job.id] = 5; // Default concurrency
-					}
+					if (!jobMgmt.concurrency[job.id]) jobMgmt.concurrency[job.id] = 5;
 				});
 			} else {
 				showMessage("Failed to fetch job types", "error");
@@ -202,15 +331,9 @@
 
 	async function startJobType(jobId: string) {
 		try {
-			const res = await createJob({
-				type: jobId,
-				command: "all"
-			});
+			const res = await createJob({ type: jobId, command: "all" });
 			if (res.status === 202) {
-				toastState.addToast({
-					message: res.data.message || `Job ${jobId} started`,
-					type: "success"
-				});
+				toastState.addToast({ message: res.data.message || `Job ${jobId} started`, type: "success" });
 				const count = Number((res.data as any).count ?? 0);
 				if (count > 0) {
 					const topic = getTopicForJobId(jobId);
@@ -218,16 +341,10 @@
 				}
 				await fetchJobTypes();
 			} else {
-				toastState.addToast({
-					message: `Failed to start job ${jobId}`,
-					type: "error"
-				});
+				toastState.addToast({ message: `Failed to start job ${jobId}`, type: "error" });
 			}
 		} catch (e) {
-			toastState.addToast({
-				message: "Error starting job: " + (e as Error).message,
-				type: "error"
-			});
+			toastState.addToast({ message: "Error starting job: " + (e as Error).message, type: "error" });
 		}
 	}
 
@@ -235,81 +352,48 @@
 		try {
 			const res = await stopJobType(jobId);
 			if (res.status === 200) {
-				toastState.addToast({
-					message: res.data.message || `Job type ${jobId} stopped`,
-					type: "success"
-				});
+				toastState.addToast({ message: res.data.message || `Job type ${jobId} stopped`, type: "success" });
 			} else {
-				toastState.addToast({
-					message: `Failed to stop job type ${jobId}`,
-					type: "error"
-				});
+				toastState.addToast({ message: `Failed to stop job type ${jobId}`, type: "error" });
 			}
 		} catch (e) {
-			toastState.addToast({
-				message: "Error stopping job type: " + (e as Error).message,
-				type: "error"
-			});
+			toastState.addToast({ message: "Error stopping job type: " + (e as Error).message, type: "error" });
 		}
 	}
 
 	async function rescanAll(jobId: string) {
 		try {
-			const res = await createJob({
-				type: jobId,
-				command: "all"
-			});
+			const res = await createJob({ type: jobId, command: "all" });
 			if (res.status === 202) {
-				toastState.addToast({
-					message: res.data.message || `Rescan all for ${jobId} started`,
-					type: "success"
-				});
+				toastState.addToast({ message: res.data.message || `Rescan all for ${jobId} started`, type: "success" });
 				const count = Number((res.data as any).count ?? 0);
 				if (count > 0) {
 					const topic = getTopicForJobId(jobId);
 					queuedByTopic[topic] = (queuedByTopic[topic] || 0) + count;
 				}
 			} else {
-				toastState.addToast({
-					message: `Failed to start rescan all for ${jobId}`,
-					type: "error"
-				});
+				toastState.addToast({ message: `Failed to start rescan all for ${jobId}`, type: "error" });
 			}
 		} catch (e) {
-			toastState.addToast({
-				message: "Error starting rescan: " + (e as Error).message,
-				type: "error"
-			});
+			toastState.addToast({ message: "Error starting rescan: " + (e as Error).message, type: "error" });
 		}
 	}
 
 	async function rescanMissing(jobId: string) {
 		try {
-			const res = await createJob({
-				type: jobId,
-				command: "missing"
-			});
+			const res = await createJob({ type: jobId, command: "missing" });
 			if (res.status === 202) {
-				toastState.addToast({
-					message: res.data.message || `Rescan missing for ${jobId} started`,
-					type: "success"
-				});
+				toastState.addToast({ message: res.data.message || `Rescan missing for ${jobId} started`, type: "success" });
 				const count = Number((res.data as any).count ?? 0);
 				if (count > 0) {
 					const topic = getTopicForJobId(jobId);
 					queuedByTopic[topic] = (queuedByTopic[topic] || 0) + count;
 				}
 			} else {
-				toastState.addToast({
-					message: `Failed to start rescan missing for ${jobId}`,
-					type: "error"
-				});
+				toastState.addToast({ message: `Failed to start rescan missing for ${jobId}`, type: "error" });
 			}
 		} catch (e) {
-			toastState.addToast({
-				message: "Error starting rescan: " + (e as Error).message,
-				type: "error"
-			});
+			toastState.addToast({ message: "Error starting rescan: " + (e as Error).message, type: "error" });
 		}
 	}
 
@@ -318,41 +402,45 @@
 		try {
 			const res = await updateJobTypeConcurrency(jobId, { concurrency: value });
 			if (res.status === 200) {
-				toastState.addToast({
-					message: res.data.message || `Concurrency for ${jobId} set to ${value}`,
-					type: "success"
-				});
+				toastState.addToast({ message: res.data.message || `Concurrency for ${jobId} set to ${value}`, type: "success" });
 			} else {
-				toastState.addToast({
-					message: `Failed to update concurrency for ${jobId}`,
-					type: "error"
-				});
+				toastState.addToast({ message: `Failed to update concurrency for ${jobId}`, type: "error" });
 			}
 		} catch (e) {
-			toastState.addToast({
-				message: "Error updating concurrency: " + (e as Error).message,
-				type: "error"
-			});
+			toastState.addToast({ message: "Error updating concurrency: " + (e as Error).message, type: "error" });
 		}
 	}
 
-	onMount(() => {
-		connectSSE();
-	});
-
-	onDestroy(() => {
-		disconnectSSE();
-	});
-
-	function getTopicForJobId(jobId: string): string {
-		switch (jobId) {
-			case "thumbnailGeneration":
-				return "image_process";
-			case "xmpGeneration":
-				return "xmp_generation";
-			default:
-				return jobId;
+	// -------- Deterministic bootstrap (snapshot + cursor) --------
+	async function bootstrapState() {
+		// 1) Snapshot counters/active from server (authoritative base)
+		const snap = await getJobsSnapshot();
+		if (snap.status === 200) {
+			const d = snap.data || {};
+			runningByTopic = d.running_by_topic || {};
+			queuedByTopic = d.queued_by_topic || {};
+			// Rebuild active entries with minimal info
+			jobTracking.active.clear();
+			if (Array.isArray(d.active)) {
+				for (const a of d.active) {
+					jobTracking.active.set(a.id, {
+						jobId: a.id,
+						type: a.topic,
+						startTime: new Date(),
+						progress: 0,
+						step: a.status || "Running"
+					});
+				}
+			}
+			stats.activeCount = jobTracking.active.size;
 		}
+		// 2) Establish current cursor by asking events/since with tiny limit
+		const since = await getEventsSince(lastCursor, 1);
+		if (since.status === 200) {
+			const nc = Number(since.data?.nextCursor ?? 0);
+			if (nc && nc > lastCursor) lastCursor = nc;
+		}
+		backfilledOnce = true;
 	}
 </script>
 

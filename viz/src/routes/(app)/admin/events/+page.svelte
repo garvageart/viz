@@ -110,14 +110,18 @@
 	const filteredHistory = $derived(() => {
 		let filtered = history;
 
+		// filter by event name (server returns `event` per OpenAPI schema)
 		if (historyFilter !== "all") {
-			filtered = filtered.filter((e) => e.eventType === historyFilter);
+			filtered = filtered.filter((e) => e.event === historyFilter);
 		}
 
 		if (historySearch) {
 			const search = historySearch.toLowerCase();
 			filtered = filtered.filter(
-				(e) => e.eventType.toLowerCase().includes(search) || JSON.stringify(e.data).toLowerCase().includes(search)
+				(e) =>
+					String(e.event || "")
+						.toLowerCase()
+						.includes(search) || JSON.stringify(e.data).toLowerCase().includes(search)
 			);
 		}
 
@@ -126,8 +130,8 @@
 
 	const eventTypes = $derived(() => {
 		const types = new Set<string>();
-		history.forEach((e) => types.add(e.eventType));
-		return Array.from(types).sort();
+		history.forEach((e) => types.add(e.event));
+		return Array.from(types).filter(Boolean).sort();
 	});
 
 	function formatTimestamp(ts: string) {
@@ -332,7 +336,7 @@
 					<details class="event-item">
 						<summary class="event-summary">
 							<div class="event-header">
-								<span class="event-type">{event.eventType}</span>
+								<span class="event-type">{event.event}</span>
 								<span class="event-time">{formatTimestamp(event.timestamp)}</span>
 							</div>
 							<MaterialIcon iconName="arrow_drop_down" />
@@ -340,7 +344,7 @@
 						<div class="event-details">
 							<div class="event-field">
 								<strong>Client ID:</strong>
-								<code>{event.clientId}</code>
+								<code>{event?.data?.clientId ?? "—"}</code>
 							</div>
 							<div class="event-field">
 								<strong>Data:</strong>
@@ -355,6 +359,11 @@
 </div>
 
 <style lang="scss">
+	:global(.admin-page) {
+		padding: 2rem;
+		overflow-y: auto;
+	}
+
 	.page-header {
 		display: flex;
 		justify-content: space-between;
@@ -654,15 +663,18 @@
 		display: flex;
 		flex-direction: column;
 		gap: 0.5rem;
-		max-height: 600px;
+		max-height: 60vh;
+		min-height: 40%;
 		overflow-y: auto;
+		overscroll-behavior: contain;
+		-webkit-overflow-scrolling: touch;
+		min-width: 0;
 	}
 
 	.event-item {
-		background: var(--imag-95);
+		background: var(--imag-100);
 		border-radius: 8px;
 		border: 1px solid var(--imag-90);
-		overflow: hidden;
 	}
 
 	.event-summary {
@@ -672,6 +684,15 @@
 		padding: 1rem;
 		cursor: pointer;
 		list-style: none;
+		color: var(--imag-text-color);
+
+		/* Remove browser default disclosure marker to avoid overlay quirks */
+		&::marker {
+			content: "";
+		}
+		&::-webkit-details-marker {
+			display: none;
+		}
 
 		&:hover {
 			background: var(--imag-90);
@@ -682,9 +703,12 @@
 		display: flex;
 		align-items: center;
 		gap: 1rem;
+		flex: 1;
+		min-width: 0;
 	}
 
 	.event-type {
+		display: inline-block;
 		font-weight: 600;
 		font-size: 0.95rem;
 		padding: 0.25rem 0.75rem;
