@@ -12,6 +12,9 @@
 	import SearchInput from "./SearchInput.svelte";
 	import UploadManager from "$lib/upload/manager.svelte";
 	import { SUPPORTED_IMAGE_TYPES, SUPPORTED_RAW_FILES, type SupportedImageTypes } from "$lib/types/images";
+	import OpenAccountPanel from "./AccountPanel.svelte";
+	import AppMenu from "./AppMenu.svelte";
+	import { slide } from "svelte/transition";
 
 	let { ...props }: SvelteHTMLElements["header"] = $props();
 
@@ -80,10 +83,34 @@
 		controller.openFileHolder();
 		controller.uploadImage();
 	}
+
+	let openAccPanel = $state(false);
+	let openAppMenu = $state(false);
+	let appMenuButton: HTMLButtonElement | undefined = $state();
 </script>
 
+<svelte:window
+	on:click={(e) => {
+		if (openAccPanel && !(e.target as HTMLElement).closest("#account-container")) {
+			openAccPanel = false;
+		}
+	}}
+/>
+
 <header {...props} class="{props.class} no-select">
-	<a id="viz-title" href="/">viz</a>
+	<div id="app-menu-container">
+		<button
+			bind:this={appMenuButton}
+			id="viz-title"
+			onclick={() => (openAppMenu = !openAppMenu)}
+			aria-label="App Menu"
+			title="App Menu"
+		>
+			viz
+			<MaterialIcon iconName="arrow_drop_down" weight={300} style="font-size: 1.2em; margin-left: 0.15em;" />
+		</button>
+		<AppMenu bind:isOpen={openAppMenu} bind:anchor={appMenuButton} />
+	</div>
 	<SearchInput
 		placeholder="Search (Ctrl/Cmd + K)"
 		bind:loading={search.loading}
@@ -107,16 +134,22 @@
 				<MaterialIcon iconName="bug_report" />
 			</button>
 		{/if}
-		<button
-			id="account-button"
-			class="header-button"
-			aria-label="Account"
-			title={user.data?.username ? `${user.data.username} (${user.data.email})` : "Account"}
-		>
-			<figure style="height: 100%; display: flex; align-items: center; justify-content: center;">
-				<span style="font-weight: 700; font-size: 0.8em;">{user.data ? user.data.username[0] : "?"}</span>
-			</figure>
-		</button>
+		<div id="account-container">
+			<button
+				id="account-button"
+				class="header-button"
+				aria-label="Account"
+				onclick={() => (openAccPanel = !openAccPanel)}
+				title={user.data?.username ? `${user.data.username} (${user.data.email})` : "Account"}
+			>
+				<figure style="height: 100%; display: flex; align-items: center; justify-content: center;">
+					<span style="font-weight: 700; font-size: 0.8em;">{user.data ? user.data.username[0] : "?"}</span>
+				</figure>
+			</button>
+			{#if openAccPanel}
+				<OpenAccountPanel />
+			{/if}
+		</div>
 	</div>
 </header>
 
@@ -137,8 +170,37 @@
 		font-family: var(--imag-code-font);
 		font-weight: 700;
 		font-size: 1em;
+		display: flex;
+		align-items: center;
+		gap: 0.1em;
+		background: transparent;
+		border: none;
+		color: var(--imag-text-color);
+		cursor: pointer;
+		padding: 0.1em 0.5em;
+		border-radius: 0.5rem;
+		transition: background-color 0.1s ease;
+
+		&:hover {
+			background-color: var(--imag-100);
+		}
+
+		&:active {
+			background-color: var(--imag-90);
+		}
+	}
+
+	#app-menu-container {
 		position: absolute;
-		left: 0.8em;
+		left: 0.5rem;
+		border-radius: 0.25rem;
+		z-index: 995;
+		display: flex;
+		flex-direction: column;
+	}
+
+	#account-container {
+		position: relative;
 	}
 
 	#account-button {
@@ -149,6 +211,7 @@
 		justify-content: center;
 		border-radius: 10em;
 		outline: 1px solid var(--imag-60);
+		background-color: var(--imag-80);
 	}
 
 	figure {
