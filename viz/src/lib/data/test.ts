@@ -28,7 +28,7 @@ export function createTestUser() {
  * @returns An ImageObjectData object with random data.
  */
 export function createTestImageObject() {
-    const randomImageNumber = Math.floor(Math.random() * 100);
+    const randomImageNumber = Math.floor(Math.random() * 1000);
     const name = `${faker.word.adjective()} ${faker.word.noun()}`;
     const testUser = createTestUser();
 
@@ -40,7 +40,7 @@ export function createTestImageObject() {
         width: Math.floor(Math.random() * 1920) + 800,
         height: Math.floor(Math.random() * 1080) + 600,
         processed: true,
-        thumbhash: generateRandomString(16),
+        thumbhash: undefined, // Don't generate invalid thumbhash for test data
         created_at: faker.date.past({ years: 2 }),
         updated_at: faker.date.recent({ days: 30 }),
         image_metadata: {
@@ -52,14 +52,14 @@ export function createTestImageObject() {
             color_space: "sRGB",
             file_modified_at: faker.date.recent({ days: 30 }).toISOString(),
             file_created_at: faker.date.past({ years: 2 }).toISOString(),
-            thumbhash: generateRandomString(16),
+            thumbhash: undefined, // Don't generate invalid thumbhash for test data
             checksum: generateRandomString(32)
         },
         image_paths: {
-            original_path: `https://picsum.photos/1920/1080?random=${randomImageNumber}`,
-            thumbnail_path: `https://picsum.photos/800/600?random=${randomImageNumber}`,
-            preview_path: `https://picsum.photos/800/600?random=${randomImageNumber}`,
-            raw_path: `https://picsum.photos/1920/1080?random=${randomImageNumber}`
+            original: `https://picsum.photos/1920/1080?random=${randomImageNumber}`,
+            thumbnail: `https://picsum.photos/400/300?random=${randomImageNumber}`,
+            preview: `https://picsum.photos/800/600?random=${randomImageNumber}`,
+            raw: `https://picsum.photos/1920/1080?random=${randomImageNumber}`
         }
     });
 }

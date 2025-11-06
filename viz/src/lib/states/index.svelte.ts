@@ -18,11 +18,12 @@ export let sidebar = $state({
 export let showHeader = writable(true);
 
 // Authenticated user state (Svelte 5 runes)
-export let user = $state<{ data: User | null; loading: boolean; fetched: boolean; error?: string | null; }>({
+export let user = $state<{ data: User | null; loading: boolean; fetched: boolean; error?: string | null; isAdmin: boolean; }>({
     data: null,
     loading: false,
     fetched: false,
     error: null,
+    isAdmin: false
 });
 
 export async function fetchCurrentUser(): Promise<User | null> {
@@ -33,6 +34,7 @@ export async function fetchCurrentUser(): Promise<User | null> {
         if (result.status === 200) {
             user.data = result.data;
             user.error = null;
+            user.isAdmin = result.data.role.includes('admin');
             return result.data;
         } else {
             user.data = null;

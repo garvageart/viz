@@ -16,3 +16,83 @@ export function convertEXIFDateTime(EXIFDateTime: string): Date {
 
     return EXIFDateObject;
 }
+
+import type { Image } from "../api";
+
+// Parse a variety of EXIF date formats similar to backend ConvertEXIFDateTime
+const DATE_FORMATS = [
+    /^(\d{4}):(\d{2}):(\d{2}) (\d{2}):(\d{2}):(\d{2})$/, // 2006:01:02 15:04:05
+    /^(\d{4})-(\d{2})-(\d{2}) (\d{2}):(\d{2}):(\d{2})$/, // 2006-01-02 15:04:05
+    /^(\d{4}):(\d{2}):(\d{2})T(\d{2}):(\d{2}):(\d{2})(Z|[+\-]\d{2}:?\d{2})$/, // 2006:01:02T15:04:05Z07:00
+    /^(\d{4})-(\d{2})-(\d{2})T(\d{2}):(\d{2}):(\d{2})(Z|[+\-]\d{2}:?\d{2})$/, // 2006-01-02T15:04:05Z07:00
+    /^(\d{4}):(\d{2}):(\d{2})$/, // date only 2006:01:02
+    /^(\d{4})-(\d{2})-(\d{2})$/ // date only 2006-01-02
+];
+
+function parseExifDate(raw?: string | null): Date | undefined {
+    if (!raw) {
+        return undefined;
+    }
+
+    let s = raw.trim();
+    const parenIdx = s.indexOf(" (");
+    if (parenIdx > 0) s = s.slice(0, parenIdx).trim();
+
+    for (const rx of DATE_FORMATS) {
+        const m = s.match(rx);
+        if (!m) continue;
+        try {
+            // Normalise separators to ISO where needed
+            if (rx === DATE_FORMATS[0]) {
+                // 2006:01:02 15:04:05 -> 2006-01-02T15:04:05
+                const [, Y, M, D, h, mm, ss] = m;
+                return new Date(`${Y}-${M}-${D}T${h}:${mm}:${ss}Z`);
+            }
+            if (rx === DATE_FORMATS[1]) {
+                const [, Y, M, D, h, mm, ss] = m;
+                return new Date(`${Y}-${M}-${D}T${h}:${mm}:${ss}Z`);
+            }
+            if (rx === DATE_FORMATS[2] || rx === DATE_FORMATS[3]) {
+                // Already close to ISO, ensure T separator
+                return new Date(s.replace(/:(?=\d{2}T)/, ":"));
+            }
+            if (rx === DATE_FORMATS[4]) {
+                const [, Y, M, D] = m;
+                return new Date(`${Y}-${M}-${D}T00:00:00Z`);
+            }
+            if (rx === DATE_FORMATS[5]) {
+                const [, Y, M, D] = m;
+                return new Date(`${Y}-${M}-${D}T00:00:00Z`);
+            }
+        } catch (e) {
+        }
+    }
+
+    // Fallback: let Date try (may be unreliable, but last resort)
+    const d = new Date(s);
+    return isNaN(d.getTime()) ? undefined : d;
+}
+
+export function getTakenAt(image: Image): Date {
+    // Priority: EXIF Original -> EXIF Modify -> metadata file_created_at -> image.created_at
+    const exif = image.exif;
+    const dates: (string | undefined)[] = [
+        exif?.date_time_original,
+        exif?.modify_date,
+        image.image_metadata?.file_created_at,
+        image.image_metadata?.file_modified_at,
+        image.created_at
+    ];
+
+    for (const date of dates) {
+        const parsed = parseExifDate(date);
+        if (parsed){
+            return parsed;
+        }
+    }
+    return new Date(image.created_at);
+}
+
+export function compareByTakenAtDesc(a: Image, b: Image): number {
+    return getTakenAt(b).getTime() - getTakenAt(a).getTime();
+}
