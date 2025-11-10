@@ -58,9 +58,9 @@ type Server struct {
 
 type ImagineServer struct {
 	*Server
-	Logger    *slog.Logger
-	Database  *db.DB
-	SSEBroker *SSEBroker
+	Logger   *slog.Logger
+	Database *db.DB
+	WSBroker *WSBroker
 }
 
 func (server ImagineServer) ConnectToDatabase(dst ...any) *gorm.DB {
