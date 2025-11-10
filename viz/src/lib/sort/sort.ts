@@ -1,7 +1,7 @@
 import type { Collection, Image } from "$lib/api";
 import type { AssetSort } from "$lib/types/asset";
 import { orderBy } from "lodash-es";
-import { getAssetDate } from "$lib/components/ImageCard.svelte";
+import { getImageDate } from "$lib/components/ImageCard.svelte";
 
 function getCollectionDate(collection: Collection): Date {
     return new Date(collection.updated_at || collection.created_at);
@@ -22,7 +22,7 @@ export function sortCollectionImages(assets: Image[], sort: AssetSort) {
         case "updated_at":
             return orderBy(assets, (img) => new Date(img.updated_at).getTime(), sort.order);
         case "oldest":
-            return orderBy(assets, (img) => getAssetDate(img).getTime(), sort.order);
+            return orderBy(assets, (img) => getImageDate(img).getTime(), sort.order);
         case "most_recent":
             return orderBy(assets, (img) => getMostRecentImageDate(img), sort.order);
         default:

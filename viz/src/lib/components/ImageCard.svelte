@@ -1,5 +1,5 @@
 <script module lang="ts">
-	export function getAssetDate(asset: Image): Date {
+	export function getImageDate(asset: Image): Date {
 		return asset.exif?.date_time_original
 			? new Date(convertEXIFDateTime(asset.exif?.date_time_original))
 			: new Date(asset.image_metadata?.file_created_at ?? asset.created_at);
@@ -15,7 +15,7 @@
 	import { normalizeBase64 } from "$lib/utils/misc";
 
 	let { asset }: { asset: Image } = $props();
-	const imageDate = DateTime.fromJSDate(getAssetDate(asset));
+	const imageDate = DateTime.fromJSDate(getImageDate(asset));
 
 	let placeholderDataURL = $state<string | undefined>();
 	let imageLoaded = $state(false);
