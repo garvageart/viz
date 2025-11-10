@@ -338,6 +338,19 @@ func ImagesRouter(db *gorm.DB, logger *slog.Logger) *chi.Mux {
 			return
 		}
 
+		// Generate ETag for transformed image based on params BEFORE processing
+		transformETag := fmt.Sprintf("%s-%dx%d-%s-%d", imgEnt.ImageMetadata.Checksum, width, height, formatParam, quality)
+
+		// Check If-None-Match early to avoid expensive VIPS processing (skip for downloads)
+		if req.FormValue("download") != "1" {
+			if match := req.Header.Get("If-None-Match"); match == transformETag {
+				res.Header().Set("Cache-Control", fmt.Sprintf("public, max-age=%d, immutable", time.Hour*24*365/time.Second))
+				res.Header().Set("ETag", transformETag)
+				res.WriteHeader(http.StatusNotModified)
+				return
+			}
+		}
+
 		// Read the original image file directly
 		originalData, err := images.ReadImage(imgEnt.Uid, imgEnt.ImageMetadata.FileName)
 		if err != nil {
@@ -407,20 +420,17 @@ func ImagesRouter(db *gorm.DB, logger *slog.Logger) *chi.Mux {
 				Keep: libvips.KeepAll,
 			})
 
-			formatParam = string(libvipsImg.Format())
-		}
+		formatParam = string(libvipsImg.Format())
+	}
 
-		// Generate ETag for transformed image based on params
-		transformETag := fmt.Sprintf("%s-%dx%d-%s-%d", imgEnt.ImageMetadata.Checksum, width, height, formatParam, quality)
+	// Set response headers
+	res.Header().Set("Content-Type", "image/"+formatParam)
+	res.Header().Set("Cache-Control", fmt.Sprintf("public, max-age=%d, immutable", time.Hour*24*365/time.Second))
+	res.Header().Set("ETag", transformETag)
+	res.Header().Set("Content-Disposition", fmt.Sprintf("attachment; filename=\"%s\"", imgEnt.ImageMetadata.FileName))
 
-		res.Header().Set("Content-Type", "image/"+formatParam)
-		res.Header().Set("Cache-Control", fmt.Sprintf("public, max-age=%d, immutable", time.Hour*24*365/time.Second))
-		res.Header().Set("ETag", transformETag)
-		res.Header().Set("Content-Disposition", fmt.Sprintf("attachment; filename=\"%s\"", imgEnt.ImageMetadata.FileName))
-
-		// If this is a download request, validate token with details
-		// For non-download requests allow normal 304/NotModified behavior.
-		if req.FormValue("download") == "1" {
+	// If this is a download request, validate token with details
+	if req.FormValue("download") == "1" {
 			// Validate opaque token with password support
 			token := req.URL.Query().Get("token")
 			password := req.URL.Query().Get("password")
@@ -462,11 +472,6 @@ func ImagesRouter(db *gorm.DB, logger *slog.Logger) *chi.Mux {
 			if !allowed {
 				render.Status(req, http.StatusUnauthorized)
 				render.JSON(res, req, dto.ErrorResponse{Error: "token not valid for this resource"})
-				return
-			}
-		} else {
-			if match := req.Header.Get("If-None-Match"); match == transformETag {
-				res.WriteHeader(http.StatusNotModified)
 				return
 			}
 		}
