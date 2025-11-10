@@ -1189,29 +1189,52 @@ paths:
 
   /events:
     get:
-      summary: Server-Sent Events stream for real-time updates
-      operationId: connectSSE
-      description: Opens a persistent connection for server-sent events. Use EventSource API in JavaScript.
+      summary: WebSocket connection for real-time updates
+      operationId: connectWebSocket
+      description: |
+        Opens a WebSocket connection for bidirectional real-time communication.
+
+        **Protocol**: ws:// or wss://
+
+        **Message Format**:
+        ```json
+        {
+          "event": "event-type",
+          "data": { ... },
+          "id": 123,
+          "timestamp": "2024-01-01T00:00:00Z"
+        }
+        ```
+
+        **Event Types**:
+        - `connected` - Connection established
+        - `job-started` - Job has started
+        - `job-progress` - Job progress update
+        - `job-completed` - Job completed successfully
+        - `job-failed` - Job failed with error
+        - `ping` - Server keepalive (respond with pong)
+
       responses:
-        "200":
-          description: SSE stream established
+        "101":
+          description: Switching Protocols - WebSocket connection established
+        "401":
+          description: Unauthorized
           content:
-            text/event-stream:
+            application/json:
               schema:
-                type: string
-                description: Server-sent events stream
+                $ref: "#/components/schemas/ErrorResponse"
 
   /events/stats:
     get:
-      summary: Get SSE connection statistics
-      operationId: getSSEStats
+      summary: Get WebSocket connection statistics
+      operationId: getWSStats
       responses:
         "200":
           description: Connection statistics
           content:
             application/json:
               schema:
-                $ref: "#/components/schemas/SSEStatsResponse"
+                $ref: "#/components/schemas/WSStatsResponse"
         "401":
           description: Unauthorized
           content:
@@ -1221,15 +1244,15 @@ paths:
 
   /events/metrics:
     get:
-      summary: Get SSE event metrics
-      operationId: getSSEMetrics
+      summary: Get WebSocket event metrics
+      operationId: getWSMetrics
       responses:
         "200":
           description: Event metrics
           content:
             application/json:
               schema:
-                $ref: "#/components/schemas/SSEMetricsResponse"
+                $ref: "#/components/schemas/WSMetricsResponse"
         "401":
           description: Unauthorized
           content:
@@ -1279,23 +1302,70 @@ paths:
               schema:
                 $ref: "#/components/schemas/ErrorResponse"
 
+  /events/since:
+    get:
+      summary: Get events since a cursor ID
+      operationId: getEventsSince
+      description: |
+        Retrieve events that occurred after a specific cursor ID.
+        Useful for catching up on missed events during reconnection.
+      parameters:
+        - in: query
+          name: cursor
+          schema:
+            type: integer
+            format: uint64
+            default: 0
+          description: Cursor ID to fetch events after
+        - in: query
+          name: limit
+          schema:
+            type: integer
+            default: 200
+            maximum: 1000
+          description: Maximum number of events to return
+      responses:
+        "200":
+          description: Events since cursor
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  events:
+                    type: array
+                    items:
+                      $ref: "#/components/schemas/EventRecord"
+                  count:
+                    type: integer
+                  nextCursor:
+                    type: integer
+                    format: uint64
+                required: [events, count, nextCursor]
+        "401":
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+
   /events/broadcast:
     post:
-      summary: Broadcast event to all connected clients
-      operationId: broadcastSSEEvent
+      summary: Broadcast event to all connected WebSocket clients
+      operationId: broadcastWSEvent
       requestBody:
         required: true
         content:
           application/json:
             schema:
-              $ref: "#/components/schemas/SSEBroadcastRequest"
+              $ref: "#/components/schemas/WSBroadcastRequest"
       responses:
         "200":
           description: Event broadcasted
           content:
             application/json:
               schema:
-                $ref: "#/components/schemas/SSEBroadcastResponse"
+                $ref: "#/components/schemas/WSBroadcastResponse"
         "400":
           description: Bad request
           content:
@@ -1311,8 +1381,8 @@ paths:
 
   /events/send/{clientId}:
     post:
-      summary: Send event to specific client
-      operationId: sendToSSEClient
+      summary: Send event to specific WebSocket client
+      operationId: sendToWSClient
       parameters:
         - in: path
           name: clientId
@@ -1324,7 +1394,7 @@ paths:
         content:
           application/json:
             schema:
-              $ref: "#/components/schemas/SSEBroadcastRequest"
+              $ref: "#/components/schemas/WSBroadcastRequest"
       responses:
         "200":
           description: Event sent
@@ -1451,8 +1521,8 @@ components:
           type: string
       required: [image_uid]
 
-    # SSE-related schemas
-    SSEStatsResponse:
+    # WebSocket-related schemas
+    WSStatsResponse:
       type: object
       properties:
         connectedClients:
@@ -1466,7 +1536,7 @@ components:
           format: date-time
       required: [connectedClients, clientIds, timestamp]
 
-    SSEMetricsResponse:
+    WSMetricsResponse:
       type: object
       properties:
         connectedClients:
@@ -1506,7 +1576,7 @@ components:
           type: integer
       required: [events, count]
 
-    SSEBroadcastRequest:
+    WSBroadcastRequest:
       type: object
       properties:
         event:
@@ -1516,7 +1586,7 @@ components:
           additionalProperties: true
       required: [event, data]
 
-    SSEBroadcastResponse:
+    WSBroadcastResponse:
       type: object
       properties:
         success:

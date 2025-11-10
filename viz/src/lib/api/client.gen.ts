@@ -277,12 +277,12 @@ export type JobStatsResponse = {
         [key: string]: number;
     };
 };
-export type SseStatsResponse = {
+export type WsStatsResponse = {
     connectedClients: number;
     clientIds: string[];
     timestamp: string;
 };
-export type SseMetricsResponse = {
+export type WsMetricsResponse = {
     connectedClients: number;
     totalEvents: number;
     eventsByType: {
@@ -301,13 +301,13 @@ export type EventHistoryResponse = {
     events: EventRecord[];
     count: number;
 };
-export type SseBroadcastRequest = {
+export type WsBroadcastRequest = {
     event: string;
     data: {
         [key: string]: any;
     };
 };
-export type SseBroadcastResponse = {
+export type WsBroadcastResponse = {
     success: boolean;
     message: string;
     clients: number;
@@ -1029,20 +1029,25 @@ export function updateJobTypeConcurrency($type: string, body: {
     }));
 }
 /**
- * Server-Sent Events stream for real-time updates
+ * WebSocket connection for real-time updates
  */
-export function connectSse(opts?: Oazapfts.RequestOpts) {
-    return oazapfts.fetchText("/events", {
+export function connectWebSocket(opts?: Oazapfts.RequestOpts) {
+    return oazapfts.fetchJson<{
+        status: 101;
+    } | {
+        status: 401;
+        data: ErrorResponse;
+    }>("/events", {
         ...opts
     });
 }
 /**
- * Get SSE connection statistics
+ * Get WebSocket connection statistics
  */
-export function getSseStats(opts?: Oazapfts.RequestOpts) {
+export function getWsStats(opts?: Oazapfts.RequestOpts) {
     return oazapfts.fetchJson<{
         status: 200;
-        data: SseStatsResponse;
+        data: WsStatsResponse;
     } | {
         status: 401;
         data: ErrorResponse;
@@ -1051,12 +1056,12 @@ export function getSseStats(opts?: Oazapfts.RequestOpts) {
     });
 }
 /**
- * Get SSE event metrics
+ * Get WebSocket event metrics
  */
-export function getSseMetrics(opts?: Oazapfts.RequestOpts) {
+export function getWsMetrics(opts?: Oazapfts.RequestOpts) {
     return oazapfts.fetchJson<{
         status: 200;
-        data: SseMetricsResponse;
+        data: WsMetricsResponse;
     } | {
         status: 401;
         data: ErrorResponse;
@@ -1098,12 +1103,36 @@ export function clearEventHistory(opts?: Oazapfts.RequestOpts) {
     });
 }
 /**
- * Broadcast event to all connected clients
+ * Get events since a cursor ID
  */
-export function broadcastSseEvent(sseBroadcastRequest: SseBroadcastRequest, opts?: Oazapfts.RequestOpts) {
+export function getEventsSince({ cursor, limit }: {
+    cursor?: number;
+    limit?: number;
+} = {}, opts?: Oazapfts.RequestOpts) {
     return oazapfts.fetchJson<{
         status: 200;
-        data: SseBroadcastResponse;
+        data: {
+            events: EventRecord[];
+            count: number;
+            nextCursor: number;
+        };
+    } | {
+        status: 401;
+        data: ErrorResponse;
+    }>(`/events/since${QS.query(QS.explode({
+        cursor,
+        limit
+    }))}`, {
+        ...opts
+    });
+}
+/**
+ * Broadcast event to all connected WebSocket clients
+ */
+export function broadcastWsEvent(wsBroadcastRequest: WsBroadcastRequest, opts?: Oazapfts.RequestOpts) {
+    return oazapfts.fetchJson<{
+        status: 200;
+        data: WsBroadcastResponse;
     } | {
         status: 400;
         data: ErrorResponse;
@@ -1113,13 +1142,13 @@ export function broadcastSseEvent(sseBroadcastRequest: SseBroadcastRequest, opts
     }>("/events/broadcast", oazapfts.json({
         ...opts,
         method: "POST",
-        body: sseBroadcastRequest
+        body: wsBroadcastRequest
     }));
 }
 /**
- * Send event to specific client
+ * Send event to specific WebSocket client
  */
-export function sendToSseClient(clientId: string, sseBroadcastRequest: SseBroadcastRequest, opts?: Oazapfts.RequestOpts) {
+export function sendToWsClient(clientId: string, wsBroadcastRequest: WsBroadcastRequest, opts?: Oazapfts.RequestOpts) {
     return oazapfts.fetchJson<{
         status: 200;
         data: {
@@ -1136,6 +1165,6 @@ export function sendToSseClient(clientId: string, sseBroadcastRequest: SseBroadc
     }>(`/events/send/${encodeURIComponent(clientId)}`, oazapfts.json({
         ...opts,
         method: "POST",
-        body: sseBroadcastRequest
+        body: wsBroadcastRequest
     }));
 }

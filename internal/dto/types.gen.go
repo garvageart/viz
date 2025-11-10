@@ -345,34 +345,6 @@ type OAuthUserData struct {
 	Picture string              `json:"picture"`
 }
 
-// SSEBroadcastRequest defines model for SSEBroadcastRequest.
-type SSEBroadcastRequest struct {
-	Data  map[string]interface{} `json:"data"`
-	Event string                 `json:"event"`
-}
-
-// SSEBroadcastResponse defines model for SSEBroadcastResponse.
-type SSEBroadcastResponse struct {
-	Clients int    `json:"clients"`
-	Message string `json:"message"`
-	Success bool   `json:"success"`
-}
-
-// SSEMetricsResponse defines model for SSEMetricsResponse.
-type SSEMetricsResponse struct {
-	ConnectedClients int            `json:"connectedClients"`
-	EventsByType     map[string]int `json:"eventsByType"`
-	Timestamp        time.Time      `json:"timestamp"`
-	TotalEvents      int            `json:"totalEvents"`
-}
-
-// SSEStatsResponse defines model for SSEStatsResponse.
-type SSEStatsResponse struct {
-	ClientIds        []string  `json:"clientIds"`
-	ConnectedClients int       `json:"connectedClients"`
-	Timestamp        time.Time `json:"timestamp"`
-}
-
 // Session defines model for Session.
 type Session struct {
 	ClientId   *string    `json:"client_id,omitempty"`
@@ -440,6 +412,34 @@ type UserCreate struct {
 	Password string              `json:"password"`
 }
 
+// WSBroadcastRequest defines model for WSBroadcastRequest.
+type WSBroadcastRequest struct {
+	Data  map[string]interface{} `json:"data"`
+	Event string                 `json:"event"`
+}
+
+// WSBroadcastResponse defines model for WSBroadcastResponse.
+type WSBroadcastResponse struct {
+	Clients int    `json:"clients"`
+	Message string `json:"message"`
+	Success bool   `json:"success"`
+}
+
+// WSMetricsResponse defines model for WSMetricsResponse.
+type WSMetricsResponse struct {
+	ConnectedClients int            `json:"connectedClients"`
+	EventsByType     map[string]int `json:"eventsByType"`
+	Timestamp        time.Time      `json:"timestamp"`
+	TotalEvents      int            `json:"totalEvents"`
+}
+
+// WSStatsResponse defines model for WSStatsResponse.
+type WSStatsResponse struct {
+	ClientIds        []string  `json:"clientIds"`
+	ConnectedClients int       `json:"connectedClients"`
+	Timestamp        time.Time `json:"timestamp"`
+}
+
 // LoginJSONBody defines parameters for Login.
 type LoginJSONBody struct {
 	Email    openapi_types.Email `json:"email"`
@@ -500,6 +500,15 @@ type DownloadImagesParams struct {
 
 // GetEventHistoryParams defines parameters for GetEventHistory.
 type GetEventHistoryParams struct {
+	// Limit Maximum number of events to return
+	Limit *int `form:"limit,omitempty" json:"limit,omitempty"`
+}
+
+// GetEventsSinceParams defines parameters for GetEventsSince.
+type GetEventsSinceParams struct {
+	// Cursor Cursor ID to fetch events after
+	Cursor *uint64 `form:"cursor,omitempty" json:"cursor,omitempty"`
+
 	// Limit Maximum number of events to return
 	Limit *int `form:"limit,omitempty" json:"limit,omitempty"`
 }
@@ -587,11 +596,11 @@ type DownloadImagesJSONRequestBody = DownloadRequest
 // SignDownloadJSONRequestBody defines body for SignDownload for application/json ContentType.
 type SignDownloadJSONRequestBody = SignDownloadRequest
 
-// BroadcastSSEEventJSONRequestBody defines body for BroadcastSSEEvent for application/json ContentType.
-type BroadcastSSEEventJSONRequestBody = SSEBroadcastRequest
+// BroadcastWSEventJSONRequestBody defines body for BroadcastWSEvent for application/json ContentType.
+type BroadcastWSEventJSONRequestBody = WSBroadcastRequest
 
-// SendToSSEClientJSONRequestBody defines body for SendToSSEClient for application/json ContentType.
-type SendToSSEClientJSONRequestBody = SSEBroadcastRequest
+// SendToWSClientJSONRequestBody defines body for SendToWSClient for application/json ContentType.
+type SendToWSClientJSONRequestBody = WSBroadcastRequest
 
 // DeleteImagesBulkJSONRequestBody defines body for DeleteImagesBulk for application/json ContentType.
 type DeleteImagesBulkJSONRequestBody DeleteImagesBulkJSONBody
