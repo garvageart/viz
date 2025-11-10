@@ -30,12 +30,15 @@ export interface UploadImageResult {
 export async function uploadImageWithProgress(
     options: UploadImageOptions
 ): Promise<{ data: UploadImageResult; status: number; }> {
-    let { onUploadProgress, data, request } = options;
+    const { onUploadProgress, data } = options;
 
     const xhr = new XMLHttpRequest();
-    if (request) {
-        request = xhr;
+
+    // Bind XHR instance back to caller's request reference for cancellation support
+    if (options.request !== undefined) {
+        options.request = xhr;
     }
+
     return new Promise((resolve, reject) => {
 
         xhr.addEventListener('error', (error) => reject(error));
