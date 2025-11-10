@@ -27,8 +27,8 @@ type ImageProcessJob struct {
 	Image entities.Image
 }
 
-// NewImageWorker creates a worker that processes images and sends SSE updates
-func NewImageWorker(db *gorm.DB, sseBroker *libhttp.SSEBroker) *jobs.Worker {
+// NewImageWorker creates a worker that processes images and sends WebSocket updates
+func NewImageWorker(db *gorm.DB, wsBroker *libhttp.WSBroker) *jobs.Worker {
 	return &jobs.Worker{
 		Name:  JobTypeImageProcess,
 		Topic: TopicImageProcess,
@@ -39,8 +39,8 @@ func NewImageWorker(db *gorm.DB, sseBroker *libhttp.SSEBroker) *jobs.Worker {
 				return fmt.Errorf("%s: %w", JobTypeImageProcess, err)
 			}
 
-			if sseBroker != nil {
-				sseBroker.Broadcast("job-started", map[string]any{
+			if wsBroker != nil {
+				wsBroker.Broadcast("job-started", map[string]any{
 					"jobId":    msg.UUID,
 					"type":     JobTypeImageProcess,
 					"imageId":  job.Image.Uid,
@@ -50,7 +50,7 @@ func NewImageWorker(db *gorm.DB, sseBroker *libhttp.SSEBroker) *jobs.Worker {
 
 			// Create reusable progress reporter and process
 			onProgress := jobs.NewProgressCallback(
-				sseBroker,
+				wsBroker,
 				msg.UUID,
 				JobTypeImageProcess,
 				job.Image.Uid,
@@ -60,8 +60,8 @@ func NewImageWorker(db *gorm.DB, sseBroker *libhttp.SSEBroker) *jobs.Worker {
 			err = ImageProcess(msg.Context(), db, job.Image, onProgress)
 
 			if err != nil {
-				if sseBroker != nil {
-					sseBroker.Broadcast("job-failed", map[string]any{
+				if wsBroker != nil {
+					wsBroker.Broadcast("job-failed", map[string]any{
 						"jobId":   msg.UUID,
 						"type":    JobTypeImageProcess,
 						"imageId": job.Image.Uid,
@@ -71,8 +71,8 @@ func NewImageWorker(db *gorm.DB, sseBroker *libhttp.SSEBroker) *jobs.Worker {
 				return err
 			}
 
-			if sseBroker != nil {
-				sseBroker.Broadcast("job-completed", map[string]any{
+			if wsBroker != nil {
+				wsBroker.Broadcast("job-completed", map[string]any{
 					"jobId":   msg.UUID,
 					"type":    JobTypeImageProcess,
 					"imageId": job.Image.Uid,

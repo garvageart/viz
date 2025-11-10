@@ -33,7 +33,7 @@ type XMPGenerationJob struct {
 }
 
 // NewXMPWorker creates a worker that generates XMP sidecar files
-func NewXMPWorker(logger *slog.Logger, sseBroker *libhttp.SSEBroker) *jobs.Worker {
+func NewXMPWorker(logger *slog.Logger, wsBroker *libhttp.WSBroker) *jobs.Worker {
 	return &jobs.Worker{
 		Name:  JobTypeXMPGeneration,
 		Topic: TopicXMPGeneration,
@@ -44,8 +44,8 @@ func NewXMPWorker(logger *slog.Logger, sseBroker *libhttp.SSEBroker) *jobs.Worke
 				return fmt.Errorf("%s: %w", JobTypeXMPGeneration, err)
 			}
 
-			if sseBroker != nil {
-				sseBroker.Broadcast("job-started", map[string]any{
+			if wsBroker != nil {
+				wsBroker.Broadcast("job-started", map[string]any{
 					"jobId":    msg.UUID,
 					"type":     JobTypeXMPGeneration,
 					"imageId":  job.Image.Uid,
@@ -54,7 +54,7 @@ func NewXMPWorker(logger *slog.Logger, sseBroker *libhttp.SSEBroker) *jobs.Worke
 			}
 
 			onProgress := jobs.NewProgressCallback(
-				sseBroker,
+				wsBroker,
 				msg.UUID,
 				JobTypeXMPGeneration,
 				job.Image.Uid,
@@ -64,8 +64,8 @@ func NewXMPWorker(logger *slog.Logger, sseBroker *libhttp.SSEBroker) *jobs.Worke
 			err = generateXMPSidecar(job.Image, logger, onProgress)
 
 			if err != nil {
-				if sseBroker != nil {
-					sseBroker.Broadcast("job-failed", map[string]any{
+				if wsBroker != nil {
+					wsBroker.Broadcast("job-failed", map[string]any{
 						"jobId":   msg.UUID,
 						"type":    JobTypeXMPGeneration,
 						"imageId": job.Image.Uid,
@@ -75,8 +75,8 @@ func NewXMPWorker(logger *slog.Logger, sseBroker *libhttp.SSEBroker) *jobs.Worke
 				return err
 			}
 
-			if sseBroker != nil {
-				sseBroker.Broadcast("job-completed", map[string]any{
+			if wsBroker != nil {
+				wsBroker.Broadcast("job-completed", map[string]any{
 					"jobId":   msg.UUID,
 					"type":    JobTypeXMPGeneration,
 					"imageId": job.Image.Uid,
