@@ -88,12 +88,3 @@ export async function getJobsSnapshot(): Promise<{ data: any; status: number; }>
     const data = await res.json().catch(() => ({}));
     return { data, status: res.status };
 }
-
-export async function getEventsSince(cursor: number, limit: number = 200): Promise<{ data: any; status: number; }> {
-    const url = new URL(`${createServerURL(MEDIA_SERVER)}/events/since`);
-    url.searchParams.set("cursor", String(cursor));
-    url.searchParams.set("limit", String(limit));
-    const res = await fetch(url, { credentials: "include" });
-    const data = await res.json().catch(() => ({}));
-    return { data, status: res.status };
-}

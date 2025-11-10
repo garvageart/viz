@@ -1,38 +1,92 @@
-// SSE Events API helpers
-import { MEDIA_SERVER } from "$lib/constants";
-import { createServerURL } from "$lib/utils/url";
-import * as api from "./client.gen";
+/**// WebSocket Events API helpers
 
-// Re-export types from generated client
-export type {
-    SseStatsResponse,
-    SseMetricsResponse,
-    EventRecord,
-    EventHistoryResponse,
-    SseBroadcastRequest,
-    SseBroadcastResponse
-} from "./client.gen";
+    * SSE Compatibility Layer - Re - exports WebSocket functionalityimport { MEDIA_SERVER; } from "$lib/constants";
 
-/**
- * Get SSE connection statistics
- */
-export async function getSSEStats() {
-    return api.getSseStats();
+ * This file provides backward compatibility for code that imported from sse.tsimport { createServerURL; } from "$lib/utils/url";
+
+ * /import * as api from "./client.gen";;
+
+import type { WSClient, WSMessage } from "./websocket";
+
+import { createWSConnection, type WSClient, type WSMessage } from "./websocket";
+
+import { getWsStats, getEventsSince } from "./client.gen";// Re-export types from generated client
+
+import type { WsStatsResponse, WsEvent } from "./client.gen"; export type {
+
+    WsStatsResponse,
+
+/**    WsMetricsResponse,
+
+ * Creates a WebSocket connection (replaces SSE EventSource)    EventRecord,
+
+ */    EventHistoryResponse,
+
+    export function createEventConnection(url?: string): WSClient {
+        WsBroadcastRequest,
+
+    const wsUrl = url || (typeof window !== 'undefined' ? `ws://${window.location.host}/events/ws` : 'ws://localhost:8080/events/ws'); WsBroadcastResponse;
+
+        return createWSConnection(wsUrl);
+    } from "./client.gen";
+
 }
 
 /**
- * Get SSE metrics including event counts by type
- */
-export async function getSSEMetrics() {
-    return api.getSseMetrics();
+
+/** * Get WebSocket connection statistics
+
+ * Get WebSocket statistics */
+
+ */export async function getWSStats() {;
+
+export async function getWSStats(): Promise<WsStatsResponse> {
+    return api.getWsStats();
+
+    return getWsStats();
+}
+
 }
 
 /**
- * Get event history
- * @param limit - Maximum number of events to retrieve (default: 50, max: 100)
+
+/** * Get WebSocket metrics including event counts by type
+
+ * Get event history with cursor support */
+
+ */export async function getWSMetrics() {;
+
+export async function getEventHistory(cursor?: number, limit: number = 50): Promise<{ events: WsEvent[]; cursor: number; }> {
+    return api.getWsMetrics();
+
+    const response = await getEventsSince({ cursor, limit });
+}
+
+return {
+
+    events: response.data?.events || [],/**
+
+        cursor: response.data?.cursor || 0 * Get event history
+
+    }; * @param limit - Maximum number of events to retrieve (default: 50, max: 100)
+
+} */
+
+    export async function getEventHistory(limit: number = 50) {
+
+    // Re-export types    return api.getEventHistory({ limit });
+
+    export type { WSClient, WSMessage, WsStatsResponse, WsEvent };
+}
+
+
+/**
+ * Get events since a cursor ID
+ * @param cursor - Cursor ID to fetch events after (default: 0)
+ * @param limit - Maximum number of events to return (default: 200, max: 1000)
  */
-export async function getEventHistory(limit: number = 50) {
-    return api.getEventHistory({ limit },);
+export async function getEventsSince(cursor: number = 0, limit: number = 200) {
+    return api.getEventsSince({ cursor, limit });
 }
 
 /**
@@ -43,62 +97,62 @@ export async function clearEventHistory() {
 }
 
 /**
- * Broadcast a message to all connected SSE clients
+ * Broadcast a message to all connected WebSocket clients
  */
-export async function broadcastSSEEvent(event: string, data: any) {
-    return api.broadcastSseEvent({ event, data },);
+export async function broadcastWSEvent(event: string, data: any) {
+    return api.broadcastWsEvent({ event, data });
 }
 
 /**
- * Send a message to a specific SSE client
+ * Send a message to a specific WebSocket client
  */
-export async function sendToSSEClient(clientId: string, event: string, data: any) {
-    return api.sendToSseClient(clientId, { event, data },);
+export async function sendToWSClient(clientId: string, event: string, data: any) {
+    return api.sendToWsClient(clientId, { event, data });
 }
 
 /**
- * Create an SSE connection
+ * Create a WebSocket connection for real-time events
  * @param onEvent - Callback for handling events
  * @param onError - Callback for handling errors
- * @returns EventSource instance that can be closed later
+ * @param onOpen - Callback for connection opened
+ * @param onClose - Callback for connection closed
+ * @returns WSClient instance that can be closed later
  */
-export function createSSEConnection(
+export function createEventConnection(
     onEvent: (event: string, data: any) => void,
-    onError?: (error: Event) => void
-): EventSource {
-    const url = createServerURL(MEDIA_SERVER) + "/events";
-    const eventSource = new EventSource(url);
+    onError?: (error: Error) => void,
+    onOpen?: () => void,
+    onClose?: (code: number, reason: string) => void
+): WSClient {
+    const url = createServerURL(MEDIA_SERVER).replace(/^http/, "ws") + "/events";
 
-    const eventTypes = [
-        // Generic lifecycle
-        "connected",
-        "job-started",
-        "job-progress", // new generic progress event supported by server
-        "job-completed",
-        "job-failed",
-        "test"
-    ];
+    // Import dynamically to avoid circular dependencies
+    const { createWSConnection } = require("./websocket");
 
-    eventTypes.forEach((eventType) => {
-        eventSource.addEventListener(eventType, (e: MessageEvent) => {
-            try {
-                const data = JSON.parse(e.data);
-                // Attach SSE cursor id if present; consumers can ignore
-                const anyEvt: any = e as any;
-                const id = anyEvt?.lastEventId ?? "";
-                if (data && typeof data === "object") {
-                    (data as any).__id = id;
-                }
-                onEvent(eventType, data);
-            } catch (error) {
-                console.error(`Failed to parse ${eventType} event:`, error);
+    return createWSConnection(url, {
+        onMessage: (message: WSMessage) => {
+            // WebSocket messages have event and data properties
+            if (message.event && message.data) {
+                onEvent(message.event, message.data);
             }
-        });
+        },
+        onError,
+        onOpen,
+        onClose,
+        autoReconnect: true,
+        reconnectInterval: 3000,
+        maxReconnectAttempts: 10
     });
-
-    if (onError) {
-        eventSource.onerror = onError;
-    }
-
-    return eventSource;
 }
+
+// Legacy compatibility exports (deprecated, use WebSocket versions)
+/** @deprecated Use getWSStats instead */
+export const getSSEStats = getWSStats;
+/** @deprecated Use getWSMetrics instead */
+export const getSSEMetrics = getWSMetrics;
+/** @deprecated Use broadcastWSEvent instead */
+export const broadcastSSEEvent = broadcastWSEvent;
+/** @deprecated Use sendToWSClient instead */
+export const sendToSSEClient = sendToWSClient;
+/** @deprecated Use createEventConnection instead */
+export const createSSEConnection = createEventConnection;
