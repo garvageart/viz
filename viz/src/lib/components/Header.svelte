@@ -14,7 +14,6 @@
 	import { SUPPORTED_IMAGE_TYPES, SUPPORTED_RAW_FILES, type SupportedImageTypes } from "$lib/types/images";
 	import OpenAccountPanel from "./AccountPanel.svelte";
 	import AppMenu from "./AppMenu.svelte";
-	import { slide } from "svelte/transition";
 
 	let { ...props }: SvelteHTMLElements["header"] = $props();
 
@@ -79,9 +78,10 @@
 	function handleUpload(e: MouseEvent) {
 		e.preventDefault();
 		// allowed image types will come from the config but for now just hardcode
-		const controller = new UploadManager([...SUPPORTED_RAW_FILES, ...SUPPORTED_IMAGE_TYPES] as SupportedImageTypes[]);
-		controller.openFileHolder();
-		controller.uploadImage();
+		const manager = new UploadManager([...SUPPORTED_RAW_FILES, ...SUPPORTED_IMAGE_TYPES] as SupportedImageTypes[]);
+
+		// Use new API: open picker and upload (fire and forget - panel will show progress)
+		manager.openPickerAndUpload();
 	}
 
 	let openAccPanel = $state(false);
@@ -157,7 +157,7 @@
 	header {
 		background-color: var(--imag-bg-color);
 		max-height: 2em;
-		padding: 0.1em 0.8em;
+		padding: 0.3em 0.8em;
 		display: flex;
 		align-items: center;
 		border-bottom: 1px solid var(--imag-60);
