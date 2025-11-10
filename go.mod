@@ -23,6 +23,7 @@ require (
 	github.com/fullstorydev/emulators/storage v1.0.0
 	github.com/go-co-op/gocron/v2 v2.16.5
 	github.com/go-errors/errors v1.5.1
+	github.com/gorilla/websocket v1.5.3
 	github.com/oapi-codegen/runtime v1.1.0
 	github.com/orandin/slog-gorm v1.4.0
 	github.com/samber/slog-multi v1.4.0
