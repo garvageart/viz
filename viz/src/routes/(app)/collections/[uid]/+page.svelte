@@ -14,7 +14,7 @@
 <script lang="ts">
 	import { goto, invalidateAll } from "$app/navigation";
 	import { page } from "$app/state";
-	import AssetGrid from "$lib/components/AssetGrid.svelte";
+	import PhotoAssetGrid from "$lib/components/PhotoAssetGrid.svelte";
 	import AssetsShell from "$lib/components/AssetsShell.svelte";
 	import Lightbox from "$lib/components/Lightbox.svelte";
 	import LoadingContainer from "$lib/components/LoadingContainer.svelte";
@@ -183,18 +183,18 @@
 	);
 
 	// Grid props
-	let grid: ComponentProps<typeof AssetGrid<Image>> = $derived({
-		assetSnippet: imageCard,
+	let grid: ComponentProps<typeof PhotoAssetGrid> = $derived({
+		photoCardSnippet: imageCard,
 		assetGridArray: imageGridArray,
 		selectedAssets,
 		singleSelectedAsset,
 		data: displayData,
-		assetDblClick: (_, asset) => {
+		assetDblClick: (_e: MouseEvent, asset: Image) => {
 			lightboxImage = asset;
 		},
-		// Context menu event from AssetGrid: { asset, anchor }
+		// Context menu event from PhotoAssetGrid: { asset, anchor }
 		onassetcontext: (detail: { asset: Image; anchor: { x: number; y: number } | HTMLElement }) => {
-			const { asset, anchor } = detail as any;
+			const { asset, anchor } = detail;
 			// Make sure this asset is the only selected one for context actions
 			if (!selectedAssets.has(asset) || selectedAssets.size <= 1) {
 				singleSelectedAsset = asset;
@@ -290,9 +290,14 @@
 
 	async function handleCollectionUpload() {
 		// allowed image types will come from the config but for now just hardcode
-		const controller = new UploadManager([...SUPPORTED_RAW_FILES, ...SUPPORTED_IMAGE_TYPES] as SupportedImageTypes[]);
-		controller.openFileHolder();
-		const uploadedImages = await controller.uploadImage();
+		const manager = new UploadManager([...SUPPORTED_RAW_FILES, ...SUPPORTED_IMAGE_TYPES] as SupportedImageTypes[]);
+
+		// Use new API: open picker and upload
+		const uploadedImages = await manager.openPickerAndUpload();
+
+		if (uploadedImages.length === 0) {
+			return;
+		}
 
 		const response = await addCollectionImages(loadedData.uid, {
 			uids: uploadedImages.map((img) => img.uid)
@@ -300,7 +305,7 @@
 
 		if (response.data.added) {
 			toastState.addToast({
-				message: `Added photos to collection`,
+				message: `Added ${uploadedImages.length} photo(s) to collection`,
 				type: "success",
 				timeout: 3000
 			});
@@ -687,6 +692,7 @@
 >
 	<AssetsShell
 		bind:grid
+		gridComponent={PhotoAssetGrid}
 		{pagination}
 		{noAssetsSnippet}
 		{selectionToolbarSnippet}
