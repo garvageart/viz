@@ -18,6 +18,11 @@
 </div>
 
 <style lang="scss">
+	:global(:root) {
+		/* expose toolbar height as a CSS variable for other components to use */
+		--imag-toolbar-height: 4em;
+	}
+
 	.viz-toolbar-container {
 		z-index: 1;
 		padding: 0.5em 2em;
