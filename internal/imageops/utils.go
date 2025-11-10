@@ -166,8 +166,19 @@ func ConvertEXIFDateTime(exifDateTime string) *time.Time {
 // first-request latency by avoiding lazy loading when the operation is
 // first used.
 func WarmupAllOps() {
-	// ensure vips is started
-	libvips.Startup(nil)
+	// Configure VIPS for optimal performance
+	vipsConfig := &libvips.Config{
+		ConcurrencyLevel: 0,    // 0 = use number of CPU cores
+		MaxCacheFiles:    100,  // Cache up to 100 files
+		MaxCacheMem:      50,   // 50MB memory cache
+		MaxCacheSize:     500,  // Cache up to 500 operations
+		ReportLeaks:      false,
+		CacheTrace:       false,
+		VectorEnabled:    true, // Enable SIMD optimizations
+	}
+	
+	// ensure vips is started with optimized config
+	libvips.Startup(vipsConfig)
 
 	ops := []string{
 		// common loaders/savers and ops that trigger plugin loading
