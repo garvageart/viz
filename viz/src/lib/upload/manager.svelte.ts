@@ -1,6 +1,6 @@
 import { upload } from "$lib/states/index.svelte";
 import type { SupportedImageTypes, SupportedRAWFiles } from "$lib/types/images";
-import { UploadImage } from "./asset.svelte";
+import { UploadImage, UploadState } from "./asset.svelte";
 
 export interface ImageUploadFileData {
     filename: string;
@@ -13,147 +13,155 @@ export interface ImageUploadSuccess {
     metadata?: any;
 }
 
+/**
+ * Complete rewrite: Clean upload manager for drag-and-drop and file picker.
+ * Files are immediately added to global upload state so the panel shows right away.
+ */
 export default class UploadManager {
     allowedTypes: string[];
-    fileHolder: HTMLInputElement;
 
-    constructor(allowedTypes: SupportedImageTypes[] | SupportedRAWFiles[]) {
+    constructor(allowedTypes: (SupportedImageTypes | SupportedRAWFiles)[]) {
         this.allowedTypes = allowedTypes;
-        this.fileHolder = document.createElement("input");
-
-        this.createFileHolder();
-    }
-
-    private async readFile(fileList: FileList) {
-        const allFiles = [...fileList];
-
-        const allFileData = allFiles.map(async (file) => {
-            const rawData = await new Promise<string | ArrayBuffer>((resolve) => {
-                const reader = new FileReader();
-
-                reader.onloadend = (e) => {
-                    if (e.target && e.target.result) {
-                        resolve(e.target.result);
-                    }
-                };
-
-                reader.readAsDataURL(file);
-            });
-
-            return {
-                file,
-                rawData
-            };
-        });
-
-        return Promise.all(allFileData);
-    }
-
-    private createFileHolder() {
-        const allowedMimeTypesString = this.allowedTypes.map((mimeType) => "image/" + mimeType).join(", ");
-
-        this.fileHolder.setAttribute("type", "file");
-        this.fileHolder.setAttribute("accept", allowedMimeTypesString);
-        this.fileHolder.multiple = true;
     }
 
     /**
-     * Upload files with controlled concurrency
-     * @param files Array of UploadImage instances to upload
-     * @param concurrency Maximum number of simultaneous uploads
-     * @returns Promise resolving to array of upload results
+     * Add files programmatically (e.g., from drag-and-drop).
+     * Files are immediately added to the global upload.files array so the panel appears.
+     * Returns array of created UploadImage tasks.
      */
-    private async uploadWithConcurrency(files: UploadImage[], concurrency: number): Promise<(ImageUploadSuccess | undefined)[]> {
-        const results: (ImageUploadSuccess | undefined)[] = [];
-        const executing: Promise<void>[] = [];
+    addFiles(files: File[]): UploadImage[] {
+        const tasks: UploadImage[] = [];
 
-        for (let i = 0; i < files.length; i++) {
-            const file = files[i];
+        for (const file of files) {
+            // Validate file type
+            const fileType = file.type.split("/")[1];
+            if (!this.allowedTypes.includes(fileType as any)) {
+                console.warn(`Skipping unsupported file type: ${file.type}`);
+                continue;
+            }
 
-            // Create a promise for this upload
-            const uploadPromise = (async () => {
-                const result = await file.upload();
-                results[i] = result;
-            })();
+            // Create upload task
+            const task = new UploadImage({
+                filename: file.name,
+                data: file
+            });
 
-            executing.push(uploadPromise);
+            tasks.push(task);
+        }
 
-            // When concurrency limit is reached, wait for one to finish
-            if (executing.length >= concurrency) {
-                await Promise.race(executing);
-                // Remove completed promises
-                executing.splice(0, executing.findIndex(p => p === uploadPromise) + 1);
+        // Immediately add to global state (panel shows when upload.files.length > 0)
+        if (tasks.length > 0) {
+            upload.files.push(...tasks);
+            upload.stats.total += tasks.length;
+        }
+
+        return tasks;
+    }
+
+    /**
+     * Start uploading tasks with concurrency control.
+     * If no tasks provided, uploads all pending tasks in the global store.
+     */
+    async start(tasks?: UploadImage[]): Promise<ImageUploadSuccess[]> {
+        const pending = tasks || upload.files.filter(t => t.state === UploadState.PENDING);
+
+        if (pending.length === 0) {
+            return [];
+        }
+
+        const results = await this.uploadWithConcurrency(pending, upload.concurrency);
+
+        // Update stats
+        const successful = results.filter(r => r !== undefined) as ImageUploadSuccess[];
+        upload.stats.success += successful.length;
+        upload.stats.errors += (pending.length - successful.length);
+
+        // Remove completed tasks from panel
+        for (const task of pending) {
+            const idx = upload.files.indexOf(task);
+            if (idx > -1) {
+                upload.files.splice(idx, 1);
             }
         }
 
-        // Wait for remaining uploads to complete
-        await Promise.all(executing);
-
-        return results;
+        return successful;
     }
 
-    openFileHolder() {
-        this.fileHolder.click();
-    }
+    /**
+     * Upload tasks with concurrency limit using a proper queue.
+     */
+    private async uploadWithConcurrency(
+        tasks: UploadImage[],
+        maxConcurrent: number
+    ): Promise<(ImageUploadSuccess | undefined)[]> {
+        const results: (ImageUploadSuccess | undefined)[] = new Array(tasks.length);
+        let activeCount = 0;
+        let nextIndex = 0;
 
-    async uploadImage() {
-        return await new Promise<ImageUploadSuccess[]>((resolve, reject) => {
-            this.fileHolder.addEventListener("change", async () => {
-                try {
-                    if (!this.fileHolder.files) {
-                        resolve([]);
-                        return;
-                    }
-
-                    const allFileData = await this.readFile(this.fileHolder.files);
-                    this.fileHolder.remove();
-
-                    const uploadFiles = [];
-
-                    for (const fileData of allFileData) {
-                        if (!this.allowedTypes.includes(fileData.file.type.split("/")[1])) {
-                            resolve([]);
-                            return;
-                        }
-
-                        const fileInformation: ImageUploadFileData = {
-                            filename: fileData.file.name,
-                            data: fileData.file
-                        };
-
-                        // Checking for duplicates should be optional maybe but just do it now anyways
-                        if (crypto?.subtle?.digest) {
-                            const hashBuffer = await crypto.subtle.digest("SHA-1", await fileData.file.arrayBuffer());
-                            const hashArray = Array.from(new Uint8Array(hashBuffer));
-                            fileInformation.checksum = hashArray.map((b) => b.toString(16).padStart(2, "0")).join("");
-                        }
-
-                        uploadFiles.push(new UploadImage(fileInformation));
-                        upload.stats.total += 1;
-                    }
-
-                    upload.files.push(...uploadFiles);
-
-                    // Upload files with concurrency control
-                    const results = await this.uploadWithConcurrency(uploadFiles, upload.concurrency);
-
-                    const successfulUploads = results.filter((r) => r !== undefined);
-                    upload.stats.success = successfulUploads.length;
-                    upload.stats.errors = upload.stats.total - successfulUploads.length;
-
-                    for (const file of uploadFiles) {
-                        const index = upload.files.indexOf(file);
-                        if (index > -1) {
-                            upload.files.splice(index, 1);
-                        }
-                    }
-
-                    resolve(successfulUploads);
-                } catch (error) {
-                    reject(error);
+        return new Promise((resolve) => {
+            const startNext = () => {
+                // If all tasks started and none active, we're done
+                if (nextIndex >= tasks.length && activeCount === 0) {
+                    resolve(results);
+                    return;
                 }
-            });
+
+                // Start new tasks while under concurrency limit
+                while (activeCount < maxConcurrent && nextIndex < tasks.length) {
+                    const index = nextIndex++;
+                    const task = tasks[index];
+
+                    activeCount++;
+
+                    task.upload()
+                        .then((result) => {
+                            results[index] = result;
+                        })
+                        .catch((err) => {
+                            console.error(`Upload failed for ${task.data.filename}:`, err);
+                            results[index] = undefined;
+                        })
+                        .finally(() => {
+                            activeCount--;
+                            startNext();
+                        });
+                }
+            };
+
+            startNext();
         });
     }
 
+    /**
+     * Open file picker dialog.
+     * Creates a hidden input, triggers click, and returns selected files.
+     */
+    openPicker(): Promise<File[]> {
+        return new Promise((resolve) => {
+            const input = document.createElement("input");
+            input.type = "file";
+            input.multiple = true;
+            input.accept = this.allowedTypes.map(t => `image/${t}`).join(",");
+
+            input.onchange = () => {
+                const files = Array.from(input.files || []);
+                input.remove();
+                resolve(files);
+            };
+
+            input.click();
+        });
+    }
+
+    /**
+     * Open picker, add files, and start upload in one call.
+     * Convenience method for backward compatibility.
+     */
+    async openPickerAndUpload(): Promise<ImageUploadSuccess[]> {
+        const files = await this.openPicker();
+        if (files.length === 0) return [];
+
+        const tasks = this.addFiles(files);
+        return await this.start(tasks);
+    }
 }
