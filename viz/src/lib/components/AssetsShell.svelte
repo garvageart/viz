@@ -2,9 +2,10 @@
 	import { dev } from "$app/environment";
 	import { DateTime } from "luxon";
 	import AssetGrid from "./AssetGrid.svelte";
+	import PhotoAssetGrid from "./PhotoAssetGrid.svelte";
 	import AssetToolbar from "./AssetToolbar.svelte";
 	import MaterialIcon from "./MaterialIcon.svelte";
-	import { type ComponentProps, type Snippet } from "svelte";
+	import { type Component, type ComponentProps, type Snippet } from "svelte";
 	import type { HTMLButtonAttributes } from "svelte/elements";
 	import { type MaterialSymbol } from "material-symbols";
 	import type { IPagination } from "$lib/types/asset";
@@ -12,7 +13,9 @@
 	import { sort } from "$lib/states/index.svelte";
 
 	type Props = {
-		grid: ComponentProps<typeof AssetGrid<T>>;
+		grid: ComponentProps<typeof AssetGrid<T>> | ComponentProps<typeof PhotoAssetGrid>;
+		/** Optional: specify PhotoAssetGrid component for photo-specific features */
+		gridComponent?: Component<any>;
 		pagination?: IPagination;
 		children?: Snippet;
 		selectionToolbarSnippet?: Snippet;
@@ -31,6 +34,7 @@
 
 	let {
 		grid = $bindable(),
+		gridComponent = AssetGrid,
 		pagination = $bindable({
 			limit: 25,
 			offset: 0
@@ -60,9 +64,8 @@
 			return dataSlice;
 		}
 
-		dataSlice.push(...grid.data.slice(dataSlice.length, dataSlice.length + (columnCount - currentRowImageCount)));
-
-		return dataSlice;
+		const fillItems = grid.data.slice(dataSlice.length, dataSlice.length + (columnCount - currentRowImageCount));
+		return [...dataSlice, ...fillItems] as typeof dataSlice;
 	});
 
 	// Sorting
@@ -122,7 +125,7 @@
 {/snippet}
 
 {#if gridData.length > 0}
-	{#if grid.selectedAssets.size > 1}
+	{#if grid.selectedAssets && grid.selectedAssets.size > 1}
 		<AssetToolbar class="selection-toolbar" {...selectionToolbarProps}>
 			<button
 				id="coll-clear-selection"
@@ -130,7 +133,7 @@
 				title="Clear selection"
 				aria-label="Clear selection"
 				style="margin-right: 1em;"
-				onclick={() => grid.selectedAssets.clear()}
+				onclick={() => grid.selectedAssets?.clear()}
 			>
 				<MaterialIcon iconName="close" />
 			</button>
@@ -187,14 +190,17 @@
 		{/if}
 	</div>
 {:else}
-	<AssetGrid {...grid} bind:assetGridArray bind:data={gridData} bind:columnCount />
+	{@const GridComp = gridComponent}
+	<GridComp {...grid} bind:assetGridArray bind:data={gridData} bind:columnCount />
 {/if}
 
 <style lang="scss">
 	#asset-tools {
 		display: flex;
 		align-items: center;
-		font-size: 0.9rem;
+		& > * {
+			font-size: 0.9rem;
+		}
 
 		& > button {
 			margin: 0em 0.5em;
@@ -214,7 +220,8 @@
 		display: flex;
 		align-items: center;
 		justify-content: center;
-		text-wrap: nowrap;
+		white-space: nowrap;
+		font-size: 0.9rem;
 
 		&:hover {
 			background-color: var(--imag-90);
