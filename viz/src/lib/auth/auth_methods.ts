@@ -1,20 +1,8 @@
 import { goto } from "$app/navigation";
 import { sleep } from "$lib/utils/misc";
 import { cookieMethods } from "$lib/utils/cookie";
-import { defaults } from "$lib/api/client.gen";
-
-interface AuthorizationCodeFlowResponse {
-    code: string;
-    state: string;
-}
-
-interface AuthorizationCodeGrantResponse {
-    access_token: string;
-    expires_in: number;
-    refresh_token: string;
-    scope: string;
-    token_type: string;
-}
+import { defaults, getCurrentUser, logout, type User } from "$lib/api/client.gen";
+import { user } from "$lib/states/index.svelte";
 
 interface OAuthResponseUserData {
     id?: string;
@@ -22,6 +10,45 @@ interface OAuthResponseUserData {
     name: string;
     picture: string;
 }
+
+export async function fetchCurrentUser(): Promise<User | null> {
+    user.loading = true;
+    try {
+        const result = await getCurrentUser();
+
+        if (result.status === 200) {
+            user.data = result.data;
+            user.error = null;
+            user.isAdmin = result.data.role.includes('admin');
+            return result.data;
+        } else {
+            user.data = null;
+            user.error = null;
+            return null;
+        }
+    } catch (err: any) {
+        user.data = null;
+        user.error = err?.message ?? 'Failed to fetch current user';
+        return null;
+    } finally {
+        user.loading = false;
+        user.fetched = true;
+    }
+}
+
+export function clearUser() {
+    user.data = null;
+    user.error = null;
+    user.fetched = true;
+}
+
+export function logoutUser() {
+    clearUser();
+    logout();
+    cookieMethods.delete("imag-state");
+    goto('/login');
+}
+
 
 export const authServerURL = defaults.baseUrl;
 

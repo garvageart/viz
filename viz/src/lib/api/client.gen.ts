@@ -72,6 +72,8 @@ export type ImageExif = {
     focal_length?: string;
     exposure_time?: string;
     aperture?: string;
+    exposure_value?: string;
+    f_number?: string;
     flash?: string;
     white_balance?: string;
     lens_model?: string;
@@ -88,6 +90,8 @@ export type ImageMetadata = {
     file_size?: number;
     original_file_name?: string;
     file_type: string;
+    // User-assigned canonical rating (0-5). Null = unrated.
+    rating?: number | null;
     keywords?: string[];
     color_space: string;
     file_modified_at: string;
@@ -127,7 +131,7 @@ export type ImagesPage = {
     prev?: string;
     next?: string;
     limit: number;
-    offset: number;
+    page: number;
     count?: number;
     items: ImagesResponse[];
 };
@@ -164,7 +168,7 @@ export type CollectionListResponse = {
     prev?: string;
     next?: string;
     limit: number;
-    offset: number;
+    page: number;
     count?: number;
     items: Collection[];
 };
@@ -471,9 +475,9 @@ export function getCurrentUser(opts?: Oazapfts.RequestOpts) {
 /**
  * List all images with pagination
  */
-export function listImages({ limit, offset }: {
+export function listImages({ limit, page }: {
     limit?: number;
-    offset?: number;
+    page?: number;
 } = {}, opts?: Oazapfts.RequestOpts) {
     return oazapfts.fetchJson<{
         status: 200;
@@ -483,7 +487,7 @@ export function listImages({ limit, offset }: {
         data: ErrorResponse;
     }>(`/images${QS.query(QS.explode({
         limit,
-        offset
+        page
     }))}`, {
         ...opts
     });
@@ -593,6 +597,30 @@ export function getImageFile(uid: string, { format, w, h, quality, download, tok
     });
 }
 /**
+ * Get EXIF data for an image
+ */
+export function getImageExif(uid: string, { simple }: {
+    simple?: boolean;
+} = {}, opts?: Oazapfts.RequestOpts) {
+    return oazapfts.fetchJson<{
+        status: 200;
+        data: ImageExif;
+    } | {
+        status: 400;
+        data: ErrorResponse;
+    } | {
+        status: 404;
+        data: ErrorResponse;
+    } | {
+        status: 500;
+        data: ErrorResponse;
+    }>(`/images/${encodeURIComponent(uid)}/exif${QS.query(QS.explode({
+        simple
+    }))}`, {
+        ...opts
+    });
+}
+/**
  * Create short-lived download token and redirect
  */
 export function quickDownloadImage(uid: string, opts?: Oazapfts.RequestOpts) {
@@ -611,9 +639,9 @@ export function quickDownloadImage(uid: string, opts?: Oazapfts.RequestOpts) {
 /**
  * List collections
  */
-export function listCollections({ limit, offset }: {
+export function listCollections({ limit, page }: {
     limit?: number;
-    offset?: number;
+    page?: number;
 } = {}, opts?: Oazapfts.RequestOpts) {
     return oazapfts.fetchJson<{
         status: 200;
@@ -626,7 +654,7 @@ export function listCollections({ limit, offset }: {
         data: ErrorResponse;
     }>(`/collections${QS.query(QS.explode({
         limit,
-        offset
+        page
     }))}`, {
         ...opts
     });

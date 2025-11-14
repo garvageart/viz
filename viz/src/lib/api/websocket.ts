@@ -1,6 +1,7 @@
 // WebSocket Events API helpers
 import { MEDIA_SERVER } from "$lib/constants";
 import { createServerURL } from "$lib/utils/url";
+import { getWsStats as genGetWsStats, getEventHistory as genGetEventHistory, getEventsSince as genGetEventsSince } from "$lib/api/client.gen";
 
 /**
  * WebSocket message structure from server
@@ -61,6 +62,28 @@ export class WSClient {
         this.connect();
     }
 
+    private handleText = (text: string) => {
+        // Server may batch messages into a single frame separated by newlines.
+        // Split and parse each line individually.
+        const parts = text.split('\n');
+        for (const part of parts) {
+            const line = part.trim();
+            if (!line) continue;
+            try {
+                const message: WSMessage = JSON.parse(line);
+
+                if (message.event === 'ping') {
+                    this.send('pong', {});
+                    continue;
+                }
+
+                this.options.onEvent(message.event, message.data);
+            } catch (error) {
+                console.error('[WebSocket] Failed to parse message part:', error, 'rawPart:', line);
+            }
+        }
+    };
+
     private connect() {
         if (this.isClosed) return;
 
@@ -68,24 +91,31 @@ export class WSClient {
             this.ws = new WebSocket(this.url);
 
             this.ws.onopen = () => {
-                console.log('[WebSocket] Connected');
+                console.debug('[WebSocket] Connected');
                 this.reconnectAttempts = 0;
                 this.options.onOpen();
             };
 
             this.ws.onmessage = (event) => {
+                // event.data can be a string or a Blob; handle both
                 try {
-                    const message: WSMessage = JSON.parse(event.data);
-
-                    // Handle ping/pong for keepalive
-                    if (message.event === 'ping') {
-                        this.send('pong', {});
-                        return;
+                    if (typeof event.data === 'string') {
+                        this.handleText(event.data);
+                    } else if (event.data instanceof Blob) {
+                        // convert blob to text asynchronously
+                        (event.data as Blob).text().then((txt) => this.handleText(txt)).catch((err) => {
+                            console.error('[WebSocket] Failed to read Blob message:', err);
+                        });
+                    } else {
+                        // Fallback: try to coerce to string
+                        try {
+                            this.handleText(String(event.data));
+                        } catch (err) {
+                            console.error('[WebSocket] Unknown message type, cannot parse:', err, event.data);
+                        }
                     }
-
-                    this.options.onEvent(message.event, message.data);
                 } catch (error) {
-                    console.error('[WebSocket] Failed to parse message:', error);
+                    console.error('[WebSocket] Failed to handle incoming message:', error, event.data);
                 }
             };
 
@@ -95,7 +125,7 @@ export class WSClient {
             };
 
             this.ws.onclose = () => {
-                console.log('[WebSocket] Closed');
+                console.debug('[WebSocket] Closed');
                 this.options.onClose();
 
                 if (this.options.autoReconnect && !this.isClosed) {
@@ -197,10 +227,9 @@ export function createWSConnection(
  * Get WebSocket connection statistics
  */
 export async function getWSStats() {
-    const response = await fetch(createServerURL(MEDIA_SERVER) + '/events/stats', {
-        credentials: 'include'
-    });
-    return response.json();
+    const res = await genGetWsStats();
+    // @ts-ignore - pass through union result
+    return res.data;
 }
 
 /**
@@ -208,20 +237,16 @@ export async function getWSStats() {
  * @param limit - Maximum number of events to retrieve (default: 50, max: 100)
  */
 export async function getEventHistory(limit: number = 50) {
-    const response = await fetch(
-        createServerURL(MEDIA_SERVER) + `/events/history?limit=${limit}`,
-        { credentials: 'include' }
-    );
-    return response.json();
+    const res = await genGetEventHistory({ limit });
+    // @ts-ignore
+    return res.data;
 }
 
 /**
  * Get events since a given cursor
  */
 export async function getEventsSince(cursor: number, limit: number = 200) {
-    const response = await fetch(
-        createServerURL(MEDIA_SERVER) + `/events/since?cursor=${cursor}&limit=${limit}`,
-        { credentials: 'include' }
-    );
-    return response.json();
+    const res = await genGetEventsSince({ cursor, limit });
+    // @ts-ignore
+    return res.data;
 }
