@@ -1,47 +1,47 @@
+<script module lang="ts">
+	export type ImageWithDateLabel = Image & { dateLabel?: string; isFirstOfDate?: boolean };
+</script>
+
 <script lang="ts">
 	import PhotoAssetGrid from "$lib/components/PhotoAssetGrid.svelte";
-	import Lightbox from "$lib/components/Lightbox.svelte";
 	import LoadingContainer from "$lib/components/LoadingContainer.svelte";
 	import VizViewContainer from "$lib/components/panels/VizViewContainer.svelte";
 	import { type Image } from "$lib/api";
 	import { DateTime } from "luxon";
 	import { getFullImagePath } from "$lib/api";
-	import { lightbox } from "$lib/states/index.svelte";
 	import MaterialIcon from "$lib/components/MaterialIcon.svelte";
-	import { loadImage } from "$lib/utils/dom.js";
 	import { SvelteSet } from "svelte/reactivity";
-	import { listImages, deleteImagesBulk, signDownload, downloadImagesBlob } from "$lib/api/client";
+	import { listImages, deleteImagesBulk, signDownload, downloadImagesBlob, getImageFile } from "$lib/api/client";
 	import { getTakenAt, compareByTakenAtDesc } from "$lib/utils/images.js";
 	import AssetToolbar from "$lib/components/AssetToolbar.svelte";
 	import Dropdown, { type DropdownOption } from "$lib/components/Dropdown.svelte";
 	import ContextMenu from "$lib/context-menu/ContextMenu.svelte";
 	import { fade } from "svelte/transition";
-	import { thumbHashToDataURL } from "thumbhash";
 	import hotkeys from "hotkeys-js";
-	import { createServerURL } from "$lib/utils/url.js";
-	import { MEDIA_SERVER } from "$lib/constants.js";
 	import UploadManager from "$lib/upload/manager.svelte";
+	import { createCollection, addCollectionImages } from "$lib/api/client";
 	import { SUPPORTED_IMAGE_TYPES, SUPPORTED_RAW_FILES, type SupportedImageTypes } from "$lib/types/images";
 	import { toastState } from "$lib/toast-notifcations/notif-state.svelte";
-	import { invalidateAll } from "$app/navigation";
+	import { goto, invalidateAll } from "$app/navigation";
+	import ImageLightbox from "$lib/components/ImageLightbox.svelte";
 
 	let { data } = $props();
 
 	// Pagination
 	const pagination = $state({
 		limit: data.limit,
-		offset: data.offset
+		page: data.page
 	});
 
-	// Local images buffer so we can append without touching URL
-	let images: Image[] = $state([...(data.images ?? [])]);
-	let hasMore = $derived(images.length < (data.count ?? 0));
+	let images: Image[] = $state(data.images ?? []);
+	let totalCount = $state<number>(data.count ?? 0);
+	let hasMore = $state(!!data.next);
+	let isPaginating = $state(false);
 
 	// Page state
 	let groups: { key: string; date: DateTime; label: string; items: Image[] }[] = $derived(groupImagesByDate(images) ?? []);
 
 	// Consolidated groups: merge small consecutive date groups into visual sections
-	type ImageWithDateLabel = Image & { dateLabel?: string; isFirstOfDate?: boolean };
 	type ConsolidatedGroup = {
 		label: string; // Combined label like "8 Mar - 26 Aug 2025"
 		totalCount: number;
@@ -95,7 +95,7 @@
 					currentConsolidation.endDate = group.date; // groups are sorted newest -> oldest
 					const start = currentConsolidation.startDate;
 					const end = currentConsolidation.endDate;
-					
+
 					if (start.year === end.year && start.month === end.month) {
 						currentConsolidation.label = `${start.day}\u2013${end.day} ${start.toFormat("LLL yyyy")}`; // e.g., 27–24 Aug 2025
 					} else if (start.year === end.year) {
@@ -165,10 +165,10 @@
 
 	// Lightbox
 	let lightboxImage: Image | undefined = $state();
-	let currentImageEl: HTMLImageElement | undefined = $derived(lightboxImage ? document.createElement("img") : undefined);
+	let show = $state(false);
 
 	$effect(() => {
-		lightbox.show = !!lightboxImage;
+		show = !!lightboxImage;
 	});
 
 	// Selection (shared across groups)
@@ -282,16 +282,27 @@
 	}
 
 	async function paginate() {
-		if (!hasMore) {
-			return;
-		}
-		pagination.offset++;
-		const res = await listImages({ limit: pagination.limit, offset: pagination.offset });
+		if (isPaginating || !hasMore) return;
+
+		isPaginating = true;
+		const nextPage = pagination.page + 1;
+		const res = await listImages({ limit: pagination.limit, page: nextPage });
 
 		if (res.status === 200) {
-			const next = res.data.items?.map((i) => i.image) ?? [];
-			images = [...images, ...next];
+			const nextItems = res.data.items?.map((i) => i.image) ?? [];
+			images.push(...nextItems);
+
+			// Update pagination state from response
+			pagination.page = res.data.page ?? nextPage;
+			totalCount = res.data.count ?? totalCount;
+			hasMore = !!res.data.next;
+		} else {
+			// On error, avoid tight loops; allow retry on next scroll
+			console.error("paginate: request failed", res);
+			hasMore = false;
 		}
+
+		isPaginating = false;
 	}
 
 	// Helper to perform token-based bulk download given a list of UIDs.
@@ -304,52 +315,31 @@
 
 		try {
 			if (uids.length === 1) {
-				// For single images, use the /images/{uid}/download route which creates
-				// a short-lived token server-side and redirects to the file endpoint
 				const uid = uids[0];
 				const img = images.find((i) => i.uid === uid)!;
-				const baseUrl = createServerURL(MEDIA_SERVER);
-				const dlUrl = new URL(`/images/${uid}/download`, baseUrl);
 
-				const res = await fetch(dlUrl.toString(), {
-					method: "GET",
-					credentials: "include",
-					redirect: "follow"
-				});
-
-				if (!res.ok) {
-					let errMsg = "";
-					try {
-						const ct = (res.headers.get("content-type") || "").toLowerCase();
-						if (ct.includes("application/json")) {
-							const j = await res.json();
-							errMsg = j?.error ?? j?.message ?? j?.detail ?? JSON.stringify(j);
-						} else {
-							errMsg = await res.text();
-						}
-					} catch (e) {
-						// ignore parse errors, we'll fallback below
+				const fileRes = await getImageFile(uid);
+				if (fileRes.status === 304) {
+					if (window.debug) {
+						console.log(`Image ${uid} not modified, using cached version for download`);
 					}
-					if (!errMsg || String(errMsg).trim() === "") {
-						errMsg = `${res.status} ${res.statusText}`;
-					}
-					throw new Error(`Failed to download image: ${errMsg}`);
+					return;
+				} else if (fileRes.status !== 200) {
+					throw new Error(`Failed to download image: HTTP ${fileRes.status}`);
 				}
 
-				const cd = res.headers.get("content-disposition") || "";
-				const filenameMatch = cd.match(/filename="?([^\"]+)"?/);
-				const parsedFilename = filenameMatch ? filenameMatch[1] : null;
-				const filename = parsedFilename || img?.name || "image";
-
-				const blob = await res.blob();
+				// this should never happen man but hey
+				const filename = img.name.trim() !== "" ? img.name : `image-${uid}-${Date.now()}`;
+				const blob = fileRes.data;
 				const url = URL.createObjectURL(blob);
-				const a = document.createElement("a");
 
+				const a = document.createElement("a");
 				a.href = url;
 				a.download = filename;
 				document.body.appendChild(a);
 				a.click();
 				a.remove();
+
 				URL.revokeObjectURL(url);
 
 				return;
@@ -438,26 +428,6 @@
 		return labelled;
 	}
 
-	function getThumbhashURL(asset: Image): string | undefined {
-		if (!asset.image_metadata?.thumbhash) {
-			return undefined;
-		}
-
-		try {
-			const binaryString = atob(asset.image_metadata.thumbhash);
-			const bytes = new Uint8Array(binaryString.length);
-			for (let i = 0; i < binaryString.length; i++) {
-				bytes[i] = binaryString.charCodeAt(i);
-			}
-			return thumbHashToDataURL(bytes);
-		} catch (error) {
-			console.warn("Failed to decode thumbhash:", error);
-			return undefined;
-		}
-	}
-
-	let thumbhashURL = $derived(lightboxImage ? getThumbhashURL(lightboxImage) : undefined);
-
 	function openLightbox(asset: Image) {
 		lightboxImage = asset;
 	}
@@ -510,26 +480,13 @@
 		lightboxImage = arr[nextIdx];
 	}
 
-	hotkeys("esc", (e) => {
-		lightboxImage = undefined;
-	});
-
-	hotkeys("left,right", (e, handler) => {
-		if (!lightbox.show) {
-			return;
-		}
-
-		e.preventDefault();
-		if (handler.key === "left") {
-			prevLightboxImage();
-		} else if (handler.key === "right") {
-			nextLightboxImage();
-		}
-	});
-
 	// Drag and drop upload state
 	let isDragging = $state(false);
 	let dragCounter = $state(0);
+
+	// Small drop-target state for 'Add to Collection' box
+	let showAddToCollection = $derived(isDragging);
+	let addBoxHover = $state(false);
 
 	/**
 	 * Recursively traverse file system entries to collect all files,
@@ -575,6 +532,49 @@
 		}
 
 		try {
+			// First, check for internal drag of images (application/x-imagine-ids)
+			const dt = e.dataTransfer;
+			if (dt) {
+				const json = dt.getData("application/x-imagine-ids");
+				if (json) {
+					try {
+						const uids: string[] = JSON.parse(json);
+						if (uids.length === 0) {
+							toastState.addToast({ type: "info", message: "No images to add to collection", timeout: 3000 });
+							return;
+						}
+
+						const createRes = await createCollection({
+							name: `New collection ${new Date().toLocaleString()}`,
+							description: "Created from dropped images",
+							private: false
+						});
+						if (createRes.status !== 201) {
+							toastState.addToast({ type: "error", message: `Failed to create collection (${createRes.status})`, timeout: 4000 });
+							return;
+						}
+
+						const collectionUid = createRes.data.uid;
+						const addRes = await addCollectionImages(collectionUid, { uids });
+						if (addRes.status === 200) {
+							toastState.addToast({ type: "success", message: `Collection created with ${uids.length} image(s)`, timeout: 4000 });
+							await invalidateAll();
+							goto(`/collections/${collectionUid}`);
+							return;
+						} else {
+							toastState.addToast({
+								type: "warning",
+								message: `Collection created but failed to add images (${addRes.status})`,
+								timeout: 4000
+							});
+							return;
+						}
+					} catch (err) {
+						console.warn("Failed to parse dragged image UIDs", err);
+					}
+				}
+			}
+
 			const allFiles: File[] = [];
 
 			// Use DataTransferItemList for folder support
@@ -669,7 +669,7 @@
 				try {
 					const res = await listImages({
 						limit: uploadedImages.length,
-						offset: 0
+						page: 0
 					});
 
 					if (res.status === 200) {
@@ -690,6 +690,154 @@
 				message: `Upload failed: ${err}`,
 				timeout: 5000
 			});
+		}
+	}
+
+	/**
+	 * Handle drop specifically onto the "Add to Collection" box.
+	 * This will upload any dropped files and create a new collection containing
+	 * the resulting uploaded images.
+	 */
+	async function handleDropCreateCollection(e: DragEvent) {
+		e.preventDefault();
+		e.stopPropagation();
+		isDragging = false;
+		dragCounter = 0;
+
+		if (!e.dataTransfer) return;
+
+		try {
+			const allFiles: File[] = [];
+
+			if (e.dataTransfer.items) {
+				const items = Array.from(e.dataTransfer.items);
+				const entries: FileSystemEntry[] = [];
+				for (const item of items) {
+					if (item.kind === "file") {
+						const entry = item.webkitGetAsEntry?.();
+						if (entry) entries.push(entry);
+						else {
+							const file = item.getAsFile();
+							if (file) allFiles.push(file);
+						}
+					}
+				}
+
+				for (const entry of entries) {
+					const files = await traverseFileTree(entry);
+					allFiles.push(...files);
+				}
+			} else {
+				allFiles.push(...Array.from(e.dataTransfer.files));
+			}
+
+			if (allFiles.length === 0) {
+				toastState.addToast({ type: "info", message: "No files to add to collection", timeout: 3000 });
+				return;
+			}
+
+			const supportedExtensions = [...SUPPORTED_IMAGE_TYPES, ...SUPPORTED_RAW_FILES];
+			const validFiles = allFiles.filter((file) => {
+				const ext = file.type.split("/")[1];
+				return supportedExtensions.includes(ext as any);
+			});
+
+			if (validFiles.length === 0) {
+				toastState.addToast({ type: "error", message: "No supported image files found to add to collection", timeout: 4000 });
+				return;
+			}
+
+			const manager = new UploadManager([...SUPPORTED_RAW_FILES, ...SUPPORTED_IMAGE_TYPES] as SupportedImageTypes[]);
+			const tasks = manager.addFiles(validFiles);
+
+			toastState.addToast({
+				type: "success",
+				message: `Uploading ${tasks.length} file(s) to create collection...`,
+				timeout: 2500
+			});
+
+			const uploadedImages = await manager.start(tasks);
+
+			if (!uploadedImages || uploadedImages.length === 0) {
+				toastState.addToast({ type: "error", message: "Upload failed, no images available to add to collection", timeout: 4000 });
+				return;
+			}
+
+			// Create collection
+			const createRes = await createCollection({
+				name: `New collection ${new Date().toLocaleString()}`,
+				description: "Created from dropped images",
+				private: false
+			});
+			if (createRes.status !== 201) {
+				toastState.addToast({ type: "error", message: `Failed to create collection (${createRes.status})`, timeout: 4000 });
+				return;
+			}
+
+			const collectionUid = createRes.data.uid;
+			const uids = uploadedImages.map((i: any) => i.uid).filter(Boolean);
+
+			if (uids.length > 0) {
+				const addRes = await addCollectionImages(collectionUid, { uids });
+				if (addRes.status === 200) {
+					toastState.addToast({ type: "success", message: `Collection created with ${uids.length} image(s)`, timeout: 4000 });
+					// navigate to new collection
+					await invalidateAll();
+					goto(`/collections/${collectionUid}`);
+				} else {
+					toastState.addToast({
+						type: "warning",
+						message: `Collection created but failed to add images (${addRes.status})`,
+						timeout: 4000
+					});
+				}
+			} else {
+				toastState.addToast({ type: "warning", message: "Collection created but no uploaded image UIDs found", timeout: 4000 });
+			}
+		} catch (err) {
+			console.error("Add-to-collection drop error:", err);
+			toastState.addToast({ type: "error", message: `Failed to create collection from dropped images: ${err}`, timeout: 5000 });
+		}
+	}
+
+	/**
+	 * Create a collection from the currently selected images (keyboard/click path).
+	 */
+	async function createCollectionFromSelected() {
+		const items = Array.from(selectedAssets);
+		if (!items || items.length === 0) {
+			toastState.addToast({ type: "info", message: "Select images first, or drag files here to upload", timeout: 3000 });
+			return;
+		}
+
+		try {
+			const uids = items.map((i) => i.uid);
+			const createRes = await createCollection({
+				name: `New collection ${new Date().toLocaleString()}`,
+				description: "Created from selected images",
+				private: false
+			});
+			if (createRes.status !== 201) {
+				toastState.addToast({ type: "error", message: `Failed to create collection (${createRes.status})`, timeout: 4000 });
+				return;
+			}
+
+			const collectionUid = createRes.data.uid;
+			const addRes = await addCollectionImages(collectionUid, { uids });
+			if (addRes.status === 200) {
+				toastState.addToast({ type: "success", message: `Collection created with ${uids.length} image(s)`, timeout: 4000 });
+				await invalidateAll();
+				goto(`/collections/${collectionUid}`);
+			} else {
+				toastState.addToast({
+					type: "warning",
+					message: `Collection created but failed to add images (${addRes.status})`,
+					timeout: 4000
+				});
+			}
+		} catch (err) {
+			console.error("createCollectionFromSelected error", err);
+			toastState.addToast({ type: "error", message: `Failed to create collection: ${err}`, timeout: 5000 });
 		}
 	}
 
@@ -715,6 +863,14 @@
 			e.dataTransfer.dropEffect = "copy";
 		}
 	}
+
+	hotkeys("escape", (e) => {
+		e.preventDefault();
+		selectedAssets.clear();
+
+		singleSelectedAsset = undefined;
+		lightboxImage = undefined;
+	});
 </script>
 
 <svelte:body ondragenter={handleDragEnter} ondragleave={handleDragLeave} ondragover={handleDragOver} ondrop={handleDrop} />
@@ -734,73 +890,57 @@
 			<MaterialIcon iconName="upload" style="font-size: 4rem; margin-bottom: 1rem;" />
 			<p style="font-size: 1.5rem; font-weight: 600;">Drop files to upload</p>
 			<p style="font-size: 1rem; opacity: 0.8;">Supports images and folders</p>
+
+			<!-- Small Add to Collection drop box placed below the main content -->
+			<div
+				class="add-to-collection-box"
+				class:hover={addBoxHover}
+				role="button"
+				tabindex="0"
+				aria-label="Add to Collection — drop images here or press Enter to create from selected images"
+				onclick={async () => {
+					// Keyboard/click activation: create collection from selected images (if any)
+					await createCollectionFromSelected();
+				}}
+				onkeydown={async (e: KeyboardEvent) => {
+					if (e.key === "Enter" || e.key === " ") {
+						e.preventDefault();
+						await createCollectionFromSelected();
+					}
+				}}
+				ondragenter={(e) => {
+					e.preventDefault();
+					addBoxHover = true;
+				}}
+				ondragleave={(e) => {
+					e.preventDefault();
+					addBoxHover = false;
+				}}
+				ondragover={(e) => {
+					e.preventDefault();
+					if (e.dataTransfer) {
+						e.dataTransfer.dropEffect = "copy";
+					}
+
+					addBoxHover = true;
+				}}
+				ondrop={async (e) => {
+					addBoxHover = false;
+					await handleDropCreateCollection(e);
+				}}
+			>
+				<MaterialIcon iconName="collections_bookmark" style="font-size: 1.6rem; margin-bottom: 0.25rem;" />
+				<span>Add to Collection</span>
+			</div>
 		</div>
 	</div>
 {/if}
 
 {#if lightboxImage}
-	{@const imageToLoad = getFullImagePath(lightboxImage.image_paths?.preview) ?? ""}
-
-	<Lightbox
-		onclick={() => {
-			lightboxImage = undefined;
-		}}
-	>
-		{#await loadImage(imageToLoad, currentImageEl!)}
-			{#if !thumbhashURL}
-				<div style="width: 3em; height: 3em">
-					<LoadingContainer />
-				</div>
-			{:else}
-				<img
-					src={thumbhashURL}
-					class="lightbox-image"
-					style="height: 90%; position: absolute;"
-					out:fade={{ duration: 300 }}
-					alt="Placeholder image for {lightboxImage.name}"
-					aria-hidden="true"
-				/>
-			{/if}
-		{:then _}
-			<img
-				src={imageToLoad}
-				class="lightbox-image"
-				alt={lightboxImage.name}
-				title={lightboxImage.name}
-				loading="eager"
-				data-image-id={lightboxImage.uid}
-			/>
-
-			<div class="lightbox-nav">
-				<button
-					class="lightbox-nav-btn prev"
-					aria-label="Previous image"
-					onclick={(e) => {
-						e.stopPropagation();
-						prevLightboxImage();
-					}}
-				>
-					<MaterialIcon iconName="arrow_back" />
-				</button>
-				<button
-					class="lightbox-nav-btn next"
-					aria-label="Next image"
-					onclick={(e) => {
-						e.stopPropagation();
-						nextLightboxImage();
-					}}
-				>
-					<MaterialIcon iconName="arrow_forward" />
-				</button>
-			</div>
-		{:catch error}
-			<p>Failed to load image</p>
-			<p>{error}</p>
-		{/await}
-	</Lightbox>
+	<ImageLightbox bind:lightboxImage {prevLightboxImage} {nextLightboxImage} />
 {/if}
 
-<VizViewContainer name="Photos" bind:data={images} bind:hasMore paginate={() => paginate()}>
+<VizViewContainer name="Photos" bind:data={images} {hasMore} paginate={() => paginate()}>
 	{#if images.length > 0}
 		{#if selectedAssets.size > 1}
 			<AssetToolbar class="selection-toolbar" stickyToolbar={true}>
@@ -852,7 +992,7 @@
 	{:else}
 		{#each consolidatedGroups as consolidatedGroup}
 			<section class="photo-group">
-				<h2>{consolidatedGroup.label}</h2>
+				<h2 class="photo-group-label">{consolidatedGroup.label}</h2>
 
 				<PhotoAssetGrid
 					{selectedAssets}
@@ -905,45 +1045,19 @@
 	}
 
 	.photo-group {
-		margin: 2rem 0rem;
-		width: 100%;
+		padding: 2rem 2rem;
 		gap: 1rem;
 		display: flex;
 		flex-direction: column;
+		box-sizing: border-box;
+		width: 100%;
 
 		h2 {
-			margin: 0rem 2rem;
-			font-weight: 700;
-			font-size: 1.1rem;
+			font-weight: 400;
+			font-size: 1.2rem;
+			color: var(--imag-10);
+			width: fit-content;
 		}
-	}
-
-	:global(.lightbox-image) {
-		max-width: 80%;
-		max-height: 90%;
-	}
-
-	.lightbox-nav {
-		position: absolute;
-		top: 50%;
-		right: 2em;
-		display: flex;
-		flex-direction: column;
-		transform: translateY(-50%);
-		pointer-events: none;
-	}
-
-	.lightbox-nav-btn {
-		border: none;
-		color: var(--imag-10);
-		width: 3rem;
-		height: 3rem;
-		display: inline-flex;
-		align-items: center;
-		justify-content: center;
-		border-radius: 0.3rem;
-		cursor: pointer;
-		pointer-events: auto;
 	}
 
 	.download-spinner {
@@ -990,9 +1104,40 @@
 		align-items: center;
 		justify-content: center;
 		color: var(--imag-10);
+		pointer-events: auto;
 		border: 2px solid var(--imag-primary);
 		border-radius: 1rem;
 		padding: 3rem 4rem;
 		background: rgba(0, 0, 0, 0.5);
+	}
+
+	.add-to-collection-box {
+		pointer-events: auto;
+		display: flex;
+		flex-direction: column;
+		align-items: center;
+		justify-content: center;
+		width: 12rem;
+		height: 4.25rem;
+		background: var(--imag-bg-color);
+		border: 2px solid var(--imag-primary);
+		color: var(--imag-10);
+		border-radius: 0.75rem;
+		gap: 0.25rem;
+		font-weight: 600;
+		cursor: pointer;
+		margin-top: 1rem;
+		padding: 0.75rem 1rem;
+
+		// Focus style for keyboard users
+		&:focus {
+			outline: 3px solid rgba(0, 0, 0, 0.35);
+			outline-offset: 2px;
+		}
+
+		// Only change on hover: background becomes imag-100
+		&:hover {
+			background: var(--imag-100);
+		}
 	}
 </style>

@@ -54,6 +54,7 @@
 	import ContextMenu from "$lib/context-menu/ContextMenu.svelte";
 	import { createServerURL } from "$lib/utils/url.js";
 	import { MEDIA_SERVER } from "$lib/constants.js";
+	import ImageLightbox from "$lib/components/ImageLightbox.svelte";
 
 	// Context menu state
 	let ctxShowMenu = $state(false);
@@ -119,13 +120,7 @@
 
 	// Lightbox
 	let lightboxImage: Image | undefined = $state();
-	let currentImageEl: HTMLImageElement | undefined = $derived(lightboxImage ? document.createElement("img") : undefined);
-
-	$effect(() => {
-		if (lightboxImage) {
-			lightbox.show = true;
-		}
-	});
+	let show = $derived(lightboxImage !== undefined);
 
 	// Search stuff
 	let searchValue = $state("");
@@ -135,19 +130,12 @@
 	// NOTE: This might be moved to a settings thing and this could just be default
 	const pagination = $derived({
 		limit: loadedData.images?.limit ?? 25,
-		offset: loadedData.images?.offset ?? 0
+		page: loadedData.images?.page ?? 0
 	});
 
-	// the searchValue hides the loading indicator when searching since we're
-	// already searching through *all* the data that is available on the client
-	// hasMore should be true only if we've loaded at least one full page of
-	// results for the current offset (i.e. there may be more pages). Previously
-	// the logic used `> pagination.limit * pagination.offset` which made the
-	// first page (offset=0) always truthy when any images existed. Use >= and
-	// (offset+1) so a partial final page won't show the loader.
-	let shouldUpdate = $derived(
-		pagination.offset * pagination.limit + pagination.limit < loadedData.image_count! && searchValue.trim() === ""
-	);
+	// Server tells us if there are more pages via the next field
+	// When searching, we're filtering client-side so no more server pages needed
+	let shouldUpdate = $derived(!!loadedData.images?.next && searchValue.trim() === "");
 
 	// Selection
 	let selectedAssets = $state<SvelteSet<Image>>(new SvelteSet());
@@ -487,12 +475,8 @@
 		lightboxImage = arr[next];
 	}
 
-	hotkeys("esc", (e) => {
-		lightboxImage = undefined;
-	});
-
 	hotkeys("left,right", (e, handler) => {
-		if (!lightbox.show) {
+		if (!show) {
 			return;
 		}
 
@@ -502,6 +486,14 @@
 		} else if (handler.key === "right") {
 			nextLightboxImage();
 		}
+	});
+
+	hotkeys("escape", (e) => {
+		e.preventDefault();
+		selectedAssets.clear();
+
+		singleSelectedAsset = undefined;
+		lightboxImage = undefined;
 	});
 
 	const dropdownOptions: DropdownOption[] = [
@@ -521,71 +513,7 @@
 	}}
 />
 
-{#if lightboxImage}
-	{@const imageToLoad = getFullImagePath(lightboxImage.image_paths?.preview) ?? ""}
-	<Lightbox
-		onclick={() => {
-			lightboxImage = undefined;
-		}}
-	>
-		<!-- Awaitng like this is better inline but `currentImageEl` is kinda
-	 being created/allocated unncessarily and is never removed or freed until the component is destroyed
-	 It's small but annoying enough where I want to find a different way to load an image
-	  -->
-		{#await loadImage(imageToLoad, currentImageEl!)}
-			{#if !thumbhashURL}
-				<div style="width: 3em; height: 3em">
-					<LoadingContainer />
-				</div>
-			{:else}
-				<img
-					src={thumbhashURL}
-					class="lightbox-image"
-					style="height: 90%; position: absolute;"
-					out:fade={{ duration: 300 }}
-					alt="Placeholder image for {lightboxImage.name}"
-					aria-hidden="true"
-				/>
-			{/if}
-		{:then _}
-			<img
-				src={imageToLoad}
-				class="lightbox-image"
-				in:fade={{ duration: 300 }}
-				alt={lightboxImage.name}
-				title={lightboxImage.name}
-				loading="eager"
-				data-image-uid={lightboxImage.uid}
-			/>
-
-			<div class="lightbox-nav">
-				<button
-					class="lightbox-nav-btn prev"
-					aria-label="Previous image"
-					onclick={(e) => {
-						e.stopPropagation();
-						prevLightboxImage();
-					}}
-				>
-					<MaterialIcon iconName="arrow_back" />
-				</button>
-				<button
-					class="lightbox-nav-btn next"
-					aria-label="Next image"
-					onclick={(e) => {
-						e.stopPropagation();
-						nextLightboxImage();
-					}}
-				>
-					<MaterialIcon iconName="arrow_forward" />
-				</button>
-			</div>
-		{:catch error}
-			<p>Failed to load image</p>
-			<p>{error}</p>
-		{/await}
-	</Lightbox>
-{/if}
+<ImageLightbox bind:lightboxImage {prevLightboxImage} {nextLightboxImage} />
 
 {#snippet imageCard(asset: Image)}
 	<ImageCard {asset} />
@@ -677,7 +605,9 @@
 	name="{localDataUpdates.name} - Collection"
 	style="font-size: {page.url.pathname === '/' ? '0.9em' : 'inherit'};"
 	paginate={() => {
-		pagination.offset++;
+		// Note: This collection detail page doesn't actually fetch more pages yet
+		// The backend loads all images at once. This is just updating the UI state.
+		pagination.page++;
 	}}
 	onscroll={(e) => {
 		const info = document.getElementById("viz-info-container")!;
@@ -779,34 +709,5 @@
 		height: 100%;
 		position: absolute;
 		right: 2rem;
-	}
-
-	:global(.lightbox-image) {
-		max-width: 80%;
-		max-height: 90%;
-	}
-
-	/* Lightbox nav buttons */
-	.lightbox-nav {
-		position: absolute;
-		top: 50%;
-		right: 2em;
-		display: flex;
-		flex-direction: column;
-		transform: translateY(-50%);
-		pointer-events: none; /* allow clicks only on buttons */
-	}
-
-	.lightbox-nav-btn {
-		border: none;
-		color: var(--imag-10);
-		width: 3rem;
-		height: 3rem;
-		display: inline-flex;
-		align-items: center;
-		justify-content: center;
-		border-radius: 0.3rem;
-		cursor: pointer;
-		pointer-events: auto;
 	}
 </style>

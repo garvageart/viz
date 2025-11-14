@@ -11,7 +11,7 @@
 	import { loadImage } from "$lib/utils/dom";
 	import { onMount, type ComponentProps } from "svelte";
 	import { SvelteSet } from "svelte/reactivity";
-	import { collectionCard } from "../collections/+page.svelte";
+	import CollectionCard from "$lib/components/CollectionCard.svelte";
 	import { ImageObjectData } from "$lib/entities/image";
 	import type CollectionData from "$lib/entities/collection";
 	import AssetsShell from "$lib/components/AssetsShell.svelte";
@@ -34,11 +34,12 @@
 
 	// Lightbox
 	let lightboxImage: ImageObjectData | undefined = $state();
+	let show = $state(false);
 	let currentImageEl: HTMLImageElement | undefined = $derived(lightboxImage ? document.createElement("img") : undefined);
 
 	$effect(() => {
 		if (lightboxImage) {
-			lightbox.show = true;
+			show = true;
 		}
 	});
 
@@ -127,6 +128,17 @@
 
 {#snippet imageCard(asset: ImageObjectData)}
 	<ImageCard {asset} />
+{/snippet}
+
+{#snippet collectionCard(collectionData: CollectionData)}
+	<a
+		data-sveltekit-preload-data
+		data-asset-id={collectionData.uid}
+		class="collection-card-link"
+		href="/collections/{collectionData.uid}"
+	>
+		<CollectionCard collection={collectionData} />
+	</a>
 {/snippet}
 
 {#snippet searchInputSnippet()}
