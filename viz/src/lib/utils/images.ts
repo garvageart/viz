@@ -1,3 +1,6 @@
+import { thumbHashToDataURL } from "thumbhash";
+import type { Image } from "../api";
+
 /**
  * Converts a date in EXIF format to a format that
  * can be parsed by the native ````Date```` object.
@@ -6,18 +9,16 @@
  * @returns {Date} The parsed EXIF date as a native Date object
  */
 export function convertEXIFDateTime(EXIFDateTime: string): Date {
-    const EXIFDate = EXIFDateTime?.split(" ")[0];
-    const EXIFTime = EXIFDateTime?.split(" ")[1];
+    const EXIFDate = EXIFDateTime.split(" ")[0];
+    const EXIFTime = EXIFDateTime.split(" ")[1];
 
-    const EXIFDateFormated = EXIFDate?.replaceAll(":", "/");
+    const EXIFDateFormated = EXIFDate.replaceAll(":", "/");
 
     const EXIFDateTimeString = `${EXIFDateFormated} ${EXIFTime}`;
     const EXIFDateObject = new Date(EXIFDateTimeString);
 
     return EXIFDateObject;
 }
-
-import type { Image } from "../api";
 
 // Parse a variety of EXIF date formats similar to backend ConvertEXIFDateTime
 const DATE_FORMATS = [
@@ -29,7 +30,7 @@ const DATE_FORMATS = [
     /^(\d{4})-(\d{2})-(\d{2})$/ // date only 2006-01-02
 ];
 
-function parseExifDate(raw?: string | null): Date | undefined {
+export function parseExifDate(raw?: string | null): Date | undefined {
     if (!raw) {
         return undefined;
     }
@@ -78,6 +79,7 @@ export function getTakenAt(image: Image): Date {
     const exif = image.exif;
     const dates: (string | undefined)[] = [
         exif?.date_time_original,
+        exif?.date_time,
         exif?.modify_date,
         image.image_metadata?.file_created_at,
         image.image_metadata?.file_modified_at,
@@ -86,7 +88,7 @@ export function getTakenAt(image: Image): Date {
 
     for (const date of dates) {
         const parsed = parseExifDate(date);
-        if (parsed){
+        if (parsed) {
             return parsed;
         }
     }
@@ -95,4 +97,39 @@ export function getTakenAt(image: Image): Date {
 
 export function compareByTakenAtDesc(a: Image, b: Image): number {
     return getTakenAt(b).getTime() - getTakenAt(a).getTime();
+}
+
+export function getThumbhashURL(asset: Image): string | undefined {
+    if (!asset.image_metadata?.thumbhash) {
+        return undefined;
+    }
+
+    try {
+        const binaryString = atob(asset.image_metadata.thumbhash);
+        const bytes = new Uint8Array(binaryString.length);
+        for (let i = 0; i < binaryString.length; i++) {
+            bytes[i] = binaryString.charCodeAt(i);
+        }
+        return thumbHashToDataURL(bytes);
+    } catch (error) {
+        console.warn("Failed to decode thumbhash:", error);
+        return undefined;
+    }
+}
+
+export function formatBytes(bytes?: number) {
+    if (!bytes && bytes !== 0) {
+        return null;
+    }
+
+    const units = ["B", "KB", "MB", "GB", "TB"];
+    let i = 0;
+    let v = bytes as number;
+
+    while (v >= 1024 && i < units.length - 1) {
+        v = v / 1024;
+        i++;
+    }
+
+    return `${v % 1 === 0 ? v.toFixed(0) : v.toFixed(2)} ${units[i]}`;
 }

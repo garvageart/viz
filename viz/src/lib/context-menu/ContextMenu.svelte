@@ -378,8 +378,8 @@
 			0 10px 30px rgba(0, 0, 0, 0.35),
 			0 2px 8px rgba(0, 0, 0, 0.3);
 		border-radius: 0.5rem;
-		max-width: calc(100vw - 16px);
-		overflow: hidden;
+		max-width: calc(100vw - 1em);
+		overflow: visible;
 		/* Prevent horizontal scrollbar on ancestor containers by avoiding sub-pixel overflow */
 		box-sizing: border-box;
 	}

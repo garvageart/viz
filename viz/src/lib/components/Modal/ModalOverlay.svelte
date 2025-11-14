@@ -1,9 +1,14 @@
 <script lang="ts">
-	import { lightbox, modal } from "$lib/states/index.svelte";
+	import { modal } from "$lib/states/index.svelte";
 	import Lightbox from "../Lightbox.svelte";
 	import Modal from "./Modal.svelte";
 
 	let { children } = $props();
+
+	let show = $state(false);
+	$effect(() => {
+		show = modal.show;
+	});
 
 	if (window.debug) {
 		$effect(() => {
@@ -14,14 +19,10 @@
 			}
 		});
 	}
-
-	$effect(() => {
-		lightbox.show = modal.show;
-	});
 </script>
 
 {#if modal.show}
-	<Lightbox onclick={() => (modal.show = false)}>
+	<Lightbox bind:show onclick={() => (modal.show = false)}>
 		<Modal>
 			{@render children()}
 		</Modal>

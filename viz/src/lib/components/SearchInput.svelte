@@ -25,7 +25,7 @@
 	}
 </script>
 
-<div class="search-container" class:has-focus={searchInputHasFocus} {...props}>
+<div class="search-input" class:has-focus={searchInputHasFocus} {...props}>
 	<button
 		class="search-button"
 		aria-label="Search"
@@ -36,11 +36,11 @@
 		onkeydown={handleSearch}
 		disabled={loading}
 	>
-		<MaterialIcon iconName="search" style="margin: 0 0.2em;" />
+		<MaterialIcon iconName="search" style="margin: 0 0.2em; color: var(--imag-10);" />
 	</button>
 	<input
 		type="search"
-		class="search-input"
+		class="search-input__field"
 		{placeholder}
 		aria-label="Search"
 		aria-disabled={loading}
@@ -69,7 +69,7 @@
 
 <style lang="scss">
 	.search-button {
-		background-color: var(--imag-100);
+		background-color: var(--imag-90);
 		border: none;
 		border-radius: 2em;
 		border-top-right-radius: 0%;
@@ -90,15 +90,15 @@
 		}
 
 		&:hover {
-			background-color: var(--imag-90);
+			background-color: var(--imag-80);
 		}
 
 		&:active {
-			background-color: var(--imag-80);
+			background-color: var(--imag-90);
 		}
 	}
 
-	.search-container {
+	.search-input {
 		display: flex;
 		align-items: center;
 		width: 20%;
@@ -113,7 +113,7 @@
 		}
 	}
 
-	.search-input {
+	.search-input__field {
 		font-size: 0.8em;
 		background-color: var(--imag-bg-color);
 		color: var(--imag-text-color);
@@ -136,8 +136,8 @@
 		}
 	}
 
-	.search-container.has-focus {
-		border: 1.5px solid var(--imag-primary);
+	.has-focus {
+		outline: 1.5px solid var(--imag-primary);
 	}
 
 	.clear-search-button {

@@ -4,10 +4,11 @@
 	import { DateTime } from "luxon";
 	import type { ComponentProps, Snippet } from "svelte";
 	import { SvelteSet } from "svelte/reactivity";
-	import { getImageDate } from "./ImageCard.svelte";
 	import { thumbHashToDataURL } from "thumbhash";
 	import { normalizeBase64 } from "$lib/utils/misc";
 	import { fade } from "svelte/transition";
+	import { getTakenAt } from "$lib/utils/images";
+	import { type ImageWithDateLabel } from "../../routes/(app)/photos/+page.svelte";
 
 	interface PhotoSpecificProps {
 		/** Custom photo card snippet - if not provided, uses default photo card */
@@ -36,8 +37,25 @@
 		photoCardSnippet
 	}: Props = $props();
 
-	// Derived state: are we in multi-selection mode (more than one selected)?
 	const isMultiSelecting = $derived(selectedAssets.size > 1);
+
+	// Count date labels so we can hide the inline badge in the trivial case
+	// where there is only one date group and that group contains a single image.
+	const dateGroupCounts = $derived.by(() => {
+		const counts: Record<string, number> = {};
+		for (const d of data) {
+			const label = (d as ImageWithDateLabel).dateLabel ?? "";
+			if (!label) {
+				continue;
+			}
+
+			counts[label] = (counts[label] || 0) + 1;
+		}
+
+		return counts;
+	});
+
+	const dateGroupCount = $derived(Object.keys(dateGroupCounts).length);
 
 	// Virtualized photo-grid state
 	let gridItemSize: number = $state(640); // legacy fallback for square grid; used as a base size hint
@@ -272,7 +290,6 @@
 
 		// Watch for resize changes
 		const resizeObserver = new ResizeObserver(() => requestAnimationFrame(updateVirtualGrid));
-
 		resizeObserver.observe(photoGridEl);
 
 		return () => {
@@ -299,7 +316,6 @@
 
 	function handleImageCardSelect(asset: Image, e: MouseEvent | KeyboardEvent) {
 		if (e.shiftKey) {
-			// Use allData if available for cross-group range selection, otherwise fall back to data
 			const selectionData = allData || data;
 			const ids = selectionData.map((i: Image) => i.uid);
 			const endIndex = ids.indexOf(asset.uid);
@@ -368,10 +384,24 @@
 	}
 </script>
 
-{#snippet defaultPhotoCard(asset: Image, dim?: { width: number; height: number })}
+{#snippet defaultPhotoCard(asset: ImageWithDateLabel, dim?: { width: number; height: number })}
 	{@const isSelected = selectedAssets.values().some((i) => i.uid === asset.uid) || singleSelectedAsset === asset}
 	<div
 		class="asset-photo"
+		draggable="true"
+		ondragstart={(e: DragEvent) => {
+			// When dragging, if multiple selected use that set, otherwise drag the single asset
+			const uids = selectedAssets.size > 1 ? Array.from(selectedAssets).map((i) => i.uid) : [asset.uid];
+			try {
+				e.dataTransfer?.setData("application/x-imagine-ids", JSON.stringify(uids));
+				e.dataTransfer!.effectAllowed = "copy";
+			} catch (err) {
+				// ignore
+			}
+		}}
+		ondragend={() => {
+			// no-op for now
+		}}
 		data-asset-id={asset.uid}
 		class:selected-photo={isSelected}
 		class:multi-selected-photo={isSelected && isMultiSelecting}
@@ -407,8 +437,8 @@
 			assetDblClick?.(e, asset);
 		}}
 	>
-		{#if (asset as any)?.isFirstOfDate && (asset as any)?.dateLabel}
-			<div class="inline-date-badge">{(asset as any).dateLabel}</div>
+		{#if asset?.isFirstOfDate && asset?.dateLabel && !(dateGroupCount === 1 && dateGroupCounts[asset.dateLabel] === 1)}
+			<div class="inline-date-badge">{asset.dateLabel}</div>
 		{/if}
 		{#if asset.image_paths}
 			{@const thumbhashURL = getThumbhashURL(asset)}
@@ -417,6 +447,7 @@
 					<img class="tile-placeholder" src={thumbhashURL} alt="" aria-hidden="true" />
 				{/if}
 				<img
+					draggable="false"
 					class="tile-image"
 					src={getSizedPreviewUrl(asset, dim?.width, dim?.height)}
 					alt={asset.name ?? asset.image_metadata?.file_name ?? ""}
@@ -435,7 +466,7 @@
 		<div class="photo-overlay">
 			<div class="photo-overlay-inner">
 				<div class="photo-name">{asset.name}</div>
-				<div class="photo-date">{DateTime.fromJSDate(getImageDate(asset)).toLocaleString(DateTime.DATETIME_MED)}</div>
+				<div class="photo-date">{DateTime.fromJSDate(getTakenAt(asset)).toLocaleString(DateTime.DATETIME_MED)}</div>
 			</div>
 		</div>
 	</div>
@@ -444,7 +475,7 @@
 {#if view === "grid"}
 	<div
 		bind:this={photoGridEl}
-		class="viz-photo-grid-container"
+		class="viz-photo-grid-container no-select"
 		onscroll={handleGridScroll}
 		use:unselectImagesOnClickOutsideAssetContainer
 	>
@@ -490,7 +521,6 @@
 		margin: 0 auto;
 		width: 100%;
 		max-width: 100%;
-		padding: 0rem 2rem;
 	}
 
 	/* When used standalone (e.g., in collections), add top margin */
@@ -524,7 +554,7 @@
 	.asset-photo {
 		position: relative;
 		overflow: hidden;
-		background: var(--imag-80);
+		// background: var(--imag-80);
 	}
 
 	.asset-photo img {

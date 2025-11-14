@@ -3,8 +3,8 @@
 	import { testLayout } from "$lib/layouts/test";
 	import { Splitpanes as Panel, type ITree } from "$lib/third-party/svelte-splitpanes";
 	import { layoutState, layoutTree } from "$lib/third-party/svelte-splitpanes/state.svelte";
-	import { arrayHasDuplicates, VizLocalStorage } from "$lib/utils/misc";
-	import { onMount, untrack } from "svelte";
+	import { VizLocalStorage } from "$lib/utils/misc";
+	import { onMount } from "svelte";
 	import SubPanel from "./SubPanel.svelte";
 	import VizSubPanelData, { Content } from "$lib/layouts/subpanel.svelte";
 	import { debugEvent } from "$lib/utils/dom";
@@ -67,25 +67,6 @@
 
 	onMount(() => {
 		intializeLayoutStructures();
-		// const duplicateAnswer = arrayHasDuplicates(
-		// 	layoutState.tree
-		// 		.flatMap((panel) => {
-		// 			if (panel.views) {
-		// 				return panel.views.map((tab) => tab.id);
-		// 			} else {
-		// 				return [];
-		// 			}
-		// 		})
-		// 		.concat(
-		// 			testLayout.flatMap((panel) =>
-		// 				panel.childs?.content ? panel.childs.content.flatMap((subPanel) => subPanel.views.map((tab) => tab.id)) : []
-		// 			)
-		// 		)
-		// );
-
-		// if (duplicateAnswer.hasDuplicates) {
-		// 	console.error("The following tabs have duplicate IDs. Please check the panels loaded", duplicateAnswer.duplicates);
-		// }
 	});
 
 	// This derived value was initially used to do

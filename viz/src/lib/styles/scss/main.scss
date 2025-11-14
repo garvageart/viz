@@ -1,27 +1,9 @@
 @use 'sass:color';
 
 @use './sassflexboxgrid/main.scss';
+@use './viz-blue.scss';
 @import 'material-symbols/sharp.css';
-@import url('../../../../static/css/general-sans.css');
 
-/* Colours */
-$base-color: #27334a;
-:root {
-    --imag-bg-color: #0F1726;
-    --imag-text-color: #F7F9F9;
-    --imag-100: #{color.mix($base-color, #fff, 100%)};
-    --imag-90: #{color.mix($base-color, #fff, 90%)};
-    --imag-80: #{color.mix($base-color, #fff, 80%)};
-    --imag-70: #{color.mix($base-color, #fff, 70%)};
-    --imag-60: #{color.mix($base-color, #fff, 60%)};
-    --imag-50: #{color.mix($base-color, #fff, 50%)};
-    --imag-40: #{color.mix($base-color, #fff, 40%)};
-    --imag-30: #{color.mix($base-color, #fff, 30%)};
-    --imag-20: #{color.mix($base-color, #fff, 20%)};
-    --imag-10: #{color.mix($base-color, #fff, 10%)};
-    --imag-primary: #1885df;
-    --imag-secondary: #06589b;
-}
 
 /* Fonts */
 :root {

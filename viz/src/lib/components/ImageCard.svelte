@@ -1,22 +1,14 @@
-<script module lang="ts">
-	export function getImageDate(asset: Image): Date {
-		return asset.exif?.date_time_original
-			? new Date(convertEXIFDateTime(asset.exif?.date_time_original))
-			: new Date(asset.image_metadata?.file_created_at ?? asset.created_at);
-	}
-</script>
-
 <script lang="ts">
 	import { DateTime } from "luxon";
 	import { getFullImagePath, type Image } from "$lib/api";
 	import { thumbHashToDataURL } from "thumbhash";
 	import { onMount } from "svelte";
-	import { convertEXIFDateTime } from "$lib/utils/images";
+	import { getTakenAt } from "$lib/utils/images";
 	import { normalizeBase64 } from "$lib/utils/misc";
 
 	let { asset }: { asset: Image } = $props();
-	const imageDate = DateTime.fromJSDate(getImageDate(asset));
-
+	const imageDate = DateTime.fromJSDate(getTakenAt(asset));
+	
 	let placeholderDataURL = $state<string | undefined>();
 	let imageLoaded = $state(false);
 

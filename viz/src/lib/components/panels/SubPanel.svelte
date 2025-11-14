@@ -890,7 +890,7 @@ for Splitpanes
 		font-size: 0.9em;
 
 		&:hover {
-			background-color: hsl(219, 26%, 15%);
+			background-color: var(--imag-90);
 		}
 	}
 

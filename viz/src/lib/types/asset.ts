@@ -1,6 +1,6 @@
 export interface IPagination {
     limit: number;
-    offset: number;
+    page: number;
 }
 
 export type AssetGridArray<T> = {

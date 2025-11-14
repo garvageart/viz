@@ -1,28 +1,39 @@
 <script lang="ts">
-	import { lightbox } from "$lib/states/index.svelte";
-
-	let lightboxEl: HTMLElement | undefined = $state();
-	let {
-		children,
-		onclick,
-		lightboxElement = $bindable()
-	}: {
+	interface Props {
 		children: () => any;
 		onclick?: (
 			e: MouseEvent & {
-				currentTarget: EventTarget & Document;
+				currentTarget: EventTarget & Window;
 			}
 		) => void;
+		show: boolean;
 		lightboxElement?: HTMLElement | undefined;
-	} = $props();
+		backgroundOpacity?: number;
+	}
+
+	let {
+		children,
+		onclick,
+		show = $bindable(false),
+		lightboxElement = $bindable(),
+		backgroundOpacity = $bindable(0.5)
+	}: Props = $props();
+
+	let lightboxEl: HTMLElement | undefined = $state();
 
 	$effect(() => {
 		lightboxElement = lightboxEl;
 	});
 
+	$effect(() => {
+		if (lightboxEl) {
+			lightboxEl.style.backgroundColor = `rgba(0, 0, 0, ${backgroundOpacity})`;
+		}
+	});
+
 	if (window.debug) {
 		$effect(() => {
-			if (lightbox.show) {
+			if (show) {
 				console.log("lightbox is showing");
 			} else {
 				console.log("lightbox is not showing");
@@ -32,23 +43,19 @@
 </script>
 
 <svelte:window
-	on:keydown={(e) => {
+	onkeydown={(e) => {
 		if (e.key === "Escape") {
-			lightbox.show = false;
+			show = false;
 		}
 	}}
-/>
-
-<svelte:document
-	on:click={(e) => {
+	onclick={(e) => {
 		if (e.target === lightboxEl) {
-			lightbox.show = false;
 			onclick?.(e);
 		}
 	}}
 />
 
-{#if lightbox.show}
+{#if show}
 	<div id="viz-lightbox-overlay" bind:this={lightboxEl}>
 		{@render children()}
 	</div>
@@ -63,8 +70,5 @@
 		height: 100%;
 		background-color: rgba(0, 0, 0, 0.5);
 		z-index: 9998;
-		display: flex;
-		justify-content: center;
-		align-items: center;
 	}
 </style>

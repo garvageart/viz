@@ -9,7 +9,6 @@
 	import { sort } from "$lib/states/index.svelte";
 	import MaterialIcon from "./MaterialIcon.svelte";
 	import { DateTime } from "luxon";
-	import { getImageDate } from "./ImageCard.svelte";
 	import { getFullImagePath } from "$lib/api";
 
 	interface Props {
@@ -391,7 +390,7 @@
 		allAssetsData.forEach((i) => selectedAssets.add(i));
 	});
 
-	hotkeys("esc", (e) => {
+	hotkeys("escape", (e) => {
 		e.preventDefault();
 		selectedAssets.clear();
 	});

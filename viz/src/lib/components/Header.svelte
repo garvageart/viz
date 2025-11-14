@@ -68,7 +68,7 @@
 	});
 
 	// Escape blurs the search input only when it is focused.
-	hotkeys("esc, escape", (e) => {
+	hotkeys("escape", (e) => {
 		if (searchInputHasFocus) {
 			e.preventDefault();
 			search.element?.blur();
@@ -90,7 +90,7 @@
 </script>
 
 <svelte:window
-	on:click={(e) => {
+	onclick={(e) => {
 		if (openAccPanel && !(e.target as HTMLElement).closest("#account-container")) {
 			openAccPanel = false;
 		}
@@ -117,7 +117,7 @@
 		bind:value={search.value}
 		bind:element={search.element}
 		{performSearch}
-		style="width: 30%; border-color: var(--imag-100); height: 1.5em;"
+		style="width: 30%; border-color: var(--imag-90); height: 1.5em;"
 	/>
 	<div class="header-button-container">
 		<button id="upload-button" class="header-button" aria-label="Upload" onclick={handleUpload}>
@@ -182,11 +182,11 @@
 		transition: background-color 0.1s ease;
 
 		&:hover {
-			background-color: var(--imag-100);
+			background-color: var(--imag-90);
 		}
 
 		&:active {
-			background-color: var(--imag-90);
+			background-color: var(--imag-80);
 		}
 	}
 

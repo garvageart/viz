@@ -37,7 +37,7 @@
 		gridComponent = AssetGrid,
 		pagination = $bindable({
 			limit: 25,
-			offset: 0
+			page: 0
 		}),
 		children,
 		toolbarSnippet,
@@ -51,7 +51,7 @@
 	let columnCount: number | undefined = $derived(assetGridArray?.[0]?.length);
 
 	let gridData = $derived.by(() => {
-		const dataSlice = grid.data.slice(0, pagination.limit * (pagination.offset === 0 ? 1 : pagination.offset + 1));
+		const dataSlice = grid.data.slice(0, pagination.limit * (pagination.page === 0 ? 1 : pagination.page + 1));
 
 		if (columnCount === undefined) {
 			return dataSlice;
