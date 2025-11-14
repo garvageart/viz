@@ -24,12 +24,14 @@ require (
 	github.com/go-co-op/gocron/v2 v2.16.5
 	github.com/go-errors/errors v1.5.1
 	github.com/gorilla/websocket v1.5.3
-	github.com/oapi-codegen/runtime v1.1.0
+	github.com/oapi-codegen/runtime v1.1.2
 	github.com/orandin/slog-gorm v1.4.0
 	github.com/samber/slog-multi v1.4.0
 	github.com/spf13/viper v1.20.1
 	google.golang.org/api v0.232.0
 )
+
+require github.com/apapsch/go-jsonmerge/v2 v2.0.0 // indirect
 
 require (
 	github.com/cenkalti/backoff/v5 v5.0.3 // indirect

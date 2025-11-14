@@ -109,14 +109,27 @@ func CollectionsRouter(db *gorm.DB, logger *slog.Logger) *chi.Mux {
 			limit = 20
 		}
 
-		offset, err := strconv.Atoi(req.URL.Query().Get("offset"))
+		page, err := strconv.Atoi(req.URL.Query().Get("page"))
 		if err != nil {
-			offset = 0
+			page = 0
 		}
 
 		var collections []entities.Collection
+		var total int64
 
-		err = db.Preload("Thumbnail").Preload("CreatedBy").Limit(limit).Offset(offset).Find(&collections).Error
+		err = db.Transaction(func(tx *gorm.DB) error {
+			// Count total collections
+			if err := tx.Model(&entities.Collection{}).Count(&total).Error; err != nil {
+				return err
+			}
+
+			// Fetch current page
+			return tx.Preload("Thumbnail").Preload("CreatedBy").
+				Limit(limit).
+				Offset(page * limit).
+				Find(&collections).Error
+		})
+
 		if err != nil {
 			libhttp.ServerError(res, req, err, logger, nil,
 				"Failed to get collections",
@@ -125,34 +138,36 @@ func CollectionsRouter(db *gorm.DB, logger *slog.Logger) *chi.Mux {
 			return
 		}
 
-		nextOffset := min(offset+limit, len(collections))
-
-		prevOffset := new(int)
-		*prevOffset = offset - limit
-
-		if *prevOffset < 0 {
-			prevOffset = nil
-		}
-
 		// Convert entities to DTOs for response
 		items := make([]dto.Collection, len(collections))
 		for i := range collections {
 			items[i] = collections[i].DTO()
 		}
 
-		href := fmt.Sprintf("/collections/?offset=%d&limit=%d", offset, limit)
-		prev := fmt.Sprintf("/collections/?offset=%d&limit=%d", prevOffset, limit)
-		next := fmt.Sprintf("/collections/?offset=%d&limit=%d", nextOffset, limit)
-		count := len(collections)
+		// Build pagination links
+		href := fmt.Sprintf("/collections/?limit=%d&page=%d", limit, page)
+		var prev *string
+		var next *string
+		hasPrev := page > 0
+		hasNext := int64((page+1)*limit) < total
+		if hasPrev {
+			p := fmt.Sprintf("/collections/?limit=%d&page=%d", limit, page-1)
+			prev = &p
+		}
+		if hasNext {
+			nx := fmt.Sprintf("/collections/?limit=%d&page=%d", limit, page+1)
+			next = &nx
+		}
 
+		count := int(total)
 		result := dto.CollectionListResponse{
-			Href:   &href,
-			Prev:   &prev,
-			Next:   &next,
-			Limit:  limit,
-			Offset: offset,
-			Count:  &count,
-			Items:  items,
+			Href:  &href,
+			Prev:  prev,
+			Next:  next,
+			Limit: limit,
+			Page:  page,
+			Count: &count,
+			Items: items,
 		}
 
 		render.Status(req, http.StatusOK)
@@ -205,19 +220,20 @@ func CollectionsRouter(db *gorm.DB, logger *slog.Logger) *chi.Mux {
 			return
 		}
 
-		href := fmt.Sprintf("/collections/%s/images/?offset=%d&limit=%d", uid, defaultImageOffset, defaultImageLimit)
-		prev := fmt.Sprintf("/collections/%s/images/?offset=%d&limit=%d", uid, defaultImageOffset-defaultImageLimit, defaultImageLimit)
-		next := fmt.Sprintf("/collections/%s/images/?offset=%d&limit=%d", uid, defaultImageOffset+defaultImageLimit, defaultImageLimit)
+		defaultImagePage := 0
+		href := fmt.Sprintf("/collections/%s/images/?page=%d&limit=%d", uid, defaultImagePage, defaultImageLimit)
+		prev := fmt.Sprintf("/collections/%s/images/?page=%d&limit=%d", uid, max(defaultImagePage-1, 0), defaultImageLimit)
+		next := fmt.Sprintf("/collections/%s/images/?page=%d&limit=%d", uid, defaultImagePage+1, defaultImageLimit)
 		count := len(imgResponse)
 
 		imagesPage := dto.ImagesPage{
-			Href:   &href,
-			Prev:   &prev,
-			Next:   &next,
-			Limit:  defaultImageLimit,
-			Offset: defaultImageOffset,
-			Count:  &count,
-			Items:  imgResponse,
+			Href:  &href,
+			Prev:  &prev,
+			Next:  &next,
+			Limit: defaultImageLimit,
+			Page:  defaultImagePage,
+			Count: &count,
+			Items: imgResponse,
 		}
 
 		// Use the entity's DTO() method which handles Thumbnail conversion
@@ -375,13 +391,13 @@ func CollectionsRouter(db *gorm.DB, logger *slog.Logger) *chi.Mux {
 		count := len(imgResponse)
 
 		result := dto.ImagesPage{
-			Href:   &href,
-			Prev:   &prev,
-			Next:   &next,
-			Limit:  limit,
-			Offset: offset,
-			Count:  &count,
-			Items:  imgResponse,
+			Href:  &href,
+			Prev:  &prev,
+			Next:  &next,
+			Limit: limit,
+			Page:  offset / limit, // derive page index from original row offset
+			Count: &count,
+			Items: imgResponse,
 		}
 
 		render.JSON(res, req, result)

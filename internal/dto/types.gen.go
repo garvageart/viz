@@ -106,13 +106,13 @@ type CollectionImage struct {
 
 // CollectionListResponse defines model for CollectionListResponse.
 type CollectionListResponse struct {
-	Count  *int         `json:"count,omitempty"`
-	Href   *string      `json:"href,omitempty"`
-	Items  []Collection `json:"items"`
-	Limit  int          `json:"limit"`
-	Next   *string      `json:"next,omitempty"`
-	Offset int          `json:"offset"`
-	Prev   *string      `json:"prev,omitempty"`
+	Count *int         `json:"count,omitempty"`
+	Href  *string      `json:"href,omitempty"`
+	Items []Collection `json:"items"`
+	Limit int          `json:"limit"`
+	Next  *string      `json:"next,omitempty"`
+	Page  int          `json:"page"`
+	Prev  *string      `json:"prev,omitempty"`
 }
 
 // CollectionUpdate defines model for CollectionUpdate.
@@ -226,6 +226,8 @@ type ImageEXIF struct {
 	DateTimeOriginal *string `json:"date_time_original,omitempty"`
 	ExifVersion      *string `json:"exif_version,omitempty"`
 	ExposureTime     *string `json:"exposure_time,omitempty"`
+	ExposureValue    *string `json:"exposure_value,omitempty"`
+	FNumber          *string `json:"f_number,omitempty"`
 	Flash            *string `json:"flash,omitempty"`
 	FocalLength      *string `json:"focal_length,omitempty"`
 	Iso              *string `json:"iso,omitempty"`
@@ -255,6 +257,8 @@ type ImageMetadata struct {
 	Label            *string   `json:"label,omitempty"`
 	OriginalFileName *string   `json:"original_file_name,omitempty"`
 	Thumbhash        *string   `json:"thumbhash,omitempty"`
+	// Rating is a user-assigned canonical rating (0..5). Null = unrated.
+	Rating           *int      `json:"rating,omitempty"`
 }
 
 // ImagePaths defines model for ImagePaths.
@@ -272,13 +276,13 @@ type ImageUploadResponse struct {
 
 // ImagesPage defines model for ImagesPage.
 type ImagesPage struct {
-	Count  *int             `json:"count,omitempty"`
-	Href   *string          `json:"href,omitempty"`
-	Items  []ImagesResponse `json:"items"`
-	Limit  int              `json:"limit"`
-	Next   *string          `json:"next,omitempty"`
-	Offset int              `json:"offset"`
-	Prev   *string          `json:"prev,omitempty"`
+	Count *int             `json:"count,omitempty"`
+	Href  *string          `json:"href,omitempty"`
+	Items []ImagesResponse `json:"items"`
+	Limit int              `json:"limit"`
+	Next  *string          `json:"next,omitempty"`
+	Page  int              `json:"page"`
+	Prev  *string          `json:"prev,omitempty"`
 }
 
 // ImagesResponse defines model for ImagesResponse.
@@ -469,8 +473,10 @@ type CompleteOAuthParamsProvider string
 
 // ListCollectionsParams defines parameters for ListCollections.
 type ListCollectionsParams struct {
-	Limit  *int `form:"limit,omitempty" json:"limit,omitempty"`
-	Offset *int `form:"offset,omitempty" json:"offset,omitempty"`
+	Limit *int `form:"limit,omitempty" json:"limit,omitempty"`
+
+	// Page Page index (0-based)
+	Page *int `form:"page,omitempty" json:"page,omitempty"`
 }
 
 // DeleteCollectionImagesJSONBody defines parameters for DeleteCollectionImages.
@@ -524,8 +530,8 @@ type ListImagesParams struct {
 	// Limit Number of images per page
 	Limit *int `form:"limit,omitempty" json:"limit,omitempty"`
 
-	// Offset Page offset (0-based)
-	Offset *int `form:"offset,omitempty" json:"offset,omitempty"`
+	// Page Page index (0-based)
+	Page *int `form:"page,omitempty" json:"page,omitempty"`
 }
 
 // UploadImageMultipartBody defines parameters for UploadImage.
@@ -536,6 +542,12 @@ type UploadImageMultipartBody struct {
 
 // UploadImageByUrlTextBody defines parameters for UploadImageByUrl.
 type UploadImageByUrlTextBody = string
+
+// GetImageExifParams defines parameters for GetImageExif.
+type GetImageExifParams struct {
+	// Simple When true, return the stored simplified EXIF object from the DB (otherwise read raw EXIF from file)
+	Simple *bool `form:"simple,omitempty" json:"simple,omitempty"`
+}
 
 // GetImageFileParams defines parameters for GetImageFile.
 type GetImageFileParams struct {

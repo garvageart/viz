@@ -45,13 +45,13 @@ type CollectionImage struct {
 
 // CollectionListResponse represents a paginated list of collections.
 type CollectionListResponse struct {
-	Count  *int         `json:"count,omitempty"`
-	Href   *string      `json:"href,omitempty"`
-	Items  []Collection `json:"items"`
-	Limit  int          `json:"limit"`
-	Next   *string      `json:"next,omitempty"`
-	Offset int          `json:"offset"`
-	Prev   *string      `json:"prev,omitempty"`
+	Count *int         `json:"count,omitempty"`
+	Href  *string      `json:"href,omitempty"`
+	Items []Collection `json:"items"`
+	Limit int          `json:"limit"`
+	Next  *string      `json:"next,omitempty"`
+	Page  int          `json:"page"`
+	Prev  *string      `json:"prev,omitempty"`
 }
 
 // Image represents an image resource returned by the API.
@@ -74,6 +74,8 @@ type Image struct {
 // ImageEXIF represents selected EXIF metadata.
 type ImageEXIF struct {
 	Aperture         *string `json:"aperture,omitempty"`
+	ExposureValue    *string `json:"exposure_value,omitempty"`
+	FNumber          *string `json:"f_number,omitempty"`
 	DateTime         *string `json:"date_time,omitempty"`
 	DateTimeOriginal *string `json:"date_time_original,omitempty"`
 	ExifVersion      *string `json:"exif_version,omitempty"`
@@ -107,6 +109,8 @@ type ImageMetadata struct {
 	Label            *string   `json:"label,omitempty"`
 	OriginalFileName *string   `json:"original_file_name,omitempty"`
 	Thumbhash        *string   `json:"thumbhash,omitempty"`
+	// Rating is a user-assigned canonical rating (0..5). Null = unrated.
+	Rating           *int      `json:"rating,omitempty"`
 }
 
 // ImagePaths are the canonical locations for different image variants.
@@ -124,7 +128,7 @@ type ImagesPage struct {
 	Items  []ImagesResponse `json:"items"`
 	Limit  int              `json:"limit"`
 	Next   *string          `json:"next,omitempty"`
-	Offset int              `json:"offset"`
+	Page   int              `json:"page"`
 	Prev   *string          `json:"prev,omitempty"`
 }
 

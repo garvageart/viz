@@ -39,37 +39,37 @@ func GetColourSpaceString(image *libvips.Image) string {
 	} else if image.Interpretation() == libvips.InterpretationHistogram {
 		return "Histogram"
 	} else if image.Interpretation() == libvips.InterpretationXyz {
-		return "Xyz"
+		return "XYZ"
 	} else if image.Interpretation() == libvips.InterpretationLab {
-		return "Lab"
+		return "LAB"
 	} else if image.Interpretation() == libvips.InterpretationCmyk {
-		return "Cmyk"
+		return "CMYK"
 	} else if image.Interpretation() == libvips.InterpretationLabq {
-		return "Labq"
+		return "LabQ"
 	} else if image.Interpretation() == libvips.InterpretationRgb {
-		return "Rgb"
+		return "RGB"
 	} else if image.Interpretation() == libvips.InterpretationCmc {
-		return "Cmc"
+		return "CMC"
 	} else if image.Interpretation() == libvips.InterpretationLch {
-		return "Lch"
+		return "LCH"
 	} else if image.Interpretation() == libvips.InterpretationLabs {
-		return "Labs"
+		return "LABS"
 	} else if image.Interpretation() == libvips.InterpretationSrgb {
-		return "Srgb"
+		return "sRGB"
 	} else if image.Interpretation() == libvips.InterpretationYxy {
-		return "Yxy"
+		return "YXY"
 	} else if image.Interpretation() == libvips.InterpretationFourier {
 		return "Fourier"
 	} else if image.Interpretation() == libvips.InterpretationRgb16 {
-		return "Rgb16"
+		return "RGB16"
 	} else if image.Interpretation() == libvips.InterpretationGrey16 {
 		return "Grey16"
 	} else if image.Interpretation() == libvips.InterpretationMatrix {
 		return "Matrix"
 	} else if image.Interpretation() == libvips.InterpretationScrgb {
-		return "Scrgb"
+		return "scRGB"
 	} else if image.Interpretation() == libvips.InterpretationHsv {
-		return "Hsv"
+		return "HSV"
 	} else if image.Interpretation() == libvips.InterpretationLast {
 		return "Last"
 	}

@@ -82,6 +82,22 @@ func createNewImageEntity(logger *slog.Logger, fileName string, libvipsImg *libv
 
 	exif, fileCreatedAt, fileModifiedAt := imageops.BuildImageEXIF(exifData)
 
+	// If EXIF contains a rating-like value, parse it and set the initial
+	// canonical rating on the image entity (clamped to 0..5). We store the
+	// raw EXIF rating in Exif.Rating as provenance but the top-level Rating
+	// becomes the canonical value once DB column exists / migration runs.
+	var initialRating *int
+	if exif.Rating != nil {
+		if r, err := strconv.Atoi(*exif.Rating); err == nil {
+			if r < 0 {
+				r = 0
+			} else if r > 5 {
+				r = 5
+			}
+			initialRating = &r
+		}
+	}
+
 	var keywords []string
 	keywordsPtr := imageops.FindExif(exifData, "Keywords", "Subject")
 	if keywordsPtr != nil {
@@ -100,6 +116,9 @@ func createNewImageEntity(logger *slog.Logger, fileName string, libvipsImg *libv
 		Keywords:         &keywords,
 		Label:            &label,
 	}
+
+	// Seed canonical rating into the stored image metadata (NULL = unrated)
+	metadata.Rating = initialRating
 
 	// Construct paths with reasonable defaults matching the {uid}/file route params
 	originalPath := fmt.Sprintf("/images/%s/file", id)
@@ -142,10 +161,10 @@ func ImagesRouter(db *gorm.DB, logger *slog.Logger) *chi.Mux {
 	// List images with pagination
 	router.Get("/", func(res http.ResponseWriter, req *http.Request) {
 		limitStr := req.URL.Query().Get("limit")
-		offsetStr := req.URL.Query().Get("offset")
+		pageStr := req.URL.Query().Get("page")
 
 		limit := 100
-		offset := 0
+		page := 0
 
 		if limitStr != "" {
 			if parsed, err := strconv.Atoi(limitStr); err == nil && parsed > 0 {
@@ -153,21 +172,27 @@ func ImagesRouter(db *gorm.DB, logger *slog.Logger) *chi.Mux {
 			}
 		}
 
-		if offsetStr != "" {
-			if parsed, err := strconv.Atoi(offsetStr); err == nil && parsed >= 0 {
-				offset = parsed
+		if pageStr != "" {
+			if parsed, err := strconv.Atoi(pageStr); err == nil && parsed >= 0 {
+				page = parsed
 			}
 		}
 
 		var images []entities.Image
+		var total int64
 
 		if err := db.WithContext(req.Context()).Transaction(func(tx *gorm.DB) error {
-			// Fetch non-deleted images
+			// Count total non-deleted images
+			if err := tx.Model(&entities.Image{}).Where("deleted_at IS NULL").Count(&total).Error; err != nil {
+				return err
+			}
+
+			// Fetch current page of non-deleted images
 			err := tx.Preload("UploadedBy").
 				Where("deleted_at IS NULL").
 				Order("created_at DESC, uid DESC").
 				Limit(limit).
-				Offset(offset * limit).
+				Offset(page * limit).
 				Find(&images).Error;
 
 			if err != nil {
@@ -196,12 +221,30 @@ func ImagesRouter(db *gorm.DB, logger *slog.Logger) *chi.Mux {
 			}
 		}
 
-		count := len(items)
+		// Build pagination links
+		href := fmt.Sprintf("/images?limit=%d&page=%d", limit, page)
+		var prev *string
+		var next *string
+		hasPrev := page > 0
+		hasNext := int64((page+1)*limit) < total
+		if hasPrev {
+			p := fmt.Sprintf("/images?limit=%d&page=%d", limit, page-1)
+			prev = &p
+		}
+		if hasNext {
+			nx := fmt.Sprintf("/images?limit=%d&page=%d", limit, page+1)
+			next = &nx
+		}
+
+		count := int(total)
 		response := dto.ImagesPage{
-			Limit:  limit,
-			Offset: offset,
-			Count:  &count,
-			Items:  items,
+			Href:  &href,
+			Prev:  prev,
+			Next:  next,
+			Limit: limit,
+			Page:  page,
+			Count: &count,
+			Items: items,
 		}
 
 		render.Status(req, http.StatusOK)
@@ -245,70 +288,77 @@ func ImagesRouter(db *gorm.DB, logger *slog.Logger) *chi.Mux {
 				return
 			}
 
-			// Set cache headers for browser caching (1 year)
-			res.Header().Set("Cache-Control", "public, max-age=31536000, immutable")
+
+			// Set cache headers: match Immich defaults for originals (private)
+			// Cache for 1 day in browser, but prevent shared caches from storing.
+			res.Header().Set("Cache-Control", "private, max-age=86400, no-transform")
 			res.Header().Set("ETag", imgEnt.ImageMetadata.Checksum) // Use checksum as ETag
+			// Last-Modified from DB metadata so proxies and clients can use If-Modified-Since
+			res.Header().Set("Last-Modified", imgEnt.UpdatedAt.UTC().Format(http.TimeFormat))
 			res.Header().Set("Content-Type", "image/"+imgEnt.ImageMetadata.FileType)
 			res.Header().Set("Content-Length", strconv.Itoa(len(imageData)))
 			res.Header().Set("Content-Disposition", fmt.Sprintf("attachment; filename=\"%s\"", imgEnt.ImageMetadata.FileName))
 
-		// If this is a download request, validate token details
-		// For non-download requests allow normal 304/NotModified behavior.
-		if req.FormValue("download") == "1" {
-			// Validate opaque token with password support
-			token := req.URL.Query().Get("token")
-			password := req.URL.Query().Get("password")
+			// If this is a download request, validate token details
+			// For non-download requests allow normal 304/NotModified behavior.
+			if req.FormValue("download") == "1" {
+				// Validate opaque token with password support
+				token := req.URL.Query().Get("token")
+				password := req.URL.Query().Get("password")
 
-			if token == "" {
-				render.Status(req, http.StatusBadRequest)
-				render.JSON(res, req, dto.ErrorResponse{Error: "missing token query param"})
-				return
-			}
-
-			uids, tokenEntity, ok := downloads.ValidateTokenWithPassword(db, token, password)
-			if !ok {
-				if tokenEntity != nil && tokenEntity.Password != nil {
-					render.Status(req, http.StatusUnauthorized)
-					render.JSON(res, req, dto.ErrorResponse{Error: "invalid or missing password"})
+				if token == "" {
+					render.Status(req, http.StatusBadRequest)
+					render.JSON(res, req, dto.ErrorResponse{Error: "missing token query param"})
 					return
 				}
-				render.Status(req, http.StatusUnauthorized)
-				render.JSON(res, req, dto.ErrorResponse{Error: "invalid or expired token"})
-				return
-			}
 
-			// Check if downloads are allowed
-			if !tokenEntity.AllowDownload {
-				render.Status(req, http.StatusForbidden)
-				render.JSON(res, req, dto.ErrorResponse{Error: "downloads not permitted for this token"})
-				return
-			}
+				uids, tokenEntity, ok := downloads.ValidateTokenWithPassword(db, token, password)
+				if !ok {
+					if tokenEntity != nil && tokenEntity.Password != nil {
+						render.Status(req, http.StatusUnauthorized)
+						render.JSON(res, req, dto.ErrorResponse{Error: "invalid or missing password"})
+						return
+					}
+					render.Status(req, http.StatusUnauthorized)
+					render.JSON(res, req, dto.ErrorResponse{Error: "invalid or expired token"})
+					return
+				}
 
-			// Validate embed access (prevents hotlinking if AllowEmbed is false)
-			if !downloads.ValidateEmbedAccess(tokenEntity, req) {
-				render.Status(req, http.StatusForbidden)
-				render.JSON(res, req, dto.ErrorResponse{Error: "embedding not allowed for this token"})
-				return
-			}
+				// Check if downloads are allowed
+				if !tokenEntity.AllowDownload {
+					render.Status(req, http.StatusForbidden)
+					render.JSON(res, req, dto.ErrorResponse{Error: "downloads not permitted for this token"})
+					return
+				}
 
-			// Ensure token is valid for this UID
-			allowed := slices.Contains(uids, uid)
-			if !allowed {
-				render.Status(req, http.StatusUnauthorized)
-				render.JSON(res, req, dto.ErrorResponse{Error: "token not valid for this resource"})
-				return
-			}
-		} else {
-			if match := req.Header.Get("If-None-Match"); match == imgEnt.ImageMetadata.Checksum {
-				res.WriteHeader(http.StatusNotModified)
-				return
-			}
+				// Validate embed access (prevents hotlinking if AllowEmbed is false)
+				if !downloads.ValidateEmbedAccess(tokenEntity, req) {
+					render.Status(req, http.StatusForbidden)
+					render.JSON(res, req, dto.ErrorResponse{Error: "embedding not allowed for this token"})
+					return
+				}
+
+				// Ensure token is valid for this UID
+				allowed := slices.Contains(uids, uid)
+				if !allowed {
+					render.Status(req, http.StatusUnauthorized)
+					render.JSON(res, req, dto.ErrorResponse{Error: "token not valid for this resource"})
+					return
+				}
+				} else {
+					if match := req.Header.Get("If-None-Match"); match == imgEnt.ImageMetadata.Checksum {
+						// echo the ETag and Last-Modified for consistent 304 handling
+						res.Header().Set("ETag", imgEnt.ImageMetadata.Checksum)
+						res.Header().Set("Last-Modified", imgEnt.UpdatedAt.UTC().Format(http.TimeFormat))
+						res.WriteHeader(http.StatusNotModified)
+						return
+					}
+				}
+
+			res.WriteHeader(http.StatusOK)
+			res.Write(imageData)
+			return
 		}
-
-		res.WriteHeader(http.StatusOK)
-		res.Write(imageData)
-		return
-	}
 
 		width, wErr := strconv.ParseInt(widthParam, 10, 64)
 		height, hErr := strconv.ParseInt(heightParam, 10, 64)
@@ -339,8 +389,9 @@ func ImagesRouter(db *gorm.DB, logger *slog.Logger) *chi.Mux {
 		// Check If-None-Match early to avoid expensive VIPS processing (skip for downloads)
 		if req.FormValue("download") != "1" {
 			if match := req.Header.Get("If-None-Match"); match == transformETag {
-				res.Header().Set("Cache-Control", fmt.Sprintf("public, max-age=%d, immutable", time.Hour*24*365/time.Second))
+				res.Header().Set("Cache-Control", "public, max-age=604800, no-transform")
 				res.Header().Set("ETag", transformETag)
+				res.Header().Set("Last-Modified", imgEnt.UpdatedAt.UTC().Format(http.TimeFormat))
 				res.WriteHeader(http.StatusNotModified)
 				return
 			}
@@ -418,10 +469,11 @@ func ImagesRouter(db *gorm.DB, logger *slog.Logger) *chi.Mux {
 		formatParam = string(libvipsImg.Format())
 	}
 
-	// Set response headers
+	// Set response headers for transform result
 	res.Header().Set("Content-Type", "image/"+formatParam)
-	res.Header().Set("Cache-Control", fmt.Sprintf("public, max-age=%d, immutable", time.Hour*24*365/time.Second))
+	res.Header().Set("Cache-Control", "public, max-age=604800, no-transform")
 	res.Header().Set("ETag", transformETag)
+	res.Header().Set("Last-Modified", imgEnt.UpdatedAt.UTC().Format(http.TimeFormat))
 	res.Header().Set("Content-Disposition", fmt.Sprintf("attachment; filename=\"%s\"", imgEnt.ImageMetadata.FileName))
 
 	// If this is a download request, validate token with details
@@ -481,6 +533,59 @@ func ImagesRouter(db *gorm.DB, logger *slog.Logger) *chi.Mux {
 		res.Header().Set("Content-Length", strconv.Itoa(len(imageData)))
 		res.WriteHeader(http.StatusOK)
 		res.Write(imageData)
+	})
+
+	router.Get("/{uid}/exif", func(res http.ResponseWriter, req *http.Request) {
+		uid := chi.URLParam(req, "uid")
+		simple := req.URL.Query().Get("simple") == "true"
+
+		var imgEnt entities.Image
+		result := db.Model(&entities.Image{}).Where("uid = ? AND deleted_at IS NULL", uid).First(&imgEnt)
+		
+		if result.Error != nil {
+			if result.Error == gorm.ErrRecordNotFound {
+				render.Status(req, http.StatusNotFound)
+				render.JSON(res, req, dto.ErrorResponse{Error: "image not found"})
+				return
+			}
+
+			render.Status(req, http.StatusInternalServerError)
+			render.JSON(res, req, dto.ErrorResponse{Error: "failed to retrieve image"})
+			return
+		}
+
+		if simple {
+			if imgEnt.Exif == nil {
+				render.Status(req, http.StatusOK)
+				render.JSON(res, req, dto.ErrorResponse{Error: "no exif data"})
+				return
+			}
+
+			render.Status(req, http.StatusOK)
+			render.JSON(res, req, imgEnt.Exif)
+			return
+		}
+		
+		imageFile, err := images.ReadImage(imgEnt.Uid, imgEnt.ImageMetadata.FileName)
+		if err != nil {
+			render.Status(req, http.StatusInternalServerError)
+			render.JSON(res, req, dto.ErrorResponse{Error: "failed to read image"})
+			return
+		}
+
+		libvipsImg, err := libvips.NewImageFromBuffer(imageFile, libvips.DefaultLoadOptions())
+		
+		if err != nil {
+			render.Status(req, http.StatusInternalServerError)
+			render.JSON(res, req, dto.ErrorResponse{Error: "failed to process image"})
+			return
+		}
+		defer libvipsImg.Close()
+		
+		exifData := libvipsImg.Exif()
+
+		render.Status(req, http.StatusOK)
+		render.JSON(res, req, exifData)
 	})
 
 	// Dedicated download route: creates a short-lived signed redirect to the

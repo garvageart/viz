@@ -258,12 +258,13 @@ paths:
             type: integer
             default: 25
           description: Number of images per page
-        - name: offset
+        - name: page
           in: query
           schema:
             type: integer
             default: 0
-          description: Page offset (0-based)
+            minimum: 0
+          description: Page index (0-based)
       responses:
         "200":
           description: OK
@@ -481,6 +482,60 @@ paths:
               schema:
                 $ref: "#/components/schemas/ErrorResponse"
 
+  /images/{uid}/exif:
+    get:
+      summary: Get EXIF data for an image
+      description: |
+        Retrieve EXIF metadata for an image. If the query parameter `simple=true` is set
+        the server will return the stored (simplified) `ImageEXIF` object from the database
+        when available. Otherwise the server will re-read the file and return the full raw
+        EXIF map extracted from the original file.
+      operationId: getImageExif
+      parameters:
+        - in: path
+          name: uid
+          required: true
+          schema:
+            type: string
+          description: Image UID
+        - in: query
+          name: simple
+          required: false
+          schema:
+            type: boolean
+          description: When true, return the stored simplified EXIF object from the DB (otherwise read raw EXIF from file)
+      responses:
+        "200":
+          description: EXIF data (simplified ImageEXIF when `simple=true`, raw EXIF map otherwise)
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ImageEXIF"
+            application/vnd.raw-exif+json:
+              schema:
+                type: object
+                description: Raw EXIF key->value map extracted from the original file
+                additionalProperties:
+                  type: string
+        "400":
+          description: Bad request (invalid request body)
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "404":
+          description: Not found (image missing)
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "500":
+          description: Server error (failed to read or process image)
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+
   /images/{uid}/download:
     get:
       summary: Create short-lived download token and redirect
@@ -525,10 +580,12 @@ paths:
             type: integer
             default: 20
         - in: query
-          name: offset
+          name: page
           schema:
             type: integer
             default: 0
+            minimum: 0
+          description: Page index (0-based)
       responses:
         "200":
           description: Collections page
@@ -1796,6 +1853,8 @@ components:
         focal_length: { type: string }
         exposure_time: { type: string }
         aperture: { type: string }
+        exposure_value: { type: string }
+        f_number: { type: string }
         flash: { type: string }
         white_balance: { type: string }
         lens_model: { type: string }
@@ -1823,6 +1882,13 @@ components:
         file_size: { type: integer, format: int64 }
         original_file_name: { type: string }
         file_type: { type: string }
+        metadata: { type: string }
+        rating:
+          {
+            type: integer,
+            nullable: true,
+            description: "User-assigned rating (0-5). Null = unrated",
+          }
         keywords:
           type: array
           items: { type: string }
@@ -1938,13 +2004,13 @@ components:
         prev: { type: string }
         next: { type: string }
         limit: { type: integer }
-        offset: { type: integer }
+        page: { type: integer }
         count: { type: integer }
         items:
           type: array
           items:
             $ref: "#/components/schemas/ImagesResponse"
-      required: [limit, offset, items]
+      required: [limit, page, items]
 
     CollectionListResponse:
       type: object
@@ -1953,13 +2019,13 @@ components:
         prev: { type: string }
         next: { type: string }
         limit: { type: integer }
-        offset: { type: integer }
+        page: { type: integer }
         count: { type: integer }
         items:
           type: array
           items:
             $ref: "#/components/schemas/Collection"
-      required: [limit, offset, items]
+      required: [limit, page, items]
 
     CollectionDetailResponse:
       type: object

@@ -14,6 +14,7 @@ import (
 	"imagine/internal/imageops"
 	"imagine/internal/images"
 	"imagine/internal/jobs"
+	libvips "imagine/internal/imageops/vips"
 
 	"gorm.io/gorm"
 )
@@ -90,6 +91,7 @@ func EnqueueImageProcessJob(job *ImageProcessJob) error {
 	if err != nil {
 		return fmt.Errorf("%s: %w", JobTypeImageProcess, err)
 	}
+
 	msg := message.NewMessage(watermill.NewUUID(), payload)
 	return jobs.Publish(TopicImageProcess, msg)
 }
@@ -159,15 +161,27 @@ func ImageProcess(ctx context.Context, db *gorm.DB, imgEnt entities.Image, onPro
 		"duration": time.Since(thumbhashTimeStart).Milliseconds(),
 	}))
 
+	// Update the database with the generated thumbhash (stored inside image_metadata JSON)
+	encoded := images.EncodeThumbhashToString(thumbhash)
+	imgEnt.ImageMetadata.Thumbhash = &encoded
+	
+	onProgress("Processing EXIF data", 80)
+
+	libvipsImg, err := libvips.NewImageFromBuffer(originalData, libvips.DefaultLoadOptions())
+	if err != nil {
+		return fmt.Errorf("failed to create vips image from buffer: %w", err)
+	}
+
+	defer libvipsImg.Close()
+	exif, _, _ := imageops.BuildImageEXIF(libvipsImg.Exif())
+
+	imgEnt.Exif = &exif
+	
 	if onProgress != nil {
 		onProgress("Updating database", 90)
 	}
 
-	// Update the database with the generated thumbhash (stored inside image_metadata JSON)
-	encoded := images.EncodeThumbhashToString(thumbhash)
-	imgEnt.ImageMetadata.Thumbhash = &encoded
-
-	if err := db.Model(&entities.Image{}).Where("uid = ?", imgEnt.Uid).Update("image_metadata", imgEnt.ImageMetadata).Error; err != nil {
+	if err := db.Model(&entities.Image{}).Where("uid = ?", imgEnt.Uid).Update("image_metadata", imgEnt.ImageMetadata).Update("exif", imgEnt.Exif).Error; err != nil {
 		return fmt.Errorf("failed to update db image thumbhash: %w", err)
 	}
 
