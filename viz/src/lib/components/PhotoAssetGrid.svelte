@@ -63,7 +63,7 @@
 	let totalHeight: number = $state(0);
 	let scrollTop: number = $state(0);
 	let targetRowHeight: number = $state(240);
-	let bufferPx = 400; // extra pixels above/below viewport for virtualization
+	let bufferPx = 200; // extra pixels above/below viewport for virtualization (reduced)
 
 	type JustifiedItem = { asset: Image; width: number; height: number };
 	type JustifiedRow = { items: JustifiedItem[]; height: number; top: number };
@@ -72,6 +72,68 @@
 	let visibleRows: JustifiedRow[] = $state([]);
 
 	let photoGridEl: HTMLDivElement | undefined = $state();
+
+	// Scrolling / lazy-load helpers
+	let isScrolling: boolean = $state(false);
+	let scrollIdleTimer: ReturnType<typeof setTimeout> | null = null;
+	const pendingLazyNodes = new SvelteSet<HTMLImageElement>();
+
+	function loadImageNode(img: HTMLImageElement) {
+		const data = img.dataset.src;
+		if (!data) {
+			return;
+		}
+		if (img.src === data) {
+			return;
+		}
+
+		img.src = data;
+	}
+
+	function lazyLoad(node: HTMLImageElement, params: { src: string }) {
+		// set dataset for potential later load; placeholder image (thumbhash) remains in DOM
+		if (params?.src) {
+			node.dataset.src = params.src;
+		}
+
+		const observer = new IntersectionObserver(
+			(entries) => {
+				for (const entry of entries) {
+					if (entry.isIntersecting) {
+						if (isScrolling) {
+							pendingLazyNodes.add(node);
+						} else {
+							loadImageNode(node);
+							observer.unobserve(node);
+						}
+					} else {
+						// If scrolled far away, cancel an in-flight fetch by clearing src
+						// (best-effort; some browsers may still fetch)
+						if (!entry.isIntersecting && !pendingLazyNodes.has(node)) {
+							// If currently not intersecting and src came from dataset, clear it
+							const ds = node.dataset.src;
+							if (ds && node.src && node.src === ds) {
+								node.src = "";
+							}
+						}
+					}
+				}
+			},
+			{ root: photoGridEl ?? null, rootMargin: "100px", threshold: 0.05 }
+		);
+
+		observer.observe(node);
+
+		return {
+			update(newParams: { src: string }) {
+				if (newParams?.src) node.dataset.src = newParams.src;
+			},
+			destroy() {
+				observer.disconnect();
+				pendingLazyNodes.delete(node);
+			}
+		};
+	}
 
 	// Build justified rows layout and compute visible rows based on scroll.
 	function updateVirtualGrid() {
@@ -244,14 +306,28 @@
 	// Build a sized preview URL with a constant size for better browser caching.
 	// Using a fixed size means fewer unique URLs and better cache hit rates.
 	function getSizedPreviewUrl(asset: Image, desiredWidth?: number, desiredHeight?: number): string {
-		if (!asset.uid) {
-			return getFullImagePath(asset.image_paths.preview ?? asset.image_paths.thumbnail ?? asset.image_paths.original ?? "");
+		// Prefer pre-generated thumbnail when available (cheaper, cached).
+		// Use a smaller preview size for grid thumbnails to reduce bandwidth/cpu.
+		const THUMB_SIZE = 400;
+		const checksum = asset.image_metadata?.checksum;
+
+		if (asset.image_paths?.thumbnail) {
+			// Append fingerprint param to thumbnail URL so it can be cached as an immutable resource
+			let url = asset.image_paths.thumbnail;
+			if (checksum) {
+				url = url + (url.includes("?") ? "&" : "?") + `v=${checksum}`;
+			}
+			return getFullImagePath(url);
 		}
 
-		// Use a constant size (800px) that works well for most display scenarios
-		// This significantly improves browser caching instead of many dynamic sizes
-		const PREVIEW_SIZE = 800;
-		return getFullImagePath(`/images/${asset.uid}/file?format=webp&w=${PREVIEW_SIZE}&h=${PREVIEW_SIZE}&quality=90`);
+		// Use a smaller preview size for grid thumbnails to reduce bandwidth/cpu.
+		const PREVIEW_SIZE = 400;
+		let url = `/images/${asset.uid}/file?format=webp&w=${PREVIEW_SIZE}&h=${PREVIEW_SIZE}&quality=80`;
+		if (checksum) {
+			url = url + `&v=${checksum}`;
+		}
+
+		return getFullImagePath(url);
 	}
 
 	// --- Lightbox prefetch helpers ---
@@ -303,6 +379,22 @@
 		}
 
 		scrollTop = photoGridEl.scrollTop;
+
+		// Throttle/mark scrolling state so we can defer non-essential loads while the user scrolls fast
+		isScrolling = true;
+		if (scrollIdleTimer) clearTimeout(scrollIdleTimer);
+		scrollIdleTimer = setTimeout(() => {
+			isScrolling = false;
+			// flush pending lazy loads
+			for (const n of Array.from(pendingLazyNodes)) {
+				try {
+					loadImageNode(n);
+				} catch (err) {
+					// ignore
+				}
+				pendingLazyNodes.delete(n);
+			}
+		}, 150);
 
 		// Update visible rows on next frame to avoid layout thrash
 		requestAnimationFrame(() => {
@@ -449,7 +541,7 @@
 				<img
 					draggable="false"
 					class="tile-image"
-					src={getSizedPreviewUrl(asset, dim?.width, dim?.height)}
+					use:lazyLoad={{ src: getSizedPreviewUrl(asset, dim?.width, dim?.height) }}
 					alt={asset.name ?? asset.image_metadata?.file_name ?? ""}
 					loading="lazy"
 					onload={(e) => (e.currentTarget as HTMLImageElement).closest(".asset-photo")?.classList.add("img-loaded")}

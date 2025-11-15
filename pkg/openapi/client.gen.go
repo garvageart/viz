@@ -206,6 +206,11 @@ type ClientInterface interface {
 
 	UploadImageByUrlWithTextBody(ctx context.Context, body UploadImageByUrlTextRequestBody, reqEditors ...RequestEditorFn) (*http.Response, error)
 
+	// UpdateImageWithBody request with any body
+	UpdateImageWithBody(ctx context.Context, uid string, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*http.Response, error)
+
+	UpdateImage(ctx context.Context, uid string, body UpdateImageJSONRequestBody, reqEditors ...RequestEditorFn) (*http.Response, error)
+
 	// QuickDownloadImage request
 	QuickDownloadImage(ctx context.Context, uid string, reqEditors ...RequestEditorFn) (*http.Response, error)
 
@@ -767,6 +772,30 @@ func (c *Client) UploadImageByUrlWithBody(ctx context.Context, contentType strin
 
 func (c *Client) UploadImageByUrlWithTextBody(ctx context.Context, body UploadImageByUrlTextRequestBody, reqEditors ...RequestEditorFn) (*http.Response, error) {
 	req, err := NewUploadImageByUrlRequestWithTextBody(c.Server, body)
+	if err != nil {
+		return nil, err
+	}
+	req = req.WithContext(ctx)
+	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
+		return nil, err
+	}
+	return c.Client.Do(req)
+}
+
+func (c *Client) UpdateImageWithBody(ctx context.Context, uid string, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewUpdateImageRequestWithBody(c.Server, uid, contentType, body)
+	if err != nil {
+		return nil, err
+	}
+	req = req.WithContext(ctx)
+	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
+		return nil, err
+	}
+	return c.Client.Do(req)
+}
+
+func (c *Client) UpdateImage(ctx context.Context, uid string, body UpdateImageJSONRequestBody, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewUpdateImageRequest(c.Server, uid, body)
 	if err != nil {
 		return nil, err
 	}
@@ -2308,6 +2337,53 @@ func NewUploadImageByUrlRequestWithBody(server string, contentType string, body 
 	return req, nil
 }
 
+// NewUpdateImageRequest calls the generic UpdateImage builder with application/json body
+func NewUpdateImageRequest(server string, uid string, body UpdateImageJSONRequestBody) (*http.Request, error) {
+	var bodyReader io.Reader
+	buf, err := json.Marshal(body)
+	if err != nil {
+		return nil, err
+	}
+	bodyReader = bytes.NewReader(buf)
+	return NewUpdateImageRequestWithBody(server, uid, "application/json", bodyReader)
+}
+
+// NewUpdateImageRequestWithBody generates requests for UpdateImage with any type of body
+func NewUpdateImageRequestWithBody(server string, uid string, contentType string, body io.Reader) (*http.Request, error) {
+	var err error
+
+	var pathParam0 string
+
+	pathParam0, err = runtime.StyleParamWithLocation("simple", false, "uid", runtime.ParamLocationPath, uid)
+	if err != nil {
+		return nil, err
+	}
+
+	serverURL, err := url.Parse(server)
+	if err != nil {
+		return nil, err
+	}
+
+	operationPath := fmt.Sprintf("/images/%s", pathParam0)
+	if operationPath[0] == '/' {
+		operationPath = "." + operationPath
+	}
+
+	queryURL, err := serverURL.Parse(operationPath)
+	if err != nil {
+		return nil, err
+	}
+
+	req, err := http.NewRequest("PATCH", queryURL.String(), body)
+	if err != nil {
+		return nil, err
+	}
+
+	req.Header.Add("Content-Type", contentType)
+
+	return req, nil
+}
+
 // NewQuickDownloadImageRequest generates requests for QuickDownloadImage
 func NewQuickDownloadImageRequest(server string, uid string) (*http.Request, error) {
 	var err error
@@ -3135,6 +3211,11 @@ type ClientWithResponsesInterface interface {
 
 	UploadImageByUrlWithTextBodyWithResponse(ctx context.Context, body UploadImageByUrlTextRequestBody, reqEditors ...RequestEditorFn) (*UploadImageByUrlResponse, error)
 
+	// UpdateImageWithBodyWithResponse request with any body
+	UpdateImageWithBodyWithResponse(ctx context.Context, uid string, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*UpdateImageResponse, error)
+
+	UpdateImageWithResponse(ctx context.Context, uid string, body UpdateImageJSONRequestBody, reqEditors ...RequestEditorFn) (*UpdateImageResponse, error)
+
 	// QuickDownloadImageWithResponse request
 	QuickDownloadImageWithResponse(ctx context.Context, uid string, reqEditors ...RequestEditorFn) (*QuickDownloadImageResponse, error)
 
@@ -3935,6 +4016,31 @@ func (r UploadImageByUrlResponse) StatusCode() int {
 	return 0
 }
 
+type UpdateImageResponse struct {
+	Body         []byte
+	HTTPResponse *http.Response
+	JSON200      *Image
+	JSON400      *ErrorResponse
+	JSON404      *ErrorResponse
+	JSON500      *ErrorResponse
+}
+
+// Status returns HTTPResponse.Status
+func (r UpdateImageResponse) Status() string {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.Status
+	}
+	return http.StatusText(0)
+}
+
+// StatusCode returns HTTPResponse.StatusCode
+func (r UpdateImageResponse) StatusCode() int {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.StatusCode
+	}
+	return 0
+}
+
 type QuickDownloadImageResponse struct {
 	Body         []byte
 	HTTPResponse *http.Response
@@ -4682,6 +4788,23 @@ func (c *ClientWithResponses) UploadImageByUrlWithTextBodyWithResponse(ctx conte
 		return nil, err
 	}
 	return ParseUploadImageByUrlResponse(rsp)
+}
+
+// UpdateImageWithBodyWithResponse request with arbitrary body returning *UpdateImageResponse
+func (c *ClientWithResponses) UpdateImageWithBodyWithResponse(ctx context.Context, uid string, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*UpdateImageResponse, error) {
+	rsp, err := c.UpdateImageWithBody(ctx, uid, contentType, body, reqEditors...)
+	if err != nil {
+		return nil, err
+	}
+	return ParseUpdateImageResponse(rsp)
+}
+
+func (c *ClientWithResponses) UpdateImageWithResponse(ctx context.Context, uid string, body UpdateImageJSONRequestBody, reqEditors ...RequestEditorFn) (*UpdateImageResponse, error) {
+	rsp, err := c.UpdateImage(ctx, uid, body, reqEditors...)
+	if err != nil {
+		return nil, err
+	}
+	return ParseUpdateImageResponse(rsp)
 }
 
 // QuickDownloadImageWithResponse request returning *QuickDownloadImageResponse
@@ -6038,6 +6161,53 @@ func ParseUploadImageByUrlResponse(rsp *http.Response) (*UploadImageByUrlRespons
 			return nil, err
 		}
 		response.JSON400 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 500:
+		var dest ErrorResponse
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON500 = &dest
+
+	}
+
+	return response, nil
+}
+
+// ParseUpdateImageResponse parses an HTTP response from a UpdateImageWithResponse call
+func ParseUpdateImageResponse(rsp *http.Response) (*UpdateImageResponse, error) {
+	bodyBytes, err := io.ReadAll(rsp.Body)
+	defer func() { _ = rsp.Body.Close() }()
+	if err != nil {
+		return nil, err
+	}
+
+	response := &UpdateImageResponse{
+		Body:         bodyBytes,
+		HTTPResponse: rsp,
+	}
+
+	switch {
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 200:
+		var dest Image
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON200 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 400:
+		var dest ErrorResponse
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON400 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 404:
+		var dest ErrorResponse
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON404 = &dest
 
 	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 500:
 		var dest ErrorResponse

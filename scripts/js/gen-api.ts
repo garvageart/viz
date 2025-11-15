@@ -39,6 +39,9 @@ function run(command: string, args: string[], cwd?: string, silent = false) {
         stdio: silent ? 'pipe' : 'inherit',
         shell: true,
     });
+
+    // blank line for printing clarity
+    console.log("");
     return result.status === 0;
 }
 
@@ -92,6 +95,46 @@ if (!goGenSuccess) {
     process.exit(1);
 }
 
+// Generate Go types+client into pkg/openapi so package is self-contained for public use.
+const outDir = join(root, 'pkg', 'openapi');
+const typesOut = join(outDir, 'types.gen.go');
+const clientOut = join(outDir, 'client.gen.go');
+console.log(`Generating Go types + client into ${outDir}`);
+
+// ensure outDir exists
+try { mkdirSync(outDir, { recursive: true }); } catch (e) { /* ignore */ }
+
+// Generate types into pkg/openapi (keeps a local copy for the public package)
+const typesSuccess = run('oapi-codegen', [
+    '-generate', 'types',
+    '-package', 'openapi',
+    '-o', typesOut,
+    specPath,
+]);
+if (!typesSuccess) {
+    console.warn('oapi-codegen types generation into pkg/openapi failed; pkg/openapi will not contain types');
+} else {
+    console.log('oapi-codegen types generated to', typesOut);
+}
+
+// Generate client into pkg/openapi
+const clientSuccess = run('oapi-codegen', [
+    '-generate', 'client',
+    '-package', 'openapi',
+    '-o', clientOut,
+    specPath,
+]);
+
+if (!clientSuccess) {
+    console.error('oapi-codegen client generation failed; skipping Go client generation');
+} else {
+    console.log('oapi-codegen client generated to', clientOut);
+}
+
+if (!typesSuccess && !existsSync(dtoOutPath)) {
+    console.warn('No types available in pkg/openapi OR internal/dto; ensure oapi-codegen types run succeeded earlier.');
+}
+
 // Tidy modules (optional, only if new dependencies were added)
 if (options.installTools || !hasRuntime) {
     console.log('Running go mod tidy...');
@@ -135,50 +178,6 @@ if (existsSync(vizDir)) {
     }
 }
 
-// Generate Go types+client into pkg/openapi so package is self-contained for public use.
-{
-    const outDir = join(root, 'pkg', 'openapi');
-    const typesOut = join(outDir, 'types.gen.go');
-    const clientOut = join(outDir, 'client.gen.go');
-    console.log(`Generating Go types + client into ${outDir}`);
-
-    // ensure outDir exists
-    try { mkdirSync(outDir, { recursive: true }); } catch (e) { /* ignore */ }
-
-    // Generate types into pkg/openapi (keeps a local copy for the public package)
-    const typesSuccess = run('oapi-codegen', [
-        '-generate', 'types',
-        '-package', 'openapi',
-        '-o', typesOut,
-        specPath,
-    ]);
-    if (!typesSuccess) {
-        console.warn('oapi-codegen types generation into pkg/openapi failed; pkg/openapi will not contain types');
-    } else {
-        console.log('oapi-codegen types generated to', typesOut);
-    }
-
-    // Generate client into pkg/openapi
-    const clientSuccess = run('oapi-codegen', [
-        '-generate', 'client',
-        '-package', 'openapi',
-        '-o', clientOut,
-        specPath,
-    ]);
-
-    if (!clientSuccess) {
-        console.error('oapi-codegen client generation failed; skipping Go client generation');
-    } else {
-        console.log('oapi-codegen client generated to', clientOut);
-    }
-
-    if (!typesSuccess && !existsSync(dtoOutPath)) {
-        console.warn('No types available in pkg/openapi OR internal/dto; ensure oapi-codegen types run succeeded earlier.');
-    }
-}
-
-// Remove old function generation (no longer needed with oazapfts)
-// oazapfts generates both types AND functions in one file
 
 // Optional build checks
 if (options.build) {

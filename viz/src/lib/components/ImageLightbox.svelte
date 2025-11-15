@@ -4,10 +4,10 @@
 	import Lightbox from "./Lightbox.svelte";
 	import LoadingContainer from "./LoadingContainer.svelte";
 	import MaterialIcon from "./MaterialIcon.svelte";
-	import { getFullImagePath, type Image } from "$lib/api";
+	import { getFullImagePath, updateImage, type Image, type ImageUpdate } from "$lib/api";
 	import hotkeys from "hotkeys-js";
 	import { formatBytes, getThumbhashURL } from "$lib/utils/images";
-	import Button from "./Button.svelte";
+	import { toastState } from "$lib/toast-notifcations/notif-state.svelte";
 
 	interface Props {
 		lightboxImage: Image | undefined;
@@ -36,6 +36,55 @@
 	let thumbhashURL = $derived(lightboxImage ? getThumbhashURL(lightboxImage) : undefined);
 	let currentImageEl: HTMLImageElement | undefined = $derived(lightboxImage ? document.createElement("img") : undefined);
 
+	// Rating UI state: previewRating for hover preview, rating is the set value
+	let previewRating = $state<number | null>(null);
+	let rating = $state<number | null>(lightboxImage?.image_metadata?.rating ?? null);
+
+	// Star values moved to state to avoid rebuilding the array on each render
+	let starValues = $state<number[]>([1, 2, 3, 4, 5]);
+
+	// Prevent concurrent rating updates
+	let updatingRating = $state(false);
+
+	async function setRating(newRating: number | null) {
+		if (!lightboxImage) {
+			return;
+		}
+
+		if (updatingRating) {
+			return;
+		}
+
+		updatingRating = true;
+		const prev = rating;
+		rating = newRating;
+
+		const uid = lightboxImage.uid;
+		const dateToUpdate: ImageUpdate = {
+			image_metadata: { rating: newRating }
+		};
+
+		try {
+			const res = await updateImage(uid, dateToUpdate);
+			if (res.status === 200) {
+				lightboxImage = res.data;
+				rating = res.data.image_metadata?.rating ?? null;
+			} else {
+				toastState.addToast({
+					type: "error",
+					message: `Failed to update rating: ${res.status} ${res.data.error}`
+				});
+
+				rating = prev;
+			}
+		} catch (err) {
+			console.error("Error updating rating", err);
+			rating = prev;
+		} finally {
+			updatingRating = false;
+		}
+	}
+
 	hotkeys("left,right", (e, handler) => {
 		if (!show) {
 			return;
@@ -53,28 +102,15 @@
 		const size = lightboxImage?.image_metadata?.file_size;
 		return formatBytes(size) ?? "—";
 	}
-
-	function formatResolution() {
-		const exifRes = lightboxImage?.exif?.resolution;
-		if (exifRes) {
-			return exifRes;
-		}
-
-		if (lightboxImage?.width && lightboxImage?.height) {
-			return `${lightboxImage.width} x ${lightboxImage.height}`;
-		}
-
-		return "—";
-	}
 </script>
 
 {#snippet metadataEditor()}
 	<div class="metadata-editor">
 		<div class="metadata-header">
-			<Button onclick={() => (lightboxImage = undefined)}>
+			<button title="Close" onclick={() => (lightboxImage = undefined)}>
 				<MaterialIcon iconName="close" />
-				<span>Close</span>
-			</Button>
+			</button>
+			<h3>Info</h3>
 		</div>
 		<div class="metadata-exif-box">
 			<div class="exif-cards">
@@ -135,9 +171,31 @@
 					<div class="card-row meta-row">
 						<MaterialIcon iconName="palette" class="exif-material-icon" />
 						<div class="card-values">
-							<div class="value-small">{lightboxImage?.image_metadata?.color_space?.toUpperCase() ?? "—"}</div>
+							<div class="value-small">{lightboxImage?.image_metadata?.color_space ?? "—"}</div>
 						</div>
 					</div>
+				</div>
+			</div>
+
+			<div class="rating-container">
+				<div class="rating-stars" role="group" onmouseleave={() => (previewRating = null)}>
+					{#each starValues as i}
+						<button
+							class="rating-button"
+							aria-label={`Set rating ${i}`}
+							onmouseenter={() => (previewRating = i)}
+							onmouseleave={() => (previewRating = null)}
+							onclick={() => setRating(i)}
+							disabled={updatingRating}
+						>
+							<MaterialIcon fill={i <= (previewRating ?? rating ?? 0)} iconName="star" iconStyle={"sharp"} />
+						</button>
+					{/each}
+					{#if rating !== null && rating !== 0}
+						<button class="rating-clear" aria-label="Clear rating" onclick={() => setRating(0)} disabled={updatingRating}>
+							<MaterialIcon iconName="close" weight={600} />
+						</button>
+					{/if}
 				</div>
 			</div>
 		</div>
@@ -153,6 +211,17 @@
 >
 	<div class="image-lightbox-container">
 		<div class="image-container">
+			<div class="image-icon-buttons">
+				<button
+					title={`${showMetadata ? "Hide" : "Show"} Info`}
+					onclick={(e) => {
+						e.stopPropagation();
+						showMetadata = !showMetadata;
+					}}
+				>
+					<MaterialIcon iconName="info" />
+				</button>
+			</div>
 			{#key lightboxImage?.uid}
 				<div class="image-wrapper">
 					{#await loadImage(imageToLoad, currentImageEl!)}
@@ -239,6 +308,25 @@
 		pointer-events: none;
 	}
 
+	.image-icon-buttons {
+		position: absolute;
+		top: 1em;
+		right: 1em;
+		z-index: 10;
+		pointer-events: auto;
+		display: flex;
+		gap: 0.5em;
+
+		button {
+			display: inline-flex;
+			align-items: center;
+			justify-content: center;
+			padding: 0.25rem;
+			background: transparent;
+			border: none;
+		}
+	}
+
 	.image-wrapper {
 		position: relative;
 		display: flex;
@@ -290,13 +378,20 @@
 		background-color: var(--imag-bg-color);
 		padding: 1em;
 		border-radius: 0.5em;
-		color: var(--imag-text-color);
+		color: var(--imag-10);
 		height: 100%;
 		width: 25vw;
 		max-width: 25vw;
 		z-index: 100;
 		pointer-events: auto;
 		box-sizing: border-box;
+	}
+
+	.metadata-header {
+		display: flex;
+		align-items: center;
+		margin-bottom: 1rem;
+		gap: 0.5rem;
 	}
 
 	.metadata-exif-box {
@@ -360,5 +455,32 @@
 		white-space: nowrap;
 		overflow: hidden;
 		text-overflow: ellipsis;
+	}
+
+	.rating-container {
+		margin-top: 0.75rem;
+		display: flex;
+		align-items: center;
+		gap: 0.5rem;
+	}
+
+	.rating-stars {
+		display: flex;
+		align-items: center;
+	}
+
+	.rating-button,
+	.rating-clear {
+		border: none;
+		background: transparent;
+		cursor: pointer;
+		color: var(--imag-30);
+		display: inline-flex;
+		align-items: center;
+		justify-content: center;
+	}
+
+	.rating-clear {
+		margin: 0rem 0.5rem;
 	}
 </style>

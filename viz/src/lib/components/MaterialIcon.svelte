@@ -2,7 +2,7 @@
 	import type { MaterialSymbol } from "material-symbols";
 	import type { SvelteHTMLElements } from "svelte/elements";
 
-	type IconStyle = "sharp" | "outlined" | "rounded";
+	type IconStyle = "sharp" | "outlined" | "rounded" | "filled";
 
 	interface Props {
 		fill?: boolean;
@@ -25,7 +25,7 @@
 		...props
 	}: Props & SvelteHTMLElements["span"] = $props();
 
-	let svgIcon: HTMLSpanElement | undefined = $state();
+	let svgHtml: string | undefined = $state("");
 	let externalSVG = $state({
 		enabled: false,
 		src: ""
@@ -33,41 +33,58 @@
 
 	if (asSVG) {
 		$effect(() => {
-			if (!svgIcon) {
-				return;
-			}
+			let cancelled = false;
+			const loadSvg = async () => {
+				try {
+					const svgPath =
+						iconStyle === "filled"
+							? `/node_modules/@material-design-icons/svg/filled/${iconName}.svg`
+							: `/node_modules/@material-design-icons/svg/${iconStyle}/${iconName}.svg`;
 
-			try {
-				const fields = import.meta.glob([`/node_modules/@material-design-icons/svg/*/*.svg`]);
-				const icon = fields[`/node_modules/@material-design-icons/svg/${iconStyle}/${iconName}.svg`]();
+					const fields = import.meta.glob([`/node_modules/@material-design-icons/svg/*/*.svg`]);
+					if (svgPath in fields) {
+						const mod = await fields[svgPath]();
+						if (cancelled) {
+							return;
+						}
 
-				const iconMod = icon.then(async (mod) => {
-					const iconModule = mod as typeof import("*.svg");
-					let iconSvgString = iconModule.default;
-					return iconSvgString;
-				});
+						const iconModule = mod as typeof import("*.svg");
+						const iconSvgString = iconModule.default;
+						const decoded = decodeURIComponent(iconSvgString.replace("data:image/svg+xml,", ""));
+						svgHtml = decoded.replace(/<svg(\s*)/, `<svg class="${iconStyle}" $1`);
+						externalSVG.enabled = false;
 
-				iconMod.then((str) => {
-					svgIcon!.innerHTML = decodeURIComponent(str.replace("data:image/svg+xml,", ""));
-				});
+						return;
+					}
 
-				return () => {
-					svgIcon!.remove();
-				};
-			} catch (error) {
-				// Default to Google GitHub hosting
-				externalSVG.enabled = true;
-				const options = [
-					weight == 400 ? undefined : `wght${weight}`,
-					grade == 0 ? undefined : `grad${grade}`,
-					fill == false ? undefined : `fill1`
-				].join("");
+					throw new Error("Icon not found in SVG package");
+				} catch (error) {
+					if (cancelled) return;
+					// Fallback to GitHub-hosted SVGs
+					externalSVG.enabled = true;
+					if (iconStyle === "filled") {
+						externalSVG.src = `https://raw.githubusercontent.com/google/material-design-icons/master/svg/filled/${iconName}.svg`;
+					} else {
+						const options = [
+							weight == 400 ? undefined : `wght${weight}`,
+							grade == 0 ? undefined : `grad${grade}`,
+							fill == false ? undefined : `fill1`
+						].join("");
 
-				const ary = [iconName, options.length > 0 ? options : "", `${opticalSize}px`].filter((x) => x.length > 0);
-				const filename = ary.join("_");
+						const ary = [iconName, options.length > 0 ? options : "", `${opticalSize}px`].filter((x) => x.length > 0);
+						const filename = ary.join("_");
 
-				externalSVG.src = `https://raw.githubusercontent.com/google/material-design-icons/master/symbols/web/${iconName}/materialsymbols${iconStyle}/${filename}.svg`;
-			}
+						externalSVG.src = `https://raw.githubusercontent.com/google/material-design-icons/master/symbols/web/${iconName}/materialsymbols${iconStyle}/${filename}.svg`;
+					}
+				}
+			};
+
+			loadSvg();
+
+			return () => {
+				cancelled = true;
+				svgHtml = "";
+			};
 		});
 	}
 </script>
@@ -76,7 +93,9 @@
 	{#if externalSVG.enabled}
 		<img {...props} src={externalSVG.src} alt={iconName} class="material-symbols-{iconStyle.toLowerCase()} {props.class}" />
 	{:else}
-		<span {...props} bind:this={svgIcon} class="material-symbols-{iconStyle.toLowerCase()} {props.class}"></span>
+		<span {...props} class="material-symbols-{iconStyle.toLowerCase()} {props.class}">
+			{@html svgHtml}
+		</span>
 	{/if}
 {:else}
 	<span
@@ -90,10 +109,13 @@
 <style lang="scss">
 	.material-symbols-sharp,
 	.material-symbols-outlined,
-	.material-symbols-rounded {
+	.material-symbols-rounded,
+	.material-symbols-filled {
 		transition: all 150ms linear;
 		padding: 0.1em;
 		display: inline-block;
+		vertical-align: middle;
+		line-height: 1;
 		border-radius: 100%;
 		font-variation-settings:
 			"FILL" 0,

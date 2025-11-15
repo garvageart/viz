@@ -149,18 +149,26 @@ func CollectionDetailResponseFromDTO(d dto.CollectionDetailResponse) CollectionD
 
 // DownloadToken is a GORM entity inferred from dto.DownloadToken
 type DownloadToken struct {
-	ID            uint           `gorm:"primarykey" json:"-"`
-	DeletedAt     gorm.DeletedAt `gorm:"index" json:"-"`
-	CreatedAt     time.Time
-	UpdatedAt     time.Time
+	ID        uint           `gorm:"primarykey" json:"-"`
+	DeletedAt gorm.DeletedAt `gorm:"index" json:"-"`
+	CreatedAt time.Time
+	UpdatedAt time.Time
+	// AllowDownload Whether downloads are permitted with this token
 	AllowDownload bool
-	AllowEmbed    bool
-	Description   *string
-	ExpiresAt     *time.Time
-	ImageUids     []string `gorm:"serializer:json;type:JSONB"`
-	Password      *string
-	ShowMetadata  bool
-	Uid           string `gorm:"uniqueIndex"`
+	// AllowEmbed Whether embedding on external sites is allowed (false prevents hotlinking)
+	AllowEmbed bool
+	// Description Optional description of this download link
+	Description *string
+	// ExpiresAt When this token expires (null for no expiry)
+	ExpiresAt *time.Time
+	// ImageUids Array of authorized image UIDs
+	ImageUids []string `gorm:"serializer:json;type:JSONB"`
+	// Password Optional bcrypt hash of password (null if no password protection)
+	Password *string
+	// ShowMetadata Whether to include EXIF and metadata in responses
+	ShowMetadata bool
+	// Uid 64-character hex token that serves as both unique identifier and authorization key
+	Uid string `gorm:"uniqueIndex"`
 }
 
 func (e DownloadToken) DTO() dto.DownloadToken {
@@ -207,6 +215,7 @@ type Image struct {
 	Name          string
 	Private       bool
 	Processed     bool
+	TakenAt       *time.Time
 	Uid           string `gorm:"uniqueIndex"`
 	UploadedByID  *string
 	UploadedBy    *User `gorm:"foreignKey:UploadedByID;references:Uid"`
@@ -220,11 +229,12 @@ func (e Image) DTO() dto.Image {
 		Description:   e.Description,
 		Exif:          e.Exif,
 		Height:        e.Height,
-	ImageMetadata: e.ImageMetadata,
+		ImageMetadata: e.ImageMetadata,
 		ImagePaths:    e.ImagePaths,
 		Name:          e.Name,
 		Private:       e.Private,
 		Processed:     e.Processed,
+		TakenAt:       e.TakenAt,
 		Uid:           e.Uid,
 		UploadedBy: func() *dto.User {
 			if e.UploadedBy != nil {
@@ -244,11 +254,12 @@ func ImageFromDTO(d dto.Image) Image {
 		Description:   d.Description,
 		Exif:          d.Exif,
 		Height:        d.Height,
-	ImageMetadata: d.ImageMetadata,
+		ImageMetadata: d.ImageMetadata,
 		ImagePaths:    d.ImagePaths,
 		Name:          d.Name,
 		Private:       d.Private,
 		Processed:     d.Processed,
+		TakenAt:       d.TakenAt,
 		Uid:           d.Uid,
 		UploadedByID: func() *string {
 			if d.UploadedBy != nil {

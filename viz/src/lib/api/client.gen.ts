@@ -90,7 +90,8 @@ export type ImageMetadata = {
     file_size?: number;
     original_file_name?: string;
     file_type: string;
-    // User-assigned canonical rating (0-5). Null = unrated.
+    metadata?: string;
+    /** User-assigned rating (0-5). Null = unrated */
     rating?: number | null;
     keywords?: string[];
     color_space: string;
@@ -120,6 +121,7 @@ export type Image = {
     image_paths: ImagePaths;
     created_at: string;
     updated_at: string;
+    taken_at?: string | null;
 };
 export type ImagesResponse = {
     added_at: string;
@@ -145,6 +147,17 @@ export type DeleteAssetsResponse = {
         error?: string;
     }[];
     message?: string;
+};
+export type ImageUpdate = {
+    name?: string;
+    description?: string | null;
+    "private"?: boolean;
+    exif?: ImageExif;
+    image_metadata?: {
+        label?: string | null;
+        rating?: number | null;
+        keywords?: string[];
+    };
 };
 export type CollectionImage = {
     uid: string;
@@ -619,6 +632,28 @@ export function getImageExif(uid: string, { simple }: {
     }))}`, {
         ...opts
     });
+}
+/**
+ * Update image metadata
+ */
+export function updateImage(uid: string, imageUpdate: ImageUpdate, opts?: Oazapfts.RequestOpts) {
+    return oazapfts.fetchJson<{
+        status: 200;
+        data: Image;
+    } | {
+        status: 400;
+        data: ErrorResponse;
+    } | {
+        status: 404;
+        data: ErrorResponse;
+    } | {
+        status: 500;
+        data: ErrorResponse;
+    }>(`/images/${encodeURIComponent(uid)}`, oazapfts.json({
+        ...opts,
+        method: "PATCH",
+        body: imageUpdate
+    }));
 }
 /**
  * Create short-lived download token and redirect

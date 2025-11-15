@@ -213,6 +213,7 @@ type Image struct {
 	Name          string         `json:"name"`
 	Private       bool           `json:"private"`
 	Processed     bool           `json:"processed"`
+	TakenAt       *time.Time     `json:"taken_at"`
 	Uid           string         `json:"uid"`
 	UpdatedAt     time.Time      `json:"updated_at"`
 	UploadedBy    *User          `json:"uploaded_by,omitempty"`
@@ -255,10 +256,12 @@ type ImageMetadata struct {
 	FileType         string    `json:"file_type"`
 	Keywords         *[]string `json:"keywords,omitempty"`
 	Label            *string   `json:"label,omitempty"`
+	Metadata         *string   `json:"metadata,omitempty"`
 	OriginalFileName *string   `json:"original_file_name,omitempty"`
-	Thumbhash        *string   `json:"thumbhash,omitempty"`
-	// Rating is a user-assigned canonical rating (0..5). Null = unrated.
-	Rating           *int      `json:"rating,omitempty"`
+
+	// Rating User-assigned rating (0-5). Null = unrated
+	Rating    *int    `json:"rating"`
+	Thumbhash *string `json:"thumbhash,omitempty"`
 }
 
 // ImagePaths defines model for ImagePaths.
@@ -267,6 +270,19 @@ type ImagePaths struct {
 	Preview   string  `json:"preview"`
 	Raw       *string `json:"raw,omitempty"`
 	Thumbnail string  `json:"thumbnail"`
+}
+
+// ImageUpdate defines model for ImageUpdate.
+type ImageUpdate struct {
+	Description   *string    `json:"description"`
+	Exif          *ImageEXIF `json:"exif,omitempty"`
+	ImageMetadata *struct {
+		Keywords *[]string `json:"keywords,omitempty"`
+		Label    *string   `json:"label"`
+		Rating   *int      `json:"rating"`
+	} `json:"image_metadata,omitempty"`
+	Name    *string `json:"name,omitempty"`
+	Private *bool   `json:"private,omitempty"`
 }
 
 // ImageUploadResponse defines model for ImageUploadResponse.
@@ -622,6 +638,9 @@ type UploadImageMultipartRequestBody UploadImageMultipartBody
 
 // UploadImageByUrlTextRequestBody defines body for UploadImageByUrl for text/plain ContentType.
 type UploadImageByUrlTextRequestBody = UploadImageByUrlTextBody
+
+// UpdateImageJSONRequestBody defines body for UpdateImage for application/json ContentType.
+type UpdateImageJSONRequestBody = ImageUpdate
 
 // CreateJobJSONRequestBody defines body for CreateJob for application/json ContentType.
 type CreateJobJSONRequestBody = JobCreateRequest

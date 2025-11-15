@@ -12,6 +12,7 @@ import (
 
 	libvips "imagine/internal/imageops/vips"
 	libos "imagine/internal/os"
+	"imagine/internal/entities"
 
 	"github.com/galdor/go-thumbhash"
 )
@@ -204,4 +205,91 @@ func WarmupAllOps() {
 		// the operation to be loaded.
 		_ = libvips.HasOperation(name)
 	}
-}	
+}
+
+// ParseExifDate tries several common EXIF/ISO formats and returns the parsed time if successful.
+func ParseExifDate(s *string) (time.Time, bool) {
+	if s == nil {
+		return time.Time{}, false
+	}
+	str := strings.TrimSpace(*s)
+	if str == "" {
+		return time.Time{}, false
+	}
+
+	// Common EXIF: "2006:01:02 15:04:05"
+	layouts := []string{
+		"2006:01:02 15:04:05",
+		"2006:01:02 15:04",
+		time.RFC3339,
+		"2006-01-02 15:04:05",
+		"2006-01-02",
+	}
+
+	for _, l := range layouts {
+		if t, err := time.ParseInLocation(l, str, time.UTC); err == nil {
+			return t, true
+		}
+	}
+
+	// Try a best-effort replacement: convert first two ':' into '-' for date part
+	// e.g. 2020:01:02 12:00:00 -> 2020-01-02 12:00:00
+	if len(str) >= 10 {
+		datePart := str[:10]
+		replaced := strings.Replace(datePart, ":", "-", 2)
+		candidate := replaced
+		if len(str) > 10 {
+			candidate += str[10:]
+		}
+		for _, l := range layouts {
+			if t, err := time.ParseInLocation(l, candidate, time.UTC); err == nil {
+				return t, true
+			}
+		}
+	}
+
+	return time.Time{}, false
+}
+
+// getTakenAt returns the most appropriate taken/creation timestamp for an image,
+// Priority: EXIF Original -> EXIF Modify -> metadata file_created_at -> image.created_at
+func GetTakenAt(img entities.Image) time.Time {
+	// Try EXIF fields first
+	if img.Exif != nil {
+		if t, ok := ParseExifDate(img.Exif.DateTimeOriginal); ok {
+			return t
+		}
+		if t, ok := ParseExifDate(img.Exif.DateTime); ok {
+			return t
+		}
+		if t, ok := ParseExifDate(img.Exif.ModifyDate); ok {
+			return t
+		}
+	}
+
+	if img.ImageMetadata != nil {
+		if !img.ImageMetadata.FileCreatedAt.IsZero() {
+			return img.ImageMetadata.FileCreatedAt
+		}
+		if !img.ImageMetadata.FileModifiedAt.IsZero() {
+			return img.ImageMetadata.FileModifiedAt
+		}
+	}
+
+	return img.CreatedAt
+}
+
+// LessByTakenAtDesc returns true if image `a` should sort before image `b` when
+// ordering by taken-at descending (newest first). If taken-at timestamps are
+// equal it falls back to Name descending to provide a stable ordering that
+// matches the client-side comparator.
+func LessByTakenAtDesc(a, b entities.Image) bool {
+	ta := GetTakenAt(a)
+	tb := GetTakenAt(b)
+
+	if ta.Equal(tb) {
+		return a.Name > b.Name
+	}
+
+	return ta.After(tb)
+}

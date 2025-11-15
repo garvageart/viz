@@ -62,6 +62,8 @@
 				return "image_process";
 			case "xmpGeneration":
 				return "xmp_generation";
+			case "exifProcess":
+				return "exif_process";
 			default:
 				return jobId;
 		}
