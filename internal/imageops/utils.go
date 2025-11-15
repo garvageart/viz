@@ -10,9 +10,9 @@ import (
 	"strings"
 	"time"
 
+	"imagine/internal/entities"
 	libvips "imagine/internal/imageops/vips"
 	libos "imagine/internal/os"
-	"imagine/internal/entities"
 
 	"github.com/galdor/go-thumbhash"
 )
@@ -169,15 +169,15 @@ func ConvertEXIFDateTime(exifDateTime string) *time.Time {
 func WarmupAllOps() {
 	// Configure VIPS for optimal performance
 	vipsConfig := &libvips.Config{
-		ConcurrencyLevel: 0,    // 0 = use number of CPU cores
-		MaxCacheFiles:    100,  // Cache up to 100 files
-		MaxCacheMem:      50,   // 50MB memory cache
-		MaxCacheSize:     500,  // Cache up to 500 operations
+		ConcurrencyLevel: 0,   // 0 = use number of CPU cores
+		MaxCacheFiles:    100, // Cache up to 100 files
+		MaxCacheMem:      50,  // 50MB memory cache
+		MaxCacheSize:     500, // Cache up to 500 operations
 		ReportLeaks:      false,
 		CacheTrace:       false,
 		VectorEnabled:    true, // Enable SIMD optimizations
 	}
-	
+
 	// ensure vips is started with optimized config
 	libvips.Startup(vipsConfig)
 

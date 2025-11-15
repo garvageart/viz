@@ -110,7 +110,7 @@ type ImageMetadata struct {
 	OriginalFileName *string   `json:"original_file_name,omitempty"`
 	Thumbhash        *string   `json:"thumbhash,omitempty"`
 	// Rating is a user-assigned canonical rating (0..5). Null = unrated.
-	Rating           *int      `json:"rating,omitempty"`
+	Rating *int `json:"rating,omitempty"`
 }
 
 // ImagePaths are the canonical locations for different image variants.
@@ -123,13 +123,13 @@ type ImagePaths struct {
 
 // ImagesPage is a generic pagination wrapper for images.
 type ImagesPage struct {
-	Count  *int             `json:"count,omitempty"`
-	Href   *string          `json:"href,omitempty"`
-	Items  []ImagesResponse `json:"items"`
-	Limit  int              `json:"limit"`
-	Next   *string          `json:"next,omitempty"`
-	Page   int              `json:"page"`
-	Prev   *string          `json:"prev,omitempty"`
+	Count *int             `json:"count,omitempty"`
+	Href  *string          `json:"href,omitempty"`
+	Items []ImagesResponse `json:"items"`
+	Limit int              `json:"limit"`
+	Next  *string          `json:"next,omitempty"`
+	Page  int              `json:"page"`
+	Prev  *string          `json:"prev,omitempty"`
 }
 
 // ImagesResponse is an item in an ImagesPage.

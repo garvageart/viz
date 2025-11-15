@@ -14,11 +14,11 @@ import (
 
 // WSClient represents a connected WebSocket client
 type WSClient struct {
-	ID      string
-	Conn    *websocket.Conn
-	Send    chan []byte
-	Broker  *WSBroker
-	mu      sync.Mutex
+	ID     string
+	Conn   *websocket.Conn
+	Send   chan []byte
+	Broker *WSBroker
+	mu     sync.Mutex
 }
 
 // WSBroker manages WebSocket connections and message broadcasting
@@ -43,7 +43,7 @@ type WSBroker struct {
 type WSMessage struct {
 	Event    string      `json:"event"`
 	Data     interface{} `json:"data"`
-	ClientID string      `json:"-"` // If empty, broadcast to all
+	ClientID string      `json:"-"`  // If empty, broadcast to all
 	ID       uint64      `json:"id"` // Monotonic ID for message tracking
 }
 

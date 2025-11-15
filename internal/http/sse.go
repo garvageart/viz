@@ -6,8 +6,8 @@ import (
 	"net/http"
 	"strconv"
 	"sync"
-	"time"
 	"sync/atomic"
+	"time"
 )
 
 // SSEClient represents a connected SSE client
@@ -41,10 +41,10 @@ type SSEMessage struct {
 
 // SSERecord is a stored history record
 type SSERecord struct {
-	ID        uint64      `json:"id"`
-	Timestamp time.Time   `json:"timestamp"`
-	Event     string      `json:"event"`
-	Data      any `json:"data"`
+	ID        uint64    `json:"id"`
+	Timestamp time.Time `json:"timestamp"`
+	Event     string    `json:"event"`
+	Data      any       `json:"data"`
 }
 
 // NewSSEBroker creates and starts a new SSE broker
@@ -263,7 +263,9 @@ func (b *SSEBroker) appendHistory(id uint64, eventType string, data any) {
 	if len(b.history) > b.historyMax {
 		// drop oldest
 		drop := len(b.history) - b.historyMax
-		if drop < 0 { drop = 0 }
+		if drop < 0 {
+			drop = 0
+		}
 		b.history = b.history[drop:]
 	}
 	b.historyMu.Unlock()

@@ -73,8 +73,8 @@ func EventsRouter(db *gorm.DB, logger *slog.Logger, wsBroker *libhttp.WSBroker) 
 		}
 		recs := wsBroker.Since(cursor, limit)
 		render.JSON(w, r, map[string]interface{}{
-			"events": recs,
-			"count":  len(recs),
+			"events":     recs,
+			"count":      len(recs),
 			"nextCursor": wsBroker.LastID(),
 		})
 	})
@@ -157,7 +157,7 @@ func EventsRouter(db *gorm.DB, logger *slog.Logger, wsBroker *libhttp.WSBroker) 
 	// Metrics endpoint for monitoring
 	router.Get("/metrics", func(w http.ResponseWriter, r *http.Request) {
 		history := wsBroker.GetRecent(100)
-		
+
 		// Count events by type
 		eventCounts := make(map[string]int)
 		for _, record := range history {

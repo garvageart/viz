@@ -30,8 +30,7 @@ func (s *ImagineStorage) CreateObject(name string, data []byte) (int, error) {
 		return numOfBytesWritten, fmt.Errorf("error writing data. Wrote %d bytes %w", numOfBytesWritten, err)
 	}
 
-	err = writer.Close(
-	)
+	err = writer.Close()
 	if err != nil {
 		return numOfBytesWritten, fmt.Errorf("error closing object writer %w", err)
 	}

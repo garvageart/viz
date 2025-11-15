@@ -10,11 +10,10 @@ import (
 )
 
 var (
-	ErrGetFile = errors.New("error getting file")
-	ErrReadingBody = errors.New("error reading body")
-	ErrCreatingFile = errors.New("error creating file")
+	ErrGetFile       = errors.New("error getting file")
+	ErrReadingBody   = errors.New("error reading body")
+	ErrCreatingFile  = errors.New("error creating file")
 	ErrWritingToFile = errors.New("error writing to file")
-	
 )
 
 func DownloadFile(URL string) ([]byte, error) {

@@ -36,7 +36,7 @@ var (
 		}
 		return dir
 	}()
-	
+
 	TrashDirectory = func() string {
 		cfg, err := config.ReadConfig()
 		if err != nil {

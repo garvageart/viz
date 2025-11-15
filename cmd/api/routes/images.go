@@ -18,6 +18,7 @@ import (
 	"strconv"
 	"strings"
 	"time"
+
 	"golang.org/x/sync/singleflight"
 
 	"github.com/go-chi/chi/v5"
@@ -32,6 +33,7 @@ import (
 	"imagine/internal/imageops"
 	libvips "imagine/internal/imageops/vips"
 	"imagine/internal/images"
+	"imagine/internal/jobs"
 	"imagine/internal/jobs/workers"
 	libos "imagine/internal/os"
 	"imagine/internal/uid"
@@ -39,7 +41,6 @@ import (
 
 // transformGroup coalesces concurrent identical transform requests to avoid duplicate work
 var transformGroup singleflight.Group
-
 
 type ImageUpload struct {
 	Name    string `json:"name,omitempty"`
@@ -195,7 +196,7 @@ func ImagesRouter(db *gorm.DB, logger *slog.Logger) *chi.Mux {
 				return err
 			}
 
-			pageOffset := max(page * limit, 0)
+			pageOffset := max(page*limit, 0)
 			if err := tx.Preload("UploadedBy").Where("deleted_at IS NULL").Order("taken_at DESC NULLS LAST, name DESC").Offset(pageOffset).Limit(limit).Find(&images).Error; err != nil {
 				return err
 			}
@@ -765,7 +766,7 @@ func ImagesRouter(db *gorm.DB, logger *slog.Logger) *chi.Mux {
 			return
 		}
 
-		err = workers.EnqueueImageProcessJob(workerJob)
+		_, err = jobs.Enqueue(db, workers.TopicImageProcess, workerJob, nil, &imageEntity.Uid)
 
 		if err != nil {
 			libhttp.ServerError(res, req, err, logger, nil,
@@ -883,7 +884,7 @@ func ImagesRouter(db *gorm.DB, logger *slog.Logger) *chi.Mux {
 			return
 		}
 
-		err = workers.EnqueueImageProcessJob(workerJob)
+		_, err = jobs.Enqueue(db, workers.TopicImageProcess, workerJob, nil, &imageEntity.Uid)
 		if err != nil {
 			libhttp.ServerError(res, req, err, logger, nil,
 				"",

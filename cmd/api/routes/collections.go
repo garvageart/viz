@@ -538,8 +538,6 @@ func CollectionsRouter(db *gorm.DB, logger *slog.Logger) *chi.Mux {
 		render.JSON(res, req, dto.DeleteImagesResponse{Deleted: true})
 	})
 
-	
-
 	return router
 }
 

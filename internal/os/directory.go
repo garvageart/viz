@@ -1,9 +1,9 @@
 package libos
 
 import (
+	"io"
 	"os"
 	"path/filepath"
-	"io"
 )
 
 func MoveDirWithFallback(src, dst string) error {
