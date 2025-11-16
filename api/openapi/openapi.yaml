@@ -419,6 +419,12 @@ paths:
                   format: binary
               required: [filename, data]
       responses:
+        "200":
+          description: Image already exists (duplicate)
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ImageUploadResponse"
         "201":
           description: Created
           content:
@@ -492,6 +498,12 @@ paths:
               type: string
               description: The URL of the image to fetch
       responses:
+        "200":
+          description: Image already exists (duplicate)
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ImageUploadResponse"
         "201":
           description: Created
           content:
@@ -1619,7 +1631,6 @@ paths:
 
 components:
   schemas:
-    # Common response types
     ErrorResponse:
       type: object
       properties:
@@ -1637,9 +1648,9 @@ components:
     ImageUploadResponse:
       type: object
       properties:
-        id:
+        uid:
           type: string
-      required: [id]
+      required: [uid]
 
     JobInfo:
       type: object

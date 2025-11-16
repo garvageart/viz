@@ -1,11 +1,15 @@
 package main
 
 import (
+	"context"
 	"errors"
 	"fmt"
 	"log/slog"
 	"net/http"
 	"os"
+	"os/signal"
+	"syscall"
+	"time"
 
 	"github.com/go-chi/chi/v5"
 	"github.com/go-chi/chi/v5/middleware"
@@ -22,6 +26,7 @@ import (
 	"imagine/internal/jobs"
 	"imagine/internal/jobs/workers"
 	imalog "imagine/internal/logger"
+	"imagine/internal/images"
 	"imagine/internal/utils"
 )
 
@@ -40,7 +45,7 @@ type ImagineMediaServer struct {
 
 // TODO TODO: Create a `createServer/Router` function that returns a router
 // with common defaults for each server type
-func (server ImagineMediaServer) Launch(router *chi.Mux) {
+func (server ImagineMediaServer) Launch(router *chi.Mux) *http.Server {
 	logger := server.Logger
 
 	serverLogger := slog.NewLogLogger(logger.Handler(), slog.LevelDebug)
@@ -132,18 +137,21 @@ func (server ImagineMediaServer) Launch(router *chi.Mux) {
 
 	address := fmt.Sprintf("%s:%d", server.Host, server.Port)
 
+	srv := &http.Server{Addr: address, Handler: router}
+
 	go func() {
 		logger.Info(fmt.Sprintf("Hey, you want some pics? 👀 - %s: %s", ServerConfig.Key, address))
 
-		err := http.ListenAndServe(address, router)
-		if err != nil {
+		if err := srv.ListenAndServe(); err != nil {
 			if !errors.Is(err, http.ErrServerClosed) {
 				logger.Error(fmt.Sprintf("failed to start server: %s", err))
+				panic(err)
 			}
-
-			panic(err)
 		}
 	}()
+
+	// return the server so the caller can gracefully shutdown
+	return srv
 }
 
 func main() {
@@ -160,7 +168,12 @@ func main() {
 	server := ImagineMediaServer{ImagineServer: ServerConfig}
 	server.ImagineServer.Logger = logger
 	server.Database = &db.DB{
-		Address: "localhost",
+			Address: func() string {
+				if host := os.Getenv("DB_HOST"); host != "" {
+					return host
+				}
+				return "localhost"
+			}(),
 		Port: func() int {
 			if os.Getenv("DB_PORT") != "" {
 				var port int
@@ -196,14 +209,64 @@ func main() {
 		Logger: logger,
 	}
 
+	if apiPortEnv := os.Getenv("API_PORT"); apiPortEnv != "" {
+		var p int
+		if _, err := fmt.Sscanf(apiPortEnv, "%d", &p); err == nil {
+			server.ImagineServer.Port = p
+		}
+	}
+
 	// Lmao I hate this
 	client := server.ConnectToDatabase(entities.Image{}, entities.Collection{}, entities.Session{}, entities.APIKey{}, entities.User{}, entities.DownloadToken{}, entities.WorkerJob{})
 	server.ImagineServer.Database.Client = client
 
-	server.Launch(router)
+	srv := server.Launch(router)
+
+	// create a cancelable context used by background tasks
+	ctx, cancel := context.WithCancel(context.Background())
+	defer cancel()
+
+	// Start transform cache GC if enabled in config.
+	if cfg.IsSet("cache.gc_enabled") {
+		if cfg.GetBool("cache.gc_enabled") {
+			images.StartTransformCacheGC(ctx, logger)
+		} else {
+			logger.Debug("transform cache gc: disabled by config")
+		}
+	} else {
+		// default: enabled
+		images.StartTransformCacheGC(ctx, logger)
+	}
 
 	imageWorker := workers.NewImageWorker(client, server.WSBroker)
 	xmpWorker := workers.NewXMPWorker(client, logger, server.WSBroker)
 	exifWorker := workers.NewExifWorker(client, server.WSBroker)
-	jobs.RunJobQueue(imageWorker, xmpWorker, exifWorker)
+
+	// Run the job router in a goroutine so we can wait for shutdown signals here
+	go func() {
+		jobs.RunJobQueue(imageWorker, xmpWorker, exifWorker)
+	}()
+
+	sigCh := make(chan os.Signal, 1)
+	signal.Notify(sigCh, os.Interrupt, syscall.SIGTERM)
+	s := <-sigCh
+	logger.Info("shutting down", slog.String("signal", s.String()))
+
+	shutdownCtx, shutdownCancel := context.WithTimeout(context.Background(), 30*time.Second)
+	defer shutdownCancel()
+
+	if srv != nil {
+		if err := srv.Shutdown(shutdownCtx); err != nil {
+			logger.Error("server shutdown failed", slog.Any("error", err))
+		}
+	}
+
+	cancel()
+
+	if jobs.Router != nil {
+		_ = jobs.Router.Close()
+	}
+
+	time.Sleep(500 * time.Millisecond)
+	logger.Info("shutdown complete")
 }

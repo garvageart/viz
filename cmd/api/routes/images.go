@@ -2,7 +2,6 @@ package routes
 
 import (
 	"bytes"
-	"crypto/md5"
 	"crypto/sha1"
 	"encoding/hex"
 	"encoding/json"
@@ -421,9 +420,54 @@ func ImagesRouter(db *gorm.DB, logger *slog.Logger) *chi.Mux {
 			}
 		}
 
-		// Use singleflight to coalesce concurrent identical transform requests
-		key := transformETag
-		resVal, err, _ := transformGroup.Do(key, func() (any, error) {
+		// Use singleflight to coalesce concurrent identical transform requests.
+		// Include the image UID in the key so coalescing only happens for the
+		// same image+params.
+		key := fmt.Sprintf("%s-%s", imgEnt.Uid, transformETag)
+
+		// Track if this is the first/unique transform or a coalesced (shared) one
+
+		// check for existing transform first
+		ext := formatParam
+		if ext == "" {
+			ext = imgEnt.ImageMetadata.FileType
+		}
+
+		if cached, ok, cerr := images.ReadCachedTransform(imgEnt.Uid, transformETag, ext); cerr == nil && ok {
+			// Serve cached bytes
+			if req.FormValue("download") != "1" {
+				if match := req.Header.Get("If-None-Match"); match == transformETag {
+					if isPermanent {
+						res.Header().Set("Cache-Control", "public, max-age=31536000, immutable")
+					} else {
+						res.Header().Set("Cache-Control", "public, max-age=604800, no-transform")
+					}
+					res.Header().Set("ETag", transformETag)
+					res.Header().Set("Last-Modified", imgEnt.UpdatedAt.UTC().Format(http.TimeFormat))
+					res.WriteHeader(http.StatusNotModified)
+					return
+				}
+			}
+
+			res.Header().Set("Content-Type", "image/"+ext)
+			if isPermanent || req.URL.Query().Get("v") != "" {
+				res.Header().Set("Cache-Control", "public, max-age=31536000, immutable")
+			} else {
+				res.Header().Set("Cache-Control", "public, max-age=604800, no-transform")
+			}
+			res.Header().Set("ETag", transformETag)
+			res.Header().Set("Last-Modified", imgEnt.UpdatedAt.UTC().Format(http.TimeFormat))
+			res.Header().Set("Content-Disposition", fmt.Sprintf("attachment; filename=\"%s\"", imgEnt.ImageMetadata.FileName))
+			res.Header().Set("Content-Length", fmt.Sprintf("%d", len(cached)))
+			res.WriteHeader(http.StatusOK)
+			res.Write(cached)
+			return
+		} else if cerr != nil {
+			// log but continue to attempt transform
+			logger.Warn("failed to read cached transform", slog.Any("error", cerr))
+		}
+
+		resVal, err, shared := transformGroup.Do(key, func() (any, error) {
 			// Read the original image file directly
 			originalData, err := images.ReadImage(imgEnt.Uid, imgEnt.ImageMetadata.FileName)
 			if err != nil {
@@ -473,6 +517,14 @@ func ImagesRouter(db *gorm.DB, logger *slog.Logger) *chi.Mux {
 			return imageData, nil
 		})
 
+
+		// Log whether this transform was coalesced (shared) or unique (first)
+		if shared {
+			logger.Debug("transformGroup: coalesced (shared) transform", slog.String("key", key), slog.String("uid", imgEnt.Uid))
+		} else {
+			logger.Debug("transformGroup: unique (first) transform", slog.String("key", key), slog.String("uid", imgEnt.Uid))
+		}
+
 		if err != nil {
 			logger.Error("image transform failed", slog.Any("error", err))
 			render.Status(req, http.StatusInternalServerError)
@@ -481,6 +533,25 @@ func ImagesRouter(db *gorm.DB, logger *slog.Logger) *chi.Mux {
 		}
 
 		imageData := resVal.([]byte)
+
+		// Attempt to write cache asynchronously (best-effort). Use same ext as served.
+		go func(uid, tag, ext string, data []byte) {
+			path, perr := images.CacheFilePath(uid, tag, ext)
+
+			var pathPtr *string
+			if perr == nil {
+				pathPtr = &path
+			}
+
+			logCacheGroup := slog.Group("cache", slog.Any("path", pathPtr), slog.Any("ext", &ext), slog.Int("bytes", len(data)))
+			logger.Debug("writing transform cache (async)")
+
+			if err := images.WriteCachedTransform(uid, tag, ext, data); err != nil {
+				logger.With(logCacheGroup).With(slog.Any("err", err)).Warn("failed to write transform cache")
+			} else {
+				logger.Debug("wrote transform cache", logCacheGroup)
+			}
+		}(imgEnt.Uid, transformETag, ext, imageData)
 
 		// Set response headers for transform result
 		res.Header().Set("Content-Type", "image/"+formatParam)
@@ -728,18 +799,39 @@ func ImagesRouter(db *gorm.DB, logger *slog.Logger) *chi.Mux {
 		authUser, _ := libhttp.UserFromContext(req)
 		imageEntity.UploadedByID = &authUser.Uid
 
-		hasher := md5.New()
-		if _, err := io.Copy(hasher, req.Body); err != nil {
-			libhttp.ServerError(res, req, err, logger, nil,
-				"",
-				"Failed to create image",
-			)
-			return
+		var checksum string
+		if fileImageUpload.Checksum != "" {
+			checksum = fileImageUpload.Checksum
+		} else {
+			hasher := sha1.New()
+			if _, err := hasher.Write(fileImageUpload.Data); err != nil {
+				libhttp.ServerError(res, req, err, logger, nil,
+					"",
+					"Failed to create image",
+				)
+				return
+			}
+
+			checksum = hex.EncodeToString(hasher.Sum(nil))
 		}
 
 		fileSize := int64(len(fileImageUpload.Data))
 		imageEntity.ImageMetadata.FileSize = &fileSize
-		imageEntity.ImageMetadata.Checksum = fileImageUpload.Checksum
+		imageEntity.ImageMetadata.Checksum = checksum
+
+		var existing entities.Image
+		dupErr := db.Where("image_metadata->>'checksum' = ?", checksum).First(&existing).Error
+		if dupErr == nil {
+			render.Status(req, http.StatusOK)
+			render.JSON(res, req, dto.ImageUploadResponse{Uid: existing.Uid})
+			return
+		} else if dupErr != gorm.ErrRecordNotFound {
+			libhttp.ServerError(res, req, dupErr, logger, nil,
+				"",
+				"Failed to check for duplicates",
+			)
+			return
+		}
 
 		logger.Info("adding images to database", slog.String("id", imageEntity.Uid))
 		dbCreateTx := db.Create(&imageEntity)
@@ -761,7 +853,7 @@ func ImagesRouter(db *gorm.DB, logger *slog.Logger) *chi.Mux {
 		if err != nil {
 			libhttp.ServerError(res, req, err, logger, nil,
 				"",
-				"Failed to process image",
+				"Failed to save image",
 			)
 			return
 		}
@@ -779,7 +871,7 @@ func ImagesRouter(db *gorm.DB, logger *slog.Logger) *chi.Mux {
 		logger.Info("upload images success", slog.String("id", imageEntity.Uid))
 
 		render.Status(req, http.StatusCreated)
-		render.JSON(res, req, dto.ImageUploadResponse{Id: imageEntity.Uid})
+		render.JSON(res, req, dto.ImageUploadResponse{Uid: imageEntity.Uid})
 	})
 
 	// TODO: either this should be a config option or removed entirely.
@@ -857,7 +949,23 @@ func ImagesRouter(db *gorm.DB, logger *slog.Logger) *chi.Mux {
 
 		fileSize := int64(len(fileBytes))
 		imageEntity.ImageMetadata.FileSize = &fileSize
-		imageEntity.ImageMetadata.Checksum = hex.EncodeToString(hasher.Sum(nil))
+		checksum := hex.EncodeToString(hasher.Sum(nil))
+		imageEntity.ImageMetadata.Checksum = checksum
+
+		var existing entities.Image
+		dupErr := db.Where("image_metadata->>'checksum' = ?", checksum).First(&existing).Error
+		if dupErr == nil {
+			// Duplicate: return existing UID as an ImageUploadResponse (200)
+			render.Status(req, http.StatusOK)
+			render.JSON(res, req, dto.ImageUploadResponse{Uid: existing.Uid})
+			return
+		} else if dupErr != gorm.ErrRecordNotFound {
+			libhttp.ServerError(res, req, dupErr, logger, nil,
+				"",
+				"Failed to check for duplicates",
+			)
+			return
+		}
 
 		logger.Info("adding image to database", slog.String("id", imageEntity.Uid))
 		dbCreateTx := db.Create(&imageEntity)
@@ -896,7 +1004,7 @@ func ImagesRouter(db *gorm.DB, logger *slog.Logger) *chi.Mux {
 		logger.Info("upload images success", slog.String("id", imageEntity.Uid))
 
 		render.Status(req, http.StatusCreated)
-		render.JSON(res, req, dto.ImageUploadResponse{Id: imageEntity.Uid})
+		render.JSON(res, req, dto.ImageUploadResponse{Uid: imageEntity.Uid})
 	})
 
 	router.Delete("/", func(res http.ResponseWriter, req *http.Request) {

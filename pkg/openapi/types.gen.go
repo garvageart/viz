@@ -313,7 +313,7 @@ type ImageUpdate struct {
 
 // ImageUploadResponse defines model for ImageUploadResponse.
 type ImageUploadResponse struct {
-	Id string `json:"id"`
+	Uid string `json:"uid"`
 }
 
 // ImagesPage defines model for ImagesPage.

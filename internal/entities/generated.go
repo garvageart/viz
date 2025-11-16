@@ -374,6 +374,27 @@ func ImageFromDTO(d dto.Image) Image {
 	}
 }
 
+// ImageUploadResponse is a GORM entity inferred from dto.ImageUploadResponse
+type ImageUploadResponse struct {
+	ID        uint           `gorm:"primarykey" json:"-"`
+	DeletedAt gorm.DeletedAt `gorm:"index" json:"-"`
+	CreatedAt time.Time
+	UpdatedAt time.Time
+	Uid       string `gorm:"uniqueIndex"`
+}
+
+func (e ImageUploadResponse) DTO() dto.ImageUploadResponse {
+	return dto.ImageUploadResponse{
+		Uid: e.Uid,
+	}
+}
+
+func ImageUploadResponseFromDTO(d dto.ImageUploadResponse) ImageUploadResponse {
+	return ImageUploadResponse{
+		Uid: d.Uid,
+	}
+}
+
 // Session is a GORM entity inferred from dto.Session
 type Session struct {
 	ID         uint           `gorm:"primarykey" json:"-"`

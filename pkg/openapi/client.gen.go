@@ -4360,6 +4360,7 @@ func (r ListImagesResponse) StatusCode() int {
 type UploadImageResponse struct {
 	Body         []byte
 	HTTPResponse *http.Response
+	JSON200      *ImageUploadResponse
 	JSON201      *ImageUploadResponse
 	JSON400      *ErrorResponse
 	JSON500      *ErrorResponse
@@ -4384,6 +4385,7 @@ func (r UploadImageResponse) StatusCode() int {
 type UploadImageByUrlResponse struct {
 	Body         []byte
 	HTTPResponse *http.Response
+	JSON200      *ImageUploadResponse
 	JSON201      *ImageUploadResponse
 	JSON400      *ErrorResponse
 	JSON500      *ErrorResponse
@@ -6702,6 +6704,13 @@ func ParseUploadImageResponse(rsp *http.Response) (*UploadImageResponse, error) 
 	}
 
 	switch {
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 200:
+		var dest ImageUploadResponse
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON200 = &dest
+
 	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 201:
 		var dest ImageUploadResponse
 		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
@@ -6742,6 +6751,13 @@ func ParseUploadImageByUrlResponse(rsp *http.Response) (*UploadImageByUrlRespons
 	}
 
 	switch {
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 200:
+		var dest ImageUploadResponse
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON200 = &dest
+
 	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 201:
 		var dest ImageUploadResponse
 		if err := json.Unmarshal(bodyBytes, &dest); err != nil {

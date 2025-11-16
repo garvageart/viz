@@ -23,8 +23,16 @@ func DeleteImageDir(uid string) error {
 	return os.RemoveAll(fmt.Sprintf("%s/%s", Directory, uid))
 }
 
+func GetImageDir(uid string) string {
+	return fmt.Sprintf("%s/%s", Directory, uid)
+}
+
+func ReadImageDir(uid string) ([]os.DirEntry, error) {
+	return os.ReadDir(GetImageDir(uid))
+}
+
 func GetImagePath(uid, fileName string) string {
-	return fmt.Sprintf("%s/%s/%s", Directory, uid, fileName)
+	return fmt.Sprintf("%s/%s", GetImageDir(uid), fileName)
 }
 
 func ReadImage(uid, fileName string) ([]byte, error) {
