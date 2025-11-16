@@ -1,5 +1,6 @@
 FROM node:22-alpine AS build
 WORKDIR /app
+RUN npm install -g pnpm
 
 ARG VITE_API_BASE_URL
 ENV VITE_API_BASE_URL=${VITE_API_BASE_URL}
@@ -13,8 +14,8 @@ ENV IMAGINE_CONFIG_PATH=/app/imagine.json
 COPY viz/package.json viz/package-lock.json* ./
 COPY viz/ ./
 
-RUN npm install --legacy-peer-deps
-RUN npm run build
+RUN pnpm install
+RUN pnpm run build
 
 FROM node:22-alpine
 WORKDIR /app
