@@ -273,20 +273,6 @@
 	}
 
 	let statsSyncInterval: ReturnType<typeof setInterval> | null = null;
-	fetch("localhost:7770/images?limit=100", {
-		method: "GET",
-		headers: {
-			"Content-Type": "application/json"
-		},
-		credentials: "include"
-	})
-		.then((res) => res.json())
-		.then((data) => {
-			console.log("Fetched images:", data);
-		})
-		.catch((error) => {
-			console.error("Error fetching images:", error);
-		});
 
 	onMount(() => {
 		connectWS();
