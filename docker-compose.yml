@@ -19,8 +19,6 @@ services:
     build:
       context: .
       dockerfile: viz/Dockerfile
-      args:
-        VITE_API_BASE_URL: "http://api:7770"
     environment:
       - IMAGINE_CONFIG_PATH=/app/imagine.json
     image: imagine-viz:latest
