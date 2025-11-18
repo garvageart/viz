@@ -1,0 +1,7 @@
+FROM debian:bookworm-slim AS packages
+
+# Install only the minimal packages needed for building and running (libvips + build deps)
+RUN apt-get update && \
+    apt-get install -y --no-install-recommends \
+    build-essential pkg-config git ca-certificates libvips-dev && \
+    rm -rf /var/lib/apt/lists/*

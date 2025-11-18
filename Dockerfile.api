@@ -1,5 +1,7 @@
 # install required system packages once
-FROM debian:bookworm-slim AS packages
+# overriding the packages image
+ARG PACKAGES_IMAGE=debian:bookworm-slim
+FROM ${PACKAGES_IMAGE} AS packages
 RUN apt-get update && \
     apt-get install -y --no-install-recommends \
     build-essential pkg-config git ca-certificates libvips-dev && \
