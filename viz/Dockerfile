@@ -3,7 +3,7 @@ FROM node:latest AS deps
 WORKDIR /app
 ENV NODE_ENV=production
 
-RUN corepack enable && corepack prepare pnpm@latest --activate
+RUN npm install -g pnpm@latest
 COPY viz/package.json viz/pnpm-lock.yaml viz/.npmrc ./
 
 RUN pnpm install --frozen-lockfile
@@ -12,7 +12,7 @@ FROM node:latest AS build
 WORKDIR /app
 ENV NODE_ENV=production
 
-RUN corepack enable && corepack prepare pnpm@latest --activate
+RUN npm install -g pnpm@latest
 
 COPY --from=deps /app/node_modules ./node_modules
 COPY viz/ ./
