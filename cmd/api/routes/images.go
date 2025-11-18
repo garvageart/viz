@@ -483,7 +483,7 @@ func ImagesRouter(db *gorm.DB, logger *slog.Logger) *chi.Mux {
 			}
 			defer libvipsImg.Close()
 
-			err = libvipsImg.Autorot() // non-fatal
+			err = libvipsImg.Autorot(&libvips.AutorotOptions{}) // non-fatal
 			if err != nil {
 				logger.Warn("failed to auto-rotate image", slog.Any("error", err))
 			}
