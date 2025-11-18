@@ -551,6 +551,7 @@
 							description: "Created from dropped images",
 							private: false
 						});
+
 						if (createRes.status !== 201) {
 							toastState.addToast({ type: "error", message: `Failed to create collection (${createRes.status})`, timeout: 4000 });
 							return;
@@ -573,6 +574,7 @@
 						}
 					} catch (err) {
 						console.warn("Failed to parse dragged image UIDs", err);
+						return;
 					}
 				}
 			}
@@ -645,10 +647,7 @@
 				});
 			}
 
-			// Use new UploadManager API
 			const manager = new UploadManager([...SUPPORTED_RAW_FILES, ...SUPPORTED_IMAGE_TYPES] as SupportedImageTypes[]);
-
-			// Add files to queue (panel appears immediately)
 			const tasks = manager.addFiles(validFiles);
 
 			toastState.addToast({
@@ -667,22 +666,10 @@
 					timeout: 3000
 				});
 
-				// Fetch the newly uploaded images and prepend them to the list
 				try {
-					const res = await listImages({
-						limit: uploadedImages.length,
-						page: 0
-					});
-
-					if (res.status === 200) {
-						const newImages = res.data.items?.map((i) => i.image) ?? [];
-						// Prepend new images to the beginning of the list
-						images = [...newImages, ...images];
-					}
+					await invalidateAll();
 				} catch (err) {
 					console.error("Failed to fetch uploaded images:", err);
-					// Fallback to full invalidation if fetch fails
-					await invalidateAll();
 				}
 			}
 		} catch (err) {
@@ -771,6 +758,7 @@
 				description: "Created from dropped images",
 				private: false
 			});
+
 			if (createRes.status !== 201) {
 				toastState.addToast({ type: "error", message: `Failed to create collection (${createRes.status})`, timeout: 4000 });
 				return;
@@ -783,8 +771,6 @@
 				const addRes = await addCollectionImages(collectionUid, { uids });
 				if (addRes.status === 200) {
 					toastState.addToast({ type: "success", message: `Collection created with ${uids.length} image(s)`, timeout: 4000 });
-					// navigate to new collection
-					await invalidateAll();
 					goto(`/collections/${collectionUid}`);
 				} else {
 					toastState.addToast({
@@ -992,44 +978,46 @@
 			<p>No photos to display</p>
 		</div>
 	{:else}
-		{#each consolidatedGroups as consolidatedGroup}
-			<section class="photo-group">
-				<h2 class="photo-group-label">{consolidatedGroup.label}</h2>
+		<div class="photo-group-container">
+			{#each consolidatedGroups as consolidatedGroup}
+				<section class="photo-group">
+					<h2 class="photo-group-label">{consolidatedGroup.label}</h2>
 
-				<PhotoAssetGrid
-					{selectedAssets}
-					bind:singleSelectedAsset
-					data={consolidatedGroup.allImages}
-					bind:allData={allImagesFlat}
-					disableOutsideUnselect={true}
-					assetDblClick={(_e, asset) => openLightbox(asset)}
-					onassetcontext={(detail: { asset: Image; anchor: { x: number; y: number } }) => {
-						const { asset, anchor } = detail;
-						if (!selectedAssets.has(asset) || selectedAssets.size <= 1) {
-							singleSelectedAsset = asset;
-							selectedAssets.clear();
-							selectedAssets.add(asset);
-						}
-
-						ctxItems = actionMenuOptions.map((opt) => ({
-							id: opt.title,
-							label: opt.title,
-							icon: opt.icon,
-							action: () => {
-								if (opt.title === "Download") {
-									const selected = Array.from(selectedAssets).map((i) => i.uid);
-									performImageDownloads(selected);
-								} else {
-									handleActionMenu(opt);
-								}
+					<PhotoAssetGrid
+						{selectedAssets}
+						bind:singleSelectedAsset
+						data={consolidatedGroup.allImages}
+						bind:allData={allImagesFlat}
+						disableOutsideUnselect={true}
+						assetDblClick={(_e, asset) => openLightbox(asset)}
+						onassetcontext={(detail: { asset: Image; anchor: { x: number; y: number } }) => {
+							const { asset, anchor } = detail;
+							if (!selectedAssets.has(asset) || selectedAssets.size <= 1) {
+								singleSelectedAsset = asset;
+								selectedAssets.clear();
+								selectedAssets.add(asset);
 							}
-						}));
-						ctxAnchor = anchor;
-						ctxShowMenu = true;
-					}}
-				/>
-			</section>
-		{/each}
+
+							ctxItems = actionMenuOptions.map((opt) => ({
+								id: opt.title,
+								label: opt.title,
+								icon: opt.icon,
+								action: () => {
+									if (opt.title === "Download") {
+										const selected = Array.from(selectedAssets).map((i) => i.uid);
+										performImageDownloads(selected);
+									} else {
+										handleActionMenu(opt);
+									}
+								}
+							}));
+							ctxAnchor = anchor;
+							ctxShowMenu = true;
+						}}
+					/>
+				</section>
+			{/each}
+		</div>
 	{/if}
 </VizViewContainer>
 
@@ -1046,9 +1034,15 @@
 		font-size: 1.1rem;
 	}
 
-	.photo-group {
+	.photo-group-container {
+		display: flex;
+		flex-direction: column;
 		padding: 2rem 2rem;
-		gap: 1rem;
+		box-sizing: border-box;
+		width: 100%;
+	}
+
+	.photo-group {
 		display: flex;
 		flex-direction: column;
 		box-sizing: border-box;
@@ -1077,16 +1071,16 @@
 		padding: 0.25rem;
 	}
 
-	:global(.toolbar-button) {
-		border: none;
-		background: transparent;
-		color: var(--imag-10);
-		display: inline-flex;
-		align-items: center;
-		justify-content: center;
-		cursor: pointer;
-		font-size: 0.9rem;
-	}
+	// :global(.toolbar-button) {
+	// 	border: none;
+	// 	background: transparent;
+	// 	color: var(--imag-10);
+	// 	display: inline-flex;
+	// 	align-items: center;
+	// 	justify-content: center;
+	// 	cursor: pointer;
+	// 	font-size: 0.9rem;
+	// }
 
 	.drop-overlay {
 		position: fixed;

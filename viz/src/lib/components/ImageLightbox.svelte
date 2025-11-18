@@ -6,7 +6,7 @@
 	import MaterialIcon from "./MaterialIcon.svelte";
 	import { getFullImagePath, updateImage, type Image, type ImageUpdate } from "$lib/api";
 	import hotkeys from "hotkeys-js";
-	import { formatBytes, getThumbhashURL } from "$lib/utils/images";
+	import { formatBytes, getTakenAt, getThumbhashURL } from "$lib/utils/images";
 	import { toastState } from "$lib/toast-notifcations/notif-state.svelte";
 
 	interface Props {
@@ -21,7 +21,7 @@
 	let imageToLoad = $derived(getFullImagePath(lightboxImage!.image_paths?.preview || lightboxImage!.image_paths?.original));
 
 	let direction = $state<"left" | "right">("right");
-	let showMetadata = $state(false);
+	let showMetadata = $state(true);
 
 	function goToPrev() {
 		direction = "left";
@@ -152,7 +152,10 @@
 							<MaterialIcon iconName="tune" class="exif-material-icon" />
 							<div class="card-values">
 								<div class="value-sub">
-									ISO {lightboxImage?.exif?.iso ?? "—"} · {lightboxImage?.exif?.exposure_value ?? "—"}
+									ISO {lightboxImage?.exif?.iso ?? "—"}
+								</div>
+								<div class="value-sub">
+									{lightboxImage?.exif?.exposure_value ?? "—"}
 								</div>
 							</div>
 						</div>
@@ -176,6 +179,32 @@
 							<div class="card-values">
 								<div class="value-sub">{lightboxImage?.image_metadata?.color_space ?? "—"}</div>
 							</div>
+						</div>
+					</div>
+				</div>
+				<div class="exif-card">
+					<div class="card-row main-row">
+						<MaterialIcon iconName="calendar_today" class="exif-material-icon" />
+						<div class="card-values">
+							<div class="value-big">
+								{#if lightboxImage?.image_metadata?.file_created_at}
+									{getTakenAt(lightboxImage).toLocaleDateString(undefined, {
+										year: "numeric",
+										month: "long",
+										day: "numeric"
+									})}
+								{:else}
+									Unknown Date
+								{/if}
+							</div>
+							{#if lightboxImage?.image_metadata?.file_created_at}
+								<div class="value-sub">
+									{getTakenAt(lightboxImage).toLocaleTimeString(undefined, {
+										hour: "2-digit",
+										minute: "2-digit"
+									})}
+								</div>
+							{/if}
 						</div>
 					</div>
 				</div>
@@ -398,7 +427,7 @@
 		z-index: 100;
 		pointer-events: auto;
 		box-sizing: border-box;
-		font-size: 0.9rem;
+		font-size: 0.85rem;
 	}
 
 	.metadata-header {
@@ -427,11 +456,13 @@
 	.exif-card {
 		background: var(--imag-100);
 		color: var(--imag-text-color);
+		box-sizing: border-box;
 		width: 100%;
 		padding: 0.6em 0.8em;
 		border-radius: 0.5em;
 		display: flex;
 		flex-direction: column;
+		justify-content: center;
 		gap: 0.4em;
 		box-shadow: 0 1px 0 rgba(0, 0, 0, 0.04) inset;
 	}
@@ -440,6 +471,8 @@
 		display: flex;
 		align-items: center;
 		gap: 0.6em;
+		/* Allow nested flex children to shrink when content is long */
+		min-width: 0;
 	}
 
 	:global(.exif-material-icon) {
@@ -456,6 +489,11 @@
 		flex-direction: column;
 		gap: 0.1em;
 		justify-content: center;
+
+		/* Flex items inside a row often need a min-width:0 so long text can
+		   be ellipsized instead of forcing the container to overflow */
+		min-width: 0;
+		flex: 1 1 auto;
 	}
 
 	.value-big {

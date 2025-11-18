@@ -45,7 +45,8 @@
 		}
 	});
 
-	let searchInputHasFocus = $state(search.element && document.activeElement === search.element);
+	let searchElement = $state<HTMLInputElement | undefined>();
+	let searchInputHasFocus = $derived(searchElement && document.activeElement === searchElement);
 
 	// If URL has search params, perform search automatically (only on client)
 	if (page.url.pathname === "/search") {
@@ -56,22 +57,19 @@
 		}
 	}
 
-	// Register hotkeys only in the browser/runtime. Keep hotkeys-js as requested.
+	// Ctrl/Cmd+I toggles dev mode
+	hotkeys("ctrl+i, command+i", (e) => {
+		e.preventDefault();
+		devEnabled = !devEnabled;
+	});
+
 	// Ctrl/Cmd+K toggles focus on the search input.
 	hotkeys("ctrl+k, command+k", (e) => {
 		e.preventDefault();
 		if (!searchInputHasFocus) {
-			search.element?.focus();
+			searchElement?.focus();
 		} else {
-			search.element?.blur();
-		}
-	});
-
-	// Escape blurs the search input only when it is focused.
-	hotkeys("escape", (e) => {
-		if (searchInputHasFocus) {
-			e.preventDefault();
-			search.element?.blur();
+			searchElement?.blur();
 		}
 	});
 
@@ -90,6 +88,25 @@
 </script>
 
 <svelte:window
+	onkeydown={(e) => {
+		if (e.key !== "Escape") {
+			return;
+		}
+
+		if (searchInputHasFocus) {
+			console.log("Escape key pressed, blurring search input");
+			searchElement?.blur();
+			return;
+		}
+
+		if (openAccPanel) {
+			openAccPanel = false;
+		}
+
+		if (openAppMenu) {
+			openAppMenu = false;
+		}
+	}}
 	onclick={(e) => {
 		if (openAccPanel && !(e.target as HTMLElement).closest("#account-container")) {
 			openAccPanel = false;
@@ -113,11 +130,12 @@
 	</div>
 	<SearchInput
 		placeholder="Search (Ctrl/Cmd + K)"
+		bind:searchInputHasFocus
 		bind:loading={search.loading}
 		bind:value={search.value}
-		bind:element={search.element}
+		bind:element={searchElement}
 		{performSearch}
-		style="width: 30%; border-color: var(--imag-90); height: 1.5em;"
+		style="width: 30%; border-color: var(--imag-90); height: 1.5em; font-size: 0.9em;"
 	/>
 	<div class="header-button-container">
 		<button id="upload-button" class="header-button" aria-label="Upload" onclick={handleUpload}>
@@ -126,11 +144,7 @@
 		</button>
 		{#if dev || !CLIENT_IS_PRODUCTION}
 			<button id="debug-button" class="header-button" aria-label="Toggle Debug Mode" onclick={() => (devEnabled = !devEnabled)}>
-				{#if devEnabled}
-					<span class="debug-mode-text">ON</span>
-				{:else}
-					<span class="debug-mode-text">OFF</span>
-				{/if}
+				<span class="debug-mode-text">{devEnabled ? "ON" : "OFF"}</span>
 				<MaterialIcon iconName="bug_report" />
 			</button>
 		{/if}

@@ -198,9 +198,6 @@
 	#asset-tools {
 		display: flex;
 		align-items: center;
-		& > * {
-			font-size: 0.9rem;
-		}
 
 		& > button {
 			margin: 0em 0.5em;
@@ -209,26 +206,6 @@
 				outline: 2px solid var(--imag-60);
 				background-color: var(--imag-80);
 			}
-		}
-	}
-
-	:global(.toolbar-button) {
-		border-radius: 10em;
-		min-width: 2em;
-		min-height: 2em;
-		padding: 0.5em;
-		display: flex;
-		align-items: center;
-		justify-content: center;
-		white-space: nowrap;
-		font-size: 0.9rem;
-
-		&:hover {
-			background-color: var(--imag-90);
-		}
-
-		&:active {
-			background-color: var(--imag-80);
 		}
 	}
 

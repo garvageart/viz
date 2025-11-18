@@ -144,7 +144,6 @@
 	.viz-dropdown-button {
 		display: flex;
 		align-items: center;
-		padding: 0.5em 0.5em;
 		border-radius: 10em;
 		white-space: nowrap;
 		cursor: pointer;

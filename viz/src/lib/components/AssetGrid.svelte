@@ -10,6 +10,9 @@
 	import MaterialIcon from "./MaterialIcon.svelte";
 	import { DateTime } from "luxon";
 	import { getFullImagePath } from "$lib/api";
+	import type { SvelteHTMLElements } from "svelte/elements";
+
+	type AssetGridView = "grid" | "list" | "cards";
 
 	interface Props {
 		data: T[];
@@ -17,6 +20,8 @@
 		singleSelectedAsset?: T;
 		selectedAssets: SvelteSet<T>;
 		assetGridArray?: AssetGridArray<T>;
+		view?: AssetGridView;
+		assetGridDisplayProps?: SvelteHTMLElements["div"];
 		columnCount?: number;
 		searchValue?: string;
 		noAssetsMessage?: string;
@@ -29,8 +34,6 @@
 		/** Disable clearing selection when clicking in other grids (useful when multiple grids share one selection set) */
 		disableOutsideUnselect?: boolean;
 		onassetcontext?: (detail: { asset: T; anchor: { x: number; y: number } }) => void;
-		/** 'grid' | 'list' | 'cards' - explicit view override */
-		view?: "grid" | "list" | "cards";
 		/** optional explicit column list for table view (order matters). If omitted, inferred from data. */
 		columns?: string[];
 		/** table config: thumbnail_key is dot-path to thumbnail in each asset, columns overrides visible keys */
@@ -49,15 +52,14 @@
 		assetDblClick,
 		disableOutsideUnselect = $bindable(false),
 		onassetcontext = $bindable(),
-		view = $bindable("grid"),
+		view = $bindable("cards"),
+		assetGridDisplayProps = $bindable({}),
 		columns = $bindable(),
 		table = $bindable()
 	}: Props = $props();
 
-	// Svelte 5: prefer function-prop events — parent can pass `onassetcontext={...}`
-
 	// HTML Elements
-	let assetGridEl: HTMLDivElement | undefined = $state();
+	let assetGridDisplayEl: HTMLDivElement | undefined = $state();
 
 	let allAssetsData = $derived.by(() => {
 		return data;
@@ -181,13 +183,13 @@
 	}
 
 	$effect(() => {
-		if (!assetGridEl || allAssetsData.length === 0) {
+		if (!assetGridDisplayEl || allAssetsData.length === 0) {
 			return;
 		}
 
 		const updateGridArray = () => {
-			if (!assetGridEl) return;
-			assetGridArray = buildAssetGridArray(assetGridEl);
+			if (!assetGridDisplayEl) return;
+			assetGridArray = buildAssetGridArray(assetGridDisplayEl);
 		};
 
 		// Use requestAnimationFrame to ensure DOM is updated
@@ -202,7 +204,7 @@
 			});
 		});
 
-		resizeObserver.observe(assetGridEl);
+		resizeObserver.observe(assetGridDisplayEl);
 
 		return () => {
 			resizeObserver.disconnect();
@@ -271,7 +273,7 @@
 
 		const columnCount = assetGridArray[0].length;
 		const positionIndexInGrid = imageInGridArray.row * columnCount + imageInGridArray.column;
-		const imageGridChildren = assetGridEl?.children;
+		const imageGridChildren = assetGridDisplayEl?.children;
 
 		// Mimic click since we already have a handler for that in `handleImageCardSelect()`
 		const focusAndSelectElement = (element: HTMLElement | undefined) => {
@@ -391,8 +393,12 @@
 	});
 
 	hotkeys("escape", (e) => {
-		e.preventDefault();
+		if (selectedAssets.size === 0 && !singleSelectedAsset) {
+			return;
+		}
+
 		selectedAssets.clear();
+		singleSelectedAsset = undefined;
 	});
 </script>
 
@@ -514,7 +520,12 @@
 {/snippet}
 
 {#snippet assetTable()}
-	<div class="viz-asset-table-container">
+	<div
+		bind:this={assetGridDisplayEl}
+		class="viz-asset-grid-container {assetGridDisplayProps.class}"
+		{...assetGridDisplayProps}
+		use:unselectImagesOnClickOutsideAssetContainer
+	>
 		<table>
 			<thead>
 				<tr>
@@ -560,21 +571,9 @@
 	{@render assetTable()}
 {:else if view === "cards"}
 	<div
-		bind:this={assetGridEl}
-		class="viz-asset-grid-container"
-		style={`padding: 0em ${page.url.pathname === "/" ? "1em" : "2em"};`}
-		use:unselectImagesOnClickOutsideAssetContainer
-	>
-		{#each allAssetsData as asset}
-			{@render assetComponentCard(asset)}
-		{/each}
-	</div>
-{:else}
-	<!-- Default grid view - renders cards -->
-	<div
-		bind:this={assetGridEl}
-		class="viz-asset-grid-container"
-		style={`padding: 0em ${page.url.pathname === "/" ? "1em" : "2em"};`}
+		bind:this={assetGridDisplayEl}
+		class="viz-asset-grid-container {assetGridDisplayProps.class}"
+		{...assetGridDisplayProps}
 		use:unselectImagesOnClickOutsideAssetContainer
 	>
 		{#each allAssetsData as asset}
@@ -598,20 +597,20 @@
 
 	/* Zebra striping for grid cards (matches table zebra) */
 	.viz-asset-grid-container > .asset-card {
-		background: var(--imag-bg-color);
-		transition: background 120ms ease-in-out;
+		background-color: var(--imag-bg-color);
+		transition: background-color 120ms ease-in-out;
 	}
 
 	.viz-asset-grid-container > .asset-card:nth-child(even) {
-		background: color-mix(in srgb, var(--imag-bg-color) 78%, white 22%);
+		background-color: color-mix(in srgb, var(--imag-bg-color) 78%, white 22%);
 	}
 
 	.viz-asset-grid-container > .asset-card:hover {
-		background: color-mix(in srgb, var(--imag-bg-color) 70%, white 30%);
+		background-color: color-mix(in srgb, var(--imag-bg-color) 70%, white 30%);
 	}
 
 	.viz-asset-grid-container > .asset-card.selected-card {
-		background: color-mix(in srgb, var(--imag-bg-color) 60%, white 40%);
+		background-color: color-mix(in srgb, var(--imag-bg-color) 60%, white 40%);
 	}
 
 	.viz-asset-grid-container > .asset-card.selected-card {

@@ -17,7 +17,7 @@
 </script>
 
 <script lang="ts">
-	import { setContext, untrack, type ComponentProps, type Snippet } from "svelte";
+	import { onMount, setContext, untrack, type ComponentProps, type Snippet } from "svelte";
 	import { Pane } from "$lib/third-party/svelte-splitpanes";
 	import MaterialIcon from "../MaterialIcon.svelte";
 	import { dev } from "$app/environment";
@@ -28,11 +28,10 @@
 	import { views } from "$lib/layouts/views";
 	import LoadingContainer from "../LoadingContainer.svelte";
 	import { isElementScrollable } from "$lib/utils/dom";
-	import { findSubPanel, generateKeyId, isVizSubPanelData } from "$lib/utils/layout";
+	import { findSubPanel, generateKeyId } from "$lib/utils/layout";
 	import { goto } from "$app/navigation";
 	import ContextMenu, { type MenuItem } from "$lib/context-menu/ContextMenu.svelte";
 	import { layoutState, layoutTree } from "$lib/third-party/svelte-splitpanes/state.svelte";
-	import VizSubPanelData, { Content as ContentClass } from "$lib/layouts/subpanel.svelte";
 	import {
 		cleanupEmptyPanels,
 		duplicateView,
@@ -67,11 +66,11 @@
 	const allProps: Props & ComponentProps<typeof Pane> = $props();
 
 	let id = allProps.id;
-	let header = allProps.header ?? false;
+	let header = $state(allProps.header ?? false);
 
 	const children = allProps.children;
 	const keyId = allProps.paneKeyId ?? generateKeyId();
-	const minSize = allProps.minSize ?? 10;
+	const minSize = $state(allProps.minSize ?? 10);
 
 	// pane size overrides when locked to prevent resizing
 	let paneMinSize: number | undefined = $state(minSize);
@@ -127,17 +126,19 @@
 		initialViews[i] = v;
 	}
 
-	if (allProps.class) {
-		className = allProps.class;
-	}
+	$effect(() => {
+		if (allProps.class) {
+			className = allProps.class;
+		}
 
-	if (initialViews.length > 0) {
-		header = true;
-	}
+		if (initialViews.length > 0) {
+			header = true;
+		}
 
-	if (header === true && initialViews.length === 0) {
-		throw new Error("Viz: Header is showing, but no tabs are provided for: " + keyId);
-	}
+		if (header === true && initialViews.length === 0) {
+			throw new Error("Viz: Header is showing, but no tabs are provided for: " + keyId);
+		}
+	});
 
 	const storedActiveView = $derived(panelViews.find((view) => view.isActive === true));
 	let activeView = $derived(storedActiveView ?? panelViews[0]);
@@ -713,14 +714,14 @@ Make the header draggable too. Use the same drag functions. If we're dragging
 a header into a different panel, place that panel in place and update the state
 for Splitpanes
 	-->
-	{#if panelViews.length > 0}
+	{#if header}
 		<div
 			class="viz-sub_panel-header {isPanelLocked() ? 'locked' : ''}"
 			role="tablist"
 			tabindex="0"
 			use:headerDraggable
-			oncontextmenu={(e) => showHeaderContextMenu(e)}
 			use:tabDrop
+			oncontextmenu={(e) => showHeaderContextMenu(e)}
 			ondragover={(event) => onDropOver(event)}
 		>
 			{#each panelViews as view, i}
@@ -860,9 +861,10 @@ for Splitpanes
 	}
 
 	.viz-sub_panel-header {
-		min-height: 1em;
+		min-height: 0.7rem;
 		background-color: var(--imag-100);
-		font-size: 13px;
+		font-size: 0.8rem;
+		overflow: auto;
 		display: flex;
 		align-items: center;
 		position: relative;

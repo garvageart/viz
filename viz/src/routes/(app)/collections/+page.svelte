@@ -47,7 +47,10 @@
 		data: displayData,
 		assetGridArray: collectionGridArray,
 		selectedAssets,
-		singleSelectedAsset
+		singleSelectedAsset,
+		assetGridDisplayProps: {
+			style: `padding: 0em ${page.url.pathname === "/" ? "1em" : "2em"};`
+		}
 	});
 
 	const currentPanelContent = getContext<Content>("content");
@@ -159,10 +162,10 @@
 			try {
 				const res = await createCollection({ name, description, private: isPrivate });
 				if (res.status === 201) {
-					listOfCollectionsData = [res.data as Collection, ...listOfCollectionsData];
+					listOfCollectionsData = [res.data, ...listOfCollectionsData];
 					modal.show = false;
 					toastState.addToast({ message: "Collection created", type: "success" });
-					goto(`/collections/${(res.data as Collection).uid}`);
+					goto(`/collections/${res.data.uid}`);
 				} else {
 					toastState.addToast({ message: (res as any).data?.error ?? `Creation failed (${res.status})`, type: "error" });
 				}
@@ -220,8 +223,7 @@
 		<div id="coll-tools">
 			<Button
 				id="create-collection"
-				class="toolbar-button"
-				style="font-size: 0.8rem; background-color: var(--imag-80);"
+				style="font-size: 0.7rem; background-color: var(--imag-100); padding: 0.2em 0.8em; display: flex; justify-content: center; align-items: center;"
 				title="Create Collection"
 				aria-label="Create Collection"
 				onclick={() => {
@@ -268,6 +270,7 @@
 <VizViewContainer
 	bind:data={displayData}
 	bind:hasMore={shouldUpdate}
+	style="padding: 0em ${page.url.pathname === '/' ? '1em' : '2em'};"
 	name="Collections"
 	paginate={() => {
 		pagination.page++;
@@ -290,6 +293,7 @@
 >
 	<AssetsShell
 		bind:grid
+		gridComponent={AssetGrid}
 		{pagination}
 		{toolbarSnippet}
 		{noAssetsSnippet}
@@ -309,20 +313,9 @@
 		cursor: context-menu;
 	}
 
-	:global(.toolbar-button) {
-		border-radius: 10em;
-		margin: 0.5em 0em;
-		/* Use rem so button font-size is consistent site-wide (not relative to local container) */
-		font-size: 0.9rem;
-		display: flex;
-		align-items: center;
-		justify-content: center;
-		color: var(--imag-text-color);
-		cursor: pointer;
-	}
-
 	#coll-details-toolbar {
 		width: 100%;
+		height: 100%;
 		display: flex;
 		justify-content: left;
 	}

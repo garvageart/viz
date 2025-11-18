@@ -75,6 +75,10 @@ export function parseExifDate(raw?: string | null): Date | undefined {
 }
 
 export function getTakenAt(image: Image): Date {
+    if (image.taken_at) {
+        return new Date(image.taken_at);
+    }
+    
     // Priority: EXIF Original -> EXIF Modify -> metadata file_created_at -> image.created_at
     const exif = image.exif;
     const dates: (string | undefined)[] = [

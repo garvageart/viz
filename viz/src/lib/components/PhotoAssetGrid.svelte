@@ -1,4 +1,4 @@
-<script lang="ts">
+<script lang="ts" generics="T extends { uid: string } & Record<string, any>">
 	import AssetGrid from "./AssetGrid.svelte";
 	import { getFullImagePath, type Image } from "$lib/api";
 	import { DateTime } from "luxon";
@@ -9,6 +9,8 @@
 	import { fade } from "svelte/transition";
 	import { getTakenAt } from "$lib/utils/images";
 	import { type ImageWithDateLabel } from "../../routes/(app)/photos/+page.svelte";
+	import { page } from "$app/state";
+	import ImageCard from "./ImageCard.svelte";
 
 	interface PhotoSpecificProps {
 		/** Custom photo card snippet - if not provided, uses default photo card */
@@ -31,7 +33,8 @@
 		assetDblClick,
 		disableOutsideUnselect = $bindable(false),
 		onassetcontext = $bindable(),
-		view = $bindable("grid"),
+		assetGridDisplayProps = $bindable({}),
+		view = $bindable("cards"),
 		columns = $bindable(),
 		table = $bindable(),
 		photoCardSnippet
@@ -560,7 +563,6 @@
 				/>
 			</div>
 			{#if isSelected && isMultiSelecting}
-				<!-- Inner ring overlay above the image; Svelte fade for smoothness -->
 				<div class="multi-select-ring" transition:fade={{ duration: 120 }}></div>
 			{/if}
 		{:else}
@@ -576,10 +578,15 @@
 	</div>
 {/snippet}
 
+{#snippet imageCard(asset: Image)}
+	<ImageCard {asset} />
+{/snippet}
+
 {#if view === "grid"}
 	<div
 		bind:this={photoGridEl}
 		class="viz-photo-grid-container no-select"
+		style={`padding: 0em ${page.url.pathname === "/" ? "1em" : "2em"};`}
 		onscroll={handleGridScroll}
 		use:unselectImagesOnClickOutsideAssetContainer
 	>
@@ -614,7 +621,8 @@
 		{view}
 		{columns}
 		{table}
-		assetSnippet={photoCardSnippet ?? defaultPhotoCard}
+		{assetGridDisplayProps}
+		assetSnippet={photoCardSnippet ?? imageCard}
 	/>
 {/if}
 
@@ -658,7 +666,6 @@
 	.asset-photo {
 		position: relative;
 		overflow: hidden;
-		// background: var(--imag-80);
 	}
 
 	.asset-photo img {

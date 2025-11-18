@@ -16,18 +16,15 @@
 	import { page } from "$app/state";
 	import PhotoAssetGrid from "$lib/components/PhotoAssetGrid.svelte";
 	import AssetsShell from "$lib/components/AssetsShell.svelte";
-	import Lightbox from "$lib/components/Lightbox.svelte";
-	import LoadingContainer from "$lib/components/LoadingContainer.svelte";
 	import VizViewContainer from "$lib/components/panels/VizViewContainer.svelte";
 	import SearchInput from "$lib/components/SearchInput.svelte";
-	import { lightbox, modal, sort } from "$lib/states/index.svelte";
+	import { modal, sort } from "$lib/states/index.svelte";
 	import type { AssetGridArray } from "$lib/types/asset.js";
 	import { SUPPORTED_IMAGE_TYPES, SUPPORTED_RAW_FILES, type SupportedImageTypes } from "$lib/types/images";
-	import { blurOnEsc, loadImage } from "$lib/utils/dom.js";
 	import hotkeys from "hotkeys-js";
 	import { DateTime } from "luxon";
 	import { SvelteSet } from "svelte/reactivity";
-	import { onMount, type ComponentProps } from "svelte";
+	import { type ComponentProps } from "svelte";
 	import { sortCollectionImages } from "$lib/sort/sort.js";
 	import ImageCard from "$lib/components/ImageCard.svelte";
 	import Button from "$lib/components/Button.svelte";
@@ -43,7 +40,6 @@
 		type Image
 	} from "$lib/api";
 	import { thumbHashToDataURL } from "thumbhash";
-	import { fade } from "svelte/transition";
 	import { toastState } from "$lib/toast-notifcations/notif-state.svelte.js";
 	import CollectionModal from "$lib/components/CollectionModal.svelte";
 	import InputText from "$lib/components/dom/InputText.svelte";
@@ -177,6 +173,9 @@
 		selectedAssets,
 		singleSelectedAsset,
 		data: displayData,
+		assetGridDisplayProps: {
+			style: `padding: 0em ${page.url.pathname === "/" ? "1em" : "2em"};`
+		},
 		assetDblClick: (_e: MouseEvent, asset: Image) => {
 			lightboxImage = asset;
 		},
@@ -489,6 +488,10 @@
 	});
 
 	hotkeys("escape", (e) => {
+		if (!show || !lightboxImage || selectedAssets.size === 0) {
+			return;
+		}
+
 		e.preventDefault();
 		selectedAssets.clear();
 
@@ -520,12 +523,12 @@
 {/snippet}
 
 {#snippet searchInputSnippet()}
-	<SearchInput style="margin: 0em 1em;" bind:value={searchValue} />
+	<SearchInput style="margin: 0em 1em; height: 2em;" bind:value={searchValue} />
 	<div id="coll-tools">
 		<Button
 			id="upload_to_collection"
 			class="toolbar-button"
-			style="font-size: 0.8rem; background-color: var(--imag-100);"
+			style="padding: 0.1em 0.5em; background-color: var(--imag-100);"
 			title="Upload to Collection"
 			aria-label="Upload to Collection"
 			onclick={() => {
@@ -538,7 +541,7 @@
 		<Button
 			id="upload_to_collection"
 			class="toolbar-button"
-			style="font-size: 0.8rem; background-color: var(--imag-100);"
+			style="padding: 0.1em 0.5em; background-color: var(--imag-100);"
 			title="Edit Collection"
 			aria-label="Edit Collection"
 			onclick={() => {
@@ -562,10 +565,10 @@
 						handleExportPhotos();
 						break;
 					case "Share Collection":
-						console.log("Not implemented yet");
+						alert("Not implemented yet");
 						break;
 					case "Duplicate Collection":
-						console.log("Maybe won't implement");
+						alert("Maybe won't implement");
 						break;
 				}
 			}}
@@ -706,8 +709,10 @@
 	#coll-tools {
 		display: flex;
 		align-items: center;
+		font-size: inherit;
 		height: 100%;
 		position: absolute;
+		gap: 0.5rem;
 		right: 2rem;
 	}
 </style>

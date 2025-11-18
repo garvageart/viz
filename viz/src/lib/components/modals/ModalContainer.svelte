@@ -1,7 +1,7 @@
 <script lang="ts">
 	import { modal } from "$lib/states/index.svelte";
 	import Lightbox from "../Lightbox.svelte";
-	import Modal from "./Modal.svelte";
+	import Modal from "./ModalLightbox.svelte";
 
 	let { children } = $props();
 

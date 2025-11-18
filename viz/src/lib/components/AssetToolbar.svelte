@@ -23,13 +23,30 @@
 		--imag-toolbar-height: 4em;
 	}
 
+	:global(.toolbar-button) {
+		border-radius: 10em;
+		padding: 0.1em 0.3em;
+		display: flex;
+		align-items: center;
+		justify-content: center;
+		white-space: nowrap;
+
+		&:hover {
+			background-color: var(--imag-90);
+		}
+
+		&:active {
+			background-color: var(--imag-80);
+		}
+	}
+
 	.viz-toolbar-container {
 		z-index: 1;
-		padding: 0.5em 2em;
+		padding: 0.4em 2em;
 		background-color: var(--imag-100);
 		backdrop-filter: blur(5px);
 		border-bottom: 1px solid var(--imag-60);
-		min-height: 4em;
+		font-size: 0.8em;
 		width: 100%;
 		max-width: 100%;
 		display: flex;

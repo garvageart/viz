@@ -7,15 +7,16 @@
 		value: string;
 		element?: HTMLInputElement;
 		placeholder?: string;
+		searchInputHasFocus?: boolean;
 		performSearch?: (e: KeyboardEvent | MouseEvent) => void;
 	}
 
-	let searchInputHasFocus = $state(false);
 	let {
 		loading = $bindable(false),
 		value = $bindable(),
 		element = $bindable(),
 		placeholder = "Search",
+		searchInputHasFocus = $bindable(),
 		performSearch,
 		...props
 	}: Props & SvelteHTMLElements["div"] = $props();
@@ -68,6 +69,20 @@
 </div>
 
 <style lang="scss">
+	.search-input {
+		display: flex;
+		align-items: center;
+		width: 20%;
+		border: 1px solid;
+		border-color: var(--imag-90);
+		border-radius: 2em;
+		background-color: var(--imag-bg-color);
+		overflow: hidden;
+		&:focus {
+			border-color: var(--imag-80);
+		}
+	}
+
 	.search-button {
 		background-color: var(--imag-90);
 		border: none;
@@ -98,23 +113,8 @@
 		}
 	}
 
-	.search-input {
-		display: flex;
-		align-items: center;
-		width: 20%;
-		height: 2em;
-		border: 1px solid;
-		border-color: var(--imag-90);
-		border-radius: 2em;
-		background-color: var(--imag-bg-color);
-		overflow: hidden;
-		&:focus {
-			border-color: var(--imag-80);
-		}
-	}
-
 	.search-input__field {
-		font-size: 0.8em;
+		font-size: 0.7rem;
 		background-color: var(--imag-bg-color);
 		color: var(--imag-text-color);
 		outline: none;
