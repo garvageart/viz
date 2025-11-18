@@ -3,6 +3,7 @@ package images
 import (
 	"imagine/internal/config"
 	"os"
+	"path/filepath"
 	"strings"
 )
 
@@ -28,7 +29,7 @@ var (
 			panic("upload location is not set in config")
 		}
 
-		dir = baseDir + "/" + dir
+		dir = filepath.Join(baseDir, dir)
 
 		if _, err := os.Stat(dir); os.IsNotExist(err) {
 			err := os.MkdirAll(dir, os.ModePerm)
@@ -49,7 +50,7 @@ var (
 			panic("base directory is not set in config")
 		}
 
-		trash := baseDir + "/trash"
+		trash := filepath.Join(baseDir, "trash")
 
 		if _, err := os.Stat(trash); os.IsNotExist(err) {
 			err := os.MkdirAll(trash, os.ModePerm)
