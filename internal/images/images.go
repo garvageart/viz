@@ -18,7 +18,9 @@ var (
 		}
 
 		if _, err := os.Stat(baseDir); os.IsNotExist(err) {
-			panic("base directory does not exist")
+			if mkerr := os.MkdirAll(baseDir, 0o755); mkerr != nil {
+				panic(mkerr)
+			}
 		}
 
 		dir := cfg.GetString("upload.location")
