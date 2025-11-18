@@ -36,6 +36,9 @@ if (process.env.NODE_ENV !== 'production') {
 export default defineConfig({
 	plugins: [devtoolsJson(), sveltekit()],
 	define: define,
+	build: {
+		reportCompressedSize: false
+	},
 	test: {
 		workspace: [
 			{
