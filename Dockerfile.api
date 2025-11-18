@@ -1,10 +1,17 @@
-FROM golang:1.25-bookworm AS builder
-WORKDIR /src
-
+# install required system packages once
+FROM debian:bookworm-slim AS packages
 RUN apt-get update && \
     apt-get install -y --no-install-recommends \
     build-essential pkg-config git ca-certificates libvips-dev && \
     rm -rf /var/lib/apt/lists/*
+
+
+FROM golang:1.25-bookworm AS builder
+WORKDIR /src
+
+# reuses apt installed packages from earlier
+COPY --from=packages /usr /usr
+COPY --from=packages /etc/ssl/certs /etc/ssl/certs
 
 COPY go.mod go.sum ./
 ARG GOPROXY=https://proxy.golang.org,direct
@@ -20,16 +27,13 @@ RUN go build -o /app/build/imagine ./cmd/api
 FROM debian:bookworm-slim AS runtime
 WORKDIR /app
 
-RUN apt-get update && \
-    apt-get install -y --no-install-recommends \
-    libvips58 ca-certificates || \
-    apt-get install -y --no-install-recommends libvips-dev ca-certificates && \
-    rm -rf /var/lib/apt/lists/*
+# and again
+COPY --from=packages /usr /usr
+COPY --from=packages /etc/ssl/certs /etc/ssl/certs
 
 # Copy only the build directory produced by the builder stage
 COPY --from=builder /app/build /app/build
 
-# Keep the config in the image root (unchanged)
 COPY imagine.json /app/imagine.json
 
 EXPOSE 7770
