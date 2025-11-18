@@ -55,6 +55,7 @@ COPY --from=packages /etc/ssl/certs /etc/ssl/certs
 COPY --from=builder /app/build /app/build
 
 COPY imagine.json /app/imagine.json
+COPY version.txt /app/version.txt
 
 EXPOSE 7770
 ENV ENV=production
