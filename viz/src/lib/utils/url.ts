@@ -12,11 +12,7 @@ export function updateURLParameter(name: string, value: string, keepFocus = true
 }
 
 export function createServerURL(serverURL: ServerURLConfig): string {
-    if (!CLIENT_IS_PRODUCTION) {
-        return serverURL.url;
-    } else {
-        return serverURL.subdomain;
-    }
+    return serverURL.url; // lol
 }
 
 /**
