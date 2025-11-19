@@ -27,7 +27,7 @@ done
 # is supplied via environment variables.
 psql -v ON_ERROR_STOP=1 --username "${POSTGRES_USER}" --dbname "postgres" <<-SQL
 DO
-$$
+\$\$
 BEGIN
   -- Create or alter role matching POSTGRES_USER
   IF NOT EXISTS (SELECT FROM pg_catalog.pg_roles WHERE rolname = '${POSTGRES_USER}') THEN
@@ -46,7 +46,7 @@ BEGIN
     EXECUTE format('CREATE DATABASE %I OWNER %I', '${POSTGRES_USER}', '${POSTGRES_USER}');
   END IF;
 END
-$$;
+\$\$;
 SQL
 
 exit 0
