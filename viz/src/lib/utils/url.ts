@@ -1,5 +1,4 @@
 import { goto } from "$app/navigation";
-import { ServerURLConfig, CLIENT_IS_PRODUCTION } from "$lib/constants";
 
 export function updateURLParameter(name: string, value: string, keepFocus = true) {
     const url = new URL(window.location.href);
