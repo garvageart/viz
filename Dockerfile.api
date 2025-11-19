@@ -37,13 +37,18 @@ COPY --from=packages /etc/ssl/certs /etc/ssl/certs
 COPY go.mod go.sum ./
 ARG GOPROXY=https://proxy.golang.org,direct
 ENV GOPROXY=${GOPROXY}
-RUN go env -w GOPROXY=${GOPROXY} && \
+RUN --mount=type=cache,id=go-mods,target=/go/pkg/mod \
+    --mount=type=cache,id=go-build,target=/root/.cache/go-build \
+    go env -w GOPROXY=${GOPROXY} && \
     go mod download
 COPY . .
 
 ENV CGO_ENABLED=1
 RUN mkdir -p /app/build
-RUN go build -o /app/build/imagine ./cmd/api
+# Use the same cache mounts when building so module compilation is cached between builds
+RUN --mount=type=cache,id=go-mods,target=/go/pkg/mod \
+    --mount=type=cache,id=go-build,target=/root/.cache/go-build \
+    go build -o /app/build/imagine ./cmd/api
 
 FROM debian:bookworm-slim AS runtime
 WORKDIR /app
