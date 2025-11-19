@@ -129,7 +129,7 @@ All settings are managed via `imagine.json`:
 ## Configuration
 
 Edit `imagine.json` to customize:
-- **Server ports**: `servers.api-server.port`, `servers.viz.port`
+- **Server ports**: `servers.api.port`, `servers.viz.port`
 - **Storage location**: `base_directory` and `upload.location`
 - **Database**: `database.username`, `database.name`
 - **GCP buckets**: `gcloud.storageBuckets` (for future cloud storage)

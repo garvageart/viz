@@ -5,8 +5,17 @@ info:
   version: 0.1.0
   description: OpenAPI specification for the Imagine API (chi-based)
 servers:
-  - url: http://localhost:7770
+  - url: http://{host}:{port}
     description: Local API
+    variables:
+      host:
+        default: localhost
+        description: Hostname or IP for the API server
+      port:
+        default: "7770"
+        description: Port for the API server
+  - url: /api
+    description: Production API
 paths:
   /ping:
     get:
