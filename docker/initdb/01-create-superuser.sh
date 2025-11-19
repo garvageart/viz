@@ -40,6 +40,11 @@ BEGIN
   IF NOT EXISTS (SELECT FROM pg_database WHERE datname = '${POSTGRES_DB}') THEN
     EXECUTE format('CREATE DATABASE %I OWNER %I', '${POSTGRES_DB}', '${POSTGRES_USER}');
   END IF;
+  -- Also ensure a database exists with the same name as the user, since some
+  -- clients default to connecting to a database named after the user.
+  IF NOT EXISTS (SELECT FROM pg_database WHERE datname = '${POSTGRES_USER}') THEN
+    EXECUTE format('CREATE DATABASE %I OWNER %I', '${POSTGRES_USER}', '${POSTGRES_USER}');
+  END IF;
 END
 $$;
 SQL
