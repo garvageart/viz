@@ -50,7 +50,11 @@ RUN --mount=type=cache,id=go-mods,target=/go/pkg/mod \
     --mount=type=cache,id=go-build,target=/root/.cache/go-build \
     if [ -f Makefile ]; then \
     echo "Building via Makefile (build-api)..."; \
-    make build-api; \
+    # Ensure the Makefile uses the same cache locations as BuildKit mounts so
+    # Go module downloads are stored in /go/pkg/mod and the Go build cache
+    # is stored in /root/.cache/go-build (these are mounted as BuildKit caches
+    # above). Override the Makefile cache dir vars when invoking make.
+    GO_MOD_CACHE_DIR=/go/pkg/mod GO_BUILD_CACHE_DIR=/root/.cache/go-build make build-api; \
     # Support both legacy output 'build/imagine' and Makefile's 'build/api'
     if [ -f build/api ]; then mv build/api /app/build/imagine; elif [ -f build/imagine ]; then mv build/imagine /app/build/imagine; else echo "Expected built binary not found"; exit 1; fi; \
     else \
