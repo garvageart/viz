@@ -44,3 +44,13 @@ vite.config.js.timestamp-*
 vite.config.ts.timestamp-*
 /personal
 /scripts/personal/mount-var.ps1
+
+# Local caches and generated artifacts
+.cache/
+$(VIZ_DIR)/.pnpm-store/
+viz/.pnpm-store/
+viz/node_modules/
+/.pnpm-store/
+/.cache/go-mods/
+/.cache/go-build/
+/.pnpm-store/

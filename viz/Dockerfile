@@ -17,7 +17,12 @@ RUN npm install -g pnpm@latest
 COPY --from=deps /app/node_modules ./node_modules
 COPY viz/ ./
 
-RUN pnpm run build
+RUN if [ -f Makefile ]; then \
+    echo "Building via Makefile (build-frontend)..."; \
+    make build-frontend; \
+    else \
+    pnpm run build; \
+    fi
 
 # running state
 FROM node:latest AS export

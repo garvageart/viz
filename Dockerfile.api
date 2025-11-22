@@ -48,7 +48,13 @@ RUN mkdir -p /app/build
 # Use the same cache mounts when building so module compilation is cached between builds
 RUN --mount=type=cache,id=go-mods,target=/go/pkg/mod \
     --mount=type=cache,id=go-build,target=/root/.cache/go-build \
-    go build -o /app/build/imagine ./cmd/api
+    if [ -f Makefile ]; then \
+    echo "Building via Makefile (build-api)..."; \
+    make build-api; \
+    mv build/imagine /app/build/imagine; \
+    else \
+    go build -o /app/build/imagine ./cmd/api; \
+    fi
 
 FROM debian:bookworm-slim AS runtime
 WORKDIR /app

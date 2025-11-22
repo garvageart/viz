@@ -3,6 +3,8 @@ services:
     build:
       context: .
       dockerfile: Dockerfile.api
+      args:
+        - MAKE_TARGET=build-api
     image: imagine-api:latest
     env_file:
       - .env
@@ -20,6 +22,8 @@ services:
     build:
       context: .
       dockerfile: viz/Dockerfile
+      args:
+        - MAKE_TARGET=build-frontend
     environment:
       - IMAGINE_CONFIG_PATH=/app/imagine.json
     image: imagine-viz:latest
