@@ -102,9 +102,9 @@
 		{#if selectedOption}
 			<span class="viz-dropdown-icon">
 				{#if selectedOption.icon}
-					<MaterialIcon iconName={selectedOption.icon} />
+					<MaterialIcon weight={300} iconName={selectedOption.icon} />
 				{:else if icon}
-					<MaterialIcon iconName={icon} />
+					<MaterialIcon weight={300} iconName={icon} />
 				{/if}
 			</span>
 			<p class="viz-dropdown-title">
@@ -113,7 +113,7 @@
 		{:else}
 			{#if icon}
 				<span class="viz-dropdown-icon">
-					<MaterialIcon iconName={icon} />
+					<MaterialIcon weight={300} iconName={icon} />
 				</span>
 			{/if}
 			{#if title}

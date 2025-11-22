@@ -97,6 +97,28 @@ if (typeof document !== 'undefined' && 'fonts' in document) {
     }
 }
 
+// Explicitly try to load Material Symbols / Material Icons families so the
+// splash waits until those icon fonts are usable. This helps avoid the
+// ligature flash/width-stretch where the literal icon name (e.g. "upload")
+// briefly appears before the font maps it to the glyph.
+if (typeof document !== 'undefined' && 'fonts' in document) {
+    try {
+        const families = [
+            'Material Symbols Outlined',
+            'Material Symbols Sharp',
+            'Material Symbols Rounded',
+            'Material Symbols Filled',
+            'Material Icons'
+        ];
+
+        const loads = families.map((f) => document.fonts.load(`1em "${f}"`).catch(() => null));
+        // Register as a combined readiness checkpoint (don't block indefinitely)
+        registerReady(Promise.allSettled(loads));
+    } catch (e) {
+        // swallow - optional best-effort
+    }
+}
+
 if (typeof window !== 'undefined') {
     const winLoad = new Promise<void>((res) => {
         if (document.readyState === 'complete') {

@@ -3,7 +3,7 @@
 </script>
 
 <script lang="ts">
-	import PhotoAssetGrid from "$lib/components/PhotoAssetGrid.svelte";
+	import PhotoAssetGrid, { type AssetGridView } from "$lib/components/PhotoAssetGrid.svelte";
 	import LoadingContainer from "$lib/components/LoadingContainer.svelte";
 	import VizViewContainer from "$lib/components/panels/VizViewContainer.svelte";
 	import { type Image } from "$lib/api";
@@ -132,36 +132,9 @@
 		return consolidated;
 	});
 
-	// Sorting state (local to photos page)
-	type SortMode = "most_recent" | "oldest" | "name_asc" | "name_desc";
-	let sortMode: SortMode = $state("most_recent");
-	const sortOptions: DropdownOption[] = [
-		{ title: "Most Recent" },
-		{ title: "Oldest" },
-		{ title: "Name A–Z" },
-		{ title: "Name Z–A" }
-	];
-
-	function getSelectedSortOption(): DropdownOption {
-		switch (sortMode) {
-			case "oldest":
-				return { title: "Oldest" };
-			case "name_asc":
-				return { title: "Name A–Z" };
-			case "name_desc":
-				return { title: "Name Z–A" };
-			default:
-				return { title: "Most Recent" };
-		}
-	}
-
-	function sortGroupItems(items: Image[]): Image[] {
-		if (sortMode === "most_recent") return [...items].sort(compareByTakenAtDesc);
-		if (sortMode === "oldest") return [...items].sort((a, b) => -compareByTakenAtDesc(a, b));
-		if (sortMode === "name_asc") return [...items].sort((a, b) => a.name.localeCompare(b.name));
-		if (sortMode === "name_desc") return [...items].sort((a, b) => b.name.localeCompare(a.name));
-		return items;
-	}
+	// Display state (local to photos page)
+	let currentAssetGridView: AssetGridView = $state("grid");
+	const displayOptions: DropdownOption[] = [{ title: "Grid" }, { title: "List" }, { title: "Card" }];
 
 	// Lightbox
 	let lightboxImage: Image | undefined = $state();
@@ -402,12 +375,12 @@
 			map.get(key)!.push(img);
 		}
 
-		// Convert to array and sort by date desc
+		// Convert to array and sort by date desc. Ensure items within each
+		// date group are ordered by taken_at descending (most recent first).
 		const arr = Array.from(map.entries()).map(([key, items]) => {
 			const date = DateTime.fromISO(key);
-			// sort items in each group based on current sort
-			const sortedItems = sortGroupItems(items);
-			return { key, date, items: sortedItems };
+			items.sort(compareByTakenAtDesc);
+			return { key, date, items };
 		});
 
 		arr.sort((a, b) => b.date.toMillis() - a.date.toMillis());
@@ -954,19 +927,16 @@
 				</div>
 			</AssetToolbar>
 		{:else}
-			<AssetToolbar stickyToolbar={true}>
+			<AssetToolbar style="position: sticky; top: 0px; display: flex; justify-content: flex-end;" stickyToolbar={true}>
 				<div style="display: flex; align-items: center; gap: 0.5rem;">
 					<Dropdown
-						title="Sort by"
+						title="Display"
 						class="toolbar-button"
-						icon="sort"
-						options={sortOptions}
-						selectedOption={getSelectedSortOption()}
+						icon="list_alt"
+						options={displayOptions}
+						selectedOption={displayOptions.find((o) => o.title.toLowerCase() === currentAssetGridView)}
 						onSelect={(opt) => {
-							if (opt.title === "Most Recent") sortMode = "most_recent";
-							else if (opt.title === "Oldest") sortMode = "oldest";
-							else if (opt.title === "Name A–Z") sortMode = "name_asc";
-							else if (opt.title === "Name Z–A") sortMode = "name_desc";
+							currentAssetGridView = opt.title as AssetGridView;
 						}}
 					/>
 				</div>
@@ -986,8 +956,9 @@
 					<PhotoAssetGrid
 						{selectedAssets}
 						bind:singleSelectedAsset
-						data={consolidatedGroup.allImages}
 						bind:allData={allImagesFlat}
+						bind:view={currentAssetGridView}
+						data={consolidatedGroup.allImages}
 						disableOutsideUnselect={true}
 						assetDblClick={(_e, asset) => openLightbox(asset)}
 						onassetcontext={(detail: { asset: Image; anchor: { x: number; y: number } }) => {
@@ -1046,6 +1017,7 @@
 		display: flex;
 		flex-direction: column;
 		box-sizing: border-box;
+		margin-bottom: 1rem;
 		width: 100%;
 
 		h2 {

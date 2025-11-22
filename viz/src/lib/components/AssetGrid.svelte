@@ -1,6 +1,5 @@
 <script lang="ts" generics="T extends { uid: string } & Record<string, any>">
 	import { dev } from "$app/environment";
-	import { page } from "$app/state";
 	import { buildGridArray } from "$lib/utils/dom";
 	import { SvelteSet } from "svelte/reactivity";
 	import hotkeys from "hotkeys-js";
@@ -11,8 +10,7 @@
 	import { DateTime } from "luxon";
 	import { getFullImagePath } from "$lib/api";
 	import type { SvelteHTMLElements } from "svelte/elements";
-
-	type AssetGridView = "grid" | "list" | "cards";
+	import type { AssetGridView } from "./PhotoAssetGrid.svelte";
 
 	interface Props {
 		data: T[];
@@ -20,7 +18,7 @@
 		singleSelectedAsset?: T;
 		selectedAssets: SvelteSet<T>;
 		assetGridArray?: AssetGridArray<T>;
-		view?: AssetGridView;
+		view?: Omit<AssetGridView, "grid">;
 		assetGridDisplayProps?: SvelteHTMLElements["div"];
 		columnCount?: number;
 		searchValue?: string;

@@ -85,6 +85,26 @@
 	let openAccPanel = $state(false);
 	let openAppMenu = $state(false);
 	let appMenuButton: HTMLButtonElement | undefined = $state();
+
+	const storeTheme = new VizLocalStorage<"light" | "dark">("theme");
+	let theme = $state<"light" | "dark">(
+		storeTheme.get() === null
+			? typeof window !== "undefined" && window.matchMedia && window.matchMedia("(prefers-color-scheme: dark)").matches
+				? "dark"
+				: "light"
+			: (storeTheme.get() as "light" | "dark")
+	);
+
+	$effect(() => {
+		try {
+			document.documentElement.dataset.theme = theme;
+			storeTheme.set(theme);
+		} catch (e) {}
+	});
+
+	function toggleTheme() {
+		theme = theme === "dark" ? "light" : "dark";
+	}
 </script>
 
 <svelte:window
@@ -135,9 +155,18 @@
 		bind:value={search.value}
 		bind:element={searchElement}
 		{performSearch}
-		style="width: 30%; border-color: var(--imag-90); height: 1.5em; font-size: 0.9em;"
+		style="width: 30%; border-color: var(--imag-80); height: 1.5em; font-size: 0.9em;"
 	/>
 	<div class="header-button-container">
+		<button
+			id="theme-toggle"
+			class="header-button theme-toggle"
+			title="Toggle theme"
+			aria-label="Toggle Theme"
+			onclick={() => toggleTheme()}
+		>
+			<MaterialIcon weight={300} iconName={theme === "dark" ? "dark_mode" : "light_mode"} />
+		</button>
 		<button id="upload-button" class="header-button" aria-label="Upload" onclick={handleUpload}>
 			<MaterialIcon iconName="upload" iconStyle="sharp" />
 			<span style="font-size: 0.75rem; font-weight: 500;"> Upload </span>
@@ -161,7 +190,7 @@
 				</figure>
 			</button>
 			{#if openAccPanel}
-				<OpenAccountPanel />
+				<OpenAccountPanel bind:openAccPanel />
 			{/if}
 		</div>
 	</div>
@@ -249,6 +278,11 @@
 		right: 0.8em;
 		display: flex;
 		align-items: center;
+	}
+
+	#theme-toggle {
+		color: var(--imag-text-color);
+		margin: auto 1.5rem;
 	}
 
 	:global(.header-button) {

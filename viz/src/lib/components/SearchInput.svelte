@@ -74,7 +74,7 @@
 		align-items: center;
 		width: 20%;
 		border: 1px solid;
-		border-color: var(--imag-90);
+		border-color: var(--imag-80);
 		border-radius: 2em;
 		background-color: var(--imag-bg-color);
 		overflow: hidden;

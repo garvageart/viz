@@ -61,7 +61,7 @@
 	let ctxAnchor: { x: number; y: number } | HTMLElement | null = $state(null as any);
 
 	// Modal data for create/edit
-	let modalData: any = $state(undefined);
+	let modalData: Collection | undefined = $state(undefined);
 	let modalMode: "create" | "edit" = $state("create");
 
 	function openCollectionContext(collection: Collection, anchor: { x: number; y: number } | HTMLElement) {
@@ -151,7 +151,7 @@
 <CollectionModal
 	heading={modalMode === "create" ? "Create Collection" : "Edit Collection"}
 	buttonText={modalMode === "create" ? "Create" : "Save"}
-	data={modalData}
+	bind:data={modalData}
 	modalAction={async (event) => {
 		const formData = new FormData(event.currentTarget);
 		const name = formData.get("name") as string;
@@ -175,11 +175,13 @@
 		} else {
 			// edit
 			try {
-				if (!modalData || !modalData.uid) return;
+				if (!modalData || !modalData.uid) {
+					return;
+				}
 				const res = await updateCollection(modalData.uid, { name, description, private: isPrivate });
 				if (res.status === 200) {
 					// update local list
-					listOfCollectionsData = listOfCollectionsData.map((c) => (c.uid === modalData.uid ? res.data : c));
+					listOfCollectionsData = listOfCollectionsData.map((c) => (c.uid === modalData!.uid ? res.data : c));
 					modal.show = false;
 					toastState.addToast({ message: "Collection updated", type: "success" });
 				} else {

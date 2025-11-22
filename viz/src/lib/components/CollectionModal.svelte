@@ -4,30 +4,20 @@
 	import ModalOverlay from "./modals/ModalContainer.svelte";
 	import SliderToggle from "./SliderToggle.svelte";
 	import InputText from "./dom/InputText.svelte";
+	import type { Collection } from "$lib/api";
 
 	interface Props {
 		heading: string;
-		data?: {
-			name: string;
-			description?: string;
-			isPrivate?: boolean | null;
-		};
+		data?: Pick<Collection, "name" | "description" | "private">;
 		buttonText: string;
 		modalAction: EventHandler<SubmitEvent, HTMLFormElement> | null | undefined;
 	}
 
-	let {
-		heading,
-		data = $bindable({
-			name: "",
-			description: "",
-			isPrivate: false
-		}),
-		buttonText,
-		modalAction
-	}: Props = $props();
+	let { heading, data = $bindable(), buttonText, modalAction }: Props = $props();
 
-	let allData = $state({ ...data, isPrivate: data.isPrivate ? "on" : "off" });
+	let allData = $state(data ?? { name: "", description: "", private: false });
+
+	let isPrivate: "on" | "off" = $derived(allData.private ? "on" : "off");
 </script>
 
 <ModalOverlay>
@@ -57,12 +47,7 @@
 				placeholder="Description (optional)"
 				bind:value={allData.description}
 			/>
-			<SliderToggle
-				id="collection-private"
-				style="margin-bottom: 1rem;"
-				label="Private"
-				bind:value={allData.isPrivate as "on" | "off"}
-			/>
+			<SliderToggle id="collection-private" style="margin-bottom: 1rem;" label="Private" bind:value={isPrivate} />
 			<Button style="margin-top: 1rem;">
 				<input id="collection-submit" type="submit" value={buttonText} />
 			</Button>

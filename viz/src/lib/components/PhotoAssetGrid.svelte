@@ -1,3 +1,7 @@
+<script module lang="ts">
+	export type AssetGridView = "grid" | "list" | "cards";
+</script>
+
 <script lang="ts" generics="T extends { uid: string } & Record<string, any>">
 	import AssetGrid from "./AssetGrid.svelte";
 	import { getFullImagePath, type Image } from "$lib/api";
@@ -34,7 +38,7 @@
 		disableOutsideUnselect = $bindable(false),
 		onassetcontext = $bindable(),
 		assetGridDisplayProps = $bindable({}),
-		view = $bindable("cards"),
+		view = $bindable("grid"),
 		columns = $bindable(),
 		table = $bindable(),
 		photoCardSnippet
@@ -572,7 +576,7 @@
 		<div class="photo-overlay">
 			<div class="photo-overlay-inner">
 				<div class="photo-name">{asset.name}</div>
-				<div class="photo-date">{DateTime.fromJSDate(getTakenAt(asset)).toLocaleString(DateTime.DATETIME_MED)}</div>
+				<div class="photo-date">{DateTime.fromJSDate(getTakenAt(asset)).toFormat("dd LLL yyyy • HH:mm")}</div>
 			</div>
 		</div>
 	</div>
@@ -586,7 +590,7 @@
 	<div
 		bind:this={photoGridEl}
 		class="viz-photo-grid-container no-select"
-		style={`padding: 0em ${page.url.pathname === "/" ? "1em" : "2em"};`}
+		style={`padding: 0em ${page.url.pathname === "/" ? "1em" : "0em"};`}
 		onscroll={handleGridScroll}
 		use:unselectImagesOnClickOutsideAssetContainer
 	>
@@ -614,11 +618,11 @@
 		bind:assetGridArray
 		bind:columnCount
 		bind:searchValue
+		bind:view
 		{noAssetsMessage}
 		{assetDblClick}
 		{disableOutsideUnselect}
 		{onassetcontext}
-		{view}
 		{columns}
 		{table}
 		{assetGridDisplayProps}
@@ -630,7 +634,7 @@
 	/* Photo grid (virtualized) styles */
 	.viz-photo-grid-container {
 		box-sizing: border-box;
-		margin: 0 auto;
+		margin: 1em auto;
 		width: 100%;
 		max-width: 100%;
 	}

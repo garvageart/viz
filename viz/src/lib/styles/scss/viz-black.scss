@@ -1,53 +1,91 @@
 @use "sass:color";
 
-$base-color: #1b1b1b;
-$bg-color: #181818;
+$bg-color: #222222;
+$base-color: #333333;
 $text-color: #F7F9F9;
+$primary-color: #1885df;
+$secondary-color: #06589b;
 
-/* Colours */
 :root {
     --imag-bg-color: #{$bg-color};
     --imag-text-color: #{$text-color};
-    --imag-100: #{color.mix($base-color, #fff, 100%)};
-    --imag-90: #{color.mix($base-color, #fff, 90%)};
-    --imag-80: #{color.mix($base-color, #fff, 80%)};
-    --imag-70: #{color.mix($base-color, #fff, 70%)};
-    --imag-60: #{color.mix($base-color, #fff, 60%)};
-    --imag-50: #{color.mix($base-color, #fff, 50%)};
-    --imag-40: #{color.mix($base-color, #fff, 40%)};
-    --imag-30: #{color.mix($base-color, #fff, 30%)};
-    --imag-20: #{color.mix($base-color, #fff, 20%)};
-    --imag-10: #{color.mix($base-color, #fff, 10%)};
-    --imag-primary: #1885df;
-    --imag-secondary: #06589b;
+    --imag-primary: #{$primary-color};
+    --imag-secondary: #{$secondary-color};
 }
 
-::-webkit-scrollbar-corner,
-::-webkit-scrollbar-track {
-    background-color: var(--imag-100);
+/// Generates the --imag-XX color palette (10% to 100% steps).
+///
+/// @param {Color} $bg-color - The theme's background color.
+/// @param {Color} $text-color - The theme's text color.
+/// @param {Color} $base-color - The color used for the step mixing (e.g., blue for light theme, dark blue for dark theme).
+/// @param {boolean} $is-light-theme [false] - If true, 100% is the lightest mix; if false, 100% is the darkest/base.
+@mixin generate-imag-colors($bg-color,
+    $text-color,
+    $base-color,
+    $is-light-theme: false,
+    $flip-bg-color: null,
+    $flip-bg-pct: 0%,
+    $flip-text-color: null,
+    $flip-text-pct: 0%) {
+    // optionally mix the provided flip colors into the bg/text
+    $out-bg-color: if($flip-bg-color !=null, color.mix($bg-color, $flip-bg-color, $flip-bg-pct), $bg-color);
+    $out-text-color: if($flip-text-color !=null, color.mix($text-color, $flip-text-color, $flip-text-pct), $text-color);
+
+    --imag-bg-color: #{$out-bg-color};
+    --imag-text-color: #{$out-text-color};
+
+    $pct: 0%;
+
+    @for $j from 0 through 9 {
+        $level: 100 - $j * 10;
+
+        @if $is-light-theme {
+            $pct: (
+                10 + $j * 10) * 1%;
+        }
+
+        @else {
+            $pct: (
+                100 - $j * 10) * 1%;
+        }
+
+        --imag-#{$level}: #{color.mix($base-color, white, $pct)};
+    }
 }
 
-::-webkit-scrollbar-thumb {
-    background-color: var(--imag-60);
-    background-clip: padding-box;
-    border: 3px solid transparent;
-    border-radius: 10px;
+/* Colours */
+
+/* Light theme: use a blue base so --imag-100 is the lightest blue and
+   --imag-10 is the darkest (in 10% steps). */
+:root[data-theme="light"],
+[data-theme="light"] {
+    @include generate-imag-colors($bg-color: $bg-color,
+        $text-color: $text-color,
+        $base-color: $base-color,
+        $is-light-theme: true,
+        $flip-bg-color: rgb(230, 231, 242),
+        $flip-bg-pct: 5%,
+        $flip-text-color: black,
+        $flip-text-pct: 7%
+);
 }
 
-::-webkit-scrollbar-thumb:hover {
-    background-color: var(--imag-80)
+/* Dark theme: opposite mapping so --imag-100 is the darkest (base 100%) and
+   --imag-10 is lightest. */
+:root[data-theme="dark"],
+[data-theme="dark"] {
+    @include generate-imag-colors($bg-color: $bg-color,
+        $text-color: $text-color,
+        $base-color: $base-color,
+        $is-light-theme: false);
 }
 
-::-webkit-scrollbar-thumb:active {
-    background-color: var(--imag-90)
-}
-
-/* Buttons */
-::-webkit-scrollbar-button:single-button {
-    background-color: var(--imag-100);
-    display: block;
-    background-size: 9px;
-    background-repeat: no-repeat;
+/* If user prefers dark and no explicit theme is set, default to dark values */
+@media (prefers-color-scheme: dark) {
+    :root:not([data-theme]) {
+        --imag-bg-color: #{$bg-color};
+        --imag-text-color: #{$text-color};
+    }
 }
 
 /* Up */
