@@ -23,7 +23,8 @@ $secondary-color: #06589b;
 /// @param {Color} $text-color - The theme's text color.
 /// @param {Color} $base-color - The color used for the step mixing (e.g., blue for light theme, dark blue for dark theme).
 /// @param {boolean} $is-light-theme [false] - If true, 100% is the lightest mix; if false, 100% is the darkest/base.
-@mixin generate-imag-colors($bg-color,
+@mixin generate-imag-colors(
+    $bg-color,
     $text-color,
     $base-color,
     $is-light-theme: false,
@@ -63,7 +64,8 @@ $secondary-color: #06589b;
    --imag-10 is the darkest (in 10% steps). */
 :root[data-theme="light"],
 [data-theme="light"] {
-    @include generate-imag-colors($bg-color: $bg-color,
+    @include generate-imag-colors(
+        $bg-color: $bg-color,
         $text-color: $text-color,
         $base-color: $base-color,
         $is-light-theme: true,
@@ -78,17 +80,38 @@ $secondary-color: #06589b;
    --imag-10 is lightest. */
 :root[data-theme="dark"],
 [data-theme="dark"] {
-    @include generate-imag-colors($bg-color: $bg-color,
+    @include generate-imag-colors(
+        $bg-color: $bg-color,
         $text-color: $text-color,
         $base-color: $base-color,
         $is-light-theme: false);
 }
 
-/* If user prefers dark and no explicit theme is set, default to dark values */
+/* If user prefers dark and no explicit theme is set, generate dark palette */
 @media (prefers-color-scheme: dark) {
     :root:not([data-theme]) {
-        --imag-bg-color: #{$bg-color};
-        --imag-text-color: #{$text-color};
+        @include generate-imag-colors(
+            $bg-color: $bg-color,
+            $text-color: $text-color,
+            $base-color: $base-color,
+            $is-light-theme: false
+        );
+    }
+}
+
+/* If user prefers light and no explicit theme is set, generate light palette */
+@media (prefers-color-scheme: light) {
+    :root:not([data-theme]) {
+        @include generate-imag-colors(
+            $bg-color: $bg-color,
+            $text-color: $text-color,
+            $base-color: $base-color,
+            $is-light-theme: true,
+            $flip-bg-color: rgb(230, 231, 242),
+            $flip-bg-pct: 5%,
+            $flip-text-color: black,
+            $flip-text-pct: 7%
+        );
     }
 }
 
