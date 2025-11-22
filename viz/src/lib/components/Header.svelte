@@ -3,7 +3,7 @@
 	import { page } from "$app/state";
 	import { CLIENT_IS_PRODUCTION } from "$lib/constants";
 	import { performSearch } from "$lib/search/execute";
-	import { search, user } from "$lib/states/index.svelte";
+	import { search, user, theme, toggleTheme } from "$lib/states/index.svelte";
 	import { VizLocalStorage } from "$lib/utils/misc";
 	import hotkeys from "hotkeys-js";
 	import { onMount } from "svelte";
@@ -85,26 +85,6 @@
 	let openAccPanel = $state(false);
 	let openAppMenu = $state(false);
 	let appMenuButton: HTMLButtonElement | undefined = $state();
-
-	const storeTheme = new VizLocalStorage<"light" | "dark">("theme");
-	let theme = $state<"light" | "dark">(
-		storeTheme.get() === null
-			? typeof window !== "undefined" && window.matchMedia && window.matchMedia("(prefers-color-scheme: dark)").matches
-				? "dark"
-				: "light"
-			: (storeTheme.get() as "light" | "dark")
-	);
-
-	$effect(() => {
-		try {
-			document.documentElement.dataset.theme = theme;
-			storeTheme.set(theme);
-		} catch (e) {}
-	});
-
-	function toggleTheme() {
-		theme = theme === "dark" ? "light" : "dark";
-	}
 </script>
 
 <svelte:window

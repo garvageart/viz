@@ -87,3 +87,26 @@ export let upload = $state({
 });
 
 export let continuePath = $state<string | null>(null);
+
+class ThemeState {
+    storage = new VizLocalStorage<"light" | "dark">("theme");
+
+    value: "light" | "dark" = $state(
+        this.storage.get() === null
+            ? typeof window !== "undefined" && window.matchMedia && window.matchMedia("(prefers-color-scheme: dark)").matches
+                ? "dark"
+                : "light"
+            : (this.storage.get() as "light" | "dark")
+    );
+
+    toggle() {
+        this.value = this.value === "dark" ? "light" : "dark";
+    }
+}
+
+export const themeState = new ThemeState();
+export let theme = themeState.value;
+
+export function toggleTheme() {
+    themeState.toggle();
+}

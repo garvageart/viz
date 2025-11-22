@@ -14,11 +14,11 @@
 
 <script>
 	import { dev } from "$app/environment";
-
 	import { CAN_DEBUG } from "$lib/constants";
+	import { themeState } from "$lib/states/index.svelte";
 	import type { VizConfig } from "$lib/types/config.types";
-	import "$lib/styles/scss/main.scss";
 	import "@fontsource-variable/manrope";
+	import "$lib/styles/scss/main.scss";
 	import "$lib/stores/appReady";
 
 	window.debug = CAN_DEBUG;
@@ -31,6 +31,15 @@
 	};
 
 	let { children } = $props();
+
+	$effect(() => {
+		try {
+			if (typeof document !== "undefined") {
+				document.documentElement.dataset.theme = themeState.value;
+			}
+			themeState.storage.set(themeState.value);
+		} catch (e) {}
+	});
 </script>
 
 {@render children()}
