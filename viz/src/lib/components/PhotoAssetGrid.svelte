@@ -625,7 +625,7 @@
 		{columns}
 		{table}
 		{assetGridDisplayProps}
-		assetSnippet={photoCardSnippet ?? imageCard}
+		assetSnippet={(photoCardSnippet ?? imageCard) as unknown as Snippet<[Image]>}
 	/>
 {/if}
 
