@@ -43,7 +43,7 @@ export default defineConfig({
 		reportCompressedSize: false
 	},
 	test: {
-		workspace: [
+		projects: [
 			{
 				extends: './vite.config.ts',
 				plugins: [svelteTesting()],
@@ -51,8 +51,15 @@ export default defineConfig({
 					name: 'client',
 					environment: 'jsdom',
 					clearMocks: true,
-					include: ['src/**/*.svelte.{test,spec.{js,ts}'],
-					exclude: ['src/lib/server/**'],
+					// include common test filename patterns and the project's `src/tests` folder
+					include: [
+						'src/tests/**/*.spec.ts',
+						'src/**/*.spec.{js,ts}',
+						'src/**/*.test.{js,ts}',
+						'src/**/*.svelte.spec.{js,ts}',
+						'src/**/*.svelte.test.{js,ts}'
+					],
+					exclude: ['src/lib/server/**', 'src/lib/third-party/**', 'src/lib/third-party/**/tests/**'],
 					setupFiles: ['./vitest-setup-client.ts']
 				}
 			},
@@ -61,8 +68,17 @@ export default defineConfig({
 				test: {
 					name: 'server',
 					environment: 'node',
-					include: ['src/**/*.{test,spec.{js,ts}'],
-					exclude: ['src/**/*.svelte.{test,spec.{js,ts}']
+					// keep server tests narrow to server-specific locations to avoid loading UI/component tests
+					include: [
+						'src/lib/server/**',
+						'src/**/*.server.spec.{js,ts}',
+						'src/**/*.server.test.{js,ts}'
+					],
+					exclude: [
+						'src/tests/**',
+						'src/**/*.svelte.spec.{js,ts}',
+						'src/lib/third-party/**/tests/**'
+					]
 				}
 			}
 		],
