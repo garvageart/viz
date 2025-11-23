@@ -1,0 +1,42 @@
+@use "sass:color";
+
+/// Generates the --imag-XX color palette (5% to 100% steps).
+///
+/// @param {Color} $bg-color - The theme's background color.
+/// @param {Color} $text-color - The theme's text color.
+/// @param {Color} $base-color - The color used for the step mixing (e.g., blue for light theme, dark blue for dark theme).
+/// @param {boolean} $is-light-theme [false] - If true, 100% is the lightest mix; if false, 100% is the darkest/base.
+@mixin generate-imag-colors($bg-color,
+    $text-color,
+    $base-color,
+    $is-light-theme: false,
+    $flip-bg-color: null,
+    $flip-bg-pct: 0%,
+    $flip-text-color: null,
+    $flip-text-pct: 0%) {
+    // optionally mix the provided flip colors into the bg/text
+    $out-bg-color: if($flip-bg-color !=null, color.mix($bg-color, $flip-bg-color, $flip-bg-pct), $bg-color);
+    $out-text-color: if($flip-text-color !=null, color.mix($text-color, $flip-text-color, $flip-text-pct), $text-color);
+
+    --imag-bg-color: #{$out-bg-color};
+    --imag-text-color: #{$out-text-color};
+
+    $pct: 0%;
+
+    // Use 20 steps (5% increments) producing --imag-100, --imag-95, ... --imag-5
+    @for $j from 0 through 19 {
+        $level: 100 - $j * 5;
+
+        @if $is-light-theme {
+            $pct: (
+                5 + $j * 5) * 1%;
+        }
+
+        @else {
+            $pct: (
+                100 - $j * 5) * 1%;
+        }
+
+        --imag-#{$level}: #{color.mix($base-color, white, $pct)};
+    }
+}
