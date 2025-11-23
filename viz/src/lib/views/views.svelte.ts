@@ -1,5 +1,6 @@
 import type { Component } from "svelte";
 import { preloadData } from "$app/navigation";
+import { debugMode } from "$lib/states/index.svelte";
 
 // usually this would be bad but the app is client only
 // and doesn't share state with anyone i guess??
@@ -65,7 +66,7 @@ class VizView<C extends Component<any, any, any> = Component<any, any, any>> {
             return;
         }
 
-        if (window.debug === true) {
+        if (debugMode) {
             console.log(`Loading data ${this.path}`);
         }
 

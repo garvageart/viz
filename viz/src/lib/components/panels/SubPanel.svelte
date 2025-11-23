@@ -41,12 +41,13 @@
 		splitPanelVertically
 	} from "$lib/layouts/panel-operations";
 	import { buildLayoutContextMenu, buildPanelContextMenu, buildTabContextMenu, type TabHandlers } from "./subpanel-context";
+	import { debugMode } from "$lib/states/index.svelte";
 
 	if (dev) {
 		window.resetAndReloadLayout = resetAndReloadLayout;
 	}
 
-	if (window.debug) {
+	if (debugMode) {
 		measureComponentRenderTimes();
 	}
 
@@ -197,7 +198,7 @@
 	let layoutContextMenuItems = $state<MenuItem[]>([]);
 	let layoutContextMenuAnchor = $state<{ x: number; y: number } | null>(null);
 
-	if (window.debug === true) {
+	if (debugMode === true) {
 		$inspect("active view", keyId, activeView);
 		if (initialViews.length) {
 			$effect(() => {
@@ -516,7 +517,7 @@
 		const result = findSubPanel("paneKeyId", viewParentId);
 		if (!result) return;
 
-		if (window.debug) {
+		if (debugMode) {
 			const layoutSummary = layoutState.tree.map((p) => ({
 				paneKeyId: p.paneKeyId,
 				contentCount: p.childs?.content?.length ?? 0
@@ -548,7 +549,7 @@
 			}
 		}
 
-		if (window.debug) {
+		if (debugMode) {
 			const layoutSummary2 = layoutState.tree.map((p) => ({
 				paneKeyId: p.paneKeyId,
 				contentCount: p.childs?.content?.length ?? 0

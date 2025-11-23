@@ -3,15 +3,18 @@
  */
 export const cookieMethods = {
     set: (key: string, value: string, expiresDate?: Date | string) => {
-        document.cookie = `${key}=${value}; expires=${expiresDate}; Secure; path =/`;
+        const prefixedKey = "viz:" + key;
+        document.cookie = `${prefixedKey}=${value}; expires=${expiresDate}; Secure; path =/`;
     },
     get: (key: string): string | undefined => {
+        const prefixedKey = "viz:" + key;
         const allCookies = document?.cookie;
-        const cookieValue = allCookies.split("; ").find(cookie => cookie.startsWith(`${key}`))?.split("=")[1];
+        const cookieValue = allCookies.split("; ").find(cookie => cookie.startsWith(`${prefixedKey}`))?.split("=")[1];
 
         return cookieValue;
     },
     delete: (key: string) => {
-        document.cookie = `${key}=; max-age=0; path =/`;
+        const prefixedKey = "viz:" + key;
+        document.cookie = `${prefixedKey}=; max-age=0; path =/`;
     }
 };

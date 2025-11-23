@@ -9,6 +9,7 @@
 	import VizSubPanelData, { Content } from "$lib/layouts/subpanel.svelte";
 	import { debugEvent } from "$lib/utils/dom";
 	import { generateKeyId } from "$lib/utils/layout";
+	import { debugMode } from "$lib/states/index.svelte";
 
 	let { id }: { id: string } = $props();
 	const theme = DEFAULT_THEME;
@@ -77,7 +78,7 @@
 		return layoutState.tree;
 	});
 
-	if (window.debug === true) {
+	if (debugMode) {
 		$inspect("global state", layoutState.tree);
 	}
 

@@ -1,4 +1,5 @@
 import type { VizSubPanel, SubPanelChilds } from "$lib/components/panels/SubPanel.svelte";
+import { debugMode } from "$lib/states/index.svelte";
 import type { TabData } from "./tabs.svelte";
 
 /**
@@ -68,7 +69,7 @@ export function cleanupSubPanels(layout: VizSubPanel[], state: TabData, keyId: s
 
     // Remove the source child subpanel if it is now empty
     if (srcChild.views.length === 0) {
-        if (window.debug === true) {
+        if (debugMode) {
             console.log(`empty subpanel ${srcChild.paneKeyId}. removing it`);
         }
 
@@ -78,7 +79,7 @@ export function cleanupSubPanels(layout: VizSubPanel[], state: TabData, keyId: s
     if (layout[srcParentIdx].childs.content.length === 0) {
         layout.splice(srcParentIdx, 1);
 
-        if (window.debug === true) {
+        if (debugMode) {
             console.log(`one panel ${layout[0].paneKeyId} left, setting maximum size to 100`);
         }
 

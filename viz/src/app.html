@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="en" %THEME_ATTR%>
 
 	<head>
 		<meta charset="utf-8" />
@@ -19,7 +19,7 @@
 				display: flex;
 				align-items: center;
 				justify-content: center;
-				background: #0F1726;
+				background: var(--imag-bg-color, #0F1726);
 			}
 
 			#app-splash .splash-inner {
@@ -38,7 +38,7 @@
 				display: flex;
 				justify-content: center;
 				align-items: center;
-				color: #F7F9F9;
+				color: var(--imag-text-color, #F7F9F9);
 			}
 
 			#app-splash .splash-text::after {
@@ -47,7 +47,7 @@
 				left: 0;
 				bottom: 0;
 				height: 3px;
-				background: #F7F9F9;
+				background: var(--imag-text-color, #F7F9F9);
 				width: 100%;
 				display: flex;
 				align-items: center;
@@ -85,10 +85,24 @@
 				pointer-events: none;
 			}
 		</style>
+
+		<script>
+			(function () {
+				try {
+					const storedTheme = localStorage.getItem('viz:theme');
+					const osTheme = window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light';
+					const theme = storedTheme || osTheme;
+					document.documentElement.setAttribute('data-theme', theme);
+				} catch (e) {
+					document.documentElement.setAttribute('data-theme', 'light');
+				}
+			})();
+		</script>
+		%viz.css.theme_style%
 		%sveltekit.head%
 	</head>
 
-	<body data-sveltekit-preload-data="hover">
+	<body>
 		<div id="app-splash" aria-hidden="true">
 			<div class="splash-inner">
 				<code class="splash-text">viz</code>

@@ -2,14 +2,23 @@ import type { ImageObjectData } from "$lib/entities/image";
 import type CollectionData from "$lib/entities/collection";
 import type { AssetSort } from "$lib/types/asset";
 import type { UploadImage } from "$lib/upload/asset.svelte";
-import { cookieMethods } from "$lib/utils/cookie";
 import { writable } from "svelte/store";
-import { type User, getCurrentUser, logout } from "$lib/api/client";
-import { VizLocalStorage } from "$lib/utils/misc";
-import { goto } from "$app/navigation";
+import { type User } from "$lib/api/client";
+import { VizLocalStorage, VizCookieStorage } from "$lib/utils/misc";
 
+class LoginState {
+    storage: VizCookieStorage<string>;
+    value: string | null = $state(null);
+    constructor() {
+        // shitty hack
+        this.storage = new VizCookieStorage<string>('state');
+        this.storage.prefix = "imag";
+        this.value = this.storage.get();
+    }
+}
+const loginState = new LoginState();
 export let login = $state({
-    state: cookieMethods.get("imag-state")
+    state: loginState.value
 });
 
 export let sidebar = $state({
@@ -50,6 +59,18 @@ export let lightbox = $state({
     show: false
 });
 
+// eventually this will move to a different page with a different way of enabling, this is just temporary
+class DebugState {
+    storage = new VizLocalStorage<boolean>('debugMode');
+    value: boolean = $state(this.storage.get() ?? false);
+
+    toggle() {
+        this.value = !this.value;
+    }
+}
+export const debugState = new DebugState();
+export let debugMode = debugState.value;
+
 class SortState {
     private storage = new VizLocalStorage<AssetSort>("sort");
 
@@ -89,18 +110,24 @@ export let upload = $state({
 export let continuePath = $state<string | null>(null);
 
 class ThemeState {
-    storage = new VizLocalStorage<"light" | "dark">("theme");
+    ls = new VizLocalStorage<'light' | 'dark'>('theme');
+    cs = new VizCookieStorage<'light' | 'dark'>('theme');
 
-    value: "light" | "dark" = $state(
-        this.storage.get() === null
-            ? typeof window !== "undefined" && window.matchMedia && window.matchMedia("(prefers-color-scheme: dark)").matches
-                ? "dark"
-                : "light"
-            : (this.storage.get() as "light" | "dark")
-    );
+    value: 'light' | 'dark' = $state(this.getInitialTheme());
+
+    private getInitialTheme(): 'light' | 'dark' {
+        // Preference: 1. LocalStorage, 2. OS preference
+        const storedTheme = this.ls.get();
+        if (storedTheme) {
+            return storedTheme;
+        }
+        return typeof window !== 'undefined' && window.matchMedia?.('(prefers-color-scheme: dark)').matches
+            ? 'dark'
+            : 'light';
+    }
 
     toggle() {
-        this.value = this.value === "dark" ? "light" : "dark";
+        this.value = this.value === 'dark' ? 'light' : 'dark';
     }
 }
 

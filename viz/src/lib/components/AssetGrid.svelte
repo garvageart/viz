@@ -5,7 +5,7 @@
 	import hotkeys from "hotkeys-js";
 	import type { AssetGridArray, AssetSortBy } from "$lib/types/asset";
 	import type { SvelteSnippet } from "$lib/types/snippet";
-	import { sort } from "$lib/states/index.svelte";
+	import { debugMode, sort } from "$lib/states/index.svelte";
 	import MaterialIcon from "./MaterialIcon.svelte";
 	import { DateTime } from "luxon";
 	import { getFullImagePath } from "$lib/api";
@@ -176,7 +176,7 @@
 	});
 
 	// Inspecting/Debugging
-	if (window.debug) {
+	if (debugMode) {
 		$inspect("selected asset", singleSelectedAsset);
 	}
 

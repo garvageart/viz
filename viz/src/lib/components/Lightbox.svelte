@@ -1,4 +1,6 @@
 <script lang="ts">
+	import { debugMode } from "$lib/states/index.svelte";
+
 	interface Props {
 		children: () => any;
 		onclick?: (
@@ -31,7 +33,7 @@
 		}
 	});
 
-	if (window.debug) {
+	if (debugMode) {
 		$effect(() => {
 			if (show) {
 				console.log("lightbox is showing");

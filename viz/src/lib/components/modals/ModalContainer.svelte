@@ -1,5 +1,5 @@
 <script lang="ts">
-	import { modal } from "$lib/states/index.svelte";
+	import { debugMode, modal } from "$lib/states/index.svelte";
 	import Lightbox from "../Lightbox.svelte";
 	import Modal from "./ModalLightbox.svelte";
 
@@ -10,7 +10,7 @@
 		show = modal.show;
 	});
 
-	if (window.debug) {
+	if (debugMode) {
 		$effect(() => {
 			if (modal.show) {
 				console.log("modal is showing");

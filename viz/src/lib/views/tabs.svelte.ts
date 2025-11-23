@@ -8,6 +8,7 @@ import { cleanupEmptyPanels, normalizeContentSizes, normalizePanelSizes, createP
 import type { DropPosition } from "./types";
 import VizSubPanelData, { Content } from "$lib/layouts/subpanel.svelte";
 import { isTabData } from "$lib/utils/layout";
+import { debugMode } from "$lib/states/index.svelte";
 
 export interface TabData {
     index: number;
@@ -123,7 +124,7 @@ class TabOps {
 
             // Remove the source child subpanel if it is now empty
             if (srcChild.views.length === 0) {
-                if (window.debug === true) {
+                if (debugMode) {
                     console.log(`empty subpanel ${srcChild.paneKeyId}. removing it`);
                 }
 
@@ -146,7 +147,7 @@ class TabOps {
             if (layout[srcParentIdx].childs.content.length === 0) {
                 layout.splice(srcParentIdx, 1);
 
-                if (window.debug === true) {
+                if (debugMode) {
                     console.log(`one panel ${layout[0].paneKeyId} left, setting maximum size to 100`);
                 }
 
@@ -192,7 +193,7 @@ class TabOps {
         }
 
         if (!panelContainsTab) {
-            if (window.debug) {
+            if (debugMode) {
                 console.log(`Attempting to move ${state.view.name} to ${nodeParentId}`);
             }
 
@@ -221,7 +222,7 @@ class TabOps {
                 childs &&
                 Array.isArray(childs.content)
             ) {
-                if (window.debug === true) {
+                if (debugMode) {
                     console.log("Move tab between child subpanels of the same parent");
                 }
 
@@ -233,7 +234,7 @@ class TabOps {
                 state.view.parent !== nodeParentId &&
                 layout.some((panel) => panel.childs.content?.some((sub) => sub.paneKeyId === nodeParentId))
             ) {
-                if (window.debug === true) {
+                if (debugMode) {
                     console.log("Move tab from parent to a child subpanel of a different parent");
                 }
 
@@ -393,9 +394,7 @@ class TabOps {
                 return;
         }
 
-        // All cleanup and normalization handled by utility
-
-        if (window.debug) {
+        if (debugMode) {
             console.log("Creating panel from:", srcParentKeyId);
             console.log("Dropzone:", dropZone);
         }

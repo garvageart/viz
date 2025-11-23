@@ -1,6 +1,7 @@
 import VizSubPanelData from "./subpanel.svelte";
 import VizView from "$lib/views/views.svelte";
 import { Content } from "./subpanel.svelte";
+import { debugMode } from "$lib/states/index.svelte";
 
 /**
  * Normalizes sizes for all content groups within panels
@@ -43,7 +44,7 @@ export function removeEmptyContent(panel: VizSubPanelData, contentIndex: number)
         return false;
     }
 
-    if (window.debug) {
+    if (debugMode) {
         console.log(`Removing empty content group ${content.paneKeyId}`);
     }
 
@@ -69,7 +70,7 @@ export function removeEmptyPanel(panels: VizSubPanelData[], panelIndex: number):
         return false;
     }
 
-    if (window.debug) {
+    if (debugMode) {
         console.log(`Removing empty panel ${panel.paneKeyId}`);
     }
 

@@ -18,7 +18,7 @@
 	import AssetsShell from "$lib/components/AssetsShell.svelte";
 	import VizViewContainer from "$lib/components/panels/VizViewContainer.svelte";
 	import SearchInput from "$lib/components/SearchInput.svelte";
-	import { modal, sort } from "$lib/states/index.svelte";
+	import { debugMode, modal, sort } from "$lib/states/index.svelte";
 	import type { AssetGridArray } from "$lib/types/asset.js";
 	import { SUPPORTED_IMAGE_TYPES, SUPPORTED_RAW_FILES, type SupportedImageTypes } from "$lib/types/images";
 	import hotkeys from "hotkeys-js";
@@ -77,7 +77,7 @@
 		const currentPath = `/collections/${loadedData.uid}`;
 		const newName = localDataUpdates.name;
 
-		if (window.debug) {
+		if (debugMode) {
 			console.log("Syncing tab name:", newName, "for path:", currentPath);
 		}
 
@@ -86,7 +86,7 @@
 			// Check panel's direct views
 			for (const view of panel.views) {
 				if (view.path === currentPath) {
-					if (window.debug) {
+					if (debugMode) {
 						console.log("Found matching view in panel.views, updating from:", view.name, "to:", newName);
 					}
 
@@ -99,7 +99,7 @@
 				for (const content of panel.childs.content) {
 					for (const view of content.views) {
 						if (view.path === currentPath) {
-							if (window.debug) {
+							if (debugMode) {
 								console.log("Found matching view in content.views, updating from:", view.name, "to:", newName);
 							}
 

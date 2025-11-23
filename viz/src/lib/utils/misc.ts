@@ -1,4 +1,5 @@
-import { dev } from "$app/environment";
+import { browser } from "$app/environment";
+import type { Cookies } from '@sveltejs/kit';
 
 export const sleep = (time: number) => new Promise(resolve => setTimeout(resolve, time));
 
@@ -70,6 +71,7 @@ export function isObject(obj: any) {
 export class VizLocalStorage<V = string> {
     key: string;
     value: V | null = null;
+    private prefix = "viz";
 
     constructor(key: string, value?: V) {
         this.key = key;
@@ -80,10 +82,7 @@ export class VizLocalStorage<V = string> {
     }
 
     get = (): V | null => {
-        if (window.debug) {
-            console.info(`getting "viz:${this.key}" from local storage`);
-        }
-        const item = localStorage.getItem("viz:" + this.key);
+        const item = localStorage.getItem(this.prefix + ":" + this.key);
 
         if (!item || item === "undefined") {
             return null;
@@ -105,10 +104,6 @@ export class VizLocalStorage<V = string> {
     };
 
     set = (value: V) => {
-        if (window.debug) {
-            console.info(`saving "viz:${this.key}" to local storage`);
-        }
-
         this.value = value;
         let tempStr: string;
 
@@ -118,11 +113,83 @@ export class VizLocalStorage<V = string> {
             tempStr = value as unknown as string;
         }
 
-        localStorage.setItem("viz:" + this.key, tempStr);
+        localStorage.setItem(this.prefix + ":" + this.key, tempStr);
     };
 
     delete = () => {
-        localStorage.removeItem("viz:" + this.key);
+        localStorage.removeItem(this.prefix + ":" + this.key);
+    };
+}
+
+export class VizCookieStorage<V = string> {
+    key: string;
+    prefix = "viz";
+    private serverCookies: Cookies | null = null;
+
+    constructor(key: string, cookies?: Cookies) {
+        this.key = key;
+
+        if (!browser && cookies) {
+            this.serverCookies = cookies;
+        }
+    }
+
+    get = (): V | null => {
+        const key = this.prefix + ":" + this.key;
+        let item: string | null = null;
+        if (this.serverCookies) {
+            item = this.serverCookies.get(key) || null;
+        } else if (browser) {
+            const match = document.cookie.match(new RegExp('(^| )' + key + '=([^;]+)'));
+            item = match ? decodeURIComponent(match[2]) : null;
+        }
+
+        if (!item || item === "undefined") {
+            return null;
+        }
+
+        if ((item?.startsWith("{") && item?.endsWith("}")) || (item?.startsWith("[") && item?.endsWith("]"))) {
+            return JSON.parse(item) as V;
+        }
+
+        if (item === "true" || item === "false") {
+            if (item === "true") {
+                return true as V;
+            } else {
+                return false as V;
+            }
+        }
+
+        return item !== null ? item as V : null;
+    };
+
+    set = (value: V, options: { path?: string; maxAge?: number; sameSite?: 'strict' | 'lax' | 'none'; } = {}) => {
+        const key = this.prefix + ":" + this.key;
+        const { path = '/', maxAge = 31536000, sameSite = 'lax' } = options;
+        let valueStr: string;
+
+        if (isObject(value)) {
+            valueStr = JSON.stringify(value);
+        } else {
+            valueStr = String(value);
+        }
+
+        if (this.serverCookies) {
+            this.serverCookies.set(key, valueStr, { path, maxAge, sameSite });
+        } else if (browser) {
+            document.cookie = `${key}=${encodeURIComponent(valueStr)}; path=${path}; max-age=${maxAge}; SameSite=${sameSite}`;
+        }
+    };
+
+    delete = (options: { path?: string; } = {}) => {
+        const key = this.prefix + ":" + this.key;
+        const { path = '/' } = options;
+
+        if (this.serverCookies) {
+            this.serverCookies.delete(key, { path });
+        } else if (browser) {
+            document.cookie = `${key}=; path=${path}; max-age=0`;
+        }
     };
 }
 

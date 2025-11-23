@@ -3,8 +3,7 @@
 	import { page } from "$app/state";
 	import { CLIENT_IS_PRODUCTION } from "$lib/constants";
 	import { performSearch } from "$lib/search/execute";
-	import { search, user, theme, toggleTheme } from "$lib/states/index.svelte";
-	import { VizLocalStorage } from "$lib/utils/misc";
+	import { search, user, theme, toggleTheme, debugMode, debugState } from "$lib/states/index.svelte";
 	import hotkeys from "hotkeys-js";
 	import { onMount } from "svelte";
 	import type { SvelteHTMLElements } from "svelte/elements";
@@ -14,23 +13,9 @@
 	import { SUPPORTED_IMAGE_TYPES, SUPPORTED_RAW_FILES, type SupportedImageTypes } from "$lib/types/images";
 	import OpenAccountPanel from "./AccountPanel.svelte";
 	import AppMenu from "./AppMenu.svelte";
+	import { de } from "@faker-js/faker";
 
 	let { ...props }: SvelteHTMLElements["header"] = $props();
-
-	// eventually this will move to a different page with a different way of enabling, this is just temporary
-	const storeDebug = new VizLocalStorage<boolean>("debugMode");
-	let devEnabled = $state(storeDebug.get() === null ? false : storeDebug.get()) as boolean;
-
-	// i'd probably forget to remove this in prod setting so just check lmao
-	if (dev || !CLIENT_IS_PRODUCTION) {
-		$effect(() => {
-			console.log("Debug mode is", devEnabled ? "enabled" : "disabled");
-			storeDebug.set(devEnabled!);
-			if (window.debug !== devEnabled) {
-				window.debug = devEnabled;
-			}
-		});
-	}
 
 	onMount(() => {
 		if (page.url.pathname !== "/search") {
@@ -60,7 +45,7 @@
 	// Ctrl/Cmd+I toggles dev mode
 	hotkeys("ctrl+i, command+i", (e) => {
 		e.preventDefault();
-		devEnabled = !devEnabled;
+		debugState.toggle();
 	});
 
 	// Ctrl/Cmd+K toggles focus on the search input.
@@ -152,8 +137,14 @@
 			<span style="font-size: 0.75rem; font-weight: 500;"> Upload </span>
 		</button>
 		{#if dev || !CLIENT_IS_PRODUCTION}
-			<button id="debug-button" class="header-button" aria-label="Toggle Debug Mode" onclick={() => (devEnabled = !devEnabled)}>
-				<span class="debug-mode-text">{devEnabled ? "ON" : "OFF"}</span>
+			<button
+				id="debug-button"
+				class="header-button"
+				aria-label="Toggle Debug Mode"
+				onclick={() => debugState.toggle()}
+				title="Toggle Debug Mode"
+			>
+				<span class="debug-mode-text">{debugState.value ? "ON" : "OFF"}</span>
 				<MaterialIcon iconName="bug_report" />
 			</button>
 		{/if}

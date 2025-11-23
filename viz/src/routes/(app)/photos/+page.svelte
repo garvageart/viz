@@ -25,6 +25,7 @@
 	import { goto, invalidateAll } from "$app/navigation";
 	import ImageLightbox from "$lib/components/ImageLightbox.svelte";
 	import Button from "$lib/components/Button.svelte";
+	import { debugMode } from "$lib/states/index.svelte.js";
 
 	let { data } = $props();
 
@@ -296,7 +297,7 @@
 
 				const fileRes = await getImageFile(uid);
 				if (fileRes.status === 304) {
-					if (window.debug) {
+					if (debugMode) {
 						console.log(`Image ${uid} not modified, using cached version for download`);
 					}
 					return;
