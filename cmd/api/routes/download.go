@@ -249,8 +249,8 @@ func DownloadRouter(db *gorm.DB, logger *slog.Logger) *chi.Mux {
 
 		// Stream ZIP using a pipe to avoid buffering the entire archive in memory
 		var filename string
-		if body.Filename != nil {
-			filename = *body.Filename
+		if body.FileName != nil {
+			filename = *body.FileName
 		}
 		streamZipResponse(res, req, db, logger, body.Uids, filename)
 	})

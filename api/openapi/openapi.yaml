@@ -419,14 +419,7 @@ paths:
         content:
           multipart/form-data:
             schema:
-              type: object
-              properties:
-                file_name:
-                  type: string
-                data:
-                  type: string
-                  format: binary
-              required: [file_name, data]
+              $ref: "#/components/schemas/ImageUploadRequest"
       responses:
         "200":
           description: Image already exists (duplicate)
@@ -1638,11 +1631,12 @@ components:
           type: string
       required: [message]
 
-    ImageUploadFile:
+    ImageUploadRequest:
       type: object
       properties:
         data:
           type: string
+          format: binary
         file_name:
           type: string
         checksum:
@@ -1654,6 +1648,9 @@ components:
       properties:
         uid:
           type: string
+        metadata:
+          type: object
+          additionalProperties: true
       required: [uid]
 
     WorkerRegisterRequest:

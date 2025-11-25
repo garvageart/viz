@@ -166,8 +166,16 @@ export type ImagesPage = {
     count?: number;
     items: ImagesResponse[];
 };
+export type ImageUploadRequest = {
+    data: Blob;
+    file_name: string;
+    checksum?: string;
+};
 export type ImageUploadResponse = {
     uid: string;
+    metadata?: {
+        [key: string]: any;
+    };
 };
 export type DeleteAssetsResponse = {
     results: {
@@ -248,7 +256,7 @@ export type DeleteImagesResponse = {
 };
 export type DownloadRequest = {
     uids: string[];
-    filename?: string;
+    file_name?: string;
 };
 export type SignDownloadRequest = {
     /** Array of image UIDs to include in the download token */
@@ -643,10 +651,7 @@ export function listImages({ limit, page }: {
 /**
  * Upload an image (multipart)
  */
-export function uploadImage(body: {
-    filename: string;
-    data: Blob;
-}, opts?: Oazapfts.RequestOpts) {
+export function uploadImage(imageUploadRequest: ImageUploadRequest, opts?: Oazapfts.RequestOpts) {
     return oazapfts.fetchJson<{
         status: 200;
         data: ImageUploadResponse;
@@ -662,7 +667,7 @@ export function uploadImage(body: {
     }>("/images", oazapfts.multipart({
         ...opts,
         method: "POST",
-        body
+        body: imageUploadRequest
     }));
 }
 /**

@@ -181,7 +181,7 @@ type DeleteImagesResponse struct {
 
 // DownloadRequest defines model for DownloadRequest.
 type DownloadRequest struct {
-	Filename *string  `json:"filename,omitempty"`
+	FileName *string  `json:"file_name,omitempty"`
 	Uids     []string `json:"uids"`
 }
 
@@ -319,9 +319,17 @@ type ImageUpdate struct {
 	Private *bool   `json:"private,omitempty"`
 }
 
+// ImageUploadRequest defines model for ImageUploadRequest.
+type ImageUploadRequest struct {
+	Checksum *string            `json:"checksum,omitempty"`
+	Data     openapi_types.File `json:"data"`
+	FileName string             `json:"file_name"`
+}
+
 // ImageUploadResponse defines model for ImageUploadResponse.
 type ImageUploadResponse struct {
-	Uid string `json:"uid"`
+	Metadata *map[string]interface{} `json:"metadata,omitempty"`
+	Uid      string                  `json:"uid"`
 }
 
 // ImagesPage defines model for ImagesPage.
@@ -618,12 +626,6 @@ type ListImagesParams struct {
 	Page *int `form:"page,omitempty" json:"page,omitempty"`
 }
 
-// UploadImageMultipartBody defines parameters for UploadImage.
-type UploadImageMultipartBody struct {
-	Data     openapi_types.File `json:"data"`
-	Filename string             `json:"filename"`
-}
-
 // UploadImageByUrlTextBody defines parameters for UploadImageByUrl.
 type UploadImageByUrlTextBody = string
 
@@ -718,7 +720,7 @@ type SendToWSClientJSONRequestBody = WSBroadcastRequest
 type DeleteImagesBulkJSONRequestBody DeleteImagesBulkJSONBody
 
 // UploadImageMultipartRequestBody defines body for UploadImage for multipart/form-data ContentType.
-type UploadImageMultipartRequestBody UploadImageMultipartBody
+type UploadImageMultipartRequestBody = ImageUploadRequest
 
 // UploadImageByUrlTextRequestBody defines body for UploadImageByUrl for text/plain ContentType.
 type UploadImageByUrlTextRequestBody = UploadImageByUrlTextBody

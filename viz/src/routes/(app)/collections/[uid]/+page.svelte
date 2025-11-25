@@ -391,7 +391,7 @@
 			const filename = `${collectionNameClean}-${DateTime.now().toFormat("ddMMyyyy_HHmmss")}.zip`;
 
 			// Use custom downloadImagesBlob function (properly handles binary responses)
-			const res = await downloadImagesBlob(token, { uids, filename });
+			const res = await downloadImagesBlob(token, { uids, file_name: filename });
 
 			if (res.status !== 200) {
 				const errMsg = res.data?.error ?? "Failed to download images";

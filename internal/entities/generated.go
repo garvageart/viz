@@ -380,18 +380,21 @@ type ImageUploadResponse struct {
 	DeletedAt gorm.DeletedAt `gorm:"index" json:"-"`
 	CreatedAt time.Time
 	UpdatedAt time.Time
-	Uid       string `gorm:"uniqueIndex"`
+	Metadata  *map[string]any `gorm:"serializer:json;type:JSONB"`
+	Uid       string          `gorm:"uniqueIndex"`
 }
 
 func (e ImageUploadResponse) DTO() dto.ImageUploadResponse {
 	return dto.ImageUploadResponse{
-		Uid: e.Uid,
+		Metadata: e.Metadata,
+		Uid:      e.Uid,
 	}
 }
 
 func ImageUploadResponseFromDTO(d dto.ImageUploadResponse) ImageUploadResponse {
 	return ImageUploadResponse{
-		Uid: d.Uid,
+		Metadata: d.Metadata,
+		Uid:      d.Uid,
 	}
 }
 

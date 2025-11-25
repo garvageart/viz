@@ -33,17 +33,12 @@ import (
 	"imagine/internal/jobs/workers"
 	libos "imagine/internal/os"
 	"imagine/internal/uid"
+	"imagine/internal/utils"
 )
 
 type ImageUpload struct {
 	Name    string `json:"name,omitempty"`
 	Private bool   `json:"private"`
-}
-
-type ImageUploadFile struct {
-	Data     []byte `json:"data"`
-	FileName string `json:"filename"`
-	Checksum string `json:"checksum,omitempty"`
 }
 
 type ImageUploadError struct {
@@ -684,7 +679,7 @@ func ImagesRouter(db *gorm.DB, logger *slog.Logger) *chi.Mux {
 	})
 
 	router.Post("/", func(res http.ResponseWriter, req *http.Request) {
-		var fileImageUpload ImageUploadFile
+		var fileImageUpload dto.ImageUploadRequest
 
 		// Parse the multipart form in the request
 		err := req.ParseMultipartForm(10 << 20) // limit your max input length!
@@ -694,49 +689,60 @@ func ImagesRouter(db *gorm.DB, logger *slog.Logger) *chi.Mux {
 			return
 		}
 
-		fileImageUpload.FileName = req.FormValue("filename")
+		fileImageUpload.FileName = req.FormValue("file_name")
+		fileImageUpload.Checksum = utils.StringPtr(req.FormValue("checksum"))
 
-		file, _, err := req.FormFile("data")
+		// Get the file and header from the form
+		file, header, err := req.FormFile("data")
 		if err != nil {
 			render.Status(req, http.StatusBadRequest)
-			render.JSON(res, req, dto.ErrorResponse{Error: err.Error()})
+			render.JSON(res, req, dto.ErrorResponse{Error: "missing file data"})
 			return
 		}
 		defer file.Close()
-		fileImageUpload.Data, err = io.ReadAll(file)
+
+		// Initialize the DTO
+		(&fileImageUpload.Data).InitFromMultipart(header)
+
+		imageFileData, err := fileImageUpload.Data.Bytes()
 		if err != nil {
-			render.Status(req, http.StatusBadRequest)
-			render.JSON(res, req, dto.ErrorResponse{Error: "invalid file data"})
+			render.Status(req, http.StatusInternalServerError)
+			render.JSON(res, req, dto.ErrorResponse{Error: "failed to read file data"})
 			return
 		}
 
-		if fileImageUpload.FileName == "" || len(fileImageUpload.Data) == 0 {
+		if fileImageUpload.FileName == "" {
 			render.Status(req, http.StatusBadRequest)
-			render.JSON(res, req, dto.ErrorResponse{Error: "invalid request body"})
+			render.JSON(res, req, dto.ErrorResponse{Error: "missing filename"})
 			return
 		}
 
-		if fileImageUpload.Checksum != "" {
+		if len(imageFileData) == 0 {
+			render.Status(req, http.StatusBadRequest)
+			render.JSON(res, req, dto.ErrorResponse{Error: "empty file data"})
+			return
+		}
+
+		if fileImageUpload.Checksum != nil && *fileImageUpload.Checksum != "" {
 			hasher := sha1.New()
-			hasher.Write(fileImageUpload.Data)
+			hasher.Write(imageFileData)
 			calculatedChecksum := hex.EncodeToString(hasher.Sum(nil))
-			if fileImageUpload.Checksum != calculatedChecksum {
+			if *fileImageUpload.Checksum != calculatedChecksum {
 				res.WriteHeader(http.StatusBadRequest)
 				render.JSON(res, req, dto.ErrorResponse{Error: "checksum mismatch"})
 				return
 			}
 		}
 
-		libvipsImg, err := libvips.NewImageFromBuffer(fileImageUpload.Data, libvips.DefaultLoadOptions())
+		libvipsImg, err := libvips.NewImageFromBuffer(imageFileData, libvips.DefaultLoadOptions())
 		if err != nil {
 			render.Status(req, http.StatusBadRequest)
-			render.JSON(res, req, dto.ErrorResponse{Error: "invalid request body"})
+			render.JSON(res, req, dto.ErrorResponse{Error: "invalid image data"})
 			return
 		}
-
 		defer libvipsImg.Close()
-		imageEntity, err := createNewImageEntity(logger, fileImageUpload.FileName, libvipsImg)
 
+		imageEntity, err := createNewImageEntity(logger, fileImageUpload.FileName, libvipsImg)
 		if err != nil {
 			libhttp.ServerError(res, req, err, logger, nil,
 				"",
@@ -749,22 +755,21 @@ func ImagesRouter(db *gorm.DB, logger *slog.Logger) *chi.Mux {
 		imageEntity.UploadedByID = &authUser.Uid
 
 		var checksum string
-		if fileImageUpload.Checksum != "" {
-			checksum = fileImageUpload.Checksum
+		if fileImageUpload.Checksum != nil && *fileImageUpload.Checksum != "" {
+			checksum = *fileImageUpload.Checksum
 		} else {
 			hasher := sha1.New()
-			if _, err := hasher.Write(fileImageUpload.Data); err != nil {
+			if _, err := hasher.Write(imageFileData); err != nil {
 				libhttp.ServerError(res, req, err, logger, nil,
 					"",
 					"Failed to create image",
 				)
 				return
 			}
-
 			checksum = hex.EncodeToString(hasher.Sum(nil))
 		}
 
-		fileSize := int64(len(fileImageUpload.Data))
+		fileSize := int64(len(imageFileData))
 		imageEntity.ImageMetadata.FileSize = &fileSize
 		imageEntity.ImageMetadata.Checksum = checksum
 
@@ -784,7 +789,6 @@ func ImagesRouter(db *gorm.DB, logger *slog.Logger) *chi.Mux {
 
 		logger.Info("adding images to database", slog.String("id", imageEntity.Uid))
 		dbCreateTx := db.Create(&imageEntity)
-
 		if dbCreateTx.Error != nil {
 			libhttp.ServerError(res, req, dbCreateTx.Error, logger, nil,
 				"",
@@ -798,7 +802,7 @@ func ImagesRouter(db *gorm.DB, logger *slog.Logger) *chi.Mux {
 			Image: *imageEntity,
 		}
 
-		err = images.SaveImage(fileImageUpload.Data, imageEntity.Uid, imageEntity.ImageMetadata.FileName)
+		err = images.SaveImage(imageFileData, imageEntity.Uid, imageEntity.ImageMetadata.FileName)
 		if err != nil {
 			libhttp.ServerError(res, req, err, logger, nil,
 				"",
@@ -807,8 +811,7 @@ func ImagesRouter(db *gorm.DB, logger *slog.Logger) *chi.Mux {
 			return
 		}
 
-		_, err = jobs.Enqueue(db, workers.TopicImageProcess, workerJob, nil, &imageEntity.Uid)
-
+		jobUid, err := jobs.Enqueue(db, workers.TopicImageProcess, workerJob, nil, &imageEntity.Uid)
 		if err != nil {
 			libhttp.ServerError(res, req, err, logger, nil,
 				"",
@@ -820,7 +823,14 @@ func ImagesRouter(db *gorm.DB, logger *slog.Logger) *chi.Mux {
 		logger.Info("upload images success", slog.String("id", imageEntity.Uid))
 
 		render.Status(req, http.StatusCreated)
-		render.JSON(res, req, dto.ImageUploadResponse{Uid: imageEntity.Uid})
+		render.JSON(res, req, dto.ImageUploadResponse{
+			Uid: imageEntity.Uid,
+			Metadata: &map[string]interface{}{
+				"job_uid": jobUid, 
+				"file_name": fileImageUpload.FileName,
+				"duplicate": dupErr == nil,
+			},
+		})
 	})
 
 	// TODO: either this should be a config option or removed entirely.
