@@ -3,6 +3,7 @@ package images
 import (
 	"context"
 	"crypto/sha1"
+	"errors"
 	"fmt"
 	"os"
 	"path/filepath"
@@ -16,6 +17,12 @@ import (
 
 const (
 	TempTransformPrefix = "tmp-transform-"
+)
+
+const (
+	CacheErrTransformNotFound = "cache: transform not found"
+	CacheErrTransformExists   = "cache: transform already exists"
+	CacheErrTransformFailed   = "cache: transform failed"
 )
 
 // cacheFileName returns the filename for a given key and extension (sha1 hex)
@@ -50,22 +57,43 @@ func CacheFilePath(uid string, key string, ext string) (string, error) {
 	return filepath.Join(dir, cacheFileName(key, ext)), nil
 }
 
-// ReadCachedTransform returns the cached bytes if present (exists==true). If not present exists==false.
-func ReadCachedTransform(uid string, key string, ext string) (data []byte, exists bool, err error) {
-	path, err := CacheFilePath(uid, key, ext)
+// FindCachedTransform returns the path to the cached transform if it exists.
+// If not present, exists==false.
+func FindCachedTransform(uid string, key string, ext string) (path string, exists bool, err error) {
+	path, err = CacheFilePath(uid, key, ext)
 	if err != nil {
-		return nil, false, err
+		return "", false, err
+	}
+
+	_, err = os.Stat(path)
+	if err != nil {
+		if os.IsNotExist(err) {
+			return "", false, nil
+		}
+
+		return "", false, err
+	}
+
+	return path, true, nil
+}
+
+// ReadCachedTransform reads the cached transform bytes for the given uid/key/ext.
+func ReadCachedTransform(uid string, key string, ext string) (data []byte, err error) {
+	path, ok, err := FindCachedTransform(uid, key, ext)
+	if err != nil {
+		return nil, err
+	}
+
+	if !ok {
+		return nil, errors.New(CacheErrTransformNotFound)
 	}
 
 	b, err := os.ReadFile(path)
 	if err != nil {
-		if os.IsNotExist(err) {
-			return nil, false, nil
-		}
-		return nil, false, err
+		return nil, err
 	}
 
-	return b, true, nil
+	return b, nil
 }
 
 // WriteCachedTransform writes bytes to a temp file then renames into place atomically.

@@ -421,12 +421,12 @@ paths:
             schema:
               type: object
               properties:
-                filename:
+                file_name:
                   type: string
                 data:
                   type: string
                   format: binary
-              required: [filename, data]
+              required: [file_name, data]
       responses:
         "200":
           description: Image already exists (duplicate)
@@ -592,7 +592,7 @@ paths:
             Content-Disposition:
               schema:
                 type: string
-              description: Attachment header with filename
+              description: Attachment header with file_name
             ETag:
               schema:
                 type: string
@@ -1638,6 +1638,17 @@ components:
           type: string
       required: [message]
 
+    ImageUploadFile:
+      type: object
+      properties:
+        data:
+          type: string
+        file_name:
+          type: string
+        checksum:
+          type: string
+      required: [data, file_name]
+
     ImageUploadResponse:
       type: object
       properties:
@@ -1905,7 +1916,7 @@ components:
           type: array
           items:
             type: string
-        filename:
+        file_name:
           type: string
       required: [uids]
 

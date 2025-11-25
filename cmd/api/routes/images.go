@@ -8,7 +8,6 @@ import (
 	"fmt"
 	"io"
 	"log/slog"
-	"math"
 	"net/http"
 	"net/url"
 	"os"
@@ -17,8 +16,6 @@ import (
 	"strconv"
 	"strings"
 	"time"
-
-	"golang.org/x/sync/singleflight"
 
 	"github.com/go-chi/chi/v5"
 	"github.com/go-chi/render"
@@ -37,9 +34,6 @@ import (
 	libos "imagine/internal/os"
 	"imagine/internal/uid"
 )
-
-// transformGroup coalesces concurrent identical transform requests to avoid duplicate work
-var transformGroup singleflight.Group
 
 type ImageUpload struct {
 	Name    string `json:"name,omitempty"`
@@ -257,11 +251,12 @@ func ImagesRouter(db *gorm.DB, logger *slog.Logger) *chi.Mux {
 	// TODO TODO: Finalize route name. "/file/" isn't exactly honest in my opinion
 	router.Get("/{uid}/file", func(res http.ResponseWriter, req *http.Request) {
 		uid := chi.URLParam(req, "uid")
-
-		formatParam := req.FormValue("format")
-		widthParam := req.FormValue("w")
-		heightParam := req.FormValue("h")
-		qualityParam := req.FormValue("quality")
+		params, err := imageops.ParseTransformParams(req.URL.Path)
+		if err != nil {
+			render.Status(req, http.StatusBadRequest)
+			render.JSON(res, req, dto.ErrorResponse{Error: "invalid transform parameters"})
+			return
+		}
 
 		// Explicitly exclude soft-deleted images
 		tx := db.Model(&entities.Image{}).Where("uid = ? AND deleted_at IS NULL", uid)
@@ -297,7 +292,9 @@ func ImagesRouter(db *gorm.DB, logger *slog.Logger) *chi.Mux {
 			isPermanent = true
 		}
 
-		if formatParam == "" && widthParam == "" && heightParam == "" && qualityParam == "" {
+		hasTransformParams := params.Format != "" || params.Width > 0 || params.Height > 0 || params.Quality > 0 || params.Rotate > 0 || params.Flip != ""
+
+		if !hasTransformParams {
 			imageData, err := images.ReadImage(imgEnt.Uid, imgEnt.ImageMetadata.FileName)
 			if err != nil {
 				render.Status(req, http.StatusInternalServerError)
@@ -379,69 +376,69 @@ func ImagesRouter(db *gorm.DB, logger *slog.Logger) *chi.Mux {
 			return
 		}
 
-		width, wErr := strconv.ParseInt(widthParam, 10, 64)
-		height, hErr := strconv.ParseInt(heightParam, 10, 64)
-		quality, qErr := strconv.ParseInt(qualityParam, 10, 64)
-
-		// Convert quality to 0-10 instead of 0-100 for the Compression option
-		// NOTE: This is not final, depending on if this idea is understandable
-		// and accepted by the community/users on release
-		if formatParam == "png" {
-			quality = int64(math.Round(float64(quality/100) * 10))
-		}
-
-		if wErr != nil || hErr != nil || qErr != nil {
-			render.Status(req, http.StatusBadRequest)
-			render.JSON(res, req, dto.ErrorResponse{Error: "invalid request parameters"})
-			return
-		}
-
-		if width < 0 || height < 0 {
+		if params.Width < 0 || params.Height < 0 {
 			render.Status(req, http.StatusBadRequest)
 			render.JSON(res, req, dto.ErrorResponse{Error: "width/height cannot be negative"})
 			return
 		}
 
 		// Generate ETag for transformed image based on params BEFORE processing
-		transformETag := fmt.Sprintf("%s-%dx%d-%s-%d", imgEnt.ImageMetadata.Checksum, width, height, formatParam, quality)
+		transformETag := fmt.Sprintf("%s-%dx%d-%s-%d-%d-%s-%s", imgEnt.ImageMetadata.Checksum, params.Width, params.Height, params.Format, params.Quality, params.Rotate, params.Flip, params.Kernel)
 
-		// Check If-None-Match early to avoid expensive VIPS processing (skip for downloads)
-		if req.FormValue("download") != "1" {
-			if match := req.Header.Get("If-None-Match"); match == transformETag {
-				if isPermanent {
-					res.Header().Set("Cache-Control", "public, max-age=31536000, immutable")
-				} else {
-					res.Header().Set("Cache-Control", "public, max-age=604800, no-transform")
-				}
-				res.Header().Set("ETag", transformETag)
-				res.Header().Set("Last-Modified", imgEnt.UpdatedAt.UTC().Format(http.TimeFormat))
-				res.WriteHeader(http.StatusNotModified)
-				return
-			}
-		}
-
-		// Use singleflight to coalesce concurrent identical transform requests.
-		// Include the image UID in the key so coalescing only happens for the
-		// same image+params.
-		key := fmt.Sprintf("%s-%s", imgEnt.Uid, transformETag)
-
-		// Track if this is the first/unique transform or a coalesced (shared) one
-
-		// check for existing transform first
-		ext := formatParam
+		ext := params.Format
 		if ext == "" {
 			ext = imgEnt.ImageMetadata.FileType
 		}
 
-		if cached, ok, cerr := images.ReadCachedTransform(imgEnt.Uid, transformETag, ext); cerr == nil && ok {
-			// Serve cached bytes
+		// If this request is for a permanent path (stored in ImagePaths), try to serve
+		// the pre-generated cached transform and do not attempt on-demand processing.
+		if isPermanent {
+			cached, cerr := images.ReadCachedTransform(imgEnt.Uid, transformETag, ext)
+			if cerr != nil {
+				if cerr.Error() == images.CacheErrTransformNotFound {
+					// Cache miss for a permanent transform — enqueue background job
+					logger.Info("permanent transform cache miss; enqueueing image process job", slog.String("uid", imgEnt.Uid), slog.String("tag", transformETag))
+
+					workerJob := &workers.ImageProcessJob{Image: imgEnt}
+					if _, err := jobs.Enqueue(db, workers.TopicImageProcess, workerJob, nil, &imgEnt.Uid); err != nil {
+						logger.Warn("failed to enqueue transform generation", slog.Any("err", err), slog.String("uid", imgEnt.Uid))
+						render.Status(req, http.StatusInternalServerError)
+						render.JSON(res, req, dto.ErrorResponse{Error: "failed to enqueue transform generation"})
+						return
+					}
+
+					render.Status(req, http.StatusAccepted)
+					render.JSON(res, req, dto.ErrorResponse{Error: "transform queued"})
+					return
+				}
+
+				// Other cache read error
+				logger.Warn("failed to read cached permanent transform", slog.Any("error", cerr))
+				render.Status(req, http.StatusInternalServerError)
+				render.JSON(res, req, dto.ErrorResponse{Error: "failed to read cached transform"})
+				return
+			}
+
+			// Serve cached bytes with long-lived immutable cache headers
+			res.Header().Set("Content-Type", "image/"+ext)
+			res.Header().Set("Cache-Control", "public, max-age=31536000, immutable")
+			res.Header().Set("ETag", transformETag)
+			res.Header().Set("Last-Modified", imgEnt.UpdatedAt.UTC().Format(http.TimeFormat))
+			res.Header().Set("Content-Disposition", fmt.Sprintf("attachment; filename=\"%s\"", imgEnt.ImageMetadata.FileName))
+			res.Header().Set("Content-Length", fmt.Sprintf("%d", len(cached)))
+			render.Status(req, http.StatusOK)
+			res.Write(cached)
+			return
+		}
+
+		// On-demand transform: check cache first
+		cached, cerr := images.ReadCachedTransform(imgEnt.Uid, transformETag, ext)
+		if cerr == nil {
+			// Cache hit: serve cached file
+			logger.Debug("on-demand transform cache hit", slog.String("uid", imgEnt.Uid), slog.String("tag", transformETag))
 			if req.FormValue("download") != "1" {
 				if match := req.Header.Get("If-None-Match"); match == transformETag {
-					if isPermanent {
-						res.Header().Set("Cache-Control", "public, max-age=31536000, immutable")
-					} else {
-						res.Header().Set("Cache-Control", "public, max-age=604800, no-transform")
-					}
+					res.Header().Set("Cache-Control", "public, max-age=604800, no-transform")
 					res.Header().Set("ETag", transformETag)
 					res.Header().Set("Last-Modified", imgEnt.UpdatedAt.UTC().Format(http.TimeFormat))
 					res.WriteHeader(http.StatusNotModified)
@@ -450,11 +447,7 @@ func ImagesRouter(db *gorm.DB, logger *slog.Logger) *chi.Mux {
 			}
 
 			res.Header().Set("Content-Type", "image/"+ext)
-			if isPermanent || req.URL.Query().Get("v") != "" {
-				res.Header().Set("Cache-Control", "public, max-age=31536000, immutable")
-			} else {
-				res.Header().Set("Cache-Control", "public, max-age=604800, no-transform")
-			}
+			res.Header().Set("Cache-Control", "public, max-age=604800, no-transform")
 			res.Header().Set("ETag", transformETag)
 			res.Header().Set("Last-Modified", imgEnt.UpdatedAt.UTC().Format(http.TimeFormat))
 			res.Header().Set("Content-Disposition", fmt.Sprintf("attachment; filename=\"%s\"", imgEnt.ImageMetadata.FileName))
@@ -462,108 +455,42 @@ func ImagesRouter(db *gorm.DB, logger *slog.Logger) *chi.Mux {
 			res.WriteHeader(http.StatusOK)
 			res.Write(cached)
 			return
-		} else if cerr != nil {
-			// log but continue to attempt transform
+		}
+
+		if cerr.Error() != images.CacheErrTransformNotFound {
 			logger.Warn("failed to read cached transform", slog.Any("error", cerr))
-		}
-
-		resVal, err, shared := transformGroup.Do(key, func() (any, error) {
-			// Read the original image file directly
-			originalData, err := images.ReadImage(imgEnt.Uid, imgEnt.ImageMetadata.FileName)
-			if err != nil {
-				logger.Error("failed to read image data", slog.Any("error", err))
-				return nil, fmt.Errorf("failed to read image data: %w", err)
-			}
-
-			// Load into libvips
-			libvipsImg, err := libvips.NewImageFromBuffer(originalData, libvips.DefaultLoadOptions())
-			if err != nil {
-				logger.Error("failed to create libvips image", slog.Any("error", err))
-				return nil, fmt.Errorf("failed to create libvips image: %w", err)
-			}
-			defer libvipsImg.Close()
-
-			err = libvipsImg.Autorot(&libvips.AutorotOptions{}) // non-fatal
-			if err != nil {
-				logger.Warn("failed to auto-rotate image", slog.Any("error", err))
-			}
-
-			// Resize with libvips
-			if err := libvipsImg.Resize(float64(width)/float64(libvipsImg.Width()), &libvips.ResizeOptions{Kernel: libvips.KernelLanczos3}); err != nil {
-				logger.Error("failed to resize image", slog.Any("error", err))
-				return nil, fmt.Errorf("failed to resize image: %w", err)
-			}
-
-			var imageData []byte
-
-			switch formatParam {
-			case "webp":
-				imageData, err = libvipsImg.WebpsaveBuffer(&libvips.WebpsaveBufferOptions{Q: int(quality)})
-			case "png":
-				imageData, err = libvipsImg.PngsaveBuffer(&libvips.PngsaveBufferOptions{Filter: libvips.PngFilterNone, Interlace: false, Palette: false, Compression: int(quality)})
-			case "jpg", "jpeg":
-				imageData, err = libvipsImg.JpegsaveBuffer(&libvips.JpegsaveBufferOptions{Q: int(quality), Interlace: true})
-			case "avif", "heif":
-				imageData, err = libvipsImg.HeifsaveBuffer(&libvips.HeifsaveBufferOptions{Q: int(quality), Bitdepth: 8, Effort: 5, Lossless: false})
-			default:
-				imageData, err = libvipsImg.RawsaveBuffer(&libvips.RawsaveBufferOptions{Keep: libvips.KeepAll})
-				formatParam = string(libvipsImg.Format())
-			}
-
-			if err != nil {
-				return nil, fmt.Errorf("failed to encode image: %w", err)
-			}
-
-			return imageData, nil
-		})
-
-
-		// Log whether this transform was coalesced (shared) or unique (first)
-		if shared {
-			logger.Debug("transformGroup: coalesced (shared) transform", slog.String("key", key), slog.String("uid", imgEnt.Uid))
-		} else {
-			logger.Debug("transformGroup: unique (first) transform", slog.String("key", key), slog.String("uid", imgEnt.Uid))
-		}
-
-		if err != nil {
-			logger.Error("image transform failed", slog.Any("error", err))
 			render.Status(req, http.StatusInternalServerError)
-			render.JSON(res, req, dto.ErrorResponse{Error: "failed to process image"})
+			render.JSON(res, req, dto.ErrorResponse{Error: "failed to read cached transform"})
 			return
 		}
 
-		imageData := resVal.([]byte)
+		// Cache miss: generate, cache, and serve
+		logger.Info("on-demand transform cache miss; generating", slog.String("uid", imgEnt.Uid), slog.String("tag", transformETag))
 
-		// Attempt to write cache asynchronously (best-effort). Use same ext as served.
-		go func(uid, tag, ext string, data []byte) {
-			path, perr := images.CacheFilePath(uid, tag, ext)
-
-			var pathPtr *string
-			if perr == nil {
-				pathPtr = &path
-			}
-
-			logCacheGroup := slog.Group("cache", slog.Any("path", pathPtr), slog.Any("ext", &ext), slog.Int("bytes", len(data)))
-			logger.Debug("writing transform cache (async)")
-
-			if err := images.WriteCachedTransform(uid, tag, ext, data); err != nil {
-				logger.With(logCacheGroup).With(slog.Any("err", err)).Warn("failed to write transform cache")
-			} else {
-				logger.Debug("wrote transform cache", logCacheGroup)
-			}
-		}(imgEnt.Uid, transformETag, ext, imageData)
-
-		// Set response headers for transform result
-		res.Header().Set("Content-Type", "image/"+formatParam)
-		// If this request matches a stored image path or includes an explicit
-		// fingerprint `v=`, serve with immutable long-term caching. Otherwise
-		// use the shorter transform TTL.
-		if isPermanent || req.URL.Query().Get("v") != "" {
-			res.Header().Set("Cache-Control", "public, max-age=31536000, immutable")
-		} else {
-			res.Header().Set("Cache-Control", "public, max-age=604800, no-transform")
+		originalData, err := images.ReadImage(imgEnt.Uid, imgEnt.ImageMetadata.FileName)
+		if err != nil {
+			render.Status(req, http.StatusInternalServerError)
+			render.JSON(res, req, dto.ErrorResponse{Error: "failed to read original image"})
+			return
 		}
 
+		tresult, err := imageops.GenerateTransform(params, imgEnt, originalData)
+		if err != nil {
+			render.Status(req, http.StatusInternalServerError)
+			render.JSON(res, req, dto.ErrorResponse{Error: "failed to generate transform"})
+			return
+		}
+
+		// Write to cache
+		go func() {
+			if err := images.WriteCachedTransform(imgEnt.Uid, *tresult.TransformHash, ext, tresult.ImageData); err != nil {
+				logger.Warn("failed to write on-demand transform to cache", slog.Any("error", err))
+			}
+		}()
+
+		// Set response headers for transform result
+		res.Header().Set("Content-Type", "image/"+ext)
+		res.Header().Set("Cache-Control", "public, max-age=604800, no-transform")
 		res.Header().Set("ETag", transformETag)
 		res.Header().Set("Last-Modified", imgEnt.UpdatedAt.UTC().Format(http.TimeFormat))
 		res.Header().Set("Content-Disposition", fmt.Sprintf("attachment; filename=\"%s\"", imgEnt.ImageMetadata.FileName))
@@ -615,9 +542,9 @@ func ImagesRouter(db *gorm.DB, logger *slog.Logger) *chi.Mux {
 			}
 		}
 
-		res.Header().Set("Content-Length", strconv.Itoa(len(imageData)))
+		res.Header().Set("Content-Length", strconv.Itoa(len(tresult.ImageData)))
 		res.WriteHeader(http.StatusOK)
-		res.Write(imageData)
+		res.Write(tresult.ImageData)
 	})
 
 	router.Get("/{uid}/exif", func(res http.ResponseWriter, req *http.Request) {
