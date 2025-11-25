@@ -244,6 +244,14 @@
 >
 	<div class="image-lightbox-container">
 		<div class="image-container">
+			<button
+				id="lightbox-icon-close"
+				class="image-icon-buttons-shadow"
+				title="Close"
+				onclick={() => (lightboxImage = undefined)}
+			>
+				<MaterialIcon iconName="close" />
+			</button>
 			<div class="image-icon-buttons">
 				<button
 					class="image-icon-buttons-shadow"
@@ -359,6 +367,14 @@
 			background: transparent;
 			border: none;
 		}
+	}
+
+	#lightbox-icon-close {
+		position: absolute;
+		top: 1em;
+		left: 1em;
+		z-index: 10;
+		pointer-events: auto;
 	}
 
 	.image-icon-buttons-shadow {
