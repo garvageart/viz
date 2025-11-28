@@ -38,12 +38,7 @@ type APIServer struct {
 	*config.ImagineServer
 }
 
-// TODO: This will be the main API server and therefore will have a lot of routes.
-// This file and directory will be renamed to "api" and the parent directory to "servers" :)
-// Split the different routes into their own files depending on what they server
-// For example, a /user* route for the user data etc.
-
-// TODO TODO: Create a `createServer/Router` function that returns a router
+// TODO: Create a `createServer/Router` function that returns a router
 // with common defaults for each server type
 func (server APIServer) Launch(router *chi.Mux) *http.Server {
 	logLevel := server.LogLevel
@@ -62,7 +57,7 @@ func (server APIServer) Launch(router *chi.Mux) *http.Server {
 			return true
 		},
 		AllowedMethods: []string{"GET", "POST", "PUT", "PATCH", "OPTIONS", "DELETE"},
-		AllowedHeaders: []string{"Accept", "Authorization", "Content-Type", "X-CSRF-Token", "x-imagine-key"},
+		AllowedHeaders: []string{"Accept", "Authorization", "Content-Type", "X-CSRF-Token", libhttp.APIKeyName},
 		// Expose Content-Disposition so client JS can read filenames from responses across origins
 		ExposedHeaders:   []string{"Set-Cookie", "Content-Disposition"},
 		AllowCredentials: true,
@@ -70,6 +65,9 @@ func (server APIServer) Launch(router *chi.Mux) *http.Server {
 	}))
 	router.Use(middleware.AllowContentEncoding("deflate", "gzip"))
 	router.Use(middleware.RequestID)
+	router.Use(middleware.Recoverer)
+	router.Use(middleware.GetHead)
+	router.Use(middleware.Timeout(60 * time.Second))
 	// Note: AuthMiddleware is applied per-route, not globally
 
 	database := server.Database
@@ -242,8 +240,8 @@ func main() {
 	httpServer := apiServer.Launch(router)
 
 	// create a cancelable context used by background tasks
-	ctx, cancel := context.WithCancel(context.Background())
-	defer cancel()
+	ctx, globalCancel := context.WithCancel(context.Background())
+	defer globalCancel()
 
 	// Start transform cache GC if enabled in config.
 	if appConfig.Cache.GCEnabled {
@@ -253,7 +251,7 @@ func main() {
 	}
 
 	imageWorker := workers.NewImageWorker(client, apiServer.WSBroker)
-	xmpWorker := workers.NewXMPWorker(client, logger, apiServer.WSBroker)
+	xmpWorker := workers.NewXMPWorker(client, apiServer.WSBroker)
 	exifWorker := workers.NewExifWorker(client, apiServer.WSBroker)
 
 	// Run the job router in a goroutine so we can wait for shutdown signals here
@@ -275,7 +273,7 @@ func main() {
 		}
 	}
 
-	cancel()
+	globalCancel()
 
 	if jobs.Router != nil {
 		_ = jobs.Router.Close()
