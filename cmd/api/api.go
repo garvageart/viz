@@ -97,8 +97,9 @@ func (server APIServer) Launch(router *chi.Mux) *http.Server {
 
 	var libvipsLogHandler libvips.LoggingHandlerFunction = func(messageDomain string, messageLevel libvips.LogLevel, message string) {
 		switch messageLevel {
-		// TODO: Create log level `FATAL` I think
-		case libvips.LogLevelCritical, libvips.LogLevelError:
+		case libvips.LogLevelCritical:
+			imalog.Fatal(logger, fmt.Sprintf("%s: %s", messageDomain, message))
+		case libvips.LogLevelError:
 			logger.Error(fmt.Sprintf("%s: %s", messageDomain, message))
 		case libvips.LogLevelWarning:
 			logger.Warn(fmt.Sprintf("%s: %s", messageDomain, message))

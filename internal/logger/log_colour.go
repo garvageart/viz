@@ -90,10 +90,10 @@ func (h *Handler) Handle(ctx context.Context, r slog.Record) error {
 			level = colorize(ansi.LightBlue, level)
 		} else if r.Level < slog.LevelError {
 			level = colorize(ansi.LightYellow, level)
-		} else if r.Level <= slog.LevelError+1 {
-			level = colorize(ansi.LightRed, level)
-		} else if r.Level > slog.LevelError+1 {
+		} else if r.Level >= LevelFatal {
 			level = colorize(ansi.LightMagenta, level)
+		} else if r.Level >= slog.LevelError {
+			level = colorize(ansi.LightRed, level)
 		}
 	}
 

@@ -26,6 +26,8 @@ func GetLevelFromString(level string) slog.Level {
 		return slog.LevelWarn
 	case "error":
 		return slog.LevelError
+	case "fatal":
+		return LevelFatal
 	default:
 		return slog.LevelInfo
 	}
