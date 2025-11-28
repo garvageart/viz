@@ -31,7 +31,16 @@ require (
 	google.golang.org/api v0.232.0
 )
 
-require github.com/apapsch/go-jsonmerge/v2 v2.0.0 // indirect
+require (
+	github.com/Rican7/retry v0.3.1 // indirect
+	github.com/ThreeDotsLabs/watermill-redisstream v1.4.4
+	github.com/apapsch/go-jsonmerge/v2 v2.0.0 // indirect
+	github.com/dgryski/go-rendezvous v0.0.0-20200823014737-9f7001d12a5f // indirect
+	github.com/golang/protobuf v1.5.4 // indirect
+	github.com/redis/go-redis/v9 v9.17.1
+	github.com/vmihailenco/msgpack v4.0.4+incompatible // indirect
+	google.golang.org/appengine v1.6.8 // indirect
+)
 
 require (
 	github.com/cenkalti/backoff/v5 v5.0.3 // indirect
@@ -121,6 +130,6 @@ require (
 	google.golang.org/genproto/googleapis/api v0.0.0-20250505200425-f936aa4a68b2 // indirect
 	google.golang.org/genproto/googleapis/rpc v0.0.0-20250505200425-f936aa4a68b2 // indirect
 	google.golang.org/grpc v1.72.0 // indirect
-	google.golang.org/protobuf v1.36.8 // indirect
+	google.golang.org/protobuf v1.36.10 // indirect
 	gopkg.in/yaml.v3 v3.0.1
 )

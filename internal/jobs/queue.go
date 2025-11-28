@@ -2,18 +2,22 @@ package jobs
 
 import (
 	"context"
+	"crypto/tls"
 	"fmt"
+	"log/slog"
 	"maps"
 	"sync"
 	"time"
 
 	"github.com/ThreeDotsLabs/watermill"
+	"github.com/ThreeDotsLabs/watermill-redisstream/pkg/redisstream"
 	"github.com/ThreeDotsLabs/watermill/message"
 	"github.com/ThreeDotsLabs/watermill/message/router/middleware"
 	"github.com/ThreeDotsLabs/watermill/message/router/plugin"
 	"github.com/ThreeDotsLabs/watermill/pubsub/gochannel"
+	goredis "github.com/redis/go-redis/v9"
 
-	imalog "imagine/internal/logger"
+	"imagine/internal/config"
 )
 
 var (
@@ -24,9 +28,10 @@ var (
 )
 
 var (
-	PubSub *gochannel.GoChannel
-	Router *message.Router
-	Logger = watermill.NewSlogLogger(imalog.CreateLogger(imalog.SetupDefaultLogHandlers()))
+	Publisher  message.Publisher
+	Subscriber message.Subscriber
+	Router     *message.Router
+	Logger     watermill.LoggerAdapter
 )
 
 // GetRunningJobs returns the current number of running jobs.
@@ -46,17 +51,17 @@ func GetAllJobs() map[string]*Job {
 	return copy
 }
 
-// Publish is a wrapper around PubSub.Publish which tracks queued counts per topic.
+// Publish is a wrapper around Publisher.Publish which tracks queued counts per topic.
 func Publish(topic string, msg *message.Message) error {
-	if PubSub == nil {
-		return fmt.Errorf("pubsub not initialized")
+	if Publisher == nil {
+		return fmt.Errorf("publisher not initialized")
 	}
 
 	queuedCountsMu.Lock()
 	queuedCounts[topic] = queuedCounts[topic] + 1
 	queuedCountsMu.Unlock()
 
-	return PubSub.Publish(topic, msg)
+	return Publisher.Publish(topic, msg)
 }
 
 // JobCounts describes running and queued counts by topic.
@@ -103,7 +108,7 @@ func RegisterWorkers(workers ...*Worker) {
 		Router.AddConsumerHandler(
 			worker.Name,
 			topic,
-			PubSub,
+			Subscriber,
 			func(msg *message.Message) error {
 
 				cm.Acquire()
@@ -147,10 +152,66 @@ func RegisterWorkers(workers ...*Worker) {
 	}
 }
 
-func RunJobQueue(workers ...*Worker) {
+func RunJobQueue(cfg config.QueueConfig, logger *slog.Logger, workers ...*Worker) {
 	var err error
-	Router, err = message.NewRouter(message.RouterConfig{}, Logger)
+	Logger = watermill.NewSlogLogger(logger)
 
+	if cfg.Enabled {
+		address := fmt.Sprintf("%s:%d", cfg.Host, cfg.Port)
+		Logger.Info("Using Redis Streams for jobs", watermill.LogFields{
+			"address": address,
+		})
+
+		var tlsConfig *tls.Config
+		if cfg.UseTLS {
+			tlsConfig = &tls.Config{
+				InsecureSkipVerify: true,
+			}
+		}
+
+		redisClient := goredis.NewClient(&goredis.Options{
+			Addr:         address,
+			Username:     cfg.Username,
+			Password:     cfg.Password,
+			DB:           cfg.DB,
+			PoolSize:     cfg.PoolSize,
+			DialTimeout:  time.Duration(cfg.DialTimeoutSeconds) * time.Second,
+			ReadTimeout:  time.Duration(cfg.ReadTimeoutSeconds) * time.Second,
+			WriteTimeout: time.Duration(cfg.WriteTimeoutSeconds) * time.Second,
+			TLSConfig:    tlsConfig,
+		})
+
+		Publisher, err = redisstream.NewPublisher(
+			redisstream.PublisherConfig{
+				Client: redisClient,
+			},
+			Logger,
+		)
+		
+		if err != nil {
+			panic(err)
+		}
+
+		Subscriber, err = redisstream.NewSubscriber(
+			redisstream.SubscriberConfig{
+				Client:        redisClient,
+				ConsumerGroup: "imagine_workers",
+			},
+			Logger,
+		)
+
+		if err != nil {
+			panic(err)
+		}
+	} else {
+		Logger.Info("Using in-memory GoChannel for jobs", nil)
+		// Fallback to gochannel
+		gc := gochannel.NewGoChannel(gochannel.Config{}, Logger)
+		Publisher = gc
+		Subscriber = gc
+	}
+
+	Router, err = message.NewRouter(message.RouterConfig{}, Logger)
 	if err != nil {
 		panic(err)
 	}
@@ -159,29 +220,37 @@ func RunJobQueue(workers ...*Worker) {
 	// You can also close the router by just calling `r.Close()`.
 	Router.AddPlugin(plugin.SignalsHandler)
 
+	poisonQueue, err := middleware.PoisonQueue(Publisher, "poison_queue")
+	if err != nil {
+		panic(err)
+	}
+	
 	// Router level middleware are executed for every message sent to the router
 	Router.AddMiddleware(
 		// CorrelationID will copy the correlation id from the incoming message's metadata to the produced messages
 		middleware.CorrelationID,
 
+		middleware.Recoverer,
+
 		// The handler function is retried if it returns an error.
 		// After MaxRetries, the message is Nacked and it's up to the PubSub to resend it.
+
+		// This can be done better honestly,
+		// These sort of just fail and hope and fail and hope
+		// Like after the second fail you should kind of just let it go
+		// and the pubsub should decide based on the error if it's
+		// worth retrying or not
 		middleware.Retry{
 			MaxRetries:      3,
 			InitialInterval: time.Second * 2,
 			Logger:          Logger,
 		}.Middleware,
 
-		// Recoverer handles panics from handlers.
-		// In this case, it passes them as errors to the Retry middleware.
-		middleware.Recoverer,
+		poisonQueue,
 
-		// middleware.NewThrottle(3, time.Second*3).Middleware,
+		middleware.NewThrottle(10, time.Second).Middleware,
 	)
 
-	// For simplicity, we are using the gochannel Pub/Sub here,
-	// You can replace it with any Pub/Sub implementation, it will work the same.
-	PubSub = gochannel.NewGoChannel(gochannel.Config{}, Logger)
 	RegisterWorkers(workers...)
 
 	// Now that all handlers are registered, we're running the Router.
