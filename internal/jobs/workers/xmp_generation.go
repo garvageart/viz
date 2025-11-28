@@ -3,12 +3,12 @@ package workers
 import (
 	"encoding/json"
 	"fmt"
-	"log/slog"
 	"os"
 	"path/filepath"
 	"strings"
 	"time"
 
+	"github.com/ThreeDotsLabs/watermill"
 	"github.com/ThreeDotsLabs/watermill/message"
 	"github.com/trimmer-io/go-xmp/models/dc"
 	"github.com/trimmer-io/go-xmp/models/exif"
@@ -35,7 +35,7 @@ type XMPGenerationJob struct {
 }
 
 // NewXMPWorker creates a worker that generates XMP sidecar files
-func NewXMPWorker(db *gorm.DB, logger *slog.Logger, wsBroker *libhttp.WSBroker) *jobs.Worker {
+func NewXMPWorker(db *gorm.DB, wsBroker *libhttp.WSBroker) *jobs.Worker {
 	return jobs.NewWorker(JobTypeXMPGeneration, TopicXMPGeneration, "XMP Sidecar Generation", 2, func(msg *message.Message) error {
 		var job XMPGenerationJob
 		err := json.Unmarshal(msg.Payload, &job)
@@ -64,7 +64,7 @@ func NewXMPWorker(db *gorm.DB, logger *slog.Logger, wsBroker *libhttp.WSBroker) 
 			job.Image.ImageMetadata.FileName,
 		)
 
-		err = generateXMPSidecar(job.Image, logger, onProgress)
+		err = generateXMPSidecar(job.Image, onProgress)
 
 		if err != nil {
 			if wsBroker != nil {
@@ -95,9 +95,9 @@ func NewXMPWorker(db *gorm.DB, logger *slog.Logger, wsBroker *libhttp.WSBroker) 
 	)
 }
 
-
-func generateXMPSidecar(img entities.Image, logger *slog.Logger, onProgress func(step string, progress int)) error {
+func generateXMPSidecar(img entities.Image, onProgress func(step string, progress int)) error {
 	originalPath := images.GetImagePath(img.Uid, img.ImageMetadata.FileName)
+	logger := jobs.Logger
 
 	if _, err := os.Stat(originalPath); os.IsNotExist(err) {
 		return fmt.Errorf("original image file not found: %s", originalPath)
@@ -150,7 +150,10 @@ func generateXMPSidecar(img entities.Image, logger *slog.Logger, onProgress func
 		if img.Exif.Orientation != nil {
 			orientation, err := imageops.ConvertOrientation(*img.Exif.Orientation)
 			if err != nil {
-				logger.Error("Failed to convert orientation", "error", err)
+				logger.Error("Failed to convert orientation", err, watermill.LogFields{
+					"image_uid":   img.Uid,
+					"orientation": *img.Exif.Orientation,
+				})
 			} else {
 				tiffModel.Orientation = orientation
 			}
@@ -199,10 +202,10 @@ func generateXMPSidecar(img entities.Image, logger *slog.Logger, onProgress func
 
 	doc.Close()
 
-	logger.Info("generated XMP sidecar",
-		slog.String("image_uid", img.Uid),
-		slog.String("xmp_path", xmpPath),
-	)
+	logger.Info("generated XMP sidecar", watermill.LogFields{
+		"image_uid": img.Uid,
+		"xmp_path":  xmpPath,
+	})
 
 	if onProgress != nil {
 		onProgress("Complete", 100)
