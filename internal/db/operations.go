@@ -13,7 +13,7 @@ import (
 
 func (db *DB) Connect() (*gorm.DB, error) {
 	if db.Logger == nil {
-		db.Logger = SetupDatabaseLogger()
+		db.Logger = SetupDatabaseLogger(db.LogLevel)
 	}
 
 	logger := db.Logger
@@ -23,25 +23,22 @@ func (db *DB) Connect() (*gorm.DB, error) {
 	)
 
 	logger.Info("Connecting to Postgres...")
-
 	dsn := fmt.Sprintf("host=%s user=%s password=%s dbname=%s port=%d sslmode=disable", db.Address, db.User, db.Password, db.DatabaseName, db.Port)
+
 	client, err := gorm.Open(postgres.Open(dsn), &gorm.Config{
 		Logger: gormLogger,
 	})
+
 	if err != nil {
 		return client, err
 	}
 
 	logger.Info("Successfully connected to PostgresSQL", slog.Group("connection",
+		slog.String("user", db.User),
 		slog.String("address", db.Address),
 		slog.Int("port", db.Port),
 		slog.String("database", db.DatabaseName),
-		slog.String("table", db.TableNameString),
 	))
-
-	if db.TableNameString != "" {
-		db.Table = client.Table(db.TableNameString)
-	}
 
 	// Set the client to the `Client` field on the receiver to be used else where
 	db.Client = client
@@ -92,9 +89,8 @@ func (db *DB) Exists(dest interface{}, conds ...interface{}) (bool, error) {
 	return true, nil
 }
 
-func SetupDatabaseLogger() *slog.Logger {
+func SetupDatabaseLogger(logLevel slog.Level) *slog.Logger {
 	httpLogFileDefaults := imalog.LogFileDefaults
-	logLevel := imalog.DefaultLogLevel
 
 	// Setup file logger
 	logFileWriter := imalog.FileLog{

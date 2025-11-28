@@ -1,29 +1,48 @@
 {
-	"baseUrl": "les-is.online",
-	"servers": {
-		"api": {
-			"port": 7770,
-			"database": "images"
-		},
-		"auth": {
-			"port": 7771,
-			"database": "api"
-		},
-		"viz": {
-			"port": 7777
-		}
-	},
-	"logging": {
-		"level": "debug"
-	},
-	"base_directory": "./var",
-	"upload": {
-		"location": "library"
-	},
-	"database": {
-		"location": "database",
-		"username": "postgres",
-		"name": "imagine",
-		"port": 5432
-	}
+  "baseUrl": "les-is.online",
+  "servers": {
+    "api": {
+      "port": 7770,
+      "database": "images"
+    },
+    "auth": {
+      "port": 7771,
+      "database": "api"
+    },
+    "viz": {
+      "port": 7777
+    }
+  },
+  "logging": {
+    "level": "debug"
+  },
+  "base_directory": "./var",
+  "upload": {
+    "location": "library"
+  },
+  "database": {
+    "location": "database",
+    "user": "postgres",
+    "name": "imagine",
+    "port": 5432
+  },
+  "redis": {
+    "enabled": false,
+    "host": "localhost",
+    "port": 6379,
+    "username": "",
+    "password": "",
+    "db": 0,
+    "use_tls": false,
+    "pool_size": 10,
+    "dial_timeout_seconds": 5,
+    "read_timeout_seconds": 3,
+    "write_timeout_seconds": 3
+  },
+  "libvips": {
+    "match_system_logging": true,
+    "cache_max_memory_mb": 512,
+    "cache_max_files": 100,
+    "concurrency": 4
+  }
 }

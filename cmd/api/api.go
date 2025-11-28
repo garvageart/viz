@@ -23,19 +23,19 @@ import (
 	libhttp "imagine/internal/http"
 	"imagine/internal/imageops"
 	libvips "imagine/internal/imageops/vips"
+	"imagine/internal/images"
 	"imagine/internal/jobs"
 	"imagine/internal/jobs/workers"
 	imalog "imagine/internal/logger"
-	"imagine/internal/images"
 	"imagine/internal/utils"
 )
 
 var (
-	ServerConfig = libhttp.ImagineServers["api"]
+	ServerConfig = config.ImagineServers["api"]
 )
 
-type ImagineMediaServer struct {
-	*libhttp.ImagineServer
+type APIServer struct {
+	*config.ImagineServer
 }
 
 // TODO: This will be the main API server and therefore will have a lot of routes.
@@ -45,9 +45,9 @@ type ImagineMediaServer struct {
 
 // TODO TODO: Create a `createServer/Router` function that returns a router
 // with common defaults for each server type
-func (server ImagineMediaServer) Launch(router *chi.Mux) *http.Server {
+func (server APIServer) Launch(router *chi.Mux) *http.Server {
+	logLevel := server.LogLevel
 	logger := server.Logger
-
 	serverLogger := slog.NewLogLogger(logger.Handler(), slog.LevelDebug)
 
 	router.Use(middleware.RequestLogger(&middleware.DefaultLogFormatter{
@@ -56,6 +56,8 @@ func (server ImagineMediaServer) Launch(router *chi.Mux) *http.Server {
 
 	// Setup general middleware - CORS must be first!
 	router.Use(cors.Handler(cors.Options{
+		// TODO: maybe make this configurable by admin since this might
+		// some people might not want to allow all origins for API
 		AllowOriginFunc: func(r *http.Request, origin string) bool {
 			return true
 		},
@@ -74,34 +76,33 @@ func (server ImagineMediaServer) Launch(router *chi.Mux) *http.Server {
 	dbClient := database.Client
 
 	var libvipsLogLevel libvips.LogLevel = libvips.LogLevelInfo
-	if os.Getenv("LIBVIPS_LOG_LEVEL") != "" {
-		switch os.Getenv("LIBVIPS_LOG_LEVEL") {
-		case "critical":
-			libvipsLogLevel = libvips.LogLevelCritical
-		case "error":
-			libvipsLogLevel = libvips.LogLevelError
-		case "warning":
-			libvipsLogLevel = libvips.LogLevelWarning
-		case "message":
-			libvipsLogLevel = libvips.LogLevelMessage
-		case "info":
-			libvipsLogLevel = libvips.LogLevelInfo
-		case "debug":
+	var matchServerLogLevel = os.Getenv("LIBVIPS_MATCH_LOG_LEVEL") == "true"
+	if matchServerLogLevel {
+		switch logLevel {
+		case slog.LevelDebug:
 			libvipsLogLevel = libvips.LogLevelDebug
+		case slog.LevelInfo:
+			libvipsLogLevel = libvips.LogLevelInfo
+		case slog.LevelWarn:
+			libvipsLogLevel = libvips.LogLevelWarning
+		case slog.LevelError:
+			libvipsLogLevel = libvips.LogLevelError
+		default:
+			libvipsLogLevel = libvips.LogLevelInfo
 		}
+	} else {
+		// TODO: fix this error message, it sucks and is confusing
+		logger.Warn("libvipsLogLevel: matching server level is off. using default: info")
 	}
 
 	var libvipsLogHandler libvips.LoggingHandlerFunction = func(messageDomain string, messageLevel libvips.LogLevel, message string) {
 		switch messageLevel {
-		case libvips.LogLevelCritical:
-			logger.Error(fmt.Sprintf("%s: %s", messageDomain, message))
-		case libvips.LogLevelError:
+		// TODO: Create log level `FATAL` I think
+		case libvips.LogLevelCritical, libvips.LogLevelError:
 			logger.Error(fmt.Sprintf("%s: %s", messageDomain, message))
 		case libvips.LogLevelWarning:
 			logger.Warn(fmt.Sprintf("%s: %s", messageDomain, message))
-		case libvips.LogLevelMessage:
-			logger.Info(fmt.Sprintf("%s: %s", messageDomain, message))
-		case libvips.LogLevelInfo:
+		case libvips.LogLevelMessage, libvips.LogLevelInfo:
 			logger.Info(fmt.Sprintf("%s: %s", messageDomain, message))
 		case libvips.LogLevelDebug:
 			logger.Debug(fmt.Sprintf("%s: %s", messageDomain, message))
@@ -156,48 +157,55 @@ func (server ImagineMediaServer) Launch(router *chi.Mux) *http.Server {
 
 func main() {
 	router := chi.NewRouter()
-	logger := imalog.CreateDefaultLogger()
 
-	cfg, err := config.ReadConfig()
+	v, err := config.ReadConfig()
 	if err != nil {
 		errorMsg := fmt.Sprintf("failed to read config file: %v", err)
-		logger.Error(errorMsg, slog.String("error", err.Error()))
 		panic(errorMsg)
 	}
 
-	server := ImagineMediaServer{ImagineServer: ServerConfig}
-	server.ImagineServer.Logger = logger
-	server.Database = &db.DB{
-			Address: func() string {
-				if host := os.Getenv("DB_HOST"); host != "" {
-					return host
-				}
-				return "localhost"
-			}(),
-		Port: func() int {
-			if os.Getenv("DB_PORT") != "" {
-				var port int
-				if cfgPort := cfg.GetInt("database.port"); cfgPort != 0 {
-					port = cfgPort
-				} else if envPort := os.Getenv("DB_PORT"); envPort != "" {
-					fmt.Sscanf(envPort, "%d", &port)
-				}
+	var appConfig config.ImagineConfig
+	if err := v.Unmarshal(&appConfig); err != nil {
+		errorMsg := fmt.Sprintf("failed to unmarshal config: %v", err)
+		panic(errorMsg)
+	}
 
-				return port
+	// setup logging stuff
+	logLevel := imalog.GetLevelFromString(appConfig.Logging.Level)
+	logger := libhttp.SetupChiLogger("api", logLevel)
+
+	apiServer := APIServer{ImagineServer: ServerConfig}
+	apiServer.ImagineServer.LogLevel = logLevel
+	apiServer.ImagineServer.Logger = logger
+
+	// db stuff
+	if os.Getenv("DB_PASSWORD") != "" {
+		appConfig.Database.Password = os.Getenv("DB_PASSWORD")
+	} else {
+		logger.Error("Database password not set, please set a password")
+		panic("Database password not set")
+	}
+
+	apiServer.Database = &db.DB{
+		Address: func() string {
+			if host := os.Getenv("DB_HOST"); host != "" {
+				return host
 			}
-
-			return 5432
+			return "localhost"
 		}(),
-		User:     os.Getenv("DB_USER"),
-		Password: os.Getenv("DB_PASSWORD"),
+		Port: func() int {
+			if appConfig.Database.Port == 0 {
+				return 5432
+			}  
+			return appConfig.Database.Port
+		}(),
+		User:     appConfig.Database.User,
+		Password: appConfig.Database.Password,
 		AppName:  utils.AppName,
 		DatabaseName: func() string {
-			if os.Getenv("DB_NAME") != "" {
-				return os.Getenv("DB_NAME")
-			}
-
-			dbName := cfg.GetString("database.name")
+			dbName := appConfig.Database.Name
 			if dbName != "" {
+				// TODO: this nonsense will change in future
 				if utils.IsDevelopment {
 					return dbName + "-dev"
 				}
@@ -207,17 +215,11 @@ func main() {
 			return "imagine"
 		}(),
 		Logger: logger,
-	}
-
-	if apiPortEnv := os.Getenv("API_PORT"); apiPortEnv != "" {
-		var p int
-		if _, err := fmt.Sscanf(apiPortEnv, "%d", &p); err == nil {
-			server.ImagineServer.Port = p
-		}
+		LogLevel: logLevel,
 	}
 
 	// Lmao I hate this
-	client := server.ConnectToDatabase(
+	client := apiServer.ConnectToDatabase(
 		entities.Image{},
 		entities.Collection{},
 		entities.Session{},
@@ -227,33 +229,35 @@ func main() {
 		entities.WorkerJob{},
 		entities.UserWithPassword{},
 	)
-	server.ImagineServer.Database.Client = client
+	apiServer.ImagineServer.Database.Client = client
 
-	srv := server.Launch(router)
+	// http server stuff
+	if apiPortEnv := os.Getenv("API_PORT"); apiPortEnv != "" {
+		var p int
+		if _, err := fmt.Sscanf(apiPortEnv, "%d", &p); err == nil {
+			apiServer.ImagineServer.Port = p
+		}
+	}
+	httpServer := apiServer.Launch(router)
 
 	// create a cancelable context used by background tasks
 	ctx, cancel := context.WithCancel(context.Background())
 	defer cancel()
 
 	// Start transform cache GC if enabled in config.
-	if cfg.IsSet("cache.gc_enabled") {
-		if cfg.GetBool("cache.gc_enabled") {
-			images.StartTransformCacheGC(ctx, logger)
-		} else {
-			logger.Debug("transform cache gc: disabled by config")
-		}
-	} else {
-		// default: enabled
+	if appConfig.Cache.GCEnabled {
 		images.StartTransformCacheGC(ctx, logger)
+	} else {
+		logger.Debug("transform cache gc: disabled by config")
 	}
 
-	imageWorker := workers.NewImageWorker(client, server.WSBroker)
-	xmpWorker := workers.NewXMPWorker(client, logger, server.WSBroker)
-	exifWorker := workers.NewExifWorker(client, server.WSBroker)
+	imageWorker := workers.NewImageWorker(client, apiServer.WSBroker)
+	xmpWorker := workers.NewXMPWorker(client, logger, apiServer.WSBroker)
+	exifWorker := workers.NewExifWorker(client, apiServer.WSBroker)
 
 	// Run the job router in a goroutine so we can wait for shutdown signals here
 	go func() {
-		jobs.RunJobQueue(imageWorker, xmpWorker, exifWorker)
+		jobs.RunJobQueue(appConfig.Queue, logger, imageWorker, xmpWorker, exifWorker)
 	}()
 
 	sigCh := make(chan os.Signal, 1)
@@ -264,8 +268,8 @@ func main() {
 	shutdownCtx, shutdownCancel := context.WithTimeout(context.Background(), 30*time.Second)
 	defer shutdownCancel()
 
-	if srv != nil {
-		if err := srv.Shutdown(shutdownCtx); err != nil {
+	if httpServer != nil {
+		if err := httpServer.Shutdown(shutdownCtx); err != nil {
 			logger.Error("server shutdown failed", slog.Any("error", err))
 		}
 	}

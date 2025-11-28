@@ -26,3 +26,35 @@ func ReadConfig() (viper.Viper, error) {
 	}
 	return *v, nil
 }
+
+var (
+	ServerKeys = map[string]string{
+		"api":  "api",
+		"viz":  "viz",
+	}
+
+	ImagineServers = func() map[string]*ImagineServer {
+		var host string
+		if utils.IsProduction {
+			host = "0.0.0.0"
+		} else {
+			host = "localhost"
+		}
+
+		config, err := ReadConfig()
+		if err != nil {
+			panic("Unable to read config file " + err.Error())
+		}
+
+		result := map[string]*ImagineServer{}
+		for _, serverKey := range ServerKeys {
+			result[serverKey] = &ImagineServer{Server: &Server{}}
+
+			result[serverKey].Port = config.GetInt(fmt.Sprintf("servers.%s.port", serverKey))
+			result[serverKey].Host = host
+			result[serverKey].Key = serverKey
+		}
+
+		return result
+	}()
+)

@@ -20,4 +20,5 @@ type DB struct {
 	Table           *gorm.DB
 	Context         context.Context
 	Logger          *slog.Logger
+	LogLevel        slog.Level
 }

@@ -11,20 +11,27 @@ import (
 )
 
 var (
-	GlobalLogger    = CreateLogger(SetupDefaultLogHandlers())
-	DefaultLogLevel = func() slog.Level {
-		logDebugEnvVar := os.Getenv("LOG_DEBUG")
-		if !utils.IsProduction ||
-			logDebugEnvVar != "" ||
-			logDebugEnvVar == "true" {
-			return slog.LevelDebug
-		}
-
-		return slog.LevelInfo
-	}()
+	GlobalLogger *slog.Logger
 )
 
-func SetupDefaultLogHandlers() []slog.Handler {
+type VizLogLevel string
+
+func GetLevelFromString(level string) slog.Level {
+	switch VizLogLevel(level) {
+	case "debug":
+		return slog.LevelDebug
+	case "info":
+		return slog.LevelInfo
+	case "warn":
+		return slog.LevelWarn
+	case "error":
+		return slog.LevelError
+	default:
+		return slog.LevelInfo
+	}
+}
+
+func SetupDefaultLogHandlers(logLevel slog.Level) []slog.Handler {
 	logShowRecordEnv := os.Getenv("LOG_SHOW_RECORD")
 	shouldAddSource := logShowRecordEnv == "true"
 	isProduction := utils.IsProduction
@@ -36,12 +43,12 @@ func SetupDefaultLogHandlers() []slog.Handler {
 
 	consoleHandlerOpts := slog.HandlerOptions{
 		AddSource: shouldAddSource,
-		Level:     DefaultLogLevel,
+		Level:     logLevel,
 	}
 
 	fileHandlerOpts := slog.HandlerOptions{
 		AddSource: true,
-		Level:     DefaultLogLevel,
+		Level:     logLevel,
 	}
 
 	var consoleLogger slog.Handler
@@ -63,6 +70,6 @@ func CreateLogger(handlers []slog.Handler) *slog.Logger {
 	return slog.New(slogmulti.Fanout(handlers...))
 }
 
-func CreateDefaultLogger() *slog.Logger {
-	return CreateLogger(SetupDefaultLogHandlers())
+func CreateDefaultLogger(logLevel slog.Level) *slog.Logger {
+	return CreateLogger(SetupDefaultLogHandlers(logLevel))
 }
