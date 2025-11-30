@@ -6,6 +6,7 @@ var
 resources/test
 resources/internal
 security
+tmp
 
 # Misc files
 auth/*.json
