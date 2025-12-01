@@ -3,7 +3,7 @@
 	import { page } from "$app/state";
 	import { CLIENT_IS_PRODUCTION } from "$lib/constants";
 	import { performSearch } from "$lib/search/execute";
-	import { search, user, theme, toggleTheme, debugMode, debugState } from "$lib/states/index.svelte";
+	import { search, user, getTheme, toggleTheme, debugMode, debugState } from "$lib/states/index.svelte";
 	import hotkeys from "hotkeys-js";
 	import { onMount } from "svelte";
 	import type { SvelteHTMLElements } from "svelte/elements";
@@ -131,7 +131,7 @@
 			aria-label="Toggle Theme"
 			onclick={() => toggleTheme()}
 		>
-			<MaterialIcon weight={300} iconName={theme === "dark" ? "dark_mode" : "light_mode"} />
+			<MaterialIcon weight={300} iconName={getTheme() === "dark" ? "dark_mode" : "light_mode"} />
 		</button>
 		<button id="upload-button" class="header-button" aria-label="Upload" onclick={handleUpload}>
 			<MaterialIcon iconName="upload" iconStyle="sharp" />

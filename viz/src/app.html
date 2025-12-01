@@ -91,7 +91,13 @@
 				try {
 					const storedTheme = localStorage.getItem('viz:theme');
 					const osTheme = window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light';
-					const theme = storedTheme || osTheme;
+					
+					let theme = osTheme;
+					
+					if (storedTheme === 'light' || storedTheme === 'dark') {
+						theme = storedTheme;
+					}
+					
 					document.documentElement.setAttribute('data-theme', theme);
 				} catch (e) {
 					document.documentElement.setAttribute('data-theme', 'dark');

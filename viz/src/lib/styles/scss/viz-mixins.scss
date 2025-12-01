@@ -13,7 +13,8 @@
     $flip-bg-color: null,
     $flip-bg-pct: 0%,
     $flip-text-color: null,
-    $flip-text-pct: 0%) {
+    $flip-text-pct: 0%,
+    $suffix: "") {
     
     $bg: $bg-color;
     $base: $base-color;
@@ -37,8 +38,8 @@
         $text: color.change($text, $lightness: 100% - color.channel($text, "lightness", $space: hsl), $space: hsl);
     }
 
-    --imag-bg-color: #{$bg};
-    --imag-text-color: #{$text};
+    --imag-bg-color#{$suffix}: #{$bg};
+    --imag-text-color#{$suffix}: #{$text};
 
     @for $j from 0 through 19 {
         $level: 100 - $j * 5;
@@ -47,11 +48,11 @@
         @if $is-light-theme {
             // Light theme: imag-100 is the (lightness-inverted) base; lower
             // levels should be progressively darker by mixing with black.
-            --imag-#{$level}: #{color.mix(black, $base, $mixPct)};
+            --imag-#{$level}#{$suffix}: #{color.mix(black, $base, $mixPct)};
         } @else {
             // Dark theme: imag-100 is the provided base; lower levels should
             // be progressively lighter by mixing with white.
-            --imag-#{$level}: #{color.mix(white, $base, $mixPct)};
+            --imag-#{$level}#{$suffix}: #{color.mix(white, $base, $mixPct)};
         }
     }
 }

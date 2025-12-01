@@ -42,7 +42,7 @@
 		themeState.ls.set(themeState.value);
 		themeState.cs.set(themeState.value);
 		if (typeof document !== "undefined") {
-			document.documentElement.setAttribute("data-theme", themeState.value);
+			document.documentElement.setAttribute("data-theme", themeState.resolved);
 		}
 	});
 </script>

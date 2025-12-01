@@ -1,5 +1,5 @@
 import { login, user, continuePath } from "$lib/states/index.svelte.js";
-import { redirect } from '@sveltejs/kit';
+import { redirect, error } from '@sveltejs/kit';
 import { initApi } from "$lib/api/client";
 import { fetchCurrentUser } from "$lib/auth/auth_methods";
 
@@ -15,8 +15,15 @@ export async function load({ url, fetch }) {
         await fetchCurrentUser();
     }
 
-    const isAuthed = !!user.data || !!login.state;
+    const isConnectionError = !!user.connectionError;
 
+    if (isConnectionError) {
+        error(503, {
+            message: "Could not connect to the Imagine server. It might be down for maintenance or restarting."
+        });
+    }
+
+    const isAuthed = !!user.data || !!login.state;
     if (!isAuthed && !url.pathname.startsWith("/auth")) {
         redirect(303, `/auth/register?continue=${decodeURIComponent(url.pathname)}`);
     }

@@ -27,12 +27,13 @@ export let sidebar = $state({
 
 export let showHeader = writable(true);
 
-export let user = $state<{ data: User | null; loading: boolean; fetched: boolean; error?: string | null; isAdmin: boolean; }>({
+export let user = $state<{ data: User | null; loading: boolean; fetched: boolean; error?: string | null; isAdmin: boolean; connectionError?: boolean }>({
     data: null,
     loading: false,
     fetched: false,
     error: null,
-    isAdmin: false
+    isAdmin: false,
+    connectionError: false
 });
 
 export let search = $state({
@@ -109,30 +110,54 @@ export let upload = $state({
 
 export let continuePath = $state<string | null>(null);
 
+export type ThemeOption = 'light' | 'dark' | 'system';
+
 class ThemeState {
-    ls = new VizLocalStorage<'light' | 'dark'>('theme');
-    cs = new VizCookieStorage<'light' | 'dark'>('theme');
+    ls = new VizLocalStorage<ThemeOption>('theme');
+    cs = new VizCookieStorage<ThemeOption>('theme');
 
-    value: 'light' | 'dark' = $state(this.getInitialTheme());
+    value: ThemeOption = $state(this.getInitialTheme());
+    systemPref: 'light' | 'dark' = $state('light');
 
-    private getInitialTheme(): 'light' | 'dark' {
-        // Preference: 1. LocalStorage, 2. OS preference
+    resolved = $derived(this.value === 'system' ? this.systemPref : this.value);
+
+    constructor() {
+        if (typeof window !== 'undefined') {
+            const media = window.matchMedia('(prefers-color-scheme: dark)');
+            this.systemPref = media.matches ? 'dark' : 'light';
+            media.addEventListener('change', (e) => {
+                this.systemPref = e.matches ? 'dark' : 'light';
+            });
+        }
+    }
+
+    private getInitialTheme(): ThemeOption {
+        // Preference: 1. LocalStorage, 2. Default to system
         const storedTheme = this.ls.get();
         if (storedTheme) {
             return storedTheme;
         }
-        return typeof window !== 'undefined' && window.matchMedia?.('(prefers-color-scheme: dark)').matches
-            ? 'dark'
-            : 'light';
+        return 'system';
     }
 
     toggle() {
-        this.value = this.value === 'dark' ? 'light' : 'dark';
+        const currentResolved = this.resolved;
+        const targetResolved = currentResolved === 'dark' ? 'light' : 'dark';
+
+        // If 'system' preference matches the target visual state, prefer 'system'.
+        // This ensures we default to system behavior when possible, while guaranteeing a visual switch.
+        if (this.systemPref === targetResolved) {
+            this.value = 'system';
+        } else {
+            this.value = targetResolved;
+        }
     }
 }
 
 export const themeState = new ThemeState();
-export let theme = themeState.value;
+export function getTheme() {
+    return themeState.resolved;
+}
 
 export function toggleTheme() {
     themeState.toggle();

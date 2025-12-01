@@ -29,6 +29,7 @@ export async function fetchCurrentUser(): Promise<User | null> {
     } catch (err: any) {
         user.data = null;
         user.error = err?.message ?? 'Failed to fetch current user';
+        user.connectionError = true;
         return null;
     } finally {
         user.loading = false;

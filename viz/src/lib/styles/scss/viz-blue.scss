@@ -17,6 +17,26 @@ $secondary-color: #06589b;
     --imag-text-color: #{$text-color};
     --imag-primary: #{$primary-color};
     --imag-secondary: #{$secondary-color};
+
+    @include viz-mixins.generate-imag-colors(
+        $bg-color: $bg-color,
+        $text-color: $text-color,
+        $base-color: $base-color,
+        $is-light-theme: true,
+        $flip-bg-color: white,
+        $flip-bg-pct: 0%,
+        $flip-text-color: black,
+        $flip-text-pct: 15%,
+        $suffix: "-light"
+    );
+
+    @include viz-mixins.generate-imag-colors(
+        $bg-color: $bg-color,
+        $text-color: $text-color,
+        $base-color: $base-color,
+        $is-light-theme: false,
+        $suffix: "-dark"
+    );
 }
 
 @mixin imag-theme($sel, $is-light, $flip-bg: null, $flip-bg-pct: 0%, $flip-text: null, $flip-text-pct: 0%) {
