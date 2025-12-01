@@ -1,0 +1,42 @@
+services:
+  # The dev container
+  app:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    volumes:
+      - ..:/workspace:cached
+      - command-history:/commandhistory
+      # Mount imagine.json if it exists, or handled by env vars
+      - ../imagine.json:/workspace/imagine.json:ro 
+      
+    # Overrides default command so things don't shut down after the process ends.
+    command: sleep infinity
+    
+    # Runs app on the same network as the database container, allows "forwardPorts" in devcontainer.json function.
+    network_mode: service:postgres
+    
+    # Use "forwardPorts" in **devcontainer.json** to forward an app port locally. 
+    # (Adding the "ports" property to this file will not forward from a Codespace.)
+
+  # We don't need the production containers in dev mode
+  api:
+    profiles: ["donotstart"]
+  viz:
+    profiles: ["donotstart"]
+  nginx:
+    profiles: ["donotstart"]
+    
+  # Ensure dependencies are up
+  postgres:
+    # We need to make sure the ports are mapped for the devcontainer to access them via localhost
+    # IF we use network_mode: service:postgres, 'app' sees 'postgres' as 'localhost'.
+    # If we use a bridge network, we use the hostname 'postgres'.
+    # network_mode: service:postgres is the cleanest for "localhost" development feeling.
+    restart: always
+
+  redis:
+    network_mode: service:postgres
+
+volumes:
+  command-history:

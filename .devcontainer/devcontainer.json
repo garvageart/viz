@@ -1,0 +1,27 @@
+{
+	"name": "Imagine Dev",
+	"dockerComposeFile": [
+		"../docker-compose.yml",
+		"docker-compose.dev.yml"
+	],
+	"service": "app",
+	"workspaceFolder": "/workspace",
+	"customizations": {
+		"vscode": {
+			"extensions": [
+				"golang.go",
+				"svelte.svelte-vscode",
+				"dbaeumer.vscode-eslint",
+				"esbenp.prettier-vscode",
+				"editorconfig.editorconfig",
+				"bradlc.vscode-tailwindcss"
+			]
+		}
+	},
+	"features": {
+		"ghcr.io/devcontainers/features/git:1": {}
+	},
+	"forwardPorts": [7770, 5173, 6379, 5432],
+	"postCreateCommand": "go mod download && cd viz && pnpm install",
+	"remoteUser": "vscode"
+}
