@@ -494,6 +494,7 @@
 						)}
 						alt={(assetData as any).name ?? (assetData as any).image_metadata?.file_name ?? ""}
 						loading="lazy"
+						crossorigin="use-credentials"
 					/>
 				{:else}
 					<!-- shitty fallback it works -->

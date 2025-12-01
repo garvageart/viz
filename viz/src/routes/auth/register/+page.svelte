@@ -121,6 +121,7 @@
 	}
 
 	#viz-title {
+		color: var(--imag-100-light);
 		font-family: var(--imag-code-font);
 		font-weight: 700;
 		font-size: 3em;

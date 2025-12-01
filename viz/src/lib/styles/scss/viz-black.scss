@@ -3,7 +3,7 @@
 
 $bg-color: #222222;
 $base-color: #333333;
-$text-color: #F7F9F9;
+$text-color: #f7f9f9;
 $primary-color: #1885df;
 $secondary-color: #06589b;
 
@@ -12,14 +12,7 @@ $secondary-color: #06589b;
     --imag-text-color: #{$text-color};
     --imag-primary: #{$primary-color};
     --imag-secondary: #{$secondary-color};
-}
 
-/* Colours */
-
-/* Light theme: use a blue base so --imag-100 is the lightest blue and
-   --imag-10 is the darkest (in 10% steps). */
-:root[data-theme="light"],
-[data-theme="light"] {
     @include viz-mixins.generate-imag-colors(
         $bg-color: $bg-color,
         $text-color: $text-color,
@@ -30,12 +23,7 @@ $secondary-color: #06589b;
         $flip-text-color: black,
         $flip-text-pct: 7%
     );
-}
 
-/* Dark theme: opposite mapping so --imag-100 is the darkest (base 100%) and
-   --imag-10 is lightest. */
-:root[data-theme="dark"],
-[data-theme="dark"] {
     @include viz-mixins.generate-imag-colors(
         $bg-color: $bg-color,
         $text-color: $text-color,
@@ -44,12 +32,25 @@ $secondary-color: #06589b;
     );
 }
 
-/* If user prefers dark and no explicit theme is set, default to dark values */
+/* Colours */
+
+/* Light theme: use a blue base so --imag-100 is the lightest blue and
+   --imag-10 is the darkest (in 10% steps). */
+$light-theme-sel: ':root[data-theme="light"], [data-theme="light"]';
+@include imag-theme($light-theme-sel, true, white, 0%, black, 15%);
+
+/* Dark theme: opposite mapping so --imag-100 is the darkest (base 100%) and
+   --imag-10 is lightest. */
+@include imag-theme(':root[data-theme="dark"], [data-theme="dark"]', false);
+
+/* If user prefers dark and no explicit theme is set, generate dark palette */
 @media (prefers-color-scheme: dark) {
-    :root:not([data-theme]) {
-        --imag-bg-color: #{$bg-color};
-        --imag-text-color: #{$text-color};
-    }
+    @include imag-theme(':root:not([data-theme])', false);
+}
+
+/* If user prefers light and no explicit theme is set, generate light palette */
+@media (prefers-color-scheme: light) {
+    @include imag-theme($light-theme-sel, true, white, 0%, black, 15%);
 }
 
 /* Up */

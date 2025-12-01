@@ -42,6 +42,7 @@
 			alt="{asset.name}{asset.uploaded_by ? ` by ${asset.uploaded_by.username}` : ''}"
 			title="{asset.name}{asset.uploaded_by ? ` by ${asset.uploaded_by.username}` : ''}"
 			loading="lazy"
+			crossorigin="use-credentials"
 			onload={() => (imageLoaded = true)}
 		/>
 	</div>

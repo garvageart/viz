@@ -281,9 +281,9 @@
 								aria-hidden="true"
 							/>
 						{/if}
-					{:then _}
+					{:then url}
 						<img
-							src={imageToLoad}
+							src={url}
 							class="lightbox-image"
 							alt={lightboxImage!.name}
 							title={lightboxImage!.name}
