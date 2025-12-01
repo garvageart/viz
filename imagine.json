@@ -3,6 +3,7 @@
   "servers": {
     "api": {
       "port": 7770,
+      "host": "localhost",
       "database": "images"
     },
     "auth": {

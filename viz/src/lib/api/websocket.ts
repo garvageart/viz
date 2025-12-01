@@ -44,7 +44,14 @@ export class WSClient {
     private isClosed = false;
 
     constructor(options: WSConnectionOptions) {
-        const base = API_BASE_URL;
+        let base = API_BASE_URL;
+
+        // If the base URL is relative (e.g., "/api"), resolve it to an absolute URL
+        // using the current window location. WebSockets require absolute URLs.
+        if (base.startsWith('/') && typeof window !== 'undefined') {
+            base = window.location.origin + base;
+        }
+
         this.url = base.replace(/^http/, 'ws') + '/events';
 
         this.options = {

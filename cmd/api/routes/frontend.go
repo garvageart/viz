@@ -86,6 +86,12 @@ func (h *FrontendHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 func (h *FrontendHandler) serveIndex(w http.ResponseWriter, r *http.Request) {
 	indexData, err := h.getIndexContent()
 	if err != nil {
+		if os.IsNotExist(err) {
+			h.Logger.Debug("index.html not found (frontend build missing)", slog.String("path", h.BuildPath))
+			http.Error(w, "Frontend build not found. If you are in development, ensure the Vite dev server is running and you are accessing the correct port (e.g. 7777).", http.StatusNotFound)
+			return
+		}
+		
 		h.Logger.Error("failed to read index.html", slog.Any("error", err))
 		http.Error(w, "Internal Server Error", http.StatusInternalServerError)
 		return

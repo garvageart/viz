@@ -113,69 +113,73 @@ func (server APIServer) Launch(router *chi.Mux) *http.Server {
 
 	server.WSBroker = libhttp.NewWSBroker(logger)
 
-	// Public routes (no auth required)
-	router.Mount("/auth", routes.AuthRouter(dbClient, logger))
-	router.Mount("/accounts", routes.AccountsRouter(dbClient, logger))
-	router.Get("/ping", func(res http.ResponseWriter, req *http.Request) {
-		jsonResponse := map[string]any{"message": "pong"}
-		render.JSON(res, req, jsonResponse)
+	// API Routes
+	router.Route("/api", func(r chi.Router) {
+		// Public routes (no auth required)
+		r.Mount("/auth", routes.AuthRouter(dbClient, logger))
+		r.Mount("/accounts", routes.AccountsRouter(dbClient, logger))
+		r.Get("/ping", func(res http.ResponseWriter, req *http.Request) {
+			jsonResponse := map[string]any{"message": "pong"}
+			render.JSON(res, req, jsonResponse)
+		})
+
+		// Protected routes (auth required)
+		r.Group(func(r chi.Router) {
+			r.Use(libhttp.AuthMiddleware(server.Database.Client, logger))
+			r.Group(func(r chi.Router) {
+				r.Use(libhttp.ScopeMiddleware([]auth.Scope{auth.EventsReadScope}))
+				r.Mount("/events", routes.EventsRouter(dbClient, logger, server.WSBroker))
+			})
+			r.Group(func(r chi.Router) {
+				r.Use(libhttp.ScopeMiddleware([]auth.Scope{
+					auth.CollectionsCreateScope,
+					auth.CollectionsDeleteScope,
+					auth.CollectionsReadScope,
+					auth.CollectionsUpdateScope,
+				}))
+				r.Mount("/collections", routes.CollectionsRouter(dbClient, logger))
+			})
+			r.Group(func(r chi.Router) {
+				r.Use(libhttp.ScopeMiddleware([]auth.Scope{
+					auth.ImagesReadScope,
+					auth.ImagesDownloadScope,
+					auth.ImagesDeleteScope,
+					auth.ImagesUpdateScope,
+					auth.ImagesUploadScope,
+				}))
+				r.Mount("/images", routes.ImagesRouter(dbClient, logger))
+			})
+
+			r.Group(func(r chi.Router) {
+				r.Use(libhttp.ScopeMiddleware([]auth.Scope{
+					auth.DownloadsCreateScope,
+				}))
+				r.Mount("/download", routes.DownloadRouter(dbClient, logger))
+			})
+			r.Group(func(r chi.Router) {
+				r.Use(libhttp.ScopeMiddleware([]auth.Scope{
+					auth.APIKeysReadScope,
+					auth.APIKeysCreateScope,
+					auth.APIKeysRevokeScope,
+					auth.APIKeysListScope,
+					auth.APIKeysRotateScope,
+					auth.APIKeysDeleteScope,
+				}))
+				r.Mount("/api-keys", routes.APIKeysRouter(dbClient, logger))
+			})
+		})
+
+		// Admin routes (auth + admin required)
+		r.Mount("/admin", routes.AdminRouter(dbClient, logger))
+		r.Mount("/jobs", routes.JobsRouter(dbClient, logger))
 	})
-
-	// Protected routes (auth required)
-	router.Group(func(r chi.Router) {
-		r.Use(libhttp.AuthMiddleware(server.Database.Client, logger))
-		r.Group(func(r chi.Router) {
-			r.Use(libhttp.ScopeMiddleware([]auth.Scope{auth.EventsReadScope}))
-			r.Mount("/events", routes.EventsRouter(dbClient, logger, server.WSBroker))
-		})
-		r.Group(func(r chi.Router) {
-			r.Use(libhttp.ScopeMiddleware([]auth.Scope{
-				auth.CollectionsCreateScope, 
-				auth.CollectionsDeleteScope, 
-				auth.CollectionsReadScope, 
-				auth.CollectionsUpdateScope,
-			}))
-			r.Mount("/collections", routes.CollectionsRouter(dbClient, logger))
-		})
-		r.Group(func(r chi.Router) {
-			r.Use(libhttp.ScopeMiddleware([]auth.Scope{
-				auth.ImagesReadScope, 
-				auth.ImagesDownloadScope, 
-				auth.ImagesDeleteScope, 
-				auth.ImagesUpdateScope, 
-				auth.ImagesUploadScope,
-			}))
-			r.Mount("/images", routes.ImagesRouter(dbClient, logger))
-		})
-
-		r.Group(func(r chi.Router) {
-			r.Use(libhttp.ScopeMiddleware([]auth.Scope{
-				auth.DownloadsCreateScope,
-			}))
-			r.Mount("/download", routes.DownloadRouter(dbClient, logger))
-		})
-		r.Group(func(r chi.Router) {
-			r.Use(libhttp.ScopeMiddleware([]auth.Scope{
-				auth.APIKeysReadScope, 
-				auth.APIKeysCreateScope,
-				auth.APIKeysRevokeScope,
-				auth.APIKeysListScope,
-				auth.APIKeysRotateScope,
-				auth.APIKeysDeleteScope,
-			}))
-			r.Mount("/api-keys", routes.APIKeysRouter(dbClient, logger))
-		})
-	})
-
-	// Admin routes (auth + admin required)
-	router.Mount("/admin", routes.AdminRouter(dbClient, logger))
-	router.Mount("/jobs", routes.JobsRouter(dbClient, logger))
 
 	// Serve Frontend (SPA + Static Files)
-	frontendPath := os.Getenv("FRONTEND_BUILD_PATH")
+	frontendPath := os.Getenv("IMAGINE_FRONTEND_BUILD_PATH")
 	if frontendPath == "" {
 		frontendPath = "./viz/build" // Default for dev/local
 	}
+	
 	frontendHandler := routes.NewFrontendHandler(frontendPath, logger)
 	router.NotFound(frontendHandler.ServeHTTP)
 

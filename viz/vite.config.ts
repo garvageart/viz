@@ -1,6 +1,6 @@
 import { svelteTesting } from '@testing-library/svelte/vite';
 import { sveltekit } from '@sveltejs/kit/vite';
-import { defineConfig } from 'vite';
+import { defineConfig, type ProxyOptions } from 'vite';
 import fs from 'fs';
 import { fileURLToPath } from 'url';
 import devtoolsJson from "vite-plugin-devtools-json";
@@ -29,8 +29,23 @@ const define = {
 	'__APP_VERSION__': JSON.stringify(pkg.version)
 };
 
+// ideally a user/developer NEVER gets to the hardcoded defaults
+const host = process.env.IMAGINE_API_SERVER_HOST || config.servers.api.host || "localhost";
+const port = process.env.IMAGINE_API_SERVER_PORT || config.servers.api.port || 7770;
+
+const apiServer: ProxyOptions = {
+	target: `http://${host}:${port}`,
+	secure: true,
+	changeOrigin: true,
+	ws: true
+};
+
+const viteProxy: Record<string, string | ProxyOptions> = {
+	'/api': apiServer
+};
+
 // Expose runtime config (servers) as a global so the built frontend can read it without extra fetches.
-(define as any).__RUNTIME_CONFIG__ = JSON.stringify({ servers: config.servers, version: pkg.version });
+(define as any).__RUNTIME_CONFIG__ = JSON.stringify({ version: pkg.version });
 
 if (process.env.NODE_ENV !== 'production') {
 	(define as any).__servers = config.servers;
@@ -85,10 +100,12 @@ export default defineConfig({
 	},
 	server: {
 		port: config.servers.viz.port,
-		cors: true
+		cors: true,
+		proxy: viteProxy
 	},
 	preview: {
 		port: config.servers.viz.port,
-		cors: true
+		cors: true,
+		proxy: viteProxy
 	}
 });
