@@ -148,6 +148,7 @@ func AuthMiddleware(db *gorm.DB, logger *slog.Logger) func(next http.Handler) ht
 			// Fallback to cookie-based session authentication.
 			cookie, err := r.Cookie(AuthTokenCookie)
 			if err != nil || cookie == nil || cookie.Value == "" {
+				logger.Debug("cookie auth failed: token missing")
 				render.Status(r, http.StatusUnauthorized)
 				render.JSON(w, r, dto.ErrorResponse{Error: "token missing"})
 				return
@@ -163,11 +164,18 @@ func AuthMiddleware(db *gorm.DB, logger *slog.Logger) func(next http.Handler) ht
 				userPtr = u
 			} else {
 				if err := db.Where("token = ?", cookie.Value).First(&sess).Error; err != nil {
-					// clear auth cookie
-					ClearCookie(AuthTokenCookie, w)
-					ClearCookie(StateCookie, w)
-					render.Status(r, http.StatusUnauthorized)
-					render.JSON(w, r, dto.ErrorResponse{Error: "invalid session"})
+					if err == gorm.ErrRecordNotFound {
+						ClearCookie(AuthTokenCookie, w)
+						ClearCookie(StateCookie, w)
+						render.Status(r, http.StatusUnauthorized)
+						render.JSON(w, r, dto.ErrorResponse{Error: "invalid session"})
+						return
+					}
+					
+					// For other errors (e.g. DB connection, locks), return 500 to allow retry
+					logger.Error("failed to query session", slog.Any("error", err))
+					render.Status(r, http.StatusInternalServerError)
+					render.JSON(w, r, dto.ErrorResponse{Error: "internal server error"})
 					return
 				}
 

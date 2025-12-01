@@ -141,30 +141,50 @@ func GenerateTransform(params *TransformParams, imgEnt entities.Image, originalD
 		_ = libvipsImg.Flip(direction)
 	}
 
-	if params.Kernel != "" {
+	if params.Width > 0 || params.Height > 0 {
 		var kernel libvips.Kernel
-		switch params.Kernel {
-		case "nearest":
-			kernel = libvips.KernelNearest
-		case "linear":
-			kernel = libvips.KernelLinear
-		case "cubic":
-			kernel = libvips.KernelCubic
-		case "mitchell":
-			kernel = libvips.KernelMitchell
-		case "lanczos2":
-			kernel = libvips.KernelLanczos2
-		case "lanczos3":
+		if params.Kernel != "" {
+			switch params.Kernel {
+			case "nearest":
+				kernel = libvips.KernelNearest
+			case "linear":
+				kernel = libvips.KernelLinear
+			case "cubic":
+				kernel = libvips.KernelCubic
+			case "mitchell":
+				kernel = libvips.KernelMitchell
+			case "lanczos2":
+				kernel = libvips.KernelLanczos2
+			case "lanczos3":
+				kernel = libvips.KernelLanczos3
+			case "mks2013":
+				kernel = libvips.KernelMks2013
+			case "mks2021":
+				kernel = libvips.KernelMks2021
+			default:
+				kernel = libvips.KernelLanczos3 // Default to Lanczos3
+			}
+		} else {
 			kernel = libvips.KernelLanczos3
-		case "mks2013":
-			kernel = libvips.KernelMks2013
-		case "mks2021":
-			kernel = libvips.KernelMks2021
-		default:
-			kernel = libvips.KernelLanczos3 // Default to Lanczos3
 		}
 
-		if err := libvipsImg.Resize(float64(params.Width)/float64(libvipsImg.Width()), &libvips.ResizeOptions{Kernel: kernel}); err != nil {
+		// Calculate scale
+		scale := 1.0
+		imgW := float64(libvipsImg.Width())
+		imgH := float64(libvipsImg.Height())
+
+		if params.Width > 0 && params.Height > 0 {
+			// Both provided: "contain" behavior (fit within box)
+			wScale := float64(params.Width) / imgW
+			hScale := float64(params.Height) / imgH
+			scale = min(wScale, hScale)
+		} else if params.Width > 0 {
+			scale = float64(params.Width) / imgW
+		} else if params.Height > 0 {
+			scale = float64(params.Height) / imgH
+		}
+
+		if err := libvipsImg.Resize(scale, &libvips.ResizeOptions{Kernel: kernel}); err != nil {
 			return nil, fmt.Errorf("failed to resize image: %w", err)
 		}
 	}
