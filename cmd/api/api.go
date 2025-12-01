@@ -171,6 +171,14 @@ func (server APIServer) Launch(router *chi.Mux) *http.Server {
 	router.Mount("/admin", routes.AdminRouter(dbClient, logger))
 	router.Mount("/jobs", routes.JobsRouter(dbClient, logger))
 
+	// Serve Frontend (SPA + Static Files)
+	frontendPath := os.Getenv("FRONTEND_BUILD_PATH")
+	if frontendPath == "" {
+		frontendPath = "./viz/build" // Default for dev/local
+	}
+	frontendHandler := routes.NewFrontendHandler(frontendPath, logger)
+	router.NotFound(frontendHandler.ServeHTTP)
+
 	address := fmt.Sprintf("%s:%d", server.Host, server.Port)
 	srv := &http.Server{Addr: address, Handler: router}
 
