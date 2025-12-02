@@ -67,9 +67,7 @@
 		GeneratedComponent = null;
 
 		const base = normalizeName(String(iconName));
-		const styleSuffixPascal = iconStyle ? String(iconStyle)[0].toUpperCase() + String(iconStyle).slice(1) : "";
-		const weightSuffix = `W${String(weight).replace(/[^0-9]/g, "")}`;
-
+		
 		// Prefer base component first to avoid many failed imports when only
 		// multi-weight/base components exist. From there try weight-specific,
 		// then style-specific, then style+weight as a last resort.
@@ -163,10 +161,7 @@
 		}
 	}
 
-	onMount(() => {
-		tryLoadGenerated();
-		ensureFontLoaded(familyForStyle(iconStyle));
-	});
+	onMount(() => ensureFontLoaded(familyForStyle(iconStyle)));
 
 	$effect(() => {
 		if (iconName || iconStyle) {

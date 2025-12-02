@@ -3,32 +3,17 @@
 	import { page } from "$app/state";
 	import { CLIENT_IS_PRODUCTION } from "$lib/constants";
 	import { performSearch } from "$lib/search/execute";
-	import { search, user, getTheme, toggleTheme, debugMode, debugState } from "$lib/states/index.svelte";
-	import hotkeys from "hotkeys-js";
-	import { onMount } from "svelte";
-	import type { SvelteHTMLElements } from "svelte/elements";
-	import MaterialIcon from "./MaterialIcon.svelte";
-	import SearchInput from "./SearchInput.svelte";
-	import UploadManager from "$lib/upload/manager.svelte";
+	import { debugState, getTheme, search, toggleTheme, user } from "$lib/states/index.svelte";
 	import { SUPPORTED_IMAGE_TYPES, SUPPORTED_RAW_FILES, type SupportedImageTypes } from "$lib/types/images";
+	import UploadManager from "$lib/upload/manager.svelte";
+	import hotkeys from "hotkeys-js";
+	import type { SvelteHTMLElements } from "svelte/elements";
 	import OpenAccountPanel from "./AccountPanel.svelte";
 	import AppMenu from "./AppMenu.svelte";
-	import { de } from "@faker-js/faker";
+	import MaterialIcon from "./MaterialIcon.svelte";
+	import SearchInput from "./SearchInput.svelte";
 
 	let { ...props }: SvelteHTMLElements["header"] = $props();
-
-	onMount(() => {
-		if (page.url.pathname !== "/search") {
-			return;
-		}
-
-		// If URL has search params, perform search automatically
-		const urlParams = new URLSearchParams(window.location.search);
-		const q = urlParams.get("q");
-		if (q) {
-			search.value = q;
-		}
-	});
 
 	let searchElement = $state<HTMLInputElement | undefined>();
 	let searchInputHasFocus = $derived(searchElement && document.activeElement === searchElement);

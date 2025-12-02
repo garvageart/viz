@@ -2,9 +2,18 @@ import type { ImageObjectData } from "$lib/entities/image";
 import type CollectionData from "$lib/entities/collection";
 import type { AssetSort } from "$lib/types/asset";
 import type { UploadImage } from "$lib/upload/asset.svelte";
-import { writable } from "svelte/store";
 import { type User } from "$lib/api/client";
 import { VizLocalStorage, VizCookieStorage } from "$lib/utils/misc";
+
+// Types
+interface UserState {
+    data: User | null;
+    loading: boolean;
+    fetched: boolean;
+    error?: string | null;
+    isAdmin: boolean;
+    connectionError?: boolean;
+}
 
 class LoginState {
     storage: VizCookieStorage<string>;
@@ -16,6 +25,7 @@ class LoginState {
         this.value = this.storage.get();
     }
 }
+
 const loginState = new LoginState();
 export let login = $state({
     state: loginState.value
@@ -25,9 +35,9 @@ export let sidebar = $state({
     open: false
 });
 
-export let showHeader = writable(true);
+export let showHeader = $state(true);
 
-export let user = $state<{ data: User | null; loading: boolean; fetched: boolean; error?: string | null; isAdmin: boolean; connectionError?: boolean; }>({
+export let user = $state<UserState>({
     data: null,
     loading: false,
     fetched: false,
@@ -49,7 +59,7 @@ export let search = $state({
     },
     value: "",
     enableHomePageSearch: false,
-    element: undefined as unknown as HTMLInputElement | undefined
+    element: undefined as HTMLInputElement | undefined
 });
 
 export let modal = $state({

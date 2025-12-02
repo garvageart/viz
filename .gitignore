@@ -16,6 +16,13 @@ auth/*.json
 .key
 .pem
 
+# Binaries
+*.exe
+*.bin
+*.dll
+*.so
+*.deb
+
 # Platform-specific
 # ---
 # Node.js

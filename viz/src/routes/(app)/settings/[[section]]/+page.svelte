@@ -2,7 +2,11 @@
 	import type { PageData } from "./$types";
 	import Settings from "$lib/components/settings/Settings.svelte";
 
-	let { data }: { data: PageData } = $props();
+	interface Props {
+		data: PageData;
+	}
+
+	let { data }: Props = $props();
 </script>
 
 <div class="settings-page">
