@@ -84,6 +84,12 @@ func (h *FrontendHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 }
 
 func (h *FrontendHandler) serveIndex(w http.ResponseWriter, r *http.Request) {
+	// Don't serve index.html for missing API routes
+	if strings.HasPrefix(r.URL.Path, "/api") {
+		http.Error(w, "Not Found", http.StatusNotFound)
+		return
+	}
+
 	indexData, err := h.getIndexContent()
 	if err != nil {
 		if os.IsNotExist(err) {

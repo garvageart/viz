@@ -1,6 +1,7 @@
 package routes
 
 import (
+	"bytes"
 	"encoding/hex"
 	"encoding/json"
 	"fmt"
@@ -10,10 +11,12 @@ import (
 	"imagine/internal/entities"
 	libhttp "imagine/internal/http"
 	"imagine/internal/uid"
+	"imagine/internal/utils"
 	"log/slog"
 	"net/http"
 	"strconv"
 	"strings"
+	"time"
 
 	"github.com/go-chi/chi/v5"
 	"github.com/go-chi/render"
@@ -40,6 +43,12 @@ func AccountsRouter(db *gorm.DB, logger *slog.Logger) *chi.Mux {
 			return
 		}
 
+		if !utils.IsValidEmail(string(create.Email)) {
+			render.Status(req, http.StatusBadRequest)
+			render.JSON(res, req, dto.ErrorResponse{Error: "Email is invalid"})
+			return
+		}
+		
 		var existingUser entities.User
 		tx := db.Where("email = ?", string(create.Email)).First(&existingUser)
 		switch tx.Error {
@@ -105,7 +114,6 @@ func AccountsRouter(db *gorm.DB, logger *slog.Logger) *chi.Mux {
 
 	router.Get("/{uid}", func(res http.ResponseWriter, req *http.Request) {
 		userID := chi.URLParam(req, "uid")
-
 		var user entities.User
 
 		err := db.Where("uid = ?", userID).First(&user).Error
@@ -131,13 +139,9 @@ func AccountsRouter(db *gorm.DB, logger *slog.Logger) *chi.Mux {
 		r.Use(libhttp.AuthMiddleware(db, logger))
 
 		r.Route("/me", func(r chi.Router) {
+			r.Use(libhttp.UserAuthMiddleware)
 			r.Get("/", func(res http.ResponseWriter, req *http.Request) {
-				user, ok := libhttp.UserFromContext(req)
-				if !ok || user == nil {
-					render.Status(req, http.StatusUnauthorized)
-					render.JSON(res, req, dto.ErrorResponse{Error: "Not authenticated"})
-					return
-				}
+				user, _ := libhttp.UserFromContext(req)
 
 				// Compute ETag based on user's UpdatedAt and UID and support conditional
 				// requests for bandwidth savings.
@@ -153,14 +157,149 @@ func AccountsRouter(db *gorm.DB, logger *slog.Logger) *chi.Mux {
 				render.JSON(res, req, user.DTO())
 			})
 
+			r.Patch("/", func(res http.ResponseWriter, req *http.Request) {
+				user, _ := libhttp.UserFromContext(req)
+
+				var updates dto.UserUpdate
+				if err := render.DecodeJSON(req.Body, &updates); err != nil {
+					render.Status(req, http.StatusBadRequest)
+					render.JSON(res, req, dto.ErrorResponse{Error: "Invalid request body"})
+					return
+				}
+
+				updateFields := make(map[string]interface{})
+				if updates.FirstName != nil {
+					updateFields["first_name"] = *updates.FirstName
+				}
+				if updates.LastName != nil {
+					updateFields["last_name"] = *updates.LastName
+				}
+				if updates.Username != nil {
+					updateFields["username"] = *updates.Username
+				}
+
+				if updates.Email != nil {
+					if utils.IsValidEmail(string(*updates.Email)) {
+						render.Status(req, http.StatusBadRequest)
+						render.JSON(res, req, dto.ErrorResponse{Error: "Email is invalid"})
+						return
+					}
+
+					updateFields["email"] = *updates.Email
+				}
+
+				if len(updateFields) == 0 {
+					render.Status(req, http.StatusBadRequest)
+					render.JSON(res, req, dto.ErrorResponse{Error: "No fields provided for update"})
+					return
+				}
+
+				if err := db.Model(&user).Updates(updateFields).Error; err != nil {
+					libhttp.ServerError(res, req, err, logger, nil,
+						"Failed to update user profile",
+						"Something went wrong, please try again later",
+					)
+					return
+				}
+
+				// Re-fetch the updated user to ensure all fields are current and to return the latest DTO
+				if err := db.Where("uid = ?", user.Uid).First(&user).Error; err != nil {
+					libhttp.ServerError(res, req, err, logger, nil,
+						"Failed to fetch updated user",
+						"Something went wrong, please try again later",
+					)
+					return
+				}
+
+				render.JSON(res, req, user.DTO())
+			})
+
+			r.Put("/password", func(res http.ResponseWriter, req *http.Request) {
+				user, _ := libhttp.UserFromContext(req)
+
+				var body dto.UserPasswordUpdate
+
+				if err := render.DecodeJSON(req.Body, &body); err != nil {
+					render.Status(req, http.StatusBadRequest)
+					render.JSON(res, req, dto.ErrorResponse{Error: "Invalid request body"})
+					return
+				}
+
+				if body.Current == "" || body.New == "" {
+					render.Status(req, http.StatusBadRequest)
+					render.JSON(res, req, dto.ErrorResponse{Error: "Current and new passwords are required"})
+					return
+				}
+
+				// Fetch the user's current password hash from DB (not in context user)
+				var dbUser struct {
+					Password string
+				}
+				if err := db.Table("users").Select("password").Where("uid = ?", user.Uid).Scan(&dbUser).Error; err != nil {
+					libhttp.ServerError(res, req, err, logger, nil, "Failed to fetch user data", "Internal server error")
+					return
+				}
+
+				// Verify current password
+				argon := crypto.CreateArgon2Hash(3, 32, 2, 32, 16)
+				parts := strings.Split(dbUser.Password, ":")
+				if len(parts) != 2 {
+					logger.Error("Invalid password hash format in DB", slog.String("uid", user.Uid))
+					render.Status(req, http.StatusInternalServerError)
+					render.JSON(res, req, dto.ErrorResponse{Error: "Internal server error"})
+					return
+				}
+
+				salt, _ := hex.DecodeString(parts[0])
+				storedHash, _ := hex.DecodeString(parts[1])
+				inputHash, _ := argon.Hash([]byte(body.Current), salt)
+
+				if !bytes.Equal(inputHash, storedHash) {
+					render.Status(req, http.StatusUnauthorized)
+					render.JSON(res, req, dto.ErrorResponse{Error: "Incorrect current password"})
+					return
+				}
+
+				// Hash new password and update
+				newSalt := argon.GenerateSalt()
+				newHash, _ := argon.Hash([]byte(body.New), newSalt)
+				passwordString := hex.EncodeToString(newSalt) + ":" + hex.EncodeToString(newHash)
+
+				if err := db.Model(&entities.User{}).Where("uid = ?", user.Uid).Update("password", passwordString).Error; err != nil {
+					libhttp.ServerError(res, req, err, logger, nil, "Failed to update password", "Internal server error")
+					return
+				}
+
+				render.Status(req, http.StatusOK)
+				render.JSON(res, req, dto.MessageResponse{Message: "Password updated successfully"})
+			})
+
 			r.Route("/settings", func(r chi.Router) {
+				r.Use(libhttp.UserAuthMiddleware)
 				r.Group(func(r chi.Router) {
 					r.Use(libhttp.ScopeMiddleware([]auth.Scope{auth.UserSettingsReadScope}))
 					r.Get("/", func(res http.ResponseWriter, req *http.Request) {
-						user, ok := libhttp.UserFromContext(req)
-						if !ok || user == nil {
-							render.Status(req, http.StatusUnauthorized)
-							render.JSON(res, req, dto.ErrorResponse{Error: "Unauthenticated"})
+						user, _ := libhttp.UserFromContext(req)
+
+						var maxOverrideUpdatedAt, maxDefaultUpdatedAt time.Time
+
+						db.Model(&entities.SettingOverride{}).
+							Where("user_id = ?", user.Uid).
+							Select("MAX(updated_at)").
+							Row().
+							Scan(&maxOverrideUpdatedAt)
+
+						db.Model(&entities.SettingDefault{}).
+							Select("MAX(updated_at)").
+							Row().
+							Scan(&maxDefaultUpdatedAt)
+
+						etag := fmt.Sprintf("W/\"%s-%d-%d\"", user.Uid, maxOverrideUpdatedAt.UnixNano(), maxDefaultUpdatedAt.UnixNano())
+						res.Header().Set("Cache-Control", "private, max-age=300, must-revalidate")
+						res.Header().Set("ETag", etag)
+
+						if match := req.Header.Get("If-None-Match"); match == etag {
+							res.WriteHeader(http.StatusNotModified)
 							return
 						}
 
@@ -213,12 +352,7 @@ func AccountsRouter(db *gorm.DB, logger *slog.Logger) *chi.Mux {
 				r.Group(func(r chi.Router) {
 					r.Use(libhttp.ScopeMiddleware([]auth.Scope{auth.UserSettingsUpdateScope}))
 					r.Patch("/", func(res http.ResponseWriter, req *http.Request) {
-						user, ok := libhttp.UserFromContext(req)
-						if !ok || user == nil {
-							render.Status(req, http.StatusUnauthorized)
-							render.JSON(res, req, dto.ErrorResponse{Error: "Unauthenticated"})
-							return
-						}
+						user, _ := libhttp.UserFromContext(req)
 
 						settingName := req.URL.Query().Get("name")
 						if settingName == "" {

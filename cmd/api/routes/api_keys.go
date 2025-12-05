@@ -60,6 +60,13 @@ func APIKeysRouter(db *gorm.DB, logger *slog.Logger) *chi.Mux {
             return
         }
 
+        var scopes []string
+        if body.Scopes != nil {
+            scopes = *body.Scopes
+        } else {
+            scopes = []string{}
+        }
+
         apiEnt := entities.APIKey{
             Uid:         apiKeyUid,
             KeyHashed:   keys["hashed_key"],
@@ -67,7 +74,7 @@ func APIKeysRouter(db *gorm.DB, logger *slog.Logger) *chi.Mux {
             Revoked:     false,
             Name:        body.Name,
             Description: body.Description,
-            Scopes:      *body.Scopes,
+            Scopes:      scopes,
             ExpiresAt:   body.ExpiresAt,
         }
 

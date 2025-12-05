@@ -18,15 +18,23 @@ import (
 
 // EntityConfig defines which OpenAPI types should become GORM entities
 type EntityConfig struct {
-	Name          string   // DTO type name from OpenAPI
-	TableName     string   // Optional custom table name
-	PKField       string   // Primary key field (default: "ID")
-	SoftDelete    bool     // Add DeletedAt
-	Indexes       []string // Fields to index
-	UniqueIndexes []string // Fields with unique indexes
+	Name          string            // DTO type name from OpenAPI
+	TableName     string            // Optional custom table name
+	PKField       string            // Primary key field (default: "ID")
+	SoftDelete    bool              // Add DeletedAt
+	Indexes       []string          // Fields to index
+	UniqueIndexes []string          // Fields with unique indexes
+	GormIndexes   []GormIndexConfig // Custom GORM indexes parsed from OpenAPI x-go-gorm-index
 	Fields        []FieldConfig
 	// Flag indicating whether the original DTO contains CreatedAt and UpdatedAt
 	DtoHasDates bool
+}
+
+// GormIndexConfig represents a single GORM index definition
+type GormIndexConfig struct {
+	Name   string   `yaml:"name"`
+	Unique bool     `yaml:"unique"`
+	Fields []string `yaml:"fields"`
 }
 
 type FieldConfig struct {
@@ -125,7 +133,7 @@ func main() {
 	}
 
 	// If an OpenAPI spec path was provided, parse it and collect x-entity:true schema names.
-	openapiIncludes := map[string]bool{}
+	openapiIncludes := map[string]EntityConfig{}
 	if *openapiPath != "" {
 		data, err := os.ReadFile(*openapiPath)
 		if err != nil {
@@ -146,7 +154,27 @@ func main() {
 					if schemaMap, ok := raw.(map[string]any); ok {
 						if val, exists := schemaMap["x-entity"]; exists {
 							if b, ok := val.(bool); ok && b {
-								openapiIncludes[name] = true
+								config := EntityConfig{
+									Name:       name,
+									SoftDelete: true, // Default to true if not specified otherwise
+									PKField:    "ID",
+								}
+								// Extract x-go-gorm-index if present
+								if gormIndexes, gormIndexExists := schemaMap["x-go-gorm-index"]; gormIndexExists {
+									indexData, err := yaml.Marshal(gormIndexes)
+									if err != nil {
+										fmt.Fprintf(os.Stderr, "Failed to marshal x-go-gorm-index for entity '%s': %v\n", name, err)
+										continue
+									}
+									var indexes []GormIndexConfig
+									if err := yaml.Unmarshal(indexData, &indexes); err != nil {
+										fmt.Fprintf(os.Stderr, "Failed to unmarshal x-go-gorm-index for entity '%s': %v\n", name, err)
+										continue
+									}
+									config.GormIndexes = indexes
+								}
+								// Add to a temporary map to resolve full config later
+								openapiIncludes[name] = config
 							}
 						}
 					}
@@ -162,28 +190,43 @@ func main() {
 			if name == "" {
 				continue
 			}
-			openapiIncludes[name] = true
+			// Assign a basic EntityConfig, as this is a force-include via CLI
+			openapiIncludes[name] = EntityConfig{
+				Name:       name,
+				SoftDelete: true,
+				PKField:    "ID",
+			}
 		}
 	}
-
 	// Merge OpenAPI includes into discovered entities (OpenAPI preference)
 	if len(openapiIncludes) > 0 {
-		for name := range openapiIncludes {
-			found := false
-			for _, e := range discovered {
-				if e.Name == name {
-					found = true
-					break
+		var mergedDiscovered []EntityConfig
+		// Create a map for faster lookup of discovered entities by name
+		discoveredMap := make(map[string]EntityConfig)
+		for _, e := range discovered {
+			discoveredMap[e.Name] = e
+		}
+
+		for name, openapiConf := range openapiIncludes {
+			if existing, found := discoveredMap[name]; found {
+				// Merge existing with openapiConf, giving openapiConf precedence for GormIndexes
+				if len(openapiConf.GormIndexes) > 0 {
+					existing.GormIndexes = openapiConf.GormIndexes
 				}
-			}
-			if !found {
-				discovered = append(discovered, EntityConfig{
-					Name:       name,
-					SoftDelete: true,
-					PKField:    "ID",
-				})
+				// Other fields can also be merged/overwritten if necessary
+				mergedDiscovered = append(mergedDiscovered, existing)
+				delete(discoveredMap, name) // Remove from map so it's not added again
+			} else {
+				// If not found in discovered, add the openapiConf directly
+				mergedDiscovered = append(mergedDiscovered, openapiConf)
 			}
 		}
+
+		// Add any remaining discovered entities that were not in openapiIncludes
+		for _, e := range discoveredMap {
+			mergedDiscovered = append(mergedDiscovered, e)
+		}
+		discovered = mergedDiscovered
 	}
 
 	// Infer fields for each entity
@@ -410,6 +453,25 @@ func populateEntityFields(dtoPath string, entities []EntityConfig) ([]EntityConf
 				continue
 			}
 
+			// Extract JSON key from struct tag
+			jsonName := ""
+			if f.Tag != nil {
+				// We manually parse because we don't want to reflect on types we don't have loaded
+				tagContent := strings.Trim(f.Tag.Value, "`")
+				for _, tagPart := range strings.Split(tagContent, " ") {
+					if strings.HasPrefix(tagPart, "json:\"") {
+						val := strings.TrimPrefix(tagPart, "json:\"")
+						val = strings.TrimSuffix(val, "\"")
+						// Handle json:"name,omitempty"
+						if commaIdx := strings.Index(val, ","); commaIdx != -1 {
+							val = val[:commaIdx]
+						}
+						jsonName = val
+						break
+					}
+				}
+			}
+
 			tStr, simple := renderType(f.Type)
 
 			// If this field is an identifier that is an alias to a basic type (e.g. UserRole -> string),
@@ -463,10 +525,40 @@ func populateEntityFields(dtoPath string, entities []EntityConfig) ([]EntityConf
 				simple = false
 			}
 
-			// Check if this field needs a unique index
+			// Build GORM index tags from EntityConfig.GormIndexes
+			gormIndexFieldTags := make(map[string][]string) // Map fieldName -> list of GORM tags for that field
+			for _, gormIdx := range e.GormIndexes {
+				for i, fieldName := range gormIdx.Fields {
+					var tagsForField []string
+					indexDef := fmt.Sprintf("%s,priority:%d", gormIdx.Name, i+1)
+
+					tagKey := "index"
+					if gormIdx.Unique {
+						tagKey = "uniqueIndex"
+					}
+
+					tagsForField = append(tagsForField, fmt.Sprintf("%s:%s", tagKey, indexDef))
+					gormIndexFieldTags[fieldName] = append(gormIndexFieldTags[fieldName], tagsForField...)
+
+				}
+			}
+
+			// Check if this field needs a GORM tag
 			gormTag := ""
-			if slices.Contains(e.UniqueIndexes, name) {
+
+			// Use explicitly defined GORM index tags from x-go-gorm-index
+			// Check Go field name first, then JSON name
+			tags, exists := gormIndexFieldTags[name]
+			if !exists && jsonName != "" {
+				tags, exists = gormIndexFieldTags[jsonName]
+			}
+
+			if exists {
+				gormTag = fmt.Sprintf("gorm:\"%s\"", strings.Join(tags, ";"))
+			} else if slices.Contains(e.UniqueIndexes, name) {
+				// Fallback for simple unique indexes (e.g., "uid" uniqueIndex) if not handled by GormIndexes
 				gormTag = "gorm:\"uniqueIndex\""
+
 			}
 
 			// If this is a simple alias-to-string type and no explicit gorm tag was set,

@@ -58,7 +58,7 @@ RUN --mount=type=cache,id=go-mods,target=/go/pkg/mod \
     # Support both legacy output 'build/imagine' and Makefile's 'build/api'
     if [ -f build/api ]; then mv build/api /app/build/imagine; elif [ -f build/imagine ]; then mv build/imagine /app/build/imagine; else echo "Expected built binary not found"; exit 1; fi; \
     else \
-    go build -o /app/build/imagine ./cmd/api; \
+    go build -o /app/builds/api/imagine ./cmd/api; \
     fi
 
 FROM debian:bookworm-slim AS runtime
@@ -69,11 +69,11 @@ COPY --from=packages /usr /usr
 COPY --from=packages /etc/ssl/certs /etc/ssl/certs
 
 # Copy only the build directory produced by the builder stage
-COPY --from=builder /app/build /app/build
+COPY --from=builder /app/builds/api /app/builds/api
 
 COPY imagine.json /app/imagine.json
 COPY version.txt /app/version.txt
 
 EXPOSE 7770
 ENV ENV=production
-CMD ["/app/build/imagine"]
+CMD ["/app/builds/api/imagine"]

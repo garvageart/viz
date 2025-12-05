@@ -16,11 +16,17 @@ servers:
         description: Port for the API server
   - url: /api
     description: Production API
+
+security:
+  - BearerAuth: []
+  - CookieAuth: []
+
 paths:
   /ping:
     get:
       summary: Health ping
       operationId: ping
+      security: []
       responses:
         "200":
           description: OK
@@ -37,6 +43,7 @@ paths:
     post:
       summary: Register a new user
       operationId: registerUser
+      security: []
       requestBody:
         required: true
         content:
@@ -61,6 +68,7 @@ paths:
     get:
       summary: Generate an API key
       operationId: generateApiKey
+      security: []
       responses:
         "200":
           description: API key generated
@@ -215,6 +223,7 @@ paths:
     post:
       summary: Login with email and password
       operationId: login
+      security: []
       requestBody:
         required: true
         content:
@@ -264,6 +273,7 @@ paths:
     get:
       summary: Initiate OAuth flow
       operationId: initiateOAuth
+      security: []
       parameters:
         - name: provider
           in: query
@@ -292,6 +302,7 @@ paths:
     post:
       summary: Complete OAuth flow
       operationId: completeOAuth
+      security: []
       parameters:
         - name: provider
           in: path
@@ -336,6 +347,8 @@ paths:
     get:
       summary: Get current session information
       operationId: getCurrentSession
+      security:
+        - CookieAuth: []
       responses:
         "200":
           description: Current session
@@ -354,6 +367,8 @@ paths:
     post:
       summary: Logout current session
       operationId: logout
+      security:
+        - CookieAuth: []
       responses:
         "200":
           description: Logged out
@@ -378,6 +393,9 @@ paths:
     get:
       summary: Get current authenticated user
       operationId: getCurrentUser
+      security:
+        - BearerAuth: []
+        - CookieAuth: []
       responses:
         "200":
           description: Authenticated user
@@ -391,12 +409,235 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/ErrorResponse"
+    patch:
+      summary: Update current authenticated user's profile
+      operationId: updateCurrentUser
+      security:
+        - BearerAuth: []
+        - CookieAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/UserUpdate"
+      responses:
+        "200":
+          description: User profile updated
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/User"
+        "400":
+          description: Bad request (e.g., validation error)
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "401":
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "404":
+          description: Not found (implies authentication issue)
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+
+  /accounts/me/password:
+    put:
+      summary: Update user password
+      operationId: updatePassword
+      security:
+        - BearerAuth: []
+        - CookieAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/UserPasswordUpdate"
+      responses:
+        "200":
+          description: Password updated successfully
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/UserUpdate"
+        "400":
+          description: Bad request (missing fields)
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "401":
+          description: Unauthorized (incorrect current password)
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "500":
+          description: Server error
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+
+  /sessions:
+    get:
+      summary: Get all sessions for the current user
+      operationId: getSessions
+      security:
+        - CookieAuth: []
+      responses:
+        "200":
+          description: List of sessions
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/Session"
+        "401":
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+    delete:
+      summary: Delete all sessions for the current user
+      operationId: deleteSessions
+      security:
+        - CookieAuth: []
+      responses:
+        "200":
+          description: All sessions logged out
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/MessageResponse"
+        "401":
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+
+  /sessions/{uid}:
+    get:
+      summary: Get a specific session by ID for the current user
+      operationId: getSessionById
+      security:
+        - CookieAuth: []
+      parameters:
+        - name: uid
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        "200":
+          description: Session details
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Session"
+        "401":
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "404":
+          description: Session not found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+    put:
+      summary: Update a specific session
+      operationId: updateSession
+      security:
+        - CookieAuth: []
+      parameters:
+        - name: uid
+          in: path
+          required: true
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/SessionUpdate"
+      responses:
+        "200":
+          description: Session updated
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Session"
+        "400":
+          description: Invalid request body
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "401":
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "404":
+          description: Session not found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+    delete:
+      summary: Delete a specific session
+      operationId: deleteSession
+      security:
+        - CookieAuth: []
+      parameters:
+        - name: uid
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        "200":
+          description: Session revoked
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/MessageResponse"
+        "401":
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "404":
+          description: Session not found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
 
   /accounts/me/settings:
     get:
       summary: Get all user settings
       description: Returns a merged list of settings (system defaults + user overrides).
       operationId: getUserSettings
+      security:
+        - BearerAuth: []
+        - CookieAuth: []
       responses:
         "200":
           description: List of user settings
@@ -422,6 +663,9 @@ paths:
       summary: Update a user setting (Override)
       description: Creates or updates an override for a specific setting.
       operationId: updateUserSetting
+      security:
+        - BearerAuth: []
+        - CookieAuth: []
       parameters:
         - in: query
           name: name
@@ -539,6 +783,7 @@ paths:
       operationId: deleteImagesBulk
       security:
         - BearerAuth: [images:write]
+        - CookieAuth: []
       requestBody:
         required: true
         content:
@@ -585,6 +830,7 @@ paths:
       operationId: uploadImageByUrl
       security:
         - BearerAuth: [images:write]
+        - CookieAuth: []
       requestBody:
         required: true
         content:
@@ -623,6 +869,9 @@ paths:
       summary: Get a processed image file
       description: Retrieve an image, optionally transformed. Use download=1 with a token for authenticated downloads. Supports password protection and embed controls.
       operationId: getImageFile
+      security:
+        - BearerAuth: [images:read]
+        - CookieAuth: []
       parameters:
         - in: path
           name: uid
@@ -722,6 +971,9 @@ paths:
         when available. Otherwise the server will re-read the file and return the full raw
         EXIF map extracted from the original file.
       operationId: getImageExif
+      security:
+        - BearerAuth: [images:read]
+        - CookieAuth: []
       parameters:
         - in: path
           name: uid
@@ -773,6 +1025,7 @@ paths:
       operationId: getImage
       security:
         - BearerAuth: [images:read]
+        - CookieAuth: []
       parameters:
         - in: path
           name: uid
@@ -810,6 +1063,7 @@ paths:
       operationId: updateImage
       security:
         - BearerAuth: [images:write]
+        - CookieAuth: []
       parameters:
         - in: path
           name: uid
@@ -854,6 +1108,9 @@ paths:
       summary: Create short-lived download token and redirect
       description: Creates a 5-minute download token and redirects to /images/{uid}/file?download=1&token=...
       operationId: quickDownloadImage
+      security:
+        - BearerAuth: [images:read]
+        - CookieAuth: []
       parameters:
         - in: path
           name: uid
@@ -888,6 +1145,7 @@ paths:
       operationId: listCollections
       security:
         - BearerAuth: [collections:read]
+        - CookieAuth: []
       parameters:
         - in: query
           name: limit
@@ -925,6 +1183,7 @@ paths:
       operationId: createCollection
       security:
         - BearerAuth: [collections:write]
+        - CookieAuth: []
       requestBody:
         required: true
         content:
@@ -957,6 +1216,7 @@ paths:
       operationId: getCollection
       security:
         - BearerAuth: [collections:read]
+        - CookieAuth: []
       parameters:
         - in: path
           name: uid
@@ -988,6 +1248,7 @@ paths:
       operationId: updateCollection
       security:
         - BearerAuth: [collections:write]
+        - CookieAuth: []
       parameters:
         - in: path
           name: uid
@@ -1030,6 +1291,7 @@ paths:
       operationId: deleteCollection
       security:
         - BearerAuth: [collections:write]
+        - CookieAuth: []
       parameters:
         - in: path
           name: uid
@@ -1058,6 +1320,7 @@ paths:
       operationId: listCollectionImages
       security:
         - BearerAuth: [collections:read]
+        - CookieAuth: []
       parameters:
         - in: path
           name: uid
@@ -1098,6 +1361,7 @@ paths:
       operationId: addCollectionImages
       security:
         - BearerAuth: [collections:write]
+        - CookieAuth: []
       parameters:
         - in: path
           name: uid
@@ -1138,6 +1402,9 @@ paths:
     delete:
       summary: Remove images from a collection
       operationId: deleteCollectionImages
+      security:
+        - BearerAuth: [collections:write]
+        - CookieAuth: []
       parameters:
         - in: path
           name: uid
@@ -1186,6 +1453,9 @@ paths:
       summary: Download a set of images as a ZIP (requires token)
       description: Download images using a token from /download/sign. Supports password-protected tokens and embed controls.
       operationId: downloadImages
+      security:
+        - BearerAuth: [downloads:create]
+        - CookieAuth: []
       parameters:
         - in: query
           name: token
@@ -1243,6 +1513,9 @@ paths:
       summary: Create a download token with optional access controls
       description: Generate a persistent download token for a set of images with configurable permissions and optional password protection
       operationId: signDownload
+      security:
+        - BearerAuth: [downloads:create]
+        - CookieAuth: []
       requestBody:
         required: false
         content:
@@ -1275,6 +1548,7 @@ paths:
       operationId: listSettingDefinitions
       security:
         - BearerAuth: [admin:read]
+        - CookieAuth: []
       responses:
         "200":
           description: List of setting definitions
@@ -1297,6 +1571,7 @@ paths:
       operationId: listSettingOverrides
       security:
         - BearerAuth: [admin:read]
+        - CookieAuth: []
       responses:
         "200":
           description: List of all overrides
@@ -1317,6 +1592,9 @@ paths:
     post:
       summary: Admin-only healthcheck
       operationId: adminHealthcheck
+      security:
+        - BearerAuth: [admin:read]
+        - CookieAuth: []
       responses:
         "200":
           description: OK
@@ -1349,6 +1627,7 @@ paths:
       operationId: getCacheStatus
       security:
         - BearerAuth: [admin:read]
+        - CookieAuth: []
       responses:
         "200":
           description: Cache status
@@ -1381,6 +1660,7 @@ paths:
       operationId: clearImageCache
       security:
         - BearerAuth: [admin:write]
+        - CookieAuth: []
       responses:
         "200":
           description: Cache cleared
@@ -1411,6 +1691,9 @@ paths:
     get:
       summary: List all workers
       operationId: listAvailableWorkers
+      security:
+        - BearerAuth: [jobs:read]
+        - CookieAuth: []
       responses:
         "200":
           description: Workers list
@@ -1427,6 +1710,9 @@ paths:
     post:
       summary: Register a new worker
       operationId: registerWorker
+      security:
+        - BearerAuth: [jobs:create]
+        - CookieAuth: []
       requestBody:
         required: true
         content:
@@ -1457,6 +1743,9 @@ paths:
     post:
       summary: Create/enqueue a job
       operationId: createJob
+      security:
+        - BearerAuth: [jobs:create]
+        - CookieAuth: []
       requestBody:
         required: true
         content:
@@ -1485,6 +1774,9 @@ paths:
     get:
       summary: List jobs with filtering and pagination
       operationId: listJobs
+      security:
+        - BearerAuth: [jobs:read]
+        - CookieAuth: []
       parameters:
         - in: query
           name: status
@@ -1528,6 +1820,9 @@ paths:
     get:
       summary: Get job detail
       operationId: getJob
+      security:
+        - BearerAuth: [jobs:read]
+        - CookieAuth: []
       parameters:
         - in: path
           name: uid
@@ -1550,6 +1845,9 @@ paths:
     delete:
       summary: Cancel job
       operationId: cancelJob
+      security:
+        - BearerAuth: [jobs:delete]
+        - CookieAuth: []
       parameters:
         - in: path
           name: uid
@@ -1572,6 +1870,9 @@ paths:
     post:
       summary: Retry job
       operationId: retryJob
+      security:
+        - BearerAuth: [jobs:update]
+        - CookieAuth: []
       parameters:
         - in: path
           name: uid
@@ -1590,6 +1891,9 @@ paths:
     get:
       summary: Get job stats by topic
       operationId: getJobStats
+      security:
+        - BearerAuth: [jobs:read]
+        - CookieAuth: []
       responses:
         "200":
           description: Job stats (running and queued by topic)
@@ -1625,6 +1929,9 @@ paths:
         - `job-failed` - Job failed with error
         - `ping` - Server keepalive (respond with pong)
 
+      security:
+        - BearerAuth: [events:read]
+        - CookieAuth: []
       responses:
         "101":
           description: Switching Protocols - WebSocket connection established
@@ -1639,6 +1946,9 @@ paths:
     get:
       summary: Get WebSocket connection statistics
       operationId: getWSStats
+      security:
+        - BearerAuth: [events:read]
+        - CookieAuth: []
       responses:
         "200":
           description: Connection statistics
@@ -1657,6 +1967,9 @@ paths:
     get:
       summary: Get WebSocket event metrics
       operationId: getWSMetrics
+      security:
+        - BearerAuth: [events:read]
+        - CookieAuth: []
       responses:
         "200":
           description: Event metrics
@@ -1675,6 +1988,9 @@ paths:
     get:
       summary: Get recent event history
       operationId: getEventHistory
+      security:
+        - BearerAuth: [events:read]
+        - CookieAuth: []
       parameters:
         - in: query
           name: limit
@@ -1699,6 +2015,9 @@ paths:
     delete:
       summary: Clear event history
       operationId: clearEventHistory
+      security:
+        - BearerAuth: [events:read]
+        - CookieAuth: []
       responses:
         "200":
           description: History cleared
@@ -1720,6 +2039,9 @@ paths:
       description: |
         Retrieve events that occurred after a specific cursor ID.
         Useful for catching up on missed events during reconnection.
+      security:
+        - BearerAuth: [events:read]
+        - CookieAuth: []
       parameters:
         - in: query
           name: cursor
@@ -1764,6 +2086,9 @@ paths:
     post:
       summary: Broadcast event to all connected WebSocket clients
       operationId: broadcastWSEvent
+      security:
+        - BearerAuth: [events:write]
+        - CookieAuth: []
       requestBody:
         required: true
         content:
@@ -1794,6 +2119,9 @@ paths:
     post:
       summary: Send event to specific WebSocket client
       operationId: sendToWSClient
+      security:
+        - BearerAuth: [events:write]
+        - CookieAuth: []
       parameters:
         - in: path
           name: clientId
@@ -1839,7 +2167,47 @@ components:
     BearerAuth:
       type: http
       scheme: bearer
-      description: "API key for authentication. The key should be provided in the Authorization header as a Bearer token."
+      description: "API key for authentication. The key should be provided in the Authorization header as a Bearer token. This token is a hex-encoded string of random bytes, prefixed with 'IMAG_'. Bearer format is intentionally omitted to avoid JWT confusion."
+      x-scopes:
+        admin:read: Read admin resources
+        admin:write: Write admin resources
+        api_keys:create: Create API keys
+        api_keys:list: List API keys
+        api_keys:get: Get API key details
+        api_keys:revoke: Revoke API keys
+        api_keys:rotate: Rotate API keys
+        api_keys:delete: Delete API keys
+        auth:refresh: Refresh authentication tokens
+        auth:revoke: Revoke authentication tokens
+        collections:create: Create collections
+        collections:read: Read collections
+        collections:update: Update collections
+        collections:delete: Delete collections
+        collections:share: Share collections
+        images:read: Read images
+        images:upload: Upload images
+        images:update: Update images
+        images:delete: Delete images
+        images:download: Download images
+        jobs:read: Read jobs
+        jobs:create: Create jobs
+        jobs:update: Update jobs
+        jobs:delete: Delete jobs
+        users:create: Create users
+        users:read: Read users
+        users:update: Update users
+        users:delete: Delete users
+        user_settings:read: Read user settings
+        user_settings:update: Update user settings
+        downloads:create: Create downloads
+        events:read: Read events
+        "*": Grants all permissions (superuser)
+
+    CookieAuth:
+      type: apiKey
+      in: cookie
+      name: imag-auth_token
+      description: "Session authentication using a cookie named 'imag-auth_token'. The cookie value is a hex-encoded string of securely-generated random bytes."
 
   schemas:
     ErrorResponse:
@@ -2118,6 +2486,10 @@ components:
 
     SettingDefault:
       x-entity: true
+      x-go-gorm-index:
+        - name: idx_setting_defaults_name
+          unique: true
+          fields: [name]
       type: object
       description: Defines a setting available in the system.
       properties:
@@ -2150,6 +2522,10 @@ components:
 
     SettingOverride:
       x-entity: true
+      x-go-gorm-index:
+        - name: idx_setting_overrides_user_name
+          unique: true
+          fields: [user_id, name]
       type: object
       description: Stores user-specific changes to settings.
       properties:
@@ -2597,6 +2973,33 @@ components:
         email: { type: string, format: email }
         password: { type: string }
       required: [name, email, password]
+
+    UserUpdate:
+      type: object
+      properties:
+        first_name:
+          type: string
+          nullable: true
+        last_name:
+          type: string
+          nullable: true
+        username:
+          type: string
+          nullable: true
+        email:
+          type: string
+          format: email
+          nullable: true
+
+    UserPasswordUpdate:
+      type: object
+      properties:
+        current:
+          type: string
+        new:
+          type: string
+      required: [current, new]
+
     Session:
       x-entity: true
       type: object
@@ -2620,6 +3023,15 @@ components:
         created_at: { type: string, format: date-time }
         updated_at: { type: string, format: date-time }
       required: [uid, token, user_uid, created_at, updated_at]
+    SessionUpdate:
+      type: object
+      properties:
+        clientName:
+          type: string
+          nullable: true
+        status:
+          type: integer
+          nullable: true
     APIKey:
       x-entity: true
       type: object

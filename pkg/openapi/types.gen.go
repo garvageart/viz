@@ -11,6 +11,7 @@ import (
 
 const (
 	BearerAuthScopes = "BearerAuth.Scopes"
+	CookieAuthScopes = "CookieAuth.Scopes"
 )
 
 // Defines values for SettingDefaultValueType.
@@ -413,6 +414,12 @@ type Session struct {
 	UserUid    string     `json:"user_uid"`
 }
 
+// SessionUpdate defines model for SessionUpdate.
+type SessionUpdate struct {
+	ClientName *string `json:"clientName"`
+	Status     *int    `json:"status"`
+}
+
 // SettingDefault Defines a setting available in the system.
 type SettingDefault struct {
 	// AllowedValues List of valid choices if type is enum.
@@ -498,6 +505,12 @@ type UserCreate struct {
 	Password string              `json:"password"`
 }
 
+// UserPasswordUpdate defines model for UserPasswordUpdate.
+type UserPasswordUpdate struct {
+	Current string `json:"current"`
+	New     string `json:"new"`
+}
+
 // UserSetting The effective setting for a user (merged Default and Override).
 type UserSetting struct {
 	AllowedValues  *[]string `json:"allowed_values"`
@@ -510,6 +523,14 @@ type UserSetting struct {
 	// Value The effective value (override if exists, else default).
 	Value     string `json:"value"`
 	ValueType string `json:"value_type"`
+}
+
+// UserUpdate defines model for UserUpdate.
+type UserUpdate struct {
+	Email     *openapi_types.Email `json:"email"`
+	FirstName *string              `json:"first_name"`
+	LastName  *string              `json:"last_name"`
+	Username  *string              `json:"username"`
 }
 
 // WSBroadcastRequest defines model for WSBroadcastRequest.
@@ -780,6 +801,12 @@ type ListJobsParamsStatus string
 // RegisterUserJSONRequestBody defines body for RegisterUser for application/json ContentType.
 type RegisterUserJSONRequestBody = UserCreate
 
+// UpdateCurrentUserJSONRequestBody defines body for UpdateCurrentUser for application/json ContentType.
+type UpdateCurrentUserJSONRequestBody = UserUpdate
+
+// UpdatePasswordJSONRequestBody defines body for UpdatePassword for application/json ContentType.
+type UpdatePasswordJSONRequestBody = UserPasswordUpdate
+
 // UpdateUserSettingJSONRequestBody defines body for UpdateUserSetting for application/json ContentType.
 type UpdateUserSettingJSONRequestBody UpdateUserSettingJSONBody
 
@@ -830,3 +857,6 @@ type CreateJobJSONRequestBody = WorkerJobCreateRequest
 
 // RegisterWorkerJSONRequestBody defines body for RegisterWorker for application/json ContentType.
 type RegisterWorkerJSONRequestBody = WorkerRegisterRequest
+
+// UpdateSessionJSONRequestBody defines body for UpdateSession for application/json ContentType.
+type UpdateSessionJSONRequestBody = SessionUpdate

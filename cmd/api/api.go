@@ -56,7 +56,6 @@ func (server APIServer) Launch(router *chi.Mux) *http.Server {
 		},
 		AllowedMethods: []string{"GET", "POST", "PUT", "PATCH", "OPTIONS", "DELETE"},
 		AllowedHeaders: []string{"Accept", "Authorization", "Content-Type", "X-CSRF-Token", libhttp.APIKeyName, "If-None-Match", "If-Modified-Since"},
-		// Expose Content-Disposition so client JS can read filenames from responses across origins
 		ExposedHeaders:   []string{"Set-Cookie", "Content-Disposition"},
 		AllowCredentials: true,
 		MaxAge:           300,
@@ -168,6 +167,8 @@ func (server APIServer) Launch(router *chi.Mux) *http.Server {
 				}))
 				r.Mount("/api-keys", routes.APIKeysRouter(dbClient, logger))
 			})
+
+			r.Mount("/sessions", routes.SessionsRouter(dbClient, logger))
 		})
 
 		// Admin routes (auth + admin required)
@@ -178,7 +179,7 @@ func (server APIServer) Launch(router *chi.Mux) *http.Server {
 	// Serve Frontend (SPA + Static Files)
 	frontendPath := os.Getenv("IMAGINE_FRONTEND_BUILD_PATH")
 	if frontendPath == "" {
-		frontendPath = "./viz/build" // Default for dev/local
+		frontendPath = "../../build/viz" // Default for dev/local
 	}
 	
 	frontendHandler := routes.NewFrontendHandler(frontendPath, logger)
