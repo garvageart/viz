@@ -1,13 +1,13 @@
 package routes
 
 import (
-	"slices"
 	"encoding/json"
 	"fmt"
 	"log/slog"
 	"net/http"
 	"os"
 	"path/filepath"
+	"slices"
 	"strings"
 
 	"github.com/go-chi/chi/v5"
@@ -22,6 +22,12 @@ import (
 	"imagine/internal/jobs"
 	"imagine/internal/jobs/workers"
 )
+
+type ActiveBrief struct {
+	Id     string         `json:"id"`
+	Topic  string         `json:"topic"`
+	Status jobs.JobStatus `json:"status"`
+}
 
 // handleImageProcessing processes image processing job requests
 func handleImageProcessing(db *gorm.DB, logger *slog.Logger, body dto.WorkerJobCreateRequest, res http.ResponseWriter, req *http.Request) {
@@ -472,12 +478,6 @@ func JobsRouter(db *gorm.DB, logger *slog.Logger) *chi.Mux {
 	r.Get("/snapshot", func(res http.ResponseWriter, req *http.Request) {
 		// active jobs
 		activeMap := jobs.GetAllJobs()
-		type ActiveBrief struct {
-			Id     string `json:"id"`
-			Topic  string `json:"topic"`
-			Status string `json:"status"`
-		}
-
 		active := make([]ActiveBrief, 0, len(activeMap))
 		for id, j := range activeMap {
 			active = append(active, ActiveBrief{Id: id, Topic: j.Topic(), Status: j.GetStatus()})
@@ -658,16 +658,16 @@ func JobsRouter(db *gorm.DB, logger *slog.Logger) *chi.Mux {
 		uid := chi.URLParam(req, "uid")
 		all := jobs.GetAllJobs()
 		if j, ok := all[uid]; ok {
-			j.SetStatus("cancelled")
+			j.SetStatus(jobs.WorkerJobStatusCancelled)
 			delete(all, uid)
-			_ = jobs.UpdateWorkerJobStatus(db, uid, "cancelled", nil, nil, nil, nil)
+			_ = jobs.UpdateWorkerJobStatus(db, uid, jobs.WorkerJobStatusCancelled, nil, nil, nil, nil)
 
 			render.Status(req, http.StatusOK)
 			render.JSON(res, req, dto.MessageResponse{Message: "Job cancelled"})
 			return
 		}
 
-		if err := jobs.UpdateWorkerJobStatus(db, uid, "cancelled", nil, nil, nil, nil); err == nil {
+		if err := jobs.UpdateWorkerJobStatus(db, uid, jobs.WorkerJobStatusCancelled, nil, nil, nil, nil); err == nil {
 			render.Status(req, http.StatusOK)
 			render.JSON(res, req, dto.MessageResponse{Message: "Job cancelled"})
 			return
@@ -696,7 +696,7 @@ func JobsRouter(db *gorm.DB, logger *slog.Logger) *chi.Mux {
 		cancelled := 0
 		for id, j := range all {
 			if j.Topic() == topic {
-				j.SetStatus("cancelled")
+				j.SetStatus(jobs.WorkerJobStatusCancelled)
 				delete(all, id)
 				cancelled++
 			}

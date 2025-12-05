@@ -13,11 +13,15 @@ import (
 	"imagine/internal/utils"
 )
 
+
+type JobStatus string
+
 const (
-	WorkerJobStatusQueued  = "queued"
-	WorkerJobStatusRunning = "running"
-	WorkerJobStatusFailed  = "failed"
-	WorkerJobStatusSuccess = "completed"
+	WorkerJobStatusQueued JobStatus  = "queued"
+	WorkerJobStatusRunning JobStatus = "running"
+	WorkerJobStatusFailed JobStatus  = "failed"
+	WorkerJobStatusSuccess JobStatus = "completed"
+	WorkerJobStatusCancelled JobStatus = "cancelled"
 )
 
 // Enqueue creates a persisted WorkerJob and publishes the message to the
@@ -49,7 +53,7 @@ func Enqueue(db *gorm.DB, topic string, payload any, cmd *JobCommand, imageUid *
 		Topic:      topic,
 		Command:    cmdStr,
 		ImageUid:   imageUid,
-		Status:     WorkerJobStatusQueued,
+		Status:     string(WorkerJobStatusQueued),
 		Payload:    &payloadStr,
 		EnqueuedAt: time.Now().UTC(),
 	}
@@ -70,7 +74,7 @@ func Enqueue(db *gorm.DB, topic string, payload any, cmd *JobCommand, imageUid *
 }
 
 // UpdateWorkerJobStatus updates WorkerJob status and optional timestamps and error info.
-func UpdateWorkerJobStatus(db *gorm.DB, uid string, status string, errorCode *string, errorMsg *string, startedAt *time.Time, completedAt *time.Time) error {
+func UpdateWorkerJobStatus(db *gorm.DB, uid string, status JobStatus, errorCode *string, errorMsg *string, startedAt *time.Time, completedAt *time.Time) error {
 	updates := map[string]any{"status": status}
 	if errorCode != nil {
 		updates["error_code"] = *errorCode

@@ -6,14 +6,14 @@ type Job struct {
 	ctx    context.Context
 	ID     string
 	topic  string
-	status string
+	status JobStatus
 }
 
-func (j *Job) SetStatus(status string) {
+func (j *Job) SetStatus(status JobStatus) {
 	j.status = status
 }
 
-func (j *Job) GetStatus() string {
+func (j *Job) GetStatus() JobStatus {
 	return j.status
 }
 
