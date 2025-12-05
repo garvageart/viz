@@ -1,13 +1,19 @@
-@use 'sass:color';
+@use "sass:color";
 
-@use './sassflexboxgrid/main.scss';
-@import 'material-symbols/sharp.css';
-
+@use "./sassflexboxgrid/main.scss";
+@import "material-symbols/sharp.css";
 
 /* Fonts */
 :root {
-    --imag-display-font: 'Manrope Variable', sans-serif;
+    --imag-display-font: "Manrope Variable", sans-serif;
     --imag-code-font: "Roboto Mono", monospace;
+}
+
+/* Colours */
+:root {
+    --imag-error-color: #ef4444;
+    --imag-success-color: #22c55e;
+    --imag-warning-color: #facc15;
 }
 
 html {
@@ -95,11 +101,11 @@ body {
 }
 
 ::-webkit-scrollbar-thumb:hover {
-    background-color: var(--imag-80)
+    background-color: var(--imag-80);
 }
 
 ::-webkit-scrollbar-thumb:active {
-    background-color: var(--imag-90)
+    background-color: var(--imag-90);
 }
 
 /* Buttons */
@@ -144,13 +150,13 @@ body {
 
 // From: https://medium.com/@rion.mrk/how-to-remove-x-icon-from-search-input-field-or-input-type-search-db3c808405fb
 /* clears the ‘X’ from Internet Explorer */
-input[type=search]::-ms-clear {
+input[type="search"]::-ms-clear {
     display: none;
     width: 0;
     height: 0;
 }
 
-input[type=search]::-ms-reveal {
+input[type="search"]::-ms-reveal {
     display: none;
     width: 0;
     height: 0;

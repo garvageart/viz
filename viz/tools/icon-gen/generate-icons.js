@@ -14,7 +14,6 @@ import { fileURLToPath } from 'url';
 import { sync } from 'glob';
 import { optimize } from 'svgo';
 
-// __dirname is not available in ESM; derive it from import.meta.url
 const __dirname = dirname(fileURLToPath(import.meta.url));
 const ROOT = resolve(__dirname, '../../');
 const SRC = join(ROOT, 'src');

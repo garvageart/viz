@@ -58,9 +58,6 @@
 		children?: Snippet;
 	}
 
-	// CSS was a mistake (or I'm an idiot)
-	let mainHeaderHeight = $state(document.querySelector("header")?.clientHeight ?? 0);
-
 	const defaultClass = "viz-panel";
 	let className: string = $state(defaultClass);
 
@@ -801,7 +798,7 @@ for Splitpanes
 		<div
 			role="none"
 			class="viz-sub_panel-content"
-			style="height: calc((100vh - {mainHeaderHeight}px - {0.7 * 2}em - 8px) + 1px); width: 100%;"
+			style="width: 100%;"
 			onclick={() => (subPanelContentFocused = true)}
 			onkeydown={() => (subPanelContentFocused = true)}
 			bind:this={subPanelContentElement}

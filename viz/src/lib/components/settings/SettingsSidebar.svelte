@@ -14,7 +14,7 @@
 	}
 </script>
 
-<Sidebar>
+<Sidebar sidebarWidth={"20%"}>
 	<div class="settings-nav-content">
 		<div class="sidebar-header">
 			<h3>Settings</h3>
@@ -39,12 +39,12 @@
 	.settings-nav-content {
 		display: flex;
 		flex-direction: column;
-		height: 100%;
-		padding-top: 1rem;
+		gap: 0.5rem;
+		padding: 1rem 0;
 	}
 
 	.sidebar-header {
-		padding: 1.5rem 1.5rem 1rem;
+		padding: 0rem 1rem;
 
 		h3 {
 			font-size: 1rem;
@@ -65,21 +65,23 @@
 
 	.nav-link {
 		display: block;
-		padding: 0.5rem 1rem;
-		color: var(--imag-40);
+		padding: 0.2rem 0.5rem;
+		color: var(--imag-20);
 		text-decoration: none;
-		border-radius: 0.375rem;
-		font-size: 1rem;
-		transition: all 0.2s;
+		border-radius: 0.25rem;
+		font-size: 1em;
+		// transition: all 0.2s;
 
 		&:hover {
-			background-color: var(--imag-70);
-			color: var(--imag-text-color);
+			background-color: var(--imag-80);
 		}
 
 		&.active {
-			background-color: var(--imag-80);
-			color: var(--imag-10);
+			background-color: var(--imag-90);
+
+			&:hover {
+				background-color: var(--imag-80);
+			}
 		}
 	}
 </style>

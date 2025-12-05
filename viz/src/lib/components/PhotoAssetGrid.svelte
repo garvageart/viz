@@ -47,6 +47,7 @@
 
 	// Styling stuff
 	const padding = `0em ${page.url.pathname === "/" ? "1em" : page.url.pathname === "/photos" ? "0em" : "2em"}`;
+	const assetLookup = $derived(new Map(data.map((a) => [a.uid, a])));
 
 	function getAssetFromElement(el: HTMLElement): Image | undefined {
 		const assetId = el.dataset.assetId;
@@ -54,7 +55,7 @@
 			return undefined;
 		}
 
-		return data.find((a) => a.uid === assetId) || allData?.find((a) => a.uid === assetId);
+		return assetLookup.get(assetId) || allData?.find((a) => a.uid === assetId);
 	}
 
 	$effect(() => {
@@ -151,20 +152,27 @@
 
 	let photoGridEl: HTMLDivElement | undefined = $state();
 
-	// Scrolling / lazy-load helpers
-	let isScrolling: boolean = $state(false);
-	let scrollIdleTimer: ReturnType<typeof setTimeout> | null = null;
-	const pendingLazyNodes = new SvelteSet<HTMLImageElement>();
+	function debounce<T extends (...args: any[]) => void>(fn: T, delay: number): T {
+		let timeoutID: ReturnType<typeof setTimeout> | undefined;
+		return function (this: any, ...args: any[]) {
+			clearTimeout(timeoutID);
+			timeoutID = setTimeout(() => fn.apply(this, args), delay);
+		} as T;
+	}
 
-	function loadImageNode(img: HTMLImageElement) {
-		const data = img.dataset.src;
-		if (!data) {
-			return;
+	// Helper to find the first visible row index using binary search O(log N)
+	function findStartIndex(rows: JustifiedRow[], scrollTop: number): number {
+		let low = 0;
+		let high = rows.length - 1;
+		while (low <= high) {
+			const mid = (low + high) >>> 1;
+			if (rows[mid].top + rows[mid].height < scrollTop) {
+				low = mid + 1;
+			} else {
+				high = mid - 1;
+			}
 		}
-		if (img.src === data) {
-			return;
-		}
-		img.src = data;
+		return Math.max(0, low);
 	}
 
 	// Build justified rows layout and compute visible rows based on scroll.
@@ -191,7 +199,14 @@
 		scrollTop = photoGridEl.scrollTop || 0;
 		const minY = Math.max(0, scrollTop - bufferPx);
 		const maxY = scrollTop + viewportH + bufferPx;
-		visibleRows = justifiedRows.filter((row) => row.top + row.height >= minY && row.top <= maxY);
+
+		const startIndex = findStartIndex(justifiedRows, minY);
+		let endIndex = startIndex;
+		while (endIndex < justifiedRows.length && justifiedRows[endIndex].top <= maxY) {
+			endIndex++;
+		}
+
+		visibleRows = justifiedRows.slice(startIndex, endIndex);
 	}
 
 	function buildJustifiedRows(containerWidth: number, images: Image[], targetH: number, gap: number): JustifiedRow[] {
@@ -321,8 +336,8 @@
 		// essentially onmount
 		requestAnimationFrame(updateVirtualGrid);
 
-		// Watch for resize changes
-		const resizeObserver = new ResizeObserver(() => requestAnimationFrame(updateVirtualGrid));
+		const debouncedUpdate = debounce(() => requestAnimationFrame(updateVirtualGrid), 100);
+		const resizeObserver = new ResizeObserver(debouncedUpdate);
 		resizeObserver.observe(photoGridEl);
 
 		return () => {
@@ -337,29 +352,19 @@
 
 		scrollTop = photoGridEl.scrollTop;
 
-		// Throttle/mark scrolling state so we can defer non-essential loads while the user scrolls fast
-		isScrolling = true;
-		if (scrollIdleTimer) clearTimeout(scrollIdleTimer);
-		scrollIdleTimer = setTimeout(() => {
-			isScrolling = false;
-			// flush pending lazy loads
-			for (const n of Array.from(pendingLazyNodes)) {
-				try {
-					loadImageNode(n);
-				} catch (err) {
-					// ignore
-				}
-				pendingLazyNodes.delete(n);
-			}
-		}, 150);
-
 		// Update visible rows on next frame to avoid layout thrash
 		requestAnimationFrame(() => {
 			const viewportH = photoGridEl!.clientHeight || window.innerHeight;
 			const minY = Math.max(0, scrollTop - bufferPx);
 			const maxY = scrollTop + viewportH + bufferPx;
 
-			visibleRows = justifiedRows.filter((row) => row.top + row.height >= minY && row.top <= maxY);
+			const startIndex = findStartIndex(justifiedRows, minY);
+			let endIndex = startIndex;
+			while (endIndex < justifiedRows.length && justifiedRows[endIndex].top <= maxY) {
+				endIndex++;
+			}
+
+			visibleRows = justifiedRows.slice(startIndex, endIndex);
 		});
 	}
 	function getSizedPreviewUrl(asset: Image): string {
@@ -647,6 +652,7 @@
 
 	.justified-row {
 		display: flex;
+		contain: layout style;
 	}
 
 	.justified-row .asset-photo {

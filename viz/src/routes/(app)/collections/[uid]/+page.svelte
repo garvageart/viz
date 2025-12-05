@@ -502,7 +502,6 @@
 {/snippet}
 
 {#snippet searchInputSnippet()}
-	<SearchInput inputId="collection-search" style="margin: 0em 1em; height: 2em;" bind:value={searchValue} />
 	<div id="coll-tools">
 		<Button
 			id="upload_to_collection"
@@ -610,7 +609,7 @@
 		{selectionToolbarSnippet}
 		toolbarSnippet={searchInputSnippet}
 		toolbarProps={{
-			style: "justify-content: center; "
+			style: "justify-content: flex-end; "
 		}}
 	>
 		<div id="viz-info-container">
@@ -619,6 +618,7 @@
 					<InputText
 						id="coll-name-input"
 						style="padding: 0% 0.5rem;"
+						title={localDataUpdates.name}
 						bind:value={localDataUpdates.name}
 						onblur={() => {
 							if (localDataUpdates.name !== loadedData.name) {
@@ -691,8 +691,9 @@
 		align-items: center;
 		font-size: inherit;
 		height: 100%;
-		position: absolute;
+		margin-left: 1rem;
+		// position: absolute;
 		gap: 0.5rem;
-		right: 2rem;
+		// right: 2rem;
 	}
 </style>

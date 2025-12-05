@@ -11,6 +11,8 @@
 
 	let { label, value = $bindable("off"), description = "", disabled = false, onchange }: Props = $props();
 
+	const toggleId = `toggle-${label.replace(/\s+/g, '-').toLowerCase()}`;
+
 	let initialRun = true;
 	$effect(() => {
 		if (initialRun) {
@@ -26,7 +28,7 @@
 
 <div class="input-container" class:disabled>
 	<div class="label-group">
-		<label class="label" for="">{label}</label>
+		<label class="label" for={toggleId}>{label}</label>
 		{#if description}
 			<span class="description">{description}</span>
 		{/if}
@@ -39,7 +41,7 @@
 			though SliderToggle doesn't support 'disabled' prop in original version.
 		-->
 		<div class:pointer-events-none={disabled} class:opacity-50={disabled}>
-			<SliderToggle {label} bind:value labelPos="side" />
+			<SliderToggle id={toggleId} {label} bind:value labelPos="side" />
 		</div>
 	</div>
 </div>

@@ -29,7 +29,7 @@ FROM node:latest AS export
 WORKDIR /app
 
 # copying previously 
-COPY --from=build /app/build /app/build
+COPY --from=build /build/viz /app/build/viz
 COPY --from=build /app/package.json /app/package.json
 COPY --from=build /app/node_modules /app/node_modules
 COPY --from=build /app/static /app/static
@@ -40,5 +40,5 @@ EXPOSE 7777
 # running as non-root
 USER node
 
-CMD ["node", "/app/build"]
+CMD ["node", "/app/build/viz"]
 

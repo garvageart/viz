@@ -91,6 +91,20 @@ export type Session = {
     created_at: string;
     updated_at: string;
 };
+export type UserUpdate = {
+    first_name?: string | null;
+    last_name?: string | null;
+    username?: string | null;
+    email?: string | null;
+};
+export type UserPasswordUpdate = {
+    current: string;
+    "new": string;
+};
+export type SessionUpdate = {
+    clientName?: string | null;
+    status?: number | null;
+};
 export type UserSetting = {
     name: string;
     /** The effective value (override if exists, else default). */
@@ -672,6 +686,136 @@ export function getCurrentUser(opts?: Oazapfts.RequestOpts) {
         data: ErrorResponse;
     }>("/accounts/me", {
         ...opts
+    });
+}
+/**
+ * Update current authenticated user's profile
+ */
+export function updateCurrentUser(userUpdate: UserUpdate, opts?: Oazapfts.RequestOpts) {
+    return oazapfts.fetchJson<{
+        status: 200;
+        data: User;
+    } | {
+        status: 400;
+        data: ErrorResponse;
+    } | {
+        status: 401;
+        data: ErrorResponse;
+    } | {
+        status: 404;
+        data: ErrorResponse;
+    }>("/accounts/me", oazapfts.json({
+        ...opts,
+        method: "PATCH",
+        body: userUpdate
+    }));
+}
+/**
+ * Update user password
+ */
+export function updatePassword(userPasswordUpdate: UserPasswordUpdate, opts?: Oazapfts.RequestOpts) {
+    return oazapfts.fetchJson<{
+        status: 200;
+        data: UserUpdate;
+    } | {
+        status: 400;
+        data: ErrorResponse;
+    } | {
+        status: 401;
+        data: ErrorResponse;
+    } | {
+        status: 500;
+        data: ErrorResponse;
+    }>("/accounts/me/password", oazapfts.json({
+        ...opts,
+        method: "PUT",
+        body: userPasswordUpdate
+    }));
+}
+/**
+ * Get all sessions for the current user
+ */
+export function getSessions(opts?: Oazapfts.RequestOpts) {
+    return oazapfts.fetchJson<{
+        status: 200;
+        data: Session[];
+    } | {
+        status: 401;
+        data: ErrorResponse;
+    }>("/sessions", {
+        ...opts
+    });
+}
+/**
+ * Delete all sessions for the current user
+ */
+export function deleteSessions(opts?: Oazapfts.RequestOpts) {
+    return oazapfts.fetchJson<{
+        status: 200;
+        data: MessageResponse;
+    } | {
+        status: 401;
+        data: ErrorResponse;
+    }>("/sessions", {
+        ...opts,
+        method: "DELETE"
+    });
+}
+/**
+ * Get a specific session by ID for the current user
+ */
+export function getSessionById(uid: string, opts?: Oazapfts.RequestOpts) {
+    return oazapfts.fetchJson<{
+        status: 200;
+        data: Session;
+    } | {
+        status: 401;
+        data: ErrorResponse;
+    } | {
+        status: 404;
+        data: ErrorResponse;
+    }>(`/sessions/${encodeURIComponent(uid)}`, {
+        ...opts
+    });
+}
+/**
+ * Update a specific session
+ */
+export function updateSession(uid: string, sessionUpdate: SessionUpdate, opts?: Oazapfts.RequestOpts) {
+    return oazapfts.fetchJson<{
+        status: 200;
+        data: Session;
+    } | {
+        status: 400;
+        data: ErrorResponse;
+    } | {
+        status: 401;
+        data: ErrorResponse;
+    } | {
+        status: 404;
+        data: ErrorResponse;
+    }>(`/sessions/${encodeURIComponent(uid)}`, oazapfts.json({
+        ...opts,
+        method: "PUT",
+        body: sessionUpdate
+    }));
+}
+/**
+ * Delete a specific session
+ */
+export function deleteSession(uid: string, opts?: Oazapfts.RequestOpts) {
+    return oazapfts.fetchJson<{
+        status: 200;
+        data: MessageResponse;
+    } | {
+        status: 401;
+        data: ErrorResponse;
+    } | {
+        status: 404;
+        data: ErrorResponse;
+    }>(`/sessions/${encodeURIComponent(uid)}`, {
+        ...opts,
+        method: "DELETE"
     });
 }
 /**

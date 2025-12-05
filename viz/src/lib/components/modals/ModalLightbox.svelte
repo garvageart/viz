@@ -48,7 +48,7 @@
 
 <style lang="scss">
 	#viz-modal {
-		width: 40%;
+		width: 45%;
 		max-height: 70%;
 		background-color: var(--imag-bg-color);
 		z-index: 9999;

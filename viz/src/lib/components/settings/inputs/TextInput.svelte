@@ -2,7 +2,7 @@
 	interface Props {
 		label: string;
 		value?: string | number;
-		type?: "text" | "number";
+		type?: "text" | "number" | "password" | "email";
 		description?: string;
 		disabled?: boolean;
 		onchange?: (value: string) => void;

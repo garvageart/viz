@@ -781,7 +781,7 @@
 		}
 
 		&.error h2 {
-			color: var(--imag-error-color, #ef4444);
+			color: var(--imag-error-color);
 		}
 	}
 

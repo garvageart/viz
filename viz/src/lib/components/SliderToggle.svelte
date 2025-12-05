@@ -7,12 +7,14 @@
 		label: string;
 		value: "on" | "off";
 		labelPos?: "side" | "top";
+		id?: string;
 	}
 
-	let { label, value = $bindable(), labelPos = "side", ...props }: Props & SvelteHTMLElements["div"] = $props();
+	let { label, value = $bindable(), labelPos = "side", id, ...props }: Props & SvelteHTMLElements["div"] = $props();
 
 	let checked = $state(true);
 	const uniqueID = generateRandomString(6);
+	const switchId = id || `switch-${uniqueID}`;
 
 	$effect(() => {
 		checked = value === "on" ? true : false;
@@ -29,14 +31,14 @@
 </script>
 
 <div {...props} class="toggle-slider {labelPos === 'side' ? 'side' : 'top'}">
-	<label for="switch-{uniqueID}" id={`switch-${uniqueID}-label`}>{label}</label>
+	<label for={switchId} id={`${switchId}-label`}>{label}</label>
 	<button
-		id="switch-{uniqueID}"
+		id={switchId}
 		style={labelPos === "side" ? "margin-left: 0.5em;" : ""}
 		role="switch"
 		aria-checked={checked}
 		data-checked={checked}
-		aria-labelledby={`switch-${uniqueID}`}
+		aria-labelledby={`${switchId}-label`}
 		onclick={handleClick}
 	>
 	</button>

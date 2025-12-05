@@ -33,9 +33,31 @@
 	}
 </script>
 
-<Header />
-<Notifications />
-{#if upload.files.length > 0}
-	<UploadPanel />
-{/if}
-{@render children()}
+<div class="viz-app-layout">
+	<Header />
+	<Notifications />
+	{#if upload.files.length > 0}
+		<UploadPanel />
+	{/if}
+	<main class="viz-content">
+		{@render children()}
+	</main>
+</div>
+
+<style>
+	.viz-app-layout {
+		display: flex;
+		flex-direction: column;
+		height: 100vh;
+		width: 100vw;
+		overflow: hidden;
+		position: relative;
+	}
+
+	.viz-content {
+		flex: 1;
+		overflow: hidden;
+		width: 100%;
+		position: relative;
+	}
+</style>
