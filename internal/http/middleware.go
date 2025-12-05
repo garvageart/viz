@@ -185,6 +185,14 @@ func AuthMiddleware(db *gorm.DB, logger *slog.Logger) func(next http.Handler) ht
 					return
 				}
 
+				if sess.LastActive == nil || time.Since(*sess.LastActive) > 5*time.Minute {
+					go func(uid string) {
+						if err := db.Model(&entities.Session{}).Where("uid = ?", uid).Update("last_active", time.Now()).Error; err != nil {
+							logger.Error("failed to update session last_active", slog.Any("error", err))
+						}
+					}(sess.Uid)
+				}
+
 				if sess.UserUid == "" {
 					render.Status(r, http.StatusUnauthorized)
 					render.JSON(w, r, dto.ErrorResponse{Error: "User missing"})
@@ -300,6 +308,20 @@ func AdminMiddleware(next http.Handler) http.Handler {
 			return
 		}
 
+		next.ServeHTTP(w, r)
+	})
+}
+
+// UserAuthMiddleware ensures that a user is authenticated and present in the request context.
+// It assumes AuthMiddleware has run earlier in the chain to populate the user in context.
+func UserAuthMiddleware(next http.Handler) http.Handler {
+	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		user, ok := UserFromContext(r)
+		if !ok || user == nil {
+			render.Status(r, http.StatusUnauthorized)
+			render.JSON(w, r, dto.ErrorResponse{Error: "Unauthenticated"})
+			return
+		}
 		next.ServeHTTP(w, r)
 	})
 }

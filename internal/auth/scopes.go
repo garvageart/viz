@@ -7,10 +7,14 @@ import (
 )
 
 type Scope string
+type ScopeItem struct {
+	Value Scope  `json:"value"`
+	Label string `json:"label"`
+}
 
 const (
-	// SuperUserScope grants all permissions.
-	SuperUserScope Scope = "*"
+	// AllScope grants all permissions.
+	AllScope Scope = "*"
 
 	// AdminReadScope grants read access to admin resources.
 	AdminReadScope Scope = "admin:read"
@@ -18,17 +22,17 @@ const (
 	AdminWriteScope Scope = "admin:write"
 
 	// APIKeysCreateScope grants permission to read API keys.
-	APIKeysCreateScope Scope = "api_keys:create"
+	APIKeysCreateScope Scope = "api-keys:create"
 	// APIKeysReadScope grants permission to read API keys.
-	APIKeysListScope Scope = "api_keys:list"
+	APIKeysListScope Scope = "api-keys:list"
 	// APIKeysReadScope grants permission to read API keys.
-	APIKeysReadScope Scope = "api_keys:get"
+	APIKeysReadScope Scope = "api-keys:read"
 	// APIKeysRevokeScope grants permission to read API keys.
-	APIKeysRevokeScope Scope = "api_keys:revoke"
+	APIKeysRevokeScope Scope = "api-keys:revoke"
 	// APIKeysRotateScope grants permission to read API keys.
-	APIKeysRotateScope Scope = "api_keys:rotate"
+	APIKeysRotateScope Scope = "api-keys:rotate"
 	// APIKeysDeleteScope grants permission to read API keys.
-	APIKeysDeleteScope Scope = "api_keys:delete"
+	APIKeysDeleteScope Scope = "api-keys:delete"
 
 	// AuthRefreshScope grants permission to refresh authentication tokens.
 	AuthRefreshScope Scope = "auth:refresh"
@@ -76,9 +80,9 @@ const (
 	UsersDeleteScope Scope = "users:delete"
 
 	// UserSettingsReadScope grants permission to read user settings.
-	UserSettingsReadScope Scope = "user_settings:read"
+	UserSettingsReadScope Scope = "user-settings:read"
 	// UserSettingsUpdateScope grants permission to update user settings.
-	UserSettingsUpdateScope Scope = "user_settings:update"
+	UserSettingsUpdateScope Scope = "user-settings:update"
 
 	// DownloadsCreateScope grants permission to create downloads.
 	DownloadsCreateScope Scope = "downloads:create"
@@ -88,50 +92,40 @@ const (
 )
 
 // AllScopes is a list of all available scopes.
-var AllScopes = []Scope{
-	SuperUserScope,
-
-	AdminReadScope, 
-	AdminWriteScope, 
-
-	APIKeysCreateScope, 
-	APIKeysListScope, 
-	APIKeysReadScope, 
-	APIKeysRevokeScope, 
-	APIKeysRotateScope, 
-	APIKeysDeleteScope, 
-
-	AuthRefreshScope, 
-	AuthRevokeScope, 
-
-	CollectionsCreateScope, 
-	CollectionsReadScope, 
-	CollectionsUpdateScope, 
-	CollectionsDeleteScope, 
-	CollectionsShareScope, 
-
-	ImagesReadScope, 
-	ImagesUploadScope, 
-	ImagesUpdateScope, 
-	ImagesDeleteScope, 
-	ImagesDownloadScope, 
-
-	JobsReadScope, 
-	JobsCreateScope, 
-	JobsUpdateScope, 
-	JobsDeleteScope, 
-
-	UsersCreateScope, 
-	UsersReadScope, 
-	UsersUpdateScope, 
-	UsersDeleteScope, 
-
-	UserSettingsReadScope, 
-	UserSettingsUpdateScope, 
-
-	DownloadsCreateScope, 
-
-	EventsReadScope, 
+var AllScopes = []ScopeItem{
+	{Value: AllScope, Label: "Full Access"},
+	{Value: AdminReadScope, Label: "Admin Read"},
+	{Value: AdminWriteScope, Label: "Admin Write"},
+	{Value: APIKeysCreateScope, Label: "Create API Keys"},
+	{Value: APIKeysListScope, Label: "List API Keys"},
+	{Value: APIKeysReadScope, Label: "Read API Key"},
+	{Value: APIKeysRevokeScope, Label: "Revoke API Keys"},
+	{Value: APIKeysRotateScope, Label: "Rotate API Keys"},
+	{Value: APIKeysDeleteScope, Label: "Delete API Keys"},
+	{Value: AuthRefreshScope, Label: "Refresh Auth"},
+	{Value: AuthRevokeScope, Label: "Revoke Auth"},
+	{Value: CollectionsCreateScope, Label: "Create Collections"},
+	{Value: CollectionsReadScope, Label: "Read Collections"},
+	{Value: CollectionsUpdateScope, Label: "Update Collections"},
+	{Value: CollectionsDeleteScope, Label: "Delete Collections"},
+	{Value: CollectionsShareScope, Label: "Share Collections"},
+	{Value: ImagesReadScope, Label: "Read Images"},
+	{Value: ImagesUploadScope, Label: "Upload Images"},
+	{Value: ImagesUpdateScope, Label: "Update Images"},
+	{Value: ImagesDeleteScope, Label: "Delete Images"},
+	{Value: ImagesDownloadScope, Label: "Download Images"},
+	{Value: JobsReadScope, Label: "Read Jobs"},
+	{Value: JobsCreateScope, Label: "Create Jobs"},
+	{Value: JobsUpdateScope, Label: "Update Jobs"},
+	{Value: JobsDeleteScope, Label: "Delete Jobs"},
+	{Value: UsersCreateScope, Label: "Create Users"},
+	{Value: UsersReadScope, Label: "Read Users"},
+	{Value: UsersUpdateScope, Label: "Update Users"},
+	{Value: UsersDeleteScope, Label: "Delete Users"},
+	{Value: UserSettingsReadScope, Label: "Read User Settings"},
+	{Value: UserSettingsUpdateScope, Label: "Update User Settings"},
+	{Value: DownloadsCreateScope, Label: "Create Downloads"},
+	{Value: EventsReadScope, Label: "Read Events"},
 }
 
 // HasScope checks if a given set of scopes grants access to a required scope.
@@ -139,7 +133,7 @@ var AllScopes = []Scope{
 // a user with "images" or "*" scope will be granted access.
 func HasScope(userScopes []string, requiredScope Scope) bool {
 	// Superuser/Superadmin has access to everything.
-	if lo.Contains(userScopes, string(SuperUserScope)) {
+	if lo.Contains(userScopes, string(AllScope)) {
 		return true
 	}
 
@@ -162,13 +156,12 @@ func HasScope(userScopes []string, requiredScope Scope) bool {
 
 		// Check for wildcard match (e.g., "images:*" grants "images:read")
 		if len(userParts) == 2 && userParts[1] == "*" && userParts[0] == requiredParts[0] {
-				return true
+			return true
 		}
 	}
 
 	return false
 }
-
 
 // HasAllScopes checks if a given set of scopes grants access to all required scopes.
 func HasAllScopes(userScopes []string, requiredScopes []Scope) bool {

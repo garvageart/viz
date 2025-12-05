@@ -5,6 +5,7 @@ import (
 	"encoding/base64"
 	"encoding/hex"
 	"errors"
+	"fmt"
 	"log/slog"
 	"net/http"
 	"strings"
@@ -41,7 +42,6 @@ type ImagineAuthPasswordFlow struct {
 
 func AuthRouter(db *gorm.DB, logger *slog.Logger) *chi.Mux {
 	router := chi.NewRouter()
-
 	router.Post("/login", func(res http.ResponseWriter, req *http.Request) {
 		// Accept minimal login payload to avoid coupling to entities
 		var login struct {
@@ -69,7 +69,7 @@ func AuthRouter(db *gorm.DB, logger *slog.Logger) *chi.Mux {
 			UID      string
 			Password string
 		}
-		
+
 		tx := db.Table("users").Select("uid, password").Where("email = ?", login.Email).Scan(&row)
 		if tx.Error != nil || row.Password == "" {
 			if tx.Error == gorm.ErrRecordNotFound || row.Password == "" {
@@ -145,6 +145,81 @@ func AuthRouter(db *gorm.DB, logger *slog.Logger) *chi.Mux {
 		render.JSON(res, req, dto.MessageResponse{Message: "User authenticated"})
 	})
 
+	router.Get("/session", func(res http.ResponseWriter, req *http.Request) {
+		var userSession entities.Session
+		cookieToken, err := req.Cookie(libhttp.AuthTokenCookie)
+
+		if err != nil {
+			if err == http.ErrNoCookie {
+				render.Status(req, http.StatusUnauthorized)
+				render.JSON(res, req, dto.ErrorResponse{Error: "No session cookie"})
+				return
+			}
+
+			libhttp.ServerError(res, req, err, logger, nil,
+				"failed to read session cookie",
+				"Something went wrong, please try again later",
+			)
+			return
+		}
+		
+		err = db.Where("token = ?", cookieToken.Value).First(&userSession).Error
+		if err != nil {
+			if err == gorm.ErrRecordNotFound {
+				render.Status(req, http.StatusUnauthorized)
+				render.JSON(res, req, dto.ErrorResponse{Error: "Session not found"})
+				return
+			}
+
+			libhttp.ServerError(res, req, err, logger, nil,
+				"failed to get session",
+				"Something went wrong, please try again later",
+			)
+			return
+		}
+
+		if userSession.ExpiresAt != nil && userSession.ExpiresAt.Before(time.Now()) {
+			db.Delete(&userSession)
+			libhttp.ClearCookie(libhttp.AuthTokenCookie, res)
+			render.Status(req, http.StatusUnauthorized)
+			render.JSON(res, req, dto.ErrorResponse{Error: "Session expired"})
+			return
+		}
+
+		// Async debounce update of LastActive
+		if userSession.LastActive == nil || time.Since(*userSession.LastActive) > 5*time.Minute {
+			// Capture needed vars for goroutine
+			uid := userSession.Uid
+			go func() {
+				if err := db.Model(&entities.Session{}).Where("uid = ?", uid).Update("last_active", time.Now()).Error; err != nil {
+					logger.Error("failed to update session last_active", slog.Any("error", err))
+				}
+			}()
+		}
+
+		var user entities.User
+		if err := db.Where("uid = ?", userSession.UserUid).First(&user).Error; err == nil {
+			libhttp.SetSessionCache(cookieToken.Value, &user, userSession.ExpiresAt)
+		}
+
+		lastActiveNano := int64(0)
+		if userSession.LastActive != nil {
+			lastActiveNano = userSession.LastActive.UnixNano()
+		}
+		etag := fmt.Sprintf("W/\"%s-%d\"", userSession.Uid, lastActiveNano)
+		
+		res.Header().Set("Cache-Control", "private, max-age=60, must-revalidate")
+		res.Header().Set("ETag", etag)
+
+		if match := req.Header.Get("If-None-Match"); match == etag {
+			res.WriteHeader(http.StatusNotModified)
+			return
+		}
+
+		render.Status(req, http.StatusOK)
+		render.JSON(res, req, userSession.DTO())
+	})
+
 	router.Get("/oauth", func(res http.ResponseWriter, req *http.Request) {
 		var oauthConfig *oauth2.Config
 		provider := req.FormValue("provider")
@@ -186,6 +261,7 @@ func AuthRouter(db *gorm.DB, logger *slog.Logger) *chi.Mux {
 		http.SetCookie(res, &http.Cookie{
 			Name:     libhttp.RedirectCookie,
 			Value:    encryptedStateB64,
+			// TODO: Make this expires value configureable
 			Expires:  carbon.Now().AddMinutes(5).StdTime(),
 			Path:     "/",
 			Secure:   true,
