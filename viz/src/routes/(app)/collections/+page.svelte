@@ -316,10 +316,8 @@
 	}
 
 	#coll-details-toolbar {
-		width: 100%;
 		height: 100%;
 		display: flex;
-		justify-content: left;
 	}
 
 	#coll-details-floating {

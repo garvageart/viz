@@ -16,7 +16,9 @@ Stuff to finish:
 	import type { UserSetting } from "$lib/api/client.gen";
 	import SettingsSidebar from "../settings/SettingsSidebar.svelte";
 	import AutoSettingsGroup from "../settings/AutoSettingsGroup.svelte";
+	import AccountsSettings from "./AccountSettings.svelte";
 	import { SvelteSet } from "svelte/reactivity";
+	import SecuritySettings from "./SecuritySettings.svelte";
 
 	// TODO: Import SecuritySettings when created
 	interface Props {
@@ -28,9 +30,9 @@ Stuff to finish:
 
 	let settings: UserSetting[] = $derived(userSettingsData);
 
-	const groupOrder = ["General", "Interface", "Images", "Notifications", "Privacy", "Security"];
+	const groupOrder = ["Account", "General", "Interface", "Images", "Notifications", "Privacy", "Security"];
 	// custom groups that aren't in the DB settings
-	const customGroups = ["Security"];
+	const customGroups = ["Security", "Account"];
 
 	let groups: string[] = $derived.by(() => {
 		const apiGroups = Array.from(new SvelteSet(settings.map((s) => s.group || "General")));
@@ -61,10 +63,9 @@ Stuff to finish:
 	<main class="settings-content">
 		{#if isCustomGroup}
 			{#if activeSection.toLowerCase() === "security"}
-				<div class="custom-group">
-					<h2>Security</h2>
-					<p>Security settings (API Keys, Sessions) coming soon...</p>
-				</div>
+				<SecuritySettings />
+			{:else if activeSection.toLowerCase() === "account"}
+				<AccountsSettings {userSettingsData} />
 			{/if}
 		{:else}
 			<AutoSettingsGroup settings={currentSettings} title={activeSection.charAt(0).toUpperCase() + activeSection.slice(1)} />
@@ -83,21 +84,8 @@ Stuff to finish:
 
 	.settings-content {
 		flex: 1;
-		padding: 2rem 3rem;
+		padding: 2rem 10rem;
 		overflow-y: auto;
 		background-color: var(--imag-bg-color);
-	}
-
-	.custom-group {
-		h2 {
-			font-size: 1.5rem;
-			font-weight: 600;
-			color: var(--imag-text-color);
-			margin-bottom: 1rem;
-		}
-
-		p {
-			color: var(--imag-40);
-		}
 	}
 </style>

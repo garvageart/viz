@@ -1,4 +1,6 @@
 <script lang="ts">
+	import { toastState } from "$lib/toast-notifcations/notif-state.svelte";
+
 	interface Props {
 		label: string;
 		value?: string;
@@ -11,19 +13,22 @@
 
 	let error = $state<string | null>(null);
 
-	function handleInput(event: Event) {
+	function JSONValidate(event: Event) {
 		const target = event.target as HTMLTextAreaElement;
 		const newValue = target.value;
 
 		try {
 			JSON.parse(newValue);
-			error = null;
 			value = newValue;
 			if (onchange) {
 				onchange(newValue);
 			}
 		} catch (e) {
-			error = "Invalid JSON format";
+			toastState.addToast({
+				dismissible: true,
+				message: "Invalid JSON",
+				type: "error"
+			});
 		}
 	}
 </script>
@@ -36,13 +41,9 @@
 				<span class="description">{description}</span>
 			{/if}
 		</div>
-		<!-- I hate this btw, must look better -->
-		{#if error}
-			<span class="error-msg">{error}</span>
-		{/if}
 	</div>
 
-	<textarea id="json-{label}" {value} oninput={handleInput} {disabled} class="json-input" class:error={!!error} rows="5"
+	<textarea id="json-{label}" {value} onblur={JSONValidate} {disabled} class="json-input" class:error={!!error} rows="5"
 	></textarea>
 </div>
 
@@ -54,6 +55,7 @@
 		border-bottom: 1px solid var(--imag-80);
 		width: 100%;
 		gap: 0.5rem;
+		max-height: 10rem;
 
 		&.disabled {
 			opacity: 0.5;
@@ -82,11 +84,6 @@
 		color: var(--imag-40);
 	}
 
-	.error-msg {
-		color: var(--imag-error-color, #ef4444);
-		font-size: 0.875rem;
-	}
-
 	.json-input {
 		width: 100%;
 		padding: 0.5rem;
@@ -103,7 +100,7 @@
 		}
 
 		&.error {
-			border-color: var(--imag-error-color, #ef4444);
+			border-color: var(--imag-error-color);
 		}
 
 		&:disabled {

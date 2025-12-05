@@ -10,6 +10,15 @@
 
 	let { label, value = $bindable(""), options = [], description = "", disabled = false, onchange }: Props = $props();
 
+	let selectedValue = $derived.by(() => {
+		if (!value) return "";
+		// If exact match exists, use it
+		if (options.includes(value)) return value;
+		// Otherwise try case-insensitive match
+		const match = options.find((o) => o.toLowerCase() === value.toLowerCase());
+		return match || value;
+	});
+
 	function handleChange(event: Event) {
 		const target = event.target as HTMLSelectElement;
 		value = target.value;
@@ -26,7 +35,7 @@
 			<span class="description">{description}</span>
 		{/if}
 	</div>
-	<select id="select-{label}" bind:value onchange={handleChange} {disabled} class="select-input">
+	<select id="select-{label}" value={selectedValue} onchange={handleChange} {disabled} class="select-input">
 		{#each options as option}
 			<option value={option}>{option}</option>
 		{/each}

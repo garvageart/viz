@@ -142,7 +142,6 @@
 		</AssetToolbar>
 	{:else}
 		<AssetToolbar {...toolbarProps}>
-			{@render toolbarSnippet?.()}
 			<div id="asset-tools">
 				{@render toolbarButton({
 					iconName: "sort",
@@ -175,6 +174,7 @@
 					})}
 				{/if}
 			</div>
+			{@render toolbarSnippet?.()}
 		</AssetToolbar>
 	{/if}
 {/if}
