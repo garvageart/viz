@@ -6,8 +6,8 @@ import { fileURLToPath } from 'url';
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
-const SCSS_DIR = path.resolve(__dirname, '../../src/lib/styles/scss');
-const OUTPUT_DIR = path.resolve(__dirname, '../../static/themes');
+const SCSS_DIR = path.resolve(__dirname, '../src/lib/styles/scss');
+const OUTPUT_DIR = path.resolve(__dirname, '../static/themes');
 
 if (!fs.existsSync(OUTPUT_DIR)) {
     fs.mkdirSync(OUTPUT_DIR, { recursive: true });
