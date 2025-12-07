@@ -13,7 +13,7 @@ Stuff to finish:
 - Custom settings (Security, API Keys, Profile, Change Password etc etc)
 -->
 <script lang="ts">
-	import type { UserSetting } from "$lib/api/client.gen";
+	import type { UserSetting } from "$lib/api";
 	import SettingsSidebar from "../settings/SettingsSidebar.svelte";
 	import AutoSettingsGroup from "../settings/AutoSettingsGroup.svelte";
 	import AccountsSettings from "./AccountSettings.svelte";

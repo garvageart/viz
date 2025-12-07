@@ -1,6 +1,6 @@
 <script lang="ts">
-	import type { UserSetting, UserUpdate } from "$lib/api/client.gen";
-	import { updateCurrentUser } from "$lib/api/client.gen";
+	import type { UserSetting, UserUpdate } from "$lib/api";
+	import { updateCurrentUser } from "$lib/api";
 	import { user } from "$lib/states/index.svelte";
 	import { toastState } from "$lib/toast-notifcations/notif-state.svelte";
 	import AutoSettingsGroup from "./AutoSettingsGroup.svelte";

@@ -1,6 +1,6 @@
 <script lang="ts">
-	import type { UserSetting } from "$lib/api/client.gen";
-	import { updateUserSetting } from "$lib/api/client.gen";
+	import type { UserSetting } from "$lib/api";
+	import { updateUserSetting } from "$lib/api";
 	import { fade } from "svelte/transition";
 	import { toastState } from "$lib/toast-notifcations/notif-state.svelte";
 	import SettingItemsList from "./SettingItemsList.svelte";
