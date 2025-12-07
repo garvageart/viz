@@ -18,6 +18,7 @@
 	import { toastState } from "$lib/toast-notifcations/notif-state.svelte";
 	import CollectionModal from "$lib/components/CollectionModal.svelte";
 	import ContextMenu from "$lib/context-menu/ContextMenu.svelte";
+	import { copyToClipboard } from "$lib/utils/misc";
 
 	let { data }: PageProps = $props();
 
@@ -114,7 +115,7 @@
 				action: async () => {
 					try {
 						const url = `${location.origin}/collections/${collection.uid}`;
-						await navigator.clipboard.writeText(url);
+						copyToClipboard(url);
 						toastState.addToast({ message: "Link copied to clipboard", type: "success" });
 					} catch (err) {
 						toastState.addToast({ message: "Failed to copy link", type: "error" });

@@ -44,9 +44,10 @@
 	import InputText from "$lib/components/dom/InputText.svelte";
 	import { layoutState } from "$lib/third-party/svelte-splitpanes/state.svelte";
 	import Dropdown, { type DropdownOption } from "$lib/components/Dropdown.svelte";
-	import { signDownload, downloadImagesZipBlob, defaults, API_BASE_URL } from "$lib/api/client";
+	import { signDownload, downloadImagesZipBlob, defaults, API_BASE_URL, createCollection } from "$lib/api";
 	import ContextMenu from "$lib/context-menu/ContextMenu.svelte";
 	import ImageLightbox from "$lib/components/ImageLightbox.svelte";
+	import { copyToClipboard } from "$lib/utils/misc.js";
 
 	// Context menu state
 	let ctxShowMenu = $state(false);
@@ -226,7 +227,7 @@
 						try {
 							const url = getFullImagePath(asset.image_paths?.original) ?? "";
 							if (url) {
-								await navigator.clipboard.writeText(url);
+								copyToClipboard(url);
 								toastState.addToast({ type: "success", message: "Link copied to clipboard" });
 							} else {
 								toastState.addToast({ type: "error", message: "No URL available" });
@@ -429,6 +430,47 @@
 		}
 	}
 
+	async function handleDuplicateCollection() {
+		try {
+			const res = await createCollection({
+				name: `Copy of ${loadedData.name}`,
+				description: loadedData.description ?? undefined,
+				private: loadedData.private ?? false
+			});
+
+			if (res.status === 201) {
+				const newCollectionUid = res.data.uid;
+				const uidsToCopy = loadedImages.map((img) => img.uid);
+
+				if (uidsToCopy.length > 0) {
+					const addRes = await addCollectionImages(newCollectionUid, { uids: uidsToCopy });
+					if (addRes.status === 200) {
+						toastState.addToast({ message: "Collection duplicated with images", type: "success" });
+						await invalidateAll();
+						goto(`/collections/${newCollectionUid}`);
+					} else {
+						toastState.addToast({
+							message: `Collection duplicated but failed to copy images (${addRes.status})`,
+							type: "warning"
+						});
+						goto(`/collections/${newCollectionUid}`); // Still navigate to the new collection
+					}
+				} else {
+					toastState.addToast({ message: "Collection duplicated (no images to copy)", type: "success" });
+					await invalidateAll();
+					goto(`/collections/${newCollectionUid}`);
+				}
+			} else {
+				toastState.addToast({
+					message: (res as any).data?.error ?? `Duplicate failed (${res.status})`,
+					type: "error"
+				});
+			}
+		} catch (err) {
+			toastState.addToast({ message: "Duplicate failed: " + (err as Error).message, type: "error" });
+		}
+	}
+
 	function getDisplayArray(): Image[] {
 		return Array.isArray(displayData) ? displayData : (displayData ?? []);
 	}
@@ -543,10 +585,19 @@
 						handleExportPhotos();
 						break;
 					case "Share Collection":
-						alert("Not implemented yet");
+						toastState.addToast({
+							type: "warning",
+							message: "Not implemented yet"
+						});
 						break;
 					case "Duplicate Collection":
-						alert("Maybe won't implement");
+						// Duplicate collection logic
+						// handleDuplicateCollection();
+
+						toastState.addToast({
+							type: "warning",
+							message: "Maybe won't implement this yet"
+						});
 						break;
 				}
 			}}
@@ -586,8 +637,6 @@
 	name="{localDataUpdates.name} - Collection"
 	style="font-size: {page.url.pathname === '/' ? '0.9em' : 'inherit'};"
 	paginate={() => {
-		// Note: This collection detail page doesn't actually fetch more pages yet
-		// The backend loads all images at once. This is just updating the UI state.
 		pagination.page++;
 	}}
 	onscroll={(e) => {
@@ -621,13 +670,13 @@
 						title={localDataUpdates.name}
 						bind:value={localDataUpdates.name}
 						onblur={() => {
-							if (localDataUpdates.name !== loadedData.name) {
+							if (localDataUpdates.name.trim() !== loadedData.name.trim()) {
 								updateCollectionDetails({
 									name: localDataUpdates.name
 								});
 							}
 						}}
-					></InputText>
+					/>
 				</span>
 				<span
 					id="coll-details"

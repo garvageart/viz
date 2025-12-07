@@ -11,7 +11,7 @@
 	import { getFullImagePath } from "$lib/api";
 	import MaterialIcon from "$lib/components/MaterialIcon.svelte";
 	import { SvelteSet } from "svelte/reactivity";
-	import { listImages, deleteImagesBulk, signDownload, downloadImagesZipBlob, getImageFile, getImage } from "$lib/api/client";
+	import { listImages, deleteImagesBulk, signDownload, downloadImagesZipBlob, getImageFile, getImage } from "$lib/api";
 	import { getTakenAt, compareByTakenAtDesc } from "$lib/utils/images.js";
 	import AssetToolbar from "$lib/components/AssetToolbar.svelte";
 	import Dropdown, { type DropdownOption } from "$lib/components/Dropdown.svelte";
@@ -19,13 +19,16 @@
 	import { fade } from "svelte/transition";
 	import hotkeys from "hotkeys-js";
 	import UploadManager, { type ImageUploadSuccess } from "$lib/upload/manager.svelte";
-	import { createCollection, addCollectionImages } from "$lib/api/client";
+	import { createCollection, addCollectionImages } from "$lib/api";
 	import { SUPPORTED_IMAGE_TYPES, SUPPORTED_RAW_FILES, type SupportedImageTypes } from "$lib/types/images";
 	import { toastState } from "$lib/toast-notifcations/notif-state.svelte";
 	import { goto, invalidateAll } from "$app/navigation";
 	import ImageLightbox from "$lib/components/ImageLightbox.svelte";
 	import Button from "$lib/components/Button.svelte";
-	import { debugMode } from "$lib/states/index.svelte";
+	import { debugMode, modal } from "$lib/states/index.svelte";
+	import { copyToClipboard } from "$lib/utils/misc.js";
+	import CollectionModal from "$lib/components/CollectionModal.svelte";
+	import ConfirmationModal from "$lib/components/modals/ConfirmationModal.svelte";
 
 	let { data } = $props();
 
@@ -170,7 +173,11 @@
 	async function handleActionMenu(option: DropdownOption) {
 		const items = Array.from(selectedAssets);
 		if (items.length === 0) {
-			alert("No images selected");
+			toastState.addToast({
+				type: "warning",
+				message: "No images selected",
+				timeout: 3000
+			});
 			return;
 		}
 
@@ -182,7 +189,11 @@
 					await performImageDownloads(uids);
 				} catch (err) {
 					console.error("Download error", err);
-					alert(`Download failed: ${err}`);
+					toastState.addToast({
+						type: "error",
+						message: `Download failed: ${err}`,
+						timeout: 5000
+					});
 				} finally {
 					downloadInProgress = false;
 				}
@@ -190,62 +201,102 @@
 
 			case "Add to Collection":
 				// TODO: Open collection picker modal
-				alert(`Add ${items.length} image(s) to collection - Not yet implemented`);
+				toastState.addToast({
+					type: "info",
+					message: `Add ${items.length} image(s) to collection - Not yet implemented`,
+					timeout: 3000
+				});
 				break;
 
 			case "Share":
 				// TODO: Open share dialog
-				alert(`Share ${items.length} image(s) - Not yet implemented`);
+				toastState.addToast({
+					type: "info",
+					message: `Share ${items.length} image(s) - Not yet implemented`,
+					timeout: 3000
+				});
 				break;
 
 			case "Copy Link":
 				if (items.length === 1) {
 					const url = getFullImagePath(items[0].image_paths?.original);
-					await navigator.clipboard.writeText(url);
-					alert("Link copied to clipboard");
+					copyToClipboard(url);
+					toastState.addToast({
+						type: "success",
+						message: "Link copied to clipboard",
+						timeout: 3000
+					});
 				} else {
-					alert("Can only copy link for a single image");
+					toastState.addToast({
+						type: "warning",
+						message: "Can only copy link for a single image",
+						timeout: 3000
+					});
 				}
 				break;
 
 			case "Edit Metadata":
 				// TODO: Open metadata editor
-				alert(`Edit metadata for ${items.length} image(s) - Not yet implemented`);
+				toastState.addToast({
+					type: "info",
+					message: `Edit metadata for ${items.length} image(s) - Not yet implemented`,
+					timeout: 3000
+				});
 				break;
 
 			case "Move to Trash":
 				const okTrash = confirm(`Move ${items.length} selected image(s) to trash?`);
-				if (!okTrash) return;
+				if (!okTrash) {
+					return;
+				}
 
 				try {
 					const res = await deleteImagesBulk({ uids: items.map((i) => i.uid), force: false });
 					if (res.status === 200 || res.status === 207) {
-						const deletedUIDs = res.data.results.filter((r) => r.deleted).map((r) => r.uid);
+						const deletedUIDs = (res.data.results ?? []).filter((r) => r.deleted).map((r) => r.uid);
 						images = images.filter((img) => !deletedUIDs.includes(img.uid));
 						selectedAssets.clear();
 					} else {
-						alert((res as any).data?.error ?? "Failed to delete images");
+						toastState.addToast({
+							type: "error",
+							message: (res as any).data?.error ?? "Failed to delete images",
+							timeout: 4000
+						});
 					}
 				} catch (err) {
-					alert(`Delete failed: ${err}`);
+					toastState.addToast({
+						type: "error",
+						message: `Delete failed: ${err}`,
+						timeout: 5000
+					});
 				}
 				break;
 
 			case "Force Delete":
 				const okForce = confirm(`Permanently delete ${items.length} image(s)? This action cannot be undone!`);
-				if (!okForce) return;
+				if (!okForce) {
+					return;
+				}
 
 				try {
 					const res = await deleteImagesBulk({ uids: items.map((i) => i.uid), force: true });
 					if (res.status === 200 || res.status === 207) {
-						const deletedUIDs = res.data.results.filter((r) => r.deleted).map((r) => r.uid);
+						const deletedUIDs = (res.data.results ?? []).filter((r) => r.deleted).map((r) => r.uid);
 						images = images.filter((img) => !deletedUIDs.includes(img.uid));
 						selectedAssets.clear();
 					} else {
-						alert((res as any).data?.error ?? "Failed to delete images");
+						toastState.addToast({
+							type: "error",
+							message: (res as any).data?.error ?? "Failed to delete images",
+							timeout: 4000
+						});
 					}
 				} catch (err) {
-					alert(`Delete failed: ${err}`);
+					toastState.addToast({
+						type: "error",
+						message: `Delete failed: ${err}`,
+						timeout: 5000
+					});
 				}
 				break;
 		}
@@ -281,7 +332,11 @@
 	// The server will create a download token and use it for authentication.
 	async function performImageDownloads(uids: string[]) {
 		if (!uids || uids.length === 0) {
-			alert("No images selected for download");
+			toastState.addToast({
+				type: "warning",
+				message: "No images selected for download",
+				timeout: 3000
+			});
 			return;
 		}
 
@@ -326,13 +381,17 @@
 			});
 
 			if (signRes.status !== 200) {
-				alert(signRes.data?.error ?? "Failed to create download token");
+				toastState.addToast({
+					type: "error",
+					message: signRes.data?.error ?? "Failed to create download token",
+					timeout: 4000
+				});
 				return;
 			}
 
 			const token = signRes.data.uid; // The token is stored in the uid field
 
-			// Use the custom downloadImagesBlob function that properly handles binary responses
+			// Use the custom downloadImagesZipBlob function that properly handles binary responses
 			const dlRes = await downloadImagesZipBlob(token, { uids });
 
 			if (dlRes.status !== 200) {
@@ -354,7 +413,11 @@
 			URL.revokeObjectURL(url);
 		} catch (err) {
 			console.error("Download error", err);
-			alert(`Download failed: ${err}`);
+			toastState.addToast({
+				type: "error",
+				message: `Download failed: ${err}`,
+				timeout: 5000
+			});
 		}
 	}
 
@@ -404,60 +467,49 @@
 		lightboxImage = asset;
 	}
 
-	function prevLightboxImage() {
-		if (!lightboxImage) {
+	function nextLightboxImage() {
+		if (!lightboxImage || allImagesFlat.length === 0) {
 			return;
 		}
 
-		const currentGroup = groups.find((g) => g.items.some((i) => i.uid === lightboxImage!.uid));
-		if (!currentGroup) {
-			return;
-		}
-
-		const arr = currentGroup.items;
-		if (!arr.length) {
-			return;
-		}
-
-		const idx = arr.findIndex((i) => i.uid === lightboxImage!.uid);
+		const idx = allImagesFlat.findIndex((i) => i.uid === lightboxImage!.uid);
 		if (idx === -1) {
 			return;
 		}
 
-		const nextIdx = (idx - 1 + arr.length) % arr.length;
-		lightboxImage = arr[nextIdx];
+		const nextIdx = (idx - 1 + allImagesFlat.length) % allImagesFlat.length;
+		lightboxImage = allImagesFlat[nextIdx];
 	}
 
-	function nextLightboxImage() {
-		if (!lightboxImage) {
+	function prevLightboxImage() {
+		if (!lightboxImage || allImagesFlat.length === 0) {
 			return;
 		}
 
-		const currentGroup = groups.find((g) => g.items.some((i) => i.uid === lightboxImage!.uid));
-		if (!currentGroup) {
-			return;
-		}
-
-		const arr = currentGroup.items;
-		if (!arr.length) {
-			return;
-		}
-
-		const idx = arr.findIndex((i) => i.uid === lightboxImage!.uid);
+		const idx = allImagesFlat.findIndex((i) => i.uid === lightboxImage!.uid);
 		if (idx === -1) {
 			return;
 		}
 
-		const nextIdx = (idx + 1) % arr.length;
-		lightboxImage = arr[nextIdx];
+		const nextIdx = (idx + 1) % allImagesFlat.length;
+		lightboxImage = allImagesFlat[nextIdx];
 	}
 
 	// Drag and drop upload state
 	let isDragging = $state(false);
 	let dragCounter = $state(0);
 
+	// Upload confirmation state
+	let showUploadConfirm = $state(false);
+	let uploadCandidates: File[] = $state([]);
+	let suggestedCollectionName = $state("");
+
+	// Collection creation state
+	let showCollectionCreate = $state(false);
+	let collectionCreateData = $state({ name: "", description: "", private: false });
+	let collectionCreatePending = $state(false);
+
 	// Small drop-target state for 'Add to Collection' box
-	let showAddToCollection = $derived(isDragging);
 	let addBoxHover = $state(false);
 
 	/**
@@ -511,6 +563,7 @@
 			}
 
 			const allFiles: File[] = [];
+			let detectedFolderName = "";
 
 			// Use DataTransferItemList for folder support
 			if (e.dataTransfer.items) {
@@ -524,6 +577,9 @@
 						const entry = item.webkitGetAsEntry?.();
 						if (entry) {
 							entries.push(entry);
+							if (entry.isDirectory && !detectedFolderName) {
+								detectedFolderName = entry.name;
+							}
 						} else {
 							// Fallback for browsers that don't support webkitGetAsEntry
 							const file = item.getAsFile();
@@ -554,7 +610,7 @@
 				return;
 			}
 
-			// Filter for supported image types
+			// Filter valid files here to avoid processing invalid ones later
 			const supportedExtensions = [...SUPPORTED_IMAGE_TYPES, ...SUPPORTED_RAW_FILES];
 			const validFiles = allFiles.filter((file) => {
 				const ext = file.type.split("/")[1];
@@ -570,39 +626,12 @@
 				return;
 			}
 
-			if (validFiles.length < allFiles.length) {
-				toastState.addToast({
-					type: "warning",
-					message: `${allFiles.length - validFiles.length} file(s) skipped (unsupported format)`,
-					timeout: 4000
-				});
-			}
+			uploadCandidates = validFiles;
+			suggestedCollectionName = detectedFolderName || `New Collection ${new Date().toLocaleDateString()}`;
 
-			const manager = new UploadManager([...SUPPORTED_RAW_FILES, ...SUPPORTED_IMAGE_TYPES] as SupportedImageTypes[]);
-			const tasks = manager.addFiles(validFiles);
-
-			toastState.addToast({
-				type: "success",
-				message: `Starting upload of ${tasks.length} file(s)...`,
-				timeout: 2500
-			});
-
-			// Start uploads with concurrency control
-			const uploadedImages = await manager.start(tasks);
-
-			if (uploadedImages.length > 0) {
-				toastState.addToast({
-					type: "success",
-					message: `Successfully uploaded ${uploadedImages.length} file(s)`,
-					timeout: 3000
-				});
-
-				try {
-					await invalidateAll();
-				} catch (err) {
-					console.error("Failed to fetch uploaded images:", err);
-				}
-			}
+			// If we detected a folder or simply want to offer the choice always:
+			showUploadConfirm = true;
+			modal.show = true;
 		} catch (err) {
 			console.error("Drop upload error:", err);
 			toastState.addToast({
@@ -611,6 +640,43 @@
 				timeout: 5000
 			});
 		}
+	}
+
+	async function processUploads(files: File[]) {
+		if (files.length < uploadCandidates.length) {
+			toastState.addToast({
+				type: "warning",
+				message: `${uploadCandidates.length - files.length} file(s) skipped (unsupported format)`,
+				timeout: 4000
+			});
+		}
+
+		const manager = new UploadManager([...SUPPORTED_RAW_FILES, ...SUPPORTED_IMAGE_TYPES] as SupportedImageTypes[]);
+		const tasks = manager.addFiles(files);
+
+		toastState.addToast({
+			type: "success",
+			message: `Starting upload of ${tasks.length} file(s)...`,
+			timeout: 2500
+		});
+
+		// Start uploads with concurrency control
+		const uploadedImages = await manager.start(tasks);
+		if (uploadedImages.length > 0) {
+			toastState.addToast({
+				type: "success",
+				message: `Successfully uploaded ${uploadedImages.length} file(s)`,
+				timeout: 3000
+			});
+
+			try {
+				await invalidateAll();
+			} catch (err) {
+				console.error("Failed to fetch uploaded images:", err);
+			}
+		}
+
+		return uploadedImages;
 	}
 
 	/**
@@ -910,24 +976,125 @@
 
 		singleSelectedAsset = undefined;
 		lightboxImage = undefined;
+
+		if (modal.show) {
+			modal.show = false;
+			showUploadConfirm = false;
+			showCollectionCreate = false;
+		}
 	});
+
+	function handleConfirmUploadOnly() {
+		showUploadConfirm = false;
+		modal.show = false;
+		processUploads(uploadCandidates);
+		uploadCandidates = [];
+	}
+
+	function handleConfirmUploadCollection() {
+		showUploadConfirm = false;
+		// Keep modal open, switch to collection create
+		collectionCreateData = { name: suggestedCollectionName, description: "", private: false };
+		showCollectionCreate = true;
+	}
+
+	async function handleCollectionSubmit() {
+		collectionCreatePending = true;
+		try {
+			// 1. Create Collection
+			const createRes = await createCollection(collectionCreateData);
+			if (createRes.status !== 201) {
+				toastState.addToast({
+					type: "error",
+					message: `Failed to create collection (${createRes.status})`,
+					timeout: 4000
+				});
+				collectionCreatePending = false;
+				return;
+			}
+
+			const collectionUid = createRes.data.uid;
+
+			// 2. Upload Images
+			showCollectionCreate = false;
+			modal.show = false;
+
+			const uploadedImages = await processUploads(uploadCandidates);
+
+			// 3. Add to Collection
+			const uids = uploadedImages.filter((img) => img && img.uid).map((i: any) => i.uid);
+
+			if (uids.length > 0) {
+				const addRes = await addCollectionImages(collectionUid, { uids });
+				if (addRes.status === 200) {
+					toastState.addToast({
+						type: "success",
+						message: `Added ${uids.length} images to collection **${collectionCreateData.name}**`,
+						timeout: 4000
+					});
+					await invalidateAll();
+					goto(`/collections/${collectionUid}`);
+				} else {
+					toastState.addToast({
+						type: "warning",
+						message: `Images uploaded but failed to add to collection: **${addRes.status}**`,
+						timeout: 4000
+					});
+				}
+			}
+		} catch (err) {
+			console.error("Collection/Upload flow failed", err);
+			toastState.addToast({
+				type: "error",
+				message: `Operation failed: ${err}`,
+				timeout: 5000
+			});
+		} finally {
+			collectionCreatePending = false;
+			uploadCandidates = [];
+		}
+	}
 </script>
 
 <svelte:body ondragenter={handleDragEnter} ondragleave={handleDragLeave} ondragover={handleDragOver} ondrop={handleDrop} />
 
 <svelte:head>
 	<title>Photos</title>
-	{#if downloadInProgress}
-		<div class="download-spinner" aria-live="polite" title="Download in progress">
-			<LoadingContainer />
-		</div>
-	{/if}
 </svelte:head>
+
+{#if downloadInProgress}
+	<div class="download-spinner" aria-live="polite" title="Download in progress">
+		<LoadingContainer />
+	</div>
+{/if}
+
+{#if showUploadConfirm && modal.show}
+	<ConfirmationModal title="Upload Options">
+		<p>You dropped {uploadCandidates.length} file(s).</p>
+		<p>How would you like to upload them?</p>
+
+		{#snippet actions()}
+			<Button onclick={handleConfirmUploadOnly}>Upload Individually</Button>
+			<Button onclick={handleConfirmUploadCollection} style="background-color: var(--imag-primary); color: white;">
+				Create Collection & Upload
+			</Button>
+		{/snippet}
+	</ConfirmationModal>
+{/if}
+
+{#if showCollectionCreate && modal.show}
+	<CollectionModal
+		heading="Create Collection"
+		bind:data={collectionCreateData}
+		buttonText={collectionCreatePending ? "Creating..." : "Create & Upload"}
+		modalAction={handleCollectionSubmit}
+	/>
+{/if}
 
 {#if isDragging}
 	<div class="drop-overlay" transition:fade={{ duration: 150 }}>
 		<div class="drop-overlay-content">
-			<MaterialIcon iconName="upload" style="font-size: 4rem; margin-bottom: 1rem;" />
+			<MaterialIcon iconName="upload" style="font-size: 4rem; margin-bottom: 1rem; color: var(--imag-10-dark);" />
 			<p style="font-size: 1.5rem; font-weight: 600;">Drop files to upload</p>
 			<p style="font-size: 1rem; opacity: 0.8;">Supports images and folders</p>
 
@@ -969,7 +1136,10 @@
 					await handleDropCreateCollection(e);
 				}}
 			>
-				<MaterialIcon iconName="collections_bookmark" style="font-size: 1.6rem; margin-bottom: 0.25rem;" />
+				<MaterialIcon
+					iconName="collections_bookmark"
+					style="font-size: 1.6rem; margin-bottom: 0.25rem; color: var(--imag-10-dark);"
+				/>
 				<span>Add to Collection</span>
 			</div>
 		</div>
@@ -1139,6 +1309,7 @@
 		position: fixed;
 		inset: 0;
 		z-index: 1000;
+		color: var(--imag-10-dark);
 		background: rgba(0, 0, 0, 0.85);
 		backdrop-filter: blur(8px);
 		display: flex;
@@ -1152,7 +1323,7 @@
 		flex-direction: column;
 		align-items: center;
 		justify-content: center;
-		color: var(--imag-10);
+		color: var(--imag-10-dark);
 		pointer-events: auto;
 		border: 2px solid var(--imag-primary);
 		border-radius: 1rem;
@@ -1176,25 +1347,22 @@
 		justify-content: center;
 		width: 12rem;
 		height: 4.25rem;
-		background: var(--imag-bg-color);
+		background-color: var(--imag-10-light);
 		border: 2px solid var(--imag-primary);
-		color: var(--imag-10);
+		color: var(--imag-10-dark);
 		border-radius: 0.75rem;
 		gap: 0.25rem;
 		font-weight: 600;
-		cursor: pointer;
 		margin-top: 1rem;
 		padding: 0.75rem 1rem;
 
-		// Focus style for keyboard users
 		&:focus {
 			outline: 3px solid rgba(0, 0, 0, 0.35);
 			outline-offset: 2px;
 		}
 
-		// Only change on hover: background becomes imag-100
 		&:hover {
-			background: var(--imag-100);
+			background: var(--imag-20-light);
 		}
 	}
 </style>
