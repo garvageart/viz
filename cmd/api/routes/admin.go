@@ -28,6 +28,11 @@ type AdminUserUpdate struct {
 	Role *dto.UserRole `json:"role,omitempty"`
 }
 
+// For me, start time is described once the config has been read in safely without fail
+// From there on, the server will launch and the database will connect which is when things
+// really start
+var StartTime = time.Now()
+
 // AdminRouter returns a router with admin-only endpoints. It applies AuthMiddleware
 // and AdminMiddleware so handlers inside can assume the request is from an admin.
 func AdminRouter(db *gorm.DB, logger *slog.Logger, storageStats *images.StorageStatsHolder) *chi.Mux {
