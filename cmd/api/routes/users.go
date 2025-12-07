@@ -109,7 +109,7 @@ func AccountsRouter(db *gorm.DB, logger *slog.Logger) *chi.Mux {
 		}
 
 		render.Status(req, http.StatusCreated)
-		render.JSON(res, req, userEnt.DTO())
+		render.JSON(res, req, uwp.User.DTO())
 	})
 
 	router.Get("/{uid}", func(res http.ResponseWriter, req *http.Request) {
