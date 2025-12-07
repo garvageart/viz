@@ -1,9 +1,18 @@
 <script module lang="ts">
 	import Splitpanes from "$lib/third-party/svelte-splitpanes/Splitpanes.svelte";
 
-	export type InternalSubPanelContainer = Omit<VizSubPanel, "childs" | "children" | "$$events" | "$$slots" | "header" | "views">;
-	export type InternalPanelContainer = Omit<ComponentProps<typeof Splitpanes>, "children" | "$$events" | "$$slots">;
-	export type Content = Omit<VizSubPanel, "childs" | "id"> & { id?: string; views: VizView[] };
+	export type InternalSubPanelContainer = Omit<
+		VizSubPanel,
+		"childs" | "children" | "$$events" | "$$slots" | "header" | "views"
+	>;
+	export type InternalPanelContainer = Omit<
+		ComponentProps<typeof Splitpanes>,
+		"children" | "$$events" | "$$slots"
+	>;
+	export type Content = Omit<VizSubPanel, "childs" | "id"> & {
+		id?: string;
+		views: VizView[];
+	};
 	export type SubPanelChilds = {
 		internalSubPanelContainer: InternalSubPanelContainer;
 		internalPanelContainer: InternalPanelContainer;
@@ -17,21 +26,35 @@
 </script>
 
 <script lang="ts">
-	import { onMount, setContext, untrack, type ComponentProps, type Snippet } from "svelte";
+	import {
+		onMount,
+		setContext,
+		untrack,
+		type ComponentProps,
+		type Snippet
+	} from "svelte";
 	import { Pane } from "$lib/third-party/svelte-splitpanes";
 	import MaterialIcon from "../MaterialIcon.svelte";
 	import { dev } from "$app/environment";
 	import type { TabData } from "$lib/views/tabs.svelte";
 	import TabOps from "$lib/views/tabs.svelte";
 	import VizView from "$lib/views/views.svelte";
-	import { measureComponentRenderTimes, resetAndReloadLayout } from "$lib/dev/components.svelte";
+	import {
+		measureComponentRenderTimes,
+		resetAndReloadLayout
+	} from "$lib/dev/components.svelte";
 	import { views } from "$lib/layouts/views";
 	import LoadingContainer from "../LoadingContainer.svelte";
 	import { isElementScrollable } from "$lib/utils/dom";
 	import { findSubPanel, generateKeyId } from "$lib/utils/layout";
 	import { goto } from "$app/navigation";
-	import ContextMenu, { type MenuItem } from "$lib/context-menu/ContextMenu.svelte";
-	import { layoutState, layoutTree } from "$lib/third-party/svelte-splitpanes/state.svelte";
+	import ContextMenu, {
+		type MenuItem
+	} from "$lib/context-menu/ContextMenu.svelte";
+	import {
+		layoutState,
+		layoutTree
+	} from "$lib/third-party/svelte-splitpanes/state.svelte";
 	import {
 		cleanupEmptyPanels,
 		duplicateView,
@@ -40,8 +63,15 @@
 		splitPanelHorizontally,
 		splitPanelVertically
 	} from "$lib/layouts/panel-operations";
-	import { buildLayoutContextMenu, buildPanelContextMenu, buildTabContextMenu, type TabHandlers } from "./subpanel-context";
+	import {
+		buildLayoutContextMenu,
+		buildPanelContextMenu,
+		buildTabContextMenu,
+		type TabHandlers
+	} from "./subpanel-context";
 	import { debugMode } from "$lib/states/index.svelte";
+	import SubPanelHeader from "./SubPanelHeader.svelte";
+	import SubPanelContent from "./SubPanelContent.svelte";
 
 	if (dev) {
 		window.resetAndReloadLayout = resetAndReloadLayout;
@@ -75,7 +105,10 @@
 	let paneMaxSize: number | undefined = $state(allProps.maxSize);
 
 	// Helper: match svelte-kit style dynamic routes like "/collections/[uid]" to concrete paths
-	function pathMatches(pattern: string | undefined, actual: string | undefined): boolean {
+	function pathMatches(
+		pattern: string | undefined,
+		actual: string | undefined
+	): boolean {
 		if (!pattern || !actual) {
 			return false;
 		}
@@ -85,7 +118,9 @@
 		}
 
 		// Escape regex specials, then turn dynamic segments \[param\] into [^/]+
-		const escaped = pattern.replace(/[.*+?^${}()|[\]\\]/g, "\\$&").replace(/\\\[[^\]]+\\\]/g, "[^/]+");
+		const escaped = pattern
+			.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")
+			.replace(/\\\[[^\]]+\\\]/g, "[^/]+");
 		const re = new RegExp("^" + escaped + "$");
 		return re.test(actual);
 	}
@@ -104,16 +139,23 @@
 		}
 
 		// Otherwise, it's serialized data from localStorage - hydrate it
-		const { id: panelViewId, name: panelViewName, path: panelViewPath } = storedView;
+		const {
+			id: panelViewId,
+			name: panelViewName,
+			path: panelViewPath
+		} = storedView;
 
 		// Try to find by path (supports dynamic segments), then by name, then by id
 		const matchedView = views.find((view) => {
-			if (panelViewPath && view.path && pathMatches(view.path, panelViewPath)) return true;
+			if (panelViewPath && view.path && pathMatches(view.path, panelViewPath))
+				return true;
 			return view.name === panelViewName || view.id === panelViewId;
 		});
 
 		if (!matchedView?.component) {
-			console.warn(`Could not find component for view: ${panelViewName} (id: ${panelViewId}, path: ${panelViewPath})`);
+			console.warn(
+				`Could not find component for view: ${panelViewName} (id: ${panelViewId}, path: ${panelViewPath})`
+			);
 			continue;
 		}
 
@@ -134,13 +176,19 @@
 		}
 
 		if (header === true && initialViews.length === 0) {
-			throw new Error("Viz: Header is showing, but no tabs are provided for: " + keyId);
+			throw new Error(
+				"Viz: Header is showing, but no tabs are provided for: " + keyId
+			);
 		}
 	});
 
-	const storedActiveView = $derived(panelViews.find((view) => view.isActive === true));
+	const storedActiveView = $derived(
+		panelViews.find((view) => view.isActive === true)
+	);
 	let activeView = $derived(storedActiveView ?? panelViews[0]);
-	let panelData = $derived(activeView.viewData ?? activeView?.getComponentData());
+	let panelData = $derived(
+		activeView.viewData ?? activeView?.getComponentData()
+	);
 
 	function isPanelLocked(): boolean {
 		// Resolve the subpanel data from the global layout and respect its locked flag
@@ -157,7 +205,8 @@
 		const sp = result?.subPanel as any;
 		if (sp && sp.locked) {
 			// Try to use stored size, fallback to configured minSize
-			const lockedSize = typeof sp.size === "number" && sp.size !== null ? sp.size : minSize;
+			const lockedSize =
+				typeof sp.size === "number" && sp.size !== null ? sp.size : minSize;
 			paneMinSize = lockedSize;
 			paneMaxSize = lockedSize;
 		} else {
@@ -178,7 +227,8 @@
 			layoutState.tree[parentIndex].locked = subPanel.locked;
 		} else {
 			// If this is a child content entry, bubble up to the parent panel where appropriate
-			(layoutState.tree[parentIndex].childs.content[childIndex] as any).locked = subPanel.locked;
+			(layoutState.tree[parentIndex].childs.content[childIndex] as any).locked =
+				subPanel.locked;
 		}
 	}
 
@@ -197,18 +247,10 @@
 
 	if (debugMode === true) {
 		$inspect("active view", keyId, activeView);
-		if (initialViews.length) {
-			$effect(() => {
-				(async () => {
-					const data = await panelData;
-					console.log("panel data", keyId, $state.snapshot(data));
-				})();
-			});
-		}
 		$inspect("panel views", keyId, panelViews);
 	}
 
-	let tabDropper: TabOps;
+	let tabDropper: TabOps = $state()!;
 
 	if (initialViews.length) {
 		tabDropper = new TabOps(initialViews);
@@ -266,7 +308,11 @@
 
 	function tabDragable(node: HTMLElement, data: TabData) {
 		// Prevent tab dragging when panel is locked, layout is globally locked, or when the specific tab is locked
-		if (isPanelLocked() || layoutTree.locked || (data && data.view && data.view.locked)) {
+		if (
+			isPanelLocked() ||
+			layoutTree.locked ||
+			(data && data.view && data.view.locked)
+		) {
 			return { destroy: () => {} };
 		}
 
@@ -361,7 +407,9 @@
 
 				// Clean up empty content and panels
 				removeEmptyContent(currentPanel, childIndex);
-				currentPanel.views = currentPanel.childs.content.flatMap((c) => c.views);
+				currentPanel.views = currentPanel.childs.content.flatMap(
+					(c) => c.views
+				);
 
 				if (currentPanel.views.length === 0) {
 					layoutState.tree.splice(parentIndex, 1);
@@ -407,7 +455,9 @@
 		// Keep everything up to the specified index, but never remove locked tabs to the right.
 		const viewsToRight = panelViews.slice(index + 1);
 		const nonLockedRight = viewsToRight.filter((v) => !v.locked);
-		const viewsToKeep = panelViews.slice(0, index + 1).concat(viewsToRight.filter((v) => v.locked));
+		const viewsToKeep = panelViews
+			.slice(0, index + 1)
+			.concat(viewsToRight.filter((v) => v.locked));
 		const closedActiveView = !viewsToKeep.some((v) => v.id === activeView.id);
 
 		panelViews = viewsToKeep;
@@ -469,7 +519,11 @@
 
 		// Create a new view instance and split the panel
 		const newView = duplicateView(view);
-		const newPanel = splitPanelVertically(layoutState.tree, parentIndex, newView);
+		const newPanel = splitPanelVertically(
+			layoutState.tree,
+			parentIndex,
+			newView
+		);
 
 		if (newPanel) {
 			newView.setActive(true);
@@ -519,7 +573,13 @@
 				paneKeyId: p.paneKeyId,
 				contentCount: p.childs?.content?.length ?? 0
 			}));
-			console.debug("[Viz] moveToPanel start", { viewId: view.id, viewParent: view.parent, result, layoutSummary, dir });
+			console.debug("[Viz] moveToPanel start", {
+				viewId: view.id,
+				viewParent: view.parent,
+				result,
+				layoutSummary,
+				dir
+			});
 		}
 
 		let { parentIndex, isChild, childIndex } = result;
@@ -527,7 +587,10 @@
 
 		// If findSubPanel returned the top-level panel (isChild === false), determine which content group contains this view
 		if (!isChild) {
-			const foundIdx = currentPanel.childs?.content?.findIndex((c) => c.views.some((v) => v.id === view.id)) ?? -1;
+			const foundIdx =
+				currentPanel.childs?.content?.findIndex((c) =>
+					c.views.some((v) => v.id === view.id)
+				) ?? -1;
 			if (foundIdx === -1) {
 				// Nothing to move
 				return;
@@ -567,7 +630,9 @@
 
 		const resolvedChildIndex = isChild
 			? childIndex
-			: (currentPanel.childs?.content?.findIndex((c) => c.views.some((v) => v.id === view.id)) ?? -1);
+			: (currentPanel.childs?.content?.findIndex((c) =>
+					c.views.some((v) => v.id === view.id)
+				) ?? -1);
 
 		if (dir === "left") {
 			if (resolvedChildIndex > 0) {
@@ -577,10 +642,16 @@
 				// move into the previous panel's rightmost content group
 				targetPanelIndex = parentIndex - 1;
 				const prevPanel = layoutState.tree[targetPanelIndex];
-				targetContentIndex = Math.max(0, (prevPanel.childs?.content?.length ?? 1) - 1);
+				targetContentIndex = Math.max(
+					0,
+					(prevPanel.childs?.content?.length ?? 1) - 1
+				);
 			}
 		} else if (dir === "right") {
-			if (resolvedChildIndex !== -1 && resolvedChildIndex < (currentPanel.childs?.content?.length ?? 0) - 1) {
+			if (
+				resolvedChildIndex !== -1 &&
+				resolvedChildIndex < (currentPanel.childs?.content?.length ?? 0) - 1
+			) {
 				targetPanelIndex = parentIndex;
 				targetContentIndex = resolvedChildIndex + 1;
 			} else if (parentIndex < layoutState.tree.length - 1) {
@@ -639,11 +710,15 @@
 			// When isChild is false, the paneKey matched a top-level panel and we must search its content groups.
 			const resolvedChildIndex = isChild
 				? childIndex
-				: (currentPanel.childs?.content?.findIndex((c) => c.views.some((v) => v.id === view.id)) ?? -1);
+				: (currentPanel.childs?.content?.findIndex((c) =>
+						c.views.some((v) => v.id === view.id)
+					) ?? -1);
 
 			canMoveLeft = resolvedChildIndex > 0;
 			// Allow moving left/right into adjacent panels as well as sibling content groups
-			canMoveRight = resolvedChildIndex !== -1 && resolvedChildIndex < (currentPanel.childs?.content?.length ?? 0) - 1;
+			canMoveRight =
+				resolvedChildIndex !== -1 &&
+				resolvedChildIndex < (currentPanel.childs?.content?.length ?? 0) - 1;
 			// If there is no sibling to the left/right, but there is a panel to the left/right,
 			// treat that as a valid move target too.
 			if (!canMoveLeft && parentIndex > 0) {
@@ -655,11 +730,17 @@
 			// Respect top-level split orientation: only allow up/down when layoutTree.horizontal is true
 			const panelsAreStacked = !!layoutTree.horizontal;
 			canMoveUp = panelsAreStacked && parentIndex > 0;
-			canMoveDown = panelsAreStacked && parentIndex < layoutState.tree.length - 1;
+			canMoveDown =
+				panelsAreStacked && parentIndex < layoutState.tree.length - 1;
 		}
 
 		// Use centralised builder for tab context menu
-		contextMenuItems = buildTabContextMenu(view, panelViews, keyId, menuHandlers);
+		contextMenuItems = buildTabContextMenu(
+			view,
+			panelViews,
+			keyId,
+			menuHandlers
+		);
 
 		showContextMenu = true;
 	}
@@ -674,9 +755,21 @@
 		layoutContextMenuAnchor = { x: event.clientX, y: event.clientY };
 
 		// Compose the global layout menu with panel-specific actions (lock/unlock all tabs)
-		layoutContextMenuItems = [...buildLayoutContextMenu(), ...buildPanelContextMenu(keyId, panelViews)];
+		layoutContextMenuItems = [
+			...buildLayoutContextMenu(),
+			...buildPanelContextMenu(keyId, panelViews)
+		];
 
 		showLayoutContextMenu = true;
+	}
+
+	function handleViewActive(view: VizView) {
+		if (dev && activeView.id === view.id && view.path) {
+			goto(view.path);
+			return;
+		}
+
+		makeViewActive(view instanceof VizView ? view : new VizView(view));
 	}
 </script>
 
@@ -695,8 +788,16 @@
 	}}
 />
 
-<ContextMenu bind:showMenu={showContextMenu} items={contextMenuItems} anchor={contextMenuAnchor} />
-<ContextMenu bind:showMenu={showLayoutContextMenu} items={layoutContextMenuItems} anchor={layoutContextMenuAnchor} />
+<ContextMenu
+	bind:showMenu={showContextMenu}
+	items={contextMenuItems}
+	anchor={contextMenuAnchor}
+/>
+<ContextMenu
+	bind:showMenu={showLayoutContextMenu}
+	items={layoutContextMenuItems}
+	anchor={layoutContextMenuAnchor}
+/>
 
 <Pane
 	class={className + (isPanelLocked() ? " locked" : "")}
@@ -713,127 +814,42 @@ a header into a different panel, place that panel in place and update the state
 for Splitpanes
 	-->
 	{#if header}
-		<div
-			class="viz-sub_panel-header {isPanelLocked() ? 'locked' : ''}"
-			role="tablist"
-			tabindex="0"
-			use:headerDraggable
-			use:tabDrop
-			oncontextmenu={(e) => showHeaderContextMenu(e)}
-			ondragover={(event) => onDropOver(event)}
-		>
-			{#each panelViews as view, i}
-				{#if view.name && view.name.trim() != ""}
-					{@const tabNameId = view.name.toLowerCase().replaceAll(" ", "-")}
-					{@const data = { index: i, view: view }}
-					<button
-						id={tabNameId + "-tab"}
-						class="viz-tab-button {activeView.id === view.id ? 'active-tab' : ''}"
-						data-tab-id={view.id}
-						role="tab"
-						title={view.name}
-						aria-label={view.name}
-						onclick={async () => {
-							if (dev) {
-								if (activeView.id === view.id) {
-									if (view.path) {
-										goto(view.path);
-										return;
-									}
-								}
-							}
-
-							if (activeView.id === view.id) {
-								// show context menu or maybe add an onclick
-								// property to the class
-							}
-
-							makeViewActive(view instanceof VizView ? view : new VizView(view));
-						}}
-						oncontextmenu={(e) => showTabContextMenu(e, view)}
-						use:tabDragable={data}
-						use:tabDrop
-						ondragover={(event) => onDropOver(event)}
-					>
-						<!--
-					Every tab name needs to manually align itself with the icon
-					Translate is used instead of margin or position is used to avoid
-					shifting the layout  
-					-->
-						<MaterialIcon style={`transform: translateY(${view.opticalCenterFix}px);`} weight={200} iconName="menu" />
-						<span class="viz-sub_panel-name">{view.name}</span>
-						{#if view.locked}
-							<MaterialIcon class="viz-tab-lock" iconName="lock" />
-						{/if}
-					</button>
-				{/if}
-			{/each}
-			{#if dev}
-				<button
-					id="viz-debug-button"
-					class="viz-tab-button"
-					aria-label="Reset and Reload"
-					title="Reset and Reload"
-					onclick={() => resetAndReloadLayout()}
-				>
-					<span class="viz-sub_panel-name">Reset Layout</span>
-					<MaterialIcon iconName="refresh" />
-				</button>
-			{/if}
-			{#if isPanelLocked()}
-				<button
-					class="viz-lock-indicator"
-					aria-label="Toggle panel lock"
-					title={isPanelLocked() ? "Unlock Panel" : "Lock Panel"}
-					onclick={() => togglePanelLock()}
-				>
-					<MaterialIcon iconName={isPanelLocked() ? "lock" : "lock_open"} />
-				</button>
-			{/if}
-		</div>
+		<SubPanelHeader
+			{keyId}
+			{panelViews}
+			{activeView}
+			isPanelLocked={isPanelLocked()}
+			{tabDropper}
+			{dev}
+			onViewActive={handleViewActive}
+			onTogglePanelLock={togglePanelLock}
+			{menuHandlers}
+		/>
 	{/if}
 	{#if activeView?.component}
 		{@const Comp = activeView.component}
-		{@const data = { index: panelViews.findIndex((view) => view.id === activeView.id), view: activeView }}
-		<div
-			role="none"
-			class="viz-sub_panel-content"
-			style="width: 100%;"
-			onclick={() => (subPanelContentFocused = true)}
-			onkeydown={() => (subPanelContentFocused = true)}
-			bind:this={subPanelContentElement}
-			use:subPanelDrop={data}
-		>
-			{#await panelData}
-				<LoadingContainer />
-			{:then loadedData}
-				{#if loadedData}
-					<Comp data={loadedData.data} />
-				{:else}
-					<Comp />
-				{/if}
-			{:catch error}
-				<h2>Something has gone wrong:</h2>
-				<p style="color: red;">{error}</p>
-			{/await}
-		</div>
+		<SubPanelContent
+			{keyId}
+			{tabDropper}
+			bind:panelViews
+			bind:activeView
+			bind:subPanelContentFocused
+			componentToRender={Comp}
+			onFocus={() => (subPanelContentFocused = true)}
+		/>
 	{/if}
 	{#if children}
-		<div class="viz-sub_panel-content" style="white-space: nowrap;" data-pane-key={keyId}>
+		<div
+			class="viz-sub_panel-content"
+			style="white-space: nowrap;"
+			data-pane-key={keyId}
+		>
 			{@render children()}
 		</div>
 	{/if}
 </Pane>
 
 <style lang="scss">
-	.viz-sub_panel-header.locked {
-		opacity: 0.7;
-		pointer-events: auto; /* still accept clicks for context menu */
-	}
-
-	/* Dim and disable adjacent split resizers for locked panes (UI-only enforcement).
-   The svelte-splitpanes implementation uses sibling resizer elements; target the
-   resizer that is immediately before or after a locked pane. */
 	:global(.splitpanes__pane.locked) + :global(.splitpanes__resizer),
 	:global(.splitpanes__resizer) + :global(.splitpanes__pane.locked) {
 		pointer-events: none;
@@ -841,89 +857,29 @@ for Splitpanes
 		cursor: default;
 	}
 
-	.viz-lock-indicator {
-		position: absolute;
-		right: 0.5em;
-		top: 0.25em;
-		background: transparent;
-		border: none;
-		display: flex;
-		align-items: center;
-		justify-content: center;
-		padding: 0.25em;
-		cursor: pointer;
-	}
-	#viz-debug-button {
-		position: absolute;
-		right: 0;
-	}
-
-	.viz-sub_panel-header {
-		min-height: 0.7rem;
-		background-color: var(--imag-100);
-		font-size: 0.8rem;
-		overflow: auto;
-		display: flex;
-		align-items: center;
-		position: relative;
-	}
-
-	.viz-sub_panel-content {
-		text-overflow: clip;
-		position: relative;
-		display: flex;
-		flex-direction: column;
-		height: 100%;
-		max-height: 100%;
-	}
-
-	.viz-tab-button {
-		display: flex;
-		align-items: center;
-		position: relative;
-		padding: 0.3em 0.7em;
-		cursor: default;
-		height: 100%;
-		max-width: 11em;
-		overflow: hidden;
-		gap: 0.3em;
-		font-size: 0.9em;
-
-		&:hover {
-			background-color: var(--imag-90);
-		}
-	}
-
-	:global(.viz-tab-lock) {
-		width: 1em;
-		height: 1em;
-		opacity: 0.9;
-		margin-left: 0.25em;
-		font-size: 0.9em;
-	}
-
-	.viz-sub_panel-name {
-		white-space: nowrap;
-		overflow: hidden;
-		text-overflow: ellipsis;
-	}
-
 	:global(
 			.splitpanes__pane > *:last-child,
-			.viz-sub_panel-content > :last-child:not(.splitpanes--horizontal, .splitpanes--vertical, .viz-view-container)
+			.viz-sub_panel-content
+				> :last-child:not(
+					.splitpanes--horizontal,
+					.splitpanes--vertical,
+					.viz-view-container
+				)
 		) {
 		padding: 0.5em;
 	}
 
 	:global(
 			.splitpanes__pane
-				> :is(.splitpanes, .splitpanes__pane, .viz-sub_panel-content, .splitpanes--horizontal, .splitpanes--vertical)
+				> :is(
+					.splitpanes,
+					.splitpanes__pane,
+					.viz-sub_panel-content,
+					.splitpanes--horizontal,
+					.splitpanes--vertical
+				)
 		) {
 		padding: 0em;
-	}
-
-	.active-tab {
-		box-shadow: 0 -1.5px 0 0 var(--imag-40) inset;
 	}
 
 	:global(.drop-hover-above) {
