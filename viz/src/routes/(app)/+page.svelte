@@ -48,7 +48,7 @@
 		&:focus,
 		&:focus-visible {
 			color: var(--imag-text-color);
-			background: var(--imag-outline-colour);
+			background: var(--imag-primary);
 			left: auto;
 			height: auto;
 			width: auto;
