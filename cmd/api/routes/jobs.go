@@ -1,7 +1,6 @@
 package routes
 
 import (
-	"encoding/json"
 	"fmt"
 	"log/slog"
 	"net/http"
@@ -565,7 +564,7 @@ func JobsRouter(db *gorm.DB, logger *slog.Logger) *chi.Mux {
 
 	r.Post("/workers", func(res http.ResponseWriter, req *http.Request) {
 		var body dto.WorkerRegisterRequest
-		if err := json.NewDecoder(req.Body).Decode(&body); err != nil {
+		if err := render.DecodeJSON(req.Body, &body); err != nil {
 			render.Status(req, http.StatusBadRequest)
 			render.JSON(res, req, dto.ErrorResponse{Error: "Invalid body"})
 			return
@@ -597,7 +596,7 @@ func JobsRouter(db *gorm.DB, logger *slog.Logger) *chi.Mux {
 
 	r.Post("/", func(res http.ResponseWriter, req *http.Request) {
 		var body dto.WorkerJobCreateRequest
-		if err := json.NewDecoder(req.Body).Decode(&body); err != nil {
+		if err := render.DecodeJSON(req.Body, &body); err != nil {
 			render.Status(req, http.StatusBadRequest)
 			render.JSON(res, req, dto.ErrorResponse{Error: "Invalid body"})
 			return
@@ -717,7 +716,7 @@ func JobsRouter(db *gorm.DB, logger *slog.Logger) *chi.Mux {
 		var body struct {
 			Concurrency int `json:"concurrency"`
 		}
-		if err := json.NewDecoder(req.Body).Decode(&body); err != nil {
+		if err := render.DecodeJSON(req.Body, &body); err != nil {
 			render.Status(req, http.StatusBadRequest)
 			render.JSON(res, req, dto.ErrorResponse{Error: "Invalid body"})
 			return

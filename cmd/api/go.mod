@@ -44,6 +44,7 @@ require (
 	github.com/jinzhu/now v1.1.5 // indirect
 	github.com/kovidgoyal/go-parallel v1.0.1 // indirect
 	github.com/kovidgoyal/imaging v1.7.2 // indirect
+	github.com/mattn/go-sqlite3 v1.14.22 // indirect
 	github.com/planetscale/vtprotobuf v0.6.1-0.20240319094008-0393e58bdf10 // indirect
 	github.com/rwcarlsen/goexif v0.0.0-20190401172101-9e8deecbddbd // indirect
 	github.com/spiffe/go-spiffe/v2 v2.5.0 // indirect
@@ -70,4 +71,5 @@ require (
 	google.golang.org/genproto/googleapis/rpc v0.0.0-20250818200422-3122310a409c // indirect
 	google.golang.org/grpc v1.74.2 // indirect
 	google.golang.org/protobuf v1.36.7 // indirect
+	gorm.io/driver/sqlite v1.6.0 // indirect
 )

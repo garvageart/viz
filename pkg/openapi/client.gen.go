@@ -121,6 +121,9 @@ type ClientInterface interface {
 	// GetCacheStatus request
 	GetCacheStatus(ctx context.Context, reqEditors ...RequestEditorFn) (*http.Response, error)
 
+	// GetDatabaseStats request
+	GetDatabaseStats(ctx context.Context, reqEditors ...RequestEditorFn) (*http.Response, error)
+
 	// AdminHealthcheck request
 	AdminHealthcheck(ctx context.Context, reqEditors ...RequestEditorFn) (*http.Response, error)
 
@@ -129,6 +132,25 @@ type ClientInterface interface {
 
 	// ListSettingOverrides request
 	ListSettingOverrides(ctx context.Context, reqEditors ...RequestEditorFn) (*http.Response, error)
+
+	// GetSystemStats request
+	GetSystemStats(ctx context.Context, reqEditors ...RequestEditorFn) (*http.Response, error)
+
+	// ListUsers request
+	ListUsers(ctx context.Context, reqEditors ...RequestEditorFn) (*http.Response, error)
+
+	// AdminCreateUserWithBody request with any body
+	AdminCreateUserWithBody(ctx context.Context, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*http.Response, error)
+
+	AdminCreateUser(ctx context.Context, body AdminCreateUserJSONRequestBody, reqEditors ...RequestEditorFn) (*http.Response, error)
+
+	// AdminDeleteUser request
+	AdminDeleteUser(ctx context.Context, uid string, reqEditors ...RequestEditorFn) (*http.Response, error)
+
+	// AdminUpdateUserWithBody request with any body
+	AdminUpdateUserWithBody(ctx context.Context, uid string, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*http.Response, error)
+
+	AdminUpdateUser(ctx context.Context, uid string, body AdminUpdateUserJSONRequestBody, reqEditors ...RequestEditorFn) (*http.Response, error)
 
 	// ListApiKeys request
 	ListApiKeys(ctx context.Context, reqEditors ...RequestEditorFn) (*http.Response, error)
@@ -466,6 +488,18 @@ func (c *Client) GetCacheStatus(ctx context.Context, reqEditors ...RequestEditor
 	return c.Client.Do(req)
 }
 
+func (c *Client) GetDatabaseStats(ctx context.Context, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewGetDatabaseStatsRequest(c.Server)
+	if err != nil {
+		return nil, err
+	}
+	req = req.WithContext(ctx)
+	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
+		return nil, err
+	}
+	return c.Client.Do(req)
+}
+
 func (c *Client) AdminHealthcheck(ctx context.Context, reqEditors ...RequestEditorFn) (*http.Response, error) {
 	req, err := NewAdminHealthcheckRequest(c.Server)
 	if err != nil {
@@ -492,6 +526,90 @@ func (c *Client) ListSettingDefinitions(ctx context.Context, reqEditors ...Reque
 
 func (c *Client) ListSettingOverrides(ctx context.Context, reqEditors ...RequestEditorFn) (*http.Response, error) {
 	req, err := NewListSettingOverridesRequest(c.Server)
+	if err != nil {
+		return nil, err
+	}
+	req = req.WithContext(ctx)
+	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
+		return nil, err
+	}
+	return c.Client.Do(req)
+}
+
+func (c *Client) GetSystemStats(ctx context.Context, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewGetSystemStatsRequest(c.Server)
+	if err != nil {
+		return nil, err
+	}
+	req = req.WithContext(ctx)
+	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
+		return nil, err
+	}
+	return c.Client.Do(req)
+}
+
+func (c *Client) ListUsers(ctx context.Context, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewListUsersRequest(c.Server)
+	if err != nil {
+		return nil, err
+	}
+	req = req.WithContext(ctx)
+	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
+		return nil, err
+	}
+	return c.Client.Do(req)
+}
+
+func (c *Client) AdminCreateUserWithBody(ctx context.Context, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewAdminCreateUserRequestWithBody(c.Server, contentType, body)
+	if err != nil {
+		return nil, err
+	}
+	req = req.WithContext(ctx)
+	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
+		return nil, err
+	}
+	return c.Client.Do(req)
+}
+
+func (c *Client) AdminCreateUser(ctx context.Context, body AdminCreateUserJSONRequestBody, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewAdminCreateUserRequest(c.Server, body)
+	if err != nil {
+		return nil, err
+	}
+	req = req.WithContext(ctx)
+	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
+		return nil, err
+	}
+	return c.Client.Do(req)
+}
+
+func (c *Client) AdminDeleteUser(ctx context.Context, uid string, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewAdminDeleteUserRequest(c.Server, uid)
+	if err != nil {
+		return nil, err
+	}
+	req = req.WithContext(ctx)
+	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
+		return nil, err
+	}
+	return c.Client.Do(req)
+}
+
+func (c *Client) AdminUpdateUserWithBody(ctx context.Context, uid string, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewAdminUpdateUserRequestWithBody(c.Server, uid, contentType, body)
+	if err != nil {
+		return nil, err
+	}
+	req = req.WithContext(ctx)
+	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
+		return nil, err
+	}
+	return c.Client.Do(req)
+}
+
+func (c *Client) AdminUpdateUser(ctx context.Context, uid string, body AdminUpdateUserJSONRequestBody, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewAdminUpdateUserRequest(c.Server, uid, body)
 	if err != nil {
 		return nil, err
 	}
@@ -1616,6 +1734,33 @@ func NewGetCacheStatusRequest(server string) (*http.Request, error) {
 	return req, nil
 }
 
+// NewGetDatabaseStatsRequest generates requests for GetDatabaseStats
+func NewGetDatabaseStatsRequest(server string) (*http.Request, error) {
+	var err error
+
+	serverURL, err := url.Parse(server)
+	if err != nil {
+		return nil, err
+	}
+
+	operationPath := fmt.Sprintf("/admin/db/stats")
+	if operationPath[0] == '/' {
+		operationPath = "." + operationPath
+	}
+
+	queryURL, err := serverURL.Parse(operationPath)
+	if err != nil {
+		return nil, err
+	}
+
+	req, err := http.NewRequest("GET", queryURL.String(), nil)
+	if err != nil {
+		return nil, err
+	}
+
+	return req, nil
+}
+
 // NewAdminHealthcheckRequest generates requests for AdminHealthcheck
 func NewAdminHealthcheckRequest(server string) (*http.Request, error) {
 	var err error
@@ -1693,6 +1838,181 @@ func NewListSettingOverridesRequest(server string) (*http.Request, error) {
 	if err != nil {
 		return nil, err
 	}
+
+	return req, nil
+}
+
+// NewGetSystemStatsRequest generates requests for GetSystemStats
+func NewGetSystemStatsRequest(server string) (*http.Request, error) {
+	var err error
+
+	serverURL, err := url.Parse(server)
+	if err != nil {
+		return nil, err
+	}
+
+	operationPath := fmt.Sprintf("/admin/system/stats")
+	if operationPath[0] == '/' {
+		operationPath = "." + operationPath
+	}
+
+	queryURL, err := serverURL.Parse(operationPath)
+	if err != nil {
+		return nil, err
+	}
+
+	req, err := http.NewRequest("GET", queryURL.String(), nil)
+	if err != nil {
+		return nil, err
+	}
+
+	return req, nil
+}
+
+// NewListUsersRequest generates requests for ListUsers
+func NewListUsersRequest(server string) (*http.Request, error) {
+	var err error
+
+	serverURL, err := url.Parse(server)
+	if err != nil {
+		return nil, err
+	}
+
+	operationPath := fmt.Sprintf("/admin/users")
+	if operationPath[0] == '/' {
+		operationPath = "." + operationPath
+	}
+
+	queryURL, err := serverURL.Parse(operationPath)
+	if err != nil {
+		return nil, err
+	}
+
+	req, err := http.NewRequest("GET", queryURL.String(), nil)
+	if err != nil {
+		return nil, err
+	}
+
+	return req, nil
+}
+
+// NewAdminCreateUserRequest calls the generic AdminCreateUser builder with application/json body
+func NewAdminCreateUserRequest(server string, body AdminCreateUserJSONRequestBody) (*http.Request, error) {
+	var bodyReader io.Reader
+	buf, err := json.Marshal(body)
+	if err != nil {
+		return nil, err
+	}
+	bodyReader = bytes.NewReader(buf)
+	return NewAdminCreateUserRequestWithBody(server, "application/json", bodyReader)
+}
+
+// NewAdminCreateUserRequestWithBody generates requests for AdminCreateUser with any type of body
+func NewAdminCreateUserRequestWithBody(server string, contentType string, body io.Reader) (*http.Request, error) {
+	var err error
+
+	serverURL, err := url.Parse(server)
+	if err != nil {
+		return nil, err
+	}
+
+	operationPath := fmt.Sprintf("/admin/users")
+	if operationPath[0] == '/' {
+		operationPath = "." + operationPath
+	}
+
+	queryURL, err := serverURL.Parse(operationPath)
+	if err != nil {
+		return nil, err
+	}
+
+	req, err := http.NewRequest("POST", queryURL.String(), body)
+	if err != nil {
+		return nil, err
+	}
+
+	req.Header.Add("Content-Type", contentType)
+
+	return req, nil
+}
+
+// NewAdminDeleteUserRequest generates requests for AdminDeleteUser
+func NewAdminDeleteUserRequest(server string, uid string) (*http.Request, error) {
+	var err error
+
+	var pathParam0 string
+
+	pathParam0, err = runtime.StyleParamWithLocation("simple", false, "uid", runtime.ParamLocationPath, uid)
+	if err != nil {
+		return nil, err
+	}
+
+	serverURL, err := url.Parse(server)
+	if err != nil {
+		return nil, err
+	}
+
+	operationPath := fmt.Sprintf("/admin/users/%s", pathParam0)
+	if operationPath[0] == '/' {
+		operationPath = "." + operationPath
+	}
+
+	queryURL, err := serverURL.Parse(operationPath)
+	if err != nil {
+		return nil, err
+	}
+
+	req, err := http.NewRequest("DELETE", queryURL.String(), nil)
+	if err != nil {
+		return nil, err
+	}
+
+	return req, nil
+}
+
+// NewAdminUpdateUserRequest calls the generic AdminUpdateUser builder with application/json body
+func NewAdminUpdateUserRequest(server string, uid string, body AdminUpdateUserJSONRequestBody) (*http.Request, error) {
+	var bodyReader io.Reader
+	buf, err := json.Marshal(body)
+	if err != nil {
+		return nil, err
+	}
+	bodyReader = bytes.NewReader(buf)
+	return NewAdminUpdateUserRequestWithBody(server, uid, "application/json", bodyReader)
+}
+
+// NewAdminUpdateUserRequestWithBody generates requests for AdminUpdateUser with any type of body
+func NewAdminUpdateUserRequestWithBody(server string, uid string, contentType string, body io.Reader) (*http.Request, error) {
+	var err error
+
+	var pathParam0 string
+
+	pathParam0, err = runtime.StyleParamWithLocation("simple", false, "uid", runtime.ParamLocationPath, uid)
+	if err != nil {
+		return nil, err
+	}
+
+	serverURL, err := url.Parse(server)
+	if err != nil {
+		return nil, err
+	}
+
+	operationPath := fmt.Sprintf("/admin/users/%s", pathParam0)
+	if operationPath[0] == '/' {
+		operationPath = "." + operationPath
+	}
+
+	queryURL, err := serverURL.Parse(operationPath)
+	if err != nil {
+		return nil, err
+	}
+
+	req, err := http.NewRequest("PATCH", queryURL.String(), body)
+	if err != nil {
+		return nil, err
+	}
+
+	req.Header.Add("Content-Type", contentType)
 
 	return req, nil
 }
@@ -4036,6 +4356,9 @@ type ClientWithResponsesInterface interface {
 	// GetCacheStatusWithResponse request
 	GetCacheStatusWithResponse(ctx context.Context, reqEditors ...RequestEditorFn) (*GetCacheStatusResponse, error)
 
+	// GetDatabaseStatsWithResponse request
+	GetDatabaseStatsWithResponse(ctx context.Context, reqEditors ...RequestEditorFn) (*GetDatabaseStatsResponse, error)
+
 	// AdminHealthcheckWithResponse request
 	AdminHealthcheckWithResponse(ctx context.Context, reqEditors ...RequestEditorFn) (*AdminHealthcheckResponse, error)
 
@@ -4044,6 +4367,25 @@ type ClientWithResponsesInterface interface {
 
 	// ListSettingOverridesWithResponse request
 	ListSettingOverridesWithResponse(ctx context.Context, reqEditors ...RequestEditorFn) (*ListSettingOverridesResponse, error)
+
+	// GetSystemStatsWithResponse request
+	GetSystemStatsWithResponse(ctx context.Context, reqEditors ...RequestEditorFn) (*GetSystemStatsResponse, error)
+
+	// ListUsersWithResponse request
+	ListUsersWithResponse(ctx context.Context, reqEditors ...RequestEditorFn) (*ListUsersResponse, error)
+
+	// AdminCreateUserWithBodyWithResponse request with any body
+	AdminCreateUserWithBodyWithResponse(ctx context.Context, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*AdminCreateUserResponse, error)
+
+	AdminCreateUserWithResponse(ctx context.Context, body AdminCreateUserJSONRequestBody, reqEditors ...RequestEditorFn) (*AdminCreateUserResponse, error)
+
+	// AdminDeleteUserWithResponse request
+	AdminDeleteUserWithResponse(ctx context.Context, uid string, reqEditors ...RequestEditorFn) (*AdminDeleteUserResponse, error)
+
+	// AdminUpdateUserWithBodyWithResponse request with any body
+	AdminUpdateUserWithBodyWithResponse(ctx context.Context, uid string, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*AdminUpdateUserResponse, error)
+
+	AdminUpdateUserWithResponse(ctx context.Context, uid string, body AdminUpdateUserJSONRequestBody, reqEditors ...RequestEditorFn) (*AdminUpdateUserResponse, error)
 
 	// ListApiKeysWithResponse request
 	ListApiKeysWithResponse(ctx context.Context, reqEditors ...RequestEditorFn) (*ListApiKeysResponse, error)
@@ -4432,6 +4774,30 @@ func (r GetCacheStatusResponse) StatusCode() int {
 	return 0
 }
 
+type GetDatabaseStatsResponse struct {
+	Body         []byte
+	HTTPResponse *http.Response
+	JSON200      *DatabaseStatsResponse
+	JSON401      *ErrorResponse
+	JSON403      *ErrorResponse
+}
+
+// Status returns HTTPResponse.Status
+func (r GetDatabaseStatsResponse) Status() string {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.Status
+	}
+	return http.StatusText(0)
+}
+
+// StatusCode returns HTTPResponse.StatusCode
+func (r GetDatabaseStatsResponse) StatusCode() int {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.StatusCode
+	}
+	return 0
+}
+
 type AdminHealthcheckResponse struct {
 	Body         []byte
 	HTTPResponse *http.Response
@@ -4497,6 +4863,135 @@ func (r ListSettingOverridesResponse) Status() string {
 
 // StatusCode returns HTTPResponse.StatusCode
 func (r ListSettingOverridesResponse) StatusCode() int {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.StatusCode
+	}
+	return 0
+}
+
+type GetSystemStatsResponse struct {
+	Body         []byte
+	HTTPResponse *http.Response
+	JSON200      *SystemStatsResponse
+	JSON401      *ErrorResponse
+	JSON403      *ErrorResponse
+}
+
+// Status returns HTTPResponse.Status
+func (r GetSystemStatsResponse) Status() string {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.Status
+	}
+	return http.StatusText(0)
+}
+
+// StatusCode returns HTTPResponse.StatusCode
+func (r GetSystemStatsResponse) StatusCode() int {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.StatusCode
+	}
+	return 0
+}
+
+type ListUsersResponse struct {
+	Body         []byte
+	HTTPResponse *http.Response
+	JSON200      *[]User
+	JSON401      *ErrorResponse
+	JSON403      *ErrorResponse
+	JSON500      *ErrorResponse
+}
+
+// Status returns HTTPResponse.Status
+func (r ListUsersResponse) Status() string {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.Status
+	}
+	return http.StatusText(0)
+}
+
+// StatusCode returns HTTPResponse.StatusCode
+func (r ListUsersResponse) StatusCode() int {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.StatusCode
+	}
+	return 0
+}
+
+type AdminCreateUserResponse struct {
+	Body         []byte
+	HTTPResponse *http.Response
+	JSON201      *User
+	JSON400      *ErrorResponse
+	JSON401      *ErrorResponse
+	JSON403      *ErrorResponse
+	JSON409      *ErrorResponse
+	JSON500      *ErrorResponse
+}
+
+// Status returns HTTPResponse.Status
+func (r AdminCreateUserResponse) Status() string {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.Status
+	}
+	return http.StatusText(0)
+}
+
+// StatusCode returns HTTPResponse.StatusCode
+func (r AdminCreateUserResponse) StatusCode() int {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.StatusCode
+	}
+	return 0
+}
+
+type AdminDeleteUserResponse struct {
+	Body         []byte
+	HTTPResponse *http.Response
+	JSON200      *MessageResponse
+	JSON401      *ErrorResponse
+	JSON403      *ErrorResponse
+	JSON404      *ErrorResponse
+	JSON500      *ErrorResponse
+}
+
+// Status returns HTTPResponse.Status
+func (r AdminDeleteUserResponse) Status() string {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.Status
+	}
+	return http.StatusText(0)
+}
+
+// StatusCode returns HTTPResponse.StatusCode
+func (r AdminDeleteUserResponse) StatusCode() int {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.StatusCode
+	}
+	return 0
+}
+
+type AdminUpdateUserResponse struct {
+	Body         []byte
+	HTTPResponse *http.Response
+	JSON200      *User
+	JSON400      *ErrorResponse
+	JSON401      *ErrorResponse
+	JSON403      *ErrorResponse
+	JSON404      *ErrorResponse
+	JSON500      *ErrorResponse
+}
+
+// Status returns HTTPResponse.Status
+func (r AdminUpdateUserResponse) Status() string {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.Status
+	}
+	return http.StatusText(0)
+}
+
+// StatusCode returns HTTPResponse.StatusCode
+func (r AdminUpdateUserResponse) StatusCode() int {
 	if r.HTTPResponse != nil {
 		return r.HTTPResponse.StatusCode
 	}
@@ -5869,6 +6364,15 @@ func (c *ClientWithResponses) GetCacheStatusWithResponse(ctx context.Context, re
 	return ParseGetCacheStatusResponse(rsp)
 }
 
+// GetDatabaseStatsWithResponse request returning *GetDatabaseStatsResponse
+func (c *ClientWithResponses) GetDatabaseStatsWithResponse(ctx context.Context, reqEditors ...RequestEditorFn) (*GetDatabaseStatsResponse, error) {
+	rsp, err := c.GetDatabaseStats(ctx, reqEditors...)
+	if err != nil {
+		return nil, err
+	}
+	return ParseGetDatabaseStatsResponse(rsp)
+}
+
 // AdminHealthcheckWithResponse request returning *AdminHealthcheckResponse
 func (c *ClientWithResponses) AdminHealthcheckWithResponse(ctx context.Context, reqEditors ...RequestEditorFn) (*AdminHealthcheckResponse, error) {
 	rsp, err := c.AdminHealthcheck(ctx, reqEditors...)
@@ -5894,6 +6398,67 @@ func (c *ClientWithResponses) ListSettingOverridesWithResponse(ctx context.Conte
 		return nil, err
 	}
 	return ParseListSettingOverridesResponse(rsp)
+}
+
+// GetSystemStatsWithResponse request returning *GetSystemStatsResponse
+func (c *ClientWithResponses) GetSystemStatsWithResponse(ctx context.Context, reqEditors ...RequestEditorFn) (*GetSystemStatsResponse, error) {
+	rsp, err := c.GetSystemStats(ctx, reqEditors...)
+	if err != nil {
+		return nil, err
+	}
+	return ParseGetSystemStatsResponse(rsp)
+}
+
+// ListUsersWithResponse request returning *ListUsersResponse
+func (c *ClientWithResponses) ListUsersWithResponse(ctx context.Context, reqEditors ...RequestEditorFn) (*ListUsersResponse, error) {
+	rsp, err := c.ListUsers(ctx, reqEditors...)
+	if err != nil {
+		return nil, err
+	}
+	return ParseListUsersResponse(rsp)
+}
+
+// AdminCreateUserWithBodyWithResponse request with arbitrary body returning *AdminCreateUserResponse
+func (c *ClientWithResponses) AdminCreateUserWithBodyWithResponse(ctx context.Context, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*AdminCreateUserResponse, error) {
+	rsp, err := c.AdminCreateUserWithBody(ctx, contentType, body, reqEditors...)
+	if err != nil {
+		return nil, err
+	}
+	return ParseAdminCreateUserResponse(rsp)
+}
+
+func (c *ClientWithResponses) AdminCreateUserWithResponse(ctx context.Context, body AdminCreateUserJSONRequestBody, reqEditors ...RequestEditorFn) (*AdminCreateUserResponse, error) {
+	rsp, err := c.AdminCreateUser(ctx, body, reqEditors...)
+	if err != nil {
+		return nil, err
+	}
+	return ParseAdminCreateUserResponse(rsp)
+}
+
+// AdminDeleteUserWithResponse request returning *AdminDeleteUserResponse
+func (c *ClientWithResponses) AdminDeleteUserWithResponse(ctx context.Context, uid string, reqEditors ...RequestEditorFn) (*AdminDeleteUserResponse, error) {
+	rsp, err := c.AdminDeleteUser(ctx, uid, reqEditors...)
+	if err != nil {
+		return nil, err
+	}
+	return ParseAdminDeleteUserResponse(rsp)
+}
+
+// AdminUpdateUserWithBodyWithResponse request with arbitrary body returning *AdminUpdateUserResponse
+func (c *ClientWithResponses) AdminUpdateUserWithBodyWithResponse(ctx context.Context, uid string, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*AdminUpdateUserResponse, error) {
+	rsp, err := c.AdminUpdateUserWithBody(ctx, uid, contentType, body, reqEditors...)
+	if err != nil {
+		return nil, err
+	}
+	return ParseAdminUpdateUserResponse(rsp)
+}
+
+func (c *ClientWithResponses) AdminUpdateUserWithResponse(ctx context.Context, uid string, body AdminUpdateUserJSONRequestBody, reqEditors ...RequestEditorFn) (*AdminUpdateUserResponse, error) {
+	rsp, err := c.AdminUpdateUser(ctx, uid, body, reqEditors...)
+	if err != nil {
+		return nil, err
+	}
+	return ParseAdminUpdateUserResponse(rsp)
 }
 
 // ListApiKeysWithResponse request returning *ListApiKeysResponse
@@ -6842,6 +7407,46 @@ func ParseGetCacheStatusResponse(rsp *http.Response) (*GetCacheStatusResponse, e
 	return response, nil
 }
 
+// ParseGetDatabaseStatsResponse parses an HTTP response from a GetDatabaseStatsWithResponse call
+func ParseGetDatabaseStatsResponse(rsp *http.Response) (*GetDatabaseStatsResponse, error) {
+	bodyBytes, err := io.ReadAll(rsp.Body)
+	defer func() { _ = rsp.Body.Close() }()
+	if err != nil {
+		return nil, err
+	}
+
+	response := &GetDatabaseStatsResponse{
+		Body:         bodyBytes,
+		HTTPResponse: rsp,
+	}
+
+	switch {
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 200:
+		var dest DatabaseStatsResponse
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON200 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 401:
+		var dest ErrorResponse
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON401 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 403:
+		var dest ErrorResponse
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON403 = &dest
+
+	}
+
+	return response, nil
+}
+
 // ParseAdminHealthcheckResponse parses an HTTP response from a AdminHealthcheckWithResponse call
 func ParseAdminHealthcheckResponse(rsp *http.Response) (*AdminHealthcheckResponse, error) {
 	bodyBytes, err := io.ReadAll(rsp.Body)
@@ -6949,6 +7554,269 @@ func ParseListSettingOverridesResponse(rsp *http.Response) (*ListSettingOverride
 			return nil, err
 		}
 		response.JSON401 = &dest
+
+	}
+
+	return response, nil
+}
+
+// ParseGetSystemStatsResponse parses an HTTP response from a GetSystemStatsWithResponse call
+func ParseGetSystemStatsResponse(rsp *http.Response) (*GetSystemStatsResponse, error) {
+	bodyBytes, err := io.ReadAll(rsp.Body)
+	defer func() { _ = rsp.Body.Close() }()
+	if err != nil {
+		return nil, err
+	}
+
+	response := &GetSystemStatsResponse{
+		Body:         bodyBytes,
+		HTTPResponse: rsp,
+	}
+
+	switch {
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 200:
+		var dest SystemStatsResponse
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON200 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 401:
+		var dest ErrorResponse
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON401 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 403:
+		var dest ErrorResponse
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON403 = &dest
+
+	}
+
+	return response, nil
+}
+
+// ParseListUsersResponse parses an HTTP response from a ListUsersWithResponse call
+func ParseListUsersResponse(rsp *http.Response) (*ListUsersResponse, error) {
+	bodyBytes, err := io.ReadAll(rsp.Body)
+	defer func() { _ = rsp.Body.Close() }()
+	if err != nil {
+		return nil, err
+	}
+
+	response := &ListUsersResponse{
+		Body:         bodyBytes,
+		HTTPResponse: rsp,
+	}
+
+	switch {
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 200:
+		var dest []User
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON200 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 401:
+		var dest ErrorResponse
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON401 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 403:
+		var dest ErrorResponse
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON403 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 500:
+		var dest ErrorResponse
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON500 = &dest
+
+	}
+
+	return response, nil
+}
+
+// ParseAdminCreateUserResponse parses an HTTP response from a AdminCreateUserWithResponse call
+func ParseAdminCreateUserResponse(rsp *http.Response) (*AdminCreateUserResponse, error) {
+	bodyBytes, err := io.ReadAll(rsp.Body)
+	defer func() { _ = rsp.Body.Close() }()
+	if err != nil {
+		return nil, err
+	}
+
+	response := &AdminCreateUserResponse{
+		Body:         bodyBytes,
+		HTTPResponse: rsp,
+	}
+
+	switch {
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 201:
+		var dest User
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON201 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 400:
+		var dest ErrorResponse
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON400 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 401:
+		var dest ErrorResponse
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON401 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 403:
+		var dest ErrorResponse
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON403 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 409:
+		var dest ErrorResponse
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON409 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 500:
+		var dest ErrorResponse
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON500 = &dest
+
+	}
+
+	return response, nil
+}
+
+// ParseAdminDeleteUserResponse parses an HTTP response from a AdminDeleteUserWithResponse call
+func ParseAdminDeleteUserResponse(rsp *http.Response) (*AdminDeleteUserResponse, error) {
+	bodyBytes, err := io.ReadAll(rsp.Body)
+	defer func() { _ = rsp.Body.Close() }()
+	if err != nil {
+		return nil, err
+	}
+
+	response := &AdminDeleteUserResponse{
+		Body:         bodyBytes,
+		HTTPResponse: rsp,
+	}
+
+	switch {
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 200:
+		var dest MessageResponse
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON200 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 401:
+		var dest ErrorResponse
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON401 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 403:
+		var dest ErrorResponse
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON403 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 404:
+		var dest ErrorResponse
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON404 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 500:
+		var dest ErrorResponse
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON500 = &dest
+
+	}
+
+	return response, nil
+}
+
+// ParseAdminUpdateUserResponse parses an HTTP response from a AdminUpdateUserWithResponse call
+func ParseAdminUpdateUserResponse(rsp *http.Response) (*AdminUpdateUserResponse, error) {
+	bodyBytes, err := io.ReadAll(rsp.Body)
+	defer func() { _ = rsp.Body.Close() }()
+	if err != nil {
+		return nil, err
+	}
+
+	response := &AdminUpdateUserResponse{
+		Body:         bodyBytes,
+		HTTPResponse: rsp,
+	}
+
+	switch {
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 200:
+		var dest User
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON200 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 400:
+		var dest ErrorResponse
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON400 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 401:
+		var dest ErrorResponse
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON401 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 403:
+		var dest ErrorResponse
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON403 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 404:
+		var dest ErrorResponse
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON404 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 500:
+		var dest ErrorResponse
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON500 = &dest
 
 	}
 

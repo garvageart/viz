@@ -365,7 +365,7 @@ func AccountsRouter(db *gorm.DB, logger *slog.Logger) *chi.Mux {
 							Value string `json:"value"`
 						}
 
-						if err := json.NewDecoder(req.Body).Decode(&reqBody); err != nil {
+						if err := render.DecodeJSON(req.Body, &reqBody); err != nil {
 							render.Status(req, http.StatusBadRequest)
 							render.JSON(res, req, dto.ErrorResponse{Error: "Invalid request body"})
 							return

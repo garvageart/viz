@@ -14,6 +14,22 @@ const (
 	CookieAuthScopes = "CookieAuth.Scopes"
 )
 
+// Defines values for AdminUserCreateRole.
+const (
+	AdminUserCreateRoleAdmin      AdminUserCreateRole = "admin"
+	AdminUserCreateRoleGuest      AdminUserCreateRole = "guest"
+	AdminUserCreateRoleSuperadmin AdminUserCreateRole = "superadmin"
+	AdminUserCreateRoleUser       AdminUserCreateRole = "user"
+)
+
+// Defines values for AdminUserUpdateRole.
+const (
+	AdminUserUpdateRoleAdmin      AdminUserUpdateRole = "admin"
+	AdminUserUpdateRoleGuest      AdminUserUpdateRole = "guest"
+	AdminUserUpdateRoleSuperadmin AdminUserUpdateRole = "superadmin"
+	AdminUserUpdateRoleUser       AdminUserUpdateRole = "user"
+)
+
 // Defines values for SettingDefaultValueType.
 const (
 	Boolean SettingDefaultValueType = "boolean"
@@ -115,6 +131,29 @@ type AddImagesResponse struct {
 	Error *string `json:"error,omitempty"`
 }
 
+// AdminUserCreate defines model for AdminUserCreate.
+type AdminUserCreate struct {
+	Email    openapi_types.Email  `json:"email"`
+	Name     string               `json:"name"`
+	Password string               `json:"password"`
+	Role     *AdminUserCreateRole `json:"role,omitempty"`
+}
+
+// AdminUserCreateRole defines model for AdminUserCreate.Role.
+type AdminUserCreateRole string
+
+// AdminUserUpdate defines model for AdminUserUpdate.
+type AdminUserUpdate struct {
+	Email     *openapi_types.Email `json:"email"`
+	FirstName *string              `json:"first_name"`
+	LastName  *string              `json:"last_name"`
+	Role      *AdminUserUpdateRole `json:"role"`
+	Username  *string              `json:"username"`
+}
+
+// AdminUserUpdateRole defines model for AdminUserUpdate.Role.
+type AdminUserUpdateRole string
+
 // CacheStatusResponse defines model for CacheStatusResponse.
 type CacheStatusResponse struct {
 	// HitRatio Cache hit ratio
@@ -193,6 +232,18 @@ type CollectionUpdate struct {
 	OwnerUID     *string `json:"ownerUID,omitempty"`
 	Private      *bool   `json:"private,omitempty"`
 	ThumbnailUID *string `json:"thumbnailUID,omitempty"`
+}
+
+// DatabaseStatsResponse defines model for DatabaseStatsResponse.
+type DatabaseStatsResponse struct {
+	// ActiveConnections Number of active connections (Postgres only)
+	ActiveConnections *int64 `json:"active_connections,omitempty"`
+	CollectionCount   int64  `json:"collection_count"`
+
+	// DbSizeBytes Size of the database in bytes (Postgres only)
+	DbSizeBytes *int64 `json:"db_size_bytes,omitempty"`
+	ImageCount  int64  `json:"image_count"`
+	UserCount   int64  `json:"user_count"`
 }
 
 // DeleteAssetsResponse defines model for DeleteAssetsResponse.
@@ -481,6 +532,24 @@ type SignDownloadRequest struct {
 
 	// Uids Array of image UIDs to include in the download token
 	Uids *[]string `json:"uids,omitempty"`
+}
+
+// SystemStatsResponse defines model for SystemStatsResponse.
+type SystemStatsResponse struct {
+	// AllocMemory Bytes of allocated heap objects
+	AllocMemory  int64  `json:"alloc_memory"`
+	NumGoroutine int    `json:"num_goroutine"`
+	StoragePath  string `json:"storage_path"`
+
+	// StorageUsedBytes Total size of files in the base directory
+	StorageUsedBytes int64 `json:"storage_used_bytes"`
+
+	// SysMemory Total bytes of memory obtained from the OS
+	SysMemory int64 `json:"sys_memory"`
+
+	// TotalSystemSpaceBytes Path to the base directory being measured
+	TotalSystemSpaceBytes *int64 `json:"total_system_space_bytes,omitempty"`
+	UptimeSeconds         int64  `json:"uptime_seconds"`
 }
 
 // User defines model for User.
@@ -809,6 +878,12 @@ type UpdatePasswordJSONRequestBody = UserPasswordUpdate
 
 // UpdateUserSettingJSONRequestBody defines body for UpdateUserSetting for application/json ContentType.
 type UpdateUserSettingJSONRequestBody UpdateUserSettingJSONBody
+
+// AdminCreateUserJSONRequestBody defines body for AdminCreateUser for application/json ContentType.
+type AdminCreateUserJSONRequestBody = AdminUserCreate
+
+// AdminUpdateUserJSONRequestBody defines body for AdminUpdateUser for application/json ContentType.
+type AdminUpdateUserJSONRequestBody = AdminUserUpdate
 
 // CreateApiKeyJSONRequestBody defines body for CreateApiKey for application/json ContentType.
 type CreateApiKeyJSONRequestBody = APIKeyCreate

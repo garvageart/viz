@@ -10,6 +10,7 @@ import (
 	"strings"
 	"time"
 
+	"imagine/internal/config"
 	"imagine/internal/entities"
 	libvips "imagine/internal/imageops/vips"
 	libos "imagine/internal/os"
@@ -166,16 +167,26 @@ func ConvertEXIFDateTime(exifDateTime string) *time.Time {
 // Startup (Startup is called internally by HasOperation). This reduces
 // first-request latency by avoiding lazy loading when the operation is
 // first used.
-func WarmupAllOps() {
+func WarmupAllOps(cfg config.LibvipsConfig) {
 	// Configure VIPS for optimal performance
 	vipsConfig := &libvips.Config{
-		ConcurrencyLevel: 0,   // 0 = use number of CPU cores
-		MaxCacheFiles:    100, // Cache up to 100 files
-		MaxCacheMem:      50,  // 50MB memory cache
-		MaxCacheSize:     500, // Cache up to 500 operations
+		ConcurrencyLevel: cfg.Concurrency,
+		MaxCacheFiles:    cfg.CacheMaxFiles,
+		MaxCacheMem:      cfg.CacheMaxMemoryMB * 1024 * 1024,
+		MaxCacheSize:     cfg.CacheMaxOperations,
 		ReportLeaks:      false,
 		CacheTrace:       false,
-		VectorEnabled:    true, // Enable SIMD optimizations
+		VectorEnabled:    cfg.VectorEnabled,
+	}
+
+	if vipsConfig.MaxCacheFiles == 0 {
+		vipsConfig.MaxCacheFiles = 100
+	}
+	if vipsConfig.MaxCacheMem == 0 {
+		vipsConfig.MaxCacheMem = 50 * 1024 * 1024 // 50MB
+	}
+	if vipsConfig.MaxCacheSize == 0 {
+		vipsConfig.MaxCacheSize = 500
 	}
 
 	// ensure vips is started with optimized config

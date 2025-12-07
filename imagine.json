@@ -41,9 +41,16 @@
     "write_timeout_seconds": 3
   },
   "libvips": {
-    "match_system_logging": true,
+    "match_system_logging": false,
     "cache_max_memory_mb": 512,
     "cache_max_files": 100,
     "concurrency": 4
+  },
+  "storage_metrics": {
+    "enabled": true,
+    "interval_seconds": 300
+  },
+  "cache": {
+    "gc_enabled": true
   }
 }

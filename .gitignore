@@ -62,3 +62,4 @@ viz/node_modules/
 /.cache/go-mods/
 /.cache/go-build/
 /.pnpm-store/
+/docs/internal

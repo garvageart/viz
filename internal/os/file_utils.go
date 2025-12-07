@@ -1,4 +1,4 @@
-package libos
+package os
 
 import (
 	"os"

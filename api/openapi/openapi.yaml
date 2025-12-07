@@ -1621,6 +1621,60 @@ paths:
               schema:
                 $ref: "#/components/schemas/ErrorResponse"
 
+  /admin/system/stats:
+    get:
+      summary: Get system statistics (uptime, memory)
+      operationId: getSystemStats
+      security:
+        - BearerAuth: [admin:read]
+        - CookieAuth: []
+      responses:
+        "200":
+          description: System stats
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/SystemStatsResponse"
+        "401":
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "403":
+          description: Forbidden
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+
+  /admin/db/stats:
+    get:
+      summary: Get database statistics (counts)
+      operationId: getDatabaseStats
+      security:
+        - BearerAuth: [admin:read]
+        - CookieAuth: []
+      responses:
+        "200":
+          description: Database stats
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/DatabaseStatsResponse"
+        "401":
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "403":
+          description: Forbidden
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+
   /admin/cache/status:
     get:
       summary: Get cache status
@@ -1676,6 +1730,190 @@ paths:
                 $ref: "#/components/schemas/ErrorResponse"
         "403":
           description: Forbidden
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "500":
+          description: Server error
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+
+  /admin/users:
+    get:
+      summary: List all users
+      operationId: listUsers
+      security:
+        - BearerAuth: [admin:read]
+        - CookieAuth: []
+      responses:
+        "200":
+          description: List of users
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/User"
+        "401":
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "403":
+          description: Forbidden
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "500":
+          description: Server error
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+    post:
+      summary: Create a new user (admin)
+      operationId: adminCreateUser
+      security:
+        - BearerAuth: [admin:write]
+        - CookieAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/AdminUserCreate"
+      responses:
+        "201":
+          description: User created
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/User"
+        "400":
+          description: Bad request
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "401":
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "403":
+          description: Forbidden
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "409":
+          description: User already exists
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "500":
+          description: Server error
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+
+  /admin/users/{uid}:
+    patch:
+      summary: Update user details (admin)
+      operationId: adminUpdateUser
+      security:
+        - BearerAuth: [admin:write]
+        - CookieAuth: []
+      parameters:
+        - in: path
+          name: uid
+          required: true
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/AdminUserUpdate"
+      responses:
+        "200":
+          description: User updated
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/User"
+        "400":
+          description: Bad request
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "401":
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "403":
+          description: Forbidden
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "404":
+          description: User not found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "500":
+          description: Server error
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+    delete:
+      summary: Delete user (admin)
+      operationId: adminDeleteUser
+      security:
+        - BearerAuth: [admin:write]
+        - CookieAuth: []
+      parameters:
+        - in: path
+          name: uid
+          required: true
+          schema:
+            type: string
+      responses:
+        "200":
+          description: User deleted
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/MessageResponse"
+        "401":
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "403":
+          description: Forbidden
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "404":
+          description: User not found
           content:
             application/json:
               schema:
@@ -2245,6 +2483,80 @@ components:
           type: object
           additionalProperties: true
       required: [uid]
+
+    AdminUserCreate:
+      type: object
+      properties:
+        name:
+          type: string
+        email:
+          type: string
+          format: email
+        password:
+          type: string
+        role:
+          type: string
+          enum: [user, admin, superadmin, guest]
+          default: user
+      required: [name, email, password]
+
+    SystemStatsResponse:
+      type: object
+      properties:
+        uptime_seconds:
+          type: integer
+          format: int64
+        num_goroutine:
+          type: integer
+        alloc_memory:
+          type: integer
+          format: int64
+          description: "Bytes of allocated heap objects"
+        sys_memory:
+          type: integer
+          format: int64
+          description: "Total bytes of memory obtained from the OS"
+        storage_used_bytes:
+          type: integer
+          format: int64
+          description: "Total size of files in the base directory"
+        storage_path:
+          type: string
+        total_system_space_bytes:
+          type: integer
+          format: int64
+          description: "Path to the base directory being measured"
+      required:
+        [
+          uptime_seconds,
+          num_goroutine,
+          alloc_memory,
+          sys_memory,
+          storage_used_bytes,
+          storage_path,
+        ]
+
+    DatabaseStatsResponse:
+      type: object
+      properties:
+        user_count:
+          type: integer
+          format: int64
+        image_count:
+          type: integer
+          format: int64
+        collection_count:
+          type: integer
+          format: int64
+        db_size_bytes:
+          type: integer
+          format: int64
+          description: "Size of the database in bytes (Postgres only)"
+        active_connections:
+          type: integer
+          format: int64
+          description: "Number of active connections (Postgres only)"
+      required: [user_count, image_count, collection_count]
 
     WorkerRegisterRequest:
       type: object
@@ -2989,6 +3301,27 @@ components:
         email:
           type: string
           format: email
+          nullable: true
+
+    AdminUserUpdate:
+      type: object
+      properties:
+        first_name:
+          type: string
+          nullable: true
+        last_name:
+          type: string
+          nullable: true
+        username:
+          type: string
+          nullable: true
+        email:
+          type: string
+          format: email
+          nullable: true
+        role:
+          type: string
+          enum: [user, admin, superadmin, guest]
           nullable: true
 
     UserPasswordUpdate:

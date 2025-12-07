@@ -708,7 +708,7 @@ func ImagesRouter(db *gorm.DB, logger *slog.Logger) *chi.Mux {
 			Force bool     `json:"force,omitempty"`
 		}
 
-		if err := json.NewDecoder(req.Body).Decode(&body); err != nil {
+		if err := render.DecodeJSON(req.Body, &body); err != nil {
 			render.Status(req, http.StatusBadRequest)
 			render.JSON(res, req, dto.DeleteAssetsResponse{Results: nil})
 			return

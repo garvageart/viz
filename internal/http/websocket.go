@@ -276,7 +276,9 @@ func (c *WSClient) readPump() {
 	for {
 		_, message, err := c.Conn.ReadMessage()
 		if err != nil {
-			if websocket.IsUnexpectedCloseError(err, websocket.CloseGoingAway, websocket.CloseAbnormalClosure) {
+			if websocket.IsCloseError(err, websocket.CloseNoStatusReceived) {
+				c.Broker.logger.Info("WebSocket connection closed", slog.String("clientId", c.ID))
+			} else if websocket.IsUnexpectedCloseError(err, websocket.CloseGoingAway, websocket.CloseAbnormalClosure) {
 				c.Broker.logger.Error("WebSocket read error", slog.String("clientId", c.ID), slog.String("error", err.Error()))
 			}
 			break

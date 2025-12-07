@@ -3,7 +3,6 @@ package routes
 import (
 	"archive/zip"
 	"context"
-	"encoding/json"
 	"fmt"
 	"io"
 	"log/slog"
@@ -137,7 +136,7 @@ func DownloadRouter(db *gorm.DB, logger *slog.Logger) *chi.Mux {
 	router.Post("/sign", func(res http.ResponseWriter, req *http.Request) {
 		var body dto.SignDownloadRequest
 
-		if err := json.NewDecoder(req.Body).Decode(&body); err != nil {
+		if err := render.DecodeJSON(req.Body, &body); err != nil {
 			render.Status(req, http.StatusBadRequest)
 			render.JSON(res, req, dto.ErrorResponse{Error: "Invalid request body"})
 			return
@@ -222,7 +221,7 @@ func DownloadRouter(db *gorm.DB, logger *slog.Logger) *chi.Mux {
 
 		var body dto.DownloadRequest
 
-		if err := json.NewDecoder(req.Body).Decode(&body); err != nil {
+		if err := render.DecodeJSON(req.Body, &body); err != nil {
 			render.Status(req, http.StatusBadRequest)
 			render.JSON(res, req, dto.ErrorResponse{Error: "Invalid request body"})
 			return

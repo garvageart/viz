@@ -21,7 +21,6 @@ import (
 	"imagine/internal/config"
 	"imagine/internal/db"
 	"imagine/internal/entities"
-	"imagine/internal/settings" // Added missing import
 	libhttp "imagine/internal/http"
 	"imagine/internal/imageops"
 	libvips "imagine/internal/imageops/vips"
@@ -29,11 +28,13 @@ import (
 	"imagine/internal/jobs"
 	"imagine/internal/jobs/workers"
 	imalog "imagine/internal/logger"
+	"imagine/internal/settings"
 	"imagine/internal/utils"
 )
 
 var (
-	ServerConfig = config.ImagineServers["api"]
+	ServerConfig       = config.ImagineServers["api"]
+	StorageStatsHolder *images.StorageStatsHolder
 )
 
 type APIServer struct {
@@ -43,7 +44,6 @@ type APIServer struct {
 // TODO: Create a `createServer/Router` function that returns a router
 // with common defaults for each server type
 func (server APIServer) Launch(router *chi.Mux) *http.Server {
-	logLevel := server.LogLevel
 	logger := server.Logger
 	serverLogger := slog.NewLogLogger(logger.Handler(), slog.LevelDebug)
 
@@ -54,8 +54,8 @@ func (server APIServer) Launch(router *chi.Mux) *http.Server {
 		AllowOriginFunc: func(r *http.Request, origin string) bool {
 			return true
 		},
-		AllowedMethods: []string{"GET", "POST", "PUT", "PATCH", "OPTIONS", "DELETE"},
-		AllowedHeaders: []string{"Accept", "Authorization", "Content-Type", "X-CSRF-Token", libhttp.APIKeyName, "If-None-Match", "If-Modified-Since"},
+		AllowedMethods:   []string{"GET", "POST", "PUT", "PATCH", "OPTIONS", "DELETE"},
+		AllowedHeaders:   []string{"Accept", "Authorization", "Content-Type", "X-CSRF-Token", libhttp.APIKeyName, "If-None-Match", "If-Modified-Since"},
 		ExposedHeaders:   []string{"Set-Cookie", "Content-Disposition"},
 		AllowCredentials: true,
 		MaxAge:           300,
@@ -72,44 +72,6 @@ func (server APIServer) Launch(router *chi.Mux) *http.Server {
 
 	database := server.Database
 	dbClient := database.Client
-
-	var libvipsLogLevel libvips.LogLevel = libvips.LogLevelInfo
-	var matchServerLogLevel = os.Getenv("LIBVIPS_MATCH_LOG_LEVEL") == "true"
-	if matchServerLogLevel {
-		switch logLevel {
-		case slog.LevelDebug:
-			libvipsLogLevel = libvips.LogLevelDebug
-		case slog.LevelInfo:
-			libvipsLogLevel = libvips.LogLevelInfo
-		case slog.LevelWarn:
-			libvipsLogLevel = libvips.LogLevelWarning
-		case slog.LevelError:
-			libvipsLogLevel = libvips.LogLevelError
-		default:
-			libvipsLogLevel = libvips.LogLevelInfo
-		}
-	} else {
-		// TODO: fix this error message, it sucks and is confusing
-		logger.Info("libvipsLogLevel: matching server level is off. using default: info")
-	}
-
-	var libvipsLogHandler libvips.LoggingHandlerFunction = func(messageDomain string, messageLevel libvips.LogLevel, message string) {
-		switch messageLevel {
-		case libvips.LogLevelCritical:
-			imalog.Fatal(logger, fmt.Sprintf("%s: %s", messageDomain, message))
-		case libvips.LogLevelError:
-			logger.Error(fmt.Sprintf("%s: %s", messageDomain, message))
-		case libvips.LogLevelWarning:
-			logger.Warn(fmt.Sprintf("%s: %s", messageDomain, message))
-		case libvips.LogLevelMessage, libvips.LogLevelInfo:
-			logger.Info(fmt.Sprintf("%s: %s", messageDomain, message))
-		case libvips.LogLevelDebug:
-			logger.Debug(fmt.Sprintf("%s: %s", messageDomain, message))
-		}
-	}
-
-	libvips.SetLogging(libvipsLogHandler, libvipsLogLevel)
-	imageops.WarmupAllOps()
 
 	server.WSBroker = libhttp.NewWSBroker(logger)
 
@@ -172,7 +134,7 @@ func (server APIServer) Launch(router *chi.Mux) *http.Server {
 		})
 
 		// Admin routes (auth + admin required)
-		r.Mount("/admin", routes.AdminRouter(dbClient, logger))
+		r.Mount("/admin", routes.AdminRouter(dbClient, logger, StorageStatsHolder))
 		r.Mount("/jobs", routes.JobsRouter(dbClient, logger))
 	})
 
@@ -181,7 +143,7 @@ func (server APIServer) Launch(router *chi.Mux) *http.Server {
 	if frontendPath == "" {
 		frontendPath = "../../build/viz" // Default for dev/local
 	}
-	
+
 	frontendHandler := routes.NewFrontendHandler(frontendPath, logger)
 	router.NotFound(frontendHandler.ServeHTTP)
 
@@ -290,6 +252,46 @@ func main() {
 			apiServer.ImagineServer.Port = p
 		}
 	}
+
+	var libvipsLogLevel libvips.LogLevel = libvips.LogLevelInfo
+	if appConfig.Libvips.MatchSystemLogging {
+		switch logLevel {
+		case slog.LevelDebug:
+			libvipsLogLevel = libvips.LogLevelDebug
+		case slog.LevelInfo:
+			libvipsLogLevel = libvips.LogLevelInfo
+		case slog.LevelWarn:
+			libvipsLogLevel = libvips.LogLevelWarning
+		case slog.LevelError:
+			libvipsLogLevel = libvips.LogLevelError
+		default:
+			libvipsLogLevel = libvips.LogLevelInfo
+		}
+	} else {
+		// TODO: fix this error message, it sucks and is confusing
+		logger.Info("libvipsLogLevel: matching server level is off. using default: info")
+	}
+
+	var libvipsLogHandler libvips.LoggingHandlerFunction = func(messageDomain string, messageLevel libvips.LogLevel, message string) {
+		switch messageLevel {
+		case libvips.LogLevelCritical:
+			imalog.Fatal(logger, fmt.Sprintf("%s: %s", messageDomain, message))
+		case libvips.LogLevelError:
+			logger.Error(fmt.Sprintf("%s: %s", messageDomain, message))
+		case libvips.LogLevelWarning:
+			logger.Warn(fmt.Sprintf("%s: %s", messageDomain, message))
+		case libvips.LogLevelMessage, libvips.LogLevelInfo:
+			logger.Info(fmt.Sprintf("%s: %s", messageDomain, message))
+		case libvips.LogLevelDebug:
+			logger.Debug(fmt.Sprintf("%s: %s", messageDomain, message))
+		}
+	}
+
+	libvips.SetLogging(libvipsLogHandler, libvipsLogLevel)
+	imageops.WarmupAllOps(appConfig.Libvips)
+
+	StorageStatsHolder = images.NewStorageStatsHolder(appConfig.BaseDir)
+
 	httpServer := apiServer.Launch(router)
 
 	// create a cancelable context used by background tasks
@@ -301,6 +303,15 @@ func main() {
 		images.StartTransformCacheGC(ctx, logger)
 	} else {
 		logger.Debug("transform cache gc: disabled by config")
+	}
+
+	if appConfig.StorageMetrics.Enabled {
+		interval := time.Duration(appConfig.StorageMetrics.IntervalSeconds) * time.Second
+		if interval <= 0 {
+			interval = 5 * time.Minute
+		}
+
+		go StorageStatsHolder.StartStorageStatsWorker(ctx, logger, interval)
 	}
 
 	imageWorker := workers.NewImageWorker(client, apiServer.WSBroker)
