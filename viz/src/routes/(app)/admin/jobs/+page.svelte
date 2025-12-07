@@ -13,6 +13,7 @@
 	} from "$lib/api";
 	import type { WorkerJob, WorkerInfo } from "$lib/api";
 	import { toastState } from "$lib/toast-notifcations/notif-state.svelte";
+	import AdminRouteShell from "$lib/components/admin/AdminRouteShell.svelte";
 
 	type UiJob = WorkerJob & {
 		filename?: string;
@@ -94,7 +95,7 @@
 					case "connected":
 						connected = true;
 						if (payload.clientId) {
-							showMessage(`Connected (client ${String(payload.clientId).slice(0, 8)})`, "success");
+							showMessage(`Connected (client ${payload.clientId})`, "success");
 						}
 
 						await bootstrapState();
@@ -235,7 +236,10 @@
 			() => (connected = true),
 			(code: number, reason: string) => {
 				connected = false;
-				showMessage(`WebSocket disconnected (${code}): ${reason}`, "info");
+				// not a normal closure (1000), going away (1001) or (1005)
+				if (code !== 1000 && code !== 1001 && code !== 1005) {
+					showMessage(`WebSocket disconnected (${code}): ${reason}`, "error");
+				}
 			}
 		);
 	}
@@ -245,7 +249,6 @@
 			wsClient.close();
 			wsClient = null;
 			connected = false;
-			showMessage("Disconnected from WebSocket", "info");
 		}
 	}
 
@@ -423,314 +426,266 @@
 	<title>Jobs - Admin</title>
 </svelte:head>
 
-<div class="admin-page">
-	<header class="page-header">
-		<div class="header-left">
-			<a href="/admin" class="back-link">
-				<MaterialIcon iconName="arrow_back" />
-			</a>
-			<div>
-				<h1>Job Manager</h1>
-				<p class="subtitle">Monitor and manage background jobs</p>
-			</div>
-		</div>
+<AdminRouteShell heading="Job Manager" description="Monitor and manage background jobs">
+	{#snippet actions()}
 		<div class="connection-status" class:connected>
 			<span class="status-dot"></span>
-			{connected ? "Connected" : "Disconnected"}
+			{connected ? "WebSocket Connected" : "WebSocket Disconnected"}
 		</div>
-	</header>
+	{/snippet}
 
-	<!-- Controls Section -->
-	<section class="content-section">
-		<div class="section-header">
-			<h2>Scheduler Controls</h2>
-		</div>
-		<div class="controls-grid">
-			{#if connected}
-				<Button onclick={disconnectWS} class="control-button">
-					<MaterialIcon iconName="link_off" />
-					Disconnect WebSocket
+	<div class="jobs-grid">
+		<!-- Controls Section -->
+		<section class="content-section">
+			<div class="controls-grid">
+				{#if connected}
+					<Button onclick={disconnectWS} class="control-button">
+						<MaterialIcon iconName="link_off" />
+						Disconnect WebSocket
+					</Button>
+				{:else}
+					<Button onclick={connectWS} class="control-button">
+						<MaterialIcon iconName="link" />
+						Connect WebSocket
+					</Button>
+				{/if}
+			</div>
+		</section>
+		<!-- Job Types Management -->
+		<section class="content-section">
+			<div class="section-header">
+				<h2>Job Types</h2>
+				<Button onclick={fetchJobTypes} disabled={workers.loading}>
+					<MaterialIcon iconName="refresh" />
+					Refresh
 				</Button>
+			</div>
+			{#if workers.loading}
+				<div class="loading">Loading job types...</div>
+			{:else if workers.types.length === 0}
+				<div class="empty-state">No job types available</div>
 			{:else}
-				<Button onclick={connectWS} class="control-button">
-					<MaterialIcon iconName="link" />
-					Connect WebSocket
-				</Button>
+				<div class="job-types-grid">
+					{#each workers.types as job}
+						<div class="job-type-card">
+							<div class="job-type-header">
+								<div class="job-type-info">
+									<h3>{getTopicForJobType(job.name)}</h3>
+									<span
+										class="job-type-status status-{(runningByTopic[getTopicForJobType(job.name)] || 0) > 0 ? 'running' : 'idle'}"
+										>{(runningByTopic[getTopicForJobType(job.name)] || 0) > 0 ? "running" : "idle"}</span
+									>
+								</div>
+								<div class="job-type-stats">
+									<div class="stat-item-small">
+										<span class="stat-label-small">Active:</span>
+										<span class="stat-value-small">{runningByTopic[getTopicForJobType(job.name)] || 0}</span>
+									</div>
+									<div class="stat-item-small">
+										<span class="stat-label-small">Waiting:</span>
+										<span class="stat-value-small">{queuedByTopic[getTopicForJobType(job.name)] || 0}</span>
+									</div>
+								</div>
+							</div>
+
+							<div class="job-type-controls">
+								<div class="control-row-small">
+									<Button class="btn-rescan" onclick={() => rescanAll(job.name)}>
+										<MaterialIcon iconName="refresh" />
+										<span>Rescan All</span>
+									</Button>
+									<Button class="btn-missing" onclick={() => rescanMissing(job.name)}>
+										<MaterialIcon iconName="search" />
+										<span>Rescan Missing</span>
+									</Button>
+								</div>
+							</div>
+							<div class="concurrency-control-small">
+								<label for="concurrency-{job.name}">
+									<MaterialIcon iconName="tune" />
+									<span>Concurrency:</span>
+								</label>
+								<div class="number-input-wrapper">
+									<input
+										id="concurrency-{job.name}"
+										type="number"
+										min="1"
+										max="20"
+										value={workers.concurrency[job.name] || 5}
+										oninput={(e) => setWorkerConcurrency(job.name, parseInt((e.target as HTMLInputElement).value))}
+									/>
+									<div class="spinner-buttons">
+										<button
+											type="button"
+											class="spinner-btn spinner-up"
+											onclick={() => {
+												const currentVal = workers.concurrency[job.name] || 5;
+												if (currentVal < 20) setWorkerConcurrency(job.name, currentVal + 1);
+											}}
+										>
+											<MaterialIcon iconName="keyboard_arrow_up" />
+										</button>
+										<button
+											type="button"
+											class="spinner-btn spinner-down"
+											onclick={() => {
+												const currentVal = workers.concurrency[job.name] || 5;
+												if (currentVal > 1) setWorkerConcurrency(job.name, currentVal - 1);
+											}}
+										>
+											<MaterialIcon iconName="keyboard_arrow_down" />
+										</button>
+									</div>
+								</div>
+							</div>
+						</div>
+					{/each}
+				</div>
 			{/if}
-		</div>
-	</section>
-	<!-- Job Types Management -->
-	<section class="content-section">
-		<div class="section-header">
-			<h2>Job Types</h2>
-			<Button onclick={fetchJobTypes} disabled={workers.loading}>
-				<MaterialIcon iconName="refresh" />
-				Refresh
-			</Button>
-		</div>
-		{#if workers.loading}
-			<div class="loading">Loading job types...</div>
-		{:else if workers.types.length === 0}
-			<div class="empty-state">No job types available</div>
-		{:else}
-			<div class="job-types-grid">
-				{#each workers.types as job}
-					<div class="job-type-card">
-						<div class="job-type-header">
-							<div class="job-type-info">
-								<h3>{getTopicForJobType(job.name)}</h3>
-								<span
-									class="job-type-status status-{(runningByTopic[getTopicForJobType(job.name)] || 0) > 0 ? 'running' : 'idle'}"
-									>{(runningByTopic[getTopicForJobType(job.name)] || 0) > 0 ? "running" : "idle"}</span
-								>
-							</div>
-							<div class="job-type-stats">
-								<div class="stat-item-small">
-									<span class="stat-label-small">Active:</span>
-									<span class="stat-value-small">{runningByTopic[getTopicForJobType(job.name)] || 0}</span>
-								</div>
-								<div class="stat-item-small">
-									<span class="stat-label-small">Waiting:</span>
-									<span class="stat-value-small">{queuedByTopic[getTopicForJobType(job.name)] || 0}</span>
-								</div>
-							</div>
-						</div>
+		</section>
 
-						<div class="job-type-controls">
-							<div class="control-row-small">
-								<Button class="btn-rescan" onclick={() => rescanAll(job.name)}>
-									<MaterialIcon iconName="refresh" />
-									<span>Rescan All</span>
-								</Button>
-								<Button class="btn-missing" onclick={() => rescanMissing(job.name)}>
-									<MaterialIcon iconName="search" />
-									<span>Rescan Missing</span>
-								</Button>
-							</div>
-						</div>
-						<div class="concurrency-control-small">
-							<label for="concurrency-{job.name}">
-								<MaterialIcon iconName="tune" />
-								<span>Concurrency:</span>
-							</label>
-							<div class="number-input-wrapper">
-								<input
-									id="concurrency-{job.name}"
-									type="number"
-									min="1"
-									max="20"
-									value={workers.concurrency[job.name] || 5}
-									oninput={(e) => setWorkerConcurrency(job.name, parseInt((e.target as HTMLInputElement).value))}
-								/>
-								<div class="spinner-buttons">
-									<button
-										type="button"
-										class="spinner-btn spinner-up"
-										onclick={() => {
-											const currentVal = workers.concurrency[job.name] || 5;
-											if (currentVal < 20) setWorkerConcurrency(job.name, currentVal + 1);
-										}}
-									>
-										<MaterialIcon iconName="keyboard_arrow_up" />
-									</button>
-									<button
-										type="button"
-										class="spinner-btn spinner-down"
-										onclick={() => {
-											const currentVal = workers.concurrency[job.name] || 5;
-											if (currentVal > 1) setWorkerConcurrency(job.name, currentVal - 1);
-										}}
-									>
-										<MaterialIcon iconName="keyboard_arrow_down" />
-									</button>
-								</div>
-							</div>
-						</div>
+		<!-- Statistics -->
+		<section class="content-section">
+			<div class="stats-grid">
+				<div class="stat-card active">
+					<MaterialIcon iconName="pending" />
+					<div class="stat-content">
+						<span class="stat-value">{stats.activeCount}</span>
+						<span class="stat-label">Active</span>
 					</div>
-				{/each}
+				</div>
+				<div class="stat-card completed">
+					<MaterialIcon iconName="check_circle" />
+					<div class="stat-content">
+						<span class="stat-value">{stats.completedCount}</span>
+						<span class="stat-label">Completed</span>
+					</div>
+				</div>
+				<div class="stat-card failed">
+					<MaterialIcon iconName="error" />
+					<div class="stat-content">
+						<span class="stat-value">{stats.failedCount}</span>
+						<span class="stat-label">Failed</span>
+					</div>
+				</div>
+				<div class="stat-card total">
+					<MaterialIcon iconName="analytics" />
+					<div class="stat-content">
+						<span class="stat-value">{stats.totalProcessed}</span>
+						<span class="stat-label">Total Processed</span>
+					</div>
+				</div>
 			</div>
+		</section>
+
+		<!-- Active Jobs -->
+		{#if activeJobs.length > 0}
+			<section class="content-section">
+				<div class="section-header">
+					<h2>Active Jobs</h2>
+					<span class="badge">{activeJobs.length}</span>
+				</div>
+				<div class="jobs-list">
+					{#each activeJobs as job}
+						<div class="job-card active">
+							<div class="job-header">
+								<div class="job-info">
+									<MaterialIcon iconName="image" />
+									<div>
+										<div class="job-title">{job.filename || job.image_uid || job.uid}</div>
+										<div class="job-meta">
+											{job.type || job.topic} • Started {job.startTime ? new Date(job.startTime).toLocaleTimeString() : ""}
+										</div>
+									</div>
+								</div>
+								<div class="job-progress-value">{job.progress}%</div>
+							</div>
+							<div class="progress-bar">
+								<div class="progress-fill" style="width: {job.progress}%"></div>
+							</div>
+							<div class="job-step">{job.step}</div>
+						</div>
+					{/each}
+				</div>
+			</section>
 		{/if}
-	</section>
 
-	<!-- Statistics -->
-	<section class="content-section">
-		<div class="stats-grid">
-			<div class="stat-card active">
-				<MaterialIcon iconName="pending" />
-				<div class="stat-content">
-					<span class="stat-value">{stats.activeCount}</span>
-					<span class="stat-label">Active</span>
+		<!-- Completed Jobs -->
+		{#if completedJobs.length > 0}
+			<section class="content-section">
+				<div class="section-header">
+					<h2>Completed Jobs</h2>
+					<span class="badge">{completedJobs.length}</span>
 				</div>
-			</div>
-			<div class="stat-card completed">
-				<MaterialIcon iconName="check_circle" />
-				<div class="stat-content">
-					<span class="stat-value">{stats.completedCount}</span>
-					<span class="stat-label">Completed</span>
-				</div>
-			</div>
-			<div class="stat-card failed">
-				<MaterialIcon iconName="error" />
-				<div class="stat-content">
-					<span class="stat-value">{stats.failedCount}</span>
-					<span class="stat-label">Failed</span>
-				</div>
-			</div>
-			<div class="stat-card total">
-				<MaterialIcon iconName="analytics" />
-				<div class="stat-content">
-					<span class="stat-value">{stats.totalProcessed}</span>
-					<span class="stat-label">Total Processed</span>
-				</div>
-			</div>
-		</div>
-	</section>
-
-	<!-- Active Jobs -->
-	{#if activeJobs.length > 0}
-		<section class="content-section">
-			<div class="section-header">
-				<h2>Active Jobs</h2>
-				<span class="badge">{activeJobs.length}</span>
-			</div>
-			<div class="jobs-list">
-				{#each activeJobs as job}
-					<div class="job-card active">
-						<div class="job-header">
-							<div class="job-info">
-								<MaterialIcon iconName="image" />
-								<div>
-									<div class="job-title">{job.filename || job.image_uid || job.uid}</div>
-									<div class="job-meta">
-										{job.type || job.topic} • Started {job.startTime ? new Date(job.startTime).toLocaleTimeString() : ""}
+				<div class="jobs-list">
+					{#each completedJobs.slice(0, 10) as job}
+						<div class="job-card completed">
+							<div class="job-header">
+								<div class="job-info">
+									<MaterialIcon iconName="check_circle" />
+									<div>
+										<div class="job-title">{job.filename || job.image_uid || job.uid}</div>
+										<div class="job-meta">
+											{job.type || job.topic} • {formatDuration(new Date(job.startTime), new Date(job.endTime ?? job.startTime))}
+										</div>
 									</div>
 								</div>
+								<span class="job-time">{job.endTime ? new Date(job.endTime).toLocaleTimeString() : ""}</span>
 							</div>
-							<div class="job-progress-value">{job.progress}%</div>
 						</div>
-						<div class="progress-bar">
-							<div class="progress-fill" style="width: {job.progress}%"></div>
-						</div>
-						<div class="job-step">{job.step}</div>
-					</div>
-				{/each}
-			</div>
-		</section>
-	{/if}
+					{/each}
+				</div>
+			</section>
+		{/if}
 
-	<!-- Completed Jobs -->
-	{#if completedJobs.length > 0}
-		<section class="content-section">
-			<div class="section-header">
-				<h2>Completed Jobs</h2>
-				<span class="badge">{completedJobs.length}</span>
-			</div>
-			<div class="jobs-list">
-				{#each completedJobs.slice(0, 10) as job}
-					<div class="job-card completed">
-						<div class="job-header">
-							<div class="job-info">
-								<MaterialIcon iconName="check_circle" />
-								<div>
-									<div class="job-title">{job.filename || job.image_uid || job.uid}</div>
-									<div class="job-meta">
-										{job.type || job.topic} • {formatDuration(new Date(job.startTime), new Date(job.endTime ?? job.startTime))}
+		<!-- Failed Jobs -->
+		{#if failedJobs.length > 0}
+			<section class="content-section">
+				<div class="section-header error">
+					<h2>Failed Jobs</h2>
+					<span class="badge error">{failedJobs.length}</span>
+				</div>
+				<div class="jobs-list">
+					{#each failedJobs.slice(0, 10) as job}
+						<div class="job-card failed">
+							<div class="job-header">
+								<div class="job-info">
+									<MaterialIcon iconName="error" />
+									<div>
+										<div class="job-title">{job.filename || job.image_uid || job.uid}</div>
+										<div class="job-meta error">{job.error || job.error_msg}</div>
 									</div>
 								</div>
+								<span class="job-time">{job.endTime ? new Date(job.endTime).toLocaleTimeString() : ""}</span>
 							</div>
-							<span class="job-time">{job.endTime ? new Date(job.endTime).toLocaleTimeString() : ""}</span>
 						</div>
-					</div>
-				{/each}
-			</div>
-		</section>
-	{/if}
-
-	<!-- Failed Jobs -->
-	{#if failedJobs.length > 0}
-		<section class="content-section">
-			<div class="section-header error">
-				<h2>Failed Jobs</h2>
-				<span class="badge error">{failedJobs.length}</span>
-			</div>
-			<div class="jobs-list">
-				{#each failedJobs.slice(0, 10) as job}
-					<div class="job-card failed">
-						<div class="job-header">
-							<div class="job-info">
-								<MaterialIcon iconName="error" />
-								<div>
-									<div class="job-title">{job.filename || job.image_uid || job.uid}</div>
-									<div class="job-meta error">{job.error || job.error_msg}</div>
-								</div>
-							</div>
-							<span class="job-time">{job.endTime ? new Date(job.endTime).toLocaleTimeString() : ""}</span>
-						</div>
-					</div>
-				{/each}
-			</div>
-		</section>
-	{/if}
-</div>
+					{/each}
+				</div>
+			</section>
+		{/if}
+	</div>
+</AdminRouteShell>
 
 <style lang="scss">
-	:global(.admin-page) {
-		padding: 2rem;
-		overflow-y: auto;
-	}
+	/* Page header styles removed */
 
-	.page-header {
+	.jobs-grid {
 		display: flex;
-		justify-content: space-between;
-		align-items: center;
-		margin-bottom: 2rem;
-		gap: 1rem;
-
-		.header-left {
-			display: flex;
-			align-items: center;
-			gap: 1rem;
-		}
-
-		.back-link {
-			display: flex;
-			align-items: center;
-			justify-content: center;
-			width: 40px;
-			height: 40px;
-			border-radius: 50%;
-			background: var(--imag-90);
-			color: var(--imag-text-color);
-			transition: all 0.2s;
-
-			&:hover {
-				background: var(--imag-80);
-			}
-		}
-
-		h1 {
-			margin: 0;
-			font-size: 1.75rem;
-			font-weight: 600;
-		}
-
-		.subtitle {
-			margin: 0.25rem 0 0 0;
-			color: var(--imag-40);
-			font-size: 0.95rem;
-		}
+		flex-direction: column;
+		gap: 1.5rem;
 	}
 
 	.connection-status {
 		display: flex;
 		align-items: center;
 		gap: 0.5rem;
-		padding: 0.5rem 1rem;
-		border-radius: 20px;
+		padding: 0.75rem 1rem;
+		border-radius: 0.5rem;
 		background: var(--imag-90);
 		font-size: 0.875rem;
 		font-weight: 500;
 		color: var(--imag-40);
+		width: fit-content;
 
 		.status-dot {
 			width: 8px;
@@ -740,8 +695,8 @@
 		}
 
 		&.connected {
-			background: #d1fae5;
-			color: #065f46;
+			background: rgba(16, 185, 129, 0.1);
+			color: #10b981;
 
 			.status-dot {
 				background: #10b981;
@@ -764,7 +719,6 @@
 		background: var(--imag-100);
 		border-radius: 12px;
 		padding: 1.5rem;
-		margin-bottom: 1.5rem;
 		border: 1px solid var(--imag-90);
 	}
 
@@ -800,10 +754,9 @@
 	}
 
 	.controls-grid {
-		display: grid;
-		grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+		display: flex;
 		gap: 1rem;
-		margin-bottom: 1rem;
+		flex-wrap: wrap;
 	}
 
 	:global(.control-button) {
@@ -846,43 +799,43 @@
 
 		&.active {
 			border-color: #d97706;
-			background: #78350f;
-			color: #fef3c7;
+			background: rgba(217, 119, 6, 0.1);
+			color: #d97706;
 
 			.stat-value {
-				color: #fef3c7;
+				color: #d97706;
 			}
 
 			.stat-label {
-				color: #fcd34d;
+				color: #b45309;
 			}
 		}
 
 		&.completed {
 			border-color: #059669;
-			background: #064e3b;
-			color: #d1fae5;
+			background: rgba(5, 150, 105, 0.1);
+			color: #059669;
 
 			.stat-value {
-				color: #d1fae5;
+				color: #059669;
 			}
 
 			.stat-label {
-				color: #6ee7b7;
+				color: #047857;
 			}
 		}
 
 		&.failed {
 			border-color: #dc2626;
-			background: #7f1d1d;
-			color: #fee2e2;
+			background: rgba(220, 38, 38, 0.1);
+			color: #dc2626;
 
 			.stat-value {
-				color: #fee2e2;
+				color: #dc2626;
 			}
 
 			.stat-label {
-				color: #fca5a5;
+				color: #b91c1c;
 			}
 		}
 
