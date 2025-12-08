@@ -13,7 +13,12 @@
 	import { type ImageWithDateLabel } from "../../routes/(app)/photos/+page.svelte";
 	import { page } from "$app/state";
 	import ImageCard from "./ImageCard.svelte";
-	import { type Props as TippyProps, followCursor, delegate, type Instance } from "tippy.js";
+	import {
+		type Props as TippyProps,
+		followCursor,
+		delegate,
+		type Instance
+	} from "tippy.js";
 	import PhotoTooltip from "$lib/components/tooltips/PhotoTooltip.svelte";
 	import "tippy.js/dist/tippy.css";
 
@@ -24,7 +29,8 @@
 		allData?: Image[];
 	}
 
-	type Props = Omit<ComponentProps<typeof AssetGrid<Image>>, "assetSnippet"> & PhotoSpecificProps;
+	type Props = Omit<ComponentProps<typeof AssetGrid<Image>>, "assetSnippet"> &
+		PhotoSpecificProps;
 
 	let {
 		data = $bindable(),
@@ -152,7 +158,10 @@
 
 	let photoGridEl: HTMLDivElement | undefined = $state();
 
-	function debounce<T extends (...args: any[]) => void>(fn: T, delay: number): T {
+	function debounce<T extends (...args: any[]) => void>(
+		fn: T,
+		delay: number
+	): T {
 		let timeoutID: ReturnType<typeof setTimeout> | undefined;
 		return function (this: any, ...args: any[]) {
 			clearTimeout(timeoutID);
@@ -190,9 +199,15 @@
 		const viewportH = photoGridEl.clientHeight || window.innerHeight;
 
 		// 1) Build all rows for current data and available width (excluding padding)
-		justifiedRows = buildJustifiedRows(availableWidth, data, targetRowHeight, gridGap);
+		justifiedRows = buildJustifiedRows(
+			availableWidth,
+			data,
+			targetRowHeight,
+			gridGap
+		);
 		totalHeight = justifiedRows.length
-			? justifiedRows[justifiedRows.length - 1].top + justifiedRows[justifiedRows.length - 1].height
+			? justifiedRows[justifiedRows.length - 1].top +
+				justifiedRows[justifiedRows.length - 1].height
 			: 0;
 
 		// 2) Compute visible rows window
@@ -202,14 +217,22 @@
 
 		const startIndex = findStartIndex(justifiedRows, minY);
 		let endIndex = startIndex;
-		while (endIndex < justifiedRows.length && justifiedRows[endIndex].top <= maxY) {
+		while (
+			endIndex < justifiedRows.length &&
+			justifiedRows[endIndex].top <= maxY
+		) {
 			endIndex++;
 		}
 
 		visibleRows = justifiedRows.slice(startIndex, endIndex);
 	}
 
-	function buildJustifiedRows(containerWidth: number, images: Image[], targetH: number, gap: number): JustifiedRow[] {
+	function buildJustifiedRows(
+		containerWidth: number,
+		images: Image[],
+		targetH: number,
+		gap: number
+	): JustifiedRow[] {
 		const rows: JustifiedRow[] = [];
 		let current: { asset: Image; ar: number }[] = [];
 		let sumAR = 0;
@@ -218,16 +241,27 @@
 		const minScale = 0.8; // allow down to -20% below target before forcing wrap
 
 		for (const asset of images) {
-			const aspectRatio = Math.max(0.1, (asset.width || 4) / (asset.height || 3));
+			const aspectRatio = Math.max(
+				0.1,
+				(asset.width || 4) / (asset.height || 3)
+			);
 			current.push({ asset, ar: aspectRatio });
 			sumAR += aspectRatio;
 
-			const rowH = (containerWidth - gap * Math.max(0, current.length - 1)) / sumAR;
+			const rowH =
+				(containerWidth - gap * Math.max(0, current.length - 1)) / sumAR;
 
 			// Decide if this row is ready: when rowH <= targetH * maxScale
 			if (rowH <= targetH * maxScale) {
-				const height = Math.max(Math.round(Math.min(rowH, targetH * maxScale)), 50);
-				let items: JustifiedItem[] = current.map(({ asset, ar }) => ({ asset, width: Math.round(ar * height), height }));
+				const height = Math.max(
+					Math.round(Math.min(rowH, targetH * maxScale)),
+					50
+				);
+				let items: JustifiedItem[] = current.map(({ asset, ar }) => ({
+					asset,
+					width: Math.round(ar * height),
+					height
+				}));
 
 				items = fitRowToWidth(items, containerWidth, gap); // adjust widths to exactly fit to avoid horizontal overflow
 				rows.push({ items, height, top });
@@ -240,9 +274,16 @@
 
 		// Handle last row: scale to stay close to target without stretching too much
 		if (current.length) {
-			const rowH = (containerWidth - gap * Math.max(0, current.length - 1)) / sumAR;
-			const height = Math.round(Math.min(Math.max(rowH, targetH * minScale), targetH));
-			let items: JustifiedItem[] = current.map(({ asset, ar }) => ({ asset, width: Math.round(ar * height), height }));
+			const rowH =
+				(containerWidth - gap * Math.max(0, current.length - 1)) / sumAR;
+			const height = Math.round(
+				Math.min(Math.max(rowH, targetH * minScale), targetH)
+			);
+			let items: JustifiedItem[] = current.map(({ asset, ar }) => ({
+				asset,
+				width: Math.round(ar * height),
+				height
+			}));
 			// For the last row we do not force full width (common justified gallery behaviour), but ensure it doesn't exceed container width
 			items = clampRowToWidth(items, containerWidth, gap);
 			rows.push({ items, height, top });
@@ -258,7 +299,11 @@
 	}
 
 	// Ensure a row exactly fits the container width (summing item widths + gaps) by proportionally scaling widths, then distributing rounding diff.
-	function fitRowToWidth(items: JustifiedItem[], containerWidth: number, gap: number): JustifiedItem[] {
+	function fitRowToWidth(
+		items: JustifiedItem[],
+		containerWidth: number,
+		gap: number
+	): JustifiedItem[] {
 		if (!items.length) {
 			return items;
 		}
@@ -272,7 +317,10 @@
 		}
 
 		const scale = available / totalItemWidth;
-		let scaled = items.map((i) => ({ ...i, width: Math.max(1, Math.round(i.width * scale)) }));
+		let scaled = items.map((i) => ({
+			...i,
+			width: Math.max(1, Math.round(i.width * scale))
+		}));
 
 		// Adjust rounding diff
 		let diff = available - scaled.reduce((s, i) => s + i.width, 0);
@@ -295,7 +343,11 @@
 	}
 
 	// Clamp a row so it never exceeds container width (without stretching to fill if shorter)
-	function clampRowToWidth(items: JustifiedItem[], containerWidth: number, gap: number): JustifiedItem[] {
+	function clampRowToWidth(
+		items: JustifiedItem[],
+		containerWidth: number,
+		gap: number
+	): JustifiedItem[] {
 		const gapTotal = gap * (items.length - 1);
 		let totalItemWidth = items.reduce((s, i) => s + i.width, 0);
 
@@ -306,7 +358,10 @@
 
 		// Scale down
 		const scale = maxAllowed / totalItemWidth;
-		let scaled = items.map((i) => ({ ...i, width: Math.max(1, Math.round(i.width * scale)) }));
+		let scaled = items.map((i) => ({
+			...i,
+			width: Math.max(1, Math.round(i.width * scale))
+		}));
 
 		// After scaling, ensure we didn't overshoot due to rounding
 		let diff = maxAllowed - scaled.reduce((s, i) => s + i.width, 0);
@@ -336,7 +391,10 @@
 		// essentially onmount
 		requestAnimationFrame(updateVirtualGrid);
 
-		const debouncedUpdate = debounce(() => requestAnimationFrame(updateVirtualGrid), 100);
+		const debouncedUpdate = debounce(
+			() => requestAnimationFrame(updateVirtualGrid),
+			100
+		);
 		const resizeObserver = new ResizeObserver(debouncedUpdate);
 		resizeObserver.observe(photoGridEl);
 
@@ -360,7 +418,10 @@
 
 			const startIndex = findStartIndex(justifiedRows, minY);
 			let endIndex = startIndex;
-			while (endIndex < justifiedRows.length && justifiedRows[endIndex].top <= maxY) {
+			while (
+				endIndex < justifiedRows.length &&
+				justifiedRows[endIndex].top <= maxY
+			) {
 				endIndex++;
 			}
 
@@ -420,7 +481,9 @@
 			const selectionData = allData || data;
 			const ids = selectionData.map((i: Image) => i.uid);
 			const endIndex = ids.indexOf(asset.uid);
-			const startIndex = singleSelectedAsset ? ids.indexOf(singleSelectedAsset.uid) : -1;
+			const startIndex = singleSelectedAsset
+				? ids.indexOf(singleSelectedAsset.uid)
+				: -1;
 
 			// If both start and end are found, do range selection
 			if (startIndex !== -1 && endIndex !== -1) {
@@ -456,7 +519,9 @@
 
 		const clickHandler = (e: MouseEvent) => {
 			const target = e.target as HTMLElement;
-			const selectionToolbar = target.closest(".selection-toolbar") as HTMLElement | undefined;
+			const selectionToolbar = target.closest(".selection-toolbar") as
+				| HTMLElement
+				| undefined;
 
 			// ignore the selection toolbar since this is what we use do actions
 			if (target === selectionToolbar || selectionToolbar?.contains(target)) {
@@ -464,7 +529,9 @@
 			}
 
 			// If click is inside ANY grid container, don't clear (supports multiple grids sharing one selection)
-			const allGrids = Array.from(document.querySelectorAll(".viz-photo-grid-container")) as HTMLElement[];
+			const allGrids = Array.from(
+				document.querySelectorAll(".viz-photo-grid-container")
+			) as HTMLElement[];
 			const insideAnyGrid = allGrids.some((g) => g.contains(target));
 			if (insideAnyGrid) {
 				return;
@@ -486,15 +553,23 @@
 </script>
 
 {#snippet defaultPhotoCard(asset: ImageWithDateLabel)}
-	{@const isSelected = selectedAssets.values().some((i) => i.uid === asset.uid) || singleSelectedAsset === asset}
+	{@const isSelected =
+		selectedAssets.values().some((i) => i.uid === asset.uid) ||
+		singleSelectedAsset === asset}
 	<div
 		class="asset-photo"
 		draggable="true"
 		ondragstart={(e: DragEvent) => {
 			// When dragging, if multiple selected use that set, otherwise drag the single asset
-			const uids = selectedAssets.size > 1 ? Array.from(selectedAssets).map((i) => i.uid) : [asset.uid];
+			const uids =
+				selectedAssets.size > 1
+					? Array.from(selectedAssets).map((i) => i.uid)
+					: [asset.uid];
 			try {
-				e.dataTransfer?.setData("application/x-imagine-ids", JSON.stringify(uids));
+				e.dataTransfer?.setData(
+					"application/x-imagine-ids",
+					JSON.stringify(uids)
+				);
 				if (e.dataTransfer) {
 					e.dataTransfer.effectAllowed = "copy";
 					const target = e.currentTarget as HTMLElement;
@@ -555,7 +630,9 @@
 					<img
 						class="tile-placeholder"
 						src={thumbhashURL}
-						alt="Blurred placeholder image for {asset.name ?? asset.image_metadata?.file_name ?? ''}"
+						alt="Blurred placeholder image for {asset.name ??
+							asset.image_metadata?.file_name ??
+							''}"
 						aria-hidden="true"
 						data-placeholder-uid={asset.uid}
 					/>
@@ -567,13 +644,20 @@
 					alt={asset.name ?? asset.image_metadata?.file_name ?? ""}
 					loading="lazy"
 					onload={(e) => {
-						(e.currentTarget as HTMLImageElement).closest(".asset-photo")?.classList.add("img-loaded");
-						document.querySelector(`img[data-placeholder-uid="${asset.uid}"]`)?.remove();
+						(e.currentTarget as HTMLImageElement)
+							.closest(".asset-photo")
+							?.classList.add("img-loaded");
+						document
+							.querySelector(`img[data-placeholder-uid="${asset.uid}"]`)
+							?.remove();
 					}}
 				/>
 			</div>
 			{#if isSelected && isMultiSelecting}
-				<div class="multi-select-ring" transition:fade={{ duration: 120 }}></div>
+				<div
+					class="multi-select-ring"
+					transition:fade={{ duration: 120 }}
+				></div>
 			{/if}
 		{:else}
 			<span class="asset-preview-fallback">{asset.name ?? asset.uid}</span>
@@ -582,7 +666,11 @@
 		<div class="photo-overlay">
 			<div class="photo-overlay-inner">
 				<div class="photo-name">{asset.name}</div>
-				<div class="photo-date">{DateTime.fromJSDate(getTakenAt(asset)).toFormat("dd LLL yyyy • HH:mm")}</div>
+				<div class="photo-date">
+					{DateTime.fromJSDate(getTakenAt(asset)).toFormat(
+						"dd LLL yyyy • HH:mm"
+					)}
+				</div>
 			</div>
 		</div>
 	</div>
@@ -607,7 +695,10 @@
 					style={`position:absolute; top:${row.top}px; left:0; right:0; gap:${gridGap}px; height:${row.height}px;`}
 				>
 					{#each row.items as item}
-						<div style={`flex:0 0 ${item.width}px; height:${row.height}px;`} class="justified-item">
+						<div
+							style={`flex:0 0 ${item.width}px; height:${row.height}px;`}
+							class="justified-item"
+						>
 							{@render defaultPhotoCard(item.asset)}
 						</div>
 					{/each}
