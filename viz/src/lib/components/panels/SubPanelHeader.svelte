@@ -258,7 +258,6 @@
 	anchor={layoutContextMenuAnchor}
 />
 
-<!-- svelte-ignore a11y_no_noninteractive_element_to_interactive_role -->
 <div
 	class="viz-sub_panel-header {isPanelLocked ? 'locked' : ''}"
 	oncontextmenu={(e) => triggerHeaderContextMenu(e)}
@@ -268,7 +267,6 @@
 	onmouseenter={() => (isHoveringHeader = true)}
 	onmouseleave={() => (isHoveringHeader = false)}
 >
-	<!-- svelte-ignore a11y_no_noninteractive_element_to_interactive_role -->
 	<div
 		bind:this={headerElement}
 		class="viz-sub_panel-tabs"
@@ -319,12 +317,17 @@
 
 	<!-- Custom Overlay Scrollbar -->
 	{#if scrollWidth > clientWidth}
-		<!-- svelte-ignore a11y_no_static_element_interactions -->
 		<div
 			class="viz-custom-scrollbar {isHoveringHeader || isDraggingScrollbar
 				? 'visible'
 				: ''}"
 			onmousedown={handleScrollbarDragStart}
+			role="slider"
+			aria-label="Scrollbar"
+			aria-valuemin="0"
+			aria-valuemax="100"
+			aria-valuenow={Math.round((scrollLeft / (scrollWidth - clientWidth)) * 100)}
+			tabindex="0"
 		>
 			<div
 				class="viz-custom-scrollbar-thumb"
