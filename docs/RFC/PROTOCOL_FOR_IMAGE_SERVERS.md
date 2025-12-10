@@ -1,0 +1,100 @@
+# Image Server Protocol
+
+| Field            | Value                                                |
+| ---------------- | ---------------------------------------------------- |
+| **RFC**          | 001                                                  |
+| **Title**        | Server-to-Server Interoperability (Imagine Protocol) |
+| **Author**       | Les                                                  |
+| **Status**       | Draft                                                |
+| **Created**      | 2025-12-10                                           |
+| **Last Updated** | 2025-12-10                                           |
+
+## Overview
+This RFC proposes a standardized protocol for enabling communication and interoperability between different image server instances. The goal is to allow users on one server to interact with content and users on another, similar to federation in the Fediverse but tailored for high-fidelity image management.
+
+This is a somewhat optimistic yet simple draft document meant outline sketch ideas that can be built upon. These ideas are based on long-established principles of designing open-protocols and is meant to be a modern and extensible protocol for the future. This protocol will likely NOT be called `imagine`, that is just the current name of this project, which in itself is likely to change to `viz` in the near-future.
+
+## Core Concepts
+
+### 1. The `imagine://` Protocol
+A custom URL scheme to identify resources across servers.
+- **Format:** `imagine://<server-domain>/<resource-type>/<resource-id>`
+- **Example:** `imagine://photos.example.com/images/12345`
+- **Resolution:** Clients (web/mobile) and servers can resolve these URLs to API endpoints.
+
+### 2. Identity & Authentication
+- **Remote User Identity:** Users are identified by `username@domain`.
+- **Server Trust:** Servers perform a handshake (likely via shared keys or public key cryptography) to establish trust.
+- **Access Control:** When a user from Server A accesses Server B, Server B authenticates the request via Server A (OIDC or signed requests).
+
+### 3. Key Capabilities
+- **Remote Viewing:** Browse collections on another server without downloading everything.
+- **Cross-Server Search:** Queries can be federated to trusted peers.
+- **Copy/Import:** "Forking" an image from a remote server to your local library with attribution preservation.
+- **Syncing:** Keeping a collection in sync across two servers (e.g., a "Backup" server and a "Live" server).
+
+### 4. Guest & Client Access
+A critical use case is a Client working with multiple Photographers/Agencies (each with their own protocol-compliant server). The Client needs a unified view without managing multiple accounts.
+
+- **The "Client Portal" Mode:** A lightweight, unbranded (or co-branded) view where a guest can see collections shared with them from *multiple* sources.
+- **Federated Guest Identity:** 
+    - A guest can be invited via email. That email acts as a "soft identity" across servers.
+    - **Example:** Photographer A shares a collection with `client@example.com`. Photographer B shares a collection with `client@example.com`.
+    - When the client logs into *any* protocol-compliant instance (or a standalone Client Portal app), they see a unified dashboard of assets from Photographer A and B.
+- **Unified Lightbox:** The client can select photos from Server A and Server B and download them in a single batch operation (behind the scenes, the browser or portal fetches from respective servers).
+
+### 5. Metadata & Standards Compliance
+To prevent data loss and ensure robust interoperability, the protocol treats embedded metadata as the **Source of Truth** for asset information. This reduces reliance on proprietary API JSON structures for core data.
+
+- **Embedded First:** When transferring or syncing images, the recipient server MUST prefer XMP/IPTC data embedded in the file over sidecar data, unless specific overrides are requested.
+- **Standardized Mapping:** The protocol defines a strict mapping between API fields and XMP/IPTC fields (e.g., `api.creator` <-> `XMP:dc:creator`).
+- **Preservation:** Servers acting as "relays" or "caches" MUST NOT strip XMP/EXIF/IPTC metadata unless explicitly configured for privacy (e.g., stripping GPS data for public guests).
+- **Rights Management:** Usage Rights and Copyright notices must be read from `XMP:Rights` and `IPTC:CopyrightNotice` to enforce federation policies (e.g., "Do not distribute").
+
+#### Schema Negotiation & Custom Mappings
+Agencies and long-standing archives often have legacy metadata schemas (e.g., mapping `Photographer` to `IPTC:SpecialInstructions` instead of `IPTC:By-line`). The protocol supports this via negotiation:
+
+1.  **Capability Discovery:** Servers expose their metadata profiles via `/.well-known/imagine/metadata-profile`. This JSON/YAML/XML document describes how the server reads/writes fields.
+2.  **Respecting Authority:** When importing an asset from a remote server, the importing server should respect the *origin's* metadata mapping intention where possible, or at minimum, preserve the raw XMP packet to ensure no data is lost during "translation" to the local schema.
+3.  **"Pass-Through" Handling:** If a server acts as a gateway or portal for another agency's server, it must present the metadata *as defined by the source*, rather than re-interpreting it through its own default mapping rules.
+
+#### Client/Language Libraries for Resolution
+Libraries for different programming languages will have to have their own spec-complaint libraries to help handle and resolve things. Using the [atproto](https://atproto.com/) and [Bluesky's various packages](https://github.com/bluesky-social/indigo) as an example, this greatly helps reduce friction in making legacy systems interop with the new protocol and can help encourage adoption among systems. This is to better help organisations with legacy code adapt quickly to modernising and standardising their code with wrappers essentially and expose those as APIs.
+
+To achieve this, these standard libraries must implement the following core capabilities:
+
+-   **Parsing:** Validating and decomposing `imagine://` URIs into their constituent parts (Authority, Collection, Asset ID).
+-   **Discovery:** Automatically fetching `/.well-known/imagine` from the target domain to locate API endpoints and metadata capabilities.
+-   **Security:** Verifying TLS certificates and handling signature verification for "trusted" server-to-server communication.
+-   **Caching:** Implementing sensible caching strategies for resolved metadata to reduce network chatter and improve responsiveness.
+-   **Adapters (Optional):** Providing interfaces for common frameworks (e.g., Express/Next.js middleware, Go `net/http` handlers, Django views) to easily "mount" the protocol handler.
+
+### 6. Protocol Extensions
+To ensure the protocol remains lightweight while supporting specialized use cases (e.g., AI tagging pipelines, print-specific color workflows, rights management documentation), it supports an extension mechanism.
+
+**CRITICAL MANDATE:** Extensions MUST NOT be used to create "walled gardens" or proprietary lock-in.
+
+-   **Public Declaration:** Any server implementing an extension MUST declare it in its public capability manifest (e.g., `/.well-known/imagine/capabilities`).
+-   **Additive Only:** Extensions must be strictly additive. A client that does not understand an extension must still be able to perform core actions: View, Search, and Download the primary asset.
+-   **Open Specification:** If an extension is used for interoperability between different organizations, its specification MUST be publicly documented. "Private" extensions are only permitted for internal-only workflows that do not cross organizational boundaries. An organisation using certain extensions for internal tools **MAY NOT** use those extensions to prevent external interoperability.
+-   **Namespacing:** Extensions must use reverse-domain notation (e.g., `com.example.features.ai-tagging`) to prevent collisions. The `org.imagine.*` namespace is reserved for official protocol standards.
+
+## Technical Requirements
+- **API Extension:** New endpoints for federation (e.g., `/.well-known/imagine`).
+- **Metadata Standardization:** strict adherence to IPTC/XMP to ensure metadata survives transfer.
+- **Webhooks/Events:** Subscription model for updates (e.g., "Notify me if the remote image is updated").
+
+## Before-End
+The world and industry around digital/image asset management is one with a long history of established practices, wide-scale adoption of different standards across companies from camera manufacture's to media agencies. There are decades long-established practices of organisations (corporate/commercial or otherwise internal) coming up with proprietary solutions that are either closed-off in its own ecosystem or require money somewhere in the chain of operability to have successful interoperability.
+
+As the world of photography has become very accessible through affordable beginner cameras, mobile phone cameras with good-to-professional features and the average semi-professional photographer having to deal with "EXIF" from time-to-time, the gap in digital asset management needs to be bridged with long-term, open-source solutions that allow anyone from long-established professionals to beginner photographers to organise and share their media without hassle.
+
+On a personal note, my frustrations with the need to currently have at least 3-4 different bits of software, from heavy and bloated native software taking up loads of resources just to view, rate and transcode some photos, to the disjointed experience of sharing those photos with clients or syncing them across devices with various cloud providers, is the primary motivator for this protocol. I want a more unified, lightweight, and standard way to handle images that respects the data, workflow and privacy of those doing the work.
+
+## Next Steps
+1. Define the `imagine://` resolution spec.
+2. Establish a vocabulary and definitions
+3. Finalise protocol name (must NOT be tied to any specific project. e.g., [atproto](https://atproto.com/) is designed by Bluesky but is not name associated)
+4. Prototype a simple "remote view" component in the frontend.
+5. Implement basic server handshake.
+6. Implement basic client-to-server communication.
