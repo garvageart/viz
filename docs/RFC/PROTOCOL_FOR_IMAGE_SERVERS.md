@@ -84,12 +84,22 @@ To ensure the protocol remains lightweight while supporting specialized use case
 - **Metadata Standardization:** strict adherence to IPTC/XMP to ensure metadata survives transfer.
 - **Webhooks/Events:** Subscription model for updates (e.g., "Notify me if the remote image is updated").
 
+### Leveraging OpenAPI
+Beyond simple documentation, the OpenAPI specification is a functional component of the protocol ecosystem:
+
+1.  **Dynamic Client Generation:** "Client Portal" applications can fetch the schema from a target server at runtime to generate type-safe bindings. This allows a client to interact with servers running different versions of the protocol without breaking.
+2.  **Validation Proxies:** Intermediary relays can use the spec to validate payloads (e.g., metadata structure) before forwarding requests, protecting destination servers from malformed data.
+3.  **Extension Discovery:** A server's capability manifest can link to partial OpenAPI specs for its active extensions. Smart clients can ingest these partial specs to "learn" new features (e.g., a "3D Model Viewer" extension) dynamically.
+4.  **Mocking & Compliance:** The official protocol spec provides a "reference OpenAPI document" that developers can use to spin up mock servers, enabling them to test their implementation's compliance without needing a live peer.
+
+> **NOTE:** This is more of a "what's possible idea" and absolutely not gauranteed to make it into the spec at all. 
+
 ## Before-End
 The world and industry around digital/image asset management is one with a long history of established practices, wide-scale adoption of different standards across companies from camera manufacture's to media agencies. There are decades long-established practices of organisations (corporate/commercial or otherwise internal) coming up with proprietary solutions that are either closed-off in its own ecosystem or require money somewhere in the chain of operability to have successful interoperability.
 
 As the world of photography has become very accessible through affordable beginner cameras, mobile phone cameras with good-to-professional features and the average semi-professional photographer having to deal with "EXIF" from time-to-time, the gap in digital asset management needs to be bridged with long-term, open-source solutions that allow anyone from long-established professionals to beginner photographers to organise and share their media without hassle.
 
-On a personal note, my frustrations with the need to currently have at least 3-4 different bits of software, from heavy and bloated native software taking up loads of resources just to view, rate and transcode some photos, to the disjointed experience of sharing those photos with clients or syncing them across devices with various cloud providers, is the primary motivator for this protocol. I want a more unified, lightweight, and standard way to handle images that respects the data, workflow and privacy of those doing the work.
+On a personal note, my frustrations with the need to currently have at least 3-4 different bits of software, from heavy and bloated native software taking up loads of resources just to view, rate and transcode some photos, to the disjointed experience of sharing those photos with clients or syncing them across devices with various cloud providers, is the primary motivator for this protocol. I want a more unified, lightweight, and standard way to handle images that respects the data, workflow and privacy of those doing the work. I am a prideful person but I want to rid the world of "not-invented-here-iritis" that fragmented my ability to label and edit and send a couple of photos in a few minutes.
 
 ## Next Steps
 1. Define the `imagine://` resolution spec.
