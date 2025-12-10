@@ -1,6 +1,7 @@
 package routes
 
 import (
+	"errors"
 	"fmt"
 	"log/slog"
 	"net/http"
@@ -15,7 +16,10 @@ import (
 	"imagine/internal/entities"
 	libhttp "imagine/internal/http"
 	"imagine/internal/uid"
+	"imagine/internal/utils"
 )
+
+var ErrCollectionUnauthorised = errors.New("unauthorized")
 
 func findCollectionImages(db *gorm.DB, imgUIDs []string, collection entities.Collection, limit, offset int) ([]dto.ImagesResponse, error) {
 	var images []entities.Image
@@ -91,6 +95,7 @@ func CollectionsRouter(db *gorm.DB, logger *slog.Logger) *chi.Mux {
 			Private:     create.Private,
 			Description: create.Description,
 			CreatedByID: &authUser.Uid,
+			OwnerID:     &authUser.Uid,
 		}
 
 		err = db.Create(&collection).Error
@@ -118,13 +123,24 @@ func CollectionsRouter(db *gorm.DB, logger *slog.Logger) *chi.Mux {
 		var total int64
 
 		err = db.Transaction(func(tx *gorm.DB) error {
+			query := tx.Model(&entities.Collection{})
+
+			authUser, ok := libhttp.UserFromContext(req)
+			if ok {
+				// Show: Public OR (Private AND Owned by me)
+				query = query.Where("private = ? OR (private = ? AND owner_id = ?)", false, true, authUser.Uid)
+			} else {
+				// Show: Only Public
+				query = query.Where("private = ?", false)
+			}
+
 			// Count total collections
-			if err := tx.Model(&entities.Collection{}).Count(&total).Error; err != nil {
+			if err := query.Count(&total).Error; err != nil {
 				return err
 			}
 
 			// Fetch current page
-			return tx.Preload("Thumbnail").Preload("CreatedBy").
+			return query.Preload("Thumbnail").Preload("CreatedBy").
 				Limit(limit).
 				Offset(page * limit).
 				Find(&collections).Error
@@ -185,6 +201,16 @@ func CollectionsRouter(db *gorm.DB, logger *slog.Logger) *chi.Mux {
 		err := db.Transaction(func(tx *gorm.DB) error {
 			if err := tx.Preload("Thumbnail").Preload("CreatedBy").First(&collection, "uid = ?", uid).Error; err != nil {
 				return err
+			}
+
+			// Access Control: If private, only owner can view
+			if collection.Private != nil && *collection.Private {
+				authUser, ok := libhttp.UserFromContext(req)
+				// If not authenticated or not the owner
+				if !ok || (collection.OwnerID != nil && *collection.OwnerID != authUser.Uid) {
+					// Return "not found" to avoid leaking existence
+					return gorm.ErrRecordNotFound
+				}
 			}
 
 			var collectionImages []dto.CollectionImage
@@ -285,6 +311,11 @@ func CollectionsRouter(db *gorm.DB, logger *slog.Logger) *chi.Mux {
 				return dbTx.Error
 			}
 
+			authUser, ok := libhttp.UserFromContext(req)
+			if !ok || (collection.OwnerID != nil && *collection.OwnerID != authUser.Uid) {
+				return fmt.Errorf("unauthorized")
+			}
+
 			updateCollectionFromDTO(&collection, update)
 
 			if err := tx.Save(&collection).Error; err != nil {
@@ -298,6 +329,12 @@ func CollectionsRouter(db *gorm.DB, logger *slog.Logger) *chi.Mux {
 			if err == gorm.ErrRecordNotFound {
 				render.Status(req, http.StatusNotFound)
 				render.JSON(res, req, dto.ErrorResponse{Error: "Collection not found"})
+				return
+			}
+
+			if err == ErrCollectionUnauthorised {
+				render.Status(req, http.StatusForbidden)
+				render.JSON(res, req, dto.ErrorResponse{Error: "You do not have permission to update this collection"})
 				return
 			}
 
@@ -321,6 +358,11 @@ func CollectionsRouter(db *gorm.DB, logger *slog.Logger) *chi.Mux {
 				return err
 			}
 
+			authUser, ok := libhttp.UserFromContext(req)
+			if !ok || (collection.OwnerID != nil && *collection.OwnerID != authUser.Uid) {
+				return fmt.Errorf("unauthorized")
+			}
+
 			if err := tx.Delete(&collection).Error; err != nil {
 				return err
 			}
@@ -332,6 +374,12 @@ func CollectionsRouter(db *gorm.DB, logger *slog.Logger) *chi.Mux {
 			if err == gorm.ErrRecordNotFound {
 				render.Status(req, http.StatusNotFound)
 				render.JSON(res, req, dto.ErrorResponse{Error: "Collection not found"})
+				return
+			}
+
+			if err == ErrCollectionUnauthorised {
+				render.Status(req, http.StatusForbidden)
+				render.JSON(res, req, dto.ErrorResponse{Error: "You do not have permission to delete this collection"})
 				return
 			}
 
@@ -361,8 +409,16 @@ func CollectionsRouter(db *gorm.DB, logger *slog.Logger) *chi.Mux {
 		var collection entities.Collection
 
 		err = db.Transaction(func(tx *gorm.DB) error {
-			if err := tx.Select("images").First(&collection, "uid = ?", uid).Error; err != nil {
+			if err := tx.Select("images", "private", "owner_id").First(&collection, "uid = ?", uid).Error; err != nil {
 				return err
+			}
+
+			// Access Control: If private, only owner can view
+			if collection.Private != nil && *collection.Private {
+				authUser, ok := libhttp.UserFromContext(req)
+				if !ok || (collection.OwnerID != nil && *collection.OwnerID != authUser.Uid) {
+					return gorm.ErrRecordNotFound
+				}
 			}
 
 			var collectionImages []dto.CollectionImage
@@ -440,7 +496,7 @@ func CollectionsRouter(db *gorm.DB, logger *slog.Logger) *chi.Mux {
 		err := render.DecodeJSON(req.Body, &colImage)
 		if err != nil {
 			render.Status(req, http.StatusBadRequest)
-			render.JSON(res, req, dto.AddImagesResponse{Added: false, Error: ptrString("invalid request body")})
+			render.JSON(res, req, dto.AddImagesResponse{Added: false, Error: utils.StringPtr("Invalid request body")})
 			return
 		}
 
@@ -450,6 +506,11 @@ func CollectionsRouter(db *gorm.DB, logger *slog.Logger) *chi.Mux {
 				return err
 			}
 
+			authUser, ok := libhttp.UserFromContext(req)
+			if !ok || (collection.OwnerID != nil && *collection.OwnerID != authUser.Uid) {
+				return fmt.Errorf("unauthorized")
+			}
+
 			for _, imgUID := range colImage.UIDs {
 				var img entities.Image
 
@@ -457,9 +518,11 @@ func CollectionsRouter(db *gorm.DB, logger *slog.Logger) *chi.Mux {
 					return err
 				}
 
+				userDTO := authUser.DTO()
 				colImageEnt := dto.CollectionImage{
 					Uid:     imgUID,
 					AddedAt: time.Now(),
+					AddedBy: &userDTO,
 				}
 
 				// Append to the slice
@@ -479,7 +542,13 @@ func CollectionsRouter(db *gorm.DB, logger *slog.Logger) *chi.Mux {
 		if err != nil {
 			if err == gorm.ErrRecordNotFound {
 				render.Status(req, http.StatusNotFound)
-				render.JSON(res, req, dto.AddImagesResponse{Added: false, Error: ptrString("collection or image not found")})
+				render.JSON(res, req, dto.AddImagesResponse{Added: false, Error: utils.StringPtr("Collection or image not found")})
+				return
+			}
+
+			if err == ErrCollectionUnauthorised {
+				render.Status(req, http.StatusForbidden)
+				render.JSON(res, req, dto.AddImagesResponse{Added: false, Error: utils.StringPtr("Unauthorized")})
 				return
 			}
 
@@ -502,7 +571,7 @@ func CollectionsRouter(db *gorm.DB, logger *slog.Logger) *chi.Mux {
 
 		if err := render.DecodeJSON(req.Body, &body); err != nil {
 			render.Status(req, http.StatusBadRequest)
-			render.JSON(res, req, dto.AddImagesResponse{Added: false, Error: ptrString("invalid request body")})
+			render.JSON(res, req, dto.AddImagesResponse{Added: false, Error: utils.StringPtr("invalid request body")})
 			return
 		}
 
@@ -510,6 +579,11 @@ func CollectionsRouter(db *gorm.DB, logger *slog.Logger) *chi.Mux {
 			var collection entities.Collection
 			if err := tx.First(&collection, "uid = ?", uid).Error; err != nil {
 				return err
+			}
+
+			authUser, ok := libhttp.UserFromContext(req)
+			if !ok || (collection.OwnerID != nil && *collection.OwnerID != authUser.Uid) {
+				return ErrCollectionUnauthorised
 			}
 
 			var images []dto.CollectionImage
@@ -551,7 +625,13 @@ func CollectionsRouter(db *gorm.DB, logger *slog.Logger) *chi.Mux {
 		if err != nil {
 			if err == gorm.ErrRecordNotFound {
 				render.Status(req, http.StatusNotFound)
-				render.JSON(res, req, dto.DeleteImagesResponse{Deleted: false, Error: ptrString("collection not found")})
+				render.JSON(res, req, dto.DeleteImagesResponse{Deleted: false, Error: utils.StringPtr("collection not found")})
+				return
+			}
+
+			if err == ErrCollectionUnauthorised {
+				render.Status(req, http.StatusForbidden)
+				render.JSON(res, req, dto.DeleteImagesResponse{Deleted: false, Error: utils.StringPtr("unauthorized")})
 				return
 			}
 
@@ -567,11 +647,6 @@ func CollectionsRouter(db *gorm.DB, logger *slog.Logger) *chi.Mux {
 	})
 
 	return router
-}
-
-// Helper function to create a string pointer
-func ptrString(s string) *string {
-	return &s
 }
 
 // updateCollectionFromDTO updates collection entity fields from a CollectionUpdate DTO
@@ -593,6 +668,6 @@ func updateCollectionFromDTO(collection *entities.Collection, update dto.Collect
 		}
 	}
 	if update.OwnerUID != nil {
-		collection.CreatedByID = update.OwnerUID
+		collection.OwnerID = update.OwnerUID
 	}
 }

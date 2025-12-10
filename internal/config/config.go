@@ -27,6 +27,18 @@ func ReadConfig() (viper.Viper, error) {
 	return *v, nil
 }
 
+func SetDefaultConfig() {
+	AppConfig.Logging.Level = "info"
+	AppConfig.UserManagement.AllowManualRegistration = true
+	AppConfig.StorageMetrics.Enabled = false
+	AppConfig.Database.Port = 5432
+	
+}
+
+func GetConfig() ImagineConfig {
+	return AppConfig
+}
+
 var (
 	ServerKeys = map[string]string{
 		"api":  "api",
@@ -48,7 +60,7 @@ var (
 
 		result := map[string]*ImagineServer{}
 		for _, serverKey := range ServerKeys {
-			result[serverKey] = &ImagineServer{Server: &Server{}}
+			result[serverKey] = &ImagineServer{ServerConfig: &ServerConfig{}}
 
 			result[serverKey].Port = config.GetInt(fmt.Sprintf("servers.%s.port", serverKey))
 			result[serverKey].Host = host

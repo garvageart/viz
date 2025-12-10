@@ -5,13 +5,6 @@ import (
 	"encoding/hex"
 	"encoding/json"
 	"fmt"
-	"imagine/internal/auth"
-	"imagine/internal/crypto"
-	"imagine/internal/dto"
-	"imagine/internal/entities"
-	libhttp "imagine/internal/http"
-	"imagine/internal/uid"
-	"imagine/internal/utils"
 	"log/slog"
 	"net/http"
 	"strconv"
@@ -22,12 +15,28 @@ import (
 	"github.com/go-chi/render"
 	"gorm.io/gorm"
 	"gorm.io/gorm/clause"
+
+	"imagine/internal/auth"
+	"imagine/internal/config"
+	"imagine/internal/crypto"
+	"imagine/internal/dto"
+	"imagine/internal/entities"
+	libhttp "imagine/internal/http"
+	"imagine/internal/settings"
+	"imagine/internal/uid"
+	"imagine/internal/utils"
 )
 
 func AccountsRouter(db *gorm.DB, logger *slog.Logger) *chi.Mux {
 	router := chi.NewRouter()
 
 	router.Post("/", func(res http.ResponseWriter, req *http.Request) {
+		if !config.GetConfig().UserManagement.AllowManualRegistration {
+			render.Status(req, http.StatusForbidden)
+			render.JSON(res, req, dto.ErrorResponse{Error: "User Registration disabled, only admin's may register users"})
+			return
+		}
+
 		var create dto.UserCreate
 
 		err := render.DecodeJSON(req.Body, &create)
@@ -48,7 +57,7 @@ func AccountsRouter(db *gorm.DB, logger *slog.Logger) *chi.Mux {
 			render.JSON(res, req, dto.ErrorResponse{Error: "Email is invalid"})
 			return
 		}
-		
+
 		var existingUser entities.User
 		tx := db.Where("email = ?", string(create.Email)).First(&existingUser)
 		switch tx.Error {
@@ -94,6 +103,16 @@ func AccountsRouter(db *gorm.DB, logger *slog.Logger) *chi.Mux {
 		uwp := entities.FromUser(userEnt, &hashed)
 		txErr := db.Transaction(func(tx *gorm.DB) error {
 			if err := tx.Create(&uwp).Error; err != nil {
+				return err
+			}
+
+			// Initialize onboarding_complete to false for new users
+			onboardingOverride := entities.SettingOverride{
+				UserId: id,
+				Name:   "onboarding_complete",
+				Value:  "false",
+			}
+			if err := tx.Create(&onboardingOverride).Error; err != nil {
 				return err
 			}
 
@@ -154,6 +173,100 @@ func AccountsRouter(db *gorm.DB, logger *slog.Logger) *chi.Mux {
 					return
 				}
 
+				render.JSON(res, req, user.DTO())
+			})
+
+			r.Put("/onboard", func(res http.ResponseWriter, req *http.Request) {
+				user, _ := libhttp.UserFromContext(req)
+
+				onboardingCompleteStr, err := settings.GetSetting(db, "onboarding_complete", &user.Uid)
+				if err == nil && onboardingCompleteStr == "true" {
+					render.Status(req, http.StatusForbidden)
+					render.JSON(res, req, dto.ErrorResponse{Error: "Onboarding already completed"})
+					return
+				}
+
+				var body dto.UserOnboardingBody
+
+				if err := render.DecodeJSON(req.Body, &body); err != nil {
+					render.Status(req, http.StatusBadRequest)
+					render.JSON(res, req, dto.ErrorResponse{Error: "Invalid request body"})
+					return
+				}
+
+				txErr := db.Transaction(func(tx *gorm.DB) error {
+					// Update User Profile
+					updates := make(map[string]interface{})
+					if body.FirstName != "" {
+						updates["first_name"] = body.FirstName
+					}
+					if body.LastName != "" {
+						updates["last_name"] = body.LastName
+					}
+					if len(updates) > 0 {
+						if err := tx.Model(&user).Updates(updates).Error; err != nil {
+							return err
+						}
+					}
+
+					// Update Settings
+					for key, value := range body.Settings {
+						// Verify setting exists and is user editable
+						var def entities.SettingDefault
+						if err := tx.Where("name = ?", key).First(&def).Error; err != nil {
+							logger.Warn("can't find setting", slog.String("name", key))
+							continue
+						}
+
+						if !def.IsUserEditable {
+							render.Status(req, http.StatusForbidden)
+							render.JSON(res, req, dto.ErrorResponse{Error: fmt.Sprintf("Setting '%s' is not user editable", key)})
+							return err // Return an error to rollback the transaction
+						}
+
+						if err := validateSettingValue(value, def); err != nil {
+							render.Status(req, http.StatusBadRequest)
+							render.JSON(res, req, dto.ErrorResponse{Error: fmt.Sprintf("Invalid value for setting '%s': %s", key, err.Error())})
+							return err // Return an error to rollback the transaction
+						}
+
+						override := entities.SettingOverride{
+							UserId: user.Uid,
+							Name:   key,
+							Value:  value,
+						}
+
+						if err := tx.Clauses(clause.OnConflict{
+							Columns:   []clause.Column{{Name: "user_id"}, {Name: "name"}},
+							DoUpdates: clause.AssignmentColumns([]string{"value"}),
+						}).Create(&override).Error; err != nil {
+							return err
+						}
+					}
+
+					// Mark onboarding as complete
+					completeOverride := entities.SettingOverride{
+						UserId: user.Uid,
+						Name:   "onboarding_complete",
+						Value:  "true",
+					}
+
+					if err := tx.Clauses(clause.OnConflict{
+						Columns:   []clause.Column{{Name: "user_id"}, {Name: "name"}},
+						DoUpdates: clause.AssignmentColumns([]string{"value"}),
+					}).Create(&completeOverride).Error; err != nil {
+						return err
+					}
+
+					return nil
+				})
+
+				if txErr != nil {
+					libhttp.ServerError(res, req, txErr, logger, nil, "Failed to complete onboarding", "Internal server error")
+					return
+				}
+
+				db.Where("uid = ?", user.Uid).First(&user)
 				render.JSON(res, req, user.DTO())
 			})
 

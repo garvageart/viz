@@ -1,5 +1,13 @@
 package config
 
+var AppConfig ImagineConfig
+
+type ServerConfig struct {
+	Host string `json:"host" mapstructure:"host"`
+	Port int    `json:"port" mapstructure:"port"`
+	Key  string `json:"key" mapstructure:"key"`
+}
+
 // RedisConfig holds the configuration for a Redis connection.
 type RedisConfig struct {
 	Enabled             bool   `json:"enabled" mapstructure:"enabled"`
@@ -55,6 +63,15 @@ type StorageMetricsConfig struct {
 	IntervalSeconds int  `json:"interval_seconds" mapstructure:"interval_seconds"`
 }
 
+// CacheConfig holds the configuration for caching.
+type CacheConfig struct {
+	GCEnabled bool `json:"gc_enabled" mapstructure:"gc_enabled"`
+}
+
+type UserManagementConfig struct {
+	AllowManualRegistration bool `json:"allow_manual_registration" mapstructure:"allow_manual_registration"`
+}
+
 // ImagineConfig is the root configuration structure.
 type ImagineConfig struct {
 	BaseURL        string               `json:"baseUrl" mapstructure:"baseUrl"`
@@ -65,10 +82,6 @@ type ImagineConfig struct {
 	Queue          QueueConfig          `json:"redis" mapstructure:"redis"`
 	Libvips        LibvipsConfig        `json:"libvips" mapstructure:"libvips"`
 	Cache          CacheConfig          `json:"cache" mapstructure:"cache"`
+	UserManagement UserManagementConfig	`json:"user_management" mapstructure:"user_management"`
 	StorageMetrics StorageMetricsConfig `json:"storage_metrics" mapstructure:"storage_metrics"`
-}
-
-// CacheConfig holds the configuration for caching.
-type CacheConfig struct {
-	GCEnabled bool `json:"gc_enabled" mapstructure:"gc_enabled"`
 }

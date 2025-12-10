@@ -148,7 +148,7 @@ func AuthMiddleware(db *gorm.DB, logger *slog.Logger) func(next http.Handler) ht
 			// Fallback to cookie-based session authentication.
 			cookie, err := r.Cookie(AuthTokenCookie)
 			if err != nil || cookie == nil || cookie.Value == "" {
-				logger.Debug("cookie auth failed: token missing")
+				logger.Debug("auth middleware: cookie auth failed", slog.String("reason", "token_missing_or_empty"), slog.Any("error", err))
 				render.Status(r, http.StatusUnauthorized)
 				render.JSON(w, r, dto.ErrorResponse{Error: "Token missing"})
 				return
@@ -165,6 +165,7 @@ func AuthMiddleware(db *gorm.DB, logger *slog.Logger) func(next http.Handler) ht
 			} else {
 				if err := db.Where("token = ?", cookie.Value).First(&sess).Error; err != nil {
 					if err == gorm.ErrRecordNotFound {
+						logger.Debug("auth middleware: cookie auth failed", slog.String("reason", "session_not_found_in_db"))
 						ClearCookie(AuthTokenCookie, w)
 						ClearCookie(StateCookie, w)
 						render.Status(r, http.StatusUnauthorized)
@@ -173,13 +174,14 @@ func AuthMiddleware(db *gorm.DB, logger *slog.Logger) func(next http.Handler) ht
 					}
 					
 					// For other errors (e.g. DB connection, locks), return 500 to allow retry
-					logger.Error("failed to query session", slog.Any("error", err))
+					logger.Error("auth middleware: failed to query session", slog.Any("error", err))
 					render.Status(r, http.StatusInternalServerError)
 					render.JSON(w, r, dto.ErrorResponse{Error: "Failed to authenticate user"})
 					return
 				}
 
 				if sess.ExpiresAt != nil && !sess.ExpiresAt.IsZero() && time.Now().After(*sess.ExpiresAt) {
+					logger.Debug("auth middleware: cookie auth failed", slog.String("reason", "session_expired"))
 					render.Status(r, http.StatusUnauthorized)
 					render.JSON(w, r, dto.ErrorResponse{Error: "Session expired"})
 					return
@@ -194,6 +196,7 @@ func AuthMiddleware(db *gorm.DB, logger *slog.Logger) func(next http.Handler) ht
 				}
 
 				if sess.UserUid == "" {
+					logger.Debug("auth middleware: cookie auth failed", slog.String("reason", "session_user_uid_empty"))
 					render.Status(r, http.StatusUnauthorized)
 					render.JSON(w, r, dto.ErrorResponse{Error: "User missing"})
 					return
@@ -201,6 +204,7 @@ func AuthMiddleware(db *gorm.DB, logger *slog.Logger) func(next http.Handler) ht
 
 				var user entities.User
 				if err := db.Where("uid = ?", sess.UserUid).First(&user).Error; err != nil {
+					logger.Debug("auth middleware: cookie auth failed", slog.String("reason", "user_not_found_in_db"), slog.String("user_uid", sess.UserUid))
 					render.Status(r, http.StatusUnauthorized)
 					render.JSON(w, r, dto.ErrorResponse{Error: "User not found"})
 					return

@@ -179,13 +179,25 @@ func ImagesRouter(db *gorm.DB, logger *slog.Logger) *chi.Mux {
 		var total int64
 
 		if err := db.WithContext(req.Context()).Transaction(func(tx *gorm.DB) error {
+			query := tx.Model(&entities.Image{}).Where("deleted_at IS NULL")
+
+			// Access Control: Filter private images
+			authUser, ok := libhttp.UserFromContext(req)
+			if ok {
+				// Show: Public OR (Private AND Owned by me)
+				query = query.Where("private = ? OR (private = ? AND owner_id = ?)", false, true, authUser.Uid)
+			} else {
+				// Show: Only Public
+				query = query.Where("private = ?", false)
+			}
+
 			// Count total non-deleted images for pagination metadata
-			if err := tx.Model(&entities.Image{}).Where("deleted_at IS NULL").Count(&total).Error; err != nil {
+			if err := query.Count(&total).Error; err != nil {
 				return err
 			}
 
 			pageOffset := max(page*limit, 0)
-			if err := tx.Preload("UploadedBy").Where("deleted_at IS NULL").Order("taken_at DESC NULLS LAST, name DESC").Offset(pageOffset).Limit(limit).Find(&images).Error; err != nil {
+			if err := query.Preload("UploadedBy").Order("taken_at DESC NULLS LAST, name DESC").Offset(pageOffset).Limit(limit).Find(&images).Error; err != nil {
 				return err
 			}
 
@@ -277,6 +289,18 @@ func ImagesRouter(db *gorm.DB, logger *slog.Logger) *chi.Mux {
 			if !validateDownloadRequest(res, req, db, uid) {
 				return
 			}
+		} else {
+			// Access Control: If private, only owner can view (unless using a valid download token logic, which is handled above)
+			if imgEnt.Private {
+				authUser, ok := libhttp.UserFromContext(req)
+				// If not authenticated or not the owner
+				if !ok || (imgEnt.OwnerID != nil && *imgEnt.OwnerID != authUser.Uid) {
+					// Return 404 to avoid leaking existence
+					render.Status(req, http.StatusNotFound)
+					render.JSON(res, req, dto.ErrorResponse{Error: "Image not found"})
+					return
+				}
+			}
 		}
 
 		hasTransformParams := params.Format != "" || params.Width > 0 || params.Height > 0 || params.Quality > 0 || params.Rotate > 0 || params.Flip != ""
@@ -359,6 +383,18 @@ func ImagesRouter(db *gorm.DB, logger *slog.Logger) *chi.Mux {
 			return
 		}
 
+		// Access Control: If private, only owner can view
+		if imgEnt.Private {
+			authUser, ok := libhttp.UserFromContext(req)
+			// If not authenticated or not the owner
+			if !ok || (imgEnt.OwnerID != nil && *imgEnt.OwnerID != authUser.Uid) {
+				// Return 404 to avoid leaking existence
+				render.Status(req, http.StatusNotFound)
+				render.JSON(res, req, dto.ErrorResponse{Error: "Image not found"})
+				return
+			}
+		}
+
 		render.Status(req, http.StatusOK)
 		render.JSON(res, req, imgEnt.DTO())
 	})
@@ -379,6 +415,12 @@ func ImagesRouter(db *gorm.DB, logger *slog.Logger) *chi.Mux {
 				return e.Error
 			}
 
+			// Access Control: Only owner can update
+			authUser, ok := libhttp.UserFromContext(req)
+			if !ok || (img.OwnerID != nil && *img.OwnerID != authUser.Uid) {
+				return fmt.Errorf("unauthorized")
+			}
+
 			updateImageFromDTO(&img, update)
 
 			if err := tx.Save(&img).Error; err != nil {
@@ -392,6 +434,12 @@ func ImagesRouter(db *gorm.DB, logger *slog.Logger) *chi.Mux {
 			if err == gorm.ErrRecordNotFound {
 				render.Status(req, http.StatusNotFound)
 				render.JSON(res, req, dto.ErrorResponse{Error: "Image not found"})
+				return
+			}
+
+			if err.Error() == "unauthorized" {
+				render.Status(req, http.StatusForbidden)
+				render.JSON(res, req, dto.ErrorResponse{Error: "You do not have permission to update this image"})
 				return
 			}
 
@@ -501,6 +549,7 @@ func ImagesRouter(db *gorm.DB, logger *slog.Logger) *chi.Mux {
 
 		authUser, _ := libhttp.UserFromContext(req)
 		imageEntity.UploadedByID = &authUser.Uid
+		imageEntity.OwnerID = &authUser.Uid
 
 		var checksum string
 		if fileImageUpload.Checksum != nil && *fileImageUpload.Checksum != "" {
@@ -637,6 +686,7 @@ func ImagesRouter(db *gorm.DB, logger *slog.Logger) *chi.Mux {
 		// Set the uploader
 		authUser, _ := libhttp.UserFromContext(req)
 		imageEntity.UploadedByID = &authUser.Uid
+		imageEntity.OwnerID = &authUser.Uid
 
 		hasher := sha1.New()
 		if _, err := io.Copy(hasher, bytes.NewReader(fileBytes)); err != nil {
@@ -734,10 +784,41 @@ func ImagesRouter(db *gorm.DB, logger *slog.Logger) *chi.Mux {
 		resultsArr := make([]map[string]any, 0, len(body.Uids))
 		var anyFailed bool
 
+		// Get authenticated user
+		authUser, ok := libhttp.UserFromContext(req)
+		if !ok {
+			render.Status(req, http.StatusUnauthorized)
+			render.JSON(res, req, dto.ErrorResponse{Error: "Unauthorized"})
+			return
+		}
+
 		for _, id := range body.Uids {
 			src := filepath.Join(libDir, id)
 			var deleted bool
 			var errMsg *string
+
+			// Check ownership before deleting
+			var img entities.Image
+			if err := db.Select("owner_id").First(&img, "uid = ?", id).Error; err != nil {
+				if err != gorm.ErrRecordNotFound {
+					logger.Error("failed to check ownership", slog.String("uid", id), slog.Any("error", err))
+					e := "failed to check ownership"
+					errMsg = &e
+				}
+				// If not found, we can't delete it anyway, so let it proceed to fail naturally or skip
+			} else {
+				if img.OwnerID != nil && *img.OwnerID != authUser.Uid {
+					e := "permission denied"
+					errMsg = &e
+					deleted = false
+					anyFailed = true
+					resultsArr = append(resultsArr, map[string]any{
+						"uid":   id,
+						"error": *errMsg,
+					})
+					continue
+				}
+			}
 
 			if body.Force {
 				// Force delete: Remove from DB permanently and delete files
@@ -1064,4 +1145,7 @@ func updateImageFromDTO(image *entities.Image, update dto.ImageUpdate) {
 		image.ImageMetadata.Keywords = update.ImageMetadata.Keywords
 	}
 
+	if update.OwnerUid != nil {
+		image.OwnerID = update.OwnerUid
+	}
 }

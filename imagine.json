@@ -3,12 +3,7 @@
   "servers": {
     "api": {
       "port": 7770,
-      "host": "localhost",
-      "database": "images"
-    },
-    "auth": {
-      "port": 7771,
-      "database": "api"
+      "host": "localhost"
     },
     "viz": {
       "port": 7777
@@ -49,6 +44,9 @@
   "storage_metrics": {
     "enabled": true,
     "interval_seconds": 300
+  },
+  "user_management": {
+    "allow_manual_registration": true
   },
   "cache": {
     "gc_enabled": true

@@ -70,7 +70,7 @@ func AuthRouter(db *gorm.DB, logger *slog.Logger) *chi.Mux {
 			Password string
 		}
 
-		tx := db.Table("users").Select("uid, password").Where("email = ?", login.Email).Scan(&row)
+		tx := db.Model(&entities.User{}).Select("uid, password").Where("email = ?", login.Email).Scan(&row)
 		if tx.Error != nil || row.Password == "" {
 			if tx.Error == gorm.ErrRecordNotFound || row.Password == "" {
 				render.Status(req, http.StatusNotFound)
