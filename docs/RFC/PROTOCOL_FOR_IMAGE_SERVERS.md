@@ -32,6 +32,7 @@ A custom URL scheme to identify resources across servers.
 - **Cross-Server Search:** Queries can be federated to trusted peers.
 - **Copy/Import:** "Forking" an image from a remote server to your local library with attribution preservation.
 - **Syncing:** Keeping a collection in sync across two servers (e.g., a "Backup" server and a "Live" server).
+- **Hybrid Workflows:** Enabling seamless interaction between different classes of systems (e.g., Enterprise DAM <-> Personal Gallery). A user can "mirror" a professional collection from a work server to a personal instance for casual viewing, or a freelancer can "submit" assets to an agency server directly from their home lab without manual file transfers or custom/proprietary systems.
 
 ### 4. Guest & Client Access
 A critical use case is a Client working with multiple Photographers/Agencies (each with their own protocol-compliant server). The Client needs a unified view without managing multiple accounts.
@@ -135,10 +136,13 @@ As the world of photography has become very accessible through affordable beginn
 
 On a personal note, my frustrations with the need to currently have at least 3-4 different bits of software, from heavy and bloated native software taking up loads of resources just to view, rate and transcode some photos, to the disjointed experience of sharing those photos with clients or syncing them across devices with various cloud providers, is the primary motivator for this protocol. I want a more unified, lightweight, and standard way to handle images that respects the data, workflow and privacy of those doing the work. I am a prideful person but I want to rid the world of "not-invented-here-iritis" that fragmented my ability to label and edit and send a couple of photos in a few minutes.
 
+One of my ideas based off this protocol is to bridge a "Enterprise/Commercial-to-Consumer" divide. There is a future where a freelance photographer running a personal instance (e.g., Immich or a small `viz` setup) can seamlessly connect with a massive Media Agency's archival system. With minimal configuration, they could authorize the agency to pull high-res assets directly from their "rogue" server, or conversely, mirror a specific "Portfolio" collection from their heavy-duty work server to a lightweight, consumer-friendly instance for sharing with family on mobile, "quick and dirty" sharing to social media or sharing solo missing files with clients without having to reconnect to an enterprise system. This interoperability shouldn't be the    
+privilege of expensive enterprise contracts; it's also about giving user choice.                
+
 ## Next Steps
 1. Define the `imagine://` resolution spec.
 2. Establish a vocabulary and definitions
-3. Finalise protocol name (must NOT be tied to any specific project. e.g., [atproto](https://atproto.com/) is designed by Bluesky but is not name associated)
+3. Finalise protocol name (must NOT be tied to any specific project. e.g., [atproto](https://atproto.com/) is designed by Bluesky but is not name associated).
 4. Prototype a simple "remote view" component in the frontend.
 5. Implement basic server handshake.
 6. Implement basic client-to-server communication.
