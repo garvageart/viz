@@ -9,7 +9,14 @@
 		value?: string | number | string[];
 	}
 
-	let { label, description, children, value = $bindable(), class: className, ...props }: Props = $props();
+	let {
+		label,
+		description,
+		children,
+		value = $bindable(),
+		class: className,
+		...props
+	}: Props = $props();
 	const selectId = props.id ?? generateKeyId();
 </script>
 
@@ -18,7 +25,12 @@
 		<label for={selectId} class="input-label">{label}</label>
 	{/if}
 	<div class="input-wrapper">
-		<select id={selectId} bind:value class="select-input {className || ''}" {...props}>
+		<select
+			id={selectId}
+			bind:value
+			class="select-input {className || ''}"
+			{...props}
+		>
 			{@render children?.()}
 		</select>
 	</div>
@@ -67,7 +79,7 @@
 		max-width: 100%;
 		min-height: 2.5rem;
 		color: var(--imag-text-color);
-		background-color: var(--imag-bg-color);
+		background-color: var(--imag-100);
 		outline: none;
 		border: none;
 		box-shadow: 0 -1px 0 var(--imag-60) inset;

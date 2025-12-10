@@ -4,7 +4,10 @@
 	import type { SvelteHTMLElements } from "svelte/elements";
 	import MaterialIcon from "../MaterialIcon.svelte";
 
-	let { children, ...props }: { children: Snippet } & SvelteHTMLElements["div"] = $props();
+	let {
+		children,
+		...props
+	}: { children: Snippet } & SvelteHTMLElements["div"] = $props();
 	let modalEl: HTMLElement | undefined = $state();
 
 	$effect(() => {
@@ -13,7 +16,11 @@
 		}
 
 		// From: https://stackoverflow.com/a/25621277
-		modalEl.querySelectorAll("textarea").forEach((t) => t.dispatchEvent(new Event("input", { bubbles: true, cancelable: true })));
+		modalEl
+			.querySelectorAll("textarea")
+			.forEach((t) =>
+				t.dispatchEvent(new Event("input", { bubbles: true, cancelable: true }))
+			);
 		const txHeight = "1rem"; // Preset initial height in pixels
 		const tx = modalEl.getElementsByTagName("textarea");
 
@@ -44,7 +51,11 @@
 </script>
 
 <div {...props} id="viz-modal" bind:this={modalEl}>
-	<button class="modal-close-btn" onclick={() => (modal.show = false)} title="Close Modal">
+	<button
+		class="modal-close-btn"
+		onclick={() => (modal.show = false)}
+		title="Close Modal"
+	>
 		<MaterialIcon iconName="close" />
 	</button>
 	{@render children()}
@@ -52,7 +63,7 @@
 
 <style lang="scss">
 	#viz-modal {
-		width: 45%;
+		width: 35%;
 		max-height: 70%;
 		background-color: var(--imag-bg-color);
 		z-index: 9999;

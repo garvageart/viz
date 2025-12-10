@@ -7,7 +7,13 @@
 		disabled?: boolean;
 	}
 
-	let { value = $bindable(), label, description, disabled = false, ...props }: Props & SvelteHTMLElements["input"] = $props();
+	let {
+		value = $bindable(),
+		label,
+		description,
+		disabled = false,
+		...props
+	}: Props & SvelteHTMLElements["input"] = $props();
 	const inputId = props.id ?? generateKeyId();
 </script>
 
@@ -75,7 +81,7 @@
 		max-width: 100%;
 		min-height: 2.5rem;
 		color: var(--imag-text-color);
-		background-color: var(--imag-bg-color);
+		background-color: var(--imag-100);
 		outline: none;
 		border: none;
 		box-shadow: 0 -1px 0 var(--imag-60) inset;

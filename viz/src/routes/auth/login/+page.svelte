@@ -1,6 +1,8 @@
 <script lang="ts">
 	import { goto } from "$app/navigation";
 	import { login } from "$lib/api";
+	import { system } from "$lib/states/index.svelte";
+	import { fetchCurrentUser } from "$lib/auth/auth_methods";
 	import Button from "$lib/components/Button.svelte";
 	import InputText from "$lib/components/dom/InputText.svelte";
 	import { toastState } from "$lib/toast-notifcations/notif-state.svelte";
@@ -39,6 +41,13 @@
 
 			if (response.status === 200) {
 				showLoginNotif("Login successful!", "success");
+
+				// Invalidate system state to force re-fetch of 'user_onboarding_required'
+				// with the new authenticated session.
+				system.fetched = false;
+				system.data = null;
+
+				await fetchCurrentUser();
 				goto("/");
 			}
 		} catch (error: any) {
@@ -76,10 +85,10 @@
 			/>
 			<InputText
 				id="login-password"
+				label="Password"
 				name="password"
 				placeholder="Password"
 				type="password"
-				style="margin-top: 1em;"
 				required
 				value={loginData.password}
 				oninput={(e) => (loginData.password = e.currentTarget.value)}
@@ -117,6 +126,7 @@
 	}
 
 	#viz-title {
+		color: var(--imag-100-light);
 		font-family: var(--imag-code-font);
 		font-weight: 700;
 		font-size: 3em;
@@ -149,6 +159,7 @@
 		display: flex;
 		flex-direction: column;
 		align-items: center;
+		gap: 1rem;
 	}
 
 	:global(#login-form > input:not([type="submit"])) {

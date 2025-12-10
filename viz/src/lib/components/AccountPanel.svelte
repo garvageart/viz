@@ -2,7 +2,7 @@
 	import { user } from "$lib/states/index.svelte";
 	import { slide } from "svelte/transition";
 	import Button from "./Button.svelte";
-	import { logout } from "$lib/api";
+	import { logoutUser } from "$lib/auth/auth_methods";
 
 	const { data } = user;
 
@@ -10,7 +10,12 @@
 	let panelEl = $state<HTMLElement | null>(null);
 </script>
 
-<div id="account-details-panel" bind:this={panelEl} in:slide={{ duration: 100 }} out:slide={{ duration: 100 }}>
+<div
+	id="account-details-panel"
+	bind:this={panelEl}
+	in:slide={{ duration: 100 }}
+	out:slide={{ duration: 100 }}
+>
 	<div id="account-details">
 		<span class="account-name">{data?.username}</span>
 		<span class="account-email">{data?.email}</span>
@@ -35,7 +40,7 @@
 	</a>
 	<hr style="border: 1px solid var(--imag-80); width: 100%;" />
 	<Button
-		onclick={() => logout()}
+		onclick={() => logoutUser()}
 		hoverColor="var(--imag-80)"
 		style="display: flex; flex-direction:column; justify-content: center; align-items: center; width: 100%;"
 	>

@@ -5,6 +5,7 @@
 	import { registerUser } from "$lib/api";
 	import { goto } from "$app/navigation";
 	import { toastState } from "$lib/toast-notifcations/notif-state.svelte";
+	import { system } from "$lib/states/index.svelte";
 
 	let pageState = page.state as typeof registerData;
 	let registerData = $state({
@@ -34,98 +35,101 @@
 >
 	<span id="viz-title">viz</span>
 	<div id="reg-container">
-		<h1 id="reg-heading">Register</h1>
-		<form
-			id="reg-form"
-			onsubmit={async (event) => {
-				event.preventDefault();
+		{#if system.data?.allow_manual_registration}
+			<h1 id="reg-heading">Register</h1>
+			<form
+				id="reg-form"
+				onsubmit={async (event) => {
+					event.preventDefault();
 
-				// fix all this form mess. validate stuff properly lmao
-				const data = new FormData(event.currentTarget);
-				const formObject = Object.fromEntries(data.entries());
+					// fix all this form mess. validate stuff properly lmao
+					const data = new FormData(event.currentTarget);
+					const formObject = Object.fromEntries(data.entries());
 
-				if (!formObject.email || !formObject.password || !formObject.name) {
-					showRegNotif("Please fill in all fields", "error");
-					return;
-				}
-
-				if (!formObject.passwordConfirm) {
-					showRegNotif("Please confirm your password", "error");
-					return;
-				}
-
-				if (formObject.password !== formObject.passwordConfirm) {
-					showRegNotif("Passwords do not match", "error");
-					return;
-				}
-
-				try {
-					const response = await registerUser({
-						name: formObject.name as string,
-						email: formObject.email as string,
-						password: formObject.password as string
-					});
-
-					if (response.status === 201) {
-						showRegNotif("Registration successful!", "success");
-						goto("/auth/login");
+					if (!formObject.email || !formObject.password || !formObject.name) {
+						showRegNotif("Please fill in all fields", "error");
+						return;
 					}
-				} catch (error) {
-					showRegNotif("Registration failed. Please try again.", "error");
-					console.error("Registration error:", error);
-				}
-			}}
-		>
-			<InputText
-				id="reg-email"
-				name="email"
-				label="Email"
-				placeholder="Email"
-				type="email"
-				required
-				disabled={pageState.email ? true : false}
-				value={registerData.email}
-				oninput={(e) => (registerData.email = e.currentTarget.value)}
-			/>
-			<InputText
-				id="reg-name"
-				name="name"
-				placeholder="Name"
-				type="text"
-				required
-				value={registerData.name}
-				oninput={(e) => (registerData.name = e.currentTarget.value)}
-			/>
-			<InputText
-				id="reg-password"
-				name="password"
-				placeholder="Password"
-				type="password"
-				style="margin-top: 1em;"
-				required
-				value={registerData.password}
-				oninput={(e) => (registerData.password = e.currentTarget.value)}
-			/>
-			<InputText
-				id="reg-password-confirm"
-				name="passwordConfirm"
-				placeholder="Confirm Password"
-				type="password"
-				required
-			/>
-			<Button style="margin-top: 1rem;">
-				<input id="reg-submit" type="submit" value="Create" />
-			</Button>
-		</form>
-		<p style="margin-top: 1em;">
-			Already have an account? <a style="font-weight: bold;" href="/auth/login"
-				>Login</a
+
+					if (!formObject.passwordConfirm) {
+						showRegNotif("Please confirm your password", "error");
+						return;
+					}
+
+					if (formObject.password !== formObject.passwordConfirm) {
+						showRegNotif("Passwords do not match", "error");
+						return;
+					}
+
+					try {
+						const response = await registerUser({
+							name: formObject.name as string,
+							email: formObject.email as string,
+							password: formObject.password as string
+						});
+
+						if (response.status === 201) {
+							goto("/auth/login").then(() =>
+								showRegNotif("Registration successful!", "success")
+							);
+						}
+					} catch (error) {
+						showRegNotif("Registration failed. Please try again.", "error");
+						console.error("Registration error:", error);
+					}
+				}}
 			>
-		</p>
-		{#if notifMessage}
-			<p style="font-size: 1.2em; font-weight: bold; margin-top: 1em;">
-				{notifMessage}
+				<InputText
+					id="reg-email"
+					name="email"
+					label="Email"
+					placeholder="Email"
+					type="email"
+					required
+					disabled={pageState.email ? true : false}
+					value={registerData.email}
+					oninput={(e) => (registerData.email = e.currentTarget.value)}
+				/>
+				<InputText
+					id="reg-name"
+					name="name"
+					placeholder="Name"
+					type="text"
+					required
+					value={registerData.name}
+					oninput={(e) => (registerData.name = e.currentTarget.value)}
+				/>
+				<InputText
+					id="reg-password"
+					name="password"
+					placeholder="Password"
+					type="password"
+					required
+					value={registerData.password}
+					oninput={(e) => (registerData.password = e.currentTarget.value)}
+				/>
+				<InputText
+					id="reg-password-confirm"
+					name="passwordConfirm"
+					placeholder="Confirm Password"
+					type="password"
+					required
+				/>
+				<Button style="margin-top: 1rem;">
+					<input id="reg-submit" type="submit" value="Create" />
+				</Button>
+			</form>
+			<p style="margin-top: 1em;">
+				Already have an account? <a
+					style="font-weight: bold;"
+					href="/auth/login">Login</a
+				>
 			</p>
+		{:else}
+			<span>
+				User registration is disabled for this server. Please contact a server
+				admin.
+			</span>
 		{/if}
 	</div>
 	<div id="reg-overlay" style="height: 100%; width: 100%;"></div>
@@ -169,7 +173,6 @@
 		align-items: center;
 		padding: 3rem 2rem;
 		width: 30%;
-		// max-height: 60%;
 		background-color: var(--imag-bg-color);
 		box-shadow: 0 -3px 0 var(--imag-primary) inset;
 		z-index: 2;

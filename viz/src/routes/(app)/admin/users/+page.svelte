@@ -1,11 +1,17 @@
 <script lang="ts">
-	import { adminDeleteUser, adminUpdateUser, adminCreateUser, type User } from "$lib/api";
+	import {
+		adminDeleteUser,
+		adminUpdateUser,
+		adminCreateUser,
+		type User
+	} from "$lib/api";
 	import Button from "$lib/components/Button.svelte";
 	import MaterialIcon from "$lib/components/MaterialIcon.svelte";
 	import ConfirmationModal from "$lib/components/modals/ConfirmationModal.svelte";
 	import ModalContainer from "$lib/components/modals/ModalContainer.svelte";
 	import InputSelect from "$lib/components/dom/InputSelect.svelte";
 	import InputText from "$lib/components/dom/InputText.svelte";
+	import SliderToggle from "$lib/components/SliderToggle.svelte";
 	import { modal, user as currentUserState } from "$lib/states/index.svelte";
 	import { toastState } from "$lib/toast-notifcations/notif-state.svelte";
 	import type { UserRole } from "$lib/types/users.js";
@@ -30,6 +36,8 @@
 
 	let showDeleteConfirm = $state(false);
 	let deletingUser = $state<User | null>(null);
+	let forceDeleteToggle = $state<"on" | "off">("off");
+	let forceDelete = $derived(forceDeleteToggle === "off" ? false : true);
 
 	let showCreateModal = $state(false);
 	let creatingUser = $state(false);
@@ -62,7 +70,10 @@
 
 	async function handleCreateUser() {
 		if (!createForm.name || !createForm.email || !createForm.password) {
-			toastState.addToast({ message: "Please fill in all required fields", type: "error" });
+			toastState.addToast({
+				message: "Please fill in all required fields",
+				type: "error"
+			});
 			return;
 		}
 
@@ -77,10 +88,16 @@
 
 			if (res.status === 201) {
 				users = [...users, res.data];
-				toastState.addToast({ message: "User created successfully", type: "success" });
+				toastState.addToast({
+					message: "User created successfully",
+					type: "success"
+				});
 				closeCreateModal();
 			} else {
-				toastState.addToast({ message: res.data.error || "Failed to create user", type: "error" });
+				toastState.addToast({
+					message: res.data.error || "Failed to create user",
+					type: "error"
+				});
 			}
 		} catch (e) {
 			toastState.addToast({ message: "Error creating user", type: "error" });
@@ -126,10 +143,16 @@
 				if (idx !== -1) {
 					users[idx] = res.data;
 				}
-				toastState.addToast({ message: "User updated successfully", type: "success" });
+				toastState.addToast({
+					message: "User updated successfully",
+					type: "success"
+				});
 				closeEditModal();
 			} else {
-				toastState.addToast({ message: res.data.error || "Failed to update user", type: "error" });
+				toastState.addToast({
+					message: res.data.error || "Failed to update user",
+					type: "error"
+				});
 			}
 		} catch (e) {
 			toastState.addToast({ message: "Error updating user", type: "error" });
@@ -138,11 +161,15 @@
 
 	function openDeleteConfirm(user: User) {
 		if (user.uid === currentUserState.data?.uid) {
-			toastState.addToast({ message: "You cannot delete your own account", type: "warning" });
+			toastState.addToast({
+				message: "You cannot delete your own account",
+				type: "warning"
+			});
 			return;
 		}
 
 		deletingUser = user;
+		forceDelete = false;
 		showDeleteConfirm = true;
 		modal.show = true;
 	}
@@ -159,13 +186,22 @@
 		}
 
 		try {
-			const res = await adminDeleteUser(deletingUser.uid);
+			const res = await adminDeleteUser(deletingUser.uid, {
+				force: forceDelete
+			});
+
 			if (res.status === 200) {
 				users = users.filter((u) => u.uid !== deletingUser?.uid);
-				toastState.addToast({ message: "User deleted successfully", type: "success" });
+				toastState.addToast({
+					message: "User deleted successfully",
+					type: "success"
+				});
 				closeDeleteConfirm();
 			} else {
-				toastState.addToast({ message: res.data.error || "Failed to delete user", type: "error" });
+				toastState.addToast({
+					message: res.data.error || "Failed to delete user",
+					type: "error"
+				});
 			}
 		} catch (e) {
 			toastState.addToast({ message: "Error deleting user", type: "error" });
@@ -177,7 +213,10 @@
 	<title>Users - Admin</title>
 </svelte:head>
 
-<AdminRouteShell heading="User Management" description="Manage user accounts, roles, and permissions.">
+<AdminRouteShell
+	heading="User Management"
+	description="Manage user accounts, roles, and permissions."
+>
 	{#snippet actions()}
 		<Button variant="mini" onclick={openCreateModal}>
 			<MaterialIcon iconName="add" />
@@ -202,9 +241,17 @@
 						<tr>
 							<td>
 								<div class="user-cell">
-									<div class="avatar-placeholder">{(user.username?.[0] || user.email?.[0] || "?").toUpperCase()}</div>
+									<div class="avatar-placeholder">
+										{(
+											user.username?.[0] ||
+											user.email?.[0] ||
+											"?"
+										).toUpperCase()}
+									</div>
 									<div class="user-info">
-										<span class="username">{user.username || "No Username"}</span>
+										<span class="username"
+											>{user.username || "No Username"}</span
+										>
 										<span class="uid" title={user.uid}>{user.uid}</span>
 									</div>
 								</div>
@@ -216,10 +263,18 @@
 							<td>{formatDate(user.created_at)}</td>
 							<td>
 								<div class="actions-cell">
-									<button class="action-btn edit" onclick={() => openEditModal(user)} title="Edit User">
-										<MaterialIcon iconName="edit" />
+									<button
+										class="action-btn edit"
+										onclick={() => openEditModal(user)}
+										title="Edit User"
+									>
+										<MaterialIcon iconName="edit" fill={true} />
 									</button>
-									<button class="action-btn delete" onclick={() => openDeleteConfirm(user)} title="Delete User">
+									<button
+										class="action-btn delete"
+										onclick={() => openDeleteConfirm(user)}
+										title="Delete User"
+									>
 										<MaterialIcon iconName="delete" />
 									</button>
 								</div>
@@ -249,7 +304,9 @@
 				<option value="guest">Guest</option>
 			</InputSelect>
 			<div class="modal-actions">
-				<Button hoverColor="var(--imag-80)" onclick={closeEditModal}>Cancel</Button>
+				<Button hoverColor="var(--imag-80)" onclick={closeEditModal}
+					>Cancel</Button
+				>
 				<Button onclick={handleUpdateUser}>Save Changes</Button>
 			</div>
 		</div>
@@ -262,7 +319,11 @@
 			<h2>Create User</h2>
 			<InputText label="Username" bind:value={createForm.name} />
 			<InputText label="Email" type="email" bind:value={createForm.email} />
-			<InputText label="Password" type="password" bind:value={createForm.password} />
+			<InputText
+				label="Password"
+				type="password"
+				bind:value={createForm.password}
+			/>
 			<InputSelect label="Role" bind:value={createForm.role}>
 				<option value="user">User</option>
 				<option value="admin">Admin</option>
@@ -270,7 +331,9 @@
 				<option value="guest">Guest</option>
 			</InputSelect>
 			<div class="modal-actions">
-				<Button hoverColor="var(--imag-80)" onclick={closeCreateModal}>Cancel</Button>
+				<Button hoverColor="var(--imag-80)" onclick={closeCreateModal}
+					>Cancel</Button
+				>
 				<Button onclick={handleCreateUser} disabled={creatingUser}>
 					{creatingUser ? "Creating..." : "Create User"}
 				</Button>
@@ -280,12 +343,42 @@
 {/if}
 
 {#if showDeleteConfirm && modal.show}
-	<ConfirmationModal title="Delete User" confirmText="Delete User" onConfirm={handleDeleteUser} onCancel={closeDeleteConfirm}>
-		<p>
-			Are you sure you want to delete user <strong>{deletingUser?.username}</strong>?
-			<br />
-			This will permanently remove their account and all associated data.
-		</p>
+	<ConfirmationModal
+		title="Delete User"
+		confirmText={forceDelete ? "Force Delete User" : "Delete User"}
+		onConfirm={handleDeleteUser}
+		onCancel={closeDeleteConfirm}
+	>
+		<span>
+			Are you sure you want to delete user <strong
+				>{deletingUser?.username}</strong
+			>?
+		</span>
+
+		<div class="force-delete-option">
+			<SliderToggle label="Force Delete" bind:value={forceDeleteToggle} />
+		</div>
+
+		<div class="message-container">
+			{#if forceDelete}
+				<p class="warning-text">
+					<MaterialIcon iconName="warning" />
+					<span>
+						<strong>Warning:</strong> This will permanently delete the user's account,
+						all their sessions, settings, and onboarding status. This action cannot
+						be undone.
+					</span>
+				</p>
+			{:else}
+				<p class="info-text">
+					<MaterialIcon iconName="info" />
+					<span>
+						This will perform a soft delete. The user will be marked as deleted
+						but data may remain in the database.
+					</span>
+				</p>
+			{/if}
+		</div>
 	</ConfirmationModal>
 {/if}
 
@@ -415,8 +508,7 @@
 		}
 
 		&.delete:hover {
-			background: #fee2e2;
-			color: #ef4444;
+			background-color: #ef4444;
 		}
 	}
 
@@ -426,6 +518,7 @@
 		flex-direction: column;
 		gap: 1.5rem;
 		color: var(--imag-text-color);
+		width: 80%;
 
 		h2 {
 			margin: 0;
@@ -444,5 +537,40 @@
 		justify-content: flex-end;
 		gap: 1rem;
 		margin-top: 1rem;
+	}
+
+	.force-delete-option {
+		margin: 1rem 0;
+		display: flex;
+		align-items: center;
+	}
+
+	.message-container {
+		min-height: 5.5rem; /* Reserve vertical space to prevent shifts */
+		display: flex;
+		align-items: flex-start;
+	}
+
+	.warning-text,
+	.info-text {
+		padding: 0.75rem;
+		border-radius: 0.5rem;
+		display: flex;
+		align-items: flex-start;
+		gap: 0.5rem;
+		font-size: 0.9rem;
+		margin: 0;
+		line-height: 1.4;
+		width: 100%;
+	}
+
+	.warning-text {
+		color: #ef4444;
+		background: rgba(239, 68, 68, 0.1);
+	}
+
+	.info-text {
+		color: var(--imag-text-color);
+		background: var(--imag-90);
 	}
 </style>

@@ -7,6 +7,7 @@
 			__RUNTIME_CONFIG__: {
 				[key: string]: string;
 			};
+			__IMAGINE_CONFIG__?: ImagineConfig;
 		}
 	}
 </script>
@@ -14,7 +15,7 @@
 <script>
 	import { dev } from "$app/environment";
 	import { debugState, themeState } from "$lib/states/index.svelte";
-	import type { VizConfig } from "$lib/types/config.types";
+	import type { VizConfig, ImagineConfig } from "$lib/types/config.types";
 	import "@fontsource-variable/manrope";
 	import "$lib/styles/scss/main.scss";
 	import "$lib/stores/appReady";

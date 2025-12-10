@@ -2,7 +2,7 @@ import type { ImageObjectData } from "$lib/entities/image";
 import type CollectionData from "$lib/entities/collection";
 import type { AssetSort } from "$lib/types/asset";
 import type { UploadImage } from "$lib/upload/asset.svelte";
-import { type User } from "$lib/api";
+import { type User, type SystemStatusResponse } from "$lib/api";
 import { VizLocalStorage, VizCookieStorage } from "$lib/utils/misc";
 
 // Types
@@ -14,6 +14,18 @@ interface UserState {
     isAdmin: boolean;
     connectionError?: boolean;
 }
+
+export let system = $state<{
+    data: SystemStatusResponse | null;
+    loading: boolean;
+    fetched: boolean;
+    error: string | null;
+}>({
+    data: null,
+    loading: false,
+    fetched: false,
+    error: null
+});
 
 class LoginState {
     storage: VizCookieStorage<string>;

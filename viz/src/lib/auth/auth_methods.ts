@@ -47,7 +47,7 @@ export function logoutUser() {
     clearUser();
     logout();
     cookieMethods.delete("imag-state");
-    goto('/login');
+    goto('/auth/login');
 }
 
 

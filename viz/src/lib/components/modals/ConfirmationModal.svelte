@@ -13,7 +13,15 @@
 		onCancel?: () => void;
 	}
 
-	let { title, children, actions, confirmText = "Confirm", cancelText = "Cancel", onConfirm, onCancel }: Props = $props();
+	let {
+		title,
+		children,
+		actions,
+		confirmText = "Confirm",
+		cancelText = "Cancel",
+		onConfirm,
+		onCancel
+	}: Props = $props();
 </script>
 
 <ModalContainer>
@@ -31,9 +39,9 @@
 			{:else}
 				<Button onclick={onCancel}>{cancelText}</Button>
 				<Button
+					class="onconfirm-btn"
+					style="background-color: var(--imag-primary); color: var(--imag-10-dark);"
 					onclick={onConfirm}
-					style="background-color: var(--imag-primary); color: var(--imag-10);"
-					hoverColor="var(--imag-100)"
 				>
 					{confirmText}
 				</Button>
@@ -46,7 +54,6 @@
 	.confirmation-modal {
 		display: flex;
 		flex-direction: column;
-		gap: 1.5rem;
 		width: 100%;
 		color: var(--imag-text-color);
 
@@ -67,5 +74,9 @@
 			justify-content: flex-end;
 			margin-top: 0.5rem;
 		}
+	}
+
+	:global(.onconfirm-btn:hover) {
+		background-color: var(--imag-secondary);
 	}
 </style>
