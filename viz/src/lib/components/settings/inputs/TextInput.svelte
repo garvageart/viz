@@ -8,7 +8,14 @@
 		onchange?: (value: string) => void;
 	}
 
-	let { label, value = $bindable(""), type = "text", description = "", disabled = false, onchange }: Props = $props();
+	let {
+		label,
+		value = $bindable(""),
+		type = "text",
+		description = "",
+		disabled = false,
+		onchange
+	}: Props = $props();
 
 	function handleInput(event: Event) {
 		const target = event.target as HTMLInputElement;
@@ -26,7 +33,14 @@
 			<span class="description">{description}</span>
 		{/if}
 	</div>
-	<input id="input-{label}" {type} bind:value oninput={handleInput} {disabled} class="text-input" />
+	<input
+		id="input-{label}"
+		{type}
+		bind:value
+		oninput={handleInput}
+		{disabled}
+		class="text-input"
+	/>
 </div>
 
 <style lang="scss">
@@ -37,7 +51,7 @@
 		padding: 1rem 0;
 		border-bottom: 1px solid var(--imag-80);
 		width: 100%;
-		font-family: var(--imag-font-family);
+		font-family: var(--imag-display-font);
 
 		&.disabled {
 			opacity: 0.5;
@@ -67,7 +81,7 @@
 		color: var(--imag-text-color);
 		border: 1px solid var(--imag-80);
 		outline: none;
-		font-family: var(--imag-font-family);
+		font-family: var(--imag-display-font);
 		width: 200px;
 
 		&:focus {

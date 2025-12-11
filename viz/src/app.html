@@ -91,19 +91,22 @@
 				try {
 					const storedTheme = localStorage.getItem('viz:theme');
 					const osTheme = window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light';
-					
+
 					let theme = osTheme;
-					
+
 					if (storedTheme === 'light' || storedTheme === 'dark') {
 						theme = storedTheme;
 					}
-					
+
 					document.documentElement.setAttribute('data-theme', theme);
 				} catch (e) {
 					document.documentElement.setAttribute('data-theme', 'dark');
 				}
 			})();
 		</script>
+		<link rel="preload" as="font" type="font/woff2" href="%viz.css.display_font%" crossorigin="anonymous">
+		<link rel="preload" as="font" type="font/woff2" href="%viz.css.mono_font%" crossorigin="anonymous">
+
 		%viz.css.theme_style%
 		%sveltekit.head%
 	</head>

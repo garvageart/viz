@@ -25,6 +25,9 @@ html {
     font-size: 16px;
     margin: 0;
     padding: 0;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+    text-rendering: optimizeLegibility;
 }
 
 /* Fix annoying HTML defaults */
@@ -50,6 +53,7 @@ code {
 
 button {
     font-family: var(--imag-display-font);
+    font-weight: 400;
     background-color: transparent;
     color: var(--imag-text-color);
     border: none;
@@ -170,4 +174,3 @@ input[type="search"]::-webkit-search-results-button,
 input[type="search"]::-webkit-search-results-decoration {
     display: none;
 }
-

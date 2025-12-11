@@ -1,18 +1,26 @@
 import type { Handle } from '@sveltejs/kit';
 import { VizCookieStorage } from '$lib/utils/misc';
+import manrope from '@fontsource-variable/manrope/files/manrope-latin-wght-normal.woff2?url';
+import robotoMono from '@fontsource-variable/roboto-mono/files/roboto-mono-latin-wght-normal.woff2?url';
+
+const criticalCssCache = new Map<string, string>();
+
+const THEME_STYLE_PLACEHOLDER = '%viz.css.theme_style%';
+const DISPLAY_FONT_PLACEHOLDER = '%viz.css.display_font%';
+const MONO_FONT_PLACEHOLDER = '%viz.css.mono_font%';
+const THEME_ATTR_PLACEHOLDER = '%THEME_ATTR%';
+
+const DEFAULT_THEME = 'viz-black';
+
+function handleFonts(html: string) {
+    return html.replace(DISPLAY_FONT_PLACEHOLDER, manrope).replace(MONO_FONT_PLACEHOLDER, robotoMono);
+}
 
 // uses vite to import the compiled CSS
 const themeImporters = import.meta.glob('$lib/styles/scss/viz-*.scss', {
     query: '?inline',
     import: 'default'
 });
-
-const criticalCssCache = new Map<string, string>();
-
-const THEME_STYLE_PLACEHOLDER = '%viz.css.theme_style%';
-const THEME_ATTR_PLACEHOLDER = '%THEME_ATTR%';
-
-const DEFAULT_THEME = 'viz-black';
 
 /**
  * SvelteKit server hook to dynamically inject theme-specific CSS.
@@ -68,7 +76,7 @@ export const handle: Handle = async ({ event, resolve }) => {
 
     return resolve(event, {
         transformPageChunk: ({ html }) =>
-            html
+            handleFonts(html)
                 .replace(THEME_STYLE_PLACEHOLDER, criticalCss)
                 .replace(THEME_ATTR_PLACEHOLDER, themeAttribute)
     });

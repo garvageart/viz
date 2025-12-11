@@ -4,6 +4,7 @@ import type { AssetSort } from "$lib/types/asset";
 import type { UploadImage } from "$lib/upload/asset.svelte";
 import { type User, type SystemStatusResponse } from "$lib/api";
 import { VizLocalStorage, VizCookieStorage } from "$lib/utils/misc";
+import { MediaQuery } from "svelte/reactivity";
 
 // Types
 interface UserState {
@@ -143,11 +144,8 @@ class ThemeState {
 
     constructor() {
         if (typeof window !== 'undefined') {
-            const media = window.matchMedia('(prefers-color-scheme: dark)');
-            this.systemPref = media.matches ? 'dark' : 'light';
-            media.addEventListener('change', (e) => {
-                this.systemPref = e.matches ? 'dark' : 'light';
-            });
+            const media = new MediaQuery('prefers-color-scheme: dark');
+            this.systemPref = media.current ? 'dark' : 'light';
         }
     }
 

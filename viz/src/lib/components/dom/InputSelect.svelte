@@ -83,7 +83,7 @@
 		outline: none;
 		border: none;
 		box-shadow: 0 -1px 0 var(--imag-60) inset;
-		font-family: var(--imag-font-family);
+		font-family: var(--imag-display-font);
 		font-size: 1rem;
 		padding: 0.5rem 1rem;
 		cursor: pointer;

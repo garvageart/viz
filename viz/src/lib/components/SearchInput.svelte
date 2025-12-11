@@ -39,7 +39,10 @@
 		onkeydown={handleSearch}
 		disabled={loading}
 	>
-		<MaterialIcon iconName="search" style="margin: 0 0.2em; color: var(--imag-20);" />
+		<MaterialIcon
+			iconName="search"
+			style="margin: 0 0.2em; color: var(--imag-20);"
+		/>
 	</button>
 	<input
 		id={inputId}
@@ -127,11 +130,11 @@
 		border-top-left-radius: 0%;
 		border-bottom-left-radius: 0%;
 		padding: 0 0.5em;
-		font-family: var(--imag-font-family);
+		font-family: var(--imag-display-font);
 
 		&::placeholder {
 			color: var(--imag-40);
-			font-family: var(--imag-font-family);
+			font-family: var(--imag-display-font);
 		}
 
 		&:focus::placeholder {

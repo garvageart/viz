@@ -50,6 +50,7 @@
 	},
 	"dependencies": {
 		"@fontsource-variable/manrope": "^5.2.8",
+		"@fontsource-variable/roboto-mono": "^5.2.8",
 		"@oazapfts/runtime": "^1.0.4",
 		"esm-env-robust": "^0.0.3",
 		"hotkeys-js": "^3.13.15",

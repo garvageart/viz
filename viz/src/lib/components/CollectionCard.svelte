@@ -1,12 +1,18 @@
 <script lang="ts" module>
-	export function openCollection(collection: Collection, currentContent: Content) {
+	export function openCollection(
+		collection: Collection,
+		currentContent: Content
+	) {
 		const collectionPath = `/collections/${collection.uid}`;
 		if (page.url.pathname !== "/") {
 			goto(collectionPath, { state: { from: page.url.pathname } });
 			return;
 		}
 
-		const currentParentIdx = findPanelIndex(layoutState.tree, getSubPanelParent(layoutState.tree, currentContent.paneKeyId)!);
+		const currentParentIdx = findPanelIndex(
+			layoutState.tree,
+			getSubPanelParent(layoutState.tree, currentContent.paneKeyId)!
+		);
 		if (currentParentIdx === -1) {
 			console.warn("Can't find panel in layout, navigating to collection page");
 			goto(collectionPath, { state: { from: page.url.pathname } });
@@ -14,10 +20,14 @@
 		}
 
 		const currentParent = layoutState.tree[currentParentIdx];
-		const childIndex = currentParent.childs.content.findIndex((subPanel) => subPanel.paneKeyId === currentContent.paneKeyId);
+		const childIndex = currentParent.childs.content.findIndex(
+			(subPanel) => subPanel.paneKeyId === currentContent.paneKeyId
+		);
 
 		if (childIndex === -1) {
-			console.warn(`Can't find child inside panel ${currentParent.paneKeyId}, navigating to collection page`);
+			console.warn(
+				`Can't find child inside panel ${currentParent.paneKeyId}, navigating to collection page`
+			);
 			goto(collectionPath, { state: { from: page.url.pathname } });
 			return;
 		}
@@ -94,15 +104,24 @@
 <div {...props} class="coll-card" data-asset-id={collection.uid}>
 	<div class="image-container">
 		{#if collection.thumbnail}
-			<img src={getFullImagePath(collection.thumbnail.image_paths.thumbnail)} alt={collection.name} class="collection-image" />
+			<img
+				src={getFullImagePath(collection.thumbnail.image_paths.thumbnail)}
+				alt={collection.name}
+				class="collection-image"
+			/>
 		{:else}
 			<div class="coll-no_thumbnail"></div>
 		{/if}
 	</div>
 	<div class="metadata">
 		<span class="coll-name" title={collection.name}>{collection.name}</span>
-		<span class="coll-created_at">{DateTime.fromISO(collection.created_at).toFormat("dd.MM.yyyy")}</span>
-		<span class="coll-image_count">{collection.image_count} {collection.image_count === 1 ? "image" : "images"}</span>
+		<span class="coll-created_at"
+			>{DateTime.fromISO(collection.created_at).toFormat("dd.MM.yyyy")}</span
+		>
+		<span class="coll-image_count"
+			>{collection.image_count}
+			{collection.image_count === 1 ? "image" : "images"}</span
+		>
 	</div>
 </div>
 
@@ -110,7 +129,7 @@
 	.coll-name {
 		font-size: 1em;
 		font-weight: bold;
-		font-family: var(--imag-font-family);
+		font-family: var(--imag-display-font);
 		color: var(--imag-text-color);
 		border: none;
 		outline: none;

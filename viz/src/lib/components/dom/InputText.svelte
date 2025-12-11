@@ -85,14 +85,14 @@
 		outline: none;
 		border: none;
 		box-shadow: 0 -1px 0 var(--imag-60) inset;
-		font-family: var(--imag-font-family);
+		font-family: var(--imag-display-font);
 		font-size: 1rem;
 		padding: 0.5rem 1rem;
 		margin-bottom: 0; /* Changed from 1rem */
 
 		&::placeholder {
 			color: var(--imag-40);
-			font-family: var(--imag-font-family);
+			font-family: var(--imag-display-font);
 		}
 
 		&:focus::placeholder {

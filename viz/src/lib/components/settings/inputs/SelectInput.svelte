@@ -8,7 +8,14 @@
 		onchange?: (value: string) => void;
 	}
 
-	let { label, value = $bindable(""), options = [], description = "", disabled = false, onchange }: Props = $props();
+	let {
+		label,
+		value = $bindable(""),
+		options = [],
+		description = "",
+		disabled = false,
+		onchange
+	}: Props = $props();
 
 	let selectedValue = $derived.by(() => {
 		if (!value) return "";
@@ -35,7 +42,13 @@
 			<span class="description">{description}</span>
 		{/if}
 	</div>
-	<select id="select-{label}" value={selectedValue} onchange={handleChange} {disabled} class="select-input">
+	<select
+		id="select-{label}"
+		value={selectedValue}
+		onchange={handleChange}
+		{disabled}
+		class="select-input"
+	>
 		{#each options as option}
 			<option value={option}>{option}</option>
 		{/each}
@@ -85,7 +98,7 @@
 		background-repeat: no-repeat;
 		background-position: right 0.5rem center;
 		background-size: 1rem;
-		font-family: var(--imag-font-family);
+		font-family: var(--imag-display-font);
 
 		&:focus {
 			border-color: var(--imag-70);

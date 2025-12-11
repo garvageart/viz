@@ -13,7 +13,12 @@
 		modalAction: EventHandler<SubmitEvent, HTMLFormElement> | null | undefined;
 	}
 
-	let { heading, data = $bindable(), buttonText, modalAction }: Props = $props();
+	let {
+		heading,
+		data = $bindable(),
+		buttonText,
+		modalAction
+	}: Props = $props();
 
 	let allData = $state(data ?? { name: "", description: "", private: false });
 
@@ -47,7 +52,12 @@
 				placeholder="Description (optional)"
 				bind:value={allData.description}
 			/>
-			<SliderToggle id="collection-private" style="margin-bottom: 1rem;" label="Private" bind:value={isPrivate} />
+			<SliderToggle
+				id="collection-private"
+				style="margin-bottom: 1rem;"
+				label="Private"
+				bind:value={isPrivate}
+			/>
 			<Button style="margin-top: 1rem;">
 				<input id="collection-submit" type="submit" value={buttonText} />
 			</Button>
@@ -88,14 +98,14 @@
 		border: none;
 		box-shadow: 0 -1.5px 0 var(--imag-60) inset;
 		font-size: 2rem;
-		font-family: var(--imag-font-family);
+		font-family: var(--imag-display-font);
 		font-weight: bold;
 		padding: 0.5rem 1rem;
 		margin-bottom: 1em;
 
 		&::placeholder {
 			color: var(--imag-40);
-			font-family: var(--imag-font-family);
+			font-family: var(--imag-display-font);
 		}
 
 		&:focus::placeholder {

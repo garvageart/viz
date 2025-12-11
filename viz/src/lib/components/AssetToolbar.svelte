@@ -6,7 +6,10 @@
 		children,
 		stickyToolbar = true,
 		...props
-	}: { children: Snippet; stickyToolbar?: boolean } & SvelteHTMLElements["div"] = $props();
+	}: {
+		children: Snippet;
+		stickyToolbar?: boolean;
+	} & SvelteHTMLElements["div"] = $props();
 </script>
 
 <div
