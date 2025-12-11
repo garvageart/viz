@@ -474,7 +474,7 @@
 		flex-shrink: 0; /* Prevent actions from shrinking */
 		background-color: var(--imag-100);
 		box-shadow: -5px 0 5px -5px rgba(0, 0, 0, 0.2); /* Shadow to indicate separation */
-		z-index: 5; /* Ensure actions are above tabs if there's overlap */
+		z-index: 2; /* Ensure actions are above tabs if there's overlap */
 	}
 
 	.viz-lock-indicator,

@@ -16,7 +16,8 @@
 	import { dev } from "$app/environment";
 	import { debugState, themeState } from "$lib/states/index.svelte";
 	import type { VizConfig, ImagineConfig } from "$lib/types/config.types";
-	import "@fontsource-variable/manrope";
+	import "@fontsource-variable/manrope/index.css";
+	import "@fontsource-variable/roboto-mono/index.css";
 	import "$lib/styles/scss/main.scss";
 	import "$lib/stores/appReady";
 

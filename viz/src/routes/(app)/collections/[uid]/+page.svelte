@@ -7,7 +7,9 @@
 		}
 		// eventually this should also look through keywords/tags
 		// and labels idk. fuzzy search???
-		return images.filter((i) => i.name.toLowerCase().includes(searchValue.toLowerCase()));
+		return images.filter((i) =>
+			i.name.toLowerCase().includes(searchValue.toLowerCase())
+		);
 	}
 </script>
 
@@ -20,7 +22,11 @@
 	import SearchInput from "$lib/components/SearchInput.svelte";
 	import { debugMode, modal, sort } from "$lib/states/index.svelte";
 	import type { AssetGridArray } from "$lib/types/asset.js";
-	import { SUPPORTED_IMAGE_TYPES, SUPPORTED_RAW_FILES, type SupportedImageTypes } from "$lib/types/images";
+	import {
+		SUPPORTED_IMAGE_TYPES,
+		SUPPORTED_RAW_FILES,
+		type SupportedImageTypes
+	} from "$lib/types/images";
 	import hotkeys from "hotkeys-js";
 	import { DateTime } from "luxon";
 	import { SvelteSet } from "svelte/reactivity";
@@ -43,8 +49,16 @@
 	import CollectionModal from "$lib/components/CollectionModal.svelte";
 	import InputText from "$lib/components/dom/InputText.svelte";
 	import { layoutState } from "$lib/third-party/svelte-splitpanes/state.svelte";
-	import Dropdown, { type DropdownOption } from "$lib/components/Dropdown.svelte";
-	import { signDownload, downloadImagesZipBlob, defaults, API_BASE_URL, createCollection } from "$lib/api";
+	import Dropdown, {
+		type DropdownOption
+	} from "$lib/components/Dropdown.svelte";
+	import {
+		signDownload,
+		downloadImagesZipBlob,
+		defaults,
+		API_BASE_URL,
+		createCollection
+	} from "$lib/api";
 	import ContextMenu from "$lib/context-menu/ContextMenu.svelte";
 	import ImageLightbox from "$lib/components/ImageLightbox.svelte";
 	import { copyToClipboard } from "$lib/utils/misc.js";
@@ -52,7 +66,9 @@
 	// Context menu state
 	let ctxShowMenu = $state(false);
 	let ctxItems = $state([] as any[]);
-	let ctxAnchor: { x: number; y: number } | HTMLElement | null = $state(null as any);
+	let ctxAnchor: { x: number; y: number } | HTMLElement | null = $state(
+		null as any
+	);
 
 	let { data } = $props();
 	// Keyboard events
@@ -70,7 +86,9 @@
 		private: data.private as boolean | undefined
 	});
 
-	let loadedImages = $derived(loadedData.images?.items?.map((img) => img.image) ?? []);
+	let loadedImages = $derived(
+		loadedData.images?.items?.map((img) => img.image) ?? []
+	);
 
 	// Sync tab name with collection name
 	$effect(() => {
@@ -87,7 +105,12 @@
 			for (const view of panel.views) {
 				if (view.path === currentPath) {
 					if (debugMode) {
-						console.log("Found matching view in panel.views, updating from:", view.name, "to:", newName);
+						console.log(
+							"Found matching view in panel.views, updating from:",
+							view.name,
+							"to:",
+							newName
+						);
 					}
 
 					view.name = newName;
@@ -100,7 +123,12 @@
 					for (const view of content.views) {
 						if (view.path === currentPath) {
 							if (debugMode) {
-								console.log("Found matching view in content.views, updating from:", view.name, "to:", newName);
+								console.log(
+									"Found matching view in content.views, updating from:",
+									view.name,
+									"to:",
+									newName
+								);
 							}
 
 							view.name = newName;
@@ -128,7 +156,9 @@
 
 	// Server tells us if there are more pages via the next field
 	// When searching, we're filtering client-side so no more server pages needed
-	let shouldUpdate = $derived(!!loadedData.images?.next && searchValue.trim() === "");
+	let shouldUpdate = $derived(
+		!!loadedData.images?.next && searchValue.trim() === ""
+	);
 
 	// Selection
 	let selectedAssets = $state<SvelteSet<Image>>(new SvelteSet());
@@ -143,7 +173,10 @@
 	let displayData = $derived(
 		searchValue.trim()
 			? sortCollectionImages(searchData, sort)
-			: sortCollectionImages(loadedData.images?.items?.map((img) => img.image) ?? [], sort)
+			: sortCollectionImages(
+					loadedData.images?.items?.map((img) => img.image) ?? [],
+					sort
+				)
 	);
 
 	// Grid props
@@ -160,7 +193,10 @@
 			lightboxImage = asset;
 		},
 		// Context menu event from PhotoAssetGrid: { asset, anchor }
-		onassetcontext: (detail: { asset: Image; anchor: { x: number; y: number } | HTMLElement }) => {
+		onassetcontext: (detail: {
+			asset: Image;
+			anchor: { x: number; y: number } | HTMLElement;
+		}) => {
 			const { asset, anchor } = detail;
 			// Make sure this asset is the only selected one for context actions
 			if (!selectedAssets.has(asset) || selectedAssets.size <= 1) {
@@ -194,7 +230,10 @@
 							a.remove();
 						} catch (err) {
 							console.error("Context menu download error", err);
-							toastState.addToast({ type: "error", message: `Download failed: ${err}` });
+							toastState.addToast({
+								type: "error",
+								message: `Download failed: ${err}`
+							});
 						}
 					}
 				},
@@ -203,19 +242,35 @@
 					label: "Remove from collection",
 					icon: "remove_circle",
 					action: async () => {
-						if (!confirm(`Remove "${asset.name || asset.uid}" from collection "${loadedData.name}"?`)) return;
+						if (
+							!confirm(
+								`Remove "${asset.name || asset.uid}" from collection "${loadedData.name}"?`
+							)
+						)
+							return;
 						try {
-							const r = await deleteCollectionImages(loadedData.uid, { uids: [asset.uid] });
+							const r = await deleteCollectionImages(loadedData.uid, {
+								uids: [asset.uid]
+							});
 							if (r.status === 200) {
-								toastState.addToast({ type: "success", message: `Removed from collection` });
+								toastState.addToast({
+									type: "success",
+									message: `Removed from collection`
+								});
 								selectedAssets.clear();
 								await invalidateAll();
 							} else {
-								toastState.addToast({ type: "error", message: r.data?.error ?? "Failed to remove" });
+								toastState.addToast({
+									type: "error",
+									message: r.data?.error ?? "Failed to remove"
+								});
 							}
 						} catch (err) {
 							console.error("remove from collection error", err);
-							toastState.addToast({ type: "error", message: `Failed to remove: ${err}` });
+							toastState.addToast({
+								type: "error",
+								message: `Failed to remove: ${err}`
+							});
 						}
 					}
 				},
@@ -228,13 +283,22 @@
 							const url = getFullImagePath(asset.image_paths?.original) ?? "";
 							if (url) {
 								copyToClipboard(url);
-								toastState.addToast({ type: "success", message: "Link copied to clipboard" });
+								toastState.addToast({
+									type: "success",
+									message: "Link copied to clipboard"
+								});
 							} else {
-								toastState.addToast({ type: "error", message: "No URL available" });
+								toastState.addToast({
+									type: "error",
+									message: "No URL available"
+								});
 							}
 						} catch (err) {
 							console.error("copy link error", err);
-							toastState.addToast({ type: "error", message: "Failed to copy link" });
+							toastState.addToast({
+								type: "error",
+								message: "Failed to copy link"
+							});
 						}
 					}
 				},
@@ -244,8 +308,10 @@
 					icon: "share",
 					action: () => {
 						// Placeholder - open share dialog or implement later
-						console.log("Share not implemented");
-						toastState.addToast({ type: "info", message: "Share not implemented" });
+						toastState.addToast({
+							type: "info",
+							message: "Share not implemented"
+						});
 					}
 				}
 			];
@@ -257,22 +323,35 @@
 
 	async function handleCollectionUpload() {
 		// allowed image types will come from the config but for now just hardcode
-		const manager = new UploadManager([...SUPPORTED_RAW_FILES, ...SUPPORTED_IMAGE_TYPES] as SupportedImageTypes[]);
+		const manager = new UploadManager([
+			...SUPPORTED_RAW_FILES,
+			...SUPPORTED_IMAGE_TYPES
+		] as SupportedImageTypes[]);
 
-		// Use new API: open picker and upload
-		const uploadedImages = await manager.openPickerAndUpload();
+		const files = await manager.openPicker();
 
-		if (uploadedImages.length === 0) {
+		if (files.length === 0) {
 			return;
 		}
 
+		const uploadedTasks = manager.addFiles(files);
+		manager.start();
+
+		const uploadedSuccesses = await Promise.all(
+			uploadedTasks.map((task) => task.imageData)
+		);
+
+		const uids = uploadedSuccesses
+			.map((success) => success?.uid)
+			.filter((v) => v !== undefined);
+
 		const response = await addCollectionImages(loadedData.uid, {
-			uids: uploadedImages.map((img) => img.uid)
+			uids: uids
 		});
 
 		if (response.data.added) {
 			toastState.addToast({
-				message: `Added ${uploadedImages.length} photo(s) to collection`,
+				message: `Added ${uids.length} photo(s) to collection`,
 				type: "success",
 				timeout: 3000
 			});
@@ -334,12 +413,21 @@
 				});
 				goto("/collections");
 			} else {
-				const errMsg = (res as any).data?.error ?? (res as any).data?.message ?? "Unknown error";
-				toastState.addToast({ type: "error", message: `Failed to delete collection: ${errMsg}` });
+				const errMsg =
+					(res as any).data?.error ??
+					(res as any).data?.message ??
+					"Unknown error";
+				toastState.addToast({
+					type: "error",
+					message: `Failed to delete collection: ${errMsg}`
+				});
 			}
 		} catch (err) {
 			console.error("deleteCollection error", err);
-			toastState.addToast({ type: "error", message: `Failed to delete collection: ${err}` });
+			toastState.addToast({
+				type: "error",
+				message: `Failed to delete collection: ${err}`
+			});
 		}
 	}
 
@@ -369,12 +457,17 @@
 			}
 
 			const token = signRes.data.uid;
-			const collectionNameClean = loadedData.name.replace(/[^a-z0-9]/gi, "_").toLowerCase();
+			const collectionNameClean = loadedData.name
+				.replace(/[^a-z0-9]/gi, "_")
+				.toLowerCase();
 
 			const filename = `${collectionNameClean}-${DateTime.now().toFormat("ddMMyyyy_HHmmss")}.zip`;
 
 			// Use custom downloadImagesBlob function (properly handles binary responses)
-			const res = await downloadImagesZipBlob(token, { uids, file_name: filename });
+			const res = await downloadImagesZipBlob(token, {
+				uids,
+				file_name: filename
+			});
 
 			if (res.status !== 200) {
 				const errMsg = res.data?.error ?? "Failed to download images";
@@ -392,10 +485,17 @@
 			a.remove();
 			URL.revokeObjectURL(url);
 
-			toastState.addToast({ type: "success", message: `Exporting ${loadedData.name}`, timeout: 3000 });
+			toastState.addToast({
+				type: "success",
+				message: `Exporting ${loadedData.name}`,
+				timeout: 3000
+			});
 		} catch (err) {
 			console.error("Export collection error", err);
-			toastState.addToast({ type: "error", message: `Failed to export collection: ${err}` });
+			toastState.addToast({
+				type: "error",
+				message: `Failed to export collection: ${err}`
+			});
 		}
 	}
 
@@ -407,7 +507,9 @@
 			return;
 		}
 
-		const ok = confirm(`Remove ${items.length} selected image(s) from collection "${loadedData.name}"?`);
+		const ok = confirm(
+			`Remove ${items.length} selected image(s) from collection "${loadedData.name}"?`
+		);
 		if (!ok) {
 			return;
 		}
@@ -416,7 +518,11 @@
 		try {
 			const res = await deleteCollectionImages(loadedData.uid, { uids });
 			if (res.status === 200 && (res.data?.deleted ?? true)) {
-				toastState.addToast({ type: "success", message: `Removed ${uids.length} image(s) from collection`, timeout: 2500 });
+				toastState.addToast({
+					type: "success",
+					message: `Removed ${uids.length} image(s) from collection`,
+					timeout: 2500
+				});
 				// Clear selection and refresh data
 				selectedAssets.clear();
 				await invalidateAll();
@@ -426,7 +532,10 @@
 			}
 		} catch (err) {
 			console.error("deleteCollectionImages error", err);
-			toastState.addToast({ type: "error", message: `Failed to remove images: ${err}` });
+			toastState.addToast({
+				type: "error",
+				message: `Failed to remove images: ${err}`
+			});
 		}
 	}
 
@@ -443,9 +552,14 @@
 				const uidsToCopy = loadedImages.map((img) => img.uid);
 
 				if (uidsToCopy.length > 0) {
-					const addRes = await addCollectionImages(newCollectionUid, { uids: uidsToCopy });
+					const addRes = await addCollectionImages(newCollectionUid, {
+						uids: uidsToCopy
+					});
 					if (addRes.status === 200) {
-						toastState.addToast({ message: "Collection duplicated with images", type: "success" });
+						toastState.addToast({
+							message: "Collection duplicated with images",
+							type: "success"
+						});
 						await invalidateAll();
 						goto(`/collections/${newCollectionUid}`);
 					} else {
@@ -456,18 +570,25 @@
 						goto(`/collections/${newCollectionUid}`); // Still navigate to the new collection
 					}
 				} else {
-					toastState.addToast({ message: "Collection duplicated (no images to copy)", type: "success" });
+					toastState.addToast({
+						message: "Collection duplicated (no images to copy)",
+						type: "success"
+					});
 					await invalidateAll();
 					goto(`/collections/${newCollectionUid}`);
 				}
 			} else {
 				toastState.addToast({
-					message: (res as any).data?.error ?? `Duplicate failed (${res.status})`,
+					message:
+						(res as any).data?.error ?? `Duplicate failed (${res.status})`,
 					type: "error"
 				});
 			}
 		} catch (err) {
-			toastState.addToast({ message: "Duplicate failed: " + (err as Error).message, type: "error" });
+			toastState.addToast({
+				message: "Duplicate failed: " + (err as Error).message,
+				type: "error"
+			});
 		}
 	}
 
@@ -607,7 +728,9 @@
 
 {#snippet noAssetsSnippet()}
 	<div id="add_to_collection-container">
-		<span style="margin: 1em; color: var(--imag-20); font-size: 1.2rem;">Add images to this collection</span>
+		<span style="margin: 1em; color: var(--imag-20); font-size: 1.2rem;"
+			>Add images to this collection</span
+		>
 		<Button
 			id="add_to_collection-button"
 			style="padding: 2em 8em; display: flex; align-items: center; justify-content: center;"
@@ -681,8 +804,12 @@
 				<span
 					id="coll-details"
 					style="padding: 0% 0.5rem;"
-					title="Updated at: {DateTime.fromJSDate(new Date(loadedData.updated_at)).toFormat('dd.MM.yyyy HH:mm')}"
-					>{DateTime.fromJSDate(new Date(loadedData.created_at)).toFormat("dd.MM.yyyy")}
+					title="Updated at: {DateTime.fromJSDate(
+						new Date(loadedData.updated_at)
+					).toFormat('dd.MM.yyyy HH:mm')}"
+					>{DateTime.fromJSDate(new Date(loadedData.created_at)).toFormat(
+						"dd.MM.yyyy"
+					)}
 					•
 					{#if searchValue.trim()}
 						{searchData.length}
@@ -696,7 +823,12 @@
 		</div>
 	</AssetsShell>
 	<!-- Context menu for right-click on assets -->
-	<ContextMenu bind:showMenu={ctxShowMenu} items={ctxItems} anchor={ctxAnchor} offsetY={4} />
+	<ContextMenu
+		bind:showMenu={ctxShowMenu}
+		items={ctxItems}
+		anchor={ctxAnchor}
+		offsetY={4}
+	/>
 </VizViewContainer>
 
 <style lang="scss">

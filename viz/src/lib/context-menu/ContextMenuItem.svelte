@@ -6,7 +6,11 @@
 		item: MenuItem;
 		index?: number;
 		active?: boolean;
-		onselect?: (detail: { item: MenuItem; index: number; event: MouseEvent }) => void;
+		onselect?: (detail: {
+			item: MenuItem;
+			index: number;
+			event: MouseEvent;
+		}) => void;
 	}
 
 	let { item, index = 0, active = false, onselect }: Props = $props();
@@ -36,7 +40,11 @@
 	}
 </script>
 
-<li role="none" onmouseenter={() => (showSubmenu = true)} onmouseleave={() => (showSubmenu = false)}>
+<li
+	role="none"
+	onmouseenter={() => (showSubmenu = true)}
+	onmouseleave={() => (showSubmenu = false)}
+>
 	<button
 		role="menuitem"
 		aria-disabled={item.disabled ? "true" : undefined}
@@ -73,11 +81,17 @@
 									onclick={(e) => onChildClick(child, ci, e)}
 								>
 									{#if child.icon}
-										<MaterialIcon class="icon" iconName={child.icon} weight={300} />
+										<MaterialIcon
+											class="icon"
+											iconName={child.icon}
+											weight={300}
+										/>
 									{/if}
 									<span class="label">{child.label}</span>
 									{#if child.shortcut}
-										<span class="shortcut" aria-hidden="true">{child.shortcut}</span>
+										<span class="shortcut" aria-hidden="true"
+											>{child.shortcut}</span
+										>
 									{/if}
 								</button>
 							</li>
@@ -100,11 +114,11 @@
 	li > button {
 		display: grid;
 		grid-template-columns: auto 1fr auto;
-		gap: 0.5rem;
+		gap: 0.3rem;
 		align-items: center;
-		font-size: 0.9rem;
+		font-size: 0.8em;
 		font-weight: 500;
-		padding: 0.25rem 0.75rem;
+		padding: 0.15rem 0.5rem;
 		text-align: left;
 		width: 100%;
 		border: 0px;
@@ -141,7 +155,7 @@
 		top: 0.15rem;
 		background: var(--imag-100);
 		box-shadow:
-			0 10px 30px rgba(0, 0, 0, 0.35),
+			0 5px 10px rgba(0, 0, 0, 0.15),
 			0 2px 8px rgba(0, 0, 0, 0.3);
 		border-radius: 0.5rem;
 		overflow: hidden;
@@ -164,19 +178,19 @@
 	.submenu ul li > button {
 		display: grid;
 		grid-template-columns: auto 1fr auto;
-		gap: 0.5rem;
+		gap: 0.3rem;
 		align-items: center;
-		font-size: 0.9rem;
+		font-size: 0.8em;
 		font-weight: 500;
-		padding: 0.25rem 0.75rem;
+		padding: 0.15rem 0.5rem;
 		text-align: left;
 		width: 100%;
 		border: 0px;
 		color: var(--imag-text-color);
 		background-color: var(--imag-100);
 		cursor: pointer;
-		box-sizing: border-box;
 		transition: background-color 0.1s ease;
+		box-sizing: border-box;
 	}
 
 	.submenu ul li > button:hover {
