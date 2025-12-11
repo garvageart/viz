@@ -16,4 +16,5 @@ const (
 	SettingNameImageResizeKernel    = "image_resize_kernel"
 	SettingNameImageVisibleMetadata = "image_visible_metadata"
 	SettingNameStripMetadata        = "privacy_download_strip_metadata"
+	SettingNameOnboardingComplete   = "onboarding_complete"
 )

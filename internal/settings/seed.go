@@ -22,7 +22,7 @@ import (
 var defaultSettings = []entities.SettingDefault{
 	EnumSetting(
 		"theme",
-		nil,
+		"Theme",
 		"System",
 		[]string{"Light", "Dark", "System"},
 		true,
@@ -31,7 +31,7 @@ var defaultSettings = []entities.SettingDefault{
 	),
 	StringSetting(
 		"language",
-		nil,
+		"Display Langauge",
 		"en-GB",
 		true,
 		"General",
@@ -39,7 +39,7 @@ var defaultSettings = []entities.SettingDefault{
 	),
 	EnumSetting(
 		"timezone",
-		nil,
+		"",
 		"Africa/Johannesburg",
 		imaTime.Timezones,
 		true,
@@ -48,7 +48,7 @@ var defaultSettings = []entities.SettingDefault{
 	),
 	BoolSetting(
 		"notifications_email",
-		nil,
+		"",
 		true,
 		true,
 		"Notifications",
@@ -56,7 +56,7 @@ var defaultSettings = []entities.SettingDefault{
 	),
 	BoolSetting(
 		"notifications_push",
-		nil,
+		"",
 		false,
 		true,
 		"Notifications",
@@ -64,7 +64,7 @@ var defaultSettings = []entities.SettingDefault{
 	),
 	EnumSetting(
 		"privacy_profile_visibility",
-		nil,
+		"",
 		"Private",
 		[]string{"Public", "Private"},
 		true,
@@ -73,7 +73,7 @@ var defaultSettings = []entities.SettingDefault{
 	),
 	IntSetting(
 		"ui_page_size_images",
-		nil,
+		"",
 		100,
 		[]int{50, 100, 250, 500},
 		true,
@@ -82,7 +82,7 @@ var defaultSettings = []entities.SettingDefault{
 	),
 	IntSetting(
 		"ui_page_size_collections",
-		nil,
+		"",
 		20,
 		[]int{20, 50, 100},
 		true,
@@ -91,7 +91,7 @@ var defaultSettings = []entities.SettingDefault{
 	),
 	EnumSetting(
 		"ui_default_view_mode",
-		nil,
+		"",
 		"Grid",
 		[]string{"Grid", "List", "Cards"},
 		true,
@@ -100,7 +100,7 @@ var defaultSettings = []entities.SettingDefault{
 	),
 	IntSetting(
 		"image_download_quality",
-		nil,
+		"",
 		90,
 		nil,
 		true,
@@ -109,7 +109,7 @@ var defaultSettings = []entities.SettingDefault{
 	),
 	EnumSetting(
 		"image_download_format",
-		nil,
+		"",
 		"original",
 		[]string{"original", "jpg", "png", "webp", "avif"},
 		true,
@@ -118,7 +118,7 @@ var defaultSettings = []entities.SettingDefault{
 	),
 	EnumSetting(
 		"image_preview_format",
-		nil,
+		"",
 		"webp",
 		[]string{"webp", "avif", "jpg", "png"},
 		true,
@@ -127,7 +127,7 @@ var defaultSettings = []entities.SettingDefault{
 	),
 	EnumSetting(
 		"image_resize_kernel",
-		nil,
+		"",
 		"lanczos3",
 		[]string{"nearest", "linear", "cubic", "mitchell", "lanczos2", "lanczos3", "mks2013", "mks2021"},
 		true,
@@ -136,7 +136,7 @@ var defaultSettings = []entities.SettingDefault{
 	),
 	BoolSetting(
 		"privacy_download_strip_metadata",
-		nil,
+		"",
 		false,
 		true,
 		"Privacy",
@@ -144,7 +144,7 @@ var defaultSettings = []entities.SettingDefault{
 	),
 	JsonSetting(
 		"image_visible_metadata",
-		nil,
+		"",
 		[]string{"date", "camera", "iso", "aperture"},
 		true,
 		"Images",
@@ -152,7 +152,7 @@ var defaultSettings = []entities.SettingDefault{
 	),
 	BoolSetting(
 		"first_run_complete",
-		nil,
+		"",
 		false,
 		false,
 		"System",
@@ -160,7 +160,7 @@ var defaultSettings = []entities.SettingDefault{
 	),
 	BoolSetting(
 		"onboarding_complete",
-		nil,
+		"",
 		false,
 		false,
 		"User",
@@ -195,6 +195,7 @@ func SeedDefaultSettings(db *gorm.DB, logger *slog.Logger) {
 
 		if wasDeleted ||
 			existing.Value != setting.Value ||
+			existing.DisplayName != setting.DisplayName ||
 			existing.Description != setting.Description ||
 			existing.Group != setting.Group ||
 			existing.IsUserEditable != setting.IsUserEditable ||
@@ -202,6 +203,7 @@ func SeedDefaultSettings(db *gorm.DB, logger *slog.Logger) {
 			!utils.EqualStringSlices(existing.AllowedValues, setting.AllowedValues) {
 
 			existing.Value = setting.Value
+			existing.DisplayName = setting.DisplayName
 			existing.Description = setting.Description
 			existing.Group = setting.Group
 			existing.IsUserEditable = setting.IsUserEditable

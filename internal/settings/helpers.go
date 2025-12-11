@@ -187,7 +187,7 @@ func GetSetting(db *gorm.DB, name string, userID *string) (string, error) {
 }
 
 // Helper function for boolean settings
-func BoolSetting(name string, displayName *string, value bool, isUserEditable bool, group, description string) entities.SettingDefault {
+func BoolSetting(name string, displayName string, value bool, isUserEditable bool, group, description string) entities.SettingDefault {
 	return entities.SettingDefault{
 		Name:           name,
 		DisplayName:    displayName,
@@ -200,7 +200,7 @@ func BoolSetting(name string, displayName *string, value bool, isUserEditable bo
 }
 
 // Helper function for integer settings
-func IntSetting(name string, displayName *string, value int, allowedValues []int, isUserEditable bool, group, description string) entities.SettingDefault {
+func IntSetting(name string, displayName string, value int, allowedValues []int, isUserEditable bool, group, description string) entities.SettingDefault {
 	var allowedValuesStr *[]string
 	if len(allowedValues) > 0 {
 		strValues := make([]string, len(allowedValues))
@@ -212,7 +212,7 @@ func IntSetting(name string, displayName *string, value int, allowedValues []int
 
 	return entities.SettingDefault{
 		Name:           name,
-		DisplayName: displayName,
+		DisplayName:    displayName,
 		Value:          strconv.Itoa(value),
 		ValueType:      dto.Integer,
 		AllowedValues:  allowedValuesStr,
@@ -223,10 +223,10 @@ func IntSetting(name string, displayName *string, value int, allowedValues []int
 }
 
 // Helper function for string settings
-func StringSetting(name string, displayName *string, value string, isUserEditable bool, group, description string) entities.SettingDefault {
+func StringSetting(name string, displayName string, value string, isUserEditable bool, group, description string) entities.SettingDefault {
 	return entities.SettingDefault{
 		Name:           name,
-		DisplayName: displayName,
+		DisplayName:    displayName,
 		Value:          value,
 		ValueType:      dto.String,
 		IsUserEditable: isUserEditable,
@@ -236,10 +236,10 @@ func StringSetting(name string, displayName *string, value string, isUserEditabl
 }
 
 // Helper function for enum settings
-func EnumSetting(name string, displayName *string, value string, allowedValues []string, isUserEditable bool, group, description string) entities.SettingDefault {
+func EnumSetting(name string, displayName string, value string, allowedValues []string, isUserEditable bool, group, description string) entities.SettingDefault {
 	return entities.SettingDefault{
 		Name:           name,
-		DisplayName: displayName,
+		DisplayName:    displayName,
 		Value:          value,
 		ValueType:      dto.Enum,
 		AllowedValues:  &allowedValues,
@@ -250,7 +250,7 @@ func EnumSetting(name string, displayName *string, value string, allowedValues [
 }
 
 // Helper function for JSON settings
-func JsonSetting(name string, displayName *string, value interface{}, isUserEditable bool, group, description string) entities.SettingDefault {
+func JsonSetting(name string, displayName string, value interface{}, isUserEditable bool, group, description string) entities.SettingDefault {
 	jsonBytes, err := json.Marshal(value)
 	if err != nil {
 		panic(fmt.Sprintf("failed to marshal JSON for setting %s: %v", name, err))
@@ -258,7 +258,7 @@ func JsonSetting(name string, displayName *string, value interface{}, isUserEdit
 
 	return entities.SettingDefault{
 		Name:           name,
-		DisplayName: displayName,
+		DisplayName:    displayName,
 		Value:          string(jsonBytes),
 		ValueType:      dto.Json,
 		IsUserEditable: isUserEditable,

@@ -547,7 +547,7 @@ type SettingDefault struct {
 	Description string `json:"description"`
 
 	// DisplayName A readable and UI-friendly name for the setting (not required but highly recommended).
-	DisplayName *string `json:"display_name,omitempty"`
+	DisplayName string `json:"display_name"`
 
 	// Group Category/group for the setting (e.g., General, Notifications).
 	Group string `json:"group"`
@@ -698,8 +698,8 @@ type UserOnboardingBody struct {
 	FirstName string `json:"first_name"`
 	LastName  string `json:"last_name"`
 
-	// Settings User-specific setting overrides.
-	Settings map[string]string `json:"settings"`
+	// Settings User-specific setting overrides
+	Settings []UserSetting `json:"settings"`
 }
 
 // UserPasswordUpdate defines model for UserPasswordUpdate.

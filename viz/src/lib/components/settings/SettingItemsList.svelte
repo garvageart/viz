@@ -12,7 +12,12 @@
 		saveStatus: "idle" | "success" | "error";
 	}
 
-	let { settings, dirtySettings, saving = $bindable(false), saveStatus = $bindable("idle") }: Props = $props();
+	let {
+		settings,
+		dirtySettings,
+		saving = $bindable(false),
+		saveStatus = $bindable("idle")
+	}: Props = $props();
 
 	function formatLabel(name: string): string {
 		return name
@@ -21,7 +26,10 @@
 			.replace(/\b\w/g, (l) => l.toUpperCase());
 	}
 
-	function getToggleValue(settingName: string, originalValue: string): "on" | "off" {
+	function getToggleValue(
+		settingName: string,
+		originalValue: string
+	): "on" | "off" {
 		const val = dirtySettings[settingName] ?? originalValue;
 		return val === "true" ? "on" : "off";
 	}
@@ -49,7 +57,7 @@
 			{#if setting.value_type === "boolean"}
 				{@const currentVal = getToggleValue(setting.name, setting.value)}
 				<SliderToggleInput
-					label={formatLabel(setting.name)}
+					label={setting.name.trim() ? setting.name : formatLabel(setting.name)}
 					description={setting.description}
 					value={currentVal}
 					disabled={!setting.is_user_editable || saving}
@@ -62,7 +70,7 @@
 				/>
 			{:else if setting.value_type === "enum"}
 				<SelectInput
-					label={formatLabel(setting.name)}
+					label={setting.name.trim() ? setting.name : formatLabel(setting.name)}
 					description={setting.description}
 					value={dirtySettings[setting.name] ?? setting.value}
 					options={setting.allowed_values || []}
@@ -72,7 +80,7 @@
 			{:else if setting.value_type === "integer"}
 				<TextInput
 					type="number"
-					label={formatLabel(setting.name)}
+					label={setting.name.trim() ? setting.name : formatLabel(setting.name)}
 					description={setting.description}
 					value={dirtySettings[setting.name] ?? setting.value}
 					disabled={!setting.is_user_editable || saving}
@@ -80,7 +88,7 @@
 				/>
 			{:else if setting.value_type === "json"}
 				<JsonInput
-					label={formatLabel(setting.name)}
+					label={setting.name.trim() ? setting.name : formatLabel(setting.name)}
 					description={setting.description}
 					value={dirtySettings[setting.name] ?? setting.value}
 					disabled={!setting.is_user_editable || saving}
@@ -89,7 +97,7 @@
 			{:else}
 				<TextInput
 					type="text"
-					label={formatLabel(setting.name)}
+					label={setting.name.trim() ? setting.name : formatLabel(setting.name)}
 					description={setting.description}
 					value={dirtySettings[setting.name] ?? setting.value}
 					disabled={!setting.is_user_editable || saving}

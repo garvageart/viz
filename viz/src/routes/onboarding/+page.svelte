@@ -1,9 +1,16 @@
 <script lang="ts">
 	import { goto } from "$app/navigation";
-	import { system, user, toggleTheme, getTheme } from "$lib/states/index.svelte";
+	import {
+		system,
+		user,
+		toggleTheme,
+		getTheme
+	} from "$lib/states/index.svelte";
 	import {
 		setupSuperadmin,
 		doUserOnboarding,
+		updateUserSettingsBatch,
+		updateCurrentUser,
 		getUserSettings,
 		type UserSetting
 	} from "$lib/api";
@@ -14,6 +21,7 @@
 	import { toastState } from "$lib/toast-notifcations/notif-state.svelte";
 	import { onMount } from "svelte";
 	import { fade, slide } from "svelte/transition";
+	import { formatLabel } from "$lib/settings/utils";
 
 	let isLoading = $state(false);
 	let currentStep = $state(0);
@@ -36,27 +44,22 @@
 
 	let userSettings = $state<UserSetting[]>([]);
 	let userSettingsValues = $state<Record<string, string>>({});
-	
+
 	// Group settings by their 'group' field
 	let settingsGroups = $derived.by(() => {
 		const groups: Record<string, UserSetting[]> = {};
 		for (const s of userSettings) {
 			const g = s.group || "General";
-			if (!groups[g]) groups[g] = [];
+			if (!groups[g]) {
+				groups[g] = [];
+			}
+
 			groups[g].push(s);
 		}
 		return groups;
 	});
 
 	let groupNames = $derived(Object.keys(settingsGroups).sort());
-
-	// --- Helpers ---
-	function formatLabel(name: string): string {
-		return name
-			.replace(/^[a-z]+_/, "") // Remove group prefix if present (e.g. 'privacy_')
-			.replace(/_/g, " ")
-			.replace(/\b\w/g, (l) => l.toUpperCase());
-	}
 
 	// --- Logic ---
 
@@ -67,12 +70,12 @@
 				const res = await getUserSettings();
 				if (res.status === 200) {
 					userSettings = res.data.filter((s) => s.is_user_editable);
-					
+
 					// Pre-fill values
 					userSettings.forEach((s) => {
 						// Special handling for theme setting if it exists to match current UI state
-						if (s.name === 'theme' || s.name === 'default_theme') {
-							// If the user hasn't explicitly set it yet (it's using default), 
+						if (s.name === "theme" || s.name === "default_theme") {
+							// If the user hasn't explicitly set it yet (it's using default),
 							// we might want to propose the one they are currently viewing.
 							// However, s.value might already be set from DB default.
 							userSettingsValues[s.name] = s.value || s.default_value;
@@ -98,15 +101,15 @@
 			}
 		}
 	}
-	
+
 	function handleThemeToggle() {
 		toggleTheme();
 		// Sync with form if 'theme' setting exists
 		const newTheme = getTheme(); // 'light' or 'dark' (or 'system' if we could query that state, but getTheme resolves it)
-		
+
 		// Look for a theme setting key
 		for (const key of Object.keys(userSettingsValues)) {
-			if (key === 'theme' || key === 'default_theme') {
+			if (key === "theme" || key === "default_theme") {
 				userSettingsValues[key] = newTheme;
 			}
 		}
@@ -134,7 +137,10 @@
 
 	async function handleSuperadminSubmit() {
 		if (superadminForm.password !== superadminForm.confirmPassword) {
-			toastState.addToast({ message: "Passwords do not match.", type: "error" });
+			toastState.addToast({
+				message: "Passwords do not match.",
+				type: "error"
+			});
 			return;
 		}
 
@@ -161,7 +167,7 @@
 				window.location.href = "/";
 			} else {
 				toastState.addToast({
-					message: (res.data as any).error || "Setup failed.",
+					message: res.data.error || "Setup failed.",
 					type: "error"
 				});
 			}
@@ -182,22 +188,31 @@
 			const res = await doUserOnboarding({
 				first_name: userForm.firstName,
 				last_name: userForm.lastName,
-				settings: userSettingsValues
+				settings: userSettings.map((setting) => ({
+					name: setting.name,
+					value: userSettingsValues[setting.name] || setting.default_value,
+					default_value: setting.default_value,
+					value_type: setting.value_type,
+					allowed_values: setting.allowed_values,
+					is_user_editable: setting.is_user_editable,
+					group: setting.group,
+					description: setting.description
+				}))
 			});
 
 			if (res.status === 200) {
 				toastState.addToast({ message: "Welcome aboard!", type: "success" });
-				
+
 				// Invalidate system state to force re-fetch of status flags
 				// This ensures the router knows onboarding is complete
 				system.fetched = false;
 				system.data = null;
-				
+
 				user.data = res.data;
 				goto("/");
 			} else {
 				toastState.addToast({
-					message: (res.data as any).error || "Onboarding failed.",
+					message: res.data.error || "Onboarding failed.",
 					type: "error"
 				});
 			}
@@ -214,15 +229,15 @@
 </script>
 
 <div class="onboarding-container">
-	<button 
-		class="theme-toggle" 
+	<button
+		class="theme-toggle"
 		onclick={handleThemeToggle}
 		title="Toggle Theme"
 		aria-label="Toggle Theme"
 	>
-		<MaterialIcon 
-			weight={300} 
-			iconName={getTheme() === "dark" ? "dark_mode" : "light_mode"} 
+		<MaterialIcon
+			weight={300}
+			iconName={getTheme() === "dark" ? "dark_mode" : "light_mode"}
 			style="font-size: 1.5rem;"
 		/>
 	</button>
@@ -388,7 +403,9 @@
 								<div class="setting-item">
 									{#if setting.value_type === "enum" && setting.allowed_values}
 										<InputSelect
-											label={formatLabel(setting.name)}
+											label={setting.name.trim()
+												? setting.name
+												: formatLabel(setting.name)}
 											description={setting.description}
 											bind:value={userSettingsValues[setting.name]}
 										>
@@ -398,7 +415,9 @@
 										</InputSelect>
 									{:else if setting.value_type === "boolean"}
 										<InputSelect
-											label={formatLabel(setting.name)}
+											label={setting.name.trim()
+												? setting.name
+												: formatLabel(setting.name)}
 											description={setting.description}
 											bind:value={userSettingsValues[setting.name]}
 										>
@@ -407,7 +426,9 @@
 										</InputSelect>
 									{:else}
 										<InputText
-											label={formatLabel(setting.name)}
+											label={setting.name.trim()
+												? setting.name
+												: formatLabel(setting.name)}
 											description={setting.description}
 											bind:value={userSettingsValues[setting.name]}
 										/>

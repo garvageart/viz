@@ -1,6 +1,7 @@
 package routes
 
 import (
+	"slices"
 	"bytes"
 	"encoding/hex"
 	"encoding/json"
@@ -109,7 +110,7 @@ func AccountsRouter(db *gorm.DB, logger *slog.Logger) *chi.Mux {
 			// Initialize onboarding_complete to false for new users
 			onboardingOverride := entities.SettingOverride{
 				UserId: id,
-				Name:   "onboarding_complete",
+				Name:   settings.SettingNameOnboardingComplete,
 				Value:  "false",
 			}
 			if err := tx.Create(&onboardingOverride).Error; err != nil {
@@ -179,7 +180,7 @@ func AccountsRouter(db *gorm.DB, logger *slog.Logger) *chi.Mux {
 			r.Put("/onboard", func(res http.ResponseWriter, req *http.Request) {
 				user, _ := libhttp.UserFromContext(req)
 
-				onboardingCompleteStr, err := settings.GetSetting(db, "onboarding_complete", &user.Uid)
+				onboardingCompleteStr, err := settings.GetSetting(db, settings.SettingNameOnboardingComplete, &user.Uid)
 				if err == nil && onboardingCompleteStr == "true" {
 					render.Status(req, http.StatusForbidden)
 					render.JSON(res, req, dto.ErrorResponse{Error: "Onboarding already completed"})
@@ -210,30 +211,34 @@ func AccountsRouter(db *gorm.DB, logger *slog.Logger) *chi.Mux {
 					}
 
 					// Update Settings
-					for key, value := range body.Settings {
+					for _, setting := range body.Settings {
 						// Verify setting exists and is user editable
 						var def entities.SettingDefault
-						if err := tx.Where("name = ?", key).First(&def).Error; err != nil {
-							logger.Warn("can't find setting", slog.String("name", key))
+						if err := tx.Where("name = ?", setting.Name).First(&def).Error; err != nil {
+							logger.Warn("can't find setting", slog.String("name", setting.Name))
 							continue
 						}
 
 						if !def.IsUserEditable {
 							render.Status(req, http.StatusForbidden)
-							render.JSON(res, req, dto.ErrorResponse{Error: fmt.Sprintf("Setting '%s' is not user editable", key)})
-							return err // Return an error to rollback the transaction
+							render.JSON(res, req, dto.ErrorResponse{Error: fmt.Sprintf("Setting '%s' is not user editable", setting.Name)})
+							return nil
 						}
 
-						if err := validateSettingValue(value, def); err != nil {
-							render.Status(req, http.StatusBadRequest)
-							render.JSON(res, req, dto.ErrorResponse{Error: fmt.Sprintf("Invalid value for setting '%s': %s", key, err.Error())})
-							return err // Return an error to rollback the transaction
+						// Validate the value against the allowed values if they are defined
+						if def.AllowedValues != nil && len(*def.AllowedValues) > 0 {
+							isValid := slices.Contains(*def.AllowedValues, setting.Value)
+							if !isValid {
+								render.Status(req, http.StatusBadRequest)
+								render.JSON(res, req, dto.ErrorResponse{Error: fmt.Sprintf("Invalid value for setting '%s'", setting.Name)})
+								return nil
+							}
 						}
 
 						override := entities.SettingOverride{
 							UserId: user.Uid,
-							Name:   key,
-							Value:  value,
+							Name:   setting.Name,
+							Value:  setting.Value,
 						}
 
 						if err := tx.Clauses(clause.OnConflict{
@@ -247,7 +252,7 @@ func AccountsRouter(db *gorm.DB, logger *slog.Logger) *chi.Mux {
 					// Mark onboarding as complete
 					completeOverride := entities.SettingOverride{
 						UserId: user.Uid,
-						Name:   "onboarding_complete",
+						Name:   settings.SettingNameOnboardingComplete,
 						Value:  "true",
 					}
 

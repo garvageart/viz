@@ -2992,7 +2992,16 @@ components:
         description:
           type: string
           description: Description for UI
-      required: [name, value, value_type, is_user_editable, group, description]
+      required:
+        [
+          name,
+          display_name,
+          value,
+          value_type,
+          is_user_editable,
+          group,
+          description,
+        ]
 
     SettingOverride:
       x-entity: true
@@ -3677,10 +3686,10 @@ components:
         last_name:
           type: string
         settings:
-          type: object
-          description: User-specific setting overrides.
-          additionalProperties:
-            type: string
+          type: array
+          description: User-specific setting overrides
+          items:
+            $ref: "#/components/schemas/UserSetting"
       required: [first_name, last_name, settings]
 
     ImageUpdate:

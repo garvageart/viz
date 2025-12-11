@@ -97,22 +97,6 @@ export type UserUpdate = {
     username?: string | null;
     email?: string | null;
 };
-export type UserOnboardingBody = {
-    first_name: string;
-    last_name: string;
-    /** User-specific setting overrides. */
-    settings: {
-        [key: string]: string;
-    };
-};
-export type UserPasswordUpdate = {
-    current: string;
-    "new": string;
-};
-export type SessionUpdate = {
-    clientName?: string | null;
-    status?: number | null;
-};
 export type UserSetting = {
     name: string;
     /** The effective value (override if exists, else default). */
@@ -123,6 +107,20 @@ export type UserSetting = {
     is_user_editable?: boolean;
     group: string;
     description: string;
+};
+export type UserOnboardingBody = {
+    first_name: string;
+    last_name: string;
+    /** User-specific setting overrides */
+    settings: UserSetting[];
+};
+export type UserPasswordUpdate = {
+    current: string;
+    "new": string;
+};
+export type SessionUpdate = {
+    clientName?: string | null;
+    status?: number | null;
 };
 export type UserSettingUpdateRequest = {
     settings: {
@@ -343,7 +341,7 @@ export type SettingDefault = {
     /** Unique name for the setting (primary key). */
     name: string;
     /** A readable and UI-friendly name for the setting (not required but highly recommended). */
-    display_name?: string;
+    display_name: string;
     /** The default value everyone gets. */
     value: string;
     /** Data type of the setting. */

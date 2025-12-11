@@ -115,6 +115,27 @@ In this improved workflow:
 -   **Offline-First & Syncing:** Native apps can leverage the protocol's sync capabilities to cache high-performance thumbnails and metadata locally. This allows for browsing and searching gigabyte-sized libraries with zero latency, even when offline, syncing changes back when connectivity is restored.
 -   **Direct Editing:** Advanced editors can open high-resolution assets directly from the server (via signed, short-lived URLs) and save edits back as new versions or sidecar files, preserving the non-destructive workflow central to professional photography.
 
+## Example Use-Cases
+
+### Manifold Release 9 Integration
+
+A robust, albeit non-professional, image server like Manifold Release 9 (as described at `https://manifold.net/doc/mfd9/image_servers.htm`) exemplifies how existing systems can leverage aspects of this protocol. While Manifold primarily serves GIS imagery via standards like WMS/WMTS and its own high-performance protocols, it could integrate with the Imagine Protocol by:
+
+1.  **Exposing Resources via `imagine://` URIs:** Manifold's image serving capabilities could be extended to publish GIS assets using the `imagine://` protocol. This would involve a mapping layer to translate `imagine://<server-domain>/images/<resource-id>` requests into Manifold's internal resource identifiers and data retrieval mechanisms.
+2.  **Federated Search and Remote Viewing:** Manifold already efficiently serves image tiles for different zoom levels. By implementing the Imagine Protocol's "Remote Viewing" and "Cross-Server Search" capabilities, a Manifold server could participate in a federated network, allowing its GIS imagery to be discovered and viewed remotely by Imagine Protocol-compliant clients.
+3.  **Metadata Standardization:** Given Manifold's rich geospatial metadata, integrating with the Imagine Protocol would involve mapping its internal metadata structures to the protocol's strict XMP/IPTC standards. This would align with the "Standardized Mapping" and "Schema Negotiation & Custom Mappings" aspects, ensuring interoperability without data loss.
+4.  **Hybrid Workflows:** Manifold's ability to act as a front-end for other WMS servers showcases its potential as a gateway in "Hybrid Workflows." It could translate requests between an Imagine Protocol network and various GIS data sources, facilitating seamless interaction between professional GIS environments and more general image management systems.
+
+### Omeka S Image Server Integration
+
+Omeka S, a web publishing platform for libraries, archives, museums, and scholars, offers an Image Server module (`https://omeka.org/s/modules/ImageServer/`) that is IIIF-compliant. This module provides another compelling example of how diverse systems can align with the Imagine Protocol's goals:
+
+1.  **IIIF Alignment:** By being IIIF-compliant, Omeka S Image Server already handles many aspects of interoperable image delivery, such as dynamic tiling and transformations (regions, sizes, rotations). This aligns naturally with the Imagine Protocol's "Remote Viewing" capabilities.
+2.  **Metadata Handling:** Omeka S utilizes Dublin Core and other metadata standards. Integration with the Imagine Protocol would involve mapping Omeka S's metadata fields to the protocol's XMP/IPTC standards, similar to the Manifold example, to ensure metadata integrity across federated systems.
+3.  **Media Type Agnostic:** The module's ability to handle various media types (images, PDF, audio, video, 3D) extends the scope of potential Imagine Protocol assets beyond just still images, aligning with a broader vision for managing digital content.
+4.  **Flexible Storage:** Support for Amazon S3 as a backend demonstrates a practical aspect of handling distributed storage, which is crucial for a federated protocol that needs to access assets across different physical locations.
+5.  **Extensibility:** Just as the Imagine Protocol envisions extensions, Omeka S's module architecture allows for integration with other tools (e.g., Cantaloupe as an external image server), showcasing a pattern of extensible interoperability.
+
 ## Technical Requirements
 - **API Extension:** New endpoints for federation (e.g., `/.well-known/imagine`).
 - **Metadata Standardization:** strict adherence to IPTC/XMP to ensure metadata survives transfer.
