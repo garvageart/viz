@@ -54,18 +54,31 @@
 	let sessionUpdatePayload = $state<SessionFormState>({ clientName: "" });
 
 	async function handleChangePassword() {
-		if (!passwordState.current || !passwordState.new || !passwordState.confirm) {
-			toastState.addToast({ message: "All fields are required", type: "error" });
+		if (
+			!passwordState.current ||
+			!passwordState.new ||
+			!passwordState.confirm
+		) {
+			toastState.addToast({
+				message: "All fields are required",
+				type: "error"
+			});
 			return;
 		}
 
 		if (passwordState.new !== passwordState.confirm) {
-			toastState.addToast({ message: "New passwords do not match", type: "error" });
+			toastState.addToast({
+				message: "New passwords do not match",
+				type: "error"
+			});
 			return;
 		}
 
 		if (passwordState.new.length < 8) {
-			toastState.addToast({ message: "Password must be at least 8 characters long", type: "error" });
+			toastState.addToast({
+				message: "Password must be at least 8 characters long",
+				type: "error"
+			});
 			return;
 		}
 
@@ -134,7 +147,12 @@
 	}
 
 	async function handleDeleteKey(uid: string) {
-		if (!confirm("Are you sure you want to delete this API Key? This action cannot be undone.")) return;
+		if (
+			!confirm(
+				"Are you sure you want to delete this API Key? This action cannot be undone."
+			)
+		)
+			return;
 		try {
 			const res = await deleteApiKey(uid);
 			if (res.status === 200) {
@@ -149,7 +167,12 @@
 	}
 
 	async function handleRevokeKey(uid: string) {
-		if (!confirm("Are you sure you want to revoke this API Key? It will stop working immediately.")) return;
+		if (
+			!confirm(
+				"Are you sure you want to revoke this API Key? It will stop working immediately."
+			)
+		)
+			return;
 		try {
 			const res = await revokeApiKey(uid);
 			if (res.status === 200) {
@@ -164,7 +187,12 @@
 	}
 
 	async function handleDeleteSession(uid: string) {
-		if (!confirm("Are you sure you want to delete this session? This action cannot be undone.")) return;
+		if (
+			!confirm(
+				"Are you sure you want to delete this session? This action cannot be undone."
+			)
+		)
+			return;
 		try {
 			const res = await deleteSession(uid);
 			if (res.status === 200) {
@@ -174,35 +202,55 @@
 					window.location.reload(); // Simple logout for now
 				}
 			} else {
-				toastState.addToast({ message: "Failed to delete session", type: "error" });
+				toastState.addToast({
+					message: "Failed to delete session",
+					type: "error"
+				});
 			}
 		} catch (e) {
-			toastState.addToast({ message: "Failed to delete session", type: "error" });
+			toastState.addToast({
+				message: "Failed to delete session",
+				type: "error"
+			});
 		}
 	}
 
 	async function handleDeleteAllSessions() {
 		if (
-			!confirm("Are you sure you want to delete ALL your sessions? You will be logged out from all devices, including this one.")
+			!confirm(
+				"Are you sure you want to delete ALL your sessions? You will be logged out from all devices, including this one."
+			)
 		)
 			return;
 		try {
 			const res = await deleteSessions();
 			if (res.status === 200) {
-				toastState.addToast({ message: "All sessions deleted. Logging out...", type: "success" });
+				toastState.addToast({
+					message: "All sessions deleted. Logging out...",
+					type: "success"
+				});
 				// Since all sessions are deleted, including current, force reload/logout
 				window.location.reload();
 			} else {
-				toastState.addToast({ message: "Failed to delete all sessions", type: "error" });
+				toastState.addToast({
+					message: "Failed to delete all sessions",
+					type: "error"
+				});
 			}
 		} catch (e) {
-			toastState.addToast({ message: "Failed to delete all sessions", type: "error" });
+			toastState.addToast({
+				message: "Failed to delete all sessions",
+				type: "error"
+			});
 		}
 	}
 
 	function handleOpenEditSessionModal(session: Session) {
 		editingSessionId = session.uid;
-		sessionUpdatePayload = { clientName: session.client_name ?? "", status: session.status ?? undefined };
+		sessionUpdatePayload = {
+			clientName: session.client_name ?? "",
+			status: session.status ?? undefined
+		};
 		showEditSessionModal = true;
 		modal.show = true;
 	}
@@ -222,10 +270,16 @@
 				modal.show = false;
 				await loadData();
 			} else {
-				toastState.addToast({ message: "Failed to update session", type: "error" });
+				toastState.addToast({
+					message: "Failed to update session",
+					type: "error"
+				});
 			}
 		} catch (e) {
-			toastState.addToast({ message: "Failed to update session", type: "error" });
+			toastState.addToast({
+				message: "Failed to update session",
+				type: "error"
+			});
 		}
 	}
 
@@ -241,7 +295,9 @@
 
 	function formatDate(dateStr?: string | null) {
 		if (!dateStr) return "Never";
-		return DateTime.fromJSDate(new Date(dateStr)).toFormat("dd-MM-yyyy HH:mm:ss");
+		return DateTime.fromJSDate(new Date(dateStr)).toFormat(
+			"dd-MM-yyyy HH:mm:ss"
+		);
 	}
 
 	function isCurrentSession(sessionItem: Session) {
@@ -251,48 +307,77 @@
 
 {#if showCreateKeyModal && modal.show}
 	<ModalContainer>
-		<ModalLightbox>
-			<CreatedApiKeyModal onClose={handleCreateKeyModalClose} onSuccess={handleKeyCreated} />
-		</ModalLightbox>
+		<CreatedApiKeyModal
+			onClose={handleCreateKeyModalClose}
+			onSuccess={handleKeyCreated}
+		/>
 	</ModalContainer>
 {/if}
 
 {#if showEditSessionModal && modal.show}
 	<ModalContainer>
-		<ModalLightbox>
-			<div class="edit-session-modal-content">
-				<h3>Edit Session</h3>
-				<TextInput label="Client Name" bind:value={sessionUpdatePayload.clientName} />
-				<!-- Add status update here if needed -->
-				<div class="modal-actions">
-					<Button onclick={handleUpdateSession}>Update</Button>
-					<Button hoverColor="var(--imag-alert-color)" onclick={handleCloseEditSessionModal}>Cancel</Button>
-				</div>
+		<div class="edit-session-modal-content">
+			<h3>Edit Session</h3>
+			<TextInput
+				label="Client Name"
+				bind:value={sessionUpdatePayload.clientName}
+			/>
+			<!-- Add status update here if needed -->
+			<div class="modal-actions">
+				<Button onclick={handleUpdateSession}>Update</Button>
+				<Button
+					hoverColor="var(--imag-alert-color)"
+					onclick={handleCloseEditSessionModal}>Cancel</Button
+				>
 			</div>
-		</ModalLightbox>
+		</div>
 	</ModalContainer>
 {/if}
 {#snippet changePasswordAction()}
 	<Button
 		onclick={handleChangePassword}
-		disabled={changingPassword || !passwordState.current || !passwordState.new || !passwordState.confirm}
+		disabled={changingPassword ||
+			!passwordState.current ||
+			!passwordState.new ||
+			!passwordState.confirm}
 	>
 		{changingPassword ? "Updating..." : "Update Password"}
 	</Button>
 {/snippet}
 
 <div class="security-settings">
-	<CustomSettingsGroup title="Password" description="Change your account password.">
+	<CustomSettingsGroup
+		title="Password"
+		description="Change your account password."
+	>
 		{#if passwordState.new && passwordState.confirm}
 			{@render changePasswordAction()}
 		{/if}
 
-		<TextInput label="Current Password" type="password" bind:value={passwordState.current} disabled={changingPassword} />
-		<TextInput label="New Password" type="password" bind:value={passwordState.new} disabled={changingPassword} />
-		<TextInput label="Confirm Password" type="password" bind:value={passwordState.confirm} disabled={changingPassword} />
+		<TextInput
+			label="Current Password"
+			type="password"
+			bind:value={passwordState.current}
+			disabled={changingPassword}
+		/>
+		<TextInput
+			label="New Password"
+			type="password"
+			bind:value={passwordState.new}
+			disabled={changingPassword}
+		/>
+		<TextInput
+			label="Confirm Password"
+			type="password"
+			bind:value={passwordState.confirm}
+			disabled={changingPassword}
+		/>
 	</CustomSettingsGroup>
 
-	<CustomSettingsGroup title="API Keys" description="Manage API keys for accessing the Imagine API.">
+	<CustomSettingsGroup
+		title="API Keys"
+		description="Manage API keys for accessing the Imagine API."
+	>
 		{#snippet actions()}
 			<Button onclick={handleOpenCreateKeyModal}>
 				<MaterialIcon iconName="add" />
@@ -317,16 +402,24 @@
 							{#if key.last_used_at}
 								<span>Last used: {formatDate(key.last_used_at)}</span>
 							{/if}
-							<span class="key-desc">{key.description || "No description"}</span>
+							<span class="key-desc">{key.description || "No description"}</span
+							>
 						</div>
 					</div>
 					<div class="key-actions">
 						{#if !key.revoked}
-							<Button onclick={() => handleRevokeKey(key.uid)} title="Revoke Key">
+							<Button
+								onclick={() => handleRevokeKey(key.uid)}
+								title="Revoke Key"
+							>
 								<MaterialIcon iconName="block" />
 							</Button>
 						{/if}
-						<Button onclick={() => handleDeleteKey(key.uid)} title="Delete Key" hoverColor="var(--imag-alert-color)">
+						<Button
+							onclick={() => handleDeleteKey(key.uid)}
+							title="Delete Key"
+							hoverColor="var(--imag-alert-color)"
+						>
 							<MaterialIcon iconName="delete" />
 						</Button>
 					</div>
@@ -339,9 +432,15 @@
 		</div>
 	</CustomSettingsGroup>
 
-	<CustomSettingsGroup title="Sessions" description="Manage your active sessions across devices.">
+	<CustomSettingsGroup
+		title="Sessions"
+		description="Manage your active sessions across devices."
+	>
 		{#snippet actions()}
-			<Button onclick={handleDeleteAllSessions} hoverColor="var(--imag-alert-color)">
+			<Button
+				onclick={handleDeleteAllSessions}
+				hoverColor="var(--imag-alert-color)"
+			>
 				<MaterialIcon iconName="logout" />
 				<span>Log out All</span>
 			</Button>
@@ -349,14 +448,21 @@
 
 		<div class="sessions-list">
 			{#each allSessions as session_item}
-				<div class="session-item" class:current={isCurrentSession(session_item)}>
+				<div
+					class="session-item"
+					class:current={isCurrentSession(session_item)}
+				>
 					{#if isCurrentSession(session_item)}
 						<span class="current-badge">Current Session</span>
 					{/if}
 					<div class="session-details">
 						<div class="session-row">
 							<span class="label">Client:</span>
-							<span class="value">{session_item.client_name || session_item.user_agent || "Unknown Client"}</span>
+							<span class="value"
+								>{session_item.client_name ||
+									session_item.user_agent ||
+									"Unknown Client"}</span
+							>
 						</div>
 						<div class="session-row">
 							<span class="label">Session ID:</span>
@@ -382,7 +488,10 @@
 						{/if}
 					</div>
 					<div class="session-actions">
-						<Button onclick={() => handleOpenEditSessionModal(session_item)} title="Edit Session">
+						<Button
+							onclick={() => handleOpenEditSessionModal(session_item)}
+							title="Edit Session"
+						>
 							<MaterialIcon iconName="edit" />
 						</Button>
 						<Button

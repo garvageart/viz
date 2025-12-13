@@ -1,5 +1,5 @@
 <script lang="ts">
-	let { width }: { width: number } = $props();
+	let { width = $bindable() }: { width: number } = $props();
 </script>
 
 <div class="progress-bar">

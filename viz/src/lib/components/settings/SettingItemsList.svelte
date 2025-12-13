@@ -57,7 +57,9 @@
 			{#if setting.value_type === "boolean"}
 				{@const currentVal = getToggleValue(setting.name, setting.value)}
 				<SliderToggleInput
-					label={setting.name.trim() ? setting.name : formatLabel(setting.name)}
+					label={setting.display_name?.trim()
+						? setting.display_name
+						: formatLabel(setting.name)}
 					description={setting.description}
 					value={currentVal}
 					disabled={!setting.is_user_editable || saving}
@@ -70,7 +72,9 @@
 				/>
 			{:else if setting.value_type === "enum"}
 				<SelectInput
-					label={setting.name.trim() ? setting.name : formatLabel(setting.name)}
+					label={setting.display_name?.trim()
+						? setting.display_name
+						: formatLabel(setting.name)}
 					description={setting.description}
 					value={dirtySettings[setting.name] ?? setting.value}
 					options={setting.allowed_values || []}
@@ -80,7 +84,9 @@
 			{:else if setting.value_type === "integer"}
 				<TextInput
 					type="number"
-					label={setting.name.trim() ? setting.name : formatLabel(setting.name)}
+					label={setting.display_name?.trim()
+						? setting.display_name
+						: formatLabel(setting.name)}
 					description={setting.description}
 					value={dirtySettings[setting.name] ?? setting.value}
 					disabled={!setting.is_user_editable || saving}
@@ -88,7 +94,9 @@
 				/>
 			{:else if setting.value_type === "json"}
 				<JsonInput
-					label={setting.name.trim() ? setting.name : formatLabel(setting.name)}
+					label={setting.display_name?.trim()
+						? setting.display_name
+						: formatLabel(setting.name)}
 					description={setting.description}
 					value={dirtySettings[setting.name] ?? setting.value}
 					disabled={!setting.is_user_editable || saving}
@@ -97,7 +105,9 @@
 			{:else}
 				<TextInput
 					type="text"
-					label={setting.name.trim() ? setting.name : formatLabel(setting.name)}
+					label={setting.display_name?.trim()
+						? setting.display_name
+						: formatLabel(setting.name)}
 					description={setting.description}
 					value={dirtySettings[setting.name] ?? setting.value}
 					disabled={!setting.is_user_editable || saving}

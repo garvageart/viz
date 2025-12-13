@@ -22,6 +22,7 @@
 	import { onMount } from "svelte";
 	import { fade, slide } from "svelte/transition";
 	import { formatLabel } from "$lib/settings/utils";
+	import ProgressBar from "$lib/components/ProgressBar.svelte";
 
 	let isLoading = $state(false);
 	let currentStep = $state(0);
@@ -226,6 +227,9 @@
 			isLoading = false;
 		}
 	}
+
+	let totalSteps = $derived(2 + groupNames.length);
+	let progressBarWidth = $derived(((currentStep + 1) / totalSteps) * 100);
 </script>
 
 <div class="onboarding-container">
@@ -337,18 +341,11 @@
 			</div>
 		{:else if system.data?.user_onboarding_required}
 			<!-- USER ONBOARDING FLOW -->
-			{@const totalSteps = 2 + groupNames.length}
 			<!-- 0:Intro, 1:Profile, 2..N:Settings -->
 
 			<div class="step-container" in:fade={{ duration: 200 }}>
-				<div class="progress-bar">
-					<div
-						class="progress-fill"
-						style="width: {((currentStep + 1) / totalSteps) * 100}%"
-					></div>
-				</div>
+				<ProgressBar bind:width={progressBarWidth} />
 
-				<!-- Step 0: Welcome -->
 				{#if currentStep === 0}
 					<div class="step-content center-text">
 						<h1>Welcome, {user.data?.username || "Traveler"}!</h1>
@@ -361,8 +358,6 @@
 					<div class="actions centered">
 						<Button onclick={nextStep}>Let's Go</Button>
 					</div>
-
-					<!-- Step 1: Profile -->
 				{:else if currentStep === 1}
 					<div class="step-content">
 						<h2>Personal Details</h2>
@@ -571,21 +566,6 @@
 		&.centered {
 			justify-content: center;
 			border-top: none;
-		}
-	}
-
-	.progress-bar {
-		position: absolute;
-		top: 0;
-		left: 0;
-		width: 100%;
-		height: 4px;
-		background: var(--imag-80);
-
-		.progress-fill {
-			height: 100%;
-			background: var(--imag-primary);
-			transition: width 0.3s ease;
 		}
 	}
 
