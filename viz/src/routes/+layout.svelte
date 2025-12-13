@@ -15,16 +15,21 @@
 <script>
 	import { dev } from "$app/environment";
 	import { debugState, themeState } from "$lib/states/index.svelte";
+	import { historyState } from "$lib/states/history.svelte";
+	import { toggleFullscreen } from "$lib/utils/misc";
 	import type { VizConfig, ImagineConfig } from "$lib/types/config.types";
+	import hotkeys from "hotkeys-js";
 	import "@fontsource-variable/manrope/index.css";
 	import "@fontsource-variable/roboto-mono/index.css";
 	import "$lib/styles/scss/main.scss";
 	import "$lib/stores/appReady";
 
+	historyState.init();
+
 	window.___vizConfig = {
 		environment: dev ? "dev" : "prod",
 		// @ts-ignore
-		version: __APP_VERSION__ as string
+		version: window.__APP_VERSION__
 	};
 
 	let { children } = $props();
@@ -45,6 +50,11 @@
 		if (typeof document !== "undefined") {
 			document.documentElement.setAttribute("data-theme", themeState.resolved);
 		}
+	});
+
+	hotkeys("shift+f", (e) => {
+		e.preventDefault();
+		toggleFullscreen();
 	});
 </script>
 
