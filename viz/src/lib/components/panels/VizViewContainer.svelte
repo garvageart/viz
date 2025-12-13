@@ -72,7 +72,8 @@
 
 	function onScroll(e: UIEvent) {
 		const element = e.target! as HTMLDivElement;
-		const offset = element.scrollHeight - element.clientHeight - element.scrollTop;
+		const offset =
+			element.scrollHeight - element.clientHeight - element.scrollTop;
 
 		if (offset <= scrollThreshold) {
 			if (!isLoadMore && hasMore) {

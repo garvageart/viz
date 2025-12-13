@@ -60,6 +60,7 @@ function withColor([x, y]: [number, number]) {
     const open = `\x1b[${x}m`,
         close = `\x1b[${y}m`;
 
+    // What the fuck am I looking at? I don't remember writing this
     return function (txt: string) {
         if (txt == null) return txt;
 

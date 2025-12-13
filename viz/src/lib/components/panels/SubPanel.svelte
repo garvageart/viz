@@ -72,6 +72,7 @@
 	import { debugMode } from "$lib/states/index.svelte";
 	import SubPanelHeader from "./SubPanelHeader.svelte";
 	import SubPanelContent from "./SubPanelContent.svelte";
+	import type VizSubPanelData from "$lib/layouts/subpanel.svelte";
 
 	if (dev) {
 		window.resetAndReloadLayout = resetAndReloadLayout;
@@ -143,7 +144,7 @@
 			id: panelViewId,
 			name: panelViewName,
 			path: panelViewPath
-		} = storedView;
+		} = storedView as VizView;
 
 		// Try to find by path (supports dynamic segments), then by name, then by id
 		const matchedView = views.find((view) => {
@@ -160,7 +161,7 @@
 		}
 
 		// Reconstruct VizView instance from serialized data
-		const v = VizView.fromJSON(storedView as any, matchedView.component);
+		const v = VizView.fromJSON(storedView, matchedView.component);
 		v.parent = keyId;
 
 		initialViews[i] = v;
@@ -193,9 +194,15 @@
 	function checkIfPanelLocked(): boolean {
 		// Resolve the subpanel data from the global layout and respect its locked flag
 		const result = findSubPanel("paneKeyId", keyId);
-		if (!result) return false;
-		const sp = result.subPanel as any;
-		if (!sp) return false;
+		if (!result) {
+			return false;
+		}
+
+		const sp = result.subPanel as VizSubPanelData;
+		if (!sp) {
+			return false;
+		}
+
 		return !!sp.locked;
 	}
 
@@ -204,7 +211,7 @@
 	// When a panel is locked, override min/max sizes to prevent resizing.
 	$effect(() => {
 		const result = findSubPanel("paneKeyId", keyId);
-		const sp = result?.subPanel as any;
+		const sp = result?.subPanel as VizSubPanelData;
 		if (sp && sp.locked) {
 			// Try to use stored size, fallback to configured minSize
 			const lockedSize =
@@ -219,9 +226,15 @@
 
 	function togglePanelLock() {
 		const result = findSubPanel("paneKeyId", keyId);
-		if (!result) return;
+		if (!result) {
+			return;
+		}
+
 		const { parentIndex, childIndex, isChild, subPanel } = result as any;
-		if (!subPanel) return;
+		if (!subPanel) {
+			return;
+		}
+
 		// Toggle locked state on the underlying data model
 		subPanel.locked = !subPanel.locked;
 		// If this was a top-level panel, ensure the layoutState.tree entry is updated
@@ -697,7 +710,9 @@
 />
 
 <Pane
-	class={className + (checkIfPanelLocked() ? " locked" : "")}
+	class={className +
+		(checkIfPanelLocked() ? " locked" : "") +
+		" sub-panel-flex-container"}
 	{...allProps}
 	{id}
 	paneKeyId={keyId}
@@ -748,6 +763,11 @@ for Splitpanes
 </Pane>
 
 <style lang="scss">
+	:global(.sub-panel-flex-container) {
+		display: flex;
+		flex-direction: column;
+	}
+
 	:global(.splitpanes__pane.locked) + :global(.splitpanes__resizer),
 	:global(.splitpanes__resizer) + :global(.splitpanes__pane.locked) {
 		pointer-events: none;
@@ -757,7 +777,8 @@ for Splitpanes
 
 	:global(
 			.splitpanes__pane > *:last-child,
-			.viz-sub_panel-content
+			.viz-sub_panel-content,
+			.viz-content-panel
 				> :last-child:not(
 					.splitpanes--horizontal,
 					.splitpanes--vertical,
@@ -773,6 +794,7 @@ for Splitpanes
 					.splitpanes,
 					.splitpanes__pane,
 					.viz-sub_panel-content,
+					.viz-content-panel,
 					.splitpanes--horizontal,
 					.splitpanes--vertical
 				)

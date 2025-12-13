@@ -10,14 +10,19 @@
 <div class="photo-tooltip-content">
 	{#if asset.image_metadata?.file_name}
 		<div class="tooltip-row">
-			<span class="tooltip-value">{asset.image_metadata.file_name}</span>
+			<span class="tooltip-value" title={asset.image_metadata.file_name}
+				>{asset.image_metadata.file_name}</span
+			>
 		</div>
 	{/if}
-	{#if takenAt}
-		<div class="tooltip-row">
-			<span class="tooltip-value">{DateTime.fromJSDate(takenAt).toFormat("dd LLL yyyy • HH:mm")}</span>
-		</div>
-	{/if}
+	<div class="tooltip-row">
+		{#if takenAt}
+			<span class="tooltip-value"
+				>{DateTime.fromJSDate(takenAt).toFormat("dd LLL yyyy • HH:mm")}</span
+			>
+			<span class="tooltip-value">{asset.owner?.username}</span>
+		{/if}
+	</div>
 </div>
 
 <style lang="scss">
@@ -28,7 +33,10 @@
 		border-radius: 0.5rem;
 	}
 
-	:global(.tippy-box[data-theme~="viz"][data-placement^="bottom"] > .tippy-arrow::before) {
+	:global(
+			.tippy-box[data-theme~="viz"][data-placement^="bottom"]
+				> .tippy-arrow::before
+		) {
 		border-bottom-color: var(--imag-100);
 	}
 

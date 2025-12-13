@@ -13,7 +13,9 @@
 	import { sort } from "$lib/states/index.svelte";
 
 	type Props = {
-		grid: ComponentProps<typeof AssetGrid<T>> | ComponentProps<typeof PhotoAssetGrid>;
+		grid:
+			| ComponentProps<typeof AssetGrid<T>>
+			| ComponentProps<typeof PhotoAssetGrid>;
 		/** Optional: specify PhotoAssetGrid component for photo-specific features */
 		gridComponent?: Component<any>;
 		pagination?: IPagination;
@@ -22,7 +24,10 @@
 		toolbarSnippet?: Snippet;
 		noAssetsSnippet?: Snippet;
 		toolbarProps?: Omit<ComponentProps<typeof AssetToolbar>, "children">;
-		selectionToolbarProps?: Omit<ComponentProps<typeof AssetToolbar>, "children">;
+		selectionToolbarProps?: Omit<
+			ComponentProps<typeof AssetToolbar>,
+			"children"
+		>;
 	};
 
 	type ToolbarButtonProps = {
@@ -51,7 +56,10 @@
 	let columnCount: number | undefined = $derived(assetGridArray?.[0]?.length);
 
 	let gridData = $derived.by(() => {
-		const dataSlice = grid.data.slice(0, pagination.limit * (pagination.page === 0 ? 1 : pagination.page + 1));
+		const dataSlice = grid.data.slice(
+			0,
+			pagination.limit * (pagination.page === 0 ? 1 : pagination.page + 1)
+		);
 
 		if (columnCount === undefined) {
 			return dataSlice;
@@ -64,7 +72,10 @@
 			return dataSlice;
 		}
 
-		const fillItems = grid.data.slice(dataSlice.length, dataSlice.length + (columnCount - currentRowImageCount));
+		const fillItems = grid.data.slice(
+			dataSlice.length,
+			dataSlice.length + (columnCount - currentRowImageCount)
+		);
 		return [...dataSlice, ...fillItems] as typeof dataSlice;
 	});
 
@@ -107,13 +118,20 @@
 			`%cGrid Array at ${DateTime.now().toFormat("dd.MM.yyyy HH:mm:ss")}`,
 			"font-weight: bold; color: var(--imag-100); font-size: 18px;"
 		);
-		console.table(assetGridArray?.map((i) => i.map((j) => j.asset?.name ?? j.asset?.uid)));
+		console.table(
+			assetGridArray?.map((i) => i.map((j) => j.asset?.name ?? j.asset?.uid))
+		);
 	}
 </script>
 
 {#snippet toolbarButton(opts: ToolbarButtonProps)}
 	{#if opts.dropdown}
-		<Dropdown class="toolbar-button" {...opts.dropdown} title={opts.text} icon={opts.iconName} />
+		<Dropdown
+			class="toolbar-button"
+			{...opts.dropdown}
+			title={opts.text}
+			icon={opts.iconName}
+		/>
 	{:else}
 		<button class="toolbar-button" {...opts} title={opts.text}>
 			<MaterialIcon iconName={opts.iconName} iconStyle={opts.iconStyle} />
@@ -186,12 +204,19 @@
 		{#if noAssetsSnippet}
 			{@render noAssetsSnippet()}
 		{:else}
-			<p style="text-align: center; margin: 2em; color: var(--imag-20);">No assets to display.</p>
+			<p style="text-align: center; margin: 2em; color: var(--imag-20);">
+				No assets to display.
+			</p>
 		{/if}
 	</div>
 {:else}
 	{@const GridComp = gridComponent}
-	<GridComp {...grid} bind:assetGridArray bind:data={gridData} bind:columnCount />
+	<GridComp
+		{...grid}
+		bind:assetGridArray
+		bind:data={gridData}
+		bind:columnCount
+	/>
 {/if}
 
 <style lang="scss">

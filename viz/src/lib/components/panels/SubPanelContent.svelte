@@ -89,7 +89,7 @@
 
 <div
 	role="none"
-	class="viz-sub_panel-content"
+	class="viz-content-panel"
 	style="width: 100%;"
 	onclick={onFocus}
 	onkeydown={onFocus}
@@ -126,18 +126,19 @@
 		cursor: default;
 	}
 
-	.viz-sub_panel-content {
+	.viz-content-panel {
 		text-overflow: clip;
 		position: relative;
 		display: flex;
 		flex-direction: column;
-		height: 100%;
-		max-height: 100%;
+		flex: 1;
+		min-height: 0;
 	}
 
 	:global(
 			.splitpanes__pane > *:last-child,
-			.viz-sub_panel-content
+			.viz-sub_panel-content,
+			.viz-content-panel
 				> :last-child:not(
 					.splitpanes--horizontal,
 					.splitpanes--vertical,
@@ -153,6 +154,7 @@
 					.splitpanes,
 					.splitpanes__pane,
 					.viz-sub_panel-content,
+					.viz-content-panel,
 					.splitpanes--horizontal,
 					.splitpanes--vertical
 				)

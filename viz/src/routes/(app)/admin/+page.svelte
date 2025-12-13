@@ -15,24 +15,34 @@
 		// uptime is now handled by formattedLiveUptime
 		activeConnections: data.wsStats?.connectedClients ?? 0,
 		goroutines: data.systemStats?.num_goroutine ?? 0,
-		allocMemory: data.systemStats?.alloc_memory ? formatBytes(data.systemStats.alloc_memory) : "Unknown",
-		sysMemory: data.systemStats?.sys_memory ? formatBytes(data.systemStats.sys_memory) : "Unknown"
+		allocMemory: data.systemStats?.alloc_memory
+			? formatBytes(data.systemStats.alloc_memory)
+			: "Unknown",
+		sysMemory: data.systemStats?.sys_memory
+			? formatBytes(data.systemStats.sys_memory)
+			: "Unknown"
 	});
 
 	let databaseInfo = $derived({
 		connections: data.dbStats?.active_connections ?? 0,
-		size: data.dbStats?.db_size_bytes ? formatBytes(data.dbStats.db_size_bytes) : "Unknown",
+		size: data.dbStats?.db_size_bytes
+			? formatBytes(data.dbStats.db_size_bytes)
+			: "Unknown",
 		users: data.dbStats?.user_count ?? 0,
 		images: data.dbStats?.image_count ?? 0
 	});
 
 	let storageInfo = $derived({
-		totalUsed: data.systemStats?.storage_used_bytes ? formatBytes(data.systemStats.storage_used_bytes) : "Unknown",
+		totalUsed: data.systemStats?.storage_used_bytes
+			? formatBytes(data.systemStats.storage_used_bytes)
+			: "Unknown",
 		totalSystemSpace: data.systemStats?.total_system_space_bytes
 			? formatBytes(data.systemStats.total_system_space_bytes)
 			: "Unknown",
 		path: data.systemStats?.storage_path ?? "Unknown",
-		cacheSize: data.cacheStatus ? formatBytes(data.cacheStatus.size) : "Unknown",
+		cacheSize: data.cacheStatus
+			? formatBytes(data.cacheStatus.size)
+			: "Unknown",
 		cacheItems: data.cacheStatus?.items ?? 0
 	});
 
@@ -99,7 +109,9 @@
 						<MaterialIcon iconName="schedule" />
 					</div>
 					<div class="stat-content">
-						<span class="stat-value" id="uptime-value">{formattedLiveUptime}</span>
+						<span class="stat-value" id="uptime-value"
+							>{formattedLiveUptime}</span
+						>
 						<span class="stat-label">Uptime</span>
 					</div>
 				</div>
@@ -211,7 +223,7 @@
 					</div>
 					<div class="stat-content">
 						<span class="stat-value">{storageInfo.totalUsed}</span>
-						<span class="stat-label">Total Used Storage</span>
+						<span class="stat-label">Used Storage</span>
 					</div>
 				</div>
 
@@ -222,7 +234,7 @@
 					</div>
 					<div class="stat-content">
 						<span class="stat-value">{storageInfo.totalSystemSpace}</span>
-						<span class="stat-label">Total System Space</span>
+						<span class="stat-label">System Space</span>
 					</div>
 				</div>
 
@@ -233,7 +245,9 @@
 					</div>
 					<div class="stat-content">
 						<span class="stat-value">{storageInfo.cacheSize}</span>
-						<span class="stat-label">Size ({storageInfo.cacheItems} items)</span>
+						<span class="stat-label"
+							>Cache ({storageInfo.cacheItems} items)</span
+						>
 					</div>
 				</div>
 
