@@ -105,7 +105,7 @@ func AdminRouter(db *gorm.DB, logger *slog.Logger, storageStats *images.StorageS
 		// Simple uptime check
 		uptime := time.Since(StartTime)
 
-		totalSystemSpace, err := libos.GetTotalDiskSpace(storageStats.GetPath())
+		freeBytes, totalSystemSpace, err := libos.GetDiskSpace(storageStats.GetPath())
 		if err != nil {
 			logger.Error("failed to get total system space", slog.Any("error", err))
 			render.Status(req, http.StatusInternalServerError)
@@ -120,10 +120,8 @@ func AdminRouter(db *gorm.DB, logger *slog.Logger, storageStats *images.StorageS
 			SysMemory:        int64(m.Sys),
 			StorageUsedBytes: storageStats.GetTotalSize(),
 			StoragePath:      storageStats.GetPath(),
-			TotalSystemSpaceBytes: func(u uint64) *int64 {
-				i := int64(u)
-				return &i
-			}(totalSystemSpace),
+			TotalSystemSpaceBytes: int64(totalSystemSpace),
+			TotalAvailableSpaceBytes: int64(freeBytes),
 		}
 
 		render.JSON(res, req, stats)

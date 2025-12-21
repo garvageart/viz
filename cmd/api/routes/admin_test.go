@@ -76,7 +76,7 @@ func TestAdminSystemStats(t *testing.T) {
 	assert.GreaterOrEqual(t, stats.StorageUsedBytes, int64(0))
 	assert.NotEmpty(t, stats.StoragePath)
 	assert.NotNil(t, stats.TotalSystemSpaceBytes)
-	assert.GreaterOrEqual(t, *stats.TotalSystemSpaceBytes, uint64(0))
+	assert.GreaterOrEqual(t, stats.TotalSystemSpaceBytes, uint64(0))
 }
 
 func TestAdminDatabaseStats(t *testing.T) {

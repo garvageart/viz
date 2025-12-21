@@ -655,9 +655,12 @@ type SystemStatsResponse struct {
 	// SysMemory Total bytes of memory obtained from the OS
 	SysMemory int64 `json:"sys_memory"`
 
-	// TotalSystemSpaceBytes Path to the base directory being measured
-	TotalSystemSpaceBytes *int64 `json:"total_system_space_bytes,omitempty"`
-	UptimeSeconds         int64  `json:"uptime_seconds"`
+	// TotalAvailableSpaceBytes Total available disk space on the system
+	TotalAvailableSpaceBytes int64 `json:"total_available_space_bytes"`
+
+	// TotalSystemSpaceBytes Total disk space on the system
+	TotalSystemSpaceBytes int64 `json:"total_system_space_bytes"`
+	UptimeSeconds         int64 `json:"uptime_seconds"`
 }
 
 // SystemStatusResponse defines model for SystemStatusResponse.

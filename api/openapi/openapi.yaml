@@ -2737,7 +2737,11 @@ components:
         total_system_space_bytes:
           type: integer
           format: int64
-          description: "Path to the base directory being measured"
+          description: "Total disk space on the system"
+        total_available_space_bytes:
+          type: integer
+          format: int64
+          description: "Total available disk space on the system"
       required:
         [
           uptime_seconds,
@@ -2746,6 +2750,8 @@ components:
           sys_memory,
           storage_used_bytes,
           storage_path,
+          total_system_space_bytes,
+          total_available_space_bytes,
         ]
 
     DatabaseStatsResponse:
