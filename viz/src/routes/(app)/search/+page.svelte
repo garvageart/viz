@@ -1,11 +1,10 @@
 <script lang="ts">
-	import { goto } from "$app/navigation";
 	import AssetGrid from "$lib/components/AssetGrid.svelte";
 	import AssetToolbar from "$lib/components/AssetToolbar.svelte";
 	import LoadingSpinner from "$lib/components/LoadingSpinner.svelte";
 	import MaterialIcon from "$lib/components/MaterialIcon.svelte";
 	import { performSearch } from "$lib/search/execute";
-	import { modal, search, sort } from "$lib/states/index.svelte";
+	import { modal, search, viewSettings } from "$lib/states/index.svelte";
 	import { onMount, type ComponentProps } from "svelte";
 	import { SvelteSet } from "svelte/reactivity";
 	import CollectionCard from "$lib/components/CollectionCard.svelte";
@@ -21,10 +20,8 @@
 		getConsolidatedGroups,
 		groupImagesByDate,
 		type ConsolidatedGroup,
-		type DateGroup,
-		type ImageWithDateLabel
+		type DateGroup
 	} from "$lib/photo-layout";
-	import { DateTime } from "luxon";
 	import { downloadOriginalImageFile } from "$lib/utils/http";
 	import { toastState } from "$lib/toast-notifcations/notif-state.svelte";
 	import Dropdown, {
@@ -48,11 +45,10 @@
 	let singleSelectedCollection: Collection | undefined = $state();
 
 	// Display state
-	let currentAssetGridView: AssetGridView = $state("grid");
 	const displayOptions: DropdownOption[] = [
 		{ title: "Grid" },
 		{ title: "List" },
-		{ title: "Card" }
+		{ title: "Cards" }
 	];
 
 	// Grouping Logic for Images (Reused from photos/+page.svelte)
@@ -70,7 +66,8 @@
 		assetSnippet: collectionCard,
 		selectedAssets: selectedCollections,
 		singleSelectedAsset: singleSelectedCollection,
-		searchValue: search.value
+		searchValue: search.value,
+		view: viewSettings.current
 	});
 
 	hotkeys("escape", (e) => {
@@ -247,10 +244,12 @@
 											icon="list_alt"
 											options={displayOptions}
 											selectedOption={displayOptions.find(
-												(o) => o.title.toLowerCase() === currentAssetGridView
+												(o) => o.title.toLowerCase() === viewSettings.current
 											)}
 											onSelect={(opt) => {
-												currentAssetGridView = opt.title as AssetGridView;
+												viewSettings.setView(
+													opt.title.toLowerCase() as AssetGridView
+												);
 											}}
 										/>
 									</div>
@@ -265,7 +264,7 @@
 											{selectedAssets}
 											bind:singleSelectedAsset
 											bind:allData={allImagesFlat}
-											bind:view={currentAssetGridView}
+											bind:view={viewSettings.current}
 											data={consolidatedGroup.allImages}
 											assetDblClick={(_e, asset) => openLightbox(asset)}
 											onassetcontext={(detail: {

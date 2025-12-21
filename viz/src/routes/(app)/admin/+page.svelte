@@ -1,6 +1,7 @@
 <script lang="ts">
 	import { invalidateAll } from "$app/navigation";
 	import MaterialIcon from "$lib/components/MaterialIcon.svelte";
+	import ProgressBar from "$lib/components/ProgressBar.svelte";
 	import AdminRouteShell from "$lib/components/admin/AdminRouteShell.svelte";
 	import { formatBytes, formatSeconds } from "$lib/utils/images";
 	import { Duration } from "luxon";
@@ -35,6 +36,9 @@
 	let storageInfo = $derived({
 		totalUsed: data.systemStats?.storage_used_bytes
 			? formatBytes(data.systemStats.storage_used_bytes)
+			: "Unknown",
+		availableSystemSpace: data.systemStats?.total_system_space_bytes
+			? formatBytes(data.systemStats.total_system_space_bytes)
 			: "Unknown",
 		totalSystemSpace: data.systemStats?.total_system_space_bytes
 			? formatBytes(data.systemStats.total_system_space_bytes)
@@ -212,10 +216,35 @@
 			</div>
 		</section>
 
-		<!-- Storage & Cache Section -->
+		<!-- Storage Section -->
 		<section class="section">
-			<h3 class="section-title">Storage & Cache</h3>
+			<h3 class="section-title">Storage</h3>
 			<div class="stats-grid">
+				<!-- Percentage of Available Space -->
+				<div class="stat-card">
+					<div class="stat-icon storage">
+						<MaterialIcon iconName="hard_drive" />
+					</div>
+					<div class="stat-content">
+						<span class="stat-value">
+							{formatBytes(
+								(data.systemStats?.total_system_space_bytes ?? 0) -
+									(data.systemStats?.total_available_space_bytes ?? 0)
+							)} of {storageInfo.totalSystemSpace}
+						</span>
+						<span class="stat-label">System Storage</span>
+						<div class="progress-bar-wrapper">
+							<ProgressBar
+								colour="secondary"
+								width={100 -
+									((data.systemStats?.total_available_space_bytes ?? 0) /
+										(data.systemStats?.total_system_space_bytes ?? 1)) *
+										100}
+							/>
+						</div>
+					</div>
+				</div>
+
 				<!-- Total Storage -->
 				<div class="stat-card">
 					<div class="stat-icon storage">
@@ -223,20 +252,11 @@
 					</div>
 					<div class="stat-content">
 						<span class="stat-value">{storageInfo.totalUsed}</span>
-						<span class="stat-label">Used Storage</span>
+						<span class="stat-label">Viz Storage</span>
 					</div>
 				</div>
 
-				<!-- Total System Space -->
-				<div class="stat-card">
-					<div class="stat-icon storage">
-						<MaterialIcon iconName="hard_drive" />
-					</div>
-					<div class="stat-content">
-						<span class="stat-value">{storageInfo.totalSystemSpace}</span>
-						<span class="stat-label">System Space</span>
-					</div>
-				</div>
+				<div class="stat-seperator"></div>
 
 				<!-- Cache Usage -->
 				<div class="stat-card">
@@ -246,7 +266,7 @@
 					<div class="stat-content">
 						<span class="stat-value">{storageInfo.cacheSize}</span>
 						<span class="stat-label"
-							>Cache ({storageInfo.cacheItems} items)</span
+							>Viz Cache ({storageInfo.cacheItems} items)</span
 						>
 					</div>
 				</div>
@@ -381,6 +401,7 @@
 		display: flex;
 		flex-direction: column;
 		min-width: 0; /* prevents overflow flex item issues */
+		flex: 1;
 	}
 
 	.stat-value {
@@ -400,6 +421,22 @@
 		min-width: 10rem;
 		display: inline-block;
 		text-align: left;
+	}
+
+	.progress-bar-wrapper {
+		position: relative;
+		height: 4px;
+		width: 100%;
+		margin-top: 1rem;
+		overflow: hidden;
+	}
+
+	.stat-seperator {
+		grid-column: 1 / -1;
+		height: 1px;
+		width: 100%;
+		background-color: var(--imag-90);
+		margin: 0.5rem 0;
 	}
 
 	.stat-label {

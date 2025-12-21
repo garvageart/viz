@@ -19,8 +19,13 @@
 	import PhotoAssetGrid from "$lib/components/PhotoAssetGrid.svelte";
 	import AssetsShell from "$lib/components/AssetsShell.svelte";
 	import VizViewContainer from "$lib/components/panels/VizViewContainer.svelte";
-	import { debugMode, modal, sort } from "$lib/states/index.svelte";
-	import type { AssetGridArray } from "$lib/types/asset.js";
+	import {
+		debugMode,
+		modal,
+		sort,
+		viewSettings
+	} from "$lib/states/index.svelte";
+	import type { AssetGridArray, AssetGridView } from "$lib/types/asset.js";
 	import {
 		SUPPORTED_IMAGE_TYPES,
 		SUPPORTED_RAW_FILES,
@@ -45,7 +50,7 @@
 		type Image
 	} from "$lib/api";
 	import { toastState } from "$lib/toast-notifcations/notif-state.svelte.js";
-	import CollectionModal from "$lib/components/CollectionModal.svelte";
+	import CollectionModal from "$lib/components/modals/CollectionModal.svelte";
 	import InputText from "$lib/components/dom/InputText.svelte";
 	import { layoutState } from "$lib/third-party/svelte-splitpanes/state.svelte";
 	import Dropdown, {
@@ -62,6 +67,10 @@
 	import ImageLightbox from "$lib/components/ImageLightbox.svelte";
 	import { copyToClipboard } from "$lib/utils/misc.js";
 	import IconButton from "$lib/components/IconButton.svelte";
+	import type VizView from "$lib/views/views.svelte";
+	import type { PageProps } from "./$types";
+	import AssetGrid from "$lib/components/AssetGrid.svelte";
+	import SearchInput from "$lib/components/SearchInput.svelte";
 
 	// Context menu state
 	let ctxShowMenu = $state(false);
@@ -70,7 +79,7 @@
 		null as any
 	);
 
-	let { data } = $props();
+	let { data, view }: PageProps & { view?: VizView } = $props();
 	// Keyboard events
 	const permittedKeys: string[] = [];
 	const selectKeys = ["Enter", "Space", " "];
@@ -78,7 +87,7 @@
 	permittedKeys.push(...selectKeys, ...moveKeys);
 
 	// Data
-	let loadedData = $derived(data);
+	let loadedData = $state(data);
 	// Track local edits separately to avoid clobbering them on refresh
 	let localDataUpdates = $state({
 		name: data.name,
@@ -86,56 +95,30 @@
 		private: data.private as boolean | undefined
 	});
 
+	// React to data changes (e.g. from invalidation or navigation)
+	$effect(() => {
+		loadedData = data;
+		localDataUpdates = {
+			name: data.name,
+			description: data.description,
+			private: data.private as boolean | undefined
+		};
+	});
+
 	let loadedImages = $derived(
 		loadedData.images?.items?.map((img) => img.image) ?? []
 	);
 
-	// Sync tab name with collection name
+	// Sync tab name with collection name directly on the passed view instance
+	// No more global tree walking!
 	$effect(() => {
-		const currentPath = `/collections/${loadedData.uid}`;
-		const newName = localDataUpdates.name;
-
-		if (debugMode) {
-			console.log("Syncing tab name:", newName, "for path:", currentPath);
-		}
-
-		// Iterate through all panels and their content to find matching view
-		for (const panel of layoutState.tree) {
-			// Check panel's direct views
-			for (const view of panel.views) {
-				if (view.path === currentPath) {
-					if (debugMode) {
-						console.log(
-							"Found matching view in panel.views, updating from:",
-							view.name,
-							"to:",
-							newName
-						);
-					}
-
-					view.name = newName;
-				}
+		if (view && localDataUpdates.name) {
+			if (debugMode) {
+				console.log(
+					`Syncing tab name to "${localDataUpdates.name}" for view ${view.id}`
+				);
 			}
-
-			// Check content views
-			if (panel.childs?.content) {
-				for (const content of panel.childs.content) {
-					for (const view of content.views) {
-						if (view.path === currentPath) {
-							if (debugMode) {
-								console.log(
-									"Found matching view in content.views, updating from:",
-									view.name,
-									"to:",
-									newName
-								);
-							}
-
-							view.name = newName;
-						}
-					}
-				}
-			}
+			view.name = localDataUpdates.name;
 		}
 	});
 
@@ -182,6 +165,7 @@
 	// Grid props
 	let grid: ComponentProps<typeof PhotoAssetGrid> = $derived({
 		photoCardSnippet: imageCard,
+		view: viewSettings.current,
 		assetGridArray: imageGridArray,
 		selectedAssets,
 		singleSelectedAsset,
@@ -594,21 +578,39 @@
 	}
 
 	function prevLightboxImage() {
-		if (!lightboxImage) return;
+		if (!lightboxImage) {
+			return;
+		}
+
 		const arr = getDisplayArray();
-		if (!arr.length) return;
+		if (!arr.length) {
+			return;
+		}
+
 		const idx = arr.findIndex((i) => i.uid === lightboxImage!.uid);
-		if (idx === -1) return;
+		if (idx === -1) {
+			return;
+		}
+
 		const next = (idx - 1 + arr.length) % arr.length;
 		lightboxImage = arr[next];
 	}
 
 	function nextLightboxImage() {
-		if (!lightboxImage) return;
+		if (!lightboxImage) {
+			return;
+		}
+
 		const arr = getDisplayArray();
-		if (!arr.length) return;
+		if (!arr.length) {
+			return;
+		}
+
 		const idx = arr.findIndex((i) => i.uid === lightboxImage!.uid);
-		if (idx === -1) return;
+		if (idx === -1) {
+			return;
+		}
+
 		const next = (idx + 1) % arr.length;
 		lightboxImage = arr[next];
 	}
@@ -662,6 +664,13 @@
 {/snippet}
 
 {#snippet searchInputSnippet()}
+	<!-- This looks like ass -->
+	<!-- <SearchInput
+		inputId="collection-search"
+		bind:value={searchValue}
+		placeholder="Search images"
+		style="font-size: 1.1em;"
+	/> -->
 	<div id="coll-tools">
 		<IconButton
 			iconName="upload"
@@ -687,6 +696,18 @@
 		>
 			Edit
 		</IconButton>
+		<Dropdown
+			title="Display"
+			class="toolbar-button"
+			icon="list_alt"
+			options={viewSettings.displayOptions}
+			selectedOption={viewSettings.displayOptions.find(
+				(o) => o.title.toLowerCase() === viewSettings.current
+			)}
+			onSelect={(opt) => {
+				viewSettings.setView(opt.title.toLowerCase() as AssetGridView);
+			}}
+		/>
 		<Dropdown
 			class="toolbar-button"
 			icon="more_horiz"
@@ -717,7 +738,7 @@
 						break;
 				}
 			}}
-		></Dropdown>
+		/>
 	</div>
 {/snippet}
 
@@ -776,7 +797,7 @@
 		{selectionToolbarSnippet}
 		toolbarSnippet={searchInputSnippet}
 		toolbarProps={{
-			style: "justify-content: flex-end; "
+			style: "justify-content: space-between; gap: 0.5rem;"
 		}}
 	>
 		<div id="viz-info-container">
@@ -787,14 +808,29 @@
 						style="padding: 0% 0.5rem;"
 						title={localDataUpdates.name}
 						bind:value={localDataUpdates.name}
-						onblur={() => {
-							if (localDataUpdates.name.trim() !== loadedData.name.trim()) {
-								updateCollectionDetails({
-									name: localDataUpdates.name
-								});
-							}
-						}}
 					/>
+					{#if localDataUpdates.name.trim() !== loadedData.name.trim()}
+						<div id="confirm-icons">
+							<IconButton
+								title="Cancel"
+								class="name-confirm-btn"
+								onclick={() => {
+									localDataUpdates.name = loadedData.name;
+								}}
+								iconName="close"
+							/>
+							<IconButton
+								title="Confirm"
+								class="name-confirm-btn"
+								onclick={() => {
+									updateCollectionDetails({
+										name: localDataUpdates.name
+									});
+								}}
+								iconName="check"
+							/>
+						</div>
+					{/if}
 				</span>
 				<span
 					id="coll-details"
@@ -849,6 +885,19 @@
 	#coll-name {
 		color: var(--imag-20);
 		font-weight: bold;
+		display: flex;
+		flex-direction: row;
+		align-items: center;
+		gap: 0.5rem;
+
+		#confirm-icons {
+			display: flex;
+			flex-direction: row;
+		}
+
+		:global(.name-confirm-btn) {
+			font-size: 0.75rem;
+		}
 	}
 
 	#coll-metadata {
@@ -867,9 +916,6 @@
 		align-items: center;
 		font-size: inherit;
 		height: 100%;
-		margin-left: 1rem;
-		// position: absolute;
-		gap: 0.5rem;
-		// right: 2rem;
+		gap: 0.75rem;
 	}
 </style>

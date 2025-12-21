@@ -1,10 +1,17 @@
 <script lang="ts">
 	import VizViewContainer from "$lib/components/panels/VizViewContainer.svelte";
 	import type { PageProps } from "./$types";
-	import CollectionCard, { openCollection } from "$lib/components/CollectionCard.svelte";
+	import CollectionCard, {
+		openCollection
+	} from "$lib/components/CollectionCard.svelte";
 	import MaterialIcon from "$lib/components/MaterialIcon.svelte";
 	import Button from "$lib/components/Button.svelte";
-	import { createCollection, type Collection, deleteCollection, updateCollection } from "$lib/api";
+	import {
+		createCollection,
+		type Collection,
+		deleteCollection,
+		updateCollection
+	} from "$lib/api";
 	import { modal, sort } from "$lib/states/index.svelte";
 	import { goto } from "$app/navigation";
 	import { page } from "$app/state";
@@ -16,9 +23,10 @@
 	import AssetsShell from "$lib/components/AssetsShell.svelte";
 	import { sortCollections } from "$lib/sort/sort";
 	import { toastState } from "$lib/toast-notifcations/notif-state.svelte";
-	import CollectionModal from "$lib/components/CollectionModal.svelte";
+	import CollectionModal from "$lib/components/modals/CollectionModal.svelte";
 	import ContextMenu from "$lib/context-menu/ContextMenu.svelte";
 	import { copyToClipboard } from "$lib/utils/misc";
+	import IconButton from "$lib/components/IconButton.svelte";
 
 	let { data }: PageProps = $props();
 
@@ -59,13 +67,18 @@
 	// Context menu state for right-click on collections
 	let ctxShowMenu = $state(false);
 	let ctxItems = $state([] as any[]);
-	let ctxAnchor: { x: number; y: number } | HTMLElement | null = $state(null as any);
+	let ctxAnchor: { x: number; y: number } | HTMLElement | null = $state(
+		null as any
+	);
 
 	// Modal data for create/edit
-	let modalData: Collection | undefined = $state(undefined);
+	let modalData: Collection | undefined = $state();
 	let modalMode: "create" | "edit" = $state("create");
 
-	function openCollectionContext(collection: Collection, anchor: { x: number; y: number } | HTMLElement) {
+	function openCollectionContext(
+		collection: Collection,
+		anchor: { x: number; y: number } | HTMLElement
+	) {
 		// Build context menu items for a collection
 		ctxItems = [
 			{
@@ -97,13 +110,27 @@
 						});
 
 						if (res.status === 201) {
-							listOfCollectionsData = [res.data as Collection, ...listOfCollectionsData];
-							toastState.addToast({ message: "Collection duplicated", type: "success" });
+							listOfCollectionsData = [
+								res.data as Collection,
+								...listOfCollectionsData
+							];
+							toastState.addToast({
+								message: "Collection duplicated",
+								type: "success"
+							});
 						} else {
-							toastState.addToast({ message: (res as any).data?.error ?? `Duplicate failed (${res.status})`, type: "error" });
+							toastState.addToast({
+								message:
+									(res as any).data?.error ??
+									`Duplicate failed (${res.status})`,
+								type: "error"
+							});
 						}
 					} catch (err) {
-						toastState.addToast({ message: "Duplicate failed: " + (err as Error).message, type: "error" });
+						toastState.addToast({
+							message: "Duplicate failed: " + (err as Error).message,
+							type: "error"
+						});
 					}
 				}
 			},
@@ -116,9 +143,15 @@
 					try {
 						const url = `${location.origin}/collections/${collection.uid}`;
 						copyToClipboard(url);
-						toastState.addToast({ message: "Link copied to clipboard", type: "success" });
+						toastState.addToast({
+							message: "Link copied to clipboard",
+							type: "success"
+						});
 					} catch (err) {
-						toastState.addToast({ message: "Failed to copy link", type: "error" });
+						toastState.addToast({
+							message: "Failed to copy link",
+							type: "error"
+						});
 					}
 				}
 			},
@@ -128,17 +161,33 @@
 				icon: "delete",
 				danger: true,
 				action: async () => {
-					if (!confirm(`Delete collection "${collection.name}"? This cannot be undone.`)) return;
+					if (
+						!confirm(
+							`Delete collection "${collection.name}"? This cannot be undone.`
+						)
+					)
+						return;
 					try {
 						const res = await deleteCollection(collection.uid);
 						if (res.status === 204) {
-							listOfCollectionsData = listOfCollectionsData.filter((c) => c.uid !== collection.uid);
-							toastState.addToast({ message: `Deleted collection ${collection.name}`, type: "success" });
+							listOfCollectionsData = listOfCollectionsData.filter(
+								(c) => c.uid !== collection.uid
+							);
+							toastState.addToast({
+								message: `Deleted collection ${collection.name}`,
+								type: "success"
+							});
 						} else {
-							toastState.addToast({ message: res.data?.error ?? "Failed to delete", type: "error" });
+							toastState.addToast({
+								message: res.data?.error ?? "Failed to delete",
+								type: "error"
+							});
 						}
 					} catch (err) {
-						toastState.addToast({ message: `Failed to delete: ${err}`, type: "error" });
+						toastState.addToast({
+							message: `Failed to delete: ${err}`,
+							type: "error"
+						});
 					}
 				}
 			}
@@ -161,17 +210,31 @@
 
 		if (modalMode === "create") {
 			try {
-				const res = await createCollection({ name, description, private: isPrivate });
+				const res = await createCollection({
+					name,
+					description,
+					private: isPrivate
+				});
 				if (res.status === 201) {
 					listOfCollectionsData = [res.data, ...listOfCollectionsData];
 					modal.show = false;
-					toastState.addToast({ message: "Collection created", type: "success" });
+					toastState.addToast({
+						message: "Collection created",
+						type: "success"
+					});
 					goto(`/collections/${res.data.uid}`);
 				} else {
-					toastState.addToast({ message: (res as any).data?.error ?? `Creation failed (${res.status})`, type: "error" });
+					toastState.addToast({
+						message:
+							(res as any).data?.error ?? `Creation failed (${res.status})`,
+						type: "error"
+					});
 				}
 			} catch (e) {
-				toastState.addToast({ message: "Creation failed: " + (e as Error).message, type: "error" });
+				toastState.addToast({
+					message: "Creation failed: " + (e as Error).message,
+					type: "error"
+				});
 			}
 		} else {
 			// edit
@@ -179,17 +242,32 @@
 				if (!modalData || !modalData.uid) {
 					return;
 				}
-				const res = await updateCollection(modalData.uid, { name, description, private: isPrivate });
+				const res = await updateCollection(modalData.uid, {
+					name,
+					description,
+					private: isPrivate
+				});
 				if (res.status === 200) {
 					// update local list
-					listOfCollectionsData = listOfCollectionsData.map((c) => (c.uid === modalData!.uid ? res.data : c));
+					listOfCollectionsData = listOfCollectionsData.map((c) =>
+						c.uid === modalData!.uid ? res.data : c
+					);
 					modal.show = false;
-					toastState.addToast({ message: "Collection updated", type: "success" });
+					toastState.addToast({
+						message: "Collection updated",
+						type: "success"
+					});
 				} else {
-					toastState.addToast({ message: res.data?.error ?? `Update failed (${res.status})`, type: "error" });
+					toastState.addToast({
+						message: res.data?.error ?? `Update failed (${res.status})`,
+						type: "error"
+					});
 				}
 			} catch (e) {
-				toastState.addToast({ message: "Update failed: " + (e as Error).message, type: "error" });
+				toastState.addToast({
+					message: "Update failed: " + (e as Error).message,
+					type: "error"
+				});
 			}
 		}
 	}}
@@ -224,9 +302,10 @@
 {#snippet toolbarSnippet()}
 	<div id="coll-details-toolbar">
 		<div id="coll-tools">
-			<Button
+			<IconButton
+				iconName="add"
 				id="create-collection"
-				style="font-size: 0.7rem; background-color: var(--imag-100); padding: 0.2em 0.8em; display: flex; justify-content: center; align-items: center;"
+				style="font-size: 0.7rem; padding: 0.2em 0.8em; display: flex; justify-content: center; align-items: center;"
 				title="Create Collection"
 				aria-label="Create Collection"
 				onclick={() => {
@@ -236,8 +315,7 @@
 				}}
 			>
 				Create
-				<MaterialIcon iconName="add" />
-			</Button>
+			</IconButton>
 		</div>
 		<span id="coll-details-floating"
 			>{listOfCollectionsData.length}
@@ -249,8 +327,13 @@
 {#snippet noAssetsSnippet()}
 	<div id="no-collections-container">
 		<div id="no-collections-text">
-			<MaterialIcon iconName="folder_open" style="font-size: 2rem; margin: 0rem 0.5rem; color: var(--imag-20);" />
-			<span style="color: var(--imag-20); font-size: 1.2rem;">Add your first collection</span>
+			<MaterialIcon
+				iconName="folder_open"
+				style="font-size: 2rem; margin: 0rem 0.5rem; color: var(--imag-20);"
+			/>
+			<span style="color: var(--imag-20); font-size: 1.2rem;"
+				>Add your first collection</span
+			>
 		</div>
 
 		<Button
@@ -283,7 +366,9 @@
 			return;
 		}
 
-		const assetGrid = document.querySelector(".viz-asset-grid-container")! as HTMLElement;
+		const assetGrid = document.querySelector(
+			".viz-asset-grid-container"
+		)! as HTMLElement;
 
 		const top = Math.max(assetGrid.offsetTop, 1);
 		const current = e.currentTarget.scrollTop;
@@ -301,13 +386,20 @@
 		{toolbarSnippet}
 		{noAssetsSnippet}
 		toolbarProps={{
-			style: `justify-content: space-between;` + (fadeOpacity ? `opacity: ${toolbarOpacity};` : "")
+			style:
+				`justify-content: space-between;` +
+				(fadeOpacity ? `opacity: ${toolbarOpacity};` : "")
 		}}
 	/>
 </VizViewContainer>
 
 <!-- Context menu for right-click on collections -->
-<ContextMenu bind:showMenu={ctxShowMenu} items={ctxItems} anchor={ctxAnchor} offsetY={4} />
+<ContextMenu
+	bind:showMenu={ctxShowMenu}
+	items={ctxItems}
+	anchor={ctxAnchor}
+	offsetY={4}
+/>
 
 <style lang="scss">
 	@use "sass:color";

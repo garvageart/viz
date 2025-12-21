@@ -38,17 +38,16 @@
 	import { goto, invalidateAll } from "$app/navigation";
 	import ImageLightbox from "$lib/components/ImageLightbox.svelte";
 	import Button from "$lib/components/Button.svelte";
-	import { modal } from "$lib/states/index.svelte";
+	import { modal, viewSettings } from "$lib/states/index.svelte";
 	import { copyToClipboard } from "$lib/utils/misc.js";
-	import CollectionModal from "$lib/components/CollectionModal.svelte";
+	import CollectionModal from "$lib/components/modals/CollectionModal.svelte";
 	import ConfirmationModal from "$lib/components/modals/ConfirmationModal.svelte";
 	import { downloadOriginalImageFile } from "$lib/utils/http.js";
 	import {
 		getConsolidatedGroups,
 		groupImagesByDate,
 		type ConsolidatedGroup,
-		type DateGroup,
-		type ImageWithDateLabel
+		type DateGroup
 	} from "$lib/photo-layout/index.js";
 
 	let { data } = $props();
@@ -70,14 +69,6 @@
 	let consolidatedGroups: ConsolidatedGroup[] = $derived.by(() => {
 		return getConsolidatedGroups(groups);
 	});
-
-	// Display state (local to photos page)
-	let currentAssetGridView: AssetGridView = $state("grid");
-	const displayOptions: DropdownOption[] = [
-		{ title: "Grid" },
-		{ title: "List" },
-		{ title: "Card" }
-	];
 
 	// Lightbox
 	let lightboxImage: Image | undefined = $state();
@@ -1229,12 +1220,12 @@
 						title="Display"
 						class="toolbar-button"
 						icon="list_alt"
-						options={displayOptions}
-						selectedOption={displayOptions.find(
-							(o) => o.title.toLowerCase() === currentAssetGridView
+						options={viewSettings.displayOptions}
+						selectedOption={viewSettings.displayOptions.find(
+							(o) => o.title.toLowerCase() === viewSettings.current
 						)}
 						onSelect={(opt) => {
-							currentAssetGridView = opt.title as AssetGridView;
+							viewSettings.setView(opt.title.toLowerCase() as AssetGridView);
 						}}
 					/>
 				</div>
@@ -1255,7 +1246,7 @@
 						{selectedAssets}
 						bind:singleSelectedAsset
 						bind:allData={allImagesFlat}
-						bind:view={currentAssetGridView}
+						bind:view={viewSettings.current}
 						data={consolidatedGroup.allImages}
 						assetDblClick={(_e, asset) => openLightbox(asset)}
 						onassetcontext={(detail: {
