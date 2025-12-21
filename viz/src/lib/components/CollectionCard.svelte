@@ -37,29 +37,47 @@
 		let existingContent: Content | undefined;
 		let existingParentPanel: VizSubPanelData | undefined;
 
+		console.debug(
+			`[openCollection] Searching for view with path: "${collectionPath}"`
+		);
 		for (let i = 0; i < layoutState.tree.length; i++) {
 			const panel = layoutState.tree[i];
+			// Ensure we have content to iterate over
+			if (!panel.childs?.content) continue;
 			for (const content of panel.childs.content) {
-				const view = content.views.find((v) => v.path === collectionPath);
-				if (view) {
-					existingView = view;
-					existingContent = content;
-					existingParentPanel = panel;
-					break;
+				for (const v of content.views) {
+					console.debug(
+						`[openCollection] Checking view id=${v.id} path="${v.path}" name="${v.name}"`
+					);
+					if (v.path === collectionPath) {
+						console.debug(`[openCollection] Found match: ${v.id}`);
+						existingView = v;
+						existingContent = content;
+						existingParentPanel = panel;
+						break;
+					}
 				}
+				if (existingView) break;
 			}
+
 			if (existingView) {
 				break;
 			}
 		}
 
 		if (existingView && existingContent && existingParentPanel) {
+			console.debug(
+				`[openCollection] Activating existing view: ${existingView.id}`
+			);
 			// Deactivate all views in the content and activate the existing one
 			existingContent.views.forEach((v) => v.setActive(false));
 			existingView.setActive(true);
+			// IMPORTANT: Trigger layout update so the UI reflects the change
+			existingParentPanel.makeViewActive(existingView);
 			return;
 		}
 
+		console.debug(`[openCollection] No match found. Creating new view.`);
 		const view = new VizView({
 			name: collection.name,
 			component: CollectionPage as any,
@@ -84,7 +102,7 @@
 <script lang="ts">
 	import { goto } from "$app/navigation";
 	import { page } from "$app/state";
-	import { addViewToContent, findSubPanel } from "$lib/utils/layout";
+	import { addViewToContent } from "$lib/utils/layout";
 	import VizView from "$lib/views/views.svelte";
 	import { DateTime } from "luxon";
 	import CollectionPage from "../../routes/(app)/collections/[uid]/+page.svelte";
@@ -92,20 +110,41 @@
 	import { layoutState } from "$lib/third-party/svelte-splitpanes/state.svelte";
 	import { findPanelIndex, getSubPanelParent } from "$lib/views/utils";
 	import type { SvelteHTMLElements } from "svelte/elements";
-	import { getFullImagePath, type Collection } from "$lib/api";
+	import {
+		getFullImagePath,
+		getImage,
+		type Collection,
+		type Image
+	} from "$lib/api";
 
 	interface Props {
 		collection: Collection;
 	}
 
 	let { collection, ...props }: Props & SvelteHTMLElements["div"] = $props();
+
+	let thumbnail = $state<Image | undefined>(collection.thumbnail);
+
+	$effect(() => {
+		if (collection.thumbnail) {
+			thumbnail = collection.thumbnail;
+		} else if (collection.images && collection.images.length > 0) {
+			getImage(collection.images[0].uid).then((res) => {
+				if (res.status === 200) {
+					thumbnail = res.data;
+				}
+			});
+		} else {
+			thumbnail = undefined;
+		}
+	});
 </script>
 
 <div {...props} class="coll-card" data-asset-id={collection.uid}>
 	<div class="image-container">
-		{#if collection.thumbnail}
+		{#if thumbnail}
 			<img
-				src={getFullImagePath(collection.thumbnail.image_paths.thumbnail)}
+				src={getFullImagePath(thumbnail.image_paths.thumbnail)}
 				alt={collection.name}
 				class="collection-image"
 			/>
@@ -165,6 +204,8 @@
 	.collection-image {
 		width: 100%;
 		height: 100%;
+		object-fit: contain;
+		object-position: center;
 	}
 
 	.coll-no_thumbnail {

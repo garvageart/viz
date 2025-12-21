@@ -5,12 +5,35 @@
 	import hotkeys from "hotkeys-js";
 	import type { AssetGridArray, AssetSortBy } from "$lib/types/asset";
 	import type { SvelteSnippet } from "$lib/types/snippet";
-	import { debugMode, sort } from "$lib/states/index.svelte";
+	import {
+		debugMode,
+		sort,
+		modal,
+		tableColumnSettings
+	} from "$lib/states/index.svelte";
 	import MaterialIcon from "./MaterialIcon.svelte";
 	import { DateTime } from "luxon";
 	import { getFullImagePath } from "$lib/api";
 	import type { SvelteHTMLElements } from "svelte/elements";
 	import type { AssetGridView } from "./PhotoAssetGrid.svelte";
+	import TableColumnSelectorModal from "./modals/TableColumnSelectorModal.svelte";
+	import { snakeToTitle } from "$lib/utils/strings";
+	import { tryParseDate } from "$lib/utils/dates";
+
+	interface DisplayableAsset {
+		uid: string;
+		name?: string;
+		created_at?: string;
+		image_paths?: {
+			thumbnail?: string;
+			preview?: string;
+		};
+		image_metadata?: {
+			file_name?: string;
+			file_created_at?: string;
+		};
+		[key: string]: any;
+	}
 
 	interface Props {
 		data: T[];
@@ -31,7 +54,10 @@
 		) => void;
 		/** Disable clearing selection when clicking in other grids (useful when multiple grids share one selection set) */
 		disableOutsideUnselect?: boolean;
-		onassetcontext?: (detail: { asset: T; anchor: { x: number; y: number } }) => void;
+		onassetcontext?: (detail: {
+			asset: T;
+			anchor: { x: number; y: number };
+		}) => void;
 		/** optional explicit column list for table view (order matters). If omitted, inferred from data. */
 		columns?: string[];
 		/** table config: thumbnail_key is dot-path to thumbnail in each asset, columns overrides visible keys */
@@ -75,71 +101,61 @@
 		const sample = allAssetsData[0] as any;
 		tableKeys = Object.keys(sample).filter((k) => {
 			const v = sample[k];
-			return v === null || v === undefined || typeof v === "string" || typeof v === "number" || typeof v === "boolean";
+			return (
+				v === null ||
+				v === undefined ||
+				typeof v === "string" ||
+				typeof v === "number" ||
+				typeof v === "boolean"
+			);
 		});
 	});
 
-	// Visible keys in table: prefer explicit `columns` prop, otherwise inferred
-	let visibleKeys: string[] = $state([] as string[]);
+	// Visible keys in table: prefer explicit `columns` prop, otherwise inferred from settings
+	let visibleKeys = $derived.by(() => {
+		if (Array.isArray(table?.columns) && table!.columns!.length > 0) {
+			return table!.columns!;
+		} else if (Array.isArray(columns) && columns.length > 0) {
+			return columns;
+		} else {
+			// Filter inferred keys by persisted selection
+			return tableKeys.filter((key) => tableColumnSettings.value.includes(key));
+		}
+	});
+
+	// Modal state
+	let showColumnSelector = $state(false);
+
+	$effect(() => {
+		if (!modal.show) {
+			showColumnSelector = false;
+		}
+	});
 
 	// helper: get nested value by dot path
 	function getNestedValue(obj: Record<string, any> | undefined, path?: string) {
-		if (!obj || !path) return undefined;
+		if (!obj || !path) {
+			return undefined;
+		}
+		
 		const parts = path.split(".");
 		let cur: any = obj;
 		for (const p of parts) {
-			if (cur == null) return undefined;
+			if (cur == null) {
+				return undefined;
+			}
+			
 			cur = cur[p];
 		}
+
 		return cur;
 	}
 
-	// helper: convert snake_case or camelCase to Sentence case
-	function snakeToSentence(key: string) {
-		if (!key) return "";
-		// If key contains dots, use last segment
-		const k = key.includes(".") ? key.split(".").pop()! : key;
-		// replace underscores and dashes with spaces, separate camelCase
-		const withSpaces = k.replace(/[_-]+/g, " ").replace(/([a-z0-9])([A-Z])/g, "$1 $2");
-		// collapse spaces, trim
-		const cleaned = withSpaces.replace(/\s+/g, " ").trim();
-		// capitalize first letter
-		return cleaned.charAt(0).toUpperCase() + cleaned.slice(1);
-	}
-
-	// try to parse a value as a date using Luxon; returns DateTime or undefined
-	function tryParseDate(v: unknown): DateTime | undefined {
-		if (v == null) return undefined;
-		if (typeof v === "string") {
-			const s = v.trim();
-			// Try ISO first
-			let dt = DateTime.fromISO(s);
-			if (dt.isValid) return dt;
-			// Try RFC2822
-			dt = DateTime.fromRFC2822(s);
-			if (dt.isValid) return dt;
-			// If it's numeric string, try as epoch
-			const n = Number(s);
-			if (!Number.isNaN(n)) {
-				if (n > 1e12) return DateTime.fromMillis(n);
-				if (n > 1e10) return DateTime.fromMillis(n);
-				if (n > 1e9) return DateTime.fromSeconds(n);
-			}
-			return undefined;
-		}
-		if (typeof v === "number") {
-			// Treat only large numbers as epoch timestamps (seconds or milliseconds).
-			// Small integers (like image width/height, counts) should NOT be parsed as dates.
-			if (v > 1e12) return DateTime.fromMillis(v);
-			if (v > 1e10) return DateTime.fromMillis(v);
-			if (v > 1e9) return DateTime.fromSeconds(v);
-			return undefined;
-		}
-		return undefined;
-	}
-
 	// Format a value for display: dates are formatted with Luxon, objects stringified, null/undefined -> ''
-	function formatValueForKey(obj: Record<string, any> | undefined, key?: string) {
+	function formatValueForKey(
+		obj: Record<string, any> | undefined,
+		key?: string
+	) {
 		let v: any = undefined;
 		if (key) {
 			v = getNestedValue(obj, key);
@@ -153,7 +169,10 @@
 			return dt.toLocaleString(DateTime.DATETIME_MED);
 		}
 
-		if (v === null || v === undefined) return "";
+		if (v === null || v === undefined) {
+			return "";
+		}
+
 		if (typeof v === "object") {
 			try {
 				return JSON.stringify(v);
@@ -164,16 +183,6 @@
 
 		return String(v);
 	}
-
-	$effect(() => {
-		if (Array.isArray(table?.columns) && table!.columns!.length > 0) {
-			visibleKeys = table!.columns!;
-		} else if (Array.isArray(columns) && columns.length > 0) {
-			visibleKeys = columns;
-		} else {
-			visibleKeys = tableKeys;
-		}
-	});
 
 	// Inspecting/Debugging
 	if (debugMode) {
@@ -270,7 +279,8 @@
 		}
 
 		const columnCount = assetGridArray[0].length;
-		const positionIndexInGrid = imageInGridArray.row * columnCount + imageInGridArray.column;
+		const positionIndexInGrid =
+			imageInGridArray.row * columnCount + imageInGridArray.column;
 		const imageGridChildren = assetGridDisplayEl?.children;
 
 		// Mimic click since we already have a handler for that in `handleImageCardSelect()`
@@ -288,19 +298,27 @@
 
 		switch (e.key) {
 			case "ArrowRight":
-				const elementRight = imageGridChildren?.item(positionIndexInGrid + 1) as HTMLElement;
+				const elementRight = imageGridChildren?.item(
+					positionIndexInGrid + 1
+				) as HTMLElement;
 				focusAndSelectElement(elementRight);
 				break;
 			case "ArrowLeft":
-				const elementLeft = imageGridChildren?.item(positionIndexInGrid - 1) as HTMLElement;
+				const elementLeft = imageGridChildren?.item(
+					positionIndexInGrid - 1
+				) as HTMLElement;
 				focusAndSelectElement(elementLeft);
 				break;
 			case "ArrowUp":
-				const elementUp = imageGridChildren?.item(positionIndexInGrid - columnCount) as HTMLElement;
+				const elementUp = imageGridChildren?.item(
+					positionIndexInGrid - columnCount
+				) as HTMLElement;
 				focusAndSelectElement(elementUp);
 				break;
 			case "ArrowDown":
-				const elementDown = imageGridChildren?.item(positionIndexInGrid + columnCount) as HTMLElement;
+				const elementDown = imageGridChildren?.item(
+					positionIndexInGrid + columnCount
+				) as HTMLElement;
 				focusAndSelectElement(elementDown);
 				break;
 			case "Tab":
@@ -310,12 +328,16 @@
 					if (positionIndexInGrid > 0) {
 						e.preventDefault();
 					}
-					focusAndSelectElement(imageGridChildren?.item(positionIndexInGrid - 1) as HTMLElement);
+					focusAndSelectElement(
+						imageGridChildren?.item(positionIndexInGrid - 1) as HTMLElement
+					);
 				} else {
 					if (positionIndexInGrid < imageGridChildren?.length! - 1) {
 						e.preventDefault();
 					}
-					focusAndSelectElement(imageGridChildren?.item(positionIndexInGrid + 1) as HTMLElement);
+					focusAndSelectElement(
+						imageGridChildren?.item(positionIndexInGrid + 1) as HTMLElement
+					);
 				}
 				break;
 		}
@@ -331,7 +353,9 @@
 
 				if ((!assetId || !asset) && j.element && allAssetsData.length > 0) {
 					if (dev) {
-						console.warn(`AssetGrid: failed to resolve asset for element at row ${j.row}, column ${j.column}`);
+						console.warn(
+							`AssetGrid: failed to resolve asset for element at row ${j.row}, column ${j.column}`
+						);
 					}
 				}
 
@@ -356,7 +380,9 @@
 
 		const clickHandler = (e: MouseEvent) => {
 			const target = e.target as HTMLElement;
-			const selectionToolbar = target.closest(".selection-toolbar") as HTMLElement | undefined;
+			const selectionToolbar = target.closest(".selection-toolbar") as
+				| HTMLElement
+				| undefined;
 
 			// ignore the selection toolbar since this is what we use do actions
 			if (target === selectionToolbar || selectionToolbar?.contains(target)) {
@@ -364,7 +390,11 @@
 			}
 
 			// If click is inside ANY grid container, don't clear (supports multiple grids sharing one selection)
-			const allGrids = Array.from(document.querySelectorAll(".viz-asset-grid-container")) as HTMLElement[];
+			const allGrids = Array.from(
+				document.querySelectorAll(
+					".viz-asset-grid-container, .viz-asset-table-container"
+				)
+			) as HTMLElement[];
 			const insideAnyGrid = allGrids.some((g) => g.contains(target));
 			if (insideAnyGrid) {
 				return;
@@ -401,7 +431,9 @@
 </script>
 
 {#snippet assetComponentCard(assetData: T)}
-	{@const isSelected = selectedAssets.values().some((i) => i.uid === assetData.uid) || singleSelectedAsset === assetData}
+	{@const isSelected =
+		selectedAssets.values().some((i) => i.uid === assetData.uid) ||
+		singleSelectedAsset === assetData}
 	<div
 		class="asset-card"
 		class:max-width-column={columnCount !== undefined && columnCount > 1}
@@ -441,7 +473,10 @@
 				selectedAssets.clear();
 				selectedAssets.add(assetData);
 			}
-			onassetcontext?.({ asset: assetData, anchor: { x: e.clientX, y: e.clientY } });
+			onassetcontext?.({
+				asset: assetData,
+				anchor: { x: e.clientX, y: e.clientY }
+			});
 		}}
 	>
 		{@render assetSnippet(assetData)}
@@ -449,7 +484,10 @@
 {/snippet}
 
 {#snippet assetComponentListOption(assetData: T)}
-	{@const isSelected = selectedAssets.values().some((i) => i.uid === assetData.uid) || singleSelectedAsset === assetData}
+	{@const isSelected =
+		Array.from(selectedAssets).some((i) => i.uid === assetData.uid) ||
+		singleSelectedAsset?.uid === assetData.uid}
+	{@const asset = assetData as unknown as DisplayableAsset}
 	<tr
 		class="asset-card"
 		class:selected-card={isSelected}
@@ -481,18 +519,18 @@
 		}}
 	>
 		<td class="asset-snippet-cell">
-			<div class="asset-snippet-inner">
-				{#if getNestedValue(assetData as any, table?.thumbnail_key) || (assetData as any).image_paths}
+			<div class="asset-snippet-inner" title={formatValueForKey(asset, "name")}>
+				{#if getNestedValue(asset, table?.thumbnail_key) || asset.image_paths}
 					<!-- I hate this -->
 					<img
 						class="asset-table-thumb"
 						src={getFullImagePath(
-							getNestedValue(assetData as any, table?.thumbnail_key) ??
-								(assetData as any).image_paths?.thumbnail ??
-								(assetData as any).image_paths?.preview ??
+							getNestedValue(asset, table?.thumbnail_key) ??
+								asset.image_paths?.thumbnail ??
+								asset.image_paths?.preview ??
 								""
 						)}
-						alt={(assetData as any).name ?? (assetData as any).image_metadata?.file_name ?? ""}
+						alt={asset.name ?? asset.image_metadata?.file_name ?? ""}
 						loading="lazy"
 						crossorigin="use-credentials"
 					/>
@@ -500,20 +538,22 @@
 					<!-- shitty fallback it works -->
 					<!-- TODO: need this to be better -->
 					<span class="asset-preview-fallback">
-						{(assetData as any).name ?? (assetData as any).image_metadata?.file_name ?? (assetData as any).uid}
+						{asset.name ?? asset.image_metadata?.file_name ?? asset.uid}
 					</span>
 				{/if}
 				<div class="asset-snippet-meta">
-					<div class="asset-snippet-name">{(assetData as any).image_metadata?.file_name ?? (assetData as any).name}</div>
+					<div class="asset-snippet-name">
+						{asset.image_metadata?.file_name ?? asset.name}
+					</div>
 					<div class="asset-snippet-sub">
-						{formatValueForKey(assetData as any, "created_at") ||
-							formatValueForKey(assetData as any, "image_metadata.file_created_at")}
+						{formatValueForKey(asset, "created_at") ||
+							formatValueForKey(asset, "image_metadata.file_created_at")}
 					</div>
 				</div>
 			</div>
 		</td>
 		{#each visibleKeys as key}
-			<td>{formatValueForKey(assetData as any, key)}</td>
+			<td>{formatValueForKey(asset, key)}</td>
 		{/each}
 	</tr>
 {/snippet}
@@ -521,12 +561,18 @@
 {#snippet assetTable()}
 	<div
 		bind:this={assetGridDisplayEl}
-		class="viz-asset-grid-container {assetGridDisplayProps.class}"
+		class="viz-asset-table-container {assetGridDisplayProps.class}"
 		{...assetGridDisplayProps}
 		use:unselectImagesOnClickOutsideAssetContainer
 	>
 		<table>
-			<thead>
+			<thead
+				oncontextmenu={(e) => {
+					e.preventDefault();
+					showColumnSelector = true;
+					modal.show = true;
+				}}
+			>
 				<tr>
 					<th>Preview</th>
 					{#each visibleKeys as key}
@@ -540,8 +586,10 @@
 									}
 								}}
 							>
-								<MaterialIcon iconName={`arrow_${sort.by === key && sort.order === "asc" ? "upward" : "downward"}`} />
-								{snakeToSentence(key)}
+								<MaterialIcon
+									iconName={`arrow_${sort.by === key && sort.order === "asc" ? "upward" : "downward"}`}
+								/>
+								{snakeToTitle(key)}
 							</button>
 						</th>
 					{/each}
@@ -579,6 +627,10 @@
 			{@render assetComponentCard(asset)}
 		{/each}
 	</div>
+{/if}
+
+{#if showColumnSelector && modal.show}
+	<TableColumnSelectorModal availableKeys={tableKeys} />
 {/if}
 
 <style lang="scss">
@@ -628,13 +680,15 @@
 
 	.viz-asset-table-container {
 		width: 100%;
+		margin: 2em 0em;
 		background: transparent;
 		box-sizing: border-box;
+		overflow-x: hidden;
 
 		table {
 			width: 100%;
+			table-layout: fixed;
 			border-collapse: collapse;
-			min-width: 720px;
 			font-size: 0.95rem;
 			color: var(--imag-text-color);
 			display: table;
@@ -657,7 +711,7 @@
 		thead th {
 			position: sticky;
 			/* Offset sticky headers by the toolbar height so headers sit below any sticky toolbar */
-			top: var(--imag-toolbar-height, 0px);
+			top: 0px;
 			z-index: 2;
 			color: var(--imag-text-color);
 			background-color: var(--imag-bg-color);
@@ -682,11 +736,14 @@
 
 		tbody tr {
 			transition: background 120ms ease-in-out;
-
 			background-color: var(--imag-bg-color);
 
 			&:nth-child(even) {
-				background-color: color-mix(in srgb, var(--imag-bg-color) 78%, white 5%);
+				background-color: color-mix(
+					in srgb,
+					var(--imag-bg-color) 80%,
+					white 15%
+				);
 			}
 
 			&:hover {
@@ -705,12 +762,11 @@
 			&.selected-card td:first-child::before {
 				content: "";
 				position: absolute;
-				left: 8px;
+				left: 4px;
 				top: 8px;
 				bottom: 8px;
-				width: 4px;
+				width: 2px;
 				background: var(--imag-primary);
-				border-radius: 2px;
 			}
 
 			td {
@@ -782,10 +838,6 @@
 		.asset-snippet-cell {
 			width: 160px;
 			min-width: 120px;
-		}
-
-		.viz-asset-table-container table {
-			min-width: 640px;
 		}
 	}
 </style>

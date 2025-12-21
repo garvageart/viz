@@ -23,6 +23,7 @@
 		selectionToolbarSnippet?: Snippet;
 		toolbarSnippet?: Snippet;
 		noAssetsSnippet?: Snippet;
+		showToolbars?: boolean;
 		toolbarProps?: Omit<ComponentProps<typeof AssetToolbar>, "children">;
 		selectionToolbarProps?: Omit<
 			ComponentProps<typeof AssetToolbar>,
@@ -47,6 +48,7 @@
 		children,
 		toolbarSnippet,
 		noAssetsSnippet,
+		showToolbars = $bindable(true),
 		toolbarProps,
 		selectionToolbarSnippet,
 		selectionToolbarProps
@@ -147,7 +149,7 @@
 	{/if}
 {/snippet}
 
-{#if gridData.length > 0}
+{#if showToolbars}
 	{#if grid.selectedAssets && grid.selectedAssets.size > 1}
 		<AssetToolbar class="selection-toolbar" {...selectionToolbarProps}>
 			<button
@@ -188,7 +190,7 @@
 						}
 					}
 				})}
-				{#if dev}
+				{#if dev && grid.view === "cards"}
 					{@render toolbarButton({
 						iconName: "grid_view",
 						text: "Print Grid",
