@@ -1,6 +1,13 @@
+<<<<<<< HEAD
 $background-color: #525252;
 $border-color: #000;
 $text-color: #fff;
+=======
+$font-stack: Consolas, monospace;
+$background-color: #525252;
+$border-color: #000;
+$text-color: #FFF;
+>>>>>>> 4d7b2fa6dd216df63fab759b8f530b422147f6c8
 $btn-active-color: #727272;
 $controls-padding-left-right: 5%;
 $border-size: 2px;
@@ -13,13 +20,21 @@ $widget-min-width: 300px;
 $widget-min-height: 150px;
 //$svg-height: 200px;
 
+<<<<<<< HEAD
+=======
+
+>>>>>>> 4d7b2fa6dd216df63fab759b8f530b422147f6c8
 .histogram-container {
   min-height: $widget-min-height;
   height: 256px;
   min-width: $widget-min-width;
   width: 100%;
 
+<<<<<<< HEAD
   font-family: var(--imag-code-font);
+=======
+  font-family: $font-stack;
+>>>>>>> 4d7b2fa6dd216df63fab759b8f530b422147f6c8
   font-size: 16px;
   border: $border;
   border-radius: $border-radius;
@@ -27,9 +42,13 @@ $widget-min-height: 150px;
   background-color: $background-color;
   color: $text-color;
 
+<<<<<<< HEAD
   *,
   *:before,
   *:after {
+=======
+  *, *:before, *:after {
+>>>>>>> 4d7b2fa6dd216df63fab759b8f530b422147f6c8
     /* Chrome 9-, Safari 5-, iOS 4.2-, Android 3-, Blackberry 7- */
     -webkit-box-sizing: border-box;
 
@@ -70,17 +89,29 @@ $widget-min-height: 150px;
     display: none;
   }
 
+<<<<<<< HEAD
   > .histogram-controls {
     white-space: nowrap;
     padding-top: $margin-size;
 
     > div {
+=======
+  >.histogram-controls {
+    white-space: nowrap;
+    padding-top: $margin-size;
+
+    >div {
+>>>>>>> 4d7b2fa6dd216df63fab759b8f530b422147f6c8
       display: inline-block;
       vertical-align: top;
       width: 50%;
     }
 
+<<<<<<< HEAD
     > .histogram-channels {
+=======
+    >.histogram-channels {
+>>>>>>> 4d7b2fa6dd216df63fab759b8f530b422147f6c8
       padding-left: $controls-padding-left-right;
       // overflows into .histogram-buttons when widget is small
       z-index: 1;
@@ -99,7 +130,11 @@ $widget-min-height: 150px;
       }
     }
 
+<<<<<<< HEAD
     > .histogram-buttons {
+=======
+    >.histogram-buttons {
+>>>>>>> 4d7b2fa6dd216df63fab759b8f530b422147f6c8
       text-align: right;
       padding-right: $controls-padding-left-right;
       height: 2em;
@@ -122,10 +157,17 @@ $widget-min-height: 150px;
         border-radius: $border-radius;
         background-color: $btn-active-color;
       }
+<<<<<<< HEAD
     }
   }
 
   > .histogram {
+=======
+
+    }
+  }
+  >.histogram {
+>>>>>>> 4d7b2fa6dd216df63fab759b8f530b422147f6c8
     border: $border;
     border-radius: $border-radius;
     margin: $margin-size;
@@ -143,6 +185,7 @@ $widget-min-height: 150px;
     }
   }
 
+<<<<<<< HEAD
   > .histogram.nostats {
     height: calc(100% - (2em + 15px));
   }
@@ -151,6 +194,17 @@ $widget-min-height: 150px;
     width: 100%;
 
     > div {
+=======
+  >.histogram.nostats {
+    height: calc(100% - (2em + 15px));
+
+  }
+
+  >.histogram-stats {
+    width: 100%;
+
+    >div {
+>>>>>>> 4d7b2fa6dd216df63fab759b8f530b422147f6c8
       width: $widget-min-width - ($border-size * 2);
       margin: 0 auto;
       ul {
@@ -184,8 +238,12 @@ $widget-min-height: 150px;
             color: $text-color;
           }
 
+<<<<<<< HEAD
           input,
           label {
+=======
+          input, label {
+>>>>>>> 4d7b2fa6dd216df63fab759b8f530b422147f6c8
             font-size: 0.75em;
             font-family: $font-stack;
           }

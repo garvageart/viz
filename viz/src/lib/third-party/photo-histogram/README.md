@@ -7,6 +7,7 @@ JS widget library written in Typescript to create histograms from canvas and ima
 [GitHub Pages Site!](http://zackee12.github.io/photo-histogram/)
 
 ## Screenshots
+<<<<<<< HEAD
 ### Colors Channel with stats bar
 
 ![alt text](https://raw.githubusercontent.com/zackee12/photo-histogram/master/resources/colors_stats.png "Colors channel")
@@ -20,6 +21,21 @@ JS widget library written in Typescript to create histograms from canvas and ima
 ![alt text](https://raw.githubusercontent.com/zackee12/photo-histogram/master/resources/red_stats_channels.png "Red channel")
 
 ### Red Channel with a selection
+=======
+###Colors Channel with stats bar
+
+![alt text](https://raw.githubusercontent.com/zackee12/photo-histogram/master/resources/colors_stats.png "Colors channel")
+
+###Colors Channel with stats bar hidden
+
+![alt text](https://raw.githubusercontent.com/zackee12/photo-histogram/master/resources/colors_nostats.png "Colors channel")
+
+###Red Channel with options shown
+
+![alt text](https://raw.githubusercontent.com/zackee12/photo-histogram/master/resources/red_stats_channels.png "Red channel")
+
+###Red Channel with a selection
+>>>>>>> 4d7b2fa6dd216df63fab759b8f530b422147f6c8
 
 ![alt text](https://raw.githubusercontent.com/zackee12/photo-histogram/master/resources/red_stats_selection.png "Red channel")
 

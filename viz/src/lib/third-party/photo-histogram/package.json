@@ -1,0 +1,10 @@
+{
+  "name": "photo-histogram",
+  "version": "0.0.0",
+  "devDependencies": {
+    "zuul": "3.8.0"
+  },
+  "scripts": {
+    "test": "zuul -- test/zuul-test.js"
+  }
+}
