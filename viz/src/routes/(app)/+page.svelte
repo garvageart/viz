@@ -2,7 +2,6 @@
 	import VizPanel from "$lib/components/panels/VizPanel.svelte";
 	import { search } from "$lib/states/index.svelte";
 	import SearchPage from "./search/+page.svelte";
-	import { onMount } from "svelte";
 
 	let vizContentContainer: HTMLDivElement | undefined = $state();
 </script>

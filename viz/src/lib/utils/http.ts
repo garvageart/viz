@@ -1,5 +1,5 @@
 import type { ImageUploadFileData } from "$lib/upload/manager.svelte";
-import { API_BASE_URL, getImageFile, getImageFileBlob, type Image } from "$lib/api";
+import { API_BASE_URL, downloadImagesZipBlob, getImageFile, getImageFileBlob, signDownload, type Image } from "$lib/api";
 import { debugMode } from "$lib/states/index.svelte";
 
 type RequestInitOptions = { fetch?: typeof fetch; } & RequestInit;
@@ -94,5 +94,55 @@ export async function downloadOriginalImageFile(img: Image) {
     a.click();
     a.remove();
 
+    URL.revokeObjectURL(url);
+}
+
+// Helper to perform token-based bulk download given a list of UIDs.
+// The server will create a download token and use it for authentication.
+export async function performImageDownloads(images: Image[]) {
+    if (!images || images.length === 0) {
+        throw new Error("No image UIDs provided for download");
+    }
+
+    const uids = images.map(i => i.uid);
+
+    if (uids.length === 1) {
+        const uid = uids[0];
+        const img = images.find((i) => i.uid === uid)!;
+
+        return downloadOriginalImageFile(img);
+    }
+
+    const signRes = await signDownload({
+        uids,
+        expires_in: 300,
+        allow_download: true,
+        allow_embed: false,
+        show_metadata: true
+    });
+
+    if (signRes.status !== 200) {
+        throw new Error(signRes.data?.error ?? "Failed to sign download request");
+    }
+
+    const token = signRes.data.uid; // The token is stored in the uid field
+    const dlRes = await downloadImagesZipBlob(token, { uids });
+
+    if (dlRes.status !== 200) {
+        throw new Error(dlRes.data?.error ?? "Failed to download archive");
+    }
+
+    // Extract filename from Content-Disposition header if available
+    // Note: The custom function returns the blob directly, so we need to handle filename separately
+    const filename = `images-${Date.now()}.zip`;
+
+    const blob = dlRes.data;
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = filename;
+    document.body.appendChild(a);
+    a.click();
+    a.remove();
     URL.revokeObjectURL(url);
 }

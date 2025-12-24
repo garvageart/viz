@@ -12,7 +12,8 @@
 		deleteCollection,
 		updateCollection
 	} from "$lib/api";
-	import { modal, sort } from "$lib/states/index.svelte";
+	import { isLayoutPage, modal, sort } from "$lib/states/index.svelte";
+	import { selectionManager } from "$lib/states/selection.svelte";
 	import { goto } from "$app/navigation";
 	import { page } from "$app/state";
 	import { SvelteSet } from "svelte/reactivity";
@@ -27,8 +28,23 @@
 	import ContextMenu from "$lib/context-menu/ContextMenu.svelte";
 	import { copyToClipboard } from "$lib/utils/misc";
 	import IconButton from "$lib/components/IconButton.svelte";
+	import { filterManager } from "$lib/states/filter.svelte";
+	import { untrack } from "svelte";
+	import FilterModal from "$lib/components/modals/FilterModal.svelte";
 
 	let { data }: PageProps = $props();
+
+	let showFilterModal = $state(false);
+	let showCollectionModal = $state(false);
+
+	$effect(() => {
+		untrack(() => {
+			filterManager.setActiveScopeType("collections");
+			if (!filterManager.keepFilters) {
+				filterManager.resetActiveScope();
+			}
+		});
+	});
 
 	const pagination = $state({
 		limit: data?.limit ?? 10,
@@ -44,8 +60,7 @@
 	let toolbarOpacity = $state(1);
 
 	// Selection
-	let selectedAssets = $state<SvelteSet<Collection>>(new SvelteSet());
-	let singleSelectedAsset: Collection | undefined = $state();
+	const scopeId = "collections-main";
 
 	let collectionGridArray: AssetGridArray<Collection> | undefined = $state();
 	let grid: ComponentProps<typeof AssetGrid<Collection>> = $derived({
@@ -55,10 +70,12 @@
 		assetSnippet: collectionCard,
 		data: displayData,
 		assetGridArray: collectionGridArray,
-		selectedAssets,
-		singleSelectedAsset,
+		scopeId,
 		assetGridDisplayProps: {
-			style: `padding: 0em ${page.url.pathname === "/" ? "1em" : "2em"};`
+			style: `padding: 0em ${isLayoutPage() ? "1em" : "2em"};`
+		},
+		onassetcontext: (detail) => {
+			openCollectionContext(detail.asset, detail.anchor);
 		}
 	});
 
@@ -165,8 +182,10 @@
 						!confirm(
 							`Delete collection "${collection.name}"? This cannot be undone.`
 						)
-					)
+					) {
 						return;
+					}
+
 					try {
 						const res = await deleteCollection(collection.uid);
 						if (res.status === 204) {
@@ -198,80 +217,86 @@
 	}
 </script>
 
-<CollectionModal
-	heading={modalMode === "create" ? "Create Collection" : "Edit Collection"}
-	buttonText={modalMode === "create" ? "Create" : "Save"}
-	bind:data={modalData}
-	modalAction={async (event) => {
-		const formData = new FormData(event.currentTarget);
-		const name = formData.get("name") as string;
-		const description = formData.get("description") as string;
-		const isPrivate = formData.get("isPrivate") === "on";
+{#if showCollectionModal && modal.show}
+	<CollectionModal
+		heading={modalMode === "create" ? "Create Collection" : "Edit Collection"}
+		buttonText={modalMode === "create" ? "Create" : "Save"}
+		bind:data={modalData}
+		modalAction={async (event) => {
+			const formData = new FormData(event.currentTarget);
+			const name = formData.get("name") as string;
+			const description = formData.get("description") as string;
+			const isPrivate = formData.get("isPrivate") === "on";
 
-		if (modalMode === "create") {
-			try {
-				const res = await createCollection({
-					name,
-					description,
-					private: isPrivate
-				});
-				if (res.status === 201) {
-					listOfCollectionsData = [res.data, ...listOfCollectionsData];
-					modal.show = false;
-					toastState.addToast({
-						message: "Collection created",
-						type: "success"
+			if (modalMode === "create") {
+				try {
+					const res = await createCollection({
+						name,
+						description,
+						private: isPrivate
 					});
-					goto(`/collections/${res.data.uid}`);
-				} else {
+					if (res.status === 201) {
+						listOfCollectionsData = [res.data, ...listOfCollectionsData];
+						modal.show = false;
+						toastState.addToast({
+							message: "Collection created",
+							type: "success"
+						});
+						goto(`/collections/${res.data.uid}`);
+					} else {
+						toastState.addToast({
+							message:
+								(res as any).data?.error ?? `Creation failed (${res.status})`,
+							type: "error"
+						});
+					}
+				} catch (e) {
 					toastState.addToast({
-						message:
-							(res as any).data?.error ?? `Creation failed (${res.status})`,
+						message: "Creation failed: " + (e as Error).message,
 						type: "error"
 					});
 				}
-			} catch (e) {
-				toastState.addToast({
-					message: "Creation failed: " + (e as Error).message,
-					type: "error"
-				});
-			}
-		} else {
-			// edit
-			try {
-				if (!modalData || !modalData.uid) {
-					return;
-				}
-				const res = await updateCollection(modalData.uid, {
-					name,
-					description,
-					private: isPrivate
-				});
-				if (res.status === 200) {
-					// update local list
-					listOfCollectionsData = listOfCollectionsData.map((c) =>
-						c.uid === modalData!.uid ? res.data : c
-					);
-					modal.show = false;
-					toastState.addToast({
-						message: "Collection updated",
-						type: "success"
+			} else {
+				// edit
+				try {
+					if (!modalData || !modalData.uid) {
+						return;
+					}
+					const res = await updateCollection(modalData.uid, {
+						name,
+						description,
+						private: isPrivate
 					});
-				} else {
+					if (res.status === 200) {
+						// update local list
+						listOfCollectionsData = listOfCollectionsData.map((c) =>
+							c.uid === modalData!.uid ? res.data : c
+						);
+						modal.show = false;
+						toastState.addToast({
+							message: "Collection updated",
+							type: "success"
+						});
+					} else {
+						toastState.addToast({
+							message: res.data?.error ?? `Update failed (${res.status})`,
+							type: "error"
+						});
+					}
+				} catch (e) {
 					toastState.addToast({
-						message: res.data?.error ?? `Update failed (${res.status})`,
+						message: "Update failed: " + (e as Error).message,
 						type: "error"
 					});
 				}
-			} catch (e) {
-				toastState.addToast({
-					message: "Update failed: " + (e as Error).message,
-					type: "error"
-				});
 			}
-		}
-	}}
-/>
+		}}
+	/>
+{/if}
+
+{#if showFilterModal && modal.show}
+	<FilterModal />
+{/if}
 
 {#snippet collectionCard(collectionData: Collection)}
 	{#if page.url.pathname !== "/"}
@@ -280,21 +305,13 @@
 			data-asset-id={collectionData.uid}
 			class="collection-card-link"
 			href="/collections/{collectionData.uid}"
-			oncontextmenu={(e) => {
-				e.preventDefault();
-				openCollectionContext(collectionData, { x: e.clientX, y: e.clientY });
-			}}
 		>
 			<CollectionCard collection={collectionData} />
 		</a>
 	{:else}
 		<CollectionCard
-			style={page.url.pathname === "/" ? "font-size: 0.9rem;" : ""}
+			style={isLayoutPage() ? "font-size: 0.9rem;" : ""}
 			collection={collectionData}
-			oncontextmenu={(e) => {
-				e.preventDefault();
-				openCollectionContext(collectionData, e.currentTarget as HTMLElement);
-			}}
 		/>
 	{/if}
 {/snippet}
@@ -302,6 +319,20 @@
 {#snippet toolbarSnippet()}
 	<div id="coll-details-toolbar">
 		<div id="coll-tools">
+			{#if !isLayoutPage()}
+				<IconButton
+					iconName="filter_list"
+					class="toolbar-button"
+					title="Filter"
+					aria-label="Filter"
+					onclick={() => {
+						showFilterModal = true;
+						modal.show = true;
+					}}
+				>
+					Filter
+				</IconButton>
+			{/if}
 			<IconButton
 				iconName="add"
 				id="create-collection"
@@ -311,6 +342,7 @@
 				onclick={() => {
 					modalMode = "create";
 					modalData = undefined;
+					showCollectionModal = true;
 					modal.show = true;
 				}}
 			>

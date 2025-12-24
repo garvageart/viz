@@ -1,9 +1,11 @@
 import type { AssetSort, AssetGridView } from "$lib/types/asset";
 import type { UploadImage } from "$lib/upload/asset.svelte";
-import { type User, type SystemStatusResponse, type Image, type Collection } from "$lib/api";
+import { type User, type SystemStatusResponse, type Image, type Collection, updateUserSetting, type UserSetting } from "$lib/api";
 import { VizLocalStorage, VizCookieStorage } from "$lib/utils/misc";
 import { MediaQuery } from "svelte/reactivity";
-import type { DropdownOption } from "$lib/types/settings";
+import type { MenuItem } from "$lib/context-menu/types";
+import { SettingNames } from "$lib/components/settings/names";
+import { page } from "$app/state";
 
 // Types
 interface UserState {
@@ -13,6 +15,7 @@ interface UserState {
     error?: string | null;
     isAdmin: boolean;
     connectionError?: boolean;
+    settings?: UserSetting[] | null;
 }
 
 export let system = $state<{
@@ -55,7 +58,8 @@ export let user = $state<UserState>({
     fetched: false,
     error: null,
     isAdmin: false,
-    connectionError: false
+    connectionError: false,
+    settings: null
 });
 
 export let search = $state({
@@ -81,6 +85,10 @@ export let modal = $state({
 export let lightbox = $state({
     show: false
 });
+
+export function isLayoutPage() {
+    return page.url.pathname === "/";
+}
 
 // eventually this will move to a different page with a different way of enabling, this is just temporary
 class DebugState {
@@ -143,10 +151,10 @@ export const tableColumnSettings = new TableColumnSettings();
 class ViewSettingsState {
     storage = new VizLocalStorage<AssetGridView>('viewSettings');
     current: AssetGridView = $state(this.storage.get() ?? 'grid');
-    displayOptions: DropdownOption[] = [
-        { title: "Grid" },
-        { title: "List" },
-        { title: "Cards" }
+    displayOptions: MenuItem[] = [
+        { id: "view-grid", label: "Grid" },
+        { id: "view-list", label: "List" },
+        { id: "view-cards", label: "Cards" }
     ];
 
     setView(view: AssetGridView) {
@@ -173,12 +181,15 @@ export let continuePath = $state<string | null>(null);
 export type ThemeOption = 'light' | 'dark' | 'system';
 
 class ThemeState {
-    ls = new VizLocalStorage<ThemeOption>('theme');
+    ls = new VizLocalStorage<ThemeOption>(SettingNames.Theme);
+    prefLs = new VizLocalStorage<ThemeOption>('preferred_theme');
 
     value: ThemeOption = $state(this.getInitialTheme());
+    preferredTheme: ThemeOption = $state(this.getInitialPreference());
     systemPref: 'light' | 'dark' = $state('light');
 
     resolved = $derived(this.value === 'system' ? this.systemPref : this.value);
+    resolvedPreference = $derived(this.preferredTheme === 'system' ? this.systemPref : this.preferredTheme);
 
     constructor() {
         if (typeof window !== 'undefined') {
@@ -196,7 +207,32 @@ class ThemeState {
         return 'system';
     }
 
+    private getInitialPreference(): ThemeOption {
+        const stored = this.prefLs.get();
+        if (stored) {
+            return stored;
+        }
+
+        return 'system';
+    }
+
+    async setPreferredTheme(theme: ThemeOption) {
+        this.preferredTheme = theme;
+        this.prefLs.set(theme);
+        try {
+            await updateUserSetting(SettingNames.Theme, { value: theme });
+        } catch (e) {
+            console.error("Failed to sync theme preference", e);
+        }
+    }
+
     toggle() {
+        // If we are NOT at our default preference, return to it.
+        if (this.resolved !== this.resolvedPreference) {
+            this.value = this.preferredTheme;
+            return;
+        }
+
         const currentResolved = this.resolved;
         const targetResolved = currentResolved === 'dark' ? 'light' : 'dark';
 

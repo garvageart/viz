@@ -31,11 +31,21 @@ export function isVizSubPanelData(obj: any): obj is VizSubPanelData {
  * Returns a flattened array of all subpanels in the layout. This is useful if you want to iterate over all subpanels
  * in the layout for any reason.
  *
- * @returns {VizSubPanel[]} - An array of all subpanels in the layout.
+ * @returns {Content[]} - An array of all subpanels in the layout.
  */
+export const getAllSubPanels = (): Content[] => {
+    const subPanels: Content[] = [];
+    if (!layoutState.tree) {
+        return subPanels;
+    }
 
-export const getAllSubPanels = (): VizSubPanel[] => {
-    const subPanels = layoutState.tree.flat();
+    for (const panel of layoutState.tree) {
+        if (panel.childs && panel.childs.content) {
+            for (const sub of panel.childs.content) {
+                subPanels.push(sub);
+            }
+        }
+    }
     return subPanels;
 };
 

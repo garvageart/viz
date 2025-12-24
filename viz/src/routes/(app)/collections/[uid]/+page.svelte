@@ -21,10 +21,15 @@
 	import VizViewContainer from "$lib/components/panels/VizViewContainer.svelte";
 	import {
 		debugMode,
+		isLayoutPage,
 		modal,
 		sort,
 		viewSettings
 	} from "$lib/states/index.svelte";
+	import {
+		selectionManager,
+		SelectionScopeNames
+	} from "$lib/states/selection.svelte";
 	import type { AssetGridArray, AssetGridView } from "$lib/types/asset.js";
 	import {
 		SUPPORTED_IMAGE_TYPES,
@@ -33,8 +38,7 @@
 	} from "$lib/types/images";
 	import hotkeys from "hotkeys-js";
 	import { DateTime } from "luxon";
-	import { SvelteSet } from "svelte/reactivity";
-	import { type ComponentProps } from "svelte";
+	import { onDestroy, type ComponentProps } from "svelte";
 	import { sortCollectionImages } from "$lib/sort/sort.js";
 	import ImageCard from "$lib/components/ImageCard.svelte";
 	import Button from "$lib/components/Button.svelte";
@@ -52,14 +56,10 @@
 	import { toastState } from "$lib/toast-notifcations/notif-state.svelte.js";
 	import CollectionModal from "$lib/components/modals/CollectionModal.svelte";
 	import InputText from "$lib/components/dom/InputText.svelte";
-	import { layoutState } from "$lib/third-party/svelte-splitpanes/state.svelte";
-	import Dropdown, {
-		type DropdownOption
-	} from "$lib/components/Dropdown.svelte";
+	import Dropdown from "$lib/components/Dropdown.svelte";
 	import {
 		signDownload,
 		downloadImagesZipBlob,
-		defaults,
 		API_BASE_URL,
 		createCollection
 	} from "$lib/api";
@@ -69,17 +69,33 @@
 	import IconButton from "$lib/components/IconButton.svelte";
 	import type VizView from "$lib/views/views.svelte";
 	import type { PageProps } from "./$types";
-	import AssetGrid from "$lib/components/AssetGrid.svelte";
-	import SearchInput from "$lib/components/SearchInput.svelte";
+	import { filterManager } from "$lib/states/filter.svelte";
+	import { untrack } from "svelte";
+	import FilterModal from "$lib/components/modals/FilterModal.svelte";
+	import type { MenuItem } from "$lib/context-menu/types";
+	import { createCollectionImageMenu } from "$lib/context-menu/menus/images";
 
 	// Context menu state
 	let ctxShowMenu = $state(false);
-	let ctxItems = $state([] as any[]);
+	let ctxItems = $state([] as MenuItem[]);
 	let ctxAnchor: { x: number; y: number } | HTMLElement | null = $state(
 		null as any
 	);
 
 	let { data, view }: PageProps & { view?: VizView } = $props();
+
+	let showFilterModal = $state(false);
+	let showCollectionModal = $state(false);
+
+	$effect(() => {
+		untrack(() => {
+			filterManager.setActiveScopeType("images");
+			if (!filterManager.keepFilters) {
+				filterManager.resetActiveScope();
+			}
+		});
+	});
+
 	// Keyboard events
 	const permittedKeys: string[] = [];
 	const selectKeys = ["Enter", "Space", " "];
@@ -144,8 +160,13 @@
 	);
 
 	// Selection
-	let selectedAssets = $state<SvelteSet<Image>>(new SvelteSet());
-	let singleSelectedAsset: Image | undefined = $state();
+	const scopeId = $derived(
+		SelectionScopeNames.COLLECTION_PREFIX + loadedData.uid
+	);
+	const selectionScope = $derived(selectionManager.getScope<Image>(scopeId));
+	onDestroy(() => {
+		selectionManager.removeScope(scopeId);
+	});
 
 	let imageGridArray: AssetGridArray<Image> | undefined = $state();
 
@@ -167,11 +188,10 @@
 		photoCardSnippet: imageCard,
 		view: viewSettings.current,
 		assetGridArray: imageGridArray,
-		selectedAssets,
-		singleSelectedAsset,
 		data: displayData,
+		scopeId: scopeId,
 		assetGridDisplayProps: {
-			style: `padding: 0em ${page.url.pathname === "/" ? "1em" : "2em"};`
+			style: `padding: 0em ${isLayoutPage() ? "1em" : "2em"};`
 		},
 		assetDblClick: (_e: MouseEvent, asset: Image) => {
 			lightboxImage = asset;
@@ -183,122 +203,11 @@
 		}) => {
 			const { asset, anchor } = detail;
 			// Make sure this asset is the only selected one for context actions
-			if (!selectedAssets.has(asset) || selectedAssets.size <= 1) {
-				singleSelectedAsset = asset;
-				selectedAssets.clear();
-				selectedAssets.add(asset);
+			if (!selectionScope.has(asset) || selectionScope.selected.size <= 1) {
+				selectionScope.select(asset);
 			}
 
-			// Build context menu items for this asset
-			ctxItems = [
-				{
-					id: `download-${asset.uid}`,
-					label: "Download",
-					icon: "download",
-					action: async () => {
-						try {
-							// Use the server download route so the server can create a short-lived
-							// token and redirect the request to the actual file endpoint. The
-							// browser will follow the redirect and return the file blob.
-							// Build the download URL using the OpenAPI-generated servers value
-							// and open it in a new tab so the browser follows redirects and
-							// receives the file from the server with proper Content-Disposition.
-							const base = API_BASE_URL;
-							const dlUrl = new URL(`/images/${asset.uid}/download`, base);
-
-							const a = document.createElement("a");
-							a.href = dlUrl.toString();
-							a.target = "_blank";
-							document.body.appendChild(a);
-							a.click();
-							a.remove();
-						} catch (err) {
-							console.error("Context menu download error", err);
-							toastState.addToast({
-								type: "error",
-								message: `Download failed: ${err}`
-							});
-						}
-					}
-				},
-				{
-					id: `remove-${asset.uid}`,
-					label: "Remove from collection",
-					icon: "remove_circle",
-					action: async () => {
-						if (
-							!confirm(
-								`Remove "${asset.name || asset.uid}" from collection "${loadedData.name}"?`
-							)
-						)
-							return;
-						try {
-							const r = await deleteCollectionImages(loadedData.uid, {
-								uids: [asset.uid]
-							});
-							if (r.status === 200) {
-								toastState.addToast({
-									type: "success",
-									message: `Removed from collection`
-								});
-								selectedAssets.clear();
-								await invalidateAll();
-							} else {
-								toastState.addToast({
-									type: "error",
-									message: r.data?.error ?? "Failed to remove"
-								});
-							}
-						} catch (err) {
-							console.error("remove from collection error", err);
-							toastState.addToast({
-								type: "error",
-								message: `Failed to remove: ${err}`
-							});
-						}
-					}
-				},
-				{
-					id: `copy-${asset.uid}`,
-					label: "Copy link",
-					icon: "link",
-					action: async () => {
-						try {
-							const url = getFullImagePath(asset.image_paths?.original) ?? "";
-							if (url) {
-								copyToClipboard(url);
-								toastState.addToast({
-									type: "success",
-									message: "Link copied to clipboard"
-								});
-							} else {
-								toastState.addToast({
-									type: "error",
-									message: "No URL available"
-								});
-							}
-						} catch (err) {
-							console.error("copy link error", err);
-							toastState.addToast({
-								type: "error",
-								message: "Failed to copy link"
-							});
-						}
-					}
-				},
-				{
-					id: `share-${asset.uid}`,
-					label: "Share",
-					icon: "share",
-					action: () => {
-						// Placeholder - open share dialog or implement later
-						toastState.addToast({
-							type: "info",
-							message: "Share not implemented"
-						});
-					}
-				}
-			];
+			ctxItems = createCollectionImageMenu(asset, loadedData);
 
 			ctxAnchor = anchor as any;
 			ctxShowMenu = true;
@@ -482,7 +391,7 @@
 
 	async function handleDeleteSelected() {
 		// Delete selected images from this collection (client-side selection)
-		const items = Array.from(selectedAssets ?? []);
+		const items = Array.from(selectionScope.selected ?? []);
 		if (!items || items.length === 0) {
 			toastState.addToast({ type: "info", message: "No images selected" });
 			return;
@@ -505,7 +414,7 @@
 					timeout: 2500
 				});
 				// Clear selection and refresh data
-				selectedAssets.clear();
+				selectionScope.clear();
 				await invalidateAll();
 			} else {
 				const errMsg = (res as any).data?.error ?? "Failed to remove images";
@@ -629,33 +538,81 @@
 	});
 
 	hotkeys("escape", (e) => {
-		if (!show || !lightboxImage || selectedAssets.size === 0) {
+		if (!show || !lightboxImage || selectionScope.selected.size === 0) {
 			return;
 		}
 
 		e.preventDefault();
-		selectedAssets.clear();
+		selectionScope.clear();
 
-		singleSelectedAsset = undefined;
 		lightboxImage = undefined;
 	});
 
-	const dropdownOptions: DropdownOption[] = [
-		{ title: "Export Photos", icon: "download" },
-		{ title: "Share Collection", icon: "share" },
-		{ title: "Duplicate Collection", icon: "content_copy" },
-		{ title: "Delete Collection", icon: "delete" }
-	];
+	// Menu items for collection actions
+	let collectionMenuItems: MenuItem[] = $derived([
+		{
+			id: "export-photos",
+			label: "Export Photos",
+			icon: "download",
+			action: () => handleExportPhotos()
+		},
+		{
+			id: "share-collection",
+			label: "Share Collection",
+			icon: "share",
+			action: () =>
+				toastState.addToast({ type: "warning", message: "Not implemented yet" })
+		},
+		{
+			id: "duplicate-collection",
+			label: "Duplicate Collection",
+			icon: "content_copy",
+			action: () =>
+				toastState.addToast({
+					type: "warning",
+					message: "Maybe won't implement this yet"
+				})
+		},
+		{
+			id: "delete-collection",
+			label: "Delete Collection",
+			icon: "delete",
+			action: () => handleDeleteCollection()
+		}
+	]);
+
+	// Display options as MenuItem[] for Dropdown
+	let displayMenuItems: MenuItem[] = $derived(
+		viewSettings.displayOptions.map((o, idx) => ({
+			id: `display-${idx}`,
+			label: o.label,
+			icon: o.icon,
+			action: () => viewSettings.setView(o.label.toLowerCase() as AssetGridView)
+		}))
+	);
+
+	let displaySelectedId: string | undefined = $derived.by(() => {
+		const idx = viewSettings.displayOptions.findIndex(
+			(o) => o.label.toLowerCase() === viewSettings.current
+		);
+		return idx !== -1 ? `display-${idx}` : undefined;
+	});
 </script>
 
-<CollectionModal
-	bind:data={localDataUpdates}
-	heading="Edit Collection"
-	buttonText="Save"
-	modalAction={() => {
-		updateCollectionDetails();
-	}}
-/>
+{#if showCollectionModal && modal.show}
+	<CollectionModal
+		bind:data={localDataUpdates}
+		heading="Edit Collection"
+		buttonText="Save"
+		modalAction={() => {
+			updateCollectionDetails();
+		}}
+	/>
+{/if}
+
+{#if showFilterModal && modal.show}
+	<FilterModal />
+{/if}
 
 <ImageLightbox bind:lightboxImage {prevLightboxImage} {nextLightboxImage} />
 
@@ -672,6 +629,20 @@
 		style="font-size: 1.1em;"
 	/> -->
 	<div id="coll-tools">
+		{#if !isLayoutPage()}
+			<IconButton
+				iconName="filter_list"
+				class="toolbar-button"
+				title="Filter"
+				aria-label="Filter"
+				onclick={() => {
+					showFilterModal = true;
+					modal.show = true;
+				}}
+			>
+				Filter
+			</IconButton>
+		{/if}
 		<IconButton
 			iconName="upload"
 			id="upload_to_collection"
@@ -691,6 +662,7 @@
 			title="Edit Collection"
 			aria-label="Edit Collection"
 			onclick={() => {
+				showCollectionModal = true;
 				modal.show = true;
 			}}
 		>
@@ -700,44 +672,14 @@
 			title="Display"
 			class="toolbar-button"
 			icon="list_alt"
-			options={viewSettings.displayOptions}
-			selectedOption={viewSettings.displayOptions.find(
-				(o) => o.title.toLowerCase() === viewSettings.current
-			)}
-			onSelect={(opt) => {
-				viewSettings.setView(opt.title.toLowerCase() as AssetGridView);
-			}}
+			items={displayMenuItems}
+			selectedItemId={displaySelectedId}
 		/>
 		<Dropdown
 			class="toolbar-button"
 			icon="more_horiz"
 			showSelectionIndicator={false}
-			options={dropdownOptions}
-			onSelect={(o) => {
-				switch (o.title) {
-					case "Delete Collection":
-						handleDeleteCollection();
-						break;
-					case "Export Photos":
-						handleExportPhotos();
-						break;
-					case "Share Collection":
-						toastState.addToast({
-							type: "warning",
-							message: "Not implemented yet"
-						});
-						break;
-					case "Duplicate Collection":
-						// Duplicate collection logic
-						// handleDuplicateCollection();
-
-						toastState.addToast({
-							type: "warning",
-							message: "Maybe won't implement this yet"
-						});
-						break;
-				}
-			}}
+			items={collectionMenuItems}
 		/>
 	</div>
 {/snippet}

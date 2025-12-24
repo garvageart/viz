@@ -1,6 +1,7 @@
 import type { Component } from "svelte";
 import { preloadData } from "$app/navigation";
 import { debugMode } from "$lib/states/index.svelte";
+import type { MenuItem } from "$lib/context-menu/types";
 
 // usually this would be bad but the app is client only
 // and doesn't share state with anyone i guess??
@@ -30,6 +31,7 @@ class VizView<C extends Component<any, any, any> = Component<any, any, any>> {
         data: C extends Component<infer P, any, any> ? (P extends { data: infer D; } ? D : any) : any;
     };
     path = $state<string | undefined>(undefined);
+    menuItems?: MenuItem[];
 
     constructor(opts: {
         name: string;
@@ -40,6 +42,7 @@ class VizView<C extends Component<any, any, any> = Component<any, any, any>> {
         id?: number;
         isActive?: boolean;
         locked?: boolean;
+        menuItems?: MenuItem[];
     }) {
         this.name = opts.name;
         this.component = opts.component;
@@ -48,7 +51,8 @@ class VizView<C extends Component<any, any, any> = Component<any, any, any>> {
         this.opticalCenterFix = opts.opticalCenterFix ?? 0.5;
         this.id = opts.id !== undefined ? opts.id : idCount++;
         this.isActive = opts.isActive ?? false;
-        this.locked = (opts as any).locked ?? false;
+        this.locked = opts.locked ?? false;
+        this.menuItems = opts.menuItems;
 
         if (this.path) {
             if (this.viewData) {

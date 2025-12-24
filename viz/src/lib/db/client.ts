@@ -1,13 +1,20 @@
 import { openDB } from "idb";
 
 export async function initDB() {
-    return await openDB("imagine", 1, {
-        upgrade(db) {
-            db.createObjectStore("preferences", {
-                keyPath: "id",
-                autoIncrement: true
-            });
+    return await openDB("imagine", 2, {
+        upgrade(db, oldVersion) {
+            if (oldVersion < 1) {
+                db.createObjectStore("preferences", {
+                    keyPath: "id",
+                    autoIncrement: true
+                });
+            }
             
+            if (oldVersion < 2) {
+                if (!db.objectStoreNames.contains("settings")) {
+                    db.createObjectStore("settings");
+                }
+            }
         }
     });
 } 
