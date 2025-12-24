@@ -9,8 +9,10 @@
 		debugMode,
 		sort,
 		modal,
-		tableColumnSettings
+		tableColumnSettings,
+		isLayoutPage
 	} from "$lib/states/index.svelte";
+	import { selectionManager } from "$lib/states/selection.svelte";
 	import MaterialIcon from "./MaterialIcon.svelte";
 	import { DateTime } from "luxon";
 	import { getFullImagePath } from "$lib/api";
@@ -38,8 +40,6 @@
 	interface Props {
 		data: T[];
 		assetSnippet: SvelteSnippet<[T]>;
-		singleSelectedAsset?: T;
-		selectedAssets: SvelteSet<T>;
 		assetGridArray?: AssetGridArray<T>;
 		view?: Omit<AssetGridView, "grid">;
 		assetGridDisplayProps?: SvelteHTMLElements["div"];
@@ -56,12 +56,14 @@
 		disableOutsideUnselect?: boolean;
 		onassetcontext?: (detail: {
 			asset: T;
-			anchor: { x: number; y: number };
+			anchor: { x: number; y: number } | HTMLElement;
 		}) => void;
 		/** optional explicit column list for table view (order matters). If omitted, inferred from data. */
 		columns?: string[];
 		/** table config: thumbnail_key is dot-path to thumbnail in each asset, columns overrides visible keys */
 		table?: { thumbnail_key?: string; columns?: string[] };
+		/** Unique identifier for selection state management */
+		scopeId?: string;
 	}
 
 	let {
@@ -71,16 +73,25 @@
 		columnCount = $bindable(),
 		searchValue = $bindable(""),
 		noAssetsMessage = "No assets found",
-		singleSelectedAsset = $bindable(),
-		selectedAssets = $bindable(new SvelteSet<T>()),
 		assetDblClick,
 		disableOutsideUnselect = $bindable(false),
 		onassetcontext = $bindable(),
 		view = $bindable("cards"),
 		assetGridDisplayProps = $bindable({}),
 		columns = $bindable(),
-		table = $bindable()
+		table = $bindable(),
+		scopeId = "default"
 	}: Props = $props();
+
+	// Selection Management
+	let selection = $derived(selectionManager.getScope<T>(scopeId));
+	let selectedUIDs = $derived(
+		new SvelteSet(Array.from(selection.selected).map((i) => i.uid))
+	);
+
+	function onFocus() {
+		selectionManager.setActive(scopeId);
+	}
 
 	// HTML Elements
 	let assetGridDisplayEl: HTMLDivElement | undefined = $state();
@@ -137,14 +148,14 @@
 		if (!obj || !path) {
 			return undefined;
 		}
-		
+
 		const parts = path.split(".");
 		let cur: any = obj;
 		for (const p of parts) {
 			if (cur == null) {
 				return undefined;
 			}
-			
+
 			cur = cur[p];
 		}
 
@@ -159,7 +170,9 @@
 		let v: any = undefined;
 		if (key) {
 			v = getNestedValue(obj, key);
-			if (v === undefined && obj) v = (obj as any)[key];
+			if (v === undefined && obj) {
+				v = (obj as any)[key];
+			}
 		} else {
 			v = obj;
 		}
@@ -186,7 +199,7 @@
 
 	// Inspecting/Debugging
 	if (debugMode) {
-		$inspect("selected asset", singleSelectedAsset);
+		$inspect("selected asset", selection.active);
 	}
 
 	$effect(() => {
@@ -219,33 +232,29 @@
 	});
 
 	function handleImageCardSelect(asset: T, e: MouseEvent) {
+		onFocus(); // Ensure this grid is active on click
+
 		if (e.shiftKey) {
-			selectedAssets.clear();
+			selection.selected.clear();
 
 			const ids = allAssetsData.map((i: T) => i.uid);
 			let startIndex = 0;
 			const endIndex = ids.indexOf(asset.uid);
 
-			if (singleSelectedAsset) {
-				startIndex = ids.indexOf(singleSelectedAsset.uid);
+			if (selection.active) {
+				startIndex = ids.indexOf(selection.active.uid);
 			}
 
 			const start = Math.min(startIndex, endIndex);
 			const end = Math.max(startIndex, endIndex);
 
 			for (let i = start; i <= end; i++) {
-				selectedAssets.add(allAssetsData[i]);
+				selection.add(allAssetsData[i]);
 			}
 		} else if (e.ctrlKey) {
-			if (selectedAssets.has(asset)) {
-				selectedAssets.delete(asset);
-			} else {
-				selectedAssets.add(asset);
-			}
+			selection.toggle(asset);
 		} else {
-			selectedAssets.clear();
-			selectedAssets.add(asset);
-			singleSelectedAsset = asset;
+			selection.select(asset);
 		}
 	}
 
@@ -374,7 +383,7 @@
 	}
 
 	function unselectImagesOnClickOutsideAssetContainer(element: HTMLElement) {
-		if (disableOutsideUnselect) {
+		if (disableOutsideUnselect || isLayoutPage()) {
 			return;
 		}
 
@@ -401,8 +410,7 @@
 			}
 
 			// Otherwise clear selection
-			singleSelectedAsset = undefined;
-			selectedAssets.clear();
+			selection.clear();
 		};
 
 		$effect(() => {
@@ -415,25 +423,28 @@
 	}
 
 	hotkeys("ctrl+a", (e) => {
+		if (selectionManager.activeScopeId !== scopeId) {
+			return;
+		}
 		e.preventDefault();
-		selectedAssets.clear();
-		allAssetsData.forEach((i) => selectedAssets.add(i));
+		selection.selectMultiple(allAssetsData);
 	});
 
 	hotkeys("escape", (e) => {
-		if (selectedAssets.size === 0 && !singleSelectedAsset) {
+		if (selectionManager.activeScopeId !== scopeId) {
+			return;
+		}
+		if (selection.selected.size === 0 && !selection.active) {
 			return;
 		}
 
-		selectedAssets.clear();
-		singleSelectedAsset = undefined;
+		selection.clear();
 	});
 </script>
 
 {#snippet assetComponentCard(assetData: T)}
 	{@const isSelected =
-		selectedAssets.values().some((i) => i.uid === assetData.uid) ||
-		singleSelectedAsset === assetData}
+		selectedUIDs.has(assetData.uid) || selection.active?.uid === assetData.uid}
 	<div
 		class="asset-card"
 		class:max-width-column={columnCount !== undefined && columnCount > 1}
@@ -468,10 +479,8 @@
 		}}
 		oncontextmenu={(e: MouseEvent & { currentTarget: HTMLElement }) => {
 			e.preventDefault();
-			if (!selectedAssets.has(assetData) || selectedAssets.size <= 1) {
-				singleSelectedAsset = assetData;
-				selectedAssets.clear();
-				selectedAssets.add(assetData);
+			if (!selection.has(assetData) || selection.selected.size <= 1) {
+				selection.select(assetData);
 			}
 			onassetcontext?.({
 				asset: assetData,
@@ -485,8 +494,8 @@
 
 {#snippet assetComponentListOption(assetData: T)}
 	{@const isSelected =
-		Array.from(selectedAssets).some((i) => i.uid === assetData.uid) ||
-		singleSelectedAsset?.uid === assetData.uid}
+		Array.from(selection.selected).some((i) => i.uid === assetData.uid) ||
+		selection.active?.uid === assetData.uid}
 	{@const asset = assetData as unknown as DisplayableAsset}
 	<tr
 		class="asset-card"
@@ -562,8 +571,11 @@
 	<div
 		bind:this={assetGridDisplayEl}
 		class="viz-asset-table-container {assetGridDisplayProps.class}"
+		class:is-active={selectionManager.activeScopeId === scopeId}
 		{...assetGridDisplayProps}
 		use:unselectImagesOnClickOutsideAssetContainer
+		onclick={onFocus}
+		onfocusin={onFocus}
 	>
 		<table>
 			<thead
@@ -620,8 +632,11 @@
 	<div
 		bind:this={assetGridDisplayEl}
 		class="viz-asset-grid-container {assetGridDisplayProps.class}"
+		class:is-active={selectionManager.activeScopeId === scopeId}
 		{...assetGridDisplayProps}
 		use:unselectImagesOnClickOutsideAssetContainer
+		onclick={onFocus}
+		onfocusin={onFocus}
 	>
 		{#each allAssetsData as asset}
 			{@render assetComponentCard(asset)}
@@ -665,9 +680,13 @@
 	}
 
 	.viz-asset-grid-container > .asset-card.selected-card {
-		outline: 2px solid var(--imag-primary);
+		outline: 2px solid var(--imag-60);
 		outline-offset: 0px;
 		border-radius: 0.5em;
+	}
+
+	.viz-asset-grid-container.is-active > .asset-card.selected-card {
+		outline-color: var(--imag-primary);
 	}
 
 	.asset-card {

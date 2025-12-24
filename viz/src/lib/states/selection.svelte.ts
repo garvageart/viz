@@ -1,12 +1,26 @@
-import { SvelteMap, SvelteSet } from "svelte/reactivity";
+import { SvelteSet } from "svelte/reactivity";
+
+export enum SelectionScopeNames {
+    DEFAULT = "default",
+    PHOTOS_DEFAULT = "photos-default",
+    PHOTOS_MAIN = "photos-main",
+    COLLECTION_PREFIX = "collection-",
+    SEARCH_IMAGES = "search-images",
+    SEARCH_COLLECTIONS = "search-collections"
+}
 
 export class SelectionScope<T extends { uid: string; } = any> {
     selected = $state(new SvelteSet<T>());
     active = $state<T | undefined>(undefined);
+    source = $state<T[]>([]); // All items available in this scope
     id: string;
 
-    constructor(id: string = "default") {
+    constructor(id: string = SelectionScopeNames.DEFAULT) {
         this.id = id;
+    }
+
+    setSource(items: T[]) {
+        this.source = items;
     }
 
     add(item: T) {
@@ -66,17 +80,30 @@ export class SelectionScope<T extends { uid: string; } = any> {
 }
 
 export class SelectionManager {
-    scopes = new SvelteMap<string, SelectionScope>();
+    scopes = new Map<string, SelectionScope>();
+    activeScopeId = $state<string | null>(null);
 
     // A default global scope for simple use cases
     global = new SelectionScope("global");
 
     constructor() { }
 
+    get activeScope() {
+        if (!this.activeScopeId) {
+            return null;
+        }
+        return this.scopes.get(this.activeScopeId) ?? null;
+    }
+
+    setActive(scopeId: string) {
+        this.activeScopeId = scopeId;
+    }
+
     getScope<T extends { uid: string; } = any>(scopeId: string): SelectionScope<T> {
         if (!this.scopes.has(scopeId)) {
             this.scopes.set(scopeId, new SelectionScope<T>(scopeId));
         }
+
         return this.scopes.get(scopeId) as SelectionScope<T>;
     }
 

@@ -1,6 +1,6 @@
 <script lang="ts">
-	import type { MenuItem } from "./ContextMenu.svelte";
 	import MaterialIcon from "../components/MaterialIcon.svelte";
+	import type { MenuItem } from "./types";
 
 	interface Props {
 		item: MenuItem;

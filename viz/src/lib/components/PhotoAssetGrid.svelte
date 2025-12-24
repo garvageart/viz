@@ -11,6 +11,7 @@
 	import { fade } from "svelte/transition";
 	import { getTakenAt, getThumbhashURL } from "$lib/utils/images";
 	import { page } from "$app/state";
+	import { selectionManager } from "$lib/states/selection.svelte";
 	import ImageCard from "./ImageCard.svelte";
 	import {
 		type Props as TippyProps,
@@ -20,13 +21,18 @@
 	} from "tippy.js";
 	import PhotoTooltip from "$lib/components/tooltips/PhotoTooltip.svelte";
 	import "tippy.js/dist/tippy.css";
+	import hotkeys from "hotkeys-js";
 	import type { ImageWithDateLabel } from "$lib/photo-layout";
+	import { isLayoutPage } from "$lib/states/index.svelte";
+	import { filterManager } from "$lib/states/filter.svelte";
 
 	interface PhotoSpecificProps {
 		/** Custom photo card snippet - if not provided, uses default photo card */
 		photoCardSnippet?: Snippet<[Image]>;
 		/** Complete flat list of all images for cross-group range selection */
 		allData?: Image[];
+		/** Unique identifier for selection state management */
+		scopeId?: string;
 	}
 
 	type Props = Omit<ComponentProps<typeof AssetGrid<Image>>, "assetSnippet"> &
@@ -35,8 +41,6 @@
 	let {
 		data = $bindable(),
 		allData = $bindable(), // Complete flat list of all images for cross-group range selection
-		selectedAssets = $bindable(new SvelteSet<Image>()),
-		singleSelectedAsset = $bindable(),
 		assetGridArray = $bindable(),
 		columnCount = $bindable(),
 		searchValue = $bindable(""),
@@ -48,11 +52,65 @@
 		view = $bindable("grid"),
 		columns = $bindable(),
 		table = $bindable(),
-		photoCardSnippet
+		photoCardSnippet,
+		scopeId = "photos-default"
 	}: Props = $props();
 
+	// Selection Management
+	let selection = $derived(selectionManager.getScope<Image>(scopeId));
+	let selectedUIDs = $derived(
+		new Set(Array.from(selection.selected).map((i) => i.uid))
+	);
+
+	// Sync data source to selection scope so filters can access it
+	$effect(() => {
+		const source = allData || data;
+		if (source) {
+			selection.setSource(source);
+			if (filterManager.activeScope && filterManager.activeScope.isImageScope()) {
+				filterManager.activeScope.updateFacets(source);
+			}
+		}
+	});
+
+	// Apply filters
+	// We filter the *view* data (`data` prop) locally for display.
+	let filteredData = $derived(filterManager.apply(data) as Image[]);
+
+	function onFocus() {
+		selectionManager.setActive(scopeId);
+	}
+
+	hotkeys("ctrl+a", (e) => {
+		if (selectionManager.activeScopeId !== scopeId) {
+			return;
+		}
+		if (view !== "grid") {
+			return;
+		}
+
+		e.preventDefault();
+		// Select filtered data, not hidden data
+		const selectionData = filteredData;
+		selection.selectMultiple(selectionData);
+	});
+
+	hotkeys("escape", (e) => {
+		if (selectionManager.activeScopeId !== scopeId) {
+			return;
+		}
+		if (view !== "grid") {
+			return;
+		}
+		if (selection.selected.size === 0 && !selection.active) {
+			return;
+		}
+
+		selection.clear();
+	});
+
 	// Styling stuff
-	const padding = `0em ${page.url.pathname === "/" ? "1em" : page.url.pathname === "/photos" ? "0em" : "2em"}`;
+	const padding = `0em ${isLayoutPage() ? "1em" : page.url.pathname === "/photos" ? "0em" : "2em"}`;
 	const assetLookup = $derived(new Map(data.map((a) => [a.uid, a])));
 
 	function getAssetFromElement(el: HTMLElement): Image | undefined {
@@ -122,13 +180,13 @@
 
 	// ALL GRID IMAGE RENDERING STUFF
 	// ----------------------------
-	const isMultiSelecting = $derived(selectedAssets.size > 1);
+	const isMultiSelecting = $derived(selection.selected.size > 1);
 
 	// Count date labels so we can hide the inline badge in the trivial case
 	// where there is only one date group and that group contains a single image.
 	const dateGroupCounts = $derived.by(() => {
 		const counts: Record<string, number> = {};
-		for (const d of data) {
+		for (const d of filteredData) {
 			const label = (d as ImageWithDateLabel).dateLabel ?? "";
 			if (!label) {
 				continue;
@@ -201,7 +259,7 @@
 		// 1) Build all rows for current data and available width (excluding padding)
 		justifiedRows = buildJustifiedRows(
 			availableWidth,
-			data,
+			filteredData,
 			targetRowHeight,
 			gridGap
 		);
@@ -477,44 +535,40 @@
 	}
 
 	function handleImageCardSelect(asset: Image, e: MouseEvent | KeyboardEvent) {
+		onFocus(); // Ensure this grid is active on click
+
 		if (e.shiftKey) {
-			const selectionData = allData || data;
+			const selectionData = filteredData;
 			const ids = selectionData.map((i: Image) => i.uid);
 			const endIndex = ids.indexOf(asset.uid);
-			const startIndex = singleSelectedAsset
-				? ids.indexOf(singleSelectedAsset.uid)
+			const startIndex = selection.active
+				? ids.indexOf(selection.active.uid)
 				: -1;
 
 			// If both start and end are found, do range selection
 			if (startIndex !== -1 && endIndex !== -1) {
-				selectedAssets.clear();
+				selection.selected.clear();
 
 				const start = Math.min(startIndex, endIndex);
 				const end = Math.max(startIndex, endIndex);
 
 				for (let i = start; i <= end; i++) {
-					selectedAssets.add(selectionData[i]);
+					selection.add(selectionData[i]);
 				}
 			} else {
 				// If anchor not found (shouldn't happen with allData), just add this asset
-				selectedAssets.add(asset);
+				selection.add(asset);
 			}
 		} else if (e.ctrlKey) {
-			if (selectedAssets.has(asset)) {
-				selectedAssets.delete(asset);
-			} else {
-				selectedAssets.add(asset);
-			}
+			selection.toggle(asset);
 		} else {
-			selectedAssets.clear();
-			selectedAssets.add(asset);
-			singleSelectedAsset = asset;
+			selection.select(asset);
 		}
 	}
 
 	function unselectImagesOnClickOutsideAssetContainer(element: HTMLElement) {
 		const clickHandler = (e: MouseEvent) => {
-			if (disableOutsideUnselect) {
+			if (disableOutsideUnselect || isLayoutPage()) {
 				return;
 			}
 			const target = e.target as HTMLElement;
@@ -565,8 +619,7 @@
 			}
 
 			// Otherwise clear selection
-			singleSelectedAsset = undefined;
-			selectedAssets.clear();
+			selection.clear();
 		};
 
 		document.addEventListener("click", clickHandler);
@@ -581,16 +634,15 @@
 
 {#snippet defaultPhotoCard(asset: ImageWithDateLabel)}
 	{@const isSelected =
-		selectedAssets.values().some((i) => i.uid === asset.uid) ||
-		singleSelectedAsset === asset}
+		selectedUIDs.has(asset.uid) || selection.active?.uid === asset.uid}
 	<div
 		class="asset-photo"
 		draggable="true"
 		ondragstart={(e: DragEvent) => {
 			// When dragging, if multiple selected use that set, otherwise drag the single asset
 			const uids =
-				selectedAssets.size > 1
-					? Array.from(selectedAssets).map((i) => i.uid)
+				selection.selected.size > 1
+					? Array.from(selection.selected).map((i) => i.uid)
 					: [asset.uid];
 			try {
 				e.dataTransfer?.setData(
@@ -631,10 +683,8 @@
 		}}
 		oncontextmenu={(e: MouseEvent & { currentTarget: HTMLElement }) => {
 			e.preventDefault();
-			if (!selectedAssets.has(asset) || selectedAssets.size <= 1) {
-				singleSelectedAsset = asset;
-				selectedAssets.clear();
-				selectedAssets.add(asset);
+			if (!selection.has(asset) || selection.selected.size <= 1) {
+				selection.select(asset);
 			}
 
 			onassetcontext?.({ asset, anchor: { x: e.clientX, y: e.clientY } });
@@ -711,9 +761,16 @@
 	<div
 		bind:this={photoGridEl}
 		class="viz-photo-grid-container no-select"
+		class:is-active={selectionManager.activeScopeId === scopeId}
 		style="padding: {padding};"
 		onscroll={handleGridScroll}
 		use:unselectImagesOnClickOutsideAssetContainer
+		onclick={onFocus}
+		onkeydown={onFocus}
+		onfocusin={onFocus}
+		role="grid"
+		aria-label="Photo Grid"
+		tabindex="0"
 	>
 		<div style={`height: ${totalHeight}px; position: relative;`}>
 			{#each visibleRows as row}
@@ -736,9 +793,7 @@
 {:else}
 	<!-- Delegate to AssetGrid for list/table/cards view -->
 	<AssetGrid
-		bind:data
-		bind:selectedAssets
-		bind:singleSelectedAsset
+		bind:data={filteredData}
 		bind:assetGridArray
 		bind:columnCount
 		bind:searchValue
@@ -750,6 +805,7 @@
 		{columns}
 		{table}
 		{assetGridDisplayProps}
+		{scopeId}
 		assetSnippet={photoCardSnippet ?? imageCard}
 	/>
 {/if}
@@ -809,8 +865,16 @@
 		background: var(--imag-bg-color);
 	}
 
+	.viz-photo-grid-container.is-active .asset-photo.multi-selected-photo {
+		outline-color: var(--imag-primary);
+	}
+
 	.asset-photo.selected-photo {
-		outline: 2px solid var(--imag-primary);
+		outline: 2px solid var(--imag-60);
+	}
+
+	.viz-photo-grid-container.is-active .asset-photo.selected-photo {
+		outline-color: var(--imag-primary);
 	}
 
 	.multi-select-ring {

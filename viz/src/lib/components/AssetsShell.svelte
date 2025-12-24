@@ -4,13 +4,14 @@
 	import AssetGrid from "./AssetGrid.svelte";
 	import PhotoAssetGrid from "./PhotoAssetGrid.svelte";
 	import AssetToolbar from "./AssetToolbar.svelte";
-	import MaterialIcon from "./MaterialIcon.svelte";
 	import { type Component, type ComponentProps, type Snippet } from "svelte";
 	import type { HTMLButtonAttributes } from "svelte/elements";
 	import { type MaterialSymbol } from "material-symbols";
 	import type { IPagination } from "$lib/types/asset";
-	import Dropdown, { type DropdownOption } from "./Dropdown.svelte";
+	import Dropdown from "./Dropdown.svelte";
+	import type { MenuItem } from "$lib/context-menu/types";
 	import { sort } from "$lib/states/index.svelte";
+	import { selectionManager } from "$lib/states/selection.svelte";
 	import IconButton from "./IconButton.svelte";
 
 	type Props = {
@@ -57,6 +58,10 @@
 	let assetGridArray: typeof grid.assetGridArray = $state();
 	let columnCount: number | undefined = $derived(assetGridArray?.[0]?.length);
 
+	let selectionScope = $derived(
+		grid.scopeId ? selectionManager.getScope(grid.scopeId) : null
+	);
+
 	let gridData = $derived.by(() => {
 		const dataSlice = grid.data.slice(
 			0,
@@ -81,37 +86,27 @@
 		return [...dataSlice, ...fillItems] as typeof dataSlice;
 	});
 
-	// Sorting
-	let sortOptions: DropdownOption[] = [
-		{
-			title: "Name"
-		},
-		{
-			title: "Created At"
-		},
-		{
-			title: "Updated At"
-		},
-		{
-			title: "Oldest"
-		},
-		{
-			title: "Most Recent"
-		}
+	// Sorting (MenuItem[] for Dropdown)
+	let sortOptions: MenuItem[] = [
+		{ id: "sort-name", label: "Name" },
+		{ id: "sort-created_at", label: "Created At" },
+		{ id: "sort-updated_at", label: "Updated At" },
+		{ id: "sort-oldest", label: "Oldest" },
+		{ id: "sort-most_recent", label: "Most Recent" }
 	];
 
-	function findCurrentSortOption(options: DropdownOption[]) {
+	function currentSortId() {
 		switch (sort.by) {
 			case "name":
-				return options.find((o) => o.title === "Name");
+				return "sort-name";
 			case "created_at":
-				return options.find((o) => o.title === "Created At");
+				return "sort-created_at";
 			case "updated_at":
-				return options.find((o) => o.title === "Updated At");
+				return "sort-updated_at";
 			case "oldest":
-				return options.find((o) => o.title === "Oldest");
+				return "sort-oldest";
 			case "most_recent":
-				return options.find((o) => o.title === "Most Recent");
+				return "sort-most_recent";
 		}
 	}
 
@@ -150,19 +145,20 @@
 {/snippet}
 
 {#if showToolbars}
-	{#if grid.selectedAssets && grid.selectedAssets.size > 1}
+	{#if selectionScope?.selected && selectionScope.selected.size > 1}
 		<AssetToolbar class="selection-toolbar" {...selectionToolbarProps}>
-			<button
+			<IconButton
+				iconName="close"
 				id="coll-clear-selection"
 				class="toolbar-button"
 				title="Clear selection"
 				aria-label="Clear selection"
 				style="margin-right: 1em;"
-				onclick={() => grid.selectedAssets?.clear()}
+				onclick={() => selectionScope.selected.clear()}
+			/>
+			<span style="font-weight: 600;"
+				>{selectionScope.selected.size} selected</span
 			>
-				<MaterialIcon iconName="close" />
-			</button>
-			<span style="font-weight: 600;">{grid.selectedAssets.size} selected</span>
 			{@render selectionToolbarSnippet?.()}
 		</AssetToolbar>
 	{:else}
@@ -173,19 +169,25 @@
 					text: "Sort by",
 					title: "Sort by",
 					dropdown: {
-						options: sortOptions,
-						selectedOption: findCurrentSortOption(sortOptions),
-						onSelect: (option) => {
-							if (option.title === "Name") {
-								sort.by = "name";
-							} else if (option.title === "Created At") {
-								sort.by = "created_at";
-							} else if (option.title === "Updated At") {
-								sort.by = "updated_at";
-							} else if (option.title === "Oldest") {
-								sort.by = "oldest";
-							} else if (option.title === "Most Recent") {
-								sort.by = "most_recent";
+						items: sortOptions,
+						selectedItemId: currentSortId(),
+						onSelect: (item) => {
+							switch (item.id) {
+								case "sort-name":
+									sort.by = "name";
+									break;
+								case "sort-created_at":
+									sort.by = "created_at";
+									break;
+								case "sort-updated_at":
+									sort.by = "updated_at";
+									break;
+								case "sort-oldest":
+									sort.by = "oldest";
+									break;
+								case "sort-most_recent":
+									sort.by = "most_recent";
+									break;
 							}
 						}
 					}
@@ -231,6 +233,23 @@
 		display: flex;
 		align-items: center;
 		gap: 0.5rem;
+	}
+
+	:global(.toolbar-button) {
+		border-radius: 10em;
+		padding: 0.1em 0.3em;
+		display: flex;
+		align-items: center;
+		justify-content: center;
+		white-space: nowrap;
+
+		&:hover {
+			background-color: var(--imag-90);
+		}
+
+		&:active {
+			background-color: var(--imag-80);
+		}
 	}
 
 	#viz-no_assets {

@@ -2,27 +2,11 @@
 	Context Menu (accessible, typed, keyboard navigable)
 	Inspiration: https://www.w3.org/WAI/ARIA/apg/patterns/menu/
 -->
-<script module lang="ts">
-	// Exported types must live in the module script so other TS files can import them
-	import type { MaterialSymbol } from "material-symbols";
-
-	export type MenuItem = {
-		id: string;
-		label: string;
-		action?: (event: MouseEvent | KeyboardEvent) => void;
-		disabled?: boolean;
-		danger?: boolean;
-		separator?: boolean;
-		icon?: MaterialSymbol; // optional icon name/class
-		shortcut?: string; // optional keyboard shortcut label
-		children?: MenuItem[]; // optional submenu
-	};
-</script>
-
 <script lang="ts">
 	import { tick } from "svelte";
 	import ContextMenuItem from "./ContextMenuItem.svelte";
 	import type { SvelteHTMLElements } from "svelte/elements";
+	import type { MenuItem } from "./types";
 
 	type Anchor = { x: number; y: number } | HTMLElement | null;
 
