@@ -31,6 +31,7 @@
 	})();
 </script>
 
+<!-- svelte-ignore state_referenced_locally -->
 <script lang="ts">
 	import { onMount, onDestroy, setContext, createEventDispatcher, tick } from "svelte";
 	import { writable } from "svelte/store";

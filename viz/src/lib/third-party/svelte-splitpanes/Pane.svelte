@@ -1,13 +1,21 @@
 <script lang="ts">
 	import { getContext, onMount, onDestroy, hasContext } from "svelte";
 	import { KEY } from "./Splitpanes.svelte";
-	import type { ClientCallbacks, IPane, PaneInitFunction, SplitContext } from "./index.js";
+	import type {
+		ClientCallbacks,
+		IPane,
+		PaneInitFunction,
+		SplitContext
+	} from "./index.js";
 	import { browser } from "./internal/env.js";
 	import { gatheringKey } from "./internal/GatheringRound.svelte";
 	import { getDimensionName } from "./internal/utils/sizing.js";
 	import { carefullCallbackSource } from "./internal/utils/functions";
 	import { arrayHasDuplicates, generateRandomString } from "$lib/utils/misc";
-	import type { Content, VizSubPanel } from "$lib/components/panels/SubPanel.svelte";
+	import type {
+		Content,
+		VizSubPanel
+	} from "$lib/components/panels/SubPanel.svelte";
 	import { getAllSubPanels } from "$lib/utils/layout";
 	import { layoutState } from "./state.svelte";
 
@@ -49,7 +57,8 @@
 	}: Props = $props();
 
 	// VARIABLES
-	let usedKeyId = $state(paneKeyId ?? generateRandomString(10));
+	let usedKeyId = $derived(paneKeyId ?? generateRandomString(10));
+	// svelte-ignore state_referenced_locally
 	let usedId = id;
 	let isActive = $state(false);
 
@@ -63,7 +72,9 @@
 	// I hate this so much
 	for (const panel of layoutState.tree) {
 		if (panel.childs?.internalSubPanelContainer) {
-			allPanes.push(panel.childs.internalSubPanelContainer as unknown as VizSubPanel);
+			allPanes.push(
+				panel.childs.internalSubPanelContainer as unknown as VizSubPanel
+			);
 		}
 	}
 
@@ -71,13 +82,18 @@
 
 	// NBBBBBBB: MAKE SURE that elements/panes with the same ID don't happen, like ever
 	if (duplicateAnswer.hasDuplicates) {
-		console.error("The following panes have duplicate IDs. Please check the DOM", duplicateAnswer.duplicates);
+		console.error(
+			"The following panes have duplicate IDs. Please check the DOM",
+			duplicateAnswer.duplicates
+		);
 		if (duplicateAnswer.duplicates.includes(usedId)) {
 			throw new Error(`Pane element with id "${usedId}" already exists`);
 		}
 	}
 
-	let paneInfo: VizSubPanel | Content | undefined = allPanes.find((pane) => pane.id === usedId);
+	let paneInfo: VizSubPanel | Content | undefined = allPanes.find(
+		(pane) => pane.id === usedId
+	);
 	if (paneInfo) {
 		usedKeyId = paneInfo.paneKeyId!;
 
@@ -90,7 +106,9 @@
 	// VARIABLES
 	const key = {};
 	const gathering = !browser && hasContext(gatheringKey);
-	const { undefinedPaneInitSize } = (!gathering ? onPaneInit(key) : {}) as ReturnType<PaneInitFunction>;
+	const { undefinedPaneInitSize } = (
+		!gathering ? onPaneInit(key) : {}
+	) as ReturnType<PaneInitFunction>;
 
 	let element: HTMLElement | undefined = $state();
 	let sz: number = $state(size ?? undefinedPaneInitSize);
@@ -107,7 +125,9 @@
 	 * In the case of the object isn't initialized yet, calling this callbacks will do nothing.
 	 */
 
-	const carefullClientCallbacks = browser ? carefullCallbackSource(() => clientCallbacks) : undefined;
+	const carefullClientCallbacks = browser
+		? carefullCallbackSource(() => clientCallbacks)
+		: undefined;
 
 	const reportGivenSizeChangeSafe = (size: number) => {
 		// We put an extra check of `size != sz` here and not in the reactive statement, since we don't want a change
@@ -124,7 +144,11 @@
 		}
 	});
 
-	let transitionClass = smoothExpand ? `transition: ${$isHorizontal ? "height" : "width"} 0.2s ease-out;` : "";
+	let transitionClass = $derived(
+		smoothExpand
+			? `transition: ${$isHorizontal ? "height" : "width"} 0.2s ease-out;`
+			: ""
+	);
 	let dimension = $derived(getDimensionName($isHorizontal));
 	let style = $derived(`${dimension}: ${sz}%; ${transitionClass}`);
 
@@ -189,7 +213,9 @@
 		<!-- svelte-ignore a11y_no_noninteractive_element_interactions -->
 		<div
 			role="separator"
-			class="splitpanes__splitter {isSplitterActive ? 'splitpanes__splitter__active' : ''}"
+			class="splitpanes__splitter {isSplitterActive
+				? 'splitpanes__splitter__active'
+				: ''}"
 			onmousedown={carefullClientCallbacks?.("onSplitterDown")}
 			ontouchstart={carefullClientCallbacks?.("onSplitterDown")}
 			onclick={carefullClientCallbacks?.("onSplitterClick")}
@@ -212,7 +238,9 @@
 
 			if (
 				target.classList.contains("viz-sub_panel-header") ||
-				!Array.from(element?.children as HTMLCollection).some((child) => child.contains(target))
+				!Array.from(element?.children as HTMLCollection).some((child) =>
+					child.contains(target)
+				)
 			) {
 				return;
 			}
