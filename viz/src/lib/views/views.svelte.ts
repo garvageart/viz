@@ -25,11 +25,11 @@ class VizView<C extends Component<any, any, any> = Component<any, any, any>> {
     parent = $state<string | undefined>(undefined);
     isActive = $state<boolean>(false);
     locked = $state<boolean>(false);
-    public viewData?: {
+    public viewData = $state<{
         type: "loaded";
         status: number;
         data: C extends Component<infer P, any, any> ? (P extends { data: infer D; } ? D : any) : any;
-    };
+    } | undefined>(undefined);
     path = $state<string | undefined>(undefined);
     menuItems?: MenuItem[];
 
@@ -63,6 +63,17 @@ class VizView<C extends Component<any, any, any> = Component<any, any, any>> {
 
     setActive(active: boolean) {
         this.isActive = active;
+    }
+
+    /**
+     * Resets the view state, clearing loaded data and resetting the name.
+     * Useful when switching between different instances of the same component type (e.g., different collections).
+     */
+    reset(newName?: string) {
+        this.viewData = undefined;
+        if (newName) {
+            this.name = newName;
+        }
     }
 
     async getComponentData(): Promise<void | { type: "loaded"; status: number; data: any; }> {

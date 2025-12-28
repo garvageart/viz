@@ -1,53 +1,32 @@
 <script lang="ts">
-	import PhotoAssetGrid, {
-		type AssetGridView
-	} from "$lib/components/PhotoAssetGrid.svelte";
-	import LoadingContainer from "$lib/components/LoadingContainer.svelte";
+	import PhotoAssetGrid from "$lib/components/PhotoAssetGrid.svelte";
 	import VizViewContainer from "$lib/components/panels/VizViewContainer.svelte";
 	import { type Image } from "$lib/api";
-	import { DateTime } from "luxon";
-	import { getFullImagePath } from "$lib/api";
 	import MaterialIcon from "$lib/components/MaterialIcon.svelte";
-	import { SvelteSet } from "svelte/reactivity";
-	import {
-		listImages,
-		deleteImagesBulk,
-		signDownload,
-		downloadImagesZipBlob,
-		getImage
-	} from "$lib/api";
+	import { listImages, getImage } from "$lib/api";
 	import AssetToolbar from "$lib/components/AssetToolbar.svelte";
 	import Dropdown from "$lib/components/Dropdown.svelte";
 	import ContextMenu from "$lib/context-menu/ContextMenu.svelte";
 	import type { MenuItem } from "$lib/context-menu/types";
-	import { fade } from "svelte/transition";
 	import hotkeys from "hotkeys-js";
 	import UploadManager, {
-		type ImageUploadSuccess,
-		waitForUploadCompletion
+		type ImageUploadSuccess
 	} from "$lib/upload/manager.svelte";
-	import { UploadState } from "$lib/upload/asset.svelte";
-	import { createCollection, addCollectionImages } from "$lib/api";
 	import {
 		SUPPORTED_IMAGE_TYPES,
 		SUPPORTED_RAW_FILES,
 		type SupportedImageTypes
 	} from "$lib/types/images";
 	import { toastState } from "$lib/toast-notifcations/notif-state.svelte";
-	import { goto, invalidateAll } from "$app/navigation";
 	import ImageLightbox from "$lib/components/ImageLightbox.svelte";
 	import Button from "$lib/components/Button.svelte";
-	import { isLayoutPage, modal, viewSettings } from "$lib/states/index.svelte";
+	import { modal, viewSettings } from "$lib/states/index.svelte";
 	import {
 		selectionManager,
 		SelectionScopeNames
 	} from "$lib/states/selection.svelte";
 	import { onDestroy } from "svelte";
-	import { copyToClipboard } from "$lib/utils/misc.js";
-	import CollectionModal from "$lib/components/modals/CollectionModal.svelte";
-	import ConfirmationModal from "$lib/components/modals/ConfirmationModal.svelte";
 	import FilterModal from "$lib/components/modals/FilterModal.svelte";
-	import { downloadOriginalImageFile } from "$lib/utils/http.js";
 	import {
 		getConsolidatedGroups,
 		groupImagesByDate,
@@ -58,8 +37,8 @@
 	import { filterManager } from "$lib/states/filter.svelte";
 	import { untrack } from "svelte";
 	import DragAndDropUpload from "$lib/components/DragAndDropUpload.svelte";
-	import { traverseFileTree } from "$lib/utils/files.js";
 	import { performImageDownloads } from "$lib/utils/http.js";
+	import { createImageMenu } from "$lib/context-menu/menus/images.js";
 
 	// Display options as MenuItem[] for Dropdown
 	const displayMenuItems: MenuItem[] = [
@@ -77,6 +56,25 @@
 		return map[(viewSettings.current as string) ?? ""];
 	}
 
+	// Helper class for managing gallery state
+	// This ensures we can mutate state (append images) while still initializing from data
+	class GalleryState {
+		images = $state<Image[]>([]);
+		pagination = $state({ limit: 100, page: 0 });
+		totalCount = $state(0);
+		hasMore = $state(false);
+
+		constructor(initData: typeof data) {
+			this.images = initData.images ?? [];
+			this.pagination = {
+				limit: initData.limit,
+				page: initData.page
+			};
+			this.totalCount = initData.count ?? 0;
+			this.hasMore = !!initData.next;
+		}
+	}
+
 	let { data } = $props();
 
 	$effect(() => {
@@ -88,19 +86,16 @@
 		});
 	});
 
-	// Pagination
-	const pagination = $state({
-		limit: data.limit,
-		page: data.page
-	});
+	// Derived state that resets when `data` changes (navigation/filtering)
+	// We use a class so we can maintain local mutable state
+	let galleryState = $derived(new GalleryState(data));
 
-	let images: Image[] = $state(data.images ?? []);
-	let totalCount = $state<number>(data.count ?? 0);
-	let hasMore = $state(!!data.next);
 	let isPaginating = $state(false);
 
 	// Page state
-	let groups: DateGroup[] = $derived(groupImagesByDate(images) ?? []);
+	let groups: DateGroup[] = $derived(
+		groupImagesByDate(filterManager.apply(galleryState.images)) ?? []
+	);
 
 	let consolidatedGroups: ConsolidatedGroup[] = $derived.by(() => {
 		return getConsolidatedGroups(groups);
@@ -108,7 +103,7 @@
 
 	// Lightbox
 	let lightboxImage: Image | undefined = $state();
-	
+
 	// Selection (shared across groups)
 	const scopeId = SelectionScopeNames.PHOTOS_MAIN;
 	const selectionScope = selectionManager.getScope<Image>(scopeId);
@@ -120,206 +115,57 @@
 	// Flat list of all images for cross-group range selection
 	let allImagesFlat = $derived(consolidatedGroups.flatMap((g) => g.allImages));
 
-	// UI state: show a small spinner while a download is in progress
-	let downloadInProgress = $state(false);
-
 	// Context menu state for right-click on assets
 	let ctxShowMenu = $state(false);
-	let ctxItems: any[] = $state([]);
+	let ctxItems: MenuItem[] = $state([]);
 	let ctxAnchor: { x: number; y: number } | HTMLElement | null = $state(null);
 
 	// Action menu items for selected images
-	let actionMenuItems: MenuItem[] = $derived([
-		{
-			id: "act-download",
-			label: "Download",
-			icon: "download",
-			action: () => {
-				downloadInProgress = true;
-				try {
-					const items = Array.from(selectionScope.selected);
-					performImageDownloads(items);
-				} catch (err) {
-					console.error("Download error", err);
+	let actionMenuItems: MenuItem[] = $derived.by(() => {
+		const baseMenuItems = createImageMenu(galleryState.images, selectionScope);
+		const pageMenuItems: MenuItem[] = [
+			{
+				id: "act-add-to-collection",
+				label: "Add to Collection",
+				icon: "collections_bookmark",
+				action: () => {
+					// TODO: Open collection picker modal
 					toastState.addToast({
-						type: "error",
-						message: `Download failed: ${err}`,
-						timeout: 5000
-					});
-				} finally {
-					downloadInProgress = false;
-				}
-			}
-		},
-		{
-			id: "act-add-to-collection",
-			label: "Add to Collection",
-			icon: "collections_bookmark",
-			action: () => {
-				// TODO: Open collection picker modal
-				toastState.addToast({
-					type: "info",
-					message: `Add ${selectionScope.selected.size} image(s) to collection - Not yet implemented`,
-					timeout: 3000
-				});
-			}
-		},
-		{
-			id: "act-share",
-			label: "Share",
-			icon: "share",
-			action: () => {
-				// TODO: Open share dialog
-				toastState.addToast({
-					type: "info",
-					message: `Share ${selectionScope.selected.size} image(s) - Not yet implemented`,
-					timeout: 3000
-				});
-			}
-		},
-		{
-			id: "act-copy-link",
-			label: "Copy Link",
-			icon: "link",
-			action: () => {
-				const items = Array.from(selectionScope.selected);
-				if (selectionScope.selected.size === 1) {
-					const url = getFullImagePath(items[0].image_paths?.original);
-					copyToClipboard(url);
-					toastState.addToast({
-						type: "success",
-						message: "Link copied to clipboard",
-						timeout: 3000
-					});
-				} else {
-					toastState.addToast({
-						type: "warning",
-						message: "Can only copy link for a single image",
+						type: "info",
+						message: `Add ${selectionScope.selected.size} image(s) to collection - Not yet implemented`,
 						timeout: 3000
 					});
 				}
 			}
-		},
-		{
-			id: "act-edit-metadata",
-			label: "Edit Metadata",
-			icon: "edit",
-			action: () => {
-								// TODO: Open metadata editor
-				toastState.addToast({
-					type: "info",
-					message: `Edit metadata for ${selectionScope.selected.size} image(s) - Not yet implemented`,
-					timeout: 3000
-				});
-			}
-		},
-		{
-			id: "act-move-to-trash",
-			label: "Move to Trash",
-			icon: "delete",
-			action: async () => {
-				const items = Array.from(selectionScope.selected);
-				const okTrash = confirm(
-					`Move ${items.length} selected image(s) to trash?`
-				);
+		];
 
-				if (!okTrash) {
-					return;
-				}
-
-				try {
-					const res = await deleteImagesBulk({
-						uids: items.map((i) => i.uid),
-						force: false
-					});
-
-					if (res.status === 200 || res.status === 207) {
-						const deletedUIDs = (res.data.results ?? [])
-							.filter((r) => r.deleted)
-							.map((r) => r.uid);
-						images = images.filter((img) => !deletedUIDs.includes(img.uid));
-						selectionScope.clear();
-					} else {
-						toastState.addToast({
-							type: "error",
-							message: res.data?.error ?? "Failed to delete images",
-							timeout: 4000
-						});
-					}
-				} catch (err) {
-					toastState.addToast({
-						type: "error",
-						message: `Delete failed: ${err}`,
-						timeout: 5000
-					});
-				}
-			}
-		},
-		{
-			id: "act-force-delete",
-			label: "Force Delete",
-			icon: "delete_forever",
-			action: async () => {
-				const items = Array.from(selectionScope.selected);
-				const okForce = confirm(
-					`Permanently delete ${items.length} image(s)? This action cannot be undone!`
-				);
-
-				if (!okForce) {
-					return;
-				}
-
-				try {
-					const res = await deleteImagesBulk({
-						uids: items.map((i) => i.uid),
-						force: true
-					});
-
-					if (res.status === 200 || res.status === 207) {
-						const deletedUIDs = (res.data.results ?? [])
-							.filter((r) => r.deleted)
-							.map((r) => r.uid);
-						images = images.filter((img) => !deletedUIDs.includes(img.uid));
-						selectionScope.clear();
-					} else {
-						toastState.addToast({
-							type: "error",
-							message: (res as any).data?.error ?? "Failed to delete images",
-							timeout: 4000
-						});
-					}
-				} catch (err) {
-					toastState.addToast({
-						type: "error",
-						message: `Delete failed: ${err}`,
-						timeout: 5000
-					});
-				}
-			}
-		}
-	]);
+		return [...baseMenuItems, ...pageMenuItems];
+	});
 
 	async function paginate() {
-		if (isPaginating || !hasMore) {
+		if (isPaginating || !galleryState.hasMore) {
 			return;
 		}
 
 		isPaginating = true;
-		const nextPage = pagination.page + 1;
-		const res = await listImages({ limit: pagination.limit, page: nextPage });
+		const nextPage = galleryState.pagination.page + 1;
+		const res = await listImages({
+			limit: galleryState.pagination.limit,
+			page: nextPage
+		});
 
 		if (res.status === 200) {
 			const nextItems = res.data.items?.map((i) => i.image) ?? [];
-			images.push(...nextItems);
+			galleryState.images.push(...nextItems);
 
 			// Update pagination state from response
-			pagination.page = res.data.page ?? nextPage;
-			totalCount = res.data.count ?? totalCount;
-			hasMore = !!res.data.next;
+			galleryState.pagination.page = res.data.page ?? nextPage;
+			galleryState.totalCount = res.data.count ?? galleryState.totalCount;
+			galleryState.hasMore = !!res.data.next;
 		} else {
 			// On error, avoid tight loops; allow retry on next scroll
 			console.error("paginate: request failed", res);
-			hasMore = false;
+			galleryState.hasMore = false;
 		}
 
 		isPaginating = false;
@@ -426,7 +272,7 @@
 
 			const imagesToAdd = await resolveRawToImages(batch);
 			if (imagesToAdd.length > 0) {
-				images.push(...imagesToAdd);
+				galleryState.images.push(...imagesToAdd);
 			}
 		}, ADD_IMAGES_DEBOUNCE_MS) as unknown as number;
 	}
@@ -462,15 +308,7 @@
 	<title>Photos</title>
 </svelte:head>
 
-{#if downloadInProgress}
-	<div class="download-spinner" aria-live="polite" title="Download in progress">
-		<LoadingContainer />
-	</div>
-{/if}
-
-<!-- {#if isDragging} -->
 <DragAndDropUpload {scopeId} {selectionScope} showCollectionCreateBox={true} />
-<!-- {/if} -->
 
 {#if lightboxImage}
 	<ImageLightbox bind:lightboxImage {prevLightboxImage} {nextLightboxImage} />
@@ -500,11 +338,11 @@
 
 <VizViewContainer
 	name="Photos"
-	bind:data={images}
-	{hasMore}
+	bind:data={galleryState.images}
+	hasMore={galleryState.hasMore}
 	paginate={() => paginate()}
 >
-	{#if images.length > 0}
+	{#if galleryState.images.length > 0}
 		{#if selectionScope.selected.size > 1}
 			<AssetToolbar class="selection-toolbar" stickyToolbar={true}>
 				<button
@@ -546,7 +384,9 @@
 							showFilterModal = true;
 							modal.show = true;
 						}}
-					></IconButton>
+					>
+						Filter
+					</IconButton>
 					<Dropdown
 						title="Display"
 						class="toolbar-button"
@@ -640,21 +480,6 @@
 			color: var(--imag-10);
 			width: fit-content;
 		}
-	}
-
-	.download-spinner {
-		position: fixed;
-		top: 1rem;
-		right: 1rem;
-		z-index: 2000;
-		width: 2.5rem;
-		height: 2.5rem;
-		display: flex;
-		align-items: center;
-		justify-content: center;
-		background: rgba(0, 0, 0, 0.6);
-		border-radius: 0.5rem;
-		padding: 0.25rem;
 	}
 
 	#add_to_imagine-container {

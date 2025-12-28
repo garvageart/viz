@@ -46,12 +46,12 @@
 		});
 	});
 
-	const pagination = $state({
+	const pagination = $derived({
 		limit: data?.limit ?? 10,
 		page: data?.page ?? 0
 	});
 
-	let listOfCollectionsData = $state(data?.items);
+	let listOfCollectionsData = $derived(data?.items);
 
 	let shouldUpdate = $derived(!!data?.next);
 	let displayData = $derived(sortCollections(listOfCollectionsData, sort));

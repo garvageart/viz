@@ -19,7 +19,7 @@
 	import AdminRouteShell from "$lib/components/admin/AdminRouteShell.svelte";
 
 	let { data } = $props();
-	let users = $state(data.users);
+	let users = $derived(data.users);
 
 	let showEditModal = $state(false);
 	let editingUser = $state<User | null>(null);

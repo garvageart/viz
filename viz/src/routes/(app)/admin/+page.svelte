@@ -50,7 +50,7 @@
 		cacheItems: data.cacheStatus?.items ?? 0
 	});
 
-	let liveUptimeSeconds = $state(data.systemStats?.uptime_seconds || 0);
+	let liveUptimeSeconds = $derived(data.systemStats?.uptime_seconds || 0);
 	let formattedLiveUptime = $derived(formatSeconds(liveUptimeSeconds));
 
 	$effect(() => {

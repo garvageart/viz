@@ -7,6 +7,7 @@
 	import { registerReady } from "$lib/stores/appReady";
 	import { loadRuntimeConfig } from "$lib/runtime-config";
 	import { onMount } from "svelte";
+	import { page } from "$app/state";
 
 	let { children } = $props();
 
@@ -40,7 +41,9 @@
 		<UploadPanel />
 	{/if}
 	<main class="viz-content">
-		{@render children()}
+		{#key page.url.href}
+			{@render children()}
+		{/key}
 	</main>
 </div>
 

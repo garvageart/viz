@@ -17,13 +17,13 @@
 	let refreshing = $state(false);
 
 	// WS Stats - initialize from load data
-	let stats = $state<WsStatsResponse>(data.stats);
+	let stats = $derived<WsStatsResponse>(data.stats);
 
 	// WS Metrics - initialize from load data
-	let metrics = $state<WsMetricsResponse>(data.metrics);
+	let metrics = $derived<WsMetricsResponse>(data.metrics);
 
 	// Event History - initialize from load data
-	let history = $state<EventHistoryItem[]>(data.history || []);
+	let history = $derived<EventHistoryItem[]>(data.history || []);
 	let historyFilter = $state("all");
 	let historySearch = $state("");
 
