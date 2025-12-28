@@ -5,6 +5,7 @@
 	import InputSelect from "$lib/components/dom/InputSelect.svelte";
 	import { selectionManager } from "$lib/states/selection.svelte";
 	import IconButton from "$lib/components/IconButton.svelte";
+	import type { HistogramChannels } from "$lib/histogram/types";
 
 	let activeScope = $derived(selectionManager.activeScope);
 	let activeItem = $derived(activeScope?.active as APIImage | undefined);
@@ -73,9 +74,7 @@
 	let resizeObserver: ResizeObserver | undefined = $state();
 
 	// UI / selection state
-	let selectedChannel = $state<"all" | "red" | "green" | "blue" | "luminance">(
-		"all"
-	);
+	let selectedChannel = $state<HistogramChannels>("all");
 	let isSelecting = $state(false);
 	let selectionStartX: number | undefined = $state();
 	let selectionEndX: number | undefined = $state();
@@ -186,7 +185,7 @@
 			ctx.lineTo(width + padding, 0.5 + x + padding);
 		}
 
-		ctx.strokeStyle = "rgba(255,255,255,0.1)";
+		ctx.strokeStyle = "rgba(255,255,255,0.15)";
 		ctx.stroke();
 	}
 
@@ -222,20 +221,28 @@
 			1
 		);
 
-		function drawChannel(channel: number[], color: string, alpha = 0.65) {
+		const sqrtMax = Math.sqrt(maxVal);
+
+		function drawChannel(
+			channel: number[],
+			color: string,
+			alpha = 0.7,
+			compositeOp: GlobalCompositeOperation = "lighter"
+		) {
 			if (!ctx) {
 				return;
 			}
 
 			ctx.save();
-			ctx.globalCompositeOperation = "source-over";
+			ctx.globalCompositeOperation = compositeOp;
 			ctx.globalAlpha = alpha;
 			ctx.beginPath();
 			ctx.moveTo(0, height);
 
 			for (let i = 0; i < BINS; i++) {
 				const x = (i / (BINS - 1)) * width;
-				const y = height - (channel[i] / maxVal) * height;
+				const sqrtValue = Math.sqrt(channel[i]);
+				const y = height - (sqrtValue / sqrtMax) * height;
 				ctx.lineTo(x, y);
 			}
 
@@ -250,18 +257,18 @@
 
 		// draw channels according to selection
 		if (selectedChannel === "all") {
-			drawChannel(hist.blue, CSSColours.blue);
-			drawChannel(hist.green, CSSColours.green);
-			drawChannel(hist.red, CSSColours.red);
+			drawChannel(hist.blue, CSSColours.blue, 0.7, "color");
+			drawChannel(hist.green, CSSColours.green, 0.7, "color");
+			drawChannel(hist.red, CSSColours.red, 0.7, "color");
 		} else if (selectedChannel === "red") {
-			drawChannel(hist.red, CSSColours.red, 0.95);
+			drawChannel(hist.red, CSSColours.red, 0.95, "source-over");
 		} else if (selectedChannel === "green") {
-			drawChannel(hist.green, CSSColours.green, 0.95);
+			drawChannel(hist.green, CSSColours.green, 0.95, "source-over");
 		} else if (selectedChannel === "blue") {
-			drawChannel(hist.blue, CSSColours.blue, 0.95);
+			drawChannel(hist.blue, CSSColours.blue, 0.95, "source-over");
 		} else if (selectedChannel === "luminance") {
 			// draw luminance as filled gray
-			drawChannel(hist.luminance, CSSColours.luminance, 0.95);
+			drawChannel(hist.luminance, CSSColours.luminance, 0.95, "source-over");
 		}
 
 		// draw luminance as semi-transparent white line on top
@@ -274,7 +281,8 @@
 
 		for (let i = 0; i < BINS; i++) {
 			const x = (i / (BINS - 1)) * width;
-			const y = height - (hist.luminance[i] / maxVal) * height;
+			const sqrtValue = Math.sqrt(hist.luminance[i]);
+			const y = height - (sqrtValue / sqrtMax) * height;
 			if (i === 0) {
 				ctx.moveTo(x, y);
 			} else {
@@ -489,7 +497,7 @@
 	<div class="stats">
 		<div class="stat-row">
 			<strong>Range:</strong>
-			<span class="val">
+			<span class="stat-val">
 				{#if selectionBins}
 					{selectionBins.start}–{selectionBins.end}
 				{:else}
@@ -499,7 +507,7 @@
 		</div>
 		<div class="stat-row">
 			<strong>Pixels:</strong>
-			<span class="val">
+			<span class="stat-val">
 				{#if stats}
 					{stats.count} ({stats.percent.toFixed(2)}%)
 				{:else}
@@ -509,13 +517,13 @@
 		</div>
 		<div class="stat-row">
 			<strong>Mean:</strong>
-			<span class="val"
+			<span class="stat-val"
 				>{#if stats}{stats.mean.toFixed(2)}{:else}—{/if}</span
 			>
 		</div>
 		<div class="stat-row">
 			<strong>Median:</strong>
-			<span class="val"
+			<span class="stat-val"
 				>{#if stats}{stats.median}{:else}—{/if}</span
 			>
 		</div>
@@ -541,7 +549,7 @@
 			display: block;
 			width: 100%;
 			border: 1px solid rgb(105, 105, 105);
-			background-color: rgb(56.1, 56.1, 56.1);
+			background-color: rgb(56, 56, 56);
 		}
 	}
 
@@ -558,6 +566,7 @@
 		grid-template-columns: repeat(2, minmax(0, 1fr));
 		gap: 0.5rem 1rem;
 		width: 100%;
+		font-family: var(--imag-code-font);
 	}
 
 	.stat-row {
@@ -567,7 +576,7 @@
 		gap: 0.5rem;
 	}
 
-	.stat-row .val {
+	.stat-row .stat-val {
 		text-align: right;
 	}
 </style>

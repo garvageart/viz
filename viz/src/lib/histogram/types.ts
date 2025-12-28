@@ -1,0 +1,1 @@
+export type HistogramChannels = "all" | "red" | "green" | "blue" | "luminance";
