@@ -1,10 +1,11 @@
 import { invalidateAll } from "$app/navigation";
-import { API_BASE_URL, deleteCollectionImages, deleteImagesBulk, getFullImagePath, type CollectionDetailResponse, type Image } from "$lib/api";
+import { deleteCollectionImages, deleteImagesBulk, getFullImagePath, type CollectionDetailResponse, type Image } from "$lib/api";
 import { toastState } from "$lib/toast-notifcations/notif-state.svelte";
 import { copyToClipboard } from "$lib/utils/misc";
 import type { MaterialSymbol } from "material-symbols";
 import type { MenuItem } from "../types";
 import { performImageDownloads } from "$lib/utils/http";
+import type { SelectionScope } from "$lib/states/selection.svelte";
 
 export function createCollectionImageMenu(asset: Image, loadedData: CollectionDetailResponse) {
     let ctxItems: MenuItem[] = [
@@ -107,8 +108,9 @@ export function createCollectionImageMenu(asset: Image, loadedData: CollectionDe
     return ctxItems;
 }
 
-export function createImageMenu(items: Image[]) {
-    let actionMenuItems: MenuItem[] = $derived([
+export function createImageMenu(images: Image[], selectionScope: SelectionScope<Image>) {
+    let items = Array.from(selectionScope.selected);
+    let actionMenuItems: MenuItem[] = [
         {
             id: "act-download",
             label: "Download",
@@ -124,19 +126,6 @@ export function createImageMenu(items: Image[]) {
                         timeout: 5000
                     });
                 }
-            }
-        },
-        {
-            id: "act-add-to-collection",
-            label: "Add to Collection",
-            icon: "collections_bookmark",
-            action: () => {
-                // TODO: Open collection picker modal
-                toastState.addToast({
-                    type: "info",
-                    message: `Add ${items.length} image(s) to collection - Not yet implemented`,
-                    timeout: 3000
-                });
             }
         },
         {
@@ -187,89 +176,89 @@ export function createImageMenu(items: Image[]) {
                 });
             }
         },
-        // {
-        //     id: "act-move-to-trash",
-        //     label: "Move to Trash",
-        //     icon: "delete",
-        //     action: async () => {
-        //         const okTrash = confirm(
-        //             `Move ${items.length} selected image(s) to trash?`
-        //         );
+        {
+            id: "act-move-to-trash",
+            label: "Move to Trash",
+            icon: "delete",
+            action: async () => {
+                const okTrash = confirm(
+                    `Move ${items.length} selected image(s) to trash?`
+                );
 
-        //         if (!okTrash) {
-        //             return;
-        //         }
+                if (!okTrash) {
+                    return;
+                }
 
-        //         try {
-        //             const res = await deleteImagesBulk({
-        //                 uids: items.map((i) => i.uid),
-        //                 force: false
-        //             });
+                try {
+                    const res = await deleteImagesBulk({
+                        uids: items.map((i) => i.uid),
+                        force: false
+                    });
 
-        //             if (res.status === 200 || res.status === 207) {
-        //                 const deletedUIDs = (res.data.results ?? [])
-        //                     .filter((r) => r.deleted)
-        //                     .map((r) => r.uid);
-        //                 images = images.filter((img) => !deletedUIDs.includes(img.uid));
-        //                 selectionScope.clear();
-        //             } else {
-        //                 toastState.addToast({
-        //                     type: "error",
-        //                     message: res.data?.error ?? "Failed to delete images",
-        //                     timeout: 4000
-        //                 });
-        //             }
-        //         } catch (err) {
-        //             toastState.addToast({
-        //                 type: "error",
-        //                 message: `Delete failed: ${err}`,
-        //                 timeout: 5000
-        //             });
-        //         }
-        //     }
-        // },
-        // {
-        //     id: "act-force-delete",
-        //     label: "Force Delete",
-        //     icon: "delete_forever",
-        //     action: async () => {
-        //         const okForce = confirm(
-        //             `Permanently delete ${items.length} image(s)? This action cannot be undone!`
-        //         );
+                    if (res.status === 200 || res.status === 207) {
+                        const deletedUIDs = (res.data.results ?? [])
+                            .filter((r) => r.deleted)
+                            .map((r) => r.uid);
+                        images = images.filter((img) => !deletedUIDs.includes(img.uid));
+                        selectionScope.clear();
+                    } else {
+                        toastState.addToast({
+                            type: "error",
+                            message: res.data?.error ?? "Failed to delete images",
+                            timeout: 4000
+                        });
+                    }
+                } catch (err) {
+                    toastState.addToast({
+                        type: "error",
+                        message: `Delete failed: ${err}`,
+                        timeout: 5000
+                    });
+                }
+            }
+        },
+        {
+            id: "act-force-delete",
+            label: "Force Delete",
+            icon: "delete_forever",
+            action: async () => {
+                const okForce = confirm(
+                    `Permanently delete ${items.length} image(s)? This action cannot be undone!`
+                );
 
-        //         if (!okForce) {
-        //             return;
-        //         }
+                if (!okForce) {
+                    return;
+                }
 
-        //         try {
-        //             const res = await deleteImagesBulk({
-        //                 uids: items.map((i) => i.uid),
-        //                 force: true
-        //             });
+                try {
+                    const res = await deleteImagesBulk({
+                        uids: items.map((i) => i.uid),
+                        force: true
+                    });
 
-        //             if (res.status === 200 || res.status === 207) {
-        //                 const deletedUIDs = (res.data.results ?? [])
-        //                     .filter((r) => r.deleted)
-        //                     .map((r) => r.uid);
-        //                 images = images.filter((img) => !deletedUIDs.includes(img.uid));
-        //                 selectionScope.clear();
-        //             } else {
-        //                 toastState.addToast({
-        //                     type: "error",
-        //                     message: (res as any).data?.error ?? "Failed to delete images",
-        //                     timeout: 4000
-        //                 });
-        //             }
-        //         } catch (err) {
-        //             toastState.addToast({
-        //                 type: "error",
-        //                 message: `Delete failed: ${err}`,
-        //                 timeout: 5000
-        //             });
-        //         }
-        //     }
-        // }
-    ]);
+                    if (res.status === 200 || res.status === 207) {
+                        const deletedUIDs = (res.data.results ?? [])
+                            .filter((r) => r.deleted)
+                            .map((r) => r.uid);
+                        images = images.filter((img) => !deletedUIDs.includes(img.uid));
+                        selectionScope.clear();
+                    } else {
+                        toastState.addToast({
+                            type: "error",
+                            message: (res as any).data?.error ?? "Failed to delete images",
+                            timeout: 4000
+                        });
+                    }
+                } catch (err) {
+                    toastState.addToast({
+                        type: "error",
+                        message: `Delete failed: ${err}`,
+                        timeout: 5000
+                    });
+                }
+            }
+        }
+    ];
 
     return actionMenuItems;
 }

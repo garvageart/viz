@@ -164,7 +164,7 @@ export class FilterScope<F, A extends Asset> {
         return isNaN(num) ? undefined : num;
     }
 
-    updateFacets(items: A[]) {
+    updateFacets<T extends Asset>(items: T[]) {
         if (this.isImageScope()) {
             const cameras = new Map<string, number>();
             const lenses = new Map<string, number>();
@@ -236,7 +236,7 @@ export class FilterScope<F, A extends Asset> {
         }
     }
 
-    apply(items: A[]): A[] {
+    apply<T extends Asset>(items: T[]): T[] {
         if (this.isImageScope()) {
             const criteria = this.criteria;
             const hasActiveFilters =
@@ -363,7 +363,7 @@ export class FilterScope<F, A extends Asset> {
                     }
                 }
                 return true;
-            });
+            }) as T[];
         } else if (this.isCollectionScope()) {
             return items; // No collection filters yet
         }
@@ -372,7 +372,7 @@ export class FilterScope<F, A extends Asset> {
 }
 
 class FilterManager {
-    scopes: Map<string, FilterScope<any, any>> = $state(new Map());
+    scopes: Map<string, FilterScope<ImageFilters, Image> | FilterScope<CollectionFilters, Collection>> = $state(new Map());
     activeScopeType: 'images' | 'collections' | null = $state('images');
     keepFilters: boolean = $state(false);
 
@@ -413,14 +413,14 @@ class FilterManager {
         this.isInitialized = true;
     }
 
-    get activeScope(): FilterScope<any, any> | undefined {
+    get activeScope(): FilterScope<ImageFilters, Image> | FilterScope<CollectionFilters, Collection> | undefined {
         if (this.activeScopeType) {
             return this.scopes.get(this.activeScopeType);
         }
         return undefined;
     }
 
-    getScope(type: 'images' | 'collections'): FilterScope<any, any> | undefined {
+    getScope(type: 'images' | 'collections'): FilterScope<ImageFilters, Image> | FilterScope<CollectionFilters, Collection> | undefined {
         return this.scopes.get(type);
     }
 
@@ -468,7 +468,7 @@ class FilterManager {
         }
     }
 
-    apply(items: Asset[]): Asset[] {
+    apply<T extends Asset = Asset>(items: T[]): T[] {
         if (!this.activeScope) {
             return items;
         }

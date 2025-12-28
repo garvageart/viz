@@ -402,6 +402,7 @@
 		overflow: visible;
 		/* Prevent horizontal scrollbar on ancestor containers by avoiding sub-pixel overflow */
 		box-sizing: border-box;
+		display: flex;
 	}
 
 	.context-menu-options {
