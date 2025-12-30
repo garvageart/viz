@@ -4,11 +4,13 @@ import { sleep, swapArrayElements } from "../utils/misc";
 import VizView from "./views.svelte";
 import { dev } from "$app/environment";
 import { views } from "$lib/layouts/views";
-import { cleanupEmptyPanels, normalizeContentSizes, normalizePanelSizes, createPanelWithView, splitPanelVertically, splitPanelHorizontally } from "$lib/layouts/panel-operations";
+import { cleanupEmptyPanels, normalizeContentSizes, normalizePanelSizes } from "$lib/layouts/panel-operations";
 import type { DropPosition } from "./types";
 import VizSubPanelData, { Content } from "$lib/layouts/subpanel.svelte";
 import { isTabData } from "$lib/utils/layout";
 import { debugMode } from "$lib/states/index.svelte";
+import { DragData } from "$lib/drag-drop/data";
+import { VizMimeTypes } from "$lib/constants";
 
 export interface TabData {
     index: number;
@@ -167,8 +169,12 @@ class TabOps {
             return;
         }
 
-        const data = event.dataTransfer.getData("text/json");
-        const state = JSON.parse(data) as TabData;
+        const dragData = DragData.getData<TabData>(event.dataTransfer, VizMimeTypes.TAB_VIEW);
+        if (!dragData) {
+            return;
+        }
+
+        const state = dragData.payload;
 
         if (!isTabData(state)) {
             return;
@@ -177,7 +183,6 @@ class TabOps {
         const tabKeyId = node.getAttribute("data-tab-id")!;
         const nodeParentId = node.closest("[data-viz-sp-id]")?.getAttribute("data-viz-sp-id");
         const nodeIsPanelHeader = node.classList.contains("viz-sub_panel-header");
-        const nodeIsTab = node.classList.contains("viz-tab-button") && node.hasAttribute("data-tab-id");
         const panelContainsTab = this.panelViews.some((view) => view.id === state.view.id);
 
         if (!nodeParentId && nodeIsPanelHeader) {
@@ -312,27 +317,36 @@ class TabOps {
     /**
      * Makes an element draggable. */
     draggable(node: HTMLElement, data: TabData) {
-        let state = JSON.stringify(data);
         node.draggable = true;
-        node.addEventListener("dragstart", (e) => {
-            e.dataTransfer?.setData("text/json", state);
-        });
+        const listener = (e: DragEvent) => {
+            if (!e.dataTransfer) {
+                return;
+            }
+
+            const dragData = new DragData(VizMimeTypes.TAB_VIEW, data);
+            dragData.setData(e.dataTransfer);
+            e.dataTransfer.effectAllowed = "move";
+        };
+        node.addEventListener("dragstart", listener);
 
         $effect(() => {
-            state = JSON.stringify(data);
             return () => {
                 node.draggable = false;
-                node.removeEventListener("dragstart", (e) => {
-                    e.dataTransfer?.setData("text/json", state);
-                });
+                node.removeEventListener("dragstart", listener);
             };
-
         });
     }
 
     private handleTabDropInside(node: HTMLElement, event: DragEvent, activeViewData: TabData) {
-        const data = event.dataTransfer!.getData("text/json");
-        const state = JSON.parse(data) as TabData;
+        if (!event.dataTransfer) {
+            return;
+        }
+
+        const dragData = DragData.getData<TabData>(event.dataTransfer, VizMimeTypes.TAB_VIEW);
+        if (!dragData) {
+            return;
+        }
+        const state = dragData.payload;
 
         const layout = layoutState.tree;
         const dstParentPanel = layout.find(panel => panel.childs.content?.some(sub => sub.paneKeyId === activeViewData.view.parent));
@@ -602,6 +616,11 @@ class TabOps {
         $effect(() => {
             node.addEventListener("dragenter", (e) => {
                 e.preventDefault();
+                const isType = DragData.isType(e.dataTransfer!, VizMimeTypes.TAB_VIEW);
+                if (!isType) {
+                    return;
+                }
+
                 this.handleDropInsideEnter(node);
             });
 

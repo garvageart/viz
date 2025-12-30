@@ -1,11 +1,28 @@
 import type { Component } from "svelte";
-import { preloadData } from "$app/navigation";
+import { preloadData, invalidateAll } from "$app/navigation";
 import { debugMode } from "$lib/states/index.svelte";
 import type { MenuItem } from "$lib/context-menu/types";
 
 // usually this would be bad but the app is client only
 // and doesn't share state with anyone i guess??
 let idCount = 1;
+
+/**
+ * A global version counter for view invalidation.
+ * Incrementing this will cause all active VizView instances to re-evaluate
+ * their derivedViewData, effectively triggering a refresh of their content.
+ */
+let invalidationVersion = $state(0);
+
+/**
+ * Triggers a global invalidation of all VizView instances and SvelteKit load functions.
+ * Use this instead of `invalidateAll()` when you want to ensure background panels
+ * also refresh their data (e.g., after uploading images or modifying collections).
+ */
+export async function invalidateViz() {
+    invalidationVersion += 1;
+    return await invalidateAll();
+}
 
 export interface SerializedVizView {
     name: string;
@@ -81,6 +98,9 @@ class VizView<C extends Component<any, any, any> = Component<any, any, any>> {
             return;
         }
 
+        // Register dependency on invalidationVersion
+        const _ = invalidationVersion;
+
         if (debugMode) {
             console.log(`Loading data ${this.path}`);
         }
@@ -91,6 +111,11 @@ class VizView<C extends Component<any, any, any> = Component<any, any, any>> {
             return result;
         }
     }
+
+    derivedViewData = $derived.by(() => {
+        // Return a promise that resolves with the component data
+        return this.getComponentData();
+    });
 
     /**
      * Serializes the view to a plain object for localStorage

@@ -10,6 +10,7 @@
 	interface Props {
 		children: Snippet;
 		name: string;
+		disableNameInTitle?: boolean;
 		style?: string;
 		data?: typeof page.data;
 		hasMore?: boolean;
@@ -20,6 +21,7 @@
 	let {
 		children,
 		name,
+		disableNameInTitle = $bindable(false),
 		style,
 		hasMore = $bindable(false), // default to false, don't spam unnecessarily
 		data = $bindable(),
@@ -88,7 +90,7 @@
 </script>
 
 <svelte:head>
-	{#if page.url.pathname !== "/"}
+	{#if page.url.pathname !== "/" && !disableNameInTitle}
 		<title>{name}</title>
 	{/if}
 </svelte:head>
@@ -111,22 +113,31 @@
 	{#if isLayoutPage()}
 		{@render children()}
 	{:else}
-		{#await pageData}
-			<LoadingContainer />
-		{:then data}
-			{#if data}
-				{@render children()}
-				{#if hasMore}
-					<div style="width: 3em; height: 3em; margin: 5em;">
-						<LoadingContainer />
-					</div>
-				{/if}
-			{:else}
-				<p>No data available</p>
+		{#if data && !randomLatency}
+			{@render children()}
+			{#if hasMore}
+				<div style="width: 3em; height: 3em; margin: 5em;">
+					<LoadingContainer />
+				</div>
 			{/if}
-		{:catch error}
-			<p>Error loading data: {error.message}</p>
-		{/await}
+		{:else}
+			{#await pageData}
+				<LoadingContainer />
+			{:then data}
+				{#if data}
+					{@render children()}
+					{#if hasMore}
+						<div style="width: 3em; height: 3em; margin: 5em;">
+							<LoadingContainer />
+						</div>
+					{/if}
+				{:else}
+					<p>No data available</p>
+				{/if}
+			{:catch error}
+				<p>Error loading data: {error.message}</p>
+			{/await}
+		{/if}
 	{/if}
 </div>
 

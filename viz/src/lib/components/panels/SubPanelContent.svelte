@@ -44,7 +44,7 @@
 
 	$effect(() => {
 		if (activeView) {
-			panelData = activeView.viewData ?? activeView.getComponentData();
+			panelData = activeView.derivedViewData;
 		}
 	});
 
@@ -79,20 +79,46 @@
 	{#if subPanelContentFocused}
 		<div class="viz-panel-active-overlay"></div>
 	{/if}
-	{#await panelData}
-		<LoadingContainer />
-	{:then loadedData}
+	{#if activeView.viewData}
 		{#if Comp}
-			{#if loadedData}
-				<Comp data={loadedData.data} view={activeView} />
-			{:else}
-				<Comp view={activeView} />
-			{/if}
+			<Comp data={activeView.viewData.data} view={activeView} />
 		{/if}
-	{:catch error}
-		<h2>Something has gone wrong:</h2>
-		<p style="color: red;">{error}</p>
-	{/await}
+		<!-- Keep the promise alive in the background to trigger updates, but don't show its pending state -->
+		{#await panelData then _}
+			<!-- no-op -->
+		{:catch error}
+			<p style="color: red; display: none;">
+				Background update failed: {error}
+			</p>
+		{/await}
+	{:else}
+		{#await panelData}
+			<div class="data-loading-container">
+				<LoadingContainer />
+			</div>
+		{:then loadedData}
+			{#if Comp}
+				{#if loadedData}
+					<Comp data={loadedData.data} view={activeView} />
+				{:else if activeView.path}
+					<div
+						style="padding: 2em; color: var(--imag-error); text-align: center;"
+					>
+						<h3>Failed to load view</h3>
+						<p>Could not load data for <strong>{activeView.name}</strong></p>
+						<p style="font-size: 0.8em; opacity: 0.8;">
+							Path: {activeView.path}
+						</p>
+					</div>
+				{:else}
+					<Comp view={activeView} />
+				{/if}
+			{/if}
+		{:catch error}
+			<h2>Something has gone wrong:</h2>
+			<p style="color: red;">{error}</p>
+		{/await}
+	{/if}
 </div>
 
 <style lang="scss">
@@ -113,6 +139,14 @@
 		flex-direction: column;
 		flex: 1;
 		min-height: 0;
+	}
+
+	.data-loading-container {
+		height: 100%;
+		width: 100%;
+		display: flex;
+		align-items: center;
+		justify-content: center;
 	}
 
 	.viz-panel-active-overlay {

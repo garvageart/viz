@@ -52,8 +52,6 @@
 	let isHoveringHeader = $state(false);
 	let isDraggingScrollbar = $state(false);
 
-	$inspect("active view", keyId, activeView.name);
-
 	$effect(() => {
 		if (!headerElement) return;
 

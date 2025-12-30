@@ -49,9 +49,8 @@
 					console.debug(
 						`[openCollection] Checking view id=${v.id} path="${v.path}" name="${v.name}"`
 					);
-					// Match by exact path or by component type if it's a collection page
-					// This allows reusing the same "slot" for different collections
-					if (v.path === collectionPath || (v.component === CollectionPage as any && content.paneKeyId === currentContent.paneKeyId)) {
+					// Match by exact path
+					if (v.path === collectionPath) {
 						console.debug(`[openCollection] Found match: ${v.id}`);
 						existingView = v;
 						existingContent = content;
@@ -71,12 +70,6 @@
 			console.debug(
 				`[openCollection] Activating existing view: ${existingView.id}`
 			);
-			
-			// If it's the same component but different collection, reset it
-			if (existingView.path !== collectionPath) {
-				existingView.reset(collection.name);
-				existingView.path = collectionPath;
-			}
 
 			// Deactivate all views in the content and activate the existing one
 			existingContent.views.forEach((v) => v.setActive(false));
@@ -113,7 +106,6 @@
 	import { page } from "$app/state";
 	import { addViewToContent } from "$lib/utils/layout";
 	import VizView from "$lib/views/views.svelte";
-	import { DateTime } from "luxon";
 	import CollectionPage from "../../routes/(app)/collections/[uid]/+page.svelte";
 	import VizSubPanelData, { Content } from "$lib/layouts/subpanel.svelte";
 	import { layoutState } from "$lib/third-party/svelte-splitpanes/state.svelte";
@@ -159,7 +151,7 @@
 	<div class="metadata">
 		<span class="coll-name" title={collection.name}>{collection.name}</span>
 		<span class="coll-created_at"
-			>{DateTime.fromISO(collection.created_at).toFormat("dd.MM.yyyy")}</span
+			>{new Date(collection.created_at).toLocaleDateString()}</span
 		>
 		<span class="coll-image_count"
 			>{collection.image_count}
