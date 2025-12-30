@@ -1,14 +1,15 @@
 <script lang="ts">
-	import { DateTime } from "luxon";
 	import { getFullImagePath, type Image } from "$lib/api";
 	import { thumbHashToDataURL } from "thumbhash";
 	import { onMount } from "svelte";
-	import { getTakenAt } from "$lib/utils/images";
+	import { getImageLabel, getTakenAt } from "$lib/utils/images";
 	import { normalizeBase64 } from "$lib/utils/misc";
+	import { VizMimeTypes } from "$lib/constants";
+	import { DragData } from "$lib/drag-drop/data";
 
 	let { asset }: { asset: Image } = $props();
-	let imageDate = $derived(DateTime.fromJSDate(getTakenAt(asset)));
-	
+	let imageDate = $derived(getTakenAt(asset));
+
 	let placeholderDataURL = $state<string | undefined>();
 	let imageLoaded = $state(false);
 
@@ -16,7 +17,9 @@
 	onMount(() => {
 		if (asset.image_metadata?.thumbhash) {
 			try {
-				const normalizedThumbhash = normalizeBase64(asset.image_metadata.thumbhash);
+				const normalizedThumbhash = normalizeBase64(
+					asset.image_metadata.thumbhash
+				);
 				const binaryString = atob(normalizedThumbhash);
 				const bytes = new Uint8Array(binaryString.length);
 				for (let i = 0; i < binaryString.length; i++) {
@@ -30,28 +33,70 @@
 	});
 </script>
 
-<div class="image-card" data-asset-id={asset.uid}>
+<div
+	class="image-card"
+	draggable="true"
+	role="button"
+	tabindex="0"
+	data-asset-id={asset.uid}
+	ondragstart={(e) => {
+		if (!e.dataTransfer) {
+			return;
+		}
+
+		const dragData = new DragData(VizMimeTypes.IMAGE_UIDS, [asset.uid]);
+		dragData.setData(e.dataTransfer);
+		e.dataTransfer.effectAllowed = "copy";
+
+		const img = e.currentTarget.querySelector(
+			".image-card-image"
+		) as HTMLImageElement;
+		if (img) {
+			e.dataTransfer.setDragImage(img, 0, 0);
+		}
+	}}
+>
 	<div class="image-container">
 		{#if placeholderDataURL && !imageLoaded}
-			<img class="image-card-placeholder" src={placeholderDataURL} alt="" aria-hidden="true" />
+			<img
+				class="image-card-placeholder"
+				src={placeholderDataURL}
+				alt=""
+				aria-hidden="true"
+			/>
 		{/if}
 		<img
 			class="image-card-image"
 			class:loaded={imageLoaded}
 			src={getFullImagePath(asset.image_paths?.thumbnail)}
-			alt="{asset.name}{asset.uploaded_by ? ` by ${asset.uploaded_by.username}` : ''}"
-			title="{asset.name}{asset.uploaded_by ? ` by ${asset.uploaded_by.username}` : ''}"
+			alt="{asset.name}{asset.uploaded_by
+				? ` by ${asset.uploaded_by.username}`
+				: ''}"
+			title="{asset.name}{asset.uploaded_by
+				? ` by ${asset.uploaded_by.username}`
+				: ''}"
 			loading="lazy"
 			crossorigin="use-credentials"
 			onload={() => (imageLoaded = true)}
 		/>
 	</div>
 	<div class="image-card-meta">
-		<span class="image-card-name" title={asset.image_metadata?.file_name}>{asset.image_metadata?.file_name ?? asset.name}</span>
-		<div class="image-card-date_time" title="Photo taken at {imageDate.toFormat('dd/MM/yyyy - HH:mm')}">
-			<span class="image-card-date">{imageDate.toFormat("dd/MM/yyyy")}</span>
+		<span class="image-card-name" title={asset.image_metadata?.file_name}
+			>{asset.image_metadata?.file_name ?? asset.name}</span
+		>
+		<div
+			class="image-card-date_time"
+			title="Photo taken at {imageDate.toLocaleString()}"
+		>
+			<span class="image-card-date">{imageDate.toLocaleDateString()}</span>
 			<span class="image-card-divider">•</span>
-			<span class="image-card-time">{imageDate.toFormat("HH:mm")}</span>
+			<span class="image-card-time"
+				>{imageDate.toLocaleTimeString().replace(/:\d{2}$/, "")}</span
+			>
+			<div
+				class="image-card-label"
+				style="background-color: {getImageLabel(asset)}"
+			></div>
 		</div>
 	</div>
 </div>
@@ -104,6 +149,14 @@
 
 	.image-card-date_time {
 		color: var(--imag-20);
+		display: flex;
+		align-items: center;
+	}
+
+	.image-card-label {
+		height: 0.5rem;
+		width: 0.5rem;
+		margin: auto 1rem;
 	}
 
 	.image-card-divider {

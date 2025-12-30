@@ -1,13 +1,18 @@
 import { invalidateAll } from "$app/navigation";
-import { deleteCollectionImages, deleteImagesBulk, getFullImagePath, type CollectionDetailResponse, type Image } from "$lib/api";
+import { deleteCollectionImages, deleteImagesBulk, getFullImagePath, updateCollection, type CollectionDetailResponse, type Image } from "$lib/api";
 import { toastState } from "$lib/toast-notifcations/notif-state.svelte";
 import { copyToClipboard } from "$lib/utils/misc";
 import type { MaterialSymbol } from "material-symbols";
 import type { MenuItem } from "../types";
 import { performImageDownloads } from "$lib/utils/http";
 import type { SelectionScope } from "$lib/states/selection.svelte";
+import { invalidateViz } from "$lib/views/views.svelte";
 
-export function createCollectionImageMenu(asset: Image, loadedData: CollectionDetailResponse) {
+interface CollectionImageMenuOptions {
+    downloadImages?: (images: Image[]) => void;
+}
+
+export function createCollectionImageMenu(asset: Image, collection: CollectionDetailResponse, opts?: CollectionImageMenuOptions) {
     let ctxItems: MenuItem[] = [
         {
             id: `download-${asset.uid}`,
@@ -15,7 +20,38 @@ export function createCollectionImageMenu(asset: Image, loadedData: CollectionDe
             icon: "download",
             action: async () => {
                 try {
+                    opts?.downloadImages?.([asset]);
+                } catch (err) {
+                    console.error("Context menu download error", err);
+                    toastState.addToast({
+                        type: "error",
+                        message: `Download failed: ${err}`
+                    });
+                }
+            }
+        },
+        {
+            id: `collection-thumbnail-${asset.uid}`,
+            label: "Make Collection Thumbnail",
+            icon: "gallery_thumbnail",
+            action: async () => {
+                try {
+                    const res = await updateCollection(collection.uid, {
+                        thumbnailUID: asset.uid
+                    });
 
+                    if (res.status === 200) {
+                        toastState.addToast({
+                            type: "success",
+                            message: `Collection thumbnail updated: **${res.data.thumbnail!.name}**`
+                        });
+                        await invalidateViz();
+                    } else {
+                        toastState.addToast({
+                            type: "error",
+                            message: res.data?.error ?? "Failed to update thumbnail"
+                        });
+                    }
                 } catch (err) {
                     console.error("Context menu download error", err);
                     toastState.addToast({
@@ -32,13 +68,13 @@ export function createCollectionImageMenu(asset: Image, loadedData: CollectionDe
             action: async () => {
                 if (
                     !confirm(
-                        `Remove "${asset.name || asset.uid}" from collection "${loadedData.name}"?`
+                        `Remove "${asset.name || asset.uid}" from collection "${collection.name}"?`
                     )
                 ) {
                     return;
                 }
                 try {
-                    const r = await deleteCollectionImages(loadedData.uid, {
+                    const r = await deleteCollectionImages(collection.uid, {
                         uids: [asset.uid]
                     });
                     if (r.status === 200) {
@@ -46,8 +82,7 @@ export function createCollectionImageMenu(asset: Image, loadedData: CollectionDe
                             type: "success",
                             message: `Removed from collection`
                         });
-                        // selectionScope.clear();
-                        await invalidateAll();
+                        await invalidateViz();
                     } else {
                         toastState.addToast({
                             type: "error",

@@ -11,10 +11,20 @@
 		type ImageUpdate
 	} from "$lib/api";
 	import hotkeys from "hotkeys-js";
-	import { formatBytes, getTakenAt, getThumbhashURL } from "$lib/utils/images";
+	import {
+		formatBytes,
+		getImageLabel,
+		getTakenAt,
+		getThumbhashURL
+	} from "$lib/utils/images";
 	import { toastState } from "$lib/toast-notifcations/notif-state.svelte";
 	import IconButton from "./IconButton.svelte";
 	import { downloadOriginalImageFile } from "$lib/utils/http";
+	import ZoomPan from "$lib/images/zoom/preview";
+	import { setRating } from "$lib/images/exif";
+	import InputText from "./dom/InputText.svelte";
+	import LabelSelector from "./LabelSelector.svelte";
+	import { LabelColours, type ImageLabel } from "$lib/images/constants";
 
 	interface Props {
 		lightboxImage: Image | undefined;
@@ -38,6 +48,20 @@
 
 	let direction = $state<"left" | "right">("right");
 	let showMetadata = $state(true);
+	let editNameMode = $state(false);
+
+	let imageEl: HTMLImageElement = $state()!;
+	let imageContainerEl: HTMLDivElement = $state()!;
+	let zoomer: ZoomPan | undefined;
+
+	$effect(() => {
+		if (imageContainerEl && imageEl) {
+			zoomer = new ZoomPan(imageContainerEl, imageEl);
+			return () => {
+				zoomer?.destroy();
+			};
+		}
+	});
 
 	function goToPrev() {
 		direction = "left";
@@ -52,8 +76,10 @@
 	let thumbhashURL = $derived(
 		lightboxImage ? getThumbhashURL(lightboxImage) : undefined
 	);
+
+	let imageUid = $derived(lightboxImage?.uid);
 	let currentImageEl: HTMLImageElement | undefined = $derived(
-		lightboxImage ? document.createElement("img") : undefined
+		imageUid ? document.createElement("img") : undefined
 	);
 
 	// Rating UI state: previewRating for hover preview, rating is the set value
@@ -68,7 +94,7 @@
 	// Prevent concurrent rating updates
 	let updatingRating = $state(false);
 
-	async function setRating(newRating: number | null) {
+	async function setImageRating(newRating: number | null) {
 		if (!lightboxImage) {
 			return;
 		}
@@ -81,26 +107,20 @@
 		const prev = rating;
 		rating = newRating;
 
-		const uid = lightboxImage.uid;
-		const dateToUpdate: ImageUpdate = {
-			image_metadata: { rating: newRating }
-		};
-
 		try {
-			const res = await updateImage(uid, dateToUpdate);
-			if (res.status === 200) {
-				lightboxImage = res.data;
-				rating = res.data.image_metadata?.rating ?? null;
-			} else {
-				toastState.addToast({
-					type: "error",
-					message: `Failed to update rating: ${res.status} ${res.data.error}`
-				});
-
-				rating = prev;
-			}
-		} catch (err) {
-			console.error("Error updating rating", err);
+			const newSuccessfulRating = await setRating(
+				lightboxImage,
+				prev,
+				newRating
+			);
+			rating = newSuccessfulRating;
+		} catch (err: any) {
+			const ratingErr = err as Error;
+			toastState.addToast({
+				type: "error",
+				title: "Failed to update rating",
+				message: `An error occurred while updating the image rating: ${ratingErr.message}`
+			});
 			rating = prev;
 		} finally {
 			updatingRating = false;
@@ -132,10 +152,107 @@
 {#snippet metadataEditor()}
 	<div class="metadata-editor">
 		<div class="metadata-header">
-			<h3>Info</h3>
+			<h3>Metadata</h3>
 		</div>
 		<div class="metadata-exif-box">
 			<div class="exif-cards">
+				<div class="exif-card">
+					<div class="card-row main-row">
+						<MaterialIcon iconName="image" class="exif-material-icon" />
+						<div class="card-values">
+							{#if editNameMode}
+								<InputText
+									bind:value={lightboxImage!.name}
+									class="value-big"
+									style="min-height: auto; padding: 0.5rem;"
+									spellcheck="false"
+									autofocus={true}
+									title={lightboxImage?.name ?? "Edit Image Name"}
+									onblur={async (e) => {
+										editNameMode = false;
+										if (e.currentTarget.value.trim() === lightboxImage!.name) {
+											return;
+										}
+
+										try {
+											const res = await updateImage(lightboxImage!.uid, {
+												name: lightboxImage!.name
+											});
+
+											if (res.status === 200) {
+												lightboxImage = res.data;
+												toastState.addToast({
+													type: "success",
+													title: "Image name updated",
+													message: `Updated to "${lightboxImage?.name}"`,
+													timeout: 2000
+												});
+											} else {
+												throw new Error(
+													`Failed to update image name: ${res.data.error}`
+												);
+											}
+										} catch (error) {
+											toastState.addToast({
+												type: "error",
+												title: "Failed to update image name",
+												message:
+													(error as Error).message ??
+													"An unknown error occurred."
+											});
+										}
+									}}
+									onkeydown={(e) => {
+										if (e.key === "Enter") {
+											e.currentTarget.blur();
+										} else if (e.key === "Escape") {
+											editNameMode = false;
+										}
+									}}
+								/>
+							{:else}
+								<div
+									role="textbox"
+									tabindex="0"
+									onclick={() => (editNameMode = true)}
+									onkeydown={() => (editNameMode = true)}
+									title={lightboxImage?.name}
+									class="value-big"
+								>
+									{lightboxImage?.name}
+								</div>
+							{/if}
+						</div>
+					</div>
+
+					<div class="card-row meta-row">
+						<MaterialIcon
+							iconName="calendar_today"
+							class="exif-material-icon"
+						/>
+						<div class="card-values">
+							<div class="value-big">
+								{#if lightboxImage?.image_metadata?.file_created_at}
+									{getTakenAt(lightboxImage).toLocaleDateString(undefined, {
+										year: "numeric",
+										month: "long",
+										day: "numeric"
+									})}
+								{:else}
+									Unknown Date
+								{/if}
+							</div>
+							{#if lightboxImage?.image_metadata?.file_created_at}
+								<div class="value-sub">
+									{getTakenAt(lightboxImage).toLocaleTimeString(undefined, {
+										hour: "2-digit",
+										minute: "2-digit"
+									})}
+								</div>
+							{/if}
+						</div>
+					</div>
+				</div>
 				<!-- Camera/Exposure card -->
 				<div class="exif-card">
 					<div class="card-row main-row">
@@ -224,38 +341,52 @@
 						</div>
 					</div>
 				</div>
-				<div class="exif-card">
-					<div class="card-row main-row">
-						<MaterialIcon
-							iconName="calendar_today"
-							class="exif-material-icon"
-						/>
-						<div class="card-values">
-							<div class="value-big">
-								{#if lightboxImage?.image_metadata?.file_created_at}
-									{getTakenAt(lightboxImage).toLocaleDateString(undefined, {
-										year: "numeric",
-										month: "long",
-										day: "numeric"
-									})}
-								{:else}
-									Unknown Date
-								{/if}
-							</div>
-							{#if lightboxImage?.image_metadata?.file_created_at}
-								<div class="value-sub">
-									{getTakenAt(lightboxImage).toLocaleTimeString(undefined, {
-										hour: "2-digit",
-										minute: "2-digit"
-									})}
-								</div>
-							{/if}
-						</div>
-					</div>
-				</div>
 			</div>
 
 			<div class="rating-container">
+				<LabelSelector
+					variant="compact"
+					label={getImageLabel(lightboxImage!)}
+					onSelect={async (selectedLabel) => {
+						if (!lightboxImage) {
+							return;
+						}
+
+						// Reverse lookup: find the key (Name) for the selected color (Value)
+						const entry = Object.entries(LabelColours).find(
+							([_, colour]) => colour === selectedLabel
+						);
+						const labelName = entry ? entry[0] : null;
+						// If "None" is selected, send null to clear the label
+						const labelToSend = (labelName === "None" || !labelName
+							? null
+							: labelName) as ImageLabel | null;
+
+						try {
+							const res = await updateImage(lightboxImage.uid, {
+								image_metadata: {
+									label: labelToSend
+								}
+							});
+
+							if (res.status === 200) {
+								lightboxImage = res.data;
+							} else {
+								throw new Error(
+									`Failed to update image label: ${res.data.error}`
+								);
+							}
+						} catch (error) {
+							toastState.addToast({
+								type: "error",
+								title: "Failed to update image label",
+								message:
+									(error as Error).message ?? "An unknown error occurred."
+							});
+						}
+					}}
+				/>
+
 				<div
 					class="rating-stars"
 					role="group"
@@ -264,10 +395,11 @@
 					{#each starValues as i}
 						<button
 							class="rating-button"
-							aria-label={`Set rating ${i}`}
+							title={`Set Rating: ${i}`}
+							aria-label={`Set Rating: ${i}`}
 							onmouseenter={() => (previewRating = i)}
 							onmouseleave={() => (previewRating = null)}
-							onclick={() => setRating(i)}
+							onclick={() => setImageRating(i)}
 							disabled={updatingRating}
 						>
 							<MaterialIcon
@@ -281,7 +413,7 @@
 						<button
 							class="rating-clear"
 							aria-label="Clear rating"
-							onclick={() => setRating(0)}
+							onclick={() => setImageRating(0)}
 							disabled={updatingRating}
 						>
 							<MaterialIcon iconName="close" weight={600} />
@@ -334,7 +466,7 @@
 				/>
 			</div>
 			{#key lightboxImage?.uid}
-				<div class="image-wrapper">
+				<div class="image-wrapper" bind:this={imageContainerEl}>
 					{#await loadImage(imageToLoad, currentImageEl!)}
 						{#if !thumbhashURL}
 							<div style="width: 3em; height: 3em">
@@ -352,6 +484,7 @@
 						{/if}
 					{:then url}
 						<img
+							bind:this={imageEl}
 							src={url}
 							class="lightbox-image"
 							alt={lightboxImage!.name}
@@ -359,6 +492,8 @@
 							loading="eager"
 							crossorigin="use-credentials"
 							data-image-id={lightboxImage!.uid}
+							ondragstart={(e) => e.preventDefault()}
+							oncontextmenu={(e) => e.preventDefault()}
 							in:fade
 							out:fade
 						/>
@@ -471,7 +606,7 @@
 		display: flex;
 		justify-content: center;
 		align-items: center;
-		max-height: 95%;
+		// max-height: 95%;
 		height: 100%;
 		width: 100%;
 		overflow: hidden;
@@ -519,8 +654,9 @@
 		border-radius: 0.5em;
 		color: var(--imag-10);
 		height: 100%;
-		width: 25vw;
-		max-width: 25vw;
+		width: auto;
+		max-width: 20vw;
+		min-width: 20vw;
 		z-index: 100;
 		pointer-events: auto;
 		box-sizing: border-box;
@@ -593,7 +729,7 @@
 		flex: 1 1 auto;
 	}
 
-	.value-big {
+	:global(.value-big) {
 		font-size: 1.1em;
 		font-weight: 600;
 	}
@@ -602,7 +738,7 @@
 		font-size: 0.9em;
 	}
 
-	.value-big,
+	:global(.value-big),
 	.value-sub {
 		color: var(--imag-20);
 		white-space: nowrap;

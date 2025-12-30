@@ -1,10 +1,13 @@
 <script lang="ts">
 	import type { Image } from "$lib/api";
-	import { getTakenAt } from "$lib/utils/images";
+	import { getImageLabel, getTakenAt } from "$lib/utils/images";
 	import { DateTime } from "luxon";
+	import LabelSelector from "../LabelSelector.svelte";
 
 	let { asset }: { asset: Image } = $props();
 	let takenAt = $derived(getTakenAt(asset));
+
+	$inspect("taken at", asset);
 </script>
 
 <div class="photo-tooltip-content">
@@ -15,13 +18,20 @@
 			>
 		</div>
 	{/if}
-	<div class="tooltip-row">
-		{#if takenAt}
+	{#if takenAt}
+		<div class="tooltip-row">
 			<span class="tooltip-value"
 				>{DateTime.fromJSDate(takenAt).toFormat("dd LLL yyyy • HH:mm")}</span
 			>
-			<span class="tooltip-value">{asset.owner?.username}</span>
-		{/if}
+			<LabelSelector
+				label={getImageLabel(asset)}
+				variant="compact"
+				enableSelection={false}
+			/>
+		</div>
+	{/if}
+	<div class="tooltip-row">
+		<span class="tooltip-value">{asset.owner?.username}</span>
 	</div>
 </div>
 
@@ -49,6 +59,7 @@
 
 	.tooltip-row {
 		display: flex;
+		align-items: center;
 		gap: 8px;
 	}
 

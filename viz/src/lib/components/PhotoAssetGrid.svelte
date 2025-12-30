@@ -6,10 +6,20 @@
 	import AssetGrid from "./AssetGrid.svelte";
 	import { getFullImagePath, type Image } from "$lib/api";
 	import { DateTime } from "luxon";
-	import { mount, unmount, type ComponentProps, type Snippet } from "svelte";
+	import {
+		mount,
+		unmount,
+		type ComponentProps,
+		type Snippet,
+		untrack
+	} from "svelte";
 	import { SvelteSet } from "svelte/reactivity";
 	import { fade } from "svelte/transition";
-	import { getTakenAt, getThumbhashURL } from "$lib/utils/images";
+	import {
+		getImageLabel,
+		getTakenAt,
+		getThumbhashURL
+	} from "$lib/utils/images";
 	import { page } from "$app/state";
 	import { selectionManager } from "$lib/states/selection.svelte";
 	import ImageCard from "./ImageCard.svelte";
@@ -25,6 +35,9 @@
 	import type { ImageWithDateLabel } from "$lib/photo-layout";
 	import { isLayoutPage } from "$lib/states/index.svelte";
 	import { filterManager } from "$lib/states/filter.svelte";
+	import { DragData } from "$lib/drag-drop/data";
+	import { VizMimeTypes } from "$lib/constants";
+	import LabelSelector from "./LabelSelector.svelte";
 
 	interface PhotoSpecificProps {
 		/** Custom photo card snippet - if not provided, uses default photo card */
@@ -67,7 +80,10 @@
 		const source = allData || data;
 		if (source) {
 			selection.setSource(source);
-			if (filterManager.activeScope && filterManager.activeScope.isImageScope()) {
+			if (
+				filterManager.activeScope &&
+				filterManager.activeScope.isImageScope()
+			) {
 				filterManager.activeScope.updateFacets(source);
 			}
 		}
@@ -257,9 +273,11 @@
 		const viewportH = photoGridEl.clientHeight || window.innerHeight;
 
 		// 1) Build all rows for current data and available width (excluding padding)
+		// Access filteredData reactively
+		const images = filteredData;
 		justifiedRows = buildJustifiedRows(
 			availableWidth,
-			filteredData,
+			images,
 			targetRowHeight,
 			gridGap
 		);
@@ -441,24 +459,37 @@
 		return scaled;
 	}
 
-	$effect(() => {
-		if (!photoGridEl || data.length === 0) {
-			return;
+	// Action to initialize grid and setup observers
+	function initGrid(node: HTMLDivElement) {
+		photoGridEl = node;
+
+		// Initial synchronous layout to prevent flash
+		if (filteredData.length > 0) {
+			untrack(() => updateVirtualGrid());
 		}
 
-		// essentially onmount
-		requestAnimationFrame(updateVirtualGrid);
-
 		const debouncedUpdate = debounce(
-			() => requestAnimationFrame(updateVirtualGrid),
+			() => requestAnimationFrame(() => untrack(() => updateVirtualGrid())),
 			100
 		);
 		const resizeObserver = new ResizeObserver(debouncedUpdate);
-		resizeObserver.observe(photoGridEl);
+		resizeObserver.observe(node);
 
-		return () => {
-			resizeObserver.disconnect();
+		return {
+			destroy() {
+				resizeObserver.disconnect();
+				photoGridEl = undefined;
+			}
 		};
+	}
+
+	// Re-run layout when data changes
+	$effect(() => {
+		if (filteredData) {
+			if (photoGridEl) {
+				untrack(() => updateVirtualGrid());
+			}
+		}
 	});
 
 	function handleGridScroll(_e: Event) {
@@ -645,11 +676,9 @@
 					? Array.from(selection.selected).map((i) => i.uid)
 					: [asset.uid];
 			try {
-				e.dataTransfer?.setData(
-					"application/x-imagine-ids",
-					JSON.stringify(uids)
-				);
 				if (e.dataTransfer) {
+					const dragData = new DragData(VizMimeTypes.IMAGE_UIDS, uids);
+					dragData.setData(e.dataTransfer);
 					e.dataTransfer.effectAllowed = "copy";
 					const target = e.currentTarget as HTMLElement;
 					const img = target.querySelector(".tile-image") as HTMLImageElement;
@@ -743,10 +772,17 @@
 		<div class="photo-overlay">
 			<div class="photo-overlay-inner">
 				<div class="photo-name">{asset.name}</div>
-				<div class="photo-date">
-					{DateTime.fromJSDate(getTakenAt(asset)).toFormat(
-						"dd LLL yyyy • HH:mm"
-					)}
+				<div class="photo-meta">
+					<div class="photo-date">
+						{DateTime.fromJSDate(getTakenAt(asset)).toFormat(
+							"dd LLL yyyy • HH:mm"
+						)}
+					</div>
+					<LabelSelector
+						variant="compact"
+						enableSelection={false}
+						label={getImageLabel(asset)}
+					/>
 				</div>
 			</div>
 		</div>
@@ -759,7 +795,7 @@
 
 {#if view === "grid"}
 	<div
-		bind:this={photoGridEl}
+		use:initGrid
 		class="viz-photo-grid-container no-select"
 		class:is-active={selectionManager.activeScopeId === scopeId}
 		style="padding: {padding};"
@@ -914,7 +950,7 @@
 	}
 
 	:global(.img-loaded) .tile-placeholder {
-		opacity: 0;
+		display: none;
 	}
 
 	.tile-image {
@@ -922,12 +958,6 @@
 		height: 100%;
 		object-fit: cover;
 		position: relative;
-		transition: opacity 0.3s ease;
-		opacity: 0;
-	}
-
-	:global(.img-loaded) .tile-image {
-		opacity: 1;
 	}
 
 	.photo-overlay {
@@ -957,6 +987,13 @@
 		white-space: nowrap;
 		overflow: hidden;
 		text-overflow: ellipsis;
+	}
+
+	.photo-meta {
+		display: flex;
+		flex-direction: row;
+		align-items: center;
+		gap: 0.5rem;
 	}
 
 	.photo-date {

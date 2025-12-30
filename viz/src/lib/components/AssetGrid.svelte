@@ -46,6 +46,7 @@
 		columnCount?: number;
 		searchValue?: string;
 		noAssetsMessage?: string;
+		disableMultiSelection?: boolean;
 		assetDblClick?: (
 			e: MouseEvent & {
 				currentTarget: EventTarget & (HTMLDivElement | HTMLTableRowElement);
@@ -75,6 +76,7 @@
 		noAssetsMessage = "No assets found",
 		assetDblClick,
 		disableOutsideUnselect = $bindable(false),
+		disableMultiSelection = $bindable(false),
 		onassetcontext = $bindable(),
 		view = $bindable("cards"),
 		assetGridDisplayProps = $bindable({}),
@@ -235,6 +237,11 @@
 		onFocus(); // Ensure this grid is active on click
 
 		if (e.shiftKey) {
+			if (disableMultiSelection) {
+				selection.select(asset);
+				return;
+			}
+
 			selection.selected.clear();
 
 			const ids = allAssetsData.map((i: T) => i.uid);

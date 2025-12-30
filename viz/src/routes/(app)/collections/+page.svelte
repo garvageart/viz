@@ -1,36 +1,37 @@
 <script lang="ts">
-	import VizViewContainer from "$lib/components/panels/VizViewContainer.svelte";
-	import type { PageProps } from "./$types";
+	import { goto } from "$app/navigation";
+	import { page } from "$app/state";
+	import {
+		createCollection,
+		deleteCollection,
+		updateCollection,
+		type Collection
+	} from "$lib/api";
+	import AssetGrid from "$lib/components/AssetGrid.svelte";
+	import AssetsShell from "$lib/components/AssetsShell.svelte";
+	import Button from "$lib/components/Button.svelte";
 	import CollectionCard, {
 		openCollection
 	} from "$lib/components/CollectionCard.svelte";
-	import MaterialIcon from "$lib/components/MaterialIcon.svelte";
-	import Button from "$lib/components/Button.svelte";
-	import {
-		createCollection,
-		type Collection,
-		deleteCollection,
-		updateCollection
-	} from "$lib/api";
-	import { isLayoutPage, modal, sort } from "$lib/states/index.svelte";
-	import { selectionManager } from "$lib/states/selection.svelte";
-	import { goto } from "$app/navigation";
-	import { page } from "$app/state";
-	import { SvelteSet } from "svelte/reactivity";
-	import AssetGrid from "$lib/components/AssetGrid.svelte";
-	import type { Content } from "$lib/layouts/subpanel.svelte";
-	import { getContext, type ComponentProps } from "svelte";
-	import type { AssetGridArray } from "$lib/types/asset";
-	import AssetsShell from "$lib/components/AssetsShell.svelte";
-	import { sortCollections } from "$lib/sort/sort";
-	import { toastState } from "$lib/toast-notifcations/notif-state.svelte";
-	import CollectionModal from "$lib/components/modals/CollectionModal.svelte";
-	import ContextMenu from "$lib/context-menu/ContextMenu.svelte";
-	import { copyToClipboard } from "$lib/utils/misc";
 	import IconButton from "$lib/components/IconButton.svelte";
-	import { filterManager } from "$lib/states/filter.svelte";
-	import { untrack } from "svelte";
+	import MaterialIcon from "$lib/components/MaterialIcon.svelte";
+	import CollectionModal from "$lib/components/modals/CollectionModal.svelte";
 	import FilterModal from "$lib/components/modals/FilterModal.svelte";
+	import VizViewContainer from "$lib/components/panels/VizViewContainer.svelte";
+	import ContextMenu from "$lib/context-menu/ContextMenu.svelte";
+	import { createCollectionMenu } from "$lib/context-menu/menus/collections";
+	import type { Content } from "$lib/layouts/subpanel.svelte";
+	import { sortCollections } from "$lib/sort/sort";
+	import { filterManager } from "$lib/states/filter.svelte";
+	import { isLayoutPage, modal, sort } from "$lib/states/index.svelte";
+	import { toastState } from "$lib/toast-notifcations/notif-state.svelte";
+	import type { AssetGridArray } from "$lib/types/asset";
+	import { getContext, untrack, type ComponentProps } from "svelte";
+	import type { PageProps } from "./$types";
+	import {
+		selectionManager,
+		SelectionScopeNames
+	} from "$lib/states/selection.svelte";
 
 	let { data }: PageProps = $props();
 
@@ -47,20 +48,23 @@
 	});
 
 	const pagination = $derived({
-		limit: data?.limit ?? 10,
-		page: data?.page ?? 0
+		limit: data.limit ?? 50,
+		page: data.page ?? 0
 	});
 
-	let listOfCollectionsData = $derived(data?.items);
+	let listOfCollectionsData = $derived(data?.items ?? []);
 
-	let shouldUpdate = $derived(!!data?.next);
+	let shouldUpdate = $derived(!!data.next);
 	let displayData = $derived(sortCollections(listOfCollectionsData, sort));
 
 	let fadeOpacity = false;
 	let toolbarOpacity = $state(1);
 
 	// Selection
-	const scopeId = "collections-main";
+	const scopeId = $derived(SelectionScopeNames.COLLECTIONS_MAIN);
+	const selectionScope = $derived(
+		selectionManager.getScope<Collection>(scopeId)
+	);
 
 	let collectionGridArray: AssetGridArray<Collection> | undefined = $state();
 	let grid: ComponentProps<typeof AssetGrid<Collection>> = $derived({
@@ -96,124 +100,72 @@
 		collection: Collection,
 		anchor: { x: number; y: number } | HTMLElement
 	) {
-		// Build context menu items for a collection
-		ctxItems = [
-			{
-				id: `open-${collection.uid}`,
-				label: "Open",
-				icon: "open_in_new",
-				action: () => goto(`/collections/${collection.uid}`)
+		ctxItems = createCollectionMenu(collection, {
+			editCollection: (col) => {
+				modalMode = "edit";
+				modalData = { ...col };
+				modal.show = true;
 			},
-			{
-				id: `edit-${collection.uid}`,
-				label: "Edit",
-				icon: "edit",
-				action: () => {
-					modalMode = "edit";
-					modalData = { ...collection };
-					modal.show = true;
-				}
+			onCollectionDuplicated: (newCol) => {
+				listOfCollectionsData = [newCol, ...listOfCollectionsData];
+				toastState.addToast({
+					message: `Duplicated collection ${newCol.name}`,
+					type: "success"
+				});
 			},
-			{
-				id: `duplicate-${collection.uid}`,
-				label: "Duplicate",
-				icon: "content_copy",
-				action: async () => {
-					try {
-						const res = await createCollection({
-							name: `Copy of ${collection.name}`,
-							description: collection.description ?? undefined,
-							private: collection.private ?? false
-						});
-
-						if (res.status === 201) {
-							listOfCollectionsData = [
-								res.data as Collection,
-								...listOfCollectionsData
-							];
-							toastState.addToast({
-								message: "Collection duplicated",
-								type: "success"
-							});
-						} else {
-							toastState.addToast({
-								message:
-									(res as any).data?.error ??
-									`Duplicate failed (${res.status})`,
-								type: "error"
-							});
-						}
-					} catch (err) {
-						toastState.addToast({
-							message: "Duplicate failed: " + (err as Error).message,
-							type: "error"
-						});
-					}
-				}
-			},
-			{ separator: true, id: `sep-${collection.uid}`, label: "" },
-			{
-				id: `copylink-${collection.uid}`,
-				label: "Copy link",
-				icon: "link",
-				action: async () => {
-					try {
-						const url = `${location.origin}/collections/${collection.uid}`;
-						copyToClipboard(url);
-						toastState.addToast({
-							message: "Link copied to clipboard",
-							type: "success"
-						});
-					} catch (err) {
-						toastState.addToast({
-							message: "Failed to copy link",
-							type: "error"
-						});
-					}
-				}
-			},
-			{
-				id: `delete-${collection.uid}`,
-				label: "Delete",
-				icon: "delete",
-				danger: true,
-				action: async () => {
-					if (
-						!confirm(
-							`Delete collection "${collection.name}"? This cannot be undone.`
-						)
-					) {
-						return;
-					}
-
-					try {
-						const res = await deleteCollection(collection.uid);
-						if (res.status === 204) {
-							listOfCollectionsData = listOfCollectionsData.filter(
-								(c) => c.uid !== collection.uid
-							);
-							toastState.addToast({
-								message: `Deleted collection ${collection.name}`,
-								type: "success"
-							});
-						} else {
-							toastState.addToast({
-								message: res.data?.error ?? "Failed to delete",
-								type: "error"
-							});
-						}
-					} catch (err) {
-						toastState.addToast({
-							message: `Failed to delete: ${err}`,
-							type: "error"
-						});
-					}
-				}
+			onCollectionDeleted: (deletedCol) => {
+				listOfCollectionsData = listOfCollectionsData.filter(
+					(c) => c.uid !== deletedCol.uid
+				);
+				toastState.addToast({
+					message: `Deleted collection ${deletedCol.name}`,
+					type: "success"
+				});
 			}
-		];
+		});
 
-		ctxAnchor = anchor as any;
+		ctxAnchor = anchor;
 		ctxShowMenu = true;
+	}
+
+	async function handleDeleteSelected() {
+		const items = Array.from(selectionScope.selected ?? []);
+		if (items.length === 0) {
+			return;
+		}
+
+		const ok = confirm(
+			`Remove ${items.length} selected collections(s)? This cannot be undone!`
+		);
+		if (!ok) {
+			return;
+		}
+
+		const uids = items.map((i: Collection) => i.uid);
+		try {
+			const deletePromises = uids.map((uid) => deleteCollection(uid));
+			const res = await Promise.all(deletePromises);
+
+			const successful = res.filter((r) => r.status === 204);
+			const failed = res.filter((r) => r.status !== 204);
+
+			toastState.addToast({
+				type: "success",
+				message: `Deleted ${successful.length} collection(s)`
+			});
+
+			if (failed.length > 0) {
+				toastState.addToast({
+					type: "error",
+					message: `Failed to delete ${failed.length} collection(s)`
+				});
+			}
+		} catch (err) {
+			toastState.addToast({
+				type: "error",
+				message: `Failed to remove images: ${err}`
+			});
+		}
 	}
 </script>
 
@@ -301,6 +253,9 @@
 {#snippet collectionCard(collectionData: Collection)}
 	{#if page.url.pathname !== "/"}
 		<a
+			title="{collectionData.name} | Last Updated: {new Date(
+				collectionData.updated_at
+			).toLocaleDateString()}"
 			data-sveltekit-preload-data
 			data-asset-id={collectionData.uid}
 			class="collection-card-link"
@@ -336,7 +291,6 @@
 			<IconButton
 				iconName="add"
 				id="create-collection"
-				style="font-size: 0.7rem; padding: 0.2em 0.8em; display: flex; justify-content: center; align-items: center;"
 				title="Create Collection"
 				aria-label="Create Collection"
 				onclick={() => {
@@ -348,12 +302,23 @@
 			>
 				Create
 			</IconButton>
+			<span id="coll-details-floating"
+				>{#if listOfCollectionsData}{listOfCollectionsData.length}{/if}
+				{listOfCollectionsData?.length === 1
+					? "collection"
+					: "collections"}</span
+			>
 		</div>
-		<span id="coll-details-floating"
-			>{listOfCollectionsData.length}
-			{listOfCollectionsData.length === 1 ? "collection" : "collections"}</span
-		>
 	</div>
+{/snippet}
+
+{#snippet selectionToolbarSnippet()}
+	<IconButton
+		iconName="delete"
+		title="Delete Selected"
+		style="position: absolute; right: 1em; background-color: var(--imag-100);"
+		onclick={handleDeleteSelected}
+	/>
 {/snippet}
 
 {#snippet noAssetsSnippet()}
@@ -415,6 +380,7 @@
 		bind:grid
 		gridComponent={AssetGrid}
 		{pagination}
+		{selectionToolbarSnippet}
 		{toolbarSnippet}
 		{noAssetsSnippet}
 		toolbarProps={{
@@ -448,14 +414,12 @@
 	#coll-details-floating {
 		color: var(--imag-40);
 		background-color: transparent;
-		margin: 0.5rem 0rem;
 		font-family: var(--imag-code-font);
 	}
 
 	#coll-tools {
 		display: flex;
 		align-items: center;
-		height: 100%;
 	}
 
 	#no-collections-text {

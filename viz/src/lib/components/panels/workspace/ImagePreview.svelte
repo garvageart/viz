@@ -2,6 +2,8 @@
 	import { selectionManager } from "$lib/states/selection.svelte";
 	import { getFullImagePath, type Image } from "$lib/api";
 	import MaterialIcon from "$lib/components/MaterialIcon.svelte";
+	import LabelSelector from "$lib/components/LabelSelector.svelte";
+	import { getImageLabel } from "$lib/utils/images";
 
 	let activeScope = $derived(selectionManager.activeScope);
 	let activeItem = $derived(activeScope?.active as Image | undefined);
@@ -26,6 +28,11 @@
 				<span class="meta">
 					{activeItem.width}x{activeItem.height} • {activeItem.image_metadata?.file_type?.toUpperCase() ??
 						"IMG"}
+					<LabelSelector
+						label={getImageLabel(activeItem)}
+						variant="compact"
+						enableSelection={false}
+					/>
 				</span>
 			</div>
 		{:else if selectionCount > 0}
@@ -98,6 +105,9 @@
 		}
 
 		.meta {
+			display: flex;
+			align-items: center;
+			gap: 0.5rem;
 			font-size: 0.75rem;
 			color: var(--imag-60);
 		}

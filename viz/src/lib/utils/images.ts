@@ -1,6 +1,8 @@
 import { thumbHashToDataURL } from "thumbhash";
-import { Duration } from "luxon";
-import type { Image } from "../api";
+import { DateTime, Duration } from "luxon";
+import { downloadImagesZipBlob, signDownload, type Collection, type CollectionDetailResponse, type Image } from "../api";
+import { LabelColours } from "$lib/images/constants";
+import type { toastState } from "$lib/toast-notifcations/notif-state.svelte";
 
 /**
  * Converts a date in EXIF format to a format that
@@ -224,4 +226,79 @@ export function parseTransformParams(pathStr: string): TransformParams {
     }
 
     return params;
+}
+
+export async function collectionExportPhotos(uids: string[], data: CollectionDetailResponse) {
+    // Gather all UIDs from the collection and create a download token
+    if (uids.length === 0) {
+        throw new Error("No images to export");
+    }
+
+    // Create a download token (5 minute expiry)
+    const signRes = await signDownload({
+        uids,
+        expires_in: 300,
+        allow_download: true,
+        allow_embed: false,
+        show_metadata: true
+    });
+
+    if (signRes.status !== 200) {
+        const errMsg = signRes.data.error ?? "Failed to create download token";
+        throw new Error(errMsg);
+    }
+
+    const token = signRes.data.uid;
+    const collectionNameClean = data.name
+        .replace(/[^a-z0-9]/gi, "_")
+        .toLowerCase();
+
+    const filename = `${collectionNameClean}-${DateTime.now().toFormat("ddMMyyyy_HHmmss")}.zip`;
+
+    // Use custom downloadImagesBlob function (properly handles binary responses)
+    const res = await downloadImagesZipBlob(token, {
+        uids,
+        file_name: filename
+    });
+
+    if (res.status !== 200) {
+        const errMsg = res.data?.error ?? "Failed to download images";
+        throw new Error(errMsg);
+    }
+
+    const blob = res.data;
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = filename;
+    document.body.appendChild(a);
+    a.click();
+    a.remove();
+    URL.revokeObjectURL(url);
+}
+
+export function getImageLabel(image: Image) {
+    const label = image.image_metadata?.label;
+    switch (label) {
+        case "Red":
+            return LabelColours.Red;
+        case "Orange":
+            return LabelColours.Orange;
+        case "Yellow":
+            return LabelColours.Yellow;
+        case "Purple":
+            return LabelColours.Purple;
+        case "Pink":
+            return LabelColours.Pink;
+        case "Green":
+            return LabelColours.Green;
+        case "Blue":
+            return LabelColours.Blue;
+        default:
+            return null;
+    }
+}
+
+export function getLabelColor(name: keyof typeof LabelColours) {
+    return LabelColours[name] || "transparent";
 }

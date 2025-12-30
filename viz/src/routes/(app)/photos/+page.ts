@@ -1,5 +1,5 @@
 import type { PageLoad } from './$types';
-import { listImages, type ImagesListResponse } from '$lib/api';
+import { listImages } from '$lib/api';
 import { error } from "@sveltejs/kit";
 
 export const load: PageLoad = async ({ url }) => {
@@ -9,15 +9,7 @@ export const load: PageLoad = async ({ url }) => {
     const response = await listImages({ limit, page });
 
     if (response.status === 200) {
-        const data = response.data as ImagesListResponse;
-        return {
-            images: data.items?.map((item) => item.image) || [],
-            count: data.count || 0,
-            limit,
-            page,
-            next: data.next || null,
-            prev: data.prev || null
-        };
+        return response.data;
     }
 
     error(response.status, {

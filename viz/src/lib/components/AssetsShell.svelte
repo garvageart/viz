@@ -145,7 +145,7 @@
 {/snippet}
 
 {#if showToolbars}
-	{#if selectionScope?.selected && selectionScope.selected.size > 1}
+	{#if selectionScope?.selected && selectionScope.selected.size > 0}
 		<AssetToolbar class="selection-toolbar" {...selectionToolbarProps}>
 			<IconButton
 				iconName="close"

@@ -50,7 +50,9 @@
 		deleteCollection,
 		deleteCollectionImages,
 		type CollectionUpdate,
-		type Image
+		type Image,
+		listCollectionImages,
+		updateImage
 	} from "$lib/api";
 	import { toastState } from "$lib/toast-notifcations/notif-state.svelte.js";
 	import CollectionModal from "$lib/components/modals/CollectionModal.svelte";
@@ -71,6 +73,12 @@
 	import FilterModal from "$lib/components/modals/FilterModal.svelte";
 	import type { MenuItem } from "$lib/context-menu/types";
 	import { createCollectionImageMenu } from "$lib/context-menu/menus/images";
+	import { ImagePaginationState } from "$lib/images/state.svelte";
+	import { performImageDownloads } from "$lib/utils/http";
+	import LabelSelector from "$lib/components/LabelSelector.svelte";
+	import { LabelColours, type ImageLabel } from "$lib/images/constants";
+	import { getImageLabel } from "$lib/utils/images";
+	import { invalidateViz } from "$lib/views/views.svelte";
 
 	// Context menu state
 	let ctxShowMenu = $state(false);
@@ -84,11 +92,13 @@
 	let showFilterModal = $state(false);
 	let showCollectionModal = $state(false);
 
-    $effect(() => {
-        if (debugMode) {
-            console.log(`[CollectionPage] Mount/Update. View ID: ${view?.id}, View Name: ${view?.name}, Data Name: ${data.name}`);
-        }
-    });
+	$effect(() => {
+		if (debugMode) {
+			console.log(
+				`[CollectionPage] Mount/Update. View ID: ${view?.id}, View Name: ${view?.name}, Data Name: ${data.name}`
+			);
+		}
+	});
 
 	$effect(() => {
 		untrack(() => {
@@ -118,9 +128,41 @@
 		localDataUpdates.private = data.private ?? false;
 	});
 
-	let loadedImages = $derived(
-		data.images?.items?.map((img) => img.image) ?? []
-	);
+	let collectionState = $derived(new ImagePaginationState(data.images));
+	let isPaginating = $state(false);
+
+	async function paginate() {
+		if (isPaginating || !collectionState.hasMore) {
+			return;
+		}
+
+		isPaginating = true;
+		const nextPage = collectionState.pagination.page + 1;
+		const res = await listCollectionImages(data.uid, {
+			limit: collectionState.pagination.limit,
+			offset: nextPage * collectionState.pagination.limit
+		});
+
+		if (res.status === 200) {
+			const nextItems = res.data.items?.map((i) => i.image) ?? [];
+			collectionState.images.push(...nextItems);
+
+			// Update pagination state from response
+			collectionState.pagination.page = res.data.page ?? nextPage;
+			collectionState.totalCount = res.data.count ?? collectionState.totalCount;
+			collectionState.hasMore = !!res.data.next;
+		} else {
+			// Avoid infinite loop on failure
+			toastState.addToast({
+				type: "error",
+				title: `Image Load Failure: ${res.status}`,
+				message: `Failed to load more images for collection: ${res.data?.error ?? "Unknown error"}`
+			});
+			collectionState.hasMore = false;
+		}
+
+		isPaginating = false;
+	}
 
 	// Sync tab name with collection name directly on the passed view instance
 	$effect(() => {
@@ -145,22 +187,13 @@
 
 	// Search stuff
 	let searchValue = $state("");
-	let searchData = $derived(searchForData(searchValue, loadedImages));
-
-	// Pagination
-	// NOTE: This might be moved to a settings thing and this could just be default
-	let pagination = $derived({
-		limit: data.images?.limit ?? 25,
-		page: data.images?.page ?? 0
-	});
-
-	// Server tells us if there are more pages via the next field
-	// When searching, we're filtering client-side so no more server pages needed
-	let shouldUpdate = $derived(!!data.images?.next && searchValue.trim() === "");
+	let searchData = $derived(searchForData(searchValue, collectionState.images));
 
 	// Selection
 	const scopeId = $derived(SelectionScopeNames.COLLECTION_PREFIX + data.uid);
 	const selectionScope = $derived(selectionManager.getScope<Image>(scopeId));
+	let selectionFirstImage = $derived(Array.from(selectionScope.selected)[0]);
+
 	onDestroy(() => {
 		selectionManager.removeScope(scopeId);
 	});
@@ -174,10 +207,7 @@
 	let displayData = $derived(
 		searchValue.trim()
 			? sortCollectionImages(searchData, sort)
-			: sortCollectionImages(
-					data.images?.items?.map((img) => img.image) ?? [],
-					sort
-				)
+			: sortCollectionImages(filterManager.apply(collectionState.images), sort)
 	);
 
 	// Grid props
@@ -204,7 +234,12 @@
 				selectionScope.select(asset);
 			}
 
-			ctxItems = createCollectionImageMenu(asset, data);
+			console.log("asset", $state.snapshot(asset));
+			ctxItems = createCollectionImageMenu(asset, data, {
+				downloadImages() {
+					performImageDownloads([asset]);
+				}
+			});
 
 			ctxAnchor = anchor as any;
 			ctxShowMenu = true;
@@ -246,7 +281,7 @@
 				timeout: 3000
 			});
 
-			await invalidateAll();
+			await invalidateViz();
 		}
 	}
 
@@ -268,11 +303,12 @@
 			return;
 		}
 
-		await invalidateAll();
+		await invalidateViz();
 
 		toastState.addToast({
+			title: response.data.name,
 			type: "success",
-			message: `Succesfully updated collection ${response.data.name}`
+			message: `Successfully updated collection`
 		});
 	}
 
@@ -310,74 +346,6 @@
 		}
 	}
 
-	async function handleExportPhotos() {
-		// Gather all UIDs from the collection and create a download token
-		try {
-			const uids = loadedImages.map((img) => img.uid);
-
-			if (uids.length === 0) {
-				toastState.addToast({ type: "info", message: "No images to export" });
-				return;
-			}
-
-			// Create a download token (5 minute expiry)
-			const signRes = await signDownload({
-				uids,
-				expires_in: 300,
-				allow_download: true,
-				allow_embed: false,
-				show_metadata: true
-			});
-
-			if (signRes.status !== 200) {
-				const errMsg = signRes.data?.error ?? "Failed to create download token";
-				toastState.addToast({ type: "error", message: errMsg });
-				return;
-			}
-
-			const token = signRes.data.uid;
-			const collectionNameClean = data.name
-				.replace(/[^a-z0-9]/gi, "_")
-				.toLowerCase();
-
-			const filename = `${collectionNameClean}-${DateTime.now().toFormat("ddMMyyyy_HHmmss")}.zip`;
-
-			// Use custom downloadImagesBlob function (properly handles binary responses)
-			const res = await downloadImagesZipBlob(token, {
-				uids,
-				file_name: filename
-			});
-
-			if (res.status !== 200) {
-				const errMsg = res.data?.error ?? "Failed to download images";
-				toastState.addToast({ type: "error", message: errMsg });
-				return;
-			}
-
-			const blob = res.data;
-			const url = URL.createObjectURL(blob);
-			const a = document.createElement("a");
-			a.href = url;
-			a.download = filename;
-			document.body.appendChild(a);
-			a.click();
-			a.remove();
-			URL.revokeObjectURL(url);
-
-			toastState.addToast({
-				type: "success",
-				message: `Exporting ${data.name}`,
-				timeout: 3000
-			});
-		} catch (err) {
-			console.error("Export collection error", err);
-			toastState.addToast({
-				type: "error",
-				message: `Failed to export collection: ${err}`
-			});
-		}
-	}
-
 	async function handleDeleteSelected() {
 		// Delete selected images from this collection (client-side selection)
 		const items = Array.from(selectionScope.selected ?? []);
@@ -404,7 +372,7 @@
 				});
 				// Clear selection and refresh data
 				selectionScope.clear();
-				await invalidateAll();
+				await invalidateViz();
 			} else {
 				const errMsg = (res as any).data?.error ?? "Failed to remove images";
 				toastState.addToast({ type: "error", message: errMsg });
@@ -428,7 +396,7 @@
 
 			if (res.status === 201) {
 				const newCollectionUid = res.data.uid;
-				const uidsToCopy = loadedImages.map((img) => img.uid);
+				const uidsToCopy = collectionState.images.map((img) => img.uid);
 
 				if (uidsToCopy.length > 0) {
 					const addRes = await addCollectionImages(newCollectionUid, {
@@ -439,7 +407,7 @@
 							message: "Collection duplicated with images",
 							type: "success"
 						});
-						await invalidateAll();
+						await invalidateViz();
 						goto(`/collections/${newCollectionUid}`);
 					} else {
 						toastState.addToast({
@@ -453,19 +421,22 @@
 						message: "Collection duplicated (no images to copy)",
 						type: "success"
 					});
-					await invalidateAll();
+					await invalidateViz();
 					goto(`/collections/${newCollectionUid}`);
 				}
 			} else {
 				toastState.addToast({
+					title: "Duplicate Collection Failed",
 					message:
-						(res as any).data?.error ?? `Duplicate failed (${res.status})`,
+						res.data.error ?? "Unknown error occurred during duplication",
 					type: "error"
 				});
 			}
 		} catch (err) {
 			toastState.addToast({
-				message: "Duplicate failed: " + (err as Error).message,
+				title: "Duplicate Collection Failed",
+				message:
+					(err as Error).message ?? "Unknown error occurred during duplication",
 				type: "error"
 			});
 		}
@@ -538,37 +509,7 @@
 	});
 
 	// Menu items for collection actions
-	let collectionMenuItems: MenuItem[] = $derived([
-		{
-			id: "export-photos",
-			label: "Export Photos",
-			icon: "download",
-			action: () => handleExportPhotos()
-		},
-		{
-			id: "share-collection",
-			label: "Share Collection",
-			icon: "share",
-			action: () =>
-				toastState.addToast({ type: "warning", message: "Not implemented yet" })
-		},
-		{
-			id: "duplicate-collection",
-			label: "Duplicate Collection",
-			icon: "content_copy",
-			action: () =>
-				toastState.addToast({
-					type: "warning",
-					message: "Maybe won't implement this yet"
-				})
-		},
-		{
-			id: "delete-collection",
-			label: "Delete Collection",
-			icon: "delete",
-			action: () => handleDeleteCollection()
-		}
-	]);
+	let collectionMenuItems: MenuItem[] = $derived(ctxItems);
 
 	// Display options as MenuItem[] for Dropdown
 	let displayMenuItems: MenuItem[] = $derived(
@@ -692,23 +633,67 @@
 {/snippet}
 
 {#snippet selectionToolbarSnippet()}
-	<Button
+	<div class="selection-actions">
+		<LabelSelector
+			variant="expanded"
+			label={getImageLabel(selectionFirstImage)}
+			onSelect={async (selectedLabel) => {
+				if (!selectionFirstImage) {
+					return;
+				}
+
+				// Reverse lookup: find the key (Name) for the selected color (Value)
+				const entry = Object.entries(LabelColours).find(
+					([_, colour]) => colour === selectedLabel
+				);
+				const labelName = entry ? entry[0] : null;
+				// If "None" is selected, send null to clear the label
+				const labelToSend = (
+					labelName === "None" || !labelName ? null : labelName
+				) as ImageLabel | null;
+
+				console.log("labelToSend", labelToSend);
+
+				const updatePromises = Array.from(selectionScope.selected).map((img) =>
+					updateImage(img.uid, {
+						image_metadata: { label: labelToSend }
+					})
+				);
+
+				const res = await Promise.all(updatePromises);
+
+				const successCount = res.filter((r) => r.status === 200).length;
+				if (successCount > 0) {
+					res.forEach((r) => {
+						if (r.status === 200) {
+							const updatedImage = r.data;
+							const imageIndex = collectionState.images.findIndex(
+								(img) => img.uid === updatedImage.uid
+							);
+							if (imageIndex !== -1) {
+								collectionState.images[imageIndex] = updatedImage;
+							}
+						}
+					});
+				}
+			}}
+		/>
+	</div>
+
+	<IconButton
+		iconName="delete"
 		title="Delete Selected"
 		style="position: absolute; right: 1em; background-color: var(--imag-100);"
 		onclick={handleDeleteSelected}
-	>
-		<MaterialIcon iconName="delete" />
-	</Button>
+	/>
 {/snippet}
 
 <VizViewContainer
 	bind:data={displayData}
-	bind:hasMore={shouldUpdate}
+	hasMore={collectionState.hasMore}
 	name="{localDataUpdates.name} - Collection"
 	style="font-size: {page.url.pathname === '/' ? '0.9em' : 'inherit'};"
-	paginate={() => {
-		pagination.page++;
-	}}
+	{paginate}
 	onscroll={(e) => {
 		const info = document.getElementById("viz-info-container")!;
 		const bottom = info.scrollHeight;
@@ -723,7 +708,7 @@
 	<AssetsShell
 		bind:grid
 		gridComponent={PhotoAssetGrid}
-		{pagination}
+		pagination={collectionState.pagination}
 		{noAssetsSnippet}
 		{selectionToolbarSnippet}
 		{toolbarSnippet}
@@ -735,6 +720,8 @@
 			<div id="coll-metadata">
 				<span id="coll-name">
 					<InputText
+						autocorrect="off"
+						spellcheck="false"
 						id="coll-name-input"
 						style="padding: 0% 0.5rem;"
 						title={localDataUpdates.name}
@@ -852,6 +839,13 @@
 		color: var(--imag-60);
 		font-family: var(--imag-code-font);
 		gap: 1rem;
+	}
+
+	.selection-actions {
+		display: flex;
+		align-items: center;
+		gap: 1rem;
+		margin: auto 1rem;
 	}
 
 	#coll-tools {

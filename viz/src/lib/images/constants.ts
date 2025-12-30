@@ -6,4 +6,7 @@ export enum LabelColours {
     Pink = "#f755a1",
     Green = "#19dd61",
     Blue = "#106ea5",
+    None = "transparent"
 }
+
+export type ImageLabel = keyof typeof LabelColours;

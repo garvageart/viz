@@ -1,44 +1,56 @@
 <script lang="ts">
-	import PhotoAssetGrid from "$lib/components/PhotoAssetGrid.svelte";
-	import VizViewContainer from "$lib/components/panels/VizViewContainer.svelte";
-	import { type Image } from "$lib/api";
-	import MaterialIcon from "$lib/components/MaterialIcon.svelte";
-	import { listImages, getImage } from "$lib/api";
+	import {
+		addCollectionImages,
+		getImage,
+		listImages,
+		updateImage,
+		type Collection,
+		type Image
+	} from "$lib/api";
 	import AssetToolbar from "$lib/components/AssetToolbar.svelte";
-	import Dropdown from "$lib/components/Dropdown.svelte";
-	import ContextMenu from "$lib/context-menu/ContextMenu.svelte";
-	import type { MenuItem } from "$lib/context-menu/types";
-	import hotkeys from "hotkeys-js";
-	import UploadManager, {
-		type ImageUploadSuccess
-	} from "$lib/upload/manager.svelte";
-	import {
-		SUPPORTED_IMAGE_TYPES,
-		SUPPORTED_RAW_FILES,
-		type SupportedImageTypes
-	} from "$lib/types/images";
-	import { toastState } from "$lib/toast-notifcations/notif-state.svelte";
-	import ImageLightbox from "$lib/components/ImageLightbox.svelte";
 	import Button from "$lib/components/Button.svelte";
-	import { modal, viewSettings } from "$lib/states/index.svelte";
-	import {
-		selectionManager,
-		SelectionScopeNames
-	} from "$lib/states/selection.svelte";
-	import { onDestroy } from "svelte";
+	import DragAndDropUpload from "$lib/components/DragAndDropUpload.svelte";
+	import Dropdown from "$lib/components/Dropdown.svelte";
+	import IconButton from "$lib/components/IconButton.svelte";
+	import ImageLightbox from "$lib/components/ImageLightbox.svelte";
+	import LabelSelector from "$lib/components/LabelSelector.svelte";
+	import MaterialIcon from "$lib/components/MaterialIcon.svelte";
+	import PhotoAssetGrid from "$lib/components/PhotoAssetGrid.svelte";
+	import CollectionSelectionModal from "$lib/components/modals/CollectionSelectionModal.svelte";
 	import FilterModal from "$lib/components/modals/FilterModal.svelte";
+	import VizViewContainer from "$lib/components/panels/VizViewContainer.svelte";
+	import { VizMimeTypes } from "$lib/constants.js";
+	import ContextMenu from "$lib/context-menu/ContextMenu.svelte";
+	import { createImageMenu } from "$lib/context-menu/menus/images.js";
+	import type { MenuItem } from "$lib/context-menu/types";
+	import { DragData } from "$lib/drag-drop/data.js";
+	import { LabelColours, type ImageLabel } from "$lib/images/constants.js";
+	import { ImagePaginationState } from "$lib/images/state.svelte.js";
 	import {
 		getConsolidatedGroups,
 		groupImagesByDate,
 		type ConsolidatedGroup,
 		type DateGroup
 	} from "$lib/photo-layout/index.js";
-	import IconButton from "$lib/components/IconButton.svelte";
 	import { filterManager } from "$lib/states/filter.svelte";
-	import { untrack } from "svelte";
-	import DragAndDropUpload from "$lib/components/DragAndDropUpload.svelte";
+	import { modal, viewSettings } from "$lib/states/index.svelte";
+	import {
+		selectionManager,
+		SelectionScopeNames
+	} from "$lib/states/selection.svelte";
+	import { toastState } from "$lib/toast-notifcations/notif-state.svelte";
+	import {
+		SUPPORTED_IMAGE_TYPES,
+		SUPPORTED_RAW_FILES,
+		type SupportedImageTypes
+	} from "$lib/types/images";
+	import UploadManager, {
+		type ImageUploadSuccess
+	} from "$lib/upload/manager.svelte";
 	import { performImageDownloads } from "$lib/utils/http.js";
-	import { createImageMenu } from "$lib/context-menu/menus/images.js";
+	import { getImageLabel } from "$lib/utils/images.js";
+	import hotkeys from "hotkeys-js";
+	import { onDestroy, untrack } from "svelte";
 
 	// Display options as MenuItem[] for Dropdown
 	const displayMenuItems: MenuItem[] = [
@@ -56,25 +68,6 @@
 		return map[(viewSettings.current as string) ?? ""];
 	}
 
-	// Helper class for managing gallery state
-	// This ensures we can mutate state (append images) while still initializing from data
-	class GalleryState {
-		images = $state<Image[]>([]);
-		pagination = $state({ limit: 100, page: 0 });
-		totalCount = $state(0);
-		hasMore = $state(false);
-
-		constructor(initData: typeof data) {
-			this.images = initData.images ?? [];
-			this.pagination = {
-				limit: initData.limit,
-				page: initData.page
-			};
-			this.totalCount = initData.count ?? 0;
-			this.hasMore = !!initData.next;
-		}
-	}
-
 	let { data } = $props();
 
 	$effect(() => {
@@ -86,10 +79,14 @@
 		});
 	});
 
-	// Derived state that resets when `data` changes (navigation/filtering)
-	// We use a class so we can maintain local mutable state
-	let galleryState = $derived(new GalleryState(data));
+	$effect(() => {
+		if (!modal.show) {
+			showFilterModal = false;
+			showCollectionSelectionModal = false;
+		}
+	});
 
+	let galleryState = $derived(new ImagePaginationState(data));
 	let isPaginating = $state(false);
 
 	// Page state
@@ -107,6 +104,7 @@
 	// Selection (shared across groups)
 	const scopeId = SelectionScopeNames.PHOTOS_MAIN;
 	const selectionScope = selectionManager.getScope<Image>(scopeId);
+	let selectionFirstImage = $derived(Array.from(selectionScope.selected)[0]);
 
 	onDestroy(() => {
 		selectionManager.removeScope(scopeId);
@@ -120,6 +118,10 @@
 	let ctxItems: MenuItem[] = $state([]);
 	let ctxAnchor: { x: number; y: number } | HTMLElement | null = $state(null);
 
+	// Modal state for collection selection
+	let showCollectionSelectionModal = $state(false);
+	let imageUidsForCollection = $state<string[]>([]);
+
 	// Action menu items for selected images
 	let actionMenuItems: MenuItem[] = $derived.by(() => {
 		const baseMenuItems = createImageMenu(galleryState.images, selectionScope);
@@ -129,17 +131,16 @@
 				label: "Add to Collection",
 				icon: "collections_bookmark",
 				action: () => {
-					// TODO: Open collection picker modal
-					toastState.addToast({
-						type: "info",
-						message: `Add ${selectionScope.selected.size} image(s) to collection - Not yet implemented`,
-						timeout: 3000
-					});
+					imageUidsForCollection = Array.from(selectionScope.selected).map(
+						(img) => img.uid
+					);
+					showCollectionSelectionModal = true;
+					modal.show = true;
 				}
 			}
 		];
 
-		return [...baseMenuItems, ...pageMenuItems];
+		return [...pageMenuItems, ...baseMenuItems];
 	});
 
 	async function paginate() {
@@ -211,6 +212,57 @@
 	let pendingNewRaw: ImageUploadSuccess[] = [];
 	let addImagesDebounceTimer: number | undefined;
 	const ADD_IMAGES_DEBOUNCE_MS = 550;
+
+	async function handleCollectionSelect(
+		collection: Collection,
+		newImageUids: string[]
+	) {
+		if (newImageUids.length === 0) {
+			toastState.addToast({
+				type: "info",
+				message: "No new images to add.",
+				timeout: 3000
+			});
+			return;
+		}
+
+		try {
+			const res = await addCollectionImages(collection.uid, {
+				uids: newImageUids
+			});
+
+			if (res.status === 200) {
+				const skippedCount =
+					imageUidsForCollection.length - newImageUids.length;
+				let message = `Added ${newImageUids.length} image(s) to collection **${collection.name}**.`;
+				if (skippedCount > 0) {
+					message += ` Skipped ${skippedCount} existing image(s).`;
+				}
+				toastState.addToast({
+					type: "success",
+					message: message,
+					timeout: 3000
+				});
+			} else {
+				toastState.addToast({
+					type: "error",
+					message: res.data?.error ?? "Failed to add images to collection",
+					timeout: 3000
+				});
+			}
+		} catch (error) {
+			toastState.addToast({
+				type: "error",
+				message: `Failed to add images to collection: ${(error as Error).message}`,
+				timeout: 3000
+			});
+		} finally {
+			selectionScope.clear();
+			showCollectionSelectionModal = false;
+			modal.show = false;
+			imageUidsForCollection = [];
+		}
+	}
 
 	async function resolveRawToImages(
 		items: ImageUploadSuccess[]
@@ -300,6 +352,7 @@
 		if (modal.show) {
 			modal.show = false;
 			showUploadConfirm = false;
+			showCollectionSelectionModal = false;
 		}
 	});
 </script>
@@ -316,6 +369,14 @@
 
 {#if showFilterModal && modal.show}
 	<FilterModal />
+{/if}
+
+{#if showCollectionSelectionModal}
+	<CollectionSelectionModal
+		bind:showModal={showCollectionSelectionModal}
+		onSelect={handleCollectionSelect}
+		imageUidsToAdd={imageUidsForCollection}
+	/>
 {/if}
 
 {#snippet noAssetsSnippet()}
@@ -343,20 +404,112 @@
 	paginate={() => paginate()}
 >
 	{#if galleryState.images.length > 0}
-		{#if selectionScope.selected.size > 1}
+		{#if selectionScope.selected.size > 0}
 			<AssetToolbar class="selection-toolbar" stickyToolbar={true}>
-				<button
-					class="toolbar-button"
-					title="Clear selection"
-					aria-label="Clear selection"
-					style="margin-right: 1em;"
-					onclick={() => selectionScope.clear()}
-				>
-					<MaterialIcon iconName="close" />
-				</button>
-				<span style="font-weight: 600;"
-					>{selectionScope.selected.size} selected</span
-				>
+				<div class="selection-info">
+					<IconButton
+						iconName="close"
+						class="toolbar-button"
+						title="Clear selection"
+						aria-label="Clear selection"
+						style="margin-right: 1em;"
+						onclick={() => selectionScope.clear()}
+					/>
+					<span style="font-weight: 600;"
+						>{selectionScope.selected.size} selected</span
+					>
+				</div>
+				<div class="selection-actions">
+					<IconButton
+						iconName={actionMenuItems.find(
+							(it) => it.id === "act-add-to-collection"
+						)?.icon ?? "collections_bookmark"}
+						class="action"
+						role="tooltip"
+						title="Add to Collection"
+						onclick={() => {
+							imageUidsForCollection = Array.from(selectionScope.selected).map(
+								(img) => img.uid
+							);
+							showCollectionSelectionModal = true;
+							modal.show = true;
+						}}
+						ondragenter={(e) => {
+							e.currentTarget.classList.add("on-enter");
+						}}
+						ondragleave={(e) => {
+							e.currentTarget.classList.remove("on-enter");
+						}}
+						ondragover={(e) => {
+							e.preventDefault();
+						}}
+						ondrop={(e) => {
+							if (!e.dataTransfer?.types.includes(VizMimeTypes.IMAGE_UIDS)) {
+								return;
+							}
+
+							const uidsData = DragData.getData<string[]>(
+								e.dataTransfer!,
+								VizMimeTypes.IMAGE_UIDS
+							)?.payload;
+
+							if (!uidsData) {
+								return;
+							}
+
+							e.currentTarget.classList.remove("on-enter");
+
+							imageUidsForCollection = uidsData;
+							showCollectionSelectionModal = true;
+							modal.show = true;
+						}}
+					>
+						Add to Collection
+					</IconButton>
+					<LabelSelector
+						variant="expanded"
+						label={getImageLabel(selectionFirstImage)}
+						onSelect={async (selectedLabel) => {
+							if (!selectionFirstImage) {
+								return;
+							}
+
+							// Reverse lookup: find the key (Name) for the selected color (Value)
+							const entry = Object.entries(LabelColours).find(
+								([_, colour]) => colour === selectedLabel
+							);
+							const labelName = entry ? entry[0] : null;
+							// If "None" is selected, send null to clear the label
+							const labelToSend = (
+								labelName === "None" || !labelName ? null : labelName
+							) as ImageLabel | null;
+
+							const updatePromises = Array.from(selectionScope.selected).map(
+								(img) =>
+									updateImage(img.uid, {
+										image_metadata: { label: labelToSend }
+									})
+							);
+
+							const res = await Promise.all(updatePromises);
+
+							const successCount = res.filter((r) => r.status === 200).length;
+							if (successCount > 0) {
+								res.forEach((r) => {
+									if (r.status === 200) {
+										const updatedImage = r.data;
+										const imageIndex = galleryState.images.findIndex(
+											(img) => img.uid === updatedImage.uid
+										);
+										if (imageIndex !== -1) {
+											galleryState.images[imageIndex] = updatedImage;
+										}
+									}
+								});
+							}
+						}}
+					/>
+				</div>
 				<div
 					style="margin-left: auto; display: flex; gap: 0.5rem; align-items: center;"
 				>
@@ -465,6 +618,26 @@
 		padding: 2rem 2rem;
 		box-sizing: border-box;
 		width: 100%;
+	}
+
+	:global(.selection-toolbar) {
+		gap: 2rem;
+	}
+
+	.selection-info {
+		display: flex;
+		align-items: center;
+	}
+
+	:global(.on-enter) {
+		background-color: var(--imag-80);
+		outline: 2px solid var(--imag-primary);
+	}
+
+	.selection-actions {
+		display: flex;
+		align-items: center;
+		gap: 1rem;
 	}
 
 	.photo-group {
