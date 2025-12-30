@@ -151,6 +151,9 @@ export type ImageExif = {
     software?: string;
     longitude?: string;
     latitude?: string;
+    offset_time?: string;
+    offset_time_original?: string;
+    offset_time_digitized?: string;
 };
 export type ImageMetadata = {
     file_name: string;
@@ -166,7 +169,8 @@ export type ImageMetadata = {
     file_modified_at: string;
     file_created_at: string;
     thumbhash?: string;
-    label?: string;
+    /** User-assigned label for the image. Null = unlabeled */
+    label?: ("Red" | "Orange" | "Yellow" | "Purple" | "Pink" | "Green" | "Blue" | "None") | null;
     checksum: string;
 };
 export type ImagePaths = {
@@ -253,7 +257,9 @@ export type ImageUpdate = {
     "private"?: boolean;
     exif?: ImageExif;
     image_metadata?: {
-        label?: string | null;
+        /** User-assigned label for the image. Null = unlabeled */
+        label?: ("Red" | "Orange" | "Yellow" | "Purple" | "Pink" | "Green" | "Blue" | "None") | null;
+        /** User-assigned rating (0-5). Null = unrated */
         rating?: number | null;
         keywords?: string[];
     };
