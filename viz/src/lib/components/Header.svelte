@@ -37,6 +37,7 @@
 		layoutTree
 	} from "$lib/third-party/svelte-splitpanes/state.svelte";
 	import { duplicateView } from "$lib/layouts/panel-operations";
+	import { untrack } from "svelte";
 
 	let { ...props }: SvelteHTMLElements["header"] = $props();
 
@@ -317,7 +318,7 @@
 			aria-label="Toggle Theme"
 			onclick={() => toggleTheme()}
 			oncontextmenu={handleThemeContext}
-		></IconButton>
+		/>
 		<IconButton
 			iconName="upload"
 			iconStyle="sharp"

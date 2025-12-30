@@ -4,7 +4,7 @@
 	import IconButton from "./IconButton.svelte";
 	import Button from "./Button.svelte";
 	import type { MenuItem } from "$lib/context-menu/types";
-	
+
 	interface Props {
 		class?: string;
 		/** Menu items to render directly in ContextMenu */
@@ -99,8 +99,10 @@
 />
 
 {#snippet buttonContent()}
-	{#if selectedItem}
-		<p class="viz-dropdown-title">{selectedItem.label}</p>
+	{#if selectedItem && selectedItem.label}
+		{#if showSelectionIndicator}
+			<p class="viz-dropdown-title">{selectedItem.label}</p>
+		{/if}
 	{:else if title}
 		<p class="viz-dropdown-title">{title}</p>
 	{/if}

@@ -46,10 +46,15 @@
 	// Build-time eager map (Vite) to include generated SVG components into the
 	// build output so server-side render / prerender can directly render SVGs.
 	// At runtime we keep the lazy `import.meta.glob` fallback for dynamic loading.
-	const ICON_MODULES_EAGER: Record<string, any> = import.meta.glob("$lib/components/icons/generated/**/*.svelte", {
-		eager: true
-	});
-	const ICON_MODULES: Record<string, () => Promise<any>> = import.meta.glob("$lib/components/icons/generated/**/*.svelte");
+	const ICON_MODULES_EAGER: Record<string, any> = import.meta.glob(
+		"$lib/components/icons/generated/**/*.svelte",
+		{
+			eager: true
+		}
+	);
+	const ICON_MODULES: Record<string, () => Promise<any>> = import.meta.glob(
+		"$lib/components/icons/generated/**/*.svelte"
+	);
 	const warnedMissing = new SvelteSet();
 
 	let GeneratedComponent: Component | null = $state(null);
@@ -75,7 +80,9 @@
 
 		// Module path candidates mirror the symbolCandidates order so we can
 		// dynamically import by path if manifest lookup fails.
-		const pathCandidates = symbolCandidates.map((sym) => `$lib/components/icons/generated/${sym}.svelte`);
+		const pathCandidates = symbolCandidates.map(
+			(sym) => `$lib/components/icons/generated/${sym}.svelte`
+		);
 
 		function anyCandidateExists() {
 			for (const p of pathCandidates) {
@@ -115,7 +122,9 @@
 						console.warn(
 							`[MaterialIcon] No generated component found for "${iconName}" (style=${iconStyle}, weight=${weight}) — falling back to font ligature.`
 						);
-						console.info(`[MaterialIcon] Candidates tried: ${pathCandidates.join(", ")}`);
+						console.info(
+							`[MaterialIcon] Candidates tried: ${pathCandidates.join(", ")}`
+						);
 						warnedMissing.add(String(iconName));
 					}
 				}
@@ -196,7 +205,9 @@
 {:else}
 	<span
 		{...props}
-		class={(props.class ? props.class + " " : "") + "material-symbols-" + iconStyle.toLowerCase()}
+		class={(props.class ? props.class + " " : "") +
+			"material-symbols-" +
+			iconStyle.toLowerCase()}
 		style={props.style +
 			`; font-variation-settings: ${`'FILL' ${fill ? 1 : 0}, 'wght' ${weight}, 'GRAD' ${grade}, 'opsz' ${opticalSize}`};`}
 		>{iconName}
@@ -207,8 +218,6 @@
 	.material-symbols-sharp,
 	.material-symbols-outlined,
 	.material-symbols-rounded {
-		color: var(--imag-text-color);
-		fill: var(--imag-text-color);
 		padding: 0.1em;
 		display: inline-block;
 		vertical-align: middle;

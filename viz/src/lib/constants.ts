@@ -11,3 +11,10 @@ export const BROWSER_BASE_URL = window.location.hostname;
 
 export const DEFAULT_THEME = "viz-theme";
 export const CAN_DEBUG = IS_BROWSER_ENV.development && localStorage.getItem("viz:debugMode") === "true";
+
+export enum VizMimeTypes {
+    IMAGE_UIDS = "application/x-viz.image.uids",
+    IMAGE_URLS = "application/x-viz.image.urls",
+    COLLECTION_UIDS = "application/x-viz.collection.uids",
+    TAB_VIEW = "application/x-viz.tab.view"
+}

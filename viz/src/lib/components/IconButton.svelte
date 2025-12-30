@@ -29,6 +29,7 @@
 	{...props}
 	bind:this={element}
 	class="{variant} {props.class || ''}"
+	class:with-children={!!children}
 	aria-label={props["aria-label"] ?? props.title}
 	style:--button-hover-bg={hoverColor}
 >
@@ -52,6 +53,10 @@
 		text-align: center;
 		transition: background-color 150ms cubic-bezier(0.4, 0, 0.2, 1) 0ms;
 		border-radius: 100px;
+
+		&.with-children {
+			padding: 0.25em 0.5em;
+		}
 
 		&:hover {
 			background-color: var(--button-hover-bg);

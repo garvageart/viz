@@ -81,7 +81,9 @@
 
 	#modal-header {
 		width: 100%;
+		padding: 0.25em;
 		display: flex;
 		justify-content: space-between;
+		box-sizing: border-box;
 	}
 </style>

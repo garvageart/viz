@@ -4,6 +4,7 @@
 	import ProgressBar from "$lib/components/ProgressBar.svelte";
 	import AdminRouteShell from "$lib/components/admin/AdminRouteShell.svelte";
 	import { formatBytes, formatSeconds } from "$lib/utils/images";
+	import { invalidateViz } from "$lib/views/views.svelte.js";
 	import { Duration } from "luxon";
 	import { onDestroy } from "svelte";
 
@@ -68,7 +69,7 @@
 	$effect(() => {
 		const interval = setInterval(
 			() => {
-				invalidateAll().then(() => {
+				invalidateViz().then(() => {
 					lastUpdated = new Date();
 				});
 			},

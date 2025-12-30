@@ -45,6 +45,11 @@
 		transition: background-color 150ms cubic-bezier(0.4, 0, 0.2, 1) 0ms;
 		border-radius: 100px;
 
+		&:disabled {
+			cursor: not-allowed;
+			opacity: 0.5;
+		}
+
 		&:hover {
 			background-color: var(--button-hover-bg);
 		}
