@@ -47,7 +47,7 @@ func ReadExif(bytes []byte) (data map[string]any, err error) {
 // Helpers to normalize EXIF keys/values coming from libvips (exif-ifdX-*)
 func CleanExifVal(s string) string {
 	// Prefer human-friendly token: if value is like "10/12500 (1/1250 sec., Rational, ...)"
-	// pick the first token inside parentheses before the comma. Otherwise take prefix before " ("
+	// pick the first token inside parentheses before the comma. Otherwise take prefix before " (" 
 	s = strings.TrimSpace(s)
 	if s == "" {
 		return s
@@ -160,6 +160,9 @@ func BuildImageEXIF(exifData map[string]string) (dto.ImageEXIF, time.Time, time.
 		Software:         FindExif(exifData, "Software"),
 		Longitude:        FindExif(exifData, "GPSLongitude", "Longitude"),
 		Latitude:         FindExif(exifData, "GPSLatitude", "Latitude"),
+		OffsetTime:          FindExif(exifData, "OffsetTime"),
+		OffsetTimeOriginal:  FindExif(exifData, "OffsetTimeOriginal"),
+		OffsetTimeDigitized: FindExif(exifData, "OffsetTimeDigitized"),
 	}
 	// Normalize aperture values which may be reported in mixed formats by
 	// different tools (e.g. "5.66 EV (f/7.1" or "5.66 EV (f/7.1)"). Prefer
@@ -236,15 +239,34 @@ func BuildImageEXIF(exifData map[string]string) (dto.ImageEXIF, time.Time, time.
 	var fileCreatedAt time.Time
 	var fileModifiedAt time.Time
 
+	effectiveOffsetOriginal := GetEffectiveExifOffset(&out)
+
+	// Determine the effective offset for ModifyDate and DateTime
+	effectiveOffsetMod := out.OffsetTime
+	if effectiveOffsetMod == nil && out.OffsetTimeOriginal != nil && *out.OffsetTimeOriginal != "+00:00" {
+		effectiveOffsetMod = out.OffsetTimeOriginal
+	}
+	if effectiveOffsetMod == nil && out.OffsetTimeDigitized != nil && *out.OffsetTimeDigitized != "+00:00" {
+		effectiveOffsetMod = out.OffsetTimeDigitized
+	}
+
 	if cd := FindExif(exifData, "DateTimeOriginal"); cd != nil {
-		if t := ConvertEXIFDateTime(*cd); t != nil {
-			fileCreatedAt = *t
+		if t, ok := ParseExifDate(cd, effectiveOffsetOriginal); ok {
+			fileCreatedAt = t
+		} else if effectiveOffsetOriginal != nil { // Retry without offset if combined failed
+			if t, ok := ParseExifDate(cd); ok {
+				fileCreatedAt = t
+			}
 		}
 	}
 
 	if md := FindExif(exifData, "ModifyDate"); md != nil {
-		if t := ConvertEXIFDateTime(*md); t != nil {
-			fileModifiedAt = *t
+		if t, ok := ParseExifDate(md, effectiveOffsetMod); ok {
+			fileModifiedAt = t
+		} else if effectiveOffsetMod != nil { // Retry without offset if combined failed
+			if t, ok := ParseExifDate(md); ok {
+				fileModifiedAt = t
+			}
 		}
 	}
 
@@ -259,4 +281,25 @@ func BuildImageEXIF(exifData map[string]string) (dto.ImageEXIF, time.Time, time.
 	}
 
 	return out, fileCreatedAt, fileModifiedAt
+}
+
+// GetEffectiveExifOffset determines the best offset for DateTimeOriginal by prioritizing
+// non-zero offsets, as some cameras write a zero offset incorrectly.
+func GetEffectiveExifOffset(exif *dto.ImageEXIF) *string {
+	if exif == nil {
+		return nil
+	}
+
+	if exif.OffsetTimeOriginal != nil && *exif.OffsetTimeOriginal != "+00:00" {
+		return exif.OffsetTimeOriginal
+	}
+	if exif.OffsetTimeDigitized != nil && *exif.OffsetTimeDigitized != "+00:00" {
+		return exif.OffsetTimeDigitized
+	}
+	if exif.OffsetTime != nil && *exif.OffsetTime != "+00:00" {
+		return exif.OffsetTime
+	}
+
+	// Fallback to original offset if all are zero or nil
+	return exif.OffsetTimeOriginal
 }

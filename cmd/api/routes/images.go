@@ -98,7 +98,7 @@ func createNewImageEntity(logger *slog.Logger, fileName string, libvipsImg *libv
 		keywords = strings.Split(*keywordsPtr, ",")
 	}
 
-	label := "None"
+	label := dto.ImageMetadataLabelNone
 
 	metadata := dto.ImageMetadata{
 		FileName:         fileName,
@@ -263,7 +263,7 @@ func ImagesRouter(db *gorm.DB, logger *slog.Logger) *chi.Mux {
 			p := fmt.Sprintf("/images?%s&page=%d", baseQuery, page-1)
 			prev = &p
 		}
-		
+
 		if hasNext {
 			nx := fmt.Sprintf("/images?%s&page=%d", baseQuery, page+1)
 			next = &nx
@@ -457,6 +457,11 @@ func ImagesRouter(db *gorm.DB, logger *slog.Logger) *chi.Mux {
 			updateImageFromDTO(&img, update)
 
 			if err := tx.Save(&img).Error; err != nil {
+				return err
+			}
+
+			// send updated data
+			if err := tx.Preload("Owner").Preload("UploadedBy").First(&img, "uid = ?", uid).Error; err != nil {
 				return err
 			}
 
@@ -1147,35 +1152,34 @@ func updateImageFromDTO(image *entities.Image, update dto.ImageUpdate) {
 		image.Exif = update.Exif
 	}
 
-	if update.ImageMetadata != nil && update.ImageMetadata.Rating != nil {
-		// Clamp rating 0..5
-		r := *update.ImageMetadata.Rating
-		if r < 0 {
-			r = 0
-		} else if r > 5 {
-			r = 5
-		}
-
+	if update.ImageMetadata != nil {
 		if image.ImageMetadata == nil {
 			image.ImageMetadata = &dto.ImageMetadata{}
 		}
 
-		image.ImageMetadata.Rating = &r
-	}
-
-	if update.ImageMetadata != nil && update.ImageMetadata.Label != nil {
-		if image.ImageMetadata == nil {
-			image.ImageMetadata = &dto.ImageMetadata{}
+		if update.ImageMetadata.Rating != nil {
+			// Clamp rating 0..5
+			r := *update.ImageMetadata.Rating
+			if r < 0 {
+				r = 0
+			} else if r > 5 {
+				r = 5
+			}
+			image.ImageMetadata.Rating = &r
 		}
 
-		image.ImageMetadata.Label = update.ImageMetadata.Label
-	}
-
-	if update.ImageMetadata != nil && update.ImageMetadata.Keywords != nil {
-		if image.ImageMetadata == nil {
-			image.ImageMetadata = &dto.ImageMetadata{}
+		if update.ImageMetadata.Label != nil {
+			// Convert from update type to entity type
+			l := dto.ImageMetadataLabel(*update.ImageMetadata.Label)
+			image.ImageMetadata.Label = &l
+		} else {
+			// Explicitly set to nil if the label is being cleared
+			image.ImageMetadata.Label = nil
 		}
-		image.ImageMetadata.Keywords = update.ImageMetadata.Keywords
+
+		if update.ImageMetadata.Keywords != nil {
+			image.ImageMetadata.Keywords = update.ImageMetadata.Keywords
+		}
 	}
 
 	if update.OwnerUid != nil {

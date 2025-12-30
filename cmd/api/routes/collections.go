@@ -24,7 +24,7 @@ var ErrCollectionUnauthorised = errors.New("unauthorized")
 func findCollectionImages(db *gorm.DB, imgUIDs []string, collection entities.Collection, limit, offset int) ([]dto.ImagesResponse, error) {
 	var images []entities.Image
 
-	if err := db.Preload("UploadedBy").Where("uid IN ?", imgUIDs).
+	if err := db.Preload("Owner").Preload("UploadedBy").Where("uid IN ?", imgUIDs).
 		Limit(limit).Offset(offset).
 		Find(&images).Error; err != nil {
 		return nil, err
@@ -111,7 +111,7 @@ func CollectionsRouter(db *gorm.DB, logger *slog.Logger) *chi.Mux {
 	router.Get("/", func(res http.ResponseWriter, req *http.Request) {
 		limit, err := strconv.Atoi(req.URL.Query().Get("limit"))
 		if err != nil {
-			limit = 20
+			limit = 50
 		}
 
 		page, err := strconv.Atoi(req.URL.Query().Get("page"))
@@ -306,9 +306,8 @@ func CollectionsRouter(db *gorm.DB, logger *slog.Logger) *chi.Mux {
 		}
 
 		err = db.Transaction(func(tx *gorm.DB) error {
-			dbTx := tx.Preload("Thumbnail").Preload("CreatedBy").First(&collection, "uid = ?", uid)
-			if dbTx.Error != nil {
-				return dbTx.Error
+			if err := tx.First(&collection, "uid = ?", uid).Error; err != nil {
+				return err
 			}
 
 			authUser, ok := libhttp.UserFromContext(req)
@@ -322,7 +321,8 @@ func CollectionsRouter(db *gorm.DB, logger *slog.Logger) *chi.Mux {
 				return err
 			}
 
-			return nil
+			// Reload to ensure updated data is sent to clients
+			return tx.Preload("Thumbnail").Preload("CreatedBy").First(&collection, "uid = ?", uid).Error
 		})
 
 		if err != nil {

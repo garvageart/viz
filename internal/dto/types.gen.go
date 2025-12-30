@@ -30,6 +30,30 @@ const (
 	AdminUserUpdateRoleUser       AdminUserUpdateRole = "user"
 )
 
+// Defines values for ImageMetadataLabel.
+const (
+	ImageMetadataLabelBlue   ImageMetadataLabel = "Blue"
+	ImageMetadataLabelGreen  ImageMetadataLabel = "Green"
+	ImageMetadataLabelNone   ImageMetadataLabel = "None"
+	ImageMetadataLabelOrange ImageMetadataLabel = "Orange"
+	ImageMetadataLabelPink   ImageMetadataLabel = "Pink"
+	ImageMetadataLabelPurple ImageMetadataLabel = "Purple"
+	ImageMetadataLabelRed    ImageMetadataLabel = "Red"
+	ImageMetadataLabelYellow ImageMetadataLabel = "Yellow"
+)
+
+// Defines values for ImageUpdateImageMetadataLabel.
+const (
+	ImageUpdateImageMetadataLabelBlue   ImageUpdateImageMetadataLabel = "Blue"
+	ImageUpdateImageMetadataLabelGreen  ImageUpdateImageMetadataLabel = "Green"
+	ImageUpdateImageMetadataLabelNone   ImageUpdateImageMetadataLabel = "None"
+	ImageUpdateImageMetadataLabelOrange ImageUpdateImageMetadataLabel = "Orange"
+	ImageUpdateImageMetadataLabelPink   ImageUpdateImageMetadataLabel = "Pink"
+	ImageUpdateImageMetadataLabelPurple ImageUpdateImageMetadataLabel = "Purple"
+	ImageUpdateImageMetadataLabelRed    ImageUpdateImageMetadataLabel = "Red"
+	ImageUpdateImageMetadataLabelYellow ImageUpdateImageMetadataLabel = "Yellow"
+)
+
 // Defines values for SettingDefaultValueType.
 const (
 	Boolean SettingDefaultValueType = "boolean"
@@ -365,48 +389,56 @@ type Image struct {
 
 // ImageEXIF defines model for ImageEXIF.
 type ImageEXIF struct {
-	Aperture         *string `json:"aperture,omitempty"`
-	DateTime         *string `json:"date_time,omitempty"`
-	DateTimeOriginal *string `json:"date_time_original,omitempty"`
-	ExifVersion      *string `json:"exif_version,omitempty"`
-	ExposureTime     *string `json:"exposure_time,omitempty"`
-	ExposureValue    *string `json:"exposure_value,omitempty"`
-	FNumber          *string `json:"f_number,omitempty"`
-	Flash            *string `json:"flash,omitempty"`
-	FocalLength      *string `json:"focal_length,omitempty"`
-	Iso              *string `json:"iso,omitempty"`
-	Latitude         *string `json:"latitude,omitempty"`
-	LensModel        *string `json:"lens_model,omitempty"`
-	Longitude        *string `json:"longitude,omitempty"`
-	Make             *string `json:"make,omitempty"`
-	Model            *string `json:"model,omitempty"`
-	ModifyDate       *string `json:"modify_date,omitempty"`
-	Orientation      *string `json:"orientation,omitempty"`
-	Rating           *string `json:"rating,omitempty"`
-	Resolution       *string `json:"resolution,omitempty"`
-	Software         *string `json:"software,omitempty"`
-	WhiteBalance     *string `json:"white_balance,omitempty"`
+	Aperture            *string `json:"aperture,omitempty"`
+	DateTime            *string `json:"date_time,omitempty"`
+	DateTimeOriginal    *string `json:"date_time_original,omitempty"`
+	ExifVersion         *string `json:"exif_version,omitempty"`
+	ExposureTime        *string `json:"exposure_time,omitempty"`
+	ExposureValue       *string `json:"exposure_value,omitempty"`
+	FNumber             *string `json:"f_number,omitempty"`
+	Flash               *string `json:"flash,omitempty"`
+	FocalLength         *string `json:"focal_length,omitempty"`
+	Iso                 *string `json:"iso,omitempty"`
+	Latitude            *string `json:"latitude,omitempty"`
+	LensModel           *string `json:"lens_model,omitempty"`
+	Longitude           *string `json:"longitude,omitempty"`
+	Make                *string `json:"make,omitempty"`
+	Model               *string `json:"model,omitempty"`
+	ModifyDate          *string `json:"modify_date,omitempty"`
+	OffsetTime          *string `json:"offset_time,omitempty"`
+	OffsetTimeDigitized *string `json:"offset_time_digitized,omitempty"`
+	OffsetTimeOriginal  *string `json:"offset_time_original,omitempty"`
+	Orientation         *string `json:"orientation,omitempty"`
+	Rating              *string `json:"rating,omitempty"`
+	Resolution          *string `json:"resolution,omitempty"`
+	Software            *string `json:"software,omitempty"`
+	WhiteBalance        *string `json:"white_balance,omitempty"`
 }
 
 // ImageMetadata defines model for ImageMetadata.
 type ImageMetadata struct {
-	Checksum         string    `json:"checksum"`
-	ColorSpace       string    `json:"color_space"`
-	FileCreatedAt    time.Time `json:"file_created_at"`
-	FileModifiedAt   time.Time `json:"file_modified_at"`
-	FileName         string    `json:"file_name"`
-	FileSize         *int64    `json:"file_size,omitempty"`
-	FileType         string    `json:"file_type"`
-	HasIccProfile    *bool     `json:"has_icc_profile,omitempty"`
-	Keywords         *[]string `json:"keywords,omitempty"`
-	Label            *string   `json:"label,omitempty"`
-	Metadata         *string   `json:"metadata,omitempty"`
-	OriginalFileName *string   `json:"original_file_name,omitempty"`
+	Checksum       string    `json:"checksum"`
+	ColorSpace     string    `json:"color_space"`
+	FileCreatedAt  time.Time `json:"file_created_at"`
+	FileModifiedAt time.Time `json:"file_modified_at"`
+	FileName       string    `json:"file_name"`
+	FileSize       *int64    `json:"file_size,omitempty"`
+	FileType       string    `json:"file_type"`
+	HasIccProfile  *bool     `json:"has_icc_profile,omitempty"`
+	Keywords       *[]string `json:"keywords,omitempty"`
+
+	// Label User-assigned label for the image. Null = unlabeled
+	Label            *ImageMetadataLabel `json:"label"`
+	Metadata         *string             `json:"metadata,omitempty"`
+	OriginalFileName *string             `json:"original_file_name,omitempty"`
 
 	// Rating User-assigned rating (0-5). Null = unrated
 	Rating    *int    `json:"rating"`
 	Thumbhash *string `json:"thumbhash,omitempty"`
 }
+
+// ImageMetadataLabel User-assigned label for the image. Null = unlabeled
+type ImageMetadataLabel string
 
 // ImagePaths defines model for ImagePaths.
 type ImagePaths struct {
@@ -422,13 +454,20 @@ type ImageUpdate struct {
 	Exif          *ImageEXIF `json:"exif,omitempty"`
 	ImageMetadata *struct {
 		Keywords *[]string `json:"keywords,omitempty"`
-		Label    *string   `json:"label"`
-		Rating   *int      `json:"rating"`
+
+		// Label User-assigned label for the image. Null = unlabeled
+		Label *ImageUpdateImageMetadataLabel `json:"label"`
+
+		// Rating User-assigned rating (0-5). Null = unrated
+		Rating *int `json:"rating"`
 	} `json:"image_metadata,omitempty"`
 	Name     *string `json:"name,omitempty"`
 	OwnerUid *string `json:"owner_uid"`
 	Private  *bool   `json:"private,omitempty"`
 }
+
+// ImageUpdateImageMetadataLabel User-assigned label for the image. Null = unlabeled
+type ImageUpdateImageMetadataLabel string
 
 // ImageUploadRequest defines model for ImageUploadRequest.
 type ImageUploadRequest struct {

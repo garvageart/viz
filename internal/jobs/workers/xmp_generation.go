@@ -166,7 +166,7 @@ func generateXMPSidecar(img entities.Image, onProgress func(step string, progres
 
 	if img.ImageMetadata != nil {
 		if img.ImageMetadata.Label != nil {
-			xmpBase.Label = *img.ImageMetadata.Label
+			xmpBase.Label = string(*img.ImageMetadata.Label)
 		}
 
 		if img.ImageMetadata.Keywords != nil && len(*img.ImageMetadata.Keywords) > 0 {

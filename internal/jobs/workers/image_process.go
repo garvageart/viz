@@ -111,11 +111,8 @@ func ImageProcess(ctx context.Context, db *gorm.DB, imgEnt entities.Image, onPro
 		imgEnt.ImageMetadata.Checksum = checksum
 	}
 
-	if onProgress != nil {
-		onProgress("Creating display thumbnail", 25)
-	}
-
 	// Create a display thumbnail from the image
+	// Update - 28/12/2025: this is redundant if we have transforms, but this can be used for something else maybe
 	thumbData, err := imageops.CreateThumbnailWithSize(originalData, 200, 0)
 	if err != nil {
 		return fmt.Errorf("failed to create thumbnail: %w", err)
@@ -155,10 +152,33 @@ func ImageProcess(ctx context.Context, db *gorm.DB, imgEnt entities.Image, onPro
 		onProgress("Generating thumbhash", 70)
 	}
 
+	// just for debugging purposes in case some thumbhashes take too long
+	thumbhashTimeStart := time.Now()
+	smallThumbImg, _, err := imageops.ReadToImage(smallThumbData)
+	if err != nil {
+		return fmt.Errorf("failed to decode thumbnail for thumbhash: %w", err)
+	}
+
+	thumbhash, err := imageops.GenerateThumbhash(smallThumbImg)
+	if err != nil {
+		return fmt.Errorf("failed to generate thumbhash: %w", err)
+	}
+
+	jobs.Logger.Debug("finished generating thumbhash", loggerFields.Add(watermill.LogFields{
+		"duration": time.Since(thumbhashTimeStart).Milliseconds(),
+	}))
+
+	encoded := images.EncodeThumbhashToString(thumbhash)
+	imgEnt.ImageMetadata.Thumbhash = &encoded
+
 	ext := imgEnt.ImageMetadata.FileType
 
 	var transformParams *imageops.TransformParams
 	var terr error
+
+	if onProgress != nil {
+		onProgress("Generating transforms", 80)
+	}
 
 	// Generate thumbnail transform (permanent paths)
 	tstart := time.Now()
@@ -242,38 +262,25 @@ func ImageProcess(ctx context.Context, db *gorm.DB, imgEnt entities.Image, onPro
 		}
 	}
 
-	if err := db.Model(&entities.Image{}).
-		Where("uid = ?", imgEnt.Uid).
-		Update("image_metadata", imgEnt.ImageMetadata).
-		Error; err != nil {
-		return fmt.Errorf("failed to update db image thumbhash: %w", err)
-	}
-
-	// just for debugging purposes in case some thumbhashes take too long
-	thumbhashTimeStart := time.Now()
-	smallThumbImg, _, err := imageops.ReadToImage(smallThumbData)
-	if err != nil {
-		return fmt.Errorf("failed to decode thumbnail for thumbhash: %w", err)
-	}
-
-	thumbhash, err := imageops.GenerateThumbhash(smallThumbImg)
-	if err != nil {
-		return fmt.Errorf("failed to generate thumbhash: %w", err)
-	}
-
-	if onProgress != nil {
-		onProgress("Generating transforms", 80)
-	}
-
-	jobs.Logger.Debug("finished generating thumbhash", loggerFields.Add(watermill.LogFields{
-		"duration": time.Since(thumbhashTimeStart).Milliseconds(),
-	}))
-
-	encoded := images.EncodeThumbhashToString(thumbhash)
-	imgEnt.ImageMetadata.Thumbhash = &encoded
-
 	if onProgress != nil {
 		onProgress("Updating database", 90)
+	}
+
+	err = db.Transaction(func (tx *gorm.DB) error {
+		// Update image entity in DB
+		if err := tx.Model(&entities.Image{}).Where("uid = ?", imgEnt.Uid).Update("image_metadata", imgEnt.ImageMetadata).Error; err != nil {
+			return fmt.Errorf("failed to update image entity: %w", err)
+		}
+
+		return nil
+	})
+
+	if err != nil {
+		return fmt.Errorf("transaction failed: %w", err)
+	}
+
+	if onProgress != nil {
+		onProgress("Completed", 100)
 	}
 
 	return nil

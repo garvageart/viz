@@ -132,7 +132,7 @@ func ConvertEXIFDateTime(exifDateTime string) *time.Time {
 		time.RFC3339,
 		"2006:01:02T15:04:05Z07:00",
 		"2006-01-02T15:04:05Z07:00",
-		// Without timezone designator
+		// With/without timezone designator
 		"2006:01:02 15:04:05-07:00",
 		"2006-01-02 15:04:05-07:00",
 	}
@@ -219,7 +219,9 @@ func WarmupAllOps(cfg config.LibvipsConfig) {
 }
 
 // ParseExifDate tries several common EXIF/ISO formats and returns the parsed time if successful.
-func ParseExifDate(s *string) (time.Time, bool) {
+// It accepts optional offset strings (e.g. "+02:00") which are tried in order by appending
+// them to the primary date string before parsing.
+func ParseExifDate(s *string, offsets ...*string) (time.Time, bool) {
 	if s == nil {
 		return time.Time{}, false
 	}
@@ -231,14 +233,33 @@ func ParseExifDate(s *string) (time.Time, bool) {
 	// Common EXIF: "2006:01:02 15:04:05"
 	layouts := []string{
 		"2006:01:02 15:04:05",
+		"2006:01:02 15:04:05-07:00",
 		"2006:01:02 15:04",
 		time.RFC3339,
 		"2006-01-02 15:04:05",
 		"2006-01-02",
 	}
 
+	// Try with offsets first
+	for _, offsetPtr := range offsets {
+		if offsetPtr == nil {
+			continue
+		}
+		offset := strings.TrimSpace(*offsetPtr)
+		if offset == "" {
+			continue
+		}
+		combined := str + offset
+		for _, l := range layouts {
+			if t, err := time.Parse(l, combined); err == nil {
+				return t, true
+			}
+		}
+	}
+
+	// Fallback to primary string without extra offsets
 	for _, l := range layouts {
-		if t, err := time.ParseInLocation(l, str, time.UTC); err == nil {
+		if t, err := time.Parse(l, str); err == nil {
 			return t, true
 		}
 	}
@@ -253,7 +274,7 @@ func ParseExifDate(s *string) (time.Time, bool) {
 			candidate += str[10:]
 		}
 		for _, l := range layouts {
-			if t, err := time.ParseInLocation(l, candidate, time.UTC); err == nil {
+			if t, err := time.Parse(l, candidate); err == nil {
 				return t, true
 			}
 		}
@@ -267,13 +288,17 @@ func ParseExifDate(s *string) (time.Time, bool) {
 func GetTakenAt(img entities.Image) time.Time {
 	// Try EXIF fields first
 	if img.Exif != nil {
-		if t, ok := ParseExifDate(img.Exif.DateTimeOriginal); ok {
+		if img.Exif.DateTimeOriginal != nil {
+			effectiveOffset := GetEffectiveExifOffset(img.Exif)
+			if t, ok := ParseExifDate(img.Exif.DateTimeOriginal, effectiveOffset); ok {
+				return t
+			}
+		}
+
+		if t, ok := ParseExifDate(img.Exif.DateTime, img.Exif.OffsetTime); ok {
 			return t
 		}
-		if t, ok := ParseExifDate(img.Exif.DateTime); ok {
-			return t
-		}
-		if t, ok := ParseExifDate(img.Exif.ModifyDate); ok {
+		if t, ok := ParseExifDate(img.Exif.ModifyDate, img.Exif.OffsetTime); ok {
 			return t
 		}
 	}

@@ -1289,7 +1289,7 @@ paths:
           name: limit
           schema:
             type: integer
-            default: 20
+            default: 50
         - in: query
           name: page
           schema:
@@ -3308,6 +3308,9 @@ components:
         software: { type: string }
         longitude: { type: string }
         latitude: { type: string }
+        offset_time: { type: string }
+        offset_time_original: { type: string }
+        offset_time_digitized: { type: string }
 
     ImagePaths:
       type: object
@@ -3329,6 +3332,8 @@ components:
         rating:
           {
             type: integer,
+            minimum: 0,
+            maximum: 5,
             nullable: true,
             description: "User-assigned rating (0-5). Null = unrated",
           }
@@ -3340,7 +3345,12 @@ components:
         file_modified_at: { type: string, format: date-time }
         file_created_at: { type: string, format: date-time }
         thumbhash: { type: string }
-        label: { type: string }
+        label:
+          type: string
+          enum: [Red, Orange, Yellow, Purple, Pink, Green, Blue, None]
+          nullable: true
+          description: "User-assigned label for the image. Null = unlabeled"
+
         checksum: { type: string }
       required:
         [
@@ -3782,12 +3792,15 @@ components:
           properties:
             label:
               type: string
+              enum: [Red, Orange, Yellow, Purple, Pink, Green, Blue, None]
               nullable: true
+              description: "User-assigned label for the image. Null = unlabeled"
             rating:
               type: integer
               minimum: 0
               maximum: 5
               nullable: true
+              description: "User-assigned rating (0-5). Null = unrated"
             keywords:
               type: array
               items:
