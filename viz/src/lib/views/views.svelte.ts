@@ -28,7 +28,6 @@ export interface SerializedVizView {
     name: string;
     opticalCenterFix?: number;
     id: number;
-    parent?: string;
     isActive: boolean;
     locked?: boolean;
     path?: string;
@@ -39,7 +38,6 @@ class VizView<C extends Component<any, any, any> = Component<any, any, any>> {
     opticalCenterFix = $state<number | undefined>(undefined);
     component: C;
     id = $state<number>(0);
-    parent = $state<string | undefined>(undefined);
     isActive = $state<boolean>(false);
     locked = $state<boolean>(false);
     public viewData = $state<{
@@ -53,7 +51,6 @@ class VizView<C extends Component<any, any, any> = Component<any, any, any>> {
     constructor(opts: {
         name: string;
         component: C;
-        parent?: string;
         opticalCenterFix?: number;
         path?: string;
         id?: number;
@@ -64,7 +61,6 @@ class VizView<C extends Component<any, any, any> = Component<any, any, any>> {
         this.name = opts.name;
         this.component = opts.component;
         this.path = opts.path;
-        this.parent = opts.parent;
         this.opticalCenterFix = opts.opticalCenterFix ?? 0.5;
         this.id = opts.id !== undefined ? opts.id : idCount++;
         this.isActive = opts.isActive ?? false;
@@ -125,7 +121,6 @@ class VizView<C extends Component<any, any, any> = Component<any, any, any>> {
             name: this.name,
             opticalCenterFix: this.opticalCenterFix,
             id: this.id,
-            parent: this.parent,
             isActive: this.isActive,
             locked: this.locked,
             path: this.path
@@ -144,7 +139,6 @@ class VizView<C extends Component<any, any, any> = Component<any, any, any>> {
         return new VizView({
             name: serialized.name,
             component: component,
-            parent: serialized.parent,
             opticalCenterFix: serialized.opticalCenterFix,
             path: serialized.path,
             id: serialized.id,
