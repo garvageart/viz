@@ -238,6 +238,14 @@
 			ctxItems = createCollectionImageMenu(asset, data, {
 				downloadImages() {
 					performImageDownloads([asset]);
+				},
+				onImageUpdated(image) {
+					const idx = collectionState.images.findIndex(
+						(i) => i.uid === image.uid
+					);
+					if (idx !== -1) {
+						collectionState.images[idx] = image;
+					}
 				}
 			});
 

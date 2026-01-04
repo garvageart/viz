@@ -1,5 +1,4 @@
-import { invalidateAll } from "$app/navigation";
-import { deleteCollectionImages, deleteImagesBulk, getFullImagePath, updateCollection, updateImage, type CollectionDetailResponse, type Image } from "$lib/api";
+import { deleteCollectionImages, deleteImagesBulk, getFullImagePath, updateCollection, updateImage, type Collection, type CollectionDetailResponse, type Image } from "$lib/api";
 import { toastState } from "$lib/toast-notifcations/notif-state.svelte";
 import { copyToClipboard } from "$lib/utils/misc";
 import type { MaterialSymbol } from "material-symbols";
@@ -10,6 +9,8 @@ import { invalidateViz } from "$lib/views/views.svelte";
 
 interface CollectionImageMenuOptions {
     downloadImages?: (images: Image[]) => void;
+    onImageUpdated?: (image: Image) => void;
+    onCollectionUpdated?: (collection: Collection) => void;
 }
 
 export function createCollectionImageMenu(asset: Image, collection: CollectionDetailResponse, opts?: CollectionImageMenuOptions) {
@@ -44,7 +45,7 @@ export function createCollectionImageMenu(asset: Image, collection: CollectionDe
                         type: "success",
                         message: `Image ${asset.favourited ? "un" : ""}favourited`
                     });
-                    asset = res.data;
+                    opts?.onImageUpdated?.(res.data);
                     await invalidateViz({ delay: 200 });
                 } else {
                     toastState.addToast({
@@ -69,6 +70,7 @@ export function createCollectionImageMenu(asset: Image, collection: CollectionDe
                             type: "success",
                             message: `Collection thumbnail updated: **${res.data.thumbnail!.name}**`
                         });
+                        opts?.onCollectionUpdated?.(res.data);
                         await invalidateViz({ delay: 200 });
                     } else {
                         toastState.addToast({
