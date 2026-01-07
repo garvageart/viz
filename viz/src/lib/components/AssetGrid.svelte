@@ -1,4 +1,5 @@
 <script lang="ts" generics="T extends { uid: string } & Record<string, any>">
+	import { untrack } from "svelte";
 	import { dev } from "$app/environment";
 	import { buildGridArray } from "$lib/utils/dom";
 	import { SvelteSet } from "svelte/reactivity";
@@ -203,6 +204,47 @@
 	if (debugMode) {
 		$inspect("selected asset", selection.active);
 	}
+
+	function scrollToAsset(asset: T) {
+		if (!assetGridDisplayEl) {
+			return;
+		}
+
+		const element = assetGridDisplayEl.querySelector(
+			`[data-asset-id="${asset.uid}"]`
+		) as HTMLElement;
+		if (!element) {
+			return;
+		}
+
+		const container = assetGridDisplayEl;
+		const elementRect = element.getBoundingClientRect();
+		const containerRect = container.getBoundingClientRect();
+
+		const relativeTop = elementRect.top - containerRect.top + container.scrollTop;
+		const relativeBottom = relativeTop + elementRect.height;
+
+		const viewTop = container.scrollTop;
+		const viewBottom = viewTop + container.clientHeight;
+
+		if (relativeTop < viewTop) {
+			container.scrollTo({
+				top: relativeTop,
+				behavior: "instant"
+			});
+		} else if (relativeBottom > viewBottom) {
+			container.scrollTo({
+				top: relativeBottom - container.clientHeight,
+				behavior: "instant"
+			});
+		}
+	}
+
+	$effect(() => {
+		if (selection.active && assetGridDisplayEl) {
+			untrack(() => scrollToAsset(selection.active!));
+		}
+	});
 
 	$effect(() => {
 		if (!assetGridDisplayEl || allAssetsData.length === 0) {
@@ -454,6 +496,7 @@
 		selectedUIDs.has(assetData.uid) || selection.active?.uid === assetData.uid}
 	<div
 		class="asset-card"
+		data-asset-id={assetData.uid}
 		class:max-width-column={columnCount !== undefined && columnCount > 1}
 		class:selected-card={isSelected}
 		role="button"
@@ -506,6 +549,7 @@
 	{@const asset = assetData as unknown as DisplayableAsset}
 	<tr
 		class="asset-card"
+		data-asset-id={assetData.uid}
 		class:selected-card={isSelected}
 		role="button"
 		tabindex="0"
@@ -850,7 +894,7 @@
 
 		.asset-snippet-sub {
 			font-size: 0.85rem;
-			color: var(--imag-fg-muted, #9fb0c6);
+			color: var(--imag-60);
 		}
 	}
 

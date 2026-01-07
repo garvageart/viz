@@ -6,8 +6,6 @@
 
 	let { asset }: { asset: Image } = $props();
 	let takenAt = $derived(getTakenAt(asset));
-
-	$inspect("taken at", asset);
 </script>
 
 <div class="photo-tooltip-content">
@@ -41,6 +39,7 @@
 		color: var(--imag-text-color);
 		border: 1px solid var(--imag-80);
 		border-radius: 0.5rem;
+		min-width: 15vw;
 	}
 
 	:global(

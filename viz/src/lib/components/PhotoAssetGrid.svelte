@@ -38,6 +38,8 @@
 	import { DragData } from "$lib/drag-drop/data";
 	import { VizMimeTypes } from "$lib/constants";
 	import LabelSelector from "./LabelSelector.svelte";
+	import { debounce } from "$lib/utils/misc";
+	import MaterialIcon from "./MaterialIcon.svelte";
 
 	interface PhotoSpecificProps {
 		/** Custom photo card snippet - if not provided, uses default photo card */
@@ -153,6 +155,7 @@
 			arrow: false,
 			delay: [500, 0],
 			moveTransition: "opacity 0.1s ease-out",
+			interactive: true,
 			onShow(instance: Instance<TippyProps>) {
 				const assetEl = instance.reference as HTMLElement;
 				const asset = getAssetFromElement(assetEl);
@@ -231,17 +234,6 @@
 	let visibleRows: JustifiedRow[] = $state([]);
 
 	let photoGridEl: HTMLDivElement | undefined = $state();
-
-	function debounce<T extends (...args: any[]) => void>(
-		fn: T,
-		delay: number
-	): T {
-		let timeoutID: ReturnType<typeof setTimeout> | undefined;
-		return function (this: any, ...args: any[]) {
-			clearTimeout(timeoutID);
-			timeoutID = setTimeout(() => fn.apply(this, args), delay);
-		} as T;
-	}
 
 	// Helper to find the first visible row index using binary search O(log N)
 	function findStartIndex(rows: JustifiedRow[], scrollTop: number): number {
@@ -459,6 +451,37 @@
 		return scaled;
 	}
 
+	function scrollToAsset(asset: Image) {
+		if (!photoGridEl || !justifiedRows.length) {
+			return;
+		}
+
+		for (const row of justifiedRows) {
+			if (row.items.some((i) => i.asset.uid === asset.uid)) {
+				const rowTop = row.top;
+				const rowBottom = row.top + row.height;
+				const gridTop = photoGridEl.scrollTop;
+				const gridBottom = gridTop + photoGridEl.clientHeight;
+
+				if (rowTop < gridTop) {
+					photoGridEl.scrollTo({ top: rowTop, behavior: "instant" });
+				} else if (rowBottom > gridBottom) {
+					photoGridEl.scrollTo({
+						top: rowBottom - photoGridEl.clientHeight,
+						behavior: "instant",
+					});
+				}
+				break;
+			}
+		}
+	}
+
+	$effect(() => {
+		if (selection.active && photoGridEl) {
+			untrack(() => scrollToAsset(selection.active!));
+		}
+	});
+
 	// Action to initialize grid and setup observers
 	function initGrid(node: HTMLDivElement) {
 		photoGridEl = node;
@@ -539,7 +562,7 @@
 		return getFullImagePath(url);
 	}
 
-	// --- Lightbox prefetch helpers ---
+	// Lightbox prefetch helpers
 	// Simple in-memory cache to avoid repeated prefetches for the same asset UID
 	const lightboxPrefetchCache = new SvelteSet<string>();
 
@@ -599,6 +622,9 @@
 
 	function unselectImagesOnClickOutsideAssetContainer(element: HTMLElement) {
 		const clickHandler = (e: MouseEvent) => {
+			// disabled on the workspace page due to needing to click around a lot in different panels while having stuff selected
+			// However, we can and probably should check that if we are on the layout page,
+			// the click is still within in the same component/page/grid. Because if it is, then should disable the deselect
 			if (disableOutsideUnselect || isLayoutPage()) {
 				return;
 			}
@@ -670,6 +696,9 @@
 		class="asset-photo"
 		draggable="true"
 		ondragstart={(e: DragEvent) => {
+			if (selection.selected.size <= 1 || selection.active?.uid !== asset.uid) {
+				selection.select(asset);
+			}
 			// When dragging, if multiple selected use that set, otherwise drag the single asset
 			const uids =
 				selection.selected.size > 1
@@ -712,7 +741,7 @@
 		}}
 		oncontextmenu={(e: MouseEvent & { currentTarget: HTMLElement }) => {
 			e.preventDefault();
-			if (!selection.has(asset) || selection.selected.size <= 1) {
+			if (!selectedUIDs.has(asset.uid) || selection.selected.size <= 1) {
 				selection.select(asset);
 			}
 
@@ -729,6 +758,24 @@
 		{#if asset?.isFirstOfDate && asset?.dateLabel && !(dateGroupCount === 1 && dateGroupCounts[asset.dateLabel] === 1)}
 			<div class="inline-date-badge">{asset.dateLabel}</div>
 		{/if}
+		{#if asset.image_metadata?.label || asset.favourited}
+			<div class="image-metadata-display">
+				{#if asset.image_metadata?.label}
+					<LabelSelector
+						variant="compact"
+						enableSelection={false}
+						label={getImageLabel(asset)}
+					/>
+				{/if}
+				{#if asset.favourited}
+					<MaterialIcon
+						iconName="favorite"
+						style="font-size: 0.8rem; color: white;"
+						fill={true}
+					/>
+				{/if}
+			</div>
+		{/if}
 		{#if asset.image_paths}
 			{@const thumbhashURL = getThumbhashURL(asset)}
 			<div class="tile-image-container" style={`height: 100%;`}>
@@ -736,7 +783,7 @@
 					<img
 						class="tile-placeholder"
 						src={thumbhashURL}
-						alt="Blurred placeholder image for {asset.name ??
+						alt="Placeholder image for {asset.name ??
 							asset.image_metadata?.file_name ??
 							''}"
 						aria-hidden="true"
@@ -778,11 +825,6 @@
 							"dd LLL yyyy • HH:mm"
 						)}
 					</div>
-					<LabelSelector
-						variant="compact"
-						enableSelection={false}
-						label={getImageLabel(asset)}
-					/>
 				</div>
 			</div>
 		</div>
@@ -873,15 +915,25 @@
 	.inline-date-badge {
 		position: absolute;
 		top: 6px;
-		left: 6px;
+		right: 6px;
 		z-index: 2;
 		background: rgba(0, 0, 0, 0.55);
 		color: var(--imag-10-dark);
 		padding: 2px 6px;
-		font-size: 12px;
+		font-size: 0.75rem;
 		line-height: 1.2;
 		border-radius: 4px;
 		backdrop-filter: blur(2px);
+	}
+
+	.image-metadata-display {
+		display: flex;
+		align-items: center;
+		gap: 0.5rem;
+		position: absolute;
+		top: 0.3rem;
+		left: 0.3rem;
+		z-index: 2;
 	}
 
 	.asset-photo {
@@ -1008,7 +1060,7 @@
 		height: 100%;
 		padding: 1rem;
 		text-align: center;
-		color: var(--imag-fg-muted, #9fb0c6);
+		color: var(--imag-60);
 		font-size: 0.9rem;
 	}
 </style>
