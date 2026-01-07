@@ -78,6 +78,46 @@ export class SelectionScope<T extends { uid: string; } = any> {
             this.selected.add(item);
         }
     }
+
+    /**
+     * Updates an item in a given source array and also updates the selection if the item is selected.
+     * @param updatedItem The new item data.
+     * @param sourceArray The original, mutable source array of items (e.g. a $state array).
+     */
+    updateItem(updatedItem: T, sourceArray: T[]) {
+        const idx = sourceArray.findIndex(i => i.uid === updatedItem.uid);
+        if (idx !== -1) {
+            const oldItem = sourceArray[idx];
+            sourceArray[idx] = updatedItem;
+
+            if (this.has(oldItem)) {
+                this.remove(oldItem);
+                this.add(updatedItem);
+            }
+
+            if (this.active?.uid === updatedItem.uid) {
+                this.active = updatedItem;
+            }
+        }
+    }
+
+    selectNext() {
+        if (!this.active || this.source.length === 0) return false;
+        const idx = this.source.findIndex(i => i.uid === this.active!.uid);
+        if (idx === -1 || idx === this.source.length - 1) return false;
+        
+        this.select(this.source[idx + 1]);
+        return true;
+    }
+
+    selectPrevious() {
+        if (!this.active || this.source.length === 0) return false;
+        const idx = this.source.findIndex(i => i.uid === this.active!.uid);
+        if (idx === -1 || idx === 0) return false;
+
+        this.select(this.source[idx - 1]);
+        return true;
+    }
 }
 
 export class SelectionManager {

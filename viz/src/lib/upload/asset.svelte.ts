@@ -1,5 +1,4 @@
 import { uploadImageWithProgress, type ImageUploadResponse } from "$lib/api";
-import { toastState } from "$lib/toast-notifcations/notif-state.svelte";
 import type { ImageUploadFileData } from "./manager.svelte";
 
 export enum UploadState {
@@ -58,34 +57,22 @@ export class UploadImage implements UploadImageStats {
         }
     };
 
-    async upload(): Promise<ImageUploadResponse | undefined> {
-        try {
-            this.state = UploadState.STARTED;
-            const responseData = await uploadImageWithProgress({
-                data: this.data,
-                onUploadProgress: this.updateProgress,
-                request: this.request
-            });
+    async upload(): Promise<ImageUploadResponse> {
+        this.state = UploadState.STARTED;
+        const responseData = await uploadImageWithProgress({
+            data: this.data,
+            onUploadProgress: this.updateProgress,
+            request: this.request
+        });
 
-            const isDuplicate = responseData.status === 200;
-
-            this.state = isDuplicate ? UploadState.DUPLICATE : UploadState.DONE;
-            if (responseData.status !== 200 && responseData.status !== 201) {
-                throw new Error(`Upload failed with status ${responseData.status}`);
-            }
-
-            this.imageData = responseData.data;
-
-            return responseData.data;
-        } catch (error) {
-            this.state = UploadState.ERROR;
-            toastState.addToast({
-                message: `Error uploading ${this.data.file_name}.`,
-                type: 'error',
-                dismissible: true,
-                timeout: 2000
-            });
-            return undefined;
+        if (responseData.status !== 200 && responseData.status !== 201) {
+            throw new Error(`Upload failed with status ${responseData.status}`);
         }
+
+        const isDuplicate = responseData.status === 200;
+        this.state = isDuplicate ? UploadState.DUPLICATE : UploadState.DONE;
+        this.imageData = responseData.data;
+
+        return responseData.data;
     }
 }

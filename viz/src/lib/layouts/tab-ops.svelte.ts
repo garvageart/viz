@@ -2,6 +2,8 @@ import { workspaceState } from "$lib/states/workspace.svelte";
 import { DragData } from "$lib/drag-drop/data";
 import { VizMimeTypes } from "$lib/constants";
 import { TabGroup } from "./model.svelte";
+import type VizView from "$lib/views/views.svelte";
+import tippy, { type Instance } from "tippy.js";
 
 export interface TabDragData {
 	viewId: number;
@@ -35,12 +37,9 @@ export class TabOps {
 
 	dropTarget(node: HTMLElement, targetGroupId: string) {
 		const onDragOver = (e: DragEvent) => {
-			e.preventDefault();
-			if (!e.dataTransfer) return;
-			e.dataTransfer.dropEffect = "move";
-
-			// Show visual feedback (overlay)
-			this.updateOverlay(node, e);
+			DragData.handleDragOver(e, VizMimeTypes.TAB_VIEW, {
+				onMatch: () => this.updateOverlay(node, e)
+			});
 		};
 
 		const onDragLeave = () => {
@@ -79,14 +78,13 @@ export class TabOps {
 
 	addToGroup(node: HTMLElement, targetGroupId: string) {
 		const onDragOver = (e: DragEvent) => {
-			e.preventDefault();
-			e.stopPropagation(); // Stop bubbling to parent panel
-			if (!e.dataTransfer) {
-				return;
+			if (
+				DragData.handleDragOver(e, VizMimeTypes.TAB_VIEW, {
+					onMatch: () => node.classList.add("drop-active")
+				})
+			) {
+				e.stopPropagation(); // Stop bubbling to parent panel
 			}
-
-			e.dataTransfer.dropEffect = "move";
-			node.classList.add("drop-active");
 		};
 
 		const onDragLeave = () => {
@@ -94,20 +92,22 @@ export class TabOps {
 		};
 
 		const onDrop = (e: DragEvent) => {
-			e.preventDefault();
-			e.stopPropagation();
 			node.classList.remove("drop-active");
-
-			if (!e.dataTransfer) {
+			if (!e.dataTransfer || !DragData.isType(e.dataTransfer, VizMimeTypes.TAB_VIEW)) {
 				return;
 			}
+
+			e.preventDefault();
+			e.stopPropagation();
 
 			const dragData = DragData.getData<TabDragData>(
 				e.dataTransfer,
 				VizMimeTypes.TAB_VIEW
 			);
 
-			if (!dragData) return;
+			if (!dragData) {
+				return;
+			}
 
 			const { viewId } = dragData.payload;
 			// Force merge by calling moveTab directly
@@ -165,7 +165,9 @@ export class TabOps {
 
 	private removeOverlay(node: HTMLElement) {
 		const overlay = node.querySelector(".drop-overlay");
-		if (overlay) overlay.remove();
+		if (overlay) {
+			overlay.remove();
+		}
 	}
 
 	private handleDrop(

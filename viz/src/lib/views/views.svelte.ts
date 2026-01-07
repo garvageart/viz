@@ -3,6 +3,10 @@ import { preloadData, invalidateAll } from "$app/navigation";
 import { debugMode } from "$lib/states/index.svelte";
 import type { MenuItem } from "$lib/context-menu/types";
 import { sleep } from "$lib/utils/misc";
+import { DYNAMIC_ROUTE_REGEX } from "$lib/constants";
+
+export type TabDropHandler<T extends any, V = VizView<any, any>> = (data: T, view: V) => Promise<void>;
+export type TabActions<Data, C extends Component<any, any, any> | undefined = Component<any, any, any> | undefined> = { dropHandler: TabDropHandler<any, VizView<C, Data>>; label: string; };
 
 // usually this would be bad but the app is client only
 // and doesn't share state with anyone i guess??
@@ -20,7 +24,7 @@ export const invalidationState = $state({ version: 0 });
  * Use this instead of `invalidateAll()` when you want to ensure background panels
  * also refresh their data (e.g., after uploading images or modifying collections).
  */
-export async function invalidateViz(opts?: { delay?: number }) {
+export async function invalidateViz(opts?: { delay?: number; }) {
     if (opts?.delay) {
         await sleep(opts.delay);
     }
@@ -37,36 +41,49 @@ export interface SerializedVizView {
     path?: string;
 }
 
-class VizView<C extends Component<any, any, any> = Component<any, any, any>> {
+class VizView<
+    C extends Component<any, any, any> | undefined = Component<any, any, any> | undefined,
+    Data = C extends Component<infer P, any, any> ? (P extends { data: infer D; } ? D : any) : any
+> {
+
     name = $state<string>("");
     opticalCenterFix = $state<number | undefined>(undefined);
-    component: C;
+    component: C | undefined;
     id = $state<number>(0);
     isActive = $state<boolean>(false);
     locked = $state<boolean>(false);
     public viewData = $state<{
         type: "loaded";
         status: number;
-        data: C extends Component<infer P, any, any> ? (P extends { data: infer D; } ? D : any) : any;
+        data: Data;
     } | undefined>(undefined);
     path = $state<string | undefined>(undefined);
+    openPathFromTab? = $state<boolean>(false);
     menuItems?: MenuItem[];
+    tabDropHandlers = new Map<string, TabActions<Data, C>>();
 
     constructor(opts: {
         name: string;
-        component: C;
+        component?: C;
         opticalCenterFix?: number;
         path?: string;
+        openPathFromTab?: boolean;
         id?: number;
         isActive?: boolean;
         locked?: boolean;
         menuItems?: MenuItem[];
+        tabDropHandlers?: Map<string, TabActions<Data, C>>;
     }) {
         this.name = opts.name;
         this.component = opts.component;
         this.path = opts.path;
-        this.opticalCenterFix = opts.opticalCenterFix ?? 0.5;
-        
+        this.openPathFromTab = opts.openPathFromTab;
+        this.opticalCenterFix = opts.opticalCenterFix ?? 0;
+
+        if (opts.tabDropHandlers) {
+            this.tabDropHandlers = opts.tabDropHandlers;
+        }
+
         if (opts.id !== undefined) {
             this.id = opts.id;
             // Update the global counter to ensure subsequent auto-generated IDs
@@ -77,7 +94,7 @@ class VizView<C extends Component<any, any, any> = Component<any, any, any>> {
         } else {
             this.id = idCount++;
         }
-        
+
         this.isActive = opts.isActive ?? false;
         this.locked = opts.locked ?? false;
         this.menuItems = opts.menuItems;
@@ -86,6 +103,10 @@ class VizView<C extends Component<any, any, any> = Component<any, any, any>> {
             // Preload data if path is available on construction
             this.getComponentData();
         }
+    }
+
+    getTabDropHandler(mimeType: string) {
+        return this.tabDropHandlers.get(mimeType);
     }
 
     setActive(active: boolean) {
@@ -108,7 +129,7 @@ class VizView<C extends Component<any, any, any> = Component<any, any, any>> {
         // will re-evaluate derivedViewData (and thus re-render) when invalidation happens.
         const version = invalidationState.version;
 
-        if (!this.path) {
+        if (!this.path || DYNAMIC_ROUTE_REGEX.test(this.path)) {
             return;
         }
 
@@ -151,10 +172,14 @@ class VizView<C extends Component<any, any, any> = Component<any, any, any>> {
      * @param serialized The serialized view data from localStorage
      * @param component The component to use for this view
      */
-    static fromJSON<C extends Component<any, any, any> = Component<any, any, any>>(
+    static fromJSON<
+        C extends Component<any, any, any> | undefined = Component<any, any, any> | undefined,
+        Data = C extends Component<infer P, any, any> ? (P extends { data: infer D; } ? D : any) : any
+    >(
         serialized: SerializedVizView,
-        component: C
-    ): VizView<C> {
+        component: C | undefined,
+        opts?: { tabDropHandlers?: Map<string, TabActions<Data, C>>; }
+    ): VizView<C, Data> {
         return new VizView({
             name: serialized.name,
             component: component,
@@ -162,7 +187,8 @@ class VizView<C extends Component<any, any, any> = Component<any, any, any>> {
             path: serialized.path,
             id: serialized.id,
             isActive: serialized.isActive,
-            locked: serialized.locked ?? false
+            locked: serialized.locked ?? false,
+            tabDropHandlers: opts?.tabDropHandlers
         });
     }
 }

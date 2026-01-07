@@ -1,6 +1,5 @@
 import { generateKeyId } from "$lib/utils/layout";
 import VizView, { type SerializedVizView } from "$lib/views/views.svelte";
-import { views as viewRegistry } from "$lib/layouts/views";
 
 // Types
 export type Orientation = "horizontal" | "vertical";
@@ -52,8 +51,6 @@ function pathMatches(
 	const re = new RegExp("^" + escaped + "$");
 	return re.test(actual);
 }
-
-// --- Classes ---
 
 /**
  * Represents a group of tabs (Leaf Node)
@@ -131,6 +128,10 @@ export class TabGroup {
 		}
 	}
 
+	containsNode(targetId: string): boolean {
+		return this.id === targetId;
+	}
+
 	toJSON(): SerializedTabGroup {
 		return {
 			type: "tab-group",
@@ -142,11 +143,11 @@ export class TabGroup {
 		};
 	}
 
-	static fromJSON(json: SerializedTabGroup): TabGroup {
+	static fromJSON(json: SerializedTabGroup, registry: VizView<any, any>[]): TabGroup {
 		const hydratedViews = json.views
 			.map((serializedView) => {
 				// Try to find by path (supports dynamic segments), then by name
-				const matchedView = viewRegistry.find((registeredView) => {
+				const matchedView = registry.find((registeredView) => {
 					if (
 						serializedView.path &&
 						registeredView.path &&
@@ -164,7 +165,7 @@ export class TabGroup {
 					return null;
 				}
 
-				return VizView.fromJSON(serializedView, matchedView.component);
+				return VizView.fromJSON(serializedView, matchedView.component, { tabDropHandlers: matchedView.tabDropHandlers });
 			})
 			.filter((v) => v !== null) as VizView[];
 
@@ -214,6 +215,7 @@ export class SplitNode {
 		} else {
 			this.children.push(node);
 		}
+
 		this.normalizeSizes();
 	}
 
@@ -237,10 +239,25 @@ export class SplitNode {
 	}
 
 	normalizeSizes() {
-		if (this.children.length === 0) return;
+		if (this.children.length === 0) {
+			return;
+		}
+
 		const sizePerChild = 100 / this.children.length;
 		this.children.forEach(child => {
 			child.size = sizePerChild;
+		});
+	}
+
+	containsNode(targetId: string): boolean {
+		if (this.id === targetId) {
+			return true;
+		}
+
+		return this.children.some((child) => {
+			if (child instanceof TabGroup) return child.containsNode(targetId);
+			if (child instanceof SplitNode) return child.containsNode(targetId);
+			return false;
 		});
 	}
 
@@ -255,7 +272,7 @@ export class SplitNode {
 		};
 	}
 
-	static fromJSON(json: SerializedSplitNode): SplitNode {
+	static fromJSON(json: SerializedSplitNode, registry: VizView<any, any>[]): SplitNode {
 		const node = new SplitNode({
 			id: json.id,
 			orientation: json.orientation,
@@ -265,9 +282,9 @@ export class SplitNode {
 
 		node.children = json.children.map((c) => {
 			if (c.type === "split") {
-				return SplitNode.fromJSON(c as SerializedSplitNode);
+				return SplitNode.fromJSON(c as SerializedSplitNode, registry);
 			}
-			return TabGroup.fromJSON(c as SerializedTabGroup);
+			return TabGroup.fromJSON(c as SerializedTabGroup, registry);
 		});
 
 		node.children.forEach((c) => (c.parent = node));
@@ -281,8 +298,11 @@ export class SplitNode {
 export class Workspace {
 	root: SplitNode | TabGroup = $state(new TabGroup({}));
 	activeGroupId: string | undefined = $state();
+	maximizedGroupId: string | undefined = $state();
+	registry: VizView<any, any>[] = [];
 
-	constructor(initialRoot?: SplitNode | TabGroup) {
+	constructor(initialRoot?: SplitNode | TabGroup, registry: VizView<any, any>[] = []) {
+		this.registry = registry;
 		if (initialRoot) {
 			this.root = initialRoot;
 		}
@@ -310,9 +330,29 @@ export class Workspace {
 	}
 
 	get activeGroup(): TabGroup | null {
-		if (!this.activeGroupId) return null;
+		if (!this.activeGroupId) {
+			return null;
+		}
+
 		const node = this.findNode(this.activeGroupId);
 		return node instanceof TabGroup ? node : null;
+	}
+
+	get maximizedGroup(): TabGroup | null {
+		if (!this.maximizedGroupId) {
+			return null;
+		}
+
+		const node = this.findNode(this.maximizedGroupId);
+		return node instanceof TabGroup ? node : null;
+	}
+
+	toggleMaximize(groupId: string) {
+		if (this.maximizedGroupId === groupId) {
+			this.maximizedGroupId = undefined;
+		} else {
+			this.maximizedGroupId = groupId;
+		}
 	}
 
 	/**
@@ -434,12 +474,18 @@ export class Workspace {
 
 	/**
 	 * Removes a node from the tree and handles layout cleanup
-	 */	private cleanupNode(node: SplitNode | TabGroup) {
+	 */
+	cleanupNode(node: SplitNode | TabGroup) {
 		const parent = node.parent;
 		if (!parent) {
 			// If it's the root and the only child is also gone, reset to a default empty group
 			if (this.root === node && (node instanceof TabGroup && node.views.length === 0)) {
 				this.root = new TabGroup({});
+			} else if (node instanceof SplitNode && node.children.length === 1) {
+				// If the root is a SplitNode with only one child, collapse it (promote child to root)
+				const remainingChild = node.children[0];
+				this.root = remainingChild;
+				remainingChild.parent = null;
 			}
 			return; // Cannot remove root unless it's empty
 		}
@@ -453,16 +499,14 @@ export class Workspace {
 		else if (node instanceof SplitNode && node.children.length === 1) {
 			const grandParent = node.parent;
 			const remainingChild = node.children[0];
+			// Since we checked !parent at the top, grandParent (which is parent) must exist.
 			if (grandParent) {
 				grandParent.replaceChild(node, remainingChild);
-			} else {
-				// This node was the root
-				this.root = remainingChild;
-				remainingChild.parent = null;
 			}
 		} else if (node instanceof SplitNode && node.children.length === 0) {
-			// This shouldn't happen, but if it does, remove the empty split node.
-			this.cleanupNode(node);
+			// Remove the empty split node.
+			parent.removeChild(node);
+			this.cleanupNode(parent);
 		}
 	}
 
@@ -485,11 +529,6 @@ export class Workspace {
 		const isAfter = direction === "right" || direction === "bottom";
 
 		const sourceGroup = this.findGroupWithView(viewToMove.id);
-		// If the view is already in the targetGroup, just activate it and return.
-		if (sourceGroup === targetGroup) {
-			targetGroup.setActive(viewToMove.id);
-			return;
-		}
 
 		// Remove view from source first
 		if (sourceGroup) {
@@ -545,15 +584,20 @@ export class Workspace {
 		};
 	}
 
-	static fromJSON(json: SerializedWorkspace): Workspace {
+	load(json: SerializedWorkspace): void {
 		let root: SplitNode | TabGroup;
 		if (json.root.type === "split") {
-			root = SplitNode.fromJSON(json.root as SerializedSplitNode);
+			root = SplitNode.fromJSON(json.root as SerializedSplitNode, this.registry);
 		} else {
-			root = TabGroup.fromJSON(json.root as SerializedTabGroup);
+			root = TabGroup.fromJSON(json.root as SerializedTabGroup, this.registry);
 		}
-		const workspace = new Workspace(root);
-		workspace.activeGroupId = json.activeGroupId;
+		this.root = root;
+		this.activeGroupId = json.activeGroupId;
+	}
+
+	static fromJSON(json: SerializedWorkspace, registry: VizView<any, any>[]): Workspace {
+		const workspace = new Workspace(undefined, registry);
+		workspace.load(json);
 		return workspace;
 	}
 }
