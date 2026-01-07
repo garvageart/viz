@@ -214,6 +214,7 @@ type Collection struct {
 	CreatedAt   time.Time          `json:"created_at"`
 	CreatedBy   *User              `json:"created_by,omitempty"`
 	Description *string            `json:"description,omitempty"`
+	Favourited  *bool              `json:"favourited,omitempty"`
 	ImageCount  int                `json:"image_count"`
 	Images      *[]CollectionImage `json:"images,omitempty"`
 	Name        string             `json:"name"`
@@ -267,6 +268,7 @@ type CollectionListResponse struct {
 // CollectionUpdate defines model for CollectionUpdate.
 type CollectionUpdate struct {
 	Description  *string `json:"description,omitempty"`
+	Favourited   *bool   `json:"favourited,omitempty"`
 	Name         *string `json:"name,omitempty"`
 	OwnerUID     *string `json:"ownerUID,omitempty"`
 	Private      *bool   `json:"private,omitempty"`
@@ -373,6 +375,7 @@ type Image struct {
 	CreatedAt     time.Time      `json:"created_at"`
 	Description   *string        `json:"description,omitempty"`
 	Exif          *ImageEXIF     `json:"exif,omitempty"`
+	Favourited    *bool          `json:"favourited,omitempty"`
 	Height        int32          `json:"height"`
 	ImageMetadata *ImageMetadata `json:"image_metadata,omitempty"`
 	ImagePaths    ImagePaths     `json:"image_paths"`
@@ -389,30 +392,50 @@ type Image struct {
 
 // ImageEXIF defines model for ImageEXIF.
 type ImageEXIF struct {
-	Aperture            *string `json:"aperture,omitempty"`
-	DateTime            *string `json:"date_time,omitempty"`
-	DateTimeOriginal    *string `json:"date_time_original,omitempty"`
-	ExifVersion         *string `json:"exif_version,omitempty"`
-	ExposureTime        *string `json:"exposure_time,omitempty"`
-	ExposureValue       *string `json:"exposure_value,omitempty"`
-	FNumber             *string `json:"f_number,omitempty"`
-	Flash               *string `json:"flash,omitempty"`
-	FocalLength         *string `json:"focal_length,omitempty"`
-	Iso                 *string `json:"iso,omitempty"`
-	Latitude            *string `json:"latitude,omitempty"`
-	LensModel           *string `json:"lens_model,omitempty"`
-	Longitude           *string `json:"longitude,omitempty"`
-	Make                *string `json:"make,omitempty"`
-	Model               *string `json:"model,omitempty"`
-	ModifyDate          *string `json:"modify_date,omitempty"`
-	OffsetTime          *string `json:"offset_time,omitempty"`
-	OffsetTimeDigitized *string `json:"offset_time_digitized,omitempty"`
-	OffsetTimeOriginal  *string `json:"offset_time_original,omitempty"`
-	Orientation         *string `json:"orientation,omitempty"`
-	Rating              *string `json:"rating,omitempty"`
-	Resolution          *string `json:"resolution,omitempty"`
-	Software            *string `json:"software,omitempty"`
-	WhiteBalance        *string `json:"white_balance,omitempty"`
+	Aperture                 *string `json:"aperture,omitempty"`
+	Copyright                *string `json:"copyright,omitempty"`
+	DateTime                 *string `json:"date_time,omitempty"`
+	DateTimeOriginal         *string `json:"date_time_original,omitempty"`
+	DigitalZoomRatio         *string `json:"digital_zoom_ratio,omitempty"`
+	ExifVersion              *string `json:"exif_version,omitempty"`
+	ExposureBiasValue        *string `json:"exposure_bias_value,omitempty"`
+	ExposureMode             *string `json:"exposure_mode,omitempty"`
+	ExposureProgram          *string `json:"exposure_program,omitempty"`
+	ExposureTime             *string `json:"exposure_time,omitempty"`
+	ExposureValue            *string `json:"exposure_value,omitempty"`
+	FNumber                  *string `json:"f_number,omitempty"`
+	Flash                    *int    `json:"flash,omitempty"`
+	FocalLength              *string `json:"focal_length,omitempty"`
+	FocalLengthIn35mmFormat  *string `json:"focal_length_in_35mm_format,omitempty"`
+	FocalPlaneResolutionUnit *string `json:"focal_plane_resolution_unit,omitempty"`
+	FocalPlaneXResolution    *string `json:"focal_plane_x_resolution,omitempty"`
+	FocalPlaneYResolution    *string `json:"focal_plane_y_resolution,omitempty"`
+	GpsAltitude              *string `json:"gps_altitude,omitempty"`
+	GpsImgDirection          *string `json:"gps_img_direction,omitempty"`
+	GpsImgDirectionRef       *string `json:"gps_img_direction_ref,omitempty"`
+	GpsSpeed                 *string `json:"gps_speed,omitempty"`
+	GpsSpeedRef              *string `json:"gps_speed_ref,omitempty"`
+	Iso                      *string `json:"iso,omitempty"`
+	Latitude                 *string `json:"latitude,omitempty"`
+	LensMake                 *string `json:"lens_make,omitempty"`
+	LensModel                *string `json:"lens_model,omitempty"`
+	LightSource              *string `json:"light_source,omitempty"`
+	Longitude                *string `json:"longitude,omitempty"`
+	Make                     *string `json:"make,omitempty"`
+	MaxApertureValue         *string `json:"max_aperture_value,omitempty"`
+	MeteringMode             *string `json:"metering_mode,omitempty"`
+	Model                    *string `json:"model,omitempty"`
+	ModifyDate               *string `json:"modify_date,omitempty"`
+	OffsetTime               *string `json:"offset_time,omitempty"`
+	OffsetTimeDigitized      *string `json:"offset_time_digitized,omitempty"`
+	OffsetTimeOriginal       *string `json:"offset_time_original,omitempty"`
+	Orientation              *string `json:"orientation,omitempty"`
+	Rating                   *string `json:"rating,omitempty"`
+	Resolution               *string `json:"resolution,omitempty"`
+	SceneCaptureType         *string `json:"scene_capture_type,omitempty"`
+	SensingMethod            *string `json:"sensing_method,omitempty"`
+	Software                 *string `json:"software,omitempty"`
+	WhiteBalance             *string `json:"white_balance,omitempty"`
 }
 
 // ImageMetadata defines model for ImageMetadata.
@@ -452,6 +475,7 @@ type ImagePaths struct {
 type ImageUpdate struct {
 	Description   *string    `json:"description"`
 	Exif          *ImageEXIF `json:"exif,omitempty"`
+	Favourited    *bool      `json:"favourited,omitempty"`
 	ImageMetadata *struct {
 		Keywords *[]string `json:"keywords,omitempty"`
 

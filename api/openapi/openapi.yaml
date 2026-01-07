@@ -3298,9 +3298,24 @@ components:
         aperture: { type: string }
         exposure_value: { type: string }
         f_number: { type: string }
-        flash: { type: string }
+        flash: { type: integer }
         white_balance: { type: string }
+        lens_make: { type: string }
         lens_model: { type: string }
+        focal_length_in_35mm_format: { type: string }
+        scene_capture_type: { type: string }
+        exposure_program: { type: string }
+        metering_mode: { type: string }
+        sensing_method: { type: string }
+        light_source: { type: string }
+        exposure_bias_value: { type: string }
+        max_aperture_value: { type: string }
+        exposure_mode: { type: string }
+        digital_zoom_ratio: { type: string }
+        focal_plane_x_resolution: { type: string }
+        focal_plane_y_resolution: { type: string }
+        focal_plane_resolution_unit: { type: string }
+        copyright: { type: string }
         modify_date: { type: string }
         rating: { type: string }
         orientation: { type: string }
@@ -3308,6 +3323,11 @@ components:
         software: { type: string }
         longitude: { type: string }
         latitude: { type: string }
+        gps_altitude: { type: string }
+        gps_img_direction: { type: string }
+        gps_img_direction_ref: { type: string }
+        gps_speed: { type: string }
+        gps_speed_ref: { type: string }
         offset_time: { type: string }
         offset_time_original: { type: string }
         offset_time_digitized: { type: string }
@@ -3376,6 +3396,7 @@ components:
         exif:
           $ref: "#/components/schemas/ImageEXIF"
         private: { type: boolean }
+        favourited: { type: boolean }
         width: { type: integer, format: int32 }
         height: { type: integer, format: int32 }
         processed: { type: boolean }
@@ -3417,6 +3438,7 @@ components:
         name: { type: string }
         image_count: { type: integer }
         private: { type: boolean, nullable: true }
+        favourited: { type: boolean }
         images:
           type: array
           items:
@@ -3447,6 +3469,7 @@ components:
         thumbnailUID: { type: string }
         description: { type: string }
         private: { type: boolean }
+        favourited: { type: boolean }
         ownerUID: { type: string }
 
     ImagesResponse:
@@ -3784,6 +3807,8 @@ components:
           type: string
           nullable: true
         private:
+          type: boolean
+        favourited:
           type: boolean
         exif:
           $ref: "#/components/schemas/ImageEXIF"

@@ -141,9 +141,24 @@ export type ImageExif = {
     aperture?: string;
     exposure_value?: string;
     f_number?: string;
-    flash?: string;
+    flash?: number;
     white_balance?: string;
+    lens_make?: string;
     lens_model?: string;
+    focal_length_in_35mm_format?: string;
+    scene_capture_type?: string;
+    exposure_program?: string;
+    metering_mode?: string;
+    sensing_method?: string;
+    light_source?: string;
+    exposure_bias_value?: string;
+    max_aperture_value?: string;
+    exposure_mode?: string;
+    digital_zoom_ratio?: string;
+    focal_plane_x_resolution?: string;
+    focal_plane_y_resolution?: string;
+    focal_plane_resolution_unit?: string;
+    copyright?: string;
     modify_date?: string;
     rating?: string;
     orientation?: string;
@@ -151,6 +166,11 @@ export type ImageExif = {
     software?: string;
     longitude?: string;
     latitude?: string;
+    gps_altitude?: string;
+    gps_img_direction?: string;
+    gps_img_direction_ref?: string;
+    gps_speed?: string;
+    gps_speed_ref?: string;
     offset_time?: string;
     offset_time_original?: string;
     offset_time_digitized?: string;
@@ -187,6 +207,7 @@ export type Image = {
     description?: string;
     exif?: ImageExif;
     "private": boolean;
+    favourited?: boolean;
     width: number;
     height: number;
     processed: boolean;
@@ -206,6 +227,7 @@ export type Collection = {
     name: string;
     image_count: number;
     "private"?: boolean | null;
+    favourited?: boolean;
     images?: CollectionImage[];
     created_by?: User;
     owner?: User;
@@ -255,6 +277,7 @@ export type ImageUpdate = {
     owner_uid?: string | null;
     description?: string | null;
     "private"?: boolean;
+    favourited?: boolean;
     exif?: ImageExif;
     image_metadata?: {
         /** User-assigned label for the image. Null = unlabeled */
@@ -296,6 +319,7 @@ export type CollectionUpdate = {
     thumbnailUID?: string;
     description?: string;
     "private"?: boolean;
+    favourited?: boolean;
     ownerUID?: string;
 };
 export type AddImagesResponse = {
