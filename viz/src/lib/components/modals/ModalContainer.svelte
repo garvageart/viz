@@ -1,9 +1,15 @@
 <script lang="ts">
 	import { debugMode, modal } from "$lib/states/index.svelte";
+	import type { Snippet } from "svelte";
 	import Lightbox from "../Lightbox.svelte";
 	import Modal from "./ModalLightbox.svelte";
 
-	let { children } = $props();
+	interface Props {
+		heading?: string;
+		children: Snippet;
+	}
+
+	let { heading, children }: Props = $props();
 
 	let show = $state(false);
 	$effect(() => {
@@ -23,7 +29,7 @@
 
 {#if modal.show}
 	<Lightbox bind:show onclick={() => (modal.show = false)}>
-		<Modal>
+		<Modal {heading}>
 			{@render children()}
 		</Modal>
 	</Lightbox>

@@ -20,9 +20,4 @@
 		flex-direction: column;
 		overflow: hidden;
 	}
-
-	:global(#viz-modal) {
-		max-height: 90% !important;
-		padding: 0 !important;
-	}
 </style>

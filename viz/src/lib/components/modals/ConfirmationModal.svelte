@@ -24,9 +24,8 @@
 	}: Props = $props();
 </script>
 
-<ModalContainer>
+<ModalContainer heading={title}>
 	<div class="confirmation-modal">
-		<h2>{title}</h2>
 		<div class="confirmation-content">
 			{#if children}
 				{@render children()}
@@ -56,11 +55,6 @@
 		flex-direction: column;
 		width: 100%;
 		color: var(--imag-text-color);
-
-		h2 {
-			margin: 0;
-			font-size: 1.5rem;
-		}
 
 		.confirmation-content {
 			display: flex;

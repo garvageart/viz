@@ -1,7 +1,7 @@
 <script lang="ts">
 	import type { EventHandler } from "svelte/elements";
 	import Button from "../Button.svelte";
-	import ModalOverlay from "./ModalContainer.svelte";
+	import ModalContainer from "./ModalContainer.svelte";
 	import SliderToggle from "../SliderToggle.svelte";
 	import InputText from "../dom/InputText.svelte";
 	import TextArea from "../dom/TextArea.svelte";
@@ -26,9 +26,8 @@
 	let isPrivate: "on" | "off" = $derived(allData.private ? "on" : "off");
 </script>
 
-<ModalOverlay>
+<ModalContainer {heading}>
 	<div id="viz-collection-modal">
-		<h1>{heading}</h1>
 		<form
 			id="collection-form"
 			onsubmit={(e) => {
@@ -45,6 +44,7 @@
 				type="text"
 				bind:value={allData.name}
 				required
+				spellcheck="false"
 			/>
 			<TextArea
 				id="collection-description"
@@ -52,6 +52,7 @@
 				label="Description"
 				placeholder="Description (optional)"
 				bind:value={allData.description}
+				spellcheck="false"
 			/>
 			<SliderToggle
 				id="collection-private"
@@ -64,7 +65,7 @@
 			</Button>
 		</form>
 	</div>
-</ModalOverlay>
+</ModalContainer>
 
 <style lang="scss">
 	#viz-collection-modal {
@@ -74,12 +75,6 @@
 		flex-direction: column;
 		justify-content: flex-start;
 		align-items: center;
-
-		h1 {
-			margin-bottom: 1.5rem;
-			font-size: 1.5rem;
-			color: var(--imag-text-color);
-		}
 	}
 
 	form {

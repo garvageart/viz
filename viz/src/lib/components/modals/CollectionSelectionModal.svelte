@@ -1,6 +1,8 @@
 <script lang="ts">
 	import { onMount } from "svelte";
 	import {
+		addCollectionImages,
+		createCollection,
 		listCollections,
 		type Collection,
 		type CollectionListResponse
@@ -13,6 +15,9 @@
 	import Lightbox from "../Lightbox.svelte";
 	import { selectionManager } from "$lib/states/selection.svelte";
 	import { toastState } from "$lib/toast-notifcations/notif-state.svelte";
+	import CollectionModal from "./CollectionModal.svelte";
+	import { goto } from "$app/navigation";
+	import { invalidateViz } from "$lib/views/views.svelte";
 
 	interface AugmentedCollection extends Collection {
 		isFullyContained: boolean;
@@ -41,6 +46,7 @@
 	let selectedCollection = $derived(Array.from(selection.selected)[0]);
 
 	let shouldUpdate = $derived(!!data?.next);
+	let showCollectionModal = $state(false);
 
 	onMount(async () => {
 		try {
@@ -106,44 +112,106 @@
 	</div>
 {/snippet}
 
-<Lightbox
-	bind:show={modal.show}
-	onclick={() => {
-		showModal = false;
-		modal.show = false;
-	}}
->
-	<div
-		class="collection-selection-modal"
-		role="dialog"
-		aria-modal="true"
-		tabindex="-1"
-		onclick={(e) => e.stopPropagation()}
-		onkeydown={(e) => e.stopPropagation()}
+{#if showCollectionModal && modal.show}
+	<CollectionModal
+		heading={"Create Collection"}
+		buttonText={"Create"}
+		modalAction={async (event) => {
+			const formData = new FormData(event.currentTarget);
+			const name = formData.get("name") as string;
+			const description = formData.get("description") as string;
+			const isPrivate = formData.get("isPrivate") === "on";
+
+			const createRes = await createCollection({
+				name: name,
+				description: description,
+				private: isPrivate
+			});
+
+			if (createRes.status !== 201) {
+				toastState.addToast({
+					type: "error",
+					message:
+						createRes.data.error ??
+						`Failed to create collection (${createRes.status})`,
+					timeout: 4000
+				});
+
+				return;
+			}
+
+			const collectionUid = createRes.data.uid;
+			const addRes = await addCollectionImages(collectionUid, {
+				uids: imageUidsToAdd
+			});
+			if (addRes.status === 200) {
+				toastState.addToast({
+					type: "success",
+					message: `Collection created with ${imageUidsToAdd.length} image(s)`,
+					timeout: 4000
+				});
+				await invalidateViz({ delay: 200 });
+				goto(`/collections/${collectionUid}`);
+			} else {
+				toastState.addToast({
+					type: "warning",
+					message: `Collection created but failed to add images (${addRes.status})`,
+					timeout: 4000
+				});
+			}
+		}}
+	/>
+{/if}
+
+{#if !showCollectionModal}
+	<Lightbox
+		bind:show={modal.show}
+		onclick={() => {
+			showModal = false;
+			modal.show = false;
+		}}
 	>
-		<h2>Select a Collection</h2>
-
-		<VizViewContainer
-			bind:data={collections}
-			bind:hasMore={shouldUpdate}
-			name="Collections"
+		<div
+			class="collection-selection-modal"
+			role="dialog"
+			aria-modal="true"
+			tabindex="-1"
+			onclick={(e) => e.stopPropagation()}
+			onkeydown={(e) => e.stopPropagation()}
 		>
-			<AssetGrid
-				data={collections}
-				assetSnippet={collectionSnippet}
-				{scopeId}
-				disableMultiSelection={true}
-			/>
-		</VizViewContainer>
+			<h2>Select a Collection</h2>
 
-		<div class="modal-actions">
-			<Button
-				disabled={!selectedCollection || selectedCollection.isFullyContained}
-				onclick={() => handleSelect(selectedCollection!)}>Confirm</Button
+			<VizViewContainer
+				bind:data={collections}
+				bind:hasMore={shouldUpdate}
+				name="Collections"
 			>
+				<AssetGrid
+					data={collections}
+					assetSnippet={collectionSnippet}
+					{scopeId}
+					disableMultiSelection={true}
+				/>
+			</VizViewContainer>
+
+			<div class="modal-actions">
+				<Button
+					onclick={() => {
+						showCollectionModal = true;
+					}}
+				>
+					Create Collection
+				</Button>
+				<Button
+					disabled={!selectedCollection || selectedCollection.isFullyContained}
+					onclick={() => handleSelect(selectedCollection!)}
+				>
+					Confirm
+				</Button>
+			</div>
 		</div>
-	</div>
-</Lightbox>
+	</Lightbox>
+{/if}
 
 <style lang="scss">
 	.collection-selection-modal {
@@ -165,6 +233,7 @@
 			display: flex;
 			justify-content: flex-end;
 			margin-top: 1rem;
+			gap: 0.5rem;
 		}
 	}
 

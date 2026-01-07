@@ -6,8 +6,10 @@
 	import TextInput from "$lib/components/settings/inputs/TextInput.svelte";
 	import { modal } from "$lib/states/index.svelte";
 	import { toastState } from "$lib/toast-notifcations/notif-state.svelte";
+	import ModalContainer from "./ModalContainer.svelte";
 
-	let { onClose, onSuccess }: { onClose: () => void; onSuccess: () => void } = $props();
+	let { onClose, onSuccess }: { onClose: () => void; onSuccess: () => void } =
+		$props();
 
 	let name = $state("");
 	let description = $state("");
@@ -50,7 +52,10 @@
 		}
 
 		if (selectedScopes.length === 0) {
-			toastState.addToast({ message: "Please select at least one scope", type: "error" });
+			toastState.addToast({
+				message: "Please select at least one scope",
+				type: "error"
+			});
 			return;
 		}
 
@@ -66,7 +71,10 @@
 				createdToken = res.data.consumer_key;
 				onSuccess();
 			} else {
-				toastState.addToast({ message: res.data.error || "Failed to create API key", type: "error" });
+				toastState.addToast({
+					message: res.data.error || "Failed to create API key",
+					type: "error"
+				});
 			}
 		} catch (e) {
 			toastState.addToast({ message: "Error creating key", type: "error" });
@@ -92,9 +100,8 @@
 	}
 </script>
 
-<div class="created-key-modal-content">
+<ModalContainer heading={createdToken ? "API Key Created" : "Create API Key"}>
 	{#if createdToken}
-		<h3>API Key Created</h3>
 		<p>Please copy your new API Key. You won't be able to see it again!</p>
 		<div class="key-display">
 			<code>{createdToken}</code>
@@ -106,7 +113,6 @@
 			<Button onclick={handleClose}>Close</Button>
 		</div>
 	{:else}
-		<h3>Create API Key</h3>
 		<div class="form-content">
 			<TextInput label="Name" bind:value={name} />
 			<TextInput label="Description" bind:value={description} />
@@ -116,7 +122,11 @@
 				<div class="scopes-list">
 					{#each scopes as scope}
 						<label class="scope-item">
-							<input type="checkbox" checked={isSelected(scope.value)} onchange={() => toggleScope(scope.value)} />
+							<input
+								type="checkbox"
+								checked={isSelected(scope.value)}
+								onchange={() => toggleScope(scope.value)}
+							/>
 							<div class="scope-info">
 								<span class="scope-value">{scope.value}</span>
 								<span class="scope-label">{scope.label}</span>
@@ -128,23 +138,17 @@
 		</div>
 		<div class="modal-actions">
 			<Button hoverColor="var(--imag-80)" onclick={handleClose}>Cancel</Button>
-			<Button onclick={handleCreate} disabled={creating || !name || selectedScopes.length === 0}>
+			<Button
+				onclick={handleCreate}
+				disabled={creating || !name || selectedScopes.length === 0}
+			>
 				{creating ? "Creating..." : "Create Key"}
 			</Button>
 		</div>
 	{/if}
-</div>
+</ModalContainer>
 
 <style lang="scss">
-	.created-key-modal-content {
-		display: flex;
-		flex-direction: column;
-		gap: 1rem;
-		padding: 1rem;
-		width: 100%;
-		max-height: 80vh; /* ensure it fits in modal */
-	}
-
 	.form-content {
 		display: flex;
 		flex-direction: column;

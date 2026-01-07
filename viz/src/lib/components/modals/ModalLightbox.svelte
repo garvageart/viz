@@ -2,13 +2,14 @@
 	import { modal } from "$lib/states/index.svelte";
 	import type { Snippet } from "svelte";
 	import type { SvelteHTMLElements } from "svelte/elements";
-	import MaterialIcon from "../MaterialIcon.svelte";
 	import IconButton from "../IconButton.svelte";
 
 	let {
 		children,
+		heading,
 		...props
-	}: { children: Snippet } & SvelteHTMLElements["div"] = $props();
+	}: { children: Snippet; heading?: string } & SvelteHTMLElements["div"] =
+		$props();
 	let modalEl: HTMLElement | undefined = $state();
 
 	$effect(() => {
@@ -58,6 +59,9 @@
 			onclick={() => (modal.show = false)}
 			title="Close Modal"
 		/>
+		{#if heading}
+			<h1>{heading}</h1>
+		{/if}
 	</div>
 	{@render children()}
 </div>
@@ -83,7 +87,19 @@
 		width: 100%;
 		padding: 0.25em;
 		display: flex;
-		justify-content: space-between;
+		justify-content: flex-start;
+		position: relative;
+		align-items: center;
+		gap: 0.5em;
 		box-sizing: border-box;
+
+		h1 {
+			font-size: 1.2rem;
+			position: absolute;
+			left: 0;
+			right: 0;
+			text-align: center;
+			pointer-events: none;
+		}
 	}
 </style>
