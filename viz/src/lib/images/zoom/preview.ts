@@ -6,22 +6,31 @@ type InstanceState = 'idle' | 'singleGesture' | 'multiGesture' | 'mouse';
 const MIN_SCALE = 1;
 const MAX_SCALE = 4;
 const DOUBLE_TAP_TIME = 185; // milliseconds
+const INERTIA_FRICTION = 0.95; // 0-1, lower is more friction
+const MIN_VELOCITY = 0.1;
 
 export default class ZoomPan {
-    private container: HTMLElement;
-    private renderer: Renderer;
-    private state: InstanceState = 'idle';
-    private scaleValue = 1;
-    private lastTapTime = 0;
-    private deviceHasTouch = false;
-    private wheelTimeout: ReturnType<typeof window.setTimeout> | undefined;
-    private start = { x: 0, y: 0, distance: 0, touches: [] as Touch[] };
-    private onZoomChange: ((percentage: number) => void) | undefined;
+    protected container: HTMLElement;
+    protected renderer: Renderer;
+    protected state: InstanceState = 'idle';
+    protected scaleValue = 1;
+    protected lastTapTime = 0;
+    protected deviceHasTouch = false;
+    protected wheelTimeout: ReturnType<typeof window.setTimeout> | undefined;
+    protected start = { x: 0, y: 0, distance: 0, touches: [] as Touch[] };
+    protected pinchStartCenter = { x: 0, y: 0 }; // Store the center of the pinch at start
+    protected onZoomChange: ((percentage: number) => void) | undefined;
+    protected onTransformChangeCallback: ((transform: any) => void) | undefined;
+
+    // Inertia state
+    protected velocity = { x: 0, y: 0 };
+    protected lastMoveTime = 0;
+    protected animationFrameId: number | null = null;
 
     minScale: number = MIN_SCALE ;
     maxScale: number = MAX_SCALE ;
 
-    constructor(container: HTMLElement, image: HTMLImageElement, minScale = MIN_SCALE, maxScale = MAX_SCALE) {
+    constructor(container: HTMLElement, image: HTMLElement, minScale = MIN_SCALE, maxScale = MAX_SCALE) {
         this.container = container;
         this.minScale = minScale;
         this.maxScale = maxScale;
@@ -30,7 +39,12 @@ export default class ZoomPan {
             minScale: this.minScale,
             maxScale: this.maxScale,
             element: image,
-            scaleSensitivity: 20
+            scaleSensitivity: 20,
+            onChange: (transform) => {
+                if (this.onTransformChangeCallback) {
+                    this.onTransformChangeCallback(transform);
+                }
+            }
         });
 
         this.attachEventListeners();
@@ -64,8 +78,37 @@ export default class ZoomPan {
         }
     };
 
+    private stopInertia() {
+        if (this.animationFrameId) {
+            cancelAnimationFrame(this.animationFrameId);
+            this.animationFrameId = null;
+        }
+        this.velocity = { x: 0, y: 0 };
+    }
+
+    private startInertia() {
+        this.stopInertia();
+        
+        const loop = () => {
+            if (Math.abs(this.velocity.x) < MIN_VELOCITY && Math.abs(this.velocity.y) < MIN_VELOCITY) {
+                this.stopInertia();
+                return;
+            }
+
+            this.renderer.panBy({ originX: this.velocity.x, originY: this.velocity.y });
+            this.velocity.x *= INERTIA_FRICTION;
+            this.velocity.y *= INERTIA_FRICTION;
+
+            this.animationFrameId = requestAnimationFrame(loop);
+        };
+
+        this.animationFrameId = requestAnimationFrame(loop);
+    }
+
     private onStart = (event: TouchEvent) => {
         this.deviceHasTouch = true;
+        this.stopInertia(); // Stop any existing movement
+
         if (this.stateIs('multiGesture')) {
             return;
         }
@@ -77,6 +120,7 @@ export default class ZoomPan {
 
             this.start.x = x;
             this.start.y = y;
+            this.pinchStartCenter = { x, y }; // Capture start center
             this.start.distance = this.getPinchDistance(event) / this.scaleValue;
             this.start.touches = [event.touches[0], event.touches[1]];
 
@@ -98,6 +142,8 @@ export default class ZoomPan {
         this.start.y = touch.pageY;
         this.start.distance = 0;
         this.start.touches = [touch];
+        this.lastMoveTime = Date.now();
+        this.velocity = { x: 0, y: 0 };
     };
 
     private onMove = (event: TouchEvent) => {
@@ -113,7 +159,13 @@ export default class ZoomPan {
             const scale = this.getPinchDistance(event) / this.start.distance;
             const { x, y } = this.getMidPoint(event);
 
-            this.renderer.zoomPan({ scale, x, y, deltaX: x - this.start.x, deltaY: y - this.start.y });
+            this.renderer.zoomPan({ 
+                scale, 
+                x: this.pinchStartCenter.x, 
+                y: this.pinchStartCenter.y, 
+                deltaX: x - this.start.x, 
+                deltaY: y - this.start.y 
+            });
 
             this.setCurrentScale(this.renderer.getScale());
 
@@ -135,6 +187,22 @@ export default class ZoomPan {
         const [touch] = event.touches;
         const deltaX = touch.pageX - this.start.x;
         const deltaY = touch.pageY - this.start.y;
+        
+        // Calculate velocity
+        const now = Date.now();
+        const dt = now - this.lastMoveTime;
+        if (dt > 0) {
+            // Simple moving average or just last frame? Last frame is jumpy.
+            // But for simple fling, last frame often works if dt is small.
+            // Let's just track it for onEnd.
+            // We want pixels per frame effectively for the loop.
+            // If dt is large (lag), deltaX might be large.
+            // Normalizing to "pixels per 16ms" might be good?
+            // Or just store raw delta if we assume frequent updates.
+            // Let's store raw delta but decay it if no move happens?
+            this.velocity = { x: deltaX, y: deltaY };
+        }
+        this.lastMoveTime = now;
 
         this.renderer.panBy({ originX: deltaX, originY: deltaY });
 
@@ -149,6 +217,7 @@ export default class ZoomPan {
 
         const currentTime = new Date().getTime();
         const tapLength = currentTime - this.lastTapTime;
+        const timeSinceLastMove = currentTime - this.lastMoveTime;
 
         if (tapLength < DOUBLE_TAP_TIME && tapLength > 0) {
             event.preventDefault();
@@ -158,6 +227,14 @@ export default class ZoomPan {
             }
 
             this.setCurrentScale(this.onDoubleTap({ x: touch.clientX, y: touch.clientY }));
+        } else {
+             // If we stopped moving before lifting finger (held still), velocity should be 0.
+            if (timeSinceLastMove > 50) {
+                this.velocity = { x: 0, y: 0 };
+            }
+            if (Math.abs(this.velocity.x) > MIN_VELOCITY || Math.abs(this.velocity.y) > MIN_VELOCITY) {
+                this.startInertia();
+            }
         }
 
         this.lastTapTime = currentTime;
@@ -169,6 +246,8 @@ export default class ZoomPan {
         if (this.deviceHasTouch) {
             return;
         }
+        
+        this.stopInertia();
 
         event.preventDefault();
         this.renderer.zoom({
@@ -187,12 +266,22 @@ export default class ZoomPan {
         }, 100);
     };
 
+    private isMouseDown = false;
+
+    private onMouseDown = (event: MouseEvent) => {
+        if (this.deviceHasTouch) return;
+        this.isMouseDown = true;
+        this.stopInertia();
+        this.velocity = { x: 0, y: 0 };
+        this.lastMoveTime = Date.now();
+    };
+
     private onMouseMove = (event: MouseEvent) => {
         if (this.deviceHasTouch) {
             return;
         }
 
-        if (event.buttons !== 1 || this.scaleValue === this.minScale) {
+        if (!this.isMouseDown || event.buttons !== 1 || this.scaleValue === this.minScale) {
             return;
         }
         event.preventDefault();
@@ -200,6 +289,9 @@ export default class ZoomPan {
         if (event.movementX === 0 && event.movementY === 0) {
             return;
         }
+        
+        this.velocity = { x: event.movementX, y: event.movementY };
+        this.lastMoveTime = Date.now();
 
         this.state = 'mouse';
         this.renderer.panBy({ originX: event.movementX, originY: event.movementY });
@@ -211,6 +303,17 @@ export default class ZoomPan {
         }
 
         this.state = 'idle';
+        this.isMouseDown = false;
+        
+        const timeSinceLastMove = Date.now() - this.lastMoveTime;
+        if (timeSinceLastMove > 50) {
+             this.velocity = { x: 0, y: 0 };
+        }
+        
+        if (Math.abs(this.velocity.x) > MIN_VELOCITY || Math.abs(this.velocity.y) > MIN_VELOCITY) {
+            this.startInertia();
+        }
+
         this.setCurrentScale(this.renderer.getScale());
     };
 
@@ -224,8 +327,15 @@ export default class ZoomPan {
             return;
         }
 
-        if (!this.stateIs('mouse')) {
-            this.setCurrentScale(this.onDoubleTap({ x: event.pageX, y: event.pageY }));
+        // Only trigger tap logic if we started the interaction on this container
+        if (this.isMouseDown && !this.stateIs('mouse')) {
+            const currentTime = new Date().getTime();
+            const clickLength = currentTime - this.lastTapTime;
+
+            if (clickLength < DOUBLE_TAP_TIME && clickLength > 0) {
+                this.setCurrentScale(this.onDoubleTap({ x: event.pageX, y: event.pageY }));
+            }
+            this.lastTapTime = currentTime;
         }
 
         this.onMouseEnd();
@@ -237,6 +347,7 @@ export default class ZoomPan {
         this.container.addEventListener('touchend', this.onEndTouch, { passive: false });
         this.container.addEventListener('touchcancel', this.onEndTouch, { passive: false });
 
+        this.container.addEventListener('mousedown', this.onMouseDown, { passive: false });
         this.container.addEventListener('mousemove', this.onMouseMove, { passive: false });
         this.container.addEventListener('mouseup', this.onMouseUp, { passive: false });
         this.container.addEventListener('mouseleave', this.onMouseEnd, { passive: false });
@@ -248,6 +359,10 @@ export default class ZoomPan {
         return this.renderer.getScalePercentage();
     };
 
+    public getTransform = () => {
+        return this.renderer.getTransform();
+    };
+
     public setZoomPercentage = (percentage: number) => {
         this.renderer.setScalePercentage(percentage);
         this.setCurrentScale(this.renderer.getScale());
@@ -257,8 +372,13 @@ export default class ZoomPan {
         this.onZoomChange = callback;
     };
 
+    public onTransformChange = (callback: (transform: any) => void) => {
+        this.onTransformChangeCallback = callback;
+    };
+
     public reset = () => {
         this.state = 'idle';
+        this.stopInertia();
         this.setCurrentScale(1);
         this.lastTapTime = 0;
         this.start = { x: 0, y: 0, distance: 0, touches: [] };
@@ -266,11 +386,13 @@ export default class ZoomPan {
     };
 
     public destroy = () => {
+        this.stopInertia();
         this.container.removeEventListener('touchstart', this.onStart);
         this.container.removeEventListener('touchmove', this.onMove);
         this.container.removeEventListener('touchend', this.onEndTouch);
         this.container.removeEventListener('touchcancel', this.onEndTouch);
 
+        this.container.removeEventListener('mousedown', this.onMouseDown);
         this.container.removeEventListener('mousemove', this.onMouseMove);
         this.container.removeEventListener('mouseup', this.onMouseUp);
         this.container.removeEventListener('mouseleave', this.onMouseEnd);

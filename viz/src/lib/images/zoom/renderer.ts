@@ -21,25 +21,30 @@ class Renderer {
         translateY: 0,
         scale: 1
     };
+    
+    private onChange: ((transform: typeof this.transform) => void) | undefined;
 
     constructor({
         container,
         element,
         minScale,
         maxScale,
-        scaleSensitivity = 10
+        scaleSensitivity = 10,
+        onChange
     }: {
         container: HTMLElement;
         element: HTMLElement;
         minScale: number;
         maxScale: number;
         scaleSensitivity?: number;
+        onChange?: (transform: typeof Renderer.DEFAULT_TRANSFORMATION) => void;
     }) {
         this.container = container;
         this.element = element;
         this.minScale = minScale;
         this.maxScale = maxScale;
         this.scaleSensitivity = scaleSensitivity;
+        this.onChange = onChange;
         this.transform = { ...Renderer.DEFAULT_TRANSFORMATION };
     }
 
@@ -93,6 +98,10 @@ class Renderer {
         this.transform.translateX = this.clampedTranslate({ axis: 'x', translate: translateX });
         this.transform.translateY = this.clampedTranslate({ axis: 'y', translate: translateY });
 
+        if (this.onChange) {
+            this.onChange({ ...this.transform });
+        }
+
         requestAnimationFrame(() => {
             if (this.transform.originOffset) {
                 this.element.style.transformOrigin = `${this.transform.originX}px ${this.transform.originY}px`;
@@ -117,6 +126,8 @@ class Renderer {
             originY: originY - this.transform.translateY
         });
     };
+
+    public getElement = () => this.element;
 
     public zoomPan = ({
         scale: scaleValue,
@@ -209,6 +220,8 @@ class Renderer {
         const percentage = (scale - this.minScale) / (this.maxScale - this.minScale) * 100;
         return this.clamp(percentage, 0, 100);
     }
+
+    public getTransform = () => ({ ...this.transform });
 
     public setScalePercentage = (percentage: number) => {
         const newScale = this.minScale + (this.clamp(percentage, 0, 100) / 100) * (this.maxScale - this.minScale);
