@@ -3,11 +3,13 @@ package imageops
 import (
 	"fmt"
 	"regexp"
+	"strconv"
 	"strings"
 	"time"
 
 	exif "github.com/dsoprea/go-exif/v3"
 	exifcommon "github.com/dsoprea/go-exif/v3/common"
+	"github.com/trimmer-io/go-xmp/xmp"
 	"imagine/internal/dto"
 )
 
@@ -131,6 +133,19 @@ func FindExif(exifData map[string]string, keys ...string) *string {
 	return &val
 }
 
+func FindExifInt(exifData map[string]string, keys ...string) *int {
+	s := FindExif(exifData, keys...)
+	if s == nil {
+		return nil
+	}
+	// Try parsing as int (can be hex if 0x prefix)
+	if v, err := strconv.ParseInt(*s, 0, 32); err == nil {
+		i := int(v)
+		return &i
+	}
+	return nil
+}
+
 // BuildImageEXIF normalizes libvips EXIF map into a dto.ImageEXIF and returns
 // parsed created/modified times (with sensible fallbacks).
 func BuildImageEXIF(exifData map[string]string) (dto.ImageEXIF, time.Time, time.Time) {
@@ -152,7 +167,7 @@ func BuildImageEXIF(exifData map[string]string) (dto.ImageEXIF, time.Time, time.
 		Iso:              FindExif(exifData, "ISO", "ISOSpeedRatings"),
 		FocalLength:      FindExif(exifData, "FocalLength"),
 		ExposureTime:     FindExif(exifData, "ExposureTime"),
-		Flash:            FindExif(exifData, "Flash"),
+		Flash:            FindExifInt(exifData, "Flash"),
 		WhiteBalance:     FindExif(exifData, "WhiteBalance"),
 		LensModel:        FindExif(exifData, "LensModel"),
 		Rating:           FindExif(exifData, "Rating"),
@@ -302,4 +317,49 @@ func GetEffectiveExifOffset(exif *dto.ImageEXIF) *string {
 
 	// Fallback to original offset if all are zero or nil
 	return exif.OffsetTimeOriginal
+}
+
+// ParseRational attempts to parse strings like "1/500", "f/1.8", "50", "50 mm" into xmp.Rational
+func ParseRational(s string) *xmp.Rational {
+	s = strings.TrimSpace(s)
+	if s == "" {
+		return nil
+	}
+
+	// Remove common units/prefixes
+	s = strings.TrimPrefix(s, "f/")
+	s = strings.TrimSuffix(s, " mm")
+	s = strings.TrimSuffix(s, " sec")
+	s = strings.TrimSuffix(s, " s")
+
+	// Try fraction "1/500"
+	if strings.Contains(s, "/") {
+		parts := strings.Split(s, "/")
+		if len(parts) == 2 {
+			num, err1 := strconv.ParseInt(strings.TrimSpace(parts[0]), 10, 64)
+			den, err2 := strconv.ParseInt(strings.TrimSpace(parts[1]), 10, 64)
+			if err1 == nil && err2 == nil && den != 0 {
+				return &xmp.Rational{Num: num, Den: den}
+			}
+		}
+	}
+
+	// Try decimal "1.8" -> 18/10
+	if strings.Contains(s, ".") {
+		f, err := strconv.ParseFloat(s, 64)
+		if err == nil {
+			// Convert float to rational approximation
+			// Simple approach: multiply by precision
+			const precision = 10000
+			num := int64(f * precision)
+			return &xmp.Rational{Num: num, Den: precision}
+		}
+	}
+
+	// Try integer "50" -> 50/1
+	if i, err := strconv.ParseInt(s, 10, 64); err == nil {
+		return &xmp.Rational{Num: i, Den: 1}
+	}
+
+	return nil
 }

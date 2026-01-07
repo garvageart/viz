@@ -268,7 +268,7 @@ func ImageProcess(ctx context.Context, db *gorm.DB, imgEnt entities.Image, onPro
 
 	err = db.Transaction(func (tx *gorm.DB) error {
 		// Update image entity in DB
-		if err := tx.Model(&entities.Image{}).Where("uid = ?", imgEnt.Uid).Update("image_metadata", imgEnt.ImageMetadata).Error; err != nil {
+		if err := tx.Model(&entities.Image{}).Where("uid = ?", imgEnt.Uid).Updates(entities.Image{ImageMetadata: imgEnt.ImageMetadata}).Error; err != nil {
 			return fmt.Errorf("failed to update image entity: %w", err)
 		}
 

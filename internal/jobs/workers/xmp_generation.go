@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"os"
 	"path/filepath"
+	"strconv"
 	"strings"
 	"time"
 
@@ -13,7 +14,7 @@ import (
 	"github.com/trimmer-io/go-xmp/models/dc"
 	"github.com/trimmer-io/go-xmp/models/exif"
 	"github.com/trimmer-io/go-xmp/models/tiff"
-	xmpbase "github.com/trimmer-io/go-xmp/models/xmp_base"
+	"github.com/trimmer-io/go-xmp/models/xmp_base"
 	"github.com/trimmer-io/go-xmp/xmp"
 	"gorm.io/gorm"
 
@@ -23,6 +24,7 @@ import (
 	"imagine/internal/images"
 	"imagine/internal/jobs"
 	"imagine/internal/utils"
+	customxmp "imagine/internal/xmp"
 )
 
 const (
@@ -116,12 +118,89 @@ func generateXMPSidecar(img entities.Image, onProgress func(step string, progres
 	dcModel := &dc.DublinCore{}
 	exifModel := &exif.ExifInfo{}
 	tiffModel := &tiff.TiffInfo{}
+	psModel := &customxmp.PhotoshopInfo{}
+
+	// Set SidecarForExtension to match original file extension (without dot)
+	ext := strings.TrimPrefix(filepath.Ext(originalPath), ".")
+	if ext != "" {
+		psModel.SidecarForExtension = ext
+	}
 
 	if onProgress != nil {
 		onProgress("Building XMP models", 20)
 	}
 
+	// 1. Basic Metadata (Rating, Label, Title)
+	if img.ImageMetadata != nil {
+		if img.ImageMetadata.Rating != nil {
+			xmpBase.Rating = xmpbase.Rating(*img.ImageMetadata.Rating)
+		}
+
+		if img.ImageMetadata.Label != nil {
+			label := string(*img.ImageMetadata.Label)
+			xmpBase.Label = label
+
+			// Map standard color labels to Photoshop Urgency for broader compatibility
+			// (e.g. Capture One older versions, Photo Mechanic, etc.)
+			// 1=Red, 2=Orange, 3=Yellow, 4=Green, 5=Blue, 6=Purple, 7=Grey
+			switch strings.ToLower(label) {
+			case "red":
+				psModel.Urgency = 1
+			case "orange":
+				psModel.Urgency = 2
+			case "yellow":
+				psModel.Urgency = 3
+			case "green":
+				psModel.Urgency = 4
+			case "blue":
+				psModel.Urgency = 5
+			case "purple":
+				psModel.Urgency = 6
+			case "grey", "gray":
+				psModel.Urgency = 7
+			}
+		}
+
+		if img.ImageMetadata.Keywords != nil && len(*img.ImageMetadata.Keywords) > 0 {
+			dcModel.Subject = *img.ImageMetadata.Keywords
+		}
+	}
+
+	// 2. Descriptive Metadata
+	if img.Name != "" && img.Name != img.Uid {
+		// Only set title if it's not just the UID (default fallback)
+		// Or if we want to preserve the filename as title, we can do that too.
+		// For now, assuming Name is user-facing title.
+		dcModel.Title = xmp.NewAltString(img.Name)
+	}
+
+	if img.Description != nil && *img.Description != "" {
+		dcModel.Description = xmp.NewAltString(*img.Description)
+	}
+
+	// 2.1 Copyright / Creator
+	var copyrightOwner string
+	if img.Owner != nil && img.Owner.FirstName != "" && img.Owner.LastName != "" {
+		copyrightOwner = fmt.Sprintf("%s %s", img.Owner.FirstName, img.Owner.LastName)
+	} else if img.UploadedBy != nil && img.UploadedBy.FirstName != "" && img.UploadedBy.LastName != "" {
+		copyrightOwner = fmt.Sprintf("%s %s", img.UploadedBy.FirstName, img.UploadedBy.LastName)
+	}
+
+	if copyrightOwner != "" {
+		// dc:rights - "Copyright (c) 2023 John Doe"
+		year := time.Now().Year()
+		if img.TakenAt != nil {
+			year = img.TakenAt.Year()
+		}
+		dcModel.Rights = xmp.NewAltString(fmt.Sprintf("Copyright (c) %d %s", year, copyrightOwner))
+
+		// photoshop:Credit - often used for "Provider" or "Credit Line"
+		psModel.Credit = copyrightOwner
+	}
+
+	// 3. EXIF / Technical Metadata
 	if img.Exif != nil {
+		// Dates
 		if img.Exif.DateTimeOriginal != nil {
 			if t, err := xmp.ParseDate(*img.Exif.DateTimeOriginal); err == nil {
 				xmpBase.CreateDate = t
@@ -135,6 +214,7 @@ func generateXMPSidecar(img entities.Image, onProgress func(step string, progres
 			}
 		}
 
+		// Device Info
 		if img.Exif.Make != nil {
 			tiffModel.Make = *img.Exif.Make
 		}
@@ -147,6 +227,13 @@ func generateXMPSidecar(img entities.Image, onProgress func(step string, progres
 			tiffModel.Software = *img.Exif.Software
 		}
 
+		// Lens Info
+		if img.Exif.LensModel != nil {
+			// exif:LensModel is standard
+			exifModel.ExLensModel = *img.Exif.LensModel
+		}
+
+		// Orientation
 		if img.Exif.Orientation != nil {
 			orientation, err := imageops.ConvertOrientation(*img.Exif.Orientation)
 			if err != nil {
@@ -158,30 +245,113 @@ func generateXMPSidecar(img entities.Image, onProgress func(step string, progres
 				tiffModel.Orientation = orientation
 			}
 		}
-	}
 
-	if onProgress != nil {
-		onProgress("Populating metadata", 50)
-	}
-
-	if img.ImageMetadata != nil {
-		if img.ImageMetadata.Label != nil {
-			xmpBase.Label = string(*img.ImageMetadata.Label)
+		// Camera Settings
+		if img.Exif.ExposureTime != nil {
+			if r := imageops.ParseRational(*img.Exif.ExposureTime); r != nil {
+				exifModel.ExposureTime = *r
+			}
 		}
 
-		if img.ImageMetadata.Keywords != nil && len(*img.ImageMetadata.Keywords) > 0 {
-			dcModel.Subject = *img.ImageMetadata.Keywords
+		if img.Exif.FNumber != nil {
+			if r := imageops.ParseRational(*img.Exif.FNumber); r != nil {
+				exifModel.FNumber = *r
+			}
+		} else if img.Exif.Aperture != nil {
+			// Fallback to Aperture if FNumber not explicit
+			if r := imageops.ParseRational(*img.Exif.Aperture); r != nil {
+				exifModel.FNumber = *r
+			}
+		}
+
+		if img.Exif.FocalLength != nil {
+			if r := imageops.ParseRational(*img.Exif.FocalLength); r != nil {
+				exifModel.FocalLength = *r
+			}
+		}
+
+		if img.Exif.Iso != nil {
+			// ISO can be a list in XMP, usually just one value
+			// Try parsing as int
+			if isoVal, err := strconv.ParseInt(*img.Exif.Iso, 10, 64); err == nil {
+				exifModel.ISOSpeedRatings = xmp.IntList{int(isoVal)}
+			} else {
+				// Handle "ISO 400" string format
+				parts := strings.FieldsSeq(*img.Exif.Iso)
+				for p := range parts {
+					if v, err := strconv.ParseInt(p, 10, 64); err == nil {
+						exifModel.ISOSpeedRatings = xmp.IntList{int(v)}
+						break
+					}
+				}
+			}
+		}
+
+		if img.Exif.Flash != nil {
+			flashVal := int64(*img.Exif.Flash)
+			f := exif.Flash{}
+
+			// Bit 0: Fired
+			f.Fired = xmp.Bool((flashVal & 1) != 0)
+
+			// Bit 1-2: Return
+			// 0 = No strobe return detection function
+			// 2 = Strobe return light not detected
+			// 3 = Strobe return light detected
+			ret := (flashVal >> 1) & 3
+			f.Return = exif.FlashReturnMode(ret)
+
+			// Bit 3-4: Mode
+			// 0 = Unknown
+			// 1 = Compulsory flash firing
+			// 2 = Compulsory flash suppression
+			// 3 = Auto mode
+			mode := (flashVal >> 3) & 3
+			f.Mode = exif.FlashMode(mode)
+
+			// Bit 5: Function
+			// 0 = Flash function present -> True
+			// 1 = No flash function -> False
+			f.Function = xmp.Bool((flashVal & 0x20) == 0)
+
+			// Bit 6: RedEye
+			f.RedEyeMode = xmp.Bool((flashVal & 0x40) != 0)
+
+			exifModel.Flash = f
+		}
+
+		if img.Exif.WhiteBalance != nil {
+			// 0 = Auto, 1 = Manual.
+			// Typically we get string "Auto" or "Manual".
+			lowerWB := strings.ToLower(*img.Exif.WhiteBalance)
+			if strings.Contains(lowerWB, "auto") {
+				exifModel.WhiteBalance = exif.WhiteBalanceAuto
+			} else if strings.Contains(lowerWB, "manual") {
+				exifModel.WhiteBalance = exif.WhiteBalanceManual
+			}
+		}
+
+		// GPS
+		if img.Exif.Latitude != nil {
+			var coord exif.GPSCoord
+			if err := coord.UnmarshalText([]byte(*img.Exif.Latitude)); err == nil {
+				exifModel.GPSLatitude = coord
+			}
+		}
+		if img.Exif.Longitude != nil {
+			var coord exif.GPSCoord
+			if err := coord.UnmarshalText([]byte(*img.Exif.Longitude)); err == nil {
+				exifModel.GPSLongitude = coord
+			}
 		}
 	}
 
-	if img.Description != nil {
-		dcModel.Description = xmp.NewAltString(*img.Description)
-	}
-
+	// 4. Register Models
 	doc.AddModel(xmpBase)
 	doc.AddModel(dcModel)
 	doc.AddModel(exifModel)
 	doc.AddModel(tiffModel)
+	doc.AddModel(psModel)
 
 	if onProgress != nil {
 		onProgress("Marshalling XMP", 80)

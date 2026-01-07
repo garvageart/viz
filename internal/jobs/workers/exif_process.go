@@ -1,12 +1,17 @@
 package workers
 
 import (
+	"bytes"
 	"context"
 	"encoding/json"
 	"fmt"
 	"imagine/internal/dto"
+	"strings"
 
 	"github.com/ThreeDotsLabs/watermill/message"
+	"github.com/trimmer-io/go-xmp/models/dc"
+	xmpbase "github.com/trimmer-io/go-xmp/models/xmp_base"
+	"github.com/trimmer-io/go-xmp/xmp"
 
 	"imagine/internal/entities"
 	libhttp "imagine/internal/http"
@@ -15,6 +20,7 @@ import (
 	"imagine/internal/images"
 	"imagine/internal/jobs"
 	"imagine/internal/utils"
+	customxmp "imagine/internal/xmp"
 
 	"gorm.io/gorm"
 	"time"
@@ -127,6 +133,91 @@ func ExifProcess(ctx context.Context, db *gorm.DB, imgEnt entities.Image, onProg
 	imgEnt.ImageMetadata.HasIccProfile = &hasIcc
 	takenAt := imageops.GetTakenAt(imgEnt)
 
+	// Extract XMP Metadata (ACR, Capture One, Standard)
+	if onProgress != nil {
+		onProgress("Processing XMP data", 60)
+	}
+
+	if doc, err := xmp.Scan(bytes.NewReader(originalData)); err == nil {
+		defer doc.Close()
+
+		xmpBase := &xmpbase.XmpBase{}
+		dcModel := &dc.DublinCore{}
+		crsModel := &customxmp.CameraRawSettings{}
+		psModel := &customxmp.PhotoshopInfo{}
+
+		// Register models on the document directly
+		// This should trigger SyncFromXMP to populate the structs from the parsed DOM
+		doc.AddModel(xmpBase)
+		doc.AddModel(dcModel)
+		doc.AddModel(crsModel)
+		doc.AddModel(psModel)
+
+		// 1. Rating
+		// Prioritize existing rating
+		if imgEnt.ImageMetadata.Rating == nil || *imgEnt.ImageMetadata.Rating == 0 {
+			var rating int
+			if crsModel.Rating != nil {
+				rating = *crsModel.Rating
+			} else if xmpBase.Rating > 0 {
+				rating = int(xmpBase.Rating)
+			}
+
+			if rating > 0 {
+				imgEnt.ImageMetadata.Rating = &rating
+			}
+		}
+
+		// 2. Label
+		// Prioritize existing label
+		if imgEnt.ImageMetadata.Label == nil || *imgEnt.ImageMetadata.Label == "" || *imgEnt.ImageMetadata.Label == dto.ImageMetadataLabelNone {
+			var label string
+			if crsModel.Label != nil && *crsModel.Label != "" {
+				label = *crsModel.Label
+			} else if xmpBase.Label != "" {
+				label = xmpBase.Label
+			} else if psModel.Urgency > 0 {
+				// Map urgency to color label
+				switch psModel.Urgency {
+				case 1:
+					label = "Red"
+				case 2:
+					label = "Orange"
+				case 3:
+					label = "Yellow"
+				case 4:
+					label = "Green"
+				case 5:
+					label = "Blue"
+				case 6:
+					label = "Purple"
+				case 7:
+					label = "Grey"
+				}
+			}
+
+			if label != "" {
+				// Normalize label to match enum if possible
+				normalizedLabel := utils.Capitalize(strings.ToLower(label))
+				// Check if it matches valid labels
+				switch normalizedLabel {
+				case "Red", "Orange", "Yellow", "Green", "Blue", "Purple", "Pink", "Grey", "Gray":
+					l := dto.ImageMetadataLabel(normalizedLabel)
+					imgEnt.ImageMetadata.Label = &l
+				}
+			}
+		}
+
+		// 3. Keywords / Subjects
+		if imgEnt.ImageMetadata.Keywords == nil || len(*imgEnt.ImageMetadata.Keywords) == 0 {
+			if len(dcModel.Subject) > 0 {
+				// Convert xmp.StringArray to []string
+				keywords := []string(dcModel.Subject)
+				imgEnt.ImageMetadata.Keywords = &keywords
+			}
+		}
+	}
+
 	if onProgress != nil {
 		onProgress("Updating database", 90)
 	}
@@ -147,6 +238,17 @@ func ExifProcess(ctx context.Context, db *gorm.DB, imgEnt entities.Image, onProg
 	dbImage.ImageMetadata.HasIccProfile = imgEnt.ImageMetadata.HasIccProfile
 	dbImage.ImageMetadata.FileCreatedAt = imgEnt.ImageMetadata.FileCreatedAt
 	dbImage.ImageMetadata.FileModifiedAt = imgEnt.ImageMetadata.FileModifiedAt
+
+	// Only merge extracted metadata if DB version is missing it, to respect user edits
+	if dbImage.ImageMetadata.Rating == nil && imgEnt.ImageMetadata.Rating != nil {
+		dbImage.ImageMetadata.Rating = imgEnt.ImageMetadata.Rating
+	}
+	if (dbImage.ImageMetadata.Label == nil || *dbImage.ImageMetadata.Label == dto.ImageMetadataLabelNone) && imgEnt.ImageMetadata.Label != nil {
+		dbImage.ImageMetadata.Label = imgEnt.ImageMetadata.Label
+	}
+	if (dbImage.ImageMetadata.Keywords == nil || len(*dbImage.ImageMetadata.Keywords) == 0) && imgEnt.ImageMetadata.Keywords != nil {
+		dbImage.ImageMetadata.Keywords = imgEnt.ImageMetadata.Keywords
+	}
 
 	if err := db.Model(&entities.Image{}).
 		Where("uid = ?", imgEnt.Uid).
