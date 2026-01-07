@@ -660,6 +660,9 @@ func updateCollectionFromDTO(collection *entities.Collection, update dto.Collect
 	if update.Private != nil {
 		collection.Private = update.Private
 	}
+	if update.Favourited != nil {
+		collection.Favourited = update.Favourited
+	}
 	if update.ThumbnailUID != nil {
 		if *update.ThumbnailUID == "" {
 			collection.ThumbnailID = nil

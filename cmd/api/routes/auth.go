@@ -1,9 +1,7 @@
 package routes
 
 import (
-	"bytes"
 	"encoding/base64"
-	"encoding/hex"
 	"errors"
 	"fmt"
 	"log/slog"
@@ -22,6 +20,7 @@ import (
 
 	"imagine/internal/auth"
 	oauth "imagine/internal/auth/oauth"
+	"imagine/internal/config"
 	"imagine/internal/crypto"
 	"imagine/internal/dto"
 	"imagine/internal/entities"
@@ -80,34 +79,18 @@ func AuthRouter(db *gorm.DB, logger *slog.Logger) *chi.Mux {
 			return
 		}
 
-		argon := crypto.CreateArgon2Hash(3, 32, 2, 32, 16)
-		dbPass := strings.Split(row.Password, ":")
-		if len(dbPass) != 2 {
+		argonParams := &crypto.Argon2Params{
+			MemoryMB: config.AppConfig.Security.Argon2MemoryMB,
+			Time:     config.AppConfig.Security.Argon2Time,
+			Threads:  config.AppConfig.Security.Argon2Threads,
+		}
+
+		isValidPass, err := crypto.VerifyPassword(row.Password, login.Password, argonParams)
+		if err != nil {
 			render.Status(req, http.StatusInternalServerError)
-			render.JSON(res, req, dto.ErrorResponse{Error: "Invalid password format"})
+			render.JSON(res, req, dto.ErrorResponse{Error: "Failed to verify password"})
 			return
 		}
-
-		salt, err := hex.DecodeString(dbPass[0])
-		if err != nil {
-			libhttp.ServerError(res, req, err, logger, nil,
-				"Failed to decode salt",
-				"Something went wrong, please try again later",
-			)
-			return
-		}
-
-		storedHash, err := hex.DecodeString(dbPass[1])
-		if err != nil {
-			libhttp.ServerError(res, req, err, logger, nil,
-				"Failed to decode hash",
-				"Something went wrong, please try again later",
-			)
-			return
-		}
-
-		inputHash, _ := argon.Hash([]byte(login.Password), salt)
-		isValidPass := bytes.Equal(inputHash, storedHash)
 
 		if !isValidPass {
 			render.Status(req, http.StatusUnauthorized)
@@ -266,7 +249,7 @@ func AuthRouter(db *gorm.DB, logger *slog.Logger) *chi.Mux {
 			Path:     "/",
 			Secure:   true,
 			HttpOnly: true, // client doesn't use this value, make HttpOnly
-			SameSite: http.SameSiteNoneMode,
+			SameSite: http.SameSiteLaxMode,
 		})
 
 		oauthUrl, err := oauth.SetupOAuthURL(res, req, oauthConfig, provider, state)
@@ -336,7 +319,7 @@ func AuthRouter(db *gorm.DB, logger *slog.Logger) *chi.Mux {
 			Expires:  expiryTime,
 			Path:     "/",
 			Secure:   true,
-			SameSite: http.SameSiteNoneMode, //FIXME: this needs to change to same site
+			SameSite: http.SameSiteLaxMode,
 		})
 
 		// delete the temporary redirect state from the browser

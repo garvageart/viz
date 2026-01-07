@@ -487,6 +487,12 @@ func ImagesRouter(db *gorm.DB, logger *slog.Logger) *chi.Mux {
 			return
 		}
 
+		logger.Info("triggering background xmp update", slog.String("uid", img.Uid))
+		_, err = jobs.Enqueue(db, workers.TopicXMPGeneration, &workers.XMPGenerationJob{Image: img}, nil, &img.Uid)
+		if err != nil {
+			logger.Error("failed to enqueue xmp generation job", slog.Any("error", err))
+		}
+
 		render.Status(req, http.StatusOK)
 		render.JSON(res, req, img.DTO())
 	})
@@ -964,6 +970,8 @@ func serveOriginalImage(res http.ResponseWriter, req *http.Request, logger *slog
 
 	res.Header().Set("Etag", fmt.Sprintf(`"%s"`, imgEnt.ImageMetadata.Checksum))
 	res.Header().Set("Last-Modified", imgEnt.UpdatedAt.UTC().Format(http.TimeFormat))
+	// Prevent XSS if the image is an SVG or other dangerous type
+	res.Header().Set("Content-Security-Policy", "sandbox")
 
 	if isDownload {
 		res.Header().Set("Cache-Control", "private, no-cache, no-store, must-revalidate")
@@ -1077,6 +1085,9 @@ func serveTransformedImage(res http.ResponseWriter, req *http.Request, logger *s
 	// Serve the newly generated image
 	res.Header().Set("Etag", transformETag)
 	res.Header().Set("Last-Modified", imgEnt.UpdatedAt.UTC().Format(http.TimeFormat))
+	// Prevent XSS if the image is an SVG or other dangerous type
+	res.Header().Set("Content-Security-Policy", "sandbox")
+
 	if isDownload {
 		res.Header().Set("Cache-Control", "private, no-cache, no-store, must-revalidate")
 		res.Header().Set("Content-Disposition", fmt.Sprintf(`attachment; filename="%s"`, imgEnt.ImageMetadata.FileName))
@@ -1146,6 +1157,10 @@ func updateImageFromDTO(image *entities.Image, update dto.ImageUpdate) {
 
 	if update.Private != nil {
 		image.Private = *update.Private
+	}
+
+	if update.Favourited != nil {
+		image.Favourited = update.Favourited
 	}
 
 	if update.Exif != nil {

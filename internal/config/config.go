@@ -33,6 +33,10 @@ func SetDefaultConfig() {
 	AppConfig.StorageMetrics.Enabled = false
 	AppConfig.Database.Port = 5432
 	
+	// RFC 9106 recommended secure defaults
+	AppConfig.Security.Argon2MemoryMB = 64
+	AppConfig.Security.Argon2Time = 3
+	AppConfig.Security.Argon2Threads = 4
 }
 
 func GetConfig() ImagineConfig {

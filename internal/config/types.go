@@ -72,6 +72,12 @@ type UserManagementConfig struct {
 	AllowManualRegistration bool `json:"allow_manual_registration" mapstructure:"allow_manual_registration"`
 }
 
+type SecurityConfig struct {
+	Argon2MemoryMB int `json:"argon2_memory_mb" mapstructure:"argon2_memory_mb"`
+	Argon2Time     int `json:"argon2_time" mapstructure:"argon2_time"`
+	Argon2Threads  int `json:"argon2_threads" mapstructure:"argon2_threads"`
+}
+
 // ImagineConfig is the root configuration structure.
 type ImagineConfig struct {
 	BaseURL        string               `json:"baseUrl" mapstructure:"baseUrl"`
@@ -84,4 +90,5 @@ type ImagineConfig struct {
 	Cache          CacheConfig          `json:"cache" mapstructure:"cache"`
 	UserManagement UserManagementConfig	`json:"user_management" mapstructure:"user_management"`
 	StorageMetrics StorageMetricsConfig `json:"storage_metrics" mapstructure:"storage_metrics"`
+	Security       SecurityConfig       `json:"security" mapstructure:"security"`
 }

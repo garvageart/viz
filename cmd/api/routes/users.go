@@ -94,10 +94,20 @@ func AccountsRouter(db *gorm.DB, logger *slog.Logger) *chi.Mux {
 			LastName:  "",
 		}
 
-		argon := crypto.CreateArgon2Hash(3, 32, 2, 32, 16)
-		salt := argon.GenerateSalt()
-		hashedPass, _ := argon.Hash([]byte(create.Password), salt)
-		hashed := hex.EncodeToString(salt) + ":" + hex.EncodeToString(hashedPass)
+		argonParams := &crypto.Argon2Params{
+			MemoryMB: config.AppConfig.Security.Argon2MemoryMB,
+			Time:     config.AppConfig.Security.Argon2Time,
+			Threads:  config.AppConfig.Security.Argon2Threads,
+		}
+
+		hashed, err := crypto.HashPassword(create.Password, argonParams)
+		if err != nil {
+			libhttp.ServerError(res, req, err, logger, nil,
+				"Failed to hash password",
+				"Something went wrong, please try again later",
+			)
+			return
+		}
 
 		// Create the user and password in a single operation using the
 		// non-generated wrapper type so the DTOs remain unchanged.

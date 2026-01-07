@@ -2,9 +2,9 @@ package images
 
 import (
 	"encoding/base64"
-	"fmt"
 	"image"
 	"os"
+	"path/filepath"
 )
 
 func EncodeThumbhashToString(data []byte) string {
@@ -16,15 +16,15 @@ func DecodeThumbhashString(encoded string) ([]byte, error) {
 }
 
 func CreateImageDir(uid string) error {
-	return os.MkdirAll(fmt.Sprintf("%s/%s", Directory, uid), os.ModePerm)
+	return os.MkdirAll(filepath.Join(Directory, uid), os.ModePerm)
 }
 
 func DeleteImageDir(uid string) error {
-	return os.RemoveAll(fmt.Sprintf("%s/%s", Directory, uid))
+	return os.RemoveAll(filepath.Join(Directory, uid))
 }
 
 func GetImageDir(uid string) string {
-	return fmt.Sprintf("%s/%s", Directory, uid)
+	return filepath.Join(Directory, uid)
 }
 
 func ReadImageDir(uid string) ([]os.DirEntry, error) {
@@ -32,7 +32,7 @@ func ReadImageDir(uid string) ([]os.DirEntry, error) {
 }
 
 func GetImagePath(uid, fileName string) string {
-	return fmt.Sprintf("%s/%s", GetImageDir(uid), fileName)
+	return filepath.Join(GetImageDir(uid), filepath.Base(fileName))
 }
 
 func ReadImage(uid, fileName string) ([]byte, error) {

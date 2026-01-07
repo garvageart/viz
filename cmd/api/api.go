@@ -8,6 +8,7 @@ import (
 	"net/http"
 	"os"
 	"os/signal"
+	"strings"
 	"syscall"
 	"time"
 
@@ -52,7 +53,19 @@ func (server APIServer) Launch(router *chi.Mux) *http.Server {
 		// TODO: maybe make this configurable by admin since this might
 		// some people might not want to allow all origins for API
 		AllowOriginFunc: func(r *http.Request, origin string) bool {
-			return true
+			if utils.IsDevelopment {
+				return true
+			}
+			allowedOrigins := os.Getenv("ALLOWED_ORIGINS")
+			if allowedOrigins == "" {
+				return false
+			}
+			for _, allowed := range strings.Split(allowedOrigins, ",") {
+				if origin == strings.TrimSpace(allowed) {
+					return true
+				}
+			}
+			return false
 		},
 		AllowedMethods:   []string{"GET", "POST", "PUT", "PATCH", "OPTIONS", "DELETE"},
 		AllowedHeaders:   []string{"Accept", "Authorization", "Content-Type", "X-CSRF-Token", libhttp.APIKeyName, "If-None-Match", "If-Modified-Since"},
@@ -60,6 +73,7 @@ func (server APIServer) Launch(router *chi.Mux) *http.Server {
 		AllowCredentials: true,
 		MaxAge:           300,
 	}))
+	router.Use(libhttp.SecurityHeaders)
 	router.Use(middleware.RequestLogger(&middleware.DefaultLogFormatter{
 		Logger: serverLogger,
 	}))

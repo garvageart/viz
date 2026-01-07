@@ -1,7 +1,6 @@
 package routes
 
 import (
-	"encoding/hex"
 	"log/slog"
 	"net/http"
 	"time"
@@ -12,6 +11,7 @@ import (
 	"gorm.io/gorm"
 
 	"imagine/internal/auth"
+	"imagine/internal/config"
 	"imagine/internal/crypto"
 	"imagine/internal/dto"
 	"imagine/internal/entities"
@@ -92,10 +92,20 @@ func (h *setupHandlers) SetupSuperadmin(w http.ResponseWriter, req *http.Request
 		Role:      dto.UserRoleSuperadmin, // Assign superadmin role
 	}
 
-	argon := crypto.CreateArgon2Hash(3, 32, 2, 32, 16)
-	salt := argon.GenerateSalt()
-	hashedPass, _ := argon.Hash([]byte(body.Password), salt)
-	hashed := hex.EncodeToString(salt) + ":" + hex.EncodeToString(hashedPass)
+	argonParams := &crypto.Argon2Params{
+		MemoryMB: config.AppConfig.Security.Argon2MemoryMB,
+		Time:     config.AppConfig.Security.Argon2Time,
+		Threads:  config.AppConfig.Security.Argon2Threads,
+	}
+
+	hashed, err := crypto.HashPassword(body.Password, argonParams)
+	if err != nil {
+		libhttp.ServerError(w, req, err, h.logger, nil,
+			"Failed to hash password",
+			"Something went wrong, please try again later",
+		)
+		return
+	}
 
 	uwp := entities.FromUser(userEnt, &hashed)
 

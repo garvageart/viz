@@ -17,6 +17,10 @@ var (
 )
 
 func DownloadFile(URL string) ([]byte, error) {
+	if err := ValidateURL(URL); err != nil {
+		return nil, fmt.Errorf("unsafe URL: %w", err)
+	}
+
 	resp, err := http.Get(URL)
 	if err != nil {
 		return nil, err

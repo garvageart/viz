@@ -5,6 +5,8 @@ import (
 	"fmt"
 	"log/slog"
 	"net/http"
+	"os"
+	"strings"
 	"sync"
 	"sync/atomic"
 	"time"
@@ -69,8 +71,28 @@ func NewWSBroker(logger *slog.Logger) *WSBroker {
 			ReadBufferSize:  1024,
 			WriteBufferSize: 1024,
 			CheckOrigin: func(r *http.Request) bool {
-				// Allow all origins - customize for production
-				return true
+				// In development, allow any origin
+				if os.Getenv("ENV") != "production" {
+					return true
+				}
+
+				// In production, check against allowed origins
+				origin := r.Header.Get("Origin")
+				if origin == "" {
+					return true // Allow non-browser clients (like mobile apps)
+				}
+
+				allowedOrigins := os.Getenv("ALLOWED_ORIGINS")
+				if allowedOrigins == "" {
+					return false // Fail safe if no origins configured
+				}
+
+				for _, allowed := range strings.Split(allowedOrigins, ",") {
+					if origin == strings.TrimSpace(allowed) {
+						return true
+					}
+				}
+				return false
 			},
 		},
 	}
