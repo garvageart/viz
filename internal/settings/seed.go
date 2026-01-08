@@ -93,7 +93,7 @@ var defaultSettings = []entities.SettingDefault{
 		"ui_default_view_mode",
 		"",
 		"Grid",
-		[]string{"Grid", "List", "Cards"},
+		[]string{"Grid", "List", "Thumbnails"},
 		true,
 		"Interface",
 		"Default display mode for image galleries.",

@@ -1,5 +1,5 @@
 <script module lang="ts">
-	export type AssetGridView = "grid" | "list" | "cards";
+	export type AssetGridView = "grid" | "list" | "thumbnails";
 </script>
 
 <script lang="ts" generics>
@@ -869,7 +869,7 @@
 		</div>
 	</div>
 {:else}
-	<!-- Delegate to AssetGrid for list/table/cards view -->
+	<!-- Delegate to AssetGrid for list/table/thumbnails view -->
 	<AssetGrid
 		bind:data={filteredData}
 		bind:assetGridArray

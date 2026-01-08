@@ -58,11 +58,11 @@
 	let displayMenuItems: MenuItem[] = $derived([
 		{ id: "display-0", label: "Grid" },
 		{ id: "display-1", label: "List" },
-		{ id: "display-2", label: "Cards" }
+		{ id: "display-2", label: "Thumbnails" }
 	]);
 
 	let displaySelectedId: string | undefined = $derived.by(() => {
-		const idx = ["grid", "list", "cards"].findIndex(
+		const idx = ["grid", "list", "thumbnails"].findIndex(
 			(v) => v === viewSettings.current
 		);
 		return idx !== -1 ? `display-${idx}` : undefined;

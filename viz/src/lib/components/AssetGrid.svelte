@@ -79,7 +79,7 @@
 		disableOutsideUnselect = $bindable(false),
 		disableMultiSelection = $bindable(false),
 		onassetcontext = $bindable(),
-		view = $bindable("cards"),
+		view = $bindable("thumbnails"),
 		assetGridDisplayProps = $bindable({}),
 		columns = $bindable(),
 		table = $bindable(),
@@ -679,7 +679,7 @@
 	{/if}
 {:else if view === "list" || sort.display === "list"}
 	{@render assetTable()}
-{:else if view === "cards"}
+{:else if view === "thumbnails"}
 	<div
 		bind:this={assetGridDisplayEl}
 		class="viz-asset-grid-container {assetGridDisplayProps.class}"

@@ -193,7 +193,7 @@
 						}
 					}
 				})}
-				{#if dev && grid.view === "cards"}
+				{#if dev && grid.view === "thumbnails"}
 					{@render toolbarButton({
 						iconName: "grid_view",
 						text: "Print Grid",

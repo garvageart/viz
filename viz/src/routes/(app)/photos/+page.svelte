@@ -58,14 +58,14 @@
 	const displayMenuItems: MenuItem[] = [
 		{ id: "display-grid", label: "Grid" },
 		{ id: "display-list", label: "List" },
-		{ id: "display-cards", label: "Cards" }
+		{ id: "display-cards", label: "Thumbnails" }
 	];
 
 	function getDisplaySelectedId(): string | undefined {
 		const map: Record<string, string> = {
 			grid: "display-grid",
 			list: "display-list",
-			cards: "display-cards"
+			thumbnails: "display-cards"
 		};
 		return map[(viewSettings.current as string) ?? ""];
 	}
@@ -245,7 +245,7 @@
 					imageUidsForCollection.length - newImageUids.length;
 				let message = `Added ${newImageUids.length} image(s) to collection **${collection.name}**`;
 				if (skippedCount > 0) {
-					message += ` .Skipped ${skippedCount} existing image(s).`;
+					message += `. Skipped ${skippedCount} existing image(s).`;
 				}
 				toastState.addToast({
 					type: "success",
@@ -620,6 +620,10 @@
 	.selection-info {
 		display: flex;
 		align-items: center;
+	}
+
+	:global(.selection-toolbar) {
+		gap: 1rem;
 	}
 
 	:global(.on-enter) {
