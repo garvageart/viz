@@ -6,7 +6,7 @@ export const load: PageLoad = async ({ params }) => {
     const collectionImages = await getCollection(params.uid);
     if (collectionImages.status !== 200) {
         error(collectionImages.status, {
-            message: collectionImages.data?.error || "Failed to load collection"
+            message: collectionImages.data.error || "Failed to load collection"
         });
     }
 

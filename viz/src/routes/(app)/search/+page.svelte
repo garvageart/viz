@@ -163,7 +163,12 @@
 </svelte:head>
 
 {#if lightboxImage}
-	<ImageLightbox bind:lightboxImage {nextLightboxImage} {prevLightboxImage} />
+	<ImageLightbox
+		bind:lightboxImage
+		{nextLightboxImage}
+		{prevLightboxImage}
+		onImageUpdated={(image) => imageSelection.updateItem(image, images)}
+	/>
 {/if}
 
 {#snippet imageCard(asset: Image)}

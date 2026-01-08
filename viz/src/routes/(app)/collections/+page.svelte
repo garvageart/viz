@@ -32,6 +32,7 @@
 		selectionManager,
 		SelectionScopeNames
 	} from "$lib/states/selection.svelte";
+	import type { MenuItem } from "$lib/context-menu/types";
 
 	let { data }: PageProps = $props();
 
@@ -65,42 +66,14 @@
 	const selectionScope = $derived(
 		selectionManager.getScope<Collection>(scopeId)
 	);
-
-	let collectionGridArray: AssetGridArray<Collection> | undefined = $state();
-	let grid: ComponentProps<typeof AssetGrid<Collection>> = $derived({
-		assetDblClick: (_, asset) => {
-			openCollection(asset, currentPanelContent);
-		},
-		assetSnippet: collectionCard,
-		data: displayData,
-		assetGridArray: collectionGridArray,
-		scopeId,
-		assetGridDisplayProps: {
-			style: `padding: 0em ${isLayoutPage() ? "1em" : "2em"};`
-		},
-		onassetcontext: (detail) => {
-			openCollectionContext(detail.asset, detail.anchor);
-		}
-	});
-
-	const currentPanelContent = getContext<TabGroup>("content");
+	const firstSelectedCollection = $derived(
+		Array.from(selectionScope.selected)[0]
+	);
 
 	// Context menu state for right-click on collections
 	let ctxShowMenu = $state(false);
-	let ctxItems = $state([] as any[]);
-	let ctxAnchor: { x: number; y: number } | HTMLElement | null = $state(
-		null as any
-	);
-
-	// Modal data for create/edit
-	let modalData: Collection | undefined = $state();
-	let modalMode: "create" | "edit" = $state("create");
-
-	function openCollectionContext(
-		collection: Collection,
-		anchor: { x: number; y: number } | HTMLElement
-	) {
-		ctxItems = createCollectionMenu(collection, {
+	let ctxItems: MenuItem[] = $derived(
+		createCollectionMenu(firstSelectedCollection, {
 			editCollection: (col) => {
 				modalMode = "edit";
 				modalData = { ...col };
@@ -127,11 +100,35 @@
 					type: "success"
 				});
 			}
-		});
+		})
+	);
+	let ctxAnchor: { x: number; y: number } | HTMLElement | null = $state(
+		null as any
+	);
 
-		ctxAnchor = anchor;
-		ctxShowMenu = true;
-	}
+	let collectionGridArray: AssetGridArray<Collection> | undefined = $state();
+	let grid: ComponentProps<typeof AssetGrid<Collection>> = $derived({
+		assetDblClick: (_, asset) => {
+			openCollection(asset, currentPanelContent);
+		},
+		assetSnippet: collectionCard,
+		data: displayData,
+		assetGridArray: collectionGridArray,
+		scopeId,
+		assetGridDisplayProps: {
+			style: `padding: 0em ${isLayoutPage() ? "1em" : "2em"};`
+		},
+		onassetcontext: (detail) => {
+			ctxAnchor = detail.anchor;
+			ctxShowMenu = true;
+		}
+	});
+
+	const currentPanelContent = getContext<TabGroup>("content");
+
+	// Modal data for create/edit
+	let modalData: Collection | undefined = $state();
+	let modalMode: "create" | "edit" = $state("create");
 
 	async function handleDeleteSelected() {
 		const items = Array.from(selectionScope.selected ?? []);
@@ -305,7 +302,7 @@
 					modal.show = true;
 				}}
 			>
-				Create
+				<span>Create</span>
 			</IconButton>
 			<span id="coll-details-floating"
 				>{#if listOfCollectionsData}{listOfCollectionsData.length}{/if}
@@ -321,7 +318,7 @@
 	<IconButton
 		iconName="delete"
 		title="Delete Selected"
-		style="position: absolute; right: 1em; background-color: var(--imag-100);"
+		style="position: absolute; right: 1em;"
 		onclick={handleDeleteSelected}
 	/>
 {/snippet}
@@ -340,7 +337,6 @@
 
 		<Button
 			id="create_collection-button"
-			style="padding: 2em 8em; display: flex; align-items: center; justify-content: center;"
 			title="Create Collection"
 			aria-label="Create Collection"
 			onclick={() => {
@@ -349,7 +345,7 @@
 				modal.show = true;
 			}}
 		>
-			Create a New Collection
+			<span>Create a New Collection</span>
 			<MaterialIcon iconName="add" style="font-size: 2em;" />
 		</Button>
 	</div>

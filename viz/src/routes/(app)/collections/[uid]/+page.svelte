@@ -14,8 +14,7 @@
 </script>
 
 <script lang="ts">
-	import { goto, invalidateAll } from "$app/navigation";
-	import { page } from "$app/state";
+	import { goto } from "$app/navigation";
 	import PhotoAssetGrid from "$lib/components/PhotoAssetGrid.svelte";
 	import AssetsShell from "$lib/components/AssetsShell.svelte";
 	import VizViewContainer from "$lib/components/panels/VizViewContainer.svelte";
@@ -43,7 +42,8 @@
 	import ImageCard from "$lib/components/ImageCard.svelte";
 	import Button from "$lib/components/Button.svelte";
 	import MaterialIcon from "$lib/components/MaterialIcon.svelte";
-	import UploadManager from "$lib/upload/manager.svelte.js";
+	import UploadManager, {
+			} from "$lib/upload/manager.svelte.js";
 	import {
 		addCollectionImages,
 		updateCollection,
@@ -52,15 +52,14 @@
 		type CollectionUpdate,
 		type Image,
 		listCollectionImages,
-		updateImage
+		updateImage,
+		getImage
 	} from "$lib/api";
 	import { toastState } from "$lib/toast-notifcations/notif-state.svelte.js";
 	import CollectionModal from "$lib/components/modals/CollectionModal.svelte";
 	import InputText from "$lib/components/dom/InputText.svelte";
 	import Dropdown from "$lib/components/Dropdown.svelte";
 	import {
-		signDownload,
-		downloadImagesZipBlob,
 		createCollection
 	} from "$lib/api";
 	import ContextMenu from "$lib/context-menu/ContextMenu.svelte";
@@ -79,14 +78,8 @@
 	import { LabelColours, type ImageLabel } from "$lib/images/constants";
 	import { getImageLabel } from "$lib/utils/images";
 	import { invalidateViz } from "$lib/views/views.svelte";
-
-	// Context menu state
-	let ctxShowMenu = $state(false);
-	let ctxItems = $state([] as MenuItem[]);
-	let ctxAnchor: { x: number; y: number } | HTMLElement | null = $state(
-		null as any
-	);
-
+	import StarRating from "$lib/components/StarRating.svelte";
+	
 	let { data, view }: PageProps & { view?: VizView } = $props();
 
 	let showFilterModal = $state(false);
@@ -110,6 +103,7 @@
 	});
 
 	// Keyboard events
+	// TODO: decide if this needs to go
 	const permittedKeys: string[] = [];
 	const selectKeys = ["Enter", "Space", " "];
 	const moveKeys = ["ArrowRight", "ArrowLeft", "ArrowUp", "ArrowDown"];
@@ -128,6 +122,7 @@
 		localDataUpdates.private = data.private ?? false;
 	});
 
+	// Image pagination state
 	let collectionState = $derived(new ImagePaginationState(data.images));
 	let isPaginating = $state(false);
 
@@ -194,6 +189,33 @@
 	const selectionScope = $derived(selectionManager.getScope<Image>(scopeId));
 	let selectionFirstImage = $derived(Array.from(selectionScope.selected)[0]);
 
+	// Context menu state
+	let ctxShowMenu = $state(false);
+	let ctxItems = $derived(
+		createCollectionImageMenu(selectionFirstImage, data, {
+			downloadImages() {
+				performImageDownloads([selectionFirstImage]);
+			},
+			onImageUpdated(image) {
+				selectionScope.updateItem(image, collectionState.images);
+			}
+		})
+	);
+	let ctxAnchor: { x: number; y: number } | HTMLElement | null = $state(
+		null as any
+	);
+
+	let focusScrollElement = $derived.by(() => {
+		const activeUid = selectionScope.active?.uid;
+		if (activeUid) {
+			const el = document.querySelector(`[data-asset-id="${activeUid}"]`);
+			if (el instanceof HTMLElement) {
+				return el;
+			}
+		}
+		return null;
+	});
+
 	onDestroy(() => {
 		selectionManager.removeScope(scopeId);
 	});
@@ -235,21 +257,7 @@
 			}
 
 			console.log("asset", $state.snapshot(asset));
-			ctxItems = createCollectionImageMenu(asset, data, {
-				downloadImages() {
-					performImageDownloads([asset]);
-				},
-				onImageUpdated(image) {
-					const idx = collectionState.images.findIndex(
-						(i) => i.uid === image.uid
-					);
-					if (idx !== -1) {
-						collectionState.images[idx] = image;
-					}
-				}
-			});
-
-			ctxAnchor = anchor as any;
+			ctxAnchor = anchor;
 			ctxShowMenu = true;
 		}
 	});
@@ -261,23 +269,13 @@
 			...SUPPORTED_IMAGE_TYPES
 		] as SupportedImageTypes[]);
 
-		const files = await manager.openPicker();
+		const uploadedImages = await manager.openPickerAndUpload();
 
-		if (files.length === 0) {
+		if (uploadedImages.length === 0) {
 			return;
 		}
 
-		const uploadedTasks = manager.addFiles(files);
-		manager.start();
-
-		const uploadedSuccesses = await Promise.all(
-			uploadedTasks.map((task) => task.imageData)
-		);
-
-		const uids = uploadedSuccesses
-			.map((success) => success?.uid)
-			.filter((v) => v !== undefined);
-
+		const uids = uploadedImages.map((img) => img.uid);
 		const response = await addCollectionImages(data.uid, {
 			uids: uids
 		});
@@ -288,6 +286,27 @@
 				type: "success",
 				timeout: 3000
 			});
+
+			const fetchPromises = uids.map(async (uid) => {
+				try {
+					const res = await getImage(uid);
+					return res.status === 200 ? res.data : null;
+				} catch (e) {
+					console.error(
+						`Failed to fetch image ${uid} for optimistic update`,
+						e
+					);
+					return null;
+				}
+			});
+
+			const newImages = (await Promise.all(fetchPromises)).filter(
+				(i) => i !== null
+			) as Image[];
+
+			if (newImages.length > 0) {
+				collectionState.images.unshift(...newImages);
+			}
 
 			await invalidateViz({ delay: 200 });
 		}
@@ -382,7 +401,7 @@
 				selectionScope.clear();
 				await invalidateViz({ delay: 200 });
 			} else {
-				const errMsg = (res as any).data?.error ?? "Failed to remove images";
+				const errMsg = res.data.error ?? "Failed to remove images";
 				toastState.addToast({ type: "error", message: errMsg });
 			}
 		} catch (err) {
@@ -517,7 +536,25 @@
 	});
 
 	// Menu items for collection actions
-	let collectionMenuItems: MenuItem[] = $derived(ctxItems);
+	let collectionActions: MenuItem[] = [
+		{
+			id: "duplicate-collection",
+			label: "Duplicate Collection",
+			icon: "content_copy",
+			action: handleDuplicateCollection
+		},
+		{
+			id: "delete-collection",
+			label: "Delete Collection",
+			icon: "delete",
+			action: handleDeleteCollection
+		}
+	];
+
+	let collectionMenuItems: MenuItem[] = $derived([
+		...collectionActions,
+		...ctxItems
+	]);
 
 	// Display options as MenuItem[] for Dropdown
 	let displayMenuItems: MenuItem[] = $derived(
@@ -552,7 +589,13 @@
 	<FilterModal />
 {/if}
 
-<ImageLightbox bind:lightboxImage {prevLightboxImage} {nextLightboxImage} />
+<ImageLightbox
+	bind:lightboxImage
+	{prevLightboxImage}
+	{nextLightboxImage}
+	onImageUpdated={(image) =>
+		selectionScope.updateItem(image, collectionState.images)}
+/>
 
 {#snippet imageCard(asset: Image)}
 	<ImageCard {asset} />
@@ -660,8 +703,6 @@
 					labelName === "None" || !labelName ? null : labelName
 				) as ImageLabel | null;
 
-				console.log("labelToSend", labelToSend);
-
 				const updatePromises = Array.from(selectionScope.selected).map((img) =>
 					updateImage(img.uid, {
 						image_metadata: { label: labelToSend }
@@ -674,13 +715,32 @@
 				if (successCount > 0) {
 					res.forEach((r) => {
 						if (r.status === 200) {
-							const updatedImage = r.data;
-							const imageIndex = collectionState.images.findIndex(
-								(img) => img.uid === updatedImage.uid
-							);
-							if (imageIndex !== -1) {
-								collectionState.images[imageIndex] = updatedImage;
-							}
+							selectionScope.updateItem(r.data, collectionState.images);
+						}
+					});
+				}
+			}}
+		/>
+		<StarRating
+			value={selectionFirstImage?.image_metadata?.rating ?? 0}
+			onChange={async (rating) => {
+				if (!selectionFirstImage) {
+					return;
+				}
+
+				const updatePromises = Array.from(selectionScope.selected).map((img) =>
+					updateImage(img.uid, {
+						image_metadata: { rating }
+					})
+				);
+
+				const res = await Promise.all(updatePromises);
+
+				const successCount = res.filter((r) => r.status === 200).length;
+				if (successCount > 0) {
+					res.forEach((r) => {
+						if (r.status === 200) {
+							selectionScope.updateItem(r.data, collectionState.images);
 						}
 					});
 				}
@@ -700,8 +760,9 @@
 	bind:data={displayData}
 	hasMore={collectionState.hasMore}
 	name="{localDataUpdates.name} - Collection"
-	style="font-size: {page.url.pathname === '/' ? '0.9em' : 'inherit'};"
+	style="font-size: {isLayoutPage() ? '0.9em' : 'inherit'};"
 	{paginate}
+	{focusScrollElement}
 	onscroll={(e) => {
 		const info = document.getElementById("viz-info-container")!;
 		const bottom = info.scrollHeight;
@@ -725,7 +786,7 @@
 		}}
 	>
 		<div id="viz-info-container">
-			<div id="coll-metadata">
+			<div id="coll-metadata" class:std-route={!isLayoutPage()}>
 				<span id="coll-name">
 					<InputText
 						autocorrect="off"
@@ -801,14 +862,14 @@
 </VizViewContainer>
 
 <style lang="scss">
-	:global(#create-collection) {
-		margin: 0em 1rem;
-	}
-
 	#add_to_collection-container {
 		display: flex;
 		flex-direction: column;
 		justify-content: left;
+	}
+
+	:global(#create-collection) {
+		margin: 0em 1rem;
 	}
 
 	#viz-info-container {
@@ -847,6 +908,10 @@
 		color: var(--imag-60);
 		font-family: var(--imag-code-font);
 		gap: 1rem;
+
+		&.std-route {
+			padding: 0.5rem 2rem;
+		}
 	}
 
 	.selection-actions {

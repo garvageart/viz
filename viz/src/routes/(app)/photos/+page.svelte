@@ -49,8 +49,10 @@
 	} from "$lib/upload/manager.svelte";
 	import { performImageDownloads } from "$lib/utils/http.js";
 	import { getImageLabel } from "$lib/utils/images.js";
+	import StarRating from "$lib/components/StarRating.svelte";
 	import hotkeys from "hotkeys-js";
 	import { onDestroy, untrack } from "svelte";
+	import { goto } from "$app/navigation";
 
 	// Display options as MenuItem[] for Dropdown
 	const displayMenuItems: MenuItem[] = [
@@ -113,18 +115,20 @@
 	// Flat list of all images for cross-group range selection
 	let allImagesFlat = $derived(consolidatedGroups.flatMap((g) => g.allImages));
 
-	// Context menu state for right-click on assets
-	let ctxShowMenu = $state(false);
-	let ctxItems: MenuItem[] = $state([]);
-	let ctxAnchor: { x: number; y: number } | HTMLElement | null = $state(null);
-
 	// Modal state for collection selection
 	let showCollectionSelectionModal = $state(false);
 	let imageUidsForCollection = $state<string[]>([]);
 
 	// Action menu items for selected images
 	let actionMenuItems: MenuItem[] = $derived.by(() => {
-		const baseMenuItems = createImageMenu(galleryState.images, selectionScope);
+		const baseMenuItems = createImageMenu(galleryState.images, selectionScope, {
+			onDelete: (deletedUIDs) => {
+				galleryState.images = galleryState.images.filter(
+					(img) => !deletedUIDs.includes(img.uid)
+				);
+				galleryState.totalCount -= deletedUIDs.length;
+			}
+		});
 		const pageMenuItems: MenuItem[] = [
 			{
 				id: "act-add-to-collection",
@@ -142,6 +146,11 @@
 
 		return [...pageMenuItems, ...baseMenuItems];
 	});
+
+	// Context menu state for right-click on assets
+	let ctxShowMenu = $state(false);
+	let ctxItems: MenuItem[] = $derived(actionMenuItems);
+	let ctxAnchor: { x: number; y: number } | HTMLElement | null = $state(null);
 
 	async function paginate() {
 		if (isPaginating || !galleryState.hasMore) {
@@ -234,14 +243,22 @@
 			if (res.status === 200) {
 				const skippedCount =
 					imageUidsForCollection.length - newImageUids.length;
-				let message = `Added ${newImageUids.length} image(s) to collection **${collection.name}**.`;
+				let message = `Added ${newImageUids.length} image(s) to collection **${collection.name}**`;
 				if (skippedCount > 0) {
-					message += ` Skipped ${skippedCount} existing image(s).`;
+					message += ` .Skipped ${skippedCount} existing image(s).`;
 				}
 				toastState.addToast({
 					type: "success",
 					message: message,
-					timeout: 3000
+					timeout: 3000,
+					actions: [
+						{
+							label: "Open Collection",
+							onClick: () => {
+								goto(`/collections/${collection.uid}`);
+							}
+						}
+					]
 				});
 			} else {
 				toastState.addToast({
@@ -288,8 +305,10 @@
 				if (res.status === 200) {
 					return res.data;
 				}
-
-				throw new Error(res.data.error);
+				console.warn(
+					`Failed to fetch image metadata for ${uid}: ${res.data.error}`
+				);
+				return null;
 			} catch (err) {
 				console.warn("Failed to fetch image metadata for", uid, err);
 				return null;
@@ -364,7 +383,13 @@
 <DragAndDropUpload {scopeId} {selectionScope} showCollectionCreateBox={true} />
 
 {#if lightboxImage}
-	<ImageLightbox bind:lightboxImage {prevLightboxImage} {nextLightboxImage} />
+	<ImageLightbox
+		bind:lightboxImage
+		{prevLightboxImage}
+		{nextLightboxImage}
+		onImageUpdated={(image) =>
+			selectionScope.updateItem(image, galleryState.images)}
+	/>
 {/if}
 
 {#if showFilterModal && modal.show}
@@ -497,18 +522,13 @@
 							if (successCount > 0) {
 								res.forEach((r) => {
 									if (r.status === 200) {
-										const updatedImage = r.data;
-										const imageIndex = galleryState.images.findIndex(
-											(img) => img.uid === updatedImage.uid
-										);
-										if (imageIndex !== -1) {
-											galleryState.images[imageIndex] = updatedImage;
-										}
+										selectionScope.updateItem(r.data, galleryState.images);
 									}
 								});
 							}
 						}}
 					/>
+					<!-- <StarRating -->
 				</div>
 				<div
 					style="margin-left: auto; display: flex; gap: 0.5rem; align-items: center;"
@@ -569,31 +589,8 @@
 						assetDblClick={(_e, asset) => {
 							openLightbox(asset);
 						}}
-						onassetcontext={(detail: {
-							asset: Image;
-							anchor: { x: number; y: number } | HTMLElement;
-						}) => {
-							const { asset, anchor } = detail;
-							if (
-								!selectionScope.has(asset) ||
-								selectionScope.selected.size <= 1
-							) {
-								selectionScope.clear();
-								selectionScope.add(asset);
-							}
-
-							ctxItems = actionMenuItems.map((it: MenuItem) => ({
-								...it,
-								action: (e?: MouseEvent | KeyboardEvent) => {
-									if (it.label === "Download") {
-										const selected = Array.from(selectionScope.selected);
-										performImageDownloads(selected);
-									} else {
-										it.action?.(e as any);
-									}
-								}
-							}));
-							ctxAnchor = anchor;
+						onassetcontext={(detail) => {
+							ctxAnchor = detail.anchor;
 							ctxShowMenu = true;
 						}}
 					/>
@@ -618,10 +615,6 @@
 		padding: 2rem 2rem;
 		box-sizing: border-box;
 		width: 100%;
-	}
-
-	:global(.selection-toolbar) {
-		gap: 2rem;
 	}
 
 	.selection-info {
