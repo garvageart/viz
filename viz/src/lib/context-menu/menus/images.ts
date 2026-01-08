@@ -13,7 +13,11 @@ interface CollectionImageMenuOptions {
     onCollectionUpdated?: (collection: Collection) => void;
 }
 
-export function createCollectionImageMenu(asset: Image, collection: CollectionDetailResponse, opts?: CollectionImageMenuOptions) {
+export function createCollectionImageMenu(asset: Image | undefined, collection: CollectionDetailResponse, opts?: CollectionImageMenuOptions) {
+    if (!asset) {
+        return [];
+    }
+
     let ctxItems: MenuItem[] = [
         {
             id: `download-${asset.uid}`,
@@ -169,8 +173,17 @@ export function createCollectionImageMenu(asset: Image, collection: CollectionDe
     return ctxItems;
 }
 
-export function createImageMenu(images: Image[], selectionScope: SelectionScope<Image>) {
+interface ImageMenuOptions {
+    onDelete?: (deletedUIDs: string[]) => void;
+}
+
+export function createImageMenu(images: Image[], selectionScope: SelectionScope<Image>, opts?: ImageMenuOptions) {
     let items = Array.from(selectionScope.selected);
+
+    if (items.length === 0) {
+        return [];
+    }
+
     let firstItem = items[0];
     let actionMenuItems: MenuItem[] = [
         {
@@ -283,10 +296,11 @@ export function createImageMenu(images: Image[], selectionScope: SelectionScope<
 
                     if (res.status === 200 || res.status === 207) {
                         const deletedUIDs = (res.data.results ?? [])
-                            .filter((r) => r.deleted)
-                            .map((r) => r.uid);
-                        images = images.filter((img) => !deletedUIDs.includes(img.uid));
+                            .filter((r) => r.deleted && r.uid)
+                            .map((r) => r.uid) as string[];
+                        opts?.onDelete?.(deletedUIDs);
                         selectionScope.clear();
+                        await invalidateViz({ delay: 200 });
                     } else {
                         toastState.addToast({
                             type: "error",
@@ -324,10 +338,11 @@ export function createImageMenu(images: Image[], selectionScope: SelectionScope<
 
                     if (res.status === 200 || res.status === 207) {
                         const deletedUIDs = (res.data.results ?? [])
-                            .filter((r) => r.deleted)
-                            .map((r) => r.uid);
-                        images = images.filter((img) => !deletedUIDs.includes(img.uid));
+                            .filter((r) => r.deleted && r.uid)
+                            .map((r) => r.uid) as string[];
+                        opts?.onDelete?.(deletedUIDs);
                         selectionScope.clear();
+                        await invalidateViz({ delay: 200 });
                     } else {
                         toastState.addToast({
                             type: "error",

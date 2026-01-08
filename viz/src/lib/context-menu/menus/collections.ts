@@ -12,7 +12,11 @@ interface CollectionMenuOptions {
     editCollection?: (collection: Collection) => void;
 }
 
-export function createCollectionMenu(collection: Collection, opts: CollectionMenuOptions) {
+export function createCollectionMenu(collection: Collection | undefined, opts: CollectionMenuOptions) {
+    if (!collection) {
+        return [];
+    }
+
     const items: MenuItem[] = [
         {
             id: `open-${collection.uid}`,
