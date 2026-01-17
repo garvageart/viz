@@ -131,9 +131,24 @@ export class SelectionManager {
 
     get activeScope() {
         if (!this.activeScopeId) {
-            return null;
+            return this.global;
         }
-        return this.scopes.get(this.activeScopeId) ?? null;
+        return this.scopes.get(this.activeScopeId) ?? this.global;
+    }
+
+    /**
+     * The primary item focused in the active scope. 
+     * This is what the Inspector panel should primarily display.
+     */
+    get focusedItem() {
+        return this.activeScope.active;
+    }
+
+    /**
+     * All items selected in the active scope.
+     */
+    get selectedItems() {
+        return Array.from(this.activeScope.selected);
     }
 
     setActive(scopeId: string) {

@@ -26,11 +26,17 @@ export class TabOps {
 			e.dataTransfer.effectAllowed = "move";
 		};
 
+		const onDragEnd = () => {
+			DragData.clear();
+		};
+
 		node.addEventListener("dragstart", onDragStart);
+		node.addEventListener("dragend", onDragEnd);
 
 		return {
 			destroy() {
 				node.removeEventListener("dragstart", onDragStart);
+				node.removeEventListener("dragend", onDragEnd);
 			}
 		};
 	}
