@@ -56,7 +56,8 @@ function sanitizeNameForFile (name) {
 async function fetchSvgForName (name, preferredWeight) {
     const s = sanitizeNameForFile(name);
     const variants = [s, `ic_${s}`, s.replace(/^ic_/, '')];
-    const defaultWeights = [100, 200, 300, 400, 500, 600, 700];
+    // Prioritize 400 (standard) first, then go to nearby weights.
+    const defaultWeights = [400, 300, 200, 100, 500, 600, 700];
     const styles = ['outlined', 'rounded', 'sharp'];
 
     // Build search order: preferredWeight first (if provided), then defaults
@@ -75,7 +76,53 @@ async function fetchSvgForName (name, preferredWeight) {
         }
     }
 
-    // Prefer local @material-symbols/svg-{weight} packages when available.
+    // 1. Try official Google Symbols repo first (direct access, high quality)
+    // The main branch has symbols organized by name and style.
+    // Note: The official repo often only has 400 weight as standard SVG export in these folders.
+    for (const style of styles) {
+        for (const v of variants) {
+            const nm = v.replace(/^ic_/, '');
+            const url = `https://raw.githubusercontent.com/google/material-design-icons/master/symbols/web/${nm}/materialsymbols${style}/${nm}_24px.svg`;
+
+            // Only use this generic URL if we are looking for 400 weight (or it's our preferredWeight)
+            // to avoid getting 400 when we specifically wanted 300/600 etc.
+            if (!preferredWeight || preferredWeight === '400') {
+                try {
+                    const res = await fetch(url);
+                    if (res && res.ok) {
+                        const text = await res.text();
+                        console.log('Fetched from Google Symbols (400):', url);
+                        return text;
+                    }
+                } catch (e) {
+                    // continue
+                }
+            }
+        }
+    }
+
+    // 2. Remote fallback: marella/material-symbols (EXCELLENT for multiple weights)
+    // This repo specifically exports all weight variants as SVGs.
+    for (const weight of weights) {
+        for (const style of styles) {
+            for (const v of variants) {
+                const nm = v.replace(/^ic_/, '');
+                const url = `https://raw.githubusercontent.com/marella/material-symbols/main/svg/${weight}/${style}/${nm}.svg`;
+                try {
+                    const res = await fetch(url);
+                    if (res && res.ok) {
+                        const text = await res.text();
+                        console.log('Fetched from Marella repo:', url);
+                        return text;
+                    }
+                } catch (e) {
+                    // ignore
+                }
+            }
+        }
+    }
+
+    // 3. Local fallback: @material-symbols/svg-{weight} packages when available.
     for (const weight of weights) {
         const pkgName = `@material-symbols/svg-${weight}`;
         const localPkg = resolve(ROOT, 'node_modules', pkgName);
@@ -105,33 +152,7 @@ async function fetchSvgForName (name, preferredWeight) {
         }
     }
 
-    // Remote fallback: try marella/material-symbols svg layout first
-    const materialSymbols = 'https://raw.githubusercontent.com/marella/material-symbols/main/svg';
-    for (const weight of weights) {
-        for (const style of styles) {
-            for (const v of variants) {
-                const nm = v.replace(/^ic_/, '');
-                const patterns = [
-                    `${materialSymbols}/${weight}/${style}/${nm}.svg`,
-                    `${materialSymbols}/${weight}/${style}/${nm}-fill.svg`
-                ];
-                for (const url of patterns) {
-                    try {
-                        const res = await fetch(url);
-                        if (res && res.ok) {
-                            const text = await res.text();
-                            console.log('Fetched', url);
-                            return text;
-                        }
-                    } catch (e) {
-                        // ignore
-                    }
-                }
-            }
-        }
-    }
-
-    // Final fallback: older google/material-design-icons repo
+    // 4. Final fallback: older google/material-design-icons repo
     const googleBase = 'https://raw.githubusercontent.com/google/material-design-icons/master';
     for (const cat of CATEGORIES) {
         for (const v of variants) {
@@ -141,7 +162,7 @@ async function fetchSvgForName (name, preferredWeight) {
                 const res = await fetch(url);
                 if (res && res.ok) {
                     const text = await res.text();
-                    console.log('Fetched', url);
+                    console.log('Fetched from old Google repo:', url);
                     return text;
                 }
             } catch (e) {
@@ -154,38 +175,60 @@ async function fetchSvgForName (name, preferredWeight) {
 }
 
 /**
- * @param {string} componentName
- * @param {string} svgContent
+ * Fetches the official list of Material Symbols codepoints.
+ * @returns {Promise<Set<string>>}
  */
-function svelteTemplate (componentName, svgContent) {
-    // remove width/height from root svg and ensure viewBox exists
-    // strip xml prolog and size attrs, then extract inner svg content so we
-    // can re-create the root <svg> with a single set of attributes (avoid
-    // duplicate xmlns/viewBox attributes).
-    const cleaned = svgContent
-        .replace(/<\?xml[\s\S]*?\?>/g, '')
-        .replace(/\swidth="[^"]+"/g, '')
-        .replace(/\sheight="[^"]+"/g, '')
-        .replace(/\sxmlns(:\w+)?="[^"]+"/g, '')
-        .replace(/\sviewBox="[^"]+"/g, '')
-        .trim();
+async function fetchCodepoints () {
+    const url = 'https://raw.githubusercontent.com/google/material-design-icons/master/variablefont/MaterialSymbolsOutlined%5BFILL%2CGRAD%2Copsz%2Cwght%5D.codepoints';
+    console.log('Fetching codepoints from:', url);
+    try {
+        const res = await fetch(url);
+        if (!res.ok) {
+            throw new Error(`Failed to fetch codepoints: ${res.statusText}`);
+        }
 
-    const innerMatch = cleaned.match(/<svg[^>]*>([\s\S]*?)<\/svg>/i);
-    let inner = innerMatch ? innerMatch[1].trim() : cleaned;
-    // ensure self-closing tags have a space before '/>' for consistent formatting
-    inner = inner.replace(/\/\>/g, ' \/>');
+        const text = await res.text();
+        const iconNames = new Set();
+        text.split('\n').forEach(line => {
+            const trimmed = line.trim();
+            if (trimmed) {
+                const [name] = trimmed.split(' ');
+                if (name) iconNames.add(name);
+            }
+        });
 
-    // Prepare the inner SVG content with consistent indentation
-    /**
-     * Indent each line of `str` by `n` spaces.
-     * @param {string} str
-     * @param {number} [n=2]
-     * @returns {string}
-     */
-    const indent = (str, n = 2) => String(str).split('\n').map((l) => (l ? ''.repeat(n) + l : l)).join('\n');
-    const innerIndented = indent(inner, 2);
+        console.log(`Fetched ${iconNames.size} valid Material Symbols.`);
+        return iconNames;
+    } catch (e) {
+        console.warn('Failed to fetch codepoints, skipping type generation update.', e);
+        return new Set();
+    }
+}
 
-    return `<script lang="ts">\n    let { size = "1.5em", className = "", title = "${componentName}", viewBox = "0 0 24 24" } = $props();\n</script>\n\n<svg\n    class={className}\n    width={size}\n    height={size}\n    {viewBox}\n    xmlns="http://www.w3.org/2000/svg"\n    aria-label={title}\n    focusable="false"\n>\n${innerIndented ? innerIndented + '\n' : ''}</svg>\n\n<style>\n    svg {\n        display: inline-block;\n        vertical-align: middle;\n    }\n</style>\n`;
+/**
+ * Generates the TypeScript definition for Material Symbols.
+ * @param {Set<string>} iconNames 
+ */
+function generateTypeDefinition (iconNames) {
+    if (iconNames.size === 0) return;
+
+    const typeDefPath = join(SRC, 'lib/types/MaterialSymbol.ts');
+    const sortedNames = Array.from(iconNames).sort();
+
+    // Create a union type of all string literals
+    const typeContent = `// Auto-generated by tools/icon-gen/generate-icons.js
+// Do not edit manually.
+
+export type MaterialSymbol = 
+${sortedNames.map(n => `    | "${n}"`).join('\n')};
+`;
+
+    if (!existsSync(dirname(typeDefPath))) {
+        mkdirSync(dirname(typeDefPath), { recursive: true });
+    }
+
+    writeFileSync(typeDefPath, typeContent, 'utf8');
+    console.log('Wrote type definitions to', typeDefPath);
 }
 
 /**
@@ -194,6 +237,10 @@ function svelteTemplate (componentName, svgContent) {
  * @returns {Promise<void>}
  */
 async function main () {
+    // 1. Fetch codepoints and update types
+    const validIcons = await fetchCodepoints();
+    generateTypeDefinition(validIcons);
+
     // gather candidate icon names from source - look for iconName="..." or iconName={'...'}
     // Use forward-slash patterns so glob works reliably on Windows.
     const pattern = `${SRC.replace(/\\/g, '/')}/**/*.{svelte,ts,js}`;
@@ -270,70 +317,67 @@ async function main () {
         const compName = 'Icon' + pascalCase(name);
         const outFile = join(OUT_DIR, `${compName}.svelte`);
 
-        let skip = false;
-        if (existsSync(outFile)) {
-            try {
-                const content = readFileSync(outFile, 'utf8');
-                // Regex to find keys in the variants object, e.g. "400":
-                // We look for quoted digits followed by a colon.
-                const existingWeights = new Set();
-                const reKeys = /"([0-9]{3})"\s*:/g;
-                let m;
-                while ((m = reKeys.exec(content)) !== null) {
-                    existingWeights.add(m[1]);
-                }
+        // We ALWAYS want weight 400 as a base fallback if available.
+        const requiredWeights = new Set(['400', ...Array.from(weightSet)]);
 
-                // Check if we have all required weights
-                const required = Array.from(weightSet);
-                const missing = required.filter(w => !existingWeights.has(w));
-
-                if (missing.length === 0) {
-                    // We still need to add to 'generated' so index.ts includes it.
-                    console.log(`Skipping ${name} (up to date)`);
-                    generated.push({ name, compName });
-                    skip = true;
-                }
-            } catch (e) {
-                // If read fails maybe just regenerate???
-            }
-        }
-
-        if (skip) {
-            continue;
-        }
-
-        console.log('Processing', name, 'weights', Array.from(weightSet).join(','));
+        console.log('Processing', name, 'weights', Array.from(requiredWeights).join(','));
         /** @type {Record<string,string>} */
         const variants = {};
+        /** @type {Record<string,string>} */
+        const filledVariants = {};
         let finalViewBox = '0 0 24 24';
 
-        for (const weight of Array.from(weightSet)) {
+        for (const weight of Array.from(requiredWeights)) {
+            // 1. Try normal version
             const rawSvg = await fetchSvgForName(name, weight);
-            if (!rawSvg) {
-                console.warn('No SVG found for', name, 'weight', weight);
-                continue;
+            if (rawSvg) {
+                const optimized = optimize(rawSvg, { multipass: true }).data;
+                const vbMatch = optimized.match(/viewBox="([^\"]+)"/i);
+                if (vbMatch) finalViewBox = vbMatch[1];
+
+                const cleaned = optimized
+                    .replace(/<\?xml[\s\S]*?\?>/g, '')
+                    .replace(/\swidth="[^"]+"/g, '')
+                    .replace(/\sheight="[^"]+"/g, '')
+                    .replace(/\sxmlns(:\w+)?="[^"]+"/g, '')
+                    .replace(/\sviewBox="[^"]+"/g, '')
+                    .trim();
+                const innerMatch = cleaned.match(/<svg[^>]*>([\s\S]*?)<\/svg>/i);
+                const inner = innerMatch ? innerMatch[1].trim() : cleaned;
+                variants[String(weight)] = inner.replace(/\/>/g, ' \/>');
             }
 
-            const optimized = optimize(rawSvg, { multipass: true }).data;
+            // 2. Try filled version (currently only supported via Marella repo fallback)
+            const s = sanitizeNameForFile(name);
+            const nm = s.replace(/^ic_/, '');
+            const styles = ['outlined', 'rounded', 'sharp'];
 
-            // extract viewBox if present (prefer the first one found)
-            const vbMatch = optimized.match(/viewBox="([^\"]+)"/i);
-            if (vbMatch) {
-                finalViewBox = vbMatch[1];
+            let filledSvg = null;
+            for (const style of styles) {
+                const url = `https://raw.githubusercontent.com/marella/material-symbols/main/svg/${weight}/${style}/${nm}-fill.svg`;
+                try {
+                    const res = await fetch(url);
+                    if (res && res.ok) {
+                        filledSvg = await res.text();
+                        console.log('Fetched filled variant:', url);
+                        break;
+                    }
+                } catch (e) { }
             }
 
-            // remove outer svg wrapper and any width/height/xmlns/viewBox attrs
-            const cleaned = optimized
-                .replace(/<\?xml[\s\S]*?\?>/g, '')
-                .replace(/\swidth="[^"]+"/g, '')
-                .replace(/\sheight="[^"]+"/g, '')
-                .replace(/\sxmlns(:\w+)?="[^"]+"/g, '')
-                .replace(/\sviewBox="[^"]+"/g, '')
-                .trim();
-            const innerMatch = cleaned.match(/<svg[^>]*>([\s\S]*?)<\/svg>/i);
-            const inner = innerMatch ? innerMatch[1].trim() : cleaned;
-
-            variants[String(weight)] = inner.replace(/\/>/g, ' \/>');
+            if (filledSvg) {
+                const optimized = optimize(filledSvg, { multipass: true }).data;
+                const cleaned = optimized
+                    .replace(/<\?xml[\s\S]*?\?>/g, '')
+                    .replace(/\swidth="[^"]+"/g, '')
+                    .replace(/\sheight="[^"]+"/g, '')
+                    .replace(/\sxmlns(:\w+)?="[^"]+"/g, '')
+                    .replace(/\sviewBox="[^"]+"/g, '')
+                    .trim();
+                const innerMatch = cleaned.match(/<svg[^>]*>([\s\S]*?)<\/svg>/i);
+                const inner = innerMatch ? innerMatch[1].trim() : cleaned;
+                filledVariants[String(weight)] = inner.replace(/\/>/g, ' \/>');
+            }
         }
 
         if (Object.keys(variants).length === 0) {
@@ -341,14 +385,17 @@ async function main () {
             continue;
         }
 
-        // Prepare the variants object as JSON so it becomes a JS object literal in the output file.
         const variantsJson = JSON.stringify(variants, null, 4);
+        const filledJson = JSON.stringify(filledVariants, null, 4);
 
         const svelte = `
 <script lang="ts">
     const variants: Record<string, string> = ${variantsJson};
-    let { size = "1.5em", className = "", title = "${compName}", viewBox = "0 0 24 24", weight = "400" } = $props();
-    const inner = $derived(variants[String(weight)] || variants["400"] || Object.values(variants)[0]);
+    const filledVariants: Record<string, string> = ${filledJson};
+    let { size = "1.5em", className = "", title = "${compName}", viewBox = "0 0 24 24", weight = "400", fill = false, ...rest } = $props();
+    
+    const activeMap = $derived(fill ? filledVariants : variants);
+    const inner = $derived(activeMap[String(weight)] || activeMap["400"] || Object.values(activeMap)[0]);
 </script>
 
 <svg
@@ -356,9 +403,11 @@ async function main () {
     width={size}
     height={size}
     viewBox="${finalViewBox}"
+    fill="currentColor"
     xmlns="http://www.w3.org/2000/svg"
     aria-label={title}
     focusable="false"
+    {...rest}
 >
     {@html inner}
 </svg>

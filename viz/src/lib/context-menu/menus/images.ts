@@ -1,7 +1,7 @@
 import { deleteCollectionImages, deleteImagesBulk, getFullImagePath, updateCollection, updateImage, type Collection, type CollectionDetailResponse, type Image } from "$lib/api";
 import { toastState } from "$lib/toast-notifcations/notif-state.svelte";
 import { copyToClipboard } from "$lib/utils/misc";
-import type { MaterialSymbol } from "material-symbols";
+import type { MaterialSymbol } from "$lib/types/MaterialSymbol";
 import type { MenuItem } from "../types";
 import { performImageDownloads } from "$lib/utils/http";
 import type { SelectionScope } from "$lib/states/selection.svelte";

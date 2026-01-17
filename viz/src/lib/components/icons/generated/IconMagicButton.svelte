@@ -1,11 +1,9 @@
 <script lang="ts">
     const variants: Record<string, string> = {
-    "400": "<path d=\"M200-120q-33 0-56.5-23.5T120-200v-560q0-33 23.5-56.5T200-840h280v80H200v560h280v80zm440-160-55-58 102-102H360v-80h327L585-622l55-58 200 200z\" />"
+    "400": "<path d=\"m10 19-2.5-5.5L2 11l5.5-2.5L10 3l2.5 5.5L18 11l-5.5 2.5Zm8 2-1.25-2.75L14 17l2.75-1.25L18 13l1.25 2.75L22 17l-2.75 1.25Z\" />"
 };
-    const filledVariants: Record<string, string> = {
-    "400": "<path d=\"M180-120q-24 0-42-18t-18-42v-600q0-24 18-42t42-18h299v60H180v600h299v60zm486-185-43-43 102-102H360v-60h363L621-612l43-43 176 176z\" />"
-};
-    let { size = "1.5em", className = "", title = "IconLogout", viewBox = "0 0 24 24", weight = "400", fill = false, ...rest } = $props();
+    const filledVariants: Record<string, string> = {};
+    let { size = "1.5em", className = "", title = "IconMagicButton", viewBox = "0 0 24 24", weight = "400", fill = false, ...rest } = $props();
     
     const activeMap = $derived(fill ? filledVariants : variants);
     const inner = $derived(activeMap[String(weight)] || activeMap["400"] || Object.values(activeMap)[0]);
@@ -15,7 +13,7 @@
     class={className}
     width={size}
     height={size}
-    viewBox="0 -960 960 960"
+    viewBox="0 0 24 24"
     fill="currentColor"
     xmlns="http://www.w3.org/2000/svg"
     aria-label={title}
