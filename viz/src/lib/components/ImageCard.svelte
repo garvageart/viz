@@ -43,7 +43,10 @@
 	});
 
 	function handleDragStart(e: DragEvent) {
-		if (variant === "mini") return;
+		if (variant === "mini") {
+			return;
+		}
+
 		if (!e.dataTransfer) {
 			return;
 		}
@@ -114,6 +117,9 @@
 		tabindex="0"
 		data-asset-id={asset.uid}
 		ondragstart={handleDragStart}
+		ondragend={() => {
+			DragData.clear();
+		}}
 	>
 		<div class="image-container">
 			{#if placeholderDataURL && !imageLoaded}

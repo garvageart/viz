@@ -31,7 +31,7 @@
 	} from "tippy.js";
 	import PhotoTooltip from "$lib/components/tooltips/PhotoTooltip.svelte";
 	import "tippy.js/dist/tippy.css";
-	import hotkeys from "hotkeys-js";
+	import hotkeys, { type HotkeysEvent, type KeyHandler } from "hotkeys-js";
 	import type { ImageWithDateLabel } from "$lib/photo-layout";
 	import { isLayoutPage } from "$lib/states/index.svelte";
 	import { filterManager } from "$lib/states/filter.svelte";
@@ -99,7 +99,7 @@
 		selectionManager.setActive(scopeId);
 	}
 
-	hotkeys("ctrl+a", (e) => {
+	function handleSelectAll(e: KeyboardEvent) {
 		if (selectionManager.activeScopeId !== scopeId) {
 			return;
 		}
@@ -111,9 +111,9 @@
 		// Select filtered data, not hidden data
 		const selectionData = filteredData;
 		selection.selectMultiple(selectionData);
-	});
+	}
 
-	hotkeys("escape", (e) => {
+	function handleEscape(e: KeyboardEvent) {
 		if (selectionManager.activeScopeId !== scopeId) {
 			return;
 		}
@@ -125,6 +125,145 @@
 		}
 
 		selection.clear();
+	}
+
+	function getAssetPosition(assetId: string) {
+		for (let r = 0; r < justifiedRows.length; r++) {
+			const row = justifiedRows[r];
+			let currentX = 0;
+			for (let i = 0; i < row.items.length; i++) {
+				const item = row.items[i];
+				if (item.asset.uid === assetId) {
+					return {
+						rowIndex: r,
+						centerX: currentX + item.width / 2
+					};
+				}
+				currentX += item.width + gridGap;
+			}
+		}
+		return null;
+	}
+
+	function handleKeyNav(e: KeyboardEvent, handler: HotkeysEvent) {
+		if (selectionManager.activeScopeId !== scopeId) {
+			return;
+		}
+		if (view !== "grid") {
+			return;
+		}
+
+		e.preventDefault();
+
+		if (!filteredData.length) {
+			return;
+		}
+
+		if (!selection.active) {
+			// If allData is provided, only the grid containing the very first global image should set the initial selection
+			if (allData && allData.length > 0) {
+				if (filteredData[0].uid === allData[0].uid) {
+					selection.select(filteredData[0]);
+				}
+			} else {
+				// Standalone grid: just select the first item
+				selection.select(filteredData[0]);
+			}
+			return;
+		}
+
+		const activeId = selection.active.uid;
+		const currentIndex = filteredData.findIndex((a) => a.uid === activeId);
+
+		// If the active item is not in this grid, do nothing (let the owning grid handle it)
+		if (currentIndex === -1) {
+			return;
+		}
+
+		if (handler.key === "left" || handler.key === "right") {
+			if (handler.key === "left") {
+				if (currentIndex > 0) {
+					selection.select(filteredData[currentIndex - 1]);
+				} else if (allData) {
+					// Boundary: Try to go to previous global item
+					const globalIndex = allData.findIndex((a) => a.uid === activeId);
+					if (globalIndex > 0) {
+						selection.select(allData[globalIndex - 1]);
+					}
+				}
+			} else {
+				if (currentIndex < filteredData.length - 1) {
+					selection.select(filteredData[currentIndex + 1]);
+				} else if (allData) {
+					// Boundary: Try to go to next global item
+					const globalIndex = allData.findIndex((a) => a.uid === activeId);
+					if (globalIndex > -1 && globalIndex < allData.length - 1) {
+						selection.select(allData[globalIndex + 1]);
+					}
+				}
+			}
+		} else {
+			const pos = getAssetPosition(activeId);
+			if (!pos) return;
+
+			const targetRowIndex = pos.rowIndex + (handler.key === "up" ? -1 : 1);
+
+			// Vertical Boundary Checks
+			if (targetRowIndex < 0) {
+				// Moved UP past top
+				if (allData) {
+					const globalIndex = allData.findIndex((a) => a.uid === activeId);
+					// Fallback: Select previous global item (effectively wrapping to end of previous group)
+					if (globalIndex > 0) {
+						selection.select(allData[globalIndex - 1]);
+					}
+				}
+				return;
+			}
+
+			if (targetRowIndex >= justifiedRows.length) {
+				// Moved DOWN past bottom
+				if (allData) {
+					const globalIndex = allData.findIndex((a) => a.uid === activeId);
+					// Fallback: Select next global item (effectively wrapping to start of next group)
+					if (globalIndex > -1 && globalIndex < allData.length - 1) {
+						selection.select(allData[globalIndex + 1]);
+					}
+				}
+				return;
+			}
+
+			// Local column navigation
+			const targetRow = justifiedRows[targetRowIndex];
+			let closestItem = targetRow.items[0];
+			let minDiff = Number.MAX_VALUE;
+			let currentX = 0;
+
+			for (const item of targetRow.items) {
+				const itemCenterX = currentX + item.width / 2;
+				const diff = Math.abs(itemCenterX - pos.centerX);
+
+				if (diff < minDiff) {
+					minDiff = diff;
+					closestItem = item;
+				}
+				currentX += item.width + gridGap;
+			}
+
+			selection.select(closestItem.asset);
+		}
+	}
+
+	$effect(() => {
+		hotkeys("ctrl+a", handleSelectAll);
+		hotkeys("escape", handleEscape);
+		hotkeys("left,right,up,down", handleKeyNav);
+
+		return () => {
+			hotkeys.unbind("ctrl+a", handleSelectAll);
+			hotkeys.unbind("escape", handleEscape);
+			hotkeys.unbind("left,right,up,down", handleKeyNav);
+		};
 	});
 
 	// Styling stuff
@@ -456,19 +595,49 @@
 			return;
 		}
 
+		// Find the scroll container
+		let scroller: HTMLElement | Window = window;
+		let parent = photoGridEl.parentElement;
+		while (parent) {
+			const style = window.getComputedStyle(parent);
+			if (
+				style.overflowY === "auto" ||
+				style.overflowY === "scroll" ||
+				style.overflow === "auto" ||
+				style.overflow === "scroll"
+			) {
+				scroller = parent;
+				break;
+			}
+			parent = parent.parentElement;
+		}
+
 		for (const row of justifiedRows) {
 			if (row.items.some((i) => i.asset.uid === asset.uid)) {
-				const rowTop = row.top;
-				const rowBottom = row.top + row.height;
-				const gridTop = photoGridEl.scrollTop;
-				const gridBottom = gridTop + photoGridEl.clientHeight;
+				const gridRect = photoGridEl.getBoundingClientRect();
+				const rowRectTop = gridRect.top + row.top;
+				const rowRectBottom = rowRectTop + row.height;
 
-				if (rowTop < gridTop) {
-					photoGridEl.scrollTo({ top: rowTop, behavior: "instant" });
-				} else if (rowBottom > gridBottom) {
-					photoGridEl.scrollTo({
-						top: rowBottom - photoGridEl.clientHeight,
-						behavior: "instant",
+				let viewTop = 0;
+				let viewBottom = window.innerHeight;
+
+				if (scroller instanceof HTMLElement) {
+					const rect = scroller.getBoundingClientRect();
+					viewTop = rect.top;
+					viewBottom = rect.bottom;
+				}
+
+				const scrollPadding = 150;
+
+				if (rowRectTop < viewTop + scrollPadding) {
+					scroller.scrollBy({
+						top: rowRectTop - viewTop - scrollPadding,
+						behavior: "instant"
+					});
+				} else if (rowRectBottom > viewBottom - scrollPadding) {
+					scroller.scrollBy({
+						top: rowRectBottom - viewBottom + scrollPadding,
+						behavior: "instant"
 					});
 				}
 				break;
@@ -592,7 +761,8 @@
 		onFocus(); // Ensure this grid is active on click
 
 		if (e.shiftKey) {
-			const selectionData = filteredData;
+			const selectionData =
+				allData && allData.length > 0 ? allData : filteredData;
 			const ids = selectionData.map((i: Image) => i.uid);
 			const endIndex = ids.indexOf(asset.uid);
 			const startIndex = selection.active
@@ -620,12 +790,41 @@
 		}
 	}
 
+	function handleContainerClick(e: MouseEvent) {
+		onFocus();
+		const target = e.target as HTMLElement;
+
+		// If we clicked on an asset photo or inside one, don't clear selection here
+		if (target.closest(".asset-photo")) {
+			return;
+		}
+
+		// Scrollbar check
+		const element = e.currentTarget as HTMLElement;
+		if (target === element) {
+			const rect = element.getBoundingClientRect();
+			// check if click is on vertical scrollbar (right side)
+			if (
+				e.clientX >=
+				rect.right - (element.offsetWidth - element.clientWidth)
+			) {
+				return;
+			}
+			// check if click is on horizontal scrollbar (bottom)
+			if (
+				e.clientY >=
+				rect.bottom - (element.offsetHeight - element.clientHeight)
+			) {
+				return;
+			}
+		}
+
+		selection.clear();
+	}
+
 	function unselectImagesOnClickOutsideAssetContainer(element: HTMLElement) {
 		const clickHandler = (e: MouseEvent) => {
-			// disabled on the workspace page due to needing to click around a lot in different panels while having stuff selected
-			// However, we can and probably should check that if we are on the layout page,
-			// the click is still within in the same component/page/grid. Because if it is, then should disable the deselect
-			if (disableOutsideUnselect || isLayoutPage()) {
+			if (disableOutsideUnselect) {
 				return;
 			}
 			const target = e.target as HTMLElement;
@@ -643,36 +842,18 @@
 				document.querySelectorAll(".viz-photo-grid-container")
 			) as HTMLElement[];
 			const insideAnyGrid = allGrids.some((g) => g.contains(target));
-			const isAsset = target.closest(".asset-photo");
 
 			if (insideAnyGrid) {
-				// If we clicked on an asset, definitely don't clear
-				if (isAsset) {
-					return;
-				}
+				return;
+			}
 
-				// If we clicked on the scrollbar of the current grid, don't clear
-				// We can detect this if the target is the grid element itself, and the click is outside client bounds
-				if (target === element) {
-					const rect = element.getBoundingClientRect();
-					// check if click is on vertical scrollbar (right side)
-					if (
-						e.clientX >=
-						rect.right - (element.offsetWidth - element.clientWidth)
-					) {
-						return;
-					}
-					// check if click is on horizontal scrollbar (bottom)
-					if (
-						e.clientY >=
-						rect.bottom - (element.offsetHeight - element.clientHeight)
-					) {
-						return;
-					}
+			if (isLayoutPage()) {
+				// On layout page, only clear if clicked inside the parent panel
+				const parentPanel = element.closest(".tab-group-panel");
+				if (parentPanel && parentPanel.contains(target)) {
+					selection.clear();
 				}
-
-				// If we are here, we clicked inside a grid (background/gap), so we SHOULD clear selection.
-				// Fall through to clear logic.
+				return;
 			}
 
 			// Otherwise clear selection
@@ -696,7 +877,7 @@
 		class="asset-photo"
 		draggable="true"
 		ondragstart={(e: DragEvent) => {
-			if (selection.selected.size <= 1 || selection.active?.uid !== asset.uid) {
+			if (!selectedUIDs.has(asset.uid)) {
 				selection.select(asset);
 			}
 			// When dragging, if multiple selected use that set, otherwise drag the single asset
@@ -721,7 +902,7 @@
 			}
 		}}
 		ondragend={() => {
-			// no-op for now
+			DragData.clear();
 		}}
 		data-asset-id={asset.uid}
 		class:selected-photo={isSelected}
@@ -843,7 +1024,7 @@
 		style="padding: {padding};"
 		onscroll={handleGridScroll}
 		use:unselectImagesOnClickOutsideAssetContainer
-		onclick={onFocus}
+		onclick={handleContainerClick}
 		onkeydown={onFocus}
 		onfocusin={onFocus}
 		role="grid"

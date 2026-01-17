@@ -221,7 +221,8 @@
 		const elementRect = element.getBoundingClientRect();
 		const containerRect = container.getBoundingClientRect();
 
-		const relativeTop = elementRect.top - containerRect.top + container.scrollTop;
+		const relativeTop =
+			elementRect.top - containerRect.top + container.scrollTop;
 		const relativeBottom = relativeTop + elementRect.height;
 
 		const viewTop = container.scrollTop;
@@ -431,8 +432,19 @@
 		return array;
 	}
 
+	function handleContainerClick(e: MouseEvent) {
+		onFocus();
+		// If we clicked on an asset card or inside one, don't clear selection here
+		// (handled by the card's own click handler)
+		if ((e.target as HTMLElement).closest(".asset-card")) {
+			return;
+		}
+
+		selection.clear();
+	}
+
 	function unselectImagesOnClickOutsideAssetContainer(element: HTMLElement) {
-		if (disableOutsideUnselect || isLayoutPage()) {
+		if (disableOutsideUnselect) {
 			return;
 		}
 
@@ -455,6 +467,15 @@
 			) as HTMLElement[];
 			const insideAnyGrid = allGrids.some((g) => g.contains(target));
 			if (insideAnyGrid) {
+				return;
+			}
+
+			if (isLayoutPage()) {
+				// On layout page, only clear if clicked inside the parent panel
+				const parentPanel = element.closest(".tab-group-panel");
+				if (parentPanel && parentPanel.contains(target)) {
+					selection.clear();
+				}
 				return;
 			}
 
@@ -625,7 +646,7 @@
 		class:is-active={selectionManager.activeScopeId === scopeId}
 		{...assetGridDisplayProps}
 		use:unselectImagesOnClickOutsideAssetContainer
-		onclick={onFocus}
+		onclick={handleContainerClick}
 		onfocusin={onFocus}
 	>
 		<table>
@@ -686,7 +707,7 @@
 		class:is-active={selectionManager.activeScopeId === scopeId}
 		{...assetGridDisplayProps}
 		use:unselectImagesOnClickOutsideAssetContainer
-		onclick={onFocus}
+		onclick={handleContainerClick}
 		onfocusin={onFocus}
 	>
 		{#each allAssetsData as asset}
