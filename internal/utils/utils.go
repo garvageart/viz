@@ -2,10 +2,12 @@ package utils
 
 import (
 	"encoding/json"
+	libos "imagine/internal/os"
 	"log"
 	"maps"
 	mRand "math/rand"
 	"os"
+	"path/filepath"
 	"reflect"
 	"regexp"
 	"slices"
@@ -41,7 +43,8 @@ const (
 )
 
 func GetAppVersion() string {
-	data, err := os.ReadFile(VersionFileName)
+	versionPath := filepath.Join(libos.ProjectRoot, VersionFileName)
+	data, err := os.ReadFile(versionPath)
 	if err != nil {
 		panic(err)
 	}
