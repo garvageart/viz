@@ -4,7 +4,7 @@
     "400": "<path d=\"M180-180h44l472-471-44-44-472 471zm-60 60v-128l575-574q8-8 19-12.5t23-4.5q11 0 22 4.5t20 12.5l44 44q9 9 13 20t4 22-4.5 22.5T823-694L248-120zm659-617-41-41zm-105 64-22-22 44 44z\" />",
     "600": "<path d=\"M184.52-185.09h44.57l443.17-442.17-43.44-44-444.3 442.74zm-78.65 79.22V-261l573.87-573.44q8.56-9.13 20.9-14.19 12.33-5.07 25.62-5.07 12.13 0 24.26 5.07 12.13 5.06 22.83 13.63L836-774.04q9.57 10.69 14.13 23.11 4.57 12.41 4.57 25.1 0 12.7-5.07 25.33-5.06 12.63-13.63 21.76L261.57-105.87zm664.09-620.96-41.57-42.13zm-119.14 77.01-22-21.44 43.44 44z\" />"
 };
-    let { size = "1.5em", className = "", title = "IconEdit", viewBox = "0 0 24 24", weight = "400" } = $props();
+    let { size = "1.5em", className = "", title = "IconEdit", viewBox = "0 0 24 24", weight = "400", ...rest } = $props();
     const inner = $derived(variants[String(weight)] || variants["400"] || Object.values(variants)[0]);
 </script>
 
@@ -16,6 +16,7 @@
     xmlns="http://www.w3.org/2000/svg"
     aria-label={title}
     focusable="false"
+    {...rest}
 >
     {@html inner}
 </svg>
