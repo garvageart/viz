@@ -3712,13 +3712,10 @@ components:
       properties:
         initialized:
           type: boolean
-          description: True if the system has been initialized (at least one user exists or first_run_complete is true).
-        user_onboarding_required:
-          type: boolean
-          description: True if the authenticated user needs to complete onboarding.
+          description: True if the system has been initialized (at least one superadmin exists and first_run_complete is true).
         needs_superadmin:
           type: boolean
-          description: True if the system requires initial superadmin setup.
+          description: True if the system requires initial superadmin setup (no superadmin exists).
         allow_manual_registration:
           type: boolean
           description: True if user registration is enabled, let's users register accounts themselves

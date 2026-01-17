@@ -29,8 +29,10 @@ type setupHandlers struct {
 // SetupSuperadmin handles the POST /api/setup/superadmin endpoint
 func (h *setupHandlers) SetupSuperadmin(w http.ResponseWriter, req *http.Request) {
 	// First, check if setup is already complete by checking the first_run_complete setting
+	// and ensuring at least one superadmin exists.
+	superadminCount, _ := entities.CountSuperadmins(h.db)
 	firstRunCompleteStr, err := settings.GetSetting(h.db, "first_run_complete", nil)
-	if err == nil && firstRunCompleteStr == "true" {
+	if err == nil && firstRunCompleteStr == "true" && superadminCount > 0 {
 		render.Status(req, http.StatusConflict)
 		render.JSON(w, req, dto.ErrorResponse{Error: "Application already initialized"})
 		return
@@ -117,7 +119,7 @@ func (h *setupHandlers) SetupSuperadmin(w http.ResponseWriter, req *http.Request
 		// Set onboarding_complete to true for superadmin
 		onboardingOverride := entities.SettingOverride{
 			UserId: id,
-			Name:   "onboarding_complete",
+			Name:   settings.SettingNameOnboardingComplete,
 			Value:  "true",
 		}
 		if err := tx.Create(&onboardingOverride).Error; err != nil {
