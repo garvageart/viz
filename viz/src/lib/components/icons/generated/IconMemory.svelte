@@ -4,7 +4,7 @@
     "400": "<path d=\"M377-377v-205h205v205zm60-60h85v-85h-85zm-77 317v-80H260q-24 0-42-18t-18-42v-100h-80v-60h80v-124h-80v-60h80v-100q0-24 18-42t42-18h100v-76h60v76h124v-76h60v76h100q24 0 42 18t18 42v100h76v60h-76v124h76v60h-76v100q0 24-18 42t-42 18H604v80h-60v-80H420v80zm344-140v-444H260v444zM480-480\" />",
     "600": "<path d=\"M377-377v-205h205v205zm60-60h85v-85h-85zM350.39-99.09v-86.78h-85.3q-32.51 0-55.87-23.35-23.35-23.36-23.35-55.87v-85.3H99.09v-66.41h86.78v-130.4H99.09v-66.41h86.78v-85.3q0-32.74 23.35-56.26 23.36-23.53 55.87-23.53h85.3v-82.21h66.41v82.21h130.4v-82.21h66.41v82.21h85.3q32.74 0 56.26 23.53 23.53 23.52 23.53 56.26v85.3h82.21v66.41H778.7v130.4h82.21v66.41H778.7v85.3q0 32.51-23.53 55.87-23.52 23.35-56.26 23.35h-85.3v86.78H547.2v-86.78H416.8v86.78zm348.52-166v-433.82H265.09v433.82zM480-480\" />"
 };
-    let { size = "1.5em", className = "", title = "IconMemory", viewBox = "0 0 24 24", weight = "400" } = $props();
+    let { size = "1.5em", className = "", title = "IconMemory", viewBox = "0 0 24 24", weight = "400", ...rest } = $props();
     const inner = $derived(variants[String(weight)] || variants["400"] || Object.values(variants)[0]);
 </script>
 
@@ -16,6 +16,7 @@
     xmlns="http://www.w3.org/2000/svg"
     aria-label={title}
     focusable="false"
+    {...rest}
 >
     {@html inner}
 </svg>
