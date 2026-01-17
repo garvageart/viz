@@ -19,6 +19,7 @@ import (
 	libhttp "imagine/internal/http"
 	"imagine/internal/images"
 	libos "imagine/internal/os"
+	"imagine/internal/settings"
 	"imagine/internal/uid"
 	"imagine/internal/utils"
 )
@@ -241,7 +242,7 @@ func AdminRouter(db *gorm.DB, logger *slog.Logger, storageStats *images.StorageS
 				// Initialize onboarding_complete to false for new users created by admin
 				onboardingOverride := entities.SettingOverride{
 					UserId: id,
-					Name:   "onboarding_complete",
+					Name:   settings.SettingNameOnboardingComplete,
 					Value:  "false",
 				}
 				if err := tx.Create(&onboardingOverride).Error; err != nil {

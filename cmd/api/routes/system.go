@@ -62,9 +62,9 @@ func GetSystemStatus(db *gorm.DB, logger *slog.Logger, req *http.Request) (*dto.
 		needsSuperadmin        bool
 	)
 
-	userCount, err := entities.CountUsers(db)
+	superadminCount, err := entities.CountSuperadmins(db)
 	if err != nil {
-		return nil, fmt.Errorf("failed to count users: %w", err)
+		return nil, fmt.Errorf("failed to count superadmins: %w", err)
 	}
 
 	firstRunCompleteStr, err := settings.GetSetting(db, "first_run_complete", nil)
@@ -79,12 +79,15 @@ func GetSystemStatus(db *gorm.DB, logger *slog.Logger, req *http.Request) (*dto.
 		firstRunComplete = false
 	}
 
-	if userCount == 0 && !firstRunComplete {
+	// The system is considered NOT initialized if there's no superadmin,
+	// regardless of what the 'first_run_complete' setting says.
+	if superadminCount == 0 {
 		needsSuperadmin = true
 		initialized = false
 	} else {
 		needsSuperadmin = false
-		initialized = true
+		// If we have a superadmin, we consider it initialized if the setting also matches
+		initialized = firstRunComplete
 	}
 
 	// For authenticated users, check 'onboarding_complete'
@@ -108,7 +111,7 @@ func GetSystemStatus(db *gorm.DB, logger *slog.Logger, req *http.Request) (*dto.
 	}
 
 	if user != nil {
-		onboardingCompleteStr, err := settings.GetSetting(db, "onboarding_complete", &user.Uid)
+		onboardingCompleteStr, err := settings.GetSetting(db, settings.SettingNameOnboardingComplete, &user.Uid)
 		if err != nil {
 			logger.Warn("could not retrieve 'onboarding_complete' setting for user, assuming true", slog.String("user_id", user.Uid), slog.Any("error", err))
 			// If setting not found for user, assume onboarding is NOT required to avoid blocking
