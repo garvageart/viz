@@ -212,10 +212,8 @@ func main() {
 		panic(errorMsg)
 	}
 
-	appConfig = config.AppConfig
-
 	// setup logging stuff
-	logLevel := imalog.GetLevelFromString(appConfig.Logging.Level)
+	logLevel := imalog.GetLevelFromString(config.AppConfig.Logging.Level)
 	logger := libhttp.SetupChiLogger("api", logLevel)
 
 	apiServer := APIServer{ImagineServer: ServerConfig}
@@ -224,11 +222,25 @@ func main() {
 
 	// db stuff
 	if os.Getenv("DB_PASSWORD") != "" {
-		appConfig.Database.Password = os.Getenv("DB_PASSWORD")
-	} else {
+		config.AppConfig.Database.Password = os.Getenv("DB_PASSWORD")
+	}
+
+	if config.AppConfig.Database.Password == "" {
 		logger.Error("Database password not set, please set a password")
 		panic("Database password not set")
 	}
+
+	if config.AppConfig.BaseDir == "" {
+		logger.Error("Base directory not set, please set BASE_DIRECTORY")
+		panic("BASE_DIRECTORY environment variable is required")
+	}
+
+	if config.AppConfig.Upload.Location == "" {
+		logger.Error("Upload location not set, please set UPLOAD_LOCATION")
+		panic("UPLOAD_LOCATION environment variable is required")
+	}
+
+	appConfig = config.AppConfig
 
 	apiServer.Database = &db.DB{
 		Address: func() string {
@@ -339,7 +351,7 @@ func main() {
 
 	// Start transform cache GC if enabled in config.
 	if appConfig.Cache.GCEnabled {
-		images.StartTransformCacheGC(ctx, logger)
+		images.StartTransformCacheGC(ctx, logger, client)
 	} else {
 		logger.Debug("transform cache gc: disabled by config")
 	}

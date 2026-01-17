@@ -63,9 +63,20 @@ type StorageMetricsConfig struct {
 	IntervalSeconds int  `json:"interval_seconds" mapstructure:"interval_seconds"`
 }
 
+// ImageCacheConfig holds caching configuration specific to images.
+type ImageCacheConfig struct {
+	HTTPMaxAgeSeconds          int `json:"http_max_age_seconds" mapstructure:"http_max_age_seconds"`
+	HTTPPermanentMaxAgeSeconds int `json:"http_permanent_max_age_seconds" mapstructure:"http_permanent_max_age_seconds"`
+}
+
 // CacheConfig holds the configuration for caching.
 type CacheConfig struct {
-	GCEnabled bool `json:"gc_enabled" mapstructure:"gc_enabled"`
+	GCEnabled              bool             `json:"gc_enabled" mapstructure:"gc_enabled"`
+	ClearPermanentTransforms bool             `json:"clear_permanent_transforms" mapstructure:"clear_permanent_transforms"`
+	MaxSizeBytes           int64            `json:"max_size_bytes" mapstructure:"max_size_bytes"`
+	MaxAgeDays             int              `json:"max_age_days" mapstructure:"max_age_days"`
+	CleanupIntervalMinutes int              `json:"cleanup_interval_minutes" mapstructure:"cleanup_interval_minutes"`
+	Images                 ImageCacheConfig `json:"images" mapstructure:"images"`
 }
 
 type UserManagementConfig struct {

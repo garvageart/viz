@@ -53,15 +53,15 @@ func (server ImagineServer) ConnectToDatabase(dst ...any) *gorm.DB {
 		time.Sleep(2 * time.Second)
 	}
 
-	// Run cleanup for setting defaults before auto-migration
-	settings.CleanupSettingDefaults(client, logger)
-	settings.CleanupSettingOverrides(client, logger)
-
 	dbError = client.AutoMigrate(dst...)
 	if dbError != nil {
 		logger.Error("error running auto-migration", slog.Any("error", dbError))
 		panic("error running auto-migration: " + dbError.Error())
 	}
+
+	// Run cleanup for setting defaults after auto-migration
+	settings.CleanupSettingDefaults(client, logger)
+	settings.CleanupSettingOverrides(client, logger)
 
 	// Seed default settings after migration
 	settings.SeedDefaultSettings(client, logger)
