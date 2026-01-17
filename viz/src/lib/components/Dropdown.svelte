@@ -1,5 +1,5 @@
 <script lang="ts">
-	import type { MaterialSymbol } from "material-symbols";
+	import type { MaterialSymbol } from "$lib/types/MaterialSymbol";
 	import ContextMenu from "$lib/context-menu/ContextMenu.svelte";
 	import IconButton from "./IconButton.svelte";
 	import Button from "./Button.svelte";

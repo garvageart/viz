@@ -1,4 +1,4 @@
-import type { MaterialSymbol } from "material-symbols";
+import type { MaterialSymbol } from "$lib/types/MaterialSymbol";
 
 export interface ShareSettings {
 

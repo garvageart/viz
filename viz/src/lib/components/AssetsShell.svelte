@@ -6,7 +6,7 @@
 	import AssetToolbar from "./AssetToolbar.svelte";
 	import { type Component, type ComponentProps, type Snippet } from "svelte";
 	import type { HTMLButtonAttributes } from "svelte/elements";
-	import { type MaterialSymbol } from "material-symbols";
+	import type { MaterialSymbol } from "$lib/types/MaterialSymbol";
 	import type { IPagination } from "$lib/types/asset";
 	import Dropdown from "./Dropdown.svelte";
 	import type { MenuItem } from "$lib/context-menu/types";
