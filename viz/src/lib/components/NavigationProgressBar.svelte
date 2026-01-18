@@ -1,44 +1,34 @@
-<!-- Adjusted from https://github.com/immich-app/immich/blob/main/web/src/lib/components/shared-components/navigation-loading-bar.svelte -->
+<!-- 
+ @component
+ A navigation progress bar that reacts authentically to actual network request 
+ progress during SvelteKit navigation.
+-->
 <script lang="ts">
-	import { onMount } from "svelte";
-	import { cubicOut } from "svelte/easing";
-	import { Tween } from "svelte/motion";
+	import { loadingState } from "$lib/states/loading.svelte";
 	import ProgressBar from "./ProgressBar.svelte";
 
-	let showing = $state(false);
-	const delay = 100;
+	let fading = $state(false);
 
-	// delay showing any progress for a little bit so very fast loads
-	// do not cause flicker
-	let progress = new Tween(0, {
-		duration: 9000,
-		delay: delay,
-		easing: cubicOut
-	});
-
-	function animate() {
-		showing = true;
-		void progress.set(90);
-	}
-
-	onMount(() => {
-		const timer = setTimeout(animate, delay);
-		return () => clearTimeout(timer);
-	});
+	// Authentic progress comes from loadingState (which tracks real fetch calls during navigation)
+	let progress = $derived(loadingState.progress);
 </script>
 
-{#if showing}
-	<div class="app-progress">
-		<ProgressBar variant="small" bind:width={progress.target} />
-	</div>
-{/if}
+<div class="viz-nav-progress" class:fading>
+	<ProgressBar variant="small" width={progress} />
+</div>
 
 <style lang="scss">
-	.app-progress {
+	.viz-nav-progress {
 		position: fixed;
 		top: 0;
 		left: 0;
 		width: 100%;
-		z-index: 9999;
+		z-index: 10000;
+		pointer-events: none;
+		transition: opacity 0.4s ease;
+
+		&.fading {
+			opacity: 0;
+		}
 	}
 </style>
