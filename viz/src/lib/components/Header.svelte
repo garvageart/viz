@@ -366,7 +366,7 @@
 	header {
 		background-color: var(--imag-bg-color);
 		max-height: 2em;
-		padding: 0.15em 0.8em;
+		padding: 0.2em 0.8em;
 		display: flex;
 		align-items: center;
 		border-bottom: 1px solid var(--imag-60);
