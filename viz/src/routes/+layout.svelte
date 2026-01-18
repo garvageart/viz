@@ -14,17 +14,18 @@
 
 <script>
 	import { dev } from "$app/environment";
-	import { debugState, themeState } from "$lib/states/index.svelte";
+	import { afterNavigate, beforeNavigate } from "$app/navigation";
+	import NavigationProgressBar from "$lib/components/NavigationProgressBar.svelte";
 	import { historyState } from "$lib/states/history.svelte";
+	import { debugState, themeState } from "$lib/states/index.svelte";
+	import "$lib/stores/appReady";
+	import "$lib/styles/scss/main.scss";
+	import type { ImagineConfig, VizConfig } from "$lib/types/config.types";
 	import { toggleFullscreen } from "$lib/utils/misc";
-	import type { VizConfig, ImagineConfig } from "$lib/types/config.types";
-	import hotkeys from "hotkeys-js";
 	import "@fontsource-variable/manrope/index.css";
 	import "@fontsource-variable/roboto-mono/index.css";
-	import "$lib/styles/scss/main.scss";
-	import "$lib/stores/appReady";
-	import { beforeNavigate, afterNavigate } from "$app/navigation";
-	import NavigationProgressBar from "$lib/components/NavigationProgressBar.svelte";
+	import hotkeys from "hotkeys-js";
+	
 
 	historyState.init();
 
