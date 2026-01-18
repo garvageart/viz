@@ -4,12 +4,26 @@ import type * as Oazapfts from "@oazapfts/runtime"; // Import type for RequestOp
 import * as QS from "@oazapfts/runtime/query";
 import { defaults, servers } from "./client.gen";
 import type { ImageUploadFileData } from "$lib/upload/manager.svelte";
+import { loadingState } from "$lib/states/loading.svelte";
 
 // Initialize defaults for the underlying oazapfts runtime
 defaults.baseUrl = servers.productionApi;
 defaults.credentials = "include";
 
 let currentFetch: typeof globalThis.fetch = globalThis.fetch; // Default to window.fetch initially
+
+/**
+ * A wrapper around fetch that tracks request lifecycle in loadingState.
+ */
+async function trackedFetch(input: RequestInfo | URL, init?: RequestInit): Promise<Response> {
+    loadingState.startRequest();
+    try {
+        const response = await currentFetch(input, init);
+        return response;
+    } finally {
+        loadingState.endRequest();
+    }
+}
 
 /**
  * Initializes the API client with SvelteKit's enhanced fetch function.
@@ -19,9 +33,8 @@ let currentFetch: typeof globalThis.fetch = globalThis.fetch; // Default to wind
  */
 export function initApi(fetch: typeof globalThis.fetch) {
     currentFetch = fetch;
-    // Also explicitly set the fetch on the generated defaults, though the proxy below
-    // will ensure currentFetch is passed to every call regardless.
-    generated.defaults.fetch = currentFetch;
+    // Also explicitly set the fetch on the generated defaults
+    generated.defaults.fetch = trackedFetch;
 }
 
 // Create a proxy for the generated API functions
@@ -33,43 +46,35 @@ const apiProxy: GeneratedApi = new Proxy(generated, {
         const originalMethod = target[prop];
 
         // If it's a non-function property (like a type, defaults, servers), return it directly
-        // This handles types, constants, or other non-callable exports from client.gen.ts
         if (typeof originalMethod !== 'function') {
             return originalMethod;
         }
 
         // Return a new function that wraps the original generated API method
         return function (this: any, ...methodArgs: any[]): ReturnType<typeof originalMethod> {
-            const finalArgs = [...methodArgs]; // Create a new array for manipulation
+            const finalArgs = [...methodArgs]; 
 
             let opts: Oazapfts.RequestOpts | undefined = undefined;
             let optsIndex = -1;
 
-            // Check if the last argument is an object (potential opts)
-            // This heuristic works for oazapfts where opts is always the last argument if present.
             if (finalArgs.length > 0 && typeof finalArgs[finalArgs.length - 1] === 'object' && finalArgs[finalArgs.length - 1] !== null) {
                 opts = finalArgs[finalArgs.length - 1] as Oazapfts.RequestOpts;
                 optsIndex = finalArgs.length - 1;
             }
 
-            // Inject the currentFetch into the options
+            // Inject the trackedFetch into the options
             const injectedOpts: Oazapfts.RequestOpts = {
                 credentials: "include",
                 ...opts,
-                fetch: currentFetch
+                fetch: trackedFetch
             };
 
             if (optsIndex !== -1) {
-                // Replace the existing opts with the new one that has fetch injected
                 finalArgs[optsIndex] = injectedOpts;
             } else {
-                // If no opts object was found, append the newOpts object as the last argument
                 finalArgs.push(injectedOpts);
             }
 
-            // Call the original generated API method with the modified arguments.
-            // Using 'as (...args: any[]) => any' helps TypeScript with the dynamic nature of apply.
-            // The 'this' context is preserved.
             return (originalMethod as (...args: any[]) => any).apply(this, finalArgs) as ReturnType<typeof originalMethod>;
         };
     },
