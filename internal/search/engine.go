@@ -19,7 +19,7 @@ func NewEngine() *Engine {
 func (e *Engine) Apply(db *gorm.DB, criteria SearchCriteria) *gorm.DB {
 	query := db.Model(&entities.Image{})
 
-	// 1. Text Search (Name OR Description OR Keywords)
+	// 1. Text Search (Name OR Description OR Keywords OR EXIF Make/Model)
 	if len(criteria.Text) > 0 {
 		term := "%" + strings.Join(criteria.Text, " ") + "%"
 		// Postgres ILIKE for case-insensitive search
@@ -27,8 +27,8 @@ func (e *Engine) Apply(db *gorm.DB, criteria SearchCriteria) *gorm.DB {
 		// For keywords (JSON array), check if the array contains the value or convert to text.
 		// Here we attempt a broad text match.
 		query = query.Where(
-			"name ILIKE ? OR description ILIKE ? OR image_metadata->>'keywords' ILIKE ?",
-			term, term, term,
+			"name ILIKE ? OR description ILIKE ? OR image_metadata::text ILIKE ? OR exif::text ILIKE ?",
+			term, term, term, term,
 		)
 	}
 
