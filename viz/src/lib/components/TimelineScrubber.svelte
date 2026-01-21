@@ -1,7 +1,7 @@
 <script lang="ts">
 	import { scale } from "svelte/transition";
 	import MaterialIcon from "./MaterialIcon.svelte";
-	
+
 	let {
 		scrollTop = $bindable(0),
 		totalHeight = 0,
@@ -29,7 +29,9 @@
 
 	// Calculate thumb position (center Y relative to viewport top) based on scrollTop
 	let thumbOffsetY = $derived.by(() => {
-		if (scrollableHeight <= 0) return marginY + 20;
+		if (scrollableHeight <= 0) {
+			return marginY + 20;
+		}
 		const ratio = scrollTop / scrollableHeight;
 		const clampedRatio = Math.max(0, Math.min(1, ratio));
 		// Start at margin + half thumb height
@@ -37,10 +39,14 @@
 	});
 
 	function handleTrackClick(e: MouseEvent) {
-		if (!isVisible || !trackEl) return;
+		if (!isVisible || !trackEl) {
+			return;
+		}
 
 		// Ignore if clicked on the thumb itself (handled by pointerdown)
-		if ((e.target as HTMLElement).closest(".scrubber-thumb")) return;
+		if ((e.target as HTMLElement).closest(".scrubber-thumb")) {
+			return;
+		}
 
 		const rect = trackEl.getBoundingClientRect();
 		// Relative Y within the track container
@@ -138,10 +144,12 @@
 		<div
 			class="scrubber-thumb"
 			class:active={isDragging || isHovering}
+			class:is-dragging={isDragging}
 			style="transform: translateY({thumbOffsetY}px) translateY(-50%);"
 			onpointerdown={handleThumbDown}
 			role="button"
 			tabindex="-1"
+			onkeydown={(e) => e.preventDefault()}
 		>
 			<div class="thumb-inner">
 				<MaterialIcon
@@ -176,9 +184,14 @@
 		display: flex;
 		align-items: center;
 		justify-content: center;
+		transition: transform 0.15s cubic-bezier(0.2, 0.8, 0.2, 1);
 
 		&:active {
 			cursor: grabbing;
+		}
+
+		&.is-dragging {
+			transition: none;
 		}
 	}
 

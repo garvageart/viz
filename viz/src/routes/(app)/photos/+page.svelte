@@ -602,25 +602,21 @@
 		</div>
 	{:else}
 		<div class="photo-group-container">
-			{#each consolidatedGroups as consolidatedGroup}
-				<section class="photo-group">
-					<h2 class="photo-group-label">{consolidatedGroup.label}</h2>
-
-					<PhotoAssetGrid
-						bind:allData={allImagesFlat}
-						bind:view={viewSettings.current}
-						data={consolidatedGroup.allImages}
-						{scopeId}
-						assetDblClick={(_e, asset) => {
-							openLightbox(asset);
-						}}
-						onassetcontext={(detail) => {
-							ctxAnchor = detail.anchor;
-							ctxShowMenu = true;
-						}}
-					/>
-				</section>
-			{/each}
+			<PhotoAssetGrid
+				bind:allData={allImagesFlat}
+				bind:view={viewSettings.current}
+				data={galleryState.images}
+				groupedData={consolidatedGroups}
+				showDateHeaders={true}
+				{scopeId}
+				assetDblClick={(_e, asset) => {
+					openLightbox(asset);
+				}}
+				onassetcontext={(detail) => {
+					ctxAnchor = detail.anchor;
+					ctxShowMenu = true;
+				}}
+			/>
 		</div>
 	{/if}
 </VizViewContainer>
@@ -637,9 +633,10 @@
 	.photo-group-container {
 		display: flex;
 		flex-direction: column;
-		padding: 2rem 2rem;
 		box-sizing: border-box;
 		width: 100%;
+		height: auto;
+		min-height: 100%; /* Important for virtualization filling container */
 	}
 
 	.selection-info {
@@ -660,21 +657,6 @@
 		display: flex;
 		align-items: center;
 		gap: 1rem;
-	}
-
-	.photo-group {
-		display: flex;
-		flex-direction: column;
-		box-sizing: border-box;
-		margin-bottom: 1rem;
-		width: 100%;
-
-		h2 {
-			font-weight: 400;
-			font-size: 1.2rem;
-			color: var(--imag-10);
-			width: fit-content;
-		}
 	}
 
 	#add_to_imagine-container {

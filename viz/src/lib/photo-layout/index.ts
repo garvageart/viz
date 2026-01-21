@@ -6,13 +6,16 @@ import { SvelteMap } from "svelte/reactivity";
 export type ImageWithDateLabel = Image & {
     dateLabel?: string;
     isFirstOfDate?: boolean;
+    isFirstOfConsolidatedGroup?: boolean;
+    isHeaderItem?: boolean;
+    headerLabel?: string;
 };
 
 // Consolidated groups: merge small consecutive date groups into visual sections
 export type ConsolidatedGroup = {
     label: string; // Combined label like "8 Mar - 26 Aug 2025"
     totalCount: number;
-    allImages: ImageWithDateLabel[]; // All images merged together with date labels
+    allImages: ImageWithDateLabel[]; // All images merged together with date labels and in-flow headers
     isConsolidated: boolean; // true if multiple date groups merged
     startDate: DateTime; // newest date in this consolidated block
     endDate: DateTime; // oldest date in this consolidated block
@@ -68,82 +71,28 @@ export function groupImagesByDate(list: Image[]) {
 }
 
 export function getConsolidatedGroups(groups: DateGroup[]) {
-    const consolidated: ConsolidatedGroup[] = [];
-    const SMALL_GROUP_THRESHOLD = 4;
-    let currentConsolidation: ConsolidatedGroup | null = null;
+    // We no longer consolidate small groups. Each DateGroup becomes its own ConsolidatedGroup.
+    // We also do NOT inject in-flow header items anymore; headers will be handled by the virtualizer as separate rows.
 
-    for (let i = 0; i < groups.length; i++) {
-        const group = groups[i];
-        const isSmall = group.items.length <= SMALL_GROUP_THRESHOLD;
-        const isLastGroup = i === groups.length - 1;
+    const consolidated: ConsolidatedGroup[] = groups.map(group => {
+        // Prepare images with their individual date labels
+        // No header item injection here.
+        const imagesWithLabels: ImageWithDateLabel[] = group.items.map((img, idx) => ({
+            ...img,
+            dateLabel: group.label,
+            isFirstOfDate: idx === 0
+        }));
 
-        if (isSmall) {
-            if (!currentConsolidation) {
-                const imagesWithLabels: ImageWithDateLabel[] = group.items.map(
-                    (img, idx) => ({
-                        ...img,
-                        dateLabel: group.label,
-                        isFirstOfDate: idx === 0
-                    })
-                );
-
-                currentConsolidation = {
-                    label: group.label,
-                    totalCount: group.items.length,
-                    allImages: imagesWithLabels,
-                    isConsolidated: false,
-                    startDate: group.date,
-                    endDate: group.date
-                };
-            } else {
-                const imagesWithLabels: ImageWithDateLabel[] = group.items.map(
-                    (img, idx) => ({
-                        ...img,
-                        dateLabel: group.label,
-                        isFirstOfDate: idx === 0
-                    })
-                );
-
-                currentConsolidation.allImages.push(...imagesWithLabels);
-                currentConsolidation.totalCount += group.items.length;
-                currentConsolidation.isConsolidated = true;
-
-                currentConsolidation.endDate = group.date;
-                const start = currentConsolidation.startDate;
-                const end = currentConsolidation.endDate;
-
-                if (start.year === end.year && start.month === end.month) {
-                    currentConsolidation.label = `${start.day}\u2013${end.day} ${start.toFormat("LLL yyyy")}`;
-                } else if (start.year === end.year) {
-                    currentConsolidation.label = `${start.toFormat("d LLL")} - ${end.toFormat("d LLL yyyy")}`;
-                } else {
-                    currentConsolidation.label = `${start.toFormat("d LLL yyyy")} - ${end.toFormat("d LLL yyyy")}`;
-                }
-            }
-
-            if (isLastGroup && currentConsolidation) {
-                consolidated.push(currentConsolidation);
-                currentConsolidation = null;
-            }
-        } else {
-            if (currentConsolidation) {
-                consolidated.push(currentConsolidation);
-                currentConsolidation = null;
-            }
-
-            const imagesWithLabels: ImageWithDateLabel[] = group.items.map(
-                (img) => ({ ...img })
-            );
-            consolidated.push({
-                label: group.label,
-                totalCount: group.items.length,
-                allImages: imagesWithLabels,
-                isConsolidated: false,
-                startDate: group.date,
-                endDate: group.date
-            });
-        }
-    }
+        return {
+            label: group.label,
+            totalCount: group.items.length,
+            allImages: imagesWithLabels,
+            isConsolidated: false,
+            startDate: group.date,
+            endDate: group.date
+        };
+    });
 
     return consolidated;
 } 
+ 
