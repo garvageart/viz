@@ -101,10 +101,10 @@
 {#snippet buttonContent()}
 	{#if selectedItem && selectedItem.label}
 		{#if showSelectionIndicator}
-			<p class="viz-dropdown-title">{selectedItem.label}</p>
+			<span class="viz-dropdown-title">{selectedItem.label}</span>
 		{/if}
 	{:else if title}
-		<p class="viz-dropdown-title">{title}</p>
+		<span class="viz-dropdown-title">{title}</span>
 	{/if}
 {/snippet}
 
