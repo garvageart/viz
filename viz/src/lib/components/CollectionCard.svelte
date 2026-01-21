@@ -71,6 +71,7 @@
 	import CollectionPage from "../../routes/(app)/collections/[uid]/+page.svelte";
 	import type { SvelteHTMLElements } from "svelte/elements";
 	import { getFullImagePath, getImage, type Collection } from "$lib/api";
+	import AssetImage from "./AssetImage.svelte";
 
 	interface Props {
 		collection: Collection;
@@ -98,8 +99,9 @@
 <div {...props} class="coll-card" data-asset-id={collection.uid}>
 	<div class="image-container">
 		{#if thumbnail}
-			<img
-				src={getFullImagePath(thumbnail.image_paths.thumbnail)}
+			<AssetImage
+				asset={thumbnail}
+				variant="preview"
 				alt={collection.name}
 				class="collection-image"
 			/>
@@ -154,13 +156,6 @@
 		display: flex;
 		align-items: center;
 		justify-content: center;
-	}
-
-	.collection-image {
-		width: 100%;
-		height: 100%;
-		object-fit: contain;
-		object-position: center;
 	}
 
 	.coll-no_thumbnail {
