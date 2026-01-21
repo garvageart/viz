@@ -18,6 +18,7 @@
 	import NavigationProgressBar from "$lib/components/NavigationProgressBar.svelte";
 	import { historyState } from "$lib/states/history.svelte";
 	import { debugState, themeState } from "$lib/states/index.svelte";
+	import { loadingState } from "$lib/states/loading.svelte";
 	import "$lib/stores/appReady";
 	import "$lib/styles/scss/main.scss";
 	import type { ImagineConfig, VizConfig } from "$lib/types/config.types";
@@ -64,10 +65,12 @@
 
 	beforeNavigate(() => {
 		showNavProgress = true;
+		loadingState.startNavigation();
 	});
 
 	afterNavigate(() => {
 		showNavProgress = false;
+		loadingState.endNavigation();
 	});
 </script>
 

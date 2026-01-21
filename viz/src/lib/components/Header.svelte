@@ -1,6 +1,7 @@
 <script lang="ts">
 	import { dev } from "$app/environment";
 	import { page } from "$app/state";
+	import { untrack } from "svelte";
 	import { CLIENT_IS_PRODUCTION, DYNAMIC_ROUTE_REGEX } from "$lib/constants";
 	import { performSearch } from "$lib/search/execute";
 	import {
@@ -46,7 +47,7 @@
 			const q = page.url.searchParams.get("q");
 			// Only update search.value if 'q' is present and different from current search.value
 			// This prevents unnecessary updates and potential infinite loops if search.value also affects the URL
-			if (q && q !== search.value) {
+			if (q && q !== untrack(() => search.value)) {
 				search.value = q;
 			}
 		}
@@ -241,35 +242,35 @@
 		>
 			viz
 			<MaterialIcon
-				iconName="arrow_drop_down"
+				iconName="expand_more"
 				weight={300}
-				style="font-size: 1.2em; margin-left: 0.15em;"
+				style="font-size: 1em; margin-left: 0.15em;"
 			/>
 		</button>
+		<AppMenu bind:isOpen={openAppMenu} bind:anchor={appMenuButton} />
 		<div class="menu-seperator"></div>
 		{#if isLayoutPage()}
 			<IconButton
 				class="header-button"
-				iconName="list_alt"
+				iconName="view_quilt"
 				title="Views"
 				onclick={handleViewMenu}
 			/>
 		{:else}
 			<IconButton
 				class="header-button"
-				iconName="desktop_windows"
+				iconName="space_dashboard"
 				title="Go to Workspace"
 				onclick={() => goto("/")}
 			/>
 		{/if}
-		<AppMenu bind:isOpen={openAppMenu} bind:anchor={appMenuButton} />
 		<div class="menu-seperator"></div>
 		<div class="icon-group-container">
 			<a class="page-nav-btn" href="/photos" title="Go to Photos">
-				<IconButton class="header-button" iconName="browse" />
+				<IconButton class="header-button" iconName="photo" />
 			</a>
 			<a class="page-nav-btn" href="/collections" title="Go to Collections">
-				<IconButton class="header-button" iconName="photo_library" />
+				<IconButton class="header-button" iconName="collections" />
 			</a>
 		</div>
 	</div>
