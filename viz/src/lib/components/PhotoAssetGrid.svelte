@@ -32,14 +32,24 @@
 	import PhotoTooltip from "$lib/components/tooltips/PhotoTooltip.svelte";
 	import "tippy.js/dist/tippy.css";
 	import hotkeys, { type HotkeysEvent, type KeyHandler } from "hotkeys-js";
-	import type { ImageWithDateLabel } from "$lib/photo-layout";
-	import { isLayoutPage } from "$lib/states/index.svelte";
+	import type {
+		ConsolidatedGroup,
+		ImageWithDateLabel
+	} from "$lib/photo-layout";
+	import { debugMode, isLayoutPage } from "$lib/states/index.svelte";
 	import { filterManager } from "$lib/states/filter.svelte";
 	import { DragData } from "$lib/drag-drop/data";
 	import { VizMimeTypes } from "$lib/constants";
 	import LabelSelector from "./LabelSelector.svelte";
 	import { debounce } from "$lib/utils/misc";
 	import MaterialIcon from "./MaterialIcon.svelte";
+	import TimelineScrubber from "./TimelineScrubber.svelte";
+	import { dev } from "$app/environment";
+	import {
+		PhotoGridVirtualizer,
+		type GridRow,
+		type PhotoGridConfig
+	} from "$lib/components/virtualizer/PhotoGridVirtualizer.svelte.js";
 
 	interface PhotoSpecificProps {
 		/** Custom photo card snippet - if not provided, uses default photo card */
@@ -48,13 +58,19 @@
 		allData?: Image[];
 		/** Unique identifier for selection state management */
 		scopeId?: string;
+		/** Grouped data for timeline view with headers */
+		groupedData?: ConsolidatedGroup[];
+		/** Whether to show date headers in the grid (requires groupedData) */
+		showDateHeaders?: boolean;
+		/** Virtualized grid layout configuration */
+		gridConfig?: PhotoGridConfig;
 	}
 
 	type Props = Omit<ComponentProps<typeof AssetGrid<Image>>, "assetSnippet"> &
 		PhotoSpecificProps;
 
 	let {
-		data = $bindable(),
+		data = $bindable([]),
 		allData = $bindable(), // Complete flat list of all images for cross-group range selection
 		assetGridArray = $bindable(),
 		columnCount = $bindable(),
@@ -68,7 +84,10 @@
 		columns = $bindable(),
 		table = $bindable(),
 		photoCardSnippet,
-		scopeId = "photos-default"
+		scopeId = "photos-default",
+		groupedData = $bindable([]),
+		showDateHeaders = $bindable(true),
+		gridConfig = {}
 	}: Props = $props();
 
 	// Selection Management
@@ -92,7 +111,9 @@
 	});
 
 	// Apply filters
-	// We filter the *view* data (`data` prop) locally for display.
+	// If we have grouped data, we assume the parent has already filtered it or passed it correctly.
+	// However, if `data` is passed (flat mode), we filter it locally.
+	// For the timeline view, `data` might be the flattened version of `groupedData`.
 	let filteredData = $derived(filterManager.apply(data) as Image[]);
 
 	function onFocus() {
@@ -128,8 +149,12 @@
 	}
 
 	function getAssetPosition(assetId: string) {
-		for (let r = 0; r < justifiedRows.length; r++) {
-			const row = justifiedRows[r];
+		const rows = virtualizer.rows;
+		for (let r = 0; r < rows.length; r++) {
+			const row = rows[r];
+			if (row.type === "header") {
+				continue;
+			}
 			let currentX = 0;
 			for (let i = 0; i < row.items.length; i++) {
 				const item = row.items[i];
@@ -139,7 +164,7 @@
 						centerX: currentX + item.width / 2
 					};
 				}
-				currentX += item.width + gridGap;
+				currentX += item.width + virtualizer.gridGap;
 			}
 		}
 		return null;
@@ -204,9 +229,22 @@
 			}
 		} else {
 			const pos = getAssetPosition(activeId);
-			if (!pos) return;
+			if (!pos) {
+				return;
+			}
 
-			const targetRowIndex = pos.rowIndex + (handler.key === "up" ? -1 : 1);
+			const rows = virtualizer.rows;
+
+			let targetRowIndex = pos.rowIndex + (handler.key === "up" ? -1 : 1);
+
+			// Skip header rows
+			while (
+				targetRowIndex >= 0 &&
+				targetRowIndex < rows.length &&
+				rows[targetRowIndex].type === "header"
+			) {
+				targetRowIndex += handler.key === "up" ? -1 : 1;
+			}
 
 			// Vertical Boundary Checks
 			if (targetRowIndex < 0) {
@@ -221,7 +259,7 @@
 				return;
 			}
 
-			if (targetRowIndex >= justifiedRows.length) {
+			if (targetRowIndex >= rows.length) {
 				// Moved DOWN past bottom
 				if (allData) {
 					const globalIndex = allData.findIndex((a) => a.uid === activeId);
@@ -234,7 +272,11 @@
 			}
 
 			// Local column navigation
-			const targetRow = justifiedRows[targetRowIndex];
+			const targetRow = rows[targetRowIndex];
+			if (targetRow.type === "header") {
+				return; // Should not happen due to skip loop
+			}
+
 			let closestItem = targetRow.items[0];
 			let minDiff = Number.MAX_VALUE;
 			let currentX = 0;
@@ -247,10 +289,11 @@
 					minDiff = diff;
 					closestItem = item;
 				}
-				currentX += item.width + gridGap;
+				currentX += item.width + virtualizer.gridGap;
 			}
 
 			selection.select(closestItem.asset);
+			suppressScrollOnce = true;
 		}
 	}
 
@@ -267,7 +310,6 @@
 	});
 
 	// Styling stuff
-	const padding = `0em ${isLayoutPage() ? "1em" : page.url.pathname === "/photos" ? "0em" : "2em"}`;
 	const assetLookup = $derived(new Map(data.map((a) => [a.uid, a])));
 
 	function getAssetFromElement(el: HTMLElement): Image | undefined {
@@ -342,9 +384,18 @@
 
 	// Count date labels so we can hide the inline badge in the trivial case
 	// where there is only one date group and that group contains a single image.
+	// NOTE: In unified view, we rely on Headers, so inline badges might be redundant or controlled by logic.
 	const dateGroupCounts = $derived.by(() => {
 		const counts: Record<string, number> = {};
-		for (const d of filteredData) {
+		// Use allData or groupedData source to get reliable labels
+		const source =
+			allData && allData.length > 0
+				? allData
+				: groupedData && groupedData.length > 0
+					? groupedData.flatMap((g) => g.allImages)
+					: filteredData;
+
+		for (const d of source) {
 			const label = (d as ImageWithDateLabel).dateLabel ?? "";
 			if (!label) {
 				continue;
@@ -356,38 +407,92 @@
 		return counts;
 	});
 
+	const groupLookup = $derived.by(() => {
+		const map = new Map<string, Image[]>();
+		if (groupedData) {
+			for (const g of groupedData) {
+				map.set(g.label, g.allImages);
+			}
+		}
+		return map;
+	});
+
+	function handleGroupSelect(label: string) {
+		const images = groupLookup.get(label);
+		if (!images) {
+			return;
+		}
+
+		const allSelected = images.every((i) => selectedUIDs.has(i.uid));
+
+		if (allSelected) {
+			for (const img of images) {
+				selection.remove(img);
+			}
+		} else {
+			selection.addMultiple(images);
+		}
+	}
+
 	const dateGroupCount = $derived(Object.keys(dateGroupCounts).length);
 
 	// Virtualized photo-grid state
-	let gridItemSize: number = $state(640); // legacy fallback for square grid; used as a base size hint
-	let gridGap: number = $state(8); // gap between items and rows
-	let totalHeight: number = $state(0);
+	const virtualizer = $derived(new PhotoGridVirtualizer(gridConfig));
 	let scrollTop: number = $state(0);
-	let targetRowHeight: number = $state(240);
-	let bufferPx = 200; // extra pixels above/below viewport for virtualization (reduced)
-
-	type JustifiedItem = { asset: Image; width: number; height: number };
-	type JustifiedRow = { items: JustifiedItem[]; height: number; top: number };
-
-	let justifiedRows: JustifiedRow[] = $state([]);
-	let visibleRows: JustifiedRow[] = $state([]);
+	let usingExternalScroll = $state(false);
+	let scrollParent: HTMLElement | Window | undefined = $state();
+	let isSyncingScroll = false; // Flag to prevent loop
+	let isScrubbing = $state(false);
+	let suppressScrollOnce = false;
 
 	let photoGridEl: HTMLDivElement | undefined = $state();
 
-	// Helper to find the first visible row index using binary search O(log N)
-	function findStartIndex(rows: JustifiedRow[], scrollTop: number): number {
-		let low = 0;
-		let high = rows.length - 1;
-		while (low <= high) {
-			const mid = (low + high) >>> 1;
-			if (rows[mid].top + rows[mid].height < scrollTop) {
-				low = mid + 1;
+	// absolute container metrics for the scrubber
+	let containerScrollTop = $state(0);
+	let containerScrollHeight = $state(0);
+	let containerViewportHeight = $state(0);
+	let gridOffsetTop = $state(0);
+
+	const dateLabel = $derived(virtualizer.getDateLabel(scrollTop));
+
+	// For the scrubber, we want it to represent the entire scrollable area of the container.
+	// We pass values that make its internal ratio calculation match the container's.
+	// Scrubber track will be positioned below the sticky toolbar.
+	const scrubberTotalHeight = $derived(
+		usingExternalScroll
+			? containerScrollHeight - gridOffsetTop
+			: virtualizer.totalHeight
+	);
+	const scrubberViewportHeight = $derived(
+		usingExternalScroll
+			? containerViewportHeight - gridOffsetTop
+			: virtualizer.viewportHeight
+	);
+	let scrubberScrollTop = $derived(
+		usingExternalScroll ? containerScrollTop : scrollTop
+	);
+
+	let scrubberScrollTopState = $derived(scrubberScrollTop);
+
+	$effect(() => {
+		if (isScrubbing) {
+			if (usingExternalScroll && scrollParent instanceof HTMLElement) {
+				isSyncingScroll = true;
+				scrollParent.scrollTop = scrubberScrollTopState;
+				// Derived containerScrollTop will update via scroll event,
+				// but we force update for virtualizer responsiveness.
+				containerScrollTop = scrubberScrollTopState;
+				scrollTop = Math.max(0, containerScrollTop - gridOffsetTop);
+				virtualizer.updateScroll(scrollTop, containerViewportHeight);
+				requestAnimationFrame(() => {
+					isSyncingScroll = false;
+				});
 			} else {
-				high = mid - 1;
+				scrollTop = scrubberScrollTopState;
+				virtualizer.updateScroll(scrollTop, virtualizer.viewportHeight);
 			}
 		}
-		return Math.max(0, low);
-	}
+	});
 
 	// Build justified rows layout and compute visible rows based on scroll.
 	function updateVirtualGrid() {
@@ -401,197 +506,39 @@
 		const paddingRight = parseFloat(computedStyle.paddingRight) || 0;
 		const availableWidth = photoGridEl.clientWidth - paddingLeft - paddingRight;
 
-		const viewportH = photoGridEl.clientHeight || window.innerHeight;
+		let vH = photoGridEl.clientHeight;
 
-		// 1) Build all rows for current data and available width (excluding padding)
-		// Access filteredData reactively
-		const images = filteredData;
-		justifiedRows = buildJustifiedRows(
-			availableWidth,
-			images,
-			targetRowHeight,
-			gridGap
-		);
-		totalHeight = justifiedRows.length
-			? justifiedRows[justifiedRows.length - 1].top +
-				justifiedRows[justifiedRows.length - 1].height
-			: 0;
-
-		// 2) Compute visible rows window
-		scrollTop = photoGridEl.scrollTop || 0;
-		const minY = Math.max(0, scrollTop - bufferPx);
-		const maxY = scrollTop + viewportH + bufferPx;
-
-		const startIndex = findStartIndex(justifiedRows, minY);
-		let endIndex = startIndex;
-		while (
-			endIndex < justifiedRows.length &&
-			justifiedRows[endIndex].top <= maxY
-		) {
-			endIndex++;
-		}
-
-		visibleRows = justifiedRows.slice(startIndex, endIndex);
-	}
-
-	function buildJustifiedRows(
-		containerWidth: number,
-		images: Image[],
-		targetH: number,
-		gap: number
-	): JustifiedRow[] {
-		const rows: JustifiedRow[] = [];
-		let current: { asset: Image; ar: number }[] = [];
-		let sumAR = 0;
-		let top = 0;
-		const maxScale = 1.3; // allow up to +30% above target height before wrapping
-		const minScale = 0.8; // allow down to -20% below target before forcing wrap
-
-		for (const asset of images) {
-			const aspectRatio = Math.max(
-				0.1,
-				(asset.width || 4) / (asset.height || 3)
-			);
-			current.push({ asset, ar: aspectRatio });
-			sumAR += aspectRatio;
-
-			const rowH =
-				(containerWidth - gap * Math.max(0, current.length - 1)) / sumAR;
-
-			// Decide if this row is ready: when rowH <= targetH * maxScale
-			if (rowH <= targetH * maxScale) {
-				const height = Math.max(
-					Math.round(Math.min(rowH, targetH * maxScale)),
-					50
-				);
-				let items: JustifiedItem[] = current.map(({ asset, ar }) => ({
-					asset,
-					width: Math.round(ar * height),
-					height
-				}));
-
-				items = fitRowToWidth(items, containerWidth, gap); // adjust widths to exactly fit to avoid horizontal overflow
-				rows.push({ items, height, top });
-				top += height + gap;
-
-				current = [];
-				sumAR = 0;
+		// If using external scroll, grid might be fully expanded, so clientHeight is huge.
+		// We want the viewport height.
+		if (usingExternalScroll || vH === 0) {
+			vH = window.innerHeight;
+			// Try to get actual scroll parent height if possible
+			if (scrollParent instanceof HTMLElement) {
+				vH = scrollParent.clientHeight;
 			}
 		}
 
-		// Handle last row: scale to stay close to target without stretching too much
-		if (current.length) {
-			const rowH =
-				(containerWidth - gap * Math.max(0, current.length - 1)) / sumAR;
-			const height = Math.round(
-				Math.min(Math.max(rowH, targetH * minScale), targetH)
-			);
-			let items: JustifiedItem[] = current.map(({ asset, ar }) => ({
-				asset,
-				width: Math.round(ar * height),
-				height
-			}));
-			// For the last row we do not force full width (common justified gallery behaviour), but ensure it doesn't exceed container width
-			items = clampRowToWidth(items, containerWidth, gap);
-			rows.push({ items, height, top });
-			top += height + gap;
-		}
-
-		// Adjust total height by removing the last added gap
-		if (rows.length) {
-			rows[rows.length - 1].top = rows[rows.length - 1].top; // no-op; clarify intention
-		}
-
-		return rows;
-	}
-
-	// Ensure a row exactly fits the container width (summing item widths + gaps) by proportionally scaling widths, then distributing rounding diff.
-	function fitRowToWidth(
-		items: JustifiedItem[],
-		containerWidth: number,
-		gap: number
-	): JustifiedItem[] {
-		if (!items.length) {
-			return items;
-		}
-
-		const gapTotal = gap * (items.length - 1);
-		const totalItemWidth = items.reduce((s, i) => s + i.width, 0);
-		const available = Math.max(0, containerWidth - gapTotal);
-
-		if (totalItemWidth === available) {
-			return items;
-		}
-
-		const scale = available / totalItemWidth;
-		let scaled = items.map((i) => ({
-			...i,
-			width: Math.max(1, Math.round(i.width * scale))
-		}));
-
-		// Adjust rounding diff
-		let diff = available - scaled.reduce((s, i) => s + i.width, 0);
-		let idx = 0;
-
-		while (diff !== 0 && idx < scaled.length * 3) {
-			// safety
-			const i = scaled[idx % scaled.length];
-			if (diff > 0) {
-				i.width += 1;
-				diff -= 1;
-			} else if (diff < 0 && i.width > 1) {
-				i.width -= 1;
-				diff += 1;
+		// Pass to virtualizer
+		if (groupedData && groupedData.length > 0) {
+			if (showDateHeaders) {
+				virtualizer.update(groupedData, availableWidth);
+			} else {
+				// If headers are off, flatten the grouped data to keep the date labels/badges
+				const flatWithLabels = groupedData.flatMap((g) => g.allImages);
+				virtualizer.updateFlat(flatWithLabels, availableWidth);
 			}
-			idx++;
+		} else if (allData && allData.length > 0) {
+			// Fallback to allData if groupedData is not present (might already be labelled)
+			virtualizer.updateFlat(allData, availableWidth);
+		} else {
+			virtualizer.updateFlat(filteredData, availableWidth);
 		}
 
-		return scaled;
-	}
-
-	// Clamp a row so it never exceeds container width (without stretching to fill if shorter)
-	function clampRowToWidth(
-		items: JustifiedItem[],
-		containerWidth: number,
-		gap: number
-	): JustifiedItem[] {
-		const gapTotal = gap * (items.length - 1);
-		let totalItemWidth = items.reduce((s, i) => s + i.width, 0);
-
-		const maxAllowed = containerWidth - gapTotal;
-		if (totalItemWidth <= maxAllowed) {
-			return items;
-		}
-
-		// Scale down
-		const scale = maxAllowed / totalItemWidth;
-		let scaled = items.map((i) => ({
-			...i,
-			width: Math.max(1, Math.round(i.width * scale))
-		}));
-
-		// After scaling, ensure we didn't overshoot due to rounding
-		let diff = maxAllowed - scaled.reduce((s, i) => s + i.width, 0);
-		let idx = 0;
-
-		while (diff !== 0 && idx < scaled.length * 3) {
-			const it = scaled[idx % scaled.length];
-
-			if (diff > 0) {
-				it.width += 1;
-				diff -= 1;
-			} else if (diff < 0 && it.width > 1) {
-				it.width -= 1;
-				diff += 1;
-			}
-			idx++;
-		}
-
-		return scaled;
+		virtualizer.updateScroll(scrollTop, vH);
 	}
 
 	function scrollToAsset(asset: Image) {
-		if (!photoGridEl || !justifiedRows.length) {
+		if (!photoGridEl || !virtualizer.rows.length) {
 			return;
 		}
 
@@ -612,12 +559,26 @@
 			parent = parent.parentElement;
 		}
 
-		for (const row of justifiedRows) {
+		for (const row of virtualizer.rows) {
+			if (row.type === "header") {
+				continue;
+			}
 			if (row.items.some((i) => i.asset.uid === asset.uid)) {
 				const gridRect = photoGridEl.getBoundingClientRect();
-				const rowRectTop = gridRect.top + row.top;
-				const rowRectBottom = rowRectTop + row.height;
+				const rowRectTop = gridRect.top + row.top; // Absolute visual top
 
+				// If using external scroll we know offsets
+				if (usingExternalScroll && scroller instanceof HTMLElement) {
+					// We can just scroll the parent
+					// Target scroll top = parent.scrollTop + (rowRectTop - parentRect.top)
+					const parentRect = scroller.getBoundingClientRect();
+					const relativeTop = rowRectTop - parentRect.top;
+					scroller.scrollBy({ top: relativeTop - 100, behavior: "instant" }); // -100 for padding
+					return;
+				}
+
+				// Default
+				const rowRectBottom = rowRectTop + row.height;
 				let viewTop = 0;
 				let viewBottom = window.innerHeight;
 
@@ -627,14 +588,13 @@
 					viewBottom = rect.bottom;
 				}
 
-				const scrollPadding = 150;
-
-				if (rowRectTop < viewTop + scrollPadding) {
+				const scrollPadding = 20;
+				if (rowRectTop < viewTop) {
 					scroller.scrollBy({
 						top: rowRectTop - viewTop - scrollPadding,
 						behavior: "instant"
 					});
-				} else if (rowRectBottom > viewBottom - scrollPadding) {
+				} else if (rowRectBottom > viewBottom) {
 					scroller.scrollBy({
 						top: rowRectBottom - viewBottom + scrollPadding,
 						behavior: "instant"
@@ -647,13 +607,112 @@
 
 	$effect(() => {
 		if (selection.active && photoGridEl) {
-			untrack(() => scrollToAsset(selection.active!));
+			untrack(() => {
+				if (!suppressScrollOnce) {
+					scrollToAsset(selection.active!);
+				}
+				suppressScrollOnce = false;
+			});
 		}
 	});
+
+	function getScrollParent(node: HTMLElement): HTMLElement | Window {
+		let parent = node.parentElement;
+		while (parent) {
+			const style = window.getComputedStyle(parent);
+			if (/(auto|scroll)/.test(style.overflowY)) {
+				return parent;
+			}
+
+			parent = parent.parentElement;
+		}
+		return window;
+	}
 
 	// Action to initialize grid and setup observers
 	function initGrid(node: HTMLDivElement) {
 		photoGridEl = node;
+		let resizeObserver: ResizeObserver | undefined;
+
+		// Detect external scroll parent
+		const parent = getScrollParent(node);
+
+		const updateMetrics = () => {
+			if (
+				!photoGridEl ||
+				!scrollParent ||
+				!(scrollParent instanceof HTMLElement)
+			)
+				return;
+
+			const parentRect = scrollParent.getBoundingClientRect();
+			const gridRect = photoGridEl.getBoundingClientRect();
+
+			// Accurate offset calculation relative to scrollable content start
+			gridOffsetTop = Math.max(
+				0,
+				gridRect.top - parentRect.top + scrollParent.scrollTop
+			);
+			containerViewportHeight = scrollParent.clientHeight;
+			containerScrollHeight = scrollParent.scrollHeight;
+			containerScrollTop = scrollParent.scrollTop;
+
+			// Update virtualizer's view of things
+			virtualizer.viewportHeight = containerViewportHeight;
+			scrollTop = Math.max(0, containerScrollTop - gridOffsetTop);
+			virtualizer.updateScroll(scrollTop, containerViewportHeight);
+
+			if (debugMode) {
+				console.log("[PhotoGrid Scroller] Metrics updated:", {
+					gridOffsetTop,
+					containerScrollTop,
+					containerScrollHeight,
+					containerViewportHeight,
+					relativeScrollTop: scrollTop,
+					totalImagesHeight: virtualizer.totalHeight
+				});
+			}
+		};
+
+		if (parent !== node && parent !== window) {
+			usingExternalScroll = true;
+			scrollParent = parent;
+
+			// Hide native scrollbar on parent
+			if (scrollParent instanceof HTMLElement) {
+				scrollParent.classList.add("scrollbar-hidden");
+			}
+
+			// Attach listener
+			const onExternalScroll = () => {
+				if (!photoGridEl) return;
+				if (isSyncingScroll || isScrubbing) return;
+				updateMetrics();
+			};
+
+			parent.addEventListener("scroll", onExternalScroll, { passive: true });
+
+			// Initial check
+			updateMetrics();
+
+			resizeObserver = new ResizeObserver(() => {
+				updateMetrics();
+				updateVirtualGrid();
+			});
+			resizeObserver.observe(node);
+			resizeObserver.observe(parent as HTMLElement);
+
+			return {
+				destroy() {
+					if (scrollParent instanceof HTMLElement) {
+						scrollParent.classList.remove("scrollbar-hidden");
+					}
+					parent.removeEventListener("scroll", onExternalScroll);
+					resizeObserver?.disconnect();
+					photoGridEl = undefined;
+				}
+			};
+		}
 
 		// Initial synchronous layout to prevent flash
 		if (filteredData.length > 0) {
@@ -664,12 +723,23 @@
 			() => requestAnimationFrame(() => untrack(() => updateVirtualGrid())),
 			100
 		);
-		const resizeObserver = new ResizeObserver(debouncedUpdate);
+		resizeObserver = new ResizeObserver((entries) => {
+			for (const entry of entries) {
+				if (entry.target === node) {
+					if (!usingExternalScroll) {
+						virtualizer.viewportHeight = entry.contentRect.height;
+					} else if (scrollParent instanceof HTMLElement) {
+						virtualizer.viewportHeight = scrollParent.clientHeight;
+					}
+				}
+			}
+			debouncedUpdate();
+		});
 		resizeObserver.observe(node);
 
 		return {
 			destroy() {
-				resizeObserver.disconnect();
+				resizeObserver?.disconnect();
 				photoGridEl = undefined;
 			}
 		};
@@ -677,38 +747,43 @@
 
 	// Re-run layout when data changes
 	$effect(() => {
-		if (filteredData) {
-			if (photoGridEl) {
-				untrack(() => updateVirtualGrid());
-			}
+		// Explicitly depend on data sources to ensure layout updates
+		const _data = data;
+		const _grouped = groupedData;
+		const _filtered = filteredData;
+
+		if (photoGridEl) {
+			untrack(() => updateVirtualGrid());
 		}
 	});
 
 	function handleGridScroll(_e: Event) {
-		if (!photoGridEl) {
+		if (usingExternalScroll) {
 			return;
 		}
 
-		scrollTop = photoGridEl.scrollTop;
-
-		// Update visible rows on next frame to avoid layout thrash
-		requestAnimationFrame(() => {
-			const viewportH = photoGridEl!.clientHeight || window.innerHeight;
-			const minY = Math.max(0, scrollTop - bufferPx);
-			const maxY = scrollTop + viewportH + bufferPx;
-
-			const startIndex = findStartIndex(justifiedRows, minY);
-			let endIndex = startIndex;
-			while (
-				endIndex < justifiedRows.length &&
-				justifiedRows[endIndex].top <= maxY
-			) {
-				endIndex++;
-			}
-
-			visibleRows = justifiedRows.slice(startIndex, endIndex);
-		});
+		if (photoGridEl) {
+			scrollTop = photoGridEl.scrollTop;
+			virtualizer.updateScroll(scrollTop, virtualizer.viewportHeight);
+		}
 	}
+
+	// Sync scrollTop to internal scroll
+	$effect(() => {
+		if (
+			!usingExternalScroll &&
+			photoGridEl &&
+			Math.abs(photoGridEl.scrollTop - scrollTop) > 1
+		) {
+			photoGridEl.scrollTop = scrollTop;
+		}
+		// No explicit update call here needed because the virtualizer is updated via bindings or events
+		// But if scrollTop is changed programmatically (scrubber), we need to ensure virtualizer knows.
+		if (!usingExternalScroll) {
+			virtualizer.updateScroll(scrollTop, virtualizer.viewportHeight);
+		}
+	});
+
 	function getSizedPreviewUrl(asset: Image): string {
 		const checksum = asset.image_metadata?.checksum;
 
@@ -734,6 +809,7 @@
 	// Lightbox prefetch helpers
 	// Simple in-memory cache to avoid repeated prefetches for the same asset UID
 	const lightboxPrefetchCache = new SvelteSet<string>();
+	const loadedImageUIDs = new SvelteSet<string>();
 
 	function prefetchLightboxImage(asset: Image) {
 		if (!asset.uid) {
@@ -759,6 +835,7 @@
 
 	function handleImageCardSelect(asset: Image, e: MouseEvent | KeyboardEvent) {
 		onFocus(); // Ensure this grid is active on click
+		suppressScrollOnce = true;
 
 		if (e.shiftKey) {
 			const selectionData =
@@ -796,6 +873,11 @@
 
 		// If we clicked on an asset photo or inside one, don't clear selection here
 		if (target.closest(".asset-photo")) {
+			return;
+		}
+
+		// Don't clear if clicking on header
+		if (target.closest(".inline-grid-header")) {
 			return;
 		}
 
@@ -870,11 +952,42 @@
 	}
 </script>
 
+{#snippet inlineHeader(label: string)}
+	{@const groupImages = groupLookup.get(label) || []}
+	{@const allSelected =
+		groupImages.length > 0 && groupImages.every((i) => selectedUIDs.has(i.uid))}
+	<div class="inline-grid-header">
+		<div class="header-content">
+			<button
+				class="header-select-btn"
+				class:selected={allSelected}
+				onclick={() => handleGroupSelect(label)}
+				title={allSelected ? "Deselect group" : "Select group"}
+			>
+				<MaterialIcon
+					iconName={allSelected ? "check_circle" : "radio_button_unchecked"}
+					fill={allSelected}
+					size="1.2rem"
+				/>
+			</button>
+			<h3>{label}</h3>
+		</div>
+	</div>
+{/snippet}
+
+{#snippet inlineDateTile(label: string)}
+	<div class="inline-date-tile">
+		<span class="date-text">{label}</span>
+	</div>
+{/snippet}
+
 {#snippet defaultPhotoCard(asset: ImageWithDateLabel)}
 	{@const isSelected =
 		selectedUIDs.has(asset.uid) || selection.active?.uid === asset.uid}
+	{@const isCached = loadedImageUIDs.has(asset.uid)}
 	<div
 		class="asset-photo"
+		class:is-cached={isCached}
 		draggable="true"
 		ondragstart={(e: DragEvent) => {
 			if (!selectedUIDs.has(asset.uid)) {
@@ -936,9 +1049,6 @@
 			assetDblClick?.(e, asset);
 		}}
 	>
-		{#if asset?.isFirstOfDate && asset?.dateLabel && !(dateGroupCount === 1 && dateGroupCounts[asset.dateLabel] === 1)}
-			<div class="inline-date-badge">{asset.dateLabel}</div>
-		{/if}
 		{#if asset.image_metadata?.label || asset.favourited}
 			<div class="image-metadata-display">
 				{#if asset.image_metadata?.label}
@@ -951,7 +1061,8 @@
 				{#if asset.favourited}
 					<MaterialIcon
 						iconName="favorite"
-						style="font-size: 0.8rem; color: white;"
+						size="0.8rem"
+						style="color: white;"
 						fill={true}
 					/>
 				{/if}
@@ -981,9 +1092,7 @@
 						(e.currentTarget as HTMLImageElement)
 							.closest(".asset-photo")
 							?.classList.add("img-loaded");
-						document
-							.querySelector(`img[data-placeholder-uid="${asset.uid}"]`)
-							?.remove();
+						loadedImageUIDs.add(asset.uid);
 					}}
 				/>
 			</div>
@@ -1017,36 +1126,79 @@
 {/snippet}
 
 {#if view === "grid"}
-	<div
-		use:initGrid
-		class="viz-photo-grid-container no-select"
-		class:is-active={selectionManager.activeScopeId === scopeId}
-		style="padding: {padding};"
-		onscroll={handleGridScroll}
-		use:unselectImagesOnClickOutsideAssetContainer
-		onclick={handleContainerClick}
-		onkeydown={onFocus}
-		onfocusin={onFocus}
-		role="grid"
-		aria-label="Photo Grid"
-		tabindex="0"
-	>
-		<div style={`height: ${totalHeight}px; position: relative;`}>
-			{#each visibleRows as row}
-				<div
-					class="justified-row"
-					style={`position:absolute; top:${row.top}px; left:0; right:0; gap:${gridGap}px; height:${row.height}px;`}
-				>
-					{#each row.items as item}
+	<div class="grid-container" class:use-external-scroll={usingExternalScroll}>
+		{#if debugMode}
+			<div
+				style="position: sticky; top: 0; left: 0; z-index: 9999; background: rgba(0,0,0,0.8); color: lime; padding: 0.5rem; pointer-events: none;"
+			>
+				Data: {data?.length} | Filtered: {filteredData?.length} | Rows: {virtualizer
+					.rows?.length} | Visible: {virtualizer.visibleRows?.length} | TotalH: {virtualizer.totalHeight}
+				| Scroll: {scrollTop} | Ext: {usingExternalScroll}
+			</div>
+		{/if}
+
+		<div
+			use:initGrid
+			class="viz-photo-grid-container no-select scrollbar-hidden"
+			class:is-active={selectionManager.activeScopeId === scopeId}
+			class:use-external-scroll={usingExternalScroll}
+			onscroll={handleGridScroll}
+			use:unselectImagesOnClickOutsideAssetContainer
+			onclick={handleContainerClick}
+			onkeydown={onFocus}
+			onfocusin={onFocus}
+			role="grid"
+			aria-label="Photo Grid"
+			tabindex="0"
+		>
+			<div
+				style={`height: ${virtualizer.totalHeight}px; position: relative; width: 100%;`}
+			>
+				{#each virtualizer.visibleRows as row (row.id)}
+					{#if row.type === "header"}
 						<div
-							style={`flex:0 0 ${item.width}px; height:${row.height}px;`}
-							class="justified-item"
+							style={`position: absolute; top: ${row.top}px; left: 0; right: 0; height: ${row.height}px; width: 100%; z-index: 1;`}
 						>
-							{@render defaultPhotoCard(item.asset)}
+							{@render inlineHeader(row.label)}
 						</div>
-					{/each}
-				</div>
-			{/each}
+					{:else if row.type === "images"}
+						<div
+							class="justified-row"
+							style={`position:absolute; top:${row.top}px; left:0; right:0; height:${row.height}px;`}
+						>
+							{#each row.items as item (item.asset.uid)}
+								<div
+									style={`position: absolute; left: ${item.left}px; width: ${item.width}px; height:${row.height}px;`}
+									class="justified-item"
+								>
+									{#if item.asset.isHeaderItem}
+										{@render inlineDateTile(item.asset.headerLabel || "")}
+									{:else}
+										{@render defaultPhotoCard(item.asset)}
+									{/if}
+								</div>
+							{/each}
+						</div>
+					{/if}
+				{/each}
+			</div>
+		</div>
+
+		<div class="scrubber-wrapper">
+			<div
+				class="scrubber-sticky-container"
+				style={usingExternalScroll
+					? `position: sticky; top: ${gridOffsetTop}px; height: ${scrubberViewportHeight}px;`
+					: "height: 100%;"}
+			>
+				<TimelineScrubber
+					bind:scrollTop={scrubberScrollTopState}
+					totalHeight={scrubberTotalHeight}
+					viewportHeight={scrubberViewportHeight}
+					{dateLabel}
+					bind:isDragging={isScrubbing}
+				/>
+			</div>
 		</div>
 	</div>
 {:else}
@@ -1071,21 +1223,61 @@
 
 <style lang="scss">
 	/* Photo grid (virtualized) styles */
+	.grid-container {
+		position: relative;
+		height: 100%;
+		width: 100%;
+		padding: 0 1rem;
+		margin: 1em auto;
+		overflow: hidden;
+		flex: 1;
+		display: flex;
+		flex-direction: column;
+		box-sizing: border-box;
+
+		&.use-external-scroll {
+			height: auto;
+			overflow: visible;
+			contain: none;
+		}
+	}
+
 	.viz-photo-grid-container {
 		box-sizing: border-box;
-		margin: 1em auto;
 		width: 100%;
 		max-width: 100%;
+		overflow-y: scroll;
+		height: 100%;
+		scrollbar-gutter: stable;
+
+		&.use-external-scroll {
+			height: auto;
+			overflow-y: visible;
+			margin-bottom: 0;
+		}
 	}
 
-	/* When used standalone (e.g., in collections), add top margin */
-	.viz-photo-grid-container:first-child {
-		margin-top: 2em;
+	.scrubber-wrapper {
+		position: absolute;
+		top: 0;
+		right: 0;
+		bottom: 0;
+		width: 2.5rem; /* Width of scrubber area */
+		pointer-events: none;
+		z-index: 10;
 	}
 
-	.justified-row {
-		display: flex;
-		contain: layout style;
+	.scrubber-sticky-container {
+		width: 100%;
+		position: relative;
+		pointer-events: auto;
+	}
+
+	:global(.scrollbar-hidden)::-webkit-scrollbar {
+		display: none;
+	}
+	:global(.scrollbar-hidden) {
+		scrollbar-width: none;
 	}
 
 	.justified-row .asset-photo {
@@ -1093,27 +1285,82 @@
 		height: 100%;
 	}
 
-	.inline-date-badge {
-		position: absolute;
-		top: 6px;
-		right: 6px;
-		z-index: 2;
-		background: rgba(0, 0, 0, 0.55);
-		color: var(--imag-10-dark);
-		padding: 2px 6px;
-		font-size: 0.75rem;
-		line-height: 1.2;
-		border-radius: 4px;
-		backdrop-filter: blur(2px);
+	.inline-grid-header {
+		display: flex;
+		flex-direction: column;
+		justify-content: flex-end;
+		height: 100%;
+		width: 100%;
+		box-sizing: border-box;
+		padding: 0.5rem 0;
+
+		.header-content {
+			width: fit-content;
+			max-width: 100%;
+			display: flex;
+			align-items: center;
+
+			&:hover .header-select-btn {
+				width: 1.2rem;
+				opacity: 1;
+				margin-right: 0.5rem;
+			}
+		}
+
+		.header-select-btn {
+			background: none;
+			border: none;
+			padding: 0;
+			cursor: pointer;
+			display: flex;
+			align-items: center;
+			justify-content: center;
+			color: var(--imag-60);
+			flex-shrink: 0;
+
+			/* Hidden state by default */
+			width: 0;
+			opacity: 0;
+			margin-right: 0;
+			overflow: hidden;
+
+			transition:
+				width 0.2s ease-out,
+				opacity 0.2s ease-out,
+				margin-right 0.2s ease-out,
+				color 0.15s;
+
+			&.selected {
+				color: var(--imag-primary);
+				/* Visible state when selected */
+				width: 1.2rem;
+				opacity: 1;
+				margin-right: 0.5rem;
+			}
+
+			&:hover {
+				color: var(--imag-primary);
+			}
+		}
+
+		h3 {
+			font-size: 1.1rem;
+			font-weight: 500;
+			color: var(--imag-text-color);
+			margin: 0;
+			white-space: nowrap;
+			overflow: hidden;
+			text-overflow: ellipsis;
+		}
 	}
 
 	.image-metadata-display {
 		display: flex;
 		align-items: center;
-		gap: 0.5rem;
+		gap: 0.3rem;
 		position: absolute;
 		top: 0.3rem;
-		left: 0.3rem;
+		right: 0.3rem;
 		z-index: 2;
 	}
 
@@ -1183,7 +1430,13 @@
 	}
 
 	:global(.img-loaded) .tile-placeholder {
-		display: none;
+		opacity: 0;
+		pointer-events: none;
+	}
+
+	/* Disable fade transition for cached images to make them feel instant */
+	.asset-photo.is-cached .tile-placeholder {
+		transition: none;
 	}
 
 	.tile-image {
@@ -1243,5 +1496,45 @@
 		text-align: center;
 		color: var(--imag-60);
 		font-size: 0.9rem;
+	}
+
+	.inline-date-tile {
+		width: 100%;
+		height: 100%;
+		display: flex;
+		flex-direction: column;
+		justify-content: flex-end;
+		align-items: flex-start;
+		padding: 1rem;
+		font-weight: 700;
+		color: var(--imag-text-color);
+		background-color: var(--imag-100);
+		text-align: left;
+		font-size: 0.85rem;
+		line-height: 1.2;
+		box-sizing: border-box;
+		position: relative;
+
+		.date-text {
+			display: -webkit-box;
+			line-clamp: 3;
+			-webkit-line-clamp: 3;
+			-webkit-box-orient: vertical;
+			overflow: hidden;
+			word-break: break-word;
+			text-transform: uppercase;
+			letter-spacing: 0.05em;
+		}
+
+		/* Divider line */
+		&::before {
+			content: "";
+			position: absolute;
+			left: 10%;
+			top: 20%;
+			bottom: 20%;
+			width: 1px;
+			background: var(--imag-60);
+		}
 	}
 </style>

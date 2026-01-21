@@ -47,6 +47,9 @@ importers:
       '@fontsource-variable/roboto-mono':
         specifier: ^5.2.8
         version: 5.2.8
+      '@immich/justified-layout-wasm':
+        specifier: ^0.4.3
+        version: 0.4.3
       '@oazapfts/runtime':
         specifier: ^1.1.0
         version: 1.1.0
@@ -527,6 +530,9 @@ packages:
 
   '@fontsource-variable/roboto-mono@5.2.8':
     resolution: {integrity: sha512-6M2U3wGIUxYNKRrUoKls8BRRIPDA57T8J0agqwyDkiEHrLEEAqptsxcUl3eTm6tnRNEn6yEm4pCefvtnujebDA==}
+
+  '@immich/justified-layout-wasm@0.4.3':
+    resolution: {integrity: sha512-fpcQ7zPhP3Cp1bEXhONVYSUeIANa2uzaQFGKufUZQo5FO7aFT77szTVChhlCy4XaVy5R4ZvgSkA/1TJmeORz7Q==}
 
   '@isaacs/cliui@8.0.2':
     resolution: {integrity: sha512-O8jcjabXaleOG9DQ0+ARXWZBTfnP4WNAqzuiJK7ll44AmxGKv/J2M4TPjxjY3znBCfvBXFzucm1twdyFybFqEA==}
@@ -2127,6 +2133,8 @@ snapshots:
   '@fontsource-variable/manrope@5.2.8': {}
 
   '@fontsource-variable/roboto-mono@5.2.8': {}
+
+  '@immich/justified-layout-wasm@0.4.3': {}
 
   '@isaacs/cliui@8.0.2':
     dependencies:

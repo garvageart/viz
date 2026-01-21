@@ -27,7 +27,7 @@
 	}
 
 	.viz-toolbar-container {
-		z-index: 1;
+		z-index: 99;
 		padding: 0.4em 2em;
 		background-color: var(--imag-100);
 		backdrop-filter: blur(5px);

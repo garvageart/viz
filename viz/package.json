@@ -49,6 +49,7 @@
 	"dependencies": {
 		"@fontsource-variable/manrope": "^5.2.8",
 		"@fontsource-variable/roboto-mono": "^5.2.8",
+		"@immich/justified-layout-wasm": "^0.4.3",
 		"@oazapfts/runtime": "^1.1.0",
 		"hotkeys-js": "^3.13.15",
 		"idb": "^8.0.3",
