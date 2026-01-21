@@ -114,6 +114,7 @@
 <style lang="scss">
 	.compact-container {
 		position: relative;
+		display: inline-flex;
 	}
 
 	.label-selector-container {
