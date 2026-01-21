@@ -279,9 +279,7 @@ func PerformTransformCacheCleanup(rootDir string, logger *slog.Logger, db *gorm.
 		cleanupIntervalMinutes = 1440 // 24 hours
 	}
 
-	if logger != nil {
-		logger.Debug("transform cache gc: starting", slog.Int64("max_size_bytes", maxSizeBytes), slog.Int("max_age_days", maxAgeDays), slog.Bool("preserve_permanent", shouldPreservePermanent))
-	}
+	logger.Debug("transform cache gc: starting", slog.Int64("max_size_bytes", maxSizeBytes), slog.Int("max_age_days", maxAgeDays), slog.Bool("preserve_permanent", shouldPreservePermanent))
 
 	permanentHashes := make(map[string]bool)
 	if shouldPreservePermanent && db != nil && hashGetter != nil {
@@ -306,9 +304,7 @@ func PerformTransformCacheCleanup(rootDir string, logger *slog.Logger, db *gorm.
 
 	entries, err := os.ReadDir(rootDir)
 	if err != nil {
-		if logger != nil {
-			logger.Warn("cache gc: failed to read images directory", slog.Any("error", err))
-		}
+		logger.Warn("cache gc: failed to read images directory", slog.Any("error", err))
 		return
 	}
 
@@ -355,24 +351,17 @@ func PerformTransformCacheCleanup(rootDir string, logger *slog.Logger, db *gorm.
 		if shouldPreservePermanent {
 			hash := strings.TrimSuffix(filepath.Base(f.path), filepath.Ext(f.path))
 			if permanentHashes[hash] {
-				if logger != nil {
-					logger.Debug("transform cache gc: preserving permanent file", slog.String("path", f.path))
-				}
-				// Do not add to 'remaining' so it is not subject to size-based eviction
-
 				continue // Skip to next file
 			}
 		}
 
 		if f.mod.Before(cutoff) {
 			if err := os.Remove(f.path); err == nil {
-				if logger != nil {
-					logger.Debug("transform cache gc: removed old file", slog.String("path", f.path), slog.Time("mod", f.mod))
-				}
+				logger.Debug("transform cache gc: removed old file", slog.String("path", f.path), slog.Time("mod", f.mod))
 
 				total -= f.size
 				continue
-			} else if logger != nil {
+			} else {
 				logger.Warn("transform cache gc: failed to remove old file", slog.String("path", f.path), slog.Any("error", err))
 			}
 		}
@@ -388,18 +377,14 @@ func PerformTransformCacheCleanup(rootDir string, logger *slog.Logger, db *gorm.
 			}
 			if err := os.Remove(f.path); err == nil {
 				total -= f.size
-				if logger != nil {
-					logger.Debug("transform cache gc: evicted file", slog.String("path", f.path), slog.Int64("size", f.size))
-				}
-			} else if logger != nil {
+				logger.Debug("transform cache gc: evicted file", slog.String("path", f.path), slog.Int64("size", f.size))
+			} else {
 				logger.Warn("transform cache gc: failed to evict file", slog.String("path", f.path), slog.Any("error", err))
 			}
 		}
 	}
 
-	if logger != nil {
-		logger.Debug("transform cache gc: finished", slog.Int64("remaining_total_bytes", total))
-	}
+	logger.Debug("transform cache gc: finished", slog.Int64("remaining_total_bytes", total))
 }
 
 // StartTransformCacheGC starts a background goroutine that periodically
@@ -411,7 +396,7 @@ func StartTransformCacheGC(ctx context.Context, logger *slog.Logger, db *gorm.DB
 		cleanupIntervalMinutes := cfg.Cache.CleanupIntervalMinutes
 		if cleanupIntervalMinutes <= 0 {
 			cleanupIntervalMinutes = 1440 // 24 hours
-			if logger != nil {
+			{
 				logger.Warn("transform cache gc: invalid cleanup interval, using default", slog.Int("interval_minutes", cleanupIntervalMinutes))
 			}
 		}
@@ -430,9 +415,7 @@ func StartTransformCacheGC(ctx context.Context, logger *slog.Logger, db *gorm.DB
 		for {
 			select {
 			case <-ctx.Done():
-				if logger != nil {
-					logger.Debug("transform cache gc: stopping")
-				}
+				logger.Debug("transform cache gc: stopping")
 				return
 			case <-ticker.C:
 				doCleanup()
