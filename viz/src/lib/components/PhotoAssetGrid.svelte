@@ -50,6 +50,7 @@
 		type GridRow,
 		type PhotoGridConfig
 	} from "$lib/components/virtualizer/PhotoGridVirtualizer.svelte.js";
+	import AssetImage from "./AssetImage.svelte";
 
 	interface PhotoSpecificProps {
 		/** Custom photo card snippet - if not provided, uses default photo card */
@@ -1069,29 +1070,15 @@
 			</div>
 		{/if}
 		{#if asset.image_paths}
-			{@const thumbhashURL = getThumbhashURL(asset)}
 			<div class="tile-image-container" style={`height: 100%;`}>
-				{#if thumbhashURL}
-					<img
-						class="tile-placeholder"
-						src={thumbhashURL}
-						alt="Placeholder image for {asset.name ??
-							asset.image_metadata?.file_name ??
-							''}"
-						aria-hidden="true"
-						data-placeholder-uid={asset.uid}
-					/>
-				{/if}
-				<img
+				<AssetImage
+					{asset}
+					variant="thumbnail"
 					draggable="false"
 					class="tile-image"
-					src={getSizedPreviewUrl(asset)}
 					alt={asset.name ?? asset.image_metadata?.file_name ?? ""}
 					loading="lazy"
-					onload={(e) => {
-						(e.currentTarget as HTMLImageElement)
-							.closest(".asset-photo")
-							?.classList.add("img-loaded");
+					onload={() => {
 						loadedImageUIDs.add(asset.uid);
 					}}
 				/>
@@ -1369,13 +1356,6 @@
 		overflow: hidden;
 	}
 
-	.asset-photo img {
-		width: 100%;
-		height: 100%;
-		object-fit: cover;
-		display: block;
-	}
-
 	.asset-photo.multi-selected-photo {
 		outline: 2px solid var(--imag-primary);
 		background: var(--imag-bg-color);
@@ -1418,28 +1398,7 @@
 		height: 100%;
 	}
 
-	.tile-placeholder {
-		position: absolute;
-		inset: 0;
-		width: 100%;
-		height: 100%;
-		object-fit: cover;
-		filter: blur(12px) saturate(120%);
-		transform: scale(1.05);
-		transition: opacity 0.35s ease;
-	}
-
-	:global(.img-loaded) .tile-placeholder {
-		opacity: 0;
-		pointer-events: none;
-	}
-
-	/* Disable fade transition for cached images to make them feel instant */
-	.asset-photo.is-cached .tile-placeholder {
-		transition: none;
-	}
-
-	.tile-image {
+	:global(.tile-image) {
 		width: 100%;
 		height: 100%;
 		object-fit: cover;

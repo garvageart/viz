@@ -6,6 +6,7 @@
 	import { getImageLabel } from "$lib/utils/images";
 	import { createImageMenu } from "$lib/context-menu/menus/images";
 	import ContextMenu from "$lib/context-menu/ContextMenu.svelte";
+	import AssetImage from "$lib/components/AssetImage.svelte";
 
 	let activeScope = $derived(selectionManager.activeScope);
 	let activeItem = $derived(activeScope?.active as Image | undefined);
@@ -51,7 +52,13 @@
 	{#if isImage}
 		{#if activeItem && imageSrc}
 			<div class="image-wrapper">
-				<img src={imageSrc} alt={activeItem.name} loading="lazy" />
+				<AssetImage
+					asset={activeItem}
+					variant="preview"
+					objectFit="contain"
+					alt={activeItem.name}
+					loading="lazy"
+				/>
 			</div>
 			<div class="info">
 				<span class="filename" title={activeItem.name}>{activeItem.name}</span>
@@ -116,12 +123,6 @@
 		overflow: hidden;
 		padding: 0.5rem;
 		height: 100%;
-
-		img {
-			max-width: 100%;
-			max-height: 100%;
-			object-fit: contain;
-		}
 	}
 
 	.info {

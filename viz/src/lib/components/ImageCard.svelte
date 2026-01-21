@@ -8,6 +8,7 @@
 	import { DragData } from "$lib/drag-drop/data";
 	import LabelSelector from "./LabelSelector.svelte";
 	import MaterialIcon from "./MaterialIcon.svelte";
+	import AssetImage from "./AssetImage.svelte";
 
 	let {
 		asset,
@@ -67,15 +68,7 @@
 {#if variant === "mini"}
 	<div title={asset.name} class="mini-card">
 		<div class="mini-image-wrapper">
-			<img
-				src={getFullImagePath(
-					asset.image_paths?.thumbnail ||
-						asset.image_paths?.preview ||
-						asset.image_paths?.original
-				)}
-				alt={asset.name}
-				loading="lazy"
-			/>
+			<AssetImage variant="thumbnail" {asset} alt={asset.name} loading="lazy" />
 			{#if asset.favourited}
 				<div class="favorite-badge">
 					<MaterialIcon
@@ -122,18 +115,9 @@
 		}}
 	>
 		<div class="image-container">
-			{#if placeholderDataURL && !imageLoaded}
-				<img
-					class="image-card-placeholder"
-					src={placeholderDataURL}
-					alt=""
-					aria-hidden="true"
-				/>
-			{/if}
-			<img
-				class="image-card-image"
-				class:loaded={imageLoaded}
-				src={getFullImagePath(asset.image_paths?.thumbnail)}
+			<AssetImage
+				{asset}
+				variant="thumbnail"
 				alt="{asset.name}{asset.uploaded_by
 					? ` by ${asset.uploaded_by.username}`
 					: ''}"
@@ -171,11 +155,7 @@
 							/>
 						{/if}
 						{#if asset.favourited}
-							<MaterialIcon
-								iconName="favorite"
-								style="font-size: 0.9rem;"
-								fill={true}
-							/>
+							<MaterialIcon iconName="favorite" size="1rem" fill={true} />
 						{/if}
 					</div>
 				</div>
@@ -202,13 +182,6 @@
 		align-items: center;
 		justify-content: center;
 		background-color: var(--imag-90);
-
-		img {
-			max-width: 100%;
-			max-height: 100%;
-			object-fit: contain;
-			padding: 0.25rem;
-		}
 
 		.favorite-badge {
 			position: absolute;
@@ -292,14 +265,6 @@
 		}
 	}
 
-	.image-card img {
-		width: 100%;
-		height: 100%;
-		object-fit: contain;
-		display: block;
-		pointer-events: none;
-	}
-
 	.image-card-meta {
 		margin-top: 0.5rem;
 		display: flex;
@@ -349,21 +314,5 @@
 		justify-content: center;
 		align-items: center;
 		position: relative;
-	}
-
-	.image-card-placeholder {
-		position: absolute;
-		width: 100%;
-		height: 100%;
-		object-fit: cover;
-	}
-
-	.image-card-image {
-		opacity: 0;
-		transition: opacity 0.3s ease-in-out;
-
-		&.loaded {
-			opacity: 1;
-		}
 	}
 </style>

@@ -15,6 +15,7 @@
 	} from "$lib/utils/images";
 	import hotkeys from "hotkeys-js";
 	import { fade } from "svelte/transition";
+	import AssetImage from "./AssetImage.svelte";
 	import CropOverlay from "./CropOverlay.svelte";
 	import CropTools from "./CropTools.svelte";
 	import InputText from "./dom/InputText.svelte";
@@ -731,54 +732,31 @@
 						oncontextmenu={handleContextMenu}
 						role="presentation"
 					>
-						{#await loadImage(displayURL, currentImageEl!)}
-							{#if !thumbhashURL}
-								<div style="width: 3em; height: 3em">
-									<LoadingContainer />
-								</div>
-							{:else}
-								<img
-									src={thumbhashURL}
-									in:fade
-									out:fade
-									class="lightbox-image lightbox-placeholder"
-									alt="Placeholder image for {lightboxImage!.name}"
-									aria-hidden="true"
-									style={`aspect-ratio: ${lightboxImage!.width} / ${lightboxImage!.height};`}
-								/>
-							{/if}
-						{:then url}
-							<img
-								bind:this={imageEl}
-								src={url}
-								class="lightbox-image"
-								class:is-crop={isCropping}
-								alt={lightboxImage!.name}
-								title={lightboxImage!.name}
-								loading="eager"
-								crossorigin="use-credentials"
-								data-image-id={lightboxImage!.uid}
-								onload={() => {
-									if (isCropping) restoreCrop();
-								}}
-								ondragstart={(e) => e.preventDefault()}
-								oncontextmenu={handleContextMenu}
-								in:fade
-								out:fade
+						<AssetImage
+							asset={lightboxImage!}
+							bind:imageElement={imageEl}
+							src={displayURL}
+							class="lightbox-image {isCropping ? 'is-crop' : ''}"
+							alt={lightboxImage!.name}
+							title={lightboxImage!.name}
+							priority={true}
+							crossorigin="use-credentials"
+							data-image-id={lightboxImage!.uid}
+							onload={() => {
+								if (isCropping) restoreCrop();
+							}}
+							ondragstart={(e) => e.preventDefault()}
+							oncontextmenu={handleContextMenu}
+						/>
+						{#if isCropping && imageDimensions && currentCrop && zoomer}
+							<CropOverlay
+								width={imageDimensions.width}
+								height={imageDimensions.height}
+								crop={currentCrop}
+								{zoomer}
+								scale={transformState.scale}
 							/>
-							{#if isCropping && imageDimensions && currentCrop && zoomer}
-								<CropOverlay
-									width={imageDimensions.width}
-									height={imageDimensions.height}
-									crop={currentCrop}
-									{zoomer}
-									scale={transformState.scale}
-								/>
-							{/if}
-						{:catch error}
-							<p>Failed to load image</p>
-							<p>{error}</p>
-						{/await}
+						{/if}
 					</div>
 				</div>
 			{/key}
@@ -945,14 +923,9 @@
 		min-width: 0;
 		min-height: 0;
 		pointer-events: auto;
-
-		&:has(.lightbox-placeholder) {
-			width: 100%;
-			height: 100%;
-		}
 	}
 
-	.lightbox-image {
+	:global(.lightbox-image) {
 		display: block;
 		max-width: 100vw;
 		max-height: 100vh;
@@ -962,15 +935,9 @@
 	}
 
 	// to give space for seeing cropping
-	.lightbox-image.is-crop {
+	:global(.lightbox-image.is-crop) {
 		max-width: 97vw;
 		max-height: 97vh;
-	}
-
-	.lightbox-placeholder {
-		width: 100%;
-		height: 100%;
-		object-fit: contain;
 	}
 
 	.lightbox-nav {
