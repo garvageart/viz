@@ -143,6 +143,13 @@ func TestEngineApply(t *testing.T) {
 			},
 			wantWhereContain: []string{"favourited = ?"},
 		},
+		{
+			name: "Text Search with EXIF",
+			criteria: SearchCriteria{
+				Text: []string{"fujifilm"},
+			},
+			wantWhereContain: []string{"image_metadata::text ILIKE ?", "exif::text ILIKE ?"},
+		},
 	}
 
 	for _, tt := range tests {
