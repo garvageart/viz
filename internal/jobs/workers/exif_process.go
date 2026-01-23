@@ -32,7 +32,7 @@ const (
 )
 
 type ExifProcessJob struct {
-	Image entities.Image
+	Image entities.ImageAsset
 }
 
 // NewExifWorker creates a worker that extracts EXIF and updates the DB
@@ -112,7 +112,7 @@ func NewExifWorker(db *gorm.DB, wsBroker *libhttp.WSBroker) *jobs.Worker {
 }
 
 // ExifProcess extracts EXIF and updates the DB (exif + taken_at + optional metadata)
-func ExifProcess(ctx context.Context, db *gorm.DB, imgEnt entities.Image, onProgress func(step string, progress int)) error {
+func ExifProcess(ctx context.Context, db *gorm.DB, imgEnt entities.ImageAsset, onProgress func(step string, progress int)) error {
 	originalData, err := images.ReadImage(imgEnt.Uid, imgEnt.ImageMetadata.FileName)
 	if err != nil {
 		return fmt.Errorf("failed to read image for exif: %w", err)
@@ -238,7 +238,7 @@ func ExifProcess(ctx context.Context, db *gorm.DB, imgEnt entities.Image, onProg
 	}
 
 	// Fetch latest image from DB to ensure we don't overwrite concurrent metadata updates (e.g. dimensions)
-	var dbImage entities.Image
+	var dbImage entities.ImageAsset
 	if err := db.Where("uid = ?", imgEnt.Uid).First(&dbImage).Error; err != nil {
 		return fmt.Errorf("failed to fetch image for update: %w", err)
 	}
@@ -265,7 +265,7 @@ func ExifProcess(ctx context.Context, db *gorm.DB, imgEnt entities.Image, onProg
 		dbImage.ImageMetadata.Keywords = imgEnt.ImageMetadata.Keywords
 	}
 
-	if err := db.Model(&entities.Image{}).
+	if err := db.Model(&entities.ImageAsset{}).
 		Where("uid = ?", imgEnt.Uid).
 		Update("exif", imgEnt.Exif).
 		Update("taken_at", takenAt).

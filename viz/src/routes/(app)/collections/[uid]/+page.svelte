@@ -1,7 +1,7 @@
 <script module>
 	export { searchForData };
 
-	function searchForData(searchValue: string, images: Image[]) {
+	function searchForData(searchValue: string, images: ImageAsset[]) {
 		if (searchValue.trim() === "") {
 			return [];
 		}
@@ -49,7 +49,7 @@
 		deleteCollection,
 		deleteCollectionImages,
 		type CollectionUpdate,
-		type Image,
+		type ImageAsset,
 		listCollectionImages,
 		updateImage,
 		getImage
@@ -174,7 +174,7 @@
 	});
 
 	// Lightbox
-	let lightboxImage: Image | undefined = $state();
+	let lightboxImage: ImageAsset | undefined = $state();
 	let show = $derived(lightboxImage !== undefined);
 
 	// Search stuff
@@ -183,7 +183,7 @@
 
 	// Selection
 	const scopeId = $derived(SelectionScopeNames.COLLECTION_PREFIX + data.uid);
-	const selectionScope = $derived(selectionManager.getScope<Image>(scopeId));
+	const selectionScope = $derived(selectionManager.getScope<ImageAsset>(scopeId));
 	let selectionFirstImage = $derived(Array.from(selectionScope.selected)[0]);
 
 	// Context menu state
@@ -220,7 +220,7 @@
 		selectionManager.removeScope(scopeId);
 	});
 
-	let imageGridArray: AssetGridArray<Image> | undefined = $state();
+	let imageGridArray: AssetGridArray<ImageAsset> | undefined = $state();
 
 	// Toolbar stuff
 	let toolbarOpacity = $state(0);
@@ -242,12 +242,12 @@
 		assetGridDisplayProps: {
 			style: `padding: 0em ${isLayoutPage() ? "1em" : "2em"};`
 		},
-		assetDblClick: (_e: MouseEvent, asset: Image) => {
+		assetDblClick: (_e: MouseEvent, asset: ImageAsset) => {
 			lightboxImage = asset;
 		},
 		// Context menu event from PhotoAssetGrid: { asset, anchor }
 		onassetcontext: (detail: {
-			asset: Image;
+			asset: ImageAsset;
 			anchor: { x: number; y: number } | HTMLElement;
 		}) => {
 			const { asset, anchor } = detail;
@@ -302,7 +302,7 @@
 
 			const newImages = (await Promise.all(fetchPromises)).filter(
 				(i) => i !== null
-			) as Image[];
+			) as ImageAsset[];
 
 			if (newImages.length > 0) {
 				collectionState.images.unshift(...newImages);
@@ -388,7 +388,7 @@
 			return;
 		}
 
-		const uids = items.map((i: Image) => i.uid);
+		const uids = items.map((i: ImageAsset) => i.uid);
 		try {
 			const res = await deleteCollectionImages(data.uid, { uids });
 			if (res.status === 200 && (res.data?.deleted ?? true)) {
@@ -469,7 +469,7 @@
 		}
 	}
 
-	function getDisplayArray(): Image[] {
+	function getDisplayArray(): ImageAsset[] {
 		return Array.isArray(displayData) ? displayData : (displayData ?? []);
 	}
 
@@ -619,7 +619,7 @@
 		selectionScope.updateItem(image, collectionState.images)}
 />
 
-{#snippet imageCard(asset: Image)}
+{#snippet imageCard(asset: ImageAsset)}
 	<ImageCard {asset} />
 {/snippet}
 

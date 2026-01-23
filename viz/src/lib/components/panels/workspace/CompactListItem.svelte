@@ -1,5 +1,5 @@
 <script lang="ts">
-	import type { Image, Collection } from "$lib/api";
+	import type { ImageAsset, Collection } from "$lib/api";
 	import { VizMimeTypes } from "$lib/constants";
 	import { DragData } from "$lib/drag-drop/data";
 	import MaterialIcon from "$lib/components/MaterialIcon.svelte";
@@ -8,7 +8,7 @@
 	import AssetImage from "$lib/components/AssetImage.svelte";
 
 	interface Props {
-		item: Image | Collection;
+		item: ImageAsset | Collection;
 		type: "image" | "collection";
 	}
 
@@ -43,7 +43,7 @@
 
 	const thumbnailAsset = $derived.by(() => {
 		if (type === "image") {
-			return item as Image;
+			return item as ImageAsset;
 		}
 		return (item as Collection).thumbnail;
 	});
@@ -93,7 +93,7 @@
 	{#if expanded}
 		<div class="details" transition:slide={{ duration: 200 }}>
 			{#if type === "image"}
-				{@const img = item as Image}
+				{@const img = item as ImageAsset}
 				<div class="detail-grid">
 					<span class="label">UID:</span>
 					<span class="value uid" title={item.uid}>{item.uid}</span>

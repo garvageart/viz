@@ -17,7 +17,7 @@ func NewEngine() *Engine {
 
 // Apply applies the search criteria to the Image query
 func (e *Engine) Apply(db *gorm.DB, criteria SearchCriteria) *gorm.DB {
-	query := db.Model(&entities.Image{})
+	query := db.Model(&entities.ImageAsset{})
 
 	// 1. Text Search (Name OR Description OR Keywords OR EXIF Make/Model)
 	if len(criteria.Text) > 0 {

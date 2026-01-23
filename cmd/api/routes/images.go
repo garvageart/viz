@@ -50,7 +50,7 @@ type ImageUploadError struct {
 	Error     string `json:"error"`
 }
 
-func createNewImageEntity(logger *slog.Logger, fileName string, libvipsImg *libvips.Image) (*entities.Image, error) {
+func createNewImageEntity(logger *slog.Logger, fileName string, libvipsImg *libvips.Image) (*entities.ImageAsset, error) {
 	logger.Info("Generating ID", slog.String("file", fileName))
 	id, err := uid.Generate()
 
@@ -131,7 +131,7 @@ func createNewImageEntity(logger *slog.Logger, fileName string, libvipsImg *libv
 		Preview:   previewPath,
 	}
 
-	allImageData := entities.Image{
+	allImageData := entities.ImageAsset{
 		Uid:           id,
 		Name:          fileName,
 		Private:       false,
@@ -192,11 +192,11 @@ func ImagesRouter(db *gorm.DB, logger *slog.Logger) *chi.Mux {
 			order = "ASC"
 		}
 
-		var images []entities.Image
+		var images []entities.ImageAsset
 		var total int64
 
 		if err := db.WithContext(req.Context()).Transaction(func(tx *gorm.DB) error {
-			query := tx.Model(&entities.Image{}).Where("deleted_at IS NULL")
+			query := tx.Model(&entities.ImageAsset{}).Where("deleted_at IS NULL")
 
 			// Access Control: Filter private images
 			authUser, ok := libhttp.UserFromContext(req)
@@ -307,8 +307,8 @@ func ImagesRouter(db *gorm.DB, logger *slog.Logger) *chi.Mux {
 			return
 		}
 
-		var imgEnt entities.Image
-		if result := db.Model(&entities.Image{}).Where("uid = ? AND deleted_at IS NULL", uid).First(&imgEnt); result.Error != nil {
+		var imgEnt entities.ImageAsset
+		if result := db.Model(&entities.ImageAsset{}).Where("uid = ? AND deleted_at IS NULL", uid).First(&imgEnt); result.Error != nil {
 			if result.Error == gorm.ErrRecordNotFound {
 				render.Status(req, http.StatusNotFound)
 				render.JSON(res, req, dto.ErrorResponse{Error: "Image not found"})
@@ -360,8 +360,8 @@ func ImagesRouter(db *gorm.DB, logger *slog.Logger) *chi.Mux {
 		uid := chi.URLParam(req, "uid")
 		simple := req.URL.Query().Get("simple") == "true"
 
-		var imgEnt entities.Image
-		result := db.Model(&entities.Image{}).Where("uid = ? AND deleted_at IS NULL", uid).First(&imgEnt)
+		var imgEnt entities.ImageAsset
+		result := db.Model(&entities.ImageAsset{}).Where("uid = ? AND deleted_at IS NULL", uid).First(&imgEnt)
 
 		if result.Error != nil {
 			if result.Error == gorm.ErrRecordNotFound {
@@ -418,8 +418,8 @@ func ImagesRouter(db *gorm.DB, logger *slog.Logger) *chi.Mux {
 	router.Get("/{uid}", func(res http.ResponseWriter, req *http.Request) {
 		uid := chi.URLParam(req, "uid")
 
-		var imgEnt entities.Image
-		result := db.Preload("Owner").Preload("UploadedBy").Model(&entities.Image{}).Where("uid = ? AND deleted_at IS NULL", uid).First(&imgEnt)
+		var imgEnt entities.ImageAsset
+		result := db.Preload("Owner").Preload("UploadedBy").Model(&entities.ImageAsset{}).Where("uid = ? AND deleted_at IS NULL", uid).First(&imgEnt)
 
 		if result.Error != nil {
 			if result.Error == gorm.ErrRecordNotFound {
@@ -459,7 +459,7 @@ func ImagesRouter(db *gorm.DB, logger *slog.Logger) *chi.Mux {
 			return
 		}
 
-		var img entities.Image
+		var img entities.ImageAsset
 		err := db.Transaction(func(tx *gorm.DB) error {
 			if e := tx.First(&img, "uid = ? AND deleted_at IS NULL", uid); e.Error != nil {
 				return e.Error
@@ -629,7 +629,7 @@ func ImagesRouter(db *gorm.DB, logger *slog.Logger) *chi.Mux {
 		imageEntity.ImageMetadata.FileSize = &fileSize
 		imageEntity.ImageMetadata.Checksum = checksum
 
-		var existing entities.Image
+		var existing entities.ImageAsset
 		dupErr := db.Where("image_metadata->>'checksum' = ?", checksum).First(&existing).Error
 		if dupErr == nil {
 			render.Status(req, http.StatusOK)
@@ -762,7 +762,7 @@ func ImagesRouter(db *gorm.DB, logger *slog.Logger) *chi.Mux {
 		checksum := hex.EncodeToString(hasher.Sum(nil))
 		imageEntity.ImageMetadata.Checksum = checksum
 
-		var existing entities.Image
+		var existing entities.ImageAsset
 		dupErr := db.Where("image_metadata->>'checksum' = ?", checksum).First(&existing).Error
 		if dupErr == nil {
 			// Duplicate: return existing UID as an ImageUploadResponse (200)
@@ -859,7 +859,7 @@ func ImagesRouter(db *gorm.DB, logger *slog.Logger) *chi.Mux {
 			var errMsg *string
 
 			// Check ownership before deleting
-			var img entities.Image
+			var img entities.ImageAsset
 			if err := db.Select("owner_id").First(&img, "uid = ?", id).Error; err != nil {
 				if err != gorm.ErrRecordNotFound {
 					logger.Error("failed to check ownership", slog.String("uid", id), slog.Any("error", err))
@@ -883,7 +883,7 @@ func ImagesRouter(db *gorm.DB, logger *slog.Logger) *chi.Mux {
 
 			if body.Force {
 				// Force delete: Remove from DB permanently and delete files
-				if err := db.Unscoped().Where("uid = ?", id).Delete(&entities.Image{}).Error; err != nil {
+				if err := db.Unscoped().Where("uid = ?", id).Delete(&entities.ImageAsset{}).Error; err != nil {
 					logger.Error("failed to hard delete from DB", slog.String("uid", id), slog.Any("error", err))
 					e := err.Error()
 					errMsg = &e
@@ -900,7 +900,7 @@ func ImagesRouter(db *gorm.DB, logger *slog.Logger) *chi.Mux {
 				}
 			} else {
 				// Soft delete: Set DeletedAt in DB and move files to trash
-				if err := db.Where("uid = ?", id).Delete(&entities.Image{}).Error; err != nil {
+				if err := db.Where("uid = ?", id).Delete(&entities.ImageAsset{}).Error; err != nil {
 					logger.Error("failed to soft delete from DB", slog.String("uid", id), slog.Any("error", err))
 					e := err.Error()
 					errMsg = &e
@@ -976,7 +976,7 @@ func ImagesRouter(db *gorm.DB, logger *slog.Logger) *chi.Mux {
 	return router
 }
 
-func serveOriginalImage(res http.ResponseWriter, req *http.Request, logger *slog.Logger, imgEnt *entities.Image, isDownload bool) {
+func serveOriginalImage(res http.ResponseWriter, req *http.Request, logger *slog.Logger, imgEnt *entities.ImageAsset, isDownload bool) {
 	imageData, err := images.ReadImage(imgEnt.Uid, imgEnt.ImageMetadata.FileName)
 	if err != nil {
 		logger.Error("failed to read original image", slog.Any("error", err))
@@ -1000,7 +1000,7 @@ func serveOriginalImage(res http.ResponseWriter, req *http.Request, logger *slog
 	http.ServeContent(res, req, imgEnt.ImageMetadata.FileName, imgEnt.UpdatedAt, bytes.NewReader(imageData))
 }
 
-func serveTransformedImage(res http.ResponseWriter, req *http.Request, logger *slog.Logger, imgEnt *entities.Image, params *transform.TransformParams, isDownload bool) {
+func serveTransformedImage(res http.ResponseWriter, req *http.Request, logger *slog.Logger, imgEnt *entities.ImageAsset, params *transform.TransformParams, isDownload bool) {
 	// 1. Determine if this is a "permanent" transform path
 	reqURI := req.URL.String()
 	isPermanent := imgEnt.ImagePaths.Thumbnail == reqURI || imgEnt.ImagePaths.Preview == reqURI
@@ -1163,7 +1163,7 @@ func validateDownloadRequest(res http.ResponseWriter, req *http.Request, db *gor
 }
 
 // updateImageFromDTO updates image entity fields from a small ImageUpdate
-func updateImageFromDTO(image *entities.Image, update dto.ImageUpdate) {
+func updateImageFromDTO(image *entities.ImageAsset, update dto.ImageUpdate) {
 	if update.Name != nil {
 		image.Name = *update.Name
 	}

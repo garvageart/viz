@@ -67,7 +67,7 @@ func ParseTransformParams(pathStr string) (*transform.TransformParams, error) {
 
 // GenerateTransform generates permanent cached transforms for thumbnail/preview paths if present.
 // These are the URLs stored in ImagePaths (e.g. /images/<uid>/file?format=webp&w=400&h=400&quality=85)
-func GenerateTransform(params *transform.TransformParams, imgEnt entities.Image, originalData []byte) (result *TransformResult, err error) {
+func GenerateTransform(params *transform.TransformParams, imgEnt entities.ImageAsset, originalData []byte) (result *TransformResult, err error) {
 	ext := params.Format
 	if ext == "" {
 		if imgEnt.ImageMetadata == nil {

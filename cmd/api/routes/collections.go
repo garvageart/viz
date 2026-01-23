@@ -22,7 +22,7 @@ import (
 var ErrCollectionUnauthorised = errors.New("unauthorized")
 
 func findCollectionImages(db *gorm.DB, imgUIDs []string, collection entities.Collection, limit, offset int) ([]dto.ImagesResponse, error) {
-	var images []entities.Image
+	var images []entities.ImageAsset
 
 	if err := db.Preload("Owner").Preload("UploadedBy").Where("uid IN ?", imgUIDs).
 		Limit(limit).Offset(offset).
@@ -512,7 +512,7 @@ func CollectionsRouter(db *gorm.DB, logger *slog.Logger) *chi.Mux {
 			}
 
 			for _, imgUID := range colImage.UIDs {
-				var img entities.Image
+				var img entities.ImageAsset
 
 				if err := tx.First(&img, "uid = ?", imgUID).Error; err != nil {
 					return err

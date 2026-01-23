@@ -286,8 +286,8 @@ type Collection struct {
 	Owner *User  `json:"owner,omitempty"`
 
 	// Private Is private
-	Private   *bool  `json:"private"`
-	Thumbnail *Image `json:"thumbnail,omitempty"`
+	Private   *bool       `json:"private"`
+	Thumbnail *ImageAsset `json:"thumbnail,omitempty"`
 
 	// Uid Collection UID
 	Uid string `json:"uid"`
@@ -326,8 +326,8 @@ type CollectionDetailResponse struct {
 	Owner *User  `json:"owner,omitempty"`
 
 	// Private Is private
-	Private   *bool  `json:"private"`
-	Thumbnail *Image `json:"thumbnail,omitempty"`
+	Private   *bool       `json:"private"`
+	Thumbnail *ImageAsset `json:"thumbnail,omitempty"`
 
 	// Uid Collection UID
 	Uid string `json:"uid"`
@@ -520,8 +520,8 @@ type EventRecord struct {
 	Timestamp time.Time `json:"timestamp"`
 }
 
-// Image defines model for Image.
-type Image struct {
+// ImageAsset defines model for ImageAsset.
+type ImageAsset struct {
 	// CreatedAt Creation time
 	CreatedAt time.Time `json:"created_at"`
 
@@ -839,9 +839,9 @@ type ImagesListResponse struct {
 // ImagesResponse defines model for ImagesResponse.
 type ImagesResponse struct {
 	// AddedAt Added timestamp
-	AddedAt time.Time `json:"added_at"`
-	AddedBy *User     `json:"added_by,omitempty"`
-	Image   Image     `json:"image"`
+	AddedAt time.Time  `json:"added_at"`
+	AddedBy *User      `json:"added_by,omitempty"`
+	Image   ImageAsset `json:"image"`
 }
 
 // ImagineConfig defines model for ImagineConfig.
@@ -948,7 +948,7 @@ type SearchListResponse struct {
 	Collections []Collection `json:"collections"`
 
 	// Images List of images found
-	Images []Image `json:"images"`
+	Images []ImageAsset `json:"images"`
 }
 
 // Session defines model for Session.

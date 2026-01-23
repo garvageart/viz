@@ -4,7 +4,7 @@
 
 <script lang="ts" generics>
 	import AssetGrid from "./AssetGrid.svelte";
-	import { getFullImagePath, type Image } from "$lib/api";
+	import { getFullImagePath, type ImageAsset } from "$lib/api";
 	import { DateTime } from "luxon";
 	import {
 		mount,
@@ -55,9 +55,9 @@
 
 	interface PhotoSpecificProps {
 		/** Custom photo card snippet - if not provided, uses default photo card */
-		photoCardSnippet?: Snippet<[Image]>;
+		photoCardSnippet?: Snippet<[ImageAsset]>;
 		/** Complete flat list of all images for cross-group range selection */
-		allData?: Image[];
+		allData?: ImageAsset[];
 		/** Unique identifier for selection state management */
 		scopeId?: string;
 		/** Grouped data for timeline view with headers */
@@ -68,7 +68,7 @@
 		gridConfig?: PhotoGridConfig;
 	}
 
-	type Props = Omit<ComponentProps<typeof AssetGrid<Image>>, "assetSnippet"> &
+	type Props = Omit<ComponentProps<typeof AssetGrid<ImageAsset>>, "assetSnippet"> &
 		PhotoSpecificProps;
 
 	let {
@@ -93,7 +93,7 @@
 	}: Props = $props();
 
 	// Selection Management
-	let selection = $derived(selectionManager.getScope<Image>(scopeId));
+	let selection = $derived(selectionManager.getScope<ImageAsset>(scopeId));
 	let selectedUIDs = $derived(
 		new Set(Array.from(selection.selected).map((i) => i.uid))
 	);
@@ -116,7 +116,7 @@
 	// If we have grouped data, we assume the parent has already filtered it or passed it correctly.
 	// However, if `data` is passed (flat mode), we filter it locally.
 	// For the timeline view, `data` might be the flattened version of `groupedData`.
-	let filteredData = $derived(filterManager.apply(data) as Image[]);
+	let filteredData = $derived(filterManager.apply(data) as ImageAsset[]);
 
 	function onFocus() {
 		selectionManager.setActive(scopeId);
@@ -314,7 +314,7 @@
 	// Styling stuff
 	const assetLookup = $derived(new Map(data.map((a) => [a.uid, a])));
 
-	function getAssetFromElement(el: HTMLElement): Image | undefined {
+	function getAssetFromElement(el: HTMLElement): ImageAsset | undefined {
 		const assetId = el.dataset.assetId;
 		if (!assetId) {
 			return undefined;
@@ -410,7 +410,7 @@
 	});
 
 	const groupLookup = $derived.by(() => {
-		const map = new Map<string, Image[]>();
+		const map = new Map<string, ImageAsset[]>();
 		if (groupedData) {
 			for (const g of groupedData) {
 				map.set(g.label, g.allImages);
@@ -539,7 +539,7 @@
 		virtualizer.updateScroll(scrollTop, vH);
 	}
 
-	function scrollToAsset(asset: Image) {
+	function scrollToAsset(asset: ImageAsset) {
 		if (!photoGridEl || !virtualizer.rows.length) {
 			return;
 		}
@@ -786,7 +786,7 @@
 		}
 	});
 
-	function getSizedPreviewUrl(asset: Image): string {
+	function getSizedPreviewUrl(asset: ImageAsset): string {
 		const checksum = asset.image_metadata?.checksum;
 
 		if (asset.image_paths?.thumbnail) {
@@ -813,7 +813,7 @@
 	const lightboxPrefetchCache = new SvelteSet<string>();
 	const loadedImageUIDs = new SvelteSet<string>();
 
-	function prefetchLightboxImage(asset: Image) {
+	function prefetchLightboxImage(asset: ImageAsset) {
 		if (!asset.uid) {
 			return;
 		}
@@ -835,14 +835,14 @@
 		};
 	}
 
-	function handleImageCardSelect(asset: Image, e: MouseEvent | KeyboardEvent) {
+	function handleImageCardSelect(asset: ImageAsset, e: MouseEvent | KeyboardEvent) {
 		onFocus(); // Ensure this grid is active on click
 		suppressScrollOnce = true;
 
 		if (e.shiftKey) {
 			const selectionData =
 				allData && allData.length > 0 ? allData : filteredData;
-			const ids = selectionData.map((i: Image) => i.uid);
+			const ids = selectionData.map((i: ImageAsset) => i.uid);
 			const endIndex = ids.indexOf(asset.uid);
 			const startIndex = selection.active
 				? ids.indexOf(selection.active.uid)
@@ -1117,7 +1117,7 @@
 	</div>
 {/snippet}
 
-{#snippet imageCard(asset: Image)}
+{#snippet imageCard(asset: ImageAsset)}
 	<ImageCard {asset} />
 {/snippet}
 

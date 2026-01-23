@@ -5,7 +5,7 @@
 		listImages,
 		updateImage,
 		type Collection,
-		type Image
+		type ImageAsset
 	} from "$lib/api";
 	import AssetToolbar from "$lib/components/AssetToolbar.svelte";
 	import Button from "$lib/components/Button.svelte";
@@ -118,11 +118,11 @@
 	});
 
 	// Lightbox
-	let lightboxImage: Image | undefined = $state();
+	let lightboxImage: ImageAsset | undefined = $state();
 
 	// Selection (shared across groups)
 	const scopeId = SelectionScopeNames.PHOTOS_MAIN;
-	const selectionScope = selectionManager.getScope<Image>(scopeId);
+	const selectionScope = selectionManager.getScope<ImageAsset>(scopeId);
 	let selectionFirstImage = $derived(
 		Array.from(selectionScope.selected).sort((a, b) =>
 			a.uid.localeCompare(b.uid)
@@ -202,7 +202,7 @@
 		isPaginating = false;
 	}
 
-	function openLightbox(asset: Image) {
+	function openLightbox(asset: ImageAsset) {
 		lightboxImage = asset;
 	}
 
@@ -304,12 +304,12 @@
 
 	async function resolveRawToImages(
 		items: ImageUploadSuccess[]
-	): Promise<Image[]> {
+	): Promise<ImageAsset[]> {
 		if (!items || items.length === 0) {
 			return [];
 		}
 
-		const results: Image[] = [];
+		const results: ImageAsset[] = [];
 		const fetchPromises = items.map(async (it) => {
 			if (!it) {
 				return null;

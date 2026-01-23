@@ -135,7 +135,7 @@ func AdminRouter(db *gorm.DB, logger *slog.Logger, storageStats *images.StorageS
 		var collectionCount int64
 
 		db.Model(&entities.User{}).Count(&userCount)
-		db.Model(&entities.Image{}).Count(&imageCount)
+		db.Model(&entities.ImageAsset{}).Count(&imageCount)
 		db.Model(&entities.Collection{}).Count(&collectionCount)
 
 		var dbSize int64

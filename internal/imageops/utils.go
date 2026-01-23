@@ -273,7 +273,7 @@ func ParseExifDate(s *string, offsets ...*string) (time.Time, bool) {
 
 // getTakenAt returns the most appropriate taken/creation timestamp for an image,
 // Priority: EXIF Original -> EXIF Modify -> metadata file_created_at -> image.created_at
-func GetTakenAt(img entities.Image) time.Time {
+func GetTakenAt(img entities.ImageAsset) time.Time {
 	// Try EXIF fields first
 	if img.Exif != nil {
 		if img.Exif.DateTimeOriginal != nil {
@@ -307,7 +307,7 @@ func GetTakenAt(img entities.Image) time.Time {
 // ordering by taken-at descending (newest first). If taken-at timestamps are
 // equal it falls back to Name descending to provide a stable ordering that
 // matches the client-side comparator.
-func LessByTakenAtDesc(a, b entities.Image) bool {
+func LessByTakenAtDesc(a, b entities.ImageAsset) bool {
 	ta := GetTakenAt(a)
 	tb := GetTakenAt(b)
 

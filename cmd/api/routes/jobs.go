@@ -43,7 +43,7 @@ func handleImageProcessing(db *gorm.DB, logger *slog.Logger, body dto.WorkerJobC
 
 	// If UIDs provided and only one, treat as a single target
 	if body.Uids != nil && len(*body.Uids) == 1 {
-		var img entities.Image
+		var img entities.ImageAsset
 		if err = db.Where("uid = ?", (*body.Uids)[0]).First(&img).Error; err != nil {
 			render.Status(req, http.StatusNotFound)
 			render.JSON(res, req, dto.ErrorResponse{Error: "Image not found"})
@@ -70,7 +70,7 @@ func handleImageProcessing(db *gorm.DB, logger *slog.Logger, body dto.WorkerJobC
 	case "missing":
 		// Find UIDs of images missing thumbhash
 		var thumbhashMissing []string
-		if err = db.Model(&entities.Image{}).Where("image_metadata->>'thumbhash' IS NULL").Pluck("uid", &thumbhashMissing).Error; err != nil {
+		if err = db.Model(&entities.ImageAsset{}).Where("image_metadata->>'thumbhash' IS NULL").Pluck("uid", &thumbhashMissing).Error; err != nil {
 			render.Status(req, http.StatusInternalServerError)
 			render.JSON(res, req, dto.ErrorResponse{Error: "Failed to identify images missing thumbhash"})
 			return
@@ -101,13 +101,13 @@ func handleImageProcessing(db *gorm.DB, logger *slog.Logger, body dto.WorkerJobC
 		count = int64(len(targetUids))
 
 	case "all":
-		if err = db.Model(&entities.Image{}).Count(&count).Error; err != nil {
+		if err = db.Model(&entities.ImageAsset{}).Count(&count).Error; err != nil {
 			render.Status(req, http.StatusInternalServerError)
 			render.JSON(res, req, dto.ErrorResponse{Error: "Failed to count images"})
 			return
 		}
 
-		if err = db.Model(&entities.Image{}).Pluck("uid", &targetUids).Error; err != nil {
+		if err = db.Model(&entities.ImageAsset{}).Pluck("uid", &targetUids).Error; err != nil {
 			render.Status(req, http.StatusInternalServerError)
 			render.JSON(res, req, dto.ErrorResponse{Error: "Failed to fetch image UIDs"})
 			return
@@ -129,7 +129,7 @@ func handleImageProcessing(db *gorm.DB, logger *slog.Logger, body dto.WorkerJobC
 			end := min(i+batchSize, len(uids))
 			batchUids := uids[i:end]
 
-			var imgs []entities.Image
+			var imgs []entities.ImageAsset
 			if err := db.Where("uid IN ?", batchUids).Find(&imgs).Error; err != nil {
 				logger.Error("failed to fetch images for batch processing", slog.Any("error", err))
 				continue
@@ -163,7 +163,7 @@ func handleXMPGeneration(db *gorm.DB, logger *slog.Logger, body dto.WorkerJobCre
 	var uidsWithoutXMP []string
 
 	if body.Uids != nil && len(*body.Uids) == 1 {
-		var img entities.Image
+		var img entities.ImageAsset
 		if err := db.Where("uid = ?", (*body.Uids)[0]).First(&img).Error; err != nil {
 			render.Status(req, http.StatusNotFound)
 			render.JSON(res, req, dto.ErrorResponse{Error: "Image not found"})
@@ -224,7 +224,7 @@ func handleXMPGeneration(db *gorm.DB, logger *slog.Logger, body dto.WorkerJobCre
 		count = int64(len(uidsWithoutXMP))
 	case "all":
 		// All images will get XMP files (regenerate existing ones)
-		err = db.Model(&entities.Image{}).Count(&count).Error
+		err = db.Model(&entities.ImageAsset{}).Count(&count).Error
 		if err != nil {
 			render.Status(req, http.StatusInternalServerError)
 			render.JSON(res, req, dto.ErrorResponse{Error: "Failed to count images"})
@@ -258,7 +258,7 @@ func handleXMPGeneration(db *gorm.DB, logger *slog.Logger, body dto.WorkerJobCre
 				end := min(i+100, len(uids))
 				batch := uids[i:end]
 
-				var batchImgs []entities.Image
+				var batchImgs []entities.ImageAsset
 				if err := db.Where("uid IN ?", batch).Find(&batchImgs).Error; err != nil {
 					logger.Error("failed to fetch images", "error", err)
 					continue
@@ -275,7 +275,7 @@ func handleXMPGeneration(db *gorm.DB, logger *slog.Logger, body dto.WorkerJobCre
 			}
 		} else {
 			query := db.Session(&gorm.Session{})
-			var imgs []entities.Image
+			var imgs []entities.ImageAsset
 			query.FindInBatches(&imgs, 100, func(tx *gorm.DB, batch int) error {
 				for _, img := range imgs {
 					job := &workers.XMPGenerationJob{Image: img}
@@ -311,7 +311,7 @@ func handleExifProcessing(db *gorm.DB, logger *slog.Logger, body dto.WorkerJobCr
 	var err error
 
 	if body.Uids != nil && len(*body.Uids) == 1 {
-		var img entities.Image
+		var img entities.ImageAsset
 		if err := db.Where("uid = ?", (*body.Uids)[0]).First(&img).Error; err != nil {
 			render.Status(req, http.StatusNotFound)
 			render.JSON(res, req, dto.ErrorResponse{Error: "Image not found"})
@@ -337,9 +337,9 @@ func handleExifProcessing(db *gorm.DB, logger *slog.Logger, body dto.WorkerJobCr
 	switch command {
 	case "missing":
 		// images without exif
-		err = db.Model(&entities.Image{}).Where(missingQuery).Count(&count).Error
+		err = db.Model(&entities.ImageAsset{}).Where(missingQuery).Count(&count).Error
 	case "all":
-		err = db.Model(&entities.Image{}).Count(&count).Error
+		err = db.Model(&entities.ImageAsset{}).Count(&count).Error
 	// 'single' replaced by `uids`: handled above if provided.
 	default:
 		render.Status(req, http.StatusBadRequest)
@@ -368,7 +368,7 @@ func handleExifProcessing(db *gorm.DB, logger *slog.Logger, body dto.WorkerJobCr
 			query = db.Session(&gorm.Session{})
 		}
 
-		var imgs []entities.Image
+		var imgs []entities.ImageAsset
 		query.FindInBatches(&imgs, 100, func(tx *gorm.DB, batch int) error {
 			for _, img := range imgs {
 				job := &workers.ExifProcessJob{Image: img}
@@ -395,7 +395,7 @@ func containsUid(s []string, e string) bool {
 
 // checkMissingTransforms checks if a given image path's transform is missing from the cache.
 // If missing, it adds the image's UID to the missingUids slice.
-func checkMissingTransforms(img entities.Image, transformPath string, missingUids *[]string, logger *slog.Logger) error {
+func checkMissingTransforms(img entities.ImageAsset, transformPath string, missingUids *[]string, logger *slog.Logger) error {
 	if transformPath == "" {
 		return nil // No path to check
 	}
@@ -442,7 +442,7 @@ func checkMissingTransforms(img entities.Image, transformPath string, missingUid
 // findMissingTransforms finds UIDs of images that have permanent paths (thumbnail/preview) defined
 // but the corresponding cached transform files are missing.
 func findMissingTransforms(db *gorm.DB, logger *slog.Logger) ([]string, error) {
-	var allImages []entities.Image
+	var allImages []entities.ImageAsset
 	var err error
 	// Fetch uid, image_paths, and image_metadata needed for cache key calculation
 	if err = db.Select("uid", "image_paths", "image_metadata").Find(&allImages).Error; err != nil {

@@ -58,7 +58,7 @@ func SearchRouter(db *gorm.DB, logger *slog.Logger) chi.Router {
 
 		imagesQuery = imagesQuery.Limit(limit).Offset((page - 1) * limit)
 
-		var images []entities.Image
+		var images []entities.ImageAsset
 		if err := imagesQuery.Find(&images).Error; err != nil {
 			logger.Error("failed to search images", slog.Any("error", err))
 			render.Status(req, http.StatusInternalServerError)
@@ -83,7 +83,7 @@ func SearchRouter(db *gorm.DB, logger *slog.Logger) chi.Router {
 			return
 		}
 
-		imagesDTO := make([]dto.Image, 0)
+		imagesDTO := make([]dto.ImageAsset, 0)
 		for _, img := range images {
 			imagesDTO = append(imagesDTO, img.DTO())
 		}

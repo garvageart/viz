@@ -26,7 +26,7 @@ const (
 )
 
 type ImageProcessJob struct {
-	Image entities.Image
+	Image entities.ImageAsset
 }
 
 // NewImageWorker creates a worker that processes images and sends WebSocket updates
@@ -108,7 +108,7 @@ func NewImageWorker(db *gorm.DB, wsBroker *libhttp.WSBroker) *jobs.Worker {
 	)
 }
 
-func ImageProcess(ctx context.Context, db *gorm.DB, imgEnt entities.Image, onProgress func(step string, progress int)) error {
+func ImageProcess(ctx context.Context, db *gorm.DB, imgEnt entities.ImageAsset, onProgress func(step string, progress int)) error {
 	originalData, err := images.ReadImage(imgEnt.Uid, imgEnt.ImageMetadata.FileName)
 	if err != nil {
 		return fmt.Errorf("failed to read image: %w", err)
@@ -284,7 +284,7 @@ func ImageProcess(ctx context.Context, db *gorm.DB, imgEnt entities.Image, onPro
 
 	err = db.Transaction(func (tx *gorm.DB) error {
 		// Update image entity in DB
-		if err := tx.Model(&entities.Image{}).Where("uid = ?", imgEnt.Uid).Updates(entities.Image{ImageMetadata: imgEnt.ImageMetadata}).Error; err != nil {
+		if err := tx.Model(&entities.ImageAsset{}).Where("uid = ?", imgEnt.Uid).Updates(entities.ImageAsset{ImageMetadata: imgEnt.ImageMetadata}).Error; err != nil {
 			return fmt.Errorf("failed to update image entity: %w", err)
 		}
 

@@ -1,6 +1,6 @@
 <script lang="ts">
 	import { selectionManager } from "$lib/states/selection.svelte";
-	import { getFullImagePath, type Image } from "$lib/api";
+	import { getFullImagePath, type ImageAsset } from "$lib/api";
 	import MaterialIcon from "$lib/components/MaterialIcon.svelte";
 	import LabelSelector from "$lib/components/LabelSelector.svelte";
 	import { getImageLabel } from "$lib/utils/images";
@@ -9,7 +9,7 @@
 	import AssetImage from "$lib/components/AssetImage.svelte";
 
 	let activeScope = $derived(selectionManager.activeScope);
-	let activeItem = $derived(activeScope?.active as Image | undefined);
+	let activeItem = $derived(activeScope?.active as ImageAsset | undefined);
 	let isImage = $derived(!!activeItem?.image_paths);
 
 	let selectionCount = $derived(activeScope?.selected.size ?? 0);

@@ -33,7 +33,7 @@ const (
 )
 
 type XMPGenerationJob struct {
-	Image entities.Image
+	Image entities.ImageAsset
 }
 
 // NewXMPWorker creates a worker that generates XMP sidecar files
@@ -112,7 +112,7 @@ func NewXMPWorker(db *gorm.DB, wsBroker *libhttp.WSBroker) *jobs.Worker {
 	)
 }
 
-func generateXMPSidecar(img entities.Image, onProgress func(step string, progress int)) error {
+func generateXMPSidecar(img entities.ImageAsset, onProgress func(step string, progress int)) error {
 	originalPath := images.GetImagePath(img.Uid, img.ImageMetadata.FileName)
 	logger := jobs.Logger
 

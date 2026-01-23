@@ -1,5 +1,5 @@
 <script lang="ts">
-	import { getFullImagePath, type Image } from "$lib/api";
+	import { getFullImagePath, type ImageAsset } from "$lib/api";
 	import { getThumbhashURL } from "$lib/utils/images";
 	import type { HTMLImgAttributes } from "svelte/elements";
 
@@ -7,7 +7,7 @@
 
 	export type AssetImageProps = {
 		/** The Image asset object from the API */
-		asset: Image;
+		asset: ImageAsset;
 		/**
 		 * How the image should fit in its container
 		 * @default "cover"
