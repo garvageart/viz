@@ -10,6 +10,7 @@ set -euo pipefail
 : "${POSTGRES_PASSWORD:?POSTGRES_PASSWORD is not set}"
 : "${POSTGRES_DB:?POSTGRES_DB is not set}"
 
+# "Wait a moment", AI is so funny sometimes. Who talks like this 😭😭😭😭
 # Wait a moment if postgres isn't ready (the official image runs these scripts after initdb,
 # but we add a small retry to be safe when executed interactively).
 
