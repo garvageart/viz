@@ -26,6 +26,7 @@
 </script>
 
 <button
+	type="button"
 	{...props}
 	bind:this={element}
 	class="{variant} {props.class || ''}"

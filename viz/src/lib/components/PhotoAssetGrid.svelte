@@ -51,6 +51,7 @@
 		type PhotoGridConfig
 	} from "$lib/components/virtualizer/PhotoGridVirtualizer.svelte.js";
 	import AssetImage from "./AssetImage.svelte";
+	import StarRating from "./StarRating.svelte";
 
 	interface PhotoSpecificProps {
 		/** Custom photo card snippet - if not provided, uses default photo card */
@@ -1050,25 +1051,32 @@
 			assetDblClick?.(e, asset);
 		}}
 	>
-		{#if asset.image_metadata?.label || asset.favourited}
-			<div class="image-metadata-display">
-				{#if asset.image_metadata?.label}
-					<LabelSelector
-						variant="compact"
-						enableSelection={false}
-						label={getImageLabel(asset)}
-					/>
-				{/if}
-				{#if asset.favourited}
-					<MaterialIcon
-						iconName="favorite"
-						size="0.8rem"
-						style="color: white;"
-						fill={true}
-					/>
-				{/if}
-			</div>
-		{/if}
+		<div class="image-metadata-display">
+			{#if asset.image_metadata?.rating}
+				<div class="left-side">
+					<StarRating static={true} value={asset.image_metadata?.rating} />
+				</div>
+			{/if}
+			{#if asset.image_metadata?.label || asset.favourited}
+				<div class="right-side">
+					{#if asset.image_metadata?.label}
+						<LabelSelector
+							variant="compact"
+							enableSelection={false}
+							label={getImageLabel(asset)}
+						/>
+					{/if}
+					{#if asset.favourited}
+						<MaterialIcon
+							iconName="favorite"
+							size="0.8rem"
+							style="color: var(--imag-text-color);"
+							fill={true}
+						/>
+					{/if}
+				</div>
+			{/if}
+		</div>
 		{#if asset.image_paths}
 			<div class="tile-image-container" style={`height: 100%;`}>
 				<AssetImage
@@ -1078,6 +1086,7 @@
 					class="tile-image"
 					alt={asset.name ?? asset.image_metadata?.file_name ?? ""}
 					loading="lazy"
+					initialLoaded={isCached}
 					onload={() => {
 						loadedImageUIDs.add(asset.uid);
 					}}
@@ -1342,13 +1351,27 @@
 	}
 
 	.image-metadata-display {
-		display: flex;
-		align-items: center;
-		gap: 0.3rem;
 		position: absolute;
-		top: 0.3rem;
-		right: 0.3rem;
+		display: flex;
+		justify-content: space-between;
+		align-items: center;
+		box-sizing: border-box;
+		padding: 0.3rem;
 		z-index: 2;
+		font-size: 0.5rem;
+		width: 100%;
+
+		.left-side {
+			display: flex;
+			align-items: center;
+			gap: 0.3rem;
+		}
+
+		.right-side {
+			display: flex;
+			align-items: center;
+			gap: 0.3rem;
+		}
 	}
 
 	.asset-photo {

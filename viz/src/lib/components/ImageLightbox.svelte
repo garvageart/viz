@@ -4,7 +4,6 @@
 	import { setRating } from "$lib/images/exif";
 	import { ZoomPanCrop, type CropRect } from "$lib/images/zoom/crop";
 	import { toastState } from "$lib/toast-notifcations/notif-state.svelte";
-	import { loadImage } from "$lib/utils/dom";
 	import { downloadOriginalImageFile } from "$lib/utils/http";
 	import {
 		formatBytes,
@@ -73,6 +72,10 @@
 	let zoomTargetEl: HTMLDivElement = $state()!; // Wrapper for image + overlay
 	let zoomer = $state<ZoomPanCrop>();
 
+	let thumbhashURL = $derived(
+		lightboxImage ? getThumbhashURL(lightboxImage) : undefined
+	);
+
 	// Transform State for CropOverlay (Scale only needed for UI inverse scaling)
 	let transformState = $state({
 		scale: 1
@@ -104,6 +107,13 @@
 	$effect(() => {
 		if (isCropping && imageEl && imageEl.complete && zoomer) {
 			restoreCrop(zoomer);
+		}
+	});
+
+	// Effect 3: Reset zoom when image changes (since we removed {#key})
+	$effect(() => {
+		if (displayURL && zoomer && !isCropping) {
+			zoomer.reset();
 		}
 	});
 
@@ -305,14 +315,32 @@
 		}
 	}
 
-	let thumbhashURL = $derived(
-		lightboxImage ? getThumbhashURL(lightboxImage) : undefined
-	);
-
 	let imageUid = $derived(lightboxImage?.uid);
-	let currentImageEl: HTMLImageElement | undefined = $derived(
-		imageUid ? document.createElement("img") : undefined
-	);
+	let loadState = $state<"loading" | "loaded" | "error">("loading");
+
+	$effect(() => {
+		if (displayURL) {
+			let active = true;
+			loadState = "loading";
+			// Create a new image to pre-load
+			const img = new Image();
+			img.onload = () => {
+				// Only update if this is still the current URL
+				if (active) {
+					loadState = "loaded";
+				}
+			};
+			img.onerror = () => {
+				if (active) {
+					loadState = "error";
+				}
+			};
+			img.src = displayURL;
+			return () => {
+				active = false;
+			};
+		}
+	});
 
 	let starRating = $derived<number | null>(
 		lightboxImage?.image_metadata?.rating ?? null
@@ -331,7 +359,6 @@
 
 		updatingRating = true;
 		const prev = starRating;
-		starRating = newRating;
 
 		try {
 			const newSuccessfulRating = await setRating(
@@ -339,7 +366,14 @@
 				prev,
 				newRating
 			);
-			starRating = newSuccessfulRating;
+
+			if (lightboxImage && lightboxImage.image_metadata) {
+				lightboxImage.image_metadata = {
+					...lightboxImage.image_metadata,
+					rating: newSuccessfulRating
+				};
+				onImageUpdated?.(lightboxImage);
+			}
 		} catch (err) {
 			const ratingErr = err as Error;
 			toastState.addToast({
@@ -347,7 +381,6 @@
 				title: "Failed to update rating",
 				message: `An error occurred while updating the image rating: ${ratingErr.message}`
 			});
-			starRating = prev;
 		} finally {
 			updatingRating = false;
 		}
@@ -647,11 +680,7 @@
 					}}
 				/>
 
-				<StarRating
-					bind:value={starRating}
-					{updatingRating}
-					onChange={setImageRating}
-				/>
+				<StarRating value={starRating} onChange={setImageRating} />
 			</div>
 		</div>
 	</div>
@@ -719,47 +748,56 @@
 					/>
 				</div>
 			{/if}
-			{#key displayURL}
+
+			<div
+				class="image-wrapper"
+				bind:this={imageContainerEl}
+				role="presentation"
+			>
 				<div
-					class="image-wrapper"
-					bind:this={imageContainerEl}
+					class="zoom-target"
+					class:is-crop={isCropping}
+					bind:this={zoomTargetEl}
+					oncontextmenu={handleContextMenu}
 					role="presentation"
 				>
-					<div
-						class="zoom-target"
-						class:is-crop={isCropping}
-						bind:this={zoomTargetEl}
-						oncontextmenu={handleContextMenu}
-						role="presentation"
-					>
-						<AssetImage
-							asset={lightboxImage!}
-							bind:imageElement={imageEl}
-							src={displayURL}
-							class="lightbox-image {isCropping ? 'is-crop' : ''}"
-							alt={lightboxImage!.name}
-							title={lightboxImage!.name}
-							priority={true}
-							crossorigin="use-credentials"
-							data-image-id={lightboxImage!.uid}
-							onload={() => {
-								if (isCropping) restoreCrop();
-							}}
-							ondragstart={(e) => e.preventDefault()}
-							oncontextmenu={handleContextMenu}
+					{#if thumbhashURL}
+						<img
+							src={thumbhashURL}
+							class="lightbox-image lightbox-placeholder"
+							class:hidden={loadState === "loaded"}
+							alt="Placeholder for {lightboxImage!.name}"
+							aria-hidden="true"
+							style={`aspect-ratio: ${lightboxImage!.width} / ${lightboxImage!.height};`}
 						/>
-						{#if isCropping && imageDimensions && currentCrop && zoomer}
-							<CropOverlay
-								width={imageDimensions.width}
-								height={imageDimensions.height}
-								crop={currentCrop}
-								{zoomer}
-								scale={transformState.scale}
-							/>
-						{/if}
-					</div>
+					{/if}
+
+					<img
+						bind:this={imageEl}
+						src={displayURL}
+						class="lightbox-image {isCropping ? 'is-crop' : ''}"
+						alt={lightboxImage!.name}
+						title={lightboxImage!.name}
+						loading="eager"
+						crossorigin="use-credentials"
+						data-image-id={lightboxImage!.uid}
+						onload={() => {
+							if (isCropping) restoreCrop();
+						}}
+						ondragstart={(e) => e.preventDefault()}
+						oncontextmenu={handleContextMenu}
+					/>
+					{#if isCropping && imageDimensions && currentCrop && zoomer}
+						<CropOverlay
+							width={imageDimensions.width}
+							height={imageDimensions.height}
+							crop={currentCrop}
+							{zoomer}
+							scale={transformState.scale}
+						/>
+					{/if}
 				</div>
-			{/key}
+			</div>
 
 			{#if prevLightboxImage && nextLightboxImage && !isCropping}
 				<div class="lightbox-nav">
@@ -915,14 +953,20 @@
 
 	.zoom-target {
 		position: relative;
-		display: inline-flex;
-		justify-content: center;
+		display: grid;
+		grid-template-columns: 100%;
+		grid-template-rows: 100%;
+		justify-items: center;
 		align-items: center;
 		max-width: 100%;
 		max-height: 100%;
 		min-width: 0;
 		min-height: 0;
 		pointer-events: auto;
+	}
+
+	.zoom-target > * {
+		grid-area: 1 / 1;
 	}
 
 	:global(.lightbox-image) {
@@ -932,6 +976,28 @@
 		width: auto;
 		height: auto;
 		pointer-events: auto;
+		transition: opacity 0.2s ease-in-out;
+	}
+
+	:global(.lightbox-image.placeholder) {
+		width: 100%;
+		height: 100%;
+		object-fit: contain;
+		z-index: 1;
+		opacity: 1;
+	}
+
+	:global(.lightbox-image.placeholder.hidden) {
+		opacity: 0;
+	}
+
+	:global(.lightbox-image.main) {
+		z-index: 2;
+		opacity: 1;
+	}
+
+	:global(.lightbox-image.main.loading) {
+		opacity: 0;
 	}
 
 	// to give space for seeing cropping

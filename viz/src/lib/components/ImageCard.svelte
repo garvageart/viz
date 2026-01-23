@@ -8,17 +8,22 @@
 	import { DragData } from "$lib/drag-drop/data";
 	import LabelSelector from "./LabelSelector.svelte";
 	import MaterialIcon from "./MaterialIcon.svelte";
-	import AssetImage from "./AssetImage.svelte";
+	import AssetImage, { type AssetImageProps } from "./AssetImage.svelte";
 
 	let {
 		asset,
 		variant = "full",
-		showMetadata = $bindable(true)
+		showMetadata = $bindable(true),
+		objectFit = "cover",
+		imageVariant = "thumbnail",
+		priority = false
 	}: {
 		asset: Image;
 		variant?: "mini" | "full";
 		showMetadata?: boolean;
-	} = $props();
+	} & Omit<AssetImageProps, "asset" | "variant"> & {
+			imageVariant?: AssetImageProps["variant"];
+		} = $props();
 
 	let imageDate = $derived(getTakenAt(asset));
 	let placeholderDataURL = $state<string | undefined>();
@@ -68,14 +73,17 @@
 {#if variant === "mini"}
 	<div title={asset.name} class="mini-card">
 		<div class="mini-image-wrapper">
-			<AssetImage variant="thumbnail" {asset} alt={asset.name} loading="lazy" />
+			<AssetImage
+				variant={imageVariant}
+				{asset}
+				{objectFit}
+				{priority}
+				alt={asset.name}
+				loading="lazy"
+			/>
 			{#if asset.favourited}
 				<div class="favorite-badge">
-					<MaterialIcon
-						iconName="favorite"
-						style="font-size: 0.8rem;"
-						fill={true}
-					/>
+					<MaterialIcon iconName="favorite" size="1rem" fill={true} />
 				</div>
 			{/if}
 		</div>
@@ -117,7 +125,9 @@
 		<div class="image-container">
 			<AssetImage
 				{asset}
-				variant="thumbnail"
+				variant={imageVariant}
+				{objectFit}
+				{priority}
 				alt="{asset.name}{asset.uploaded_by
 					? ` by ${asset.uploaded_by.username}`
 					: ''}"
@@ -192,6 +202,7 @@
 			display: flex;
 			align-items: center;
 			justify-content: center;
+			z-index: 5;
 		}
 	}
 
