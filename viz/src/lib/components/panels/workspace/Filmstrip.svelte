@@ -1,21 +1,21 @@
 <script lang="ts">
 	import { selectionManager } from "$lib/states/selection.svelte";
-	import { type Image } from "$lib/api";
+	import { type ImageAsset } from "$lib/api";
 	import ImageCard from "$lib/components/ImageCard.svelte";
 
 	let activeScope = $derived(selectionManager.activeScope);
-	let activeItem = $derived(activeScope?.active as Image | undefined);
+	let activeItem = $derived(activeScope?.active as ImageAsset | undefined);
 
 	// activeScope.source contains the list of items
-	let filmstripImages = $derived((activeScope?.source as Image[]) ?? []);
+	let filmstripImages = $derived((activeScope?.source as ImageAsset[]) ?? []);
 
 	let activeItemIndex = $derived(
 		filmstripImages.findIndex((img) => img.uid === activeItem?.uid)
 	);
 
-	let selectedItems = $derived(activeScope?.selected ?? new Set<Image>());
+	let selectedItems = $derived(activeScope?.selected ?? new Set<ImageAsset>());
 
-	function handleImageClick(image: Image, e: MouseEvent) {
+	function handleImageClick(image: ImageAsset, e: MouseEvent) {
 		if (!activeScope) return;
 
 		// Ensure we have focus/active scope (though filmstrip usually reflects active scope)
@@ -50,7 +50,7 @@
 		}
 	}
 
-	function handleItemKeydown(e: KeyboardEvent, image: Image) {
+	function handleItemKeydown(e: KeyboardEvent, image: ImageAsset) {
 		if (e.key === "Enter" || e.key === " ") {
 			e.preventDefault();
 			// For keyboard "Enter/Space", we treat it as a standard click (select)

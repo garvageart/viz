@@ -331,7 +331,7 @@ export type ImagePaths = {
     /** Path to raw file */
     raw?: string;
 };
-export type Image = {
+export type ImageAsset = {
     /** Image UID */
     uid: string;
     /** Image name */
@@ -384,7 +384,7 @@ export type Collection = {
     owner?: User;
     /** Collection description */
     description?: string;
-    thumbnail?: Image;
+    thumbnail?: ImageAsset;
     /** Creation time */
     created_at: string;
     /** Update time */
@@ -392,7 +392,7 @@ export type Collection = {
 };
 export type SearchListResponse = {
     /** List of images found */
-    images: Image[];
+    images: ImageAsset[];
     /** List of collections found */
     collections: Collection[];
 };
@@ -400,7 +400,7 @@ export type ImagesResponse = {
     /** Added timestamp */
     added_at: string;
     added_by?: User;
-    image: Image;
+    image: ImageAsset;
 };
 export type ImagesListResponse = {
     /** Self link */
@@ -504,7 +504,7 @@ export type CollectionDetailResponse = {
     owner?: User;
     /** Collection description */
     description?: string;
-    thumbnail?: Image;
+    thumbnail?: ImageAsset;
     /** Creation time */
     created_at: string;
     /** Update time */
@@ -1562,7 +1562,7 @@ export function getImageExif(uid: string, { simple }: {
 export function getImage(uid: string, opts?: Oazapfts.RequestOpts) {
     return oazapfts.fetchJson<{
         status: 200;
-        data: Image;
+        data: ImageAsset;
     } | {
         status: 400;
         data: ErrorResponse;
@@ -1582,7 +1582,7 @@ export function getImage(uid: string, opts?: Oazapfts.RequestOpts) {
 export function updateImage(uid: string, imageUpdate: ImageUpdate, opts?: Oazapfts.RequestOpts) {
     return oazapfts.fetchJson<{
         status: 200;
-        data: Image;
+        data: ImageAsset;
     } | {
         status: 400;
         data: ErrorResponse;

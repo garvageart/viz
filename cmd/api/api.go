@@ -281,7 +281,7 @@ func main() {
 
 	// Lmao I hate this
 	client := apiServer.ConnectToDatabase(
-		entities.Image{},
+		entities.ImageAsset{},
 		entities.Collection{},
 		entities.Session{},
 		entities.APIKey{},

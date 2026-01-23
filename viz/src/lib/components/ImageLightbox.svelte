@@ -1,5 +1,5 @@
 <script lang="ts">
-	import { getFullImagePath, updateImage, type Image } from "$lib/api";
+	import { getFullImagePath, updateImage, type ImageAsset } from "$lib/api";
 	import { LabelColours, type ImageLabel } from "$lib/images/constants";
 	import { setRating } from "$lib/images/exif";
 	import { ZoomPanCrop, type CropRect } from "$lib/images/zoom/crop";
@@ -26,10 +26,10 @@
 	import StarRating from "./StarRating.svelte";
 
 	interface Props {
-		lightboxImage: Image | undefined;
+		lightboxImage: ImageAsset | undefined;
 		prevLightboxImage?: () => void;
 		nextLightboxImage?: () => void;
-		onImageUpdated?: (image: Image) => void;
+		onImageUpdated?: (image: ImageAsset) => void;
 	}
 
 	let {

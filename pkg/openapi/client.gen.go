@@ -6331,7 +6331,7 @@ func (r UploadImageByUrlResponse) StatusCode() int {
 type GetImageResponse struct {
 	Body         []byte
 	HTTPResponse *http.Response
-	JSON200      *Image
+	JSON200      *ImageAsset
 	JSON400      *ErrorResponse
 	JSON404      *ErrorResponse
 	JSON500      *ErrorResponse
@@ -6356,7 +6356,7 @@ func (r GetImageResponse) StatusCode() int {
 type UpdateImageResponse struct {
 	Body         []byte
 	HTTPResponse *http.Response
-	JSON200      *Image
+	JSON200      *ImageAsset
 	JSON400      *ErrorResponse
 	JSON404      *ErrorResponse
 	JSON500      *ErrorResponse
@@ -9910,7 +9910,7 @@ func ParseGetImageResponse(rsp *http.Response) (*GetImageResponse, error) {
 
 	switch {
 	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 200:
-		var dest Image
+		var dest ImageAsset
 		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
 			return nil, err
 		}
@@ -9957,7 +9957,7 @@ func ParseUpdateImageResponse(rsp *http.Response) (*UpdateImageResponse, error) 
 
 	switch {
 	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 200:
-		var dest Image
+		var dest ImageAsset
 		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
 			return nil, err
 		}

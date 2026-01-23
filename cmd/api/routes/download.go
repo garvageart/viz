@@ -30,12 +30,12 @@ func writeImagesToZip(ctx context.Context, db *gorm.DB, logger *slog.Logger, zw 
 		return nil
 	}
 
-	var imgs []entities.Image
+	var imgs []entities.ImageAsset
 	if err := db.WithContext(ctx).Where("uid IN ? AND deleted_at IS NULL", uids).Find(&imgs).Error; err != nil {
 		return err
 	}
 
-	imgMap := make(map[string]entities.Image, len(imgs))
+	imgMap := make(map[string]entities.ImageAsset, len(imgs))
 	for _, im := range imgs {
 		imgMap[im.Uid] = im
 	}

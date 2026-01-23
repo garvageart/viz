@@ -238,10 +238,10 @@ type PermanentHashGetter func(db *gorm.DB) (map[string]bool, error)
 // GetPermanentTransformHashes builds a map of hashes for all permanent transforms of existing images.
 func GetPermanentTransformHashes(db *gorm.DB) (map[string]bool, error) {
 	permanentHashes := make(map[string]bool)
-	var images []entities.Image
+	var images []entities.ImageAsset
 
 	// Process images in batches to avoid loading everything into memory
-	err := db.Model(&entities.Image{}).Where("deleted_at IS NULL").FindInBatches(&images, 1000, func(tx *gorm.DB, batch int) error {
+	err := db.Model(&entities.ImageAsset{}).Where("deleted_at IS NULL").FindInBatches(&images, 1000, func(tx *gorm.DB, batch int) error {
 		for _, img := range images {
 			if img.ImageMetadata == nil {
 				continue

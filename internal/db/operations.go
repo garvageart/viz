@@ -116,7 +116,7 @@ func BackfillOwnership(client *gorm.DB, logger *slog.Logger) {
 	logger.Info("Backfilling ownership for images and collections...")
 
 	// Use model to ensure correct table name, then Exec raw SQL for performance
-	if err := client.Model(&entities.Image{}).Exec("UPDATE images SET owner_id = uploaded_by_id WHERE owner_id IS NULL AND uploaded_by_id IS NOT NULL").Error; err != nil {
+	if err := client.Model(&entities.ImageAsset{}).Exec("UPDATE images SET owner_id = uploaded_by_id WHERE owner_id IS NULL AND uploaded_by_id IS NOT NULL").Error; err != nil {
 		logger.Error("Failed to backfill image ownership", slog.Any("error", err))
 	}
 

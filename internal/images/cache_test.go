@@ -206,7 +206,7 @@ func TestCacheFileName(t *testing.T) {
 // Ensure eTags can be reconstructed and are stable
 func TestETagReconstruction(t *testing.T) {
 	// Dummy Image
-	img := entities.Image{
+	img := entities.ImageAsset{
 		ImageMetadata: &dto.ImageMetadata{
 			Checksum: "checksum123",
 		},

@@ -57,7 +57,7 @@ func TestGenerateTransform_ModernSamples(t *testing.T) {
 			}
 
 			// Mock entity
-			imgEnt := entities.Image{
+			imgEnt := entities.ImageAsset{
 				ImageMetadata: &dto.ImageMetadata{
 					FileType: strings.TrimPrefix(filepath.Ext(file.Name()), "."),
 					Checksum: "mock-checksum-" + file.Name(),
@@ -190,7 +190,7 @@ func TestPermanentTransforms(t *testing.T) {
 				t.Fatalf("Failed to read file %s: %v", path, err)
 			}
 
-			imgEnt := entities.Image{
+			imgEnt := entities.ImageAsset{
 				ImageMetadata: &dto.ImageMetadata{
 					FileType: strings.TrimPrefix(filepath.Ext(file.Name()), "."),
 					Checksum: "mock-checksum-" + file.Name(),

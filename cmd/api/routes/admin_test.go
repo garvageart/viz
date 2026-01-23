@@ -32,7 +32,7 @@ func newTestDB(t *testing.T) *gorm.DB {
 	// Auto-migrate all entities
 	err = db.AutoMigrate(
 		&entities.User{},
-		&entities.Image{},
+		&entities.ImageAsset{},
 		&entities.Collection{},
 		&entities.Session{},
 		&entities.APIKey{},
