@@ -1191,13 +1191,18 @@ func updateImageFromDTO(image *entities.Image, update dto.ImageUpdate) {
 
 		if update.ImageMetadata.Rating != nil {
 			// Clamp rating 0..5
+			// Treat 0 as "unrated" -> nil
 			r := *update.ImageMetadata.Rating
-			if r < 0 {
-				r = 0
-			} else if r > 5 {
-				r = 5
+			if r == 0 {
+				image.ImageMetadata.Rating = nil
+			} else {
+				if r < 0 {
+					r = 0
+				} else if r > 5 {
+					r = 5
+				}
+				image.ImageMetadata.Rating = &r
 			}
-			image.ImageMetadata.Rating = &r
 		}
 
 		if update.ImageMetadata.Label != nil {
