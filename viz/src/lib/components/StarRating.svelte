@@ -3,98 +3,149 @@
 	import IconButton from "./IconButton.svelte";
 
 	interface Props {
+		/**
+		 * The current rating value (1-5).
+		 */
 		value: number | null;
-		onChange: (rating: number | null) => void;
-		onClear?: () => void;
-		updatingRating?: boolean;
+		/**
+		 * If true, the rating is read-only (display mode).
+		 * @default false
+		 */
+		readonly?: boolean;
+		/**
+		 * Alias for readonly, for backward compatibility.
+		 */
+		static?: boolean;
+		/**
+		 * Callback when a rating is set.
+		 * @param rating The new rating (1-5) or null if cleared.
+		 */
+		onChange?: (rating: number | null) => void;
 	}
 
 	let {
 		value = $bindable(null),
-		updatingRating = $bindable(false),
-		onChange,
-		onClear
+		readonly = false,
+		static: isStatic = false,
+		onChange
 	}: Props = $props();
 
-	// Rating UI state: previewRating for hover preview, rating is the set value
-	let previewRating = $state<number | null>(null);
-	let rating = $derived<number | null>(value);
+	const isReadonly = $derived(readonly || isStatic);
 
-	let starValues = $state<number[]>([1, 2, 3, 4, 5]);
+	// Interaction state
+	let hoverValue = $state<number | null>(null);
+	let displayValue = $derived(hoverValue ?? value ?? 0);
 
-	// Prevent concurrent rating updates
-	function handleClick(rating: number) {
-		if (value === rating) {
-			onChange(null);
+	function handleSelect(star: number) {
+		if (isReadonly) return;
+
+		// if clicking the current value, clear it.
+		const newValue = value === star ? 0 : star;
+
+		if (onChange) {
+			onChange(newValue);
 		} else {
-			onChange(rating);
+			value = newValue;
+		}
+	}
+
+	function handleClear(e: MouseEvent) {
+		e.stopPropagation();
+		if (isReadonly) return;
+		if (onChange) {
+			onChange(0);
+		} else {
+			value = 0;
 		}
 	}
 </script>
 
-<div class="rating-container">
-	<div
-		class="rating-stars"
-		role="group"
-		onmouseleave={() => (previewRating = null)}
-	>
-		{#each starValues as i}
+<div
+	class="star-rating"
+	class:readonly={isReadonly}
+	class:interactive={!isReadonly}
+	role={isReadonly ? "img" : "radiogroup"}
+	aria-label="Star Rating"
+	onmouseleave={() => {
+		hoverValue = null;
+	}}
+>
+	{#each { length: 5 } as _, i}
+		{@const star = i + 1}
+		{@const filled = star <= displayValue}
+
+		{#if isReadonly}
+			<div class="star-item static" class:filled>
+				<MaterialIcon iconName="star" iconStyle={"sharp"} fill={filled} />
+			</div>
+		{:else}
 			<button
-				class="rating-button"
-				title={`Set Rating: ${i}`}
-				aria-label={`Set Rating: ${i}`}
-				onmouseenter={() => (previewRating = i)}
-				onmouseleave={() => (previewRating = null)}
-				onclick={() => handleClick(i)}
-				disabled={updatingRating}
-			>
-				<MaterialIcon
-					fill={i <= (previewRating ?? rating ?? 0)}
-					iconName="star"
-					iconStyle={"sharp"}
-				/>
-			</button>
-		{/each}
-		{#if rating !== null && rating !== 0}
-			<IconButton
-				iconName="close"
-				weight={600}
-				class="rating-clear"
-				aria-label="Clear rating"
-				onclick={() => {
-					handleClick(0);
-					onClear?.();
+				class="star-item interactive"
+				class:filled
+				type="button"
+				aria-label={`Rate ${star} stars`}
+				aria-pressed={value === star}
+				onmouseenter={() => {
+					hoverValue = star;
 				}}
-				disabled={updatingRating}
-			/>
+				onclick={() => handleSelect(star)}
+			>
+				<MaterialIcon iconName="star" iconStyle={"sharp"} fill={filled} />
+			</button>
 		{/if}
-	</div>
+	{/each}
+
+	{#if !isReadonly && value !== null && value !== 0}
+		<IconButton
+			iconName="close"
+			variant="mini"
+			aria-label="Clear rating"
+			onclick={handleClear}
+			class="clear-rating-btn"
+			style="margin-left: 0.5rem;"
+		/>
+	{/if}
 </div>
 
 <style lang="scss">
-	.rating-container {
-		display: flex;
+	.star-rating {
+		display: inline-flex;
 		align-items: center;
-		gap: 0.5em;
+		gap: 0.1em;
+		color: var(--imag-text-color);
+
+		&.readonly {
+			pointer-events: none;
+		}
 	}
 
-	.rating-stars {
-		display: flex;
-		align-items: center;
-	}
-
-	.rating-button,
-	:global(.rating-clear) {
-		border: none;
-		background: transparent;
-		cursor: pointer;
-		color: var(--imag-10) !important;
+	.star-item {
 		display: inline-flex;
 		align-items: center;
 		justify-content: center;
+		color: inherit;
+		transition:
+			color 0.15s ease,
+			transform 0.1s ease;
+
+		&.filled {
+			color: var(--imag-text-color);
+		}
 	}
 
-	:global(.rating-clear) {
-		margin: 0em 0.5em;
+	.star-item.interactive {
+		background: none;
+		border: none;
+		padding: 0;
+		cursor: pointer;
+		outline: none;
+
+		&:hover {
+			color: var(--imag-text-color);
+		}
+
+		&:focus-visible {
+			color: var(--imag-text-color);
+		}
 	}
 </style>

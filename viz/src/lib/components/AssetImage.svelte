@@ -3,9 +3,9 @@
 	import { getThumbhashURL } from "$lib/utils/images";
 	import type { HTMLImgAttributes } from "svelte/elements";
 
-	type ImageVariant = "thumbnail" | "preview" | "original";
+	export type ImageVariant = "thumbnail" | "preview" | "original";
 
-	type AssetProps = {
+	export type AssetImageProps = {
 		/** The Image asset object from the API */
 		asset: Image;
 		/**
@@ -22,15 +22,27 @@
 		 * Force a specific image size variant.
 		 * If unset, uses srcset to let the browser decide based on viewport.
 		 * Useful for grids where you know you only need thumbnails.
-		 */		
+		 */
 		variant?: ImageVariant;
 		/**
 		 * Binding to the internal image element
 		 */
 		imageElement?: HTMLImageElement;
+		/**
+		 * If true, renders the image tag directly without a wrapper div.
+		 * Useful for contexts where the wrapper interferes with layout (e.g. Lightbox).
+		 * Note: ThumbHash placeholder is disabled in naked mode.
+		 * @default false
+		 */
+		naked?: boolean;
+		/**
+		 * If true, assumes the image is already loaded (e.g. from cache) and immediately shows it
+		 * without fade-in or placeholder.
+		 */
+		initialLoaded?: boolean;
 	};
 
-	type Props = AssetProps & HTMLImgAttributes;
+	type Props = AssetImageProps & HTMLImgAttributes;
 
 	let {
 		asset,
@@ -38,11 +50,13 @@
 		priority = false,
 		variant,
 		imageElement = $bindable(),
+		naked = false,
+		initialLoaded = false,
 		src: srcOverride,
 		...rest
 	}: Props = $props();
 
-	let loaded = $state(false);
+	let loaded = $derived(initialLoaded);
 
 	/**
 	 * Helper to add version/checksum to path for immutable caching
@@ -120,18 +134,7 @@
 	const thumbhash = $derived(getThumbhashURL(asset));
 </script>
 
-<div class="asset-image-container {rest.class ?? ''}" style={rest.style}>
-	{#if thumbhash}
-		<img
-			src={thumbhash}
-			class="placeholder"
-			class:hidden={loaded}
-			style:object-fit={objectFit}
-			alt=""
-			aria-hidden="true"
-		/>
-	{/if}
-
+{#if naked}
 	<img
 		{...rest}
 		bind:this={imageElement}
@@ -139,22 +142,53 @@
 		{src}
 		loading={priority ? "eager" : "lazy"}
 		fetchpriority={priority ? "high" : "auto"}
-		class="main-image"
+		class="{rest.class} main-image"
 		class:visible={loaded}
 		style:object-fit={objectFit}
+		style={rest.style}
 		onload={(e) => {
 			loaded = true;
 			rest.onload?.(e);
 		}}
 		alt={rest.alt ?? asset.name ?? asset.uid}
 	/>
-</div>
+{:else}
+	<div class="asset-image-container {rest.class ?? ''}" style={rest.style}>
+		{#if thumbhash}
+			<img
+				src={thumbhash}
+				class="placeholder"
+				class:hidden={loaded}
+				style:object-fit={objectFit}
+				alt=""
+				aria-hidden="true"
+			/>
+		{/if}
+
+		<img
+			{...rest}
+			bind:this={imageElement}
+			{srcset}
+			{src}
+			loading={priority ? "eager" : "lazy"}
+			fetchpriority={priority ? "high" : "auto"}
+			class="main-image"
+			class:visible={loaded}
+			style:object-fit={objectFit}
+			onload={(e) => {
+				loaded = true;
+				rest.onload?.(e);
+			}}
+			alt={rest.alt ?? asset.name ?? asset.uid}
+		/>
+	</div>
+{/if}
 
 <style lang="scss">
 	.asset-image-container {
 		position: relative;
-		width: 100%;
-		height: 100%;
+		width: var(--asset-width, 100%);
+		height: var(--asset-height, 100%);
 		overflow: hidden;
 		display: block;
 		background-color: var(--imag-100); /* Darker background while loading */
@@ -177,8 +211,10 @@
 	}
 
 	.main-image {
-		width: 100%;
-		height: 100%;
+		width: var(--asset-width, 100%);
+		height: var(--asset-height, 100%);
+		max-width: 100%;
+		max-height: 100%;
 		display: block;
 		opacity: 0;
 		transition: opacity 0.3s ease-in;
