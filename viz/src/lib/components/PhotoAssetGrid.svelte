@@ -906,6 +906,13 @@
 		selection.clear();
 	}
 
+	function handleOuterContainerClick(e: MouseEvent) {
+		onFocus();
+		if (e.target === e.currentTarget) {
+			selection.clear();
+		}
+	}
+
 	function unselectImagesOnClickOutsideAssetContainer(element: HTMLElement) {
 		const clickHandler = (e: MouseEvent) => {
 			if (disableOutsideUnselect) {
@@ -963,7 +970,10 @@
 			<button
 				class="header-select-btn"
 				class:selected={allSelected}
-				onclick={() => handleGroupSelect(label)}
+				onclick={(e) => {
+					e.stopPropagation();
+					handleGroupSelect(label);
+				}}
 				title={allSelected ? "Deselect group" : "Select group"}
 			>
 				<MaterialIcon
@@ -1027,6 +1037,7 @@
 		onfocus={() => prefetchLightboxImage(asset)}
 		onclick={(e) => {
 			e.preventDefault();
+			e.stopPropagation();
 			handleImageCardSelect(asset, e);
 		}}
 		onkeydown={(e) => {
@@ -1037,6 +1048,7 @@
 		}}
 		oncontextmenu={(e: MouseEvent & { currentTarget: HTMLElement }) => {
 			e.preventDefault();
+			e.stopPropagation();
 			if (!selectedUIDs.has(asset.uid) || selection.selected.size <= 1) {
 				selection.select(asset);
 			}
@@ -1122,7 +1134,12 @@
 {/snippet}
 
 {#if view === "grid"}
-	<div class="grid-container" class:use-external-scroll={usingExternalScroll}>
+	<div
+		class="grid-container"
+		class:use-external-scroll={usingExternalScroll}
+		onclick={handleOuterContainerClick}
+		role="presentation"
+	>
 		{#if debugMode}
 			<div
 				style="position: sticky; top: 0; left: 0; z-index: 9999; background: rgba(0,0,0,0.8); color: lime; padding: 0.5rem; pointer-events: none;"
