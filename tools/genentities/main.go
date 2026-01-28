@@ -147,45 +147,12 @@ func main() {
 			os.Exit(1)
 		}
 
-		// Navigate to components.schemas
-		if comp, ok := doc["components"].(map[string]any); ok {
-			if schemas, ok := comp["schemas"].(map[string]any); ok {
-				for name, raw := range schemas {
-					if schemaMap, ok := raw.(map[string]any); ok {
-						if val, exists := schemaMap["x-entity"]; exists {
-							if b, ok := val.(bool); ok && b {
-								config := EntityConfig{
-									Name:       name,
-									SoftDelete: true, // Default to true if not specified otherwise
-									PKField:    "ID",
-								}
-								// Extract x-go-gorm-index if present
-								if gormIndexes, gormIndexExists := schemaMap["x-go-gorm-index"]; gormIndexExists {
-									indexData, err := yaml.Marshal(gormIndexes)
-									if err != nil {
-										fmt.Fprintf(os.Stderr, "Failed to marshal x-go-gorm-index for entity '%s': %v\n", name, err)
-										continue
-									}
-									var indexes []GormIndexConfig
-									if err := yaml.Unmarshal(indexData, &indexes); err != nil {
-										fmt.Fprintf(os.Stderr, "Failed to unmarshal x-go-gorm-index for entity '%s': %v\n", name, err)
-										continue
-									}
-									config.GormIndexes = indexes
-								}
-								// Add to a temporary map to resolve full config later
-								openapiIncludes[name] = config
-							}
-						}
-					}
-				}
-			}
-		}
+		openapiIncludes = extractOpenAPIEntities(doc)
 	}
 
 	// for DTOs we want to explicitly define as entities (CLI -include has lowest priority)
 	if *include != "" {
-		for _, name := range strings.Split(*include, ",") {
+		for name := range strings.SplitSeq(*include, ",") {
 			name = strings.TrimSpace(name)
 			if name == "" {
 				continue
@@ -458,9 +425,9 @@ func populateEntityFields(dtoPath string, entities []EntityConfig) ([]EntityConf
 			if f.Tag != nil {
 				// We manually parse because we don't want to reflect on types we don't have loaded
 				tagContent := strings.Trim(f.Tag.Value, "`")
-				for _, tagPart := range strings.Split(tagContent, " ") {
-					if strings.HasPrefix(tagPart, "json:\"") {
-						val := strings.TrimPrefix(tagPart, "json:\"")
+				for tagPart := range strings.SplitSeq(tagContent, " ") {
+					if after, ok :=strings.CutPrefix(tagPart, "json:\""); ok  {
+						val := after
 						val = strings.TrimSuffix(val, "\"")
 						// Handle json:"name,omitempty"
 						if commaIdx := strings.Index(val, ","); commaIdx != -1 {
@@ -486,8 +453,8 @@ func populateEntityFields(dtoPath string, entities []EntityConfig) ([]EntityConf
 
 			// Special handling for references to other entities
 			// If field type is *dto.SomeType and SomeType has a uid field, treat it as a foreign key
-			if strings.HasPrefix(tStr, "*dto.") {
-				typeName := strings.TrimPrefix(tStr, "*dto.")
+			if after, ok :=strings.CutPrefix(tStr, "*dto."); ok  {
+				typeName := after
 				if refStruct, exists := structMap[typeName]; exists {
 					// Check if this referenced type has a uid field (making it an entity)
 					hasUID := false
@@ -577,4 +544,55 @@ func populateEntityFields(dtoPath string, entities []EntityConfig) ([]EntityConf
 	}
 
 	return entities, nil
+}
+
+func extractOpenAPIEntities(doc map[string]any) map[string]EntityConfig {
+	entities := make(map[string]EntityConfig)
+	comp, ok := doc["components"].(map[string]any)
+	if !ok {
+		return entities
+	}
+	schemas, ok := comp["schemas"].(map[string]any)
+	if !ok {
+		return entities
+	}
+
+	for name, raw := range schemas {
+		schemaMap, ok := raw.(map[string]any)
+		if !ok {
+			continue
+		}
+
+		val, exists := schemaMap["x-entity"]
+		if !exists {
+			continue
+		}
+
+		if isEntity, ok := val.(bool); !ok || !isEntity {
+			continue
+		}
+
+		config := EntityConfig{
+			Name:       name,
+			SoftDelete: true, // Default to true if not specified otherwise
+			PKField:    "ID",
+		}
+
+		// Extract x-go-gorm-index if present
+		if gormIndexes, exists := schemaMap["x-go-gorm-index"]; exists {
+			indexData, err := yaml.Marshal(gormIndexes)
+			if err != nil {
+				fmt.Fprintf(os.Stderr, "Failed to marshal x-go-gorm-index for entity '%s': %v\n", name, err)
+				continue
+			}
+			var indexes []GormIndexConfig
+			if err := yaml.Unmarshal(indexData, &indexes); err != nil {
+				fmt.Fprintf(os.Stderr, "Failed to unmarshal x-go-gorm-index for entity '%s': %v\n", name, err)
+				continue
+			}
+			config.GormIndexes = indexes
+		}
+		entities[name] = config
+	}
+	return entities
 }
