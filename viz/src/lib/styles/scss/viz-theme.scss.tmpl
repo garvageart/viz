@@ -39,7 +39,7 @@ $secondary-color: {{.SecondaryColor}};
     );
 }
 
-@mixin imag-theme($sel, $is-light, $flip-bg: null, $flip-bg-pct: 0%, $flip-text: null, $flip-text-pct: 0%) {
+@mixin viz-theme($sel, $is-light, $flip-bg: null, $flip-bg-pct: 0%, $flip-text: null, $flip-text-pct: 0%) {
     #{$sel} {
         @include viz-mixins.generate-viz-colors(
             $bg-color: $bg-color,
@@ -57,20 +57,20 @@ $secondary-color: {{.SecondaryColor}};
 /* Light theme: use a blue base so --viz-100 is the lightest blue and
    --viz-10 is the darkest (in 10% steps). */
 $light-theme-sel: ':root[data-theme="light"], [data-theme="light"]';
-@include imag-theme($light-theme-sel, true, {{.FlipBgColor}}, {{.FlipBgPct}}, {{.FlipTextColor}}, {{.FlipTextPct}});
+@include viz-theme($light-theme-sel, true, {{.FlipBgColor}}, {{.FlipBgPct}}, {{.FlipTextColor}}, {{.FlipTextPct}});
 
 /* Dark theme: opposite mapping so --viz-100 is the darkest (base 100%) and
    --viz-10 is lightest. */
-@include imag-theme(':root[data-theme="dark"], [data-theme="dark"]', false);
+@include viz-theme(':root[data-theme="dark"], [data-theme="dark"]', false);
 
 /* If user prefers dark and no explicit theme is set, generate dark palette */
 @media (prefers-color-scheme: dark) {
-    @include imag-theme(":root:not([data-theme])", false);
+    @include viz-theme(":root:not([data-theme])", false);
 }
 
 /* If user prefers light and no explicit theme is set, generate light palette */
 @media (prefers-color-scheme: light) {
-    @include imag-theme($light-theme-sel, true, {{.FlipBgColor}}, {{.FlipBgPct}}, {{.FlipTextColor}}, {{.FlipTextPct}});
+    @include viz-theme($light-theme-sel, true, {{.FlipBgColor}}, {{.FlipBgPct}}, {{.FlipTextColor}}, {{.FlipTextPct}});
 }
 
 /* Up */

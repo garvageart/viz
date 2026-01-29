@@ -47,18 +47,18 @@
         $mixPct: $j * 5%;
 
         @if $is-light-theme {
-            // Light theme: imag-100 is the (lightness-inverted) base; lower
+            // Light theme: viz-100 is the (lightness-inverted) base; lower
             // levels should be progressively darker by mixing with black.
             --viz-#{$level}#{$suffix}: #{color.mix(black, $base, $mixPct)};
         } @else {
-            // Dark theme: imag-100 is the provided base; lower levels should
+            // Dark theme: viz-100 is the provided base; lower levels should
             // be progressively lighter by mixing with white.
             --viz-#{$level}#{$suffix}: #{color.mix(white, $base, $mixPct)};
         }
     }
 }
 
-@mixin imag-theme($sel, $is-light, $flip-bg: null, $flip-bg-pct: 0%, $flip-text: null, $flip-text-pct: 0%) {
+@mixin viz-theme($sel, $is-light, $flip-bg: null, $flip-bg-pct: 0%, $flip-text: null, $flip-text-pct: 0%) {
     #{$sel} {
         @include generate-viz-colors(
             $bg-color: $bg-color,
