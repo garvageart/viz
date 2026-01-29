@@ -18,7 +18,7 @@ $secondary-color: {{.SecondaryColor}};
     --viz-primary: #{$primary-color};
     --viz-secondary: #{$secondary-color};
 
-    @include viz-mixins.generate-imag-colors(
+    @include viz-mixins.generate-viz-colors(
         $bg-color: $bg-color,
         $text-color: $text-color,
         $base-color: $base-color,
@@ -30,7 +30,7 @@ $secondary-color: {{.SecondaryColor}};
         $suffix: "-light"
     );
 
-    @include viz-mixins.generate-imag-colors(
+    @include viz-mixins.generate-viz-colors(
         $bg-color: $bg-color,
         $text-color: $text-color,
         $base-color: $base-color,
@@ -41,7 +41,7 @@ $secondary-color: {{.SecondaryColor}};
 
 @mixin imag-theme($sel, $is-light, $flip-bg: null, $flip-bg-pct: 0%, $flip-text: null, $flip-text-pct: 0%) {
     #{$sel} {
-        @include viz-mixins.generate-imag-colors(
+        @include viz-mixins.generate-viz-colors(
             $bg-color: $bg-color,
             $text-color: $text-color,
             $base-color: $base-color,
