@@ -1,6 +1,6 @@
 # Infrastructure & Building Guide
 
-This guide covers how to build, run, and develop **Imagine**.
+This guide covers how to build, run, and develop **Viz**.
 
 **Preferred Method**: Docker Compose (simplest, consistent environment).
 **Manual Method**: For specialized development or environments where Docker is not available.
@@ -19,8 +19,8 @@ This is the recommended way to run the application. It handles the database, red
 
 1.  **Clone the repository**:
 ```bash
-git clone https://github.com/garvageart/imagine.git
-cd imagine
+git clone https://github.com/garvageart/viz.git
+cd viz
 ```
 
 2.  **Environment Setup**:
@@ -75,7 +75,7 @@ You need to manually create the role and database that the app expects. Connect 
 ```sql
 -- Replace 'myuser' and 'mypassword' with values from your .env
 CREATE ROLE myuser WITH LOGIN SUPERUSER PASSWORD '<mypassword>';
-CREATE DATABASE imagine OWNER myuser;
+CREATE DATABASE viz OWNER myuser;
 ```
 
 > Note: The application will handle table creation (AutoMigrate) on startup.
@@ -92,7 +92,7 @@ go mod download
 # Run from the project root using the workspace
 go run ./cmd/api
 ```
-The server should start on port `7770` (or as defined in `imagine.json` / `.env`).
+The server should start on port `7770` (or as defined in `viz.json` / `.env`).
 
 ### Step 3: Frontend (Viz)
 
@@ -138,7 +138,7 @@ Accessing `http://localhost:7770` (API port) will serve the frontend app for any
 
 ## 4. HTTPS / Custom Domain Setup (Optional)
 
-You can run the application with a custom domain (e.g., `https://imagine.local`) and valid HTTPS certificates locally using [Caddy](https://caddyserver.com/). This mimics a production environment and avoids browser security warnings.
+You can run the application with a custom domain (e.g., `https://viz.local`) and valid HTTPS certificates locally using [Caddy](https://caddyserver.com/). This mimics a production environment and avoids browser security warnings.
 
 ### Automated Setup (Recommended)
 You can use the built-in setup script to configure your `hosts` file and `Caddyfile` automatically.
@@ -164,7 +164,7 @@ Map your custom domain to your local machine.
 
 Add the following line:
 ```text
-127.0.0.1 imagine.local
+127.0.0.1 viz.local
 ```
 
 ### 3. Run Caddy
@@ -176,7 +176,7 @@ caddy run
 *Note: You may need to run as Administrator/sudo the first time to allow Caddy to install its root certificate into your system's trust store.*
 
 ### 4. Access
-Open **https://imagine.local** in your browser.
+Open **https://viz.local** in your browser.
 Caddy will automatically reverse-proxy requests to your running frontend (`localhost:7777`), which in turn proxies API requests to the backend.
 
 ---

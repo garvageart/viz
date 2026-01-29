@@ -1,3 +1,4 @@
+// Colours
 $viz-error-color: #ef4444;
 $viz-success-color: #22c55e;
 $viz-warning-color: #facc15;
@@ -10,3 +11,26 @@ $viz-color-tag-purple: #9355f7;
 $viz-color-tag-pink: #f755a1;
 $viz-color-tag-green: #19dd61;
 $viz-color-tag-blue: #106ea5;
+
+// Sizing
+$viz-base-unit: 16px;
+
+// Font sizes
+$viz-font-size-xs: 0.75rem; // 12px
+$viz-font-size-sm: 0.875rem; // 14px
+$viz-font-size-std: 1rem; // 16px
+$viz-font-size-lg: 1.125rem; // 18px
+$viz-font-size-xl: 1.25rem; // 20px
+$viz-font-size-2xl: 1.5rem; // 24px
+$viz-font-size-3xl: 1.875rem; // 30px
+$viz-font-size-4xl: 2.25rem; // 36px
+$viz-font-size-5xl: 3rem; // 48px
+
+// Padding sizes
+$viz-padding-xs: 0.25rem; // 4px
+$viz-padding-sm: 0.5rem; // 8px
+$viz-padding-md: 0.75rem; // 12px
+$viz-padding-std: 1rem; // 16px
+$viz-padding-lg: 1.25rem; // 20px
+$viz-padding-xl: 1.5rem; // 24px
+$viz-padding-2xl: 2rem; // 32px

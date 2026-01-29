@@ -12,9 +12,9 @@ import (
 
 	"github.com/go-chi/render"
 
-	imaAuth "imagine/internal/auth"
-	"imagine/internal/dto"
-	"imagine/internal/entities"
+	imaAuth "viz/internal/auth"
+	"viz/internal/dto"
+	"viz/internal/entities"
 )
 
 // Simple in-memory session->user cache to avoid DB lookups on every request.

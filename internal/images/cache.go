@@ -14,10 +14,10 @@ import (
 
 	"gorm.io/gorm"
 
-	"imagine/internal/config"
-	"imagine/internal/dto"
-	"imagine/internal/entities"
-	"imagine/internal/transform"
+	"viz/internal/config"
+	"viz/internal/dto"
+	"viz/internal/entities"
+	"viz/internal/transform"
 )
 
 const (

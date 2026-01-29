@@ -13,11 +13,11 @@ import (
 	googleapi "google.golang.org/api/oauth2/v2"
 	"google.golang.org/api/option"
 
-	"imagine/internal/config"
+	"viz/internal/config"
 )
 
 type OAuthServerSetup struct {
-	*config.ImagineServer
+	*config.VizServer
 }
 
 var (
@@ -32,7 +32,7 @@ var (
 		Endpoint: google.Endpoint,
 	}
 
-	GoogleOAuth = ImagineOAuth{
+	GoogleOAuth = VizOAuth{
 		config: GoogleOAuthConfig,
 	}
 )

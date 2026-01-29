@@ -11,8 +11,8 @@ import (
 	"gorm.io/gorm"
 	"log/slog"
 
-	"imagine/internal/dto"
-	libhttp "imagine/internal/http"
+	"viz/internal/dto"
+	libhttp "viz/internal/http"
 )
 
 // EventsRouter creates routes for WebSocket event management

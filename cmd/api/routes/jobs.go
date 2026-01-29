@@ -13,14 +13,14 @@ import (
 	"github.com/go-chi/render"
 	"gorm.io/gorm"
 
-	"imagine/internal/dto"
-	"imagine/internal/entities"
-	libhttp "imagine/internal/http"
-	"imagine/internal/imageops"
-	"imagine/internal/images"
-	"imagine/internal/jobs"
-	"imagine/internal/jobs/workers"
-	"imagine/internal/transform"
+	"viz/internal/dto"
+	"viz/internal/entities"
+	libhttp "viz/internal/http"
+	"viz/internal/imageops"
+	"viz/internal/images"
+	"viz/internal/jobs"
+	"viz/internal/jobs/workers"
+	"viz/internal/transform"
 )
 
 type ActiveBrief struct {

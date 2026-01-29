@@ -4,18 +4,18 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
-	"imagine/internal/transform"
+	"viz/internal/transform"
 	"time"
 
 	"github.com/ThreeDotsLabs/watermill"
 	"github.com/ThreeDotsLabs/watermill/message"
 
-	"imagine/internal/entities"
-	libhttp "imagine/internal/http"
-	"imagine/internal/imageops"
-	"imagine/internal/images"
-	"imagine/internal/jobs"
-	"imagine/internal/utils"
+	"viz/internal/entities"
+	libhttp "viz/internal/http"
+	"viz/internal/imageops"
+	"viz/internal/images"
+	"viz/internal/jobs"
+	"viz/internal/utils"
 
 	"gorm.io/gorm"
 )

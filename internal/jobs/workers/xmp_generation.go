@@ -18,13 +18,13 @@ import (
 	"github.com/trimmer-io/go-xmp/xmp"
 	"gorm.io/gorm"
 
-	"imagine/internal/entities"
-	libhttp "imagine/internal/http"
-	"imagine/internal/imageops"
-	"imagine/internal/images"
-	"imagine/internal/jobs"
-	"imagine/internal/utils"
-	customxmp "imagine/internal/xmp"
+	"viz/internal/entities"
+	libhttp "viz/internal/http"
+	"viz/internal/imageops"
+	"viz/internal/images"
+	"viz/internal/jobs"
+	"viz/internal/utils"
+	customxmp "viz/internal/xmp"
 )
 
 const (
@@ -127,7 +127,7 @@ func generateXMPSidecar(img entities.ImageAsset, onProgress func(step string, pr
 	xmpPath := strings.TrimSuffix(originalPath, filepath.Ext(originalPath)) + ".xmp"
 	doc := xmp.NewDocument()
 	xmpBase := &xmpbase.XmpBase{
-		CreatorTool: "Imagine Image Management System",
+		CreatorTool: "Viz Image Management System",
 	}
 
 	dcModel := &dc.DublinCore{}

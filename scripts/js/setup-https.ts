@@ -8,7 +8,7 @@ const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 const PROJECT_ROOT = path.resolve(__dirname, '../../'); // scripts/js -> scripts -> root
 
-const DOMAIN = 'imagine.local';
+const DOMAIN = 'viz.local';
 const TARGET_IP = '127.0.0.1';
 const CADDYFILE_NAME = 'Caddyfile';
 
@@ -72,13 +72,13 @@ function ensureCaddyfile() {
 
 function updateHostsFile() {
     const hostsPath = getHostsFilePath();
-    
+
     log.info(`Checking hosts file at: ${hostsPath}`);
 
     try {
         const content = fs.readFileSync(hostsPath, 'utf8');
         const lines = content.split(/\r?\n/);
-        
+
         // Check if entry already exists (naively)
         const exists = lines.some(line => {
             const trimmed = line.trim();
@@ -91,8 +91,8 @@ function updateHostsFile() {
         }
 
         // Prepare new content
-        const newEntry = `${os.EOL}${TARGET_IP} ${DOMAIN} # Added by Imagine setup script${os.EOL}`;
-        
+        const newEntry = `${os.EOL}${TARGET_IP} ${DOMAIN} # Added by Viz setup script${os.EOL}`;
+
         try {
             fs.appendFileSync(hostsPath, newEntry);
             log.success(`Added '${DOMAIN}' to hosts file.`);
@@ -130,7 +130,7 @@ function trustCertificate() {
 }
 
 async function main() {
-    console.log(`${colors.bold}Imagine HTTPS Setup (Caddy)${colors.reset}`);
+    console.log(`${colors.bold}Viz HTTPS Setup (Caddy)${colors.reset}`);
     console.log("==================================");
 
     // 1. Check Caddy
@@ -164,7 +164,7 @@ async function main() {
 
     // 5. Summary
     log.step("Setup Complete!");
-    console.log(`\nTo start the HTTPS proxy:`)
+    console.log(`\nTo start the HTTPS proxy:`);
     console.log(`  ${colors.green}caddy run${colors.reset}`);
     console.log(`\nThen access the app at:`);
     console.log(`  ${colors.cyan}https://${DOMAIN}${colors.reset}`);

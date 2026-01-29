@@ -8,8 +8,8 @@ import (
 	"gorm.io/driver/postgres"
 	"gorm.io/gorm"
 
-	"imagine/internal/entities"
-	imalog "imagine/internal/logger"
+	"viz/internal/entities"
+	imalog "viz/internal/logger"
 )
 
 func (db *DB) Connect() (*gorm.DB, error) {

@@ -15,7 +15,7 @@ var (
 	AlphanumericRegex = regexp.MustCompile(`^[a-zA-Z0-9]+$`) // TODO: benchmark this against enumerating
 )
 
-// Generates a new UID at the default Imagine length
+// Generates a new UID at the default Viz length
 // with Base62 characters (0-9a-zA-Z)
 func Generate() (string, error) {
 	return gonanoid.Generate(Base62Alphabet, DefaultLength)

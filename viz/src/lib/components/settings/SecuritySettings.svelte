@@ -376,7 +376,7 @@
 
 	<CustomSettingsGroup
 		title="API Keys"
-		description="Manage API keys for accessing the Imagine API."
+		description="Manage API keys for accessing the Viz API."
 	>
 		{#snippet actions()}
 			<Button onclick={handleOpenCreateKeyModal}>

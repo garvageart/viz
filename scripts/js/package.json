@@ -1,7 +1,7 @@
 {
-	"name": "@imagine/scripts",
+	"name": "@viz/scripts",
 	"version": "0.0.1",
-	"description": "Internal JavaScript scripts for the Imagine project",
+	"description": "Internal JavaScript scripts for the Viz project",
 	"private": true,
 	"type": "module",
 	"license": "AGPL-3.0",

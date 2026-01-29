@@ -1,7 +1,7 @@
 package imageops
 
 import (
-	libvips "imagine/internal/imageops/vips"
+	libvips "viz/internal/imageops/vips"
 )
 
 // NormalizeToSRGB converts the image to sRGB color space.

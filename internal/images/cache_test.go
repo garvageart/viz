@@ -12,11 +12,11 @@ import (
 
 	"gorm.io/gorm"
 
-	"imagine/internal/config"
-	"imagine/internal/dto"
-	"imagine/internal/entities"
-	"imagine/internal/transform"
-	"imagine/internal/uid"
+	"viz/internal/config"
+	"viz/internal/dto"
+	"viz/internal/entities"
+	"viz/internal/transform"
+	"viz/internal/uid"
 )
 
 func TestPerformTransformCacheCleanup(t *testing.T) {

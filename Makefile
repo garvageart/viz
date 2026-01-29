@@ -2,7 +2,7 @@ SHELL := /usr/bin/env bash
 SCRIPTS_DIR := scripts/js
 .PHONY: help build build-api build-frontend generate-icons generate-types generate-types-install fmt lint test docker-build docker-push docker-up docker-down migrate initdb clean image-api image-viz dev run
 
-# Simple Makefile for common tasks across the imagine repository.
+# Simple Makefile for common tasks across the viz repository.
 # Targets included:
 #  - build: builds backend and frontend
 #  - build-api: builds Go API binary
@@ -181,7 +181,7 @@ buildx-api:
 	@docker buildx build --progress=plain \
 		--cache-to=type=local,dest=$(BUILDX_CACHE_API_DIR) \
 		--cache-from=type=local,src=$(BUILDX_CACHE_API_DIR) \
-		-f Dockerfile.api -t imagine-api:local --load .
+		-f Dockerfile.api -t viz-api:local --load .
 
 buildx-viz:
 	@echo "Building Viz image with buildx and local cache ($(BUILDX_CACHE_VIZ_DIR))"
@@ -189,10 +189,10 @@ buildx-viz:
 	@docker buildx build --progress=plain \
 		--cache-to=type=local,dest=$(BUILDX_CACHE_VIZ_DIR) \
 		--cache-from=type=local,src=$(BUILDX_CACHE_VIZ_DIR) \
-		-f viz/Dockerfile -t imagine-viz:local viz --load
+		-f viz/Dockerfile -t viz-viz:local viz --load
 
 buildx-build: buildx-api buildx-viz
-	@echo "buildx build complete. Use the images 'imagine-api:local' and 'imagine-viz:local' or tag/push as needed."
+	@echo "buildx build complete. Use the images 'viz-api:local' and 'viz-viz:local' or tag/push as needed."
 
 docker-up:
 	@echo "Starting services with docker-compose..."
@@ -204,16 +204,16 @@ docker-down:
 
 image-api:
 	@echo "Building API image"
-	@docker build -f Dockerfile.api -t $(REGISTRY)/imagine-api:$(TAG) .
+	@docker build -f Dockerfile.api -t $(REGISTRY)/viz-api:$(TAG) .
 
 image-viz:
 	@echo "Building Viz image"
-	@docker build -f $(VIZ_DIR)/Dockerfile -t $(REGISTRY)/imagine-viz:$(TAG) $(VIZ_DIR)
+	@docker build -f $(VIZ_DIR)/Dockerfile -t $(REGISTRY)/viz-viz:$(TAG) $(VIZ_DIR)
 
 docker-push: image-api image-viz
 	@echo "Pushing images to $(REGISTRY)"
-	@docker push $(REGISTRY)/imagine-api:$(TAG)
-	@docker push $(REGISTRY)/imagine-viz:$(TAG)
+	@docker push $(REGISTRY)/viz-api:$(TAG)
+	@docker push $(REGISTRY)/viz-viz:$(TAG)
 
 ### Database / Migrations (best-effort)
 migrate:
@@ -271,11 +271,11 @@ ci-build: check-env
 	$(MAKE) generate-types-install USE_HOST_CACHE=0; \
 	# Build API image with buildx (load into local daemon). Adjust cache flags to your CI.
 	if docker buildx version >/dev/null 2>&1; then \
-		docker buildx build --progress=plain --tag $(REGISTRY)/imagine-api:$(TAG) -f Dockerfile.api --load .; \
-		docker buildx build --progress=plain --tag $(REGISTRY)/imagine-viz:$(TAG) -f viz/Dockerfile --load viz; \
+		docker buildx build --progress=plain --tag $(REGISTRY)/viz-api:$(TAG) -f Dockerfile.api --load .; \
+		docker buildx build --progress=plain --tag $(REGISTRY)/viz-viz:$(TAG) -f viz/Dockerfile --load viz; \
 	else \
-		docker build -f Dockerfile.api -t $(REGISTRY)/imagine-api:$(TAG) .; \
-		docker build -f viz/Dockerfile -t $(REGISTRY)/imagine-viz:$(TAG) viz; \
+		docker build -f Dockerfile.api -t $(REGISTRY)/viz-api:$(TAG) .; \
+		docker build -f viz/Dockerfile -t $(REGISTRY)/viz-viz:$(TAG) viz; \
 	fi
 
 

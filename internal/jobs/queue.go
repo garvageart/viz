@@ -17,7 +17,7 @@ import (
 	"github.com/ThreeDotsLabs/watermill/pubsub/gochannel"
 	goredis "github.com/redis/go-redis/v9"
 
-	"imagine/internal/config"
+	"viz/internal/config"
 )
 
 var (

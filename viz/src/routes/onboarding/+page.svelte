@@ -271,7 +271,7 @@
 				<!-- Step 0: Welcome -->
 				{#if currentStep === 0}
 					<div class="step-content">
-						<h1>Welcome to Imagine</h1>
+						<h1>Welcome to Viz</h1>
 						<div class="info-box">
 							<p>
 								<strong>You are the first user!</strong>

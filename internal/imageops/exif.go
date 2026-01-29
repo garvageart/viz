@@ -10,7 +10,7 @@ import (
 	exif "github.com/dsoprea/go-exif/v3"
 	exifcommon "github.com/dsoprea/go-exif/v3/common"
 	"github.com/trimmer-io/go-xmp/xmp"
-	"imagine/internal/dto"
+	"viz/internal/dto"
 )
 
 func ReadExif(bytes []byte) (data map[string]any, err error) {

@@ -14,10 +14,10 @@ import (
 	"gorm.io/gorm"
 	"log/slog"
 
-	"imagine/api/routes"
-	"imagine/internal/dto"
-	"imagine/internal/entities"
-	"imagine/internal/images"
+	"viz/api/routes"
+	"viz/internal/dto"
+	"viz/internal/entities"
+	"viz/internal/images"
 )
 
 // Helper function to create a new test logger

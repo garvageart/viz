@@ -1,6 +1,6 @@
 package http
 
 const (
-	APIKeyName = "x-imagine-key"
+	APIKeyName = "x-viz-key"
 	APIUserVersion = "X-User-Version"
 )

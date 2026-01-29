@@ -1,17 +1,17 @@
-# RFC 001: Server-to-Server Interoperability (Imagine Protocol)
+# RFC 001: Server-to-Server Interoperability (Viz Protocol)
 
-| Field            | Value                                                |
-| ---------------- | ---------------------------------------------------- |
-| **RFC**          | 001                                                  |
-| **Title**        | Server-to-Server Interoperability (Imagine Protocol) |
-| **Author**       | Les                                                  |
-| **Status**       | Draft                                                |
-| **Created**      | 2025-12-10                                           |
-| **Last Updated** | 2026-01-22                                           |
+| Field            | Value                                            |
+| ---------------- | ------------------------------------------------ |
+| **RFC**          | 001                                              |
+| **Title**        | Server-to-Server Interoperability (Viz Protocol) |
+| **Author**       | Les                                              |
+| **Status**       | Draft                                            |
+| **Created**      | 2025-12-10                                       |
+| **Last Updated** | 2026-01-22                                       |
 
 ## Abstract
 
-This document specifies a standardized protocol for communication and interoperability between image server instances. It defines a URI scheme (`imagine://`) for resource identification, a federated identity model, and a set of core capabilities including remote viewing, cross-server search, and metadata synchronization. The protocol aims to bridge the gap between enterprise Digital Asset Management (DAM) systems, professional photography workflows, and personal archiving solutions, enabling a decentralized yet unified user experience.
+This document specifies a standardized protocol for communication and interoperability between image server instances. It defines a URI scheme (`viz://`) for resource identification, a federated identity model, and a set of core capabilities including remote viewing, cross-server search, and metadata synchronization. The protocol aims to bridge the gap between enterprise Digital Asset Management (DAM) systems, professional photography workflows, and personal archiving solutions, enabling a decentralized yet unified user experience.
 
 ## 1. Introduction
 
@@ -33,18 +33,18 @@ One of my ideas based off this protocol is to bridge a "Enterprise/Commercial-to
 
 ## 2. Resource Identification
 
-### 2.1 The `imagine` URI Scheme
+### 2.1 The `viz` URI Scheme
 
-This protocol defines the `imagine` Uniform Resource Identifier (URI) scheme to locate resources across the federated network.
+This protocol defines the `viz` Uniform Resource Identifier (URI) scheme to locate resources across the federated network.
 
-> **Note:** The scheme name `imagine` is currently a placeholder. As this protocol is designed to be project-agnostic and not tied to any specific application, a final, neutral scheme name will be selected in a future revision.
+> **Note:** The scheme name `viz` is currently a placeholder. As this protocol is designed to be project-agnostic and not tied to any specific application, a final, neutral scheme name will be selected in a future revision.
 
-*   **Syntax:** `imagine://<authority>/<resource-type>/<resource-id>`
+*   **Syntax:** `viz://<authority>/<resource-type>/<resource-id>`
 *   **Authority:** The domain name of the hosting server (e.g., `photos.example.com`).
 *   **Resource Type:** Identifies the collection type. Standard types include `images`, `collections`, and `albums`.
 *   **Resource ID:** The unique identifier of the asset on the host server.
 
-**Example:** `imagine://photos.example.com/images/12345`
+**Example:** `viz://photos.example.com/images/12345`
 
 ### 2.2 Resolution
 Clients and servers MUST implement resolution logic to translate these URIs into actionable API endpoints. Resolution SHOULD rely on standard discovery mechanisms (see Section 4).
@@ -75,7 +75,7 @@ Servers acting as relays, proxies, or caches MUST NOT strip XMP/EXIF/IPTC metada
 
 ### 4.3 Mapping and Negotiation
 Servers MUST standardize mapping between API fields and XMP/IPTC fields (e.g., `api.creator` <-> `XMP:dc:creator`).
-*   **Discovery:** Servers MUST expose their metadata profiles via `/.well-known/imagine/metadata-profile`.
+*   **Discovery:** Servers MUST expose their metadata profiles via `/.well-known/viz/metadata-profile`.
 *   **Respecting Authority:** Importing servers SHOULD respect the origin's metadata mapping intention where possible.
 
 ### 4.4 Rights Management
@@ -152,7 +152,7 @@ To maintain synchronization across servers, servers MAY implement an active even
 To ensure the protocol remains lightweight while supporting specialized use cases, an extension mechanism is defined.
 
 *   **Constraint:** Extensions MUST NOT be used to create "walled gardens" or proprietary lock-in.
-*   **Discovery:** Extensions MUST be declared in the server's public capability manifest (e.g., `/.well-known/imagine/capabilities`).
+*   **Discovery:** Extensions MUST be declared in the server's public capability manifest (e.g., `/.well-known/viz/capabilities`).
 *   **Additive Only:** Extensions MUST be strictly additive. A client that does not understand an extension MUST still be able to perform core actions: View, Search, and Download.
 *   **Namespacing:** Extensions MUST use reverse-domain notation (e.g., `com.example.features.ai-tagging`).
 
@@ -160,7 +160,7 @@ To ensure the protocol remains lightweight while supporting specialized use case
 
 ### 10.1 Standard Libraries
 Libraries SHOULD be developed for common programming languages to reduce friction for adoption. These libraries MUST implement:
-*   **Parsing:** Validating and decomposing `imagine://` URIs.
+*   **Parsing:** Validating and decomposing `viz://` URIs.
 *   **Discovery:** Automatically fetching `/.well-known` configurations.
 *   **Security:** Verifying TLS certificates and signatures.
 
@@ -173,7 +173,7 @@ The protocol SHOULD utilize OpenAPI specifications for:
 ## Appendix A: Example Use-Cases
 
 ### A.1 Manifold Release 9 Integration
-A GIS image server like Manifold Release 9 could integrate by exposing resources via `imagine://` URIs, mapping internal identifiers to protocol IDs. It could participate in federated search, allowing GIS imagery to be discoverable alongside standard photography, while acting as a gateway for other WMS servers.
+A GIS image server like Manifold Release 9 could integrate by exposing resources via `viz://` URIs, mapping internal identifiers to protocol IDs. It could participate in federated search, allowing GIS imagery to be discoverable alongside standard photography, while acting as a gateway for other WMS servers.
 
 ### A.2 Omeka S Image Server Integration
 Omeka S (IIIF-compliant) aligns well with the "Remote Viewing" capabilities. Integration would involve mapping Dublin Core metadata to the protocol's XMP/IPTC standards, ensuring archival data is preserved when accessed via the federated network.
@@ -187,14 +187,14 @@ This scenario demonstrates a multi-hop asset lifecycle enabled by the protocol:
 4.  **Updates & Revocation:** Later, the photographer realizes a caption error. They update it on their server. An `asset.updated` event propagates to the Agency, which reviews and accepts the change, subsequently notifying the Media House. Conversely, if rights expire, a `rights.changed` event ensures the Media House's system flags the asset as "Do Not Publish."
 
 ### A.4 The Guardian's "The Grid" (Enterprise DAM Integration)
-[The Grid](https://github.com/guardian/grid) is The Guardian's open-source image management system, capable of handling millions of images with sophisticated rights management and usage tracking. Integration with the Imagine Protocol would enhance its capabilities in the following ways:
+[The Grid](https://github.com/guardian/grid) is The Guardian's open-source image management system, capable of handling millions of images with sophisticated rights management and usage tracking. Integration with the Viz Protocol would enhance its capabilities in the following ways:
 
-*   **Federated Ingestion:** Currently, The Grid ingests images from wire agencies and internal uploads. By implementing the protocol, The Grid could treat freelance photographers' personal nodes as "remote agencies." Instead of manually uploading files, a photographer simply shares an `imagine://` collection link. The Grid then crawls and indexes these remote assets without immediate heavy transfer, pulling high-res files only when an image is selected for publication.
+*   **Federated Ingestion:** Currently, The Grid ingests images from wire agencies and internal uploads. By implementing the protocol, The Grid could treat freelance photographers' personal nodes as "remote agencies." Instead of manually uploading files, a photographer simply shares an `viz://` collection link. The Grid then crawls and indexes these remote assets without immediate heavy transfer, pulling high-res files only when an image is selected for publication.
 *   **Dynamic Rights Synchronization:** The Grid excels at tracking usage rights (e.g., "expires in 30 days"). The protocol's Event Federation (`rights.changed`) would allow The Grid to automatically update an asset's status if the rights holder (photographer or agency) modifies terms on their own server, reducing the risk of accidental copyright infringement.
 *   **Unified Search:** The Grid's powerful search could federate queries to trusted partner archives (e.g., historical societies running protocol-compliant servers), presenting a unified search result page to picture editors that mixes internal holdings with external, licensable content.
 
 ## Next Steps
-1.  Define the URI resolution spec (currently using the `imagine` placeholder).
+1.  Define the URI resolution spec (currently using the `viz` placeholder).
 2.  Establish a controlled vocabulary and definitions.
 3.  Finalize the formal protocol name (MUST NOT be tied to any specific project or application).
 4.  Evaluate transport protocols (QUIC, TUS) for performance and resilience.

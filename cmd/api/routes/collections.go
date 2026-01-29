@@ -12,11 +12,11 @@ import (
 	"github.com/go-chi/render"
 	"gorm.io/gorm"
 
-	"imagine/internal/dto"
-	"imagine/internal/entities"
-	libhttp "imagine/internal/http"
-	"imagine/internal/uid"
-	"imagine/internal/utils"
+	"viz/internal/dto"
+	"viz/internal/entities"
+	libhttp "viz/internal/http"
+	"viz/internal/uid"
+	"viz/internal/utils"
 )
 
 var ErrCollectionUnauthorised = errors.New("unauthorized")

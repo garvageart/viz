@@ -9,10 +9,10 @@ import (
 )
 
 const (
-	AuthTokenCookie    = "imag-auth_token"
-	StateCookie        = "imag-state"
-	RedirectCookie     = "imag-redirect_state"
-	RefreshTokenCookie = "imag-refresh_token"
+	AuthTokenCookie    = "viz-auth_token"
+	StateCookie        = "viz-state"
+	RedirectCookie     = "viz-redirect_state"
+	RefreshTokenCookie = "viz-refresh_token"
 )
 
 func GetRequestID(request *http.Request) string {

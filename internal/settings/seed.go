@@ -14,9 +14,9 @@ import (
 
 	"gorm.io/gorm"
 
-	"imagine/internal/entities"
-	imaTime "imagine/internal/time"
-	"imagine/internal/utils"
+	"viz/internal/entities"
+	imaTime "viz/internal/time"
+	"viz/internal/utils"
 )
 
 var defaultSettings = []entities.SettingDefault{

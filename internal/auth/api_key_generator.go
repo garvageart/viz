@@ -7,7 +7,7 @@ import (
 	"math/rand/v2"
 	"strings"
 
-	"imagine/internal/crypto"
+	"viz/internal/crypto"
 )
 
 func HashSecret(secret string) (string, error) {

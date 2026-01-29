@@ -10,7 +10,7 @@ import (
 	"golang.org/x/crypto/bcrypt"
 	"gorm.io/gorm"
 
-	"imagine/internal/entities"
+	"viz/internal/entities"
 )
 
 // TokenOptions configures the download token creation

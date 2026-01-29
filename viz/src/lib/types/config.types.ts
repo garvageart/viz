@@ -6,6 +6,6 @@ export interface VizConfig {
     theme?: string;
 }
 
-export interface ImagineConfig {
+export interface Vizig {
     system: SystemStatusResponse;
 };

@@ -3,8 +3,8 @@ import { toastState } from "./notif-state.svelte";
 export function addTestNotifications() {
     toastState.addToast({
         type: "info",
-        title: "Welcome to Imagine!",
-        message: "This is an **info** notification with a *title*. Check out the [documentation](https://imagine.com/docs).",
+        title: "Welcome to Viz!",
+        message: "This is an **info** notification with a *title*. Check out the [documentation](https://viz.com/docs).",
         timeout: 0, // Infinite
         actions: [
             { label: "Dismiss", onClick: () => toastState.dismissToast(0) }
@@ -24,7 +24,7 @@ export function addTestNotifications() {
 
     toastState.addToast({
         type: "warning",
-        message: "Disk space is running low. Please clear some space. More info at https://imagine.com/storage",
+        message: "Disk space is running low. Please clear some space. More info at https://viz.com/storage",
         timeout: 0, // Infinite
     });
 

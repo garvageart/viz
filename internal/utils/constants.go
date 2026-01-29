@@ -5,7 +5,7 @@ import (
 )
 
 const (
-	AppName = "imagine"
+	AppName = "viz"
 )
 
 var (

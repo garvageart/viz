@@ -17,29 +17,29 @@ import (
 	"github.com/go-chi/cors"
 	"github.com/go-chi/render"
 
-	"imagine/api/routes"
-	"imagine/internal/auth"
-	"imagine/internal/config"
-	"imagine/internal/db"
-	"imagine/internal/entities"
-	libhttp "imagine/internal/http"
-	"imagine/internal/imageops"
-	libvips "imagine/internal/imageops/vips"
-	"imagine/internal/images"
-	"imagine/internal/jobs"
-	"imagine/internal/jobs/workers"
-	imalog "imagine/internal/logger"
-	"imagine/internal/settings"
-	"imagine/internal/utils"
+	"viz/api/routes"
+	"viz/internal/auth"
+	"viz/internal/config"
+	"viz/internal/db"
+	"viz/internal/entities"
+	libhttp "viz/internal/http"
+	"viz/internal/imageops"
+	libvips "viz/internal/imageops/vips"
+	"viz/internal/images"
+	"viz/internal/jobs"
+	"viz/internal/jobs/workers"
+	imalog "viz/internal/logger"
+	"viz/internal/settings"
+	"viz/internal/utils"
 )
 
 var (
-	ServerConfig       = config.ImagineServers["api"]
+	ServerConfig       = config.VizServers["api"]
 	StorageStatsHolder *images.StorageStatsHolder
 )
 
 type APIServer struct {
-	*config.ImagineServer
+	*config.VizServer
 }
 
 // TODO: Create a `createServer/Router` function that returns a router
@@ -206,7 +206,7 @@ func main() {
 		panic(errorMsg)
 	}
 
-	var appConfig config.ImagineConfig
+	var appConfig config.VizConfig
 	if err := v.Unmarshal(&config.AppConfig); err != nil {
 		errorMsg := fmt.Sprintf("failed to unmarshal config: %v", err)
 		panic(errorMsg)
@@ -216,9 +216,9 @@ func main() {
 	logLevel := imalog.GetLevelFromString(config.AppConfig.Logging.Level)
 	logger := libhttp.SetupChiLogger("api", logLevel)
 
-	apiServer := APIServer{ImagineServer: ServerConfig}
-	apiServer.ImagineServer.LogLevel = logLevel
-	apiServer.ImagineServer.Logger = logger
+	apiServer := APIServer{VizServer: ServerConfig}
+	apiServer.VizServer.LogLevel = logLevel
+	apiServer.VizServer.Logger = logger
 
 	// db stuff
 	if os.Getenv("DB_PASSWORD") != "" {
@@ -292,7 +292,7 @@ func main() {
 		entities.SettingDefault{},
 		entities.SettingOverride{},
 	)
-	apiServer.ImagineServer.Database.Client = client
+	apiServer.VizServer.Database.Client = client
 
 	settings.SeedDefaultSettings(client, logger)
 
@@ -300,7 +300,7 @@ func main() {
 	if apiPortEnv := os.Getenv("API_PORT"); apiPortEnv != "" {
 		var p int
 		if _, err := fmt.Sscanf(apiPortEnv, "%d", &p); err == nil {
-			apiServer.ImagineServer.Port = p
+			apiServer.VizServer.Port = p
 		}
 	}
 

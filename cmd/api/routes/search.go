@@ -9,10 +9,10 @@ import (
 	"github.com/go-chi/render"
 	"gorm.io/gorm"
 
-	"imagine/internal/dto"
-	"imagine/internal/entities"
-	libhttp "imagine/internal/http"
-	"imagine/internal/search"
+	"viz/internal/dto"
+	"viz/internal/entities"
+	libhttp "viz/internal/http"
+	"viz/internal/search"
 )
 
 // SearchRouter creates a new router for search-related endpoints

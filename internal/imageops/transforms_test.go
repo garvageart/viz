@@ -1,12 +1,12 @@
 package imageops
 
 import (
-	"imagine/internal/config"
-	"imagine/internal/dto"
-	"imagine/internal/entities"
-	"imagine/internal/images"
-	libvips "imagine/internal/imageops/vips"
-	"imagine/internal/transform"
+	"viz/internal/config"
+	"viz/internal/dto"
+	"viz/internal/entities"
+	"viz/internal/images"
+	libvips "viz/internal/imageops/vips"
+	"viz/internal/transform"
 	"os"
 	"path/filepath"
 	"strings"

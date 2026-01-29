@@ -7,8 +7,8 @@ import devtoolsJson from "vite-plugin-devtools-json";
 
 const file = fileURLToPath(new URL('package.json', import.meta.url));
 const pkg = JSON.parse(fs.readFileSync(file, 'utf8'));
-// In Docker we can pass IMAGINE_CONFIG_PATH (e.g., /app/imagine.json)
-const configPath = process.env.IMAGINE_CONFIG_PATH || '../imagine.json';
+// In Docker we can pass IMAGINE_CONFIG_PATH (e.g., /app/viz.json)
+const configPath = process.env.IMAGINE_CONFIG_PATH || '../viz.json';
 let config: any;
 try {
 	config = JSON.parse(fs.readFileSync(configPath, 'utf8'));
@@ -110,7 +110,7 @@ export default defineConfig({
 		port: config.servers.viz.port,
 		cors: true,
 		proxy: viteProxy,
-		allowedHosts: ['imagine.local']
+		allowedHosts: ['viz.local']
 	},
 	preview: {
 		port: config.servers.viz.port,

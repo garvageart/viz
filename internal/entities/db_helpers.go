@@ -5,7 +5,7 @@ import (
 
 	"gorm.io/gorm"
 
-	"imagine/internal/dto"
+	"viz/internal/dto"
 )
 
 func CountUsers(db *gorm.DB) (int64, error) {

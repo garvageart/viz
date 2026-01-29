@@ -9,8 +9,8 @@ import (
 	"github.com/ThreeDotsLabs/watermill/message"
 	"gorm.io/gorm"
 
-	"imagine/internal/entities"
-	"imagine/internal/utils"
+	"viz/internal/entities"
+	"viz/internal/utils"
 )
 
 

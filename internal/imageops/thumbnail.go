@@ -3,7 +3,7 @@ package imageops
 import (
 	"fmt"
 
-	libvips "imagine/internal/imageops/vips"
+	libvips "viz/internal/imageops/vips"
 )
 
 // CreateThumbnailWithSize creates a thumbnail using libvips from the input image bytes.

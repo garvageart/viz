@@ -11,11 +11,11 @@ import (
 	"github.com/go-chi/render"
 	"gorm.io/gorm"
 
-	"imagine/internal/config"
-	"imagine/internal/dto"
-	"imagine/internal/entities"
-	libhttp "imagine/internal/http"
-	"imagine/internal/settings"
+	"viz/internal/config"
+	"viz/internal/dto"
+	"viz/internal/entities"
+	libhttp "viz/internal/http"
+	"viz/internal/settings"
 )
 
 // SystemRouter creates a router for system-related endpoints

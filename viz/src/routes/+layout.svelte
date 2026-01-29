@@ -7,7 +7,7 @@
 			__RUNTIME_CONFIG__: {
 				[key: string]: string;
 			};
-			__IMAGINE_CONFIG__?: ImagineConfig;
+			__VIZ_CONFIG__?: VizConfig;
 		}
 	}
 </script>
@@ -21,12 +21,13 @@
 	import { loadingState } from "$lib/states/loading.svelte";
 	import "$lib/stores/appReady";
 	import "$lib/styles/scss/main.scss";
-	import type { ImagineConfig, VizConfig } from "$lib/types/config.types";
+	import type { VizConfig } from "$lib/types/config.types";
 	import { toggleFullscreen } from "$lib/utils/misc";
 	import "@fontsource-variable/manrope/index.css";
+	// import "@fontsource-variable/public-sans/index.css";
+	// import "@fontsource/clear-sans/index.css";
 	import "@fontsource-variable/roboto-mono/index.css";
 	import hotkeys from "hotkeys-js";
-	
 
 	historyState.init();
 

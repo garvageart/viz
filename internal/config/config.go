@@ -2,8 +2,8 @@ package config
 
 import (
 	"fmt"
-	libos "imagine/internal/os"
-	"imagine/internal/utils"
+	libos "viz/internal/os"
+	"viz/internal/utils"
 	"strings"
 
 	"github.com/spf13/viper"
@@ -94,7 +94,7 @@ func ReadConfig() (viper.Viper, error) {
 	return *v, nil
 }
 
-func GetConfig() ImagineConfig {
+func GetConfig() VizConfig {
 	return AppConfig
 }
 
@@ -104,7 +104,7 @@ var (
 		"viz": "viz",
 	}
 
-	ImagineServers = func() map[string]*ImagineServer {
+	VizServers = func() map[string]*VizServer {
 		var host string
 		if utils.IsProduction {
 			host = "0.0.0.0"
@@ -117,9 +117,9 @@ var (
 			panic("Unable to read config file " + err.Error())
 		}
 
-		result := map[string]*ImagineServer{}
+		result := map[string]*VizServer{}
 		for _, serverKey := range ServerKeys {
-			result[serverKey] = &ImagineServer{ServerConfig: &ServerConfig{}}
+			result[serverKey] = &VizServer{ServerConfig: &ServerConfig{}}
 
 			result[serverKey].Port = config.GetInt(fmt.Sprintf("servers.%s.port", serverKey))
 			result[serverKey].Host = host
