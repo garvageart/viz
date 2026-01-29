@@ -41,10 +41,12 @@
 
 	let show = $derived(lightboxImage !== undefined);
 	let imageToLoad = $derived(
-		getFullImagePath(
-			lightboxImage!.image_paths?.preview ||
-				lightboxImage!.image_paths?.original
-		)
+		lightboxImage
+			? getFullImagePath(
+					lightboxImage.image_paths?.preview ||
+						lightboxImage.image_paths?.original
+				)
+			: ""
 	);
 
 	// Crop State
