@@ -377,7 +377,7 @@
 	}
 
 	#viz-title {
-		font-family: var(--viz-code-font);
+		font-family: var(--viz-mono-font);
 		font-weight: 700;
 		font-size: 1em;
 		display: flex;
@@ -508,7 +508,7 @@
 
 	.debug-mode-text {
 		margin-right: 0.4em;
-		font-family: var(--viz-code-font);
+		font-family: var(--viz-mono-font);
 		font-weight: 500;
 		font-size: 1em;
 	}

@@ -415,7 +415,7 @@
 	#coll-details-floating {
 		color: var(--viz-40);
 		background-color: transparent;
-		font-family: var(--viz-code-font);
+		font-family: var(--viz-mono-font);
 	}
 
 	#coll-tools {

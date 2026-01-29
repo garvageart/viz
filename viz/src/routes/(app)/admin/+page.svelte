@@ -413,7 +413,7 @@
 
 		&.path {
 			font-size: 1rem;
-			font-family: var(--viz-code-font);
+			font-family: var(--viz-mono-font);
 			word-break: break-all;
 		}
 	}

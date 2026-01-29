@@ -102,7 +102,7 @@
 		font-weight: 700;
 		color: var(--viz-text-color);
 		line-height: 1;
-		font-family: var(--viz-code-font);
+		font-family: var(--viz-mono-font);
 	}
 
 	.message-container {
@@ -161,7 +161,7 @@
 			color: var(--viz-text-color);
 			background-color: var(--viz-100);
 			border-radius: 4px;
-			font-family: var(--viz-code-font);
+			font-family: var(--viz-mono-font);
 			white-space: pre-wrap;
 			word-break: break-word;
 			max-height: 12rem;

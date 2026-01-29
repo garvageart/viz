@@ -238,7 +238,7 @@
 
 		.uid {
 			font-weight: 700;
-			font-family: var(--viz-code-font);
+			font-family: var(--viz-mono-font);
 		}
 	}
 </style>

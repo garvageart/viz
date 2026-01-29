@@ -7,7 +7,7 @@
 /* Fonts */
 :root {
     --viz-display-font: "Manrope Variable", sans-serif;
-    --viz-code-font: "Roboto Mono Variable", monospace;
+    --viz-mono-font: "Roboto Mono Variable", monospace;
 }
 
 /* Colours */
@@ -56,7 +56,7 @@ h6 {
 }
 
 code {
-    font-family: var(--viz-code-font);
+    font-family: var(--viz-mono-font);
     font-weight: 600;
 }
 

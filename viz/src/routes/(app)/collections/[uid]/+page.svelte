@@ -975,7 +975,7 @@
 		flex-direction: column;
 		overflow: hidden;
 		color: var(--viz-60);
-		font-family: var(--viz-code-font);
+		font-family: var(--viz-mono-font);
 		gap: 1rem;
 		max-width: 40rem;
 

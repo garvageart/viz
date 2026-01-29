@@ -580,7 +580,7 @@
 		grid-template-columns: repeat(auto-fit, minmax(120px, 1fr));
 		gap: 0.2rem 0.5rem;
 		width: 100%;
-		font-family: var(--viz-code-font);
+		font-family: var(--viz-mono-font);
 		flex-shrink: 0;
 	}
 

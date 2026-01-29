@@ -151,7 +151,7 @@
 
 	#viz-title {
 		color: var(--viz-100-light);
-		font-family: var(--viz-code-font);
+		font-family: var(--viz-mono-font);
 		font-weight: 700;
 		font-size: 3em;
 		margin: 0.5em;

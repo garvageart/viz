@@ -170,7 +170,7 @@
 
 		.value {
 			font-weight: 600;
-			font-family: var(--viz-code-font);
+			font-family: var(--viz-mono-font);
 			font-size: 1.1em;
 		}
 	}

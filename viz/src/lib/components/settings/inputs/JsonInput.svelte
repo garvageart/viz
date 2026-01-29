@@ -105,7 +105,7 @@
 		color: var(--viz-text-color);
 		border: 1px solid var(--viz-80);
 		outline: none;
-		font-family: var(--viz-code-font);
+		font-family: var(--viz-mono-font);
 		resize: vertical;
 
 		&:focus {

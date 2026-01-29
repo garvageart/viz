@@ -165,7 +165,7 @@
 		align-items: center;
 
 		code {
-			font-family: var(--viz-code-font);
+			font-family: var(--viz-mono-font);
 			word-break: break-all;
 			flex-grow: 1;
 			margin-right: 0.5rem;

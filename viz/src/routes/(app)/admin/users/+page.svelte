@@ -455,7 +455,7 @@
 	.uid {
 		font-size: 0.75rem;
 		color: var(--viz-40);
-		font-family: var(--viz-code-font);
+		font-family: var(--viz-mono-font);
 	}
 
 	.role-badge {

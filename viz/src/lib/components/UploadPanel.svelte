@@ -251,7 +251,7 @@
 			color: var(--viz-text-color);
 			padding: 0.25em;
 			text-align: center;
-			font-family: var(--viz-code-font);
+			font-family: var(--viz-mono-font);
 
 			&:focus {
 				outline: none;
@@ -265,7 +265,7 @@
 		display: flex;
 		flex-direction: column;
 		justify-content: flex-start;
-		font-family: var(--viz-code-font);
+		font-family: var(--viz-mono-font);
 		overflow-y: auto;
 		flex: 1;
 		min-height: 0;
