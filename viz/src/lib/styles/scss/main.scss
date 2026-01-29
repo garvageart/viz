@@ -12,18 +12,18 @@
 
 /* Colours */
 :root {
-    --viz-error-color: #{v.$imag-error-color};
-    --viz-success-color: #{v.$imag-success-color};
-    --viz-warning-color: #{v.$imag-warning-color};
-    --viz-info-color: #{v.$imag-info-color};
+    --viz-error-color: #{v.$viz-error-color};
+    --viz-success-color: #{v.$viz-success-color};
+    --viz-warning-color: #{v.$viz-warning-color};
+    --viz-info-color: #{v.$viz-info-color};
 
-    --viz-color-tag-red: #{v.$imag-color-tag-red};
-    --viz-color-tag-orange: #{v.$imag-color-tag-orange};
-    --viz-color-tag-yellow: #{v.$imag-color-tag-yellow};
-    --viz-color-tag-purple: #{v.$imag-color-tag-purple};
-    --viz-color-tag-pink: #{v.$imag-color-tag-pink};
-    --viz-color-tag-green: #{v.$imag-color-tag-green};
-    --viz-color-tag-blue: #{v.$imag-color-tag-blue};
+    --viz-color-tag-red: #{v.$viz-color-tag-red};
+    --viz-color-tag-orange: #{v.$viz-color-tag-orange};
+    --viz-color-tag-yellow: #{v.$viz-color-tag-yellow};
+    --viz-color-tag-purple: #{v.$viz-color-tag-purple};
+    --viz-color-tag-pink: #{v.$viz-color-tag-pink};
+    --viz-color-tag-green: #{v.$viz-color-tag-green};
+    --viz-color-tag-blue: #{v.$viz-color-tag-blue};
 }
 
 html {

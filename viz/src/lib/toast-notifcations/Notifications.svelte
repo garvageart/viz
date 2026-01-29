@@ -89,9 +89,9 @@
 	@use "sass:color";
 	@use "../styles/scss/variables" as v;
 
-	$error: v.$imag-error-color;
-	$success: v.$imag-success-color;
-	$warning: v.$imag-warning-color;
+	$error: v.$viz-error-color;
+	$success: v.$viz-success-color;
+	$warning: v.$viz-warning-color;
 
 	@mixin toast-btn-variant($color) {
 		background: color.mix($color, #fff, 50%);
