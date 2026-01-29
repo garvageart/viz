@@ -1,6 +1,6 @@
 # Installing libvips
 
-Imagine requires **libvips** to be installed on your system. We rely on `pkg-config` to locate the library, ensuring a consistent build process across all operating systems.
+Viz requires **libvips** to be installed on your system. We rely on `pkg-config` to locate the library, ensuring a consistent build process across all operating systems.
 
 We provide a cross-platform setup script to automate this process.
 

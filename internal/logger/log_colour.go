@@ -8,7 +8,7 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
-	"imagine/internal/ansi"
+	"viz/internal/ansi"
 	"io"
 	"log/slog"
 	"strings"

@@ -6,8 +6,8 @@ import (
 	"os"
 	"strings"
 
-	imalog "imagine/internal/logger"
-	"imagine/internal/utils"
+	imalog "viz/internal/logger"
+	"viz/internal/utils"
 )
 
 func setupChiLogHandler(name string, logLevel slog.Level) []slog.Handler {

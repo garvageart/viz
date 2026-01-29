@@ -1,7 +1,7 @@
 package jobs
 
 import (
-	libhttp "imagine/internal/http"
+	libhttp "viz/internal/http"
 )
 
 // NewProgressCallback creates a reusable progress reporter closure that broadcasts

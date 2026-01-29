@@ -53,7 +53,7 @@ package entities
 
 import (
 	"gorm.io/gorm"
-	"imagine/internal/dto"
+	"viz/internal/dto"
 	"time"
 )
 

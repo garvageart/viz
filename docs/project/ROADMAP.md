@@ -10,6 +10,6 @@ The following items listed in this documenation outline the tasks and features t
 - [ ] Implement plugin system for both the user level and the backend level
 - [ ] Create native desktop and mobile versions which reduce the need for server size processing as much as possible
 - [ ] Support Internationalisation and Localization across the project (front and backend)
-- [ ] Enable server-to-server communication and interaction via viz/imagine (URL?) protocol 
+- [ ] Enable server-to-server communication and interaction via viz/viz (URL?) protocol 
 
 N.B Must be EXTREMELY performant (whatever that means depending on the context)

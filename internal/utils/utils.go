@@ -2,7 +2,7 @@ package utils
 
 import (
 	"encoding/json"
-	libos "imagine/internal/os"
+	libos "viz/internal/os"
 	"log"
 	"maps"
 	mRand "math/rand"

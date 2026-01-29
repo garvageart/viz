@@ -844,8 +844,8 @@ type ImagesResponse struct {
 	Image   ImageAsset `json:"image"`
 }
 
-// ImagineConfig defines model for ImagineConfig.
-type ImagineConfig struct {
+// VizConfig defines model for VizConfig.
+type VizConfig struct {
 	// BaseUrl Base URL of the application
 	BaseUrl *string `json:"baseUrl,omitempty"`
 

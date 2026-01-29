@@ -2,7 +2,7 @@ package search
 
 import (
 	"fmt"
-	"imagine/internal/entities"
+	"viz/internal/entities"
 	"regexp"
 	"strings"
 

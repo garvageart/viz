@@ -58,7 +58,7 @@ export function clearUser() {
 export function logoutUser() {
     clearUser();
     logout();
-    cookieMethods.delete("imag-state");
+    cookieMethods.delete("vizstate");
     goto('/auth/login');
 }
 
@@ -109,7 +109,7 @@ export async function sendOAuthParams(provider: string | null): Promise<boolean>
             });
             return true;
         } else {
-            cookieMethods.delete("imag-state");
+            cookieMethods.delete("viz-state");
             return false;
         }
     } catch (err) {

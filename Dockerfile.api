@@ -84,10 +84,10 @@ RUN --mount=type=cache,id=go-mods,target=/go/pkg/mod \
     # is stored in /root/.cache/go-build (these are mounted as BuildKit caches
     # above). Override the Makefile cache dir vars when invoking make.
     GO_MOD_CACHE_DIR=/go/pkg/mod GO_BUILD_CACHE_DIR=/root/.cache/go-build make build-api; \
-    # Support both legacy output 'build/imagine' and Makefile's 'build/api'
-    if [ -f build/api ]; then mv build/api /app/build/api/imagine; elif [ -f build/imagine ]; then mv build/imagine /app/build/api/imagine; else echo "Expected built binary not found"; exit 1; fi; \
+    # Support both legacy output 'build/viz' and Makefile's 'build/api'
+    if [ -f build/api ]; then mv build/api /app/build/api/viz; elif [ -f build/viz ]; then mv build/viz /app/build/api/viz; else echo "Expected built binary not found"; exit 1; fi; \
     else \
-    go build -o /app/build/api/imagine ./cmd/api; \
+    go build -o /app/build/api/viz ./cmd/api; \
     fi
 
 
@@ -100,24 +100,24 @@ COPY --from=packages /usr /usr
 COPY --from=packages /etc/ssl/certs /etc/ssl/certs
 
 # Create a non-root user
-RUN groupadd -r imagine && useradd -r -g imagine imagine && \
-    mkdir -p /app/var && chown -R imagine:imagine /app
+RUN groupadd -r viz && useradd -r -g viz viz && \
+    mkdir -p /app/var && chown -R viz:viz /app
 
 # Copy backend binary
-COPY --from=backend-builder /app/build/api/imagine /app/imagine
+COPY --from=backend-builder /app/build/api/viz /app/viz
 
 # Copy frontend assets
 # frontend-builder built to /app/build/viz (relative to /app/viz via ../build/viz)
 COPY --from=frontend-builder /app/build/viz /app/frontend
 
-COPY imagine.json /app/imagine.json
+COPY viz.json /app/viz.json
 COPY version.txt /app/version.txt
 
 # Configure to serve frontend
 ENV ENV=production
 ENV IMAGINE_FRONTEND_BUILD_PATH=/app/frontend
 
-USER imagine
+USER viz
 
 EXPOSE 7770
-CMD ["/app/imagine"]
+CMD ["/app/viz"]

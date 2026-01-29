@@ -12,16 +12,16 @@ import (
 	"gorm.io/gorm"
 	"log/slog"
 
-	"imagine/internal/crypto"
+	"viz/internal/crypto"
 
-	"imagine/internal/dto"
-	"imagine/internal/entities"
-	libhttp "imagine/internal/http"
-	"imagine/internal/images"
-	libos "imagine/internal/os"
-	"imagine/internal/settings"
-	"imagine/internal/uid"
-	"imagine/internal/utils"
+	"viz/internal/dto"
+	"viz/internal/entities"
+	libhttp "viz/internal/http"
+	"viz/internal/images"
+	libos "viz/internal/os"
+	"viz/internal/settings"
+	"viz/internal/uid"
+	"viz/internal/utils"
 )
 
 type AdminUserUpdate struct {

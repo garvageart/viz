@@ -17,15 +17,15 @@ import (
 	"gorm.io/gorm"
 	"gorm.io/gorm/clause"
 
-	"imagine/internal/auth"
-	"imagine/internal/config"
-	"imagine/internal/crypto"
-	"imagine/internal/dto"
-	"imagine/internal/entities"
-	libhttp "imagine/internal/http"
-	"imagine/internal/settings"
-	"imagine/internal/uid"
-	"imagine/internal/utils"
+	"viz/internal/auth"
+	"viz/internal/config"
+	"viz/internal/crypto"
+	"viz/internal/dto"
+	"viz/internal/entities"
+	libhttp "viz/internal/http"
+	"viz/internal/settings"
+	"viz/internal/uid"
+	"viz/internal/utils"
 )
 
 func AccountsRouter(db *gorm.DB, logger *slog.Logger) *chi.Mux {

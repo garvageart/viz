@@ -1,16 +1,16 @@
 {
-	"name": "imagine-monorepo",
+	"name": "viz-monorepo",
 	"private": true,
 	"license": "AGPL-3.0",
 	"scripts": {
-		"dev": "pnpm -r --filter \"@imagine/*\" dev",
-		"build": "pnpm -r --filter \"@imagine/*\" build",
-		"test": "pnpm -r --filter \"@imagine/*\" test",
-		"check": "pnpm -r --filter \"@imagine/*\" check",
-		"lint": "pnpm -r --filter \"@imagine/*\" lint",
-		"format": "pnpm -r --filter \"@imagine/*\" format",
-		"gen:api": "pnpm --filter @imagine/scripts gen:api",
-		"setup:https": "pnpm --filter @imagine/scripts setup:https"
+		"dev": "pnpm -r --filter \"@viz/*\" dev",
+		"build": "pnpm -r --filter \"@viz/*\" build",
+		"test": "pnpm -r --filter \"@viz/*\" test",
+		"check": "pnpm -r --filter \"@viz/*\" check",
+		"lint": "pnpm -r --filter \"@viz/*\" lint",
+		"format": "pnpm -r --filter \"@viz/*\" format",
+		"gen:api": "pnpm --filter @viz/scripts gen:api",
+		"setup:https": "pnpm --filter @viz/scripts setup:https"
 	},
 	"keywords": [],
 	"pnpm": {

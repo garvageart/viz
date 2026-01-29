@@ -1,6 +1,6 @@
 package config
 
-var AppConfig ImagineConfig
+var AppConfig VizConfig
 
 type ServerConfig struct {
 	Host string `json:"host" mapstructure:"host"`
@@ -89,8 +89,8 @@ type SecurityConfig struct {
 	Argon2Threads  int `json:"argon2_threads" mapstructure:"argon2_threads"`
 }
 
-// ImagineConfig is the root configuration structure.
-type ImagineConfig struct {
+// VizConfig is the root configuration structure.
+type VizConfig struct {
 	BaseURL        string               `json:"baseUrl" mapstructure:"baseUrl"`
 	Logging        LoggingConfig        `json:"logging" mapstructure:"logging"`
 	BaseDir        string               `json:"base_directory" mapstructure:"base_directory"`

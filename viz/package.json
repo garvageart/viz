@@ -1,5 +1,5 @@
 {
-	"name": "@imagine/viz",
+	"name": "@viz/viz",
 	"private": true,
 	"version": "0.0.1",
 	"type": "module",
@@ -48,7 +48,9 @@
 	},
 	"dependencies": {
 		"@fontsource-variable/manrope": "^5.2.8",
+		"@fontsource-variable/public-sans": "^5.2.7",
 		"@fontsource-variable/roboto-mono": "^5.2.8",
+		"@fontsource/clear-sans": "^5.2.5",
 		"@immich/justified-layout-wasm": "^0.4.3",
 		"@oazapfts/runtime": "^1.1.0",
 		"hotkeys-js": "^3.13.15",

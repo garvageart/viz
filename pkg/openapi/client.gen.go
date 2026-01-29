@@ -6830,7 +6830,7 @@ func (r SetupSuperadminResponse) StatusCode() int {
 type GetSystemConfigResponse struct {
 	Body         []byte
 	HTTPResponse *http.Response
-	JSON200      *ImagineConfig
+	JSON200      *VizConfig
 	JSON401      *ErrorResponse
 	JSON403      *ErrorResponse
 }
@@ -10697,7 +10697,7 @@ func ParseGetSystemConfigResponse(rsp *http.Response) (*GetSystemConfigResponse,
 
 	switch {
 	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 200:
-		var dest ImagineConfig
+		var dest VizConfig
 		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
 			return nil, err
 		}

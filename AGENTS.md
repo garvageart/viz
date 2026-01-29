@@ -1,9 +1,9 @@
 # Project Context for Agents
 
-This document provides a comprehensive guide for AI agents and developers working on the **Imagine** project. Adhering to these guidelines is crucial for maintaining code quality and consistency.
+This document provides a comprehensive guide for AI agents and developers working on the **Viz** project. Adhering to these guidelines is crucial for maintaining code quality and consistency.
 
 ## 1. Project Overview
-**Imagine** is a high-performance, self-hosted image management and processing platform. It is designed as a modern, open-source alternative to commercial products like PhotoShelter, tailored for professional photographers, media teams, and content creators who need full control over their digital assets.
+**Viz** is a high-performance, self-hosted image management and processing platform. It is designed as a modern, open-source alternative to commercial products like PhotoShelter, tailored for professional photographers, media teams, and content creators who need full control over their digital assets.
 
 **Core Features**:
 - **High-Performance Asset Ingestion**: Fast uploads with checksum verification to prevent duplicates.
@@ -23,7 +23,7 @@ This document provides a comprehensive guide for AI agents and developers workin
 - **Image Processing**: `libvips` (v8.18+) provides fast and memory-efficient image processing. It's accessed via Go bindings. Core logic is in `internal/imageops/`.
 - **Queue/Async**: Watermill provides a robust pub/sub system for background jobs (e.g., thumbnailing, metadata extraction). It's configured to use Redis in production and in-memory for simple setups.
 - **Logging**: `slog` (standard library structured logging) is used throughout. Logs are written as JSON for machine-parsability.
-- **Configuration**: Viper manages configuration from `imagine.json` and environment variables. `internal/config/` holds the structures.
+- **Configuration**: Viper manages configuration from `Viz.json` and environment variables. `internal/config/` holds the structures.
 - **Authentication**: Supports both stateful sessions (cookies) for the frontend and stateless API Keys for third-party integrations. Logic is in `internal/auth/`.
 - **API Documentation**: An OpenAPI 3.0 specification is maintained at `api/openapi/openapi.yaml`. This spec is the source of truth for generating both Go DTOs and the TypeScript API client.
 
@@ -116,4 +116,4 @@ The `make generate-types` command orchestrates this entire process:
 - **Manual Setup**:
   - Run `bun scripts/js/setup-libvips.ts` to install `libvips` (v8.18+) and configure environment variables.
 - **Ports**: API: `7770`, Frontend Dev: `7777`, PostgreSQL: `5432`, Redis: `6379`.
-- **Configuration**: The default configuration is in `imagine.json`. Overrides can be placed in `imagine.local.json` or set via environment variables.
+- **Configuration**: The default configuration is in `Viz.json`. Overrides can be placed in `Viz.local.json` or set via environment variables.

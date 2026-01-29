@@ -8,20 +8,20 @@ import (
 	"cloud.google.com/go/storage"
 )
 
-type ImagineStorageOperations interface {
+type VizStorageOperations interface {
 	CreateObject(name string, data []byte) (int, error)
 	ReadObject(name string) ([]byte, error)
 	DeleteObject(name string) error
 	MoveObject(srcName string, destName string) error
 }
 
-type ImagineStorage struct {
+type VizStorage struct {
 	Bucket  *storage.BucketHandle
 	Context context.Context
-	ImagineStorageOperations
+	VizStorageOperations
 }
 
-func (s *ImagineStorage) CreateObject(name string, data []byte) (int, error) {
+func (s *VizStorage) CreateObject(name string, data []byte) (int, error) {
 	object := s.Bucket.Object(name)
 	writer := object.NewWriter(s.Context)
 
@@ -37,7 +37,7 @@ func (s *ImagineStorage) CreateObject(name string, data []byte) (int, error) {
 	return numOfBytesWritten, nil
 }
 
-func (s *ImagineStorage) ReadObject(name string) ([]byte, error) {
+func (s *VizStorage) ReadObject(name string) ([]byte, error) {
 	object := s.Bucket.Object(name)
 	emptyBytes := make([]byte, 0)
 
@@ -57,7 +57,7 @@ func (s *ImagineStorage) ReadObject(name string) ([]byte, error) {
 	return gcsRes, nil
 }
 
-func (s *ImagineStorage) DeleteObject(name string) error {
+func (s *VizStorage) DeleteObject(name string) error {
 	object := s.Bucket.Object(name)
 	err := object.Delete(s.Context)
 	if err != nil {

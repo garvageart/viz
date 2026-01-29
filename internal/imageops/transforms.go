@@ -2,9 +2,9 @@ package imageops
 
 import (
 	"fmt"
-	"imagine/internal/entities"
-	libvips "imagine/internal/imageops/vips"
-	"imagine/internal/transform"
+	"viz/internal/entities"
+	libvips "viz/internal/imageops/vips"
+	"viz/internal/transform"
 	"net/url"
 	"strconv"
 )

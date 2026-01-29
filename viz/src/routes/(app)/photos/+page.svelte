@@ -369,7 +369,7 @@
 		}, ADD_IMAGES_DEBOUNCE_MS) as unknown as number;
 	}
 
-	async function addImagesToImagine() {
+	async function addImagesToViz() {
 		const manager = new UploadManager([
 			...SUPPORTED_RAW_FILES,
 			...SUPPORTED_IMAGE_TYPES
@@ -435,7 +435,7 @@
 			style="padding: 2em 8em; display: flex; align-items: center; justify-content: center;"
 			title="Select Photos"
 			aria-label="Select Photos"
-			onclick={async () => addImagesToImagine()}
+			onclick={async () => addImagesToViz()}
 		>
 			Select Photos
 			<MaterialIcon iconName="add" style="font-size: 2em;" />

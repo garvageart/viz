@@ -36,7 +36,7 @@ class LoginState {
     constructor() {
         // shitty hack
         this.storage = new VizCookieStorage<string>('state');
-        this.storage.prefix = "imag";
+        this.storage.prefix = "viz";
         this.value = this.storage.get();
     }
 }

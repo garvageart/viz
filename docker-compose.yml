@@ -5,7 +5,7 @@ services:
       dockerfile: Dockerfile.api
       args:
         - MAKE_TARGET=build-api
-    image: imagine-api:latest
+    image: viz-api:latest
     env_file:
       - .env
     environment:
@@ -17,7 +17,7 @@ services:
       - redis
     restart: unless-stopped
     volumes:
-      - ./imagine.json:/app/imagine.json:ro
+      - ./viz.json:/app/viz.json:ro
 
   redis:
     image: redis:7-alpine

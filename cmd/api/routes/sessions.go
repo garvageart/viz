@@ -9,9 +9,9 @@ import (
 	"github.com/go-chi/render"
 	"gorm.io/gorm"
 
-	"imagine/internal/dto"
-	"imagine/internal/entities"
-	libhttp "imagine/internal/http"
+	"viz/internal/dto"
+	"viz/internal/entities"
+	libhttp "viz/internal/http"
 )
 
 func SessionsRouter(db *gorm.DB, logger *slog.Logger) *chi.Mux {

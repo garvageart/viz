@@ -1,6 +1,6 @@
 import { generateRandomString } from "$lib/utils/misc";
 
-const REF_MIME_TYPE = "application/x-imagine-viz-ref";
+const REF_MIME_TYPE = "application/x-viz-viz-ref";
 
 export class DragData<T> {
 	private static localPayload: any = null;

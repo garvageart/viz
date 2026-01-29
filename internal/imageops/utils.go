@@ -10,10 +10,10 @@ import (
 	"strings"
 	"time"
 
-	"imagine/internal/config"
-	"imagine/internal/entities"
-	libvips "imagine/internal/imageops/vips"
-	libos "imagine/internal/os"
+	"viz/internal/config"
+	"viz/internal/entities"
+	libvips "viz/internal/imageops/vips"
+	libos "viz/internal/os"
 
 	"github.com/galdor/go-thumbhash"
 )

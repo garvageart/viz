@@ -27,7 +27,7 @@ var (
 		Endpoint: github.Endpoint,
 	}
 
-	GithubOAuth = ImagineOAuth{
+	GithubOAuth = VizOAuth{
 		config: GithubOAuthConfig,
 	}
 )

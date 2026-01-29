@@ -1,9 +1,9 @@
 # yaml-language-server: $schema=https://spec.openapis.org/oas/3.0/schema/2021-09-28
 openapi: 3.0.3
 info:
-  title: Imagine API
+  title: Viz API
   version: 0.1.0
-  description: OpenAPI specification for the Imagine API (chi-based)
+  description: OpenAPI specification for the Viz API (chi-based)
 servers:
   - url: http://{host}:{port}
     description: Local API
@@ -1780,7 +1780,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: "#/components/schemas/ImagineConfig"
+                $ref: "#/components/schemas/VizConfig"
         "401":
           description: Unauthorized
           content:
@@ -2667,8 +2667,8 @@ components:
     CookieAuth:
       type: apiKey
       in: cookie
-      name: imag-auth_token
-      description: "Session authentication using a cookie named 'imag-auth_token'. The cookie value is a hex-encoded string of securely-generated random bytes."
+      name: viz-auth_token
+      description: "Session authentication using a cookie named 'viz-auth_token'. The cookie value is a hex-encoded string of securely-generated random bytes."
 
   schemas:
     ErrorResponse:
@@ -4013,7 +4013,7 @@ components:
                 type: string
               description: Keywords
 
-    ImagineConfig:
+    VizConfig:
       type: object
       properties:
         baseUrl:

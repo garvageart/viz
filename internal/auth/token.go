@@ -2,7 +2,7 @@ package auth
 
 import (
 	"encoding/hex"
-	"imagine/internal/crypto"
+	"viz/internal/crypto"
 )
 
 func GenerateAuthToken() string {

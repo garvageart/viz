@@ -14,9 +14,9 @@ import (
 
 	_ "github.com/joho/godotenv/autoload"
 
-	liberrors "imagine/internal/errors"
-	libos "imagine/internal/os"
-	"imagine/internal/utils"
+	liberrors "viz/internal/errors"
+	libos "viz/internal/os"
+	"viz/internal/utils"
 )
 
 var (

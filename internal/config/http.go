@@ -8,13 +8,13 @@ import (
 
 	"gorm.io/gorm"
 	
-	"imagine/internal/db"
-	"imagine/internal/settings"
-	libhttp "imagine/internal/http"
+	"viz/internal/db"
+	"viz/internal/settings"
+	libhttp "viz/internal/http"
 	_ "github.com/joho/godotenv/autoload"
 )
 
-type ImagineServer struct {
+type VizServer struct {
 	*ServerConfig
 	Logger   *slog.Logger
 	Database *db.DB
@@ -22,7 +22,7 @@ type ImagineServer struct {
 	LogLevel slog.Level
 }
 
-func (server ImagineServer) ConnectToDatabase(dst ...any) *gorm.DB {
+func (server VizServer) ConnectToDatabase(dst ...any) *gorm.DB {
 	logger := server.Logger
 	database := server.Database
 

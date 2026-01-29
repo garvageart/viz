@@ -9,8 +9,8 @@ import (
 	"path/filepath"
 	"strings"
 
-	libos "imagine/internal/os"
-	"imagine/internal/utils"
+	libos "viz/internal/os"
+	"viz/internal/utils"
 )
 
 const (

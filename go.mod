@@ -1,4 +1,4 @@
-module imagine
+module viz
 
 go 1.25.0
 

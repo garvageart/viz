@@ -1,4 +1,4 @@
-module imagine/api
+module viz/api
 
 go 1.25.0
 

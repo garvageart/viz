@@ -1,5 +1,5 @@
 /**
- * Imagine API
+ * Viz API
  * 0.1.0
  * DO NOT MODIFY - This file has been generated using oazapfts.
  * See https://www.npmjs.com/package/oazapfts
@@ -678,7 +678,7 @@ export type StorageMetricsConfig = {
     /** Interval in seconds */
     interval_seconds?: number;
 };
-export type ImagineConfig = {
+export type VizConfig = {
     /** Base URL of the application */
     baseUrl?: string;
     logging?: LoggingConfig;
@@ -1886,7 +1886,7 @@ export function adminHealthcheck(opts?: Oazapfts.RequestOpts) {
 export function getSystemConfig(opts?: Oazapfts.RequestOpts) {
     return oazapfts.fetchJson<{
         status: 200;
-        data: ImagineConfig;
+        data: VizConfig;
     } | {
         status: 401;
         data: ErrorResponse;

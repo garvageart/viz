@@ -1,7 +1,7 @@
 package images
 
 import (
-	"imagine/internal/config"
+	"viz/internal/config"
 	"os"
 	"path/filepath"
 	"strings"

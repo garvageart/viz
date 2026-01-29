@@ -26,5 +26,5 @@ var (
 )
 
 var (
-	APIKeyPrefix = "imag"
+	APIKeyPrefix = "viz"
 )

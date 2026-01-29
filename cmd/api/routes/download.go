@@ -16,11 +16,11 @@ import (
 	"github.com/go-chi/render"
 	"gorm.io/gorm"
 
-	"imagine/internal/downloads"
-	"imagine/internal/dto"
-	"imagine/internal/entities"
-	"imagine/internal/images"
-	"imagine/internal/utils"
+	"viz/internal/downloads"
+	"viz/internal/dto"
+	"viz/internal/entities"
+	"viz/internal/images"
+	"viz/internal/utils"
 )
 
 // writeImagesToZip queries images for the given uids and writes them into the provided zip.Writer

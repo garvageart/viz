@@ -1,6 +1,8 @@
 import type { Handle } from '@sveltejs/kit';
 import { VizCookieStorage } from '$lib/utils/misc';
-import manrope from '@fontsource-variable/manrope/files/manrope-latin-wght-normal.woff2?url';
+import manrope from '@fontsource-variable/manrope/index.css?url';
+// import clearSans from '@fontsource/clear-sans/index.css?url';
+// import publicSans from '@fontsource-variable/public-sans/index.css?url';
 import robotoMono from '@fontsource-variable/roboto-mono/files/roboto-mono-latin-wght-normal.woff2?url';
 
 const criticalCssCache = new Map<string, string>();

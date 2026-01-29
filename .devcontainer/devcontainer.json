@@ -1,5 +1,5 @@
 {
-	"name": "Imagine Dev",
+	"name": "Viz Dev",
 	"dockerComposeFile": [
 		"../docker-compose.yml",
 		"docker-compose.dev.yml"
@@ -21,7 +21,12 @@
 	"features": {
 		"ghcr.io/devcontainers/features/git:1": {}
 	},
-	"forwardPorts": [7770, 5173, 6379, 5432],
+	"forwardPorts": [
+		7770,
+		5173,
+		6379,
+		5432
+	],
 	"postCreateCommand": "go mod download && cd viz && pnpm install",
 	"remoteUser": "vscode"
 }

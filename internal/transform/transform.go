@@ -2,8 +2,8 @@ package transform
 
 import (
 	"fmt"
-	"imagine/internal/entities"
-	"imagine/internal/utils"
+	"viz/internal/entities"
+	"viz/internal/utils"
 	"net/url"
 	"strconv"
 )

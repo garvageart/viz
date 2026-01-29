@@ -40,7 +40,7 @@
 			id: "help",
 			label: "Help & Support",
 			action: () =>
-				window.open("https://github.com/garvageart/imagine/issues", "_blank")
+				window.open("https://github.com/garvageart/viz/issues", "_blank")
 		},
 		{
 			id: "shortcuts",

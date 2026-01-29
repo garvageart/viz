@@ -13,17 +13,17 @@ import (
 	"github.com/go-chi/render"
 	"golang.org/x/oauth2"
 
-	"imagine/internal/crypto"
-	libhttp "imagine/internal/http"
+	"viz/internal/crypto"
+	libhttp "viz/internal/http"
 )
 
-type ImagineOAuth struct {
+type VizOAuth struct {
 	config *oauth2.Config
 }
 
-func (oauth ImagineOAuth) OAuthHandler(res http.ResponseWriter, req *http.Request, logger *slog.Logger) (*oauth2.Token, error) {
+func (oauth VizOAuth) OAuthHandler(res http.ResponseWriter, req *http.Request, logger *slog.Logger) (*oauth2.Token, error) {
 	redirectState := req.FormValue("state")
-	cookieState, err := req.Cookie("imag-redirect-state")
+	cookieState, err := req.Cookie("viz-redirect-state")
 	redirectedStateHash := crypto.CreateHash([]byte(redirectState))
 	redirectStateHashString := base64.URLEncoding.EncodeToString(redirectedStateHash)
 

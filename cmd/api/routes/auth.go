@@ -18,24 +18,24 @@ import (
 	gonanoid "github.com/matoous/go-nanoid/v2"
 	"golang.org/x/oauth2"
 
-	"imagine/internal/auth"
-	oauth "imagine/internal/auth/oauth"
-	"imagine/internal/config"
-	"imagine/internal/crypto"
-	"imagine/internal/dto"
-	"imagine/internal/entities"
-	libhttp "imagine/internal/http"
-	"imagine/internal/uid"
-	"imagine/internal/utils"
+	"viz/internal/auth"
+	oauth "viz/internal/auth/oauth"
+	"viz/internal/config"
+	"viz/internal/crypto"
+	"viz/internal/dto"
+	"viz/internal/entities"
+	libhttp "viz/internal/http"
+	"viz/internal/uid"
+	"viz/internal/utils"
 )
 
-type ImagineAuthCodeFlow struct {
+type VizAuthCodeFlow struct {
 	Code  string `json:"code"`
 	State string `json:"state"`
 }
 
 // Idk what this is or what I meant to put here
-type ImagineAuthPasswordFlow struct {
+type VizAuthPasswordFlow struct {
 	State string
 }
 

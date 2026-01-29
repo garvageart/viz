@@ -6,8 +6,8 @@ import (
 	"log/slog"
 	"strconv"
 
-	"imagine/internal/dto"
-	"imagine/internal/entities"
+	"viz/internal/dto"
+	"viz/internal/entities"
 
 	"gorm.io/gorm"
 )

@@ -54,7 +54,7 @@ export async function load({ url, fetch }) {
 
     if (isConnectionError) {
         error(503, {
-            message: "Could not connect to the Imagine server. It might be down for maintenance or restarting."
+            message: "Could not connect to the Viz server. It might be down for maintenance or restarting."
         });
     }
 

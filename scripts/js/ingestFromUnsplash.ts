@@ -4,7 +4,7 @@ import path from "path";
 import fs from "fs";
 
 const sleep = (ms: number) => new Promise(resolve => setTimeout(resolve, ms));
-const config = JSON.parse(fs.readFileSync('../imagine.json', 'utf8'));
+const config = JSON.parse(fs.readFileSync('../viz.json', 'utf8'));
 const serverPort = parseInt(config.servers["api"].port);
 
 async function main() {

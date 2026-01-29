@@ -7,8 +7,8 @@ services:
     volumes:
       - ..:/workspace:cached
       - command-history:/commandhistory
-      # Mount imagine.json if it exists, or handled by env vars
-      - ../imagine.json:/workspace/imagine.json:ro 
+      # Mount viz.json if it exists, or handled by env vars
+      - ../viz.json:/workspace/viz.json:ro 
       
     # Overrides default command so things don't shut down after the process ends.
     command: sleep infinity
