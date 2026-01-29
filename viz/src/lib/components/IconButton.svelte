@@ -18,7 +18,7 @@
 		grade = 0,
 		opticalSize = 24,
 		children,
-		hoverColor = "var(--imag-80)",
+		hoverColor = "var(--viz-80)",
 		variant = "primary",
 		element = $bindable(),
 		...props
@@ -41,7 +41,7 @@
 <style lang="scss">
 	button {
 		cursor: pointer;
-		color: var(--imag-text-color);
+		color: var(--viz-text-color);
 		font-weight: 400;
 		letter-spacing: 0.02em;
 		height: max-content;

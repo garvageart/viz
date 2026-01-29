@@ -427,7 +427,7 @@
 
 {#snippet noAssetsSnippet()}
 	<div id="add_to_imagine-container">
-		<span style="margin: 1em; color: var(--imag-20); font-size: 1.2rem;"
+		<span style="margin: 1em; color: var(--viz-20); font-size: 1.2rem;"
 			>Add your first images</span
 		>
 		<Button
@@ -676,8 +676,8 @@
 	}
 
 	:global(.on-enter) {
-		background-color: var(--imag-80);
-		outline: 2px solid var(--imag-primary);
+		background-color: var(--viz-80);
+		outline: 2px solid var(--viz-primary);
 	}
 
 	.selection-actions {

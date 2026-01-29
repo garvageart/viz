@@ -109,7 +109,7 @@
 		flex-direction: column;
 		height: 100%;
 		padding: 0.5rem;
-		color: var(--imag-text-color);
+		color: var(--viz-text-color);
 		position: relative;
 		box-sizing: border-box;
 		justify-content: space-between;
@@ -127,8 +127,8 @@
 
 	.info {
 		padding: 0.75rem 1rem;
-		background-color: var(--imag-bg-color);
-		border-top: 1px solid var(--imag-80);
+		background-color: var(--viz-bg-color);
+		border-top: 1px solid var(--viz-80);
 		display: flex;
 		flex-direction: column;
 		gap: 0.25rem;
@@ -138,7 +138,7 @@
 		.filename {
 			font-size: 0.9rem;
 			font-weight: 500;
-			color: var(--imag-text-color);
+			color: var(--viz-text-color);
 			white-space: nowrap;
 			overflow: hidden;
 			text-overflow: ellipsis;
@@ -149,7 +149,7 @@
 			align-items: center;
 			gap: 0.5rem;
 			font-size: 0.75rem;
-			color: var(--imag-40);
+			color: var(--viz-40);
 		}
 	}
 
@@ -159,7 +159,7 @@
 		flex-direction: column;
 		align-items: center;
 		justify-content: center;
-		color: var(--imag-60);
+		color: var(--viz-60);
 		gap: 0.5rem;
 
 		.text {

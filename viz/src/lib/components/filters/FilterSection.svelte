@@ -34,7 +34,7 @@
 
 <style lang="scss">
 	.filter-section {
-		border-bottom: 1px solid var(--imag-80);
+		border-bottom: 1px solid var(--viz-80);
 
 		&:last-child {
 			border-bottom: none;
@@ -50,15 +50,15 @@
 		border: none;
 		padding: 0.2rem;
 		cursor: pointer;
-		color: var(--imag-text-color);
+		color: var(--viz-text-color);
 		font-weight: 600;
 		font-size: 0.8rem;
 		text-align: left;
 		transition: color 0.2s;
 
 		&:hover {
-			color: var(--imag-20);
-			background-color: var(--imag-90);
+			color: var(--viz-20);
+			background-color: var(--viz-90);
 		}
 	}
 

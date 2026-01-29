@@ -203,7 +203,7 @@
 					Create Collection
 				</Button>
 				<Button
-					style="background-color: var(--imag-primary);"
+					style="background-color: var(--viz-primary);"
 					disabled={!selectedCollection || selectedCollection.isFullyContained}
 					onclick={() => handleSelect(selectedCollection!)}
 				>
@@ -220,9 +220,9 @@
 		flex-direction: column;
 		width: 90%;
 		height: 90%;
-		color: var(--imag-text-color);
+		color: var(--viz-text-color);
 		padding: 1rem;
-		background-color: var(--imag-bg-color);
+		background-color: var(--viz-bg-color);
 		border-radius: 0.5rem;
 		box-sizing: border-box;
 

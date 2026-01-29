@@ -28,7 +28,7 @@
 <style>
 	.collection-filter-container {
 		padding: 1rem;
-		color: var(--imag-60);
+		color: var(--viz-60);
 		font-style: italic;
 		text-wrap: auto;
 		text-align: center;

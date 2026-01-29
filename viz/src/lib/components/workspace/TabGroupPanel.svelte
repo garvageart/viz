@@ -496,14 +496,14 @@
 		pointer-events: none;
 		z-index: 900;
 		box-shadow:
-			0 1.5px 0 var(--imag-primary) inset,
-			1.5px 0 0 var(--imag-primary) inset,
-			-1.5px 0 0 var(--imag-primary) inset,
-			0 -1.5px 0 var(--imag-primary) inset;
+			0 1.5px 0 var(--viz-primary) inset,
+			1.5px 0 0 var(--viz-primary) inset,
+			-1.5px 0 0 var(--viz-primary) inset,
+			0 -1.5px 0 var(--viz-primary) inset;
 	}
 
 	.tab-group-header {
-		background-color: var(--imag-100);
+		background-color: var(--viz-100);
 		font-size: 0.8rem;
 		display: flex;
 		align-items: center;
@@ -516,7 +516,7 @@
 		transition: background-color 0.2s;
 
 		&:global(.drop-active) {
-			background-color: var(--imag-90);
+			background-color: var(--viz-90);
 		}
 	}
 
@@ -555,20 +555,20 @@
 		transition: background-color 0.15s ease;
 
 		&:hover {
-			background-color: var(--imag-90);
+			background-color: var(--viz-90);
 		}
 
 		&.active {
-			box-shadow: 0 -2px 0 0 var(--imag-primary) inset;
+			box-shadow: 0 -2px 0 0 var(--viz-primary) inset;
 		}
 
 		&:global(.drop-target-active) {
 			background-color: color-mix(
 				in srgb,
-				var(--imag-primary) 30%,
+				var(--viz-primary) 30%,
 				transparent
 			) !important;
-			outline: 1.5px solid var(--imag-primary);
+			outline: 1.5px solid var(--viz-primary);
 			outline-offset: -1.5px;
 			z-index: 10;
 		}
@@ -586,7 +586,7 @@
 		overflow: hidden;
 		display: flex;
 		flex-direction: column;
-		background-color: var(--imag-bg-color);
+		background-color: var(--viz-bg-color);
 	}
 
 	.viz-custom-scrollbar {
@@ -607,7 +607,7 @@
 	}
 
 	.viz-custom-scrollbar-thumb {
-		background-color: color-mix(in srgb, var(--imag-40) 50%, transparent);
+		background-color: color-mix(in srgb, var(--viz-40) 50%, transparent);
 		height: 100%;
 		cursor: pointer;
 		position: absolute;
@@ -620,7 +620,7 @@
 		align-items: center;
 		height: 100%;
 		flex-shrink: 0;
-		background-color: var(--imag-100);
+		background-color: var(--viz-100);
 		z-index: 2;
 	}
 
@@ -644,11 +644,11 @@
 		height: 100%;
 		padding: 2rem;
 		text-align: center;
-		color: var(--imag-60);
+		color: var(--viz-60);
 	}
 
 	.error-container {
-		color: var(--imag-error);
+		color: var(--viz-error);
 	}
 
 	:global(.tab-lock) {

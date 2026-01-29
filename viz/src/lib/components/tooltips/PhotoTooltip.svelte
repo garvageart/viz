@@ -35,9 +35,9 @@
 
 <style lang="scss">
 	:global(.tippy-box[data-theme~="viz"]) {
-		background-color: var(--imag-100);
-		color: var(--imag-text-color);
-		border: 1px solid var(--imag-80);
+		background-color: var(--viz-100);
+		color: var(--viz-text-color);
+		border: 1px solid var(--viz-80);
 		border-radius: 0.5rem;
 		min-width: 15vw;
 	}
@@ -46,7 +46,7 @@
 			.tippy-box[data-theme~="viz"][data-placement^="bottom"]
 				> .tippy-arrow::before
 		) {
-		border-bottom-color: var(--imag-100);
+		border-bottom-color: var(--viz-100);
 	}
 
 	.photo-tooltip-content {

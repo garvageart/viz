@@ -49,17 +49,17 @@
 		justify-content: flex-start;
 		align-items: center;
 		padding: 2rem;
-		color: var(--imag-text-color);
+		color: var(--viz-text-color);
 	}
 
 	h1 {
-		font-family: var(--imag-display-font);
+		font-family: var(--viz-display-font);
 		font-size: 2.5rem;
 		margin-bottom: 0.5rem;
 	}
 
 	.subtitle {
-		color: var(--imag-60);
+		color: var(--viz-60);
 		margin-bottom: 2rem;
 		font-size: 1.1rem;
 	}
@@ -69,7 +69,7 @@
 		max-width: 600px;
 		overflow-y: auto;
 		padding: 1rem;
-		background: var(--imag-bg-color);
+		background: var(--viz-bg-color);
 		border-radius: 1rem;
 		box-shadow: inset 0 0 10px rgba(0, 0, 0, 0.5);
 
@@ -78,10 +78,10 @@
 			width: 6px;
 		}
 		&::-webkit-scrollbar-track {
-			background: var(--imag-100);
+			background: var(--viz-100);
 		}
 		&::-webkit-scrollbar-thumb {
-			background: var(--imag-60);
+			background: var(--viz-60);
 			border-radius: 3px;
 		}
 
@@ -93,15 +93,15 @@
 		}
 
 		:global(.checkbox-group-item) {
-			background: var(--imag-100);
+			background: var(--viz-100);
 			padding: 0.75rem 1rem;
 			border-radius: 0.5rem;
-			border: 1px solid var(--imag-90);
+			border: 1px solid var(--viz-90);
 			transition: all 0.2s;
 
 			&:hover {
-				border-color: var(--imag-primary);
-				background: var(--imag-90);
+				border-color: var(--viz-primary);
+				background: var(--viz-90);
 			}
 		}
 	}

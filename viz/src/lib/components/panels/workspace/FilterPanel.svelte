@@ -33,7 +33,7 @@
 				variant="mini"
 				title="Keep Filters while browsing"
 				style={filterManager.keepFilters
-					? "background-color: var(--imag-80);"
+					? "background-color: var(--viz-80);"
 					: ""}
 				onclick={() => filterManager.toggleKeepFilters()}
 			/>
@@ -52,7 +52,7 @@
 		display: flex;
 		flex-direction: column;
 		height: 100%;
-		background-color: var(--imag-bg-color);
+		background-color: var(--viz-bg-color);
 	}
 
 	.filter-panel {
@@ -62,13 +62,13 @@
 		overflow-y: scroll;
 		overflow-x: hidden;
 		padding: 0.5rem;
-		color: var(--imag-text-color);
+		color: var(--viz-text-color);
 		position: relative;
 	}
 
 	.filter-panel-footer {
 		// flex-shrink: 0;
-		border-top: 1px solid var(--imag-80);
+		border-top: 1px solid var(--viz-80);
 		position: relative;
 	}
 
@@ -77,7 +77,7 @@
 		justify-content: flex-start;
 		align-items: center;
 		padding: 0.2rem 0.5rem;
-		background-color: var(--imag-bg-color);
+		background-color: var(--viz-bg-color);
 		gap: 0.5rem;
 		width: 100%;
 	}

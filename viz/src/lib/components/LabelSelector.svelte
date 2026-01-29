@@ -132,9 +132,9 @@
 		gap: 0.5em;
 		width: 1.25em;
 		height: 1.25em;
-		border: 1px solid var(--imag-60);
-		background-color: var(--imag-bg-color);
-		color: var(--imag-text-color);
+		border: 1px solid var(--viz-60);
+		background-color: var(--viz-bg-color);
+		color: var(--viz-text-color);
 		cursor: pointer;
 		font-size: 0.9em;
 		padding: 0;
@@ -144,7 +144,7 @@
 		}
 
 		&.selected {
-			outline: 1.5px solid var(--imag-primary);
+			outline: 1.5px solid var(--viz-primary);
 			outline-offset: 0.5px;
 		}
 	}
@@ -158,8 +158,8 @@
 		height: 0.75rem;
 		width: 0.75rem;
 		outline: none;
-		border: 1px solid var(--imag-60);
-		background-color: var(--imag-bg-color);
+		border: 1px solid var(--viz-60);
+		background-color: var(--viz-bg-color);
 		cursor: pointer;
 		padding: 0;
 
@@ -168,8 +168,8 @@
 		}
 
 		&:focus-visible {
-			outline: 1.5px solid var(--imag-primary);
-			border-color: var(--imag-primary);
+			outline: 1.5px solid var(--viz-primary);
+			border-color: var(--viz-primary);
 		}
 	}
 
@@ -178,8 +178,8 @@
 		top: calc(100% + 4px);
 		left: 0;
 		z-index: 1000;
-		background-color: var(--imag-bg-color);
-		border: 1px solid var(--imag-60);
+		background-color: var(--viz-bg-color);
+		border: 1px solid var(--viz-60);
 		padding: 0.5rem;
 		display: flex;
 		gap: 0.5rem;

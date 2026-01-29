@@ -9,7 +9,7 @@
 
 	let {
 		children,
-		hoverColor = "var(--imag-80)",
+		hoverColor = "var(--viz-80)",
 		variant = "primary",
 		element = $bindable(),
 		...props
@@ -29,12 +29,12 @@
 <style lang="scss">
 	button {
 		cursor: pointer;
-		color: var(--imag-text-color);
+		color: var(--viz-text-color);
 		font-weight: 400;
 		font-size: 1em; /* default */
 		letter-spacing: 0.02em;
 		height: max-content;
-		background-color: var(--imag-90);
+		background-color: var(--viz-90);
 		border: none;
 		padding: 0.5em 1em;
 		display: inline-flex;

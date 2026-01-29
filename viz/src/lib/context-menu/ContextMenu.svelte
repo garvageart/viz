@@ -407,8 +407,8 @@
 
 	.context-menu-options {
 		display: inline-flex;
-		background-color: var(--imag-100);
-		color: var(--imag-text-color);
+		background-color: var(--viz-100);
+		color: var(--viz-text-color);
 		flex-direction: column;
 		border-radius: 0.5rem;
 		width: 100%;
@@ -434,6 +434,6 @@
 	.separator {
 		height: 1px;
 		margin: 4px 6px;
-		background: var(--imag-40);
+		background: var(--viz-40);
 	}
 </style>

@@ -9,7 +9,13 @@
 		onchange?: (value: string) => void;
 	}
 
-	let { label, value = $bindable(""), description = "", disabled = false, onchange }: Props = $props();
+	let {
+		label,
+		value = $bindable(""),
+		description = "",
+		disabled = false,
+		onchange
+	}: Props = $props();
 
 	let error = $state<string | null>(null);
 
@@ -43,7 +49,14 @@
 		</div>
 	</div>
 
-	<textarea id="json-{label}" {value} onblur={JSONValidate} {disabled} class="json-input" class:error={!!error} rows="5"
+	<textarea
+		id="json-{label}"
+		{value}
+		onblur={JSONValidate}
+		{disabled}
+		class="json-input"
+		class:error={!!error}
+		rows="5"
 	></textarea>
 </div>
 
@@ -52,7 +65,7 @@
 		display: flex;
 		flex-direction: column;
 		padding: 1rem 0;
-		border-bottom: 1px solid var(--imag-80);
+		border-bottom: 1px solid var(--viz-80);
 		width: 100%;
 		gap: 0.5rem;
 		max-height: 10rem;
@@ -76,31 +89,31 @@
 
 	.label {
 		font-weight: 500;
-		color: var(--imag-text-color);
+		color: var(--viz-text-color);
 	}
 
 	.description {
 		font-size: 0.875rem;
-		color: var(--imag-40);
+		color: var(--viz-40);
 	}
 
 	.json-input {
 		width: 100%;
 		padding: 0.5rem;
 		border-radius: 0.375rem;
-		background-color: var(--imag-100);
-		color: var(--imag-text-color);
-		border: 1px solid var(--imag-80);
+		background-color: var(--viz-100);
+		color: var(--viz-text-color);
+		border: 1px solid var(--viz-80);
 		outline: none;
-		font-family: var(--imag-code-font);
+		font-family: var(--viz-code-font);
 		resize: vertical;
 
 		&:focus {
-			border-color: var(--imag-70);
+			border-color: var(--viz-70);
 		}
 
 		&.error {
-			border-color: var(--imag-error-color);
+			border-color: var(--viz-error-color);
 		}
 
 		&:disabled {

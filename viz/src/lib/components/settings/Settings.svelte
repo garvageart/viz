@@ -30,15 +30,27 @@ Stuff to finish:
 
 	let settings: UserSetting[] = $derived(userSettingsData);
 
-	const groupOrder = ["Account", "General", "Interface", "Images", "Notifications", "Privacy", "Security"];
+	const groupOrder = [
+		"Account",
+		"General",
+		"Interface",
+		"Images",
+		"Notifications",
+		"Privacy",
+		"Security"
+	];
 	// custom groups that aren't in the DB settings
 	const customGroups = ["Security", "Account"];
 
 	let groups: string[] = $derived.by(() => {
-		const apiGroups = Array.from(new SvelteSet(settings.map((s) => s.group || "General")));
+		const apiGroups = Array.from(
+			new SvelteSet(settings.map((s) => s.group || "General"))
+		);
 
 		// Merge and sort based on predefined order
-		const allGroups = Array.from(new SvelteSet([...apiGroups, ...customGroups]));
+		const allGroups = Array.from(
+			new SvelteSet([...apiGroups, ...customGroups])
+		);
 		return allGroups.sort((a, b) => {
 			const indexA = groupOrder.indexOf(a);
 			const indexB = groupOrder.indexOf(b);
@@ -53,8 +65,17 @@ Stuff to finish:
 		});
 	});
 
-	let currentSettings = $derived(settings.filter((s) => (s.group || "General").toLowerCase() === activeSection.toLowerCase()));
-	let isCustomGroup = $derived(customGroups.map((g) => g.toLowerCase()).includes(activeSection.toLowerCase()));
+	let currentSettings = $derived(
+		settings.filter(
+			(s) =>
+				(s.group || "General").toLowerCase() === activeSection.toLowerCase()
+		)
+	);
+	let isCustomGroup = $derived(
+		customGroups
+			.map((g) => g.toLowerCase())
+			.includes(activeSection.toLowerCase())
+	);
 </script>
 
 <div class="settings-layout">
@@ -68,7 +89,10 @@ Stuff to finish:
 				<AccountsSettings {userSettingsData} />
 			{/if}
 		{:else}
-			<AutoSettingsGroup settings={currentSettings} title={activeSection.charAt(0).toUpperCase() + activeSection.slice(1)} />
+			<AutoSettingsGroup
+				settings={currentSettings}
+				title={activeSection.charAt(0).toUpperCase() + activeSection.slice(1)}
+			/>
 		{/if}
 	</main>
 </div>
@@ -79,13 +103,13 @@ Stuff to finish:
 		width: 100%;
 		height: 100%;
 		overflow: hidden;
-		background-color: var(--imag-100);
+		background-color: var(--viz-100);
 	}
 
 	.settings-content {
 		flex: 1;
 		padding: 2rem 10rem;
 		overflow-y: auto;
-		background-color: var(--imag-bg-color);
+		background-color: var(--viz-bg-color);
 	}
 </style>

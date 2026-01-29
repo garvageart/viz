@@ -14,7 +14,7 @@
 
 <div
 	{...props}
-	class="viz-toolbar-container {props.class ?? ""}"
+	class="viz-toolbar-container {props.class ?? ''}"
 	style={`${stickyToolbar === true ? "position: sticky; top: 0px;" : "position: relative;"} ${props.style ?? ""}`}
 >
 	{@render children?.()}
@@ -23,15 +23,15 @@
 <style lang="scss">
 	:global(:root) {
 		/* expose toolbar height as a CSS variable for other components to use */
-		--imag-toolbar-height: 4em;
+		--viz-toolbar-height: 4em;
 	}
 
 	.viz-toolbar-container {
 		z-index: 99;
 		padding: 0.4em 2em;
-		background-color: var(--imag-100);
+		background-color: var(--viz-100);
 		backdrop-filter: blur(5px);
-		border-bottom: 1px solid var(--imag-60);
+		border-bottom: 1px solid var(--viz-60);
 		font-size: 0.8em;
 		width: 100%;
 		max-width: 100%;

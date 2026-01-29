@@ -5,7 +5,9 @@
 	import { goto } from "$app/navigation";
 
 	let statusCode = $derived(page.status);
-	let errorMessage = $derived(page.error?.message ?? "An unexpected error occurred.");
+	let errorMessage = $derived(
+		page.error?.message ?? "An unexpected error occurred."
+	);
 	let stackTrace = $derived((page.error as any)?.stack);
 </script>
 
@@ -13,11 +15,20 @@
 	<div class="error-card">
 		<div class="icon-wrapper">
 			{#if statusCode === 404}
-				<MaterialIcon iconName="search_off" style="font-size: 4rem; color: var(--imag-20);" />
+				<MaterialIcon
+					iconName="search_off"
+					style="font-size: 4rem; color: var(--viz-20);"
+				/>
 			{:else if statusCode === 403 || statusCode === 401}
-				<MaterialIcon iconName="lock" style="font-size: 4rem; color: var(--imag-20);" />
+				<MaterialIcon
+					iconName="lock"
+					style="font-size: 4rem; color: var(--viz-20);"
+				/>
 			{:else}
-				<MaterialIcon iconName="error_med" style="font-size: 4rem; color: var(--imag-20);" />
+				<MaterialIcon
+					iconName="error_med"
+					style="font-size: 4rem; color: var(--viz-20);"
+				/>
 			{/if}
 		</div>
 
@@ -70,12 +81,12 @@
 		justify-content: center;
 		height: 100vh;
 		width: 100vw;
-		background-color: var(--imag-bg-color);
-		color: var(--imag-text-color);
+		background-color: var(--viz-bg-color);
+		color: var(--viz-text-color);
 	}
 
 	.error-card {
-		background-color: var(--imag-100);
+		background-color: var(--viz-100);
 		padding: 3rem;
 		border-radius: 12px;
 		box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
@@ -85,7 +96,7 @@
 		display: flex;
 		flex-direction: column;
 		gap: 1.5rem;
-		border: 1px solid var(--imag-60);
+		border: 1px solid var(--viz-60);
 	}
 
 	.icon-wrapper {
@@ -97,9 +108,9 @@
 	.status-code {
 		font-size: 4rem;
 		font-weight: 700;
-		color: var(--imag-text-color);
+		color: var(--viz-text-color);
 		line-height: 1;
-		font-family: var(--imag-code-font);
+		font-family: var(--viz-code-font);
 	}
 
 	.message-container {
@@ -115,7 +126,7 @@
 	}
 
 	.error-message {
-		color: var(--imag-20);
+		color: var(--viz-20);
 		font-size: 1rem;
 		margin: 0;
 		line-height: 1.5;
@@ -127,20 +138,20 @@
 		margin-top: 1rem;
 
 		details {
-			background-color: var(--imag-bg-color);
+			background-color: var(--viz-bg-color);
 			border-radius: 0.5em;
 			padding: 0.5rem;
-			border: 1px solid var(--imag-60);
+			border: 1px solid var(--viz-60);
 
 			summary {
 				cursor: pointer;
 				font-weight: 500;
-				color: var(--imag-20);
+				color: var(--viz-20);
 				padding: 0.25rem;
 				user-select: none;
 
 				&:hover {
-					color: var(--imag-text-color);
+					color: var(--viz-text-color);
 				}
 			}
 		}
@@ -150,10 +161,10 @@
 			padding: 0.5rem;
 			overflow-x: auto;
 			font-size: 0.8rem;
-			color: var(--imag-text-color);
-			background-color: var(--imag-100);
+			color: var(--viz-text-color);
+			background-color: var(--viz-100);
 			border-radius: 4px;
-			font-family: var(--imag-code-font);
+			font-family: var(--viz-code-font);
 			white-space: pre-wrap;
 			word-break: break-word;
 			max-height: 12rem;
@@ -170,15 +181,15 @@
 	}
 
 	:global(.actions-button) {
-		background-color: var(--imag-100);
-		color: var(--imag-text-color);
+		background-color: var(--viz-100);
+		color: var(--viz-text-color);
 		padding: 0.75em 1.5em;
 		display: flex;
 		align-items: center;
 		gap: 0.5em;
 
 		&:hover {
-			background-color: var(--imag-90);
+			background-color: var(--viz-90);
 		}
 	}
 </style>

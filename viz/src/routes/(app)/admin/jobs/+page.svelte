@@ -357,10 +357,10 @@
 	}
 
 	.dashboard-section {
-		background: var(--imag-100);
+		background: var(--viz-100);
 		border-radius: 1rem;
 		padding: 1.5rem;
-		border: 1px solid var(--imag-90);
+		border: 1px solid var(--viz-90);
 		contain: layout;
 
 		&.stats-section {
@@ -400,7 +400,7 @@
 				margin: 0;
 				font-size: 1.25rem;
 				font-weight: 700;
-				color: var(--imag-text-color);
+				color: var(--viz-text-color);
 			}
 
 			:global(.title-icon) {
@@ -419,20 +419,20 @@
 			margin: 0;
 			font-size: 1rem;
 			font-weight: 600;
-			color: var(--imag-text-color);
+			color: var(--viz-text-color);
 		}
 	}
 
 	.badge {
 		padding: 0.25rem 0.75rem;
-		background: var(--imag-80);
+		background: var(--viz-80);
 		border-radius: 1.25rem;
 		font-size: 0.875rem;
 		font-weight: 700;
-		color: var(--imag-text-color);
+		color: var(--viz-text-color);
 
 		&.highlight {
-			background: var(--imag-primary);
+			background: var(--viz-primary);
 			color: white;
 		}
 	}
@@ -448,16 +448,16 @@
 		align-items: center;
 		gap: 1rem;
 		padding: 1rem;
-		background: var(--imag-90);
+		background: var(--viz-90);
 		border-radius: 0.75rem;
-		border: 1px solid var(--imag-80);
+		border: 1px solid var(--viz-80);
 		transition:
 			border-color 0.2s,
 			background-color 0.2s;
 
 		&:hover {
-			border-color: var(--imag-70);
-			background-color: var(--imag-80);
+			border-color: var(--viz-70);
+			background-color: var(--viz-80);
 		}
 
 		.stat-icon {
@@ -467,8 +467,8 @@
 			width: 3rem;
 			height: 3rem;
 			border-radius: 0.75rem;
-			background: var(--imag-80);
-			color: var(--imag-text-color);
+			background: var(--viz-80);
+			color: var(--viz-text-color);
 		}
 
 		.stat-content {
@@ -487,28 +487,28 @@
 			font-weight: 600;
 			text-transform: uppercase;
 			letter-spacing: 0.05em;
-			color: var(--imag-40);
+			color: var(--viz-40);
 		}
 
 		&.active {
 			background: linear-gradient(
 				135deg,
-				rgba(var(--imag-primary-rgb), 0.1) 0%,
+				rgba(var(--viz-primary-rgb), 0.1) 0%,
 				transparent 100%
 			);
-			border: 1px solid rgba(var(--imag-primary-rgb), 0.2);
+			border: 1px solid rgba(var(--viz-primary-rgb), 0.2);
 
 			&:hover {
-				background: rgba(var(--imag-primary-rgb), 0.15);
-				border-color: var(--imag-primary);
+				background: rgba(var(--viz-primary-rgb), 0.15);
+				border-color: var(--viz-primary);
 			}
 
 			.stat-icon {
-				background: var(--imag-primary);
+				background: var(--viz-primary);
 				color: white;
 			}
 			.stat-value {
-				color: var(--imag-primary);
+				color: var(--viz-primary);
 			}
 		}
 
@@ -529,14 +529,14 @@
 		&.failed {
 			&:hover {
 				background: rgba(220, 38, 38, 0.05);
-				border-color: var(--imag-error-color);
+				border-color: var(--viz-error-color);
 			}
 			.stat-icon {
-				background: var(--imag-error-color);
+				background: var(--viz-error-color);
 				color: white;
 			}
 			.stat-value {
-				color: var(--imag-error-color);
+				color: var(--viz-error-color);
 			}
 		}
 	}
@@ -552,14 +552,14 @@
 	}
 
 	.job-card {
-		background: var(--imag-90);
+		background: var(--viz-90);
 		border-radius: 0.75rem;
 		overflow: hidden;
-		border: 1px solid var(--imag-80);
+		border: 1px solid var(--viz-80);
 		flex-shrink: 0;
 
 		&.active {
-			border-left: 0.25rem solid var(--imag-primary);
+			border-left: 0.25rem solid var(--viz-primary);
 		}
 
 		.job-card-main {
@@ -579,9 +579,9 @@
 			justify-content: center;
 			width: 2.5rem;
 			height: 2.5rem;
-			background: var(--imag-80);
+			background: var(--viz-80);
 			border-radius: 0.625rem;
-			color: var(--imag-primary);
+			color: var(--viz-primary);
 		}
 
 		.job-details {
@@ -594,7 +594,7 @@
 				white-space: nowrap;
 				overflow: hidden;
 				text-overflow: ellipsis;
-				color: var(--imag-text-color);
+				color: var(--viz-text-color);
 			}
 
 			.job-meta {
@@ -602,10 +602,10 @@
 				align-items: center;
 				gap: 0.5rem;
 				font-size: 0.75rem;
-				color: var(--imag-40);
+				color: var(--viz-40);
 
 				.job-type-tag {
-					background: var(--imag-80);
+					background: var(--viz-80);
 					padding: 0.125rem 0.5rem;
 					border-radius: 0.25rem;
 					font-weight: 600;
@@ -628,19 +628,19 @@
 
 			.job-step {
 				font-weight: 600;
-				color: var(--imag-text-color);
+				color: var(--viz-text-color);
 			}
 
 			.progress-value {
 				font-weight: 800;
-				color: var(--imag-primary);
+				color: var(--viz-primary);
 			}
 		}
 	}
 
 	.progress-bar-container {
 		height: 0.625rem;
-		background: var(--imag-80);
+		background: var(--viz-80);
 		border-radius: 0.3125rem;
 		overflow: hidden;
 		position: relative;
@@ -648,7 +648,7 @@
 
 	.progress-bar-fill {
 		height: 100%;
-		background: var(--imag-primary);
+		background: var(--viz-primary);
 		border-radius: 0.3125rem;
 		transition: width 0.4s cubic-bezier(0.4, 0, 0.2, 1);
 		position: relative;
@@ -697,7 +697,7 @@
 			font-weight: 700;
 			text-transform: uppercase;
 			letter-spacing: 0.05em;
-			color: var(--imag-40);
+			color: var(--viz-40);
 			flex-shrink: 0;
 		}
 	}
@@ -707,17 +707,17 @@
 		align-items: center;
 		gap: 0.75rem;
 		padding: 0.75rem;
-		background: var(--imag-90);
+		background: var(--viz-90);
 		border-radius: 0.625rem;
-		border: 1px solid var(--imag-80);
+		border: 1px solid var(--viz-80);
 		flex-shrink: 0;
 		transition:
 			border-color 0.2s,
 			background-color 0.2s;
 
 		&:hover {
-			border-color: var(--imag-70);
-			background-color: var(--imag-80);
+			border-color: var(--viz-70);
+			background-color: var(--viz-80);
 		}
 
 		:global(.status-icon) {
@@ -740,11 +740,11 @@
 			.mini-job-meta,
 			.mini-job-error {
 				font-size: 0.75rem;
-				color: var(--imag-40);
+				color: var(--viz-40);
 			}
 
 			.mini-job-error {
-				color: var(--imag-error-color);
+				color: var(--viz-error-color);
 				font-style: italic;
 			}
 		}
@@ -757,7 +757,7 @@
 
 		&.failure {
 			:global(.status-icon) {
-				color: var(--imag-error-color);
+				color: var(--viz-error-color);
 			}
 		}
 	}
@@ -773,12 +773,12 @@
 	}
 
 	:global(.btn-connect) {
-		background: var(--imag-primary) !important;
+		background: var(--viz-primary) !important;
 		color: white !important;
 	}
 	:global(.btn-disconnect) {
-		background: var(--imag-80) !important;
-		color: var(--imag-text-color) !important;
+		background: var(--viz-80) !important;
+		color: var(--viz-text-color) !important;
 	}
 
 	.job-types-list {
@@ -788,14 +788,14 @@
 	}
 
 	.worker-card {
-		background: var(--imag-90);
+		background: var(--viz-90);
 		border-radius: 0.75rem;
 		padding: 1rem;
-		border: 1px solid var(--imag-80);
+		border: 1px solid var(--viz-80);
 		transition: border-color 0.2s;
 
 		&:hover {
-			border-color: var(--imag-70);
+			border-color: var(--viz-70);
 		}
 
 		.worker-header {
@@ -823,7 +823,7 @@
 						background: #10b981;
 					}
 					&.idle {
-						background: var(--imag-60);
+						background: var(--viz-60);
 					}
 				}
 			}
@@ -839,12 +839,12 @@
 					font-weight: 700;
 
 					&.running {
-						background: rgba(var(--imag-primary-rgb), 0.2);
-						color: var(--imag-primary);
+						background: rgba(var(--viz-primary-rgb), 0.2);
+						color: var(--viz-primary);
 					}
 					&.queued {
-						background: var(--imag-80);
-						color: var(--imag-40);
+						background: var(--viz-80);
+						color: var(--viz-40);
 					}
 				}
 			}
@@ -862,18 +862,18 @@
 			justify-content: space-between;
 			align-items: center;
 			padding-top: 0.75rem;
-			border-top: 1px solid var(--imag-80);
+			border-top: 1px solid var(--viz-80);
 
 			.concurrency-label {
 				font-size: 0.75rem;
 				font-weight: 600;
-				color: var(--imag-40);
+				color: var(--viz-40);
 			}
 
 			.concurrency-input {
 				display: flex;
 				align-items: center;
-				background: var(--imag-80);
+				background: var(--viz-80);
 				border-radius: 0.375rem;
 				overflow: hidden;
 
@@ -882,10 +882,10 @@
 					height: 1.5rem;
 					border: none;
 					background: transparent;
-					color: var(--imag-text-color);
+					color: var(--viz-text-color);
 					cursor: pointer;
 					&:hover {
-						background: var(--imag-70);
+						background: var(--viz-70);
 					}
 				}
 
@@ -907,15 +907,15 @@
 		border-radius: 1.875rem;
 		font-size: 0.75rem;
 		font-weight: 700;
-		background: var(--imag-90);
-		color: var(--imag-40);
-		border: 1px solid var(--imag-80);
+		background: var(--viz-90);
+		color: var(--viz-40);
+		border: 1px solid var(--viz-80);
 
 		.status-dot {
 			width: 0.5rem;
 			height: 0.5rem;
 			border-radius: 50%;
-			background: var(--imag-60);
+			background: var(--viz-60);
 		}
 
 		.status-text {
@@ -956,10 +956,10 @@
 		align-items: center;
 		justify-content: center;
 		flex: 1;
-		color: var(--imag-40);
+		color: var(--viz-40);
 		text-align: center;
 		padding: 2rem;
-		border: 2px dashed var(--imag-80);
+		border: 2px dashed var(--viz-80);
 		border-radius: 0.75rem;
 		margin: 1rem 0;
 
@@ -980,9 +980,9 @@
 		padding: 2rem;
 		text-align: center;
 		font-size: 0.75rem;
-		color: var(--imag-60);
+		color: var(--viz-60);
 		font-style: italic;
-		border: 1px dashed var(--imag-80);
+		border: 1px dashed var(--viz-80);
 		border-radius: 0.5rem;
 		margin-top: 0.5rem;
 	}
@@ -993,15 +993,15 @@
 		justify-content: center;
 		gap: 0.75rem;
 		padding: 2rem;
-		color: var(--imag-40);
+		color: var(--viz-40);
 		font-size: 0.875rem;
 	}
 
 	.spinner-small {
 		width: 1rem;
 		height: 1rem;
-		border: 2px solid var(--imag-80);
-		border-top-color: var(--imag-primary);
+		border: 2px solid var(--viz-80);
+		border-top-color: var(--viz-primary);
 		border-radius: 50%;
 		animation: spin 1s linear infinite;
 	}

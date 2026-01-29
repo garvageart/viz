@@ -49,9 +49,9 @@
 		justify-content: space-between;
 		align-items: center;
 		padding: 1rem 0;
-		border-bottom: 1px solid var(--imag-80);
+		border-bottom: 1px solid var(--viz-80);
 		width: 100%;
-		font-family: var(--imag-display-font);
+		font-family: var(--viz-display-font);
 
 		&.disabled {
 			opacity: 0.5;
@@ -66,26 +66,26 @@
 
 	.label {
 		font-weight: 500;
-		color: var(--imag-text-color);
+		color: var(--viz-text-color);
 	}
 
 	.description {
 		font-size: 0.875rem;
-		color: var(--imag-text-color);
+		color: var(--viz-text-color);
 	}
 
 	.text-input {
 		padding: 0.5rem 1rem;
 		border-radius: 0.375rem;
-		background-color: var(--imag-100);
-		color: var(--imag-text-color);
-		border: 1px solid var(--imag-80);
+		background-color: var(--viz-100);
+		color: var(--viz-text-color);
+		border: 1px solid var(--viz-80);
 		outline: none;
-		font-family: var(--imag-display-font);
+		font-family: var(--viz-display-font);
 		width: 200px;
 
 		&:focus {
-			border-color: var(--imag-70);
+			border-color: var(--viz-70);
 		}
 
 		&:disabled {

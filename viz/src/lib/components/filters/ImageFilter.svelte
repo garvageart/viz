@@ -294,7 +294,7 @@
 
 <style lang="scss">
 	.filter-section {
-		border-bottom: 1px solid var(--imag-80);
+		border-bottom: 1px solid var(--viz-80);
 
 		&:last-child {
 			border-bottom: none;
@@ -310,15 +310,15 @@
 		border: none;
 		padding: 0.2rem;
 		cursor: pointer;
-		color: var(--imag-text-color);
+		color: var(--viz-text-color);
 		font-weight: 600;
 		font-size: 0.8rem;
 		text-align: left;
 		transition: color 0.2s;
 
 		&:hover {
-			color: var(--imag-20);
-			background-color: var(--imag-90);
+			color: var(--viz-20);
+			background-color: var(--viz-90);
 		}
 	}
 
@@ -334,7 +334,7 @@
 		align-items: center;
 		gap: 0.5rem;
 		font-size: 0.9rem;
-		color: var(--imag-60);
+		color: var(--viz-60);
 	}
 
 	.date-inputs {
@@ -350,20 +350,20 @@
 
 		.label {
 			font-size: 0.8rem;
-			color: var(--imag-60);
+			color: var(--viz-60);
 		}
 
 		input[type="date"] {
-			background: var(--imag-100);
+			background: var(--viz-100);
 			border: none;
-			box-shadow: 0 -1px 0 var(--imag-60) inset;
-			color: var(--imag-text-color);
+			box-shadow: 0 -1px 0 var(--viz-60) inset;
+			color: var(--viz-text-color);
 			padding: 4px 8px;
 			border-radius: 0;
-			font-family: var(--imag-display-font);
+			font-family: var(--viz-display-font);
 
 			&:focus {
-				box-shadow: 0 -2px 0 var(--imag-primary) inset;
+				box-shadow: 0 -2px 0 var(--viz-primary) inset;
 				outline: none;
 			}
 
@@ -377,6 +377,6 @@
 
 	:global(.arrow-icon) {
 		font-size: 1.2rem;
-		color: var(--imag-60);
+		color: var(--viz-60);
 	}
 </style>

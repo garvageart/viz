@@ -10,7 +10,13 @@
 		id?: string;
 	}
 
-	let { label, value = $bindable(), labelPos = "side", id, ...props }: Props & SvelteHTMLElements["div"] = $props();
+	let {
+		label,
+		value = $bindable(),
+		labelPos = "side",
+		id,
+		...props
+	}: Props & SvelteHTMLElements["div"] = $props();
 
 	let checked = $state(true);
 	const uniqueID = generateRandomString(6);
@@ -93,7 +99,7 @@
 	}
 
 	.toggle-slider button[aria-checked="true"] {
-		background-color: var(--imag-primary);
+		background-color: var(--viz-primary);
 	}
 
 	.toggle-slider button[aria-checked="true"]::before {
@@ -102,7 +108,7 @@
 	}
 
 	.toggle-slider button:focus {
-		box-shadow: 0 0px 0px 1px var(--imag-primary);
+		box-shadow: 0 0px 0px 1px var(--viz-primary);
 	}
 
 	.toggle-slider button {
@@ -114,7 +120,7 @@
 	}
 
 	.toggle-slider button:focus {
-		box-shadow: 0 0px 8px var(--imag-primary);
+		box-shadow: 0 0px 8px var(--viz-primary);
 		border-radius: 1.5em;
 	}
 </style>

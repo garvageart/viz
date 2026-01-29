@@ -9,9 +9,17 @@
 		onchange?: (value: string) => void;
 	}
 
-	let { label, value = $bindable("off"), description = "", disabled = false, onchange }: Props = $props();
+	let {
+		label,
+		value = $bindable("off"),
+		description = "",
+		disabled = false,
+		onchange
+	}: Props = $props();
 
-	const toggleId = $derived(`toggle-${label.replace(/\s+/g, '-').toLowerCase()}`);
+	const toggleId = $derived(
+		`toggle-${label.replace(/\s+/g, "-").toLowerCase()}`
+	);
 
 	let initialRun = true;
 	$effect(() => {
@@ -52,7 +60,7 @@
 		justify-content: space-between;
 		align-items: center;
 		padding: 1rem 0;
-		border-bottom: 1px solid var(--imag-80);
+		border-bottom: 1px solid var(--viz-80);
 		width: 100%;
 
 		&.disabled {
@@ -68,12 +76,12 @@
 
 	.label {
 		font-weight: 500;
-		color: var(--imag-text-color);
+		color: var(--viz-text-color);
 	}
 
 	.description {
 		font-size: 0.875rem;
-		color: var(--imag-40);
+		color: var(--viz-40);
 	}
 
 	.toggle-wrapper {

@@ -71,7 +71,7 @@
 		width: 35%;
 		max-height: 70%;
 		gap: 0.5rem;
-		background-color: var(--imag-bg-color);
+		background-color: var(--viz-bg-color);
 		z-index: 9999;
 		display: flex;
 		flex-direction: column;

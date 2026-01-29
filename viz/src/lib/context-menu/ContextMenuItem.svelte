@@ -122,24 +122,24 @@
 		text-align: left;
 		width: 100%;
 		border: 0px;
-		color: var(--imag-text-color);
-		background-color: var(--imag-100);
+		color: var(--viz-text-color);
+		background-color: var(--viz-100);
 		cursor: pointer;
 		transition: background-color 0.1s ease;
 	}
 
 	li > button:hover {
-		background-color: var(--imag-90);
+		background-color: var(--viz-90);
 	}
 
 	li > button.disabled {
-		color: var(--imag-70);
+		color: var(--viz-70);
 		cursor: default;
 		opacity: 0.5;
 	}
 
 	li > button.disabled:hover {
-		background-color: var(--imag-100);
+		background-color: var(--viz-100);
 	}
 
 	.shortcut {
@@ -153,7 +153,7 @@
 		/* overlap slightly with parent to avoid hover gap */
 		left: calc(100% - 6px);
 		top: 0.15rem;
-		background: var(--imag-100);
+		background: var(--viz-100);
 		box-shadow:
 			0 5px 10px rgba(0, 0, 0, 0.15),
 			0 2px 8px rgba(0, 0, 0, 0.3);
@@ -186,25 +186,25 @@
 		text-align: left;
 		width: 100%;
 		border: 0px;
-		color: var(--imag-text-color);
-		background-color: var(--imag-100);
+		color: var(--viz-text-color);
+		background-color: var(--viz-100);
 		cursor: pointer;
 		transition: background-color 0.1s ease;
 		box-sizing: border-box;
 	}
 
 	.submenu ul li > button:hover {
-		background-color: var(--imag-90);
+		background-color: var(--viz-90);
 	}
 
 	.submenu ul li > button.disabled {
-		color: var(--imag-70);
+		color: var(--viz-70);
 		cursor: default;
 		opacity: 0.5;
 	}
 
 	.submenu ul li > button.disabled:hover {
-		background-color: var(--imag-100);
+		background-color: var(--viz-100);
 	}
 
 	.submenu-arrow {

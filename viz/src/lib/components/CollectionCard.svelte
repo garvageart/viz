@@ -125,8 +125,8 @@
 	.coll-name {
 		font-size: 1em;
 		font-weight: bold;
-		font-family: var(--imag-display-font);
-		color: var(--imag-text-color);
+		font-family: var(--viz-display-font);
+		color: var(--viz-text-color);
 		border: none;
 		outline: none;
 		padding: 0.2em 0em;
@@ -143,7 +143,7 @@
 		min-width: 100%;
 		max-width: 100%;
 		height: auto;
-		background-color: var(--imag-90);
+		background-color: var(--viz-90);
 		transition: background-color 0.1s ease;
 		text-align: left;
 		overflow: overlay;
@@ -151,7 +151,7 @@
 
 	.image-container {
 		height: 13em;
-		background-color: var(--imag-80);
+		background-color: var(--viz-80);
 		pointer-events: none;
 		display: flex;
 		align-items: center;
@@ -159,7 +159,7 @@
 	}
 
 	.coll-no_thumbnail {
-		background-color: var(--imag-40);
+		background-color: var(--viz-40);
 		width: 60%;
 		height: 90%;
 	}

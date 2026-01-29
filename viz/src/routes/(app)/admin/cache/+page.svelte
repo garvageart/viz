@@ -59,9 +59,17 @@
 	<title>Cache - Admin</title>
 </svelte:head>
 
-<AdminRouteShell heading="Cache Management" description="Monitor and manage the image processing cache">
+<AdminRouteShell
+	heading="Cache Management"
+	description="Monitor and manage the image processing cache"
+>
 	{#snippet actions()}
-		<Button variant="small" onclick={openClearConfirm} disabled={loading} hoverColor="var(--imag-alert-color)">
+		<Button
+			variant="small"
+			onclick={openClearConfirm}
+			disabled={loading}
+			hoverColor="var(--viz-alert-color)"
+		>
 			<MaterialIcon iconName="delete_sweep" />
 			{#if loading}
 				Clearing...
@@ -113,17 +121,18 @@
 		<p>
 			Are you sure you want to clear the entire image cache?
 			<br />
-			This will remove all generated thumbnails and previews. They will be regenerated on demand, which may increase server load temporarily.
+			This will remove all generated thumbnails and previews. They will be regenerated
+			on demand, which may increase server load temporarily.
 		</p>
 	</ConfirmationModal>
 {/if}
 
 <style lang="scss">
 	.cache-status-section {
-		background-color: var(--imag-100);
+		background-color: var(--viz-100);
 		border-radius: 12px;
 		padding: 1.5rem;
-		border: 1px solid var(--imag-90);
+		border: 1px solid var(--viz-90);
 		max-width: 600px;
 	}
 
@@ -151,17 +160,17 @@
 		justify-content: space-between;
 		align-items: center;
 		padding: 0.75rem;
-		background: var(--imag-90);
+		background: var(--viz-90);
 		border-radius: 0.5rem;
 
 		.label {
-			color: var(--imag-40);
+			color: var(--viz-40);
 			font-weight: 500;
 		}
 
 		.value {
 			font-weight: 600;
-			font-family: var(--imag-code-font);
+			font-family: var(--viz-code-font);
 			font-size: 1.1em;
 		}
 	}

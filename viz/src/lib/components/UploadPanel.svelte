@@ -98,8 +98,8 @@
 				minimized = false;
 			}}
 			title="Show Upload Panel"
-			style="background-color: var(--imag-secondary);"
-			hoverColor="var(--imag-primary)"
+			style="background-color: var(--viz-secondary);"
+			hoverColor="var(--viz-primary)"
 		>
 			<MaterialIcon iconName="upload" style="font-size: 1.5rem;" />
 			<span
@@ -115,7 +115,7 @@
 			<div id="upload-panel-header-info">
 				<Button
 					style="background-color: transparent; padding: 0em;"
-					hoverColor="var(--imag-80)"
+					hoverColor="var(--viz-80)"
 					title="Minimize Upload Panel"
 					onclick={() => {
 						minimized = true;
@@ -149,7 +149,7 @@
 					{#if file.state === UploadState.STARTED}
 						<Button
 							style="background-color: transparent; padding: 0em;"
-							hoverColor="var(--imag-80)"
+							hoverColor="var(--viz-80)"
 							title="Cancel Upload"
 							onclick={() => {
 								file.cancelRequest();
@@ -194,9 +194,9 @@
 		position: absolute;
 		bottom: 2em;
 		left: 2em;
-		background-color: var(--imag-100);
+		background-color: var(--viz-100);
 		z-index: 9999;
-		border: 1.5px solid var(--imag-60);
+		border: 1.5px solid var(--viz-60);
 		border-radius: 0.5em;
 		max-height: 60vh;
 		overflow: hidden;
@@ -218,8 +218,8 @@
 		padding: 0 1rem;
 		font-size: 0.9rem;
 		font-weight: 600;
-		border-bottom: 1px solid var(--imag-60);
-		background-color: var(--imag-90);
+		border-bottom: 1px solid var(--viz-60);
+		background-color: var(--viz-90);
 		box-sizing: border-box;
 		gap: 1rem;
 	}
@@ -245,17 +245,17 @@
 		}
 
 		input[type="number"] {
-			background-color: var(--imag-80);
-			border: 1px solid var(--imag-60);
+			background-color: var(--viz-80);
+			border: 1px solid var(--viz-60);
 			border-radius: 0.25em;
-			color: var(--imag-text-color);
+			color: var(--viz-text-color);
 			padding: 0.25em;
 			text-align: center;
-			font-family: var(--imag-code-font);
+			font-family: var(--viz-code-font);
 
 			&:focus {
 				outline: none;
-				border-color: var(--imag-40);
+				border-color: var(--viz-40);
 			}
 		}
 	}
@@ -265,7 +265,7 @@
 		display: flex;
 		flex-direction: column;
 		justify-content: flex-start;
-		font-family: var(--imag-code-font);
+		font-family: var(--viz-code-font);
 		overflow-y: auto;
 		flex: 1;
 		min-height: 0;
@@ -277,12 +277,12 @@
 		position: relative;
 		width: 100%;
 		padding: 0.5rem 1rem;
-		border-bottom: 1px solid var(--imag-70);
-		background-color: var(--imag-100);
+		border-bottom: 1px solid var(--viz-70);
+		background-color: var(--viz-100);
 		box-sizing: border-box;
 
 		&:hover {
-			background-color: var(--imag-90);
+			background-color: var(--viz-90);
 		}
 	}
 
@@ -329,7 +329,7 @@
 	.viz-upload-progress-text {
 		font-weight: 600;
 		font-size: 0.75rem;
-		color: var(--imag-20);
+		color: var(--viz-20);
 		min-width: 40px;
 		text-align: right;
 	}
@@ -337,7 +337,7 @@
 	.panel-file-info-progress-container {
 		width: 100%;
 		height: 4px;
-		background-color: var(--imag-70);
+		background-color: var(--viz-70);
 		border-radius: 2px;
 		overflow: hidden;
 		position: relative;
@@ -345,7 +345,7 @@
 
 	.panel-file-info-progress {
 		height: 100%;
-		background: linear-gradient(90deg, var(--imag-40), var(--imag-20));
+		background: linear-gradient(90deg, var(--viz-40), var(--viz-20));
 		border-radius: 2px;
 		transition: width 0.3s ease;
 		display: block;

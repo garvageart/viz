@@ -183,7 +183,9 @@
 
 	// Selection
 	const scopeId = $derived(SelectionScopeNames.COLLECTION_PREFIX + data.uid);
-	const selectionScope = $derived(selectionManager.getScope<ImageAsset>(scopeId));
+	const selectionScope = $derived(
+		selectionManager.getScope<ImageAsset>(scopeId)
+	);
 	let selectionFirstImage = $derived(Array.from(selectionScope.selected)[0]);
 
 	// Context menu state
@@ -689,7 +691,7 @@
 
 {#snippet noAssetsSnippet()}
 	<div id="add_to_collection-container">
-		<span style="margin: 1em; color: var(--imag-20); font-size: 1.2rem;"
+		<span style="margin: 1em; color: var(--viz-20); font-size: 1.2rem;"
 			>Add images to this collection</span
 		>
 		<Button
@@ -933,7 +935,7 @@
 	}
 
 	#coll-name {
-		color: var(--imag-text-color);
+		color: var(--viz-text-color);
 		font-weight: bold;
 		display: flex;
 		flex-direction: row;
@@ -972,8 +974,8 @@
 		display: flex;
 		flex-direction: column;
 		overflow: hidden;
-		color: var(--imag-60);
-		font-family: var(--imag-code-font);
+		color: var(--viz-60);
+		font-family: var(--viz-code-font);
 		gap: 1rem;
 		max-width: 40rem;
 

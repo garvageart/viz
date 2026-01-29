@@ -86,23 +86,45 @@
 		}
 	}
 
-	let accountSettings = $derived(userSettingsData.filter((s) => s.name === "privacy_profile_visibility"));
+	let accountSettings = $derived(
+		userSettingsData.filter((s) => s.name === "privacy_profile_visibility")
+	);
 </script>
 
 <div class="account-settings-section">
 	<CustomSettingsGroup title="Account">
 		{#snippet actions()}
 			{#if dirty}
-				<button class="btn-save" onclick={saveAccountChanges} disabled={savingAccount}>
+				<button
+					class="btn-save"
+					onclick={saveAccountChanges}
+					disabled={savingAccount}
+				>
 					{savingAccount ? "Saving..." : "Save Changes"}
 				</button>
 			{/if}
 		{/snippet}
 
-		<TextInput label="Email" bind:value={settingsUserUpdate.email} disabled={savingAccount} />
-		<TextInput label="Username" bind:value={settingsUserUpdate.username} disabled={savingAccount} />
-		<TextInput label="First Name" bind:value={settingsUserUpdate.firstName} disabled={savingAccount} />
-		<TextInput label="Last Name" bind:value={settingsUserUpdate.lastName} disabled={savingAccount} />
+		<TextInput
+			label="Email"
+			bind:value={settingsUserUpdate.email}
+			disabled={savingAccount}
+		/>
+		<TextInput
+			label="Username"
+			bind:value={settingsUserUpdate.username}
+			disabled={savingAccount}
+		/>
+		<TextInput
+			label="First Name"
+			bind:value={settingsUserUpdate.firstName}
+			disabled={savingAccount}
+		/>
+		<TextInput
+			label="Last Name"
+			bind:value={settingsUserUpdate.lastName}
+			disabled={savingAccount}
+		/>
 	</CustomSettingsGroup>
 
 	<AutoSettingsGroup
@@ -120,8 +142,8 @@
 	}
 
 	.btn-save {
-		background-color: var(--imag-80);
-		color: var(--imag-text-color);
+		background-color: var(--viz-80);
+		color: var(--viz-text-color);
 		border: none;
 		padding: 0.5rem 1rem;
 		border-radius: 0.375rem;

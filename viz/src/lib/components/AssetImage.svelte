@@ -191,7 +191,7 @@
 		height: var(--asset-height, 100%);
 		overflow: hidden;
 		display: block;
-		background-color: var(--imag-100); /* Darker background while loading */
+		background-color: var(--viz-100); /* Darker background while loading */
 	}
 
 	.placeholder {

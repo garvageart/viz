@@ -17,7 +17,11 @@
 		type ImageUploadSuccess
 	} from "$lib/upload/manager.svelte";
 	import { invalidateAll, goto } from "$app/navigation";
-	import { createCollection, addCollectionImages, type ImageAsset } from "$lib/api";
+	import {
+		createCollection,
+		addCollectionImages,
+		type ImageAsset
+	} from "$lib/api";
 	import { SelectionScope } from "$lib/states/selection.svelte";
 	import { UploadState } from "$lib/upload/asset.svelte";
 	import UploadManager from "$lib/upload/manager.svelte";
@@ -124,7 +128,10 @@
 		try {
 			// Ignore internal image drops on the background - they must be dropped on the specific box
 			// checking types is enough, getData works too but let's just skip if we see the key
-			if (e.dataTransfer && DragData.isType(e.dataTransfer, VizMimeTypes.IMAGE_UIDS)) {
+			if (
+				e.dataTransfer &&
+				DragData.isType(e.dataTransfer, VizMimeTypes.IMAGE_UIDS)
+			) {
 				return;
 			}
 
@@ -229,7 +236,8 @@
 		if (dragCounter === 1) {
 			if (
 				internalDragActive ||
-				(e.dataTransfer && DragData.isType(e.dataTransfer, VizMimeTypes.IMAGE_UIDS))
+				(e.dataTransfer &&
+					DragData.isType(e.dataTransfer, VizMimeTypes.IMAGE_UIDS))
 			) {
 				isInternalDrag = true;
 			} else {
@@ -631,7 +639,7 @@
 			<Button onclick={handleConfirmUploadOnly}>Upload Individually</Button>
 			<Button
 				onclick={handleConfirmUploadCollection}
-				style="background-color: var(--imag-primary); color: white;"
+				style="background-color: var(--viz-primary); color: white;"
 			>
 				Create Collection & Upload
 			</Button>
@@ -653,7 +661,7 @@
 		<div class="drop-overlay-content">
 			<MaterialIcon
 				iconName="upload"
-				style="font-size: 4rem; margin-bottom: 1rem; color: var(--imag-10-dark);"
+				style="font-size: 4rem; margin-bottom: 1rem; color: var(--viz-10-dark);"
 			/>
 			<p style="font-size: 1.5rem; font-weight: 600;">Drop files to upload</p>
 			<p style="font-size: 1rem; opacity: 0.8;">Supports images and folders</p>
@@ -698,7 +706,7 @@
 				>
 					<MaterialIcon
 						iconName="collections_bookmark"
-						style="font-size: 1.6rem; margin-bottom: 0.25rem; color: var(--imag-10-dark);"
+						style="font-size: 1.6rem; margin-bottom: 0.25rem; color: var(--viz-10-dark);"
 					/>
 					<span>Add to Collection</span>
 				</div>
@@ -712,7 +720,7 @@
 		position: fixed;
 		inset: 0;
 		z-index: 1000;
-		color: var(--imag-10-dark);
+		color: var(--viz-10-dark);
 		background: rgba(0, 0, 0, 0.85);
 		backdrop-filter: blur(8px);
 		display: flex;
@@ -726,9 +734,9 @@
 		flex-direction: column;
 		align-items: center;
 		justify-content: center;
-		color: var(--imag-10-dark);
+		color: var(--viz-10-dark);
 		pointer-events: auto;
-		border: 2px solid var(--imag-primary);
+		border: 2px solid var(--viz-primary);
 		border-radius: 1rem;
 		padding: 3rem 4rem;
 		background: rgba(0, 0, 0, 0.5);
@@ -742,9 +750,9 @@
 		justify-content: center;
 		width: 12rem;
 		height: 4.25rem;
-		background-color: var(--imag-10-light);
-		border: 2px solid var(--imag-primary);
-		color: var(--imag-10-dark);
+		background-color: var(--viz-10-light);
+		border: 2px solid var(--viz-primary);
+		color: var(--viz-10-dark);
 		border-radius: 0.75rem;
 		gap: 0.25rem;
 		font-weight: 600;
@@ -757,7 +765,7 @@
 		}
 
 		&:hover {
-			background: var(--imag-20-light);
+			background: var(--viz-20-light);
 		}
 	}
 </style>

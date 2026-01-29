@@ -86,12 +86,12 @@
 		display: flex;
 		justify-content: space-between;
 		font-size: 0.8rem;
-		color: var(--imag-60);
+		color: var(--viz-60);
 	}
 
 	.label {
 		font-weight: 500;
-		color: var(--imag-text-color);
+		color: var(--viz-text-color);
 	}
 
 	.range-display {
@@ -115,6 +115,6 @@
 	}
 
 	.separator {
-		color: var(--imag-60);
+		color: var(--viz-60);
 	}
 </style>

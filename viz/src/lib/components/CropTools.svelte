@@ -97,7 +97,7 @@
 		display: flex;
 		flex-direction: column;
 		gap: 0.8em;
-		background: var(--imag-bg-color);
+		background: var(--viz-bg-color);
 		padding: 0.8em;
 		border-radius: 0.5em;
 		z-index: 9999;
@@ -108,7 +108,7 @@
 		&.floating {
 			position: fixed;
 			box-shadow: 0 4px 16px rgba(0, 0, 0, 0.4);
-			border: 1px solid var(--imag-10);
+			border: 1px solid var(--viz-10);
 			/* Basic collision avoidance: translate up/left if near edges? */
 			transform: translate(0, 0);
 		}
@@ -117,7 +117,7 @@
 			/* Sidebar styling to match metadata editor look */
 			height: auto;
 			width: 100%;
-			background: var(--imag-bg-color);
+			background: var(--viz-bg-color);
 			/* If parent doesn't constrain width, we might want a max-width, but parent likely handles it */
 		}
 	}
@@ -125,7 +125,7 @@
 	.menu-header {
 		font-size: 0.85em;
 		font-weight: 600;
-		color: var(--imag-30);
+		color: var(--viz-30);
 		text-transform: uppercase;
 		letter-spacing: 0.05em;
 		margin-bottom: 0.2em;
@@ -138,9 +138,9 @@
 	}
 
 	.preset-btn {
-		background: var(--imag-90);
+		background: var(--viz-90);
 		border: 1px solid transparent;
-		color: var(--imag-text-color);
+		color: var(--viz-text-color);
 		padding: 0.4em;
 		border-radius: 0.3em;
 		cursor: pointer;
@@ -149,13 +149,13 @@
 		transition: all 0.2s;
 
 		&:hover {
-			background: var(--imag-80);
+			background: var(--viz-80);
 		}
 
 		&.active {
-			background: var(--imag-primary);
+			background: var(--viz-primary);
 			color: white;
-			border-color: var(--imag-primary);
+			border-color: var(--viz-primary);
 		}
 	}
 
@@ -163,7 +163,7 @@
 		display: flex;
 		justify-content: space-between;
 		gap: 0.5em;
-		border-top: 1px solid var(--imag-10);
+		border-top: 1px solid var(--viz-10);
 		padding-top: 0.8em;
 		margin-top: 0.2em;
 
@@ -195,12 +195,12 @@
 		}
 
 		:global(.action-btn.reset) {
-			color: var(--imag-text-color);
-			background-color: var(--imag-80);
+			color: var(--viz-text-color);
+			background-color: var(--viz-80);
 		}
 
 		:global(.action-btn.reset:hover) {
-			background-color: var(--imag-70);
+			background-color: var(--viz-70);
 		}
 	}
 </style>
