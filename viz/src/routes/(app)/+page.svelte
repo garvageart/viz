@@ -45,13 +45,13 @@
 
 		&:focus,
 		&:focus-visible {
-			color: var(--imag-text-color);
-			background: var(--imag-primary);
+			color: var(--viz-text-color);
+			background: var(--viz-primary);
 			left: auto;
 			height: auto;
 			width: auto;
 			padding: 0.2em 3em;
-			outline: var(--imag-text-color) dashed 2px;
+			outline: var(--viz-text-color) dashed 2px;
 			outline-offset: -2px;
 			z-index: 999;
 		}

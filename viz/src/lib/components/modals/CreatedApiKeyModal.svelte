@@ -137,7 +137,7 @@
 			</div>
 		</div>
 		<div class="modal-actions">
-			<Button hoverColor="var(--imag-80)" onclick={handleClose}>Cancel</Button>
+			<Button hoverColor="var(--viz-80)" onclick={handleClose}>Cancel</Button>
 			<Button
 				onclick={handleCreate}
 				disabled={creating || !name || selectedScopes.length === 0}
@@ -157,7 +157,7 @@
 	}
 
 	.key-display {
-		background-color: var(--imag-100);
+		background-color: var(--viz-100);
 		padding: 1rem;
 		border-radius: 0.5rem;
 		display: flex;
@@ -165,7 +165,7 @@
 		align-items: center;
 
 		code {
-			font-family: var(--imag-code-font);
+			font-family: var(--viz-code-font);
 			word-break: break-all;
 			flex-grow: 1;
 			margin-right: 0.5rem;
@@ -180,7 +180,7 @@
 		h4 {
 			font-size: 0.9rem;
 			font-weight: 600;
-			color: var(--imag-text-color);
+			color: var(--viz-text-color);
 			margin: 0;
 		}
 	}
@@ -191,7 +191,7 @@
 		gap: 0.5rem;
 		max-height: 13rem;
 		overflow-y: auto;
-		border: 1px solid var(--imag-80);
+		border: 1px solid var(--viz-80);
 		padding: 0.5rem;
 		border-radius: 0.25rem;
 	}
@@ -205,11 +205,11 @@
 		user-select: none;
 
 		&:hover {
-			background-color: var(--imag-100);
+			background-color: var(--viz-100);
 		}
 
 		input[type="checkbox"] {
-			accent-color: var(--imag-80);
+			accent-color: var(--viz-80);
 			width: 1rem;
 			height: 1rem;
 		}
@@ -225,7 +225,7 @@
 	}
 
 	.scope-value {
-		color: var(--imag-10);
+		color: var(--viz-10);
 		font-size: 0.75rem;
 	}
 

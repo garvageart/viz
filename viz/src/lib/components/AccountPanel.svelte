@@ -23,7 +23,7 @@
 	{#if user.isAdmin}
 		<a href="/admin">
 			<Button
-				hoverColor="var(--imag-80)"
+				hoverColor="var(--viz-80)"
 				style="display: flex; flex-direction:column; justify-content: center; align-items: center; width: 100%;"
 			>
 				Admin Panel
@@ -32,16 +32,16 @@
 	{/if}
 	<a href="/settings">
 		<Button
-			hoverColor="var(--imag-80)"
+			hoverColor="var(--viz-80)"
 			style="display: flex; flex-direction:column; justify-content: center; align-items: center; width: 100%;"
 		>
 			Settings
 		</Button>
 	</a>
-	<hr style="border: 1px solid var(--imag-80); width: 100%;" />
+	<hr style="border: 1px solid var(--viz-80); width: 100%;" />
 	<Button
 		onclick={() => logoutUser()}
-		hoverColor="var(--imag-80)"
+		hoverColor="var(--viz-80)"
 		style="display: flex; flex-direction:column; justify-content: center; align-items: center; width: 100%;"
 	>
 		Log Out
@@ -57,8 +57,8 @@
 		right: 0;
 		z-index: 250;
 		min-width: 15vw;
-		background-color: var(--imag-100);
-		border: 1px solid var(--imag-80);
+		background-color: var(--viz-100);
+		border: 1px solid var(--viz-80);
 		border-radius: 0.5rem;
 		box-shadow:
 			0 4px 12px rgba(0, 0, 0, 0.15),
@@ -75,11 +75,11 @@
 	.account-name {
 		font-weight: 600;
 		font-size: 1rem;
-		color: var(--imag-text-color);
+		color: var(--viz-text-color);
 	}
 
 	.account-email {
 		font-size: 0.8rem;
-		color: var(--imag-60);
+		color: var(--viz-60);
 	}
 </style>

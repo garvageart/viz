@@ -87,7 +87,7 @@
 		align-items: center;
 		justify-content: space-between;
 		font-size: 0.85rem;
-		color: var(--imag-60);
+		color: var(--viz-60);
 
 		/* Align checkbox properly */
 		:global(.checkbox-wrapper) {
@@ -113,13 +113,13 @@
 		font-style: italic;
 		font-size: 0.8rem;
 		opacity: 0.6;
-		color: var(--imag-60);
+		color: var(--viz-60);
 	}
 
 	/* Override Button styling to look like a link or simple toggle */
 	:global(.more-btn) {
 		background-color: transparent !important;
-		color: var(--imag-primary) !important;
+		color: var(--viz-primary) !important;
 		padding: 0 !important;
 		align-self: flex-start;
 		height: auto !important;

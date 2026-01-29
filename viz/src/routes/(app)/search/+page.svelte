@@ -424,9 +424,7 @@
 								e.preventDefault();
 							}}
 							ondrop={(e) => {
-								if (
-									!e.dataTransfer?.types.includes(VizMimeTypes.IMAGE_UIDS)
-								) {
+								if (!e.dataTransfer?.types.includes(VizMimeTypes.IMAGE_UIDS)) {
 									return;
 								}
 
@@ -463,9 +461,7 @@
 									);
 									const labelName = entry ? entry[0] : null;
 									const labelToSend = (
-										labelName === "None" || !labelName
-											? null
-											: labelName
+										labelName === "None" || !labelName ? null : labelName
 									) as ImageLabel | null;
 
 									const updatePromises = Array.from(
@@ -538,10 +534,7 @@
 				</div>
 			</AssetToolbar>
 		{:else if !search.loading}
-			<AssetToolbar
-				style="position: sticky; top: 0px;"
-				class="asset-toolbar"
-			>
+			<AssetToolbar style="position: sticky; top: 0px;" class="asset-toolbar">
 				<div class="toolbar-content">
 					<div class="selection-info">
 						<span>
@@ -597,7 +590,7 @@
 					{#if collections.length > 0}
 						<section class="collections-section">
 							<div
-								style="display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid var(--imag-20); padding-right: 1rem;"
+								style="display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid var(--viz-20); padding-right: 1rem;"
 							>
 								<h2>Collections ({collections.length})</h2>
 								{#if collectionSelection.selected.size <= 1}
@@ -637,7 +630,7 @@
 					{#if images.length > 0}
 						<section class="images-section">
 							<div
-								style="display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid var(--imag-20); padding-right: 1rem;"
+								style="display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid var(--viz-20); padding-right: 1rem;"
 							>
 								<h2>Images ({images.length})</h2>
 								{#if imageSelection.selected.size <= 1}
@@ -713,7 +706,7 @@
 		width: 100%;
 		position: sticky;
 		top: 0;
-		background-color: var(--imag-100);
+		background-color: var(--viz-100);
 	}
 
 	.selection-info {
@@ -741,8 +734,8 @@
 	}
 
 	:global(.on-enter) {
-		background-color: var(--imag-80);
-		outline: 2px solid var(--imag-primary);
+		background-color: var(--viz-80);
+		outline: 2px solid var(--viz-primary);
 	}
 
 	:global(.asset-toolbar) {

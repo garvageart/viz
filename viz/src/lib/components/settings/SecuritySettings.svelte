@@ -326,7 +326,7 @@
 			<div class="modal-actions">
 				<Button onclick={handleUpdateSession}>Update</Button>
 				<Button
-					hoverColor="var(--imag-alert-color)"
+					hoverColor="var(--viz-alert-color)"
 					onclick={handleCloseEditSessionModal}>Cancel</Button
 				>
 			</div>
@@ -418,7 +418,7 @@
 						<Button
 							onclick={() => handleDeleteKey(key.uid)}
 							title="Delete Key"
-							hoverColor="var(--imag-alert-color)"
+							hoverColor="var(--viz-alert-color)"
 						>
 							<MaterialIcon iconName="delete" />
 						</Button>
@@ -439,7 +439,7 @@
 		{#snippet actions()}
 			<Button
 				onclick={handleDeleteAllSessions}
-				hoverColor="var(--imag-alert-color)"
+				hoverColor="var(--viz-alert-color)"
 			>
 				<MaterialIcon iconName="logout" />
 				<span>Log out All</span>
@@ -497,7 +497,7 @@
 						<Button
 							onclick={() => handleDeleteSession(session_item.uid)}
 							title="Delete Session"
-							hoverColor="var(--imag-alert-color)"
+							hoverColor="var(--viz-alert-color)"
 						>
 							<MaterialIcon iconName="delete" />
 						</Button>
@@ -532,8 +532,8 @@
 
 	.key-item,
 	.session-item {
-		background-color: var(--imag-100);
-		border: 1px solid var(--imag-80);
+		background-color: var(--viz-100);
+		border: 1px solid var(--viz-80);
 		border-radius: 0.5rem;
 		padding: 1rem;
 		display: flex;
@@ -565,12 +565,12 @@
 
 	.label {
 		font-weight: 500;
-		color: var(--imag-text-color);
+		color: var(--viz-text-color);
 		min-width: 5rem;
 	}
 
 	.value {
-		color: var(--imag-text-color);
+		color: var(--viz-text-color);
 	}
 
 	.key-name {
@@ -584,29 +584,29 @@
 		padding: 0.2rem 0.5rem;
 		border-radius: 1rem;
 		font-weight: 500;
-		border: 1px solid var(--imag-80);
-		color: var(--imag-text-color);
-		background-color: var(--imag-90);
+		border: 1px solid var(--viz-80);
+		color: var(--viz-text-color);
+		background-color: var(--viz-90);
 	}
 
 	.status-badge.active {
-		color: var(--imag-primary);
+		color: var(--viz-primary);
 	}
 
 	.status-badge.revoked {
-		color: var(--imag-alert-color);
+		color: var(--viz-alert-color);
 	}
 
 	.current-badge {
-		border-color: var(--imag-primary);
-		// 	color: var(--imag-text-color);
+		border-color: var(--viz-primary);
+		// 	color: var(--viz-text-color);
 	}
 
 	.key-meta {
 		display: flex;
 		flex-direction: column;
 		font-size: 0.75rem;
-		color: var(--imag-text-color);
+		color: var(--viz-text-color);
 		gap: 0.25rem;
 	}
 

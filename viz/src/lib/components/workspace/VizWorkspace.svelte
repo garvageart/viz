@@ -92,7 +92,7 @@
 		height: 100%;
 		width: 100%;
 		overflow: hidden;
-		background-color: var(--imag-100);
+		background-color: var(--viz-100);
 	}
 
 	.loading {
@@ -100,6 +100,6 @@
 		align-items: center;
 		justify-content: center;
 		height: 100%;
-		color: var(--imag-60);
+		color: var(--viz-60);
 	}
 </style>

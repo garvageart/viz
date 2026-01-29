@@ -161,16 +161,16 @@
 		cursor: pointer;
 
 		&:focus {
-			outline: 2px solid var(--imag-60);
-			background-color: var(--imag-80);
+			outline: 2px solid var(--viz-60);
+			background-color: var(--viz-80);
 		}
 
 		&:hover {
-			background-color: var(--imag-90);
+			background-color: var(--viz-90);
 		}
 
 		&:active {
-			background-color: var(--imag-80);
+			background-color: var(--viz-80);
 		}
 	}
 </style>

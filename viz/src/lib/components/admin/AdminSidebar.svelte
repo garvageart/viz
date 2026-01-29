@@ -20,11 +20,19 @@
 </script>
 
 <Sidebar>
-	<nav class="admin-nav" data-sveltekit-preload-data="hover" data-sveltekit-preload-code="hover">
+	<nav
+		class="admin-nav"
+		data-sveltekit-preload-data="hover"
+		data-sveltekit-preload-code="hover"
+	>
 		<ul>
 			{#each items as item}
 				<li>
-					<a href={item.href} class="nav-link" class:active={isActive(item.href, item.exact)}>
+					<a
+						href={item.href}
+						class="nav-link"
+						class:active={isActive(item.href, item.exact)}
+					>
 						{item.label}
 					</a>
 				</li>
@@ -50,20 +58,20 @@
 	.nav-link {
 		display: block;
 		padding: 0.5rem 0.75rem;
-		color: var(--imag-text-color);
+		color: var(--viz-text-color);
 		text-decoration: none;
 		border-radius: 0.375rem;
 		font-size: 0.95rem;
 		transition: background-color 0.2s;
 
 		&:hover {
-			background-color: var(--imag-80);
+			background-color: var(--viz-80);
 		}
 
 		&.active {
-			background-color: var(--imag-90);
+			background-color: var(--viz-90);
 			font-weight: 500;
-			color: var(--imag-10);
+			color: var(--viz-10);
 		}
 	}
 </style>

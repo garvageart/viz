@@ -48,7 +48,7 @@
 
 		h3 {
 			font-size: 1rem;
-			color: var(--imag-10);
+			color: var(--viz-10);
 			font-weight: 600;
 			margin: 0;
 		}
@@ -66,21 +66,21 @@
 	.nav-link {
 		display: block;
 		padding: 0.2rem 0.5rem;
-		color: var(--imag-20);
+		color: var(--viz-20);
 		text-decoration: none;
 		border-radius: 0.25rem;
 		font-size: 1em;
 		// transition: all 0.2s;
 
 		&:hover {
-			background-color: var(--imag-80);
+			background-color: var(--viz-80);
 		}
 
 		&.active {
-			background-color: var(--imag-90);
+			background-color: var(--viz-90);
 
 			&:hover {
-				background-color: var(--imag-80);
+				background-color: var(--viz-80);
 			}
 		}
 	}

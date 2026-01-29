@@ -296,7 +296,7 @@
 			bind:value={search.value}
 			bind:element={searchElement}
 			{performSearch}
-			style="width: 100%; border-color: var(--imag-80); height: 1.5em; font-size: 0.9em;"
+			style="width: 100%; border-color: var(--viz-80); height: 1.5em; font-size: 0.9em;"
 		/>
 	</div>
 	<div class="header-button-container">
@@ -365,19 +365,19 @@
 
 <style lang="scss">
 	header {
-		background-color: var(--imag-bg-color);
+		background-color: var(--viz-bg-color);
 		max-height: 2em;
 		padding: 0.2em 0.8em;
 		display: flex;
 		align-items: center;
-		border-bottom: 1px solid var(--imag-60);
+		border-bottom: 1px solid var(--viz-60);
 		position: relative;
 		justify-content: space-between;
 		flex-direction: row;
 	}
 
 	#viz-title {
-		font-family: var(--imag-code-font);
+		font-family: var(--viz-code-font);
 		font-weight: 700;
 		font-size: 1em;
 		display: flex;
@@ -385,18 +385,18 @@
 		gap: 0.1em;
 		background: transparent;
 		border: none;
-		color: var(--imag-text-color);
+		color: var(--viz-text-color);
 		cursor: pointer;
 		padding: 0em 0.5em;
 		border-radius: 0.5rem;
 		transition: background-color 0.1s ease;
 
 		&:hover {
-			background-color: var(--imag-95);
+			background-color: var(--viz-95);
 		}
 
 		&:active {
-			background-color: var(--imag-90);
+			background-color: var(--viz-90);
 		}
 	}
 
@@ -411,7 +411,7 @@
 	}
 
 	.menu-seperator {
-		background-color: var(--imag-60);
+		background-color: var(--viz-60);
 		height: 60%;
 		width: 1px;
 	}
@@ -449,8 +449,8 @@
 		align-items: center;
 		justify-content: center;
 		border-radius: 10em;
-		outline: 1px solid var(--imag-60);
-		background-color: var(--imag-80);
+		outline: 1px solid var(--viz-60);
+		background-color: var(--viz-80);
 	}
 
 	figure {
@@ -464,7 +464,7 @@
 
 	:global(#header-upload-button) {
 		margin: auto 1rem;
-		color: var(--imag-text-color);
+		color: var(--viz-text-color);
 		font-size: 0.8rem;
 		padding: 0.25em 0.5em;
 	}
@@ -486,29 +486,29 @@
 		border-radius: 10em;
 		padding: 0.15em 0.4em;
 		font-size: 0.8rem;
-		color: var(--imag-10);
+		color: var(--viz-10);
 		cursor: pointer;
 
 		&:focus {
-			box-shadow: 0px 0px 0px 1.5px inset var(--imag-primary);
+			box-shadow: 0px 0px 0px 1.5px inset var(--viz-primary);
 			outline: none;
-			background-color: var(--imag-90);
+			background-color: var(--viz-90);
 			border-radius: 4em;
 		}
 
 		&:hover {
-			background-color: var(--imag-90);
-			// outline: 1px solid var(--imag-60);
+			background-color: var(--viz-90);
+			// outline: 1px solid var(--viz-60);
 		}
 
 		&:active {
-			background-color: var(--imag-80);
+			background-color: var(--viz-80);
 		}
 	}
 
 	.debug-mode-text {
 		margin-right: 0.4em;
-		font-family: var(--imag-code-font);
+		font-family: var(--viz-code-font);
 		font-weight: 500;
 		font-size: 1em;
 	}

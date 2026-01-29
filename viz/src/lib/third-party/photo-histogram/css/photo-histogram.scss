@@ -19,7 +19,7 @@ $widget-min-height: 150px;
   min-width: $widget-min-width;
   width: 100%;
 
-  font-family: var(--imag-code-font);
+  font-family: var(--viz-code-font);
   font-size: 16px;
   border: $border;
   border-radius: $border-radius;
@@ -91,7 +91,7 @@ $widget-min-height: 150px;
       }
 
       select {
-        font-family: var(--imag-code-font);
+        font-family: var(--viz-code-font);
         background-color: $background-color;
         color: $text-color;
         border-color: $border-color;
@@ -187,7 +187,7 @@ $widget-min-height: 150px;
           input,
           label {
             font-size: 0.75em;
-            font-family: var(--imag-code-font);
+            font-family: var(--viz-code-font);
           }
         }
       }

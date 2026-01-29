@@ -299,7 +299,7 @@
 
 		span {
 			font-size: 0.9rem;
-			color: var(--imag-40);
+			color: var(--viz-40);
 			margin-right: 0.5rem;
 		}
 	}
@@ -313,10 +313,10 @@
 	.section-title {
 		font-size: 1.25rem;
 		font-weight: 600;
-		color: var(--imag-text-color);
+		color: var(--viz-text-color);
 		margin: 0;
 		padding-left: 0.5rem;
-		border-left: 4px solid var(--imag-primary);
+		border-left: 4px solid var(--viz-primary);
 		line-height: 1.2;
 	}
 
@@ -327,8 +327,8 @@
 	}
 
 	.stat-card {
-		background: var(--imag-100);
-		border: 1px solid var(--imag-90);
+		background: var(--viz-100);
+		border: 1px solid var(--viz-90);
 		border-radius: 0.75rem;
 		padding: 1.5rem;
 		display: flex;
@@ -337,7 +337,7 @@
 		transition: border-color 0.2s;
 
 		&:hover {
-			border-color: var(--imag-80);
+			border-color: var(--viz-80);
 		}
 
 		&.wide {
@@ -352,7 +352,7 @@
 		display: flex;
 		align-items: center;
 		justify-content: center;
-		color: var(--imag-bg-color);
+		color: var(--viz-bg-color);
 		flex-shrink: 0;
 
 		&.version {
@@ -409,11 +409,11 @@
 		font-size: 1.2rem;
 		font-weight: 700;
 		line-height: 1.2;
-		color: var(--imag-text-color);
+		color: var(--viz-text-color);
 
 		&.path {
 			font-size: 1rem;
-			font-family: var(--imag-code-font);
+			font-family: var(--viz-code-font);
 			word-break: break-all;
 		}
 	}
@@ -436,13 +436,13 @@
 		grid-column: 1 / -1;
 		height: 1px;
 		width: 100%;
-		background-color: var(--imag-90);
+		background-color: var(--viz-90);
 		margin: 0.5rem 0;
 	}
 
 	.stat-label {
 		font-size: 0.875rem;
-		color: var(--imag-40);
+		color: var(--viz-40);
 		margin-top: 0.25rem;
 	}
 </style>

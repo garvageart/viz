@@ -39,8 +39,8 @@
 		justify-content: space-between;
 		align-items: center;
 		padding: 1rem 2rem;
-		border-bottom: 1px solid var(--imag-80);
-		background-color: var(--imag-bg-color);
+		border-bottom: 1px solid var(--viz-80);
+		background-color: var(--viz-bg-color);
 		position: sticky;
 		top: 0;
 		z-index: 10;
@@ -53,7 +53,7 @@
 
 		.description {
 			margin: 0.25rem 0 0 0;
-			color: var(--imag-40);
+			color: var(--viz-40);
 			font-size: 0.95rem;
 		}
 	}

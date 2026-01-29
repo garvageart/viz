@@ -9,7 +9,7 @@
 <IconButton
 	class="fullscreen-toggle"
 	iconName="fullscreen"
-	hoverColor="var(--imag-70-light)"
+	hoverColor="var(--viz-70-light)"
 	onclick={() => toggleFullscreen()}
 	title="Toggle Fullscreen"
 	aria-label="Toggle Fullscreen"
@@ -18,7 +18,7 @@
 <IconButton
 	class="theme-toggle"
 	iconName={getTheme() === "dark" ? "dark_mode" : "light_mode"}
-	hoverColor="var(--imag-70-light)"
+	hoverColor="var(--viz-70-light)"
 	onclick={() => toggleTheme()}
 	title="Toggle Theme"
 	aria-label="Toggle Theme"
@@ -32,7 +32,7 @@
 		top: 1.5rem;
 		right: 1.5rem;
 		background: transparent;
-		color: var(--imag-100-light);
+		color: var(--viz-100-light);
 		z-index: 1000;
 	}
 
@@ -41,7 +41,7 @@
 		top: 1.5rem;
 		left: 1.5rem;
 		background: transparent;
-		color: var(--imag-100-light);
+		color: var(--viz-100-light);
 		z-index: 1000;
 	}
 </style>

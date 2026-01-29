@@ -41,7 +41,7 @@
 		class="progress-fill"
 		style="width: {width}%; height: {variantMappings.get(
 			variant
-		)}px; background-color: var(--imag-{colour})"
+		)}px; background-color: var(--viz-{colour})"
 	></div>
 </div>
 
@@ -51,7 +51,7 @@
 		top: 0;
 		left: 0;
 		width: 100%;
-		background-color: var(--imag-80);
+		background-color: var(--viz-80);
 
 		.progress-fill {
 			height: 100%;

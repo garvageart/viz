@@ -328,9 +328,9 @@
 		<div id="no-collections-text">
 			<MaterialIcon
 				iconName="folder_open"
-				style="font-size: 2rem; margin: 0rem 0.5rem; color: var(--imag-20);"
+				style="font-size: 2rem; margin: 0rem 0.5rem; color: var(--viz-20);"
 			/>
-			<span style="color: var(--imag-20); font-size: 1.2rem;"
+			<span style="color: var(--viz-20); font-size: 1.2rem;"
 				>Add your first collection</span
 			>
 		</div>
@@ -413,9 +413,9 @@
 	}
 
 	#coll-details-floating {
-		color: var(--imag-40);
+		color: var(--viz-40);
 		background-color: transparent;
-		font-family: var(--imag-code-font);
+		font-family: var(--viz-code-font);
 	}
 
 	#coll-tools {

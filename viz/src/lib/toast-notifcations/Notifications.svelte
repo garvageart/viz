@@ -74,7 +74,7 @@
 						title="Dismiss"
 						aria-label="Dismiss notification"
 						style="padding: 0.1em;"
-						hoverColor="var(--imag-40-light)"
+						hoverColor="var(--viz-40-light)"
 						onclick={() => toastState.dismissToast(toast.id)}
 					>
 						<MaterialIcon iconName="close" style="font-size: 1.2em;" />
@@ -96,7 +96,7 @@
 	@mixin toast-btn-variant($color) {
 		background: color.mix($color, #fff, 50%);
 		border-color: color.mix($color, #fff, 40%);
-		
+
 		&:hover {
 			background: color.mix($color, #fff, 60%);
 		}
@@ -105,7 +105,7 @@
 	@mixin toast-variant($color) {
 		background-color: color.mix($color, #fff, 30%);
 		border-color: color.mix($color, #fff, 90%);
-		color: var(--imag-10-light);
+		color: var(--viz-10-light);
 		--toast-border: color.mix($color, #fff, 90%);
 	}
 
@@ -140,16 +140,16 @@
 		border: 1px solid transparent;
 
 		/* Default / Info */
-		background-color: var(--imag-90);
-		color: var(--imag-text-color);
-		border-color: var(--imag-80);
-		--toast-border: var(--imag-80);
+		background-color: var(--viz-90);
+		color: var(--viz-text-color);
+		border-color: var(--viz-80);
+		--toast-border: var(--viz-80);
 
 		&.viz-toast-info {
-			background-color: var(--imag-90);
-			color: var(--imag-text-color);
-			border-color: var(--imag-80);
-			--toast-border: var(--imag-80);
+			background-color: var(--viz-90);
+			color: var(--viz-text-color);
+			border-color: var(--viz-80);
+			--toast-border: var(--viz-80);
 		}
 
 		&.viz-toast-success {
@@ -234,8 +234,8 @@
 	}
 
 	:global(.viz-toast-close) {
-		background-color: var(--imag-30-light);
-		outline: var(--imag-50-light) solid 1px;
+		background-color: var(--viz-30-light);
+		outline: var(--viz-50-light) solid 1px;
 	}
 
 	.viz-toast-close-wrapper {

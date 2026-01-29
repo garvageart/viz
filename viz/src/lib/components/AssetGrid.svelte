@@ -736,30 +736,30 @@
 
 	/* Zebra striping for grid cards (matches table zebra) */
 	.viz-asset-grid-container > .asset-card {
-		background-color: var(--imag-bg-color);
+		background-color: var(--viz-bg-color);
 		transition: background-color 120ms ease-in-out;
 	}
 
 	.viz-asset-grid-container > .asset-card:nth-child(even) {
-		background-color: color-mix(in srgb, var(--imag-bg-color) 78%, white 22%);
+		background-color: color-mix(in srgb, var(--viz-bg-color) 78%, white 22%);
 	}
 
 	.viz-asset-grid-container > .asset-card:hover {
-		background-color: color-mix(in srgb, var(--imag-bg-color) 70%, white 30%);
+		background-color: color-mix(in srgb, var(--viz-bg-color) 70%, white 30%);
 	}
 
 	.viz-asset-grid-container > .asset-card.selected-card {
-		background-color: color-mix(in srgb, var(--imag-bg-color) 60%, white 40%);
+		background-color: color-mix(in srgb, var(--viz-bg-color) 60%, white 40%);
 	}
 
 	.viz-asset-grid-container > .asset-card.selected-card {
-		outline: 2px solid var(--imag-60);
+		outline: 2px solid var(--viz-60);
 		outline-offset: 0px;
 		border-radius: 0.5em;
 	}
 
 	.viz-asset-grid-container.is-active > .asset-card.selected-card {
-		outline-color: var(--imag-primary);
+		outline-color: var(--viz-primary);
 	}
 
 	.asset-card {
@@ -782,7 +782,7 @@
 			table-layout: fixed;
 			border-collapse: collapse;
 			font-size: 0.95rem;
-			color: var(--imag-text-color);
+			color: var(--viz-text-color);
 			display: table;
 		}
 
@@ -805,13 +805,13 @@
 			/* Offset sticky headers by the toolbar height so headers sit below any sticky toolbar */
 			top: 0px;
 			z-index: 2;
-			color: var(--imag-text-color);
-			background-color: var(--imag-bg-color);
+			color: var(--viz-text-color);
+			background-color: var(--viz-bg-color);
 			text-align: left;
 			font-weight: 600;
 			padding: 0.6rem 0.75rem;
 			vertical-align: middle;
-			border-bottom: 1px solid var(--imag-90);
+			border-bottom: 1px solid var(--viz-90);
 
 			button {
 				display: inline-flex;
@@ -828,22 +828,22 @@
 
 		tbody tr {
 			transition: background 120ms ease-in-out;
-			background-color: var(--imag-bg-color);
+			background-color: var(--viz-bg-color);
 
 			&:nth-child(even) {
 				background-color: color-mix(
 					in srgb,
-					var(--imag-bg-color) 80%,
+					var(--viz-bg-color) 80%,
 					white 15%
 				);
 			}
 
 			&:hover {
-				background: color-mix(in srgb, var(--imag-bg-color) 70%, white 10%);
+				background: color-mix(in srgb, var(--viz-bg-color) 70%, white 10%);
 			}
 
 			&.selected-card {
-				background: color-mix(in srgb, var(--imag-bg-color) 60%, white 12%);
+				background: color-mix(in srgb, var(--viz-bg-color) 60%, white 12%);
 			}
 
 			/* Table row selection accent: show a left indicator inside the preview cell */
@@ -858,13 +858,13 @@
 				top: 8px;
 				bottom: 8px;
 				width: 2px;
-				background: var(--imag-primary);
+				background: var(--viz-primary);
 			}
 
 			td {
 				padding: 0.6rem 0.75rem;
 				vertical-align: middle;
-				border-bottom: 1px solid var(--imag-100);
+				border-bottom: 1px solid var(--viz-100);
 				white-space: nowrap;
 				overflow: hidden;
 				text-overflow: ellipsis;
@@ -896,7 +896,7 @@
 			object-fit: contain;
 			border-radius: 0.4em;
 			flex-shrink: 0;
-			background: var(--imag-80);
+			background: var(--viz-80);
 		}
 
 		.asset-snippet-meta {
@@ -916,7 +916,7 @@
 
 		.asset-snippet-sub {
 			font-size: 0.85rem;
-			color: var(--imag-60);
+			color: var(--viz-60);
 		}
 	}
 

@@ -39,7 +39,7 @@
 				<Button onclick={onCancel}>{cancelText}</Button>
 				<Button
 					class="onconfirm-btn"
-					style="background-color: var(--imag-primary); color: var(--imag-10-dark);"
+					style="background-color: var(--viz-primary); color: var(--viz-10-dark);"
 					onclick={onConfirm}
 				>
 					{confirmText}
@@ -54,7 +54,7 @@
 		display: flex;
 		flex-direction: column;
 		width: 100%;
-		color: var(--imag-text-color);
+		color: var(--viz-text-color);
 
 		.confirmation-content {
 			display: flex;
@@ -71,6 +71,6 @@
 	}
 
 	:global(.onconfirm-btn:hover) {
-		background-color: var(--imag-secondary);
+		background-color: var(--viz-secondary);
 	}
 </style>

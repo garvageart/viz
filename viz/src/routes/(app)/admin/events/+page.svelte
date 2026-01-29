@@ -5,7 +5,11 @@
 	import { getWsStats, getWsMetrics, getEventsSince } from "$lib/api";
 	import { toastState } from "$lib/toast-notifcations/notif-state.svelte";
 	import type { PageData } from "./$types";
-	import type { WsStatsResponse, WsMetricsResponse, EventRecord } from "$lib/api";
+	import type {
+		WsStatsResponse,
+		WsMetricsResponse,
+		EventRecord
+	} from "$lib/api";
 	import { modal } from "$lib/states/index.svelte";
 	import ConfirmationModal from "$lib/components/modals/ConfirmationModal.svelte";
 	import AdminRouteShell from "$lib/components/admin/AdminRouteShell.svelte";
@@ -34,7 +38,10 @@
 	// Confirmation state
 	let showClearConfirm = $state(false);
 
-	function showMessage(message: string, type: "success" | "error" | "info" = "info"): void {
+	function showMessage(
+		message: string,
+		type: "success" | "error" | "info" = "info"
+	): void {
 		toastState.addToast({ message, type });
 	}
 
@@ -90,7 +97,10 @@
 	async function handleClearConfirm(): Promise<void> {
 		showClearConfirm = false;
 		modal.show = false;
-		showMessage("Clear event history endpoint not yet implemented for WebSocket", "info");
+		showMessage(
+			"Clear event history endpoint not yet implemented for WebSocket",
+			"info"
+		);
 		// TODO: Implement clearWsEventHistory endpoint if needed
 	}
 
@@ -134,7 +144,8 @@
 				(e) =>
 					String(e.event || "")
 						.toLowerCase()
-						.includes(search) || JSON.stringify(e.data).toLowerCase().includes(search)
+						.includes(search) ||
+					JSON.stringify(e.data).toLowerCase().includes(search)
 			);
 		}
 
@@ -154,7 +165,9 @@
 	function getMaxEventCount(): number {
 		const eventsByType = metrics.eventsByType as Record<string, number>;
 		const values = Object.values(eventsByType || {});
-		const nums = values.map((v) => (typeof v === "number" ? v : Number(v) || 0));
+		const nums = values.map((v) =>
+			typeof v === "number" ? v : Number(v) || 0
+		);
 		return nums.length ? Math.max(...nums) : 0;
 	}
 
@@ -183,14 +196,26 @@
 	<title>Events - Admin</title>
 </svelte:head>
 
-<AdminRouteShell heading="Event Monitor" description="WebSocket metrics and event history">
+<AdminRouteShell
+	heading="Event Monitor"
+	description="WebSocket metrics and event history"
+>
 	{#snippet actions()}
 		<div class="header-actions">
-			<Button variant="small" onclick={toggleAutoRefresh} class="control-button">
+			<Button
+				variant="small"
+				onclick={toggleAutoRefresh}
+				class="control-button"
+			>
 				<MaterialIcon iconName={autoRefresh ? "pause" : "play_arrow"} />
 				{autoRefresh ? "Auto-refresh: ON" : "Auto-refresh: OFF"}
 			</Button>
-			<Button variant="small" onclick={refreshAll} disabled={refreshing} class="control-button">
+			<Button
+				variant="small"
+				onclick={refreshAll}
+				disabled={refreshing}
+				class="control-button"
+			>
 				<MaterialIcon iconName="refresh" />
 				Refresh
 			</Button>
@@ -222,7 +247,9 @@
 				<div class="stat-card">
 					<MaterialIcon iconName="schedule" />
 					<div class="stat-content">
-						<span class="stat-value">{new Date(stats.timestamp).toLocaleTimeString()}</span>
+						<span class="stat-value"
+							>{new Date(stats.timestamp).toLocaleTimeString()}</span
+						>
 						<span class="stat-label">Last Updated</span>
 					</div>
 				</div>
@@ -266,7 +293,9 @@
 						<MaterialIcon iconName="lightbulb" />
 					</div>
 					<div class="metric-content">
-						<span class="metric-value">{Object.keys(metrics.eventsByType).length}</span>
+						<span class="metric-value"
+							>{Object.keys(metrics.eventsByType).length}</span
+						>
 						<span class="metric-label">Event Types</span>
 					</div>
 				</div>
@@ -275,7 +304,9 @@
 						<MaterialIcon iconName="update" />
 					</div>
 					<div class="metric-content">
-						<span class="metric-value">{new Date(metrics.timestamp).toLocaleTimeString()}</span>
+						<span class="metric-value"
+							>{new Date(metrics.timestamp).toLocaleTimeString()}</span
+						>
 						<span class="metric-label">Last Update</span>
 					</div>
 				</div>
@@ -296,7 +327,10 @@
 								<span class="event-type-count">{count} events</span>
 							</div>
 							<div class="event-type-bar">
-								<div class="event-type-fill" style="width: {getEventFillWidth(count)}%"></div>
+								<div
+									class="event-type-fill"
+									style="width: {getEventFillWidth(count)}%"
+								></div>
 							</div>
 						</div>
 					{/each}
@@ -323,9 +357,17 @@
 				</div>
 				<div class="search-group">
 					<MaterialIcon iconName="search" />
-					<input type="text" bind:value={historySearch} placeholder="Search events..." />
+					<input
+						type="text"
+						bind:value={historySearch}
+						placeholder="Search events..."
+					/>
 				</div>
-				<Button variant="mini" onclick={requestClearHistory} class="control-button">
+				<Button
+					variant="mini"
+					onclick={requestClearHistory}
+					class="control-button"
+				>
 					<MaterialIcon iconName="delete_sweep" />
 					Clear History
 				</Button>
@@ -343,7 +385,9 @@
 							<summary class="event-summary">
 								<div class="event-header">
 									<span class="event-type">{event.event}</span>
-									<span class="event-time">{formatTimestamp(event.timestamp)}</span>
+									<span class="event-time"
+										>{formatTimestamp(event.timestamp)}</span
+									>
 								</div>
 								<MaterialIcon iconName="arrow_drop_down" />
 							</summary>
@@ -372,7 +416,10 @@
 		onConfirm={handleClearConfirm}
 		onCancel={handleClearCancel}
 	>
-		<p>Are you sure you want to clear all event history? This action cannot be undone.</p>
+		<p>
+			Are you sure you want to clear all event history? This action cannot be
+			undone.
+		</p>
 	</ConfirmationModal>
 {/if}
 
@@ -389,10 +436,10 @@
 	}
 
 	.content-section {
-		background: var(--imag-100);
+		background: var(--viz-100);
 		border-radius: 12px;
 		padding: 1.5rem;
-		border: 1px solid var(--imag-90);
+		border: 1px solid var(--viz-90);
 	}
 
 	.section-header {
@@ -410,11 +457,11 @@
 
 	.badge {
 		padding: 0.25rem 0.625rem;
-		background: var(--imag-80);
+		background: var(--viz-80);
 		border-radius: 1rem;
 		font-size: 0.875rem;
 		font-weight: 600;
-		color: var(--imag-text-color);
+		color: var(--viz-text-color);
 	}
 
 	.stats-grid {
@@ -428,13 +475,13 @@
 		align-items: center;
 		gap: 1rem;
 		padding: 1.25rem;
-		background: var(--imag-90);
+		background: var(--viz-90);
 		border-radius: 1rem;
-		border: 2px solid var(--imag-80);
+		border: 2px solid var(--viz-80);
 		transition: border-color 0.2s;
 
 		&:hover {
-			border-color: var(--imag-70);
+			border-color: var(--viz-70);
 		}
 
 		.stat-content {
@@ -446,12 +493,12 @@
 			font-size: 2rem;
 			font-weight: 700;
 			line-height: 1;
-			color: var(--imag-text-color);
+			color: var(--viz-text-color);
 		}
 
 		.stat-label {
 			font-size: 0.875rem;
-			color: var(--imag-40);
+			color: var(--viz-40);
 			margin-top: 0.25rem;
 		}
 	}
@@ -467,13 +514,13 @@
 		align-items: center;
 		gap: 1rem;
 		padding: 1.25rem;
-		background: var(--imag-90);
+		background: var(--viz-90);
 		border-radius: 1rem;
-		border: 2px solid var(--imag-80);
+		border: 2px solid var(--viz-80);
 		transition: border-color 0.2s;
 
 		&:hover {
-			border-color: var(--imag-70);
+			border-color: var(--viz-70);
 		}
 
 		.metric-icon {
@@ -482,8 +529,8 @@
 			justify-content: center;
 			width: 3em;
 			height: 3em;
-			background: var(--imag-primary);
-			color: var(--imag-text-color);
+			background: var(--viz-primary);
+			color: var(--viz-text-color);
 			border-radius: 1rem;
 		}
 
@@ -500,7 +547,7 @@
 
 		.metric-label {
 			font-size: 0.875rem;
-			color: var(--imag-40);
+			color: var(--viz-40);
 			margin-top: 0.25rem;
 		}
 	}
@@ -514,12 +561,12 @@
 		border-radius: 0.5rem;
 		font-size: 0.95rem;
 		font-weight: 500;
-		background-color: var(--imag-80);
-		color: var(--imag-text-color);
+		background-color: var(--viz-80);
+		color: var(--viz-text-color);
 		transition: background-color 0.2s;
 
 		&:hover {
-			background-color: var(--imag-70);
+			background-color: var(--viz-70);
 		}
 	}
 
@@ -531,7 +578,7 @@
 
 	.event-type-card {
 		padding: 1rem;
-		background: var(--imag-95);
+		background: var(--viz-95);
 		border-radius: 0.5rem;
 	}
 
@@ -548,19 +595,23 @@
 
 	.event-type-count {
 		font-size: 0.875rem;
-		color: var(--imag-40);
+		color: var(--viz-40);
 	}
 
 	.event-type-bar {
 		height: 0.5rem;
-		background: var(--imag-90);
+		background: var(--viz-90);
 		border-radius: 0.25rem;
 		overflow: hidden;
 	}
 
 	.event-type-fill {
 		height: 100%;
-		background: linear-gradient(90deg, var(--imag-primary), var(--imag-accent-color));
+		background: linear-gradient(
+			90deg,
+			var(--viz-primary),
+			var(--viz-accent-color)
+		);
 		transition: width 0.3s ease;
 	}
 
@@ -579,15 +630,15 @@
 
 		select {
 			padding: 0.5rem 0.75rem;
-			border: 1px solid var(--imag-80);
+			border: 1px solid var(--viz-80);
 			border-radius: 0.375rem;
-			background: var(--imag-100);
-			color: var(--imag-text-color);
+			background: var(--viz-100);
+			color: var(--viz-text-color);
 			font-size: 0.875rem;
 
 			&:focus {
 				outline: none;
-				border-color: var(--imag-primary);
+				border-color: var(--viz-primary);
 			}
 		}
 	}
@@ -599,12 +650,12 @@
 		flex: 1;
 		max-width: 400px;
 		padding: 0.5rem 0.75rem;
-		border: 1px solid var(--imag-80);
+		border: 1px solid var(--viz-80);
 		border-radius: 0.375rem;
-		background: var(--imag-100);
+		background: var(--viz-100);
 
 		&:focus-within {
-			border-color: var(--imag-primary);
+			border-color: var(--viz-primary);
 		}
 
 		input {
@@ -612,7 +663,7 @@
 			background: transparent;
 			flex: 1;
 			font-size: 0.875rem;
-			color: var(--imag-text-color);
+			color: var(--viz-text-color);
 
 			&:focus {
 				outline: none;
@@ -626,7 +677,7 @@
 		align-items: center;
 		justify-content: center;
 		padding: 3rem 1rem;
-		color: var(--imag-40);
+		color: var(--viz-40);
 
 		p {
 			margin: 0.5rem 0 0 0;
@@ -647,9 +698,9 @@
 	}
 
 	.event-item {
-		background: var(--imag-100);
+		background: var(--viz-100);
 		border-radius: 8px;
-		border: 1px solid var(--imag-90);
+		border: 1px solid var(--viz-90);
 	}
 
 	.event-summary {
@@ -659,7 +710,7 @@
 		padding: 1rem;
 		cursor: pointer;
 		list-style: none;
-		color: var(--imag-text-color);
+		color: var(--viz-text-color);
 
 		/* Remove browser default disclosure marker to avoid overlay quirks */
 		&::marker {
@@ -670,7 +721,7 @@
 		}
 
 		&:hover {
-			background: var(--imag-90);
+			background: var(--viz-90);
 		}
 	}
 
@@ -687,20 +738,20 @@
 		font-weight: 600;
 		font-size: 0.95rem;
 		padding: 0.25rem 0.75rem;
-		background: var(--imag-primary);
+		background: var(--viz-primary);
 		color: white;
 		border-radius: 4px;
 	}
 
 	.event-time {
 		font-size: 0.825rem;
-		color: var(--imag-40);
+		color: var(--viz-40);
 	}
 
 	.event-details {
 		padding: 1rem;
-		border-top: 1px solid var(--imag-90);
-		background: var(--imag-100);
+		border-top: 1px solid var(--viz-90);
+		background: var(--viz-100);
 	}
 
 	.event-field {
@@ -719,7 +770,7 @@
 		code {
 			display: block;
 			padding: 0.5rem;
-			background: var(--imag-90);
+			background: var(--viz-90);
 			border-radius: 4px;
 			font-size: 0.825rem;
 			font-family: "Courier New", monospace;
@@ -727,7 +778,7 @@
 
 		pre {
 			padding: 1rem;
-			background: var(--imag-90);
+			background: var(--viz-90);
 			border-radius: 4px;
 			overflow-x: auto;
 			font-size: 0.825rem;

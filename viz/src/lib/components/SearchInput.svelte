@@ -41,7 +41,7 @@
 	>
 		<MaterialIcon
 			iconName="search"
-			style="margin: 0 0.2em; color: var(--imag-20);"
+			style="margin: 0 0.2em; color: var(--viz-20);"
 		/>
 	</button>
 	<input
@@ -80,17 +80,17 @@
 		align-items: center;
 		width: 20%;
 		border: 1px solid;
-		border-color: var(--imag-80);
+		border-color: var(--viz-80);
 		border-radius: 2em;
-		background-color: var(--imag-bg-color);
+		background-color: var(--viz-bg-color);
 		overflow: hidden;
 		&:focus {
-			border-color: var(--imag-80);
+			border-color: var(--viz-80);
 		}
 	}
 
 	.search-button {
-		background-color: var(--imag-90);
+		background-color: var(--viz-90);
 		border: none;
 		border-radius: 2em;
 		border-top-right-radius: 0%;
@@ -101,28 +101,28 @@
 		display: flex;
 		align-items: center;
 		justify-content: center;
-		color: var(--imag-text-color);
+		color: var(--viz-text-color);
 		cursor: pointer;
 
 		&:focus {
-			box-shadow: 0px 0px 0px 1.5px inset var(--imag-60);
+			box-shadow: 0px 0px 0px 1.5px inset var(--viz-60);
 			outline: none;
-			background-color: var(--imag-80);
+			background-color: var(--viz-80);
 		}
 
 		&:hover {
-			background-color: var(--imag-80);
+			background-color: var(--viz-80);
 		}
 
 		&:active {
-			background-color: var(--imag-90);
+			background-color: var(--viz-90);
 		}
 	}
 
 	.search-input__field {
 		font-size: 0.85em;
-		background-color: var(--imag-bg-color);
-		color: var(--imag-text-color);
+		background-color: var(--viz-bg-color);
+		color: var(--viz-text-color);
 		outline: none;
 		border: none;
 		width: 100%;
@@ -130,21 +130,21 @@
 		border-top-left-radius: 0%;
 		border-bottom-left-radius: 0%;
 		padding: 0 0.5em;
-		font-family: var(--imag-display-font);
+		font-family: var(--viz-display-font);
 
 		&::placeholder {
 			font-size: 0.9em;
-			color: var(--imag-40);
-			font-family: var(--imag-display-font);
+			color: var(--viz-40);
+			font-family: var(--viz-display-font);
 		}
 
 		&:focus::placeholder {
-			color: var(--imag-text-color);
+			color: var(--viz-text-color);
 		}
 	}
 
 	.has-focus {
-		outline: 1.5px solid var(--imag-primary);
+		outline: 1.5px solid var(--viz-primary);
 	}
 
 	.clear-search-button {
@@ -156,15 +156,15 @@
 		display: flex;
 		align-items: center;
 		justify-content: center;
-		color: var(--imag-80);
+		color: var(--viz-80);
 		cursor: pointer;
 
 		&:hover {
-			color: var(--imag-70);
+			color: var(--viz-70);
 		}
 
 		&:active {
-			color: var(--imag-60);
+			color: var(--viz-60);
 		}
 	}
 </style>

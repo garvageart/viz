@@ -304,7 +304,7 @@
 				<option value="guest">Guest</option>
 			</InputSelect>
 			<div class="modal-actions">
-				<Button hoverColor="var(--imag-80)" onclick={closeEditModal}
+				<Button hoverColor="var(--viz-80)" onclick={closeEditModal}
 					>Cancel</Button
 				>
 				<Button onclick={handleUpdateUser}>Save Changes</Button>
@@ -331,7 +331,7 @@
 				<option value="guest">Guest</option>
 			</InputSelect>
 			<div class="modal-actions">
-				<Button hoverColor="var(--imag-80)" onclick={closeCreateModal}
+				<Button hoverColor="var(--viz-80)" onclick={closeCreateModal}
 					>Cancel</Button
 				>
 				<Button onclick={handleCreateUser} disabled={creatingUser}>
@@ -390,10 +390,10 @@
 	}
 
 	.content-section {
-		background: var(--imag-100);
+		background: var(--viz-100);
 		border-radius: 0.75rem;
 		padding: 1.5rem;
-		border: 1px solid var(--imag-90);
+		border: 1px solid var(--viz-90);
 	}
 
 	.users-table-container {
@@ -408,14 +408,14 @@
 		th {
 			text-align: left;
 			padding: 1rem;
-			color: var(--imag-40);
+			color: var(--viz-40);
 			font-weight: 600;
-			border-bottom: 1px solid var(--imag-80);
+			border-bottom: 1px solid var(--viz-80);
 		}
 
 		td {
 			padding: 1rem;
-			border-bottom: 1px solid var(--imag-90);
+			border-bottom: 1px solid var(--viz-90);
 			vertical-align: middle;
 		}
 
@@ -433,8 +433,8 @@
 	.avatar-placeholder {
 		width: 2rem;
 		height: 2rem;
-		background: var(--imag-80);
-		color: var(--imag-text-color);
+		background: var(--viz-80);
+		color: var(--viz-text-color);
 		border-radius: 50%;
 		display: flex;
 		align-items: center;
@@ -454,8 +454,8 @@
 
 	.uid {
 		font-size: 0.75rem;
-		color: var(--imag-40);
-		font-family: var(--imag-code-font);
+		color: var(--viz-40);
+		font-family: var(--viz-code-font);
 	}
 
 	.role-badge {
@@ -473,13 +473,13 @@
 		}
 
 		&.user {
-			background: var(--imag-90);
-			color: var(--imag-text-color);
+			background: var(--viz-90);
+			color: var(--viz-text-color);
 		}
 
 		&.guest {
-			background: var(--imag-90);
-			color: var(--imag-40);
+			background: var(--viz-90);
+			color: var(--viz-40);
 		}
 	}
 
@@ -499,12 +499,12 @@
 		background: transparent;
 		border-radius: 0.25rem;
 		cursor: pointer;
-		color: var(--imag-40);
+		color: var(--viz-40);
 		transition: all 0.2s;
 
 		&:hover {
-			background: var(--imag-90);
-			color: var(--imag-text-color);
+			background: var(--viz-90);
+			color: var(--viz-text-color);
 		}
 
 		&.delete:hover {
@@ -517,7 +517,7 @@
 		display: flex;
 		flex-direction: column;
 		gap: 1.5rem;
-		color: var(--imag-text-color);
+		color: var(--viz-text-color);
 		width: 80%;
 
 		h2 {
@@ -570,7 +570,7 @@
 	}
 
 	.info-text {
-		color: var(--imag-text-color);
-		background: var(--imag-90);
+		color: var(--viz-text-color);
+		background: var(--viz-90);
 	}
 </style>

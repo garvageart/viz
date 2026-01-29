@@ -72,52 +72,52 @@
 	.textarea-label {
 		font-size: 0.875rem;
 		font-weight: 500;
-		color: var(--imag-40);
+		color: var(--viz-40);
 	}
 
 	.textarea-description {
 		font-size: 0.85rem;
-		color: var(--imag-60);
+		color: var(--viz-60);
 		padding-left: 0.5rem;
 	}
 
 	textarea {
 		max-width: 100%;
 		min-height: 2.5rem;
-		color: var(--imag-text-color);
-		background-color: var(--imag-100);
+		color: var(--viz-text-color);
+		background-color: var(--viz-100);
 		outline: none;
 		border: none;
-		box-shadow: 0 -1px 0 var(--imag-60) inset;
-		font-family: var(--imag-display-font);
+		box-shadow: 0 -1px 0 var(--viz-60) inset;
+		font-family: var(--viz-display-font);
 		font-size: 1rem;
 		padding: 0.5rem 1rem;
 		margin-bottom: 0;
 
 		&::placeholder {
-			color: var(--imag-40);
-			font-family: var(--imag-display-font);
+			color: var(--viz-40);
+			font-family: var(--viz-display-font);
 		}
 
 		&:focus::placeholder {
-			color: var(--imag-60);
+			color: var(--viz-60);
 			opacity: 1;
 		}
 
 		&:focus {
-			box-shadow: 0 -2px 0 var(--imag-primary) inset;
+			box-shadow: 0 -2px 0 var(--viz-primary) inset;
 		}
 
 		&:focus {
-			background-color: var(--imag-100);
-			box-shadow: 0 -2px 0 var(--imag-primary) inset;
+			background-color: var(--viz-100);
+			box-shadow: 0 -2px 0 var(--viz-primary) inset;
 		}
 
 		&:-webkit-autofill,
 		&:-webkit-autofill:focus {
-			-webkit-text-fill-color: var(--imag-text-color);
-			-webkit-box-shadow: 0 0 0px 1000px var(--imag-100) inset;
-			-webkit-box-shadow: 0 -5px 0 var(--imag-primary) inset;
+			-webkit-text-fill-color: var(--viz-text-color);
+			-webkit-box-shadow: 0 0 0px 1000px var(--viz-100) inset;
+			-webkit-box-shadow: 0 -5px 0 var(--viz-primary) inset;
 			transition:
 				background-color 0s 600000s,
 				color 0s 600000s !important;

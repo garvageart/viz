@@ -9,9 +9,11 @@
 	let authed = $state(false);
 
 	onMount(() => {
-		authed = !!user.data && (user.data.role === "admin" || user.data.role === "superadmin");
+		authed =
+			!!user.data &&
+			(user.data.role === "admin" || user.data.role === "superadmin");
 		if (!authed) {
-			// Add a small delay before redirecting to allow the toast to be 
+			// Add a small delay before redirecting to allow the toast to be
 			toastState.addToast({
 				message: "You do not have permission to access the admin panel.",
 				type: "error"
@@ -36,13 +38,13 @@
 		width: 100%;
 		height: 100%;
 		overflow: hidden;
-		background-color: var(--imag-100);
+		background-color: var(--viz-100);
 	}
 
 	.admin-content {
 		flex: 1;
 		overflow-y: auto;
-		background-color: var(--imag-bg-color);
+		background-color: var(--viz-bg-color);
 		display: flex;
 		flex-direction: column;
 	}

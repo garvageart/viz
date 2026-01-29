@@ -138,14 +138,14 @@
 	.compact-item {
 		display: flex;
 		flex-direction: column;
-		background-color: var(--imag-100);
+		background-color: var(--viz-100);
 		border-radius: 0.25rem;
 		border: 1px solid transparent;
 		transition: background-color 0.2s;
 		overflow: hidden;
 
 		&:hover {
-			background-color: var(--imag-95);
+			background-color: var(--viz-95);
 		}
 	}
 
@@ -165,7 +165,7 @@
 		flex-shrink: 0;
 		border-radius: 0.25rem;
 		overflow: hidden;
-		background-color: var(--imag-80);
+		background-color: var(--viz-80);
 		display: flex;
 		align-items: center;
 		justify-content: center;
@@ -176,7 +176,7 @@
 		}
 
 		.placeholder {
-			color: var(--imag-60);
+			color: var(--viz-60);
 			display: flex;
 		}
 	}
@@ -193,27 +193,27 @@
 		white-space: nowrap;
 		overflow: hidden;
 		text-overflow: ellipsis;
-		color: var(--imag-text-color);
+		color: var(--viz-text-color);
 	}
 
 	.expand-btn {
 		background: none;
 		border: none;
-		color: var(--imag-60);
+		color: var(--viz-60);
 		cursor: pointer;
 		padding: 0;
 		display: flex;
 		align-items: center;
 
 		&:hover {
-			color: var(--imag-text-color);
+			color: var(--viz-text-color);
 		}
 	}
 
 	.details {
 		padding: 0.5rem;
-		border-top: 1px solid var(--imag-90);
-		background-color: var(--imag-95);
+		border-top: 1px solid var(--viz-90);
+		background-color: var(--viz-95);
 		font-size: 0.75rem;
 	}
 
@@ -224,13 +224,13 @@
 		margin-top: 0.25rem;
 
 		.label {
-			color: var(--imag-40);
+			color: var(--viz-40);
 			text-align: right;
 			white-space: nowrap;
 		}
 
 		.value {
-			color: var(--imag-text-color);
+			color: var(--viz-text-color);
 			overflow: hidden;
 			text-overflow: ellipsis;
 			white-space: nowrap;
@@ -238,7 +238,7 @@
 
 		.uid {
 			font-weight: 700;
-			font-family: var(--imag-code-font);
+			font-family: var(--viz-code-font);
 		}
 	}
 </style>

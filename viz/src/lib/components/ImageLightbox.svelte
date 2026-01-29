@@ -420,7 +420,7 @@
 	}
 
 	const lightboxMaterialIconColour =
-		"color: var(--imag-10-dark); fill: var(--imag-10-dark);";
+		"color: var(--viz-10-dark); fill: var(--viz-10-dark);";
 </script>
 
 {#snippet metadataEditor()}
@@ -890,7 +890,7 @@
 	}
 
 	.crop-tools-sidebar {
-		background-color: var(--imag-bg-color);
+		background-color: var(--viz-bg-color);
 		padding: 1em;
 		border-radius: 0.5em;
 		height: 100%;
@@ -929,8 +929,8 @@
 		border: none;
 
 		:global(span) {
-			color: var(--imag-10-dark) !important;
-			fill: var(--imag-10-dark) !important;
+			color: var(--viz-10-dark) !important;
+			fill: var(--viz-10-dark) !important;
 		}
 
 		filter: drop-shadow(0 8px 22px rgba(0, 0, 0, 1))
@@ -1020,7 +1020,7 @@
 
 	.lightbox-nav-btn {
 		border: none;
-		color: var(--imag-10);
+		color: var(--viz-10);
 		width: 3em;
 		height: 3em;
 		display: inline-flex;
@@ -1032,10 +1032,10 @@
 	}
 
 	.metadata-editor {
-		background-color: var(--imag-bg-color);
+		background-color: var(--viz-bg-color);
 		padding: 1em;
 		border-radius: 0.5em;
-		color: var(--imag-10);
+		color: var(--viz-10);
 		height: 100%;
 		width: auto;
 		max-width: 20vw;
@@ -1070,8 +1070,8 @@
 	}
 
 	.exif-card {
-		background: var(--imag-100);
-		color: var(--imag-text-color);
+		background: var(--viz-100);
+		color: var(--viz-text-color);
 		box-sizing: border-box;
 		width: 100%;
 		padding: 0.6em 0.8em;
@@ -1092,7 +1092,7 @@
 	}
 
 	:global(.exif-material-icon) {
-		color: var(--imag-10);
+		color: var(--viz-10);
 		display: inline-flex;
 		align-items: center;
 		justify-content: center;
@@ -1123,7 +1123,7 @@
 
 	:global(.value-big),
 	.value-sub {
-		color: var(--imag-20);
+		color: var(--viz-20);
 		white-space: nowrap;
 		overflow: hidden;
 		text-overflow: ellipsis;

@@ -9,16 +9,29 @@
 		sidebarWidth?: string;
 	}
 
-	let { open = $bindable(true), title, sidebarWidth = "18%", children }: Props = $props();
+	let {
+		open = $bindable(true),
+		title,
+		sidebarWidth = "18%",
+		children
+	}: Props = $props();
 
 	let sidebarEl: HTMLElement;
 	let sidebarWidthState = $derived(open ? sidebarWidth : "3rem");
 </script>
 
-<nav bind:this={sidebarEl} class="viz-sidebar" style:min-width={sidebarWidthState}>
+<nav
+	bind:this={sidebarEl}
+	class="viz-sidebar"
+	style:min-width={sidebarWidthState}
+>
 	<div class="sidebar-header" class:closed={!open}>
 		{#if open}
-			<button class="close-sidebar-button" title="Close Settings Sidebar" onclick={() => (open = !open)}>
+			<button
+				class="close-sidebar-button"
+				title="Close Settings Sidebar"
+				onclick={() => (open = !open)}
+			>
 				<MaterialIcon iconName="close" />
 			</button>
 			{#if title}
@@ -36,7 +49,10 @@
 		{/if}
 	</div>
 	{#if open}
-		<div class="sidebar-content" transition:slide={{ axis: "x", duration: 300 }}>
+		<div
+			class="sidebar-content"
+			transition:slide={{ axis: "x", duration: 300 }}
+		>
 			{@render children?.()}
 		</div>
 	{/if}
@@ -44,8 +60,8 @@
 
 <style lang="scss">
 	.viz-sidebar {
-		background-color: var(--imag-100);
-		border-right: 1px solid var(--imag-60);
+		background-color: var(--viz-100);
+		border-right: 1px solid var(--viz-60);
 		height: 100%;
 		display: flex;
 		flex-direction: column;
@@ -57,7 +73,7 @@
 		display: flex;
 		align-items: center;
 		justify-content: flex-start;
-		border-bottom: 1px solid var(--imag-60);
+		border-bottom: 1px solid var(--viz-60);
 		transition: border 0.3s ease;
 
 		&.closed {
@@ -76,7 +92,7 @@
 		min-width: 2em;
 		width: 100%;
 		top: 2em;
-		background-color: var(--imag-80);
+		background-color: var(--viz-80);
 	}
 
 	.close-sidebar-button {

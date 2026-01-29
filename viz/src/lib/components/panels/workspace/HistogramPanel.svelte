@@ -547,9 +547,9 @@
 		box-sizing: border-box;
 		height: 100%;
 		padding: 0.5rem;
-		color: var(--imag-text-color);
+		color: var(--viz-text-color);
 		position: relative;
-		background-color: var(--imag-bg-color);
+		background-color: var(--viz-bg-color);
 		font-size: 0.75rem;
 		gap: 0.75rem;
 		overflow-y: auto;
@@ -580,7 +580,7 @@
 		grid-template-columns: repeat(auto-fit, minmax(120px, 1fr));
 		gap: 0.2rem 0.5rem;
 		width: 100%;
-		font-family: var(--imag-code-font);
+		font-family: var(--viz-code-font);
 		flex-shrink: 0;
 	}
 

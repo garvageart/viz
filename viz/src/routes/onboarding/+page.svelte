@@ -472,7 +472,7 @@
 		justify-content: center;
 		align-items: center;
 		min-height: 100vh;
-		background-color: var(--imag-bg-color);
+		background-color: var(--viz-bg-color);
 		padding: 1rem;
 		position: relative;
 	}
@@ -483,7 +483,7 @@
 		right: 1.5rem;
 		background: transparent;
 		border: none;
-		color: var(--imag-text-color);
+		color: var(--viz-text-color);
 		cursor: pointer;
 		padding: 0.5rem;
 		border-radius: 50%;
@@ -493,17 +493,17 @@
 		transition: background-color 0.2s;
 
 		&:hover {
-			background-color: var(--imag-90);
+			background-color: var(--viz-90);
 		}
 	}
 
 	.card {
-		background: var(--imag-100);
+		background: var(--viz-100);
 		border-radius: 1rem;
 		box-shadow: 0 10px 25px rgba(0, 0, 0, 0.2);
 		width: 100%;
 		max-width: 40%;
-		border: 1px solid var(--imag-60);
+		border: 1px solid var(--viz-60);
 		display: flex;
 		flex-direction: column;
 		overflow: hidden;
@@ -541,27 +541,27 @@
 		font-size: 2rem;
 		font-weight: 700;
 		margin-bottom: 0.5rem;
-		color: var(--imag-text-color);
+		color: var(--viz-text-color);
 	}
 
 	h2 {
 		font-size: 1.5rem;
-		color: var(--imag-text-color);
+		color: var(--viz-text-color);
 		margin-bottom: 0.25rem;
 		text-transform: capitalize;
 	}
 
 	.subtitle {
-		color: var(--imag-40);
+		color: var(--viz-40);
 		margin-bottom: 1rem;
 	}
 
 	.info-box {
-		background: var(--imag-90);
-		border: 1px solid var(--imag-primary);
+		background: var(--viz-90);
+		border: 1px solid var(--viz-primary);
 		padding: 1rem;
 		border-radius: 0.5rem;
-		color: var(--imag-text-color);
+		color: var(--viz-text-color);
 		font-size: 0.95rem;
 		line-height: 1.5;
 
@@ -605,6 +605,6 @@
 		justify-content: center;
 		align-items: center;
 		height: 100%;
-		color: var(--imag-40);
+		color: var(--viz-40);
 	}
 </style>

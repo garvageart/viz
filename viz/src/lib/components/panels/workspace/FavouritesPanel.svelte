@@ -1,6 +1,11 @@
 <script lang="ts">
 	import { onMount } from "svelte";
-	import { api, executeSearch, type ImageAsset, type Collection } from "$lib/api";
+	import {
+		api,
+		executeSearch,
+		type ImageAsset,
+		type Collection
+	} from "$lib/api";
 	import CompactListItem from "./CompactListItem.svelte";
 	import MaterialIcon from "$lib/components/MaterialIcon.svelte";
 	import { slide, fade } from "svelte/transition";
@@ -136,12 +141,15 @@
 		if (isInternalDrag) return;
 
 		dragCounter--;
-		
+
 		// Use relatedTarget to check if we are truly leaving the container
 		const relatedTarget = e.relatedTarget as Node;
 		const currentTarget = e.currentTarget as Node;
-		
-		if (dragCounter <= 0 || (currentTarget && !currentTarget.contains(relatedTarget))) {
+
+		if (
+			dragCounter <= 0 ||
+			(currentTarget && !currentTarget.contains(relatedTarget))
+		) {
 			isDraggingOver = false;
 			dragCounter = 0;
 		}
@@ -272,8 +280,8 @@
 		flex-direction: column;
 		height: 100%;
 		overflow-y: auto;
-		background-color: var(--imag-bg-color);
-		color: var(--imag-text-color);
+		background-color: var(--viz-bg-color);
+		color: var(--viz-text-color);
 		padding: 0.5rem;
 		gap: 0.75rem;
 		box-sizing: border-box;
@@ -291,7 +299,7 @@
 		width: 100%;
 		background: none;
 		border: none;
-		color: var(--imag-text-color);
+		color: var(--viz-text-color);
 		cursor: pointer;
 		padding: 0.25rem;
 		font-family: inherit;
@@ -301,7 +309,7 @@
 		border-radius: 0.25rem;
 
 		&:hover {
-			background-color: var(--imag-90);
+			background-color: var(--viz-90);
 			opacity: 0.9;
 		}
 	}
@@ -331,7 +339,7 @@
 	.empty-state {
 		padding: 1rem;
 		text-align: center;
-		color: var(--imag-60);
+		color: var(--viz-60);
 		font-style: italic;
 		font-size: 0.85rem;
 	}
@@ -355,7 +363,7 @@
 		align-items: center;
 		justify-content: center;
 		pointer-events: none;
-		border: 1px solid var(--imag-60);
+		border: 1px solid var(--viz-60);
 		border-radius: 1rem;
 		padding: 2rem;
 		background: rgba(0, 0, 0, 0.5);

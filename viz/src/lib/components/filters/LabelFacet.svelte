@@ -66,7 +66,7 @@
 		align-items: center;
 		justify-content: space-between;
 		font-size: 0.85rem;
-		color: var(--imag-60);
+		color: var(--viz-60);
 		cursor: pointer;
 
 		.label-row {
@@ -77,14 +77,14 @@
 
 		.label-name {
 			font-size: 0.85rem;
-			color: var(--imag-text-color);
+			color: var(--viz-text-color);
 		}
 	}
 
 	.color-indicator {
 		width: 0.75em;
 		height: 0.75em;
-		border: 1px solid var(--imag-60);
+		border: 1px solid var(--viz-60);
 	}
 
 	.count {
@@ -97,6 +97,6 @@
 		font-style: italic;
 		font-size: 0.8rem;
 		opacity: 0.6;
-		color: var(--imag-60);
+		color: var(--viz-60);
 	}
 </style>

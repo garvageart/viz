@@ -191,7 +191,7 @@
 		display: flex;
 		align-items: center;
 		justify-content: center;
-		background-color: var(--imag-90);
+		background-color: var(--viz-90);
 
 		.favorite-badge {
 			position: absolute;
@@ -208,16 +208,16 @@
 
 	.mini-footer {
 		padding: 0.25rem;
-		background-color: var(--imag-100);
+		background-color: var(--viz-100);
 		display: flex;
 		flex-direction: column;
 		gap: 2px;
-		border-top: 1px solid var(--imag-90);
+		border-top: 1px solid var(--viz-90);
 
 		.mini-filename {
 			font-size: 0.7rem;
 			font-weight: 600;
-			color: var(--imag-40);
+			color: var(--viz-40);
 			white-space: nowrap;
 			overflow: hidden;
 			text-overflow: ellipsis;
@@ -241,10 +241,10 @@
 				width: 0.25rem;
 				height: 0.25rem;
 				border-radius: 50%;
-				background-color: var(--imag-80);
+				background-color: var(--viz-80);
 
 				&.filled {
-					background-color: var(--imag-10);
+					background-color: var(--viz-10);
 				}
 			}
 		}
@@ -259,7 +259,7 @@
 
 	.image-card {
 		max-height: 25em;
-		background-color: var(--imag-100);
+		background-color: var(--viz-100);
 		padding: 0.8em;
 		border-radius: 0.5em;
 		overflow: hidden;
@@ -272,7 +272,7 @@
 		}
 
 		&:hover {
-			background-color: var(--imag-90);
+			background-color: var(--viz-90);
 		}
 	}
 
@@ -295,7 +295,7 @@
 	}
 
 	.image-card-details {
-		color: var(--imag-20);
+		color: var(--viz-20);
 		display: flex;
 		align-items: center;
 		width: 100%;
@@ -303,7 +303,7 @@
 	}
 
 	.image-card-divider {
-		color: var(--imag-40);
+		color: var(--viz-40);
 	}
 
 	.image-card-time {
@@ -320,7 +320,7 @@
 
 	.image-container {
 		height: 13em;
-		background-color: var(--imag-80);
+		background-color: var(--viz-80);
 		display: flex;
 		justify-content: center;
 		align-items: center;

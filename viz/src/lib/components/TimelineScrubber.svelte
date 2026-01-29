@@ -198,8 +198,8 @@
 	.thumb-inner {
 		width: 3rem;
 		height: 3rem;
-		background-color: var(--imag-secondary);
-		color: var(--imag-10-dark);
+		background-color: var(--viz-secondary);
+		color: var(--viz-10-dark);
 		border-radius: 50%;
 		display: flex;
 		align-items: center;
@@ -234,8 +234,8 @@
 		right: 3.5rem;
 		top: 0; /* Set via inline style */
 		transform: translateY(-50%);
-		background-color: var(--imag-10);
-		color: var(--imag-100);
+		background-color: var(--viz-10);
+		color: var(--viz-100);
 		box-shadow: 0 4px 20px rgba(0, 0, 0, 0.4);
 		padding: 0.5rem 1rem;
 		border-radius: 0.5rem;

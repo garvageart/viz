@@ -1,6 +1,6 @@
 @use "sass:color";
 
-/// Generates the --imag-XX color palette (5% to 100% steps).
+/// Generates the --viz-XX color palette (5% to 100% steps).
 ///
 /// @param {Color} $bg-color - The theme's background color.
 /// @param {Color} $text-color - The theme's text color.
@@ -39,8 +39,8 @@
         $text: color.change($text, $lightness: 100% - color.channel($text, "lightness", $space: hsl), $space: hsl);
     }
 
-    --imag-bg-color#{$suffix}: #{$bg};
-    --imag-text-color#{$suffix}: #{$text};
+    --viz-bg-color#{$suffix}: #{$bg};
+    --viz-text-color#{$suffix}: #{$text};
 
     @for $j from 0 through 19 {
         $level: 100 - $j * 5;
@@ -49,11 +49,11 @@
         @if $is-light-theme {
             // Light theme: imag-100 is the (lightness-inverted) base; lower
             // levels should be progressively darker by mixing with black.
-            --imag-#{$level}#{$suffix}: #{color.mix(black, $base, $mixPct)};
+            --viz-#{$level}#{$suffix}: #{color.mix(black, $base, $mixPct)};
         } @else {
             // Dark theme: imag-100 is the provided base; lower levels should
             // be progressively lighter by mixing with white.
-            --imag-#{$level}#{$suffix}: #{color.mix(white, $base, $mixPct)};
+            --viz-#{$level}#{$suffix}: #{color.mix(white, $base, $mixPct)};
         }
     }
 }

@@ -188,7 +188,7 @@
 		overflow: hidden;
 		cursor: pointer;
 		background-color: #0d0d0d;
-		border: 1px solid var(--imag-80);
+		border: 1px solid var(--viz-80);
 		transition: all 0.1s ease;
 		flex-shrink: 0;
 		box-sizing: border-box;
@@ -199,18 +199,18 @@
 
 		&:hover {
 			background-color: #1a1a1a;
-			border-color: var(--imag-70);
+			border-color: var(--viz-70);
 		}
 
 		&.active {
-			border-color: var(--imag-primary);
+			border-color: var(--viz-primary);
 			background-color: #1a1a1a;
-			outline: 1px solid var(--imag-primary);
+			outline: 1px solid var(--viz-primary);
 			z-index: 1;
 		}
 
 		&.selected:not(.active) {
-			border-color: var(--imag-secondary);
+			border-color: var(--viz-secondary);
 		}
 	}
 </style>

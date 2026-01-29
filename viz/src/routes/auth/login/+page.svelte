@@ -126,8 +126,8 @@
 	}
 
 	#viz-title {
-		color: var(--imag-100-light);
-		font-family: var(--imag-code-font);
+		color: var(--viz-100-light);
+		font-family: var(--viz-code-font);
 		font-weight: 700;
 		font-size: 3em;
 		margin: 0.5em;
@@ -149,8 +149,8 @@
 		align-items: center;
 		padding: 3rem 2rem;
 		width: 30%;
-		background-color: var(--imag-bg-color);
-		box-shadow: 0 -3px 0 var(--imag-primary) inset;
+		background-color: var(--viz-bg-color);
+		box-shadow: 0 -3px 0 var(--viz-primary) inset;
 		z-index: 2;
 	}
 

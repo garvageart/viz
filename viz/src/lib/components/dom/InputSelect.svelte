@@ -80,12 +80,12 @@
 	.input-label {
 		font-size: 0.875rem;
 		font-weight: 500;
-		color: var(--imag-40);
+		color: var(--viz-40);
 	}
 
 	.input-description {
 		font-size: 0.85rem;
-		color: var(--imag-text-secondary, #888);
+		color: var(--viz-text-secondary, #888);
 		padding-left: 0.5rem;
 	}
 
@@ -93,12 +93,12 @@
 		width: 100%;
 		max-width: 100%;
 		min-height: 2rem;
-		color: var(--imag-text-color);
-		background-color: var(--imag-100);
+		color: var(--viz-text-color);
+		background-color: var(--viz-100);
 		outline: none;
 		border: none;
-		box-shadow: 0 -1px 0 var(--imag-60) inset;
-		font-family: var(--imag-display-font);
+		box-shadow: 0 -1px 0 var(--viz-60) inset;
+		font-family: var(--viz-display-font);
 		font-size: 1rem;
 		padding: 0.5rem 1rem;
 		cursor: pointer;
@@ -111,8 +111,8 @@
 		background-size: 1rem;
 
 		&:focus {
-			background-color: var(--imag-100);
-			box-shadow: 0 -2px 0 var(--imag-primary) inset;
+			background-color: var(--viz-100);
+			box-shadow: 0 -2px 0 var(--viz-primary) inset;
 		}
 	}
 </style>

@@ -15,7 +15,7 @@
 			stroke-dasharray="164.93361431346415 56.97787143782138"
 			r="35"
 			stroke-width="6"
-			stroke={color ? color : "var(--imag-40)"}
+			stroke={color ? color : "var(--viz-40)"}
 			fill="none"
 			cy="50"
 			cx="50"

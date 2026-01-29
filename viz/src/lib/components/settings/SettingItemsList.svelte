@@ -132,8 +132,8 @@
 	.empty-state {
 		padding: 2rem;
 		text-align: center;
-		color: var(--imag-40);
-		background-color: var(--imag-100);
+		color: var(--viz-40);
+		background-color: var(--viz-100);
 		border-radius: 0.5rem;
 	}
 </style>

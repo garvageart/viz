@@ -68,7 +68,10 @@
 		gridConfig?: PhotoGridConfig;
 	}
 
-	type Props = Omit<ComponentProps<typeof AssetGrid<ImageAsset>>, "assetSnippet"> &
+	type Props = Omit<
+		ComponentProps<typeof AssetGrid<ImageAsset>>,
+		"assetSnippet"
+	> &
 		PhotoSpecificProps;
 
 	let {
@@ -835,7 +838,10 @@
 		};
 	}
 
-	function handleImageCardSelect(asset: ImageAsset, e: MouseEvent | KeyboardEvent) {
+	function handleImageCardSelect(
+		asset: ImageAsset,
+		e: MouseEvent | KeyboardEvent
+	) {
 		onFocus(); // Ensure this grid is active on click
 		suppressScrollOnce = true;
 
@@ -1082,7 +1088,7 @@
 						<MaterialIcon
 							iconName="favorite"
 							size="0.8rem"
-							style="color: var(--imag-text-color);"
+							style="color: var(--viz-text-color);"
 							fill={true}
 						/>
 					{/if}
@@ -1328,7 +1334,7 @@
 			display: flex;
 			align-items: center;
 			justify-content: center;
-			color: var(--imag-60);
+			color: var(--viz-60);
 			flex-shrink: 0;
 
 			/* Hidden state by default */
@@ -1344,7 +1350,7 @@
 				color 0.15s;
 
 			&.selected {
-				color: var(--imag-primary);
+				color: var(--viz-primary);
 				/* Visible state when selected */
 				width: 1.2rem;
 				opacity: 1;
@@ -1352,14 +1358,14 @@
 			}
 
 			&:hover {
-				color: var(--imag-primary);
+				color: var(--viz-primary);
 			}
 		}
 
 		h3 {
 			font-size: 1.1rem;
 			font-weight: 500;
-			color: var(--imag-text-color);
+			color: var(--viz-text-color);
 			margin: 0;
 			white-space: nowrap;
 			overflow: hidden;
@@ -1397,20 +1403,20 @@
 	}
 
 	.asset-photo.multi-selected-photo {
-		outline: 2px solid var(--imag-primary);
-		background: var(--imag-bg-color);
+		outline: 2px solid var(--viz-primary);
+		background: var(--viz-bg-color);
 	}
 
 	.viz-photo-grid-container.is-active .asset-photo.multi-selected-photo {
-		outline-color: var(--imag-primary);
+		outline-color: var(--viz-primary);
 	}
 
 	.asset-photo.selected-photo {
-		outline: 2px solid var(--imag-60);
+		outline: 2px solid var(--viz-60);
 	}
 
 	.viz-photo-grid-container.is-active .asset-photo.selected-photo {
-		outline-color: var(--imag-primary);
+		outline-color: var(--viz-primary);
 	}
 
 	.multi-select-ring {
@@ -1493,7 +1499,7 @@
 		height: 100%;
 		padding: 1rem;
 		text-align: center;
-		color: var(--imag-60);
+		color: var(--viz-60);
 		font-size: 0.9rem;
 	}
 
@@ -1506,8 +1512,8 @@
 		align-items: flex-start;
 		padding: 1rem;
 		font-weight: 700;
-		color: var(--imag-text-color);
-		background-color: var(--imag-100);
+		color: var(--viz-text-color);
+		background-color: var(--viz-100);
 		text-align: left;
 		font-size: 0.85rem;
 		line-height: 1.2;
@@ -1533,7 +1539,7 @@
 			top: 20%;
 			bottom: 20%;
 			width: 1px;
-			background: var(--imag-60);
+			background: var(--viz-60);
 		}
 	}
 </style>

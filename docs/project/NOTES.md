@@ -3,7 +3,7 @@ A document of general notes and random sporadic stuff that myself (Les) and mayb
 
 **General rule of thumb for this document:** if you point or section gets too big, it likely needs its own document.
 
-## Infrustructure for custom themes (Using --imag-100 - --imag-5)
+## Infrustructure for custom themes (Using --viz-100 - --viz-5)
 The idea is that currently I just have two test themes, [`viz-blue`](../viz/src/lib/styles/scss/viz-blue.scss) and [`viz-black`](../viz/src/lib/styles/scss/viz-black.scss) written in SCSS, compiled by Vite and imported at runtime by the [`hooks.server.ts`](../viz/src/hooks.server.ts) file. However, this app is a SPA and embedded into the [`cmd/api`](../cmd/api/main.go) file (name needs to change to server tbh) and whatever SCSS is used needs to get compiled again.
 
 We could use [`https://github.com/bep/godartsass`](https://github.com/bep/godartsass) to compile at runtime or maybe just a seperate process that could be launched once when necessary.
