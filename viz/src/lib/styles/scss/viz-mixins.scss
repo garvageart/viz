@@ -6,7 +6,7 @@
 /// @param {Color} $text-color - The theme's text color.
 /// @param {Color} $base-color - The color used for the step mixing (e.g., blue for light theme, dark blue for dark theme).
 /// @param {boolean} $is-light-theme [false] - If true, 100% is the lightest mix; if false, 100% is the darkest/base.
-@mixin generate-imag-colors(
+@mixin generate-viz-colors(
     $bg-color,
     $text-color,
     $base-color,
@@ -60,7 +60,7 @@
 
 @mixin imag-theme($sel, $is-light, $flip-bg: null, $flip-bg-pct: 0%, $flip-text: null, $flip-text-pct: 0%) {
     #{$sel} {
-        @include generate-imag-colors(
+        @include generate-viz-colors(
             $bg-color: $bg-color,
             $text-color: $text-color,
             $base-color: $base-color,
