@@ -495,7 +495,7 @@
 			onchange={() => scheduleRender()}
 			labelPosition="side"
 			label="Channel"
-			style="font-size: 0.75rem; padding: 0.2rem 0.75rem;"
+			style="font-size: 0.75rem;"
 		>
 			<option value="all">All (RGB)</option>
 			<option value="red">Red</option>

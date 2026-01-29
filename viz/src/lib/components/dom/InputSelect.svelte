@@ -92,7 +92,6 @@
 	.select-input {
 		width: 100%;
 		max-width: 100%;
-		min-height: 2rem;
 		color: var(--viz-text-color);
 		background-color: var(--viz-100);
 		outline: none;
@@ -100,7 +99,7 @@
 		box-shadow: 0 -1px 0 var(--viz-60) inset;
 		font-family: var(--viz-display-font);
 		font-size: 1rem;
-		padding: 0.5rem 1rem;
+		padding: 0.5em 1em;
 		cursor: pointer;
 
 		/* Custom styling to match InputText */
