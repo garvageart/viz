@@ -34,7 +34,7 @@ node_modules
 .vercel
 .netlify
 .wrangler
-/viz/.svelte-kit
+/viewfinder/.svelte-kit
 /build
 
 # OS
@@ -55,15 +55,15 @@ vite.config.ts.timestamp-*
 
 # Local caches and generated artifacts
 .cache/
-$(VIZ_DIR)/.pnpm-store/
-viz/.pnpm-store/
-viz/node_modules/
+$(viewfinder_DIR)/.pnpm-store/
+viewfinder/.pnpm-store/
+viewfinder/node_modules/
 /.pnpm-store/
 /.cache/go-mods/
 /.cache/go-build/
 /.pnpm-store/
 /docs/*/internal
-/viz/playwright-report
-/viz/test-results
-/viz/e2e/.auth
-/viz/e2e-*.png
+/viewfinder/playwright-report
+/viewfinder/test-results
+/viewfinder/e2e/.auth
+/viewfinder/e2e-*.png
