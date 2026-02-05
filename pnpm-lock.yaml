@@ -39,7 +39,7 @@ importers:
         specifier: ^4.20.6
         version: 4.21.0
 
-  viz:
+  viewfinder:
     dependencies:
       '@fontsource-variable/manrope':
         specifier: ^5.2.8
@@ -1258,6 +1258,7 @@ packages:
 
   glob@10.5.0:
     resolution: {integrity: sha512-DfXN8DfhJ7NH3Oe7cFmu3NCu1wKbkReJ8TorzSAFbSKrlNaQSKfIzqYqVY8zlbs2NLBbWpRiU52GX2PbaBVNkg==}
+    deprecated: Old versions of glob are not supported, and contain widely publicized security vulnerabilities, which have been fixed in the current version. Please update. Support for old versions may be purchased (at exorbitant rates) by contacting i@izs.me
     hasBin: true
 
   hotkeys-js@3.13.15:
