@@ -46,12 +46,12 @@ async function handleOnboarding(page: Page) {
 }
 
 setup('authenticate', async ({ page }) => {
-  const email = process.env.TEST_EMAIL;
-  const password = process.env.TEST_PASSWORD;
-  const username = process.env.TEST_USERNAME;
+  const email = process.env.E2E_TEST_EMAIL;
+  const password = process.env.E2E_TEST_PASSWORD;
+  const username = process.env.E2E_TEST_USERNAME;
 
   if (!email || !password || !username) {
-    throw new Error('Missing E2E test credentials. Please set TEST_EMAIL, TEST_PASSWORD, and TEST_USERNAME environment variables.');
+    throw new Error('Missing E2E test credentials. Please set E2E_TEST_EMAIL, E2E_TEST_PASSWORD, and E2E_TEST_USERNAME environment variables.');
   }
 
   console.log(`Navigating to app...`);
