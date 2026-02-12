@@ -7,7 +7,9 @@
 /* Fonts */
 :root {
     --viz-display-font: "Manrope Variable", sans-serif;
-    --viz-mono-font: "Roboto Mono Variable", ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace;
+    --viz-mono-font:
+        "Roboto Mono Variable", ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New",
+        monospace;
 }
 
 /* Colours */
@@ -26,14 +28,70 @@
     --viz-color-tag-blue: #{v.$viz-color-tag-blue};
 }
 
+/* Sizing */
+:root {
+    --viz-base-unit: #{v.$viz-base-unit};
+}
+
+/* Font sizes */
+:root {
+    --viz-font-size-xs: #{v.$viz-font-size-xs};
+    --viz-font-size-sm: #{v.$viz-font-size-sm};
+    --viz-font-size-std: #{v.$viz-font-size-std};
+    --viz-font-size-lg: #{v.$viz-font-size-lg};
+    --viz-font-size-xl: #{v.$viz-font-size-xl};
+    --viz-font-size-2xl: #{v.$viz-font-size-2xl};
+    --viz-font-size-3xl: #{v.$viz-font-size-3xl};
+    --viz-font-size-4xl: #{v.$viz-font-size-4xl};
+    --viz-font-size-5xl: #{v.$viz-font-size-5xl};
+}
+
+/* Padding sizes */
+:root {
+    --viz-padding-xs: #{v.$viz-padding-xs};
+    --viz-padding-sm: #{v.$viz-padding-sm};
+    --viz-padding-md: #{v.$viz-padding-md};
+    --viz-padding-std: #{v.$viz-padding-std};
+    --viz-padding-lg: #{v.$viz-padding-lg};
+    --viz-padding-xl: #{v.$viz-padding-xl};
+    --viz-padding-2xl: #{v.$viz-padding-2xl};
+}
+
+/* Scrollbar Settings */
+:root {
+    /* Dimensions */
+    --viz-scrollbar-width: 14px;
+    --viz-scrollbar-height: 14px;
+    --viz-scrollbar-button-height: 14px;
+
+    /* Colors */
+    --viz-scrollbar-bg: var(--viz-100);
+    --viz-scrollbar-corner-bg: var(--viz-100);
+    --viz-scrollbar-thumb-bg: var(--viz-60);
+    --viz-scrollbar-thumb-hover-bg: var(--viz-80);
+    --viz-scrollbar-thumb-active-bg: var(--viz-90);
+
+    /* Arrow Buttons */
+    --viz-scrollbar-button-arrow-color: var(--viz-text-color);
+    --viz-scrollbar-button-bg: transparent;
+    --viz-scrollbar-button-hover-bg: var(--viz-80);
+    --viz-scrollbar-button-active-bg: var(--viz-70);
+
+    /* Arrow Fit */
+    --viz-scrollbar-arrow-scale: 240%;
+}
+
 html {
     font-family: var(--viz-display-font);
     font-weight: 400;
     background-color: var(--viz-bg-color);
     color: var(--viz-text-color);
-    font-size: 16px;
+    font-size: var(--viz-font-size-std);
     margin: 0;
     padding: 0;
+}
+
+.antialiasing {
     -webkit-font-smoothing: antialiased;
     -moz-osx-font-smoothing: grayscale;
     text-rendering: optimizeLegibility;
@@ -98,68 +156,65 @@ body {
 }
 
 ::-webkit-scrollbar {
-    width: 14px;
-    height: 16px;
+    width: var(--viz-scrollbar-width);
+    height: var(--viz-scrollbar-height);
+    background-color: var(--viz-scrollbar-bg);
 }
 
 ::-webkit-scrollbar-corner,
 ::-webkit-scrollbar-track {
-    background-color: var(--viz-100);
+    background-color: var(--viz-scrollbar-bg);
 }
 
 ::-webkit-scrollbar-thumb {
-    background-color: var(--viz-60);
+    background-color: var(--viz-scrollbar-thumb-bg);
     background-clip: padding-box;
     border: 3px solid transparent;
-    border-radius: 7px;
 }
 
 ::-webkit-scrollbar-thumb:hover {
-    background-color: var(--viz-80);
+    background-color: var(--viz-scrollbar-thumb-hover-bg);
 }
 
 ::-webkit-scrollbar-thumb:active {
-    background-color: var(--viz-90);
+    background-color: var(--viz-scrollbar-thumb-active-bg);
 }
 
 /* Buttons */
 ::-webkit-scrollbar-button:single-button {
-    background-color: var(--viz-100);
+    background-color: var(--viz-scrollbar-button-bg, transparent);
     display: block;
-    background-size: 9px;
+    background-size: 10px;
     background-repeat: no-repeat;
+    background-position: center;
 }
 
 /* Up */
 ::-webkit-scrollbar-button:single-button:vertical:decrement {
-    height: 12px;
-    width: 16px;
-    background-position: center 4px;
-    background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='100' height='100' fill='var(--viz-20)'><polygon points='50,00 0,50 100,50'/></svg>");
+    height: var(--viz-scrollbar-button-height);
+    width: var(--viz-scrollbar-width);
 }
 
 ::-webkit-scrollbar-button:single-button:vertical:decrement:hover {
-    background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='100' height='100' fill='var(--viz-90)'><polygon points='50,00 0,50 100,50'/></svg>");
+    background-color: var(--viz-scrollbar-button-hover-bg);
 }
 
 ::-webkit-scrollbar-button:single-button:vertical:decrement:active {
-    background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='100' height='100' fill='var(--viz-100)'><polygon points='50,00 0,50 100,50'/></svg>");
+    background-color: var(--viz-scrollbar-button-active-bg);
 }
 
 /* Down */
 ::-webkit-scrollbar-button:single-button:vertical:increment {
-    height: 12px;
-    width: 16px;
-    background-position: center 2px;
-    background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='100' height='100' fill='var(--viz-20)'><polygon points='0,0 100,0 50,50'/></svg>");
+    height: var(--viz-scrollbar-button-height);
+    width: var(--viz-scrollbar-width);
 }
 
 ::-webkit-scrollbar-button:single-button:vertical:increment:hover {
-    background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='100' height='100' fill='var(--viz-90)'><polygon points='0,0 100,0 50,50'/></svg>");
+    background-color: var(--viz-scrollbar-button-hover-bg);
 }
 
 ::-webkit-scrollbar-button:single-button:vertical:increment:active {
-    background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='100' height='100' fill='var(--viz-100)'><polygon points='0,0 100,0 50,50'/></svg>");
+    background-color: var(--viz-scrollbar-button-active-bg);
 }
 
 // From: https://medium.com/@rion.mrk/how-to-remove-x-icon-from-search-input-field-or-input-type-search-db3c808405fb
