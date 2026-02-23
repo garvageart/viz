@@ -196,7 +196,7 @@ func RunJobQueue(cfg config.QueueConfig, logger *slog.Logger, workers ...*Worker
 		Subscriber, err = redisstream.NewSubscriber(
 			redisstream.SubscriberConfig{
 				Client:        redisClient,
-				ConsumerGroup: "imagine_workers",
+				ConsumerGroup: "VIZ_workers",
 			},
 			Logger,
 		)

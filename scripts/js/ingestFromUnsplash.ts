@@ -47,7 +47,7 @@ async function main() {
             method: "POST",
             headers: {
                 "Content-Type": "application/json",
-                "Authorization": `Bearer ${process.env.IMAGINE_API_KEY}`
+                "Authorization": `Bearer ${process.env.VIZ_API_KEY}`
             },
             body: JSON.stringify({
                 url: url,

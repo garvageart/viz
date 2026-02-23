@@ -7,15 +7,15 @@ import devtoolsJson from "vite-plugin-devtools-json";
 
 const file = fileURLToPath(new URL('package.json', import.meta.url));
 const pkg = JSON.parse(fs.readFileSync(file, 'utf8'));
-// In Docker we can pass IMAGINE_CONFIG_PATH (e.g., /app/viz.json)
-const configPath = process.env.IMAGINE_CONFIG_PATH || '../viz.json';
+// In Docker we can pass VIZ_CONFIG_PATH (e.g., /app/viz.json)
+const configPath = process.env.VIZ_CONFIG_PATH || '../viz.json';
 let config: any;
 try {
 	config = JSON.parse(fs.readFileSync(configPath, 'utf8'));
 } catch (err) {
-	if (process.env.IMAGINE_CONFIG_PATH) {
+	if (process.env.VIZ_CONFIG_PATH) {
 		// Fail fast for unexpected Docker build context issues.
-		throw new Error(`IMAGINE_CONFIG_PATH set to '${process.env.IMAGINE_CONFIG_PATH}' but file not found: ${err}`);
+		throw new Error(`VIZ_CONFIG_PATH set to '${process.env.VIZ_CONFIG_PATH}' but file not found: ${err}`);
 	}
 
 	config = {
@@ -30,8 +30,8 @@ const define = {
 };
 
 // ideally a user/developer NEVER gets to the hardcoded defaults
-const host = process.env.IMAGINE_API_SERVER_HOST || config.servers.api.host || "localhost";
-const port = process.env.IMAGINE_API_SERVER_PORT || config.servers.api.port || 7770;
+const host = process.env.VIZ_API_SERVER_HOST || config.servers.api.host || "localhost";
+const port = process.env.VIZ_API_SERVER_PORT || config.servers.api.port || 7770;
 
 const apiServer: ProxyOptions = {
 	target: `http://${host}:${port}`,
