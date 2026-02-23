@@ -30,17 +30,17 @@ func ClearCookie(name string, w http.ResponseWriter) {
 	}
 
 	// Optional domain for cross-subdomain cookies
-	if d := os.Getenv("IMAGINE_COOKIE_DOMAIN"); d != "" {
+	if d := os.Getenv("VIZ_COOKIE_DOMAIN"); d != "" {
 		cookie.Domain = d
 	}
 
 	// Secure must be true for SameSite=None to work in browsers
-	if os.Getenv("IMAGINE_COOKIE_SECURE") == "true" {
+	if os.Getenv("VIZ_COOKIE_SECURE") == "true" {
 		cookie.Secure = true
 	}
 
-	// Allow configuring SameSite via IMAGINE_COOKIE_SAMESITE
-	switch os.Getenv("IMAGINE_COOKIE_SAMESITE") {
+	// Allow configuring SameSite via VIZ_COOKIE_SAMESITE
+	switch os.Getenv("VIZ_COOKIE_SAMESITE") {
 	case "None":
 		cookie.SameSite = http.SameSiteNoneMode
 	case "Strict":
@@ -62,17 +62,17 @@ func CreateAuthTokenCookie(expireTime time.Time, token string) *http.Cookie {
 	}
 
 	// Optional domain for cross-subdomain cookies
-	if d := os.Getenv("IMAGINE_COOKIE_DOMAIN"); d != "" {
+	if d := os.Getenv("VIZ_COOKIE_DOMAIN"); d != "" {
 		cookie.Domain = d
 	}
 
 	// Secure must be true for SameSite=None to work in browsers
-	if os.Getenv("IMAGINE_COOKIE_SECURE") == "true" {
+	if os.Getenv("VIZ_COOKIE_SECURE") == "true" {
 		cookie.Secure = true
 	}
 
-	// Allow configuring SameSite via IMAGINE_COOKIE_SAMESITE
-	switch os.Getenv("IMAGINE_COOKIE_SAMESITE") {
+	// Allow configuring SameSite via VIZ_COOKIE_SAMESITE
+	switch os.Getenv("VIZ_COOKIE_SAMESITE") {
 	case "None":
 		cookie.SameSite = http.SameSiteNoneMode
 	case "Strict":

@@ -161,7 +161,7 @@ func (server APIServer) Launch(router *chi.Mux) *http.Server {
 	})
 
 	// Serve Frontend (SPA + Static Files)
-	frontendPath := os.Getenv("IMAGINE_FRONTEND_BUILD_PATH")
+	frontendPath := os.Getenv("VIZ_FRONTEND_BUILD_PATH")
 	if frontendPath == "" {
 		frontendPath = "../../build/viz" // Default for dev/local
 	}
@@ -263,18 +263,7 @@ func main() {
 		}(),
 		Password: appConfig.Database.Password,
 		AppName:  utils.AppName,
-		DatabaseName: func() string {
-			dbName := appConfig.Database.Name
-			if dbName != "" {
-				// TODO: this nonsense will change in future
-				if utils.IsDevelopment {
-					return dbName + "-dev"
-				}
-				return dbName
-			}
-
-			return "imagine"
-		}(),
+		DatabaseName: appConfig.Database.Name,
 		Logger:   logger,
 		LogLevel: logLevel,
 	}

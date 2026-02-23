@@ -45,7 +45,7 @@ func ReadConfig() (viper.Viper, error) {
 
 	v.SetDefault("database.location", "database")
 	v.SetDefault("database.port", 5432)
-	v.SetDefault("database.name", "imagine")
+	v.SetDefault("database.name", "viz")
 
 	v.SetDefault("redis.enabled", false)
 	v.SetDefault("redis.host", "localhost")
