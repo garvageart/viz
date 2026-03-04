@@ -1,0 +1,78 @@
+services:
+  api:
+    build:
+      context: ..
+      dockerfile: .devcontainer/Dockerfile
+    volumes:
+      - ..:/workspace:cached
+      - viz-node-modules:/workspace/node_modules
+      - viz-pnpm-store:/workspace/.pnpm-store
+      - viz-bashhistory:/commandhistory
+      - viz-go-modules:/go/pkg
+    networks:
+      - viz-net
+    depends_on:
+      - db
+      - redis
+    env_file:
+      - .env
+    ports:
+      - "7770:7770"
+      - "7777:7777"
+    environment:
+      - DB_HOST=db
+      - REDIS_HOST=redis
+    # Keep the container running
+    command: sleep infinity
+
+  db:
+    image: postgres:18-alpine
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: ${DB_USER}
+      POSTGRES_PASSWORD: ${DB_PASSWORD}
+      POSTGRES_DB: ${DB_NAME}
+    ports:
+      - "5432:5432"
+    volumes:
+      - viz-db-data:/var/lib/postgresql
+      - ../docker/initdb:/docker-entrypoint-initdb.d
+    networks:
+      - viz-net
+
+  redis:
+    image: redis:8-alpine
+    restart: unless-stopped
+    ports:
+      - "6379:6379"
+    networks:
+      - viz-net
+
+  caddy:
+    image: caddy:2-alpine
+    restart: unless-stopped
+    ports:
+      - "80:80"
+      - "443:443"
+      - "443:443/udp"
+    volumes:
+      - ../Caddyfile:/etc/caddy/Caddyfile
+      - viz-caddy-data:/data
+      - viz-caddy-config:/config
+    networks:
+      - viz-net
+    depends_on:
+      - api
+
+networks:
+  viz-net:
+    driver: bridge
+
+volumes:
+  viz-db-data:
+  viz-bashhistory:
+  viz-caddy-data:
+  viz-caddy-config:
+  viz-node-modules:
+  viz-pnpm-store:
+  viz-go-modules:

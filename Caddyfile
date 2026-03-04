@@ -1,4 +1,4 @@
-viz.local {
+viz.localhost, localhost {
 	tls internal
-	reverse_proxy localhost:7777
+	reverse_proxy api:7777
 }

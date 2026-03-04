@@ -1,32 +1,77 @@
 {
-	"name": "Viz Dev",
+	"name": "viz-dev-container",
 	"dockerComposeFile": [
-		"../docker-compose.yml",
-		"docker-compose.dev.yml"
+		"docker-compose.yml"
 	],
-	"service": "app",
+	"service": "api",
 	"workspaceFolder": "/workspace",
+	"shutdownAction": "stopCompose",
 	"customizations": {
 		"vscode": {
 			"extensions": [
 				"golang.go",
 				"svelte.svelte-vscode",
-				"dbaeumer.vscode-eslint",
 				"esbenp.prettier-vscode",
+				"dbaeumer.vscode-eslint",
+				"ms-azuretools.vscode-docker",
 				"editorconfig.editorconfig",
-				"bradlc.vscode-tailwindcss"
+				"tamasfe.even-better-toml",
+				"mikestead.dotenv"
 			]
 		}
 	},
+	"remoteUser": "vscode",
+	"initializeCommand": "bash .devcontainer/initialize-container.sh",
+	"postCreateCommand": "bash .devcontainer/post-create.sh",
+	"mounts": [
+		"source=viz-bashhistory,target=/commandhistory,type=volume"
+	],
 	"features": {
-		"ghcr.io/devcontainers/features/git:1": {}
+		"ghcr.io/devcontainers/features/common-utils:2": {
+			"installZsh": true,
+			"configureZshOhMyZsh": true,
+			"upgradePackages": true,
+			"username": "vscode",
+			"userUid": "1000",
+			"userGid": "1000"
+		},
+		"ghcr.io/devcontainers/features/docker-in-docker:2": {
+			"version": "latest",
+			"enableNonRootDocker": true
+		}
 	},
 	"forwardPorts": [
 		7770,
-		5173,
+		7777,
+		5432,
 		6379,
-		5432
+		80,
+		443
 	],
-	"postCreateCommand": "go mod download && cd viz && pnpm install",
-	"remoteUser": "vscode"
+	"portsAttributes": {
+		"7770": {
+			"label": "API Server",
+			"onAutoForward": "notify"
+		},
+		"7777": {
+			"label": "Frontend (Vite)",
+			"onAutoForward": "notify"
+		},
+		"5432": {
+			"label": "PostgreSQL",
+			"onAutoForward": "silent"
+		},
+		"6379": {
+			"label": "Redis",
+			"onAutoForward": "silent"
+		},
+		"80": {
+			"label": "Caddy (HTTP)",
+			"onAutoForward": "notify"
+		},
+		"443": {
+			"label": "Caddy (HTTPS)",
+			"onAutoForward": "notify"
+		}
+	}
 }

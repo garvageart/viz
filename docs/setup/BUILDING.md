@@ -75,8 +75,9 @@ You need to manually create the role and database that the app expects. Connect 
 ```sql
 -- Replace 'myuser' and 'mypassword' with values from your .env
 CREATE ROLE myuser WITH LOGIN SUPERUSER PASSWORD '<mypassword>';
-CREATE DATABASE viz OWNER myuser;
+CREATE DATABASE viz OWNER myuser; -- Use the default 'viz' or your chosen database name
 ```
+> Note: If you choose a database name other than the default 'viz', you must update the `Database.Name` field in your `viz.json` configuration file accordingly.
 
 > Note: The application will handle table creation (AutoMigrate) on startup.
 
@@ -125,10 +126,10 @@ go build -o bin/api ./cmd/api
 ```
 
 3.  **Run**:
-    Set the `IMAGINE_FRONTEND_BUILD_PATH` environment variable to point to the built assets. **Viz** will serve these static files when you access the API port directly (useful for single-container deployments).
+    Set the `VIZ_FRONTEND_BUILD_PATH` environment variable to point to the built assets. **Viz** will serve these static files when you access the API port directly (useful for single-container deployments).
     
 ```bash
-export IMAGINE_FRONTEND_BUILD_PATH="./build/viz"
+export VIZ_FRONTEND_BUILD_PATH="./build/viz"
 ./bin/api
 ```
     
@@ -138,7 +139,7 @@ Accessing `http://localhost:7770` (API port) will serve the frontend app for any
 
 ## 4. HTTPS / Custom Domain Setup (Optional)
 
-You can run the application with a custom domain (e.g., `https://viz.local`) and valid HTTPS certificates locally using [Caddy](https://caddyserver.com/). This mimics a production environment and avoids browser security warnings.
+You can run the application with a custom domain (e.g., `https://viz.localhost`) and valid HTTPS certificates locally using [Caddy](https://caddyserver.com/). This mimics a production environment and avoids browser security warnings.
 
 ### Automated Setup (Recommended)
 You can use the built-in setup script to configure your `hosts` file and `Caddyfile` automatically.
@@ -164,7 +165,7 @@ Map your custom domain to your local machine.
 
 Add the following line:
 ```text
-127.0.0.1 viz.local
+127.0.0.1 viz.localhost
 ```
 
 ### 3. Run Caddy
@@ -176,7 +177,7 @@ caddy run
 *Note: You may need to run as Administrator/sudo the first time to allow Caddy to install its root certificate into your system's trust store.*
 
 ### 4. Access
-Open **https://viz.local** in your browser.
+Open **https://viz.localhost** in your browser.
 Caddy will automatically reverse-proxy requests to your running frontend (`localhost:7777`), which in turn proxies API requests to the backend.
 
 ---
@@ -186,3 +187,4 @@ Caddy will automatically reverse-proxy requests to your running frontend (`local
 - **`connect: connection refused`**: Check if Redis and Postgres are running.
 - **Go Version Errors**: Ensure you are using Go 1.25. The project uses a Go Workspace (`go.work`).
 - **"libvips not found"**: Ensure `pkg-config` can find libvips. On Windows, check your `PATH` and `PKG_CONFIG_PATH`.
+- **HMR not working in Dev Container**: Ensure your `vite.config.ts` sets `server.host` to `'0.0.0.0'` so the container exposes the port. You may also need to set `server.watch.usePolling: true` if file changes aren't detected.

@@ -1,0 +1,96 @@
+# Stage 1: Frontend Build
+FROM node:24-slim AS frontend-builder
+
+WORKDIR /app
+
+# Install pnpm
+RUN npm install -g pnpm
+
+# Copy workspace and frontend files
+COPY pnpm-lock.yaml pnpm-workspace.yaml package.json ./
+COPY viewfinder/package.json ./viewfinder/
+COPY scripts/js/package.json ./scripts/js/
+
+# Install dependencies
+RUN pnpm install --frozen-lockfile
+
+# Copy the rest of the frontend and scripts
+COPY viewfinder ./viewfinder
+COPY scripts/js ./scripts/js
+
+# Build frontend
+WORKDIR /app/viewfinder
+RUN pnpm run build
+
+# Stage 2: Backend Build
+FROM golang:1.25-bookworm AS backend-builder
+
+# Install build tools and required dependencies to build libvips from source.
+RUN apt-get update && \
+    apt-get install -y --no-install-recommends \
+    build-essential pkg-config git ca-certificates curl \
+    meson ninja-build python3 python3-pip python3-setuptools \
+    libglib2.0-dev libexpat1-dev libjpeg-dev libpng-dev libtiff-dev \
+    libwebp-dev libheif-dev libopenexr-dev liborc-0.4-dev libgirepository1.0-dev \
+    libxml2-dev libexif-dev libpoppler-glib-dev libgsf-1-dev libopenjp2-7-dev && \
+    rm -rf /var/lib/apt/lists/*
+
+# Download, build and install libvips
+COPY .libvips-version /tmp/.libvips-version
+RUN set -eux; \
+    VIPS_VERSION=$(cat /tmp/.libvips-version | tr -d '[:space:]'); \
+    mkdir -p /tmp/build && cd /tmp/build; \
+    curl -fsSL "https://github.com/libvips/libvips/releases/download/v${VIPS_VERSION}/vips-${VIPS_VERSION}.tar.xz" -o vips.tar.xz; \
+    tar xJf vips.tar.xz; \
+    cd vips-${VIPS_VERSION}; \
+    meson setup build --prefix=/usr ; \
+    ninja -C build; \
+    ninja -C build install; \
+    rm -rf /tmp/build; \
+    ldconfig || true
+
+WORKDIR /app
+
+# Copy Go workspace files
+COPY go.mod go.sum go.work go.work.sum ./
+COPY cmd/api/go.mod cmd/api/go.sum ./cmd/api/
+
+# Download Go dependencies
+RUN go mod download
+
+# Copy the rest of the backend code
+COPY . .
+
+# Build backend
+RUN go build -o /app/api ./cmd/api
+
+# Stage 3: Final Production Image
+FROM debian:bookworm-slim
+
+# Install runtime dependencies for libvips
+RUN apt-get update && \
+    apt-get install -y --no-install-recommends \
+    libglib2.0-0 libexpat1 libjpeg62-turbo libpng16-16 libtiff6 \
+    libwebp7 libheif1 libopenexr-3-1-30 liborc-0.4-0 libgirepository-1.0-1 \
+    libxml2 libexif12 libpoppler-glib8 libgsf-1-114 libopenjp2-7 \
+    ca-certificates && \
+    rm -rf /var/lib/apt/lists/*
+
+WORKDIR /app
+
+# Copy binary from backend-builder
+COPY --from=backend-builder /app/api /app/api
+
+# Copy built frontend from frontend-builder
+COPY --from=frontend-builder /app/build/viewfinder /app/frontend
+
+# Set environment variables
+ENV VIZ_FRONTEND_BUILD_PATH=/app/frontend
+ENV PORT=7770
+ENV BASE_DIRECTORY=/app/var
+
+# Expose the API port
+EXPOSE 7770
+
+# Start the application
+CMD ["/app/api"]
