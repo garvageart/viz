@@ -33,7 +33,8 @@
 		type DateGroup
 	} from "$lib/photo-layout/index.js";
 	import { filterManager } from "$lib/states/filter.svelte";
-	import { modal, viewSettings } from "$lib/states/index.svelte";
+	import { viewSettings } from "$lib/states/index.svelte";
+	import { modalsManager } from "$lib/components/modals/manager/ModalManager.svelte";
 	import {
 		selectionManager,
 		SelectionScopeNames
@@ -98,13 +99,6 @@
 		});
 	});
 
-	$effect(() => {
-		if (!modal.show) {
-			showFilterModal = false;
-			showCollectionSelectionModal = false;
-		}
-	});
-
 	let galleryState = $derived(new ImagePaginationState(data));
 	let isPaginating = $state(false);
 
@@ -136,10 +130,6 @@
 	// Flat list of all images for cross-group range selection
 	let allImagesFlat = $derived(consolidatedGroups.flatMap((g) => g.allImages));
 
-	// Modal state for collection selection
-	let showCollectionSelectionModal = $state(false);
-	let imageUidsForCollection = $state<string[]>([]);
-
 	// Action menu items for selected images
 	let actionMenuItems: MenuItem[] = $derived.by(() => {
 		const baseMenuItems = createImageMenu(galleryState.images, selectionScope, {
@@ -156,11 +146,12 @@
 				label: "Add to Collection",
 				icon: "collections_bookmark",
 				action: () => {
-					imageUidsForCollection = Array.from(selectionScope.selected).map(
-						(img) => img.uid
-					);
-					showCollectionSelectionModal = true;
-					modal.show = true;
+					modalsManager.open(CollectionSelectionModal, {
+						imageUidsToAdd: Array.from(selectionScope.selected).map(
+							(img) => img.uid
+						),
+						onSelect: handleCollectionSelect
+					});
 				}
 			}
 		];
@@ -234,11 +225,6 @@
 		lightboxImage = allImagesFlat[nextIdx];
 	}
 
-	// Upload confirmation state
-	let showUploadConfirm = $state(false);
-
-	let showFilterModal = $state(false);
-
 	let pendingNewRaw: ImageUploadSuccess[] = [];
 	let addImagesDebounceTimer: number | undefined;
 	const ADD_IMAGES_DEBOUNCE_MS = 550;
@@ -262,12 +248,7 @@
 			});
 
 			if (res.status === 200) {
-				const skippedCount =
-					imageUidsForCollection.length - newImageUids.length;
 				let message = `Added ${newImageUids.length} image(s) to collection **${collection.name}**`;
-				if (skippedCount > 0) {
-					message += `. Skipped ${skippedCount} existing image(s).`;
-				}
 				toastState.addToast({
 					type: "success",
 					message: message,
@@ -296,9 +277,6 @@
 			});
 		} finally {
 			selectionScope.clear();
-			showCollectionSelectionModal = false;
-			modal.show = false;
-			imageUidsForCollection = [];
 		}
 	}
 
@@ -386,14 +364,7 @@
 	hotkeys("escape", (e) => {
 		e.preventDefault();
 		selectionScope.clear();
-
 		lightboxImage = undefined;
-
-		if (modal.show) {
-			modal.show = false;
-			showUploadConfirm = false;
-			showCollectionSelectionModal = false;
-		}
 	});
 </script>
 
@@ -410,18 +381,6 @@
 		{nextLightboxImage}
 		onImageUpdated={(image) =>
 			selectionScope.updateItem(image, galleryState.images)}
-	/>
-{/if}
-
-{#if showFilterModal && modal.show}
-	<FilterModal />
-{/if}
-
-{#if showCollectionSelectionModal}
-	<CollectionSelectionModal
-		bind:showModal={showCollectionSelectionModal}
-		onSelect={handleCollectionSelect}
-		imageUidsToAdd={imageUidsForCollection}
 	/>
 {/if}
 
@@ -474,11 +433,12 @@
 						role="tooltip"
 						title="Add to Collection"
 						onclick={() => {
-							imageUidsForCollection = Array.from(selectionScope.selected).map(
-								(img) => img.uid
-							);
-							showCollectionSelectionModal = true;
-							modal.show = true;
+							modalsManager.open(CollectionSelectionModal, {
+								imageUidsToAdd: Array.from(selectionScope.selected).map(
+									(img) => img.uid
+								),
+								onSelect: handleCollectionSelect
+							});
 						}}
 						ondragenter={(e) => {
 							e.currentTarget.classList.add("on-enter");
@@ -505,9 +465,10 @@
 
 							e.currentTarget.classList.remove("on-enter");
 
-							imageUidsForCollection = uidsData;
-							showCollectionSelectionModal = true;
-							modal.show = true;
+							modalsManager.open(CollectionSelectionModal, {
+								imageUidsToAdd: uidsData,
+								onSelect: handleCollectionSelect
+							});
 						}}
 					>
 						Add to Collection
@@ -606,8 +567,7 @@
 						title="Filter"
 						aria-label="Filter"
 						onclick={() => {
-							showFilterModal = true;
-							modal.show = true;
+							modalsManager.open(FilterModal, {});
 						}}
 					>
 						Filter

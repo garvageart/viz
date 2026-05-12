@@ -4,31 +4,31 @@
 	import { clearImageCache } from "$lib/api";
 	import Button from "$lib/components/Button.svelte";
 	import ConfirmationModal from "$lib/components/modals/ConfirmationModal.svelte";
-	import { modal } from "$lib/states/index.svelte";
 	import { formatBytes } from "$lib/utils/images";
 	import { toastState } from "$lib/toast-notifcations/notif-state.svelte";
 	import AdminRouteShell from "$lib/components/admin/AdminRouteShell.svelte";
 	import MaterialIcon from "$lib/components/MaterialIcon.svelte";
+	import { modalsManager } from "$lib/components/modals/manager/ModalManager.svelte";
 
 	let { data } = $props();
 
 	let cacheStatus = $derived(data.cacheStatus);
 	let loading = $state(false);
-	let showClearConfirm = $state(false);
 
 	function openClearConfirm() {
-		showClearConfirm = true;
-		modal.show = true;
-	}
-
-	function closeClearConfirm() {
-		showClearConfirm = false;
-		modal.show = false;
+		modalsManager.open(
+			ConfirmationModal,
+			{
+				title: "Clear Image Cache",
+				confirmText: "Clear Cache",
+				onConfirm: handleClearCache
+			},
+			{ heading: "Clear Image Cache" }
+		);
 	}
 
 	async function handleClearCache() {
 		loading = true;
-		closeClearConfirm();
 
 		try {
 			const response = await clearImageCache();
@@ -110,22 +110,6 @@
 		</div>
 	</div>
 </AdminRouteShell>
-
-{#if showClearConfirm && modal.show}
-	<ConfirmationModal
-		title="Clear Image Cache"
-		confirmText="Clear Cache"
-		onConfirm={handleClearCache}
-		onCancel={closeClearConfirm}
-	>
-		<p>
-			Are you sure you want to clear the entire image cache?
-			<br />
-			This will remove all generated thumbnails and previews. They will be regenerated
-			on demand, which may increase server load temporarily.
-		</p>
-	</ConfirmationModal>
-{/if}
 
 <style lang="scss">
 	.cache-status-section {

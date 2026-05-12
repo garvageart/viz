@@ -1,9 +1,7 @@
 <script lang="ts">
 	import { goto } from "$app/navigation";
-	import { page } from "$app/state";
 	import {
 		createCollection,
-		deleteCollection,
 		updateCollection,
 		type Collection
 	} from "$lib/api";
@@ -17,27 +15,24 @@
 	import MaterialIcon from "$lib/components/MaterialIcon.svelte";
 	import CollectionModal from "$lib/components/modals/CollectionModal.svelte";
 	import FilterModal from "$lib/components/modals/FilterModal.svelte";
+	import { modalsManager } from "$lib/components/modals/manager/ModalManager.svelte";
 	import VizViewContainer from "$lib/components/panels/VizViewContainer.svelte";
 	import ContextMenu from "$lib/context-menu/ContextMenu.svelte";
 	import { createCollectionMenu } from "$lib/context-menu/menus/collections";
-	import { TabGroup } from "$lib/layouts/model.svelte";
+	import type { MenuItem } from "$lib/context-menu/types";
 	import { sortCollections } from "$lib/sort/sort";
 	import { filterManager } from "$lib/states/filter.svelte";
-	import { isLayoutPage, modal, sort } from "$lib/states/index.svelte";
-	import { toastState } from "$lib/toast-notifcations/notif-state.svelte";
-	import type { AssetGridArray } from "$lib/types/asset";
-	import { getContext, untrack, type ComponentProps } from "svelte";
-	import type { PageProps } from "./$types";
+	import { isLayoutPage, sort } from "$lib/states/index.svelte";
 	import {
 		selectionManager,
 		SelectionScopeNames
 	} from "$lib/states/selection.svelte";
-	import type { MenuItem } from "$lib/context-menu/types";
+	import { toastState } from "$lib/toast-notifcations/notif-state.svelte";
+	import type { AssetGridArray } from "$lib/types/asset";
+	import { untrack, type ComponentProps } from "svelte";
+	import type { PageProps } from "./$types";
 
 	let { data }: PageProps = $props();
-
-	let showFilterModal = $state(false);
-	let showCollectionModal = $state(false);
 
 	$effect(() => {
 		untrack(() => {
@@ -70,14 +65,95 @@
 		Array.from(selectionScope.selected)[0]
 	);
 
+	// Modal data for create/edit
+	let modalData: Collection | undefined = $state();
+	let modalMode: "create" | "edit" = $state("create");
+
+	function openFilterModal() {
+		modalsManager.open(FilterModal, {});
+	}
+
+	function openCollectionModal(
+		mode: "create" | "edit",
+		initialData?: Collection
+	) {
+		modalMode = mode;
+		modalData = initialData ? { ...initialData } : undefined;
+
+		modalsManager.open(
+			CollectionModal,
+			{
+				heading: mode === "create" ? "Create Collection" : "Edit Collection",
+				buttonText: mode === "create" ? "Create" : "Save",
+				data: modalData,
+				modalAction: async (event) => {
+					const formData = new FormData(event.currentTarget);
+					const name = formData.get("name") as string;
+					const description = formData.get("description") as string;
+					const isPrivate = formData.get("isPrivate") === "on";
+
+					if (modalMode === "create") {
+						const res = await createCollection({
+							name,
+							description,
+							private: isPrivate
+						});
+
+						if (res.status === 201) {
+							toastState.addToast({
+								message: `Created collection ${res.data.name}`,
+								type: "success"
+							});
+
+							modalsManager.pop();
+							goto(`/collections/${res.data.uid}`);
+						} else {
+							toastState.addToast({
+								message: `Failed to create collection: ${res.data.error || "Unknown error"}`,
+								type: "error"
+							});
+						}
+					} else {
+						if (!modalData || !modalData.uid) {
+							return;
+						}
+
+						const res = await updateCollection(modalData.uid, {
+							name,
+							description,
+							private: isPrivate
+						});
+
+						if (res.status === 200) {
+							listOfCollectionsData = listOfCollectionsData.map((c) =>
+								c.uid === modalData!.uid ? res.data : c
+							);
+
+							toastState.addToast({
+								message: `Updated collection ${res.data.name}`,
+								type: "success"
+							});
+
+							modalsManager.pop();
+						} else {
+							toastState.addToast({
+								message: `Failed to update collection: ${res.data.error || "Unknown error"}`,
+								type: "error"
+							});
+						}
+					}
+				}
+			},
+			{ heading: mode === "create" ? "Create Collection" : "Edit Collection" }
+		);
+	}
+
 	// Context menu state for right-click on collections
 	let ctxShowMenu = $state(false);
 	let ctxItems: MenuItem[] = $derived(
 		createCollectionMenu(firstSelectedCollection, {
 			editCollection: (col) => {
-				modalMode = "edit";
-				modalData = { ...col };
-				modal.show = true;
+				openCollectionModal("edit", col);
 			},
 			onCollectionDuplicated: (newCol) => {
 				listOfCollectionsData = [newCol, ...listOfCollectionsData];
@@ -102,250 +178,85 @@
 			}
 		})
 	);
-	let ctxAnchor: { x: number; y: number } | HTMLElement | null = $state(
-		null as any
-	);
+	let ctxAnchor: { x: number; y: number } | HTMLElement | null = $state(null);
 
 	let collectionGridArray: AssetGridArray<Collection> | undefined = $state();
+
 	let grid: ComponentProps<typeof AssetGrid<Collection>> = $derived({
-		assetDblClick: (_, asset) => {
-			openCollection(asset, currentPanelContent);
-		},
-		assetSnippet: collectionCard,
-		data: displayData,
+		assetSnippet: collectionSnippet,
+		view: "grid",
 		assetGridArray: collectionGridArray,
-		scopeId,
+		data: displayData,
+		scopeId: scopeId,
 		assetGridDisplayProps: {
 			style: `padding: 0em ${isLayoutPage() ? "1em" : "2em"};`
 		},
-		onassetcontext: (detail) => {
-			ctxAnchor = detail.anchor;
+		assetDblClick: (_e, asset: Collection) => {
+			openCollection(asset, null);
+		},
+		onassetcontext: (detail: {
+			asset: Collection;
+			anchor: { x: number; y: number } | HTMLElement;
+		}) => {
+			const { asset, anchor } = detail;
+			if (!selectionScope.has(asset) || selectionScope.selected.size <= 1) {
+				selectionScope.select(asset);
+			}
+			ctxAnchor = anchor;
 			ctxShowMenu = true;
 		}
 	});
 
-	const currentPanelContent = getContext<TabGroup>("content");
-
-	// Modal data for create/edit
-	let modalData: Collection | undefined = $state();
-	let modalMode: "create" | "edit" = $state("create");
-
-	async function handleDeleteSelected() {
-		const items = Array.from(selectionScope.selected ?? []);
-		if (items.length === 0) {
-			return;
-		}
-
-		const ok = confirm(
-			`Remove ${items.length} selected collections(s)? This cannot be undone!`
-		);
-		if (!ok) {
-			return;
-		}
-
-		const uids = items.map((i: Collection) => i.uid);
-		try {
-			const deletePromises = uids.map((uid) => deleteCollection(uid));
-			const res = await Promise.all(deletePromises);
-
-			const successful = res.filter((r) => r.status === 204);
-			const failed = res.filter((r) => r.status !== 204);
-
-			toastState.addToast({
-				type: "success",
-				message: `Deleted ${successful.length} collection(s)`
-			});
-
-			if (failed.length > 0) {
-				toastState.addToast({
-					type: "error",
-					message: `Failed to delete ${failed.length} collection(s)`
-				});
-			}
-		} catch (err) {
-			toastState.addToast({
-				type: "error",
-				message: `Failed to remove images: ${err}`
-			});
-		}
+	async function paginate() {
+		pagination.page++;
 	}
 </script>
 
-{#if showCollectionModal && modal.show}
-	<CollectionModal
-		heading={modalMode === "create" ? "Create Collection" : "Edit Collection"}
-		buttonText={modalMode === "create" ? "Create" : "Save"}
-		bind:data={modalData}
-		modalAction={async (event) => {
-			const formData = new FormData(event.currentTarget);
-			const name = formData.get("name") as string;
-			const description = formData.get("description") as string;
-			const isPrivate = formData.get("isPrivate") === "on";
-
-			if (modalMode === "create") {
-				try {
-					const res = await createCollection({
-						name,
-						description,
-						private: isPrivate
-					});
-					if (res.status === 201) {
-						listOfCollectionsData = [res.data, ...listOfCollectionsData];
-						modal.show = false;
-						toastState.addToast({
-							message: "Collection created",
-							type: "success"
-						});
-						goto(`/collections/${res.data.uid}`);
-					} else {
-						toastState.addToast({
-							message:
-								(res as any).data?.error ?? `Creation failed (${res.status})`,
-							type: "error"
-						});
-					}
-				} catch (e) {
-					toastState.addToast({
-						message: "Creation failed: " + (e as Error).message,
-						type: "error"
-					});
-				}
-			} else {
-				// edit
-				try {
-					if (!modalData || !modalData.uid) {
-						return;
-					}
-					const res = await updateCollection(modalData.uid, {
-						name,
-						description,
-						private: isPrivate
-					});
-					if (res.status === 200) {
-						// update local list
-						listOfCollectionsData = listOfCollectionsData.map((c) =>
-							c.uid === modalData!.uid ? res.data : c
-						);
-						modal.show = false;
-						toastState.addToast({
-							message: "Collection updated",
-							type: "success"
-						});
-					} else {
-						toastState.addToast({
-							message: res.data?.error ?? `Update failed (${res.status})`,
-							type: "error"
-						});
-					}
-				} catch (e) {
-					toastState.addToast({
-						message: "Update failed: " + (e as Error).message,
-						type: "error"
-					});
-				}
-			}
-		}}
-	/>
-{/if}
-
-{#if showFilterModal && modal.show}
-	<FilterModal />
-{/if}
-
-{#snippet collectionCard(collectionData: Collection)}
-	{#if page.url.pathname !== "/"}
-		<a
-			title="{collectionData.name} | Last Updated: {new Date(
-				collectionData.updated_at
-			).toLocaleDateString()}"
-			data-sveltekit-preload-data
-			data-asset-id={collectionData.uid}
-			class="collection-card-link"
-			href="/collections/{collectionData.uid}"
-		>
-			<CollectionCard collection={collectionData} />
-		</a>
-	{:else}
-		<CollectionCard
-			style={isLayoutPage() ? "font-size: 0.9rem;" : ""}
-			collection={collectionData}
-		/>
-	{/if}
+{#snippet collectionSnippet(collection: Collection)}
+	<CollectionCard {collection} />
 {/snippet}
 
 {#snippet toolbarSnippet()}
-	<div id="coll-details-toolbar">
-		<div id="coll-tools">
-			{#if !isLayoutPage()}
-				<IconButton
-					iconName="filter_list"
-					class="toolbar-button"
-					title="Filter"
-					aria-label="Filter"
-					onclick={() => {
-						showFilterModal = true;
-						modal.show = true;
-					}}
-				>
-					Filter
-				</IconButton>
-			{/if}
-			<IconButton
-				iconName="add"
-				id="create-collection"
-				title="Create Collection"
-				aria-label="Create Collection"
-				onclick={() => {
-					modalMode = "create";
-					modalData = undefined;
-					showCollectionModal = true;
-					modal.show = true;
-				}}
-			>
-				<span>Create</span>
-			</IconButton>
-			<span id="coll-details-floating"
-				>{#if listOfCollectionsData}{listOfCollectionsData.length}{/if}
-				{listOfCollectionsData?.length === 1
-					? "collection"
-					: "collections"}</span
-			>
-		</div>
-	</div>
-{/snippet}
-
-{#snippet selectionToolbarSnippet()}
-	<IconButton
-		iconName="delete"
-		title="Delete Selected"
-		style="position: absolute; right: 1em;"
-		onclick={handleDeleteSelected}
-	/>
-{/snippet}
-
-{#snippet noAssetsSnippet()}
-	<div id="no-collections-container">
-		<div id="no-collections-text">
-			<MaterialIcon
-				iconName="folder_open"
-				style="font-size: 2rem; margin: 0rem 0.5rem; color: var(--viz-20);"
-			/>
-			<span style="color: var(--viz-20); font-size: 1.2rem;"
-				>Add your first collection</span
-			>
-		</div>
-
-		<Button
-			id="create_collection-button"
+	<div id="coll-tools">
+		<IconButton
+			iconName="filter_list"
+			class="toolbar-button"
+			title="Filter"
+			aria-label="Filter"
+			onclick={openFilterModal}
+		>
+			Filter
+		</IconButton>
+		<IconButton
+			iconName="add"
+			id="create-collection"
+			class="toolbar-button"
 			title="Create Collection"
 			aria-label="Create Collection"
 			onclick={() => {
-				modalMode = "create";
-				modalData = undefined;
-				modal.show = true;
+				openCollectionModal("create");
 			}}
 		>
-			<span>Create a New Collection</span>
+			Create
+		</IconButton>
+	</div>
+{/snippet}
+
+{#snippet noAssetsSnippet()}
+	<div id="create_collection-container">
+		<span style="margin: 1em; color: var(--viz-20); font-size: 1.2rem;"
+			>Create your first collection</span
+		>
+		<Button
+			id="create_collection-button"
+			style="padding: 2em 8em; display: flex; align-items: center; justify-content: center;"
+			title="Create Collection"
+			aria-label="Create Collection"
+			onclick={() => {
+				openCollectionModal("create");
+			}}
+		>
+			Create Collection
 			<MaterialIcon iconName="add" style="font-size: 2em;" />
 		</Button>
 	</div>
@@ -353,27 +264,18 @@
 
 <VizViewContainer
 	bind:data={displayData}
-	bind:hasMore={shouldUpdate}
-	style="padding: 0em ${page.url.pathname === '/' ? '1em' : '2em'};"
+	hasMore={shouldUpdate}
 	name="Collections"
-	paginate={() => {
-		pagination.page++;
-	}}
+	{paginate}
 	onscroll={(e) => {
-		if (!fadeOpacity) {
-			return;
-		}
+		const info = document.getElementById("viz-info-container")!;
+		if (!info) return;
+		const bottom = info.scrollHeight;
 
-		const assetGrid = document.querySelector(
-			".viz-asset-grid-container"
-		)! as HTMLElement;
-
-		const top = Math.max(assetGrid.offsetTop, 1);
-		const current = e.currentTarget.scrollTop;
-		if (current >= top) {
-			toolbarOpacity = 0;
+		if (e.currentTarget.scrollTop < bottom) {
+			toolbarOpacity = e.currentTarget.scrollTop / bottom;
 		} else {
-			toolbarOpacity = Math.max(0, Math.min(1, 1 - current / top));
+			toolbarOpacity = 1;
 		}
 	}}
 >
@@ -381,53 +283,74 @@
 		bind:grid
 		gridComponent={AssetGrid}
 		{pagination}
-		{selectionToolbarSnippet}
-		{toolbarSnippet}
 		{noAssetsSnippet}
+		{toolbarSnippet}
 		toolbarProps={{
-			style:
-				`justify-content: space-between;` +
-				(fadeOpacity ? `opacity: ${toolbarOpacity};` : "")
+			style: "justify-content: flex-end; gap: 0.5rem;"
 		}}
+	>
+		<div id="viz-info-container">
+			<div id="coll-metadata" class:std-route={!isLayoutPage()}>
+				<span id="coll-name">Collections</span>
+			</div>
+		</div>
+	</AssetsShell>
+
+	<!-- Context menu for right-click on collections -->
+	<ContextMenu
+		bind:showMenu={ctxShowMenu}
+		items={ctxItems}
+		anchor={ctxAnchor}
+		offsetY={4}
 	/>
 </VizViewContainer>
 
-<!-- Context menu for right-click on collections -->
-<ContextMenu
-	bind:showMenu={ctxShowMenu}
-	items={ctxItems}
-	anchor={ctxAnchor}
-	offsetY={4}
-/>
-
 <style lang="scss">
-	@use "sass:color";
-
-	.collection-card-link {
-		cursor: context-menu;
-	}
-
-	#coll-details-toolbar {
-		height: 100%;
+	#create_collection-container {
 		display: flex;
+		flex-direction: column;
+		justify-content: left;
 	}
 
-	#coll-details-floating {
-		color: var(--viz-40);
-		background-color: transparent;
+	:global(#create-collection) {
+		margin: 0em 1rem;
+	}
+
+	#viz-info-container {
+		width: 100%;
+		max-width: 100%;
+		display: flex;
+		flex-direction: column;
+		justify-content: space-between;
+		margin: 1em 0em;
+	}
+
+	#coll-name {
+		color: var(--viz-text-color);
+		font-weight: bold;
+		font-size: 1.5rem;
+	}
+
+	#coll-metadata {
+		padding: 0.5rem 1rem;
+		display: flex;
+		flex-direction: column;
+		overflow: hidden;
+		color: var(--viz-60);
 		font-family: var(--viz-mono-font);
+		gap: 1rem;
+		max-width: 40rem;
+
+		&.std-route {
+			padding: 0.5rem 2rem;
+		}
 	}
 
 	#coll-tools {
 		display: flex;
 		align-items: center;
-	}
-
-	#no-collections-text {
-		display: flex;
-		flex-direction: row;
-		justify-content: center;
-		align-items: center;
-		margin-bottom: 1rem;
+		font-size: inherit;
+		height: 100%;
+		gap: 0.75rem;
 	}
 </style>

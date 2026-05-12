@@ -15,13 +15,43 @@
 
 <script lang="ts">
 	import { goto } from "$app/navigation";
-	import PhotoAssetGrid from "$lib/components/PhotoAssetGrid.svelte";
+	import {
+		addCollectionImages,
+		createCollection,
+		deleteCollection,
+		deleteCollectionImages,
+		getImage,
+		listCollectionImages,
+		updateCollection,
+		updateImage,
+		type CollectionUpdate,
+		type ImageAsset
+	} from "$lib/api";
 	import AssetsShell from "$lib/components/AssetsShell.svelte";
+	import Button from "$lib/components/Button.svelte";
+	import InputText from "$lib/components/dom/InputText.svelte";
+	import Dropdown from "$lib/components/Dropdown.svelte";
+	import IconButton from "$lib/components/IconButton.svelte";
+	import ImageCard from "$lib/components/ImageCard.svelte";
+	import ImageLightbox from "$lib/components/ImageLightbox.svelte";
+	import LabelSelector from "$lib/components/LabelSelector.svelte";
+	import MaterialIcon from "$lib/components/MaterialIcon.svelte";
+	import CollectionModal from "$lib/components/modals/CollectionModal.svelte";
+	import FilterModal from "$lib/components/modals/FilterModal.svelte";
+	import { modalsManager } from "$lib/components/modals/manager/ModalManager.svelte";
 	import VizViewContainer from "$lib/components/panels/VizViewContainer.svelte";
+	import PhotoAssetGrid from "$lib/components/PhotoAssetGrid.svelte";
+	import StarRating from "$lib/components/StarRating.svelte";
+	import ContextMenu from "$lib/context-menu/ContextMenu.svelte";
+	import { createCollectionImageMenu } from "$lib/context-menu/menus/images";
+	import type { MenuItem } from "$lib/context-menu/types";
+	import { LabelColours, type ImageLabel } from "$lib/images/constants";
+	import { ImagePaginationState } from "$lib/images/state.svelte";
+	import { sortCollectionImages } from "$lib/sort/sort.js";
+	import { filterManager } from "$lib/states/filter.svelte";
 	import {
 		debugMode,
 		isLayoutPage,
-		modal,
 		sort,
 		viewSettings
 	} from "$lib/states/index.svelte";
@@ -29,58 +59,24 @@
 		selectionManager,
 		SelectionScopeNames
 	} from "$lib/states/selection.svelte";
+	import { toastState } from "$lib/toast-notifcations/notif-state.svelte.js";
 	import type { AssetGridArray, AssetGridView } from "$lib/types/asset.js";
 	import {
 		SUPPORTED_IMAGE_TYPES,
 		SUPPORTED_RAW_FILES,
 		type SupportedImageTypes
 	} from "$lib/types/images";
+	import UploadManager from "$lib/upload/manager.svelte.js";
+	import { performImageDownloads } from "$lib/utils/http";
+	import { getImageLabel } from "$lib/utils/images";
+	import type VizView from "$lib/views/views.svelte";
+	import { invalidateViz } from "$lib/views/views.svelte";
 	import hotkeys from "hotkeys-js";
 	import { DateTime } from "luxon";
-	import { onDestroy, type ComponentProps } from "svelte";
-	import { sortCollectionImages } from "$lib/sort/sort.js";
-	import ImageCard from "$lib/components/ImageCard.svelte";
-	import Button from "$lib/components/Button.svelte";
-	import MaterialIcon from "$lib/components/MaterialIcon.svelte";
-	import UploadManager from "$lib/upload/manager.svelte.js";
-	import {
-		addCollectionImages,
-		updateCollection,
-		deleteCollection,
-		deleteCollectionImages,
-		type CollectionUpdate,
-		type ImageAsset,
-		listCollectionImages,
-		updateImage,
-		getImage
-	} from "$lib/api";
-	import { toastState } from "$lib/toast-notifcations/notif-state.svelte.js";
-	import CollectionModal from "$lib/components/modals/CollectionModal.svelte";
-	import InputText from "$lib/components/dom/InputText.svelte";
-	import Dropdown from "$lib/components/Dropdown.svelte";
-	import { createCollection } from "$lib/api";
-	import ContextMenu from "$lib/context-menu/ContextMenu.svelte";
-	import ImageLightbox from "$lib/components/ImageLightbox.svelte";
-	import IconButton from "$lib/components/IconButton.svelte";
-	import type VizView from "$lib/views/views.svelte";
+	import { onDestroy, tick, untrack, type ComponentProps } from "svelte";
 	import type { PageProps } from "./$types";
-	import { filterManager } from "$lib/states/filter.svelte";
-	import { untrack } from "svelte";
-	import FilterModal from "$lib/components/modals/FilterModal.svelte";
-	import type { MenuItem } from "$lib/context-menu/types";
-	import { createCollectionImageMenu } from "$lib/context-menu/menus/images";
-	import { ImagePaginationState } from "$lib/images/state.svelte";
-	import { performImageDownloads } from "$lib/utils/http";
-	import LabelSelector from "$lib/components/LabelSelector.svelte";
-	import { LabelColours, type ImageLabel } from "$lib/images/constants";
-	import { getImageLabel } from "$lib/utils/images";
-	import { invalidateViz } from "$lib/views/views.svelte";
-	import StarRating from "$lib/components/StarRating.svelte";
 
 	let { data, view }: PageProps & { view?: VizView } = $props();
-
-	let showFilterModal = $state(false);
-	let showCollectionModal = $state(false);
 
 	$effect(() => {
 		if (debugMode) {
@@ -322,7 +318,6 @@
 			}
 		);
 
-		modal.show = false;
 		if (response.status !== 200) {
 			toastState.addToast({
 				type: "error",
@@ -596,22 +591,27 @@
 		);
 		return idx !== -1 ? `display-${idx}` : undefined;
 	});
+
+	function openFilterModal() {
+		modalsManager.open(FilterModal, {});
+	}
+
+	function openEditCollectionModal() {
+		modalsManager.open(
+			CollectionModal,
+			{
+				heading: "Edit Collection",
+				buttonText: "Save",
+				data: localDataUpdates,
+				modalAction: async () => {
+					await updateCollectionDetails();
+					modalsManager.pop();
+				}
+			},
+			{ heading: "Edit Collection" }
+		);
+	}
 </script>
-
-{#if showCollectionModal && modal.show}
-	<CollectionModal
-		bind:data={localDataUpdates}
-		heading="Edit Collection"
-		buttonText="Save"
-		modalAction={() => {
-			updateCollectionDetails();
-		}}
-	/>
-{/if}
-
-{#if showFilterModal && modal.show}
-	<FilterModal />
-{/if}
 
 <ImageLightbox
 	bind:lightboxImage
@@ -640,10 +640,7 @@
 				class="toolbar-button"
 				title="Filter"
 				aria-label="Filter"
-				onclick={() => {
-					showFilterModal = true;
-					modal.show = true;
-				}}
+				onclick={openFilterModal}
 			>
 				Filter
 			</IconButton>
@@ -666,10 +663,7 @@
 			class="toolbar-button"
 			title="Edit Collection"
 			aria-label="Edit Collection"
-			onclick={() => {
-				showCollectionModal = true;
-				modal.show = true;
-			}}
+			onclick={openEditCollectionModal}
 		>
 			Edit
 		</IconButton>
@@ -828,11 +822,7 @@
 							id="coll-name-input"
 							style="padding: 0% 0.5rem;"
 							title={localDataUpdates.name}
-							bind:focused={showCollNameInput}
 							bind:value={localDataUpdates.name}
-							onblur={() => {
-								showCollNameInput = false;
-							}}
 						/>
 					{:else}
 						<span
@@ -874,10 +864,12 @@
 								<IconButton
 									title="Confirm"
 									class="name-confirm-btn"
-									onclick={() => {
+									onclick={async () => {
 										updateCollectionDetails({
 											name: localDataUpdates.name
 										});
+										await tick();
+										showCollNameInput = false;
 									}}
 									iconName="check"
 								/>

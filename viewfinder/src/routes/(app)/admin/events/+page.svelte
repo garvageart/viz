@@ -10,9 +10,9 @@
 		WsMetricsResponse,
 		EventRecord
 	} from "$lib/api";
-	import { modal } from "$lib/states/index.svelte";
 	import ConfirmationModal from "$lib/components/modals/ConfirmationModal.svelte";
 	import AdminRouteShell from "$lib/components/admin/AdminRouteShell.svelte";
+	import { modalsManager } from "$lib/components/modals/manager/ModalManager.svelte";
 
 	type EventHistoryItem = EventRecord;
 
@@ -34,9 +34,6 @@
 	// Auto-refresh
 	let autoRefresh = $state(true);
 	let refreshInterval: number | null = null;
-
-	// Confirmation state
-	let showClearConfirm = $state(false);
 
 	function showMessage(
 		message: string,
@@ -90,23 +87,23 @@
 	}
 
 	function requestClearHistory() {
-		showClearConfirm = true;
-		modal.show = true;
+		modalsManager.open(
+			ConfirmationModal,
+			{
+				title: "Clear Event History",
+				confirmText: "Clear History",
+				onConfirm: handleClearConfirm
+			},
+			{ heading: "Clear Event History" }
+		);
 	}
 
 	async function handleClearConfirm(): Promise<void> {
-		showClearConfirm = false;
-		modal.show = false;
 		showMessage(
 			"Clear event history endpoint not yet implemented for WebSocket",
 			"info"
 		);
 		// TODO: Implement clearWsEventHistory endpoint if needed
-	}
-
-	function handleClearCancel() {
-		showClearConfirm = false;
-		modal.show = false;
 	}
 
 	function toggleAutoRefresh(): void {
@@ -408,20 +405,6 @@
 		</section>
 	</div>
 </AdminRouteShell>
-
-{#if showClearConfirm && modal.show}
-	<ConfirmationModal
-		title="Clear Event History"
-		confirmText="Clear History"
-		onConfirm={handleClearConfirm}
-		onCancel={handleClearCancel}
-	>
-		<p>
-			Are you sure you want to clear all event history? This action cannot be
-			undone.
-		</p>
-	</ConfirmationModal>
-{/if}
 
 <style lang="scss">
 	.admin-page-content {

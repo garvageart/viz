@@ -78,10 +78,6 @@ export let search = $state({
     element: undefined as HTMLInputElement | undefined
 });
 
-export let modal = $state({
-    show: false
-});
-
 export let lightbox = $state({
     show: false
 });
@@ -251,4 +247,4 @@ export function getTheme() {
 
 export function toggleTheme() {
     themeState.toggle();
-} 
+}

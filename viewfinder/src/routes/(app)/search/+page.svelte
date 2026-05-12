@@ -6,7 +6,6 @@
 	import { performSearch } from "$lib/search/execute";
 	import {
 		isLayoutPage,
-		modal,
 		search,
 		viewSettings
 	} from "$lib/states/index.svelte";
@@ -47,6 +46,7 @@
 	import CollectionSelectionModal from "$lib/components/modals/CollectionSelectionModal.svelte";
 	import { goto } from "$app/navigation";
 	import { addCollectionImages } from "$lib/api";
+	import { modalsManager } from "$lib/components/modals/manager/ModalManager.svelte";
 
 	let collections = $derived(search.data.collections.data);
 	let images = $derived(search.data.images.data);
@@ -67,7 +67,6 @@
 	let disableOutsideUnselect = $derived(isLayoutPage());
 
 	// Modal state for collection selection
-	let showCollectionSelectionModal = $state(false);
 	let imageUidsForCollection = $state<string[]>([]);
 
 	// Derived selection helpers
@@ -103,17 +102,23 @@
 				label: "Add to Collection",
 				icon: "collections_bookmark",
 				action: () => {
-					imageUidsForCollection = Array.from(imageSelection.selected).map(
-						(img) => img.uid
-					);
-					showCollectionSelectionModal = true;
-					modal.show = true;
+					openAddToCollectionModal();
 				}
 			}
 		];
 
 		return [...pageMenuItems, ...baseMenuItems];
 	});
+
+	function openAddToCollectionModal() {
+		imageUidsForCollection = Array.from(imageSelection.selected).map(
+			(img) => img.uid
+		);
+		modalsManager.open(CollectionSelectionModal, {
+			imageUidsToAdd: imageUidsForCollection,
+			onSelect: handleCollectionSelect
+		}, { heading: "Select a Collection" });
+	}
 
 	let collectionActionMenuItems = $derived.by(() => {
 		return createCollectionMenu(firstSelectedCollection, {
@@ -221,10 +226,6 @@
 		collectionSelection.clear();
 
 		lightboxImage = undefined;
-
-		if (modal.show) {
-			modal.show = false;
-		}
 	});
 
 	function openLightbox(asset: ImageAsset) {
@@ -330,8 +331,6 @@
 			});
 		} finally {
 			imageSelection.clear();
-			showCollectionSelectionModal = false;
-			modal.show = false;
 			imageUidsForCollection = [];
 		}
 	}
@@ -350,14 +349,6 @@
 <svelte:head>
 	<title>Search{search.value ? ` - ${search.value}` : ""}</title>
 </svelte:head>
-
-{#if showCollectionSelectionModal}
-	<CollectionSelectionModal
-		bind:showModal={showCollectionSelectionModal}
-		onSelect={handleCollectionSelect}
-		imageUidsToAdd={imageUidsForCollection}
-	/>
-{/if}
 
 {#if lightboxImage}
 	<ImageLightbox
@@ -408,11 +399,7 @@
 							role="tooltip"
 							title="Add to Collection"
 							onclick={() => {
-								imageUidsForCollection = Array.from(
-									imageSelection.selected
-								).map((img) => img.uid);
-								showCollectionSelectionModal = true;
-								modal.show = true;
+								openAddToCollectionModal();
 							}}
 							ondragenter={(e) => {
 								e.currentTarget.classList.add("on-enter");
@@ -440,8 +427,10 @@
 								e.currentTarget.classList.remove("on-enter");
 
 								imageUidsForCollection = uidsData;
-								showCollectionSelectionModal = true;
-								modal.show = true;
+								modalsManager.open(CollectionSelectionModal, {
+									imageUidsToAdd: imageUidsForCollection,
+									onSelect: handleCollectionSelect
+								}, { heading: "Select a Collection" });
 							}}
 						>
 							Add to Collection
