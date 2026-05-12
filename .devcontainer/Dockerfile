@@ -16,7 +16,10 @@ RUN apt-get update && \
     meson ninja-build python3 python3-pip python3-setuptools \
     libglib2.0-dev libexpat1-dev libjpeg-dev libpng-dev libtiff-dev \
     libwebp-dev libheif-dev libopenexr-dev liborc-0.4-dev libgirepository1.0-dev \
-    libxml2-dev libexif-dev libpoppler-glib-dev libgsf-1-dev libopenjp2-7-dev && \
+    libxml2-dev libexif-dev libpoppler-glib-dev libgsf-1-dev libopenjp2-7-dev \
+    libjxl-dev libimagequant-dev libarchive-dev librsvg2-dev \
+    libopenslide-dev libmatio-dev libcfitsio-dev libcgif-dev \
+    libmagickwand-dev libraw-dev libnifti-dev && \
     rm -rf /var/lib/apt/lists/*
 
 # Download, build and install libvips so headers/libs match the generated bindings

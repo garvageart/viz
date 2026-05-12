@@ -4,12 +4,12 @@ go 1.25.0
 
 require (
 	github.com/ajg/form v1.5.1 // indirect
-	github.com/go-chi/chi/v5 v5.2.2
+	github.com/go-chi/chi/v5 v5.2.3
 	github.com/go-chi/render v1.0.3
 	go.uber.org/multierr v1.11.0 // indirect
 	go.uber.org/zap v1.27.0
-	golang.org/x/crypto v0.40.0
-	golang.org/x/net v0.41.0 // indirect
+	golang.org/x/crypto v0.42.0
+	golang.org/x/net v0.44.0 // indirect
 	golang.org/x/sync v0.17.0 // indirect
 	golang.org/x/text v0.30.0 // indirect
 )
@@ -18,7 +18,7 @@ require (
 	cloud.google.com/go/storage v1.54.0
 	github.com/ThreeDotsLabs/watermill v1.5.1
 	github.com/cshum/vipsgen v1.2.1
-	github.com/dromara/carbon/v2 v2.6.6
+	github.com/dromara/carbon/v2 v2.6.11
 	github.com/dsoprea/go-exif/v3 v3.0.1
 	github.com/fullstorydev/emulators/storage v1.0.0
 	github.com/go-co-op/gocron/v2 v2.16.5
@@ -29,6 +29,11 @@ require (
 	github.com/samber/slog-multi v1.4.0
 	github.com/spf13/viper v1.20.1
 	google.golang.org/api v0.232.0
+)
+
+require (
+	github.com/davecgh/go-spew v1.1.2-0.20180830191138-d8f796af33cc // indirect
+	github.com/pmezard/go-difflib v1.0.1-0.20181226105442-5d4384ee4fb2 // indirect
 )
 
 require (
@@ -66,7 +71,7 @@ require (
 	github.com/jinzhu/inflection v1.0.0 // indirect
 	github.com/jinzhu/now v1.1.5 // indirect
 	gorm.io/driver/postgres v1.6.0
-	gorm.io/gorm v1.30.0
+	gorm.io/gorm v1.30.2
 )
 
 require (

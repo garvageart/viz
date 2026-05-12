@@ -1,4 +1,5 @@
 viz.localhost, localhost {
 	tls internal
-	reverse_proxy api:7777
+	reverse_proxy /api/* 127.0.0.1:7770
+	reverse_proxy 127.0.0.1:7777
 }

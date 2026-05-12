@@ -1,12 +1,59 @@
-// Lol I gotta get rid of this man
 {
-    "editor.formatOnSave": true,
-    "[go]": {
-        "editor.formatOnSave": false,
-        "editor.codeActionsOnSave": {
-            "source.organizeImports": "never"
-        }
-    },
-    "makefile.configureOnOpen": false,
-    "files.eol": "\n"
+	"[css]": {
+		"editor.defaultFormatter": "esbenp.prettier-vscode",
+		"editor.formatOnSave": true,
+		"editor.tabSize": 2
+	},
+	"[go]": {
+		"editor.formatOnSave": false,
+		"editor.codeActionsOnSave": {
+			"source.organizeImports": "always"
+		}
+	},
+	"[javascript]": {
+		"editor.codeActionsOnSave": {
+			"source.organizeImports": "explicit",
+			"source.removeUnusedImports": "explicit"
+		},
+		"editor.defaultFormatter": "esbenp.prettier-vscode",
+		"editor.formatOnSave": true,
+		"editor.tabSize": 2
+	},
+	"[json]": {
+		"editor.defaultFormatter": "esbenp.prettier-vscode",
+		"editor.formatOnSave": true,
+		"editor.tabSize": 2
+	},
+	"[jsonc]": {
+		"editor.defaultFormatter": "esbenp.prettier-vscode",
+		"editor.formatOnSave": true,
+		"editor.tabSize": 2
+	},
+	"[svelte]": {
+		"editor.codeActionsOnSave": {
+			"source.organizeImports": "explicit",
+			"source.removeUnusedImports": "explicit"
+		},
+		"editor.defaultFormatter": "svelte.svelte-vscode",
+		"editor.formatOnSave": true,
+		"editor.tabSize": 2
+	},
+	"[typescript]": {
+		"editor.codeActionsOnSave": {
+			"source.organizeImports": "explicit",
+			"source.removeUnusedImports": "explicit"
+		},
+		"editor.defaultFormatter": "esbenp.prettier-vscode",
+		"editor.formatOnSave": true,
+		"editor.tabSize": 2
+	},
+	"makefile.configureOnOpen": false,
+	"files.eol": "\n",
+	"editor.formatOnSave": true,
+	"explorer.fileNesting.enabled": true,
+	"explorer.fileNesting.patterns": {
+		"*.ts": "${capture}.spec.ts,${capture}.mock.ts"
+	},
+	"svelte.enable-ts-plugin": true,
+	"typescript.preferences.importModuleSpecifier": "non-relative"
 }

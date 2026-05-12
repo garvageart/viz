@@ -12,7 +12,7 @@ SCRIPTS_DIR := scripts/js
 #  - fmt/lint/test: formatting, linting, running tests
 #  - migrate/initdb: helpers for database migration/init steps (best-effort)
 
-VIZ_DIR := viz
+VIEWFINDER_DIR := viewfinder
 GO_CMD ?= go
 PNPM ?= pnpm
 DOCKER_COMPOSE ?= docker compose
@@ -20,7 +20,7 @@ BUILDX_CACHE_DIR ?= $(CURDIR)/.buildcache
 
 # Local buildx cache dirs (api/viz)
 BUILDX_CACHE_API_DIR := $(BUILDX_CACHE_DIR)/api
-BUILDX_CACHE_VIZ_DIR := $(BUILDX_CACHE_DIR)/viz
+BUILDX_CACHE_VIEWFINDER_DIR := $(BUILDX_CACHE_DIR)/viz
 
 # Cache control: when `USE_HOST_CACHE=1` Make will use host-side cache dirs
 # for Go module cache, Go build cache and pnpm store. This preserves fast
@@ -30,7 +30,7 @@ BUILDX_CACHE_VIZ_DIR := $(BUILDX_CACHE_DIR)/viz
 USE_HOST_CACHE ?= 1
 GO_MOD_CACHE_DIR ?= $(CURDIR)/.cache/go-mods
 GO_BUILD_CACHE_DIR ?= $(CURDIR)/.cache/go-build
-PNPM_STORE_DIR ?= $(CURDIR)/$(VIZ_DIR)/.pnpm-store
+PNPM_STORE_DIR ?= $(CURDIR)/$(VIEWFINDER_DIR)/.pnpm-store
 
 # Image registry and tag; override with `make REGISTRY=... TAG=...`
 REGISTRY_HOST ?= ghcr.io
@@ -59,7 +59,7 @@ help:
 	@printf "  build                     Build backend and frontend\n"
 	@printf "  build-api                 Build Go API binary\n"
 	@printf "  build-frontend            Build the Viz frontend (pnpm)\n"
-	@printf "  generate-icons            Run icon generator in $(VIZ_DIR)\n"
+	@printf "  generate-icons            Run icon generator in $(VIEWFINDER_DIR)\n"
 	@printf "  generate-types            Generate API types (Go DTOs + TS client)\n"
 	@printf "  generate-types-install    Install type generation tools and run generation\n"
 	@printf "  fmt                       Run formatting (Go and frontend if available)\n"
@@ -98,8 +98,8 @@ build-api:
 	fi
 
 build-frontend:
-	@echo "Building frontend in $(VIZ_DIR)..."
-	@cd $(VIZ_DIR) && if [ "$(USE_HOST_CACHE)" = "1" ]; then \
+	@echo "Building frontend in $(VIEWFINDER_DIR)..."
+	@cd $(VIEWFINDER_DIR) && if [ "$(USE_HOST_CACHE)" = "1" ]; then \
 		mkdir -p "$(PNPM_STORE_DIR)"; \
 		$(PNPM) install --frozen-lockfile --store-dir "$(PNPM_STORE_DIR)" || true; \
 		$(PNPM) run generate:icons || true; \
@@ -112,7 +112,7 @@ build-frontend:
 
 generate-icons:
 	@echo "Generating icons for frontend..."
-	@cd $(VIZ_DIR) && $(PNPM) run generate:icons
+	@cd $(VIEWFINDER_DIR) && $(PNPM) run generate:icons
 
 generate-types:
 	@echo "Generating API types (Go DTOs + TS client) using scripts in $(SCRIPTS_DIR)..."
@@ -148,9 +148,9 @@ generate-types-install:
 fmt:
 	@echo "Formatting Go sources..."
 	@$(GO_CMD) fmt ./...
-	@if [ -f "$(VIZ_DIR)/package.json" ]; then \
+	@if [ -f "$(VIEWFINDER_DIR)/package.json" ]; then \
 		echo "Formatting frontend (if script exists)..."; \
-		cd $(VIZ_DIR) && $(PNPM) run format || true; \
+		cd $(VIEWFINDER_DIR) && $(PNPM) run format || true; \
 	fi
 
 lint:
@@ -164,8 +164,8 @@ lint:
 test:
 	@echo "Running Go tests..."
 	@$(GO_CMD) test ./...
-	@if [ -f "$(VIZ_DIR)/package.json" ]; then \
-		cd $(VIZ_DIR) && $(PNPM) run test || true; \
+	@if [ -f "$(VIEWFINDER_DIR)/package.json" ]; then \
+		cd $(VIEWFINDER_DIR) && $(PNPM) run test || true; \
 	fi
 
 ### Docker
@@ -184,11 +184,11 @@ buildx-api:
 		-f Dockerfile.api -t viz-api:local --load .
 
 buildx-viz:
-	@echo "Building Viz image with buildx and local cache ($(BUILDX_CACHE_VIZ_DIR))"
-	@mkdir -p $(BUILDX_CACHE_VIZ_DIR)
+	@echo "Building Viz image with buildx and local cache ($(BUILDX_CACHE_VIEWFINDER_DIR))"
+	@mkdir -p $(BUILDX_CACHE_VIEWFINDER_DIR)
 	@docker buildx build --progress=plain \
-		--cache-to=type=local,dest=$(BUILDX_CACHE_VIZ_DIR) \
-		--cache-from=type=local,src=$(BUILDX_CACHE_VIZ_DIR) \
+		--cache-to=type=local,dest=$(BUILDX_CACHE_VIEWFINDER_DIR) \
+		--cache-from=type=local,src=$(BUILDX_CACHE_VIEWFINDER_DIR) \
 		-f viz/Dockerfile -t viz-viz:local viz --load
 
 buildx-build: buildx-api buildx-viz
@@ -208,7 +208,7 @@ image-api:
 
 image-viz:
 	@echo "Building Viz image"
-	@docker build -f $(VIZ_DIR)/Dockerfile -t $(REGISTRY)/viz-viz:$(TAG) $(VIZ_DIR)
+	@docker build -f $(VIEWFINDER_DIR)/Dockerfile -t $(REGISTRY)/viz-viz:$(TAG) $(VIEWFINDER_DIR)
 
 docker-push: image-api image-viz
 	@echo "Pushing images to $(REGISTRY)"
@@ -235,12 +235,12 @@ initdb:
 clean:
 	@echo "Cleaning build artifacts and generated icons..."
 	@rm -rf build
-	@rm -rf $(VIZ_DIR)/src/lib/components/icons/generated || true
+	@rm -rf $(VIEWFINDER_DIR)/src/lib/components/icons/generated || true
 
 dev:
 	@echo "Developer: start API (if you have a dev script) and frontend dev server"
 	@echo " - Run backend dev in one terminal: $(GO_CMD) run ./cmd/api (or main.go)"
-	@echo " - Run frontend dev in another: cd $(VIZ_DIR) && $(PNPM) run dev"
+	@echo " - Run frontend dev in another: cd $(VIEWFINDER_DIR) && $(PNPM) run dev"
 
 run: build
 	@echo "Run completed build artifacts (see README for local run instructions)."

@@ -116,4 +116,4 @@ The `make generate-types` command orchestrates this entire process:
 - **Manual Setup**:
   - Run `bun scripts/js/setup-libvips.ts` to install `libvips` (v8.18+) and configure environment variables.
 - **Ports**: API: `7770`, Frontend Dev: `7777`, PostgreSQL: `5432`, Redis: `6379`.
-- **Configuration**: The default configuration is in `Viz.json`. Overrides can be placed in `Viz.local.json` or set via environment variables.
+- **Configuration**: The default configuration is in `viz.json`. Overrides can be placed in `viz.json` or set via environment variables.
