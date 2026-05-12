@@ -13,7 +13,7 @@ type RedisConfig struct {
 	Enabled             bool   `json:"enabled" mapstructure:"enabled"`
 	Host                string `json:"host" mapstructure:"host"`
 	Port                int    `json:"port" mapstructure:"port"`
-	Username            string `json:"username" mapstructure:"username"`
+	Username            string `json:"username" mapstructure:"name"`
 	Password            string `json:"password" mapstructure:"password"`
 	DB                  int    `json:"db" mapstructure:"db"`
 	UseTLS              bool   `json:"use_tls" mapstructure:"use_tls"`
@@ -39,7 +39,8 @@ type DatabaseConfig struct {
 
 // LoggingConfig holds the configuration for logging.
 type LoggingConfig struct {
-	Level string `json:"level" mapstructure:"level"`
+	Level      string `json:"level" mapstructure:"level"`
+	Timezone   string `json:"timezone" mapstructure:"timezone"` // "local" or "utc"
 }
 
 // UploadConfig holds the configuration for uploads.

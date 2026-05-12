@@ -53,6 +53,9 @@ func (server VizServer) ConnectToDatabase(dst ...any) *gorm.DB {
 		time.Sleep(2 * time.Second)
 	}
 
+	// Manual migrations before AutoMigrate
+	db.MigrateUsersTable(client, logger)
+
 	dbError = client.AutoMigrate(dst...)
 	if dbError != nil {
 		logger.Error("error running auto-migration", slog.Any("error", dbError))

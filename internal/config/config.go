@@ -2,9 +2,9 @@ package config
 
 import (
 	"fmt"
+	"strings"
 	libos "viz/internal/os"
 	"viz/internal/utils"
-	"strings"
 
 	"github.com/spf13/viper"
 )
@@ -42,6 +42,7 @@ func ReadConfig() (viper.Viper, error) {
 	v.SetDefault("servers.viz.port", 7777)
 
 	v.SetDefault("logging.level", "debug")
+	v.SetDefault("logging.timezone", "utc")
 
 	v.SetDefault("database.location", "database")
 	v.SetDefault("database.port", 5432)
@@ -91,6 +92,7 @@ func ReadConfig() (viper.Viper, error) {
 			return viper.Viper{}, fmt.Errorf("error reading config file: %w", err)
 		}
 	}
+
 	return *v, nil
 }
 

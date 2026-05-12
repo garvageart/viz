@@ -188,7 +188,7 @@ func RunJobQueue(cfg config.QueueConfig, logger *slog.Logger, workers ...*Worker
 			},
 			Logger,
 		)
-		
+
 		if err != nil {
 			panic(err)
 		}
@@ -225,7 +225,7 @@ func RunJobQueue(cfg config.QueueConfig, logger *slog.Logger, workers ...*Worker
 	if err != nil {
 		panic(err)
 	}
-	
+
 	// Router level middleware are executed for every message sent to the router
 	Router.AddMiddleware(
 		// CorrelationID will copy the correlation id from the incoming message's metadata to the produced messages

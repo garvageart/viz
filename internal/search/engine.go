@@ -74,7 +74,7 @@ func (e *Engine) Apply(db *gorm.DB, criteria SearchCriteria) *gorm.DB {
 	// 4. User Filters (e.g. owner:john)
 	if user, ok := criteria.Filters["owner"]; ok {
 		query = query.Joins("JOIN users ON users.uid = images.owner_id").
-			Where("users.username = ?", user)
+			Where("users.name = ?", user)
 	}
 
 	// Status
@@ -128,7 +128,7 @@ func (e *Engine) ApplyCollections(db *gorm.DB, criteria SearchCriteria) *gorm.DB
 	// 2. User Filters
 	if user, ok := criteria.Filters["owner"]; ok {
 		query = query.Joins("JOIN users ON users.uid = collections.owner_id").
-			Where("users.username = ?", user)
+			Where("users.name = ?", user)
 	}
 
 	// Status

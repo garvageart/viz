@@ -1378,7 +1378,7 @@ func DefaultMagickloadOptions() *MagickloadOptions {
 	}
 }
 
-// NewMagickload vips_magickload load file with ImageMagick
+// NewMagickload vips_magickload load file with ImageMagick7
 //
 // The filename specifies filename to load from.
 func NewMagickload(filename string, options *MagickloadOptions) (*Image, error) {
@@ -1422,7 +1422,7 @@ func DefaultMagickloadBufferOptions() *MagickloadBufferOptions {
 	}
 }
 
-// NewMagickloadBuffer vips_magickload_buffer load buffer with ImageMagick
+// NewMagickloadBuffer vips_magickload_buffer load buffer with ImageMagick7
 func NewMagickloadBuffer(buf []byte, options *MagickloadBufferOptions) (*Image, error) {
 	Startup(nil)
 	if len(buf) == 0 {
@@ -1467,7 +1467,7 @@ func DefaultMagickloadSourceOptions() *MagickloadSourceOptions {
 	}
 }
 
-// NewMagickloadSource vips_magickload_source load source with ImageMagick
+// NewMagickloadSource vips_magickload_source load source with ImageMagick7
 //
 // The source specifies source to load from.
 func NewMagickloadSource(source *Source, options *MagickloadSourceOptions) (*Image, error) {
@@ -2003,80 +2003,6 @@ func NewMatrixloadSource(source *Source, options *MatrixloadSourceOptions) (*Ima
 		return nil, err
 	}
 	return newImageRef(vipsImage, ImageTypeMatrix, nil), nil
-}
-
-// NiftiloadOptions optional arguments for vips_niftiload
-type NiftiloadOptions struct {
-	// Memory Force open via memory
-	Memory bool
-	// Access Required access pattern for this file
-	Access Access
-	// FailOn Error level to fail on
-	FailOn FailOn
-	// Revalidate Don't use a cached result for this operation
-	Revalidate bool
-}
-
-// DefaultNiftiloadOptions creates default value for vips_niftiload optional arguments
-func DefaultNiftiloadOptions() *NiftiloadOptions {
-	return &NiftiloadOptions{
-	}
-}
-
-// NewNiftiload vips_niftiload load NIfTI volume
-//
-// The filename specifies filename to load from.
-func NewNiftiload(filename string, options *NiftiloadOptions) (*Image, error) {
-	Startup(nil)
-	if options != nil {
-		vipsImage, err := vipsgenNiftiloadWithOptions(filename, options.Memory, options.Access, options.FailOn, options.Revalidate)
-		if err != nil {
-			return nil, err
-		}
-		return newImageRef(vipsImage, ImageTypeUnknown, nil), nil
-	}
-	vipsImage, err := vipsgenNiftiload(filename)
-	if err != nil {
-		return nil, err
-	}
-	return newImageRef(vipsImage, ImageTypeUnknown, nil), nil
-}
-
-// NiftiloadSourceOptions optional arguments for vips_niftiload_source
-type NiftiloadSourceOptions struct {
-	// Memory Force open via memory
-	Memory bool
-	// Access Required access pattern for this file
-	Access Access
-	// FailOn Error level to fail on
-	FailOn FailOn
-	// Revalidate Don't use a cached result for this operation
-	Revalidate bool
-}
-
-// DefaultNiftiloadSourceOptions creates default value for vips_niftiload_source optional arguments
-func DefaultNiftiloadSourceOptions() *NiftiloadSourceOptions {
-	return &NiftiloadSourceOptions{
-	}
-}
-
-// NewNiftiloadSource vips_niftiload_source load NIfTI volumes
-//
-// The source specifies source to load from.
-func NewNiftiloadSource(source *Source, options *NiftiloadSourceOptions) (*Image, error) {
-	Startup(nil)
-	if options != nil {
-		vipsImage, err := vipsgenNiftiloadSourceWithOptions(source.src, options.Memory, options.Access, options.FailOn, options.Revalidate)
-		if err != nil {
-			return nil, err
-		}
-		return newImageRef(vipsImage, ImageTypeUnknown, nil), nil
-	}
-	vipsImage, err := vipsgenNiftiloadSource(source.src)
-	if err != nil {
-		return nil, err
-	}
-	return newImageRef(vipsImage, ImageTypeUnknown, nil), nil
 }
 
 // OpenexrloadOptions optional arguments for vips_openexrload
@@ -5924,172 +5850,6 @@ func (r *Image) Getpoint(x int, y int, options *GetpointOptions) ([]float64, err
 	return outArray, nil
 }
 
-// GifsaveOptions optional arguments for vips_gifsave
-type GifsaveOptions struct {
-	// Dither Amount of dithering
-	Dither float64
-	// Effort Quantisation effort
-	Effort int
-	// Bitdepth Number of bits per pixel
-	Bitdepth int
-	// InterframeMaxerror Maximum inter-frame error for transparency
-	InterframeMaxerror float64
-	// Reuse Reuse palette from input
-	Reuse bool
-	// InterpaletteMaxerror Maximum inter-palette error for palette reusage
-	InterpaletteMaxerror float64
-	// Interlace Generate an interlaced (progressive) GIF
-	Interlace bool
-	// KeepDuplicateFrames Keep duplicate frames in the output instead of combining them
-	KeepDuplicateFrames bool
-	// Keep Which metadata to retain
-	Keep Keep
-	// Background Background value
-	Background []float64
-	// PageHeight Set page height for multipage save
-	PageHeight int
-	// Profile Filename of ICC profile to embed
-	Profile string
-}
-
-// DefaultGifsaveOptions creates default value for vips_gifsave optional arguments
-func DefaultGifsaveOptions() *GifsaveOptions {
-	return &GifsaveOptions{
-		Dither: 1,
-		Effort: 7,
-		Bitdepth: 8,
-		InterpaletteMaxerror: 3,
-	}
-}
-
-// Gifsave vips_gifsave save as gif
-//
-// The filename specifies filename to save to.
-func (r *Image) Gifsave(filename string, options *GifsaveOptions) (error) {
-	if options != nil {
-		err := vipsgenGifsaveWithOptions(r.image, filename, options.Dither, options.Effort, options.Bitdepth, options.InterframeMaxerror, options.Reuse, options.InterpaletteMaxerror, options.Interlace, options.KeepDuplicateFrames, options.Keep, options.Background, options.PageHeight, options.Profile)
-		if err != nil {
-			return err
-		}
-		return nil
-	}
-	err := vipsgenGifsave(r.image, filename)
-	if err != nil {
-		return err
-	}
-	return nil
-}
-
-// GifsaveBufferOptions optional arguments for vips_gifsave_buffer
-type GifsaveBufferOptions struct {
-	// Dither Amount of dithering
-	Dither float64
-	// Effort Quantisation effort
-	Effort int
-	// Bitdepth Number of bits per pixel
-	Bitdepth int
-	// InterframeMaxerror Maximum inter-frame error for transparency
-	InterframeMaxerror float64
-	// Reuse Reuse palette from input
-	Reuse bool
-	// InterpaletteMaxerror Maximum inter-palette error for palette reusage
-	InterpaletteMaxerror float64
-	// Interlace Generate an interlaced (progressive) GIF
-	Interlace bool
-	// KeepDuplicateFrames Keep duplicate frames in the output instead of combining them
-	KeepDuplicateFrames bool
-	// Keep Which metadata to retain
-	Keep Keep
-	// Background Background value
-	Background []float64
-	// PageHeight Set page height for multipage save
-	PageHeight int
-	// Profile Filename of ICC profile to embed
-	Profile string
-}
-
-// DefaultGifsaveBufferOptions creates default value for vips_gifsave_buffer optional arguments
-func DefaultGifsaveBufferOptions() *GifsaveBufferOptions {
-	return &GifsaveBufferOptions{
-		Dither: 1,
-		Effort: 7,
-		Bitdepth: 8,
-		InterpaletteMaxerror: 3,
-	}
-}
-
-// GifsaveBuffer vips_gifsave_buffer save as gif
-func (r *Image) GifsaveBuffer(options *GifsaveBufferOptions) ([]byte, error) {
-	if options != nil {
-		buf, err := vipsgenGifsaveBufferWithOptions(r.image, options.Dither, options.Effort, options.Bitdepth, options.InterframeMaxerror, options.Reuse, options.InterpaletteMaxerror, options.Interlace, options.KeepDuplicateFrames, options.Keep, options.Background, options.PageHeight, options.Profile)
-		if err != nil {
-			return nil, err
-		}
-		return buf, nil
-	}
-	buf, err := vipsgenGifsaveBuffer(r.image)
-	if err != nil {
-		return nil, err
-	}
-	return buf, nil
-}
-
-// GifsaveTargetOptions optional arguments for vips_gifsave_target
-type GifsaveTargetOptions struct {
-	// Dither Amount of dithering
-	Dither float64
-	// Effort Quantisation effort
-	Effort int
-	// Bitdepth Number of bits per pixel
-	Bitdepth int
-	// InterframeMaxerror Maximum inter-frame error for transparency
-	InterframeMaxerror float64
-	// Reuse Reuse palette from input
-	Reuse bool
-	// InterpaletteMaxerror Maximum inter-palette error for palette reusage
-	InterpaletteMaxerror float64
-	// Interlace Generate an interlaced (progressive) GIF
-	Interlace bool
-	// KeepDuplicateFrames Keep duplicate frames in the output instead of combining them
-	KeepDuplicateFrames bool
-	// Keep Which metadata to retain
-	Keep Keep
-	// Background Background value
-	Background []float64
-	// PageHeight Set page height for multipage save
-	PageHeight int
-	// Profile Filename of ICC profile to embed
-	Profile string
-}
-
-// DefaultGifsaveTargetOptions creates default value for vips_gifsave_target optional arguments
-func DefaultGifsaveTargetOptions() *GifsaveTargetOptions {
-	return &GifsaveTargetOptions{
-		Dither: 1,
-		Effort: 7,
-		Bitdepth: 8,
-		InterpaletteMaxerror: 3,
-	}
-}
-
-// GifsaveTarget vips_gifsave_target save as gif
-//
-// The target specifies target to save to.
-func (r *Image) GifsaveTarget(target *Target, options *GifsaveTargetOptions) (error) {
-	if options != nil {
-		err := vipsgenGifsaveTargetWithOptions(r.image, target.target, options.Dither, options.Effort, options.Bitdepth, options.InterframeMaxerror, options.Reuse, options.InterpaletteMaxerror, options.Interlace, options.KeepDuplicateFrames, options.Keep, options.Background, options.PageHeight, options.Profile)
-		if err != nil {
-			return err
-		}
-		return nil
-	}
-	err := vipsgenGifsaveTarget(r.image, target.target)
-	if err != nil {
-		return err
-	}
-	return nil
-}
-
 // GlobalbalanceOptions optional arguments for vips_globalbalance
 type GlobalbalanceOptions struct {
 	// Gamma Image gamma
@@ -6206,7 +5966,7 @@ type HeifsaveOptions struct {
 func DefaultHeifsaveOptions() *HeifsaveOptions {
 	return &HeifsaveOptions{
 		Q: 50,
-		Bitdepth: 8,
+		Bitdepth: 12,
 		Compression: HeifCompression(1),
 		Effort: 4,
 	}
@@ -6262,7 +6022,7 @@ type HeifsaveBufferOptions struct {
 func DefaultHeifsaveBufferOptions() *HeifsaveBufferOptions {
 	return &HeifsaveBufferOptions{
 		Q: 50,
-		Bitdepth: 8,
+		Bitdepth: 12,
 		Compression: HeifCompression(1),
 		Effort: 4,
 	}
@@ -6316,7 +6076,7 @@ type HeifsaveTargetOptions struct {
 func DefaultHeifsaveTargetOptions() *HeifsaveTargetOptions {
 	return &HeifsaveTargetOptions{
 		Q: 50,
-		Bitdepth: 8,
+		Bitdepth: 12,
 		Compression: HeifCompression(1),
 		Effort: 4,
 	}
@@ -8219,42 +7979,6 @@ func (r *Image) Multiply(right *Image) (error) {
 		return err
 	}
 	r.setImage(out)
-	return nil
-}
-
-// NiftisaveOptions optional arguments for vips_niftisave
-type NiftisaveOptions struct {
-	// Keep Which metadata to retain
-	Keep Keep
-	// Background Background value
-	Background []float64
-	// PageHeight Set page height for multipage save
-	PageHeight int
-	// Profile Filename of ICC profile to embed
-	Profile string
-}
-
-// DefaultNiftisaveOptions creates default value for vips_niftisave optional arguments
-func DefaultNiftisaveOptions() *NiftisaveOptions {
-	return &NiftisaveOptions{
-	}
-}
-
-// Niftisave vips_niftisave save image to nifti file
-//
-// The filename specifies filename to save to.
-func (r *Image) Niftisave(filename string, options *NiftisaveOptions) (error) {
-	if options != nil {
-		err := vipsgenNiftisaveWithOptions(r.image, filename, options.Keep, options.Background, options.PageHeight, options.Profile)
-		if err != nil {
-			return err
-		}
-		return nil
-	}
-	err := vipsgenNiftisave(r.image, filename)
-	if err != nil {
-		return err
-	}
 	return nil
 }
 

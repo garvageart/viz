@@ -292,15 +292,6 @@ int vipsgen_gifload_buffer_with_options(void* buf, size_t len, VipsImage** out, 
 int vipsgen_gifload_source(VipsSourceCustom* source, VipsImage** out);
 int vipsgen_gifload_source_with_options(VipsSourceCustom* source, VipsImage** out, gint n, gint page, gboolean memory, VipsAccess access, VipsFailOn fail_on, gboolean revalidate);
 
-int vipsgen_gifsave(VipsImage* in, const char* filename);
-int vipsgen_gifsave_with_options(VipsImage* in, const char* filename, double dither, gint effort, gint bitdepth, double interframe_maxerror, gboolean reuse, double interpalette_maxerror, gboolean interlace, gboolean keep_duplicate_frames, VipsForeignKeep keep, double* background, int background_n, gint page_height, const char* profile);
-
-int vipsgen_gifsave_buffer(VipsImage* in, void** buf, size_t* len);
-int vipsgen_gifsave_buffer_with_options(VipsImage* in, void** buf, size_t* len, double dither, gint effort, gint bitdepth, double interframe_maxerror, gboolean reuse, double interpalette_maxerror, gboolean interlace, gboolean keep_duplicate_frames, VipsForeignKeep keep, double* background, int background_n, gint page_height, const char* profile);
-
-int vipsgen_gifsave_target(VipsImage* in, VipsTargetCustom* target);
-int vipsgen_gifsave_target_with_options(VipsImage* in, VipsTargetCustom* target, double dither, gint effort, gint bitdepth, double interframe_maxerror, gboolean reuse, double interpalette_maxerror, gboolean interlace, gboolean keep_duplicate_frames, VipsForeignKeep keep, double* background, int background_n, gint page_height, const char* profile);
-
 int vipsgen_globalbalance(VipsImage* in, VipsImage** out);
 int vipsgen_globalbalance_with_options(VipsImage* in, VipsImage** out, double gamma, gboolean int_output);
 
@@ -568,15 +559,6 @@ int vipsgen_msb(VipsImage* in, VipsImage** out);
 int vipsgen_msb_with_options(VipsImage* in, VipsImage** out, gint band);
 
 int vipsgen_multiply(VipsImage* left, VipsImage* right, VipsImage** out);
-
-int vipsgen_niftiload(const char* filename, VipsImage** out);
-int vipsgen_niftiload_with_options(const char* filename, VipsImage** out, gboolean memory, VipsAccess access, VipsFailOn fail_on, gboolean revalidate);
-
-int vipsgen_niftiload_source(VipsSourceCustom* source, VipsImage** out);
-int vipsgen_niftiload_source_with_options(VipsSourceCustom* source, VipsImage** out, gboolean memory, VipsAccess access, VipsFailOn fail_on, gboolean revalidate);
-
-int vipsgen_niftisave(VipsImage* in, const char* filename);
-int vipsgen_niftisave_with_options(VipsImage* in, const char* filename, VipsForeignKeep keep, double* background, int background_n, gint page_height, const char* profile);
 
 int vipsgen_openexrload(const char* filename, VipsImage** out);
 int vipsgen_openexrload_with_options(const char* filename, VipsImage** out, gboolean memory, VipsAccess access, VipsFailOn fail_on, gboolean revalidate);

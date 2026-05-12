@@ -10,7 +10,7 @@ import (
 	"viz/internal/utils"
 )
 
-func setupChiLogHandler(name string, logLevel slog.Level) []slog.Handler {
+func setupChiLogHandler(name string, logLevel slog.Level, useLocal bool) []slog.Handler {
 	httpLogFileDefaults := imalog.LogFileDefaults
 	logShowRecordEnv := os.Getenv("LOG_SHOW_RECORD")
 	shouldAddSource := logShowRecordEnv == "true"
@@ -36,6 +36,9 @@ func setupChiLogHandler(name string, logLevel slog.Level) []slog.Handler {
 		return a
 	}
 
+	// Convert time to local timezone if configured
+	replaceAttrsFunc = imalog.ConvertTimeToLocalIfEnabled(useLocal, replaceAttrsFunc)
+
 	fileHandlerOpts := &slog.HandlerOptions{
 		AddSource: true,
 		Level:     logLevel,
@@ -52,12 +55,14 @@ func setupChiLogHandler(name string, logLevel slog.Level) []slog.Handler {
 		HandlerOptions: &slog.HandlerOptions{
 			AddSource: true,
 			Level:     logLevel,
+			ReplaceAttr: imalog.ConvertTimeToLocalIfEnabled(useLocal, nil),
 		},
 	})
 
 	consoleHandlerOpts := slog.HandlerOptions{
 		AddSource: shouldAddSource,
 		Level:     logLevel,
+		ReplaceAttr: imalog.ConvertTimeToLocalIfEnabled(useLocal, nil),
 	}
 
 	var consoleLogger slog.Handler
@@ -76,8 +81,8 @@ func setupChiLogHandler(name string, logLevel slog.Level) []slog.Handler {
 	}
 }
 
-func SetupChiLogger(name string, logLevel slog.Level) *slog.Logger {
-	handlers := setupChiLogHandler(name, logLevel)
+func SetupChiLogger(name string, logLevel slog.Level, useLocal bool) *slog.Logger {
+	handlers := setupChiLogHandler(name, logLevel, useLocal)
 
 	logger := imalog.CreateLogger(handlers)
 	return logger

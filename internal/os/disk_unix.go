@@ -6,16 +6,19 @@ import (
 	"syscall"
 )
 
-// GetTotalDiskSpace returns the total disk space in bytes for the given path.
-func GetTotalDiskSpace(path string) (uint64, error) {
+// GetDiskSpace returns the free and total disk space in bytes for a given path.
+// For Unix-like systems, it uses syscall.Statfs.
+func GetDiskSpace(path string) (freeBytes uint64, totalBytes uint64, err error) {
 	fs := syscall.Statfs_t{}
-	err := syscall.Statfs(path, &fs)
+	err = syscall.Statfs(path, &fs)
 	if err != nil {
-		return 0, err
+		return 0, 0, err
 	}
-	// Calculate total disk space in bytes
-	// f_bsize is the optimal transfer block size
-	// f_blocks is the total number of blocks
-	total := fs.Blocks * uint64(fs.Bsize)
-	return total, nil
+
+	// Available blocks * block size = free space in bytes
+	freeBytes = fs.Bavail * uint64(fs.Bsize)
+	// Total blocks * block size = total space in bytes
+	totalBytes = fs.Blocks * uint64(fs.Bsize)
+
+	return freeBytes, totalBytes, nil
 }

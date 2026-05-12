@@ -33,7 +33,7 @@ func GetLevelFromString(level string) slog.Level {
 	}
 }
 
-func SetupDefaultLogHandlers(logLevel slog.Level) []slog.Handler {
+func SetupDefaultLogHandlers(logLevel slog.Level, useLocal bool) []slog.Handler {
 	logShowRecordEnv := os.Getenv("LOG_SHOW_RECORD")
 	shouldAddSource := logShowRecordEnv == "true"
 	isProduction := utils.IsProduction
@@ -44,13 +44,15 @@ func SetupDefaultLogHandlers(logLevel slog.Level) []slog.Handler {
 	}
 
 	consoleHandlerOpts := slog.HandlerOptions{
-		AddSource: shouldAddSource,
-		Level:     logLevel,
+		AddSource:   shouldAddSource,
+		Level:       logLevel,
+		ReplaceAttr: ConvertTimeToLocalIfEnabled(useLocal, nil),
 	}
 
 	fileHandlerOpts := slog.HandlerOptions{
-		AddSource: true,
-		Level:     logLevel,
+		AddSource:   true,
+		Level:       logLevel,
+		ReplaceAttr: ConvertTimeToLocalIfEnabled(useLocal, nil),
 	}
 
 	var consoleLogger slog.Handler
@@ -72,6 +74,6 @@ func CreateLogger(handlers []slog.Handler) *slog.Logger {
 	return slog.New(slogmulti.Fanout(handlers...))
 }
 
-func CreateDefaultLogger(logLevel slog.Level) *slog.Logger {
-	return CreateLogger(SetupDefaultLogHandlers(logLevel))
+func CreateDefaultLogger(logLevel slog.Level, useLocal bool) *slog.Logger {
+	return CreateLogger(SetupDefaultLogHandlers(logLevel, useLocal))
 }

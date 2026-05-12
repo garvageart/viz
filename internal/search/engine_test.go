@@ -194,7 +194,7 @@ func TestEngineApplyCollections(t *testing.T) {
 					"owner": "jane",
 				},
 			},
-			wantWhereContain: []string{"users.username = ?"},
+			wantWhereContain: []string{"users.name = ?"},
 		},
 		{
 			name: "Favourited True",

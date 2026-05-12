@@ -1892,90 +1892,6 @@ func vipsgenGifloadSourceWithOptions(source *C.VipsSourceCustom, n int, page int
 	return out, nil
 }
 
-// vipsgenGifsave vips_gifsave save as gif
-func vipsgenGifsave(in *C.VipsImage, filename string) (error) {
-	cfilename := C.CString(filename)
-	defer freeCString(cfilename)
-	if err := C.vipsgen_gifsave(in, cfilename); err != 0 {
-		return handleVipsError()
-	}
-	return nil
-}
-
-// vipsgenGifsaveWithOptions vips_gifsave save as gif with optional arguments
-func vipsgenGifsaveWithOptions(in *C.VipsImage, filename string, dither float64, effort int, bitdepth int, interframeMaxerror float64, reuse bool, interpaletteMaxerror float64, interlace bool, keepDuplicateFrames bool, keep Keep, background []float64, pageHeight int, profile string) (error) {
-	cfilename := C.CString(filename)
-	defer freeCString(cfilename)
-	cbackground, cbackgroundLength, err := convertToDoubleArray(background)
-	if err != nil {
-		return err
-	}
-	if cbackground != nil {
-		defer freeDoubleArray(cbackground)
-	}
-	cprofile := C.CString(profile)
-	defer freeCString(cprofile)
-	if err := C.vipsgen_gifsave_with_options(in, cfilename, C.double(dither), C.gint(effort), C.gint(bitdepth), C.double(interframeMaxerror), C.int(boolToInt(reuse)), C.double(interpaletteMaxerror), C.int(boolToInt(interlace)), C.int(boolToInt(keepDuplicateFrames)), C.VipsForeignKeep(keep), cbackground, cbackgroundLength, C.gint(pageHeight), cprofile); err != 0 {
-		return handleVipsError()
-	}
-	return nil
-}
-
-// vipsgenGifsaveBuffer vips_gifsave_buffer save as gif
-func vipsgenGifsaveBuffer(in *C.VipsImage) ([]byte, error) {
-	var buf unsafe.Pointer
-	var length C.size_t
-	if err := C.vipsgen_gifsave_buffer(in, &buf, &length); err != 0 {
-		return nil, handleVipsError()
-	}
-	return bufferToBytes(buf, length), nil
-}
-
-// vipsgenGifsaveBufferWithOptions vips_gifsave_buffer save as gif with optional arguments
-func vipsgenGifsaveBufferWithOptions(in *C.VipsImage, dither float64, effort int, bitdepth int, interframeMaxerror float64, reuse bool, interpaletteMaxerror float64, interlace bool, keepDuplicateFrames bool, keep Keep, background []float64, pageHeight int, profile string) ([]byte, error) {
-	var buf unsafe.Pointer
-	var length C.size_t
-	cbackground, cbackgroundLength, err := convertToDoubleArray(background)
-	if err != nil {
-		return nil, err
-	}
-	if cbackground != nil {
-		defer freeDoubleArray(cbackground)
-	}
-	cprofile := C.CString(profile)
-	defer freeCString(cprofile)
-	if err := C.vipsgen_gifsave_buffer_with_options(in, &buf, &length, C.double(dither), C.gint(effort), C.gint(bitdepth), C.double(interframeMaxerror), C.int(boolToInt(reuse)), C.double(interpaletteMaxerror), C.int(boolToInt(interlace)), C.int(boolToInt(keepDuplicateFrames)), C.VipsForeignKeep(keep), cbackground, cbackgroundLength, C.gint(pageHeight), cprofile); err != 0 {
-		return nil, handleVipsError()
-	}
-	return bufferToBytes(buf, length), nil
-}
-
-// vipsgenGifsaveTarget vips_gifsave_target save as gif
-func vipsgenGifsaveTarget(in *C.VipsImage, target *C.VipsTargetCustom) (error) {
-	
-	if err := C.vipsgen_gifsave_target(in, target); err != 0 {
-		return handleVipsError()
-	}
-	return nil
-}
-
-// vipsgenGifsaveTargetWithOptions vips_gifsave_target save as gif with optional arguments
-func vipsgenGifsaveTargetWithOptions(in *C.VipsImage, target *C.VipsTargetCustom, dither float64, effort int, bitdepth int, interframeMaxerror float64, reuse bool, interpaletteMaxerror float64, interlace bool, keepDuplicateFrames bool, keep Keep, background []float64, pageHeight int, profile string) (error) {
-	cbackground, cbackgroundLength, err := convertToDoubleArray(background)
-	if err != nil {
-		return err
-	}
-	if cbackground != nil {
-		defer freeDoubleArray(cbackground)
-	}
-	cprofile := C.CString(profile)
-	defer freeCString(cprofile)
-	if err := C.vipsgen_gifsave_target_with_options(in, target, C.double(dither), C.gint(effort), C.gint(bitdepth), C.double(interframeMaxerror), C.int(boolToInt(reuse)), C.double(interpaletteMaxerror), C.int(boolToInt(interlace)), C.int(boolToInt(keepDuplicateFrames)), C.VipsForeignKeep(keep), cbackground, cbackgroundLength, C.gint(pageHeight), cprofile); err != 0 {
-		return handleVipsError()
-	}
-	return nil
-}
-
 // vipsgenGlobalbalance vips_globalbalance global balance an image mosaic
 func vipsgenGlobalbalance(in *C.VipsImage) (*C.VipsImage, error) {
 	var out *C.VipsImage
@@ -3141,7 +3057,7 @@ func vipsgenLogmatWithOptions(sigma float64, minAmpl float64, separable bool, pr
 	return out, nil
 }
 
-// vipsgenMagickload vips_magickload load file with ImageMagick
+// vipsgenMagickload vips_magickload load file with ImageMagick7
 func vipsgenMagickload(filename string) (*C.VipsImage, error) {
 	var out *C.VipsImage
 	cfilename := C.CString(filename)
@@ -3152,7 +3068,7 @@ func vipsgenMagickload(filename string) (*C.VipsImage, error) {
 	return out, nil
 }
 
-// vipsgenMagickloadWithOptions vips_magickload load file with ImageMagick with optional arguments
+// vipsgenMagickloadWithOptions vips_magickload load file with ImageMagick7 with optional arguments
 func vipsgenMagickloadWithOptions(filename string, density string, page int, n int, memory bool, access Access, failOn FailOn, revalidate bool) (*C.VipsImage, error) {
 	var out *C.VipsImage
 	cfilename := C.CString(filename)
@@ -3165,7 +3081,7 @@ func vipsgenMagickloadWithOptions(filename string, density string, page int, n i
 	return out, nil
 }
 
-// vipsgenMagickloadBuffer vips_magickload_buffer load buffer with ImageMagick
+// vipsgenMagickloadBuffer vips_magickload_buffer load buffer with ImageMagick7
 func vipsgenMagickloadBuffer(buf []byte) (*C.VipsImage, error) {
 	src := buf
 	// Reference src here so it's not garbage collected during image initialization.
@@ -3177,7 +3093,7 @@ func vipsgenMagickloadBuffer(buf []byte) (*C.VipsImage, error) {
 	return out, nil
 }
 
-// vipsgenMagickloadBufferWithOptions vips_magickload_buffer load buffer with ImageMagick with optional arguments
+// vipsgenMagickloadBufferWithOptions vips_magickload_buffer load buffer with ImageMagick7 with optional arguments
 func vipsgenMagickloadBufferWithOptions(buf []byte, density string, page int, n int, memory bool, access Access, failOn FailOn, revalidate bool) (*C.VipsImage, error) {
 	src := buf
 	// Reference src here so it's not garbage collected during image initialization.
@@ -3191,7 +3107,7 @@ func vipsgenMagickloadBufferWithOptions(buf []byte, density string, page int, n 
 	return out, nil
 }
 
-// vipsgenMagickloadSource vips_magickload_source load source with ImageMagick
+// vipsgenMagickloadSource vips_magickload_source load source with ImageMagick7
 func vipsgenMagickloadSource(source *C.VipsSourceCustom) (*C.VipsImage, error) {
 	var out *C.VipsImage
 	if err := C.vipsgen_magickload_source(source, &out); err != 0 {
@@ -3200,7 +3116,7 @@ func vipsgenMagickloadSource(source *C.VipsSourceCustom) (*C.VipsImage, error) {
 	return out, nil
 }
 
-// vipsgenMagickloadSourceWithOptions vips_magickload_source load source with ImageMagick with optional arguments
+// vipsgenMagickloadSourceWithOptions vips_magickload_source load source with ImageMagick7 with optional arguments
 func vipsgenMagickloadSourceWithOptions(source *C.VipsSourceCustom, density string, page int, n int, memory bool, access Access, failOn FailOn, revalidate bool) (*C.VipsImage, error) {
 	var out *C.VipsImage
 	cdensity := C.CString(density)
@@ -3940,75 +3856,6 @@ func vipsgenMultiply(left *C.VipsImage, right *C.VipsImage) (*C.VipsImage, error
 		return nil, handleImageError(out)
 	}
 	return out, nil
-}
-
-// vipsgenNiftiload vips_niftiload load NIfTI volume
-func vipsgenNiftiload(filename string) (*C.VipsImage, error) {
-	var out *C.VipsImage
-	cfilename := C.CString(filename)
-	defer freeCString(cfilename)
-	if err := C.vipsgen_niftiload(cfilename, &out); err != 0 {
-		return nil, handleImageError(out)
-	}
-	return out, nil
-}
-
-// vipsgenNiftiloadWithOptions vips_niftiload load NIfTI volume with optional arguments
-func vipsgenNiftiloadWithOptions(filename string, memory bool, access Access, failOn FailOn, revalidate bool) (*C.VipsImage, error) {
-	var out *C.VipsImage
-	cfilename := C.CString(filename)
-	defer freeCString(cfilename)
-	if err := C.vipsgen_niftiload_with_options(cfilename, &out, C.int(boolToInt(memory)), C.VipsAccess(access), C.VipsFailOn(failOn), C.int(boolToInt(revalidate))); err != 0 {
-		return nil, handleImageError(out)
-	}
-	return out, nil
-}
-
-// vipsgenNiftiloadSource vips_niftiload_source load NIfTI volumes
-func vipsgenNiftiloadSource(source *C.VipsSourceCustom) (*C.VipsImage, error) {
-	var out *C.VipsImage
-	if err := C.vipsgen_niftiload_source(source, &out); err != 0 {
-		return nil, handleImageError(out)
-	}
-	return out, nil
-}
-
-// vipsgenNiftiloadSourceWithOptions vips_niftiload_source load NIfTI volumes with optional arguments
-func vipsgenNiftiloadSourceWithOptions(source *C.VipsSourceCustom, memory bool, access Access, failOn FailOn, revalidate bool) (*C.VipsImage, error) {
-	var out *C.VipsImage
-	if err := C.vipsgen_niftiload_source_with_options(source, &out, C.int(boolToInt(memory)), C.VipsAccess(access), C.VipsFailOn(failOn), C.int(boolToInt(revalidate))); err != 0 {
-		return nil, handleImageError(out)
-	}
-	return out, nil
-}
-
-// vipsgenNiftisave vips_niftisave save image to nifti file
-func vipsgenNiftisave(in *C.VipsImage, filename string) (error) {
-	cfilename := C.CString(filename)
-	defer freeCString(cfilename)
-	if err := C.vipsgen_niftisave(in, cfilename); err != 0 {
-		return handleVipsError()
-	}
-	return nil
-}
-
-// vipsgenNiftisaveWithOptions vips_niftisave save image to nifti file with optional arguments
-func vipsgenNiftisaveWithOptions(in *C.VipsImage, filename string, keep Keep, background []float64, pageHeight int, profile string) (error) {
-	cfilename := C.CString(filename)
-	defer freeCString(cfilename)
-	cbackground, cbackgroundLength, err := convertToDoubleArray(background)
-	if err != nil {
-		return err
-	}
-	if cbackground != nil {
-		defer freeDoubleArray(cbackground)
-	}
-	cprofile := C.CString(profile)
-	defer freeCString(cprofile)
-	if err := C.vipsgen_niftisave_with_options(in, cfilename, C.VipsForeignKeep(keep), cbackground, cbackgroundLength, C.gint(pageHeight), cprofile); err != 0 {
-		return handleVipsError()
-	}
-	return nil
 }
 
 // vipsgenOpenexrload vips_openexrload load an OpenEXR image
