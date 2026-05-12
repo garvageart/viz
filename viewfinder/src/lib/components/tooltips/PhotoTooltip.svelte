@@ -29,7 +29,7 @@
 		</div>
 	{/if}
 	<div class="tooltip-row">
-		<span class="tooltip-value">{asset.owner?.username}</span>
+		<span class="tooltip-value">{asset.owner?.name}</span>
 	</div>
 </div>
 

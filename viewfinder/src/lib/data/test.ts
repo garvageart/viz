@@ -14,7 +14,7 @@ export function createTestUser() {
         uid: generateRandomString(8),
         first_name: faker.person.firstName(),
         last_name: faker.person.lastName(),
-        username: faker.internet.username(),
+        name: faker.internet.username(),
         email: faker.internet.email(),
         role: "user",
         created_at: faker.date.past({ years: 2 }),

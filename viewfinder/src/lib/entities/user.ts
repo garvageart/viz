@@ -4,17 +4,17 @@ class UserData {
     uid: string;
     first_name: string;
     last_name: string;
-    username: string;
+    name: string;
     email: string;
     role: UserRole;
     created_at: Date;
     updated_at: Date;
 
-    constructor(data: Partial<UserData> & Pick<UserData, 'uid' | 'username' | 'email' | 'created_at' | 'updated_at'>) {
+    constructor(data: Partial<UserData> & Pick<UserData, 'uid' | 'name' | 'email' | 'created_at' | 'updated_at'>) {
         this.uid = data.uid;
         this.first_name = data.first_name ?? '';
         this.last_name = data.last_name ?? '';
-        this.username = data.username;
+        this.name = data.name;
         this.email = data.email;
         this.role = data.role || 'user';
         this.created_at = data.created_at;

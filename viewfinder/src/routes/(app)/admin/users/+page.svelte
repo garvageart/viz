@@ -8,44 +8,21 @@
 	import Button from "$lib/components/Button.svelte";
 	import MaterialIcon from "$lib/components/MaterialIcon.svelte";
 	import ConfirmationModal from "$lib/components/modals/ConfirmationModal.svelte";
-	import ModalContainer from "$lib/components/modals/ModalContainer.svelte";
-	import InputSelect from "$lib/components/dom/InputSelect.svelte";
-	import InputText from "$lib/components/dom/InputText.svelte";
 	import SliderToggle from "$lib/components/SliderToggle.svelte";
-	import { modal, user as currentUserState } from "$lib/states/index.svelte";
+	import { user as currentUserState } from "$lib/states/index.svelte";
 	import { toastState } from "$lib/toast-notifcations/notif-state.svelte";
 	import type { UserRole } from "$lib/types/users.js";
 	import { DateTime } from "luxon";
 	import AdminRouteShell from "$lib/components/admin/AdminRouteShell.svelte";
+	import { modalsManager } from "$lib/components/modals/manager/ModalManager.svelte";
+	import UserCreateModal from "$lib/components/modals/UserCreateModal.svelte";
+	import UserEditModal from "$lib/components/modals/UserEditModal.svelte";
 
 	let { data } = $props();
 	let users = $derived(data.users);
 
-	let showEditModal = $state(false);
-	let editingUser = $state<User | null>(null);
-
-	type EditForm = Omit<User, "uid" | "created_at" | "updated_at">;
-
-	let editForm = $state<EditForm>({
-		first_name: "",
-		last_name: "",
-		username: "",
-		email: "",
-		role: "user"
-	});
-
-	let showDeleteConfirm = $state(false);
-	let deletingUser = $state<User | null>(null);
-	let forceDeleteToggle = $state<"on" | "off">("off");
-	let forceDelete = $derived(forceDeleteToggle === "off" ? false : true);
-
-	let showCreateModal = $state(false);
-	let creatingUser = $state(false);
-	let createForm = $state({
-		name: "",
-		email: "",
-		password: "",
-		role: "user"
+	$effect(() => {
+		users = data.users;
 	});
 
 	function formatDate(dateStr: string) {
@@ -53,111 +30,85 @@
 	}
 
 	function openCreateModal() {
-		createForm = {
-			name: "",
-			email: "",
-			password: "",
-			role: "user"
-		};
-		showCreateModal = true;
-		modal.show = true;
-	}
+		modalsManager.open(
+			UserCreateModal,
+			{
+				onSave: async (createForm) => {
+					if (!createForm.name || !createForm.email || !createForm.password) {
+						toastState.addToast({
+							message: "Please fill in all required fields",
+							type: "error"
+						});
+						throw new Error("Validation failed");
+					}
 
-	function closeCreateModal() {
-		showCreateModal = false;
-		modal.show = false;
-	}
+					const res = await adminCreateUser({
+						name: createForm.name,
+						email: createForm.email,
+						password: createForm.password,
+						role: createForm.role as UserRole
+					});
 
-	async function handleCreateUser() {
-		if (!createForm.name || !createForm.email || !createForm.password) {
-			toastState.addToast({
-				message: "Please fill in all required fields",
-				type: "error"
-			});
-			return;
-		}
-
-		creatingUser = true;
-		try {
-			const res = await adminCreateUser({
-				name: createForm.name,
-				email: createForm.email,
-				password: createForm.password,
-				role: createForm.role as UserRole
-			});
-
-			if (res.status === 201) {
-				users = [...users, res.data];
-				toastState.addToast({
-					message: "User created successfully",
-					type: "success"
-				});
-				closeCreateModal();
-			} else {
-				toastState.addToast({
-					message: res.data.error || "Failed to create user",
-					type: "error"
-				});
-			}
-		} catch (e) {
-			toastState.addToast({ message: "Error creating user", type: "error" });
-		} finally {
-			creatingUser = false;
-		}
+					if (res.status === 201) {
+						users = [...users, res.data];
+						toastState.addToast({
+							message: "User created successfully",
+							type: "success"
+						});
+					} else {
+						toastState.addToast({
+							message: res.data.error || "Failed to create user",
+							type: "error"
+						});
+						throw new Error(res.data.error);
+					}
+				}
+			},
+			{ heading: "Create User" }
+		);
 	}
 
 	function openEditModal(user: User) {
-		editingUser = user;
-		editForm = {
-			first_name: user.first_name,
-			last_name: user.last_name,
-			username: user.username,
-			email: user.email,
-			role: user.role
-		};
-		showEditModal = true;
-		modal.show = true;
-	}
+		modalsManager.open(
+			UserEditModal,
+			{
+				user,
+				onSave: async (editForm) => {
+					const res = await adminUpdateUser(user.uid, {
+						first_name: editForm.first_name,
+						last_name: editForm.last_name,
+						name: editForm.name,
+						email: editForm.email,
+						role: editForm.role as UserRole
+					});
 
-	function closeEditModal() {
-		showEditModal = false;
-		modal.show = false;
-		editingUser = null;
-	}
-
-	async function handleUpdateUser() {
-		if (!editingUser) return;
-
-		try {
-			const res = await adminUpdateUser(editingUser.uid, {
-				first_name: editForm.first_name,
-				last_name: editForm.last_name,
-				username: editForm.username,
-				email: editForm.email,
-				role: editForm.role as UserRole
-			});
-
-			if (res.status === 200) {
-				// Update local list
-				const idx = users.findIndex((u) => u.uid === res.data.uid);
-				if (idx !== -1) {
-					users[idx] = res.data;
+					if (res.status === 200) {
+						// Update local list
+						const idx = users.findIndex((u) => u.uid === res.data.uid);
+						if (idx !== -1) {
+							users[idx] = res.data;
+						}
+						toastState.addToast({
+							message: "User updated successfully",
+							type: "success"
+						});
+					} else {
+						toastState.addToast({
+							message: res.data.error || "Failed to update user",
+							type: "error"
+						});
+						throw new Error(res.data.error);
+					}
 				}
-				toastState.addToast({
-					message: "User updated successfully",
-					type: "success"
-				});
-				closeEditModal();
-			} else {
-				toastState.addToast({
-					message: res.data.error || "Failed to update user",
-					type: "error"
-				});
-			}
-		} catch (e) {
-			toastState.addToast({ message: "Error updating user", type: "error" });
-		}
+			},
+			{ heading: "Edit User" }
+		);
 	}
+
+	// State for delete modal
+	let userToDelete = $state<User | null>(null);
+	let forceDeleteToggle = $state<"on" | "off">("off");
+	let forceDelete = $derived(forceDeleteToggle === "on");
 
 	function openDeleteConfirm(user: User) {
 		if (user.uid === currentUserState.data?.uid) {
@@ -168,50 +119,78 @@
 			return;
 		}
 
-		deletingUser = user;
-		forceDelete = false;
-		showDeleteConfirm = true;
-		modal.show = true;
-	}
+		userToDelete = user;
+		forceDeleteToggle = "off";
 
-	function closeDeleteConfirm() {
-		showDeleteConfirm = false;
-		modal.show = false;
-		deletingUser = null;
-	}
+		modalsManager.open(
+			ConfirmationModal,
+			{
+				title: "Delete User",
+				get confirmText() {
+					return forceDelete ? "Force Delete User" : "Delete User";
+				},
+				onConfirm: async () => {
+					if (!userToDelete) return;
+					const res = await adminDeleteUser(userToDelete.uid, {
+						force: forceDelete
+					});
 
-	async function handleDeleteUser() {
-		if (!deletingUser) {
-			return;
-		}
-
-		try {
-			const res = await adminDeleteUser(deletingUser.uid, {
-				force: forceDelete
-			});
-
-			if (res.status === 200) {
-				users = users.filter((u) => u.uid !== deletingUser?.uid);
-				toastState.addToast({
-					message: "User deleted successfully",
-					type: "success"
-				});
-				closeDeleteConfirm();
-			} else {
-				toastState.addToast({
-					message: res.data.error || "Failed to delete user",
-					type: "error"
-				});
-			}
-		} catch (e) {
-			toastState.addToast({ message: "Error deleting user", type: "error" });
-		}
+					if (res.status === 200) {
+						users = users.filter((u) => u.uid !== userToDelete?.uid);
+						toastState.addToast({
+							message: "User deleted successfully",
+							type: "success"
+						});
+					} else {
+						toastState.addToast({
+							message: res.data.error || "Failed to delete user",
+							type: "error"
+						});
+					}
+				},
+				children: deleteConfirmSnippet
+			},
+			{ heading: "Delete User" }
+		);
 	}
 </script>
 
 <svelte:head>
 	<title>Users - Admin</title>
 </svelte:head>
+
+{#snippet deleteConfirmSnippet()}
+	{#if userToDelete}
+		<span>
+			Are you sure you want to delete user <strong>{userToDelete.name}</strong>?
+		</span>
+
+		<div class="force-delete-option">
+			<SliderToggle label="Force Delete" bind:value={forceDeleteToggle} />
+		</div>
+
+		<div class="message-container">
+			{#if forceDelete}
+				<p class="warning-text">
+					<MaterialIcon iconName="warning" />
+					<span>
+						<strong>Warning:</strong> This will permanently delete the user's
+						account, all their sessions, settings, and onboarding status. This
+						action cannot be undone.
+					</span>
+				</p>
+			{:else}
+				<p class="info-text">
+					<MaterialIcon iconName="info" />
+					<span>
+						This will perform a soft delete. The user will be marked as deleted
+						but data may remain in the database.
+					</span>
+				</p>
+			{/if}
+		</div>
+	{/if}
+{/snippet}
 
 <AdminRouteShell
 	heading="User Management"
@@ -242,16 +221,10 @@
 							<td>
 								<div class="user-cell">
 									<div class="avatar-placeholder">
-										{(
-											user.username?.[0] ||
-											user.email?.[0] ||
-											"?"
-										).toUpperCase()}
+										{(user.name?.[0] || user.email?.[0] || "?").toUpperCase()}
 									</div>
 									<div class="user-info">
-										<span class="username"
-											>{user.username || "No Username"}</span
-										>
+										<span class="name">{user.name || "No Name"}</span>
 										<span class="uid" title={user.uid}>{user.uid}</span>
 									</div>
 								</div>
@@ -286,101 +259,6 @@
 		</div>
 	</section>
 </AdminRouteShell>
-
-{#if showEditModal && modal.show}
-	<ModalContainer>
-		<div class="user-modal">
-			<h2>Edit User</h2>
-			<InputText label="Username" bind:value={editForm.username} />
-			<InputText label="Email" type="email" bind:value={editForm.email} />
-			<div class="form-row">
-				<InputText label="First Name" bind:value={editForm.first_name} />
-				<InputText label="Last Name" bind:value={editForm.last_name} />
-			</div>
-			<InputSelect label="Role" bind:value={editForm.role}>
-				<option value="user">User</option>
-				<option value="admin">Admin</option>
-				<option value="superadmin">Superadmin</option>
-				<option value="guest">Guest</option>
-			</InputSelect>
-			<div class="modal-actions">
-				<Button hoverColor="var(--viz-80)" onclick={closeEditModal}
-					>Cancel</Button
-				>
-				<Button onclick={handleUpdateUser}>Save Changes</Button>
-			</div>
-		</div>
-	</ModalContainer>
-{/if}
-
-{#if showCreateModal && modal.show}
-	<ModalContainer>
-		<div class="user-modal">
-			<h2>Create User</h2>
-			<InputText label="Username" bind:value={createForm.name} />
-			<InputText label="Email" type="email" bind:value={createForm.email} />
-			<InputText
-				label="Password"
-				type="password"
-				bind:value={createForm.password}
-			/>
-			<InputSelect label="Role" bind:value={createForm.role}>
-				<option value="user">User</option>
-				<option value="admin">Admin</option>
-				<option value="superadmin">Superadmin</option>
-				<option value="guest">Guest</option>
-			</InputSelect>
-			<div class="modal-actions">
-				<Button hoverColor="var(--viz-80)" onclick={closeCreateModal}
-					>Cancel</Button
-				>
-				<Button onclick={handleCreateUser} disabled={creatingUser}>
-					{creatingUser ? "Creating..." : "Create User"}
-				</Button>
-			</div>
-		</div>
-	</ModalContainer>
-{/if}
-
-{#if showDeleteConfirm && modal.show}
-	<ConfirmationModal
-		title="Delete User"
-		confirmText={forceDelete ? "Force Delete User" : "Delete User"}
-		onConfirm={handleDeleteUser}
-		onCancel={closeDeleteConfirm}
-	>
-		<span>
-			Are you sure you want to delete user <strong
-				>{deletingUser?.username}</strong
-			>?
-		</span>
-
-		<div class="force-delete-option">
-			<SliderToggle label="Force Delete" bind:value={forceDeleteToggle} />
-		</div>
-
-		<div class="message-container">
-			{#if forceDelete}
-				<p class="warning-text">
-					<MaterialIcon iconName="warning" />
-					<span>
-						<strong>Warning:</strong> This will permanently delete the user's account,
-						all their sessions, settings, and onboarding status. This action cannot
-						be undone.
-					</span>
-				</p>
-			{:else}
-				<p class="info-text">
-					<MaterialIcon iconName="info" />
-					<span>
-						This will perform a soft delete. The user will be marked as deleted
-						but data may remain in the database.
-					</span>
-				</p>
-			{/if}
-		</div>
-	</ConfirmationModal>
-{/if}
 
 <style lang="scss">
 	.header-actions {
@@ -448,7 +326,7 @@
 		flex-direction: column;
 	}
 
-	.username {
+	.name {
 		font-weight: 500;
 	}
 
@@ -510,33 +388,6 @@
 		&.delete:hover {
 			background-color: #ef4444;
 		}
-	}
-
-	.user-modal {
-		padding: 1.5rem;
-		display: flex;
-		flex-direction: column;
-		gap: 1.5rem;
-		color: var(--viz-text-color);
-		width: 80%;
-
-		h2 {
-			margin: 0;
-			font-size: 1.5rem;
-		}
-	}
-
-	.form-row {
-		display: grid;
-		grid-template-columns: 1fr 1fr;
-		gap: 1rem;
-	}
-
-	.modal-actions {
-		display: flex;
-		justify-content: flex-end;
-		gap: 1rem;
-		margin-top: 1rem;
 	}
 
 	.force-delete-option {
