@@ -33,8 +33,8 @@ export type User = {
     first_name: string;
     /** Last name */
     last_name: string;
-    /** Username */
-    username: string;
+    /** Name */
+    name: string;
     /** Email */
     email: string;
     /** User role */
@@ -147,8 +147,8 @@ export type UserUpdate = {
     first_name?: string | null;
     /** Last name */
     last_name?: string | null;
-    /** Username */
-    username?: string | null;
+    /** Name */
+    name?: string | null;
     /** Email address */
     email?: string | null;
 };
@@ -749,8 +749,8 @@ export type AdminUserUpdate = {
     first_name?: string | null;
     /** Last name */
     last_name?: string | null;
-    /** Username */
-    username?: string | null;
+    /** Name */
+    name?: string | null;
     /** Email address */
     email?: string | null;
     /** User role */
@@ -897,8 +897,8 @@ export type SystemStatusResponse = {
     allow_manual_registration: boolean;
 };
 export type SuperadminSetupRequest = {
-    /** Desired username */
-    username: string;
+    /** Desired name */
+    name: string;
     /** Email address */
     email: string;
     /** Password */

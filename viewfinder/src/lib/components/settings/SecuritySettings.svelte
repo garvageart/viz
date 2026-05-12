@@ -1,639 +1,525 @@
 <script lang="ts">
-	import type { ApiKey, Session, SessionUpdate } from "$lib/api";
 	import {
 		deleteApiKey,
-		listApiKeys,
-		revokeApiKey,
-		updatePassword,
-		getSessions,
 		deleteSession,
-		deleteSessions,
+		getCurrentSession,
+		getSessions,
+		listApiKeys,
 		updateSession,
-		getCurrentSession
+		type ApiKey,
+		type Session
 	} from "$lib/api";
 	import Button from "$lib/components/Button.svelte";
 	import MaterialIcon from "$lib/components/MaterialIcon.svelte";
+	import ConfirmationModal from "$lib/components/modals/ConfirmationModal.svelte";
 	import CreatedApiKeyModal from "$lib/components/modals/CreatedApiKeyModal.svelte";
-	import ModalContainer from "$lib/components/modals/ModalContainer.svelte";
-	import { modal } from "$lib/states/index.svelte";
 	import { toastState } from "$lib/toast-notifcations/notif-state.svelte";
 	import { DateTime } from "luxon";
 	import { onMount } from "svelte";
-	import CustomSettingsGroup from "./CustomSettingsGroup.svelte";
-	import TextInput from "./inputs/TextInput.svelte";
+	import { modalsManager } from "../modals/manager/ModalManager.svelte";
+	import RenameSessionModal from "./RenameSessionModal.svelte";
 
-	// Password state
-	let passwordState = $state({
-		current: "",
-		new: "",
-		confirm: ""
-	});
-
-	let changingPassword = $state(false);
-
-	// API Keys State
-	let apiKeys = $state<ApiKey[]>([]);
-
-	// Session State
-	let allSessions = $state<Session[]>([]);
-	let currentSession = $state<Session | null>(null);
-	let loadingData = $state(false);
-
-	// Create Key Modal State
-	let showCreateKeyModal = $state(false);
-
-	// Edit Session Modal State
-	let showEditSessionModal = $state(false);
-	let editingSessionId = $state<string | null>(null);
-
-	interface SessionFormState {
-		clientName: string;
-		status?: number;
+	interface ExtendedSession extends Session {
+		is_current?: boolean;
+		browser?: string;
+		os?: string;
+		ip_address?: string;
+		last_active_at?: string;
 	}
-	let sessionUpdatePayload = $state<SessionFormState>({ clientName: "" });
 
-	async function handleChangePassword() {
-		if (
-			!passwordState.current ||
-			!passwordState.new ||
-			!passwordState.confirm
-		) {
-			toastState.addToast({
-				message: "All fields are required",
-				type: "error"
-			});
-			return;
-		}
+	let sessions = $state<ExtendedSession[]>([]);
+	let apiKeys = $state<ApiKey[]>([]);
+	let loading = $state(true);
 
-		if (passwordState.new !== passwordState.confirm) {
-			toastState.addToast({
-				message: "New passwords do not match",
-				type: "error"
-			});
-			return;
-		}
+	// Key deletion state
+	let deletingKey = $state<ApiKey | null>(null);
 
-		if (passwordState.new.length < 8) {
-			toastState.addToast({
-				message: "Password must be at least 8 characters long",
-				type: "error"
-			});
-			return;
-		}
+	// Session management state
+	let revokingSession = $state<ExtendedSession | null>(null);
 
-		changingPassword = true;
+	function getBrowser(ua?: string) {
+		if (!ua) return "Unknown Browser";
+		if (ua.includes("Firefox")) return "Firefox";
+		if (ua.includes("Edg")) return "Edge";
+		if (ua.includes("Chrome")) return "Chrome";
+		if (ua.includes("Safari")) return "Safari";
+		return "Unknown Browser";
+	}
 
-		const res = await updatePassword({
-			current: passwordState.current,
-			new: passwordState.new
-		});
-
-		if (res.status === 200) {
-			toastState.addToast({
-				dismissible: true,
-				message: "Password updated successfully",
-				type: "success"
-			});
-			passwordState = { current: "", new: "", confirm: "" };
-		} else {
-			toastState.addToast({
-				dismissible: true,
-				message: "Failed to update password",
-				type: "error"
-			});
-		}
-
-		changingPassword = false;
+	function getOS(ua?: string) {
+		if (!ua) return "Unknown OS";
+		if (ua.includes("Windows")) return "Windows";
+		if (ua.includes("Mac OS")) return "macOS";
+		if (ua.includes("Linux")) return "Linux";
+		if (ua.includes("Android")) return "Android";
+		if (ua.includes("iOS")) return "iOS";
+		return "Unknown OS";
 	}
 
 	async function loadData() {
-		loadingData = true;
+		loading = true;
 		try {
-			const [keysRes, allSessionsRes, currentSessionRes] = await Promise.all([
-				listApiKeys(),
+			const [sessionsRes, apiKeysRes, currentRes] = await Promise.all([
 				getSessions(),
-				getCurrentSession() // Use this to identify the current session
+				listApiKeys(),
+				getCurrentSession()
 			]);
 
-			if (keysRes.status === 200) {
-				apiKeys = keysRes.data.items || [];
+			const currentUid = currentRes.status === 200 ? currentRes.data.uid : null;
+
+			if (sessionsRes.status === 200) {
+				sessions = sessionsRes.data.map((s) => ({
+					...s,
+					is_current: s.uid === currentUid,
+					browser: getBrowser(s.user_agent),
+					os: getOS(s.user_agent),
+					ip_address: s.client_ip,
+					last_active_at: s.last_active
+				}));
 			}
-			if (allSessionsRes.status === 200) {
-				allSessions = allSessionsRes.data || [];
-			}
-			if (currentSessionRes.status === 200) {
-				currentSession = currentSessionRes.data;
+
+			if (apiKeysRes.status === 200) {
+				apiKeys = apiKeysRes.data.items;
 			}
 		} catch (e) {
-			console.error("Failed to load security data", e);
+			toastState.addToast({
+				message: "Error loading security settings",
+				type: "error"
+			});
 		} finally {
-			loadingData = false;
+			loading = false;
 		}
 	}
 
-	function handleOpenCreateKeyModal() {
-		showCreateKeyModal = true;
-		modal.show = true;
-	}
+	onMount(loadData);
 
-	function handleCreateKeyModalClose() {
-		showCreateKeyModal = false;
-		modal.show = false; // Ensure global modal state is reset
-	}
-
-	function handleKeyCreated() {
-		loadData();
-	}
-
-	async function handleDeleteKey(uid: string) {
-		if (
-			!confirm(
-				"Are you sure you want to delete this API Key? This action cannot be undone."
-			)
-		)
-			return;
-		try {
-			const res = await deleteApiKey(uid);
-			if (res.status === 200) {
-				apiKeys = apiKeys.filter((k) => k.uid !== uid);
-				toastState.addToast({ message: "API Key deleted", type: "success" });
-			} else {
-				toastState.addToast({
-					message: res.data.error || "Failed to delete key",
-					type: "error"
-				});
-			}
-		} catch (e) {
-			toastState.addToast({ message: "Failed to delete key", type: "error" });
-		}
-	}
-
-	async function handleRevokeKey(uid: string) {
-		if (
-			!confirm(
-				"Are you sure you want to revoke this API Key? It will stop working immediately."
-			)
-		)
-			return;
-		try {
-			const res = await revokeApiKey(uid);
-			if (res.status === 200) {
-				toastState.addToast({ message: "API Key revoked", type: "success" });
-				await loadData();
-			} else {
-				toastState.addToast({ message: "Failed to revoke key", type: "error" });
-			}
-		} catch (e) {
-			toastState.addToast({ message: "Failed to revoke key", type: "error" });
-		}
-	}
-
-	async function handleDeleteSession(uid: string) {
-		if (
-			!confirm(
-				"Are you sure you want to delete this session? This action cannot be undone."
-			)
-		)
-			return;
-		try {
-			const res = await deleteSession(uid);
-			if (res.status === 200) {
-				toastState.addToast({ message: "Session deleted", type: "success" });
-				await loadData(); // Refresh all sessions
-				if (currentSession && currentSession.uid === uid) {
-					window.location.reload(); // Simple logout for now
-				}
-			} else {
-				toastState.addToast({
-					message: "Failed to delete session",
-					type: "error"
-				});
-			}
-		} catch (e) {
-			toastState.addToast({
-				message: "Failed to delete session",
-				type: "error"
-			});
-		}
-	}
-
-	async function handleDeleteAllSessions() {
-		if (
-			!confirm(
-				"Are you sure you want to delete ALL your sessions? You will be logged out from all devices, including this one."
-			)
-		)
-			return;
-		try {
-			const res = await deleteSessions();
-			if (res.status === 200) {
-				toastState.addToast({
-					message: "All sessions deleted. Logging out...",
-					type: "success"
-				});
-				// Since all sessions are deleted, including current, force reload/logout
-				window.location.reload();
-			} else {
-				toastState.addToast({
-					message: "Failed to delete all sessions",
-					type: "error"
-				});
-			}
-		} catch (e) {
-			toastState.addToast({
-				message: "Failed to delete all sessions",
-				type: "error"
-			});
-		}
-	}
-
-	function handleOpenEditSessionModal(session: Session) {
-		editingSessionId = session.uid;
-		sessionUpdatePayload = {
-			clientName: session.client_name ?? "",
-			status: session.status ?? undefined
-		};
-		showEditSessionModal = true;
-		modal.show = true;
-	}
-
-	async function handleUpdateSession() {
-		if (!editingSessionId) return;
-
-		try {
-			const payload: SessionUpdate = {
-				clientName: sessionUpdatePayload.clientName,
-				status: sessionUpdatePayload.status ?? null
-			};
-			const res = await updateSession(editingSessionId, payload);
-			if (res.status === 200) {
-				toastState.addToast({ message: "Session updated", type: "success" });
-				showEditSessionModal = false;
-				modal.show = false;
-				await loadData();
-			} else {
-				toastState.addToast({
-					message: "Failed to update session",
-					type: "error"
-				});
-			}
-		} catch (e) {
-			toastState.addToast({
-				message: "Failed to update session",
-				type: "error"
-			});
-		}
-	}
-
-	function handleCloseEditSessionModal() {
-		showEditSessionModal = false;
-		editingSessionId = null;
-		modal.show = false;
-	}
-
-	onMount(() => {
-		loadData();
-	});
-
-	function formatDate(dateStr?: string | null) {
+	function formatDate(dateStr?: string) {
 		if (!dateStr) return "Never";
-		return DateTime.fromJSDate(new Date(dateStr)).toFormat(
-			"dd-MM-yyyy HH:mm:ss"
+		return DateTime.fromISO(dateStr).toRelative();
+	}
+
+	function openApiKeyModal() {
+		modalsManager.open(
+			CreatedApiKeyModal,
+			{
+				onClose: () => {},
+				onSuccess: loadData
+			},
+			{ heading: "Create API Key" }
 		);
 	}
 
-	function isCurrentSession(sessionItem: Session) {
-		return currentSession && sessionItem.uid === currentSession.uid;
+	function openDeleteKeyConfirm(key: ApiKey) {
+		deletingKey = key;
+		modalsManager.open(
+			ConfirmationModal,
+			{
+				title: "Delete API Key",
+				confirmText: "Delete Key",
+				onConfirm: handleDeleteKey,
+				children: deleteKeySnippet
+			},
+			{ heading: "Delete API Key" }
+		);
+	}
+
+	async function handleDeleteKey() {
+		if (!deletingKey) return;
+
+		try {
+			const res = await deleteApiKey(deletingKey.uid);
+			if (res.status === 200) {
+				apiKeys = apiKeys.filter((k) => k.uid !== deletingKey?.uid);
+				toastState.addToast({
+					message: "API Key deleted successfully",
+					type: "success"
+				});
+			} else {
+				toastState.addToast({
+					message: "Failed to delete API key",
+					type: "error"
+				});
+			}
+		} catch (e) {
+			toastState.addToast({ message: "Error deleting key", type: "error" });
+		} finally {
+			deletingKey = null;
+		}
+	}
+
+	function openRenameSessionModal(session: ExtendedSession) {
+		modalsManager.open(
+			RenameSessionModal,
+			{
+				initialName: session.client_name || "",
+				onRename: async (newName) => {
+					const res = await updateSession(session.uid, {
+						clientName: newName
+					} as any);
+					if (res.status === 200) {
+						sessions = sessions.map((s) =>
+							s.uid === session.uid
+								? {
+										...res.data,
+										is_current: s.is_current,
+										browser: s.browser,
+										os: s.os,
+										ip_address: res.data.client_ip,
+										last_active_at: res.data.last_active
+									}
+								: s
+						);
+						toastState.addToast({
+							message: "Session renamed successfully",
+							type: "success"
+						});
+					} else {
+						toastState.addToast({
+							message: "Failed to rename session",
+							type: "error"
+						});
+						throw new Error("Failed to rename");
+					}
+				}
+			},
+			{ heading: "Rename Session" }
+		);
+	}
+
+	function openRevokeConfirm(session: ExtendedSession) {
+		revokingSession = session;
+		modalsManager.open(
+			ConfirmationModal,
+			{
+				title: "Revoke Session",
+				confirmText: "Revoke Session",
+				onConfirm: handleRevokeSession,
+				children: revokeSessionSnippet
+			},
+			{ heading: "Revoke Session" }
+		);
+	}
+
+	async function handleRevokeSession() {
+		if (!revokingSession) return;
+
+		try {
+			const res = await deleteSession(revokingSession.uid);
+			if (res.status === 200) {
+				sessions = sessions.filter((s) => s.uid !== revokingSession?.uid);
+				toastState.addToast({
+					message: "Session revoked successfully",
+					type: "success"
+				});
+			} else {
+				toastState.addToast({
+					message: "Failed to revoke session",
+					type: "error"
+				});
+			}
+		} catch (e) {
+			toastState.addToast({ message: "Error revoking session", type: "error" });
+		} finally {
+			revokingSession = null;
+		}
 	}
 </script>
 
-{#if showCreateKeyModal && modal.show}
-	<CreatedApiKeyModal
-		onClose={handleCreateKeyModalClose}
-		onSuccess={handleKeyCreated}
-	/>
-{/if}
+{#snippet deleteKeySnippet()}
+	{#if deletingKey}
+		<span>
+			Are you sure you want to delete the API key <strong
+				>{deletingKey.name}</strong
+			>? Any applications using this key will lose access immediately.
+		</span>
+	{/if}
+{/snippet}
 
-{#if showEditSessionModal && modal.show}
-	<ModalContainer>
-		<div class="edit-session-modal-content">
-			<h3>Edit Session</h3>
-			<TextInput
-				label="Client Name"
-				bind:value={sessionUpdatePayload.clientName}
-			/>
-			<!-- Add status update here if needed -->
-			<div class="modal-actions">
-				<Button onclick={handleUpdateSession}>Update</Button>
-				<Button
-					hoverColor="var(--viz-alert-color)"
-					onclick={handleCloseEditSessionModal}>Cancel</Button
-				>
-			</div>
-		</div>
-	</ModalContainer>
-{/if}
-{#snippet changePasswordAction()}
-	<Button
-		onclick={handleChangePassword}
-		disabled={changingPassword ||
-			!passwordState.current ||
-			!passwordState.new ||
-			!passwordState.confirm}
-	>
-		{changingPassword ? "Updating..." : "Update Password"}
-	</Button>
+{#snippet revokeSessionSnippet()}
+	<span>
+		Are you sure you want to revoke this session? You will be logged out on that
+		device.
+	</span>
 {/snippet}
 
 <div class="security-settings">
-	<CustomSettingsGroup
-		title="Password"
-		description="Change your account password."
-	>
-		{#if passwordState.new && passwordState.confirm}
-			{@render changePasswordAction()}
-		{/if}
-
-		<TextInput
-			label="Current Password"
-			type="password"
-			bind:value={passwordState.current}
-			disabled={changingPassword}
-		/>
-		<TextInput
-			label="New Password"
-			type="password"
-			bind:value={passwordState.new}
-			disabled={changingPassword}
-		/>
-		<TextInput
-			label="Confirm Password"
-			type="password"
-			bind:value={passwordState.confirm}
-			disabled={changingPassword}
-		/>
-	</CustomSettingsGroup>
-
-	<CustomSettingsGroup
-		title="API Keys"
-		description="Manage API keys for accessing the Viz API."
-	>
-		{#snippet actions()}
-			<Button onclick={handleOpenCreateKeyModal}>
-				<MaterialIcon iconName="add" />
-				<span>Create Key</span>
+	<section class="settings-section">
+		<div class="section-header">
+			<div class="header-info">
+				<h3>API Keys</h3>
+				<p>Personal access tokens for API access.</p>
+			</div>
+			<Button variant="mini" onclick={openApiKeyModal}>
+				<MaterialIcon iconName="add" /> Create Key
 			</Button>
-		{/snippet}
+		</div>
 
 		<div class="keys-list">
-			{#each apiKeys as key}
-				<div class="key-item" class:revoked={key.revoked}>
-					<div class="key-info">
-						<div class="key-header">
-							<span class="key-name">{key.name}</span>
-							{#if key.revoked}
-								<span class="status-badge revoked">Revoked</span>
-							{:else}
-								<span class="status-badge active">Active</span>
-							{/if}
-						</div>
-						<div class="key-meta">
-							<span>Created: {formatDate(key.created_at)}</span>
-							{#if key.last_used_at}
-								<span>Last used: {formatDate(key.last_used_at)}</span>
-							{/if}
-							<span class="key-desc">{key.description || "No description"}</span
-							>
-						</div>
-					</div>
-					<div class="key-actions">
-						{#if !key.revoked}
-							<Button
-								onclick={() => handleRevokeKey(key.uid)}
-								title="Revoke Key"
-							>
-								<MaterialIcon iconName="block" />
-							</Button>
-						{/if}
-						<Button
-							onclick={() => handleDeleteKey(key.uid)}
-							title="Delete Key"
-							hoverColor="var(--viz-alert-color)"
-						>
-							<MaterialIcon iconName="delete" />
-						</Button>
-					</div>
-				</div>
+			{#if loading}
+				<div class="loading-state">Loading...</div>
 			{:else}
-				{#if !loadingData}
-					<p class="empty-state">No API keys found</p>
-				{/if}
-			{/each}
-		</div>
-	</CustomSettingsGroup>
-
-	<CustomSettingsGroup
-		title="Sessions"
-		description="Manage your active sessions across devices."
-	>
-		{#snippet actions()}
-			<Button
-				onclick={handleDeleteAllSessions}
-				hoverColor="var(--viz-alert-color)"
-			>
-				<MaterialIcon iconName="logout" />
-				<span>Log out All</span>
-			</Button>
-		{/snippet}
-
-		<div class="sessions-list">
-			{#each allSessions as session_item}
-				<div
-					class="session-item"
-					class:current={isCurrentSession(session_item)}
-				>
-					{#if isCurrentSession(session_item)}
-						<span class="current-badge">Current Session</span>
-					{/if}
-					<div class="session-details">
-						<div class="session-row">
-							<span class="label">Client:</span>
-							<span class="value"
-								>{session_item.client_name ||
-									session_item.user_agent ||
-									"Unknown Client"}</span
-							>
-						</div>
-						<div class="session-row">
-							<span class="label">Session ID:</span>
-							<span class="value">{session_item.uid}</span>
-						</div>
-						<div class="session-row">
-							<span class="label">Logged In:</span>
-							<span class="value">{formatDate(session_item.login_at)}</span>
-						</div>
-						<div class="session-row">
-							<span class="label">Last Active:</span>
-							<span class="value">{formatDate(session_item.last_active)}</span>
-						</div>
-						<div class="session-row">
-							<span class="label">Expires:</span>
-							<span class="value">{formatDate(session_item.expires_at)}</span>
-						</div>
-						{#if session_item.client_ip}
-							<div class="session-row">
-								<span class="label">IP:</span>
-								<span class="value">{session_item.client_ip}</span>
-							</div>
+				<table class="settings-table">
+					<thead>
+						<tr>
+							<th>Name</th>
+							<th>Created</th>
+							<th>Last Used</th>
+							<th style="text-align: right;">Actions</th>
+						</tr>
+					</thead>
+					<tbody>
+						{#each apiKeys as key}
+							<tr>
+								<td>
+									<div class="key-info">
+										<span class="name">{key.name}</span>
+										{#if key.description}
+											<span class="description">{key.description}</span>
+										{/if}
+									</div>
+								</td>
+								<td>{formatDate(key.created_at)}</td>
+								<td
+									>{key.last_used_at
+										? formatDate(key.last_used_at)
+										: "Never"}</td
+								>
+								<td>
+									<div class="actions-cell">
+										<button
+											class="action-btn delete"
+											onclick={() => openDeleteKeyConfirm(key)}
+											title="Delete Key"
+										>
+											<MaterialIcon iconName="delete" />
+										</button>
+									</div>
+								</td>
+							</tr>
+						{/each}
+						{#if apiKeys.length === 0}
+							<tr>
+								<td colspan="4" class="empty-row">No API keys created yet.</td>
+							</tr>
 						{/if}
-					</div>
-					<div class="session-actions">
-						<Button
-							onclick={() => handleOpenEditSessionModal(session_item)}
-							title="Edit Session"
-						>
-							<MaterialIcon iconName="edit" />
-						</Button>
-						<Button
-							onclick={() => handleDeleteSession(session_item.uid)}
-							title="Delete Session"
-							hoverColor="var(--viz-alert-color)"
-						>
-							<MaterialIcon iconName="delete" />
-						</Button>
-					</div>
-				</div>
-			{:else}
-				{#if !loadingData}
-					<p class="empty-state">No active sessions found.</p>
-				{/if}
-			{/each}
-			{#if loadingData}
-				<p class="loading-state">Loading sessions...</p>
+					</tbody>
+				</table>
 			{/if}
 		</div>
-	</CustomSettingsGroup>
+	</section>
+
+	<section class="settings-section">
+		<div class="section-header">
+			<div class="header-info">
+				<h3>Active Sessions</h3>
+				<p>Devices that are currently logged into your account.</p>
+			</div>
+		</div>
+
+		<div class="sessions-list">
+			{#if loading}
+				<div class="loading-state">Loading...</div>
+			{:else}
+				<table class="settings-table">
+					<thead>
+						<tr>
+							<th>Device / Browser</th>
+							<th>Last Active</th>
+							<th style="text-align: right;">Actions</th>
+						</tr>
+					</thead>
+					<tbody>
+						{#each sessions as session}
+							<tr>
+								<td>
+									<div class="session-info">
+										<div class="session-main">
+											<span class="name"
+												>{session.client_name || "Unknown Device"}</span
+											>
+											{#if session.is_current}
+												<span class="current-badge">Current</span>
+											{/if}
+										</div>
+										<span class="details">
+											{session.browser} on {session.os} • {session.ip_address}
+										</span>
+									</div>
+								</td>
+								<td>{formatDate(session.last_active_at)}</td>
+								<td>
+									<div class="actions-cell">
+										<button
+											class="action-btn"
+											onclick={() => openRenameSessionModal(session)}
+											title="Rename Session"
+										>
+											<MaterialIcon iconName="edit" />
+										</button>
+										{#if !session.is_current}
+											<button
+												class="action-btn revoke"
+												onclick={() => openRevokeConfirm(session)}
+												title="Revoke Session"
+											>
+												<MaterialIcon iconName="logout" />
+											</button>
+										{/if}
+									</div>
+								</td>
+							</tr>
+						{/each}
+					</tbody>
+				</table>
+			{/if}
+		</div>
+	</section>
 </div>
 
 <style lang="scss">
 	.security-settings {
 		display: flex;
 		flex-direction: column;
+		gap: 2.5rem;
+	}
+
+	.settings-section {
+		display: flex;
+		flex-direction: column;
+		gap: 1.25rem;
+	}
+
+	.section-header {
+		display: flex;
+		justify-content: space-between;
+		align-items: flex-start;
+
+		h3 {
+			margin: 0;
+			font-size: 1.1rem;
+			font-weight: 600;
+		}
+
+		p {
+			margin: 0.25rem 0 0 0;
+			font-size: 0.9rem;
+			color: var(--viz-40);
+		}
+	}
+
+	.settings-table {
 		width: 100%;
-		height: 100%;
-		gap: 3rem;
+		border-collapse: collapse;
+		font-size: 0.9rem;
+
+		th {
+			text-align: left;
+			padding: 0.75rem 1rem;
+			color: var(--viz-40);
+			font-weight: 500;
+			border-bottom: 1px solid var(--viz-90);
+		}
+
+		td {
+			padding: 1rem;
+			border-bottom: 1px solid var(--viz-95);
+			vertical-align: middle;
+		}
+
+		tr:last-child td {
+			border-bottom: none;
+		}
 	}
 
-	.keys-list {
+	.key-info {
 		display: flex;
 		flex-direction: column;
-		gap: 1rem;
+		gap: 0.125rem;
+
+		.name {
+			font-weight: 500;
+			color: var(--viz-text-color);
+		}
+
+		.description {
+			font-size: 0.8rem;
+			color: var(--viz-40);
+		}
 	}
 
-	.key-item,
-	.session-item {
-		background-color: var(--viz-100);
-		border: 1px solid var(--viz-80);
-		border-radius: 0.5rem;
-		padding: 1rem;
+	.session-info {
 		display: flex;
 		flex-direction: column;
-		gap: 1rem;
+		gap: 0.125rem;
+
+		.name {
+			font-weight: 500;
+			color: var(--viz-text-color);
+		}
+
+		.details {
+			font-size: 0.8rem;
+			color: var(--viz-40);
+		}
 	}
 
-	.key-item.revoked {
-		opacity: 0.6;
-	}
-
-	.key-info,
-	.session-details {
-		display: flex;
-		flex-direction: column;
-		gap: 0.5rem;
-	}
-
-	.key-header {
+	.session-main {
 		display: flex;
 		align-items: center;
-		gap: 1rem;
-	}
-
-	.session-row {
-		display: flex;
 		gap: 0.5rem;
 	}
 
-	.label {
-		font-weight: 500;
-		color: var(--viz-text-color);
-		min-width: 5rem;
-	}
-
-	.value {
-		color: var(--viz-text-color);
-	}
-
-	.key-name {
-		font-weight: 600;
-		font-size: 1rem;
-	}
-
-	.status-badge,
 	.current-badge {
-		font-size: 0.75rem;
-		padding: 0.2rem 0.5rem;
-		border-radius: 1rem;
-		font-weight: 500;
-		border: 1px solid var(--viz-80);
-		color: var(--viz-text-color);
-		background-color: var(--viz-90);
-	}
-
-	.status-badge.active {
+		padding: 0.125rem 0.375rem;
+		background: rgba(var(--viz-primary-rgb), 0.1);
 		color: var(--viz-primary);
+		border-radius: 0.25rem;
+		font-size: 0.7rem;
+		font-weight: 600;
+		text-transform: uppercase;
 	}
 
-	.status-badge.revoked {
-		color: var(--viz-alert-color);
-	}
-
-	.current-badge {
-		border-color: var(--viz-primary);
-		// 	color: var(--viz-text-color);
-	}
-
-	.key-meta {
-		display: flex;
-		flex-direction: column;
-		font-size: 0.75rem;
-		color: var(--viz-text-color);
-		gap: 0.25rem;
-	}
-
-	.key-actions,
-	.session-actions {
-		display: flex;
-		gap: 0.5rem;
-	}
-
-	.sessions-list {
-		display: flex;
-		flex-direction: column;
-		gap: 1rem;
-	}
-
-	.edit-session-modal-content {
-		display: flex;
-		flex-direction: column;
-		gap: 1rem;
-		padding: 1rem;
-		min-width: 400px;
-	}
-
-	.modal-actions {
+	.actions-cell {
 		display: flex;
 		justify-content: flex-end;
 		gap: 0.5rem;
-		margin-top: 1rem;
+	}
+
+	.action-btn {
+		display: flex;
+		align-items: center;
+		justify-content: center;
+		width: 2rem;
+		height: 2rem;
+		border: none;
+		background: transparent;
+		border-radius: 0.25rem;
+		cursor: pointer;
+		color: var(--viz-40);
+		transition: all 0.2s;
+
+		&:hover {
+			background: var(--viz-90);
+			color: var(--viz-text-color);
+		}
+
+		&.delete:hover,
+		&.revoke:hover {
+			background-color: rgba(239, 68, 68, 0.1);
+			color: #ef4444;
+		}
+	}
+
+	.empty-row {
+		text-align: center;
+		padding: 2rem !important;
+		color: var(--viz-40);
+		font-style: italic;
+	}
+
+	.loading-state {
+		padding: 2rem;
+		text-align: center;
+		color: var(--viz-40);
 	}
 </style>

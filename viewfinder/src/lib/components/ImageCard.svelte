@@ -129,10 +129,10 @@
 				{objectFit}
 				{priority}
 				alt="{asset.name}{asset.uploaded_by
-					? ` by ${asset.uploaded_by.username}`
+					? ` by ${asset.uploaded_by.name}`
 					: ''}"
 				title="{asset.name}{asset.uploaded_by
-					? ` by ${asset.uploaded_by.username}`
+					? ` by ${asset.uploaded_by.name}`
 					: ''}"
 				loading="lazy"
 				crossorigin="use-credentials"

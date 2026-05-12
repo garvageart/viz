@@ -17,7 +17,7 @@
 	out:slide={{ duration: 100 }}
 >
 	<div id="account-details">
-		<span class="account-name">{data?.username}</span>
+		<span class="account-name">{data?.name}</span>
 		<span class="account-email">{data?.email}</span>
 	</div>
 	{#if user.isAdmin}

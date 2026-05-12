@@ -18,7 +18,7 @@
 		...props
 	}: Props & SvelteHTMLElements["input"] = $props();
 
-	const inputId = props.id ?? generateRandomString(6);
+	const inputId = $derived(props.id ?? generateRandomString(6));
 	let inputEl = $state<HTMLInputElement | undefined>();
 	$effect(() => {
 		if (inputEl && focused) {

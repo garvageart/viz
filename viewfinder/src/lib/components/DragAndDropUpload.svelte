@@ -1,7 +1,6 @@
 <script lang="ts">
 	import { fade } from "svelte/transition";
 	import MaterialIcon from "./MaterialIcon.svelte";
-	import { modal } from "$lib/states/index.svelte";
 	import CollectionModal from "./modals/CollectionModal.svelte";
 	import { traverseFileTree } from "$lib/utils/files";
 	import { toastState } from "$lib/toast-notifcations/notif-state.svelte";
@@ -28,15 +27,24 @@
 	import { DragData } from "$lib/drag-drop/data";
 	import { VizMimeTypes } from "$lib/constants";
 	import { invalidateViz } from "$lib/views/views.svelte";
+	import { modalsManager } from "./modals/manager/ModalManager.svelte";
 
 	interface Props {
-		scopeId: string; // might be useful soon
-		selectionScope: SelectionScope<ImageAsset>;
+		scopeId?: string; // might be useful soon
+		selectionScope?: SelectionScope<ImageAsset>;
 		showCollectionCreateBox?: boolean;
 		createCollectionFromSelected?: () => Promise<void>;
+		children?: import("svelte").Snippet;
+		onUploadSuccess?: () => void;
 	}
 
-	let { showCollectionCreateBox, scopeId, selectionScope }: Props = $props();
+	let {
+		showCollectionCreateBox,
+		scopeId,
+		selectionScope,
+		children,
+		onUploadSuccess
+	}: Props = $props();
 
 	// Drag and drop upload state
 	let isDragging = $state(false);
@@ -44,31 +52,16 @@
 	let isInternalDrag = $state(false);
 	let internalDragActive = $state(false);
 
-	// Upload confirmation state
-	let showUploadConfirm = $state(false);
+	// Upload candidates
 	let uploadCandidates: File[] = $state([]);
 	let suggestedCollectionName = $state("");
 
-	let showCollectionCreate = $state(false);
-	let collectionCreateData = $state({
-		name: "",
-		description: "",
-		private: false
-	});
 	let collectionCreatePending = $state(false);
 
 	// Small drop-target state for 'Add to Collection' box
 	let addBoxHover = $state(false);
 
 	async function processUploads(files: File[]) {
-		if (files.length < uploadCandidates.length) {
-			toastState.addToast({
-				type: "warning",
-				message: `${uploadCandidates.length - files.length} file(s) skipped (unsupported format)`,
-				timeout: 4000
-			});
-		}
-
 		const manager = new UploadManager([
 			...SUPPORTED_RAW_FILES,
 			...SUPPORTED_IMAGE_TYPES
@@ -207,9 +200,12 @@
 				detectedFolderName ||
 				`New Collection ${new Date().toLocaleDateString()}`;
 
-			// If we detected a folder or simply want to offer the choice always:
-			showUploadConfirm = true;
-			modal.show = true;
+			// Open confirmation modal
+			modalsManager.open(ConfirmationModal, {
+				title: "Upload Options",
+				children: uploadConfirmSnippet,
+				actions: uploadConfirmActions
+			}, { heading: "Upload Options" });
 		} catch (err) {
 			console.error("Drop upload error:", err);
 			toastState.addToast({
@@ -263,30 +259,36 @@
 		}
 	}
 
-	function handleConfirmUploadOnly() {
-		showUploadConfirm = false;
-		modal.show = false;
-
-		processUploads(uploadCandidates);
+	async function handleConfirmUploadOnly(id: string) {
+		modalsManager.close(id);
+		await processUploads(uploadCandidates);
 		uploadCandidates = [];
 	}
 
-	function handleConfirmUploadCollection() {
-		showUploadConfirm = false;
-		// Keep modal open, switch to collection create
-		collectionCreateData = {
+	function handleConfirmUploadCollection(id: string) {
+		modalsManager.close(id);
+		
+		let collectionCreateData = {
 			name: suggestedCollectionName,
 			description: "",
 			private: false
 		};
-		showCollectionCreate = true;
+
+		modalsManager.open(CollectionModal, {
+			heading: "Create Collection",
+			data: collectionCreateData,
+			buttonText: "Create & Upload",
+			modalAction: async () => {
+				await handleCollectionSubmit(collectionCreateData);
+			}
+		}, { heading: "Create Collection" });
 	}
 
-	async function handleCollectionSubmit() {
+	async function handleCollectionSubmit(data: any) {
 		collectionCreatePending = true;
 		try {
 			// 1. Create Collection
-			const createRes = await createCollection(collectionCreateData);
+			const createRes = await createCollection(data);
 			if (createRes.status !== 201) {
 				toastState.addToast({
 					type: "error",
@@ -300,8 +302,7 @@
 			const collectionUid = createRes.data.uid;
 
 			// 2. Upload Images
-			showCollectionCreate = false;
-			modal.show = false;
+			modalsManager.pop(); // Close collection modal
 
 			const uploadedImages = await processUploads(uploadCandidates);
 
@@ -315,7 +316,7 @@
 				if (addRes.status === 200) {
 					toastState.addToast({
 						type: "success",
-						message: `Added ${uids.length} images to collection **${collectionCreateData.name}**`,
+						message: `Added ${uids.length} images to collection **${data.name}**`,
 						timeout: 4000
 					});
 					await invalidateViz({ delay: 200 });
@@ -345,6 +346,7 @@
 	 * Create a collection from the currently selected images (keyboard/click path).
 	 */
 	async function createCollectionFromSelected() {
+		if (!selectionScope) return;
 		const items = Array.from(selectionScope.selected);
 		if (!items || items.length === 0) {
 			toastState.addToast({
@@ -621,6 +623,21 @@
 	}
 </script>
 
+{#snippet uploadConfirmSnippet()}
+	<p>You dropped {uploadCandidates.length} file(s).</p>
+	<p>How would you like to upload them?</p>
+{/snippet}
+
+{#snippet uploadConfirmActions({ id }: { id: string })}
+	<Button onclick={() => handleConfirmUploadOnly(id)}>Upload Individually</Button>
+	<Button
+		onclick={() => handleConfirmUploadCollection(id)}
+		style="background-color: var(--viz-primary); color: white;"
+	>
+		Create Collection & Upload
+	</Button>
+{/snippet}
+
 <svelte:body
 	ondragenter={handleDragEnter}
 	ondragleave={handleDragLeave}
@@ -629,32 +646,6 @@
 	ondragstart={handleDragStart}
 	ondragend={handleDragEnd}
 />
-
-{#if showUploadConfirm && modal.show}
-	<ConfirmationModal title="Upload Options">
-		<p>You dropped {uploadCandidates.length} file(s).</p>
-		<p>How would you like to upload them?</p>
-
-		{#snippet actions()}
-			<Button onclick={handleConfirmUploadOnly}>Upload Individually</Button>
-			<Button
-				onclick={handleConfirmUploadCollection}
-				style="background-color: var(--viz-primary); color: white;"
-			>
-				Create Collection & Upload
-			</Button>
-		{/snippet}
-	</ConfirmationModal>
-{/if}
-
-{#if showCollectionCreate && modal.show}
-	<CollectionModal
-		heading="Create Collection"
-		bind:data={collectionCreateData}
-		buttonText={collectionCreatePending ? "Creating..." : "Create & Upload"}
-		modalAction={handleCollectionSubmit}
-	/>
-{/if}
 
 {#if isDragging && !isInternalDrag}
 	<div class="drop-overlay" transition:fade={{ duration: 150 }}>

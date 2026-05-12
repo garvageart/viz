@@ -4,7 +4,7 @@ const authFile = 'e2e/.auth/user.json';
 
 async function handleOnboarding(page: Page) {
     console.log('Handling onboarding flow...');
-    
+
     // Step 0: Welcome
     const getStartedBtn = page.locator('button:has-text("Get Started"), button:has-text("Let\'s Go")');
     if (await getStartedBtn.isVisible()) {
@@ -32,7 +32,7 @@ async function handleOnboarding(page: Page) {
             await finishBtn.click();
             break;
         }
-        
+
         const nextBtn = page.locator('button:has-text("Next")');
         if (await nextBtn.isVisible()) {
             await nextBtn.click();
@@ -46,82 +46,82 @@ async function handleOnboarding(page: Page) {
 }
 
 setup('authenticate', async ({ page }) => {
-  const email = process.env.E2E_TEST_EMAIL;
-  const password = process.env.E2E_TEST_PASSWORD;
-  const username = process.env.E2E_TEST_USERNAME;
+    const email = process.env.E2E_TEST_EMAIL;
+    const password = process.env.E2E_TEST_PASSWORD;
+    const name = process.env.E2E_TEST_USERNAME;
 
-  if (!email || !password || !username) {
-    throw new Error('Missing E2E test credentials. Please set E2E_TEST_EMAIL, E2E_TEST_PASSWORD, and E2E_TEST_USERNAME environment variables.');
-  }
+    if (!email || !password || !name) {
+        throw new Error('Missing E2E test credentials. Please set E2E_TEST_EMAIL, E2E_TEST_PASSWORD, and E2E_TEST_USERNAME environment variables.');
+    }
 
-  console.log(`Navigating to app...`);
-  await page.goto('/');
+    console.log(`Navigating to app...`);
+    await page.goto('/');
 
-  const workspace = page.locator('.viz-workspace');
-  
-  // Wait for initial load
-  await page.waitForLoadState('networkidle');
-  console.log(`Current URL: ${page.url()}`);
+    const workspace = page.locator('.viz-workspace');
 
-  if (await workspace.isVisible()) {
-    console.log('Already authenticated.');
-  } else if (page.url().includes('/onboarding')) {
-    console.log('First run detected. Assuming first run or incomplete setup.');
-    await handleOnboarding(page);
-    await expect(workspace).toBeVisible({ timeout: 20000 });
-  } else {
-    console.log('Not authenticated. Attempting login...');
-    await page.fill('#login-email', email);
-    await page.fill('#login-password', password);
-    await page.click('#login-submit');
+    // Wait for initial load
+    await page.waitForLoadState('networkidle');
+    console.log(`Current URL: ${page.url()}`);
 
-    // Wait for success, error, or onboarding redirect
-    await Promise.race([
-        workspace.waitFor({ state: 'visible', timeout: 15000 }).catch(() => {}),
-        page.waitForURL('**/onboarding', { timeout: 10000 }).catch(() => {}),
-        page.locator('.viz-toast-error').waitFor({ state: 'visible', timeout: 5000 }).catch(() => {})
-    ]);
-
-    if (page.url().includes('/onboarding')) {
+    if (await workspace.isVisible()) {
+        console.log('Already authenticated.');
+    } else if (page.url().includes('/onboarding')) {
+        console.log('First run detected. Assuming first run or incomplete setup.');
         await handleOnboarding(page);
-    }
-
-    // Give it a moment to settle after potential onboarding
-    if (await workspace.isVisible({ timeout: 15000 })) {
-      console.log('Authentication and onboarding successful.');
+        await expect(workspace).toBeVisible({ timeout: 20000 });
     } else {
-      const errorToast = page.locator('.viz-toast-error');
-      if (await errorToast.isVisible()) {
-          const errorMsg = await errorToast.locator('.viz-toast-message').textContent();
-          console.error(`Login failed with toast: ${errorMsg}`);
-          
-          if (errorMsg?.includes('User not found')) {
-              console.log('User not found. Attempting registration...');
-              await page.goto('/auth/register');
-              await page.fill('#reg-email', email);
-              await page.fill('#reg-name', username);
-              await page.fill('#reg-password', password);
-              await page.fill('#reg-password-confirm', password);
-              await page.click('#reg-submit');
-              
-              await page.waitForURL('**/onboarding', { timeout: 10000 }).catch(() => {});
-              if (page.url().includes('/onboarding')) {
-                  await handleOnboarding(page);
-              }
-              
-              await expect(workspace).toBeVisible({ timeout: 15000 });
-              console.log('Registration and onboarding successful.');
-          } else {
-              await page.screenshot({ path: 'e2e-login-failure.png' });
-              throw new Error(`Authentication failed: ${errorMsg}`);
-          }
-      } else {
-          await page.screenshot({ path: 'e2e-unknown-failure.png' });
-          throw new Error(`Authentication failed: Unknown state at ${page.url()}`);
-      }
-    }
-  }
+        console.log('Not authenticated. Attempting login...');
+        await page.fill('#login-email', email);
+        await page.fill('#login-password', password);
+        await page.click('#login-submit');
 
-  // Save state
-  await page.context().storageState({ path: authFile });
+        // Wait for success, error, or onboarding redirect
+        await Promise.race([
+            workspace.waitFor({ state: 'visible', timeout: 15000 }).catch(() => { }),
+            page.waitForURL('**/onboarding', { timeout: 10000 }).catch(() => { }),
+            page.locator('.viz-toast-error').waitFor({ state: 'visible', timeout: 5000 }).catch(() => { })
+        ]);
+
+        if (page.url().includes('/onboarding')) {
+            await handleOnboarding(page);
+        }
+
+        // Give it a moment to settle after potential onboarding
+        if (await workspace.isVisible({ timeout: 15000 })) {
+            console.log('Authentication and onboarding successful.');
+        } else {
+            const errorToast = page.locator('.viz-toast-error');
+            if (await errorToast.isVisible()) {
+                const errorMsg = await errorToast.locator('.viz-toast-message').textContent();
+                console.error(`Login failed with toast: ${errorMsg}`);
+
+                if (errorMsg?.includes('User not found')) {
+                    console.log('User not found. Attempting registration...');
+                    await page.goto('/auth/register');
+                    await page.fill('#reg-email', email);
+                    await page.fill('#reg-name', name);
+                    await page.fill('#reg-password', password);
+                    await page.fill('#reg-password-confirm', password);
+                    await page.click('#reg-submit');
+
+                    await page.waitForURL('**/onboarding', { timeout: 10000 }).catch(() => { });
+                    if (page.url().includes('/onboarding')) {
+                        await handleOnboarding(page);
+                    }
+
+                    await expect(workspace).toBeVisible({ timeout: 15000 });
+                    console.log('Registration and onboarding successful.');
+                } else {
+                    await page.screenshot({ path: 'e2e-login-failure.png' });
+                    throw new Error(`Authentication failed: ${errorMsg}`);
+                }
+            } else {
+                await page.screenshot({ path: 'e2e-unknown-failure.png' });
+                throw new Error(`Authentication failed: Unknown state at ${page.url()}`);
+            }
+        }
+    }
+
+    // Save state
+    await page.context().storageState({ path: authFile });
 });

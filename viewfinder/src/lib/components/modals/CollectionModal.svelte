@@ -1,11 +1,10 @@
 <script lang="ts">
+	import type { Collection } from "$lib/api";
 	import type { EventHandler } from "svelte/elements";
 	import Button from "../Button.svelte";
-	import ModalContainer from "./ModalContainer.svelte";
 	import SliderToggle from "../SliderToggle.svelte";
 	import InputText from "../dom/InputText.svelte";
 	import TextArea from "../dom/TextArea.svelte";
-	import type { Collection } from "$lib/api";
 
 	interface Props {
 		heading: string;
@@ -14,58 +13,69 @@
 		modalAction: EventHandler<SubmitEvent, HTMLFormElement> | null | undefined;
 	}
 
-	let {
-		heading,
-		data = $bindable(),
-		buttonText,
-		modalAction
-	}: Props = $props();
+	let { data = $bindable(), buttonText, modalAction }: Props = $props();
 
-	let allData = $derived(data ?? { name: "", description: "", private: false });
+	let name = $state(data?.name ?? "");
+	let description = $state(data?.description ?? "");
+	let isPrivate = $state(data?.private ? ("on" as const) : ("off" as const));
 
-	let isPrivate: "on" | "off" = $derived(allData.private ? "on" : "off");
+	$effect(() => {
+		if (data) {
+			data.name = name;
+			data.description = description;
+			data.private = isPrivate === "on";
+		} else {
+			data = {
+				name,
+				description,
+				private: isPrivate === "on"
+			} as Pick<Collection, "name" | "description" | "private">;
+		}
+	});
+
+	async function handleSubmit(
+		e: SubmitEvent & { currentTarget: HTMLFormElement }
+	) {
+		e.preventDefault();
+		e.stopPropagation();
+
+		if (modalAction) {
+			await modalAction(e);
+		}
+	}
 </script>
 
-<ModalContainer {heading}>
-	<div id="viz-collection-modal">
-		<form
-			id="collection-form"
-			onsubmit={(e) => {
-				e.preventDefault();
-				e.stopPropagation();
-				modalAction?.(e);
-			}}
-		>
-			<InputText
-				id="collection-name"
-				name="name"
-				label="Name"
-				placeholder="Name"
-				type="text"
-				bind:value={allData.name}
-				required
-				spellcheck="false"
-			/>
-			<TextArea
-				id="collection-description"
-				name="description"
-				label="Description"
-				placeholder="Description (optional)"
-				bind:value={allData.description}
-				spellcheck="false"
-			/>
-			<SliderToggle
-				id="collection-private"
-				style="margin-bottom: 1rem;"
-				label="Private"
-				bind:value={isPrivate}
-			/>
-			<Button style="margin-top: 1rem; width: 100%;">
-				<input id="collection-submit" type="submit" value={buttonText} />
-			</Button>
-		</form>
-	</div>
-</ModalContainer>
+<div id="viz-collection-modal">
+	<form id="collection-form" onsubmit={handleSubmit}>
+		<InputText
+			id="collection-name"
+			name="name"
+			label="Name"
+			placeholder="Name"
+			type="text"
+			bind:value={name}
+			required
+			spellcheck="false"
+		/>
+		<TextArea
+			id="collection-description"
+			name="description"
+			label="Description"
+			placeholder="Description (optional)"
+			bind:value={description}
+			spellcheck="false"
+		/>
+		<SliderToggle
+			id="collection-private"
+			style="margin-bottom: 1rem;"
+			label="Private"
+			bind:value={isPrivate}
+		/>
+		<Button style="margin-top: 1rem; width: 100%;">
+			<input id="collection-submit" type="submit" value={buttonText} />
+		</Button>
+	</form>
+</div>
 
 <style lang="scss">
 	#viz-collection-modal {
@@ -78,7 +88,7 @@
 	}
 
 	form {
-		width: 60%;
+		width: 80%;
 		max-width: 90%;
 		display: flex;
 		flex-direction: column;

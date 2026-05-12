@@ -14,7 +14,9 @@
 		disabled = false,
 		...props
 	}: Props & SvelteHTMLElements["textarea"] = $props();
-	const inputId = props.id ?? generateRandomString(6);
+
+	const fallbackId = generateRandomString(6);
+	const inputId = $derived(props.id ?? fallbackId);
 </script>
 
 <div class="textarea-container" class:disabled>

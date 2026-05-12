@@ -11,6 +11,7 @@
 		show: boolean;
 		lightboxElement?: HTMLElement | undefined;
 		backgroundOpacity?: number;
+		zIndex?: number;
 	}
 
 	let {
@@ -18,7 +19,8 @@
 		onclick,
 		show = $bindable(false),
 		lightboxElement = $bindable(),
-		backgroundOpacity = $bindable(0.5)
+		backgroundOpacity = $bindable(0.5),
+		zIndex = 9998
 	}: Props = $props();
 
 	let lightboxEl: HTMLElement | undefined = $state();
@@ -58,7 +60,7 @@
 />
 
 {#if show}
-	<div id="viz-lightbox-overlay" bind:this={lightboxEl}>
+	<div id="viz-lightbox-overlay" style:z-index={zIndex} bind:this={lightboxEl}>
 		{@render children()}
 	</div>
 {/if}
@@ -71,7 +73,6 @@
 		width: 100%;
 		height: 100%;
 		background-color: rgba(0, 0, 0, 0.5);
-		z-index: 9998;
 		display: flex;
 		justify-content: center;
 		align-items: center;

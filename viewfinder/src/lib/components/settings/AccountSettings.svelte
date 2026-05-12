@@ -18,7 +18,7 @@
 	let settingsUserUpdate = $state({
 		firstName: "",
 		lastName: "",
-		username: "",
+		name: "",
 		email: ""
 	});
 
@@ -28,7 +28,7 @@
 		return (
 			settingsUserUpdate.firstName !== currentUser?.first_name ||
 			settingsUserUpdate.lastName !== currentUser?.last_name ||
-			settingsUserUpdate.username !== currentUser?.username ||
+			settingsUserUpdate.name !== currentUser?.name ||
 			settingsUserUpdate.email !== currentUser?.email
 		);
 	});
@@ -38,7 +38,7 @@
 		if (currentUser) {
 			settingsUserUpdate.firstName = currentUser.first_name || "";
 			settingsUserUpdate.lastName = currentUser.last_name || "";
-			settingsUserUpdate.username = currentUser.username || "";
+			settingsUserUpdate.name = currentUser.name || "";
 			settingsUserUpdate.email = currentUser.email || "";
 			dirty = false;
 		}
@@ -59,8 +59,8 @@
 		if (settingsUserUpdate.lastName !== (currentUser.last_name || "")) {
 			updates.last_name = settingsUserUpdate.lastName;
 		}
-		if (settingsUserUpdate.username !== (currentUser.username || "")) {
-			updates.username = settingsUserUpdate.username;
+		if (settingsUserUpdate.name !== (currentUser.name || "")) {
+			updates.name = settingsUserUpdate.name;
 		}
 		if (settingsUserUpdate.email !== (currentUser.email || "")) {
 			updates.email = settingsUserUpdate.email;
@@ -111,8 +111,8 @@
 			disabled={savingAccount}
 		/>
 		<TextInput
-			label="Username"
-			bind:value={settingsUserUpdate.username}
+			label="Name"
+			bind:value={settingsUserUpdate.name}
 			disabled={savingAccount}
 		/>
 		<TextInput

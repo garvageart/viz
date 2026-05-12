@@ -338,15 +338,15 @@
 				class="header-button"
 				aria-label="Account"
 				onclick={() => (openAccPanel = !openAccPanel)}
-				title={user.data?.username
-					? `${user.data.username} (${user.data.email})`
+				title={user.data?.name
+					? `${user.data.name} (${user.data.email})`
 					: "Account"}
 			>
 				<figure
 					style="height: 100%; display: flex; align-items: center; justify-content: center;"
 				>
 					<span style="font-weight: 800; font-size: 0.9em;"
-						>{user.data ? user.data.username[0] : "?"}</span
+						>{user.data ? user.data.name[0] : "?"}</span
 					>
 				</figure>
 			</button>
@@ -475,10 +475,6 @@
 		gap: 0.5rem;
 	}
 
-	:global(#theme-toggle) {
-		margin: auto 0.5rem;
-	}
-
 	:global(.header-button) {
 		display: flex;
 		align-items: center;
@@ -498,7 +494,6 @@
 
 		&:hover {
 			background-color: var(--viz-90);
-			// outline: 1px solid var(--viz-60);
 		}
 
 		&:active {

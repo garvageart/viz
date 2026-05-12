@@ -19,7 +19,9 @@
 		class: className,
 		...props
 	}: Props = $props();
-	const selectId = props.id ?? generateKeyId();
+
+	const fallbackId = generateKeyId();
+	const selectId = $derived(props.id ?? fallbackId);
 </script>
 
 <div

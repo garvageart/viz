@@ -89,7 +89,7 @@ When the OpenAPI spec changes, run:
 bun scripts/js/gen-api.ts
 
 # Or just TypeScript client
-cd viz
+cd viewfinder
 pnpm run gen:api
 ```
 

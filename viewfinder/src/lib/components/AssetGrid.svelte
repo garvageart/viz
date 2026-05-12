@@ -9,7 +9,6 @@
 	import {
 		debugMode,
 		sort,
-		modal,
 		tableColumnSettings,
 		isLayoutPage
 	} from "$lib/states/index.svelte";
@@ -22,6 +21,7 @@
 	import TableColumnSelectorModal from "./modals/TableColumnSelectorModal.svelte";
 	import { snakeToTitle } from "$lib/utils/strings";
 	import { tryParseDate } from "$lib/utils/dates";
+	import { modalsManager } from "./modals/manager/ModalManager.svelte";
 
 	interface DisplayableAsset {
 		uid: string;
@@ -38,7 +38,7 @@
 		[key: string]: any;
 	}
 
-	interface Props {
+	export interface AssetGridProps<T extends { uid: string } & Record<string, any>> {
 		data: T[];
 		assetSnippet: SvelteSnippet<[T]>;
 		assetGridArray?: AssetGridArray<T>;
@@ -84,7 +84,7 @@
 		columns = $bindable(),
 		table = $bindable(),
 		scopeId = "default"
-	}: Props = $props();
+	}: AssetGridProps<T> = $props();
 
 	// Selection Management
 	let selection = $derived(selectionManager.getScope<T>(scopeId));
@@ -134,15 +134,6 @@
 		} else {
 			// Filter inferred keys by persisted selection
 			return tableKeys.filter((key) => tableColumnSettings.value.includes(key));
-		}
-	});
-
-	// Modal state
-	let showColumnSelector = $state(false);
-
-	$effect(() => {
-		if (!modal.show) {
-			showColumnSelector = false;
 		}
 	});
 
@@ -510,6 +501,12 @@
 
 		selection.clear();
 	});
+
+	function openColumnSelector() {
+		modalsManager.open(TableColumnSelectorModal, {
+			availableKeys: tableKeys
+		}, { heading: "Table Columns" });
+	}
 </script>
 
 {#snippet assetComponentCard(assetData: T)}
@@ -653,8 +650,7 @@
 			<thead
 				oncontextmenu={(e) => {
 					e.preventDefault();
-					showColumnSelector = true;
-					modal.show = true;
+					openColumnSelector();
 				}}
 			>
 				<tr>
@@ -716,10 +712,6 @@
 	</div>
 {/if}
 
-{#if showColumnSelector && modal.show}
-	<TableColumnSelectorModal availableKeys={tableKeys} />
-{/if}
-
 <style lang="scss">
 	.viz-asset-grid-container {
 		box-sizing: border-box;
@@ -754,8 +746,7 @@
 
 	.viz-asset-grid-container > .asset-card.selected-card {
 		outline: 2px solid var(--viz-60);
-		outline-offset: 0px;
-		border-radius: 0.5em;
+		outline-offset: 0px; border-radius: 0.5em;
 	}
 
 	.viz-asset-grid-container.is-active > .asset-card.selected-card {
