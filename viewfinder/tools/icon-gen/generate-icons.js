@@ -11,7 +11,7 @@
 import { readFileSync, existsSync, mkdirSync, writeFileSync } from 'fs';
 import { resolve, join, dirname } from 'path';
 import { fileURLToPath } from 'url';
-import { sync } from 'glob';
+import { globSync } from 'glob';
 import { optimize } from 'svgo';
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
@@ -256,7 +256,7 @@ async function main () {
     // gather candidate icon names from source - look for iconName="..." or iconName={'...'}
     // Use forward-slash patterns so glob works reliably on Windows.
     const pattern = `${SRC.replace(/\\/g, '/')}/**/*.{svelte,ts,js}`;
-    const files = sync(pattern, { nodir: true });
+    const files = globSync(pattern, { nodir: true });
 
     console.log('Scanning files with pattern:', pattern);
     console.log('Found files:', files.length);

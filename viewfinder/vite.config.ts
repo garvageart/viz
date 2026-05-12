@@ -30,11 +30,11 @@ const define = {
 };
 
 // ideally a user/developer NEVER gets to the hardcoded defaults
-const host = process.env.VIZ_API_SERVER_HOST || config.servers.api.host || "localhost";
-const port = process.env.VIZ_API_SERVER_PORT || config.servers.api.port || 7770;
+const apiHost = process.env.VIZ_API_SERVER_HOST || config.servers.api.host || "localhost";
+const apiPort = process.env.VIZ_API_SERVER_PORT || config.servers.api.port || 7770;
 
 const apiServer: ProxyOptions = {
-	target: `http://${host}:${port}`,
+	target: `http://${apiHost}:${apiPort}`,
 	secure: true,
 	changeOrigin: true,
 	ws: true
@@ -107,10 +107,14 @@ export default defineConfig({
 		],
 	},
 	server: {
+		host: '0.0.0.0',
 		port: config.servers.viz.port,
 		cors: true,
 		proxy: viteProxy,
-		allowedHosts: ['viz.local']
+		allowedHosts: ['viz.localhost', 'localhost', '127.0.0.1'],
+		watch: {
+			usePolling: true
+		},
 	},
 	preview: {
 		port: config.servers.viz.port,
