@@ -1,12 +1,13 @@
 <script lang="ts">
 	import Button from "$lib/components/Button.svelte";
-	import ModalContainer from "./ModalContainer.svelte";
 	import type { Snippet } from "svelte";
+	import { modalsManager } from "./manager/ModalManager.svelte";
 
 	interface Props {
+		id: string;
 		title: string;
-		children?: Snippet;
-		actions?: Snippet;
+		children?: Snippet<[any]>;
+		actions?: Snippet<[any]>;
 		confirmText?: string;
 		cancelText?: string;
 		onConfirm?: () => void;
@@ -14,6 +15,7 @@
 	}
 
 	let {
+		id,
 		title,
 		children,
 		actions,
@@ -22,32 +24,45 @@
 		onConfirm,
 		onCancel
 	}: Props = $props();
+
+	function handleConfirm() {
+		if (onConfirm) {
+			onConfirm();
+		}
+		modalsManager.close(id, true);
+	}
+
+	function handleCancel() {
+		if (onCancel) {
+			onCancel();
+		}
+
+		modalsManager.dismiss(id, "cancel");
+	}
 </script>
 
-<ModalContainer heading={title}>
-	<div class="confirmation-modal">
-		<div class="confirmation-content">
-			{#if children}
-				{@render children()}
-			{/if}
-		</div>
-
-		<div class="confirm-actions">
-			{#if actions}
-				{@render actions()}
-			{:else}
-				<Button onclick={onCancel}>{cancelText}</Button>
-				<Button
-					class="onconfirm-btn"
-					style="background-color: var(--viz-primary); color: var(--viz-10-dark);"
-					onclick={onConfirm}
-				>
-					{confirmText}
-				</Button>
-			{/if}
-		</div>
+<div class="confirmation-modal">
+	<div class="confirmation-content">
+		{#if children}
+			{@render children({ id })}
+		{/if}
 	</div>
-</ModalContainer>
+
+	<div class="confirm-actions">
+		{#if actions}
+			{@render actions({ id })}
+		{:else}
+			<Button onclick={handleCancel}>{cancelText}</Button>
+			<Button
+				class="onconfirm-btn"
+				style="background-color: var(--viz-primary); color: var(--viz-10-dark);"
+				onclick={handleConfirm}
+			>
+				{confirmText}
+			</Button>
+		{/if}
+	</div>
+</div>
 
 <style lang="scss">
 	.confirmation-modal {

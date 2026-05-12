@@ -1,36 +1,35 @@
 <script lang="ts">
-	import { debugMode, modal } from "$lib/states/index.svelte";
-	import type { Snippet } from "svelte";
+	import { modalsManager } from "./manager/ModalManager.svelte";
 	import Lightbox from "../Lightbox.svelte";
-	import Modal from "./ModalLightbox.svelte";
-
-	interface Props {
-		heading?: string;
-		children: Snippet;
-	}
-
-	let { heading, children }: Props = $props();
-
-	let show = $state(false);
-	$effect(() => {
-		show = modal.show;
-	});
-
-	if (debugMode) {
-		$effect(() => {
-			if (modal.show) {
-				console.log("modal is showing");
-			} else {
-				console.log("modal is not showing");
-			}
-		});
-	}
+	import ModalLightbox from "./ModalLightbox.svelte";
 </script>
 
-{#if modal.show}
-	<Lightbox bind:show onclick={() => (modal.show = false)}>
-		<Modal {heading}>
-			{@render children()}
-		</Modal>
+<svelte:window
+	onkeydown={(e) => {
+		if (e.key === "Escape") {
+			modalsManager.pop();
+		}
+	}}
+/>
+
+{#each modalsManager.modals as modal (modal.id)}
+	<Lightbox
+		show={true}
+		onclick={() => {
+			if (modal.options?.closeOnOverlayClick !== false) {
+				modalsManager.dismiss(modal.id, "overlay-click");
+			}
+		}}
+		zIndex={modal.index}
+	>
+		<ModalLightbox
+			heading={modal.options?.heading}
+			width={modal.options?.width}
+			height={modal.options?.height}
+			zIndex={modal.index + 1}
+			onclickClose={() => modalsManager.dismiss(modal.id, "close-button")}
+		>
+			<modal.component {...modal.props} id={modal.id} />
+		</ModalLightbox>
 	</Lightbox>
-{/if}
+{/each}

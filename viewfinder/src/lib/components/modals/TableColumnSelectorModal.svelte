@@ -1,10 +1,10 @@
 <script lang="ts">
-	import ModalOverlay from "./ModalContainer.svelte";
 	import CheckboxGroup from "../dom/CheckboxGroup.svelte";
 	import { tableColumnSettings } from "$lib/states/index.svelte";
 	import { snakeToSentence } from "$lib/utils/strings";
 
 	interface Props {
+		id: string;
 		availableKeys: string[];
 	}
 
@@ -29,16 +29,14 @@
 	});
 </script>
 
-<ModalOverlay>
-	<div id="viz-column-selector-modal">
-		<h1>Table Columns</h1>
-		<p class="subtitle">Select which columns to display in the list view</p>
+<div id="viz-column-selector-modal">
+	<h1>Table Columns</h1>
+	<p class="subtitle">Select which columns to display in the list view</p>
 
-		<div class="column-list">
-			<CheckboxGroup {options} bind:value={selectedColumns} />
-		</div>
+	<div class="column-list">
+		<CheckboxGroup {options} bind:value={selectedColumns} />
 	</div>
-</ModalOverlay>
+</div>
 
 <style lang="scss">
 	#viz-column-selector-modal {

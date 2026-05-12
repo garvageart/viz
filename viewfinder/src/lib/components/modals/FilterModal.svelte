@@ -1,16 +1,10 @@
 <script lang="ts">
-	import { modal } from "$lib/states/index.svelte";
-	import ModalContainer from "./ModalContainer.svelte";
 	import FilterPanel from "../panels/workspace/FilterPanel.svelte";
 </script>
 
-{#if modal.show}
-	<ModalContainer>
-		<div class="filter-modal-content">
-			<FilterPanel />
-		</div>
-	</ModalContainer>
-{/if}
+<div class="filter-modal-content">
+	<FilterPanel />
+</div>
 
 <style lang="scss">
 	.filter-modal-content {

@@ -17,16 +17,15 @@
 	import { afterNavigate, beforeNavigate } from "$app/navigation";
 
 	import NavigationProgressBar from "$lib/components/NavigationProgressBar.svelte";
+	import ModalRenderer from "$lib/components/modals/ModalContainer.svelte";
 	import { historyState } from "$lib/states/history.svelte";
 	import { debugState, themeState } from "$lib/states/index.svelte";
 	import { loadingState } from "$lib/states/loading.svelte";
 	import "$lib/stores/appReady";
 	import "$lib/styles/scss/main.scss";
-	import type { VizConfig, ViewfinderConfig } from "$lib/types/config.types";
+	import type { ViewfinderConfig, VizConfig } from "$lib/types/config.types";
 	import { toggleFullscreen } from "$lib/utils/misc";
 	import "@fontsource-variable/manrope/index.css";
-	// import "@fontsource-variable/public-sans/index.css";
-	// import "@fontsource/clear-sans/index.css";
 	import "@fontsource-variable/roboto-mono/index.css";
 	import hotkeys from "hotkeys-js";
 
@@ -80,3 +79,4 @@
 	<NavigationProgressBar />
 {/if}
 {@render children()}
+<ModalRenderer />

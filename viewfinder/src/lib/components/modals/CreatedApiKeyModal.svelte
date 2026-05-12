@@ -4,12 +4,15 @@
 	import Button from "$lib/components/Button.svelte";
 	import MaterialIcon from "$lib/components/MaterialIcon.svelte";
 	import TextInput from "$lib/components/settings/inputs/TextInput.svelte";
-	import { modal } from "$lib/states/index.svelte";
 	import { toastState } from "$lib/toast-notifcations/notif-state.svelte";
-	import ModalContainer from "./ModalContainer.svelte";
+	import { copyToClipboard } from "$lib/utils/misc";
+	import { modalsManager } from "./manager/ModalManager.svelte";
 
-	let { onClose, onSuccess }: { onClose: () => void; onSuccess: () => void } =
-		$props();
+	let {
+		id,
+		onClose,
+		onSuccess
+	}: { id: string; onClose: () => void; onSuccess: () => void } = $props();
 
 	let name = $state("");
 	let description = $state("");
@@ -85,7 +88,7 @@
 
 	function handleCopy() {
 		if (createdToken) {
-			navigator.clipboard.writeText(createdToken);
+			copyToClipboard(createdToken);
 			toastState.addToast({
 				message: "API Key copied to clipboard",
 				type: "success",
@@ -95,12 +98,17 @@
 	}
 
 	function handleClose() {
-		modal.show = false;
 		onClose();
+		modalsManager.close(id);
+	}
+
+	function handleCancel() {
+		onClose();
+		modalsManager.dismiss(id, "cancel");
 	}
 </script>
 
-<ModalContainer heading={createdToken ? "API Key Created" : "Create API Key"}>
+<div class="api-key-modal-inner">
 	{#if createdToken}
 		<p>Please copy your new API Key. You won't be able to see it again!</p>
 		<div class="key-display">
@@ -137,7 +145,7 @@
 			</div>
 		</div>
 		<div class="modal-actions">
-			<Button hoverColor="var(--viz-80)" onclick={handleClose}>Cancel</Button>
+			<Button hoverColor="var(--viz-80)" onclick={handleCancel}>Cancel</Button>
 			<Button
 				onclick={handleCreate}
 				disabled={creating || !name || selectedScopes.length === 0}
@@ -146,9 +154,15 @@
 			</Button>
 		</div>
 	{/if}
-</ModalContainer>
+</div>
 
 <style lang="scss">
+	.api-key-modal-inner {
+		display: flex;
+		flex-direction: column;
+		width: 100%;
+	}
+
 	.form-content {
 		display: flex;
 		flex-direction: column;
