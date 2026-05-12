@@ -98,11 +98,6 @@ class VizView<
         this.isActive = opts.isActive ?? false;
         this.locked = opts.locked ?? false;
         this.menuItems = opts.menuItems;
-
-        if (this.path) {
-            // Preload data if path is available on construction
-            this.getComponentData();
-        }
     }
 
     getTabDropHandler(mimeType: string) {

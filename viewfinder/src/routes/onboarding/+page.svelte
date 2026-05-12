@@ -41,7 +41,7 @@
 
 	// Superadmin State
 	let superadminForm = $state({
-		username: "",
+		name: "",
 		email: "",
 		password: "",
 		confirmPassword: "",
@@ -103,27 +103,18 @@
 					}
 				} else {
 					toastState.addToast({
-						message: "Failed to load settings.",
+						message: res.data.error || "Failed to load settings.",
 						type: "error"
 					});
 				}
 			} catch (e) {
 				console.error(e);
+				toastState.addToast({
+					message: "An unexpected error occurred while loading settings.",
+					type: "error"
+				});
 			} finally {
 				isLoading = false;
-			}
-		}
-	}
-
-	function handleThemeToggle() {
-		toggleTheme();
-		// Sync with form if 'theme' setting exists
-		const newTheme = getTheme(); // 'light' or 'dark' (or 'system' if we could query that state, but getTheme resolves it)
-
-		// Look for a theme setting key
-		for (const key of Object.keys(userSettingsValues)) {
-			if (key === "theme" || key === "default_theme") {
-				userSettingsValues[key] = newTheme;
 			}
 		}
 	}
@@ -161,11 +152,11 @@
 		isLoading = true;
 		try {
 			const res = await setupSuperadmin({
-				username: superadminForm.username,
-				email: superadminForm.email,
+				name: superadminForm.name.trim(),
+				email: superadminForm.email.trim(),
 				password: superadminForm.password,
-				firstName: superadminForm.firstName,
-				lastName: superadminForm.lastName
+				firstName: superadminForm.firstName.trim(),
+				lastName: superadminForm.lastName.trim()
 			});
 
 			if (res.status === 201) {
@@ -178,7 +169,7 @@
 				system.fetched = false;
 				system.data = null;
 
-				window.location.href = "/";
+				goto("/");
 			} else {
 				toastState.addToast({
 					message: res.data.error || "Setup failed.",
@@ -200,8 +191,8 @@
 		isLoading = true;
 		try {
 			const res = await doUserOnboarding({
-				first_name: userForm.firstName,
-				last_name: userForm.lastName,
+				first_name: userForm.firstName.trim(),
+				last_name: userForm.lastName.trim(),
 				settings: userSettings.map((setting) => ({
 					name: setting.name,
 					display_name: setting.display_name,
@@ -249,19 +240,6 @@
 </script>
 
 <div class="onboarding-container">
-	<button
-		class="theme-toggle"
-		onclick={handleThemeToggle}
-		title="Toggle Theme"
-		aria-label="Toggle Theme"
-	>
-		<MaterialIcon
-			weight={300}
-			iconName={getTheme() === "dark" ? "dark_mode" : "light_mode"}
-			style="font-size: 1.5rem;"
-		/>
-	</button>
-
 	<div class="card">
 		{#if system.loading}
 			<div class="loading">Loading...</div>
@@ -270,35 +248,55 @@
 			<div class="step-container" in:fade={{ duration: 200 }}>
 				<!-- Step 0: Welcome -->
 				{#if currentStep === 0}
-					<div class="step-content">
-						<h1>Welcome to Viz</h1>
-						<div class="info-box">
-							<p>
-								<strong>You are the first user!</strong>
-							</p>
-							<p>
-								As the first user, you will be granted <strong
-									>Superadmin</strong
-								>
-								privileges. This gives you full control over the system, including
-								managing other users, system settings, and more.
-							</p>
-							<p>Let's get your account set up.</p>
+					<form
+						onsubmit={(e) => {
+							e.preventDefault();
+							nextStep();
+						}}
+						class="step-form"
+					>
+						<div class="step-content">
+							<h1>Welcome to Viz</h1>
+							<div class="info-box">
+								<p>
+									<strong>You are the first user!</strong>
+								</p>
+								<p>
+									As the first user, you will be granted <strong
+										>Superadmin</strong
+									>
+									privileges. This gives you full control over the system, including
+									managing other users, system settings, and more.
+								</p>
+								<p>Let's get your account set up.</p>
+							</div>
 						</div>
-					</div>
-					<div class="actions">
-						<Button onclick={nextStep}>Get Started</Button>
-					</div>
+						<div class="actions centered">
+							<Button type="submit">Get Started</Button>
+						</div>
+					</form>
 
 					<!-- Step 1: Account Info -->
 				{:else if currentStep === 1}
-					<div class="step-content">
-						<h2>Account Details</h2>
-						<p class="subtitle">Set your login credentials.</p>
-						<form onsubmit={(e) => e.preventDefault()}>
+					<form
+						onsubmit={(e) => {
+							e.preventDefault();
+							if (
+								superadminForm.name &&
+								superadminForm.email &&
+								superadminForm.password
+							) {
+								nextStep();
+							}
+						}}
+						class="step-form"
+					>
+						<div class="step-content">
+							<h2>Account Details</h2>
+							<p class="subtitle">Set your login credentials.</p>
 							<InputText
-								label="Username"
-								bind:value={superadminForm.username}
+								label="Name"
+								bind:value={superadminForm.name}
 								required
 							/>
 							<InputText
@@ -319,24 +317,30 @@
 								bind:value={superadminForm.confirmPassword}
 								required
 							/>
-						</form>
-					</div>
-					<div class="actions">
-						<Button onclick={prevStep}>Back</Button>
-						<Button
-							disabled={!superadminForm.username ||
-								!superadminForm.email ||
-								!superadminForm.password}
-							onclick={nextStep}>Next</Button
-						>
-					</div>
+						</div>
+						<div class="actions">
+							<Button type="button" onclick={prevStep}>Back</Button>
+							<Button
+								type="submit"
+								disabled={!superadminForm.name ||
+									!superadminForm.email ||
+									!superadminForm.password}>Next</Button
+							>
+						</div>
+					</form>
 
 					<!-- Step 2: Profile Info -->
 				{:else if currentStep === 2}
-					<div class="step-content">
-						<h2>Your Profile</h2>
-						<p class="subtitle">Tell us a bit about yourself.</p>
-						<form onsubmit={(e) => e.preventDefault()}>
+					<form
+						onsubmit={(e) => {
+							e.preventDefault();
+							handleSuperadminSubmit();
+						}}
+						class="step-form"
+					>
+						<div class="step-content">
+							<h2>Your Profile</h2>
+							<p class="subtitle">Tell us a bit about yourself.</p>
 							<InputText
 								label="First Name"
 								bind:value={superadminForm.firstName}
@@ -345,14 +349,14 @@
 								label="Last Name"
 								bind:value={superadminForm.lastName}
 							/>
-						</form>
-					</div>
-					<div class="actions">
-						<Button onclick={prevStep}>Back</Button>
-						<Button onclick={handleSuperadminSubmit} disabled={isLoading}>
-							{isLoading ? "Creating Account..." : "Finish Setup"}
-						</Button>
-					</div>
+						</div>
+						<div class="actions">
+							<Button type="button" onclick={prevStep}>Back</Button>
+							<Button type="submit" disabled={isLoading}>
+								{isLoading ? "Creating Account..." : "Finish Setup"}
+							</Button>
+						</div>
+					</form>
 				{/if}
 			</div>
 		{:else if system.data?.user_onboarding_required}
@@ -363,22 +367,38 @@
 				<ProgressBar bind:width={progressBarWidth} />
 
 				{#if currentStep === 0}
-					<div class="step-content center-text">
-						<h1>Welcome, {user.data?.username || "Traveler"}!</h1>
-						<p>We're glad you're here.</p>
-						<p>
-							Before you dive in, we need to gather a few details to personalize
-							your experience.
-						</p>
-					</div>
-					<div class="actions centered">
-						<Button onclick={nextStep}>Let's Go</Button>
-					</div>
+					<form
+						onsubmit={(e) => {
+							e.preventDefault();
+							nextStep();
+						}}
+						class="step-form"
+					>
+						<div class="step-content center-text">
+							<h1>Welcome, {user.data?.name || "Traveler"}!</h1>
+							<p>We're glad you're here.</p>
+							<p>
+								Before you dive in, we need to gather a few details to
+								personalize your experience.
+							</p>
+						</div>
+						<div class="actions centered">
+							<Button type="submit">Let's Go</Button>
+						</div>
+					</form>
 				{:else if currentStep === 1}
-					<div class="step-content">
-						<h2>Personal Details</h2>
-						<p class="subtitle">How should we address you?</p>
-						<form onsubmit={(e) => e.preventDefault()}>
+					<form
+						onsubmit={(e) => {
+							e.preventDefault();
+							if (userForm.firstName && userForm.lastName) {
+								nextStep();
+							}
+						}}
+						class="step-form"
+					>
+						<div class="step-content">
+							<h2>Personal Details</h2>
+							<p class="subtitle">How should we address you?</p>
 							<InputText
 								label="First Name"
 								bind:value={userForm.firstName}
@@ -389,15 +409,16 @@
 								bind:value={userForm.lastName}
 								required
 							/>
-						</form>
-					</div>
-					<div class="actions">
-						<Button onclick={prevStep}>Back</Button>
-						<Button
-							disabled={!userForm.firstName || !userForm.lastName}
-							onclick={nextStep}>Next</Button
-						>
-					</div>
+						</div>
+						<div class="actions">
+							<Button type="button" onclick={prevStep}>Back</Button>
+							<Button
+								type="submit"
+								disabled={!userForm.firstName || !userForm.lastName}
+								>Next</Button
+							>
+						</div>
+					</form>
 
 					<!-- Steps 2...N: Settings Groups -->
 				{:else if currentStep >= 2 && currentStep < 2 + groupNames.length}
@@ -405,59 +426,71 @@
 					{@const groupName = groupNames[groupIndex]}
 					{@const settings = settingsGroups[groupName]}
 
-					<div class="step-content">
-						<h2>{groupName.replace(/_/g, " ")} Settings</h2>
-						<p class="subtitle">Customize your experience.</p>
+					<form
+						onsubmit={(e) => {
+							e.preventDefault();
+							if (currentStep === totalSteps - 1) {
+								handleUserOnboardingSubmit();
+							} else {
+								nextStep();
+							}
+						}}
+						class="step-form"
+					>
+						<div class="step-content">
+							<h2>{groupName.replace(/_/g, " ")} Settings</h2>
+							<p class="subtitle">Customize your experience.</p>
 
-						<div class="settings-list">
-							{#each settings as setting}
-								<div class="setting-item">
-									{#if setting.value_type === "enum" && setting.allowed_values}
-										<InputSelect
-											label={setting.name.trim()
-												? setting.name
-												: formatLabel(setting.name)}
-											description={setting.description}
-											bind:value={userSettingsValues[setting.name]}
-										>
-											{#each setting.allowed_values as option}
-												<option value={option}>{option}</option>
-											{/each}
-										</InputSelect>
-									{:else if setting.value_type === "boolean"}
-										<InputSelect
-											label={setting.name.trim()
-												? setting.name
-												: formatLabel(setting.name)}
-											description={setting.description}
-											bind:value={userSettingsValues[setting.name]}
-										>
-											<option value="true">Yes</option>
-											<option value="false">No</option>
-										</InputSelect>
-									{:else}
-										<InputText
-											label={setting.name.trim()
-												? setting.name
-												: formatLabel(setting.name)}
-											description={setting.description}
-											bind:value={userSettingsValues[setting.name]}
-										/>
-									{/if}
-								</div>
-							{/each}
+							<div class="settings-list">
+								{#each settings as setting}
+									<div class="setting-item">
+										{#if setting.value_type === "enum" && setting.allowed_values}
+											<InputSelect
+												label={setting.name.trim()
+													? setting.name
+													: formatLabel(setting.name)}
+												description={setting.description}
+												bind:value={userSettingsValues[setting.name]}
+											>
+												{#each setting.allowed_values as option}
+													<option value={option}>{option}</option>
+												{/each}
+											</InputSelect>
+										{:else if setting.value_type === "boolean"}
+											<InputSelect
+												label={setting.name.trim()
+													? setting.name
+													: formatLabel(setting.name)}
+												description={setting.description}
+												bind:value={userSettingsValues[setting.name]}
+											>
+												<option value="true">Yes</option>
+												<option value="false">No</option>
+											</InputSelect>
+										{:else}
+											<InputText
+												label={setting.name.trim()
+													? setting.name
+													: formatLabel(setting.name)}
+												description={setting.description}
+												bind:value={userSettingsValues[setting.name]}
+											/>
+										{/if}
+									</div>
+								{/each}
+							</div>
 						</div>
-					</div>
-					<div class="actions">
-						<Button onclick={prevStep}>Back</Button>
-						{#if currentStep === totalSteps - 1}
-							<Button onclick={handleUserOnboardingSubmit} disabled={isLoading}>
-								{isLoading ? "Finishing..." : "Complete Setup"}
-							</Button>
-						{:else}
-							<Button onclick={nextStep}>Next</Button>
-						{/if}
-					</div>
+						<div class="actions">
+							<Button type="button" onclick={prevStep}>Back</Button>
+							{#if currentStep === totalSteps - 1}
+								<Button type="submit" disabled={isLoading}>
+									{isLoading ? "Finishing..." : "Complete Setup"}
+								</Button>
+							{:else}
+								<Button type="submit">Next</Button>
+							{/if}
+						</div>
+					</form>
 				{/if}
 			</div>
 		{:else}
@@ -477,33 +510,13 @@
 		position: relative;
 	}
 
-	.theme-toggle {
-		position: absolute;
-		top: 1.5rem;
-		right: 1.5rem;
-		background: transparent;
-		border: none;
-		color: var(--viz-text-color);
-		cursor: pointer;
-		padding: 0.5rem;
-		border-radius: 50%;
-		display: flex;
-		align-items: center;
-		justify-content: center;
-		transition: background-color 0.2s;
-
-		&:hover {
-			background-color: var(--viz-90);
-		}
-	}
-
 	.card {
-		background: var(--viz-100);
+		background: var(--viz-bg-color);
 		border-radius: 1rem;
 		box-shadow: 0 10px 25px rgba(0, 0, 0, 0.2);
 		width: 100%;
 		max-width: 40%;
-		border: 1px solid var(--viz-60);
+		border: 1px solid var(--viz-primary);
 		display: flex;
 		flex-direction: column;
 		overflow: hidden;
@@ -519,17 +532,18 @@
 		height: 100%;
 	}
 
+	.step-form {
+		display: flex;
+		flex-direction: column;
+		flex: 1;
+		height: 100%;
+	}
+
 	.step-content {
 		flex: 1;
 		display: flex;
 		flex-direction: column;
 		gap: 1.5rem;
-
-		form {
-			display: flex;
-			flex-direction: column;
-			gap: 1rem;
-		}
 
 		&.center-text {
 			text-align: center;
@@ -557,7 +571,7 @@
 	}
 
 	.info-box {
-		background: var(--viz-90);
+		background: var(--viz-100);
 		border: 1px solid var(--viz-primary);
 		padding: 1rem;
 		border-radius: 0.5rem;
