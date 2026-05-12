@@ -8,7 +8,7 @@ const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 const PROJECT_ROOT = path.resolve(__dirname, '../../'); // scripts/js -> scripts -> root
 
-const DOMAIN = 'viz.local';
+const DOMAIN = 'viz.localhost';
 const TARGET_IP = '127.0.0.1';
 const CADDYFILE_NAME = 'Caddyfile';
 

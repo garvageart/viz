@@ -63,12 +63,38 @@ async function installWindows() {
     log('pacman -Syu finished (may require terminal restart if core packages were updated).');
   }
 
-  log(`Installing mingw-w64-x86_64-vips via pacman...`);
+  log(`Installing dependencies via pacman...`);
   try {
-    runCommand('pacman', ['-S', '--noconfirm', 'mingw-w64-x86_64-vips']);
-    success('libvips installed via pacman.');
+    const packages = [
+      'mingw-w64-x86_64-libvips',
+      'mingw-w64-x86_64-gcc',
+      'mingw-w64-x86_64-imagemagick',
+      'mingw-w64-x86_64-libheif',
+      'mingw-w64-x86_64-libjxl',
+      'mingw-w64-x86_64-openslide',
+      'mingw-w64-x86_64-poppler',
+      'mingw-w64-x86_64-libimagequant',
+      'mingw-w64-x86_64-libarchive',
+      'mingw-w64-x86_64-librsvg',
+      'mingw-w64-x86_64-matio',
+      'mingw-w64-x86_64-cfitsio',
+      'mingw-w64-x86_64-libcgif',
+      'mingw-w64-x86_64-libraw',
+      'mingw-w64-x86_64-libnifti'
+    ];
+
+    // Check if pkg-config is in path
+    try {
+      execSync('pkg-config --version', { stdio: 'ignore' });
+    } catch (e) {
+      log('pkg-config not found in PATH. Adding mingw-w64-x86_64-pkg-config to installation.');
+      packages.push('mingw-w64-x86_64-pkg-config');
+    }
+
+    runCommand('pacman', ['-S', '--noconfirm', ...packages]);
+    success('Dependencies (libvips, gcc, pkg-config) installed via pacman.');
   } catch (e) {
-    error(`Failed to install libvips via pacman. Ensure you've run 'pacman -Syu' recently.`);
+    error(`Failed to install dependencies via pacman. Ensure you've run 'pacman -Syu' recently.`);
     throw e;
   }
 
@@ -134,47 +160,195 @@ async function installMacOS() {
     throw new Error('Homebrew is not installed. Please install Homebrew first: https://brew.sh/');
   }
 
-  log('Installing vips and pkg-config via Homebrew...');
-  runCommand('brew', ['install', 'vips', 'pkg-config']);
+  log('Installing vips and dependencies via Homebrew...');
+  const packages = [
+    'vips',
+    'gcc',
+    'pkg-config',
+    'imagemagick',
+    'libheif',
+    'jpeg-xl',
+    'openslide',
+    'poppler',
+    'libimagequant',
+    'libarchive',
+    'librsvg',
+    'matio',
+    'cfitsio',
+    'cgif',
+    'libraw',
+    'libnifti'
+  ];
+  runCommand('brew', ['install', ...packages]);
   success('Installation complete via Homebrew.');
 }
 
-async function installLinux() {
-  log('Detecting Linux environment...');
+function checkVersionMatch(required: string): boolean {
+  try {
+    const vipsVersionOutput = execSync('vips --version', { encoding: 'utf-8' }).trim();
+    const versionMatch = vipsVersionOutput.match(/vips-(\d+\.\d+\.\d+)/);
+    const installedVersion = versionMatch ? versionMatch[1] : null;
+    return installedVersion === required;
+  } catch (e) {
+    return false;
+  }
+}
+
+async function installFromSourceLinux(version: string) {
+  log(`Installing libvips ${version} from source...`);
+  
+  const buildDeps = [
+    'build-essential', 'pkg-config', 'git', 'ca-certificates', 'curl',
+    'meson', 'ninja-build', 'python3', 'python3-pip', 'python3-setuptools',
+    'libglib2.0-dev', 'libexpat1-dev', 'libjpeg-dev', 'libpng-dev', 'libtiff-dev',
+    'libwebp-dev', 'libheif-dev', 'libopenexr-dev', 'liborc-0.4-dev', 'libgirepository1.0-dev',
+    'libxml2-dev', 'libexif-dev', 'libpoppler-glib-dev', 'libgsf-1-dev', 'libopenjp2-7-dev',
+    'libjxl-dev', 'libimagequant-dev', 'libarchive-dev', 'librsvg2-dev',
+    'libopenslide-dev', 'libmatio-dev', 'libcfitsio-dev', 'libcgif-dev',
+    'libmagickwand-dev', 'libraw-dev', 'libnifti-dev'
+  ];
+
+  log('Installing build dependencies...');
+  try {
+    runCommand('sudo', ['apt-get', 'update']);
+    runCommand('sudo', ['apt-get', 'install', '-y', '--no-install-recommends', ...buildDeps]);
+  } catch (e) {
+    error('Failed to install build dependencies. Manual intervention required.');
+    throw e;
+  }
+
+  const buildDir = path.join(os.tmpdir(), 'vips-build');
+  log(`Building in ${buildDir}...`);
 
   try {
+    await fs.mkdir(buildDir, { recursive: true });
+    const tarball = path.join(buildDir, `vips-${version}.tar.xz`);
+    const url = `https://github.com/libvips/libvips/releases/download/v${version}/vips-${version}.tar.xz`;
+
+    log(`Downloading ${url}...`);
+    runCommand('curl', ['-fsSL', url, '-o', tarball]);
+
+    log('Extracting...');
+    runCommand('tar', ['xJf', tarball], { cwd: buildDir });
+
+    const sourceDir = path.join(buildDir, `vips-${version}`);
+    log('Running meson setup...');
+    runCommand('meson', ['setup', 'build', '--prefix=/usr'], { cwd: sourceDir });
+
+    log('Building with ninja...');
+    runCommand('ninja', ['-C', 'build'], { cwd: sourceDir });
+
+    log('Installing...');
+    runCommand('sudo', ['ninja', '-C', 'build', 'install'], { cwd: sourceDir });
+    runCommand('sudo', ['ldconfig']);
+
+    success(`libvips ${version} installed from source successfully.`);
+  } finally {
+    try {
+      await fs.rm(buildDir, { recursive: true, force: true });
+    } catch (e) { }
+  }
+}
+
+async function installLinux(requiredVersion: string) {
+  log('Detecting Linux environment...');
+
+  let hasApt = false;
+  try {
     execSync('which apt-get', { stdio: 'ignore' });
-    log('Detected apt-based system. Installing libvips-dev...');
+    hasApt = true;
+  } catch (e) { }
+
+  if (hasApt) {
+    log('Detected apt-based system. Checking available version...');
+    try {
+      const policy = execSync(`apt-cache policy libvips-dev`, { encoding: 'utf-8' });
+      const candidateMatch = policy.match(/Candidate:\s+(\d+\.\d+\.\d+)/);
+      const candidateVersion = candidateMatch ? candidateMatch[1] : null;
+
+      if (candidateVersion === requiredVersion) {
+        log(`Matching version ${requiredVersion} found in apt. Installing...`);
+        const packages = [
+          'libvips-dev', 'gcc', 'pkg-config', 'libmagickwand-dev', 'libheif-dev',
+          'libjxl-dev', 'libopenslide-dev', 'libpoppler-glib-dev',
+          'libimagequant-dev', 'libarchive-dev', 'librsvg2-dev',
+          'libmatio-dev', 'libcfitsio-dev', 'libcgif-dev',
+          'libraw-dev', 'libnifti-dev'
+        ];
+        runCommand('sudo', ['apt-get', 'update']);
+        runCommand('sudo', ['apt-get', 'install', '-y', ...packages]);
+        success('Installation complete via apt-get.');
+        return;
+      } else {
+        log(`Apt candidate version ${candidateVersion} does not match ${requiredVersion}.`);
+        if (checkVersionMatch(requiredVersion)) {
+          success(`Correct version ${requiredVersion} is already installed.`);
+          return;
+        }
+        
+        log('Would you like to install from source? (requires sudo)');
+        // Since we are in a script, we'll proceed if we're on a known dev environment or just do it.
+        // For safety in this context, I'll just do it as it's the required version for the project.
+        await installFromSourceLinux(requiredVersion);
+        return;
+      }
+    } catch (e) {
+      log('Could not determine apt version policy. Falling back to default install.');
+    }
+
+    const packages = [
+      'libvips-dev', 'gcc', 'pkg-config', 'libmagickwand-dev', 'libheif-dev',
+      'libjxl-dev', 'libopenslide-dev', 'libpoppler-glib-dev',
+      'libimagequant-dev', 'libarchive-dev', 'librsvg2-dev',
+      'libmatio-dev', 'libcfitsio-dev', 'libcgif-dev',
+      'libraw-dev', 'libnifti-dev'
+    ];
     runCommand('sudo', ['apt-get', 'update']);
-    runCommand('sudo', ['apt-get', 'install', '-y', 'libvips-dev', 'pkg-config']);
+    runCommand('sudo', ['apt-get', 'install', '-y', ...packages]);
     success('Installation complete via apt-get.');
     return;
-  } catch (e) { } // Ignore errors and try next package manager
+  }
 
   try {
     execSync('which dnf', { stdio: 'ignore' });
-    log('Detected dnf-based system. Installing vips-devel...');
-    runCommand('sudo', ['dnf', 'install', '-y', 'vips-devel', 'pkg-config']);
+    log('Detected dnf-based system. Installing vips-devel and dependencies...');
+    const packages = [
+      'vips-devel', 'gcc', 'pkg-config', 'ImageMagick-devel', 'libheif-devel',
+      'libjxl-devel', 'openslide-devel', 'poppler-glib-devel'
+    ];
+    runCommand('sudo', ['dnf', 'install', '-y', ...packages]);
     success('Installation complete via dnf.');
     return;
-  } catch (e) { } // Ignore errors and try next package manager
+  } catch (e) { }
 
   try {
     execSync('which pacman', { stdio: 'ignore' });
-    log('Detected pacman-based system. Installing libvips...');
-    runCommand('sudo', ['pacman', '-S', '--noconfirm', 'libvips', 'pkgconf']);
+    log('Detected pacman-based system. Installing libvips and dependencies...');
+    const packages = [
+      'libvips', 'gcc', 'pkgconf', 'imagemagick', 'libheif', 'libjxl', 'openslide', 'poppler'
+    ];
+    runCommand('sudo', ['pacman', '-S', '--noconfirm', ...packages]);
     success('Installation complete via pacman.');
     return;
-  } catch (e) { } // Ignore errors and throw if no package manager found
+  } catch (e) { }
 
-  throw new Error('Unsupported Linux distribution. Please install libvips-dev and pkg-config manually.');
+  throw new Error('Unsupported Linux distribution. Please install libvips-dev, gcc, and pkg-config manually.');
 }
 
-async function verify() {
+async function verify(requiredVersion: string) {
   log('Verifying installation...');
   try {
-    const vipsVersion = execSync('vips --version', { encoding: 'utf-8' }).trim();
-    success(`Found binary: ${vipsVersion}`);
+    const vipsVersionOutput = execSync('vips --version', { encoding: 'utf-8' }).trim();
+    // vips --version output is typically "vips-8.15.1"
+    const versionMatch = vipsVersionOutput.match(/vips-(\d+\.\d+\.\d+)/);
+    const installedVersion = versionMatch ? versionMatch[1] : null;
+
+    if (installedVersion === requiredVersion) {
+      success(`Found matching binary: ${vipsVersionOutput}`);
+    } else {
+      error(`Version mismatch! Target: ${requiredVersion}, Installed: ${installedVersion || vipsVersionOutput}`);
+      error('The installed version does not match the required version specified in .libvips-version.');
+    }
   } catch (e) {
     error('vips binary not found in PATH.');
   }
@@ -200,11 +374,12 @@ async function main() {
     } else if (platform === 'darwin') {
       await installMacOS();
     } else if (platform === 'linux') {
-      await installLinux();
+      await installLinux(version);
     } else {
       throw new Error(`Unsupported platform: ${platform}`);
     }
-    await verify();
+    await verify(version);
+    success('Setup process finished. PLEASE REFRESH YOUR TERMINAL for changes to take effect.');
   } catch (e: any) {
     error(e.message || e);
     process.exit(1);

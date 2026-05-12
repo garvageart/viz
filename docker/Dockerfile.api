@@ -32,7 +32,10 @@ RUN apt-get update && \
     meson ninja-build python3 python3-pip python3-setuptools \
     libglib2.0-dev libexpat1-dev libjpeg-dev libpng-dev libtiff-dev \
     libwebp-dev libheif-dev libopenexr-dev liborc-0.4-dev libgirepository1.0-dev \
-    libxml2-dev libexif-dev libpoppler-glib-dev libgsf-1-dev libopenjp2-7-dev && \
+    libxml2-dev libexif-dev libpoppler-glib-dev libgsf-1-dev libopenjp2-7-dev \
+    libjxl-dev libimagequant-dev libarchive-dev librsvg2-dev \
+    libopenslide-dev libmatio-dev libcfitsio-dev libcgif-dev \
+    libmagickwand-dev libraw-dev libnifti-dev && \
     rm -rf /var/lib/apt/lists/*
 
 # Download, build and install libvips
@@ -73,6 +76,8 @@ RUN apt-get update && \
     libglib2.0-0 libexpat1 libjpeg62-turbo libpng16-16 libtiff6 \
     libwebp7 libheif1 libopenexr-3-1-30 liborc-0.4-0 libgirepository-1.0-1 \
     libxml2 libexif12 libpoppler-glib8 libgsf-1-114 libopenjp2-7 \
+    libjxl0.7 libimagequant0 libarchive13 librsvg2-2 libopenslide0 libmatio11 \
+    libcfitsio10 libcgif0 libmagickwand-6.q16-7 libraw23 libnifti2 \
     ca-certificates && \
     rm -rf /var/lib/apt/lists/*
 
