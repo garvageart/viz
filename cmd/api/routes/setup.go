@@ -45,7 +45,7 @@ func (h *setupHandlers) SetupSuperadmin(w http.ResponseWriter, req *http.Request
 		return
 	}
 
-	if body.Username == "" || body.Password == "" || string(body.Email) == "" {
+	if body.Name == "" || body.Password == "" || string(body.Email) == "" {
 		render.Status(req, http.StatusBadRequest)
 		render.JSON(w, req, dto.ErrorResponse{Error: "Required fields are missing"})
 		return
@@ -59,11 +59,11 @@ func (h *setupHandlers) SetupSuperadmin(w http.ResponseWriter, req *http.Request
 
 	// Check if user already exists
 	var existingUser entities.User
-	tx := h.db.Where("email = ?", string(body.Email)).Or("username = ?", body.Username).First(&existingUser)
+	tx := h.db.Where("email = ?", string(body.Email)).First(&existingUser)
 	switch tx.Error {
 	case nil:
 		render.Status(req, http.StatusConflict)
-		render.JSON(w, req, dto.ErrorResponse{Error: "User with this email or username already exists"})
+		render.JSON(w, req, dto.ErrorResponse{Error: "User with this email or name already exists"})
 		return
 	case gorm.ErrRecordNotFound:
 		// OK, continue
@@ -88,7 +88,7 @@ func (h *setupHandlers) SetupSuperadmin(w http.ResponseWriter, req *http.Request
 	userEnt := entities.User{
 		Uid:       id,
 		Email:     string(body.Email),
-		Username:  body.Username,
+		Name:      body.Name,
 		FirstName: func() string { if body.FirstName != nil { return *body.FirstName } else { return "" } }(),
 		LastName:  func() string { if body.LastName != nil { return *body.LastName } else { return "" } }(),
 		Role:      dto.UserRoleSuperadmin, // Assign superadmin role

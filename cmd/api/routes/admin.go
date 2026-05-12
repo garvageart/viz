@@ -218,7 +218,7 @@ func AdminRouter(db *gorm.DB, logger *slog.Logger, storageStats *images.StorageS
 			userEnt := entities.User{
 				Uid:      id,
 				Email:    string(adminCreate.Email),
-				Username: adminCreate.Name,
+				Name: adminCreate.Name,
 				Role:     role,
 			}
 
@@ -278,7 +278,7 @@ func AdminRouter(db *gorm.DB, logger *slog.Logger, storageStats *images.StorageS
 			}
 
 			updates := entities.User{
-				Username:  *update.Username,
+				Name:      *update.Name,
 				FirstName: *update.FirstName,
 				LastName:  *update.LastName,
 				Email:     string(*update.Email),

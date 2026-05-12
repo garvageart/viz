@@ -89,7 +89,7 @@ func AccountsRouter(db *gorm.DB, logger *slog.Logger) *chi.Mux {
 		userEnt := entities.User{
 			Uid:       id,
 			Email:     string(create.Email),
-			Username:  create.Name,
+			Name:      create.Name,
 			FirstName: "",
 			LastName:  "",
 		}
@@ -302,8 +302,8 @@ func AccountsRouter(db *gorm.DB, logger *slog.Logger) *chi.Mux {
 				if updates.LastName != nil {
 					updateFields["last_name"] = *updates.LastName
 				}
-				if updates.Username != nil {
-					updateFields["username"] = *updates.Username
+				if updates.Name != nil {
+					updateFields["name"] = *updates.Name
 				}
 
 				if updates.Email != nil {

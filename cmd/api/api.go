@@ -214,15 +214,16 @@ func main() {
 
 	// setup logging stuff
 	logLevel := imalog.GetLevelFromString(config.AppConfig.Logging.Level)
-	logger := libhttp.SetupChiLogger("api", logLevel)
+	useLocal := config.AppConfig.Logging.Timezone == "local"
+	logger := libhttp.SetupChiLogger("api", logLevel, useLocal)
 
 	apiServer := APIServer{VizServer: ServerConfig}
 	apiServer.VizServer.LogLevel = logLevel
 	apiServer.VizServer.Logger = logger
 
 	// db stuff
-	if os.Getenv("DB_PASSWORD") != "" {
-		config.AppConfig.Database.Password = os.Getenv("DB_PASSWORD")
+	if os.Getenv("POSTGRES_PASSWORD") != "" {
+		config.AppConfig.Database.Password = os.Getenv("POSTGRES_PASSWORD")
 	}
 
 	if config.AppConfig.Database.Password == "" {
@@ -256,16 +257,16 @@ func main() {
 			return appConfig.Database.Port
 		}(),
 		User: func() string {
-			if user := os.Getenv("DB_USER"); user != "" {
+			if user := os.Getenv("POSTGRES_USER"); user != "" {
 				return user
 			}
 			return appConfig.Database.User
 		}(),
-		Password: appConfig.Database.Password,
-		AppName:  utils.AppName,
+		Password:     appConfig.Database.Password,
+		AppName:      utils.AppName,
 		DatabaseName: appConfig.Database.Name,
-		Logger:   logger,
-		LogLevel: logLevel,
+		Logger:       logger,
+		LogLevel:     logLevel,
 	}
 
 	// Lmao I hate this

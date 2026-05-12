@@ -3659,7 +3659,7 @@ components:
         uid: { type: string, description: User UID }
         first_name: { type: string, description: First name }
         last_name: { type: string, description: Last name }
-        username: { type: string, description: Username }
+        name: { type: string, description: Name }
         email: { type: string, description: Email }
         role:
           type: string
@@ -3674,7 +3674,7 @@ components:
           uid,
           first_name,
           last_name,
-          username,
+          name,
           email,
           role,
           created_at,
@@ -3700,10 +3700,10 @@ components:
           type: string
           nullable: true
           description: Last name
-        username:
+        name:
           type: string
           nullable: true
-          description: Username
+          description: Name
         email:
           type: string
           format: email
@@ -3721,10 +3721,10 @@ components:
           type: string
           nullable: true
           description: Last name
-        username:
+        name:
           type: string
           nullable: true
-          description: Username
+          description: Name
         email:
           type: string
           format: email
@@ -3896,9 +3896,9 @@ components:
     SuperadminSetupRequest:
       type: object
       properties:
-        username:
+        name:
           type: string
-          description: Desired username
+          description: Desired name
         email:
           type: string
           format: email
@@ -3915,7 +3915,7 @@ components:
           nullable: true
           description: Last name
       required:
-        - username
+        - name
         - email
         - password
     SuperadminSetupResponse:
