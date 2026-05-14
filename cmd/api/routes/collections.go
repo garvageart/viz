@@ -1,11 +1,13 @@
 package routes
 
 import (
+	"slices"
 	"errors"
 	"fmt"
 	"log/slog"
 	"net/http"
 	"strconv"
+	"strings"
 	"time"
 
 	"github.com/go-chi/chi/v5"
@@ -21,12 +23,31 @@ import (
 
 var ErrCollectionUnauthorised = errors.New("unauthorized")
 
-func findCollectionImages(db *gorm.DB, imgUIDs []string, collection entities.Collection, limit, offset int) ([]dto.ImagesResponse, error) {
+func findCollectionImages(db *gorm.DB, imgUIDs []string, collection entities.Collection, limit, offset int, sortBy, order string) ([]dto.ImagesResponse, error) {
 	var images []entities.ImageAsset
 
-	if err := db.Preload("Owner").Preload("UploadedBy").Where("uid IN ?", imgUIDs).
-		Limit(limit).Offset(offset).
-		Find(&images).Error; err != nil {
+	query := db.Preload("Owner").Preload("UploadedBy").Where("uid IN ?", imgUIDs)
+
+	allowedSortBy := []string{"taken_at", "created_at", "updated_at", "name"}
+	validSortBy := slices.Contains(allowedSortBy, sortBy)
+
+	if !validSortBy {
+		sortBy = "taken_at"
+	}
+
+	upperOrder := "DESC"
+	if order == "ASC" {
+		upperOrder = "ASC"
+	}
+
+	var orderClause string
+	if sortBy == "taken_at" {
+		orderClause = fmt.Sprintf("taken_at %s NULLS LAST, name %s", upperOrder, upperOrder)
+	} else {
+		orderClause = fmt.Sprintf("%s %s", sortBy, upperOrder)
+	}
+
+	if err := query.Order(orderClause).Limit(limit).Offset(offset).Find(&images).Error; err != nil {
 		return nil, err
 	}
 
@@ -122,7 +143,7 @@ func CollectionsRouter(db *gorm.DB, logger *slog.Logger) *chi.Mux {
 		var collections []entities.Collection
 		var total int64
 
-		err = db.Transaction(func(tx *gorm.DB) error {
+		if err := db.Transaction(func(tx *gorm.DB) error {
 			query := tx.Model(&entities.Collection{})
 
 			authUser, ok := libhttp.UserFromContext(req)
@@ -144,9 +165,7 @@ func CollectionsRouter(db *gorm.DB, logger *slog.Logger) *chi.Mux {
 				Limit(limit).
 				Offset(page * limit).
 				Find(&collections).Error
-		})
-
-		if err != nil {
+		}); err != nil {
 			libhttp.ServerError(res, req, err, logger, nil,
 				"Failed to get collections",
 				"Something went wrong, please try again later",
@@ -195,6 +214,16 @@ func CollectionsRouter(db *gorm.DB, logger *slog.Logger) *chi.Mux {
 		defaultImageLimit := 100
 		defaultImageOffset := 0
 
+		sortBy := req.URL.Query().Get("sort_by")
+		if sortBy == "" {
+			sortBy = "taken_at"
+		}
+		orderParam := req.URL.Query().Get("order")
+		order := "DESC"
+		if strings.ToUpper(orderParam) == "ASC" {
+			order = "ASC"
+		}
+
 		var collection entities.Collection
 		var imgResponse []dto.ImagesResponse
 
@@ -223,7 +252,7 @@ func CollectionsRouter(db *gorm.DB, logger *slog.Logger) *chi.Mux {
 				imageUIDs[i] = img.Uid
 			}
 
-			allColImages, err := findCollectionImages(tx, imageUIDs, collection, defaultImageLimit, defaultImageOffset)
+			allColImages, err := findCollectionImages(tx, imageUIDs, collection, defaultImageLimit, defaultImageOffset, sortBy, order)
 			if err != nil {
 				return err
 			}
@@ -247,7 +276,7 @@ func CollectionsRouter(db *gorm.DB, logger *slog.Logger) *chi.Mux {
 		}
 
 		defaultImagePage := 0
-		href := fmt.Sprintf("/collections/%s/images/?page=%d&limit=%d", uid, defaultImagePage, defaultImageLimit)
+		href := fmt.Sprintf("/collections/%s/images/?page=%d&limit=%d&sort_by=%s&order=%s", uid, defaultImagePage, defaultImageLimit, sortBy, order)
 
 		var next *string
 		var totalImages int
@@ -256,7 +285,7 @@ func CollectionsRouter(db *gorm.DB, logger *slog.Logger) *chi.Mux {
 		}
 
 		if totalImages > defaultImageLimit {
-			nxPtr := fmt.Sprintf("/collections/%s/images/?page=%d&limit=%d", uid, defaultImagePage+1, defaultImageLimit)
+			nxPtr := fmt.Sprintf("/collections/%s/images/?page=%d&limit=%d&sort_by=%s&order=%s", uid, defaultImagePage+1, defaultImageLimit, sortBy, order)
 			next = &nxPtr
 		}
 
@@ -395,20 +424,39 @@ func CollectionsRouter(db *gorm.DB, logger *slog.Logger) *chi.Mux {
 
 	router.Get("/{uid}/images", func(res http.ResponseWriter, req *http.Request) {
 		uid := chi.URLParam(req, "uid")
-		limit, err := strconv.Atoi(req.URL.Query().Get("limit"))
-		if err != nil {
-			limit = 100
+		// Parse pagination params (use page/limit like the main images route)
+		limitStr := req.URL.Query().Get("limit")
+		limit := 100
+		if limitStr != "" {
+			if parsed, err := strconv.Atoi(limitStr); err == nil && parsed > 0 {
+				limit = parsed
+			}
 		}
 
-		offset, err := strconv.Atoi(req.URL.Query().Get("offset"))
-		if err != nil {
-			offset = 0
+		pageStr := req.URL.Query().Get("page")
+		page := 0
+		if pageStr != "" {
+			if parsed, err := strconv.Atoi(pageStr); err == nil && parsed >= 0 {
+				page = parsed
+			}
+		}
+
+		offset := max(page*limit, 0)
+
+		sortBy := req.URL.Query().Get("sort_by")
+		if sortBy == "" {
+			sortBy = "taken_at"
+		}
+		orderParam := req.URL.Query().Get("order")
+		order := "DESC"
+		if strings.ToUpper(orderParam) == "ASC" {
+			order = "ASC"
 		}
 
 		var imgResponse []dto.ImagesResponse
 		var collection entities.Collection
 
-		err = db.Transaction(func(tx *gorm.DB) error {
+		if err := db.Transaction(func(tx *gorm.DB) error {
 			if err := tx.Select("images", "private", "owner_id").First(&collection, "uid = ?", uid).Error; err != nil {
 				return err
 			}
@@ -431,15 +479,14 @@ func CollectionsRouter(db *gorm.DB, logger *slog.Logger) *chi.Mux {
 				imageUIDs[i] = img.Uid
 			}
 
-			imgResponse, err = findCollectionImages(tx, imageUIDs, collection, limit, offset)
-			if err != nil {
-				return err
+			var innerErr error
+			imgResponse, innerErr = findCollectionImages(tx, imageUIDs, collection, limit, offset, sortBy, order)
+			if innerErr != nil {
+				return innerErr
 			}
 
 			return nil
-		})
-
-		if err != nil {
+		}); err != nil {
 			if err == gorm.ErrRecordNotFound {
 				render.Status(req, http.StatusNotFound)
 				render.JSON(res, req, dto.ErrorResponse{Error: "Collection not found"})
@@ -453,11 +500,11 @@ func CollectionsRouter(db *gorm.DB, logger *slog.Logger) *chi.Mux {
 			return
 		}
 
-		href := fmt.Sprintf("/collections/%s/images/?offset=%d&limit=%d", uid, offset, limit)
+		href := fmt.Sprintf("/collections/%s/images/?page=%d&limit=%d&sort_by=%s&order=%s", uid, page, limit, sortBy, order)
 
 		var prev *string
-		if offset > 0 {
-			pv := fmt.Sprintf("/collections/%s/images/?offset=%d&limit=%d", uid, max(offset-limit, 0), limit)
+		if page > 0 {
+			pv := fmt.Sprintf("/collections/%s/images/?page=%d&limit=%d&sort_by=%s&order=%s", uid, page-1, limit, sortBy, order)
 			prev = &pv
 		}
 
@@ -467,19 +514,20 @@ func CollectionsRouter(db *gorm.DB, logger *slog.Logger) *chi.Mux {
 			totalImages = len(*collection.Images)
 		}
 
-		if offset+limit < totalImages {
-			nx := fmt.Sprintf("/collections/%s/images/?offset=%d&limit=%d", uid, offset+limit, limit)
+		if (page+1)*limit < totalImages {
+			nx := fmt.Sprintf("/collections/%s/images/?page=%d&limit=%d&sort_by=%s&order=%s", uid, page+1, limit, sortBy, order)
 			next = &nx
 		}
 
-		count := len(imgResponse)
+		// Report total images in collection as the Count metadata
+		count := totalImages
 
 		result := dto.ImagesListResponse{
 			Href:  &href,
 			Prev:  prev,
 			Next:  next,
 			Limit: limit,
-			Page:  offset / limit, // derive page index from original row offset
+			Page:  page,
 			Count: &count,
 			Items: imgResponse,
 		}
