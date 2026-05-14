@@ -6,13 +6,20 @@
 	import "$lib/components/panels/viz-panel.scss";
 	import { registerReady } from "$lib/stores/appReady";
 	import { loadRuntimeConfig } from "$lib/runtime-config";
-	import { onMount } from "svelte";
+	import { onMount, untrack } from "svelte";
 	import { page } from "$app/state";
+	import { invalidateViz } from "$lib/views/views.svelte";
 
 	let { children } = $props();
 
 	$effect(() => {
+		// Watch sort state for changes
+		const { by, order } = sortState.value;
 		sortState.save();
+
+		untrack(() => {
+			invalidateViz();
+		});
 	});
 
 	// Fetch runtime config early and have the app wait for it before marking ready
