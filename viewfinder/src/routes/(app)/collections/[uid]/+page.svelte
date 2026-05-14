@@ -116,7 +116,7 @@
 	});
 
 	// Image pagination state
-	let collectionState = $derived(new ImagePaginationState(data.images));
+	let collectionState = $derived(new ImagePaginationState(data.images, data.image_count));
 	let isPaginating = $state(false);
 
 	async function paginate() {
@@ -128,7 +128,9 @@
 		const nextPage = collectionState.pagination.page + 1;
 		const res = await listCollectionImages(data.uid, {
 			limit: collectionState.pagination.limit,
-			page: nextPage
+			page: nextPage,
+			sortBy: sort.by,
+			order: sort.order
 		});
 
 		if (res.status === 200) {
@@ -310,6 +312,7 @@
 
 			if (newImages.length > 0) {
 				collectionState.images.unshift(...newImages);
+				collectionState.totalCount += newImages.length;
 			}
 
 			await invalidateViz({ delay: 200 });
@@ -402,6 +405,10 @@
 				});
 				// Clear selection and refresh data
 				selectionScope.clear();
+				collectionState.images = collectionState.images.filter(
+					(i) => !uids.includes(i.uid)
+				);
+				collectionState.totalCount -= uids.length;
 				await invalidateViz({ delay: 200 });
 			} else {
 				const errMsg = res.data.error ?? "Failed to remove images";

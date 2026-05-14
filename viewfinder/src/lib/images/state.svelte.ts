@@ -8,7 +8,7 @@ export class ImagePaginationState {
     totalCount = $state(0);
     hasMore = $state(false);
 
-    constructor(data: ImagesListResponse) {
+    constructor(data: ImagesListResponse, initialTotalCount?: number) {
         if (!data) {
             return;
         }
@@ -19,7 +19,7 @@ export class ImagePaginationState {
             page: data.page ?? 0
         };
 
-        this.totalCount = data.count ?? 0;
+        this.totalCount = initialTotalCount ?? data.count ?? 0;
         this.hasMore = !!data.next;
     }
 }
