@@ -13,6 +13,7 @@ import (
 	"github.com/go-chi/render"
 
 	imaAuth "viz/internal/auth"
+	"viz/internal/crypto"
 	"viz/internal/dto"
 	"viz/internal/entities"
 )
@@ -117,17 +118,29 @@ func AuthMiddleware(db *gorm.DB, logger *slog.Logger) func(next http.Handler) ht
 		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 			apiKey := getAPIKeyFromRequest(r)
 			if apiKey != "" {
-				hashed, _ := imaAuth.HashSecret(apiKey)
-
 				var key entities.APIKey
-				query := db.Where("key_hashed = ?", hashed).Preload("User").First(&key)
-				if query.Error != nil {
-					if query.Error == gorm.ErrRecordNotFound {
-						render.Status(r, http.StatusUnauthorized)
-						render.JSON(w, r, dto.ErrorResponse{Error: "Invalid api key"})
-						return
-					}
+				authenticated := false
 
+				// Try viz_UID_SECRET
+				if uidStr, secret, ok := imaAuth.ExtractAPIParts(apiKey); ok {
+					if err := db.Where("uid = ?", uidStr).Preload("User").First(&key).Error; err == nil {
+						// Verify secret with Argon2
+						if match, _ := crypto.VerifyPassword(key.KeyHashed, secret, nil); match {
+							authenticated = true
+						}
+					}
+				}
+
+				// Fallback
+				if !authenticated {
+					hashed, _ := imaAuth.HashSecret(apiKey)
+					query := db.Where("key_hashed = ?", hashed).Preload("User").First(&key)
+					if query.Error == nil {
+						authenticated = true
+					}
+				}
+
+				if !authenticated {
 					render.Status(r, http.StatusUnauthorized)
 					render.JSON(w, r, dto.ErrorResponse{Error: "Invalid api key"})
 					return
