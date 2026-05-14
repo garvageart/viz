@@ -216,7 +216,7 @@ type ClientInterface interface {
 	DeleteCollection(ctx context.Context, uid string, reqEditors ...RequestEditorFn) (*http.Response, error)
 
 	// GetCollection request
-	GetCollection(ctx context.Context, uid string, reqEditors ...RequestEditorFn) (*http.Response, error)
+	GetCollection(ctx context.Context, uid string, params *GetCollectionParams, reqEditors ...RequestEditorFn) (*http.Response, error)
 
 	// UpdateCollectionWithBody request with any body
 	UpdateCollectionWithBody(ctx context.Context, uid string, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*http.Response, error)
@@ -922,8 +922,8 @@ func (c *Client) DeleteCollection(ctx context.Context, uid string, reqEditors ..
 	return c.Client.Do(req)
 }
 
-func (c *Client) GetCollection(ctx context.Context, uid string, reqEditors ...RequestEditorFn) (*http.Response, error) {
-	req, err := NewGetCollectionRequest(c.Server, uid)
+func (c *Client) GetCollection(ctx context.Context, uid string, params *GetCollectionParams, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewGetCollectionRequest(c.Server, uid, params)
 	if err != nil {
 		return nil, err
 	}
@@ -2752,6 +2752,30 @@ func NewListCollectionsRequest(server string, params *ListCollectionsParams) (*h
 
 		}
 
+		if params.SortBy != nil {
+
+			if queryFrag, err := runtime.StyleParamWithOptions("form", true, "sort_by", *params.SortBy, runtime.StyleParamOptions{ParamLocation: runtime.ParamLocationQuery, Type: "string", Format: ""}); err != nil {
+				return nil, err
+			} else {
+				for _, qp := range strings.Split(queryFrag, "&") {
+					rawQueryFragments = append(rawQueryFragments, qp)
+				}
+			}
+
+		}
+
+		if params.Order != nil {
+
+			if queryFrag, err := runtime.StyleParamWithOptions("form", true, "order", *params.Order, runtime.StyleParamOptions{ParamLocation: runtime.ParamLocationQuery, Type: "string", Format: ""}); err != nil {
+				return nil, err
+			} else {
+				for _, qp := range strings.Split(queryFrag, "&") {
+					rawQueryFragments = append(rawQueryFragments, qp)
+				}
+			}
+
+		}
+
 		if encoded := queryValues.Encode(); encoded != "" {
 			rawQueryFragments = append(rawQueryFragments, encoded)
 		}
@@ -2841,7 +2865,7 @@ func NewDeleteCollectionRequest(server string, uid string) (*http.Request, error
 }
 
 // NewGetCollectionRequest generates requests for GetCollection
-func NewGetCollectionRequest(server string, uid string) (*http.Request, error) {
+func NewGetCollectionRequest(server string, uid string, params *GetCollectionParams) (*http.Request, error) {
 	var err error
 
 	var pathParam0 string
@@ -2864,6 +2888,45 @@ func NewGetCollectionRequest(server string, uid string) (*http.Request, error) {
 	queryURL, err := serverURL.Parse(operationPath)
 	if err != nil {
 		return nil, err
+	}
+
+	if params != nil {
+		// queryValues collects non-styled parameters (passthrough, JSON)
+		// that are safe to round-trip through url.Values.Encode().
+		queryValues := queryURL.Query()
+		// rawQueryFragments collects pre-encoded query fragments from
+		// styled parameters, preserving literal commas as delimiters
+		// per the OpenAPI spec (e.g. "color=blue,black,brown").
+		var rawQueryFragments []string
+
+		if params.SortBy != nil {
+
+			if queryFrag, err := runtime.StyleParamWithOptions("form", true, "sort_by", *params.SortBy, runtime.StyleParamOptions{ParamLocation: runtime.ParamLocationQuery, Type: "string", Format: ""}); err != nil {
+				return nil, err
+			} else {
+				for _, qp := range strings.Split(queryFrag, "&") {
+					rawQueryFragments = append(rawQueryFragments, qp)
+				}
+			}
+
+		}
+
+		if params.Order != nil {
+
+			if queryFrag, err := runtime.StyleParamWithOptions("form", true, "order", *params.Order, runtime.StyleParamOptions{ParamLocation: runtime.ParamLocationQuery, Type: "string", Format: ""}); err != nil {
+				return nil, err
+			} else {
+				for _, qp := range strings.Split(queryFrag, "&") {
+					rawQueryFragments = append(rawQueryFragments, qp)
+				}
+			}
+
+		}
+
+		if encoded := queryValues.Encode(); encoded != "" {
+			rawQueryFragments = append(rawQueryFragments, encoded)
+		}
+		queryURL.RawQuery = strings.Join(rawQueryFragments, "&")
 	}
 
 	req, err := http.NewRequest(http.MethodGet, queryURL.String(), nil)
@@ -4910,7 +4973,7 @@ type ClientWithResponsesInterface interface {
 	DeleteCollectionWithResponse(ctx context.Context, uid string, reqEditors ...RequestEditorFn) (*DeleteCollectionResponse, error)
 
 	// GetCollectionWithResponse request
-	GetCollectionWithResponse(ctx context.Context, uid string, reqEditors ...RequestEditorFn) (*GetCollectionResponse, error)
+	GetCollectionWithResponse(ctx context.Context, uid string, params *GetCollectionParams, reqEditors ...RequestEditorFn) (*GetCollectionResponse, error)
 
 	// UpdateCollectionWithBodyWithResponse request with any body
 	UpdateCollectionWithBodyWithResponse(ctx context.Context, uid string, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*UpdateCollectionResponse, error)
@@ -7902,8 +7965,8 @@ func (c *ClientWithResponses) DeleteCollectionWithResponse(ctx context.Context, 
 }
 
 // GetCollectionWithResponse request returning *GetCollectionResponse
-func (c *ClientWithResponses) GetCollectionWithResponse(ctx context.Context, uid string, reqEditors ...RequestEditorFn) (*GetCollectionResponse, error) {
-	rsp, err := c.GetCollection(ctx, uid, reqEditors...)
+func (c *ClientWithResponses) GetCollectionWithResponse(ctx context.Context, uid string, params *GetCollectionParams, reqEditors ...RequestEditorFn) (*GetCollectionResponse, error) {
+	rsp, err := c.GetCollection(ctx, uid, params, reqEditors...)
 	if err != nil {
 		return nil, err
 	}

@@ -140,6 +140,21 @@ func CollectionsRouter(db *gorm.DB, logger *slog.Logger) *chi.Mux {
 			page = 0
 		}
 
+		sortBy := req.URL.Query().Get("sort_by")
+		if sortBy == "" {
+			sortBy = "updated_at"
+		}
+		allowedSortBy := []string{"name", "created_at", "updated_at"}
+		if !slices.Contains(allowedSortBy, sortBy) {
+			sortBy = "updated_at"
+		}
+
+		orderParam := req.URL.Query().Get("order")
+		order := "DESC"
+		if strings.ToUpper(orderParam) == "ASC" {
+			order = "ASC"
+		}
+
 		var collections []entities.Collection
 		var total int64
 
@@ -162,6 +177,7 @@ func CollectionsRouter(db *gorm.DB, logger *slog.Logger) *chi.Mux {
 
 			// Fetch current page
 			return query.Preload("Thumbnail").Preload("CreatedBy").
+				Order(fmt.Sprintf("%s %s", sortBy, order)).
 				Limit(limit).
 				Offset(page * limit).
 				Find(&collections).Error

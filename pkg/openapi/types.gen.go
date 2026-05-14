@@ -239,6 +239,87 @@ func (e CompleteOAuthParamsProvider) Valid() bool {
 	}
 }
 
+// Defines values for ListCollectionsParamsSortBy.
+const (
+	ListCollectionsParamsSortByCreatedAt ListCollectionsParamsSortBy = "created_at"
+	ListCollectionsParamsSortByName      ListCollectionsParamsSortBy = "name"
+	ListCollectionsParamsSortByUpdatedAt ListCollectionsParamsSortBy = "updated_at"
+)
+
+// Valid indicates whether the value is a known member of the ListCollectionsParamsSortBy enum.
+func (e ListCollectionsParamsSortBy) Valid() bool {
+	switch e {
+	case ListCollectionsParamsSortByCreatedAt:
+		return true
+	case ListCollectionsParamsSortByName:
+		return true
+	case ListCollectionsParamsSortByUpdatedAt:
+		return true
+	default:
+		return false
+	}
+}
+
+// Defines values for ListCollectionsParamsOrder.
+const (
+	ListCollectionsParamsOrderASC  ListCollectionsParamsOrder = "ASC"
+	ListCollectionsParamsOrderDESC ListCollectionsParamsOrder = "DESC"
+)
+
+// Valid indicates whether the value is a known member of the ListCollectionsParamsOrder enum.
+func (e ListCollectionsParamsOrder) Valid() bool {
+	switch e {
+	case ListCollectionsParamsOrderASC:
+		return true
+	case ListCollectionsParamsOrderDESC:
+		return true
+	default:
+		return false
+	}
+}
+
+// Defines values for GetCollectionParamsSortBy.
+const (
+	GetCollectionParamsSortByCreatedAt GetCollectionParamsSortBy = "created_at"
+	GetCollectionParamsSortByName      GetCollectionParamsSortBy = "name"
+	GetCollectionParamsSortByTakenAt   GetCollectionParamsSortBy = "taken_at"
+	GetCollectionParamsSortByUpdatedAt GetCollectionParamsSortBy = "updated_at"
+)
+
+// Valid indicates whether the value is a known member of the GetCollectionParamsSortBy enum.
+func (e GetCollectionParamsSortBy) Valid() bool {
+	switch e {
+	case GetCollectionParamsSortByCreatedAt:
+		return true
+	case GetCollectionParamsSortByName:
+		return true
+	case GetCollectionParamsSortByTakenAt:
+		return true
+	case GetCollectionParamsSortByUpdatedAt:
+		return true
+	default:
+		return false
+	}
+}
+
+// Defines values for GetCollectionParamsOrder.
+const (
+	GetCollectionParamsOrderASC  GetCollectionParamsOrder = "ASC"
+	GetCollectionParamsOrderDESC GetCollectionParamsOrder = "DESC"
+)
+
+// Valid indicates whether the value is a known member of the GetCollectionParamsOrder enum.
+func (e GetCollectionParamsOrder) Valid() bool {
+	switch e {
+	case GetCollectionParamsOrderASC:
+		return true
+	case GetCollectionParamsOrderDESC:
+		return true
+	default:
+		return false
+	}
+}
+
 // Defines values for ListCollectionImagesParamsSortBy.
 const (
 	ListCollectionImagesParamsSortByCreatedAt ListCollectionImagesParamsSortBy = "created_at"
@@ -1766,8 +1847,32 @@ type ListCollectionsParams struct {
 	Limit *int `form:"limit,omitempty" json:"limit,omitempty"`
 
 	// Page Page index (0-based)
-	Page *int `form:"page,omitempty" json:"page,omitempty"`
+	Page   *int                         `form:"page,omitempty" json:"page,omitempty"`
+	SortBy *ListCollectionsParamsSortBy `form:"sort_by,omitempty" json:"sort_by,omitempty"`
+
+	// Order Sort order
+	Order *ListCollectionsParamsOrder `form:"order,omitempty" json:"order,omitempty"`
 }
+
+// ListCollectionsParamsSortBy defines parameters for ListCollections.
+type ListCollectionsParamsSortBy string
+
+// ListCollectionsParamsOrder defines parameters for ListCollections.
+type ListCollectionsParamsOrder string
+
+// GetCollectionParams defines parameters for GetCollection.
+type GetCollectionParams struct {
+	SortBy *GetCollectionParamsSortBy `form:"sort_by,omitempty" json:"sort_by,omitempty"`
+
+	// Order Sort order
+	Order *GetCollectionParamsOrder `form:"order,omitempty" json:"order,omitempty"`
+}
+
+// GetCollectionParamsSortBy defines parameters for GetCollection.
+type GetCollectionParamsSortBy string
+
+// GetCollectionParamsOrder defines parameters for GetCollection.
+type GetCollectionParamsOrder string
 
 // DeleteCollectionImagesJSONBody defines parameters for DeleteCollectionImages.
 type DeleteCollectionImagesJSONBody struct {
