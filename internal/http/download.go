@@ -4,9 +4,11 @@ import (
 	"errors"
 	"fmt"
 	"io"
+	"net"
 	"net/http"
 	"os"
 	"sync"
+	"time"
 )
 
 var (
@@ -16,17 +18,38 @@ var (
 	ErrWritingToFile = errors.New("error writing to file")
 )
 
+// SafeHTTPClient returns an http.Client configured to prevent SSRF and DNS rebinding
+// by validating IP addresses at the time of connection.
+func SafeHTTPClient(timeout time.Duration) *http.Client {
+	return &http.Client{
+		Timeout: timeout,
+		Transport: &http.Transport{
+			DialContext: (&net.Dialer{
+				Timeout:   timeout,
+				KeepAlive: 30 * time.Second,
+				Control:   SafeDialerControl,
+			}).DialContext,
+			ResponseHeaderTimeout: timeout,
+		},
+	}
+}
+
 func DownloadFile(URL string) ([]byte, error) {
 	if err := ValidateURL(URL); err != nil {
 		return nil, fmt.Errorf("unsafe URL: %w", err)
 	}
 
-	resp, err := http.Get(URL)
+	client := SafeHTTPClient(30 * time.Second)
+	resp, err := client.Get(URL)
 	if err != nil {
 		return nil, err
 	}
 
 	defer resp.Body.Close()
+
+	if resp.StatusCode != http.StatusOK {
+		return nil, fmt.Errorf("bad status: %s", resp.Status)
+	}
 
 	body, err := io.ReadAll(resp.Body)
 	if err != nil {
