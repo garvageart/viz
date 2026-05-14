@@ -640,14 +640,14 @@
 							<button
 								onclick={() => {
 									if (sort.by === key) {
-										sort.order = sort.order === "asc" ? "desc" : "asc";
+										sort.order = sort.order === "ASC" ? "DESC" : "ASC";
 									} else {
 										sort.by = key as AssetSortBy;
 									}
 								}}
 							>
 								<MaterialIcon
-									iconName={`arrow_${sort.by === key && sort.order === "asc" ? "upward" : "downward"}`}
+									iconName={`arrow_${sort.by === key && sort.order === "ASC" ? "upward" : "downward"}`}
 								/>
 								{snakeToTitle(key)}
 							</button>

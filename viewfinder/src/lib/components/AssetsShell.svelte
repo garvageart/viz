@@ -91,8 +91,7 @@
 		{ id: "sort-name", label: "Name" },
 		{ id: "sort-created_at", label: "Created At" },
 		{ id: "sort-updated_at", label: "Updated At" },
-		{ id: "sort-oldest", label: "Oldest" },
-		{ id: "sort-most_recent", label: "Most Recent" }
+		{ id: "sort-taken_at", label: "Taken At" }
 	];
 
 	function currentSortId() {
@@ -103,11 +102,13 @@
 				return "sort-created_at";
 			case "updated_at":
 				return "sort-updated_at";
-			case "oldest":
-				return "sort-oldest";
-			case "most_recent":
-				return "sort-most_recent";
+			case "taken_at":
+				return "sort-taken_at";
 		}
+	}
+
+	function toggleSortOrder() {
+		sort.order = sort.order === "ASC" ? "DESC" : "ASC";
 	}
 
 	function printGridAsTable() {
@@ -183,16 +184,19 @@
 								case "sort-updated_at":
 									sort.by = "updated_at";
 									break;
-								case "sort-oldest":
-									sort.by = "oldest";
-									break;
-								case "sort-most_recent":
-									sort.by = "most_recent";
+								case "sort-taken_at":
+									sort.by = "taken_at";
 									break;
 							}
 						}
 					}
 				})}
+				<IconButton
+					iconName={sort.order === "ASC" ? "arrow_upward" : "arrow_downward"}
+					class="toolbar-button"
+					title="Toggle Sort Order ({sort.order})"
+					onclick={toggleSortOrder}
+				/>
 				{#if dev && grid.view === "thumbnails"}
 					{@render toolbarButton({
 						iconName: "grid_view",

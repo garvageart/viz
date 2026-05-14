@@ -1,5 +1,6 @@
 <script lang="ts">
 	import type { ImageAsset } from "$lib/api";
+	import MaterialIcon from "$lib/components/MaterialIcon.svelte";
 	import { getImageLabel, getTakenAt } from "$lib/utils/images";
 	import { DateTime } from "luxon";
 	import LabelSelector from "../LabelSelector.svelte";
@@ -18,6 +19,12 @@
 	{/if}
 	{#if takenAt}
 		<div class="tooltip-row">
+			<MaterialIcon
+				iconName="calendar_clock"
+				grade={-25}
+				weight={300}
+				size="1rem"
+			/>
 			<span class="tooltip-value"
 				>{DateTime.fromJSDate(takenAt).toFormat("dd LLL yyyy • HH:mm")}</span
 			>
@@ -29,6 +36,7 @@
 		</div>
 	{/if}
 	<div class="tooltip-row">
+		<MaterialIcon iconName="person" weight={300} size="1rem" />
 		<span class="tooltip-value">{asset.owner?.name}</span>
 	</div>
 </div>
