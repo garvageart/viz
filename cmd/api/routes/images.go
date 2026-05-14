@@ -883,8 +883,21 @@ func ImagesRouter(db *gorm.DB, logger *slog.Logger) *chi.Mux {
 
 			if body.Force {
 				// Force delete: Remove from DB permanently and delete files
-				if err := db.Unscoped().Where("uid = ?", id).Delete(&entities.ImageAsset{}).Error; err != nil {
-					logger.Error("failed to hard delete from DB", slog.String("uid", id), slog.Any("error", err))
+				err := db.Transaction(func(tx *gorm.DB) error {
+					// Nullify collection thumbnails that use this image to avoid FK violation
+					if err := tx.Model(&entities.Collection{}).Where("thumbnail_id = ?", id).Update("thumbnail_id", nil).Error; err != nil {
+						return fmt.Errorf("failed to nullify collection thumbnails: %w", err)
+					}
+
+					// Remove from DB permanently
+					if err := tx.Unscoped().Where("uid = ?", id).Delete(&entities.ImageAsset{}).Error; err != nil {
+						return fmt.Errorf("failed to hard delete from DB: %w", err)
+					}
+					return nil
+				})
+
+				if err != nil {
+					logger.Error("failed to force delete asset", slog.String("uid", id), slog.Any("error", err))
 					e := err.Error()
 					errMsg = &e
 					deleted = false
