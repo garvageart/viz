@@ -26,7 +26,7 @@ All API endpoints are available as simple, typed functions:
 import { listCollections, createCollection, addCollectionImages } from "$lib/api";
 
 // List collections with pagination
-const response = await listCollections({ limit: 50, offset: 0 });
+const response = await listCollections({ limit: 50, page: 0 });
 console.log(response.data.items); // Fully typed!
 
 // Create a collection

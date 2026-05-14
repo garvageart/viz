@@ -1477,10 +1477,26 @@ paths:
             type: integer
             default: 100
         - in: query
-          name: offset
+          name: page
           schema:
             type: integer
             default: 0
+            minimum: 0
+          description: Current page index (0-based) of images being fetched
+        - in: query
+          name: sort_by
+          schema:
+            type: string
+            default: taken_at
+            enum: [taken_at, created_at, updated_at, name]
+            description: Key which images are sorted by
+        - in: query
+          name: order
+          schema:
+            type: string
+            default: DESC
+            enum: [ASC, DESC]
+          description: Sort order
       responses:
         "200":
           description: Images page

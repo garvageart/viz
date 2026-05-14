@@ -1715,9 +1715,11 @@ export function deleteCollection(uid: string, opts?: Oazapfts.RequestOpts) {
 /**
  * List images in a collection
  */
-export function listCollectionImages(uid: string, { limit, offset }: {
+export function listCollectionImages(uid: string, { limit, page, sortBy, order }: {
     limit?: number;
-    offset?: number;
+    page?: number;
+    sortBy?: "taken_at" | "created_at" | "updated_at" | "name";
+    order?: "ASC" | "DESC";
 } = {}, opts?: Oazapfts.RequestOpts) {
     return oazapfts.fetchJson<{
         status: 200;
@@ -1730,7 +1732,9 @@ export function listCollectionImages(uid: string, { limit, offset }: {
         data: ErrorResponse;
     }>(`/collections/${encodeURIComponent(uid)}/images${QS.query(QS.explode({
         limit,
-        offset
+        page,
+        sort_by: sortBy,
+        order
     }))}`, {
         ...opts
     });
