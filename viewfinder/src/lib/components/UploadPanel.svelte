@@ -53,7 +53,9 @@
 	});
 
 	$effect(() => {
-		if (!listEl) {
+		if (!listEl || upload.files.length === 0) {
+			prevCompletedCount = 0;
+			prevFilesCount = 0;
 			return;
 		}
 
@@ -68,14 +70,37 @@
 
 		const filesCount = upload.files.length;
 
-		// Scroll whenever files are added or completed, regardless of current position
+		// Scroll whenever files are added or completed
 		if (completed > prevCompletedCount || filesCount > prevFilesCount) {
 			try {
 				const behavior = prefersReducedMotion() ? "auto" : "smooth";
-				listEl.scrollTo({
-					top: listEl.scrollHeight,
-					behavior: behavior as ScrollBehavior
-				});
+
+				// Find the last active upload (the one furthest down the list that is actually uploading)
+				let targetIndex = -1;
+				for (let i = upload.files.length - 1; i >= 0; i--) {
+					if (upload.files[i].state === UploadState.STARTED) {
+						targetIndex = i;
+						break;
+					}
+				}
+
+				// If we found an active upload, scroll it into view.
+				// We use 'nearest' to ensure it's visible with minimal movement.
+				if (targetIndex !== -1) {
+					const activeItem = listEl.children[targetIndex] as HTMLElement;
+					if (activeItem) {
+						activeItem.scrollIntoView({
+							behavior: behavior as ScrollBehavior,
+							block: "nearest"
+						});
+					}
+				} else if (filesCount > prevFilesCount) {
+					// If new files were added but none are started yet, scroll to bottom
+					listEl.scrollTo({
+						top: listEl.scrollHeight,
+						behavior: behavior as ScrollBehavior
+					});
+				}
 			} catch (e) {
 				// silently ignore DOM issues
 			}

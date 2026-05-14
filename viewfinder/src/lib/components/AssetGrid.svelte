@@ -519,16 +519,6 @@
 		class:selected-card={isSelected}
 		role="button"
 		tabindex="0"
-		onfocus={(e) => {
-			if (!e.currentTarget.classList.contains("selected-card")) {
-				e.currentTarget.classList.add("selected-card");
-			}
-		}}
-		onblur={(e) => {
-			if (e.currentTarget.classList.contains("selected-card") && !isSelected) {
-				e.currentTarget.classList.remove("selected-card");
-			}
-		}}
 		onclick={(e) => {
 			e.preventDefault();
 			handleImageCardSelect(assetData, e);
@@ -571,16 +561,6 @@
 		class:selected-card={isSelected}
 		role="button"
 		tabindex="0"
-		onfocus={(e) => {
-			if (!e.currentTarget.classList.contains("selected-card")) {
-				e.currentTarget.classList.add("selected-card");
-			}
-		}}
-		onblur={(e) => {
-			if (e.currentTarget.classList.contains("selected-card") && !isSelected) {
-				e.currentTarget.classList.remove("selected-card");
-			}
-		}}
 		onclick={(e) => {
 			handleImageCardSelect(assetData, e);
 		}}
@@ -740,16 +720,16 @@
 		background-color: color-mix(in srgb, var(--viz-bg-color) 70%, white 30%);
 	}
 
-	.viz-asset-grid-container > .asset-card.selected-card {
+	.viz-asset-grid-container > .asset-card.selected-card,
+	.viz-asset-grid-container > .asset-card:focus-visible {
 		background-color: color-mix(in srgb, var(--viz-bg-color) 60%, white 40%);
-	}
-
-	.viz-asset-grid-container > .asset-card.selected-card {
 		outline: 2px solid var(--viz-60);
-		outline-offset: 0px; border-radius: 0.5em;
+		outline-offset: 0px;
+		border-radius: 0.5em;
 	}
 
-	.viz-asset-grid-container.is-active > .asset-card.selected-card {
+	.viz-asset-grid-container.is-active > .asset-card.selected-card,
+	.viz-asset-grid-container.is-active > .asset-card:focus-visible {
 		outline-color: var(--viz-primary);
 	}
 
@@ -759,6 +739,7 @@
 		justify-content: flex-start;
 		border-radius: 0.5em;
 		overflow: hidden;
+		outline: none;
 	}
 
 	.viz-asset-table-container {
@@ -833,16 +814,19 @@
 				background: color-mix(in srgb, var(--viz-bg-color) 70%, white 10%);
 			}
 
-			&.selected-card {
+			&.selected-card,
+			&:focus-visible {
 				background: color-mix(in srgb, var(--viz-bg-color) 60%, white 12%);
 			}
 
 			/* Table row selection accent: show a left indicator inside the preview cell */
-			&.selected-card td:first-child {
+			&.selected-card td:first-child,
+			&:focus-visible td:first-child {
 				position: relative;
 			}
 
-			&.selected-card td:first-child::before {
+			&.selected-card td:first-child::before,
+			&:focus-visible td:first-child::before {
 				content: "";
 				position: absolute;
 				left: 4px;

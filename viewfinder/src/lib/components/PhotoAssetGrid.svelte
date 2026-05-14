@@ -934,9 +934,10 @@
 				return;
 			}
 
-			// If click is inside ANY grid container, don't clear (supports multiple grids sharing one selection)
+			// If click is inside ANY grid container or scrubber, don't clear.
+			// (supports multiple grids sharing one selection)
 			const allGrids = Array.from(
-				document.querySelectorAll(".viz-photo-grid-container")
+				document.querySelectorAll(".viz-photo-grid-container, .timeline-scrubber")
 			) as HTMLElement[];
 			const insideAnyGrid = allGrids.some((g) => g.contains(target));
 

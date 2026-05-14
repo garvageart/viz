@@ -1,32 +1,31 @@
 <script lang="ts">
-	import { fade } from "svelte/transition";
-	import MaterialIcon from "./MaterialIcon.svelte";
-	import CollectionModal from "./modals/CollectionModal.svelte";
-	import { traverseFileTree } from "$lib/utils/files";
+	import { goto } from "$app/navigation";
+	import {
+		addCollectionImages,
+		createCollection,
+		type ImageAsset
+	} from "$lib/api";
+	import { VizMimeTypes } from "$lib/constants";
+	import { DragData } from "$lib/drag-drop/data";
+	import { SelectionScope } from "$lib/states/selection.svelte";
 	import { toastState } from "$lib/toast-notifcations/notif-state.svelte";
 	import {
 		SUPPORTED_IMAGE_TYPES,
 		SUPPORTED_RAW_FILES,
 		type SupportedImageTypes
 	} from "$lib/types/images";
-	import ConfirmationModal from "./modals/ConfirmationModal.svelte";
-	import Button from "./Button.svelte";
-	import {
+	import { UploadState } from "$lib/upload/asset.svelte";
+	import UploadManager, {
 		waitForUploadCompletion,
 		type ImageUploadSuccess
 	} from "$lib/upload/manager.svelte";
-	import { invalidateAll, goto } from "$app/navigation";
-	import {
-		createCollection,
-		addCollectionImages,
-		type ImageAsset
-	} from "$lib/api";
-	import { SelectionScope } from "$lib/states/selection.svelte";
-	import { UploadState } from "$lib/upload/asset.svelte";
-	import UploadManager from "$lib/upload/manager.svelte";
-	import { DragData } from "$lib/drag-drop/data";
-	import { VizMimeTypes } from "$lib/constants";
+	import { traverseFileTree } from "$lib/utils/files";
 	import { invalidateViz } from "$lib/views/views.svelte";
+	import { fade } from "svelte/transition";
+	import Button from "./Button.svelte";
+	import MaterialIcon from "./MaterialIcon.svelte";
+	import CollectionModal from "./modals/CollectionModal.svelte";
+	import ConfirmationModal from "./modals/ConfirmationModal.svelte";
 	import { modalsManager } from "./modals/manager/ModalManager.svelte";
 
 	interface Props {
@@ -201,11 +200,15 @@
 				`New Collection ${new Date().toLocaleDateString()}`;
 
 			// Open confirmation modal
-			modalsManager.open(ConfirmationModal, {
-				title: "Upload Options",
-				children: uploadConfirmSnippet,
-				actions: uploadConfirmActions
-			}, { heading: "Upload Options" });
+			modalsManager.open(
+				ConfirmationModal,
+				{
+					title: "Upload Options",
+					children: uploadConfirmSnippet,
+					actions: uploadConfirmActions
+				},
+				{ heading: "Upload Options" }
+			);
 		} catch (err) {
 			console.error("Drop upload error:", err);
 			toastState.addToast({
@@ -267,21 +270,25 @@
 
 	function handleConfirmUploadCollection(id: string) {
 		modalsManager.close(id);
-		
+
 		let collectionCreateData = {
 			name: suggestedCollectionName,
 			description: "",
 			private: false
 		};
 
-		modalsManager.open(CollectionModal, {
-			heading: "Create Collection",
-			data: collectionCreateData,
-			buttonText: "Create & Upload",
-			modalAction: async () => {
-				await handleCollectionSubmit(collectionCreateData);
-			}
-		}, { heading: "Create Collection" });
+		modalsManager.open(
+			CollectionModal,
+			{
+				heading: "Create Collection",
+				data: collectionCreateData,
+				buttonText: "Create & Upload",
+				modalAction: async () => {
+					await handleCollectionSubmit(collectionCreateData);
+				}
+			},
+			{ heading: "Create Collection" }
+		);
 	}
 
 	async function handleCollectionSubmit(data: any) {
@@ -624,12 +631,15 @@
 </script>
 
 {#snippet uploadConfirmSnippet()}
-	<p>You dropped {uploadCandidates.length} file(s).</p>
-	<p>How would you like to upload them?</p>
+	<p>
+		You dropped {uploadCandidates.length} file(s). How would you like to upload them?
+	</p>
 {/snippet}
 
 {#snippet uploadConfirmActions({ id }: { id: string })}
-	<Button onclick={() => handleConfirmUploadOnly(id)}>Upload Individually</Button>
+	<Button onclick={() => handleConfirmUploadOnly(id)}
+		>Upload Individually</Button
+	>
 	<Button
 		onclick={() => handleConfirmUploadCollection(id)}
 		style="background-color: var(--viz-primary); color: white;"
