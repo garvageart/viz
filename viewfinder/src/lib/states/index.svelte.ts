@@ -104,10 +104,10 @@ class SortState {
         display: "cover",
         group: {
             by: "year",
-            order: "asc",
+            order: "ASC",
         },
-        by: "oldest",
-        order: "asc",
+        by: "taken_at",
+        order: "DESC",
     } as const;
 
     value: AssetSort = $state(

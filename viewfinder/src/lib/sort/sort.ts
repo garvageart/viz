@@ -14,34 +14,33 @@ function getMostRecentImageDate(img: ImageAsset): number {
 }
 
 export function sortCollectionImages(assets: ImageAsset[], sort: AssetSort) {
+    const order = sort.order.toLowerCase() as "asc" | "desc";
     switch (sort.by) {
         case "name":
-            return orderBy(assets, "name", sort.order);
+            return orderBy(assets, "name", order);
         case "created_at":
-            return orderBy(assets, (img) => new Date(img.created_at).getTime(), sort.order);
+            return orderBy(assets, (img) => new Date(img.created_at).getTime(), order);
         case "updated_at":
-            return orderBy(assets, (img) => new Date(img.updated_at).getTime(), sort.order);
-        case "oldest":
-            return orderBy(assets, (img) => getTakenAt(img).getTime(), sort.order);
-        case "most_recent":
-            return orderBy(assets, (img) => getMostRecentImageDate(img), sort.order);
+            return orderBy(assets, (img) => new Date(img.updated_at).getTime(), order);
+        case "taken_at":
+            return orderBy(assets, (img) => getTakenAt(img).getTime(), order);
         default:
             return assets;
     }
 }
 
 export function sortCollections(collections: Collection[], sort: AssetSort) {
+    const order = sort.order.toLowerCase() as "asc" | "desc";
     switch (sort.by) {
         case "name":
-            return orderBy(collections, "name", sort.order);
+            return orderBy(collections, "name", order);
         case "created_at":
-            return orderBy(collections, (col) => new Date(col.created_at).getTime(), sort.order);
+            return orderBy(collections, (col) => new Date(col.created_at).getTime(), order);
         case "updated_at":
-            return orderBy(collections, (col) => new Date(col.updated_at).getTime(), sort.order);
-        case "oldest":
-            return orderBy(collections, (col) => getCollectionDate(col).getTime(), sort.order);
-        case "most_recent":
-            return orderBy(collections, (col) => getCollectionDate(col).getTime(), sort.order);
+            return orderBy(collections, (col) => new Date(col.updated_at).getTime(), order);
+        case "taken_at":
+            // For collections, taken_at maps to the same date logic as before (updated_at || created_at)
+            return orderBy(collections, (col) => getCollectionDate(col).getTime(), order);
         default:
             return collections;
     }

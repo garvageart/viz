@@ -1617,9 +1617,11 @@ export function quickDownloadImage(uid: string, opts?: Oazapfts.RequestOpts) {
 /**
  * List collections
  */
-export function listCollections({ limit, page }: {
+export function listCollections({ limit, page, sortBy, order }: {
     limit?: number;
     page?: number;
+    sortBy?: "name" | "created_at" | "updated_at";
+    order?: "ASC" | "DESC";
 } = {}, opts?: Oazapfts.RequestOpts) {
     return oazapfts.fetchJson<{
         status: 200;
@@ -1632,7 +1634,9 @@ export function listCollections({ limit, page }: {
         data: ErrorResponse;
     }>(`/collections${QS.query(QS.explode({
         limit,
-        page
+        page,
+        sort_by: sortBy,
+        order
     }))}`, {
         ...opts
     });
@@ -1659,7 +1663,10 @@ export function createCollection(collectionCreate: CollectionCreate, opts?: Oaza
 /**
  * Get collection detail
  */
-export function getCollection(uid: string, opts?: Oazapfts.RequestOpts) {
+export function getCollection(uid: string, { sortBy, order }: {
+    sortBy?: "taken_at" | "created_at" | "updated_at" | "name";
+    order?: "ASC" | "DESC";
+} = {}, opts?: Oazapfts.RequestOpts) {
     return oazapfts.fetchJson<{
         status: 200;
         data: CollectionDetailResponse;
@@ -1669,7 +1676,10 @@ export function getCollection(uid: string, opts?: Oazapfts.RequestOpts) {
     } | {
         status: 500;
         data: ErrorResponse;
-    }>(`/collections/${encodeURIComponent(uid)}`, {
+    }>(`/collections/${encodeURIComponent(uid)}${QS.query(QS.explode({
+        sort_by: sortBy,
+        order
+    }))}`, {
         ...opts
     });
 }

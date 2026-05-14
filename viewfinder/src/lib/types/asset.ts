@@ -12,9 +12,9 @@ export type AssetGridArray<T> = {
     size: number;
 }[][];
 
-export type AssetSortOrder = "asc" | "desc";
+export type AssetSortOrder = "ASC" | "DESC";
 
-export type AssetSortBy = "name" | "created_at" | "updated_at" | "oldest" | "most_recent";
+export type AssetSortBy = "name" | "created_at" | "updated_at" | "taken_at";
 
 export type AssetGroupBy = "none" | "year" | "month" | "day";
 
