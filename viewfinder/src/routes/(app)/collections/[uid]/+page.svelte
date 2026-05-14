@@ -81,7 +81,7 @@
 	$effect(() => {
 		if (debugMode) {
 			console.log(
-				`[CollectionPage] Mount/Update. View ID: ${view?.id}, View Name: ${view?.name}, Data Name: ${data.name}`
+				`[CollectionPage] Mount/Update. View ID: ${view?.id}, View Name: ${view?.name}, Data Name: ${localDataUpdates.name}`
 			);
 		}
 	});
@@ -128,7 +128,7 @@
 		const nextPage = collectionState.pagination.page + 1;
 		const res = await listCollectionImages(data.uid, {
 			limit: collectionState.pagination.limit,
-			offset: nextPage * collectionState.pagination.limit
+			page: nextPage
 		});
 
 		if (res.status === 200) {
@@ -187,14 +187,19 @@
 	// Context menu state
 	let ctxShowMenu = $state(false);
 	let ctxItems = $derived(
-		createCollectionImageMenu(selectionFirstImage, data, {
-			downloadImages() {
-				performImageDownloads([selectionFirstImage]);
+		createCollectionImageMenu(
+			selectionScope.active,
+			data,
+			{
+				downloadImages(imgs) {
+					performImageDownloads(imgs);
+				},
+				onImageUpdated(image) {
+					selectionScope.updateItem(image, collectionState.images);
+				}
 			},
-			onImageUpdated(image) {
-				selectionScope.updateItem(image, collectionState.images);
-			}
-		})
+			Array.from(selectionScope.selected)
+		)
 	);
 	let ctxAnchor: { x: number; y: number } | HTMLElement | null = $state(
 		null as any
@@ -249,10 +254,11 @@
 			anchor: { x: number; y: number } | HTMLElement;
 		}) => {
 			const { asset, anchor } = detail;
-			// Make sure this asset is the only selected one for context actions
-			if (!selectionScope.has(asset) || selectionScope.selected.size <= 1) {
+			// Make sure this asset is part of the selection for context actions
+			if (!selectionScope.has(asset)) {
 				selectionScope.select(asset);
 			}
+			selectionScope.active = asset;
 
 			console.log("asset", $state.snapshot(asset));
 			ctxAnchor = anchor;
@@ -888,10 +894,11 @@
 					•
 					{#if searchValue.trim()}
 						{searchData.length}
-						{searchData.length === 1 ? "image" : "images"} of {data.image_count}
+						{searchData.length === 1 ? "image" : "images"} of {collectionState
+							.images.length}
 					{:else}
-						{data.image_count}
-						{data.image_count === 1 ? "image" : "images"}
+						{collectionState.totalCount}
+						{collectionState.totalCount === 1 ? "image" : "images"}
 					{/if}
 				</span>
 			</div>
