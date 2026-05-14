@@ -107,9 +107,9 @@
 		groupImagesByDate(filterManager.apply(galleryState.images)) ?? []
 	);
 
-	let consolidatedGroups: ConsolidatedGroup[] = $derived.by(() => {
-		return getConsolidatedGroups(groups);
-	});
+	let consolidatedGroups: ConsolidatedGroup[] = $derived(
+		getConsolidatedGroups(groups)
+	);
 
 	// Lightbox
 	let lightboxImage: ImageAsset | undefined = $state();

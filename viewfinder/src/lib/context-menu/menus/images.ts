@@ -27,11 +27,19 @@ interface CollectionImageMenuOptions {
 export function createCollectionImageMenu(
 	asset: ImageAsset | undefined,
 	collection: CollectionDetailResponse,
-	opts?: CollectionImageMenuOptions
+	opts?: CollectionImageMenuOptions,
+	selectedAssets: ImageAsset[] = []
 ) {
 	if (!asset) {
 		return [];
 	}
+
+	// Determine if the clicked asset is part of the current selection.
+	// If it is, and there are multiple selected, we'll offer bulk actions.
+	const isAssetSelected = selectedAssets.some((a) => a.uid === asset.uid);
+	const targetAssets =
+		isAssetSelected && selectedAssets.length > 1 ? selectedAssets : [asset];
+	const targetCount = targetAssets.length;
 
 	let ctxItems: MenuItem[] = [
 		{
@@ -40,7 +48,7 @@ export function createCollectionImageMenu(
 			icon: "file_export",
 			action: () => {
 				modalsManager.open(ExportPanel, {
-					assets: [asset]
+					assets: targetAssets
 				});
 			}
 		},
@@ -50,7 +58,7 @@ export function createCollectionImageMenu(
 			icon: "download",
 			action: async () => {
 				try {
-					opts?.downloadImages?.([asset]);
+					opts?.downloadImages?.(targetAssets);
 				} catch (err) {
 					console.error("Context menu download error", err);
 					toastState.addToast({
@@ -125,14 +133,16 @@ export function createCollectionImageMenu(
 			action: async () => {
 				if (
 					!confirm(
-						`Remove "${asset.name || asset.uid}" from collection "${collection.name}"?`
+						targetCount > 1
+							? `Remove ${targetCount} selected images from collection "${collection.name}"?`
+							: `Remove "${asset.name || asset.uid}" from collection "${collection.name}"?`
 					)
 				) {
 					return;
 				}
 				try {
 					const r = await deleteCollectionImages(collection.uid, {
-						uids: [asset.uid]
+						uids: targetAssets.map((a) => a.uid)
 					});
 					if (r.status === 200) {
 						toastState.addToast({

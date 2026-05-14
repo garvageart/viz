@@ -67,7 +67,6 @@
 <style lang="scss">
 	.viz-modal {
 		width: 35%;
-		height: 70%;
 		max-height: 100%;
 		background-color: var(--viz-bg-color);
 		display: flex;
@@ -100,6 +99,7 @@
 
 	.modal-content {
 		width: 100%;
+		padding: 1rem;
 		flex: 1;
 		display: flex;
 		flex-direction: column;

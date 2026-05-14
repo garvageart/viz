@@ -106,7 +106,7 @@ class SortState {
             by: "year",
             order: "asc",
         },
-        by: "name",
+        by: "oldest",
         order: "asc",
     } as const;
 

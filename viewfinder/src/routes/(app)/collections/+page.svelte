@@ -184,7 +184,7 @@
 
 	let grid: ComponentProps<typeof AssetGrid<Collection>> = $derived({
 		assetSnippet: collectionSnippet,
-		view: "grid",
+		view: "thumbnails",
 		assetGridArray: collectionGridArray,
 		data: displayData,
 		scopeId: scopeId,

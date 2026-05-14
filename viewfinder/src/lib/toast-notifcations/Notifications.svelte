@@ -1,5 +1,6 @@
 <script lang="ts">
 	import { fly } from "svelte/transition";
+	import DOMPurify from "dompurify";
 	import { toastState } from "./notif-state.svelte";
 	import Button from "$lib/components/Button.svelte";
 	import MaterialIcon from "$lib/components/MaterialIcon.svelte";
@@ -9,7 +10,7 @@
 			return "";
 		}
 
-		let safeText = text
+		let html = text
 			.replace(/&/g, "&amp;")
 			.replace(/</g, "&lt;")
 			.replace(/>/g, "&gt;")
@@ -17,24 +18,27 @@
 			.replace(/'/g, "&#039;");
 
 		// 1. Bold: **text**
-		safeText = safeText.replace(/\*\*(.*?)\*\*/g, "<strong>$1</strong>");
+		html = html.replace(/\*\*(.*?)\*\*/g, "<strong>$1</strong>");
 
 		// 2. Italic: *text*
-		safeText = safeText.replace(/\*(.*?)\*/g, "<em>$1</em>");
+		html = html.replace(/\*(.*?)\*/g, "<em>$1</em>");
 
 		// 3. Named Links: [Link Text](url)
-		safeText = safeText.replace(
+		html = html.replace(
 			/\[([^\]]+)\]\(((?:https?:\/\/|\/)[^\s)]+)\)/g,
 			'<a href="$2" target="_blank" rel="noopener noreferrer" class="viz-toast-link">$1</a>'
 		);
 
 		// 4. Raw URLs (that weren't captured by named links): https://example.com
 		const urlRegex = /(?<!href=")(https?:\/\/[^\s<]+)/g;
-		safeText = safeText.replace(urlRegex, (url) => {
+		html = html.replace(urlRegex, (url) => {
 			return `<a href="${url}" target="_blank" rel="noopener noreferrer" class="viz-toast-link">${url}</a>`;
 		});
 
-		return safeText;
+		return DOMPurify.sanitize(html, {
+			ALLOWED_TAGS: ["strong", "em", "a"],
+			ALLOWED_ATTR: ["href", "target", "rel", "class"]
+		});
 	}
 </script>
 
