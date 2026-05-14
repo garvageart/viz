@@ -8,8 +8,10 @@ import (
 	"strings"
 
 	"viz/internal/crypto"
+	"viz/internal/uid"
 )
 
+// HashSecret performs a legacy SHA-256 hash for backward compatibility.
 func HashSecret(secret string) (string, error) {
 	shaHash := sha256.New()
 	_, err := shaHash.Write([]byte(secret))
@@ -22,9 +24,26 @@ func HashSecret(secret string) (string, error) {
 	return hex.EncodeToString(hashedSecret), nil
 }
 
-func GenerateAPIKey() (map[string]string, error) {
-	keyBytes := crypto.MustGenerateRandomBytes(32)
+// ExtractAPIParts splits a modern API key into its UID and Secret components with format: viz_UID_SECRET
+// and validates the prefix and structure. Returns ok=false if the format is invalid.
+func ExtractAPIParts(key string) (uidStr, secret string, ok bool) {
+	parts := strings.Split(key, "_")
+	if len(parts) != 3 || parts[0] != APIKeyPrefix {
+		return "", "", false
+	}
 
+	return parts[1], parts[2], true
+}
+
+// GenerateAPIKey generates a new API key using the project's UID system
+// and hashes the secret part with Argon2id.
+func GenerateAPIKey() (fullKey, uidStr, hashedSecret string, err error) {
+	uidStr, err = uid.Generate()
+	if err != nil {
+		return "", "", "", err
+	}
+
+	keyBytes := crypto.MustGenerateRandomBytes(32)
 	randomHorseName := strings.ToLower(HorseNames[rand.IntN(len(HorseNames))])
 	randomHorseBytes := []byte(randomHorseName)
 
@@ -34,12 +53,14 @@ func GenerateAPIKey() (map[string]string, error) {
 	randomHorseBytesFilledToMax := append(randomHorseBytes, randomHorseBytesGen...)
 
 	bytesCombined := append(keyBytes, randomHorseBytesFilledToMax...)
+	secret := hex.EncodeToString(bytesCombined)
 
-	finalConsumerKey := fmt.Sprint(APIKeyPrefix, "_", hex.EncodeToString(bytesCombined))
-	hashedKey, _ := HashSecret(finalConsumerKey)
+	fullKey = fmt.Sprintf("%s_%s_%s", APIKeyPrefix, uidStr, secret)
 
-	return map[string]string{
-		"consumer_key": finalConsumerKey,
-		"hashed_key":   hashedKey,
-	}, nil
+	hashedSecret, err = crypto.HashPassword(secret, nil)
+	if err != nil {
+		return "", "", "", err
+	}
+
+	return fullKey, uidStr, hashedSecret, nil
 }

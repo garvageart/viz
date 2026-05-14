@@ -14,7 +14,6 @@ import (
 	"viz/internal/dto"
 	"viz/internal/entities"
 	libhttp "viz/internal/http"
-	"viz/internal/uid"
 )
 
 // APIKeysRouter manages API key lifecycle: create, list, get, revoke, rotate, delete.
@@ -46,17 +45,9 @@ func APIKeysRouter(db *gorm.DB, logger *slog.Logger) *chi.Mux {
             }
         }
 
-        keys, err := auth.GenerateAPIKey()
+        fullKey, apiKeyUid, hashedKey, err := auth.GenerateAPIKey()
         if err != nil {
             libhttp.ServerError(res, req, err, logger, nil, "failed to generate api key", "Failed to create API key")
-            return
-        }
-
-        consumerKey := keys["consumer_key"]
-
-        apiKeyUid, err := uid.Generate()
-        if err != nil {
-            libhttp.ServerError(res, req, err, logger, nil, "failed to generate uid", "Failed to create API key")
             return
         }
 
@@ -69,7 +60,7 @@ func APIKeysRouter(db *gorm.DB, logger *slog.Logger) *chi.Mux {
 
         apiEnt := entities.APIKey{
             Uid:         apiKeyUid,
-            KeyHashed:   keys["hashed_key"],
+            KeyHashed:   hashedKey,
             UserID:      &authUser.Uid,
             Revoked:     false,
             Name:        body.Name,
@@ -90,7 +81,7 @@ func APIKeysRouter(db *gorm.DB, logger *slog.Logger) *chi.Mux {
 
         logger.Info("Generated an API key", slog.String("request_id", libhttp.GetRequestID(req)))
         render.Status(req, http.StatusCreated)
-        render.JSON(res, req, dto.APIKeyCreateResponse{ConsumerKey: consumerKey, ExpiresAt: body.ExpiresAt})
+        render.JSON(res, req, dto.APIKeyCreateResponse{ConsumerKey: fullKey, ExpiresAt: body.ExpiresAt})
     })
 
     r.Get("/", func(res http.ResponseWriter, req *http.Request) {
@@ -210,16 +201,9 @@ func APIKeysRouter(db *gorm.DB, logger *slog.Logger) *chi.Mux {
 
         // Perform revoke + create in a transaction
         // Generate replacement keys outside the transaction to avoid long txs
-        keys, err := auth.GenerateAPIKey()
+        fullKey, newUid, hashedKey, err := auth.GenerateAPIKey()
         if err != nil {
             libhttp.ServerError(res, req, err, logger, nil, "failed to generate api key", "Failed to rotate API key")
-            return
-        }
-
-        consumerKey := keys["consumer_key"]
-        newUid, err := uid.Generate()
-        if err != nil {
-            libhttp.ServerError(res, req, err, logger, nil, "failed to generate uid", "Failed to rotate API key")
             return
         }
 
@@ -232,7 +216,7 @@ func APIKeysRouter(db *gorm.DB, logger *slog.Logger) *chi.Mux {
             // Create replacement
             apiEnt := entities.APIKey{
                 Uid:         newUid,
-                KeyHashed:   keys["hashed_key"],
+                KeyHashed:   hashedKey,
                 UserID:      existing.UserID,
                 Revoked:     false,
                 Name:        existing.Name,
@@ -258,7 +242,7 @@ func APIKeysRouter(db *gorm.DB, logger *slog.Logger) *chi.Mux {
         }
 
         render.Status(req, http.StatusCreated)
-        render.JSON(res, req, dto.APIKeyCreateResponse{ConsumerKey: consumerKey})
+        render.JSON(res, req, dto.APIKeyCreateResponse{ConsumerKey: fullKey})
     })
 
     // Delete (hard-delete) an API key -- admin or owner
