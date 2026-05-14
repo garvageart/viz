@@ -156,13 +156,31 @@ export class PhotoGridVirtualizer {
                 flushBatch();
 
                 // Check Cache for large group
-                const cacheKey = `${group.label}-${group.allImages.length}-${width}`;
+                const uidsSignature = group.allImages.length > 0 
+                    ? `${group.allImages[0].uid}-${group.allImages[group.allImages.length - 1].uid}`
+                    : '';
+                const cacheKey = `${group.label}-${group.allImages.length}-${width}-${uidsSignature}`;
                 let cached = this.groupCache.get(cacheKey);
 
                 if (!cached) {
                     // Compute Layout for this group
                     cached = this.computeGroup(group, width);
                     this.groupCache.set(cacheKey, cached);
+                } else {
+                    // IMPORTANT: Update asset references in the cached rows.
+                    // Because SelectionScope.updateItem or parent derivation might replace the asset object,
+                    // we must ensure the virtualizer rows point to the NEW objects
+                    // so that Svelte components rendering them are reactive and show latest metadata.
+                    let imageIdx = 0;
+                    for (const row of cached.rows) {
+                        if (row.type === 'images') {
+                            for (const item of row.items) {
+                                // JustifiedLayout preserves order, so we can just match by index.
+                                // group.allImages[imageIdx] should correspond 1:1 with the original items.
+                                item.asset = group.allImages[imageIdx++];
+                            }
+                        }
+                    }
                 }
 
                 // Apply absolute positions
