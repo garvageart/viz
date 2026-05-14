@@ -1,3 +1,6 @@
 packages:
   - 'viewfinder'
   - 'scripts/js'
+allowBuilds:
+  '@parcel/watcher': false
+  esbuild: false

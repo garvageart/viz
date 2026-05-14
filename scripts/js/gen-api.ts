@@ -58,7 +58,22 @@ if (options.installTools) {
     console.log('Ensuring oapi-codegen is installed...');
     if (!commandExists('oapi-codegen')) {
         console.log('Installing oapi-codegen...');
-        run('go', ['install', 'github.com/oapi-codegen/oapi-codegen/v2/cmd/oapi-codegen@latest']);
+        const installSuccess = run('go', ['install', 'github.com/oapi-codegen/oapi-codegen/v2/cmd/oapi-codegen@latest']);
+        if (installSuccess) {
+            // Try to locate the installed binary and add it to PATH for this process so subsequent commands can find it.
+            const binName = process.platform === 'win32' ? 'oapi-codegen.exe' : 'oapi-codegen';
+            const goBin = process.env.GOBIN || (process.env.GOPATH ? join(process.env.GOPATH, 'bin') : join(process.env.HOME || '', 'go', 'bin'));
+            const candidate = join(goBin, binName);
+            if (existsSync(candidate)) {
+                const pathSep = process.platform === 'win32' ? ';' : ':';
+                process.env.PATH = `${goBin}${pathSep}${process.env.PATH || ''}`;
+                console.log(`Added ${goBin} to PATH for this process.`);
+            } else {
+                console.warn(`oapi-codegen installed but not found at ${candidate}. It may not be on PATH; consider adding ${goBin} to your PATH.`);
+            }
+        } else {
+            console.warn('`go install` for oapi-codegen failed. The generator may still run via `go run`, but the binary was not installed.');
+        }
     }
 
     console.log('Ensuring pnpm dev dep openapi-typescript is installed...');
@@ -80,7 +95,9 @@ if (!hasRuntime) {
 
 // Generate Go DTOs
 console.log(`Generating Go DTOs from ${specPath} -> ${dtoOutPath}`);
-const goGenSuccess = run('oapi-codegen', [
+const goGenSuccess = run('go', [
+    'run',
+    'github.com/oapi-codegen/oapi-codegen/v2/cmd/oapi-codegen@latest',
     '-generate',
     'types',
     '-package',
@@ -105,7 +122,9 @@ console.log(`Generating Go types + client into ${outDir}`);
 try { mkdirSync(outDir, { recursive: true }); } catch (e) { /* ignore */ }
 
 // Generate types into pkg/openapi (keeps a local copy for the public package)
-const typesSuccess = run('oapi-codegen', [
+const typesSuccess = run('go', [
+    'run',
+    'github.com/oapi-codegen/oapi-codegen/v2/cmd/oapi-codegen@latest',
     '-generate', 'types',
     '-package', 'openapi',
     '-o', typesOut,
@@ -118,7 +137,9 @@ if (!typesSuccess) {
 }
 
 // Generate client into pkg/openapi
-const clientSuccess = run('oapi-codegen', [
+const clientSuccess = run('go', [
+    'run',
+    'github.com/oapi-codegen/oapi-codegen/v2/cmd/oapi-codegen@latest',
     '-generate', 'client',
     '-package', 'openapi',
     '-o', clientOut,
