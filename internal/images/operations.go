@@ -1,8 +1,11 @@
 package images
 
 import (
+	"crypto/sha1"
+	"encoding/hex"
 	"encoding/base64"
 	"image"
+	"io"
 	"os"
 	"path/filepath"
 )
@@ -62,4 +65,29 @@ func SaveImage(data []byte, uid, fileName string) error {
 
 	imagesDir := GetImagePath(uid, fileName)
 	return os.WriteFile(imagesDir, data, 0644)
+}
+
+func SaveImageFromReader(reader io.Reader, uid, fileName string) (int64, string, error) {
+	err := CreateImageDir(uid)
+	if err != nil {
+		return 0, "", err
+	}
+
+	imagesDir := GetImagePath(uid, fileName)
+	file, err := os.Create(imagesDir)
+	if err != nil {
+		return 0, "", err
+	}
+	defer file.Close()
+
+	hasher := sha1.New()
+	multiWriter := io.MultiWriter(file, hasher)
+
+	size, err := io.Copy(multiWriter, reader)
+	if err != nil {
+		return 0, "", err
+	}
+
+	checksum := hex.EncodeToString(hasher.Sum(nil))
+	return size, checksum, nil
 }

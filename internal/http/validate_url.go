@@ -1,10 +1,12 @@
 package http
 
 import (
+	"slices"
 	"errors"
 	"net"
 	"net/url"
 	"strings"
+	"syscall"
 )
 
 var (
@@ -36,16 +38,35 @@ func ValidateURL(rawURL string) error {
 		return err
 	}
 
-	for _, ip := range ips {
-		if isPrivateIP(ip) {
+	if slices.ContainsFunc(ips, IsPrivateIP) {
 			return ErrPrivateIP
 		}
+
+	return nil
+}
+
+// SafeDialerControl is a Control function for net.Dialer that prevents
+// connections to private or local IP addresses. This is a defense
+// against SSRF and DNS Rebinding attacks.
+func SafeDialerControl(network, address string, c syscall.RawConn) error {
+	host, _, err := net.SplitHostPort(address)
+	if err != nil {
+		return err
+	}
+
+	ip := net.ParseIP(host)
+	if ip == nil {
+		return ErrInvalidHost
+	}
+
+	if IsPrivateIP(ip) {
+		return ErrPrivateIP
 	}
 
 	return nil
 }
 
-func isPrivateIP(ip net.IP) bool {
+func IsPrivateIP(ip net.IP) bool {
 	if ip.IsLoopback() || ip.IsLinkLocalUnicast() || ip.IsLinkLocalMulticast() {
 		return true
 	}
