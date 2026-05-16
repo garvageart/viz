@@ -1,13 +1,15 @@
 <script lang="ts">
+	import IconButton from "$lib/components/IconButton.svelte";
 	import { upload } from "$lib/states/index.svelte";
-	import { fade, scale } from "svelte/transition";
 	import { UploadState } from "$lib/upload/asset.svelte";
 	import {
 		processGlobalQueue,
 		waitForUploadCompletion
 	} from "$lib/upload/manager.svelte";
+	import { scale } from "svelte/transition";
 	import Button from "./Button.svelte";
 	import MaterialIcon from "./MaterialIcon.svelte";
+	import { invalidateViz } from "$lib/views/views.svelte";
 
 	let minimized = $state(false);
 
@@ -15,11 +17,6 @@
 
 	let prevCompletedCount = $state(0);
 	let prevFilesCount = $state(0);
-
-	const isUserNearBottom = (el: HTMLDivElement) => {
-		const threshold = 150; // px
-		return el.scrollHeight - (el.scrollTop + el.clientHeight) < threshold;
-	};
 
 	const prefersReducedMotion = () =>
 		typeof window !== "undefined" &&
@@ -30,6 +27,23 @@
 		upload.concurrency = Math.min(Math.max(upload.concurrency || 1, 1), 10);
 		processGlobalQueue();
 	});
+
+
+	$effect(() => {
+		// for every x amount of photos (20 for now), refresh Viz to show latest images
+		const completedCount = upload.files.filter(
+			(f) =>
+				f.state === UploadState.DONE ||
+				f.state === UploadState.ERROR ||
+				f.state === UploadState.CANCELED ||
+				f.state === UploadState.DUPLICATE
+		).length;
+		const refreshThreshold = 20;
+
+		if (completedCount > 0 && completedCount % refreshThreshold === 0) {
+			invalidateViz({ delay: 500 });
+		}
+	})
 
 	$effect(() => {
 		if (upload.files.length > 0) {
@@ -52,6 +66,7 @@
 		}
 	});
 
+	// I hate this very much
 	$effect(() => {
 		if (!listEl || upload.files.length === 0) {
 			prevCompletedCount = 0;
@@ -168,6 +183,29 @@
 				</label>
 			</div>
 		</div>
+		<div id="viz-upload-panel-sub_header">
+			<IconButton
+				iconName="cancel"
+				style="background-color: transparent; padding: 0em;"
+				hoverColor="var(--viz-80)"
+				title="Cancel All Uploads"
+				onclick={() => {
+					upload.files.forEach((file) => {
+						if (file.state === UploadState.STARTED) {
+							file.cancelRequest();
+						}
+					});
+					upload.files = [];
+				}}
+			></IconButton>
+			<span class="viz-upload-progress-text">
+				{upload.files.filter((f) => f.state === UploadState.DONE ||
+							f.state === UploadState.ERROR ||
+							f.state === UploadState.CANCELED ||
+							f.state === UploadState.DUPLICATE)
+					.length}/{upload.files.length} completed
+			</span>
+		</div>
 		<div id="viz-upload-panel-list" bind:this={listEl}>
 			{#each upload.files as file}
 				<div class="panel-file-info" data-checksum={file.data.checksum}>
@@ -247,6 +285,24 @@
 		background-color: var(--viz-90);
 		box-sizing: border-box;
 		gap: 1rem;
+	}
+
+	#viz-upload-panel-sub_header {
+		width: 100%;
+		display: flex;
+		align-items: center;
+		padding: 0.5rem 1rem;
+		font-size: 0.9rem;
+		font-weight: 600;
+		border-bottom: 1px solid var(--viz-60);
+		background-color: var(--viz-95);
+		box-sizing: border-box;
+		gap: 0.5rem;
+	}
+
+	.viz-upload-progress-text {
+		font-style: italic;
+		font-weight: 300;
 	}
 
 	#upload-panel-header-info {

@@ -29,7 +29,8 @@ export interface DateGroup {
 }
 
 export function groupImagesByDate(list: ImageAsset[]) {
-    const map = new SvelteMap<string, ImageAsset[]>();
+    const map = new Map<string, ImageAsset[]>();
+    const keys: string[] = []; // Used to preserve the order of groups as they appear in the list
 
     for (const img of list) {
         const taken = getTakenAt(img);
@@ -37,26 +38,20 @@ export function groupImagesByDate(list: ImageAsset[]) {
         const key = dt.toISODate()!;
         if (!map.has(key)) {
             map.set(key, []);
+            keys.push(key);
         }
 
         map.get(key)!.push(img);
     }
 
-    // Convert to array and sort by date desc. Ensure items within each
-    // date group are ordered by taken_at descending (most recent first).
-    const arr = Array.from(map.entries()).map(([key, items]) => {
+    // Map the keys back to DateGroup objects, preserving the order they first appeared.
+    // We assume the items within each group should also maintain their relative order from the input list.
+    const labelled = keys.map((key) => {
+        const items = map.get(key)!;
         const date = DateTime.fromISO(key);
-        items.sort(compareByTakenAtDesc);
-        return { key, date, items };
-    });
-
-    arr.sort((a, b) => b.date.toMillis() - a.date.toMillis());
-
-    // create display label (Today / Yesterday / date)
-    const labelled = arr.map((g) => {
         const today = DateTime.now().startOf("day");
-        const diff = today.diff(g.date.startOf("day"), "days").days;
-        let label = g.date.toLocaleString(DateTime.DATE_MED);
+        const diff = today.diff(date.startOf("day"), "days").days;
+        let label = date.toLocaleString(DateTime.DATE_MED);
 
         if (diff === 0) {
             label = "Today";
@@ -64,7 +59,7 @@ export function groupImagesByDate(list: ImageAsset[]) {
             label = "Yesterday";
         }
 
-        return { key: g.key, date: g.date, label, items: g.items };
+        return { key, date, label, items };
     });
 
     return labelled;

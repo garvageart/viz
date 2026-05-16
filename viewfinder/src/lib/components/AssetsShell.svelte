@@ -146,7 +146,7 @@
 {/snippet}
 
 {#if showToolbars}
-	{#if selectionScope?.selected && selectionScope.selected.size > 0}
+	{#if selectionScope && selectionScope.size > 0}
 		<AssetToolbar class="selection-toolbar" {...selectionToolbarProps}>
 			<div class="selection-info">
 				<IconButton
@@ -158,7 +158,7 @@
 					onclick={() => selectionScope.clear()}
 				/>
 				<span style="font-weight: 600;"
-					>{selectionScope.selected.size} selected</span
+					>{selectionScope.size} selected</span
 				>
 			</div>
 			{@render selectionToolbarSnippet?.()}

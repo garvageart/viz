@@ -17,10 +17,7 @@
 	import { fade } from "svelte/transition";
 	import {
 		getImageLabel,
-		getTakenAt,
-		getThumbhashURL
-	} from "$lib/utils/images";
-	import { page } from "$app/state";
+		getTakenAt	} from "$lib/utils/images";
 	import { selectionManager } from "$lib/states/selection.svelte";
 	import ImageCard from "./ImageCard.svelte";
 	import {
@@ -31,7 +28,7 @@
 	} from "tippy.js";
 	import PhotoTooltip from "$lib/components/tooltips/PhotoTooltip.svelte";
 	import "tippy.js/dist/tippy.css";
-	import hotkeys, { type HotkeysEvent, type KeyHandler } from "hotkeys-js";
+	import hotkeys, { type HotkeysEvent } from "hotkeys-js";
 	import type {
 		ConsolidatedGroup,
 		ImageWithDateLabel
@@ -44,10 +41,8 @@
 	import { debounce } from "$lib/utils/misc";
 	import MaterialIcon from "./MaterialIcon.svelte";
 	import TimelineScrubber from "./TimelineScrubber.svelte";
-	import { dev } from "$app/environment";
 	import {
 		PhotoGridVirtualizer,
-		type GridRow,
 		type PhotoGridConfig
 	} from "$lib/components/virtualizer/PhotoGridVirtualizer.svelte.js";
 	import AssetImage from "./AssetImage.svelte";
@@ -66,6 +61,8 @@
 		showDateHeaders?: boolean;
 		/** Virtualized grid layout configuration */
 		gridConfig?: PhotoGridConfig;
+		/** Callback triggered when Select All (Ctrl+A) is pressed */
+		onselectAll?: () => void;
 	}
 
 	type Props = Omit<
@@ -92,14 +89,16 @@
 		scopeId = "photos-default",
 		groupedData = $bindable([]),
 		showDateHeaders = $bindable(true),
-		gridConfig = {}
+		gridConfig = {},
+		onselectAll
 	}: Props = $props();
 
 	// Selection Management
 	let selection = $derived(selectionManager.getScope<ImageAsset>(scopeId));
-	let selectedUIDs = $derived(
-		new Set(Array.from(selection.selected).map((i) => i.uid))
-	);
+	let selectedUIDs = $derived.by(() => {
+		const source = allData || data;
+		return new Set(source.filter((i) => selection.has(i)).map((i) => i.uid));
+	});
 
 	// Sync data source to selection scope so filters can access it
 	$effect(() => {
@@ -134,9 +133,14 @@
 		}
 
 		e.preventDefault();
-		// Select filtered data, not hidden data
-		const selectionData = filteredData;
-		selection.selectMultiple(selectionData);
+
+		if (onselectAll) {
+			onselectAll();
+		} else {
+			// Select filtered data, not hidden data
+			const selectionData = filteredData;
+			selection.selectMultiple(selectionData);
+		}
 	}
 
 	function handleEscape(e: KeyboardEvent) {
@@ -385,7 +389,7 @@
 
 	// ALL GRID IMAGE RENDERING STUFF
 	// ----------------------------
-	const isMultiSelecting = $derived(selection.selected.size > 1);
+	const isMultiSelecting = $derived(selection.size > 1);
 
 	// Count date labels so we can hide the inline badge in the trivial case
 	// where there is only one date group and that group contains a single image.
@@ -1011,7 +1015,7 @@
 			}
 			// When dragging, if multiple selected use that set, otherwise drag the single asset
 			const uids =
-				selection.selected.size > 1
+				selection.size > 1
 					? Array.from(selection.selected).map((i) => i.uid)
 					: [asset.uid];
 			try {
@@ -1054,7 +1058,7 @@
 			e.preventDefault();
 			e.stopPropagation();
 			suppressScrollOnce = true;
-			if (!selectedUIDs.has(asset.uid) || selection.selected.size <= 1) {
+			if (!selectedUIDs.has(asset.uid) || selection.size <= 1) {
 				selection.select(asset);
 			}
 

@@ -12,7 +12,7 @@
 	let activeItem = $derived(activeScope?.active as ImageAsset | undefined);
 	let isImage = $derived(!!activeItem?.image_paths);
 
-	let selectionCount = $derived(activeScope?.selected.size ?? 0);
+	let selectionCount = $derived(activeScope?.size ?? 0);
 	let imageSrc = $derived(
 		activeItem?.image_paths?.preview
 			? getFullImagePath(activeItem.image_paths.preview)

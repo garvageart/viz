@@ -1,3 +1,4 @@
+import { goto } from "$app/navigation";
 import {
 	deleteCollectionImages,
 	deleteImagesBulk,
@@ -22,13 +23,15 @@ interface CollectionImageMenuOptions {
 	downloadImages?: (images: ImageAsset[]) => void;
 	onImageUpdated?: (image: ImageAsset) => void;
 	onCollectionUpdated?: (collection: Collection) => void;
+	onDelete?: (deletedUIDs: string[]) => void;
 }
 
 export function createCollectionImageMenu(
 	asset: ImageAsset | undefined,
 	collection: CollectionDetailResponse,
 	opts?: CollectionImageMenuOptions,
-	selectedAssets: ImageAsset[] = []
+	selectedAssets: ImageAsset[] = [],
+	selectionScope?: SelectionScope<ImageAsset>
 ) {
 	if (!asset) {
 		return [];
@@ -36,16 +39,24 @@ export function createCollectionImageMenu(
 
 	// Determine if the clicked asset is part of the current selection.
 	// If it is, and there are multiple selected, we'll offer bulk actions.
-	const isAssetSelected = selectedAssets.some((a) => a.uid === asset.uid);
-	const targetAssets =
-		isAssetSelected && selectedAssets.length > 1 ? selectedAssets : [asset];
-	const targetCount = targetAssets.length;
+	const isAssetSelected =
+		selectionScope?.has(asset) ??
+		selectedAssets.some((a) => a.uid === asset.uid);
+	const isMulti =
+		selectionScope?.isSelectAll ||
+		(isAssetSelected && selectedAssets.length > 1);
+	const targetAssets = isMulti ? selectedAssets : [asset];
+	const targetCount = selectionScope?.isSelectAll
+		? selectionScope.size
+		: isAssetSelected
+			? selectedAssets.length
+			: 1;
 
 	let ctxItems: MenuItem[] = [
 		{
 			id: "act-export",
 			label: "Export",
-			icon: "file_export",
+			icon: "publish",
 			action: () => {
 				modalsManager.open(ExportPanel, {
 					assets: targetAssets
@@ -107,8 +118,19 @@ export function createCollectionImageMenu(
 					if (res.status === 200) {
 						toastState.addToast({
 							type: "success",
-							message: `Collection thumbnail updated: **${res.data.thumbnail!.name}**`
+							message: `Collection thumbnail updated: **${res.data.thumbnail!.name}**`,
+							actions: [
+								{
+									label: "View",
+									onClick: () => {
+										// TODO: add collection detail page
+										// For now just go to collections list so that they can see it somewhere
+										goto(`/collections`);
+									}
+								}
+							]
 						});
+
 						opts?.onCollectionUpdated?.(res.data);
 						await invalidateViz({ delay: 200 });
 					} else {
@@ -140,10 +162,18 @@ export function createCollectionImageMenu(
 				) {
 					return;
 				}
+
 				try {
 					const r = await deleteCollectionImages(collection.uid, {
-						uids: targetAssets.map((a) => a.uid)
+						uids: selectionScope?.isSelectAll
+							? undefined
+							: targetAssets.map((a) => a.uid),
+						all: selectionScope?.isSelectAll,
+						exclusions: selectionScope?.isSelectAll
+							? Array.from(selectionScope.excluded)
+							: undefined
 					});
+
 					if (r.status === 200) {
 						toastState.addToast({
 							type: "success",
@@ -204,6 +234,109 @@ export function createCollectionImageMenu(
 					message: "Share not implemented"
 				});
 			}
+		},
+		{
+			id: "divider-delete",
+			label: "",
+			separator: true
+		},
+		{
+			id: "act-delete",
+			label: "Delete",
+			icon: "delete",
+			action: async () => {
+				const okTrash = confirm(
+					targetCount > 1
+						? `Move ${targetCount} selected image(s) to trash?`
+						: `Move "${asset.name || asset.uid}" to trash?`
+				);
+
+				if (!okTrash) {
+					return;
+				}
+
+				try {
+					const res = await deleteImagesBulk({
+						uids: targetAssets.map((a) => a.uid),
+						force: false
+					});
+
+					if (res.status === 200 || res.status === 207) {
+						const deletedUIDs = (res.data.results ?? [])
+							.filter((r) => r.deleted && r.uid)
+							.map((r) => r.uid);
+						opts?.onDelete?.(deletedUIDs);
+
+						toastState.addToast({
+							type: "success",
+							message: `Deleted ${deletedUIDs.length} image(s)`
+						});
+
+						await invalidateViz({ delay: 200 });
+					} else {
+						toastState.addToast({
+							type: "error",
+							message: res.data?.error ?? "Failed to delete images",
+							timeout: 4000
+						});
+					}
+				} catch (err) {
+					toastState.addToast({
+						type: "error",
+						message: `Delete failed: ${err}`,
+						timeout: 5000
+					});
+				}
+			}
+		},
+		{
+			id: "act-force-delete",
+			label: "Force Delete",
+			icon: "delete_forever",
+			action: async () => {
+				const okForce = confirm(
+					targetCount > 1
+						? `Permanently delete ${targetCount} selected image(s)? This action cannot be undone!`
+						: `Permanently delete "${asset.name || asset.uid}"? This action cannot be undone!`
+				);
+
+				if (!okForce) {
+					return;
+				}
+
+				try {
+					const res = await deleteImagesBulk({
+						uids: targetAssets.map((a) => a.uid),
+						force: true
+					});
+
+					if (res.status === 200 || res.status === 207) {
+						const deletedUIDs = (res.data.results ?? [])
+							.filter((r) => r.deleted && r.uid)
+							.map((r) => r.uid);
+						opts?.onDelete?.(deletedUIDs);
+
+						toastState.addToast({
+							type: "success",
+							message: `Deleted ${deletedUIDs.length} image(s)`
+						});
+
+						await invalidateViz({ delay: 200 });
+					} else {
+						toastState.addToast({
+							type: "error",
+							message: (res as any).data?.error ?? "Failed to delete images",
+							timeout: 4000
+						});
+					}
+				} catch (err) {
+					toastState.addToast({
+						type: "error",
+						message: `Delete failed: ${err}`,
+						timeout: 5000
+					});
+				}
+			}
 		}
 	];
 
@@ -220,17 +353,21 @@ export function createImageMenu(
 	opts?: ImageMenuOptions
 ) {
 	let items = Array.from(selectionScope.selected);
+	const isMulti = selectionScope.isSelectAll || items.length > 1;
+	const targetCount = selectionScope.isSelectAll
+		? selectionScope.size
+		: items.length;
 
-	if (items.length === 0) {
+	if (targetCount === 0) {
 		return [];
 	}
 
-	let firstItem = items[0];
+	let firstItem = items[0] || images[0];
 	let actionMenuItems: MenuItem[] = [
 		{
 			id: "act-export",
 			label: "Export",
-			icon: "file_export",
+			icon: "publish",
 			action: () => {
 				modalsManager.open(
 					ExportPanel,
@@ -266,7 +403,7 @@ export function createImageMenu(
 				// TODO: Open share dialog
 				toastState.addToast({
 					type: "info",
-					message: `Share ${items.length} image(s) - Not yet implemented`,
+					message: `Share ${targetCount} image(s) - Not yet implemented`,
 					timeout: 3000
 				});
 			}
@@ -276,7 +413,7 @@ export function createImageMenu(
 			label: "Copy Link",
 			icon: "link",
 			action: () => {
-				if (items.length === 1) {
+				if (targetCount === 1) {
 					const url = getFullImagePath(firstItem.image_paths?.original);
 					copyToClipboard(url);
 					toastState.addToast({
@@ -295,26 +432,35 @@ export function createImageMenu(
 		},
 		{
 			id: "act-favourite",
-			label: items[0].favourited ? "Unfavourite" : "Favourite",
+			label:
+				targetCount === 1 && firstItem.favourited ? "Unfavourite" : "Favourite",
 			icon: "favorite",
 			action: async () => {
-				const res = await updateImage(firstItem.uid, {
-					favourited: firstItem.favourited ? false : true
-				});
-
-				if (res.status === 200) {
-					toastState.addToast({
-						type: "success",
-						message: `Image ${firstItem.favourited ? "un" : ""}favourited`
+				if (targetCount === 1) {
+					const res = await updateImage(firstItem.uid, {
+						favourited: firstItem.favourited ? false : true
 					});
-					firstItem = res.data;
-					await invalidateViz({ delay: 200 });
+
+					if (res.status === 200) {
+						toastState.addToast({
+							type: "success",
+							message: `Image ${firstItem.favourited ? "un" : ""}favourited`
+						});
+						
+						await invalidateViz({ delay: 200 });
+					} else {
+						toastState.addToast({
+							type: "error",
+							message:
+								res.data.error ??
+								`Failed to ${firstItem.favourited ? "un" : ""}favourite`
+						});
+					}
 				} else {
 					toastState.addToast({
-						type: "error",
-						message:
-							res.data.error ??
-							`Failed to ${firstItem.favourited ? "un" : ""}favourite`
+						type: "info",
+						message: "Bulk favourite not yet implemented",
+						timeout: 3000
 					});
 				}
 			}
@@ -327,7 +473,7 @@ export function createImageMenu(
 				// TODO: Open metadata editor
 				toastState.addToast({
 					type: "info",
-					message: `Edit metadata for ${items.length} image(s) - Not yet implemented`,
+					message: `Edit metadata for ${targetCount} image(s) - Not yet implemented`,
 					timeout: 3000
 				});
 			}
@@ -338,7 +484,7 @@ export function createImageMenu(
 			icon: "delete",
 			action: async () => {
 				const okTrash = confirm(
-					`Move ${items.length} selected image(s) to trash?`
+					`Move ${targetCount} selected image(s) to trash?`
 				);
 
 				if (!okTrash) {
@@ -380,7 +526,7 @@ export function createImageMenu(
 			icon: "delete_forever",
 			action: async () => {
 				const okForce = confirm(
-					`Permanently delete ${items.length} image(s)? This action cannot be undone!`
+					`Permanently delete ${targetCount} image(s)? This action cannot be undone!`
 				);
 
 				if (!okForce) {

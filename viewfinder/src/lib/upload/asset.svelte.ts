@@ -69,9 +69,22 @@ export class UploadImage implements UploadImageStats {
             throw new Error(`Upload failed with status ${responseData.status}`);
         }
 
-        const isDuplicate = responseData.status === 200;
-        this.state = isDuplicate ? UploadState.DUPLICATE : UploadState.DONE;
         this.imageData = responseData.data;
+
+        switch (this.imageData.status) {
+            case "duplicate":
+                this.state = UploadState.DUPLICATE;
+                break;
+            case "uploaded":
+            case "processing":
+                this.state = UploadState.DONE;
+                break;
+            case "failed":
+                this.state = UploadState.ERROR;
+                break;
+            default:
+                this.state = UploadState.DONE;
+        }
 
         return responseData.data;
     }

@@ -1,6 +1,7 @@
 import { upload } from "$lib/states/index.svelte";
 import type { SupportedImageTypes, SupportedRAWFiles } from "$lib/types/images";
 import { UploadImage, UploadState } from "./asset.svelte";
+import type { ImageUploadStatus } from "$lib/api";
 
 export interface ImageUploadFileData {
     file_name: string;
@@ -10,6 +11,7 @@ export interface ImageUploadFileData {
 
 export interface ImageUploadSuccess {
     uid: string;
+    status: ImageUploadStatus;
     metadata?: any;
 }
 
@@ -168,6 +170,7 @@ export default class UploadManager {
             .filter(t => (t.state === UploadState.DONE || t.state === UploadState.DUPLICATE) && t.imageData)
             .map(t => ({
                 uid: t.imageData!.uid,
+                status: t.imageData!.status,
                 metadata: t.imageData
             }));
         return success;

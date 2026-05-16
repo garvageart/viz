@@ -495,7 +495,7 @@
 		if (selectionManager.activeScopeId !== scopeId) {
 			return;
 		}
-		if (selection.selected.size === 0 && !selection.active) {
+		if (selection.size === 0 && !selection.active) {
 			return;
 		}
 
@@ -537,7 +537,7 @@
 		}}
 		oncontextmenu={(e: MouseEvent & { currentTarget: HTMLElement }) => {
 			e.preventDefault();
-			if (!selection.has(assetData) || selection.selected.size <= 1) {
+			if (!selection.has(assetData) || selection.size <= 1) {
 				selection.select(assetData);
 			}
 			onassetcontext?.({
