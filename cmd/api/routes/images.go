@@ -4,7 +4,6 @@ import (
 	"bytes"
 	"crypto/sha1"
 	"encoding/hex"
-	"encoding/json"
 	"fmt"
 	"io"
 	"log/slog"
@@ -633,7 +632,10 @@ func ImagesRouter(db *gorm.DB, logger *slog.Logger) *chi.Mux {
 		dupErr := db.Where("image_metadata->>'checksum' = ?", checksum).First(&existing).Error
 		if dupErr == nil {
 			render.Status(req, http.StatusOK)
-			render.JSON(res, req, dto.ImageUploadResponse{Uid: existing.Uid})
+			render.JSON(res, req, dto.ImageUploadResponse{
+				Uid:    existing.Uid,
+				Status: dto.ImageUploadStatusDuplicate,
+			})
 			return
 		} else if dupErr != gorm.ErrRecordNotFound {
 			logger.Error("Failed to check for duplicates", slog.Any("error", dupErr))
@@ -676,11 +678,12 @@ func ImagesRouter(db *gorm.DB, logger *slog.Logger) *chi.Mux {
 
 		render.Status(req, http.StatusCreated)
 		render.JSON(res, req, dto.ImageUploadResponse{
-			Uid: imageEntity.Uid,
+			Uid:    imageEntity.Uid,
+			Status: dto.ImageUploadStatusUploaded,
 			Metadata: &map[string]interface{}{
 				"job_uid":   jobUid,
 				"file_name": fileImageUpload.FileName,
-				"duplicate": dupErr == nil,
+				"duplicate": false,
 			},
 		})
 	})
@@ -767,7 +770,10 @@ func ImagesRouter(db *gorm.DB, logger *slog.Logger) *chi.Mux {
 		if dupErr == nil {
 			// Duplicate: return existing UID as an ImageUploadResponse (200)
 			render.Status(req, http.StatusOK)
-			render.JSON(res, req, dto.ImageUploadResponse{Uid: existing.Uid})
+			render.JSON(res, req, dto.ImageUploadResponse{
+				Uid:    existing.Uid,
+				Status: dto.ImageUploadStatusDuplicate,
+			})
 			return
 		} else if dupErr != gorm.ErrRecordNotFound {
 			logger.Error("Failed to check for duplicates", slog.Any("error", dupErr))
@@ -810,7 +816,10 @@ func ImagesRouter(db *gorm.DB, logger *slog.Logger) *chi.Mux {
 		logger.Info("upload images success", slog.String("id", imageEntity.Uid))
 
 		render.Status(req, http.StatusCreated)
-		render.JSON(res, req, dto.ErrorResponse{Error: imageEntity.Uid})
+		render.JSON(res, req, dto.ImageUploadResponse{
+			Uid:    imageEntity.Uid,
+			Status: dto.ImageUploadStatusUploaded,
+		})
 	})
 
 	router.Delete("/", func(res http.ResponseWriter, req *http.Request) {
@@ -827,7 +836,7 @@ func ImagesRouter(db *gorm.DB, logger *slog.Logger) *chi.Mux {
 
 		if len(body.Uids) == 0 {
 			render.Status(req, http.StatusBadRequest)
-			render.JSON(res, req, dto.DeleteAssetsResponse{Results: nil})
+			render.JSON(res, req, dto.ErrorResponse{Error: "no UIDs provided"})
 			return
 		}
 
@@ -842,7 +851,7 @@ func ImagesRouter(db *gorm.DB, logger *slog.Logger) *chi.Mux {
 			}
 		}
 
-		resultsArr := make([]map[string]any, 0, len(body.Uids))
+		resultsArr := make([]dto.DeleteAssetResult, 0, len(body.Uids))
 		var anyFailed bool
 
 		// Get authenticated user
@@ -873,9 +882,10 @@ func ImagesRouter(db *gorm.DB, logger *slog.Logger) *chi.Mux {
 					errMsg = &e
 					deleted = false
 					anyFailed = true
-					resultsArr = append(resultsArr, map[string]any{
-						"uid":   id,
-						"error": *errMsg,
+					resultsArr = append(resultsArr, dto.DeleteAssetResult{
+						Uid:     id,
+						Deleted: deleted,
+						Error:   errMsg,
 					})
 					continue
 				}
@@ -884,8 +894,11 @@ func ImagesRouter(db *gorm.DB, logger *slog.Logger) *chi.Mux {
 			if body.Force {
 				// Force delete: Remove from DB permanently and delete files
 				err := db.Transaction(func(tx *gorm.DB) error {
-					// Nullify collection thumbnails that use this image to avoid FK violation
-					if err := tx.Model(&entities.Collection{}).Where("thumbnail_id = ?", id).Update("thumbnail_id", nil).Error; err != nil {
+					// Nullify collection thumbnails that use this image to avoid FK violation.
+					// We use Unscoped() to ensure that even soft-deleted collections are updated,
+					// otherwise a hard-delete of the image will still fail due to FK constraints
+					// on those soft-deleted rows.
+					if err := tx.Unscoped().Model(&entities.Collection{}).Where("thumbnail_id = ?", id).Updates(map[string]any{"thumbnail_id": nil}).Error; err != nil {
 						return fmt.Errorf("failed to nullify collection thumbnails: %w", err)
 					}
 
@@ -933,14 +946,11 @@ func ImagesRouter(db *gorm.DB, logger *slog.Logger) *chi.Mux {
 				}
 			}
 
-			entry := map[string]any{
-				"uid":     id,
-				"deleted": deleted,
-			}
-			if errMsg != nil {
-				entry["error"] = *errMsg
-			}
-			resultsArr = append(resultsArr, entry)
+			resultsArr = append(resultsArr, dto.DeleteAssetResult{
+				Uid:     id,
+				Deleted: deleted,
+				Error:   errMsg,
+			})
 		}
 
 		var msg *string
@@ -948,10 +958,8 @@ func ImagesRouter(db *gorm.DB, logger *slog.Logger) *chi.Mux {
 			m := fmt.Sprintf("failed to delete/move ids: %s", func() string {
 				var failed []string
 				for _, r := range resultsArr {
-					if d, ok := r["deleted"].(bool); ok && !d {
-						if uid, ok := r["uid"].(string); ok {
-							failed = append(failed, uid)
-						}
+					if !r.Deleted {
+						failed = append(failed, r.Uid)
 					}
 				}
 				return strings.Join(failed, ",")
@@ -959,30 +967,17 @@ func ImagesRouter(db *gorm.DB, logger *slog.Logger) *chi.Mux {
 			msg = &m
 		}
 
-		tmp := map[string]any{"results": resultsArr}
-		if msg != nil {
-			tmp["message"] = *msg
-		}
-
-		b, _ := json.Marshal(tmp)
-		var resp dto.DeleteAssetsResponse
-		if err := json.Unmarshal(b, &resp); err != nil {
-			if anyFailed {
-				render.Status(req, http.StatusMultiStatus)
-			} else {
-				render.Status(req, http.StatusOK)
-			}
-			render.JSON(res, req, tmp)
-			return
+		resp := dto.DeleteAssetsResponse{
+			Results: &resultsArr,
+			Message: msg,
 		}
 
 		if anyFailed {
 			render.Status(req, http.StatusMultiStatus)
-			render.JSON(res, req, resp)
-			return
+		} else {
+			render.Status(req, http.StatusOK)
 		}
 
-		render.Status(req, http.StatusOK)
 		render.JSON(res, req, resp)
 	})
 

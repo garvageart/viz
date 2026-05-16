@@ -134,6 +134,30 @@ func (e ImageUpdateImageMetadataLabel) Valid() bool {
 	}
 }
 
+// Defines values for ImageUploadStatus.
+const (
+	ImageUploadStatusDuplicate  ImageUploadStatus = "duplicate"
+	ImageUploadStatusFailed     ImageUploadStatus = "failed"
+	ImageUploadStatusProcessing ImageUploadStatus = "processing"
+	ImageUploadStatusUploaded   ImageUploadStatus = "uploaded"
+)
+
+// Valid indicates whether the value is a known member of the ImageUploadStatus enum.
+func (e ImageUploadStatus) Valid() bool {
+	switch e {
+	case ImageUploadStatusDuplicate:
+		return true
+	case ImageUploadStatusFailed:
+		return true
+	case ImageUploadStatusProcessing:
+		return true
+	case ImageUploadStatusUploaded:
+		return true
+	default:
+		return false
+	}
+}
+
 // Defines values for SettingDefaultValueType.
 const (
 	Boolean SettingDefaultValueType = "boolean"
@@ -433,25 +457,25 @@ func (e GetImageFileParamsDownload) Valid() bool {
 
 // Defines values for ListJobsParamsStatus.
 const (
-	Cancelled ListJobsParamsStatus = "cancelled"
-	Completed ListJobsParamsStatus = "completed"
-	Failed    ListJobsParamsStatus = "failed"
-	Queued    ListJobsParamsStatus = "queued"
-	Running   ListJobsParamsStatus = "running"
+	ListJobsParamsStatusCancelled ListJobsParamsStatus = "cancelled"
+	ListJobsParamsStatusCompleted ListJobsParamsStatus = "completed"
+	ListJobsParamsStatusFailed    ListJobsParamsStatus = "failed"
+	ListJobsParamsStatusQueued    ListJobsParamsStatus = "queued"
+	ListJobsParamsStatusRunning   ListJobsParamsStatus = "running"
 )
 
 // Valid indicates whether the value is a known member of the ListJobsParamsStatus enum.
 func (e ListJobsParamsStatus) Valid() bool {
 	switch e {
-	case Cancelled:
+	case ListJobsParamsStatusCancelled:
 		return true
-	case Completed:
+	case ListJobsParamsStatusCompleted:
 		return true
-	case Failed:
+	case ListJobsParamsStatusFailed:
 		return true
-	case Queued:
+	case ListJobsParamsStatusQueued:
 		return true
-	case Running:
+	case ListJobsParamsStatusRunning:
 		return true
 	default:
 		return false
@@ -764,19 +788,25 @@ type DatabaseStatsResponse struct {
 	UserCount int64 `json:"user_count"`
 }
 
+// DeleteAssetResult defines model for DeleteAssetResult.
+type DeleteAssetResult struct {
+	// Deleted Whether it was deleted
+	Deleted bool `json:"deleted"`
+
+	// Error Error message if failed
+	Error *string `json:"error,omitempty"`
+
+	// Uid UID of the asset
+	Uid string `json:"uid"`
+}
+
 // DeleteAssetsResponse defines model for DeleteAssetsResponse.
 type DeleteAssetsResponse struct {
+	// Message Summary message of the operation
+	Message *string `json:"message,omitempty"`
+
 	// Results Results of deletion
-	Results *[]struct {
-		// Deleted Whether it was deleted
-		Deleted *bool `json:"deleted,omitempty"`
-
-		// Error Error message if failed
-		Error *string `json:"error,omitempty"`
-
-		// Uid UID of the asset
-		Uid *string `json:"uid,omitempty"`
-	} `json:"results,omitempty"`
+	Results *[]DeleteAssetResult `json:"results,omitempty"`
 }
 
 // DeleteImagesResponse defines model for DeleteImagesResponse.
@@ -1145,9 +1175,15 @@ type ImageUploadResponse struct {
 	// Metadata Extracted metadata
 	Metadata *map[string]interface{} `json:"metadata,omitempty"`
 
+	// Status The status of the image upload
+	Status ImageUploadStatus `json:"status"`
+
 	// Uid UID of the uploaded image
 	Uid string `json:"uid"`
 }
+
+// ImageUploadStatus The status of the image upload
+type ImageUploadStatus string
 
 // ImagesListResponse defines model for ImagesListResponse.
 type ImagesListResponse struct {
@@ -1876,8 +1912,14 @@ type GetCollectionParamsOrder string
 
 // DeleteCollectionImagesJSONBody defines parameters for DeleteCollectionImages.
 type DeleteCollectionImagesJSONBody struct {
+	// All Flag to select all images
+	All *bool `json:"all,omitempty"`
+
+	// Exclusions UIDs to exclude when all is true
+	Exclusions *[]string `json:"exclusions,omitempty"`
+
 	// Uids List of image UIDs
-	Uids []string `json:"uids"`
+	Uids *[]string `json:"uids,omitempty"`
 }
 
 // ListCollectionImagesParams defines parameters for ListCollectionImages.

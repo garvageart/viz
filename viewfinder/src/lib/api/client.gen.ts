@@ -426,24 +426,29 @@ export type ImageUploadRequest = {
     /** Optional checksum of the file */
     checksum?: string;
 };
+export type ImageUploadStatus = "uploaded" | "duplicate" | "failed" | "processing";
 export type ImageUploadResponse = {
     /** UID of the uploaded image */
     uid: string;
+    status: ImageUploadStatus;
     /** Extracted metadata */
     metadata?: {
         [key: string]: any;
     };
 };
+export type DeleteAssetResult = {
+    /** UID of the asset */
+    uid: string;
+    /** Whether it was deleted */
+    deleted: boolean;
+    /** Error message if failed */
+    error?: string;
+};
 export type DeleteAssetsResponse = {
     /** Results of deletion */
-    results?: {
-        /** UID of the asset */
-        uid?: string;
-        /** Whether it was deleted */
-        deleted?: boolean;
-        /** Error message if failed */
-        error?: string;
-    }[];
+    results?: DeleteAssetResult[];
+    /** Summary message of the operation */
+    message?: string;
 };
 export type ImageUpdate = {
     /** Image name */
@@ -1723,6 +1728,23 @@ export function deleteCollection(uid: string, opts?: Oazapfts.RequestOpts) {
     });
 }
 /**
+ * List all image UIDs in a collection
+ */
+export function listCollectionImageUiDs(uid: string, opts?: Oazapfts.RequestOpts) {
+    return oazapfts.fetchJson<{
+        status: 200;
+        data: string[];
+    } | {
+        status: 404;
+        data: ErrorResponse;
+    } | {
+        status: 500;
+        data: ErrorResponse;
+    }>(`/collections/${encodeURIComponent(uid)}/images/uids`, {
+        ...opts
+    });
+}
+/**
  * List images in a collection
  */
 export function listCollectionImages(uid: string, { limit, page, sortBy, order }: {
@@ -1776,7 +1798,11 @@ export function addCollectionImages(uid: string, body: {
  */
 export function deleteCollectionImages(uid: string, body: {
     /** List of image UIDs */
-    uids: string[];
+    uids?: string[];
+    /** Flag to select all images */
+    all?: boolean;
+    /** UIDs to exclude when all is true */
+    exclusions?: string[];
 }, opts?: Oazapfts.RequestOpts) {
     return oazapfts.fetchJson<{
         status: 200;

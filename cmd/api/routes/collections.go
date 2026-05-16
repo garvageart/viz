@@ -294,12 +294,12 @@ func CollectionsRouter(db *gorm.DB, logger *slog.Logger) *chi.Mux {
 		defaultImagePage := 0
 		href := fmt.Sprintf("/collections/%s/images/?page=%d&limit=%d&sort_by=%s&order=%s", uid, defaultImagePage, defaultImageLimit, sortBy, order)
 
-		var next *string
 		var totalImages int
 		if collection.Images != nil {
 			totalImages = len(*collection.Images)
 		}
 
+		var next *string
 		if totalImages > defaultImageLimit {
 			nxPtr := fmt.Sprintf("/collections/%s/images/?page=%d&limit=%d&sort_by=%s&order=%s", uid, defaultImagePage+1, defaultImageLimit, sortBy, order)
 			next = &nxPtr
@@ -307,15 +307,13 @@ func CollectionsRouter(db *gorm.DB, logger *slog.Logger) *chi.Mux {
 
 		var prev *string
 
-		count := len(imgResponse)
-
 		ImagesListResponse := dto.ImagesListResponse{
 			Href:  &href,
 			Prev:  prev,
 			Next:  next,
 			Limit: defaultImageLimit,
 			Page:  defaultImagePage,
-			Count: &count,
+			Count: &totalImages,
 			Items: imgResponse,
 		}
 
@@ -436,6 +434,42 @@ func CollectionsRouter(db *gorm.DB, logger *slog.Logger) *chi.Mux {
 		}
 
 		res.WriteHeader(http.StatusNoContent)
+	})
+
+	router.Get("/{uid}/images/uids", func(res http.ResponseWriter, req *http.Request) {
+		uid := chi.URLParam(req, "uid")
+
+		var collection entities.Collection
+		if err := db.Select("images", "private", "owner_id").First(&collection, "uid = ?", uid).Error; err != nil {
+			if err == gorm.ErrRecordNotFound {
+				render.Status(req, http.StatusNotFound)
+				render.JSON(res, req, dto.ErrorResponse{Error: "Collection not found"})
+				return
+			}
+			
+			libhttp.ServerError(res, req, err, logger, nil, "Failed to fetch collection image UIDs", "")
+			return
+		}
+
+		authUser, ok := libhttp.UserFromContext(req)
+		if !ok || (collection.OwnerID != nil && *collection.OwnerID != authUser.Uid) {
+			render.Status(req, http.StatusForbidden)
+			render.JSON(res, req, dto.ErrorResponse{Error: "Unauthorized"})
+			return
+		}
+
+		var uids []string
+		if collection.Images != nil {
+			uids = make([]string, len(*collection.Images))
+			for i, img := range *collection.Images {
+				uids[i] = img.Uid
+			}
+		} else {
+			uids = []string{}
+		}
+
+		render.Status(req, http.StatusOK)
+		render.JSON(res, req, uids)
 	})
 
 	router.Get("/{uid}/images", func(res http.ResponseWriter, req *http.Request) {
@@ -600,7 +634,7 @@ func CollectionsRouter(db *gorm.DB, logger *slog.Logger) *chi.Mux {
 
 			collection.ImageCount = len(*collection.Images)
 
-			return tx.Save(&collection).Error
+			return tx.Model(&collection).Select("Images", "ImageCount").Updates(&collection).Error
 		})
 
 		if err != nil {
@@ -630,7 +664,9 @@ func CollectionsRouter(db *gorm.DB, logger *slog.Logger) *chi.Mux {
 	router.Delete("/{uid}/images", func(res http.ResponseWriter, req *http.Request) {
 		uid := chi.URLParam(req, "uid")
 		var body struct {
-			UIDs []string `json:"uids"`
+			UIDs       []string `json:"uids"`
+			All        bool     `json:"all"`
+			Exclusions []string `json:"exclusions"`
 		}
 
 		if err := render.DecodeJSON(req.Body, &body); err != nil {
@@ -655,35 +691,52 @@ func CollectionsRouter(db *gorm.DB, logger *slog.Logger) *chi.Mux {
 				images = *collection.Images
 			}
 
-			if len(images) == 0 || len(body.UIDs) == 0 {
-				collection.ImageCount = len(images)
+			if len(images) == 0 {
+				collection.ImageCount = 0
 				return tx.Save(&collection).Error
 			}
 
-			toRemove := make(map[string]struct{}, len(body.UIDs))
-			for _, u := range body.UIDs {
-				toRemove[u] = struct{}{}
+			if !body.All && len(body.UIDs) == 0 {
+				return nil // Nothing to do
 			}
 
-			j := 0
-			for i := 0; i < len(images); i++ {
-				img := images[i]
-				if _, found := toRemove[img.Uid]; !found {
-					images[j] = img
-					j++
+			var newImages []dto.CollectionImage
+
+			if body.All {
+				// Remove all EXCEPT exclusions
+				excludedMap := make(map[string]struct{}, len(body.Exclusions))
+				for _, u := range body.Exclusions {
+					excludedMap[u] = struct{}{}
+				}
+
+				newImages = make([]dto.CollectionImage, 0, len(body.Exclusions))
+				for _, img := range images {
+					if _, found := excludedMap[img.Uid]; found {
+						newImages = append(newImages, img)
+					}
+				}
+			} else {
+				// Remove specific UIDs
+				toRemove := make(map[string]struct{}, len(body.UIDs))
+				for _, u := range body.UIDs {
+					toRemove[u] = struct{}{}
+				}
+
+				newImages = make([]dto.CollectionImage, 0, len(images))
+				for _, img := range images {
+					if _, found := toRemove[img.Uid]; !found {
+						newImages = append(newImages, img)
+					}
 				}
 			}
 
-			if j == 0 {
+			collection.ImageCount = len(newImages)
+			collection.Images = &newImages
+			if len(newImages) == 0 {
 				collection.Images = nil
-			} else {
-				tmp := make([]dto.CollectionImage, j)
-				copy(tmp, images[:j])
-				collection.Images = &tmp
 			}
-			collection.ImageCount = j
 
-			return tx.Save(&collection).Error
+			return tx.Model(&collection).Select("Images", "ImageCount").Updates(&collection).Error
 		})
 
 		if err != nil {

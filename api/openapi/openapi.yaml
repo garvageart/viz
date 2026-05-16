@@ -1486,6 +1486,41 @@ paths:
               schema:
                 $ref: "#/components/schemas/ErrorResponse"
 
+  /collections/{uid}/images/uids:
+    get:
+      summary: List all image UIDs in a collection
+      operationId: listCollectionImageUIDs
+      security:
+        - BearerAuth: [collections:read]
+        - CookieAuth: []
+      parameters:
+        - in: path
+          name: uid
+          required: true
+          schema:
+            type: string
+      responses:
+        "200":
+          description: A flat list of UIDs
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  type: string
+        "404":
+          description: Not found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "500":
+          description: Server error
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+
   /collections/{uid}/images:
     get:
       summary: List images in a collection
@@ -1612,7 +1647,14 @@ paths:
                   items:
                     type: string
                   description: List of image UIDs
-              required: [uids]
+                all:
+                  type: boolean
+                  description: Flag to select all images
+                exclusions:
+                  type: array
+                  items:
+                    type: string
+                  description: UIDs to exclude when all is true
       responses:
         "200":
           description: Images removed
@@ -2752,11 +2794,18 @@ components:
         uid:
           type: string
           description: UID of the uploaded image
+        status:
+          $ref: "#/components/schemas/ImageUploadStatus"
         metadata:
           type: object
           additionalProperties: true
           description: Extracted metadata
-      required: [uid]
+      required: [uid, status]
+
+    ImageUploadStatus:
+      type: string
+      enum: [uploaded, duplicate, failed, processing]
+      description: The status of the image upload
 
     AdminUserCreate:
       type: object
@@ -3118,18 +3167,26 @@ components:
         results:
           type: array
           items:
-            type: object
-            properties:
-              uid:
-                type: string
-                description: UID of the asset
-              deleted:
-                type: boolean
-                description: Whether it was deleted
-              error:
-                type: string
-                description: Error message if failed
+            $ref: "#/components/schemas/DeleteAssetResult"
           description: Results of deletion
+        message:
+          type: string
+          description: Summary message of the operation
+
+    DeleteAssetResult:
+      type: object
+      properties:
+        uid:
+          type: string
+          description: UID of the asset
+        deleted:
+          type: boolean
+          description: Whether it was deleted
+        error:
+          type: string
+          description: Error message if failed
+      required: [uid, deleted]
+
     SettingDefault:
       x-entity: true
       x-go-gorm-index:

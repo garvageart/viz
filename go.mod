@@ -8,10 +8,10 @@ require (
 	github.com/go-chi/render v1.0.3
 	go.uber.org/multierr v1.11.0 // indirect
 	go.uber.org/zap v1.27.0
-	golang.org/x/crypto v0.42.0
-	golang.org/x/net v0.44.0 // indirect
-	golang.org/x/sync v0.17.0 // indirect
-	golang.org/x/text v0.30.0 // indirect
+	golang.org/x/crypto v0.46.0
+	golang.org/x/net v0.48.0 // indirect
+	golang.org/x/sync v0.19.0 // indirect
+	golang.org/x/text v0.32.0 // indirect
 )
 
 require (
@@ -24,7 +24,7 @@ require (
 	github.com/go-co-op/gocron/v2 v2.16.5
 	github.com/go-errors/errors v1.5.1
 	github.com/gorilla/websocket v1.5.3
-	github.com/oapi-codegen/runtime v1.1.2
+	github.com/oapi-codegen/runtime v1.4.0
 	github.com/orandin/slog-gorm v1.4.0
 	github.com/samber/slog-multi v1.4.0
 	github.com/spf13/viper v1.20.1
@@ -129,8 +129,8 @@ require (
 	go.opentelemetry.io/otel/sdk/metric v1.35.0 // indirect
 	go.opentelemetry.io/otel/trace v1.35.0 // indirect
 	golang.org/x/oauth2 v0.30.0
-	golang.org/x/sys v0.38.0
-	golang.org/x/time v0.11.0 // indirect
+	golang.org/x/sys v0.39.0
+	golang.org/x/time v0.14.0 // indirect
 	google.golang.org/genproto v0.0.0-20250303144028-a0af3efb3deb // indirect
 	google.golang.org/genproto/googleapis/api v0.0.0-20250505200425-f936aa4a68b2 // indirect
 	google.golang.org/genproto/googleapis/rpc v0.0.0-20250505200425-f936aa4a68b2 // indirect

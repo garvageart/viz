@@ -236,6 +236,9 @@ type ClientInterface interface {
 
 	AddCollectionImages(ctx context.Context, uid string, body AddCollectionImagesJSONRequestBody, reqEditors ...RequestEditorFn) (*http.Response, error)
 
+	// ListCollectionImageUIDs request
+	ListCollectionImageUIDs(ctx context.Context, uid string, reqEditors ...RequestEditorFn) (*http.Response, error)
+
 	// DownloadImagesWithBody request with any body
 	DownloadImagesWithBody(ctx context.Context, params *DownloadImagesParams, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*http.Response, error)
 
@@ -1008,6 +1011,18 @@ func (c *Client) AddCollectionImagesWithBody(ctx context.Context, uid string, co
 
 func (c *Client) AddCollectionImages(ctx context.Context, uid string, body AddCollectionImagesJSONRequestBody, reqEditors ...RequestEditorFn) (*http.Response, error) {
 	req, err := NewAddCollectionImagesRequest(c.Server, uid, body)
+	if err != nil {
+		return nil, err
+	}
+	req = req.WithContext(ctx)
+	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
+		return nil, err
+	}
+	return c.Client.Do(req)
+}
+
+func (c *Client) ListCollectionImageUIDs(ctx context.Context, uid string, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewListCollectionImageUIDsRequest(c.Server, uid)
 	if err != nil {
 		return nil, err
 	}
@@ -3175,6 +3190,40 @@ func NewAddCollectionImagesRequestWithBody(server string, uid string, contentTyp
 	return req, nil
 }
 
+// NewListCollectionImageUIDsRequest generates requests for ListCollectionImageUIDs
+func NewListCollectionImageUIDsRequest(server string, uid string) (*http.Request, error) {
+	var err error
+
+	var pathParam0 string
+
+	pathParam0, err = runtime.StyleParamWithOptions("simple", false, "uid", uid, runtime.StyleParamOptions{ParamLocation: runtime.ParamLocationPath, Type: "string", Format: ""})
+	if err != nil {
+		return nil, err
+	}
+
+	serverURL, err := url.Parse(server)
+	if err != nil {
+		return nil, err
+	}
+
+	operationPath := fmt.Sprintf("/collections/%s/images/uids", pathParam0)
+	if operationPath[0] == '/' {
+		operationPath = "." + operationPath
+	}
+
+	queryURL, err := serverURL.Parse(operationPath)
+	if err != nil {
+		return nil, err
+	}
+
+	req, err := http.NewRequest(http.MethodGet, queryURL.String(), nil)
+	if err != nil {
+		return nil, err
+	}
+
+	return req, nil
+}
+
 // NewDownloadImagesRequest calls the generic DownloadImages builder with application/json body
 func NewDownloadImagesRequest(server string, params *DownloadImagesParams, body DownloadImagesJSONRequestBody) (*http.Request, error) {
 	var bodyReader io.Reader
@@ -4993,6 +5042,9 @@ type ClientWithResponsesInterface interface {
 
 	AddCollectionImagesWithResponse(ctx context.Context, uid string, body AddCollectionImagesJSONRequestBody, reqEditors ...RequestEditorFn) (*AddCollectionImagesResponse, error)
 
+	// ListCollectionImageUIDsWithResponse request
+	ListCollectionImageUIDsWithResponse(ctx context.Context, uid string, reqEditors ...RequestEditorFn) (*ListCollectionImageUIDsResponse, error)
+
 	// DownloadImagesWithBodyWithResponse request with any body
 	DownloadImagesWithBodyWithResponse(ctx context.Context, params *DownloadImagesParams, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*DownloadImagesResponse, error)
 
@@ -6375,6 +6427,38 @@ func (r AddCollectionImagesResponse) StatusCode() int {
 
 // ContentType is a convenience method to retrieve the Content-Type value from the HTTP response headers
 func (r AddCollectionImagesResponse) ContentType() string {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.Header.Get("Content-Type")
+	}
+	return ""
+}
+
+type ListCollectionImageUIDsResponse struct {
+	Body         []byte
+	HTTPResponse *http.Response
+	JSON200      *[]string
+	JSON404      *ErrorResponse
+	JSON500      *ErrorResponse
+}
+
+// Status returns HTTPResponse.Status
+func (r ListCollectionImageUIDsResponse) Status() string {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.Status
+	}
+	return http.StatusText(0)
+}
+
+// StatusCode returns HTTPResponse.StatusCode
+func (r ListCollectionImageUIDsResponse) StatusCode() int {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.StatusCode
+	}
+	return 0
+}
+
+// ContentType is a convenience method to retrieve the Content-Type value from the HTTP response headers
+func (r ListCollectionImageUIDsResponse) ContentType() string {
 	if r.HTTPResponse != nil {
 		return r.HTTPResponse.Header.Get("Content-Type")
 	}
@@ -8031,6 +8115,15 @@ func (c *ClientWithResponses) AddCollectionImagesWithResponse(ctx context.Contex
 		return nil, err
 	}
 	return ParseAddCollectionImagesResponse(rsp)
+}
+
+// ListCollectionImageUIDsWithResponse request returning *ListCollectionImageUIDsResponse
+func (c *ClientWithResponses) ListCollectionImageUIDsWithResponse(ctx context.Context, uid string, reqEditors ...RequestEditorFn) (*ListCollectionImageUIDsResponse, error) {
+	rsp, err := c.ListCollectionImageUIDs(ctx, uid, reqEditors...)
+	if err != nil {
+		return nil, err
+	}
+	return ParseListCollectionImageUIDsResponse(rsp)
 }
 
 // DownloadImagesWithBodyWithResponse request with arbitrary body returning *DownloadImagesResponse
@@ -10050,6 +10143,46 @@ func ParseAddCollectionImagesResponse(rsp *http.Response) (*AddCollectionImagesR
 			return nil, err
 		}
 		response.JSON404 = &dest
+
+	}
+
+	return response, nil
+}
+
+// ParseListCollectionImageUIDsResponse parses an HTTP response from a ListCollectionImageUIDsWithResponse call
+func ParseListCollectionImageUIDsResponse(rsp *http.Response) (*ListCollectionImageUIDsResponse, error) {
+	bodyBytes, err := io.ReadAll(rsp.Body)
+	defer func() { _ = rsp.Body.Close() }()
+	if err != nil {
+		return nil, err
+	}
+
+	response := &ListCollectionImageUIDsResponse{
+		Body:         bodyBytes,
+		HTTPResponse: rsp,
+	}
+
+	switch {
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 200:
+		var dest []string
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON200 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 404:
+		var dest ErrorResponse
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON404 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 500:
+		var dest ErrorResponse
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON500 = &dest
 
 	}
 
