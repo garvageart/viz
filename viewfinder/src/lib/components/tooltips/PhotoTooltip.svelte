@@ -12,7 +12,7 @@
 <div class="photo-tooltip-content">
 	{#if asset.image_metadata?.file_name}
 		<div class="tooltip-row">
-			<span class="tooltip-value" title={asset.image_metadata.file_name}
+			<span class="tooltip-value tooltip-label" title={asset.image_metadata.file_name}
 				>{asset.image_metadata.file_name}</span
 			>
 		</div>
@@ -70,9 +70,9 @@
 		gap: 8px;
 	}
 
-	// .tooltip-label {
-	// 	font-weight: 600;
-	// }
+	.tooltip-label {
+		font-weight: 600;
+	}
 
 	.tooltip-value {
 		opacity: 0.9;

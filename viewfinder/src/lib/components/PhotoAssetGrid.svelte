@@ -442,7 +442,13 @@
 	const dateGroupCount = $derived(Object.keys(dateGroupCounts).length);
 
 	// Virtualized photo-grid state
-	const virtualizer = $derived(new PhotoGridVirtualizer(gridConfig));
+	// We use a stable instance and update its config via effect to avoid recreation and potential scroll jumps.
+	// svelte-ignore state_referenced_locally
+	const virtualizer = new PhotoGridVirtualizer(gridConfig);
+	$effect(() => {
+		virtualizer.updateConfig(gridConfig);
+	});
+
 	let scrollTop: number = $state(0);
 	let usingExternalScroll = $state(false);
 	let scrollParent: HTMLElement | Window | undefined = $state();
@@ -548,21 +554,8 @@
 		}
 
 		// Find the scroll container
-		let scroller: HTMLElement | Window = window;
-		let parent = photoGridEl.parentElement;
-		while (parent) {
-			const style = window.getComputedStyle(parent);
-			if (
-				style.overflowY === "auto" ||
-				style.overflowY === "scroll" ||
-				style.overflow === "auto" ||
-				style.overflow === "scroll"
-			) {
-				scroller = parent;
-				break;
-			}
-			parent = parent.parentElement;
-		}
+		const scroller = usingExternalScroll ? scrollParent : photoGridEl;
+		if (!scroller) return;
 
 		for (const row of virtualizer.rows) {
 			if (row.type === "header") {
@@ -570,7 +563,11 @@
 			}
 			if (row.items.some((i) => i.asset.uid === asset.uid)) {
 				const gridRect = photoGridEl.getBoundingClientRect();
-				const rowRectTop = gridRect.top + row.top; // Absolute visual top
+				// viewportTop = gridRect.top + row.top - currentScroll
+				// Visual position in viewport = gridRect.top + (row.top - currentScroll).
+				const currentScroll =
+					scroller instanceof Window ? window.scrollY : scroller.scrollTop;
+				const rowRectTop = gridRect.top + row.top - currentScroll;
 
 				// If using external scroll we know offsets
 				if (usingExternalScroll && scroller instanceof HTMLElement) {
@@ -1056,6 +1053,7 @@
 		oncontextmenu={(e: MouseEvent & { currentTarget: HTMLElement }) => {
 			e.preventDefault();
 			e.stopPropagation();
+			suppressScrollOnce = true;
 			if (!selectedUIDs.has(asset.uid) || selection.selected.size <= 1) {
 				selection.select(asset);
 			}

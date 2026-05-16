@@ -23,12 +23,13 @@
 <style lang="scss">
 	:global(:root) {
 		/* expose toolbar height as a CSS variable for other components to use */
-		--viz-toolbar-height: 4em;
+		--viz-toolbar-height: 3em;
 	}
 
 	.viz-toolbar-container {
 		z-index: 99;
-		padding: 0.4em 2em;
+		padding: 0 2em;
+		height: var(--viz-toolbar-height);
 		background-color: var(--viz-100);
 		backdrop-filter: blur(5px);
 		border-bottom: 1px solid var(--viz-60);
