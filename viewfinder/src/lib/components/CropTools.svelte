@@ -6,7 +6,7 @@
 		onApply: () => void;
 		onCancel: () => void;
 		onReset: () => void;
-		onAspectRatioChange: (ratio: number | null) => void;
+		onAspectRatioChange: (ratio: number | null | "original") => void;
 		x?: number;
 		y?: number;
 		variant?: "floating" | "placed";
@@ -22,10 +22,11 @@
 		variant = "floating"
 	}: Props = $props();
 
-	let selectedRatio = $state<number | null>(null);
+	let selectedRatioLabel = $state<string>("Free");
 
 	const ratios = [
 		{ label: "Free", value: null },
+		{ label: "Original", value: "original" },
 		{ label: "1:1", value: 1 },
 		{ label: "4:5", value: 4 / 5 },
 		{ label: "16:9", value: 16 / 9 },
@@ -33,8 +34,8 @@
 		{ label: "2:3", value: 2 / 3 }
 	];
 
-	function selectRatio(value: number | null) {
-		selectedRatio = value;
+	function selectRatio(label: string, value: number | null | "original") {
+		selectedRatioLabel = label;
 		onAspectRatioChange(value);
 	}
 
@@ -56,8 +57,8 @@
 	<div class="crop-presets">
 		{#each ratios as ratio}
 			<button
-				class="preset-btn {selectedRatio === ratio.value ? 'active' : ''}"
-				onclick={() => selectRatio(ratio.value)}
+				class="preset-btn {selectedRatioLabel === ratio.label ? 'active' : ''}"
+				onclick={() => selectRatio(ratio.label, ratio.value as any)}
 			>
 				{ratio.label}
 			</button>

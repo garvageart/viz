@@ -1,23 +1,90 @@
 <script lang="ts">
-	import type {
-		ZoomPanCrop,
-		CropRect,
-		DragAction
-	} from "$lib/images/zoom/crop";
-	import { DragActionName } from "$lib/images/zoom/crop";
+	import {
+		calculateCrop,
+		type CropRect,
+		type DragAction
+	} from "../images/zoom/crop-utils";
 
 	interface Props {
 		width: number;
 		height: number;
 		crop: CropRect;
-		zoomer: ZoomPanCrop;
 		scale?: number;
+		aspectRatio?: number | null;
 	}
 
-	let { width, height, crop, zoomer, scale = 1 }: Props = $props();
+	let {
+		width,
+		height,
+		crop = $bindable(),
+		scale = 1,
+		aspectRatio = null
+	}: Props = $props();
 
-	function handleStart(action: DragAction, e: MouseEvent | TouchEvent) {
-		zoomer.startCropDrag(action, e);
+	let isDragging = $state(false);
+	let currentAction = $state<DragAction>(null);
+	let startX = 0;
+	let startY = 0;
+	let startCropState: CropRect = { x: 0, y: 0, width: 0, height: 0 };
+
+	function handleStart(action: DragAction, e: PointerEvent) {
+		if (e.button !== 0) {
+			return;
+		}
+
+		const target = e.currentTarget as HTMLElement;
+		target.setPointerCapture(e.pointerId);
+
+		e.preventDefault();
+		e.stopPropagation();
+
+		isDragging = true;
+		currentAction = action;
+		startX = e.clientX;
+		startY = e.clientY;
+		startCropState = { ...crop };
+	}
+
+	function handleMove(e: PointerEvent) {
+		if (!isDragging || !currentAction) {
+			return;
+		}
+
+		e.preventDefault();
+		e.stopPropagation();
+
+		const dx = (e.clientX - startX) / scale;
+		const dy = (e.clientY - startY) / scale;
+
+		crop = calculateCrop(
+			currentAction,
+			crop,
+			startCropState,
+			dx,
+			dy,
+			{ width, height },
+			{
+				aspectRatio,
+				altKey: e.altKey,
+				shiftKey: e.shiftKey
+			}
+		);
+	}
+
+	function handleEnd(e: PointerEvent) {
+		if (!isDragging) {
+			return;
+		}
+
+		const target = e.currentTarget as HTMLElement;
+		if (target.hasPointerCapture(e.pointerId)) {
+			target.releasePointerCapture(e.pointerId);
+		}
+
+		e.stopPropagation();
+
+		isDragging = false;
+		currentAction = null;
 	}
 
 	function handleKeyDown(e: KeyboardEvent) {
@@ -45,8 +112,10 @@
 	<div
 		class="handle {dragAction}"
 		style={handleStyle}
-		onmousedown={(e) => handleStart(dragAction, e)}
-		ontouchstart={(e) => handleStart(dragAction, e)}
+		onpointerdown={(e) => handleStart(dragAction, e)}
+		onpointermove={handleMove}
+		onpointerup={handleEnd}
+		onpointercancel={handleEnd}
 		ondragstart={(e) => e.preventDefault()}
 		role="button"
 		tabindex="-1"
@@ -58,8 +127,10 @@
 	<div
 		class="crop-box"
 		style="{tStyle} {outlineStyle}"
-		onmousedown={(e) => handleStart("move", e)}
-		ontouchstart={(e) => handleStart("move", e)}
+		onpointerdown={(e) => handleStart("move", e)}
+		onpointermove={handleMove}
+		onpointerup={handleEnd}
+		onpointercancel={handleEnd}
 		onmouseup={(e) => e.stopPropagation()}
 		onclick={(e) => e.stopPropagation()}
 		onkeydown={handleKeyDown}
@@ -69,10 +140,25 @@
 		aria-label="Crop Area"
 	>
 		<!-- Grid lines (Rule of thirds) -->
-		<div class="grid-line v v1" style="width: {borderWidth}px"></div>
-		<div class="grid-line v v2" style="width: {borderWidth}px"></div>
-		<div class="grid-line h h1" style="height: {borderWidth}px"></div>
-		<div class="grid-line h h2" style="height: {borderWidth}px"></div>
+		<div
+			class="grid-line v v1"
+			style="width: {borderWidth}px; left: 33.33%;"
+		></div>
+
+		<div
+			class="grid-line v v2"
+			style="width: {borderWidth}px; left: 66.66%;"
+		></div>
+
+		<div
+			class="grid-line h h1"
+			style="height: {borderWidth}px; top: 33.33%;"
+		></div>
+
+		<div
+			class="grid-line h h2"
+			style="height: {borderWidth}px; top: 66.66%;"
+		></div>
 
 		<!-- Handles -->
 		{#each ["nw", "n", "ne", "e", "se", "s", "sw", "w"] as dragAction}
@@ -88,6 +174,7 @@
 		left: 0;
 		pointer-events: none; /* Let clicks pass through to image if not hitting crop box */
 		touch-action: none;
+		z-index: 5;
 	}
 
 	.crop-box {
@@ -106,42 +193,28 @@
 
 	.grid-line {
 		position: absolute;
-		background-color: rgba(255, 255, 255, 0.4);
+		background-color: rgba(255, 255, 255, 0.5);
+		box-shadow: 0 0 1px rgba(0, 0, 0, 0.5);
 		pointer-events: none;
 	}
+
 	.v {
 		top: 0;
 		bottom: 0;
-		width: 1px;
-		transform: translateX(-50%); /* Center the line */
 	}
+
 	.h {
 		left: 0;
 		right: 0;
-		height: 1px;
-		transform: translateY(-50%); /* Center the line */
-	}
-	.v1 {
-		left: 33.33%;
-	}
-	.v2 {
-		left: 66.66%;
-	}
-	.h1 {
-		top: 33.33%;
-	}
-	.h2 {
-		top: 66.66%;
 	}
 
 	/* Handles */
 	.handle {
 		position: absolute;
-		width: 14px;
-		height: 14px;
+		width: 8px;
+		height: 8px;
 		background-color: white;
 		border: 1px solid rgba(0, 0, 0, 0.2);
-		border-radius: 50%;
 		z-index: 10;
 		touch-action: none;
 	}
@@ -155,7 +228,7 @@
 		right: -10px;
 		bottom: -10px;
 		background: transparent;
-		border-radius: 50%;
+		border-radius: 2px;
 	}
 
 	.nw {

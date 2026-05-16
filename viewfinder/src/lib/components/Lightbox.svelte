@@ -48,6 +48,10 @@
 
 <svelte:window
 	onkeydown={(e) => {
+		if (e.defaultPrevented) {
+			return;
+		}
+
 		if (e.key === "Escape") {
 			show = false;
 		}
