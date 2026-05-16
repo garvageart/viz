@@ -86,11 +86,8 @@
 				heading: mode === "create" ? "Create Collection" : "Edit Collection",
 				buttonText: mode === "create" ? "Create" : "Save",
 				data: modalData,
-				modalAction: async (event) => {
-					const formData = new FormData(event.currentTarget);
-					const name = formData.get("name") as string;
-					const description = formData.get("description") as string;
-					const isPrivate = formData.get("isPrivate") === "on";
+				modalAction: async (newData) => {
+					const { name, description, private: isPrivate } = newData;
 
 					if (modalMode === "create") {
 						const res = await createCollection({
@@ -286,7 +283,7 @@
 		{noAssetsSnippet}
 		{toolbarSnippet}
 		toolbarProps={{
-			style: "justify-content: flex-end; gap: 0.5rem;"
+			style: "justify-content: space-between; gap: 0.5rem;"
 		}}
 	>
 		<div id="viz-info-container">
@@ -310,10 +307,6 @@
 		display: flex;
 		flex-direction: column;
 		justify-content: left;
-	}
-
-	:global(#create-collection) {
-		margin: 0em 1rem;
 	}
 
 	#viz-info-container {

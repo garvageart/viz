@@ -283,8 +283,8 @@
 				heading: "Create Collection",
 				data: collectionCreateData,
 				buttonText: "Create & Upload",
-				modalAction: async () => {
-					await handleCollectionSubmit(collectionCreateData);
+				modalAction: async (newData) => {
+					await handleCollectionSubmit(newData);
 				}
 			},
 			{ heading: "Create Collection" }

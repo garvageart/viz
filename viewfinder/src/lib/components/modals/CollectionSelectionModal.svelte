@@ -90,11 +90,8 @@
 		modalsManager.open(CollectionModal, {
 			heading: "Create Collection",
 			buttonText: "Create",
-			modalAction: async (event) => {
-				const formData = new FormData(event.currentTarget);
-				const name = formData.get("name") as string;
-				const description = formData.get("description") as string;
-				const isPrivate = formData.get("isPrivate") === "on";
+			modalAction: async (newData) => {
+				const { name, description, private: isPrivate } = newData;
 
 				const createRes = await createCollection({
 					name: name,

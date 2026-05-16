@@ -116,7 +116,9 @@
 	});
 
 	// Image pagination state
-	let collectionState = $derived(new ImagePaginationState(data.images, data.image_count));
+	let collectionState = $derived(
+		new ImagePaginationState(data.images, data.image_count)
+	);
 	let isPaginating = $state(false);
 
 	async function paginate() {
@@ -198,14 +200,19 @@
 				},
 				onImageUpdated(image) {
 					selectionScope.updateItem(image, collectionState.images);
+				},
+				onDelete(uids) {
+					selectionScope.clear();
+					collectionState.images = collectionState.images.filter(
+						(i) => !uids.includes(i.uid)
+					);
+					collectionState.totalCount -= uids.length;
 				}
 			},
 			Array.from(selectionScope.selected)
 		)
 	);
-	let ctxAnchor: { x: number; y: number } | HTMLElement | null = $state(
-		null as any
-	);
+	let ctxAnchor: { x: number; y: number } | HTMLElement | null = $state(null);
 
 	let focusScrollElement = $derived.by(() => {
 		const activeUid = selectionScope.active?.uid;
@@ -215,6 +222,7 @@
 				return el;
 			}
 		}
+
 		return null;
 	});
 
@@ -362,6 +370,7 @@
 					message: `Deleted collection ${data.name}`,
 					timeout: 3000
 				});
+
 				goto("/collections");
 			} else {
 				const errMsg = res.data.error ?? "Unknown error";
@@ -408,6 +417,7 @@
 				collectionState.images = collectionState.images.filter(
 					(i) => !uids.includes(i.uid)
 				);
+
 				collectionState.totalCount -= uids.length;
 				await invalidateViz({ delay: 200 });
 			} else {
@@ -444,6 +454,7 @@
 							message: "Collection duplicated with images",
 							type: "success"
 						});
+
 						await invalidateViz({ delay: 200 });
 						goto(`/collections/${newCollectionUid}`);
 					} else {
@@ -451,6 +462,7 @@
 							message: `Collection duplicated but failed to copy images (${addRes.status})`,
 							type: "warning"
 						});
+
 						goto(`/collections/${newCollectionUid}`); // Still navigate to the new collection
 					}
 				} else {
@@ -616,7 +628,8 @@
 				heading: "Edit Collection",
 				buttonText: "Save",
 				data: localDataUpdates,
-				modalAction: async () => {
+				modalAction: async (newData) => {
+					Object.assign(localDataUpdates, newData);
 					await updateCollectionDetails();
 					modalsManager.pop();
 				}
@@ -926,11 +939,7 @@
 		flex-direction: column;
 		justify-content: left;
 	}
-
-	:global(#create-collection) {
-		margin: 0em 1rem;
-	}
-
+	
 	#viz-info-container {
 		width: 100%;
 		max-width: 100%;

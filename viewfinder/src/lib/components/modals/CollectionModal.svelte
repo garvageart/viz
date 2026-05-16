@@ -1,37 +1,31 @@
 <script lang="ts">
 	import type { Collection } from "$lib/api";
-	import type { EventHandler } from "svelte/elements";
+	import { untrack } from "svelte";
 	import Button from "../Button.svelte";
 	import SliderToggle from "../SliderToggle.svelte";
 	import InputText from "../dom/InputText.svelte";
 	import TextArea from "../dom/TextArea.svelte";
 
+	type CollectionFormData = {
+		name: string;
+		description: string;
+		private: boolean;
+	};
+
 	interface Props {
 		heading: string;
 		data?: Pick<Collection, "name" | "description" | "private">;
 		buttonText: string;
-		modalAction: EventHandler<SubmitEvent, HTMLFormElement> | null | undefined;
+		modalAction: (data: CollectionFormData) => Promise<void> | void;
 	}
 
-	let { data = $bindable(), buttonText, modalAction }: Props = $props();
+	let { data, buttonText, modalAction }: Props = $props();
 
-	let name = $state(data?.name ?? "");
-	let description = $state(data?.description ?? "");
-	let isPrivate = $state(data?.private ? ("on" as const) : ("off" as const));
-
-	$effect(() => {
-		if (data) {
-			data.name = name;
-			data.description = description;
-			data.private = isPrivate === "on";
-		} else {
-			data = {
-				name,
-				description,
-				private: isPrivate === "on"
-			} as Pick<Collection, "name" | "description" | "private">;
-		}
-	});
+	let name = $state(untrack(() => data?.name ?? ""));
+	let description = $state(untrack(() => data?.description ?? ""));
+	let isPrivate = $state(
+		untrack(() => (data?.private ? ("on" as const) : ("off" as const)))
+	);
 
 	async function handleSubmit(
 		e: SubmitEvent & { currentTarget: HTMLFormElement }
@@ -40,7 +34,11 @@
 		e.stopPropagation();
 
 		if (modalAction) {
-			await modalAction(e);
+			await modalAction({
+				name,
+				description,
+				private: isPrivate === "on"
+			});
 		}
 	}
 </script>
