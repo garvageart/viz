@@ -196,7 +196,7 @@
 			anchor: { x: number; y: number } | HTMLElement;
 		}) => {
 			const { asset, anchor } = detail;
-			if (!selectionScope.has(asset) || selectionScope.selected.size <= 1) {
+			if (!selectionScope.has(asset) || selectionScope.size <= 1) {
 				selectionScope.select(asset);
 			}
 			ctxAnchor = anchor;

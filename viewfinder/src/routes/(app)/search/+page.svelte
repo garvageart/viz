@@ -70,7 +70,16 @@
 	let imageUidsForCollection = $state<string[]>([]);
 
 	// Derived selection helpers
-	let firstSelectedImage = $derived(Array.from(imageSelection.selected)[0]);
+	let firstSelectedImage = $derived.by(() => {
+		if (imageSelection.size === 0) return undefined;
+
+		if (imageSelection.isSelectAll && images.length > 0) {
+			const firstRich = images.find((i) => imageSelection.has(i));
+			if (firstRich) return firstRich;
+		}
+
+		return Array.from(imageSelection.selected)[0];
+	});
 	let firstSelectedCollection = $derived(
 		Array.from(collectionSelection.selected)[0]
 	);
@@ -376,7 +385,7 @@
 
 <div id="search">
 	<div id="search-info-container" class="selection-container">
-		{#if imageSelection.selected.size > 0}
+		{#if imageSelection.size > 0}
 			<AssetToolbar class="asset-toolbar">
 				<div class="toolbar-content">
 					<div class="selection-info">
@@ -389,7 +398,7 @@
 							onclick={() => imageSelection.clear()}
 						/>
 						<span style="font-weight: 600;"
-							>{imageSelection.selected.size} selected</span
+							>{imageSelection.size} selected</span
 						>
 					</div>
 					<div class="selection-actions">
@@ -495,7 +504,7 @@
 					</div>
 				</div>
 			</AssetToolbar>
-		{:else if collectionSelection.selected.size > 0}
+		{:else if collectionSelection.size > 0}
 			<AssetToolbar class="asset-toolbar">
 				<div class="toolbar-content">
 					<div class="selection-info">
@@ -508,7 +517,7 @@
 							onclick={() => collectionSelection.clear()}
 						/>
 						<span style="font-weight: 600;"
-							>{collectionSelection.selected.size} selected</span
+							>{collectionSelection.size} selected</span
 						>
 					</div>
 					<div class="toolbar-right">
@@ -582,7 +591,7 @@
 								style="display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid var(--viz-20); padding-right: 1rem;"
 							>
 								<h2>Collections ({collections.length})</h2>
-								{#if collectionSelection.selected.size <= 1}
+								{#if collectionSelection.size <= 1}
 									<div style="display: flex; align-items: center; gap: 0.5rem;">
 										<Dropdown
 											title="Display"
@@ -604,7 +613,7 @@
 										const { asset } = detail;
 										if (
 											!collectionSelection.has(asset) ||
-											collectionSelection.selected.size <= 1
+											collectionSelection.size <= 1
 										) {
 											collectionSelection.select(asset);
 										}
@@ -622,7 +631,7 @@
 								style="display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid var(--viz-20); padding-right: 1rem;"
 							>
 								<h2>Images ({images.length})</h2>
-								{#if imageSelection.selected.size <= 1}
+								{#if imageSelection.size <= 1}
 									<div style="display: flex; align-items: center; gap: 0.5rem;">
 										<Dropdown
 											title="Display"
@@ -653,7 +662,7 @@
 										const { asset } = detail;
 										if (
 											!imageSelection.has(asset) ||
-											imageSelection.selected.size <= 1
+											imageSelection.size <= 1
 										) {
 											imageSelection.select(asset);
 										}

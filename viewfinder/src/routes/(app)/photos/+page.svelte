@@ -35,6 +35,7 @@
 	import { filterManager } from "$lib/states/filter.svelte";
 	import { viewSettings } from "$lib/states/index.svelte";
 	import { modalsManager } from "$lib/components/modals/manager/ModalManager.svelte";
+	import { page } from "$app/state";
 	import {
 		selectionManager,
 		SelectionScopeNames
@@ -53,6 +54,7 @@
 	import hotkeys from "hotkeys-js";
 	import { onDestroy, untrack } from "svelte";
 	import { goto } from "$app/navigation";
+	import type { AssetSortBy, AssetSortOrder } from "$lib/types/asset.js";
 
 	// Display options as MenuItem[] for Dropdown
 	const displayMenuItems: MenuItem[] = [
@@ -89,6 +91,10 @@
 	}
 
 	let { data } = $props();
+
+	// Local sort state
+	let sortBy = $state<AssetSortBy>("taken_at");
+	let sortOrder = $state<AssetSortOrder>("DESC");
 
 	$effect(() => {
 		untrack(() => {
@@ -173,7 +179,9 @@
 		const nextPage = galleryState.pagination.page + 1;
 		const res = await listImages({
 			limit: galleryState.pagination.limit,
-			page: nextPage
+			page: nextPage,
+			sortBy,
+			order: sortOrder
 		});
 
 		if (res.status === 200) {
@@ -557,9 +565,68 @@
 			</AssetToolbar>
 		{:else}
 			<AssetToolbar
-				style="position: sticky; top: 0px; display: flex; justify-content: flex-end;"
+				style="position: sticky; top: 0px; display: flex; justify-content: space-between;"
 				stickyToolbar={true}
 			>
+				<div style="display: flex; align-items: center; gap: 0.5rem;">
+					<Dropdown
+						title="Sort"
+						class="toolbar-button"
+						icon="sort"
+						items={[
+							{ id: "sort-name", label: "Name" },
+							{ id: "sort-created_at", label: "Created At" },
+							{ id: "sort-updated_at", label: "Updated At" },
+							{ id: "sort-taken_at", label: "Taken At" }
+						]}
+						selectedItemId={(() => {
+							switch (sortBy) {
+								case "name":
+									return "sort-name";
+								case "created_at":
+									return "sort-created_at";
+								case "updated_at":
+									return "sort-updated_at";
+								case "taken_at":
+									return "sort-taken_at";
+								default:
+									return undefined;
+							}
+						})()}
+						onSelect={(item) => {
+							switch (item.id) {
+								case "sort-name":
+									sortBy = "name";
+									break;
+								case "sort-created_at":
+									sortBy = "created_at";
+									break;
+								case "sort-updated_at":
+									sortBy = "updated_at";
+									break;
+								case "sort-taken_at":
+									sortBy = "taken_at";
+									break;
+							}
+							galleryState.images = [];
+							galleryState.pagination.page = -1;
+							galleryState.hasMore = true;
+							paginate();
+						}}
+					/>
+					<IconButton
+						iconName={sortOrder === "ASC" ? "arrow_upward" : "arrow_downward"}
+						class="toolbar-button"
+						title={`Toggle Sort Order (${sortOrder})`}
+						onclick={() => {
+							sortOrder = sortOrder === "ASC" ? "DESC" : "ASC";
+							galleryState.images = [];
+							galleryState.pagination.page = -1;
+							galleryState.hasMore = true;
+							paginate();
+						}}
+					/>
+				</div>
 				<div style="display: flex; align-items: center; gap: 0.5rem;">
 					<IconButton
 						iconName="filter_list"

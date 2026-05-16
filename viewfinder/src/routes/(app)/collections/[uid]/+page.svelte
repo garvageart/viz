@@ -22,6 +22,7 @@
 		deleteCollectionImages,
 		getImage,
 		listCollectionImages,
+		listCollectionImageUiDs,
 		updateCollection,
 		updateImage,
 		type CollectionUpdate,
@@ -186,7 +187,22 @@
 	const selectionScope = $derived(
 		selectionManager.getScope<ImageAsset>(scopeId)
 	);
-	let selectionFirstImage = $derived(Array.from(selectionScope.selected)[0]);
+	let selectionFirstImage = $derived.by(() => {
+		if (selectionScope.size === 0) {
+			return undefined;
+		}
+
+		// If we are in "Select All" mode, the 'selected' set contains lightweight {uid} objects.
+		// We prefer picking a "rich" asset from the current view so that toolbars/inspectors show real data.
+		if (selectionScope.isSelectAll && displayData.length > 0) {
+			const firstRich = displayData.find((i) => selectionScope.has(i));
+			if (firstRich) {
+				return firstRich;
+			}
+		}
+
+		return Array.from(selectionScope.selected)[0];
+	});
 
 	// Context menu state
 	let ctxShowMenu = $state(false);
@@ -209,7 +225,8 @@
 					collectionState.totalCount -= uids.length;
 				}
 			},
-			Array.from(selectionScope.selected)
+			Array.from(selectionScope.selected),
+			selectionScope
 		)
 	);
 	let ctxAnchor: { x: number; y: number } | HTMLElement | null = $state(null);
@@ -273,6 +290,23 @@
 			console.log("asset", $state.snapshot(asset));
 			ctxAnchor = anchor;
 			ctxShowMenu = true;
+		},
+		onselectAll: async () => {
+			selectionScope.selectAll();
+			selectionScope.setTotalCount(collectionState.totalCount);
+
+			// Strategy 1: Fetch all UIDs for actions that require them (Export, Download, etc.)
+			try {
+				const res = await listCollectionImageUiDs(data.uid);
+				if (res.status === 200) {
+					// We populate the selectionScope.selected with lightweight objects
+					const uids = res.data;
+					const lightweightImages = uids.map((uid) => ({ uid }) as ImageAsset);
+					selectionScope.addMultiple(lightweightImages);
+				}
+			} catch (err) {
+				console.error("Failed to fetch all UIDs for selection", err);
+			}
 		}
 	});
 
@@ -390,36 +424,62 @@
 
 	async function handleDeleteSelected() {
 		// Delete selected images from this collection (client-side selection)
-		const items = Array.from(selectionScope.selected ?? []);
-		if (!items || items.length === 0) {
+		if (selectionScope.size === 0) {
 			toastState.addToast({ type: "info", message: "No images selected" });
 			return;
 		}
 
+		const count = selectionScope.size;
 		const ok = confirm(
-			`Remove ${items.length} selected image(s) from collection "${data.name}"?`
+			`Remove ${count} selected image(s) from collection "${data.name}"?`
 		);
 		if (!ok) {
 			return;
 		}
 
-		const uids = items.map((i: ImageAsset) => i.uid);
 		try {
-			const res = await deleteCollectionImages(data.uid, { uids });
+			const res = await deleteCollectionImages(data.uid, {
+				uids: selectionScope.isSelectAll
+					? undefined
+					: Array.from(selectionScope.selected).map((i) => i.uid),
+				all: selectionScope.isSelectAll,
+				exclusions: selectionScope.isSelectAll
+					? Array.from(selectionScope.excluded)
+					: undefined
+			});
+
 			if (res.status === 200 && (res.data?.deleted ?? true)) {
 				toastState.addToast({
 					type: "success",
-					message: `Removed ${uids.length} image(s) from collection`,
+					message: `Removed ${count} image(s) from collection`,
 					timeout: 2500
 				});
+
 				// Clear selection and refresh data
 				selectionScope.clear();
-				collectionState.images = collectionState.images.filter(
-					(i) => !uids.includes(i.uid)
-				);
 
-				collectionState.totalCount -= uids.length;
-				await invalidateViz({ delay: 200 });
+				if (count > 100) {
+					// If a lot were deleted, just refresh everything
+					await invalidateViz({ delay: 200 });
+				} else {
+					// Optimistic local update
+					const removedUIDs = new Set(
+						selectionScope.isSelectAll
+							? [] // Hard to compute without full list
+							: Array.from(selectionScope.selected).map((i) => i.uid)
+					);
+
+					if (selectionScope.isSelectAll) {
+						// Simplest is to refresh
+						await invalidateViz({ delay: 200 });
+					} else {
+						collectionState.images = collectionState.images.filter(
+							(i) => !removedUIDs.has(i.uid)
+						);
+						collectionState.totalCount -= count;
+						await invalidateViz({ delay: 200 });
+					}
+				}
 			} else {
 				const errMsg = res.data.error ?? "Failed to remove images";
 				toastState.addToast({ type: "error", message: errMsg });
@@ -547,7 +607,7 @@
 	});
 
 	hotkeys("escape", (e) => {
-		if (!show || !lightboxImage || selectionScope.selected.size === 0) {
+		if (!show || !lightboxImage || selectionScope.size === 0) {
 			return;
 		}
 
@@ -939,7 +999,7 @@
 		flex-direction: column;
 		justify-content: left;
 	}
-	
+
 	#viz-info-container {
 		width: 100%;
 		max-width: 100%;
