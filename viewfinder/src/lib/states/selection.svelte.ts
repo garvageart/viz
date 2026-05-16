@@ -12,6 +12,10 @@ export enum SelectionScopeNames {
 
 export class SelectionScope<T extends { uid: string; } = any> {
     selected = $state(new SvelteSet<T>());
+    excluded = $state(new SvelteSet<string>()); // UIDs to exclude when isSelectAll is true
+    isSelectAll = $state(false);
+    totalCount = $state(0);
+
     active = $state<T | undefined>(undefined);
     source = $state<T[]>([]); // All items available in this scope
     id: string;
@@ -24,28 +28,56 @@ export class SelectionScope<T extends { uid: string; } = any> {
         this.source = items;
     }
 
+    setTotalCount(count: number) {
+        this.totalCount = count;
+    }
+
     add(item: T) {
+        if (this.isSelectAll) {
+            this.excluded.delete(item.uid);
+        }
         this.selected.add(item);
     }
 
     remove(item: T) {
-        this.selected.delete(item);
+        if (this.isSelectAll) {
+            this.excluded.add(item.uid);
+        }
+        // Find the exact reference to delete, in case object changed
+        let ref = item;
+        for (const s of this.selected) {
+            if (s.uid === item.uid) {
+                ref = s;
+                break;
+            }
+        }
+        this.selected.delete(ref);
     }
 
     has(item: T) {
-        return this.selected.has(item);
+        if (this.isSelectAll) {
+            return !this.excluded.has(item.uid);
+        }
+        if (this.selected.has(item)) return true;
+        // Check by uid as fallback
+        for (const s of this.selected) {
+            if (s.uid === item.uid) return true;
+        }
+        return false;
     }
 
     clear() {
         this.selected.clear();
+        this.excluded.clear();
+        this.isSelectAll = false;
         this.active = undefined;
     }
 
     toggle(item: T) {
-        if (this.selected.has(item)) {
-            this.selected.delete(item);
+        if (this.has(item)) {
+            this.remove(item);
         } else {
-            this.selected.add(item);
+            this.add(item);
         }
     }
 
@@ -54,8 +86,8 @@ export class SelectionScope<T extends { uid: string; } = any> {
      * Sets it as the active (primary) selection.
      */
     select(item: T) {
-        this.selected.clear();
-        this.selected.add(item);
+        this.clear();
+        this.add(item);
         this.active = item;
     }
 
@@ -64,9 +96,9 @@ export class SelectionScope<T extends { uid: string; } = any> {
      * Does NOT set a single active item (unless items has length 1, but usually active implies user focus)
      */
     selectMultiple(items: Iterable<T>) {
-        this.selected.clear();
+        this.clear();
         for (const item of items) {
-            this.selected.add(item);
+            this.add(item);
         }
     }
 
@@ -75,8 +107,27 @@ export class SelectionScope<T extends { uid: string; } = any> {
      */
     addMultiple(items: Iterable<T>) {
         for (const item of items) {
-            this.selected.add(item);
+            this.add(item);
         }
+    }
+
+    /**
+     * Triggers "Select All" mode for the scope.
+     */
+    selectAll() {
+        this.selected.clear();
+        this.excluded.clear();
+        this.isSelectAll = true;
+    }
+
+    /**
+     * Returns the effective number of selected items.
+     */
+    get size() {
+        if (this.isSelectAll) {
+            return Math.max(0, this.totalCount - this.excluded.size);
+        }
+        return this.selected.size;
     }
 
     /**
@@ -91,18 +142,23 @@ export class SelectionScope<T extends { uid: string; } = any> {
             sourceArray[idx] = updatedItem;
         }
 
-        // Find and update in selected set by UID
-        let itemInSet: T | undefined;
-        for (const item of this.selected) {
-            if (item.uid === updatedItem.uid) {
-                itemInSet = item;
-                break;
+        if (this.isSelectAll) {
+            // If it was excluded, it stays excluded unless we explicitly change that.
+            // Selection state is already tracked by UID in excluded set.
+        } else {
+            // Find and update in selected set by UID
+            let itemInSet: T | undefined;
+            for (const item of this.selected) {
+                if (item.uid === updatedItem.uid) {
+                    itemInSet = item;
+                    break;
+                }
             }
-        }
 
-        if (itemInSet) {
-            this.remove(itemInSet);
-            this.add(updatedItem);
+            if (itemInSet) {
+                this.selected.delete(itemInSet);
+                this.selected.add(updatedItem);
+            }
         }
 
         if (this.active?.uid === updatedItem.uid) {

@@ -114,6 +114,16 @@ class SortState {
         this.storage.get() ?? this.defaults
     );
 
+    constructor() {
+        if (typeof window !== "undefined") {
+            $effect.root(() => {
+                $effect(() => {
+                    this.save();
+                });
+            });
+        }
+    }
+
     save() {
         this.storage.set(this.value);
     }

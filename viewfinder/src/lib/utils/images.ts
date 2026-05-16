@@ -276,7 +276,10 @@ export async function collectionExportPhotos(uids: string[], data: CollectionDet
     URL.revokeObjectURL(url);
 }
 
-export function getImageLabel(image: ImageAsset) {
+export function getImageLabel(image: ImageAsset | undefined | null) {
+    if (!image) {
+        return null;
+    }
     const label = image.image_metadata?.label;
     switch (label) {
         case "Red":
