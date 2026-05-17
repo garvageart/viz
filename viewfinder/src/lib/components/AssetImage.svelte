@@ -154,7 +154,7 @@
 	/>
 {:else}
 	<div class="asset-image-container {rest.class ?? ''}" style={rest.style}>
-		{#if thumbhash}
+		{#if thumbhash && !loaded}
 			<img
 				src={thumbhash}
 				class="placeholder"
@@ -219,7 +219,7 @@
 		opacity: 0;
 		transition: opacity 0.3s ease-in;
 		position: relative;
-		z-index: 2;
+		// z-index: 2;
 
 		&.visible {
 			opacity: 1;
