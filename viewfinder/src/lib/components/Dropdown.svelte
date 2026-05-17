@@ -114,6 +114,7 @@
 			class="viz-dropdown-button {className}"
 			weight={300}
 			iconName={currentIcon}
+			title={title}
 			bind:element={buttonEl}
 			onclick={toggleMenu}
 		>
@@ -122,6 +123,7 @@
 	{:else}
 		<Button
 			class="viz-dropdown-button {className}"
+			title={title}
 			bind:element={buttonEl}
 			onclick={toggleMenu}
 		>

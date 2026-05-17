@@ -759,6 +759,8 @@
 			icon="list_alt"
 			items={displayMenuItems}
 			selectedItemId={displaySelectedId}
+			showSelectionIndicator={false}
+			onSelect={(item) => item.action?.(new MouseEvent("click"))}
 		/>
 		<Dropdown
 			class="toolbar-button"

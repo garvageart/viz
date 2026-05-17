@@ -617,8 +617,8 @@
 												icon="list_alt"
 												items={collectionDisplayMenuItems}
 												selectedItemId={collectionDisplaySelectedId}
-											/>
-										</div>
+												showSelectionIndicator={false}
+											/>										</div>
 									{/if}
 								</div>
 								<div class="collection-group-container">
@@ -657,8 +657,8 @@
 												icon="list_alt"
 												items={imageDisplayMenuItems}
 												selectedItemId={imageDisplaySelectedId}
-											/>
-										</div>
+												showSelectionIndicator={false}
+											/>										</div>
 									{/if}
 								</div>
 

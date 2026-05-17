@@ -645,6 +645,8 @@
 						icon="list_alt"
 						items={displayMenuItems}
 						selectedItemId={getDisplaySelectedId()}
+						showSelectionIndicator={false}
+						onSelect={(item) => item.action?.(new MouseEvent("click"))}
 					/>
 				</div>
 			</AssetToolbar>
