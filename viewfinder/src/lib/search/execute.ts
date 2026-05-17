@@ -37,14 +37,51 @@ export async function performSearch() {
 
     updateURLParameter("q", search.value);
 
-    const res = await executeSearch(search.value, { limit: 100, page: 0 });
+    // Reset pagination on new search
+    search.pagination.page = 0;
+    search.pagination.hasMore = false;
+
+    const res = await executeSearch(search.value, { limit: search.pagination.limit, page: 0 });
     if (res.status === 200) {
         search.data.images.data = res.data.images ?? [];
         search.data.collections.data = res.data.collections ?? [];
+
+        search.pagination.page = res.data.page ?? 0;
+        search.pagination.count = res.data.count ?? 0;
+        search.pagination.hasMore = !!res.data.next;
+
         search.loading = false;
     } else {
         search.data.images.data = [];
         search.data.collections.data = [];
+        search.loading = false;
         throw new Error(`Error fetching search results: ${res.data.error}`);
     }
-} 
+}
+
+export async function paginateSearch() {
+    if (search.loading || !search.pagination.hasMore) return;
+
+    search.loading = true;
+    const nextPage = search.pagination.page + 1;
+
+    try {
+        const res = await executeSearch(search.value, { 
+            limit: search.pagination.limit, 
+            page: nextPage 
+        });
+
+        if (res.status === 200) {
+            const nextImages = res.data.images ?? [];
+            search.data.images.data.push(...nextImages);
+
+            search.pagination.page = res.data.page ?? nextPage;
+            search.pagination.hasMore = !!res.data.next;
+        }
+    } catch (error) {
+        console.error("Pagination failed:", error);
+    } finally {
+        search.loading = false;
+    }
+}
+ 

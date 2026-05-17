@@ -1,52 +1,46 @@
 <script lang="ts">
+	import { goto } from "$app/navigation";
+	import type { Collection, ImageAsset } from "$lib/api";
+	import { addCollectionImages, updateImage } from "$lib/api";
 	import AssetGrid from "$lib/components/AssetGrid.svelte";
 	import AssetToolbar from "$lib/components/AssetToolbar.svelte";
-	import LoadingSpinner from "$lib/components/LoadingSpinner.svelte";
-	import MaterialIcon from "$lib/components/MaterialIcon.svelte";
-	import { performSearch } from "$lib/search/execute";
-	import {
-		isLayoutPage,
-		search,
-		viewSettings
-	} from "$lib/states/index.svelte";
-	import { onMount, type ComponentProps } from "svelte";
 	import CollectionCard from "$lib/components/CollectionCard.svelte";
-	import AssetsShell from "$lib/components/AssetsShell.svelte";
+	import Dropdown from "$lib/components/Dropdown.svelte";
+	import IconButton from "$lib/components/IconButton.svelte";
 	import ImageCard from "$lib/components/ImageCard.svelte";
-	import PhotoAssetGrid from "$lib/components/PhotoAssetGrid.svelte";
 	import ImageLightbox from "$lib/components/ImageLightbox.svelte";
-	import type { Collection, ImageAsset } from "$lib/api";
-	import hotkeys from "hotkeys-js";
+	import LabelSelector from "$lib/components/LabelSelector.svelte";
+	import LoadingSpinner from "$lib/components/LoadingSpinner.svelte";
+	import CollectionSelectionModal from "$lib/components/modals/CollectionSelectionModal.svelte";
+	import { modalsManager } from "$lib/components/modals/manager/ModalManager.svelte";
+	import VizViewContainer from "$lib/components/panels/VizViewContainer.svelte";
+	import PhotoAssetGrid from "$lib/components/PhotoAssetGrid.svelte";
+	import StarRating from "$lib/components/StarRating.svelte";
+	import { VizMimeTypes } from "$lib/constants";
+	import ContextMenu from "$lib/context-menu/ContextMenu.svelte";
+	import { createCollectionMenu } from "$lib/context-menu/menus/collections";
+	import { createImageMenu } from "$lib/context-menu/menus/images";
+	import type { MenuItem } from "$lib/context-menu/types";
+	import { DragData } from "$lib/drag-drop/data";
+	import { LabelColours, type ImageLabel } from "$lib/images/constants";
 	import {
 		getConsolidatedGroups,
 		groupImagesByDate,
 		type ConsolidatedGroup,
 		type DateGroup
 	} from "$lib/photo-layout";
-	import { downloadOriginalImageFile } from "$lib/utils/http";
-	import { toastState } from "$lib/toast-notifcations/notif-state.svelte";
-	import Dropdown from "$lib/components/Dropdown.svelte";
-	import type { MenuItem } from "$lib/context-menu/types";
+	import { paginateSearch, performSearch } from "$lib/search/execute";
+	import { isLayoutPage, search, viewSettings } from "$lib/states/index.svelte";
 	import {
 		selectionManager,
 		SelectionScopeNames
 	} from "$lib/states/selection.svelte";
+	import { toastState } from "$lib/toast-notifcations/notif-state.svelte";
 	import type { AssetGridView } from "$lib/types/asset";
-	import { createImageMenu } from "$lib/context-menu/menus/images";
-	import { createCollectionMenu } from "$lib/context-menu/menus/collections";
-	import IconButton from "$lib/components/IconButton.svelte";
-	import LabelSelector from "$lib/components/LabelSelector.svelte";
-	import StarRating from "$lib/components/StarRating.svelte";
+	import { downloadOriginalImageFile } from "$lib/utils/http";
 	import { getImageLabel } from "$lib/utils/images";
-	import { LabelColours, type ImageLabel } from "$lib/images/constants";
-	import { updateImage } from "$lib/api";
-	import ContextMenu from "$lib/context-menu/ContextMenu.svelte";
-	import { DragData } from "$lib/drag-drop/data";
-	import { VizMimeTypes } from "$lib/constants";
-	import CollectionSelectionModal from "$lib/components/modals/CollectionSelectionModal.svelte";
-	import { goto } from "$app/navigation";
-	import { addCollectionImages } from "$lib/api";
-	import { modalsManager } from "$lib/components/modals/manager/ModalManager.svelte";
+	import hotkeys from "hotkeys-js";
+	import { onMount, type ComponentProps } from "svelte";
 
 	let collections = $derived(search.data.collections.data);
 	let images = $derived(search.data.images.data);
@@ -123,10 +117,14 @@
 		imageUidsForCollection = Array.from(imageSelection.selected).map(
 			(img) => img.uid
 		);
-		modalsManager.open(CollectionSelectionModal, {
-			imageUidsToAdd: imageUidsForCollection,
-			onSelect: handleCollectionSelect
-		}, { heading: "Select a Collection" });
+		modalsManager.open(
+			CollectionSelectionModal,
+			{
+				imageUidsToAdd: imageUidsForCollection,
+				onSelect: handleCollectionSelect
+			},
+			{ heading: "Select a Collection", width: "90%", height: "80%" }
+		);
 	}
 
 	let collectionActionMenuItems = $derived.by(() => {
@@ -226,6 +224,9 @@
 			ctxAnchor = detail.anchor;
 			ctxItems = collectionActionMenuItems;
 			ctxShowMenu = true;
+		},
+		assetDblClick: (_e, asset: Collection) => {
+			goto(`/collections/${asset.uid}`);
 		}
 	});
 
@@ -386,7 +387,10 @@
 <div id="search">
 	<div id="search-info-container" class="selection-container">
 		{#if imageSelection.size > 0}
-			<AssetToolbar class="asset-toolbar">
+			<AssetToolbar
+				class="asset-toolbar"
+				style="justify-content: space-between;"
+			>
 				<div class="toolbar-content">
 					<div class="selection-info">
 						<IconButton
@@ -397,8 +401,7 @@
 							style="margin-right: 1em;"
 							onclick={() => imageSelection.clear()}
 						/>
-						<span style="font-weight: 600;"
-							>{imageSelection.size} selected</span
+						<span style="font-weight: 600;">{imageSelection.size} selected</span
 						>
 					</div>
 					<div class="selection-actions">
@@ -436,10 +439,18 @@
 								e.currentTarget.classList.remove("on-enter");
 
 								imageUidsForCollection = uidsData;
-								modalsManager.open(CollectionSelectionModal, {
-									imageUidsToAdd: imageUidsForCollection,
-									onSelect: handleCollectionSelect
-								}, { heading: "Select a Collection" });
+								modalsManager.open(
+									CollectionSelectionModal,
+									{
+										imageUidsToAdd: imageUidsForCollection,
+										onSelect: handleCollectionSelect
+									},
+									{
+										heading: "Select a Collection",
+										width: "90%",
+										height: "80%"
+									}
+								);
 							}}
 						>
 							Add to Collection
@@ -458,6 +469,7 @@
 										([_, colour]) => colour === selectedLabel
 									);
 									const labelName = entry ? entry[0] : null;
+									// If "None" is selected, send null to clear the label
 									const labelToSend = (
 										labelName === "None" || !labelName ? null : labelName
 									) as ImageLabel | null;
@@ -493,15 +505,15 @@
 							/>
 						{/if}
 					</div>
-					<div class="toolbar-right">
-						<Dropdown
-							class="toolbar-button"
-							icon="more_horiz"
-							items={imageActionMenuItems}
-							showSelectionIndicator={false}
-							align="right"
-						/>
-					</div>
+				</div>
+				<div class="toolbar-right">
+					<Dropdown
+						class="toolbar-button"
+						icon="more_horiz"
+						items={imageActionMenuItems}
+						showSelectionIndicator={false}
+						align="right"
+					/>
 				</div>
 			</AssetToolbar>
 		{:else if collectionSelection.size > 0}
@@ -520,15 +532,15 @@
 							>{collectionSelection.size} selected</span
 						>
 					</div>
-					<div class="toolbar-right">
-						<Dropdown
-							class="toolbar-button"
-							icon="more_horiz"
-							items={collectionActionMenuItems}
-							showSelectionIndicator={false}
-							align="right"
-						/>
-					</div>
+				</div>
+				<div class="toolbar-right">
+					<Dropdown
+						class="toolbar-button"
+						icon="more_horiz"
+						items={collectionActionMenuItems}
+						showSelectionIndicator={false}
+						align="right"
+					/>
 				</div>
 			</AssetToolbar>
 		{:else if !search.loading}
@@ -536,146 +548,153 @@
 				<div class="toolbar-content">
 					<div class="selection-info">
 						<span>
-							{totalResults} results found in
+							{search.pagination.count} results found in
 							<strong>{(timeFound / 1000).toFixed(2)} seconds</strong>
 						</span>
 						<div class="search-info-details" style="margin-left: 1rem;">
 							<span>
 								{collections.length} collection{collections.length === 1
 									? ""
-									: "s"}, {images.length}
-								image{images.length === 1 ? "" : "s"}
+									: "s"}, {search.pagination.count}
+								image{search.pagination.count === 1 ? "" : "s"}
 							</span>
 						</div>
 					</div>
-					<div class="toolbar-right">
-						<IconButton
-							iconName="filter_list"
-							class="toolbar-button"
-							title="Filter"
-							aria-label="Filter"
-							onclick={() => {
-								// Placeholder for now as filter modal isn't fully integrated into search logic
-								// But we keep the button for consistency and future wiring
-								toastState.addToast({
-									type: "info",
-									message: "Filtering search results is coming soon",
-									timeout: 3000
-								});
-							}}
-						>
-							Filter
-						</IconButton>
-					</div>
+				</div>
+				<div class="toolbar-right">
+					<IconButton
+						iconName="filter_list"
+						class="toolbar-button"
+						title="Filter"
+						aria-label="Filter"
+						onclick={() => {
+							// Placeholder for now as filter modal isn't fully integrated into search logic
+							// But we keep the button for consistency and future wiring
+							toastState.addToast({
+								type: "info",
+								message: "Filtering search results is coming soon",
+								timeout: 3000
+							});
+						}}
+					>
+						Filter
+					</IconButton>
 				</div>
 			</AssetToolbar>
 		{/if}
 	</div>
 
 	<div class="search-container no-select">
-		{#if search.loading}
+		{#if search.loading && !search.executed}
 			<div class="loading-container">
 				<p id="search-loading-text">Searching for "{search.value}"...</p>
 				<LoadingSpinner />
 			</div>
 		{:else if search.executed}
 			<div class="results">
-				{#if totalResults === 0}
-					<div class="no-results">
-						<p>No results found for "{search.value}"</p>
-					</div>
-				{:else}
-					{#if collections.length > 0}
-						<section class="collections-section">
-							<div
-								style="display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid var(--viz-20); padding-right: 1rem;"
-							>
-								<h2>Collections ({collections.length})</h2>
-								{#if collectionSelection.size <= 1}
-									<div style="display: flex; align-items: center; gap: 0.5rem;">
-										<Dropdown
-											title="Display"
-											class="toolbar-button"
-											icon="list_alt"
-											items={collectionDisplayMenuItems}
-											selectedItemId={collectionDisplaySelectedId}
-										/>
-									</div>
-								{/if}
-							</div>
-							<div class="collection-group-container">
-								<AssetGrid
-									{...collectionsGrid}
-									onassetcontext={(detail: {
-										asset: Collection;
-										anchor: { x: number; y: number } | HTMLElement;
-									}) => {
-										const { asset } = detail;
-										if (
-											!collectionSelection.has(asset) ||
-											collectionSelection.size <= 1
-										) {
-											collectionSelection.select(asset);
-										}
-										ctxAnchor = detail.anchor;
-										ctxItems = collectionActionMenuItems;
-										ctxShowMenu = true;
-									}}
-								/>
-							</div>
-						</section>
-					{/if}
-					{#if images.length > 0}
-						<section class="images-section">
-							<div
-								style="display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid var(--viz-20); padding-right: 1rem;"
-							>
-								<h2>Images ({images.length})</h2>
-								{#if imageSelection.size <= 1}
-									<div style="display: flex; align-items: center; gap: 0.5rem;">
-										<Dropdown
-											title="Display"
-											class="toolbar-button"
-											icon="list_alt"
-											items={imageDisplayMenuItems}
-											selectedItemId={imageDisplaySelectedId}
-										/>
-									</div>
-								{/if}
-							</div>
+				<VizViewContainer
+					name="Search Results"
+					data={images}
+					hasMore={search.pagination.hasMore}
+					paginate={() => paginateSearch()}
+				>
+					{#if totalResults === 0}
+						<div class="no-results">
+							<p>No results found for "{search.value}"</p>
+						</div>
+					{:else}
+						{#if collections.length > 0}
+							<section class="collections-section">
+								<div class="search-section-header">
+									<h2>Collections ({collections.length})</h2>
+									{#if collectionSelection.size <= 1}
+										<div
+											style="display: flex; align-items: center; gap: 0.5rem;"
+										>
+											<Dropdown
+												title="Display"
+												class="toolbar-button"
+												icon="list_alt"
+												items={collectionDisplayMenuItems}
+												selectedItemId={collectionDisplaySelectedId}
+											/>
+										</div>
+									{/if}
+								</div>
+								<div class="collection-group-container">
+									<AssetGrid
+										{...collectionsGrid}
+										onassetcontext={(detail: {
+											asset: Collection;
+											anchor: { x: number; y: number } | HTMLElement;
+										}) => {
+											const { asset } = detail;
+											if (
+												!collectionSelection.has(asset) ||
+												collectionSelection.size <= 1
+											) {
+												collectionSelection.select(asset);
+											}
+											ctxAnchor = detail.anchor;
+											ctxItems = collectionActionMenuItems;
+											ctxShowMenu = true;
+										}}
+									/>
+								</div>
+							</section>
+						{/if}
+						{#if images.length > 0}
+							<section class="images-section">
+								<div class="search-section-header">
+									<h2>Images ({images.length} of {search.pagination.count})</h2>
+									{#if imageSelection.size <= 1}
+										<div
+											style="display: flex; align-items: center; gap: 0.5rem;"
+										>
+											<Dropdown
+												title="Display"
+												class="toolbar-button"
+												icon="list_alt"
+												items={imageDisplayMenuItems}
+												selectedItemId={imageDisplaySelectedId}
+											/>
+										</div>
+									{/if}
+								</div>
 
-							<div class="photo-group-container">
-								<PhotoAssetGrid
-									bind:allData={allImagesFlat}
-									view={imageViewMode}
-									data={images}
-									groupedData={consolidatedGroups}
-									showDateHeaders={true}
-									scopeId={imageScopeId}
-									assetDblClick={(_e, asset) => {
-										openLightbox(asset);
-									}}
-									onassetcontext={(detail: {
-										asset: ImageAsset;
-										anchor: { x: number; y: number } | HTMLElement;
-									}) => {
-										const { asset } = detail;
-										if (
-											!imageSelection.has(asset) ||
-											imageSelection.size <= 1
-										) {
-											imageSelection.select(asset);
-										}
+								<div class="photo-group-container">
+									<PhotoAssetGrid
+										bind:allData={allImagesFlat}
+										view={imageViewMode}
+										data={images}
+										groupedData={consolidatedGroups}
+										showDateHeaders={true}
+										scopeId={imageScopeId}
+										assetDblClick={(_e, asset) => {
+											openLightbox(asset);
+										}}
+										onassetcontext={(detail: {
+											asset: ImageAsset;
+											anchor: { x: number; y: number } | HTMLElement;
+										}) => {
+											const { asset } = detail;
+											if (
+												!imageSelection.has(asset) ||
+												imageSelection.size <= 1
+											) {
+												imageSelection.select(asset);
+											}
 
-										ctxAnchor = detail.anchor;
-										ctxItems = imageActionMenuItems;
-										ctxShowMenu = true;
-									}}
-								/>
-							</div>
-						</section>
+											ctxAnchor = detail.anchor;
+											ctxItems = imageActionMenuItems;
+											ctxShowMenu = true;
+										}}
+									/>
+								</div>
+							</section>
+						{/if}
 					{/if}
-				{/if}
+				</VizViewContainer>
 			</div>
 		{/if}
 	</div>
@@ -689,7 +708,7 @@
 	offsetY={0}
 />
 
-<style>
+<style lang="scss">
 	#search {
 		overflow-y: auto;
 		display: flex;
@@ -722,7 +741,7 @@
 		display: flex;
 		align-items: center;
 		width: 100%;
-		justify-content: space-between;
+		gap: 2rem;
 	}
 
 	.toolbar-right {
@@ -744,11 +763,20 @@
 		white-space: wrap;
 		width: 100%;
 
-		/* h1 {
-			margin: 0.5rem 0rem;
-			font-weight: 800;
-			text-align: center;
-		} */
+		.search-section-header {
+			display: flex;
+			justify-content: space-between;
+			align-items: center;
+			border-bottom: 1px solid var(--viz-20);
+			padding: 0.25rem 1rem;
+			font-size: 0.9rem;
+		}
+
+		h2 {
+			font-size: 1em;
+			font-family: var(--viz-display-font);
+			color: var(--viz-text-color);
+		}
 	}
 
 	.loading-container,
@@ -775,14 +803,6 @@
 		position: relative;
 		margin-bottom: 3rem;
 		width: 100%;
-	}
-
-	h2 {
-		padding: 0.5rem 1rem;
-		padding-bottom: 0.5rem;
-		font-weight: 400;
-		margin: 0;
-		font-size: 1.2rem;
 	}
 
 	.collection-group-container {

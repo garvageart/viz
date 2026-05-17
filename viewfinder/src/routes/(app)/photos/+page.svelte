@@ -157,7 +157,7 @@
 							(img) => img.uid
 						),
 						onSelect: handleCollectionSelect
-					});
+					}, { heading: "Select a Collection", width: "90%", height: "80%" });
 				}
 			}
 		];
@@ -446,7 +446,7 @@
 									(img) => img.uid
 								),
 								onSelect: handleCollectionSelect
-							});
+							}, { heading: "Select a Collection", width: "90%", height: "80%" });
 						}}
 						ondragenter={(e) => {
 							e.currentTarget.classList.add("on-enter");
@@ -476,7 +476,7 @@
 							modalsManager.open(CollectionSelectionModal, {
 								imageUidsToAdd: uidsData,
 								onSelect: handleCollectionSelect
-							});
+							}, { heading: "Select a Collection", width: "90%", height: "80%" });
 						}}
 					>
 						Add to Collection

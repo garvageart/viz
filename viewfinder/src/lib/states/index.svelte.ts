@@ -73,6 +73,12 @@ export let search = $state({
             data: [] as ImageAsset[]
         }
     },
+    pagination: {
+        page: 0,
+        limit: 100,
+        count: 0,
+        hasMore: false
+    },
     value: "",
     enableHomePageSearch: false,
     element: undefined as HTMLInputElement | undefined
