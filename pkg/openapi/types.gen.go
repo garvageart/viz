@@ -1303,8 +1303,23 @@ type SearchListResponse struct {
 	// Collections List of collections found
 	Collections []Collection `json:"collections"`
 
+	// Count Total count of images found
+	Count *int `json:"count,omitempty"`
+
 	// Images List of images found
 	Images []ImageAsset `json:"images"`
+
+	// Limit Items per page
+	Limit int `json:"limit"`
+
+	// Next Next page link
+	Next *string `json:"next,omitempty"`
+
+	// Page Current page
+	Page int `json:"page"`
+
+	// Prev Previous page link
+	Prev *string `json:"prev,omitempty"`
 }
 
 // Session defines model for Session.

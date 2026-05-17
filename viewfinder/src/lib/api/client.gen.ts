@@ -395,6 +395,16 @@ export type SearchListResponse = {
     images: ImageAsset[];
     /** List of collections found */
     collections: Collection[];
+    /** Current page */
+    page: number;
+    /** Items per page */
+    limit: number;
+    /** Total count of images found */
+    count?: number;
+    /** Next page link */
+    next?: string;
+    /** Previous page link */
+    prev?: string;
 };
 export type ImagesResponse = {
     /** Added timestamp */

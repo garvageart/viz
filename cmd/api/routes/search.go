@@ -1,6 +1,7 @@
 package routes
 
 import (
+	"fmt"
 	"log/slog"
 	"net/http"
 	"strconv"
@@ -44,19 +45,24 @@ func SearchRouter(db *gorm.DB, logger *slog.Logger) chi.Router {
 			return db.Where("private = ?", false)
 		}
 
-		imagesQuery := engine.Apply(db, criteria).Scopes(securityScope)
-
 		limit := 100
 		page := 0
 		if l, err := strconv.Atoi(limitParam); err == nil && l > 0 {
 			limit = l
 		}
 
-		if p, err := strconv.Atoi(pageParam); err == nil && p > 0 {
+		if p, err := strconv.Atoi(pageParam); err == nil && p >= 0 {
 			page = p
 		}
 
-		imagesQuery = imagesQuery.Limit(limit).Offset((page - 1) * limit)
+		imagesQuery := engine.Apply(db, criteria).Scopes(securityScope)
+
+		var totalCount int64
+		if err := imagesQuery.Count(&totalCount).Error; err != nil {
+			logger.Error("failed to count search images", slog.Any("error", err))
+		}
+
+		imagesQuery = imagesQuery.Limit(limit).Offset(page * limit)
 
 		var images []entities.ImageAsset
 		if err := imagesQuery.Find(&images).Error; err != nil {
@@ -70,7 +76,7 @@ func SearchRouter(db *gorm.DB, logger *slog.Logger) chi.Router {
 		}
 
 		collectionsQuery := engine.ApplyCollections(db, criteria).Scopes(securityScope)
-		collectionsQuery = collectionsQuery.Limit(limit).Offset((page - 1) * limit)
+		collectionsQuery = collectionsQuery.Limit(limit).Offset(page * limit)
 
 		var collections []entities.Collection
 		if err := collectionsQuery.Find(&collections).Error; err != nil {
@@ -93,11 +99,23 @@ func SearchRouter(db *gorm.DB, logger *slog.Logger) chi.Router {
 			collectionsDTO = append(collectionsDTO, col.DTO())
 		}
 
+		var nextLink *string
+		if int64((page+1)*limit) < totalCount {
+			link := fmt.Sprintf("/search?q=%s&limit=%d&page=%d", queryParam, limit, page+1)
+			nextLink = &link
+		}
+
 		render.Status(req, http.StatusOK)
+		count := int(totalCount)
+
 		render.JSON(res, req, dto.SearchListResponse{
 			Images:      imagesDTO,
 			Collections: collectionsDTO,
-		})
+			Page:        page,
+			Limit:       limit,
+			Count:       &count,
+			Next:        nextLink,
+		})	
 	})
 
 	return r
