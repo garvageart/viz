@@ -93,6 +93,30 @@ func TestParseQuery(t *testing.T) {
 				Filters: map[string]string{},
 			},
 		},
+		{
+			name:  "Since and Until filters",
+			input: "since:01-04-2024 until:30-04-2024",
+			expected: SearchCriteria{
+				Text: []string{},
+				DateRange: DateRange{
+					Min: time.Date(2024, 4, 1, 0, 0, 0, 0, time.UTC),
+					Max: time.Date(2024, 4, 30, 0, 0, 0, 0, time.UTC),
+				},
+				Filters: map[string]string{},
+			},
+		},
+		{
+			name:  "Natural date formats",
+			input: "since:\"01 Apr 2024\" until:\"30 Apr 2024\"",
+			expected: SearchCriteria{
+				Text: []string{},
+				DateRange: DateRange{
+					Min: time.Date(2024, 4, 1, 0, 0, 0, 0, time.UTC),
+					Max: time.Date(2024, 4, 30, 0, 0, 0, 0, time.UTC),
+				},
+				Filters: map[string]string{},
+			},
+		},
 	}
 
 	for _, tt := range tests {

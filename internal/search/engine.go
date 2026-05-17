@@ -105,6 +105,19 @@ func (e *Engine) Apply(db *gorm.DB, criteria SearchCriteria) *gorm.DB {
 	}
 
 	// 5. Date Filters
+	if val, ok := criteria.Filters["month"]; ok {
+		monthNum := parseMonth(val)
+		if monthNum > 0 {
+			query = query.Where("EXTRACT(MONTH FROM taken_at) = ?", monthNum)
+		}
+	}
+	if val, ok := criteria.Filters["year"]; ok {
+		var year int
+		if _, err := fmt.Sscanf(val, "%d", &year); err == nil {
+			query = query.Where("EXTRACT(YEAR FROM taken_at) = ?", year)
+		}
+	}
+
 	if !criteria.DateRange.Min.IsZero() {
 		query = query.Where("taken_at >= ?", criteria.DateRange.Min)
 	}
@@ -113,6 +126,35 @@ func (e *Engine) Apply(db *gorm.DB, criteria SearchCriteria) *gorm.DB {
 	}
 
 	return query
+}
+
+func parseMonth(val string) int {
+	val = strings.ToLower(val)
+	months := map[string]int{
+		"january": 1, "jan": 1,
+		"february": 2, "feb": 2,
+		"march": 3, "mar": 3,
+		"april": 4, "apr": 4,
+		"may": 5,
+		"june": 6, "jun": 6,
+		"july": 7, "jul": 7,
+		"august": 8, "aug": 8,
+		"september": 9, "sep": 9,
+		"october": 10, "oct": 10,
+		"november": 11, "nov": 11,
+		"december": 12, "dec": 12,
+	}
+	if n, ok := months[val]; ok {
+		return n
+	}
+	// Try numeric
+	var n int
+	if _, err := fmt.Sscanf(val, "%d", &n); err == nil {
+		if n >= 1 && n <= 12 {
+			return n
+		}
+	}
+	return 0
 }
 
 // ApplyCollections applies the search criteria to the Collection query

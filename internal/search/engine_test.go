@@ -150,6 +150,33 @@ func TestEngineApply(t *testing.T) {
 			},
 			wantWhereContain: []string{"image_metadata::text ILIKE ?", "exif::text ILIKE ?"},
 		},
+		{
+			name: "Month Filter Name",
+			criteria: SearchCriteria{
+				Filters: map[string]string{
+					"month": "april",
+				},
+			},
+			wantWhereContain: []string{"EXTRACT(MONTH FROM taken_at) = ?"},
+		},
+		{
+			name: "Month Filter Numeric",
+			criteria: SearchCriteria{
+				Filters: map[string]string{
+					"month": "4",
+				},
+			},
+			wantWhereContain: []string{"EXTRACT(MONTH FROM taken_at) = ?"},
+		},
+		{
+			name: "Year Filter",
+			criteria: SearchCriteria{
+				Filters: map[string]string{
+					"year": "2024",
+				},
+			},
+			wantWhereContain: []string{"EXTRACT(YEAR FROM taken_at) = ?"},
+		},
 	}
 
 	for _, tt := range tests {

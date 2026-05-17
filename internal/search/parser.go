@@ -1,6 +1,7 @@
 package search
 
 import (
+	"fmt"
 	"regexp"
 	"strings"
 	"time"
@@ -51,11 +52,11 @@ func ParseQuery(input string) SearchCriteria {
 
 		// Handle Date Filters
 		switch key {
-		case "after":
+		case "after", "since":
 			if t, err := parseDate(value); err == nil {
 				criteria.DateRange.Min = t
 			}
-		case "before":
+		case "before", "until":
 			if t, err := parseDate(value); err == nil {
 				criteria.DateRange.Max = t
 			}
@@ -88,6 +89,22 @@ func ParseQuery(input string) SearchCriteria {
 }
 
 func parseDate(value string) (time.Time, error) {
-	// DD-MM-YYYY
-	return time.Parse("02-01-2006", value)
+	// Try multiple formats
+	formats := []string{
+		"02-01-2006",
+		"2006-01-02",
+		"02/01/2006",
+		"2006/01/02",
+		"02 Jan 2006",
+		"Jan 02 2006",
+		"2006-01-02T15:04:05Z07:00",
+	}
+
+	for _, f := range formats {
+		if t, err := time.Parse(f, value); err == nil {
+			return t, nil
+		}
+	}
+
+	return time.Time{}, fmt.Errorf("invalid date format: %s", value)
 }
