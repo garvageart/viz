@@ -123,6 +123,9 @@ importers:
       '@types/node':
         specifier: ^24.12.3
         version: 24.12.3
+      dotenv:
+        specifier: ^17.4.2
+        version: 17.4.2
       oazapfts:
         specifier: ^6.4.0
         version: 6.4.0(@oazapfts/runtime@1.2.0)(openapi-types@12.1.3)
