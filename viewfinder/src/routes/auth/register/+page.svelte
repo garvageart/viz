@@ -72,6 +72,9 @@
 							goto("/auth/login").then(() =>
 								showRegNotif("Registration successful!", "success")
 							);
+						} else {
+							const errMsg = response.data?.error || "Registration failed";
+							showRegNotif(errMsg, "error");
 						}
 					} catch (error) {
 						showRegNotif("Registration failed. Please try again.", "error");

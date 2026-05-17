@@ -49,15 +49,15 @@
 
 				await fetchCurrentUser();
 				goto("/");
-			}
-		} catch (error: any) {
-			if (error.status === 401) {
+			} else if (response.status === 401) {
 				showLoginNotif("Invalid email or password", "error");
-			} else if (error.status === 404) {
+			} else if (response.status === 404) {
 				showLoginNotif("User not found", "error");
 			} else {
 				showLoginNotif("Login failed. Please try again.", "error");
 			}
+		} catch (error: any) {
+			showLoginNotif("Login failed. Please try again.", "error");
 			console.error("Login error:", error);
 		}
 	}
