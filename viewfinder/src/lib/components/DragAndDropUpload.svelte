@@ -34,7 +34,7 @@
 		showCollectionCreateBox?: boolean;
 		createCollectionFromSelected?: () => Promise<void>;
 		children?: import("svelte").Snippet;
-		onUploadSuccess?: () => void;
+		onUploadSuccess?: (uploaded: ImageUploadSuccess[]) => void | Promise<void>;
 	}
 
 	let {
@@ -97,6 +97,13 @@
 				await invalidateViz({ delay: 200 });
 			} catch (err) {
 				console.error("Failed to fetch uploaded images:", err);
+			}
+
+			// optional upload success
+			try {
+				if (onUploadSuccess) await onUploadSuccess(uploadedImages);
+			} catch (err) {
+				console.error("onUploadSuccess handler failed:", err);
 			}
 		}
 
@@ -354,13 +361,14 @@
 	 */
 	async function createCollectionFromSelected() {
 		if (!selectionScope) return;
-		const items = Array.from(selectionScope.selected);
+		const items = selectionScope.selectedItems;
 		if (!items || items.length === 0) {
 			toastState.addToast({
 				type: "info",
 				message: "Select images first, or drag files here to upload",
 				timeout: 3000
 			});
+
 			return;
 		}
 
@@ -371,6 +379,7 @@
 				description: "Created from selected images",
 				private: false
 			});
+
 			if (createRes.status !== 201) {
 				toastState.addToast({
 					type: "error",
@@ -382,12 +391,14 @@
 
 			const collectionUid = createRes.data.uid;
 			const addRes = await addCollectionImages(collectionUid, { uids });
+
 			if (addRes.status === 200) {
 				toastState.addToast({
 					type: "success",
 					message: `Collection created with ${uids.length} image(s)`,
 					timeout: 4000
 				});
+
 				await invalidateViz({ delay: 200 });
 				goto(`/collections/${collectionUid}`);
 			} else {
@@ -397,6 +408,7 @@
 					timeout: 4000
 				});
 			}
+			
 		} catch (err) {
 			console.error("createCollectionFromSelected error", err);
 			toastState.addToast({

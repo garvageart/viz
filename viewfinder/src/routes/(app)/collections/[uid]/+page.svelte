@@ -44,7 +44,7 @@
 	import PhotoAssetGrid from "$lib/components/PhotoAssetGrid.svelte";
 	import StarRating from "$lib/components/StarRating.svelte";
 	import ContextMenu from "$lib/context-menu/ContextMenu.svelte";
-	import { createCollectionImageMenu } from "$lib/context-menu/menus/images";
+	import { createImageMenu } from "$lib/context-menu/menus/images";
 	import type { MenuItem } from "$lib/context-menu/types";
 	import { LabelColours, type ImageLabel } from "$lib/images/constants";
 	import { ImagePaginationState } from "$lib/images/state.svelte";
@@ -68,6 +68,8 @@
 		type SupportedImageTypes
 	} from "$lib/types/images";
 	import UploadManager from "$lib/upload/manager.svelte.js";
+	import DragAndDropUpload from "$lib/components/DragAndDropUpload.svelte";
+	import type { ImageUploadSuccess } from "$lib/upload/manager.svelte";
 	import { performImageDownloads } from "$lib/utils/http";
 	import { getImageLabel } from "$lib/utils/images";
 	import type VizView from "$lib/views/views.svelte";
@@ -201,32 +203,28 @@
 			}
 		}
 
-		return Array.from(selectionScope.selected)[0];
+		return selectionScope.selectedItems[0];
 	});
 
 	// Context menu state
 	let ctxShowMenu = $state(false);
 	let ctxItems = $derived(
-		createCollectionImageMenu(
-			selectionScope.active,
-			data,
+		createImageMenu(
+			collectionState.images,
+			selectionScope,
 			{
-				downloadImages(imgs) {
-					performImageDownloads(imgs);
-				},
-				onImageUpdated(image) {
+				collection: data,
+				onUpdate: (image: ImageAsset) => {
 					selectionScope.updateItem(image, collectionState.images);
 				},
-				onDelete(uids) {
+				onDelete: (uids: string[]) => {
 					selectionScope.clear();
 					collectionState.images = collectionState.images.filter(
 						(i) => !uids.includes(i.uid)
 					);
 					collectionState.totalCount -= uids.length;
 				}
-			},
-			Array.from(selectionScope.selected),
-			selectionScope
+			}
 		)
 	);
 	let ctxAnchor: { x: number; y: number } | HTMLElement | null = $state(null);
@@ -245,6 +243,18 @@
 
 	// UI Stuff
 	let showCollNameInput = $state(false);
+	let collNameContainer: HTMLElement | undefined = $state();
+
+	function handleWindowClick(e: MouseEvent) {
+		if (showCollNameInput && collNameContainer && !collNameContainer.contains(e.target as Node)) {
+			// Clicked outside the edit area
+			// Reset to original data if name was empty or if we want to cancel on click-away
+			if (localDataUpdates.name.trim() === "") {
+				localDataUpdates.name = data.name;
+			}
+			showCollNameInput = false;
+		}
+	}
 
 	onDestroy(() => {
 		selectionManager.removeScope(scopeId);
@@ -361,6 +371,48 @@
 		}
 	}
 
+	async function handleDropUploadSuccess(uploadedImages: ImageUploadSuccess[]) {
+		if (!uploadedImages || uploadedImages.length === 0) return;
+		const uids = uploadedImages.map((img) => img.uid).filter(Boolean);
+		if (uids.length === 0) return;
+
+		try {
+			const res = await addCollectionImages(data.uid, { uids });
+			if (res.status === 200 && (res.data?.added ?? true)) {
+				toastState.addToast({
+					message: `Added ${uids.length} photo(s) to collection`,
+					type: "success",
+					timeout: 3000
+				});
+
+				const fetchPromises = uids.map(async (uid) => {
+					try {
+						const r = await getImage(uid);
+						return r.status === 200 ? r.data : null;
+					} catch (e) {
+						console.error(`Failed to fetch image ${uid}`, e);
+						return null;
+					}
+				});
+
+				const newImages = (await Promise.all(fetchPromises)).filter((i) => i !== null) as ImageAsset[];
+
+				if (newImages.length > 0) {
+					collectionState.images.unshift(...newImages);
+					collectionState.totalCount += newImages.length;
+				}
+
+				await invalidateViz({ delay: 200 });
+			} else {
+				toastState.addToast({ type: "warning", message: `Uploaded but failed to add to collection: ${res.status}` });
+				await invalidateViz({ delay: 200 });
+			}
+		} catch (err) {
+			console.error("handleDropUploadSuccess error", err);
+			toastState.addToast({ type: "error", message: `Failed to add uploaded images to collection: ${err}` });
+		}
+	}
+
 	async function updateCollectionDetails(updateData?: CollectionUpdate) {
 		const response = await updateCollection(
 			data.uid,
@@ -441,7 +493,7 @@
 			const res = await deleteCollectionImages(data.uid, {
 				uids: selectionScope.isSelectAll
 					? undefined
-					: Array.from(selectionScope.selected).map((i) => i.uid),
+					: selectionScope.selectedItems.map((i) => i.uid),
 				all: selectionScope.isSelectAll,
 				exclusions: selectionScope.isSelectAll
 					? Array.from(selectionScope.excluded)
@@ -463,11 +515,12 @@
 					await invalidateViz({ delay: 200 });
 				} else {
 					// Optimistic local update
-					const removedUIDs = new Set(
-						selectionScope.isSelectAll
-							? [] // Hard to compute without full list
-							: Array.from(selectionScope.selected).map((i) => i.uid)
-					);
+						const removedUIDs = new Set(
+							selectionScope.isSelectAll
+								? [] // Hard to compute without full list
+								: selectionScope.selectedItems.map((i) => i.uid)
+						);
+
 
 					if (selectionScope.isSelectAll) {
 						// Simplest is to refresh
@@ -699,6 +752,8 @@
 	}
 </script>
 
+<svelte:window onclick={handleWindowClick} />
+
 <ImageLightbox
 	bind:lightboxImage
 	{prevLightboxImage}
@@ -706,6 +761,8 @@
 	onImageUpdated={(image) =>
 		selectionScope.updateItem(image, collectionState.images)}
 />
+
+<DragAndDropUpload {scopeId} {selectionScope} showCollectionCreateBox={false} onUploadSuccess={handleDropUploadSuccess} />
 
 {#snippet imageCard(asset: ImageAsset)}
 	<ImageCard {asset} />
@@ -809,12 +866,11 @@
 					labelName === "None" || !labelName ? null : labelName
 				) as ImageLabel | null;
 
-				const updatePromises = Array.from(selectionScope.selected).map((img) =>
+				const updatePromises = selectionScope.selectedItems.map((img) =>
 					updateImage(img.uid, {
 						image_metadata: { label: labelToSend }
 					})
 				);
-
 				const res = await Promise.all(updatePromises);
 
 				const successCount = res.filter((r) => r.status === 200).length;
@@ -834,7 +890,7 @@
 					return;
 				}
 
-				const updatePromises = Array.from(selectionScope.selected).map((img) =>
+				const updatePromises = selectionScope.selectedItems.map((img) =>
 					updateImage(img.uid, {
 						image_metadata: { rating }
 					})
@@ -902,7 +958,7 @@
 				class:std-route={!isLayoutPage()}
 				class:name-input={showCollNameInput}
 			>
-				<span id="coll-name">
+				<span id="coll-name" bind:this={collNameContainer}>
 					{#if showCollNameInput}
 						<InputText
 							autocorrect="off"
@@ -918,10 +974,16 @@
 							role="button"
 							tabindex="0"
 							title={"Click to edit name"}
-							onclick={() => {
+							onclick={(e) => {
+								e.stopPropagation();
 								showCollNameInput = true;
 							}}
-							onkeydown={(e) => e.currentTarget.click()}
+							onkeydown={(e) => {
+								if (e.key === "Enter" || e.key === " ") {
+									e.stopPropagation();
+									showCollNameInput = true;
+								}
+							}}
 						>
 							{localDataUpdates.name}
 						</span>
@@ -946,6 +1008,7 @@
 									class="name-confirm-btn"
 									onclick={() => {
 										localDataUpdates.name = data.name;
+										showCollNameInput = false;
 									}}
 									iconName="close"
 								/>
