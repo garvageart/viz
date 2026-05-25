@@ -3633,6 +3633,10 @@ components:
 
     CollectionImage:
       x-entity: true
+      x-go-gorm-index:
+        - name: idx_collection_images_collection_id_uid
+          unique: true
+          fields: [collection_id, uid]
       type: object
       properties:
         uid: { type: string, description: Image UID }

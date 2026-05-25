@@ -32,3 +32,8 @@ func FromUser(u User, password *string) UserWithPassword {
 func (ImageAsset) TableName() string {
 	return "images"
 }
+
+// TableName overrides the default GORM table name for CollectionImage.
+func (CollectionImage) TableName() string {
+	return "collection_images"
+}

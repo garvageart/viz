@@ -62,6 +62,9 @@ func (server VizServer) ConnectToDatabase(dst ...any) *gorm.DB {
 		panic("error running auto-migration: " + dbError.Error())
 	}
 
+	// Manual migrations after AutoMigrate
+	db.MigrateCollectionImages(client, logger)
+
 	// Run cleanup for setting defaults after auto-migration
 	settings.CleanupSettingDefaults(client, logger)
 	settings.CleanupSettingOverrides(client, logger)
