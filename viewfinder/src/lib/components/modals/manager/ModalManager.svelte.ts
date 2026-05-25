@@ -29,7 +29,7 @@ export class ModalsManager {
 	): Promise<R> {
 		const id = generateRandomString(8);
 
-		return new Promise<R>((resolve, reject) => {
+		const promise = new Promise<R>((resolve, reject) => {
 			this.modals.push({
 				id,
 				component,
@@ -40,6 +40,11 @@ export class ModalsManager {
 				options
 			});
 		});
+
+		// Silent catch to prevent "Uncaught (in promise)" when dismissed
+		promise.catch(() => {});
+
+		return promise;
 	}
 
 	close(id: string, result?: any) {

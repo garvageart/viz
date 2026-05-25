@@ -22,7 +22,7 @@
 		headerSnippet,
 		fillContainer = false,
 		heading,
-		width = "35%",
+		width = "50%",
 		height,
 		zIndex = 9999,
 		icon,
@@ -66,7 +66,8 @@
 
 <style lang="scss">
 	.viz-modal {
-		width: 35%;
+		width: 50%;
+		height: 80%;
 		max-height: 100%;
 		background-color: var(--viz-bg-color);
 		display: flex;

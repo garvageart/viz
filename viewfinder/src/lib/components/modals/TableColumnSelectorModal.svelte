@@ -1,7 +1,7 @@
 <script lang="ts">
-	import CheckboxGroup from "../dom/CheckboxGroup.svelte";
 	import { tableColumnSettings } from "$lib/states/index.svelte";
 	import { snakeToSentence } from "$lib/utils/strings";
+	import CheckboxGroup from "../dom/CheckboxGroup.svelte";
 
 	interface Props {
 		id: string;
@@ -30,7 +30,6 @@
 </script>
 
 <div id="viz-column-selector-modal">
-	<h1>Table Columns</h1>
 	<p class="subtitle">Select which columns to display in the list view</p>
 
 	<div class="column-list">
@@ -46,14 +45,7 @@
 		flex-direction: column;
 		justify-content: flex-start;
 		align-items: center;
-		padding: 2rem;
 		color: var(--viz-text-color);
-	}
-
-	h1 {
-		font-family: var(--viz-display-font);
-		font-size: 2.5rem;
-		margin-bottom: 0.5rem;
 	}
 
 	.subtitle {
@@ -66,10 +58,8 @@
 		width: 100%;
 		max-width: 600px;
 		overflow-y: auto;
-		padding: 1rem;
 		background: var(--viz-bg-color);
 		border-radius: 1rem;
-		box-shadow: inset 0 0 10px rgba(0, 0, 0, 0.5);
 
 		/* Custom scrollbar matching project style */
 		&::-webkit-scrollbar {

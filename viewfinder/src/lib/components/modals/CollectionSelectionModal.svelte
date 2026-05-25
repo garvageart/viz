@@ -42,7 +42,7 @@
 	let selection = $derived(
 		selectionManager.getScope<AugmentedCollection>(scopeId)
 	);
-	let selectedCollection = $derived(Array.from(selection.selected)[0]);
+	let selectedCollection = $derived(selection.selectedItems[0] as AugmentedCollection);
 
 	let shouldUpdate = $derived(!!data?.next);
 
@@ -179,6 +179,7 @@
 			assetSnippet={collectionSnippet}
 			{scopeId}
 			disableMultiSelection={true}
+			disableOutsideUnselect={true}
 		/>
 	</VizViewContainer>
 
