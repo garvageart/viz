@@ -3,50 +3,48 @@
 </script>
 
 <script lang="ts" generics>
-	import AssetGrid from "./AssetGrid.svelte";
 	import { getFullImagePath, type ImageAsset } from "$lib/api";
-	import { DateTime } from "luxon";
-	import {
-		mount,
-		unmount,
-		type ComponentProps,
-		type Snippet,
-		untrack
-	} from "svelte";
-	import { SvelteSet } from "svelte/reactivity";
-	import { fade } from "svelte/transition";
-	import {
-		getImageLabel,
-		getTakenAt	} from "$lib/utils/images";
-	import { selectionManager } from "$lib/states/selection.svelte";
-	import ImageCard from "./ImageCard.svelte";
-	import {
-		type Props as TippyProps,
-		followCursor,
-		delegate,
-		type Instance
-	} from "tippy.js";
 	import PhotoTooltip from "$lib/components/tooltips/PhotoTooltip.svelte";
-	import "tippy.js/dist/tippy.css";
-	import hotkeys, { type HotkeysEvent } from "hotkeys-js";
-	import type {
-		ConsolidatedGroup,
-		ImageWithDateLabel
-	} from "$lib/photo-layout";
-	import { debugMode, isLayoutPage } from "$lib/states/index.svelte";
-	import { filterManager } from "$lib/states/filter.svelte";
-	import { DragData } from "$lib/drag-drop/data";
-	import { VizMimeTypes } from "$lib/constants";
-	import LabelSelector from "./LabelSelector.svelte";
-	import { debounce } from "$lib/utils/misc";
-	import MaterialIcon from "./MaterialIcon.svelte";
-	import TimelineScrubber from "./TimelineScrubber.svelte";
 	import {
 		PhotoGridVirtualizer,
 		type PhotoGridConfig
 	} from "$lib/components/virtualizer/PhotoGridVirtualizer.svelte.js";
+	import { VizMimeTypes } from "$lib/constants";
+	import { DragData } from "$lib/drag-drop/data";
+	import type {
+		ConsolidatedGroup,
+		ImageWithDateLabel
+	} from "$lib/photo-layout";
+	import { filterManager } from "$lib/states/filter.svelte";
+	import { debugMode, isLayoutPage } from "$lib/states/index.svelte";
+	import { selectionManager } from "$lib/states/selection.svelte";
+	import { getImageLabel, getTakenAt } from "$lib/utils/images";
+	import { debounce } from "$lib/utils/misc";
+	import hotkeys, { type HotkeysEvent } from "hotkeys-js";
+	import { DateTime } from "luxon";
+	import {
+		mount,
+		unmount,
+		untrack,
+		type ComponentProps,
+		type Snippet
+	} from "svelte";
+	import { SvelteSet } from "svelte/reactivity";
+	import { fade } from "svelte/transition";
+	import {
+		delegate,
+		followCursor,
+		type Instance,
+		type Props as TippyProps
+	} from "tippy.js";
+	import "tippy.js/dist/tippy.css";
+	import AssetGrid from "./AssetGrid.svelte";
 	import AssetImage from "./AssetImage.svelte";
+	import ImageCard from "./ImageCard.svelte";
+	import LabelSelector from "./LabelSelector.svelte";
+	import MaterialIcon from "./MaterialIcon.svelte";
 	import StarRating from "./StarRating.svelte";
+	import TimelineScrubber from "./TimelineScrubber.svelte";
 
 	interface PhotoSpecificProps {
 		/** Custom photo card snippet - if not provided, uses default photo card */
@@ -95,10 +93,7 @@
 
 	// Selection Management
 	let selection = $derived(selectionManager.getScope<ImageAsset>(scopeId));
-	let selectedUIDs = $derived.by(() => {
-		const source = allData || data;
-		return new Set(source.filter((i) => selection.has(i)).map((i) => i.uid));
-	});
+	let selectedUIDs = $derived(selection.selectedUids);
 
 	// Sync data source to selection scope so filters can access it
 	$effect(() => {
@@ -438,8 +433,19 @@
 			for (const img of images) {
 				selection.remove(img);
 			}
+			// Clear anchor if it was part of this group
+			if (
+				selection.active &&
+				images.some((i) => i.uid === selection.active?.uid)
+			) {
+				selection.active = undefined;
+			}
 		} else {
 			selection.addMultiple(images);
+			// Set anchor to last item of group for shift-selection
+			if (images.length > 0) {
+				selection.active = images[images.length - 1];
+			}
 		}
 	}
 
@@ -722,7 +728,7 @@
 
 		// Initial synchronous layout to prevent flash
 		if (filteredData.length > 0) {
-			untrack(() => updateVirtualGrid());
+			updateVirtualGrid();
 		}
 
 		const debouncedUpdate = debounce(
@@ -759,7 +765,9 @@
 		const _filtered = filteredData;
 
 		if (photoGridEl) {
-			untrack(() => updateVirtualGrid());
+			untrack(() => {
+				updateVirtualGrid();
+			});
 		}
 	});
 
@@ -926,19 +934,27 @@
 				return;
 			}
 			const target = e.target as HTMLElement;
-			const selectionToolbar = target.closest(".selection-toolbar") as
-				| HTMLElement
-				| undefined;
+
+			// Ignore clicks that happen inside portalized context menus so
+			// interacting with a menu does not clear the current selection.
+			if (target.closest(".context-menu")) {
+				return;
+			}
+			const selectionToolbar = target.closest(
+				".selection-toolbar, .asset-toolbar, .viz-toolbar-container"
+			) as HTMLElement | undefined;
 
 			// ignore the selection toolbar since this is what we use do actions
 			if (target === selectionToolbar || selectionToolbar?.contains(target)) {
 				return;
 			}
 
-			// If click is inside ANY grid container or scrubber, don't clear.
-			// (supports multiple grids sharing one selection)
+			// If click is inside ANY grid container, scrubber, or modal, don't clear.
+			// (supports multiple grids sharing one selection and prevents modals from clearing selection)
 			const allGrids = Array.from(
-				document.querySelectorAll(".viz-photo-grid-container, .timeline-scrubber")
+				document.querySelectorAll(
+					".viz-photo-grid-container, .timeline-scrubber, .viz-asset-grid-container, [role='dialog']"
+				)
 			) as HTMLElement[];
 			const insideAnyGrid = allGrids.some((g) => g.contains(target));
 
@@ -1016,7 +1032,7 @@
 			// When dragging, if multiple selected use that set, otherwise drag the single asset
 			const uids =
 				selection.size > 1
-					? Array.from(selection.selected).map((i) => i.uid)
+					? selection.selectedItems.map((i) => i.uid)
 					: [asset.uid];
 			try {
 				if (e.dataTransfer) {

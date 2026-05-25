@@ -118,7 +118,7 @@
 >
 	{#each filmstripImages as image, i (image.uid)}
 		{@const isActive = activeItem?.uid === image.uid}
-		{@const isSelected = selectedItems.has(image)}
+		{@const isSelected = activeScope?.has(image) ?? false}
 		<div
 			class="filmstrip-item"
 			class:active={isActive}

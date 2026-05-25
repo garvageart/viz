@@ -18,6 +18,9 @@
 	import CropOverlay from "./CropOverlay.svelte";
 	import CropTools from "./CropTools.svelte";
 	import InputText from "./dom/InputText.svelte";
+	import ContextMenu from "$lib/context-menu/ContextMenu.svelte";
+	import { createImageMenu } from "$lib/context-menu/menus/images";
+	import { SelectionScope } from "$lib/states/selection.svelte";
 	import IconButton from "./IconButton.svelte";
 	import LabelSelector from "./LabelSelector.svelte";
 	import Lightbox from "./Lightbox.svelte";
@@ -756,26 +759,25 @@
 			<div
 				class="image-wrapper"
 				bind:this={imageContainerEl}
-				use:createZoomImage={{ maxZoom: 4, wheelZoomRatio: 0.1 }}
 				role="presentation"
+				onclick={(e) => {
+					if (e.target === imageContainerEl && !isCropping) {
+						lightboxImage = undefined;
+					}
+				}}
 			>
 				<div
 					class="zoom-target"
 					class:is-crop={isCropping}
 					oncontextmenu={handleContextMenu}
 					role="presentation"
+					use:createZoomImage={{ maxZoom: 4, wheelZoomRatio: 0.1 }}
+					onclick={(e) => {
+						if (e.target === e.currentTarget && !isCropping) {
+							lightboxImage = undefined;
+						}
+					}}
 				>
-					{#if thumbhashURL}
-						<img
-							src={thumbhashURL}
-							class="lightbox-image placeholder"
-							class:hidden={loadState === "loaded"}
-							alt="Placeholder for {lightboxImage!.name}"
-							aria-hidden="true"
-							style={`aspect-ratio: ${lightboxImage!.width} / ${lightboxImage!.height};`}
-						/>
-					{/if}
-
 					<img
 						bind:this={imageEl}
 						src={displayURL}
@@ -795,6 +797,16 @@
 						ondragstart={(e) => e.preventDefault()}
 						oncontextmenu={handleContextMenu}
 					/>
+
+					{#if thumbhashURL && loadState !== "loaded"}
+						<img
+							src={thumbhashURL}
+							class="lightbox-image placeholder"
+							alt="Placeholder for {lightboxImage!.name}"
+							aria-hidden="true"
+							style={`aspect-ratio: ${lightboxImage!.width} / ${lightboxImage!.height};`}
+						/>
+					{/if}
 
 					{#if isCropping && imageDimensions && currentCrop}
 						<CropOverlay
@@ -877,7 +889,7 @@
 		align-items: center;
 		height: 100%;
 		width: 100%;
-		pointer-events: none;
+		pointer-events: auto;
 	}
 
 	.image-container {
@@ -887,7 +899,7 @@
 		align-items: center;
 		width: 100%;
 		height: 100%;
-		pointer-events: none;
+		pointer-events: auto;
 	}
 
 	:global(.image-icon-buttons) {
@@ -938,7 +950,7 @@
 		height: 100%;
 		width: 100%;
 		overflow: hidden;
-		pointer-events: none;
+		pointer-events: auto;
 	}
 
 	.zoom-target {
@@ -950,8 +962,6 @@
 		align-items: center;
 		max-width: 100%;
 		max-height: 100%;
-		width: 100%;
-		height: 100%;
 		pointer-events: auto;
 	}
 
@@ -961,8 +971,8 @@
 
 	:global(.lightbox-image) {
 		display: block;
-		max-width: 100vw;
-		max-height: 100vh;
+		max-width: 100%;
+		max-height: 100%;
 		width: auto;
 		height: auto;
 		pointer-events: auto;
@@ -970,8 +980,6 @@
 	}
 
 	:global(.lightbox-image.placeholder) {
-		width: 100% !important;
-		height: 100% !important;
 		object-fit: contain;
 		z-index: 1;
 		opacity: 1;

@@ -1,26 +1,25 @@
 <script lang="ts" generics="T extends { uid: string } & Record<string, any>">
-	import { untrack } from "svelte";
 	import { dev } from "$app/environment";
-	import { buildGridArray } from "$lib/utils/dom";
-	import { SvelteSet } from "svelte/reactivity";
-	import hotkeys from "hotkeys-js";
-	import type { AssetGridArray, AssetSortBy } from "$lib/types/asset";
-	import type { SvelteSnippet } from "$lib/types/snippet";
+	import { getFullImagePath } from "$lib/api";
 	import {
 		debugMode,
+		isLayoutPage,
 		sort,
-		tableColumnSettings,
-		isLayoutPage
+		tableColumnSettings
 	} from "$lib/states/index.svelte";
 	import { selectionManager } from "$lib/states/selection.svelte";
-	import MaterialIcon from "./MaterialIcon.svelte";
+	import type { AssetGridArray, AssetSortBy } from "$lib/types/asset";
+	import type { SvelteSnippet } from "$lib/types/snippet";
+	import { tryParseDate } from "$lib/utils/dates";
+	import { buildGridArray } from "$lib/utils/dom";
+	import { snakeToTitle } from "$lib/utils/strings";
+	import hotkeys from "hotkeys-js";
 	import { DateTime } from "luxon";
-	import { getFullImagePath } from "$lib/api";
+	import { untrack } from "svelte";
 	import type { SvelteHTMLElements } from "svelte/elements";
+	import MaterialIcon from "./MaterialIcon.svelte";
 	import type { AssetGridView } from "./PhotoAssetGrid.svelte";
 	import TableColumnSelectorModal from "./modals/TableColumnSelectorModal.svelte";
-	import { snakeToTitle } from "$lib/utils/strings";
-	import { tryParseDate } from "$lib/utils/dates";
 	import { modalsManager } from "./modals/manager/ModalManager.svelte";
 
 	interface DisplayableAsset {
@@ -38,7 +37,9 @@
 		[key: string]: any;
 	}
 
-	export interface AssetGridProps<T extends { uid: string } & Record<string, any>> {
+	export interface AssetGridProps<
+		T extends { uid: string } & Record<string, any>
+	> {
 		data: T[];
 		assetSnippet: SvelteSnippet<[T]>;
 		assetGridArray?: AssetGridArray<T>;
@@ -88,9 +89,7 @@
 
 	// Selection Management
 	let selection = $derived(selectionManager.getScope<T>(scopeId));
-	let selectedUIDs = $derived(
-		new SvelteSet(Array.from(selection.selected).map((i) => i.uid))
-	);
+	let selectedUIDs = $derived(selection.selectedUids);
 
 	function onFocus() {
 		selectionManager.setActive(scopeId);
@@ -441,9 +440,15 @@
 
 		const clickHandler = (e: MouseEvent) => {
 			const target = e.target as HTMLElement;
-			const selectionToolbar = target.closest(".selection-toolbar") as
-				| HTMLElement
-				| undefined;
+
+			// Ignore clicks that happen inside portalized context menus so
+			// interacting with a menu does not clear the current selection.
+			if (target.closest(".context-menu")) {
+				return;
+			}
+			const selectionToolbar = target.closest(
+				".selection-toolbar, .asset-toolbar, .viz-toolbar-container"
+			) as HTMLElement | undefined;
 
 			// ignore the selection toolbar since this is what we use do actions
 			if (target === selectionToolbar || selectionToolbar?.contains(target)) {
@@ -503,9 +508,13 @@
 	});
 
 	function openColumnSelector() {
-		modalsManager.open(TableColumnSelectorModal, {
-			availableKeys: tableKeys
-		}, { heading: "Table Columns" });
+		modalsManager.open(
+			TableColumnSelectorModal,
+			{
+				availableKeys: tableKeys
+			},
+			{ heading: "Table Columns" }
+		);
 	}
 </script>
 
@@ -552,8 +561,7 @@
 
 {#snippet assetComponentListOption(assetData: T)}
 	{@const isSelected =
-		Array.from(selection.selected).some((i) => i.uid === assetData.uid) ||
-		selection.active?.uid === assetData.uid}
+		selection.has(assetData) || selection.active?.uid === assetData.uid}
 	{@const asset = assetData as unknown as DisplayableAsset}
 	<tr
 		class="asset-card"
@@ -836,6 +844,10 @@
 				background: var(--viz-primary);
 			}
 
+			&.selected-card {
+				background-color: color-mix(in srgb, var(--viz-bg-color) 100%, var(--viz-secondary) 20%);
+			}
+
 			td {
 				padding: 0.6rem 0.75rem;
 				vertical-align: middle;
@@ -891,7 +903,7 @@
 
 		.asset-snippet-sub {
 			font-size: 0.85rem;
-			color: var(--viz-60);
+			color: var(--viz-40);
 		}
 	}
 
