@@ -19,6 +19,7 @@
 	import NavigationProgressBar from "$lib/components/NavigationProgressBar.svelte";
 	import ModalRenderer from "$lib/components/modals/ModalContainer.svelte";
 	import { historyState } from "$lib/states/history.svelte";
+	import { eventsState } from "$lib/states/events.svelte";
 	import { debugState, themeState } from "$lib/states/index.svelte";
 	import { loadingState } from "$lib/states/loading.svelte";
 	import "$lib/stores/appReady";
@@ -30,6 +31,7 @@
 	import hotkeys from "hotkeys-js";
 
 	historyState.init();
+	eventsState.init();
 
 	window.___viewfinderConfig = {
 		environment: dev ? "dev" : "prod",

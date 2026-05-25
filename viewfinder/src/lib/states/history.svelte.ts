@@ -47,7 +47,9 @@ class HistoryState {
 			this.initialIdx = this.currentIdx;
 			this.maxIdx = this.currentIdx;
 			// Defer this update to ensure router is initialized
-			tick().then(() => this.updateState(this.currentIdx));
+			tick().then(() => this.updateState(this.currentIdx)).catch(err => {
+				console.warn("[History] Failed to update state after tick:", err);
+			});
 		}
 
 		this.initialized = true;
@@ -157,7 +159,12 @@ class HistoryState {
 	private updateState(idx: number) {
 		if (typeof window === "undefined") return;
 		const newState = { ...(window.history.state || {}), viz_nav_idx: idx };
-		replaceState(window.location.href, newState);
+		try {
+			replaceState(window.location.href, newState);
+		} catch (e) {
+			// Fallback if router not yet ready
+			window.history.replaceState(newState, "", window.location.href);
+		}
 	}
 
 	private updateDerived() {
