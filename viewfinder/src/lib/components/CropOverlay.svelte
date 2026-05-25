@@ -123,7 +123,7 @@
 	></div>
 {/snippet}
 
-<div class="crop-overlay-container" style="width: 100%; height: 100%;">
+<div class="crop-overlay-container" style="width: {width}px; height: {height}px;">
 	<div
 		class="crop-box"
 		style="{tStyle} {outlineStyle}"
@@ -170,8 +170,9 @@
 <style>
 	.crop-overlay-container {
 		position: absolute;
-		top: 0;
-		left: 0;
+		justify-self: center;
+		align-self: center;
+		overflow: visible;
 		pointer-events: none; /* Let clicks pass through to image if not hitting crop box */
 		touch-action: none;
 		z-index: 5;

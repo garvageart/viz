@@ -13,18 +13,13 @@
 	} from "$lib/utils/images";
 	import { useZoomImageWheel } from "@zoom-image/svelte";
 	import hotkeys from "hotkeys-js";
-	import { fade } from "svelte/transition";
-	import AssetImage from "./AssetImage.svelte";
+	import { onMount, untrack } from "svelte";
 	import CropOverlay from "./CropOverlay.svelte";
 	import CropTools from "./CropTools.svelte";
 	import InputText from "./dom/InputText.svelte";
-	import ContextMenu from "$lib/context-menu/ContextMenu.svelte";
-	import { createImageMenu } from "$lib/context-menu/menus/images";
-	import { SelectionScope } from "$lib/states/selection.svelte";
 	import IconButton from "./IconButton.svelte";
 	import LabelSelector from "./LabelSelector.svelte";
 	import Lightbox from "./Lightbox.svelte";
-	import LoadingContainer from "./LoadingContainer.svelte";
 	import MaterialIcon from "./MaterialIcon.svelte";
 	import StarRating from "./StarRating.svelte";
 
@@ -97,6 +92,54 @@
 
 	// Helper to get render dimensions
 	let imageDimensions = $state<{ width: number; height: number } | null>(null);
+
+	// Reactively track image dimension changes (window resize, crop layout changes)
+	// and update imageDimensions, scaling currentCrop proportionally to keep it in sync.
+	$effect(() => {
+		if (isCropping && imageEl) {
+			const updateDimensions = () => {
+				if (imageEl.clientWidth > 0 && imageEl.clientHeight > 0) {
+					const newWidth = imageEl.clientWidth;
+					const newHeight = imageEl.clientHeight;
+
+					untrack(() => {
+						if (imageDimensions && currentCrop) {
+							const oldWidth = imageDimensions.width;
+							const oldHeight = imageDimensions.height;
+
+							if (oldWidth > 0 && oldHeight > 0 && (oldWidth !== newWidth || oldHeight !== newHeight)) {
+								const scaleX = newWidth / oldWidth;
+								const scaleY = newHeight / oldHeight;
+
+								currentCrop = {
+									x: currentCrop.x * scaleX,
+									y: currentCrop.y * scaleY,
+									width: currentCrop.width * scaleX,
+									height: currentCrop.height * scaleY
+								};
+							}
+						}
+
+						imageDimensions = {
+							width: newWidth,
+							height: newHeight
+						};
+					});
+				}
+			};
+
+			updateDimensions();
+
+			const observer = new ResizeObserver(() => {
+				updateDimensions();
+			});
+			observer.observe(imageEl);
+
+			return () => {
+				observer.disconnect();
+			};
+		}
+	});
 
 	function goToPrev() {
 		if (isCropping) {
@@ -397,77 +440,89 @@
 		}
 	}
 
-	hotkeys("left,right", (e, handler) => {
-		if (!show || isCropping) {
-			return;
-		}
+	onMount(() => {
+		const handleLeftRight = (e: KeyboardEvent, handler: any) => {
+			if (!show || isCropping) {
+				return;
+			}
 
-		const activeEl = document.activeElement;
-		const isInputFocused =
-			activeEl &&
-			(activeEl.tagName === "INPUT" ||
-				activeEl.tagName === "TEXTAREA" ||
-				activeEl.tagName === "SELECT" ||
-				activeEl.getAttribute("contenteditable") === "true");
+			const activeEl = document.activeElement;
+			const isInputFocused =
+				activeEl &&
+				(activeEl.tagName === "INPUT" ||
+					activeEl.tagName === "TEXTAREA" ||
+					activeEl.tagName === "SELECT" ||
+					activeEl.getAttribute("contenteditable") === "true");
 
-		if (isInputFocused || editNameMode) {
-			return;
-		}
+			if (isInputFocused || editNameMode) {
+				return;
+			}
 
-		e.preventDefault();
-		if (handler.key === "left") {
-			goToPrev();
-		} else if (handler.key === "right") {
-			goToNext();
-		}
-	});
-
-	hotkeys("enter", (e) => {
-		if (!show || !isCropping) {
-			return;
-		}
-
-		const activeEl = document.activeElement;
-		const isInputFocused =
-			activeEl &&
-			(activeEl.tagName === "INPUT" ||
-				activeEl.tagName === "TEXTAREA" ||
-				activeEl.tagName === "SELECT" ||
-				activeEl.getAttribute("contenteditable") === "true");
-
-		if (isInputFocused || editNameMode) {
-			return;
-		}
-
-		e.preventDefault();
-		handleCropApply();
-	});
-
-	hotkeys("esc", (e) => {
-		if (!show) {
-			return;
-		}
-
-		const activeEl = document.activeElement;
-		const isInputFocused =
-			activeEl &&
-			(activeEl.tagName === "INPUT" ||
-				activeEl.tagName === "TEXTAREA" ||
-				activeEl.tagName === "SELECT" ||
-				activeEl.getAttribute("contenteditable") === "true");
-
-		if (isInputFocused || editNameMode) {
-			return;
-		}
-
-		if (isCropping) {
 			e.preventDefault();
-			toggleCropMode();
-			return;
-		}
+			if (handler.key === "left") {
+				goToPrev();
+			} else if (handler.key === "right") {
+				goToNext();
+			}
+		};
 
-		// If not cropping, let Lightbox handle it or close explicitly
-		lightboxImage = undefined;
+		const handleEnter = (e: KeyboardEvent) => {
+			if (!show || !isCropping) {
+				return;
+			}
+
+			const activeEl = document.activeElement;
+			const isInputFocused =
+				activeEl &&
+				(activeEl.tagName === "INPUT" ||
+					activeEl.tagName === "TEXTAREA" ||
+					activeEl.tagName === "SELECT" ||
+					activeEl.getAttribute("contenteditable") === "true");
+
+			if (isInputFocused || editNameMode) {
+				return;
+			}
+
+			e.preventDefault();
+			handleCropApply();
+		};
+
+		const handleEsc = (e: KeyboardEvent) => {
+			if (!show) {
+				return;
+			}
+
+			const activeEl = document.activeElement;
+			const isInputFocused =
+				activeEl &&
+				(activeEl.tagName === "INPUT" ||
+					activeEl.tagName === "TEXTAREA" ||
+					activeEl.tagName === "SELECT" ||
+					activeEl.getAttribute("contenteditable") === "true");
+
+			if (isInputFocused || editNameMode) {
+				return;
+			}
+
+			if (isCropping) {
+				e.preventDefault();
+				toggleCropMode();
+				return;
+			}
+
+			// If not cropping, let Lightbox handle it or close explicitly
+			lightboxImage = undefined;
+		};
+
+		hotkeys("left,right", handleLeftRight);
+		hotkeys("enter", handleEnter);
+		hotkeys("esc", handleEsc);
+
+		return () => {
+			hotkeys.unbind("left,right", handleLeftRight);
+			hotkeys.unbind("enter", handleEnter);
+			hotkeys.unbind("esc", handleEsc);
+		};
 	});
 
 	function formatFileSize() {
@@ -701,12 +756,34 @@
 		if (!isCropping) {
 			lightboxImage = undefined;
 		} else {
-			cropMenuPosition = null;
+			if (cropMenuPosition) {
+				cropMenuPosition = null;
+			} else {
+				handleCropApply();
+				lightboxImage = undefined;
+			}
 		}
 	}}
 >
 	<div class="image-lightbox-container">
-		<div class="image-container">
+		<div
+			class="image-container"
+			onclick={(e) => {
+				if (isCropping) {
+					const target = e.target as HTMLElement;
+					if (!target.closest("button") && !target.closest(".crop-tools-container")) {
+						e.stopPropagation();
+						if (cropMenuPosition) {
+							cropMenuPosition = null;
+						} else {
+							handleCropApply();
+							lightboxImage = undefined;
+						}
+					}
+				}
+			}}
+			role="presentation"
+		>
 			<IconButton
 				id="lightbox-icon-close"
 				class="lightbox-button-icon"
@@ -963,6 +1040,10 @@
 		max-width: 100%;
 		max-height: 100%;
 		pointer-events: auto;
+	}
+
+	.zoom-target.is-crop {
+		overflow: visible !important;
 	}
 
 	.zoom-target > * {

@@ -109,7 +109,7 @@
 		&.floating {
 			position: fixed;
 			box-shadow: 0 4px 16px rgba(0, 0, 0, 0.4);
-			border: 1px solid var(--viz-10);
+			border: 1px solid var(--viz-80);
 			/* Basic collision avoidance: translate up/left if near edges? */
 			transform: translate(0, 0);
 		}
