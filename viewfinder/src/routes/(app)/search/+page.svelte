@@ -38,6 +38,7 @@
 	import { toastState } from "$lib/toast-notifcations/notif-state.svelte";
 	import type { AssetGridView } from "$lib/types/asset";
 	import { downloadOriginalImageFile } from "$lib/utils/http";
+	import { invalidateViz } from "$lib/views/views.svelte";
 	import { getImageLabel } from "$lib/utils/images";
 	import hotkeys from "hotkeys-js";
 	import { onMount, type ComponentProps } from "svelte";
@@ -72,10 +73,10 @@
 			if (firstRich) return firstRich;
 		}
 
-		return Array.from(imageSelection.selected)[0];
+		return imageSelection.selectedItems[0];
 	});
 	let firstSelectedCollection = $derived(
-		Array.from(collectionSelection.selected)[0]
+		collectionSelection.selectedItems[0]
 	);
 
 	// Context Menu State
@@ -114,7 +115,7 @@
 	});
 
 	function openAddToCollectionModal() {
-		imageUidsForCollection = Array.from(imageSelection.selected).map(
+		imageUidsForCollection = imageSelection.selectedItems.map(
 			(img) => img.uid
 		);
 		modalsManager.open(
@@ -326,6 +327,9 @@
 						}
 					]
 				});
+
+				// Trigger refresh
+				await invalidateViz({ delay: 200 });
 			} else {
 				toastState.addToast({
 					type: "error",
@@ -474,9 +478,7 @@
 										labelName === "None" || !labelName ? null : labelName
 									) as ImageLabel | null;
 
-									const updatePromises = Array.from(
-										imageSelection.selected
-									).map((img) =>
+									const updatePromises = imageSelection.selectedItems.map((img) =>
 										updateImage(img.uid, {
 											image_metadata: { label: labelToSend }
 										})
@@ -492,9 +494,7 @@
 										return;
 									}
 
-									const updatePromises = Array.from(
-										imageSelection.selected
-									).map((img) =>
+									const updatePromises = imageSelection.selectedItems.map((img) =>
 										updateImage(img.uid, {
 											image_metadata: { rating }
 										})

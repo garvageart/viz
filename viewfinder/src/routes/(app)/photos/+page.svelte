@@ -35,6 +35,7 @@
 	import { filterManager } from "$lib/states/filter.svelte";
 	import { viewSettings } from "$lib/states/index.svelte";
 	import { modalsManager } from "$lib/components/modals/manager/ModalManager.svelte";
+	import { invalidateViz } from "$lib/views/views.svelte";
 	import { page } from "$app/state";
 	import {
 		selectionManager,
@@ -123,11 +124,11 @@
 	// Selection (shared across groups)
 	const scopeId = SelectionScopeNames.PHOTOS_MAIN;
 	const selectionScope = selectionManager.getScope<ImageAsset>(scopeId);
-	let selectionFirstImage = $derived(
-		Array.from(selectionScope.selected).sort((a, b) =>
-			a.uid.localeCompare(b.uid)
-		)[0]
-	);
+	let selectionFirstImage = $derived.by(() => {
+		const items = selectionScope.selectedItems;
+		if (items.length === 0) return undefined;
+		return [...items].sort((a, b) => a.uid.localeCompare(b.uid))[0];
+	});
 
 	onDestroy(() => {
 		selectionManager.removeScope(scopeId);
@@ -153,9 +154,7 @@
 				icon: "collections_bookmark",
 				action: () => {
 					modalsManager.open(CollectionSelectionModal, {
-						imageUidsToAdd: Array.from(selectionScope.selected).map(
-							(img) => img.uid
-						),
+						imageUidsToAdd: selectionScope.selectedItems.map((img) => img.uid),
 						onSelect: handleCollectionSelect
 					}, { heading: "Select a Collection", width: "90%", height: "80%" });
 				}
@@ -270,6 +269,9 @@
 						}
 					]
 				});
+
+				// Trigger refresh
+				await invalidateViz({ delay: 200 });
 			} else {
 				toastState.addToast({
 					type: "error",
@@ -442,9 +444,7 @@
 						title="Add to Collection"
 						onclick={() => {
 							modalsManager.open(CollectionSelectionModal, {
-								imageUidsToAdd: Array.from(selectionScope.selected).map(
-									(img) => img.uid
-								),
+								imageUidsToAdd: selectionScope.selectedItems.map((img) => img.uid),
 								onSelect: handleCollectionSelect
 							}, { heading: "Select a Collection", width: "90%", height: "80%" });
 						}}
@@ -499,7 +499,7 @@
 								labelName === "None" || !labelName ? null : labelName
 							) as ImageLabel | null;
 
-							const updatePromises = Array.from(selectionScope.selected).map(
+							const updatePromises = selectionScope.selectedItems.map(
 								(img) =>
 									updateImage(img.uid, {
 										image_metadata: { label: labelToSend }
@@ -528,7 +528,7 @@
 								return;
 							}
 
-							const updatePromises = Array.from(selectionScope.selected).map(
+							const updatePromises = selectionScope.selectedItems.map(
 								(img) =>
 									updateImage(img.uid, {
 										image_metadata: { rating }

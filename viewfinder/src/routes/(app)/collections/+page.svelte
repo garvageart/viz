@@ -61,9 +61,7 @@
 	const selectionScope = $derived(
 		selectionManager.getScope<Collection>(scopeId)
 	);
-	const firstSelectedCollection = $derived(
-		Array.from(selectionScope.selected)[0]
-	);
+	const firstSelectedCollection = $derived(selectionScope.selectedItems[0]);
 
 	// Modal data for create/edit
 	let modalData: Collection | undefined = $state();
