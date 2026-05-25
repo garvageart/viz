@@ -56,6 +56,8 @@ func SearchRouter(db *gorm.DB, logger *slog.Logger) chi.Router {
 		}
 
 		imagesQuery := engine.Apply(db, criteria).Scopes(securityScope)
+		// Ensure related fields required by DTOs are loaded (owner/uploaded_by)
+		imagesQuery = imagesQuery.Preload("Owner").Preload("UploadedBy")
 
 		var totalCount int64
 		if err := imagesQuery.Count(&totalCount).Error; err != nil {
@@ -76,7 +78,8 @@ func SearchRouter(db *gorm.DB, logger *slog.Logger) chi.Router {
 		}
 
 		collectionsQuery := engine.ApplyCollections(db, criteria).Scopes(securityScope)
-		collectionsQuery = collectionsQuery.Limit(limit).Offset(page * limit)
+		// Preload collection relations used by the DTO (thumbnail, created_by)
+		collectionsQuery = collectionsQuery.Preload("Thumbnail").Preload("CreatedBy").Limit(limit).Offset(page * limit)
 
 		var collections []entities.Collection
 		if err := collectionsQuery.Find(&collections).Error; err != nil {

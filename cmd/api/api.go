@@ -115,7 +115,7 @@ func (server APIServer) Launch(router *chi.Mux) *http.Server {
 					auth.CollectionsReadScope,
 					auth.CollectionsUpdateScope,
 				}))
-				r.Mount("/collections", routes.CollectionsRouter(dbClient, logger))
+				r.Mount("/collections", routes.CollectionsRouter(dbClient, logger, server.WSBroker))
 			})
 			r.Group(func(r chi.Router) {
 				r.Use(libhttp.ScopeMiddleware([]auth.Scope{
@@ -273,6 +273,7 @@ func main() {
 	client := apiServer.ConnectToDatabase(
 		entities.ImageAsset{},
 		entities.Collection{},
+		entities.CollectionImage{},
 		entities.Session{},
 		entities.APIKey{},
 		entities.User{},

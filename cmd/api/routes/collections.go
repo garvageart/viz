@@ -13,6 +13,7 @@ import (
 	"github.com/go-chi/chi/v5"
 	"github.com/go-chi/render"
 	"gorm.io/gorm"
+	"gorm.io/gorm/clause"
 
 	"viz/internal/dto"
 	"viz/internal/entities"
@@ -23,10 +24,14 @@ import (
 
 var ErrCollectionUnauthorised = errors.New("unauthorized")
 
-func findCollectionImages(db *gorm.DB, imgUIDs []string, collection entities.Collection, limit, offset int, sortBy, order string) ([]dto.ImagesResponse, error) {
+func findCollectionImages(db *gorm.DB, collection entities.Collection, limit, offset int, sortBy, order string) ([]dto.ImagesResponse, error) {
 	var images []entities.ImageAsset
 
-	query := db.Preload("Owner").Preload("UploadedBy").Where("uid IN ?", imgUIDs)
+	query := db.Model(&entities.ImageAsset{}).
+		Preload("Owner").
+		Preload("UploadedBy").
+		Joins("JOIN collection_images ON collection_images.uid = images.uid").
+		Where("collection_images.collection_id = ?", collection.ID)
 
 	allowedSortBy := []string{"taken_at", "created_at", "updated_at", "name"}
 	validSortBy := slices.Contains(allowedSortBy, sortBy)
@@ -42,33 +47,47 @@ func findCollectionImages(db *gorm.DB, imgUIDs []string, collection entities.Col
 
 	var orderClause string
 	if sortBy == "taken_at" {
-		orderClause = fmt.Sprintf("taken_at %s NULLS LAST, name %s", upperOrder, upperOrder)
+		orderClause = fmt.Sprintf("images.taken_at %s NULLS LAST, images.name %s", upperOrder, upperOrder)
 	} else {
-		orderClause = fmt.Sprintf("%s %s", sortBy, upperOrder)
+		orderClause = fmt.Sprintf("images.%s %s", sortBy, upperOrder)
 	}
 
 	if err := query.Order(orderClause).Limit(limit).Offset(offset).Find(&images).Error; err != nil {
 		return nil, err
 	}
 
-	// Build a lookup map to safely pair metadata by UID regardless of DB row order.
-	// collection.Images is *[]dto.CollectionImage
-	var collectionImages []dto.CollectionImage
-	if collection.Images != nil {
-		collectionImages = *collection.Images
+	// We need to fetch the added_at and added_by info from the join table
+	// for the DTO conversion.
+	var collectionImages []entities.CollectionImage
+	if err := db.Where("collection_id = ? AND uid IN ?", collection.ID, func() []string {
+		uids := make([]string, len(images))
+		for i, img := range images {
+			uids[i] = img.Uid
+		}
+		return uids
+	}()).Preload("AddedBy").Find(&collectionImages).Error; err != nil {
+		return nil, err
 	}
 
-	meta := make(map[string]dto.CollectionImage, len(collectionImages))
-	for _, m := range collectionImages {
-		meta[m.Uid] = m
+	meta := make(map[string]entities.CollectionImage, len(collectionImages))
+	for _, ci := range collectionImages {
+		meta[ci.Uid] = ci
 	}
 
 	imgResponse := make([]dto.ImagesResponse, len(images))
 	for i, img := range images {
 		m := meta[img.Uid]
+		userDTO := func() *dto.User {
+			if m.AddedBy != nil {
+				d := m.AddedBy.DTO()
+				return &d
+			}
+			return nil
+		}()
+
 		imgResponse[i] = dto.ImagesResponse{
 			AddedAt: m.AddedAt,
-			AddedBy: m.AddedBy,
+			AddedBy: userDTO,
 			Image:   img.DTO(),
 		}
 	}
@@ -76,7 +95,7 @@ func findCollectionImages(db *gorm.DB, imgUIDs []string, collection entities.Col
 	return imgResponse, nil
 }
 
-func CollectionsRouter(db *gorm.DB, logger *slog.Logger) *chi.Mux {
+func CollectionsRouter(db *gorm.DB, logger *slog.Logger, wsBroker *libhttp.WSBroker) *chi.Mux {
 	router := chi.NewRouter()
 
 	router.Post("/", func(res http.ResponseWriter, req *http.Request) {
@@ -123,6 +142,10 @@ func CollectionsRouter(db *gorm.DB, logger *slog.Logger) *chi.Mux {
 		if err != nil {
 			render.JSON(res, req, dto.ErrorResponse{Error: "Failed to create collection"})
 			return
+		}
+
+		if wsBroker != nil {
+			_ = wsBroker.Broadcast("collection-created", collection.DTO())
 		}
 
 		render.Status(req, http.StatusCreated)
@@ -258,22 +281,12 @@ func CollectionsRouter(db *gorm.DB, logger *slog.Logger) *chi.Mux {
 				}
 			}
 
-			var collectionImages []dto.CollectionImage
-			if collection.Images != nil {
-				collectionImages = *collection.Images
-			}
-
-			imageUIDs := make([]string, len(collectionImages))
-			for i, img := range collectionImages {
-				imageUIDs[i] = img.Uid
-			}
-
-			allColImages, err := findCollectionImages(tx, imageUIDs, collection, defaultImageLimit, defaultImageOffset, sortBy, order)
+			var err error
+			imgResponse, err = findCollectionImages(tx, collection, defaultImageLimit, defaultImageOffset, sortBy, order)
 			if err != nil {
 				return err
 			}
 
-			imgResponse = allColImages
 			return nil
 		})
 
@@ -294,10 +307,7 @@ func CollectionsRouter(db *gorm.DB, logger *slog.Logger) *chi.Mux {
 		defaultImagePage := 0
 		href := fmt.Sprintf("/collections/%s/images/?page=%d&limit=%d&sort_by=%s&order=%s", uid, defaultImagePage, defaultImageLimit, sortBy, order)
 
-		var totalImages int
-		if collection.Images != nil {
-			totalImages = len(*collection.Images)
-		}
+		totalImages := collection.ImageCount
 
 		var next *string
 		if totalImages > defaultImageLimit {
@@ -368,6 +378,13 @@ func CollectionsRouter(db *gorm.DB, logger *slog.Logger) *chi.Mux {
 			return tx.Preload("Thumbnail").Preload("CreatedBy").First(&collection, "uid = ?", uid).Error
 		})
 
+		if err == nil && wsBroker != nil {
+			_ = wsBroker.Broadcast("collection-updated", map[string]interface{}{
+				"uid":    collection.Uid,
+				"action": "updated",
+			})
+		}
+
 		if err != nil {
 			if err == gorm.ErrRecordNotFound {
 				render.Status(req, http.StatusNotFound)
@@ -413,6 +430,12 @@ func CollectionsRouter(db *gorm.DB, logger *slog.Logger) *chi.Mux {
 			return nil
 		})
 
+		if err == nil && wsBroker != nil {
+			_ = wsBroker.Broadcast("collection-deleted", map[string]interface{}{
+				"uid": uid,
+			})
+		}
+
 		if err != nil {
 			if err == gorm.ErrRecordNotFound {
 				render.Status(req, http.StatusNotFound)
@@ -440,7 +463,7 @@ func CollectionsRouter(db *gorm.DB, logger *slog.Logger) *chi.Mux {
 		uid := chi.URLParam(req, "uid")
 
 		var collection entities.Collection
-		if err := db.Select("images", "private", "owner_id").First(&collection, "uid = ?", uid).Error; err != nil {
+		if err := db.Select("id", "uid", "private", "owner_id").First(&collection, "uid = ?", uid).Error; err != nil {
 			if err == gorm.ErrRecordNotFound {
 				render.Status(req, http.StatusNotFound)
 				render.JSON(res, req, dto.ErrorResponse{Error: "Collection not found"})
@@ -452,19 +475,23 @@ func CollectionsRouter(db *gorm.DB, logger *slog.Logger) *chi.Mux {
 		}
 
 		authUser, ok := libhttp.UserFromContext(req)
-		if !ok || (collection.OwnerID != nil && *collection.OwnerID != authUser.Uid) {
-			render.Status(req, http.StatusForbidden)
-			render.JSON(res, req, dto.ErrorResponse{Error: "Unauthorized"})
-			return
+		if collection.Private != nil && *collection.Private {
+			if !ok || (collection.OwnerID != nil && *collection.OwnerID != authUser.Uid) {
+				render.Status(req, http.StatusForbidden)
+				render.JSON(res, req, dto.ErrorResponse{Error: "Unauthorized"})
+				return
+			}
 		}
 
 		var uids []string
-		if collection.Images != nil {
-			uids = make([]string, len(*collection.Images))
-			for i, img := range *collection.Images {
-				uids[i] = img.Uid
-			}
-		} else {
+		if err := db.Model(&entities.CollectionImage{}).
+			Where("collection_id = ?", collection.ID).
+			Pluck("uid", &uids).Error; err != nil {
+			libhttp.ServerError(res, req, err, logger, nil, "Failed to fetch collection image UIDs", "")
+			return
+		}
+
+		if uids == nil {
 			uids = []string{}
 		}
 
@@ -507,7 +534,7 @@ func CollectionsRouter(db *gorm.DB, logger *slog.Logger) *chi.Mux {
 		var collection entities.Collection
 
 		if err := db.Transaction(func(tx *gorm.DB) error {
-			if err := tx.Select("images", "private", "owner_id").First(&collection, "uid = ?", uid).Error; err != nil {
+			if err := tx.Select("image_count", "private", "owner_id", "id").First(&collection, "uid = ?", uid).Error; err != nil {
 				return err
 			}
 
@@ -519,18 +546,8 @@ func CollectionsRouter(db *gorm.DB, logger *slog.Logger) *chi.Mux {
 				}
 			}
 
-			var collectionImages []dto.CollectionImage
-			if collection.Images != nil {
-				collectionImages = *collection.Images
-			}
-
-			imageUIDs := make([]string, len(collectionImages))
-			for i, img := range collectionImages {
-				imageUIDs[i] = img.Uid
-			}
-
 			var innerErr error
-			imgResponse, innerErr = findCollectionImages(tx, imageUIDs, collection, limit, offset, sortBy, order)
+			imgResponse, innerErr = findCollectionImages(tx, collection, limit, offset, sortBy, order)
 			if innerErr != nil {
 				return innerErr
 			}
@@ -559,10 +576,7 @@ func CollectionsRouter(db *gorm.DB, logger *slog.Logger) *chi.Mux {
 		}
 
 		var next *string
-		var totalImages int
-		if collection.Images != nil {
-			totalImages = len(*collection.Images)
-		}
+		totalImages := collection.ImageCount
 
 		if (page+1)*limit < totalImages {
 			nx := fmt.Sprintf("/collections/%s/images/?page=%d&limit=%d&sort_by=%s&order=%s", uid, page+1, limit, sortBy, order)
@@ -598,6 +612,12 @@ func CollectionsRouter(db *gorm.DB, logger *slog.Logger) *chi.Mux {
 			return
 		}
 
+		if len(colImage.UIDs) == 0 {
+			render.Status(req, http.StatusOK)
+			render.JSON(res, req, dto.AddImagesResponse{Added: true})
+			return
+		}
+
 		err = db.Transaction(func(tx *gorm.DB) error {
 			var collection entities.Collection
 			if err := tx.First(&collection, "uid = ?", uid).Error; err != nil {
@@ -606,35 +626,59 @@ func CollectionsRouter(db *gorm.DB, logger *slog.Logger) *chi.Mux {
 
 			authUser, ok := libhttp.UserFromContext(req)
 			if !ok || (collection.OwnerID != nil && *collection.OwnerID != authUser.Uid) {
-				return fmt.Errorf("unauthorized")
+				return ErrCollectionUnauthorised
 			}
 
-			for _, imgUID := range colImage.UIDs {
-				var img entities.ImageAsset
-
-				if err := tx.First(&img, "uid = ?", imgUID).Error; err != nil {
-					return err
-				}
-
-				userDTO := authUser.DTO()
-				colImageEnt := dto.CollectionImage{
-					Uid:     imgUID,
-					AddedAt: time.Now(),
-					AddedBy: &userDTO,
-				}
-
-				// Append to the slice
-				var images []dto.CollectionImage
-				if collection.Images != nil {
-					images = *collection.Images
-				}
-				images = append(images, colImageEnt)
-				collection.Images = &images
+			// Verify all images exist in one query
+			var count int64
+			if err := tx.Model(&entities.ImageAsset{}).Where("uid IN ?", colImage.UIDs).Count(&count).Error; err != nil {
+				return err
 			}
 
-			collection.ImageCount = len(*collection.Images)
+			if count != int64(len(colImage.UIDs)) {
+				return gorm.ErrRecordNotFound
+			}
 
-			return tx.Model(&collection).Select("Images", "ImageCount").Updates(&collection).Error
+			now := time.Now()
+
+			// Prepare bulk insert for join table
+			newColImages := make([]entities.CollectionImage, len(colImage.UIDs))
+			for i, imgUID := range colImage.UIDs {
+				newColImages[i] = entities.CollectionImage{
+					CollectionID: &collection.ID,
+					Uid:          imgUID,
+					AddedAt:      now,
+					AddedByID:    &authUser.Uid,
+				}
+			}
+
+			// Bulk insert - ignore conflicts (already in collection)
+			if err := tx.Clauses(clause.OnConflict{DoNothing: true}).Create(&newColImages).Error; err != nil {
+				return err
+			}
+
+			// Update image count and timestamp
+			var totalCount int64
+			if err := tx.Model(&entities.CollectionImage{}).Where("collection_id = ?", collection.ID).Count(&totalCount).Error; err != nil {
+				return err
+			}
+
+			collection.ImageCount = int(totalCount)
+			collection.UpdatedAt = now
+
+			if err := tx.Model(&collection).Select("ImageCount", "UpdatedAt").Updates(&collection).Error; err != nil {
+				return err
+			}
+
+			if wsBroker != nil {
+				_ = wsBroker.Broadcast("collection-updated", map[string]interface{}{
+					"uid":    collection.Uid,
+					"action": "images-added",
+					"count":  len(colImage.UIDs),
+				})
+			}
+
+			return nil
 		})
 
 		if err != nil {
@@ -686,57 +730,45 @@ func CollectionsRouter(db *gorm.DB, logger *slog.Logger) *chi.Mux {
 				return ErrCollectionUnauthorised
 			}
 
-			var images []dto.CollectionImage
-			if collection.Images != nil {
-				images = *collection.Images
-			}
-
-			if len(images) == 0 {
-				collection.ImageCount = 0
-				return tx.Save(&collection).Error
-			}
-
-			if !body.All && len(body.UIDs) == 0 {
-				return nil // Nothing to do
-			}
-
-			var newImages []dto.CollectionImage
+			query := tx.Model(&entities.CollectionImage{}).Where("collection_id = ?", collection.ID)
 
 			if body.All {
-				// Remove all EXCEPT exclusions
-				excludedMap := make(map[string]struct{}, len(body.Exclusions))
-				for _, u := range body.Exclusions {
-					excludedMap[u] = struct{}{}
-				}
-
-				newImages = make([]dto.CollectionImage, 0, len(body.Exclusions))
-				for _, img := range images {
-					if _, found := excludedMap[img.Uid]; found {
-						newImages = append(newImages, img)
-					}
+				if len(body.Exclusions) > 0 {
+					query = query.Where("uid NOT IN ?", body.Exclusions)
 				}
 			} else {
-				// Remove specific UIDs
-				toRemove := make(map[string]struct{}, len(body.UIDs))
-				for _, u := range body.UIDs {
-					toRemove[u] = struct{}{}
-				}
-
-				newImages = make([]dto.CollectionImage, 0, len(images))
-				for _, img := range images {
-					if _, found := toRemove[img.Uid]; !found {
-						newImages = append(newImages, img)
-					}
+				if len(body.UIDs) > 0 {
+					query = query.Where("uid IN ?", body.UIDs)
+				} else {
+					return nil // Nothing to do
 				}
 			}
 
-			collection.ImageCount = len(newImages)
-			collection.Images = &newImages
-			if len(newImages) == 0 {
-				collection.Images = nil
+			if err := query.Delete(&entities.CollectionImage{}).Error; err != nil {
+				return err
 			}
 
-			return tx.Model(&collection).Select("Images", "ImageCount").Updates(&collection).Error
+			// Update image count and timestamp
+			var totalCount int64
+			if err := tx.Model(&entities.CollectionImage{}).Where("collection_id = ?", collection.ID).Count(&totalCount).Error; err != nil {
+				return err
+			}
+
+			collection.ImageCount = int(totalCount)
+			collection.UpdatedAt = time.Now()
+
+			if err := tx.Model(&collection).Select("ImageCount", "UpdatedAt").Updates(&collection).Error; err != nil {
+				return err
+			}
+
+			if wsBroker != nil {
+				_ = wsBroker.Broadcast("collection-updated", map[string]interface{}{
+					"uid":    collection.Uid,
+					"action": "images-removed",
+				})
+			}
+
+			return nil
 		})
 
 		if err != nil {
