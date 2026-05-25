@@ -1,4 +1,4 @@
-import { SvelteSet } from "svelte/reactivity";
+import { SvelteMap, SvelteSet } from "svelte/reactivity";
 
 export enum SelectionScopeNames {
     DEFAULT = "default",
@@ -11,8 +11,8 @@ export enum SelectionScopeNames {
 }
 
 export class SelectionScope<T extends { uid: string; } = any> {
-    selected = $state(new SvelteSet<T>());
-    excluded = $state(new SvelteSet<string>()); // UIDs to exclude when isSelectAll is true
+	selected = $state(new SvelteMap<string, T>());
+	excluded = $state(new SvelteSet<string>()); // UIDs to exclude when isSelectAll is true
     isSelectAll = $state(false);
     totalCount = $state(0);
 
@@ -33,37 +33,27 @@ export class SelectionScope<T extends { uid: string; } = any> {
     }
 
     add(item: T) {
+        if (!item || !item.uid) return;
         if (this.isSelectAll) {
             this.excluded.delete(item.uid);
         }
-        this.selected.add(item);
+        this.selected.set(item.uid, item);
     }
 
     remove(item: T) {
+        if (!item || !item.uid) return;
         if (this.isSelectAll) {
             this.excluded.add(item.uid);
         }
-        // Find the exact reference to delete, in case object changed
-        let ref = item;
-        for (const s of this.selected) {
-            if (s.uid === item.uid) {
-                ref = s;
-                break;
-            }
-        }
-        this.selected.delete(ref);
+        this.selected.delete(item.uid);
     }
 
     has(item: T) {
+        if (!item || !item.uid) return false;
         if (this.isSelectAll) {
             return !this.excluded.has(item.uid);
         }
-        if (this.selected.has(item)) return true;
-        // Check by uid as fallback
-        for (const s of this.selected) {
-            if (s.uid === item.uid) return true;
-        }
-        return false;
+        return this.selected.has(item.uid);
     }
 
     clear() {
@@ -76,8 +66,12 @@ export class SelectionScope<T extends { uid: string; } = any> {
     toggle(item: T) {
         if (this.has(item)) {
             this.remove(item);
+            if (this.active?.uid === item.uid) {
+                this.active = undefined;
+            }
         } else {
             this.add(item);
+            this.active = item;
         }
     }
 
@@ -93,7 +87,6 @@ export class SelectionScope<T extends { uid: string; } = any> {
 
     /**
      * Selects multiple items, clearing previous selection.
-     * Does NOT set a single active item (unless items has length 1, but usually active implies user focus)
      */
     selectMultiple(items: Iterable<T>) {
         this.clear();
@@ -131,34 +124,40 @@ export class SelectionScope<T extends { uid: string; } = any> {
     }
 
     /**
+     * Returns an array of all currently selected item objects.
+     */
+    get selectedItems(): T[] {
+        if (this.isSelectAll) {
+            return this.source.filter(i => !this.excluded.has(i.uid));
+        }
+        return Array.from(this.selected.values());
+    }
+
+    /**
+     * Set of all selected UIDs
+     */
+    get selectedUids(): Set<string> {
+        if (this.isSelectAll) {
+             const uids = new Set(this.source.map(i => i.uid));
+             for (const ex of this.excluded) {
+                 uids.delete(ex);
+             }
+             return uids;
+        }
+        return new Set(this.selected.keys());
+    }
+
+    /**
      * Updates an item in a given source array and also updates the selection if the item is selected.
-     * @param updatedItem The new item data.
-     * @param sourceArray The original, mutable source array of items (e.g. a $state array).
      */
     updateItem(updatedItem: T, sourceArray: T[]) {
         const idx = sourceArray.findIndex(i => i.uid === updatedItem.uid);
         if (idx !== -1) {
-            // Update source array (keeping reference if possible is good, but here we replace)
             sourceArray[idx] = updatedItem;
         }
 
-        if (this.isSelectAll) {
-            // If it was excluded, it stays excluded unless we explicitly change that.
-            // Selection state is already tracked by UID in excluded set.
-        } else {
-            // Find and update in selected set by UID
-            let itemInSet: T | undefined;
-            for (const item of this.selected) {
-                if (item.uid === updatedItem.uid) {
-                    itemInSet = item;
-                    break;
-                }
-            }
-
-            if (itemInSet) {
-                this.selected.delete(itemInSet);
-                this.selected.add(updatedItem);
-            }
+        if (this.selected.has(updatedItem.uid)) {
+            this.selected.set(updatedItem.uid, updatedItem);
         }
 
         if (this.active?.uid === updatedItem.uid) {
@@ -203,7 +202,6 @@ export class SelectionManager {
 
     /**
      * The primary item focused in the active scope. 
-     * This is what the Inspector panel should primarily display.
      */
     get focusedItem() {
         return this.activeScope.active;
@@ -213,7 +211,7 @@ export class SelectionManager {
      * All items selected in the active scope.
      */
     get selectedItems() {
-        return Array.from(this.activeScope.selected);
+        return this.activeScope.selectedItems;
     }
 
     setActive(scopeId: string) {
@@ -234,15 +232,13 @@ export class SelectionManager {
 
     /**
      * aggregated helper: get all selected items across all scopes
-     * (Useful for global filtering/actions)
      */
     getAllSelectedItems<T extends { uid: string; } = any>(): T[] {
         const all: T[] = [];
-        // Include default global
-        all.push(...this.global.selected as unknown as T[]);
+        all.push(...this.global.selectedItems as unknown as T[]);
 
         for (const scope of this.scopes.values()) {
-            all.push(...scope.selected as unknown as T[]);
+            all.push(...scope.selectedItems as unknown as T[]);
         }
         return all;
     }
