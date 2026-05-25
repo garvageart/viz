@@ -15,15 +15,19 @@ export async function traverseFileTree(item: FileSystemEntry): Promise<File[]> {
         const dirEntry = item as FileSystemDirectoryEntry;
         const reader = dirEntry.createReader();
 
-        const entries = await new Promise<FileSystemEntry[]>(
-            (resolve, reject) => {
+        const readBatch = async (): Promise<FileSystemEntry[]> => {
+            return new Promise((resolve, reject) => {
                 reader.readEntries(resolve, reject);
-            }
-        );
+            });
+        };
 
-        for (const entry of entries) {
-            const nestedFiles = await traverseFileTree(entry);
-            files.push(...nestedFiles);
+        let entries = await readBatch();
+        while (entries.length > 0) {
+            for (const entry of entries) {
+                const nestedFiles = await traverseFileTree(entry);
+                files.push(...nestedFiles);
+            }
+            entries = await readBatch();
         }
     }
 

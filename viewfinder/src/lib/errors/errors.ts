@@ -52,6 +52,10 @@ export class VizError extends Error {
             } : this.cause
         };
     }
+
+    toString() {
+        return `${this.name} [${this.code}]: ${this.message}`;
+    }
 }
 
 /**

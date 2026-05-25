@@ -25,11 +25,17 @@ export const invalidationState = $state({ version: 0 });
  * also refresh their data (e.g., after uploading images or modifying collections).
  */
 export async function invalidateViz(opts?: { delay?: number; }) {
+    if (typeof window === "undefined") return;
+    
     if (opts?.delay) {
         await sleep(opts.delay);
     }
     invalidationState.version += 1;
-    return await invalidateAll();
+    try {
+        return await invalidateAll();
+    } catch (e) {
+        console.warn("[Views] Failed to invalidateAll:", e);
+    }
 }
 
 export interface SerializedVizView {
