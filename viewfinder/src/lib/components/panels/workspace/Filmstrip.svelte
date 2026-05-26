@@ -16,7 +16,9 @@
 	let selectedItems = $derived(activeScope?.selected ?? new Set<ImageAsset>());
 
 	function handleImageClick(image: ImageAsset, e: MouseEvent) {
-		if (!activeScope) return;
+		if (!activeScope) {
+return;
+}
 
 		// Ensure we have focus/active scope (though filmstrip usually reflects active scope)
 		// If we wanted to enforce this scope being active, we'd do selectionManager.setActive(...)
@@ -34,7 +36,9 @@
 			}
 
 			// Fallback if active item not in current view/source
-			if (startIndex === -1) startIndex = 0;
+			if (startIndex === -1) {
+startIndex = 0;
+}
 			if (endIndex === -1) return; // Should not happen if clicked image is in list
 
 			const start = Math.min(startIndex, endIndex);

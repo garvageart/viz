@@ -66,11 +66,15 @@
 
 	// Derived selection helpers
 	let firstSelectedImage = $derived.by(() => {
-		if (imageSelection.size === 0) return undefined;
+		if (imageSelection.size === 0) {
+return undefined;
+}
 
 		if (imageSelection.isSelectAll && images.length > 0) {
 			const firstRich = images.find((i) => imageSelection.has(i));
-			if (firstRich) return firstRich;
+			if (firstRich) {
+return firstRich;
+}
 		}
 
 		return imageSelection.selectedItems[0];
@@ -272,7 +276,9 @@
 	}
 
 	async function performImageDownloads(uids: string[]) {
-		if (uids.length === 0) return;
+		if (uids.length === 0) {
+return;
+}
 
 		// If single image, use direct download helper
 		if (uids.length === 1) {

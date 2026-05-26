@@ -15,4 +15,4 @@ export enum SettingNames {
     ImageVisibleMetadata = "image_visible_metadata",
     StripMetadata = "privacy_download_strip_metadata",
     OnboardingComplete = "onboarding_complete"
-} 
+}

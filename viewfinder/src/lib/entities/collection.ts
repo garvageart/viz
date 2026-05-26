@@ -13,7 +13,10 @@ class CollectionData {
     description: string;
     thumbnail?: ImageObjectData;
 
-    constructor(data: Partial<CollectionData> & Pick<CollectionData, 'uid' | 'name' | 'image_count' | 'created_at' | 'updated_at'>) {
+    constructor(
+        data: Partial<CollectionData> &
+            Pick<CollectionData, "uid" | "name" | "image_count" | "created_at" | "updated_at">
+    ) {
         this.uid = data.uid;
         this.name = data.name;
         this.image_count = data.image_count;
@@ -22,7 +25,7 @@ class CollectionData {
         this.created_by = data.created_by;
         this.created_at = data.created_at;
         this.updated_at = data.updated_at;
-        this.description = data.description ?? '';
+        this.description = data.description ?? "";
         this.thumbnail = data.thumbnail;
 
         for (const [key, value] of Object.entries(data)) {
@@ -45,7 +48,7 @@ class CollectionData {
             created_by: apiCollection.created_by?.uid,
             created_at: new Date(apiCollection.created_at),
             updated_at: new Date(apiCollection.updated_at),
-            description: apiCollection.description ?? '',
+            description: apiCollection.description ?? ""
         });
     }
 }

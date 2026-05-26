@@ -23,9 +23,7 @@ export function measureComponentRenderTimes(message?: string) {
 }
 
 export function resetAndReloadLayout() {
-
     localStorage.removeItem("viz:workspaceLayout");
 
     location.reload();
-
 }

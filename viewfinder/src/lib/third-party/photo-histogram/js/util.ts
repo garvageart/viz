@@ -19,7 +19,9 @@ export function cnt(histogram: number[]): number {
 export function middleIndex(histogram: number[]): number {
     const totalCount = cnt(histogram);
     let middleIndex = Math.floor(totalCount / 2);
-    if (totalCount > 1 && totalCount % 2 === 1) middleIndex += 1;
+    if (totalCount > 1 && totalCount % 2 === 1) {
+        middleIndex += 1;
+    }
     return middleIndex;
 }
 
@@ -161,7 +163,7 @@ export class EnumEx {
     /**
      * Get name/value pairs of enumeration
      */
-    static getNamesAndValues(e: any): Array<{ name: string; value: number; }> {
+    static getNamesAndValues(e: any): Array<{ name: string; value: number }> {
         return EnumEx.getValues(e).map((v) => ({ name: e[v], value: v }));
     }
 }
@@ -175,7 +177,3 @@ export function clientXY2SvgPoint(svg: SVGSVGElement, clientX: number, clientY: 
     point.y = clientY;
     return point.matrixTransform(svg.getScreenCTM()!.inverse());
 }
-
-
-
-

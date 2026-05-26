@@ -8,51 +8,51 @@
 @use "./variables/grid-variables";
 
 .row {
-  @include grid-mixins.row();
+    @include grid-mixins.row();
 }
 
 .row.reverse {
-  @include grid-mixins.row-reverse();
+    @include grid-mixins.row-reverse();
 }
 
 .row.natural-height {
-  @include grid-mixins.row-natural-height();
+    @include grid-mixins.row-natural-height();
 }
 
 .row.flex-column {
-  @include grid-mixins.row-flex-column();
+    @include grid-mixins.row-flex-column();
 }
 
 .col {
-  @include grid-mixins.col();
+    @include grid-mixins.col();
 }
 
 .col.reverse {
-  @include grid-mixins.col-reverse();
+    @include grid-mixins.col-reverse();
 }
 
 .first {
-  order: -1;
+    order: -1;
 }
 
 .last {
-  order: 1;
+    order: 1;
 }
 
 .align-start {
-  align-self: flex-start;
+    align-self: flex-start;
 }
 
 .align-end {
-  align-self: flex-end;
+    align-self: flex-end;
 }
 
 .align-center {
-  align-self: center;
+    align-self: center;
 }
 
 .align-baseline {
-  align-self: baseline;
+    align-self: baseline;
 }
 
 .align-stretch {
@@ -61,77 +61,77 @@
 
 // Mixin to run inside of for loop - creates col/breakpoint classes * Not for developer use *
 @mixin col-factory($thisPrefix) {
-  .col-#{$thisPrefix} {
-    box-sizing: border-box;
-    flex-grow: 1;
-    flex-basis: 0;
-    max-width: 100%;
-    padding: grid-variables.$gutter;
-  }
-  @for $i from 1 through grid-variables.$grid-columns {
-    .col-#{$thisPrefix}-#{$i} {
-      box-sizing: border-box;
-      flex-basis: math.div(100%, grid-variables.$grid-columns) * $i;
-      max-width: math.div(100%, grid-variables.$grid-columns) * $i;
-      padding: grid-variables.$gutter;
+    .col-#{$thisPrefix} {
+        box-sizing: border-box;
+        flex-grow: 1;
+        flex-basis: 0;
+        max-width: 100%;
+        padding: grid-variables.$gutter;
     }
-    .col-#{$thisPrefix}-offset-#{$i} {
-      margin-left: math.div(100%, grid-variables.$grid-columns) * $i;
+    @for $i from 1 through grid-variables.$grid-columns {
+        .col-#{$thisPrefix}-#{$i} {
+            box-sizing: border-box;
+            flex-basis: math.div(100%, grid-variables.$grid-columns) * $i;
+            max-width: math.div(100%, grid-variables.$grid-columns) * $i;
+            padding: grid-variables.$gutter;
+        }
+        .col-#{$thisPrefix}-offset-#{$i} {
+            margin-left: math.div(100%, grid-variables.$grid-columns) * $i;
+        }
     }
-  }
-  .row.start-#{$thisPrefix} {
-    justify-content: flex-start;
-  }
-  .row.center-#{$thisPrefix} {
-    justify-content: center;
-  }
-  .row.end-#{$thisPrefix} {
-    justify-content: flex-end;
-  }
-  .row.top-#{$thisPrefix} {
-    align-items: flex-start;
-  }
-  .row.middle-#{$thisPrefix} {
-    align-items: center;
-  }
-  .row.bottom-#{$thisPrefix} {
-    align-items: flex-end;
-  }
-  .row.around-#{$thisPrefix} {
-    justify-content: space-around;
-  }
-  .row.between-#{$thisPrefix} {
-    justify-content: space-between;
-  }
-  .first-#{$thisPrefix} {
-    order: -1;
-  }
-  .last-#{$thisPrefix} {
-    order: 1;
-  }
+    .row.start-#{$thisPrefix} {
+        justify-content: flex-start;
+    }
+    .row.center-#{$thisPrefix} {
+        justify-content: center;
+    }
+    .row.end-#{$thisPrefix} {
+        justify-content: flex-end;
+    }
+    .row.top-#{$thisPrefix} {
+        align-items: flex-start;
+    }
+    .row.middle-#{$thisPrefix} {
+        align-items: center;
+    }
+    .row.bottom-#{$thisPrefix} {
+        align-items: flex-end;
+    }
+    .row.around-#{$thisPrefix} {
+        justify-content: space-around;
+    }
+    .row.between-#{$thisPrefix} {
+        justify-content: space-between;
+    }
+    .first-#{$thisPrefix} {
+        order: -1;
+    }
+    .last-#{$thisPrefix} {
+        order: 1;
+    }
 } // Mixin to run inside of for loop - creates col/breakpoint classes
 
 @for $i from 1 through list.length(grid-variables.$breakpoint-up-prefixes) {
-  $thisPrefix: list.nth(grid-variables.$breakpoint-up-prefixes, $i);
-  @if $thisPrefix == "xs" {
-    @include col-factory($thisPrefix);
-  } @else if $thisPrefix == "sm" {
-    @media #{grid-variables.$breakpoint-sm-up} {
-      @include col-factory($thisPrefix);
+    $thisPrefix: list.nth(grid-variables.$breakpoint-up-prefixes, $i);
+    @if $thisPrefix == "xs" {
+        @include col-factory($thisPrefix);
+    } @else if $thisPrefix == "sm" {
+        @media #{grid-variables.$breakpoint-sm-up} {
+            @include col-factory($thisPrefix);
+        }
+    } @else if $thisPrefix == "md" {
+        @media #{grid-variables.$breakpoint-md-up} {
+            @include col-factory($thisPrefix);
+        }
+    } @else if $thisPrefix == "lg" {
+        @media #{grid-variables.$breakpoint-lg-up} {
+            @include col-factory($thisPrefix);
+        }
+    } @else if $thisPrefix == "xl" {
+        @media #{grid-variables.$breakpoint-xl-up} {
+            @include col-factory($thisPrefix);
+        }
     }
-  } @else if $thisPrefix == "md" {
-    @media #{grid-variables.$breakpoint-md-up} {
-      @include col-factory($thisPrefix);
-    }
-  } @else if $thisPrefix == "lg" {
-    @media #{grid-variables.$breakpoint-lg-up} {
-      @include col-factory($thisPrefix);
-    }
-  } @else if $thisPrefix == "xl" {
-    @media #{grid-variables.$breakpoint-xl-up} {
-      @include col-factory($thisPrefix);
-    }
-  }
 }
 
 .col-gutter-lr {

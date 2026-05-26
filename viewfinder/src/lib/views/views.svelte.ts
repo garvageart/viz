@@ -5,8 +5,14 @@ import type { MenuItem } from "$lib/context-menu/types";
 import { sleep } from "$lib/utils/misc";
 import { DYNAMIC_ROUTE_REGEX } from "$lib/constants";
 
-export type TabDropHandler<T extends any, V = VizView<any, any>> = (data: T, view: V) => Promise<void>;
-export type TabActions<Data, C extends Component<any, any, any> | undefined = Component<any, any, any> | undefined> = { dropHandler: TabDropHandler<any, VizView<C, Data>>; label: string; };
+export type TabDropHandler<T extends any, V = VizView<any, any>> = (
+    data: T,
+    view: V
+) => Promise<void>;
+export type TabActions<
+    Data,
+    C extends Component<any, any, any> | undefined = Component<any, any, any> | undefined
+> = { dropHandler: TabDropHandler<any, VizView<C, Data>>; label: string };
 
 // usually this would be bad but the app is client only
 // and doesn't share state with anyone i guess??
@@ -24,9 +30,11 @@ export const invalidationState = $state({ version: 0 });
  * Use this instead of `invalidateAll()` when you want to ensure background panels
  * also refresh their data (e.g., after uploading images or modifying collections).
  */
-export async function invalidateViz(opts?: { delay?: number; }) {
-    if (typeof window === "undefined") return;
-    
+export async function invalidateViz(opts?: { delay?: number }) {
+    if (typeof window === "undefined") {
+        return;
+    }
+
     if (opts?.delay) {
         await sleep(opts.delay);
     }
@@ -49,20 +57,22 @@ export interface SerializedVizView {
 
 class VizView<
     C extends Component<any, any, any> | undefined = Component<any, any, any> | undefined,
-    Data = C extends Component<infer P, any, any> ? (P extends { data: infer D; } ? D : any) : any
+    Data = C extends Component<infer P, any, any> ? (P extends { data: infer D } ? D : any) : any
 > {
-
     name = $state<string>("");
     opticalCenterFix = $state<number | undefined>(undefined);
     component: C | undefined;
     id = $state<number>(0);
     isActive = $state<boolean>(false);
     locked = $state<boolean>(false);
-    public viewData = $state<{
-        type: "loaded";
-        status: number;
-        data: Data;
-    } | undefined>(undefined);
+    public viewData = $state<
+        | {
+              type: "loaded";
+              status: number;
+              data: Data;
+          }
+        | undefined
+    >(undefined);
     path = $state<string | undefined>(undefined);
     openPathFromTab? = $state<boolean>(false);
     menuItems?: MenuItem[];
@@ -125,7 +135,11 @@ class VizView<
         }
     }
 
-    async getComponentData(): Promise<void | { type: "loaded"; status: number; data: any; }> {
+    async getComponentData(): Promise<void | {
+        type: "loaded";
+        status: number;
+        data: any;
+    }> {
         // Register dependency on invalidationVersion first so even views without path
         // will re-evaluate derivedViewData (and thus re-render) when invalidation happens.
         const version = invalidationState.version;
@@ -138,11 +152,11 @@ class VizView<
             console.log(`Loading data ${this.path}`);
         }
 
-        const sep = this.path.includes('?') ? '&' : '?';
+        const sep = this.path.includes("?") ? "&" : "?";
         const urlWithCacheBust = `${this.path}${sep}invalidation=${version}`;
 
         const result = await preloadData(urlWithCacheBust);
-        if (result.type === 'loaded' && result.status === 200) {
+        if (result.type === "loaded" && result.status === 200) {
             this.viewData = result as any;
             return result;
         }
@@ -175,11 +189,15 @@ class VizView<
      */
     static fromJSON<
         C extends Component<any, any, any> | undefined = Component<any, any, any> | undefined,
-        Data = C extends Component<infer P, any, any> ? (P extends { data: infer D; } ? D : any) : any
+        Data = C extends Component<infer P, any, any>
+            ? P extends { data: infer D }
+                ? D
+                : any
+            : any
     >(
         serialized: SerializedVizView,
         component: C | undefined,
-        opts?: { tabDropHandlers?: Map<string, TabActions<Data, C>>; }
+        opts?: { tabDropHandlers?: Map<string, TabActions<Data, C>> }
     ): VizView<C, Data> {
         return new VizView({
             name: serialized.name,

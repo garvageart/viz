@@ -45,60 +45,22 @@ export const views: VizView<any, any>[] = [
         component: CollectionPage,
         path: "/collections/[uid]",
         tabDropHandlers: new Map([
-            [VizMimeTypes.IMAGE_UIDS, {
-                label: "Add to Collection",
-                dropHandler: async (data: string[], v) => {
-                    if (!v.path) {
-                        return;
-                    }
+            [
+                VizMimeTypes.IMAGE_UIDS,
+                {
+                    label: "Add to Collection",
+                    dropHandler: async (data: string[], v) => {
+                        if (!v.path) {
+                            return;
+                        }
 
-                    const existingUIDs = (v.viewData?.data.images.items.map(i => i.image.uid));
-                    const newUIDs = data.filter(uid => !existingUIDs?.includes(uid));
+                        const existingUIDs = v.viewData?.data.images.items.map((i) => i.image.uid);
+                        const newUIDs = data.filter((uid) => !existingUIDs?.includes(uid));
 
-                    if (newUIDs.length === 0) {
-                        toastState.addToast({
-                            type: "success",
-                            message: `No new images to add to **${v.name}**`,
-                            timeout: 5000,
-                            actions: [
-                                {
-                                    label: "Open Collection",
-                                    onClick: () => {
-                                        const workspace = workspaceState.workspace;
-                                        if (!workspace) {
-                                            return;
-                                        }
-
-                                        const group = workspace.findGroupWithView(v.id);
-                                        if (group) {
-                                            group.setActive(v.id);
-                                            workspace.setActiveGroup(group.id);
-                                        }
-                                    }
-                                }
-                            ]
-                        });
-                        return;
-                    }
-
-                    const skippedUidLength = data.length - newUIDs.length;
-
-                    const match = v.path.match(/\/collections\/([^\/?]+)/);
-                    if (match && match[1] && match[1] !== "[uid]") {
-                        const collectionUid = match[1];
-                        const res = await addCollectionImages(collectionUid, { uids: newUIDs });
-
-                        if (res.status === 200 && res.data.added) {
-                            let skippedMessage = skippedUidLength ? `Skipped ${skippedUidLength} images.` : "";
-                            let toastMessage = `Added ${newUIDs.length} image(s) to **${v.name}**`;
-
-                            if (skippedMessage) {
-                                toastMessage += `. ${skippedMessage}`;
-                            }
-
+                        if (newUIDs.length === 0) {
                             toastState.addToast({
                                 type: "success",
-                                message: toastMessage,
+                                message: `No new images to add to **${v.name}**`,
                                 timeout: 5000,
                                 actions: [
                                     {
@@ -118,29 +80,72 @@ export const views: VizView<any, any>[] = [
                                     }
                                 ]
                             });
-                            await invalidateViz({ delay: 200 });
-                        } else {
-                            toastState.addToast({
-                                type: "error",
-                                message: `Failed to add images: ${res.data?.error || "Unknown error"}`
-                            });
+                            return;
+                        }
+
+                        const skippedUidLength = data.length - newUIDs.length;
+
+                        const match = v.path.match(/\/collections\/([^\/?]+)/);
+                        if (match && match[1] && match[1] !== "[uid]") {
+                            const collectionUid = match[1];
+                            const res = await addCollectionImages(collectionUid, { uids: newUIDs });
+
+                            if (res.status === 200 && res.data.added) {
+                                let skippedMessage = skippedUidLength
+                                    ? `Skipped ${skippedUidLength} images.`
+                                    : "";
+                                let toastMessage = `Added ${newUIDs.length} image(s) to **${v.name}**`;
+
+                                if (skippedMessage) {
+                                    toastMessage += `. ${skippedMessage}`;
+                                }
+
+                                toastState.addToast({
+                                    type: "success",
+                                    message: toastMessage,
+                                    timeout: 5000,
+                                    actions: [
+                                        {
+                                            label: "Open Collection",
+                                            onClick: () => {
+                                                const workspace = workspaceState.workspace;
+                                                if (!workspace) {
+                                                    return;
+                                                }
+
+                                                const group = workspace.findGroupWithView(v.id);
+                                                if (group) {
+                                                    group.setActive(v.id);
+                                                    workspace.setActiveGroup(group.id);
+                                                }
+                                            }
+                                        }
+                                    ]
+                                });
+                                await invalidateViz({ delay: 200 });
+                            } else {
+                                toastState.addToast({
+                                    type: "error",
+                                    message: `Failed to add images: ${res.data?.error || "Unknown error"}`
+                                });
+                            }
                         }
                     }
                 }
-            }]
+            ]
         ])
     }),
     new VizView({
         name: "Filter",
-        component: FilterPanel,
+        component: FilterPanel
     }),
     new VizView({
         name: "Filmstrip",
-        component: Filmstrip,
+        component: Filmstrip
     }),
     new VizView({
         name: "Preview",
-        component: ImagePreview,
+        component: ImagePreview
     }),
     new VizView({
         name: "Histogram",

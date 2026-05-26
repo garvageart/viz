@@ -24,7 +24,7 @@ export function createTestUser() {
 
 /**
  * Creates a random test image object for testing purposes.
- * 
+ *
  * @returns An ImageObjectData object with random data.
  */
 export function createTestImageObject() {

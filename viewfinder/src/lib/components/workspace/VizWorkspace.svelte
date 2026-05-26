@@ -62,7 +62,9 @@
 	});
 
 	$effect(() => {
-		if (!initialized) return;
+		if (!initialized) {
+return;
+}
 
 		hotkeys("`", (event, handler) => {
 			// Prevent default behavior (e.g. typing ` in an input, if filter logic fails)

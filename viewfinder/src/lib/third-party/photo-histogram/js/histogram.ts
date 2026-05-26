@@ -14,8 +14,7 @@ export interface HistogramChannelData {
     blue: number[];
     luminance: number[];
     rgb: number[];
-};
-
+}
 
 export interface HistogramData {
     hist: HistogramChannelData;
@@ -112,7 +111,7 @@ export class Histogram {
             green: new Array(256).fill(0),
             blue: new Array(256).fill(0),
             luminance: new Array(256).fill(0),
-            rgb: new Array(256).fill(0),
+            rgb: new Array(256).fill(0)
         };
 
         // Tally each pixel into its bin where index = bin value
@@ -122,8 +121,8 @@ export class Histogram {
             const b = imageData.data[i + 2];
             const l = Math.floor(
                 this._luminanceWeights[0] * r +
-                this._luminanceWeights[1] * g +
-                this._luminanceWeights[2] * b
+                    this._luminanceWeights[1] * g +
+                    this._luminanceWeights[2] * b
             );
 
             histograms.red[r] += 1;
@@ -142,7 +141,7 @@ export class Histogram {
             green: 0,
             blue: 0,
             luminance: 0,
-            rgb: 0,
+            rgb: 0
         };
 
         for (let i = 0; i < 256; i++) {
@@ -160,7 +159,7 @@ export class Histogram {
             median: {} as HistogramStat,
             mode: {} as HistogramStat,
             stddev: {} as HistogramStat,
-            count: {} as HistogramStat,
+            count: {} as HistogramStat
         };
 
         for (const channel of channels) {
@@ -182,7 +181,7 @@ export class Histogram {
             mean: stats.mean,
             median: stats.median,
             mode: stats.mode,
-            stddev: stats.stddev,
+            stddev: stats.stddev
         };
     }
 
@@ -193,6 +192,3 @@ export class Histogram {
         this.data = this.calcData();
     }
 }
-
-
-

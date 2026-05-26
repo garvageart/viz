@@ -1,6 +1,13 @@
 import type { AssetSort, AssetGridView } from "$lib/types/asset";
 import type { UploadImage } from "$lib/upload/asset.svelte";
-import { type User, type SystemStatusResponse, type ImageAsset, type Collection, updateUserSetting, type UserSetting } from "$lib/api";
+import {
+    type User,
+    type SystemStatusResponse,
+    type ImageAsset,
+    type Collection,
+    updateUserSetting,
+    type UserSetting
+} from "$lib/api";
 import { VizLocalStorage, VizCookieStorage } from "$lib/utils/misc";
 import { MediaQuery } from "svelte/reactivity";
 import type { MenuItem } from "$lib/context-menu/types";
@@ -35,7 +42,7 @@ class LoginState {
     value: string | null = $state(null);
     constructor() {
         // shitty hack
-        this.storage = new VizCookieStorage<string>('state');
+        this.storage = new VizCookieStorage<string>("state");
         this.storage.prefix = "viz";
         this.value = this.storage.get();
     }
@@ -94,7 +101,7 @@ export function isLayoutPage() {
 
 // eventually this will move to a different page with a different way of enabling, this is just temporary
 class DebugState {
-    storage = new VizLocalStorage<boolean>('debugMode');
+    storage = new VizLocalStorage<boolean>("debugMode");
     value: boolean = $state(this.storage.get() ?? false);
 
     toggle() {
@@ -110,15 +117,13 @@ class SortState {
         display: "cover",
         group: {
             by: "year",
-            order: "ASC",
+            order: "ASC"
         },
         by: "taken_at",
-        order: "DESC",
+        order: "DESC"
     } as const;
 
-    value: AssetSort = $state(
-        this.storage.get() ?? this.defaults
-    );
+    value: AssetSort = $state(this.storage.get() ?? this.defaults);
 
     constructor() {
         if (typeof window !== "undefined") {
@@ -139,13 +144,13 @@ export const sortState = new SortState();
 export let sort = sortState.value;
 
 export class TableColumnSettings {
-    storage = new VizLocalStorage<string[]>('tableColumnSettings');
+    storage = new VizLocalStorage<string[]>("tableColumnSettings");
     // Default columns (Preview is hardcoded in AssetGrid, so we just track the dynamic ones)
-    value: string[] = $state(this.storage.get() ?? ['name', 'created_at']);
+    value: string[] = $state(this.storage.get() ?? ["name", "created_at"]);
 
     toggle(column: string) {
         if (this.value.includes(column)) {
-            this.value = this.value.filter(c => c !== column);
+            this.value = this.value.filter((c) => c !== column);
         } else {
             this.value = [...this.value, column];
         }
@@ -161,8 +166,8 @@ export class TableColumnSettings {
 export const tableColumnSettings = new TableColumnSettings();
 
 class ViewSettingsState {
-    storage = new VizLocalStorage<AssetGridView>('viewSettings');
-    current: AssetGridView = $state(this.storage.get() ?? 'grid');
+    storage = new VizLocalStorage<AssetGridView>("viewSettings");
+    current: AssetGridView = $state(this.storage.get() ?? "grid");
     displayOptions: MenuItem[] = [
         { id: "view-grid", label: "Grid" },
         { id: "view-list", label: "List" },
@@ -190,23 +195,25 @@ export let upload = $state({
 
 export let continuePath = $state<string | null>(null);
 
-export type ThemeOption = 'light' | 'dark' | 'system';
+export type ThemeOption = "light" | "dark" | "system";
 
 class ThemeState {
     ls = new VizLocalStorage<ThemeOption>(SettingNames.Theme);
-    prefLs = new VizLocalStorage<ThemeOption>('preferred_theme');
+    prefLs = new VizLocalStorage<ThemeOption>("preferred_theme");
 
     value: ThemeOption = $state(this.getInitialTheme());
     preferredTheme: ThemeOption = $state(this.getInitialPreference());
 
-    private media = typeof window !== 'undefined' ? new MediaQuery('prefers-color-scheme: dark') : undefined;
-    systemPref = $derived((this.media?.current ?? false) ? 'dark' : 'light');
+    private media =
+        typeof window !== "undefined" ? new MediaQuery("prefers-color-scheme: dark") : undefined;
+    systemPref = $derived((this.media?.current ?? false) ? "dark" : "light");
 
-    resolved = $derived(this.value === 'system' ? this.systemPref : this.value);
-    resolvedPreference = $derived(this.preferredTheme === 'system' ? this.systemPref : this.preferredTheme);
+    resolved = $derived(this.value === "system" ? this.systemPref : this.value);
+    resolvedPreference = $derived(
+        this.preferredTheme === "system" ? this.systemPref : this.preferredTheme
+    );
 
-    constructor() {
-    }
+    constructor() {}
 
     private getInitialTheme(): ThemeOption {
         // Preference: 1. LocalStorage, 2. Default to system
@@ -214,7 +221,7 @@ class ThemeState {
         if (storedTheme) {
             return storedTheme;
         }
-        return 'system';
+        return "system";
     }
 
     private getInitialPreference(): ThemeOption {
@@ -223,7 +230,7 @@ class ThemeState {
             return stored;
         }
 
-        return 'system';
+        return "system";
     }
 
     async setPreferredTheme(theme: ThemeOption) {
@@ -244,12 +251,12 @@ class ThemeState {
         }
 
         const currentResolved = this.resolved;
-        const targetResolved = currentResolved === 'dark' ? 'light' : 'dark';
+        const targetResolved = currentResolved === "dark" ? "light" : "dark";
 
         // If 'system' preference matches the target visual state, prefer 'system'.
         // This ensures we default to system behavior when possible, while guaranteeing a visual switch.
         if (this.systemPref === targetResolved) {
-            this.value = 'system';
+            this.value = "system";
         } else {
             this.value = targetResolved;
         }

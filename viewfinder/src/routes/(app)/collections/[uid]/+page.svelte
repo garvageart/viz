@@ -372,9 +372,13 @@
 	}
 
 	async function handleDropUploadSuccess(uploadedImages: ImageUploadSuccess[]) {
-		if (!uploadedImages || uploadedImages.length === 0) return;
+		if (!uploadedImages || uploadedImages.length === 0) {
+return;
+}
 		const uids = uploadedImages.map((img) => img.uid).filter(Boolean);
-		if (uids.length === 0) return;
+		if (uids.length === 0) {
+return;
+}
 
 		try {
 			const res = await addCollectionImages(data.uid, { uids });

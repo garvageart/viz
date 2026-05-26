@@ -18,7 +18,9 @@
 
 	// Calculate all sizes at once to ensure consistency
 	let paneSizes = $derived.by(() => {
-		if (!(node instanceof SplitNode)) return [];
+		if (!(node instanceof SplitNode)) {
+return [];
+}
 
 		// If nothing maximized, return model sizes
 		if (!maximizedId) {

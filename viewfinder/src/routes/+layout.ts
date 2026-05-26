@@ -1,8 +1,8 @@
 import { user, continuePath, system } from "$lib/states/index.svelte.js";
-import { redirect, error } from '@sveltejs/kit';
+import { redirect, error } from "@sveltejs/kit";
 import { initApi, getSystemStatus } from "$lib/api";
 import { fetchCurrentUser } from "$lib/auth/auth_methods";
-import { browser } from '$app/environment';
+import { browser } from "$app/environment";
 
 export const ssr = false;
 export const csr = true;
@@ -34,13 +34,13 @@ export async function load({ url, fetch }) {
 
     const needsSuperadmin = system.data?.needs_superadmin;
     const userOnboardingRequired = system.data?.user_onboarding_required;
-    const isOnboardingPage = url.pathname.startsWith('/onboarding');
-    const isAuthPage = url.pathname.startsWith('/auth');
+    const isOnboardingPage = url.pathname.startsWith("/onboarding");
+    const isAuthPage = url.pathname.startsWith("/auth");
 
     // 1. Superadmin setup takes priority over everything
     if (needsSuperadmin) {
         if (!isOnboardingPage) {
-            redirect(303, '/onboarding');
+            redirect(303, "/onboarding");
         }
         return;
     }
@@ -54,7 +54,8 @@ export async function load({ url, fetch }) {
 
     if (isConnectionError) {
         error(503, {
-            message: "Could not connect to the Viz server. It might be down for maintenance or restarting."
+            message:
+                "Could not connect to the Viz server. It might be down for maintenance or restarting."
         });
     }
 
@@ -66,7 +67,7 @@ export async function load({ url, fetch }) {
             // Already logged in? Go home or to continue path
             const queryParams = new URLSearchParams(url.search);
             const continueQuery = queryParams.get("continue");
-            redirect(303, continueQuery ? decodeURIComponent(continueQuery) : '/');
+            redirect(303, continueQuery ? decodeURIComponent(continueQuery) : "/");
         }
         // Not logged in, stay on auth page
         return;
@@ -74,21 +75,22 @@ export async function load({ url, fetch }) {
 
     // 4. Handle Protected Routes (everything else)
     if (!isAuthed) {
-        const continueUrl = url.pathname === '/' ? '' : `?continue=${encodeURIComponent(url.pathname)}`;
+        const continueUrl =
+            url.pathname === "/" ? "" : `?continue=${encodeURIComponent(url.pathname)}`;
         redirect(303, `/auth/login${continueUrl}`);
     }
 
     // 5. User Onboarding (only if authenticated)
     if (userOnboardingRequired) {
         if (!isOnboardingPage) {
-            redirect(303, '/onboarding');
+            redirect(303, "/onboarding");
         }
         return;
     }
 
     // 6. Prevent access to /onboarding if not needed
     if (isOnboardingPage && !userOnboardingRequired) {
-        redirect(303, '/');
+        redirect(303, "/");
     }
 
     // 7. Handle "continue" param if present on a non-auth page (rare, but possible if redirected manually)

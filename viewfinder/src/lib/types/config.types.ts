@@ -8,4 +8,4 @@ export interface ViewfinderConfig {
 
 export interface VizConfig {
     system: SystemStatusResponse;
-};
+}

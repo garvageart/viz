@@ -44,11 +44,15 @@
 		} else {
 			// Fallback: find first TabGroup in the tree
 			const findFirstGroup = (node: any): TabGroup | null => {
-				if (node instanceof TabGroup) return node;
+				if (node instanceof TabGroup) {
+return node;
+}
 				if (node.children) {
 					for (const child of node.children) {
 						const found = findFirstGroup(child);
-						if (found) return found;
+						if (found) {
+return found;
+}
 					}
 				}
 				return null;

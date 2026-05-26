@@ -9,7 +9,10 @@ export const cookieMethods = {
     get: (key: string): string | undefined => {
         const prefixedKey = "viz:" + key;
         const allCookies = document?.cookie;
-        const cookieValue = allCookies.split("; ").find(cookie => cookie.startsWith(`${prefixedKey}`))?.split("=")[1];
+        const cookieValue = allCookies
+            .split("; ")
+            .find((cookie) => cookie.startsWith(`${prefixedKey}`))
+            ?.split("=")[1];
 
         return cookieValue;
     },

@@ -130,7 +130,9 @@
 					return forceDelete ? "Force Delete User" : "Delete User";
 				},
 				onConfirm: async () => {
-					if (!userToDelete) return;
+					if (!userToDelete) {
+return;
+}
 					const res = await adminDeleteUser(userToDelete.uid, {
 						force: forceDelete
 					});

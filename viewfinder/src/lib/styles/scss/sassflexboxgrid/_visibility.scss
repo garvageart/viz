@@ -2,69 +2,69 @@
 @use "variables/grid-variables";
 
 .show {
-  display: block !important;
+    display: block !important;
 }
 
 .row.show {
-  display: -webkit-flex !important;
-  display: -ms-flexbox !important;
-  display: flex !important;
+    display: -webkit-flex !important;
+    display: -ms-flexbox !important;
+    display: flex !important;
 }
 
 .hide {
-  display: none !important;
+    display: none !important;
 }
 
 // Mixin to run inside of for loop - creates visibility classes * Not for developer use *
 @mixin vis-factory($thisPrefix) {
-  .show-#{$thisPrefix} {
-    display: block !important;
-  }
-  .row.show-#{$thisPrefix} {
-    display: -webkit-flex !important;
-    display: -ms-flexbox !important;
-    display: flex !important;
-  }
-  .hide-#{$thisPrefix} {
-    display: none !important;
-  }
+    .show-#{$thisPrefix} {
+        display: block !important;
+    }
+    .row.show-#{$thisPrefix} {
+        display: -webkit-flex !important;
+        display: -ms-flexbox !important;
+        display: flex !important;
+    }
+    .hide-#{$thisPrefix} {
+        display: none !important;
+    }
 } // Mixin to run inside of for loop - creates visibility classes * Not for developer use *
 
 @for $i from 1 through list.length(grid-variables.$breakpoint-all-prefixes) {
-  $thisPrefix: list.nth(grid-variables.$breakpoint-all-prefixes, $i);
-  @if $thisPrefix == "xs" {
-    @include vis-factory($thisPrefix);
-  } @else if $thisPrefix == "xs-only" {
-    @media #{grid-variables.$breakpoint-xs-only} {
-      @include vis-factory($thisPrefix);
+    $thisPrefix: list.nth(grid-variables.$breakpoint-all-prefixes, $i);
+    @if $thisPrefix == "xs" {
+        @include vis-factory($thisPrefix);
+    } @else if $thisPrefix == "xs-only" {
+        @media #{grid-variables.$breakpoint-xs-only} {
+            @include vis-factory($thisPrefix);
+        }
+    } @else if $thisPrefix == "sm" {
+        @media #{grid-variables.$breakpoint-sm-up} {
+            @include vis-factory($thisPrefix);
+        }
+    } @else if $thisPrefix == "sm-only" {
+        @media #{grid-variables.$breakpoint-sm-only} {
+            @include vis-factory($thisPrefix);
+        }
+    } @else if $thisPrefix == "md" {
+        @media #{grid-variables.$breakpoint-md-up} {
+            @include vis-factory($thisPrefix);
+        }
+    } @else if $thisPrefix == "md-only" {
+        @media #{grid-variables.$breakpoint-md-only} {
+            @include vis-factory($thisPrefix);
+        }
+    } @else if $thisPrefix == "lg" {
+        @media #{grid-variables.$breakpoint-lg-up} {
+            @include vis-factory($thisPrefix);
+        }
+    } @else if $thisPrefix == "lg-only" {
+        @media #{grid-variables.$breakpoint-lg-only} {
+            @include vis-factory($thisPrefix);
+        }
+    } @else if $thisPrefix == "xl" {
+        @media #{grid-variables.$breakpoint-xl-up} {
+            @include vis-factory($thisPrefix);
+        }
     }
-  } @else if $thisPrefix == "sm" {
-    @media #{grid-variables.$breakpoint-sm-up} {
-      @include vis-factory($thisPrefix);
-    }
-  } @else if $thisPrefix == "sm-only" {
-    @media #{grid-variables.$breakpoint-sm-only} {
-      @include vis-factory($thisPrefix);
-    }
-  } @else if $thisPrefix == "md" {
-    @media #{grid-variables.$breakpoint-md-up} {
-      @include vis-factory($thisPrefix);
-    }
-  } @else if $thisPrefix == "md-only" {
-    @media #{grid-variables.$breakpoint-md-only} {
-      @include vis-factory($thisPrefix);
-    }
-  } @else if $thisPrefix == "lg" {
-    @media #{grid-variables.$breakpoint-lg-up} {
-      @include vis-factory($thisPrefix);
-    }
-  } @else if $thisPrefix == "lg-only" {
-    @media #{grid-variables.$breakpoint-lg-only} {
-      @include vis-factory($thisPrefix);
-    }
-  } @else if $thisPrefix == "xl" {
-    @media #{grid-variables.$breakpoint-xl-up} {
-      @include vis-factory($thisPrefix);
-    }
-  }
 }

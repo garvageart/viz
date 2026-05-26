@@ -41,7 +41,10 @@ export async function performSearch() {
     search.pagination.page = 0;
     search.pagination.hasMore = false;
 
-    const res = await executeSearch(search.value, { limit: search.pagination.limit, page: 0 });
+    const res = await executeSearch(search.value, {
+        limit: search.pagination.limit,
+        page: 0
+    });
     if (res.status === 200) {
         search.data.images.data = res.data.images ?? [];
         search.data.collections.data = res.data.collections ?? [];
@@ -60,15 +63,17 @@ export async function performSearch() {
 }
 
 export async function paginateSearch() {
-    if (search.loading || !search.pagination.hasMore) return;
+    if (search.loading || !search.pagination.hasMore) {
+        return;
+    }
 
     search.loading = true;
     const nextPage = search.pagination.page + 1;
 
     try {
-        const res = await executeSearch(search.value, { 
-            limit: search.pagination.limit, 
-            page: nextPage 
+        const res = await executeSearch(search.value, {
+            limit: search.pagination.limit,
+            page: nextPage
         });
 
         if (res.status === 200) {
@@ -84,4 +89,3 @@ export async function paginateSearch() {
         search.loading = false;
     }
 }
- 

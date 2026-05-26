@@ -101,7 +101,9 @@
 
 			// optional upload success
 			try {
-				if (onUploadSuccess) await onUploadSuccess(uploadedImages);
+				if (onUploadSuccess) {
+await onUploadSuccess(uploadedImages);
+}
 			} catch (err) {
 				console.error("onUploadSuccess handler failed:", err);
 			}
@@ -360,7 +362,9 @@
 	 * Create a collection from the currently selected images (keyboard/click path).
 	 */
 	async function createCollectionFromSelected() {
-		if (!selectionScope) return;
+		if (!selectionScope) {
+return;
+}
 		const items = selectionScope.selectedItems;
 		if (!items || items.length === 0) {
 			toastState.addToast({
@@ -431,7 +435,9 @@
 		dragCounter = 0;
 		isInternalDrag = false;
 
-		if (!e.dataTransfer) return;
+		if (!e.dataTransfer) {
+return;
+}
 
 		try {
 			// Check for internal drag of images first
@@ -497,10 +503,14 @@
 				for (const item of items) {
 					if (item.kind === "file") {
 						const entry = item.webkitGetAsEntry?.();
-						if (entry) entries.push(entry);
+						if (entry) {
+entries.push(entry);
+}
 						else {
 							const file = item.getAsFile();
-							if (file) allFiles.push(file);
+							if (file) {
+allFiles.push(file);
+}
 						}
 					}
 				}

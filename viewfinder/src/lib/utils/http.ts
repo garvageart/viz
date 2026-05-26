@@ -1,12 +1,31 @@
 import type { ImageUploadFileData } from "$lib/upload/manager.svelte";
-import { API_BASE_URL, downloadImagesZipBlob, getImageFile, getImageFileBlob, signDownload, type ImageAsset } from "$lib/api";
+import {
+    API_BASE_URL,
+    downloadImagesZipBlob,
+    getImageFile,
+    getImageFileBlob,
+    signDownload,
+    type ImageAsset
+} from "$lib/api";
 import { debugMode } from "$lib/states/index.svelte";
 
-type RequestInitOptions = { fetch?: typeof fetch; } & RequestInit;
+type RequestInitOptions = { fetch?: typeof fetch } & RequestInit;
 
-export async function sendAPIRequest<T>(path: string, options: RequestInitOptions, form: true): Promise<Response>;
-export async function sendAPIRequest<T>(path: string, options?: RequestInitOptions, form?: false): Promise<T>;
-export async function sendAPIRequest<T>(path: string, options?: RequestInitOptions, form: boolean = false): Promise<T | Response> {
+export async function sendAPIRequest<T>(
+    path: string,
+    options: RequestInitOptions,
+    form: true
+): Promise<Response>;
+export async function sendAPIRequest<T>(
+    path: string,
+    options?: RequestInitOptions,
+    form?: false
+): Promise<T>;
+export async function sendAPIRequest<T>(
+    path: string,
+    options?: RequestInitOptions,
+    form: boolean = false
+): Promise<T | Response> {
     if (path.startsWith("/")) {
         path = path.substring(1);
     }
@@ -25,7 +44,7 @@ export async function sendAPIRequest<T>(path: string, options?: RequestInitOptio
         return res.json() as Promise<T>;
     }
 
-    return fetch(`${base}/${path}`, options).then(res => res.json() as Promise<T>);
+    return fetch(`${base}/${path}`, options).then((res) => res.json() as Promise<T>);
 }
 
 // From https://github.com/immich-app/immich/main/web/src/lib/utils.ts#L55
@@ -36,14 +55,16 @@ export interface UploadRequestOptions {
     onUploadProgress?: (event: ProgressEvent<XMLHttpRequestEventTarget>) => void;
 }
 
-export const uploadRequest = async <T>(options: UploadRequestOptions): Promise<{ data: T; status: number; }> => {
+export const uploadRequest = async <T>(
+    options: UploadRequestOptions
+): Promise<{ data: T; status: number }> => {
     const { onUploadProgress, data, path = "/images" } = options;
 
     return new Promise((resolve, reject) => {
         const xhr = new XMLHttpRequest();
 
-        xhr.addEventListener('error', (error) => reject(error));
-        xhr.addEventListener('load', () => {
+        xhr.addEventListener("error", (error) => reject(error));
+        xhr.addEventListener("load", () => {
             if (xhr.readyState === 4 && xhr.status >= 200 && xhr.status < 300) {
                 resolve({ data: xhr.response as T, status: xhr.status });
             } else {
@@ -52,7 +73,7 @@ export const uploadRequest = async <T>(options: UploadRequestOptions): Promise<{
         });
 
         if (onUploadProgress) {
-            xhr.upload.addEventListener('progress', (event) => onUploadProgress(event));
+            xhr.upload.addEventListener("progress", (event) => onUploadProgress(event));
         }
 
         const formData = new FormData();
@@ -61,8 +82,8 @@ export const uploadRequest = async <T>(options: UploadRequestOptions): Promise<{
         }
 
         const base = API_BASE_URL;
-        xhr.open(options.method || 'POST', `${base}${path}`);
-        xhr.responseType = 'json';
+        xhr.open(options.method || "POST", `${base}${path}`);
+        xhr.responseType = "json";
         xhr.send(formData);
     });
 };
@@ -72,9 +93,7 @@ export async function downloadOriginalImageFile(img: ImageAsset) {
     const fileRes = await getImageFileBlob(uid, {}, { cache: "no-cache" });
     if (fileRes.status === 304) {
         if (debugMode) {
-            console.log(
-                `Image ${uid} not modified, using cached version for download`
-            );
+            console.log(`Image ${uid} not modified, using cached version for download`);
         }
         return;
     } else if (fileRes.status !== 200) {
@@ -82,8 +101,7 @@ export async function downloadOriginalImageFile(img: ImageAsset) {
     }
 
     // this should never happen man but hey
-    const filename =
-        img.name.trim() !== "" ? img.name : `image-${uid}-${Date.now()}`;
+    const filename = img.name.trim() !== "" ? img.name : `image-${uid}-${Date.now()}`;
     const blob = fileRes.data;
     const url = URL.createObjectURL(blob);
 
@@ -104,7 +122,7 @@ export async function performImageDownloads(images: ImageAsset[]) {
         throw new Error("No image UIDs provided for download");
     }
 
-    const uids = images.map(i => i.uid);
+    const uids = images.map((i) => i.uid);
 
     if (uids.length === 1) {
         const uid = uids[0];

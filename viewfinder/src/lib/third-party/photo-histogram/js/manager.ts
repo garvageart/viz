@@ -41,7 +41,13 @@ export class Svg {
     /**
      * Create and append a rect element
      */
-    rect(x: number, y: number, width: number, height: number, attributes?: Record<string, any>): SVGRectElement {
+    rect(
+        x: number,
+        y: number,
+        width: number,
+        height: number,
+        attributes?: Record<string, any>
+    ): SVGRectElement {
         const attrs = attributes ?? {};
         attrs.x = x.toString(10);
         attrs.y = y.toString(10);
@@ -53,7 +59,13 @@ export class Svg {
     /**
      * Create and append a line element
      */
-    line(x1: number, y1: number, x2: number, y2: number, attributes?: Record<string, any>): SVGLineElement {
+    line(
+        x1: number,
+        y1: number,
+        x2: number,
+        y2: number,
+        attributes?: Record<string, any>
+    ): SVGLineElement {
         const attrs = attributes ?? {};
         attrs.x1 = x1.toString(10);
         attrs.y1 = y1.toString(10);
@@ -93,7 +105,10 @@ export class SvgPathBuilder {
 
     private appendCommand(command: string, x: number, y: number): SvgPathBuilder {
         const coordinate = `${x} ${y}`;
-        this._data = this._data === "" ? `${command} ${coordinate}` : `${this._data} ${command} ${coordinate}`;
+        this._data =
+            this._data === ""
+                ? `${command} ${coordinate}`
+                : `${this._data} ${command} ${coordinate}`;
         return this;
     }
 
@@ -105,5 +120,3 @@ export class SvgPathBuilder {
         return this.appendCommand("L", x, y);
     }
 }
-
-

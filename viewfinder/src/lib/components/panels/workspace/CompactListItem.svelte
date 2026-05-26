@@ -16,7 +16,9 @@
 	let expanded = $state(false);
 
 	function handleDragStart(e: DragEvent) {
-		if (!e.dataTransfer) return;
+		if (!e.dataTransfer) {
+return;
+}
 
 		const mimeType =
 			type === "image" ? VizMimeTypes.IMAGE_UIDS : VizMimeTypes.COLLECTION_UIDS;
@@ -33,7 +35,9 @@
 	}
 
 	function formatDate(dateString: string) {
-		if (!dateString) return "-";
+		if (!dateString) {
+return "-";
+}
 		return new Date(dateString).toLocaleDateString(undefined, {
 			year: "numeric",
 			month: "short",

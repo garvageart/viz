@@ -1,29 +1,25 @@
 import { DateTime } from "luxon";
 
 export enum LogLevel {
-    DEBUG = 'DEBUG',
-    INFO = 'INFO',
-    LOG = 'LOG',
-    WARN = 'WARN',
-    ERROR = 'ERROR',
+    DEBUG = "DEBUG",
+    INFO = "INFO",
+    LOG = "LOG",
+    WARN = "WARN",
+    ERROR = "ERROR"
 }
 
 /**
  * Used in dev mode to nicely log to the console
  */
-export const logger = (
-    level: LogLevel,
-    message: string | Error,
-    ...args: any
-) => {
+export const logger = (level: LogLevel, message: string | Error, ...args: any) => {
     const colorize = withColor(
         {
             [LogLevel.DEBUG]: colors.magenta,
             [LogLevel.INFO]: colors.blue,
             [LogLevel.LOG]: colors.green,
             [LogLevel.WARN]: colors.yellow,
-            [LogLevel.ERROR]: colors.red,
-        }[level],
+            [LogLevel.ERROR]: colors.red
+        }[level]
     );
 
     let msg = `${colorize(DateTime.now().toFormat("dd-MM-yyyy HH:mm:ss"))}`;
@@ -52,22 +48,20 @@ const colors: {
     green: [32, 39],
     magenta: [35, 39],
     red: [31, 39],
-    yellow: [33, 39],
+    yellow: [33, 39]
 };
 
 function withColor([x, y]: [number, number]) {
-    const rgx = new RegExp(`\\x1b\\[${y}m`, 'g');
+    const rgx = new RegExp(`\\x1b\\[${y}m`, "g");
     const open = `\x1b[${x}m`,
         close = `\x1b[${y}m`;
 
     // What the fuck am I looking at? I don't remember writing this
     return function (txt: string) {
-        if (txt == null) return txt;
+        if (txt == null) {
+            return txt;
+        }
 
-        return (
-            open +
-            (~('' + txt).indexOf(close) ? txt.replace(rgx, close + open) : txt) +
-            close
-        );
+        return open + (~("" + txt).indexOf(close) ? txt.replace(rgx, close + open) : txt) + close;
     };
 }

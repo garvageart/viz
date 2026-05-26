@@ -46,18 +46,22 @@ const apiProxy: GeneratedApi = new Proxy(generated, {
         const originalMethod = target[prop];
 
         // If it's a non-function property (like a type, defaults, servers), return it directly
-        if (typeof originalMethod !== 'function') {
+        if (typeof originalMethod !== "function") {
             return originalMethod;
         }
 
         // Return a new function that wraps the original generated API method
         return function (this: any, ...methodArgs: any[]): ReturnType<typeof originalMethod> {
-            const finalArgs = [...methodArgs]; 
+            const finalArgs = [...methodArgs];
 
             let opts: Oazapfts.RequestOpts | undefined = undefined;
             let optsIndex = -1;
 
-            if (finalArgs.length > 0 && typeof finalArgs[finalArgs.length - 1] === 'object' && finalArgs[finalArgs.length - 1] !== null) {
+            if (
+                finalArgs.length > 0 &&
+                typeof finalArgs[finalArgs.length - 1] === "object" &&
+                finalArgs[finalArgs.length - 1] !== null
+            ) {
                 opts = finalArgs[finalArgs.length - 1] as Oazapfts.RequestOpts;
                 optsIndex = finalArgs.length - 1;
             }
@@ -75,9 +79,11 @@ const apiProxy: GeneratedApi = new Proxy(generated, {
                 finalArgs.push(injectedOpts);
             }
 
-            return (originalMethod as (...args: any[]) => any).apply(this, finalArgs) as ReturnType<typeof originalMethod>;
+            return (originalMethod as (...args: any[]) => any).apply(this, finalArgs) as ReturnType<
+                typeof originalMethod
+            >;
         };
-    },
+    }
 });
 
 // Export the proxied API client as 'api'
@@ -98,8 +104,10 @@ export function warnIfLocalhostFallback() {
     }
 
     try {
-        if (typeof window !== 'undefined' && API_BASE_URL.includes('localhost')) {
-            console.warn('Frontend is using a localhost fallback for API URL. Build-time config not injected or runtime config not set.');
+        if (typeof window !== "undefined" && API_BASE_URL.includes("localhost")) {
+            console.warn(
+                "Frontend is using a localhost fallback for API URL. Build-time config not injected or runtime config not set."
+            );
             doneFallback = true;
         }
     } catch (e) {
@@ -121,7 +129,7 @@ export interface UploadImageOptions {
  */
 export async function uploadImageWithProgress(
     options: UploadImageOptions
-): Promise<{ data: generated.ImageUploadResponse; status: number; }> {
+): Promise<{ data: generated.ImageUploadResponse; status: number }> {
     const { onUploadProgress, data } = options;
 
     const xhr = new XMLHttpRequest();
@@ -132,18 +140,21 @@ export async function uploadImageWithProgress(
     }
 
     return new Promise((resolve, reject) => {
-        xhr.addEventListener('error', (error) => reject(error));
-        xhr.addEventListener('load', () => {
+        xhr.addEventListener("error", (error) => reject(error));
+        xhr.addEventListener("load", () => {
             if (xhr.readyState === 4 && xhr.status >= 200 && xhr.status < 300) {
                 const response = xhr.response as generated.ImageUploadResponse;
                 resolve({ data: response, status: xhr.status });
             } else {
-                reject({ data: xhr.response as generated.ErrorResponse, status: xhr.status });
+                reject({
+                    data: xhr.response as generated.ErrorResponse,
+                    status: xhr.status
+                });
             }
         });
 
         if (onUploadProgress) {
-            xhr.upload.addEventListener('progress', (event) => onUploadProgress(event));
+            xhr.upload.addEventListener("progress", (event) => onUploadProgress(event));
         }
 
         const formData = new FormData();
@@ -157,16 +168,16 @@ export async function uploadImageWithProgress(
         }
 
         const base = API_BASE_URL; // Use the exported API_BASE_URL
-        xhr.open('POST', `${base}/images`);
+        xhr.open("POST", `${base}/images`);
         xhr.withCredentials = true;
-        xhr.responseType = 'json';
+        xhr.responseType = "json";
         xhr.send(formData);
     });
 }
 
 export function getFullImagePath(path: string): string {
     // If path is already a full URL (starts with http:// or https://), return as-is
-    if (path.startsWith('http://') || path.startsWith('https://')) {
+    if (path.startsWith("http://") || path.startsWith("https://")) {
         return path;
     }
     const base = API_BASE_URL; // Use the exported API_BASE_URL
@@ -179,7 +190,10 @@ export type JobSnapshotResponse = {
     active: generated.WorkerJob[];
 };
 
-export async function getJobsSnapshot(): Promise<{ data: JobSnapshotResponse; status: number; }> {
+export async function getJobsSnapshot(): Promise<{
+    data: JobSnapshotResponse;
+    status: number;
+}> {
     const base = API_BASE_URL; // Use the exported API_BASE_URL
     // Use `currentFetch` for custom fetch calls
     const res = await currentFetch(`${base}/jobs/snapshot`, {
@@ -191,8 +205,8 @@ export async function getJobsSnapshot(): Promise<{ data: JobSnapshotResponse; st
 
 export async function updateJobTypeConcurrency(
     jobType: string,
-    body: { concurrency: number; }
-): Promise<{ data: any; status: number; }> {
+    body: { concurrency: number }
+): Promise<{ data: any; status: number }> {
     const base = API_BASE_URL; // Use the exported API_BASE_URL
     const url = `${base}/jobs/types/${encodeURIComponent(jobType)}/concurrency`;
     try {
@@ -209,7 +223,10 @@ export async function updateJobTypeConcurrency(
         const data = await res.json().catch(() => ({}));
         return { data, status: res.status };
     } catch (err) {
-        return { data: { error: err instanceof Error ? err.message : String(err) }, status: 500 };
+        return {
+            data: { error: err instanceof Error ? err.message : String(err) },
+            status: 500
+        };
     }
 }
 
@@ -223,11 +240,11 @@ export async function downloadImagesZipBlob(
     password?: string,
     opts?: Oazapfts.RequestOpts
 ): Promise<
-    | { status: 200; data: Blob; }
-    | { status: 400; data: generated.ErrorResponse; }
-    | { status: 401; data: generated.ErrorResponse; }
-    | { status: 403; data: generated.ErrorResponse; }
-    | { status: 500; data: generated.ErrorResponse; }
+    | { status: 200; data: Blob }
+    | { status: 400; data: generated.ErrorResponse }
+    | { status: 401; data: generated.ErrorResponse }
+    | { status: 403; data: generated.ErrorResponse }
+    | { status: 500; data: generated.ErrorResponse }
 > {
     const baseUrl = defaults.baseUrl || "";
     const queryParams = QS.query(QS.explode({ token, password }));
@@ -262,7 +279,7 @@ export async function downloadImagesZipBlob(
                 "Content-Type": "application/json",
                 ...headers
             },
-            body: JSON.stringify(downloadRequest),
+            body: JSON.stringify(downloadRequest)
         });
 
         if (response.ok) {
@@ -288,7 +305,9 @@ export async function downloadImagesZipBlob(
     } catch (error) {
         return {
             status: 500,
-            data: { error: error instanceof Error ? error.message : "Network error" }
+            data: {
+                error: error instanceof Error ? error.message : "Network error"
+            }
         };
     }
 }
@@ -307,14 +326,15 @@ export async function getImageFileBlob(
         download?: "1";
         token?: string;
         password?: string;
-    } = {}, opts?: Oazapfts.RequestOpts
+    } = {},
+    opts?: Oazapfts.RequestOpts
 ): Promise<
-    | { status: 200; data: Blob; }
-    | { status: 304; }
-    | { status: 400; data: generated.ErrorResponse; }
-    | { status: 401; data: generated.ErrorResponse; }
-    | { status: 403; data: generated.ErrorResponse; }
-    | { status: 500; data: generated.ErrorResponse; }
+    | { status: 200; data: Blob }
+    | { status: 304 }
+    | { status: 400; data: generated.ErrorResponse }
+    | { status: 401; data: generated.ErrorResponse }
+    | { status: 403; data: generated.ErrorResponse }
+    | { status: 500; data: generated.ErrorResponse }
 > {
     const baseUrl = API_BASE_URL;
     const queryParams = QS.query(QS.explode(params));
@@ -364,19 +384,21 @@ export async function getImageFileBlob(
             const errorData = await response.json();
             return {
                 status: response.status as 400 | 401 | 403 | 500,
-                data: errorData,
+                data: errorData
             };
         }
 
         // Fallback error
         return {
             status: response.status as 400 | 401 | 403 | 500,
-            data: { error: `Request failed with status ${response.status}` },
+            data: { error: `Request failed with status ${response.status}` }
         };
     } catch (error) {
         return {
             status: 500,
-            data: { error: error instanceof Error ? error.message : "Network error" },
+            data: {
+                error: error instanceof Error ? error.message : "Network error"
+            }
         };
     }
 }

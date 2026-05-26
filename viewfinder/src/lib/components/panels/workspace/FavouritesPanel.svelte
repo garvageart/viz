@@ -92,7 +92,9 @@
 	async function handleDrop(e: DragEvent) {
 		isDraggingOver = false;
 		dragCounter = 0;
-		if (!e.dataTransfer || isInternalDrag) return;
+		if (!e.dataTransfer || isInternalDrag) {
+return;
+}
 
 		const imageUidsData = DragData.getData<string[]>(
 			e.dataTransfer,
@@ -125,7 +127,9 @@
 	}
 
 	function handleDragEnter(e: DragEvent) {
-		if (isInternalDrag) return;
+		if (isInternalDrag) {
+return;
+}
 
 		if (
 			DragData.isType(e.dataTransfer!, VizMimeTypes.IMAGE_UIDS) ||
@@ -138,7 +142,9 @@
 	}
 
 	function handleDragLeave(e: DragEvent) {
-		if (isInternalDrag) return;
+		if (isInternalDrag) {
+return;
+}
 
 		dragCounter--;
 
@@ -156,7 +162,9 @@
 	}
 
 	function handleDragOver(e: DragEvent) {
-		if (isInternalDrag) return;
+		if (isInternalDrag) {
+return;
+}
 
 		if (
 			DragData.isType(e.dataTransfer!, VizMimeTypes.IMAGE_UIDS) ||
@@ -167,7 +175,9 @@
 				e.dataTransfer.dropEffect = "copy";
 			}
 			// Ensure we stay in dragging state
-			if (!isDraggingOver) isDraggingOver = true;
+			if (!isDraggingOver) {
+isDraggingOver = true;
+}
 		}
 	}
 

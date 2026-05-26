@@ -5,11 +5,10 @@ export function updateURLParameter(name: string, value: string, keepFocus = true
     const searchParams = url.searchParams;
 
     searchParams.set(name, value);
-    const newUrl = url.origin + url.pathname + '?' + searchParams.toString() + url.hash;
+    const newUrl = url.origin + url.pathname + "?" + searchParams.toString() + url.hash;
 
     goto(newUrl, { replaceState: true, keepFocus, noScroll: true });
 }
-
 
 /**
  * Reads a URL's hash and returns an object containing the query key/pair values as a properties

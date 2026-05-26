@@ -126,7 +126,9 @@
 	const selectionScope = selectionManager.getScope<ImageAsset>(scopeId);
 	let selectionFirstImage = $derived.by(() => {
 		const items = selectionScope.selectedItems;
-		if (items.length === 0) return undefined;
+		if (items.length === 0) {
+return undefined;
+}
 		return [...items].sort((a, b) => a.uid.localeCompare(b.uid))[0];
 	});
 

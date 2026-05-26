@@ -243,7 +243,9 @@
 		}
 
 		const updateGridArray = () => {
-			if (!assetGridDisplayEl) return;
+			if (!assetGridDisplayEl) {
+return;
+}
 			assetGridArray = buildAssetGridArray(assetGridDisplayEl);
 		};
 

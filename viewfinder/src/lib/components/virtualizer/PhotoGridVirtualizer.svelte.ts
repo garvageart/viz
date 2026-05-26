@@ -34,8 +34,8 @@ export type GridRow = GridRowHeader | GridRowImages;
 
 // Cached row stores relativeTop (y-pos relative to the group start)
 type CachedRow =
-    | (Omit<GridRowHeader, "top"> & { relativeTop: number; })
-    | (Omit<GridRowImages, "top"> & { relativeTop: number; });
+    | (Omit<GridRowHeader, "top"> & { relativeTop: number })
+    | (Omit<GridRowImages, "top"> & { relativeTop: number });
 
 type GroupCacheEntry = {
     rows: CachedRow[];
@@ -108,7 +108,9 @@ export class PhotoGridVirtualizer {
         const SMALL_GROUP_THRESHOLD = 6;
 
         const flushBatch = () => {
-            if (smallGroupBatch.length === 0) return;
+            if (smallGroupBatch.length === 0) {
+                return;
+            }
 
             // Compute Layout for this batch of small groups
             // We create a mixed list of items: [Header, ...Images, Header, ...Images]
@@ -156,9 +158,10 @@ export class PhotoGridVirtualizer {
                 flushBatch();
 
                 // Check Cache for large group
-                const uidsSignature = group.allImages.length > 0 
-                    ? `${group.allImages[0].uid}-${group.allImages[group.allImages.length - 1].uid}`
-                    : '';
+                const uidsSignature =
+                    group.allImages.length > 0
+                        ? `${group.allImages[0].uid}-${group.allImages[group.allImages.length - 1].uid}`
+                        : "";
                 const cacheKey = `${group.label}-${group.allImages.length}-${width}-${uidsSignature}`;
                 let cached = this.groupCache.get(cacheKey);
 
@@ -173,7 +176,7 @@ export class PhotoGridVirtualizer {
                     // so that Svelte components rendering them are reactive and show latest metadata.
                     let imageIdx = 0;
                     for (const row of cached.rows) {
-                        if (row.type === 'images') {
+                        if (row.type === "images") {
                             for (const item of row.items) {
                                 // JustifiedLayout preserves order, so we can just match by index.
                                 // group.allImages[imageIdx] should correspond 1:1 with the original items.
@@ -215,11 +218,7 @@ export class PhotoGridVirtualizer {
         this.containerWidth = width;
 
         // Compute straight images, no header
-        const { rows, height } = this.computeImages(
-            images as ImageWithDateLabel[],
-            width,
-            "flat"
-        );
+        const { rows, height } = this.computeImages(images as ImageWithDateLabel[], width, "flat");
 
         const finalRows: GridRow[] = rows.map((r) => ({
             ...r,
@@ -286,10 +285,7 @@ export class PhotoGridVirtualizer {
         return Math.max(0, low);
     }
 
-    private computeGroup(
-        group: ConsolidatedGroup,
-        width: number
-    ): GroupCacheEntry {
+    private computeGroup(group: ConsolidatedGroup, width: number): GroupCacheEntry {
         const rows: CachedRow[] = [];
         let cursorY = 0;
 
@@ -327,11 +323,7 @@ export class PhotoGridVirtualizer {
         };
     }
 
-    private computeImages(
-        items: ImageWithDateLabel[],
-        width: number,
-        groupId: string
-    ) {
+    private computeImages(items: ImageWithDateLabel[], width: number, groupId: string) {
         if (items.length === 0) {
             return { rows: [], height: 0 };
         }
@@ -384,9 +376,9 @@ export class PhotoGridVirtualizer {
                 // The current item `asset` is the first item of the new row (conceptually)
                 // However, JustifiedLayout has already computed positions.
                 // We might need to manually shift things if we want extra gaps?
-                // Actually, the `JustifiedLayout` library handles spacing. 
+                // Actually, the `JustifiedLayout` library handles spacing.
                 // If we want EXTRA gap for rows with headers, we might need to post-process?
-                // Or: simpler approach - just check if the previous row had a header? 
+                // Or: simpler approach - just check if the previous row had a header?
                 // No, we want gap ABOVE the row with header.
 
                 // Push previous row
@@ -436,8 +428,8 @@ export class PhotoGridVirtualizer {
             row.relativeTop += cummulativeOffset;
 
             // Check if we need to add a gap before this row
-            if (row.type === 'images') {
-                const hasHeader = row.items.some(item => item.asset.isHeaderItem);
+            if (row.type === "images") {
+                const hasHeader = row.items.some((item) => item.asset.isHeaderItem);
 
                 // Add gap if this row has a header.
                 // This ensures that even the first row of a batch gets separation from whatever came before (e.g. a previous large group).
@@ -484,10 +476,7 @@ export class PhotoGridVirtualizer {
         // Identify its group.
         // Return that group's header.
 
-        const idx = Math.max(
-            0,
-            Math.min(this.findStartIndex(scrollTop), this.rows.length - 1)
-        );
+        const idx = Math.max(0, Math.min(this.findStartIndex(scrollTop), this.rows.length - 1));
         if (this.rows.length === 0) {
             return null;
         }

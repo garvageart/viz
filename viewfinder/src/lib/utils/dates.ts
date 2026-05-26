@@ -33,7 +33,6 @@ export function tryParseDate(v: any): DateTime | undefined {
             if (n > 1e9) {
                 return DateTime.fromSeconds(n);
             }
-
         }
         return undefined;
     }
@@ -57,4 +56,4 @@ export function tryParseDate(v: any): DateTime | undefined {
     }
 
     return undefined;
-} 
+}

@@ -69,7 +69,7 @@ export function getConsolidatedGroups(groups: DateGroup[]) {
     // We no longer consolidate small groups. Each DateGroup becomes its own ConsolidatedGroup.
     // We also do NOT inject in-flow header items anymore; headers will be handled by the virtualizer as separate rows.
 
-    const consolidated: ConsolidatedGroup[] = groups.map(group => {
+    const consolidated: ConsolidatedGroup[] = groups.map((group) => {
         // Prepare images with their individual date labels
         // No header item injection here.
         const imagesWithLabels: ImageWithDateLabel[] = group.items.map((img, idx) => ({

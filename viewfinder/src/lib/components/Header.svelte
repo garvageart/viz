@@ -105,7 +105,9 @@
 	const activeViewNames = $derived.by(() => {
 		const names = new Set<string>();
 		const workspace = workspaceState.workspace;
-		if (!workspace) return names;
+		if (!workspace) {
+return names;
+}
 
 		const groups = workspace.getAllTabGroups();
 		for (const group of groups) {
@@ -158,7 +160,9 @@
 		ctxAnchor = { x: e.clientX, y: e.clientY };
 
 		const workspace = workspaceState.workspace;
-		if (!workspace) return;
+		if (!workspace) {
+return;
+}
 
 		ctxItems = views
 			.filter((view) => !view.path || !DYNAMIC_ROUTE_REGEX.test(view.path))

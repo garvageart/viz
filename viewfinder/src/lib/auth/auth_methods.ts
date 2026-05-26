@@ -19,7 +19,7 @@ export async function fetchCurrentUser(): Promise<User | null> {
         if (result.status === 200) {
             user.data = result.data;
             user.error = null;
-            user.isAdmin = result.data.role.includes('admin');
+            user.isAdmin = result.data.role.includes("admin");
 
             // Fetch settings
             try {
@@ -39,7 +39,7 @@ export async function fetchCurrentUser(): Promise<User | null> {
         }
     } catch (err: any) {
         user.data = null;
-        user.error = err?.message ?? 'Failed to fetch current user';
+        user.error = err?.message ?? "Failed to fetch current user";
         user.connectionError = true;
         return null;
     } finally {
@@ -59,9 +59,8 @@ export function logoutUser() {
     clearUser();
     logout();
     cookieMethods.delete("vizstate");
-    goto('/auth/login');
+    goto("/auth/login");
 }
-
 
 export const authServerURL = defaults.baseUrl;
 

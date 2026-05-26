@@ -38,21 +38,43 @@
 	let revokingSession = $state<ExtendedSession | null>(null);
 
 	function getBrowser(ua?: string) {
-		if (!ua) return "Unknown Browser";
-		if (ua.includes("Firefox")) return "Firefox";
-		if (ua.includes("Edg")) return "Edge";
-		if (ua.includes("Chrome")) return "Chrome";
-		if (ua.includes("Safari")) return "Safari";
+		if (!ua) {
+return "Unknown Browser";
+}
+		if (ua.includes("Firefox")) {
+return "Firefox";
+}
+		if (ua.includes("Edg")) {
+return "Edge";
+}
+		if (ua.includes("Chrome")) {
+return "Chrome";
+}
+		if (ua.includes("Safari")) {
+return "Safari";
+}
 		return "Unknown Browser";
 	}
 
 	function getOS(ua?: string) {
-		if (!ua) return "Unknown OS";
-		if (ua.includes("Windows")) return "Windows";
-		if (ua.includes("Mac OS")) return "macOS";
-		if (ua.includes("Linux")) return "Linux";
-		if (ua.includes("Android")) return "Android";
-		if (ua.includes("iOS")) return "iOS";
+		if (!ua) {
+return "Unknown OS";
+}
+		if (ua.includes("Windows")) {
+return "Windows";
+}
+		if (ua.includes("Mac OS")) {
+return "macOS";
+}
+		if (ua.includes("Linux")) {
+return "Linux";
+}
+		if (ua.includes("Android")) {
+return "Android";
+}
+		if (ua.includes("iOS")) {
+return "iOS";
+}
 		return "Unknown OS";
 	}
 
@@ -94,7 +116,9 @@
 	onMount(loadData);
 
 	function formatDate(dateStr?: string) {
-		if (!dateStr) return "Never";
+		if (!dateStr) {
+return "Never";
+}
 		return DateTime.fromISO(dateStr).toRelative();
 	}
 
@@ -124,7 +148,9 @@
 	}
 
 	async function handleDeleteKey() {
-		if (!deletingKey) return;
+		if (!deletingKey) {
+return;
+}
 
 		try {
 			const res = await deleteApiKey(deletingKey.uid);
@@ -201,7 +227,9 @@
 	}
 
 	async function handleRevokeSession() {
-		if (!revokingSession) return;
+		if (!revokingSession) {
+return;
+}
 
 		try {
 			const res = await deleteSession(revokingSession.uid);

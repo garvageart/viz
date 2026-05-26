@@ -12,6 +12,6 @@ export const load: PageLoad = async ({ params }) => {
 
     return {
         settings: response.data,
-        section: params.section || 'general'
+        section: params.section || "general"
     };
 };

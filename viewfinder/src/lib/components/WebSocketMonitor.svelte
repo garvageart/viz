@@ -41,7 +41,9 @@
 	};
 
 	function connect() {
-		if (wsClient) return;
+		if (wsClient) {
+return;
+}
 
 		wsClient = createWSConnection(
 			(event: string, data: any) => {

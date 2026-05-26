@@ -1,12 +1,17 @@
 import { thumbHashToDataURL } from "thumbhash";
 import { DateTime, Duration } from "luxon";
-import { downloadImagesZipBlob, signDownload, type CollectionDetailResponse, type ImageAsset } from "../api";
+import {
+    downloadImagesZipBlob,
+    signDownload,
+    type CollectionDetailResponse,
+    type ImageAsset
+} from "../api";
 import { flashModes, LabelColours } from "$lib/images/constants";
 
 /**
  * Converts a date in EXIF format to a format that
  * can be parsed by the native ````Date```` object.
- * 
+ *
  * @param {String} EXIFDateTime A date in EXIF format that can be parsed by the function
  * @returns {Date} The parsed EXIF date as a native Date object
  */
@@ -39,11 +44,15 @@ export function parseExifDate(raw?: string | null): Date | undefined {
 
     let s = raw.trim();
     const parenIdx = s.indexOf(" (");
-    if (parenIdx > 0) s = s.slice(0, parenIdx).trim();
+    if (parenIdx > 0) {
+        s = s.slice(0, parenIdx).trim();
+    }
 
     for (const rx of DATE_FORMATS) {
         const m = s.match(rx);
-        if (!m) continue;
+        if (!m) {
+            continue;
+        }
         try {
             // Normalise separators to ISO where needed
             if (rx === DATE_FORMATS[0]) {
@@ -67,8 +76,7 @@ export function parseExifDate(raw?: string | null): Date | undefined {
                 const [, Y, M, D] = m;
                 return new Date(`${Y}-${M}-${D}T00:00:00Z`);
             }
-        } catch (e) {
-        }
+        } catch (e) {}
     }
 
     // Fallback: let Date try (may be unreliable, but last resort)
@@ -248,9 +256,7 @@ export async function collectionExportPhotos(uids: string[], data: CollectionDet
     }
 
     const token = signRes.data.uid;
-    const collectionNameClean = data.name
-        .replace(/[^a-z0-9]/gi, "_")
-        .toLowerCase();
+    const collectionNameClean = data.name.replace(/[^a-z0-9]/gi, "_").toLowerCase();
 
     const filename = `${collectionNameClean}-${DateTime.now().toFormat("ddMMyyyy_HHmmss")}.zip`;
 
@@ -314,5 +320,5 @@ export function getFlashMode(flash?: number) {
         return flashModes[flash];
     }
 
-    return (flash & 1) ? "Fired" : "Did not fire";
+    return flash & 1 ? "Fired" : "Did not fire";
 }

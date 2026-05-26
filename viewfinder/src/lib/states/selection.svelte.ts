@@ -10,9 +10,9 @@ export enum SelectionScopeNames {
     SEARCH_COLLECTIONS = "search-collections"
 }
 
-export class SelectionScope<T extends { uid: string; } = any> {
-	selected = $state(new SvelteMap<string, T>());
-	excluded = $state(new SvelteSet<string>()); // UIDs to exclude when isSelectAll is true
+export class SelectionScope<T extends { uid: string } = any> {
+    selected = $state(new SvelteMap<string, T>());
+    excluded = $state(new SvelteSet<string>()); // UIDs to exclude when isSelectAll is true
     isSelectAll = $state(false);
     totalCount = $state(0);
 
@@ -33,7 +33,9 @@ export class SelectionScope<T extends { uid: string; } = any> {
     }
 
     add(item: T) {
-        if (!item || !item.uid) return;
+        if (!item || !item.uid) {
+            return;
+        }
         if (this.isSelectAll) {
             this.excluded.delete(item.uid);
         }
@@ -41,7 +43,9 @@ export class SelectionScope<T extends { uid: string; } = any> {
     }
 
     remove(item: T) {
-        if (!item || !item.uid) return;
+        if (!item || !item.uid) {
+            return;
+        }
         if (this.isSelectAll) {
             this.excluded.add(item.uid);
         }
@@ -49,7 +53,9 @@ export class SelectionScope<T extends { uid: string; } = any> {
     }
 
     has(item: T) {
-        if (!item || !item.uid) return false;
+        if (!item || !item.uid) {
+            return false;
+        }
         if (this.isSelectAll) {
             return !this.excluded.has(item.uid);
         }
@@ -128,7 +134,7 @@ export class SelectionScope<T extends { uid: string; } = any> {
      */
     get selectedItems(): T[] {
         if (this.isSelectAll) {
-            return this.source.filter(i => !this.excluded.has(i.uid));
+            return this.source.filter((i) => !this.excluded.has(i.uid));
         }
         return Array.from(this.selected.values());
     }
@@ -138,11 +144,11 @@ export class SelectionScope<T extends { uid: string; } = any> {
      */
     get selectedUids(): Set<string> {
         if (this.isSelectAll) {
-             const uids = new Set(this.source.map(i => i.uid));
-             for (const ex of this.excluded) {
-                 uids.delete(ex);
-             }
-             return uids;
+            const uids = new Set(this.source.map((i) => i.uid));
+            for (const ex of this.excluded) {
+                uids.delete(ex);
+            }
+            return uids;
         }
         return new Set(this.selected.keys());
     }
@@ -151,7 +157,7 @@ export class SelectionScope<T extends { uid: string; } = any> {
      * Updates an item in a given source array and also updates the selection if the item is selected.
      */
     updateItem(updatedItem: T, sourceArray: T[]) {
-        const idx = sourceArray.findIndex(i => i.uid === updatedItem.uid);
+        const idx = sourceArray.findIndex((i) => i.uid === updatedItem.uid);
         if (idx !== -1) {
             sourceArray[idx] = updatedItem;
         }
@@ -166,18 +172,26 @@ export class SelectionScope<T extends { uid: string; } = any> {
     }
 
     selectNext() {
-        if (!this.active || this.source.length === 0) return false;
-        const idx = this.source.findIndex(i => i.uid === this.active!.uid);
-        if (idx === -1 || idx === this.source.length - 1) return false;
-        
+        if (!this.active || this.source.length === 0) {
+            return false;
+        }
+        const idx = this.source.findIndex((i) => i.uid === this.active!.uid);
+        if (idx === -1 || idx === this.source.length - 1) {
+            return false;
+        }
+
         this.select(this.source[idx + 1]);
         return true;
     }
 
     selectPrevious() {
-        if (!this.active || this.source.length === 0) return false;
-        const idx = this.source.findIndex(i => i.uid === this.active!.uid);
-        if (idx === -1 || idx === 0) return false;
+        if (!this.active || this.source.length === 0) {
+            return false;
+        }
+        const idx = this.source.findIndex((i) => i.uid === this.active!.uid);
+        if (idx === -1 || idx === 0) {
+            return false;
+        }
 
         this.select(this.source[idx - 1]);
         return true;
@@ -191,7 +205,7 @@ export class SelectionManager {
     // A default global scope for simple use cases
     global = new SelectionScope("global");
 
-    constructor() { }
+    constructor() {}
 
     get activeScope() {
         if (!this.activeScopeId) {
@@ -201,7 +215,7 @@ export class SelectionManager {
     }
 
     /**
-     * The primary item focused in the active scope. 
+     * The primary item focused in the active scope.
      */
     get focusedItem() {
         return this.activeScope.active;
@@ -218,7 +232,7 @@ export class SelectionManager {
         this.activeScopeId = scopeId;
     }
 
-    getScope<T extends { uid: string; } = any>(scopeId: string): SelectionScope<T> {
+    getScope<T extends { uid: string } = any>(scopeId: string): SelectionScope<T> {
         if (!this.scopes.has(scopeId)) {
             this.scopes.set(scopeId, new SelectionScope<T>(scopeId));
         }
@@ -233,12 +247,12 @@ export class SelectionManager {
     /**
      * aggregated helper: get all selected items across all scopes
      */
-    getAllSelectedItems<T extends { uid: string; } = any>(): T[] {
+    getAllSelectedItems<T extends { uid: string } = any>(): T[] {
         const all: T[] = [];
-        all.push(...this.global.selectedItems as unknown as T[]);
+        all.push(...(this.global.selectedItems as unknown as T[]));
 
         for (const scope of this.scopes.values()) {
-            all.push(...scope.selectedItems as unknown as T[]);
+            all.push(...(scope.selectedItems as unknown as T[]));
         }
         return all;
     }

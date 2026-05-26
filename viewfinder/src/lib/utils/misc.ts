@@ -1,11 +1,11 @@
 import { browser } from "$app/environment";
-import type { Cookies } from '@sveltejs/kit';
+import type { Cookies } from "@sveltejs/kit";
 
-export const sleep = (time: number) => new Promise(resolve => setTimeout(resolve, time));
+export const sleep = (time: number) => new Promise((resolve) => setTimeout(resolve, time));
 
 export function generateRandomString(length: number): string {
-    let result = '';
-    const characters = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789';
+    let result = "";
+    const characters = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789";
     const charactersLength = characters.length;
     for (let i = 0; i < length; i++) {
         result += characters.charAt(Math.floor(Math.random() * charactersLength));
@@ -42,14 +42,11 @@ export function copyToClipboard(text: string) {
     textArea.focus();
     textArea.select();
 
-    document.execCommand('copy');
+    document.execCommand("copy");
     document.body.removeChild(textArea);
 }
 
-export function debounce<T extends (...args: any[]) => void>(
-    fn: T,
-    delay: number
-): T {
+export function debounce<T extends (...args: any[]) => void>(fn: T, delay: number): T {
     let timeoutID: ReturnType<typeof setTimeout> | undefined;
     return function (this: any, ...args: any[]) {
         clearTimeout(timeoutID);
@@ -58,7 +55,7 @@ export function debounce<T extends (...args: any[]) => void>(
 }
 
 export function isObject(obj: any) {
-    return obj !== null && typeof obj === 'object';
+    return obj !== null && typeof obj === "object";
 }
 
 export class VizLocalStorage<V = string> {
@@ -81,7 +78,10 @@ export class VizLocalStorage<V = string> {
             return null;
         }
 
-        if ((item?.startsWith("{") && item?.endsWith("}")) || (item?.startsWith("[") && item?.endsWith("]"))) {
+        if (
+            (item?.startsWith("{") && item?.endsWith("}")) ||
+            (item?.startsWith("[") && item?.endsWith("]"))
+        ) {
             return JSON.parse(item) as V;
         }
 
@@ -93,7 +93,7 @@ export class VizLocalStorage<V = string> {
             }
         }
 
-        return item !== null ? item as V : null;
+        return item !== null ? (item as V) : null;
     };
 
     set = (value: V) => {
@@ -133,7 +133,7 @@ export class VizCookieStorage<V = string> {
         if (this.serverCookies) {
             item = this.serverCookies.get(key) || null;
         } else if (browser) {
-            const match = document.cookie.match(new RegExp('(^| )' + key + '=([^;]+)'));
+            const match = document.cookie.match(new RegExp("(^| )" + key + "=([^;]+)"));
             item = match ? decodeURIComponent(match[2]) : null;
         }
 
@@ -141,7 +141,10 @@ export class VizCookieStorage<V = string> {
             return null;
         }
 
-        if ((item?.startsWith("{") && item?.endsWith("}")) || (item?.startsWith("[") && item?.endsWith("]"))) {
+        if (
+            (item?.startsWith("{") && item?.endsWith("}")) ||
+            (item?.startsWith("[") && item?.endsWith("]"))
+        ) {
             return JSON.parse(item) as V;
         }
 
@@ -153,12 +156,19 @@ export class VizCookieStorage<V = string> {
             }
         }
 
-        return item !== null ? item as V : null;
+        return item !== null ? (item as V) : null;
     };
 
-    set = (value: V, options: { path?: string; maxAge?: number; sameSite?: 'strict' | 'lax' | 'none'; } = {}) => {
+    set = (
+        value: V,
+        options: {
+            path?: string;
+            maxAge?: number;
+            sameSite?: "strict" | "lax" | "none";
+        } = {}
+    ) => {
         const key = this.prefix + ":" + this.key;
-        const { path = '/', maxAge = 31536000, sameSite = 'lax' } = options;
+        const { path = "/", maxAge = 31536000, sameSite = "lax" } = options;
         let valueStr: string;
 
         if (isObject(value)) {
@@ -174,9 +184,9 @@ export class VizCookieStorage<V = string> {
         }
     };
 
-    delete = (options: { path?: string; } = {}) => {
+    delete = (options: { path?: string } = {}) => {
         const key = this.prefix + ":" + this.key;
-        const { path = '/' } = options;
+        const { path = "/" } = options;
 
         if (this.serverCookies) {
             this.serverCookies.delete(key, { path });
@@ -188,9 +198,12 @@ export class VizCookieStorage<V = string> {
 
 export function swapArrayElements<A>(array: A[], index1: number, index2: number) {
     array[index1] = array.splice(index2, 1, array[index1])[0];
-};
+}
 
-export function arrayHasDuplicates(arr: any[]): { hasDuplicates: boolean, duplicates: any[]; } {
+export function arrayHasDuplicates(arr: any[]): {
+    hasDuplicates: boolean;
+    duplicates: any[];
+} {
     let dupli: never[] = [];
     arr.reduce((acc, curr) => {
         if (acc.indexOf(curr) === -1 && arr.indexOf(curr) !== arr.lastIndexOf(curr)) {
@@ -219,13 +232,13 @@ export function normalizeBase64(str: string) {
         normalized += "=".repeat(4 - padding);
     }
     return normalized;
-};
+}
 
 /**
  * Creates a Viz-specific MIME type string.
  * @param mimeType The specific MIME type suffix (e.g., "image.uids").
  * @returns The full Viz MIME type string (e.g., "application/x-viz.image.uids").
-*/
+ */
 export function createVizMimeType(mimeType: string) {
     return `application/x-viz.${mimeType}`;
 }

@@ -5,9 +5,7 @@ export function snakeToSentence(string: string) {
     // If key contains dots, use last segment
     const k = string.includes(".") ? string.split(".").pop()! : string;
     // replace underscores and dashes with spaces, separate camelCase
-    const withSpaces = k
-        .replace(/[_-]+/g, " ")
-        .replace(/([a-z0-9])([A-Z])/g, "$1 $2");
+    const withSpaces = k.replace(/[_-]+/g, " ").replace(/([a-z0-9])([A-Z])/g, "$1 $2");
     // collapse spaces, trim
     const cleaned = withSpaces.replace(/\s+/g, " ").trim();
     // capitalize first letter

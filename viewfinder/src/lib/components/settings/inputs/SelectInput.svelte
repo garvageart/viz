@@ -18,9 +18,13 @@
 	}: Props = $props();
 
 	let selectedValue = $derived.by(() => {
-		if (!value) return "";
+		if (!value) {
+return "";
+}
 		// If exact match exists, use it
-		if (options.includes(value)) return value;
+		if (options.includes(value)) {
+return value;
+}
 		// Otherwise try case-insensitive match
 		const match = options.find((o) => o.toLowerCase() === value.toLowerCase());
 		return match || value;

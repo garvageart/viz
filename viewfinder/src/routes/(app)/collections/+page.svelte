@@ -264,7 +264,9 @@
 	{paginate}
 	onscroll={(e) => {
 		const info = document.getElementById("viz-info-container")!;
-		if (!info) return;
+		if (!info) {
+return;
+}
 		const bottom = info.scrollHeight;
 
 		if (e.currentTarget.scrollTop < bottom) {

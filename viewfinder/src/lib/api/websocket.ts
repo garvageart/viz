@@ -47,17 +47,17 @@ export class WSClient {
 
         // If the base URL is relative (e.g., "/api"), resolve it to an absolute URL
         // using the current window location. WebSockets require absolute URLs.
-        if (base.startsWith('/') && typeof window !== 'undefined') {
+        if (base.startsWith("/") && typeof window !== "undefined") {
             base = window.location.origin + base;
         }
 
-        this.url = base.replace(/^http/, 'ws') + '/events';
+        this.url = base.replace(/^http/, "ws") + "/events";
 
         this.options = {
             onEvent: options.onEvent,
-            onError: options.onError || (() => { }),
-            onOpen: options.onOpen || (() => { }),
-            onClose: options.onClose || (() => { }),
+            onError: options.onError || (() => {}),
+            onOpen: options.onOpen || (() => {}),
+            onClose: options.onClose || (() => {}),
             autoReconnect: options.autoReconnect ?? true,
             reconnectDelay: options.reconnectDelay ?? 1000,
             maxReconnectAttempts: options.maxReconnectAttempts ?? 5
@@ -69,33 +69,37 @@ export class WSClient {
     private handleText = (text: string) => {
         // Server may batch messages into a single frame separated by newlines.
         // Split and parse each line individually.
-        const parts = text.split('\n');
+        const parts = text.split("\n");
         for (const part of parts) {
             const line = part.trim();
-            if (!line) continue;
+            if (!line) {
+                continue;
+            }
             try {
                 const message: WSMessage = JSON.parse(line);
 
-                if (message.event === 'ping') {
-                    this.send('pong', {});
+                if (message.event === "ping") {
+                    this.send("pong", {});
                     continue;
                 }
 
                 this.options.onEvent(message.event, message.data);
             } catch (error) {
-                console.error('[WebSocket] Failed to parse message part:', error, 'rawPart:', line);
+                console.error("[WebSocket] Failed to parse message part:", error, "rawPart:", line);
             }
         }
     };
 
     private connect() {
-        if (this.isClosed) return;
+        if (this.isClosed) {
+            return;
+        }
 
         try {
             this.ws = new WebSocket(this.url);
 
             this.ws.onopen = () => {
-                console.debug('[WebSocket] Connected');
+                console.debug("[WebSocket] Connected");
                 this.reconnectAttempts = 0;
                 this.options.onOpen();
             };
@@ -103,33 +107,44 @@ export class WSClient {
             this.ws.onmessage = (event) => {
                 // event.data can be a string or a Blob; handle both
                 try {
-                    if (typeof event.data === 'string') {
+                    if (typeof event.data === "string") {
                         this.handleText(event.data);
                     } else if (event.data instanceof Blob) {
                         // convert blob to text asynchronously
-                        (event.data as Blob).text().then((txt) => this.handleText(txt)).catch((err) => {
-                            console.error('[WebSocket] Failed to read Blob message:', err);
-                        });
+                        (event.data as Blob)
+                            .text()
+                            .then((txt) => this.handleText(txt))
+                            .catch((err) => {
+                                console.error("[WebSocket] Failed to read Blob message:", err);
+                            });
                     } else {
                         // Fallback: try to coerce to string
                         try {
                             this.handleText(String(event.data));
                         } catch (err) {
-                            console.error('[WebSocket] Unknown message type, cannot parse:', err, event.data);
+                            console.error(
+                                "[WebSocket] Unknown message type, cannot parse:",
+                                err,
+                                event.data
+                            );
                         }
                     }
                 } catch (error) {
-                    console.error('[WebSocket] Failed to handle incoming message:', error, event.data);
+                    console.error(
+                        "[WebSocket] Failed to handle incoming message:",
+                        error,
+                        event.data
+                    );
                 }
             };
 
             this.ws.onerror = (error) => {
-                console.error('[WebSocket] Error:', error);
+                console.error("[WebSocket] Error:", error);
                 this.options.onError(error);
             };
 
             this.ws.onclose = (event: CloseEvent) => {
-                console.debug('[WebSocket] Closed', event.code, event.reason);
+                console.debug("[WebSocket] Closed", event.code, event.reason);
                 this.options.onClose(event.code, event.reason);
 
                 if (this.options.autoReconnect && !this.isClosed) {
@@ -137,7 +152,7 @@ export class WSClient {
                 }
             };
         } catch (error) {
-            console.error('[WebSocket] Connection error:', error);
+            console.error("[WebSocket] Connection error:", error);
             if (this.options.autoReconnect && !this.isClosed) {
                 this.scheduleReconnect();
             }
@@ -150,9 +165,11 @@ export class WSClient {
         }
 
         // Check if we've exceeded max attempts (0 means infinite)
-        if (this.options.maxReconnectAttempts > 0 &&
-            this.reconnectAttempts >= this.options.maxReconnectAttempts) {
-            console.error('[WebSocket] Max reconnect attempts reached');
+        if (
+            this.options.maxReconnectAttempts > 0 &&
+            this.reconnectAttempts >= this.options.maxReconnectAttempts
+        ) {
+            console.error("[WebSocket] Max reconnect attempts reached");
             return;
         }
 
@@ -173,7 +190,7 @@ export class WSClient {
         if (this.ws && this.ws.readyState === WebSocket.OPEN) {
             this.ws.send(JSON.stringify({ event, data }));
         } else {
-            console.warn('[WebSocket] Cannot send - not connected');
+            console.warn("[WebSocket] Cannot send - not connected");
         }
     }
 

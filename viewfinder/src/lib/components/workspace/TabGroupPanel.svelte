@@ -119,7 +119,9 @@
 	}
 
 	function startDragScroll(direction: "left" | "right") {
-		if (dragScrollInterval) return;
+		if (dragScrollInterval) {
+return;
+}
 		dragScrollInterval = setInterval(() => {
 			if (headerEl) {
 				headerEl.scrollLeft +=
@@ -154,7 +156,9 @@
 	function handleKeyDown(event: KeyboardEvent) {
 		const views = group.views;
 		const activeIndex = views.findIndex((v) => v.id === activeView?.id);
-		if (activeIndex === -1) return;
+		if (activeIndex === -1) {
+return;
+}
 
 		let nextIndex = -1;
 		switch (event.key) {

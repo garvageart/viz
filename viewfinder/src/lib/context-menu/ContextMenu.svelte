@@ -79,7 +79,9 @@
 
 	function computePosition() {
 		// If no anchor is provided, render in-place (no coordinates)
-		if (!contextMenu) return;
+		if (!contextMenu) {
+return;
+}
 
 		if (!anchor) {
 			position = { top: 0, left: 0 };
@@ -198,7 +200,9 @@
 		mRect: DOMRect | undefined | null
 	) {
 		removeDebugOverlays();
-		if (!aRect || !mRect) return;
+		if (!aRect || !mRect) {
+return;
+}
 		debugAnchorEl = document.createElement("div");
 		debugMenuEl = document.createElement("div");
 

@@ -8,7 +8,7 @@ export enum HistogramChannel {
     Green,
     Blue,
     Luminance,
-    RGB,
+    RGB
 }
 
 export interface UiOptions {
@@ -80,7 +80,7 @@ const DEFAULT_COLORS: ColorScheme = {
     background: "#383838",
     backgroundLine: "#949494",
     overlayFill: "rgba(0, 0, 0, 0.5)",
-    overlayStroke: "#000",
+    overlayStroke: "#000"
 };
 
 const STAT_INPUTS = [
@@ -91,7 +91,7 @@ const STAT_INPUTS = [
     ["Pixels:", "inputPixels"],
     ["Level:", "inputLevel"],
     ["Count:", "inputCount"],
-    ["Percentile:", "inputPercentile"],
+    ["Percentile:", "inputPercentile"]
 ] as const;
 
 export class Ui {
@@ -104,7 +104,11 @@ export class Ui {
     colors: ColorScheme;
     id: ElementIds;
 
-    constructor(parent: HTMLElement, source: HTMLCanvasElement | HTMLImageElement, options?: UiOptions) {
+    constructor(
+        parent: HTMLElement,
+        source: HTMLCanvasElement | HTMLImageElement,
+        options?: UiOptions
+    ) {
         const opts = options ?? {};
         const optColors = opts.colors ?? {};
 
@@ -121,7 +125,7 @@ export class Ui {
             background: optColors.background ?? DEFAULT_COLORS.background,
             backgroundLine: optColors.backgroundLine ?? DEFAULT_COLORS.backgroundLine,
             overlayFill: optColors.overlayFill ?? DEFAULT_COLORS.overlayFill,
-            overlayStroke: optColors.overlayStroke ?? DEFAULT_COLORS.overlayStroke,
+            overlayStroke: optColors.overlayStroke ?? DEFAULT_COLORS.overlayStroke
         };
 
         this.id = {
@@ -140,7 +144,7 @@ export class Ui {
             inputPercentile: util.id("inputPercentile"),
             rectOverlay: util.id("rectOverlay"),
             selectChannels: util.id("selectChannels"),
-            textStatus: util.id("textStatus"),
+            textStatus: util.id("textStatus")
         };
 
         this.parent = parent;
@@ -152,7 +156,7 @@ export class Ui {
             height: opts.height ?? "256",
             preserveAspectRatio: "none",
             style: "mix-blend-mode: normal",
-            class: "histogram-svg",
+            class: "histogram-svg"
         });
 
         this.histogram = new core.Histogram(source);
@@ -161,7 +165,10 @@ export class Ui {
     }
 
     selectedChannel(): HistogramChannel {
-        return parseInt((document.getElementById(this.id.selectChannels) as HTMLSelectElement).value, 10);
+        return parseInt(
+            (document.getElementById(this.id.selectChannels) as HTMLSelectElement).value,
+            10
+        );
     }
 
     render(): void {
@@ -177,7 +184,7 @@ export class Ui {
             fill: this.colors.overlayFill,
             stroke: this.colors.overlayStroke,
             "stroke-width": 1.0,
-            id: this.id.rectOverlay,
+            id: this.id.rectOverlay
         });
 
         this.updateStats();
@@ -194,28 +201,54 @@ export class Ui {
             { class: "histogram-controls", id: this.id.containerControls },
             parent
         );
-        const containerChannels = util.createElement("div", { class: "histogram-channels" }, container);
-        const label = util.createElement("label", { for: this.id.selectChannels }, containerChannels);
+        const containerChannels = util.createElement(
+            "div",
+            { class: "histogram-channels" },
+            container
+        );
+        const label = util.createElement(
+            "label",
+            { for: this.id.selectChannels },
+            containerChannels
+        );
         label.innerHTML = "Channels:";
 
         const channels = util.EnumEx.getNamesAndValues(HistogramChannel);
-        const select = util.createElement("select", { id: this.id.selectChannels }, containerChannels);
+        const select = util.createElement(
+            "select",
+            { id: this.id.selectChannels },
+            containerChannels
+        );
         for (const { name, value } of channels) {
             const option = util.createElement("option", { value: value.toString() }, select);
             option.innerHTML = name;
         }
 
-        const containerButtons = util.createElement("div", { class: "histogram-buttons" }, container);
+        const containerButtons = util.createElement(
+            "div",
+            { class: "histogram-buttons" },
+            container
+        );
         const anchorStats = util.createElement(
             "a",
-            { href: "#", class: "histogram-button", id: this.id.btnStatsToggle, title: "Hide Stats Bar" },
+            {
+                href: "#",
+                class: "histogram-button",
+                id: this.id.btnStatsToggle,
+                title: "Hide Stats Bar"
+            },
             containerButtons
         );
         util.createElement("i", { class: "fa fa-bars" }, anchorStats);
 
         const anchorRefresh = util.createElement(
             "a",
-            { href: "#", class: "histogram-button", id: this.id.btnRefresh, title: "Refresh Data" },
+            {
+                href: "#",
+                class: "histogram-button",
+                id: this.id.btnRefresh,
+                title: "Refresh Data"
+            },
             containerButtons
         );
         util.createElement("i", { class: "fa fa-refresh" }, anchorRefresh);
@@ -226,7 +259,11 @@ export class Ui {
     }
 
     private createContainerStats(parent: Element): void {
-        const container = util.createElement("div", { class: "histogram-stats", id: this.id.containerStats }, parent);
+        const container = util.createElement(
+            "div",
+            { class: "histogram-stats", id: this.id.containerStats },
+            parent
+        );
         const innerContainer = util.createElement("div", undefined, container);
         const ul = util.createElement("ul", undefined, innerContainer);
 
@@ -306,12 +343,18 @@ export class Ui {
 
     private handleMouseDown(e: MouseEvent): void {
         const channel = this.selectedChannel();
-        const pt = util.clientXY2SvgPoint(this.svgManager.element as SVGSVGElement, e.clientX, e.clientY);
+        const pt = util.clientXY2SvgPoint(
+            this.svgManager.element as SVGSVGElement,
+            e.clientX,
+            e.clientY
+        );
         const bin = Math.min(255, Math.max(0, Math.round(pt.x)));
 
         const inputLevel = document.getElementById(this.id.inputLevel) as HTMLInputElement;
         const inputCount = document.getElementById(this.id.inputCount) as HTMLInputElement;
-        const inputPercentile = document.getElementById(this.id.inputPercentile) as HTMLInputElement;
+        const inputPercentile = document.getElementById(
+            this.id.inputPercentile
+        ) as HTMLInputElement;
 
         inputLevel.value = `${bin}..${bin}`;
 
@@ -326,7 +369,11 @@ export class Ui {
             return;
         }
 
-        const pt = util.clientXY2SvgPoint(this.svgManager.element as SVGSVGElement, e.clientX, e.clientY);
+        const pt = util.clientXY2SvgPoint(
+            this.svgManager.element as SVGSVGElement,
+            e.clientX,
+            e.clientY
+        );
         const x1 = this.prevMouseDownPoint.x;
         const x2 = pt.x;
         const x = Math.min(x1, x2);
@@ -346,32 +393,55 @@ export class Ui {
 
         const inputLevel = document.getElementById(this.id.inputLevel) as HTMLInputElement;
         const inputCount = document.getElementById(this.id.inputCount) as HTMLInputElement;
-        const inputPercentile = document.getElementById(this.id.inputPercentile) as HTMLInputElement;
+        const inputPercentile = document.getElementById(
+            this.id.inputPercentile
+        ) as HTMLInputElement;
 
         inputCount.value = count.toString(10);
         inputPercentile.value = percent.toFixed(2);
         inputLevel.value = `${start}..${stop}`;
     }
 
-    private getChannelData(channel: HistogramChannel): { hist: number[]; count: number; } {
+    private getChannelData(channel: HistogramChannel): {
+        hist: number[];
+        count: number;
+    } {
         switch (channel) {
             case HistogramChannel.Red:
-                return { hist: this.histogram.red, count: this.histogram.count.red };
+                return {
+                    hist: this.histogram.red,
+                    count: this.histogram.count.red
+                };
             case HistogramChannel.Green:
-                return { hist: this.histogram.green, count: this.histogram.count.green };
+                return {
+                    hist: this.histogram.green,
+                    count: this.histogram.count.green
+                };
             case HistogramChannel.Blue:
-                return { hist: this.histogram.blue, count: this.histogram.count.blue };
+                return {
+                    hist: this.histogram.blue,
+                    count: this.histogram.count.blue
+                };
             case HistogramChannel.Luminance:
-                return { hist: this.histogram.luminance, count: this.histogram.count.luminance };
+                return {
+                    hist: this.histogram.luminance,
+                    count: this.histogram.count.luminance
+                };
             case HistogramChannel.RGB:
             case HistogramChannel.Colors:
-                return { hist: this.histogram.rgb, count: this.histogram.count.rgb };
+                return {
+                    hist: this.histogram.rgb,
+                    count: this.histogram.count.rgb
+                };
             default:
                 throw new Error("channel not recognized");
         }
     }
 
-    private getChannelValue(channel: HistogramChannel, bin: number): { count: number; percent: number; } {
+    private getChannelValue(
+        channel: HistogramChannel,
+        bin: number
+    ): { count: number; percent: number } {
         const { hist, count: total } = this.getChannelData(channel);
         const count = hist[bin];
         const percent = (100.0 * count) / total;
@@ -382,7 +452,7 @@ export class Ui {
         channel: HistogramChannel,
         start: number,
         stop: number
-    ): { count: number; percent: number; } {
+    ): { count: number; percent: number } {
         const { hist, count: total } = this.getChannelData(channel);
         let count = 0;
         for (let i = start; i <= stop; i++) {
@@ -394,7 +464,9 @@ export class Ui {
 
     private renderHistogramBackground(): void {
         // background color
-        this.svgManager.rect(0, 0, this.viewBoxWidth, this.viewBoxHeight, { fill: this.colors.background });
+        this.svgManager.rect(0, 0, this.viewBoxWidth, this.viewBoxHeight, {
+            fill: this.colors.background
+        });
 
         const smallStep = this.viewBoxWidth / 20;
         const bigStep = this.viewBoxWidth / 5;
@@ -403,7 +475,7 @@ export class Ui {
         for (let i = smallStep; i < this.viewBoxWidth; i += smallStep) {
             this.svgManager.line(i, 0, i, this.viewBoxHeight, {
                 stroke: this.colors.backgroundLine,
-                "stroke-width": 0.1,
+                "stroke-width": 0.1
             });
         }
 
@@ -411,7 +483,7 @@ export class Ui {
         for (let i = smallStep; i < this.viewBoxHeight; i += smallStep) {
             this.svgManager.line(0, i, this.viewBoxWidth, i, {
                 stroke: this.colors.backgroundLine,
-                "stroke-width": 0.1,
+                "stroke-width": 0.1
             });
         }
 
@@ -419,7 +491,7 @@ export class Ui {
         for (let i = bigStep; i < this.viewBoxWidth; i += bigStep) {
             this.svgManager.line(i, 0, i, this.viewBoxHeight, {
                 stroke: this.colors.backgroundLine,
-                "stroke-width": 0.2,
+                "stroke-width": 0.2
             });
         }
     }
@@ -442,7 +514,9 @@ export class Ui {
             let color = hist[i];
             // normalize so data fits in viewbox
             color *= this.viewBoxHeight / max;
-            if (color <= 0) color = -10;
+            if (color <= 0) {
+                color = -10;
+            }
             dColor.lineTo(i, this.viewBoxHeight - color);
         }
 
@@ -477,7 +551,9 @@ export class Ui {
         const offRight = this.viewBoxWidth + 10;
 
         // increase max so largest is 10% from the top of hist
-        const max = Math.max(this.histogram.max.red, this.histogram.max.green, this.histogram.max.blue) * 1.1;
+        const max =
+            Math.max(this.histogram.max.red, this.histogram.max.green, this.histogram.max.blue) *
+            1.1;
 
         const builders = {
             red: new manager.SvgPathBuilder(this.svgManager).moveTo(0, this.viewBoxHeight),
@@ -486,7 +562,7 @@ export class Ui {
             redGreen: new manager.SvgPathBuilder(this.svgManager).moveTo(0, this.viewBoxHeight),
             redBlue: new manager.SvgPathBuilder(this.svgManager).moveTo(0, this.viewBoxHeight),
             greenBlue: new manager.SvgPathBuilder(this.svgManager).moveTo(0, this.viewBoxHeight),
-            redGreenBlue: new manager.SvgPathBuilder(this.svgManager).moveTo(0, this.viewBoxHeight),
+            redGreenBlue: new manager.SvgPathBuilder(this.svgManager).moveTo(0, this.viewBoxHeight)
         };
 
         for (let i = 0; i < 256; i++) {
@@ -494,9 +570,15 @@ export class Ui {
             let g = (this.histogram.green[i] * this.viewBoxHeight) / max;
             let b = (this.histogram.blue[i] * this.viewBoxHeight) / max;
 
-            if (r <= 0) r = -10;
-            if (g <= 0) g = -10;
-            if (b <= 0) b = -10;
+            if (r <= 0) {
+                r = -10;
+            }
+            if (g <= 0) {
+                g = -10;
+            }
+            if (b <= 0) {
+                b = -10;
+            }
 
             // Determine the sorted order of RGB values
             const sorted = this.sortChannels(r, g, b);
@@ -505,9 +587,9 @@ export class Ui {
 
             // Map the values to the appropriate builders based on their rank
             const valueMap = new Map([
-                [0, lowest],    // lowest channel
-                [1, mid],       // middle channel
-                [2, highest],   // highest channel
+                [0, lowest], // lowest channel
+                [1, mid], // middle channel
+                [2, highest] // highest channel
             ]);
 
             // For each position, plot or skip based on the channel's rank
@@ -518,7 +600,7 @@ export class Ui {
                 "redGreen",
                 "redBlue",
                 "greenBlue",
-                "redGreenBlue",
+                "redGreenBlue"
             ] as const;
             const channelRanks = [indices.r, indices.g, indices.b];
 
@@ -536,21 +618,36 @@ export class Ui {
                 } else if (pos === 3) {
                     // redGreen (red vs green)
                     if (channelRanks[0] !== 2 && channelRanks[1] !== 2) {
-                        builder.lineTo(i, channelRanks[0] > channelRanks[1] ? this.viewBoxHeight - r : this.viewBoxHeight - g);
+                        builder.lineTo(
+                            i,
+                            channelRanks[0] > channelRanks[1]
+                                ? this.viewBoxHeight - r
+                                : this.viewBoxHeight - g
+                        );
                     } else {
                         builder.lineTo(i, offBottom);
                     }
                 } else if (pos === 4) {
                     // redBlue (red vs blue)
                     if (channelRanks[0] !== 2 && channelRanks[2] !== 2) {
-                        builder.lineTo(i, channelRanks[0] > channelRanks[2] ? this.viewBoxHeight - r : this.viewBoxHeight - b);
+                        builder.lineTo(
+                            i,
+                            channelRanks[0] > channelRanks[2]
+                                ? this.viewBoxHeight - r
+                                : this.viewBoxHeight - b
+                        );
                     } else {
                         builder.lineTo(i, offBottom);
                     }
                 } else if (pos === 5) {
                     // greenBlue (green vs blue)
                     if (channelRanks[1] !== 2 && channelRanks[2] !== 2) {
-                        builder.lineTo(i, channelRanks[1] > channelRanks[2] ? this.viewBoxHeight - g : this.viewBoxHeight - b);
+                        builder.lineTo(
+                            i,
+                            channelRanks[1] > channelRanks[2]
+                                ? this.viewBoxHeight - g
+                                : this.viewBoxHeight - b
+                        );
                     } else {
                         builder.lineTo(i, offBottom);
                     }
@@ -576,36 +673,45 @@ export class Ui {
             this.colors.redGreen,
             this.colors.redBlue,
             this.colors.greenBlue,
-            this.colors.redGreenBlue,
+            this.colors.redGreenBlue
         ];
 
         Object.entries(builders).forEach(([key, builder], idx) => {
             builder.lineTo(offRight, offBottom).lineTo(offLeft, offBottom);
-            builder.build({ fill: fillColors[idx], stroke: this.colors.stroke, "stroke-width": 1.0 });
+            builder.build({
+                fill: fillColors[idx],
+                stroke: this.colors.stroke,
+                "stroke-width": 1.0
+            });
         });
     }
 
-    private sortChannels(r: number, g: number, b: number): {
+    private sortChannels(
+        r: number,
+        g: number,
+        b: number
+    ): {
         values: [number, number, number];
-        indices: { r: number; g: number; b: number; };
+        indices: { r: number; g: number; b: number };
     } {
         const channels = [
             { value: r, index: 0 },
             { value: g, index: 1 },
-            { value: b, index: 2 },
+            { value: b, index: 2 }
         ];
         const sorted = channels.sort((a, b) => a.value - b.value);
 
         const indices = { r: 0, g: 0, b: 0 };
         for (let i = 0; i < 3; i++) {
-            if (sorted[i].index === 0) indices.r = i;
-            else if (sorted[i].index === 1) indices.g = i;
+            if (sorted[i].index === 0) {
+                indices.r = i;
+            } else if (sorted[i].index === 1) indices.g = i;
             else indices.b = i;
         }
 
         return {
             values: [sorted[0].value, sorted[1].value, sorted[2].value],
-            indices,
+            indices
         };
     }
 
@@ -619,7 +725,7 @@ export class Ui {
             pixels: document.getElementById(this.id.inputPixels) as HTMLInputElement,
             level: document.getElementById(this.id.inputLevel) as HTMLInputElement,
             count: document.getElementById(this.id.inputCount) as HTMLInputElement,
-            percentile: document.getElementById(this.id.inputPercentile) as HTMLInputElement,
+            percentile: document.getElementById(this.id.inputPercentile) as HTMLInputElement
         };
 
         const { hist, count: totalCount } = this.getChannelData(channel);
@@ -628,7 +734,7 @@ export class Ui {
             median: this.histogram.median,
             mode: this.histogram.mode,
             std: this.histogram.std,
-            count: this.histogram.count,
+            count: this.histogram.count
         };
 
         const channelKey = this._getChannelKey(channel);
@@ -660,6 +766,3 @@ export class Ui {
         }
     }
 }
-
-
-

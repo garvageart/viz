@@ -15,7 +15,10 @@ export class ImageObjectData {
     created_at: Date;
     updated_at: Date;
 
-    constructor(data: Partial<ImageObjectData> & Pick<ImageObjectData, 'uid' | 'name' | 'created_at' | 'updated_at'>) {
+    constructor(
+        data: Partial<ImageObjectData> &
+            Pick<ImageObjectData, "uid" | "name" | "created_at" | "updated_at">
+    ) {
         this.uid = data.uid;
         this.name = data.name;
         this.description = data.description;
@@ -48,7 +51,7 @@ export class ImageObjectData {
             processed: apiImage.processed,
             thumbhash: apiImage.image_metadata?.thumbhash,
             created_at: new Date(apiImage.created_at),
-            updated_at: new Date(apiImage.updated_at),
+            updated_at: new Date(apiImage.updated_at)
         });
     }
 }

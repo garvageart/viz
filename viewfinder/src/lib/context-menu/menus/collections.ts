@@ -12,7 +12,10 @@ interface CollectionMenuOptions {
     editCollection?: (collection: Collection) => void;
 }
 
-export function createCollectionMenu(collection: Collection | undefined, opts: CollectionMenuOptions) {
+export function createCollectionMenu(
+    collection: Collection | undefined,
+    opts: CollectionMenuOptions
+) {
     if (!collection) {
         return [];
     }
@@ -51,7 +54,9 @@ export function createCollectionMenu(collection: Collection | undefined, opts: C
                 } else {
                     toastState.addToast({
                         type: "error",
-                        message: res.data.error ?? `Failed to ${collection.favourited ? "un" : ""}favourite`
+                        message:
+                            res.data.error ??
+                            `Failed to ${collection.favourited ? "un" : ""}favourite`
                     });
                 }
             }
@@ -72,9 +77,7 @@ export function createCollectionMenu(collection: Collection | undefined, opts: C
                         opts.onCollectionDuplicated?.(res.data);
                     } else {
                         toastState.addToast({
-                            message:
-                                res.data.error ??
-                                `Duplicate failed (${res.status})`,
+                            message: res.data.error ?? `Duplicate failed (${res.status})`,
                             type: "error"
                         });
                     }
@@ -113,11 +116,7 @@ export function createCollectionMenu(collection: Collection | undefined, opts: C
             icon: "delete",
             danger: true,
             action: async () => {
-                if (
-                    !confirm(
-                        `Delete collection "${collection.name}"? This cannot be undone.`
-                    )
-                ) {
+                if (!confirm(`Delete collection "${collection.name}"? This cannot be undone.`)) {
                     return;
                 }
 

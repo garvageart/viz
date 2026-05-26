@@ -565,7 +565,9 @@
 
 		// Find the scroll container
 		const scroller = usingExternalScroll ? scrollParent : photoGridEl;
-		if (!scroller) return;
+		if (!scroller) {
+return;
+}
 
 		for (const row of virtualizer.rows) {
 			if (row.type === "header") {
@@ -697,8 +699,12 @@
 
 			// Attach listener
 			const onExternalScroll = () => {
-				if (!photoGridEl) return;
-				if (isSyncingScroll || isScrubbing) return;
+				if (!photoGridEl) {
+return;
+}
+				if (isSyncingScroll || isScrubbing) {
+return;
+}
 				updateMetrics();
 			};
 

@@ -55,11 +55,17 @@ Stuff to finish:
 			const indexA = groupOrder.indexOf(a);
 			const indexB = groupOrder.indexOf(b);
 			// If both are in the order list, sort by index
-			if (indexA !== -1 && indexB !== -1) return indexA - indexB;
+			if (indexA !== -1 && indexB !== -1) {
+return indexA - indexB;
+}
 			// If only A is in list, A comes first
-			if (indexA !== -1) return -1;
+			if (indexA !== -1) {
+return -1;
+}
 			// If only B is in list, B comes first
-			if (indexB !== -1) return 1;
+			if (indexB !== -1) {
+return 1;
+}
 			// Otherwise alphabetical
 			return a.localeCompare(b);
 		});

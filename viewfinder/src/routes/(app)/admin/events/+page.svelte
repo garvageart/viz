@@ -116,7 +116,9 @@
 	}
 
 	function startAutoRefresh(): void {
-		if (refreshInterval) return;
+		if (refreshInterval) {
+return;
+}
 		refreshInterval = window.setInterval(refreshAll, 5000);
 	}
 

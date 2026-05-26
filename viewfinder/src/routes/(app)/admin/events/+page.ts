@@ -32,6 +32,6 @@ export const load: PageLoad = async (): Promise<PageLoadData> => {
     return {
         stats: statsRes.data,
         metrics: metricsRes.data,
-        history: 'events' in historyRes.data ? (historyRes.data.events || []) : []
+        history: "events" in historyRes.data ? historyRes.data.events || [] : []
     };
 };

@@ -37,7 +37,9 @@
 	let displayValue = $derived(hoverValue ?? value ?? 0);
 
 	function handleSelect(star: number) {
-		if (isReadonly) return;
+		if (isReadonly) {
+return;
+}
 
 		// if clicking the current value, clear it.
 		const newValue = value === star ? 0 : star;
@@ -51,7 +53,9 @@
 
 	function handleClear(e: MouseEvent) {
 		e.stopPropagation();
-		if (isReadonly) return;
+		if (isReadonly) {
+return;
+}
 		if (onChange) {
 			onChange(0);
 		} else {

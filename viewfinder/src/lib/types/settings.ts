@@ -1,16 +1,12 @@
 import type { MaterialSymbol } from "$lib/types/MaterialSymbol";
 
-export interface ShareSettings {
+export interface ShareSettings {}
 
-}
-
-export interface AdvancedSettings {
-    
-}
+export interface AdvancedSettings {}
 
 export interface Settings {
-    share: ShareSettings
-    advanced: AdvancedSettings
+    share: ShareSettings;
+    advanced: AdvancedSettings;
 }
 
 export type DropdownOption = {

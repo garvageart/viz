@@ -1,5 +1,5 @@
 import { SvelteSet } from "svelte/reactivity";
-import { writable } from 'svelte/store';
+import { writable } from "svelte/store";
 
 // public store that components can subscribe to
 export const appReady = writable(false);
@@ -70,17 +70,21 @@ function finalizeReady() {
     appReady.set(true);
 
     try {
-        if (typeof document !== 'undefined') {
-            const el = document.getElementById('app-splash');
+        if (typeof document !== "undefined") {
+            const el = document.getElementById("app-splash");
             if (el) {
-                el.classList.add('app-splash--fade');
+                el.classList.add("app-splash--fade");
                 const cleanup = () => {
                     el.remove();
                     document.getElementById("splash-styles")?.remove();
                 };
-                el.addEventListener('transitionend', cleanup, { once: true });
+                el.addEventListener("transitionend", cleanup, { once: true });
                 // fallback removal in case transitionend doesn't fire
-                setTimeout(() => { if (el.parentNode) el.remove(); }, 700);
+                setTimeout(() => {
+                    if (el.parentNode) {
+                        el.remove();
+                    }
+                }, 700);
             }
         }
     } catch (e) {
@@ -93,25 +97,24 @@ function finalizeReady() {
     }
 }
 
-if (typeof document !== 'undefined' && 'fonts' in document) {
+if (typeof document !== "undefined" && "fonts" in document) {
     try {
         registerReady(document.fonts.ready);
-    } catch (e) {
-    }
+    } catch (e) {}
 }
 
 // Explicitly try to load Material Symbols / Material Icons families so the
 // splash waits until those icon fonts are usable. This helps avoid the
 // ligature flash/width-stretch where the literal icon name (e.g. "upload")
 // briefly appears before the font maps it to the glyph.
-if (typeof document !== 'undefined' && 'fonts' in document) {
+if (typeof document !== "undefined" && "fonts" in document) {
     try {
         const families = [
-            'Material Symbols Outlined',
-            'Material Symbols Sharp',
-            'Material Symbols Rounded',
-            'Material Symbols Filled',
-            'Material Icons'
+            "Material Symbols Outlined",
+            "Material Symbols Sharp",
+            "Material Symbols Rounded",
+            "Material Symbols Filled",
+            "Material Icons"
         ];
 
         const loads = families.map((f) => document.fonts.load(`1em "${f}"`).catch(() => null));
@@ -122,12 +125,12 @@ if (typeof document !== 'undefined' && 'fonts' in document) {
     }
 }
 
-if (typeof window !== 'undefined') {
+if (typeof window !== "undefined") {
     const winLoad = new Promise<void>((res) => {
-        if (document.readyState === 'complete') {
+        if (document.readyState === "complete") {
             res();
         } else {
-            window.addEventListener('load', () => res(), { once: true });
+            window.addEventListener("load", () => res(), { once: true });
         }
     });
 

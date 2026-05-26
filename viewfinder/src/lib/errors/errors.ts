@@ -45,11 +45,14 @@ export class VizError extends Error {
             details: this.details,
             timestamp: this.timestamp,
             stack: this.stack,
-            cause: this.cause instanceof Error ? {
-                name: this.cause.name,
-                message: this.cause.message,
-                stack: this.cause.stack
-            } : this.cause
+            cause:
+                this.cause instanceof Error
+                    ? {
+                          name: this.cause.name,
+                          message: this.cause.message,
+                          stack: this.cause.stack
+                      }
+                    : this.cause
         };
     }
 
@@ -100,7 +103,12 @@ export class ApiError extends VizError {
 export class ValidationError extends ApiError {
     public readonly validationErrors: unknown[];
 
-    constructor(message: string = "Validation failed.", validationErrors: unknown[] = [], status: number = 400, options: VizErrorOptions = {}) {
+    constructor(
+        message: string = "Validation failed.",
+        validationErrors: unknown[] = [],
+        status: number = 400,
+        options: VizErrorOptions = {}
+    ) {
         super(message, status, {
             code: "VALIDATION_ERROR",
             details: { validationErrors },
@@ -128,7 +136,10 @@ export class UnauthorizedError extends ApiError {
  * Specific API error for permission failures (403 Forbidden).
  */
 export class ForbiddenError extends ApiError {
-    constructor(message: string = "You do not have permission to access this resource.", options: VizErrorOptions = {}) {
+    constructor(
+        message: string = "You do not have permission to access this resource.",
+        options: VizErrorOptions = {}
+    ) {
         super(message, 403, {
             code: "FORBIDDEN_ERROR",
             ...options
@@ -141,7 +152,10 @@ export class ForbiddenError extends ApiError {
  * Specific API error for resource not found (404 Not Found).
  */
 export class NotFoundError extends ApiError {
-    constructor(message: string = "The requested resource was not found.", options: VizErrorOptions = {}) {
+    constructor(
+        message: string = "The requested resource was not found.",
+        options: VizErrorOptions = {}
+    ) {
         super(message, 404, {
             code: "NOT_FOUND_ERROR",
             ...options

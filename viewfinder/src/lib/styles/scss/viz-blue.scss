@@ -35,7 +35,14 @@ $secondary-color: #06589b;
     );
 }
 
-@mixin viz-theme($sel, $is-light, $flip-bg: null, $flip-bg-pct: 0%, $flip-text: null, $flip-text-pct: 0%) {
+@mixin viz-theme(
+    $sel,
+    $is-light,
+    $flip-bg: null,
+    $flip-bg-pct: 0%,
+    $flip-text: null,
+    $flip-text-pct: 0%
+) {
     #{$sel} {
         @include viz-mixins.generate-viz-colors(
             $bg-color: $bg-color,

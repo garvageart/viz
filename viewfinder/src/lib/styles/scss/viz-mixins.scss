@@ -76,9 +76,21 @@
     }
 
     @if $is-light-theme {
-        $bg: color.change($bg, $lightness: 100% - color.channel($bg, "lightness", $space: hsl), $space: hsl);
-        $base: color.change($base, $lightness: 100% - color.channel($base, "lightness", $space: hsl), $space: hsl);
-        $text: color.change($text, $lightness: 100% - color.channel($text, "lightness", $space: hsl), $space: hsl);
+        $bg: color.change(
+            $bg,
+            $lightness: 100% - color.channel($bg, "lightness", $space: hsl),
+            $space: hsl
+        );
+        $base: color.change(
+            $base,
+            $lightness: 100% - color.channel($base, "lightness", $space: hsl),
+            $space: hsl
+        );
+        $text: color.change(
+            $text,
+            $lightness: 100% - color.channel($text, "lightness", $space: hsl),
+            $space: hsl
+        );
     }
 
     --viz-bg-color#{$suffix}: #{$bg};
@@ -103,7 +115,14 @@
     }
 }
 
-@mixin viz-theme($sel, $is-light, $flip-bg: null, $flip-bg-pct: 0%, $flip-text: null, $flip-text-pct: 0%) {
+@mixin viz-theme(
+    $sel,
+    $is-light,
+    $flip-bg: null,
+    $flip-bg-pct: 0%,
+    $flip-text: null,
+    $flip-text-pct: 0%
+) {
     #{$sel} {
         @include generate-viz-colors(
             $bg-color: $bg-color,

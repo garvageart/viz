@@ -33,7 +33,9 @@
 	}
 
 	function onChildClick(child: MenuItem, childIndex: number, e: MouseEvent) {
-		if (child.disabled || child.separator) return;
+		if (child.disabled || child.separator) {
+return;
+}
 		child.action?.(e);
 		onselect?.({ item: child, index: childIndex, event: e });
 		showSubmenu = false;

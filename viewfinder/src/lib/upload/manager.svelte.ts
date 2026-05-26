@@ -51,7 +51,7 @@ export function processGlobalQueue() {
         return;
     }
 
-    const pendingTasks = upload.files.filter(t => t.state === UploadState.PENDING);
+    const pendingTasks = upload.files.filter((t) => t.state === UploadState.PENDING);
 
     if (pendingTasks.length === 0) {
         return;
@@ -140,7 +140,7 @@ export default class UploadManager {
             const input = document.createElement("input");
             input.type = "file";
             input.multiple = true;
-            input.accept = this.allowedTypes.map(t => `image/${t}`).join(",");
+            input.accept = this.allowedTypes.map((t) => `image/${t}`).join(",");
 
             input.onchange = () => {
                 const files = Array.from(input.files || []);
@@ -159,7 +159,9 @@ export default class UploadManager {
      */
     async openPickerAndUpload(): Promise<ImageUploadSuccess[]> {
         const files = await this.openPicker();
-        if (files.length === 0) return [];
+        if (files.length === 0) {
+            return [];
+        }
 
         const tasks = this.addFiles(files);
         await this.start();
@@ -167,12 +169,16 @@ export default class UploadManager {
         await waitForUploadCompletion(tasks);
 
         const success = tasks
-            .filter(t => (t.state === UploadState.DONE || t.state === UploadState.DUPLICATE) && t.imageData)
-            .map(t => ({
+            .filter(
+                (t) =>
+                    (t.state === UploadState.DONE || t.state === UploadState.DUPLICATE) &&
+                    t.imageData
+            )
+            .map((t) => ({
                 uid: t.imageData!.uid,
                 status: t.imageData!.status,
                 metadata: t.imageData
             }));
         return success;
     }
-} 
+}

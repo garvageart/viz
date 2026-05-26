@@ -26,7 +26,7 @@ export function createDefaultLayout(): Workspace {
             new TabGroup({
                 size: 70,
                 views: collectionsView ? [collectionsView] : []
-            }),
+            })
         ]
     });
 

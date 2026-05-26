@@ -8,4 +8,3 @@ export function isValidUid(str: string): boolean {
 export function isVizMimeType(mimeType: string): boolean {
     return mimeType.startsWith("application/x-viz.");
 }
-

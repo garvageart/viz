@@ -1,10 +1,10 @@
 /**
  * ⚠️ DEPRECATION NOTICE ⚠️
- * 
+ *
  * The types in this file are being deprecated in favor of the auto-generated API types.
  * Please use types from './api-adapters' instead, which are generated from the OpenAPI spec
  * and guarantee synchronization with the backend API.
- * 
+ *
  * Migration guide:
  * - IImageObjectData → Use APIImage from api-adapters
  * - Collection → Use APICollection from api-adapters
@@ -12,7 +12,7 @@
  * - ImagesResponse → Use APIImagesResponse from api-adapters
  * - CollectionResponse → Use APICollectionListResponse from api-adapters
  * - Pagination → Use APIPagination from api-adapters
- * 
+ *
  * This file will be removed in a future version.
  */
 
@@ -21,19 +21,54 @@ import type { APIPagination } from "$lib/api/adapters";
 import type CollectionData from "$lib/entities/collection";
 
 export type SupportedImageTypes = "jpeg" | "jpg" | "png" | "tiff";
-export const SUPPORTED_IMAGE_TYPES: SupportedImageTypes[] = [
-    "jpeg",
-    "jpg",
-    "png",
-    "tiff"
-];
+export const SUPPORTED_IMAGE_TYPES: SupportedImageTypes[] = ["jpeg", "jpg", "png", "tiff"];
 
 /**
  * Taken from https://docs.photoprism.app/developer-guide/media/raw/
- * 
+ *
  * Not the final supported files, this may eventually end up being removed
-*/
-export type SupportedRAWFiles = "3fr" | "ari" | "arw" | "bay" | "cap" | "cr2" | "cr3" | "crw" | "data" | "dcr" | "dcs" | "drf" | "eip" | "erf" | "fff" | "gpr" | "iiq" | "k25" | "kdc" | "mdc" | "mef" | "mos" | "mrw" | "nef" | "nrw" | "obm" | "orf" | "pef" | "ptx" | "pxn" | "r3d" | "raf" | "raw" | "rw2" | "rwl" | "rwz" | "sr2" | "srf" | "srw" | "x3f";
+ */
+export type SupportedRAWFiles =
+    | "3fr"
+    | "ari"
+    | "arw"
+    | "bay"
+    | "cap"
+    | "cr2"
+    | "cr3"
+    | "crw"
+    | "data"
+    | "dcr"
+    | "dcs"
+    | "drf"
+    | "eip"
+    | "erf"
+    | "fff"
+    | "gpr"
+    | "iiq"
+    | "k25"
+    | "kdc"
+    | "mdc"
+    | "mef"
+    | "mos"
+    | "mrw"
+    | "nef"
+    | "nrw"
+    | "obm"
+    | "orf"
+    | "pef"
+    | "ptx"
+    | "pxn"
+    | "r3d"
+    | "raf"
+    | "raw"
+    | "rw2"
+    | "rwl"
+    | "rwz"
+    | "sr2"
+    | "srf"
+    | "srw"
+    | "x3f";
 export const SUPPORTED_RAW_FILES: SupportedRAWFiles[] = [
     "3fr",
     "ari",
@@ -111,7 +146,7 @@ export interface ImageData {
     width: number;
     height: number;
     colorSpace: string;
-};
+}
 
 /**
  * @deprecated Use CollectionData entity class instead
@@ -128,7 +163,7 @@ export interface Collection {
     description: string;
     owner: User;
     thumbnail?: IImageObjectData;
-};
+}
 
 /**
  * @deprecated Not in API schema

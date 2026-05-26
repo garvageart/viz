@@ -34,19 +34,19 @@ export interface ImageFacets {
     lenses: Map<string, number>;
     tags: Map<string, number>;
     labels: Map<string, number>;
-    iso: { min: number; max: number; };
-    fStop: { min: number; max: number; };
-    shutterSpeed: { min: number; max: number; };
-    focalLength: { min: number; max: number; };
+    iso: { min: number; max: number };
+    fStop: { min: number; max: number };
+    shutterSpeed: { min: number; max: number };
+    focalLength: { min: number; max: number };
 }
 
-export interface CollectionFilters { }
+export interface CollectionFilters {}
 
-export interface CollectionFacets { }
+export interface CollectionFacets {}
 
 interface SavedScopeState {
     criteria: any;
-    uiState: { expanded: Record<string, boolean>; };
+    uiState: { expanded: Record<string, boolean> };
 }
 
 interface SavedFilterState {
@@ -86,17 +86,21 @@ const DB_KEY = "filter-manager-state";
 const SETTINGS_STORE = "settings";
 
 export class FilterScope<F, A extends Asset> {
-    type: 'images' | 'collections';
+    type: "images" | "collections";
     criteria: F = $state() as F;
     facets: any = $state();
-    uiState: { expanded: Record<string, boolean>; } = $state() as any;
+    uiState: { expanded: Record<string, boolean> } = $state() as any;
 
-    constructor(type: 'images' | 'collections', defaultFilters: F, defaultUiState: { expanded: Record<string, boolean>; }) {
+    constructor(
+        type: "images" | "collections",
+        defaultFilters: F,
+        defaultUiState: { expanded: Record<string, boolean> }
+    ) {
         this.type = type;
         this.criteria = { ...defaultFilters };
         this.uiState = { ...defaultUiState };
 
-        if (type === 'images') {
+        if (type === "images") {
             this.facets = {
                 cameras: new Map(),
                 lenses: new Map(),
@@ -113,19 +117,19 @@ export class FilterScope<F, A extends Asset> {
     }
 
     resetCriteria() {
-        if (this.type === 'images') {
+        if (this.type === "images") {
             Object.assign(this.criteria as ImageFilters, DEFAULT_IMAGE_FILTERS);
-        } else if (this.type === 'collections') {
+        } else if (this.type === "collections") {
             Object.assign(this.criteria as CollectionFilters, DEFAULT_COLLECTION_FILTERS);
         }
     }
 
     isImageScope(): this is FilterScope<ImageFilters, ImageAsset> {
-        return this.type === 'images';
+        return this.type === "images";
     }
 
     isCollectionScope(): this is FilterScope<CollectionFilters, Collection> {
-        return this.type === 'collections';
+        return this.type === "collections";
     }
 
     private parseFStop(val: string | undefined): number | undefined {
@@ -177,13 +181,17 @@ export class FilterScope<F, A extends Asset> {
             const tags = new Map<string, number>();
             const labels = new Map<string, number>();
 
-            let minIso = Infinity, maxIso = -Infinity;
-            let minF = Infinity, maxF = -Infinity;
-            let minSS = Infinity, maxSS = -Infinity;
-            let minFL = Infinity, maxFL = -Infinity;
+            let minIso = Infinity,
+                maxIso = -Infinity;
+            let minF = Infinity,
+                maxF = -Infinity;
+            let minSS = Infinity,
+                maxSS = -Infinity;
+            let minFL = Infinity,
+                maxFL = -Infinity;
 
             for (const item of items) {
-                if ('image_metadata' in item) {
+                if ("image_metadata" in item) {
                     const img = item as ImageAsset;
                     const exif = img.exif || {};
 
@@ -210,26 +218,42 @@ export class FilterScope<F, A extends Asset> {
 
                     const iso = this.parseISO(exif.iso);
                     if (iso !== undefined) {
-                        if (iso < minIso) { minIso = iso; }
-                        if (iso > maxIso) { maxIso = iso; }
+                        if (iso < minIso) {
+                            minIso = iso;
+                        }
+                        if (iso > maxIso) {
+                            maxIso = iso;
+                        }
                     }
 
                     const f = this.parseFStop(exif.aperture ?? exif.f_number);
                     if (f !== undefined) {
-                        if (f < minF) { minF = f; }
-                        if (f > maxF) { maxF = f; }
+                        if (f < minF) {
+                            minF = f;
+                        }
+                        if (f > maxF) {
+                            maxF = f;
+                        }
                     }
 
                     const ss = this.parseShutterSpeed(exif.exposure_time);
                     if (ss !== undefined) {
-                        if (ss < minSS) { minSS = ss; }
-                        if (ss > maxSS) { maxSS = ss; }
+                        if (ss < minSS) {
+                            minSS = ss;
+                        }
+                        if (ss > maxSS) {
+                            maxSS = ss;
+                        }
                     }
 
                     const fl = this.parseFocalLength(exif.focal_length);
                     if (fl !== undefined) {
-                        if (fl < minFL) { minFL = fl; }
-                        if (fl > maxFL) { maxFL = fl; }
+                        if (fl < minFL) {
+                            minFL = fl;
+                        }
+                        if (fl > maxFL) {
+                            maxFL = fl;
+                        }
                     }
                 }
             }
@@ -239,10 +263,22 @@ export class FilterScope<F, A extends Asset> {
                 lenses,
                 tags,
                 labels,
-                iso: { min: minIso === Infinity ? 0 : minIso, max: maxIso === -Infinity ? 12800 : maxIso },
-                fStop: { min: minF === Infinity ? 0 : minF, max: maxF === -Infinity ? 32 : maxF },
-                shutterSpeed: { min: minSS === Infinity ? 0 : minSS, max: maxSS === -Infinity ? 30 : maxSS },
-                focalLength: { min: minFL === Infinity ? 0 : minFL, max: maxFL === -Infinity ? 1000 : maxFL }
+                iso: {
+                    min: minIso === Infinity ? 0 : minIso,
+                    max: maxIso === -Infinity ? 12800 : maxIso
+                },
+                fStop: {
+                    min: minF === Infinity ? 0 : minF,
+                    max: maxF === -Infinity ? 32 : maxF
+                },
+                shutterSpeed: {
+                    min: minSS === Infinity ? 0 : minSS,
+                    max: maxSS === -Infinity ? 30 : maxSS
+                },
+                focalLength: {
+                    min: minFL === Infinity ? 0 : minFL,
+                    max: maxFL === -Infinity ? 1000 : maxFL
+                }
             };
         } else if (this.isCollectionScope()) {
             this.facets = {};
@@ -254,11 +290,16 @@ export class FilterScope<F, A extends Asset> {
             const criteria = this.criteria;
             const hasActiveFilters =
                 criteria.rating !== null ||
-                criteria.date.after || criteria.date.before ||
-                criteria.iso.min !== undefined || criteria.iso.max !== undefined ||
-                criteria.fStop.min !== undefined || criteria.fStop.max !== undefined ||
-                criteria.shutterSpeed.min !== undefined || criteria.shutterSpeed.max !== undefined ||
-                criteria.focalLength.min !== undefined || criteria.focalLength.max !== undefined ||
+                criteria.date.after ||
+                criteria.date.before ||
+                criteria.iso.min !== undefined ||
+                criteria.iso.max !== undefined ||
+                criteria.fStop.min !== undefined ||
+                criteria.fStop.max !== undefined ||
+                criteria.shutterSpeed.min !== undefined ||
+                criteria.shutterSpeed.max !== undefined ||
+                criteria.focalLength.min !== undefined ||
+                criteria.focalLength.max !== undefined ||
                 criteria.tags.length > 0 ||
                 criteria.camera.length > 0 ||
                 criteria.lens.length > 0 ||
@@ -268,11 +309,11 @@ export class FilterScope<F, A extends Asset> {
                 return items;
             }
 
-            return items.filter(item => {
-                if (!('image_metadata' in item)) {
+            return items.filter((item) => {
+                if (!("image_metadata" in item)) {
                     return false;
                 }
-                
+
                 const img = item as ImageAsset;
                 const exif = img.exif || {};
 
@@ -329,20 +370,32 @@ export class FilterScope<F, A extends Asset> {
                     }
                 }
 
-                if (criteria.shutterSpeed.min !== undefined || criteria.shutterSpeed.max !== undefined) {
+                if (
+                    criteria.shutterSpeed.min !== undefined ||
+                    criteria.shutterSpeed.max !== undefined
+                ) {
                     const val = this.parseShutterSpeed(exif.exposure_time);
                     if (val === undefined) {
                         return false;
                     }
-                    if (criteria.shutterSpeed.min !== undefined && val < criteria.shutterSpeed.min) {
+                    if (
+                        criteria.shutterSpeed.min !== undefined &&
+                        val < criteria.shutterSpeed.min
+                    ) {
                         return false;
                     }
-                    if (criteria.shutterSpeed.max !== undefined && val > criteria.shutterSpeed.max) {
+                    if (
+                        criteria.shutterSpeed.max !== undefined &&
+                        val > criteria.shutterSpeed.max
+                    ) {
                         return false;
                     }
                 }
 
-                if (criteria.focalLength.min !== undefined || criteria.focalLength.max !== undefined) {
+                if (
+                    criteria.focalLength.min !== undefined ||
+                    criteria.focalLength.max !== undefined
+                ) {
                     const val = this.parseFocalLength(exif.focal_length);
                     if (val === undefined) {
                         return false;
@@ -357,7 +410,7 @@ export class FilterScope<F, A extends Asset> {
 
                 if (criteria.tags.length > 0) {
                     const imgTags = img.image_metadata?.keywords || [];
-                    const hasAll = criteria.tags.every(t => imgTags.includes(t));
+                    const hasAll = criteria.tags.every((t) => imgTags.includes(t));
                     if (!hasAll) {
                         return false;
                     }
@@ -393,16 +446,25 @@ export class FilterScope<F, A extends Asset> {
 }
 
 class FilterManager {
-    scopes: Map<string, FilterScope<ImageFilters, ImageAsset> | FilterScope<CollectionFilters, Collection>> = $state(new Map());
-    activeScopeType: 'images' | 'collections' | null = $state('images');
+    scopes: Map<
+        string,
+        FilterScope<ImageFilters, ImageAsset> | FilterScope<CollectionFilters, Collection>
+    > = $state(new Map());
+    activeScopeType: "images" | "collections" | null = $state("images");
     keepFilters: boolean = $state(false);
 
     private dbPromise: Promise<IDBPDatabase> | null = null;
     private isInitialized = false;
 
     constructor() {
-        this.scopes.set('images', new FilterScope('images', DEFAULT_IMAGE_FILTERS, DEFAULT_IMAGE_UI_STATE));
-        this.scopes.set('collections', new FilterScope('collections', DEFAULT_COLLECTION_FILTERS, DEFAULT_COLLECTION_UI_STATE));
+        this.scopes.set(
+            "images",
+            new FilterScope("images", DEFAULT_IMAGE_FILTERS, DEFAULT_IMAGE_UI_STATE)
+        );
+        this.scopes.set(
+            "collections",
+            new FilterScope("collections", DEFAULT_COLLECTION_FILTERS, DEFAULT_COLLECTION_UI_STATE)
+        );
 
         if (typeof window !== "undefined") {
             this.init();
@@ -434,20 +496,28 @@ class FilterManager {
         this.isInitialized = true;
     }
 
-    get activeScope(): FilterScope<ImageFilters, ImageAsset> | FilterScope<CollectionFilters, Collection> | undefined {
+    get activeScope():
+        | FilterScope<ImageFilters, ImageAsset>
+        | FilterScope<CollectionFilters, Collection>
+        | undefined {
         if (this.activeScopeType) {
             return this.scopes.get(this.activeScopeType);
         }
         return undefined;
     }
 
-    getScope(type: 'images'): FilterScope<ImageFilters, ImageAsset> | undefined;
-    getScope(type: 'collections'): FilterScope<CollectionFilters, Collection> | undefined;
-    getScope(type: 'images' | 'collections'): FilterScope<ImageFilters, ImageAsset> | FilterScope<CollectionFilters, Collection> | undefined {
+    getScope(type: "images"): FilterScope<ImageFilters, ImageAsset> | undefined;
+    getScope(type: "collections"): FilterScope<CollectionFilters, Collection> | undefined;
+    getScope(
+        type: "images" | "collections"
+    ):
+        | FilterScope<ImageFilters, ImageAsset>
+        | FilterScope<CollectionFilters, Collection>
+        | undefined {
         return this.scopes.get(type);
     }
 
-    setActiveScopeType(type: 'images' | 'collections' | null) {
+    setActiveScopeType(type: "images" | "collections" | null) {
         this.activeScopeType = type;
     }
 
@@ -479,7 +549,7 @@ class FilterManager {
         for (const [key, scope] of this.scopes.entries()) {
             stateToSave.scopes[key] = {
                 criteria: $state.snapshot(scope.criteria),
-                uiState: $state.snapshot(scope.uiState),
+                uiState: $state.snapshot(scope.uiState)
             };
         }
 
