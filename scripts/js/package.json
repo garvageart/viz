@@ -1,33 +1,33 @@
 {
-	"name": "@viz/scripts",
-	"version": "0.0.1",
-	"description": "Internal JavaScript scripts for the Viz project",
-	"private": true,
-	"type": "module",
-	"license": "AGPL-3.0",
-	"packageManager": "pnpm@10.11.0",
-	"bugsEmail": "igotissues@lesis.online",
-	"bugsUrl": "https://lesis.online/contact/bug-report",
-	"scripts": {
-		"test": "echo \"Error: no test specified\" && exit 1",
-		"gen:api": "tsx gen-api.ts",
-		"gen:api:install": "tsx gen-api.ts --install-tools",
-		"gen:api:build": "tsx gen-api.ts --build",
-		"setup:https": "tsx setup-https.ts"
-	},
-	"keywords": [],
-	"author": "Les <hello@lesis.online>",
-	"devDependencies": {
-		"@types/js-yaml": "^4.0.9",
-		"@types/node": "^24.12.3",
-		"@types/semver": "^7.7.1",
-		"js-yaml": "^4.1.1",
-		"oazapfts": "^6.4.0",
-		"tsx": "^4.21.0"
-	},
-	"dependencies": {
-		"dotenv": "^17.4.2",
-		"semver": "^7.8.0",
-		"unsplash-js": "^7.0.20"
-	}
+    "name": "@viz/scripts",
+    "version": "0.0.1",
+    "description": "Internal JavaScript scripts for the Viz project",
+    "private": true,
+    "type": "module",
+    "license": "AGPL-3.0",
+    "packageManager": "pnpm@10.11.0",
+    "bugsEmail": "igotissues@lesis.online",
+    "bugsUrl": "https://lesis.online/contact/bug-report",
+    "scripts": {
+        "test": "echo \"Error: no test specified\" && exit 1",
+        "gen:api": "tsx gen-api.ts",
+        "gen:api:install": "tsx gen-api.ts --install-tools",
+        "gen:api:build": "tsx gen-api.ts --build",
+        "setup:https": "tsx setup-https.ts"
+    },
+    "keywords": [],
+    "author": "Les <hello@lesis.online>",
+    "devDependencies": {
+        "@types/js-yaml": "^4.0.9",
+        "@types/node": "^24.12.3",
+        "@types/semver": "^7.7.1",
+        "js-yaml": "^4.1.1",
+        "oazapfts": "^6.4.0",
+        "tsx": "^4.21.0"
+    },
+    "dependencies": {
+        "dotenv": "^17.4.2",
+        "semver": "^7.8.0",
+        "unsplash-js": "^7.0.20"
+    }
 }

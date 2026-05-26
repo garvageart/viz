@@ -1,16 +1,16 @@
-import fs from 'node:fs';
-import os from 'node:os';
-import path from 'node:path';
-import { execSync } from 'node:child_process';
-import { fileURLToPath } from 'node:url';
+import fs from "node:fs";
+import os from "node:os";
+import path from "node:path";
+import { execSync } from "node:child_process";
+import { fileURLToPath } from "node:url";
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
-const PROJECT_ROOT = path.resolve(__dirname, '../../'); // scripts/js -> scripts -> root
+const PROJECT_ROOT = path.resolve(__dirname, "../../"); // scripts/js -> scripts -> root
 
-const DOMAIN = 'viz.localhost';
-const TARGET_IP = '127.0.0.1';
-const CADDYFILE_NAME = 'Caddyfile';
+const DOMAIN = "viz.localhost";
+const TARGET_IP = "127.0.0.1";
+const CADDYFILE_NAME = "Caddyfile";
 
 // ANSI colors for prettier output
 const colors = {
@@ -27,21 +27,21 @@ const log = {
     success: (msg: string) => console.log(`${colors.green}✔ ${msg}${colors.reset}`),
     warn: (msg: string) => console.log(`${colors.yellow}⚠ ${msg}${colors.reset}`),
     error: (msg: string) => console.log(`${colors.red}✖ ${msg}${colors.reset}`),
-    step: (msg: string) => console.log(`\n${colors.bold}${msg}${colors.reset}`),
+    step: (msg: string) => console.log(`\n${colors.bold}${msg}${colors.reset}`)
 };
 
 function getHostsFilePath(): string {
     const platform = os.platform();
-    if (platform === 'win32') {
-        return 'C:\\Windows\\System32\\drivers\\etc\\hosts';
+    if (platform === "win32") {
+        return "C:\\Windows\\System32\\drivers\\etc\\hosts";
     }
-    return '/etc/hosts';
+    return "/etc/hosts";
 }
 
 function checkCaddyInstalled(): boolean {
     try {
-        const cmd = os.platform() === 'win32' ? 'where caddy' : 'which caddy';
-        execSync(cmd, { stdio: 'ignore' });
+        const cmd = os.platform() === "win32" ? "where caddy" : "which caddy";
+        execSync(cmd, { stdio: "ignore" });
         return true;
     } catch {
         return false;
@@ -76,13 +76,15 @@ function updateHostsFile() {
     log.info(`Checking hosts file at: ${hostsPath}`);
 
     try {
-        const content = fs.readFileSync(hostsPath, 'utf8');
+        const content = fs.readFileSync(hostsPath, "utf8");
         const lines = content.split(/\r?\n/);
 
         // Check if entry already exists (naively)
-        const exists = lines.some(line => {
+        const exists = lines.some((line) => {
             const trimmed = line.trim();
-            return !trimmed.startsWith('#') && trimmed.includes(DOMAIN) && trimmed.includes(TARGET_IP);
+            return (
+                !trimmed.startsWith("#") && trimmed.includes(DOMAIN) && trimmed.includes(TARGET_IP)
+            );
         });
 
         if (exists) {
@@ -97,10 +99,12 @@ function updateHostsFile() {
             fs.appendFileSync(hostsPath, newEntry);
             log.success(`Added '${DOMAIN}' to hosts file.`);
         } catch (err: any) {
-            if (err.code === 'EACCES' || err.code === 'EPERM') {
+            if (err.code === "EACCES" || err.code === "EPERM") {
                 log.error("Permission denied writing to hosts file.");
-                log.warn("Please run this script with Administrator privileges (sudo or Run as Administrator).");
-                if (os.platform() !== 'win32') {
+                log.warn(
+                    "Please run this script with Administrator privileges (sudo or Run as Administrator)."
+                );
+                if (os.platform() !== "win32") {
                     console.log(`\n  sudo npx tsx scripts/js/setup-https.ts\n`);
                 }
                 process.exit(1);
@@ -108,7 +112,6 @@ function updateHostsFile() {
                 throw err;
             }
         }
-
     } catch (e) {
         log.error(`Failed to update hosts file: ${(e as Error).message}`);
         process.exit(1);
@@ -119,7 +122,7 @@ function trustCertificate() {
     log.info("Attempting to trust Caddy root certificate...");
     try {
         // This command requires admin privileges to write to the trust store
-        execSync('caddy trust', { stdio: 'inherit', cwd: PROJECT_ROOT });
+        execSync("caddy trust", { stdio: "inherit", cwd: PROJECT_ROOT });
         log.success("Certificate trust command executed.");
     } catch (e) {
         log.warn("Failed to automatically trust the certificate.");
@@ -140,9 +143,9 @@ async function main() {
     } else {
         log.warn("Caddy is NOT found in your PATH.");
         console.log(`  Please install Caddy manually:`);
-        if (os.platform() === 'win32') {
+        if (os.platform() === "win32") {
             console.log(`  > choco install caddy`);
-        } else if (os.platform() === 'darwin') {
+        } else if (os.platform() === "darwin") {
             console.log(`  > brew install caddy`);
         } else {
             console.log(`  > https://caddyserver.com/docs/install`);

@@ -1,21 +1,21 @@
 {
-	"name": "viz-monorepo",
-	"private": true,
-	"license": "AGPL-3.0",
-	"scripts": {
-		"dev": "pnpm -r --filter \"@viz/*\" dev",
-		"build": "pnpm -r --filter \"@viz/*\" build",
-		"test": "pnpm -r --filter \"@viz/*\" test",
-		"check": "pnpm -r --filter \"@viz/*\" check",
-		"lint": "pnpm -r --filter \"@viz/*\" lint",
-		"format": "pnpm -r --filter \"@viz/*\" format",
-		"gen:api": "pnpm --filter @viz/scripts gen:api",
-		"setup:https": "pnpm --filter @viz/scripts setup:https"
-	},
-	"keywords": [],
-	"pnpm": {
-		"onlyBuiltDependencies": [
-			"esbuild"
-		]
-	}
+    "name": "viz-monorepo",
+    "private": true,
+    "license": "AGPL-3.0",
+    "scripts": {
+        "dev": "pnpm -r --filter \"@viz/*\" dev",
+        "build": "pnpm -r --filter \"@viz/*\" build",
+        "test": "pnpm -r --filter \"@viz/*\" test",
+        "check": "pnpm -r --filter \"@viz/*\" check",
+        "lint": "pnpm -r --filter \"@viz/*\" lint",
+        "format": "pnpm -r --filter \"@viz/*\" format",
+        "gen:api": "pnpm --filter @viz/scripts gen:api",
+        "setup:https": "pnpm --filter @viz/scripts setup:https"
+    },
+    "keywords": [],
+    "pnpm": {
+        "onlyBuiltDependencies": [
+            "esbuild"
+        ]
+    }
 }

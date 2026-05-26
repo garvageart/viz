@@ -1,10 +1,10 @@
-import { createApi } from 'unsplash-js';
+import { createApi } from "unsplash-js";
 import dotenv from "dotenv";
 import path from "path";
 import fs from "fs";
 
-const sleep = (ms: number) => new Promise(resolve => setTimeout(resolve, ms));
-const config = JSON.parse(fs.readFileSync('../viz.json', 'utf8'));
+const sleep = (ms: number) => new Promise((resolve) => setTimeout(resolve, ms));
+const config = JSON.parse(fs.readFileSync("../viz.json", "utf8"));
 const serverPort = parseInt(config.servers["api"].port);
 
 async function main() {
@@ -27,8 +27,8 @@ async function main() {
     console.log("Fetching random images from Unsplash...");
     const result = await unsplash.photos.getRandom({ count: 30 });
 
-    if (result.type === 'error') {
-        throw new Error(`Failed to fetch random images from Unsplash: ${result.errors.join(', ')}`);
+    if (result.type === "error") {
+        throw new Error(`Failed to fetch random images from Unsplash: ${result.errors.join(", ")}`);
     }
 
     const randomImgs = Array.isArray(result.response) ? result.response : [result.response];
@@ -43,34 +43,39 @@ async function main() {
 
         await sleep(500);
 
-        promises.push(fetch(`http://localhost:${serverPort}/images/url`, {
-            method: "POST",
-            headers: {
-                "Content-Type": "application/json",
-                "Authorization": `Bearer ${process.env.VIZ_API_KEY}`
-            },
-            body: JSON.stringify({
-                url: url,
-                photoTaker: photoTaker,
-                photoTakerPortfolio: photoTakerPortfolio,
-                source: "unsplash",
-                exif: randomImgs[i].exif
+        promises.push(
+            fetch(`http://localhost:${serverPort}/images/url`, {
+                method: "POST",
+                headers: {
+                    "Content-Type": "application/json",
+                    Authorization: `Bearer ${process.env.VIZ_API_KEY}`
+                },
+                body: JSON.stringify({
+                    url: url,
+                    photoTaker: photoTaker,
+                    photoTakerPortfolio: photoTakerPortfolio,
+                    source: "unsplash",
+                    exif: randomImgs[i].exif
+                })
             })
-        }));
+        );
     }
 
     await Promise.all(promises)
-        .then(async responses => {
+        .then(async (responses) => {
             console.log("All images ingested.");
             for (const res of responses) {
                 if (!res.ok || res.status !== 201) {
                     const errorText = await res.text();
-                    throw new Error(`Failed to ingest image. Status: ${res.status}. Body: ${errorText}`);
+                    throw new Error(
+                        `Failed to ingest image. Status: ${res.status}. Body: ${errorText}`
+                    );
                 }
 
                 console.log(await res.json());
             }
-        }).catch(error => {
+        })
+        .catch((error) => {
             console.error("An error occurred image ingestion:");
             if (error instanceof Error) {
                 console.error(error.message);
@@ -83,16 +88,21 @@ async function main() {
     // Track a photo download
     // https://help.unsplash.com/api-guidelines/guideline-triggering-a-download
     console.log("Tracking downloads...");
-    const downloadPromises = randomImgs.map(img => {
-        return unsplash.photos.trackDownload({
-            downloadLocation: img.links.download_location,
-        }).then(trackResult => {
-            if (trackResult.type === 'error') {
-                console.error(`Failed to track download for ${img.id}:`, trackResult.errors.join(', '));
-            } else {
-                console.log(`Download tracked for ${img.id}`);
-            }
-        });
+    const downloadPromises = randomImgs.map((img) => {
+        return unsplash.photos
+            .trackDownload({
+                downloadLocation: img.links.download_location
+            })
+            .then((trackResult) => {
+                if (trackResult.type === "error") {
+                    console.error(
+                        `Failed to track download for ${img.id}:`,
+                        trackResult.errors.join(", ")
+                    );
+                } else {
+                    console.log(`Download tracked for ${img.id}`);
+                }
+            });
     });
 
     await Promise.all(downloadPromises);
@@ -100,7 +110,7 @@ async function main() {
     console.log("Done");
 }
 
-main().catch(error => {
+main().catch((error) => {
     console.error("An error occurred during the script execution:");
     if (error instanceof Error) {
         console.error(error.message);
@@ -109,4 +119,3 @@ main().catch(error => {
     }
     process.exit(1);
 });
-

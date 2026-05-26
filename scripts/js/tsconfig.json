@@ -11,11 +11,7 @@
         "strict": true,
         "moduleResolution": "bundler",
         "module": "esnext",
-        "lib": [
-            "ESNext"
-        ]
+        "lib": ["ESNext"]
     },
-    "exclude": [
-        "./*.js"
-    ]
+    "exclude": ["./*.js"]
 }
