@@ -1,4 +1,3 @@
-import { goto } from "$app/navigation";
 import {
     deleteCollectionImages,
     deleteImagesBulk,
@@ -9,7 +8,9 @@ import {
     type CollectionDetailResponse,
     type ImageAsset
 } from "$lib/api";
-import { debugMode } from "$lib/states/index.svelte";
+import ExportPanel from "$lib/components/ExportPanel.svelte";
+import DeleteModal from "$lib/components/modals/DeleteModal.svelte";
+import { modalsManager } from "$lib/components/modals/manager/ModalManager.svelte";
 import type { SelectionScope } from "$lib/states/selection.svelte";
 import { toastState } from "$lib/toast-notifcations/notif-state.svelte";
 import { invalidateViz } from "$lib/views/views.svelte";
@@ -27,22 +28,27 @@ export function createImageMenu(
     options: ImageMenuOptions = {}
 ): MenuItem[] {
     const { onDelete, onUpdate, collection } = options;
+    const items = selectionScope.selectedItems;
+    const allFavourited = items.length > 0 && items.every((img) => img.favourited);
 
     const actionMenuItems: MenuItem[] = [
         {
-            id: "act-favourite",
-            label: "Favourite",
-            icon: "favorite",
+            id: "act-toggle-favourite",
+            label: allFavourited ? "Unfavourite" : "Favourite",
+            icon: allFavourited ? "favorite_border" : "favorite",
             action: async () => {
-                const items = selectionScope.selectedItems;
-                const promises = items.map((img) => updateImage(img.uid, { favourited: true }));
+                const itemsToUpdate = selectionScope.selectedItems;
+                const setFavourited = !allFavourited;
+                const promises = itemsToUpdate.map((img) =>
+                    updateImage(img.uid, { favourited: setFavourited })
+                );
                 try {
                     const results = await Promise.all(promises);
                     const success = results.filter((r) => r.status === 200);
                     if (success.length > 0) {
                         toastState.addToast({
                             type: "success",
-                            message: `Favourited ${success.length} images`,
+                            message: `${setFavourited ? "Favourited" : "Unfavourited"} ${success.length} images`,
                             timeout: 3000
                         });
                         for (const res of success) {
@@ -54,41 +60,22 @@ export function createImageMenu(
                 } catch (err) {
                     toastState.addToast({
                         type: "error",
-                        message: `Favourite failed: ${err}`,
+                        message: `${setFavourited ? "Favourite" : "Unfavourite"} failed: ${err}`,
                         timeout: 5000
                     });
                 }
             }
         },
         {
-            id: "act-unfavourite",
-            label: "Unfavourite",
-            icon: "favorite_border",
-            action: async () => {
-                const items = selectionScope.selectedItems;
-                const promises = items.map((img) => updateImage(img.uid, { favourited: false }));
-                try {
-                    const results = await Promise.all(promises);
-                    const success = results.filter((r) => r.status === 200);
-                    if (success.length > 0) {
-                        toastState.addToast({
-                            type: "success",
-                            message: `Unfavourited ${success.length} images`,
-                            timeout: 3000
-                        });
-                        for (const res of success) {
-                            selectionScope.updateItem(res.data, allImages);
-                            onUpdate?.(res.data);
-                        }
-                        await invalidateViz({ delay: 200 });
-                    }
-                } catch (err) {
-                    toastState.addToast({
-                        type: "error",
-                        message: `Unfavourite failed: ${err}`,
-                        timeout: 5000
-                    });
-                }
+            id: "act-export",
+            label: "Export",
+            icon: "ios_share",
+            action: () => {
+                modalsManager.open(
+                    ExportPanel,
+                    { assets: items },
+                    { height: "80%", applyPadding: false, closeOnOverlayClick: true }
+                );
             }
         },
         {
@@ -200,37 +187,45 @@ export function createImageMenu(
 
     actionMenuItems.push({
         id: "act-delete",
-        label: "Delete Permanently",
+        label: "Delete",
         icon: "delete",
         danger: true,
         action: async () => {
             const items = selectionScope.selectedItems;
             const uids = items.map((i) => i.uid);
-            const confirmMsg =
-                uids.length === 1
-                    ? `Are you sure you want to permanently delete "${items[0].name || items[0].uid}"?`
-                    : `Are you sure you want to permanently delete ${uids.length} images?`;
 
-            if (confirm(confirmMsg)) {
-                try {
-                    const res = await deleteImagesBulk({ uids });
-                    if (res.status === 200) {
-                        toastState.addToast({
-                            type: "success",
-                            message: `Deleted ${uids.length} images`,
-                            timeout: 3000
-                        });
-                        onDelete?.(uids);
-                        selectionScope.clear();
-                        await invalidateViz({ delay: 200 });
-                    }
-                } catch (err) {
+            const action = await modalsManager.open<
+                { id: string; itemCount: number; itemName?: string },
+                "delete" | "permanent"
+            >(
+                DeleteModal,
+                { itemCount: items.length, itemName: items[0]?.name },
+                { heading: "Delete Images", width: "40%", closeOnOverlayClick: true }
+            );
+
+            if (action === undefined) {
+                return;
+            }
+
+            try {
+                const isPermanent = action === "permanent";
+                const res = await deleteImagesBulk({ uids, force: isPermanent });
+                if (res.status === 200) {
                     toastState.addToast({
-                        type: "error",
-                        message: `Delete failed: ${err}`,
-                        timeout: 5000
+                        type: "success",
+                        message: `${isPermanent ? "Permanently deleted" : "Moved to Trash"} ${uids.length} image${uids.length === 1 ? "" : "s"}`,
+                        timeout: 3000
                     });
+                    onDelete?.(uids);
+                    selectionScope.clear();
+                    await invalidateViz({ delay: 200 });
                 }
+            } catch (err) {
+                toastState.addToast({
+                    type: "error",
+                    message: `Delete failed: ${err}`,
+                    timeout: 5000
+                });
             }
         }
     });
