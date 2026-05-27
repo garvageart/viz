@@ -5,8 +5,7 @@ export interface ModalInstance<T extends Record<string, any> = Record<string, an
     id: string;
     component: Component<T>;
     props: Omit<T, "id">;
-    resolve: (result: R) => void;
-    reject: (reason?: string) => void;
+    resolve: (result: R | undefined) => void;
     index: number;
     options?: ModalOptions;
 }
@@ -15,6 +14,7 @@ export interface ModalOptions {
     heading?: string;
     width?: string;
     height?: string;
+    applyPadding?: boolean;
     closeOnOverlayClick?: boolean;
 }
 
@@ -26,23 +26,19 @@ export class ModalsManager {
         component: Component<T>,
         props: Omit<T, "id">,
         options?: ModalOptions
-    ): Promise<R> {
+    ): Promise<R | undefined> {
         const id = generateRandomString(8);
 
-        const promise = new Promise<R>((resolve, reject) => {
+        const promise = new Promise<R | undefined>((resolve) => {
             this.modals.push({
                 id,
                 component,
                 props,
                 resolve,
-                reject,
                 index: this.baseZIndex + this.modals.length * 10,
                 options
             });
         });
-
-        // Silent catch to prevent "Uncaught (in promise)" when dismissed
-        promise.catch(() => {});
 
         return promise;
     }
@@ -64,7 +60,8 @@ export class ModalsManager {
         if (index !== -1) {
             const modal = this.modals[index];
 
-            modal.reject(reason);
+            // Resolve with undefined to signify dismissal/cancellation
+            modal.resolve(undefined);
             this.modals.splice(index, 1);
         }
     }
