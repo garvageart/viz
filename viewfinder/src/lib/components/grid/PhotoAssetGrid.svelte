@@ -297,7 +297,6 @@
 			}
 
 			selection.select(closestItem.asset);
-			suppressScrollOnce = true;
 		}
 	}
 
@@ -579,15 +578,26 @@ return;
 				// Visual position in viewport = gridRect.top + (row.top - currentScroll).
 				const currentScroll =
 					scroller instanceof Window ? window.scrollY : scroller.scrollTop;
-				const rowRectTop = gridRect.top + row.top - currentScroll;
+				const rowRectTop = usingExternalScroll
+					? gridRect.top + row.top
+					: gridRect.top + row.top - currentScroll;
 
 				// If using external scroll we know offsets
 				if (usingExternalScroll && scroller instanceof HTMLElement) {
-					// We can just scroll the parent
-					// Target scroll top = parent.scrollTop + (rowRectTop - parentRect.top)
 					const parentRect = scroller.getBoundingClientRect();
 					const relativeTop = rowRectTop - parentRect.top;
-					scroller.scrollBy({ top: relativeTop - 100, behavior: "instant" }); // -100 for padding
+					const viewBottom = scroller.clientHeight;
+					const scrollPaddingTop = 100; // Offset for sticky header/toolbar
+					const scrollPaddingBottom = 20;
+
+					if (relativeTop < scrollPaddingTop) {
+						scroller.scrollBy({ top: relativeTop - scrollPaddingTop, behavior: "instant" });
+					} else if (relativeTop + row.height > viewBottom - scrollPaddingBottom) {
+						scroller.scrollBy({
+							top: relativeTop + row.height - viewBottom + scrollPaddingBottom,
+							behavior: "instant"
+						});
+					}
 					return;
 				}
 
@@ -619,14 +629,23 @@ return;
 		}
 	}
 
+	let lastActiveUID: string | null = null;
+
 	$effect(() => {
-		if (selection.active && photoGridEl) {
+		const currentActive = selection.active;
+		if (currentActive && photoGridEl) {
+			const activeUid = currentActive.uid;
 			untrack(() => {
-				if (!suppressScrollOnce) {
-					scrollToAsset(selection.active!);
+				if (activeUid !== lastActiveUID) {
+					lastActiveUID = activeUid;
+					if (!suppressScrollOnce) {
+						scrollToAsset(currentActive);
+					}
 				}
 				suppressScrollOnce = false;
 			});
+		} else if (!currentActive) {
+			lastActiveUID = null;
 		}
 	});
 

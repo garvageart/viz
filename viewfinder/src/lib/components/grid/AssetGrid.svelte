@@ -231,9 +231,20 @@
 		}
 	}
 
+	let lastActiveUID: string | null = null;
+
 	$effect(() => {
-		if (selection.active && assetGridDisplayEl) {
-			untrack(() => scrollToAsset(selection.active!));
+		const currentActive = selection.active;
+		if (currentActive && assetGridDisplayEl) {
+			const activeUid = currentActive.uid;
+			untrack(() => {
+				if (activeUid !== lastActiveUID) {
+					lastActiveUID = activeUid;
+					scrollToAsset(currentActive);
+				}
+			});
+		} else if (!currentActive) {
+			lastActiveUID = null;
 		}
 	});
 
