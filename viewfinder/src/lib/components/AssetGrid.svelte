@@ -424,14 +424,41 @@ return;
 		return array;
 	}
 
-	function handleContainerClick(e: MouseEvent) {
-		onFocus();
-		// If we clicked on an asset card or inside one, don't clear selection here
-		// (handled by the card's own click handler)
-		if ((e.target as HTMLElement).closest(".asset-card")) {
-			return;
+	function shouldKeepSelection(target: HTMLElement | null): boolean {
+		if (!target) {
+			return false;
 		}
 
+		// 1. Keep if clicking an image card/photo
+		if (target.closest(".asset-photo, .asset-card")) {
+			return true;
+		}
+
+		// 2. Keep if clicking interactive elements (buttons, links, form controls)
+		if (
+			target.closest("button, a, input, select, textarea, [role='button'], [role='menuitem'], [role='tab'], [role='checkbox']")
+		) {
+			return true;
+		}
+
+		// 3. Keep if clicking custom interactive components (rating, label dropdowns, menus, modals, scrubber)
+		if (
+			target.closest(
+				".star-rating, .label-selector, .context-menu, .dropdown-content, .dropdown-menu, .timeline-scrubber, [role='dialog'], .viz-modal"
+			)
+		) {
+			return true;
+		}
+
+		return false;
+	}
+
+	function handleContainerClick(e: MouseEvent) {
+		onFocus();
+		const target = e.target as HTMLElement;
+		if (shouldKeepSelection(target)) {
+			return;
+		}
 		selection.clear();
 	}
 
@@ -443,28 +470,8 @@ return;
 		const clickHandler = (e: MouseEvent) => {
 			const target = e.target as HTMLElement;
 
-			// Ignore clicks that happen inside portalized context menus so
-			// interacting with a menu does not clear the current selection.
-			if (target.closest(".context-menu")) {
-				return;
-			}
-			const selectionToolbar = target.closest(
-				".selection-toolbar, .asset-toolbar, .viz-toolbar-container"
-			) as HTMLElement | undefined;
-
-			// ignore the selection toolbar since this is what we use do actions
-			if (target === selectionToolbar || selectionToolbar?.contains(target)) {
-				return;
-			}
-
-			// If click is inside ANY grid container, don't clear (supports multiple grids sharing one selection)
-			const allGrids = Array.from(
-				document.querySelectorAll(
-					".viz-asset-grid-container, .viz-asset-table-container"
-				)
-			) as HTMLElement[];
-			const insideAnyGrid = allGrids.some((g) => g.contains(target));
-			if (insideAnyGrid) {
+			// Check if we should preserve the selection
+			if (shouldKeepSelection(target)) {
 				return;
 			}
 

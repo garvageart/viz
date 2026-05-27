@@ -890,12 +890,40 @@ return;
 		}
 	}
 
+	function shouldKeepSelection(target: HTMLElement | null): boolean {
+		if (!target) {
+			return false;
+		}
+
+		// 1. Keep if clicking an image card/photo
+		if (target.closest(".asset-photo, .asset-card")) {
+			return true;
+		}
+
+		// 2. Keep if clicking interactive elements (buttons, links, form controls)
+		if (
+			target.closest("button, a, input, select, textarea, [role='button'], [role='menuitem'], [role='tab'], [role='checkbox']")
+		) {
+			return true;
+		}
+
+		// 3. Keep if clicking custom interactive components (rating, label dropdowns, menus, modals, scrubber)
+		if (
+			target.closest(
+				".star-rating, .label-selector, .context-menu, .dropdown-content, .dropdown-menu, .timeline-scrubber, [role='dialog'], .viz-modal"
+			)
+		) {
+			return true;
+		}
+
+		return false;
+	}
+
 	function handleContainerClick(e: MouseEvent) {
 		onFocus();
 		const target = e.target as HTMLElement;
 
-		// If we clicked on an asset photo or inside one, don't clear selection here
-		if (target.closest(".asset-photo")) {
+		if (shouldKeepSelection(target)) {
 			return;
 		}
 
@@ -929,9 +957,11 @@ return;
 
 	function handleOuterContainerClick(e: MouseEvent) {
 		onFocus();
-		if (e.target === e.currentTarget) {
-			selection.clear();
+		const target = e.target as HTMLElement;
+		if (shouldKeepSelection(target)) {
+			return;
 		}
+		selection.clear();
 	}
 
 	function unselectImagesOnClickOutsideAssetContainer(element: HTMLElement) {
@@ -941,30 +971,8 @@ return;
 			}
 			const target = e.target as HTMLElement;
 
-			// Ignore clicks that happen inside portalized context menus so
-			// interacting with a menu does not clear the current selection.
-			if (target.closest(".context-menu")) {
-				return;
-			}
-			const selectionToolbar = target.closest(
-				".selection-toolbar, .asset-toolbar, .viz-toolbar-container"
-			) as HTMLElement | undefined;
-
-			// ignore the selection toolbar since this is what we use do actions
-			if (target === selectionToolbar || selectionToolbar?.contains(target)) {
-				return;
-			}
-
-			// If click is inside ANY grid container, scrubber, or modal, don't clear.
-			// (supports multiple grids sharing one selection and prevents modals from clearing selection)
-			const allGrids = Array.from(
-				document.querySelectorAll(
-					".viz-photo-grid-container, .timeline-scrubber, .viz-asset-grid-container, [role='dialog']"
-				)
-			) as HTMLElement[];
-			const insideAnyGrid = allGrids.some((g) => g.contains(target));
-
-			if (insideAnyGrid) {
+			// Check if we should preserve the selection
+			if (shouldKeepSelection(target)) {
 				return;
 			}
 
@@ -981,13 +989,12 @@ return;
 			selection.clear();
 		};
 
-		document.addEventListener("click", clickHandler);
-
-		return {
-			destroy() {
+		$effect(() => {
+			document.addEventListener("click", clickHandler);
+			return () => {
 				document.removeEventListener("click", clickHandler);
-			}
-		};
+			};
+		});
 	}
 </script>
 
