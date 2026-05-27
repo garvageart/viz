@@ -82,7 +82,12 @@ export class VizLocalStorage<V = string> {
             (item?.startsWith("{") && item?.endsWith("}")) ||
             (item?.startsWith("[") && item?.endsWith("]"))
         ) {
-            return JSON.parse(item) as V;
+            try {
+                return JSON.parse(item) as V;
+            } catch (e) {
+                console.error("[VizLocalStorage] Failed to parse item", this.key, e);
+                return null;
+            }
         }
 
         if (item === "true" || item === "false") {
