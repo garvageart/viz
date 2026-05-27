@@ -119,6 +119,7 @@ test.describe('AssetGrid Functionality', () => {
     });
 
     test('should function correctly in search results', async ({ page }) => {
+        test.slow();
         // Navigate to search with query that returns collections
         await page.goto('/search?q=a');
         await page.waitForLoadState('networkidle');

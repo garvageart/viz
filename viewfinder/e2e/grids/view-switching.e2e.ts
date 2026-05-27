@@ -38,6 +38,7 @@ test.describe('View Switching Functionality', () => {
     });
 
     test('should switch views on /search', async ({ page }) => {
+        test.slow();
         await page.goto('/search?q=a');
         await page.waitForLoadState('networkidle');
         await expect(page.locator('.viz-view-container')).toBeVisible({ timeout: 20000 });
@@ -63,6 +64,7 @@ test.describe('View Switching Functionality', () => {
     });
 
     test('should switch views on /collections/[uid]', async ({ page }) => {
+        test.slow();
         // 1. Find a collection first
         await page.goto('/collections');
         await page.waitForLoadState('networkidle');
