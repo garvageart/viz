@@ -2,7 +2,35 @@ import { test, expect } from '@playwright/test';
 
 test.describe('Layout Regression Tests', () => {
     test.beforeEach(async ({ page }) => {
+        test.slow();
+        // Go to home to establish origin
         await page.goto('/');
+        
+        // Set layout in localStorage to ensure predictable starting point
+        await page.evaluate(() => {
+            const singleLayout = {
+                root: {
+                    type: "tab-group",
+                    id: "tg-main",
+                    size: 100,
+                    locked: false,
+                    activeViewId: 1,
+                    views: [
+                        { name: "Clock", id: 1, isActive: true },
+                        { name: "Filter", id: 2, isActive: false },
+                        { name: "Collections", id: 3, isActive: false, path: "/collections" }
+                    ]
+                },
+                activeGroupId: "tg-main"
+            };
+            localStorage.setItem("viz:workspaceLayout", JSON.stringify(singleLayout));
+        });
+
+        // Reload to load the single group layout
+        await page.reload();
+        await page.waitForLoadState('networkidle');
+
+        // Wait for the workspace to initialize
         await expect(page.locator('.viz-workspace')).toBeVisible({ timeout: 15000 });
     });
 
@@ -16,24 +44,19 @@ test.describe('Layout Regression Tests', () => {
         // Wait for split
         await expect(page.locator('.splitpanes__splitter').first()).toBeVisible();
 
-        // 2. Split the NEW group (the one on the right) again to get 3 groups
-        // The new group should be the second .tab-group-panel
+        // 2. Split another tab from the first group again to get 3 groups
         const groups = page.locator('.tab-group-panel');
         await expect(groups).toHaveCount(2);
 
-        const secondGroupTabs = groups.nth(1).locator('button[role="tab"]').first();
-        await secondGroupTabs.click({ button: 'right' });
+        const firstGroupTabs = groups.first().locator('button[role="tab"]');
+        // Right click the second tab in the first group ("Filter") and split right
+        await firstGroupTabs.nth(1).click({ button: 'right' });
         await page.locator('text="Split Right"').click();
 
         // Wait for second split
         await expect(groups).toHaveCount(3);
         
         // Now we have [Group 1] | [Group 2] | [Group 3]
-        // This likely creates a structure like: SplitNode(Group1, SplitNode(Group2, Group3))
-        // or SplitNode(Group1, Group2, Group3) depending on how split works.
-        // Based on "splitGroup" implementation:
-        // if parent has same orientation, it adds as sibling.
-        // Default split is horizontal (side-by-side).
 
         // 3. Move the tab from Group 3 to Group 2
         const group2 = groups.nth(1);

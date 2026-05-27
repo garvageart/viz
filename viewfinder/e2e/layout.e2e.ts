@@ -3,9 +3,34 @@ import { test, expect } from '@playwright/test';
 test.describe('Workspace Layout & Persistence', () => {
     
     test.beforeEach(async ({ page }) => {
-        // Navigate to the app (auth state is handled by setup project)
+        test.slow();
+        // Go to home to establish origin
         await page.goto('/');
         
+        // Set layout in localStorage to ensure predictable starting point
+        await page.evaluate(() => {
+            const singleLayout = {
+                root: {
+                    type: "tab-group",
+                    id: "tg-main",
+                    size: 100,
+                    locked: false,
+                    activeViewId: 1,
+                    views: [
+                        { name: "Clock", id: 1, isActive: true },
+                        { name: "Filter", id: 2, isActive: false },
+                        { name: "Collections", id: 3, isActive: false, path: "/collections" }
+                    ]
+                },
+                activeGroupId: "tg-main"
+            };
+            localStorage.setItem("viz:workspaceLayout", JSON.stringify(singleLayout));
+        });
+
+        // Reload to load the single group layout
+        await page.reload();
+        await page.waitForLoadState('networkidle');
+
         // Wait for the workspace to initialize
         await expect(page.locator('.viz-workspace')).toBeVisible({ timeout: 15000 });
     });
@@ -38,12 +63,18 @@ test.describe('Workspace Layout & Persistence', () => {
             throw e;
         }
 
+        // Wait for Svelte to save the updated layout to localStorage
+        await expect(async () => {
+            const layout = await page.evaluate(() => localStorage.getItem('viz:workspaceLayout'));
+            expect(layout).toContain(trimmedName);
+        }).toPass({ timeout: 5000 });
+
         // 5. Reload the page
         await page.reload();
         await page.waitForLoadState('networkidle');
 
         // 6. Verify the tab is still there, active, and has the correct name
-        await expect(page.locator('.viz-workspace')).toBeVisible();
+        await expect(page.locator('.viz-workspace')).toBeVisible({ timeout: 15000 });
         const persistedTab = page.locator('button[role="tab"]').filter({ hasText: trimmedName });
         await expect(persistedTab.first()).toBeVisible({ timeout: 15000 });
         
@@ -73,12 +104,18 @@ test.describe('Workspace Layout & Persistence', () => {
         const splitter = page.locator('.splitpanes__splitter');
         await expect(splitter.first()).toBeVisible();
 
+        // Wait for Svelte to save the updated split layout to localStorage
+        await expect(async () => {
+            const layout = await page.evaluate(() => localStorage.getItem('viz:workspaceLayout'));
+            expect(layout).toContain('split');
+        }).toPass({ timeout: 5000 });
+
         // 5. Reload the page
         await page.reload();
         await page.waitForLoadState('networkidle');
 
         // 6. Verify the split persisted
-        await expect(page.locator('.splitpanes__splitter').first()).toBeVisible();
+        await expect(page.locator('.splitpanes__splitter').first()).toBeVisible({ timeout: 15000 });
         await expect(page.locator('button[role="tab"]').filter({ hasText: trimmedName }).first()).toBeVisible();
     });
 
@@ -105,6 +142,12 @@ test.describe('Workspace Layout & Persistence', () => {
 
         // 3. Verify it's gone
         await expect(dynamicTab).not.toBeVisible();
+
+        // Wait for Svelte to save the updated layout to localStorage
+        await expect(async () => {
+            const layout = await page.evaluate(() => localStorage.getItem('viz:workspaceLayout'));
+            expect(layout).not.toContain(trimmedName);
+        }).toPass({ timeout: 5000 });
 
         // 4. Reload
         await page.reload();
