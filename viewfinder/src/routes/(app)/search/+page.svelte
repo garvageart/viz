@@ -91,6 +91,9 @@ return firstRich;
 	// Action Menus
 	let imageActionMenuItems = $derived.by(() => {
 		const baseMenuItems = createImageMenu(images, imageSelection, {
+			onUpdate: (image) => {
+				performSearch();
+			},
 			onDelete: (deletedUIDs) => {
 				// For search, we might just want to remove them from the view or re-search
 				// Ideally, we'd remove them from the local 'images' array if it were mutable in this context

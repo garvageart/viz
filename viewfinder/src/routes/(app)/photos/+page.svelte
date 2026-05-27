@@ -141,6 +141,11 @@ return undefined;
 	// Action menu items for selected images
 	let actionMenuItems: MenuItem[] = $derived.by(() => {
 		const baseMenuItems = createImageMenu(galleryState.images, selectionScope, {
+			onUpdate: (updatedImage) => {
+				galleryState.images = galleryState.images.map((img) =>
+					img.uid === updatedImage.uid ? updatedImage : img
+				);
+			},
 			onDelete: (deletedUIDs) => {
 				galleryState.images = galleryState.images.filter(
 					(img) => !deletedUIDs.includes(img.uid)

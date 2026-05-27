@@ -18,6 +18,7 @@
 
 	import NavigationProgressBar from "$lib/components/ui/NavigationProgressBar.svelte";
 	import ModalRenderer from "$lib/components/modals/ModalContainer.svelte";
+	import Notifications from "$lib/toast-notifcations/Notifications.svelte";
 	import { historyState } from "$lib/states/history.svelte";
 	import { eventsState } from "$lib/states/events.svelte";
 	import { debugState, themeState } from "$lib/states/index.svelte";
@@ -81,4 +82,5 @@
 	<NavigationProgressBar />
 {/if}
 {@render children()}
+<Notifications />
 <ModalRenderer />

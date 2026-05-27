@@ -40,12 +40,27 @@ class ToastState {
 
         const mergedToast = { ...defaultToast, ...toast, id };
 
-        // Push the toast to the top of the list of toasts
-        this.toasts.unshift(mergedToast);
+        // If a toast with the same message already exists, move it to the front
+        const existing = this.toasts.find((t) => t.message === mergedToast.message);
+        if (existing) {
+            // Update properties and move to front
+            const existingId = existing.id;
+            const updated = { ...existing, ...mergedToast, id: existingId };
+            this.toasts = [updated, ...this.toasts.filter((t) => t.id !== existingId)];
+
+            // Reset timeout for existing toast
+            if (updated.timeout && updated.timeout > 0) {
+                setTimeout(() => this.dismissToast(existingId), updated.timeout);
+            }
+            return;
+        }
+
+        // Otherwise add new toast at the front
+        this.toasts = [mergedToast, ...this.toasts];
 
         // If toast is dismissible and has a timeout, dismiss it after "timeout" amount of time.
         if (mergedToast.timeout && mergedToast.timeout > 0) {
-            setTimeout(() => this.dismissToast(id), mergedToast.timeout);
+            setTimeout(() => this.dismissToast(mergedToast.id), mergedToast.timeout);
         }
     };
 }

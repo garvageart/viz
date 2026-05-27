@@ -1,7 +1,6 @@
 <script lang="ts">
 	import Header from "$lib/components/ui/Header.svelte";
 	import UploadPanel from "$lib/components/ui/panels/UploadPanel.svelte";
-	import Notifications from "$lib/toast-notifcations/Notifications.svelte";
 	import { sortState, upload } from "$lib/states/index.svelte";
 	import "$lib/components/panels/viz-panel.scss";
 	import { registerReady } from "$lib/stores/appReady";
@@ -43,7 +42,6 @@
 
 <div class="viz-app-layout">
 	<Header />
-	<Notifications />
 	{#if upload.files.length > 0}
 		<UploadPanel />
 	{/if}

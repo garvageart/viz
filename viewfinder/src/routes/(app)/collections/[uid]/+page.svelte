@@ -215,6 +215,9 @@
 				collection: data,
 				onUpdate: (image: ImageAsset) => {
 					selectionScope.updateItem(image, collectionState.images);
+					collectionState.images = collectionState.images.map((i) =>
+						i.uid === image.uid ? image : i
+					);
 				},
 				onDelete: (uids: string[]) => {
 					selectionScope.clear();
