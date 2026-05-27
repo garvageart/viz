@@ -53,6 +53,21 @@
 
 	$effect(() => {
 		if (initialized && workspaceState.workspace) {
+			// Explicitly read reactive properties of the workspace tree to register deep dependencies
+			const trackNode = (node: any) => {
+				if (!node) return;
+				const _active = node.activeViewId;
+				const _views = node.views?.length;
+				const _size = node.size;
+				const _locked = node.locked;
+				if (node.children) {
+					node.children.forEach(trackNode);
+				}
+			};
+			trackNode(workspaceState.workspace.root);
+			const _activeGroup = workspaceState.workspace.activeGroupId;
+			const _maximizedGroup = workspaceState.workspace.maximizedGroupId;
+
 			const serialized = workspaceState.workspace.toJSON();
 			storage.set(serialized);
 			if (debugMode) {

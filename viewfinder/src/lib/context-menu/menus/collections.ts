@@ -50,7 +50,7 @@ export function createCollectionMenu(
                         message: `Collection ${collection.favourited ? "un" : ""}favourited`
                     });
                     opts.onCollectionUpdated?.(res.data);
-                    await invalidateViz({ delay: 200 });
+                    await invalidateViz({ delay: 200, skipInvalidateAll: true });
                 } else {
                     toastState.addToast({
                         type: "error",

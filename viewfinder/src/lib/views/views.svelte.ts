@@ -30,7 +30,7 @@ export const invalidationState = $state({ version: 0 });
  * Use this instead of `invalidateAll()` when you want to ensure background panels
  * also refresh their data (e.g., after uploading images or modifying collections).
  */
-export async function invalidateViz(opts?: { delay?: number }) {
+export async function invalidateViz(opts?: { delay?: number; skipInvalidateAll?: boolean }) {
     if (typeof window === "undefined") {
         return;
     }
@@ -39,6 +39,9 @@ export async function invalidateViz(opts?: { delay?: number }) {
         await sleep(opts.delay);
     }
     invalidationState.version += 1;
+    if (opts?.skipInvalidateAll) {
+        return;
+    }
     try {
         return await invalidateAll();
     } catch (e) {

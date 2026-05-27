@@ -30,6 +30,7 @@ export function createImageMenu(
     const { onDelete, onUpdate, collection } = options;
     const items = selectionScope.selectedItems;
     const allFavourited = items.length > 0 && items.every((img) => img.favourited);
+    console.log("[createImageMenu] items count:", items.length, "items:", items.map(img => ({ uid: img.uid, name: img.name, favourited: img.favourited })), "allFavourited:", allFavourited);
 
     const actionMenuItems: MenuItem[] = [
         {
@@ -55,7 +56,7 @@ export function createImageMenu(
                             selectionScope.updateItem(res.data, allImages);
                             onUpdate?.(res.data);
                         }
-                        await invalidateViz({ delay: 200 });
+                        await invalidateViz({ delay: 200, skipInvalidateAll: true });
                     }
                 } catch (err) {
                     toastState.addToast({
