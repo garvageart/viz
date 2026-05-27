@@ -46,6 +46,7 @@ async function handleOnboarding(page: Page) {
 }
 
 setup('authenticate', async ({ page }) => {
+    setup.setTimeout(60000);
     const email = process.env.E2E_TEST_EMAIL;
     const password = process.env.E2E_TEST_PASSWORD;
     const name = process.env.E2E_TEST_USERNAME;
@@ -112,15 +113,20 @@ setup('authenticate', async ({ page }) => {
                     await expect(workspace).toBeVisible({ timeout: 15000 });
                     console.log('Registration and onboarding successful.');
                 } else {
-                    await page.screenshot({ path: 'e2e-login-failure.png' });
+                    await page.screenshot({ path: 'e2e/screenshots/e2e-login-failure.png' });
                     throw new Error(`Authentication failed: ${errorMsg}`);
                 }
             } else {
-                await page.screenshot({ path: 'e2e-unknown-failure.png' });
+                await page.screenshot({ path: 'e2e/screenshots/e2e-unknown-failure.png' });
                 throw new Error(`Authentication failed: Unknown state at ${page.url()}`);
             }
         }
     }
+
+    // Warm up routes to avoid lazy compilation timeouts in Vite dev mode
+    console.log('Warming up routes...');
+    await page.goto('/photos').catch(() => {});
+    await page.goto('/collections').catch(() => {});
 
     // Save state
     await page.context().storageState({ path: authFile });

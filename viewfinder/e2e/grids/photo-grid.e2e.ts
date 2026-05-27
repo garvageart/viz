@@ -118,8 +118,8 @@ test.describe('PhotoAssetGrid Functionality', () => {
             await expect(contextMenu).toBeVisible();
             
             // Verify some common menu items exist
-            await expect(contextMenu.locator('text="Download"')).toBeVisible();
-            await expect(contextMenu.locator('text="Add to Collection"')).toBeVisible();
+            await expect(contextMenu.locator('text="Download Original"')).toBeVisible();
+            await expect(contextMenu.locator('text="Delete"')).toBeVisible();
 
             // Close context menu by clicking elsewhere
             await page.mouse.click(0, 0);
@@ -238,4 +238,69 @@ test.describe('PhotoAssetGrid Functionality', () => {
             }
         }
     });
+
+    test('should keep scroll stable during favourite/unfavourite', async ({ page }) => {
+        const photos = page.locator('.asset-photo');
+        await expect(async () => {
+            expect(await photos.count()).toBeGreaterThan(0);
+        }).toPass({ timeout: 10000 });
+
+        const container = page.locator('.viz-view-container');
+        
+        // Record starting scroll position
+        const initialScroll = await container.evaluate((el) => el.scrollTop);
+        
+        // Right click first photo and favourite it
+        const firstPhoto = photos.first();
+        await firstPhoto.click({ button: 'right' });
+        
+        const contextMenu = page.locator('.context-menu');
+        await expect(contextMenu).toBeVisible();
+        
+        const favButton = contextMenu.locator('button:has-text("Favourite"), button:has-text("Unfavourite")');
+        await expect(favButton).toBeVisible();
+        
+        await favButton.click();
+        
+        // Ensure context menu closed and check if scroll position remained stable
+        await expect(contextMenu).not.toBeVisible();
+        
+        // Wait a small bit for any delayed scroll reactions
+        await page.waitForTimeout(300);
+        
+        const finalScroll = await container.evaluate((el) => el.scrollTop);
+        expect(Math.abs(finalScroll - initialScroll)).toBeLessThan(5); // should be stable within a few pixels tolerance
+    });
+
+    test('should not scroll parent when navigating visible items, but scroll parent when navigating off-screen', async ({ page }) => {
+        const photos = page.locator('.asset-photo');
+        await expect(async () => {
+            expect(await photos.count()).toBeGreaterThan(2);
+        }).toPass({ timeout: 10000 });
+
+        const container = page.locator('.viz-view-container');
+        
+        // Start on first photo
+        const firstPhoto = photos.first();
+        await firstPhoto.click();
+        await expect(firstPhoto).toHaveClass(/selected-photo/);
+        
+        // Record scroll position
+        const initialScroll = await container.evaluate((el) => el.scrollTop);
+        
+        // Navigate Left and Right (visible items)
+        await page.keyboard.press('ArrowRight');
+        await page.waitForTimeout(100);
+        
+        // Scroll should remain perfectly still
+        let currentScroll = await container.evaluate((el) => el.scrollTop);
+        expect(Math.abs(currentScroll - initialScroll)).toBeLessThan(2);
+        
+        await page.keyboard.press('ArrowLeft');
+        await page.waitForTimeout(100);
+        
+        currentScroll = await container.evaluate((el) => el.scrollTop);
+        expect(Math.abs(currentScroll - initialScroll)).toBeLessThan(2);
+    });
 });
+

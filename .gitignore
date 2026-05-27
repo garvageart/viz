@@ -67,5 +67,6 @@ viewfinder/node_modules/
 /viewfinder/playwright-report
 /viewfinder/test-results
 /viewfinder/e2e/.auth
+/viewfinder/e2e/screenshots
 /viewfinder/e2e-*.png
 .antigravitycli

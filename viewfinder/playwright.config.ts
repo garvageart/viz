@@ -9,6 +9,8 @@ dotenv.config({ path: '../.env', override: true });
 export default defineConfig({
 	testDir: 'e2e',
 	testMatch: '**/*.e2e.ts',
+	snapshotDir: 'e2e/screenshots',
+	outputDir: 'e2e/screenshots/results',
 	/* Maximum time one test can run for. */
 	timeout: 30 * 1000,
 	expect: {
