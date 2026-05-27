@@ -156,4 +156,92 @@ test.describe('Workspace Layout & Persistence', () => {
         // 5. Verify it's still gone
         await expect(page.locator('button[role="tab"]').filter({ hasText: trimmedName })).not.toBeVisible();
     });
+
+    test('should persist vertical splits after page reload', async ({ page }) => {
+        // Identify the initial tab group
+        const firstTab = page.locator('button[role="tab"]').first();
+        await expect(firstTab).toBeVisible();
+
+        // Perform a vertical split via context menu ("Split Down")
+        const tabName = await firstTab.locator('.tab-name').textContent();
+        const trimmedName = tabName!.trim();
+        await firstTab.click({ button: 'right' });
+
+        // Select "Split Down" from the context menu
+        const splitDownOption = page.locator('text="Split Down"');
+        await expect(splitDownOption).toBeVisible();
+        await splitDownOption.click();
+        
+        // Wait for the layout to update
+        await page.waitForTimeout(1000);
+
+        // Verify we now have multiple tab groups separated vertically (splitpanes--vertical class exists)
+        const splitter = page.locator('.splitpanes__splitter');
+        await expect(splitter.first()).toBeVisible({ timeout: 10000 });
+
+        // Wait for Svelte to save the updated split layout to localStorage
+        await expect(async () => {
+            const layout = await page.evaluate(() => localStorage.getItem('viz:workspaceLayout'));
+            expect(layout).toContain('split');
+            expect(layout).toContain('vertical');
+        }).toPass({ timeout: 5000 });
+
+        // Reload the page
+        await page.reload();
+        await page.waitForLoadState('networkidle');
+
+        // Verify the split persisted
+        await expect(page.locator('.viz-workspace')).toBeVisible({ timeout: 15000 });
+        await expect(page.locator('.splitpanes__splitter').first()).toBeVisible({ timeout: 15000 });
+        await expect(page.locator('button[role="tab"]').filter({ hasText: trimmedName }).first()).toBeVisible({ timeout: 15000 });
+    });
+
+    test('should maximize active tab group via hotkey and toggle back', async ({ page }) => {
+        // Ensure we split first so we have multiple groups
+        const firstTab = page.locator('button[role="tab"]').first();
+        await expect(firstTab).toBeVisible();
+        await firstTab.click({ button: 'right' });
+        await page.locator('text="Split Right"').click();
+
+        // Wait for horizontal splitter to be visible
+        const splitter = page.locator('.splitpanes__splitter');
+        await expect(splitter.first()).toBeVisible({ timeout: 10000 });
+
+        // Focus on the active group by clicking a tab
+        await firstTab.click();
+
+        // Press the backtick hotkey to maximize
+        await page.keyboard.press('`');
+        await page.waitForTimeout(500);
+
+        // Verify the second tab group panel is now hidden (maximized state)
+        const panels = page.locator('.tab-group-panel');
+        await expect(panels.nth(1)).not.toBeVisible();
+
+        // Press the backtick hotkey again to restore
+        await page.keyboard.press('`');
+        await page.waitForTimeout(500);
+
+        // Verify the second tab group panel is visible again
+        await expect(panels.nth(1)).toBeVisible();
+    });
+
+    test('should gracefully recover from corrupted layout storage', async ({ page }) => {
+        // Write an invalid, broken JSON layout to localStorage
+        await page.evaluate(() => {
+            localStorage.setItem("viz:workspaceLayout", "{broken_garbage: true[}");
+        });
+
+        // Reload the page to trigger layout parsing
+        await page.reload();
+        await page.waitForLoadState('networkidle');
+
+        // Verify that the app didn't crash, .viz-workspace is visible, and the fallback default layout rendered
+        await expect(page.locator('.viz-workspace')).toBeVisible({ timeout: 15000 });
+        
+        // Default layout should contain Clock, Filter, and Collections tabs
+        await expect(page.locator('button[role="tab"]').filter({ hasText: 'Clock' }).first()).toBeVisible({ timeout: 10000 });
+        await expect(page.locator('button[role="tab"]').filter({ hasText: 'Filter' }).first()).toBeVisible({ timeout: 10000 });
+        await expect(page.locator('button[role="tab"]').filter({ hasText: 'Collections' }).first()).toBeVisible({ timeout: 10000 });
+    });
 });
