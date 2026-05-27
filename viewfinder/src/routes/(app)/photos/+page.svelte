@@ -1,23 +1,26 @@
 <script lang="ts">
+	import { goto } from "$app/navigation";
 	import {
-		addCollectionImages,
-		getImage,
-		listImages,
-		updateImage,
-		type Collection,
-		type ImageAsset
+	    addCollectionImages,
+	    getImage,
+	    listImages,
+	    updateImage,
+	    type Collection,
+	    type ImageAsset
 	} from "$lib/api";
-	import AssetToolbar from "$lib/components/AssetToolbar.svelte";
-	import Button from "$lib/components/Button.svelte";
-	import DragAndDropUpload from "$lib/components/DragAndDropUpload.svelte";
-	import Dropdown from "$lib/components/Dropdown.svelte";
-	import IconButton from "$lib/components/IconButton.svelte";
-	import ImageLightbox from "$lib/components/ImageLightbox.svelte";
-	import LabelSelector from "$lib/components/LabelSelector.svelte";
-	import MaterialIcon from "$lib/components/MaterialIcon.svelte";
-	import PhotoAssetGrid from "$lib/components/PhotoAssetGrid.svelte";
+	import AssetToolbar from "$lib/components/ui/toolbars/AssetToolbar.svelte";
+	import Button from "$lib/components/ui/Button.svelte";
+	import DragAndDropUpload from "$lib/components/ui/DragAndDropUpload.svelte";
+	import Dropdown from "$lib/components/context-menus/Dropdown.svelte";
+	import IconButton from "$lib/components/ui/IconButton.svelte";
+	import ImageLightbox from "$lib/components/ui/ImageLightbox.svelte";
+	import LabelSelector from "$lib/components/image-tools/LabelSelector.svelte";
+	import MaterialIcon from "$lib/components/ui/MaterialIcon.svelte";
+	import StarRating from "$lib/components/image-tools/StarRating.svelte";
+	import PhotoAssetGrid from "$lib/components/grid/PhotoAssetGrid.svelte";
 	import CollectionSelectionModal from "$lib/components/modals/CollectionSelectionModal.svelte";
 	import FilterModal from "$lib/components/modals/FilterModal.svelte";
+	import { modalsManager } from "$lib/components/modals/manager/ModalManager.svelte";
 	import VizViewContainer from "$lib/components/panels/VizViewContainer.svelte";
 	import { VizMimeTypes } from "$lib/constants.js";
 	import ContextMenu from "$lib/context-menu/ContextMenu.svelte";
@@ -27,35 +30,31 @@
 	import { LabelColours, type ImageLabel } from "$lib/images/constants.js";
 	import { ImagePaginationState } from "$lib/images/state.svelte.js";
 	import {
-		getConsolidatedGroups,
-		groupImagesByDate,
-		type ConsolidatedGroup,
-		type DateGroup
+	    getConsolidatedGroups,
+	    groupImagesByDate,
+	    type ConsolidatedGroup,
+	    type DateGroup
 	} from "$lib/photo-layout/index.js";
 	import { filterManager } from "$lib/states/filter.svelte";
 	import { viewSettings } from "$lib/states/index.svelte";
-	import { modalsManager } from "$lib/components/modals/manager/ModalManager.svelte";
-	import { invalidateViz } from "$lib/views/views.svelte";
-	import { page } from "$app/state";
 	import {
-		selectionManager,
-		SelectionScopeNames
+	    selectionManager,
+	    SelectionScopeNames
 	} from "$lib/states/selection.svelte";
 	import { toastState } from "$lib/toast-notifcations/notif-state.svelte";
+	import type { AssetSortBy, AssetSortOrder } from "$lib/types/asset.js";
 	import {
-		SUPPORTED_IMAGE_TYPES,
-		SUPPORTED_RAW_FILES,
-		type SupportedImageTypes
+	    SUPPORTED_IMAGE_TYPES,
+	    SUPPORTED_RAW_FILES,
+	    type SupportedImageTypes
 	} from "$lib/types/images";
 	import UploadManager, {
-		type ImageUploadSuccess
+	    type ImageUploadSuccess
 	} from "$lib/upload/manager.svelte";
 	import { getImageLabel } from "$lib/utils/images.js";
-	import StarRating from "$lib/components/StarRating.svelte";
+	import { invalidateViz } from "$lib/views/views.svelte";
 	import hotkeys from "hotkeys-js";
 	import { onDestroy, untrack } from "svelte";
-	import { goto } from "$app/navigation";
-	import type { AssetSortBy, AssetSortOrder } from "$lib/types/asset.js";
 
 	// Display options as MenuItem[] for Dropdown
 	const displayMenuItems: MenuItem[] = [

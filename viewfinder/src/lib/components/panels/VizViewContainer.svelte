@@ -1,7 +1,7 @@
 <script lang="ts">
 	import { page } from "$app/state";
 	import { onDestroy, onMount, untrack, type Snippet } from "svelte";
-	import LoadingContainer from "../LoadingContainer.svelte";
+	import LoadingContainer from "../overlays/LoadingContainer.svelte";
 	import { dev } from "$app/environment";
 	import type { SvelteHTMLElements } from "svelte/elements";
 	import { isElementScrollable } from "$lib/utils/dom";

@@ -5,14 +5,14 @@
 		updateCollection,
 		type Collection
 	} from "$lib/api";
-	import AssetGrid from "$lib/components/AssetGrid.svelte";
-	import AssetsShell from "$lib/components/AssetsShell.svelte";
-	import Button from "$lib/components/Button.svelte";
+	import AssetGrid from "$lib/components/grid/AssetGrid.svelte";
+	import AssetsShell from "$lib/components/ui/AssetsShell.svelte";
+	import Button from "$lib/components/ui/Button.svelte";
 	import CollectionCard, {
 		openCollection
-	} from "$lib/components/CollectionCard.svelte";
-	import IconButton from "$lib/components/IconButton.svelte";
-	import MaterialIcon from "$lib/components/MaterialIcon.svelte";
+	} from "$lib/components/ui/CollectionCard.svelte";
+	import IconButton from "$lib/components/ui/IconButton.svelte";
+	import MaterialIcon from "$lib/components/ui/MaterialIcon.svelte";
 	import CollectionModal from "$lib/components/modals/CollectionModal.svelte";
 	import FilterModal from "$lib/components/modals/FilterModal.svelte";
 	import { modalsManager } from "$lib/components/modals/manager/ModalManager.svelte";

@@ -1,9 +1,9 @@
 <script lang="ts">
 	import type { ImageAsset } from "$lib/api";
-	import MaterialIcon from "$lib/components/MaterialIcon.svelte";
+	import MaterialIcon from "$lib/components/ui/MaterialIcon.svelte";
 	import { getImageLabel, getTakenAt } from "$lib/utils/images";
 	import { DateTime } from "luxon";
-	import LabelSelector from "../LabelSelector.svelte";
+	import LabelSelector from "../image-tools/LabelSelector.svelte";
 
 	let { asset }: { asset: ImageAsset } = $props();
 	let takenAt = $derived(getTakenAt(asset));

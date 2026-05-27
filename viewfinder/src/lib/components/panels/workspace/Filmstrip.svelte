@@ -1,7 +1,7 @@
 <script lang="ts">
 	import { selectionManager } from "$lib/states/selection.svelte";
 	import { type ImageAsset } from "$lib/api";
-	import ImageCard from "$lib/components/ImageCard.svelte";
+	import ImageCard from "$lib/components/ui/ImageCard.svelte";
 
 	let activeScope = $derived(selectionManager.activeScope);
 	let activeItem = $derived(activeScope?.active as ImageAsset | undefined);

@@ -1,9 +1,9 @@
 <script lang="ts">
 	import type { User } from "$lib/api";
 	import type { UserRole } from "$lib/types/users";
-	import Button from "$lib/components/Button.svelte";
-	import InputText from "$lib/components/dom/InputText.svelte";
-	import InputSelect from "$lib/components/dom/InputSelect.svelte";
+	import Button from "$lib/components/ui/Button.svelte";
+	import InputText from "$lib/components/ui/InputText.svelte";
+	import InputSelect from "$lib/components/ui/InputSelect.svelte";
 	import { modalsManager } from "./manager/ModalManager.svelte";
 	import { untrack } from "svelte";
 

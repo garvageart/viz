@@ -1,6 +1,6 @@
 <script lang="ts">
 	import { scale } from "svelte/transition";
-	import MaterialIcon from "./MaterialIcon.svelte";
+	import MaterialIcon from "../ui/MaterialIcon.svelte";
 
 	let {
 		scrollTop = $bindable(0),

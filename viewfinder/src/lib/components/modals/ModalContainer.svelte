@@ -1,6 +1,6 @@
 <script lang="ts">
     import { modalsManager } from "./manager/ModalManager.svelte";
-    import Lightbox from "../Lightbox.svelte";
+    import Lightbox from "../ui/Lightbox.svelte";
     import ModalLightbox from "./ModalLightbox.svelte";
 </script>
 

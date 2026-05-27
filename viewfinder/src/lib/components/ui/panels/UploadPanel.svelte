@@ -1,5 +1,5 @@
 <script lang="ts">
-	import IconButton from "$lib/components/IconButton.svelte";
+	import IconButton from "$lib/components/ui/IconButton.svelte";
 	import { upload } from "$lib/states/index.svelte";
 	import { UploadState } from "$lib/upload/asset.svelte";
 	import {
@@ -7,8 +7,8 @@
 		waitForUploadCompletion
 	} from "$lib/upload/manager.svelte";
 	import { scale } from "svelte/transition";
-	import Button from "./Button.svelte";
-	import MaterialIcon from "./MaterialIcon.svelte";
+	import Button from "../Button.svelte";
+	import MaterialIcon from "../MaterialIcon.svelte";
 	import { invalidateViz } from "$lib/views/views.svelte";
 
 	let minimized = $state(false);

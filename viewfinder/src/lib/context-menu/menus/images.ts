@@ -8,7 +8,7 @@ import {
     type CollectionDetailResponse,
     type ImageAsset
 } from "$lib/api";
-import ExportPanel from "$lib/components/ExportPanel.svelte";
+import ExportPanel from "$lib/components/ui/panels/ExportPanel.svelte";
 import DeleteModal from "$lib/components/modals/DeleteModal.svelte";
 import { modalsManager } from "$lib/components/modals/manager/ModalManager.svelte";
 import type { SelectionScope } from "$lib/states/selection.svelte";

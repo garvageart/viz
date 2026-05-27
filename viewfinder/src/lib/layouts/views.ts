@@ -1,6 +1,6 @@
 import { addCollectionImages } from "$lib/api";
 import type { CollectionDetailResponse } from "$lib/api/client.gen";
-import DevWelcomeText from "$lib/components/DevWelcomeText.svelte";
+import DevWelcomeText from "$lib/components/misc/DevWelcomeText.svelte";
 import FavouritesPanel from "$lib/components/panels/workspace/FavouritesPanel.svelte";
 import Filmstrip from "$lib/components/panels/workspace/Filmstrip.svelte";
 import FilterPanel from "$lib/components/panels/workspace/FilterPanel.svelte";

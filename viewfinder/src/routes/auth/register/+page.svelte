@@ -1,7 +1,7 @@
 <script lang="ts">
 	import { page } from "$app/state";
-	import Button from "$lib/components/Button.svelte";
-	import InputText from "$lib/components/dom/InputText.svelte";
+	import Button from "$lib/components/ui/Button.svelte";
+	import InputText from "$lib/components/ui/InputText.svelte";
 	import { registerUser } from "$lib/api";
 	import { goto } from "$app/navigation";
 	import { toastState } from "$lib/toast-notifcations/notif-state.svelte";

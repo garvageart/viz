@@ -14,14 +14,14 @@
     import { useZoomImageWheel } from "@zoom-image/svelte";
     import hotkeys from "hotkeys-js";
     import { onMount, untrack } from "svelte";
-    import CropOverlay from "./CropOverlay.svelte";
-    import CropTools from "./CropTools.svelte";
-    import InputText from "./dom/InputText.svelte";
+    import CropOverlay from "../image-tools/CropOverlay.svelte";
+    import CropTools from "../image-tools/CropTools.svelte";
+    import InputText from "./InputText.svelte";
     import IconButton from "./IconButton.svelte";
-    import LabelSelector from "./LabelSelector.svelte";
+    import LabelSelector from "../image-tools/LabelSelector.svelte";
     import Lightbox from "./Lightbox.svelte";
     import MaterialIcon from "./MaterialIcon.svelte";
-    import StarRating from "./StarRating.svelte";
+    import StarRating from "../image-tools/StarRating.svelte";
 
     interface Props {
         lightboxImage: ImageAsset | undefined;

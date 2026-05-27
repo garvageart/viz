@@ -22,8 +22,8 @@
 	import UploadManager from "$lib/upload/manager.svelte";
 	import hotkeys from "hotkeys-js";
 	import type { SvelteHTMLElements } from "svelte/elements";
-	import OpenAccountPanel from "./AccountPanel.svelte";
-	import AppMenu from "./AppMenu.svelte";
+	import OpenAccountPanel from "../context-menus/AccountPanel.svelte";
+	import AppMenu from "../context-menus/AppMenu.svelte";
 	import MaterialIcon from "./MaterialIcon.svelte";
 	import SearchInput from "./SearchInput.svelte";
 	import IconButton from "./IconButton.svelte";

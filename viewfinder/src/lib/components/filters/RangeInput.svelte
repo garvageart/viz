@@ -1,5 +1,5 @@
 <script lang="ts">
-	import InputText from "../dom/InputText.svelte";
+	import InputText from "../ui/InputText.svelte";
 
 	interface Props {
 		label: string;

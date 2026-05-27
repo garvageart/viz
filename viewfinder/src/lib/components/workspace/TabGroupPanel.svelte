@@ -1,7 +1,7 @@
 <script lang="ts">
 	import type { TabGroup } from "$lib/layouts/model.svelte";
-	import MaterialIcon from "../MaterialIcon.svelte";
-	import LoadingContainer from "../LoadingContainer.svelte";
+	import MaterialIcon from "../ui/MaterialIcon.svelte";
+	import LoadingContainer from "../overlays/LoadingContainer.svelte";
 	import { setContext, untrack } from "svelte";
 	import { tabOps } from "$lib/layouts/tab-ops.svelte";
 	import { workspaceState } from "$lib/states/workspace.svelte";

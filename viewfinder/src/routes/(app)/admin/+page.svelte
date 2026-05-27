@@ -1,7 +1,7 @@
 <script lang="ts">
 	import { invalidateAll } from "$app/navigation";
-	import MaterialIcon from "$lib/components/MaterialIcon.svelte";
-	import ProgressBar from "$lib/components/ProgressBar.svelte";
+	import MaterialIcon from "$lib/components/ui/MaterialIcon.svelte";
+	import ProgressBar from "$lib/components/ui/ProgressBar.svelte";
 	import AdminRouteShell from "$lib/components/admin/AdminRouteShell.svelte";
 	import { formatBytes, formatSeconds } from "$lib/utils/images";
 	import { invalidateViz } from "$lib/views/views.svelte.js";

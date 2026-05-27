@@ -16,7 +16,7 @@
 	import { dev } from "$app/environment";
 	import { afterNavigate, beforeNavigate } from "$app/navigation";
 
-	import NavigationProgressBar from "$lib/components/NavigationProgressBar.svelte";
+	import NavigationProgressBar from "$lib/components/ui/NavigationProgressBar.svelte";
 	import ModalRenderer from "$lib/components/modals/ModalContainer.svelte";
 	import { historyState } from "$lib/states/history.svelte";
 	import { eventsState } from "$lib/states/events.svelte";

@@ -2,10 +2,10 @@
     import type { ImageAsset } from "$lib/api";
     import type { MenuItem } from "$lib/context-menu/types";
     import { slide } from "svelte/transition";
-    import Button from "./Button.svelte";
-    import Dropdown from "./Dropdown.svelte";
-    import MaterialIcon from "./MaterialIcon.svelte";
-    import { modalsManager } from "./modals/manager/ModalManager.svelte";
+    import Button from "../Button.svelte";
+    import Dropdown from "../../context-menus/Dropdown.svelte";
+    import MaterialIcon from "../MaterialIcon.svelte";
+    import { modalsManager } from "../../modals/manager/ModalManager.svelte";
 
     interface Props {
         id: string;

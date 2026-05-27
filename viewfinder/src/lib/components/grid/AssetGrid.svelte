@@ -2,10 +2,10 @@
 	import { dev } from "$app/environment";
 	import { getFullImagePath } from "$lib/api";
 	import {
-		debugMode,
-		isLayoutPage,
-		sort,
-		tableColumnSettings
+	    debugMode,
+	    isLayoutPage,
+	    sort,
+	    tableColumnSettings
 	} from "$lib/states/index.svelte";
 	import { selectionManager } from "$lib/states/selection.svelte";
 	import type { AssetGridArray, AssetSortBy } from "$lib/types/asset";
@@ -17,10 +17,10 @@
 	import { DateTime } from "luxon";
 	import { untrack } from "svelte";
 	import type { SvelteHTMLElements } from "svelte/elements";
-	import MaterialIcon from "./MaterialIcon.svelte";
-	import type { AssetGridView } from "./PhotoAssetGrid.svelte";
-	import TableColumnSelectorModal from "./modals/TableColumnSelectorModal.svelte";
-	import { modalsManager } from "./modals/manager/ModalManager.svelte";
+	import MaterialIcon from "../ui/MaterialIcon.svelte";
+	import type { AssetGridView } from "../grid/PhotoAssetGrid.svelte";
+	import TableColumnSelectorModal from "../modals/TableColumnSelectorModal.svelte";
+	import { modalsManager } from "../modals/manager/ModalManager.svelte";
 
 	interface DisplayableAsset {
 		uid: string;

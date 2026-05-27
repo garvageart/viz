@@ -72,7 +72,7 @@ return found;
 	import { goto } from "$app/navigation";
 	import { page } from "$app/state";
 	import VizView from "$lib/views/views.svelte";
-	import CollectionPage from "../../routes/(app)/collections/[uid]/+page.svelte";
+	import CollectionPage from "../../../routes/(app)/collections/[uid]/+page.svelte";
 	import type { SvelteHTMLElements } from "svelte/elements";
 	import { getFullImagePath, getImage, type Collection } from "$lib/api";
 	import AssetImage from "./AssetImage.svelte";

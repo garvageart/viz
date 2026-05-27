@@ -1,6 +1,6 @@
 <script lang="ts">
 	import { filterManager } from "$lib/states/filter.svelte";
-	import IconButton from "$lib/components/IconButton.svelte";
+	import IconButton from "$lib/components/ui/IconButton.svelte";
 	import ImageFilter from "$lib/components/filters/ImageFilter.svelte";
 	import CollectionFilter from "$lib/components/filters/CollectionFilter.svelte";
 

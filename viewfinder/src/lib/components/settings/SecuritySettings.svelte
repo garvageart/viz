@@ -9,8 +9,8 @@
 		type ApiKey,
 		type Session
 	} from "$lib/api";
-	import Button from "$lib/components/Button.svelte";
-	import MaterialIcon from "$lib/components/MaterialIcon.svelte";
+	import Button from "$lib/components/ui/Button.svelte";
+	import MaterialIcon from "$lib/components/ui/MaterialIcon.svelte";
 	import ConfirmationModal from "$lib/components/modals/ConfirmationModal.svelte";
 	import CreatedApiKeyModal from "$lib/components/modals/CreatedApiKeyModal.svelte";
 	import { toastState } from "$lib/toast-notifcations/notif-state.svelte";

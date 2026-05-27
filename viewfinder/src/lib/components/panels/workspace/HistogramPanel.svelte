@@ -2,9 +2,9 @@
 	import { onMount, onDestroy } from "svelte";
 	import { computeHistogram, type HistogramData } from "$lib/histogram";
 	import { getFullImagePath, type ImageAsset } from "$lib/api";
-	import InputSelect from "$lib/components/dom/InputSelect.svelte";
+	import InputSelect from "$lib/components/ui/InputSelect.svelte";
 	import { selectionManager } from "$lib/states/selection.svelte";
-	import IconButton from "$lib/components/IconButton.svelte";
+	import IconButton from "$lib/components/ui/IconButton.svelte";
 	import type { HistogramChannels } from "$lib/histogram/types";
 	import type { HistogramChannelData } from "$lib/third-party/photo-histogram/js";
 

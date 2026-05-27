@@ -2,10 +2,10 @@
 	import type { ImageAsset, Collection } from "$lib/api";
 	import { VizMimeTypes } from "$lib/constants";
 	import { DragData } from "$lib/drag-drop/data";
-	import MaterialIcon from "$lib/components/MaterialIcon.svelte";
+	import MaterialIcon from "$lib/components/ui/MaterialIcon.svelte";
 	import { slide } from "svelte/transition";
 	import { formatBytes } from "$lib/utils/images";
-	import AssetImage from "$lib/components/AssetImage.svelte";
+	import AssetImage from "$lib/components/ui/AssetImage.svelte";
 
 	interface Props {
 		item: ImageAsset | Collection;

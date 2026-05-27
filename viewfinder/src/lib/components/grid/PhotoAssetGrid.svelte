@@ -39,11 +39,11 @@
 	} from "tippy.js";
 	import "tippy.js/dist/tippy.css";
 	import AssetGrid from "./AssetGrid.svelte";
-	import AssetImage from "./AssetImage.svelte";
-	import ImageCard from "./ImageCard.svelte";
-	import LabelSelector from "./LabelSelector.svelte";
-	import MaterialIcon from "./MaterialIcon.svelte";
-	import StarRating from "./StarRating.svelte";
+	import AssetImage from "../ui/AssetImage.svelte";
+	import ImageCard from "../ui/ImageCard.svelte";
+	import LabelSelector from "../image-tools/LabelSelector.svelte";
+	import MaterialIcon from "../ui/MaterialIcon.svelte";
+	import StarRating from "../image-tools/StarRating.svelte";
 	import TimelineScrubber from "./TimelineScrubber.svelte";
 
 	interface PhotoSpecificProps {

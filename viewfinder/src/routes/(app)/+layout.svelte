@@ -1,6 +1,6 @@
 <script lang="ts">
-	import Header from "$lib/components/Header.svelte";
-	import UploadPanel from "$lib/components/UploadPanel.svelte";
+	import Header from "$lib/components/ui/Header.svelte";
+	import UploadPanel from "$lib/components/ui/panels/UploadPanel.svelte";
 	import Notifications from "$lib/toast-notifcations/Notifications.svelte";
 	import { sortState, upload } from "$lib/states/index.svelte";
 	import "$lib/components/panels/viz-panel.scss";

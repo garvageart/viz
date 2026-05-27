@@ -1,9 +1,9 @@
 <script lang="ts">
-    import MaterialIcon from "$lib/components/MaterialIcon.svelte";
+    import MaterialIcon from "$lib/components/ui/MaterialIcon.svelte";
     import type { MaterialSymbol } from "$lib/types/MaterialSymbol";
     import type { Snippet } from "svelte";
     import type { SvelteHTMLElements } from "svelte/elements";
-    import IconButton from "../IconButton.svelte";
+    import IconButton from "../ui/IconButton.svelte";
 
     type Props = {
         children: Snippet;

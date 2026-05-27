@@ -2,12 +2,12 @@
 	import { invalidate } from "$app/navigation";
 	import { page } from "$app/state";
 	import { clearImageCache } from "$lib/api";
-	import Button from "$lib/components/Button.svelte";
+	import Button from "$lib/components/ui/Button.svelte";
 	import ConfirmationModal from "$lib/components/modals/ConfirmationModal.svelte";
 	import { formatBytes } from "$lib/utils/images";
 	import { toastState } from "$lib/toast-notifcations/notif-state.svelte";
 	import AdminRouteShell from "$lib/components/admin/AdminRouteShell.svelte";
-	import MaterialIcon from "$lib/components/MaterialIcon.svelte";
+	import MaterialIcon from "$lib/components/ui/MaterialIcon.svelte";
 	import { modalsManager } from "$lib/components/modals/manager/ModalManager.svelte";
 
 	let { data } = $props();

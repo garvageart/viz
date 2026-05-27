@@ -11,10 +11,10 @@
 
 <script lang="ts">
 	import { slide } from "svelte/transition";
-	import MaterialIcon from "../MaterialIcon.svelte";
+	import MaterialIcon from "../ui/MaterialIcon.svelte";
 	import ChecklistFacet from "./ChecklistFacet.svelte";
 	import RangeInput from "./RangeInput.svelte";
-	import StarRating from "../StarRating.svelte";
+	import StarRating from "../image-tools/StarRating.svelte";
 	import type { ImageFilters, ImageFacets } from "$lib/states/filter.svelte";
 	import LabelFacet from "./LabelFacet.svelte";
 

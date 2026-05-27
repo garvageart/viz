@@ -1,7 +1,7 @@
 <script lang="ts">
 	import { tableColumnSettings } from "$lib/states/index.svelte";
 	import { snakeToSentence } from "$lib/utils/strings";
-	import CheckboxGroup from "../dom/CheckboxGroup.svelte";
+	import CheckboxGroup from "../ui/CheckboxGroup.svelte";
 
 	interface Props {
 		id: string;

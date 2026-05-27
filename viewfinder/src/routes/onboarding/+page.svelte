@@ -12,15 +12,15 @@
 		getUserSettings,
 		type UserSetting
 	} from "$lib/api";
-	import InputText from "$lib/components/dom/InputText.svelte";
-	import InputSelect from "$lib/components/dom/InputSelect.svelte";
-	import Button from "$lib/components/Button.svelte";
-	import MaterialIcon from "$lib/components/MaterialIcon.svelte";
+	import InputText from "$lib/components/ui/InputText.svelte";
+	import InputSelect from "$lib/components/ui/InputSelect.svelte";
+	import Button from "$lib/components/ui/Button.svelte";
+	import MaterialIcon from "$lib/components/ui/MaterialIcon.svelte";
 	import { toastState } from "$lib/toast-notifcations/notif-state.svelte";
 	import { onMount } from "svelte";
 	import { fade } from "svelte/transition";
 	import { formatLabel } from "$lib/settings/utils";
-	import ProgressBar from "$lib/components/ProgressBar.svelte";
+	import ProgressBar from "$lib/components/ui/ProgressBar.svelte";
 	import { page } from "$app/state";
 
 	let isLoading = $state(false);

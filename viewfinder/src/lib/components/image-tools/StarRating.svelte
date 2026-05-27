@@ -1,6 +1,6 @@
 <script lang="ts">
-	import MaterialIcon from "$lib/components/MaterialIcon.svelte";
-	import IconButton from "./IconButton.svelte";
+	import MaterialIcon from "$lib/components/ui/MaterialIcon.svelte";
+	import IconButton from "../ui/IconButton.svelte";
 
 	interface Props {
 		/**

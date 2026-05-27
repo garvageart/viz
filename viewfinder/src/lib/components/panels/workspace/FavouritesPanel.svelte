@@ -7,7 +7,7 @@
 		type Collection
 	} from "$lib/api";
 	import CompactListItem from "./CompactListItem.svelte";
-	import MaterialIcon from "$lib/components/MaterialIcon.svelte";
+	import MaterialIcon from "$lib/components/ui/MaterialIcon.svelte";
 	import { slide, fade } from "svelte/transition";
 	import { initDB } from "$lib/db/client";
 	import { VizMimeTypes } from "$lib/constants";

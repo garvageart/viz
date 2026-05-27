@@ -1,7 +1,7 @@
 <script lang="ts">
 	import { LabelColours } from "$lib/images/constants";
 	import type { ImageFilters, ImageFacets } from "$lib/states/filter.svelte";
-	import Checkbox from "../dom/Checkbox.svelte";
+	import Checkbox from "../ui/Checkbox.svelte";
 
 	interface Props {
 		criteria: ImageFilters;

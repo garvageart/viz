@@ -3,7 +3,7 @@
 		calculateCrop,
 		type CropRect,
 		type DragAction
-	} from "../images/zoom/crop-utils";
+	} from "../../images/zoom/crop-utils";
 
 	interface Props {
 		width: number;

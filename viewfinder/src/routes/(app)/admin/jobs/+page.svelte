@@ -2,8 +2,8 @@
 	import { onMount } from "svelte";
 	import { fade } from "svelte/transition";
 	import AdminRouteShell from "$lib/components/admin/AdminRouteShell.svelte";
-	import IconButton from "$lib/components/IconButton.svelte";
-	import MaterialIcon from "$lib/components/MaterialIcon.svelte";
+	import IconButton from "$lib/components/ui/IconButton.svelte";
+	import MaterialIcon from "$lib/components/ui/MaterialIcon.svelte";
 	import { jobsState } from "$lib/states/jobs.svelte";
 
 	function formatDuration(start: Date, end: Date) {

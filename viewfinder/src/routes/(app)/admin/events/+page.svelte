@@ -1,7 +1,7 @@
 <script lang="ts">
 	import { onMount, onDestroy } from "svelte";
-	import Button from "$lib/components/Button.svelte";
-	import MaterialIcon from "$lib/components/MaterialIcon.svelte";
+	import Button from "$lib/components/ui/Button.svelte";
+	import MaterialIcon from "$lib/components/ui/MaterialIcon.svelte";
 	import { getWsStats, getWsMetrics, getEventsSince } from "$lib/api";
 	import { toastState } from "$lib/toast-notifcations/notif-state.svelte";
 	import type { PageData } from "./$types";

@@ -2,20 +2,20 @@
 	import { goto } from "$app/navigation";
 	import type { Collection, ImageAsset } from "$lib/api";
 	import { addCollectionImages, updateImage } from "$lib/api";
-	import AssetGrid from "$lib/components/AssetGrid.svelte";
-	import AssetToolbar from "$lib/components/AssetToolbar.svelte";
-	import CollectionCard from "$lib/components/CollectionCard.svelte";
-	import Dropdown from "$lib/components/Dropdown.svelte";
-	import IconButton from "$lib/components/IconButton.svelte";
-	import ImageCard from "$lib/components/ImageCard.svelte";
-	import ImageLightbox from "$lib/components/ImageLightbox.svelte";
-	import LabelSelector from "$lib/components/LabelSelector.svelte";
-	import LoadingSpinner from "$lib/components/LoadingSpinner.svelte";
+	import AssetGrid from "$lib/components/grid/AssetGrid.svelte";
+	import AssetToolbar from "$lib/components/ui/toolbars/AssetToolbar.svelte";
+	import CollectionCard from "$lib/components/ui/CollectionCard.svelte";
+	import Dropdown from "$lib/components/context-menus/Dropdown.svelte";
+	import PhotoAssetGrid from "$lib/components/grid/PhotoAssetGrid.svelte";
+	import IconButton from "$lib/components/ui/IconButton.svelte";
+	import ImageCard from "$lib/components/ui/ImageCard.svelte";
+	import ImageLightbox from "$lib/components/ui/ImageLightbox.svelte";
+	import LabelSelector from "$lib/components/image-tools/LabelSelector.svelte";
+	import LoadingSpinner from "$lib/components/ui/LoadingSpinner.svelte";
 	import CollectionSelectionModal from "$lib/components/modals/CollectionSelectionModal.svelte";
 	import { modalsManager } from "$lib/components/modals/manager/ModalManager.svelte";
 	import VizViewContainer from "$lib/components/panels/VizViewContainer.svelte";
-	import PhotoAssetGrid from "$lib/components/PhotoAssetGrid.svelte";
-	import StarRating from "$lib/components/StarRating.svelte";
+	import StarRating from "$lib/components/image-tools/StarRating.svelte";
 	import { VizMimeTypes } from "$lib/constants";
 	import ContextMenu from "$lib/context-menu/ContextMenu.svelte";
 	import { createCollectionMenu } from "$lib/context-menu/menus/collections";
@@ -24,22 +24,22 @@
 	import { DragData } from "$lib/drag-drop/data";
 	import { LabelColours, type ImageLabel } from "$lib/images/constants";
 	import {
-		getConsolidatedGroups,
-		groupImagesByDate,
-		type ConsolidatedGroup,
-		type DateGroup
+	    getConsolidatedGroups,
+	    groupImagesByDate,
+	    type ConsolidatedGroup,
+	    type DateGroup
 	} from "$lib/photo-layout";
 	import { paginateSearch, performSearch } from "$lib/search/execute";
 	import { isLayoutPage, search, viewSettings } from "$lib/states/index.svelte";
 	import {
-		selectionManager,
-		SelectionScopeNames
+	    selectionManager,
+	    SelectionScopeNames
 	} from "$lib/states/selection.svelte";
 	import { toastState } from "$lib/toast-notifcations/notif-state.svelte";
 	import type { AssetGridView } from "$lib/types/asset";
 	import { downloadOriginalImageFile } from "$lib/utils/http";
-	import { invalidateViz } from "$lib/views/views.svelte";
 	import { getImageLabel } from "$lib/utils/images";
+	import { invalidateViz } from "$lib/views/views.svelte";
 	import hotkeys from "hotkeys-js";
 	import { onMount, type ComponentProps } from "svelte";
 

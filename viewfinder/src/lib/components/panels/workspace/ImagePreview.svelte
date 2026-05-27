@@ -1,12 +1,12 @@
 <script lang="ts">
 	import { selectionManager } from "$lib/states/selection.svelte";
 	import { getFullImagePath, type ImageAsset } from "$lib/api";
-	import MaterialIcon from "$lib/components/MaterialIcon.svelte";
-	import LabelSelector from "$lib/components/LabelSelector.svelte";
+	import MaterialIcon from "$lib/components/ui/MaterialIcon.svelte";
+	import LabelSelector from "$lib/components/image-tools/LabelSelector.svelte";
 	import { getImageLabel } from "$lib/utils/images";
 	import { createImageMenu } from "$lib/context-menu/menus/images";
 	import ContextMenu from "$lib/context-menu/ContextMenu.svelte";
-	import AssetImage from "$lib/components/AssetImage.svelte";
+	import AssetImage from "$lib/components/ui/AssetImage.svelte";
 
 	let activeScope = $derived(selectionManager.activeScope);
 	let activeItem = $derived(activeScope?.active as ImageAsset | undefined);

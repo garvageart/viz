@@ -8,9 +8,9 @@
 		type CollectionListResponse
 	} from "$lib/api";
 	import { modalsManager } from "./manager/ModalManager.svelte";
-	import AssetGrid from "../AssetGrid.svelte";
-	import Button from "../Button.svelte";
-	import CollectionCard from "../CollectionCard.svelte";
+	import AssetGrid from "../grid/AssetGrid.svelte";
+	import Button from "../ui/Button.svelte";
+	import CollectionCard from "../ui/CollectionCard.svelte";
 	import VizViewContainer from "../panels/VizViewContainer.svelte";
 	import { selectionManager } from "$lib/states/selection.svelte";
 	import { toastState } from "$lib/toast-notifcations/notif-state.svelte";

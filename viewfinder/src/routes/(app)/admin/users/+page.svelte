@@ -5,10 +5,10 @@
 		adminCreateUser,
 		type User
 	} from "$lib/api";
-	import Button from "$lib/components/Button.svelte";
-	import MaterialIcon from "$lib/components/MaterialIcon.svelte";
+	import Button from "$lib/components/ui/Button.svelte";
+	import MaterialIcon from "$lib/components/ui/MaterialIcon.svelte";
 	import ConfirmationModal from "$lib/components/modals/ConfirmationModal.svelte";
-	import SliderToggle from "$lib/components/SliderToggle.svelte";
+	import SliderToggle from "$lib/components/ui/SliderToggle.svelte";
 	import { user as currentUserState } from "$lib/states/index.svelte";
 	import { toastState } from "$lib/toast-notifcations/notif-state.svelte";
 	import type { UserRole } from "$lib/types/users.js";

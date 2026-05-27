@@ -6,7 +6,7 @@
 	import { normalizeBase64 } from "$lib/utils/misc";
 	import { VizMimeTypes } from "$lib/constants";
 	import { DragData } from "$lib/drag-drop/data";
-	import LabelSelector from "./LabelSelector.svelte";
+	import LabelSelector from "../image-tools/LabelSelector.svelte";
 	import MaterialIcon from "./MaterialIcon.svelte";
 	import AssetImage, { type AssetImageProps } from "./AssetImage.svelte";
 

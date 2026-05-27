@@ -24,9 +24,9 @@
 	import { fade } from "svelte/transition";
 	import Button from "./Button.svelte";
 	import MaterialIcon from "./MaterialIcon.svelte";
-	import CollectionModal from "./modals/CollectionModal.svelte";
-	import ConfirmationModal from "./modals/ConfirmationModal.svelte";
-	import { modalsManager } from "./modals/manager/ModalManager.svelte";
+	import CollectionModal from "../modals/CollectionModal.svelte";
+	import ConfirmationModal from "../modals/ConfirmationModal.svelte";
+	import { modalsManager } from "../modals/manager/ModalManager.svelte";
 
 	interface Props {
 		scopeId?: string; // might be useful soon

@@ -3,8 +3,8 @@
 	import { login } from "$lib/api";
 	import { system } from "$lib/states/index.svelte";
 	import { fetchCurrentUser } from "$lib/auth/auth_methods";
-	import Button from "$lib/components/Button.svelte";
-	import InputText from "$lib/components/dom/InputText.svelte";
+	import Button from "$lib/components/ui/Button.svelte";
+	import InputText from "$lib/components/ui/InputText.svelte";
 	import { toastState } from "$lib/toast-notifcations/notif-state.svelte";
 
 	let loginData = $state({

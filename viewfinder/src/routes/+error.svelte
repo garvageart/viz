@@ -1,7 +1,7 @@
 <script lang="ts">
 	import { page } from "$app/state";
-	import Button from "$lib/components/Button.svelte";
-	import MaterialIcon from "$lib/components/MaterialIcon.svelte";
+	import Button from "$lib/components/ui/Button.svelte";
+	import MaterialIcon from "$lib/components/ui/MaterialIcon.svelte";
 	import { goto } from "$app/navigation";
 
 	let statusCode = $derived(page.status);

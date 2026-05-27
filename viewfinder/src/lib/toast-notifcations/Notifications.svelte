@@ -2,8 +2,8 @@
 	import { fly } from "svelte/transition";
 	import DOMPurify from "dompurify";
 	import { toastState } from "./notif-state.svelte";
-	import Button from "$lib/components/Button.svelte";
-	import MaterialIcon from "$lib/components/MaterialIcon.svelte";
+	import Button from "$lib/components/ui/Button.svelte";
+	import MaterialIcon from "$lib/components/ui/MaterialIcon.svelte";
 
 	function parseNotificationText(text: string) {
 		if (!text) {

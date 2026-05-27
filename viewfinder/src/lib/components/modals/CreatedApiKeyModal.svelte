@@ -1,8 +1,8 @@
 <script lang="ts">
 	import { createApiKey } from "$lib/api";
 	import { scopes, Scope } from "$lib/api/constants";
-	import Button from "$lib/components/Button.svelte";
-	import MaterialIcon from "$lib/components/MaterialIcon.svelte";
+	import Button from "$lib/components/ui/Button.svelte";
+	import MaterialIcon from "$lib/components/ui/MaterialIcon.svelte";
 	import TextInput from "$lib/components/settings/inputs/TextInput.svelte";
 	import { toastState } from "$lib/toast-notifcations/notif-state.svelte";
 	import { copyToClipboard } from "$lib/utils/misc";

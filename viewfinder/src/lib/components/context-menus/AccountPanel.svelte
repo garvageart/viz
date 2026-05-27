@@ -1,7 +1,7 @@
 <script lang="ts">
 	import { user } from "$lib/states/index.svelte";
 	import { slide } from "svelte/transition";
-	import Button from "./Button.svelte";
+	import Button from "../ui/Button.svelte";
 	import { logoutUser } from "$lib/auth/auth_methods";
 
 	const { data } = user;

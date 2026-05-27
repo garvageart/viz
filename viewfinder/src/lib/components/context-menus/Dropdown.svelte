@@ -1,8 +1,8 @@
 <script lang="ts">
 	import type { MaterialSymbol } from "$lib/types/MaterialSymbol";
 	import ContextMenu from "$lib/context-menu/ContextMenu.svelte";
-	import IconButton from "./IconButton.svelte";
-	import Button from "./Button.svelte";
+	import IconButton from "../ui/IconButton.svelte";
+	import Button from "../ui/Button.svelte";
 	import type { MenuItem } from "$lib/context-menu/types";
 
 	interface Props {

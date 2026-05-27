@@ -1,6 +1,6 @@
 <script lang="ts">
 	import { toggleTheme, getTheme } from "$lib/states/index.svelte";
-	import IconButton from "$lib/components/IconButton.svelte";
+	import IconButton from "$lib/components/ui/IconButton.svelte";
 	import { toggleFullscreen } from "$lib/utils/misc";
 
 	let { children } = $props();

@@ -16,33 +16,34 @@
 <script lang="ts">
 	import { goto } from "$app/navigation";
 	import {
-		addCollectionImages,
-		createCollection,
-		deleteCollection,
-		deleteCollectionImages,
-		getImage,
-		listCollectionImages,
-		listCollectionImageUiDs,
-		updateCollection,
-		updateImage,
-		type CollectionUpdate,
-		type ImageAsset
+	    addCollectionImages,
+	    createCollection,
+	    deleteCollection,
+	    deleteCollectionImages,
+	    getImage,
+	    listCollectionImages,
+	    listCollectionImageUiDs,
+	    updateCollection,
+	    updateImage,
+	    type CollectionUpdate,
+	    type ImageAsset
 	} from "$lib/api";
-	import AssetsShell from "$lib/components/AssetsShell.svelte";
-	import Button from "$lib/components/Button.svelte";
-	import InputText from "$lib/components/dom/InputText.svelte";
-	import Dropdown from "$lib/components/Dropdown.svelte";
-	import IconButton from "$lib/components/IconButton.svelte";
-	import ImageCard from "$lib/components/ImageCard.svelte";
-	import ImageLightbox from "$lib/components/ImageLightbox.svelte";
-	import LabelSelector from "$lib/components/LabelSelector.svelte";
-	import MaterialIcon from "$lib/components/MaterialIcon.svelte";
+	import AssetsShell from "$lib/components/ui/AssetsShell.svelte";
+	import Button from "$lib/components/ui/Button.svelte";
+	import InputText from "$lib/components/ui/InputText.svelte";
+	import DragAndDropUpload from "$lib/components/ui/DragAndDropUpload.svelte";
+	import Dropdown from "$lib/components/context-menus/Dropdown.svelte";
+	import PhotoAssetGrid from "$lib/components/grid/PhotoAssetGrid.svelte";
+	import IconButton from "$lib/components/ui/IconButton.svelte";
+	import ImageCard from "$lib/components/ui/ImageCard.svelte";
+	import ImageLightbox from "$lib/components/ui/ImageLightbox.svelte";
+	import LabelSelector from "$lib/components/image-tools/LabelSelector.svelte";
+	import MaterialIcon from "$lib/components/ui/MaterialIcon.svelte";
 	import CollectionModal from "$lib/components/modals/CollectionModal.svelte";
 	import FilterModal from "$lib/components/modals/FilterModal.svelte";
 	import { modalsManager } from "$lib/components/modals/manager/ModalManager.svelte";
 	import VizViewContainer from "$lib/components/panels/VizViewContainer.svelte";
-	import PhotoAssetGrid from "$lib/components/PhotoAssetGrid.svelte";
-	import StarRating from "$lib/components/StarRating.svelte";
+	import StarRating from "$lib/components/image-tools/StarRating.svelte";
 	import ContextMenu from "$lib/context-menu/ContextMenu.svelte";
 	import { createImageMenu } from "$lib/context-menu/menus/images";
 	import type { MenuItem } from "$lib/context-menu/types";
@@ -51,26 +52,24 @@
 	import { sortCollectionImages } from "$lib/sort/sort.js";
 	import { filterManager } from "$lib/states/filter.svelte";
 	import {
-		debugMode,
-		isLayoutPage,
-		sort,
-		viewSettings
+	    debugMode,
+	    isLayoutPage,
+	    sort,
+	    viewSettings
 	} from "$lib/states/index.svelte";
 	import {
-		selectionManager,
-		SelectionScopeNames
+	    selectionManager,
+	    SelectionScopeNames
 	} from "$lib/states/selection.svelte";
 	import { toastState } from "$lib/toast-notifcations/notif-state.svelte.js";
 	import type { AssetGridArray, AssetGridView } from "$lib/types/asset.js";
 	import {
-		SUPPORTED_IMAGE_TYPES,
-		SUPPORTED_RAW_FILES,
-		type SupportedImageTypes
+	    SUPPORTED_IMAGE_TYPES,
+	    SUPPORTED_RAW_FILES,
+	    type SupportedImageTypes
 	} from "$lib/types/images";
-	import UploadManager from "$lib/upload/manager.svelte.js";
-	import DragAndDropUpload from "$lib/components/DragAndDropUpload.svelte";
 	import type { ImageUploadSuccess } from "$lib/upload/manager.svelte";
-	import { performImageDownloads } from "$lib/utils/http";
+	import UploadManager from "$lib/upload/manager.svelte.js";
 	import { getImageLabel } from "$lib/utils/images";
 	import type VizView from "$lib/views/views.svelte";
 	import { invalidateViz } from "$lib/views/views.svelte";
