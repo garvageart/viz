@@ -50,6 +50,8 @@
     "makefile.configureOnOpen": false,
     "files.eol": "\n",
     "editor.formatOnSave": true,
+    "editor.insertSpaces": true,
+    "editor.detectIndentation": false,
     "explorer.fileNesting.enabled": true,
     "explorer.fileNesting.patterns": {
         "*.ts": "${capture}.spec.ts,${capture}.mock.ts"
