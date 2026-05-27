@@ -18,7 +18,11 @@ let currentFetch: typeof globalThis.fetch = globalThis.fetch; // Default to wind
 async function trackedFetch(input: RequestInfo | URL, init?: RequestInit): Promise<Response> {
     loadingState.startRequest();
     try {
-        const response = await currentFetch(input, init);
+        const fetchInit = {
+            cache: "no-store" as const,
+            ...init
+        };
+        const response = await currentFetch(input, fetchInit);
         return response;
     } finally {
         loadingState.endRequest();

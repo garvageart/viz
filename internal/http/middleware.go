@@ -247,7 +247,7 @@ func AuthMiddleware(db *gorm.DB, logger *slog.Logger) func(next http.Handler) ht
 			if r.Method == http.MethodGet {
 				if u, ok := UserFromContext(r); ok && u != nil {
 					etag := fmt.Sprintf("W/\"%d-%s\"", u.UpdatedAt.UnixNano(), u.Uid)
-					w.Header().Set("Cache-Control", "private, max-age=60, must-revalidate")
+					w.Header().Set("Cache-Control", "no-cache, no-store, must-revalidate")
 					w.Header().Set("ETag", etag)
 					w.Header().Set(APIUserVersion, etag)
 				}

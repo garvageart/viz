@@ -1,10 +1,10 @@
 <script lang="ts">
 	import { goto } from "$app/navigation";
 	import { login } from "$lib/api";
-	import { system } from "$lib/states/index.svelte";
 	import { fetchCurrentUser } from "$lib/auth/auth_methods";
 	import Button from "$lib/components/ui/Button.svelte";
 	import InputText from "$lib/components/ui/InputText.svelte";
+	import { system } from "$lib/states/index.svelte";
 	import { toastState } from "$lib/toast-notifcations/notif-state.svelte";
 
 	let loginData = $state({
@@ -93,20 +93,14 @@
 				value={loginData.password}
 				oninput={(e) => (loginData.password = e.currentTarget.value)}
 			/>
-			<Button style="margin-top: 1rem;">
-				<input id="login-submit" type="submit" value="Login" />
-			</Button>
+			<Button id="login-submit" type="submit" style="margin-top: 1rem;" onclick={handleLogin}>Login</Button>
 		</form>
 		<p style="margin-top: 1em;">
 			Don't have an account? <a style="font-weight: bold;" href="/auth/register"
 				>Register</a
 			>
 		</p>
-		<!-- {#if notifMessage}
-			<p style="font-size: 1.2em; font-weight: bold; margin-top: 1em;">
-				{notifMessage}
-			</p>
-		{/if} -->
+        
 	</div>
 	<div id="login-overlay" style="height: 100%; width: 100%;"></div>
 </main>
@@ -171,7 +165,7 @@
 		margin-bottom: 1rem;
 	}
 
-	#login-submit {
+	:global(#login-submit) {
 		border: inherit;
 		background-color: transparent;
 		color: inherit;
