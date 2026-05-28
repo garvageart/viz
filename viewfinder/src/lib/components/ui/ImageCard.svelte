@@ -1,14 +1,14 @@
 <script lang="ts">
 	import { type ImageAsset } from "$lib/api";
-	import { thumbHashToDataURL } from "thumbhash";
-	import { onMount } from "svelte";
-	import { getImageLabel, getTakenAt } from "$lib/utils/images";
-	import { normalizeBase64 } from "$lib/utils/misc";
 	import { VizMimeTypes } from "$lib/constants";
 	import { DragData } from "$lib/drag-drop/data";
+	import { getImageLabel, getTakenAt } from "$lib/utils/images";
+	import { normalizeBase64 } from "$lib/utils/misc";
+	import { onMount } from "svelte";
+	import { thumbHashToDataURL } from "thumbhash";
 	import LabelSelector from "../image-tools/LabelSelector.svelte";
-	import MaterialIcon from "./MaterialIcon.svelte";
 	import AssetImage, { type AssetImageProps } from "./AssetImage.svelte";
+	import MaterialIcon from "./MaterialIcon.svelte";
 
 	let {
 		asset,
