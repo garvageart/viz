@@ -30,7 +30,6 @@ export function createImageMenu(
     const { onDelete, onUpdate, collection } = options;
     const items = selectionScope.selectedItems;
     const allFavourited = items.length > 0 && items.every((img) => img.favourited);
-    console.log("[createImageMenu] items count:", items.length, "items:", items.map(img => ({ uid: img.uid, name: img.name, favourited: img.favourited })), "allFavourited:", allFavourited);
 
     const actionMenuItems: MenuItem[] = [
         {
