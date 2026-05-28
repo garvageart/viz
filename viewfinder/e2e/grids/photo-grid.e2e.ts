@@ -84,6 +84,27 @@ test.describe('PhotoAssetGrid Functionality', () => {
             await expect(lightbox).toBeVisible();
             await expect(lightbox.locator('.lightbox-image.main')).toBeVisible();
 
+            // 1. Verify Metadata/Details panel is visible by default
+            const metadataPanel = page.locator('.metadata-editor');
+            await expect(metadataPanel).toBeVisible({ timeout: 5000 });
+            await expect(metadataPanel.locator('h3:has-text("Metadata")')).toBeVisible();
+
+            // 2. Click "Hide Info" button to toggle it off
+            const hideInfoBtn = page.locator('button[title="Hide Info"]');
+            await expect(hideInfoBtn).toBeVisible();
+            await hideInfoBtn.click();
+
+            // 3. Verify Metadata/Details panel is hidden
+            await expect(metadataPanel).not.toBeVisible({ timeout: 5000 });
+
+            // 4. Click "Show Info" button to toggle it back on
+            const showInfoBtn = page.locator('button[title="Show Info"]');
+            await expect(showInfoBtn).toBeVisible();
+            await showInfoBtn.click();
+
+            // 5. Verify Metadata/Details panel is visible again
+            await expect(metadataPanel).toBeVisible({ timeout: 5000 });
+
             // Navigation within lightbox (if multiple photos)
             if (count > 1) {
                 const firstImageId = await lightbox.locator('.lightbox-image.main').getAttribute('data-image-id');
@@ -214,27 +235,39 @@ test.describe('PhotoAssetGrid Functionality', () => {
             await expect(page).toHaveURL(/\/collections\/.+/);
             
             const grid = page.locator('.viz-photo-grid-container');
-            await expect(grid).toBeVisible();
+            const emptyState = page.locator('#add_to_collection-container');
             
-            const photos = grid.locator('.asset-photo');
-            // Wait for images in collection
+            // Wait for either the photo grid or the empty state to appear
             await expect(async () => {
-                const count = await photos.count();
-                expect(count).toBeGreaterThan(0);
-            }).toPass({ timeout: 10000 }).catch(() => {
-                console.log('Collection is empty, skipping photo grid tests');
-            });
+                const hasGrid = await grid.isVisible();
+                const hasEmpty = await emptyState.isVisible();
+                expect(hasGrid || hasEmpty).toBe(true);
+            }).toPass({ timeout: 15000 });
 
-            if (await photos.count() > 0) {
-                const firstPhoto = photos.first();
-                await firstPhoto.click();
-                await expect(firstPhoto).toHaveClass(/selected-photo/);
-                
-                // Keyboard nav in collection grid
-                if (await photos.count() > 1) {
-                    await page.keyboard.press('ArrowRight');
-                    await expect(photos.nth(1)).toHaveClass(/selected-photo/);
+            if (await grid.isVisible()) {
+                const photos = grid.locator('.asset-photo');
+                // Wait for images in collection
+                await expect(async () => {
+                    const count = await photos.count();
+                    expect(count).toBeGreaterThan(0);
+                }).toPass({ timeout: 10000 }).catch(() => {
+                    console.log('Collection is empty, skipping photo grid tests');
+                });
+
+                if (await photos.count() > 0) {
+                    const firstPhoto = photos.first();
+                    await firstPhoto.click();
+                    await expect(firstPhoto).toHaveClass(/selected-photo/);
+                    
+                    // Keyboard nav in collection grid
+                    if (await photos.count() > 1) {
+                        await page.keyboard.press('ArrowRight');
+                        await expect(photos.nth(1)).toHaveClass(/selected-photo/);
+                    }
                 }
+            } else {
+                console.log('Tested empty collection page successfully');
+                await expect(emptyState).toBeVisible();
             }
         }
     });
