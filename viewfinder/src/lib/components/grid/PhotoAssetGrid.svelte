@@ -1139,7 +1139,7 @@ return;
 						<MaterialIcon
 							iconName="favorite"
 							size="0.8rem"
-							style="color: var(--viz-text-color);"
+							style="color: white;"
 							fill={true}
 						/>
 					{/if}
