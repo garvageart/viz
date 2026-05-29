@@ -41,18 +41,6 @@ importers:
 
   viewfinder:
     dependencies:
-      '@fontsource-variable/manrope':
-        specifier: ^5.2.8
-        version: 5.2.8
-      '@fontsource-variable/public-sans':
-        specifier: ^5.2.7
-        version: 5.2.7
-      '@fontsource-variable/roboto-mono':
-        specifier: ^5.2.9
-        version: 5.2.9
-      '@fontsource/clear-sans':
-        specifier: ^5.2.5
-        version: 5.2.5
       '@immich/justified-layout-wasm':
         specifier: ^0.4.3
         version: 0.4.3
@@ -96,6 +84,15 @@ importers:
       '@faker-js/faker':
         specifier: ^9.9.0
         version: 9.9.0
+      '@fontsource-variable/geist':
+        specifier: ^5.2.9
+        version: 5.2.9
+      '@fontsource-variable/manrope':
+        specifier: ^5.2.8
+        version: 5.2.8
+      '@fontsource-variable/roboto-mono':
+        specifier: ^5.2.9
+        version: 5.2.9
       '@playwright/test':
         specifier: ^1.59.1
         version: 1.59.1
@@ -509,17 +506,14 @@ packages:
     resolution: {integrity: sha512-OEl393iCOoo/z8bMezRlJu+GlRGlsKbUAN7jKB6LhnKoqKve5DXRpalbItIIcwnCjs1k/FOPjFzcA6Qn+H+YbA==}
     engines: {node: '>=18.0.0', npm: '>=9.0.0'}
 
+  '@fontsource-variable/geist@5.2.9':
+    resolution: {integrity: sha512-TP+QSBG3wxKGPE33CbMy/L0Nu3qvJ6Fy81Yc4LnQ95xH+i+cfEp8fyU8/kfV14YwszxIFPhnoMTbjL71waVpyQ==}
+
   '@fontsource-variable/manrope@5.2.8':
     resolution: {integrity: sha512-nc9lOuCRz73UHnovDE2bwXUdghE2SEOc7Aii0qGe3CLyE03W1a7VnY5Z6euRiapiKbCkGS+eXbY3s/kvWeGeSw==}
 
-  '@fontsource-variable/public-sans@5.2.7':
-    resolution: {integrity: sha512-4mvade2J3slKkvwRkS+p8T3szet/0vhWoSnuUJTVU81Uo2pRpSZY/Y8bSLRqpSwzIPxjVmRJ53oq6JKP/l/PSg==}
-
   '@fontsource-variable/roboto-mono@5.2.9':
     resolution: {integrity: sha512-OzFO2AXlSGcXl/NcXS3CGjImb6rczCByPJ1C+Dzp9kkYOrUPyrGTuAtqPcmA/d+nZGX5oyOWKXLk5BrwVLYqkw==}
-
-  '@fontsource/clear-sans@5.2.5':
-    resolution: {integrity: sha512-j0iDui5CZGgitsNxilxISSDcBqCU1B7BlC486G78FvRNQmLrbVpr/1wkTcuR1NQRZq5AFHWOeCUwZs8+6nC25A==}
 
   '@immich/justified-layout-wasm@0.4.3':
     resolution: {integrity: sha512-fpcQ7zPhP3Cp1bEXhONVYSUeIANa2uzaQFGKufUZQo5FO7aFT77szTVChhlCy4XaVy5R4ZvgSkA/1TJmeORz7Q==}
@@ -1966,13 +1960,11 @@ snapshots:
 
   '@faker-js/faker@9.9.0': {}
 
+  '@fontsource-variable/geist@5.2.9': {}
+
   '@fontsource-variable/manrope@5.2.8': {}
 
-  '@fontsource-variable/public-sans@5.2.7': {}
-
   '@fontsource-variable/roboto-mono@5.2.9': {}
-
-  '@fontsource/clear-sans@5.2.5': {}
 
   '@immich/justified-layout-wasm@0.4.3': {}
 

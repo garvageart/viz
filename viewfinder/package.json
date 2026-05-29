@@ -24,6 +24,9 @@
 	},
 	"devDependencies": {
 		"@faker-js/faker": "^9.9.0",
+		"@fontsource-variable/geist": "^5.2.9",
+		"@fontsource-variable/manrope": "^5.2.8",
+		"@fontsource-variable/roboto-mono": "^5.2.9",
 		"@playwright/test": "^1.59.1",
 		"@sveltejs/adapter-static": "^3.0.10",
 		"@sveltejs/kit": "^2.59.1",
@@ -46,10 +49,6 @@
 		"vitest": "^3.2.4"
 	},
 	"dependencies": {
-		"@fontsource-variable/manrope": "^5.2.8",
-		"@fontsource-variable/public-sans": "^5.2.7",
-		"@fontsource-variable/roboto-mono": "^5.2.9",
-		"@fontsource/clear-sans": "^5.2.5",
 		"@immich/justified-layout-wasm": "^0.4.3",
 		"@oazapfts/runtime": "^1.2.0",
 		"@zoom-image/core": "^0.42.0",

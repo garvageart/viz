@@ -28,6 +28,7 @@
 	import type { ViewfinderConfig, VizConfig } from "$lib/types/config.types";
 	import { toggleFullscreen } from "$lib/utils/misc";
 	import "@fontsource-variable/manrope/index.css";
+	import "@fontsource-variable/geist/index.css";
 	import "@fontsource-variable/roboto-mono/index.css";
 	import hotkeys from "hotkeys-js";
 
