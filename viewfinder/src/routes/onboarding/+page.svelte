@@ -14,6 +14,7 @@
 	} from "$lib/api";
 	import InputText from "$lib/components/ui/InputText.svelte";
 	import InputSelect from "$lib/components/ui/InputSelect.svelte";
+	import InputPassword from "$lib/components/ui/InputPassword.svelte";
 	import Button from "$lib/components/ui/Button.svelte";
 	import MaterialIcon from "$lib/components/ui/MaterialIcon.svelte";
 	import { toastState } from "$lib/toast-notifcations/notif-state.svelte";
@@ -305,15 +306,13 @@
 								bind:value={superadminForm.email}
 								required
 							/>
-							<InputText
+							<InputPassword
 								label="Password"
-								type="password"
 								bind:value={superadminForm.password}
 								required
 							/>
-							<InputText
+							<InputPassword
 								label="Confirm Password"
-								type="password"
 								bind:value={superadminForm.confirmPassword}
 								required
 							/>

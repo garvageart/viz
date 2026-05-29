@@ -4,6 +4,7 @@
 	import { fetchCurrentUser } from "$lib/auth/auth_methods";
 	import Button from "$lib/components/ui/Button.svelte";
 	import InputText from "$lib/components/ui/InputText.svelte";
+	import InputPassword from "$lib/components/ui/InputPassword.svelte";
 	import { system } from "$lib/states/index.svelte";
 	import { toastState } from "$lib/toast-notifcations/notif-state.svelte";
 
@@ -83,12 +84,11 @@
 				value={loginData.email}
 				oninput={(e) => (loginData.email = e.currentTarget.value)}
 			/>
-			<InputText
+			<InputPassword
 				id="login-password"
 				label="Password"
 				name="password"
 				placeholder="Password"
-				type="password"
 				required
 				value={loginData.password}
 				oninput={(e) => (loginData.password = e.currentTarget.value)}

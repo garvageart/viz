@@ -4,6 +4,7 @@
 	import { registerUser } from "$lib/api";
 	import Button from "$lib/components/ui/Button.svelte";
 	import InputText from "$lib/components/ui/InputText.svelte";
+	import InputPassword from "$lib/components/ui/InputPassword.svelte";
 	import { system } from "$lib/states/index.svelte";
 	import { toastState } from "$lib/toast-notifcations/notif-state.svelte";
 
@@ -100,20 +101,18 @@ async function handleRegister(event: Event) {
 					value={registerData.name}
 					oninput={(e) => (registerData.name = e.currentTarget.value)}
 				/>
-				<InputText
+				<InputPassword
 					id="reg-password"
 					name="password"
 					placeholder="Password"
-					type="password"
 					required
 					value={registerData.password}
 					oninput={(e) => (registerData.password = e.currentTarget.value)}
 				/>
-				<InputText
+				<InputPassword
 					id="reg-password-confirm"
 					name="passwordConfirm"
 					placeholder="Confirm Password"
-					type="password"
 					required
 				/>
 				<Button id="reg-submit" type="submit" style="margin-top: 1rem;" onclick={handleRegister}>Create</Button>

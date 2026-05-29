@@ -2,6 +2,7 @@
 	import Button from "$lib/components/ui/Button.svelte";
 	import InputText from "$lib/components/ui/InputText.svelte";
 	import InputSelect from "$lib/components/ui/InputSelect.svelte";
+	import InputPassword from "$lib/components/ui/InputPassword.svelte";
 	import { modalsManager } from "./manager/ModalManager.svelte";
 
 	interface Props {
@@ -39,9 +40,8 @@
 	<h2>Create User</h2>
 	<InputText label="Name" bind:value={createForm.name} />
 	<InputText label="Email" type="email" bind:value={createForm.email} />
-	<InputText
+	<InputPassword
 		label="Password"
-		type="password"
 		bind:value={createForm.password}
 	/>
 	<InputSelect label="Role" bind:value={createForm.role}>
