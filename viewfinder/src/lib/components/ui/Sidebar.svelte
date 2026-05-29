@@ -1,6 +1,6 @@
 <script lang="ts">
 	import { slide } from "svelte/transition";
-	import MaterialIcon from "./MaterialIcon.svelte";
+	import IconButton from "./IconButton.svelte";
 
 	interface Props {
 		open?: boolean;
@@ -12,40 +12,42 @@
 	let {
 		open = $bindable(true),
 		title,
-		sidebarWidth = "18%",
+		sidebarWidth = "var(--viz-sidebar-width-expanded)",
 		children
 	}: Props = $props();
 
 	let sidebarEl: HTMLElement;
-	let sidebarWidthState = $derived(open ? sidebarWidth : "3rem");
+	let sidebarWidthState = $derived(open ? sidebarWidth : "var(--viz-sidebar-width-collapsed)");
 </script>
 
 <nav
 	bind:this={sidebarEl}
 	class="viz-sidebar"
+	style:width={sidebarWidthState}
 	style:min-width={sidebarWidthState}
+	style:max-width={sidebarWidthState}
 >
 	<div class="sidebar-header" class:closed={!open}>
 		{#if open}
-			<button
-				class="close-sidebar-button"
+			<IconButton
+				iconName="close"
 				title="Close Settings Sidebar"
 				onclick={() => (open = !open)}
-			>
-				<MaterialIcon iconName="close" />
-			</button>
+				variant="small"
+				class="sidebar-toggle-btn"
+			/>
 			{#if title}
 				<h3 class="sidebar-heading">{title}</h3>
 			{/if}
 		{:else}
-			<button
-				id="open-sidebar-button"
+			<IconButton
+				iconName="arrow_right"
 				title="Open Settings Sidebar"
 				onclick={() => (open = true)}
+				variant="small"
+				class="sidebar-toggle-btn open-btn"
 				out:slide={{ axis: "x", duration: 300 }}
-			>
-				<MaterialIcon iconName="arrow_right" />
-			</button>
+			/>
 		{/if}
 	</div>
 	{#if open}
@@ -61,42 +63,62 @@
 <style lang="scss">
 	.viz-sidebar {
 		background-color: var(--viz-100);
-		border-right: 1px solid var(--viz-60);
+		border-right: var(--viz-border-thin);
 		height: 100%;
 		display: flex;
 		flex-direction: column;
 		position: relative;
-		transition: min-width 0.3s ease;
+		transition: width 0.3s ease, min-width 0.3s ease, max-width 0.3s ease;
+		box-sizing: border-box;
 	}
 
 	.sidebar-header {
 		display: flex;
 		align-items: center;
 		justify-content: flex-start;
-		border-bottom: 1px solid var(--viz-60);
-		transition: border 0.3s ease;
+		border-bottom: var(--viz-border-thin);
+		padding: var(--viz-spacing-sm) var(--viz-spacing-md);
+		gap: var(--viz-spacing-sm);
+		height: var(--viz-header-height);
+		box-sizing: border-box;
+		transition: border-bottom 0.3s ease;
 
 		&.closed {
-			border-bottom: 0px;
+			border-bottom: none;
+			justify-content: center;
+			padding: var(--viz-spacing-sm) 0;
 		}
+	}
+
+	.sidebar-heading {
+		font-family: var(--viz-display-font);
+		font-size: var(--viz-font-size-sm);
+		font-weight: 600;
+		letter-spacing: 0.05em;
+		text-transform: uppercase;
+		color: var(--viz-40);
+		margin: 0;
+		white-space: nowrap;
+		overflow: hidden;
+		text-overflow: ellipsis;
 	}
 
 	.sidebar-content {
 		width: 100%;
-		height: 100%;
+		height: calc(100% - var(--viz-header-height));
 		overflow-y: auto;
+		box-sizing: border-box;
 	}
 
-	#open-sidebar-button {
-		height: 2em;
-		min-width: 2em;
-		width: 100%;
-		top: 2em;
-		background-color: var(--viz-80);
-	}
-
-	.close-sidebar-button {
-		height: 2em;
-		min-width: 2em;
+	:global(.sidebar-toggle-btn) {
+		color: var(--viz-30) !important;
+		&:hover {
+			background-color: var(--viz-90) !important;
+		}
+		
+		&.open-btn {
+			width: 80%;
+			margin: 0 auto;
+		}
 	}
 </style>

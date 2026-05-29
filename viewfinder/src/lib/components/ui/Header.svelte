@@ -161,8 +161,8 @@ return names;
 
 		const workspace = workspaceState.workspace;
 		if (!workspace) {
-return;
-}
+            return;
+        }
 
 		ctxItems = views
 			.filter((view) => !view.path || !DYNAMIC_ROUTE_REGEX.test(view.path))
@@ -248,11 +248,12 @@ return;
 			<MaterialIcon
 				iconName="expand_more"
 				weight={300}
-				style="font-size: 1em; margin-left: 0.15em;"
+				size="1em"
+				style="margin-left: 0.15em;"
 			/>
 		</button>
 		<AppMenu bind:isOpen={openAppMenu} bind:anchor={appMenuButton} />
-		<div class="menu-seperator"></div>
+		<div class="menu-separator"></div>
 		{#if isLayoutPage()}
 			<IconButton
 				class="header-button"
@@ -268,7 +269,7 @@ return;
 				onclick={() => goto("/")}
 			/>
 		{/if}
-		<div class="menu-seperator"></div>
+		<div class="menu-separator"></div>
 		<div class="icon-group-container">
 			<a class="page-nav-btn" href="/photos" title="Go to Photos">
 				<IconButton class="header-button" iconName="photo" />
@@ -291,7 +292,7 @@ return;
 			disabled={!historyState.canGoForward}
 			onclick={() => history.forward()}
 		/>
-		<div class="menu-seperator"></div>
+		<div class="menu-separator"></div>
 		<SearchInput
 			inputId="header-search"
 			placeholder="Search (Ctrl/Cmd + K)"
@@ -300,7 +301,7 @@ return;
 			bind:value={search.value}
 			bind:element={searchElement}
 			{performSearch}
-			style="width: 100%; border-color: var(--viz-80); height: 1.5em; font-size: 0.9em;"
+			style="width: 100%;"
 		/>
 	</div>
 	<div class="header-button-container">
@@ -339,7 +340,6 @@ return;
 		<div id="account-container">
 			<button
 				id="account-button"
-				class="header-button"
 				aria-label="Account"
 				onclick={() => (openAccPanel = !openAccPanel)}
 				title={user.data?.name
@@ -370,58 +370,62 @@ return;
 <style lang="scss">
 	header {
 		background-color: var(--viz-bg-color);
-		max-height: 2em;
-		padding: 0.2em 0.8em;
+		height: var(--viz-header-height);
+		padding: 0 var(--viz-spacing-md);
 		display: flex;
 		align-items: center;
-		border-bottom: 1px solid var(--viz-60);
+		border-bottom: var(--viz-border-thin);
 		position: relative;
 		justify-content: space-between;
 		flex-direction: row;
+		box-sizing: border-box;
 	}
 
 	#viz-title {
 		font-family: var(--viz-mono-font);
 		font-weight: 700;
-		font-size: 1em;
+		font-size: var(--viz-font-size-std);
 		display: flex;
 		align-items: center;
-		gap: 0.1em;
+		gap: var(--viz-spacing-xxs);
 		background: transparent;
 		border: none;
+		border-bottom: 2px solid transparent;
 		color: var(--viz-text-color);
 		cursor: pointer;
-		padding: 0em 0.5em;
-		border-radius: 0.5rem;
-		transition: background-color 0.1s ease;
+		padding: var(--viz-spacing-xxs) 0;
+		border-radius: 0;
+		transition: border-color 150ms ease;
 
 		&:hover {
-			background-color: var(--viz-95);
+			background-color: transparent;
+			border-bottom-color: var(--viz-primary);
 		}
 
 		&:active {
-			background-color: var(--viz-90);
+			background-color: transparent;
+			border-bottom-color: var(--viz-secondary);
 		}
 	}
 
 	#left-menu-container {
-		border-radius: 0.25rem;
+		border-radius: var(--viz-border-radius-sm);
 		z-index: 300;
-		gap: 0.5rem;
+		gap: var(--viz-spacing-sm);
 		height: 100%;
 		display: flex;
 		flex-direction: row;
 		align-items: center;
 	}
 
-	.menu-seperator {
+	.menu-separator {
 		background-color: var(--viz-60);
-		height: 60%;
+		height: 50%;
 		width: 1px;
 	}
 
 	.icon-group-container {
-		gap: 0.5rem;
+		gap: var(--viz-spacing-xs);
 		display: flex;
 		flex-direction: row;
 	}
@@ -437,7 +441,7 @@ return;
 		display: flex;
 		flex-direction: row;
 		align-items: center;
-		gap: 0.5rem;
+		gap: var(--viz-spacing-sm);
 		width: 30%;
 		height: 100%;
 	}
@@ -447,14 +451,27 @@ return;
 	}
 
 	#account-button {
-		height: 1.4rem;
-		width: 1.4rem;
+		height: 1.75rem;
+		width: 1.75rem;
 		display: flex;
 		align-items: center;
 		justify-content: center;
-		border-radius: 10em;
-		outline: 1px solid var(--viz-60);
-		background-color: var(--viz-80);
+		border-radius: var(--viz-border-radius-pill);
+		border: var(--viz-border-thin);
+		border-color: var(--viz-60);
+		background-color: var(--viz-90);
+		cursor: pointer;
+		outline: none;
+		transition: background-color 150ms ease, border-color 150ms ease;
+
+		&:hover {
+			background-color: var(--viz-80);
+			border-color: var(--viz-50);
+		}
+
+		&:focus-visible {
+			box-shadow: 0 0 0 2px var(--viz-bg-color), 0 0 0 4px var(--viz-primary);
+		}
 	}
 
 	figure {
@@ -467,42 +484,30 @@ return;
 	}
 
 	:global(#header-upload-button) {
-		margin: auto 1rem;
+		margin: 0 var(--viz-spacing-sm);
 		color: var(--viz-text-color);
-		font-size: 0.8rem;
-		padding: 0.25em 0.5em;
+	}
+
+	:global(.header-button) {
+		font-size: 0.8rem !important;
+		padding: var(--viz-spacing-xxs) var(--viz-spacing-xs) !important;
+		border: 1px solid transparent !important;
+		background-color: transparent !important;
+
+		&:hover {
+			background-color: var(--viz-90) !important;
+			border-color: var(--viz-80) !important;
+		}
+
+		&:active {
+			background-color: var(--viz-80) !important;
+		}
 	}
 
 	.header-button-container {
 		display: flex;
 		align-items: center;
-		gap: 0.5rem;
-	}
-
-	:global(.header-button) {
-		display: flex;
-		align-items: center;
-		justify-content: center;
-		border-radius: 10em;
-		padding: 0.15em 0.4em;
-		font-size: 0.8rem;
-		color: var(--viz-10);
-		cursor: pointer;
-
-		&:focus {
-			box-shadow: 0px 0px 0px 1.5px inset var(--viz-primary);
-			outline: none;
-			background-color: var(--viz-90);
-			border-radius: 4em;
-		}
-
-		&:hover {
-			background-color: var(--viz-90);
-		}
-
-		&:active {
-			background-color: var(--viz-80);
-		}
+		gap: var(--viz-spacing-sm);
 	}
 
 	.debug-mode-text {
@@ -511,4 +516,5 @@ return;
 		font-weight: 500;
 		font-size: 1em;
 	}
+
 </style>
