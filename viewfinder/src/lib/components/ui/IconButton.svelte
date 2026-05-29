@@ -42,39 +42,62 @@
 	button {
 		cursor: pointer;
 		color: var(--viz-text-color);
-		font-weight: 400;
+		font-weight: 500;
 		letter-spacing: 0.02em;
 		height: max-content;
-		border: none;
-		padding: 0.25em;
-		gap: 0.25em;
+		border: 1px solid transparent;
+		padding: var(--viz-spacing-xs);
+		gap: var(--viz-spacing-xs);
 		display: inline-flex;
 		align-items: center;
+		justify-content: center;
 		flex-direction: row;
 		text-align: center;
-		transition: background-color 150ms cubic-bezier(0.4, 0, 0.2, 1) 0ms;
-		border-radius: 100px;
+		transition: background-color 150ms cubic-bezier(0.4, 0, 0.2, 1) 0ms, border-color 150ms ease;
+		border-radius: var(--viz-border-radius-pill);
+		outline: none;
 
 		&.with-children {
-			padding: 0.25em 0.5em;
+			padding: var(--viz-spacing-xs) var(--viz-spacing-sm);
 		}
 
-		&:hover {
+		&:focus-visible {
+			box-shadow: 0 0 0 2px var(--viz-bg-color), 0 0 0 4px var(--viz-primary);
+		}
+
+		&:hover:not(:disabled) {
 			background-color: var(--button-hover-bg);
+			border-color: var(--viz-80);
+		}
+
+		&:active:not(:disabled) {
+			background-color: var(--viz-75);
 		}
 
 		&:disabled {
 			cursor: not-allowed;
 			opacity: 0.5;
 			background-color: transparent;
+			border-color: transparent;
 		}
 
 		&.small {
-			font-size: 0.85em;
+			font-size: var(--viz-font-size-sm);
+			padding: var(--viz-spacing-xxs);
+			
+			&.with-children {
+				padding: var(--viz-spacing-xxs) var(--viz-spacing-xs);
+			}
 		}
 
 		&.mini {
-			font-size: 0.75em;
+			font-size: var(--viz-font-size-xs);
+			padding: 0;
+			
+			&.with-children {
+				padding: var(--viz-spacing-xxs);
+			}
 		}
 	}
+
 </style>
