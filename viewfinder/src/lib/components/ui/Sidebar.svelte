@@ -6,13 +6,13 @@
 		open?: boolean;
 		children?: import("svelte").Snippet;
 		title?: string;
-		sidebarWidth?: string;
+		width?: string;
 	}
 
 	let {
 		open = $bindable(true),
 		title,
-		sidebarWidth = "var(--viz-sidebar-width-expanded)",
+		width: sidebarWidth = "var(--viz-sidebar-width-expanded)",
 		children
 	}: Props = $props();
 

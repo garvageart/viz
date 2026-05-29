@@ -28,7 +28,9 @@ Stuff to finish:
 
 	let { activeSection = "general", userSettingsData }: Props = $props();
 
-	let settings: UserSetting[] = $derived(userSettingsData);
+	let settings: UserSetting[] = $derived(
+		userSettingsData.filter((s) => s.is_user_editable !== false)
+	);
 
 	const groupOrder = [
 		"Account",

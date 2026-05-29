@@ -14,7 +14,7 @@
 	}
 </script>
 
-<Sidebar sidebarWidth={"20%"}>
+<Sidebar width={"20%"}>
 	<div class="settings-nav-content">
 		<div class="sidebar-header">
 			<h3>Settings</h3>
@@ -69,8 +69,7 @@
 		color: var(--viz-20);
 		text-decoration: none;
 		border-radius: 0.25rem;
-		font-size: 1em;
-		// transition: all 0.2s;
+		font-size: var(--viz-font-size-sm);
 
 		&:hover {
 			background-color: var(--viz-80);
