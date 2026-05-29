@@ -6,7 +6,7 @@
 	import { normalizeBase64 } from "$lib/utils/misc";
 	import { onMount } from "svelte";
 	import { thumbHashToDataURL } from "thumbhash";
-	import LabelSelector from "../image-tools/ImageLabel.svelte";
+	import ImageLabelViewer from "../image-tools/ImageLabelViewer.svelte";
 	import AssetImage, { type AssetImageProps } from "./AssetImage.svelte";
 	import MaterialIcon from "./MaterialIcon.svelte";
 
@@ -158,7 +158,7 @@
 					</div>
 					<div class="image-card-indicators">
 						{#if asset.image_metadata?.label && asset.image_metadata?.label !== "None"}
-							<LabelSelector
+							<ImageLabelViewer
 								label={getImageLabel(asset)}
 								enableSelection={false}
 								variant={"compact"}

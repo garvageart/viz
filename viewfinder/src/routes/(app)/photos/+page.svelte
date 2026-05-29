@@ -8,20 +8,20 @@
 	    type Collection,
 	    type ImageAsset
 	} from "$lib/api";
-	import AssetToolbar from "$lib/components/ui/toolbars/AssetToolbar.svelte";
-	import Button from "$lib/components/ui/Button.svelte";
-	import DragAndDropUpload from "$lib/components/ui/DragAndDropUpload.svelte";
 	import Dropdown from "$lib/components/context-menus/Dropdown.svelte";
-	import IconButton from "$lib/components/ui/IconButton.svelte";
-	import ImageLightbox from "$lib/components/ui/ImageLightbox.svelte";
-	import LabelSelector from "$lib/components/image-tools/ImageLabel.svelte";
-	import MaterialIcon from "$lib/components/ui/MaterialIcon.svelte";
-	import StarRating from "$lib/components/image-tools/StarRating.svelte";
 	import PhotoAssetGrid from "$lib/components/grid/PhotoAssetGrid.svelte";
+	import ImageLabelViewer from "$lib/components/image-tools/ImageLabelViewer.svelte";
+	import StarRating from "$lib/components/image-tools/StarRating.svelte";
 	import CollectionSelectionModal from "$lib/components/modals/CollectionSelectionModal.svelte";
 	import FilterModal from "$lib/components/modals/FilterModal.svelte";
 	import { modalsManager } from "$lib/components/modals/manager/ModalManager.svelte";
 	import VizViewContainer from "$lib/components/panels/VizViewContainer.svelte";
+	import Button from "$lib/components/ui/Button.svelte";
+	import DragAndDropUpload from "$lib/components/ui/DragAndDropUpload.svelte";
+	import IconButton from "$lib/components/ui/IconButton.svelte";
+	import ImageLightbox from "$lib/components/ui/ImageLightbox.svelte";
+	import MaterialIcon from "$lib/components/ui/MaterialIcon.svelte";
+	import AssetToolbar from "$lib/components/ui/toolbars/AssetToolbar.svelte";
 	import { VizMimeTypes } from "$lib/constants.js";
 	import ContextMenu from "$lib/context-menu/ContextMenu.svelte";
 	import { createImageMenu } from "$lib/context-menu/menus/images.js";
@@ -487,7 +487,7 @@ return undefined;
 					>
 						Add to Collection
 					</IconButton>
-					<LabelSelector
+					<ImageLabelViewer
 						variant="expanded"
 						label={getImageLabel(selectionFirstImage)}
 						onSelect={async (selectedLabel) => {

@@ -2,20 +2,20 @@
 	import { goto } from "$app/navigation";
 	import type { Collection, ImageAsset } from "$lib/api";
 	import { addCollectionImages, updateImage } from "$lib/api";
-	import AssetGrid from "$lib/components/grid/AssetGrid.svelte";
-	import AssetToolbar from "$lib/components/ui/toolbars/AssetToolbar.svelte";
-	import CollectionCard from "$lib/components/ui/CollectionCard.svelte";
 	import Dropdown from "$lib/components/context-menus/Dropdown.svelte";
+	import AssetGrid from "$lib/components/grid/AssetGrid.svelte";
 	import PhotoAssetGrid from "$lib/components/grid/PhotoAssetGrid.svelte";
-	import IconButton from "$lib/components/ui/IconButton.svelte";
-	import ImageCard from "$lib/components/ui/ImageCard.svelte";
-	import ImageLightbox from "$lib/components/ui/ImageLightbox.svelte";
-	import LabelSelector from "$lib/components/image-tools/ImageLabel.svelte";
-	import LoadingSpinner from "$lib/components/ui/LoadingSpinner.svelte";
+	import ImageLabelViewer from "$lib/components/image-tools/ImageLabelViewer.svelte";
+	import StarRating from "$lib/components/image-tools/StarRating.svelte";
 	import CollectionSelectionModal from "$lib/components/modals/CollectionSelectionModal.svelte";
 	import { modalsManager } from "$lib/components/modals/manager/ModalManager.svelte";
 	import VizViewContainer from "$lib/components/panels/VizViewContainer.svelte";
-	import StarRating from "$lib/components/image-tools/StarRating.svelte";
+	import CollectionCard from "$lib/components/ui/CollectionCard.svelte";
+	import IconButton from "$lib/components/ui/IconButton.svelte";
+	import ImageCard from "$lib/components/ui/ImageCard.svelte";
+	import ImageLightbox from "$lib/components/ui/ImageLightbox.svelte";
+	import LoadingSpinner from "$lib/components/ui/LoadingSpinner.svelte";
+	import AssetToolbar from "$lib/components/ui/toolbars/AssetToolbar.svelte";
 	import { VizMimeTypes } from "$lib/constants";
 	import ContextMenu from "$lib/context-menu/ContextMenu.svelte";
 	import { createCollectionMenu } from "$lib/context-menu/menus/collections";
@@ -469,7 +469,7 @@ return;
 							Add to Collection
 						</IconButton>
 						{#if firstSelectedImage}
-							<LabelSelector
+							<ImageLabelViewer
 								variant="expanded"
 								label={getImageLabel(firstSelectedImage)}
 								onSelect={async (selectedLabel) => {

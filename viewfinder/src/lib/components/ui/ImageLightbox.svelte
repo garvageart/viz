@@ -16,12 +16,12 @@
     import { onMount, untrack } from "svelte";
     import CropOverlay from "../image-tools/CropOverlay.svelte";
     import CropTools from "../image-tools/CropTools.svelte";
-    import InputText from "./InputText.svelte";
+    import ImageLabelViewer from "../image-tools/ImageLabelViewer.svelte";
+    import StarRating from "../image-tools/StarRating.svelte";
     import IconButton from "./IconButton.svelte";
-    import LabelSelector from "../image-tools/ImageLabel.svelte";
+    import InputText from "./InputText.svelte";
     import Lightbox from "./Lightbox.svelte";
     import MaterialIcon from "./MaterialIcon.svelte";
-    import StarRating from "../image-tools/StarRating.svelte";
 
     interface Props {
         lightboxImage: ImageAsset | undefined;
@@ -754,7 +754,7 @@
                 </div>
             </div>
             <div class="rating-container">
-                <LabelSelector
+                <ImageLabelViewer
                     variant="compact"
                     label={getImageLabel(lightboxImage!)}
                     onSelect={async (selectedLabel) => {

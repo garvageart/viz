@@ -3,7 +3,7 @@
 	import MaterialIcon from "$lib/components/ui/MaterialIcon.svelte";
 	import { getImageLabel, getTakenAt } from "$lib/utils/images";
 	import { DateTime } from "luxon";
-	import LabelSelector from "../image-tools/ImageLabel.svelte";
+	import ImageLabelViewer from "../image-tools/ImageLabelViewer.svelte";
 
 	let { asset }: { asset: ImageAsset } = $props();
 	let takenAt = $derived(getTakenAt(asset));
@@ -28,7 +28,7 @@
 			<span class="tooltip-value"
 				>{DateTime.fromJSDate(takenAt).toFormat("dd LLL yyyy • HH:mm")}</span
 			>
-			<LabelSelector
+			<ImageLabelViewer
 				label={getImageLabel(asset)}
 				variant="compact"
 				enableSelection={false}

@@ -6,14 +6,14 @@
 	import { getFullImagePath, type ImageAsset } from "$lib/api";
 	import PhotoTooltip from "$lib/components/tooltips/PhotoTooltip.svelte";
 	import {
-		PhotoGridVirtualizer,
-		type PhotoGridConfig
+	    PhotoGridVirtualizer,
+	    type PhotoGridConfig
 	} from "$lib/components/virtualizer/PhotoGridVirtualizer.svelte.js";
 	import { VizMimeTypes } from "$lib/constants";
 	import { DragData } from "$lib/drag-drop/data";
 	import type {
-		ConsolidatedGroup,
-		ImageWithDateLabel
+	    ConsolidatedGroup,
+	    ImageWithDateLabel
 	} from "$lib/photo-layout";
 	import { filterManager } from "$lib/states/filter.svelte";
 	import { debugMode, isLayoutPage } from "$lib/states/index.svelte";
@@ -23,27 +23,27 @@
 	import hotkeys, { type HotkeysEvent } from "hotkeys-js";
 	import { DateTime } from "luxon";
 	import {
-		mount,
-		unmount,
-		untrack,
-		type ComponentProps,
-		type Snippet
+	    mount,
+	    unmount,
+	    untrack,
+	    type ComponentProps,
+	    type Snippet
 	} from "svelte";
 	import { SvelteSet } from "svelte/reactivity";
 	import { fade } from "svelte/transition";
 	import {
-		delegate,
-		followCursor,
-		type Instance,
-		type Props as TippyProps
+	    delegate,
+	    followCursor,
+	    type Instance,
+	    type Props as TippyProps
 	} from "tippy.js";
 	import "tippy.js/dist/tippy.css";
-	import AssetGrid from "./AssetGrid.svelte";
+	import ImageLabelViewer from "../image-tools/ImageLabelViewer.svelte";
+	import StarRating from "../image-tools/StarRating.svelte";
 	import AssetImage from "../ui/AssetImage.svelte";
 	import ImageCard from "../ui/ImageCard.svelte";
-	import LabelSelector from "../image-tools/ImageLabel.svelte";
 	import MaterialIcon from "../ui/MaterialIcon.svelte";
-	import StarRating from "../image-tools/StarRating.svelte";
+	import AssetGrid from "./AssetGrid.svelte";
 	import TimelineScrubber from "./TimelineScrubber.svelte";
 
 	interface PhotoSpecificProps {
@@ -1129,7 +1129,7 @@ return;
 			{#if asset.image_metadata?.label || asset.favourited}
 				<div class="right-side">
 					{#if asset.image_metadata?.label}
-						<LabelSelector
+						<ImageLabelViewer
 							variant="compact"
 							enableSelection={false}
 							label={getImageLabel(asset)}

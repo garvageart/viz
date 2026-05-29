@@ -28,22 +28,22 @@
 	    type CollectionUpdate,
 	    type ImageAsset
 	} from "$lib/api";
-	import AssetsShell from "$lib/components/ui/AssetsShell.svelte";
-	import Button from "$lib/components/ui/Button.svelte";
-	import InputText from "$lib/components/ui/InputText.svelte";
-	import DragAndDropUpload from "$lib/components/ui/DragAndDropUpload.svelte";
 	import Dropdown from "$lib/components/context-menus/Dropdown.svelte";
 	import PhotoAssetGrid from "$lib/components/grid/PhotoAssetGrid.svelte";
-	import IconButton from "$lib/components/ui/IconButton.svelte";
-	import ImageCard from "$lib/components/ui/ImageCard.svelte";
-	import ImageLightbox from "$lib/components/ui/ImageLightbox.svelte";
-	import LabelSelector from "$lib/components/image-tools/ImageLabel.svelte";
-	import MaterialIcon from "$lib/components/ui/MaterialIcon.svelte";
+	import ImageLabelViewer from "$lib/components/image-tools/ImageLabelViewer.svelte";
+	import StarRating from "$lib/components/image-tools/StarRating.svelte";
 	import CollectionModal from "$lib/components/modals/CollectionModal.svelte";
 	import FilterModal from "$lib/components/modals/FilterModal.svelte";
 	import { modalsManager } from "$lib/components/modals/manager/ModalManager.svelte";
 	import VizViewContainer from "$lib/components/panels/VizViewContainer.svelte";
-	import StarRating from "$lib/components/image-tools/StarRating.svelte";
+	import AssetsShell from "$lib/components/ui/AssetsShell.svelte";
+	import Button from "$lib/components/ui/Button.svelte";
+	import DragAndDropUpload from "$lib/components/ui/DragAndDropUpload.svelte";
+	import IconButton from "$lib/components/ui/IconButton.svelte";
+	import ImageCard from "$lib/components/ui/ImageCard.svelte";
+	import ImageLightbox from "$lib/components/ui/ImageLightbox.svelte";
+	import InputText from "$lib/components/ui/InputText.svelte";
+	import MaterialIcon from "$lib/components/ui/MaterialIcon.svelte";
 	import ContextMenu from "$lib/context-menu/ContextMenu.svelte";
 	import { createImageMenu } from "$lib/context-menu/menus/images";
 	import type { MenuItem } from "$lib/context-menu/types";
@@ -854,7 +854,7 @@ return;
 
 {#snippet selectionToolbarSnippet()}
 	<div class="selection-actions">
-		<LabelSelector
+		<ImageLabelViewer
 			variant="expanded"
 			label={getImageLabel(selectionFirstImage)}
 			onSelect={async (selectedLabel) => {
