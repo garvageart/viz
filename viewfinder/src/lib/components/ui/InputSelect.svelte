@@ -30,7 +30,12 @@
 	class:side-label={labelPosition === "side"}
 >
 	{#if label}
-		<label for={selectId} class="input-label">{label}</label>
+		<label for={selectId} class="input-label">
+			{label}
+			{#if props.required}
+				<span class="required-asterisk">*</span>
+			{/if}
+		</label>
 	{/if}
 	<div class="input-wrapper">
 		<select
@@ -53,14 +58,16 @@
 		flex-direction: column;
 		min-width: 0%;
 		position: relative;
-		gap: 0.25rem;
+		width: 100%;
+		gap: var(--viz-spacing-sm); // UI Spacing Token
 
 		&.side-label {
 			flex-direction: row;
 			align-items: center;
 
 			.input-label {
-				margin-right: 0.5rem;
+				margin-right: var(--viz-spacing-sm); // UI Spacing Token
+				margin-bottom: 0;
 				white-space: nowrap;
 			}
 		}
@@ -80,20 +87,26 @@
 	}
 
 	.input-label {
-		font-size: 0.875rem;
+		font-size: var(--viz-font-size-sm); // UI Typography Token
 		font-weight: 500;
 		color: var(--viz-40);
 	}
 
+	.required-asterisk {
+		color: var(--viz-error-color);
+		margin-left: var(--viz-spacing-xxs); // UI Spacing Token
+	}
+
 	.input-description {
-		font-size: 0.85rem;
-		color: var(--viz-text-secondary, #888);
-		padding-left: 0.5rem;
+		font-size: var(--viz-font-size-xs); // UI Typography Token
+		color: var(--viz-60);
+		padding-left: var(--viz-spacing-sm); // UI Spacing Token
 	}
 
 	.select-input {
 		width: 100%;
 		max-width: 100%;
+		min-height: 2.5rem; // Standard density height
 		color: var(--viz-text-color);
 		background-color: var(--viz-100);
 		outline: none;
@@ -101,19 +114,28 @@
 		box-shadow: 0 -1px 0 var(--viz-60) inset;
 		font-family: var(--viz-display-font);
 		font-size: 1rem;
-		padding: 0.5em 1em;
+		padding: var(--viz-spacing-sm) 2rem var(--viz-spacing-sm) var(--viz-spacing-std); // UI Padding Tokens
 		cursor: pointer;
-
-		/* Custom styling to match InputText */
 		appearance: none;
-		background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 24 24' stroke='%239ca3af'%3E%3Cpath stroke-linecap='round' stroke-linejoin='round' stroke-width='2' d='M19 9l-7 7-7-7'%3E%3C/path%3E%3C/svg%3E");
 		background-repeat: no-repeat;
-		background-position: right 0.5rem center;
-		background-size: 1rem;
+		background-position: right var(--viz-spacing-md) center; // UI Spacing Token
+		background-size: var(--viz-font-size-sm); // UI Typography Token
+
+		// Scalable high-contrast neutral chevron SVG arrow (light/dark adaptive)
+		background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 24 24' stroke='%23888888' stroke-width='2'%3E%3Cpath stroke-linecap='round' stroke-linejoin='round' d='M19 9l-7 7-7-7'/%3E%3C/svg%3E");
+
+		&:hover:not(:disabled) {
+			box-shadow: 0 -1px 0 var(--viz-40) inset;
+		}
 
 		&:focus {
 			background-color: var(--viz-100);
 			box-shadow: 0 -2px 0 var(--viz-primary) inset;
+		}
+
+		&:focus-visible {
+			outline: 2px solid var(--viz-primary);
+			outline-offset: 1px;
 		}
 	}
 </style>
