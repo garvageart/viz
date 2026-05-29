@@ -10,6 +10,7 @@ import { performSearch } from "$lib/search/execute";
 class EventsState {
     private client: WSClient | null = null;
     connected = $state(false);
+    initialized = $state(false);
 
     private debouncedInvalidate = debounce(async () => {
         console.debug("[Events] Triggering debounced refresh");
@@ -38,12 +39,19 @@ class EventsState {
 
         this.client = createWSConnection(
             (event, data) => this.handleEvent(event, data),
-            () => (this.connected = false),
+            () => {
+                this.connected = false;
+                this.initialized = true;
+            },
             () => {
                 this.connected = true;
+                this.initialized = true;
                 console.debug("[Events] Global WebSocket connected");
             },
-            () => (this.connected = false)
+            () => {
+                this.connected = false;
+                this.initialized = true;
+            }
         );
     }
 

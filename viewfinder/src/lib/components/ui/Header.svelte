@@ -14,6 +14,7 @@
 		isLayoutPage
 	} from "$lib/states/index.svelte";
 	import { historyState } from "$lib/states/history.svelte";
+	import { eventsState } from "$lib/states/events.svelte";
 	import {
 		SUPPORTED_IMAGE_TYPES,
 		SUPPORTED_RAW_FILES,
@@ -305,6 +306,12 @@ return names;
 		/>
 	</div>
 	<div class="header-button-container">
+		{#if eventsState.initialized && !eventsState.connected}
+			<div class="offline-badge" title="Server Offline (WebSocket Disconnected)">
+				<span class="offline-dot"></span>
+				<span>Offline</span>
+			</div>
+		{/if}
 		<IconButton
 			weight={300}
 			iconName={getTheme() === "dark" ? "dark_mode" : "light_mode"}
@@ -515,6 +522,45 @@ return names;
 		font-family: var(--viz-mono-font);
 		font-weight: 500;
 		font-size: 1em;
+	}
+
+	.offline-badge {
+		display: inline-flex;
+		align-items: center;
+		gap: var(--viz-spacing-xs);
+		background-color: transparent;
+		border: var(--viz-border-thin);
+		border-color: var(--viz-error-color);
+		color: var(--viz-error-color);
+		padding: var(--viz-spacing-xxs) var(--viz-spacing-xs);
+		border-radius: var(--viz-border-radius-sm);
+		font-size: var(--viz-font-size-xs);
+		font-weight: 600;
+		text-transform: uppercase;
+		letter-spacing: 0.05em;
+		line-height: 1;
+		user-select: none;
+	}
+
+	.offline-dot {
+		width: 6px;
+		height: 6px;
+		background-color: var(--viz-error-color);
+		border-radius: var(--viz-border-radius-pill);
+		display: inline-block;
+		animation: offline-pulse 1.5s infinite ease-in-out;
+	}
+
+	@keyframes offline-pulse {
+		0% {
+			opacity: 0.4;
+		}
+		50% {
+			opacity: 1;
+		}
+		100% {
+			opacity: 0.4;
+		}
 	}
 
 </style>
