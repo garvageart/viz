@@ -12,33 +12,36 @@
 	const adminSettings: MenuItem = {
 		id: "admin",
 		label: "Admin",
+		icon: "admin_panel_settings",
 		children: [
-			{ id: "admin-system", label: "Dashboard", action: () => goto("/admin") },
-			{ id: "admin-users", label: "Users", action: () => goto("/admin/users") },
-			{ id: "admin-jobs", label: "Jobs", action: () => goto("/admin/jobs") },
+			{ id: "admin-system", label: "Dashboard", icon: "dashboard", action: () => goto("/admin") },
+			{ id: "admin-users", label: "Users", icon: "group", action: () => goto("/admin/users") },
+			{ id: "admin-jobs", label: "Jobs", icon: "work", action: () => goto("/admin/jobs") },
 			{
 				id: "admin-events",
 				label: "Events",
+				icon: "event",
 				action: () => goto("/admin/events")
 			}
 		]
 	};
 
 	const menuItems: MenuItem[] = [
-		{ id: "workspace", label: "Workspace", action: () => goto("/") },
+		{ id: "workspace", label: "Workspace", icon: "space_dashboard", action: () => goto("/") },
 		{ id: "divider-1", label: "", separator: true },
-		{ id: "photos", label: "Photos", action: () => goto("/photos") },
-		// { id: "search", label: "Search", action: () => goto("/search") },
+		{ id: "photos", label: "Photos", icon: "photo", action: () => goto("/photos") },
 		{
 			id: "collections",
 			label: "Collections",
+			icon: "collections",
 			action: () => goto("/collections")
 		},
 		{ id: "divider-2", label: "", separator: true },
-		{ id: "settings", label: "Settings", action: () => goto("/settings") },
+		{ id: "settings", label: "Settings", icon: "settings", action: () => goto("/settings") },
 		{
 			id: "help",
 			label: "Help & Support",
+			icon: "help",
 			action: () =>
 				window.open("https://github.com/garvageart/viz/issues", "_blank")
 		},
@@ -46,6 +49,7 @@
 			id: "shortcuts",
 			label: "Keyboard Shortcuts",
 			shortcut: "?",
+			icon: "keyboard",
 			action: () =>
 				alert("Keyboard shortcuts:\n\nCtrl/Cmd + K: Search\nEsc: Close panels")
 		}
@@ -70,6 +74,7 @@
 
 <style lang="scss">
 	:global(.app-menu) {
-		font-size: 1.1rem;
+		font-size: var(--viz-font-size-md) !important;
 	}
 </style>
+

@@ -257,7 +257,7 @@
 					</div>
 				</div>
 
-				<div class="stat-seperator"></div>
+				<div class="stat-separator"></div>
 
 				<!-- Cache Usage -->
 				<div class="stat-card">
@@ -432,7 +432,7 @@
 		overflow: hidden;
 	}
 
-	.stat-seperator {
+	.stat-separator {
 		grid-column: 1 / -1;
 		height: 1px;
 		width: 100%;

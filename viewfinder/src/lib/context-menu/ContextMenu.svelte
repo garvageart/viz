@@ -379,7 +379,7 @@ return;
 			<ul role="menu" aria-orientation="vertical">
 				{#each items as item, i}
 					{#if item.separator}
-						<li class="separator" role="separator" aria-hidden="true"></li>
+						<li class="ctx-separator" role="separator" aria-hidden="true"></li>
 					{:else}
 						<ContextMenuItem
 							{item}
@@ -435,9 +435,11 @@ return;
 		border-bottom-right-radius: 0.5rem;
 	}
 
-	.separator {
-		height: 1px;
-		margin: 4px 6px;
-		background: var(--viz-40);
+	:global(.ctx-separator) {
+		height: 1px !important;
+		margin: var(--viz-spacing-xs) var(--viz-spacing-sm) !important;
+		background-color: var(--viz-60) !important;
+		list-style: none !important;
+		display: block !important;
 	}
 </style>

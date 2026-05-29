@@ -72,7 +72,7 @@ return;
 				<ul>
 					{#each item.children as child, ci}
 						{#if child.separator}
-							<li class="separator" role="separator" aria-hidden="true"></li>
+							<li class="ctx-seperator" role="separator" aria-hidden="true"></li>
 						{:else}
 							<li role="none">
 								<button
