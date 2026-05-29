@@ -24,6 +24,18 @@ import (
 
 var ErrCollectionUnauthorised = errors.New("unauthorized")
 
+// isAuthorizedToModifyCollection returns true if the given user is the owner
+// of the collection or has admin/superadmin role.
+func isAuthorizedToModifyCollection(user *entities.User, collection entities.Collection) bool {
+	if user == nil {
+		return false
+	}
+	if collection.OwnerID != nil && *collection.OwnerID == user.Uid {
+		return true
+	}
+	return user.Role == dto.UserRoleAdmin || user.Role == dto.UserRoleSuperadmin
+}
+
 func findCollectionImages(db *gorm.DB, collection entities.Collection, limit, offset int, sortBy, order string) ([]dto.ImagesResponse, error) {
 	var images []entities.ImageAsset
 
@@ -274,9 +286,8 @@ func CollectionsRouter(db *gorm.DB, logger *slog.Logger, wsBroker *libhttp.WSBro
 			// Access Control: If private, only owner can view
 			if collection.Private != nil && *collection.Private {
 				authUser, ok := libhttp.UserFromContext(req)
-				// If not authenticated or not the owner
-				if !ok || (collection.OwnerID != nil && *collection.OwnerID != authUser.Uid) {
-					// Return "not found" to avoid leaking existence
+				// If not authenticated or not the owner/admin, return not found to avoid leaking existence
+				if !ok || !isAuthorizedToModifyCollection(authUser, collection) {
 					return gorm.ErrRecordNotFound
 				}
 			}
@@ -364,8 +375,8 @@ func CollectionsRouter(db *gorm.DB, logger *slog.Logger, wsBroker *libhttp.WSBro
 			}
 
 			authUser, ok := libhttp.UserFromContext(req)
-			if !ok || (collection.OwnerID != nil && *collection.OwnerID != authUser.Uid) {
-				return fmt.Errorf("unauthorized")
+			if !ok || !isAuthorizedToModifyCollection(authUser, collection) {
+				return ErrCollectionUnauthorised
 			}
 
 			updateCollectionFromDTO(&collection, update)
@@ -419,8 +430,14 @@ func CollectionsRouter(db *gorm.DB, logger *slog.Logger, wsBroker *libhttp.WSBro
 			}
 
 			authUser, ok := libhttp.UserFromContext(req)
-			if !ok || (collection.OwnerID != nil && *collection.OwnerID != authUser.Uid) {
-				return fmt.Errorf("unauthorized")
+			if !ok || !isAuthorizedToModifyCollection(authUser, collection) {
+				return ErrCollectionUnauthorised
+			}
+
+			// Remove any collection image join rows first to avoid foreign key
+			// conflicts or other DB-level constraints when deleting the collection.
+			if err := tx.Where("collection_id = ?", collection.ID).Delete(&entities.CollectionImage{}).Error; err != nil {
+				return err
 			}
 
 			if err := tx.Delete(&collection).Error; err != nil {
@@ -476,7 +493,7 @@ func CollectionsRouter(db *gorm.DB, logger *slog.Logger, wsBroker *libhttp.WSBro
 
 		authUser, ok := libhttp.UserFromContext(req)
 		if collection.Private != nil && *collection.Private {
-			if !ok || (collection.OwnerID != nil && *collection.OwnerID != authUser.Uid) {
+			if !ok || !isAuthorizedToModifyCollection(authUser, collection) {
 				render.Status(req, http.StatusForbidden)
 				render.JSON(res, req, dto.ErrorResponse{Error: "Unauthorized"})
 				return
@@ -541,7 +558,7 @@ func CollectionsRouter(db *gorm.DB, logger *slog.Logger, wsBroker *libhttp.WSBro
 			// Access Control: If private, only owner can view
 			if collection.Private != nil && *collection.Private {
 				authUser, ok := libhttp.UserFromContext(req)
-				if !ok || (collection.OwnerID != nil && *collection.OwnerID != authUser.Uid) {
+				if !ok || !isAuthorizedToModifyCollection(authUser, collection) {
 					return gorm.ErrRecordNotFound
 				}
 			}
@@ -625,7 +642,7 @@ func CollectionsRouter(db *gorm.DB, logger *slog.Logger, wsBroker *libhttp.WSBro
 			}
 
 			authUser, ok := libhttp.UserFromContext(req)
-			if !ok || (collection.OwnerID != nil && *collection.OwnerID != authUser.Uid) {
+			if !ok || !isAuthorizedToModifyCollection(authUser, collection) {
 				return ErrCollectionUnauthorised
 			}
 
@@ -726,7 +743,7 @@ func CollectionsRouter(db *gorm.DB, logger *slog.Logger, wsBroker *libhttp.WSBro
 			}
 
 			authUser, ok := libhttp.UserFromContext(req)
-			if !ok || (collection.OwnerID != nil && *collection.OwnerID != authUser.Uid) {
+			if !ok || !isAuthorizedToModifyCollection(authUser, collection) {
 				return ErrCollectionUnauthorised
 			}
 

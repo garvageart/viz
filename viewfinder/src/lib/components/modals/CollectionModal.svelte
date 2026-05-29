@@ -96,7 +96,7 @@
 	}
 
 	#collection-submit {
-		border: inherit;
+		border: none;
 		background-color: transparent;
 		color: inherit;
 		font-family: inherit;
