@@ -101,6 +101,28 @@ func UserFromContext(r *http.Request) (*entities.User, bool) {
 	return u, ok
 }
 
+// IsAdmin returns true if the provided user has admin or superadmin role.
+func IsAdmin(user *entities.User) bool {
+	if user == nil {
+		return false
+	}
+	return user.Role == dto.UserRoleAdmin || user.Role == dto.UserRoleSuperadmin
+}
+
+// IsAdminFromRequest returns true if the request is authenticated as an
+// admin/superadmin either via session (cookie) or API key.
+func IsAdminFromRequest(r *http.Request) bool {
+	if u, ok := UserFromContext(r); ok && IsAdmin(u) {
+		return true
+	}
+
+	if ak, ok := APIKeyFromContext(r); ok && ak != nil && ak.User != nil {
+		return ak.User.Role == dto.UserRoleAdmin || ak.User.Role == dto.UserRoleSuperadmin
+	}
+
+	return false
+}
+
 // APIKeyFromContext returns the authenticated API Key from the request context, if present.
 func APIKeyFromContext(r *http.Request) (*entities.APIKey, bool) {
 	v := r.Context().Value(ctxAPIKey)

@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"crypto/sha1"
 	"encoding/hex"
+	"errors"
 	"fmt"
 	"io"
 	"log/slog"
@@ -48,6 +49,8 @@ type ImageUploadError struct {
 	Retryable bool   `json:"retryable"`
 	Error     string `json:"error"`
 }
+
+var ErrImageUnauthorised = errors.New("unauthorized")
 
 func createNewImageEntity(logger *slog.Logger, fileName string, libvipsImg *libvips.Image) (*entities.ImageAsset, error) {
 	logger.Info("Generating ID", slog.String("file", fileName))
@@ -335,13 +338,15 @@ func ImagesRouter(db *gorm.DB, logger *slog.Logger) *chi.Mux {
 		} else {
 			// Access Control: If private, only owner can view (unless using a valid download token logic, which is handled above)
 			if imgEnt.Private {
-				authUser, ok := libhttp.UserFromContext(req)
-				// If not authenticated or not the owner
-				if !ok || (imgEnt.OwnerID != nil && *imgEnt.OwnerID != authUser.Uid) {
-					// Return 404 to avoid leaking existence
-					render.Status(req, http.StatusNotFound)
-					render.JSON(res, req, dto.ErrorResponse{Error: "Image not found"})
-					return
+				// Allow admins (cookie or API key) to bypass owner checks
+				if !libhttp.IsAdminFromRequest(req) {
+					authUser, ok := libhttp.UserFromContext(req)
+					if !ok || (imgEnt.OwnerID != nil && *imgEnt.OwnerID != authUser.Uid) {
+						// Return 404 to avoid leaking existence
+						render.Status(req, http.StatusNotFound)
+						render.JSON(res, req, dto.ErrorResponse{Error: "Image not found"})
+						return
+					}
 				}
 			}
 		}
@@ -432,15 +437,16 @@ func ImagesRouter(db *gorm.DB, logger *slog.Logger) *chi.Mux {
 			return
 		}
 
-		// Access Control: If private, only owner can view
+		// Access Control: If private, only owner can view (admins may bypass)
 		if imgEnt.Private {
-			authUser, ok := libhttp.UserFromContext(req)
-			// If not authenticated or not the owner
-			if !ok || (imgEnt.OwnerID != nil && *imgEnt.OwnerID != authUser.Uid) {
-				// Return 404 to avoid leaking existence
-				render.Status(req, http.StatusNotFound)
-				render.JSON(res, req, dto.ErrorResponse{Error: "Image not found"})
-				return
+			if !libhttp.IsAdminFromRequest(req) {
+				authUser, ok := libhttp.UserFromContext(req)
+				if !ok || (imgEnt.OwnerID != nil && *imgEnt.OwnerID != authUser.Uid) {
+					// Return 404 to avoid leaking existence
+					render.Status(req, http.StatusNotFound)
+					render.JSON(res, req, dto.ErrorResponse{Error: "Image not found"})
+					return
+				}
 			}
 		}
 
@@ -464,10 +470,12 @@ func ImagesRouter(db *gorm.DB, logger *slog.Logger) *chi.Mux {
 				return e.Error
 			}
 
-			// Access Control: Only owner can update
-			authUser, ok := libhttp.UserFromContext(req)
-			if !ok || (img.OwnerID != nil && *img.OwnerID != authUser.Uid) {
-				return fmt.Errorf("unauthorized")
+			// Access Control: Only owner can update (admins may bypass)
+			if !libhttp.IsAdminFromRequest(req) {
+				authUser, ok := libhttp.UserFromContext(req)
+				if !ok || (img.OwnerID != nil && *img.OwnerID != authUser.Uid) {
+					return ErrImageUnauthorised
+				}
 			}
 
 			updateImageFromDTO(&img, update)
@@ -854,9 +862,10 @@ func ImagesRouter(db *gorm.DB, logger *slog.Logger) *chi.Mux {
 		resultsArr := make([]dto.DeleteAssetResult, 0, len(body.Uids))
 		var anyFailed bool
 
-		// Get authenticated user
+		// Get authenticated user (cookie) and admin status (cookie or API key)
 		authUser, ok := libhttp.UserFromContext(req)
-		if !ok {
+		isAdmin := libhttp.IsAdminFromRequest(req)
+		if !ok && !isAdmin {
 			render.Status(req, http.StatusUnauthorized)
 			render.JSON(res, req, dto.ErrorResponse{Error: "Unauthorized"})
 			return
@@ -877,7 +886,7 @@ func ImagesRouter(db *gorm.DB, logger *slog.Logger) *chi.Mux {
 				}
 				// If not found, we can't delete it anyway, so let it proceed to fail naturally or skip
 			} else {
-				if img.OwnerID != nil && *img.OwnerID != authUser.Uid {
+				if img.OwnerID != nil && (!ok || *img.OwnerID != authUser.Uid) && !isAdmin {
 					e := "permission denied"
 					errMsg = &e
 					deleted = false

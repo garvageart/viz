@@ -1,11 +1,11 @@
 package routes
 
 import (
-	"slices"
 	"errors"
 	"fmt"
 	"log/slog"
 	"net/http"
+	"slices"
 	"strconv"
 	"strings"
 	"time"
@@ -285,10 +285,12 @@ func CollectionsRouter(db *gorm.DB, logger *slog.Logger, wsBroker *libhttp.WSBro
 
 			// Access Control: If private, only owner can view
 			if collection.Private != nil && *collection.Private {
-				authUser, ok := libhttp.UserFromContext(req)
-				// If not authenticated or not the owner/admin, return not found to avoid leaking existence
-				if !ok || !isAuthorizedToModifyCollection(authUser, collection) {
-					return gorm.ErrRecordNotFound
+				if !libhttp.IsAdminFromRequest(req) {
+					authUser, ok := libhttp.UserFromContext(req)
+					// If not authenticated or not the owner/admin, return not found to avoid leaking existence
+					if !ok || !isAuthorizedToModifyCollection(authUser, collection) {
+						return gorm.ErrRecordNotFound
+					}
 				}
 			}
 
@@ -374,9 +376,17 @@ func CollectionsRouter(db *gorm.DB, logger *slog.Logger, wsBroker *libhttp.WSBro
 				return err
 			}
 
-			authUser, ok := libhttp.UserFromContext(req)
-			if !ok || !isAuthorizedToModifyCollection(authUser, collection) {
-				return ErrCollectionUnauthorised
+			if !libhttp.IsAdminFromRequest(req) {
+				if !libhttp.IsAdminFromRequest(req) {
+					if !libhttp.IsAdminFromRequest(req) {
+						if !libhttp.IsAdminFromRequest(req) {
+							authUser, ok := libhttp.UserFromContext(req)
+							if !ok || !isAuthorizedToModifyCollection(authUser, collection) {
+								return ErrCollectionUnauthorised
+							}
+						}
+					}
+				}
 			}
 
 			updateCollectionFromDTO(&collection, update)
@@ -491,12 +501,14 @@ func CollectionsRouter(db *gorm.DB, logger *slog.Logger, wsBroker *libhttp.WSBro
 			return
 		}
 
-		authUser, ok := libhttp.UserFromContext(req)
 		if collection.Private != nil && *collection.Private {
-			if !ok || !isAuthorizedToModifyCollection(authUser, collection) {
-				render.Status(req, http.StatusForbidden)
-				render.JSON(res, req, dto.ErrorResponse{Error: "Unauthorized"})
-				return
+			if !libhttp.IsAdminFromRequest(req) {
+				authUser, ok := libhttp.UserFromContext(req)
+				if !ok || !isAuthorizedToModifyCollection(authUser, collection) {
+					render.Status(req, http.StatusForbidden)
+					render.JSON(res, req, dto.ErrorResponse{Error: "Unauthorized"})
+					return
+				}
 			}
 		}
 
