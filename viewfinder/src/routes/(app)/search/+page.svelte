@@ -10,7 +10,7 @@
 	import IconButton from "$lib/components/ui/IconButton.svelte";
 	import ImageCard from "$lib/components/ui/ImageCard.svelte";
 	import ImageLightbox from "$lib/components/ui/ImageLightbox.svelte";
-	import LabelSelector from "$lib/components/image-tools/LabelSelector.svelte";
+	import LabelSelector from "$lib/components/image-tools/ImageLabel.svelte";
 	import LoadingSpinner from "$lib/components/ui/LoadingSpinner.svelte";
 	import CollectionSelectionModal from "$lib/components/modals/CollectionSelectionModal.svelte";
 	import { modalsManager } from "$lib/components/modals/manager/ModalManager.svelte";

@@ -41,7 +41,7 @@
 	import AssetGrid from "./AssetGrid.svelte";
 	import AssetImage from "../ui/AssetImage.svelte";
 	import ImageCard from "../ui/ImageCard.svelte";
-	import LabelSelector from "../image-tools/LabelSelector.svelte";
+	import LabelSelector from "../image-tools/ImageLabel.svelte";
 	import MaterialIcon from "../ui/MaterialIcon.svelte";
 	import StarRating from "../image-tools/StarRating.svelte";
 	import TimelineScrubber from "./TimelineScrubber.svelte";

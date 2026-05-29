@@ -37,7 +37,7 @@
 	import IconButton from "$lib/components/ui/IconButton.svelte";
 	import ImageCard from "$lib/components/ui/ImageCard.svelte";
 	import ImageLightbox from "$lib/components/ui/ImageLightbox.svelte";
-	import LabelSelector from "$lib/components/image-tools/LabelSelector.svelte";
+	import LabelSelector from "$lib/components/image-tools/ImageLabel.svelte";
 	import MaterialIcon from "$lib/components/ui/MaterialIcon.svelte";
 	import CollectionModal from "$lib/components/modals/CollectionModal.svelte";
 	import FilterModal from "$lib/components/modals/FilterModal.svelte";

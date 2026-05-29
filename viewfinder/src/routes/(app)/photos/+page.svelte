@@ -14,7 +14,7 @@
 	import Dropdown from "$lib/components/context-menus/Dropdown.svelte";
 	import IconButton from "$lib/components/ui/IconButton.svelte";
 	import ImageLightbox from "$lib/components/ui/ImageLightbox.svelte";
-	import LabelSelector from "$lib/components/image-tools/LabelSelector.svelte";
+	import LabelSelector from "$lib/components/image-tools/ImageLabel.svelte";
 	import MaterialIcon from "$lib/components/ui/MaterialIcon.svelte";
 	import StarRating from "$lib/components/image-tools/StarRating.svelte";
 	import PhotoAssetGrid from "$lib/components/grid/PhotoAssetGrid.svelte";

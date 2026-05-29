@@ -2,7 +2,7 @@
 	import { selectionManager } from "$lib/states/selection.svelte";
 	import { getFullImagePath, type ImageAsset } from "$lib/api";
 	import MaterialIcon from "$lib/components/ui/MaterialIcon.svelte";
-	import LabelSelector from "$lib/components/image-tools/LabelSelector.svelte";
+	import LabelSelector from "$lib/components/image-tools/ImageLabel.svelte";
 	import { getImageLabel } from "$lib/utils/images";
 	import { createImageMenu } from "$lib/context-menu/menus/images";
 	import ContextMenu from "$lib/context-menu/ContextMenu.svelte";
