@@ -136,3 +136,94 @@
         );
     }
 }
+
+/// Global theme bootstrapper. Register all color modes and media queries.
+@mixin register-theme-core(
+    $bg-color,
+    $text-color,
+    $base-color,
+    $primary-color,
+    $secondary-color,
+    $flip-bg-color: null,
+    $flip-bg-pct: 0%,
+    $flip-text-color: null,
+    $flip-text-pct: 0%
+) {
+    :root {
+        --viz-bg-color: #{$bg-color};
+        --viz-text-color: #{$text-color};
+        --viz-primary: #{$primary-color};
+        --viz-secondary: #{$secondary-color};
+
+        @include generate-viz-colors(
+            $bg-color: $bg-color,
+            $text-color: $text-color,
+            $base-color: $base-color,
+            $is-light-theme: true,
+            $flip-bg-color: $flip-bg-color,
+            $flip-bg-pct: $flip-bg-pct,
+            $flip-text-color: $flip-text-color,
+            $flip-text-pct: $flip-text-pct,
+            $suffix: "-light"
+        );
+
+        @include generate-viz-colors(
+            $bg-color: $bg-color,
+            $text-color: $text-color,
+            $base-color: $base-color,
+            $is-light-theme: false,
+            $suffix: "-dark"
+        );
+    }
+
+    $light-theme-sel: ':root[data-theme="light"], [data-theme="light"]';
+
+    #{$light-theme-sel} {
+        @include generate-viz-colors(
+            $bg-color: $bg-color,
+            $text-color: $text-color,
+            $base-color: $base-color,
+            $is-light-theme: true,
+            $flip-bg-color: $flip-bg-color,
+            $flip-bg-pct: $flip-bg-pct,
+            $flip-text-color: $flip-text-color,
+            $flip-text-pct: $flip-text-pct
+        );
+    }
+
+    :root[data-theme="dark"], [data-theme="dark"] {
+        @include generate-viz-colors(
+            $bg-color: $bg-color,
+            $text-color: $text-color,
+            $base-color: $base-color,
+            $is-light-theme: false
+        );
+    }
+
+    @media (prefers-color-scheme: dark) {
+        :root:not([data-theme]) {
+            @include generate-viz-colors(
+                $bg-color: $bg-color,
+                $text-color: $text-color,
+                $base-color: $base-color,
+                $is-light-theme: false
+            );
+        }
+    }
+
+    @media (prefers-color-scheme: light) {
+        :root:not([data-theme]) {
+            @include generate-viz-colors(
+                $bg-color: $bg-color,
+                $text-color: $text-color,
+                $base-color: $base-color,
+                $is-light-theme: true,
+                $flip-bg-color: $flip-bg-color,
+                $flip-bg-pct: $flip-bg-pct,
+                $flip-text-color: $flip-text-color,
+                $flip-text-pct: $flip-text-pct
+            );
+        }
+    }
+}
+

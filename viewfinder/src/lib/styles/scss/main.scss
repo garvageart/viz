@@ -57,6 +57,36 @@
     --viz-padding-2xl: #{v.$viz-padding-2xl};
 }
 
+/* Spacing scale */
+:root {
+    --viz-spacing-xxs: #{v.$viz-spacing-xxs};
+    --viz-spacing-xs: #{v.$viz-spacing-xs};
+    --viz-spacing-sm: #{v.$viz-spacing-sm};
+    --viz-spacing-md: #{v.$viz-spacing-md};
+    --viz-spacing-std: #{v.$viz-spacing-std};
+    --viz-spacing-lg: #{v.$viz-spacing-lg};
+    --viz-spacing-xl: #{v.$viz-spacing-xl};
+    --viz-spacing-xxl: #{v.$viz-spacing-xxl};
+}
+
+/* Layout coordinates */
+:root {
+    --viz-header-height: #{v.$viz-header-height};
+    --viz-sidebar-width-expanded: #{v.$viz-sidebar-width-expanded};
+    --viz-sidebar-width-collapsed: #{v.$viz-sidebar-width-collapsed};
+}
+
+/* Borders & Radius */
+:root {
+    --viz-border-radius-sm: #{v.$viz-border-radius-sm};
+    --viz-border-radius-md: #{v.$viz-border-radius-md};
+    --viz-border-radius-lg: #{v.$viz-border-radius-lg};
+    --viz-border-radius-pill: #{v.$viz-border-radius-pill};
+    --viz-border-thin: 1px solid var(--viz-60);
+    --viz-border-thick: 2px solid var(--viz-primary);
+}
+
+
 /* Scrollbar Settings */
 :root {
     /* Dimensions */

@@ -34,3 +34,25 @@ $viz-padding-std: 1rem; // 16px
 $viz-padding-lg: 1.25rem; // 20px
 $viz-padding-xl: 1.5rem; // 24px
 $viz-padding-2xl: 2rem; // 32px
+
+// Spacing scale based on relative rem units for perfect zooming
+$viz-spacing-xxs: 0.125rem; // 2px
+$viz-spacing-xs: 0.25rem; // 4px
+$viz-spacing-sm: 0.5rem; // 8px
+$viz-spacing-md: 0.75rem; // 12px
+$viz-spacing-std: 1rem; // 16px
+$viz-spacing-lg: 1.25rem; // 20px
+$viz-spacing-xl: 1.5rem; // 24px
+$viz-spacing-xxl: 2rem; // 32px
+
+// Layout coordinates
+$viz-header-height: 2rem;
+$viz-sidebar-width-expanded: 240px;
+$viz-sidebar-width-collapsed: 3.5rem;
+
+// Borders & Radius
+$viz-border-radius-sm: 2px;
+$viz-border-radius-md: 4px;
+$viz-border-radius-lg: 8px;
+$viz-border-radius-pill: 9999px;
+
