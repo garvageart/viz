@@ -40,14 +40,15 @@
 				<h3 class="sidebar-heading">{title}</h3>
 			{/if}
 		{:else}
-			<IconButton
-				iconName="arrow_right"
-				title="Open Settings Sidebar"
-				onclick={() => (open = true)}
-				variant="small"
-				class="sidebar-toggle-btn open-btn"
-				out:slide={{ axis: "x", duration: 300 }}
-			/>
+			<div out:slide={{ axis: "x", duration: 300 }} style:display="inline-flex">
+				<IconButton
+					iconName="arrow_right"
+					title="Open Settings Sidebar"
+					onclick={() => (open = true)}
+					variant="small"
+					class="sidebar-toggle-btn open-btn"
+				/>
+			</div>
 		{/if}
 	</div>
 	{#if open}
@@ -115,10 +116,10 @@
 		&:hover {
 			background-color: var(--viz-90) !important;
 		}
-		
-		&.open-btn {
-			width: 80%;
-			margin: 0 auto;
-		}
+	}
+	
+	:global(.sidebar-toggle-btn.open-btn) {
+		width: 80%;
+		margin: 0 auto;
 	}
 </style>
