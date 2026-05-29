@@ -1,9 +1,9 @@
 <script lang="ts">
-	import { fly } from "svelte/transition";
-	import DOMPurify from "dompurify";
-	import { toastState } from "./notif-state.svelte";
-	import Button from "$lib/components/ui/Button.svelte";
+	import IconButton from "$lib/components/ui/IconButton.svelte";
 	import MaterialIcon from "$lib/components/ui/MaterialIcon.svelte";
+	import DOMPurify from "dompurify";
+	import { fly } from "svelte/transition";
+	import { toastState } from "./notif-state.svelte";
 
 	function parseNotificationText(text: string) {
 		if (!text) {
@@ -21,7 +21,7 @@
 		html = html.replace(/\*\*(.*?)\*\*/g, "<strong>$1</strong>");
 
 		// 2. Italic: *text*
-		html = html.replace(/\*(.*?)\*/g, "<em>$1</em>");
+		html = html.replace(/\*(.*?)\*(?!\*)/g, "<em>$1</em>");
 
 		// 3. Named Links: [Link Text](url)
 		html = html.replace(
@@ -40,6 +40,25 @@
 			ALLOWED_ATTR: ["href", "target", "rel", "class"]
 		});
 	}
+
+	function getToastIcon(type: string) {
+		switch (type) {
+			case "success":
+				return "check_circle";
+			case "warning":
+				return "warning";
+			case "error":
+				return "error";
+			case "info":
+			default:
+				return "info";
+		}
+	}
+
+	function formatCategoryLabel(type: string) {
+		const label = type || "info";
+		return label.charAt(0).toUpperCase() + label.slice(1);
+	}
 </script>
 
 <section id="viz-toast-section">
@@ -48,12 +67,33 @@
 			data-toast-id={toast.id}
 			class="viz-toast viz-toast-{toast.type || 'info'}"
 			role="alert"
-			in:fly={{ duration: 250, x: 500, opacity: 0 }}
-			out:fly={{ duration: 250, x: 500, opacity: 0 }}
+			in:fly={{ duration: 250, x: 400, opacity: 0 }}
+			out:fly={{ duration: 200, x: 400, opacity: 0 }}
 		>
-			<div class="viz-toast-content-wrapper">
+			<header class="viz-toast-header">
+				<div class="viz-toast-type-container">
+					<MaterialIcon
+						iconName={getToastIcon(toast.type || 'info')}
+						size="0.875rem"
+						class="viz-toast-header-icon"
+					/>
+					<span class="viz-toast-type-label">{formatCategoryLabel(toast.type || 'info')}</span>
+				</div>
+				{#if toast.dismissible}
+					<IconButton
+						class="viz-toast-close"
+						iconName="close"
+						title="Dismiss"
+						aria-label="Dismiss notification"
+						variant="mini"
+						onclick={() => toastState.dismissToast(toast.id)}
+					/>
+				{/if}
+			</header>
+
+			<div class="viz-toast-body">
 				{#if toast.title}
-					<div class="viz-toast-title">{toast.title}</div>
+					<h4 class="viz-toast-title">{toast.title}</h4>
 				{/if}
 
 				<div class="viz-toast-message">
@@ -70,181 +110,202 @@
 					</div>
 				{/if}
 			</div>
-
-			{#if toast.dismissible}
-				<div class="viz-toast-close-wrapper">
-					<Button
-						class="viz-toast-close"
-						title="Dismiss"
-						aria-label="Dismiss notification"
-						style="padding: 0.1em;"
-						hoverColor="var(--viz-40-light)"
-						onclick={() => toastState.dismissToast(toast.id)}
-					>
-						<MaterialIcon iconName="close" style="font-size: 1.2em;" />
-					</Button>
-				</div>
-			{/if}
 		</article>
 	{/each}
 </section>
 
 <style lang="scss">
-	@use "sass:color";
-	@use "../styles/scss/variables" as v;
-
-	$error: v.$viz-error-color;
-	$success: v.$viz-success-color;
-	$warning: v.$viz-warning-color;
-
-	@mixin toast-btn-variant($color) {
-		background: color.mix($color, #fff, 50%);
-		border-color: color.mix($color, #fff, 40%);
-
-		&:hover {
-			background: color.mix($color, #fff, 60%);
-		}
-	}
-
-	@mixin toast-variant($color) {
-		background-color: color.mix($color, #fff, 30%);
-		border-color: color.mix($color, #fff, 90%);
-		color: var(--viz-10-light);
-		--toast-border: color.mix($color, #fff, 90%);
-	}
-
 	#viz-toast-section {
 		position: fixed;
-		right: 2em;
-		bottom: 2em;
-		width: 350px;
-		max-width: 90vw;
+		right: var(--viz-spacing-lg);
+		bottom: var(--viz-spacing-lg);
+		width: 22rem;
+		max-width: calc(100vw - var(--viz-spacing-lg) * 2);
 		display: flex;
-		justify-content: flex-end;
 		flex-direction: column;
-		align-items: flex-end;
+		gap: var(--viz-spacing-sm);
 		z-index: 99999;
 		pointer-events: none;
+		box-sizing: border-box;
 	}
 
 	.viz-toast {
-		border-radius: 0.5em;
-		min-height: 3.5em;
+		font-size: var(--viz-font-size-sm);
 		width: 100%;
-		padding: 0.75em 1em;
-		margin-top: 0.5em;
 		display: flex;
-		align-items: center;
-		justify-content: space-between;
-		gap: 1rem;
+		flex-direction: column;
 		box-shadow:
-			0 4px 6px rgba(0, 0, 0, 0.1),
-			0 2px 4px rgba(0, 0, 0, 0.06);
+			0 12px 32px rgba(0, 0, 0, 0.24),
+			0 2px 8px rgba(0, 0, 0, 0.12);
 		pointer-events: auto;
-		border: 1px solid transparent;
+		position: relative;
+		overflow: hidden;
+		box-sizing: border-box;
+		border-radius: var(--viz-border-radius-md); // Rounded corners restored
+		transition: background-color 150ms ease, border-color 150ms ease;
 
-		/* Default / Info */
-		background-color: var(--viz-90);
-		color: var(--viz-text-color);
-		border-color: var(--viz-80);
-		--toast-border: var(--viz-80);
-
+		// Map type-based accent colors (used for colored background mixes and left cue bars)
 		&.viz-toast-info {
-			background-color: var(--viz-90);
-			color: var(--viz-text-color);
-			border-color: var(--viz-80);
-			--toast-border: var(--viz-80);
+			--toast-accent-color: var(--viz-info-color);
 		}
-
 		&.viz-toast-success {
-			@include toast-variant($success);
+			--toast-accent-color: var(--viz-success-color);
 		}
-
 		&.viz-toast-warning {
-			@include toast-variant($warning);
+			--toast-accent-color: var(--viz-warning-color);
+		}
+		&.viz-toast-error {
+			--toast-accent-color: var(--viz-error-color);
 		}
 
-		&.viz-toast-error {
-			@include toast-variant($error);
+		// Richly colored background & border that automatically aligns with dark/light themes
+		background-color: color-mix(in srgb, var(--toast-accent-color) 25%, var(--viz-95));
+		border: 1px solid color-mix(in srgb, var(--toast-accent-color) 45%, var(--viz-60));
+		color: var(--viz-text-color);
+
+		// Dynamic color bar on the left edge (DAM aesthetic)
+		&::before {
+			content: '';
+			position: absolute;
+			left: 0;
+			top: 0;
+			bottom: 0;
+			width: 4px;
+			z-index: 2;
+			background-color: var(--toast-accent-color);
 		}
 	}
 
-	.viz-toast-content-wrapper {
-		flex: 1;
+	.viz-toast-header {
+		display: flex;
+		align-items: center;
+		justify-content: space-between;
+		padding: var(--viz-spacing-xs) var(--viz-spacing-md);
+		padding-left: calc(var(--viz-spacing-md) + 4px); // Account for left vertical strip
+		background-color: color-mix(in srgb, var(--toast-accent-color) 35%, var(--viz-90));
+		border-bottom: 1px solid color-mix(in srgb, var(--toast-accent-color) 40%, var(--viz-60));
+		height: 1.75rem;
+		box-sizing: border-box;
+	}
+
+	.viz-toast-type-container {
+		display: flex;
+		align-items: center;
+		gap: var(--viz-spacing-xs);
+		color: var(--viz-text-color);
+		opacity: 0.95;
+	}
+
+	.viz-toast-type-label {
+		font-size: var(--viz-font-size-xs);
+		font-weight: 700;
+		letter-spacing: 0.04em;
+		font-family: var(--viz-mono-font);
+		line-height: 1;
+	}
+
+	:global(.viz-toast-header-icon) {
+		display: inline-flex;
+		align-items: center;
+		justify-content: center;
+		color: var(--viz-text-color);
+		opacity: 0.75;
+	}
+
+	.viz-toast-body {
+		padding: var(--viz-spacing-md);
+		padding-left: calc(var(--viz-spacing-md) + 4px);
 		display: flex;
 		flex-direction: column;
-		gap: 0.3em;
-		margin-right: 0.5em;
-		overflow-wrap: break-word;
-		word-break: break-word;
+		gap: var(--viz-spacing-xs);
+		box-sizing: border-box;
 	}
 
 	.viz-toast-title {
 		font-weight: 700;
-		font-size: 0.95em;
-		margin-bottom: 0.1em;
+		font-size: var(--viz-font-size-sm);
 		line-height: 1.2;
+		margin: 0;
+		color: var(--viz-text-color);
 	}
 
 	.viz-toast-message {
-		font-size: 0.9em;
-		line-height: 1.4;
+		font-size: var(--viz-font-size-xs);
+		line-height: 1.5;
+		color: var(--viz-30);
+		overflow-wrap: break-word;
+		word-break: break-word;
 	}
 
-	/* Deep selector for links injected via @html */
-	.viz-toast-message :global(a.viz-toast-link) {
-		color: inherit;
-		text-decoration: underline;
-		font-weight: 500;
-	}
-
+	/* selectors for markdown formatting inside the message */
 	.viz-toast-message :global(strong) {
 		font-weight: 700;
+		color: var(--viz-text-color);
+	}
+
+	.viz-toast-message :global(em) {
+		font-style: italic;
+	}
+
+	.viz-toast-message :global(a.viz-toast-link) {
+		color: var(--viz-primary);
+		text-decoration: underline;
+		font-weight: 600;
+		transition: color 150ms ease;
+		
+		&:hover {
+			color: var(--viz-secondary);
+		}
 	}
 
 	.viz-toast-actions {
 		display: flex;
-		gap: 0.5em;
-		margin-top: 0.5em;
+		gap: var(--viz-spacing-xs);
+		margin-top: var(--viz-spacing-xs);
 		flex-wrap: wrap;
 	}
 
 	.viz-toast-action-btn {
-		background: rgba(255, 255, 255, 0.2);
-		border: 1px solid rgba(255, 255, 255, 0.3);
-		color: inherit;
-		padding: 0.25em 0.6em;
-		border-radius: 0.25rem;
-		font-size: 0.85rem;
+		background-color: var(--viz-90);
+		border: var(--viz-border-thin);
+		color: var(--viz-text-color);
+		padding: var(--viz-spacing-xxs) var(--viz-spacing-sm);
+		border-radius: var(--viz-border-radius-pill); // Pill shape strictly for interactive actions
+		font-size: var(--viz-font-size-xs);
 		cursor: pointer;
-		font-weight: 500;
-		transition: background-color 0.2s;
+		font-weight: 600;
+		font-family: var(--viz-display-font);
+		transition: background-color 150ms ease, border-color 150ms ease;
 
-		.viz-toast-success & {
-			@include toast-btn-variant($success);
+		&:hover {
+			background-color: var(--viz-80);
+			border-color: var(--viz-60);
 		}
 
-		.viz-toast-warning & {
-			@include toast-btn-variant($warning);
+		&:active {
+			background-color: var(--viz-75);
 		}
 
-		.viz-toast-error & {
-			@include toast-btn-variant($error);
+		&:focus-visible {
+			outline: 2px solid var(--viz-primary);
+			outline-offset: 1px;
 		}
-	}
-
-	.viz-toast-action-btn:hover {
-		background: rgba(255, 255, 255, 0.3);
 	}
 
 	:global(.viz-toast-close) {
-		background-color: var(--viz-30-light);
-		outline: var(--viz-50-light) solid 1px;
-	}
+		color: var(--viz-text-color) !important;
+		opacity: 0.5;
+		border: none !important;
+		background-color: transparent !important;
+		transition: opacity 150ms ease, background-color 150ms ease;
 
-	.viz-toast-close-wrapper {
-		margin-left: auto;
-		margin-top: -0.25em;
-		margin-right: -0.5em;
+		&:hover {
+			opacity: 1;
+			background-color: rgba(255, 255, 255, 0.3) !important;
+		}
+
+		:global([data-theme="light"]) &:hover {
+			background-color: rgba(0, 0, 0, 0.15) !important;
+		}
 	}
 </style>
