@@ -1,22 +1,22 @@
 <script lang="ts">
-	import { onMount } from "svelte";
+	import { goto } from "$app/navigation";
 	import {
-		addCollectionImages,
-		createCollection,
-		listCollections,
-		type Collection,
-		type CollectionListResponse
+	    addCollectionImages,
+	    createCollection,
+	    listCollections,
+	    type Collection,
+	    type CollectionListResponse
 	} from "$lib/api";
-	import { modalsManager } from "./manager/ModalManager.svelte";
-	import AssetGrid from "../grid/AssetGrid.svelte";
-	import Button from "../ui/Button.svelte";
-	import CollectionCard from "../ui/CollectionCard.svelte";
-	import VizViewContainer from "../panels/VizViewContainer.svelte";
 	import { selectionManager } from "$lib/states/selection.svelte";
 	import { toastState } from "$lib/toast-notifcations/notif-state.svelte";
-	import CollectionModal from "./CollectionModal.svelte";
-	import { goto } from "$app/navigation";
 	import { invalidateViz } from "$lib/views/views.svelte";
+	import { onMount } from "svelte";
+	import AssetGrid from "../grid/AssetGrid.svelte";
+	import VizViewContainer from "../panels/VizViewContainer.svelte";
+	import Button from "../ui/Button.svelte";
+	import CollectionCard from "../ui/CollectionCard.svelte";
+	import CollectionModal from "./CollectionModal.svelte";
+	import { modalsManager } from "./manager/ModalManager.svelte";
 
 	interface AugmentedCollection extends Collection {
 		isFullyContained: boolean;
@@ -167,7 +167,6 @@
 	aria-modal="true"
 	tabindex="-1"
 >
-	<h2>Select a Collection</h2>
 
 	<VizViewContainer
 		bind:data={collections}
@@ -185,11 +184,13 @@
 
 	<div class="modal-actions">
 		<Button
+			variant="small"
 			onclick={openCreateCollectionModal}
 		>
 			Create Collection
 		</Button>
 		<Button
+			variant="small"
 			style="background-color: var(--viz-primary);"
 			disabled={!selectedCollection || selectedCollection.isFullyContained}
 			onclick={() => handleSelect(selectedCollection!)}
@@ -207,10 +208,6 @@
 		height: 100%;
 		color: var(--viz-text-color);
 		box-sizing: border-box;
-
-		h2 {
-			margin-bottom: 1rem;
-		}
 
 		.modal-actions {
 			display: flex;

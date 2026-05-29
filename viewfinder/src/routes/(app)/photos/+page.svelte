@@ -402,18 +402,16 @@ return undefined;
 
 {#snippet noAssetsSnippet()}
 	<div id="add_to_viz-container">
-		<span style="margin: 1em; color: var(--viz-20); font-size: 1.2rem;"
-			>Add your first images</span
-		>
+		<span class="no-assets-title">Add your first images</span>
 		<Button
 			id="add_to_collection-button"
-			style="padding: 2em 8em; display: flex; align-items: center; justify-content: center;"
+			class="add-photos-btn"
 			title="Select Photos"
 			aria-label="Select Photos"
 			onclick={async () => addImagesToViz()}
 		>
 			Select Photos
-			<MaterialIcon iconName="add" style="font-size: 2em;" />
+			<MaterialIcon iconName="add" class="add-icon" />
 		</Button>
 	</div>
 {/snippet}
@@ -430,13 +428,12 @@ return undefined;
 				<div class="selection-info">
 					<IconButton
 						iconName="close"
-						class="toolbar-button"
+						class="toolbar-button clear-selection-btn"
 						title="Clear selection"
 						aria-label="Clear selection"
-						style="margin-right: 1em;"
 						onclick={() => selectionScope.clear()}
 					/>
-					<span style="font-weight: 600;"
+					<span class="selection-count"
 						>{selectionScope.selected.size} selected</span
 					>
 				</div>
@@ -557,9 +554,7 @@ return undefined;
 						}}
 					/>
 				</div>
-				<div
-					style="margin-left: auto; display: flex; gap: 0.5rem; align-items: center;"
-				>
+				<div class="selection-menu-wrapper">
 					<Dropdown
 						class="toolbar-button"
 						icon="more_horiz"
@@ -570,11 +565,8 @@ return undefined;
 				</div>
 			</AssetToolbar>
 		{:else}
-			<AssetToolbar
-				style="position: sticky; top: 0px; display: flex; justify-content: space-between;"
-				stickyToolbar={true}
-			>
-				<div style="display: flex; align-items: center; gap: 0.5rem;">
+			<AssetToolbar class="main-asset-toolbar" stickyToolbar={true}>
+				<div class="toolbar-group">
 					<Dropdown
 						title="Sort"
 						class="toolbar-button"
@@ -633,7 +625,7 @@ return undefined;
 						}}
 					/>
 				</div>
-				<div style="display: flex; align-items: center; gap: 0.5rem;">
+				<div class="toolbar-group">
 					<IconButton
 						iconName="filter_list"
 						class="toolbar-button"
@@ -707,7 +699,38 @@ return undefined;
 	}
 
 	:global(.selection-toolbar) {
-		gap: 1rem;
+		gap: var(--viz-spacing-std);
+		border-bottom: var(--viz-border-thin);
+	}
+
+	:global(.clear-selection-btn) {
+		margin-right: var(--viz-spacing-sm);
+	}
+
+	.selection-count {
+		font-weight: 600;
+		font-size: var(--viz-font-size-sm);
+	}
+
+	.selection-menu-wrapper {
+		margin-left: auto;
+		display: flex;
+		gap: var(--viz-spacing-sm);
+		align-items: center;
+	}
+
+	:global(.main-asset-toolbar) {
+		position: sticky;
+		top: 0;
+		display: flex;
+		justify-content: space-between;
+		border-bottom: var(--viz-border-thin);
+	}
+
+	.toolbar-group {
+		display: flex;
+		align-items: center;
+		gap: var(--viz-spacing-sm);
 	}
 
 	:global(.on-enter) {
@@ -718,13 +741,31 @@ return undefined;
 	.selection-actions {
 		display: flex;
 		align-items: center;
-		gap: 1rem;
+		gap: var(--viz-spacing-std);
 	}
 
 	#add_to_viz-container {
 		display: flex;
 		flex-direction: column;
 		justify-content: left;
+	}
+
+	.no-assets-title {
+		margin: var(--viz-spacing-std);
+		color: var(--viz-40);
+		font-size: var(--viz-font-size-xl);
+		font-weight: 500;
+	}
+
+	:global(.add-photos-btn) {
+		padding: var(--viz-spacing-xl) var(--viz-spacing-xxl) !important;
+		display: inline-flex !important;
+		align-items: center;
+		justify-content: center;
+	}
+
+	:global(.add-icon) {
+		font-size: var(--viz-font-size-2xl) !important;
 	}
 
 	#viz-no_assets {

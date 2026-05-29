@@ -36,10 +36,11 @@
     </p>
 
     <div class="delete-actions">
-        <Button onclick={handleCancel} class="cancel-btn">Cancel</Button>
+        <Button variant="small" onclick={handleCancel} class="cancel-btn">Cancel</Button>
 
         <div class="confirm-group">
             <Button
+                variant="small"
                 onclick={handleSoftDelete}
                 class="soft-delete-btn"
                 style="background-color: var(--viz-100); color: var(--viz-text-color);"
@@ -47,6 +48,7 @@
                 Delete
             </Button>
             <Button
+                variant="small"
                 onclick={handlePermanentDelete}
                 class="permanent-delete-btn"
                 style="background-color: var(--viz-danger, #ef4444); color: white;"

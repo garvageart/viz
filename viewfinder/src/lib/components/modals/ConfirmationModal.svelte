@@ -52,8 +52,9 @@
 		{#if actions}
 			{@render actions({ id })}
 		{:else}
-			<Button onclick={handleCancel}>{cancelText}</Button>
+			<Button variant="small" onclick={handleCancel}>{cancelText}</Button>
 			<Button
+				variant="small"
 				class="onconfirm-btn"
 				style="background-color: var(--viz-primary); color: var(--viz-10-dark);"
 				onclick={handleConfirm}
