@@ -378,9 +378,11 @@ return undefined;
 	}
 
 	hotkeys("escape", (e) => {
+		if (lightboxImage) {
+			return;
+		}
 		e.preventDefault();
 		selectionScope.clear();
-		lightboxImage = undefined;
 	});
 </script>
 

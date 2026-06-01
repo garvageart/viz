@@ -12,6 +12,7 @@
 		lightboxElement?: HTMLElement | undefined;
 		backgroundOpacity?: number;
 		zIndex?: number;
+		closeOnEsc?: boolean;
 	}
 
 	let {
@@ -20,7 +21,8 @@
 		show = $bindable(false),
 		lightboxElement = $bindable(),
 		backgroundOpacity = $bindable(0.5),
-		zIndex = 9998
+		zIndex = 9998,
+		closeOnEsc = true
 	}: Props = $props();
 
 	let lightboxEl: HTMLElement | undefined = $state();
@@ -52,7 +54,7 @@
 			return;
 		}
 
-		if (e.key === "Escape") {
+		if (e.key === "Escape" && closeOnEsc) {
 			show = false;
 		}
 	}}

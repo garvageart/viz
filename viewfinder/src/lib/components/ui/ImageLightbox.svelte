@@ -11,7 +11,7 @@
         getTakenAt,
         getThumbhashURL
     } from "$lib/utils/images";
-    import { useZoomImageWheel } from "@zoom-image/svelte";
+    import { createZoomImageWheel, type ZoomImageWheelStateUpdate } from "@zoom-image/core";
     import hotkeys from "hotkeys-js";
     import { onMount, untrack } from "svelte";
     import CropOverlay from "../image-tools/CropOverlay.svelte";
@@ -22,6 +22,7 @@
     import InputText from "./InputText.svelte";
     import Lightbox from "./Lightbox.svelte";
     import MaterialIcon from "./MaterialIcon.svelte";
+    import { dev } from "$app/environment";
 
     interface Props {
         lightboxImage: ImageAsset | undefined;
@@ -77,13 +78,72 @@
     let canvasEl: HTMLCanvasElement = $state()!;
     let imageContainerEl: HTMLDivElement = $state()!;
 
-    const { createZoomImage, zoomImageState, setZoomImageState } =
-        useZoomImageWheel();
+    let zoomTargetEl: HTMLDivElement = $state()!;
+    let zoomInstance: ReturnType<typeof createZoomImageWheel> | null = null;
+
+    let zoomState = $state({
+        currentZoom: 1,
+        currentPositionX: -1,
+        currentPositionY: -1,
+        currentRotation: 0
+    });
 
     let transformState = $derived({
-        scale: $zoomImageState.currentZoom,
-        x: $zoomImageState.currentPositionX,
-        y: $zoomImageState.currentPositionY
+        scale: zoomState.currentZoom,
+        x: zoomState.currentPositionX,
+        y: zoomState.currentPositionY
+    });
+
+    function setZoomImageState(state: ZoomImageWheelStateUpdate) {
+        if (zoomInstance) {
+            zoomInstance.setState(state);
+        }
+    }
+
+    $effect(() => {
+        if (show && loadState === "loaded" && zoomTargetEl && imageEl && !isCropping) {
+            // Clean up any existing zoom instance first
+            if (zoomInstance) {
+                zoomInstance.cleanup();
+                zoomInstance = null;
+            }
+
+            // Initialize a new zoom instance
+            zoomInstance = createZoomImageWheel(zoomTargetEl, {
+                maxZoom: 4,
+                wheelZoomRatio: 0.1
+            });
+
+            // Set initial state
+            const state = zoomInstance.getState();
+            zoomState.currentZoom = state.currentZoom;
+            zoomState.currentPositionX = state.currentPositionX;
+            zoomState.currentPositionY = state.currentPositionY;
+
+            // Subscribe to state updates
+            zoomInstance.subscribe(({ state }) => {
+                zoomState.currentZoom = state.currentZoom;
+                zoomState.currentPositionX = state.currentPositionX;
+                zoomState.currentPositionY = state.currentPositionY;
+            });
+        } else {
+            // Clean up when not showing, loading, or cropping
+            if (zoomInstance) {
+                zoomInstance.cleanup();
+                zoomInstance = null;
+            }
+            zoomState.currentZoom = 1;
+            zoomState.currentPositionX = -1;
+            zoomState.currentPositionY = -1;
+        }
+
+        // Clean up zoom instance when this effect is re-run or destroyed
+        return () => {
+            if (zoomInstance) {
+                zoomInstance.cleanup();
+                zoomInstance = null;
+            }
+        };
     });
 
     let thumbhashURL = $derived(
@@ -793,6 +853,7 @@
 <Lightbox
     bind:show
     backgroundOpacity={0.95}
+    closeOnEsc={!isCropping}
     onclick={() => {
         if (!isCropping) {
             lightboxImage = undefined;
@@ -800,8 +861,7 @@
             if (cropMenuPosition) {
                 cropMenuPosition = null;
             } else {
-                handleCropApply();
-                lightboxImage = undefined;
+                toggleCropMode();
             }
         }
     }}
@@ -820,8 +880,7 @@
                         if (cropMenuPosition) {
                             cropMenuPosition = null;
                         } else {
-                            handleCropApply();
-                            lightboxImage = undefined;
+                            toggleCropMode();
                         }
                     }
                 }
@@ -845,20 +904,22 @@
             />
             {#if !isCropping}
                 <div class="image-icon-buttons">
-                    <IconButton
-                        class="lightbox-button-icon"
-                        hoverColor="transparent"
-                        style={lightboxMaterialIconColour}
-                        title="Show Placeholder"
-                        iconName="blur_linear"
-                        onclick={() => {
-                            if (loadState === "loaded") {
-                                loadState = "loading";
-                            } else {
-                                loadState = "loaded";
-                            }
-                        }}
-                    />
+                    {#if dev}
+                        <IconButton
+                            class="lightbox-button-icon"
+                            hoverColor="transparent"
+                            style={lightboxMaterialIconColour}
+                            title="Show Placeholder"
+                            iconName="blur_linear"
+                            onclick={() => {
+                                if (loadState === "loaded") {
+                                    loadState = "loading";
+                                } else {
+                                    loadState = "loaded";
+                                }
+                            }}
+                        />
+                    {/if}
                     <IconButton
                         class="lightbox-button-icon"
                         hoverColor="transparent"
@@ -906,7 +967,7 @@
                     class:is-crop={isCropping}
                     oncontextmenu={handleContextMenu}
                     role="presentation"
-                    use:createZoomImage={{ maxZoom: 4, wheelZoomRatio: 0.1 }}
+                    bind:this={zoomTargetEl}
                     onclick={(e) => {
                         if (e.target === e.currentTarget && !isCropping) {
                             lightboxImage = undefined;

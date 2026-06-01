@@ -239,11 +239,12 @@ return firstRich;
 	});
 
 	hotkeys("escape", (e) => {
+		if (lightboxImage) {
+			return;
+		}
 		e.preventDefault();
 		imageSelection.clear();
 		collectionSelection.clear();
-
-		lightboxImage = undefined;
 	});
 
 	function openLightbox(asset: ImageAsset) {

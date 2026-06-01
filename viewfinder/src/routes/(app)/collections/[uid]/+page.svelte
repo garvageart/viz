@@ -666,15 +666,16 @@ return;
 	});
 
 	hotkeys("escape", (e) => {
-		if (!show || !lightboxImage || selectionScope.size === 0) {
+		if (lightboxImage) {
+			return;
+		}
+		if (!show || selectionScope.size === 0) {
 			return;
 		}
 
 		e.preventDefault();
 		selectionScope.clear();
 		showCollNameInput = false;
-
-		lightboxImage = undefined;
 	});
 
 	// Menu items for collection actions
