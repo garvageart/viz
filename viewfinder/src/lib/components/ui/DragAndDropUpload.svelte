@@ -32,6 +32,7 @@
 		scopeId?: string; // might be useful soon
 		selectionScope?: SelectionScope<ImageAsset>;
 		showCollectionCreateBox?: boolean;
+		bypassConfirmation?: boolean;
 		createCollectionFromSelected?: () => Promise<void>;
 		children?: import("svelte").Snippet;
 		onUploadSuccess?: (uploaded: ImageUploadSuccess[]) => void | Promise<void>;
@@ -39,6 +40,7 @@
 
 	let {
 		showCollectionCreateBox,
+		bypassConfirmation = false,
 		scopeId,
 		selectionScope,
 		children,
@@ -207,6 +209,12 @@ await onUploadSuccess(uploadedImages);
 			suggestedCollectionName =
 				detectedFolderName ||
 				`New Collection ${new Date().toLocaleDateString()}`;
+
+			if (bypassConfirmation) {
+				await processUploads(validFiles);
+				uploadCandidates = [];
+				return;
+			}
 
 			// Open confirmation modal
 			modalsManager.open(

@@ -365,8 +365,13 @@
 			) as ImageAsset[];
 
 			if (newImages.length > 0) {
-				collectionState.images.unshift(...newImages);
-				collectionState.totalCount += newImages.length;
+				const currentUids = new Set(collectionState.images.map((i) => i.uid));
+				const uniqueNewImages = newImages.filter((img) => !currentUids.has(img.uid));
+
+				if (uniqueNewImages.length > 0) {
+					collectionState.images.unshift(...uniqueNewImages);
+					collectionState.totalCount += uniqueNewImages.length;
+				}
 			}
 
 			await invalidateViz({ delay: 200 });
@@ -404,8 +409,13 @@ return;
 				const newImages = (await Promise.all(fetchPromises)).filter((i) => i !== null) as ImageAsset[];
 
 				if (newImages.length > 0) {
-					collectionState.images.unshift(...newImages);
-					collectionState.totalCount += newImages.length;
+					const currentUids = new Set(collectionState.images.map((i) => i.uid));
+					const uniqueNewImages = newImages.filter((img) => !currentUids.has(img.uid));
+
+					if (uniqueNewImages.length > 0) {
+						collectionState.images.unshift(...uniqueNewImages);
+						collectionState.totalCount += uniqueNewImages.length;
+					}
 				}
 
 				await invalidateViz({ delay: 200 });
@@ -769,7 +779,7 @@ return;
 		selectionScope.updateItem(image, collectionState.images)}
 />
 
-<DragAndDropUpload {scopeId} {selectionScope} showCollectionCreateBox={false} onUploadSuccess={handleDropUploadSuccess} />
+<DragAndDropUpload {scopeId} {selectionScope} showCollectionCreateBox={false} bypassConfirmation={true} onUploadSuccess={handleDropUploadSuccess} />
 
 {#snippet imageCard(asset: ImageAsset)}
 	<ImageCard {asset} />
