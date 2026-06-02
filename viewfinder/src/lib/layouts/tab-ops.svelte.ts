@@ -13,7 +13,7 @@ export interface TabDragData {
 export type DropPosition = "left" | "right" | "top" | "bottom" | "center";
 
 export class TabOps {
-    draggable(node: HTMLElement, data: TabDragData) {
+    draggable = (node: HTMLElement, data: TabDragData) => {
         node.draggable = true;
 
         const onDragStart = (e: DragEvent) => {
@@ -39,9 +39,9 @@ export class TabOps {
                 node.removeEventListener("dragend", onDragEnd);
             }
         };
-    }
+    };
 
-    dropTarget(node: HTMLElement, targetGroupId: string) {
+    dropTarget = (node: HTMLElement, targetGroupId: string) => {
         const onDragOver = (e: DragEvent) => {
             DragData.handleDragOver(e, VizMimeTypes.TAB_VIEW, {
                 onMatch: () => this.updateOverlay(node, e)
@@ -81,9 +81,9 @@ export class TabOps {
                 node.removeEventListener("drop", onDrop);
             }
         };
-    }
+    };
 
-    addToGroup(node: HTMLElement, targetGroupId: string) {
+    addToGroup = (node: HTMLElement, targetGroupId: string) => {
         const onDragOver = (e: DragEvent) => {
             if (
                 DragData.handleDragOver(e, VizMimeTypes.TAB_VIEW, {
@@ -132,7 +132,7 @@ export class TabOps {
                 node.removeEventListener("drop", onDrop);
             }
         };
-    }
+    };
 
     private calculateDropPosition(node: HTMLElement, e: DragEvent): DropPosition {
         const rect = node.getBoundingClientRect();
