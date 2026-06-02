@@ -38,21 +38,22 @@
 			path: collectionPath
 		});
 
-		// Add to current group if provided, otherwise add to root or first group found
-		if (currentGroup) {
-			currentGroup.addTab(view);
+		// Add to current group if provided, otherwise add to active workspace group or root/first group found
+		const targetGroup = currentGroup || workspace.activeGroup;
+		if (targetGroup) {
+			targetGroup.addTab(view);
 		} else {
 			// Fallback: find first TabGroup in the tree
 			const findFirstGroup = (node: any): TabGroup | null => {
 				if (node instanceof TabGroup) {
-return node;
-}
+					return node;
+				}
 				if (node.children) {
 					for (const child of node.children) {
 						const found = findFirstGroup(child);
 						if (found) {
-return found;
-}
+							return found;
+						}
 					}
 				}
 				return null;
