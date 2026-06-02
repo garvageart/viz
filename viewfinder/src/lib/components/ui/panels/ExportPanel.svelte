@@ -6,6 +6,7 @@
     import Dropdown from "../../context-menus/Dropdown.svelte";
     import MaterialIcon from "../MaterialIcon.svelte";
     import { modalsManager } from "../../modals/manager/ModalManager.svelte";
+    import Slider from "../Slider.svelte";
 
     interface Props {
         id: string;
@@ -187,15 +188,13 @@
                         </div>
                         {#if ["jpg", "webp", "avif"].includes(format)}
                             <div class="control-group quality-slider">
-                                <label for="quality-range"
-                                    >Quality: {quality}</label
-                                >
-                                <input
+                                <Slider
                                     id="quality-range"
-                                    type="range"
-                                    min="1"
-                                    max="100"
+                                    label="Quality"
+                                    min={1}
+                                    max={100}
                                     bind:value={quality}
+                                    showValue={true}
                                 />
                             </div>
                         {/if}
@@ -488,12 +487,6 @@
 
     .quality-slider {
         flex: 2;
-
-        input[type="range"] {
-            accent-color: var(--viz-primary);
-            height: 1.5rem;
-            cursor: pointer;
-        }
     }
 
     .placeholder-text {
