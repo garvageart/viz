@@ -2,6 +2,7 @@ import { upload } from "$lib/states/index.svelte";
 import type { SupportedImageTypes, SupportedRAWFiles } from "$lib/types/images";
 import { UploadImage, UploadState } from "./asset.svelte";
 import type { ImageUploadStatus } from "$lib/api";
+import type { DirectoryInputElement } from "$lib/types/dom";
 
 export interface ImageUploadFileData {
     file_name: string;
@@ -12,7 +13,7 @@ export interface ImageUploadFileData {
 export interface ImageUploadSuccess {
     uid: string;
     status: ImageUploadStatus;
-    metadata?: any;
+    metadata?: Record<string, unknown>;
 }
 
 // Module-level state to be shared across all UploadManager instances
@@ -159,6 +160,56 @@ export default class UploadManager {
      */
     async openPickerAndUpload(): Promise<ImageUploadSuccess[]> {
         const files = await this.openPicker();
+        if (files.length === 0) {
+            return [];
+        }
+
+        const tasks = this.addFiles(files);
+        await this.start();
+
+        await waitForUploadCompletion(tasks);
+
+        const success = tasks
+            .filter(
+                (t) =>
+                    (t.state === UploadState.DONE || t.state === UploadState.DUPLICATE) &&
+                    t.imageData
+            )
+            .map((t) => ({
+                uid: t.imageData!.uid,
+                status: t.imageData!.status,
+                metadata: t.imageData
+            }));
+        return success;
+    }
+
+    /**
+     * Open directory/folder picker dialog.
+     * Creates a hidden input with webkitdirectory attribute, triggers click, and returns selected files.
+     */
+    openFolderPicker(): Promise<File[]> {
+        return new Promise((resolve) => {
+            const input = document.createElement("input") as DirectoryInputElement;
+            input.type = "file";
+            input.multiple = true;
+            input.webkitdirectory = true;
+            input.directory = true;
+
+            input.onchange = () => {
+                const files = Array.from(input.files || []);
+                input.remove();
+                resolve(files);
+            };
+
+            input.click();
+        });
+    }
+
+    /**
+     * Open folder picker, add files, and start upload in one call.
+     */
+    async openFolderPickerAndUpload(): Promise<ImageUploadSuccess[]> {
+        const files = await this.openFolderPicker();
         if (files.length === 0) {
             return [];
         }

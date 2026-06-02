@@ -28,6 +28,7 @@
 	import MaterialIcon from "./MaterialIcon.svelte";
 	import SearchInput from "./SearchInput.svelte";
 	import IconButton from "./IconButton.svelte";
+	import Dropdown from "$lib/components/context-menus/Dropdown.svelte";
 	import { goto } from "$app/navigation";
 	import { toastState } from "$lib/toast-notifcations/notif-state.svelte";
 	import ContextMenu from "$lib/context-menu/ContextMenu.svelte";
@@ -70,15 +71,30 @@
 		}
 	});
 
-	async function handleUpload(e: MouseEvent) {
-		e.preventDefault();
-		// allowed image types will come from the config but for now just hardcode
+	const uploadMenuItems: MenuItem[] = [
+		{
+			id: "upload-photos",
+			label: "Upload Photos",
+			icon: "photo_library",
+			action: () => triggerUpload("photos")
+		},
+		{
+			id: "upload-folder",
+			label: "Upload Folder",
+			icon: "folder_open",
+			action: () => triggerUpload("folder")
+		}
+	];
+
+	async function triggerUpload(type: "photos" | "folder") {
 		const manager = new UploadManager([
 			...SUPPORTED_RAW_FILES,
 			...SUPPORTED_IMAGE_TYPES
 		] as SupportedImageTypes[]);
 
-		const uploadedImages = await manager.openPickerAndUpload();
+		const uploadedImages = type === "photos"
+			? await manager.openPickerAndUpload()
+			: await manager.openFolderPickerAndUpload();
 
 		if (uploadedImages.length === 0) {
 			return;
@@ -88,7 +104,7 @@
 			toastState.addToast({
 				title: "Upload Success",
 				type: "success",
-				message: `${uploadedImages.length} image(s) sucessfully uploaded`,
+				message: `${uploadedImages.length} image(s) successfully uploaded`,
 				actions: [
 					{
 						label: "Go to Photos",
@@ -107,8 +123,8 @@
 		const names = new Set<string>();
 		const workspace = workspaceState.workspace;
 		if (!workspace) {
-return names;
-}
+            return names;
+        }
 
 		const groups = workspace.getAllTabGroups();
 		for (const group of groups) {
@@ -273,10 +289,10 @@ return names;
 		<div class="menu-separator"></div>
 		<div class="icon-group-container">
 			<a class="page-nav-btn" href="/photos" title="Go to Photos">
-				<IconButton class="header-button" iconName="photo" />
+				<IconButton class="header-button" iconName="imagesmode" />
 			</a>
 			<a class="page-nav-btn" href="/collections" title="Go to Collections">
-				<IconButton class="header-button" iconName="collections" />
+				<IconButton class="header-button" iconName="photo_album" />
 			</a>
 		</div>
 	</div>
@@ -322,16 +338,14 @@ return names;
 			onclick={() => toggleTheme()}
 			oncontextmenu={handleThemeContext}
 		/>
-		<IconButton
-			iconName="upload"
-			iconStyle="sharp"
-			id="header-upload-button"
-			class="header-button"
-			aria-label="Upload"
-			onclick={handleUpload}
-		>
-			<span style="font-size: 0.75rem; font-weight: 500;"> Upload </span>
-		</IconButton>
+		<Dropdown
+			class="header-button header-upload-dropdown"
+			icon="upload"
+			title="Upload"
+			items={uploadMenuItems}
+			showSelectionIndicator={false}
+			align="right"
+		/>
 		{#if dev || !CLIENT_IS_PRODUCTION}
 			<IconButton
 				iconName="bug_report"
@@ -490,7 +504,7 @@ return names;
 		unicode-bidi: isolate;
 	}
 
-	:global(#header-upload-button) {
+	.header-upload-dropdown {
 		margin: 0 var(--viz-spacing-sm);
 		color: var(--viz-text-color);
 	}
