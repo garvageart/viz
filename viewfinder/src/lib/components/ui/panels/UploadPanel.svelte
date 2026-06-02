@@ -1,4 +1,5 @@
 <script lang="ts">
+	import { untrack } from "svelte";
 	import IconButton from "$lib/components/ui/IconButton.svelte";
 	import { upload } from "$lib/states/index.svelte";
 	import { UploadState } from "$lib/upload/asset.svelte";
@@ -25,7 +26,9 @@
 
 	$effect(() => {
 		upload.concurrency = Math.min(Math.max(upload.concurrency || 1, 1), 10);
-		processGlobalQueue();
+		untrack(() => {
+			processGlobalQueue();
+		});
 	});
 
 
