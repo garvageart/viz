@@ -1,6 +1,7 @@
 <script lang="ts">
     import { getFullImagePath, updateImage, type ImageAsset } from "$lib/api";
     import { LabelColours, type ImageLabel } from "$lib/images/constants";
+    import { calculateZoomTo, constrainTranslation } from "$lib/images/zoom/zoom-utils";
     import { setRating } from "$lib/images/exif";
     import { toastState } from "$lib/toast-notifcations/notif-state.svelte";
     import { downloadOriginalImageFile } from "$lib/utils/http";
@@ -11,9 +12,9 @@
         getTakenAt,
         getThumbhashURL
     } from "$lib/utils/images";
-    import { createZoomImageWheel, type ZoomImageWheelStateUpdate } from "@zoom-image/core";
     import hotkeys from "hotkeys-js";
     import { onMount, untrack } from "svelte";
+    import type { MouseEventHandler, PointerEventHandler, WheelEventHandler } from "svelte/elements";
     import CropOverlay from "../image-tools/CropOverlay.svelte";
     import CropTools from "../image-tools/CropTools.svelte";
     import ImageLabelViewer from "../image-tools/ImageLabelViewer.svelte";
@@ -78,14 +79,18 @@
     let canvasEl: HTMLCanvasElement = $state()!;
     let imageContainerEl: HTMLDivElement = $state()!;
 
-    let zoomTargetEl: HTMLDivElement = $state()!;
-    let zoomInstance: ReturnType<typeof createZoomImageWheel> | null = null;
+    class ImageZoomState {
+        currentZoom = $state(1);
+        currentPositionX = $state(0);
+        currentPositionY = $state(0);
+        currentRotation = $state(0);
+    }
 
-    let zoomState = $state({
-        currentZoom: 1,
-        currentPositionX: -1,
-        currentPositionY: -1,
-        currentRotation: 0
+    let zoomTargetEl: HTMLDivElement = $state()!;
+
+    let zoomState = $derived.by(() => {
+        lightboxImage?.uid;
+        return new ImageZoomState();
     });
 
     let transformState = $derived({
@@ -94,57 +99,116 @@
         y: zoomState.currentPositionY
     });
 
-    function setZoomImageState(state: ZoomImageWheelStateUpdate) {
-        if (zoomInstance) {
-            zoomInstance.setState(state);
-        }
+    let isDragging = $state(false);
+    let wasDragging = $state(false);
+    let dragStart = {
+        mouseX: 0,
+        mouseY: 0,
+        tx: 0,
+        ty: 0
+    };
+
+    function zoomTo(newZoom: number, clientX: number, clientY: number) {
+        if (!imageDimensions || !imageContainerEl || !zoomTargetEl) return;
+
+        const result = calculateZoomTo({
+            currentZoom: zoomState.currentZoom,
+            currentPositionX: zoomState.currentPositionX,
+            currentPositionY: zoomState.currentPositionY,
+            newZoom,
+            clientX,
+            clientY,
+            zoomTargetRect: zoomTargetEl.getBoundingClientRect(),
+            viewport: {
+                width: imageContainerEl.clientWidth,
+                height: imageContainerEl.clientHeight
+            },
+            image: imageDimensions
+        });
+
+        zoomState.currentZoom = result.zoom;
+        zoomState.currentPositionX = result.x;
+        zoomState.currentPositionY = result.y;
     }
 
-    $effect(() => {
-        if (show && loadState === "loaded" && zoomTargetEl && imageEl && !isCropping) {
-            // Clean up any existing zoom instance first
-            if (zoomInstance) {
-                zoomInstance.cleanup();
-                zoomInstance = null;
-            }
+    const handleWheel: WheelEventHandler<HTMLDivElement> = (event) => {
+        event.preventDefault();
 
-            // Initialize a new zoom instance
-            zoomInstance = createZoomImageWheel(zoomTargetEl, {
-                maxZoom: 4,
-                wheelZoomRatio: 0.1
-            });
+        // scroll zoom feel: Zoom ratio proportional to current zoom. Similar to Capture One/Lightroom
+        const zoomFactor = 0.15;
+        const direction = event.deltaY < 0 ? 1 : -1;
+        const newZoom = zoomState.currentZoom + direction * zoomFactor * zoomState.currentZoom;
+        
+        zoomTo(newZoom, event.clientX, event.clientY);
+    };
 
-            // Set initial state
-            const state = zoomInstance.getState();
-            zoomState.currentZoom = state.currentZoom;
-            zoomState.currentPositionX = state.currentPositionX;
-            zoomState.currentPositionY = state.currentPositionY;
+    const handleDoubleClick: MouseEventHandler<HTMLDivElement> = (event) => {
+        event.stopPropagation();
+        if (isCropping) return;
 
-            // Subscribe to state updates
-            zoomInstance.subscribe(({ state }) => {
-                zoomState.currentZoom = state.currentZoom;
-                zoomState.currentPositionX = state.currentPositionX;
-                zoomState.currentPositionY = state.currentPositionY;
-            });
-        } else {
-            // Clean up when not showing, loading, or cropping
-            if (zoomInstance) {
-                zoomInstance.cleanup();
-                zoomInstance = null;
-            }
+        if (zoomState.currentZoom > 1) {
+            // Zoom out to 1
             zoomState.currentZoom = 1;
-            zoomState.currentPositionX = -1;
-            zoomState.currentPositionY = -1;
+            zoomState.currentPositionX = 0;
+            zoomState.currentPositionY = 0;
+        } else {
+            // Zoom in to 2.5 (100% style) at cursor position
+            zoomTo(2.5, event.clientX, event.clientY);
+        }
+    };
+
+    const handlePointerDown: PointerEventHandler<HTMLDivElement> = (event) => {
+        if (event.button !== 0 || zoomState.currentZoom <= 1) return;
+
+        isDragging = true;
+        wasDragging = false;
+        dragStart.mouseX = event.clientX;
+        dragStart.mouseY = event.clientY;
+        dragStart.tx = zoomState.currentPositionX;
+        dragStart.ty = zoomState.currentPositionY;
+        
+        event.currentTarget.setPointerCapture(event.pointerId);
+    };
+
+    const handlePointerMove: PointerEventHandler<HTMLDivElement> = (event) => {
+        if (!isDragging || !imageDimensions || !imageContainerEl) return;
+
+        const dx = event.clientX - dragStart.mouseX;
+        const dy = event.clientY - dragStart.mouseY;
+
+        if (Math.abs(dx) > 3 || Math.abs(dy) > 3) {
+            wasDragging = true;
         }
 
-        // Clean up zoom instance when this effect is re-run or destroyed
-        return () => {
-            if (zoomInstance) {
-                zoomInstance.cleanup();
-                zoomInstance = null;
+        const constrained = constrainTranslation(
+            dragStart.tx + dx,
+            dragStart.ty + dy,
+            zoomState.currentZoom,
+            {
+                width: imageContainerEl.clientWidth,
+                height: imageContainerEl.clientHeight
+            },
+            imageDimensions
+        );
+
+        zoomState.currentPositionX = constrained.x;
+        zoomState.currentPositionY = constrained.y;
+    };
+
+    const handlePointerUp: PointerEventHandler<HTMLDivElement> = (event) => {
+        if (isDragging) {
+            isDragging = false;
+            try {
+                event.currentTarget.releasePointerCapture(event.pointerId);
+            } catch (e) {}
+
+            if (wasDragging) {
+                setTimeout(() => {
+                    wasDragging = false;
+                }, 50);
             }
-        };
-    });
+        }
+    };
 
     let thumbhashURL = $derived(
         lightboxImage ? getThumbhashURL(lightboxImage) : undefined
@@ -155,55 +219,56 @@
         null
     );
 
+    function updateImageDimensions() {
+        if (imageEl && imageEl.clientWidth > 0 && imageEl.clientHeight > 0) {
+            const newWidth = imageEl.clientWidth;
+            const newHeight = imageEl.clientHeight;
+
+            untrack(() => {
+                if (imageDimensions && currentCrop) {
+                    const oldWidth = imageDimensions.width;
+                    const oldHeight = imageDimensions.height;
+
+                    if (
+                        oldWidth > 0 &&
+                        oldHeight > 0 &&
+                        (oldWidth !== newWidth ||
+                            oldHeight !== newHeight)
+                    ) {
+                        const scaleX = newWidth / oldWidth;
+                        const scaleY = newHeight / oldHeight;
+
+                        currentCrop = {
+                            x: currentCrop.x * scaleX,
+                            y: currentCrop.y * scaleY,
+                            width: currentCrop.width * scaleX,
+                            height: currentCrop.height * scaleY
+                        };
+                    }
+                }
+
+                imageDimensions = {
+                    width: newWidth,
+                    height: newHeight
+                };
+            });
+        }
+    }
+
     // Reactively track image dimension changes (window resize, crop layout changes)
     // and update imageDimensions, scaling currentCrop proportionally to keep it in sync.
     $effect(() => {
-        if (isCropping && imageEl) {
-            const updateDimensions = () => {
-                if (imageEl.clientWidth > 0 && imageEl.clientHeight > 0) {
-                    const newWidth = imageEl.clientWidth;
-                    const newHeight = imageEl.clientHeight;
-
-                    untrack(() => {
-                        if (imageDimensions && currentCrop) {
-                            const oldWidth = imageDimensions.width;
-                            const oldHeight = imageDimensions.height;
-
-                            if (
-                                oldWidth > 0 &&
-                                oldHeight > 0 &&
-                                (oldWidth !== newWidth ||
-                                    oldHeight !== newHeight)
-                            ) {
-                                const scaleX = newWidth / oldWidth;
-                                const scaleY = newHeight / oldHeight;
-
-                                currentCrop = {
-                                    x: currentCrop.x * scaleX,
-                                    y: currentCrop.y * scaleY,
-                                    width: currentCrop.width * scaleX,
-                                    height: currentCrop.height * scaleY
-                                };
-                            }
-                        }
-
-                        imageDimensions = {
-                            width: newWidth,
-                            height: newHeight
-                        };
-                    });
-                }
-            };
-
-            updateDimensions();
+        if (show && imageEl) {
+            updateImageDimensions();
 
             const observer = new ResizeObserver(() => {
-                updateDimensions();
+                updateImageDimensions();
             });
             observer.observe(imageEl);
 
             return () => {
                 observer.disconnect();
+                imageDimensions = null;
             };
         }
     });
@@ -287,7 +352,9 @@
             // Enter crop mode
             isCropping = true;
             // Reset zoom to ensure user sees the whole image context for cropping
-            setZoomImageState({ currentZoom: 1, enable: false });
+            zoomState.currentZoom = 1;
+            zoomState.currentPositionX = 0;
+            zoomState.currentPositionY = 0;
 
             if (imageEl.complete) {
                 restoreCrop();
@@ -297,7 +364,6 @@
             isCropping = false;
             currentCrop = null;
             cropMenuPosition = null;
-            setZoomImageState({ enable: true });
         }
     }
 
@@ -416,7 +482,9 @@
         isCropping = false;
         currentCrop = null;
         cropMenuPosition = null;
-        setZoomImageState({ currentZoom: 1, enable: true });
+        zoomState.currentZoom = 1;
+        zoomState.currentPositionX = 0;
+        zoomState.currentPositionY = 0;
     }
 
     function handleCropReset() {
@@ -433,12 +501,12 @@
         };
     }
 
-    function handleContextMenu(e: MouseEvent) {
+    const handleContextMenu: MouseEventHandler<HTMLElement> = (e) => {
         e.preventDefault();
         if (isCropping) {
             cropMenuPosition = { x: e.clientX, y: e.clientY };
         }
-    }
+    };
 
     let loadState = $state<"loading" | "loaded" | "error">("loading");
 
@@ -855,8 +923,11 @@
     backgroundOpacity={0.95}
     closeOnEsc={!isCropping}
     onclick={() => {
+        if (wasDragging) return;
         if (!isCropping) {
-            lightboxImage = undefined;
+            if (zoomState.currentZoom === 1) {
+                lightboxImage = undefined;
+            }
         } else {
             if (cropMenuPosition) {
                 cropMenuPosition = null;
@@ -870,6 +941,10 @@
         <div
             class="image-container"
             onclick={(e) => {
+                if (wasDragging) {
+                    e.stopPropagation();
+                    return;
+                }
                 if (isCropping) {
                     const target = e.target as HTMLElement;
                     if (
@@ -957,7 +1032,11 @@
                 bind:this={imageContainerEl}
                 role="presentation"
                 onclick={(e) => {
-                    if (e.target === imageContainerEl && !isCropping) {
+                    if (wasDragging) {
+                        e.stopPropagation();
+                        return;
+                    }
+                    if (e.target === imageContainerEl && !isCropping && zoomState.currentZoom === 1) {
                         lightboxImage = undefined;
                     }
                 }}
@@ -965,11 +1044,24 @@
                 <div
                     class="zoom-target"
                     class:is-crop={isCropping}
+                    class:can-pan={zoomState.currentZoom > 1}
+                    class:is-panning={isDragging}
                     oncontextmenu={handleContextMenu}
                     role="presentation"
                     bind:this={zoomTargetEl}
+                    style="{imageDimensions ? `width: ${imageDimensions.width}px; height: ${imageDimensions.height}px;` : ''} transform: translate({zoomState.currentPositionX}px, {zoomState.currentPositionY}px) scale({zoomState.currentZoom}); transform-origin: 0 0;"
+                    onwheel={handleWheel}
+                    ondblclick={handleDoubleClick}
+                    onpointerdown={handlePointerDown}
+                    onpointermove={handlePointerMove}
+                    onpointerup={handlePointerUp}
+                    onpointercancel={handlePointerUp}
                     onclick={(e) => {
-                        if (e.target === e.currentTarget && !isCropping) {
+                        if (wasDragging) {
+                            e.stopPropagation();
+                            return;
+                        }
+                        if (e.target === e.currentTarget && !isCropping && zoomState.currentZoom === 1) {
                             lightboxImage = undefined;
                         }
                     }}
@@ -987,7 +1079,10 @@
                         crossorigin="use-credentials"
                         data-image-id={lightboxImage!.uid}
                         onload={() => {
-                            setZoomImageState({ currentZoom: 1 });
+                            zoomState.currentZoom = 1;
+                            zoomState.currentPositionX = 0;
+                            zoomState.currentPositionY = 0;
+                            updateImageDimensions();
                             if (isCropping) {
                                 restoreCrop();
                             }
@@ -1333,5 +1428,11 @@
         display: flex;
         align-items: center;
         gap: 0.5em;
+    }
+    .zoom-target.can-pan {
+        cursor: grab;
+    }
+    .zoom-target.is-panning {
+        cursor: grabbing;
     }
 </style>
