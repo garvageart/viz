@@ -1,6 +1,7 @@
 import { test, expect, type Page } from '@playwright/test';
 import * as fs from 'fs';
 import * as path from 'path';
+import { cleanupTestCollections } from './helpers';
 
 /**
  * Reusable helper to simulate file drag-and-drop upload inside the browser page context.
@@ -50,6 +51,15 @@ async function performDragAndDrop(page: Page, fileBuffer: Buffer, fileName: stri
 }
 
 test.describe('Drag & Drop File Upload Flow', () => {
+
+    test.beforeEach(async ({ request }) => {
+        await cleanupTestCollections(request);
+    });
+
+    test.afterEach(async ({ request }) => {
+        await cleanupTestCollections(request);
+    });
+
 
     test('should trigger drop overlay and perform mock file upload', async ({ page }) => {
         test.slow();

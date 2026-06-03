@@ -4,12 +4,16 @@ import { toastState } from "$lib/toast-notifcations/notif-state.svelte";
 import { copyToClipboard } from "$lib/utils/misc";
 import { invalidateViz } from "$lib/views/views.svelte";
 import type { MenuItem } from "../types";
+import { modalsManager } from "$lib/components/modals/manager/ModalManager.svelte";
+import ConfirmationModal from "$lib/components/modals/ConfirmationModal.svelte";
 
 interface CollectionMenuOptions {
     onCollectionDuplicated?: (collection: Collection) => void;
     onCollectionDeleted?: (collection: Collection) => void;
+    onCollectionsDeleted?: (collections: Collection[]) => void;
     onCollectionUpdated?: (collection: Collection) => void;
     editCollection?: (collection: Collection) => void;
+    selectedCollections?: Collection[];
 }
 
 export function createCollectionMenu(
@@ -112,33 +116,76 @@ export function createCollectionMenu(
         },
         {
             id: `delete-${collection.uid}`,
-            label: "Delete",
+            label: opts.selectedCollections && opts.selectedCollections.length > 1
+                ? `Delete ${opts.selectedCollections.length} collections`
+                : "Delete",
             icon: "delete",
             danger: true,
-            action: async () => {
-                if (!confirm(`Delete collection "${collection.name}"? This cannot be undone.`)) {
-                    return;
-                }
+            action: () => {
+                const targets = opts.selectedCollections && opts.selectedCollections.length > 1
+                    ? opts.selectedCollections
+                    : [collection];
 
-                try {
-                    const res = await deleteCollection(collection.uid);
-                    if (res.status === 204) {
-                        opts.onCollectionDeleted?.(collection);
-                    } else {
-                        toastState.addToast({
-                            message: res.data.error ?? "Failed to delete",
-                            type: "error"
-                        });
+                const confirmMsg = targets.length > 1
+                    ? `Delete ${targets.length} collections? This cannot be undone.`
+                    : `Delete collection "${collection.name}"? This cannot be undone.`;
+
+                modalsManager.open(
+                    ConfirmationModal,
+                    {
+                        title: targets.length > 1 ? "Delete Collections" : "Delete Collection",
+                        confirmText: targets.length > 1 ? "Delete Collections" : "Delete Collection",
+                        message: confirmMsg,
+                        onConfirm: async () => {
+                            try {
+                                const results = await Promise.all(
+                                    targets.map(async (c) => {
+                                        const res = await deleteCollection(c.uid);
+                                        return { collection: c, res };
+                                    })
+                                );
+
+                                const successes = results.filter(r => r.res.status === 204);
+                                const failures = results.filter(r => r.res.status !== 204);
+
+                                if (successes.length > 0) {
+                                    if (opts.onCollectionsDeleted) {
+                                        opts.onCollectionsDeleted(successes.map(s => s.collection));
+                                    } else {
+                                        for (const success of successes) {
+                                            opts.onCollectionDeleted?.(success.collection);
+                                        }
+                                    }
+                                }
+
+                                if (failures.length > 0) {
+                                    const errorMsg = failures.map(f => {
+                                        if (f.res.status !== 204) {
+                                            return `${f.collection.name}: ${f.res.data.error || f.res.status}`;
+                                        }
+                                        return `${f.collection.name}: status ${f.res.status}`;
+                                    }).join('; ');
+                                    toastState.addToast({
+                                        message: `Failed to delete some collections: ${errorMsg}`,
+                                        type: "error"
+                                    });
+                                }
+                            } catch (err) {
+                                toastState.addToast({
+                                    message: `Failed to delete: ${err}`,
+                                    type: "error"
+                                });
+                            }
+                        }
+                    },
+                    {
+                        heading: targets.length > 1 ? "Delete Collections" : "Delete Collection"
                     }
-                } catch (err) {
-                    toastState.addToast({
-                        message: `Failed to delete: ${err}`,
-                        type: "error"
-                    });
-                }
+                );
             }
         }
     ];
+
 
     return items;
 }

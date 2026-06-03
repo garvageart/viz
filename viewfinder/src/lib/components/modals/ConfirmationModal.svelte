@@ -6,6 +6,7 @@
 	interface Props {
 		id: string;
 		title: string;
+		message?: string;
 		children?: Snippet<[any]>;
 		actions?: Snippet<[any]>;
 		confirmText?: string;
@@ -17,6 +18,7 @@
 	let {
 		id,
 		title,
+		message,
 		children,
 		actions,
 		confirmText = "Confirm",
@@ -45,6 +47,8 @@
 	<div class="confirmation-content">
 		{#if children}
 			{@render children({ id })}
+		{:else if message}
+			<span>{message}</span>
 		{/if}
 	</div>
 

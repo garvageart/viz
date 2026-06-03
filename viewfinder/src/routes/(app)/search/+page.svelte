@@ -137,9 +137,20 @@ return firstRich;
 
 	let collectionActionMenuItems = $derived.by(() => {
 		return createCollectionMenu(firstSelectedCollection, {
+			selectedCollections: collectionSelection.selectedItems,
 			onCollectionDeleted: () => performSearch(),
 			onCollectionDuplicated: () => performSearch(),
-			onCollectionUpdated: () => performSearch()
+			onCollectionUpdated: () => performSearch(),
+			onCollectionsDeleted: (deletedCols) => {
+				collectionSelection.clear();
+				toastState.addToast({
+					message: deletedCols.length > 1
+						? `Deleted ${deletedCols.length} collections`
+						: `Deleted collection ${deletedCols[0].name}`,
+					type: "success"
+				});
+				performSearch();
+			}
 		});
 	});
 

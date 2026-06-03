@@ -147,6 +147,7 @@
 	let ctxShowMenu = $state(false);
 	let ctxItems: MenuItem[] = $derived(
 		createCollectionMenu(firstSelectedCollection, {
+			selectedCollections: selectionScope.selectedItems,
 			editCollection: (col) => {
 				openCollectionModal("edit", col);
 			},
@@ -168,6 +169,19 @@
 				);
 				toastState.addToast({
 					message: `Deleted collection ${deletedCol.name}`,
+					type: "success"
+				});
+			},
+			onCollectionsDeleted: (deletedCols) => {
+				const deletedUids = new Set(deletedCols.map(c => c.uid));
+				listOfCollectionsData = listOfCollectionsData.filter(
+					(c) => !deletedUids.has(c.uid)
+				);
+				selectionScope.clear();
+				toastState.addToast({
+					message: deletedCols.length > 1
+						? `Deleted ${deletedCols.length} collections`
+						: `Deleted collection ${deletedCols[0].name}`,
 					type: "success"
 				});
 			}

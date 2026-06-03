@@ -1,8 +1,10 @@
 import { test, expect } from '@playwright/test';
+import { cleanupTestCollections } from './helpers';
 
 test.describe('Collection Lifecycle & Context Menus', () => {
 
-    test.beforeEach(async ({ page }) => {
+    test.beforeEach(async ({ page, request }) => {
+        await cleanupTestCollections(request);
         test.slow();
         // Go directly to collections workspace page
         await page.goto('/collections');
@@ -11,6 +13,11 @@ test.describe('Collection Lifecycle & Context Menus', () => {
         // Wait for the view container to appear
         await expect(page.locator('.viz-view-container')).toBeVisible({ timeout: 20000 });
     });
+
+    test.afterEach(async ({ request }) => {
+        await cleanupTestCollections(request);
+    });
+
 
     test('should perform full collection lifecycle (Create -> Edit -> Delete)', async ({ page }) => {
         // 1. Open Create Collection Modal
@@ -73,13 +80,16 @@ test.describe('Collection Lifecycle & Context Menus', () => {
         const deleteOption = contextMenu.locator('text="Delete"');
         await expect(deleteOption).toBeVisible();
 
-        // Set up handler to accept the native browser confirm dialog
-        page.once('dialog', async (dialog) => {
-            expect(dialog.message()).toContain('Delete collection');
-            await dialog.accept();
-        });
-
         await deleteOption.click();
+
+        // Expect the confirmation modal to be visible
+        const confirmModal = page.locator('.confirmation-modal');
+        await expect(confirmModal).toBeVisible();
+
+        // Click the confirm button in the modal
+        const confirmBtn = confirmModal.locator('.onconfirm-btn');
+        await expect(confirmBtn).toBeVisible();
+        await confirmBtn.click();
 
         // Verify the card is deleted from UI
         await expect(updatedCard).not.toBeVisible({ timeout: 15000 });
