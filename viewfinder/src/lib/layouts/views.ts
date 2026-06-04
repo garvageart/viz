@@ -44,6 +44,7 @@ export const views: VizView<any, any>[] = [
         name: "Collection",
         component: CollectionPage,
         path: "/collections/[uid]",
+        // I hate this now that I look at it again. This needs to be done elsewhere tbh
         tabDropHandlers: new Map([
             [
                 VizMimeTypes.IMAGE_UIDS,
