@@ -208,6 +208,7 @@ border: 1px solid color-mix(in srgb, var(--toast-accent-color) 45%, var(--viz-60
        box-shadow: 0 0 0 2px var(--viz-bg-color), 0 0 0 4px var(--viz-primary);
    }
    ```
+3. **Component Selection**: Avoid using plain HTML `<button>` elements containing `<MaterialIcon>`. Instead, use the custom `<IconButton>` component (`$lib/components/ui/IconButton.svelte`) to ensure consistent padding, hover transitions, disabled states, and keyboard focus outlines.
 
 #### Header Navigation Density
 To maximize professional DAM screen workspace, the main header navigation is designed strictly at **`2rem`** (`32px`) height. Icons inside the header reside at a compact **`0.8rem`** sizing to ensure high-density toolbars.
