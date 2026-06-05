@@ -236,6 +236,18 @@ await onUploadSuccess(uploadedImages);
 		}
 	}
 
+	function withRelevantDrag(handler: (e: DragEvent) => void | Promise<void>) {
+		return (e: DragEvent) => {
+			if (
+				e.dataTransfer?.types &&
+				(e.dataTransfer.types.includes("Files") ||
+					e.dataTransfer.types.includes(VizMimeTypes.IMAGE_UIDS))
+			) {
+				return handler(e);
+			}
+		};
+	}
+
 	function handleDragStart(e: DragEvent) {
 		internalDragActive = true;
 	}
@@ -278,6 +290,11 @@ await onUploadSuccess(uploadedImages);
 			e.dataTransfer.dropEffect = "copy";
 		}
 	}
+
+	const onDragEnter = withRelevantDrag(handleDragEnter);
+	const onDragLeave = withRelevantDrag(handleDragLeave);
+	const onDragOver = withRelevantDrag(handleDragOver);
+	const onDrop = withRelevantDrag(handleDrop);
 
 	async function handleConfirmUploadOnly(id: string) {
 		modalsManager.close(id);
@@ -679,10 +696,10 @@ allFiles.push(file);
 {/snippet}
 
 <svelte:body
-	ondragenter={handleDragEnter}
-	ondragleave={handleDragLeave}
-	ondragover={handleDragOver}
-	ondrop={handleDrop}
+	ondragenter={onDragEnter}
+	ondragleave={onDragLeave}
+	ondragover={onDragOver}
+	ondrop={onDrop}
 	ondragstart={handleDragStart}
 	ondragend={handleDragEnd}
 />
