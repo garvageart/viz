@@ -177,4 +177,43 @@ test.describe('Drag & Drop File Upload Flow', () => {
         await toastCloseBtn.click();
         await expect(toastCloseBtn).not.toBeVisible();
     });
+
+    test('should ignore non-file drags (such as tab dragging) and not show upload overlay or error/info toast', async ({ page }) => {
+        // Go directly to the Photos page
+        await page.goto('/photos');
+        await page.waitForLoadState('networkidle');
+
+        // Confirm Photos page is fully loaded and visible
+        await expect(page.locator('.viz-view-container')).toBeVisible({ timeout: 20000 });
+
+        // Simulate dragging and dropping a non-file, internal type (like VizMimeTypes.TAB_VIEW)
+        await page.evaluate(() => {
+            const dt = new DataTransfer();
+            dt.setData('application/x-viz.tab.view', 'test-tab-data');
+
+            const target = document.querySelector('.viz-view-container') || document.body;
+
+            // Dispatch dragenter
+            const dragEnterEvt = new DragEvent('dragenter', { bubbles: true, cancelable: true });
+            Object.defineProperty(dragEnterEvt, 'dataTransfer', { value: dt, configurable: true });
+            target.dispatchEvent(dragEnterEvt);
+
+            // Dispatch dragover
+            const dragOverEvt = new DragEvent('dragover', { bubbles: true, cancelable: true });
+            Object.defineProperty(dragOverEvt, 'dataTransfer', { value: dt, configurable: true });
+            target.dispatchEvent(dragOverEvt);
+
+            // Dispatch drop
+            const dropEvt = new DragEvent('drop', { bubbles: true, cancelable: true });
+            Object.defineProperty(dropEvt, 'dataTransfer', { value: dt, configurable: true });
+            target.dispatchEvent(dropEvt);
+        });
+
+        // Verify that the drop overlay is NOT visible/present
+        await expect(page.locator('.drop-overlay')).not.toBeVisible({ timeout: 3000 });
+
+        // Verify that no "No files to upload" toast is shown
+        const infoToast = page.locator('.viz-toast-info').filter({ hasText: 'No files to upload' });
+        await expect(infoToast).not.toBeVisible({ timeout: 3000 });
+    });
 });
