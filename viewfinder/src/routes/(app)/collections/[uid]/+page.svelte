@@ -34,6 +34,7 @@
 	import StarRating from "$lib/components/image-tools/StarRating.svelte";
 	import CollectionModal from "$lib/components/modals/CollectionModal.svelte";
 	import FilterModal from "$lib/components/modals/FilterModal.svelte";
+	import AddPhotosModal from "$lib/components/modals/AddPhotosModal.svelte";
 	import { modalsManager } from "$lib/components/modals/manager/ModalManager.svelte";
 	import VizViewContainer from "$lib/components/panels/VizViewContainer.svelte";
 	import AssetsShell from "$lib/components/ui/AssetsShell.svelte";
@@ -770,6 +771,22 @@ return;
 			{ heading: "Edit Collection" }
 		);
 	}
+
+	function openAddPhotosModal() {
+		modalsManager.open(
+			AddPhotosModal,
+			{
+				collectionUid: data.uid,
+				collectionName: data.name
+			},
+			{
+				heading: "Add Photos to Collection",
+				width: "95%",
+				height: "90%",
+				applyPadding: false
+			}
+		);
+	}
 </script>
 
 <svelte:window onclick={handleWindowClick} />
@@ -808,6 +825,15 @@ return;
 				Filter
 			</IconButton>
 		{/if}
+		<IconButton
+			iconName="add_photo_alternate"
+			class="toolbar-button"
+			title="Add Photos"
+			aria-label="Add Photos"
+			onclick={openAddPhotosModal}
+		>
+			Add Photos
+		</IconButton>
 		<IconButton
 			iconName="upload"
 			id="upload_to_collection"
