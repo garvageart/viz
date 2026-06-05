@@ -73,6 +73,13 @@
 	import UploadManager from "$lib/upload/manager.svelte.js";
 	import { getImageLabel } from "$lib/utils/images";
 	import type VizView from "$lib/views/views.svelte";
+	import {
+		getConsolidatedGroups,
+		groupImagesByDate,
+		type ConsolidatedGroup,
+		type DateGroup
+	} from "$lib/photo-layout/index.js";
+	import { VizLocalStorage } from "$lib/utils/misc.js";
 	import { invalidateViz } from "$lib/views/views.svelte";
 	import hotkeys from "hotkeys-js";
 	import { DateTime } from "luxon";
@@ -268,6 +275,34 @@
 
 	let imageGridArray: AssetGridArray<ImageAsset> | undefined = $state();
 
+	const showDatesStorage = new VizLocalStorage<boolean>("showDatesCollection");
+	let showDates = $state(showDatesStorage.get() ?? false);
+
+	$effect(() => {
+		showDatesStorage.set(showDates);
+	});
+
+	let groups: DateGroup[] = $derived.by(() => {
+		if (showDates) {
+			return groupImagesByDate(displayData) ?? [];
+		}
+		return [];
+	});
+
+	let consolidatedGroups: ConsolidatedGroup[] = $derived.by(() => {
+		if (showDates) {
+			return getConsolidatedGroups(groups);
+		}
+		return [];
+	});
+
+	let allImagesFlat = $derived.by(() => {
+		if (showDates) {
+			return consolidatedGroups.flatMap((g) => g.allImages);
+		}
+		return undefined;
+	});
+
 	// Toolbar stuff
 	let toolbarOpacity = $state(0);
 
@@ -285,6 +320,9 @@
 		assetGridArray: imageGridArray,
 		data: displayData,
 		scopeId: scopeId,
+		groupedData: showDates ? consolidatedGroups : undefined,
+		showDateHeaders: showDates,
+		allData: showDates ? allImagesFlat : undefined,
 		assetGridDisplayProps: {
 			style: `padding: 0em ${isLayoutPage() ? "1em" : "2em"};`
 		},
@@ -734,21 +772,34 @@ return;
 		return list;
 	});
 
-	// Display options as MenuItem[] for Dropdown
-	let displayMenuItems: MenuItem[] = $derived(
-		viewSettings.displayOptions.map((o, idx) => ({
-			id: `display-${idx}`,
-			label: o.label,
-			icon: o.icon,
-			action: () => viewSettings.setView(o.label.toLowerCase() as AssetGridView)
-		}))
-	);
+	let displayMenuItems: MenuItem[] = $derived.by(() => {
+		const baseItems: MenuItem[] = viewSettings.displayOptions.map((o, idx) => {
+			const isActive = viewSettings.current === o.label.toLowerCase();
+			return {
+				id: `display-${idx}`,
+				label: o.label,
+				icon: isActive ? ("check" as const) : undefined,
+				action: () => {
+					viewSettings.setView(o.label.toLowerCase() as AssetGridView);
+				}
+			};
+		});
 
-	let displaySelectedId: string | undefined = $derived.by(() => {
-		const idx = viewSettings.displayOptions.findIndex(
-			(o) => o.label.toLowerCase() === viewSettings.current
-		);
-		return idx !== -1 ? `display-${idx}` : undefined;
+		if (viewSettings.current === "grid") {
+			baseItems.push(
+				{ id: "display-separator", label: "", separator: true },
+				{
+					id: "display-show-dates",
+					label: "Show Dates",
+					icon: showDates ? ("check_box" as const) : ("check_box_outline_blank" as const),
+					action: () => {
+						showDates = !showDates;
+					}
+				}
+			);
+		}
+
+		return baseItems;
 	});
 
 	function openFilterModal() {
@@ -857,14 +908,21 @@ return;
 			Edit
 		</IconButton>
 		<Dropdown
-			title="Display"
+			title="Options"
 			class="toolbar-button"
-			icon="list_alt"
 			items={displayMenuItems}
-			selectedItemId={displaySelectedId}
 			showSelectionIndicator={false}
-			onSelect={(item) => item.action?.(new MouseEvent("click"))}
-		/>
+		>
+			{#snippet trigger({ toggle, showMenu, title })}
+				<IconButton
+					iconName="settings"
+					onclick={toggle}
+					class="toolbar-button {showMenu ? 'active' : ''}"
+				>
+					{title}
+				</IconButton>
+			{/snippet}
+		</Dropdown>
 		<Dropdown
 			class="toolbar-button"
 			icon="more_horiz"
