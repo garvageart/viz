@@ -44,13 +44,13 @@
 	});
 
 	const pagination = $derived({
-		limit: data.limit ?? 50,
-		page: data.page ?? 0
+		limit: data?.limit ?? 50,
+		page: data?.page ?? 0
 	});
 
 	let listOfCollectionsData = $derived(data?.items ?? []);
 
-	let shouldUpdate = $derived(!!data.next);
+	let shouldUpdate = $derived(!!data?.next);
 	let displayData = $derived(sortCollections(listOfCollectionsData, sort));
 
 	let fadeOpacity = false;
