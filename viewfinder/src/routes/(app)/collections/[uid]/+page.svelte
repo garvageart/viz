@@ -747,8 +747,7 @@ return;
 	];
 
 	let collectionMenuItems: MenuItem[] = $derived([
-		...collectionActions,
-		...ctxItems
+		...collectionActions
 	]);
 
 	// Create a list for the selection toolbar Dropdown
