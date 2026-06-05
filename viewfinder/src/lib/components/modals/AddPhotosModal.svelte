@@ -1,0 +1,474 @@
+<script lang="ts">
+	import { onDestroy, onMount } from "svelte";
+	import {
+		listImages,
+		listCollectionImageUiDs,
+		addCollectionImages,
+		type ImageAsset
+	} from "$lib/api";
+	import { selectionManager } from "$lib/states/selection.svelte";
+	import { toastState } from "$lib/toast-notifcations/notif-state.svelte";
+	import { invalidateViz } from "$lib/views/views.svelte";
+	import { modalsManager } from "./manager/ModalManager.svelte";
+	import { ImagePaginationState } from "$lib/images/state.svelte";
+	import {
+		getConsolidatedGroups,
+		groupImagesByDate,
+		type ConsolidatedGroup,
+		type DateGroup
+	} from "$lib/photo-layout";
+	import { filterManager } from "$lib/states/filter.svelte";
+	import { viewSettings } from "$lib/states/index.svelte";
+	import type { AssetSortBy, AssetSortOrder } from "$lib/types/asset";
+	import PhotoAssetGrid from "../grid/PhotoAssetGrid.svelte";
+	import VizViewContainer from "../panels/VizViewContainer.svelte";
+	import AssetToolbar from "../ui/toolbars/AssetToolbar.svelte";
+	import IconButton from "../ui/IconButton.svelte";
+	import Dropdown from "../context-menus/Dropdown.svelte";
+	import Button from "../ui/Button.svelte";
+	import type { MenuItem } from "$lib/context-menu/types";
+
+	interface Props {
+		id: string; // modal ID from modalsManager
+		collectionUid: string;
+		collectionName: string;
+	}
+
+	let { id, collectionUid, collectionName }: Props = $props();
+
+	const scopeId = "add-photos-modal";
+	const selectionScope = selectionManager.getScope<ImageAsset>(scopeId);
+
+	let existingUids = $state<Set<string>>(new Set());
+	let isLoading = $state(true);
+	let initialDataLoaded = $state(false);
+
+	// Local sort state
+	let sortBy = $state<AssetSortBy>("taken_at");
+	let sortOrder = $state<AssetSortOrder>("DESC");
+
+	// Display options for Dropdown
+	const displayMenuItems: MenuItem[] = [
+		{
+			id: "display-grid",
+			label: "Grid",
+			action: () => {
+				viewSettings.setView("grid");
+			}
+		},
+		{
+			id: "display-list",
+			label: "List",
+			action: () => {
+				viewSettings.setView("grid"); // PhotoAssetGrid mostly supports grid, but we keep option consistent
+				viewSettings.setView("list");
+			}
+		},
+		{
+			id: "display-cards",
+			label: "Thumbnails",
+			action: () => {
+				viewSettings.setView("thumbnails");
+			}
+		}
+	];
+
+	function getDisplaySelectedId(): string | undefined {
+		const map: Record<string, string> = {
+			grid: "display-grid",
+			list: "display-list",
+			thumbnails: "display-cards"
+		};
+		return map[(viewSettings.current as string) ?? ""];
+	}
+
+	let galleryState = $state<ImagePaginationState>(new ImagePaginationState({
+		items: [],
+		limit: 100,
+		page: 0,
+		count: 0
+	}));
+
+	let isPaginating = $state(false);
+
+	// Fetch existing collection image UIDs and first page of images
+	onMount(async () => {
+		isLoading = true;
+		try {
+			const uidsRes = await listCollectionImageUiDs(collectionUid);
+			if (uidsRes.status === 200) {
+				existingUids = new Set(uidsRes.data);
+			}
+
+			const imagesRes = await listImages({
+				limit: 100,
+				page: 0,
+				sortBy,
+				order: sortOrder
+			});
+
+			if (imagesRes.status === 200) {
+				galleryState = new ImagePaginationState(imagesRes.data);
+				initialDataLoaded = true;
+			} else {
+				toastState.addToast({
+					type: "error",
+					message: imagesRes.data?.error ?? "Failed to load images"
+				});
+			}
+		} catch (error) {
+			console.error("Error loading initial data in AddPhotosModal:", error);
+			toastState.addToast({
+				type: "error",
+				message: `Failed to load images: ${(error as Error).message}`
+			});
+		} finally {
+			isLoading = false;
+		}
+	});
+
+	onDestroy(() => {
+		selectionManager.removeScope(scopeId);
+	});
+
+	// Show all images in the timeline, but pass existingUids to disable already-added ones
+	let filteredImages = $derived(galleryState.images);
+
+	let groups: DateGroup[] = $derived(
+		groupImagesByDate(filterManager.apply(filteredImages)) ?? []
+	);
+
+	let consolidatedGroups: ConsolidatedGroup[] = $derived(
+		getConsolidatedGroups(groups)
+	);
+
+	let allImagesFlat = $derived(consolidatedGroups.flatMap((g) => g.allImages));
+
+	async function paginate() {
+		if (isPaginating || !galleryState.hasMore) {
+			return;
+		}
+
+		isPaginating = true;
+		const nextPage = galleryState.pagination.page + 1;
+		try {
+			const res = await listImages({
+				limit: galleryState.pagination.limit,
+				page: nextPage,
+				sortBy,
+				order: sortOrder
+			});
+
+			if (res.status === 200) {
+				const nextItems = res.data.items?.map((i) => i.image) ?? [];
+				galleryState.images.push(...nextItems);
+
+				galleryState.pagination.page = res.data.page ?? nextPage;
+				galleryState.totalCount = res.data.count ?? galleryState.totalCount;
+				galleryState.hasMore = !!res.data.next;
+			} else {
+				console.error("paginate: request failed", res);
+				galleryState.hasMore = false;
+			}
+		} catch (error) {
+			console.error("Pagination error:", error);
+			galleryState.hasMore = false;
+		} finally {
+			isPaginating = false;
+		}
+	}
+
+	async function handleAdd() {
+		const selectedUids = selectionScope.selectedItems.map((img) => img.uid);
+		if (selectedUids.length === 0) {
+			return;
+		}
+
+		isLoading = true;
+		try {
+			const res = await addCollectionImages(collectionUid, {
+				uids: selectedUids
+			});
+
+			if (res.status === 200) {
+				toastState.addToast({
+					type: "success",
+					message: `Added ${selectedUids.length} image(s) to collection **${collectionName}**`,
+					timeout: 3000
+				});
+				await invalidateViz({ delay: 200 });
+				modalsManager.close(id, true);
+			} else {
+				toastState.addToast({
+					type: "error",
+					message: res.data?.error ?? "Failed to add images to collection"
+				});
+			}
+		} catch (error) {
+			toastState.addToast({
+				type: "error",
+				message: `Error adding images: ${(error as Error).message}`
+			});
+		} finally {
+			isLoading = false;
+			selectionScope.clear();
+		}
+	}
+
+	function handleCancel() {
+		selectionScope.clear();
+		modalsManager.close(id);
+	}
+</script>
+
+<div class="add-photos-modal-container">
+	{#if isLoading && !initialDataLoaded}
+		<div class="loading-state">
+			<span class="loading-spinner"></span>
+			<span class="loading-text">Loading library timeline...</span>
+		</div>
+	{:else}
+		<div class="modal-body">
+			<AssetToolbar class="main-asset-toolbar" stickyToolbar={true}>
+				<div class="toolbar-group">
+					<Dropdown
+						title="Sort"
+						class="toolbar-button"
+						icon="sort"
+						items={[
+							{ id: "sort-name", label: "Name" },
+							{ id: "sort-created_at", label: "Created At" },
+							{ id: "sort-updated_at", label: "Updated At" },
+							{ id: "sort-taken_at", label: "Taken At" }
+						]}
+						selectedItemId={(() => {
+							switch (sortBy) {
+								case "name":
+									return "sort-name";
+								case "created_at":
+									return "sort-created_at";
+								case "updated_at":
+									return "sort-updated_at";
+								case "taken_at":
+									return "sort-taken_at";
+								default:
+									return undefined;
+							}
+						})()}
+						onSelect={(item) => {
+							switch (item.id) {
+								case "sort-name":
+									sortBy = "name";
+									break;
+								case "sort-created_at":
+									sortBy = "created_at";
+									break;
+								case "sort-updated_at":
+									sortBy = "updated_at";
+									break;
+								case "sort-taken_at":
+									sortBy = "taken_at";
+									break;
+							}
+							galleryState.images = [];
+							galleryState.pagination.page = -1;
+							galleryState.hasMore = true;
+							paginate();
+						}}
+					/>
+					<IconButton
+						iconName={sortOrder === "ASC" ? "arrow_upward" : "arrow_downward"}
+						class="toolbar-button"
+						title={`Toggle Sort Order (${sortOrder})`}
+						onclick={() => {
+							sortOrder = sortOrder === "ASC" ? "DESC" : "ASC";
+							galleryState.images = [];
+							galleryState.pagination.page = -1;
+							galleryState.hasMore = true;
+							paginate();
+						}}
+					/>
+				</div>
+				<div class="toolbar-group">
+					<Dropdown
+						title="Display"
+						class="toolbar-button"
+						icon="list_alt"
+						items={displayMenuItems}
+						selectedItemId={getDisplaySelectedId()}
+						showSelectionIndicator={false}
+						onSelect={(item) => item.action?.(new MouseEvent("click"))}
+					/>
+				</div>
+			</AssetToolbar>
+
+			<div class="grid-wrapper">
+				<VizViewContainer
+					name="AddPhotosTimeline"
+					disableNameInTitle={true}
+					bind:data={galleryState.images}
+					hasMore={galleryState.hasMore}
+					paginate={() => paginate()}
+				>
+					{#if filteredImages.length === 0}
+						<div class="no-photos">No photos found in your library.</div>
+					{:else}
+						<div class="photo-group-container">
+							<PhotoAssetGrid
+								bind:allData={allImagesFlat}
+								bind:view={viewSettings.current}
+								data={filteredImages}
+								groupedData={consolidatedGroups}
+								showDateHeaders={true}
+								{scopeId}
+								disabledUids={existingUids}
+							/>
+						</div>
+					{/if}
+				</VizViewContainer>
+			</div>
+		</div>
+
+		<div class="modal-footer">
+			<div class="selection-status">
+				{#if selectionScope.size > 0}
+					<span class="selection-count">{selectionScope.size} selected</span>
+				{:else}
+					<span class="no-selection">Select photos to add</span>
+				{/if}
+			</div>
+			<div class="footer-actions">
+				<Button variant="small" onclick={handleCancel} disabled={isLoading}>Cancel</Button>
+				<Button
+					variant="small"
+					style="background-color: var(--viz-primary);"
+					disabled={selectionScope.size === 0 || isLoading}
+					onclick={handleAdd}
+				>
+					Add to Collection
+				</Button>
+			</div>
+		</div>
+	{/if}
+</div>
+
+<style lang="scss">
+	.add-photos-modal-container {
+		display: flex;
+		flex-direction: column;
+		width: 100%;
+		height: 100%;
+		min-height: 0;
+		color: var(--viz-text-color);
+		box-sizing: border-box;
+		background-color: var(--viz-100);
+	}
+
+	.loading-state {
+		display: flex;
+		flex-direction: column;
+		align-items: center;
+		justify-content: center;
+		flex: 1;
+		gap: var(--viz-spacing-std);
+		color: var(--viz-40);
+
+		.loading-spinner {
+			width: 2rem;
+			height: 2rem;
+			border: 2px solid var(--viz-80);
+			border-top-color: var(--viz-primary);
+			border-radius: 50%;
+			animation: spin 0.8s linear infinite;
+		}
+
+		.loading-text {
+			font-family: var(--viz-mono-font);
+			font-size: var(--viz-font-size-xs);
+		}
+	}
+
+	@keyframes spin {
+		to {
+			transform: rotate(360deg);
+		}
+	}
+
+	.modal-body {
+		display: flex;
+		flex-direction: column;
+		flex: 1;
+		min-height: 0;
+		position: relative;
+	}
+
+	.grid-wrapper {
+		flex: 1;
+		min-height: 0;
+		overflow: hidden;
+		position: relative;
+	}
+
+	.photo-group-container {
+		display: flex;
+		flex-direction: column;
+		box-sizing: border-box;
+		width: 100%;
+		height: auto;
+		min-height: 100%;
+	}
+
+	.no-photos {
+		display: flex;
+		align-items: center;
+		justify-content: center;
+		height: 100%;
+		padding: var(--viz-spacing-xxl);
+		color: var(--viz-40);
+		font-size: var(--viz-font-size-lg);
+		text-align: center;
+	}
+
+	:global(.main-asset-toolbar) {
+		display: flex;
+		justify-content: space-between;
+		border-bottom: var(--viz-border-thin);
+		padding: var(--viz-spacing-sm) var(--viz-spacing-std);
+		background-color: var(--viz-95);
+		z-index: 10;
+	}
+
+	.toolbar-group {
+		display: flex;
+		align-items: center;
+		gap: var(--viz-spacing-sm);
+	}
+
+	.modal-footer {
+		display: flex;
+		justify-content: space-between;
+		align-items: center;
+		padding: var(--viz-spacing-std);
+		border-top: var(--viz-border-thin);
+		background-color: var(--viz-95);
+		flex-shrink: 0;
+	}
+
+	.selection-status {
+		font-family: var(--viz-mono-font);
+		font-size: var(--viz-font-size-sm);
+
+		.selection-count {
+			font-weight: 600;
+		}
+
+		.no-selection {
+			color: var(--viz-40);
+		}
+	}
+
+	.footer-actions {
+		display: flex;
+		gap: var(--viz-spacing-sm);
+	}
+</style>
