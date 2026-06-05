@@ -43,12 +43,16 @@
 		<InputText label="First Name" bind:value={editForm.first_name} />
 		<InputText label="Last Name" bind:value={editForm.last_name} />
 	</div>
-	<InputSelect label="Role" bind:value={editForm.role}>
-		<option value="user">User</option>
-		<option value="admin">Admin</option>
-		<option value="superadmin">Superadmin</option>
-		<option value="guest">Guest</option>
-	</InputSelect>
+	<InputSelect
+		label="Role"
+		bind:value={editForm.role}
+		options={[
+			{ value: "user", label: "User" },
+			{ value: "admin", label: "Admin" },
+			{ value: "superadmin", label: "Superadmin" },
+			{ value: "guest", label: "Guest" }
+		]}
+	/>
 	<div class="modal-actions">
 		<Button hoverColor="var(--viz-80)" onclick={handleCancel}>Cancel</Button>
 		<Button onclick={handleSave}>Save Changes</Button>

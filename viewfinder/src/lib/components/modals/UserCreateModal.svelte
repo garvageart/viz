@@ -44,12 +44,16 @@
 		label="Password"
 		bind:value={createForm.password}
 	/>
-	<InputSelect label="Role" bind:value={createForm.role}>
-		<option value="user">User</option>
-		<option value="admin">Admin</option>
-		<option value="superadmin">Superadmin</option>
-		<option value="guest">Guest</option>
-	</InputSelect>
+	<InputSelect
+		label="Role"
+		bind:value={createForm.role}
+		options={[
+			{ value: "user", label: "User" },
+			{ value: "admin", label: "Admin" },
+			{ value: "superadmin", label: "Superadmin" },
+			{ value: "guest", label: "Guest" }
+		]}
+	/>
 	<div class="modal-actions">
 		<Button hoverColor="var(--viz-80)" onclick={handleCancel}>Cancel</Button>
 		<Button onclick={handleSave} disabled={loading}>
