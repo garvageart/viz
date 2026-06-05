@@ -17,8 +17,8 @@
 
 	function handleImageClick(image: ImageAsset, e: MouseEvent) {
 		if (!activeScope) {
-return;
-}
+            return;
+        }
 
 		// Ensure we have focus/active scope (though filmstrip usually reflects active scope)
 		// If we wanted to enforce this scope being active, we'd do selectionManager.setActive(...)
@@ -37,9 +37,12 @@ return;
 
 			// Fallback if active item not in current view/source
 			if (startIndex === -1) {
-startIndex = 0;
-}
-			if (endIndex === -1) return; // Should not happen if clicked image is in list
+                startIndex = 0;
+            }
+
+			if (endIndex === -1) {
+                return
+            }; // Should not happen if clicked image is in list
 
 			const start = Math.min(startIndex, endIndex);
 			const end = Math.max(startIndex, endIndex);
@@ -120,29 +123,35 @@ startIndex = 0;
 	onwheel={handleWheel}
 	bind:this={containerRef}
 >
-	{#each filmstripImages as image, i (image.uid)}
-		{@const isActive = activeItem?.uid === image.uid}
-		{@const isSelected = activeScope?.has(image) ?? false}
-		<div
-			class="filmstrip-item"
-			class:active={isActive}
-			class:selected={isSelected}
-			onclick={(e) => handleImageClick(image, e)}
-			onkeydown={(e) => handleItemKeydown(e, image)}
-			role="button"
-			tabindex="0"
-			aria-pressed={isActive}
-			aria-label={`Select image ${image.name}`}
-			bind:this={itemRefs[i]}
-		>
-			<ImageCard
-				asset={image}
-				variant="mini"
-				objectFit="contain"
-				imageVariant="thumbnail"
-			/>
-		</div>
-	{/each}
+	{#if filmstripImages.length === 0}
+        <div class="empty-state">
+            Empty Selection
+        </div>
+    {:else}
+        {#each filmstripImages as image, i (image.uid)}
+            {@const isActive = activeItem?.uid === image.uid}
+            {@const isSelected = activeScope?.has(image) ?? false}
+            <div
+                class="filmstrip-item"
+                class:active={isActive}
+                class:selected={isSelected}
+                onclick={(e) => handleImageClick(image, e)}
+                onkeydown={(e) => handleItemKeydown(e, image)}
+                role="button"
+                tabindex="0"
+                aria-pressed={isActive}
+                aria-label={`Select image ${image.name}`}
+                bind:this={itemRefs[i]}
+            >
+                <ImageCard
+                    asset={image}
+                    variant="mini"
+                    objectFit="contain"
+                    imageVariant="thumbnail"
+                />
+            </div>
+        {/each}
+    {/if}
 </nav>
 
 <style lang="scss">
@@ -183,6 +192,18 @@ startIndex = 0;
 			}
 		}
 	}
+
+    .empty-state {
+        color: var(--viz-60);
+        font-style: italic;
+        padding: 1rem;
+        text-align: center;
+        width: 100%;
+        height: 100%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+    }
 
 	.filmstrip-item {
 		position: relative;
