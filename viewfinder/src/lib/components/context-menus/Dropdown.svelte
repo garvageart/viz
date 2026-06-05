@@ -4,6 +4,7 @@
 	import IconButton from "../ui/IconButton.svelte";
 	import Button from "../ui/Button.svelte";
 	import type { MenuItem } from "$lib/context-menu/types";
+	import type { Snippet } from "svelte";
 
 	interface Props {
 		class?: string;
@@ -24,6 +25,14 @@
 		align?: "left" | "right";
 		/** Debug: forward to ContextMenu to render overlays and logs */
 		debug?: boolean;
+		/** Custom trigger button snippet. Receives toggle function, open state, and title. */
+		trigger?: Snippet<[
+			{
+				toggle: () => void;
+				showMenu: boolean;
+				title: string | undefined;
+			}
+		]>;
 	}
 
 	let {
@@ -36,7 +45,8 @@
 		showSelectionIndicator = true,
 		align = "left",
 		debug = false,
-		class: className
+		class: className,
+		trigger
 	}: Props = $props();
 
 	let buttonEl: HTMLButtonElement | undefined = $state(undefined);
@@ -109,7 +119,9 @@
 {/snippet}
 
 <div class="viz-dropdown-container" bind:this={containerEl}>
-	{#if currentIcon}
+	{#if trigger}
+		{@render trigger({ toggle: toggleMenu, showMenu, title })}
+	{:else if currentIcon}
 		<IconButton
 			class="viz-dropdown-button {className}"
 			weight={300}
@@ -135,7 +147,7 @@
 	<ContextMenu
 		bind:showMenu
 		items={menuItems}
-		anchor={buttonEl as HTMLElement}
+		anchor={(buttonEl ?? containerEl) as HTMLElement}
 		offsetY={0}
 		{align}
 		{debug}
