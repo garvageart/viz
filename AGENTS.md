@@ -100,6 +100,24 @@ The `make generate-types` command orchestrates this entire process:
 
 ## 6. Coding Guidelines
 
+### General
+- **Comments**: Do not delete comments you did not add unless explicitly told to do so. 
+  - *Rationale*: Original comments capture design intents, safety mechanisms, workarounds, or business logic context. Deleting them degrades codebase maintainability. Comments may also be developer notes or personal messages. If the code logic is changing significantly, update the comments to reflect the new logic rather than removing them.
+  - *Rule*: During refactoring, search-and-replace, or lint fixes, ensure existing comments are preserved. If code logic changes significantly, update the comments to be accurate instead of deleting them.
+- **If-Statements**: All `if` statements must not be inlined. Always use brackets and next line.
+  - *Rationale*: Consistency across backend (Go) and frontend (TypeScript) codebases makes the code easier to scan, simplifies setting breakpoints during debugging, and reduces the chance of errors during block updates.
+  - *Rule*: Never write one-liners like `if (cond) return;`. Always break to the next line and wrap inside brackets.
+  - *Example*:
+    ```typescript
+    // Correct:
+    if (isDisabled) {
+        return;
+    }
+
+    // Incorrect:
+    if (isDisabled) return;
+    ```
+
 ### Go (Backend)
 - **Formatting**: Code MUST be formatted with `gofmt`.
 - **If-Statements**: ALWAYS use multi-line blocks.
@@ -127,6 +145,11 @@ This section serves as the design system guide for frontend components.
 2. **High Information Density**: Sizing is compact and clean to maximize workspace for photography assets and editor sidebars.
 3. **Structured Editorial Grid**: Layout coordinates are separated by crisp `1px` hairlines and vertical columns.
 4. **Interactive Contrast**: Flat sharp corners are used for panels, containers, and input fields to maintain grid alignment, while pill shapes are reserved strictly for interactive action buttons.
+5. **No Primary/Secondary Text**: Text (including icon fonts) should NEVER be styled with the primary or secondary color to ensure high accessibility and contrast standards. Instead, reserve these colors for structural accents and interactive framing:
+   - **Primary Action Targets**: Backgrounds for buttons, toggle switches, and primary control states.
+   - **Focus & Selection Frames**: Focus outlines, selected bounding rings, active cards, and drag-and-drop dropzone highlights.
+   - **Visual Accents & Dividers**: Active tab underlines, header accents, progress/loading indicator bars, and charts.
+   For all body copy, labels, links, and general text elements, use base text colors or status/info accents instead.
 
 ### Typography System
 Viz utilizes two primary variable typography scales served through Google Fonts:
