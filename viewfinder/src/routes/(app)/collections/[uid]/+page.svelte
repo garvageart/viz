@@ -106,20 +106,23 @@
 
 	// Data
 	let localDataUpdates = $state({
-		name: untrack(() => data.name),
-		description: untrack(() => data.description ?? ""),
-		private: untrack(() => data.private ?? false)
+		name: untrack(() => data?.name ?? ""),
+		description: untrack(() => data?.description ?? ""),
+		private: untrack(() => data?.private ?? false)
 	});
 
+	// Let it be known that I hate this but don't have any other solution rn
 	$effect(() => {
-		localDataUpdates.name = data.name;
-		localDataUpdates.description = data.description ?? "";
-		localDataUpdates.private = data.private ?? false;
+		if (data) {
+			localDataUpdates.name = data.name;
+			localDataUpdates.description = data.description ?? "";
+			localDataUpdates.private = data.private ?? false;
+		}
 	});
 
 	// Image pagination state
 	let collectionState = $derived(
-		new ImagePaginationState(data.images, data.image_count)
+		new ImagePaginationState(data?.images, data?.image_count)
 	);
 	let isPaginating = $state(false);
 
