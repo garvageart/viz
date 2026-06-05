@@ -13,6 +13,7 @@
 	import ConfirmationModal from "$lib/components/modals/ConfirmationModal.svelte";
 	import AdminRouteShell from "$lib/components/admin/AdminRouteShell.svelte";
 	import { modalsManager } from "$lib/components/modals/manager/ModalManager.svelte";
+	import InputSelect from "$lib/components/ui/InputSelect.svelte";
 
 	type EventHistoryItem = EventRecord;
 
@@ -156,6 +157,11 @@ return;
 		history.forEach((e) => types.add(e.event));
 		return Array.from(types).filter(Boolean).sort();
 	});
+
+	const filterOptions = $derived([
+		{ value: "all", label: "All Events" },
+		...eventTypes().map((type) => ({ value: type, label: type }))
+	]);
 
 	function formatTimestamp(ts: string): string {
 		return new Date(ts).toLocaleString();
@@ -347,12 +353,11 @@ return;
 
 			<div class="history-controls">
 				<div class="filter-group">
-					<select bind:value={historyFilter} aria-label="Filter by event type">
-						<option value="all">All Events</option>
-						{#each eventTypes() as type}
-							<option value={type}>{type}</option>
-						{/each}
-					</select>
+					<InputSelect
+						bind:value={historyFilter}
+						aria-label="Filter by event type"
+						options={filterOptions}
+					/>
 				</div>
 				<div class="search-group">
 					<MaterialIcon iconName="search" />
@@ -612,20 +617,7 @@ return;
 		display: flex;
 		align-items: center;
 		gap: 0.5rem;
-
-		select {
-			padding: 0.5rem 0.75rem;
-			border: 1px solid var(--viz-80);
-			border-radius: 0.375rem;
-			background: var(--viz-100);
-			color: var(--viz-text-color);
-			font-size: 0.875rem;
-
-			&:focus {
-				outline: none;
-				border-color: var(--viz-primary);
-			}
-		}
+		width: 11.25rem;
 	}
 
 	.search-group {

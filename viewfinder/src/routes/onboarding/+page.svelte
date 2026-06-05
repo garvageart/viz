@@ -450,11 +450,8 @@
 													: formatLabel(setting.name)}
 												description={setting.description}
 												bind:value={userSettingsValues[setting.name]}
-											>
-												{#each setting.allowed_values as option}
-													<option value={option}>{option}</option>
-												{/each}
-											</InputSelect>
+												options={setting.allowed_values}
+											/>
 										{:else if setting.value_type === "boolean"}
 											<InputSelect
 												label={setting.name.trim()
@@ -462,10 +459,11 @@
 													: formatLabel(setting.name)}
 												description={setting.description}
 												bind:value={userSettingsValues[setting.name]}
-											>
-												<option value="true">Yes</option>
-												<option value="false">No</option>
-											</InputSelect>
+												options={[
+													{ value: "true", label: "Yes" },
+													{ value: "false", label: "No" }
+												]}
+											/>
 										{:else}
 											<InputText
 												label={setting.name.trim()
