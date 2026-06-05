@@ -508,7 +508,7 @@
 				color: white;
 			}
 			.stat-value {
-				color: var(--viz-primary);
+				color: var(--viz-info-color);
 			}
 		}
 
@@ -581,7 +581,7 @@
 			height: 2.5rem;
 			background: var(--viz-80);
 			border-radius: 0.625rem;
-			color: var(--viz-primary);
+			color: var(--viz-info-color);
 		}
 
 		.job-details {
@@ -633,7 +633,7 @@
 
 			.progress-value {
 				font-weight: 800;
-				color: var(--viz-primary);
+				color: var(--viz-info-color);
 			}
 		}
 	}
@@ -839,8 +839,8 @@
 					font-weight: 700;
 
 					&.running {
-						background: rgba(var(--viz-primary-rgb), 0.2);
-						color: var(--viz-primary);
+						background: color-mix(in srgb, var(--viz-info-color) 20%, var(--viz-95));
+						color: var(--viz-info-color);
 					}
 					&.queued {
 						background: var(--viz-80);

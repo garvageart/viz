@@ -119,7 +119,7 @@
 	/* Override Button styling to look like a link or simple toggle */
 	:global(.more-btn) {
 		background-color: transparent !important;
-		color: var(--viz-primary) !important;
+		color: var(--viz-info-color) !important;
 		padding: 0 !important;
 		align-self: flex-start;
 		height: auto !important;

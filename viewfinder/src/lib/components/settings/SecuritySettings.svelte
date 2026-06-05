@@ -499,8 +499,8 @@ return;
 
 	.current-badge {
 		padding: 0.125rem 0.375rem;
-		background: rgba(var(--viz-primary-rgb), 0.1);
-		color: var(--viz-primary);
+		background: color-mix(in srgb, var(--viz-success-color) 15%, var(--viz-95));
+		color: var(--viz-success-color);
 		border-radius: 0.25rem;
 		font-size: 0.7rem;
 		font-weight: 600;

@@ -248,13 +248,14 @@
 	}
 
 	.viz-toast-message :global(a.viz-toast-link) {
-		color: var(--viz-primary);
+		color: var(--viz-info-color);
 		text-decoration: underline;
 		font-weight: 600;
 		transition: color 150ms ease;
 		
 		&:hover {
-			color: var(--viz-secondary);
+			color: var(--viz-info-color);
+			opacity: 0.8;
 		}
 	}
 
