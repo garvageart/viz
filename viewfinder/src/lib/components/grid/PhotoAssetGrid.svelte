@@ -61,6 +61,8 @@
 		gridConfig?: PhotoGridConfig;
 		/** Callback triggered when Select All (Ctrl+A) is pressed */
 		onselectAll?: () => void;
+		/** Set of image UIDs that should be marked as disabled in the grid*/
+		disabledUids?: Set<string>;
 	}
 
 	type Props = Omit<
@@ -88,7 +90,8 @@
 		groupedData = $bindable([]),
 		showDateHeaders = $bindable(true),
 		gridConfig = {},
-		onselectAll
+		onselectAll,
+		disabledUids = new Set()
 	}: Props = $props();
 
 	// Selection Management
@@ -123,6 +126,7 @@
 		if (selectionManager.activeScopeId !== scopeId) {
 			return;
 		}
+
 		if (view !== "grid") {
 			return;
 		}
@@ -132,8 +136,8 @@
 		if (onselectAll) {
 			onselectAll();
 		} else {
-			// Select filtered data, not hidden data
-			const selectionData = filteredData;
+			// Select filtered data, not hidden or disabled data
+			const selectionData = filteredData.filter(img => !disabledUids.has(img.uid));
 			selection.selectMultiple(selectionData);
 		}
 	}
@@ -189,46 +193,46 @@
 		}
 
 		if (!selection.active) {
-			// If allData is provided, only the grid containing the very first global image should set the initial selection
-			if (allData && allData.length > 0) {
-				if (filteredData[0].uid === allData[0].uid) {
-					selection.select(filteredData[0]);
-				}
-			} else {
-				// Standalone grid: just select the first item
-				selection.select(filteredData[0]);
+			const searchList = allData && allData.length > 0 ? allData : filteredData;
+			const firstEnabled = searchList.find((img) => !disabledUids.has(img.uid));
+			if (firstEnabled) {
+				selection.select(firstEnabled);
 			}
 			return;
 		}
 
 		const activeId = selection.active.uid;
-		const currentIndex = filteredData.findIndex((a) => a.uid === activeId);
+		const searchList = allData && allData.length > 0 ? allData : filteredData;
+		const globalIndex = searchList.findIndex((a) => a.uid === activeId);
 
-		// If the active item is not in this grid, do nothing (let the owning grid handle it)
-		if (currentIndex === -1) {
+		if (globalIndex === -1) {
 			return;
 		}
 
 		if (handler.key === "left" || handler.key === "right") {
 			if (handler.key === "left") {
-				if (currentIndex > 0) {
-					selection.select(filteredData[currentIndex - 1]);
-				} else if (allData) {
-					// Boundary: Try to go to previous global item
-					const globalIndex = allData.findIndex((a) => a.uid === activeId);
-					if (globalIndex > 0) {
-						selection.select(allData[globalIndex - 1]);
+				let targetIndex = -1;
+				for (let i = globalIndex - 1; i >= 0; i--) {
+					if (!disabledUids.has(searchList[i].uid)) {
+						targetIndex = i;
+						break;
 					}
 				}
+				if (targetIndex !== -1) {
+					// Boundary: Try to go to previous global item
+					selection.select(searchList[targetIndex]);
+				}
 			} else {
-				if (currentIndex < filteredData.length - 1) {
-					selection.select(filteredData[currentIndex + 1]);
-				} else if (allData) {
-					// Boundary: Try to go to next global item
-					const globalIndex = allData.findIndex((a) => a.uid === activeId);
-					if (globalIndex > -1 && globalIndex < allData.length - 1) {
-						selection.select(allData[globalIndex + 1]);
+				let targetIndex = -1;
+				for (let i = globalIndex + 1; i < searchList.length; i++) {
+					if (!disabledUids.has(searchList[i].uid)) {
+						targetIndex = i;
+						break;
 					}
+				}
+				if (targetIndex !== -1) {
+					// Boundary: Try to go to next global item
+					selection.select(searchList[targetIndex]);
 				}
 			}
 		} else {
@@ -242,22 +246,35 @@
 			let targetRowIndex = pos.rowIndex + (handler.key === "up" ? -1 : 1);
 
 			// Skip header rows
-			while (
-				targetRowIndex >= 0 &&
-				targetRowIndex < rows.length &&
-				rows[targetRowIndex].type === "header"
-			) {
+			while (targetRowIndex >= 0 && targetRowIndex < rows.length) {
+				const row = rows[targetRowIndex];
+				if (row.type === "header") {
+					targetRowIndex += handler.key === "up" ? -1 : 1;
+					continue;
+				}
+
+				const nonDisabledItems = row.items.filter((item) => !disabledUids.has(item.asset.uid));
+				if (nonDisabledItems.length > 0) {
+					break;
+				}
+
 				targetRowIndex += handler.key === "up" ? -1 : 1;
 			}
 
 			// Vertical Boundary Checks
 			if (targetRowIndex < 0) {
 				// Moved UP past top
-				if (allData) {
-					const globalIndex = allData.findIndex((a) => a.uid === activeId);
+				if (searchList) {
 					// Fallback: Select previous global item (effectively wrapping to end of previous group)
-					if (globalIndex > 0) {
-						selection.select(allData[globalIndex - 1]);
+					let targetIndex = -1;
+					for (let i = globalIndex - 1; i >= 0; i--) {
+						if (!disabledUids.has(searchList[i].uid)) {
+							targetIndex = i;
+							break;
+						}
+					}
+					if (targetIndex !== -1) {
+						selection.select(searchList[targetIndex]);
 					}
 				}
 				return;
@@ -265,11 +282,17 @@
 
 			if (targetRowIndex >= rows.length) {
 				// Moved DOWN past bottom
-				if (allData) {
-					const globalIndex = allData.findIndex((a) => a.uid === activeId);
+				if (searchList) {
 					// Fallback: Select next global item (effectively wrapping to start of next group)
-					if (globalIndex > -1 && globalIndex < allData.length - 1) {
-						selection.select(allData[globalIndex + 1]);
+					let targetIndex = -1;
+					for (let i = globalIndex + 1; i < searchList.length; i++) {
+						if (!disabledUids.has(searchList[i].uid)) {
+							targetIndex = i;
+							break;
+						}
+					}
+					if (targetIndex !== -1) {
+						selection.select(searchList[targetIndex]);
 					}
 				}
 				return;
@@ -281,17 +304,24 @@
 				return; // Should not happen due to skip loop
 			}
 
-			let closestItem = targetRow.items[0];
+			const nonDisabledItems = targetRow.items.filter((item) => !disabledUids.has(item.asset.uid));
+			if (nonDisabledItems.length === 0) {
+				return;
+			}
+
+			let closestItem = nonDisabledItems[0];
 			let minDiff = Number.MAX_VALUE;
 			let currentX = 0;
 
 			for (const item of targetRow.items) {
 				const itemCenterX = currentX + item.width / 2;
-				const diff = Math.abs(itemCenterX - pos.centerX);
+				if (!disabledUids.has(item.asset.uid)) {
+					const diff = Math.abs(itemCenterX - pos.centerX);
 
-				if (diff < minDiff) {
-					minDiff = diff;
-					closestItem = item;
+					if (diff < minDiff) {
+						minDiff = diff;
+						closestItem = item;
+					}
 				}
 				currentX += item.width + virtualizer.gridGap;
 			}
@@ -876,6 +906,9 @@ return;
 		asset: ImageAsset,
 		e: MouseEvent | KeyboardEvent
 	) {
+		if (disabledUids.has(asset.uid)) {
+			return;
+		}
 		onFocus(); // Ensure this grid is active on click
 		suppressScrollOnce = true;
 
@@ -1053,11 +1086,17 @@ return;
 	{@const isSelected =
 		selectedUIDs.has(asset.uid) || selection.active?.uid === asset.uid}
 	{@const isCached = loadedImageUIDs.has(asset.uid)}
+	{@const isDisabled = disabledUids.has(asset.uid)}
 	<div
 		class="asset-photo"
 		class:is-cached={isCached}
-		draggable="true"
+		class:disabled-asset={isDisabled}
+		draggable={!isDisabled}
 		ondragstart={(e: DragEvent) => {
+			if (isDisabled) {
+                return;
+            }
+            
 			if (!selectedUIDs.has(asset.uid)) {
 				selection.select(asset);
 			}
@@ -1183,6 +1222,10 @@ return;
 				</div>
 			</div>
 		</div>
+
+		{#if isDisabled}
+			<div class="disabled-overlay"></div>
+		{/if}
 	</div>
 {/snippet}
 
@@ -1287,6 +1330,7 @@ return;
 		{table}
 		{assetGridDisplayProps}
 		{scopeId}
+		disabledUids={disabledUids}
 		assetSnippet={photoCardSnippet ?? imageCard}
 	/>
 {/if}
@@ -1451,6 +1495,23 @@ return;
 	.asset-photo {
 		position: relative;
 		overflow: hidden;
+	}
+
+	.asset-photo.disabled-asset {
+		cursor: not-allowed;
+		pointer-events: none;
+		opacity: 0.65;
+
+		.disabled-overlay {
+			position: absolute;
+			top: 0;
+			left: 0;
+			right: 0;
+			bottom: 0;
+			background: rgba(0, 0, 0, 0.45);
+			z-index: 5;
+			pointer-events: none;
+		}
 	}
 
 	.asset-photo.multi-selected-photo {

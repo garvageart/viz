@@ -67,6 +67,7 @@
 		table?: { thumbnail_key?: string; columns?: string[] };
 		/** Unique identifier for selection state management */
 		scopeId?: string;
+		disabledUids?: Set<string>;
 	}
 
 	let {
@@ -84,7 +85,8 @@
 		assetGridDisplayProps = $bindable({}),
 		columns = $bindable(),
 		table = $bindable(),
-		scopeId = "default"
+		scopeId = "default",
+		disabledUids = new Set()
 	}: AssetGridProps<T> = $props();
 
 	// Selection Management
@@ -255,8 +257,9 @@
 
 		const updateGridArray = () => {
 			if (!assetGridDisplayEl) {
-return;
-}
+                return;
+            }
+
 			assetGridArray = buildAssetGridArray(assetGridDisplayEl);
 		};
 
@@ -280,6 +283,10 @@ return;
 	});
 
 	function handleImageCardSelect(asset: T, e: MouseEvent) {
+		if (disabledUids.has(asset.uid)) {
+			return;
+		}
+
 		onFocus(); // Ensure this grid is active on click
 
 		if (e.shiftKey) {
@@ -312,6 +319,9 @@ return;
 	}
 
 	function handleKeydownCardSelect(asset: T, e: KeyboardEvent) {
+		if (disabledUids.has(asset.uid)) {
+			return;
+		}
 		if (!assetGridArray) {
 			return;
 		}
@@ -346,10 +356,34 @@ return;
 		const imageGridChildren = assetGridDisplayEl?.children;
 
 		// Mimic click since we already have a handler for that in `handleImageCardSelect()`
-		const focusAndSelectElement = (element: HTMLElement | undefined) => {
+		const focusAndSelectElement = (element: HTMLElement | undefined, step: number) => {
 			// out of bounds
 			if (!element) {
 				return;
+			}
+
+			// check if disabled and find the next non-disabled element in the direction of step
+			const assetId = element.getAttribute("data-asset-id");
+			if (assetId && disabledUids.has(assetId)) {
+				let targetElement: HTMLElement | undefined = undefined;
+				let nextIndex = positionIndexInGrid + step;
+
+				while (nextIndex >= 0 && nextIndex < (imageGridChildren?.length ?? 0)) {
+					const candElement = imageGridChildren?.item(nextIndex) as HTMLElement;
+					const candAssetId = candElement?.getAttribute("data-asset-id");
+					if (candAssetId && !disabledUids.has(candAssetId)) {
+						targetElement = candElement;
+						break;
+					}
+                    
+					nextIndex += step;
+				}
+
+				if (!targetElement) {
+					// out of bounds
+					return;
+				}
+				element = targetElement;
 			}
 
 			// maybe unnessary to blur but i wanna make sure lmao
@@ -363,25 +397,25 @@ return;
 				const elementRight = imageGridChildren?.item(
 					positionIndexInGrid + 1
 				) as HTMLElement;
-				focusAndSelectElement(elementRight);
+				focusAndSelectElement(elementRight, 1);
 				break;
 			case "ArrowLeft":
 				const elementLeft = imageGridChildren?.item(
 					positionIndexInGrid - 1
 				) as HTMLElement;
-				focusAndSelectElement(elementLeft);
+				focusAndSelectElement(elementLeft, -1);
 				break;
 			case "ArrowUp":
 				const elementUp = imageGridChildren?.item(
 					positionIndexInGrid - columnCount
 				) as HTMLElement;
-				focusAndSelectElement(elementUp);
+				focusAndSelectElement(elementUp, -columnCount);
 				break;
 			case "ArrowDown":
 				const elementDown = imageGridChildren?.item(
 					positionIndexInGrid + columnCount
 				) as HTMLElement;
-				focusAndSelectElement(elementDown);
+				focusAndSelectElement(elementDown, columnCount);
 				break;
 			case "Tab":
 				// to break out of the grid by tabbing and focusing we need to let
@@ -391,14 +425,16 @@ return;
 						e.preventDefault();
 					}
 					focusAndSelectElement(
-						imageGridChildren?.item(positionIndexInGrid - 1) as HTMLElement
+						imageGridChildren?.item(positionIndexInGrid - 1) as HTMLElement,
+						-1
 					);
 				} else {
 					if (positionIndexInGrid < imageGridChildren?.length! - 1) {
 						e.preventDefault();
 					}
 					focusAndSelectElement(
-						imageGridChildren?.item(positionIndexInGrid + 1) as HTMLElement
+						imageGridChildren?.item(positionIndexInGrid + 1) as HTMLElement,
+						1
 					);
 				}
 				break;
@@ -541,14 +577,17 @@ return;
 {#snippet assetComponentCard(assetData: T)}
 	{@const isSelected =
 		selectedUIDs.has(assetData.uid) || selection.active?.uid === assetData.uid}
+	{@const isDisabled = disabledUids.has(assetData.uid)}
 	<div
 		class="asset-card"
+		class:disabled-asset={isDisabled}
 		data-asset-id={assetData.uid}
 		class:max-width-column={columnCount !== undefined && columnCount > 1}
 		class:selected-card={isSelected}
 		role="button"
-		tabindex="0"
+		tabindex={isDisabled ? -1 : 0}
 		onclick={(e) => {
+			if (isDisabled) return;
 			e.preventDefault();
 			handleImageCardSelect(assetData, e);
 		}}
@@ -575,6 +614,9 @@ return;
 			});
 		}}
 	>
+		{#if isDisabled}
+			<div class="disabled-overlay"></div>
+		{/if}
 		{@render assetSnippet(assetData)}
 	</div>
 {/snippet}
@@ -582,14 +624,17 @@ return;
 {#snippet assetComponentListOption(assetData: T)}
 	{@const isSelected =
 		selection.has(assetData) || selection.active?.uid === assetData.uid}
+	{@const isDisabled = disabledUids.has(assetData.uid)}
 	{@const asset = assetData as unknown as DisplayableAsset}
 	<tr
 		class="asset-card"
+		class:disabled-asset={isDisabled}
 		data-asset-id={assetData.uid}
 		class:selected-card={isSelected}
 		role="button"
-		tabindex="0"
+		tabindex={isDisabled ? -1 : 0}
 		onclick={(e) => {
+			if (isDisabled) return;
 			handleImageCardSelect(assetData, e);
 		}}
 		onkeydown={(e) => {
@@ -768,6 +813,24 @@ return;
 		border-radius: 0.5em;
 		overflow: hidden;
 		outline: none;
+	}
+
+	.asset-card.disabled-asset {
+		cursor: not-allowed;
+		pointer-events: none;
+		opacity: 0.65;
+		position: relative;
+
+		.disabled-overlay {
+			position: absolute;
+			top: 0;
+			left: 0;
+			right: 0;
+			bottom: 0;
+			background: rgba(0, 0, 0, 0.45);
+			z-index: 5;
+			pointer-events: none;
+		}
 	}
 
 	.viz-asset-table-container {
