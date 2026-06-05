@@ -36,6 +36,7 @@ export function createImageMenu(
             id: "act-toggle-favourite",
             label: allFavourited ? "Unfavourite" : "Favourite",
             icon: allFavourited ? "favorite_border" : "favorite",
+            disabled: selectionScope.size === 0,
             action: async () => {
                 const itemsToUpdate = selectionScope.selectedItems;
                 const setFavourited = !allFavourited;
@@ -70,6 +71,7 @@ export function createImageMenu(
             id: "act-export",
             label: "Export",
             icon: "ios_share",
+            disabled: selectionScope.size === 0,
             action: () => {
                 modalsManager.open(
                     ExportPanel,
@@ -87,6 +89,7 @@ export function createImageMenu(
             id: "act-copy-path",
             label: "Copy Path",
             icon: "content_copy",
+            disabled: selectionScope.size === 0,
             action: () => {
                 const items = selectionScope.selectedItems;
                 const paths = items
@@ -104,6 +107,7 @@ export function createImageMenu(
             id: "act-download",
             label: "Download Original",
             icon: "download",
+            disabled: selectionScope.size === 0,
             action: () => {
                 const items = selectionScope.selectedItems;
                 for (const img of items) {
@@ -128,6 +132,7 @@ export function createImageMenu(
             id: "act-remove-from-collection",
             label: "Remove from Collection",
             icon: "layers_clear",
+            disabled: selectionScope.size === 0,
             action: async () => {
                 const items = selectionScope.selectedItems;
                 const uids = items.map((i) => i.uid);
@@ -190,6 +195,7 @@ export function createImageMenu(
         label: "Delete",
         icon: "delete",
         danger: true,
+        disabled: selectionScope.size === 0,
         action: async () => {
             const items = selectionScope.selectedItems;
             const uids = items.map((i) => i.uid);

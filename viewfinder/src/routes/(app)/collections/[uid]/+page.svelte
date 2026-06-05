@@ -761,6 +761,7 @@ return;
 			id: "remove-selected",
 			label: "Remove from Collection",
 			icon: "remove_circle",
+			disabled: selectionScope.size === 0,
 			action: handleDeleteSelected
 		};
 
