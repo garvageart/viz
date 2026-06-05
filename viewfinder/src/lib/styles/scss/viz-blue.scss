@@ -5,7 +5,7 @@ $bg-color: #0f1726;
 $base-color: color.adjust(color.mix($bg-color, white, 89%), $saturation: 20%, $lightness: -4%);
 $text-color: #f7f9f9;
 $primary-color: #1885df;
-$secondary-color: #06589b;
+$secondary-color: #e79c1d;
 
 @include m.register-theme-core(
     $bg-color: $bg-color,
