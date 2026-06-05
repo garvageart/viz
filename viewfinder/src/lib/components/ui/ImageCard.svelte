@@ -81,24 +81,26 @@
 				alt={asset.name}
 				loading="lazy"
 			/>
-			{#if asset.favourited}
-				<div class="favorite-badge">
-					<MaterialIcon iconName="favorite" size="1rem" fill={true} />
-				</div>
-			{/if}
 		</div>
 		<div class="mini-footer">
 			<span class="mini-filename"
 				>{asset.image_metadata?.file_name ?? asset.name}</span
 			>
 			<div class="mini-meta">
-				<div class="mini-rating">
-					{#each Array(5) as _, i}
-						<div
-							class="dot"
-							class:filled={i < (asset.image_metadata?.rating ?? 0)}
-						></div>
-					{/each}
+				<div class="mini-left">
+					{#if asset.favourited}
+						<div class="mini-favorite">
+							<MaterialIcon iconName="favorite" size="0.75rem" fill={true} />
+						</div>
+					{/if}
+					<div class="mini-rating">
+						{#each Array(5) as _, i (i)}
+							<div
+								class="dot"
+								class:filled={i < (asset.image_metadata?.rating ?? 0)}
+							></div>
+						{/each}
+					</div>
 				</div>
 				{#if asset.image_metadata?.label && asset.image_metadata?.label !== "None"}
 					<div
@@ -161,7 +163,7 @@
 							<ImageLabelViewer
 								label={getImageLabel(asset)}
 								enableSelection={false}
-								variant={"compact"}
+								variant="compact"
 							/>
 						{/if}
 						{#if asset.favourited}
@@ -192,27 +194,16 @@
 		align-items: center;
 		justify-content: center;
 		background-color: var(--viz-90);
-
-		.favorite-badge {
-			position: absolute;
-			top: 1px;
-			right: 1px;
-			color: #df2e69;
-			filter: drop-shadow(0 0 2px rgba(0, 0, 0, 0.8));
-			display: flex;
-			align-items: center;
-			justify-content: center;
-			z-index: 5;
-		}
 	}
 
 	.mini-footer {
-		padding: 0.25rem;
+		padding: var(--viz-spacing-xs);
 		background-color: var(--viz-100);
 		display: flex;
 		flex-direction: column;
-		gap: 2px;
-		border-top: 1px solid var(--viz-90);
+		gap: var(--viz-spacing-xxs);
+		border-top: var(--viz-border-thin);
+		border-top-color: var(--viz-90);
 
 		.mini-filename {
 			font-size: 0.7rem;
@@ -228,14 +219,27 @@
 		.mini-meta {
 			display: flex;
 			align-items: center;
+			justify-content: space-between;
+			gap: var(--viz-spacing-xs);
+			height: 0.75rem;
+		}
+
+		.mini-left {
+			display: flex;
+			align-items: center;
+			gap: var(--viz-spacing-xs);
+		}
+
+		.mini-favorite {
+			display: flex;
+			align-items: center;
 			justify-content: center;
-			gap: 0.4rem;
-			height: 0.5rem;
+			color: var(--viz-error-color);
 		}
 
 		.mini-rating {
 			display: flex;
-			gap: 2px;
+			gap: var(--viz-spacing-xxs);
 
 			.dot {
 				width: 0.25rem;
