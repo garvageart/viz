@@ -496,13 +496,14 @@
 			labelPosition="side"
 			label="Channel"
 			style="font-size: 0.75rem;"
-		>
-			<option value="all">All (RGB)</option>
-			<option value="red">Red</option>
-			<option value="green">Green</option>
-			<option value="blue">Blue</option>
-			<option value="luminance">Luminance</option>
-		</InputSelect>
+			options={[
+				{ value: "all", label: "All (RGB)" },
+				{ value: "red", label: "Red" },
+				{ value: "green", label: "Green" },
+				{ value: "blue", label: "Blue" },
+				{ value: "luminance", label: "Luminance" }
+			]}
+		/>
 
 		<IconButton
 			iconName="refresh"
