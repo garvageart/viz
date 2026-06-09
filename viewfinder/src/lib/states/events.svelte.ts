@@ -1,4 +1,4 @@
-import { createWSConnection, type WSClient } from "$lib/api/websocket";
+import { WSClient } from "$lib/api/websocket";
 import { invalidateViz } from "$lib/views/views.svelte";
 import { debounce } from "$lib/utils/misc";
 import { performSearch } from "$lib/search/execute";
@@ -11,6 +11,7 @@ class EventsState {
     private client: WSClient | null = null;
     connected = $state(false);
     initialized = $state(false);
+    private wasDisconnected = false;
 
     private debouncedInvalidate = debounce(async () => {
         console.debug("[Events] Triggering debounced refresh");
@@ -37,22 +38,33 @@ class EventsState {
 
         console.debug("[Events] Initializing global WebSocket connection");
 
-        this.client = createWSConnection(
-            (event, data) => this.handleEvent(event, data),
-            () => {
+        this.client = new WSClient({
+            onEvent: (event, data) => this.handleEvent(event, data),
+            onError: () => {
+                console.debug("[Events] onError callback, current connected state:", this.connected);
+                if (this.connected) {
+                    this.wasDisconnected = true;
+                    console.debug("[Events] onError marked wasDisconnected = true");
+                }
                 this.connected = false;
                 this.initialized = true;
             },
-            () => {
+            onOpen: () => {
                 this.connected = true;
                 this.initialized = true;
-                console.debug("[Events] Global WebSocket connected");
+                console.debug("[Events] Global WebSocket connected, wasDisconnected is currently:", this.wasDisconnected);
             },
-            () => {
+            onClose: () => {
+                console.debug("[Events] onClose callback, current connected state:", this.connected);
+                if (this.connected) {
+                    this.wasDisconnected = true;
+                    console.debug("[Events] onClose marked wasDisconnected = true");
+                }
                 this.connected = false;
                 this.initialized = true;
-            }
-        );
+            },
+            maxReconnectAttempts: 0 // Retry infinitely so we automatically reconnect when server reboots
+        });
     }
 
     /**
@@ -67,6 +79,7 @@ class EventsState {
     }
 
     private handleEvent(event: string, data: any) {
+        console.debug("[Events] handleEvent received event:", event, "data:", data, "wasDisconnected state:", this.wasDisconnected);
         switch (event) {
             case "collection-created":
             case "collection-updated":
@@ -75,7 +88,15 @@ class EventsState {
                 this.debouncedInvalidate();
                 break;
 
-            // We can add more global event handlers here as needed
+            case "server-online":
+                console.debug("[Events] Server came back online, wasDisconnected:", this.wasDisconnected);
+                if (this.wasDisconnected) {
+                    console.debug("[Events] Reloading page after server came back online...");
+                    if (typeof window !== "undefined") {
+                        window.location.reload();
+                    }
+                }
+                break;
         }
     }
 }

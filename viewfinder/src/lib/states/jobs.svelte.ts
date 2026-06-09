@@ -255,21 +255,23 @@ class JobsState {
             },
             (err) => {
                 console.error("WebSocket error:", err);
+                if (this.connected) {
+                    toastState.addToast({
+                        message: "WebSocket connection error",
+                        type: "error"
+                    });
+                }
                 this.connected = false;
-                toastState.addToast({
-                    message: "WebSocket connection error",
-                    type: "error"
-                });
             },
             () => (this.connected = true),
             (code: number, reason: string) => {
-                this.connected = false;
-                if (code !== 1000 && code !== 1001 && code !== 1005) {
+                if (this.connected && code !== 1000 && code !== 1001 && code !== 1005) {
                     toastState.addToast({
                         message: `WebSocket disconnected (${code}): ${reason}`,
                         type: "error"
                     });
                 }
+                this.connected = false;
             }
         );
     }

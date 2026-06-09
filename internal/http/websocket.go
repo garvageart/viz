@@ -262,6 +262,18 @@ func (b *WSBroker) ServeWS(w http.ResponseWriter, r *http.Request) {
 		client.Send <- data
 	}
 
+	// Send server-online event to indicate the server is online/operational
+	serverOnlineMsg := &WSMessage{
+		Event: "server-online",
+		Data: map[string]interface{}{
+			"message": "Server is online",
+		},
+		ID: 0,
+	}
+	if data, err := json.Marshal(serverOnlineMsg); err == nil {
+		client.Send <- data
+	}
+
 	// Start goroutines for reading and writing
 	go client.writePump()
 	go client.readPump()
