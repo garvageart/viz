@@ -32,17 +32,15 @@ cp .env.example .env
 
 3.  **Start Services**:
 ```bash
-docker compose up --build -d
+docker compose -f docker/docker-compose.yml up --build -d
 ```
 This brings up:
-- **`postgres`**: Database (Port 5432)
-- **`redis`**: Job Queue Broker (Port 6379)
-- **`api`**: Go Backend (Port 7770)
-- **`viz`**: SvelteKit Frontend (Port 7777 - *Note: The API also serves the frontend in production builds, but the dev container runs `pnpm dev` for hot-reloading.*)
+- **`postgres`**: Database (Internal port 5432, not exposed to host by default)
+- **`redis`**: Job Queue Broker (Internal port 6379, not exposed to host by default)
+- **`api`**: Go Backend & Frontend (Exposed on Port 7770)
 
 4.  **Access**:
-    - Frontend: `http://localhost:7777`
-    - API: `http://localhost:7770`
+    - Frontend & API: `http://localhost:7770`
 
 ### Database Note
 The Docker setup uses `docker/initdb/01-create-superuser.sh` to automatically create the Postgres user and database defined in your `.env` file on the first run.

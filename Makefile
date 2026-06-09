@@ -15,12 +15,11 @@ SCRIPTS_DIR := scripts/js
 VIEWFINDER_DIR := viewfinder
 GO_CMD ?= go
 PNPM ?= pnpm
-DOCKER_COMPOSE ?= docker compose
+DOCKER_COMPOSE ?= docker compose -f docker/docker-compose.yml
 BUILDX_CACHE_DIR ?= $(CURDIR)/.buildcache
 
-# Local buildx cache dirs (api/viz)
+# Local buildx cache dirs (api)
 BUILDX_CACHE_API_DIR := $(BUILDX_CACHE_DIR)/api
-BUILDX_CACHE_VIEWFINDER_DIR := $(BUILDX_CACHE_DIR)/viz
 
 # Cache control: when `USE_HOST_CACHE=1` Make will use host-side cache dirs
 # for Go module cache, Go build cache and pnpm store. This preserves fast
@@ -174,25 +173,17 @@ docker-build:
 	@$(DOCKER_COMPOSE) build --parallel
 
 ### Buildx targets (useful to persist cache locally and speed up Go module downloads)
-.PHONY: buildx-api buildx-viz buildx-build
+.PHONY: buildx-api buildx-build
 buildx-api:
 	@echo "Building API image with buildx and local cache ($(BUILDX_CACHE_API_DIR))"
 	@mkdir -p $(BUILDX_CACHE_API_DIR)
 	@docker buildx build --progress=plain \
 		--cache-to=type=local,dest=$(BUILDX_CACHE_API_DIR) \
 		--cache-from=type=local,src=$(BUILDX_CACHE_API_DIR) \
-		-f Dockerfile.api -t viz-api:local --load .
+		-f docker/Dockerfile.api -t viz-api:local --load .
 
-buildx-viz:
-	@echo "Building Viz image with buildx and local cache ($(BUILDX_CACHE_VIEWFINDER_DIR))"
-	@mkdir -p $(BUILDX_CACHE_VIEWFINDER_DIR)
-	@docker buildx build --progress=plain \
-		--cache-to=type=local,dest=$(BUILDX_CACHE_VIEWFINDER_DIR) \
-		--cache-from=type=local,src=$(BUILDX_CACHE_VIEWFINDER_DIR) \
-		-f viz/Dockerfile -t viz-viz:local viz --load
-
-buildx-build: buildx-api buildx-viz
-	@echo "buildx build complete. Use the images 'viz-api:local' and 'viz-viz:local' or tag/push as needed."
+buildx-build: buildx-api
+	@echo "buildx build complete. Use the image 'viz-api:local'."
 
 docker-up:
 	@echo "Starting services with docker-compose..."
@@ -204,16 +195,11 @@ docker-down:
 
 image-api:
 	@echo "Building API image"
-	@docker build -f Dockerfile.api -t $(REGISTRY)/viz-api:$(TAG) .
+	@docker build -f docker/Dockerfile.api -t $(REGISTRY)/viz-api:$(TAG) .
 
-image-viz:
-	@echo "Building Viz image"
-	@docker build -f $(VIEWFINDER_DIR)/Dockerfile -t $(REGISTRY)/viz-viz:$(TAG) $(VIEWFINDER_DIR)
-
-docker-push: image-api image-viz
-	@echo "Pushing images to $(REGISTRY)"
+docker-push: image-api
+	@echo "Pushing image to $(REGISTRY)"
 	@docker push $(REGISTRY)/viz-api:$(TAG)
-	@docker push $(REGISTRY)/viz-viz:$(TAG)
 
 ### Database / Migrations (best-effort)
 migrate:
@@ -271,11 +257,9 @@ ci-build: check-env
 	$(MAKE) generate-types-install USE_HOST_CACHE=0; \
 	# Build API image with buildx (load into local daemon). Adjust cache flags to your CI.
 	if docker buildx version >/dev/null 2>&1; then \
-		docker buildx build --progress=plain --tag $(REGISTRY)/viz-api:$(TAG) -f Dockerfile.api --load .; \
-		docker buildx build --progress=plain --tag $(REGISTRY)/viz-viz:$(TAG) -f viz/Dockerfile --load viz; \
+		docker buildx build --progress=plain --tag $(REGISTRY)/viz-api:$(TAG) -f docker/Dockerfile.api --load .; \
 	else \
-		docker build -f Dockerfile.api -t $(REGISTRY)/viz-api:$(TAG) .; \
-		docker build -f viz/Dockerfile -t $(REGISTRY)/viz-viz:$(TAG) viz; \
+		docker build -f docker/Dockerfile.api -t $(REGISTRY)/viz-api:$(TAG) .; \
 	fi
 
 

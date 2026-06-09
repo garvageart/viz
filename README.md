@@ -38,12 +38,11 @@ cp .env.example .env
 
 #### Run:
 ```bash
-docker compose up --build -d
+docker compose -f docker/docker-compose.yml up --build -d
 ```
 
 #### Use:
-    - Frontend: `http://localhost:7777`
-    - API: `http://localhost:7770`
+    - Frontend & API: `http://localhost:7770`
 
 See [**docs/BUILDING.md**](./docs/BUILDING.md) for detailed setup instructions, including **Manual/Non-Docker** development guides (Windows/Linux/macOS).
 

@@ -27,9 +27,9 @@ services:
     env_file:
       - ../.env
     environment:
-      - POSTGRES_USER=${POSTGRES_USER:-postgres}
-      - POSTGRES_PASSWORD=${POSTGRES_PASSWORD:-postgres}
-      - POSTGRES_DB=${POSTGRES_DB:-viz}
+      - POSTGRES_USER=${DB_USER:-postgres}
+      - POSTGRES_PASSWORD=${DB_PASSWORD:-postgres}
+      - POSTGRES_DB=${DB_NAME:-viz}
     volumes:
       - viz-db-data:/var/lib/postgresql/data
       - ./initdb:/docker-entrypoint-initdb.d
@@ -37,7 +37,7 @@ services:
       test:
         [
           "CMD-SHELL",
-          "pg_isready -U $${POSTGRES_USER:-postgres} -d $${POSTGRES_DB:-viz}"
+          "pg_isready -U $${DB_USER:-postgres} -d $${DB_NAME:-viz}"
         ]
       interval: 10s
       timeout: 5s
