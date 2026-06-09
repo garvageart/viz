@@ -89,16 +89,19 @@ export function calculateZoomTo(options: {
     const mx = clientX - zoomTargetRect.left;
     const my = clientY - zoomTargetRect.top;
 
-    // Map screen coordinate to the unscaled layout coordinate of the image
-    const px = (mx - currentPositionX) / currentZoom;
-    const py = (my - currentPositionY) / currentZoom;
+    // Map screen coordinate to the unscaled layout coordinate of the image.
+    // Since zoomTargetRect moves with currentPosition, mx/my are already relative
+    // to the translated position.
+    const px = mx / currentZoom;
+    const py = my / currentZoom;
 
     // Clamp zoom factor between 1.0 and 4.0
     const nextZoom = Math.max(1, Math.min(newZoom, 4));
 
-    // Calculate translations targeting the mapped coordinate under the new zoom
-    const nextTx = mx - px * nextZoom;
-    const nextTy = my - py * nextZoom;
+    // Calculate translations targeting the mapped coordinate under the new zoom.
+    // We add the current translation to offset the movement of the zoomTargetRect.
+    const nextTx = mx + currentPositionX - px * nextZoom;
+    const nextTy = my + currentPositionY - py * nextZoom;
 
     // Apply viewport boundaries
     const constrained = constrainTranslation(nextTx, nextTy, nextZoom, viewport, image);

@@ -134,10 +134,27 @@
     const handleWheel: WheelEventHandler<HTMLDivElement> = (event) => {
         event.preventDefault();
 
+        // Normalize deltaY to pixels across different browsers and devices
+        let dy = event.deltaY;
+        if (event.deltaMode === 1) {
+            // DOM_DELTA_LINE
+            dy *= 33.3;
+        } else if (event.deltaMode === 2) {
+            // DOM_DELTA_PAGE
+            dy *= 800;
+        }
+
+        // Limit the maximum delta per event to prevent huge jumps from fast scrolling
+        dy = Math.max(-150, Math.min(dy, 150));
+
         // scroll zoom feel: Zoom ratio proportional to current zoom. Similar to Capture One/Lightroom
-        const zoomFactor = 0.15;
-        const direction = event.deltaY < 0 ? 1 : -1;
-        const newZoom = zoomState.currentZoom + direction * zoomFactor * zoomState.currentZoom;
+        // We use exponential zoom scaling to make trackpad and smooth scrolling feel natural and controllable.
+        // Touchpad two-finger pinch-to-zoom has event.ctrlKey === true and uses a different zoom intensity
+        // than standard scroll wheel zooming.
+        const isPinch = event.ctrlKey;
+        const zoomIntensity = isPinch ? 0.015 : 0.0022;
+        const factor = Math.exp(-dy * zoomIntensity);
+        const newZoom = zoomState.currentZoom * factor;
         
         zoomTo(newZoom, event.clientX, event.clientY);
     };

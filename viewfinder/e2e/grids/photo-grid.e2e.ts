@@ -335,5 +335,59 @@ test.describe('PhotoAssetGrid Functionality', () => {
         currentScroll = await container.evaluate((el) => el.scrollTop);
         expect(Math.abs(currentScroll - initialScroll)).toBeLessThan(2);
     });
+
+    test('should support zooming in the lightbox using mouse wheel and trackpad pinch', async ({ page }) => {
+        const photos = page.locator('.asset-photo');
+        await expect(async () => {
+            const count = await photos.count();
+            expect(count).toBeGreaterThan(0);
+        }).toPass({ timeout: 10000 });
+
+        // Open Lightbox
+        await photos.first().dblclick();
+        const lightbox = page.locator('#viz-lightbox-overlay');
+        await expect(lightbox).toBeVisible();
+
+        const zoomTarget = lightbox.locator('.zoom-target');
+        await expect(zoomTarget).toBeVisible();
+
+        // 1. Initial scale should be 1.0 (unzoomed)
+        let style = await zoomTarget.getAttribute('style');
+        expect(style).toContain('scale(1)');
+
+        // 2. Zoom in using mouse wheel (deltaY: -120, ctrlKey: false)
+        await zoomTarget.dispatchEvent('wheel', {
+            deltaY: -120,
+            clientX: 300,
+            clientY: 225,
+            ctrlKey: false
+        });
+
+        // Verify scale increases above 1.0
+        style = await zoomTarget.getAttribute('style');
+        let scaleMatch = style?.match(/scale\(([\d.]+)\)/);
+        let scaleVal = scaleMatch ? parseFloat(scaleMatch[1]) : 1.0;
+        expect(scaleVal).toBeGreaterThan(1.0);
+        const mouseWheelZoomScale = scaleVal;
+
+        // 3. Zoom in further using trackpad pinch (deltaY: -10, ctrlKey: true)
+        await zoomTarget.dispatchEvent('wheel', {
+            deltaY: -10,
+            clientX: 300,
+            clientY: 225,
+            ctrlKey: true
+        });
+
+        // Verify scale increases further
+        style = await zoomTarget.getAttribute('style');
+        scaleMatch = style?.match(/scale\(([\d.]+)\)/);
+        scaleVal = scaleMatch ? parseFloat(scaleMatch[1]) : 1.0;
+        expect(scaleVal).toBeGreaterThan(mouseWheelZoomScale);
+
+        // 4. Double click to zoom out / reset
+        await lightbox.locator('.lightbox-image.main').dblclick({ force: true });
+        style = await zoomTarget.getAttribute('style');
+        expect(style).toContain('scale(1)');
+    });
 });
 
