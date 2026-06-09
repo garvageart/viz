@@ -15,7 +15,7 @@ SCRIPTS_DIR := scripts/js
 VIEWFINDER_DIR := viewfinder
 GO_CMD ?= go
 PNPM ?= pnpm
-DOCKER_COMPOSE ?= docker compose -f docker/docker-compose.yml
+DOCKER_COMPOSE ?= docker compose -f docker/docker-compose.yml --project-directory .
 BUILDX_CACHE_DIR ?= $(CURDIR)/.buildcache
 
 # Local buildx cache dirs (api)
