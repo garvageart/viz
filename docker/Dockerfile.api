@@ -66,7 +66,7 @@ RUN go mod download
 COPY . .
 
 # Build backend
-RUN go build -o /app/api ./cmd/api
+RUN go build -o /app/viz-api ./cmd/api
 
 # Stage 3: Final Production Image
 FROM debian:bookworm-slim
@@ -89,7 +89,7 @@ RUN ldconfig
 WORKDIR /app
 
 # Copy binary from backend-builder
-COPY --from=backend-builder /app/api /app/api
+COPY --from=backend-builder /app/viz-api /app/viz-api
 
 # Copy built frontend from frontend-builder
 COPY --from=frontend-builder /app/build/viewfinder /app/frontend
@@ -103,4 +103,4 @@ ENV BASE_DIRECTORY=/app/var
 EXPOSE 7770
 
 # Start the application
-CMD ["/app/api"]
+CMD ["/app/viz-api"]
