@@ -82,6 +82,15 @@ func NewWSBroker(logger *slog.Logger) *WSBroker {
 					return true // Allow non-browser clients (like mobile apps)
 				}
 
+				// Allow same-origin connections (Origin matches Request Host)
+				originWithoutScheme := origin
+				if idx := strings.Index(origin, "://"); idx != -1 {
+					originWithoutScheme = origin[idx+3:]
+				}
+				if strings.EqualFold(originWithoutScheme, r.Host) {
+					return true
+				}
+
 				allowedOrigins := os.Getenv("ALLOWED_ORIGINS")
 				if allowedOrigins == "" {
 					return false // Fail safe if no origins configured
