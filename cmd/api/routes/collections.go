@@ -377,15 +377,9 @@ func CollectionsRouter(db *gorm.DB, logger *slog.Logger, wsBroker *libhttp.WSBro
 			}
 
 			if !libhttp.IsAdminFromRequest(req) {
-				if !libhttp.IsAdminFromRequest(req) {
-					if !libhttp.IsAdminFromRequest(req) {
-						if !libhttp.IsAdminFromRequest(req) {
-							authUser, ok := libhttp.UserFromContext(req)
-							if !ok || !isAuthorizedToModifyCollection(authUser, collection) {
-								return ErrCollectionUnauthorised
-							}
-						}
-					}
+				authUser, ok := libhttp.UserFromContext(req)
+				if !ok || !isAuthorizedToModifyCollection(authUser, collection) {
+					return ErrCollectionUnauthorised
 				}
 			}
 
