@@ -88,8 +88,9 @@ RUN ldconfig
 
 WORKDIR /app
 
-# Copy binary from backend-builder
+# Copy binary and version file from backend-builder
 COPY --from=backend-builder /app/viz-api /app/viz-api
+COPY --from=backend-builder /app/version.txt /app/version.txt
 
 # Copy built frontend from frontend-builder
 COPY --from=frontend-builder /app/build/viewfinder /app/frontend
