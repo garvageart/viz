@@ -1,4 +1,4 @@
-#!/bin/bash
+#!/bin/sh
 set -euo pipefail
 
 # This script runs during Postgres container initialization (first time only).
