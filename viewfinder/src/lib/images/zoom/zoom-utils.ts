@@ -95,8 +95,8 @@ export function calculateZoomTo(options: {
     const px = mx / currentZoom;
     const py = my / currentZoom;
 
-    // Clamp zoom factor between 1.0 and 4.0
-    const nextZoom = Math.max(1, Math.min(newZoom, 4));
+    // Clamp zoom factor between 1.0 and 16.0
+    const nextZoom = Math.max(1, Math.min(newZoom, 16));
 
     // Calculate translations targeting the mapped coordinate under the new zoom.
     // We add the current translation to offset the movement of the zoomTargetRect.

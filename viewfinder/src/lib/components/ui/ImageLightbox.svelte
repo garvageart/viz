@@ -24,6 +24,7 @@
     import Lightbox from "./Lightbox.svelte";
     import MaterialIcon from "./MaterialIcon.svelte";
     import { dev } from "$app/environment";
+    import { ImageLoader } from "$lib/images/loader/image-loader.svelte";
 
     interface Props {
         lightboxImage: ImageAsset | undefined;
@@ -49,35 +50,12 @@
             : ""
     );
 
-    // Crop State
-    let isCropping = $state(false);
-    let cropAspectRatio = $state<number | null>(null);
-    let currentCrop = $state<{
-        x: number;
-        y: number;
-        width: number;
-        height: number;
-    } | null>(null);
-    let cropMenuPosition = $state<{ x: number; y: number } | null>(null);
-    // Store crop edits (original/natural coordinates) to restore them when re-entering crop mode
-    let cropEdits = $state<
-        Record<string, { x: number; y: number; width: number; height: number }>
-    >({});
-
-    let overriddenImages = $state<Record<string, string>>({});
-    let displayURL = $derived(
-        lightboxImage?.uid && overriddenImages[lightboxImage.uid] && !isCropping
-            ? overriddenImages[lightboxImage.uid]
-            : imageToLoad
-    );
-
-    let direction = $state<"left" | "right">("right");
-    let showMetadata = $state(true);
-    let editNameMode = $state(false);
-
+    // Element Bindings
     let imageEl: HTMLImageElement = $state()!;
     let canvasEl: HTMLCanvasElement = $state()!;
     let imageContainerEl: HTMLDivElement = $state()!;
+    let zoomTargetEl: HTMLDivElement = $state()!;
+    let showImageStateDebugPanel = $state(false);
 
     class ImageZoomState {
         currentZoom = $state(1);
@@ -85,8 +63,6 @@
         currentPositionY = $state(0);
         currentRotation = $state(0);
     }
-
-    let zoomTargetEl: HTMLDivElement = $state()!;
 
     let zoomState = $derived.by(() => {
         lightboxImage?.uid;
@@ -108,8 +84,117 @@
         ty: 0
     };
 
+    // Crop State
+    let isCropping = $state(false);
+    let cropAspectRatio = $state<number | null>(null);
+    let currentCrop = $state<{
+        x: number;
+        y: number;
+        width: number;
+        height: number;
+    } | null>(null);
+    let cropMenuPosition = $state<{ x: number; y: number } | null>(null);
+
+    // Store crop edits (original/natural coordinates) to restore them when re-entering crop mode
+    let cropEdits = $state<
+        Record<string, { x: number; y: number; width: number; height: number }>
+    >({});
+
+    let overriddenImages = $state<Record<string, string>>({});
+
+    const loader = new ImageLoader({
+        get lightboxImage() { return lightboxImage; },
+        get overriddenImages() { return overriddenImages; },
+        get isCropping() { return isCropping; },
+        get currentZoom() { return zoomState.currentZoom; },
+        get imageToLoad() { return imageToLoad; },
+        resetZoom() {
+            zoomState.currentZoom = 1;
+            zoomState.currentPositionX = 0;
+            zoomState.currentPositionY = 0;
+        },
+        updateImageDimensions() {
+            updateImageDimensions();
+        },
+        restoreCrop() {
+            restoreCrop();
+        }
+    });
+
+    // Reset zoomed URL and load states when image changes or is closed
+    $effect(() => {
+        const uid = lightboxImage?.uid;
+        untrack(() => {
+            loader.reset(uid);
+            imageDimensions = null;
+        });
+    });
+
+    $effect(() => {
+        const currentImage = lightboxImage;
+        if (!currentImage?.uid) {
+            return;
+        }
+
+        const currentZoom = zoomState.currentZoom;
+        const originalPath = currentImage.image_paths?.original;
+
+        if (currentZoom <= 1 || !originalPath) {
+            return;
+        }
+
+        // Debounce the resolution upgrade so we don't spam requests during active zooming
+        const timeoutId = setTimeout(() => {
+            const containerWidth = imageContainerEl?.clientWidth || 1920;
+            const containerHeight = imageContainerEl?.clientHeight || 1080;
+            const containerLongestEdge = Math.max(containerWidth, containerHeight);
+            
+            // Snap the zoom factor to discrete steps to prevent intermediate spammed requests during pinch/scroll
+            const snappedZoom = currentZoom > 10.0 ? 16.0
+                              : currentZoom > 5.0  ? 8.0
+                              : currentZoom > 2.5  ? 4.0
+                              : 2.0;
+
+            const targetSize = Math.round(containerLongestEdge * snappedZoom);
+            
+            // Snap to the next multiple of 256px to maximize cache hits on resizes/monitor variances
+            const snappedSize = Math.ceil(targetSize / 256) * 256;
+            
+            // Clamp to the image's original longest edge
+            const originalLongestEdge = Math.max(currentImage.width || 0, currentImage.height || 0);
+            const size = Math.min(originalLongestEdge, snappedSize);
+
+            // Request both w and h to let the backend scale the longest edge to `size`
+            const transformParams = `?w=${size}&h=${size}&quality=90&format=webp`;
+            const fullURL = getFullImagePath(originalPath + transformParams);
+
+            if (loader.zoomedImageURL === fullURL) {
+                return;
+            }
+
+            loader.triggerZoomUpgrade(fullURL);
+
+            // Load high-resolution image in background to avoid flicker
+            const preloadImg = new Image();
+            preloadImg.onload = () => {
+                loader.completeZoomUpgrade(fullURL);
+            };
+            preloadImg.src = fullURL;
+        }, 300);
+
+        return () => {
+            clearTimeout(timeoutId);
+        };
+    });
+
+    let direction = $state<"left" | "right">("right");
+    let showMetadata = $state(true);
+    let editNameMode = $state(false);
+
     function zoomTo(newZoom: number, clientX: number, clientY: number) {
-        if (!imageDimensions || !imageContainerEl || !zoomTargetEl) return;
+        if (!imageDimensions || !imageContainerEl || !zoomTargetEl) {
+            return;
+        }
 
         const result = calculateZoomTo({
             currentZoom: zoomState.currentZoom,
@@ -161,7 +246,9 @@
 
     const handleDoubleClick: MouseEventHandler<HTMLDivElement> = (event) => {
         event.stopPropagation();
-        if (isCropping) return;
+        if (isCropping) {
+            return;
+        }
 
         if (zoomState.currentZoom > 1) {
             // Zoom out to 1
@@ -175,7 +262,9 @@
     };
 
     const handlePointerDown: PointerEventHandler<HTMLDivElement> = (event) => {
-        if (event.button !== 0 || zoomState.currentZoom <= 1) return;
+        if (event.button !== 0 || zoomState.currentZoom <= 1) {
+            return;
+        }
 
         isDragging = true;
         wasDragging = false;
@@ -188,7 +277,9 @@
     };
 
     const handlePointerMove: PointerEventHandler<HTMLDivElement> = (event) => {
-        if (!isDragging || !imageDimensions || !imageContainerEl) return;
+        if (!isDragging || !imageDimensions || !imageContainerEl) {
+            return;
+        }
 
         const dx = event.clientX - dragStart.mouseX;
         const dy = event.clientY - dragStart.mouseY;
@@ -524,33 +615,6 @@
             cropMenuPosition = { x: e.clientX, y: e.clientY };
         }
     };
-
-    let loadState = $state<"loading" | "loaded" | "error">("loading");
-
-    $effect(() => {
-        if (displayURL) {
-            let active = true;
-            loadState = "loading";
-
-            const img = new Image();
-            img.onload = () => {
-                if (active) {
-                    loadState = "loaded";
-                }
-            };
-
-            img.onerror = () => {
-                if (active) {
-                    loadState = "error";
-                }
-            };
-
-            img.src = displayURL;
-            return () => {
-                active = false;
-            };
-        }
-    });
 
     let starRating = $derived<number | null>(
         lightboxImage?.image_metadata?.rating ?? null
@@ -1001,14 +1065,20 @@
                             class="lightbox-button-icon"
                             hoverColor="transparent"
                             style={lightboxMaterialIconColour}
-                            title="Show Placeholder"
+                            title="Toggle Placeholder"
                             iconName="blur_linear"
                             onclick={() => {
-                                if (loadState === "loaded") {
-                                    loadState = "loading";
-                                } else {
-                                    loadState = "loaded";
-                                }
+                                loader.initialImageLoaded = !loader.initialImageLoaded;
+                            }}
+                        />
+                        <IconButton
+                            class="lightbox-button-icon"
+                            hoverColor="transparent"
+                            style={lightboxMaterialIconColour}
+                            title="Toggle Zoom & Image State Debug"
+                            iconName="report"
+                            onclick={() => {
+                                showImageStateDebugPanel = !showImageStateDebugPanel;
                             }}
                         />
                     {/if}
@@ -1058,6 +1128,69 @@
                     }
                 }}
             >
+                {#if dev && showImageStateDebugPanel}
+                    <div class="lightbox-debug-panel">
+                        <h3>Zoom & Loader State</h3>
+                        <div class="debug-grid">
+                            <span class="debug-label">Initial Load:</span>
+                            <span class="debug-val" class:loaded={loader.initialImageLoaded}>
+                                {loader.initialImageLoaded ? "Loaded" : "Loading"}
+                            </span>
+
+                            <span class="debug-label">Load State:</span>
+                            <span class="debug-val" class:loaded-state={loader.loadState === "loaded"} class:loading-state={loader.loadState === "loading"} class:error-state={loader.loadState === "error"}>
+                                {loader.loadState}
+                            </span>
+
+                            <span class="debug-label">UID:</span>
+                            <span class="debug-val mono">
+                                {lightboxImage?.uid || "none"}
+                            </span>
+
+                            <span class="debug-label">Last UID:</span>
+                            <span class="debug-val mono">
+                                {loader.lastLoadedImageUid || "none"}
+                            </span>
+
+                            <span class="debug-label">Current Zoom:</span>
+                            <span class="debug-val">
+                                {zoomState.currentZoom.toFixed(4)}x ({Math.round(zoomState.currentZoom * 100)}%)
+                            </span>
+
+                            <span class="debug-label">Coords:</span>
+                            <span class="debug-val mono">
+                                X: {Math.round(zoomState.currentPositionX)}px, Y: {Math.round(zoomState.currentPositionY)}px
+                            </span>
+
+                            <span class="debug-label">Display URL:</span>
+                            <span class="debug-val url" title={loader.displayURL}>
+                                {loader.displayURL ? loader.displayURL.substring(loader.displayURL.lastIndexOf('/') + 1) : "none"}
+                            </span>
+
+                            <span class="debug-label">Zoomed URL:</span>
+                            <span class="debug-val url" title={loader.zoomedImageURL}>
+                                {loader.zoomedImageURL ? loader.zoomedImageURL.substring(loader.zoomedImageURL.lastIndexOf('/') + 1) : "none"}
+                            </span>
+
+                            <span class="debug-label">Fetch Type:</span>
+                            <span class="debug-val mono">
+                                {loader.fetchType}
+                            </span>
+
+                            <span class="debug-label">Fetch Status:</span>
+                            <span class="debug-val" class:loaded-state={loader.fetchEndTime !== null} class:loading-state={loader.fetchStartTime !== null && loader.fetchEndTime === null}>
+                                {loader.fetchEndTime !== null 
+                                    ? `Completed (${loader.fetchDuration}ms)` 
+                                    : (loader.fetchStartTime !== null ? "Pending" : "Idle")}
+                            </span>
+
+                            <span class="debug-label">Fetch URL:</span>
+                            <span class="debug-val url" title={loader.currentFetchURL}>
+                                {loader.currentFetchURL ? loader.currentFetchURL.substring(loader.currentFetchURL.lastIndexOf('/') + 1) : "none"}
+                            </span>
+                        </div>
+                    </div>
+                {/if}
                 <div
                     class="zoom-target"
                     class:is-crop={isCropping}
@@ -1085,30 +1218,23 @@
                 >
                     <img
                         bind:this={imageEl}
-                        src={displayURL}
+                        src={loader.displayURL}
                         class="lightbox-image main {isCropping
                             ? 'is-crop'
                             : ''}"
-                        class:loading={loadState !== "loaded"}
+                        class:loading={!loader.initialImageLoaded}
                         alt={lightboxImage!.name}
                         title={lightboxImage!.name}
                         loading="eager"
                         crossorigin="use-credentials"
                         data-image-id={lightboxImage!.uid}
-                        onload={() => {
-                            zoomState.currentZoom = 1;
-                            zoomState.currentPositionX = 0;
-                            zoomState.currentPositionY = 0;
-                            updateImageDimensions();
-                            if (isCropping) {
-                                restoreCrop();
-                            }
-                        }}
+                        onload={() => loader.handleLoad()}
+                        onerror={() => loader.handleError()}
                         ondragstart={(e) => e.preventDefault()}
                         oncontextmenu={handleContextMenu}
                     />
 
-                    {#if thumbhashURL && loadState !== "loaded"}
+                    {#if thumbhashURL && !loader.initialImageLoaded}
                         <img
                             src={thumbhashURL}
                             class="lightbox-image placeholder"
@@ -1128,6 +1254,12 @@
                         />
                     {/if}
                 </div>
+
+                {#if zoomState.currentZoom > 1}
+                    <div class="zoom-indicator-badge">
+                        Zoom: {Math.round(zoomState.currentZoom * 100)}%
+                    </div>
+                {/if}
             </div>
 
             {#if prevLightboxImage && nextLightboxImage && !isCropping}
@@ -1235,8 +1367,10 @@
         align-items: center;
         justify-content: center;
         padding: 0.25em;
-        background: transparent;
+        background: transparent !important;
         border: none;
+        opacity: 1;
+        transition: opacity 150ms ease;
 
         :global(span) {
             color: var(--viz-10-dark) !important;
@@ -1249,7 +1383,14 @@
         -webkit-filter: drop-shadow(0 8px 22px rgba(0, 0, 0, 1))
             drop-shadow(0 2px 6px rgba(0, 0, 0, 1))
             drop-shadow(0 2px 6px rgba(0, 0, 0, 0.1));
-        will-change: filter;
+        will-change: filter, opacity;
+    }
+
+    :global(.lightbox-button-icon:hover:not(:disabled)) {
+        background-color: transparent !important;
+        border-color: transparent !important;
+        box-shadow: none !important;
+        opacity: 0.75 !important;
     }
 
     .image-wrapper {
@@ -1446,10 +1587,94 @@
         align-items: center;
         gap: 0.5em;
     }
+
     .zoom-target.can-pan {
         cursor: grab;
     }
+
     .zoom-target.is-panning {
         cursor: grabbing;
+    }
+    
+    .zoom-indicator-badge {
+        position: absolute;
+        bottom: var(--viz-spacing-lg);
+        left: 50%;
+        transform: translateX(-50%);
+        background-color: rgba(0, 0, 0, 0.75);
+        color: var(--viz-10-dark);
+        padding: var(--viz-spacing-sm) var(--viz-spacing-lg);
+        border-radius: 0;
+        font-family: var(--viz-mono-font);
+        font-size: var(--viz-font-size-sm);
+        font-weight: 600;
+        letter-spacing: 0.05em;
+        z-index: 10;
+        pointer-events: none;
+        backdrop-filter: blur(4px);
+        border: 1px solid rgba(255, 255, 255, 0.1);
+        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.25);
+    }
+
+    .lightbox-debug-panel {
+        position: absolute;
+        top: var(--viz-spacing-std);
+        left: var(--viz-spacing-std);
+        background: var(--viz-95);
+        border: var(--viz-border-thin);
+        border-radius: var(--viz-border-radius-md);
+        padding: var(--viz-spacing-md);
+        z-index: 100;
+        font-family: var(--viz-mono-font);
+        font-size: var(--viz-font-size-xs);
+        color: var(--viz-text-color);
+        max-width: 20rem;
+        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.25);
+        pointer-events: auto;
+
+        h3 {
+            margin: 0 0 var(--viz-spacing-sm) 0;
+            font-size: var(--viz-font-size-sm);
+            font-weight: 600;
+            border-bottom: var(--viz-border-thin);
+            padding-bottom: var(--viz-spacing-xs);
+        }
+
+        .debug-grid {
+            display: grid;
+            grid-template-columns: auto 1fr;
+            gap: var(--viz-spacing-xs) var(--viz-spacing-sm);
+        }
+
+        .debug-label {
+            color: var(--viz-40);
+            font-weight: 500;
+        }
+
+        .debug-val {
+            font-weight: 600;
+            word-break: break-all;
+
+            &.loaded, &.loaded-state {
+                color: var(--viz-success-color);
+            }
+
+            &.loading-state {
+                color: var(--viz-info-color);
+            }
+
+            &.error-state {
+                color: var(--viz-error-color);
+            }
+
+            &.mono {
+                color: var(--viz-30);
+            }
+
+            &.url {
+                font-size: 0.7rem;
+                color: var(--viz-30);
+            }
+        }
     }
 </style>
