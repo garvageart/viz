@@ -50,7 +50,8 @@ RUN set -eux; \
     ninja -C build; \
     ninja -C build install; \
     rm -rf /tmp/build; \
-    ldconfig || true
+    ldconfig || true; \
+    mkdir -p /vips-libs && cp -d /usr/lib/libvips.so* /usr/lib/*-linux-gnu/libvips.so* /vips-libs/ 2>/dev/null || true
 
 WORKDIR /app
 
@@ -77,9 +78,13 @@ RUN apt-get update && \
     libwebp7 libheif1 libopenexr-3-1-30 liborc-0.4-0 libgirepository-1.0-1 \
     libxml2 libexif12 libpoppler-glib8 libgsf-1-114 libopenjp2-7 \
     libjxl0.7 libimagequant0 libarchive13 librsvg2-2 libopenslide0 libmatio11 \
-    libcfitsio10 libcgif0 libmagickwand-6.q16-7 libraw23 libnifti2 \
+    libcfitsio10 libcgif0 libmagickwand-6.q16-6 libraw20 libnifti2-2 \
     ca-certificates && \
     rm -rf /var/lib/apt/lists/*
+
+# Copy libvips from backend-builder
+COPY --from=backend-builder /vips-libs/ /usr/lib/
+RUN ldconfig
 
 WORKDIR /app
 
