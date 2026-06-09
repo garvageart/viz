@@ -16,6 +16,7 @@ services:
     environment:
       - DB_HOST=db
       - REDIS_HOST=redis
+      - ENV=production
     volumes:
       - viz-data:/app/var
     networks:
