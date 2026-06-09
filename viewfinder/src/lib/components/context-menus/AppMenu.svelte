@@ -22,6 +22,12 @@
 				label: "Events",
 				icon: "event",
 				action: () => goto("/admin/events")
+			},
+			{
+				id: "admin-cache",
+				label: "Cache",
+				icon: "cached",
+				action: () => goto("/admin/cache")
 			}
 		]
 	};

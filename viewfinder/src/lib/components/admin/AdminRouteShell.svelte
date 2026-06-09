@@ -13,7 +13,7 @@
 	<header class="page-header">
 		<div class="route-info">
 			<h1>{heading}</h1>
-			<p class="description">{description}</p>
+			<span class="description">{description}</span>
 		</div>
 		{#if actions}
 			<div class="page-actions">
@@ -52,6 +52,7 @@
 		}
 
 		.description {
+			display: block;
 			margin: 0.25rem 0 0 0;
 			color: var(--viz-40);
 			font-size: 0.95rem;
