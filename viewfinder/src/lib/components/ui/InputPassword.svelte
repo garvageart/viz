@@ -119,6 +119,7 @@
 	}
 
 	input {
+		box-sizing: border-box;
 		width: 100%;
 		max-width: 100%;
 		min-height: 2.5rem; // Standard density height
