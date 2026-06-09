@@ -10,6 +10,7 @@ import (
 	"path/filepath"
 	"sort"
 	"strings"
+	"sync/atomic"
 	"time"
 
 	"gorm.io/gorm"
@@ -143,6 +144,21 @@ func PurgeTransformsForUID(uid string) error {
 	return os.RemoveAll(dir)
 }
 
+var (
+	cacheHits   uint64
+	cacheMisses uint64
+)
+
+// IncrementCacheHits atomically increments the server-side cache hits count.
+func IncrementCacheHits() {
+	atomic.AddUint64(&cacheHits, 1)
+}
+
+// IncrementCacheMisses atomically increments the server-side cache misses count.
+func IncrementCacheMisses() {
+	atomic.AddUint64(&cacheMisses, 1)
+}
+
 // GetCacheStatus calculates and returns the current status of the image transform cache.
 func GetCacheStatus() (dto.CacheStatusResponse, error) {
 	var totalSize int64
@@ -195,24 +211,27 @@ func GetCacheStatus() (dto.CacheStatusResponse, error) {
 		}
 	}
 
-	// For now, hits and misses are not tracked.
-	// If tracking is implemented, update these values.
+	hits := atomic.LoadUint64(&cacheHits)
+	misses := atomic.LoadUint64(&cacheMisses)
 	var hitRatio float64
-	if totalItems > 0 {
-		hitRatio = float64(0) / float64(totalItems) // Placeholder
+	if hits+misses > 0 {
+		hitRatio = float64(hits) / float64(hits+misses)
 	}
 
 	return dto.CacheStatusResponse{
 		Size:     int(totalSize),
 		Items:    int(totalItems),
-		Hits:     0,
-		Misses:   0,
+		Hits:     int(hits),
+		Misses:   int(misses),
 		HitRatio: float32(hitRatio),
 	}, nil
 }
 
 // ClearCache removes all cached transform files.
 func ClearCache(logger *slog.Logger) error {
+	atomic.StoreUint64(&cacheHits, 0)
+	atomic.StoreUint64(&cacheMisses, 0)
+
 	entries, err := os.ReadDir(Directory)
 	if err != nil {
 		return fmt.Errorf("failed to read images directory: %w", err)

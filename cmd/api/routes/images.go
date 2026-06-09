@@ -1062,6 +1062,7 @@ func serveTransformedImage(res http.ResponseWriter, req *http.Request, logger *s
 
 	if err == nil {
 		// Cache HIT: Serve the cached file
+		images.IncrementCacheHits()
 		logger.Debug("server-side cache hit", slog.String("key", cacheKey))
 		res.Header().Set("Etag", transformETag)
 		res.Header().Set("Last-Modified", imgEnt.UpdatedAt.UTC().Format(http.TimeFormat))
@@ -1093,6 +1094,7 @@ func serveTransformedImage(res http.ResponseWriter, req *http.Request, logger *s
 
 	// 5b. If not permanent, generate on-the-fly
 	logger.Info("server-side cache miss, generating on-demand transform", slog.String("key", cacheKey))
+	images.IncrementCacheMisses()
 	originalData, err := images.ReadImage(imgEnt.Uid, imgEnt.ImageMetadata.FileName)
 	if err != nil {
 		logger.Error("failed to read original for transform", slog.Any("error", err))
