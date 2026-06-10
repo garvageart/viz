@@ -16,6 +16,10 @@
 	import { dev } from "$app/environment";
 	import { afterNavigate, beforeNavigate } from "$app/navigation";
 
+	if (dev) {
+		import("material-symbols/index.css");
+	}
+
 	import NavigationProgressBar from "$lib/components/ui/NavigationProgressBar.svelte";
 	import ModalRenderer from "$lib/components/modals/ModalContainer.svelte";
 	import Notifications from "$lib/toast-notifcations/Notifications.svelte";

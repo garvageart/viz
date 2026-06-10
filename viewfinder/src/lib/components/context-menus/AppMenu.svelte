@@ -78,9 +78,4 @@
 	offsetY={4}
 />
 
-<style lang="scss">
-	:global(.app-menu) {
-		font-size: var(--viz-font-size-md) !important;
-	}
-</style>
 
