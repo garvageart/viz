@@ -244,14 +244,51 @@ ${sortedNames.map(n => `    | "${n}"`).join('\n')};
 }
 
 /**
+ * Loads the list of valid Material Symbols from the generated MaterialSymbol.ts file.
+ * @returns {Set<string>|null}
+ */
+function loadValidSymbols () {
+    const path = join(SRC, 'lib/types/MaterialSymbol.ts');
+    if (!existsSync(path)) return null;
+    try {
+        const content = readFileSync(path, 'utf8');
+        const matches = content.match(/"([^"]+)"/g);
+        if (!matches) return null;
+        return new Set(matches.map(m => m.slice(1, -1)));
+    } catch (e) {
+        return null;
+    }
+}
+
+/**
  * Scan source files for `iconName` usages, fetch matching SVGs and
  * generate Svelte components under `src/lib/components/icons/generated/`.
  * @returns {Promise<void>}
  */
 async function main () {
-    // 1. Fetch codepoints and update types
-    const validIcons = await fetchCodepoints();
-    generateTypeDefinition(validIcons);
+    const force = process.argv.includes('--force');
+
+    // 1. Fetch codepoints and update types if forced or file doesn't exist
+    const typeDefPath = join(SRC, 'lib/types/MaterialSymbol.ts');
+    if (!existsSync(typeDefPath) || force) {
+        const validIcons = await fetchCodepoints();
+        generateTypeDefinition(validIcons);
+    } else {
+        console.log('MaterialSymbol.ts already exists, skipping codepoints fetch. (Use --force to update)');
+    }
+
+    const validSymbols = loadValidSymbols();
+
+    const failedCachePath = join(__dirname, 'failed-icons.json');
+    let failedCache = {};
+    let failedCacheChanged = false;
+    if (existsSync(failedCachePath) && !force) {
+        try {
+            failedCache = JSON.parse(readFileSync(failedCachePath, 'utf8'));
+        } catch (e) {
+            failedCache = {};
+        }
+    }
 
     // gather candidate icon names from source - look for iconName="..." or iconName={'...'}
     // Use forward-slash patterns so glob works reliably on Windows.
@@ -269,6 +306,14 @@ async function main () {
     const reNameSingle = /iconName\s*=\s*'([a-zA-Z0-9_\- ]+)'/g;
     const reNameExpr = /iconName\s*=\s*{\s*"([a-zA-Z0-9_\- ]+)"\s*}/g;
     const reNameObj = /iconName\s*:\s*"([a-zA-Z0-9_\- ]+)"/g; // object literal
+    const reNameObjSingle = /iconName\s*:\s*'([a-zA-Z0-9_\- ]+)'/g;
+
+    // Icon property detection
+    const reIconDouble = /icon\s*=\s*"([a-zA-Z0-9_\- ]+)"/g;
+    const reIconSingle = /icon\s*=\s*'([a-zA-Z0-9_\- ]+)'/g;
+    const reIconExpr = /icon\s*=\s*{\s*"([a-zA-Z0-9_\- ]+)"\s*}/g;
+    const reIconObj = /icon\s*:\s*"([a-zA-Z0-9_\- ]+)"/g;
+    const reIconObjSingle = /icon\s*:\s*'([a-zA-Z0-9_\- ]+)'/g;
 
     // Weight detection
     const reWeightDouble = /(?:iconWeight|weight)\s*=\s*"([0-9]{3})"/g;
@@ -288,7 +333,10 @@ async function main () {
         let m;
         
         const fileNames = new Set();
-        [reNameDouble, reNameSingle, reNameExpr, reNameObj].forEach((r) => {
+        [
+            reNameDouble, reNameSingle, reNameExpr, reNameObj, reNameObjSingle,
+            reIconDouble, reIconSingle, reIconExpr, reIconObj, reIconObjSingle
+        ].forEach((r) => {
             r.lastIndex = 0;
             while ((m = r.exec(text)) !== null) {
                 fileNames.add(m[1]);
@@ -300,10 +348,24 @@ async function main () {
         let exprMatch;
         while ((exprMatch = reExprBraces.exec(text)) !== null) {
             const expr = exprMatch[1];
-            const reStrings = /(?:"([^"]+)"|'([^']+)')/g;
+            const reStrings = /(?:"([^"]+)"|'([^']+)'|`([^`]+)`)/g;
             let strMatch;
             while ((strMatch = reStrings.exec(expr)) !== null) {
-                const val = strMatch[1] || strMatch[2];
+                const val = strMatch[1] || strMatch[2] || strMatch[3];
+                if (val && val.trim()) {
+                    fileNames.add(val.trim());
+                }
+            }
+        }
+
+        // Match icon={...} and extract all string literals inside the expression braces
+        const reIconExprBraces = /icon\s*=\s*\{([^{}]+)\}/g;
+        while ((exprMatch = reIconExprBraces.exec(text)) !== null) {
+            const expr = exprMatch[1];
+            const reStrings = /(?:"([^"]+)"|'([^']+)'|`([^`]+)`)/g;
+            let strMatch;
+            while ((strMatch = reStrings.exec(expr)) !== null) {
+                const val = strMatch[1] || strMatch[2] || strMatch[3];
                 if (val && val.trim()) {
                     fileNames.add(val.trim());
                 }
@@ -329,6 +391,9 @@ async function main () {
         });
 
         for (const n of fileNames) {
+            if (validSymbols && !validSymbols.has(n)) {
+                continue;
+            }
             if (!names.has(n)) names.set(n, { weights: new Set(), styles: new Set() });
             const entry = names.get(n);
             foundWeights.forEach(w => entry.weights.add(w));
@@ -358,6 +423,16 @@ async function main () {
             const styleSuffix = isDefaultStyle ? '' : pascalCase(style);
             const compName = 'Icon' + pascalCase(name) + styleSuffix;
             const outFile = join(OUT_DIR, `${compName}.svelte`);
+
+            if (existsSync(outFile) && !force) {
+                generated.push({ name, compName, style, isDefault: isDefaultStyle });
+                continue;
+            }
+
+            const cacheKey = `${name}-${style}`;
+            if (failedCache[cacheKey] && !force) {
+                continue;
+            }
 
             console.log(`Processing ${name} (${style}) weights ${Array.from(requiredWeights).join(',')}`);
             
@@ -416,6 +491,8 @@ async function main () {
 
             if (Object.keys(variants).length === 0) {
                 console.warn(`No variants available for ${name} (${style}); skipping component generation.`);
+                failedCache[cacheKey] = true;
+                failedCacheChanged = true;
                 continue;
             }
 
@@ -465,6 +542,11 @@ async function main () {
     const lines = generated.map(g => `export { default as ${g.compName} } from './${g.compName}.svelte';`);
     writeFileSync(indexPath, lines.join('\n') + '\n', 'utf8');
     console.log('Wrote index.ts with', generated.length, 'icons');
+
+    if (failedCacheChanged) {
+        writeFileSync(failedCachePath, JSON.stringify(failedCache, null, 4), 'utf8');
+        console.log('Updated failed-icons.json cache.');
+    }
 }
 
 main().catch(e => { console.error(e); process.exit(1); });
