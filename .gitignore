@@ -69,4 +69,5 @@ viewfinder/node_modules/
 /viewfinder/e2e/.auth
 /viewfinder/e2e/screenshots
 /viewfinder/e2e-*.png
+/viewfinder/static/themes
 .antigravitycli
