@@ -6,28 +6,30 @@
 	let { children } = $props();
 </script>
 
-<IconButton
-	class="fullscreen-toggle"
-	iconName="fullscreen"
-	hoverColor="var(--viz-70-light)"
-	onclick={() => toggleFullscreen()}
-	title="Toggle Fullscreen"
-	aria-label="Toggle Fullscreen"
-/>
+<div class="fullscreen-toggle-wrapper">
+	<IconButton
+		iconName="fullscreen"
+		hoverColor="var(--viz-70-light)"
+		onclick={() => toggleFullscreen()}
+		title="Toggle Fullscreen"
+		aria-label="Toggle Fullscreen"
+	/>
+</div>
 
-<IconButton
-	class="theme-toggle"
-	iconName={getTheme() === "dark" ? "dark_mode" : "light_mode"}
-	hoverColor="var(--viz-70-light)"
-	onclick={() => toggleTheme()}
-	title="Toggle Theme"
-	aria-label="Toggle Theme"
-/>
+<div class="theme-toggle-wrapper">
+	<IconButton
+		iconName={getTheme() === "dark" ? "dark_mode" : "light_mode"}
+		hoverColor="var(--viz-70-light)"
+		onclick={() => toggleTheme()}
+		title="Toggle Theme"
+		aria-label="Toggle Theme"
+	/>
+</div>
 
 {@render children()}
 
 <style lang="scss">
-	:global(.theme-toggle) {
+	.theme-toggle-wrapper {
 		position: fixed;
 		top: 1.5rem;
 		right: 1.5rem;
@@ -36,7 +38,7 @@
 		z-index: 1;
 	}
 
-	:global(.fullscreen-toggle) {
+	.fullscreen-toggle-wrapper {
 		position: fixed;
 		top: 1.5rem;
 		left: 1.5rem;
