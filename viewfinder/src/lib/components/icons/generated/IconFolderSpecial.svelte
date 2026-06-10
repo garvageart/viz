@@ -1,11 +1,11 @@
 <script lang="ts">
     const variants: Record<string, string> = {
-    "400": "<path d=\"M120-120v-720h720v720zm80-80h560v-120H640q-30 38-71.5 59T480-240t-88.5-21-71.5-59H200zm280-120q38 0 69-22t43-58h168v-360H200v360h168q12 36 43 58t69 22M200-200h560z\" />"
+    "400": "<path d=\"m504-292 92-70 92 70-34-114 92-74H632l-36-112-36 112H446l92 74zM80-160v-640h320l80 80h400v560zm80-80h640v-400H447l-80-80H160zm0 0v-480z\" />"
 };
     const filledVariants: Record<string, string> = {
-    "400": "<path d=\"M120-120v-720h720v720zm434-196.5q33-23.5 56-59.5h170v-404H180v404h170q23 36 56.25 59.5 33.24 23.5 74 23.5Q521-293 554-316.5\" />"
+    "400": "<path d=\"m508-301 88-61 87 61-33-106 87-73H631l-35-104-36 104H454l87 73zM80-160v-640h341l60 60h399v580z\" />"
 };
-    let { size = "1.5em", className = "", title = "IconInbox", viewBox = "0 -960 960 960", weight = "400", fill = false, ...rest } = $props();
+    let { size = "1.5em", className = "", title = "IconFolderSpecial", viewBox = "0 -960 960 960", weight = "400", fill = false, ...rest } = $props();
     
     const activeMap = $derived(fill ? filledVariants : variants);
     const inner = $derived(activeMap[String(weight)] || activeMap["400"] || Object.values(activeMap)[0]);

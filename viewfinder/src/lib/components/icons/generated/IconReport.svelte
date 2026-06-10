@@ -1,11 +1,11 @@
 <script lang="ts">
     const variants: Record<string, string> = {
-    "400": "<path d=\"M120-120v-720h720v720zm80-80h560v-120H640q-30 38-71.5 59T480-240t-88.5-21-71.5-59H200zm280-120q38 0 69-22t43-58h168v-360H200v360h168q12 36 43 58t69 22M200-200h560z\" />"
+    "400": "<path d=\"M480-280q17 0 28.5-11.5T520-320t-11.5-28.5T480-360t-28.5 11.5T440-320t11.5 28.5T480-280m-40-160h80v-240h-80zM330-120 120-330v-300l210-210h300l210 210v300L630-120zm34-80h232l164-164v-232L596-760H364L200-596v232zm116-280\" />"
 };
     const filledVariants: Record<string, string> = {
-    "400": "<path d=\"M120-120v-720h720v720zm434-196.5q33-23.5 56-59.5h170v-404H180v404h170q23 36 56.25 59.5 33.24 23.5 74 23.5Q521-293 554-316.5\" />"
+    "400": "<path d=\"M480-281q14 0 24.5-10.5T515-316t-10.5-24.5T480-351t-24.5 10.5T445-316t10.5 24.5T480-281m-30-144h60v-263h-60zM330-120 120-330v-300l210-210h300l210 210v300L630-120z\" />"
 };
-    let { size = "1.5em", className = "", title = "IconInbox", viewBox = "0 -960 960 960", weight = "400", fill = false, ...rest } = $props();
+    let { size = "1.5em", className = "", title = "IconReport", viewBox = "0 -960 960 960", weight = "400", fill = false, ...rest } = $props();
     
     const activeMap = $derived(fill ? filledVariants : variants);
     const inner = $derived(activeMap[String(weight)] || activeMap["400"] || Object.values(activeMap)[0]);
