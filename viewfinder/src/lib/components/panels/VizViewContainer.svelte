@@ -1,11 +1,11 @@
 <script lang="ts">
-	import { page } from "$app/state";
-	import { onDestroy, onMount, untrack, type Snippet } from "svelte";
-	import LoadingContainer from "../overlays/LoadingContainer.svelte";
 	import { dev } from "$app/environment";
-	import type { SvelteHTMLElements } from "svelte/elements";
-	import { isElementScrollable } from "$lib/utils/dom";
+	import { page } from "$app/state";
 	import { isLayoutPage } from "$lib/states/index.svelte";
+	import { isElementScrollable } from "$lib/utils/dom";
+	import { onDestroy, untrack, type Snippet } from "svelte";
+	import type { SvelteHTMLElements } from "svelte/elements";
+	import LoadingContainer from "../overlays/LoadingContainer.svelte";
 
 	interface Props {
 		children: Snippet;
