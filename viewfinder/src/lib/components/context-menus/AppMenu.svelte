@@ -39,7 +39,7 @@
 		{
 			id: "collections",
 			label: "Collections",
-			icon: "collections",
+			icon: "photo_album",
 			action: () => goto("/collections")
 		},
 		{ id: "divider-2", label: "", separator: true },
