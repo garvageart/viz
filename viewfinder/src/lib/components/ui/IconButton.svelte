@@ -8,12 +8,12 @@
 		element?: HTMLButtonElement;
 	}
 
-	type Props = ButtonProps & IconProps;
+	type Props = ButtonProps & Partial<IconProps>;
 
 	let {
-		iconName = $bindable(),
+		iconName,
 		iconStyle = "sharp",
-		fill = $bindable(false),
+		fill = false,
 		weight = 400,
 		grade = 0,
 		opticalSize = 24,
@@ -34,7 +34,9 @@
 	aria-label={props["aria-label"] ?? props.title}
 	style:--button-hover-bg={hoverColor}
 >
-	<MaterialIcon {iconName} {iconStyle} {fill} {grade} {opticalSize} />
+	{#if iconName}
+		<MaterialIcon {iconName} {iconStyle} {fill} {grade} {opticalSize} />
+	{/if}
 	{@render children?.()}
 </button>
 

@@ -1,6 +1,8 @@
 <script lang="ts">
 	import { slide } from "svelte/transition";
 	import IconButton from "./IconButton.svelte";
+	import IconLeftPanelCloseCustom from "./icons/IconLeftPanelCloseCustom.svelte";
+	import IconLeftPanelOpenCustom from "./icons/IconLeftPanelOpenCustom.svelte";
 
 	interface Props {
 		open?: boolean;
@@ -30,24 +32,26 @@
 	<div class="sidebar-header" class:closed={!open}>
 		{#if open}
 			<IconButton
-				iconName="close"
-				title="Close Settings Sidebar"
+				title="Collapse Sidebar"
 				onclick={() => (open = !open)}
 				variant="small"
 				class="sidebar-toggle-btn"
-			/>
+			>
+				<IconLeftPanelCloseCustom size="1.25em" />
+			</IconButton>
 			{#if title}
 				<h3 class="sidebar-heading">{title}</h3>
 			{/if}
 		{:else}
 			<div out:slide={{ axis: "x", duration: 300 }} style:display="inline-flex">
 				<IconButton
-					iconName="arrow_right"
-					title="Open Settings Sidebar"
+					title="Expand Sidebar"
 					onclick={() => (open = true)}
 					variant="small"
 					class="sidebar-toggle-btn open-btn"
-				/>
+				>
+					<IconLeftPanelOpenCustom size="1.25em" />
+				</IconButton>
 			</div>
 		{/if}
 	</div>
