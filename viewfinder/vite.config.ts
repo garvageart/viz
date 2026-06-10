@@ -55,7 +55,13 @@ export default defineConfig({
 	plugins: [devtoolsJson(), sveltekit()],
 	define: define,
 	build: {
-		reportCompressedSize: false
+		target: 'es2022',
+		reportCompressedSize: false,
+		rollupOptions: {
+			external: [
+				'material-symbols/index.css'
+			]
+		}
 	},
 	test: {
 		globals: true, // This enables global APIs like 'expect', 'vi'

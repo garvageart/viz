@@ -74,9 +74,6 @@ importers:
       luxon:
         specifier: ^3.7.2
         version: 3.7.2
-      material-symbols:
-        specifier: ^0.44.12
-        version: 0.44.12
       thumbhash:
         specifier: ^0.1.1
         version: 0.1.1
@@ -126,6 +123,9 @@ importers:
       dotenv:
         specifier: ^17.4.2
         version: 17.4.2
+      material-symbols:
+        specifier: ^0.44.12
+        version: 0.44.12
       oazapfts:
         specifier: ^6.4.0
         version: 6.4.0(@oazapfts/runtime@1.2.0)(openapi-types@12.1.3)
