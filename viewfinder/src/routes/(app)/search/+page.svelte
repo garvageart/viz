@@ -691,6 +691,7 @@ return;
 										groupedData={consolidatedGroups}
 										showDateHeaders={true}
 										scopeId={imageScopeId}
+										onLoadMore={() => paginateSearch()}
 										assetDblClick={(_e, asset) => {
 											openLightbox(asset);
 										}}

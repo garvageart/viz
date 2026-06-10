@@ -323,6 +323,7 @@
 		groupedData: showDates ? consolidatedGroups : undefined,
 		showDateHeaders: showDates,
 		allData: showDates ? allImagesFlat : undefined,
+		onLoadMore: () => paginate(),
 		assetGridDisplayProps: {
 			style: `padding: 0em ${isLayoutPage() ? "1em" : "2em"};`
 		},

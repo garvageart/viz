@@ -63,6 +63,8 @@
 		onselectAll?: () => void;
 		/** Set of image UIDs that should be marked as disabled in the grid*/
 		disabledUids?: Set<string>;
+		/** Callback to load more images for pagination when selecting a group */
+		onLoadMore?: () => Promise<void> | void;
 	}
 
 	type Props = Omit<
@@ -91,7 +93,8 @@
 		showDateHeaders = $bindable(true),
 		gridConfig = {},
 		onselectAll,
-		disabledUids = new Set()
+		disabledUids = new Set(),
+		onLoadMore
 	}: Props = $props();
 
 	// Selection Management
@@ -450,30 +453,78 @@
 		return map;
 	});
 
-	function handleGroupSelect(label: string) {
+	async function handleGroupSelect(label: string) {
 		const images = groupLookup.get(label);
 		if (!images) {
 			return;
 		}
 
-		const allSelected = images.every((i) => selectedUIDs.has(i.uid));
+		const enabledImages = images.filter((i) => !disabledUids.has(i.uid));
+		if (enabledImages.length === 0) {
+			return;
+		}
+
+		const allSelected = enabledImages.every((i) => selectedUIDs.has(i.uid));
 
 		if (allSelected) {
-			for (const img of images) {
+			for (const img of enabledImages) {
 				selection.remove(img);
 			}
 			// Clear anchor if it was part of this group
 			if (
 				selection.active &&
-				images.some((i) => i.uid === selection.active?.uid)
+				enabledImages.some((i) => i.uid === selection.active?.uid)
 			) {
 				selection.active = undefined;
 			}
 		} else {
-			selection.addMultiple(images);
+			selection.addMultiple(enabledImages);
 			// Set anchor to last item of group for shift-selection
-			if (images.length > 0) {
-				selection.active = images[images.length - 1];
+			if (enabledImages.length > 0) {
+				suppressScrollOnce = true;
+				selection.active = enabledImages[enabledImages.length - 1];
+			}
+
+			// If onLoadMore is provided and this group reaches the end of the currently loaded list,
+			// load more pages programmatically until the whole group is loaded.
+			if (onLoadMore) {
+				let currentImages = enabledImages;
+				let lastImage = currentImages[currentImages.length - 1];
+				let searchList = allData && allData.length > 0 ? allData : data;
+
+				while (
+					lastImage &&
+					searchList.length > 0 &&
+					searchList[searchList.length - 1].uid === lastImage.uid
+				) {
+					const beforeLength = searchList.length;
+					await onLoadMore();
+
+					const afterList = allData && allData.length > 0 ? allData : data;
+					if (afterList.length <= beforeLength) {
+						break;
+					}
+					searchList = afterList;
+
+					const updatedImages = groupLookup.get(label) || [];
+					const newlyLoadedInGroup = updatedImages.filter(
+						(i) => !disabledUids.has(i.uid) && !selectedUIDs.has(i.uid)
+					);
+
+					if (newlyLoadedInGroup.length === 0) {
+						break;
+					}
+
+					selection.addMultiple(newlyLoadedInGroup);
+					currentImages = updatedImages.filter((i) => !disabledUids.has(i.uid));
+					if (currentImages.length > 0) {
+						suppressScrollOnce = true;
+						selection.active = currentImages[currentImages.length - 1];
+						lastImage = currentImages[currentImages.length - 1];
+					} else {
+						break;
+					}
+				}
 			}
 		}
 	}
@@ -676,6 +727,7 @@ return;
 			});
 		} else if (!currentActive) {
 			lastActiveUID = null;
+			suppressScrollOnce = false;
 		}
 	});
 
