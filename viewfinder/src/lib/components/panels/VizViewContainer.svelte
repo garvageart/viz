@@ -44,6 +44,11 @@
 
 	let viewContainer: HTMLElement | undefined = $state();
 	let isLoading = $state(true);
+	
+	const shouldEnableScroll = $derived(
+		isLayoutPage() || hasMore || (data && data.length > 0)
+	);
+	
 	const initStyle = $derived(`${isLoading ? "height: 100%;" : ""} ${style}`);
 	let pageData = $derived.by(() => {
 		if (dev && randomLatency) {
@@ -149,7 +154,7 @@
 </svelte:head>
 <div
 	{...props}
-	class="viz-view-container no-select {props.class}"
+	class="viz-view-container no-select {shouldEnableScroll ? 'scrollable' : ''} {props.class}"
 	onscroll={onScroll}
 	onresize={onResize}
 	style="{initStyle} {style}"
@@ -197,10 +202,14 @@
 	.viz-view-container {
 		white-space: normal;
 		display: block;
-		overflow: auto;
+		overflow: hidden;
 		width: 100%;
 		max-width: 100%;
 		height: 100%;
 		position: relative;
+	}
+
+	.viz-view-container.scrollable {
+		overflow: auto;
 	}
 </style>
