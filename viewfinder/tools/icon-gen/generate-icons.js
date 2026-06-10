@@ -295,6 +295,21 @@ async function main () {
             }
         });
 
+        // Match iconName={...} and extract all string literals inside the expression braces
+        const reExprBraces = /iconName\s*=\s*\{([^{}]+)\}/g;
+        let exprMatch;
+        while ((exprMatch = reExprBraces.exec(text)) !== null) {
+            const expr = exprMatch[1];
+            const reStrings = /(?:"([^"]+)"|'([^']+)')/g;
+            let strMatch;
+            while ((strMatch = reStrings.exec(expr)) !== null) {
+                const val = strMatch[1] || strMatch[2];
+                if (val && val.trim()) {
+                    fileNames.add(val.trim());
+                }
+            }
+        }
+
         if (fileNames.size === 0) continue;
 
         const foundWeights = new Set();

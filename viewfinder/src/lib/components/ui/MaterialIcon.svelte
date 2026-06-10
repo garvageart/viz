@@ -103,17 +103,19 @@
 	async function loadGeneratedIcon(name: string, style: IconStyle) {
 		const base = normalizeName(name);
 		const styleSuffix = style === "sharp" ? "" : normalizeName(style);
-		const modulePath = `/src/lib/components/icons/generated/Icon${base}${styleSuffix}.svelte`;
+		const filename = `/Icon${base}${styleSuffix}.svelte`;
 
 		// 1. Try Eager (Build/Prerender)
-		if (building && modulePath in ICON_MODULES_EAGER) {
-			return (ICON_MODULES_EAGER[modulePath] as any).default;
+		const eagerKey = Object.keys(ICON_MODULES_EAGER).find((k) => k.endsWith(filename));
+		if (building && eagerKey) {
+			return (ICON_MODULES_EAGER[eagerKey] as any).default;
 		}
 
 		// 2. Try Lazy (Runtime/Dev)
-		if (modulePath in ICON_MODULES) {
+		const lazyKey = Object.keys(ICON_MODULES).find((k) => k.endsWith(filename));
+		if (lazyKey) {
 			try {
-				const mod = await (ICON_MODULES[modulePath] as any)();
+				const mod = await (ICON_MODULES[lazyKey] as any)();
 				return mod.default;
 			} catch (err) {
 				// Silent failure expected for icons that haven't been generated

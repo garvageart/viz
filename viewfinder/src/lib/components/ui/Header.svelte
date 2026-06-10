@@ -37,7 +37,8 @@
 	import MaterialIcon from "./MaterialIcon.svelte";
 	import SearchInput from "./SearchInput.svelte";
 
-	let { ...props }: SvelteHTMLElements["header"] = $props();
+
+
 
 	let searchElement = $state<HTMLInputElement | undefined>();
 	let searchInputHasFocus = $derived(
@@ -252,7 +253,7 @@
 	}}
 />
 
-<header {...props} class="{props.class} no-select">
+<header class="no-select">
 	<div id="left-menu-container">
 		<button
 			bind:this={appMenuButton}
@@ -504,7 +505,7 @@
 		unicode-bidi: isolate;
 	}
 
-	.header-upload-dropdown {
+	:global(.header-upload-dropdown) {
 		margin: 0 var(--viz-spacing-sm);
 		color: var(--viz-text-color);
 	}
