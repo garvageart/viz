@@ -5,14 +5,12 @@ $bg-color: #111111;
 $base-color: #222222;
 $text-color: #f7f9f9;
 $primary-color: #1885df;
-$secondary-color: #e79c1d;
 
 @include m.register-theme-core(
     $bg-color: $bg-color,
     $text-color: $text-color,
     $base-color: $base-color,
     $primary-color: $primary-color,
-    $secondary-color: $secondary-color,
     $flip-bg-color: white,
     $flip-bg-pct: 0%,
     $flip-text-color: black,

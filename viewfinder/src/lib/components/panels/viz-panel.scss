@@ -88,9 +88,9 @@
     outline: 2px;
     outline-offset: -2px;
     outline-style: solid;
-    outline-color: var(--viz-secondary);
+    outline-color: var(--viz-primary);
     border-radius: 0.25rem;
-    background-color: color-mix(in srgb, var(--viz-secondary) 20%, transparent);
+    background-color: color-mix(in srgb, var(--viz-primary) 20%, transparent);
     z-index: 899;
     transition: all 0.2s ease-in-out;
 }

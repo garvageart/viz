@@ -1,7 +1,7 @@
 <script lang="ts">
-	import { selectionManager } from "$lib/states/selection.svelte";
 	import { type ImageAsset } from "$lib/api";
 	import ImageCard from "$lib/components/ui/ImageCard.svelte";
+	import { selectionManager } from "$lib/states/selection.svelte";
 
 	let activeScope = $derived(selectionManager.activeScope);
 	let activeItem = $derived(activeScope?.active as ImageAsset | undefined);
@@ -235,7 +235,7 @@
 		}
 
 		&.selected:not(.active) {
-			border-color: var(--viz-secondary);
+			border-color: var(--viz-primary);
 		}
 	}
 </style>

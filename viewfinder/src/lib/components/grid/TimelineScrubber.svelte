@@ -198,7 +198,7 @@
 	.thumb-inner {
 		width: 3rem;
 		height: 3rem;
-		background-color: var(--viz-secondary);
+		background-color: var(--viz-primary);
 		color: var(--viz-10-dark);
 		border-radius: 50%;
 		display: flex;

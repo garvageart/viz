@@ -10,13 +10,11 @@ $bg-color: {{.BgColor}};
 $base-color: {{.BaseColor}};
 $text-color: {{.TextColor}};
 $primary-color: {{.PrimaryColor}};
-$secondary-color: {{.SecondaryColor}};
 
 :root {
     --viz-bg-color: #{$bg-color};
     --viz-text-color: #{$text-color};
     --viz-primary: #{$primary-color};
-    --viz-secondary: #{$secondary-color};
 
     @include viz-mixins.generate-viz-colors(
         $bg-color: $bg-color,

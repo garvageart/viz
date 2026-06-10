@@ -143,7 +143,6 @@
     $text-color,
     $base-color,
     $primary-color,
-    $secondary-color,
     $flip-bg-color: null,
     $flip-bg-pct: 0%,
     $flip-text-color: null,
@@ -153,7 +152,6 @@
         --viz-bg-color: #{$bg-color};
         --viz-text-color: #{$text-color};
         --viz-primary: #{$primary-color};
-        --viz-secondary: #{$secondary-color};
 
         @include generate-viz-colors(
             $bg-color: $bg-color,

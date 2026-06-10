@@ -1,41 +1,41 @@
 <script lang="ts">
 	import { dev } from "$app/environment";
-	import { page } from "$app/state";
-	import { untrack } from "svelte";
-	import { CLIENT_IS_PRODUCTION, DYNAMIC_ROUTE_REGEX } from "$lib/constants";
-	import { performSearch } from "$lib/search/execute";
-	import {
-		debugState,
-		getTheme,
-		search,
-		toggleTheme,
-		user,
-		themeState,
-		isLayoutPage
-	} from "$lib/states/index.svelte";
-	import { historyState } from "$lib/states/history.svelte";
-	import { eventsState } from "$lib/states/events.svelte";
-	import {
-		SUPPORTED_IMAGE_TYPES,
-		SUPPORTED_RAW_FILES,
-		type SupportedImageTypes
-	} from "$lib/types/images";
-	import UploadManager from "$lib/upload/manager.svelte";
-	import hotkeys from "hotkeys-js";
-	import type { SvelteHTMLElements } from "svelte/elements";
-	import OpenAccountPanel from "../context-menus/AccountPanel.svelte";
-	import AppMenu from "../context-menus/AppMenu.svelte";
-	import MaterialIcon from "./MaterialIcon.svelte";
-	import SearchInput from "./SearchInput.svelte";
-	import IconButton from "./IconButton.svelte";
-	import Dropdown from "$lib/components/context-menus/Dropdown.svelte";
 	import { goto } from "$app/navigation";
-	import { toastState } from "$lib/toast-notifcations/notif-state.svelte";
+	import { page } from "$app/state";
+	import Dropdown from "$lib/components/context-menus/Dropdown.svelte";
+	import { CLIENT_IS_PRODUCTION, DYNAMIC_ROUTE_REGEX } from "$lib/constants";
 	import ContextMenu from "$lib/context-menu/ContextMenu.svelte";
 	import type { MenuItem } from "$lib/context-menu/types";
 	import { views } from "$lib/layouts/views";
+	import { performSearch } from "$lib/search/execute";
+	import { eventsState } from "$lib/states/events.svelte";
+	import { historyState } from "$lib/states/history.svelte";
+	import {
+	    debugState,
+	    getTheme,
+	    isLayoutPage,
+	    search,
+	    themeState,
+	    toggleTheme,
+	    user
+	} from "$lib/states/index.svelte";
 	import { workspaceState } from "$lib/states/workspace.svelte";
+	import { toastState } from "$lib/toast-notifcations/notif-state.svelte";
+	import {
+	    SUPPORTED_IMAGE_TYPES,
+	    SUPPORTED_RAW_FILES,
+	    type SupportedImageTypes
+	} from "$lib/types/images";
+	import UploadManager from "$lib/upload/manager.svelte";
 	import VizView from "$lib/views/views.svelte";
+	import hotkeys from "hotkeys-js";
+	import { untrack } from "svelte";
+	import type { SvelteHTMLElements } from "svelte/elements";
+	import OpenAccountPanel from "../context-menus/AccountPanel.svelte";
+	import AppMenu from "../context-menus/AppMenu.svelte";
+	import IconButton from "./IconButton.svelte";
+	import MaterialIcon from "./MaterialIcon.svelte";
+	import SearchInput from "./SearchInput.svelte";
 
 	let { ...props }: SvelteHTMLElements["header"] = $props();
 
@@ -425,7 +425,7 @@
 
 		&:active {
 			background-color: transparent;
-			border-bottom-color: var(--viz-secondary);
+			border-bottom-color: var(--viz-primary);
 		}
 	}
 

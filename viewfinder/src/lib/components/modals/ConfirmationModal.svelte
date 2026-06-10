@@ -91,6 +91,6 @@
 	}
 
 	:global(.onconfirm-btn:hover) {
-		background-color: var(--viz-secondary);
+		background-color: var(--viz-primary);
 	}
 </style>

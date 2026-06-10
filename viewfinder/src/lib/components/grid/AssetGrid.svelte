@@ -17,10 +17,10 @@
 	import { DateTime } from "luxon";
 	import { untrack } from "svelte";
 	import type { SvelteHTMLElements } from "svelte/elements";
-	import MaterialIcon from "../ui/MaterialIcon.svelte";
 	import type { AssetGridView } from "../grid/PhotoAssetGrid.svelte";
 	import TableColumnSelectorModal from "../modals/TableColumnSelectorModal.svelte";
 	import { modalsManager } from "../modals/manager/ModalManager.svelte";
+	import MaterialIcon from "../ui/MaterialIcon.svelte";
 
 	interface DisplayableAsset {
 		uid: string;
@@ -928,7 +928,7 @@
 			}
 
 			&.selected-card {
-				background-color: color-mix(in srgb, var(--viz-bg-color) 100%, var(--viz-secondary) 20%);
+				background-color: color-mix(in srgb, var(--viz-bg-color) 100%, var(--viz-primary) 20%);
 			}
 
 			td {

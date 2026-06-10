@@ -1,16 +1,16 @@
 <script lang="ts">
-	import { untrack } from "svelte";
 	import IconButton from "$lib/components/ui/IconButton.svelte";
 	import { upload } from "$lib/states/index.svelte";
 	import { UploadState } from "$lib/upload/asset.svelte";
 	import {
-		processGlobalQueue,
-		waitForUploadCompletion
+	    processGlobalQueue,
+	    waitForUploadCompletion
 	} from "$lib/upload/manager.svelte";
+	import { invalidateViz } from "$lib/views/views.svelte";
+	import { untrack } from "svelte";
 	import { scale } from "svelte/transition";
 	import Button from "../Button.svelte";
 	import MaterialIcon from "../MaterialIcon.svelte";
-	import { invalidateViz } from "$lib/views/views.svelte";
 
 	let minimized = $state(false);
 
@@ -141,7 +141,7 @@
 				minimized = false;
 			}}
 			title="Show Upload Panel"
-			style="background-color: var(--viz-secondary);"
+			style="background-color: var(--viz-primary);"
 			hoverColor="var(--viz-primary)"
 		>
 			<MaterialIcon iconName="upload" style="font-size: 1.5rem;" />
