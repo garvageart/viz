@@ -101,11 +101,9 @@ build-frontend:
 	@cd $(VIEWFINDER_DIR) && if [ "$(USE_HOST_CACHE)" = "1" ]; then \
 		mkdir -p "$(PNPM_STORE_DIR)"; \
 		$(PNPM) install --frozen-lockfile --store-dir "$(PNPM_STORE_DIR)" || true; \
-		$(PNPM) run generate:icons || true; \
 		$(PNPM) run build; \
 	else \
 		$(PNPM) install --frozen-lockfile || true; \
-		$(PNPM) run generate:icons || true; \
 		$(PNPM) run build; \
 	fi
 
