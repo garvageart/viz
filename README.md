@@ -16,7 +16,7 @@
 
 - **Image Upload & Organization**: Upload and automatically process images with thumbnails, EXIF extraction.
 - **Collections**: Group images into collections for better organization.
-- **Search**: Fast semantic search.
+- **Search**: Fast semantic and keyword search.
 - **Background Processing**: Robust job queue (Watermill + Redis) for non-blocking image operations.
 - **Modern UI**: Built with SvelteKit 5, featuring a responsive image grid, metadata view and editing, and drag-and-drop uploads.
 - **Deployment**: Docker Compose support for easy set up (API, Frontend, Postgres, Redis).
