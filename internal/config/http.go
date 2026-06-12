@@ -65,6 +65,11 @@ func (server VizServer) ConnectToDatabase(dst ...any) *gorm.DB {
 	// Manual migrations after AutoMigrate
 	db.MigrateCollectionImages(client, logger)
 
+	if err := db.RunGooseMigrations(client, logger); err != nil {
+		logger.Error("error running Goose migrations", slog.Any("error", err))
+		panic("error running Goose migrations: " + err.Error())
+	}
+
 	// Run cleanup for setting defaults after auto-migration
 	settings.CleanupSettingDefaults(client, logger)
 	settings.CleanupSettingOverrides(client, logger)
