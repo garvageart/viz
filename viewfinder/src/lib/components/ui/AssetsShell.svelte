@@ -264,7 +264,7 @@
 
 	#viz-no_assets {
 		width: 100%;
-		height: 100%;
+		flex-grow: 1;
 		display: flex;
 		justify-content: center;
 		align-items: center;

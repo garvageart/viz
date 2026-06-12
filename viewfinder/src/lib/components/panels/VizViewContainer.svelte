@@ -201,7 +201,8 @@
 <style>
 	.viz-view-container {
 		white-space: normal;
-		display: block;
+		display: flex;
+		flex-direction: column;
 		overflow: hidden;
 		width: 100%;
 		max-width: 100%;
@@ -211,5 +212,9 @@
 
 	.viz-view-container.scrollable {
 		overflow: auto;
+	}
+
+	.viz-view-container > :global(*) {
+		flex-shrink: 0;
 	}
 </style>
