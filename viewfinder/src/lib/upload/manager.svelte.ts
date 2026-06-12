@@ -1,8 +1,9 @@
 import { upload } from "$lib/states/index.svelte";
 import type { SupportedImageTypes, SupportedRAWFiles } from "$lib/types/images";
 import { UploadImage, UploadState } from "./asset.svelte";
-import type { ImageUploadStatus } from "$lib/api";
+import { checkDuplicates, type ImageUploadStatus } from "$lib/api";
 import type { DirectoryInputElement } from "$lib/types/dom";
+import { calculateSHA1 } from "$lib/utils/crypto";
 
 export interface ImageUploadFileData {
     file_name: string;
@@ -117,10 +118,68 @@ export default class UploadManager {
     }
 
     /**
+     * Pre-calculates SHA-1 checksums for files and checks them against the database in bulk.
+     * Any files that already exist are marked as duplicates.
+     */
+    async precheckDuplicates(tasks: UploadImage[]): Promise<void> {
+        // Calculate checksum for all tasks that don't have it yet
+        await Promise.all(
+            tasks.map(async (task) => {
+                if (!task.checksum) {
+                    try {
+                        const checksum = await calculateSHA1(task.data.data);
+                        task.checksum = checksum;
+                        task.data.checksum = checksum;
+                    } catch (e) {
+                        console.error(`Failed to calculate checksum for ${task.data.file_name}:`, e);
+                    }
+                }
+            })
+        );
+
+        // Filter tasks that have checksums and are still pending
+        const validTasks = tasks.filter((t) => t.checksum && t.state === UploadState.PENDING);
+        if (validTasks.length === 0) {
+            return;
+        }
+
+        const checksums = validTasks.map((t) => t.checksum as string);
+
+        try {
+            // Call bulk duplicate check API
+            const response = await checkDuplicates({ checksums });
+
+            if (response.status === 200 && response.data.duplicates && response.data.duplicates.length > 0) {
+                const dupMap = new Map<string, string>(); // checksum -> uid
+                for (const dup of response.data.duplicates) {
+                    dupMap.set(dup.checksum, dup.uid);
+                }
+
+                for (const task of validTasks) {
+                    if (task.checksum && dupMap.has(task.checksum)) {
+                        task.state = UploadState.DUPLICATE;
+                        task.progress = 100;
+                        task.imageData = {
+                            uid: dupMap.get(task.checksum)!,
+                            status: "duplicate"
+                        };
+                    }
+                }
+            }
+        } catch (err) {
+            console.error("Duplicate precheck API request failed:", err);
+        }
+    }
+
+    /**
      * Start uploading tasks with concurrency control.
      * If no tasks provided, uploads all pending tasks in the global store.
      */
     async start(tasks?: UploadImage[]): Promise<void> {
+        const tasksToCheck = tasks || upload.files.filter((t) => t.state === UploadState.PENDING);
+        if (tasksToCheck.length > 0) {
+            await this.precheckDuplicates(tasksToCheck);
+        }
         processGlobalQueue();
     }
 

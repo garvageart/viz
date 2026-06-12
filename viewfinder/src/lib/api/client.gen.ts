@@ -8,14 +8,11 @@ import * as Oazapfts from "@oazapfts/runtime";
 import * as QS from "@oazapfts/runtime/query";
 export const defaults: Oazapfts.Defaults<Oazapfts.CustomHeaders> = {
     headers: {},
-    baseUrl: "http://localhost:7770"
+    baseUrl: "http://localhost:7770",
 };
 const oazapfts = Oazapfts.runtime(defaults);
 export const servers = {
-    localApi: ({
-        host = "localhost",
-        port = "7770"
-    }: {
+    localApi: ({ host = "localhost", port = "7770" }: {
         host: string | number | boolean;
         port: string | number | boolean;
     }) => `http://${host}:${port}`,
@@ -187,7 +184,7 @@ export type UserPasswordUpdate = {
     /** Current password */
     current: string;
     /** New password */
-    new: string;
+    "new": string;
 };
 export type SessionUpdate = {
     /** New client name */
@@ -345,7 +342,7 @@ export type ImageAsset = {
     description?: string;
     exif?: ImageExif;
     /** Is private */
-    private: boolean;
+    "private": boolean;
     /** Is favourited */
     favourited?: boolean;
     /** Image width */
@@ -378,7 +375,7 @@ export type Collection = {
     /** Number of images */
     image_count: number;
     /** Is private */
-    private?: boolean | null;
+    "private"?: boolean | null;
     /** Is favourited */
     favourited?: boolean;
     /** List of images */
@@ -463,6 +460,20 @@ export type DeleteAssetsResponse = {
     /** Summary message of the operation */
     message?: string;
 };
+export type DuplicateCheckRequest = {
+    /** List of SHA-1 checksums to check for duplicates */
+    checksums: string[];
+};
+export type DuplicateCheckResult = {
+    /** The checksum of the duplicate image */
+    checksum: string;
+    /** The UID of the existing image */
+    uid: string;
+};
+export type DuplicateCheckResponse = {
+    /** List of duplicates found */
+    duplicates: DuplicateCheckResult[];
+};
 export type ImageUpdate = {
     /** Image name */
     name?: string;
@@ -471,15 +482,13 @@ export type ImageUpdate = {
     /** Image description */
     description?: string | null;
     /** Is private */
-    private?: boolean;
+    "private"?: boolean;
     /** Is favourited */
     favourited?: boolean;
     exif?: ImageExif;
     image_metadata?: {
         /** User-assigned label for the image. Null = unlabeled */
-        label?:
-            | ("Red" | "Orange" | "Yellow" | "Purple" | "Pink" | "Green" | "Blue" | "None")
-            | null;
+        label?: ("Red" | "Orange" | "Yellow" | "Purple" | "Pink" | "Green" | "Blue" | "None") | null;
         /** User-assigned rating (0-5). Null = unrated */
         rating?: number | null;
         /** Keywords */
@@ -506,7 +515,7 @@ export type CollectionCreate = {
     /** Collection name */
     name: string;
     /** Is private */
-    private?: boolean | null;
+    "private"?: boolean | null;
     /** Collection description */
     description?: string;
 };
@@ -518,7 +527,7 @@ export type CollectionDetailResponse = {
     /** Number of images */
     image_count?: number;
     /** Is private */
-    private?: boolean | null;
+    "private"?: boolean | null;
     images: ImagesListResponse;
     created_by?: User;
     owner?: User;
@@ -538,7 +547,7 @@ export type CollectionUpdate = {
     /** Collection description */
     description?: string;
     /** Is private */
-    private?: boolean;
+    "private"?: boolean;
     /** Is favourited */
     favourited?: boolean;
     /** Owner UID */
@@ -798,7 +807,7 @@ export type WorkerRegisterRequest = {
 };
 export type WorkerJobCreateRequest = {
     /** Job topic (e.g., exif_process, image_process) */
-    type: string;
+    "type": string;
     /** Command to execute (all=process all, missing=process missing) */
     command: "all" | "missing";
     /** Image UIDs to process (optional, if omitted all images are considered) */
@@ -814,7 +823,7 @@ export type WorkerJob = {
     /** Job UID */
     uid: string;
     /** Job type */
-    type: string;
+    "type": string;
     /** Job topic */
     topic: string;
     /** Job command */
@@ -953,42 +962,32 @@ export function ping(opts?: Oazapfts.RequestOpts) {
  * Register a new user
  */
 export function registerUser(userCreate: UserCreate, opts?: Oazapfts.RequestOpts) {
-    return oazapfts.fetchJson<
-        | {
-              status: 201;
-              data: User;
-          }
-        | {
-              status: 400;
-              data: ErrorResponse;
-          }
-        | {
-              status: 403;
-              data: ErrorResponse;
-          }
-    >(
-        "/accounts/",
-        oazapfts.json({
-            ...opts,
-            method: "POST",
-            body: userCreate
-        })
-    );
+    return oazapfts.fetchJson<{
+        status: 201;
+        data: User;
+    } | {
+        status: 400;
+        data: ErrorResponse;
+    } | {
+        status: 403;
+        data: ErrorResponse;
+    }>("/accounts/", oazapfts.json({
+        ...opts,
+        method: "POST",
+        body: userCreate
+    }));
 }
 /**
  * Generate an API key
  */
 export function generateApiKey(opts?: Oazapfts.RequestOpts) {
-    return oazapfts.fetchJson<
-        | {
-              status: 200;
-              data: ApiKey;
-          }
-        | {
-              status: 500;
-              data: ErrorResponse;
-          }
-    >("/auth/apikey", {
+    return oazapfts.fetchJson<{
+        status: 200;
+        data: ApiKey;
+    } | {
+        status: 500;
+        data: ErrorResponse;
+    }>("/auth/apikey", {
         ...opts
     });
 }
@@ -996,38 +995,29 @@ export function generateApiKey(opts?: Oazapfts.RequestOpts) {
  * Create a new API key
  */
 export function createApiKey(apiKeyCreate: ApiKeyCreate, opts?: Oazapfts.RequestOpts) {
-    return oazapfts.fetchJson<
-        | {
-              status: 201;
-              data: ApiKeyCreateResponse;
-          }
-        | {
-              status: 400;
-              data: ErrorResponse;
-          }
-    >(
-        "/api-keys",
-        oazapfts.json({
-            ...opts,
-            method: "POST",
-            body: apiKeyCreate
-        })
-    );
+    return oazapfts.fetchJson<{
+        status: 201;
+        data: ApiKeyCreateResponse;
+    } | {
+        status: 400;
+        data: ErrorResponse;
+    }>("/api-keys", oazapfts.json({
+        ...opts,
+        method: "POST",
+        body: apiKeyCreate
+    }));
 }
 /**
  * List API keys for the authenticated user
  */
 export function listApiKeys(opts?: Oazapfts.RequestOpts) {
-    return oazapfts.fetchJson<
-        | {
-              status: 200;
-              data: ApiKeyListResponse;
-          }
-        | {
-              status: 401;
-              data: ErrorResponse;
-          }
-    >("/api-keys", {
+    return oazapfts.fetchJson<{
+        status: 200;
+        data: ApiKeyListResponse;
+    } | {
+        status: 401;
+        data: ErrorResponse;
+    }>("/api-keys", {
         ...opts
     });
 }
@@ -1035,16 +1025,13 @@ export function listApiKeys(opts?: Oazapfts.RequestOpts) {
  * Get API key details
  */
 export function getApiKey(uid: string, opts?: Oazapfts.RequestOpts) {
-    return oazapfts.fetchJson<
-        | {
-              status: 200;
-              data: ApiKey;
-          }
-        | {
-              status: 404;
-              data: ErrorResponse;
-          }
-    >(`/api-keys/${encodeURIComponent(uid)}`, {
+    return oazapfts.fetchJson<{
+        status: 200;
+        data: ApiKey;
+    } | {
+        status: 404;
+        data: ErrorResponse;
+    }>(`/api-keys/${encodeURIComponent(uid)}`, {
         ...opts
     });
 }
@@ -1052,16 +1039,13 @@ export function getApiKey(uid: string, opts?: Oazapfts.RequestOpts) {
  * Delete an API key
  */
 export function deleteApiKey(uid: string, opts?: Oazapfts.RequestOpts) {
-    return oazapfts.fetchJson<
-        | {
-              status: 200;
-              data: MessageResponse;
-          }
-        | {
-              status: 401;
-              data: ErrorResponse;
-          }
-    >(`/api-keys/${encodeURIComponent(uid)}`, {
+    return oazapfts.fetchJson<{
+        status: 200;
+        data: MessageResponse;
+    } | {
+        status: 401;
+        data: ErrorResponse;
+    }>(`/api-keys/${encodeURIComponent(uid)}`, {
         ...opts,
         method: "DELETE"
     });
@@ -1093,121 +1077,83 @@ export function rotateApiKey(uid: string, opts?: Oazapfts.RequestOpts) {
 /**
  * Login with email and password
  */
-export function login(
-    body: {
-        /** User email address */
-        email: string;
-        /** User password */
-        password: string;
-    },
-    opts?: Oazapfts.RequestOpts
-) {
-    return oazapfts.fetchJson<
-        | {
-              status: 200;
-              data: MessageResponse;
-          }
-        | {
-              status: 400;
-              data: ErrorResponse;
-          }
-        | {
-              status: 401;
-              data: ErrorResponse;
-          }
-        | {
-              status: 404;
-              data: ErrorResponse;
-          }
-        | {
-              status: 500;
-              data: ErrorResponse;
-          }
-    >(
-        "/auth/login",
-        oazapfts.json({
-            ...opts,
-            method: "POST",
-            body
-        })
-    );
+export function login(body: {
+    /** User email address */
+    email: string;
+    /** User password */
+    password: string;
+}, opts?: Oazapfts.RequestOpts) {
+    return oazapfts.fetchJson<{
+        status: 200;
+        data: MessageResponse;
+    } | {
+        status: 400;
+        data: ErrorResponse;
+    } | {
+        status: 401;
+        data: ErrorResponse;
+    } | {
+        status: 404;
+        data: ErrorResponse;
+    } | {
+        status: 500;
+        data: ErrorResponse;
+    }>("/auth/login", oazapfts.json({
+        ...opts,
+        method: "POST",
+        body
+    }));
 }
 /**
  * Initiate OAuth flow
  */
 export function initiateOAuth(provider: "google" | "github", opts?: Oazapfts.RequestOpts) {
-    return oazapfts.fetchJson<
-        | {
-              status: 307;
-          }
-        | {
-              status: 400;
-              data: ErrorResponse;
-          }
-        | {
-              status: 500;
-              data: ErrorResponse;
-          }
-    >(
-        `/auth/oauth${QS.query(
-            QS.explode({
-                provider
-            })
-        )}`,
-        {
-            ...opts
-        }
-    );
+    return oazapfts.fetchJson<{
+        status: 307;
+    } | {
+        status: 400;
+        data: ErrorResponse;
+    } | {
+        status: 500;
+        data: ErrorResponse;
+    }>(`/auth/oauth${QS.query(QS.explode({
+        provider
+    }))}`, {
+        ...opts
+    });
 }
 /**
  * Complete OAuth flow
  */
-export function completeOAuth(
-    provider: "google" | "github",
-    code: string,
-    state: string,
-    opts?: Oazapfts.RequestOpts
-) {
-    return oazapfts.fetchJson<
-        | {
-              status: 200;
-              data: OAuthUserData;
-          }
-        | {
-              status: 400;
-              data: ErrorResponse;
-          }
-        | {
-              status: 500;
-              data: ErrorResponse;
-          }
-    >(
-        `/auth/oauth/${encodeURIComponent(provider)}${QS.query(
-            QS.explode({
-                code,
-                state
-            })
-        )}`,
-        {
-            ...opts,
-            method: "POST"
-        }
-    );
+export function completeOAuth(provider: "google" | "github", code: string, state: string, opts?: Oazapfts.RequestOpts) {
+    return oazapfts.fetchJson<{
+        status: 200;
+        data: OAuthUserData;
+    } | {
+        status: 400;
+        data: ErrorResponse;
+    } | {
+        status: 500;
+        data: ErrorResponse;
+    }>(`/auth/oauth/${encodeURIComponent(provider)}${QS.query(QS.explode({
+        code,
+        state
+    }))}`, {
+        ...opts,
+        method: "POST"
+    });
 }
 /**
  * Get current session information
  */
 export function getCurrentSession(opts?: Oazapfts.RequestOpts) {
-    return oazapfts.fetchJson<
-        | {
-              status: 200;
-              data: Session;
-          }
-        | {
-              status: 401;
-              data: ErrorResponse;
-          }
-    >("/auth/session", {
+    return oazapfts.fetchJson<{
+        status: 200;
+        data: Session;
+    } | {
+        status: 401;
+        data: ErrorResponse;
+    }>("/auth/session", {
         ...opts
     });
 }
@@ -1215,20 +1161,16 @@ export function getCurrentSession(opts?: Oazapfts.RequestOpts) {
  * Logout current session
  */
 export function logout(opts?: Oazapfts.RequestOpts) {
-    return oazapfts.fetchJson<
-        | {
-              status: 200;
-              data: MessageResponse;
-          }
-        | {
-              status: 401;
-              data: ErrorResponse;
-          }
-        | {
-              status: 500;
-              data: ErrorResponse;
-          }
-    >("/auth/logout", {
+    return oazapfts.fetchJson<{
+        status: 200;
+        data: MessageResponse;
+    } | {
+        status: 401;
+        data: ErrorResponse;
+    } | {
+        status: 500;
+        data: ErrorResponse;
+    }>("/auth/logout", {
         ...opts,
         method: "POST"
     });
@@ -1237,16 +1179,13 @@ export function logout(opts?: Oazapfts.RequestOpts) {
  * Get current authenticated user
  */
 export function getCurrentUser(opts?: Oazapfts.RequestOpts) {
-    return oazapfts.fetchJson<
-        | {
-              status: 200;
-              data: User;
-          }
-        | {
-              status: 401;
-              data: ErrorResponse;
-          }
-    >("/accounts/me", {
+    return oazapfts.fetchJson<{
+        status: 200;
+        data: User;
+    } | {
+        status: 401;
+        data: ErrorResponse;
+    }>("/accounts/me", {
         ...opts
     });
 }
@@ -1254,112 +1193,79 @@ export function getCurrentUser(opts?: Oazapfts.RequestOpts) {
  * Update current authenticated user's profile
  */
 export function updateCurrentUser(userUpdate: UserUpdate, opts?: Oazapfts.RequestOpts) {
-    return oazapfts.fetchJson<
-        | {
-              status: 200;
-              data: User;
-          }
-        | {
-              status: 400;
-              data: ErrorResponse;
-          }
-        | {
-              status: 401;
-              data: ErrorResponse;
-          }
-        | {
-              status: 404;
-              data: ErrorResponse;
-          }
-    >(
-        "/accounts/me",
-        oazapfts.json({
-            ...opts,
-            method: "PATCH",
-            body: userUpdate
-        })
-    );
+    return oazapfts.fetchJson<{
+        status: 200;
+        data: User;
+    } | {
+        status: 400;
+        data: ErrorResponse;
+    } | {
+        status: 401;
+        data: ErrorResponse;
+    } | {
+        status: 404;
+        data: ErrorResponse;
+    }>("/accounts/me", oazapfts.json({
+        ...opts,
+        method: "PATCH",
+        body: userUpdate
+    }));
 }
 /**
  * Onboard current authenticated user
  */
-export function doUserOnboarding(
-    userOnboardingBody: UserOnboardingBody,
-    opts?: Oazapfts.RequestOpts
-) {
-    return oazapfts.fetchJson<
-        | {
-              status: 200;
-              data: User;
-          }
-        | {
-              status: 400;
-              data: ErrorResponse;
-          }
-        | {
-              status: 401;
-              data: ErrorResponse;
-          }
-        | {
-              status: 404;
-              data: ErrorResponse;
-          }
-    >(
-        "/accounts/me/onboard",
-        oazapfts.json({
-            ...opts,
-            method: "PUT",
-            body: userOnboardingBody
-        })
-    );
+export function doUserOnboarding(userOnboardingBody: UserOnboardingBody, opts?: Oazapfts.RequestOpts) {
+    return oazapfts.fetchJson<{
+        status: 200;
+        data: User;
+    } | {
+        status: 400;
+        data: ErrorResponse;
+    } | {
+        status: 401;
+        data: ErrorResponse;
+    } | {
+        status: 404;
+        data: ErrorResponse;
+    }>("/accounts/me/onboard", oazapfts.json({
+        ...opts,
+        method: "PUT",
+        body: userOnboardingBody
+    }));
 }
 /**
  * Update user password
  */
-export function updatePassword(
-    userPasswordUpdate: UserPasswordUpdate,
-    opts?: Oazapfts.RequestOpts
-) {
-    return oazapfts.fetchJson<
-        | {
-              status: 200;
-              data: UserUpdate;
-          }
-        | {
-              status: 400;
-              data: ErrorResponse;
-          }
-        | {
-              status: 401;
-              data: ErrorResponse;
-          }
-        | {
-              status: 500;
-              data: ErrorResponse;
-          }
-    >(
-        "/accounts/me/password",
-        oazapfts.json({
-            ...opts,
-            method: "PUT",
-            body: userPasswordUpdate
-        })
-    );
+export function updatePassword(userPasswordUpdate: UserPasswordUpdate, opts?: Oazapfts.RequestOpts) {
+    return oazapfts.fetchJson<{
+        status: 200;
+        data: UserUpdate;
+    } | {
+        status: 400;
+        data: ErrorResponse;
+    } | {
+        status: 401;
+        data: ErrorResponse;
+    } | {
+        status: 500;
+        data: ErrorResponse;
+    }>("/accounts/me/password", oazapfts.json({
+        ...opts,
+        method: "PUT",
+        body: userPasswordUpdate
+    }));
 }
 /**
  * Get all sessions for the current user
  */
 export function getSessions(opts?: Oazapfts.RequestOpts) {
-    return oazapfts.fetchJson<
-        | {
-              status: 200;
-              data: Session[];
-          }
-        | {
-              status: 401;
-              data: ErrorResponse;
-          }
-    >("/sessions", {
+    return oazapfts.fetchJson<{
+        status: 200;
+        data: Session[];
+    } | {
+        status: 401;
+        data: ErrorResponse;
+    }>("/sessions", {
         ...opts
     });
 }
@@ -1367,16 +1273,13 @@ export function getSessions(opts?: Oazapfts.RequestOpts) {
  * Delete all sessions for the current user
  */
 export function deleteSessions(opts?: Oazapfts.RequestOpts) {
-    return oazapfts.fetchJson<
-        | {
-              status: 200;
-              data: MessageResponse;
-          }
-        | {
-              status: 401;
-              data: ErrorResponse;
-          }
-    >("/sessions", {
+    return oazapfts.fetchJson<{
+        status: 200;
+        data: MessageResponse;
+    } | {
+        status: 401;
+        data: ErrorResponse;
+    }>("/sessions", {
         ...opts,
         method: "DELETE"
     });
@@ -1385,75 +1288,55 @@ export function deleteSessions(opts?: Oazapfts.RequestOpts) {
  * Get a specific session by ID for the current user
  */
 export function getSessionById(uid: string, opts?: Oazapfts.RequestOpts) {
-    return oazapfts.fetchJson<
-        | {
-              status: 200;
-              data: Session;
-          }
-        | {
-              status: 401;
-              data: ErrorResponse;
-          }
-        | {
-              status: 404;
-              data: ErrorResponse;
-          }
-    >(`/sessions/${encodeURIComponent(uid)}`, {
+    return oazapfts.fetchJson<{
+        status: 200;
+        data: Session;
+    } | {
+        status: 401;
+        data: ErrorResponse;
+    } | {
+        status: 404;
+        data: ErrorResponse;
+    }>(`/sessions/${encodeURIComponent(uid)}`, {
         ...opts
     });
 }
 /**
  * Update a specific session
  */
-export function updateSession(
-    uid: string,
-    sessionUpdate: SessionUpdate,
-    opts?: Oazapfts.RequestOpts
-) {
-    return oazapfts.fetchJson<
-        | {
-              status: 200;
-              data: Session;
-          }
-        | {
-              status: 400;
-              data: ErrorResponse;
-          }
-        | {
-              status: 401;
-              data: ErrorResponse;
-          }
-        | {
-              status: 404;
-              data: ErrorResponse;
-          }
-    >(
-        `/sessions/${encodeURIComponent(uid)}`,
-        oazapfts.json({
-            ...opts,
-            method: "PUT",
-            body: sessionUpdate
-        })
-    );
+export function updateSession(uid: string, sessionUpdate: SessionUpdate, opts?: Oazapfts.RequestOpts) {
+    return oazapfts.fetchJson<{
+        status: 200;
+        data: Session;
+    } | {
+        status: 400;
+        data: ErrorResponse;
+    } | {
+        status: 401;
+        data: ErrorResponse;
+    } | {
+        status: 404;
+        data: ErrorResponse;
+    }>(`/sessions/${encodeURIComponent(uid)}`, oazapfts.json({
+        ...opts,
+        method: "PUT",
+        body: sessionUpdate
+    }));
 }
 /**
  * Delete a specific session
  */
 export function deleteSession(uid: string, opts?: Oazapfts.RequestOpts) {
-    return oazapfts.fetchJson<
-        | {
-              status: 200;
-              data: MessageResponse;
-          }
-        | {
-              status: 401;
-              data: ErrorResponse;
-          }
-        | {
-              status: 404;
-              data: ErrorResponse;
-          }
-    >(`/sessions/${encodeURIComponent(uid)}`, {
+    return oazapfts.fetchJson<{
+        status: 200;
+        data: MessageResponse;
+    } | {
+        status: 401;
+        data: ErrorResponse;
+    } | {
+        status: 404;
+        data: ErrorResponse;
+    }>(`/sessions/${encodeURIComponent(uid)}`, {
         ...opts,
         method: "DELETE"
     });
@@ -1462,263 +1345,198 @@ export function deleteSession(uid: string, opts?: Oazapfts.RequestOpts) {
  * Get all user settings
  */
 export function getUserSettings(opts?: Oazapfts.RequestOpts) {
-    return oazapfts.fetchJson<
-        | {
-              status: 200;
-              data: UserSetting[];
-          }
-        | {
-              status: 401;
-              data: ErrorResponse;
-          }
-        | {
-              status: 500;
-              data: ErrorResponse;
-          }
-    >("/accounts/me/settings", {
+    return oazapfts.fetchJson<{
+        status: 200;
+        data: UserSetting[];
+    } | {
+        status: 401;
+        data: ErrorResponse;
+    } | {
+        status: 500;
+        data: ErrorResponse;
+    }>("/accounts/me/settings", {
         ...opts
     });
 }
 /**
  * Update a user setting (Override)
  */
-export function updateUserSetting(
-    name: string,
-    body: {
-        /** New setting value */
-        value: string;
-    },
-    opts?: Oazapfts.RequestOpts
-) {
-    return oazapfts.fetchJson<
-        | {
-              status: 200;
-              data: UserSetting;
-          }
-        | {
-              status: 400;
-              data: ErrorResponse;
-          }
-        | {
-              status: 404;
-              data: ErrorResponse;
-          }
-        | {
-              status: 500;
-              data: ErrorResponse;
-          }
-    >(
-        `/accounts/me/settings${QS.query(
-            QS.explode({
-                name
-            })
-        )}`,
-        oazapfts.json({
-            ...opts,
-            method: "PATCH",
-            body
-        })
-    );
+export function updateUserSetting(name: string, body: {
+    /** New setting value */
+    value: string;
+}, opts?: Oazapfts.RequestOpts) {
+    return oazapfts.fetchJson<{
+        status: 200;
+        data: UserSetting;
+    } | {
+        status: 400;
+        data: ErrorResponse;
+    } | {
+        status: 404;
+        data: ErrorResponse;
+    } | {
+        status: 500;
+        data: ErrorResponse;
+    }>(`/accounts/me/settings${QS.query(QS.explode({
+        name
+    }))}`, oazapfts.json({
+        ...opts,
+        method: "PATCH",
+        body
+    }));
 }
 /**
  * Update multiple user settings (batch override)
  */
-export function updateUserSettingsBatch(
-    userSettingUpdateRequest: UserSettingUpdateRequest,
-    opts?: Oazapfts.RequestOpts
-) {
-    return oazapfts.fetchJson<
-        | {
-              status: 200;
-              data: UserSetting[];
-          }
-        | {
-              status: 400;
-              data: ErrorResponse;
-          }
-        | {
-              status: 401;
-              data: ErrorResponse;
-          }
-        | {
-              status: 500;
-              data: ErrorResponse;
-          }
-    >(
-        "/accounts/me/settings",
-        oazapfts.json({
-            ...opts,
-            method: "PUT",
-            body: userSettingUpdateRequest
-        })
-    );
+export function updateUserSettingsBatch(userSettingUpdateRequest: UserSettingUpdateRequest, opts?: Oazapfts.RequestOpts) {
+    return oazapfts.fetchJson<{
+        status: 200;
+        data: UserSetting[];
+    } | {
+        status: 400;
+        data: ErrorResponse;
+    } | {
+        status: 401;
+        data: ErrorResponse;
+    } | {
+        status: 500;
+        data: ErrorResponse;
+    }>("/accounts/me/settings", oazapfts.json({
+        ...opts,
+        method: "PUT",
+        body: userSettingUpdateRequest
+    }));
 }
 /**
  * Search for images and collections
  */
-export function executeSearch(
-    q: string,
-    {
+export function executeSearch(q: string, { limit, page }: {
+    limit?: number;
+    page?: number;
+} = {}, opts?: Oazapfts.RequestOpts) {
+    return oazapfts.fetchJson<{
+        status: 200;
+        data: SearchListResponse;
+    } | {
+        status: 500;
+        data: ErrorResponse;
+    }>(`/search${QS.query(QS.explode({
+        q,
         limit,
         page
-    }: {
-        limit?: number;
-        page?: number;
-    } = {},
-    opts?: Oazapfts.RequestOpts
-) {
-    return oazapfts.fetchJson<
-        | {
-              status: 200;
-              data: SearchListResponse;
-          }
-        | {
-              status: 500;
-              data: ErrorResponse;
-          }
-    >(
-        `/search${QS.query(
-            QS.explode({
-                q,
-                limit,
-                page
-            })
-        )}`,
-        {
-            ...opts
-        }
-    );
+    }))}`, {
+        ...opts
+    });
 }
 /**
  * List all images with pagination
  */
-export function listImages(
-    {
+export function listImages({ limit, page, sortBy, order }: {
+    limit?: number;
+    page?: number;
+    sortBy?: "taken_at" | "created_at" | "updated_at" | "name";
+    order?: string;
+} = {}, opts?: Oazapfts.RequestOpts) {
+    return oazapfts.fetchJson<{
+        status: 200;
+        data: ImagesListResponse;
+    } | {
+        status: 500;
+        data: ErrorResponse;
+    }>(`/images${QS.query(QS.explode({
         limit,
         page,
-        sortBy,
+        sort_by: sortBy,
         order
-    }: {
-        limit?: number;
-        page?: number;
-        sortBy?: "taken_at" | "created_at" | "updated_at" | "name";
-        order?: string;
-    } = {},
-    opts?: Oazapfts.RequestOpts
-) {
-    return oazapfts.fetchJson<
-        | {
-              status: 200;
-              data: ImagesListResponse;
-          }
-        | {
-              status: 500;
-              data: ErrorResponse;
-          }
-    >(
-        `/images${QS.query(
-            QS.explode({
-                limit,
-                page,
-                sort_by: sortBy,
-                order
-            })
-        )}`,
-        {
-            ...opts
-        }
-    );
+    }))}`, {
+        ...opts
+    });
 }
 /**
  * Upload an image (multipart)
  */
 export function uploadImage(imageUploadRequest: ImageUploadRequest, opts?: Oazapfts.RequestOpts) {
-    return oazapfts.fetchJson<
-        | {
-              status: 200;
-              data: ImageUploadResponse;
-          }
-        | {
-              status: 201;
-              data: ImageUploadResponse;
-          }
-        | {
-              status: 400;
-              data: ErrorResponse;
-          }
-        | {
-              status: 500;
-              data: ErrorResponse;
-          }
-    >(
-        "/images",
-        oazapfts.multipart({
-            ...opts,
-            method: "POST",
-            body: imageUploadRequest
-        })
-    );
+    return oazapfts.fetchJson<{
+        status: 200;
+        data: ImageUploadResponse;
+    } | {
+        status: 201;
+        data: ImageUploadResponse;
+    } | {
+        status: 400;
+        data: ErrorResponse;
+    } | {
+        status: 500;
+        data: ErrorResponse;
+    }>("/images", oazapfts.multipart({
+        ...opts,
+        method: "POST",
+        body: imageUploadRequest
+    }));
 }
 /**
  * Delete multiple asset UID directories (soft move to trash or force delete)
  */
-export function deleteImagesBulk(
-    body: {
-        /** List of image UIDs */
-        uids: string[];
-        /** Force deletion */
-        force?: boolean;
-    },
-    opts?: Oazapfts.RequestOpts
-) {
-    return oazapfts.fetchJson<
-        | {
-              status: 200;
-              data: DeleteAssetsResponse;
-          }
-        | {
-              status: 207;
-              data: DeleteAssetsResponse;
-          }
-        | {
-              status: 400;
-              data: ErrorResponse;
-          }
-        | {
-              status: 500;
-              data: ErrorResponse;
-          }
-    >(
-        "/images",
-        oazapfts.json({
-            ...opts,
-            method: "DELETE",
-            body
-        })
-    );
+export function deleteImagesBulk(body: {
+    /** List of image UIDs */
+    uids: string[];
+    /** Force deletion */
+    force?: boolean;
+}, opts?: Oazapfts.RequestOpts) {
+    return oazapfts.fetchJson<{
+        status: 200;
+        data: DeleteAssetsResponse;
+    } | {
+        status: 207;
+        data: DeleteAssetsResponse;
+    } | {
+        status: 400;
+        data: ErrorResponse;
+    } | {
+        status: 500;
+        data: ErrorResponse;
+    }>("/images", oazapfts.json({
+        ...opts,
+        method: "DELETE",
+        body
+    }));
+}
+/**
+ * Check if images with the given checksums already exist
+ */
+export function checkDuplicates(duplicateCheckRequest: DuplicateCheckRequest, opts?: Oazapfts.RequestOpts) {
+    return oazapfts.fetchJson<{
+        status: 200;
+        data: DuplicateCheckResponse;
+    } | {
+        status: 400;
+        data: ErrorResponse;
+    } | {
+        status: 500;
+        data: ErrorResponse;
+    }>("/images/duplicates", oazapfts.json({
+        ...opts,
+        method: "POST",
+        body: duplicateCheckRequest
+    }));
 }
 /**
  * Upload an image by URL
  */
 export function uploadImageByUrl(body: string, opts?: Oazapfts.RequestOpts) {
-    return oazapfts.fetchJson<
-        | {
-              status: 200;
-              data: ImageUploadResponse;
-          }
-        | {
-              status: 201;
-              data: ImageUploadResponse;
-          }
-        | {
-              status: 400;
-              data: ErrorResponse;
-          }
-        | {
-              status: 500;
-              data: ErrorResponse;
-          }
-    >("/images/url", {
+    return oazapfts.fetchJson<{
+        status: 200;
+        data: ImageUploadResponse;
+    } | {
+        status: 201;
+        data: ImageUploadResponse;
+    } | {
+        status: 400;
+        data: ErrorResponse;
+    } | {
+        status: 500;
+        data: ErrorResponse;
+    }>("/images/url", {
         ...opts,
         method: "POST",
         body
@@ -1727,9 +1545,30 @@ export function uploadImageByUrl(body: string, opts?: Oazapfts.RequestOpts) {
 /**
  * Get a processed image file
  */
-export function getImageFile(
-    uid: string,
-    {
+export function getImageFile(uid: string, { format, width, height, quality, download, token, password }: {
+    format?: "webp" | "png" | "jpg" | "jpeg" | "avif" | "heif";
+    width?: number;
+    height?: number;
+    quality?: number;
+    download?: "1";
+    token?: string;
+    password?: string;
+} = {}, opts?: Oazapfts.RequestOpts) {
+    return oazapfts.fetchJson<{
+        status: 200;
+        data: Blob;
+    } | {
+        status: 304;
+    } | {
+        status: 400;
+        data: ErrorResponse;
+    } | {
+        status: 401;
+        data: ErrorResponse;
+    } | {
+        status: 403;
+        data: ErrorResponse;
+    }>(`/images/${encodeURIComponent(uid)}/file${QS.query(QS.explode({
         format,
         width,
         height,
@@ -1737,116 +1576,51 @@ export function getImageFile(
         download,
         token,
         password
-    }: {
-        format?: "webp" | "png" | "jpg" | "jpeg" | "avif" | "heif";
-        width?: number;
-        height?: number;
-        quality?: number;
-        download?: "1";
-        token?: string;
-        password?: string;
-    } = {},
-    opts?: Oazapfts.RequestOpts
-) {
-    return oazapfts.fetchJson<
-        | {
-              status: 200;
-              data: Blob;
-          }
-        | {
-              status: 304;
-          }
-        | {
-              status: 400;
-              data: ErrorResponse;
-          }
-        | {
-              status: 401;
-              data: ErrorResponse;
-          }
-        | {
-              status: 403;
-              data: ErrorResponse;
-          }
-    >(
-        `/images/${encodeURIComponent(uid)}/file${QS.query(
-            QS.explode({
-                format,
-                width,
-                height,
-                quality,
-                download,
-                token,
-                password
-            })
-        )}`,
-        {
-            ...opts
-        }
-    );
+    }))}`, {
+        ...opts
+    });
 }
 /**
  * Get EXIF data for an image
  */
-export function getImageExif(
-    uid: string,
-    {
+export function getImageExif(uid: string, { simple }: {
+    simple?: boolean;
+} = {}, opts?: Oazapfts.RequestOpts) {
+    return oazapfts.fetchJson<{
+        status: 200;
+        data: ImageExif;
+    } | {
+        status: 400;
+        data: ErrorResponse;
+    } | {
+        status: 404;
+        data: ErrorResponse;
+    } | {
+        status: 500;
+        data: ErrorResponse;
+    }>(`/images/${encodeURIComponent(uid)}/exif${QS.query(QS.explode({
         simple
-    }: {
-        simple?: boolean;
-    } = {},
-    opts?: Oazapfts.RequestOpts
-) {
-    return oazapfts.fetchJson<
-        | {
-              status: 200;
-              data: ImageExif;
-          }
-        | {
-              status: 400;
-              data: ErrorResponse;
-          }
-        | {
-              status: 404;
-              data: ErrorResponse;
-          }
-        | {
-              status: 500;
-              data: ErrorResponse;
-          }
-    >(
-        `/images/${encodeURIComponent(uid)}/exif${QS.query(
-            QS.explode({
-                simple
-            })
-        )}`,
-        {
-            ...opts
-        }
-    );
+    }))}`, {
+        ...opts
+    });
 }
 /**
  * Get image metadata
  */
 export function getImage(uid: string, opts?: Oazapfts.RequestOpts) {
-    return oazapfts.fetchJson<
-        | {
-              status: 200;
-              data: ImageAsset;
-          }
-        | {
-              status: 400;
-              data: ErrorResponse;
-          }
-        | {
-              status: 404;
-              data: ErrorResponse;
-          }
-        | {
-              status: 500;
-              data: ErrorResponse;
-          }
-    >(`/images/${encodeURIComponent(uid)}`, {
+    return oazapfts.fetchJson<{
+        status: 200;
+        data: ImageAsset;
+    } | {
+        status: 400;
+        data: ErrorResponse;
+    } | {
+        status: 404;
+        data: ErrorResponse;
+    } | {
+        status: 500;
+        data: ErrorResponse;
+    }>(`/images/${encodeURIComponent(uid)}`, {
         ...opts
     });
 }
@@ -1854,212 +1628,144 @@ export function getImage(uid: string, opts?: Oazapfts.RequestOpts) {
  * Update image metadata
  */
 export function updateImage(uid: string, imageUpdate: ImageUpdate, opts?: Oazapfts.RequestOpts) {
-    return oazapfts.fetchJson<
-        | {
-              status: 200;
-              data: ImageAsset;
-          }
-        | {
-              status: 400;
-              data: ErrorResponse;
-          }
-        | {
-              status: 404;
-              data: ErrorResponse;
-          }
-        | {
-              status: 500;
-              data: ErrorResponse;
-          }
-    >(
-        `/images/${encodeURIComponent(uid)}`,
-        oazapfts.json({
-            ...opts,
-            method: "PATCH",
-            body: imageUpdate
-        })
-    );
+    return oazapfts.fetchJson<{
+        status: 200;
+        data: ImageAsset;
+    } | {
+        status: 400;
+        data: ErrorResponse;
+    } | {
+        status: 404;
+        data: ErrorResponse;
+    } | {
+        status: 500;
+        data: ErrorResponse;
+    }>(`/images/${encodeURIComponent(uid)}`, oazapfts.json({
+        ...opts,
+        method: "PATCH",
+        body: imageUpdate
+    }));
 }
 /**
  * Create short-lived download token and redirect
  */
 export function quickDownloadImage(uid: string, opts?: Oazapfts.RequestOpts) {
-    return oazapfts.fetchJson<
-        | {
-              status: 302;
-          }
-        | {
-              status: 400;
-              data: ErrorResponse;
-          }
-        | {
-              status: 500;
-              data: ErrorResponse;
-          }
-    >(`/images/${encodeURIComponent(uid)}/download`, {
+    return oazapfts.fetchJson<{
+        status: 302;
+    } | {
+        status: 400;
+        data: ErrorResponse;
+    } | {
+        status: 500;
+        data: ErrorResponse;
+    }>(`/images/${encodeURIComponent(uid)}/download`, {
         ...opts
     });
 }
 /**
  * List collections
  */
-export function listCollections(
-    {
+export function listCollections({ limit, page, sortBy, order }: {
+    limit?: number;
+    page?: number;
+    sortBy?: "name" | "created_at" | "updated_at";
+    order?: "ASC" | "DESC";
+} = {}, opts?: Oazapfts.RequestOpts) {
+    return oazapfts.fetchJson<{
+        status: 200;
+        data: CollectionListResponse;
+    } | {
+        status: 400;
+        data: ErrorResponse;
+    } | {
+        status: 500;
+        data: ErrorResponse;
+    }>(`/collections${QS.query(QS.explode({
         limit,
         page,
-        sortBy,
+        sort_by: sortBy,
         order
-    }: {
-        limit?: number;
-        page?: number;
-        sortBy?: "name" | "created_at" | "updated_at";
-        order?: "ASC" | "DESC";
-    } = {},
-    opts?: Oazapfts.RequestOpts
-) {
-    return oazapfts.fetchJson<
-        | {
-              status: 200;
-              data: CollectionListResponse;
-          }
-        | {
-              status: 400;
-              data: ErrorResponse;
-          }
-        | {
-              status: 500;
-              data: ErrorResponse;
-          }
-    >(
-        `/collections${QS.query(
-            QS.explode({
-                limit,
-                page,
-                sort_by: sortBy,
-                order
-            })
-        )}`,
-        {
-            ...opts
-        }
-    );
+    }))}`, {
+        ...opts
+    });
 }
 /**
  * Create a collection
  */
 export function createCollection(collectionCreate: CollectionCreate, opts?: Oazapfts.RequestOpts) {
-    return oazapfts.fetchJson<
-        | {
-              status: 201;
-              data: Collection;
-          }
-        | {
-              status: 400;
-              data: ErrorResponse;
-          }
-        | {
-              status: 500;
-              data: ErrorResponse;
-          }
-    >(
-        "/collections",
-        oazapfts.json({
-            ...opts,
-            method: "POST",
-            body: collectionCreate
-        })
-    );
+    return oazapfts.fetchJson<{
+        status: 201;
+        data: Collection;
+    } | {
+        status: 400;
+        data: ErrorResponse;
+    } | {
+        status: 500;
+        data: ErrorResponse;
+    }>("/collections", oazapfts.json({
+        ...opts,
+        method: "POST",
+        body: collectionCreate
+    }));
 }
 /**
  * Get collection detail
  */
-export function getCollection(
-    uid: string,
-    {
-        sortBy,
+export function getCollection(uid: string, { sortBy, order }: {
+    sortBy?: "taken_at" | "created_at" | "updated_at" | "name";
+    order?: "ASC" | "DESC";
+} = {}, opts?: Oazapfts.RequestOpts) {
+    return oazapfts.fetchJson<{
+        status: 200;
+        data: CollectionDetailResponse;
+    } | {
+        status: 404;
+        data: ErrorResponse;
+    } | {
+        status: 500;
+        data: ErrorResponse;
+    }>(`/collections/${encodeURIComponent(uid)}${QS.query(QS.explode({
+        sort_by: sortBy,
         order
-    }: {
-        sortBy?: "taken_at" | "created_at" | "updated_at" | "name";
-        order?: "ASC" | "DESC";
-    } = {},
-    opts?: Oazapfts.RequestOpts
-) {
-    return oazapfts.fetchJson<
-        | {
-              status: 200;
-              data: CollectionDetailResponse;
-          }
-        | {
-              status: 404;
-              data: ErrorResponse;
-          }
-        | {
-              status: 500;
-              data: ErrorResponse;
-          }
-    >(
-        `/collections/${encodeURIComponent(uid)}${QS.query(
-            QS.explode({
-                sort_by: sortBy,
-                order
-            })
-        )}`,
-        {
-            ...opts
-        }
-    );
+    }))}`, {
+        ...opts
+    });
 }
 /**
  * Update collection
  */
-export function updateCollection(
-    uid: string,
-    collectionUpdate: CollectionUpdate,
-    opts?: Oazapfts.RequestOpts
-) {
-    return oazapfts.fetchJson<
-        | {
-              status: 200;
-              data: Collection;
-          }
-        | {
-              status: 400;
-              data: ErrorResponse;
-          }
-        | {
-              status: 404;
-              data: ErrorResponse;
-          }
-        | {
-              status: 500;
-              data: ErrorResponse;
-          }
-    >(
-        `/collections/${encodeURIComponent(uid)}`,
-        oazapfts.json({
-            ...opts,
-            method: "PATCH",
-            body: collectionUpdate
-        })
-    );
+export function updateCollection(uid: string, collectionUpdate: CollectionUpdate, opts?: Oazapfts.RequestOpts) {
+    return oazapfts.fetchJson<{
+        status: 200;
+        data: Collection;
+    } | {
+        status: 400;
+        data: ErrorResponse;
+    } | {
+        status: 404;
+        data: ErrorResponse;
+    } | {
+        status: 500;
+        data: ErrorResponse;
+    }>(`/collections/${encodeURIComponent(uid)}`, oazapfts.json({
+        ...opts,
+        method: "PATCH",
+        body: collectionUpdate
+    }));
 }
 /**
  * Delete a collection
  */
 export function deleteCollection(uid: string, opts?: Oazapfts.RequestOpts) {
-    return oazapfts.fetchJson<
-        | {
-              status: 204;
-          }
-        | {
-              status: 404;
-              data: ErrorResponse;
-          }
-        | {
-              status: 500;
-              data: ErrorResponse;
-          }
-    >(`/collections/${encodeURIComponent(uid)}`, {
+    return oazapfts.fetchJson<{
+        status: 204;
+    } | {
+        status: 404;
+        data: ErrorResponse;
+    } | {
+        status: 500;
+        data: ErrorResponse;
+    }>(`/collections/${encodeURIComponent(uid)}`, {
         ...opts,
         method: "DELETE"
     });
@@ -2068,233 +1774,157 @@ export function deleteCollection(uid: string, opts?: Oazapfts.RequestOpts) {
  * List all image UIDs in a collection
  */
 export function listCollectionImageUiDs(uid: string, opts?: Oazapfts.RequestOpts) {
-    return oazapfts.fetchJson<
-        | {
-              status: 200;
-              data: string[];
-          }
-        | {
-              status: 404;
-              data: ErrorResponse;
-          }
-        | {
-              status: 500;
-              data: ErrorResponse;
-          }
-    >(`/collections/${encodeURIComponent(uid)}/images/uids`, {
+    return oazapfts.fetchJson<{
+        status: 200;
+        data: string[];
+    } | {
+        status: 404;
+        data: ErrorResponse;
+    } | {
+        status: 500;
+        data: ErrorResponse;
+    }>(`/collections/${encodeURIComponent(uid)}/images/uids`, {
         ...opts
     });
 }
 /**
  * List images in a collection
  */
-export function listCollectionImages(
-    uid: string,
-    {
+export function listCollectionImages(uid: string, { limit, page, sortBy, order }: {
+    limit?: number;
+    page?: number;
+    sortBy?: "taken_at" | "created_at" | "updated_at" | "name";
+    order?: "ASC" | "DESC";
+} = {}, opts?: Oazapfts.RequestOpts) {
+    return oazapfts.fetchJson<{
+        status: 200;
+        data: ImagesListResponse;
+    } | {
+        status: 404;
+        data: ErrorResponse;
+    } | {
+        status: 500;
+        data: ErrorResponse;
+    }>(`/collections/${encodeURIComponent(uid)}/images${QS.query(QS.explode({
         limit,
         page,
-        sortBy,
+        sort_by: sortBy,
         order
-    }: {
-        limit?: number;
-        page?: number;
-        sortBy?: "taken_at" | "created_at" | "updated_at" | "name";
-        order?: "ASC" | "DESC";
-    } = {},
-    opts?: Oazapfts.RequestOpts
-) {
-    return oazapfts.fetchJson<
-        | {
-              status: 200;
-              data: ImagesListResponse;
-          }
-        | {
-              status: 404;
-              data: ErrorResponse;
-          }
-        | {
-              status: 500;
-              data: ErrorResponse;
-          }
-    >(
-        `/collections/${encodeURIComponent(uid)}/images${QS.query(
-            QS.explode({
-                limit,
-                page,
-                sort_by: sortBy,
-                order
-            })
-        )}`,
-        {
-            ...opts
-        }
-    );
+    }))}`, {
+        ...opts
+    });
 }
 /**
  * Add images to a collection
  */
-export function addCollectionImages(
-    uid: string,
-    body: {
-        /** List of image UIDs */
-        uids: string[];
-    },
-    opts?: Oazapfts.RequestOpts
-) {
-    return oazapfts.fetchJson<
-        | {
-              status: 200;
-              data: AddImagesResponse;
-          }
-        | {
-              status: 400;
-              data: AddImagesResponse;
-          }
-        | {
-              status: 404;
-              data: AddImagesResponse;
-          }
-    >(
-        `/collections/${encodeURIComponent(uid)}/images`,
-        oazapfts.json({
-            ...opts,
-            method: "PUT",
-            body
-        })
-    );
+export function addCollectionImages(uid: string, body: {
+    /** List of image UIDs */
+    uids: string[];
+}, opts?: Oazapfts.RequestOpts) {
+    return oazapfts.fetchJson<{
+        status: 200;
+        data: AddImagesResponse;
+    } | {
+        status: 400;
+        data: AddImagesResponse;
+    } | {
+        status: 404;
+        data: AddImagesResponse;
+    }>(`/collections/${encodeURIComponent(uid)}/images`, oazapfts.json({
+        ...opts,
+        method: "PUT",
+        body
+    }));
 }
 /**
  * Remove images from a collection
  */
-export function deleteCollectionImages(
-    uid: string,
-    body: {
-        /** List of image UIDs */
-        uids?: string[];
-        /** Flag to select all images */
-        all?: boolean;
-        /** UIDs to exclude when all is true */
-        exclusions?: string[];
-    },
-    opts?: Oazapfts.RequestOpts
-) {
-    return oazapfts.fetchJson<
-        | {
-              status: 200;
-              data: DeleteImagesResponse;
-          }
-        | {
-              status: 400;
-              data: DeleteImagesResponse;
-          }
-        | {
-              status: 404;
-              data: DeleteImagesResponse;
-          }
-        | {
-              status: 500;
-              data: ErrorResponse;
-          }
-    >(
-        `/collections/${encodeURIComponent(uid)}/images`,
-        oazapfts.json({
-            ...opts,
-            method: "DELETE",
-            body
-        })
-    );
+export function deleteCollectionImages(uid: string, body: {
+    /** List of image UIDs */
+    uids?: string[];
+    /** Flag to select all images */
+    all?: boolean;
+    /** UIDs to exclude when all is true */
+    exclusions?: string[];
+}, opts?: Oazapfts.RequestOpts) {
+    return oazapfts.fetchJson<{
+        status: 200;
+        data: DeleteImagesResponse;
+    } | {
+        status: 400;
+        data: DeleteImagesResponse;
+    } | {
+        status: 404;
+        data: DeleteImagesResponse;
+    } | {
+        status: 500;
+        data: ErrorResponse;
+    }>(`/collections/${encodeURIComponent(uid)}/images`, oazapfts.json({
+        ...opts,
+        method: "DELETE",
+        body
+    }));
 }
 /**
  * Download a set of images as a ZIP (requires token)
  */
-export function downloadImages(
-    token: string,
-    downloadRequest: DownloadRequest,
-    {
+export function downloadImages(token: string, downloadRequest: DownloadRequest, { password }: {
+    password?: string;
+} = {}, opts?: Oazapfts.RequestOpts) {
+    return oazapfts.fetchJson<{
+        status: 200;
+        data: Blob;
+    } | {
+        status: 400;
+        data: ErrorResponse;
+    } | {
+        status: 401;
+        data: ErrorResponse;
+    } | {
+        status: 403;
+        data: ErrorResponse;
+    } | {
+        status: 500;
+        data: ErrorResponse;
+    }>(`/download${QS.query(QS.explode({
+        token,
         password
-    }: {
-        password?: string;
-    } = {},
-    opts?: Oazapfts.RequestOpts
-) {
-    return oazapfts.fetchJson<
-        | {
-              status: 200;
-              data: Blob;
-          }
-        | {
-              status: 400;
-              data: ErrorResponse;
-          }
-        | {
-              status: 401;
-              data: ErrorResponse;
-          }
-        | {
-              status: 403;
-              data: ErrorResponse;
-          }
-        | {
-              status: 500;
-              data: ErrorResponse;
-          }
-    >(
-        `/download${QS.query(
-            QS.explode({
-                token,
-                password
-            })
-        )}`,
-        oazapfts.json({
-            ...opts,
-            method: "POST",
-            body: downloadRequest
-        })
-    );
+    }))}`, oazapfts.json({
+        ...opts,
+        method: "POST",
+        body: downloadRequest
+    }));
 }
 /**
  * Create a download token with optional access controls
  */
-export function signDownload(
-    signDownloadRequest?: SignDownloadRequest,
-    opts?: Oazapfts.RequestOpts
-) {
-    return oazapfts.fetchJson<
-        | {
-              status: 200;
-              data: DownloadToken;
-          }
-        | {
-              status: 400;
-              data: ErrorResponse;
-          }
-        | {
-              status: 500;
-              data: ErrorResponse;
-          }
-    >(
-        "/download/sign",
-        oazapfts.json({
-            ...opts,
-            method: "POST",
-            body: signDownloadRequest
-        })
-    );
+export function signDownload(signDownloadRequest?: SignDownloadRequest, opts?: Oazapfts.RequestOpts) {
+    return oazapfts.fetchJson<{
+        status: 200;
+        data: DownloadToken;
+    } | {
+        status: 400;
+        data: ErrorResponse;
+    } | {
+        status: 500;
+        data: ErrorResponse;
+    }>("/download/sign", oazapfts.json({
+        ...opts,
+        method: "POST",
+        body: signDownloadRequest
+    }));
 }
 /**
  * List all setting definitions
  */
 export function listSettingDefinitions(opts?: Oazapfts.RequestOpts) {
-    return oazapfts.fetchJson<
-        | {
-              status: 200;
-              data: SettingDefault[];
-          }
-        | {
-              status: 401;
-              data: ErrorResponse;
-          }
-    >("/admin/settings/definitions", {
+    return oazapfts.fetchJson<{
+        status: 200;
+        data: SettingDefault[];
+    } | {
+        status: 401;
+        data: ErrorResponse;
+    }>("/admin/settings/definitions", {
         ...opts
     });
 }
@@ -2302,16 +1932,13 @@ export function listSettingDefinitions(opts?: Oazapfts.RequestOpts) {
  * List all overrides (debug/admin)
  */
 export function listSettingOverrides(opts?: Oazapfts.RequestOpts) {
-    return oazapfts.fetchJson<
-        | {
-              status: 200;
-              data: SettingOverride[];
-          }
-        | {
-              status: 401;
-              data: ErrorResponse;
-          }
-    >("/admin/settings/overrides", {
+    return oazapfts.fetchJson<{
+        status: 200;
+        data: SettingOverride[];
+    } | {
+        status: 401;
+        data: ErrorResponse;
+    }>("/admin/settings/overrides", {
         ...opts
     });
 }
@@ -2319,24 +1946,19 @@ export function listSettingOverrides(opts?: Oazapfts.RequestOpts) {
  * Admin-only healthcheck
  */
 export function adminHealthcheck(opts?: Oazapfts.RequestOpts) {
-    return oazapfts.fetchJson<
-        | {
-              status: 200;
-              data: MessageResponse;
-          }
-        | {
-              status: 401;
-              data: ErrorResponse;
-          }
-        | {
-              status: 403;
-              data: ErrorResponse;
-          }
-        | {
-              status: 500;
-              data: ErrorResponse;
-          }
-    >("/admin/healthcheck", {
+    return oazapfts.fetchJson<{
+        status: 200;
+        data: MessageResponse;
+    } | {
+        status: 401;
+        data: ErrorResponse;
+    } | {
+        status: 403;
+        data: ErrorResponse;
+    } | {
+        status: 500;
+        data: ErrorResponse;
+    }>("/admin/healthcheck", {
         ...opts,
         method: "POST"
     });
@@ -2345,20 +1967,16 @@ export function adminHealthcheck(opts?: Oazapfts.RequestOpts) {
  * Get system configuration
  */
 export function getSystemConfig(opts?: Oazapfts.RequestOpts) {
-    return oazapfts.fetchJson<
-        | {
-              status: 200;
-              data: VizConfig;
-          }
-        | {
-              status: 401;
-              data: ErrorResponse;
-          }
-        | {
-              status: 403;
-              data: ErrorResponse;
-          }
-    >("/system/config", {
+    return oazapfts.fetchJson<{
+        status: 200;
+        data: VizConfig;
+    } | {
+        status: 401;
+        data: ErrorResponse;
+    } | {
+        status: 403;
+        data: ErrorResponse;
+    }>("/system/config", {
         ...opts
     });
 }
@@ -2366,20 +1984,16 @@ export function getSystemConfig(opts?: Oazapfts.RequestOpts) {
  * Get system statistics (uptime, memory)
  */
 export function getSystemStats(opts?: Oazapfts.RequestOpts) {
-    return oazapfts.fetchJson<
-        | {
-              status: 200;
-              data: SystemStatsResponse;
-          }
-        | {
-              status: 401;
-              data: ErrorResponse;
-          }
-        | {
-              status: 403;
-              data: ErrorResponse;
-          }
-    >("/admin/system/stats", {
+    return oazapfts.fetchJson<{
+        status: 200;
+        data: SystemStatsResponse;
+    } | {
+        status: 401;
+        data: ErrorResponse;
+    } | {
+        status: 403;
+        data: ErrorResponse;
+    }>("/admin/system/stats", {
         ...opts
     });
 }
@@ -2387,20 +2001,16 @@ export function getSystemStats(opts?: Oazapfts.RequestOpts) {
  * Get database statistics (counts)
  */
 export function getDatabaseStats(opts?: Oazapfts.RequestOpts) {
-    return oazapfts.fetchJson<
-        | {
-              status: 200;
-              data: DatabaseStatsResponse;
-          }
-        | {
-              status: 401;
-              data: ErrorResponse;
-          }
-        | {
-              status: 403;
-              data: ErrorResponse;
-          }
-    >("/admin/db/stats", {
+    return oazapfts.fetchJson<{
+        status: 200;
+        data: DatabaseStatsResponse;
+    } | {
+        status: 401;
+        data: ErrorResponse;
+    } | {
+        status: 403;
+        data: ErrorResponse;
+    }>("/admin/db/stats", {
         ...opts
     });
 }
@@ -2408,24 +2018,19 @@ export function getDatabaseStats(opts?: Oazapfts.RequestOpts) {
  * Get cache status
  */
 export function getCacheStatus(opts?: Oazapfts.RequestOpts) {
-    return oazapfts.fetchJson<
-        | {
-              status: 200;
-              data: CacheStatusResponse;
-          }
-        | {
-              status: 401;
-              data: ErrorResponse;
-          }
-        | {
-              status: 403;
-              data: ErrorResponse;
-          }
-        | {
-              status: 500;
-              data: ErrorResponse;
-          }
-    >("/admin/cache/status", {
+    return oazapfts.fetchJson<{
+        status: 200;
+        data: CacheStatusResponse;
+    } | {
+        status: 401;
+        data: ErrorResponse;
+    } | {
+        status: 403;
+        data: ErrorResponse;
+    } | {
+        status: 500;
+        data: ErrorResponse;
+    }>("/admin/cache/status", {
         ...opts
     });
 }
@@ -2433,24 +2038,19 @@ export function getCacheStatus(opts?: Oazapfts.RequestOpts) {
  * Clear the image cache
  */
 export function clearImageCache(opts?: Oazapfts.RequestOpts) {
-    return oazapfts.fetchJson<
-        | {
-              status: 200;
-              data: MessageResponse;
-          }
-        | {
-              status: 401;
-              data: ErrorResponse;
-          }
-        | {
-              status: 403;
-              data: ErrorResponse;
-          }
-        | {
-              status: 500;
-              data: ErrorResponse;
-          }
-    >("/admin/cache", {
+    return oazapfts.fetchJson<{
+        status: 200;
+        data: MessageResponse;
+    } | {
+        status: 401;
+        data: ErrorResponse;
+    } | {
+        status: 403;
+        data: ErrorResponse;
+    } | {
+        status: 500;
+        data: ErrorResponse;
+    }>("/admin/cache", {
         ...opts,
         method: "DELETE"
     });
@@ -2459,24 +2059,19 @@ export function clearImageCache(opts?: Oazapfts.RequestOpts) {
  * List all users
  */
 export function listUsers(opts?: Oazapfts.RequestOpts) {
-    return oazapfts.fetchJson<
-        | {
-              status: 200;
-              data: User[];
-          }
-        | {
-              status: 401;
-              data: ErrorResponse;
-          }
-        | {
-              status: 403;
-              data: ErrorResponse;
-          }
-        | {
-              status: 500;
-              data: ErrorResponse;
-          }
-    >("/admin/users", {
+    return oazapfts.fetchJson<{
+        status: 200;
+        data: User[];
+    } | {
+        status: 401;
+        data: ErrorResponse;
+    } | {
+        status: 403;
+        data: ErrorResponse;
+    } | {
+        status: 500;
+        data: ErrorResponse;
+    }>("/admin/users", {
         ...opts
     });
 }
@@ -2484,252 +2079,173 @@ export function listUsers(opts?: Oazapfts.RequestOpts) {
  * Create a new user (admin)
  */
 export function adminCreateUser(adminUserCreate: AdminUserCreate, opts?: Oazapfts.RequestOpts) {
-    return oazapfts.fetchJson<
-        | {
-              status: 201;
-              data: User;
-          }
-        | {
-              status: 400;
-              data: ErrorResponse;
-          }
-        | {
-              status: 401;
-              data: ErrorResponse;
-          }
-        | {
-              status: 403;
-              data: ErrorResponse;
-          }
-        | {
-              status: 409;
-              data: ErrorResponse;
-          }
-        | {
-              status: 500;
-              data: ErrorResponse;
-          }
-    >(
-        "/admin/users",
-        oazapfts.json({
-            ...opts,
-            method: "POST",
-            body: adminUserCreate
-        })
-    );
+    return oazapfts.fetchJson<{
+        status: 201;
+        data: User;
+    } | {
+        status: 400;
+        data: ErrorResponse;
+    } | {
+        status: 401;
+        data: ErrorResponse;
+    } | {
+        status: 403;
+        data: ErrorResponse;
+    } | {
+        status: 409;
+        data: ErrorResponse;
+    } | {
+        status: 500;
+        data: ErrorResponse;
+    }>("/admin/users", oazapfts.json({
+        ...opts,
+        method: "POST",
+        body: adminUserCreate
+    }));
 }
 /**
  * Update user details (admin)
  */
-export function adminUpdateUser(
-    uid: string,
-    adminUserUpdate: AdminUserUpdate,
-    opts?: Oazapfts.RequestOpts
-) {
-    return oazapfts.fetchJson<
-        | {
-              status: 200;
-              data: User;
-          }
-        | {
-              status: 400;
-              data: ErrorResponse;
-          }
-        | {
-              status: 401;
-              data: ErrorResponse;
-          }
-        | {
-              status: 403;
-              data: ErrorResponse;
-          }
-        | {
-              status: 404;
-              data: ErrorResponse;
-          }
-        | {
-              status: 500;
-              data: ErrorResponse;
-          }
-    >(
-        `/admin/users/${encodeURIComponent(uid)}`,
-        oazapfts.json({
-            ...opts,
-            method: "PATCH",
-            body: adminUserUpdate
-        })
-    );
+export function adminUpdateUser(uid: string, adminUserUpdate: AdminUserUpdate, opts?: Oazapfts.RequestOpts) {
+    return oazapfts.fetchJson<{
+        status: 200;
+        data: User;
+    } | {
+        status: 400;
+        data: ErrorResponse;
+    } | {
+        status: 401;
+        data: ErrorResponse;
+    } | {
+        status: 403;
+        data: ErrorResponse;
+    } | {
+        status: 404;
+        data: ErrorResponse;
+    } | {
+        status: 500;
+        data: ErrorResponse;
+    }>(`/admin/users/${encodeURIComponent(uid)}`, oazapfts.json({
+        ...opts,
+        method: "PATCH",
+        body: adminUserUpdate
+    }));
 }
 /**
  * Delete user (admin)
  */
-export function adminDeleteUser(
-    uid: string,
-    body?: {
-        /** If true, permanently deletes the user and all associated data (sessions, settings). */
-        force?: boolean;
-    },
-    opts?: Oazapfts.RequestOpts
-) {
-    return oazapfts.fetchJson<
-        | {
-              status: 200;
-              data: MessageResponse;
-          }
-        | {
-              status: 401;
-              data: ErrorResponse;
-          }
-        | {
-              status: 403;
-              data: ErrorResponse;
-          }
-        | {
-              status: 404;
-              data: ErrorResponse;
-          }
-        | {
-              status: 500;
-              data: ErrorResponse;
-          }
-    >(
-        `/admin/users/${encodeURIComponent(uid)}`,
-        oazapfts.json({
-            ...opts,
-            method: "DELETE",
-            body
-        })
-    );
+export function adminDeleteUser(uid: string, body?: {
+    /** If true, permanently deletes the user and all associated data (sessions, settings). */
+    force?: boolean;
+}, opts?: Oazapfts.RequestOpts) {
+    return oazapfts.fetchJson<{
+        status: 200;
+        data: MessageResponse;
+    } | {
+        status: 401;
+        data: ErrorResponse;
+    } | {
+        status: 403;
+        data: ErrorResponse;
+    } | {
+        status: 404;
+        data: ErrorResponse;
+    } | {
+        status: 500;
+        data: ErrorResponse;
+    }>(`/admin/users/${encodeURIComponent(uid)}`, oazapfts.json({
+        ...opts,
+        method: "DELETE",
+        body
+    }));
 }
 /**
  * List all workers
  */
 export function listAvailableWorkers(opts?: Oazapfts.RequestOpts) {
-    return oazapfts.fetchJson<
-        | {
-              status: 200;
-              data: WorkersListResponse;
-          }
-        | {
-              status: 401;
-              data: ErrorResponse;
-          }
-    >("/jobs/workers", {
+    return oazapfts.fetchJson<{
+        status: 200;
+        data: WorkersListResponse;
+    } | {
+        status: 401;
+        data: ErrorResponse;
+    }>("/jobs/workers", {
         ...opts
     });
 }
 /**
  * Register a new worker
  */
-export function registerWorker(
-    workerRegisterRequest: WorkerRegisterRequest,
-    opts?: Oazapfts.RequestOpts
-) {
-    return oazapfts.fetchJson<
-        | {
-              status: 201;
-              data: WorkerInfo;
-          }
-        | {
-              status: 400;
-              data: ErrorResponse;
-          }
-        | {
-              status: 500;
-              data: ErrorResponse;
-          }
-    >(
-        "/jobs/workers",
-        oazapfts.json({
-            ...opts,
-            method: "POST",
-            body: workerRegisterRequest
-        })
-    );
+export function registerWorker(workerRegisterRequest: WorkerRegisterRequest, opts?: Oazapfts.RequestOpts) {
+    return oazapfts.fetchJson<{
+        status: 201;
+        data: WorkerInfo;
+    } | {
+        status: 400;
+        data: ErrorResponse;
+    } | {
+        status: 500;
+        data: ErrorResponse;
+    }>("/jobs/workers", oazapfts.json({
+        ...opts,
+        method: "POST",
+        body: workerRegisterRequest
+    }));
 }
 /**
  * Create/enqueue a job
  */
-export function createJob(
-    workerJobCreateRequest: WorkerJobCreateRequest,
-    opts?: Oazapfts.RequestOpts
-) {
-    return oazapfts.fetchJson<
-        | {
-              status: 202;
-              data: WorkerJobEnqueueResponse;
-          }
-        | {
-              status: 400;
-              data: ErrorResponse;
-          }
-        | {
-              status: 500;
-              data: ErrorResponse;
-          }
-    >(
-        "/jobs",
-        oazapfts.json({
-            ...opts,
-            method: "POST",
-            body: workerJobCreateRequest
-        })
-    );
+export function createJob(workerJobCreateRequest: WorkerJobCreateRequest, opts?: Oazapfts.RequestOpts) {
+    return oazapfts.fetchJson<{
+        status: 202;
+        data: WorkerJobEnqueueResponse;
+    } | {
+        status: 400;
+        data: ErrorResponse;
+    } | {
+        status: 500;
+        data: ErrorResponse;
+    }>("/jobs", oazapfts.json({
+        ...opts,
+        method: "POST",
+        body: workerJobCreateRequest
+    }));
 }
 /**
  * List jobs with filtering and pagination
  */
-export function listJobs(
-    {
+export function listJobs({ status, topic, limit, page }: {
+    status?: "queued" | "running" | "completed" | "failed" | "cancelled";
+    topic?: string;
+    limit?: number;
+    page?: number;
+} = {}, opts?: Oazapfts.RequestOpts) {
+    return oazapfts.fetchJson<{
+        status: 200;
+        data: WorkerJobsResponse;
+    } | {
+        status: 500;
+        data: ErrorResponse;
+    }>(`/jobs${QS.query(QS.explode({
         status,
         topic,
         limit,
         page
-    }: {
-        status?: "queued" | "running" | "completed" | "failed" | "cancelled";
-        topic?: string;
-        limit?: number;
-        page?: number;
-    } = {},
-    opts?: Oazapfts.RequestOpts
-) {
-    return oazapfts.fetchJson<
-        | {
-              status: 200;
-              data: WorkerJobsResponse;
-          }
-        | {
-              status: 500;
-              data: ErrorResponse;
-          }
-    >(
-        `/jobs${QS.query(
-            QS.explode({
-                status,
-                topic,
-                limit,
-                page
-            })
-        )}`,
-        {
-            ...opts
-        }
-    );
+    }))}`, {
+        ...opts
+    });
 }
 /**
  * Get job detail
  */
 export function getJob(uid: string, opts?: Oazapfts.RequestOpts) {
-    return oazapfts.fetchJson<
-        | {
-              status: 200;
-              data: WorkerJob;
-          }
-        | {
-              status: 404;
-              data: ErrorResponse;
-          }
-    >(`/jobs/${encodeURIComponent(uid)}`, {
+    return oazapfts.fetchJson<{
+        status: 200;
+        data: WorkerJob;
+    } | {
+        status: 404;
+        data: ErrorResponse;
+    }>(`/jobs/${encodeURIComponent(uid)}`, {
         ...opts
     });
 }
@@ -2737,16 +2253,13 @@ export function getJob(uid: string, opts?: Oazapfts.RequestOpts) {
  * Cancel job
  */
 export function cancelJob(uid: string, opts?: Oazapfts.RequestOpts) {
-    return oazapfts.fetchJson<
-        | {
-              status: 200;
-              data: MessageResponse;
-          }
-        | {
-              status: 404;
-              data: ErrorResponse;
-          }
-    >(`/jobs/${encodeURIComponent(uid)}`, {
+    return oazapfts.fetchJson<{
+        status: 200;
+        data: MessageResponse;
+    } | {
+        status: 404;
+        data: ErrorResponse;
+    }>(`/jobs/${encodeURIComponent(uid)}`, {
         ...opts,
         method: "DELETE"
     });
@@ -2778,15 +2291,12 @@ export function getJobStats(opts?: Oazapfts.RequestOpts) {
  * WebSocket connection for real-time updates
  */
 export function connectWebSocket(opts?: Oazapfts.RequestOpts) {
-    return oazapfts.fetchJson<
-        | {
-              status: 101;
-          }
-        | {
-              status: 401;
-              data: ErrorResponse;
-          }
-    >("/events", {
+    return oazapfts.fetchJson<{
+        status: 101;
+    } | {
+        status: 401;
+        data: ErrorResponse;
+    }>("/events", {
         ...opts
     });
 }
@@ -2794,16 +2304,13 @@ export function connectWebSocket(opts?: Oazapfts.RequestOpts) {
  * Get WebSocket connection statistics
  */
 export function getWsStats(opts?: Oazapfts.RequestOpts) {
-    return oazapfts.fetchJson<
-        | {
-              status: 200;
-              data: WsStatsResponse;
-          }
-        | {
-              status: 401;
-              data: ErrorResponse;
-          }
-    >("/events/stats", {
+    return oazapfts.fetchJson<{
+        status: 200;
+        data: WsStatsResponse;
+    } | {
+        status: 401;
+        data: ErrorResponse;
+    }>("/events/stats", {
         ...opts
     });
 }
@@ -2811,64 +2318,45 @@ export function getWsStats(opts?: Oazapfts.RequestOpts) {
  * Get WebSocket event metrics
  */
 export function getWsMetrics(opts?: Oazapfts.RequestOpts) {
-    return oazapfts.fetchJson<
-        | {
-              status: 200;
-              data: WsMetricsResponse;
-          }
-        | {
-              status: 401;
-              data: ErrorResponse;
-          }
-    >("/events/metrics", {
+    return oazapfts.fetchJson<{
+        status: 200;
+        data: WsMetricsResponse;
+    } | {
+        status: 401;
+        data: ErrorResponse;
+    }>("/events/metrics", {
         ...opts
     });
 }
 /**
  * Get recent event history
  */
-export function getEventHistory(
-    {
+export function getEventHistory({ limit }: {
+    limit?: number;
+} = {}, opts?: Oazapfts.RequestOpts) {
+    return oazapfts.fetchJson<{
+        status: 200;
+        data: EventHistoryResponse;
+    } | {
+        status: 401;
+        data: ErrorResponse;
+    }>(`/events/history${QS.query(QS.explode({
         limit
-    }: {
-        limit?: number;
-    } = {},
-    opts?: Oazapfts.RequestOpts
-) {
-    return oazapfts.fetchJson<
-        | {
-              status: 200;
-              data: EventHistoryResponse;
-          }
-        | {
-              status: 401;
-              data: ErrorResponse;
-          }
-    >(
-        `/events/history${QS.query(
-            QS.explode({
-                limit
-            })
-        )}`,
-        {
-            ...opts
-        }
-    );
+    }))}`, {
+        ...opts
+    });
 }
 /**
  * Clear event history
  */
 export function clearEventHistory(opts?: Oazapfts.RequestOpts) {
-    return oazapfts.fetchJson<
-        | {
-              status: 200;
-              data: MessageResponse;
-          }
-        | {
-              status: 401;
-              data: ErrorResponse;
-          }
-    >("/events/history", {
+    return oazapfts.fetchJson<{
+        status: 200;
+        data: MessageResponse;
+    } | {
+        status: 401;
+        data: ErrorResponse;
+    }>("/events/history", {
         ...opts,
         method: "DELETE"
     });
@@ -2876,140 +2364,95 @@ export function clearEventHistory(opts?: Oazapfts.RequestOpts) {
 /**
  * Get events since a cursor ID
  */
-export function getEventsSince(
-    {
+export function getEventsSince({ cursor, limit }: {
+    cursor?: number;
+    limit?: number;
+} = {}, opts?: Oazapfts.RequestOpts) {
+    return oazapfts.fetchJson<{
+        status: 200;
+        data: {
+            /** List of events */
+            events: EventRecord[];
+            /** Number of events */
+            count: number;
+            /** Next cursor ID */
+            nextCursor: number;
+        };
+    } | {
+        status: 401;
+        data: ErrorResponse;
+    }>(`/events/since${QS.query(QS.explode({
         cursor,
         limit
-    }: {
-        cursor?: number;
-        limit?: number;
-    } = {},
-    opts?: Oazapfts.RequestOpts
-) {
-    return oazapfts.fetchJson<
-        | {
-              status: 200;
-              data: {
-                  /** List of events */
-                  events: EventRecord[];
-                  /** Number of events */
-                  count: number;
-                  /** Next cursor ID */
-                  nextCursor: number;
-              };
-          }
-        | {
-              status: 401;
-              data: ErrorResponse;
-          }
-    >(
-        `/events/since${QS.query(
-            QS.explode({
-                cursor,
-                limit
-            })
-        )}`,
-        {
-            ...opts
-        }
-    );
+    }))}`, {
+        ...opts
+    });
 }
 /**
  * Broadcast event to all connected WebSocket clients
  */
-export function broadcastWsEvent(
-    wsBroadcastRequest: WsBroadcastRequest,
-    opts?: Oazapfts.RequestOpts
-) {
-    return oazapfts.fetchJson<
-        | {
-              status: 200;
-              data: WsBroadcastResponse;
-          }
-        | {
-              status: 400;
-              data: ErrorResponse;
-          }
-        | {
-              status: 500;
-              data: ErrorResponse;
-          }
-    >(
-        "/events/broadcast",
-        oazapfts.json({
-            ...opts,
-            method: "POST",
-            body: wsBroadcastRequest
-        })
-    );
+export function broadcastWsEvent(wsBroadcastRequest: WsBroadcastRequest, opts?: Oazapfts.RequestOpts) {
+    return oazapfts.fetchJson<{
+        status: 200;
+        data: WsBroadcastResponse;
+    } | {
+        status: 400;
+        data: ErrorResponse;
+    } | {
+        status: 500;
+        data: ErrorResponse;
+    }>("/events/broadcast", oazapfts.json({
+        ...opts,
+        method: "POST",
+        body: wsBroadcastRequest
+    }));
 }
 /**
  * Send event to specific WebSocket client
  */
-export function sendToWsClient(
-    clientId: string,
-    wsBroadcastRequest: WsBroadcastRequest,
-    opts?: Oazapfts.RequestOpts
-) {
+export function sendToWsClient(clientId: string, wsBroadcastRequest: WsBroadcastRequest, opts?: Oazapfts.RequestOpts) {
     return oazapfts.fetchJson<{
         status: 500;
         data: ErrorResponse;
-    }>(
-        `/events/send/${encodeURIComponent(clientId)}`,
-        oazapfts.json({
-            ...opts,
-            method: "POST",
-            body: wsBroadcastRequest
-        })
-    );
+    }>(`/events/send/${encodeURIComponent(clientId)}`, oazapfts.json({
+        ...opts,
+        method: "POST",
+        body: wsBroadcastRequest
+    }));
 }
 /**
  * Get system and user onboarding status
  */
 export function getSystemStatus(opts?: Oazapfts.RequestOpts) {
-    return oazapfts.fetchJson<
-        | {
-              status: 200;
-              data: SystemStatusResponse;
-          }
-        | {
-              status: 500;
-              data: ErrorResponse;
-          }
-    >("/system/status", {
+    return oazapfts.fetchJson<{
+        status: 200;
+        data: SystemStatusResponse;
+    } | {
+        status: 500;
+        data: ErrorResponse;
+    }>("/system/status", {
         ...opts
     });
 }
 /**
  * Initialize application with first superadmin user
  */
-export function setupSuperadmin(
-    superadminSetupRequest: SuperadminSetupRequest,
-    opts?: Oazapfts.RequestOpts
-) {
-    return oazapfts.fetchJson<
-        | {
-              status: 201;
-              data: SuperadminSetupResponse;
-          }
-        | {
-              status: 400;
-              data: ErrorResponse;
-          }
-        | {
-              status: 409;
-              data: ErrorResponse;
-          }
-        | {
-              status: 500;
-              data: ErrorResponse;
-          }
-    >(
-        "/setup/superadmin",
-        oazapfts.json({
-            ...opts,
-            method: "POST",
-            body: superadminSetupRequest
-        })
-    );
+export function setupSuperadmin(superadminSetupRequest: SuperadminSetupRequest, opts?: Oazapfts.RequestOpts) {
+    return oazapfts.fetchJson<{
+        status: 201;
+        data: SuperadminSetupResponse;
+    } | {
+        status: 400;
+        data: ErrorResponse;
+    } | {
+        status: 409;
+        data: ErrorResponse;
+    } | {
+        status: 500;
+        data: ErrorResponse;
+    }>("/setup/superadmin", oazapfts.json({
+        ...opts,
+        method: "POST",
+        body: superadminSetupRequest
+    }));
 }

@@ -990,6 +990,49 @@ func ImagesRouter(db *gorm.DB, logger *slog.Logger) *chi.Mux {
 		render.JSON(res, req, resp)
 	})
 
+	router.Post("/duplicates", func(res http.ResponseWriter, req *http.Request) {
+		var body dto.DuplicateCheckRequest
+		if err := render.DecodeJSON(req.Body, &body); err != nil {
+			logger.Error("Failed to decode duplicate check request", slog.Any("error", err))
+			render.Status(req, http.StatusBadRequest)
+			render.JSON(res, req, dto.ErrorResponse{Error: "Invalid request body"})
+
+			return
+		}
+
+		if len(body.Checksums) == 0 {
+			render.Status(req, http.StatusOK)
+			render.JSON(res, req, dto.DuplicateCheckResponse{
+				Duplicates: []dto.DuplicateCheckResult{},
+			})
+
+			return
+		}
+
+		var results []dto.DuplicateCheckResult
+
+		err := db.Model(&entities.ImageAsset{}).
+			Select("uid, image_metadata->>'checksum' as checksum").
+			Where("image_metadata->>'checksum' IN ?", body.Checksums).
+			Find(&results).Error
+
+		if err != nil {
+			logger.Error("Failed to query duplicates", slog.Any("error", err))
+			render.Status(req, http.StatusInternalServerError)
+			render.JSON(res, req, dto.ErrorResponse{Error: "Failed to query duplicates"})
+			return
+		}
+
+		if results == nil {
+			results = []dto.DuplicateCheckResult{}
+		}
+
+		render.Status(req, http.StatusOK)
+		render.JSON(res, req, dto.DuplicateCheckResponse{
+			Duplicates: results,
+		})
+	})
+
 	return router
 }
 
