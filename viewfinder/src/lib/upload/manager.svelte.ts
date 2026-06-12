@@ -122,6 +122,10 @@ export default class UploadManager {
      * Any files that already exist are marked as duplicates.
      */
     async precheckDuplicates(tasks: UploadImage[]): Promise<void> {
+        if (typeof crypto === "undefined" || !crypto.subtle) {
+            console.warn("[Upload] Web Crypto API (crypto.subtle) is not available (requires HTTPS or localhost). Bypassing bulk duplicate pre-check.");
+            return;
+        }
         // Calculate checksum for all tasks that don't have it yet
         await Promise.all(
             tasks.map(async (task) => {
