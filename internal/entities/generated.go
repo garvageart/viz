@@ -7,33 +7,93 @@ import (
 	"viz/internal/dto"
 )
 
-// SettingOverride is a GORM entity inferred from dto.SettingOverride
-type SettingOverride struct {
-	ID        uint           `gorm:"primarykey" json:"-"`
-	DeletedAt gorm.DeletedAt `gorm:"index" json:"-"`
-	CreatedAt time.Time
-	UpdatedAt time.Time
-	// Name Links to SettingDefault.name.
-	Name string `gorm:"uniqueIndex:idx_setting_overrides_user_name,priority:2"`
-	// UserId Links to the users table.
-	UserId string `gorm:"uniqueIndex:idx_setting_overrides_user_name,priority:1"`
-	// Value The user's chosen value for the setting.
-	Value string
+// CollectionDetailResponse is a GORM entity inferred from dto.CollectionDetailResponse
+type CollectionDetailResponse struct {
+	ID          uint           `gorm:"primarykey" json:"-"`
+	DeletedAt   gorm.DeletedAt `gorm:"index" json:"-"`
+	CreatedAt   time.Time
+	UpdatedAt   time.Time
+	CreatedByID *string
+	CreatedBy   *User `gorm:"foreignKey:CreatedByID;references:Uid"`
+	// Description Collection description
+	Description *string
+	// ImageCount Number of images
+	ImageCount *int
+	Images     dto.ImagesListResponse `gorm:"serializer:json;type:JSONB"`
+	// Name Collection name
+	Name    string
+	OwnerID *string
+	Owner   *User `gorm:"foreignKey:OwnerID;references:Uid"`
+	// Private Is private
+	Private     *bool
+	ThumbnailID *string
+	Thumbnail   *ImageAsset `gorm:"foreignKey:ThumbnailID;references:Uid"`
+	// Uid Collection UID
+	Uid string `gorm:"uniqueIndex"`
 }
 
-func (e SettingOverride) DTO() dto.SettingOverride {
-	return dto.SettingOverride{
-		Name:   e.Name,
-		UserId: e.UserId,
-		Value:  e.Value,
+func (e CollectionDetailResponse) DTO() dto.CollectionDetailResponse {
+	return dto.CollectionDetailResponse{
+		CreatedAt: e.CreatedAt,
+		UpdatedAt: e.UpdatedAt,
+		CreatedBy: func() *dto.User {
+			if e.CreatedBy != nil {
+				d := e.CreatedBy.DTO()
+				return &d
+			}
+			return nil
+		}(),
+		Description: e.Description,
+		ImageCount:  e.ImageCount,
+		Images:      e.Images,
+		Name:        e.Name,
+		Owner: func() *dto.User {
+			if e.Owner != nil {
+				d := e.Owner.DTO()
+				return &d
+			}
+			return nil
+		}(),
+		Private: e.Private,
+		Thumbnail: func() *dto.ImageAsset {
+			if e.Thumbnail != nil {
+				d := e.Thumbnail.DTO()
+				return &d
+			}
+			return nil
+		}(),
+		Uid: e.Uid,
 	}
 }
 
-func SettingOverrideFromDTO(d dto.SettingOverride) SettingOverride {
-	return SettingOverride{
-		Name:   d.Name,
-		UserId: d.UserId,
-		Value:  d.Value,
+func CollectionDetailResponseFromDTO(d dto.CollectionDetailResponse) CollectionDetailResponse {
+	return CollectionDetailResponse{
+		CreatedAt: d.CreatedAt,
+		UpdatedAt: d.UpdatedAt,
+		CreatedByID: func() *string {
+			if d.CreatedBy != nil {
+				return &d.CreatedBy.Uid
+			}
+			return nil
+		}(),
+		Description: d.Description,
+		ImageCount:  d.ImageCount,
+		Images:      d.Images,
+		Name:        d.Name,
+		OwnerID: func() *string {
+			if d.Owner != nil {
+				return &d.Owner.Uid
+			}
+			return nil
+		}(),
+		Private: d.Private,
+		ThumbnailID: func() *string {
+			if d.Thumbnail != nil {
+				return &d.Thumbnail.Uid
+			}
+			return nil
+		}(),
+		Uid: d.Uid,
 	}
 }
 
@@ -130,189 +190,57 @@ func SessionFromDTO(d dto.Session) Session {
 	}
 }
 
-// User is a GORM entity inferred from dto.User
-type User struct {
+// DownloadToken is a GORM entity inferred from dto.DownloadToken
+type DownloadToken struct {
 	ID        uint           `gorm:"primarykey" json:"-"`
 	DeletedAt gorm.DeletedAt `gorm:"index" json:"-"`
 	CreatedAt time.Time
 	UpdatedAt time.Time
-	// Email Email
-	Email string
-	// FirstName First name
-	FirstName string
-	// LastName Last name
-	LastName string
-	// Name Name
-	Name string
-	// Role User role
-	Role dto.UserRole `gorm:"type:text"`
-	// Uid User UID
-	Uid string `gorm:"uniqueIndex"`
-}
-
-func (e User) DTO() dto.User {
-	return dto.User{
-		CreatedAt: e.CreatedAt,
-		UpdatedAt: e.UpdatedAt,
-		Email:     e.Email,
-		FirstName: e.FirstName,
-		LastName:  e.LastName,
-		Name:      e.Name,
-		Role:      e.Role,
-		Uid:       e.Uid,
-	}
-}
-
-func UserFromDTO(d dto.User) User {
-	return User{
-		CreatedAt: d.CreatedAt,
-		UpdatedAt: d.UpdatedAt,
-		Email:     d.Email,
-		FirstName: d.FirstName,
-		LastName:  d.LastName,
-		Name:      d.Name,
-		Role:      d.Role,
-		Uid:       d.Uid,
-	}
-}
-
-// SettingDefault is a GORM entity inferred from dto.SettingDefault
-type SettingDefault struct {
-	ID        uint           `gorm:"primarykey" json:"-"`
-	DeletedAt gorm.DeletedAt `gorm:"index" json:"-"`
-	CreatedAt time.Time
-	UpdatedAt time.Time
-	// AllowedValues List of valid choices if type is enum.
-	AllowedValues *[]string `gorm:"serializer:json;type:JSONB"`
-	// Description Description for UI
-	Description string
-	// DisplayName A readable and UI-friendly name for the setting (not required but highly recommended).
-	DisplayName string
-	// Group Category/group for the setting (e.g., General, Notifications).
-	Group string
-	// IsUserEditable Describes whether a user can edit this setting.
-	IsUserEditable bool
-	// Name Unique name for the setting (primary key).
-	Name string `gorm:"uniqueIndex:idx_setting_defaults_name,priority:1"`
-	// Value The default value everyone gets.
-	Value string
-	// ValueType Data type of the setting.
-	ValueType dto.SettingDefaultValueType `gorm:"type:text"`
-}
-
-func (e SettingDefault) DTO() dto.SettingDefault {
-	return dto.SettingDefault{
-		AllowedValues:  e.AllowedValues,
-		Description:    e.Description,
-		DisplayName:    e.DisplayName,
-		Group:          e.Group,
-		IsUserEditable: e.IsUserEditable,
-		Name:           e.Name,
-		Value:          e.Value,
-		ValueType:      e.ValueType,
-	}
-}
-
-func SettingDefaultFromDTO(d dto.SettingDefault) SettingDefault {
-	return SettingDefault{
-		AllowedValues:  d.AllowedValues,
-		Description:    d.Description,
-		DisplayName:    d.DisplayName,
-		Group:          d.Group,
-		IsUserEditable: d.IsUserEditable,
-		Name:           d.Name,
-		Value:          d.Value,
-		ValueType:      d.ValueType,
-	}
-}
-
-// CollectionDetailResponse is a GORM entity inferred from dto.CollectionDetailResponse
-type CollectionDetailResponse struct {
-	ID          uint           `gorm:"primarykey" json:"-"`
-	DeletedAt   gorm.DeletedAt `gorm:"index" json:"-"`
-	CreatedAt   time.Time
-	UpdatedAt   time.Time
-	CreatedByID *string
-	CreatedBy   *User `gorm:"foreignKey:CreatedByID;references:Uid"`
-	// Description Collection description
+	// AllowDownload Whether downloads are permitted with this token
+	AllowDownload bool
+	// AllowEmbed Whether embedding on external sites is allowed (false prevents hotlinking)
+	AllowEmbed bool
+	// Description Optional description of this download link
 	Description *string
-	// ImageCount Number of images
-	ImageCount *int
-	Images     dto.ImagesListResponse `gorm:"serializer:json;type:JSONB"`
-	// Name Collection name
-	Name    string
-	OwnerID *string
-	Owner   *User `gorm:"foreignKey:OwnerID;references:Uid"`
-	// Private Is private
-	Private     *bool
-	ThumbnailID *string
-	Thumbnail   *ImageAsset `gorm:"foreignKey:ThumbnailID;references:Uid"`
-	// Uid Collection UID
+	// ExpiresAt When this token expires (null for no expiry)
+	ExpiresAt *time.Time
+	// ImageUids Array of authorized image UIDs
+	ImageUids []string `gorm:"serializer:json;type:JSONB"`
+	// Password Optional bcrypt hash of password (null if no password protection)
+	Password *string
+	// ShowMetadata Whether to include EXIF and metadata in responses
+	ShowMetadata bool
+	// Uid 64-character hex token that serves as both unique identifier and authorization key
 	Uid string `gorm:"uniqueIndex"`
 }
 
-func (e CollectionDetailResponse) DTO() dto.CollectionDetailResponse {
-	return dto.CollectionDetailResponse{
-		CreatedAt: e.CreatedAt,
-		UpdatedAt: e.UpdatedAt,
-		CreatedBy: func() *dto.User {
-			if e.CreatedBy != nil {
-				d := e.CreatedBy.DTO()
-				return &d
-			}
-			return nil
-		}(),
-		Description: e.Description,
-		ImageCount:  e.ImageCount,
-		Images:      e.Images,
-		Name:        e.Name,
-		Owner: func() *dto.User {
-			if e.Owner != nil {
-				d := e.Owner.DTO()
-				return &d
-			}
-			return nil
-		}(),
-		Private: e.Private,
-		Thumbnail: func() *dto.ImageAsset {
-			if e.Thumbnail != nil {
-				d := e.Thumbnail.DTO()
-				return &d
-			}
-			return nil
-		}(),
-		Uid: e.Uid,
+func (e DownloadToken) DTO() dto.DownloadToken {
+	return dto.DownloadToken{
+		CreatedAt:     e.CreatedAt,
+		UpdatedAt:     e.UpdatedAt,
+		AllowDownload: e.AllowDownload,
+		AllowEmbed:    e.AllowEmbed,
+		Description:   e.Description,
+		ExpiresAt:     e.ExpiresAt,
+		ImageUids:     e.ImageUids,
+		Password:      e.Password,
+		ShowMetadata:  e.ShowMetadata,
+		Uid:           e.Uid,
 	}
 }
 
-func CollectionDetailResponseFromDTO(d dto.CollectionDetailResponse) CollectionDetailResponse {
-	return CollectionDetailResponse{
-		CreatedAt: d.CreatedAt,
-		UpdatedAt: d.UpdatedAt,
-		CreatedByID: func() *string {
-			if d.CreatedBy != nil {
-				return &d.CreatedBy.Uid
-			}
-			return nil
-		}(),
-		Description: d.Description,
-		ImageCount:  d.ImageCount,
-		Images:      d.Images,
-		Name:        d.Name,
-		OwnerID: func() *string {
-			if d.Owner != nil {
-				return &d.Owner.Uid
-			}
-			return nil
-		}(),
-		Private: d.Private,
-		ThumbnailID: func() *string {
-			if d.Thumbnail != nil {
-				return &d.Thumbnail.Uid
-			}
-			return nil
-		}(),
-		Uid: d.Uid,
+func DownloadTokenFromDTO(d dto.DownloadToken) DownloadToken {
+	return DownloadToken{
+		CreatedAt:     d.CreatedAt,
+		UpdatedAt:     d.UpdatedAt,
+		AllowDownload: d.AllowDownload,
+		AllowEmbed:    d.AllowEmbed,
+		Description:   d.Description,
+		ExpiresAt:     d.ExpiresAt,
+		ImageUids:     d.ImageUids,
+		Password:      d.Password,
+		ShowMetadata:  d.ShowMetadata,
+		Uid:           d.Uid,
 	}
 }
 
@@ -382,158 +310,53 @@ func WorkerJobFromDTO(d dto.WorkerJob) WorkerJob {
 	}
 }
 
-// CollectionImage is a GORM entity inferred from dto.CollectionImage
-type CollectionImage struct {
+// SettingDefault is a GORM entity inferred from dto.SettingDefault
+type SettingDefault struct {
 	ID        uint           `gorm:"primarykey" json:"-"`
 	DeletedAt gorm.DeletedAt `gorm:"index" json:"-"`
 	CreatedAt time.Time
 	UpdatedAt time.Time
-	// AddedAt Added timestamp
-	AddedAt   time.Time
-	AddedByID *string
-	AddedBy   *User `gorm:"foreignKey:AddedByID;references:Uid"`
-	// Uid Image UID
-	Uid          string `gorm:"uniqueIndex:idx_collection_images_collection_id_uid,priority:2"`
-	CollectionID *uint  `gorm:"uniqueIndex:idx_collection_images_collection_id_uid,priority:1"`
+	// AllowedValues List of valid choices if type is enum.
+	AllowedValues *[]string `gorm:"serializer:json;type:JSONB"`
+	// Description Description for UI
+	Description string
+	// DisplayName A readable and UI-friendly name for the setting (not required but highly recommended).
+	DisplayName string
+	// Group Category/group for the setting (e.g., General, Notifications).
+	Group string
+	// IsUserEditable Describes whether a user can edit this setting.
+	IsUserEditable bool
+	// Name Unique name for the setting (primary key).
+	Name string `gorm:"uniqueIndex:idx_setting_defaults_name,priority:1"`
+	// Value The default value everyone gets.
+	Value string
+	// ValueType Data type of the setting.
+	ValueType dto.SettingDefaultValueType `gorm:"type:text"`
 }
 
-func (e CollectionImage) DTO() dto.CollectionImage {
-	return dto.CollectionImage{
-		AddedAt: e.AddedAt,
-		AddedBy: func() *dto.User {
-			if e.AddedBy != nil {
-				d := e.AddedBy.DTO()
-				return &d
-			}
-			return nil
-		}(),
-		Uid: e.Uid,
+func (e SettingDefault) DTO() dto.SettingDefault {
+	return dto.SettingDefault{
+		AllowedValues:  e.AllowedValues,
+		Description:    e.Description,
+		DisplayName:    e.DisplayName,
+		Group:          e.Group,
+		IsUserEditable: e.IsUserEditable,
+		Name:           e.Name,
+		Value:          e.Value,
+		ValueType:      e.ValueType,
 	}
 }
 
-func CollectionImageFromDTO(d dto.CollectionImage) CollectionImage {
-	return CollectionImage{
-		AddedAt: d.AddedAt,
-		AddedByID: func() *string {
-			if d.AddedBy != nil {
-				return &d.AddedBy.Uid
-			}
-			return nil
-		}(),
-		Uid: d.Uid,
-	}
-}
-
-// Collection is a GORM entity inferred from dto.Collection
-type Collection struct {
-	ID          uint           `gorm:"primarykey" json:"-"`
-	DeletedAt   gorm.DeletedAt `gorm:"index" json:"-"`
-	CreatedAt   time.Time
-	UpdatedAt   time.Time
-	CreatedByID *string
-	CreatedBy   *User `gorm:"foreignKey:CreatedByID;references:Uid"`
-	// Description Collection description
-	Description *string
-	// Favourited Is favourited
-	Favourited *bool
-	// ImageCount Number of images
-	ImageCount int
-	// Images List of images
-	Images []CollectionImage `gorm:"foreignKey:CollectionID"`
-	// Name Collection name
-	Name    string
-	OwnerID *string
-	Owner   *User `gorm:"foreignKey:OwnerID;references:Uid"`
-	// Private Is private
-	Private     *bool
-	ThumbnailID *string
-	Thumbnail   *ImageAsset `gorm:"foreignKey:ThumbnailID;references:Uid"`
-	// Uid Collection UID
-	Uid string `gorm:"uniqueIndex"`
-}
-
-func (e Collection) DTO() dto.Collection {
-	return dto.Collection{
-		CreatedAt: e.CreatedAt,
-		UpdatedAt: e.UpdatedAt,
-		CreatedBy: func() *dto.User {
-			if e.CreatedBy != nil {
-				d := e.CreatedBy.DTO()
-				return &d
-			}
-			return nil
-		}(),
-		Description: e.Description,
-		Favourited:  e.Favourited,
-		ImageCount:  e.ImageCount,
-		Images: func() *[]dto.CollectionImage {
-			if len(e.Images) == 0 {
-				return nil
-			}
-			res := make([]dto.CollectionImage, len(e.Images))
-			for i, v := range e.Images {
-				res[i] = v.DTO()
-			}
-			return &res
-		}(),
-		Name: e.Name,
-		Owner: func() *dto.User {
-			if e.Owner != nil {
-				d := e.Owner.DTO()
-				return &d
-			}
-			return nil
-		}(),
-		Private: e.Private,
-		Thumbnail: func() *dto.ImageAsset {
-			if e.Thumbnail != nil {
-				d := e.Thumbnail.DTO()
-				return &d
-			}
-			return nil
-		}(),
-		Uid: e.Uid,
-	}
-}
-
-func CollectionFromDTO(d dto.Collection) Collection {
-	return Collection{
-		CreatedAt: d.CreatedAt,
-		UpdatedAt: d.UpdatedAt,
-		CreatedByID: func() *string {
-			if d.CreatedBy != nil {
-				return &d.CreatedBy.Uid
-			}
-			return nil
-		}(),
-		Description: d.Description,
-		Favourited:  d.Favourited,
-		ImageCount:  d.ImageCount,
-		Images: func() []CollectionImage {
-			if d.Images == nil {
-				return nil
-			}
-			res := make([]CollectionImage, len(*d.Images))
-			for i, v := range *d.Images {
-				res[i] = CollectionImageFromDTO(v)
-			}
-			return res
-		}(),
-		Name: d.Name,
-		OwnerID: func() *string {
-			if d.Owner != nil {
-				return &d.Owner.Uid
-			}
-			return nil
-		}(),
-		Private: d.Private,
-		ThumbnailID: func() *string {
-			if d.Thumbnail != nil {
-				return &d.Thumbnail.Uid
-			}
-			return nil
-		}(),
-		Uid: d.Uid,
+func SettingDefaultFromDTO(d dto.SettingDefault) SettingDefault {
+	return SettingDefault{
+		AllowedValues:  d.AllowedValues,
+		Description:    d.Description,
+		DisplayName:    d.DisplayName,
+		Group:          d.Group,
+		IsUserEditable: d.IsUserEditable,
+		Name:           d.Name,
+		Value:          d.Value,
+		ValueType:      d.ValueType,
 	}
 }
 
@@ -707,87 +530,234 @@ func APIKeyFromDTO(d dto.APIKey) APIKey {
 	}
 }
 
-// DownloadToken is a GORM entity inferred from dto.DownloadToken
-type DownloadToken struct {
+// CollectionImage is a GORM entity inferred from dto.CollectionImage
+type CollectionImage struct {
 	ID        uint           `gorm:"primarykey" json:"-"`
 	DeletedAt gorm.DeletedAt `gorm:"index" json:"-"`
 	CreatedAt time.Time
 	UpdatedAt time.Time
-	// AllowDownload Whether downloads are permitted with this token
-	AllowDownload bool
-	// AllowEmbed Whether embedding on external sites is allowed (false prevents hotlinking)
-	AllowEmbed bool
-	// Description Optional description of this download link
+	// AddedAt Added timestamp
+	AddedAt   time.Time
+	AddedByID *string
+	AddedBy   *User `gorm:"foreignKey:AddedByID;references:Uid"`
+	// Uid Image UID
+	Uid          string `gorm:"uniqueIndex:idx_collection_images_collection_id_uid,priority:2"`
+	CollectionID *uint  `gorm:"uniqueIndex:idx_collection_images_collection_id_uid,priority:1"`
+}
+
+func (e CollectionImage) DTO() dto.CollectionImage {
+	return dto.CollectionImage{
+		AddedAt: e.AddedAt,
+		AddedBy: func() *dto.User {
+			if e.AddedBy != nil {
+				d := e.AddedBy.DTO()
+				return &d
+			}
+			return nil
+		}(),
+		Uid: e.Uid,
+	}
+}
+
+func CollectionImageFromDTO(d dto.CollectionImage) CollectionImage {
+	return CollectionImage{
+		AddedAt: d.AddedAt,
+		AddedByID: func() *string {
+			if d.AddedBy != nil {
+				return &d.AddedBy.Uid
+			}
+			return nil
+		}(),
+		Uid: d.Uid,
+	}
+}
+
+// Collection is a GORM entity inferred from dto.Collection
+type Collection struct {
+	ID          uint           `gorm:"primarykey" json:"-"`
+	DeletedAt   gorm.DeletedAt `gorm:"index" json:"-"`
+	CreatedAt   time.Time
+	UpdatedAt   time.Time
+	CreatedByID *string
+	CreatedBy   *User `gorm:"foreignKey:CreatedByID;references:Uid"`
+	// Description Collection description
 	Description *string
-	// ExpiresAt When this token expires (null for no expiry)
-	ExpiresAt *time.Time
-	// ImageUids Array of authorized image UIDs
-	ImageUids []string `gorm:"serializer:json;type:JSONB"`
-	// Password Optional bcrypt hash of password (null if no password protection)
-	Password *string
-	// ShowMetadata Whether to include EXIF and metadata in responses
-	ShowMetadata bool
-	// Uid 64-character hex token that serves as both unique identifier and authorization key
+	// Favourited Is favourited
+	Favourited *bool
+	// ImageCount Number of images
+	ImageCount int
+	// Images List of images
+	Images []CollectionImage `gorm:"foreignKey:CollectionID"`
+	// Name Collection name
+	Name    string
+	OwnerID *string
+	Owner   *User `gorm:"foreignKey:OwnerID;references:Uid"`
+	// Private Is private
+	Private     *bool
+	ThumbnailID *string
+	Thumbnail   *ImageAsset `gorm:"foreignKey:ThumbnailID;references:Uid"`
+	// Uid Collection UID
 	Uid string `gorm:"uniqueIndex"`
 }
 
-func (e DownloadToken) DTO() dto.DownloadToken {
-	return dto.DownloadToken{
-		CreatedAt:     e.CreatedAt,
-		UpdatedAt:     e.UpdatedAt,
-		AllowDownload: e.AllowDownload,
-		AllowEmbed:    e.AllowEmbed,
-		Description:   e.Description,
-		ExpiresAt:     e.ExpiresAt,
-		ImageUids:     e.ImageUids,
-		Password:      e.Password,
-		ShowMetadata:  e.ShowMetadata,
-		Uid:           e.Uid,
+func (e Collection) DTO() dto.Collection {
+	return dto.Collection{
+		CreatedAt: e.CreatedAt,
+		UpdatedAt: e.UpdatedAt,
+		CreatedBy: func() *dto.User {
+			if e.CreatedBy != nil {
+				d := e.CreatedBy.DTO()
+				return &d
+			}
+			return nil
+		}(),
+		Description: e.Description,
+		Favourited:  e.Favourited,
+		ImageCount:  e.ImageCount,
+		Images: func() *[]dto.CollectionImage {
+			if len(e.Images) == 0 {
+				return nil
+			}
+			res := make([]dto.CollectionImage, len(e.Images))
+			for i, v := range e.Images {
+				res[i] = v.DTO()
+			}
+			return &res
+		}(),
+		Name: e.Name,
+		Owner: func() *dto.User {
+			if e.Owner != nil {
+				d := e.Owner.DTO()
+				return &d
+			}
+			return nil
+		}(),
+		Private: e.Private,
+		Thumbnail: func() *dto.ImageAsset {
+			if e.Thumbnail != nil {
+				d := e.Thumbnail.DTO()
+				return &d
+			}
+			return nil
+		}(),
+		Uid: e.Uid,
 	}
 }
 
-func DownloadTokenFromDTO(d dto.DownloadToken) DownloadToken {
-	return DownloadToken{
-		CreatedAt:     d.CreatedAt,
-		UpdatedAt:     d.UpdatedAt,
-		AllowDownload: d.AllowDownload,
-		AllowEmbed:    d.AllowEmbed,
-		Description:   d.Description,
-		ExpiresAt:     d.ExpiresAt,
-		ImageUids:     d.ImageUids,
-		Password:      d.Password,
-		ShowMetadata:  d.ShowMetadata,
-		Uid:           d.Uid,
+func CollectionFromDTO(d dto.Collection) Collection {
+	return Collection{
+		CreatedAt: d.CreatedAt,
+		UpdatedAt: d.UpdatedAt,
+		CreatedByID: func() *string {
+			if d.CreatedBy != nil {
+				return &d.CreatedBy.Uid
+			}
+			return nil
+		}(),
+		Description: d.Description,
+		Favourited:  d.Favourited,
+		ImageCount:  d.ImageCount,
+		Images: func() []CollectionImage {
+			if d.Images == nil {
+				return nil
+			}
+			res := make([]CollectionImage, len(*d.Images))
+			for i, v := range *d.Images {
+				res[i] = CollectionImageFromDTO(v)
+			}
+			return res
+		}(),
+		Name: d.Name,
+		OwnerID: func() *string {
+			if d.Owner != nil {
+				return &d.Owner.Uid
+			}
+			return nil
+		}(),
+		Private: d.Private,
+		ThumbnailID: func() *string {
+			if d.Thumbnail != nil {
+				return &d.Thumbnail.Uid
+			}
+			return nil
+		}(),
+		Uid: d.Uid,
 	}
 }
 
-// DeleteAssetResult is a GORM entity inferred from dto.DeleteAssetResult
-type DeleteAssetResult struct {
+// SettingOverride is a GORM entity inferred from dto.SettingOverride
+type SettingOverride struct {
 	ID        uint           `gorm:"primarykey" json:"-"`
 	DeletedAt gorm.DeletedAt `gorm:"index" json:"-"`
 	CreatedAt time.Time
 	UpdatedAt time.Time
-	// Deleted Whether it was deleted
-	Deleted bool
-	// Error Error message if failed
-	Error *string
-	// Uid UID of the asset
-	Uid string `gorm:"uniqueIndex"`
+	// Name Links to SettingDefault.name.
+	Name string `gorm:"uniqueIndex:idx_setting_overrides_user_name,priority:2"`
+	// UserId Links to the users table.
+	UserId string `gorm:"uniqueIndex:idx_setting_overrides_user_name,priority:1"`
+	// Value The user's chosen value for the setting.
+	Value string
 }
 
-func (e DeleteAssetResult) DTO() dto.DeleteAssetResult {
-	return dto.DeleteAssetResult{
-		Deleted: e.Deleted,
-		Error:   e.Error,
-		Uid:     e.Uid,
+func (e SettingOverride) DTO() dto.SettingOverride {
+	return dto.SettingOverride{
+		Name:   e.Name,
+		UserId: e.UserId,
+		Value:  e.Value,
 	}
 }
 
-func DeleteAssetResultFromDTO(d dto.DeleteAssetResult) DeleteAssetResult {
-	return DeleteAssetResult{
-		Deleted: d.Deleted,
-		Error:   d.Error,
-		Uid:     d.Uid,
+func SettingOverrideFromDTO(d dto.SettingOverride) SettingOverride {
+	return SettingOverride{
+		Name:   d.Name,
+		UserId: d.UserId,
+		Value:  d.Value,
+	}
+}
+
+// User is a GORM entity inferred from dto.User
+type User struct {
+	ID        uint           `gorm:"primarykey" json:"-"`
+	DeletedAt gorm.DeletedAt `gorm:"index" json:"-"`
+	CreatedAt time.Time
+	UpdatedAt time.Time
+	// Email Email
+	Email string
+	// FirstName First name
+	FirstName string
+	// LastName Last name
+	LastName string
+	// Name Name
+	Name string
+	// Role User role
+	Role dto.UserRole `gorm:"type:text"`
+	// Uid User UID
+	Uid string `gorm:"uniqueIndex"`
+}
+
+func (e User) DTO() dto.User {
+	return dto.User{
+		CreatedAt: e.CreatedAt,
+		UpdatedAt: e.UpdatedAt,
+		Email:     e.Email,
+		FirstName: e.FirstName,
+		LastName:  e.LastName,
+		Name:      e.Name,
+		Role:      e.Role,
+		Uid:       e.Uid,
+	}
+}
+
+func UserFromDTO(d dto.User) User {
+	return User{
+		CreatedAt: d.CreatedAt,
+		UpdatedAt: d.UpdatedAt,
+		Email:     d.Email,
+		FirstName: d.FirstName,
+		LastName:  d.LastName,
+		Name:      d.Name,
+		Role:      d.Role,
+		Uid:       d.Uid,
 	}
 }
 
@@ -844,5 +814,35 @@ func ImageUploadResponseFromDTO(d dto.ImageUploadResponse) ImageUploadResponse {
 		Metadata: d.Metadata,
 		Status:   d.Status,
 		Uid:      d.Uid,
+	}
+}
+
+// DeleteAssetResult is a GORM entity inferred from dto.DeleteAssetResult
+type DeleteAssetResult struct {
+	ID        uint           `gorm:"primarykey" json:"-"`
+	DeletedAt gorm.DeletedAt `gorm:"index" json:"-"`
+	CreatedAt time.Time
+	UpdatedAt time.Time
+	// Deleted Whether it was deleted
+	Deleted bool
+	// Error Error message if failed
+	Error *string
+	// Uid UID of the asset
+	Uid string `gorm:"uniqueIndex"`
+}
+
+func (e DeleteAssetResult) DTO() dto.DeleteAssetResult {
+	return dto.DeleteAssetResult{
+		Deleted: e.Deleted,
+		Error:   e.Error,
+		Uid:     e.Uid,
+	}
+}
+
+func DeleteAssetResultFromDTO(d dto.DeleteAssetResult) DeleteAssetResult {
+	return DeleteAssetResult{
+		Deleted: d.Deleted,
+		Error:   d.Error,
+		Uid:     d.Uid,
 	}
 }
