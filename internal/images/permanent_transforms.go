@@ -1,6 +1,6 @@
 package images
 
-import "viz/internal/transform"
+import "viz/internal/images/transform"
 
 // PermanentTransformName is a type for permanent transform names
 type PermanentTransformName string

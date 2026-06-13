@@ -15,7 +15,7 @@ import (
 	"viz/internal/config"
 	"viz/internal/dto"
 	"viz/internal/entities"
-	"viz/internal/transform"
+	"viz/internal/images/transform"
 	"viz/internal/uid"
 )
 

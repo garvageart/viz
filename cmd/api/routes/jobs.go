@@ -18,9 +18,9 @@ import (
 	libhttp "viz/internal/http"
 	"viz/internal/imageops"
 	"viz/internal/images"
+	"viz/internal/images/transform"
 	"viz/internal/jobs"
 	"viz/internal/jobs/workers"
-	"viz/internal/transform"
 )
 
 type ActiveBrief struct {

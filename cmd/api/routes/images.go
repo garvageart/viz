@@ -30,10 +30,10 @@ import (
 	"viz/internal/imageops"
 	libvips "viz/internal/imageops/vips"
 	"viz/internal/images"
+	"viz/internal/images/transform"
 	"viz/internal/jobs"
 	"viz/internal/jobs/workers"
 	libos "viz/internal/os"
-	"viz/internal/transform"
 	"viz/internal/uid"
 	"viz/internal/utils"
 )
