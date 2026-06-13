@@ -185,7 +185,7 @@ func ExifProcess(ctx context.Context, db *gorm.DB, imgEnt entities.ImageAsset, o
 
 		// 2. Label
 		// Prioritize existing label
-		if imgEnt.ImageMetadata.Label == nil || *imgEnt.ImageMetadata.Label == "" || *imgEnt.ImageMetadata.Label == dto.ImageMetadataLabelNone {
+		if imgEnt.ImageMetadata.Label == nil || *imgEnt.ImageMetadata.Label == "" {
 			var label string
 			if crsModel.Label != nil && *crsModel.Label != "" {
 				label = *crsModel.Label
@@ -217,7 +217,7 @@ func ExifProcess(ctx context.Context, db *gorm.DB, imgEnt entities.ImageAsset, o
 				// Check if it matches valid labels
 				switch normalizedLabel {
 				case "Red", "Orange", "Yellow", "Green", "Blue", "Purple", "Pink", "Grey", "Gray":
-					l := dto.ImageMetadataLabel(normalizedLabel)
+					l := dto.Label(normalizedLabel)
 					imgEnt.ImageMetadata.Label = &l
 				}
 			}
@@ -258,7 +258,7 @@ func ExifProcess(ctx context.Context, db *gorm.DB, imgEnt entities.ImageAsset, o
 	if dbImage.ImageMetadata.Rating == nil && imgEnt.ImageMetadata.Rating != nil {
 		dbImage.ImageMetadata.Rating = imgEnt.ImageMetadata.Rating
 	}
-	if (dbImage.ImageMetadata.Label == nil || *dbImage.ImageMetadata.Label == dto.ImageMetadataLabelNone) && imgEnt.ImageMetadata.Label != nil {
+	if (dbImage.ImageMetadata.Label == nil || *dbImage.ImageMetadata.Label == "") && imgEnt.ImageMetadata.Label != nil {
 		dbImage.ImageMetadata.Label = imgEnt.ImageMetadata.Label
 	}
 	if (dbImage.ImageMetadata.Keywords == nil || len(*dbImage.ImageMetadata.Keywords) == 0) && imgEnt.ImageMetadata.Keywords != nil {

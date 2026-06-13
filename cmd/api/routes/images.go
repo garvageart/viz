@@ -102,8 +102,6 @@ func createNewImageEntity(logger *slog.Logger, fileName string, libvipsImg *libv
 		keywords = strings.Split(*keywordsPtr, ",")
 	}
 
-	label := dto.ImageMetadataLabelNone
-
 	metadata := dto.ImageMetadata{
 		FileName:         fileName,
 		OriginalFileName: &fileName,
@@ -112,7 +110,6 @@ func createNewImageEntity(logger *slog.Logger, fileName string, libvipsImg *libv
 		FileModifiedAt:   fileModifiedAt,
 		FileCreatedAt:    fileCreatedAt,
 		Keywords:         &keywords,
-		Label:            &label,
 	}
 
 	// Seed canonical rating into the stored image metadata (NULL = unrated)
@@ -1268,9 +1265,7 @@ func updateImageFromDTO(image *entities.ImageAsset, update dto.ImageUpdate) {
 		}
 
 		if update.ImageMetadata.Label != nil {
-			// Convert from update type to entity type
-			l := dto.ImageMetadataLabel(*update.ImageMetadata.Label)
-			image.ImageMetadata.Label = &l
+			image.ImageMetadata.Label = update.ImageMetadata.Label
 		} else {
 			// Explicitly set to nil if the label is being cleared
 			image.ImageMetadata.Label = nil
