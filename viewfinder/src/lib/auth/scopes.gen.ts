@@ -1,3 +1,8 @@
+/**
+ * DO NOT MODIFY - This file has been generated from OpenAPI spec.
+ * See scripts/js/gen-api.ts
+ */
+
 export enum Scope {
     FullAccess = "*",
     AdminRead = "admin:read",

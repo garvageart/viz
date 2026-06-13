@@ -1,6 +1,6 @@
 <script lang="ts">
 	import { createApiKey } from "$lib/api";
-	import { scopes, Scope } from "$lib/api/constants";
+	import { scopes, Scope } from "$lib/auth/scopes.gen";
 	import Button from "$lib/components/ui/Button.svelte";
 	import MaterialIcon from "$lib/components/ui/MaterialIcon.svelte";
 	import TextInput from "$lib/components/settings/inputs/TextInput.svelte";
@@ -19,9 +19,9 @@
 	let creating = $state(false);
 	let createdToken = $state<string | null>(null);
 
-	let selectedScopes = $state<string[]>([Scope.FullAccess]); // Default to Full Access
+	let selectedScopes = $state<Scope[]>([Scope.FullAccess]); // Default to Full Access
 
-	function toggleScope(scope: string) {
+	function toggleScope(scope: Scope) {
 		if (scope === Scope.FullAccess) {
 			// If selecting *, clear others or just ensure it's the only one needed (backend handles logic)
 			// But for UI UX, if * is selected, maybe disable others or select all?
@@ -45,7 +45,7 @@
 		}
 	}
 
-	function isSelected(scope: string) {
+	function isSelected(scope: Scope) {
 		return selectedScopes.includes(scope);
 	}
 
