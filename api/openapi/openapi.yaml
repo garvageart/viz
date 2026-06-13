@@ -2749,39 +2749,39 @@ components:
       scheme: bearer
       description: "API key for authentication. The key should be provided in the Authorization header as a Bearer token. This token is a hex-encoded string of random bytes, prefixed with 'IMAG_'. Bearer format is intentionally omitted to avoid JWT confusion."
       x-scopes:
-        admin:read: Read admin resources
-        admin:write: Write admin resources
-        api_keys:create: Create API keys
-        api_keys:list: List API keys
-        api_keys:get: Get API key details
-        api_keys:revoke: Revoke API keys
-        api_keys:rotate: Rotate API keys
-        api_keys:delete: Delete API keys
-        auth:refresh: Refresh authentication tokens
-        auth:revoke: Revoke authentication tokens
-        collections:create: Create collections
-        collections:read: Read collections
-        collections:update: Update collections
-        collections:delete: Delete collections
-        collections:share: Share collections
-        images:read: Read images
-        images:upload: Upload images
-        images:update: Update images
-        images:delete: Delete images
-        images:download: Download images
-        jobs:read: Read jobs
-        jobs:create: Create jobs
-        jobs:update: Update jobs
-        jobs:delete: Delete jobs
-        users:create: Create users
-        users:read: Read users
-        users:update: Update users
-        users:delete: Delete users
-        user_settings:read: Read user settings
-        user_settings:update: Update user settings
-        downloads:create: Create downloads
-        events:read: Read events
-        "*": Grants all permissions (superuser)
+        "*": Full Access
+        admin:read: Admin Read
+        admin:write: Admin Write
+        api-keys:create: Create API Keys
+        api-keys:list: List API Keys
+        api-keys:read: Read API Key
+        api-keys:revoke: Revoke API Keys
+        api-keys:rotate: Rotate API Keys
+        api-keys:delete: Delete API Keys
+        auth:refresh: Refresh Auth
+        auth:revoke: Revoke Auth
+        collections:create: Create Collections
+        collections:read: Read Collections
+        collections:update: Update Collections
+        collections:delete: Delete Collections
+        collections:share: Share Collections
+        images:read: Read Images
+        images:upload: Upload Images
+        images:update: Update Images
+        images:delete: Delete Images
+        images:download: Download Images
+        jobs:read: Read Jobs
+        jobs:create: Create Jobs
+        jobs:update: Update Jobs
+        jobs:delete: Delete Jobs
+        users:create: Create Users
+        users:read: Read Users
+        users:update: Update Users
+        users:delete: Delete Users
+        user-settings:read: Read User Settings
+        user-settings:update: Update User Settings
+        downloads:create: Create Downloads
+        events:read: Read Events
 
     CookieAuth:
       type: apiKey
@@ -2797,6 +2797,11 @@ components:
           type: string
           description: Error message
       required: [error]
+
+    Label:
+      type: string
+      enum: [Red, Orange, Yellow, Purple, Pink, Green, Blue]
+      description: "User-assigned label color for the image"
 
     MessageResponse:
       type: object
@@ -3633,8 +3638,8 @@ components:
           { type: string, format: date-time, description: File creation time }
         thumbhash: { type: string, description: Thumbhash }
         label:
-          type: string
-          enum: [Red, Orange, Yellow, Purple, Pink, Green, Blue, None]
+          allOf:
+            - $ref: "#/components/schemas/Label"
           nullable: true
           description: "User-assigned label for the image. Null = unlabeled"
 
@@ -4166,8 +4171,8 @@ components:
           type: object
           properties:
             label:
-              type: string
-              enum: [Red, Orange, Yellow, Purple, Pink, Green, Blue, None]
+              allOf:
+                - $ref: "#/components/schemas/Label"
               nullable: true
               description: "User-assigned label for the image. Null = unlabeled"
             rating:

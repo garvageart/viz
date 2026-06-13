@@ -62,78 +62,6 @@ func (e AdminUserUpdateRole) Valid() bool {
 	}
 }
 
-// Defines values for ImageMetadataLabel.
-const (
-	ImageMetadataLabelBlue   ImageMetadataLabel = "Blue"
-	ImageMetadataLabelGreen  ImageMetadataLabel = "Green"
-	ImageMetadataLabelNone   ImageMetadataLabel = "None"
-	ImageMetadataLabelOrange ImageMetadataLabel = "Orange"
-	ImageMetadataLabelPink   ImageMetadataLabel = "Pink"
-	ImageMetadataLabelPurple ImageMetadataLabel = "Purple"
-	ImageMetadataLabelRed    ImageMetadataLabel = "Red"
-	ImageMetadataLabelYellow ImageMetadataLabel = "Yellow"
-)
-
-// Valid indicates whether the value is a known member of the ImageMetadataLabel enum.
-func (e ImageMetadataLabel) Valid() bool {
-	switch e {
-	case ImageMetadataLabelBlue:
-		return true
-	case ImageMetadataLabelGreen:
-		return true
-	case ImageMetadataLabelNone:
-		return true
-	case ImageMetadataLabelOrange:
-		return true
-	case ImageMetadataLabelPink:
-		return true
-	case ImageMetadataLabelPurple:
-		return true
-	case ImageMetadataLabelRed:
-		return true
-	case ImageMetadataLabelYellow:
-		return true
-	default:
-		return false
-	}
-}
-
-// Defines values for ImageUpdateImageMetadataLabel.
-const (
-	ImageUpdateImageMetadataLabelBlue   ImageUpdateImageMetadataLabel = "Blue"
-	ImageUpdateImageMetadataLabelGreen  ImageUpdateImageMetadataLabel = "Green"
-	ImageUpdateImageMetadataLabelNone   ImageUpdateImageMetadataLabel = "None"
-	ImageUpdateImageMetadataLabelOrange ImageUpdateImageMetadataLabel = "Orange"
-	ImageUpdateImageMetadataLabelPink   ImageUpdateImageMetadataLabel = "Pink"
-	ImageUpdateImageMetadataLabelPurple ImageUpdateImageMetadataLabel = "Purple"
-	ImageUpdateImageMetadataLabelRed    ImageUpdateImageMetadataLabel = "Red"
-	ImageUpdateImageMetadataLabelYellow ImageUpdateImageMetadataLabel = "Yellow"
-)
-
-// Valid indicates whether the value is a known member of the ImageUpdateImageMetadataLabel enum.
-func (e ImageUpdateImageMetadataLabel) Valid() bool {
-	switch e {
-	case ImageUpdateImageMetadataLabelBlue:
-		return true
-	case ImageUpdateImageMetadataLabelGreen:
-		return true
-	case ImageUpdateImageMetadataLabelNone:
-		return true
-	case ImageUpdateImageMetadataLabelOrange:
-		return true
-	case ImageUpdateImageMetadataLabelPink:
-		return true
-	case ImageUpdateImageMetadataLabelPurple:
-		return true
-	case ImageUpdateImageMetadataLabelRed:
-		return true
-	case ImageUpdateImageMetadataLabelYellow:
-		return true
-	default:
-		return false
-	}
-}
-
 // Defines values for ImageUploadStatus.
 const (
 	ImageUploadStatusDuplicate  ImageUploadStatus = "duplicate"
@@ -152,6 +80,39 @@ func (e ImageUploadStatus) Valid() bool {
 	case ImageUploadStatusProcessing:
 		return true
 	case ImageUploadStatusUploaded:
+		return true
+	default:
+		return false
+	}
+}
+
+// Defines values for Label.
+const (
+	Blue   Label = "Blue"
+	Green  Label = "Green"
+	Orange Label = "Orange"
+	Pink   Label = "Pink"
+	Purple Label = "Purple"
+	Red    Label = "Red"
+	Yellow Label = "Yellow"
+)
+
+// Valid indicates whether the value is a known member of the Label enum.
+func (e Label) Valid() bool {
+	switch e {
+	case Blue:
+		return true
+	case Green:
+		return true
+	case Orange:
+		return true
+	case Pink:
+		return true
+	case Purple:
+		return true
+	case Red:
+		return true
+	case Yellow:
 		return true
 	default:
 		return false
@@ -1114,7 +1075,7 @@ type ImageMetadata struct {
 	Keywords *[]string `json:"keywords,omitempty"`
 
 	// Label User-assigned label for the image. Null = unlabeled
-	Label *ImageMetadataLabel `json:"label,omitempty"`
+	Label *Label `json:"label,omitempty"`
 
 	// Metadata Additional metadata
 	Metadata *string `json:"metadata,omitempty"`
@@ -1128,9 +1089,6 @@ type ImageMetadata struct {
 	// Thumbhash Thumbhash
 	Thumbhash *string `json:"thumbhash,omitempty"`
 }
-
-// ImageMetadataLabel User-assigned label for the image. Null = unlabeled
-type ImageMetadataLabel string
 
 // ImagePaths defines model for ImagePaths.
 type ImagePaths struct {
@@ -1160,7 +1118,7 @@ type ImageUpdate struct {
 		Keywords *[]string `json:"keywords,omitempty"`
 
 		// Label User-assigned label for the image. Null = unlabeled
-		Label *ImageUpdateImageMetadataLabel `json:"label,omitempty"`
+		Label *Label `json:"label,omitempty"`
 
 		// Rating User-assigned rating (0-5). Null = unrated
 		Rating *int `json:"rating,omitempty"`
@@ -1175,9 +1133,6 @@ type ImageUpdate struct {
 	// Private Is private
 	Private *bool `json:"private,omitempty"`
 }
-
-// ImageUpdateImageMetadataLabel User-assigned label for the image. Null = unlabeled
-type ImageUpdateImageMetadataLabel string
 
 // ImageUploadRequest defines model for ImageUploadRequest.
 type ImageUploadRequest struct {
@@ -1237,6 +1192,9 @@ type ImagesResponse struct {
 	AddedBy *User      `json:"added_by,omitempty"`
 	Image   ImageAsset `json:"image"`
 }
+
+// Label User-assigned label color for the image
+type Label string
 
 // LibvipsConfig defines model for LibvipsConfig.
 type LibvipsConfig struct {

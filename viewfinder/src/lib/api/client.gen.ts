@@ -38,7 +38,7 @@ export type User = {
     /** Email */
     email: string;
     /** User role */
-    role: "user" | "admin" | "superadmin" | "guest";
+    role: Role;
     /** Creation time */
     created_at: string;
     /** Update time */
@@ -317,7 +317,7 @@ export type ImageMetadata = {
     /** Thumbhash */
     thumbhash?: string;
     /** User-assigned label for the image. Null = unlabeled */
-    label?: ("Red" | "Orange" | "Yellow" | "Purple" | "Pink" | "Green" | "Blue" | "None") | null;
+    label?: (Label) | null;
     /** File checksum */
     checksum: string;
 };
@@ -436,7 +436,6 @@ export type ImageUploadRequest = {
     /** Optional checksum of the file */
     checksum?: string;
 };
-export type ImageUploadStatus = "uploaded" | "duplicate" | "failed" | "processing";
 export type ImageUploadResponse = {
     /** UID of the uploaded image */
     uid: string;
@@ -488,7 +487,7 @@ export type ImageUpdate = {
     exif?: ImageExif;
     image_metadata?: {
         /** User-assigned label for the image. Null = unlabeled */
-        label?: ("Red" | "Orange" | "Yellow" | "Purple" | "Pink" | "Green" | "Blue" | "None") | null;
+        label?: (Label) | null;
         /** User-assigned rating (0-5). Null = unrated */
         rating?: number | null;
         /** Keywords */
@@ -617,7 +616,7 @@ export type SettingDefault = {
     /** The default value everyone gets. */
     value: string;
     /** Data type of the setting. */
-    value_type: "boolean" | "string" | "integer" | "enum" | "json";
+    value_type: Value_type;
     /** List of valid choices if type is enum. */
     allowed_values?: string[] | null;
     /** Describes whether a user can edit this setting. */
@@ -771,7 +770,7 @@ export type AdminUserCreate = {
     /** User's password */
     password: string;
     /** User role */
-    role?: "user" | "admin" | "superadmin" | "guest";
+    role?: Role;
 };
 export type AdminUserUpdate = {
     /** First name */
@@ -783,7 +782,7 @@ export type AdminUserUpdate = {
     /** Email address */
     email?: string | null;
     /** User role */
-    role?: ("user" | "admin" | "superadmin" | "guest") | null;
+    role?: Role | null;
 };
 export type WorkerInfo = {
     /** Job topic/worker name (e.g., exif_process, image_process) */
@@ -809,7 +808,7 @@ export type WorkerJobCreateRequest = {
     /** Job topic (e.g., exif_process, image_process) */
     "type": string;
     /** Command to execute (all=process all, missing=process missing) */
-    command: "all" | "missing";
+    command: Command;
     /** Image UIDs to process (optional, if omitted all images are considered) */
     uids?: string[];
 };
@@ -2455,4 +2454,36 @@ export function setupSuperadmin(superadminSetupRequest: SuperadminSetupRequest, 
         method: "POST",
         body: superadminSetupRequest
     }));
+}
+export enum Role {
+    User = "user",
+    Admin = "admin",
+    Superadmin = "superadmin",
+    Guest = "guest"
+}
+export enum Label {
+    Red = "Red",
+    Orange = "Orange",
+    Yellow = "Yellow",
+    Purple = "Purple",
+    Pink = "Pink",
+    Green = "Green",
+    Blue = "Blue"
+}
+export enum ImageUploadStatus {
+    Uploaded = "uploaded",
+    Duplicate = "duplicate",
+    Failed = "failed",
+    Processing = "processing"
+}
+export enum Value_type {
+    Boolean = "boolean",
+    String = "string",
+    Integer = "integer",
+    Enum = "enum",
+    Json = "json"
+}
+export enum Command {
+    All = "all",
+    Missing = "missing"
 }
