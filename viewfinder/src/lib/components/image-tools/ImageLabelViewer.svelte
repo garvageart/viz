@@ -45,7 +45,7 @@
 
 {#if variant === "expanded"}
 	<div class="label-selector-container">
-		{#each Object.entries(LabelColours).filter(([_, colour]) => colour !== LabelColours.None) as [name, colour]}
+		{#each Object.entries(LabelColours) as [name, colour]}
 			<button
 				class="label-selector"
 				title={name}
@@ -54,7 +54,7 @@
 				disabled={!enableSelection}
 				onclick={() => {
 					if (label === colour) {
-						handleSelect(LabelColours.None);
+						handleSelect(null);
 					} else {
 						handleSelect(colour as LabelColours);
 					}
@@ -65,13 +65,13 @@
 		{/each}
 	</div>
 {:else if variant === "compact"}
-	{#if enableSelection || label !== null || (label && label !== LabelColours.None)}
+	{#if enableSelection || label !== null}
 		<div class="label-selector-container" class:compact={variant === "compact"}>
 			<div class="compact-container" bind:this={dropdownContainer}>
 				<button
 					class="label-selector-trigger"
 					class:disable-select={!enableSelection}
-					style={!label || label === LabelColours.None
+					style={!label
 						? nullNoneLabelStyle
 						: `background-color: ${label};`}
 					onclick={() => {
@@ -86,7 +86,7 @@
 				</button>
 				{#if isOpen}
 					<div class="label-dropdown">
-						{#each Object.entries(LabelColours).filter(([_, colour]) => colour !== LabelColours.None) as [name, colour]}
+						{#each Object.entries(LabelColours) as [name, colour]}
 							<button
 								class="label-selector"
 								title={name}
@@ -94,7 +94,7 @@
 								class:selected={label === colour}
 								onclick={() => {
 									if (label === colour) {
-										handleSelect(LabelColours.None);
+										handleSelect(null);
 									} else {
 										handleSelect(colour as LabelColours);
 									}

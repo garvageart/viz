@@ -5,8 +5,7 @@ export enum LabelColours {
     Purple = "#9355f7",
     Pink = "#f755a1",
     Green = "#19dd61",
-    Blue = "#106ea5",
-    None = "transparent"
+    Blue = "#106ea5"
 }
 
 export const flashModes: Record<number, string> = {
@@ -37,5 +36,3 @@ export const flashModes: Record<number, string> = {
     0x5d: "Auto, fired, return not detected",
     0x5f: "Auto, fired, return detected"
 };
-
-export type ImageLabel = keyof typeof LabelColours;

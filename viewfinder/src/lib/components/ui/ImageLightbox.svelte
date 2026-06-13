@@ -1,6 +1,6 @@
 <script lang="ts">
-    import { getFullImagePath, updateImage, type ImageAsset } from "$lib/api";
-    import { LabelColours, type ImageLabel } from "$lib/images/constants";
+    import { getFullImagePath, updateImage, type ImageAsset, Label as ImageLabel } from "$lib/api";
+    import { LabelColours } from "$lib/images/constants";
     import { calculateZoomTo, constrainTranslation } from "$lib/images/zoom/zoom-utils";
     import { setRating } from "$lib/images/exif";
     import { toastState } from "$lib/toast-notifcations/notif-state.svelte";
@@ -974,15 +974,11 @@
                         const entry = Object.entries(LabelColours).find(
                             ([_, colour]) => colour === selectedLabel
                         );
-                        const labelToSend = entry
-                            ? entry[0] === "None"
-                                ? null
-                                : entry[0]
-                            : null;
+                        const labelToSend = entry ? entry[0] as ImageLabel : null;
                         try {
                             const res = await updateImage(lightboxImage.uid, {
                                 image_metadata: {
-                                    label: labelToSend as ImageLabel | null
+                                    label: labelToSend
                                 }
                             });
 

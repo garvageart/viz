@@ -26,7 +26,8 @@
 	    updateCollection,
 	    updateImage,
 	    type CollectionUpdate,
-	    type ImageAsset
+	    type ImageAsset,
+	    Label as ImageLabel
 	} from "$lib/api";
 	import Dropdown from "$lib/components/context-menus/Dropdown.svelte";
 	import PhotoAssetGrid from "$lib/components/grid/PhotoAssetGrid.svelte";
@@ -48,7 +49,7 @@
 	import ContextMenu from "$lib/context-menu/ContextMenu.svelte";
 	import { createImageMenu } from "$lib/context-menu/menus/images";
 	import type { MenuItem } from "$lib/context-menu/types";
-	import { LabelColours, type ImageLabel } from "$lib/images/constants";
+	import { LabelColours } from "$lib/images/constants";
 	import { ImagePaginationState } from "$lib/images/state.svelte";
 	import { sortCollectionImages } from "$lib/sort/sort.js";
 	import { filterManager } from "$lib/states/filter.svelte";
@@ -966,10 +967,7 @@ return;
 					([_, colour]) => colour === selectedLabel
 				);
 				const labelName = entry ? entry[0] : null;
-				// If "None" is selected, send null to clear the label
-				const labelToSend = (
-					labelName === "None" || !labelName ? null : labelName
-				) as ImageLabel | null;
+				const labelToSend = labelName as ImageLabel | null;
 
 				const updatePromises = selectionScope.selectedItems.map((img) =>
 					updateImage(img.uid, {

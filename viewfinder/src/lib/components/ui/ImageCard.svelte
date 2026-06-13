@@ -102,7 +102,7 @@
 						{/each}
 					</div>
 				</div>
-				{#if asset.image_metadata?.label && asset.image_metadata?.label !== "None"}
+				{#if asset.image_metadata?.label}
 					<div
 						class="mini-label-indicator"
 						style="background-color: {getImageLabel(asset)}"
@@ -159,7 +159,7 @@
 						>
 					</div>
 					<div class="image-card-indicators">
-						{#if asset.image_metadata?.label && asset.image_metadata?.label !== "None"}
+						{#if asset.image_metadata?.label}
 							<ImageLabelViewer
 								label={getImageLabel(asset)}
 								enableSelection={false}

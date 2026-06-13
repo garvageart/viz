@@ -5,6 +5,7 @@
 	    getImage,
 	    listImages,
 	    updateImage,
+	    Label as ImageLabel,
 	    type Collection,
 	    type ImageAsset
 	} from "$lib/api";
@@ -27,7 +28,7 @@
 	import { createImageMenu } from "$lib/context-menu/menus/images.js";
 	import type { MenuItem } from "$lib/context-menu/types";
 	import { DragData } from "$lib/drag-drop/data.js";
-	import { LabelColours, type ImageLabel } from "$lib/images/constants.js";
+	import { LabelColours } from "$lib/images/constants.js";
 	import { ImagePaginationState } from "$lib/images/state.svelte.js";
 	import {
 	    getConsolidatedGroups,
@@ -499,10 +500,7 @@ return undefined;
 								([_, colour]) => colour === selectedLabel
 							);
 							const labelName = entry ? entry[0] : null;
-							// If "None" is selected, send null to clear the label
-							const labelToSend = (
-								labelName === "None" || !labelName ? null : labelName
-							) as ImageLabel | null;
+							const labelToSend = labelName as ImageLabel | null;
 
 							const updatePromises = selectionScope.selectedItems.map(
 								(img) =>

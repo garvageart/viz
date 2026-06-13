@@ -1,7 +1,7 @@
 <script lang="ts">
 	import { goto } from "$app/navigation";
 	import type { Collection, ImageAsset } from "$lib/api";
-	import { addCollectionImages, updateImage } from "$lib/api";
+	import { addCollectionImages, updateImage, Label as ImageLabel } from "$lib/api";
 	import Dropdown from "$lib/components/context-menus/Dropdown.svelte";
 	import AssetGrid from "$lib/components/grid/AssetGrid.svelte";
 	import PhotoAssetGrid from "$lib/components/grid/PhotoAssetGrid.svelte";
@@ -22,7 +22,7 @@
 	import { createImageMenu } from "$lib/context-menu/menus/images";
 	import type { MenuItem } from "$lib/context-menu/types";
 	import { DragData } from "$lib/drag-drop/data";
-	import { LabelColours, type ImageLabel } from "$lib/images/constants";
+	import { LabelColours } from "$lib/images/constants";
 	import {
 	    getConsolidatedGroups,
 	    groupImagesByDate,
@@ -494,10 +494,7 @@ return;
 										([_, colour]) => colour === selectedLabel
 									);
 									const labelName = entry ? entry[0] : null;
-									// If "None" is selected, send null to clear the label
-									const labelToSend = (
-										labelName === "None" || !labelName ? null : labelName
-									) as ImageLabel | null;
+									const labelToSend = labelName as ImageLabel | null;
 
 									const updatePromises = imageSelection.selectedItems.map((img) =>
 										updateImage(img.uid, {
