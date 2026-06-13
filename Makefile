@@ -1,6 +1,6 @@
 SHELL := /usr/bin/env bash
 SCRIPTS_DIR := scripts/js
-.PHONY: help build build-api build-frontend generate-icons generate-types generate-types-install fmt lint test docker-build docker-push docker-up docker-down migrate initdb clean image-server image-viz dev run
+.PHONY: help build build-api build-frontend generate-icons generate-types generate-types-install fmt lint test docker-build docker-push docker-up docker-down migrate initdb clean image-server image-viz dev run check-go
 
 # Simple Makefile for common tasks across the viz repository.
 # Targets included:
@@ -21,12 +21,16 @@ BUILDX_CACHE_DIR ?= $(CURDIR)/.buildcache
 # Local buildx cache dirs (server)
 BUILDX_CACHE_SERVER_DIR := $(BUILDX_CACHE_DIR)/server
 
+# Detect if running inside a container (Docker/Podman/etc.)
+IN_CONTAINER ?= $(shell if [ -f /.dockerenv ] || grep -q 'docker\|container' /proc/self/cgroup 2>/dev/null; then echo 1; else echo 0; fi)
+
 # Cache control: when `USE_HOST_CACHE=1` Make will use host-side cache dirs
-# for Go module cache, Go build cache and pnpm store. This preserves fast
-# incremental builds when running `make` locally. Set `USE_HOST_CACHE=0`
-# to disable host caches (useful inside Docker build where BuildKit mounts
-# are preferred).
-USE_HOST_CACHE ?= 1
+# for Go module cache, Go build cache and pnpm store.
+ifeq ($(IN_CONTAINER),1)
+    USE_HOST_CACHE ?= 1
+else
+    USE_HOST_CACHE ?= 0
+endif
 GO_MOD_CACHE_DIR ?= $(CURDIR)/.cache/go-mods
 GO_BUILD_CACHE_DIR ?= $(CURDIR)/.cache/go-build
 PNPM_STORE_DIR ?= $(CURDIR)/$(VIEWFINDER_DIR)/.pnpm-store
@@ -64,6 +68,7 @@ help:
 	@printf "  fmt                       Run formatting (Go and frontend if available)\n"
 	@printf "  lint                      Run linters (if available)\n"
 	@printf "  test                      Run Go tests and frontend tests if present\n"
+	@printf "  check-go                  Run go build ./... to type-check Go code\n"
 	@printf "  docker-build              Build Docker images via docker compose\n"
 	@printf "  docker-up                 Start services via docker compose\n"
 	@printf "  docker-down               Stop services\n"
@@ -157,6 +162,9 @@ lint:
 	else \
 		echo "golangci-lint not found, skipping Go lint. Install it or add a linter."; \
 	fi
+check-go:
+	@echo "Checking Go code for compilation and type errors..."
+	@$(GO_CMD) build ./...
 
 test:
 	@echo "Running Go tests..."
