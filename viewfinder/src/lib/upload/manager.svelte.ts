@@ -1,7 +1,7 @@
 import { upload } from "$lib/states/index.svelte";
 import type { SupportedImageTypes, SupportedRAWFiles } from "$lib/types/images";
 import { UploadImage, UploadState } from "./asset.svelte";
-import { checkDuplicates, type ImageUploadStatus } from "$lib/api";
+import { checkDuplicates, ImageUploadStatus } from "$lib/api";
 import type { DirectoryInputElement } from "$lib/types/dom";
 import { calculateSHA1 } from "$lib/utils/crypto";
 
@@ -165,7 +165,7 @@ export default class UploadManager {
                         task.progress = 100;
                         task.imageData = {
                             uid: dupMap.get(task.checksum)!,
-                            status: "duplicate"
+                            status: ImageUploadStatus.Duplicate
                         };
                     }
                 }

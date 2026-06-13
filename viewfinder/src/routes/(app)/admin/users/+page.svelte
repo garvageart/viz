@@ -3,7 +3,8 @@
 		adminDeleteUser,
 		adminUpdateUser,
 		adminCreateUser,
-		type User
+		type User,
+		Role
 	} from "$lib/api";
 	import Button from "$lib/components/ui/Button.svelte";
 	import MaterialIcon from "$lib/components/ui/MaterialIcon.svelte";
@@ -46,7 +47,7 @@
 						name: createForm.name,
 						email: createForm.email,
 						password: createForm.password,
-						role: createForm.role as UserRole
+						role: createForm.role as Role
 					});
 
 					if (res.status === 201) {
@@ -79,7 +80,7 @@
 						last_name: editForm.last_name,
 						name: editForm.name,
 						email: editForm.email,
-						role: editForm.role as UserRole
+						role: editForm.role as Role
 					});
 
 					if (res.status === 200) {

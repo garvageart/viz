@@ -6,7 +6,8 @@ import {
     updateJobTypeConcurrency,
     getEventsSince,
     type WorkerJob,
-    type WorkerInfo
+    type WorkerInfo,
+    Command
 } from "$lib/api";
 import { createWSConnection, type WSClient } from "$lib/api/websocket";
 import { toastState } from "$lib/toast-notifcations/notif-state.svelte";
@@ -390,7 +391,7 @@ class JobsState {
 
     async rescanAll(jobId: string) {
         try {
-            const res = await createJob({ type: jobId, command: "all" });
+            const res = await createJob({ type: jobId, command: Command.All });
             if (res.status === 202) {
                 toastState.addToast({
                     message: res.data.message || `Rescan all for ${jobId} started`,
@@ -418,7 +419,7 @@ class JobsState {
 
     async rescanMissing(jobId: string) {
         try {
-            const res = await createJob({ type: jobId, command: "missing" });
+            const res = await createJob({ type: jobId, command: Command.Missing });
             if (res.status === 202) {
                 toastState.addToast({
                     message: res.data.message || `Rescan missing for ${jobId} started`,

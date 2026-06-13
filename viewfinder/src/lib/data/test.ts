@@ -1,4 +1,4 @@
-import type { User, ImageAsset, Collection } from "$lib/api";
+import { type User, type ImageAsset, type Collection, Role } from "$lib/api";
 import { generateRandomString } from "$lib/utils/misc";
 import { faker } from "@faker-js/faker";
 
@@ -14,7 +14,7 @@ export function createTestUser(): User {
 		last_name: faker.person.lastName(),
 		name: faker.internet.username(),
 		email: faker.internet.email(),
-		role: "user",
+		role: Role.User,
 		created_at: faker.date.past({ years: 2 }).toISOString(),
 		updated_at: faker.date.recent({ days: 60 }).toISOString()
 	};
