@@ -8,8 +8,8 @@ import (
 	"viz/internal/config"
 	"viz/internal/dto"
 	"viz/internal/entities"
-	libvips "viz/internal/imageops/vips"
 	"viz/internal/images"
+	libvips "viz/internal/images/ops/vips"
 	"viz/internal/images/transform"
 )
 

@@ -12,7 +12,7 @@ import (
 
 	"viz/internal/config"
 	"viz/internal/entities"
-	libvips "viz/internal/imageops/vips"
+	libvips "viz/internal/images/ops/vips"
 	libos "viz/internal/os"
 
 	"github.com/galdor/go-thumbhash"

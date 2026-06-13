@@ -5,6 +5,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"time"
+	imageops "viz/internal/images/ops"
 	"viz/internal/images/transform"
 
 	"github.com/ThreeDotsLabs/watermill"
@@ -12,7 +13,6 @@ import (
 
 	"viz/internal/entities"
 	libhttp "viz/internal/http"
-	"viz/internal/imageops"
 	"viz/internal/images"
 	"viz/internal/jobs"
 	"viz/internal/utils"

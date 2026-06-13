@@ -5,7 +5,7 @@ import (
 	"net/url"
 	"strconv"
 	"viz/internal/entities"
-	libvips "viz/internal/imageops/vips"
+	libvips "viz/internal/images/ops/vips"
 	"viz/internal/images/transform"
 )
 

@@ -5,8 +5,9 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
-	"viz/internal/dto"
 	"strings"
+	"viz/internal/dto"
+	imageops "viz/internal/images/ops"
 
 	"github.com/ThreeDotsLabs/watermill/message"
 	"github.com/trimmer-io/go-xmp/models/dc"
@@ -15,15 +16,15 @@ import (
 
 	"viz/internal/entities"
 	libhttp "viz/internal/http"
-	"viz/internal/imageops"
-	libvips "viz/internal/imageops/vips"
 	"viz/internal/images"
+	libvips "viz/internal/images/ops/vips"
 	"viz/internal/jobs"
 	"viz/internal/utils"
 	customxmp "viz/internal/xmp"
 
-	"gorm.io/gorm"
 	"time"
+
+	"gorm.io/gorm"
 )
 
 const (

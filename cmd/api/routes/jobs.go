@@ -16,7 +16,7 @@ import (
 	"viz/internal/dto"
 	"viz/internal/entities"
 	libhttp "viz/internal/http"
-	"viz/internal/imageops"
+	"viz/internal/images/ops"
 	"viz/internal/images"
 	"viz/internal/images/transform"
 	"viz/internal/jobs"
