@@ -1,0 +1,15 @@
+node_modules
+.cache
+dist
+tmp
+var
+target
+
+# Media/Assets
+*.png
+*.jpg
+*.jpeg
+*.gif
+*.svg
+*.webp
+*.ico
