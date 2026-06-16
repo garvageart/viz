@@ -4,6 +4,7 @@
     import { fade } from "svelte/transition";
     import { toastState } from "$lib/toast-notifcations/notif-state.svelte";
     import SettingItemsList from "./SettingItemsList.svelte";
+    import Button from "$lib/components/ui/Button.svelte";
 
     interface Props {
         settings?: UserSetting[];
@@ -89,9 +90,9 @@
         {#if hasChanges || saveStatus === "success"}
             <div class="actions" transition:fade>
                 {#if hasChanges}
-                    <button class="btn-save" disabled={saving} onclick={saveChanges}>
+                    <Button variant="small" disabled={saving} onclick={saveChanges}>
                         {saving ? "Saving..." : "Save Changes"}
-                    </button>
+                    </Button>
                 {/if}
             </div>
         {/if}
@@ -113,7 +114,7 @@
         justify-content: space-between;
         align-items: flex-start;
         padding-bottom: 1rem;
-        border-bottom: 1px solid var(--viz-80);
+        border-bottom: 1px solid var(--viz-60);
 
         h2 {
             font-size: 1.5rem;
@@ -132,25 +133,5 @@
         display: flex;
         align-items: center;
         gap: 1rem;
-    }
-
-    .btn-save {
-        background-color: var(--viz-80);
-        color: var(--viz-text-color);
-        border: none;
-        padding: 0.5rem 1rem;
-        border-radius: 0.375rem;
-        font-weight: 500;
-        cursor: pointer;
-        transition: opacity 0.2s;
-
-        &:hover:not(:disabled) {
-            opacity: 0.9;
-        }
-
-        &:disabled {
-            opacity: 0.7;
-            cursor: not-allowed;
-        }
     }
 </style>

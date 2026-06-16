@@ -45,7 +45,7 @@
         justify-content: space-between;
         align-items: flex-start;
         padding-bottom: 1rem;
-        border-bottom: 1px solid var(--viz-80);
+        border-bottom: 1px solid var(--viz-60);
 
         h2 {
             font-size: 1.5rem;

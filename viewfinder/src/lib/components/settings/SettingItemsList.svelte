@@ -123,7 +123,15 @@
     .settings-list {
         display: flex;
         flex-direction: column;
+        align-items: center;
         width: 100%;
+        gap: 1.5rem;
+    }
+
+    .setting-item {
+        width: 100%;
+        display: flex;
+        flex-direction: column;
     }
 
     .empty-state {

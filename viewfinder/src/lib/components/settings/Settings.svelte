@@ -14,10 +14,10 @@ Stuff to finish:
 -->
 <script lang="ts">
     import type { UserSetting } from "$lib/api";
-    import SettingsSidebar from "../settings/SettingsSidebar.svelte";
-    import AutoSettingsGroup from "../settings/AutoSettingsGroup.svelte";
-    import AccountsSettings from "./AccountSettings.svelte";
     import { SvelteSet } from "svelte/reactivity";
+    import AutoSettingsGroup from "../settings/AutoSettingsGroup.svelte";
+    import SettingsSidebar from "../settings/SettingsSidebar.svelte";
+    import AccountsSettings from "./AccountSettings.svelte";
     import SecuritySettings from "./SecuritySettings.svelte";
 
     // TODO: Import SecuritySettings when created
@@ -27,6 +27,9 @@ Stuff to finish:
     }
 
     let { activeSection = "general", userSettingsData }: Props = $props();
+    let activeSectionDisplayName = $derived(
+        activeSection.charAt(0).toUpperCase() + activeSection.slice(1)
+    );
 
     let settings: UserSetting[] = $derived(
         userSettingsData.filter((s) => s.is_user_editable !== false)
@@ -41,6 +44,7 @@ Stuff to finish:
         "Privacy",
         "Security"
     ];
+
     // custom groups that aren't in the DB settings
     const customGroups = ["Security", "Account"];
 
@@ -56,14 +60,17 @@ Stuff to finish:
             if (indexA !== -1 && indexB !== -1) {
                 return indexA - indexB;
             }
+
             // If only A is in list, A comes first
             if (indexA !== -1) {
                 return -1;
             }
+
             // If only B is in list, B comes first
             if (indexB !== -1) {
                 return 1;
             }
+
             // Otherwise alphabetical
             return a.localeCompare(b);
         });
@@ -76,6 +83,12 @@ Stuff to finish:
         customGroups.map((g) => g.toLowerCase()).includes(activeSection.toLowerCase())
     );
 </script>
+
+<svelte:head>
+    {#if activeSection}
+        <title>{activeSectionDisplayName} - Settings</title>
+    {/if}
+</svelte:head>
 
 <div class="settings-layout">
     <SettingsSidebar {groups} activeGroup={activeSection} />
@@ -107,7 +120,7 @@ Stuff to finish:
 
     .settings-content {
         flex: 1;
-        padding: 2rem 10rem;
+        padding: 2rem 15rem;
         overflow-y: auto;
         background-color: var(--viz-bg-color);
     }

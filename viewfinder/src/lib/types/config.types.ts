@@ -6,6 +6,6 @@ export interface ViewfinderConfig {
     theme?: string;
 }
 
-export interface VizConfig {
+export interface VizBootstrapConfig {
     system: SystemStatusResponse;
 }

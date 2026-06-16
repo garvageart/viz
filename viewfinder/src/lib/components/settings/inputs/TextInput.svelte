@@ -1,4 +1,7 @@
 <script lang="ts">
+    import InputText from "../../ui/InputText.svelte";
+    import SettingRow from "../SettingRow.svelte";
+
     interface Props {
         label: string;
         value?: string | number;
@@ -26,70 +29,15 @@
     }
 </script>
 
-<div class="input-container" class:disabled>
-    <div class="label-group">
-        <label for="input-{label}" class="label">{label}</label>
-        {#if description}
-            <span class="description">{description}</span>
-        {/if}
-    </div>
-    <input
-        id="input-{label}"
-        {type}
-        bind:value
-        oninput={handleInput}
-        {disabled}
-        class="text-input"
-    />
-</div>
-
-<style lang="scss">
-    .input-container {
-        display: flex;
-        justify-content: space-between;
-        align-items: center;
-        padding: 1rem 0;
-        border-bottom: 1px solid var(--viz-80);
-        width: 100%;
-        font-family: var(--viz-display-font);
-
-        &.disabled {
-            opacity: 0.5;
-        }
-    }
-
-    .label-group {
-        display: flex;
-        flex-direction: column;
-        gap: 0.25rem;
-    }
-
-    .label {
-        font-weight: 500;
-        color: var(--viz-text-color);
-    }
-
-    .description {
-        font-size: 0.875rem;
-        color: var(--viz-text-color);
-    }
-
-    .text-input {
-        padding: 0.5rem 1rem;
-        border-radius: 0.375rem;
-        background-color: var(--viz-100);
-        color: var(--viz-text-color);
-        border: 1px solid var(--viz-80);
-        outline: none;
-        font-family: var(--viz-display-font);
-        width: 200px;
-
-        &:focus {
-            border-color: var(--viz-70);
-        }
-
-        &:disabled {
-            cursor: not-allowed;
-        }
-    }
-</style>
+<SettingRow {label} {description} {disabled}>
+    {#snippet control()}
+        <InputText
+            id="input-{label}"
+            style="background-color: var(--viz-90);"
+            {type}
+            bind:value
+            oninput={handleInput}
+            {disabled}
+        />
+    {/snippet}
+</SettingRow>

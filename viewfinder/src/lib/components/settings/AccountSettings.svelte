@@ -6,6 +6,7 @@
     import AutoSettingsGroup from "./AutoSettingsGroup.svelte";
     import CustomSettingsGroup from "./CustomSettingsGroup.svelte";
     import TextInput from "./inputs/TextInput.svelte";
+    import Button from "$lib/components/ui/Button.svelte";
 
     interface Props {
         userSettingsData: UserSetting[];
@@ -95,9 +96,9 @@
     <CustomSettingsGroup title="Account">
         {#snippet actions()}
             {#if dirty}
-                <button class="btn-save" onclick={saveAccountChanges} disabled={savingAccount}>
+                <Button variant="small" onclick={saveAccountChanges} disabled={savingAccount}>
                     {savingAccount ? "Saving..." : "Save Changes"}
-                </button>
+                </Button>
             {/if}
         {/snippet}
 
@@ -127,25 +128,5 @@
         display: flex;
         flex-direction: column;
         gap: 3rem;
-    }
-
-    .btn-save {
-        background-color: var(--viz-80);
-        color: var(--viz-text-color);
-        border: none;
-        padding: 0.5rem 1rem;
-        border-radius: 0.375rem;
-        font-weight: 500;
-        cursor: pointer;
-        transition: opacity 0.2s;
-
-        &:hover:not(:disabled) {
-            opacity: 0.9;
-        }
-
-        &:disabled {
-            opacity: 0.7;
-            cursor: not-allowed;
-        }
     }
 </style>

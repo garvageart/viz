@@ -1,5 +1,6 @@
 <script lang="ts">
     import SliderToggle from "$lib/components/ui/SliderToggle.svelte";
+    import SettingRow from "../SettingRow.svelte";
 
     interface Props {
         label: string;
@@ -32,57 +33,22 @@
     });
 </script>
 
-<div class="input-container" class:disabled>
-    <div class="label-group">
-        <label class="label" for={toggleId}>{label}</label>
-        {#if description}
-            <span class="description">{description}</span>
-        {/if}
-    </div>
-    <div class="toggle-wrapper" class:disabled>
-        <!-- 
-			We pass the label to SliderToggle because it's required, 
-			but we hide it via CSS to use our own label/description layout.
-			We treat the 'disabled' state by disabling pointer events if needed,
-			though SliderToggle doesn't support 'disabled' prop in original version.
-		-->
-        <div class:pointer-events-none={disabled} class:opacity-50={disabled}>
-            <SliderToggle id={toggleId} {label} bind:value labelPos="side" />
+<SettingRow {label} {description} {disabled}>
+    {#snippet control()}
+        <div class="toggle-wrapper">
+            <div class:pointer-events-none={disabled} class:opacity-50={disabled}>
+                <SliderToggle id={toggleId} {label} bind:value labelPos="side" />
+            </div>
         </div>
-    </div>
-</div>
+    {/snippet}
+</SettingRow>
 
 <style lang="scss">
-    .input-container {
-        display: flex;
-        justify-content: space-between;
-        align-items: center;
-        padding: 1rem 0;
-        border-bottom: 1px solid var(--viz-80);
-        width: 100%;
-
-        &.disabled {
-            opacity: 0.5;
-        }
-    }
-
-    .label-group {
-        display: flex;
-        flex-direction: column;
-        gap: 0.25rem;
-    }
-
-    .label {
-        font-weight: 500;
-        color: var(--viz-text-color);
-    }
-
-    .description {
-        font-size: 0.875rem;
-        color: var(--viz-40);
-    }
-
     .toggle-wrapper {
+        display: flex;
+        justify-content: flex-end;
+        width: 100%;
+        flex-shrink: 0;
         :global(.toggle-slider label) {
             display: none;
         }

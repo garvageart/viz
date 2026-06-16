@@ -1,5 +1,6 @@
 <script lang="ts">
     import InputSelect from "../../ui/InputSelect.svelte";
+    import SettingRow from "../SettingRow.svelte";
 
     interface Props {
         label: string;
@@ -41,59 +42,15 @@
     }
 </script>
 
-<div class="select-container" class:disabled>
-    <div class="label-group">
-        <label for="select-{label}" class="label">{label}</label>
-        {#if description}
-            <span class="description">{description}</span>
-        {/if}
-    </div>
-    <div class="select-wrapper">
+<SettingRow {label} {description} {disabled}>
+    {#snippet control()}
         <InputSelect
             id="select-{label}"
+            style="background-color: var(--viz-90);"
             value={selectedValue}
             onchange={handleChange}
             {disabled}
             {options}
         />
-    </div>
-</div>
-
-<style lang="scss">
-    .select-container {
-        display: flex;
-        justify-content: space-between;
-        align-items: center;
-        padding: var(--viz-spacing-std) 0;
-        border-bottom: 1px solid var(--viz-80);
-        width: 100%;
-        gap: var(--viz-spacing-lg);
-
-        &.disabled {
-            opacity: 0.5;
-        }
-    }
-
-    .label-group {
-        display: flex;
-        flex-direction: column;
-        gap: var(--viz-spacing-xs);
-        flex: 1;
-        min-width: 0;
-    }
-
-    .label {
-        font-weight: 500;
-        color: var(--viz-text-color);
-    }
-
-    .description {
-        font-size: var(--viz-font-size-sm);
-        color: var(--viz-text-color);
-    }
-
-    .select-wrapper {
-        width: 15rem;
-        flex-shrink: 0;
-    }
-</style>
+    {/snippet}
+</SettingRow>
