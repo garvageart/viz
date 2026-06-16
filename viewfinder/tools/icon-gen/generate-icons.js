@@ -8,11 +8,11 @@
  * Svelte components to `src/lib/components/icons/generated/`.
  */
 
-import { readFileSync, existsSync, mkdirSync, writeFileSync } from "fs";
-import { resolve, join, dirname } from "path";
-import { fileURLToPath } from "url";
+import { existsSync, mkdirSync, readFileSync, writeFileSync } from "fs";
 import { globSync } from "glob";
+import { dirname, join, resolve } from "path";
 import { optimize } from "svgo";
+import { fileURLToPath } from "url";
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
 const ROOT = resolve(__dirname, "../../");
@@ -399,6 +399,17 @@ async function main() {
                 }
             }
         }
+        // lol fucking hell
+        // see: /src/lib/components/storage/StorageTemplateSettings.svelte
+        // TODO: fix this brah
+        const reFuncCallDouble = /tokenCategory\s*\(\s*"([a-zA-Z0-9_\- ]+)"/g;
+        const reFuncCallSingle = /tokenCategory\s*\(\s*'([a-zA-Z0-9_\- ]+)'/g;
+        [reFuncCallDouble, reFuncCallSingle].forEach((r) => {
+            r.lastIndex = 0;
+            while ((m = r.exec(text)) !== null) {
+                fileNames.add(m[1]);
+            }
+        });
 
         if (fileNames.size === 0) continue;
 
