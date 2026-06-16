@@ -1,16 +1,11 @@
 import { listUsers } from "$lib/api";
-import { error } from "@sveltejs/kit";
+import { sendVizAPIRequest } from "$lib/utils/http";
 import type { PageLoad } from "./$types";
 
 export const load: PageLoad = async ({ fetch }) => {
-    const res = await listUsers({ fetch });
-    if (res.status === 200) {
-        return {
-            users: res.data
-        };
-    }
+    const users = await sendVizAPIRequest(listUsers({ fetch }), "Failed to load users");
 
-    throw error(res.status, {
-        message: res.data.error || "Failed to load users"
-    });
+    return {
+        users
+    };
 };

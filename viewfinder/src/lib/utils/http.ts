@@ -8,43 +8,29 @@ import {
     type ImageAsset
 } from "$lib/api";
 import { debugMode } from "$lib/states/index.svelte";
+import { error } from "@sveltejs/kit";
 
-type RequestInitOptions = { fetch?: typeof fetch } & RequestInit;
+type ExtractSuccessData<R> = [Extract<R, { status: 200 }>] extends [never]
+    ? R extends { data: infer D }
+        ? D
+        : never
+    : Extract<R, { status: 200 }> extends { data: infer D }
+      ? D
+      : never;
 
-export async function sendAPIRequest<T>(
-    path: string,
-    options: RequestInitOptions,
-    form: true
-): Promise<Response>;
-export async function sendAPIRequest<T>(
-    path: string,
-    options?: RequestInitOptions,
-    form?: false
-): Promise<T>;
-export async function sendAPIRequest<T>(
-    path: string,
-    options?: RequestInitOptions,
-    form: boolean = false
-): Promise<T | Response> {
-    if (path.startsWith("/")) {
-        path = path.substring(1);
+export async function sendVizAPIRequest<R extends { data: any; status: number }>(
+    promise: Promise<R>,
+    fallbackMessage = "Failed to load request data"
+): Promise<ExtractSuccessData<R>> {
+    const res = await promise;
+    if (res.status === 200) {
+        return res.data as ExtractSuccessData<R>;
     }
 
-    if (form) {
-        const base = API_BASE_URL;
-        if (options?.fetch) {
-            return options.fetch(`${base}/${path}`, options);
-        }
-        return fetch(`${base}/${path}`, options);
-    }
-
-    const base = API_BASE_URL;
-    if (options?.fetch) {
-        const res = await options.fetch(`${base}/${path}`, options);
-        return res.json() as Promise<T>;
-    }
-
-    return fetch(`${base}/${path}`, options).then((res) => res.json() as Promise<T>);
+    const errorData = res.data as { error?: string } | null | undefined;
+    error(res.status, {
+        message: errorData?.error || fallbackMessage
+    });
 }
 
 // From https://github.com/immich-app/immich/main/web/src/lib/utils.ts#L55

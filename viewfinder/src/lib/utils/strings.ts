@@ -22,3 +22,11 @@ export function snakeToTitle(string: string) {
         .map((word) => word.charAt(0).toUpperCase() + word.slice(1))
         .join(" ");
 }
+
+export function toSentenceCase(string: string) {
+    if (!string) {
+        return "";
+    }
+
+    return string.charAt(0).toUpperCase() + string.slice(1);
+}

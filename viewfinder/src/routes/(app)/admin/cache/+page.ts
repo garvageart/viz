@@ -1,15 +1,10 @@
 import { getCacheStatus } from "$lib/api";
-import { error } from "@sveltejs/kit";
+import { sendVizAPIRequest } from "$lib/utils/http";
 
 export async function load() {
-    const res = await getCacheStatus();
-    if (res.status !== 200) {
-        throw error(res.status, {
-            message: res.data.error || "Failed to load cache status"
-        });
-    }
+    const cacheStatus = await sendVizAPIRequest(getCacheStatus(), "Failed to load cache status");
 
     return {
-        cacheStatus: res.data
+        cacheStatus
     };
 }
