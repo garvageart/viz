@@ -42,7 +42,7 @@ export class ImageLoader {
         if (this.zoomedImageURL && this.deps.currentZoom > 1 && !isCropping) {
             return this.zoomedImageURL;
         }
-        
+
         return this.deps.imageToLoad;
     }
 

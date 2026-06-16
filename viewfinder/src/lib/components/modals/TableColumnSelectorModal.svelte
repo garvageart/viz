@@ -1,96 +1,93 @@
 <script lang="ts">
-	import { tableColumnSettings } from "$lib/states/index.svelte";
-	import { snakeToSentence } from "$lib/utils/strings";
-	import CheckboxGroup from "../ui/CheckboxGroup.svelte";
+    import { tableColumnSettings } from "$lib/states/index.svelte";
+    import { snakeToSentence } from "$lib/utils/strings";
+    import CheckboxGroup from "../ui/CheckboxGroup.svelte";
 
-	interface Props {
-		id: string;
-		availableKeys: string[];
-	}
+    interface Props {
+        id: string;
+        availableKeys: string[];
+    }
 
-	let { availableKeys }: Props = $props();
+    let { availableKeys }: Props = $props();
 
-	let options = $derived(
-		availableKeys.map((key) => ({
-			label: snakeToSentence(key),
-			value: key
-		}))
-	);
+    let options = $derived(
+        availableKeys.map((key) => ({
+            label: snakeToSentence(key),
+            value: key
+        }))
+    );
 
-	let selectedColumns = $state([...tableColumnSettings.value]);
+    let selectedColumns = $state([...tableColumnSettings.value]);
 
-	$effect(() => {
-		if (
-			JSON.stringify(selectedColumns) !==
-			JSON.stringify(tableColumnSettings.value)
-		) {
-			tableColumnSettings.set(selectedColumns);
-		}
-	});
+    $effect(() => {
+        if (JSON.stringify(selectedColumns) !== JSON.stringify(tableColumnSettings.value)) {
+            tableColumnSettings.set(selectedColumns);
+        }
+    });
 </script>
 
 <div id="viz-column-selector-modal">
-	<p class="subtitle">Select which columns to display in the list view</p>
+    <p class="subtitle">Select which columns to display in the list view</p>
 
-	<div class="column-list">
-		<CheckboxGroup {options} bind:value={selectedColumns} />
-	</div>
+    <div class="column-list">
+        <CheckboxGroup {options} bind:value={selectedColumns} />
+    </div>
 </div>
 
 <style lang="scss">
-	#viz-column-selector-modal {
-		width: 100%;
-		height: 100%;
-		display: flex;
-		flex-direction: column;
-		justify-content: flex-start;
-		align-items: center;
-		color: var(--viz-text-color);
-	}
+    #viz-column-selector-modal {
+        width: 100%;
+        height: 100%;
+        display: flex;
+        flex-direction: column;
+        justify-content: flex-start;
+        align-items: center;
+        color: var(--viz-text-color);
+    }
 
-	.subtitle {
-		color: var(--viz-60);
-		margin-bottom: 2rem;
-		font-size: 1.1rem;
-	}
+    .subtitle {
+        color: var(--viz-60);
+        margin-bottom: 2rem;
+        font-size: 1.1rem;
+    }
 
-	.column-list {
-		width: 100%;
-		max-width: 600px;
-		overflow-y: auto;
-		background: var(--viz-bg-color);
-		border-radius: 1rem;
+    .column-list {
+        width: 100%;
+        max-width: 600px;
+        overflow-y: auto;
+        background: var(--viz-bg-color);
+        border-radius: 1rem;
 
-		/* Custom scrollbar matching project style */
-		&::-webkit-scrollbar {
-			width: 6px;
-		}
-		&::-webkit-scrollbar-track {
-			background: var(--viz-100);
-		}
-		&::-webkit-scrollbar-thumb {
-			background: var(--viz-60);
-			border-radius: 3px;
-		}
+        /* Custom scrollbar matching project style */
+        &::-webkit-scrollbar {
+            width: 6px;
+        }
+        &::-webkit-scrollbar-track {
+            background: var(--viz-100);
+        }
+        &::-webkit-scrollbar-thumb {
+            background: var(--viz-60);
+            border-radius: 3px;
+        }
 
-		/* Styling the CheckboxGroup to match the previous grid layout */
-		:global(.checkbox-group) {
-			display: grid;
-			grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
-			gap: 1rem;
-		}
+        /* Styling the CheckboxGroup to match the previous grid layout */
+        :global(.checkbox-group) {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
+            gap: 1rem;
+        }
 
-		:global(.checkbox-group-item) {
-			background: var(--viz-100);
-			padding: 0.75rem 1rem;
-			border-radius: 0.5rem;
-			border: 1px solid var(--viz-90);
-			transition: all 0.2s;
+        :global(.checkbox-group-item) {
+            background: var(--viz-100);
+            padding: 0.75rem 1rem;
+            border-radius: 0.5rem;
+            border: 1px solid var(--viz-90);
+            transition: all 0.2s;
 
-			&:hover {
-				border-color: var(--viz-primary);
-				background: var(--viz-90);
-			}
-		}
-	}
+            &:hover {
+                border-color: var(--viz-primary);
+                background: var(--viz-90);
+            }
+        }
+    }
 </style>

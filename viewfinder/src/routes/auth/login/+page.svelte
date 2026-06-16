@@ -1,179 +1,175 @@
 <script lang="ts">
-	import { goto } from "$app/navigation";
-	import { login } from "$lib/api";
-	import { fetchCurrentUser } from "$lib/auth/auth_methods";
-	import Button from "$lib/components/ui/Button.svelte";
-	import InputText from "$lib/components/ui/InputText.svelte";
-	import InputPassword from "$lib/components/ui/InputPassword.svelte";
-	import { system } from "$lib/states/index.svelte";
-	import { toastState } from "$lib/toast-notifcations/notif-state.svelte";
+    import { goto } from "$app/navigation";
+    import { login } from "$lib/api";
+    import { fetchCurrentUser } from "$lib/auth/auth_methods";
+    import Button from "$lib/components/ui/Button.svelte";
+    import InputText from "$lib/components/ui/InputText.svelte";
+    import InputPassword from "$lib/components/ui/InputPassword.svelte";
+    import { system } from "$lib/states/index.svelte";
+    import { toastState } from "$lib/toast-notifcations/notif-state.svelte";
 
-	let loginData = $state({
-		email: "",
-		password: ""
-	});
+    let loginData = $state({
+        email: "",
+        password: ""
+    });
 
-	let notifMessage = $state("");
+    let notifMessage = $state("");
 
-	function showLoginNotif(
-		message: string,
-		level: "success" | "info" | "warning" | "error"
-	) {
-		notifMessage = message;
-		toastState.addToast({
-			message,
-			type: level
-		});
-	}
+    function showLoginNotif(message: string, level: "success" | "info" | "warning" | "error") {
+        notifMessage = message;
+        toastState.addToast({
+            message,
+            type: level
+        });
+    }
 
-	async function handleLogin(event: Event) {
-		event.preventDefault();
+    async function handleLogin(event: Event) {
+        event.preventDefault();
 
-		if (!loginData.email || !loginData.password) {
-			showLoginNotif("Please fill in all fields", "error");
-			return;
-		}
+        if (!loginData.email || !loginData.password) {
+            showLoginNotif("Please fill in all fields", "error");
+            return;
+        }
 
-		try {
-			const response = await login({
-				email: loginData.email,
-				password: loginData.password
-			});
+        try {
+            const response = await login({
+                email: loginData.email,
+                password: loginData.password
+            });
 
-			if (response.status === 200) {
-				showLoginNotif("Login successful!", "success");
+            if (response.status === 200) {
+                showLoginNotif("Login successful!", "success");
 
-				// Invalidate system state to force re-fetch of 'user_onboarding_required'
-				// with the new authenticated session.
-				system.fetched = false;
-				system.data = null;
+                // Invalidate system state to force re-fetch of 'user_onboarding_required'
+                // with the new authenticated session.
+                system.fetched = false;
+                system.data = null;
 
-				await fetchCurrentUser();
-				goto("/");
-			} else if (response.status === 401) {
-				showLoginNotif("Invalid email or password", "error");
-			} else if (response.status === 404) {
-				showLoginNotif("User not found", "error");
-			} else {
-				showLoginNotif("Login failed. Please try again.", "error");
-			}
-		} catch (error: any) {
-			showLoginNotif("Login failed. Please try again.", "error");
-			console.error("Login error:", error);
-		}
-	}
+                await fetchCurrentUser();
+                goto("/");
+            } else if (response.status === 401) {
+                showLoginNotif("Invalid email or password", "error");
+            } else if (response.status === 404) {
+                showLoginNotif("User not found", "error");
+            } else {
+                showLoginNotif("Login failed. Please try again.", "error");
+            }
+        } catch (error: any) {
+            showLoginNotif("Login failed. Please try again.", "error");
+            console.error("Login error:", error);
+        }
+    }
 </script>
 
 <!-- Random background image thing needs to go at some point, maybe with a server/admin administrated background image -->
 <main
-	style="background-image: url('https://picsum.photos/1920/1080/?random={Math.floor(
-		Math.random() * 300
-	)}');"
+    style="background-image: url('https://picsum.photos/1920/1080/?random={Math.floor(
+        Math.random() * 300
+    )}');"
 >
-	<span id="viz-title">viz</span>
-	<div id="login-container">
-		<h1 id="login-heading">Login</h1>
-		<form id="login-form" onsubmit={handleLogin}>
-			<InputText
-				id="login-email"
-				label="Email"
-				name="email"
-				placeholder="Email"
-				type="email"
-				required
-				value={loginData.email}
-				oninput={(e) => (loginData.email = e.currentTarget.value)}
-			/>
-			<InputPassword
-				id="login-password"
-				label="Password"
-				name="password"
-				placeholder="Password"
-				required
-				value={loginData.password}
-				oninput={(e) => (loginData.password = e.currentTarget.value)}
-			/>
-			<Button id="login-submit" type="submit" style="margin-top: 1rem;" onclick={handleLogin}>Login</Button>
-		</form>
-		<p style="margin-top: 1em;">
-			Don't have an account? <a style="font-weight: bold;" href="/auth/register"
-				>Register</a
-			>
-		</p>
-        
-	</div>
-	<div id="login-overlay" style="height: 100%; width: 100%;"></div>
+    <span id="viz-title">viz</span>
+    <div id="login-container">
+        <h1 id="login-heading">Login</h1>
+        <form id="login-form" onsubmit={handleLogin}>
+            <InputText
+                id="login-email"
+                label="Email"
+                name="email"
+                placeholder="Email"
+                type="email"
+                required
+                value={loginData.email}
+                oninput={(e) => (loginData.email = e.currentTarget.value)}
+            />
+            <InputPassword
+                id="login-password"
+                label="Password"
+                name="password"
+                placeholder="Password"
+                required
+                value={loginData.password}
+                oninput={(e) => (loginData.password = e.currentTarget.value)}
+            />
+            <Button id="login-submit" type="submit" style="margin-top: 1rem;" onclick={handleLogin}
+                >Login</Button
+            >
+        </form>
+        <p style="margin-top: 1em;">
+            Don't have an account? <a style="font-weight: bold;" href="/auth/register">Register</a>
+        </p>
+    </div>
+    <div id="login-overlay" style="height: 100%; width: 100%;"></div>
 </main>
 
 <style lang="scss">
-	@use "sass:color";
+    @use "sass:color";
 
-	main {
-		display: flex;
-		flex-direction: column;
-		align-items: center;
-		justify-content: center;
-		width: 100%;
-		height: 100%;
-		background-size: cover;
-		background-position: center;
-	}
+    main {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        width: 100%;
+        height: 100%;
+        background-size: cover;
+        background-position: center;
+    }
 
-	#viz-title {
-		color: var(--viz-100-light);
-		font-family: var(--viz-mono-font);
-		font-weight: 700;
-		font-size: 3em;
-		margin: 0.5em;
-		z-index: 2;
-	}
+    #viz-title {
+        color: var(--viz-100-light);
+        font-family: var(--viz-mono-font);
+        font-weight: 700;
+        font-size: 3em;
+        margin: 0.5em;
+        z-index: 2;
+    }
 
-	#login-overlay {
-		position: absolute;
-		top: 0;
-		left: 0;
-		z-index: 1;
-		background-color: rgb(39, 51, 74, 70%);
-		backdrop-filter: blur(26px);
-	}
+    #login-overlay {
+        position: absolute;
+        top: 0;
+        left: 0;
+        z-index: 1;
+        background-color: rgb(39, 51, 74, 70%);
+        backdrop-filter: blur(26px);
+    }
 
-	#login-container {
-		display: flex;
-		flex-direction: column;
-		align-items: center;
-		padding: 3rem 2rem;
-		width: 30%;
-		background-color: var(--viz-bg-color);
-		box-shadow: 0 -3px 0 var(--viz-primary) inset;
-		z-index: 2;
-	}
+    #login-container {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        padding: 3rem 2rem;
+        width: 30%;
+        background-color: var(--viz-bg-color);
+        box-shadow: 0 -3px 0 var(--viz-primary) inset;
+        z-index: 2;
+    }
 
-	#login-form {
-		width: 100%;
-		display: flex;
-		flex-direction: column;
-		align-items: center;
-		gap: 1rem;
-	}
+    #login-form {
+        width: 100%;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        gap: 1rem;
+    }
 
-	:global(#login-form > input:not([type="submit"])) {
-		width: 60%;
-		max-width: 60%;
-		min-height: 2.5rem;
-		font-size: 1.5rem;
-		padding: 0.5rem 2rem;
-		margin-bottom: 1rem;
-	}
+    :global(#login-form > input:not([type="submit"])) {
+        width: 60%;
+        max-width: 60%;
+        min-height: 2.5rem;
+        font-size: 1.5rem;
+        padding: 0.5rem 2rem;
+        margin-bottom: 1rem;
+    }
 
-	:global(#login-submit) {
-		border: inherit;
-		background-color: transparent;
-		color: inherit;
-		font-family: inherit;
-		font-weight: bold;
-		font-size: inherit;
-		cursor: pointer;
-		width: 100%;
-		height: 100%;
-	}
+    :global(#login-submit) {
+        border: inherit;
+        background-color: transparent;
+        color: inherit;
+        font-family: inherit;
+        font-weight: bold;
+        font-size: inherit;
+        cursor: pointer;
+        width: 100%;
+        height: 100%;
+    }
 </style>

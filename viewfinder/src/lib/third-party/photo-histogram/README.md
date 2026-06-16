@@ -1,13 +1,17 @@
 [![Build Status](https://travis-ci.org/zackee12/photo-histogram.svg?branch=master)](https://travis-ci.org/zackee12/photo-histogram)
 
 # Photo Histogram
-JS widget library written in Typescript to create histograms from canvas and image elements with no dependencies.  The design is modeled after Photoshop.
+
+JS widget library written in Typescript to create histograms from canvas and image elements with no dependencies. The design is modeled after Photoshop.
 
 ## Example Site (Requires recent browser with WebGL support)
+
 [GitHub Pages Site!](http://zackee12.github.io/photo-histogram/)
 
 ## Screenshots
+
 <<<<<<< HEAD
+
 ### Colors Channel with stats bar
 
 ![alt text](https://raw.githubusercontent.com/zackee12/photo-histogram/master/resources/colors_stats.png "Colors channel")
@@ -21,6 +25,7 @@ JS widget library written in Typescript to create histograms from canvas and ima
 ![alt text](https://raw.githubusercontent.com/zackee12/photo-histogram/master/resources/red_stats_channels.png "Red channel")
 
 ### Red Channel with a selection
+
 =======
 ###Colors Channel with stats bar
 
@@ -35,12 +40,15 @@ JS widget library written in Typescript to create histograms from canvas and ima
 ![alt text](https://raw.githubusercontent.com/zackee12/photo-histogram/master/resources/red_stats_channels.png "Red channel")
 
 ###Red Channel with a selection
->>>>>>> 4d7b2fa6dd216df63fab759b8f530b422147f6c8
+
+> > > > > > > 4d7b2fa6dd216df63fab759b8f530b422147f6c8
 
 ![alt text](https://raw.githubusercontent.com/zackee12/photo-histogram/master/resources/red_stats_selection.png "Red channel")
 
 ## Usage
+
 ### HTML
+
 ```html
 <!DOCTYPE html>
 <html>
@@ -60,17 +68,19 @@ JS widget library written in Typescript to create histograms from canvas and ima
 ```
 
 ### Javascript
+
 ```javascript
-    // img element source
-    var src1 = document.getElementById('myimage');
-    var dst1 = document.getElementById('histogram1');
-    var histogram1 = new PhotoHistogram.Ui(dst1, src1);
-    
-    // canvas element source
-    var src2 = document.getElementById('mycanvas');
-    var dst2 = document.getElementById('histogram2');
-    var histogram2 = new PhotoHistogram.Ui(dst2, src2);
+// img element source
+var src1 = document.getElementById("myimage");
+var dst1 = document.getElementById("histogram1");
+var histogram1 = new PhotoHistogram.Ui(dst1, src1);
+
+// canvas element source
+var src2 = document.getElementById("mycanvas");
+var dst2 = document.getElementById("histogram2");
+var histogram2 = new PhotoHistogram.Ui(dst2, src2);
 ```
 
 ## Broswer Support
+
 [![Selenium Test Status](https://saucelabs.com/browser-matrix/zackee12.svg)](https://saucelabs.com/u/zackee12)

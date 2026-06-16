@@ -123,7 +123,9 @@ export default class UploadManager {
      */
     async precheckDuplicates(tasks: UploadImage[]): Promise<void> {
         if (typeof crypto === "undefined" || !crypto.subtle) {
-            console.warn("[Upload] Web Crypto API (crypto.subtle) is not available (requires HTTPS or localhost). Bypassing bulk duplicate pre-check.");
+            console.warn(
+                "[Upload] Web Crypto API (crypto.subtle) is not available (requires HTTPS or localhost). Bypassing bulk duplicate pre-check."
+            );
             return;
         }
         // Calculate checksum for all tasks that don't have it yet
@@ -135,7 +137,10 @@ export default class UploadManager {
                         task.checksum = checksum;
                         task.data.checksum = checksum;
                     } catch (e) {
-                        console.error(`Failed to calculate checksum for ${task.data.file_name}:`, e);
+                        console.error(
+                            `Failed to calculate checksum for ${task.data.file_name}:`,
+                            e
+                        );
                     }
                 }
             })
@@ -153,7 +158,11 @@ export default class UploadManager {
             // Call bulk duplicate check API
             const response = await checkDuplicates({ checksums });
 
-            if (response.status === 200 && response.data.duplicates && response.data.duplicates.length > 0) {
+            if (
+                response.status === 200 &&
+                response.data.duplicates &&
+                response.data.duplicates.length > 0
+            ) {
                 const dupMap = new Map<string, string>(); // checksum -> uid
                 for (const dup of response.data.duplicates) {
                     dupMap.set(dup.checksum, dup.uid);

@@ -1,68 +1,68 @@
 <script lang="ts">
-	import VizWorkspace from "$lib/components/workspace/VizWorkspace.svelte";
-	import { search } from "$lib/states/index.svelte";
-	import SearchPage from "./search/+page.svelte";
+    import VizWorkspace from "$lib/components/workspace/VizWorkspace.svelte";
+    import { search } from "$lib/states/index.svelte";
+    import SearchPage from "./search/+page.svelte";
 
-	let vizContentContainer: HTMLDivElement | undefined = $state();
+    let vizContentContainer: HTMLDivElement | undefined = $state();
 </script>
 
 <svelte:head>
-	<title>viz</title>
+    <title>viz</title>
 </svelte:head>
 
 <a href="#main" class="skip-to-main" aria-label="Skip to main content">
-	<p>Skip to main content</p>
+    <p>Skip to main content</p>
 </a>
 
 <main id="main" class="no-select">
-	{#if search.value !== "" && search.enableHomePageSearch}
-		<SearchPage />
-	{:else}
-		<div class="viz-content-container" bind:this={vizContentContainer}>
-			<VizWorkspace id="viz-content" />
-		</div>
-	{/if}
+    {#if search.value !== "" && search.enableHomePageSearch}
+        <SearchPage />
+    {:else}
+        <div class="viz-content-container" bind:this={vizContentContainer}>
+            <VizWorkspace id="viz-content" />
+        </div>
+    {/if}
 </main>
 
 <style lang="scss">
-	main {
-		display: flex;
-		flex-direction: row;
-		align-items: center;
-		width: 100%;
-		height: 100%;
-	}
+    main {
+        display: flex;
+        flex-direction: row;
+        align-items: center;
+        width: 100%;
+        height: 100%;
+    }
 
-	.skip-to-main {
-		left: -999px;
-		position: absolute;
-		top: 0;
-		width: 1px;
-		height: 1px;
-		overflow: hidden;
-		z-index: -999;
-		display: block;
+    .skip-to-main {
+        left: -999px;
+        position: absolute;
+        top: 0;
+        width: 1px;
+        height: 1px;
+        overflow: hidden;
+        z-index: -999;
+        display: block;
 
-		&:focus,
-		&:focus-visible {
-			color: var(--viz-text-color);
-			background: var(--viz-primary);
-			left: auto;
-			height: auto;
-			width: auto;
-			padding: 0.2em 3em;
-			outline: var(--viz-text-color) dashed 2px;
-			outline-offset: -2px;
-			z-index: 999;
-		}
-	}
+        &:focus,
+        &:focus-visible {
+            color: var(--viz-text-color);
+            background: var(--viz-primary);
+            left: auto;
+            height: auto;
+            width: auto;
+            padding: 0.2em 3em;
+            outline: var(--viz-text-color) dashed 2px;
+            outline-offset: -2px;
+            z-index: 999;
+        }
+    }
 
-	.viz-content-container {
-		display: flex;
-		flex-direction: column;
-		align-items: center;
-		width: 100%;
-		height: 100%;
-		overflow: auto;
-	}
+    .viz-content-container {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        width: 100%;
+        height: 100%;
+        overflow: auto;
+    }
 </style>

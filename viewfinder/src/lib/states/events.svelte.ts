@@ -41,7 +41,10 @@ class EventsState {
         this.client = new WSClient({
             onEvent: (event, data) => this.handleEvent(event, data),
             onError: () => {
-                console.debug("[Events] onError callback, current connected state:", this.connected);
+                console.debug(
+                    "[Events] onError callback, current connected state:",
+                    this.connected
+                );
                 if (this.connected) {
                     this.wasDisconnected = true;
                     console.debug("[Events] onError marked wasDisconnected = true");
@@ -52,10 +55,16 @@ class EventsState {
             onOpen: () => {
                 this.connected = true;
                 this.initialized = true;
-                console.debug("[Events] Global WebSocket connected, wasDisconnected is currently:", this.wasDisconnected);
+                console.debug(
+                    "[Events] Global WebSocket connected, wasDisconnected is currently:",
+                    this.wasDisconnected
+                );
             },
             onClose: () => {
-                console.debug("[Events] onClose callback, current connected state:", this.connected);
+                console.debug(
+                    "[Events] onClose callback, current connected state:",
+                    this.connected
+                );
                 if (this.connected) {
                     this.wasDisconnected = true;
                     console.debug("[Events] onClose marked wasDisconnected = true");
@@ -79,7 +88,14 @@ class EventsState {
     }
 
     private handleEvent(event: string, data: any) {
-        console.debug("[Events] handleEvent received event:", event, "data:", data, "wasDisconnected state:", this.wasDisconnected);
+        console.debug(
+            "[Events] handleEvent received event:",
+            event,
+            "data:",
+            data,
+            "wasDisconnected state:",
+            this.wasDisconnected
+        );
         switch (event) {
             case "collection-created":
             case "collection-updated":
@@ -89,7 +105,10 @@ class EventsState {
                 break;
 
             case "server-online":
-                console.debug("[Events] Server came back online, wasDisconnected:", this.wasDisconnected);
+                console.debug(
+                    "[Events] Server came back online, wasDisconnected:",
+                    this.wasDisconnected
+                );
                 if (this.wasDisconnected) {
                     console.debug("[Events] Reloading page after server came back online...");
                     if (typeof window !== "undefined") {

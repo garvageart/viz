@@ -33,13 +33,7 @@
 
 <!-- svelte-ignore state_referenced_locally -->
 <script lang="ts">
-    import {
-        onMount,
-        onDestroy,
-        setContext,
-        createEventDispatcher,
-        tick
-    } from "svelte";
+    import { onMount, onDestroy, setContext, createEventDispatcher, tick } from "svelte";
     import { writable } from "svelte/store";
     import type {
         IPane,
@@ -278,11 +272,7 @@
         const parentIsSplitpanes = isSplitpanes(parent);
         const isSplitpanesElement = isSplitpanes(element);
 
-        return (
-            isSplitpanesElement &&
-            parentIsPane === false &&
-            parentIsSplitpanes === false
-        );
+        return isSplitpanesElement && parentIsPane === false && parentIsSplitpanes === false;
     }
 
     // used to complete rendering service side (SSR mode)
@@ -462,8 +452,7 @@
             // the try catch is to support old browser, flag is preset to false
             try {
                 return (
-                    (containerComputedStyle ?? calcComputedStyle(container!))
-                        .direction === "rtl"
+                    (containerComputedStyle ?? calcComputedStyle(container!)).direction === "rtl"
                 );
             } catch (_err) {
                 // We want application to not crush, but don't care about the message
@@ -498,11 +487,7 @@
         node.nodeType === Node.ELEMENT_NODE &&
         (node as HTMLElement).classList.contains("splitpanes__splitter");
 
-    function getOrientedDiff(
-        drag: Position,
-        elementSize: number,
-        isRTL: boolean
-    ): number {
+    function getOrientedDiff(drag: Position, elementSize: number, isRTL: boolean): number {
         let tdrag = drag[horizontal ? "top" : "left"];
         if (isRTL && !horizontal) {
             tdrag = elementSize - tdrag;
@@ -559,15 +544,8 @@
                 containerRectWithoutBorder[getCurrentDimensionName()];
             const _isRTL = isRTL(containerComputedStyle);
 
-            const currentMouseDrag = positionDiff(
-                globalMousePosition,
-                containerRectWithoutBorder
-            );
-            const tdrag = getOrientedDiff(
-                currentMouseDrag,
-                containerSizeWithoutBorder,
-                _isRTL
-            );
+            const currentMouseDrag = positionDiff(globalMousePosition, containerRectWithoutBorder);
+            const tdrag = getOrientedDiff(currentMouseDrag, containerSizeWithoutBorder, _isRTL);
             calculatePanesSize(tdrag, containerSizeWithoutBorder);
 
             dispatch("resize", prepareResizeEvent());
@@ -632,27 +610,17 @@
                 }
             }
 
-            const maxExtendedSize = Math.min(
-                Math.max(0, 100 - totalMinSizes),
-                splitterPane.max()
-            );
+            const maxExtendedSize = Math.min(Math.max(0, 100 - totalMinSizes), splitterPane.max());
 
             // Resets to default size if the splitter pane is already maximized
             if (splitterPane.sz() >= maxExtendedSize) {
                 // Reset all panes to their default (given) size or equal share if not defined
                 const defaultTotal = panes.reduce(
-                    (acc, p) =>
-                        acc +
-                        (typeof p.givenSize === "number" ? p.givenSize : 0),
+                    (acc, p) => acc + (typeof p.givenSize === "number" ? p.givenSize : 0),
                     0
                 );
-                const undefinedCount = panes.filter(
-                    (p) => typeof p.givenSize !== "number"
-                ).length;
-                const fallbackSize =
-                    undefinedCount > 0
-                        ? (100 - defaultTotal) / undefinedCount
-                        : 0;
+                const undefinedCount = panes.filter((p) => typeof p.givenSize !== "number").length;
+                const fallbackSize = undefinedCount > 0 ? (100 - defaultTotal) / undefinedCount : 0;
 
                 for (let i = 0; i < panes.length; i++) {
                     const pane = panes[i];
@@ -669,8 +637,7 @@
                 return;
             }
 
-            const totalMaxExtendedPlusMinSizes =
-                totalMinSizes + maxExtendedSize;
+            const totalMaxExtendedPlusMinSizes = totalMinSizes + maxExtendedSize;
             if (totalMaxExtendedPlusMinSizes >= 100) {
                 // put everything to the minimum, and in the splitterPane put the rest of the size
                 for (let i = 0; i < panes.length; i++) {
@@ -705,8 +672,7 @@
                 for (let i = splitterIndex - 1; i >= 0; i--) giveBest(panes[i]);
 
                 // go forward and give the most size as we can
-                for (let i = splitterIndex + 1; i < panes.length; i++)
-                    giveBest(panes[i]);
+                for (let i = splitterIndex + 1; i < panes.length; i++) giveBest(panes[i]);
 
                 // at the end of the process, we must have that `leftSpare` is 0
                 if (leftSpare !== 0) {
@@ -770,10 +736,7 @@
      * Returns the drag percentage of the splitter relative to the 2 parts it's inbetween, meaning the ratio between
      *  the size that all the panes before the splitter consumes (ignoring other splitters size) and the total size of the container.
      */
-    function getCurrentDragPercentage(
-        tdrag: number,
-        containerSizeWithoutBorder: number
-    ) {
+    function getCurrentDragPercentage(tdrag: number, containerSizeWithoutBorder: number) {
         // Here we want the splitter size **including the borders**.
         // We need to use `Element.getBoundingClientRect()` and not `Element.clientWidth` and `Element.clientHeight`,
         //  bacause the latter round the number of pixels to integer, and additionally, they don't include the borders.
@@ -800,12 +763,9 @@
             currentAfterNode = currentAfterNode.nextSibling;
         }
 
-        const totalSplitterBefore =
-            splittersTotalSizeBefore + activeSplitterDrag;
+        const totalSplitterBefore = splittersTotalSizeBefore + activeSplitterDrag;
         const totalSplitter =
-            splittersTotalSizeBefore +
-            activeSplitterSize +
-            splittersTotalSizeAfter;
+            splittersTotalSizeBefore + activeSplitterSize + splittersTotalSizeAfter;
 
         // An explanation to the mathematical computation:
         //
@@ -822,20 +782,13 @@
         // And solving it yeild the answer:
         // `x1 + ... + xn = (tdrag - totalSplitterBefore) / (containerSizeWithoutBorder - totalSplitter)`
 
-        return (
-            ((tdrag - totalSplitterBefore) /
-                (containerSizeWithoutBorder - totalSplitter)) *
-            100
-        );
+        return ((tdrag - totalSplitterBefore) / (containerSizeWithoutBorder - totalSplitter)) * 100;
     }
 
     /**
      * Called when slitters are moving to adjust pane sizes
      */
-    function calculatePanesSize(
-        tdrag: number,
-        containerSizeWithoutBorder: number
-    ) {
+    function calculatePanesSize(tdrag: number, containerSizeWithoutBorder: number) {
         let paneBeforeIndex = activeSplitter - 1;
         let paneBefore = panes[paneBeforeIndex];
 
@@ -855,19 +808,14 @@
 
         // Calculate drag percentage
         const mouseDragPercentage = Math.max(
-            Math.min(
-                getCurrentDragPercentage(tdrag, containerSizeWithoutBorder),
-                maxDrag
-            ),
+            Math.min(getCurrentDragPercentage(tdrag, containerSizeWithoutBorder), maxDrag),
             minDrag
         );
 
         // Handle snap
-        const paneBeforeSnap =
-            sums.prevPanesSize + paneBefore.min() + paneBefore.snap();
+        const paneBeforeSnap = sums.prevPanesSize + paneBefore.min() + paneBefore.snap();
 
-        const paneAfterSnap =
-            100 - (sums.nextPanesSize + paneAfter.min() + paneAfter.snap());
+        const paneAfterSnap = 100 - (sums.nextPanesSize + paneAfter.min() + paneAfter.snap());
 
         let dragPercentage = mouseDragPercentage;
         let snapped = false;
@@ -881,10 +829,7 @@
                 snapped = true;
             }
         } else if (mouseDragPercentage >= paneAfterSnap) {
-            if (
-                mouseDragPercentage <
-                100 - sums.nextPanesSize - paneAfter.min()
-            ) {
+            if (mouseDragPercentage < 100 - sums.nextPanesSize - paneAfter.min()) {
                 dragPercentage = Math.min(
                     100 - (paneAfter.min() + sums.nextPanesSize),
                     paneBefore.max() + sums.prevPanesSize
@@ -894,33 +839,19 @@
         }
 
         const paneBeforeMaxReached =
-            paneBefore.max() < 100 &&
-            dragPercentage >= paneBefore.max() + sums.prevPanesSize;
+            paneBefore.max() < 100 && dragPercentage >= paneBefore.max() + sums.prevPanesSize;
         const paneAfterMaxReached =
-            paneAfter.max() < 100 &&
-            dragPercentage <= 100 - (paneAfter.max() + sums.nextPanesSize);
+            paneAfter.max() < 100 && dragPercentage <= 100 - (paneAfter.max() + sums.nextPanesSize);
         // Prevent dragging beyond pane max.
         if (paneBeforeMaxReached || paneAfterMaxReached) {
             if (paneBeforeMaxReached) {
                 paneBefore.setSz(paneBefore.max());
                 paneAfter.setSz(
-                    Math.max(
-                        100 -
-                            paneBefore.max() -
-                            sums.prevPanesSize -
-                            sums.nextPanesSize,
-                        0
-                    )
+                    Math.max(100 - paneBefore.max() - sums.prevPanesSize - sums.nextPanesSize, 0)
                 );
             } else {
                 paneBefore.setSz(
-                    Math.max(
-                        100 -
-                            paneAfter.max() -
-                            sums.prevPanesSize -
-                            sums.nextPanesSize,
-                        0
-                    )
+                    Math.max(100 - paneAfter.max() - sums.prevPanesSize - sums.nextPanesSize, 0)
                 );
                 paneAfter.setSz(paneAfter.max());
             }
@@ -944,9 +875,7 @@
                 paneBefore.setSz(
                     Math.min(
                         Math.max(
-                            dragPercentage -
-                                sums.prevPanesSize -
-                                sums.prevReachedMinPanes,
+                            dragPercentage - sums.prevPanesSize - sums.prevReachedMinPanes,
                             paneBefore.min()
                         ),
                         paneBefore.max()
@@ -957,10 +886,7 @@
                 paneAfter.setSz(
                     Math.min(
                         Math.max(
-                            100 -
-                                dragPercentage -
-                                sums.nextPanesSize -
-                                sums.nextReachedMinPanes,
+                            100 - dragPercentage - sums.nextPanesSize - sums.nextReachedMinPanes,
                             paneAfter.min()
                         ),
                         paneAfter.max()
@@ -976,10 +902,7 @@
         let paneAfterIndex: number | undefined = splitterIndex + 1;
         // Pushing Down.
         // Going smaller than the current pane min size: take the previous expanded pane.
-        if (
-            dragPercentage <
-            sums.prevPanesSize + panes[paneBeforeIndex].min()
-        ) {
+        if (dragPercentage < sums.prevPanesSize + panes[paneBeforeIndex].min()) {
             paneBeforeIndex = findPrevExpandedPane(splitterIndex)?.index;
 
             sums.prevReachedMinPanes = 0;
@@ -1004,25 +927,17 @@
             } else {
                 // If pushing a n-2 or less pane, from splitter, then make sure all in between is at min size.
                 if (paneBeforeIndex < splitterIndex) {
-                    forEachPartial(
-                        panes,
-                        paneBeforeIndex + 1,
-                        splitterIndex + 1,
-                        (pane: IPane) => {
-                            pane.setSz(pane.min());
-                            sums.prevReachedMinPanes += pane.min();
-                        }
-                    );
+                    forEachPartial(panes, paneBeforeIndex + 1, splitterIndex + 1, (pane: IPane) => {
+                        pane.setSz(pane.min());
+                        sums.prevReachedMinPanes += pane.min();
+                    });
                 }
                 sums.prevPanesSize = sumPrevPanesSize(paneBeforeIndex);
             }
         }
         // Pushing Up.
         // Pushing up beyond min size is reached: take the next expanded pane.
-        if (
-            dragPercentage >
-            100 - sums.nextPanesSize - panes[paneAfterIndex].min()
-        ) {
+        if (dragPercentage > 100 - sums.nextPanesSize - panes[paneAfterIndex].min()) {
             paneAfterIndex = findNextExpandedPane(splitterIndex)?.index;
             if (paneBeforeIndex === undefined) {
                 console.log("Yep undefined paneAfterIndex");
@@ -1036,15 +951,10 @@
                 const panesCount = panes.length;
                 panes[panesCount - 1].setSz(panes[panesCount - 1].min());
 
-                forEachPartial(
-                    panes,
-                    splitterIndex + 1,
-                    panesCount - 1,
-                    (pane) => {
-                        pane.setSz(pane.min());
-                        sums.nextReachedMinPanes += pane.min();
-                    }
-                );
+                forEachPartial(panes, splitterIndex + 1, panesCount - 1, (pane) => {
+                    pane.setSz(pane.min());
+                    sums.nextReachedMinPanes += pane.min();
+                });
 
                 panes[paneBeforeIndex].setSz(
                     100 -
@@ -1057,15 +967,10 @@
             } else {
                 // If pushing a n+2 or more pane, from splitter, then make sure all in between is at min size.
                 if (paneAfterIndex > splitterIndex + 1) {
-                    forEachPartial(
-                        panes,
-                        splitterIndex + 1,
-                        paneAfterIndex,
-                        (pane: IPane) => {
-                            pane.setSz(pane.min());
-                            sums.nextReachedMinPanes += pane.min();
-                        }
-                    );
+                    forEachPartial(panes, splitterIndex + 1, paneAfterIndex, (pane: IPane) => {
+                        pane.setSz(pane.min());
+                        sums.nextReachedMinPanes += pane.min();
+                    });
                 }
                 sums.nextPanesSize = sumNextPanesSize(paneAfterIndex);
             }
@@ -1081,9 +986,7 @@
 
     // Return the previous pane from siblings which has a size (width for vert or height for horz) of more than 0.
     const findPrevExpandedPane = (splitterIndex: number): IPane | undefined =>
-        [...panes]
-            .reverse()
-            .find((p) => p.index < splitterIndex && p.sz() > p.min());
+        [...panes].reverse().find((p) => p.index < splitterIndex && p.sz() > p.min());
 
     // Return the next pane from siblings which has a size (width for vert or height for horz) of more than 0.
     const findNextExpandedPane = (splitterIndex: number): IPane | undefined =>
@@ -1109,8 +1012,8 @@
         normalizePaneSizes();
 
         if (isReady) {
-			dispatch("resized", prepareResizeEvent());
-		}
+            dispatch("resized", prepareResizeEvent());
+        }
     }
 
     function equalize() {
@@ -1149,19 +1052,16 @@
         }
 
         const undefinedSizesCount = panesCount - definedSizesCount;
-        const undefinedSizesReadyCount =
-            undefinedSizesCount - undefinedSizesNotReadyCount;
+        const undefinedSizesReadyCount = undefinedSizesCount - undefinedSizesNotReadyCount;
 
         // the proportion of the newly added panes
         let undefinedSizesNotReadySz: number;
         let undefinedScaleFactor: number;
         if (undefinedSizesReadyCount > 0) {
             // if has undefined sizes panes that are ready:
-            undefinedSizesNotReadySz =
-                undefinedSizesSum / undefinedSizesReadyCount;
+            undefinedSizesNotReadySz = undefinedSizesSum / undefinedSizesReadyCount;
             if (undefinedSizesNotReadySz > 0.1 && leftToAllocate > 0.1) {
-                undefinedSizesSum +=
-                    undefinedSizesNotReadyCount * undefinedSizesNotReadySz;
+                undefinedSizesSum += undefinedSizesNotReadyCount * undefinedSizesNotReadySz;
                 undefinedScaleFactor = leftToAllocate / undefinedSizesSum;
             } else {
                 // when the size of the ready undefined panes shares are negligible, need to set the not ready
@@ -1183,9 +1083,7 @@
                 const pane = panes[i];
                 if (!(typeof pane.givenSize === "number")) {
                     // add the proportion of the newly added pane if has undefined size
-                    const currentSz = pane.isReady
-                        ? pane.sz()
-                        : undefinedSizesNotReadySz;
+                    const currentSz = pane.isReady ? pane.sz() : undefinedSizesNotReadySz;
                     const sz = Math.max(
                         Math.min(currentSz * undefinedScaleFactor, pane.max()),
                         pane.min()
@@ -1197,18 +1095,12 @@
 
             // since we multiply by scaling, there might be left space that is needed to be saturated
             if (Math.abs(leftToAllocate) > 0.1) {
-                leftToAllocate = readjustSizes(
-                    leftToAllocate,
-                    ungrowable,
-                    unshrinkable
-                );
+                leftToAllocate = readjustSizes(leftToAllocate, ungrowable, unshrinkable);
             }
         }
 
         if (!isFinite(leftToAllocate)) {
-            console.warn(
-                "Splitpanes: Internal error, sizes might be NaN as a result."
-            );
+            console.warn("Splitpanes: Internal error, sizes might be NaN as a result.");
         } else if (Math.abs(leftToAllocate) > 0.1) {
             console.warn(
                 "Splitpanes: Could not resize panes correctly due to their constraints.",
@@ -1225,8 +1117,7 @@
     ): number {
         const panesCount = panes.length;
         const panesSizableCount =
-            panesCount -
-            (leftToAllocate > 0 ? ungrowable.length : unshrinkable.length);
+            panesCount - (leftToAllocate > 0 ? ungrowable.length : unshrinkable.length);
         if (panesSizableCount <= 0) {
             return leftToAllocate;
         }

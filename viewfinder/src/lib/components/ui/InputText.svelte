@@ -1,143 +1,143 @@
 <script lang="ts">
-	import { generateRandomString } from "$lib/utils/misc";
-	import type { SvelteHTMLElements } from "svelte/elements";
+    import { generateRandomString } from "$lib/utils/misc";
+    import type { SvelteHTMLElements } from "svelte/elements";
 
-	interface Props {
-		label?: string;
-		description?: string;
-		disabled?: boolean;
-		focused?: boolean;
-	}
+    interface Props {
+        label?: string;
+        description?: string;
+        disabled?: boolean;
+        focused?: boolean;
+    }
 
-	let {
-		value = $bindable(),
-		focused = $bindable(),
-		label,
-		description,
-		disabled = false,
-		...props
-	}: Props & SvelteHTMLElements["input"] = $props();
+    let {
+        value = $bindable(),
+        focused = $bindable(),
+        label,
+        description,
+        disabled = false,
+        ...props
+    }: Props & SvelteHTMLElements["input"] = $props();
 
-	const inputId = $derived(props.id ?? generateRandomString(6));
-	let inputEl = $state<HTMLInputElement | undefined>();
-	$effect(() => {
-		if (inputEl && focused) {
-			inputEl.focus();
-			inputEl.select();
-		}
-	});
+    const inputId = $derived(props.id ?? generateRandomString(6));
+    let inputEl = $state<HTMLInputElement | undefined>();
+    $effect(() => {
+        if (inputEl && focused) {
+            inputEl.focus();
+            inputEl.select();
+        }
+    });
 </script>
 
 <div class="input-container" class:disabled>
-	{#if label}
-		<label for={inputId} class="input-label"
-			>{label}
-			{#if props.required}
-				<span class="required-asterisk">*</span>
-			{/if}
-		</label>
-	{/if}
-	<input
-		{...props}
-		id={inputId}
-		name={props.name}
-		type={props.type ?? "text"}
-		placeholder={props.placeholder}
-		bind:this={inputEl}
-		bind:value
-		{disabled}
-		oninput={(e) => {
-			props.oninput?.(e);
-		}}
-		onchange={(e) => {
-			props.onchange?.(e);
-		}}
-		onfocus={(e) => {
-			focused = true;
-			props.onfocus?.(e);
-		}}
-		onblur={(e) => {
-			focused = false;
-			props.onblur?.(e);
-		}}
-	/>
-	{#if description}
-		<div class="input-description">{description}</div>
-	{/if}
+    {#if label}
+        <label for={inputId} class="input-label"
+            >{label}
+            {#if props.required}
+                <span class="required-asterisk">*</span>
+            {/if}
+        </label>
+    {/if}
+    <input
+        {...props}
+        id={inputId}
+        name={props.name}
+        type={props.type ?? "text"}
+        placeholder={props.placeholder}
+        bind:this={inputEl}
+        bind:value
+        {disabled}
+        oninput={(e) => {
+            props.oninput?.(e);
+        }}
+        onchange={(e) => {
+            props.onchange?.(e);
+        }}
+        onfocus={(e) => {
+            focused = true;
+            props.onfocus?.(e);
+        }}
+        onblur={(e) => {
+            focused = false;
+            props.onblur?.(e);
+        }}
+    />
+    {#if description}
+        <div class="input-description">{description}</div>
+    {/if}
 </div>
 
 <style lang="scss">
-	.input-container {
-		display: flex;
-		flex-direction: column;
-		min-width: 0%;
-		position: relative;
-		width: 100%;
-		gap: 0.5rem;
+    .input-container {
+        display: flex;
+        flex-direction: column;
+        min-width: 0%;
+        position: relative;
+        width: 100%;
+        gap: 0.5rem;
 
-		&.disabled {
-			opacity: 0.5;
+        &.disabled {
+            opacity: 0.5;
 
-			input {
-				cursor: not-allowed;
-			}
-		}
-	}
+            input {
+                cursor: not-allowed;
+            }
+        }
+    }
 
-	.input-label {
-		font-size: 0.875rem;
-		font-weight: 500;
-		color: var(--viz-40);
-	}
+    .input-label {
+        font-size: 0.875rem;
+        font-weight: 500;
+        color: var(--viz-40);
+    }
 
-	.input-description {
-		font-size: 0.85rem;
-		color: var(--viz-60);
-		padding-left: 0.5rem;
-	}
+    .input-description {
+        font-size: 0.85rem;
+        color: var(--viz-60);
+        padding-left: 0.5rem;
+    }
 
-	input:not([type="submit"]) {
-		box-sizing: border-box;
-		width: 100%;
-		max-width: 100%;
-		min-height: 2.5rem;
-		color: var(--viz-text-color);
-		background-color: var(--viz-100);
-		outline: none;
-		border: none;
-		box-shadow: 0 -1px 0 var(--viz-60) inset;
-		font-family: var(--viz-display-font);
-		font-size: 1rem;
-		padding: 0.5rem 1rem;
-		margin-bottom: 0; /* Changed from 1rem */
+    input:not([type="submit"]) {
+        box-sizing: border-box;
+        width: 100%;
+        max-width: 100%;
+        min-height: 2.5rem;
+        color: var(--viz-text-color);
+        background-color: var(--viz-100);
+        outline: none;
+        border: none;
+        box-shadow: 0 -1px 0 var(--viz-60) inset;
+        font-family: var(--viz-display-font);
+        font-size: 1rem;
+        padding: 0.5rem 1rem;
+        margin-bottom: 0; /* Changed from 1rem */
 
-		&::placeholder {
-			color: var(--viz-40);
-			font-family: var(--viz-display-font);
-		}
+        &::placeholder {
+            color: var(--viz-40);
+            font-family: var(--viz-display-font);
+        }
 
-		&:focus::placeholder {
-			color: var(--viz-60);
-			opacity: 1;
-		}
+        &:focus::placeholder {
+            color: var(--viz-60);
+            opacity: 1;
+        }
 
-		&:focus {
-			box-shadow: 0 -2px 0 var(--viz-primary) inset;
-		}
+        &:focus {
+            box-shadow: 0 -2px 0 var(--viz-primary) inset;
+        }
 
-		&:focus {
-			background-color: var(--viz-100);
-			box-shadow: 0 -2px 0 var(--viz-primary) inset;
-		}
+        &:focus {
+            background-color: var(--viz-100);
+            box-shadow: 0 -2px 0 var(--viz-primary) inset;
+        }
 
-		&:-webkit-autofill,
-		&:-webkit-autofill:focus {
-			-webkit-text-fill-color: var(--viz-text-color);
-			-webkit-box-shadow: 0 0 0px 1000px var(--viz-100) inset;
-			-webkit-box-shadow: 0 -5px 0 var(--viz-primary) inset;
-			transition:
-				background-color 0s 600000s,
-				color 0s 600000s !important;
-		}
-	}
+        &:-webkit-autofill,
+        &:-webkit-autofill:focus {
+            -webkit-text-fill-color: var(--viz-text-color);
+            -webkit-box-shadow: 0 0 0px 1000px var(--viz-100) inset;
+            -webkit-box-shadow: 0 -5px 0 var(--viz-primary) inset;
+            transition:
+                background-color 0s 600000s,
+                color 0s 600000s !important;
+        }
+    }
 </style>

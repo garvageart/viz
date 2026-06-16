@@ -1,169 +1,159 @@
 <script lang="ts">
-	import { getFullImagePath, type ImageAsset } from "$lib/api";
-	import ImageLabelViewer from "$lib/components/image-tools/ImageLabelViewer.svelte";
-	import AssetImage from "$lib/components/ui/AssetImage.svelte";
-	import MaterialIcon from "$lib/components/ui/MaterialIcon.svelte";
-	import ContextMenu from "$lib/context-menu/ContextMenu.svelte";
-	import { createImageMenu } from "$lib/context-menu/menus/images";
-	import { selectionManager } from "$lib/states/selection.svelte";
-	import { getImageLabel } from "$lib/utils/images";
+    import { getFullImagePath, type ImageAsset } from "$lib/api";
+    import ImageLabelViewer from "$lib/components/image-tools/ImageLabelViewer.svelte";
+    import AssetImage from "$lib/components/ui/AssetImage.svelte";
+    import MaterialIcon from "$lib/components/ui/MaterialIcon.svelte";
+    import ContextMenu from "$lib/context-menu/ContextMenu.svelte";
+    import { createImageMenu } from "$lib/context-menu/menus/images";
+    import { selectionManager } from "$lib/states/selection.svelte";
+    import { getImageLabel } from "$lib/utils/images";
 
-	let activeScope = $derived(selectionManager.activeScope);
-	let activeItem = $derived(activeScope?.active as ImageAsset | undefined);
-	let isImage = $derived(!!activeItem?.image_paths);
+    let activeScope = $derived(selectionManager.activeScope);
+    let activeItem = $derived(activeScope?.active as ImageAsset | undefined);
+    let isImage = $derived(!!activeItem?.image_paths);
 
-	let selectionCount = $derived(activeScope?.size ?? 0);
-	let imageSrc = $derived(
-		activeItem?.image_paths?.preview
-			? getFullImagePath(activeItem.image_paths.preview)
-			: null
-	);
+    let selectionCount = $derived(activeScope?.size ?? 0);
+    let imageSrc = $derived(
+        activeItem?.image_paths?.preview ? getFullImagePath(activeItem.image_paths.preview) : null
+    );
 
-	let showMenu = $state(false);
-	let menuAnchor = $state<{ x: number; y: number } | HTMLElement | null>(null);
-	let menuItems = $derived.by(() => {
-		if (!activeItem || !activeScope) {
-			return [];
-		}
+    let showMenu = $state(false);
+    let menuAnchor = $state<{ x: number; y: number } | HTMLElement | null>(null);
+    let menuItems = $derived.by(() => {
+        if (!activeItem || !activeScope) {
+            return [];
+        }
 
-		return createImageMenu([activeItem], activeScope, {
-			onDelete(deletedUIDs) {
-				activeScope?.remove(deletedUIDs);
-			}
-		});
-	});
+        return createImageMenu([activeItem], activeScope, {
+            onDelete(deletedUIDs) {
+                activeScope?.remove(deletedUIDs);
+            }
+        });
+    });
 
-	function handleContextMenu(e: MouseEvent) {
-		if (!activeItem) {
-			return;
-		}
+    function handleContextMenu(e: MouseEvent) {
+        if (!activeItem) {
+            return;
+        }
 
-		e.preventDefault();
-		menuAnchor = { x: e.clientX, y: e.clientY };
-		showMenu = true;
-	}
+        e.preventDefault();
+        menuAnchor = { x: e.clientX, y: e.clientY };
+        showMenu = true;
+    }
 </script>
 
-<div
-	class="preview-container"
-	role="presentation"
-	oncontextmenu={handleContextMenu}
->
-	{#if isImage}
-		{#if activeItem && imageSrc}
-			<div class="image-wrapper">
-				<AssetImage
-					asset={activeItem}
-					variant="preview"
-					objectFit="contain"
-					alt={activeItem.name}
-					loading="lazy"
-				/>
-			</div>
-			<div class="info">
-				<span class="filename" title={activeItem.name}>{activeItem.name}</span>
-				<span class="meta">
-					{activeItem.width}x{activeItem.height} • {activeItem.image_metadata?.file_type?.toUpperCase() ??
-						"IMG"}
-					<ImageLabelViewer
-						label={getImageLabel(activeItem)}
-						variant="compact"
-						enableSelection={false}
-					/>
-					{#if activeItem.favourited}
-						<MaterialIcon
-							iconName="favorite"
-							style="font-size: 0.8rem;"
-							fill={true}
-						/>
-					{/if}
-				</span>
-			</div>
-		{:else if selectionCount > 0}
-			<div class="placeholder">
-				<MaterialIcon
-					iconName="photo_library"
-					opticalSize={48}
-					style="font-size: 4rem; opacity: 0.5;"
-				/>
-				<span class="text">{selectionCount} items selected</span>
-			</div>
-		{/if}
-	{:else}
-		<div class="placeholder">
-			<MaterialIcon
-				iconName="image"
-				opticalSize={48}
-				style="font-size: 4rem; opacity: 0.5;"
-			/>
-			<span class="text">No image(s) selected</span>
-		</div>
-	{/if}
+<div class="preview-container" role="presentation" oncontextmenu={handleContextMenu}>
+    {#if isImage}
+        {#if activeItem && imageSrc}
+            <div class="image-wrapper">
+                <AssetImage
+                    asset={activeItem}
+                    variant="preview"
+                    objectFit="contain"
+                    alt={activeItem.name}
+                    loading="lazy"
+                />
+            </div>
+            <div class="info">
+                <span class="filename" title={activeItem.name}>{activeItem.name}</span>
+                <span class="meta">
+                    {activeItem.width}x{activeItem.height} • {activeItem.image_metadata?.file_type?.toUpperCase() ??
+                        "IMG"}
+                    <ImageLabelViewer
+                        label={getImageLabel(activeItem)}
+                        variant="compact"
+                        enableSelection={false}
+                    />
+                    {#if activeItem.favourited}
+                        <MaterialIcon iconName="favorite" style="font-size: 0.8rem;" fill={true} />
+                    {/if}
+                </span>
+            </div>
+        {:else if selectionCount > 0}
+            <div class="placeholder">
+                <MaterialIcon
+                    iconName="photo_library"
+                    opticalSize={48}
+                    style="font-size: 4rem; opacity: 0.5;"
+                />
+                <span class="text">{selectionCount} items selected</span>
+            </div>
+        {/if}
+    {:else}
+        <div class="placeholder">
+            <MaterialIcon
+                iconName="image"
+                opticalSize={48}
+                style="font-size: 4rem; opacity: 0.5;"
+            />
+            <span class="text">No image(s) selected</span>
+        </div>
+    {/if}
 
-	<ContextMenu bind:showMenu items={menuItems} anchor={menuAnchor} />
+    <ContextMenu bind:showMenu items={menuItems} anchor={menuAnchor} />
 </div>
 
 <style lang="scss">
-	.preview-container {
-		display: flex;
-		flex-direction: column;
-		height: 100%;
-		padding: 0.5rem;
-		color: var(--viz-text-color);
-		position: relative;
-		box-sizing: border-box;
-		justify-content: space-between;
-		align-items: stretch;
-	}
+    .preview-container {
+        display: flex;
+        flex-direction: column;
+        height: 100%;
+        padding: 0.5rem;
+        color: var(--viz-text-color);
+        position: relative;
+        box-sizing: border-box;
+        justify-content: space-between;
+        align-items: stretch;
+    }
 
-	.image-wrapper {
-		display: flex;
-		align-items: center;
-		justify-content: center;
-		overflow: hidden;
-		padding: 0.5rem;
-		height: 100%;
-	}
+    .image-wrapper {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        overflow: hidden;
+        padding: 0.5rem;
+        height: 100%;
+    }
 
-	.info {
-		padding: 0.75rem 1rem;
-		background-color: var(--viz-bg-color);
-		border-top: 1px solid var(--viz-80);
-		display: flex;
-		flex-direction: column;
-		gap: 0.25rem;
-		max-width: 100%;
-		box-sizing: border-box;
+    .info {
+        padding: 0.75rem 1rem;
+        background-color: var(--viz-bg-color);
+        border-top: 1px solid var(--viz-80);
+        display: flex;
+        flex-direction: column;
+        gap: 0.25rem;
+        max-width: 100%;
+        box-sizing: border-box;
 
-		.filename {
-			font-size: 0.9rem;
-			font-weight: 500;
-			color: var(--viz-text-color);
-			white-space: nowrap;
-			overflow: hidden;
-			text-overflow: ellipsis;
-		}
+        .filename {
+            font-size: 0.9rem;
+            font-weight: 500;
+            color: var(--viz-text-color);
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
 
-		.meta {
-			display: flex;
-			align-items: center;
-			gap: 0.5rem;
-			font-size: 0.75rem;
-			color: var(--viz-40);
-		}
-	}
+        .meta {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            font-size: 0.75rem;
+            color: var(--viz-40);
+        }
+    }
 
-	.placeholder {
-		flex: 1;
-		display: flex;
-		flex-direction: column;
-		align-items: center;
-		justify-content: center;
-		color: var(--viz-60);
-		gap: 0.5rem;
+    .placeholder {
+        flex: 1;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        color: var(--viz-60);
+        gap: 0.5rem;
 
-		.text {
-			font-size: 0.9rem;
-		}
-	}
+        .text {
+            font-size: 0.9rem;
+        }
+    }
 </style>

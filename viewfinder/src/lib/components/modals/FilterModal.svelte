@@ -1,17 +1,17 @@
 <script lang="ts">
-	import FilterPanel from "../panels/workspace/FilterPanel.svelte";
+    import FilterPanel from "../panels/workspace/FilterPanel.svelte";
 </script>
 
 <div class="filter-modal-content">
-	<FilterPanel />
+    <FilterPanel />
 </div>
 
 <style lang="scss">
-	.filter-modal-content {
-		width: 100%;
-		height: 80vh;
-		display: flex;
-		flex-direction: column;
-		overflow: hidden;
-	}
+    .filter-modal-content {
+        width: 100%;
+        height: 80vh;
+        display: flex;
+        flex-direction: column;
+        overflow: hidden;
+    }
 </style>

@@ -26,13 +26,14 @@
 <div class="delete-modal-content">
     <p class="delete-message">
         {#if itemCount === 1}
-            Are you sure you want to delete "{itemName || 'this item'}"?
+            Are you sure you want to delete "{itemName || "this item"}"?
         {:else}
             Are you sure you want to delete these {itemCount} items?
         {/if}
     </p>
     <p class="delete-warning">
-        "Delete" moves the items to the Trash folder, allowing you to restore them later. "Delete Permanently" deletes them forever and cannot be undone.
+        "Delete" moves the items to the Trash folder, allowing you to restore them later. "Delete
+        Permanently" deletes them forever and cannot be undone.
     </p>
 
     <div class="delete-actions">

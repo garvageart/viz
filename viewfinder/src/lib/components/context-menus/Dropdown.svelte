@@ -1,190 +1,188 @@
 <script lang="ts">
-	import type { MaterialSymbol } from "$lib/types/MaterialSymbol";
-	import ContextMenu from "$lib/context-menu/ContextMenu.svelte";
-	import IconButton from "../ui/IconButton.svelte";
-	import Button from "../ui/Button.svelte";
-	import type { MenuItem } from "$lib/context-menu/types";
-	import type { Snippet } from "svelte";
+    import type { MaterialSymbol } from "$lib/types/MaterialSymbol";
+    import ContextMenu from "$lib/context-menu/ContextMenu.svelte";
+    import IconButton from "../ui/IconButton.svelte";
+    import Button from "../ui/Button.svelte";
+    import type { MenuItem } from "$lib/context-menu/types";
+    import type { Snippet } from "svelte";
 
-	interface Props {
-		class?: string;
-		/** Menu items to render directly in ContextMenu */
-		items: MenuItem[];
-		/** If provided, shows this id as the current selection and displays a check icon next to it in the menu */
-		selectedItemId?: string;
-		showMenu?: boolean;
-		/** Button text when no selection (or for action menus that don't track selection) */
-		title?: string;
-		/** Icon to show on the button */
-		icon?: MaterialSymbol;
-		/** Called when an item is selected */
-		onSelect?: (item: MenuItem) => void;
-		/** If true, show check icons for selected item. Set to false for action menus. Default: true */
-		showSelectionIndicator?: boolean;
-		/** Horizontal alignment of the menu relative to the button: 'left' or 'right' */
-		align?: "left" | "right";
-		/** Debug: forward to ContextMenu to render overlays and logs */
-		debug?: boolean;
-		/** Custom trigger button snippet. Receives toggle function, open state, and title. */
-		trigger?: Snippet<[
-			{
-				toggle: () => void;
-				showMenu: boolean;
-				title: string | undefined;
-			}
-		]>;
-	}
+    interface Props {
+        class?: string;
+        /** Menu items to render directly in ContextMenu */
+        items: MenuItem[];
+        /** If provided, shows this id as the current selection and displays a check icon next to it in the menu */
+        selectedItemId?: string;
+        showMenu?: boolean;
+        /** Button text when no selection (or for action menus that don't track selection) */
+        title?: string;
+        /** Icon to show on the button */
+        icon?: MaterialSymbol;
+        /** Called when an item is selected */
+        onSelect?: (item: MenuItem) => void;
+        /** If true, show check icons for selected item. Set to false for action menus. Default: true */
+        showSelectionIndicator?: boolean;
+        /** Horizontal alignment of the menu relative to the button: 'left' or 'right' */
+        align?: "left" | "right";
+        /** Debug: forward to ContextMenu to render overlays and logs */
+        debug?: boolean;
+        /** Custom trigger button snippet. Receives toggle function, open state, and title. */
+        trigger?: Snippet<
+            [
+                {
+                    toggle: () => void;
+                    showMenu: boolean;
+                    title: string | undefined;
+                }
+            ]
+        >;
+    }
 
-	let {
-		items,
-		selectedItemId = $bindable(),
-		showMenu = $bindable(false),
-		title,
-		icon,
-		onSelect,
-		showSelectionIndicator = true,
-		align = "left",
-		debug = false,
-		class: className,
-		trigger
-	}: Props = $props();
+    let {
+        items,
+        selectedItemId = $bindable(),
+        showMenu = $bindable(false),
+        title,
+        icon,
+        onSelect,
+        showSelectionIndicator = true,
+        align = "left",
+        debug = false,
+        class: className,
+        trigger
+    }: Props = $props();
 
-	let buttonEl: HTMLButtonElement | undefined = $state(undefined);
-	let containerEl: HTMLElement | null = $state(null);
+    let buttonEl: HTMLButtonElement | undefined = $state(undefined);
+    let containerEl: HTMLElement | null = $state(null);
 
-	// Derived selected item from items by id
-	let selectedItem: MenuItem | undefined = $derived(
-		items?.find((i) => i.id === selectedItemId)
-	);
+    // Derived selected item from items by id
+    let selectedItem: MenuItem | undefined = $derived(items?.find((i) => i.id === selectedItemId));
 
-	let currentIcon: MaterialSymbol | undefined = $derived(
-		(selectedItem?.icon as MaterialSymbol | undefined) ?? icon
-	);
+    let currentIcon: MaterialSymbol | undefined = $derived(
+        (selectedItem?.icon as MaterialSymbol | undefined) ?? icon
+    );
 
-	let menuItems: MenuItem[] = $state([]);
+    let menuItems: MenuItem[] = $state([]);
 
-	function buildMenuItems(): MenuItem[] {
-		return items.map((it) => ({
-			...it,
-			icon:
-				it.icon ??
-				(showSelectionIndicator && selectedItemId === it.id
-					? "check"
-					: undefined),
-			// wrap existing action so dropdown selection handling runs first
-			action: (e) => handleItemSelect(it, e)
-		}));
-	}
+    function buildMenuItems(): MenuItem[] {
+        return items.map((it) => ({
+            ...it,
+            icon:
+                it.icon ??
+                (showSelectionIndicator && selectedItemId === it.id ? "check" : undefined),
+            // wrap existing action so dropdown selection handling runs first
+            action: (e) => handleItemSelect(it, e)
+        }));
+    }
 
-	function handleItemSelect(item: MenuItem, e: MouseEvent | KeyboardEvent) {
-		onSelect?.(item);
-		if (showSelectionIndicator) {
-			selectedItemId = item.id;
-		}
-		showMenu = false;
-		// Call item's own action if present (forward the event)
-		item.action?.(e);
-	}
+    function handleItemSelect(item: MenuItem, e: MouseEvent | KeyboardEvent) {
+        onSelect?.(item);
+        if (showSelectionIndicator) {
+            selectedItemId = item.id;
+        }
+        showMenu = false;
+        // Call item's own action if present (forward the event)
+        item.action?.(e);
+    }
 
-	function toggleMenu() {
-		menuItems = buildMenuItems();
-		showMenu = !showMenu;
-	}
+    function toggleMenu() {
+        menuItems = buildMenuItems();
+        showMenu = !showMenu;
+    }
 </script>
 
 <svelte:window
-	onkeydown={(e) => {
-		if (e.key === "Escape") {
-			showMenu = false;
-		}
-	}}
-	onclick={(e) => {
-		if (!containerEl?.contains(e.target as Node)) {
-			showMenu = false;
-		}
-	}}
-	onresize={() => {
-		/* ContextMenu handles collisions */
-	}}
+    onkeydown={(e) => {
+        if (e.key === "Escape") {
+            showMenu = false;
+        }
+    }}
+    onclick={(e) => {
+        if (!containerEl?.contains(e.target as Node)) {
+            showMenu = false;
+        }
+    }}
+    onresize={() => {
+        /* ContextMenu handles collisions */
+    }}
 />
 
 {#snippet buttonContent()}
-	{#if selectedItem && selectedItem.label}
-		{#if showSelectionIndicator}
-			<span class="viz-dropdown-title">{selectedItem.label}</span>
-		{/if}
-	{:else if title}
-		<span class="viz-dropdown-title">{title}</span>
-	{/if}
+    {#if selectedItem && selectedItem.label}
+        {#if showSelectionIndicator}
+            <span class="viz-dropdown-title">{selectedItem.label}</span>
+        {/if}
+    {:else if title}
+        <span class="viz-dropdown-title">{title}</span>
+    {/if}
 {/snippet}
 
 <div class="viz-dropdown-container" bind:this={containerEl}>
-	{#if trigger}
-		{@render trigger({ toggle: toggleMenu, showMenu, title })}
-	{:else if currentIcon}
-		<IconButton
-			class="viz-dropdown-button {className}"
-			weight={300}
-			iconName={currentIcon}
-			title={title}
-			bind:element={buttonEl}
-			onclick={toggleMenu}
-		>
-			{@render buttonContent()}
-		</IconButton>
-	{:else}
-		<Button
-			class="viz-dropdown-button {className}"
-			title={title}
-			bind:element={buttonEl}
-			onclick={toggleMenu}
-		>
-			{@render buttonContent()}
-		</Button>
-	{/if}
+    {#if trigger}
+        {@render trigger({ toggle: toggleMenu, showMenu, title })}
+    {:else if currentIcon}
+        <IconButton
+            class="viz-dropdown-button {className}"
+            weight={300}
+            iconName={currentIcon}
+            {title}
+            bind:element={buttonEl}
+            onclick={toggleMenu}
+        >
+            {@render buttonContent()}
+        </IconButton>
+    {:else}
+        <Button
+            class="viz-dropdown-button {className}"
+            {title}
+            bind:element={buttonEl}
+            onclick={toggleMenu}
+        >
+            {@render buttonContent()}
+        </Button>
+    {/if}
 
-	<!-- Render menu without a positioned wrapper; ContextMenu uses fixed coords anchored to button -->
-	<ContextMenu
-		bind:showMenu
-		items={menuItems}
-		anchor={(buttonEl ?? containerEl) as HTMLElement}
-		offsetY={0}
-		{align}
-		{debug}
-	/>
+    <!-- Render menu without a positioned wrapper; ContextMenu uses fixed coords anchored to button -->
+    <ContextMenu
+        bind:showMenu
+        items={menuItems}
+        anchor={(buttonEl ?? containerEl) as HTMLElement}
+        offsetY={0}
+        {align}
+        {debug}
+    />
 </div>
 
 <style lang="scss">
-	.viz-dropdown-container {
-		position: relative;
-		display: inline-block;
-	}
+    .viz-dropdown-container {
+        position: relative;
+        display: inline-block;
+    }
 
-	.viz-dropdown-title {
-		margin: 0em 0.2rem;
-		white-space: nowrap;
-		overflow: hidden;
-		text-overflow: ellipsis;
-	}
+    .viz-dropdown-title {
+        margin: 0em 0.2rem;
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+    }
 
-	:global(.viz-dropdown-button) {
-		display: flex;
-		align-items: center;
-		border-radius: 10em;
-		white-space: nowrap;
-		cursor: pointer;
+    :global(.viz-dropdown-button) {
+        display: flex;
+        align-items: center;
+        border-radius: 10em;
+        white-space: nowrap;
+        cursor: pointer;
 
-		&:focus {
-			outline: 2px solid var(--viz-60);
-			background-color: var(--viz-80);
-		}
+        &:focus {
+            outline: 2px solid var(--viz-60);
+            background-color: var(--viz-80);
+        }
 
-		&:hover {
-			background-color: var(--viz-90);
-		}
+        &:hover {
+            background-color: var(--viz-90);
+        }
 
-		&:active {
-			background-color: var(--viz-80);
-		}
-	}
+        &:active {
+            background-color: var(--viz-80);
+        }
+    }
 </style>

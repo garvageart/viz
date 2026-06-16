@@ -1,272 +1,256 @@
 <script lang="ts" generics="T extends { uid: string } & Record<string, any>">
-	import { dev } from "$app/environment";
-	import type { MenuItem } from "$lib/context-menu/types";
-	import { sort } from "$lib/states/index.svelte";
-	import { selectionManager } from "$lib/states/selection.svelte";
-	import type { MaterialSymbol } from "$lib/types/MaterialSymbol";
-	import type { IPagination } from "$lib/types/asset";
-	import { DateTime } from "luxon";
-	import { type Component, type ComponentProps, type Snippet } from "svelte";
-	import type { HTMLButtonAttributes } from "svelte/elements";
-	import AssetGrid from "../grid/AssetGrid.svelte";
-	import AssetToolbar from "./toolbars/AssetToolbar.svelte";
-	import Dropdown from "../context-menus/Dropdown.svelte";
-	import IconButton from "./IconButton.svelte";
-	import PhotoAssetGrid from "../grid/PhotoAssetGrid.svelte";
+    import { dev } from "$app/environment";
+    import type { MenuItem } from "$lib/context-menu/types";
+    import { sort } from "$lib/states/index.svelte";
+    import { selectionManager } from "$lib/states/selection.svelte";
+    import type { MaterialSymbol } from "$lib/types/MaterialSymbol";
+    import type { IPagination } from "$lib/types/asset";
+    import { DateTime } from "luxon";
+    import { type Component, type ComponentProps, type Snippet } from "svelte";
+    import type { HTMLButtonAttributes } from "svelte/elements";
+    import AssetGrid from "../grid/AssetGrid.svelte";
+    import AssetToolbar from "./toolbars/AssetToolbar.svelte";
+    import Dropdown from "../context-menus/Dropdown.svelte";
+    import IconButton from "./IconButton.svelte";
+    import PhotoAssetGrid from "../grid/PhotoAssetGrid.svelte";
 
-	type Props = {
-		grid:
-			| ComponentProps<typeof AssetGrid<T>>
-			| ComponentProps<typeof PhotoAssetGrid>;
-		gridComponent?: Component<any>;
-		pagination?: IPagination;
-		children?: Snippet;
-		selectionToolbarSnippet?: Snippet;
-		toolbarSnippet?: Snippet;
-		noAssetsSnippet?: Snippet;
-		showToolbars?: boolean;
-		toolbarProps?: Omit<ComponentProps<typeof AssetToolbar>, "children">;
-		selectionToolbarProps?: Omit<
-			ComponentProps<typeof AssetToolbar>,
-			"children"
-		>;
-	};
+    type Props = {
+        grid: ComponentProps<typeof AssetGrid<T>> | ComponentProps<typeof PhotoAssetGrid>;
+        gridComponent?: Component<any>;
+        pagination?: IPagination;
+        children?: Snippet;
+        selectionToolbarSnippet?: Snippet;
+        toolbarSnippet?: Snippet;
+        noAssetsSnippet?: Snippet;
+        showToolbars?: boolean;
+        toolbarProps?: Omit<ComponentProps<typeof AssetToolbar>, "children">;
+        selectionToolbarProps?: Omit<ComponentProps<typeof AssetToolbar>, "children">;
+    };
 
-	type ToolbarButtonProps = {
-		iconName: MaterialSymbol;
-		iconStyle?: "sharp" | "outlined" | "rounded";
-		text: string;
-		dropdown?: Omit<ComponentProps<typeof Dropdown>, "title">;
-	} & HTMLButtonAttributes;
+    type ToolbarButtonProps = {
+        iconName: MaterialSymbol;
+        iconStyle?: "sharp" | "outlined" | "rounded";
+        text: string;
+        dropdown?: Omit<ComponentProps<typeof Dropdown>, "title">;
+    } & HTMLButtonAttributes;
 
-	let {
-		grid = $bindable(),
-		gridComponent = AssetGrid,
-		pagination = $bindable({
-			limit: 25,
-			page: 0
-		}),
-		children,
-		toolbarSnippet,
-		noAssetsSnippet,
-		showToolbars = $bindable(true),
-		toolbarProps,
-		selectionToolbarSnippet,
-		selectionToolbarProps
-	}: Props = $props();
+    let {
+        grid = $bindable(),
+        gridComponent = AssetGrid,
+        pagination = $bindable({
+            limit: 25,
+            page: 0
+        }),
+        children,
+        toolbarSnippet,
+        noAssetsSnippet,
+        showToolbars = $bindable(true),
+        toolbarProps,
+        selectionToolbarSnippet,
+        selectionToolbarProps
+    }: Props = $props();
 
-	let assetGridArray: typeof grid.assetGridArray = $state();
-	let columnCount: number | undefined = $derived(assetGridArray?.[0]?.length);
+    let assetGridArray: typeof grid.assetGridArray = $state();
+    let columnCount: number | undefined = $derived(assetGridArray?.[0]?.length);
 
-	let selectionScope = $derived(
-		grid.scopeId ? selectionManager.getScope(grid.scopeId) : null
-	);
+    let selectionScope = $derived(grid.scopeId ? selectionManager.getScope(grid.scopeId) : null);
 
-	let gridData = $derived.by(() => {
-		const dataSlice = grid.data.slice(
-			0,
-			pagination.limit * (pagination.page === 0 ? 1 : pagination.page + 1)
-		);
+    let gridData = $derived.by(() => {
+        const dataSlice = grid.data.slice(
+            0,
+            pagination.limit * (pagination.page === 0 ? 1 : pagination.page + 1)
+        );
 
-		if (columnCount === undefined) {
-			return dataSlice;
-		}
+        if (columnCount === undefined) {
+            return dataSlice;
+        }
 
-		// NOTE: in future this might be an option in the settings
-		// fill available space in the last row
-		const currentRowImageCount = dataSlice.length % columnCount;
-		if (currentRowImageCount === 0) {
-			return dataSlice;
-		}
+        // NOTE: in future this might be an option in the settings
+        // fill available space in the last row
+        const currentRowImageCount = dataSlice.length % columnCount;
+        if (currentRowImageCount === 0) {
+            return dataSlice;
+        }
 
-		const fillItems = grid.data.slice(
-			dataSlice.length,
-			dataSlice.length + (columnCount - currentRowImageCount)
-		);
-		return [...dataSlice, ...fillItems] as typeof dataSlice;
-	});
+        const fillItems = grid.data.slice(
+            dataSlice.length,
+            dataSlice.length + (columnCount - currentRowImageCount)
+        );
+        return [...dataSlice, ...fillItems] as typeof dataSlice;
+    });
 
-	// Sorting (MenuItem[] for Dropdown)
-	let sortOptions: MenuItem[] = [
-		{ id: "sort-name", label: "Name" },
-		{ id: "sort-created_at", label: "Created At" },
-		{ id: "sort-updated_at", label: "Updated At" },
-		{ id: "sort-taken_at", label: "Taken At" }
-	];
+    // Sorting (MenuItem[] for Dropdown)
+    let sortOptions: MenuItem[] = [
+        { id: "sort-name", label: "Name" },
+        { id: "sort-created_at", label: "Created At" },
+        { id: "sort-updated_at", label: "Updated At" },
+        { id: "sort-taken_at", label: "Taken At" }
+    ];
 
-	function currentSortId() {
-		switch (sort.by) {
-			case "name":
-				return "sort-name";
-			case "created_at":
-				return "sort-created_at";
-			case "updated_at":
-				return "sort-updated_at";
-			case "taken_at":
-				return "sort-taken_at";
-		}
-	}
+    function currentSortId() {
+        switch (sort.by) {
+            case "name":
+                return "sort-name";
+            case "created_at":
+                return "sort-created_at";
+            case "updated_at":
+                return "sort-updated_at";
+            case "taken_at":
+                return "sort-taken_at";
+        }
+    }
 
-	function toggleSortOrder() {
-		sort.order = sort.order === "ASC" ? "DESC" : "ASC";
-	}
+    function toggleSortOrder() {
+        sort.order = sort.order === "ASC" ? "DESC" : "ASC";
+    }
 
-	function printGridAsTable() {
-		console.log(
-			`%cGrid Array at ${DateTime.now().toFormat("dd.MM.yyyy HH:mm:ss")}`,
-			"font-weight: bold; color: var(--viz-100); font-size: 18px;"
-		);
-		console.table(
-			assetGridArray?.map((i) => i.map((j) => j.asset?.name ?? j.asset?.uid))
-		);
-	}
+    function printGridAsTable() {
+        console.log(
+            `%cGrid Array at ${DateTime.now().toFormat("dd.MM.yyyy HH:mm:ss")}`,
+            "font-weight: bold; color: var(--viz-100); font-size: 18px;"
+        );
+        console.table(assetGridArray?.map((i) => i.map((j) => j.asset?.name ?? j.asset?.uid)));
+    }
 </script>
 
 {#snippet toolbarButton(opts: ToolbarButtonProps)}
-	{#if opts.dropdown}
-		<Dropdown
-			class="toolbar-button"
-			{...opts.dropdown}
-			title={opts.text}
-			icon={opts.iconName}
-		/>
-	{:else}
-		<IconButton
-			{...opts}
-			iconName={opts.iconName}
-			iconStyle={opts.iconStyle}
-			class="toolbar-button"
-			title={opts.text}
-		>
-			{#if opts.text.trim()}
-				<span style="margin: 0em 0.2em;">{opts.text}</span>
-			{/if}
-		</IconButton>
-	{/if}
+    {#if opts.dropdown}
+        <Dropdown
+            class="toolbar-button"
+            {...opts.dropdown}
+            title={opts.text}
+            icon={opts.iconName}
+        />
+    {:else}
+        <IconButton
+            {...opts}
+            iconName={opts.iconName}
+            iconStyle={opts.iconStyle}
+            class="toolbar-button"
+            title={opts.text}
+        >
+            {#if opts.text.trim()}
+                <span style="margin: 0em 0.2em;">{opts.text}</span>
+            {/if}
+        </IconButton>
+    {/if}
 {/snippet}
 
 {#if showToolbars}
-	{#if selectionScope && selectionScope.size > 0}
-		<AssetToolbar class="selection-toolbar" {...selectionToolbarProps}>
-			<div class="selection-info">
-				<IconButton
-					iconName="close"
-					class="toolbar-button"
-					title="Clear selection"
-					aria-label="Clear selection"
-					style="margin-right: 1em;"
-					onclick={() => selectionScope.clear()}
-				/>
-				<span style="font-weight: 600;"
-					>{selectionScope.size} selected</span
-				>
-			</div>
-			{@render selectionToolbarSnippet?.()}
-		</AssetToolbar>
-	{:else}
-		<AssetToolbar {...toolbarProps}>
-			<div id="asset-tools">
-				{@render toolbarButton({
-					iconName: "sort",
-					text: "Sort by",
-					title: "Sort by",
-					dropdown: {
-						items: sortOptions,
-						selectedItemId: currentSortId(),
-						onSelect: (item) => {
-							switch (item.id) {
-								case "sort-name":
-									sort.by = "name";
-									break;
-								case "sort-created_at":
-									sort.by = "created_at";
-									break;
-								case "sort-updated_at":
-									sort.by = "updated_at";
-									break;
-								case "sort-taken_at":
-									sort.by = "taken_at";
-									break;
-							}
-						}
-					}
-				})}
-				<IconButton
-					iconName={sort.order === "ASC" ? "arrow_upward" : "arrow_downward"}
-					class="toolbar-button"
-					title="Toggle Sort Order ({sort.order})"
-					onclick={toggleSortOrder}
-				/>
-				{#if dev && grid.view === "thumbnails"}
-					{@render toolbarButton({
-						iconName: "grid_view",
-						text: "Print Grid",
-						title: "Print Grid to Console",
-						onclick: printGridAsTable
-					})}
-				{/if}
-			</div>
-			{@render toolbarSnippet?.()}
-		</AssetToolbar>
-	{/if}
+    {#if selectionScope && selectionScope.size > 0}
+        <AssetToolbar class="selection-toolbar" {...selectionToolbarProps}>
+            <div class="selection-info">
+                <IconButton
+                    iconName="close"
+                    class="toolbar-button"
+                    title="Clear selection"
+                    aria-label="Clear selection"
+                    style="margin-right: 1em;"
+                    onclick={() => selectionScope.clear()}
+                />
+                <span style="font-weight: 600;">{selectionScope.size} selected</span>
+            </div>
+            {@render selectionToolbarSnippet?.()}
+        </AssetToolbar>
+    {:else}
+        <AssetToolbar {...toolbarProps}>
+            <div id="asset-tools">
+                {@render toolbarButton({
+                    iconName: "sort",
+                    text: "Sort by",
+                    title: "Sort by",
+                    dropdown: {
+                        items: sortOptions,
+                        selectedItemId: currentSortId(),
+                        onSelect: (item) => {
+                            switch (item.id) {
+                                case "sort-name":
+                                    sort.by = "name";
+                                    break;
+                                case "sort-created_at":
+                                    sort.by = "created_at";
+                                    break;
+                                case "sort-updated_at":
+                                    sort.by = "updated_at";
+                                    break;
+                                case "sort-taken_at":
+                                    sort.by = "taken_at";
+                                    break;
+                            }
+                        }
+                    }
+                })}
+                <IconButton
+                    iconName={sort.order === "ASC" ? "arrow_upward" : "arrow_downward"}
+                    class="toolbar-button"
+                    title="Toggle Sort Order ({sort.order})"
+                    onclick={toggleSortOrder}
+                />
+                {#if dev && grid.view === "thumbnails"}
+                    {@render toolbarButton({
+                        iconName: "grid_view",
+                        text: "Print Grid",
+                        title: "Print Grid to Console",
+                        onclick: printGridAsTable
+                    })}
+                {/if}
+            </div>
+            {@render toolbarSnippet?.()}
+        </AssetToolbar>
+    {/if}
 {/if}
 
 {@render children?.()}
 
 {#if gridData.length === 0}
-	<div id="viz-no_assets">
-		{#if noAssetsSnippet}
-			{@render noAssetsSnippet()}
-		{:else}
-			<p style="text-align: center; margin: 2em; color: var(--viz-10);">
-				No assets to display.
-			</p>
-		{/if}
-	</div>
+    <div id="viz-no_assets">
+        {#if noAssetsSnippet}
+            {@render noAssetsSnippet()}
+        {:else}
+            <p style="text-align: center; margin: 2em; color: var(--viz-10);">
+                No assets to display.
+            </p>
+        {/if}
+    </div>
 {:else}
-	{@const GridComp = gridComponent}
-	<GridComp
-		{...grid}
-		bind:assetGridArray
-		bind:data={gridData}
-		bind:columnCount
-	/>
+    {@const GridComp = gridComponent}
+    <GridComp {...grid} bind:assetGridArray bind:data={gridData} bind:columnCount />
 {/if}
 
 <style lang="scss">
-	#asset-tools {
-		display: flex;
-		align-items: center;
-		gap: 0.5rem;
-	}
+    #asset-tools {
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+    }
 
-	.selection-info {
-		display: flex;
-		align-items: center;
-	}
+    .selection-info {
+        display: flex;
+        align-items: center;
+    }
 
-	:global(.toolbar-button) {
-		border-radius: 10em;
-		padding: 0.1em 0.3em;
-		display: flex;
-		align-items: center;
-		justify-content: center;
-		white-space: nowrap;
+    :global(.toolbar-button) {
+        border-radius: 10em;
+        padding: 0.1em 0.3em;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        white-space: nowrap;
 
-		&:hover {
-			background-color: var(--viz-90);
-		}
+        &:hover {
+            background-color: var(--viz-90);
+        }
 
-		&:active {
-			background-color: var(--viz-80);
-		}
-	}
+        &:active {
+            background-color: var(--viz-80);
+        }
+    }
 
-	#viz-no_assets {
-		width: 100%;
-		flex-grow: 1;
-		display: flex;
-		justify-content: center;
-		align-items: center;
-	}
+    #viz-no_assets {
+        width: 100%;
+        flex-grow: 1;
+        display: flex;
+        justify-content: center;
+        align-items: center;
+    }
 </style>

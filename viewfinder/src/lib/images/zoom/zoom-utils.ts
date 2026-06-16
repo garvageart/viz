@@ -35,7 +35,7 @@ export function constrainTranslation(
     const imageLeftScreen = (Vw - Iw) / 2;
     if (zoomedW <= Vw) {
         // Center horizontally
-        nextTx = -Iw * (zoom - 1) / 2;
+        nextTx = (-Iw * (zoom - 1)) / 2;
     } else {
         // Clip to viewport boundaries
         const minTx = Vw - imageLeftScreen - zoomedW;
@@ -48,7 +48,7 @@ export function constrainTranslation(
     const imageTopScreen = (Vh - Ih) / 2;
     if (zoomedH <= Vh) {
         // Center vertically
-        nextTy = -Ih * (zoom - 1) / 2;
+        nextTy = (-Ih * (zoom - 1)) / 2;
     } else {
         // Clip to viewport boundaries
         const minTy = Vh - imageTopScreen - zoomedH;

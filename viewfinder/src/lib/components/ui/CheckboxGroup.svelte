@@ -1,5 +1,5 @@
 <script lang="ts">
-    import Checkbox from './Checkbox.svelte';
+    import Checkbox from "./Checkbox.svelte";
 
     interface Option {
         label: string;
@@ -19,7 +19,7 @@
                 value = [...value, optionValue];
             }
         } else {
-            value = value.filter(v => v !== optionValue);
+            value = value.filter((v) => v !== optionValue);
         }
     }
 </script>
@@ -30,7 +30,8 @@
             <Checkbox
                 label={option.label}
                 checked={value.includes(option.value)}
-                onchange={(e: Event) => updateValue(option.value, (e.target as HTMLInputElement).checked)}
+                onchange={(e: Event) =>
+                    updateValue(option.value, (e.target as HTMLInputElement).checked)}
             />
         </div>
     {/each}
@@ -42,7 +43,7 @@
         flex-direction: column;
         gap: 0.5rem;
     }
-    
+
     .checkbox-group-item {
         display: flex;
     }

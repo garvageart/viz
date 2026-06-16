@@ -1,264 +1,254 @@
 <script lang="ts">
-	import { generateKeyId } from "$lib/utils/layout";
-	import { Select } from "bits-ui";
-	import type { SvelteHTMLElements } from "svelte/elements";
-	import MaterialIcon from "./MaterialIcon.svelte";
+    import { generateKeyId } from "$lib/utils/layout";
+    import { Select } from "bits-ui";
+    import type { SvelteHTMLElements } from "svelte/elements";
+    import MaterialIcon from "./MaterialIcon.svelte";
 
-	interface Props {
-		label?: string;
-		labelPosition?: "top" | "side";
-		description?: string;
-		value?: string | number | boolean;
-		options: Array<string | { value: string; label: string }>;
-		disabled?: boolean;
-		required?: boolean;
-		name?: string;
-		id?: string;
-		class?: string;
-		style?: string; // UI style prop
-		onchange?: (val: string) => void;
-	}
+    interface Props {
+        label?: string;
+        labelPosition?: "top" | "side";
+        description?: string;
+        value?: string | number | boolean;
+        options: Array<string | { value: string; label: string }>;
+        disabled?: boolean;
+        required?: boolean;
+        name?: string;
+        id?: string;
+        class?: string;
+        style?: string; // UI style prop
+        onchange?: (val: string) => void;
+    }
 
-	let {
-		label,
-		labelPosition = "top",
-		description,
-		value = $bindable(),
-		options,
-		disabled = false,
-		required = false,
-		name,
-		class: className,
-		style,
-		onchange,
-		...props
-	}: Props & Omit<SvelteHTMLElements["button"], "onchange" | "value"> = $props();
+    let {
+        label,
+        labelPosition = "top",
+        description,
+        value = $bindable(),
+        options,
+        disabled = false,
+        required = false,
+        name,
+        class: className,
+        style,
+        onchange,
+        ...props
+    }: Props & Omit<SvelteHTMLElements["button"], "onchange" | "value"> = $props();
 
-	const fallbackId = generateKeyId();
-	const selectId = $derived(props.id ?? fallbackId);
+    const fallbackId = generateKeyId();
+    const selectId = $derived(props.id ?? fallbackId);
 
-	const stringValue = $derived(String(value ?? ""));
+    const stringValue = $derived(String(value ?? ""));
 
-	// Propagate changes from stringValue back to value
-	function handleValueChange(v: string) {
-		value = v;
-		if (onchange) {
-			onchange(v);
-		}
-	}
+    // Propagate changes from stringValue back to value
+    function handleValueChange(v: string) {
+        value = v;
+        if (onchange) {
+            onchange(v);
+        }
+    }
 
-	const normalizedOptions = $derived(
-		options.map((opt) => {
-			if (typeof opt === "string") {
-				return { value: opt, label: opt };
-			}
-			return opt;
-		})
-	);
+    const normalizedOptions = $derived(
+        options.map((opt) => {
+            if (typeof opt === "string") {
+                return { value: opt, label: opt };
+            }
+            return opt;
+        })
+    );
 
-	const selectedLabel = $derived(
-		normalizedOptions.find((opt) => opt.value === stringValue)?.label ?? ""
-	);
+    const selectedLabel = $derived(
+        normalizedOptions.find((opt) => opt.value === stringValue)?.label ?? ""
+    );
 </script>
 
-<Select.Root
-	type="single"
-	value={stringValue}
-	onValueChange={handleValueChange}
-	disabled={disabled}
-	name={name}
->
-	<div
-		class="input-container"
-		class:disabled={disabled}
-		class:side-label={labelPosition === "side"}
-	>
-		{#if label}
-			<label for={selectId} class="input-label">
-				{label}
-				{#if required}
-					<span class="required-asterisk">*</span>
-				{/if}
-			</label>
-		{/if}
-		<div class="input-wrapper">
-			<Select.Trigger
-				id={selectId}
-				class="select-trigger {className || ''}"
-				style={style}
-				{...props}
-			>
-				<span class="select-value">{selectedLabel || "Select an option..."}</span>
-			</Select.Trigger>
-			<Select.Content class="select-content" sideOffset={4}>
-				<Select.Viewport class="select-viewport">
-					{#each normalizedOptions as item}
-						<Select.Item class="select-item" value={item.value} label={item.label}>
-							{#snippet children({ selected })}
-								<span class="item-label">{item.label}</span>
-								{#if selected}
-									<span class="item-indicator">
-										<MaterialIcon
-											iconName="check"
-											style="font-size: 1rem; color: var(--viz-primary);"
-										/>
-									</span>
-								{/if}
-							{/snippet}
-						</Select.Item>
-					{/each}
-				</Select.Viewport>
-			</Select.Content>
-		</div>
-		{#if description}
-			<div class="input-description">{description}</div>
-		{/if}
-	</div>
+<Select.Root type="single" value={stringValue} onValueChange={handleValueChange} {disabled} {name}>
+    <div class="input-container" class:disabled class:side-label={labelPosition === "side"}>
+        {#if label}
+            <label for={selectId} class="input-label">
+                {label}
+                {#if required}
+                    <span class="required-asterisk">*</span>
+                {/if}
+            </label>
+        {/if}
+        <div class="input-wrapper">
+            <Select.Trigger
+                id={selectId}
+                class="select-trigger {className || ''}"
+                {style}
+                {...props}
+            >
+                <span class="select-value">{selectedLabel || "Select an option..."}</span>
+            </Select.Trigger>
+            <Select.Content class="select-content" sideOffset={4}>
+                <Select.Viewport class="select-viewport">
+                    {#each normalizedOptions as item}
+                        <Select.Item class="select-item" value={item.value} label={item.label}>
+                            {#snippet children({ selected })}
+                                <span class="item-label">{item.label}</span>
+                                {#if selected}
+                                    <span class="item-indicator">
+                                        <MaterialIcon
+                                            iconName="check"
+                                            style="font-size: 1rem; color: var(--viz-primary);"
+                                        />
+                                    </span>
+                                {/if}
+                            {/snippet}
+                        </Select.Item>
+                    {/each}
+                </Select.Viewport>
+            </Select.Content>
+        </div>
+        {#if description}
+            <div class="input-description">{description}</div>
+        {/if}
+    </div>
 </Select.Root>
 
 <style lang="scss">
-	.input-container {
-		display: flex;
-		flex-direction: column;
-		min-width: 0%;
-		position: relative;
-		width: 100%;
-		gap: var(--viz-spacing-sm);
+    .input-container {
+        display: flex;
+        flex-direction: column;
+        min-width: 0%;
+        position: relative;
+        width: 100%;
+        gap: var(--viz-spacing-sm);
 
-		&.side-label {
-			flex-direction: row;
-			align-items: center;
+        &.side-label {
+            flex-direction: row;
+            align-items: center;
 
-			.input-label {
-				margin-right: var(--viz-spacing-sm);
-				margin-bottom: 0;
-				white-space: nowrap;
-			}
-		}
+            .input-label {
+                margin-right: var(--viz-spacing-sm);
+                margin-bottom: 0;
+                white-space: nowrap;
+            }
+        }
 
-		&.disabled {
-			opacity: 0.5;
+        &.disabled {
+            opacity: 0.5;
 
-			:global(.select-trigger) {
-				cursor: not-allowed;
-			}
-		}
-	}
+            :global(.select-trigger) {
+                cursor: not-allowed;
+            }
+        }
+    }
 
-	.input-label {
-		font-size: var(--viz-font-size-sm);
-		font-weight: 500;
-		color: var(--viz-40);
-	}
+    .input-label {
+        font-size: var(--viz-font-size-sm);
+        font-weight: 500;
+        color: var(--viz-40);
+    }
 
-	.required-asterisk {
-		color: var(--viz-error-color);
-		margin-left: var(--viz-spacing-xxs);
-	}
+    .required-asterisk {
+        color: var(--viz-error-color);
+        margin-left: var(--viz-spacing-xxs);
+    }
 
-	.input-description {
-		font-size: var(--viz-font-size-xs);
-		color: var(--viz-60);
-		padding-left: var(--viz-spacing-sm);
-	}
+    .input-description {
+        font-size: var(--viz-font-size-xs);
+        color: var(--viz-60);
+        padding-left: var(--viz-spacing-sm);
+    }
 
-	.input-wrapper {
-		position: relative;
-		width: 100%;
+    .input-wrapper {
+        position: relative;
+        width: 100%;
 
-		:global(.select-trigger) {
-			display: flex;
-			align-items: center;
-			justify-content: space-between;
-			width: 100%;
-			max-width: 100%;
-			min-height: 2.5rem; // Standard density height
-			color: var(--viz-text-color);
-			background-color: var(--viz-100);
-			outline: none;
-			border: none;
-			box-shadow: 0 -1px 0 var(--viz-60) inset;
-			font-family: var(--viz-display-font);
-			font-size: var(--viz-font-size-sm);
-			padding: var(--viz-spacing-sm) 2rem var(--viz-spacing-sm) var(--viz-spacing-std);
-			cursor: pointer;
-			text-align: left;
-			position: relative;
+        :global(.select-trigger) {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            width: 100%;
+            max-width: 100%;
+            min-height: 2.5rem; // Standard density height
+            color: var(--viz-text-color);
+            background-color: var(--viz-100);
+            outline: none;
+            border: none;
+            box-shadow: 0 -1px 0 var(--viz-60) inset;
+            font-family: var(--viz-display-font);
+            font-size: var(--viz-font-size-sm);
+            padding: var(--viz-spacing-sm) 2rem var(--viz-spacing-sm) var(--viz-spacing-std);
+            cursor: pointer;
+            text-align: left;
+            position: relative;
 
-			// Scalable high-contrast neutral chevron SVG arrow (light/dark adaptive)
-			background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 24 24' stroke='%23888888' stroke-width='2'%3E%3Cpath stroke-linecap='round' stroke-linejoin='round' d='M19 9l-7 7-7-7'/%3E%3C/svg%3E");
-			background-repeat: no-repeat;
-			background-position: right var(--viz-spacing-md) center;
-			background-size: var(--viz-font-size-sm);
+            // Scalable high-contrast neutral chevron SVG arrow (light/dark adaptive)
+            background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 24 24' stroke='%23888888' stroke-width='2'%3E%3Cpath stroke-linecap='round' stroke-linejoin='round' d='M19 9l-7 7-7-7'/%3E%3C/svg%3E");
+            background-repeat: no-repeat;
+            background-position: right var(--viz-spacing-md) center;
+            background-size: var(--viz-font-size-sm);
 
-			&:hover:not(:disabled) {
-				box-shadow: 0 -1px 0 var(--viz-40) inset;
-			}
+            &:hover:not(:disabled) {
+                box-shadow: 0 -1px 0 var(--viz-40) inset;
+            }
 
-			&:focus {
-				background-color: var(--viz-100);
-				box-shadow: 0 -2px 0 var(--viz-primary) inset;
-			}
+            &:focus {
+                background-color: var(--viz-100);
+                box-shadow: 0 -2px 0 var(--viz-primary) inset;
+            }
 
-			&:focus-visible {
-				outline: 2px solid var(--viz-primary);
-				outline-offset: 1px;
-			}
-		}
+            &:focus-visible {
+                outline: 2px solid var(--viz-primary);
+                outline-offset: 1px;
+            }
+        }
 
-		:global(.select-content) {
-			background-color: var(--viz-95);
-			border: var(--viz-border-thin);
-			border-radius: var(--viz-border-radius-md);
-			box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
-			padding: var(--viz-spacing-xs);
-			min-width: 12.5rem;
-			z-index: 100;
-			box-sizing: border-box;
-		}
+        :global(.select-content) {
+            background-color: var(--viz-95);
+            border: var(--viz-border-thin);
+            border-radius: var(--viz-border-radius-md);
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+            padding: var(--viz-spacing-xs);
+            min-width: 12.5rem;
+            z-index: 100;
+            box-sizing: border-box;
+        }
 
-		:global(.select-viewport) {
-			max-height: 15rem; // Scroll boundary
-			overflow-y: auto;
-			width: 100%;
-			box-sizing: border-box;
-			display: flex;
-			flex-direction: column;
-			gap: var(--viz-spacing-xxs);
-			outline: none;
-		}
+        :global(.select-viewport) {
+            max-height: 15rem; // Scroll boundary
+            overflow-y: auto;
+            width: 100%;
+            box-sizing: border-box;
+            display: flex;
+            flex-direction: column;
+            gap: var(--viz-spacing-xxs);
+            outline: none;
+        }
 
-		:global(.select-item) {
-			display: flex;
-			align-items: center;
-			justify-content: space-between;
-			padding: var(--viz-spacing-xs) var(--viz-spacing-sm);
-			font-family: var(--viz-display-font);
-			font-size: var(--viz-font-size-sm);
-			color: var(--viz-text-color);
-			border-radius: var(--viz-border-radius-sm);
-			cursor: pointer;
-			outline: none;
-			user-select: none;
-			position: relative;
-			transition: background-color 80ms ease;
+        :global(.select-item) {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: var(--viz-spacing-xs) var(--viz-spacing-sm);
+            font-family: var(--viz-display-font);
+            font-size: var(--viz-font-size-sm);
+            color: var(--viz-text-color);
+            border-radius: var(--viz-border-radius-sm);
+            cursor: pointer;
+            outline: none;
+            user-select: none;
+            position: relative;
+            transition: background-color 80ms ease;
 
-			&:hover,
-			&:global([data-highlighted]) {
-				background-color: var(--viz-80);
-			}
+            &:hover,
+            &:global([data-highlighted]) {
+                background-color: var(--viz-80);
+            }
 
-			&:global([data-selected]) {
-				background-color: var(--viz-90);
-				font-weight: 500;
-			}
-		}
+            &:global([data-selected]) {
+                background-color: var(--viz-90);
+                font-weight: 500;
+            }
+        }
 
-		:global(.item-indicator) {
-			display: inline-flex;
-			align-items: center;
-			justify-content: center;
-			margin-left: var(--viz-spacing-sm);
-		}
-	}
+        :global(.item-indicator) {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            margin-left: var(--viz-spacing-sm);
+        }
+    }
 </style>

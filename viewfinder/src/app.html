@@ -1,123 +1,141 @@
-<!DOCTYPE html>
+<!doctype html>
 <html lang="en" %THEME_ATTR% class="antialiasing">
+    <head>
+        <meta charset="utf-8" />
+        <link rel="icon" href="%sveltekit.assets%/favicon.png" />
+        <meta name="viewport" content="width=device-width, initial-scale=1" />
+        <title>viz</title>
 
-	<head>
-		<meta charset="utf-8" />
-		<link rel="icon" href="%sveltekit.assets%/favicon.png" />
-		<meta name="viewport" content="width=device-width, initial-scale=1" />
-		<title>viz</title>
+        <style id="splash-styles">
+            html,
+            body {
+                height: 100%;
+                margin: 0;
+            }
 
-		<style id="splash-styles">
-			html,
-			body {
-				height: 100%;
-				margin: 0;
-			}
+            #app-splash {
+                min-height: 100vh;
+                display: flex;
+                align-items: center;
+                justify-content: center;
+                background: var(--viz-bg-color, #0f1726);
+            }
 
-			#app-splash {
-				min-height: 100vh;
-				display: flex;
-				align-items: center;
-				justify-content: center;
-				background: var(--viz-bg-color, #0F1726);
-			}
+            #app-splash .splash-inner {
+                text-align: center;
+                font-family:
+                    Manrope,
+                    system-ui,
+                    -apple-system,
+                    "Segoe UI",
+                    Roboto,
+                    "Helvetica Neue",
+                    Arial;
+            }
 
-			#app-splash .splash-inner {
-				text-align: center;
-				font-family: Manrope, system-ui, -apple-system, 'Segoe UI', Roboto, 'Helvetica Neue', Arial;
-			}
+            #app-splash .splash-text {
+                font-family: "Roboto Mono", monospace;
+                font-size: 3.2rem;
+                font-weight: 800;
+                letter-spacing: 0.6px;
+                display: inline-block;
+                position: relative;
+                padding-bottom: 6px;
+                display: flex;
+                justify-content: center;
+                align-items: center;
+                color: var(--viz-text-color, #f7f9f9);
+            }
 
-			#app-splash .splash-text {
-				font-family: 'Roboto Mono', monospace;
-				font-size: 3.2rem;
-				font-weight: 800;
-				letter-spacing: 0.6px;
-				display: inline-block;
-				position: relative;
-				padding-bottom: 6px;
-				display: flex;
-				justify-content: center;
-				align-items: center;
-				color: var(--viz-text-color, #F7F9F9);
-			}
+            #app-splash .splash-text::after {
+                content: "";
+                position: absolute;
+                left: 0;
+                bottom: 0;
+                height: 3px;
+                background: var(--viz-text-color, #f7f9f9);
+                width: 100%;
+                display: flex;
+                align-items: center;
+                justify-content: center;
+                transform-origin: left;
+                transform: scaleX(0);
+                animation: viz-underline 1.6s ease-in-out infinite;
+            }
 
-			#app-splash .splash-text::after {
-				content: '';
-				position: absolute;
-				left: 0;
-				bottom: 0;
-				height: 3px;
-				background: var(--viz-text-color, #F7F9F9);
-				width: 100%;
-				display: flex;
-				align-items: center;
-				justify-content: center;
-				transform-origin: left;
-				transform: scaleX(0);
-				animation: viz-underline 1.6s ease-in-out infinite;
-			}
+            @keyframes viz-underline {
+                0% {
+                    transform-origin: left;
+                    transform: scaleX(0);
+                }
 
-			@keyframes viz-underline {
-				0% {
-					transform-origin: left;
-					transform: scaleX(0);
-				}
+                45% {
+                    transform-origin: left;
+                    transform: scaleX(1);
+                }
 
-				45% {
-					transform-origin: left;
-					transform: scaleX(1);
-				}
+                55% {
+                    transform-origin: right;
+                    transform: scaleX(1);
+                }
 
-				55% {
-					transform-origin: right;
-					transform: scaleX(1);
-				}
+                100% {
+                    transform-origin: right;
+                    transform: scaleX(0);
+                }
+            }
 
-				100% {
-					transform-origin: right;
-					transform: scaleX(0);
-				}
-			}
+            .app-splash--fade {
+                opacity: 0;
+                transition: opacity 0.28s ease;
+                pointer-events: none;
+            }
+        </style>
 
-			.app-splash--fade {
-				opacity: 0;
-				transition: opacity .28s ease;
-				pointer-events: none;
-			}
-		</style>
+        <script id="theme-ready-script">
+            (function () {
+                try {
+                    const storedTheme = localStorage.getItem("viz:theme");
+                    const osTheme = window.matchMedia("(prefers-color-scheme: dark)").matches
+                        ? "dark"
+                        : "light";
 
-		<script id="theme-ready-script">
-			(function () {
-				try {
-					const storedTheme = localStorage.getItem('viz:theme');
-					const osTheme = window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light';
+                    let theme = osTheme;
 
-					let theme = osTheme;
+                    if (storedTheme === "light" || storedTheme === "dark") {
+                        theme = storedTheme;
+                    }
 
-					if (storedTheme === 'light' || storedTheme === 'dark') {
-						theme = storedTheme;
-					}
+                    document.documentElement.setAttribute("data-theme", theme);
+                } catch (e) {
+                    document.documentElement.setAttribute("data-theme", "dark");
+                }
+            })();
+        </script>
+        <link
+            rel="preload"
+            as="font"
+            type="font/woff2"
+            href="%viz.css.display_font%"
+            crossorigin="anonymous"
+        />
+        <link
+            rel="preload"
+            as="font"
+            type="font/woff2"
+            href="%viz.css.mono_font%"
+            crossorigin="anonymous"
+        />
 
-					document.documentElement.setAttribute('data-theme', theme);
-				} catch (e) {
-					document.documentElement.setAttribute('data-theme', 'dark');
-				}
-			})();
-		</script>
-		<link rel="preload" as="font" type="font/woff2" href="%viz.css.display_font%" crossorigin="anonymous">
-		<link rel="preload" as="font" type="font/woff2" href="%viz.css.mono_font%" crossorigin="anonymous">
+        %viz.css.theme_style% %sveltekit.head%
+    </head>
 
-		%viz.css.theme_style%
-		%sveltekit.head%
-	</head>
-
-	<body>
-		<div id="app-splash" aria-hidden="true">
-			<div class="splash-inner">
-				<code class="splash-text">viz</code>
-			</div>
-		</div>
-		<div style="display: contents">%sveltekit.body%</div>
-	</body>
-
+    <body>
+        <div id="app-splash" aria-hidden="true">
+            <div class="splash-inner">
+                <code class="splash-text">viz</code>
+            </div>
+        </div>
+        <div style="display: contents">%sveltekit.body%</div>
+    </body>
 </html>

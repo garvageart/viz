@@ -116,25 +116,29 @@ export function createCollectionMenu(
         },
         {
             id: `delete-${collection.uid}`,
-            label: opts.selectedCollections && opts.selectedCollections.length > 1
-                ? `Delete ${opts.selectedCollections.length} collections`
-                : "Delete",
+            label:
+                opts.selectedCollections && opts.selectedCollections.length > 1
+                    ? `Delete ${opts.selectedCollections.length} collections`
+                    : "Delete",
             icon: "delete",
             danger: true,
             action: () => {
-                const targets = opts.selectedCollections && opts.selectedCollections.length > 1
-                    ? opts.selectedCollections
-                    : [collection];
+                const targets =
+                    opts.selectedCollections && opts.selectedCollections.length > 1
+                        ? opts.selectedCollections
+                        : [collection];
 
-                const confirmMsg = targets.length > 1
-                    ? `Delete ${targets.length} collections? This cannot be undone.`
-                    : `Delete collection "${collection.name}"? This cannot be undone.`;
+                const confirmMsg =
+                    targets.length > 1
+                        ? `Delete ${targets.length} collections? This cannot be undone.`
+                        : `Delete collection "${collection.name}"? This cannot be undone.`;
 
                 modalsManager.open(
                     ConfirmationModal,
                     {
                         title: targets.length > 1 ? "Delete Collections" : "Delete Collection",
-                        confirmText: targets.length > 1 ? "Delete Collections" : "Delete Collection",
+                        confirmText:
+                            targets.length > 1 ? "Delete Collections" : "Delete Collection",
                         message: confirmMsg,
                         onConfirm: async () => {
                             try {
@@ -145,12 +149,14 @@ export function createCollectionMenu(
                                     })
                                 );
 
-                                const successes = results.filter(r => r.res.status === 204);
-                                const failures = results.filter(r => r.res.status !== 204);
+                                const successes = results.filter((r) => r.res.status === 204);
+                                const failures = results.filter((r) => r.res.status !== 204);
 
                                 if (successes.length > 0) {
                                     if (opts.onCollectionsDeleted) {
-                                        opts.onCollectionsDeleted(successes.map(s => s.collection));
+                                        opts.onCollectionsDeleted(
+                                            successes.map((s) => s.collection)
+                                        );
                                     } else {
                                         for (const success of successes) {
                                             opts.onCollectionDeleted?.(success.collection);
@@ -159,12 +165,14 @@ export function createCollectionMenu(
                                 }
 
                                 if (failures.length > 0) {
-                                    const errorMsg = failures.map(f => {
-                                        if (f.res.status !== 204) {
-                                            return `${f.collection.name}: ${f.res.data.error || f.res.status}`;
-                                        }
-                                        return `${f.collection.name}: status ${f.res.status}`;
-                                    }).join('; ');
+                                    const errorMsg = failures
+                                        .map((f) => {
+                                            if (f.res.status !== 204) {
+                                                return `${f.collection.name}: ${f.res.data.error || f.res.status}`;
+                                            }
+                                            return `${f.collection.name}: status ${f.res.status}`;
+                                        })
+                                        .join("; ");
                                     toastState.addToast({
                                         message: `Failed to delete some collections: ${errorMsg}`,
                                         type: "error"
@@ -185,7 +193,6 @@ export function createCollectionMenu(
             }
         }
     ];
-
 
     return items;
 }

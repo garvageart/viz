@@ -54,11 +54,7 @@
             {#if heading}
                 <h1>{heading}</h1>
             {/if}
-            <IconButton
-                iconName="close"
-                onclick={() => onclickClose?.()}
-                title="Close Modal"
-            />
+            <IconButton iconName="close" onclick={() => onclickClose?.()} title="Close Modal" />
         {/if}
     </div>
     <div class="modal-content" class:padding={applyPadding}>

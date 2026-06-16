@@ -189,7 +189,8 @@
         );
     }
 
-    :root[data-theme="dark"], [data-theme="dark"] {
+    :root[data-theme="dark"],
+    [data-theme="dark"] {
         @include generate-viz-colors(
             $bg-color: $bg-color,
             $text-color: $text-color,
@@ -224,4 +225,3 @@
         }
     }
 }
-

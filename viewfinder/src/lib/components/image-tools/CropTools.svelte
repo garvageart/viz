@@ -1,207 +1,200 @@
 <script lang="ts">
-	import IconButton from "../ui/IconButton.svelte";
-	import MaterialIcon from "../ui/MaterialIcon.svelte";
+    import IconButton from "../ui/IconButton.svelte";
+    import MaterialIcon from "../ui/MaterialIcon.svelte";
 
-	interface Props {
-		onApply: () => void;
-		onCancel: () => void;
-		onReset: () => void;
-		onAspectRatioChange: (ratio: number | null | "original") => void;
-		x?: number;
-		y?: number;
-		variant?: "floating" | "placed";
-	}
+    interface Props {
+        onApply: () => void;
+        onCancel: () => void;
+        onReset: () => void;
+        onAspectRatioChange: (ratio: number | null | "original") => void;
+        x?: number;
+        y?: number;
+        variant?: "floating" | "placed";
+    }
 
-	let {
-		onApply,
-		onCancel,
-		onReset,
-		onAspectRatioChange,
-		x = 0,
-		y = 0,
-		variant = "floating"
-	}: Props = $props();
+    let {
+        onApply,
+        onCancel,
+        onReset,
+        onAspectRatioChange,
+        x = 0,
+        y = 0,
+        variant = "floating"
+    }: Props = $props();
 
-	let selectedRatioLabel = $state<string>("Free");
+    let selectedRatioLabel = $state<string>("Free");
 
-	const ratios = [
-		{ label: "Free", value: null },
-		{ label: "Original", value: "original" },
-		{ label: "1:1", value: 1 },
-		{ label: "4:5", value: 4 / 5 },
-		{ label: "16:9", value: 16 / 9 },
-		{ label: "5:4", value: 5 / 4 },
-		{ label: "2:3", value: 2 / 3 }
-	];
+    const ratios = [
+        { label: "Free", value: null },
+        { label: "Original", value: "original" },
+        { label: "1:1", value: 1 },
+        { label: "4:5", value: 4 / 5 },
+        { label: "16:9", value: 16 / 9 },
+        { label: "5:4", value: 5 / 4 },
+        { label: "2:3", value: 2 / 3 }
+    ];
 
-	function selectRatio(label: string, value: number | null | "original") {
-		selectedRatioLabel = label;
-		onAspectRatioChange(value);
-	}
+    function selectRatio(label: string, value: number | null | "original") {
+        selectedRatioLabel = label;
+        onAspectRatioChange(value);
+    }
 
-	let style = $derived(
-		variant === "floating" ? `left: ${x}px; top: ${y}px;` : ""
-	);
+    let style = $derived(variant === "floating" ? `left: ${x}px; top: ${y}px;` : "");
 </script>
 
 <div
-	class="crop-tools-menu {variant}"
-	{style}
-	onclick={(e) => e.stopPropagation()}
-	onkeydown={(e) => e.stopPropagation()}
-	role="menu"
-	tabindex="0"
+    class="crop-tools-menu {variant}"
+    {style}
+    onclick={(e) => e.stopPropagation()}
+    onkeydown={(e) => e.stopPropagation()}
+    role="menu"
+    tabindex="0"
 >
-	<div class="menu-header">Crop Tools</div>
+    <div class="menu-header">Crop Tools</div>
 
-	<div class="crop-presets">
-		{#each ratios as ratio}
-			<button
-				class="preset-btn {selectedRatioLabel === ratio.label ? 'active' : ''}"
-				onclick={() => selectRatio(ratio.label, ratio.value as any)}
-			>
-				{ratio.label}
-			</button>
-		{/each}
-	</div>
+    <div class="crop-presets">
+        {#each ratios as ratio}
+            <button
+                class="preset-btn {selectedRatioLabel === ratio.label ? 'active' : ''}"
+                onclick={() => selectRatio(ratio.label, ratio.value as any)}
+            >
+                {ratio.label}
+            </button>
+        {/each}
+    </div>
 
-	<div class="crop-actions">
-		<IconButton
-			iconName="restart_alt"
-			class="action-btn reset"
-			onclick={onReset}
-			title="Reset Crop"
-		>
-			<span>Reset</span>
-		</IconButton>
-		<IconButton
-			iconName="close"
-			class="action-btn cancel"
-			onclick={onCancel}
-			title="Cancel Crop"
-		>
-			<span>Cancel</span>
-		</IconButton>
-		<IconButton
-			iconName="check"
-			class="action-btn apply"
-			onclick={onApply}
-			title="Apply Crop"
-		>
-			<span>Apply</span>
-		</IconButton>
-	</div>
+    <div class="crop-actions">
+        <IconButton
+            iconName="restart_alt"
+            class="action-btn reset"
+            onclick={onReset}
+            title="Reset Crop"
+        >
+            <span>Reset</span>
+        </IconButton>
+        <IconButton
+            iconName="close"
+            class="action-btn cancel"
+            onclick={onCancel}
+            title="Cancel Crop"
+        >
+            <span>Cancel</span>
+        </IconButton>
+        <IconButton iconName="check" class="action-btn apply" onclick={onApply} title="Apply Crop">
+            <span>Apply</span>
+        </IconButton>
+    </div>
 </div>
 
 <style lang="scss">
-	.crop-tools-menu {
-		display: flex;
-		flex-direction: column;
-		gap: 0.8em;
-		background: var(--viz-bg-color);
-		padding: 0.8em;
-		border-radius: 0.5em;
-		z-index: 9999;
-		pointer-events: auto;
-		min-width: 200px;
-		box-sizing: border-box;
+    .crop-tools-menu {
+        display: flex;
+        flex-direction: column;
+        gap: 0.8em;
+        background: var(--viz-bg-color);
+        padding: 0.8em;
+        border-radius: 0.5em;
+        z-index: 9999;
+        pointer-events: auto;
+        min-width: 200px;
+        box-sizing: border-box;
 
-		&.floating {
-			position: fixed;
-			box-shadow: 0 4px 16px rgba(0, 0, 0, 0.4);
-			border: 1px solid var(--viz-80);
-			/* Basic collision avoidance: translate up/left if near edges? */
-			transform: translate(0, 0);
-		}
+        &.floating {
+            position: fixed;
+            box-shadow: 0 4px 16px rgba(0, 0, 0, 0.4);
+            border: 1px solid var(--viz-80);
+            /* Basic collision avoidance: translate up/left if near edges? */
+            transform: translate(0, 0);
+        }
 
-		&.placed {
-			/* Sidebar styling to match metadata editor look */
-			height: auto;
-			width: 100%;
-			background: var(--viz-bg-color);
-			/* If parent doesn't constrain width, we might want a max-width, but parent likely handles it */
-		}
-	}
+        &.placed {
+            /* Sidebar styling to match metadata editor look */
+            height: auto;
+            width: 100%;
+            background: var(--viz-bg-color);
+            /* If parent doesn't constrain width, we might want a max-width, but parent likely handles it */
+        }
+    }
 
-	.menu-header {
-		font-size: 0.85em;
-		font-weight: 600;
-		color: var(--viz-30);
-		text-transform: uppercase;
-		letter-spacing: 0.05em;
-		margin-bottom: 0.2em;
-	}
+    .menu-header {
+        font-size: 0.85em;
+        font-weight: 600;
+        color: var(--viz-30);
+        text-transform: uppercase;
+        letter-spacing: 0.05em;
+        margin-bottom: 0.2em;
+    }
 
-	.crop-presets {
-		display: grid;
-		grid-template-columns: 1fr 1fr 1fr;
-		gap: 0.4em;
-	}
+    .crop-presets {
+        display: grid;
+        grid-template-columns: 1fr 1fr 1fr;
+        gap: 0.4em;
+    }
 
-	.preset-btn {
-		background: var(--viz-90);
-		border: 1px solid transparent;
-		color: var(--viz-text-color);
-		padding: 0.4em;
-		border-radius: 0.3em;
-		cursor: pointer;
-		font-size: 0.85em;
-		text-align: center;
-		transition: all 0.2s;
+    .preset-btn {
+        background: var(--viz-90);
+        border: 1px solid transparent;
+        color: var(--viz-text-color);
+        padding: 0.4em;
+        border-radius: 0.3em;
+        cursor: pointer;
+        font-size: 0.85em;
+        text-align: center;
+        transition: all 0.2s;
 
-		&:hover {
-			background: var(--viz-80);
-		}
+        &:hover {
+            background: var(--viz-80);
+        }
 
-		&.active {
-			background: var(--viz-primary);
-			color: white;
-			border-color: var(--viz-primary);
-		}
-	}
+        &.active {
+            background: var(--viz-primary);
+            color: white;
+            border-color: var(--viz-primary);
+        }
+    }
 
-	.crop-actions {
-		display: flex;
-		justify-content: space-between;
-		gap: 0.5em;
-		border-top: 1px solid var(--viz-10);
-		padding-top: 0.8em;
-		margin-top: 0.2em;
+    .crop-actions {
+        display: flex;
+        justify-content: space-between;
+        gap: 0.5em;
+        border-top: 1px solid var(--viz-10);
+        padding-top: 0.8em;
+        margin-top: 0.2em;
 
-		:global(.action-btn) {
-			display: flex;
-			align-items: center;
-			justify-content: center;
-			font-weight: 500;
-			// padding: 0.5em 0.8em;
-			font-size: 0.9em;
-			flex: 1;
-			transition: background-color 0.2s;
-		}
+        :global(.action-btn) {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: 500;
+            // padding: 0.5em 0.8em;
+            font-size: 0.9em;
+            flex: 1;
+            transition: background-color 0.2s;
+        }
 
-		:global(.action-btn.apply) {
-			color: #4caf50;
-			background-color: rgba(76, 175, 80, 0.1);
-		}
-		:global(.action-btn.apply:hover) {
-			background-color: rgba(76, 175, 80, 0.2);
-		}
+        :global(.action-btn.apply) {
+            color: #4caf50;
+            background-color: rgba(76, 175, 80, 0.1);
+        }
+        :global(.action-btn.apply:hover) {
+            background-color: rgba(76, 175, 80, 0.2);
+        }
 
-		:global(.action-btn.cancel) {
-			color: #f44336;
-			background-color: rgba(244, 67, 54, 0.1);
-		}
-		:global(.action-btn.cancel:hover) {
-			background-color: rgba(244, 67, 54, 0.2);
-		}
+        :global(.action-btn.cancel) {
+            color: #f44336;
+            background-color: rgba(244, 67, 54, 0.1);
+        }
+        :global(.action-btn.cancel:hover) {
+            background-color: rgba(244, 67, 54, 0.2);
+        }
 
-		:global(.action-btn.reset) {
-			color: var(--viz-text-color);
-			background-color: var(--viz-80);
-		}
+        :global(.action-btn.reset) {
+            color: var(--viz-text-color);
+            background-color: var(--viz-80);
+        }
 
-		:global(.action-btn.reset:hover) {
-			background-color: var(--viz-70);
-		}
-	}
+        :global(.action-btn.reset:hover) {
+            background-color: var(--viz-70);
+        }
+    }
 </style>

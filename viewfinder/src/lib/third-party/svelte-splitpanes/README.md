@@ -47,7 +47,7 @@ Special thanks to all contributors and in particular [Tal500](https://github.com
 
 | ![Chrome](https://raw.github.com/alrra/browser-logos/master/src/chrome/chrome_48x48.png) | ![Firefox](https://raw.github.com/alrra/browser-logos/master/src/firefox/firefox_48x48.png) | ![Safari](https://raw.github.com/alrra/browser-logos/master/src/safari/safari_48x48.png) | ![Opera](https://raw.github.com/alrra/browser-logos/master/src/opera/opera_48x48.png) | ![Edge](https://raw.github.com/alrra/browser-logos/master/src/edge/edge_48x48.png) | ![IE](https://raw.github.com/alrra/browser-logos/master/src/archive/internet-explorer_9-11/internet-explorer_9-11_48x48.png) |
 | ---------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------- | ---------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------- | ---------------------------------------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------- |
-| Latest ✔                                                                                | Latest ✔                                                                                   | Latest ✔                                                                                | Latest ✔                                                                             | Latest ✔                                                                          | 11 ✔                                                                                                                        |
+| Latest ✔                                                                                 | Latest ✔                                                                                    | Latest ✔                                                                                 | Latest ✔                                                                              | Latest ✔                                                                           | 11 ✔                                                                                                                         |
 
 ## Star History
 
@@ -68,27 +68,27 @@ $ npm i svelte-splitpanes
 
 ```svelte
 <script>
-  import { Pane, Splitpanes } from 'svelte-splitpanes';
+    import { Pane, Splitpanes } from "svelte-splitpanes";
 </script>
 
 <Splitpanes style="height: 400px">
-  <Pane minSize={20}>
-    1
-    <br />
-    <em class="specs">I have a min width of 20%</em>
-  </Pane>
-  <Pane>
-    <Splitpanes horizontal={true}>
-      <Pane minSize={15}>
-        2
+    <Pane minSize={20}>
+        1
         <br />
-        <em class="specs">I have a min height of 15%</em>
-      </Pane>
-      <Pane>3</Pane>
-      <Pane>4</Pane>
-    </Splitpanes>
-  </Pane>
-  <Pane>5</Pane>
+        <em class="specs">I have a min width of 20%</em>
+    </Pane>
+    <Pane>
+        <Splitpanes horizontal={true}>
+            <Pane minSize={15}>
+                2
+                <br />
+                <em class="specs">I have a min height of 15%</em>
+            </Pane>
+            <Pane>3</Pane>
+            <Pane>4</Pane>
+        </Splitpanes>
+    </Pane>
+    <Pane>5</Pane>
 </Splitpanes>
 ```
 
@@ -103,23 +103,23 @@ Here is the list of properties that apply to `<Splitpanes>`
 | dblClickSplitter | boolean         | true                        | Double click on splitter to maximize the next pane                                                                                                                     |
 | rtl              | boolean\|"auto" | "auto"                      | Supports Right to left, by default will auto detect                                                                                                                    |
 | firstSplitter    | boolean         | false                       | Displays the first splitter when set to true. This allows maximizing the first pane on splitter double click                                                           |
-| id               | string          | undefined                   | Provide an optional id attribute to the component for styling/other reasons. will be `keyId` if none is provided                                                                                            |
-| keyId               | string          | undefined                   | a random string used for tracking position                                                                                            |
+| id               | string          | undefined                   | Provide an optional id attribute to the component for styling/other reasons. will be `keyId` if none is provided                                                       |
+| keyId            | string          | undefined                   | a random string used for tracking position                                                                                                                             |
 | theme            | string          | 'default-theme'             | Used to styles the splitters using a different css class, if different then the default value 'default-theme'. see the styling examples in the demo site for more info |
 | class            | string          | undefined                   | Any additional css classes to be added to the component                                                                                                                |
 
 Properties that apply to `<Pane>`
 
-| Parameter name | Type         | Default     | Comments                                                |
-| -------------- | ------------ | ----------- | ------------------------------------------------------- |
-| id               | string          | undefined                   | Provide an optional id attribute to the component for styling/other reasons. will be `keyId` if none is provided |
-| keyId               | string          | undefined                   | a random string used for tracking position |
-| minSize        | number       | 0           | minimum pane size constraint in %                       |
-| maxSize        | number       | 100         | maximum pane size constraint in %                       |
-| size           | number\|null | null        | pane size in %, will autosize if not defined            |
-| snapSize       | number       | 0(disabled) | edge snap size constraint in %                          |
-| class          | string       | undefined   | any additional css classes to be added to the component |
-| smoothExpand          | string       | false   | if the pane should expand it's size smoothly on splitter double click |
+| Parameter name | Type         | Default     | Comments                                                                                                         |
+| -------------- | ------------ | ----------- | ---------------------------------------------------------------------------------------------------------------- |
+| id             | string       | undefined   | Provide an optional id attribute to the component for styling/other reasons. will be `keyId` if none is provided |
+| keyId          | string       | undefined   | a random string used for tracking position                                                                       |
+| minSize        | number       | 0           | minimum pane size constraint in %                                                                                |
+| maxSize        | number       | 100         | maximum pane size constraint in %                                                                                |
+| size           | number\|null | null        | pane size in %, will autosize if not defined                                                                     |
+| snapSize       | number       | 0(disabled) | edge snap size constraint in %                                                                                   |
+| class          | string       | undefined   | any additional css classes to be added to the component                                                          |
+| smoothExpand   | string       | false       | if the pane should expand it's size smoothly on splitter double click                                            |
 
 ### Styling
 
@@ -129,35 +129,35 @@ The component can be further styled after the props have been defined by overrid
 /* The following classes can be used to style the splitter, see demos*/
 
 .splitpanes {
-  background-color: #f8f8f8;
+    background-color: #f8f8f8;
 }
 
 .splitpanes__splitter {
-  background-color: #ccc;
-  position: relative;
+    background-color: #ccc;
+    position: relative;
 }
 .splitpanes__splitter:before {
-  content: '';
-  position: absolute;
-  left: 0;
-  top: 0;
-  transition: opacity 0.4s;
-  background-color: rgba(255, 0, 0, 0.3);
-  opacity: 0;
-  z-index: 1;
+    content: "";
+    position: absolute;
+    left: 0;
+    top: 0;
+    transition: opacity 0.4s;
+    background-color: rgba(255, 0, 0, 0.3);
+    opacity: 0;
+    z-index: 1;
 }
 .splitpanes__splitter:hover:before {
-  opacity: 1;
+    opacity: 1;
 }
 .splitpanes--vertical > .splitpanes__splitter:before {
-  left: -30px;
-  right: -30px;
-  height: 100%;
+    left: -30px;
+    right: -30px;
+    height: 100%;
 }
 .splitpanes--horizontal > .splitpanes__splitter:before {
-  top: -30px;
-  bottom: -30px;
-  width: 100%;
+    top: -30px;
+    bottom: -30px;
+    width: 100%;
 }
 ```
 
@@ -167,12 +167,12 @@ The component raises the following events:
 
 | name             | description                                                                                                 | data                                                                                                                                                                       |
 | ---------------- | ----------------------------------------------------------------------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `ready`          | fires when splitpanes is ready                                                                              | returns a map with the keys being the splitpanes Id and the value being an array of `IPanesSerialized`                                                                                                                                                                       |
+| `ready`          | fires when splitpanes is ready                                                                              | returns a map with the keys being the splitpanes Id and the value being an array of `IPanesSerialized`                                                                     |
 | `resize`         | fires while resizing (on mousemove/touchmove)                                                               | returns an array of all the panes objects with their dimensions                                                                                                            |
 | `resized`        | fires once when the resizing stops after user drag (on mouseup/touchend) or when adding or removing a pane. | returns an array of all the panes objects with their dimensions                                                                                                            |
 | `pane-click`     | when clicking (or touching) a pane                                                                          | returns the clicked pane object with its dimensions                                                                                                                        |
 | `pane-maximize`  | fires when the pane is maximized (ie. typically by double clicking the splitter)                            | returns the maximized pane object with its dimensions                                                                                                                      |
-| `pane-reset` | fires when a pane is reset to its default/calculated size | returns the maximized pane object with its dimensions                                                                                                                      |
+| `pane-reset`     | fires when a pane is reset to its default/calculated size                                                   | returns the maximized pane object with its dimensions                                                                                                                      |
 | `pane-add`       | fires when a pane is added                                                                                  | returns an object containing the index of the added pane and the new array of panes after resize                                                                           |
 | `pane-remove`    | fires when a pane is removed                                                                                | returns an object containing the removed pane and an array of all the remaining pane objects with their dimensions (after resize)                                          |
 | `splitter-click` | fires when you click a splitter                                                                             | returns the next pane object (with its dimensions) directly after the clicked splitter. This event is only emitted if dragging did not occur between mousedown and mouseup |
@@ -181,23 +181,24 @@ Events are easy to trap
 
 ```svelte
 <script>
-  import { Splitpanes } from 'svelte-splitpanes';
+    import { Splitpanes } from "svelte-splitpanes";
 
-  function handleMessage(event) {
-    console.log(JSON.stringify(event));
-  }
+    function handleMessage(event) {
+        console.log(JSON.stringify(event));
+    }
 </script>
 
 <Splitpanes
-  on:ready={handleMessage}
-  on:resize={handleMessage}
-  on:resized={handleMessage}
-  on:pane-click={handleMessage}
-  on:pane-maximize={handleMessage}
-  on:pane-reset={handleMessage}
-  on:pane-add={handleMessage}
-  on:pane-remove={handleMessage}
-  on:splitter-click={handleMessage} />
+    on:ready={handleMessage}
+    on:resize={handleMessage}
+    on:resized={handleMessage}
+    on:pane-click={handleMessage}
+    on:pane-maximize={handleMessage}
+    on:pane-reset={handleMessage}
+    on:pane-add={handleMessage}
+    on:pane-remove={handleMessage}
+    on:splitter-click={handleMessage}
+/>
 ```
 
 ## Contributing
@@ -237,8 +238,8 @@ To ease the development and to enforce the process of formatting the code, perfo
 1. Make sure that all the relevant changes are staged.
 2. (Optional) Run `pnpm build && pnpm test` to execute Playwright tests.
 3. Run `pnpm commit`.
-   - If linting or svelte checks are failed, the commit process will abort and you'll have to fix them.
-   - Otherwise, you will procceed to the commitment interactive terminal, and just follow the instructions to commit your changes.
+    - If linting or svelte checks are failed, the commit process will abort and you'll have to fix them.
+    - Otherwise, you will procceed to the commitment interactive terminal, and just follow the instructions to commit your changes.
 
 #### Commit Message Format
 

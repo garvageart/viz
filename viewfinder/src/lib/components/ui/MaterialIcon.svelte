@@ -5,222 +5,206 @@
  font ligatures (as a fallback).
 -->
 <script lang="ts">
-	import type { MaterialSymbol } from "$lib/types/MaterialSymbol";
-	import type { SvelteHTMLElements } from "svelte/elements";
-	import { registerReady } from "$lib/stores/appReady";
-	import { SvelteMap, SvelteSet } from "svelte/reactivity";
-	import type { Component } from "svelte";
-	import { building, dev } from "$app/environment";
+    import type { MaterialSymbol } from "$lib/types/MaterialSymbol";
+    import type { SvelteHTMLElements } from "svelte/elements";
+    import { registerReady } from "$lib/stores/appReady";
+    import { SvelteMap, SvelteSet } from "svelte/reactivity";
+    import type { Component } from "svelte";
+    import { building, dev } from "$app/environment";
 
-	// Global Font Loading State
-	// We keep this global so we don't try to load the same font multiple times.
-	const fontLoadMap = new SvelteMap<string, Promise<any>>();
-	const warnedMissing = new SvelteSet<string>();
+    // Global Font Loading State
+    // We keep this global so we don't try to load the same font multiple times.
+    const fontLoadMap = new SvelteMap<string, Promise<any>>();
+    const warnedMissing = new SvelteSet<string>();
 
-	// Icon Modules (Vite Glob Imports)
-	// Eager: Available synchronously during build/prerender.
-	const ICON_MODULES_EAGER = import.meta.glob(
-		"$lib/components/icons/generated/**/*.svelte",
-		{ eager: true }
-	);
-	// Lazy: Loaded on demand in the browser/dev to save bundle size.
-	const ICON_MODULES = import.meta.glob(
-		"$lib/components/icons/generated/**/*.svelte"
-	);
+    // Icon Modules (Vite Glob Imports)
+    // Eager: Available synchronously during build/prerender.
+    const ICON_MODULES_EAGER = import.meta.glob("$lib/components/icons/generated/**/*.svelte", {
+        eager: true
+    });
+    // Lazy: Loaded on demand in the browser/dev to save bundle size.
+    const ICON_MODULES = import.meta.glob("$lib/components/icons/generated/**/*.svelte");
 
-	// Props
-	type IconStyle = "sharp" | "outlined" | "rounded" | "filled";
+    // Props
+    type IconStyle = "sharp" | "outlined" | "rounded" | "filled";
 
-	export interface IconProps {
-		/** The Material Symbol name */
-		iconName: MaterialSymbol;
-		/** The style variant of the icon */
-		iconStyle?: IconStyle;
-		/** Fill the icon (1) or outline (0) */
-		fill?: boolean;
-		/** Font weight / stroke width (100-700) */
-		weight?: number;
-		/** Grade (-25, 0, 200) - affects thickness */
-		grade?: -25 | 0 | 200;
-		/** Optical size (20, 24, 40, 48) */
-		opticalSize?: 20 | 24 | 40 | 48;
-		/** Custom size (e.g. "1rem", "24px") */
-		size?: string;
-	}
+    export interface IconProps {
+        /** The Material Symbol name */
+        iconName: MaterialSymbol;
+        /** The style variant of the icon */
+        iconStyle?: IconStyle;
+        /** Fill the icon (1) or outline (0) */
+        fill?: boolean;
+        /** Font weight / stroke width (100-700) */
+        weight?: number;
+        /** Grade (-25, 0, 200) - affects thickness */
+        grade?: -25 | 0 | 200;
+        /** Optical size (20, 24, 40, 48) */
+        opticalSize?: 20 | 24 | 40 | 48;
+        /** Custom size (e.g. "1rem", "24px") */
+        size?: string;
+    }
 
-	let {
-		iconName,
-		iconStyle = "sharp",
-		fill = false,
-		weight = 400,
-		grade = 0,
-		opticalSize = 24,
-		size = "1.5em",
-		...props
-	}: IconProps & SvelteHTMLElements["span"] = $props();
+    let {
+        iconName,
+        iconStyle = "sharp",
+        fill = false,
+        weight = 400,
+        grade = 0,
+        opticalSize = 24,
+        size = "1.5em",
+        ...props
+    }: IconProps & SvelteHTMLElements["span"] = $props();
 
-	// State
-	let GeneratedComponent: Component | null = $state(null);
+    // State
+    let GeneratedComponent: Component | null = $state(null);
 
-	// Helpers
-	function familyForStyle(style: string) {
-		switch (style) {
-			case "outlined":
-				return "Material Symbols Outlined";
-			case "sharp":
-				return "Material Symbols Sharp";
-			case "rounded":
-				return "Material Symbols Rounded";
-			case "filled":
-				return "Material Symbols Filled";
-			default:
-				return "Material Icons";
-		}
-	}
+    // Helpers
+    function familyForStyle(style: string) {
+        switch (style) {
+            case "outlined":
+                return "Material Symbols Outlined";
+            case "sharp":
+                return "Material Symbols Sharp";
+            case "rounded":
+                return "Material Symbols Rounded";
+            case "filled":
+                return "Material Symbols Filled";
+            default:
+                return "Material Icons";
+        }
+    }
 
-	function normalizeName(n: string) {
-		return String(n)
-			.replace(/[^a-z0-9]+/gi, " ")
-			.trim()
-			.split(/\s+/)
-			.map((p) => p[0].toUpperCase() + p.slice(1))
-			.join("");
-	}
+    function normalizeName(n: string) {
+        return String(n)
+            .replace(/[^a-z0-9]+/gi, " ")
+            .trim()
+            .split(/\s+/)
+            .map((p) => p[0].toUpperCase() + p.slice(1))
+            .join("");
+    }
 
-	function ensureFontLoaded(family: string) {
-		if (typeof document === "undefined" || !("fonts" in document)) {
-			return;
-		}
+    function ensureFontLoaded(family: string) {
+        if (typeof document === "undefined" || !("fonts" in document)) {
+            return;
+        }
 
-		if (!fontLoadMap.has(family)) {
-			const p = document.fonts.load(`1em "${family}"`).catch(() => null);
-			fontLoadMap.set(family, p);
-			registerReady(p);
-		}
-		return fontLoadMap.get(family);
-	}
+        if (!fontLoadMap.has(family)) {
+            const p = document.fonts.load(`1em "${family}"`).catch(() => null);
+            fontLoadMap.set(family, p);
+            registerReady(p);
+        }
+        return fontLoadMap.get(family);
+    }
 
-	async function loadGeneratedIcon(name: string, style: IconStyle) {
-		const base = normalizeName(name);
-		const styleSuffix = style === "sharp" ? "" : normalizeName(style);
-		const filename = `/Icon${base}${styleSuffix}.svelte`;
+    async function loadGeneratedIcon(name: string, style: IconStyle) {
+        const base = normalizeName(name);
+        const styleSuffix = style === "sharp" ? "" : normalizeName(style);
+        const filename = `/Icon${base}${styleSuffix}.svelte`;
 
-		// 1. Try Eager (Build/Prerender)
-		const eagerKey = Object.keys(ICON_MODULES_EAGER).find((k) => k.endsWith(filename));
-		if (building && eagerKey) {
-			return (ICON_MODULES_EAGER[eagerKey] as any).default;
-		}
+        // 1. Try Eager (Build/Prerender)
+        const eagerKey = Object.keys(ICON_MODULES_EAGER).find((k) => k.endsWith(filename));
+        if (building && eagerKey) {
+            return (ICON_MODULES_EAGER[eagerKey] as any).default;
+        }
 
-		// 2. Try Lazy (Runtime/Dev)
-		const lazyKey = Object.keys(ICON_MODULES).find((k) => k.endsWith(filename));
-		if (lazyKey) {
-			try {
-				const mod = await (ICON_MODULES[lazyKey] as any)();
-				return mod.default;
-			} catch (err) {
-				// Silent failure expected for icons that haven't been generated
-			}
-		}
+        // 2. Try Lazy (Runtime/Dev)
+        const lazyKey = Object.keys(ICON_MODULES).find((k) => k.endsWith(filename));
+        if (lazyKey) {
+            try {
+                const mod = await (ICON_MODULES[lazyKey] as any)();
+                return mod.default;
+            } catch (err) {
+                // Silent failure expected for icons that haven't been generated
+            }
+        }
 
-		return null;
-	}
+        return null;
+    }
 
-	// Effects
-	// Load generated component when iconName or iconStyle changes
-	$effect(() => {
-		if (!iconName) {
-			GeneratedComponent = null;
-			return;
-		}
+    // Effects
+    // Load generated component when iconName or iconStyle changes
+    $effect(() => {
+        if (!iconName) {
+            GeneratedComponent = null;
+            return;
+        }
 
-		loadGeneratedIcon(iconName, iconStyle).then((comp) => {
-			GeneratedComponent = comp;
+        loadGeneratedIcon(iconName, iconStyle).then((comp) => {
+            GeneratedComponent = comp;
 
-			// Warn only in dev if missing and not already warned
-			if (!comp && dev && !warnedMissing.has(`${iconName}-${iconStyle}`)) {
-				warnedMissing.add(`${iconName}-${iconStyle}`);
-			}
-		});
-	});
+            // Warn only in dev if missing and not already warned
+            if (!comp && dev && !warnedMissing.has(`${iconName}-${iconStyle}`)) {
+                warnedMissing.add(`${iconName}-${iconStyle}`);
+            }
+        });
+    });
 
-	// Ensure font is loaded as fallback (or primary if no generated icon)
-	$effect(() => {
-		if (!GeneratedComponent) {
-			ensureFontLoaded(familyForStyle(iconStyle));
-		}
-	});
+    // Ensure font is loaded as fallback (or primary if no generated icon)
+    $effect(() => {
+        if (!GeneratedComponent) {
+            ensureFontLoaded(familyForStyle(iconStyle));
+        }
+    });
 
-	// Styles (for fallback)
-	let fontSettings = $derived(
-		`'FILL' ${fill ? 1 : 0}, 'wght' ${weight}, 'GRAD' ${grade}, 'opsz' ${opticalSize}`
-	);
+    // Styles (for fallback)
+    let fontSettings = $derived(
+        `'FILL' ${fill ? 1 : 0}, 'wght' ${weight}, 'GRAD' ${grade}, 'opsz' ${opticalSize}`
+    );
 
-	const fallbackClass = $derived(
-		(props.class ? props.class + " " : "") +
-			"material-symbols-" +
-			iconStyle.toLowerCase()
-	);
+    const fallbackClass = $derived(
+        (props.class ? props.class + " " : "") + "material-symbols-" + iconStyle.toLowerCase()
+    );
 
-	const fallbackStyle = $derived(
-		`${props.style || ""}; font-variation-settings: ${fontSettings}; ${size ? `font-size: ${size};` : ""}`
-	);
+    const fallbackStyle = $derived(
+        `${props.style || ""}; font-variation-settings: ${fontSettings}; ${size ? `font-size: ${size};` : ""}`
+    );
 </script>
 
-<span
-	class="viz-material-icon"
-	style:width={size}
-	style:height={size}
-	style:flex-shrink="0"
->
-	{#if GeneratedComponent}
-		<GeneratedComponent
-			{...props}
-			className={props.class || ""}
-			{weight}
-			{fill}
-			{size}
-		/>
-	{:else}
-		<span {...props} class={fallbackClass} style={fallbackStyle}>
-			{iconName}
-		</span>
-	{/if}
+<span class="viz-material-icon" style:width={size} style:height={size} style:flex-shrink="0">
+    {#if GeneratedComponent}
+        <GeneratedComponent {...props} className={props.class || ""} {weight} {fill} {size} />
+    {:else}
+        <span {...props} class={fallbackClass} style={fallbackStyle}>
+            {iconName}
+        </span>
+    {/if}
 </span>
 
 <style lang="scss">
-	.viz-material-icon {
-		display: inline-flex;
-		align-items: center;
-		justify-content: center;
-		line-height: 0; /* Prevents line-height from messing with SVG size */
+    .viz-material-icon {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        line-height: 0; /* Prevents line-height from messing with SVG size */
 
-		:global(svg) {
-			display: block;
-			width: 100%;
-			height: 100%;
-		}
-	}
+        :global(svg) {
+            display: block;
+            width: 100%;
+            height: 100%;
+        }
+    }
 
-	/* Fallback Font Styles */
-	.material-symbols-sharp,
-	.material-symbols-outlined,
-	.material-symbols-rounded {
-		display: inline-block;
-		vertical-align: middle;
-		line-height: 1;
-		font-variation-settings:
-			"FILL" 0,
-			"wght" 400,
-			"GRAD" 0,
-			"opsz" 48;
-		font-size: 1.5em;
-		min-width: 1em;
-		text-align: center;
-		user-select: none;
-		white-space: nowrap;
-		-webkit-font-smoothing: antialiased;
-		text-rendering: optimizeLegibility;
-		-moz-osx-font-smoothing: grayscale;
-		font-feature-settings: "liga";
-	}
+    /* Fallback Font Styles */
+    .material-symbols-sharp,
+    .material-symbols-outlined,
+    .material-symbols-rounded {
+        display: inline-block;
+        vertical-align: middle;
+        line-height: 1;
+        font-variation-settings:
+            "FILL" 0,
+            "wght" 400,
+            "GRAD" 0,
+            "opsz" 48;
+        font-size: 1.5em;
+        min-width: 1em;
+        text-align: center;
+        user-select: none;
+        white-space: nowrap;
+        -webkit-font-smoothing: antialiased;
+        text-rendering: optimizeLegibility;
+        -moz-osx-font-smoothing: grayscale;
+        font-feature-settings: "liga";
+    }
 </style>

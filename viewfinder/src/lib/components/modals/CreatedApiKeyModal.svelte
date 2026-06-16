@@ -1,252 +1,249 @@
 <script lang="ts">
-	import { createApiKey } from "$lib/api";
-	import { scopes, Scope } from "$lib/auth/scopes.gen";
-	import Button from "$lib/components/ui/Button.svelte";
-	import MaterialIcon from "$lib/components/ui/MaterialIcon.svelte";
-	import TextInput from "$lib/components/settings/inputs/TextInput.svelte";
-	import { toastState } from "$lib/toast-notifcations/notif-state.svelte";
-	import { copyToClipboard } from "$lib/utils/misc";
-	import { modalsManager } from "./manager/ModalManager.svelte";
+    import { createApiKey } from "$lib/api";
+    import { scopes, Scope } from "$lib/auth/scopes.gen";
+    import Button from "$lib/components/ui/Button.svelte";
+    import MaterialIcon from "$lib/components/ui/MaterialIcon.svelte";
+    import TextInput from "$lib/components/settings/inputs/TextInput.svelte";
+    import { toastState } from "$lib/toast-notifcations/notif-state.svelte";
+    import { copyToClipboard } from "$lib/utils/misc";
+    import { modalsManager } from "./manager/ModalManager.svelte";
 
-	let {
-		id,
-		onClose,
-		onSuccess
-	}: { id: string; onClose: () => void; onSuccess: () => void } = $props();
+    let { id, onClose, onSuccess }: { id: string; onClose: () => void; onSuccess: () => void } =
+        $props();
 
-	let name = $state("");
-	let description = $state("");
-	let creating = $state(false);
-	let createdToken = $state<string | null>(null);
+    let name = $state("");
+    let description = $state("");
+    let creating = $state(false);
+    let createdToken = $state<string | null>(null);
 
-	let selectedScopes = $state<Scope[]>([Scope.FullAccess]); // Default to Full Access
+    let selectedScopes = $state<Scope[]>([Scope.FullAccess]); // Default to Full Access
 
-	function toggleScope(scope: Scope) {
-		if (scope === Scope.FullAccess) {
-			// If selecting *, clear others or just ensure it's the only one needed (backend handles logic)
-			// But for UI UX, if * is selected, maybe disable others or select all?
-			// Let's just toggle it.
-			if (selectedScopes.includes(Scope.FullAccess)) {
-				selectedScopes = [];
-			} else {
-				selectedScopes = [Scope.FullAccess];
-			}
-		} else {
-			// If * was selected, deselect it when picking specific scopes
-			if (selectedScopes.includes(Scope.FullAccess)) {
-				selectedScopes = selectedScopes.filter((s) => s !== Scope.FullAccess);
-			}
+    function toggleScope(scope: Scope) {
+        if (scope === Scope.FullAccess) {
+            // If selecting *, clear others or just ensure it's the only one needed (backend handles logic)
+            // But for UI UX, if * is selected, maybe disable others or select all?
+            // Let's just toggle it.
+            if (selectedScopes.includes(Scope.FullAccess)) {
+                selectedScopes = [];
+            } else {
+                selectedScopes = [Scope.FullAccess];
+            }
+        } else {
+            // If * was selected, deselect it when picking specific scopes
+            if (selectedScopes.includes(Scope.FullAccess)) {
+                selectedScopes = selectedScopes.filter((s) => s !== Scope.FullAccess);
+            }
 
-			if (selectedScopes.includes(scope)) {
-				selectedScopes = selectedScopes.filter((s) => s !== scope);
-			} else {
-				selectedScopes = [...selectedScopes, scope];
-			}
-		}
-	}
+            if (selectedScopes.includes(scope)) {
+                selectedScopes = selectedScopes.filter((s) => s !== scope);
+            } else {
+                selectedScopes = [...selectedScopes, scope];
+            }
+        }
+    }
 
-	function isSelected(scope: Scope) {
-		return selectedScopes.includes(scope);
-	}
+    function isSelected(scope: Scope) {
+        return selectedScopes.includes(scope);
+    }
 
-	async function handleCreate() {
-		if (!name) {
-			return;
-		}
+    async function handleCreate() {
+        if (!name) {
+            return;
+        }
 
-		if (selectedScopes.length === 0) {
-			toastState.addToast({
-				message: "Please select at least one scope",
-				type: "error"
-			});
-			return;
-		}
+        if (selectedScopes.length === 0) {
+            toastState.addToast({
+                message: "Please select at least one scope",
+                type: "error"
+            });
+            return;
+        }
 
-		creating = true;
-		try {
-			const res = await createApiKey({
-				name: name,
-				description: description || null,
-				scopes: selectedScopes
-			});
+        creating = true;
+        try {
+            const res = await createApiKey({
+                name: name,
+                description: description || null,
+                scopes: selectedScopes
+            });
 
-			if (res.status === 201) {
-				createdToken = res.data.consumer_key;
-				onSuccess();
-			} else {
-				toastState.addToast({
-					message: res.data.error || "Failed to create API key",
-					type: "error"
-				});
-			}
-		} catch (e) {
-			toastState.addToast({ message: "Error creating key", type: "error" });
-		} finally {
-			creating = false;
-		}
-	}
+            if (res.status === 201) {
+                createdToken = res.data.consumer_key;
+                onSuccess();
+            } else {
+                toastState.addToast({
+                    message: res.data.error || "Failed to create API key",
+                    type: "error"
+                });
+            }
+        } catch (e) {
+            toastState.addToast({ message: "Error creating key", type: "error" });
+        } finally {
+            creating = false;
+        }
+    }
 
-	function handleCopy() {
-		if (createdToken) {
-			copyToClipboard(createdToken);
-			toastState.addToast({
-				message: "API Key copied to clipboard",
-				type: "success",
-				dismissible: true
-			});
-		}
-	}
+    function handleCopy() {
+        if (createdToken) {
+            copyToClipboard(createdToken);
+            toastState.addToast({
+                message: "API Key copied to clipboard",
+                type: "success",
+                dismissible: true
+            });
+        }
+    }
 
-	function handleClose() {
-		onClose();
-		modalsManager.close(id);
-	}
+    function handleClose() {
+        onClose();
+        modalsManager.close(id);
+    }
 
-	function handleCancel() {
-		onClose();
-		modalsManager.dismiss(id, "cancel");
-	}
+    function handleCancel() {
+        onClose();
+        modalsManager.dismiss(id, "cancel");
+    }
 </script>
 
 <div class="api-key-modal-inner">
-	{#if createdToken}
-		<p>Please copy your new API Key. You won't be able to see it again!</p>
-		<div class="key-display">
-			<code>{createdToken}</code>
-			<Button onclick={handleCopy}>
-				<MaterialIcon iconName="content_copy" /> Copy
-			</Button>
-		</div>
-		<div class="modal-actions">
-			<Button onclick={handleClose}>Close</Button>
-		</div>
-	{:else}
-		<div class="form-content">
-			<TextInput label="Name" bind:value={name} />
-			<TextInput label="Description" bind:value={description} />
+    {#if createdToken}
+        <p>Please copy your new API Key. You won't be able to see it again!</p>
+        <div class="key-display">
+            <code>{createdToken}</code>
+            <Button onclick={handleCopy}>
+                <MaterialIcon iconName="content_copy" /> Copy
+            </Button>
+        </div>
+        <div class="modal-actions">
+            <Button onclick={handleClose}>Close</Button>
+        </div>
+    {:else}
+        <div class="form-content">
+            <TextInput label="Name" bind:value={name} />
+            <TextInput label="Description" bind:value={description} />
 
-			<div class="scopes-section">
-				<h4>Scopes</h4>
-				<div class="scopes-list">
-					{#each scopes as scope}
-						<label class="scope-item">
-							<input
-								type="checkbox"
-								checked={isSelected(scope.value)}
-								onchange={() => toggleScope(scope.value)}
-							/>
-							<div class="scope-info">
-								<span class="scope-value">{scope.value}</span>
-								<span class="scope-label">{scope.label}</span>
-							</div>
-						</label>
-					{/each}
-				</div>
-			</div>
-		</div>
-		<div class="modal-actions">
-			<Button hoverColor="var(--viz-80)" onclick={handleCancel}>Cancel</Button>
-			<Button
-				onclick={handleCreate}
-				disabled={creating || !name || selectedScopes.length === 0}
-			>
-				{creating ? "Creating..." : "Create Key"}
-			</Button>
-		</div>
-	{/if}
+            <div class="scopes-section">
+                <h4>Scopes</h4>
+                <div class="scopes-list">
+                    {#each scopes as scope}
+                        <label class="scope-item">
+                            <input
+                                type="checkbox"
+                                checked={isSelected(scope.value)}
+                                onchange={() => toggleScope(scope.value)}
+                            />
+                            <div class="scope-info">
+                                <span class="scope-value">{scope.value}</span>
+                                <span class="scope-label">{scope.label}</span>
+                            </div>
+                        </label>
+                    {/each}
+                </div>
+            </div>
+        </div>
+        <div class="modal-actions">
+            <Button hoverColor="var(--viz-80)" onclick={handleCancel}>Cancel</Button>
+            <Button
+                onclick={handleCreate}
+                disabled={creating || !name || selectedScopes.length === 0}
+            >
+                {creating ? "Creating..." : "Create Key"}
+            </Button>
+        </div>
+    {/if}
 </div>
 
 <style lang="scss">
-	.api-key-modal-inner {
-		display: flex;
-		flex-direction: column;
-		width: 100%;
-	}
+    .api-key-modal-inner {
+        display: flex;
+        flex-direction: column;
+        width: 100%;
+    }
 
-	.form-content {
-		display: flex;
-		flex-direction: column;
-		gap: 1rem;
-		overflow-y: auto;
-	}
+    .form-content {
+        display: flex;
+        flex-direction: column;
+        gap: 1rem;
+        overflow-y: auto;
+    }
 
-	.key-display {
-		background-color: var(--viz-100);
-		padding: 1rem;
-		border-radius: 0.5rem;
-		display: flex;
-		justify-content: space-between;
-		align-items: center;
+    .key-display {
+        background-color: var(--viz-100);
+        padding: 1rem;
+        border-radius: 0.5rem;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
 
-		code {
-			font-family: var(--viz-mono-font);
-			word-break: break-all;
-			flex-grow: 1;
-			margin-right: 0.5rem;
-		}
-	}
+        code {
+            font-family: var(--viz-mono-font);
+            word-break: break-all;
+            flex-grow: 1;
+            margin-right: 0.5rem;
+        }
+    }
 
-	.scopes-section {
-		display: flex;
-		flex-direction: column;
-		gap: 0.5rem;
+    .scopes-section {
+        display: flex;
+        flex-direction: column;
+        gap: 0.5rem;
 
-		h4 {
-			font-size: 0.9rem;
-			font-weight: 600;
-			color: var(--viz-text-color);
-			margin: 0;
-		}
-	}
+        h4 {
+            font-size: 0.9rem;
+            font-weight: 600;
+            color: var(--viz-text-color);
+            margin: 0;
+        }
+    }
 
-	.scopes-list {
-		display: grid;
-		grid-template-columns: 1fr 1fr;
-		gap: 0.5rem;
-		max-height: 13rem;
-		overflow-y: auto;
-		border: 1px solid var(--viz-80);
-		padding: 0.5rem;
-		border-radius: 0.25rem;
-	}
+    .scopes-list {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 0.5rem;
+        max-height: 13rem;
+        overflow-y: auto;
+        border: 1px solid var(--viz-80);
+        padding: 0.5rem;
+        border-radius: 0.25rem;
+    }
 
-	.scope-item {
-		display: flex;
-		align-items: center;
-		gap: 0.5rem;
-		font-size: 0.85rem;
-		cursor: pointer;
-		user-select: none;
+    .scope-item {
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+        font-size: 0.85rem;
+        cursor: pointer;
+        user-select: none;
 
-		&:hover {
-			background-color: var(--viz-100);
-		}
+        &:hover {
+            background-color: var(--viz-100);
+        }
 
-		input[type="checkbox"] {
-			accent-color: var(--viz-80);
-			width: 1rem;
-			height: 1rem;
-		}
-	}
+        input[type="checkbox"] {
+            accent-color: var(--viz-80);
+            width: 1rem;
+            height: 1rem;
+        }
+    }
 
-	.scope-info {
-		display: flex;
-		flex-direction: column;
-	}
+    .scope-info {
+        display: flex;
+        flex-direction: column;
+    }
 
-	.scope-label {
-		font-weight: 500;
-	}
+    .scope-label {
+        font-weight: 500;
+    }
 
-	.scope-value {
-		color: var(--viz-10);
-		font-size: 0.75rem;
-	}
+    .scope-value {
+        color: var(--viz-10);
+        font-size: 0.75rem;
+    }
 
-	.modal-actions {
-		display: flex;
-		justify-content: flex-end;
-		gap: 0.5rem;
-		margin-top: 1rem;
-	}
+    .modal-actions {
+        display: flex;
+        justify-content: flex-end;
+        gap: 0.5rem;
+        margin-top: 1rem;
+    }
 </style>

@@ -1,122 +1,116 @@
 <script lang="ts">
-	import {
-		Workspace,
-		type SerializedWorkspace
-	} from "$lib/layouts/model.svelte";
-	import LayoutNode from "./LayoutNode.svelte";
-	import { VizLocalStorage } from "$lib/utils/misc";
-	import { onMount } from "svelte";
-	import { debugMode } from "$lib/states/index.svelte";
-	import { workspaceState } from "$lib/states/workspace.svelte";
-	import { createDefaultLayout } from "./layouts/registry";
-	import { dev } from "$app/environment";
-	import { views } from "$lib/layouts/views";
-	import hotkeys from "hotkeys-js";
+    import { Workspace, type SerializedWorkspace } from "$lib/layouts/model.svelte";
+    import LayoutNode from "./LayoutNode.svelte";
+    import { VizLocalStorage } from "$lib/utils/misc";
+    import { onMount } from "svelte";
+    import { debugMode } from "$lib/states/index.svelte";
+    import { workspaceState } from "$lib/states/workspace.svelte";
+    import { createDefaultLayout } from "./layouts/registry";
+    import { dev } from "$app/environment";
+    import { views } from "$lib/layouts/views";
+    import hotkeys from "hotkeys-js";
 
-	interface Props {
-		id: string;
-	}
+    interface Props {
+        id: string;
+    }
 
-	let { id }: Props = $props();
+    let { id }: Props = $props();
 
-	const storage = new VizLocalStorage<SerializedWorkspace>("workspaceLayout");
-	let initialized = $state(false);
+    const storage = new VizLocalStorage<SerializedWorkspace>("workspaceLayout");
+    let initialized = $state(false);
 
-	onMount(() => {
-		const stored = storage.get();
-		workspaceState.workspace = new Workspace(undefined, views);
-		if (stored) {
-			try {
-				workspaceState.workspace.load(stored);
-				if (debugMode) {
-					console.log("[Workspace] Hydrated from storage");
-				}
-			} catch (e) {
-				console.error("[Workspace] Failed to hydrate layout", e);
-				workspaceState.workspace = createDefaultLayout();
-			}
-		} else {
-			workspaceState.workspace = createDefaultLayout();
-		}
+    onMount(() => {
+        const stored = storage.get();
+        workspaceState.workspace = new Workspace(undefined, views);
+        if (stored) {
+            try {
+                workspaceState.workspace.load(stored);
+                if (debugMode) {
+                    console.log("[Workspace] Hydrated from storage");
+                }
+            } catch (e) {
+                console.error("[Workspace] Failed to hydrate layout", e);
+                workspaceState.workspace = createDefaultLayout();
+            }
+        } else {
+            workspaceState.workspace = createDefaultLayout();
+        }
 
-		initialized = true;
-	});
+        initialized = true;
+    });
 
-	if (dev) {
-		$effect(() => {
-			console.log(
-				"[Workspace] Workspace state:",
-				workspaceState.workspace?.toJSON()
-			);
-		});
-	}
+    if (dev) {
+        $effect(() => {
+            console.log("[Workspace] Workspace state:", workspaceState.workspace?.toJSON());
+        });
+    }
 
-	$effect(() => {
-		if (initialized && workspaceState.workspace) {
-			// Explicitly read reactive properties of the workspace tree to register deep dependencies
-			const trackNode = (node: any) => {
-				if (!node) return;
-				const _active = node.activeViewId;
-				const _views = node.views?.length;
-				const _size = node.size;
-				const _locked = node.locked;
-				if (node.children) {
-					node.children.forEach(trackNode);
-				}
-			};
-			trackNode(workspaceState.workspace.root);
-			const _activeGroup = workspaceState.workspace.activeGroupId;
-			const _maximizedGroup = workspaceState.workspace.maximizedGroupId;
+    $effect(() => {
+        if (initialized && workspaceState.workspace) {
+            // Explicitly read reactive properties of the workspace tree to register deep dependencies
+            const trackNode = (node: any) => {
+                if (!node) return;
+                const _active = node.activeViewId;
+                const _views = node.views?.length;
+                const _size = node.size;
+                const _locked = node.locked;
+                if (node.children) {
+                    node.children.forEach(trackNode);
+                }
+            };
+            trackNode(workspaceState.workspace.root);
+            const _activeGroup = workspaceState.workspace.activeGroupId;
+            const _maximizedGroup = workspaceState.workspace.maximizedGroupId;
 
-			const serialized = workspaceState.workspace.toJSON();
-			storage.set(serialized);
-			if (debugMode) {
-				console.log("[Workspace] Layout saved");
-			}
-		}
-	});
+            const serialized = workspaceState.workspace.toJSON();
+            storage.set(serialized);
+            if (debugMode) {
+                console.log("[Workspace] Layout saved");
+            }
+        }
+    });
 
-	$effect(() => {
-		if (!initialized) {
-return;
-}
+    $effect(() => {
+        if (!initialized) {
+            return;
+        }
 
-		hotkeys("`", (event, handler) => {
-			// Prevent default behavior (e.g. typing ` in an input, if filter logic fails)
-			event.preventDefault();
-			const ws = workspaceState.workspace;
-			if (ws && ws.activeGroupId) {
-				ws.toggleMaximize(ws.activeGroupId);
-			}
-		});
+        hotkeys("`", (event, handler) => {
+            // Prevent default behavior (e.g. typing ` in an input, if filter logic fails)
+            event.preventDefault();
+            const ws = workspaceState.workspace;
+            if (ws && ws.activeGroupId) {
+                ws.toggleMaximize(ws.activeGroupId);
+            }
+        });
 
-		return () => {
-			hotkeys.unbind("`");
-		};
-	});
+        return () => {
+            hotkeys.unbind("`");
+        };
+    });
 </script>
 
 <div {id} class="viz-workspace">
-	{#if initialized && workspaceState.workspace}
-		<LayoutNode node={workspaceState.workspace.root} />
-	{:else}
-		<div class="loading">Initializing Workspace...</div>
-	{/if}
+    {#if initialized && workspaceState.workspace}
+        <LayoutNode node={workspaceState.workspace.root} />
+    {:else}
+        <div class="loading">Initializing Workspace...</div>
+    {/if}
 </div>
 
 <style lang="scss">
-	.viz-workspace {
-		height: 100%;
-		width: 100%;
-		overflow: hidden;
-		background-color: var(--viz-100);
-	}
+    .viz-workspace {
+        height: 100%;
+        width: 100%;
+        overflow: hidden;
+        background-color: var(--viz-100);
+    }
 
-	.loading {
-		display: flex;
-		align-items: center;
-		justify-content: center;
-		height: 100%;
-		color: var(--viz-60);
-	}
+    .loading {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        height: 100%;
+        color: var(--viz-60);
+    }
 </style>

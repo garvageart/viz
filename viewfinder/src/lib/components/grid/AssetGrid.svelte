@@ -1,1005 +1,991 @@
 <script lang="ts" generics="T extends { uid: string } & Record<string, any>">
-	import { dev } from "$app/environment";
-	import { getFullImagePath } from "$lib/api";
-	import {
-	    debugMode,
-	    isLayoutPage,
-	    sort,
-	    tableColumnSettings
-	} from "$lib/states/index.svelte";
-	import { selectionManager } from "$lib/states/selection.svelte";
-	import type { AssetGridArray, AssetSortBy } from "$lib/types/asset";
-	import type { SvelteSnippet } from "$lib/types/snippet";
-	import { tryParseDate } from "$lib/utils/dates";
-	import { buildGridArray } from "$lib/utils/dom";
-	import { snakeToTitle } from "$lib/utils/strings";
-	import hotkeys from "hotkeys-js";
-	import { DateTime } from "luxon";
-	import { untrack } from "svelte";
-	import type { SvelteHTMLElements } from "svelte/elements";
-	import type { AssetGridView } from "../grid/PhotoAssetGrid.svelte";
-	import TableColumnSelectorModal from "../modals/TableColumnSelectorModal.svelte";
-	import { modalsManager } from "../modals/manager/ModalManager.svelte";
-	import MaterialIcon from "../ui/MaterialIcon.svelte";
+    import { dev } from "$app/environment";
+    import { getFullImagePath } from "$lib/api";
+    import { debugMode, isLayoutPage, sort, tableColumnSettings } from "$lib/states/index.svelte";
+    import { selectionManager } from "$lib/states/selection.svelte";
+    import type { AssetGridArray, AssetSortBy } from "$lib/types/asset";
+    import type { SvelteSnippet } from "$lib/types/snippet";
+    import { tryParseDate } from "$lib/utils/dates";
+    import { buildGridArray } from "$lib/utils/dom";
+    import { snakeToTitle } from "$lib/utils/strings";
+    import hotkeys from "hotkeys-js";
+    import { DateTime } from "luxon";
+    import { untrack } from "svelte";
+    import type { SvelteHTMLElements } from "svelte/elements";
+    import type { AssetGridView } from "../grid/PhotoAssetGrid.svelte";
+    import TableColumnSelectorModal from "../modals/TableColumnSelectorModal.svelte";
+    import { modalsManager } from "../modals/manager/ModalManager.svelte";
+    import MaterialIcon from "../ui/MaterialIcon.svelte";
 
-	interface DisplayableAsset {
-		uid: string;
-		name?: string;
-		created_at?: string;
-		image_paths?: {
-			thumbnail?: string;
-			preview?: string;
-		};
-		image_metadata?: {
-			file_name?: string;
-			file_created_at?: string;
-		};
-		[key: string]: any;
-	}
+    interface DisplayableAsset {
+        uid: string;
+        name?: string;
+        created_at?: string;
+        image_paths?: {
+            thumbnail?: string;
+            preview?: string;
+        };
+        image_metadata?: {
+            file_name?: string;
+            file_created_at?: string;
+        };
+        [key: string]: any;
+    }
 
-	export interface AssetGridProps<
-		T extends { uid: string } & Record<string, any>
-	> {
-		data: T[];
-		assetSnippet: SvelteSnippet<[T]>;
-		assetGridArray?: AssetGridArray<T>;
-		view?: Omit<AssetGridView, "grid">;
-		assetGridDisplayProps?: SvelteHTMLElements["div"];
-		columnCount?: number;
-		searchValue?: string;
-		noAssetsMessage?: string;
-		disableMultiSelection?: boolean;
-		assetDblClick?: (
-			e: MouseEvent & {
-				currentTarget: EventTarget & (HTMLDivElement | HTMLTableRowElement);
-			},
-			asset: T
-		) => void;
-		/** Disable clearing selection when clicking in other grids (useful when multiple grids share one selection set) */
-		disableOutsideUnselect?: boolean;
-		onassetcontext?: (detail: {
-			asset: T;
-			anchor: { x: number; y: number } | HTMLElement;
-		}) => void;
-		/** optional explicit column list for table view (order matters). If omitted, inferred from data. */
-		columns?: string[];
-		/** table config: thumbnail_key is dot-path to thumbnail in each asset, columns overrides visible keys */
-		table?: { thumbnail_key?: string; columns?: string[] };
-		/** Unique identifier for selection state management */
-		scopeId?: string;
-		disabledUids?: Set<string>;
-	}
+    export interface AssetGridProps<T extends { uid: string } & Record<string, any>> {
+        data: T[];
+        assetSnippet: SvelteSnippet<[T]>;
+        assetGridArray?: AssetGridArray<T>;
+        view?: Omit<AssetGridView, "grid">;
+        assetGridDisplayProps?: SvelteHTMLElements["div"];
+        columnCount?: number;
+        searchValue?: string;
+        noAssetsMessage?: string;
+        disableMultiSelection?: boolean;
+        assetDblClick?: (
+            e: MouseEvent & {
+                currentTarget: EventTarget & (HTMLDivElement | HTMLTableRowElement);
+            },
+            asset: T
+        ) => void;
+        /** Disable clearing selection when clicking in other grids (useful when multiple grids share one selection set) */
+        disableOutsideUnselect?: boolean;
+        onassetcontext?: (detail: {
+            asset: T;
+            anchor: { x: number; y: number } | HTMLElement;
+        }) => void;
+        /** optional explicit column list for table view (order matters). If omitted, inferred from data. */
+        columns?: string[];
+        /** table config: thumbnail_key is dot-path to thumbnail in each asset, columns overrides visible keys */
+        table?: { thumbnail_key?: string; columns?: string[] };
+        /** Unique identifier for selection state management */
+        scopeId?: string;
+        disabledUids?: Set<string>;
+    }
 
-	let {
-		data = $bindable(),
-		assetSnippet,
-		assetGridArray = $bindable(),
-		columnCount = $bindable(),
-		searchValue = $bindable(""),
-		noAssetsMessage = "No assets found",
-		assetDblClick,
-		disableOutsideUnselect = $bindable(false),
-		disableMultiSelection = $bindable(false),
-		onassetcontext = $bindable(),
-		view = $bindable("thumbnails"),
-		assetGridDisplayProps = $bindable({}),
-		columns = $bindable(),
-		table = $bindable(),
-		scopeId = "default",
-		disabledUids = new Set()
-	}: AssetGridProps<T> = $props();
+    let {
+        data = $bindable(),
+        assetSnippet,
+        assetGridArray = $bindable(),
+        columnCount = $bindable(),
+        searchValue = $bindable(""),
+        noAssetsMessage = "No assets found",
+        assetDblClick,
+        disableOutsideUnselect = $bindable(false),
+        disableMultiSelection = $bindable(false),
+        onassetcontext = $bindable(),
+        view = $bindable("thumbnails"),
+        assetGridDisplayProps = $bindable({}),
+        columns = $bindable(),
+        table = $bindable(),
+        scopeId = "default",
+        disabledUids = new Set()
+    }: AssetGridProps<T> = $props();
 
-	// Selection Management
-	let selection = $derived(selectionManager.getScope<T>(scopeId));
-	let selectedUIDs = $derived(selection.selectedUids);
+    // Selection Management
+    let selection = $derived(selectionManager.getScope<T>(scopeId));
+    let selectedUIDs = $derived(selection.selectedUids);
 
-	function onFocus() {
-		selectionManager.setActive(scopeId);
-	}
+    function onFocus() {
+        selectionManager.setActive(scopeId);
+    }
 
-	// HTML Elements
-	let assetGridDisplayEl: HTMLDivElement | undefined = $state();
+    // HTML Elements
+    let assetGridDisplayEl: HTMLDivElement | undefined = $state();
 
-	let allAssetsData = $derived.by(() => {
-		return data;
-	});
+    let allAssetsData = $derived.by(() => {
+        return data;
+    });
 
-	// Table column keys (safe: only primitive values)
-	let tableKeys: string[] = $state([] as string[]);
+    // Table column keys (safe: only primitive values)
+    let tableKeys: string[] = $state([] as string[]);
 
-	$effect(() => {
-		if (allAssetsData.length === 0) {
-			tableKeys = [];
-			return;
-		}
+    $effect(() => {
+        if (allAssetsData.length === 0) {
+            tableKeys = [];
+            return;
+        }
 
-		const sample = allAssetsData[0] as any;
-		tableKeys = Object.keys(sample).filter((k) => {
-			const v = sample[k];
-			return (
-				v === null ||
-				v === undefined ||
-				typeof v === "string" ||
-				typeof v === "number" ||
-				typeof v === "boolean"
-			);
-		});
-	});
+        const sample = allAssetsData[0] as any;
+        tableKeys = Object.keys(sample).filter((k) => {
+            const v = sample[k];
+            return (
+                v === null ||
+                v === undefined ||
+                typeof v === "string" ||
+                typeof v === "number" ||
+                typeof v === "boolean"
+            );
+        });
+    });
 
-	// Visible keys in table: prefer explicit `columns` prop, otherwise inferred from settings
-	let visibleKeys = $derived.by(() => {
-		if (Array.isArray(table?.columns) && table!.columns!.length > 0) {
-			return table!.columns!;
-		} else if (Array.isArray(columns) && columns.length > 0) {
-			return columns;
-		} else {
-			// Filter inferred keys by persisted selection
-			return tableKeys.filter((key) => tableColumnSettings.value.includes(key));
-		}
-	});
+    // Visible keys in table: prefer explicit `columns` prop, otherwise inferred from settings
+    let visibleKeys = $derived.by(() => {
+        if (Array.isArray(table?.columns) && table!.columns!.length > 0) {
+            return table!.columns!;
+        } else if (Array.isArray(columns) && columns.length > 0) {
+            return columns;
+        } else {
+            // Filter inferred keys by persisted selection
+            return tableKeys.filter((key) => tableColumnSettings.value.includes(key));
+        }
+    });
 
-	// helper: get nested value by dot path
-	function getNestedValue(obj: Record<string, any> | undefined, path?: string) {
-		if (!obj || !path) {
-			return undefined;
-		}
+    // helper: get nested value by dot path
+    function getNestedValue(obj: Record<string, any> | undefined, path?: string) {
+        if (!obj || !path) {
+            return undefined;
+        }
 
-		const parts = path.split(".");
-		let cur: any = obj;
-		for (const p of parts) {
-			if (cur == null) {
-				return undefined;
-			}
+        const parts = path.split(".");
+        let cur: any = obj;
+        for (const p of parts) {
+            if (cur == null) {
+                return undefined;
+            }
 
-			cur = cur[p];
-		}
+            cur = cur[p];
+        }
 
-		return cur;
-	}
+        return cur;
+    }
 
-	// Format a value for display: dates are formatted with Luxon, objects stringified, null/undefined -> ''
-	function formatValueForKey(
-		obj: Record<string, any> | undefined,
-		key?: string
-	) {
-		let v: any = undefined;
-		if (key) {
-			v = getNestedValue(obj, key);
-			if (v === undefined && obj) {
-				v = (obj as any)[key];
-			}
-		} else {
-			v = obj;
-		}
+    // Format a value for display: dates are formatted with Luxon, objects stringified, null/undefined -> ''
+    function formatValueForKey(obj: Record<string, any> | undefined, key?: string) {
+        let v: any = undefined;
+        if (key) {
+            v = getNestedValue(obj, key);
+            if (v === undefined && obj) {
+                v = (obj as any)[key];
+            }
+        } else {
+            v = obj;
+        }
 
-		const dt = tryParseDate(v);
-		if (dt) {
-			return dt.toLocaleString(DateTime.DATETIME_MED);
-		}
+        const dt = tryParseDate(v);
+        if (dt) {
+            return dt.toLocaleString(DateTime.DATETIME_MED);
+        }
 
-		if (v === null || v === undefined) {
-			return "";
-		}
+        if (v === null || v === undefined) {
+            return "";
+        }
 
-		if (typeof v === "object") {
-			try {
-				return JSON.stringify(v);
-			} catch {
-				return String(v);
-			}
-		}
+        if (typeof v === "object") {
+            try {
+                return JSON.stringify(v);
+            } catch {
+                return String(v);
+            }
+        }
 
-		return String(v);
-	}
+        return String(v);
+    }
 
-	// Inspecting/Debugging
-	if (debugMode) {
-		$inspect("selected asset", selection.active);
-	}
+    // Inspecting/Debugging
+    if (debugMode) {
+        $inspect("selected asset", selection.active);
+    }
 
-	function scrollToAsset(asset: T) {
-		if (!assetGridDisplayEl) {
-			return;
-		}
+    function scrollToAsset(asset: T) {
+        if (!assetGridDisplayEl) {
+            return;
+        }
 
-		const element = assetGridDisplayEl.querySelector(
-			`[data-asset-id="${asset.uid}"]`
-		) as HTMLElement;
-		if (!element) {
-			return;
-		}
+        const element = assetGridDisplayEl.querySelector(
+            `[data-asset-id="${asset.uid}"]`
+        ) as HTMLElement;
+        if (!element) {
+            return;
+        }
 
-		const container = assetGridDisplayEl;
-		const elementRect = element.getBoundingClientRect();
-		const containerRect = container.getBoundingClientRect();
+        const container = assetGridDisplayEl;
+        const elementRect = element.getBoundingClientRect();
+        const containerRect = container.getBoundingClientRect();
 
-		const relativeTop =
-			elementRect.top - containerRect.top + container.scrollTop;
-		const relativeBottom = relativeTop + elementRect.height;
+        const relativeTop = elementRect.top - containerRect.top + container.scrollTop;
+        const relativeBottom = relativeTop + elementRect.height;
 
-		const viewTop = container.scrollTop;
-		const viewBottom = viewTop + container.clientHeight;
+        const viewTop = container.scrollTop;
+        const viewBottom = viewTop + container.clientHeight;
 
-		if (relativeTop < viewTop) {
-			container.scrollTo({
-				top: relativeTop,
-				behavior: "instant"
-			});
-		} else if (relativeBottom > viewBottom) {
-			container.scrollTo({
-				top: relativeBottom - container.clientHeight,
-				behavior: "instant"
-			});
-		}
-	}
+        if (relativeTop < viewTop) {
+            container.scrollTo({
+                top: relativeTop,
+                behavior: "instant"
+            });
+        } else if (relativeBottom > viewBottom) {
+            container.scrollTo({
+                top: relativeBottom - container.clientHeight,
+                behavior: "instant"
+            });
+        }
+    }
 
-	let lastActiveUID: string | null = null;
+    let lastActiveUID: string | null = null;
 
-	$effect(() => {
-		const currentActive = selection.active;
-		if (currentActive && assetGridDisplayEl) {
-			const activeUid = currentActive.uid;
-			untrack(() => {
-				if (activeUid !== lastActiveUID) {
-					lastActiveUID = activeUid;
-					scrollToAsset(currentActive);
-				}
-			});
-		} else if (!currentActive) {
-			lastActiveUID = null;
-		}
-	});
+    $effect(() => {
+        const currentActive = selection.active;
+        if (currentActive && assetGridDisplayEl) {
+            const activeUid = currentActive.uid;
+            untrack(() => {
+                if (activeUid !== lastActiveUID) {
+                    lastActiveUID = activeUid;
+                    scrollToAsset(currentActive);
+                }
+            });
+        } else if (!currentActive) {
+            lastActiveUID = null;
+        }
+    });
 
-	$effect(() => {
-		if (!assetGridDisplayEl || allAssetsData.length === 0) {
-			return;
-		}
+    $effect(() => {
+        if (!assetGridDisplayEl || allAssetsData.length === 0) {
+            return;
+        }
 
-		const updateGridArray = () => {
-			if (!assetGridDisplayEl) {
+        const updateGridArray = () => {
+            if (!assetGridDisplayEl) {
                 return;
             }
 
-			assetGridArray = buildAssetGridArray(assetGridDisplayEl);
-		};
+            assetGridArray = buildAssetGridArray(assetGridDisplayEl);
+        };
 
-		// Use requestAnimationFrame to ensure DOM is updated
-		requestAnimationFrame(() => {
-			updateGridArray();
-		});
+        // Use requestAnimationFrame to ensure DOM is updated
+        requestAnimationFrame(() => {
+            updateGridArray();
+        });
 
-		// Watch for resize changes
-		const resizeObserver = new ResizeObserver(() => {
-			requestAnimationFrame(() => {
-				updateGridArray();
-			});
-		});
+        // Watch for resize changes
+        const resizeObserver = new ResizeObserver(() => {
+            requestAnimationFrame(() => {
+                updateGridArray();
+            });
+        });
 
-		resizeObserver.observe(assetGridDisplayEl);
+        resizeObserver.observe(assetGridDisplayEl);
 
-		return () => {
-			resizeObserver.disconnect();
-		};
-	});
+        return () => {
+            resizeObserver.disconnect();
+        };
+    });
 
-	function handleImageCardSelect(asset: T, e: MouseEvent) {
-		if (disabledUids.has(asset.uid)) {
-			return;
-		}
+    function handleImageCardSelect(asset: T, e: MouseEvent) {
+        if (disabledUids.has(asset.uid)) {
+            return;
+        }
 
-		onFocus(); // Ensure this grid is active on click
+        onFocus(); // Ensure this grid is active on click
 
-		if (e.shiftKey) {
-			if (disableMultiSelection) {
-				selection.select(asset);
-				return;
-			}
+        if (e.shiftKey) {
+            if (disableMultiSelection) {
+                selection.select(asset);
+                return;
+            }
 
-			selection.selected.clear();
+            selection.selected.clear();
 
-			const ids = allAssetsData.map((i: T) => i.uid);
-			let startIndex = 0;
-			const endIndex = ids.indexOf(asset.uid);
+            const ids = allAssetsData.map((i: T) => i.uid);
+            let startIndex = 0;
+            const endIndex = ids.indexOf(asset.uid);
 
-			if (selection.active) {
-				startIndex = ids.indexOf(selection.active.uid);
-			}
+            if (selection.active) {
+                startIndex = ids.indexOf(selection.active.uid);
+            }
 
-			const start = Math.min(startIndex, endIndex);
-			const end = Math.max(startIndex, endIndex);
+            const start = Math.min(startIndex, endIndex);
+            const end = Math.max(startIndex, endIndex);
 
-			for (let i = start; i <= end; i++) {
-				selection.add(allAssetsData[i]);
-			}
-		} else if (e.ctrlKey) {
-			selection.toggle(asset);
-		} else {
-			selection.select(asset);
-		}
-	}
+            for (let i = start; i <= end; i++) {
+                selection.add(allAssetsData[i]);
+            }
+        } else if (e.ctrlKey) {
+            selection.toggle(asset);
+        } else {
+            selection.select(asset);
+        }
+    }
 
-	function handleKeydownCardSelect(asset: T, e: KeyboardEvent) {
-		if (disabledUids.has(asset.uid)) {
-			return;
-		}
-		if (!assetGridArray) {
-			return;
-		}
+    function handleKeydownCardSelect(asset: T, e: KeyboardEvent) {
+        if (disabledUids.has(asset.uid)) {
+            return;
+        }
+        if (!assetGridArray) {
+            return;
+        }
 
-		if (
-			e.key !== "ArrowLeft" &&
-			e.key !== "ArrowRight" &&
-			e.key !== "ArrowUp" &&
-			e.key !== "ArrowDown" &&
-			e.key !== "Tab" &&
-			!e.shiftKey &&
-			!e.metaKey
-		) {
-			return;
-		}
+        if (
+            e.key !== "ArrowLeft" &&
+            e.key !== "ArrowRight" &&
+            e.key !== "ArrowUp" &&
+            e.key !== "ArrowDown" &&
+            e.key !== "Tab" &&
+            !e.shiftKey &&
+            !e.metaKey
+        ) {
+            return;
+        }
 
-		const imageInGridArray = assetGridArray
-			.find((i) => i.find((j) => j.asset?.uid === asset.uid))
-			?.find((j) => j.asset?.uid === asset.uid);
+        const imageInGridArray = assetGridArray
+            .find((i) => i.find((j) => j.asset?.uid === asset.uid))
+            ?.find((j) => j.asset?.uid === asset.uid);
 
-		if (!imageInGridArray) {
-			if (dev) {
-				console.warn(`Can't find asset ${asset.uid} in grid array`);
-			}
+        if (!imageInGridArray) {
+            if (dev) {
+                console.warn(`Can't find asset ${asset.uid} in grid array`);
+            }
 
-			return;
-		}
+            return;
+        }
 
-		const columnCount = assetGridArray[0].length;
-		const positionIndexInGrid =
-			imageInGridArray.row * columnCount + imageInGridArray.column;
-		const imageGridChildren = assetGridDisplayEl?.children;
+        const columnCount = assetGridArray[0].length;
+        const positionIndexInGrid = imageInGridArray.row * columnCount + imageInGridArray.column;
+        const imageGridChildren = assetGridDisplayEl?.children;
 
-		// Mimic click since we already have a handler for that in `handleImageCardSelect()`
-		const focusAndSelectElement = (element: HTMLElement | undefined, step: number) => {
-			// out of bounds
-			if (!element) {
-				return;
-			}
+        // Mimic click since we already have a handler for that in `handleImageCardSelect()`
+        const focusAndSelectElement = (element: HTMLElement | undefined, step: number) => {
+            // out of bounds
+            if (!element) {
+                return;
+            }
 
-			// check if disabled and find the next non-disabled element in the direction of step
-			const assetId = element.getAttribute("data-asset-id");
-			if (assetId && disabledUids.has(assetId)) {
-				let targetElement: HTMLElement | undefined = undefined;
-				let nextIndex = positionIndexInGrid + step;
+            // check if disabled and find the next non-disabled element in the direction of step
+            const assetId = element.getAttribute("data-asset-id");
+            if (assetId && disabledUids.has(assetId)) {
+                let targetElement: HTMLElement | undefined = undefined;
+                let nextIndex = positionIndexInGrid + step;
 
-				while (nextIndex >= 0 && nextIndex < (imageGridChildren?.length ?? 0)) {
-					const candElement = imageGridChildren?.item(nextIndex) as HTMLElement;
-					const candAssetId = candElement?.getAttribute("data-asset-id");
-					if (candAssetId && !disabledUids.has(candAssetId)) {
-						targetElement = candElement;
-						break;
-					}
-                    
-					nextIndex += step;
-				}
+                while (nextIndex >= 0 && nextIndex < (imageGridChildren?.length ?? 0)) {
+                    const candElement = imageGridChildren?.item(nextIndex) as HTMLElement;
+                    const candAssetId = candElement?.getAttribute("data-asset-id");
+                    if (candAssetId && !disabledUids.has(candAssetId)) {
+                        targetElement = candElement;
+                        break;
+                    }
 
-				if (!targetElement) {
-					// out of bounds
-					return;
-				}
-				element = targetElement;
-			}
+                    nextIndex += step;
+                }
 
-			// maybe unnessary to blur but i wanna make sure lmao
-			(imageGridChildren?.item(positionIndexInGrid) as HTMLElement).blur();
-			element.focus();
-			element.click();
-		};
+                if (!targetElement) {
+                    // out of bounds
+                    return;
+                }
+                element = targetElement;
+            }
 
-		switch (e.key) {
-			case "ArrowRight":
-				const elementRight = imageGridChildren?.item(
-					positionIndexInGrid + 1
-				) as HTMLElement;
-				focusAndSelectElement(elementRight, 1);
-				break;
-			case "ArrowLeft":
-				const elementLeft = imageGridChildren?.item(
-					positionIndexInGrid - 1
-				) as HTMLElement;
-				focusAndSelectElement(elementLeft, -1);
-				break;
-			case "ArrowUp":
-				const elementUp = imageGridChildren?.item(
-					positionIndexInGrid - columnCount
-				) as HTMLElement;
-				focusAndSelectElement(elementUp, -columnCount);
-				break;
-			case "ArrowDown":
-				const elementDown = imageGridChildren?.item(
-					positionIndexInGrid + columnCount
-				) as HTMLElement;
-				focusAndSelectElement(elementDown, columnCount);
-				break;
-			case "Tab":
-				// to break out of the grid by tabbing and focusing we need to let
-				// the browser handle the tabbing if we are at the edge of the grid boundary (first and last elements)
-				if (e.shiftKey) {
-					if (positionIndexInGrid > 0) {
-						e.preventDefault();
-					}
-					focusAndSelectElement(
-						imageGridChildren?.item(positionIndexInGrid - 1) as HTMLElement,
-						-1
-					);
-				} else {
-					if (positionIndexInGrid < imageGridChildren?.length! - 1) {
-						e.preventDefault();
-					}
-					focusAndSelectElement(
-						imageGridChildren?.item(positionIndexInGrid + 1) as HTMLElement,
-						1
-					);
-				}
-				break;
-		}
-	}
+            // maybe unnessary to blur but i wanna make sure lmao
+            (imageGridChildren?.item(positionIndexInGrid) as HTMLElement).blur();
+            element.focus();
+            element.click();
+        };
 
-	function buildAssetGridArray(element: HTMLElement) {
-		const array = buildGridArray(element).map((i) => {
-			return i.map((j) => {
-				// first try the element itself, then fallback to firstElementChild (older components)
-				const assetId = (j.element?.getAttribute("data-asset-id") ??
-					j.element?.firstElementChild?.getAttribute("data-asset-id"))!;
-				const asset = allAssetsData.find((i: T) => i.uid === assetId)!;
+        switch (e.key) {
+            case "ArrowRight":
+                const elementRight = imageGridChildren?.item(
+                    positionIndexInGrid + 1
+                ) as HTMLElement;
+                focusAndSelectElement(elementRight, 1);
+                break;
+            case "ArrowLeft":
+                const elementLeft = imageGridChildren?.item(positionIndexInGrid - 1) as HTMLElement;
+                focusAndSelectElement(elementLeft, -1);
+                break;
+            case "ArrowUp":
+                const elementUp = imageGridChildren?.item(
+                    positionIndexInGrid - columnCount
+                ) as HTMLElement;
+                focusAndSelectElement(elementUp, -columnCount);
+                break;
+            case "ArrowDown":
+                const elementDown = imageGridChildren?.item(
+                    positionIndexInGrid + columnCount
+                ) as HTMLElement;
+                focusAndSelectElement(elementDown, columnCount);
+                break;
+            case "Tab":
+                // to break out of the grid by tabbing and focusing we need to let
+                // the browser handle the tabbing if we are at the edge of the grid boundary (first and last elements)
+                if (e.shiftKey) {
+                    if (positionIndexInGrid > 0) {
+                        e.preventDefault();
+                    }
+                    focusAndSelectElement(
+                        imageGridChildren?.item(positionIndexInGrid - 1) as HTMLElement,
+                        -1
+                    );
+                } else {
+                    if (positionIndexInGrid < imageGridChildren?.length! - 1) {
+                        e.preventDefault();
+                    }
+                    focusAndSelectElement(
+                        imageGridChildren?.item(positionIndexInGrid + 1) as HTMLElement,
+                        1
+                    );
+                }
+                break;
+        }
+    }
 
-				if ((!assetId || !asset) && j.element && allAssetsData.length > 0) {
-					if (dev) {
-						console.warn(
-							`AssetGrid: failed to resolve asset for element at row ${j.row}, column ${j.column}`
-						);
-					}
-				}
+    function buildAssetGridArray(element: HTMLElement) {
+        const array = buildGridArray(element).map((i) => {
+            return i.map((j) => {
+                // first try the element itself, then fallback to firstElementChild (older components)
+                const assetId = (j.element?.getAttribute("data-asset-id") ??
+                    j.element?.firstElementChild?.getAttribute("data-asset-id"))!;
+                const asset = allAssetsData.find((i: T) => i.uid === assetId)!;
 
-				return {
-					asset,
-					row: j.row,
-					column: j.column,
-					columnSize: j.columnSize,
-					size: j.size,
-					rowSize: j.rowSize
-				};
-			});
-		});
+                if ((!assetId || !asset) && j.element && allAssetsData.length > 0) {
+                    if (dev) {
+                        console.warn(
+                            `AssetGrid: failed to resolve asset for element at row ${j.row}, column ${j.column}`
+                        );
+                    }
+                }
 
-		return array;
-	}
+                return {
+                    asset,
+                    row: j.row,
+                    column: j.column,
+                    columnSize: j.columnSize,
+                    size: j.size,
+                    rowSize: j.rowSize
+                };
+            });
+        });
 
-	function shouldKeepSelection(target: HTMLElement | null): boolean {
-		if (!target) {
-			return false;
-		}
+        return array;
+    }
 
-		// 1. Keep if clicking an image card/photo
-		if (target.closest(".asset-photo, .asset-card")) {
-			return true;
-		}
+    function shouldKeepSelection(target: HTMLElement | null): boolean {
+        if (!target) {
+            return false;
+        }
 
-		// 2. Keep if clicking interactive elements (buttons, links, form controls)
-		if (
-			target.closest("button, a, input, select, textarea, [role='button'], [role='menuitem'], [role='tab'], [role='checkbox']")
-		) {
-			return true;
-		}
+        // 1. Keep if clicking an image card/photo
+        if (target.closest(".asset-photo, .asset-card")) {
+            return true;
+        }
 
-		// 3. Keep if clicking custom interactive components (rating, label dropdowns, menus, modals, scrubber)
-		if (
-			target.closest(
-				".star-rating, .label-selector, .context-menu, .dropdown-content, .dropdown-menu, .timeline-scrubber, [role='dialog'], .viz-modal"
-			)
-		) {
-			return true;
-		}
+        // 2. Keep if clicking interactive elements (buttons, links, form controls)
+        if (
+            target.closest(
+                "button, a, input, select, textarea, [role='button'], [role='menuitem'], [role='tab'], [role='checkbox']"
+            )
+        ) {
+            return true;
+        }
 
-		return false;
-	}
+        // 3. Keep if clicking custom interactive components (rating, label dropdowns, menus, modals, scrubber)
+        if (
+            target.closest(
+                ".star-rating, .label-selector, .context-menu, .dropdown-content, .dropdown-menu, .timeline-scrubber, [role='dialog'], .viz-modal"
+            )
+        ) {
+            return true;
+        }
 
-	function handleContainerClick(e: MouseEvent) {
-		onFocus();
-		const target = e.target as HTMLElement;
-		if (shouldKeepSelection(target)) {
-			return;
-		}
-		selection.clear();
-	}
+        return false;
+    }
 
-	function unselectImagesOnClickOutsideAssetContainer(element: HTMLElement) {
-		if (disableOutsideUnselect) {
-			return;
-		}
+    function handleContainerClick(e: MouseEvent) {
+        onFocus();
+        const target = e.target as HTMLElement;
+        if (shouldKeepSelection(target)) {
+            return;
+        }
+        selection.clear();
+    }
 
-		const clickHandler = (e: MouseEvent) => {
-			const target = e.target as HTMLElement;
+    function unselectImagesOnClickOutsideAssetContainer(element: HTMLElement) {
+        if (disableOutsideUnselect) {
+            return;
+        }
 
-			// Check if we should preserve the selection
-			if (shouldKeepSelection(target)) {
-				return;
-			}
+        const clickHandler = (e: MouseEvent) => {
+            const target = e.target as HTMLElement;
 
-			if (isLayoutPage()) {
-				// On layout page, only clear if clicked inside the parent panel
-				const parentPanel = element.closest(".tab-group-panel");
-				if (parentPanel && parentPanel.contains(target)) {
-					selection.clear();
-				}
-				return;
-			}
+            // Check if we should preserve the selection
+            if (shouldKeepSelection(target)) {
+                return;
+            }
 
-			// Otherwise clear selection
-			selection.clear();
-		};
+            if (isLayoutPage()) {
+                // On layout page, only clear if clicked inside the parent panel
+                const parentPanel = element.closest(".tab-group-panel");
+                if (parentPanel && parentPanel.contains(target)) {
+                    selection.clear();
+                }
+                return;
+            }
 
-		$effect(() => {
-			document.addEventListener("click", clickHandler);
+            // Otherwise clear selection
+            selection.clear();
+        };
 
-			return () => {
-				document.removeEventListener("click", clickHandler);
-			};
-		});
-	}
+        $effect(() => {
+            document.addEventListener("click", clickHandler);
 
-	hotkeys("ctrl+a", (e) => {
-		if (selectionManager.activeScopeId !== scopeId) {
-			return;
-		}
-		e.preventDefault();
-		selection.selectMultiple(allAssetsData);
-	});
+            return () => {
+                document.removeEventListener("click", clickHandler);
+            };
+        });
+    }
 
-	hotkeys("escape", (e) => {
-		if (selectionManager.activeScopeId !== scopeId) {
-			return;
-		}
-		if (selection.size === 0 && !selection.active) {
-			return;
-		}
+    hotkeys("ctrl+a", (e) => {
+        if (selectionManager.activeScopeId !== scopeId) {
+            return;
+        }
+        e.preventDefault();
+        selection.selectMultiple(allAssetsData);
+    });
 
-		selection.clear();
-	});
+    hotkeys("escape", (e) => {
+        if (selectionManager.activeScopeId !== scopeId) {
+            return;
+        }
+        if (selection.size === 0 && !selection.active) {
+            return;
+        }
 
-	function openColumnSelector() {
-		modalsManager.open(
-			TableColumnSelectorModal,
-			{
-				availableKeys: tableKeys
-			},
-			{ heading: "Table Columns" }
-		);
-	}
+        selection.clear();
+    });
+
+    function openColumnSelector() {
+        modalsManager.open(
+            TableColumnSelectorModal,
+            {
+                availableKeys: tableKeys
+            },
+            { heading: "Table Columns" }
+        );
+    }
 </script>
 
 {#snippet assetComponentCard(assetData: T)}
-	{@const isSelected =
-		selectedUIDs.has(assetData.uid) || selection.active?.uid === assetData.uid}
-	{@const isDisabled = disabledUids.has(assetData.uid)}
-	<div
-		class="asset-card"
-		class:disabled-asset={isDisabled}
-		data-asset-id={assetData.uid}
-		class:max-width-column={columnCount !== undefined && columnCount > 1}
-		class:selected-card={isSelected}
-		role="button"
-		tabindex={isDisabled ? -1 : 0}
-		onclick={(e) => {
-			if (isDisabled) return;
-			e.preventDefault();
-			handleImageCardSelect(assetData, e);
-		}}
-		onkeydown={(e) => {
-			e.preventDefault();
-			handleKeydownCardSelect(assetData, e);
-		}}
-		ondblclick={(e) => {
-			if (e.ctrlKey) {
-				e.preventDefault();
-				return;
-			}
+    {@const isSelected = selectedUIDs.has(assetData.uid) || selection.active?.uid === assetData.uid}
+    {@const isDisabled = disabledUids.has(assetData.uid)}
+    <div
+        class="asset-card"
+        class:disabled-asset={isDisabled}
+        data-asset-id={assetData.uid}
+        class:max-width-column={columnCount !== undefined && columnCount > 1}
+        class:selected-card={isSelected}
+        role="button"
+        tabindex={isDisabled ? -1 : 0}
+        onclick={(e) => {
+            if (isDisabled) return;
+            e.preventDefault();
+            handleImageCardSelect(assetData, e);
+        }}
+        onkeydown={(e) => {
+            e.preventDefault();
+            handleKeydownCardSelect(assetData, e);
+        }}
+        ondblclick={(e) => {
+            if (e.ctrlKey) {
+                e.preventDefault();
+                return;
+            }
 
-			assetDblClick?.(e, assetData);
-		}}
-		oncontextmenu={(e: MouseEvent & { currentTarget: HTMLElement }) => {
-			e.preventDefault();
-			if (!selection.has(assetData) || selection.size <= 1) {
-				selection.select(assetData);
-			}
-			onassetcontext?.({
-				asset: assetData,
-				anchor: { x: e.clientX, y: e.clientY }
-			});
-		}}
-	>
-		{#if isDisabled}
-			<div class="disabled-overlay"></div>
-		{/if}
-		{@render assetSnippet(assetData)}
-	</div>
+            assetDblClick?.(e, assetData);
+        }}
+        oncontextmenu={(e: MouseEvent & { currentTarget: HTMLElement }) => {
+            e.preventDefault();
+            if (!selection.has(assetData) || selection.size <= 1) {
+                selection.select(assetData);
+            }
+            onassetcontext?.({
+                asset: assetData,
+                anchor: { x: e.clientX, y: e.clientY }
+            });
+        }}
+    >
+        {#if isDisabled}
+            <div class="disabled-overlay"></div>
+        {/if}
+        {@render assetSnippet(assetData)}
+    </div>
 {/snippet}
 
 {#snippet assetComponentListOption(assetData: T)}
-	{@const isSelected =
-		selection.has(assetData) || selection.active?.uid === assetData.uid}
-	{@const isDisabled = disabledUids.has(assetData.uid)}
-	{@const asset = assetData as unknown as DisplayableAsset}
-	<tr
-		class="asset-card"
-		class:disabled-asset={isDisabled}
-		data-asset-id={assetData.uid}
-		class:selected-card={isSelected}
-		role="button"
-		tabindex={isDisabled ? -1 : 0}
-		onclick={(e) => {
-			if (isDisabled) return;
-			handleImageCardSelect(assetData, e);
-		}}
-		onkeydown={(e) => {
-			handleKeydownCardSelect(assetData, e);
-		}}
-		ondblclick={(e) => {
-			if (e.ctrlKey) {
-				e.preventDefault();
-				return;
-			}
+    {@const isSelected = selection.has(assetData) || selection.active?.uid === assetData.uid}
+    {@const isDisabled = disabledUids.has(assetData.uid)}
+    {@const asset = assetData as unknown as DisplayableAsset}
+    <tr
+        class="asset-card"
+        class:disabled-asset={isDisabled}
+        data-asset-id={assetData.uid}
+        class:selected-card={isSelected}
+        role="button"
+        tabindex={isDisabled ? -1 : 0}
+        onclick={(e) => {
+            if (isDisabled) return;
+            handleImageCardSelect(assetData, e);
+        }}
+        onkeydown={(e) => {
+            handleKeydownCardSelect(assetData, e);
+        }}
+        ondblclick={(e) => {
+            if (e.ctrlKey) {
+                e.preventDefault();
+                return;
+            }
 
-			assetDblClick?.(e, assetData);
-		}}
-	>
-		<td class="asset-snippet-cell">
-			<div class="asset-snippet-inner" title={formatValueForKey(asset, "name")}>
-				{#if getNestedValue(asset, table?.thumbnail_key) || asset.image_paths}
-					<!-- I hate this -->
-					<img
-						class="asset-table-thumb"
-						src={getFullImagePath(
-							getNestedValue(asset, table?.thumbnail_key) ??
-								asset.image_paths?.thumbnail ??
-								asset.image_paths?.preview ??
-								""
-						)}
-						alt={asset.name ?? asset.image_metadata?.file_name ?? ""}
-						loading="lazy"
-						crossorigin="use-credentials"
-					/>
-				{:else}
-					<!-- shitty fallback it works -->
-					<!-- TODO: need this to be better -->
-					<span class="asset-preview-fallback">
-						{asset.name ?? asset.image_metadata?.file_name ?? asset.uid}
-					</span>
-				{/if}
-				<div class="asset-snippet-meta">
-					<div class="asset-snippet-name">
-						{asset.image_metadata?.file_name ?? asset.name}
-					</div>
-					<div class="asset-snippet-sub">
-						{formatValueForKey(asset, "created_at") ||
-							formatValueForKey(asset, "image_metadata.file_created_at")}
-					</div>
-				</div>
-			</div>
-		</td>
-		{#each visibleKeys as key}
-			<td>{formatValueForKey(asset, key)}</td>
-		{/each}
-	</tr>
+            assetDblClick?.(e, assetData);
+        }}
+    >
+        <td class="asset-snippet-cell">
+            <div class="asset-snippet-inner" title={formatValueForKey(asset, "name")}>
+                {#if getNestedValue(asset, table?.thumbnail_key) || asset.image_paths}
+                    <!-- I hate this -->
+                    <img
+                        class="asset-table-thumb"
+                        src={getFullImagePath(
+                            getNestedValue(asset, table?.thumbnail_key) ??
+                                asset.image_paths?.thumbnail ??
+                                asset.image_paths?.preview ??
+                                ""
+                        )}
+                        alt={asset.name ?? asset.image_metadata?.file_name ?? ""}
+                        loading="lazy"
+                        crossorigin="use-credentials"
+                    />
+                {:else}
+                    <!-- shitty fallback it works -->
+                    <!-- TODO: need this to be better -->
+                    <span class="asset-preview-fallback">
+                        {asset.name ?? asset.image_metadata?.file_name ?? asset.uid}
+                    </span>
+                {/if}
+                <div class="asset-snippet-meta">
+                    <div class="asset-snippet-name">
+                        {asset.image_metadata?.file_name ?? asset.name}
+                    </div>
+                    <div class="asset-snippet-sub">
+                        {formatValueForKey(asset, "created_at") ||
+                            formatValueForKey(asset, "image_metadata.file_created_at")}
+                    </div>
+                </div>
+            </div>
+        </td>
+        {#each visibleKeys as key}
+            <td>{formatValueForKey(asset, key)}</td>
+        {/each}
+    </tr>
 {/snippet}
 
 {#snippet assetTable()}
-	<div
-		bind:this={assetGridDisplayEl}
-		class="viz-asset-table-container {assetGridDisplayProps.class}"
-		class:is-active={selectionManager.activeScopeId === scopeId}
-		{...assetGridDisplayProps}
-		use:unselectImagesOnClickOutsideAssetContainer
-		onclick={handleContainerClick}
-		onfocusin={onFocus}
-	>
-		<table>
-			<thead
-				oncontextmenu={(e) => {
-					e.preventDefault();
-					openColumnSelector();
-				}}
-			>
-				<tr>
-					<th>Preview</th>
-					{#each visibleKeys as key}
-						<th>
-							<button
-								onclick={() => {
-									if (sort.by === key) {
-										sort.order = sort.order === "ASC" ? "DESC" : "ASC";
-									} else {
-										sort.by = key as AssetSortBy;
-									}
-								}}
-							>
-								<MaterialIcon
-									iconName={`arrow_${sort.by === key && sort.order === "ASC" ? "upward" : "downward"}`}
-								/>
-								{snakeToTitle(key)}
-							</button>
-						</th>
-					{/each}
-				</tr>
-			</thead>
-			<tbody>
-				{#each allAssetsData as asset}
-					{@render assetComponentListOption(asset)}
-				{/each}
-			</tbody>
-		</table>
-	</div>
+    <div
+        bind:this={assetGridDisplayEl}
+        class="viz-asset-table-container {assetGridDisplayProps.class}"
+        class:is-active={selectionManager.activeScopeId === scopeId}
+        {...assetGridDisplayProps}
+        use:unselectImagesOnClickOutsideAssetContainer
+        onclick={handleContainerClick}
+        onfocusin={onFocus}
+    >
+        <table>
+            <thead
+                oncontextmenu={(e) => {
+                    e.preventDefault();
+                    openColumnSelector();
+                }}
+            >
+                <tr>
+                    <th>Preview</th>
+                    {#each visibleKeys as key}
+                        <th>
+                            <button
+                                onclick={() => {
+                                    if (sort.by === key) {
+                                        sort.order = sort.order === "ASC" ? "DESC" : "ASC";
+                                    } else {
+                                        sort.by = key as AssetSortBy;
+                                    }
+                                }}
+                            >
+                                <MaterialIcon
+                                    iconName={`arrow_${sort.by === key && sort.order === "ASC" ? "upward" : "downward"}`}
+                                />
+                                {snakeToTitle(key)}
+                            </button>
+                        </th>
+                    {/each}
+                </tr>
+            </thead>
+            <tbody>
+                {#each allAssetsData as asset}
+                    {@render assetComponentListOption(asset)}
+                {/each}
+            </tbody>
+        </table>
+    </div>
 {/snippet}
 
 {#if allAssetsData.length === 0}
-	{#if searchValue}
-		<div class="no-results">
-			<p>No results found for "{searchValue}"</p>
-		</div>
-	{:else}
-		<div>
-			<p>{noAssetsMessage}</p>
-		</div>
-	{/if}
+    {#if searchValue}
+        <div class="no-results">
+            <p>No results found for "{searchValue}"</p>
+        </div>
+    {:else}
+        <div>
+            <p>{noAssetsMessage}</p>
+        </div>
+    {/if}
 {:else if view === "list" || sort.display === "list"}
-	{@render assetTable()}
+    {@render assetTable()}
 {:else if view === "thumbnails"}
-	<div
-		bind:this={assetGridDisplayEl}
-		class="viz-asset-grid-container {assetGridDisplayProps.class}"
-		class:is-active={selectionManager.activeScopeId === scopeId}
-		{...assetGridDisplayProps}
-		use:unselectImagesOnClickOutsideAssetContainer
-		onclick={handleContainerClick}
-		onfocusin={onFocus}
-	>
-		{#each allAssetsData as asset}
-			{@render assetComponentCard(asset)}
-		{/each}
-	</div>
+    <div
+        bind:this={assetGridDisplayEl}
+        class="viz-asset-grid-container {assetGridDisplayProps.class}"
+        class:is-active={selectionManager.activeScopeId === scopeId}
+        {...assetGridDisplayProps}
+        use:unselectImagesOnClickOutsideAssetContainer
+        onclick={handleContainerClick}
+        onfocusin={onFocus}
+    >
+        {#each allAssetsData as asset}
+            {@render assetComponentCard(asset)}
+        {/each}
+    </div>
 {/if}
 
 <style lang="scss">
-	.viz-asset-grid-container {
-		box-sizing: border-box;
-		margin: 2rem 0;
-		padding: 0 1rem;
-		display: grid;
-		gap: 1em;
-		width: 100%;
-		max-width: 100%;
-		text-overflow: clip;
-		justify-content: center;
-		grid-template-columns: repeat(auto-fill, minmax(15em, 1fr));
-	}
+    .viz-asset-grid-container {
+        box-sizing: border-box;
+        margin: 2rem 0;
+        padding: 0 1rem;
+        display: grid;
+        gap: 1em;
+        width: 100%;
+        max-width: 100%;
+        text-overflow: clip;
+        justify-content: center;
+        grid-template-columns: repeat(auto-fill, minmax(15em, 1fr));
+    }
 
-	/* Zebra striping for grid cards (matches table zebra) */
-	.viz-asset-grid-container > .asset-card {
-		background-color: var(--viz-bg-color);
-		transition: background-color 120ms ease-in-out;
-	}
+    /* Zebra striping for grid cards (matches table zebra) */
+    .viz-asset-grid-container > .asset-card {
+        background-color: var(--viz-bg-color);
+        transition: background-color 120ms ease-in-out;
+    }
 
-	.viz-asset-grid-container > .asset-card:nth-child(even) {
-		background-color: color-mix(in srgb, var(--viz-bg-color) 78%, white 22%);
-	}
+    .viz-asset-grid-container > .asset-card:nth-child(even) {
+        background-color: color-mix(in srgb, var(--viz-bg-color) 78%, white 22%);
+    }
 
-	.viz-asset-grid-container > .asset-card:hover {
-		background-color: color-mix(in srgb, var(--viz-bg-color) 70%, white 30%);
-	}
+    .viz-asset-grid-container > .asset-card:hover {
+        background-color: color-mix(in srgb, var(--viz-bg-color) 70%, white 30%);
+    }
 
-	.viz-asset-grid-container > .asset-card.selected-card,
-	.viz-asset-grid-container > .asset-card:focus-visible {
-		background-color: color-mix(in srgb, var(--viz-bg-color) 60%, white 40%);
-		outline: 2px solid var(--viz-60);
-		outline-offset: 0px;
-		border-radius: 0.5em;
-	}
+    .viz-asset-grid-container > .asset-card.selected-card,
+    .viz-asset-grid-container > .asset-card:focus-visible {
+        background-color: color-mix(in srgb, var(--viz-bg-color) 60%, white 40%);
+        outline: 2px solid var(--viz-60);
+        outline-offset: 0px;
+        border-radius: 0.5em;
+    }
 
-	.viz-asset-grid-container.is-active > .asset-card.selected-card,
-	.viz-asset-grid-container.is-active > .asset-card:focus-visible {
-		outline-color: var(--viz-primary);
-	}
+    .viz-asset-grid-container.is-active > .asset-card.selected-card,
+    .viz-asset-grid-container.is-active > .asset-card:focus-visible {
+        outline-color: var(--viz-primary);
+    }
 
-	.asset-card {
-		display: flex;
-		flex-direction: column;
-		justify-content: flex-start;
-		border-radius: 0.5em;
-		overflow: hidden;
-		outline: none;
-	}
+    .asset-card {
+        display: flex;
+        flex-direction: column;
+        justify-content: flex-start;
+        border-radius: 0.5em;
+        overflow: hidden;
+        outline: none;
+    }
 
-	.asset-card.disabled-asset {
-		cursor: not-allowed;
-		pointer-events: none;
-		opacity: 0.65;
-		position: relative;
+    .asset-card.disabled-asset {
+        cursor: not-allowed;
+        pointer-events: none;
+        opacity: 0.65;
+        position: relative;
 
-		.disabled-overlay {
-			position: absolute;
-			top: 0;
-			left: 0;
-			right: 0;
-			bottom: 0;
-			background: rgba(0, 0, 0, 0.45);
-			z-index: 5;
-			pointer-events: none;
-		}
-	}
+        .disabled-overlay {
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(0, 0, 0, 0.45);
+            z-index: 5;
+            pointer-events: none;
+        }
+    }
 
-	.viz-asset-table-container {
-		width: 100%;
-		margin: 2em 0em;
-		background: transparent;
-		box-sizing: border-box;
-		overflow-x: hidden;
+    .viz-asset-table-container {
+        width: 100%;
+        margin: 2em 0em;
+        background: transparent;
+        box-sizing: border-box;
+        overflow-x: hidden;
 
-		table {
-			width: 100%;
-			table-layout: fixed;
-			border-collapse: collapse;
-			font-size: 0.95rem;
-			color: var(--viz-text-color);
-			display: table;
-		}
+        table {
+            width: 100%;
+            table-layout: fixed;
+            border-collapse: collapse;
+            font-size: 0.95rem;
+            color: var(--viz-text-color);
+            display: table;
+        }
 
-		thead,
-		tbody {
-			display: table-row-group;
-		}
+        thead,
+        tbody {
+            display: table-row-group;
+        }
 
-		tr {
-			display: table-row;
-		}
+        tr {
+            display: table-row;
+        }
 
-		th,
-		td {
-			display: table-cell;
-		}
+        th,
+        td {
+            display: table-cell;
+        }
 
-		thead th {
-			position: sticky;
-			/* Offset sticky headers by the toolbar height so headers sit below any sticky toolbar */
-			top: 0px;
-			z-index: 2;
-			color: var(--viz-text-color);
-			background-color: var(--viz-bg-color);
-			text-align: left;
-			font-weight: 600;
-			padding: 0.6rem 0.75rem;
-			vertical-align: middle;
-			border-bottom: 1px solid var(--viz-90);
+        thead th {
+            position: sticky;
+            /* Offset sticky headers by the toolbar height so headers sit below any sticky toolbar */
+            top: 0px;
+            z-index: 2;
+            color: var(--viz-text-color);
+            background-color: var(--viz-bg-color);
+            text-align: left;
+            font-weight: 600;
+            padding: 0.6rem 0.75rem;
+            vertical-align: middle;
+            border-bottom: 1px solid var(--viz-90);
 
-			button {
-				display: inline-flex;
-				align-items: center;
-				gap: 0.5rem;
-				background: transparent;
-				border: none;
-				color: inherit;
-				cursor: pointer;
-				font: inherit;
-				padding: 0;
-			}
-		}
+            button {
+                display: inline-flex;
+                align-items: center;
+                gap: 0.5rem;
+                background: transparent;
+                border: none;
+                color: inherit;
+                cursor: pointer;
+                font: inherit;
+                padding: 0;
+            }
+        }
 
-		tbody tr {
-			transition: background 120ms ease-in-out;
-			background-color: var(--viz-bg-color);
+        tbody tr {
+            transition: background 120ms ease-in-out;
+            background-color: var(--viz-bg-color);
 
-			&:nth-child(even) {
-				background-color: color-mix(
-					in srgb,
-					var(--viz-bg-color) 80%,
-					white 15%
-				);
-			}
+            &:nth-child(even) {
+                background-color: color-mix(in srgb, var(--viz-bg-color) 80%, white 15%);
+            }
 
-			&:hover {
-				background: color-mix(in srgb, var(--viz-bg-color) 70%, white 10%);
-			}
+            &:hover {
+                background: color-mix(in srgb, var(--viz-bg-color) 70%, white 10%);
+            }
 
-			&.selected-card,
-			&:focus-visible {
-				background: color-mix(in srgb, var(--viz-bg-color) 60%, white 12%);
-			}
+            &.selected-card,
+            &:focus-visible {
+                background: color-mix(in srgb, var(--viz-bg-color) 60%, white 12%);
+            }
 
-			/* Table row selection accent: show a left indicator inside the preview cell */
-			&.selected-card td:first-child,
-			&:focus-visible td:first-child {
-				position: relative;
-			}
+            /* Table row selection accent: show a left indicator inside the preview cell */
+            &.selected-card td:first-child,
+            &:focus-visible td:first-child {
+                position: relative;
+            }
 
-			&.selected-card td:first-child::before,
-			&:focus-visible td:first-child::before {
-				content: "";
-				position: absolute;
-				left: 4px;
-				top: 8px;
-				bottom: 8px;
-				width: 2px;
-				background: var(--viz-primary);
-			}
+            &.selected-card td:first-child::before,
+            &:focus-visible td:first-child::before {
+                content: "";
+                position: absolute;
+                left: 4px;
+                top: 8px;
+                bottom: 8px;
+                width: 2px;
+                background: var(--viz-primary);
+            }
 
-			&.selected-card {
-				background-color: color-mix(in srgb, var(--viz-bg-color) 100%, var(--viz-primary) 20%);
-			}
+            &.selected-card {
+                background-color: color-mix(
+                    in srgb,
+                    var(--viz-bg-color) 100%,
+                    var(--viz-primary) 20%
+                );
+            }
 
-			td {
-				padding: 0.6rem 0.75rem;
-				vertical-align: middle;
-				border-bottom: 1px solid var(--viz-100);
-				white-space: nowrap;
-				overflow: hidden;
-				text-overflow: ellipsis;
-			}
-		}
-	}
+            td {
+                padding: 0.6rem 0.75rem;
+                vertical-align: middle;
+                border-bottom: 1px solid var(--viz-100);
+                white-space: nowrap;
+                overflow: hidden;
+                text-overflow: ellipsis;
+            }
+        }
+    }
 
-	// Preview column: thumbnail + meta stacked
-	.asset-snippet-cell {
-		width: 220px;
-		max-width: 260px;
-		min-width: 160px;
-		padding: 0.5rem;
-		vertical-align: middle;
-		display: flex;
-		align-items: center;
-		gap: 0.75rem;
+    // Preview column: thumbnail + meta stacked
+    .asset-snippet-cell {
+        width: 220px;
+        max-width: 260px;
+        min-width: 160px;
+        padding: 0.5rem;
+        vertical-align: middle;
+        display: flex;
+        align-items: center;
+        gap: 0.75rem;
 
-		.asset-snippet-inner {
-			display: flex;
-			align-items: center;
-			gap: 0.75rem;
-		}
+        .asset-snippet-inner {
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+        }
 
-		.asset-table-thumb,
-		img {
-			width: 6em;
-			height: 4em;
-			object-fit: contain;
-			border-radius: 0.4em;
-			flex-shrink: 0;
-			background: var(--viz-80);
-		}
+        .asset-table-thumb,
+        img {
+            width: 6em;
+            height: 4em;
+            object-fit: contain;
+            border-radius: 0.4em;
+            flex-shrink: 0;
+            background: var(--viz-80);
+        }
 
-		.asset-snippet-meta {
-			display: flex;
-			flex-direction: column;
-			gap: 0.25rem;
-			overflow: hidden;
-		}
+        .asset-snippet-meta {
+            display: flex;
+            flex-direction: column;
+            gap: 0.25rem;
+            overflow: hidden;
+        }
 
-		.asset-snippet-name {
-			font-weight: 600;
-			white-space: nowrap;
-			overflow: hidden;
-			text-overflow: ellipsis;
-			max-width: 16rem;
-		}
+        .asset-snippet-name {
+            font-weight: 600;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            max-width: 16rem;
+        }
 
-		.asset-snippet-sub {
-			font-size: 0.85rem;
-			color: var(--viz-40);
-		}
-	}
+        .asset-snippet-sub {
+            font-size: 0.85rem;
+            color: var(--viz-40);
+        }
+    }
 
-	// Values columns should wrap gracefully on small widths
-	.viz-asset-table-container tbody td:not(.asset-snippet-cell) {
-		max-width: 18ch;
-	}
+    // Values columns should wrap gracefully on small widths
+    .viz-asset-table-container tbody td:not(.asset-snippet-cell) {
+        max-width: 18ch;
+    }
 
-	// Responsive adjustments
-	@media (max-width: 800px) {
-		.asset-snippet-cell {
-			width: 160px;
-			min-width: 120px;
-		}
-	}
+    // Responsive adjustments
+    @media (max-width: 800px) {
+        .asset-snippet-cell {
+            width: 160px;
+            min-width: 120px;
+        }
+    }
 </style>

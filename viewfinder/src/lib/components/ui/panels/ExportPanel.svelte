@@ -104,15 +104,8 @@
     <div class="export-body">
         <!-- DESTINATION -->
         <div class="section" class:expanded={sections.destination}>
-            <button
-                class="section-header"
-                onclick={() => toggleSection("destination")}
-            >
-                <MaterialIcon
-                    iconName={sections.destination
-                        ? "expand_more"
-                        : "chevron_right"}
-                />
+            <button class="section-header" onclick={() => toggleSection("destination")}>
+                <MaterialIcon iconName={sections.destination ? "expand_more" : "chevron_right"} />
                 <span>Destination</span>
             </button>
             {#if sections.destination}
@@ -130,23 +123,15 @@
 
         <!-- FILE NAMING -->
         <div class="section" class:expanded={sections.naming}>
-            <button
-                class="section-header"
-                onclick={() => toggleSection("naming")}
-            >
-                <MaterialIcon
-                    iconName={sections.naming ? "expand_more" : "chevron_right"}
-                />
+            <button class="section-header" onclick={() => toggleSection("naming")}>
+                <MaterialIcon iconName={sections.naming ? "expand_more" : "chevron_right"} />
                 <span>File Naming</span>
             </button>
             {#if sections.naming}
                 <div class="section-content" transition:slide>
                     <div class="control-group">
                         <label for="naming-mode">Naming:</label>
-                        <Dropdown
-                            items={namingItems}
-                            bind:selectedItemId={namingMode}
-                        />
+                        <Dropdown items={namingItems} bind:selectedItemId={namingMode} />
                     </div>
                     {#if namingMode.includes("custom")}
                         <div class="control-group">
@@ -165,15 +150,8 @@
 
         <!-- FILE SETTINGS -->
         <div class="section" class:expanded={sections.settings}>
-            <button
-                class="section-header"
-                onclick={() => toggleSection("settings")}
-            >
-                <MaterialIcon
-                    iconName={sections.settings
-                        ? "expand_more"
-                        : "chevron_right"}
-                />
+            <button class="section-header" onclick={() => toggleSection("settings")}>
+                <MaterialIcon iconName={sections.settings ? "expand_more" : "chevron_right"} />
                 <span>File Settings</span>
             </button>
             {#if sections.settings}
@@ -181,10 +159,7 @@
                     <div class="control-row">
                         <div class="control-group">
                             <label for="format-select">Format:</label>
-                            <Dropdown
-                                items={formatItems}
-                                bind:selectedItemId={format}
-                            />
+                            <Dropdown items={formatItems} bind:selectedItemId={format} />
                         </div>
                         {#if ["jpg", "webp", "avif"].includes(format)}
                             <div class="control-group quality-slider">
@@ -201,20 +176,11 @@
                     </div>
                     <div class="control-group">
                         <label for="colorspace-select">Color Space:</label>
-                        <Dropdown
-                            items={colorSpaceItems}
-                            bind:selectedItemId={colorSpace}
-                        />
+                        <Dropdown items={colorSpaceItems} bind:selectedItemId={colorSpace} />
                     </div>
                     <div class="control-group checkbox">
-                        <input
-                            type="checkbox"
-                            id="strip-meta"
-                            bind:checked={stripMetadata}
-                        />
-                        <label for="strip-meta"
-                            >Remove all metadata (EXIF, XMP, IPTC)</label
-                        >
+                        <input type="checkbox" id="strip-meta" bind:checked={stripMetadata} />
+                        <label for="strip-meta">Remove all metadata (EXIF, XMP, IPTC)</label>
                     </div>
                 </div>
             {/if}
@@ -222,23 +188,15 @@
 
         <!-- IMAGE SIZING -->
         <div class="section" class:expanded={sections.sizing}>
-            <button
-                class="section-header"
-                onclick={() => toggleSection("sizing")}
-            >
-                <MaterialIcon
-                    iconName={sections.sizing ? "expand_more" : "chevron_right"}
-                />
+            <button class="section-header" onclick={() => toggleSection("sizing")}>
+                <MaterialIcon iconName={sections.sizing ? "expand_more" : "chevron_right"} />
                 <span>Image Sizing</span>
             </button>
             {#if sections.sizing}
                 <div class="section-content" transition:slide>
                     <div class="control-group">
                         <label for="resize-mode">Resize to Fit:</label>
-                        <Dropdown
-                            items={resizeItems}
-                            bind:selectedItemId={resizeMode}
-                        />
+                        <Dropdown items={resizeItems} bind:selectedItemId={resizeMode} />
                     </div>
                     {#if resizeMode !== "none"}
                         <div class="control-row dimensions">
@@ -251,25 +209,15 @@
                                               ? "W"
                                               : "Edge"}:</label
                                     >
-                                    <input
-                                        id="resize-w"
-                                        type="number"
-                                        bind:value={resizeWidth}
-                                    />
+                                    <input id="resize-w" type="number" bind:value={resizeWidth} />
                                 </div>
                             {/if}
                             {#if ["height", "dimensions"].includes(resizeMode)}
                                 <div class="control-group">
                                     <label for="resize-h"
-                                        >{resizeMode === "height"
-                                            ? "Height"
-                                            : "H"}:</label
+                                        >{resizeMode === "height" ? "Height" : "H"}:</label
                                     >
-                                    <input
-                                        id="resize-h"
-                                        type="number"
-                                        bind:value={resizeHeight}
-                                    />
+                                    <input id="resize-h" type="number" bind:value={resizeHeight} />
                                 </div>
                             {/if}
                             <span class="unit">px</span>
@@ -281,44 +229,26 @@
 
         <!-- METADATA (Placeholder) -->
         <div class="section" class:expanded={sections.metadata}>
-            <button
-                class="section-header"
-                onclick={() => toggleSection("metadata")}
-            >
-                <MaterialIcon
-                    iconName={sections.metadata
-                        ? "expand_more"
-                        : "chevron_right"}
-                />
+            <button class="section-header" onclick={() => toggleSection("metadata")}>
+                <MaterialIcon iconName={sections.metadata ? "expand_more" : "chevron_right"} />
                 <span>Metadata</span>
             </button>
             {#if sections.metadata}
                 <div class="section-content" transition:slide>
-                    <p class="placeholder-text">
-                        Copyright and Contact Info will be added here.
-                    </p>
+                    <p class="placeholder-text">Copyright and Contact Info will be added here.</p>
                 </div>
             {/if}
         </div>
 
         <!-- WATERMARKING (Placeholder) -->
         <div class="section" class:expanded={sections.watermarking}>
-            <button
-                class="section-header"
-                onclick={() => toggleSection("watermarking")}
-            >
-                <MaterialIcon
-                    iconName={sections.watermarking
-                        ? "expand_more"
-                        : "chevron_right"}
-                />
+            <button class="section-header" onclick={() => toggleSection("watermarking")}>
+                <MaterialIcon iconName={sections.watermarking ? "expand_more" : "chevron_right"} />
                 <span>Watermarking</span>
             </button>
             {#if sections.watermarking}
                 <div class="section-content" transition:slide>
-                    <p class="placeholder-text">
-                        Watermarking options will be added here.
-                    </p>
+                    <p class="placeholder-text">Watermarking options will be added here.</p>
                 </div>
             {/if}
         </div>
@@ -348,7 +278,7 @@
     }
 
     .export-header {
-		padding: 1rem;
+        padding: 1rem;
         border-bottom: 1px solid var(--viz-80);
         background-color: var(--viz-bg-color);
 

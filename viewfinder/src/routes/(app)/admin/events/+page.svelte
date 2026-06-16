@@ -1,766 +1,732 @@
 <script lang="ts">
-	import { onMount, onDestroy } from "svelte";
-	import Button from "$lib/components/ui/Button.svelte";
-	import MaterialIcon from "$lib/components/ui/MaterialIcon.svelte";
-	import { getWsStats, getWsMetrics, getEventsSince } from "$lib/api";
-	import { toastState } from "$lib/toast-notifcations/notif-state.svelte";
-	import type { PageData } from "./$types";
-	import type {
-		WsStatsResponse,
-		WsMetricsResponse,
-		EventRecord
-	} from "$lib/api";
-	import ConfirmationModal from "$lib/components/modals/ConfirmationModal.svelte";
-	import AdminRouteShell from "$lib/components/admin/AdminRouteShell.svelte";
-	import { modalsManager } from "$lib/components/modals/manager/ModalManager.svelte";
-	import InputSelect from "$lib/components/ui/InputSelect.svelte";
+    import { onMount, onDestroy } from "svelte";
+    import Button from "$lib/components/ui/Button.svelte";
+    import MaterialIcon from "$lib/components/ui/MaterialIcon.svelte";
+    import { getWsStats, getWsMetrics, getEventsSince } from "$lib/api";
+    import { toastState } from "$lib/toast-notifcations/notif-state.svelte";
+    import type { PageData } from "./$types";
+    import type { WsStatsResponse, WsMetricsResponse, EventRecord } from "$lib/api";
+    import ConfirmationModal from "$lib/components/modals/ConfirmationModal.svelte";
+    import AdminRouteShell from "$lib/components/admin/AdminRouteShell.svelte";
+    import { modalsManager } from "$lib/components/modals/manager/ModalManager.svelte";
+    import InputSelect from "$lib/components/ui/InputSelect.svelte";
 
-	type EventHistoryItem = EventRecord;
+    type EventHistoryItem = EventRecord;
 
-	let { data }: { data: PageData } = $props();
+    let { data }: { data: PageData } = $props();
 
-	let refreshing = $state(false);
+    let refreshing = $state(false);
 
-	// WS Stats - initialize from load data
-	let stats = $derived<WsStatsResponse>(data.stats);
+    // WS Stats - initialize from load data
+    let stats = $derived<WsStatsResponse>(data.stats);
 
-	// WS Metrics - initialize from load data
-	let metrics = $derived<WsMetricsResponse>(data.metrics);
+    // WS Metrics - initialize from load data
+    let metrics = $derived<WsMetricsResponse>(data.metrics);
 
-	// Event History - initialize from load data
-	let history = $derived<EventHistoryItem[]>(data.history || []);
-	let historyFilter = $state("all");
-	let historySearch = $state("");
+    // Event History - initialize from load data
+    let history = $derived<EventHistoryItem[]>(data.history || []);
+    let historyFilter = $state("all");
+    let historySearch = $state("");
 
-	// Auto-refresh
-	let autoRefresh = $state(true);
-	let refreshInterval: number | null = null;
+    // Auto-refresh
+    let autoRefresh = $state(true);
+    let refreshInterval: number | null = null;
 
-	function showMessage(
-		message: string,
-		type: "success" | "error" | "info" = "info"
-	): void {
-		toastState.addToast({ message, type });
-	}
+    function showMessage(message: string, type: "success" | "error" | "info" = "info"): void {
+        toastState.addToast({ message, type });
+    }
 
-	async function loadStats(): Promise<void> {
-		try {
-			const res = await getWsStats();
-			if (res.status === 200) {
-				stats = res.data;
-			}
-		} catch (e) {
-			console.error("Failed to load stats:", e);
-		}
-	}
+    async function loadStats(): Promise<void> {
+        try {
+            const res = await getWsStats();
+            if (res.status === 200) {
+                stats = res.data;
+            }
+        } catch (e) {
+            console.error("Failed to load stats:", e);
+        }
+    }
 
-	async function loadMetrics(): Promise<void> {
-		try {
-			const res = await getWsMetrics();
-			if (res.status === 200) {
-				metrics = res.data;
-			}
-		} catch (e) {
-			console.error("Failed to load metrics:", e);
-		}
-	}
+    async function loadMetrics(): Promise<void> {
+        try {
+            const res = await getWsMetrics();
+            if (res.status === 200) {
+                metrics = res.data;
+            }
+        } catch (e) {
+            console.error("Failed to load metrics:", e);
+        }
+    }
 
-	async function loadHistory(): Promise<void> {
-		try {
-			const res = await getEventsSince({ limit: 50 });
-			if (res.status === 200 && "events" in res.data) {
-				history = res.data.events || [];
-			}
-		} catch (e) {
-			console.error("Failed to load history:", e);
-		}
-	}
+    async function loadHistory(): Promise<void> {
+        try {
+            const res = await getEventsSince({ limit: 50 });
+            if (res.status === 200 && "events" in res.data) {
+                history = res.data.events || [];
+            }
+        } catch (e) {
+            console.error("Failed to load history:", e);
+        }
+    }
 
-	async function refreshAll(): Promise<void> {
-		refreshing = true;
-		try {
-			await Promise.all([loadStats(), loadMetrics(), loadHistory()]);
-		} catch (e) {
-			showMessage("Refresh failed: " + (e as Error).message, "error");
-		} finally {
-			refreshing = false;
-		}
-	}
+    async function refreshAll(): Promise<void> {
+        refreshing = true;
+        try {
+            await Promise.all([loadStats(), loadMetrics(), loadHistory()]);
+        } catch (e) {
+            showMessage("Refresh failed: " + (e as Error).message, "error");
+        } finally {
+            refreshing = false;
+        }
+    }
 
-	function requestClearHistory() {
-		modalsManager.open(
-			ConfirmationModal,
-			{
-				title: "Clear Event History",
-				confirmText: "Clear History",
-				onConfirm: handleClearConfirm
-			},
-			{ heading: "Clear Event History" }
-		);
-	}
+    function requestClearHistory() {
+        modalsManager.open(
+            ConfirmationModal,
+            {
+                title: "Clear Event History",
+                confirmText: "Clear History",
+                onConfirm: handleClearConfirm
+            },
+            { heading: "Clear Event History" }
+        );
+    }
 
-	async function handleClearConfirm(): Promise<void> {
-		showMessage(
-			"Clear event history endpoint not yet implemented for WebSocket",
-			"info"
-		);
-		// TODO: Implement clearWsEventHistory endpoint if needed
-	}
+    async function handleClearConfirm(): Promise<void> {
+        showMessage("Clear event history endpoint not yet implemented for WebSocket", "info");
+        // TODO: Implement clearWsEventHistory endpoint if needed
+    }
 
-	function toggleAutoRefresh(): void {
-		autoRefresh = !autoRefresh;
-		if (autoRefresh) {
-			startAutoRefresh();
-		} else {
-			stopAutoRefresh();
-		}
-	}
+    function toggleAutoRefresh(): void {
+        autoRefresh = !autoRefresh;
+        if (autoRefresh) {
+            startAutoRefresh();
+        } else {
+            stopAutoRefresh();
+        }
+    }
 
-	function startAutoRefresh(): void {
-		if (refreshInterval) {
-return;
-}
-		refreshInterval = window.setInterval(refreshAll, 5000);
-	}
+    function startAutoRefresh(): void {
+        if (refreshInterval) {
+            return;
+        }
+        refreshInterval = window.setInterval(refreshAll, 5000);
+    }
 
-	function stopAutoRefresh(): void {
-		if (refreshInterval) {
-			clearInterval(refreshInterval);
-			refreshInterval = null;
-		}
-	}
+    function stopAutoRefresh(): void {
+        if (refreshInterval) {
+            clearInterval(refreshInterval);
+            refreshInterval = null;
+        }
+    }
 
-	const filteredHistory = $derived(() => {
-		let filtered = history;
+    const filteredHistory = $derived(() => {
+        let filtered = history;
 
-		// filter by event name (server returns `event` per OpenAPI schema)
-		if (historyFilter !== "all") {
-			filtered = filtered.filter((e) => e.event === historyFilter);
-		}
+        // filter by event name (server returns `event` per OpenAPI schema)
+        if (historyFilter !== "all") {
+            filtered = filtered.filter((e) => e.event === historyFilter);
+        }
 
-		if (historySearch) {
-			const search = historySearch.toLowerCase();
-			filtered = filtered.filter(
-				(e) =>
-					String(e.event || "")
-						.toLowerCase()
-						.includes(search) ||
-					JSON.stringify(e.data).toLowerCase().includes(search)
-			);
-		}
+        if (historySearch) {
+            const search = historySearch.toLowerCase();
+            filtered = filtered.filter(
+                (e) =>
+                    String(e.event || "")
+                        .toLowerCase()
+                        .includes(search) || JSON.stringify(e.data).toLowerCase().includes(search)
+            );
+        }
 
-		return filtered;
-	});
+        return filtered;
+    });
 
-	const eventTypes = $derived((): string[] => {
-		const types = new Set<string>();
-		history.forEach((e) => types.add(e.event));
-		return Array.from(types).filter(Boolean).sort();
-	});
+    const eventTypes = $derived((): string[] => {
+        const types = new Set<string>();
+        history.forEach((e) => types.add(e.event));
+        return Array.from(types).filter(Boolean).sort();
+    });
 
-	const filterOptions = $derived([
-		{ value: "all", label: "All Events" },
-		...eventTypes().map((type) => ({ value: type, label: type }))
-	]);
+    const filterOptions = $derived([
+        { value: "all", label: "All Events" },
+        ...eventTypes().map((type) => ({ value: type, label: type }))
+    ]);
 
-	function formatTimestamp(ts: string): string {
-		return new Date(ts).toLocaleString();
-	}
+    function formatTimestamp(ts: string): string {
+        return new Date(ts).toLocaleString();
+    }
 
-	function getMaxEventCount(): number {
-		const eventsByType = metrics.eventsByType as Record<string, number>;
-		const values = Object.values(eventsByType || {});
-		const nums = values.map((v) =>
-			typeof v === "number" ? v : Number(v) || 0
-		);
-		return nums.length ? Math.max(...nums) : 0;
-	}
+    function getMaxEventCount(): number {
+        const eventsByType = metrics.eventsByType as Record<string, number>;
+        const values = Object.values(eventsByType || {});
+        const nums = values.map((v) => (typeof v === "number" ? v : Number(v) || 0));
+        return nums.length ? Math.max(...nums) : 0;
+    }
 
-	function getEventFillWidth(count: unknown): number {
-		const num = typeof count === "number" ? count : Number(count) || 0;
-		const max = getMaxEventCount();
-		return max > 0 ? (num / max) * 100 : 0;
-	}
+    function getEventFillWidth(count: unknown): number {
+        const num = typeof count === "number" ? count : Number(count) || 0;
+        const max = getMaxEventCount();
+        return max > 0 ? (num / max) * 100 : 0;
+    }
 
-	function formatJSON(data: any): string {
-		return JSON.stringify(data, null, 2);
-	}
+    function formatJSON(data: any): string {
+        return JSON.stringify(data, null, 2);
+    }
 
-	onMount(async () => {
-		if (autoRefresh) {
-			startAutoRefresh();
-		}
-	});
+    onMount(async () => {
+        if (autoRefresh) {
+            startAutoRefresh();
+        }
+    });
 
-	onDestroy(() => {
-		stopAutoRefresh();
-	});
+    onDestroy(() => {
+        stopAutoRefresh();
+    });
 </script>
 
 <svelte:head>
-	<title>Events - Admin</title>
+    <title>Events - Admin</title>
 </svelte:head>
 
-<AdminRouteShell
-	heading="Event Monitor"
-	description="WebSocket metrics and event history"
->
-	{#snippet actions()}
-		<div class="header-actions">
-			<Button
-				variant="small"
-				onclick={toggleAutoRefresh}
-				class="control-button"
-			>
-				<MaterialIcon iconName={autoRefresh ? "pause" : "play_arrow"} />
-				{autoRefresh ? "Auto-refresh: ON" : "Auto-refresh: OFF"}
-			</Button>
-			<Button
-				variant="small"
-				onclick={refreshAll}
-				disabled={refreshing}
-				class="control-button"
-			>
-				<MaterialIcon iconName="refresh" />
-				Refresh
-			</Button>
-		</div>
-	{/snippet}
+<AdminRouteShell heading="Event Monitor" description="WebSocket metrics and event history">
+    {#snippet actions()}
+        <div class="header-actions">
+            <Button variant="small" onclick={toggleAutoRefresh} class="control-button">
+                <MaterialIcon iconName={autoRefresh ? "pause" : "play_arrow"} />
+                {autoRefresh ? "Auto-refresh: ON" : "Auto-refresh: OFF"}
+            </Button>
+            <Button
+                variant="small"
+                onclick={refreshAll}
+                disabled={refreshing}
+                class="control-button"
+            >
+                <MaterialIcon iconName="refresh" />
+                Refresh
+            </Button>
+        </div>
+    {/snippet}
 
-	<div class="admin-page-content">
-		<!-- Connection Stats -->
-		<section class="content-section">
-			<div class="section-header">
-				<MaterialIcon iconName="link" />
-				<h2>Connection Statistics</h2>
-			</div>
-			<div class="stats-grid">
-				<div class="stat-card">
-					<MaterialIcon iconName="sensors" />
-					<div class="stat-content">
-						<span class="stat-value">{stats.connectedClients}</span>
-						<span class="stat-label">Connected Clients</span>
-					</div>
-				</div>
-				<div class="stat-card">
-					<MaterialIcon iconName="timeline" />
-					<div class="stat-content">
-						<span class="stat-value">{metrics.totalEvents}</span>
-						<span class="stat-label">Total Events</span>
-					</div>
-				</div>
-				<div class="stat-card">
-					<MaterialIcon iconName="schedule" />
-					<div class="stat-content">
-						<span class="stat-value"
-							>{new Date(stats.timestamp).toLocaleTimeString()}</span
-						>
-						<span class="stat-label">Last Updated</span>
-					</div>
-				</div>
-				<div class="stat-card">
-					<MaterialIcon iconName="groups" />
-					<div class="stat-content">
-						<span class="stat-value">{stats.clientIds.length}</span>
-						<span class="stat-label">Active Clients</span>
-					</div>
-				</div>
-			</div>
-		</section>
+    <div class="admin-page-content">
+        <!-- Connection Stats -->
+        <section class="content-section">
+            <div class="section-header">
+                <MaterialIcon iconName="link" />
+                <h2>Connection Statistics</h2>
+            </div>
+            <div class="stats-grid">
+                <div class="stat-card">
+                    <MaterialIcon iconName="sensors" />
+                    <div class="stat-content">
+                        <span class="stat-value">{stats.connectedClients}</span>
+                        <span class="stat-label">Connected Clients</span>
+                    </div>
+                </div>
+                <div class="stat-card">
+                    <MaterialIcon iconName="timeline" />
+                    <div class="stat-content">
+                        <span class="stat-value">{metrics.totalEvents}</span>
+                        <span class="stat-label">Total Events</span>
+                    </div>
+                </div>
+                <div class="stat-card">
+                    <MaterialIcon iconName="schedule" />
+                    <div class="stat-content">
+                        <span class="stat-value"
+                            >{new Date(stats.timestamp).toLocaleTimeString()}</span
+                        >
+                        <span class="stat-label">Last Updated</span>
+                    </div>
+                </div>
+                <div class="stat-card">
+                    <MaterialIcon iconName="groups" />
+                    <div class="stat-content">
+                        <span class="stat-value">{stats.clientIds.length}</span>
+                        <span class="stat-label">Active Clients</span>
+                    </div>
+                </div>
+            </div>
+        </section>
 
-		<!-- Performance Metrics -->
-		<section class="content-section">
-			<div class="section-header">
-				<MaterialIcon iconName="analytics" />
-				<h2>Performance Metrics</h2>
-			</div>
-			<div class="metrics-grid">
-				<div class="metric-card">
-					<div class="metric-icon">
-						<MaterialIcon iconName="speed" />
-					</div>
-					<div class="metric-content">
-						<span class="metric-value">{metrics.totalEvents}</span>
-						<span class="metric-label">Total Events</span>
-					</div>
-				</div>
-				<div class="metric-card">
-					<div class="metric-icon">
-						<MaterialIcon iconName="trending_up" />
-					</div>
-					<div class="metric-content">
-						<span class="metric-value">{metrics.connectedClients}</span>
-						<span class="metric-label">Active Connections</span>
-					</div>
-				</div>
-				<div class="metric-card">
-					<div class="metric-icon">
-						<MaterialIcon iconName="lightbulb" />
-					</div>
-					<div class="metric-content">
-						<span class="metric-value"
-							>{Object.keys(metrics.eventsByType).length}</span
-						>
-						<span class="metric-label">Event Types</span>
-					</div>
-				</div>
-				<div class="metric-card">
-					<div class="metric-icon">
-						<MaterialIcon iconName="update" />
-					</div>
-					<div class="metric-content">
-						<span class="metric-value"
-							>{new Date(metrics.timestamp).toLocaleTimeString()}</span
-						>
-						<span class="metric-label">Last Update</span>
-					</div>
-				</div>
-			</div>
-		</section>
-		{#if Object.keys(metrics.eventsByType || {}).length > 0}
-			<!-- Event Types Distribution -->
-			<section class="content-section">
-				<div class="section-header">
-					<MaterialIcon iconName="bar_chart" />
-					<h2>Event Types Distribution</h2>
-				</div>
-				<div class="event-types">
-					{#each Object.entries(metrics.eventsByType || {}) as [type, count]}
-						<div class="event-type-card">
-							<div class="event-type-info">
-								<span class="event-type-name">{type}</span>
-								<span class="event-type-count">{count} events</span>
-							</div>
-							<div class="event-type-bar">
-								<div
-									class="event-type-fill"
-									style="width: {getEventFillWidth(count)}%"
-								></div>
-							</div>
-						</div>
-					{/each}
-				</div>
-			</section>
-		{/if}
+        <!-- Performance Metrics -->
+        <section class="content-section">
+            <div class="section-header">
+                <MaterialIcon iconName="analytics" />
+                <h2>Performance Metrics</h2>
+            </div>
+            <div class="metrics-grid">
+                <div class="metric-card">
+                    <div class="metric-icon">
+                        <MaterialIcon iconName="speed" />
+                    </div>
+                    <div class="metric-content">
+                        <span class="metric-value">{metrics.totalEvents}</span>
+                        <span class="metric-label">Total Events</span>
+                    </div>
+                </div>
+                <div class="metric-card">
+                    <div class="metric-icon">
+                        <MaterialIcon iconName="trending_up" />
+                    </div>
+                    <div class="metric-content">
+                        <span class="metric-value">{metrics.connectedClients}</span>
+                        <span class="metric-label">Active Connections</span>
+                    </div>
+                </div>
+                <div class="metric-card">
+                    <div class="metric-icon">
+                        <MaterialIcon iconName="lightbulb" />
+                    </div>
+                    <div class="metric-content">
+                        <span class="metric-value">{Object.keys(metrics.eventsByType).length}</span>
+                        <span class="metric-label">Event Types</span>
+                    </div>
+                </div>
+                <div class="metric-card">
+                    <div class="metric-icon">
+                        <MaterialIcon iconName="update" />
+                    </div>
+                    <div class="metric-content">
+                        <span class="metric-value"
+                            >{new Date(metrics.timestamp).toLocaleTimeString()}</span
+                        >
+                        <span class="metric-label">Last Update</span>
+                    </div>
+                </div>
+            </div>
+        </section>
+        {#if Object.keys(metrics.eventsByType || {}).length > 0}
+            <!-- Event Types Distribution -->
+            <section class="content-section">
+                <div class="section-header">
+                    <MaterialIcon iconName="bar_chart" />
+                    <h2>Event Types Distribution</h2>
+                </div>
+                <div class="event-types">
+                    {#each Object.entries(metrics.eventsByType || {}) as [type, count]}
+                        <div class="event-type-card">
+                            <div class="event-type-info">
+                                <span class="event-type-name">{type}</span>
+                                <span class="event-type-count">{count} events</span>
+                            </div>
+                            <div class="event-type-bar">
+                                <div
+                                    class="event-type-fill"
+                                    style="width: {getEventFillWidth(count)}%"
+                                ></div>
+                            </div>
+                        </div>
+                    {/each}
+                </div>
+            </section>
+        {/if}
 
-		<!-- Event History -->
-		<section class="content-section">
-			<div class="section-header">
-				<MaterialIcon iconName="history" />
-				<h2>Event History</h2>
-				<span class="badge">{history.length}</span>
-			</div>
+        <!-- Event History -->
+        <section class="content-section">
+            <div class="section-header">
+                <MaterialIcon iconName="history" />
+                <h2>Event History</h2>
+                <span class="badge">{history.length}</span>
+            </div>
 
-			<div class="history-controls">
-				<div class="filter-group">
-					<InputSelect
-						bind:value={historyFilter}
-						aria-label="Filter by event type"
-						options={filterOptions}
-					/>
-				</div>
-				<div class="search-group">
-					<MaterialIcon iconName="search" />
-					<input
-						type="text"
-						bind:value={historySearch}
-						placeholder="Search events..."
-					/>
-				</div>
-				<Button
-					variant="mini"
-					onclick={requestClearHistory}
-					class="control-button"
-				>
-					<MaterialIcon iconName="delete_sweep" />
-					Clear History
-				</Button>
-			</div>
+            <div class="history-controls">
+                <div class="filter-group">
+                    <InputSelect
+                        bind:value={historyFilter}
+                        aria-label="Filter by event type"
+                        options={filterOptions}
+                    />
+                </div>
+                <div class="search-group">
+                    <MaterialIcon iconName="search" />
+                    <input type="text" bind:value={historySearch} placeholder="Search events..." />
+                </div>
+                <Button variant="mini" onclick={requestClearHistory} class="control-button">
+                    <MaterialIcon iconName="delete_sweep" />
+                    Clear History
+                </Button>
+            </div>
 
-			{#if filteredHistory().length === 0}
-				<div class="empty-state">
-					<MaterialIcon iconName="inbox" />
-					<p>No events found</p>
-				</div>
-			{:else}
-				<div class="history-list">
-					{#each filteredHistory() as event}
-						<details class="event-item">
-							<summary class="event-summary">
-								<div class="event-header">
-									<span class="event-type">{event.event}</span>
-									<span class="event-time"
-										>{formatTimestamp(event.timestamp)}</span
-									>
-								</div>
-								<MaterialIcon iconName="arrow_drop_down" />
-							</summary>
-							<div class="event-details">
-								<div class="event-field">
-									<strong>Client ID:</strong>
-									<code>{event?.data?.clientId ?? "—"}</code>
-								</div>
-								<div class="event-field">
-									<strong>Data:</strong>
-									<pre>{formatJSON(event.data)}</pre>
-								</div>
-							</div>
-						</details>
-					{/each}
-				</div>
-			{/if}
-		</section>
-	</div>
+            {#if filteredHistory().length === 0}
+                <div class="empty-state">
+                    <MaterialIcon iconName="inbox" />
+                    <p>No events found</p>
+                </div>
+            {:else}
+                <div class="history-list">
+                    {#each filteredHistory() as event}
+                        <details class="event-item">
+                            <summary class="event-summary">
+                                <div class="event-header">
+                                    <span class="event-type">{event.event}</span>
+                                    <span class="event-time"
+                                        >{formatTimestamp(event.timestamp)}</span
+                                    >
+                                </div>
+                                <MaterialIcon iconName="arrow_drop_down" />
+                            </summary>
+                            <div class="event-details">
+                                <div class="event-field">
+                                    <strong>Client ID:</strong>
+                                    <code>{event?.data?.clientId ?? "—"}</code>
+                                </div>
+                                <div class="event-field">
+                                    <strong>Data:</strong>
+                                    <pre>{formatJSON(event.data)}</pre>
+                                </div>
+                            </div>
+                        </details>
+                    {/each}
+                </div>
+            {/if}
+        </section>
+    </div>
 </AdminRouteShell>
 
 <style lang="scss">
-	.admin-page-content {
-		display: flex;
-		flex-direction: column;
-		gap: 1.5rem;
-	}
+    .admin-page-content {
+        display: flex;
+        flex-direction: column;
+        gap: 1.5rem;
+    }
 
-	.header-actions {
-		display: flex;
-		gap: 0.75rem;
-	}
+    .header-actions {
+        display: flex;
+        gap: 0.75rem;
+    }
 
-	.content-section {
-		background: var(--viz-100);
-		border-radius: 12px;
-		padding: 1.5rem;
-		border: 1px solid var(--viz-90);
-	}
+    .content-section {
+        background: var(--viz-100);
+        border-radius: 12px;
+        padding: 1.5rem;
+        border: 1px solid var(--viz-90);
+    }
 
-	.section-header {
-		display: flex;
-		align-items: center;
-		gap: 0.75rem;
-		margin-bottom: 1.25rem;
+    .section-header {
+        display: flex;
+        align-items: center;
+        gap: 0.75rem;
+        margin-bottom: 1.25rem;
 
-		h2 {
-			margin: 0;
-			font-size: 1.25rem;
-			font-weight: 600;
-		}
-	}
+        h2 {
+            margin: 0;
+            font-size: 1.25rem;
+            font-weight: 600;
+        }
+    }
 
-	.badge {
-		padding: 0.25rem 0.625rem;
-		background: var(--viz-80);
-		border-radius: 1rem;
-		font-size: 0.875rem;
-		font-weight: 600;
-		color: var(--viz-text-color);
-	}
+    .badge {
+        padding: 0.25rem 0.625rem;
+        background: var(--viz-80);
+        border-radius: 1rem;
+        font-size: 0.875rem;
+        font-weight: 600;
+        color: var(--viz-text-color);
+    }
 
-	.stats-grid {
-		display: grid;
-		grid-template-columns: repeat(auto-fit, minmax(12em, 1fr));
-		gap: 1rem;
-	}
+    .stats-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(12em, 1fr));
+        gap: 1rem;
+    }
 
-	.stat-card {
-		display: flex;
-		align-items: center;
-		gap: 1rem;
-		padding: 1.25rem;
-		background: var(--viz-90);
-		border-radius: 1rem;
-		border: 2px solid var(--viz-80);
-		transition: border-color 0.2s;
+    .stat-card {
+        display: flex;
+        align-items: center;
+        gap: 1rem;
+        padding: 1.25rem;
+        background: var(--viz-90);
+        border-radius: 1rem;
+        border: 2px solid var(--viz-80);
+        transition: border-color 0.2s;
 
-		&:hover {
-			border-color: var(--viz-70);
-		}
+        &:hover {
+            border-color: var(--viz-70);
+        }
 
-		.stat-content {
-			display: flex;
-			flex-direction: column;
-		}
+        .stat-content {
+            display: flex;
+            flex-direction: column;
+        }
 
-		.stat-value {
-			font-size: 2rem;
-			font-weight: 700;
-			line-height: 1;
-			color: var(--viz-text-color);
-		}
+        .stat-value {
+            font-size: 2rem;
+            font-weight: 700;
+            line-height: 1;
+            color: var(--viz-text-color);
+        }
 
-		.stat-label {
-			font-size: 0.875rem;
-			color: var(--viz-40);
-			margin-top: 0.25rem;
-		}
-	}
+        .stat-label {
+            font-size: 0.875rem;
+            color: var(--viz-40);
+            margin-top: 0.25rem;
+        }
+    }
 
-	.metrics-grid {
-		display: grid;
-		grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
-		gap: 1rem;
-	}
+    .metrics-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+        gap: 1rem;
+    }
 
-	.metric-card {
-		display: flex;
-		align-items: center;
-		gap: 1rem;
-		padding: 1.25rem;
-		background: var(--viz-90);
-		border-radius: 1rem;
-		border: 2px solid var(--viz-80);
-		transition: border-color 0.2s;
+    .metric-card {
+        display: flex;
+        align-items: center;
+        gap: 1rem;
+        padding: 1.25rem;
+        background: var(--viz-90);
+        border-radius: 1rem;
+        border: 2px solid var(--viz-80);
+        transition: border-color 0.2s;
 
-		&:hover {
-			border-color: var(--viz-70);
-		}
+        &:hover {
+            border-color: var(--viz-70);
+        }
 
-		.metric-icon {
-			display: flex;
-			align-items: center;
-			justify-content: center;
-			width: 3em;
-			height: 3em;
-			background: var(--viz-primary);
-			color: var(--viz-text-color);
-			border-radius: 1rem;
-		}
+        .metric-icon {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            width: 3em;
+            height: 3em;
+            background: var(--viz-primary);
+            color: var(--viz-text-color);
+            border-radius: 1rem;
+        }
 
-		.metric-content {
-			display: flex;
-			flex-direction: column;
-		}
+        .metric-content {
+            display: flex;
+            flex-direction: column;
+        }
 
-		.metric-value {
-			font-size: 1.5rem;
-			font-weight: 700;
-			line-height: 1;
-		}
+        .metric-value {
+            font-size: 1.5rem;
+            font-weight: 700;
+            line-height: 1;
+        }
 
-		.metric-label {
-			font-size: 0.875rem;
-			color: var(--viz-40);
-			margin-top: 0.25rem;
-		}
-	}
+        .metric-label {
+            font-size: 0.875rem;
+            color: var(--viz-40);
+            margin-top: 0.25rem;
+        }
+    }
 
-	:global(.control-button) {
-		display: flex;
-		align-items: center;
-		justify-content: center;
-		gap: 0.5rem;
-		padding: 0.875rem 1.25rem;
-		border-radius: 0.5rem;
-		font-size: 0.95rem;
-		font-weight: 500;
-		background-color: var(--viz-80);
-		color: var(--viz-text-color);
-		transition: background-color 0.2s;
+    :global(.control-button) {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        gap: 0.5rem;
+        padding: 0.875rem 1.25rem;
+        border-radius: 0.5rem;
+        font-size: 0.95rem;
+        font-weight: 500;
+        background-color: var(--viz-80);
+        color: var(--viz-text-color);
+        transition: background-color 0.2s;
 
-		&:hover {
-			background-color: var(--viz-70);
-		}
-	}
+        &:hover {
+            background-color: var(--viz-70);
+        }
+    }
 
-	.event-types {
-		display: flex;
-		flex-direction: column;
-		gap: 1rem;
-	}
+    .event-types {
+        display: flex;
+        flex-direction: column;
+        gap: 1rem;
+    }
 
-	.event-type-card {
-		padding: 1rem;
-		background: var(--viz-95);
-		border-radius: 0.5rem;
-	}
+    .event-type-card {
+        padding: 1rem;
+        background: var(--viz-95);
+        border-radius: 0.5rem;
+    }
 
-	.event-type-info {
-		display: flex;
-		justify-content: space-between;
-		margin-bottom: 0.5rem;
-	}
+    .event-type-info {
+        display: flex;
+        justify-content: space-between;
+        margin-bottom: 0.5rem;
+    }
 
-	.event-type-name {
-		font-weight: 600;
-		font-size: 0.95rem;
-	}
+    .event-type-name {
+        font-weight: 600;
+        font-size: 0.95rem;
+    }
 
-	.event-type-count {
-		font-size: 0.875rem;
-		color: var(--viz-40);
-	}
+    .event-type-count {
+        font-size: 0.875rem;
+        color: var(--viz-40);
+    }
 
-	.event-type-bar {
-		height: 0.5rem;
-		background: var(--viz-90);
-		border-radius: 0.25rem;
-		overflow: hidden;
-	}
+    .event-type-bar {
+        height: 0.5rem;
+        background: var(--viz-90);
+        border-radius: 0.25rem;
+        overflow: hidden;
+    }
 
-	.event-type-fill {
-		height: 100%;
-		background: linear-gradient(
-			90deg,
-			var(--viz-primary),
-			var(--viz-accent-color)
-		);
-		transition: width 0.3s ease;
-	}
+    .event-type-fill {
+        height: 100%;
+        background: linear-gradient(90deg, var(--viz-primary), var(--viz-accent-color));
+        transition: width 0.3s ease;
+    }
 
-	.history-controls {
-		display: flex;
-		gap: 1rem;
-		margin-bottom: 1.25rem;
-		flex-wrap: wrap;
-		align-items: center;
-	}
+    .history-controls {
+        display: flex;
+        gap: 1rem;
+        margin-bottom: 1.25rem;
+        flex-wrap: wrap;
+        align-items: center;
+    }
 
-	.filter-group {
-		display: flex;
-		align-items: center;
-		gap: 0.5rem;
-		width: 11.25rem;
-	}
+    .filter-group {
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+        width: 11.25rem;
+    }
 
-	.search-group {
-		display: flex;
-		align-items: center;
-		gap: 0.5rem;
-		flex: 1;
-		max-width: 400px;
-		padding: 0.5rem 0.75rem;
-		border: 1px solid var(--viz-80);
-		border-radius: 0.375rem;
-		background: var(--viz-100);
+    .search-group {
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+        flex: 1;
+        max-width: 400px;
+        padding: 0.5rem 0.75rem;
+        border: 1px solid var(--viz-80);
+        border-radius: 0.375rem;
+        background: var(--viz-100);
 
-		&:focus-within {
-			border-color: var(--viz-primary);
-		}
+        &:focus-within {
+            border-color: var(--viz-primary);
+        }
 
-		input {
-			border: none;
-			background: transparent;
-			flex: 1;
-			font-size: 0.875rem;
-			color: var(--viz-text-color);
+        input {
+            border: none;
+            background: transparent;
+            flex: 1;
+            font-size: 0.875rem;
+            color: var(--viz-text-color);
 
-			&:focus {
-				outline: none;
-			}
-		}
-	}
+            &:focus {
+                outline: none;
+            }
+        }
+    }
 
-	.empty-state {
-		display: flex;
-		flex-direction: column;
-		align-items: center;
-		justify-content: center;
-		padding: 3rem 1rem;
-		color: var(--viz-40);
+    .empty-state {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        padding: 3rem 1rem;
+        color: var(--viz-40);
 
-		p {
-			margin: 0.5rem 0 0 0;
-			font-size: 1rem;
-		}
-	}
+        p {
+            margin: 0.5rem 0 0 0;
+            font-size: 1rem;
+        }
+    }
 
-	.history-list {
-		display: flex;
-		flex-direction: column;
-		gap: 0.5rem;
-		max-height: 60vh;
-		min-height: 40%;
-		overflow-y: auto;
-		overscroll-behavior: contain;
-		-webkit-overflow-scrolling: touch;
-		min-width: 0;
-	}
+    .history-list {
+        display: flex;
+        flex-direction: column;
+        gap: 0.5rem;
+        max-height: 60vh;
+        min-height: 40%;
+        overflow-y: auto;
+        overscroll-behavior: contain;
+        -webkit-overflow-scrolling: touch;
+        min-width: 0;
+    }
 
-	.event-item {
-		background: var(--viz-100);
-		border-radius: 8px;
-		border: 1px solid var(--viz-90);
-	}
+    .event-item {
+        background: var(--viz-100);
+        border-radius: 8px;
+        border: 1px solid var(--viz-90);
+    }
 
-	.event-summary {
-		display: flex;
-		justify-content: space-between;
-		align-items: center;
-		padding: 1rem;
-		cursor: pointer;
-		list-style: none;
-		color: var(--viz-text-color);
+    .event-summary {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        padding: 1rem;
+        cursor: pointer;
+        list-style: none;
+        color: var(--viz-text-color);
 
-		/* Remove browser default disclosure marker to avoid overlay quirks */
-		&::marker {
-			content: "";
-		}
-		&::-webkit-details-marker {
-			display: none;
-		}
+        /* Remove browser default disclosure marker to avoid overlay quirks */
+        &::marker {
+            content: "";
+        }
+        &::-webkit-details-marker {
+            display: none;
+        }
 
-		&:hover {
-			background: var(--viz-90);
-		}
-	}
+        &:hover {
+            background: var(--viz-90);
+        }
+    }
 
-	.event-header {
-		display: flex;
-		align-items: center;
-		gap: 1rem;
-		flex: 1;
-		min-width: 0;
-	}
+    .event-header {
+        display: flex;
+        align-items: center;
+        gap: 1rem;
+        flex: 1;
+        min-width: 0;
+    }
 
-	.event-type {
-		display: inline-block;
-		font-weight: 600;
-		font-size: 0.95rem;
-		padding: 0.25rem 0.75rem;
-		background: var(--viz-primary);
-		color: white;
-		border-radius: 4px;
-	}
+    .event-type {
+        display: inline-block;
+        font-weight: 600;
+        font-size: 0.95rem;
+        padding: 0.25rem 0.75rem;
+        background: var(--viz-primary);
+        color: white;
+        border-radius: 4px;
+    }
 
-	.event-time {
-		font-size: 0.825rem;
-		color: var(--viz-40);
-	}
+    .event-time {
+        font-size: 0.825rem;
+        color: var(--viz-40);
+    }
 
-	.event-details {
-		padding: 1rem;
-		border-top: 1px solid var(--viz-90);
-		background: var(--viz-100);
-	}
+    .event-details {
+        padding: 1rem;
+        border-top: 1px solid var(--viz-90);
+        background: var(--viz-100);
+    }
 
-	.event-field {
-		margin-bottom: 1rem;
+    .event-field {
+        margin-bottom: 1rem;
 
-		&:last-child {
-			margin-bottom: 0;
-		}
+        &:last-child {
+            margin-bottom: 0;
+        }
 
-		strong {
-			display: block;
-			margin-bottom: 0.5rem;
-			font-size: 0.875rem;
-		}
+        strong {
+            display: block;
+            margin-bottom: 0.5rem;
+            font-size: 0.875rem;
+        }
 
-		code {
-			display: block;
-			padding: 0.5rem;
-			background: var(--viz-90);
-			border-radius: 4px;
-			font-size: 0.825rem;
-			font-family: "Courier New", monospace;
-		}
+        code {
+            display: block;
+            padding: 0.5rem;
+            background: var(--viz-90);
+            border-radius: 4px;
+            font-size: 0.825rem;
+            font-family: "Courier New", monospace;
+        }
 
-		pre {
-			padding: 1rem;
-			background: var(--viz-90);
-			border-radius: 4px;
-			overflow-x: auto;
-			font-size: 0.825rem;
-			font-family: "Courier New", monospace;
-			line-height: 1.4;
-		}
-	}
+        pre {
+            padding: 1rem;
+            background: var(--viz-90);
+            border-radius: 4px;
+            overflow-x: auto;
+            font-size: 0.825rem;
+            font-family: "Courier New", monospace;
+            line-height: 1.4;
+        }
+    }
 </style>

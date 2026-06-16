@@ -8,19 +8,33 @@
  * Svelte components to `src/lib/components/icons/generated/`.
  */
 
-import { readFileSync, existsSync, mkdirSync, writeFileSync } from 'fs';
-import { resolve, join, dirname } from 'path';
-import { fileURLToPath } from 'url';
-import { globSync } from 'glob';
-import { optimize } from 'svgo';
+import { readFileSync, existsSync, mkdirSync, writeFileSync } from "fs";
+import { resolve, join, dirname } from "path";
+import { fileURLToPath } from "url";
+import { globSync } from "glob";
+import { optimize } from "svgo";
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
-const ROOT = resolve(__dirname, '../../');
-const SRC = join(ROOT, 'src');
-const OUT_DIR = join(SRC, 'lib/components/icons/generated');
+const ROOT = resolve(__dirname, "../../");
+const SRC = join(ROOT, "src");
+const OUT_DIR = join(SRC, "lib/components/icons/generated");
 
 const CATEGORIES = [
-    'action', 'alert', 'av', 'communication', 'content', 'editor', 'file', 'hardware', 'image', 'maps', 'navigation', 'notification', 'places', 'social', 'toggle'
+    "action",
+    "alert",
+    "av",
+    "communication",
+    "content",
+    "editor",
+    "file",
+    "hardware",
+    "image",
+    "maps",
+    "navigation",
+    "notification",
+    "places",
+    "social",
+    "toggle"
 ];
 
 /**
@@ -28,13 +42,13 @@ const CATEGORIES = [
  * @param {string} s
  * @returns {string}
  */
-function pascalCase (s) {
+function pascalCase(s) {
     return String(s)
-        .replace(/[^a-zA-Z0-9]+/g, ' ')
+        .replace(/[^a-zA-Z0-9]+/g, " ")
         .trim()
         .split(/\s+/)
-        .map(p => p[0].toUpperCase() + p.slice(1))
-        .join('');
+        .map((p) => p[0].toUpperCase() + p.slice(1))
+        .join("");
 }
 
 /**
@@ -42,8 +56,11 @@ function pascalCase (s) {
  * @param {string} name
  * @returns {string}
  */
-function sanitizeNameForFile (name) {
-    return String(name).toLowerCase().replace(/\s+/g, '_').replace(/[^a-z0-9_]/g, '_');
+function sanitizeNameForFile(name) {
+    return String(name)
+        .toLowerCase()
+        .replace(/\s+/g, "_")
+        .replace(/[^a-z0-9_]/g, "_");
 }
 
 /**
@@ -54,12 +71,12 @@ function sanitizeNameForFile (name) {
  * @param {string} [preferredStyle]
  * @returns {Promise<string|null>} SVG text or null if not found
  */
-async function fetchSvgForName (name, preferredWeight, preferredStyle) {
+async function fetchSvgForName(name, preferredWeight, preferredStyle) {
     const s = sanitizeNameForFile(name);
-    const variants = [s, `ic_${s}`, s.replace(/^ic_/, '')];
+    const variants = [s, `ic_${s}`, s.replace(/^ic_/, "")];
     // Prioritize 400 (standard) first, then go to nearby weights.
     const defaultWeights = [400, 300, 200, 100, 500, 600, 700];
-    const defaultStyles = ['sharp', 'rounded', 'outlined'];
+    const defaultStyles = ["sharp", "rounded", "outlined"];
 
     // Build search order: preferredWeight first (if provided), then defaults
     /** @type {string[]} */
@@ -93,12 +110,12 @@ async function fetchSvgForName (name, preferredWeight, preferredStyle) {
     // Note: The official repo often only has 400 weight as standard SVG export in these folders.
     for (const style of styles) {
         for (const v of variants) {
-            const nm = v.replace(/^ic_/, '');
+            const nm = v.replace(/^ic_/, "");
             const url = `https://raw.githubusercontent.com/google/material-design-icons/master/symbols/web/${nm}/materialsymbols${style}/${nm}_24px.svg`;
 
             // Only use this generic URL if we are looking for 400 weight (or it's our preferredWeight)
             // to avoid getting 400 when we specifically wanted 300/600 etc.
-            if (!preferredWeight || preferredWeight === '400') {
+            if (!preferredWeight || preferredWeight === "400") {
                 try {
                     const res = await fetch(url);
                     if (res && res.ok) {
@@ -118,7 +135,7 @@ async function fetchSvgForName (name, preferredWeight, preferredStyle) {
     for (const weight of weights) {
         for (const style of styles) {
             for (const v of variants) {
-                const nm = v.replace(/^ic_/, '');
+                const nm = v.replace(/^ic_/, "");
                 const url = `https://raw.githubusercontent.com/marella/material-symbols/main/svg/${weight}/${style}/${nm}.svg`;
                 try {
                     const res = await fetch(url);
@@ -137,7 +154,7 @@ async function fetchSvgForName (name, preferredWeight, preferredStyle) {
     // 3. Local fallback: @material-symbols/svg-{weight} packages when available.
     for (const weight of weights) {
         const pkgName = `@material-symbols/svg-${weight}`;
-        const localPkg = resolve(ROOT, 'node_modules', pkgName);
+        const localPkg = resolve(ROOT, "node_modules", pkgName);
         if (existsSync(localPkg)) {
             for (const style of styles) {
                 for (const v of variants) {
@@ -151,8 +168,8 @@ async function fetchSvgForName (name, preferredWeight, preferredStyle) {
                     for (const c of candidates) {
                         if (existsSync(c)) {
                             try {
-                                const text = readFileSync(c, 'utf8');
-                                console.log('Found local SVG in', pkgName, c);
+                                const text = readFileSync(c, "utf8");
+                                console.log("Found local SVG in", pkgName, c);
                                 return text;
                             } catch (e) {
                                 // continue
@@ -165,16 +182,16 @@ async function fetchSvgForName (name, preferredWeight, preferredStyle) {
     }
 
     // 4. Final fallback: older google/material-design-icons repo
-    const googleBase = 'https://raw.githubusercontent.com/google/material-design-icons/master';
+    const googleBase = "https://raw.githubusercontent.com/google/material-design-icons/master";
     for (const cat of CATEGORIES) {
         for (const v of variants) {
-            const filename = `ic_${v}_24px.svg`.replace(/ic_ic_/, 'ic_');
+            const filename = `ic_${v}_24px.svg`.replace(/ic_ic_/, "ic_");
             const url = `${googleBase}/${cat}/svg/production/${filename}`;
             try {
                 const res = await fetch(url);
                 if (res && res.ok) {
                     const text = await res.text();
-                    console.log('Fetched from old Google repo:', url);
+                    console.log("Fetched from old Google repo:", url);
                     return text;
                 }
             } catch (e) {
@@ -190,9 +207,10 @@ async function fetchSvgForName (name, preferredWeight, preferredStyle) {
  * Fetches the official list of Material Symbols codepoints.
  * @returns {Promise<Set<string>>}
  */
-async function fetchCodepoints () {
-    const url = 'https://raw.githubusercontent.com/google/material-design-icons/master/variablefont/MaterialSymbolsOutlined%5BFILL%2CGRAD%2Copsz%2Cwght%5D.codepoints';
-    console.log('Fetching codepoints from:', url);
+async function fetchCodepoints() {
+    const url =
+        "https://raw.githubusercontent.com/google/material-design-icons/master/variablefont/MaterialSymbolsOutlined%5BFILL%2CGRAD%2Copsz%2Cwght%5D.codepoints";
+    console.log("Fetching codepoints from:", url);
     try {
         const res = await fetch(url);
         if (!res.ok) {
@@ -201,10 +219,10 @@ async function fetchCodepoints () {
 
         const text = await res.text();
         const iconNames = new Set();
-        text.split('\n').forEach(line => {
+        text.split("\n").forEach((line) => {
             const trimmed = line.trim();
             if (trimmed) {
-                const [name] = trimmed.split(' ');
+                const [name] = trimmed.split(" ");
                 if (name) iconNames.add(name);
             }
         });
@@ -212,19 +230,19 @@ async function fetchCodepoints () {
         console.log(`Fetched ${iconNames.size} valid Material Symbols.`);
         return iconNames;
     } catch (e) {
-        console.warn('Failed to fetch codepoints, skipping type generation update.', e);
+        console.warn("Failed to fetch codepoints, skipping type generation update.", e);
         return new Set();
     }
 }
 
 /**
  * Generates the TypeScript definition for Material Symbols.
- * @param {Set<string>} iconNames 
+ * @param {Set<string>} iconNames
  */
-function generateTypeDefinition (iconNames) {
+function generateTypeDefinition(iconNames) {
     if (iconNames.size === 0) return;
 
-    const typeDefPath = join(SRC, 'lib/types/MaterialSymbol.ts');
+    const typeDefPath = join(SRC, "lib/types/MaterialSymbol.ts");
     const sortedNames = Array.from(iconNames).sort();
 
     // Create a union type of all string literals
@@ -232,29 +250,29 @@ function generateTypeDefinition (iconNames) {
 // Do not edit manually.
 
 export type MaterialSymbol = 
-${sortedNames.map(n => `    | "${n}"`).join('\n')};
+${sortedNames.map((n) => `    | "${n}"`).join("\n")};
 `;
 
     if (!existsSync(dirname(typeDefPath))) {
         mkdirSync(dirname(typeDefPath), { recursive: true });
     }
 
-    writeFileSync(typeDefPath, typeContent, 'utf8');
-    console.log('Wrote type definitions to', typeDefPath);
+    writeFileSync(typeDefPath, typeContent, "utf8");
+    console.log("Wrote type definitions to", typeDefPath);
 }
 
 /**
  * Loads the list of valid Material Symbols from the generated MaterialSymbol.ts file.
  * @returns {Set<string>|null}
  */
-function loadValidSymbols () {
-    const path = join(SRC, 'lib/types/MaterialSymbol.ts');
+function loadValidSymbols() {
+    const path = join(SRC, "lib/types/MaterialSymbol.ts");
     if (!existsSync(path)) return null;
     try {
-        const content = readFileSync(path, 'utf8');
+        const content = readFileSync(path, "utf8");
         const matches = content.match(/"([^"]+)"/g);
         if (!matches) return null;
-        return new Set(matches.map(m => m.slice(1, -1)));
+        return new Set(matches.map((m) => m.slice(1, -1)));
     } catch (e) {
         return null;
     }
@@ -265,26 +283,28 @@ function loadValidSymbols () {
  * generate Svelte components under `src/lib/components/icons/generated/`.
  * @returns {Promise<void>}
  */
-async function main () {
-    const force = process.argv.includes('--force');
+async function main() {
+    const force = process.argv.includes("--force");
 
     // 1. Fetch codepoints and update types if forced or file doesn't exist
-    const typeDefPath = join(SRC, 'lib/types/MaterialSymbol.ts');
+    const typeDefPath = join(SRC, "lib/types/MaterialSymbol.ts");
     if (!existsSync(typeDefPath) || force) {
         const validIcons = await fetchCodepoints();
         generateTypeDefinition(validIcons);
     } else {
-        console.log('MaterialSymbol.ts already exists, skipping codepoints fetch. (Use --force to update)');
+        console.log(
+            "MaterialSymbol.ts already exists, skipping codepoints fetch. (Use --force to update)"
+        );
     }
 
     const validSymbols = loadValidSymbols();
 
-    const failedCachePath = join(__dirname, 'failed-icons.json');
+    const failedCachePath = join(__dirname, "failed-icons.json");
     let failedCache = {};
     let failedCacheChanged = false;
     if (existsSync(failedCachePath) && !force) {
         try {
-            failedCache = JSON.parse(readFileSync(failedCachePath, 'utf8'));
+            failedCache = JSON.parse(readFileSync(failedCachePath, "utf8"));
         } catch (e) {
             failedCache = {};
         }
@@ -292,13 +312,13 @@ async function main () {
 
     // gather candidate icon names from source - look for iconName="..." or iconName={'...'}
     // Use forward-slash patterns so glob works reliably on Windows.
-    const pattern = `${SRC.replace(/\\/g, '/')}/**/*.{svelte,ts,js}`;
+    const pattern = `${SRC.replace(/\\/g, "/")}/**/*.{svelte,ts,js}`;
     const files = globSync(pattern, { nodir: true });
 
-    console.log('Scanning files with pattern:', pattern);
-    console.log('Found files:', files.length);
-    if (files.length > 0) console.log('Example file:', files[0]);
-    
+    console.log("Scanning files with pattern:", pattern);
+    console.log("Found files:", files.length);
+    if (files.length > 0) console.log("Example file:", files[0]);
+
     // Map of iconName -> { weights: Set, styles: Set }
     const names = new Map();
 
@@ -328,14 +348,22 @@ async function main () {
     const reStyleObj = /iconStyle\s*:\s*"([a-z]+)"/g;
 
     for (const f of files) {
-        if (f.includes('/generated/')) continue;
-        const text = readFileSync(f, 'utf8');
+        if (f.includes("/generated/")) continue;
+        const text = readFileSync(f, "utf8");
         let m;
-        
+
         const fileNames = new Set();
         [
-            reNameDouble, reNameSingle, reNameExpr, reNameObj, reNameObjSingle,
-            reIconDouble, reIconSingle, reIconExpr, reIconObj, reIconObjSingle
+            reNameDouble,
+            reNameSingle,
+            reNameExpr,
+            reNameObj,
+            reNameObjSingle,
+            reIconDouble,
+            reIconSingle,
+            reIconExpr,
+            reIconObj,
+            reIconObjSingle
         ].forEach((r) => {
             r.lastIndex = 0;
             while ((m = r.exec(text)) !== null) {
@@ -396,8 +424,8 @@ async function main () {
             }
             if (!names.has(n)) names.set(n, { weights: new Set(), styles: new Set() });
             const entry = names.get(n);
-            foundWeights.forEach(w => entry.weights.add(w));
-            foundStyles.forEach(s => entry.styles.add(s));
+            foundWeights.forEach((w) => entry.weights.add(w));
+            foundStyles.forEach((s) => entry.styles.add(s));
         }
     }
 
@@ -408,20 +436,20 @@ async function main () {
     const generated = [];
 
     // debug: list discovered literal icon names
-    console.log('Discovered icon names:', Array.from(names.keys()).sort());
-    console.log('Total distinct icon names:', names.size);
+    console.log("Discovered icon names:", Array.from(names.keys()).sort());
+    console.log("Total distinct icon names:", names.size);
 
     for (const [name, entry] of names.entries()) {
-        const requiredWeights = new Set(['400', ...Array.from(entry.weights)]);
-        const requiredStyles = new Set(['sharp', ...Array.from(entry.styles)]);
-        
+        const requiredWeights = new Set(["400", ...Array.from(entry.weights)]);
+        const requiredStyles = new Set(["sharp", ...Array.from(entry.styles)]);
+
         // Filter out "filled" from styles as it's handled via the "fill" prop in our components
-        requiredStyles.delete('filled');
+        requiredStyles.delete("filled");
 
         for (const style of requiredStyles) {
-            const isDefaultStyle = style === 'sharp';
-            const styleSuffix = isDefaultStyle ? '' : pascalCase(style);
-            const compName = 'Icon' + pascalCase(name) + styleSuffix;
+            const isDefaultStyle = style === "sharp";
+            const styleSuffix = isDefaultStyle ? "" : pascalCase(style);
+            const compName = "Icon" + pascalCase(name) + styleSuffix;
             const outFile = join(OUT_DIR, `${compName}.svelte`);
 
             if (existsSync(outFile) && !force) {
@@ -434,13 +462,15 @@ async function main () {
                 continue;
             }
 
-            console.log(`Processing ${name} (${style}) weights ${Array.from(requiredWeights).join(',')}`);
-            
+            console.log(
+                `Processing ${name} (${style}) weights ${Array.from(requiredWeights).join(",")}`
+            );
+
             /** @type {Record<string,string>} */
             const variants = {};
             /** @type {Record<string,string>} */
             const filledVariants = {};
-            let finalViewBox = '0 0 24 24';
+            let finalViewBox = "0 0 24 24";
 
             for (const weight of Array.from(requiredWeights)) {
                 // 1. Try normal version
@@ -451,46 +481,48 @@ async function main () {
                     if (vbMatch) finalViewBox = vbMatch[1];
 
                     const cleaned = optimized
-                        .replace(/<\?xml[\s\S]*?\?>/g, '')
-                        .replace(/\swidth="[^"]+"/g, '')
-                        .replace(/\sheight="[^"]+"/g, '')
-                        .replace(/\sxmlns(:\w+)?="[^"]+"/g, '')
-                        .replace(/\sviewBox="[^"]+"/g, '')
+                        .replace(/<\?xml[\s\S]*?\?>/g, "")
+                        .replace(/\swidth="[^"]+"/g, "")
+                        .replace(/\sheight="[^"]+"/g, "")
+                        .replace(/\sxmlns(:\w+)?="[^"]+"/g, "")
+                        .replace(/\sviewBox="[^"]+"/g, "")
                         .trim();
                     const innerMatch = cleaned.match(/<svg[^>]*>([\s\S]*?)<\/svg>/i);
                     const inner = innerMatch ? innerMatch[1].trim() : cleaned;
-                    variants[String(weight)] = inner.replace(/\/>/g, ' \/>');
+                    variants[String(weight)] = inner.replace(/\/>/g, " \/>");
                 }
 
                 // 2. Try filled version
                 const s = sanitizeNameForFile(name);
-                const nm = s.replace(/^ic_/, '');
-                
+                const nm = s.replace(/^ic_/, "");
+
                 // Try Marella repo for filled variant
                 const filledUrl = `https://raw.githubusercontent.com/marella/material-symbols/main/svg/${weight}/${style}/${nm}-fill.svg`;
                 try {
                     const res = await fetch(filledUrl);
                     if (res && res.ok) {
                         const filledSvg = await res.text();
-                        console.log('Fetched filled variant:', filledUrl);
-                        
+                        console.log("Fetched filled variant:", filledUrl);
+
                         const optimized = optimize(filledSvg, { multipass: true }).data;
                         const cleaned = optimized
-                            .replace(/<\?xml[\s\S]*?\?>/g, '')
-                            .replace(/\swidth="[^"]+"/g, '')
-                            .replace(/\sheight="[^"]+"/g, '')
-                            .replace(/\sxmlns(:\w+)?="[^"]+"/g, '')
-                            .replace(/\sviewBox="[^"]+"/g, '')
+                            .replace(/<\?xml[\s\S]*?\?>/g, "")
+                            .replace(/\swidth="[^"]+"/g, "")
+                            .replace(/\sheight="[^"]+"/g, "")
+                            .replace(/\sxmlns(:\w+)?="[^"]+"/g, "")
+                            .replace(/\sviewBox="[^"]+"/g, "")
                             .trim();
                         const innerMatch = cleaned.match(/<svg[^>]*>([\s\S]*?)<\/svg>/i);
                         const inner = innerMatch ? innerMatch[1].trim() : cleaned;
-                        filledVariants[String(weight)] = inner.replace(/\/>/g, ' \/>');
+                        filledVariants[String(weight)] = inner.replace(/\/>/g, " \/>");
                     }
-                } catch (e) { }
+                } catch (e) {}
             }
 
             if (Object.keys(variants).length === 0) {
-                console.warn(`No variants available for ${name} (${style}); skipping component generation.`);
+                console.warn(
+                    `No variants available for ${name} (${style}); skipping component generation.`
+                );
                 failedCache[cacheKey] = true;
                 failedCacheChanged = true;
                 continue;
@@ -531,22 +563,27 @@ async function main () {
 </style>
 `;
 
-            writeFileSync(outFile, svelte.trimStart(), 'utf8');
-            console.log('Wrote', outFile);
+            writeFileSync(outFile, svelte.trimStart(), "utf8");
+            console.log("Wrote", outFile);
             generated.push({ name, compName, style, isDefault: isDefaultStyle });
         }
     }
 
     // write index file
-    const indexPath = join(OUT_DIR, 'index.ts');
-    const lines = generated.map(g => `export { default as ${g.compName} } from './${g.compName}.svelte';`);
-    writeFileSync(indexPath, lines.join('\n') + '\n', 'utf8');
-    console.log('Wrote index.ts with', generated.length, 'icons');
+    const indexPath = join(OUT_DIR, "index.ts");
+    const lines = generated.map(
+        (g) => `export { default as ${g.compName} } from './${g.compName}.svelte';`
+    );
+    writeFileSync(indexPath, lines.join("\n") + "\n", "utf8");
+    console.log("Wrote index.ts with", generated.length, "icons");
 
     if (failedCacheChanged) {
-        writeFileSync(failedCachePath, JSON.stringify(failedCache, null, 4), 'utf8');
-        console.log('Updated failed-icons.json cache.');
+        writeFileSync(failedCachePath, JSON.stringify(failedCache, null, 4), "utf8");
+        console.log("Updated failed-icons.json cache.");
     }
 }
 
-main().catch(e => { console.error(e); process.exit(1); });
+main().catch((e) => {
+    console.error(e);
+    process.exit(1);
+});
