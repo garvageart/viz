@@ -1,6 +1,7 @@
 package routes
 
 import (
+	"encoding/json"
 	"fmt"
 	"log/slog"
 	"net/http"
@@ -49,6 +50,57 @@ func SystemRouter(db *gorm.DB, logger *slog.Logger) chi.Router {
 
 			render.Status(req, http.StatusOK)
 			render.JSON(res, req, cfg)
+		})
+
+		authRouter.Put("/config", func(res http.ResponseWriter, req *http.Request) {
+			var body dto.VizConfig
+			if err := render.Decode(req, &body); err != nil {
+				render.Status(req, http.StatusBadRequest)
+				render.JSON(res, req, dto.ErrorResponse{Error: "invalid request body: " + err.Error()})
+				return
+			}
+
+			// Merge DTO into a copy of current AppConfig
+			updatedConfig := config.AppConfig
+
+			dtoBytes, err := json.Marshal(body)
+			if err != nil {
+				logger.Error("failed to marshal request DTO", slog.Any("error", err))
+				render.Status(req, http.StatusInternalServerError)
+				render.JSON(res, req, dto.ErrorResponse{Error: "failed to process configuration"})
+				return
+			}
+
+			if err := json.Unmarshal(dtoBytes, &updatedConfig); err != nil {
+				logger.Error("failed to unmarshal into config struct", slog.Any("error", err))
+				render.Status(req, http.StatusBadRequest)
+				render.JSON(res, req, dto.ErrorResponse{Error: "invalid configuration format: " + err.Error()})
+				return
+			}
+
+			// Restore password fields if they were sanitized ("***")
+			if updatedConfig.Database.Password == "***" {
+				updatedConfig.Database.Password = config.AppConfig.Database.Password
+			}
+			if updatedConfig.Queue.Password == "***" {
+				updatedConfig.Queue.Password = config.AppConfig.Queue.Password
+			}
+
+			// Write to viz.json
+			if err := config.WriteConfig(updatedConfig); err != nil {
+				logger.Error("failed to write config", slog.Any("error", err))
+				render.Status(req, http.StatusInternalServerError)
+				render.JSON(res, req, dto.ErrorResponse{Error: "failed to save configuration: " + err.Error()})
+				return
+			}
+
+			// Return the sanitized updated configuration
+			sanitizedConfig := updatedConfig
+			sanitizedConfig.Database.Password = "***"
+			sanitizedConfig.Queue.Password = "***"
+
+			render.Status(req, http.StatusOK)
+			render.JSON(res, req, sanitizedConfig)
 		})
 	})
 
