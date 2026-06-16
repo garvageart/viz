@@ -170,57 +170,99 @@ var defaultSettings = []entities.SettingDefault{
 
 // SeedDefaultSettings inserts initial default settings into the database if they don't already exist.
 func SeedDefaultSettings(db *gorm.DB, logger *slog.Logger) {
-	for _, setting := range defaultSettings {
-		var existing entities.SettingDefault
+	err := db.Transaction(func(tx *gorm.DB) error {
+		// Clean up settings that have been deleted or moved (no longer in defaultSettings)
+		activeNames := make(map[string]bool)
+		for _, setting := range defaultSettings {
+			activeNames[setting.Name] = true
+		}
 
-		// Manually find first to allow Unscoped to find soft-deleted records reliably
-		err := db.Unscoped().Where("name = ?", setting.Name).First(&existing).Error
+		var allDefaults []entities.SettingDefault
+		if err := tx.Unscoped().Find(&allDefaults).Error; err != nil {
+			logger.Error("failed to query default settings for cleanup", slog.Any("error", err))
+			return err
+		}
 
-		if err != nil {
-			if errors.Is(err, gorm.ErrRecordNotFound) {
-				// Not found, create it
-				if createErr := db.Create(&setting).Error; createErr != nil {
-					logger.Error("failed to create default setting", slog.String("setting_name", setting.Name), slog.Any("error", createErr))
-				} else {
-					logger.Info("created default setting", slog.String("setting_name", setting.Name))
+		for _, existingDefault := range allDefaults {
+			if !activeNames[existingDefault.Name] {
+				// 1. Delete all overrides for this setting
+				if err := tx.Unscoped().Where("name = ?", existingDefault.Name).Delete(&entities.SettingOverride{}).Error; err != nil {
+					logger.Error("failed to delete overrides for removed setting", slog.String("setting_name", existingDefault.Name), slog.Any("error", err))
+					return err
 				}
-			} else {
-				logger.Error("failed to query default setting", slog.String("setting_name", setting.Name), slog.Any("error", err))
+				logger.Info("removed overrides for deleted setting", slog.String("setting_name", existingDefault.Name))
+
+				// 2. Delete the default setting record
+				if err := tx.Unscoped().Delete(&existingDefault).Error; err != nil {
+					logger.Error("failed to delete default setting from database", slog.String("setting_name", existingDefault.Name), slog.Any("error", err))
+					return err
+				}
+				logger.Info("removed deleted default setting from database", slog.String("setting_name", existingDefault.Name))
 			}
-			continue
 		}
 
-		// If found (including soft-deleted), check if update is needed
-		wasDeleted := existing.DeletedAt.Valid
+		// Seeding loop
+		for _, setting := range defaultSettings {
+			var existing entities.SettingDefault
 
-		if wasDeleted ||
-			existing.Value != setting.Value ||
-			existing.DisplayName != setting.DisplayName ||
-			existing.Description != setting.Description ||
-			existing.Group != setting.Group ||
-			existing.IsUserEditable != setting.IsUserEditable ||
-			existing.ValueType != setting.ValueType ||
-			!utils.EqualStringSlices(existing.AllowedValues, setting.AllowedValues) {
+			// Manually find first to allow Unscoped to find soft-deleted records reliably
+			err := tx.Unscoped().Where("name = ?", setting.Name).First(&existing).Error
 
-			existing.Value = setting.Value
-			existing.DisplayName = setting.DisplayName
-			existing.Description = setting.Description
-			existing.Group = setting.Group
-			existing.IsUserEditable = setting.IsUserEditable
-			existing.ValueType = setting.ValueType
-			existing.AllowedValues = setting.AllowedValues
-
-			if wasDeleted {
-				existing.DeletedAt = gorm.DeletedAt{} // Reset to NULL
+			if err != nil {
+				if errors.Is(err, gorm.ErrRecordNotFound) {
+					// Not found, create it
+					if createErr := tx.Create(&setting).Error; createErr != nil {
+						logger.Error("failed to create default setting", slog.String("setting_name", setting.Name), slog.Any("error", createErr))
+						return createErr
+					}
+					logger.Info("created default setting", slog.String("setting_name", setting.Name))
+				} else {
+					logger.Error("failed to query default setting", slog.String("setting_name", setting.Name), slog.Any("error", err))
+					return err
+				}
+				continue
 			}
 
-			if updateErr := db.Unscoped().Save(&existing).Error; updateErr != nil {
-				logger.Error("failed to update default setting", slog.String("setting_name", setting.Name), slog.Any("error", updateErr))
-			} else {
+			// If found (including soft-deleted), check if update is needed
+			wasDeleted := existing.DeletedAt.Valid
+
+			if wasDeleted ||
+				existing.Value != setting.Value ||
+				existing.DisplayName != setting.DisplayName ||
+				existing.Description != setting.Description ||
+				existing.Group != setting.Group ||
+				existing.IsUserEditable != setting.IsUserEditable ||
+				existing.ValueType != setting.ValueType ||
+				!utils.EqualStringSlices(existing.AllowedValues, setting.AllowedValues) {
+
+				existing.Value = setting.Value
+				existing.DisplayName = setting.DisplayName
+				existing.Description = setting.Description
+				existing.Group = setting.Group
+				existing.IsUserEditable = setting.IsUserEditable
+				existing.ValueType = setting.ValueType
+				existing.AllowedValues = setting.AllowedValues
+
+				if wasDeleted {
+					existing.DeletedAt = gorm.DeletedAt{} // Reset to NULL
+				}
+
+				if updateErr := tx.Unscoped().Save(&existing).Error; updateErr != nil {
+					logger.Error("failed to update default setting", slog.String("setting_name", setting.Name), slog.Any("error", updateErr))
+					return updateErr
+				}
 				logger.Info("updated default setting", slog.String("setting_name", setting.Name))
+			} else {
+				logger.Info("default setting up-to-date", slog.String("setting_name", setting.Name))
 			}
-		} else {
-			logger.Info("default setting up-to-date", slog.String("setting_name", setting.Name))
 		}
+
+		return nil
+	})
+
+	if err != nil {
+		logger.Error("failed to complete settings seeding transaction", slog.Any("error", err))
+	} else {
+		logger.Info("successfully completed settings seeding transaction")
 	}
 }
