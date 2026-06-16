@@ -18,76 +18,78 @@
                 display: flex;
                 align-items: center;
                 justify-content: center;
-                background: var(--viz-bg-color, #0f1726);
+                background: var(--viz-100, #0c0f17);
+                background-image:
+                    linear-gradient(
+                        to right,
+                        color-mix(in srgb, var(--viz-60, rgba(255, 255, 255, 0.1)) 8%, transparent)
+                            1px,
+                        transparent 1px
+                    ),
+                    linear-gradient(
+                        to bottom,
+                        color-mix(in srgb, var(--viz-60, rgba(255, 255, 255, 0.1)) 8%, transparent)
+                            1px,
+                        transparent 1px
+                    );
+                background-size: 40px 40px;
+                background-position: center;
+                position: fixed;
+                top: 0;
+                left: 0;
+                width: 100%;
+                height: 100%;
+                z-index: 9999;
+                transition: opacity 0.25s cubic-bezier(0.4, 0, 0.2, 1);
             }
 
             #app-splash .splash-inner {
                 text-align: center;
-                font-family:
-                    Manrope,
-                    system-ui,
-                    -apple-system,
-                    "Segoe UI",
-                    Roboto,
-                    "Helvetica Neue",
-                    Arial;
+                animation: splash-fade-in 0.4s ease-out forwards;
             }
 
             #app-splash .splash-text {
-                font-family: "Roboto Mono", monospace;
-                font-size: 3.2rem;
-                font-weight: 800;
-                letter-spacing: 0.6px;
-                display: inline-block;
-                position: relative;
-                padding-bottom: 6px;
-                display: flex;
-                justify-content: center;
+                font-family: "Roboto Mono Variable", "Roboto Mono", monospace;
+                font-size: 2.8rem;
+                font-weight: 700;
+                letter-spacing: -0.02em;
+                color: var(--viz-text-color, #f8fafc);
+                margin: 0;
+                text-transform: lowercase;
+                display: inline-flex;
                 align-items: center;
-                color: var(--viz-text-color, #f7f9f9);
             }
 
             #app-splash .splash-text::after {
-                content: "";
-                position: absolute;
-                left: 0;
-                bottom: 0;
-                height: 3px;
-                background: var(--viz-text-color, #f7f9f9);
-                width: 100%;
-                display: flex;
-                align-items: center;
-                justify-content: center;
-                transform-origin: left;
-                transform: scaleX(0);
-                animation: viz-underline 1.6s ease-in-out infinite;
+                content: "_";
+                color: var(--viz-primary, #3b82f6);
+                animation: splash-cursor-blink 0.8s step-end infinite;
+                margin-left: 2px;
             }
 
-            @keyframes viz-underline {
-                0% {
-                    transform-origin: left;
-                    transform: scaleX(0);
+            @keyframes splash-fade-in {
+                from {
+                    opacity: 0;
+                    transform: translateY(4px);
                 }
-
-                45% {
-                    transform-origin: left;
-                    transform: scaleX(1);
+                to {
+                    opacity: 1;
+                    transform: translateY(0);
                 }
+            }
 
-                55% {
-                    transform-origin: right;
-                    transform: scaleX(1);
+            @keyframes splash-cursor-blink {
+                from,
+                to {
+                    color: transparent;
                 }
-
-                100% {
-                    transform-origin: right;
-                    transform: scaleX(0);
+                50% {
+                    color: var(--viz-primary, #3b82f6);
                 }
             }
 
             .app-splash--fade {
                 opacity: 0;
-                transition: opacity 0.28s ease;
                 pointer-events: none;
             }
         </style>
@@ -133,7 +135,7 @@
     <body>
         <div id="app-splash" aria-hidden="true">
             <div class="splash-inner">
-                <code class="splash-text">viz</code>
+                <h1 class="splash-text">viz</h1>
             </div>
         </div>
         <div style="display: contents">%sveltekit.body%</div>

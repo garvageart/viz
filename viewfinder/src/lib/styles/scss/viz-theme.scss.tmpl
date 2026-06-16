@@ -14,6 +14,8 @@ $primary-color: {{.PrimaryColor}};
 :root {
     --viz-bg-color: #{$bg-color};
     --viz-text-color: #{$text-color};
+    --viz-text-color-light: #{$text-color};
+    --viz-text-color-dark: #{color.change($text-color, $lightness: 100% - color.channel($text-color, "lightness", $space: hsl), $space: hsl)};
     --viz-primary: #{$primary-color};
 
     @include viz-mixins.generate-viz-colors(
