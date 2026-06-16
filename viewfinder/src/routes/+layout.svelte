@@ -7,7 +7,7 @@
             __RUNTIME_CONFIG__: {
                 [key: string]: string;
             };
-            __VIZ_CONFIG__?: VizConfig;
+            __VIZ_CONFIG__?: VizBootstrapConfig;
         }
     }
 </script>
@@ -25,11 +25,11 @@
     import Notifications from "$lib/toast-notifcations/Notifications.svelte";
     import { historyState } from "$lib/states/history.svelte";
     import { eventsState } from "$lib/states/events.svelte";
-    import { debugState, themeState } from "$lib/states/index.svelte";
+    import { debugState, themeState, user } from "$lib/states/index.svelte";
     import { loadingState } from "$lib/states/loading.svelte";
     import "$lib/stores/appReady";
     import "$lib/styles/scss/main.scss";
-    import type { ViewfinderConfig, VizConfig } from "$lib/types/config.types";
+    import type { ViewfinderConfig, VizBootstrapConfig } from "$lib/types/config.types";
     import { toggleFullscreen } from "$lib/utils/misc";
     import "@fontsource-variable/manrope/index.css";
     import "@fontsource-variable/geist/index.css";
@@ -37,7 +37,14 @@
     import hotkeys from "hotkeys-js";
 
     historyState.init();
-    eventsState.init();
+
+    $effect(() => {
+        if (user.data) {
+            eventsState.init();
+        } else {
+            eventsState.destroy();
+        }
+    });
 
     window.___viewfinderConfig = {
         environment: dev ? "dev" : "prod",
@@ -83,9 +90,10 @@
     });
 </script>
 
-{#if showNavProgress}
-    <NavigationProgressBar />
-{/if}
 {@render children()}
 <Notifications />
 <ModalRenderer />
+
+{#if showNavProgress}
+    <NavigationProgressBar />
+{/if}

@@ -1,12 +1,12 @@
 <script lang="ts">
-    import { invalidateAll } from "$app/navigation";
     import MaterialIcon from "$lib/components/ui/MaterialIcon.svelte";
     import ProgressBar from "$lib/components/ui/ProgressBar.svelte";
     import AdminRouteShell from "$lib/components/admin/AdminRouteShell.svelte";
     import { formatBytes, formatSeconds } from "$lib/utils/images";
     import { invalidateViz } from "$lib/views/views.svelte.js";
     import { Duration } from "luxon";
-    import { onDestroy } from "svelte";
+    import type { MaterialSymbol } from "$lib/types/MaterialSymbol.js";
+    import type { Snippet } from "svelte";
 
     let { data } = $props();
 
@@ -76,9 +76,55 @@
     });
 </script>
 
-<svelte:head>
-    <title>Admin Dashboard</title>
-</svelte:head>
+{#snippet statCard({
+    icon,
+    iconClass,
+    label,
+    value,
+    isWide = false,
+    isPath = false,
+    id = undefined,
+    href = undefined,
+    children = null
+}: {
+    icon: MaterialSymbol;
+    iconClass: string;
+    label: string;
+    value: string | number | null | undefined;
+    isWide?: boolean;
+    isPath?: boolean;
+    id?: string;
+    href?: string;
+    children?: Snippet | null;
+})}
+    {#if href}
+        <a {href} class={["stat-card", isWide ? "wide" : ""]}>
+            <div class={["stat-icon", iconClass]}>
+                <MaterialIcon iconName={icon} />
+            </div>
+            <div class="stat-content">
+                <span class={["stat-value", isPath ? "path" : ""]} {id}>{value}</span>
+                <span class="stat-label">{label}</span>
+                {#if children}
+                    {@render children()}
+                {/if}
+            </div>
+        </a>
+    {:else}
+        <div class={["stat-card", isWide ? "wide" : ""]}>
+            <div class={["stat-icon", iconClass]}>
+                <MaterialIcon iconName={icon} />
+            </div>
+            <div class="stat-content">
+                <span class={["stat-value", isPath ? "path" : ""]} {id}>{value}</span>
+                <span class="stat-label">{label}</span>
+                {#if children}
+                    {@render children()}
+                {/if}
+            </div>
+        </div>
+    {/if}
+{/snippet}
 
 <AdminRouteShell heading="Dashboard" description="System overview and metrics">
     <div class="dashboard-container">
@@ -93,71 +139,50 @@
         <section class="section">
             <h3 class="section-title">System Overview</h3>
             <div class="stats-grid">
-                <!-- System Version -->
-                <div class="stat-card">
-                    <div class="stat-icon version">
-                        <MaterialIcon iconName="info" />
-                    </div>
-                    <div class="stat-content">
-                        <span class="stat-value">v{systemInfo.version}</span>
-                        <span class="stat-label">System Version</span>
-                    </div>
-                </div>
+                {@render statCard({
+                    icon: "info",
+                    iconClass: "version",
+                    value: `v${systemInfo.version}`,
+                    label: "System Version"
+                })}
 
-                <!-- Uptime -->
-                <div class="stat-card">
-                    <div class="stat-icon uptime">
-                        <MaterialIcon iconName="schedule" />
-                    </div>
-                    <div class="stat-content">
-                        <span class="stat-value" id="uptime-value">{formattedLiveUptime}</span>
-                        <span class="stat-label">Uptime</span>
-                    </div>
-                </div>
+                {@render statCard({
+                    icon: "schedule",
+                    iconClass: "uptime",
+                    value: formattedLiveUptime,
+                    label: "Uptime",
+                    id: "uptime-value"
+                })}
 
-                <!-- Active Connections (WS) -->
-                <div class="stat-card">
-                    <div class="stat-icon connections">
-                        <MaterialIcon iconName="hub" />
-                    </div>
-                    <div class="stat-content">
-                        <span class="stat-value">{systemInfo.activeConnections}</span>
-                        <span class="stat-label">Active Clients</span>
-                    </div>
-                </div>
+                {@render statCard({
+                    icon: "hub",
+                    iconClass: "connections",
+                    value: systemInfo.activeConnections,
+                    label: "Active Clients",
+                    href: "/admin/events"
+                })}
 
-                <!-- Goroutines -->
-                <div class="stat-card">
-                    <div class="stat-icon goroutines">
-                        <MaterialIcon iconName="compare_arrows" />
-                    </div>
-                    <div class="stat-content">
-                        <span class="stat-value">{systemInfo.goroutines}</span>
-                        <span class="stat-label">Goroutines</span>
-                    </div>
-                </div>
+                {@render statCard({
+                    icon: "compare_arrows",
+                    iconClass: "goroutines",
+                    value: systemInfo.goroutines,
+                    label: "Goroutines",
+                    href: "/admin/jobs"
+                })}
 
-                <!-- Allocated Memory -->
-                <div class="stat-card">
-                    <div class="stat-icon alloc-memory">
-                        <MaterialIcon iconName="memory" />
-                    </div>
-                    <div class="stat-content">
-                        <span class="stat-value">{systemInfo.allocMemory}</span>
-                        <span class="stat-label">Allocated Memory</span>
-                    </div>
-                </div>
+                {@render statCard({
+                    icon: "memory",
+                    iconClass: "alloc-memory",
+                    value: systemInfo.allocMemory,
+                    label: "Allocated Memory"
+                })}
 
-                <!-- System Memory -->
-                <div class="stat-card">
-                    <div class="stat-icon sys-memory">
-                        <MaterialIcon iconName="memory_alt" />
-                    </div>
-                    <div class="stat-content">
-                        <span class="stat-value">{systemInfo.sysMemory}</span>
-                        <span class="stat-label">System Memory</span>
-                    </div>
-                </div>
+                {@render statCard({
+                    icon: "memory_alt",
+                    iconClass: "sys-memory",
+                    value: systemInfo.sysMemory,
+                    label: "System Memory"
+                })}
             </div>
         </section>
 
@@ -165,49 +190,36 @@
         <section class="section">
             <h3 class="section-title">Database</h3>
             <div class="stats-grid">
-                <!-- DB Connections -->
-                <div class="stat-card">
-                    <div class="stat-icon db">
-                        <MaterialIcon iconName="database" />
-                    </div>
-                    <div class="stat-content">
-                        <span class="stat-value">{databaseInfo.connections}</span>
-                        <span class="stat-label">Active Connections</span>
-                    </div>
-                </div>
+                {@render statCard({
+                    icon: "database",
+                    iconClass: "db",
+                    value: databaseInfo.connections,
+                    label: "Active Connections"
+                })}
 
-                <!-- DB Size -->
-                <div class="stat-card">
-                    <div class="stat-icon storage">
-                        <MaterialIcon iconName="hard_drive" />
-                    </div>
-                    <div class="stat-content">
-                        <span class="stat-value">{databaseInfo.size}</span>
-                        <span class="stat-label">Database Size</span>
-                    </div>
-                </div>
+                {@render statCard({
+                    icon: "hard_drive",
+                    iconClass: "storage",
+                    value: databaseInfo.size,
+                    label: "Database Size",
+                    href: "/admin/storage"
+                })}
 
-                <!-- Total Users -->
-                <div class="stat-card">
-                    <div class="stat-icon users">
-                        <MaterialIcon iconName="group" />
-                    </div>
-                    <div class="stat-content">
-                        <span class="stat-value">{databaseInfo.users}</span>
-                        <span class="stat-label">Total Users</span>
-                    </div>
-                </div>
+                {@render statCard({
+                    icon: "group",
+                    iconClass: "users",
+                    value: databaseInfo.users,
+                    label: "Total Users",
+                    href: "/admin/users"
+                })}
 
-                <!-- Total Images -->
-                <div class="stat-card">
-                    <div class="stat-icon images">
-                        <MaterialIcon iconName="image" />
-                    </div>
-                    <div class="stat-content">
-                        <span class="stat-value">{databaseInfo.images}</span>
-                        <span class="stat-label">Total Images</span>
-                    </div>
-                </div>
+                {@render statCard({
+                    icon: "image",
+                    iconClass: "images",
+                    value: databaseInfo.images,
+                    label: "Total Images",
+                    href: "/photos"
+                })}
             </div>
         </section>
 
@@ -215,65 +227,57 @@
         <section class="section">
             <h3 class="section-title">Storage</h3>
             <div class="stats-grid">
-                <!-- Percentage of Available Space -->
-                <div class="stat-card">
-                    <div class="stat-icon storage">
-                        <MaterialIcon iconName="hard_drive" />
+                {#snippet systemStorageProgress()}
+                    <div class="progress-bar-wrapper">
+                        <ProgressBar
+                            colour="secondary"
+                            width={100 -
+                                ((data.systemStats?.total_available_space_bytes ?? 0) /
+                                    (data.systemStats?.total_system_space_bytes ?? 1)) *
+                                    100}
+                        />
                     </div>
-                    <div class="stat-content">
-                        <span class="stat-value">
-                            {formatBytes(
-                                (data.systemStats?.total_system_space_bytes ?? 0) -
-                                    (data.systemStats?.total_available_space_bytes ?? 0)
-                            )} of {storageInfo.totalSystemSpace}
-                        </span>
-                        <span class="stat-label">System Storage</span>
-                        <div class="progress-bar-wrapper">
-                            <ProgressBar
-                                colour="secondary"
-                                width={100 -
-                                    ((data.systemStats?.total_available_space_bytes ?? 0) /
-                                        (data.systemStats?.total_system_space_bytes ?? 1)) *
-                                        100}
-                            />
-                        </div>
-                    </div>
-                </div>
+                {/snippet}
 
-                <!-- Total Storage -->
-                <div class="stat-card">
-                    <div class="stat-icon storage">
-                        <MaterialIcon iconName="hard_drive" />
-                    </div>
-                    <div class="stat-content">
-                        <span class="stat-value">{storageInfo.totalUsed}</span>
-                        <span class="stat-label">Viz Storage</span>
-                    </div>
-                </div>
+                {@render statCard({
+                    icon: "hard_drive",
+                    iconClass: "storage",
+                    value: `${formatBytes(
+                        (data.systemStats?.total_system_space_bytes ?? 0) -
+                            (data.systemStats?.total_available_space_bytes ?? 0)
+                    )} of ${storageInfo.totalSystemSpace}`,
+                    label: "System Storage",
+                    href: "/admin/storage",
+                    children: systemStorageProgress
+                })}
+
+                {@render statCard({
+                    icon: "hard_drive",
+                    iconClass: "storage",
+                    value: storageInfo.totalUsed,
+                    label: "Viz Storage",
+                    href: "/admin/storage"
+                })}
 
                 <div class="stat-separator"></div>
 
-                <!-- Cache Usage -->
-                <div class="stat-card">
-                    <div class="stat-icon cache">
-                        <MaterialIcon iconName="memory" />
-                    </div>
-                    <div class="stat-content">
-                        <span class="stat-value">{storageInfo.cacheSize}</span>
-                        <span class="stat-label">Viz Cache ({storageInfo.cacheItems} items)</span>
-                    </div>
-                </div>
+                {@render statCard({
+                    icon: "memory",
+                    iconClass: "cache",
+                    value: storageInfo.cacheSize,
+                    label: `Viz Cache (${storageInfo.cacheItems} items)`,
+                    href: "/admin/cache"
+                })}
 
-                <!-- Storage Path -->
-                <div class="stat-card wide">
-                    <div class="stat-icon storage-path">
-                        <MaterialIcon iconName="folder" />
-                    </div>
-                    <div class="stat-content">
-                        <span class="stat-value path">{storageInfo.path}</span>
-                        <span class="stat-label">Storage Path</span>
-                    </div>
-                </div>
+                {@render statCard({
+                    icon: "folder",
+                    iconClass: "storage-path",
+                    value: storageInfo.path,
+                    label: "Storage Path",
+                    isWide: true,
+                    isPath: true,
+                    href: "/admin/storage"
+                })}
             </div>
         </section>
     </div>
@@ -320,16 +324,18 @@
 
     .stat-card {
         background: var(--viz-100);
-        border: 1px solid var(--viz-90);
+        border: 1px solid var(--viz-80);
         border-radius: 0.75rem;
         padding: 1.5rem;
         display: flex;
         align-items: center;
         gap: 1rem;
         transition: border-color 0.2s;
+        text-decoration: none;
+        color: inherit;
 
         &:hover {
-            border-color: var(--viz-80);
+            border-color: var(--viz-70);
         }
 
         &.wide {

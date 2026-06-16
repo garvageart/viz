@@ -5,6 +5,7 @@
     import IconButton from "$lib/components/ui/IconButton.svelte";
     import MaterialIcon from "$lib/components/ui/MaterialIcon.svelte";
     import { jobsState } from "$lib/states/jobs.svelte";
+    import type { MaterialSymbol } from "$lib/types/MaterialSymbol.js";
 
     function formatDuration(start: Date, end: Date) {
         const ms = end.getTime() - start.getTime();
@@ -18,9 +19,29 @@
     });
 </script>
 
-<svelte:head>
-    <title>Jobs - Admin</title>
-</svelte:head>
+{#snippet statCard({
+    icon,
+    value,
+    label,
+    cardClass,
+    delay
+}: {
+    icon: MaterialSymbol;
+    value: string | number;
+    label: string;
+    cardClass: string;
+    delay: number;
+})}
+    <div class={["stat-card", cardClass]} in:fade={{ delay }}>
+        <div class="stat-icon">
+            <MaterialIcon iconName={icon} />
+        </div>
+        <div class="stat-content">
+            <span class="stat-value">{value}</span>
+            <span class="stat-label">{label}</span>
+        </div>
+    </div>
+{/snippet}
 
 <AdminRouteShell heading="Job Manager" description="Monitor and manage background jobs">
     {#snippet actions()}
@@ -162,42 +183,37 @@
             <!-- Statistics -->
             <section class="dashboard-section stats-section">
                 <div class="stats-grid">
-                    <div class="stat-card active" in:fade>
-                        <div class="stat-icon">
-                            <MaterialIcon iconName="pending" />
-                        </div>
-                        <div class="stat-content">
-                            <span class="stat-value">{jobsState.stats.activeCount}</span>
-                            <span class="stat-label">Active Jobs</span>
-                        </div>
-                    </div>
-                    <div class="stat-card completed" in:fade={{ delay: 100 }}>
-                        <div class="stat-icon">
-                            <MaterialIcon iconName="check_circle" />
-                        </div>
-                        <div class="stat-content">
-                            <span class="stat-value">{jobsState.stats.completedCount}</span>
-                            <span class="stat-label">Completed</span>
-                        </div>
-                    </div>
-                    <div class="stat-card failed" in:fade={{ delay: 200 }}>
-                        <div class="stat-icon">
-                            <MaterialIcon iconName="error" />
-                        </div>
-                        <div class="stat-content">
-                            <span class="stat-value">{jobsState.stats.failedCount}</span>
-                            <span class="stat-label">Failed</span>
-                        </div>
-                    </div>
-                    <div class="stat-card total" in:fade={{ delay: 300 }}>
-                        <div class="stat-icon">
-                            <MaterialIcon iconName="analytics" />
-                        </div>
-                        <div class="stat-content">
-                            <span class="stat-value">{jobsState.stats.totalProcessed}</span>
-                            <span class="stat-label">Total Processed</span>
-                        </div>
-                    </div>
+                    {@render statCard({
+                        icon: "pending",
+                        value: jobsState.stats.activeCount,
+                        label: "Active Jobs",
+                        cardClass: "active",
+                        delay: 0
+                    })}
+
+                    {@render statCard({
+                        icon: "check_circle",
+                        value: jobsState.stats.completedCount,
+                        label: "Completed",
+                        cardClass: "completed",
+                        delay: 100
+                    })}
+
+                    {@render statCard({
+                        icon: "error",
+                        value: jobsState.stats.failedCount,
+                        label: "Failed",
+                        cardClass: "failed",
+                        delay: 200
+                    })}
+
+                    {@render statCard({
+                        icon: "analytics",
+                        value: jobsState.stats.totalProcessed,
+                        label: "Total Processed",
+                        cardClass: "total",
+                        delay: 300
+                    })}
                 </div>
             </section>
 

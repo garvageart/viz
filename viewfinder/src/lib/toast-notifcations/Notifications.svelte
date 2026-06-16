@@ -149,16 +149,16 @@
             border-color 150ms ease;
 
         // Map type-based accent colors (used for colored background mixes and left cue bars)
-        &.viz-toast-info {
+        &:global(.viz-toast-info) {
             --toast-accent-color: var(--viz-info-color);
         }
-        &.viz-toast-success {
+        &:global(.viz-toast-success) {
             --toast-accent-color: var(--viz-success-color);
         }
-        &.viz-toast-warning {
+        &:global(.viz-toast-warning) {
             --toast-accent-color: var(--viz-warning-color);
         }
-        &.viz-toast-error {
+        &:global(.viz-toast-error) {
             --toast-accent-color: var(--viz-error-color);
         }
 

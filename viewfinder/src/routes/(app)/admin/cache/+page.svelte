@@ -10,6 +10,8 @@
     import MaterialIcon from "$lib/components/ui/MaterialIcon.svelte";
     import { modalsManager } from "$lib/components/modals/manager/ModalManager.svelte";
 
+    import type { MaterialSymbol } from "$lib/types/MaterialSymbol.js";
+
     let { data } = $props();
 
     let cacheStatus = $derived(data.cacheStatus);
@@ -74,9 +76,28 @@
     }
 </script>
 
-<svelte:head>
-    <title>Cache - Admin</title>
-</svelte:head>
+{#snippet metricCard({
+    icon,
+    iconClass,
+    title,
+    value,
+    desc
+}: {
+    icon: MaterialSymbol;
+    iconClass: string;
+    title: string;
+    value: string | number;
+    desc: string;
+})}
+    <div class="metric-card">
+        <div class="card-header">
+            <MaterialIcon iconName={icon} class={["icon-accent", iconClass]} />
+            <span class="card-title">{title}</span>
+        </div>
+        <div class="card-value">{value}</div>
+        <span class="card-desc">{desc}</span>
+    </div>
+{/snippet}
 
 <AdminRouteShell
     heading="Cache Management"
@@ -110,43 +131,37 @@
     <div class="cache-container">
         <!-- Metrics Cards Grid -->
         <div class="metrics-grid">
-            <div class="metric-card">
-                <div class="card-header">
-                    <MaterialIcon iconName="folder_special" class="icon-accent size" />
-                    <span class="card-title">Total Size</span>
-                </div>
-                <div class="card-value">{formatBytes(cacheStatus.size)}</div>
-                <span class="card-desc">Total disk footprint of cached image transformations</span>
-            </div>
+            {@render metricCard({
+                icon: "folder_special",
+                iconClass: "size",
+                title: "Total Size",
+                value: formatBytes(cacheStatus.size) ?? "0 B",
+                desc: "Total disk footprint of cached image transformations"
+            })}
 
-            <div class="metric-card">
-                <div class="card-header">
-                    <MaterialIcon iconName="photo_library" class="icon-accent items" />
-                    <span class="card-title">Cached Items</span>
-                </div>
-                <div class="card-value">{cacheStatus.items.toLocaleString()}</div>
-                <span class="card-desc">Count of distinct transformed images currently stored</span>
-            </div>
+            {@render metricCard({
+                icon: "photo_library",
+                iconClass: "items",
+                title: "Cached Items",
+                value: cacheStatus.items.toLocaleString(),
+                desc: "Count of distinct transformed images currently stored"
+            })}
 
-            <div class="metric-card">
-                <div class="card-header">
-                    <MaterialIcon iconName="speed" class="icon-accent hits" />
-                    <span class="card-title">Cache Hits</span>
-                </div>
-                <div class="card-value">{cacheStatus.hits.toLocaleString()}</div>
-                <span class="card-desc">Transform requests served directly from local cache</span>
-            </div>
+            {@render metricCard({
+                icon: "speed",
+                iconClass: "hits",
+                title: "Cache Hits",
+                value: cacheStatus.hits.toLocaleString(),
+                desc: "Transform requests served directly from local cache"
+            })}
 
-            <div class="metric-card">
-                <div class="card-header">
-                    <MaterialIcon iconName="trending_up" class="icon-accent ratio" />
-                    <span class="card-title">Hit Ratio</span>
-                </div>
-                <div class="card-value">{(cacheStatus.hit_ratio * 100).toFixed(2)}%</div>
-                <span class="card-desc"
-                    >Efficiency of cache serving requests without re-processing</span
-                >
-            </div>
+            {@render metricCard({
+                icon: "trending_up",
+                iconClass: "ratio",
+                title: "Hit Ratio",
+                value: `${(cacheStatus.hit_ratio * 100).toFixed(2)}%`,
+                desc: "Efficiency of cache serving requests without re-processing"
+            })}
         </div>
 
         <!-- Details & Visualization Section -->
@@ -243,7 +258,6 @@
         display: flex;
         flex-direction: column;
         gap: var(--viz-spacing-xl);
-        max-width: 1200px;
         margin: 0 auto;
     }
 

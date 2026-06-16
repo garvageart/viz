@@ -10,6 +10,7 @@
     import AdminRouteShell from "$lib/components/admin/AdminRouteShell.svelte";
     import { modalsManager } from "$lib/components/modals/manager/ModalManager.svelte";
     import InputSelect from "$lib/components/ui/InputSelect.svelte";
+    import type { MaterialSymbol } from "$lib/types/MaterialSymbol.js";
 
     type EventHistoryItem = EventRecord;
 
@@ -184,9 +185,43 @@
     });
 </script>
 
-<svelte:head>
-    <title>Events - Admin</title>
-</svelte:head>
+{#snippet statCard({
+    icon,
+    value,
+    label
+}: {
+    icon: MaterialSymbol;
+    value: string | number;
+    label: string;
+})}
+    <div class="stat-card">
+        <MaterialIcon iconName={icon} />
+        <div class="stat-content">
+            <span class="stat-value">{value}</span>
+            <span class="stat-label">{label}</span>
+        </div>
+    </div>
+{/snippet}
+
+{#snippet metricCard({
+    icon,
+    value,
+    label
+}: {
+    icon: MaterialSymbol;
+    value: string | number;
+    label: string;
+})}
+    <div class="metric-card">
+        <div class="metric-icon">
+            <MaterialIcon iconName={icon} />
+        </div>
+        <div class="metric-content">
+            <span class="metric-value">{value}</span>
+            <span class="metric-label">{label}</span>
+        </div>
+    </div>
+{/snippet}
 
 <AdminRouteShell heading="Event Monitor" description="WebSocket metrics and event history">
     {#snippet actions()}
@@ -215,36 +250,29 @@
                 <h2>Connection Statistics</h2>
             </div>
             <div class="stats-grid">
-                <div class="stat-card">
-                    <MaterialIcon iconName="sensors" />
-                    <div class="stat-content">
-                        <span class="stat-value">{stats.connectedClients}</span>
-                        <span class="stat-label">Connected Clients</span>
-                    </div>
-                </div>
-                <div class="stat-card">
-                    <MaterialIcon iconName="timeline" />
-                    <div class="stat-content">
-                        <span class="stat-value">{metrics.totalEvents}</span>
-                        <span class="stat-label">Total Events</span>
-                    </div>
-                </div>
-                <div class="stat-card">
-                    <MaterialIcon iconName="schedule" />
-                    <div class="stat-content">
-                        <span class="stat-value"
-                            >{new Date(stats.timestamp).toLocaleTimeString()}</span
-                        >
-                        <span class="stat-label">Last Updated</span>
-                    </div>
-                </div>
-                <div class="stat-card">
-                    <MaterialIcon iconName="groups" />
-                    <div class="stat-content">
-                        <span class="stat-value">{stats.clientIds.length}</span>
-                        <span class="stat-label">Active Clients</span>
-                    </div>
-                </div>
+                {@render statCard({
+                    icon: "sensors",
+                    value: stats.connectedClients,
+                    label: "Connected Clients"
+                })}
+
+                {@render statCard({
+                    icon: "timeline",
+                    value: metrics.totalEvents,
+                    label: "Total Events"
+                })}
+
+                {@render statCard({
+                    icon: "schedule",
+                    value: new Date(stats.timestamp).toLocaleTimeString(),
+                    label: "Last Updated"
+                })}
+
+                {@render statCard({
+                    icon: "groups",
+                    value: stats.clientIds.length,
+                    label: "Active Clients"
+                })}
             </div>
         </section>
 
@@ -255,44 +283,29 @@
                 <h2>Performance Metrics</h2>
             </div>
             <div class="metrics-grid">
-                <div class="metric-card">
-                    <div class="metric-icon">
-                        <MaterialIcon iconName="speed" />
-                    </div>
-                    <div class="metric-content">
-                        <span class="metric-value">{metrics.totalEvents}</span>
-                        <span class="metric-label">Total Events</span>
-                    </div>
-                </div>
-                <div class="metric-card">
-                    <div class="metric-icon">
-                        <MaterialIcon iconName="trending_up" />
-                    </div>
-                    <div class="metric-content">
-                        <span class="metric-value">{metrics.connectedClients}</span>
-                        <span class="metric-label">Active Connections</span>
-                    </div>
-                </div>
-                <div class="metric-card">
-                    <div class="metric-icon">
-                        <MaterialIcon iconName="lightbulb" />
-                    </div>
-                    <div class="metric-content">
-                        <span class="metric-value">{Object.keys(metrics.eventsByType).length}</span>
-                        <span class="metric-label">Event Types</span>
-                    </div>
-                </div>
-                <div class="metric-card">
-                    <div class="metric-icon">
-                        <MaterialIcon iconName="update" />
-                    </div>
-                    <div class="metric-content">
-                        <span class="metric-value"
-                            >{new Date(metrics.timestamp).toLocaleTimeString()}</span
-                        >
-                        <span class="metric-label">Last Update</span>
-                    </div>
-                </div>
+                {@render metricCard({
+                    icon: "speed",
+                    value: metrics.totalEvents,
+                    label: "Total Events"
+                })}
+
+                {@render metricCard({
+                    icon: "trending_up",
+                    value: metrics.connectedClients,
+                    label: "Active Connections"
+                })}
+
+                {@render metricCard({
+                    icon: "lightbulb",
+                    value: Object.keys(metrics.eventsByType).length,
+                    label: "Event Types"
+                })}
+
+                {@render metricCard({
+                    icon: "update",
+                    value: new Date(metrics.timestamp).toLocaleTimeString(),
+                    label: "Last Update"
+                })}
             </div>
         </section>
         {#if Object.keys(metrics.eventsByType || {}).length > 0}
@@ -399,7 +412,7 @@
         background: var(--viz-100);
         border-radius: 12px;
         padding: 1.5rem;
-        border: 1px solid var(--viz-90);
+        border: 1px solid var(--viz-80);
     }
 
     .section-header {

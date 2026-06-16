@@ -6,12 +6,12 @@
     import SliderToggle from "$lib/components/ui/SliderToggle.svelte";
     import { user as currentUserState } from "$lib/states/index.svelte";
     import { toastState } from "$lib/toast-notifcations/notif-state.svelte";
-    import type { UserRole } from "$lib/types/users.js";
     import { DateTime } from "luxon";
     import AdminRouteShell from "$lib/components/admin/AdminRouteShell.svelte";
     import { modalsManager } from "$lib/components/modals/manager/ModalManager.svelte";
     import UserCreateModal from "$lib/components/modals/UserCreateModal.svelte";
     import UserEditModal from "$lib/components/modals/UserEditModal.svelte";
+    import IconButton from "$lib/components/ui/IconButton.svelte";
 
     let { data } = $props();
     let users = $derived(data.users);
@@ -45,7 +45,7 @@
                     });
 
                     if (res.status === 201) {
-                        users = [...users, res.data];
+                        users.push(res.data);
                         toastState.addToast({
                             message: "User created successfully",
                             type: "success"
@@ -152,10 +152,6 @@
     }
 </script>
 
-<svelte:head>
-    <title>Users - Admin</title>
-</svelte:head>
-
 {#snippet deleteConfirmSnippet()}
     {#if userToDelete}
         <span>
@@ -168,21 +164,21 @@
 
         <div class="message-container">
             {#if forceDelete}
-                <p class="warning-text">
+                <span class="warning-text">
                     <MaterialIcon iconName="warning" />
                     <span>
                         <strong>Warning:</strong> This will permanently delete the user's account, all
                         their sessions, settings, and onboarding status. This action cannot be undone.
                     </span>
-                </p>
+                </span>
             {:else}
-                <p class="info-text">
+                <span class="info-text">
                     <MaterialIcon iconName="info" />
                     <span>
                         This will perform a soft delete. The user will be marked as deleted but data
                         may remain in the database.
                     </span>
-                </p>
+                </span>
             {/if}
         </div>
     {/if}
@@ -216,11 +212,19 @@
                         <tr>
                             <td>
                                 <div class="user-cell">
-                                    <div class="avatar-placeholder">
+                                    <div
+                                        class="avatar-placeholder"
+                                        class:current-user={user.uid === currentUserState.data?.uid}
+                                    >
                                         {(user.name?.[0] || user.email?.[0] || "?").toUpperCase()}
                                     </div>
                                     <div class="user-info">
-                                        <span class="name">{user.name || "No Name"}</span>
+                                        <span class="name"
+                                            >{user.name || "No Name"}
+                                            {user.uid === currentUserState.data?.uid
+                                                ? "(You)"
+                                                : ""}</span
+                                        >
                                         <span class="uid" title={user.uid}>{user.uid}</span>
                                     </div>
                                 </div>
@@ -232,20 +236,19 @@
                             <td>{formatDate(user.created_at)}</td>
                             <td>
                                 <div class="actions-cell">
-                                    <button
+                                    <IconButton
+                                        iconName="edit"
+                                        fill={true}
                                         class="action-btn edit"
                                         onclick={() => openEditModal(user)}
                                         title="Edit User"
-                                    >
-                                        <MaterialIcon iconName="edit" fill={true} />
-                                    </button>
-                                    <button
+                                    />
+                                    <IconButton
+                                        iconName="delete"
                                         class="action-btn delete"
                                         onclick={() => openDeleteConfirm(user)}
                                         title="Delete User"
-                                    >
-                                        <MaterialIcon iconName="delete" />
-                                    </button>
+                                    />
                                 </div>
                             </td>
                         </tr>
@@ -267,7 +270,7 @@
         background: var(--viz-100);
         border-radius: 0.75rem;
         padding: 1.5rem;
-        border: 1px solid var(--viz-90);
+        border: 1px solid var(--viz-80);
     }
 
     .users-table-container {
@@ -315,6 +318,10 @@
         justify-content: center;
         font-weight: 600;
         font-size: 0.9rem;
+
+        &.current-user {
+            outline: 2px solid var(--viz-primary);
+        }
     }
 
     .user-info {

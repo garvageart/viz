@@ -9,6 +9,10 @@
     let { heading, description, actions, children }: Props = $props();
 </script>
 
+<svelte:head>
+    <title>{heading}</title>
+</svelte:head>
+
 <div class="admin-page-route">
     <header class="page-header">
         <div class="route-info">
@@ -38,24 +42,21 @@
         display: flex;
         justify-content: space-between;
         align-items: center;
-        padding: 1rem 2rem;
-        border-bottom: 1px solid var(--viz-80);
+        padding: var(--viz-spacing-md) var(--viz-spacing-lg);
+        border-bottom: var(--viz-border-thin);
         background-color: var(--viz-bg-color);
-        position: sticky;
-        top: 0;
-        z-index: 10;
 
         h1 {
             margin: 0;
-            font-size: 1.75rem;
+            font-size: var(--viz-font-size-xl);
             font-weight: 600;
         }
 
         .description {
             display: block;
-            margin: 0.25rem 0 0 0;
+            margin: var(--viz-spacing-xxs) 0 0 0;
             color: var(--viz-40);
-            font-size: 0.95rem;
+            font-size: var(--viz-font-size-xs);
         }
     }
 
@@ -65,6 +66,6 @@
     }
 
     .page-content {
-        padding: 2rem;
+        padding: var(--viz-spacing-lg);
     }
 </style>

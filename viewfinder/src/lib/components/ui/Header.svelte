@@ -30,7 +30,6 @@
     import VizView from "$lib/views/views.svelte";
     import hotkeys from "hotkeys-js";
     import { untrack } from "svelte";
-    import type { SvelteHTMLElements } from "svelte/elements";
     import OpenAccountPanel from "../context-menus/AccountPanel.svelte";
     import AppMenu from "../context-menus/AppMenu.svelte";
     import IconButton from "./IconButton.svelte";
@@ -292,12 +291,14 @@
         <IconButton
             class="header-button"
             iconName="arrow_back"
+            title="Go Back"
             disabled={!historyState.canGoBack}
             onclick={() => history.back()}
         />
         <IconButton
             class="header-button"
             iconName="arrow_forward"
+            title="Go Forward"
             disabled={!historyState.canGoForward}
             onclick={() => history.forward()}
         />

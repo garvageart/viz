@@ -422,10 +422,11 @@
     }
 
     :global(.ctx-separator) {
-        height: 1px !important;
+        height: 0 !important;
+        border-top: 1px solid var(--viz-60) !important;
         margin: var(--viz-spacing-xs) var(--viz-spacing-sm) !important;
-        background-color: var(--viz-60) !important;
         list-style: none !important;
         display: block !important;
+        padding: 0 !important;
     }
 </style>
