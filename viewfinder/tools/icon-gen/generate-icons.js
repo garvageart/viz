@@ -300,6 +300,7 @@ async function main() {
     const validSymbols = loadValidSymbols();
 
     const failedCachePath = join(__dirname, "failed-icons.json");
+    /** @type {Record<string, boolean>} */
     let failedCache = {};
     let failedCacheChanged = false;
     if (existsSync(failedCachePath) && !force) {
@@ -310,7 +311,6 @@ async function main() {
         }
     }
 
-    // gather candidate icon names from source - look for iconName="..." or iconName={'...'}
     // Use forward-slash patterns so glob works reliably on Windows.
     const pattern = `${SRC.replace(/\\/g, "/")}/**/*.{svelte,ts,js}`;
     const files = globSync(pattern, { nodir: true });
@@ -319,21 +319,102 @@ async function main() {
     console.log("Found files:", files.length);
     if (files.length > 0) console.log("Example file:", files[0]);
 
-    // Map of iconName -> { weights: Set, styles: Set }
+    //----------------------------------------------------------------------
+    // PASS 1: Discover which prop names and function/snippet argument positions
+    // are typed as MaterialSymbol anywhere in the source tree.
+    //
+    // This makes icon discovery self-maintaining: adding a new component or
+    // function that accepts a MaterialSymbol parameter is enough — no changes
+    // to this script are needed.
+    //
+    // Discovered structure:
+    //   iconPropNames  — Set<string>  e.g. { "iconName", "icon", "myIcon" }
+    //   iconFuncArgs   — Map<funcName, Set<number>>  e.g. { "tokenCategory" => {0} }
+    //----------------------------------------------------------------------
+
+    /** @type {Set<string>} Prop/variable names typed as MaterialSymbol */
+    const iconPropNames = new Set(["iconName", "icon"]); // safe baseline fallbacks
+
+    /**
+     * Map of function/snippet name -> set of 0-based argument positions that
+     * are typed as MaterialSymbol.
+     * @type {Map<string, Set<number>>}
+     */
+    const iconFuncArgs = new Map();
+
+    // Matches: `paramName: MaterialSymbol` or `paramName?: MaterialSymbol`
+    // Captures the identifier before the colon.
+    const reMSProp = /\b(\w+)\??:\s*(?:[\w.]+\.)?MaterialSymbol\b/g;
+
+    // Matches function/snippet definitions and captures the name + raw param list.
+    // Handles both TS functions and Svelte {#snippet ...} blocks.
+    // e.g.  function foo(a: string, icon: MaterialSymbol)
+    //       {#snippet bar(iconName: MaterialSymbol, title: string)}
+    //       const baz = (x: MaterialSymbol) =>
+    const reFuncDef =
+        /(?:(?:function|snippet)\s+(\w+)|(?:const|let)\s+(\w+)\s*=\s*(?:async\s*)?\()\s*\(?\s*([^)]*MaterialSymbol[^)]*)\)/g;
+
+    for (const f of files) {
+        if (f.includes("/generated/") || f.includes("/types/MaterialSymbol")) {
+            continue;
+        }
+        const text = readFileSync(f, "utf8");
+
+        // 1a. Collect prop/variable names typed as MaterialSymbol
+        reMSProp.lastIndex = 0;
+        let mp;
+        while ((mp = reMSProp.exec(text)) !== null) {
+            iconPropNames.add(mp[1]);
+        }
+
+        // 1b. Collect function/snippet names and their MaterialSymbol param positions
+        reFuncDef.lastIndex = 0;
+        let mf;
+        while ((mf = reFuncDef.exec(text)) !== null) {
+            const funcName = mf[1] || mf[2];
+            const rawParams = mf[3];
+            if (!funcName || !rawParams) {
+                continue;
+            }
+
+            // Split params on commas (naive but sufficient for non-nested generics)
+            const params = rawParams.split(",");
+            params.forEach((param, idx) => {
+                if (/(?:[\w.]+\.)?MaterialSymbol/.test(param)) {
+                    if (!iconFuncArgs.has(funcName)) {
+                        iconFuncArgs.set(funcName, new Set());
+                    }
+                    const funcSet = iconFuncArgs.get(funcName);
+                    if (funcSet) {
+                        funcSet.add(idx);
+                    }
+                }
+            });
+        }
+    }
+
+    console.log("Discovered icon prop names:", Array.from(iconPropNames).sort());
+    console.log(
+        "Discovered icon func args:",
+        Object.fromEntries(
+            Array.from(iconFuncArgs.entries()).map(([k, v]) => [k, Array.from(v)])
+        )
+    );
+
+    //----------------------------------------------------------------------
+    // PASS 2: Scan all source files for icon name strings using the discovered
+    // prop names and function argument positions from Pass 1.
+    //
+    // Three extraction strategies per file:
+    //   A. Prop attributes:  propName="value"  propName={'value'}  propName={expr}
+    //   B. Object literals:  propName: "value"  propName: 'value'
+    //   C. Call-site args:   funcName("value", ...)  at known positions
+    //
+    // All candidates are validated against the MaterialSymbol allowlist.
+    //----------------------------------------------------------------------
+
+    /** @type {Map<string, { weights: Set<string>, styles: Set<string> }>} */
     const names = new Map();
-
-    const reNameDouble = /iconName\s*=\s*"([a-zA-Z0-9_\- ]+)"/g;
-    const reNameSingle = /iconName\s*=\s*'([a-zA-Z0-9_\- ]+)'/g;
-    const reNameExpr = /iconName\s*=\s*{\s*"([a-zA-Z0-9_\- ]+)"\s*}/g;
-    const reNameObj = /iconName\s*:\s*"([a-zA-Z0-9_\- ]+)"/g; // object literal
-    const reNameObjSingle = /iconName\s*:\s*'([a-zA-Z0-9_\- ]+)'/g;
-
-    // Icon property detection
-    const reIconDouble = /icon\s*=\s*"([a-zA-Z0-9_\- ]+)"/g;
-    const reIconSingle = /icon\s*=\s*'([a-zA-Z0-9_\- ]+)'/g;
-    const reIconExpr = /icon\s*=\s*{\s*"([a-zA-Z0-9_\- ]+)"\s*}/g;
-    const reIconObj = /icon\s*:\s*"([a-zA-Z0-9_\- ]+)"/g;
-    const reIconObjSingle = /icon\s*:\s*'([a-zA-Z0-9_\- ]+)'/g;
 
     // Weight detection
     const reWeightDouble = /(?:iconWeight|weight)\s*=\s*"([0-9]{3})"/g;
@@ -347,71 +428,154 @@ async function main() {
     const reStyleExpr = /iconStyle\s*=\s*{\s*"([a-z]+)"\s*}/g;
     const reStyleObj = /iconStyle\s*:\s*"([a-z]+)"/g;
 
+    /**
+     * Validate and register a candidate icon name.
+     * @param {string} candidate
+     * @param {Set<string>} fileNames
+     */
+    function tryAddIcon(candidate, fileNames) {
+        const val = candidate.trim();
+        if (val && (!validSymbols || validSymbols.has(val))) {
+            fileNames.add(val);
+        }
+    }
+
+    /**
+     * Extract all string literals from a JS/TS expression string.
+     * Handles simple quoted strings; does not evaluate dynamic expressions.
+     * @param {string} expr
+     * @returns {string[]}
+     */
+    function extractStringsFromExpr(expr) {
+        const results = [];
+        const re = /(?:"([^"\\]+)"|'([^'\\]+)'|`([^`\\]+)`)/g;
+        let sm;
+        while ((sm = re.exec(expr)) !== null) {
+            const v = sm[1] ?? sm[2] ?? sm[3];
+            if (v) {
+                results.push(v);
+            }
+        }
+        return results;
+    }
+
+    /**
+     * Extract the Nth comma-separated argument from a raw argument string.
+     * This is a best-effort regex approach; it handles quoted strings and
+     * simple expressions but will not correctly parse deeply nested calls.
+     * @param {string} argsText  Raw text between the outer parentheses
+     * @param {number} position  0-based argument index
+     * @returns {string[]}  All string literals found at that position
+     */
+    function extractArgAtPosition(argsText, position) {
+        // Split on top-level commas (ignoring commas inside nested parens/brackets)
+        const args = [];
+        let depth = 0;
+        let current = "";
+        for (let i = 0; i < argsText.length; i++) {
+            const ch = argsText[i];
+            if (ch === "(" || ch === "[" || ch === "{") {
+                depth++;
+                current += ch;
+            } else if (ch === ")" || ch === "]" || ch === "}") {
+                depth--;
+                current += ch;
+            } else if (ch === "," && depth === 0) {
+                args.push(current.trim());
+                current = "";
+            } else {
+                current += ch;
+            }
+        }
+        if (current.trim()) {
+            args.push(current.trim());
+        }
+
+        if (position >= args.length) {
+            return [];
+        }
+        return extractStringsFromExpr(args[position]);
+    }
+
     for (const f of files) {
-        if (f.includes("/generated/")) continue;
+        if (f.includes("/generated/") || f.includes("/types/MaterialSymbol")) {
+            continue;
+        }
         const text = readFileSync(f, "utf8");
         let m;
 
         const fileNames = new Set();
-        [
-            reNameDouble,
-            reNameSingle,
-            reNameExpr,
-            reNameObj,
-            reNameObjSingle,
-            reIconDouble,
-            reIconSingle,
-            reIconExpr,
-            reIconObj,
-            reIconObjSingle
-        ].forEach((r) => {
-            r.lastIndex = 0;
-            while ((m = r.exec(text)) !== null) {
-                fileNames.add(m[1]);
-            }
-        });
 
-        // Match iconName={...} and extract all string literals inside the expression braces
-        const reExprBraces = /iconName\s*=\s*\{([^{}]+)\}/g;
-        let exprMatch;
-        while ((exprMatch = reExprBraces.exec(text)) !== null) {
-            const expr = exprMatch[1];
-            const reStrings = /(?:"([^"]+)"|'([^']+)'|`([^`]+)`)/g;
-            let strMatch;
-            while ((strMatch = reStrings.exec(expr)) !== null) {
-                const val = strMatch[1] || strMatch[2] || strMatch[3];
-                if (val && val.trim()) {
-                    fileNames.add(val.trim());
+        // 2A & 2B. Prop attributes and object literal values
+        for (const propName of iconPropNames) {
+            // propName="value"
+            const reAttrDouble = new RegExp(`${propName}\\s*=\\s*"([^"]+)"`, "g");
+            reAttrDouble.lastIndex = 0;
+            while ((m = reAttrDouble.exec(text)) !== null) {
+                tryAddIcon(m[1], fileNames);
+            }
+
+            // propName='value'
+            const reAttrSingle = new RegExp(`${propName}\\s*=\\s*'([^']+)'`, "g");
+            reAttrSingle.lastIndex = 0;
+            while ((m = reAttrSingle.exec(text)) !== null) {
+                tryAddIcon(m[1], fileNames);
+            }
+
+            // propName={expr} — extract all string literals inside the braces
+            const reAttrExpr = new RegExp(`${propName}\\s*=\\s*\\{([^{}]+)\\}`, "g");
+            reAttrExpr.lastIndex = 0;
+            while ((m = reAttrExpr.exec(text)) !== null) {
+                extractStringsFromExpr(m[1]).forEach((v) => tryAddIcon(v, fileNames));
+            }
+
+            // propName: "value"  (object literal / TS interface usage)
+            const reObjDouble = new RegExp(`${propName}\\s*:\\s*"([^"]+)"`, "g");
+            reObjDouble.lastIndex = 0;
+            while ((m = reObjDouble.exec(text)) !== null) {
+                tryAddIcon(m[1], fileNames);
+            }
+
+            // propName: 'value'
+            const reObjSingle = new RegExp(`${propName}\\s*:\\s*'([^']+)'`, "g");
+            reObjSingle.lastIndex = 0;
+            while ((m = reObjSingle.exec(text)) !== null) {
+                tryAddIcon(m[1], fileNames);
+            }
+        }
+
+        // 2C. Function/snippet call sites at known MaterialSymbol positions
+        for (const [funcName, positions] of iconFuncArgs.entries()) {
+            // Match: funcName( ... ) — capture everything up to the matching close paren.
+            // We use a simple depth-tracking loop on matched positions rather than a
+            // single regex to correctly handle nested calls.
+            const reCallStart = new RegExp(`\\b${funcName}\\s*\\(`, "g");
+            reCallStart.lastIndex = 0;
+            let mc;
+            while ((mc = reCallStart.exec(text)) !== null) {
+                // Walk forward from the opening paren to find the matching close paren
+                let depth = 1;
+                let i = mc.index + mc[0].length;
+                while (i < text.length && depth > 0) {
+                    if (text[i] === "(") {
+                        depth++;
+                    } else if (text[i] === ")") {
+                        depth--;
+                    }
+                    i++;
+                }
+                const argsText = text.slice(mc.index + mc[0].length, i - 1);
+                for (const pos of positions) {
+                    extractArgAtPosition(argsText, pos).forEach((v) =>
+                        tryAddIcon(v, fileNames)
+                    );
                 }
             }
         }
 
-        // Match icon={...} and extract all string literals inside the expression braces
-        const reIconExprBraces = /icon\s*=\s*\{([^{}]+)\}/g;
-        while ((exprMatch = reIconExprBraces.exec(text)) !== null) {
-            const expr = exprMatch[1];
-            const reStrings = /(?:"([^"]+)"|'([^']+)'|`([^`]+)`)/g;
-            let strMatch;
-            while ((strMatch = reStrings.exec(expr)) !== null) {
-                const val = strMatch[1] || strMatch[2] || strMatch[3];
-                if (val && val.trim()) {
-                    fileNames.add(val.trim());
-                }
-            }
+        if (fileNames.size === 0) {
+            continue;
         }
-        // lol fucking hell
-        // see: /src/lib/components/storage/StorageTemplateSettings.svelte
-        // TODO: fix this brah
-        const reFuncCallDouble = /tokenCategory\s*\(\s*"([a-zA-Z0-9_\- ]+)"/g;
-        const reFuncCallSingle = /tokenCategory\s*\(\s*'([a-zA-Z0-9_\- ]+)'/g;
-        [reFuncCallDouble, reFuncCallSingle].forEach((r) => {
-            r.lastIndex = 0;
-            while ((m = r.exec(text)) !== null) {
-                fileNames.add(m[1]);
-            }
-        });
-
-        if (fileNames.size === 0) continue;
 
         const foundWeights = new Set();
         [reWeightDouble, reWeightSingle, reWeightExpr, reWeightObj].forEach((r) => {
@@ -430,13 +594,14 @@ async function main() {
         });
 
         for (const n of fileNames) {
-            if (validSymbols && !validSymbols.has(n)) {
-                continue;
+            if (!names.has(n)) {
+                names.set(n, { weights: new Set(), styles: new Set() });
             }
-            if (!names.has(n)) names.set(n, { weights: new Set(), styles: new Set() });
             const entry = names.get(n);
-            foundWeights.forEach((w) => entry.weights.add(w));
-            foundStyles.forEach((s) => entry.styles.add(s));
+            if (entry) {
+                foundWeights.forEach((w) => entry.weights.add(w));
+                foundStyles.forEach((s) => entry.styles.add(s));
+            }
         }
     }
 
