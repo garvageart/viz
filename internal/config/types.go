@@ -14,7 +14,7 @@ type RedisConfig struct {
 	Host                string `json:"host" mapstructure:"host"`
 	Port                int    `json:"port" mapstructure:"port"`
 	Username            string `json:"username" mapstructure:"name"`
-	Password            string `json:"password" mapstructure:"password"`
+	Password            string `json:"password,omitempty" mapstructure:"password"`
 	DB                  int    `json:"db" mapstructure:"db"`
 	UseTLS              bool   `json:"use_tls" mapstructure:"use_tls"`
 	PoolSize            int    `json:"pool_size" mapstructure:"pool_size"`
@@ -32,15 +32,15 @@ type QueueConfig struct {
 type DatabaseConfig struct {
 	Location string `json:"location" mapstructure:"location"`
 	User     string `json:"user" mapstructure:"user"`
-	Password string `json:"password" mapstructure:"password"`
+	Password string `json:"password,omitempty" mapstructure:"password"`
 	Name     string `json:"name" mapstructure:"name"`
 	Port     int    `json:"port" mapstructure:"port"`
 }
 
 // LoggingConfig holds the configuration for logging.
 type LoggingConfig struct {
-	Level      string `json:"level" mapstructure:"level"`
-	Timezone   string `json:"timezone" mapstructure:"timezone"` // "local" or "utc"
+	Level    string `json:"level" mapstructure:"level"`
+	Timezone string `json:"timezone" mapstructure:"timezone"` // "local" or "utc"
 }
 
 // UploadConfig holds the configuration for uploads.
@@ -72,12 +72,12 @@ type ImageCacheConfig struct {
 
 // CacheConfig holds the configuration for caching.
 type CacheConfig struct {
-	GCEnabled              bool             `json:"gc_enabled" mapstructure:"gc_enabled"`
+	GCEnabled                bool             `json:"gc_enabled" mapstructure:"gc_enabled"`
 	ClearPermanentTransforms bool             `json:"clear_permanent_transforms" mapstructure:"clear_permanent_transforms"`
-	MaxSizeBytes           int64            `json:"max_size_bytes" mapstructure:"max_size_bytes"`
-	MaxAgeDays             int              `json:"max_age_days" mapstructure:"max_age_days"`
-	CleanupIntervalMinutes int              `json:"cleanup_interval_minutes" mapstructure:"cleanup_interval_minutes"`
-	Images                 ImageCacheConfig `json:"images" mapstructure:"images"`
+	MaxSizeBytes             int64            `json:"max_size_bytes" mapstructure:"max_size_bytes"`
+	MaxAgeDays               int              `json:"max_age_days" mapstructure:"max_age_days"`
+	CleanupIntervalMinutes   int              `json:"cleanup_interval_minutes" mapstructure:"cleanup_interval_minutes"`
+	Images                   ImageCacheConfig `json:"images" mapstructure:"images"`
 }
 
 type UserManagementConfig struct {
@@ -90,6 +90,11 @@ type SecurityConfig struct {
 	Argon2Threads  int `json:"argon2_threads" mapstructure:"argon2_threads"`
 }
 
+// StorageConfig holds the configuration for image storage paths.
+type StorageConfig struct {
+	StoragePathTemplate string `json:"storage_path_template" mapstructure:"storage_path_template"`
+}
+
 // VizConfig is the root configuration structure.
 type VizConfig struct {
 	BaseURL        string               `json:"baseUrl" mapstructure:"baseUrl"`
@@ -100,7 +105,8 @@ type VizConfig struct {
 	Queue          QueueConfig          `json:"redis" mapstructure:"redis"`
 	Libvips        LibvipsConfig        `json:"libvips" mapstructure:"libvips"`
 	Cache          CacheConfig          `json:"cache" mapstructure:"cache"`
-	UserManagement UserManagementConfig	`json:"user_management" mapstructure:"user_management"`
+	UserManagement UserManagementConfig `json:"user_management" mapstructure:"user_management"`
 	StorageMetrics StorageMetricsConfig `json:"storage_metrics" mapstructure:"storage_metrics"`
+	Storage        StorageConfig        `json:"storage" mapstructure:"storage"`
 	Security       SecurityConfig       `json:"security" mapstructure:"security"`
 }

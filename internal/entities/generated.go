@@ -80,96 +80,33 @@ func APIKeyFromDTO(d dto.APIKey) APIKey {
 	}
 }
 
-// Session is a GORM entity inferred from dto.Session
-type Session struct {
+// SettingOverride is a GORM entity inferred from dto.SettingOverride
+type SettingOverride struct {
 	ID        uint           `gorm:"primarykey" json:"-"`
 	DeletedAt gorm.DeletedAt `gorm:"index" json:"-"`
 	CreatedAt time.Time
 	UpdatedAt time.Time
-	// ClientId Client ID
-	ClientId *string
-	// ClientIp Client IP
-	ClientIp *string
-	// ClientName Client name
-	ClientName *string
-	// ExpiresAt Expiry time
-	ExpiresAt *time.Time
-	// LastActive Last active time
-	LastActive *time.Time
-	// LoginAt Login time
-	LoginAt *time.Time
-	// LoginIp Login IP
-	LoginIp *string
-	// RefId Reference ID
-	RefId *string
-	// Status Session status
-	Status *int
-	// Timeout Timeout in seconds
-	Timeout *int64
-	// Token Session token
-	Token string
-	// Uid Session UID
-	Uid    string `gorm:"uniqueIndex"`
-	UserID *string
-	User   *User `gorm:"foreignKey:UserID;references:Uid"`
-	// UserAgent User agent
-	UserAgent *string
-	// UserUid User UID
-	UserUid string
+	// Name Links to SettingDefault.name.
+	Name string `gorm:"uniqueIndex:idx_setting_overrides_user_name,priority:2"`
+	// UserId Links to the users table.
+	UserId string `gorm:"uniqueIndex:idx_setting_overrides_user_name,priority:1"`
+	// Value The user's chosen value for the setting.
+	Value string
 }
 
-func (e Session) DTO() dto.Session {
-	return dto.Session{
-		CreatedAt:  e.CreatedAt,
-		UpdatedAt:  e.UpdatedAt,
-		ClientId:   e.ClientId,
-		ClientIp:   e.ClientIp,
-		ClientName: e.ClientName,
-		ExpiresAt:  e.ExpiresAt,
-		LastActive: e.LastActive,
-		LoginAt:    e.LoginAt,
-		LoginIp:    e.LoginIp,
-		RefId:      e.RefId,
-		Status:     e.Status,
-		Timeout:    e.Timeout,
-		Token:      e.Token,
-		Uid:        e.Uid,
-		User: func() *dto.User {
-			if e.User != nil {
-				d := e.User.DTO()
-				return &d
-			}
-			return nil
-		}(),
-		UserAgent: e.UserAgent,
-		UserUid:   e.UserUid,
+func (e SettingOverride) DTO() dto.SettingOverride {
+	return dto.SettingOverride{
+		Name:   e.Name,
+		UserId: e.UserId,
+		Value:  e.Value,
 	}
 }
 
-func SessionFromDTO(d dto.Session) Session {
-	return Session{
-		CreatedAt:  d.CreatedAt,
-		UpdatedAt:  d.UpdatedAt,
-		ClientId:   d.ClientId,
-		ClientIp:   d.ClientIp,
-		ClientName: d.ClientName,
-		ExpiresAt:  d.ExpiresAt,
-		LastActive: d.LastActive,
-		LoginAt:    d.LoginAt,
-		LoginIp:    d.LoginIp,
-		RefId:      d.RefId,
-		Status:     d.Status,
-		Timeout:    d.Timeout,
-		Token:      d.Token,
-		Uid:        d.Uid,
-		UserID: func() *string {
-			if d.User != nil {
-				return &d.User.Uid
-			}
-			return nil
-		}(),
-		UserAgent: d.UserAgent,
-		UserUid:   d.UserUid,
+func SettingOverrideFromDTO(d dto.SettingOverride) SettingOverride {
+	return SettingOverride{
+		Name:   d.Name,
+		UserId: d.UserId,
+		Value:  d.Value,
 	}
 }
 
@@ -324,69 +261,95 @@ func DownloadTokenFromDTO(d dto.DownloadToken) DownloadToken {
 	}
 }
 
-// WorkerJob is a GORM entity inferred from dto.WorkerJob
-type WorkerJob struct {
+// SettingDefault is a GORM entity inferred from dto.SettingDefault
+type SettingDefault struct {
 	ID        uint           `gorm:"primarykey" json:"-"`
 	DeletedAt gorm.DeletedAt `gorm:"index" json:"-"`
 	CreatedAt time.Time
 	UpdatedAt time.Time
-	// Command Job command
-	Command *string
-	// CompletedAt Completed timestamp
-	CompletedAt *time.Time
-	// EnqueuedAt Enqueued timestamp
-	EnqueuedAt time.Time
-	// ErrorCode Error code if failed
-	ErrorCode *string
-	// ErrorMsg Error message if failed
-	ErrorMsg *string
-	// ImageUid Related image UID
-	ImageUid *string
-	// Payload Job payload
-	Payload *string
-	// StartedAt Started timestamp
-	StartedAt *time.Time
-	// Status Job status
-	Status string
-	// Topic Job topic
-	Topic string
-	// Type Job type
-	Type string
-	// Uid Job UID
-	Uid string `gorm:"uniqueIndex"`
+	// AllowedValues List of valid choices if type is enum.
+	AllowedValues *[]string `gorm:"serializer:json;type:JSONB"`
+	// Description Description for UI
+	Description string
+	// DisplayName A readable and UI-friendly name for the setting (not required but highly recommended).
+	DisplayName string
+	// Group Category/group for the setting (e.g., General, Notifications).
+	Group string
+	// IsUserEditable Describes whether a user can edit this setting.
+	IsUserEditable bool
+	// Name Unique name for the setting (primary key).
+	Name string `gorm:"uniqueIndex:idx_setting_defaults_name,priority:1"`
+	// Value The default value everyone gets.
+	Value string
+	// ValueType Data type of the setting.
+	ValueType dto.SettingDefaultValueType `gorm:"type:text"`
 }
 
-func (e WorkerJob) DTO() dto.WorkerJob {
-	return dto.WorkerJob{
-		Command:     e.Command,
-		CompletedAt: e.CompletedAt,
-		EnqueuedAt:  e.EnqueuedAt,
-		ErrorCode:   e.ErrorCode,
-		ErrorMsg:    e.ErrorMsg,
-		ImageUid:    e.ImageUid,
-		Payload:     e.Payload,
-		StartedAt:   e.StartedAt,
-		Status:      e.Status,
-		Topic:       e.Topic,
-		Type:        e.Type,
-		Uid:         e.Uid,
+func (e SettingDefault) DTO() dto.SettingDefault {
+	return dto.SettingDefault{
+		AllowedValues:  e.AllowedValues,
+		Description:    e.Description,
+		DisplayName:    e.DisplayName,
+		Group:          e.Group,
+		IsUserEditable: e.IsUserEditable,
+		Name:           e.Name,
+		Value:          e.Value,
+		ValueType:      e.ValueType,
 	}
 }
 
-func WorkerJobFromDTO(d dto.WorkerJob) WorkerJob {
-	return WorkerJob{
-		Command:     d.Command,
-		CompletedAt: d.CompletedAt,
-		EnqueuedAt:  d.EnqueuedAt,
-		ErrorCode:   d.ErrorCode,
-		ErrorMsg:    d.ErrorMsg,
-		ImageUid:    d.ImageUid,
-		Payload:     d.Payload,
-		StartedAt:   d.StartedAt,
-		Status:      d.Status,
-		Topic:       d.Topic,
-		Type:        d.Type,
-		Uid:         d.Uid,
+func SettingDefaultFromDTO(d dto.SettingDefault) SettingDefault {
+	return SettingDefault{
+		AllowedValues:  d.AllowedValues,
+		Description:    d.Description,
+		DisplayName:    d.DisplayName,
+		Group:          d.Group,
+		IsUserEditable: d.IsUserEditable,
+		Name:           d.Name,
+		Value:          d.Value,
+		ValueType:      d.ValueType,
+	}
+}
+
+// CollectionImage is a GORM entity inferred from dto.CollectionImage
+type CollectionImage struct {
+	ID        uint           `gorm:"primarykey" json:"-"`
+	DeletedAt gorm.DeletedAt `gorm:"index" json:"-"`
+	CreatedAt time.Time
+	UpdatedAt time.Time
+	// AddedAt Added timestamp
+	AddedAt   time.Time
+	AddedByID *string
+	AddedBy   *User `gorm:"foreignKey:AddedByID;references:Uid"`
+	// Uid Image UID
+	Uid          string `gorm:"uniqueIndex:idx_collection_images_collection_id_uid,priority:2"`
+	CollectionID *uint  `gorm:"uniqueIndex:idx_collection_images_collection_id_uid,priority:1"`
+}
+
+func (e CollectionImage) DTO() dto.CollectionImage {
+	return dto.CollectionImage{
+		AddedAt: e.AddedAt,
+		AddedBy: func() *dto.User {
+			if e.AddedBy != nil {
+				d := e.AddedBy.DTO()
+				return &d
+			}
+			return nil
+		}(),
+		Uid: e.Uid,
+	}
+}
+
+func CollectionImageFromDTO(d dto.CollectionImage) CollectionImage {
+	return CollectionImage{
+		AddedAt: d.AddedAt,
+		AddedByID: func() *string {
+			if d.AddedBy != nil {
+				return &d.AddedBy.Uid
+			}
+			return nil
+		}(),
+		Uid: d.Uid,
 	}
 }
 
@@ -503,129 +466,69 @@ func CollectionFromDTO(d dto.Collection) Collection {
 	}
 }
 
-// SettingDefault is a GORM entity inferred from dto.SettingDefault
-type SettingDefault struct {
+// WorkerJob is a GORM entity inferred from dto.WorkerJob
+type WorkerJob struct {
 	ID        uint           `gorm:"primarykey" json:"-"`
 	DeletedAt gorm.DeletedAt `gorm:"index" json:"-"`
 	CreatedAt time.Time
 	UpdatedAt time.Time
-	// AllowedValues List of valid choices if type is enum.
-	AllowedValues *[]string `gorm:"serializer:json;type:JSONB"`
-	// Description Description for UI
-	Description string
-	// DisplayName A readable and UI-friendly name for the setting (not required but highly recommended).
-	DisplayName string
-	// Group Category/group for the setting (e.g., General, Notifications).
-	Group string
-	// IsUserEditable Describes whether a user can edit this setting.
-	IsUserEditable bool
-	// Name Unique name for the setting (primary key).
-	Name string `gorm:"uniqueIndex:idx_setting_defaults_name,priority:1"`
-	// Value The default value everyone gets.
-	Value string
-	// ValueType Data type of the setting.
-	ValueType dto.SettingDefaultValueType `gorm:"type:text"`
-}
-
-func (e SettingDefault) DTO() dto.SettingDefault {
-	return dto.SettingDefault{
-		AllowedValues:  e.AllowedValues,
-		Description:    e.Description,
-		DisplayName:    e.DisplayName,
-		Group:          e.Group,
-		IsUserEditable: e.IsUserEditable,
-		Name:           e.Name,
-		Value:          e.Value,
-		ValueType:      e.ValueType,
-	}
-}
-
-func SettingDefaultFromDTO(d dto.SettingDefault) SettingDefault {
-	return SettingDefault{
-		AllowedValues:  d.AllowedValues,
-		Description:    d.Description,
-		DisplayName:    d.DisplayName,
-		Group:          d.Group,
-		IsUserEditable: d.IsUserEditable,
-		Name:           d.Name,
-		Value:          d.Value,
-		ValueType:      d.ValueType,
-	}
-}
-
-// User is a GORM entity inferred from dto.User
-type User struct {
-	ID        uint           `gorm:"primarykey" json:"-"`
-	DeletedAt gorm.DeletedAt `gorm:"index" json:"-"`
-	CreatedAt time.Time
-	UpdatedAt time.Time
-	// Email Email
-	Email string
-	// FirstName First name
-	FirstName string
-	// LastName Last name
-	LastName string
-	// Name Name
-	Name string
-	// Role User role
-	Role dto.UserRole `gorm:"type:text"`
-	// Uid User UID
+	// Command Job command
+	Command *string
+	// CompletedAt Completed timestamp
+	CompletedAt *time.Time
+	// EnqueuedAt Enqueued timestamp
+	EnqueuedAt time.Time
+	// ErrorCode Error code if failed
+	ErrorCode *string
+	// ErrorMsg Error message if failed
+	ErrorMsg *string
+	// ImageUid Related image UID
+	ImageUid *string
+	// Payload Job payload
+	Payload *string
+	// StartedAt Started timestamp
+	StartedAt *time.Time
+	// Status Job status
+	Status string
+	// Topic Job topic
+	Topic string
+	// Type Job type
+	Type string
+	// Uid Job UID
 	Uid string `gorm:"uniqueIndex"`
 }
 
-func (e User) DTO() dto.User {
-	return dto.User{
-		CreatedAt: e.CreatedAt,
-		UpdatedAt: e.UpdatedAt,
-		Email:     e.Email,
-		FirstName: e.FirstName,
-		LastName:  e.LastName,
-		Name:      e.Name,
-		Role:      e.Role,
-		Uid:       e.Uid,
+func (e WorkerJob) DTO() dto.WorkerJob {
+	return dto.WorkerJob{
+		Command:     e.Command,
+		CompletedAt: e.CompletedAt,
+		EnqueuedAt:  e.EnqueuedAt,
+		ErrorCode:   e.ErrorCode,
+		ErrorMsg:    e.ErrorMsg,
+		ImageUid:    e.ImageUid,
+		Payload:     e.Payload,
+		StartedAt:   e.StartedAt,
+		Status:      e.Status,
+		Topic:       e.Topic,
+		Type:        e.Type,
+		Uid:         e.Uid,
 	}
 }
 
-func UserFromDTO(d dto.User) User {
-	return User{
-		CreatedAt: d.CreatedAt,
-		UpdatedAt: d.UpdatedAt,
-		Email:     d.Email,
-		FirstName: d.FirstName,
-		LastName:  d.LastName,
-		Name:      d.Name,
-		Role:      d.Role,
-		Uid:       d.Uid,
-	}
-}
-
-// SettingOverride is a GORM entity inferred from dto.SettingOverride
-type SettingOverride struct {
-	ID        uint           `gorm:"primarykey" json:"-"`
-	DeletedAt gorm.DeletedAt `gorm:"index" json:"-"`
-	CreatedAt time.Time
-	UpdatedAt time.Time
-	// Name Links to SettingDefault.name.
-	Name string `gorm:"uniqueIndex:idx_setting_overrides_user_name,priority:2"`
-	// UserId Links to the users table.
-	UserId string `gorm:"uniqueIndex:idx_setting_overrides_user_name,priority:1"`
-	// Value The user's chosen value for the setting.
-	Value string
-}
-
-func (e SettingOverride) DTO() dto.SettingOverride {
-	return dto.SettingOverride{
-		Name:   e.Name,
-		UserId: e.UserId,
-		Value:  e.Value,
-	}
-}
-
-func SettingOverrideFromDTO(d dto.SettingOverride) SettingOverride {
-	return SettingOverride{
-		Name:   d.Name,
-		UserId: d.UserId,
-		Value:  d.Value,
+func WorkerJobFromDTO(d dto.WorkerJob) WorkerJob {
+	return WorkerJob{
+		Command:     d.Command,
+		CompletedAt: d.CompletedAt,
+		EnqueuedAt:  d.EnqueuedAt,
+		ErrorCode:   d.ErrorCode,
+		ErrorMsg:    d.ErrorMsg,
+		ImageUid:    d.ImageUid,
+		Payload:     d.Payload,
+		StartedAt:   d.StartedAt,
+		Status:      d.Status,
+		Topic:       d.Topic,
+		Type:        d.Type,
+		Uid:         d.Uid,
 	}
 }
 
@@ -719,45 +622,142 @@ func CollectionDetailResponseFromDTO(d dto.CollectionDetailResponse) CollectionD
 	}
 }
 
-// CollectionImage is a GORM entity inferred from dto.CollectionImage
-type CollectionImage struct {
-	ID           uint           `gorm:"primarykey" json:"-"`
-	DeletedAt    gorm.DeletedAt `gorm:"index" json:"-"`
-	CreatedAt    time.Time
-	UpdatedAt    time.Time
-	CollectionID *uint `gorm:"uniqueIndex:idx_collection_images_collection_id_uid,priority:1"`
-	// AddedAt Added timestamp
-	AddedAt   time.Time
-	AddedByID *string
-	AddedBy   *User `gorm:"foreignKey:AddedByID;references:Uid"`
-	// Uid Image UID
-	Uid string `gorm:"uniqueIndex:idx_collection_images_collection_id_uid,priority:2"`
+// User is a GORM entity inferred from dto.User
+type User struct {
+	ID        uint           `gorm:"primarykey" json:"-"`
+	DeletedAt gorm.DeletedAt `gorm:"index" json:"-"`
+	CreatedAt time.Time
+	UpdatedAt time.Time
+	// Email Email
+	Email string
+	// FirstName First name
+	FirstName string
+	// LastName Last name
+	LastName string
+	// Name Name
+	Name string
+	// Role User role
+	Role dto.UserRole `gorm:"type:text"`
+	// Uid User UID
+	Uid string `gorm:"uniqueIndex"`
 }
 
-func (e CollectionImage) DTO() dto.CollectionImage {
-	return dto.CollectionImage{
-		AddedAt: e.AddedAt,
-		AddedBy: func() *dto.User {
-			if e.AddedBy != nil {
-				d := e.AddedBy.DTO()
+func (e User) DTO() dto.User {
+	return dto.User{
+		CreatedAt: e.CreatedAt,
+		UpdatedAt: e.UpdatedAt,
+		Email:     e.Email,
+		FirstName: e.FirstName,
+		LastName:  e.LastName,
+		Name:      e.Name,
+		Role:      e.Role,
+		Uid:       e.Uid,
+	}
+}
+
+func UserFromDTO(d dto.User) User {
+	return User{
+		CreatedAt: d.CreatedAt,
+		UpdatedAt: d.UpdatedAt,
+		Email:     d.Email,
+		FirstName: d.FirstName,
+		LastName:  d.LastName,
+		Name:      d.Name,
+		Role:      d.Role,
+		Uid:       d.Uid,
+	}
+}
+
+// Session is a GORM entity inferred from dto.Session
+type Session struct {
+	ID        uint           `gorm:"primarykey" json:"-"`
+	DeletedAt gorm.DeletedAt `gorm:"index" json:"-"`
+	CreatedAt time.Time
+	UpdatedAt time.Time
+	// ClientId Client ID
+	ClientId *string
+	// ClientIp Client IP
+	ClientIp *string
+	// ClientName Client name
+	ClientName *string
+	// ExpiresAt Expiry time
+	ExpiresAt *time.Time
+	// LastActive Last active time
+	LastActive *time.Time
+	// LoginAt Login time
+	LoginAt *time.Time
+	// LoginIp Login IP
+	LoginIp *string
+	// RefId Reference ID
+	RefId *string
+	// Status Session status
+	Status *int
+	// Timeout Timeout in seconds
+	Timeout *int64
+	// Token Session token
+	Token string
+	// Uid Session UID
+	Uid    string `gorm:"uniqueIndex"`
+	UserID *string
+	User   *User `gorm:"foreignKey:UserID;references:Uid"`
+	// UserAgent User agent
+	UserAgent *string
+	// UserUid User UID
+	UserUid string
+}
+
+func (e Session) DTO() dto.Session {
+	return dto.Session{
+		CreatedAt:  e.CreatedAt,
+		UpdatedAt:  e.UpdatedAt,
+		ClientId:   e.ClientId,
+		ClientIp:   e.ClientIp,
+		ClientName: e.ClientName,
+		ExpiresAt:  e.ExpiresAt,
+		LastActive: e.LastActive,
+		LoginAt:    e.LoginAt,
+		LoginIp:    e.LoginIp,
+		RefId:      e.RefId,
+		Status:     e.Status,
+		Timeout:    e.Timeout,
+		Token:      e.Token,
+		Uid:        e.Uid,
+		User: func() *dto.User {
+			if e.User != nil {
+				d := e.User.DTO()
 				return &d
 			}
 			return nil
 		}(),
-		Uid: e.Uid,
+		UserAgent: e.UserAgent,
+		UserUid:   e.UserUid,
 	}
 }
 
-func CollectionImageFromDTO(d dto.CollectionImage) CollectionImage {
-	return CollectionImage{
-		AddedAt: d.AddedAt,
-		AddedByID: func() *string {
-			if d.AddedBy != nil {
-				return &d.AddedBy.Uid
+func SessionFromDTO(d dto.Session) Session {
+	return Session{
+		CreatedAt:  d.CreatedAt,
+		UpdatedAt:  d.UpdatedAt,
+		ClientId:   d.ClientId,
+		ClientIp:   d.ClientIp,
+		ClientName: d.ClientName,
+		ExpiresAt:  d.ExpiresAt,
+		LastActive: d.LastActive,
+		LoginAt:    d.LoginAt,
+		LoginIp:    d.LoginIp,
+		RefId:      d.RefId,
+		Status:     d.Status,
+		Timeout:    d.Timeout,
+		Token:      d.Token,
+		Uid:        d.Uid,
+		UserID: func() *string {
+			if d.User != nil {
+				return &d.User.Uid
 			}
 			return nil
 		}(),
-		Uid: d.Uid,
+		UserAgent: d.UserAgent,
+		UserUid:   d.UserUid,
 	}
 }
 
@@ -791,6 +791,32 @@ func DeleteAssetResultFromDTO(d dto.DeleteAssetResult) DeleteAssetResult {
 	}
 }
 
+// DuplicateCheckResult is a GORM entity inferred from dto.DuplicateCheckResult
+type DuplicateCheckResult struct {
+	ID        uint           `gorm:"primarykey" json:"-"`
+	DeletedAt gorm.DeletedAt `gorm:"index" json:"-"`
+	CreatedAt time.Time
+	UpdatedAt time.Time
+	// Checksum The checksum of the duplicate image
+	Checksum string
+	// Uid The UID of the existing image
+	Uid string `gorm:"uniqueIndex"`
+}
+
+func (e DuplicateCheckResult) DTO() dto.DuplicateCheckResult {
+	return dto.DuplicateCheckResult{
+		Checksum: e.Checksum,
+		Uid:      e.Uid,
+	}
+}
+
+func DuplicateCheckResultFromDTO(d dto.DuplicateCheckResult) DuplicateCheckResult {
+	return DuplicateCheckResult{
+		Checksum: d.Checksum,
+		Uid:      d.Uid,
+	}
+}
+
 // ImageUploadResponse is a GORM entity inferred from dto.ImageUploadResponse
 type ImageUploadResponse struct {
 	ID        uint           `gorm:"primarykey" json:"-"`
@@ -817,32 +843,6 @@ func ImageUploadResponseFromDTO(d dto.ImageUploadResponse) ImageUploadResponse {
 	return ImageUploadResponse{
 		Metadata: d.Metadata,
 		Status:   d.Status,
-		Uid:      d.Uid,
-	}
-}
-
-// DuplicateCheckResult is a GORM entity inferred from dto.DuplicateCheckResult
-type DuplicateCheckResult struct {
-	ID        uint           `gorm:"primarykey" json:"-"`
-	DeletedAt gorm.DeletedAt `gorm:"index" json:"-"`
-	CreatedAt time.Time
-	UpdatedAt time.Time
-	// Checksum The checksum of the duplicate image
-	Checksum string
-	// Uid The UID of the existing image
-	Uid string `gorm:"uniqueIndex"`
-}
-
-func (e DuplicateCheckResult) DTO() dto.DuplicateCheckResult {
-	return dto.DuplicateCheckResult{
-		Checksum: e.Checksum,
-		Uid:      e.Uid,
-	}
-}
-
-func DuplicateCheckResultFromDTO(d dto.DuplicateCheckResult) DuplicateCheckResult {
-	return DuplicateCheckResult{
-		Checksum: d.Checksum,
 		Uid:      d.Uid,
 	}
 }

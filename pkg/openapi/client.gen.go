@@ -374,6 +374,11 @@ type ClientInterface interface {
 	// GetSystemConfig request
 	GetSystemConfig(ctx context.Context, reqEditors ...RequestEditorFn) (*http.Response, error)
 
+	// UpdateSystemConfigWithBody request with any body
+	UpdateSystemConfigWithBody(ctx context.Context, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*http.Response, error)
+
+	UpdateSystemConfig(ctx context.Context, body UpdateSystemConfigJSONRequestBody, reqEditors ...RequestEditorFn) (*http.Response, error)
+
 	// GetSystemStatus request
 	GetSystemStatus(ctx context.Context, reqEditors ...RequestEditorFn) (*http.Response, error)
 }
@@ -1616,6 +1621,30 @@ func (c *Client) SetupSuperadmin(ctx context.Context, body SetupSuperadminJSONRe
 
 func (c *Client) GetSystemConfig(ctx context.Context, reqEditors ...RequestEditorFn) (*http.Response, error) {
 	req, err := NewGetSystemConfigRequest(c.Server)
+	if err != nil {
+		return nil, err
+	}
+	req = req.WithContext(ctx)
+	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
+		return nil, err
+	}
+	return c.Client.Do(req)
+}
+
+func (c *Client) UpdateSystemConfigWithBody(ctx context.Context, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewUpdateSystemConfigRequestWithBody(c.Server, contentType, body)
+	if err != nil {
+		return nil, err
+	}
+	req = req.WithContext(ctx)
+	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
+		return nil, err
+	}
+	return c.Client.Do(req)
+}
+
+func (c *Client) UpdateSystemConfig(ctx context.Context, body UpdateSystemConfigJSONRequestBody, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewUpdateSystemConfigRequest(c.Server, body)
 	if err != nil {
 		return nil, err
 	}
@@ -4894,6 +4923,46 @@ func NewGetSystemConfigRequest(server string) (*http.Request, error) {
 	return req, nil
 }
 
+// NewUpdateSystemConfigRequest calls the generic UpdateSystemConfig builder with application/json body
+func NewUpdateSystemConfigRequest(server string, body UpdateSystemConfigJSONRequestBody) (*http.Request, error) {
+	var bodyReader io.Reader
+	buf, err := json.Marshal(body)
+	if err != nil {
+		return nil, err
+	}
+	bodyReader = bytes.NewReader(buf)
+	return NewUpdateSystemConfigRequestWithBody(server, "application/json", bodyReader)
+}
+
+// NewUpdateSystemConfigRequestWithBody generates requests for UpdateSystemConfig with any type of body
+func NewUpdateSystemConfigRequestWithBody(server string, contentType string, body io.Reader) (*http.Request, error) {
+	var err error
+
+	serverURL, err := url.Parse(server)
+	if err != nil {
+		return nil, err
+	}
+
+	operationPath := fmt.Sprintf("/system/config")
+	if operationPath[0] == '/' {
+		operationPath = "." + operationPath
+	}
+
+	queryURL, err := serverURL.Parse(operationPath)
+	if err != nil {
+		return nil, err
+	}
+
+	req, err := http.NewRequest(http.MethodPut, queryURL.String(), body)
+	if err != nil {
+		return nil, err
+	}
+
+	req.Header.Add("Content-Type", contentType)
+
+	return req, nil
+}
+
 // NewGetSystemStatusRequest generates requests for GetSystemStatus
 func NewGetSystemStatusRequest(server string) (*http.Request, error) {
 	var err error
@@ -5248,6 +5317,11 @@ type ClientWithResponsesInterface interface {
 
 	// GetSystemConfigWithResponse request
 	GetSystemConfigWithResponse(ctx context.Context, reqEditors ...RequestEditorFn) (*GetSystemConfigResponse, error)
+
+	// UpdateSystemConfigWithBodyWithResponse request with any body
+	UpdateSystemConfigWithBodyWithResponse(ctx context.Context, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*UpdateSystemConfigResponse, error)
+
+	UpdateSystemConfigWithResponse(ctx context.Context, body UpdateSystemConfigJSONRequestBody, reqEditors ...RequestEditorFn) (*UpdateSystemConfigResponse, error)
 
 	// GetSystemStatusWithResponse request
 	GetSystemStatusWithResponse(ctx context.Context, reqEditors ...RequestEditorFn) (*GetSystemStatusResponse, error)
@@ -7721,6 +7795,40 @@ func (r GetSystemConfigResponse) ContentType() string {
 	return ""
 }
 
+type UpdateSystemConfigResponse struct {
+	Body         []byte
+	HTTPResponse *http.Response
+	JSON200      *VizConfig
+	JSON400      *ErrorResponse
+	JSON401      *ErrorResponse
+	JSON403      *ErrorResponse
+	JSON500      *ErrorResponse
+}
+
+// Status returns HTTPResponse.Status
+func (r UpdateSystemConfigResponse) Status() string {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.Status
+	}
+	return http.StatusText(0)
+}
+
+// StatusCode returns HTTPResponse.StatusCode
+func (r UpdateSystemConfigResponse) StatusCode() int {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.StatusCode
+	}
+	return 0
+}
+
+// ContentType is a convenience method to retrieve the Content-Type value from the HTTP response headers
+func (r UpdateSystemConfigResponse) ContentType() string {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.Header.Get("Content-Type")
+	}
+	return ""
+}
+
 type GetSystemStatusResponse struct {
 	Body         []byte
 	HTTPResponse *http.Response
@@ -8659,6 +8767,23 @@ func (c *ClientWithResponses) GetSystemConfigWithResponse(ctx context.Context, r
 		return nil, err
 	}
 	return ParseGetSystemConfigResponse(rsp)
+}
+
+// UpdateSystemConfigWithBodyWithResponse request with arbitrary body returning *UpdateSystemConfigResponse
+func (c *ClientWithResponses) UpdateSystemConfigWithBodyWithResponse(ctx context.Context, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*UpdateSystemConfigResponse, error) {
+	rsp, err := c.UpdateSystemConfigWithBody(ctx, contentType, body, reqEditors...)
+	if err != nil {
+		return nil, err
+	}
+	return ParseUpdateSystemConfigResponse(rsp)
+}
+
+func (c *ClientWithResponses) UpdateSystemConfigWithResponse(ctx context.Context, body UpdateSystemConfigJSONRequestBody, reqEditors ...RequestEditorFn) (*UpdateSystemConfigResponse, error) {
+	rsp, err := c.UpdateSystemConfig(ctx, body, reqEditors...)
+	if err != nil {
+		return nil, err
+	}
+	return ParseUpdateSystemConfigResponse(rsp)
 }
 
 // GetSystemStatusWithResponse request returning *GetSystemStatusResponse
@@ -11700,6 +11825,60 @@ func ParseGetSystemConfigResponse(rsp *http.Response) (*GetSystemConfigResponse,
 			return nil, err
 		}
 		response.JSON403 = &dest
+
+	}
+
+	return response, nil
+}
+
+// ParseUpdateSystemConfigResponse parses an HTTP response from a UpdateSystemConfigWithResponse call
+func ParseUpdateSystemConfigResponse(rsp *http.Response) (*UpdateSystemConfigResponse, error) {
+	bodyBytes, err := io.ReadAll(rsp.Body)
+	defer func() { _ = rsp.Body.Close() }()
+	if err != nil {
+		return nil, err
+	}
+
+	response := &UpdateSystemConfigResponse{
+		Body:         bodyBytes,
+		HTTPResponse: rsp,
+	}
+
+	switch {
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 200:
+		var dest VizConfig
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON200 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 400:
+		var dest ErrorResponse
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON400 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 401:
+		var dest ErrorResponse
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON401 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 403:
+		var dest ErrorResponse
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON403 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 500:
+		var dest ErrorResponse
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON500 = &dest
 
 	}
 

@@ -1428,6 +1428,12 @@ type SignDownloadRequest struct {
 	Uids *[]string `json:"uids,omitempty"`
 }
 
+// StorageConfig defines model for StorageConfig.
+type StorageConfig struct {
+	// StoragePathTemplate Template for the directory structure of stored images
+	StoragePathTemplate *string `json:"storage_path_template,omitempty"`
+}
+
 // StorageMetricsConfig defines model for StorageMetricsConfig.
 type StorageMetricsConfig struct {
 	// Enabled Metrics enabled
@@ -1651,6 +1657,7 @@ type VizConfig struct {
 	Libvips        *LibvipsConfig        `json:"libvips,omitempty"`
 	Logging        *LoggingConfig        `json:"logging,omitempty"`
 	Redis          *QueueConfig          `json:"redis,omitempty"`
+	Storage        *StorageConfig        `json:"storage,omitempty"`
 	StorageMetrics *StorageMetricsConfig `json:"storage_metrics,omitempty"`
 	Upload         *UploadConfig         `json:"upload,omitempty"`
 	UserManagement *UserManagementConfig `json:"user_management,omitempty"`
@@ -2141,3 +2148,6 @@ type UpdateSessionJSONRequestBody = SessionUpdate
 
 // SetupSuperadminJSONRequestBody defines body for SetupSuperadmin for application/json ContentType.
 type SetupSuperadminJSONRequestBody = SuperadminSetupRequest
+
+// UpdateSystemConfigJSONRequestBody defines body for UpdateSystemConfig for application/json ContentType.
+type UpdateSystemConfigJSONRequestBody = VizConfig

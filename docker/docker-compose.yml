@@ -19,6 +19,7 @@ services:
       - ENV=production
     volumes:
       - viz-data:/app/var
+      - ../viz.json:/app/viz.json
     networks:
       - viz-net
 

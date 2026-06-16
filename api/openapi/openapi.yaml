@@ -1912,6 +1912,50 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/ErrorResponse"
+    put:
+      summary: Update system configuration
+      description: Update the system configuration and save it back to viz.json.
+      operationId: updateSystemConfig
+      security:
+        - BearerAuth: [admin:write]
+        - CookieAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/VizConfig"
+      responses:
+        "200":
+          description: Configuration updated successfully
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/VizConfig"
+        "400":
+          description: Invalid request payload
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "401":
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "403":
+          description: Forbidden
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "500":
+          description: Server error
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
 
   /admin/system/stats:
     get:
@@ -4212,6 +4256,15 @@ components:
           $ref: "#/components/schemas/UserManagementConfig"
         storage_metrics:
           $ref: "#/components/schemas/StorageMetricsConfig"
+        storage:
+          $ref: "#/components/schemas/StorageConfig"
+
+    StorageConfig:
+      type: object
+      properties:
+        storage_path_template:
+          type: string
+          description: Template for the directory structure of stored images
 
     LoggingConfig:
       type: object

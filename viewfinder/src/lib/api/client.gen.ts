@@ -706,6 +706,10 @@ export type StorageMetricsConfig = {
     /** Interval in seconds */
     interval_seconds?: number;
 };
+export type StorageConfig = {
+    /** Template for the directory structure of stored images */
+    storage_path_template?: string;
+};
 export type VizConfig = {
     /** Base URL of the application */
     baseUrl?: string;
@@ -719,6 +723,7 @@ export type VizConfig = {
     cache?: CacheConfig;
     user_management?: UserManagementConfig;
     storage_metrics?: StorageMetricsConfig;
+    storage?: StorageConfig;
 };
 export type SystemStatsResponse = {
     /** System uptime in seconds */
@@ -1978,6 +1983,31 @@ export function getSystemConfig(opts?: Oazapfts.RequestOpts) {
     }>("/system/config", {
         ...opts
     });
+}
+/**
+ * Update system configuration
+ */
+export function updateSystemConfig(vizConfig: VizConfig, opts?: Oazapfts.RequestOpts) {
+    return oazapfts.fetchJson<{
+        status: 200;
+        data: VizConfig;
+    } | {
+        status: 400;
+        data: ErrorResponse;
+    } | {
+        status: 401;
+        data: ErrorResponse;
+    } | {
+        status: 403;
+        data: ErrorResponse;
+    } | {
+        status: 500;
+        data: ErrorResponse;
+    }>("/system/config", oazapfts.json({
+        ...opts,
+        method: "PUT",
+        body: vizConfig
+    }));
 }
 /**
  * Get system statistics (uptime, memory)

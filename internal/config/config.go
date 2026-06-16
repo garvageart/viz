@@ -1,7 +1,10 @@
 package config
 
 import (
+	"encoding/json"
 	"fmt"
+	"os"
+	"path/filepath"
 	"strings"
 	libos "viz/internal/os"
 	"viz/internal/utils"
@@ -65,6 +68,7 @@ func ReadConfig() (viper.Viper, error) {
 	v.SetDefault("libvips.cache_max_operations", 0)
 	v.SetDefault("libvips.concurrency", 1)
 
+	v.SetDefault("storage.storage_path_template", "{{y}}/{{y}}-{{MM}}-{{dd}}/{{filename}}")
 	v.SetDefault("storage_metrics.enabled", true)
 	v.SetDefault("storage_metrics.interval_seconds", 300)
 
@@ -99,6 +103,33 @@ func ReadConfig() (viper.Viper, error) {
 
 func GetConfig() VizConfig {
 	return AppConfig
+}
+
+// WriteConfig writes the updated configuration back to the viz.json file.
+func WriteConfig(cfg VizConfig) error {
+	AppConfig = cfg
+
+	// Clear secrets before marshaling so they are never written to the file
+	writeCfg := cfg
+	writeCfg.Database.Password = ""
+	writeCfg.Queue.Password = ""
+
+	jsonBytes, err := json.MarshalIndent(writeCfg, "", "  ")
+	if err != nil {
+		return fmt.Errorf("failed to marshal config: %w", err)
+	}
+
+	configPath := filepath.Join(libos.CurrentWorkingDirectory, "viz.json")
+	err = os.WriteFile(configPath, jsonBytes, 0644)
+	if err != nil {
+		// Fallback to project root
+		configPath = filepath.Join(libos.ProjectRoot, "viz.json")
+		err = os.WriteFile(configPath, jsonBytes, 0644)
+		if err != nil {
+			return fmt.Errorf("failed to write config file: %w", err)
+		}
+	}
+	return nil
 }
 
 var (
