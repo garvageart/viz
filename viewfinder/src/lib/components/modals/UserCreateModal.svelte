@@ -4,6 +4,8 @@
     import InputSelect from "$lib/components/ui/InputSelect.svelte";
     import InputPassword from "$lib/components/ui/InputPassword.svelte";
     import { modalsManager } from "./manager/ModalManager.svelte";
+    import { Role } from "$lib/api";
+    import { toSentenceCase } from "$lib/utils/strings";
 
     interface Props {
         id: string;
@@ -37,19 +39,13 @@
 </script>
 
 <div class="user-modal">
-    <h2>Create User</h2>
     <InputText label="Name" bind:value={createForm.name} />
     <InputText label="Email" type="email" bind:value={createForm.email} />
     <InputPassword label="Password" bind:value={createForm.password} />
     <InputSelect
         label="Role"
         bind:value={createForm.role}
-        options={[
-            { value: "user", label: "User" },
-            { value: "admin", label: "Admin" },
-            { value: "superadmin", label: "Superadmin" },
-            { value: "guest", label: "Guest" }
-        ]}
+        options={Object.values(Role).map((r) => ({ value: r, label: toSentenceCase(r) }))}
     />
     <div class="modal-actions">
         <Button hoverColor="var(--viz-80)" onclick={handleCancel}>Cancel</Button>
@@ -61,17 +57,11 @@
 
 <style lang="scss">
     .user-modal {
-        padding: 1.5rem;
         display: flex;
         flex-direction: column;
         gap: 1.5rem;
         color: var(--viz-text-color);
         width: 100%;
-
-        h2 {
-            margin: 0;
-            font-size: 1.5rem;
-        }
     }
 
     .modal-actions {

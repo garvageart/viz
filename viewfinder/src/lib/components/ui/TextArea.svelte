@@ -92,7 +92,7 @@
         border: none;
         box-shadow: 0 -1px 0 var(--viz-60) inset;
         font-family: var(--viz-display-font);
-        font-size: 1rem;
+        font-size: var(--viz-font-size-sm);
         padding: 0.5rem 1rem;
         margin-bottom: 0;
 

@@ -80,25 +80,27 @@
             >
                 <span class="select-value">{selectedLabel || "Select an option..."}</span>
             </Select.Trigger>
-            <Select.Content class="select-content" sideOffset={4}>
-                <Select.Viewport class="select-viewport">
-                    {#each normalizedOptions as item}
-                        <Select.Item class="select-item" value={item.value} label={item.label}>
-                            {#snippet children({ selected })}
-                                <span class="item-label">{item.label}</span>
-                                {#if selected}
-                                    <span class="item-indicator">
-                                        <MaterialIcon
-                                            iconName="check"
-                                            style="font-size: 1rem; color: var(--viz-primary);"
-                                        />
-                                    </span>
-                                {/if}
-                            {/snippet}
-                        </Select.Item>
-                    {/each}
-                </Select.Viewport>
-            </Select.Content>
+            <Select.Portal>
+                <Select.Content class="select-content" sideOffset={4}>
+                    <Select.Viewport class="select-viewport">
+                        {#each normalizedOptions as item}
+                            <Select.Item class="select-item" value={item.value} label={item.label}>
+                                {#snippet children({ selected })}
+                                    <span class="item-label">{item.label}</span>
+                                    {#if selected}
+                                        <span class="item-indicator">
+                                            <MaterialIcon
+                                                iconName="check"
+                                                style="font-size: 1rem; color: var(--viz-primary);"
+                                            />
+                                        </span>
+                                    {/if}
+                                {/snippet}
+                            </Select.Item>
+                        {/each}
+                    </Select.Viewport>
+                </Select.Content>
+            </Select.Portal>
         </div>
         {#if description}
             <div class="input-description">{description}</div>
@@ -195,60 +197,60 @@
                 outline-offset: 1px;
             }
         }
+    }
 
-        :global(.select-content) {
-            background-color: var(--viz-95);
-            border: var(--viz-border-thin);
-            border-radius: var(--viz-border-radius-md);
-            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
-            padding: var(--viz-spacing-xs);
-            min-width: 12.5rem;
-            z-index: 100;
-            box-sizing: border-box;
+    :global(.select-content) {
+        background-color: var(--viz-95);
+        border: var(--viz-border-thin);
+        border-radius: var(--viz-border-radius-md);
+        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+        padding: var(--viz-spacing-xs);
+        min-width: 12.5rem;
+        z-index: 99999;
+        box-sizing: border-box;
+    }
+
+    :global(.select-viewport) {
+        max-height: 15rem; // Scroll boundary
+        overflow-y: auto;
+        width: 100%;
+        box-sizing: border-box;
+        display: flex;
+        flex-direction: column;
+        gap: var(--viz-spacing-xxs);
+        outline: none;
+    }
+
+    :global(.select-item) {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        padding: var(--viz-spacing-xs) var(--viz-spacing-sm);
+        font-family: var(--viz-display-font);
+        font-size: var(--viz-font-size-sm);
+        color: var(--viz-text-color);
+        border-radius: var(--viz-border-radius-sm);
+        cursor: pointer;
+        outline: none;
+        user-select: none;
+        position: relative;
+        transition: background-color 80ms ease;
+
+        &:hover,
+        &:global([data-highlighted]) {
+            background-color: var(--viz-80);
         }
 
-        :global(.select-viewport) {
-            max-height: 15rem; // Scroll boundary
-            overflow-y: auto;
-            width: 100%;
-            box-sizing: border-box;
-            display: flex;
-            flex-direction: column;
-            gap: var(--viz-spacing-xxs);
-            outline: none;
+        &:global([data-selected]) {
+            background-color: var(--viz-90);
+            font-weight: 500;
         }
+    }
 
-        :global(.select-item) {
-            display: flex;
-            align-items: center;
-            justify-content: space-between;
-            padding: var(--viz-spacing-xs) var(--viz-spacing-sm);
-            font-family: var(--viz-display-font);
-            font-size: var(--viz-font-size-sm);
-            color: var(--viz-text-color);
-            border-radius: var(--viz-border-radius-sm);
-            cursor: pointer;
-            outline: none;
-            user-select: none;
-            position: relative;
-            transition: background-color 80ms ease;
-
-            &:hover,
-            &:global([data-highlighted]) {
-                background-color: var(--viz-80);
-            }
-
-            &:global([data-selected]) {
-                background-color: var(--viz-90);
-                font-weight: 500;
-            }
-        }
-
-        :global(.item-indicator) {
-            display: inline-flex;
-            align-items: center;
-            justify-content: center;
-            margin-left: var(--viz-spacing-sm);
-        }
+    :global(.item-indicator) {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        margin-left: var(--viz-spacing-sm);
     }
 </style>

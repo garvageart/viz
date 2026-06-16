@@ -18,21 +18,12 @@
         ...props
     }: Props & SvelteHTMLElements["div"] = $props();
 
-    let checked = $state(true);
     const uniqueID = generateRandomString(6);
     const switchId = $derived(id || `switch-${uniqueID}`);
 
-    $effect(() => {
-        checked = value === "on" ? true : false;
-    });
-
     const handleClick: MouseEventHandler<HTMLButtonElement> = (e) => {
         e.preventDefault();
-        const target = e.currentTarget;
-        const state = target.getAttribute("aria-checked");
-
-        checked = state === "true" ? false : true;
-        value = checked === true ? "on" : "off";
+        value = value === "on" ? "off" : "on";
     };
 </script>
 
@@ -42,8 +33,8 @@
         id={switchId}
         style={labelPos === "side" ? "margin-left: 0.5em;" : ""}
         role="switch"
-        aria-checked={checked}
-        data-checked={checked}
+        aria-checked={value === "on"}
+        data-checked={value === "on"}
         aria-labelledby={`${switchId}-label`}
         onclick={handleClick}
     >

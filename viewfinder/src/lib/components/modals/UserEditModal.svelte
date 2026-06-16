@@ -1,11 +1,12 @@
 <script lang="ts">
-    import type { User } from "$lib/api";
+    import { Role, type User } from "$lib/api";
     import type { UserRole } from "$lib/types/users";
     import Button from "$lib/components/ui/Button.svelte";
     import InputText from "$lib/components/ui/InputText.svelte";
     import InputSelect from "$lib/components/ui/InputSelect.svelte";
     import { modalsManager } from "./manager/ModalManager.svelte";
     import { untrack } from "svelte";
+    import { snakeToSentence, toSentenceCase } from "$lib/utils/strings";
 
     interface Props {
         id: string;
@@ -36,7 +37,6 @@
 </script>
 
 <div class="user-modal">
-    <h2>Edit User</h2>
     <InputText label="Name" bind:value={editForm.name} />
     <InputText label="Email" type="email" bind:value={editForm.email} />
     <div class="form-row">
@@ -46,12 +46,7 @@
     <InputSelect
         label="Role"
         bind:value={editForm.role}
-        options={[
-            { value: "user", label: "User" },
-            { value: "admin", label: "Admin" },
-            { value: "superadmin", label: "Superadmin" },
-            { value: "guest", label: "Guest" }
-        ]}
+        options={Object.values(Role).map((r) => ({ value: r, label: toSentenceCase(r) }))}
     />
     <div class="modal-actions">
         <Button hoverColor="var(--viz-80)" onclick={handleCancel}>Cancel</Button>
@@ -61,17 +56,11 @@
 
 <style lang="scss">
     .user-modal {
-        padding: 1.5rem;
         display: flex;
         flex-direction: column;
         gap: 1.5rem;
         color: var(--viz-text-color);
         width: 100%;
-
-        h2 {
-            margin: 0;
-            font-size: 1.5rem;
-        }
     }
 
     .form-row {
