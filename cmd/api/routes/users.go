@@ -410,40 +410,62 @@ func AccountsRouter(db *gorm.DB, logger *slog.Logger) *chi.Mux {
 						user, _ := libhttp.UserFromContext(req)
 
 						var maxOverrideUpdatedAt, maxDefaultUpdatedAt time.Time
+						var overrideCount, defaultCount int64
+						var defaults []entities.SettingDefault
+						var overrides []entities.SettingOverride
 
-						db.Model(&entities.SettingOverride{}).
-							Where("user_id = ?", user.Uid).
-							Select("MAX(updated_at)").
-							Row().
-							Scan(&maxOverrideUpdatedAt)
+						txErr := db.Transaction(func(tx *gorm.DB) error {
+							tx.Model(&entities.SettingOverride{}).
+								Where("user_id = ?", user.Uid).
+								Select("MAX(updated_at)").
+								Row().
+								Scan(&maxOverrideUpdatedAt)
 
-						db.Model(&entities.SettingDefault{}).
-							Select("MAX(updated_at)").
-							Row().
-							Scan(&maxDefaultUpdatedAt)
+							if err := tx.Model(&entities.SettingOverride{}).
+								Where("user_id = ?", user.Uid).
+								Count(&overrideCount).Error; err != nil {
+								return err
+							}
 
-						etag := fmt.Sprintf("W/\"%s-%d-%d\"", user.Uid, maxOverrideUpdatedAt.UnixNano(), maxDefaultUpdatedAt.UnixNano())
+							tx.Model(&entities.SettingDefault{}).
+								Select("MAX(updated_at)").
+								Row().
+								Scan(&maxDefaultUpdatedAt)
+
+							if err := tx.Model(&entities.SettingDefault{}).
+								Count(&defaultCount).Error; err != nil {
+								return err
+							}
+
+							etag := fmt.Sprintf("W/\"%s-%d-%d-%d-%d\"", user.Uid, maxOverrideUpdatedAt.UnixNano(), overrideCount, maxDefaultUpdatedAt.UnixNano(), defaultCount)
+							if match := req.Header.Get("If-None-Match"); match == etag {
+								return nil
+							}
+
+							if err := tx.Find(&defaults).Error; err != nil {
+								return err
+							}
+
+							if err := tx.Where("user_id = ?", user.Uid).Find(&overrides).Error; err != nil {
+								return err
+							}
+
+							return nil
+						})
+
+						if txErr != nil {
+							logger.Error("failed to fetch settings", slog.Any("error", txErr))
+							render.Status(req, http.StatusInternalServerError)
+							render.JSON(res, req, dto.ErrorResponse{Error: "Failed to fetch settings"})
+							return
+						}
+
+						etag := fmt.Sprintf("W/\"%s-%d-%d-%d-%d\"", user.Uid, maxOverrideUpdatedAt.UnixNano(), overrideCount, maxDefaultUpdatedAt.UnixNano(), defaultCount)
 						res.Header().Set("Cache-Control", "private, max-age=300, must-revalidate")
 						res.Header().Set("ETag", etag)
 
 						if match := req.Header.Get("If-None-Match"); match == etag {
 							res.WriteHeader(http.StatusNotModified)
-							return
-						}
-
-						var defaults []entities.SettingDefault
-						if err := db.Find(&defaults).Error; err != nil {
-							logger.Error("failed to fetch setting defaults", slog.Any("error", err))
-							render.Status(req, http.StatusInternalServerError)
-							render.JSON(res, req, dto.ErrorResponse{Error: "Failed to fetch defaults"})
-							return
-						}
-
-						var overrides []entities.SettingOverride
-						if err := db.Where("user_id = ?", user.Uid).Find(&overrides).Error; err != nil {
-							logger.Error("failed to fetch user setting overrides", slog.Any("error", err))
-							render.Status(req, http.StatusInternalServerError)
-							render.JSON(res, req, dto.ErrorResponse{Error: "Failed to fetch overrides"})
 							return
 						}
 
