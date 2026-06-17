@@ -80,7 +80,7 @@
     let assetUid = $state("nIiGNClg0dx0MSC1gHgQa5ST");
 
     const getExampleDate = () =>
-        DateTime.fromISO("2025-09-15T14:30:22.456Z", { locale: window.navigator.language });
+        DateTime.fromISO("2025-03-01T14:05:07.456Z", { locale: window.navigator.language });
 
     function clean(val: string): string;
     function clean(val: null | undefined): null;
@@ -278,7 +278,15 @@
         <div class="editor-section">
             <div class="control-group">
                 <div class="label-row">
-                    <span class="designer-label">Template Designer</span>
+                    <div class="designer-header">
+                        <h4 class="designer-label">Template Designer</h4>
+                        <p>
+                            Use the input below to define your storage path template (slashes are
+                            cleaned for safe paths). You can also click on the available variables
+                            on the right to insert them at your cursor position.
+                        </p>
+                    </div>
+
                     <div class="action-buttons">
                         <IconButton
                             variant="small"
@@ -307,6 +315,7 @@
             <div class="control-group">
                 <InputSelect
                     label="Select Preset Template"
+                    labelPosition="side"
                     options={selectOptions}
                     bind:value={selectedPreset}
                     onchange={handlePresetChange}
@@ -379,7 +388,7 @@
                         <InputText
                             label="Filename"
                             bind:value={filename}
-                            placeholder="summer_trip.jpg"
+                            placeholder="PHOTO_2193.jpg"
                         />
                     </div>
 
@@ -388,18 +397,18 @@
                     </div>
 
                     <div class="field-item">
-                        <InputText label="Camera Make" bind:value={make} placeholder="Sony" />
+                        <InputText label="Camera Make" bind:value={make} placeholder="FUJIFILM" />
                     </div>
 
                     <div class="field-item">
-                        <InputText label="Camera Model" bind:value={model} placeholder="ILCE-7M4" />
+                        <InputText label="Camera Model" bind:value={model} placeholder="X-S10" />
                     </div>
 
                     <div class="field-item">
                         <InputText
                             label="Lens Model"
                             bind:value={lensModel}
-                            placeholder="FE 24-70mm F2.8 GM"
+                            placeholder="XF 35mm f/2.0"
                         />
                     </div>
                 </div>
@@ -421,7 +430,7 @@
                 )}
                     <div class="token-category">
                         <div class="category-header">
-                            <MaterialIcon {iconName} />
+                            <MaterialIcon {iconName} weight={300} />
                             <h5>{title}</h5>
                         </div>
                         {@render children()}
@@ -517,13 +526,9 @@
                     </div>
                 {/snippet}
 
-                {@render tokenCategory("today", "Date & Time Tokens", dateTimeTokens)}
+                {@render tokenCategory("today", "Date/Time Tokens", dateTimeTokens)}
                 {@render tokenCategory("photo_camera", "EXIF / Metadata Tokens", metadataTokens)}
-                {@render tokenCategory(
-                    "folder_special",
-                    "Collection Context Tokens",
-                    collectionTokens
-                )}
+                {@render tokenCategory("folder_special", "Collection Tokens", collectionTokens)}
             </div>
         </div>
     </div>
@@ -663,19 +668,35 @@
         .label-row {
             display: flex;
             justify-content: space-between;
-            align-items: center;
-            margin-bottom: var(--viz-spacing-xs);
+            align-items: flex-start;
+            margin-bottom: var(--viz-spacing-md);
+            gap: var(--viz-spacing-md);
 
-            .designer-label {
-                font-family: var(--viz-display-font);
-                font-size: var(--viz-font-size-sm);
-                font-weight: 600;
-                color: var(--viz-40);
+            .designer-header {
+                display: flex;
+                flex-direction: column;
+
+                .designer-label {
+                    margin: 0;
+                    font-size: var(--viz-font-size-std);
+                    font-weight: 600;
+                    color: var(--viz-text-color);
+                }
+
+                p {
+                    margin: var(--viz-spacing-xs) 0 0;
+                    font-size: var(--viz-font-size-xs);
+                    color: var(--viz-40);
+                }
             }
 
             .action-buttons {
                 display: flex;
                 gap: var(--viz-spacing-xs);
+                align-items: center;
+                margin-top: var(--viz-spacing-xxs);
+                flex-shrink: 0;
+                white-space: nowrap;
             }
         }
     }
@@ -776,15 +797,15 @@
         .context-header {
             h4 {
                 margin: 0;
-                font-size: var(--viz-font-size-sm);
+                font-size: var(--viz-font-size-std);
                 font-weight: 600;
-                color: var(--viz-40);
+                color: var(--viz-text-color);
             }
 
             p {
-                margin: var(--viz-spacing-xxs) 0 0;
+                margin: var(--viz-spacing-xs) 0 0;
                 font-size: var(--viz-font-size-xs);
-                color: var(--viz-30);
+                color: var(--viz-40);
             }
         }
 
@@ -810,7 +831,7 @@
     }
 
     .tokens-section {
-        background-color: var(--viz-95);
+        background-color: var(--viz-90);
         display: flex;
         flex-direction: column;
         height: 100%;
@@ -818,7 +839,7 @@
     }
 
     .tokens-header {
-        padding: var(--viz-spacing-lg) var(--viz-spacing-lg) var(--viz-spacing-md);
+        padding: var(--viz-spacing-md) var(--viz-spacing-lg);
         border-bottom: var(--viz-border-thin);
 
         h4 {
@@ -868,18 +889,14 @@
             display: flex;
             align-items: center;
             gap: var(--viz-spacing-xs);
-            color: var(--viz-40);
 
             :global(span) {
-                font-size: 1.1rem;
+                font-size: 1rem;
             }
 
             h5 {
                 margin: 0;
                 font-size: var(--viz-font-size-sm);
-                font-weight: 600;
-                text-transform: uppercase;
-                letter-spacing: 0.05em;
             }
         }
     }
