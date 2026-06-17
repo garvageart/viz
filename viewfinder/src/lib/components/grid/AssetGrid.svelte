@@ -377,7 +377,14 @@
             // maybe unnessary to blur but i wanna make sure lmao
             (imageGridChildren?.item(positionIndexInGrid) as HTMLElement).blur();
             element.focus();
-            element.click();
+            
+            const targetAssetId = element.getAttribute("data-asset-id");
+            const targetAsset = allAssetsData.find((a) => a.uid === targetAssetId);
+            if (targetAsset) {
+                handleImageCardSelect(targetAsset, e as unknown as MouseEvent);
+            } else {
+                element.click();
+            }
         };
 
         switch (e.key) {
@@ -799,6 +806,12 @@
         border-radius: 0.5em;
         overflow: hidden;
         outline: none;
+
+        &:focus,
+        &:focus-visible {
+            outline: none;
+            box-shadow: none;
+        }
     }
 
     .asset-card.disabled-asset {

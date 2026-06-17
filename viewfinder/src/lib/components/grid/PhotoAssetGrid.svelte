@@ -83,6 +83,7 @@
     // Selection Management
     let selection = $derived(selectionManager.getScope<ImageAsset>(scopeId));
     let selectedUIDs = $derived(selection.selectedUids);
+    let selectionAnchor = $state<ImageAsset | null>(null);
 
     // Sync data source to selection scope so filters can access it
     $effect(() => {
@@ -179,7 +180,7 @@
             const searchList = allData && allData.length > 0 ? allData : filteredData;
             const firstEnabled = searchList.find((img) => !disabledUids.has(img.uid));
             if (firstEnabled) {
-                selection.select(firstEnabled);
+                handleImageCardSelect(firstEnabled, e);
             }
             return;
         }
@@ -192,8 +193,8 @@
             return;
         }
 
-        if (handler.key === "left" || handler.key === "right") {
-            if (handler.key === "left") {
+        if (handler.key.endsWith("left") || handler.key.endsWith("right")) {
+            if (handler.key.endsWith("left")) {
                 let targetIndex = -1;
                 for (let i = globalIndex - 1; i >= 0; i--) {
                     if (!disabledUids.has(searchList[i].uid)) {
@@ -203,7 +204,7 @@
                 }
                 if (targetIndex !== -1) {
                     // Boundary: Try to go to previous global item
-                    selection.select(searchList[targetIndex]);
+                    handleImageCardSelect(searchList[targetIndex], e);
                 }
             } else {
                 let targetIndex = -1;
@@ -215,7 +216,7 @@
                 }
                 if (targetIndex !== -1) {
                     // Boundary: Try to go to next global item
-                    selection.select(searchList[targetIndex]);
+                    handleImageCardSelect(searchList[targetIndex], e);
                 }
             }
         } else {
@@ -226,13 +227,13 @@
 
             const rows = virtualizer.rows;
 
-            let targetRowIndex = pos.rowIndex + (handler.key === "up" ? -1 : 1);
+            let targetRowIndex = pos.rowIndex + (handler.key.endsWith("up") ? -1 : 1);
 
             // Skip header rows
             while (targetRowIndex >= 0 && targetRowIndex < rows.length) {
                 const row = rows[targetRowIndex];
                 if (row.type === "header") {
-                    targetRowIndex += handler.key === "up" ? -1 : 1;
+                    targetRowIndex += handler.key.endsWith("up") ? -1 : 1;
                     continue;
                 }
 
@@ -243,7 +244,7 @@
                     break;
                 }
 
-                targetRowIndex += handler.key === "up" ? -1 : 1;
+                targetRowIndex += handler.key.endsWith("up") ? -1 : 1;
             }
 
             // Vertical Boundary Checks
@@ -259,7 +260,7 @@
                         }
                     }
                     if (targetIndex !== -1) {
-                        selection.select(searchList[targetIndex]);
+                        handleImageCardSelect(searchList[targetIndex], e);
                     }
                 }
                 return;
@@ -277,7 +278,7 @@
                         }
                     }
                     if (targetIndex !== -1) {
-                        selection.select(searchList[targetIndex]);
+                        handleImageCardSelect(searchList[targetIndex], e);
                     }
                 }
                 return;
@@ -313,19 +314,19 @@
                 currentX += item.width + virtualizer.gridGap;
             }
 
-            selection.select(closestItem.asset);
+            handleImageCardSelect(closestItem.asset, e);
         }
     }
 
     $effect(() => {
         hotkeys("ctrl+a", handleSelectAll);
         hotkeys("escape", handleEscape);
-        hotkeys("left,right,up,down", handleKeyNav);
+        hotkeys("left,right,up,down,shift+left,shift+right,shift+up,shift+down", handleKeyNav);
 
         return () => {
             hotkeys.unbind("ctrl+a", handleSelectAll);
             hotkeys.unbind("escape", handleEscape);
-            hotkeys.unbind("left,right,up,down", handleKeyNav);
+            hotkeys.unbind("left,right,up,down,shift+left,shift+right,shift+up,shift+down", handleKeyNav);
         };
     });
 
@@ -935,7 +936,8 @@
             const selectionData = allData && allData.length > 0 ? allData : filteredData;
             const ids = selectionData.map((i: ImageAsset) => i.uid);
             const endIndex = ids.indexOf(asset.uid);
-            const startIndex = selection.active ? ids.indexOf(selection.active.uid) : -1;
+            const anchor = selectionAnchor || selection.active;
+            const startIndex = anchor ? ids.indexOf(anchor.uid) : -1;
 
             // If both start and end are found, do range selection
             if (startIndex !== -1 && endIndex !== -1) {
@@ -947,14 +949,22 @@
                 for (let i = start; i <= end; i++) {
                     selection.add(selectionData[i]);
                 }
+                selection.active = asset;
             } else {
-                // If anchor not found (shouldn't happen with allData), just add this asset
                 selection.add(asset);
+                selection.active = asset;
+                selectionAnchor = asset;
             }
         } else if (e.ctrlKey) {
             selection.toggle(asset);
+            if (selection.has(asset)) {
+                selectionAnchor = asset;
+            } else if (selectionAnchor?.uid === asset.uid) {
+                selectionAnchor = selection.active || null;
+            }
         } else {
             selection.select(asset);
+            selectionAnchor = asset;
         }
     }
 
@@ -1497,6 +1507,12 @@
     .asset-photo {
         position: relative;
         overflow: hidden;
+
+        &:focus,
+        &:focus-visible {
+            outline: none;
+            box-shadow: none;
+        }
     }
 
     .asset-photo.disabled-asset {

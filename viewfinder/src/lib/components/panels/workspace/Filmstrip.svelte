@@ -2,6 +2,7 @@
     import { type ImageAsset } from "$lib/api";
     import ImageCard from "$lib/components/ui/ImageCard.svelte";
     import { selectionManager } from "$lib/states/selection.svelte";
+    import MaterialIcon from "$lib/components/ui/MaterialIcon.svelte";
 
     let activeScope = $derived(selectionManager.activeScope);
     let activeItem = $derived(activeScope?.active as ImageAsset | undefined);
@@ -13,64 +14,71 @@
 
     let selectedItems = $derived(activeScope?.selected ?? new Set<ImageAsset>());
 
-    function handleImageClick(image: ImageAsset, e: MouseEvent) {
+    let selectionAnchor = $state<ImageAsset | null>(null);
+
+    function handleImageClick(image: ImageAsset, e: MouseEvent | KeyboardEvent) {
         if (!activeScope) {
             return;
         }
 
-        // Ensure we have focus/active scope (though filmstrip usually reflects active scope)
-        // If we wanted to enforce this scope being active, we'd do selectionManager.setActive(...)
-        // but filmstrip seems to just reflect whatever is active.
-
         if (e.shiftKey) {
-            activeScope.selected.clear();
-
             const ids = filmstripImages.map((i) => i.uid);
-            let startIndex = 0;
             const endIndex = ids.indexOf(image.uid);
+            const anchor = selectionAnchor || activeScope.active;
+            const startIndex = anchor ? ids.indexOf(anchor.uid) : -1;
 
-            if (activeScope.active) {
-                startIndex = ids.indexOf(activeScope.active.uid);
-            }
+            if (startIndex !== -1 && endIndex !== -1) {
+                activeScope.selected.clear();
 
-            // Fallback if active item not in current view/source
-            if (startIndex === -1) {
-                startIndex = 0;
-            }
+                const start = Math.min(startIndex, endIndex);
+                const end = Math.max(startIndex, endIndex);
 
-            if (endIndex === -1) {
-                return;
-            } // Should not happen if clicked image is in list
-
-            const start = Math.min(startIndex, endIndex);
-            const end = Math.max(startIndex, endIndex);
-
-            for (let i = start; i <= end; i++) {
-                activeScope.add(filmstripImages[i]);
+                for (let i = start; i <= end; i++) {
+                    activeScope.add(filmstripImages[i]);
+                }
+                activeScope.active = image;
+            } else {
+                activeScope.add(image);
+                activeScope.active = image;
+                selectionAnchor = image;
             }
         } else if (e.ctrlKey || e.metaKey) {
             activeScope.toggle(image);
+            if (activeScope.has(image)) {
+                selectionAnchor = image;
+            } else if (selectionAnchor?.uid === image.uid) {
+                selectionAnchor = activeScope.active || null;
+            }
         } else {
             activeScope.select(image);
+            selectionAnchor = image;
         }
     }
 
     function handleItemKeydown(e: KeyboardEvent, image: ImageAsset) {
         if (e.key === "Enter" || e.key === " ") {
             e.preventDefault();
-            // For keyboard "Enter/Space", we treat it as a standard click (select)
-            // unless we want to support modifiers there too.
-            // Passing a mock event or just calling select directly.
-            // Usually keyboard selection on Enter is just "select this one".
-            activeScope?.select(image);
+            handleImageClick(image, e);
         } else if (e.key === "ArrowLeft" || e.key === "ArrowUp") {
             e.preventDefault();
             e.stopPropagation();
-            activeScope?.selectPrevious();
+            if (activeScope) {
+                const idx = filmstripImages.findIndex((img) => img.uid === image.uid);
+                if (idx > 0) {
+                    const targetImage = filmstripImages[idx - 1];
+                    handleImageClick(targetImage, e);
+                }
+            }
         } else if (e.key === "ArrowRight" || e.key === "ArrowDown") {
             e.preventDefault();
             e.stopPropagation();
-            activeScope?.selectNext();
+            if (activeScope) {
+                const idx = filmstripImages.findIndex((img) => img.uid === image.uid);
+                if (idx !== -1 && idx < filmstripImages.length - 1) {
+                    const targetImage = filmstripImages[idx + 1];
+                    handleImageClick(targetImage, e);
+                }
+            }
         }
     }
 
@@ -110,6 +118,10 @@
                     block: "nearest",
                     inline: "center"
                 });
+
+                if (document.activeElement && containerRef?.contains(document.activeElement)) {
+                    el.focus();
+                }
             }
         }
     });
@@ -122,7 +134,15 @@
     bind:this={containerRef}
 >
     {#if filmstripImages.length === 0}
-        <div class="empty-state">Empty Selection</div>
+        <div class="empty-state">
+            <div class="empty-icon-wrapper">
+                <MaterialIcon iconName="image_not_supported" size="1.5rem" />
+            </div>
+            <div class="empty-text-wrapper">
+                <span class="empty-title">No assets in this view</span>
+                <span class="empty-subtitle">Select a folder or collection to view assets</span>
+            </div>
+        </div>
     {:else}
         {#each filmstripImages as image, i (image.uid)}
             {@const isActive = activeItem?.uid === image.uid}
@@ -160,8 +180,10 @@
         width: 100%;
         height: 100%;
 
-        &:focus {
+        &:focus,
+        &:focus-visible {
             outline: none;
+            box-shadow: none;
         }
 
         &.horizontal {
@@ -173,6 +195,16 @@
                 height: 100%;
                 min-width: 7em;
                 max-width: 10em;
+            }
+
+            .empty-state {
+                flex-direction: row;
+                gap: var(--viz-spacing-sm);
+                
+                .empty-text-wrapper {
+                    align-items: flex-start;
+                    text-align: left;
+                }
             }
         }
 
@@ -186,19 +218,59 @@
                 min-height: 7em;
                 max-height: 10em;
             }
+
+            .empty-state {
+                flex-direction: column;
+                gap: var(--viz-spacing-xs);
+                
+                .empty-text-wrapper {
+                    align-items: center;
+                    text-align: center;
+                }
+            }
         }
     }
 
     .empty-state {
-        color: var(--viz-60);
-        font-style: italic;
-        padding: 1rem;
-        text-align: center;
+        color: var(--viz-40);
+        padding: var(--viz-spacing-sm);
         width: 100%;
         height: 100%;
         display: flex;
         align-items: center;
         justify-content: center;
+        box-sizing: border-box;
+
+        .empty-icon-wrapper {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: var(--viz-60);
+            background-color: var(--viz-95);
+            border-radius: var(--viz-border-radius-md);
+            padding: var(--viz-spacing-xs);
+            border: var(--viz-border-thin);
+            border-color: var(--viz-90);
+        }
+
+        .empty-text-wrapper {
+            display: flex;
+            flex-direction: column;
+            text-align: left;
+        }
+
+        .empty-title {
+            font-size: var(--viz-font-size-sm);
+            font-weight: 600;
+            color: var(--viz-text-color);
+            font-family: var(--viz-display-font);
+        }
+
+        .empty-subtitle {
+            font-size: var(--viz-font-size-xs);
+            color: var(--viz-40);
+            font-family: var(--viz-mono-font);
+        }
     }
 
     .filmstrip-item {
@@ -210,12 +282,14 @@
         cursor: pointer;
         background-color: #0d0d0d;
         border: 1px solid var(--viz-80);
-        transition: all 0.1s ease;
+        transition: background-color 0.1s ease, border-color 0.1s ease;
         flex-shrink: 0;
         box-sizing: border-box;
 
-        &:focus {
+        &:focus,
+        &:focus-visible {
             outline: none;
+            box-shadow: none;
         }
 
         &:hover {
@@ -226,8 +300,9 @@
         &.active {
             border-color: var(--viz-primary);
             background-color: #1a1a1a;
-            outline: 1px solid var(--viz-primary);
+            box-shadow: 0 0 0 1px var(--viz-primary);
             z-index: 1;
+            outline: none;
         }
 
         &.selected:not(.active) {
