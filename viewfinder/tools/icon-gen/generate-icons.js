@@ -396,9 +396,7 @@ async function main() {
     console.log("Discovered icon prop names:", Array.from(iconPropNames).sort());
     console.log(
         "Discovered icon func args:",
-        Object.fromEntries(
-            Array.from(iconFuncArgs.entries()).map(([k, v]) => [k, Array.from(v)])
-        )
+        Object.fromEntries(Array.from(iconFuncArgs.entries()).map(([k, v]) => [k, Array.from(v)]))
     );
 
     //----------------------------------------------------------------------
@@ -566,9 +564,7 @@ async function main() {
                 }
                 const argsText = text.slice(mc.index + mc[0].length, i - 1);
                 for (const pos of positions) {
-                    extractArgAtPosition(argsText, pos).forEach((v) =>
-                        tryAddIcon(v, fileNames)
-                    );
+                    extractArgAtPosition(argsText, pos).forEach((v) => tryAddIcon(v, fileNames));
                 }
             }
         }
