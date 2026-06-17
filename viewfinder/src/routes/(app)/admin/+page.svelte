@@ -1,12 +1,11 @@
 <script lang="ts">
+    import AdminRouteShell from "$lib/components/admin/AdminRouteShell.svelte";
     import MaterialIcon from "$lib/components/ui/MaterialIcon.svelte";
     import ProgressBar from "$lib/components/ui/ProgressBar.svelte";
-    import AdminRouteShell from "$lib/components/admin/AdminRouteShell.svelte";
+    import type { MaterialSymbol } from "$lib/types/MaterialSymbol.js";
     import { formatBytes, formatSeconds } from "$lib/utils/images";
     import { invalidateViz } from "$lib/views/views.svelte.js";
-    import { Duration } from "luxon";
-    import type { MaterialSymbol } from "$lib/types/MaterialSymbol.js";
-    import type { Snippet } from "svelte";
+    import { Duration, DateTime } from "luxon";
 
     let { data } = $props();
 
@@ -14,7 +13,6 @@
 
     let systemInfo = $derived({
         version: window.__APP_VERSION__,
-        // uptime is now handled by formattedLiveUptime
         activeConnections: data.wsStats?.connectedClients ?? 0,
         goroutines: data.systemStats?.num_goroutine ?? 0,
         allocMemory: data.systemStats?.alloc_memory
@@ -47,8 +45,22 @@
         cacheItems: data.cacheStatus?.items ?? 0
     });
 
-    let liveUptimeSeconds = $derived(data.systemStats?.uptime_seconds || 0);
+    let liveUptimeSeconds = $state(0);
     let formattedLiveUptime = $derived(formatSeconds(liveUptimeSeconds));
+
+    let storagePercent = $derived(
+        100 -
+            ((data.systemStats?.total_available_space_bytes ?? 0) /
+                (data.systemStats?.total_system_space_bytes ?? 1)) *
+                100
+    );
+
+    let formattedSystemStorage = $derived(
+        `${formatBytes(
+            (data.systemStats?.total_system_space_bytes ?? 0) -
+                (data.systemStats?.total_available_space_bytes ?? 0)
+        )} of ${storageInfo.totalSystemSpace}`
+    );
 
     $effect(() => {
         liveUptimeSeconds = data.systemStats?.uptime_seconds || 0;
@@ -81,205 +93,225 @@
     iconClass,
     label,
     value,
-    isWide = false,
-    isPath = false,
     id = undefined,
     href = undefined,
-    children = null
+    mono = false
 }: {
     icon: MaterialSymbol;
     iconClass: string;
     label: string;
     value: string | number | null | undefined;
-    isWide?: boolean;
-    isPath?: boolean;
     id?: string;
     href?: string;
-    children?: Snippet | null;
+    mono?: boolean;
 })}
     {#if href}
-        <a {href} class={["stat-card", isWide ? "wide" : ""]}>
+        <a {href} class="stat-card">
             <div class={["stat-icon", iconClass]}>
                 <MaterialIcon iconName={icon} />
             </div>
             <div class="stat-content">
-                <span class={["stat-value", isPath ? "path" : ""]} {id}>{value}</span>
+                <span class="stat-value" class:font-mono={mono} {id}>{value}</span>
                 <span class="stat-label">{label}</span>
-                {#if children}
-                    {@render children()}
-                {/if}
             </div>
         </a>
     {:else}
-        <div class={["stat-card", isWide ? "wide" : ""]}>
+        <div class="stat-card">
             <div class={["stat-icon", iconClass]}>
                 <MaterialIcon iconName={icon} />
             </div>
             <div class="stat-content">
-                <span class={["stat-value", isPath ? "path" : ""]} {id}>{value}</span>
+                <span class="stat-value" class:font-mono={mono} {id}>{value}</span>
                 <span class="stat-label">{label}</span>
-                {#if children}
-                    {@render children()}
-                {/if}
             </div>
         </div>
     {/if}
 {/snippet}
 
-<AdminRouteShell heading="Dashboard" description="System overview and metrics">
+{#snippet headerActions()}
+    <div class="last-updated-badge">
+        <MaterialIcon iconName="sync" size="0.95rem" class="sync-icon" />
+        <span>Updated {DateTime.fromJSDate(lastUpdated).toFormat("HH:mm:ss")}</span>
+    </div>
+{/snippet}
+
+<AdminRouteShell heading="Dashboard" description="System overview and metrics" actions={headerActions}>
     <div class="dashboard-container">
-        <div class="stats-info">
-            <span>Last updated:</span>
-            <span>
-                {lastUpdated.toLocaleString()}
-            </span>
-        </div>
+        <div class="dashboard-grid">
+            <!-- Left Column: Core Application Metrics & Health -->
+            <div class="dashboard-main-column">
+                <!-- App Usage section -->
+                <section class="section">
+                    <h3 class="section-title">Application Usage</h3>
+                    <div class="stats-grid">
+                        {@render statCard({
+                            icon: "image",
+                            iconClass: "images",
+                            value: databaseInfo.images,
+                            label: "Total Images",
+                            href: "/photos"
+                        })}
 
-        <!-- System Overview Section -->
-        <section class="section">
-            <h3 class="section-title">System Overview</h3>
-            <div class="stats-grid">
-                {@render statCard({
-                    icon: "info",
-                    iconClass: "version",
-                    value: `v${systemInfo.version}`,
-                    label: "System Version"
-                })}
+                        {@render statCard({
+                            icon: "group",
+                            iconClass: "users",
+                            value: databaseInfo.users,
+                            label: "Total Users",
+                            href: "/admin/users"
+                        })}
 
-                {@render statCard({
-                    icon: "schedule",
-                    iconClass: "uptime",
-                    value: formattedLiveUptime,
-                    label: "Uptime",
-                    id: "uptime-value"
-                })}
+                        {@render statCard({
+                            icon: "hub",
+                            iconClass: "connections",
+                            value: systemInfo.activeConnections,
+                            label: "Active Clients",
+                            href: "/admin/events"
+                        })}
 
-                {@render statCard({
-                    icon: "hub",
-                    iconClass: "connections",
-                    value: systemInfo.activeConnections,
-                    label: "Active Clients",
-                    href: "/admin/events"
-                })}
-
-                {@render statCard({
-                    icon: "compare_arrows",
-                    iconClass: "goroutines",
-                    value: systemInfo.goroutines,
-                    label: "Goroutines",
-                    href: "/admin/jobs"
-                })}
-
-                {@render statCard({
-                    icon: "memory",
-                    iconClass: "alloc-memory",
-                    value: systemInfo.allocMemory,
-                    label: "Allocated Memory"
-                })}
-
-                {@render statCard({
-                    icon: "memory_alt",
-                    iconClass: "sys-memory",
-                    value: systemInfo.sysMemory,
-                    label: "System Memory"
-                })}
-            </div>
-        </section>
-
-        <!-- Database Section -->
-        <section class="section">
-            <h3 class="section-title">Database</h3>
-            <div class="stats-grid">
-                {@render statCard({
-                    icon: "database",
-                    iconClass: "db",
-                    value: databaseInfo.connections,
-                    label: "Active Connections"
-                })}
-
-                {@render statCard({
-                    icon: "hard_drive",
-                    iconClass: "storage",
-                    value: databaseInfo.size,
-                    label: "Database Size",
-                    href: "/admin/storage"
-                })}
-
-                {@render statCard({
-                    icon: "group",
-                    iconClass: "users",
-                    value: databaseInfo.users,
-                    label: "Total Users",
-                    href: "/admin/users"
-                })}
-
-                {@render statCard({
-                    icon: "image",
-                    iconClass: "images",
-                    value: databaseInfo.images,
-                    label: "Total Images",
-                    href: "/photos"
-                })}
-            </div>
-        </section>
-
-        <!-- Storage Section -->
-        <section class="section">
-            <h3 class="section-title">Storage</h3>
-            <div class="stats-grid">
-                {#snippet systemStorageProgress()}
-                    <div class="progress-bar-wrapper">
-                        <ProgressBar
-                            colour="secondary"
-                            width={100 -
-                                ((data.systemStats?.total_available_space_bytes ?? 0) /
-                                    (data.systemStats?.total_system_space_bytes ?? 1)) *
-                                    100}
-                        />
+                        {@render statCard({
+                            icon: "database",
+                            iconClass: "db",
+                            value: databaseInfo.connections,
+                            label: "Database Connections"
+                        })}
                     </div>
-                {/snippet}
+                </section>
 
-                {@render statCard({
-                    icon: "hard_drive",
-                    iconClass: "storage",
-                    value: `${formatBytes(
-                        (data.systemStats?.total_system_space_bytes ?? 0) -
-                            (data.systemStats?.total_available_space_bytes ?? 0)
-                    )} of ${storageInfo.totalSystemSpace}`,
-                    label: "System Storage",
-                    href: "/admin/storage",
-                    children: systemStorageProgress
-                })}
+                <!-- Resource Usage section -->
+                <section class="section">
+                    <h3 class="section-title">System Resources</h3>
+                    <div class="stats-grid">
+                        {@render statCard({
+                            icon: "schedule",
+                            iconClass: "uptime",
+                            value: formattedLiveUptime,
+                            label: "System Uptime",
+                            id: "uptime-value",
+                            mono: true
+                        })}
 
-                {@render statCard({
-                    icon: "hard_drive",
-                    iconClass: "storage",
-                    value: storageInfo.totalUsed,
-                    label: "Viz Storage",
-                    href: "/admin/storage"
-                })}
+                        {@render statCard({
+                            icon: "compare_arrows",
+                            iconClass: "goroutines",
+                            value: systemInfo.goroutines,
+                            label: "Concurrent Tasks",
+                            href: "/admin/jobs"
+                        })}
 
-                <div class="stat-separator"></div>
+                        {@render statCard({
+                            icon: "memory",
+                            iconClass: "alloc-memory",
+                            value: systemInfo.allocMemory,
+                            label: "Allocated Memory (Go)",
+                            mono: true
+                        })}
 
-                {@render statCard({
-                    icon: "memory",
-                    iconClass: "cache",
-                    value: storageInfo.cacheSize,
-                    label: `Viz Cache (${storageInfo.cacheItems} items)`,
-                    href: "/admin/cache"
-                })}
-
-                {@render statCard({
-                    icon: "folder",
-                    iconClass: "storage-path",
-                    value: storageInfo.path,
-                    label: "Storage Path",
-                    isWide: true,
-                    isPath: true,
-                    href: "/admin/storage"
-                })}
+                        {@render statCard({
+                            icon: "memory_alt",
+                            iconClass: "sys-memory",
+                            value: systemInfo.sysMemory,
+                            label: "System Memory (Total)",
+                            mono: true
+                        })}
+                    </div>
+                </section>
             </div>
-        </section>
+
+            <!-- Right Column: Storage, Cache, and System Details -->
+            <div class="dashboard-sidebar-column">
+                <!-- Storage Card -->
+                <div class="custom-card storage-card">
+                    <div class="card-header">
+                        <div class="card-title-group">
+                            <div class="stat-icon storage">
+                                <MaterialIcon iconName="hard_drive" />
+                            </div>
+                            <div>
+                                <h4>Storage Status</h4>
+                                <span class="card-subtitle">Disk space allocation</span>
+                            </div>
+                        </div>
+                        <a
+                            href="/admin/storage"
+                            class="icon-link-btn"
+                            title="View Storage Settings"
+                        >
+                            <MaterialIcon iconName="chevron_right" size="1.25rem" />
+                        </a>
+                    </div>
+                    <div class="card-body">
+                        <div class="storage-row">
+                            <span class="storage-label">Storage Path</span>
+                            <span class="storage-value path" title={storageInfo.path}
+                                >{storageInfo.path}</span
+                            >
+                        </div>
+                        <div class="storage-row">
+                            <span class="storage-label">Viz Storage (Images)</span>
+                            <span class="storage-value">{storageInfo.totalUsed}</span>
+                        </div>
+                        <div class="storage-row progress-row">
+                            <div class="progress-labels">
+                                <span class="storage-label">System Disk Usage</span>
+                                <span class="storage-value font-mono">{formattedSystemStorage}</span
+                                >
+                            </div>
+                            <div class="progress-bar-wrapper">
+                                <ProgressBar
+                                    colour="primary"
+                                    variant="large"
+                                    width={storagePercent}
+                                />
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Cache Card -->
+                <div class="custom-card cache-card">
+                    <div class="card-header">
+                        <div class="card-title-group">
+                            <div class="stat-icon cache">
+                                <MaterialIcon iconName="memory" />
+                            </div>
+                            <div>
+                                <h4>Cache Status</h4>
+                                <span class="card-subtitle">Redis / In-memory data</span>
+                            </div>
+                        </div>
+                        <a href="/admin/cache" class="icon-link-btn" title="View Cache Settings">
+                            <MaterialIcon iconName="chevron_right" size="1.25rem" />
+                        </a>
+                    </div>
+                    <div class="card-body">
+                        <div class="storage-row">
+                            <span class="storage-label">Total Cache Size</span>
+                            <span class="storage-value">{storageInfo.cacheSize}</span>
+                        </div>
+                        <div class="storage-row">
+                            <span class="storage-label">Cached Items</span>
+                            <span class="storage-value font-mono">{storageInfo.cacheItems}</span>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- System Info Footer Card -->
+                <div class="custom-card version-card">
+                    <div class="card-body horizontal">
+                        <div class="card-title-group">
+                            <div class="stat-icon version">
+                                <MaterialIcon iconName="info" />
+                            </div>
+                            <div>
+                                <h4>System Version</h4>
+                                <span class="card-subtitle">Build tag</span>
+                            </div>
+                        </div>
+                        <span class="version-tag">v{systemInfo.version}</span>
+                    </div>
+                </div>
+            </div>
+        </div>
     </div>
 </AdminRouteShell>
 
@@ -287,17 +319,49 @@
     .dashboard-container {
         display: flex;
         flex-direction: column;
-        gap: var(--viz-spacing-xxl);
+        gap: var(--viz-spacing-lg);
     }
 
-    .stats-info {
-        display: flex;
+    .last-updated-badge {
+        display: inline-flex;
+        align-items: center;
+        gap: var(--viz-spacing-xs);
+        background-color: var(--viz-95);
+        border: var(--viz-border-thin);
+        border-radius: var(--viz-border-radius-sm);
+        padding: var(--viz-spacing-xs) var(--viz-spacing-sm);
+        font-size: var(--viz-font-size-xs);
+        color: var(--viz-text-color);
+        font-family: var(--viz-mono-font);
+        letter-spacing: -0.02em;
 
-        span {
-            font-size: var(--viz-font-size-xs);
-            color: var(--viz-40);
-            margin-right: var(--viz-spacing-xs);
+        :global(.sync-icon) {
+            color: var(--viz-primary);
         }
+    }
+
+    .dashboard-grid {
+        display: grid;
+        grid-template-columns: 2fr 1fr;
+        gap: var(--viz-spacing-lg);
+        align-items: start;
+
+        @media (max-width: 1024px) {
+            grid-template-columns: 1fr;
+            gap: var(--viz-spacing-lg);
+        }
+    }
+
+    .dashboard-main-column {
+        display: flex;
+        flex-direction: column;
+        gap: var(--viz-spacing-xl);
+    }
+
+    .dashboard-sidebar-column {
+        display: flex;
+        flex-direction: column;
+        gap: var(--viz-spacing-lg);
     }
 
     .section {
@@ -318,7 +382,7 @@
 
     .stats-grid {
         display: grid;
-        grid-template-columns: repeat(auto-fit, minmax(15rem, 1fr));
+        grid-template-columns: repeat(auto-fit, minmax(13rem, 1fr));
         gap: var(--viz-spacing-md);
     }
 
@@ -326,11 +390,13 @@
         background-color: var(--viz-95);
         border: var(--viz-border-thin);
         border-radius: var(--viz-border-radius-md);
-        padding: var(--viz-spacing-lg);
+        padding: var(--viz-spacing-md) var(--viz-spacing-lg);
         display: flex;
         align-items: center;
         gap: var(--viz-spacing-md);
-        transition: border-color 0.2s ease, background-color 0.2s ease;
+        transition:
+            border-color 0.2s ease,
+            background-color 0.2s ease;
         text-decoration: none;
         color: inherit;
 
@@ -338,21 +404,19 @@
             border-color: var(--viz-70);
             background-color: var(--viz-90);
         }
-
-        &.wide {
-            grid-column: 1 / -1;
-        }
     }
 
     .stat-icon {
-        width: 3rem;
-        height: 3rem;
+        width: 2.75rem;
+        height: 2.75rem;
         border-radius: var(--viz-border-radius-md);
         display: flex;
         align-items: center;
         justify-content: center;
         flex-shrink: 0;
-        transition: background-color 0.2s ease, color 0.2s ease;
+        transition:
+            background-color 0.2s ease,
+            color 0.2s ease;
 
         &.version {
             background-color: #3b82f6;
@@ -403,57 +467,178 @@
             color: var(--viz-10-dark);
         }
 
-        /* Material Icon scaling override */
+        :global(svg),
         :global(.material-icons) {
-            font-size: 1.5rem;
+            font-size: 1.35rem;
         }
     }
 
     .stat-content {
         display: flex;
         flex-direction: column;
-        min-width: 0; /* prevents overflow flex item issues */
+        min-width: 0;
         flex: 1;
     }
 
     .stat-value {
         font-size: var(--viz-font-size-xl);
         font-weight: 700;
-        font-family: var(--viz-mono-font);
+        font-family: var(--viz-display-font);
         line-height: 1.2;
         color: var(--viz-text-color);
 
-        &.path {
-            font-size: var(--viz-font-size-sm);
-            word-break: break-all;
+        &.font-mono {
+            font-family: var(--viz-mono-font);
+            letter-spacing: -0.04em;
         }
-    }
-
-    #uptime-value {
-        min-width: 10rem;
-        display: inline-block;
-        text-align: left;
-    }
-
-    .progress-bar-wrapper {
-        position: relative;
-        height: 4px;
-        width: 100%;
-        margin-top: var(--viz-spacing-std);
-        overflow: hidden;
-    }
-
-    .stat-separator {
-        grid-column: 1 / -1;
-        height: 1px;
-        width: 100%;
-        background-color: var(--viz-60);
-        margin: var(--viz-spacing-sm) 0;
     }
 
     .stat-label {
         font-size: var(--viz-font-size-xs);
         color: var(--viz-40);
         margin-top: var(--viz-spacing-xxs);
+    }
+
+    .custom-card {
+        background-color: var(--viz-95);
+        border: var(--viz-border-thin);
+        border-radius: var(--viz-border-radius-lg);
+        padding: var(--viz-spacing-lg);
+        display: flex;
+        flex-direction: column;
+        gap: var(--viz-spacing-md);
+    }
+
+    .card-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        border-bottom: var(--viz-border-thin);
+        padding-bottom: var(--viz-spacing-md);
+        margin-bottom: var(--viz-spacing-xxs);
+    }
+
+    .card-title-group {
+        display: flex;
+        align-items: center;
+        gap: var(--viz-spacing-sm);
+
+        h4 {
+            font-size: var(--viz-font-size-std);
+            font-weight: 600;
+            color: var(--viz-text-color);
+            margin: 0;
+        }
+    }
+
+    .card-subtitle {
+        font-size: var(--viz-font-size-xs);
+        color: var(--viz-40);
+        display: block;
+        margin-top: 2px;
+    }
+
+    .icon-link-btn {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        width: 1.75rem;
+        height: 1.75rem;
+        border-radius: var(--viz-border-radius-pill);
+        color: var(--viz-30);
+        text-decoration: none;
+        transition:
+            background-color 0.15s ease,
+            color 0.15s ease;
+
+        &:hover {
+            background-color: var(--viz-80);
+            color: var(--viz-text-color);
+        }
+    }
+
+    .card-body {
+        display: flex;
+        flex-direction: column;
+        gap: var(--viz-spacing-sm);
+
+        &.horizontal {
+            flex-direction: row;
+            justify-content: space-between;
+            align-items: center;
+            width: 100%;
+        }
+    }
+
+    .storage-row {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        font-size: var(--viz-font-size-sm);
+        gap: var(--viz-spacing-md);
+
+        .storage-label {
+            color: var(--viz-40);
+            font-weight: 500;
+        }
+
+        .storage-value {
+            color: var(--viz-text-color);
+            font-weight: 600;
+
+            &.path {
+                font-family: var(--viz-mono-font);
+                font-size: var(--viz-font-size-xs);
+                word-break: break-all;
+                max-width: 12rem;
+                text-align: right;
+                overflow: hidden;
+                text-overflow: ellipsis;
+                white-space: nowrap;
+            }
+
+            &.font-mono {
+                font-family: var(--viz-mono-font);
+                letter-spacing: -0.04em;
+            }
+        }
+
+        &.progress-row {
+            flex-direction: column;
+            align-items: stretch;
+            gap: var(--viz-spacing-xs);
+            margin-top: var(--viz-spacing-xs);
+        }
+
+        .progress-labels {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+    }
+
+    .progress-bar-wrapper {
+        position: relative;
+        width: 100%;
+    }
+
+    .version-card {
+        padding: var(--viz-spacing-md) var(--viz-spacing-lg);
+    }
+
+    .version-tag {
+        font-family: var(--viz-mono-font);
+        font-size: var(--viz-font-size-sm);
+        font-weight: 700;
+        letter-spacing: -0.03em;
+        background-color: var(--viz-80);
+        color: var(--viz-text-color);
+        padding: 0.15rem 0.5rem;
+        border-radius: var(--viz-border-radius-sm);
+        border: var(--viz-border-thin);
+    }
+
+    #uptime-value {
+        font-size: var(--viz-font-size-lg);
     }
 </style>

@@ -206,9 +206,7 @@
                                             <div
                                                 class="progress-bar-fill"
                                                 style="width: {job.progress || 0}%"
-                                            >
-                                                <div class="progress-shimmer"></div>
-                                            </div>
+                                            ></div>
                                         </div>
                                     </div>
                                 </div>
@@ -950,7 +948,7 @@
     .progress-bar-container {
         height: var(--viz-spacing-xs);
         background-color: var(--viz-80);
-        border-radius: var(--viz-border-radius-pill);
+        border-radius: var(--viz-border-radius-sm);
         overflow: hidden;
         position: relative;
     }
@@ -958,34 +956,9 @@
     .progress-bar-fill {
         height: 100%;
         background-color: var(--viz-primary);
-        border-radius: var(--viz-border-radius-pill);
-        transition: width 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+        border-radius: var(--viz-border-radius-sm);
         position: relative;
         overflow: hidden;
-    }
-
-    .progress-shimmer {
-        position: absolute;
-        top: 0;
-        left: 0;
-        right: 0;
-        bottom: 0;
-        background: linear-gradient(
-            90deg,
-            transparent 0%,
-            rgba(255, 255, 255, 0.15) 50%,
-            transparent 100%
-        );
-        animation: shimmer 2s infinite linear;
-    }
-
-    @keyframes shimmer {
-        0% {
-            transform: translateX(-100%);
-        }
-        100% {
-            transform: translateX(100%);
-        }
     }
 
     .history-job-card {

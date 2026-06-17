@@ -17,9 +17,9 @@
         | "10";
 
     const variantMappings = new SvelteMap<Variants, number>([
-        ["small", 2],
-        ["medium", 4],
-        ["large", 8],
+        ["small", 3],
+        ["medium", 6],
+        ["large", 10],
         ["xlarge", 16]
     ]);
 
@@ -30,28 +30,34 @@
     }
 
     let { width = $bindable(), variant = "medium", colour = "primary" }: Props = $props();
+
+    let height = $derived(variantMappings.get(variant) ?? 6);
 </script>
 
-<div class="progress-bar">
+<div class="progress-bar-track" class:has-border={height >= 6} style:height="{height}px">
     <div
         class="progress-fill"
-        style="width: {width}%; height: {variantMappings.get(
-            variant
-        )}px; background-color: var(--viz-{colour})"
+        style="width: {width}%; background-color: var(--viz-{colour})"
     ></div>
 </div>
 
 <style lang="scss">
-    .progress-bar {
-        position: absolute;
-        top: 0;
-        left: 0;
+    .progress-bar-track {
         width: 100%;
-        background-color: var(--viz-80);
+        background-color: var(--viz-90);
+        overflow: hidden;
+        box-sizing: border-box;
 
-        .progress-fill {
-            height: 100%;
-            transition: width 0.3s ease;
+        &.has-border {
+            border: var(--viz-border-thin);
+            border-color: var(--viz-70);
         }
+    }
+
+    .progress-fill {
+        height: 100%;
+        border-radius: var(--viz-border-radius-sm);
+        position: relative;
+        overflow: hidden;
     }
 </style>

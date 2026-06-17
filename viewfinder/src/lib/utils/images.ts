@@ -152,11 +152,24 @@ export function formatSeconds(totalSeconds?: number): string | null {
     if (totalSeconds === undefined || totalSeconds === null) {
         return null;
     }
-    if (totalSeconds === 0) return "0s";
+    if (totalSeconds === 0) {
+        return "0s";
+    }
 
-    return Duration.fromObject({ seconds: totalSeconds })
+    const human = Duration.fromObject({ seconds: totalSeconds })
         .shiftTo("days", "hours", "minutes", "seconds")
         .toHuman({ unitDisplay: "narrow", listStyle: "narrow" });
+
+    if (!human) {
+        return null;
+    }
+
+    // Fix Luxon's localized commas and extra spacing in narrow output
+    return human
+        .replace(/,/g, "")
+        .replace(/(\d+)\s+([dhms])/g, "$1$2")
+        .replace(/\s+/g, " ")
+        .trim();
 }
 
 export interface TransformParams {
