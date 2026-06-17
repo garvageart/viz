@@ -49,7 +49,7 @@ func ReadExif(bytes []byte) (data map[string]any, err error) {
 // Helpers to normalize EXIF keys/values coming from libvips (exif-ifdX-*)
 func CleanExifVal(s string) string {
 	// Prefer human-friendly token: if value is like "10/12500 (1/1250 sec., Rational, ...)"
-	// pick the first token inside parentheses before the comma. Otherwise take prefix before " (" 
+	// pick the first token inside parentheses before the comma. Otherwise take prefix before " ("
 	s = strings.TrimSpace(s)
 	if s == "" {
 		return s
@@ -155,26 +155,26 @@ func BuildImageEXIF(exifData map[string]string) (dto.ImageEXIF, time.Time, time.
 	}
 
 	out = dto.ImageEXIF{
-		Aperture:         FindExif(exifData, "ApertureValue", "FNumber", "Aperture"),
-		FNumber:          FindExif(exifData, "FNumber"),
-		ExposureValue:    FindExif(exifData, "ExposureValue", "ExposureBiasValue"),
-		Model:            FindExif(exifData, "Model"),
-		Make:             FindExif(exifData, "Make"),
-		ExifVersion:      FindExif(exifData, "ExifVersion"),
-		DateTime:         FindExif(exifData, "DateTime", "ModifyDate"),
-		DateTimeOriginal: FindExif(exifData, "DateTimeOriginal"),
-		ModifyDate:       FindExif(exifData, "ModifyDate", "DateTime"),
-		Iso:              FindExif(exifData, "ISO", "ISOSpeedRatings"),
-		FocalLength:      FindExif(exifData, "FocalLength"),
-		ExposureTime:     FindExif(exifData, "ExposureTime"),
-		Flash:            FindExifInt(exifData, "Flash"),
-		WhiteBalance:     FindExif(exifData, "WhiteBalance"),
-		LensModel:        FindExif(exifData, "LensModel"),
-		Rating:           FindExif(exifData, "Rating"),
-		Orientation:      FindExif(exifData, "Orientation"),
-		Software:         FindExif(exifData, "Software"),
-		Longitude:        FindExif(exifData, "GPSLongitude", "Longitude"),
-		Latitude:         FindExif(exifData, "GPSLatitude", "Latitude"),
+		Aperture:            FindExif(exifData, "ApertureValue", "FNumber", "Aperture"),
+		FNumber:             FindExif(exifData, "FNumber"),
+		ExposureValue:       FindExif(exifData, "ExposureValue", "ExposureBiasValue"),
+		Model:               FindExif(exifData, "Model"),
+		Make:                FindExif(exifData, "Make"),
+		ExifVersion:         FindExif(exifData, "ExifVersion"),
+		DateTime:            FindExif(exifData, "DateTime", "ModifyDate"),
+		DateTimeOriginal:    FindExif(exifData, "DateTimeOriginal"),
+		ModifyDate:          FindExif(exifData, "ModifyDate", "DateTime"),
+		Iso:                 FindExif(exifData, "ISO", "ISOSpeedRatings"),
+		FocalLength:         FindExif(exifData, "FocalLength"),
+		ExposureTime:        FindExif(exifData, "ExposureTime"),
+		Flash:               FindExifInt(exifData, "Flash"),
+		WhiteBalance:        FindExif(exifData, "WhiteBalance"),
+		LensModel:           FindExif(exifData, "LensModel"),
+		Rating:              FindExif(exifData, "Rating"),
+		Orientation:         FindExif(exifData, "Orientation"),
+		Software:            FindExif(exifData, "Software"),
+		Longitude:           FindExif(exifData, "GPSLongitude", "Longitude"),
+		Latitude:            FindExif(exifData, "GPSLatitude", "Latitude"),
 		OffsetTime:          FindExif(exifData, "OffsetTime"),
 		OffsetTimeOriginal:  FindExif(exifData, "OffsetTimeOriginal"),
 		OffsetTimeDigitized: FindExif(exifData, "OffsetTimeDigitized"),

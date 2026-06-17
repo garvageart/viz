@@ -7,11 +7,11 @@ import (
 	"time"
 
 	"gorm.io/gorm"
-	
-	"viz/internal/db"
-	"viz/internal/settings"
-	libhttp "viz/internal/http"
+
 	_ "github.com/joho/godotenv/autoload"
+	"viz/internal/db"
+	libhttp "viz/internal/http"
+	"viz/internal/settings"
 )
 
 type VizServer struct {
@@ -33,7 +33,6 @@ func (server VizServer) ConnectToDatabase(dst ...any) *gorm.DB {
 		}
 	}
 
-	
 	start := time.Now()
 	var client *gorm.DB
 	var dbError error

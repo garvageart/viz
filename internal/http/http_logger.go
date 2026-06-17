@@ -40,28 +40,28 @@ func setupChiLogHandler(name string, logLevel slog.Level, useLocal bool) []slog.
 	replaceAttrsFunc = imalog.ConvertTimeToLocalIfEnabled(useLocal, replaceAttrsFunc)
 
 	fileHandlerOpts := &slog.HandlerOptions{
-		AddSource: true,
-		Level:     logLevel,
+		AddSource:   true,
+		Level:       logLevel,
 		ReplaceAttr: replaceAttrsFunc,
 	}
 
 	httpLogFileHandler := imalog.NewFileLogger(&imalog.ImalogHandlerOptions{
-		Writer: httpLogFileWriter,
+		Writer:         httpLogFileWriter,
 		HandlerOptions: fileHandlerOpts,
 	})
 
 	mainLogFileHandler := imalog.NewFileLogger(&imalog.ImalogHandlerOptions{
 		Writer: logFileJSON,
 		HandlerOptions: &slog.HandlerOptions{
-			AddSource: true,
-			Level:     logLevel,
+			AddSource:   true,
+			Level:       logLevel,
 			ReplaceAttr: imalog.ConvertTimeToLocalIfEnabled(useLocal, nil),
 		},
 	})
 
 	consoleHandlerOpts := slog.HandlerOptions{
-		AddSource: shouldAddSource,
-		Level:     logLevel,
+		AddSource:   shouldAddSource,
+		Level:       logLevel,
 		ReplaceAttr: imalog.ConvertTimeToLocalIfEnabled(useLocal, nil),
 	}
 

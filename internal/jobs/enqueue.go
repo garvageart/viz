@@ -13,14 +13,13 @@ import (
 	"viz/internal/utils"
 )
 
-
 type JobStatus string
 
 const (
-	WorkerJobStatusQueued JobStatus  = "queued"
-	WorkerJobStatusRunning JobStatus = "running"
-	WorkerJobStatusFailed JobStatus  = "failed"
-	WorkerJobStatusSuccess JobStatus = "completed"
+	WorkerJobStatusQueued    JobStatus = "queued"
+	WorkerJobStatusRunning   JobStatus = "running"
+	WorkerJobStatusFailed    JobStatus = "failed"
+	WorkerJobStatusSuccess   JobStatus = "completed"
 	WorkerJobStatusCancelled JobStatus = "cancelled"
 )
 

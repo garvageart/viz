@@ -8,18 +8,18 @@ package entities
 // for internal/auth storage. GORM will AutoMigrate this type and add the
 // `password` column to the existing `users` table.
 type UserWithPassword struct {
-    User
-    Password *string `gorm:"type:text"`
+	User
+	Password *string `gorm:"type:text"`
 }
 
 // TableName ensures GORM uses the same table as the generated User type.
 func (UserWithPassword) TableName() string {
-    return "users"
+	return "users"
 }
 
 // ToUser returns the embedded generated User value.
 func (u UserWithPassword) ToUser() User {
-    return u.User
+	return u.User
 }
 
 // FromUser creates a UserWithPassword from a generated User and optional

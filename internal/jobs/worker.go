@@ -10,11 +10,11 @@ import (
 )
 
 type Worker struct {
-	Handler JobHandler
-	Name    string
-	Topic   string
-	DisplayName string
-	Concurrency int
+	Handler       JobHandler
+	Name          string
+	Topic         string
+	DisplayName   string
+	Concurrency   int
 	Count         func(db any, command string, payload any) (int64, error)
 	Enqueue       func(db any, command string, payload any) (int, error)
 	CustomHandler any
@@ -112,7 +112,7 @@ func NewWorker(id string, topic string, displayName string, concurrency int, han
 		DisplayName: displayName,
 		Concurrency: concurrency,
 	}
-	
+
 	RegisterWorker(w)
 	return w
 }

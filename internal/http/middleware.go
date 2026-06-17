@@ -207,7 +207,7 @@ func AuthMiddleware(db *gorm.DB, logger *slog.Logger) func(next http.Handler) ht
 						render.JSON(w, r, dto.ErrorResponse{Error: "Invalid session"})
 						return
 					}
-					
+
 					// For other errors (e.g. DB connection, locks), return 500 to allow retry
 					logger.Error("auth middleware: failed to query session", slog.Any("error", err))
 					render.Status(r, http.StatusInternalServerError)

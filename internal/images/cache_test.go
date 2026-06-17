@@ -61,13 +61,13 @@ func TestPerformTransformCacheCleanup(t *testing.T) {
 	logger := slog.New(slog.NewTextHandler(io.Discard, nil))
 
 	tests := []struct {
-		name                 string
-		clearPermanent       bool
-		maxSizeBytes         int64
-		files                map[string]time.Duration // filename -> age
-		fileSizes            map[string]int64         // filename -> size (default 10 bytes)
-		expectExists         []string
-		expectDeleted        []string
+		name           string
+		clearPermanent bool
+		maxSizeBytes   int64
+		files          map[string]time.Duration // filename -> age
+		fileSizes      map[string]int64         // filename -> size (default 10 bytes)
+		expectExists   []string
+		expectDeleted  []string
 	}{
 		{
 			name:           "Preserve Permanent (Default)",

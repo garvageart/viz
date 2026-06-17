@@ -3,9 +3,9 @@ package db
 import (
 	"context"
 	"fmt"
-	"log/slog"
 	"github.com/pressly/goose/v3"
 	"gorm.io/gorm"
+	"log/slog"
 
 	"viz/internal/logger"
 	"viz/tools/migrations"

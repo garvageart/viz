@@ -1,10 +1,10 @@
 package http
 
 import (
-	"slices"
 	"errors"
 	"net"
 	"net/url"
+	"slices"
 	"strings"
 	"syscall"
 )
@@ -39,8 +39,8 @@ func ValidateURL(rawURL string) error {
 	}
 
 	if slices.ContainsFunc(ips, IsPrivateIP) {
-			return ErrPrivateIP
-		}
+		return ErrPrivateIP
+	}
 
 	return nil
 }

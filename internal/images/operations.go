@@ -2,8 +2,8 @@ package images
 
 import (
 	"crypto/sha1"
-	"encoding/hex"
 	"encoding/base64"
+	"encoding/hex"
 	"image"
 	"io"
 	"os"

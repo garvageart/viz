@@ -48,18 +48,18 @@ func MigrateCollectionImages(db *gorm.DB, logger *slog.Logger) {
 				// We'll use a raw query to insert into the new table to avoid entity dependency issues during migration
 				// The new table 'collection_images' should have been created by AutoMigrate already
 				// but we'll be safe.
-				
+
 				/*
 				   The JSON structure was []dto.CollectionImage:
 				   [{"uid": "...", "added_at": "...", "added_by": {...}}]
 				*/
-				
+
 				// Instead of complex JSON parsing in Go, we can use Postgres JSON functions if we want,
 				// but let's do it in Go for better cross-DB compatibility (though we are mostly Postgres).
-				
+
 				// Actually, since we're using GORM's JSON serializer usually, we can just use a slice of maps or a temp struct.
 				// But wait, the easiest way is to just let Postgres do it if it's Postgres.
-				
+
 				query := `
 					INSERT INTO collection_images (collection_id, uid, added_at, added_by_id, created_at, updated_at)
 					SELECT ?, (obj->>'uid'), (obj->>'added_at')::timestamp, (obj->'added_by'->>'uid'), NOW(), NOW()

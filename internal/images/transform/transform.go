@@ -2,21 +2,21 @@ package transform
 
 import (
 	"fmt"
-	"viz/internal/entities"
-	"viz/internal/utils"
 	"net/url"
 	"strconv"
+	"viz/internal/entities"
+	"viz/internal/utils"
 )
 
 // TransformParams defines the parameters for an image transformation.
 type TransformParams struct {
-	Format   string
-	Width    int64
-	Height   int64
-	Quality  int64
-	Rotate   int
-	Flip     string
-	Kernel   string
+	Format  string
+	Width   int64
+	Height  int64
+	Quality int64
+	Rotate  int
+	Flip    string
+	Kernel  string
 }
 
 // ToQueryString serializes the transform parameters into a URL query string.

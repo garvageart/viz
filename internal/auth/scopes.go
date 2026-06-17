@@ -12,8 +12,6 @@ type ScopeItem struct {
 	Label string `json:"label"`
 }
 
-
-
 // HasScope checks if a given set of scopes grants access to a required scope.
 // The check is hierarchical. For example, if the required scope is "images:read",
 // a user with "images" or "*" scope will be granted access.

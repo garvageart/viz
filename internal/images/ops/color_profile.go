@@ -10,11 +10,11 @@ import (
 func NormalizeToSRGB(img *libvips.Image) error {
 	// If image is already sRGB, we might still want to run IccTransform if there's an embedded profile
 	// that needs to be "baked in" or converted to the standard sRGB profile.
-	// However, usually checking interpretation is a good first step optimization, 
-	// but strictly speaking, "sRGB" interpretation doesn't guarantee the data matches the standard sRGB profile 
+	// However, usually checking interpretation is a good first step optimization,
+	// but strictly speaking, "sRGB" interpretation doesn't guarantee the data matches the standard sRGB profile
 	// if the embedded profile says otherwise.
 	//
-	// Safest approach: 
+	// Safest approach:
 	// 1. If ICC profile exists -> Transform to sRGB.
 	// 2. If no ICC profile -> Force interpretation to sRGB (converting values if it was CMYK/LAB etc).
 
@@ -31,7 +31,7 @@ func NormalizeToSRGB(img *libvips.Image) error {
 		// vips_icc_transform attaches the new profile. We might want to strip it to save space
 		// since browsers assume sRGB anyway, but keeping it is "more correct".
 		// For web use, stripping it is common optimization if we are sure it's sRGB.
-		// img.RemoveICCProfile() 
+		// img.RemoveICCProfile()
 		return nil
 	}
 

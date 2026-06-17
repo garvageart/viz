@@ -18,9 +18,9 @@ func TestMain(m *testing.M) {
 	WarmupAllOps(config.LibvipsConfig{
 		Concurrency: 1,
 	})
-	
+
 	code := m.Run()
-	
+
 	libvips.Shutdown()
 	os.Exit(code)
 }
@@ -28,7 +28,7 @@ func TestMain(m *testing.M) {
 func TestGenerateTransform_ModernSamples(t *testing.T) {
 	// Path to samples relative to this test file
 	samplesDir := "../../resources/test/samples"
-	
+
 	// Ensure samples exist
 	if _, err := os.Stat(samplesDir); os.IsNotExist(err) {
 		t.Skipf("Samples directory not found at %s, skipping test", samplesDir)
@@ -120,14 +120,14 @@ func TestGenerateTransform_ModernSamples(t *testing.T) {
 					} else if result.Ext != expectedFormat {
 						t.Errorf("Expected ext %s, got %s", expectedFormat, result.Ext)
 					}
-					
+
 					// Verify dimensions
 					resImg, err := libvips.NewImageFromBuffer(result.ImageData, libvips.DefaultLoadOptions())
 					if err != nil {
 						t.Fatalf("Failed to decode result image for verification: %v", err)
 					}
 					defer resImg.Close()
-					
+
 					width := int64(resImg.Width())
 					height := int64(resImg.Height())
 
@@ -212,7 +212,7 @@ func TestPermanentTransforms(t *testing.T) {
 					if len(result.ImageData) == 0 {
 						t.Fatal("Result ImageData is empty")
 					}
-					
+
 					// Verify result with libvips
 					resImg, err := libvips.NewImageFromBuffer(result.ImageData, libvips.DefaultLoadOptions())
 					if err != nil {

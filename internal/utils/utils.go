@@ -2,7 +2,6 @@ package utils
 
 import (
 	"encoding/json"
-	libos "viz/internal/os"
 	"log"
 	"maps"
 	mRand "math/rand"
@@ -12,6 +11,7 @@ import (
 	"regexp"
 	"slices"
 	"strings"
+	libos "viz/internal/os"
 
 	"go.uber.org/zap"
 )
@@ -184,8 +184,6 @@ func EqualStringSlices(a, b *[]string) bool {
 	return true
 
 }
-
-
 
 // Capitalize returns the string with the first letter capitalized.
 

@@ -8,11 +8,11 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
-	"viz/internal/ansi"
 	"io"
 	"log/slog"
 	"strings"
 	"sync"
+	"viz/internal/ansi"
 )
 
 const (

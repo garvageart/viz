@@ -122,7 +122,7 @@ func TestParseQuery(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			got := ParseQuery(tt.input)
-			
+
 			if len(got.Filters) == 0 && len(tt.expected.Filters) == 0 {
 				got.Filters = map[string]string{}
 				tt.expected.Filters = map[string]string{}

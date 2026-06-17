@@ -1,10 +1,10 @@
 package images
 
 import (
-	"viz/internal/config"
 	"os"
 	"path/filepath"
 	"strings"
+	"viz/internal/config"
 )
 
 var (
