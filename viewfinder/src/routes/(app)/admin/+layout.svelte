@@ -2,7 +2,16 @@
     import { onMount } from "svelte";
     import { goto } from "$app/navigation";
     import { user } from "$lib/states/index.svelte";
-    import AdminSidebar from "$lib/components/admin/AdminSidebar.svelte";
+    import NavSidebar, { type NavItem } from "$lib/components/ui/Sidebar/NavSidebar.svelte";
+
+    const adminNavItems: NavItem[] = [
+        { label: "Dashboard", href: "/admin", icon: "dashboard", exact: true },
+        { label: "Users", href: "/admin/users", icon: "group" },
+        { label: "Jobs", href: "/admin/jobs", icon: "compare_arrows" },
+        { label: "Events", href: "/admin/events", icon: "hub" },
+        { label: "Cache", href: "/admin/cache", icon: "memory" },
+        { label: "Storage", href: "/admin/storage", icon: "hard_drive" }
+    ];
     import { toastState } from "$lib/toast-notifcations/notif-state.svelte";
 
     let { children } = $props();
@@ -23,7 +32,7 @@
 
 {#if authed}
     <div class="admin-layout">
-        <AdminSidebar />
+        <NavSidebar title="Admin" items={adminNavItems} />
         <main class="admin-content">
             {@render children()}
         </main>

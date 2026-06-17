@@ -1,8 +1,8 @@
 <script lang="ts">
     import { slide } from "svelte/transition";
-    import IconButton from "./IconButton.svelte";
-    import IconLeftPanelCloseCustom from "./icons/IconLeftPanelCloseCustom.svelte";
-    import IconLeftPanelOpenCustom from "./icons/IconLeftPanelOpenCustom.svelte";
+    import IconButton from "../IconButton.svelte";
+    import IconLeftPanelCloseCustom from "../icons/IconLeftPanelCloseCustom.svelte";
+    import IconLeftPanelOpenCustom from "../icons/IconLeftPanelOpenCustom.svelte";
 
     interface Props {
         open?: boolean;

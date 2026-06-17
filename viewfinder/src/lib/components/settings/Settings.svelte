@@ -16,9 +16,28 @@ Stuff to finish:
     import type { UserSetting } from "$lib/api";
     import { SvelteSet } from "svelte/reactivity";
     import AutoSettingsGroup from "../settings/AutoSettingsGroup.svelte";
-    import SettingsSidebar from "../settings/SettingsSidebar.svelte";
+    import NavSidebar, { type NavItem } from "$lib/components/ui/Sidebar/NavSidebar.svelte";
+    import { type MaterialSymbol } from "$lib/types/MaterialSymbol";
     import AccountsSettings from "./AccountSettings.svelte";
     import SecuritySettings from "./SecuritySettings.svelte";
+
+    const groupIcons: Record<string, MaterialSymbol> = {
+        account: "account_circle",
+        general: "settings",
+        interface: "palette",
+        images: "image",
+        notifications: "notifications",
+        privacy: "shield",
+        security: "lock"
+    };
+
+    let navItems: NavItem[] = $derived(
+        groups.map((group) => ({
+            label: group.charAt(0).toUpperCase() + group.slice(1),
+            href: `/settings/${group.toLowerCase()}`,
+            icon: groupIcons[group.toLowerCase()] || "settings"
+        }))
+    );
 
     // TODO: Import SecuritySettings when created
     interface Props {
@@ -91,7 +110,7 @@ Stuff to finish:
 </svelte:head>
 
 <div class="settings-layout">
-    <SettingsSidebar {groups} activeGroup={activeSection} />
+    <NavSidebar title="Settings" items={navItems} />
 
     <main class="settings-content">
         {#if isCustomGroup}
