@@ -31,13 +31,7 @@ Stuff to finish:
         security: "lock"
     };
 
-    let navItems: NavItem[] = $derived(
-        groups.map((group) => ({
-            label: group.charAt(0).toUpperCase() + group.slice(1),
-            href: `/settings/${group.toLowerCase()}`,
-            icon: groupIcons[group.toLowerCase()] || "settings"
-        }))
-    );
+
 
     // TODO: Import SecuritySettings when created
     interface Props {
@@ -94,6 +88,14 @@ Stuff to finish:
             return a.localeCompare(b);
         });
     });
+
+    let navItems: NavItem[] = $derived(
+        groups.map((group) => ({
+            label: group.charAt(0).toUpperCase() + group.slice(1),
+            href: `/settings/${group.toLowerCase()}`,
+            icon: groupIcons[group.toLowerCase()] || "settings"
+        }))
+    );
 
     let currentSettings = $derived(
         settings.filter((s) => (s.group || "General").toLowerCase() === activeSection.toLowerCase())
