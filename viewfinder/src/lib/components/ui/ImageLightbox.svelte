@@ -65,11 +65,24 @@
         currentPositionX = $state(0);
         currentPositionY = $state(0);
         currentRotation = $state(0);
+
+        reset() {
+            this.currentZoom = 1;
+            this.currentPositionX = 0;
+            this.currentPositionY = 0;
+            this.currentRotation = 0;
+        }
     }
 
-    let zoomState = $derived.by(() => {
-        lightboxImage?.uid;
-        return new ImageZoomState();
+    const zoomState = new ImageZoomState();
+    let lastImageUid = $state<string | undefined>(undefined);
+
+    $effect(() => {
+        const currentUid = lightboxImage?.uid;
+        if (currentUid !== lastImageUid) {
+            zoomState.reset();
+            lastImageUid = currentUid;
+        }
     });
 
     let transformState = $derived({
@@ -135,12 +148,17 @@
     });
 
     // Reset zoomed URL and load states when image changes or is closed
+    let lastLoaderImageUid = $state<string | undefined>(undefined);
+
     $effect(() => {
         const uid = lightboxImage?.uid;
-        untrack(() => {
-            loader.reset(uid);
-            imageDimensions = null;
-        });
+        if (uid !== lastLoaderImageUid) {
+            untrack(() => {
+                loader.reset(uid);
+                imageDimensions = null;
+            });
+            lastLoaderImageUid = uid;
+        }
     });
 
     $effect(() => {
