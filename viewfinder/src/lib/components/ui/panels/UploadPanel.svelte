@@ -424,14 +424,14 @@
     }
 
     .panel-file-info-progress.complete {
-        background: linear-gradient(90deg, hsl(115, 80%, 40%), hsl(115, 50%, 40%));
+        background: linear-gradient(90deg, var(--viz-success-color), color-mix(in srgb, var(--viz-success-color) 60%, var(--viz-40)));
     }
 
     .panel-file-info-progress.error {
-        background: linear-gradient(90deg, hsl(0, 80%, 40%), hsl(0, 50%, 40%));
+        background: linear-gradient(90deg, var(--viz-error-color), color-mix(in srgb, var(--viz-error-color) 60%, var(--viz-40)));
     }
 
     .panel-file-info-progress.duplicate {
-        background: linear-gradient(90deg, hsl(36, 80%, 40%), hsl(36, 50%, 40%));
+        background: linear-gradient(90deg, var(--viz-warning-color), color-mix(in srgb, var(--viz-warning-color) 60%, var(--viz-40)));
     }
 </style>
