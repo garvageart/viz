@@ -1,18 +1,4 @@
-<script module lang="ts">
-    declare global {
-        interface Window {
-            ___viewfinderConfig?: ViewfinderConfig;
-            resetAndReloadLayout?: () => void;
-            __APP_VERSION__: string;
-            __RUNTIME_CONFIG__: {
-                [key: string]: string;
-            };
-            __VIZ_CONFIG__?: VizBootstrapConfig;
-        }
-    }
-</script>
-
-<script>
+<script lang="ts">
     import { dev } from "$app/environment";
     import { afterNavigate, beforeNavigate } from "$app/navigation";
 
@@ -29,7 +15,6 @@
     import { loadingState } from "$lib/states/loading.svelte";
     import "$lib/stores/appReady";
     import "$lib/styles/scss/main.scss";
-    import type { ViewfinderConfig, VizBootstrapConfig } from "$lib/types/config.types";
     import { toggleFullscreen } from "$lib/utils/misc";
     import "@fontsource-variable/manrope/index.css";
     import "@fontsource-variable/geist/index.css";
@@ -48,8 +33,7 @@
 
     window.___viewfinderConfig = {
         environment: dev ? "dev" : "prod",
-        // @ts-ignore
-        version: window.__APP_VERSION__
+        version: __APP_VERSION__
     };
 
     let { children } = $props();

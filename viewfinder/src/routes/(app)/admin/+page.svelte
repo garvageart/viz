@@ -12,7 +12,7 @@
     let lastUpdated = $state(new Date());
 
     let systemInfo = $derived({
-        version: window.__APP_VERSION__,
+        version: __APP_VERSION__,
         activeConnections: data.wsStats?.connectedClients ?? 0,
         goroutines: data.systemStats?.num_goroutine ?? 0,
         allocMemory: data.systemStats?.alloc_memory
@@ -202,7 +202,7 @@
                             icon: "memory",
                             iconClass: "alloc-memory",
                             value: systemInfo.allocMemory,
-                            label: "Allocated Memory (Go)",
+                            label: "App Memory Usage",
                             mono: true
                         })}
 
@@ -210,7 +210,7 @@
                             icon: "memory_alt",
                             iconClass: "sys-memory",
                             value: systemInfo.sysMemory,
-                            label: "System Memory (Total)",
+                            label: "Total Server Memory",
                             mono: true
                         })}
                     </div>
@@ -241,18 +241,18 @@
                     </div>
                     <div class="card-body">
                         <div class="storage-row">
-                            <span class="storage-label">Storage Path</span>
+                            <span class="storage-label">Storage Folder</span>
                             <span class="storage-value path" title={storageInfo.path}
                                 >{storageInfo.path}</span
                             >
                         </div>
                         <div class="storage-row">
-                            <span class="storage-label">Viz Storage (Images)</span>
+                            <span class="storage-label">Image Storage</span>
                             <span class="storage-value">{storageInfo.totalUsed}</span>
                         </div>
                         <div class="storage-row progress-row">
                             <div class="progress-labels">
-                                <span class="storage-label">System Disk Usage</span>
+                                <span class="storage-label">Server Storage Space</span>
                                 <span class="storage-value font-mono">{formattedSystemStorage}</span
                                 >
                             </div>
@@ -276,7 +276,7 @@
                             </div>
                             <div>
                                 <h4>Cache Status</h4>
-                                <span class="card-subtitle">Redis / In-memory data</span>
+                                <span class="card-subtitle">Stores optimized images for faster loading.</span>
                             </div>
                         </div>
                         <a href="/admin/cache" class="icon-link-btn" title="View Cache Settings">
