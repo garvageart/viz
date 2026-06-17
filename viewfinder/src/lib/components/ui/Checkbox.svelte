@@ -30,7 +30,6 @@
             event.preventDefault();
             checked = !checked;
 
-            // Dispatch change event manually since programmatic change doesn't trigger it
             const changeEvent = new Event("change", { bubbles: true });
             const input = document.getElementById(uniqueId) as HTMLInputElement;
             if (input) {
@@ -55,11 +54,11 @@
                 viewBox="0 0 24 24"
                 fill="none"
                 stroke="currentColor"
-                stroke-width="3"
+                stroke-width="3.5"
                 stroke-linecap="round"
                 stroke-linejoin="round"
             >
-                <polyline points="20 6 9 17 4 12"></polyline>
+                <polyline points="4 12 9 17 20 6"></polyline>
             </svg>
         </span>
         {#if label}
@@ -72,21 +71,37 @@
     .checkbox-wrapper {
         display: inline-flex;
         align-items: center;
-        cursor: pointer;
         user-select: none;
 
         &.disabled {
             opacity: 0.5;
+            cursor: not-allowed;
             pointer-events: none;
+        }
+
+        /* Cohesive hover feedback */
+        &:hover:not(.disabled) {
+            .viz-checkbox {
+                border-color: var(--viz-40);
+                background-color: var(--viz-90);
+            }
+
+            .label-text {
+                color: var(--viz-text-color);
+            }
         }
     }
 
     input[type="checkbox"] {
         position: absolute;
-        opacity: 0;
-        cursor: pointer;
-        height: 0;
-        width: 0;
+        width: 1px;
+        height: 1px;
+        padding: 0;
+        margin: -1px;
+        overflow: hidden;
+        clip: rect(0, 0, 0, 0);
+        white-space: nowrap;
+        border: 0;
     }
 
     .viz-checkbox {
@@ -95,42 +110,71 @@
         justify-content: center;
         width: 1rem;
         height: 1rem;
-        border: 1.5px solid var(--viz-60);
-        border-radius: 4px;
-        background-color: transparent;
-        transition: all 0.2s ease;
+        border: var(--viz-border-thin);
+        border-radius: var(--viz-border-radius-sm);
+        background-color: var(--viz-95);
         color: transparent;
+        transition: 
+            background-color 0.12s ease, 
+            border-color 0.12s ease, 
+            box-shadow 0.12s ease;
+        flex-shrink: 0;
+        cursor: pointer;
     }
 
-    /* Checkmark size */
+    /* Checkmark SVG styling & self-drawing polyline */
     svg {
-        width: 0.75rem;
-        height: 0.75rem;
+        width: 0.7rem;
+        height: 0.7rem;
+        display: block;
+
+        polyline {
+            stroke-dasharray: 24;
+            stroke-dashoffset: 24;
+            transition: stroke-dashoffset 0.18s cubic-bezier(0.16, 1, 0.3, 1);
+        }
     }
 
     /* Checked state */
-    input[type="checkbox"]:checked + label .viz-checkbox {
-        background-color: var(--viz-primary);
-        border: 1.5px solid var(--viz-90);
-        color: white;
+    input[type="checkbox"]:checked + label {
+        .viz-checkbox {
+            background-color: var(--viz-primary);
+            border-color: var(--viz-primary);
+            color: #ffffff;
+            /* Inset highlight shadow for premium 3D feel */
+            box-shadow: inset 0 1px 1px rgba(255, 255, 255, 0.2), 0 1px 2px rgba(0, 0, 0, 0.1);
+
+            polyline {
+                stroke-dashoffset: 0;
+            }
+        }
+
+        .label-text {
+            color: var(--viz-text-color);
+        }
     }
 
-    /* Focus state */
-    input[type="checkbox"]:focus + label .viz-checkbox {
-        box-shadow: 0 0 0 3px rgba(var(--viz-primary), 0.2);
-        border-color: var(--viz-primary);
+    /* Keyboard Focus Ring (focus-visible) */
+    input[type="checkbox"]:focus-visible + label {
+        .viz-checkbox {
+            box-shadow: 0 0 0 2px var(--viz-bg-color), 0 0 0 4px var(--viz-primary);
+            border-color: var(--viz-primary);
+        }
     }
 
     label {
-        display: flex;
+        display: inline-flex;
         align-items: center;
         cursor: pointer;
         font-family: var(--viz-display-font);
-        color: var(--viz-text-color);
-        gap: 0.5rem;
+        gap: var(--viz-spacing-sm);
+        user-select: none;
     }
 
     .label-text {
-        font-size: 1rem;
+        font-size: var(--viz-font-size-sm);
+        font-weight: 500;
+        color: var(--viz-40);
+        transition: color 0.12s ease;
     }
 </style>
