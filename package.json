@@ -13,11 +13,7 @@
         "setup:https": "pnpm --filter @viz/scripts setup:https"
     },
     "keywords": [],
-    "pnpm": {
-        "onlyBuiltDependencies": [
-            "esbuild"
-        ]
-    },
+
     "devDependencies": {
         "prettier": "^3.8.4",
         "prettier-plugin-svelte": "^4.1.0"
