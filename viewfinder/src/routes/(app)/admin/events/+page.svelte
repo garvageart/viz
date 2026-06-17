@@ -1,8 +1,6 @@
 <script lang="ts">
-    import { onMount, onDestroy } from "svelte";
     import Button from "$lib/components/ui/Button.svelte";
     import MaterialIcon from "$lib/components/ui/MaterialIcon.svelte";
-    import { getWsStats, getWsMetrics, getEventsSince } from "$lib/api";
     import { toastState } from "$lib/toast-notifcations/notif-state.svelte";
     import type { PageData } from "./$types";
     import type { WsStatsResponse, WsMetricsResponse, EventRecord } from "$lib/api";
@@ -11,87 +9,24 @@
     import { modalsManager } from "$lib/components/modals/manager/ModalManager.svelte";
     import InputSelect from "$lib/components/ui/InputSelect.svelte";
     import type { MaterialSymbol } from "$lib/types/MaterialSymbol.js";
-    import InputText from "$lib/components/ui/InputText.svelte";
 
     type EventHistoryItem = EventRecord;
 
     let { data }: { data: PageData } = $props();
 
-    let refreshing = $state(false);
-
-    // WS Stats - initialize from load data
+    // WS Stats - derived from page load data
     let stats = $derived<WsStatsResponse>(data.stats);
 
-    // WS Metrics - initialize from load data
+    // WS Metrics - derived from page load data
     let metrics = $derived<WsMetricsResponse>(data.metrics);
 
-    // Event History - initialize from load data
+    // Event History - derived from page load data
     let history = $derived<EventHistoryItem[]>(data.history || []);
     let historyFilter = $state("all");
     let historySearch = $state("");
 
-    // Auto-refresh
-    let autoRefresh = $state(true);
-    let refreshInterval: number | null = null;
-
-    $effect(() => {
-        stats = data.stats;
-    });
-
-    $effect(() => {
-        metrics = data.metrics;
-    });
-
-    $effect(() => {
-        history = data.history || [];
-    });
-
     function showMessage(message: string, type: "success" | "error" | "info" = "info"): void {
         toastState.addToast({ message, type });
-    }
-
-    async function loadStats(): Promise<void> {
-        try {
-            const res = await getWsStats();
-            if (res.status === 200) {
-                stats = res.data;
-            }
-        } catch (e) {
-            console.error("Failed to load stats:", e);
-        }
-    }
-
-    async function loadMetrics(): Promise<void> {
-        try {
-            const res = await getWsMetrics();
-            if (res.status === 200) {
-                metrics = res.data;
-            }
-        } catch (e) {
-            console.error("Failed to load metrics:", e);
-        }
-    }
-
-    async function loadHistory(): Promise<void> {
-        try {
-            const res = await getEventsSince({ limit: 50 });
-            if (res.status === 200 && "events" in res.data) {
-                history = res.data.events || [];
-            }
-        } catch (e) {
-            console.error("Failed to load history:", e);
-        }
-    }
-
-    async function refreshAll(): Promise<void> {
-        refreshing = true;
-        try {
-            await Promise.all([loadStats(), loadMetrics(), loadHistory()]);
-        } catch (e) {
-            showMessage("Refresh failed: " + (e as Error).message, "error");
-        } finally {
-            refreshing = false;
-        }
     }
 
     function requestClearHistory() {
@@ -109,29 +44,6 @@
     async function handleClearConfirm(): Promise<void> {
         showMessage("Clear event history endpoint not yet implemented for WebSocket", "info");
         // TODO: Implement clearWsEventHistory endpoint if needed
-    }
-
-    function toggleAutoRefresh(): void {
-        autoRefresh = !autoRefresh;
-        if (autoRefresh) {
-            startAutoRefresh();
-        } else {
-            stopAutoRefresh();
-        }
-    }
-
-    function startAutoRefresh(): void {
-        if (refreshInterval) {
-            return;
-        }
-        refreshInterval = window.setInterval(refreshAll, 5000);
-    }
-
-    function stopAutoRefresh(): void {
-        if (refreshInterval) {
-            clearInterval(refreshInterval);
-            refreshInterval = null;
-        }
     }
 
     let filteredHistory = $derived.by(() => {
@@ -190,16 +102,6 @@
     function formatJSON(data: any): string {
         return JSON.stringify(data, null, 2);
     }
-
-    onMount(async () => {
-        if (autoRefresh) {
-            startAutoRefresh();
-        }
-    });
-
-    onDestroy(() => {
-        stopAutoRefresh();
-    });
 </script>
 
 {#snippet statCard({
@@ -241,19 +143,6 @@
 {/snippet}
 
 <AdminRouteShell heading="Event Monitor" description="WebSocket metrics and event history">
-    {#snippet actions()}
-        <div class="header-actions">
-            <Button variant="small" onclick={toggleAutoRefresh}>
-                <MaterialIcon iconName={autoRefresh ? "pause" : "play_arrow"} />
-                {autoRefresh ? "Auto-refresh: ON" : "Auto-refresh: OFF"}
-            </Button>
-            <Button variant="small" onclick={refreshAll} disabled={refreshing}>
-                <MaterialIcon iconName="refresh" />
-                Refresh
-            </Button>
-        </div>
-    {/snippet}
-
     <div class="admin-page-content">
         <!-- Connection Stats -->
         <section class="content-section">
@@ -387,13 +276,15 @@
                     {#each filteredHistory as event}
                         <details class="event-item">
                             <summary class="event-summary">
-                                <div class="event-header">
-                                    <span class="event-type">{event.event}</span>
-                                    <span class="event-time"
-                                        >{formatTimestamp(event.timestamp)}</span
-                                    >
+                                <div class="summary-content">
+                                    <div class="event-header">
+                                        <span class="event-type">{event.event}</span>
+                                        <span class="event-time"
+                                            >{formatTimestamp(event.timestamp)}</span
+                                        >
+                                    </div>
+                                    <MaterialIcon iconName="arrow_drop_down" />
                                 </div>
-                                <MaterialIcon iconName="arrow_drop_down" />
                             </summary>
                             <div class="event-details">
                                 <div class="event-field">
@@ -418,11 +309,6 @@
         display: flex;
         flex-direction: column;
         gap: var(--viz-spacing-xl);
-    }
-
-    .header-actions {
-        display: flex;
-        gap: var(--viz-spacing-sm);
     }
 
     .content-section {
@@ -718,9 +604,10 @@
         border: var(--viz-border-thin);
         border-radius: var(--viz-border-radius-md);
         overflow: hidden;
+        flex-shrink: 0;
 
         &[open] {
-            .event-summary {
+            .summary-content {
                 border-bottom: var(--viz-border-thin);
                 background-color: var(--viz-80);
 
@@ -732,14 +619,9 @@
     }
 
     .event-summary {
-        display: flex;
-        justify-content: space-between;
-        align-items: center;
-        padding: var(--viz-spacing-md) var(--viz-spacing-lg);
         cursor: pointer;
         list-style: none;
-        color: var(--viz-text-color);
-        transition: background-color 0.15s ease;
+        padding: 0;
 
         &::marker {
             content: "";
@@ -749,8 +631,19 @@
         }
 
         &:hover {
-            background-color: var(--viz-80);
+            .summary-content {
+                background-color: var(--viz-80);
+            }
         }
+    }
+
+    .summary-content {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        padding: var(--viz-spacing-md) var(--viz-spacing-lg);
+        color: var(--viz-text-color);
+        transition: background-color 0.15s ease;
 
         :global(.viz-material-icon) {
             color: var(--viz-40);

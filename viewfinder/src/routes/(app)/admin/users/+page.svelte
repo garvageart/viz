@@ -341,26 +341,29 @@
 
     .role-badge {
         display: inline-block;
-        padding: 0.25rem 0.5rem;
-        border-radius: 0.25rem;
-        font-size: 0.75rem;
+        padding: 0.2rem 0.5rem;
+        border-radius: var(--viz-border-radius-sm);
+        font-size: var(--viz-font-size-xs);
         font-weight: 600;
         text-transform: uppercase;
 
         &.admin,
         &.superadmin {
-            background: rgba(16, 185, 129, 0.1);
-            color: #10b981;
+            background: color-mix(in srgb, var(--viz-success-color) 8%, var(--viz-95));
+            color: var(--viz-text-color);
+            border: 1px solid color-mix(in srgb, var(--viz-success-color) 45%, var(--viz-60));
         }
 
         &.user {
             background: var(--viz-90);
             color: var(--viz-text-color);
+            border: 1px solid var(--viz-80);
         }
 
         &.guest {
-            background: var(--viz-90);
+            background: var(--viz-95);
             color: var(--viz-40);
+            border: 1px solid var(--viz-80);
         }
     }
 

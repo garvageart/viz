@@ -287,31 +287,31 @@
     .dashboard-container {
         display: flex;
         flex-direction: column;
-        gap: 2.5rem;
+        gap: var(--viz-spacing-xxl);
     }
 
     .stats-info {
         display: flex;
 
         span {
-            font-size: 0.9rem;
+            font-size: var(--viz-font-size-xs);
             color: var(--viz-40);
-            margin-right: 0.5rem;
+            margin-right: var(--viz-spacing-xs);
         }
     }
 
     .section {
         display: flex;
         flex-direction: column;
-        gap: 1rem;
+        gap: var(--viz-spacing-md);
     }
 
     .section-title {
-        font-size: 1.25rem;
+        font-size: var(--viz-font-size-lg);
         font-weight: 600;
         color: var(--viz-text-color);
         margin: 0;
-        padding-left: 0.5rem;
+        padding-left: var(--viz-spacing-sm);
         border-left: 4px solid var(--viz-primary);
         line-height: 1.2;
     }
@@ -319,23 +319,24 @@
     .stats-grid {
         display: grid;
         grid-template-columns: repeat(auto-fit, minmax(15rem, 1fr));
-        gap: 1rem;
+        gap: var(--viz-spacing-md);
     }
 
     .stat-card {
-        background: var(--viz-100);
-        border: 1px solid var(--viz-80);
-        border-radius: 0.75rem;
-        padding: 1.5rem;
+        background-color: var(--viz-95);
+        border: var(--viz-border-thin);
+        border-radius: var(--viz-border-radius-md);
+        padding: var(--viz-spacing-lg);
         display: flex;
         align-items: center;
-        gap: 1rem;
-        transition: border-color 0.2s;
+        gap: var(--viz-spacing-md);
+        transition: border-color 0.2s ease, background-color 0.2s ease;
         text-decoration: none;
         color: inherit;
 
         &:hover {
             border-color: var(--viz-70);
+            background-color: var(--viz-90);
         }
 
         &.wide {
@@ -344,55 +345,67 @@
     }
 
     .stat-icon {
-        width: 3.5rem;
-        height: 3.5rem;
-        border-radius: 0.75rem;
+        width: 3rem;
+        height: 3rem;
+        border-radius: var(--viz-border-radius-md);
         display: flex;
         align-items: center;
         justify-content: center;
-        color: var(--viz-bg-color);
         flex-shrink: 0;
+        transition: background-color 0.2s ease, color 0.2s ease;
 
         &.version {
             background-color: #3b82f6;
+            color: #ffffff;
         }
         &.connections {
             background-color: #10b981;
+            color: #ffffff;
         }
         &.cache {
             background-color: #f59e0b;
+            color: var(--viz-10-dark);
         }
         &.uptime {
             background-color: #8b5cf6;
+            color: #ffffff;
         }
         &.db {
             background-color: #6366f1;
+            color: #ffffff;
         }
         &.storage {
             background-color: #ec4899;
+            color: #ffffff;
         }
         &.users {
             background-color: #14b8a6;
+            color: #ffffff;
         }
         &.images {
             background-color: #f43f5e;
+            color: #ffffff;
         }
         &.goroutines {
             background-color: #0d9488;
+            color: #ffffff;
         }
         &.alloc-memory {
             background-color: #d946af;
+            color: #ffffff;
         }
         &.sys-memory {
             background-color: #a855f7;
+            color: #ffffff;
         }
         &.storage-path {
             background-color: #22c55e;
+            color: var(--viz-10-dark);
         }
 
         /* Material Icon scaling override */
         :global(.material-icons) {
-            font-size: 1.75rem;
+            font-size: 1.5rem;
         }
     }
 
@@ -404,14 +417,14 @@
     }
 
     .stat-value {
-        font-size: 1.2rem;
+        font-size: var(--viz-font-size-xl);
         font-weight: 700;
+        font-family: var(--viz-mono-font);
         line-height: 1.2;
         color: var(--viz-text-color);
 
         &.path {
-            font-size: 1rem;
-            font-family: var(--viz-mono-font);
+            font-size: var(--viz-font-size-sm);
             word-break: break-all;
         }
     }
@@ -426,7 +439,7 @@
         position: relative;
         height: 4px;
         width: 100%;
-        margin-top: 1rem;
+        margin-top: var(--viz-spacing-std);
         overflow: hidden;
     }
 
@@ -434,13 +447,13 @@
         grid-column: 1 / -1;
         height: 1px;
         width: 100%;
-        background-color: var(--viz-90);
-        margin: 0.5rem 0;
+        background-color: var(--viz-60);
+        margin: var(--viz-spacing-sm) 0;
     }
 
     .stat-label {
-        font-size: 0.875rem;
+        font-size: var(--viz-font-size-xs);
         color: var(--viz-40);
-        margin-top: 0.25rem;
+        margin-top: var(--viz-spacing-xxs);
     }
 </style>
