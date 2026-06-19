@@ -252,7 +252,12 @@ func TestCacheMetricsPersistence(t *testing.T) {
 	atomic.StoreUint64(&cacheMisses, 0)
 	atomic.StoreUint32(&dirtyStats, 0)
 
+	// Save and redirect global Directory to tempDir to protect live directory
+	oldDirectory := Directory
+	Directory = tempDir
+
 	t.Cleanup(func() {
+		Directory = oldDirectory
 		redisClient = nil
 		statsFilePath = ""
 		atomic.StoreUint64(&cacheHits, 0)
