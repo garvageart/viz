@@ -1,5 +1,4 @@
 /// <reference types="vitest" />
-import { svelteTesting } from "@testing-library/svelte/vite";
 import { sveltekit } from "@sveltejs/kit/vite";
 import { defineConfig, type ProxyOptions } from "vite";
 import fs from "fs";
@@ -85,7 +84,6 @@ export default defineConfig({
         projects: [
             {
                 extends: "./vite.config.ts", // Extend the base config
-                plugins: [svelteTesting()],
                 test: {
                     name: "client",
                     clearMocks: true
