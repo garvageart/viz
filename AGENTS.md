@@ -35,8 +35,9 @@ This document provides a comprehensive guide for AI agents and developers workin
 - **API Client**: The primary client is generated from the OpenAPI spec using `oazapfts`. A custom wrapper in `viz/src/lib/api/index.ts` enhances this client, primarily for handling binary file uploads with the correct `Content-Type`.
 - **State Management**: Global and session-level state is managed through custom modules in `viz/src/lib/states/`. These modules are simple `.ts` files that export state runes.
 - **Testing**:
-  - **Vitest**: For unit and component testing.
-  - **Playwright**: For end-to-end (E2E) testing.
+  - **Strategy: E2E-First**: We avoid brittle UI component unit tests (JSDOM) because they require extensive manual mocking of SvelteKit's `$app/*` modules and browser APIs (like IndexedDB or ResizeObserver). The primary focus is on robust E2E testing using Playwright to test features in a real browser environment.
+  - **Playwright**: Used for all UI and user flow testing.
+  - **Vitest**: Strictly reserved for pure logic, state management, and utility functions. No UI components or DOM manipulation should be tested in Vitest.
 
 ## 3. Key Workflows & Logic
 
