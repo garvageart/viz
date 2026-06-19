@@ -240,7 +240,7 @@ dev-api:
 	COMMIT=$$(git rev-parse HEAD 2>/dev/null || echo "unknown") && \
 	REF=$$(git rev-parse --abbrev-ref HEAD 2>/dev/null || echo "unknown") && \
 	URL=$$(git remote get-url origin 2>/dev/null || git config --get remote.origin.url 2>/dev/null || echo "unknown") && \
-	$(GO_CMD) run -ldflags="\
+	$(GO_CMD) run $(GO_FLAGS) -ldflags="\
 	  -X 'viz/internal/config.Version=$$VERSION' \
 	  -X 'viz/internal/config.BuildID=local-dev' \
 	  -X 'viz/internal/config.SourceCommit=$$COMMIT' \
@@ -248,7 +248,7 @@ dev-api:
 	  -X 'viz/internal/config.SourceUrl=$$URL' \
 	  -X 'viz/internal/config.Repository=viz' \
 	  -X 'viz/internal/config.RepositoryUrl=$$URL'" \
-	  ./cmd/api
+	  ./cmd/api $(ARGS)
 
 run: build
 	@echo "Run completed build artifacts (see README for local run instructions)."
