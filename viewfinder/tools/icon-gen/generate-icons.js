@@ -284,7 +284,7 @@ function loadValidSymbols() {
  * @returns {Promise<void>}
  */
 async function main() {
-    const force = process.argv.includes("--force");
+    const force = process.argv.includes("--force") || !!process.env.CI;
 
     // 1. Fetch codepoints and update types if forced or file doesn't exist
     const typeDefPath = join(SRC, "lib/types/MaterialSymbol.ts");
@@ -313,7 +313,7 @@ async function main() {
 
     // Use forward-slash patterns so glob works reliably on Windows.
     const pattern = `${SRC.replace(/\\/g, "/")}/**/*.{svelte,ts,js}`;
-    const files = globSync(pattern, { nodir: true });
+    const files = globSync(pattern, { nodir: true, ignore: ["**/.svelte-kit/**", "**/node_modules/**"] });
 
     console.log("Scanning files with pattern:", pattern);
     console.log("Found files:", files.length);
