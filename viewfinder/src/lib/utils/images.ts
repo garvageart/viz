@@ -131,21 +131,58 @@ export function getThumbhashURL(asset: ImageAsset): string | undefined {
     }
 }
 
+export const enum ByteUnit {
+    'B' = 'B',
+    'KiB' = 'KiB',
+    'MiB' = 'MiB',
+    'GiB' = 'GiB',
+    'TiB' = 'TiB',
+    'PiB' = 'PiB',
+    'EiB' = 'EiB',
+}
+
+const byteUnits = [ByteUnit.B, ByteUnit.KiB, ByteUnit.MiB, ByteUnit.GiB, ByteUnit.TiB, ByteUnit.PiB, ByteUnit.EiB];
+
+/**
+ * Convert bytes to best human readable unit and number of that unit.
+ *
+ * * For `1024` bytes, returns `1` and `KiB`.
+ * * For `1536` bytes, returns `1.5` and `KiB`.
+ *
+ * @param bytes number of bytes
+ * @param maxPrecision maximum number of decimal places, default is `1`
+ * @returns size (number) and unit (string)
+ */
+export function getBytesWithUnit(bytes: number, maxPrecision = 1): [number, ByteUnit] {
+    const magnitude = Math.floor(Math.log(bytes <= 0 ? 1 : bytes) / Math.log(1024));
+
+    return [Number.parseFloat((bytes / 1024 ** magnitude).toFixed(maxPrecision)), byteUnits[magnitude]];
+}
+
+/**
+ * Localized number of bytes with a unit.
+ *
+ * For `1536` bytes:
+ * * en: `1.5 KiB`
+ * * de: `1,5 KiB`
+ *
+ * @param bytes number of bytes
+ * @param locale locale to use, default is `navigator.language`
+ * @param maxPrecision maximum number of decimal places, default is `1`
+ * @returns localized bytes with unit as string
+ */
+export function getByteUnitString(bytes: number, locale?: string, maxPrecision = 1): string {
+    const [size, unit] = getBytesWithUnit(bytes, maxPrecision);
+    return `${size.toLocaleString(locale)} ${unit}`;
+}
+
 export function formatBytes(bytes?: number) {
-    if (!bytes && bytes !== 0) {
+    if (bytes === undefined || bytes === null || isNaN(bytes)) {
         return null;
     }
-
-    const units = ["B", "KB", "MB", "GB", "TB"];
-    let i = 0;
-    let v = bytes as number;
-
-    while (v >= 1024 && i < units.length - 1) {
-        v = v / 1024;
-        i++;
-    }
-
-    return `${v % 1 === 0 ? v.toFixed(0) : v.toFixed(2)} ${units[i]}`;
+    
+    const locale = typeof window !== "undefined" ? (window.navigator.languages?.[0] || window.navigator.language) : undefined;
+    return getByteUnitString(bytes, locale, 1);
 }
 
 export function formatSeconds(totalSeconds?: number): string | null {
