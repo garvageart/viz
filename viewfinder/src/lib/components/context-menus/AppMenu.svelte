@@ -38,6 +38,12 @@
                 label: "Cache",
                 icon: "cached",
                 action: () => goto("/admin/cache")
+            },
+            {
+                id: "admin-storage",
+                label: "Storage",
+                icon: "hard_drive",
+                action: () => goto("/admin/storage")
             }
         ]
     };
