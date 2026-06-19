@@ -4,8 +4,6 @@ import (
 	"fmt"
 	"log/slog"
 	"os"
-
-	"path"
 	"path/filepath"
 	"strings"
 
@@ -29,7 +27,7 @@ var (
 	)
 
 	LogDirectoryDefault = func() string {
-		return path.Join(libos.CurrentWorkingDirectory, "var", "logs")
+		return filepath.Join(libos.CurrentWorkingDirectory, "var", "logs")
 	}()
 
 	LogFileDefaults = FileLog{
@@ -69,7 +67,7 @@ func (fl FileLog) Write(data []byte) (n int, err error) {
 }
 
 func (fl FileLog) FilePath() string {
-	return libos.StandardisePaths(path.Join(fl.Directory, fl.Filename+"."+LogFileExt))
+	return filepath.Clean(filepath.Join(fl.Directory, fl.Filename+"."+LogFileExt))
 }
 
 func NewFileLogger(opts *ImalogHandlerOptions) slog.Handler {

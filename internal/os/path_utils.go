@@ -4,8 +4,6 @@ import (
 	"fmt"
 	"os"
 	"path/filepath"
-	"runtime"
-	"strings"
 )
 
 var (
@@ -15,7 +13,7 @@ var (
 			panic(fmt.Errorf("error retrieving current working directory: %w", err))
 		}
 
-		return StandardisePaths(cwd)
+		return filepath.Clean(cwd)
 	}()
 
 	ProjectRoot = func() string {
@@ -26,7 +24,7 @@ var (
 
 		for {
 			if _, err := os.Stat(filepath.Join(curr, "go.mod")); err == nil {
-				return StandardisePaths(curr)
+				return filepath.Clean(curr)
 			}
 
 			parent := filepath.Dir(curr)
@@ -39,12 +37,3 @@ var (
 		return CurrentWorkingDirectory
 	}()
 )
-
-// Microsoft you will pay for your crimes against standards
-func StandardisePaths(path string) string {
-	if runtime.GOOS == "windows" {
-		return strings.ReplaceAll(path, "/", "\\")
-	} else {
-		return strings.ReplaceAll(path, "\\", "/")
-	}
-}
