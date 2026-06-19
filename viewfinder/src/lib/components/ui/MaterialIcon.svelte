@@ -31,17 +31,17 @@
     export interface IconProps {
         /** The Material Symbol name */
         iconName: MaterialSymbol;
-        /** The style variant of the icon */
+        /** The style variant of the icon. Defaults to `sharp` */
         iconStyle?: IconStyle;
         /** Fill the icon (1) or outline (0) */
         fill?: boolean;
-        /** Font weight / stroke width (100-700) */
+        /** Font weight / stroke width (100-700). Defaults to `400`. */
         weight?: number;
-        /** Grade (-25, 0, 200) - affects thickness */
+        /** Grade (-25, 0, 200) - affects thickness. Defaults to `0`. */
         grade?: -25 | 0 | 200;
-        /** Optical size (20, 24, 40, 48) */
+        /** Optical size (20, 24, 40, 48). Defaults to `24`. */
         opticalSize?: 20 | 24 | 40 | 48;
-        /** Custom size (e.g. "1rem", "24px") */
+        /** Custom size (e.g. "1rem", "24px"). Defaults to `1.5rem`. */
         size?: string;
     }
 
