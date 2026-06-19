@@ -82,7 +82,7 @@
     $effect(() => {
         if (debugMode) {
             console.log(
-                `[CollectionPage] Mount/Update. View ID: ${view?.id}, View Name: ${view?.name}, Data Name: ${localDataUpdates.name}`
+                `[CollectionPage] Mount/Update. View ID: ${view?.id}, View Name: ${view?.name}, Data Name: ${name}`
             );
         }
     });
@@ -104,20 +104,9 @@
     permittedKeys.push(...selectKeys, ...moveKeys);
 
     // Data
-    let localDataUpdates = $state({
-        name: untrack(() => data?.name ?? ""),
-        description: untrack(() => data?.description ?? ""),
-        private: untrack(() => data?.private ?? false)
-    });
-
-    // Let it be known that I hate this but don't have any other solution rn
-    $effect(() => {
-        if (data) {
-            localDataUpdates.name = data.name;
-            localDataUpdates.description = data.description ?? "";
-            localDataUpdates.private = data.private ?? false;
-        }
-    });
+    let name = $derived(data?.name ?? "");
+    let description = $derived(data?.description ?? "");
+    let isPrivate = $derived(data?.private ?? false);
 
     // Image pagination state
     let collectionState = $derived(new ImagePaginationState(data?.images, data?.image_count));
@@ -160,7 +149,7 @@
 
     // Sync tab name with collection name directly on the passed view instance
     $effect(() => {
-        if (view && localDataUpdates.name) {
+        if (view && name) {
             // Ensure we aren't applying stale data to a new view
             if (view.path && !view.path.includes(data.uid)) {
                 return;
@@ -168,10 +157,10 @@
 
             if (debugMode) {
                 console.log(
-                    `Syncing tab name to "${localDataUpdates.name}" for view ${view.id}. Data Name: ${data.name}`
+                    `Syncing tab name to "${name}" for view ${view.id}. Data Name: ${data.name}`
                 );
             }
-            view.name = localDataUpdates.name;
+            view.name = name;
         }
     });
 
@@ -249,8 +238,8 @@
         ) {
             // Clicked outside the edit area
             // Reset to original data if name was empty or if we want to cancel on click-away
-            if (localDataUpdates.name.trim() === "") {
-                localDataUpdates.name = data.name;
+            if (name.trim() === "") {
+                name = data.name;
             }
             showCollNameInput = false;
         }
@@ -468,7 +457,9 @@
         const response = await updateCollection(
             data.uid,
             updateData ?? {
-                ...localDataUpdates
+                name,
+                description,
+                private: isPrivate
             }
         );
 
@@ -798,9 +789,11 @@
             {
                 heading: "Edit Collection",
                 buttonText: "Save",
-                data: localDataUpdates,
+                data: { name, description, private: isPrivate },
                 modalAction: async (newData) => {
-                    Object.assign(localDataUpdates, newData);
+                    name = newData.name;
+                    description = newData.description;
+                    isPrivate = newData.private;
                     await updateCollectionDetails();
                     modalsManager.pop();
                 }
@@ -1016,7 +1009,7 @@
 <VizViewContainer
     bind:data={displayData}
     hasMore={collectionState.hasMore}
-    name="{localDataUpdates.name} - Collection"
+    name="{name} - Collection"
     style="font-size: {isLayoutPage() ? '0.9em' : 'inherit'};"
     {paginate}
     {focusScrollElement}
@@ -1055,8 +1048,8 @@
                             spellcheck="false"
                             id="coll-name-input"
                             style="padding: 0% 0.5rem;"
-                            title={localDataUpdates.name}
-                            bind:value={localDataUpdates.name}
+                            title={name}
+                            bind:value={name}
                         />
                     {:else}
                         <span
@@ -1075,11 +1068,11 @@
                                 }
                             }}
                         >
-                            {localDataUpdates.name}
+                            {name}
                         </span>
                     {/if}
                     {#if showCollNameInput}
-                        {#if localDataUpdates.name.trim() === ""}
+                        {#if name.trim() === ""}
                             <MaterialIcon
                                 iconName="warning"
                                 style="font-size: 0.9rem;"
@@ -1088,7 +1081,7 @@
                         {:else}
                             <div
                                 id="confirm-icons"
-                                style:visibility={localDataUpdates.name.trim() === data.name.trim()
+                                style:visibility={name.trim() === data.name.trim()
                                     ? "hidden"
                                     : "visible"}
                             >
@@ -1096,7 +1089,7 @@
                                     title="Cancel"
                                     class="name-confirm-btn"
                                     onclick={() => {
-                                        localDataUpdates.name = data.name;
+                                        name = data.name;
                                         showCollNameInput = false;
                                     }}
                                     iconName="close"
@@ -1106,7 +1099,7 @@
                                     class="name-confirm-btn"
                                     onclick={async () => {
                                         updateCollectionDetails({
-                                            name: localDataUpdates.name
+                                            name: name
                                         });
                                         await tick();
                                         showCollNameInput = false;
