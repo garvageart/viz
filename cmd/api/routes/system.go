@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"log/slog"
 	"net/http"
+	"runtime"
 	"strconv"
 	"time"
 
@@ -16,13 +17,42 @@ import (
 	"viz/internal/dto"
 	"viz/internal/entities"
 	libhttp "viz/internal/http"
+	libvips "viz/internal/images/ops/vips"
 	"viz/internal/settings"
+	"viz/internal/utils"
 )
 
 // SystemRouter creates a router for system-related endpoints
 func SystemRouter(db *gorm.DB, logger *slog.Logger) chi.Router {
 	r := chi.NewRouter()
 	r.Use(systemCacheMiddleware)
+
+	// Pre-compute static server info once on startup
+	goos := runtime.GOOS
+	goarch := runtime.GOARCH
+	env := utils.Environment
+	gov := runtime.Version()
+	vipsVersion := libvips.Version
+	
+	serverAbout := dto.ServerAbout{
+		Version:       config.Version,
+		Build:         &config.BuildID,
+		Go:            &gov,
+		Repository:    &config.Repository,
+		RepositoryUrl: &config.RepositoryUrl,
+		SourceCommit:  &config.SourceCommit,
+		SourceRef:     &config.SourceRef,
+		SourceUrl:     &config.SourceUrl,
+		Os:            &goos,
+		Architecture:  &goarch,
+		Environment:   &env,
+		Libvips:       &vipsVersion,
+	}
+
+	r.Get("/about", func(res http.ResponseWriter, req *http.Request) {
+		render.Status(req, http.StatusOK)
+		render.JSON(res, req, serverAbout)
+	})
 
 	// This is lowkey complicated and a mess but whatever
 	r.Get("/status", func(res http.ResponseWriter, req *http.Request) {

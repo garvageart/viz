@@ -18,6 +18,32 @@ export const servers = {
     }) => `http://${host}:${port}`,
     productionApi: "/api"
 };
+export type ServerAbout = {
+    /** The semantic version string of the Viz server API (e.g., '0.1.0-dev'). */
+    version: string;
+    /** The unique build identifier or CI pipeline run ID that produced this server artifact. */
+    build?: string;
+    /** The version of the Go compiler and runtime used to build the server executable (e.g., 'go1.22.0'). */
+    go?: string;
+    /** The target operating system the server was compiled for (e.g., 'linux', 'darwin', 'windows'). */
+    os?: string;
+    /** The target hardware architecture the server was compiled for (e.g., 'amd64', 'arm64'). */
+    architecture?: string;
+    /** The current execution environment profile. Determines logging verbosity and feature flags (e.g., 'production' or 'development'). */
+    environment?: string;
+    /** The version of the libvips C library for the server build. */
+    libvips?: string;
+    /** The name of the upstream repository hosting the Viz source code. */
+    repository?: string;
+    /** The remote HTTP/HTTPS URL pointing to the root of the source code repository. */
+    repositoryUrl?: string;
+    /** The full SHA-1 hash of the Git commit from which this server build was compiled. */
+    sourceCommit?: string;
+    /** The Git reference (branch name or tag) from which this server build was compiled. */
+    sourceRef?: string;
+    /** The direct URL linking to the specific commit tree in the remote repository. */
+    sourceUrl?: string;
+};
 export type UserCreate = {
     /** Full name */
     name: string;
@@ -948,6 +974,17 @@ export type SuperadminSetupResponse = {
     /** Session token for the newly created superadmin */
     sessionToken: string;
 };
+/**
+ * System details and version information
+ */
+export function getSystemAbout(opts?: Oazapfts.RequestOpts) {
+    return oazapfts.fetchJson<{
+        status: 200;
+        data: ServerAbout;
+    }>("/system/about", {
+        ...opts
+    });
+}
 /**
  * Health ping
  */

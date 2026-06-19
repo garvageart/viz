@@ -120,8 +120,18 @@ This generates the single-page application JS file in `./build/viz`.
 2.  **Build Backend**:
 From the project root:
 ```bash
-go build -o bin/api ./cmd/api
+# Example build command with versioning and repository info injected
+go build -ldflags="\
+  -X 'viz/internal/config.Version=1.0.0' \
+  -X 'viz/internal/config.BuildID=manual' \
+  -X 'viz/internal/config.SourceCommit=$(git rev-parse HEAD)' \
+  -X 'viz/internal/config.SourceRef=$(git rev-parse --abbrev-ref HEAD)' \
+  -X 'viz/internal/config.SourceUrl=https://github.com/garvageart/viz' \
+  -X 'viz/internal/config.Repository=viz' \
+  -X 'viz/internal/config.RepositoryUrl=https://github.com/garvageart/viz'" \
+  -o bin/api ./cmd/api
 ```
+> **Note**: Passing `-ldflags` injects version and repository information into the API's `/system/about` endpoint. These variables are intentionally left blank in the source code so they can be securely managed by CI/CD pipelines or custom user and developer builds.
 
 3.  **Run**:
     Set the `VIZ_FRONTEND_BUILD_PATH` environment variable to point to the built assets. **Viz** will serve these static files when you access the API port directly (useful for single-container deployments).

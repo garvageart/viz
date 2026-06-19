@@ -1301,6 +1301,45 @@ type SearchListResponse struct {
 	Prev *string `json:"prev,omitempty"`
 }
 
+// ServerAbout defines model for ServerAbout.
+type ServerAbout struct {
+	// Architecture The target hardware architecture the server was compiled for (e.g., 'amd64', 'arm64').
+	Architecture *string `json:"architecture,omitempty"`
+
+	// Build The unique build identifier or CI pipeline run ID that produced this server artifact.
+	Build *string `json:"build,omitempty"`
+
+	// Environment The current execution environment profile. Determines logging verbosity and feature flags (e.g., 'production' or 'development').
+	Environment *string `json:"environment,omitempty"`
+
+	// Go The version of the Go compiler and runtime used to build the server executable (e.g., 'go1.22.0').
+	Go *string `json:"go,omitempty"`
+
+	// Libvips The version of the libvips C library for the server build.
+	Libvips *string `json:"libvips,omitempty"`
+
+	// Os The target operating system the server was compiled for (e.g., 'linux', 'darwin', 'windows').
+	Os *string `json:"os,omitempty"`
+
+	// Repository The name of the upstream repository hosting the Viz source code.
+	Repository *string `json:"repository,omitempty"`
+
+	// RepositoryUrl The remote HTTP/HTTPS URL pointing to the root of the source code repository.
+	RepositoryUrl *string `json:"repositoryUrl,omitempty"`
+
+	// SourceCommit The full SHA-1 hash of the Git commit from which this server build was compiled.
+	SourceCommit *string `json:"sourceCommit,omitempty"`
+
+	// SourceRef The Git reference (branch name or tag) from which this server build was compiled.
+	SourceRef *string `json:"sourceRef,omitempty"`
+
+	// SourceUrl The direct URL linking to the specific commit tree in the remote repository.
+	SourceUrl *string `json:"sourceUrl,omitempty"`
+
+	// Version The semantic version string of the Viz server API (e.g., '0.1.0-dev').
+	Version string `json:"version"`
+}
+
 // Session defines model for Session.
 type Session struct {
 	// ClientId Client ID

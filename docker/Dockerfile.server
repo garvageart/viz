@@ -60,6 +60,15 @@ WORKDIR /app
 COPY go.mod go.sum go.work go.work.sum ./
 COPY cmd/api/go.mod cmd/api/go.sum ./cmd/api/
 
+# Accept build arguments for version injection
+ARG VERSION
+ARG BUILD_ID
+ARG SOURCE_COMMIT
+ARG SOURCE_REF
+ARG SOURCE_URL
+ARG REPOSITORY
+ARG REPOSITORY_URL
+
 # Download Go dependencies
 RUN go mod download
 
@@ -67,7 +76,16 @@ RUN go mod download
 COPY . .
 
 # Build backend
-RUN go build -o /app/viz-server ./cmd/api
+RUN VERSION=${VERSION:-$(cat version.txt)} && \
+    go build -ldflags="\
+      -X 'viz/internal/config.Version=${VERSION}' \
+      -X 'viz/internal/config.BuildID=${BUILD_ID}' \
+      -X 'viz/internal/config.SourceCommit=${SOURCE_COMMIT}' \
+      -X 'viz/internal/config.SourceRef=${SOURCE_REF}' \
+      -X 'viz/internal/config.SourceUrl=${SOURCE_URL}' \
+      -X 'viz/internal/config.Repository=${REPOSITORY}' \
+      -X 'viz/internal/config.RepositoryUrl=${REPOSITORY_URL}'" \
+    -o /app/viz-server ./cmd/api
 
 # Stage 3: Final Production Image
 FROM debian:bookworm-slim

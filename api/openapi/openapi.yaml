@@ -22,6 +22,19 @@ security:
   - CookieAuth: []
 
 paths:
+  /system/about:
+    get:
+      summary: System details and version information
+      operationId: getSystemAbout
+      security: []
+      responses:
+        "200":
+          description: Server details
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ServerAbout"
+
   /ping:
     get:
       summary: Health ping
@@ -2834,6 +2847,48 @@ components:
       description: "Session authentication using a cookie named 'viz-auth_token'. The cookie value is a hex-encoded string of securely-generated random bytes."
 
   schemas:
+    ServerAbout:
+      type: object
+      required:
+        - version
+      properties:
+        version:
+          type: string
+          description: The semantic version string of the Viz server API (e.g., '0.1.0-dev').
+        build:
+          type: string
+          description: The unique build identifier or CI pipeline run ID that produced this server artifact.
+        go:
+          type: string
+          description: The version of the Go compiler and runtime used to build the server executable (e.g., 'go1.22.0').
+        os:
+          type: string
+          description: The target operating system the server was compiled for (e.g., 'linux', 'darwin', 'windows').
+        architecture:
+          type: string
+          description: The target hardware architecture the server was compiled for (e.g., 'amd64', 'arm64').
+        environment:
+          type: string
+          description: The current execution environment profile. Determines logging verbosity and feature flags (e.g., 'production' or 'development').
+        libvips:
+          type: string
+          description: The version of the libvips C library for the server build.
+        repository:
+          type: string
+          description: The name of the upstream repository hosting the Viz source code.
+        repositoryUrl:
+          type: string
+          description: The remote HTTP/HTTPS URL pointing to the root of the source code repository.
+        sourceCommit:
+          type: string
+          description: The full SHA-1 hash of the Git commit from which this server build was compiled.
+        sourceRef:
+          type: string
+          description: The Git reference (branch name or tag) from which this server build was compiled.
+        sourceUrl:
+          type: string
+          description: The direct URL linking to the specific commit tree in the remote repository.
+
     ErrorResponse:
       type: object
       properties:

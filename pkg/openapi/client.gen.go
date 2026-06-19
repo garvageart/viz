@@ -371,6 +371,9 @@ type ClientInterface interface {
 
 	SetupSuperadmin(ctx context.Context, body SetupSuperadminJSONRequestBody, reqEditors ...RequestEditorFn) (*http.Response, error)
 
+	// GetSystemAbout request
+	GetSystemAbout(ctx context.Context, reqEditors ...RequestEditorFn) (*http.Response, error)
+
 	// GetSystemConfig request
 	GetSystemConfig(ctx context.Context, reqEditors ...RequestEditorFn) (*http.Response, error)
 
@@ -1609,6 +1612,18 @@ func (c *Client) SetupSuperadminWithBody(ctx context.Context, contentType string
 
 func (c *Client) SetupSuperadmin(ctx context.Context, body SetupSuperadminJSONRequestBody, reqEditors ...RequestEditorFn) (*http.Response, error) {
 	req, err := NewSetupSuperadminRequest(c.Server, body)
+	if err != nil {
+		return nil, err
+	}
+	req = req.WithContext(ctx)
+	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
+		return nil, err
+	}
+	return c.Client.Do(req)
+}
+
+func (c *Client) GetSystemAbout(ctx context.Context, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewGetSystemAboutRequest(c.Server)
 	if err != nil {
 		return nil, err
 	}
@@ -4896,6 +4911,33 @@ func NewSetupSuperadminRequestWithBody(server string, contentType string, body i
 	return req, nil
 }
 
+// NewGetSystemAboutRequest generates requests for GetSystemAbout
+func NewGetSystemAboutRequest(server string) (*http.Request, error) {
+	var err error
+
+	serverURL, err := url.Parse(server)
+	if err != nil {
+		return nil, err
+	}
+
+	operationPath := fmt.Sprintf("/system/about")
+	if operationPath[0] == '/' {
+		operationPath = "." + operationPath
+	}
+
+	queryURL, err := serverURL.Parse(operationPath)
+	if err != nil {
+		return nil, err
+	}
+
+	req, err := http.NewRequest(http.MethodGet, queryURL.String(), nil)
+	if err != nil {
+		return nil, err
+	}
+
+	return req, nil
+}
+
 // NewGetSystemConfigRequest generates requests for GetSystemConfig
 func NewGetSystemConfigRequest(server string) (*http.Request, error) {
 	var err error
@@ -5314,6 +5356,9 @@ type ClientWithResponsesInterface interface {
 	SetupSuperadminWithBodyWithResponse(ctx context.Context, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*SetupSuperadminResponse, error)
 
 	SetupSuperadminWithResponse(ctx context.Context, body SetupSuperadminJSONRequestBody, reqEditors ...RequestEditorFn) (*SetupSuperadminResponse, error)
+
+	// GetSystemAboutWithResponse request
+	GetSystemAboutWithResponse(ctx context.Context, reqEditors ...RequestEditorFn) (*GetSystemAboutResponse, error)
 
 	// GetSystemConfigWithResponse request
 	GetSystemConfigWithResponse(ctx context.Context, reqEditors ...RequestEditorFn) (*GetSystemConfigResponse, error)
@@ -7763,6 +7808,36 @@ func (r SetupSuperadminResponse) ContentType() string {
 	return ""
 }
 
+type GetSystemAboutResponse struct {
+	Body         []byte
+	HTTPResponse *http.Response
+	JSON200      *ServerAbout
+}
+
+// Status returns HTTPResponse.Status
+func (r GetSystemAboutResponse) Status() string {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.Status
+	}
+	return http.StatusText(0)
+}
+
+// StatusCode returns HTTPResponse.StatusCode
+func (r GetSystemAboutResponse) StatusCode() int {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.StatusCode
+	}
+	return 0
+}
+
+// ContentType is a convenience method to retrieve the Content-Type value from the HTTP response headers
+func (r GetSystemAboutResponse) ContentType() string {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.Header.Get("Content-Type")
+	}
+	return ""
+}
+
 type GetSystemConfigResponse struct {
 	Body         []byte
 	HTTPResponse *http.Response
@@ -8758,6 +8833,15 @@ func (c *ClientWithResponses) SetupSuperadminWithResponse(ctx context.Context, b
 		return nil, err
 	}
 	return ParseSetupSuperadminResponse(rsp)
+}
+
+// GetSystemAboutWithResponse request returning *GetSystemAboutResponse
+func (c *ClientWithResponses) GetSystemAboutWithResponse(ctx context.Context, reqEditors ...RequestEditorFn) (*GetSystemAboutResponse, error) {
+	rsp, err := c.GetSystemAbout(ctx, reqEditors...)
+	if err != nil {
+		return nil, err
+	}
+	return ParseGetSystemAboutResponse(rsp)
 }
 
 // GetSystemConfigWithResponse request returning *GetSystemConfigResponse
@@ -11785,6 +11869,32 @@ func ParseSetupSuperadminResponse(rsp *http.Response) (*SetupSuperadminResponse,
 			return nil, err
 		}
 		response.JSON500 = &dest
+
+	}
+
+	return response, nil
+}
+
+// ParseGetSystemAboutResponse parses an HTTP response from a GetSystemAboutWithResponse call
+func ParseGetSystemAboutResponse(rsp *http.Response) (*GetSystemAboutResponse, error) {
+	bodyBytes, err := io.ReadAll(rsp.Body)
+	defer func() { _ = rsp.Body.Close() }()
+	if err != nil {
+		return nil, err
+	}
+
+	response := &GetSystemAboutResponse{
+		Body:         bodyBytes,
+		HTTPResponse: rsp,
+	}
+
+	switch {
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 200:
+		var dest ServerAbout
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON200 = &dest
 
 	}
 
