@@ -6,6 +6,7 @@
     import ProgressBar from "$lib/components/ui/ProgressBar.svelte";
     import type { MaterialSymbol } from "$lib/types/MaterialSymbol.js";
     import { formatBytes, formatSeconds } from "$lib/utils/images";
+    import { parseGitWebUrl, getGitBranchUrl, getGitCommitUrl } from "$lib/utils/url";
     import { Duration, DateTime } from "luxon";
 
     let { data } = $props();
@@ -35,8 +36,8 @@
         totalUsed: data.systemStats?.storage_used_bytes
             ? formatBytes(data.systemStats.storage_used_bytes)
             : "Unknown",
-        availableSystemSpace: data.systemStats?.total_system_space_bytes
-            ? formatBytes(data.systemStats.total_system_space_bytes)
+        availableSystemSpace: data.systemStats?.total_available_space_bytes
+            ? formatBytes(data.systemStats.total_available_space_bytes)
             : "Unknown",
         totalSystemSpace: data.systemStats?.total_system_space_bytes
             ? formatBytes(data.systemStats.total_system_space_bytes)
@@ -45,6 +46,10 @@
         cacheSize: data.cacheStatus ? formatBytes(data.cacheStatus.size) : "Unknown",
         cacheItems: data.cacheStatus?.items ?? 0
     });
+
+    let repoWebUrl = $derived(parseGitWebUrl(data.serverAbout?.repositoryUrl));
+    let branchUrl = $derived(getGitBranchUrl(data.serverAbout?.repositoryUrl, data.serverAbout?.sourceRef));
+    let commitUrl = $derived(getGitCommitUrl(data.serverAbout?.repositoryUrl, data.serverAbout?.sourceCommit));
 
     let liveUptimeSeconds = $derived(data.systemStats?.uptime_seconds || 0);
     let formattedLiveUptime = $derived(formatSeconds(liveUptimeSeconds));
@@ -293,19 +298,80 @@
                     </div>
                 </div>
 
-                <!-- System Info Footer Card -->
-                <div class="custom-card version-card">
-                    <div class="card-body horizontal">
+                <!-- Server Information Card -->
+                <div class="custom-card about-card">
+                    <div class="card-header">
                         <div class="card-title-group">
                             <div class="stat-icon version">
-                                <MaterialIcon iconName="info" />
+                                <MaterialIcon iconName="terminal" />
                             </div>
                             <div>
-                                <h4>System Version</h4>
-                                <span class="card-subtitle">Build tag</span>
+                                <h4>Server Information</h4>
+                                <span class="card-subtitle">Environment & Build</span>
                             </div>
                         </div>
-                        <span class="version-tag">v{systemInfo.version}</span>
+                    </div>
+                    <div class="card-body">
+                        <div class="about-grid">
+                            <div class="about-item">
+                                <span class="about-label">Version</span>
+                                <span class="about-value version-tag">v{data.serverAbout?.version || "Unknown"}</span>
+                            </div>
+                            <div class="about-item">
+                                <span class="about-label">Build ID</span>
+                                <span class="about-value font-mono">{data.serverAbout?.build || "Unknown"}</span>
+                            </div>
+                            <div class="about-item">
+                                <span class="about-label">Go Runtime</span>
+                                <span class="about-value">{data.serverAbout?.go || "Unknown"}</span>
+                            </div>
+                            <div class="about-item">
+                                <span class="about-label">libvips</span>
+                                <span class="about-value font-mono">v{data.serverAbout?.libvips || "Unknown"}</span>
+                            </div>
+                            <div class="about-item">
+                                <span class="about-label">Environment</span>
+                                <span class="about-value">{data.serverAbout?.environment || "Unknown"}</span>
+                            </div>
+                            <div class="about-item">
+                                <span class="about-label">OS / Arch</span>
+                                <span class="about-value">{data.serverAbout?.os || "Unknown"}/{data.serverAbout?.architecture || "Unknown"}</span>
+                            </div>
+                            <div class="about-item">
+                                <span class="about-label">Commit</span>
+                                <span class="about-value font-mono">
+                                    {#if commitUrl}
+                                        <a href={commitUrl} target="_blank" rel="noreferrer" class="repo-link">
+                                            {data.serverAbout?.sourceCommit ? data.serverAbout.sourceCommit.substring(0, 7) : "Unknown"}
+                                        </a>
+                                    {:else}
+                                        {data.serverAbout?.sourceCommit ? data.serverAbout.sourceCommit.substring(0, 7) : "Unknown"}
+                                    {/if}
+                                </span>
+                            </div>
+                            <div class="about-item">
+                                <span class="about-label">Branch</span>
+                                <span class="about-value font-mono">
+                                    {#if branchUrl}
+                                        <a href={branchUrl} target="_blank" rel="noreferrer" class="repo-link">
+                                            {data.serverAbout?.sourceRef || "Unknown"}
+                                        </a>
+                                    {:else}
+                                        {data.serverAbout?.sourceRef || "Unknown"}
+                                    {/if}
+                                </span>
+                            </div>
+                            {#if repoWebUrl}
+                                <div class="about-item">
+                                    <span class="about-label">Repository</span>
+                                    <span class="about-value">
+                                        <a href={repoWebUrl} target="_blank" rel="noreferrer" class="repo-link">
+                                            {data.serverAbout?.repository || "Source Code"}
+                                        </a>
+                                    </span>
+                                </div>
+                            {/if}
+                        </div>
                     </div>
                 </div>
             </div>
@@ -620,20 +686,62 @@
         width: 100%;
     }
 
-    .version-card {
-        padding: var(--viz-spacing-md) var(--viz-spacing-lg);
+    .about-card {
+        border: var(--viz-border-thin);
+    }
+
+    .about-grid {
+        display: flex;
+        flex-direction: column;
+    }
+
+    .about-item {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        border-bottom: 1px dashed var(--viz-80);
+        padding: var(--viz-spacing-sm) 0;
+
+        &:first-child {
+            padding-top: 0;
+        }
+
+        &:last-child {
+            border-bottom: none;
+            padding-bottom: 0;
+        }
+
+        .about-label {
+            font-size: var(--viz-font-size-sm);
+            color: var(--viz-40);
+        }
+
+        .about-value {
+            font-size: var(--viz-font-size-sm);
+            color: var(--viz-text-color);
+            font-weight: 500;
+        }
+
+        .repo-link {
+            color: inherit;
+            text-decoration: underline;
+            
+            &:hover {
+                color: var(--viz-text-color);
+                text-decoration: none;
+            }
+        }
     }
 
     .version-tag {
         font-family: var(--viz-mono-font);
-        font-size: var(--viz-font-size-sm);
-        font-weight: 700;
-        letter-spacing: -0.03em;
-        background-color: var(--viz-80);
+        font-size: var(--viz-font-size-xs);
+        padding: 0.25rem 0.6rem;
+        background-color: var(--viz-90);
         color: var(--viz-text-color);
-        padding: 0.15rem 0.5rem;
-        border-radius: var(--viz-border-radius-sm);
         border: var(--viz-border-thin);
+        border-radius: var(--viz-border-radius-sm);
+        font-weight: 600;
     }
 
     #uptime-value {
