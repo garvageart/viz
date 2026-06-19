@@ -5,6 +5,7 @@ import (
 	"path/filepath"
 	"strings"
 	"viz/internal/config"
+	libos "viz/internal/os"
 )
 
 var (
@@ -16,6 +17,10 @@ var (
 		baseDir := cfg.GetString("base_directory")
 		if strings.TrimSpace(baseDir) == "" {
 			panic("base directory is not set in config")
+		}
+
+		if !filepath.IsAbs(baseDir) {
+			baseDir = filepath.Join(libos.ProjectRoot, baseDir)
 		}
 
 		if _, err := os.Stat(baseDir); os.IsNotExist(err) {
@@ -48,6 +53,10 @@ var (
 		baseDir := cfg.GetString("base_directory")
 		if strings.TrimSpace(baseDir) == "" {
 			panic("base directory is not set in config")
+		}
+
+		if !filepath.IsAbs(baseDir) {
+			baseDir = filepath.Join(libos.ProjectRoot, baseDir)
 		}
 
 		trash := filepath.Join(baseDir, "trash")

@@ -9,6 +9,7 @@ import (
 	libos "viz/internal/os"
 	"viz/internal/utils"
 
+	"github.com/joho/godotenv"
 	"github.com/spf13/viper"
 )
 
@@ -16,6 +17,9 @@ import (
 // ENV VARIABLES -> VIZ.JSON CONFIG VALUES -> DEFAULT VALUES
 // STICK TO DEFAULTS IF VIZ.JSON VALUES ARE INVALID/FAIL TO PARSE CORRECTLY
 func ReadConfig() (viper.Viper, error) {
+	// Load environment variables from .env if present in project root
+	_ = godotenv.Load(filepath.Join(libos.ProjectRoot, ".env"))
+
 	configPath := libos.CurrentWorkingDirectory
 
 	v := viper.New() // Create a new viper instance to avoid global state issues
