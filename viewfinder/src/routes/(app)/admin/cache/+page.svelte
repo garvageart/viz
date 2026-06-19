@@ -9,6 +9,7 @@
     import AdminRouteShell from "$lib/components/admin/AdminRouteShell.svelte";
     import MaterialIcon from "$lib/components/ui/MaterialIcon.svelte";
     import { modalsManager } from "$lib/components/modals/manager/ModalManager.svelte";
+    import { invalidateViz } from "$lib/views/views.svelte";
 
     import type { MaterialSymbol } from "$lib/types/MaterialSymbol.js";
 
@@ -46,7 +47,7 @@
                 type: "success",
                 message: "Image cache cleared successfully."
             });
-            await invalidate(page.url.pathname);
+            await invalidateViz();
         } catch (e) {
             toastState.addToast({
                 type: "error",
