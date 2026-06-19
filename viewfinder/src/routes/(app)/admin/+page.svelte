@@ -1,10 +1,11 @@
 <script lang="ts">
+    import { invalidate } from "$app/navigation";
+    import { page } from "$app/state";
     import AdminRouteShell from "$lib/components/admin/AdminRouteShell.svelte";
     import MaterialIcon from "$lib/components/ui/MaterialIcon.svelte";
     import ProgressBar from "$lib/components/ui/ProgressBar.svelte";
     import type { MaterialSymbol } from "$lib/types/MaterialSymbol.js";
     import { formatBytes, formatSeconds } from "$lib/utils/images";
-    import { invalidateViz } from "$lib/views/views.svelte.js";
     import { Duration, DateTime } from "luxon";
 
     let { data } = $props();
@@ -45,7 +46,7 @@
         cacheItems: data.cacheStatus?.items ?? 0
     });
 
-    let liveUptimeSeconds = $state(0);
+    let liveUptimeSeconds = $derived(data.systemStats?.uptime_seconds || 0);
     let formattedLiveUptime = $derived(formatSeconds(liveUptimeSeconds));
 
     let storagePercent = $derived(
@@ -63,10 +64,6 @@
     );
 
     $effect(() => {
-        liveUptimeSeconds = data.systemStats?.uptime_seconds || 0;
-    });
-
-    $effect(() => {
         const interval = setInterval(() => {
             liveUptimeSeconds++;
         }, 1000);
@@ -77,8 +74,9 @@
     $effect(() => {
         const interval = setInterval(
             () => {
-                invalidateViz({ delay: 200 }).then(() => {
+                invalidate(page.route.id ?? page.url.pathname).then(() => {
                     lastUpdated = new Date();
+                    liveUptimeSeconds = data.systemStats?.uptime_seconds || 0;
                 });
             },
             Duration.fromObject({ seconds: 30 }).as("milliseconds")
