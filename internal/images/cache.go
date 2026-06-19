@@ -3,16 +3,21 @@ package images
 import (
 	"context"
 	"crypto/sha1"
+	"crypto/tls"
+	"encoding/json"
 	"errors"
 	"fmt"
 	"log/slog"
 	"os"
 	"path/filepath"
 	"sort"
+	"strconv"
 	"strings"
+	"sync"
 	"sync/atomic"
 	"time"
 
+	goredis "github.com/redis/go-redis/v9"
 	"gorm.io/gorm"
 
 	"viz/internal/config"
@@ -147,16 +152,175 @@ func PurgeTransformsForUID(uid string) error {
 var (
 	cacheHits   uint64
 	cacheMisses uint64
+
+	redisClient    *goredis.Client
+	redisKeyHits   = "viz:cache:hits"
+	redisKeyMisses = "viz:cache:misses"
+
+	statsFileName  = "cache_stats.json"
+	statsFilePath  string
+	statsFileMutex sync.Mutex
+	dirtyStats     uint32 // 1 if stats changed in memory and need flush
 )
+
+type cacheStats struct {
+	Hits   uint64 `json:"hits"`
+	Misses uint64 `json:"misses"`
+}
+
+// InitCache initializes the cache persistence layer (either Redis or local file storage).
+func InitCache(queueCfg config.QueueConfig, baseDir string, logger *slog.Logger) {
+	if queueCfg.Enabled {
+		address := fmt.Sprintf("%s:%d", queueCfg.Host, queueCfg.Port)
+		var tlsConfig *tls.Config
+		if queueCfg.UseTLS {
+			tlsConfig = &tls.Config{
+				InsecureSkipVerify: true,
+			}
+		}
+
+		client := goredis.NewClient(&goredis.Options{
+			Addr:         address,
+			Username:     queueCfg.Username,
+			Password:     queueCfg.Password,
+			DB:           queueCfg.DB,
+			PoolSize:     queueCfg.PoolSize,
+			DialTimeout:  time.Duration(queueCfg.DialTimeoutSeconds) * time.Second,
+			ReadTimeout:  time.Duration(queueCfg.ReadTimeoutSeconds) * time.Second,
+			WriteTimeout: time.Duration(queueCfg.WriteTimeoutSeconds) * time.Second,
+			TLSConfig:    tlsConfig,
+		})
+
+		ctx, cancel := context.WithTimeout(context.Background(), 2*time.Second)
+		defer cancel()
+		if err := client.Ping(ctx).Err(); err == nil {
+			redisClient = client
+			logger.Info("Using Redis for persistent cache metrics", slog.String("address", address))
+			return
+		} else {
+			logger.Warn("Failed to connect to Redis for cache metrics, falling back to file persistence", slog.Any("error", err))
+		}
+	}
+
+	statsFilePath = filepath.Join(baseDir, statsFileName)
+	// Clean up any left-over tmp file from a previous crash/unclean shutdown
+	tmpPath := statsFilePath + ".tmp"
+	if _, err := os.Stat(tmpPath); err == nil {
+		_ = os.Remove(tmpPath)
+	}
+	loadCacheStatsFromFile(logger)
+}
+
+func loadCacheStatsFromFile(logger *slog.Logger) {
+	statsFileMutex.Lock()
+	defer statsFileMutex.Unlock()
+
+	if _, err := os.Stat(statsFilePath); os.IsNotExist(err) {
+		return
+	}
+
+	data, err := os.ReadFile(statsFilePath)
+	if err != nil {
+		logger.Error("Failed to read cache stats file", slog.String("path", statsFilePath), slog.Any("error", err))
+		return
+	}
+
+	var stats cacheStats
+	if err := json.Unmarshal(data, &stats); err != nil {
+		logger.Error("Failed to parse cache stats JSON", slog.String("path", statsFilePath), slog.Any("error", err))
+		return
+	}
+
+	atomic.StoreUint64(&cacheHits, stats.Hits)
+	atomic.StoreUint64(&cacheMisses, stats.Misses)
+	logger.Debug("Loaded cache stats from file", slog.Uint64("hits", stats.Hits), slog.Uint64("misses", stats.Misses))
+}
+
+// SaveCacheStats writes the in-memory cache stats to the persistent JSON file if Redis is not used.
+func SaveCacheStats(logger *slog.Logger) {
+	if redisClient != nil {
+		return
+	}
+
+	if statsFilePath == "" {
+		return
+	}
+
+	statsFileMutex.Lock()
+	defer statsFileMutex.Unlock()
+
+	if atomic.SwapUint32(&dirtyStats, 0) == 0 {
+		return
+	}
+
+	stats := cacheStats{
+		Hits:   atomic.LoadUint64(&cacheHits),
+		Misses: atomic.LoadUint64(&cacheMisses),
+	}
+
+	data, err := json.MarshalIndent(stats, "", "  ")
+	if err != nil {
+		logger.Error("Failed to marshal cache stats JSON", slog.Any("error", err))
+		return
+	}
+
+	tmpPath := statsFilePath + ".tmp"
+	if err := os.WriteFile(tmpPath, data, 0644); err != nil {
+		logger.Error("Failed to write temporary cache stats file", slog.String("path", tmpPath), slog.Any("error", err))
+		return
+	}
+
+	if err := os.Rename(tmpPath, statsFilePath); err != nil {
+		os.Remove(tmpPath)
+		logger.Error("Failed to rename temporary cache stats file", slog.String("path", statsFilePath), slog.Any("error", err))
+		return
+	}
+}
+
+// StartCacheStatsWriter starts a background goroutine that periodically writes cache stats to disk.
+func StartCacheStatsWriter(ctx context.Context, logger *slog.Logger) {
+	if redisClient != nil {
+		return
+	}
+
+	ticker := time.NewTicker(5 * time.Second)
+	defer ticker.Stop()
+
+	for {
+		select {
+		case <-ctx.Done():
+			SaveCacheStats(logger)
+			return
+		case <-ticker.C:
+			SaveCacheStats(logger)
+		}
+	}
+}
 
 // IncrementCacheHits atomically increments the server-side cache hits count.
 func IncrementCacheHits() {
+	if redisClient != nil {
+		ctx, cancel := context.WithTimeout(context.Background(), 2*time.Second)
+		defer cancel()
+		if err := redisClient.Incr(ctx, redisKeyHits).Err(); err == nil {
+			return
+		}
+	}
 	atomic.AddUint64(&cacheHits, 1)
+	atomic.StoreUint32(&dirtyStats, 1)
 }
 
 // IncrementCacheMisses atomically increments the server-side cache misses count.
 func IncrementCacheMisses() {
+	if redisClient != nil {
+		ctx, cancel := context.WithTimeout(context.Background(), 2*time.Second)
+		defer cancel()
+		if err := redisClient.Incr(ctx, redisKeyMisses).Err(); err == nil {
+			return
+		}
+	}
 	atomic.AddUint64(&cacheMisses, 1)
+	atomic.StoreUint32(&dirtyStats, 1)
 }
 
 // GetCacheStatus calculates and returns the current status of the image transform cache.
@@ -211,8 +375,42 @@ func GetCacheStatus() (dto.CacheStatusResponse, error) {
 		}
 	}
 
-	hits := atomic.LoadUint64(&cacheHits)
-	misses := atomic.LoadUint64(&cacheMisses)
+	var hits uint64
+	var misses uint64
+
+	if redisClient != nil {
+		ctx, cancel := context.WithTimeout(context.Background(), 2*time.Second)
+		defer cancel()
+		hStr, err1 := redisClient.Get(ctx, redisKeyHits).Result()
+		switch err1 {
+		case nil:
+			hVal, errH := strconv.ParseUint(hStr, 10, 64)
+			if errH == nil {
+				hits = hVal
+			}
+		case goredis.Nil:
+			hits = 0
+		default:
+			hits = atomic.LoadUint64(&cacheHits)
+		}
+
+		mStr, err2 := redisClient.Get(ctx, redisKeyMisses).Result()
+		switch err2 {
+		case nil:
+			mVal, errM := strconv.ParseUint(mStr, 10, 64)
+			if errM == nil {
+				misses = mVal
+			}
+		case goredis.Nil:
+			misses = 0
+		default:
+			misses = atomic.LoadUint64(&cacheMisses)
+		}
+	} else {
+		hits = atomic.LoadUint64(&cacheHits)
+		misses = atomic.LoadUint64(&cacheMisses)
+	}
+
 	var hitRatio float64
 	if hits+misses > 0 {
 		hitRatio = float64(hits) / float64(hits+misses)
@@ -227,10 +425,18 @@ func GetCacheStatus() (dto.CacheStatusResponse, error) {
 	}, nil
 }
 
-// ClearCache removes all cached transform files.
+// ClearCache removes all cached transform files and resets persistent metrics.
 func ClearCache(logger *slog.Logger) error {
+	if redisClient != nil {
+		ctx, cancel := context.WithTimeout(context.Background(), 2*time.Second)
+		defer cancel()
+		redisClient.Set(ctx, redisKeyHits, 0, 0)
+		redisClient.Set(ctx, redisKeyMisses, 0, 0)
+	}
 	atomic.StoreUint64(&cacheHits, 0)
 	atomic.StoreUint64(&cacheMisses, 0)
+	atomic.StoreUint32(&dirtyStats, 1)
+	SaveCacheStats(logger)
 
 	entries, err := os.ReadDir(Directory)
 	if err != nil {
@@ -350,6 +556,15 @@ func PerformTransformCacheCleanup(rootDir string, logger *slog.Logger, db *gorm.
 
 			base := tf.Name()
 			if strings.HasPrefix(base, TempTransformPrefix) {
+				finfo, err := tf.Info()
+				if err == nil {
+					// Clean up temporary transform files that have been orphaned (older than 1 hour)
+					if finfo.ModTime().Before(time.Now().Add(-1 * time.Hour)) {
+						p := filepath.Join(transformsPath, base)
+						_ = os.Remove(p)
+						logger.Debug("transform cache gc: cleaned up orphaned temp file", slog.String("path", p))
+					}
+				}
 				continue
 			}
 

@@ -7,9 +7,11 @@ import (
 	"log/slog"
 	"os"
 	"path/filepath"
+	"sync/atomic"
 	"testing"
 	"time"
 
+	_ "github.com/joho/godotenv/autoload"
 	"gorm.io/gorm"
 
 	"viz/internal/config"
@@ -235,5 +237,82 @@ func TestETagReconstruction(t *testing.T) {
 	etag3 := transform.CreateTransformEtag(img, &params)
 	if *etag1 == *etag3 {
 		t.Errorf("ETag should change when params change")
+	}
+}
+
+func TestCacheMetricsPersistence(t *testing.T) {
+	// Setup temp directory
+	tempDir := t.TempDir()
+	logger := slog.New(slog.NewTextHandler(io.Discard, nil))
+
+	// Reset global state in case of prior tests
+	redisClient = nil
+	statsFilePath = ""
+	atomic.StoreUint64(&cacheHits, 0)
+	atomic.StoreUint64(&cacheMisses, 0)
+	atomic.StoreUint32(&dirtyStats, 0)
+
+	t.Cleanup(func() {
+		redisClient = nil
+		statsFilePath = ""
+		atomic.StoreUint64(&cacheHits, 0)
+		atomic.StoreUint64(&cacheMisses, 0)
+		atomic.StoreUint32(&dirtyStats, 0)
+	})
+
+	// Initialize local file cache
+	InitCache(config.QueueConfig{RedisConfig: config.RedisConfig{Enabled: false}}, tempDir, logger)
+
+	// Increment metrics
+	IncrementCacheHits()
+	IncrementCacheHits()
+	IncrementCacheMisses()
+
+	// Verify in-memory values
+	status, err := GetCacheStatus()
+	if err != nil {
+		t.Fatalf("failed to get cache status: %v", err)
+	}
+	if status.Hits != 2 {
+		t.Errorf("expected 2 hits, got %d", status.Hits)
+	}
+	if status.Misses != 1 {
+		t.Errorf("expected 1 miss, got %d", status.Misses)
+	}
+
+	// Manually trigger save
+	SaveCacheStats(logger)
+
+	// Reset in-memory values
+	atomic.StoreUint64(&cacheHits, 0)
+	atomic.StoreUint64(&cacheMisses, 0)
+
+	// Reload from file
+	loadCacheStatsFromFile(logger)
+
+	// Verify loaded values
+	status2, err := GetCacheStatus()
+	if err != nil {
+		t.Fatalf("failed to get cache status: %v", err)
+	}
+	if status2.Hits != 2 {
+		t.Errorf("expected reloaded 2 hits, got %d", status2.Hits)
+	}
+	if status2.Misses != 1 {
+		t.Errorf("expected reloaded 1 miss, got %d", status2.Misses)
+	}
+
+	// Test ClearCache
+	if err := ClearCache(logger); err != nil {
+		t.Fatalf("failed to clear cache: %v", err)
+	}
+
+	// Verify cleared
+	status3, err := GetCacheStatus()
+	if err != nil {
+		t.Fatalf("failed to get cache status: %v", err)
+	}
+	if status3.Hits != 0 || status3.Misses != 0 {
+		t.Errorf("expected cleared metrics, got hits=%d, misses=%d", status3.Hits, status3.Misses)
 	}
 }

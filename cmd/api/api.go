@@ -334,11 +334,17 @@ func main() {
 
 	StorageStatsHolder = images.NewStorageStatsHolder(appConfig.BaseDir)
 
+	// Initialize persistent cache metrics (Redis or file system fallback)
+	images.InitCache(appConfig.Queue, appConfig.BaseDir, logger)
+
 	httpServer := apiServer.Launch(router)
 
 	// create a cancelable context used by background tasks
 	ctx, globalCancel := context.WithCancel(context.Background())
 	defer globalCancel()
+
+	// Start cache stats writer for file-based fallback
+	go images.StartCacheStatsWriter(ctx, logger)
 
 	// Start transform cache GC if enabled in config.
 	if appConfig.Cache.GCEnabled {
@@ -380,6 +386,9 @@ func main() {
 	}
 
 	globalCancel()
+
+	// Save any pending cache stats if file fallback is used
+	images.SaveCacheStats(logger)
 
 	if jobs.Router != nil {
 		_ = jobs.Router.Close()
