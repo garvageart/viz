@@ -22,6 +22,10 @@ import (
 	"viz/internal/utils"
 )
 
+const (
+	sanitizedPasswordPlaceholder = "***"
+)
+
 // SystemRouter creates a router for system-related endpoints
 func SystemRouter(db *gorm.DB, logger *slog.Logger) chi.Router {
 	r := chi.NewRouter()
@@ -34,8 +38,13 @@ func SystemRouter(db *gorm.DB, logger *slog.Logger) chi.Router {
 	gov := runtime.Version()
 	vipsVersion := libvips.Version
 	
+	appVersion := config.Version
+	if appVersion == "" {
+		appVersion = utils.GetAppVersion()
+	}
+	
 	serverAbout := dto.ServerAbout{
-		Version:       config.Version,
+		Version:       appVersion,
 		Build:         &config.BuildID,
 		Go:            &gov,
 		Repository:    &config.Repository,
@@ -75,8 +84,8 @@ func SystemRouter(db *gorm.DB, logger *slog.Logger) chi.Router {
 		authRouter.Get("/config", func(res http.ResponseWriter, req *http.Request) {
 			cfg := config.AppConfig
 			// Sanitize sensitive fields
-			cfg.Database.Password = "***"
-			cfg.Queue.Password = "***"
+			cfg.Database.Password = sanitizedPasswordPlaceholder
+			cfg.Queue.Password = sanitizedPasswordPlaceholder
 
 			render.Status(req, http.StatusOK)
 			render.JSON(res, req, cfg)
@@ -108,11 +117,11 @@ func SystemRouter(db *gorm.DB, logger *slog.Logger) chi.Router {
 				return
 			}
 
-			// Restore password fields if they were sanitized ("***")
-			if updatedConfig.Database.Password == "***" {
+			// Restore password fields if they were sanitized (sanitizedPasswordPlaceholder)
+			if updatedConfig.Database.Password == sanitizedPasswordPlaceholder {
 				updatedConfig.Database.Password = config.AppConfig.Database.Password
 			}
-			if updatedConfig.Queue.Password == "***" {
+			if updatedConfig.Queue.Password == sanitizedPasswordPlaceholder {
 				updatedConfig.Queue.Password = config.AppConfig.Queue.Password
 			}
 
@@ -126,8 +135,8 @@ func SystemRouter(db *gorm.DB, logger *slog.Logger) chi.Router {
 
 			// Return the sanitized updated configuration
 			sanitizedConfig := updatedConfig
-			sanitizedConfig.Database.Password = "***"
-			sanitizedConfig.Queue.Password = "***"
+			sanitizedConfig.Database.Password = sanitizedPasswordPlaceholder
+			sanitizedConfig.Queue.Password = sanitizedPasswordPlaceholder
 
 			render.Status(req, http.StatusOK)
 			render.JSON(res, req, sanitizedConfig)

@@ -88,10 +88,12 @@ go mod download
 ```
 3.  Run the API:
 ```bash
-# Run from the project root using the workspace
-go run ./cmd/api
+# Run from the project root using the newly added Make target
+make dev-api
 ```
 The server should start on port `7770` (or as defined in `viz.json` / `.env`).
+
+> **Note**: If you run `go run ./cmd/api` directly without `-ldflags`, build-specific variables (like `Version` or `SourceCommit`) in the `/system/about` payload will be completely blank. Using `make dev-api` automatically evaluates and injects your local git data into the backend.
 
 ### Step 3: Frontend (Viz)
 
