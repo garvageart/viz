@@ -12,6 +12,14 @@ SCRIPTS_DIR := scripts/js
 #  - fmt/lint/test: formatting, linting, running tests
 #  - migrate/initdb: helpers for database migration/init steps (best-effort)
 
+# Environment details for build injection
+VERSION := $(shell cat version.txt 2>/dev/null || echo "0.0.0-dev")
+COMMIT := $(shell git rev-parse HEAD 2>/dev/null || echo "unknown")
+REF := $(shell git rev-parse --abbrev-ref HEAD 2>/dev/null || echo "unknown")
+GIT_REMOTE ?= origin
+REPO_URL ?= $(shell git remote get-url $(GIT_REMOTE) 2>/dev/null || git config --get remote.origin.url 2>/dev/null || echo "unknown")
+REPO_NAME ?= $(shell basename $(REPO_URL) .git 2>/dev/null || echo "viz")
+
 VIEWFINDER_DIR := viewfinder
 GO_CMD ?= go
 PNPM ?= pnpm
@@ -236,18 +244,14 @@ dev:
 
 dev-api:
 	@echo "Starting backend dev server with local git injection..."
-	@VERSION=$$(cat version.txt 2>/dev/null || echo "0.0.0-dev") && \
-	COMMIT=$$(git rev-parse HEAD 2>/dev/null || echo "unknown") && \
-	REF=$$(git rev-parse --abbrev-ref HEAD 2>/dev/null || echo "unknown") && \
-	URL=$$(git remote get-url origin 2>/dev/null || git config --get remote.origin.url 2>/dev/null || echo "unknown") && \
 	$(GO_CMD) run $(GO_FLAGS) -ldflags="\
-	  -X 'viz/internal/config.Version=$$VERSION' \
+	  -X 'viz/internal/config.Version=$(VERSION)' \
 	  -X 'viz/internal/config.BuildID=local-dev' \
-	  -X 'viz/internal/config.SourceCommit=$$COMMIT' \
-	  -X 'viz/internal/config.SourceRef=$$REF' \
-	  -X 'viz/internal/config.SourceUrl=$$URL' \
-	  -X 'viz/internal/config.Repository=viz' \
-	  -X 'viz/internal/config.RepositoryUrl=$$URL'" \
+	  -X 'viz/internal/config.SourceCommit=$(COMMIT)' \
+	  -X 'viz/internal/config.SourceRef=$(REF)' \
+	  -X 'viz/internal/config.SourceUrl=$(REPO_URL)' \
+	  -X 'viz/internal/config.Repository=$(REPO_NAME)' \
+	  -X 'viz/internal/config.RepositoryUrl=$(REPO_URL)'" \
 	  ./cmd/api $(ARGS)
 
 run: build
