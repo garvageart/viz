@@ -1,3 +1,4 @@
+/// <reference types="vitest" />
 import { svelteTesting } from "@testing-library/svelte/vite";
 import { sveltekit } from "@sveltejs/kit/vite";
 import { defineConfig, type ProxyOptions } from "vite";
