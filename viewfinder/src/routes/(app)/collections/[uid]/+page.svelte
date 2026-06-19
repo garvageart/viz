@@ -736,7 +736,7 @@
         const removeAction: MenuItem = {
             id: "remove-selected",
             label: "Remove from Collection",
-            icon: "remove_circle",
+            icon: "cancel",
             disabled: selectionScope.size === 0,
             action: handleDeleteSelected
         };

@@ -299,7 +299,7 @@
                         <IconButton
                             variant="small"
                             weight={300}
-                            iconName={saving ? "sync" : "save_alt"}
+                            iconName={saving ? "sync" : "save"}
                             class="{saving ? 'spinning' : ''} save-sptemplate-btn"
                             onclick={handleSaveTemplate}
                             disabled={template === activeTemplate ||

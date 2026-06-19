@@ -246,7 +246,7 @@
                                         title="Edit User"
                                     />
                                     <IconButton
-                                        iconName="remove_circle"
+                                        iconName="person_remove"
                                         grade={-25}
                                         variant="small"
                                         class="action-btn delete"
