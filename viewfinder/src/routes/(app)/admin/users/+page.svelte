@@ -1,27 +1,25 @@
 <script lang="ts">
-    import { adminDeleteUser, adminUpdateUser, adminCreateUser, type User, Role } from "$lib/api";
-    import Button from "$lib/components/ui/Button.svelte";
-    import MaterialIcon from "$lib/components/ui/MaterialIcon.svelte";
+    import { invalidateAll } from "$app/navigation";
+    import { adminCreateUser, adminDeleteUser, adminUpdateUser, Role, type User } from "$lib/api";
+    import AdminRouteShell from "$lib/components/admin/AdminRouteShell.svelte";
     import ConfirmationModal from "$lib/components/modals/ConfirmationModal.svelte";
+    import { modalsManager } from "$lib/components/modals/manager/ModalManager.svelte";
+    import UserCreateModal from "$lib/components/modals/UserCreateModal.svelte";
+    import UserEditModal from "$lib/components/modals/UserEditModal.svelte";
+    import Button from "$lib/components/ui/Button.svelte";
+    import IconButton from "$lib/components/ui/IconButton.svelte";
+    import MaterialIcon from "$lib/components/ui/MaterialIcon.svelte";
     import SliderToggle from "$lib/components/ui/SliderToggle.svelte";
     import { user as currentUserState } from "$lib/states/index.svelte";
     import { toastState } from "$lib/toast-notifcations/notif-state.svelte";
     import { DateTime } from "luxon";
-    import AdminRouteShell from "$lib/components/admin/AdminRouteShell.svelte";
-    import { modalsManager } from "$lib/components/modals/manager/ModalManager.svelte";
-    import UserCreateModal from "$lib/components/modals/UserCreateModal.svelte";
-    import UserEditModal from "$lib/components/modals/UserEditModal.svelte";
-    import IconButton from "$lib/components/ui/IconButton.svelte";
 
     let { data } = $props();
     let users = $derived(data.users);
 
-    $effect(() => {
-        users = data.users;
-    });
-
     function formatDate(dateStr: string) {
-        return DateTime.fromISO(dateStr).toFormat("dd MMM yyyy, HH:mm");
+        return DateTime.fromISO(dateStr)
+            .toLocaleString(DateTime.DATETIME_MED);
     }
 
     function openCreateModal() {
@@ -50,6 +48,7 @@
                             message: "User created successfully",
                             type: "success"
                         });
+                        invalidateAll();
                     } else {
                         toastState.addToast({
                             message: res.data.error || "Failed to create user",
@@ -78,15 +77,12 @@
                     });
 
                     if (res.status === 200) {
-                        // Update local list
-                        const idx = users.findIndex((u) => u.uid === res.data.uid);
-                        if (idx !== -1) {
-                            users[idx] = res.data;
-                        }
+                        users = users.map((u) => (u.uid === res.data.uid ? res.data : u));
                         toastState.addToast({
                             message: "User updated successfully",
                             type: "success"
                         });
+                        invalidateAll();
                     } else {
                         toastState.addToast({
                             message: res.data.error || "Failed to update user",
@@ -138,6 +134,7 @@
                             message: "User deleted successfully",
                             type: "success"
                         });
+                        invalidateAll();
                     } else {
                         toastState.addToast({
                             message: res.data.error || "Failed to delete user",
@@ -189,7 +186,7 @@
     description="Manage user accounts, roles, and permissions."
 >
     {#snippet actions()}
-        <Button variant="mini" onclick={openCreateModal}>
+        <Button variant="small" onclick={openCreateModal}>
             <MaterialIcon iconName="add" />
             Create User
         </Button>
@@ -213,8 +210,12 @@
                             <td>
                                 <div class="user-cell">
                                     <div
-                                        class="avatar-placeholder"
-                                        class:current-user={user.uid === currentUserState.data?.uid}
+                                        class={[
+                                            "avatar-placeholder",
+                                            user.uid === currentUserState.data?.uid
+                                                ? "current-user"
+                                                : ""
+                                        ]}
                                     >
                                         {(user.name?.[0] || user.email?.[0] || "?").toUpperCase()}
                                     </div>
@@ -237,14 +238,17 @@
                             <td>
                                 <div class="actions-cell">
                                     <IconButton
-                                        iconName="edit"
-                                        fill={true}
+                                        iconName="person_edit"
+                                        grade={-25}
+                                        variant="small"
                                         class="action-btn edit"
                                         onclick={() => openEditModal(user)}
                                         title="Edit User"
                                     />
                                     <IconButton
-                                        iconName="delete"
+                                        iconName="remove_circle"
+                                        grade={-25}
+                                        variant="small"
                                         class="action-btn delete"
                                         onclick={() => openDeleteConfirm(user)}
                                         title="Delete User"
@@ -260,17 +264,11 @@
 </AdminRouteShell>
 
 <style lang="scss">
-    .header-actions {
-        display: flex;
-        gap: 0.75rem;
-        margin: 1rem 0;
-    }
-
     .content-section {
-        background: var(--viz-100);
-        border-radius: 0.75rem;
-        padding: 1.5rem;
-        border: 1px solid var(--viz-80);
+        background-color: var(--viz-95);
+        border: var(--viz-border-thin);
+        border-radius: var(--viz-border-radius-md);
+        padding: var(--viz-spacing-xl);
     }
 
     .users-table-container {
@@ -280,19 +278,30 @@
     .users-table {
         width: 100%;
         border-collapse: collapse;
-        font-size: 0.9rem;
+        font-size: var(--viz-font-size-sm);
+
+        tr {
+            transition: background-color 0.15s ease;
+
+            &:hover {
+                background-color: var(--viz-90);
+            }
+        }
 
         th {
             text-align: left;
-            padding: 1rem;
+            padding: var(--viz-spacing-md) var(--viz-spacing-sm);
             color: var(--viz-40);
             font-weight: 600;
-            border-bottom: 1px solid var(--viz-80);
+            font-size: var(--viz-font-size-xs);
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+            border-bottom: var(--viz-border-thin);
         }
 
         td {
-            padding: 1rem;
-            border-bottom: 1px solid var(--viz-90);
+            padding: var(--viz-spacing-md) var(--viz-spacing-sm);
+            border-bottom: var(--viz-border-thin);
             vertical-align: middle;
         }
 
@@ -304,100 +313,95 @@
     .user-cell {
         display: flex;
         align-items: center;
-        gap: 0.75rem;
+        gap: var(--viz-spacing-sm);
     }
 
     .avatar-placeholder {
         width: 2rem;
         height: 2rem;
-        background: var(--viz-80);
+        background: var(--viz-90);
         color: var(--viz-text-color);
-        border-radius: 50%;
+        border-radius: var(--viz-border-radius-pill);
         display: flex;
         align-items: center;
         justify-content: center;
         font-weight: 600;
-        font-size: 0.9rem;
+        font-size: var(--viz-font-size-sm);
+        border: var(--viz-border-thin);
 
         &.current-user {
             outline: 2px solid var(--viz-primary);
+            outline-offset: 1px;
         }
     }
 
     .user-info {
         display: flex;
         flex-direction: column;
+        gap: var(--viz-spacing-xxs);
     }
 
     .name {
         font-weight: 500;
+        color: var(--viz-text-color);
     }
 
     .uid {
-        font-size: 0.75rem;
+        font-size: var(--viz-font-size-xs);
         color: var(--viz-40);
         font-family: var(--viz-mono-font);
     }
 
     .role-badge {
         display: inline-block;
-        padding: 0.2rem 0.5rem;
+        padding: var(--viz-spacing-xxs) var(--viz-spacing-sm);
         border-radius: var(--viz-border-radius-sm);
         font-size: var(--viz-font-size-xs);
         font-weight: 600;
         text-transform: uppercase;
+        letter-spacing: 0.05em;
 
         &.admin,
         &.superadmin {
-            background: color-mix(in srgb, var(--viz-success-color) 8%, var(--viz-95));
+            background: color-mix(in srgb, var(--viz-success-color) 12%, var(--viz-95));
             color: var(--viz-text-color);
-            border: 1px solid color-mix(in srgb, var(--viz-success-color) 45%, var(--viz-60));
+            border: 1px solid color-mix(in srgb, var(--viz-success-color) 25%, var(--viz-60));
         }
 
         &.user {
             background: var(--viz-90);
             color: var(--viz-text-color);
-            border: 1px solid var(--viz-80);
+            border: var(--viz-border-thin);
         }
 
         &.guest {
             background: var(--viz-95);
             color: var(--viz-40);
-            border: 1px solid var(--viz-80);
+            border: var(--viz-border-thin);
         }
     }
 
     .actions-cell {
         display: flex;
         justify-content: flex-end;
-        gap: 0.5rem;
+        gap: var(--viz-spacing-sm);
     }
 
     .action-btn {
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        width: 2rem;
-        height: 2rem;
-        border: none;
-        background: transparent;
-        border-radius: 0.25rem;
-        cursor: pointer;
         color: var(--viz-40);
-        transition: all 0.2s;
+        transition: color 0.15s ease;
 
         &:hover {
-            background: var(--viz-90);
             color: var(--viz-text-color);
         }
 
         &.delete:hover {
-            background-color: #ef4444;
+            color: var(--viz-error-color);
         }
     }
 
     .force-delete-option {
-        margin: 1rem 0;
+        margin: var(--viz-spacing-std) 0;
         display: flex;
         align-items: center;
     }
@@ -410,24 +414,34 @@
 
     .warning-text,
     .info-text {
-        padding: 0.75rem;
-        border-radius: 0.5rem;
+        padding: var(--viz-spacing-md);
+        border-radius: var(--viz-border-radius-md);
         display: flex;
         align-items: flex-start;
-        gap: 0.5rem;
-        font-size: 0.9rem;
+        gap: var(--viz-spacing-sm);
+        font-size: var(--viz-font-size-sm);
         margin: 0;
-        line-height: 1.4;
+        line-height: 1.5;
         width: 100%;
     }
 
     .warning-text {
-        color: #ef4444;
-        background: rgba(239, 68, 68, 0.1);
+        color: var(--viz-text-color);
+        background-color: color-mix(in srgb, var(--viz-error-color) 12%, var(--viz-95));
+        border: 1px solid color-mix(in srgb, var(--viz-error-color) 25%, var(--viz-60));
+
+        :global(.viz-material-icon) {
+            color: var(--viz-error-color);
+        }
     }
 
     .info-text {
         color: var(--viz-text-color);
-        background: var(--viz-90);
+        background-color: color-mix(in srgb, var(--viz-info-color) 12%, var(--viz-95));
+        border: 1px solid color-mix(in srgb, var(--viz-info-color) 25%, var(--viz-60));
+
+        :global(.viz-material-icon) {
+            color: var(--viz-info-color);
+        }
     }
 </style>
