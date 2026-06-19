@@ -231,8 +231,24 @@ clean:
 
 dev:
 	@echo "Developer: start API (if you have a dev script) and frontend dev server"
-	@echo " - Run backend dev in one terminal: $(GO_CMD) run ./cmd/api (or main.go)"
+	@echo " - Run backend dev in one terminal: make dev-api"
 	@echo " - Run frontend dev in another: cd $(VIEWFINDER_DIR) && $(PNPM) run dev"
+
+dev-api:
+	@echo "Starting backend dev server with local git injection..."
+	@VERSION=$$(cat version.txt 2>/dev/null || echo "0.0.0-dev") && \
+	COMMIT=$$(git rev-parse HEAD 2>/dev/null || echo "unknown") && \
+	REF=$$(git rev-parse --abbrev-ref HEAD 2>/dev/null || echo "unknown") && \
+	URL=$$(git remote get-url origin 2>/dev/null || git config --get remote.origin.url 2>/dev/null || echo "unknown") && \
+	$(GO_CMD) run -ldflags="\
+	  -X 'viz/internal/config.Version=$$VERSION' \
+	  -X 'viz/internal/config.BuildID=local-dev' \
+	  -X 'viz/internal/config.SourceCommit=$$COMMIT' \
+	  -X 'viz/internal/config.SourceRef=$$REF' \
+	  -X 'viz/internal/config.SourceUrl=$$URL' \
+	  -X 'viz/internal/config.Repository=viz' \
+	  -X 'viz/internal/config.RepositoryUrl=$$URL'" \
+	  ./cmd/api
 
 run: build
 	@echo "Run completed build artifacts (see README for local run instructions)."
