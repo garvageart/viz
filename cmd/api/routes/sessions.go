@@ -127,7 +127,6 @@ func SessionsRouter(db *gorm.DB, logger *slog.Logger) *chi.Mux {
 		render.JSON(res, req, session.DTO())
 	})
 
-
 	// DELETE /sessions - Delete ALL sessions for the current user
 	router.Delete("/", func(res http.ResponseWriter, req *http.Request) {
 		user, _ := libhttp.UserFromContext(req)

@@ -145,7 +145,7 @@ func AuthRouter(db *gorm.DB, logger *slog.Logger) *chi.Mux {
 			)
 			return
 		}
-		
+
 		err = db.Where("token = ?", cookieToken.Value).First(&userSession).Error
 		if err != nil {
 			if err == gorm.ErrRecordNotFound {
@@ -190,7 +190,7 @@ func AuthRouter(db *gorm.DB, logger *slog.Logger) *chi.Mux {
 			lastActiveNano = userSession.LastActive.UnixNano()
 		}
 		etag := fmt.Sprintf("W/\"%s-%d\"", userSession.Uid, lastActiveNano)
-		
+
 		res.Header().Set("Cache-Control", "private, max-age=60, must-revalidate")
 		res.Header().Set("ETag", etag)
 
@@ -242,8 +242,8 @@ func AuthRouter(db *gorm.DB, logger *slog.Logger) *chi.Mux {
 
 		// 5 minute max window to login using the generated state
 		http.SetCookie(res, &http.Cookie{
-			Name:     libhttp.RedirectCookie,
-			Value:    encryptedStateB64,
+			Name:  libhttp.RedirectCookie,
+			Value: encryptedStateB64,
 			// TODO: Make this expires value configureable
 			Expires:  carbon.Now().AddMinutes(5).StdTime(),
 			Path:     "/",

@@ -490,7 +490,7 @@ func CollectionsRouter(db *gorm.DB, logger *slog.Logger, wsBroker *libhttp.WSBro
 				render.JSON(res, req, dto.ErrorResponse{Error: "Collection not found"})
 				return
 			}
-			
+
 			libhttp.ServerError(res, req, err, logger, nil, "Failed to fetch collection image UIDs", "")
 			return
 		}

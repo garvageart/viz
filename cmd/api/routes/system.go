@@ -37,12 +37,12 @@ func SystemRouter(db *gorm.DB, logger *slog.Logger) chi.Router {
 	env := utils.Environment
 	gov := runtime.Version()
 	vipsVersion := libvips.Version
-	
+
 	appVersion := config.Version
 	if appVersion == "" {
 		appVersion = utils.GetAppVersion()
 	}
-	
+
 	serverAbout := dto.ServerAbout{
 		Version:       appVersion,
 		Build:         &config.BuildID,

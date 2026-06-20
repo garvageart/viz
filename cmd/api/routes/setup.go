@@ -86,12 +86,24 @@ func (h *setupHandlers) SetupSuperadmin(w http.ResponseWriter, req *http.Request
 	}
 
 	userEnt := entities.User{
-		Uid:       id,
-		Email:     string(body.Email),
-		Name:      body.Name,
-		FirstName: func() string { if body.FirstName != nil { return *body.FirstName } else { return "" } }(),
-		LastName:  func() string { if body.LastName != nil { return *body.LastName } else { return "" } }(),
-		Role:      dto.UserRoleSuperadmin, // Assign superadmin role
+		Uid:   id,
+		Email: string(body.Email),
+		Name:  body.Name,
+		FirstName: func() string {
+			if body.FirstName != nil {
+				return *body.FirstName
+			} else {
+				return ""
+			}
+		}(),
+		LastName: func() string {
+			if body.LastName != nil {
+				return *body.LastName
+			} else {
+				return ""
+			}
+		}(),
+		Role: dto.UserRoleSuperadmin, // Assign superadmin role
 	}
 
 	argonParams := &crypto.Argon2Params{
@@ -135,7 +147,7 @@ func (h *setupHandlers) SetupSuperadmin(w http.ResponseWriter, req *http.Request
 		if err := tx.Create(&firstRunSettingOverride).Error; err != nil {
 			return err
 		}
-		
+
 		return nil
 	})
 

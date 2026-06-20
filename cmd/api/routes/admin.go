@@ -115,13 +115,13 @@ func AdminRouter(db *gorm.DB, logger *slog.Logger, storageStats *images.StorageS
 		}
 
 		stats := dto.SystemStatsResponse{
-			UptimeSeconds:    int64(uptime.Seconds()),
-			NumGoroutine:     runtime.NumGoroutine(),
-			AllocMemory:      int64(m.Alloc),
-			SysMemory:        int64(m.Sys),
-			StorageUsedBytes: storageStats.GetTotalSize(),
-			StoragePath:      storageStats.GetPath(),
-			TotalSystemSpaceBytes: int64(totalSystemSpace),
+			UptimeSeconds:            int64(uptime.Seconds()),
+			NumGoroutine:             runtime.NumGoroutine(),
+			AllocMemory:              int64(m.Alloc),
+			SysMemory:                int64(m.Sys),
+			StorageUsedBytes:         storageStats.GetTotalSize(),
+			StoragePath:              storageStats.GetPath(),
+			TotalSystemSpaceBytes:    int64(totalSystemSpace),
 			TotalAvailableSpaceBytes: int64(freeBytes),
 		}
 
@@ -216,10 +216,10 @@ func AdminRouter(db *gorm.DB, logger *slog.Logger, storageStats *images.StorageS
 			}
 
 			userEnt := entities.User{
-				Uid:      id,
-				Email:    string(adminCreate.Email),
-				Name: adminCreate.Name,
-				Role:     role,
+				Uid:   id,
+				Email: string(adminCreate.Email),
+				Name:  adminCreate.Name,
+				Role:  role,
 			}
 
 			argon := crypto.CreateArgon2Hash(3, 32, 2, 32, 16)

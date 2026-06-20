@@ -2,11 +2,13 @@ package routes_test
 
 import (
 	"encoding/json"
+	"fmt"
 	"io"
 	"net/http"
 	"net/http/httptest"
 	"os"
 	"testing"
+	"time"
 
 	"github.com/go-chi/chi/v5"
 	"github.com/stretchr/testify/assert"
@@ -27,7 +29,9 @@ func newTestLogger() *slog.Logger {
 
 // Helper function to create a new in-memory SQLite database
 func newTestDB(t *testing.T) *gorm.DB {
-	db, err := gorm.Open(sqlite.Open("file::memory:?cache=shared"), &gorm.Config{})
+	// Use a unique database name to prevent data collision between concurrent/subsequent tests
+	dbName := fmt.Sprintf("file:memdb-%d?mode=memory&cache=shared", time.Now().UnixNano())
+	db, err := gorm.Open(sqlite.Open(dbName), &gorm.Config{})
 	assert.NoError(t, err)
 	// Auto-migrate all entities
 	err = db.AutoMigrate(
@@ -46,8 +50,32 @@ func newTestDB(t *testing.T) *gorm.DB {
 	return db
 }
 
+// Helper function to create an admin user and session token
+func createAdminSession(t *testing.T, db *gorm.DB) string {
+	admin := entities.User{
+		Uid:   "admin-uid",
+		Email: "admin@example.com",
+		Role:  dto.UserRoleAdmin,
+	}
+	err := db.Create(&admin).Error
+	assert.NoError(t, err)
+
+	future := time.Now().Add(1 * time.Hour)
+	session := entities.Session{
+		Uid:       "session-uid",
+		Token:     "valid-token",
+		UserUid:   admin.Uid,
+		ExpiresAt: &future,
+	}
+	err = db.Create(&session).Error
+	assert.NoError(t, err)
+
+	return "valid-token"
+}
+
 func TestAdminSystemStats(t *testing.T) {
 	db := newTestDB(t)
+	token := createAdminSession(t, db)
 	logger := newTestLogger()
 	storageStats := images.NewStorageStatsHolder(os.TempDir()) // Use temp dir for stats
 
@@ -57,8 +85,15 @@ func TestAdminSystemStats(t *testing.T) {
 	ts := httptest.NewServer(r)
 	defer ts.Close()
 
-	// Make request to the system stats endpoint
-	resp, err := ts.Client().Get(ts.URL + "/admin/system/stats")
+	// Make request with session cookie to the system stats endpoint
+	req, err := http.NewRequest(http.MethodGet, ts.URL+"/admin/system/stats", nil)
+	assert.NoError(t, err)
+	req.AddCookie(&http.Cookie{
+		Name:  "viz-auth_token",
+		Value: token,
+	})
+
+	resp, err := ts.Client().Do(req)
 	assert.NoError(t, err)
 	defer resp.Body.Close()
 
@@ -76,11 +111,12 @@ func TestAdminSystemStats(t *testing.T) {
 	assert.GreaterOrEqual(t, stats.StorageUsedBytes, int64(0))
 	assert.NotEmpty(t, stats.StoragePath)
 	assert.NotNil(t, stats.TotalSystemSpaceBytes)
-	assert.GreaterOrEqual(t, stats.TotalSystemSpaceBytes, uint64(0))
+	assert.GreaterOrEqual(t, stats.TotalSystemSpaceBytes, int64(0))
 }
 
 func TestAdminDatabaseStats(t *testing.T) {
 	db := newTestDB(t)
+	token := createAdminSession(t, db)
 	logger := newTestLogger()
 	storageStats := images.NewStorageStatsHolder(os.TempDir())
 
@@ -90,8 +126,15 @@ func TestAdminDatabaseStats(t *testing.T) {
 	ts := httptest.NewServer(r)
 	defer ts.Close()
 
-	// Make request to the database stats endpoint
-	resp, err := ts.Client().Get(ts.URL + "/admin/db/stats")
+	// Make request with session cookie to the database stats endpoint
+	req, err := http.NewRequest(http.MethodGet, ts.URL+"/admin/db/stats", nil)
+	assert.NoError(t, err)
+	req.AddCookie(&http.Cookie{
+		Name:  "viz-auth_token",
+		Value: token,
+	})
+
+	resp, err := ts.Client().Do(req)
 	assert.NoError(t, err)
 	defer resp.Body.Close()
 
