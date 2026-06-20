@@ -9,13 +9,21 @@
         labelPosition?: "top" | "side";
         description?: string;
         value?: string | number | boolean;
-        options: Array<string | { value: string; label: string }>;
+        options: Array<
+            | string
+            | {
+                  value: string;
+                  label: string;
+                  type?: "item" | "separator" | "label";
+              }
+        >;
         disabled?: boolean;
         required?: boolean;
         name?: string;
         id?: string;
         class?: string;
         style?: string; // UI style prop
+        contentAlign?: "start" | "center" | "end";
         onchange?: (val: string) => void;
     }
 
@@ -30,6 +38,7 @@
         name,
         class: className,
         style,
+        contentAlign = "start",
         onchange,
         ...props
     }: Props & Omit<SvelteHTMLElements["button"], "onchange" | "value"> = $props();
@@ -50,9 +59,9 @@
     const normalizedOptions = $derived(
         options.map((opt) => {
             if (typeof opt === "string") {
-                return { value: opt, label: opt };
+                return { value: opt, label: opt, type: "item" as const };
             }
-            return opt;
+            return { type: "item" as const, ...opt };
         })
     );
 
@@ -74,22 +83,28 @@
                 <span class="select-value">{selectedLabel || "Select an option..."}</span>
             </Select.Trigger>
             <Select.Portal>
-                <Select.Content class="select-content" sideOffset={4}>
+                <Select.Content class="select-content" sideOffset={4} align={contentAlign}>
                     <Select.Viewport class="select-viewport">
                         {#each normalizedOptions as item}
-                            <Select.Item class="select-item" value={item.value} label={item.label}>
-                                {#snippet children({ selected })}
-                                    <span class="item-label">{item.label}</span>
-                                    {#if selected}
-                                        <span class="item-indicator">
-                                            <MaterialIcon
-                                                iconName="check"
-                                                style="font-size: 1rem; color: var(--viz-primary);"
-                                            />
-                                        </span>
-                                    {/if}
-                                {/snippet}
-                            </Select.Item>
+                            {#if item.type === "separator" || item.value === "---"}
+                                <div class="select-separator" role="separator"></div>
+                            {:else if item.type === "label"}
+                                <div class="select-group-label" role="presentation">{item.label}</div>
+                            {:else}
+                                <Select.Item class="select-item" value={item.value} label={item.label}>
+                                    {#snippet children({ selected })}
+                                        <span class="item-label">{item.label}</span>
+                                        {#if selected}
+                                            <span class="item-indicator">
+                                                <MaterialIcon
+                                                    iconName="check"
+                                                    style="font-size: 1rem; color: var(--viz-primary);"
+                                                />
+                                            </span>
+                                        {/if}
+                                    {/snippet}
+                                </Select.Item>
+                            {/if}
                         {/each}
                     </Select.Viewport>
                 </Select.Content>
@@ -189,6 +204,13 @@
                 outline: 2px solid var(--viz-primary);
                 outline-offset: 1px;
             }
+
+            :global(.select-value) {
+                white-space: nowrap;
+                overflow: hidden;
+                text-overflow: ellipsis;
+                min-width: 0;
+            }
         }
     }
 
@@ -245,5 +267,20 @@
         align-items: center;
         justify-content: center;
         margin-left: var(--viz-spacing-sm);
+    }
+
+    :global(.select-separator) {
+        height: 1px;
+        background-color: var(--viz-80);
+        margin: var(--viz-spacing-xxs) 0;
+    }
+
+    :global(.select-group-label) {
+        font-size: var(--viz-font-size-xs);
+        font-weight: 700;
+        color: var(--viz-40);
+        padding: var(--viz-spacing-xs) var(--viz-spacing-sm);
+        text-transform: uppercase;
+        letter-spacing: 0.05em;
     }
 </style>
