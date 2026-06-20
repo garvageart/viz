@@ -1,12 +1,50 @@
+<script module lang="ts">
+    import type { ModalOptions } from "$lib/components/modals/manager/ModalManager.svelte";
+
+    export let modalOptions: ModalOptions = $state({
+        height: "80%",
+        width: "40%",
+    });
+</script>
+
 <script lang="ts">
     import type { ImageAsset } from "$lib/api";
-    import type { MenuItem } from "$lib/context-menu/types";
+    import { DbSettings } from "$lib/db/settings";
+    import { generateRandomString } from "$lib/utils/misc";
+    import { onMount } from "svelte";
     import { slide } from "svelte/transition";
-    import Button from "../Button.svelte";
-    import Dropdown from "../../context-menus/Dropdown.svelte";
-    import MaterialIcon from "../MaterialIcon.svelte";
     import { modalsManager } from "../../modals/manager/ModalManager.svelte";
+    import BatchRenameBuilder, { defaultTemplate, type SavedRenameSettings } from "../BatchRenameBuilder.svelte";
+    import Button from "../Button.svelte";
+    import Checkbox from "../Checkbox.svelte";
+    import InputSelect from "../InputSelect.svelte";
+    import InputText from "../InputText.svelte";
+    import MaterialIcon from "../MaterialIcon.svelte";
     import Slider from "../Slider.svelte";
+
+    export type ExportFormat = "jpg" | "png" | "webp" | "avif" | "tiff";
+    export type ResizeMode = "none" | "width" | "height" | "long-edge" | "short-edge" | "dimensions";
+    export type ColorSpace = "sRGB" | "AdobeRGB" | "ProPhoto" | "DisplayP3";
+    export type DestinationMode = "zip";
+
+    export interface SavedExportSettings {
+        format: ExportFormat;
+        quality: number;
+        resizeMode: ResizeMode;
+        resizeWidth: number;
+        resizeHeight: number;
+        colorSpace: ColorSpace;
+        stripMetadata: boolean;
+        destinationMode: DestinationMode;
+        sections?: {
+            destination: boolean;
+            naming: boolean;
+            settings: boolean;
+            sizing: boolean;
+            metadata: boolean;
+            watermarking: boolean;
+        };
+    }
 
     interface Props {
         id: string;
@@ -30,61 +68,103 @@
     }
 
     // Export Settings State
-    let format = $state("jpg");
-    let quality = $state(80);
-    let resizeMode = $state("none");
-    let resizeWidth = $state(2048);
-    let resizeHeight = $state(2048);
-    let colorSpace = $state("sRGB");
-    let stripMetadata = $state(true);
-    let namingMode = $state("original");
-    let customName = $state("");
-    let destinationMode = $state("zip");
+    let settings = $state<SavedExportSettings>({
+        format: "jpg",
+        quality: 80,
+        resizeMode: "none",
+        resizeWidth: 2048,
+        resizeHeight: 2048,
+        colorSpace: "sRGB",
+        stripMetadata: true,
+        destinationMode: "zip"
+    });
 
-    const formatItems: MenuItem[] = [
-        { id: "jpg", label: "JPEG" },
-        { id: "png", label: "PNG" },
-        { id: "webp", label: "WebP" },
-        { id: "avif", label: "AVIF" },
-        { id: "tiff", label: "TIFF" }
-    ];
+    let renameSettings = $state<SavedRenameSettings>({
+        namingMode: "original",
+        customName: "",
+        namingTemplate: defaultTemplate,
+        sequenceStart: 1,
+        sequencePadding: 4,
+        builderRows: [
+            {
+                id: generateRandomString(16),
+                type: "original",
+                textValue: "",
+                dateFormat: "YYYY-MM-DD",
+                metadataField: "model",
+                sequencePadding: 4
+            }
+        ]
+    });
+    let activeTemplate = $state("{{basename}}");
 
-    const resizeItems: MenuItem[] = [
-        { id: "none", label: "None" },
-        { id: "width", label: "Width" },
-        { id: "height", label: "Height" },
-        { id: "long-edge", label: "Long Edge" },
-        { id: "short-edge", label: "Short Edge" },
-        { id: "dimensions", label: "Dimensions" }
-    ];
+    const settingsDb = new DbSettings<SavedExportSettings>("export_panel_settings");
+    const renameDb = new DbSettings<SavedRenameSettings>("batch_rename_settings");
+    let settingsLoaded = $state(false);
 
-    const colorSpaceItems: MenuItem[] = [
-        { id: "sRGB", label: "sRGB" },
-        { id: "AdobeRGB", label: "Adobe RGB (1998)" },
-        { id: "ProPhoto", label: "ProPhoto RGB" },
-        { id: "DisplayP3", label: "Display P3" }
-    ];
+    onMount(async () => {
+        const [savedExport, savedRename] = await Promise.all([settingsDb.load(), renameDb.load()]);
 
-    const namingItems: MenuItem[] = [
-        { id: "original", label: "Original Name" },
-        { id: "custom", label: "Custom Name" },
-        { id: "sequence", label: "Sequence" },
-        { id: "original-sequence", label: "Original Name + Sequence" }
-    ];
+        if (savedExport) {
+            settings = { ...settings, ...savedExport };
+            if (savedExport.sections) {
+                sections = { ...sections, ...savedExport.sections };
+            }
+        }
+
+        if (savedRename) {
+            renameSettings = { ...renameSettings, ...savedRename };
+        }
+
+        settingsLoaded = true;
+    });
+
+    $effect(() => {
+        if (!settingsLoaded) {
+            return;
+        }
+
+        settingsDb.save({
+            ...$state.snapshot(settings),
+            sections: $state.snapshot(sections)
+        });
+
+        renameDb.save($state.snapshot(renameSettings));
+    });
+
+    const formatOptions = [
+        { value: "jpg", label: "JPEG" },
+        { value: "png", label: "PNG" },
+        { value: "webp", label: "WebP" },
+        { value: "avif", label: "AVIF" },
+        { value: "tiff", label: "TIFF" }
+    ] as const;
+
+    const resizeOptions = [
+        { value: "none", label: "None" },
+        { value: "width", label: "Width" },
+        { value: "height", label: "Height" },
+        { value: "long-edge", label: "Long Edge" },
+        { value: "short-edge", label: "Short Edge" },
+        { value: "dimensions", label: "Dimensions" }
+    ] as const;
+
+    const colorSpaceOptions = [
+        { value: "sRGB", label: "sRGB" },
+        { value: "AdobeRGB", label: "Adobe RGB (1998)" },
+        { value: "ProPhoto", label: "ProPhoto RGB" },
+        { value: "DisplayP3", label: "Display P3" }
+    ] as const;
 
     function handleExport() {
         // Implementation will follow in the future using wasm-vips
         modalsManager.close(id, {
-            format,
-            quality,
-            resizeMode,
-            resizeWidth,
-            resizeHeight,
-            colorSpace,
-            stripMetadata,
-            namingMode,
-            customName,
-            destinationMode
+            ...$state.snapshot(settings),
+            namingMode: renameSettings.namingMode,
+            customName: renameSettings.customName,
+            namingTemplate: activeTemplate,
+            sequenceStart: renameSettings.sequenceStart,
+            sequencePadding: renameSettings.sequencePadding
         });
     }
 
@@ -110,13 +190,11 @@
             </button>
             {#if sections.destination}
                 <div class="section-content" transition:slide>
-                    <div class="control-group">
-                        <label for="dest-mode">Export to:</label>
-                        <Dropdown
-                            items={[{ id: "zip", label: "Download as ZIP" }]}
-                            bind:selectedItemId={destinationMode}
-                        />
-                    </div>
+                    <InputSelect
+                        label="Export to"
+                        options={[{ value: "zip", label: "Download as ZIP" }]}
+                        bind:value={settings.destinationMode}
+                    />
                 </div>
             {/if}
         </div>
@@ -129,16 +207,12 @@
             </button>
             {#if sections.naming}
                 <div class="section-content" transition:slide>
-                    <div class="control-group">
-                        <label for="naming-mode">Naming:</label>
-                        <Dropdown items={namingItems} bind:selectedItemId={namingMode} />
-                    </div>
-                    {#if namingMode.includes("custom")}
-                        <div class="control-group">
-                            <label for="custom-name">Custom Text:</label>
-                            <input id="custom-name" type="text" bind:value={customName} placeholder="Untitled" />
-                        </div>
-                    {/if}
+                    <BatchRenameBuilder
+                        bind:settings={renameSettings}
+                        bind:activeTemplate
+                        {assets}
+                        format={settings.format}
+                    />
                 </div>
             {/if}
         </div>
@@ -152,31 +226,30 @@
             {#if sections.settings}
                 <div class="section-content" transition:slide>
                     <div class="control-row">
-                        <div class="control-group">
-                            <label for="format-select">Format:</label>
-                            <Dropdown items={formatItems} bind:selectedItemId={format} />
-                        </div>
-                        {#if ["jpg", "webp", "avif"].includes(format)}
-                            <div class="control-group quality-slider">
+                        <InputSelect label="Format" options={Array.from(formatOptions)} bind:value={settings.format} />
+                        {#if ["jpg", "webp", "avif"].includes(settings.format)}
+                            <div class="quality-slider">
                                 <Slider
                                     id="quality-range"
                                     label="Quality"
                                     min={1}
                                     max={100}
-                                    bind:value={quality}
+                                    bind:value={settings.quality}
                                     showValue={true}
                                 />
                             </div>
                         {/if}
                     </div>
-                    <div class="control-group">
-                        <label for="colorspace-select">Color Space:</label>
-                        <Dropdown items={colorSpaceItems} bind:selectedItemId={colorSpace} />
-                    </div>
-                    <div class="control-group checkbox">
-                        <input type="checkbox" id="strip-meta" bind:checked={stripMetadata} />
-                        <label for="strip-meta">Remove all metadata (EXIF, XMP, IPTC)</label>
-                    </div>
+                    <InputSelect
+                        label="Color Space"
+                        options={Array.from(colorSpaceOptions)}
+                        bind:value={settings.colorSpace}
+                    />
+                    <Checkbox
+                        id="strip-meta"
+                        label="Remove all metadata (EXIF, XMP, IPTC)"
+                        bind:checked={settings.stripMetadata}
+                    />
                 </div>
             {/if}
         </div>
@@ -189,29 +262,32 @@
             </button>
             {#if sections.sizing}
                 <div class="section-content" transition:slide>
-                    <div class="control-group">
-                        <label for="resize-mode">Resize to Fit:</label>
-                        <Dropdown items={resizeItems} bind:selectedItemId={resizeMode} />
-                    </div>
-                    {#if resizeMode !== "none"}
+                    <InputSelect
+                        label="Resize to Fit"
+                        options={Array.from(resizeOptions)}
+                        bind:value={settings.resizeMode}
+                    />
+                    {#if settings.resizeMode !== "none"}
                         <div class="control-row dimensions">
-                            {#if ["width", "long-edge", "short-edge", "dimensions"].includes(resizeMode)}
-                                <div class="control-group">
-                                    <label for="resize-w"
-                                        >{resizeMode === "width"
-                                            ? "Width"
-                                            : resizeMode === "dimensions"
-                                              ? "W"
-                                              : "Edge"}:</label
-                                    >
-                                    <input id="resize-w" type="number" bind:value={resizeWidth} />
-                                </div>
+                            {#if ["width", "long-edge", "short-edge", "dimensions"].includes(settings.resizeMode)}
+                                <InputText
+                                    id="resize-w"
+                                    type="number"
+                                    label={settings.resizeMode === "width"
+                                        ? "Width"
+                                        : settings.resizeMode === "dimensions"
+                                          ? "W"
+                                          : "Edge"}
+                                    bind:value={settings.resizeWidth}
+                                />
                             {/if}
-                            {#if ["height", "dimensions"].includes(resizeMode)}
-                                <div class="control-group">
-                                    <label for="resize-h">{resizeMode === "height" ? "Height" : "H"}:</label>
-                                    <input id="resize-h" type="number" bind:value={resizeHeight} />
-                                </div>
+                            {#if ["height", "dimensions"].includes(settings.resizeMode)}
+                                <InputText
+                                    id="resize-h"
+                                    type="number"
+                                    label={settings.resizeMode === "height" ? "Height" : "H"}
+                                    bind:value={settings.resizeHeight}
+                                />
                             {/if}
                             <span class="unit">px</span>
                         </div>
@@ -249,11 +325,7 @@
 
     <div class="export-footer">
         <Button onclick={handleCancel}>Cancel</Button>
-        <Button
-            variant="primary"
-            onclick={handleExport}
-            style="background-color: var(--viz-primary); color: var(--viz-10-dark); padding: 0.5rem 2rem;"
-        >
+        <Button variant="primary" onclick={handleExport} class="export-btn">
             Export {assets.length} Item{assets.length === 1 ? "" : "s"}
         </Button>
     </div>
@@ -270,21 +342,69 @@
         overflow: hidden;
     }
 
+    // Target all inner input wrappers & fields to make them compact/slim
+    :global(.export-panel .input-container) {
+        gap: var(--viz-spacing-xs) !important;
+        min-width: 0 !important;
+    }
+
+    :global(.export-panel .input-label) {
+        font-size: var(--viz-font-size-xs) !important;
+    }
+
+    :global(.export-panel .select-trigger) {
+        min-height: 2rem !important;
+        padding: var(--viz-spacing-xs) 2rem var(--viz-spacing-xs) var(--viz-spacing-sm) !important;
+        font-size: var(--viz-font-size-sm) !important;
+        background-position: right var(--viz-spacing-sm) center !important;
+        min-width: 0 !important;
+    }
+
+    :global(.export-panel input:not([type="submit"]):not([type="checkbox"]):not([type="range"])) {
+        min-height: 2rem !important;
+        padding: var(--viz-spacing-xs) var(--viz-spacing-sm) !important;
+        font-size: var(--viz-font-size-sm) !important;
+        min-width: 0 !important;
+    }
+
+    :global(.export-panel .slider-label) {
+        font-size: var(--viz-font-size-xs) !important;
+    }
+
+    :global(.export-panel .slider-value) {
+        font-size: var(--viz-font-size-xs) !important;
+    }
+
+    :global(.export-panel input[type="range"]) {
+        margin: var(--viz-spacing-xs) 0 !important;
+    }
+
+    :global(.export-panel .label-text) {
+        font-size: var(--viz-font-size-xs) !important;
+    }
+
+    :global(.export-panel .export-btn) {
+        background-color: var(--viz-primary) !important;
+        color: var(--viz-10-dark) !important;
+        padding: var(--viz-spacing-sm) var(--viz-spacing-xl) !important;
+        font-size: var(--viz-font-size-sm) !important;
+    }
+
     .export-header {
-        padding: 1rem;
+        padding: var(--viz-spacing-sm) var(--viz-spacing-md);
         border-bottom: 1px solid var(--viz-80);
         background-color: var(--viz-bg-color);
 
         h2 {
             margin: 0;
-            font-size: 1.1rem;
+            font-size: var(--viz-font-size-std);
             font-weight: 600;
         }
 
         .asset-summary {
-            font-size: 0.8rem;
+            font-size: var(--viz-font-size-xs);
             color: var(--viz-40);
-            margin-top: 0.25rem;
+            margin-top: var(--viz-spacing-xxs);
         }
     }
 
@@ -310,13 +430,13 @@
         width: 100%;
         display: flex;
         align-items: center;
-        padding: 0.75rem 1rem;
+        padding: var(--viz-spacing-sm) var(--viz-spacing-md);
         background: none;
         border: none;
         color: var(--viz-text-color);
         cursor: pointer;
         font-weight: 600;
-        font-size: 0.85rem;
+        font-size: var(--viz-font-size-sm);
         text-align: left;
         transition: background-color 0.2s;
 
@@ -325,84 +445,34 @@
         }
 
         span {
-            margin-left: 0.5rem;
-            text-transform: uppercase;
-            letter-spacing: 0.05em;
+            margin-left: var(--viz-spacing-sm);
         }
     }
 
     .section-content {
-        padding: 1rem 1.5rem;
+        padding: var(--viz-spacing-md) var(--viz-spacing-std);
         display: flex;
         flex-direction: column;
-        gap: 1rem;
-    }
-
-    .control-group {
-        display: flex;
-        flex-direction: column;
-        gap: 0.4rem;
-
-        label {
-            font-size: 0.75rem;
-            font-weight: 500;
-            color: var(--viz-40);
-        }
-
-        input[type="text"],
-        input[type="number"] {
-            background-color: var(--viz-90);
-            border: 1px solid var(--viz-70);
-            border-radius: 0.25rem;
-            color: var(--viz-text-color);
-            padding: 0.5rem;
-            font-family: var(--viz-mono-font);
-            font-size: 0.85rem;
-
-            &:focus {
-                outline: none;
-                border-color: var(--viz-primary);
-            }
-        }
-
-        &.checkbox {
-            flex-direction: row;
-            align-items: center;
-            gap: 0.75rem;
-            margin-top: 0.5rem;
-
-            input {
-                width: 1rem;
-                height: 1rem;
-                cursor: pointer;
-                accent-color: var(--viz-primary);
-            }
-
-            label {
-                margin-bottom: 0;
-                cursor: pointer;
-                color: var(--viz-text-color);
-                font-size: 0.85rem;
-            }
-        }
+        gap: var(--viz-spacing-md);
     }
 
     .control-row {
         display: flex;
-        gap: 1.5rem;
+        gap: var(--viz-spacing-std);
         align-items: flex-end;
 
-        .control-group {
+        :global(.input-container) {
             flex: 1;
         }
 
         &.dimensions {
-            .control-group {
-                max-width: 100px;
+            :global(.input-container) {
+                max-width: 6.25rem;
+                flex: none;
             }
             .unit {
-                margin-bottom: 0.5rem;
-                font-size: 0.8rem;
+                margin-bottom: var(--viz-spacing-sm);
+                font-size: var(--viz-font-size-xs);
                 color: var(--viz-50);
             }
         }
@@ -410,21 +480,24 @@
 
     .quality-slider {
         flex: 2;
+        display: flex;
+        flex-direction: column;
+        min-width: 0;
     }
 
     .placeholder-text {
         font-style: italic;
-        font-size: 0.8rem;
+        font-size: var(--viz-font-size-xs);
         color: var(--viz-50);
         margin: 0;
     }
 
     .export-footer {
-        padding: 1.25rem 1.5rem;
+        padding: var(--viz-spacing-md) var(--viz-spacing-std);
         border-top: 1px solid var(--viz-80);
         background-color: var(--viz-100);
         display: flex;
         justify-content: flex-end;
-        gap: 1rem;
+        gap: var(--viz-spacing-sm);
     }
 </style>
