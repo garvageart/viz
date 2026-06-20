@@ -157,7 +157,7 @@ generate-types-install:
 ### Code hygiene
 fmt:
 	@echo "Formatting Go sources..."
-	@$(GO_CMD) fmt $$(go list -f '{{.Dir}}/...' -m)
+	@for dir in $$(go list -f '{{.Dir}}' -m); do (cd $$dir && $(GO_CMD) fmt ./...); done
 	@if [ -f "$(VIEWFINDER_DIR)/package.json" ]; then \
 		echo "Formatting frontend (if script exists)..."; \
 		cd $(VIEWFINDER_DIR) && $(PNPM) run format || true; \
@@ -195,7 +195,7 @@ test: test-go
 
 test-go:
 	@echo "Running Go tests..."
-	@$(GO_CMD) test $$(go list -f '{{.Dir}}/...' -m)
+	@for dir in $$(go list -f '{{.Dir}}' -m); do (cd $$dir && $(GO_CMD) test ./...); done
 
 ### Docker
 docker-build:
