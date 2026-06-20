@@ -25,7 +25,7 @@
         heading,
         width = "50%",
         height,
-        applyPadding = true,
+        applyPadding = false,
         zIndex = 9999,
         icon,
         onclickClose,
