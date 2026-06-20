@@ -180,10 +180,7 @@
                                             <MaterialIcon iconName="image" />
                                         </div>
                                         <div class="job-details">
-                                            <div
-                                                class="job-title"
-                                                title={job.filename || job.image_uid || job.uid}
-                                            >
+                                            <div class="job-title" title={job.filename || job.image_uid || job.uid}>
                                                 {job.filename || job.image_uid || job.uid}
                                             </div>
                                             <div class="job-meta">
@@ -203,10 +200,7 @@
                                             <span class="progress-value">{job.progress || 0}%</span>
                                         </div>
                                         <div class="progress-bar-container">
-                                            <div
-                                                class="progress-bar-fill"
-                                                style="width: {job.progress || 0}%"
-                                            ></div>
+                                            <div class="progress-bar-fill" style="width: {job.progress || 0}%"></div>
                                         </div>
                                     </div>
                                 </div>
@@ -236,15 +230,21 @@
                                 type="button"
                                 class="history-tab"
                                 class:active={activeTab === "all"}
-                                onclick={() => { activeTab = "all"; }}
+                                onclick={() => {
+                                    activeTab = "all";
+                                }}
                             >
-                                All <span class="tab-badge">{jobsState.completedJobs.length + jobsState.failedJobs.length}</span>
+                                All <span class="tab-badge"
+                                    >{jobsState.completedJobs.length + jobsState.failedJobs.length}</span
+                                >
                             </button>
                             <button
                                 type="button"
                                 class="history-tab success"
                                 class:active={activeTab === "success"}
-                                onclick={() => { activeTab = "success"; }}
+                                onclick={() => {
+                                    activeTab = "success";
+                                }}
                             >
                                 Success <span class="tab-badge">{jobsState.completedJobs.length}</span>
                             </button>
@@ -252,7 +252,9 @@
                                 type="button"
                                 class="history-tab failed"
                                 class:active={activeTab === "failed"}
-                                onclick={() => { activeTab = "failed"; }}
+                                onclick={() => {
+                                    activeTab = "failed";
+                                }}
                             >
                                 Failed <span class="tab-badge">{jobsState.failedJobs.length}</span>
                             </button>
@@ -275,7 +277,9 @@
                             <button
                                 type="button"
                                 class="clear-search-btn"
-                                onclick={() => { searchQuery = ""; }}
+                                onclick={() => {
+                                    searchQuery = "";
+                                }}
                                 title="Clear search"
                             >
                                 <MaterialIcon iconName="close" />
@@ -286,7 +290,11 @@
                     <!-- Unified Jobs List -->
                     <div class="jobs-list history-list">
                         {#each filteredHistory as job (job.uid)}
-                            <div class="history-job-card" class:success={job.status === "completed"} class:failure={job.status === "failed"}>
+                            <div
+                                class="history-job-card"
+                                class:success={job.status === "completed"}
+                                class:failure={job.status === "failed"}
+                            >
                                 <div class="job-status-icon">
                                     {#if job.status === "completed"}
                                         <MaterialIcon iconName="check_circle" />
@@ -324,7 +332,9 @@
                         {:else}
                             <div class="empty-state-placeholder history-empty">
                                 <MaterialIcon iconName="history" class="empty-icon" />
-                                <p>{searchQuery ? "No history matches your search" : "No job history yet"}</p>
+                                <p>
+                                    {searchQuery ? "No history matches your search" : "No job history yet"}
+                                </p>
                             </div>
                         {/each}
                     </div>
@@ -340,7 +350,10 @@
                         <IconButton
                             iconName="refresh"
                             variant="small"
-                            onclick={() => { jobsState.fetchJobTypes(); }}
+                            class="worker-icon-btn"
+                            onclick={() => {
+                                jobsState.fetchJobTypes();
+                            }}
                             disabled={jobsState.workers.loading}
                         ></IconButton>
                     </div>
@@ -356,9 +369,7 @@
                                 <div class="worker-card">
                                     <div class="worker-header">
                                         <div class="worker-id">
-                                            <span class="worker-name"
-                                                >{jobsState.getTopicForJobType(job.name)}</span
-                                            >
+                                            <span class="worker-name">{jobsState.getTopicForJobType(job.name)}</span>
                                             <span
                                                 class="worker-dot {(jobsState.runningByTopic[
                                                     jobsState.getTopicForJobType(job.name)
@@ -369,14 +380,10 @@
                                         </div>
                                         <div class="worker-stats">
                                             <span class="stat-badge running" title="Active">
-                                                {jobsState.runningByTopic[
-                                                    jobsState.getTopicForJobType(job.name)
-                                                ] || 0}
+                                                {jobsState.runningByTopic[jobsState.getTopicForJobType(job.name)] || 0}
                                             </span>
                                             <span class="stat-badge queued" title="Queued">
-                                                {jobsState.queuedByTopic[
-                                                    jobsState.getTopicForJobType(job.name)
-                                                ] || 0}
+                                                {jobsState.queuedByTopic[jobsState.getTopicForJobType(job.name)] || 0}
                                             </span>
                                         </div>
                                     </div>
@@ -385,13 +392,19 @@
                                         <IconButton
                                             iconName="refresh"
                                             variant="small"
-                                            onclick={() => { jobsState.rescanAll(job.name); }}
+                                            class="worker-icon-btn"
+                                            onclick={() => {
+                                                jobsState.rescanAll(job.name);
+                                            }}
                                             title="Rescan All"
                                         ></IconButton>
                                         <IconButton
                                             iconName="search"
                                             variant="small"
-                                            onclick={() => { jobsState.rescanMissing(job.name); }}
+                                            class="worker-icon-btn"
+                                            onclick={() => {
+                                                jobsState.rescanMissing(job.name);
+                                            }}
                                             title="Rescan Missing"
                                         ></IconButton>
                                     </div>
@@ -404,11 +417,7 @@
                                                 onclick={() => {
                                                     jobsState.setWorkerConcurrency(
                                                         job.name,
-                                                        Math.max(
-                                                            1,
-                                                            (jobsState.workers.concurrency[job.name] ||
-                                                                5) - 1
-                                                        )
+                                                        Math.max(1, (jobsState.workers.concurrency[job.name] || 5) - 1)
                                                     );
                                                 }}>-</button
                                             >
@@ -420,11 +429,7 @@
                                                 onclick={() => {
                                                     jobsState.setWorkerConcurrency(
                                                         job.name,
-                                                        Math.min(
-                                                            50,
-                                                            (jobsState.workers.concurrency[job.name] ||
-                                                                5) + 1
-                                                        )
+                                                        Math.min(50, (jobsState.workers.concurrency[job.name] || 5) + 1)
                                                     );
                                                 }}>+</button
                                             >
@@ -502,6 +507,18 @@
 
         &.workers-section {
             min-height: 20rem;
+
+            :global(.worker-icon-btn) {
+                border-color: var(--viz-60);
+
+                &:hover:not(:disabled) {
+                    border-color: var(--viz-80);
+                }
+
+                &:disabled {
+                    border-color: transparent;
+                }
+            }
         }
     }
 
@@ -592,7 +609,9 @@
         display: flex;
         align-items: center;
         gap: var(--viz-spacing-xs);
-        transition: color 0.15s ease, border-color 0.15s ease;
+        transition:
+            color 0.15s ease,
+            border-color 0.15s ease;
         border-bottom: 2px solid transparent;
         margin-bottom: -2px;
 
@@ -637,7 +656,9 @@
             background-color: var(--viz-80);
             border-radius: var(--viz-border-radius-sm);
             color: var(--viz-40);
-            transition: background-color 0.15s ease, color 0.15s ease;
+            transition:
+                background-color 0.15s ease,
+                color 0.15s ease;
         }
     }
 
@@ -704,10 +725,9 @@
 
         h3 {
             margin: 0;
-            font-size: var(--viz-font-size-sm);
+            font-size: var(--viz-font-size-md);
             font-weight: 600;
             color: var(--viz-text-color);
-            letter-spacing: 0.05em;
         }
     }
 
@@ -760,7 +780,9 @@
             border-radius: var(--viz-border-radius-md);
             background-color: var(--viz-90);
             color: var(--viz-text-color);
-            transition: background-color 0.2s ease, color 0.2s ease;
+            transition:
+                background-color 0.2s ease,
+                color 0.2s ease;
 
             :global(.viz-material-icon) {
                 font-size: var(--viz-font-size-xl);
@@ -1051,7 +1073,8 @@
             font-size: var(--viz-font-size-xs);
             color: var(--viz-40);
 
-            .job-duration, .job-time {
+            .job-duration,
+            .job-time {
                 font-family: var(--viz-mono-font);
             }
 
@@ -1209,7 +1232,10 @@
         background-color: var(--viz-90);
         color: var(--viz-40);
         border: var(--viz-border-thin);
-        transition: background-color 0.2s ease, border-color 0.2s ease, color 0.2s ease;
+        transition:
+            background-color 0.2s ease,
+            border-color 0.2s ease,
+            color 0.2s ease;
 
         .status-dot {
             width: 6px;
