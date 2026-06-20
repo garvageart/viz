@@ -1,8 +1,8 @@
 /// <reference types="vitest" />
 import { sveltekit } from "@sveltejs/kit/vite";
-import { defineConfig, type ProxyOptions } from "vite";
 import fs from "fs";
 import { fileURLToPath } from "url";
+import { type ProxyOptions, defineConfig } from "vite";
 import devtoolsJson from "vite-plugin-devtools-json";
 
 const file = fileURLToPath(new URL("package.json", import.meta.url));

@@ -1,9 +1,7 @@
-import type { ComponentProps } from "svelte";
 import type { Readable } from "svelte/store";
 
-import Splitpanes from "./Splitpanes.svelte";
-export { default as Splitpanes } from "./Splitpanes.svelte";
 export { default as Pane } from "./Pane.svelte";
+export { default as Splitpanes } from "./Splitpanes.svelte";
 
 export type PaneInitFunction = (_key: any) => {
     undefinedPaneInitSize: number;

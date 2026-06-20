@@ -1,4 +1,4 @@
-import { pxToNumber, type Sides, type SidesStart } from "./sizing.js";
+import { type Sides, type SidesStart, pxToNumber } from "./sizing.js";
 import { calcComputedStyle } from "./styling.js";
 
 export type Position = SidesStart;

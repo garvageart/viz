@@ -1,4 +1,4 @@
-import { updateImage, type ImageAsset, type ImageUpdate } from "$lib/api";
+import { type ImageAsset, type ImageUpdate, updateImage } from "$lib/api";
 
 export async function setRating(image: ImageAsset, prevRating: number | null, newRating: number | null) {
     if (prevRating === newRating) {

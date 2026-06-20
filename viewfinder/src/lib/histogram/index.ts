@@ -1,10 +1,9 @@
-import { Histogram as PHHistogram } from "../third-party/photo-histogram/js/histogram";
 import type { HistogramData, HistogramStat } from "../third-party/photo-histogram/js/histogram";
+import { Histogram as PHHistogram } from "../third-party/photo-histogram/js/histogram";
 import * as HistogramUtils from "../third-party/photo-histogram/js/util";
 
+export { HistogramUtils, PHHistogram as PhotoHistogram };
 export type { HistogramData, HistogramStat };
-export { HistogramUtils };
-export { PHHistogram as PhotoHistogram };
 
 /**
  * Ensures an HTMLImageElement is loaded before using it as a source for drawing.

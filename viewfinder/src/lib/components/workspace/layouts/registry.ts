@@ -1,4 +1,4 @@
-import { Workspace, SplitNode, TabGroup } from "$lib/layouts/model.svelte";
+import { SplitNode, TabGroup, Workspace } from "$lib/layouts/model.svelte";
 import { views as viewRegistry } from "$lib/layouts/views";
 
 export function createDefaultLayout(): Workspace {

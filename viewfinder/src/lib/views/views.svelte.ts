@@ -1,9 +1,9 @@
+import { invalidateAll, preloadData } from "$app/navigation";
 import type { Component } from "svelte";
-import { preloadData, invalidateAll } from "$app/navigation";
-import { debugMode } from "$lib/states/index.svelte";
-import type { MenuItem } from "$lib/context-menu/types";
-import { sleep } from "$lib/utils/misc";
 import { DYNAMIC_ROUTE_REGEX } from "$lib/constants";
+import type { MenuItem } from "$lib/context-menu/types";
+import { debugMode } from "$lib/states/index.svelte";
+import { sleep } from "$lib/utils/misc";
 
 export type TabDropHandler<T extends any, V = VizView<any, any>> = (data: T, view: V) => Promise<void>;
 export type TabActions<Data, C extends Component<any, any, any> | undefined = Component<any, any, any> | undefined> = {

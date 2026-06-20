@@ -9,12 +9,13 @@
         "check": "pnpm -r --filter \"@viz/*\" check",
         "lint": "pnpm -r --filter \"@viz/*\" lint",
         "format": "pnpm -r --filter \"@viz/*\" format",
+        "format:check": "pnpm -r --filter \"@viz/*\" format:check",
         "gen:api": "pnpm --filter @viz/scripts gen:api",
         "setup:https": "pnpm --filter @viz/scripts setup:https"
     },
     "keywords": [],
-
     "devDependencies": {
+        "@trivago/prettier-plugin-sort-imports": "^6.0.2",
         "prettier": "^3.8.4",
         "prettier-plugin-svelte": "^4.1.0"
     }

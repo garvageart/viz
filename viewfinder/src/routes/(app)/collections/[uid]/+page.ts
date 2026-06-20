@@ -1,7 +1,7 @@
-import type { PageLoad } from "./$types";
-import { getCollection } from "$lib/api";
 import { error } from "@sveltejs/kit";
+import { getCollection } from "$lib/api";
 import { sort } from "$lib/states/index.svelte";
+import type { PageLoad } from "./$types";
 
 export const load: PageLoad = async ({ params }) => {
     const collectionImages = await getCollection(params.uid, {

@@ -1,18 +1,18 @@
-import type { AssetSort, AssetGridView } from "$lib/types/asset";
-import type { UploadImage } from "$lib/upload/asset.svelte";
-import {
-    type User,
-    type SystemStatusResponse,
-    type ImageAsset,
-    type Collection,
-    updateUserSetting,
-    type UserSetting
-} from "$lib/api";
-import { VizLocalStorage, VizCookieStorage } from "$lib/utils/misc";
-import { MediaQuery } from "svelte/reactivity";
-import type { MenuItem } from "$lib/context-menu/types";
-import { SettingNames } from "$lib/components/settings/names";
 import { page } from "$app/state";
+import { MediaQuery } from "svelte/reactivity";
+import {
+    type Collection,
+    type ImageAsset,
+    type SystemStatusResponse,
+    type User,
+    type UserSetting,
+    updateUserSetting
+} from "$lib/api";
+import { SettingNames } from "$lib/components/settings/names";
+import type { MenuItem } from "$lib/context-menu/types";
+import type { AssetGridView, AssetSort } from "$lib/types/asset";
+import type { UploadImage } from "$lib/upload/asset.svelte";
+import { VizCookieStorage, VizLocalStorage } from "$lib/utils/misc";
 
 // Types
 interface UserState {

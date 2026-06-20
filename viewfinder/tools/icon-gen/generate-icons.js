@@ -7,7 +7,6 @@
  * repository across common categories, runs SVGO optimization, and writes
  * Svelte components to `src/lib/components/icons/generated/`.
  */
-
 import { existsSync, mkdirSync, readFileSync, writeFileSync } from "fs";
 import { globSync } from "glob";
 import { dirname, join, resolve } from "path";

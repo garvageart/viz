@@ -1,6 +1,6 @@
+import { orderBy } from "lodash-es";
 import type { Collection, ImageAsset } from "$lib/api";
 import type { AssetSort } from "$lib/types/asset";
-import { orderBy } from "lodash-es";
 import { getTakenAt } from "$lib/utils/images";
 
 function getCollectionDate(collection: Collection): Date {

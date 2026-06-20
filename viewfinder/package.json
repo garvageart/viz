@@ -21,6 +21,7 @@
         "test": "pnpm run test:unit --run && pnpm run test:e2e",
         "test:e2e": "playwright test --reporter=list",
         "format": "prettier --write .",
+        "format:check": "prettier --check .",
         "gen:api": "oazapfts ../api/openapi/openapi.yaml src/lib/api/client.gen.ts --useEnumType"
     },
     "devDependencies": {
@@ -33,6 +34,7 @@
         "@sveltejs/kit": "^2.59.1",
         "@sveltejs/vite-plugin-svelte": "^5.1.1",
         "@testing-library/jest-dom": "^6.9.1",
+        "@trivago/prettier-plugin-sort-imports": "^6.0.2",
         "@types/lodash-es": "^4.17.12",
         "@types/luxon": "^3.7.1",
         "@types/node": "^24.12.4",

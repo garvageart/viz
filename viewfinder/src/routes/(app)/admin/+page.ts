@@ -1,4 +1,4 @@
-import { getCacheStatus, getWsStats, getDatabaseStats, getSystemStats, getSystemAbout } from "$lib/api";
+import { getCacheStatus, getDatabaseStats, getSystemAbout, getSystemStats, getWsStats } from "$lib/api";
 import type { PageLoad } from "./$types";
 
 export const load: PageLoad = async () => {

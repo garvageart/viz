@@ -1,5 +1,5 @@
-import * as manager from "./manager";
 import * as core from "./histogram";
+import * as manager from "./manager";
 import * as util from "./util";
 
 export enum HistogramChannel {

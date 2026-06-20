@@ -1,6 +1,6 @@
-import { describe, it, expect } from "vitest";
 import * as fs from "fs";
 import * as path from "path";
+import { describe, expect, it } from "vitest";
 
 describe("MaterialIcon Generation Validation", () => {
     it("should have a generated Svelte component for every icon used in the codebase", () => {

@@ -1,4 +1,4 @@
-import { test, expect } from "@playwright/test";
+import { expect, test } from "@playwright/test";
 import { cleanupTestCollections } from "./helpers";
 
 test.describe("Collection Add Photos Timeline & Disabled States", () => {

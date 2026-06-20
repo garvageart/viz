@@ -1,4 +1,4 @@
-import { test, expect } from "@playwright/test";
+import { expect, test } from "@playwright/test";
 
 test.describe("Advanced Search & Image Filtering", () => {
     test.beforeEach(async ({ page }) => {

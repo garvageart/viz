@@ -1,8 +1,8 @@
 import { goto } from "$app/navigation";
-import { sleep } from "$lib/utils/misc";
-import { cookieMethods } from "$lib/utils/cookie";
-import { defaults, getCurrentUser, getUserSettings, logout, type User } from "$lib/api";
+import { type User, defaults, getCurrentUser, getUserSettings, logout } from "$lib/api";
 import { user } from "$lib/states/index.svelte";
+import { cookieMethods } from "$lib/utils/cookie";
+import { sleep } from "$lib/utils/misc";
 
 interface OAuthResponseUserData {
     id?: string;

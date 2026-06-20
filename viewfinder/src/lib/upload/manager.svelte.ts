@@ -1,9 +1,9 @@
+import { ImageUploadStatus, checkDuplicates } from "$lib/api";
 import { upload } from "$lib/states/index.svelte";
-import type { SupportedImageTypes, SupportedRAWFiles } from "$lib/types/images";
-import { UploadImage, UploadState } from "./asset.svelte";
-import { checkDuplicates, ImageUploadStatus } from "$lib/api";
 import type { DirectoryInputElement } from "$lib/types/dom";
+import type { SupportedImageTypes, SupportedRAWFiles } from "$lib/types/images";
 import { calculateSHA1 } from "$lib/utils/crypto";
+import { UploadImage, UploadState } from "./asset.svelte";
 
 export interface ImageUploadFileData {
     file_name: string;

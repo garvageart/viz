@@ -1,14 +1,7 @@
-import type { ImageUploadFileData } from "$lib/upload/manager.svelte";
-import {
-    API_BASE_URL,
-    downloadImagesZipBlob,
-    getImageFile,
-    getImageFileBlob,
-    signDownload,
-    type ImageAsset
-} from "$lib/api";
-import { debugMode } from "$lib/states/index.svelte";
 import { error } from "@sveltejs/kit";
+import { API_BASE_URL, type ImageAsset, downloadImagesZipBlob, getImageFileBlob, signDownload } from "$lib/api";
+import { debugMode } from "$lib/states/index.svelte";
+import type { ImageUploadFileData } from "$lib/upload/manager.svelte";
 
 type ExtractSuccessData<R> = [Extract<R, { status: 200 }>] extends [never]
     ? R extends { data: infer D }

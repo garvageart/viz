@@ -1,7 +1,7 @@
-import type { PageLoad } from "./$types";
-import { listImages } from "$lib/api";
 import { error } from "@sveltejs/kit";
+import { listImages } from "$lib/api";
 import type { AssetSortBy } from "$lib/types/asset";
+import type { PageLoad } from "./$types";
 
 export const load: PageLoad = async ({ url }) => {
     const limit = parseInt(url.searchParams.get("limit") || "100", 10);

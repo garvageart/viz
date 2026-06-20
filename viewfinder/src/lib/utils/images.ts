@@ -1,7 +1,7 @@
-import { thumbHashToDataURL } from "thumbhash";
 import { DateTime, Duration } from "luxon";
-import { downloadImagesZipBlob, signDownload, type CollectionDetailResponse, type ImageAsset } from "../api";
-import { flashModes, LabelColours } from "$lib/images/constants";
+import { thumbHashToDataURL } from "thumbhash";
+import { type CollectionDetailResponse, type ImageAsset, downloadImagesZipBlob, signDownload } from "$lib/api";
+import { LabelColours, flashModes } from "$lib/images/constants";
 
 /**
  * Converts a date in EXIF format to a format that

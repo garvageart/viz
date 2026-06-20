@@ -1,6 +1,6 @@
-import { openDB, type IDBPDatabase } from "idb";
-import { type ImageAsset, type Collection } from "$lib/api";
+import { type IDBPDatabase } from "idb";
 import { DateTime } from "luxon";
+import { type Collection, type ImageAsset } from "$lib/api";
 import { initDB } from "$lib/db/client";
 import { getImageLabel } from "$lib/utils/images";
 

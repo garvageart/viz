@@ -1,4 +1,4 @@
-import { test, expect, type Page } from "@playwright/test";
+import { expect, test } from "@playwright/test";
 import * as fs from "fs";
 import * as path from "path";
 import { cleanupTestCollections, performDragAndDrop } from "./helpers";

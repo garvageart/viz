@@ -1,6 +1,6 @@
 import "@testing-library/jest-dom/vitest";
-import { vi } from "vitest";
 import { writable } from "svelte/store";
+import { vi } from "vitest";
 
 // Move SvelteKit virtual module mocks to the top to ensure they are loaded first
 vi.mock("$app/navigation", () => ({

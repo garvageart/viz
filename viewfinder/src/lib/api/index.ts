@@ -1,10 +1,11 @@
 // viz/src/lib/api/index.ts
-import * as generated from "./client.gen";
-import type * as Oazapfts from "@oazapfts/runtime"; // Import type for RequestOpts
+import type * as Oazapfts from "@oazapfts/runtime";
+// Import type for RequestOpts
 import * as QS from "@oazapfts/runtime/query";
-import { defaults, servers } from "./client.gen";
-import type { ImageUploadFileData } from "$lib/upload/manager.svelte";
 import { loadingState } from "$lib/states/loading.svelte";
+import type { ImageUploadFileData } from "$lib/upload/manager.svelte";
+import * as generated from "./client.gen";
+import { defaults, servers } from "./client.gen";
 
 // Initialize defaults for the underlying oazapfts runtime
 defaults.baseUrl = servers.productionApi;
@@ -94,8 +95,8 @@ const apiProxy: GeneratedApi = new Proxy(generated, {
 export const api = apiProxy;
 
 // Re-export other non-function exports like defaults, servers, and all types separately
-export { defaults, servers };
 export * from "./client.gen"; // This re-exports all types from the generated client.
+export { defaults, servers };
 
 // Exports from the old client.ts and custom functions ---
 export const API_BASE_URL = defaults.baseUrl; // Export the configured base URL

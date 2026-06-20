@@ -1,5 +1,5 @@
-import { getUserSettings } from "$lib/api";
 import { error } from "@sveltejs/kit";
+import { getUserSettings } from "$lib/api";
 import type { PageLoad } from "./$types";
 
 export const load: PageLoad = async ({ params }) => {

@@ -1,4 +1,4 @@
-import { test, expect, type Page, type Locator } from "@playwright/test";
+import { type Locator, type Page, expect, test } from "@playwright/test";
 import * as fs from "fs";
 import * as path from "path";
 import { performDragAndDrop } from "./helpers";

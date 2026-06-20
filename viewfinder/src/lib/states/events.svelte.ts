@@ -1,7 +1,7 @@
 import { WSClient } from "$lib/api/websocket";
-import { invalidateViz } from "$lib/views/views.svelte";
-import { debounce } from "$lib/utils/misc";
 import { performSearch } from "$lib/search/execute";
+import { debounce } from "$lib/utils/misc";
+import { invalidateViz } from "$lib/views/views.svelte";
 
 /**
  * Global application events handler via WebSocket.

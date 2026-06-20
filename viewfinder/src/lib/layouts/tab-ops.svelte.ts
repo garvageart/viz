@@ -1,9 +1,7 @@
-import { workspaceState } from "$lib/states/workspace.svelte";
-import { DragData } from "$lib/drag-drop/data";
 import { VizMimeTypes } from "$lib/constants";
+import { DragData } from "$lib/drag-drop/data";
+import { workspaceState } from "$lib/states/workspace.svelte";
 import { TabGroup } from "./model.svelte";
-import type VizView from "$lib/views/views.svelte";
-import tippy, { type Instance } from "tippy.js";
 
 export interface TabDragData {
     viewId: number;

@@ -1,8 +1,8 @@
-import { user, continuePath, system } from "$lib/states/index.svelte.js";
-import { redirect, error } from "@sveltejs/kit";
-import { initApi, getSystemStatus } from "$lib/api";
-import { fetchCurrentUser } from "$lib/auth/auth_methods";
 import { browser } from "$app/environment";
+import { error, redirect } from "@sveltejs/kit";
+import { getSystemStatus, initApi } from "$lib/api";
+import { fetchCurrentUser } from "$lib/auth/auth_methods";
+import { system, user } from "$lib/states/index.svelte.js";
 
 export const ssr = false;
 export const csr = true;

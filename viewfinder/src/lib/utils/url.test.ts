@@ -1,5 +1,5 @@
-import { describe, it, expect } from "vitest";
-import { parseGitWebUrl, getGitBranchUrl, getGitCommitUrl } from "./url";
+import { describe, expect, it } from "vitest";
+import { getGitBranchUrl, getGitCommitUrl, parseGitWebUrl } from "./url";
 
 describe("url utils", () => {
     describe("parseGitWebUrl", () => {

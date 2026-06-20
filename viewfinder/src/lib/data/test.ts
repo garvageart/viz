@@ -1,6 +1,6 @@
-import { type User, type ImageAsset, type Collection, Role } from "$lib/api";
-import { generateRandomString } from "$lib/utils/misc";
 import { faker } from "@faker-js/faker";
+import { type Collection, type ImageAsset, Role, type User } from "$lib/api";
+import { generateRandomString } from "$lib/utils/misc";
 
 /**
  * Creates a random test user for testing purposes.

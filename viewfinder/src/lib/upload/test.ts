@@ -1,5 +1,5 @@
-import { upload } from "$lib/states/index.svelte";
 import { onMount } from "svelte";
+import { upload } from "$lib/states/index.svelte";
 import { UploadImage, UploadState } from "./asset.svelte";
 
 export function setupDummyUploads() {

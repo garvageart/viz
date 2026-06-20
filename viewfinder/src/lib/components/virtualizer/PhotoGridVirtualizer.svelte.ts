@@ -1,8 +1,8 @@
 import { JustifiedLayout } from "@immich/justified-layout-wasm";
+import { DateTime } from "luxon";
 import type { ImageAsset } from "$lib/api";
 import type { ConsolidatedGroup, ImageWithDateLabel } from "$lib/photo-layout";
 import { getTakenAt } from "$lib/utils/images";
-import { DateTime } from "luxon";
 
 export type GridItem = {
     asset: ImageWithDateLabel;

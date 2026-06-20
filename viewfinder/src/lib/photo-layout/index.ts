@@ -1,7 +1,6 @@
-import type { ImageAsset } from "$lib/api";
-import { getTakenAt, compareByTakenAtDesc } from "$lib/utils/images";
 import { DateTime } from "luxon";
-import { SvelteMap } from "svelte/reactivity";
+import type { ImageAsset } from "$lib/api";
+import { getTakenAt } from "$lib/utils/images";
 
 export type ImageWithDateLabel = ImageAsset & {
     dateLabel?: string;

@@ -15,10 +15,9 @@
  *
  * This file will be removed in a future version.
  */
-
-import type { User } from "./users";
 import type { APIPagination } from "$lib/api/adapters";
 import type CollectionData from "$lib/entities/collection";
+import type { User } from "./users";
 
 export type SupportedImageTypes = "jpeg" | "jpg" | "png" | "tiff";
 export const SUPPORTED_IMAGE_TYPES: SupportedImageTypes[] = ["jpeg", "jpg", "png", "tiff"];

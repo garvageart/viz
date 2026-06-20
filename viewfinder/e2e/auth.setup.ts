@@ -1,4 +1,4 @@
-import { test as setup, expect, type Page } from "@playwright/test";
+import { type Page, expect, test as setup } from "@playwright/test";
 
 const authFile = "e2e/.auth/user.json";
 

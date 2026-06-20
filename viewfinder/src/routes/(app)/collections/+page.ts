@@ -1,6 +1,6 @@
-import type { PageLoad } from "./$types";
-import { listCollections } from "$lib/api";
 import { error } from "@sveltejs/kit";
+import { listCollections } from "$lib/api";
+import type { PageLoad } from "./$types";
 
 export const load: PageLoad = async () => {
     const response = await listCollections();

@@ -25,7 +25,7 @@ This directory contains:
 All API endpoints are available as simple, typed functions:
 
 ```typescript
-import { listCollections, createCollection, addCollectionImages } from "$lib/api";
+import { addCollectionImages, createCollection, listCollections } from "$lib/api";
 
 // List collections with pagination
 const response = await listCollections({ limit: 50, page: 0 });

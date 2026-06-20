@@ -1,5 +1,5 @@
-import { generateRandomString } from "$lib/utils/misc";
 import type { Component } from "svelte";
+import { generateRandomString } from "$lib/utils/misc";
 
 export interface ModalInstance<T extends Record<string, any> = Record<string, any>, R = any> {
     id: string;

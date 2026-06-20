@@ -1,15 +1,15 @@
 import {
+    Command,
+    type WorkerInfo,
+    type WorkerJob,
+    createJob,
+    getEventsSince,
     getJobStats,
     getJobsSnapshot,
     listAvailableWorkers,
-    createJob,
-    updateJobTypeConcurrency,
-    getEventsSince,
-    type WorkerJob,
-    type WorkerInfo,
-    Command
+    updateJobTypeConcurrency
 } from "$lib/api";
-import { createWSConnection, type WSClient } from "$lib/api/websocket";
+import { type WSClient, createWSConnection } from "$lib/api/websocket";
 import { toastState } from "$lib/toast-notifcations/notif-state.svelte";
 
 export type UiJob = WorkerJob & {

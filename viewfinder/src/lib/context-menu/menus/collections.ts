@@ -1,11 +1,11 @@
 import { goto } from "$app/navigation";
 import { type Collection, createCollection, deleteCollection, updateCollection } from "$lib/api";
+import ConfirmationModal from "$lib/components/modals/ConfirmationModal.svelte";
+import { modalsManager } from "$lib/components/modals/manager/ModalManager.svelte";
 import { toastState } from "$lib/toast-notifcations/notif-state.svelte";
 import { copyToClipboard } from "$lib/utils/misc";
 import { invalidateViz } from "$lib/views/views.svelte";
 import type { MenuItem } from "../types";
-import { modalsManager } from "$lib/components/modals/manager/ModalManager.svelte";
-import ConfirmationModal from "$lib/components/modals/ConfirmationModal.svelte";
 
 interface CollectionMenuOptions {
     onCollectionDuplicated?: (collection: Collection) => void;
