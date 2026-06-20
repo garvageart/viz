@@ -18,6 +18,13 @@ export interface ModalOptions {
     closeOnOverlayClick?: boolean;
 }
 
+const DEFAULT_MODAL_OPTIONS: ModalOptions = {
+    width: "50%",
+    height: "80%",
+    applyPadding: false,
+    closeOnOverlayClick: true
+};
+
 export class ModalsManager {
     modals = $state<ModalInstance<any, any>[]>([]);
     baseZIndex = 1000;
@@ -36,7 +43,7 @@ export class ModalsManager {
                 props,
                 resolve,
                 index: this.baseZIndex + this.modals.length * 10,
-                options
+                options: { ...DEFAULT_MODAL_OPTIONS, ...options }
             });
         });
 
