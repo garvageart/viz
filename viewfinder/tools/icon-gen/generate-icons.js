@@ -568,6 +568,29 @@ async function main() {
                 }
             }
         }
+        // 2D. Scan for typed variable declarations
+        // Match Record<..., MaterialSymbol> = { ... }
+        const reRecord = /Record\s*<\s*[^>]*?,\s*MaterialSymbol\s*>\s*=\s*\{([\s\S]*?)\}/g;
+        let mr;
+        while ((mr = reRecord.exec(text)) !== null) {
+            extractStringsFromExpr(mr[1]).forEach((v) => tryAddIcon(v, fileNames));
+        }
+
+        // Match MaterialSymbol[] or Array<MaterialSymbol> = [ ... ]
+        const reArray = /(?:MaterialSymbol\[\]|Array\s*<\s*MaterialSymbol\s*>)\s*=\s*\[([\s\S]*?)\]/g;
+        let ma;
+        while ((ma = reArray.exec(text)) !== null) {
+            extractStringsFromExpr(ma[1]).forEach((v) => tryAddIcon(v, fileNames));
+        }
+
+        // Match single variables: : MaterialSymbol = "icon_name"
+        const reSingle = /:\s*MaterialSymbol\s*=\s*(?:"([^"\\]+)"|'([^'\\]+)'|`([^`\\]+)`)/g;
+        let msi;
+        while ((msi = reSingle.exec(text)) !== null) {
+            const candidate = msi[1] ?? msi[2] ?? msi[3];
+            tryAddIcon(candidate, fileNames);
+        }
+
 
         if (fileNames.size === 0) {
             continue;
