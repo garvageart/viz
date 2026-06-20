@@ -17,6 +17,7 @@ go.work.sum
 migrations
 
 # Generated files
+viewfinder/static/themes/
 **/client.gen.ts
 **/types.gen.go
 **/generated.go
