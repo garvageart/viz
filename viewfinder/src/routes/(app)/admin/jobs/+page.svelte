@@ -1,5 +1,6 @@
 <script lang="ts">
     import AdminRouteShell from "$lib/components/admin/AdminRouteShell.svelte";
+    import Button from "$lib/components/ui/Button.svelte";
     import IconButton from "$lib/components/ui/IconButton.svelte";
     import MaterialIcon from "$lib/components/ui/MaterialIcon.svelte";
     import { jobsState } from "$lib/states/jobs.svelte";
@@ -412,26 +413,26 @@
                                     <div class="concurrency-row">
                                         <span class="concurrency-label">Concurrency</span>
                                         <div class="concurrency-input">
-                                            <button
+                                            <Button
                                                 class="step-btn"
                                                 onclick={() => {
                                                     jobsState.setWorkerConcurrency(
                                                         job.name,
                                                         Math.max(1, (jobsState.workers.concurrency[job.name] || 5) - 1)
                                                     );
-                                                }}>-</button
+                                                }}>-</Button
                                             >
                                             <span class="step-value"
                                                 >{jobsState.workers.concurrency[job.name] || 5}</span
                                             >
-                                            <button
+                                            <Button
                                                 class="step-btn"
                                                 onclick={() => {
                                                     jobsState.setWorkerConcurrency(
                                                         job.name,
                                                         Math.min(50, (jobsState.workers.concurrency[job.name] || 5) + 1)
                                                     );
-                                                }}>+</button
+                                                }}>+</Button
                                             >
                                         </div>
                                     </div>
@@ -1191,20 +1192,14 @@
                 overflow: hidden;
                 border: var(--viz-border-thin);
 
-                .step-btn {
+                :global(.step-btn) {
                     width: 1.5rem;
                     height: 1.5rem;
-                    border: none;
                     background: transparent;
-                    color: var(--viz-text-color);
-                    cursor: pointer;
-                    font-weight: bold;
-                    display: flex;
-                    align-items: center;
-                    justify-content: center;
-                    transition: background-color 0.15s ease;
+                    border-color: transparent;
 
                     &:hover {
+                        border: inherit;
                         background-color: var(--viz-70);
                     }
                 }
