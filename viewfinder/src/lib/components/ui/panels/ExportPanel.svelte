@@ -3,7 +3,7 @@
 
     export let modalOptions: ModalOptions = $state({
         height: "80%",
-        width: "40%",
+        width: "40%"
     });
 </script>
 

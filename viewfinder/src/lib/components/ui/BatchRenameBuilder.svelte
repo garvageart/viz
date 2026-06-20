@@ -58,7 +58,6 @@
         format?: RenameFormat;
     }
 
-
     let {
         settings = $bindable({
             namingMode: "original",
