@@ -13,6 +13,7 @@
     import { toSentenceCase } from "$lib/utils/strings";
     import Handlebars from "handlebars";
     import { DateTime } from "luxon";
+    import { buildDateTokens, cleanPathSegment, DEFAULT_TEMPLATE_EXAMPLE } from "$lib/ui-tools/template";
 
     interface Props {
         config: VizConfig;
@@ -73,52 +74,25 @@
 
     // Context Values
     let hasCollection = $state(true);
-    let filename = $state("PHOTO_2193.jpg");
-    let make = $state("Fujifilm");
-    let model = $state("X-S10");
-    let lensModel = $state("XF 35mm f/2.0");
-    let assetUid = $state("nIiGNClg0dx0MSC1gHgQa5ST");
+    let filename = $state(DEFAULT_TEMPLATE_EXAMPLE.filename);
+    let make = $state(DEFAULT_TEMPLATE_EXAMPLE.make);
+    let model = $state(DEFAULT_TEMPLATE_EXAMPLE.model);
+    let lensModel = $state(DEFAULT_TEMPLATE_EXAMPLE.lensModel);
+    let assetUid = $state(DEFAULT_TEMPLATE_EXAMPLE.assetUid);
 
-    const getExampleDate = () => DateTime.fromISO("2025-03-01T14:05:07.456Z", { locale: window.navigator.language });
-
-    function clean(val: string): string;
-    function clean(val: null | undefined): null;
-    function clean(val: string | null | undefined): string | null {
-        if (val === null || val === undefined) {
-            return null;
-        }
-
-        return val.replace(/[\/\\]/g, "_");
-    }
+    const getExampleDate = () =>
+        DateTime.fromISO(DEFAULT_TEMPLATE_EXAMPLE.exampleDateStr, { locale: window.navigator.language });
 
     let context = $derived({
-        y: getExampleDate().toFormat("y"),
-        yy: getExampleDate().toFormat("yy"),
-        M: getExampleDate().toFormat("M"),
-        MM: getExampleDate().toFormat("MM"),
-        MMM: getExampleDate().toFormat("MMM"),
-        MMMM: getExampleDate().toFormat("MMMM"),
-        d: getExampleDate().toFormat("d"),
-        dd: getExampleDate().toFormat("dd"),
-        h: getExampleDate().toFormat("h"),
-        hh: getExampleDate().toFormat("hh"),
-        H: getExampleDate().toFormat("H"),
-        HH: getExampleDate().toFormat("HH"),
-        m: getExampleDate().toFormat("m"),
-        mm: getExampleDate().toFormat("mm"),
-        s: getExampleDate().toFormat("s"),
-        ss: getExampleDate().toFormat("ss"),
-        SSS: getExampleDate().toFormat("SSS"),
-        W: getExampleDate().toFormat("W"),
-        WW: getExampleDate().toFormat("WW"),
+        ...buildDateTokens(getExampleDate()),
         seq: "001",
-        filename: clean(filename),
-        assetUid: clean(assetUid),
-        collection: hasCollection ? clean("Collection Name") : null,
+        filename: cleanPathSegment(filename),
+        assetUid: cleanPathSegment(assetUid),
+        collection: hasCollection ? cleanPathSegment("Collection Name") : null,
         "collection-startDate-y": hasCollection ? getExampleDate().toFormat("y") : null,
-        make: clean(make),
-        model: clean(model),
-        lensModel: clean(lensModel)
+        make: cleanPathSegment(make),
+        model: cleanPathSegment(model),
+        lensModel: cleanPathSegment(lensModel)
     });
 
     const storagePresets = [
