@@ -35,7 +35,7 @@ export function createImageMenu(
         {
             id: "act-toggle-favourite",
             label: allFavourited ? "Unfavourite" : "Favourite",
-            icon: allFavourited ? "favorite_border" : "favorite",
+            icon: allFavourited ? { iconName: "favorite", fill: false } : { iconName: "favorite", fill: true },
             disabled: selectionScope.size === 0,
             action: async () => {
                 const itemsToUpdate = selectionScope.selectedItems;

@@ -721,7 +721,7 @@ async function main() {
 <script lang="ts">
     const variants: Record<string, string> = ${variantsJson};
     const filledVariants: Record<string, string> = ${filledJson};
-    let { size = "1.5em", className = "", title = "${compName}", viewBox = "${finalViewBox}", weight = "400", fill = false, ...rest } = $props();
+    let { size = "1.5em", className = "", title = "${name}", viewBox = "${finalViewBox}", weight = "400", fill = false, ...rest } = $props();
     
     const activeMap = $derived(fill ? filledVariants : variants);
     const inner = $derived(activeMap[String(weight)] || activeMap["400"] || Object.values(activeMap)[0]);

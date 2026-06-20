@@ -48,7 +48,11 @@
         onclick={onClick}
     >
         {#if item.icon}
-            <MaterialIcon class="icon" iconName={item.icon} weight={300} />
+            {#if typeof item.icon === "string"}
+                <MaterialIcon class="icon" iconName={item.icon} weight={300} />
+            {:else}
+                <MaterialIcon class="icon" weight={300} {...item.icon} />
+            {/if}
         {/if}
         <span class="label">{item.label}</span>
         {#if item.shortcut}
@@ -75,7 +79,11 @@
                                     onclick={(e) => onChildClick(child, ci, e)}
                                 >
                                     {#if child.icon}
-                                        <MaterialIcon class="icon" iconName={child.icon} weight={300} />
+                                        {#if typeof child.icon === "string"}
+                                            <MaterialIcon class="icon" iconName={child.icon} weight={300} />
+                                        {:else}
+                                            <MaterialIcon class="icon" weight={300} {...child.icon} />
+                                        {/if}
                                     {/if}
                                     <span class="label">{child.label}</span>
                                     {#if child.shortcut}

@@ -1,3 +1,4 @@
+import type { IconProps } from "$lib/components/ui/MaterialIcon.svelte";
 import type { MaterialSymbol } from "$lib/types/MaterialSymbol";
 
 export type MenuItem = {
@@ -7,7 +8,7 @@ export type MenuItem = {
     disabled?: boolean;
     danger?: boolean;
     separator?: boolean;
-    icon?: MaterialSymbol; // optional icon name/class
+    icon?: MaterialSymbol | IconProps; // optional icon name/class or icon props
     shortcut?: string; // optional keyboard shortcut label
     children?: MenuItem[]; // optional submenu
 };
