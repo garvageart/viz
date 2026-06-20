@@ -10,7 +10,7 @@ import {
 } from "$lib/api";
 import DeleteModal from "$lib/components/modals/DeleteModal.svelte";
 import { modalsManager } from "$lib/components/modals/manager/ModalManager.svelte";
-import ExportPanel from "$lib/components/ui/panels/ExportPanel.svelte";
+import ExportPanel, { modalOptions as exportModalOptions } from "$lib/components/ui/panels/ExportPanel.svelte";
 import type { SelectionScope } from "$lib/states/selection.svelte";
 import { toastState } from "$lib/toast-notifcations/notif-state.svelte";
 import { invalidateViz } from "$lib/views/views.svelte";
@@ -71,11 +71,7 @@ export function createImageMenu(
             icon: "ios_share",
             disabled: selectionScope.size === 0,
             action: () => {
-                modalsManager.open(
-                    ExportPanel,
-                    { assets: items },
-                    { height: "80%", applyPadding: false, closeOnOverlayClick: true }
-                );
+                modalsManager.open(ExportPanel, { assets: items }, exportModalOptions);
             }
         },
         {
