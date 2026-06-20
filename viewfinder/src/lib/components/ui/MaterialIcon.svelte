@@ -36,7 +36,7 @@
         /** Fill the icon (1) or outline (0) */
         fill?: boolean;
         /** Font weight / stroke width (100-700). Defaults to `400`. */
-        weight?: number;
+        weight?: 100 | 200 | 300 | 400 | 500 | 600 | 700;
         /** Grade (-25, 0, 200) - affects thickness. Defaults to `0`. */
         grade?: -25 | 0 | 200;
         /** Optical size (20, 24, 40, 48). Defaults to `24`. */
