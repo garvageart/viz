@@ -59,12 +59,7 @@
             bind:value={description}
             spellcheck="false"
         />
-        <SliderToggle
-            id="collection-private"
-            style="margin-bottom: 1rem;"
-            label="Private"
-            bind:value={isPrivate}
-        />
+        <SliderToggle id="collection-private" style="margin-bottom: 1rem;" label="Private" bind:value={isPrivate} />
         <Button variant="small" style="margin-top: 1rem; width: 100%;">
             <input id="collection-submit" type="submit" value={buttonText} />
         </Button>

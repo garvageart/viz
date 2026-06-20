@@ -96,8 +96,7 @@ export function calculateCrop(
     }
 
     // Aspect Ratio
-    const effectiveAspectRatio =
-        aspectRatio ?? (shiftKey ? startCrop.width / startCrop.height : null);
+    const effectiveAspectRatio = aspectRatio ?? (shiftKey ? startCrop.width / startCrop.height : null);
 
     if (effectiveAspectRatio) {
         const widthDriven = isEast || isWest || (!isNorth && !isSouth);

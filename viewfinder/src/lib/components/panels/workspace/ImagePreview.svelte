@@ -13,9 +13,7 @@
     let isImage = $derived(!!activeItem?.image_paths);
 
     let selectionCount = $derived(activeScope?.size ?? 0);
-    let imageSrc = $derived(
-        activeItem?.image_paths?.preview ? getFullImagePath(activeItem.image_paths.preview) : null
-    );
+    let imageSrc = $derived(activeItem?.image_paths?.preview ? getFullImagePath(activeItem.image_paths.preview) : null);
 
     let showMenu = $state(false);
     let menuAnchor = $state<{ x: number; y: number } | HTMLElement | null>(null);
@@ -59,11 +57,7 @@
                 <span class="meta">
                     {activeItem.width}x{activeItem.height} • {activeItem.image_metadata?.file_type?.toUpperCase() ??
                         "IMG"}
-                    <ImageLabelViewer
-                        label={getImageLabel(activeItem)}
-                        variant="compact"
-                        enableSelection={false}
-                    />
+                    <ImageLabelViewer label={getImageLabel(activeItem)} variant="compact" enableSelection={false} />
                     {#if activeItem.favourited}
                         <MaterialIcon iconName="favorite" style="font-size: 0.8rem;" fill={true} />
                     {/if}
@@ -71,21 +65,13 @@
             </div>
         {:else if selectionCount > 0}
             <div class="placeholder">
-                <MaterialIcon
-                    iconName="photo_library"
-                    opticalSize={48}
-                    style="font-size: 4rem; opacity: 0.5;"
-                />
+                <MaterialIcon iconName="photo_library" opticalSize={48} style="font-size: 4rem; opacity: 0.5;" />
                 <span class="text">{selectionCount} items selected</span>
             </div>
         {/if}
     {:else}
         <div class="placeholder">
-            <MaterialIcon
-                iconName="image"
-                opticalSize={48}
-                style="font-size: 4rem; opacity: 0.5;"
-            />
+            <MaterialIcon iconName="image" opticalSize={48} style="font-size: 4rem; opacity: 0.5;" />
             <span class="text">No image(s) selected</span>
         </div>
     {/if}

@@ -10,10 +10,7 @@
     let { data }: Props = $props();
 </script>
 
-<AdminRouteShell
-    heading="Storage Settings"
-    description="Manage storage settings for your application."
->
+<AdminRouteShell heading="Storage Settings" description="Manage storage settings for your application.">
     <div class="storage-container">
         <StorageTemplate config={data}></StorageTemplate>
     </div>

@@ -10,10 +10,7 @@ class UserData {
     created_at: Date;
     updated_at: Date;
 
-    constructor(
-        data: Partial<UserData> &
-            Pick<UserData, "uid" | "name" | "email" | "created_at" | "updated_at">
-    ) {
+    constructor(data: Partial<UserData> & Pick<UserData, "uid" | "name" | "email" | "created_at" | "updated_at">) {
         this.uid = data.uid;
         this.first_name = data.first_name ?? "";
         this.last_name = data.last_name ?? "";

@@ -170,12 +170,7 @@
         stats = undefined;
     }
 
-    function drawGrid(
-        ctx: CanvasRenderingContext2D,
-        width: number,
-        height: number,
-        padding: number
-    ) {
+    function drawGrid(ctx: CanvasRenderingContext2D, width: number, height: number, padding: number) {
         const steps = 4;
         ctx.beginPath();
 
@@ -219,13 +214,7 @@
         const hist = lastHist;
 
         // choose max across channels for normalization
-        const maxVal = Math.max(
-            lastMax?.red ?? 1,
-            lastMax?.green ?? 1,
-            lastMax?.blue ?? 1,
-            lastMax?.luminance ?? 1,
-            1
-        );
+        const maxVal = Math.max(lastMax?.red ?? 1, lastMax?.green ?? 1, lastMax?.blue ?? 1, lastMax?.luminance ?? 1, 1);
 
         const sqrtMax = Math.sqrt(maxVal);
 
@@ -504,8 +493,7 @@
 
         <IconButton iconName="refresh" onclick={resetCanvas} title="Reset Histogram" />
     </div>
-    <canvas class="no-select" oncontextmenu={(e) => e.preventDefault()} bind:this={canvasEl}
-    ></canvas>
+    <canvas class="no-select" oncontextmenu={(e) => e.preventDefault()} bind:this={canvasEl}></canvas>
     {#snippet stat(label: string, value: string)}
         <div class="stat-row" title={value}>
             <strong>{label}:</strong>
@@ -514,10 +502,7 @@
     {/snippet}
 
     <div class="stats">
-        {@render stat(
-            "Range",
-            selectionBins ? `${selectionBins.start}–${selectionBins.end}` : `0–${BINS - 1}`
-        )}
+        {@render stat("Range", selectionBins ? `${selectionBins.start}–${selectionBins.end}` : `0–${BINS - 1}`)}
         {@render stat("Pixels", stats ? `${stats.count} (${stats.percent.toFixed(2)}%)` : "—")}
         {@render stat("Mean", stats ? stats.mean.toFixed(2) : "—")}
         {@render stat("Median", stats ? stats.median.toString() : "—")}

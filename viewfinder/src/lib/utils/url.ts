@@ -26,19 +26,19 @@ export function getURLParams(url: string): any {
 export function parseGitWebUrl(url: string | null | undefined): string {
     if (!url) return "";
     let cleanUrl = url;
-    
+
     // Handle ssh:// prefix
     if (cleanUrl.startsWith("ssh://")) {
         cleanUrl = cleanUrl.replace("ssh://", "");
     }
-    
+
     // Handle git@host:repo format
     if (cleanUrl.includes("@")) {
         cleanUrl = cleanUrl.split("@")[1];
         cleanUrl = cleanUrl.replace(":", "/");
         cleanUrl = "https://" + cleanUrl;
     }
-    
+
     if (cleanUrl.endsWith(".git")) {
         cleanUrl = cleanUrl.slice(0, -4);
     }
@@ -54,10 +54,10 @@ export function parseGitWebUrl(url: string | null | undefined): string {
 export function getGitBranchUrl(repoUrl: string | null | undefined, branch: string | null | undefined): string {
     if (!repoUrl || !branch) return "";
     const base = parseGitWebUrl(repoUrl);
-    
+
     if (base.includes("github.com")) return `${base}/tree/${branch}`;
     if (base.includes("gitlab.com")) return `${base}/-/tree/${branch}`;
-    
+
     return "";
 }
 
@@ -67,9 +67,9 @@ export function getGitBranchUrl(repoUrl: string | null | undefined, branch: stri
 export function getGitCommitUrl(repoUrl: string | null | undefined, commit: string | null | undefined): string {
     if (!repoUrl || !commit) return "";
     const base = parseGitWebUrl(repoUrl);
-    
+
     if (base.includes("github.com")) return `${base}/commit/${commit}`;
     if (base.includes("gitlab.com")) return `${base}/-/commit/${commit}`;
-    
+
     return "";
 }

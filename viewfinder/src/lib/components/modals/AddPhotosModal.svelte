@@ -1,11 +1,6 @@
 <script lang="ts">
     import { onDestroy, onMount } from "svelte";
-    import {
-        listImages,
-        listCollectionImageUiDs,
-        addCollectionImages,
-        type ImageAsset
-    } from "$lib/api";
+    import { listImages, listCollectionImageUiDs, addCollectionImages, type ImageAsset } from "$lib/api";
     import { selectionManager } from "$lib/states/selection.svelte";
     import { toastState } from "$lib/toast-notifcations/notif-state.svelte";
     import { invalidateViz } from "$lib/views/views.svelte";
@@ -136,9 +131,7 @@
     // Show all images in the timeline, but pass existingUids to disable already-added ones
     let filteredImages = $derived(galleryState.images);
 
-    let groups: DateGroup[] = $derived(
-        groupImagesByDate(filterManager.apply(filteredImages)) ?? []
-    );
+    let groups: DateGroup[] = $derived(groupImagesByDate(filterManager.apply(filteredImages)) ?? []);
 
     let consolidatedGroups: ConsolidatedGroup[] = $derived(getConsolidatedGroups(groups));
 

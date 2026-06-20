@@ -74,11 +74,7 @@
             aria-label={showPassword ? "Hide password" : "Show password"}
             tabindex="-1"
         >
-            <MaterialIcon
-                iconName={showPassword ? "visibility_off" : "visibility"}
-                size="1.1rem"
-                iconStyle="sharp"
-            />
+            <MaterialIcon iconName={showPassword ? "visibility_off" : "visibility"} size="1.1rem" iconStyle="sharp" />
         </button>
     </div>
     {#if description}

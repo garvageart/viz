@@ -32,8 +32,8 @@
         {/if}
     </p>
     <p class="delete-warning">
-        "Delete" moves the items to the Trash folder, allowing you to restore them later. "Delete
-        Permanently" deletes them forever and cannot be undone.
+        "Delete" moves the items to the Trash folder, allowing you to restore them later. "Delete Permanently" deletes
+        them forever and cannot be undone.
     </p>
 
     <div class="delete-actions">

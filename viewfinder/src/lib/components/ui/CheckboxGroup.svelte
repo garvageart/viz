@@ -30,8 +30,7 @@
             <Checkbox
                 label={option.label}
                 checked={value.includes(option.value)}
-                onchange={(e: Event) =>
-                    updateValue(option.value, (e.target as HTMLInputElement).checked)}
+                onchange={(e: Event) => updateValue(option.value, (e.target as HTMLInputElement).checked)}
             />
         </div>
     {/each}

@@ -11,14 +11,7 @@
         onchange?: (value: string) => void;
     }
 
-    let {
-        label,
-        value = $bindable(""),
-        type = "text",
-        description = "",
-        disabled = false,
-        onchange
-    }: Props = $props();
+    let { label, value = $bindable(""), type = "text", description = "", disabled = false, onchange }: Props = $props();
 
     function handleInput(event: Event) {
         const target = event.target as HTMLInputElement;

@@ -59,10 +59,7 @@ export class HistogramWrapper {
 
     constructor(source: HTMLImageElement | HTMLCanvasElement, luminanceWeights?: number[]) {
         // caller is responsible for ensuring image is loaded when necessary
-        this._hist = new PHHistogram(
-            source as HTMLImageElement | HTMLCanvasElement,
-            luminanceWeights
-        );
+        this._hist = new PHHistogram(source as HTMLImageElement | HTMLCanvasElement, luminanceWeights);
     }
 
     get data(): HistogramData {

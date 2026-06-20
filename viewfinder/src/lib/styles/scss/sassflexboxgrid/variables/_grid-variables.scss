@@ -37,15 +37,5 @@ $breakpoints-all: (
     $breakpoint-xl-up
 );
 $breakpoint-ups: ($breakpoint-sm-up, $breakpoint-md-up, $breakpoint-lg-up, $breakpoint-xl-up);
-$breakpoint-all-prefixes: (
-    "xs",
-    "xs-only",
-    "sm",
-    "sm-only",
-    "md",
-    "md-only",
-    "lg",
-    "lg-only",
-    "xl"
-);
+$breakpoint-all-prefixes: ("xs", "xs-only", "sm", "sm-only", "md", "md-only", "lg", "lg-only", "xl");
 $breakpoint-up-prefixes: ("xs", "sm", "md", "lg", "xl");

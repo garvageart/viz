@@ -15,9 +15,7 @@ try {
 } catch (err) {
     if (process.env.VIZ_CONFIG_PATH) {
         // Fail fast for unexpected Docker build context issues.
-        throw new Error(
-            `VIZ_CONFIG_PATH set to '${process.env.VIZ_CONFIG_PATH}' but file not found: ${err}`
-        );
+        throw new Error(`VIZ_CONFIG_PATH set to '${process.env.VIZ_CONFIG_PATH}' but file not found: ${err}`);
     }
 
     config = {
@@ -96,11 +94,7 @@ export default defineConfig({
                     name: "server",
                     environment: "node",
                     // keep server tests narrow to server-specific locations to avoid loading UI/component tests
-                    include: [
-                        "src/lib/server/**",
-                        "src/**/*.server.spec.{js,ts}",
-                        "src/**/*.server.test.{js,ts}"
-                    ],
+                    include: ["src/lib/server/**", "src/**/*.server.spec.{js,ts}", "src/**/*.server.test.{js,ts}"],
                     exclude: [
                         "src/tests/**",
                         "src/**/*.svelte.spec.{js,ts}",

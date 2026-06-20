@@ -10,13 +10,7 @@
         onchange?: (value: string) => void;
     }
 
-    let {
-        label,
-        value = $bindable("off"),
-        description = "",
-        disabled = false,
-        onchange
-    }: Props = $props();
+    let { label, value = $bindable("off"), description = "", disabled = false, onchange }: Props = $props();
 
     const toggleId = $derived(`toggle-${label.replace(/\s+/g, "-").toLowerCase()}`);
 

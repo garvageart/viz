@@ -39,24 +39,16 @@ export function getHTMLGridColumsAndRows(element: HTMLElement) {
         // get number of grid rows
         gridRowCount: gridComputedStyle.getPropertyValue("grid-template-rows").split(" ").length,
         // get number of grid columns
-        gridColumnCount: gridComputedStyle.getPropertyValue("grid-template-columns").split(" ")
-            .length,
+        gridColumnCount: gridComputedStyle.getPropertyValue("grid-template-columns").split(" ").length,
         // get grid row sizes
-        gridRowSizes: gridComputedStyle
-            .getPropertyValue("grid-template-rows")
-            .split(" ")
-            .map(parseFloat),
+        gridRowSizes: gridComputedStyle.getPropertyValue("grid-template-rows").split(" ").map(parseFloat),
         // get grid column sizes
-        gridColumnSizes: gridComputedStyle
-            .getPropertyValue("grid-template-columns")
-            .split(" ")
-            .map(parseFloat)
+        gridColumnSizes: gridComputedStyle.getPropertyValue("grid-template-columns").split(" ").map(parseFloat)
     };
 }
 
 export function buildGridArray(element: HTMLElement) {
-    const { gridRowCount, gridColumnCount, gridRowSizes, gridColumnSizes } =
-        getHTMLGridColumsAndRows(element);
+    const { gridRowCount, gridColumnCount, gridRowSizes, gridColumnSizes } = getHTMLGridColumsAndRows(element);
 
     return Array.from({ length: gridRowCount }, (_, i) =>
         Array.from({ length: gridColumnCount }, (_, j) => {

@@ -40,14 +40,7 @@
 </script>
 
 <div class="checkbox-wrapper" class:disabled {...props}>
-    <input
-        type="checkbox"
-        id={uniqueId}
-        bind:checked
-        {disabled}
-        {onchange}
-        onkeydown={handleKeydown}
-    />
+    <input type="checkbox" id={uniqueId} bind:checked {disabled} {onchange} onkeydown={handleKeydown} />
     <label for={uniqueId}>
         <span class="viz-checkbox" aria-hidden="true">
             <svg
@@ -114,9 +107,9 @@
         border-radius: var(--viz-border-radius-sm);
         background-color: var(--viz-95);
         color: transparent;
-        transition: 
-            background-color 0.12s ease, 
-            border-color 0.12s ease, 
+        transition:
+            background-color 0.12s ease,
+            border-color 0.12s ease,
             box-shadow 0.12s ease;
         flex-shrink: 0;
         cursor: pointer;
@@ -142,7 +135,9 @@
             border-color: var(--viz-primary);
             color: #ffffff;
             /* Inset highlight shadow for premium 3D feel */
-            box-shadow: inset 0 1px 1px rgba(255, 255, 255, 0.2), 0 1px 2px rgba(0, 0, 0, 0.1);
+            box-shadow:
+                inset 0 1px 1px rgba(255, 255, 255, 0.2),
+                0 1px 2px rgba(0, 0, 0, 0.1);
 
             polyline {
                 stroke-dashoffset: 0;
@@ -157,7 +152,9 @@
     /* Keyboard Focus Ring (focus-visible) */
     input[type="checkbox"]:focus-visible + label {
         .viz-checkbox {
-            box-shadow: 0 0 0 2px var(--viz-bg-color), 0 0 0 4px var(--viz-primary);
+            box-shadow:
+                0 0 0 2px var(--viz-bg-color),
+                0 0 0 4px var(--viz-primary);
             border-color: var(--viz-primary);
         }
     }

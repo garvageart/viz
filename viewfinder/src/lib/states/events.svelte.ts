@@ -41,10 +41,7 @@ class EventsState {
         this.client = new WSClient({
             onEvent: (event, data) => this.handleEvent(event, data),
             onError: () => {
-                console.debug(
-                    "[Events] onError callback, current connected state:",
-                    this.connected
-                );
+                console.debug("[Events] onError callback, current connected state:", this.connected);
                 if (this.connected) {
                     this.wasDisconnected = true;
                     console.debug("[Events] onError marked wasDisconnected = true");
@@ -61,10 +58,7 @@ class EventsState {
                 );
             },
             onClose: () => {
-                console.debug(
-                    "[Events] onClose callback, current connected state:",
-                    this.connected
-                );
+                console.debug("[Events] onClose callback, current connected state:", this.connected);
                 if (this.connected) {
                     this.wasDisconnected = true;
                     console.debug("[Events] onClose marked wasDisconnected = true");
@@ -105,10 +99,7 @@ class EventsState {
                 break;
 
             case "server-online":
-                console.debug(
-                    "[Events] Server came back online, wasDisconnected:",
-                    this.wasDisconnected
-                );
+                console.debug("[Events] Server came back online, wasDisconnected:", this.wasDisconnected);
                 if (this.wasDisconnected) {
                     console.debug("[Events] Reloading page after server came back online...");
                     if (typeof window !== "undefined") {

@@ -250,11 +250,9 @@
                                     <strong>You are the first user!</strong>
                                 </p>
                                 <p>
-                                    As the first user, you will be granted <strong
-                                        >Superadmin</strong
-                                    >
-                                    privileges. This gives you full control over the system, including
-                                    managing other users, system settings, and more.
+                                    As the first user, you will be granted <strong>Superadmin</strong>
+                                    privileges. This gives you full control over the system, including managing other users,
+                                    system settings, and more.
                                 </p>
                                 <p>Let's get your account set up.</p>
                             </div>
@@ -269,11 +267,7 @@
                     <form
                         onsubmit={(e) => {
                             e.preventDefault();
-                            if (
-                                superadminForm.name &&
-                                superadminForm.email &&
-                                superadminForm.password
-                            ) {
+                            if (superadminForm.name && superadminForm.email && superadminForm.password) {
                                 nextStep();
                             }
                         }}
@@ -283,17 +277,8 @@
                             <h2>Account Details</h2>
                             <p class="subtitle">Set your login credentials.</p>
                             <InputText label="Name" bind:value={superadminForm.name} required />
-                            <InputText
-                                label="Email"
-                                type="email"
-                                bind:value={superadminForm.email}
-                                required
-                            />
-                            <InputPassword
-                                label="Password"
-                                bind:value={superadminForm.password}
-                                required
-                            />
+                            <InputText label="Email" type="email" bind:value={superadminForm.email} required />
+                            <InputPassword label="Password" bind:value={superadminForm.password} required />
                             <InputPassword
                                 label="Confirm Password"
                                 bind:value={superadminForm.confirmPassword}
@@ -304,9 +289,8 @@
                             <Button type="button" onclick={prevStep}>Back</Button>
                             <Button
                                 type="submit"
-                                disabled={!superadminForm.name ||
-                                    !superadminForm.email ||
-                                    !superadminForm.password}>Next</Button
+                                disabled={!superadminForm.name || !superadminForm.email || !superadminForm.password}
+                                >Next</Button
                             >
                         </div>
                     </form>
@@ -353,10 +337,7 @@
                         <div class="step-content center-text">
                             <h1>Welcome, {user.data?.name || "Traveler"}!</h1>
                             <p>We're glad you're here.</p>
-                            <p>
-                                Before you dive in, we need to gather a few details to personalize
-                                your experience.
-                            </p>
+                            <p>Before you dive in, we need to gather a few details to personalize your experience.</p>
                         </div>
                         <div class="actions centered">
                             <Button type="submit">Let's Go</Button>
@@ -375,19 +356,12 @@
                         <div class="step-content">
                             <h2>Personal Details</h2>
                             <p class="subtitle">How should we address you?</p>
-                            <InputText
-                                label="First Name"
-                                bind:value={userForm.firstName}
-                                required
-                            />
+                            <InputText label="First Name" bind:value={userForm.firstName} required />
                             <InputText label="Last Name" bind:value={userForm.lastName} required />
                         </div>
                         <div class="actions">
                             <Button type="button" onclick={prevStep}>Back</Button>
-                            <Button
-                                type="submit"
-                                disabled={!userForm.firstName || !userForm.lastName}>Next</Button
-                            >
+                            <Button type="submit" disabled={!userForm.firstName || !userForm.lastName}>Next</Button>
                         </div>
                     </form>
 
@@ -417,18 +391,14 @@
                                     <div class="setting-item">
                                         {#if setting.value_type === "enum" && setting.allowed_values}
                                             <InputSelect
-                                                label={setting.name.trim()
-                                                    ? setting.name
-                                                    : formatLabel(setting.name)}
+                                                label={setting.name.trim() ? setting.name : formatLabel(setting.name)}
                                                 description={setting.description}
                                                 bind:value={userSettingsValues[setting.name]}
                                                 options={setting.allowed_values}
                                             />
                                         {:else if setting.value_type === "boolean"}
                                             <InputSelect
-                                                label={setting.name.trim()
-                                                    ? setting.name
-                                                    : formatLabel(setting.name)}
+                                                label={setting.name.trim() ? setting.name : formatLabel(setting.name)}
                                                 description={setting.description}
                                                 bind:value={userSettingsValues[setting.name]}
                                                 options={[
@@ -438,9 +408,7 @@
                                             />
                                         {:else}
                                             <InputText
-                                                label={setting.name.trim()
-                                                    ? setting.name
-                                                    : formatLabel(setting.name)}
+                                                label={setting.name.trim() ? setting.name : formatLabel(setting.name)}
                                                 description={setting.description}
                                                 bind:value={userSettingsValues[setting.name]}
                                             />

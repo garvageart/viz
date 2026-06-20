@@ -104,11 +104,7 @@ export class Ui {
     colors: ColorScheme;
     id: ElementIds;
 
-    constructor(
-        parent: HTMLElement,
-        source: HTMLCanvasElement | HTMLImageElement,
-        options?: UiOptions
-    ) {
+    constructor(parent: HTMLElement, source: HTMLCanvasElement | HTMLImageElement, options?: UiOptions) {
         const opts = options ?? {};
         const optColors = opts.colors ?? {};
 
@@ -165,10 +161,7 @@ export class Ui {
     }
 
     selectedChannel(): HistogramChannel {
-        return parseInt(
-            (document.getElementById(this.id.selectChannels) as HTMLSelectElement).value,
-            10
-        );
+        return parseInt((document.getElementById(this.id.selectChannels) as HTMLSelectElement).value, 10);
     }
 
     render(): void {
@@ -201,34 +194,18 @@ export class Ui {
             { class: "histogram-controls", id: this.id.containerControls },
             parent
         );
-        const containerChannels = util.createElement(
-            "div",
-            { class: "histogram-channels" },
-            container
-        );
-        const label = util.createElement(
-            "label",
-            { for: this.id.selectChannels },
-            containerChannels
-        );
+        const containerChannels = util.createElement("div", { class: "histogram-channels" }, container);
+        const label = util.createElement("label", { for: this.id.selectChannels }, containerChannels);
         label.innerHTML = "Channels:";
 
         const channels = util.EnumEx.getNamesAndValues(HistogramChannel);
-        const select = util.createElement(
-            "select",
-            { id: this.id.selectChannels },
-            containerChannels
-        );
+        const select = util.createElement("select", { id: this.id.selectChannels }, containerChannels);
         for (const { name, value } of channels) {
             const option = util.createElement("option", { value: value.toString() }, select);
             option.innerHTML = name;
         }
 
-        const containerButtons = util.createElement(
-            "div",
-            { class: "histogram-buttons" },
-            container
-        );
+        const containerButtons = util.createElement("div", { class: "histogram-buttons" }, container);
         const anchorStats = util.createElement(
             "a",
             {
@@ -259,11 +236,7 @@ export class Ui {
     }
 
     private createContainerStats(parent: Element): void {
-        const container = util.createElement(
-            "div",
-            { class: "histogram-stats", id: this.id.containerStats },
-            parent
-        );
+        const container = util.createElement("div", { class: "histogram-stats", id: this.id.containerStats }, parent);
         const innerContainer = util.createElement("div", undefined, container);
         const ul = util.createElement("ul", undefined, innerContainer);
 
@@ -343,18 +316,12 @@ export class Ui {
 
     private handleMouseDown(e: MouseEvent): void {
         const channel = this.selectedChannel();
-        const pt = util.clientXY2SvgPoint(
-            this.svgManager.element as SVGSVGElement,
-            e.clientX,
-            e.clientY
-        );
+        const pt = util.clientXY2SvgPoint(this.svgManager.element as SVGSVGElement, e.clientX, e.clientY);
         const bin = Math.min(255, Math.max(0, Math.round(pt.x)));
 
         const inputLevel = document.getElementById(this.id.inputLevel) as HTMLInputElement;
         const inputCount = document.getElementById(this.id.inputCount) as HTMLInputElement;
-        const inputPercentile = document.getElementById(
-            this.id.inputPercentile
-        ) as HTMLInputElement;
+        const inputPercentile = document.getElementById(this.id.inputPercentile) as HTMLInputElement;
 
         inputLevel.value = `${bin}..${bin}`;
 
@@ -369,11 +336,7 @@ export class Ui {
             return;
         }
 
-        const pt = util.clientXY2SvgPoint(
-            this.svgManager.element as SVGSVGElement,
-            e.clientX,
-            e.clientY
-        );
+        const pt = util.clientXY2SvgPoint(this.svgManager.element as SVGSVGElement, e.clientX, e.clientY);
         const x1 = this.prevMouseDownPoint.x;
         const x2 = pt.x;
         const x = Math.min(x1, x2);
@@ -393,9 +356,7 @@ export class Ui {
 
         const inputLevel = document.getElementById(this.id.inputLevel) as HTMLInputElement;
         const inputCount = document.getElementById(this.id.inputCount) as HTMLInputElement;
-        const inputPercentile = document.getElementById(
-            this.id.inputPercentile
-        ) as HTMLInputElement;
+        const inputPercentile = document.getElementById(this.id.inputPercentile) as HTMLInputElement;
 
         inputCount.value = count.toString(10);
         inputPercentile.value = percent.toFixed(2);
@@ -438,10 +399,7 @@ export class Ui {
         }
     }
 
-    private getChannelValue(
-        channel: HistogramChannel,
-        bin: number
-    ): { count: number; percent: number } {
+    private getChannelValue(channel: HistogramChannel, bin: number): { count: number; percent: number } {
         const { hist, count: total } = this.getChannelData(channel);
         const count = hist[bin];
         const percent = (100.0 * count) / total;
@@ -551,9 +509,7 @@ export class Ui {
         const offRight = this.viewBoxWidth + 10;
 
         // increase max so largest is 10% from the top of hist
-        const max =
-            Math.max(this.histogram.max.red, this.histogram.max.green, this.histogram.max.blue) *
-            1.1;
+        const max = Math.max(this.histogram.max.red, this.histogram.max.green, this.histogram.max.blue) * 1.1;
 
         const builders = {
             red: new manager.SvgPathBuilder(this.svgManager).moveTo(0, this.viewBoxHeight),
@@ -593,15 +549,7 @@ export class Ui {
             ]);
 
             // For each position, plot or skip based on the channel's rank
-            const positions = [
-                "red",
-                "green",
-                "blue",
-                "redGreen",
-                "redBlue",
-                "greenBlue",
-                "redGreenBlue"
-            ] as const;
+            const positions = ["red", "green", "blue", "redGreen", "redBlue", "greenBlue", "redGreenBlue"] as const;
             const channelRanks = [indices.r, indices.g, indices.b];
 
             for (let pos = 0; pos < positions.length; pos++) {
@@ -620,9 +568,7 @@ export class Ui {
                     if (channelRanks[0] !== 2 && channelRanks[1] !== 2) {
                         builder.lineTo(
                             i,
-                            channelRanks[0] > channelRanks[1]
-                                ? this.viewBoxHeight - r
-                                : this.viewBoxHeight - g
+                            channelRanks[0] > channelRanks[1] ? this.viewBoxHeight - r : this.viewBoxHeight - g
                         );
                     } else {
                         builder.lineTo(i, offBottom);
@@ -632,9 +578,7 @@ export class Ui {
                     if (channelRanks[0] !== 2 && channelRanks[2] !== 2) {
                         builder.lineTo(
                             i,
-                            channelRanks[0] > channelRanks[2]
-                                ? this.viewBoxHeight - r
-                                : this.viewBoxHeight - b
+                            channelRanks[0] > channelRanks[2] ? this.viewBoxHeight - r : this.viewBoxHeight - b
                         );
                     } else {
                         builder.lineTo(i, offBottom);
@@ -644,9 +588,7 @@ export class Ui {
                     if (channelRanks[1] !== 2 && channelRanks[2] !== 2) {
                         builder.lineTo(
                             i,
-                            channelRanks[1] > channelRanks[2]
-                                ? this.viewBoxHeight - g
-                                : this.viewBoxHeight - b
+                            channelRanks[1] > channelRanks[2] ? this.viewBoxHeight - g : this.viewBoxHeight - b
                         );
                     } else {
                         builder.lineTo(i, offBottom);

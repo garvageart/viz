@@ -11,14 +11,7 @@
         onchange?: (value: string) => void;
     }
 
-    let {
-        label,
-        value = $bindable(""),
-        options = [],
-        description = "",
-        disabled = false,
-        onchange
-    }: Props = $props();
+    let { label, value = $bindable(""), options = [], description = "", disabled = false, onchange }: Props = $props();
 
     // Case-insensitive match logic
     const selectedValue = $derived.by(() => {

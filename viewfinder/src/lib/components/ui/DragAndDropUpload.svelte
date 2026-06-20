@@ -5,16 +5,9 @@
     import { DragData } from "$lib/drag-drop/data";
     import { SelectionScope } from "$lib/states/selection.svelte";
     import { toastState } from "$lib/toast-notifcations/notif-state.svelte";
-    import {
-        SUPPORTED_IMAGE_TYPES,
-        SUPPORTED_RAW_FILES,
-        type SupportedImageTypes
-    } from "$lib/types/images";
+    import { SUPPORTED_IMAGE_TYPES, SUPPORTED_RAW_FILES, type SupportedImageTypes } from "$lib/types/images";
     import { UploadState } from "$lib/upload/asset.svelte";
-    import UploadManager, {
-        waitForUploadCompletion,
-        type ImageUploadSuccess
-    } from "$lib/upload/manager.svelte";
+    import UploadManager, { waitForUploadCompletion, type ImageUploadSuccess } from "$lib/upload/manager.svelte";
     import { traverseFileTree } from "$lib/utils/files";
     import { invalidateViz } from "$lib/views/views.svelte";
     import { fade } from "svelte/transition";
@@ -59,10 +52,7 @@
     let addBoxHover = $state(false);
 
     async function processUploads(files: File[]) {
-        const manager = new UploadManager([
-            ...SUPPORTED_RAW_FILES,
-            ...SUPPORTED_IMAGE_TYPES
-        ] as SupportedImageTypes[]);
+        const manager = new UploadManager([...SUPPORTED_RAW_FILES, ...SUPPORTED_IMAGE_TYPES] as SupportedImageTypes[]);
         const tasks = manager.addFiles(files);
 
         toastState.addToast({
@@ -194,8 +184,7 @@
             }
 
             uploadCandidates = validFiles;
-            suggestedCollectionName =
-                detectedFolderName || `New Collection ${new Date().toLocaleDateString()}`;
+            suggestedCollectionName = detectedFolderName || `New Collection ${new Date().toLocaleDateString()}`;
 
             if (bypassConfirmation) {
                 await processUploads(validFiles);
@@ -227,8 +216,7 @@
         return (e: DragEvent) => {
             if (
                 e.dataTransfer?.types &&
-                (e.dataTransfer.types.includes("Files") ||
-                    e.dataTransfer.types.includes(VizMimeTypes.IMAGE_UIDS))
+                (e.dataTransfer.types.includes("Files") || e.dataTransfer.types.includes(VizMimeTypes.IMAGE_UIDS))
             ) {
                 return handler(e);
             }
@@ -249,10 +237,7 @@
         e.preventDefault();
         dragCounter++;
         if (dragCounter === 1) {
-            if (
-                internalDragActive ||
-                (e.dataTransfer && DragData.isType(e.dataTransfer, VizMimeTypes.IMAGE_UIDS))
-            ) {
+            if (internalDragActive || (e.dataTransfer && DragData.isType(e.dataTransfer, VizMimeTypes.IMAGE_UIDS))) {
                 isInternalDrag = true;
             } else {
                 isInternalDrag = false;
@@ -681,10 +666,7 @@
 {#if isDragging && !isInternalDrag}
     <div class="drop-overlay" transition:fade={{ duration: 150 }}>
         <div class="drop-overlay-content">
-            <MaterialIcon
-                iconName="upload"
-                style="font-size: 4rem; margin-bottom: 1rem; color: var(--viz-10-dark);"
-            />
+            <MaterialIcon iconName="upload" style="font-size: 4rem; margin-bottom: 1rem; color: var(--viz-10-dark);" />
             <p style="font-size: 1.5rem; font-weight: 600;">Drop files to upload</p>
             <p style="font-size: 1rem; opacity: 0.8;">Supports images and folders</p>
 

@@ -36,9 +36,7 @@ test.describe("Workspace Layout & Persistence", () => {
 
     test("should persist open collection tabs after page reload", async ({ page }) => {
         // 1. Find the "Collections" tab and click it
-        const collectionsTab = page
-            .locator('button[role="tab"]')
-            .filter({ hasText: "Collections" });
+        const collectionsTab = page.locator('button[role="tab"]').filter({ hasText: "Collections" });
         await expect(collectionsTab).toBeVisible();
         await collectionsTab.click();
 
@@ -80,9 +78,7 @@ test.describe("Workspace Layout & Persistence", () => {
         await expect(persistedTab.first()).toBeVisible({ timeout: 15000 });
 
         // 7. Verify the content of the tab is loaded
-        await expect(page.locator(".tab-group-content").first()).not.toContainText(
-            "No active view"
-        );
+        await expect(page.locator(".tab-group-content").first()).not.toContainText("No active view");
     });
 
     test("should persist tab group splits after page reload", async ({ page }) => {
@@ -119,9 +115,7 @@ test.describe("Workspace Layout & Persistence", () => {
 
         // 6. Verify the split persisted
         await expect(page.locator(".splitpanes__splitter").first()).toBeVisible({ timeout: 15000 });
-        await expect(
-            page.locator('button[role="tab"]').filter({ hasText: trimmedName }).first()
-        ).toBeVisible();
+        await expect(page.locator('button[role="tab"]').filter({ hasText: trimmedName }).first()).toBeVisible();
     });
 
     test("should handle closing tabs and persist the change", async ({ page }) => {
@@ -159,9 +153,7 @@ test.describe("Workspace Layout & Persistence", () => {
         await page.waitForLoadState("networkidle");
 
         // 5. Verify it's still gone
-        await expect(
-            page.locator('button[role="tab"]').filter({ hasText: trimmedName })
-        ).not.toBeVisible();
+        await expect(page.locator('button[role="tab"]').filter({ hasText: trimmedName })).not.toBeVisible();
     });
 
     test("should persist vertical splits after page reload", async ({ page }) => {
@@ -200,9 +192,9 @@ test.describe("Workspace Layout & Persistence", () => {
         // Verify the split persisted
         await expect(page.locator(".viz-workspace")).toBeVisible({ timeout: 15000 });
         await expect(page.locator(".splitpanes__splitter").first()).toBeVisible({ timeout: 15000 });
-        await expect(
-            page.locator('button[role="tab"]').filter({ hasText: trimmedName }).first()
-        ).toBeVisible({ timeout: 15000 });
+        await expect(page.locator('button[role="tab"]').filter({ hasText: trimmedName }).first()).toBeVisible({
+            timeout: 15000
+        });
     });
 
     test("should maximize active tab group via hotkey and toggle back", async ({ page }) => {
@@ -249,14 +241,14 @@ test.describe("Workspace Layout & Persistence", () => {
         await expect(page.locator(".viz-workspace")).toBeVisible({ timeout: 15000 });
 
         // Default layout should contain Clock, Filter, and Collections tabs
-        await expect(
-            page.locator('button[role="tab"]').filter({ hasText: "Clock" }).first()
-        ).toBeVisible({ timeout: 10000 });
-        await expect(
-            page.locator('button[role="tab"]').filter({ hasText: "Filter" }).first()
-        ).toBeVisible({ timeout: 10000 });
-        await expect(
-            page.locator('button[role="tab"]').filter({ hasText: "Collections" }).first()
-        ).toBeVisible({ timeout: 10000 });
+        await expect(page.locator('button[role="tab"]').filter({ hasText: "Clock" }).first()).toBeVisible({
+            timeout: 10000
+        });
+        await expect(page.locator('button[role="tab"]').filter({ hasText: "Filter" }).first()).toBeVisible({
+            timeout: 10000
+        });
+        await expect(page.locator('button[role="tab"]').filter({ hasText: "Collections" }).first()).toBeVisible({
+            timeout: 10000
+        });
     });
 });

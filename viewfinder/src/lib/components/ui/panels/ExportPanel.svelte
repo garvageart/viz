@@ -136,12 +136,7 @@
                     {#if namingMode.includes("custom")}
                         <div class="control-group">
                             <label for="custom-name">Custom Text:</label>
-                            <input
-                                id="custom-name"
-                                type="text"
-                                bind:value={customName}
-                                placeholder="Untitled"
-                            />
+                            <input id="custom-name" type="text" bind:value={customName} placeholder="Untitled" />
                         </div>
                     {/if}
                 </div>
@@ -214,9 +209,7 @@
                             {/if}
                             {#if ["height", "dimensions"].includes(resizeMode)}
                                 <div class="control-group">
-                                    <label for="resize-h"
-                                        >{resizeMode === "height" ? "Height" : "H"}:</label
-                                    >
+                                    <label for="resize-h">{resizeMode === "height" ? "Height" : "H"}:</label>
                                     <input id="resize-h" type="number" bind:value={resizeHeight} />
                                 </div>
                             {/if}

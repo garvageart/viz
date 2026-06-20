@@ -20,14 +20,8 @@
     {#if takenAt}
         <div class="tooltip-row">
             <MaterialIcon iconName="calendar_clock" grade={-25} weight={300} size="1rem" />
-            <span class="tooltip-value"
-                >{DateTime.fromJSDate(takenAt).toFormat("dd LLL yyyy • HH:mm")}</span
-            >
-            <ImageLabelViewer
-                label={getImageLabel(asset)}
-                variant="compact"
-                enableSelection={false}
-            />
+            <span class="tooltip-value">{DateTime.fromJSDate(takenAt).toFormat("dd LLL yyyy • HH:mm")}</span>
+            <ImageLabelViewer label={getImageLabel(asset)} variant="compact" enableSelection={false} />
         </div>
     {/if}
     <div class="tooltip-row">

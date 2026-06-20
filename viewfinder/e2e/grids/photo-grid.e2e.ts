@@ -108,16 +108,12 @@ test.describe("PhotoAssetGrid Functionality", () => {
 
             // Navigation within lightbox (if multiple photos)
             if (count > 1) {
-                const firstImageId = await lightbox
-                    .locator(".lightbox-image.main")
-                    .getAttribute("data-image-id");
+                const firstImageId = await lightbox.locator(".lightbox-image.main").getAttribute("data-image-id");
                 await page.keyboard.press("ArrowRight");
 
                 // Wait for image ID to change
                 await expect(async () => {
-                    const nextImageId = await lightbox
-                        .locator(".lightbox-image.main")
-                        .getAttribute("data-image-id");
+                    const nextImageId = await lightbox.locator(".lightbox-image.main").getAttribute("data-image-id");
                     expect(nextImageId).not.toBe(firstImageId);
                 }).toPass();
             }
@@ -301,9 +297,7 @@ test.describe("PhotoAssetGrid Functionality", () => {
         const contextMenu = page.locator(".context-menu");
         await expect(contextMenu).toBeVisible();
 
-        const favButton = contextMenu.locator(
-            'button:has-text("Favourite"), button:has-text("Unfavourite")'
-        );
+        const favButton = contextMenu.locator('button:has-text("Favourite"), button:has-text("Unfavourite")');
         await expect(favButton).toBeVisible();
 
         await favButton.click();
@@ -351,9 +345,7 @@ test.describe("PhotoAssetGrid Functionality", () => {
         expect(Math.abs(currentScroll - initialScroll)).toBeLessThan(2);
     });
 
-    test("should support zooming in the lightbox using mouse wheel and trackpad pinch", async ({
-        page
-    }) => {
+    test("should support zooming in the lightbox using mouse wheel and trackpad pinch", async ({ page }) => {
         const photos = page.locator(".asset-photo");
         await expect(async () => {
             const count = await photos.count();

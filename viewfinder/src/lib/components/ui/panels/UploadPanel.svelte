@@ -217,16 +217,13 @@
                             <div class="panel-file">
                                 <span class="viz-upload-file-name">{file.data.file_name}</span>
                             </div>
-                            <span class="viz-upload-progress-text"
-                                >{Math.round(file.progress)}%</span
-                            >
+                            <span class="viz-upload-progress-text">{Math.round(file.progress)}%</span>
                         </div>
                         <div class="panel-file-info-progress-container">
                             <span
                                 class="panel-file-info-progress"
                                 class:complete={file.state === UploadState.DONE}
-                                class:error={file.state === UploadState.ERROR ||
-                                    file.state === UploadState.CANCELED}
+                                class:error={file.state === UploadState.ERROR || file.state === UploadState.CANCELED}
                                 class:duplicate={file.state === UploadState.DUPLICATE}
                                 style="width: {file.progress}%;"
                             >
@@ -424,14 +421,26 @@
     }
 
     .panel-file-info-progress.complete {
-        background: linear-gradient(90deg, var(--viz-success-color), color-mix(in srgb, var(--viz-success-color) 60%, var(--viz-40)));
+        background: linear-gradient(
+            90deg,
+            var(--viz-success-color),
+            color-mix(in srgb, var(--viz-success-color) 60%, var(--viz-40))
+        );
     }
 
     .panel-file-info-progress.error {
-        background: linear-gradient(90deg, var(--viz-error-color), color-mix(in srgb, var(--viz-error-color) 60%, var(--viz-40)));
+        background: linear-gradient(
+            90deg,
+            var(--viz-error-color),
+            color-mix(in srgb, var(--viz-error-color) 60%, var(--viz-40))
+        );
     }
 
     .panel-file-info-progress.duplicate {
-        background: linear-gradient(90deg, var(--viz-warning-color), color-mix(in srgb, var(--viz-warning-color) 60%, var(--viz-40)));
+        background: linear-gradient(
+            90deg,
+            var(--viz-warning-color),
+            color-mix(in srgb, var(--viz-warning-color) 60%, var(--viz-40))
+        );
     }
 </style>

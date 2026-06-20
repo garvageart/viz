@@ -5,20 +5,10 @@
     import { setRating } from "$lib/images/exif";
     import { toastState } from "$lib/toast-notifcations/notif-state.svelte";
     import { downloadOriginalImageFile } from "$lib/utils/http";
-    import {
-        formatBytes,
-        getFlashMode,
-        getImageLabel,
-        getTakenAt,
-        getThumbhashURL
-    } from "$lib/utils/images";
+    import { formatBytes, getFlashMode, getImageLabel, getTakenAt, getThumbhashURL } from "$lib/utils/images";
     import hotkeys from "hotkeys-js";
     import { onMount, untrack } from "svelte";
-    import type {
-        MouseEventHandler,
-        PointerEventHandler,
-        WheelEventHandler
-    } from "svelte/elements";
+    import type { MouseEventHandler, PointerEventHandler, WheelEventHandler } from "svelte/elements";
     import CropOverlay from "../image-tools/CropOverlay.svelte";
     import CropTools from "../image-tools/CropTools.svelte";
     import ImageLabelViewer from "../image-tools/ImageLabelViewer.svelte";
@@ -37,20 +27,11 @@
         onImageUpdated?: (image: ImageAsset) => void;
     }
 
-    let {
-        lightboxImage = $bindable(),
-        prevLightboxImage,
-        nextLightboxImage,
-        onImageUpdated
-    }: Props = $props();
+    let { lightboxImage = $bindable(), prevLightboxImage, nextLightboxImage, onImageUpdated }: Props = $props();
 
     let show = $derived(lightboxImage !== undefined);
     let imageToLoad = $derived(
-        lightboxImage
-            ? getFullImagePath(
-                  lightboxImage.image_paths?.preview || lightboxImage.image_paths?.original
-              )
-            : ""
+        lightboxImage ? getFullImagePath(lightboxImage.image_paths?.preview || lightboxImage.image_paths?.original) : ""
     );
 
     // Element Bindings
@@ -112,9 +93,7 @@
     let cropMenuPosition = $state<{ x: number; y: number } | null>(null);
 
     // Store crop edits (original/natural coordinates) to restore them when re-entering crop mode
-    let cropEdits = $state<Record<string, { x: number; y: number; width: number; height: number }>>(
-        {}
-    );
+    let cropEdits = $state<Record<string, { x: number; y: number; width: number; height: number }>>({});
 
     let overriddenImages = $state<Record<string, string>>({});
 
@@ -181,8 +160,7 @@
             const containerLongestEdge = Math.max(containerWidth, containerHeight);
 
             // Snap the zoom factor to discrete steps to prevent intermediate spammed requests during pinch/scroll
-            const snappedZoom =
-                currentZoom > 10.0 ? 16.0 : currentZoom > 5.0 ? 8.0 : currentZoom > 2.5 ? 4.0 : 2.0;
+            const snappedZoom = currentZoom > 10.0 ? 16.0 : currentZoom > 5.0 ? 8.0 : currentZoom > 2.5 ? 4.0 : 2.0;
 
             const targetSize = Math.round(containerLongestEdge * snappedZoom);
 
@@ -362,11 +340,7 @@
                     const oldWidth = imageDimensions.width;
                     const oldHeight = imageDimensions.height;
 
-                    if (
-                        oldWidth > 0 &&
-                        oldHeight > 0 &&
-                        (oldWidth !== newWidth || oldHeight !== newHeight)
-                    ) {
+                    if (oldWidth > 0 && oldHeight > 0 && (oldWidth !== newWidth || oldHeight !== newHeight)) {
                         const scaleX = newWidth / oldWidth;
                         const scaleY = newHeight / oldHeight;
 
@@ -846,10 +820,7 @@
                             {#if lightboxImage?.exif?.model && lightboxImage?.exif?.make}
                                 <div class="value-big">
                                     {lightboxImage.exif.make}
-                                    {lightboxImage.exif.model.replace(
-                                        new RegExp(`^${lightboxImage.exif.make} `),
-                                        ""
-                                    )}
+                                    {lightboxImage.exif.model.replace(new RegExp(`^${lightboxImage.exif.make} `), "")}
                                 </div>
                             {:else}
                                 <div class="value-big">Unknown Camera</div>
@@ -879,9 +850,7 @@
                             <MaterialIcon iconName="camera" class="exif-material-icon" />
                             <div class="card-values">
                                 <div class="value-sub">
-                                    {lightboxImage?.exif?.f_number ??
-                                        lightboxImage?.exif?.aperture ??
-                                        "—"}
+                                    {lightboxImage?.exif?.f_number ?? lightboxImage?.exif?.aperture ?? "—"}
                                 </div>
                                 <div class="value-sub">
                                     {lightboxImage?.exif?.exposure_time ?? "—"}
@@ -926,9 +895,7 @@
                             <MaterialIcon iconName="aspect_ratio" class="exif-material-icon" />
                             <div class="card-values">
                                 <div class="value-sub">
-                                    {Math.floor(
-                                        (lightboxImage?.width! * lightboxImage?.height!) / 1_000_000
-                                    )} MP
+                                    {Math.floor((lightboxImage?.width! * lightboxImage?.height!) / 1_000_000)} MP
                                 </div>
                                 <div class="value-sub">{formatFileSize()}</div>
                             </div>
@@ -953,9 +920,7 @@
                             return;
                         }
 
-                        const entry = Object.entries(LabelColours).find(
-                            ([_, colour]) => colour === selectedLabel
-                        );
+                        const entry = Object.entries(LabelColours).find(([_, colour]) => colour === selectedLabel);
                         const labelToSend = entry ? (entry[0] as ImageLabel) : null;
                         try {
                             const res = await updateImage(lightboxImage.uid, {
@@ -1098,11 +1063,7 @@
                         e.stopPropagation();
                         return;
                     }
-                    if (
-                        e.target === imageContainerEl &&
-                        !isCropping &&
-                        zoomState.currentZoom === 1
-                    ) {
+                    if (e.target === imageContainerEl && !isCropping && zoomState.currentZoom === 1) {
                         lightboxImage = undefined;
                     }
                 }}
@@ -1138,9 +1099,7 @@
 
                             <span class="debug-label">Current Zoom:</span>
                             <span class="debug-val">
-                                {zoomState.currentZoom.toFixed(4)}x ({Math.round(
-                                    zoomState.currentZoom * 100
-                                )}%)
+                                {zoomState.currentZoom.toFixed(4)}x ({Math.round(zoomState.currentZoom * 100)}%)
                             </span>
 
                             <span class="debug-label">Coords:</span>
@@ -1153,18 +1112,14 @@
                             <span class="debug-label">Display URL:</span>
                             <span class="debug-val url" title={loader.displayURL}>
                                 {loader.displayURL
-                                    ? loader.displayURL.substring(
-                                          loader.displayURL.lastIndexOf("/") + 1
-                                      )
+                                    ? loader.displayURL.substring(loader.displayURL.lastIndexOf("/") + 1)
                                     : "none"}
                             </span>
 
                             <span class="debug-label">Zoomed URL:</span>
                             <span class="debug-val url" title={loader.zoomedImageURL}>
                                 {loader.zoomedImageURL
-                                    ? loader.zoomedImageURL.substring(
-                                          loader.zoomedImageURL.lastIndexOf("/") + 1
-                                      )
+                                    ? loader.zoomedImageURL.substring(loader.zoomedImageURL.lastIndexOf("/") + 1)
                                     : "none"}
                             </span>
 
@@ -1177,8 +1132,7 @@
                             <span
                                 class="debug-val"
                                 class:loaded-state={loader.fetchEndTime !== null}
-                                class:loading-state={loader.fetchStartTime !== null &&
-                                    loader.fetchEndTime === null}
+                                class:loading-state={loader.fetchStartTime !== null && loader.fetchEndTime === null}
                             >
                                 {loader.fetchEndTime !== null
                                     ? `Completed (${loader.fetchDuration}ms)`
@@ -1190,9 +1144,7 @@
                             <span class="debug-label">Fetch URL:</span>
                             <span class="debug-val url" title={loader.currentFetchURL}>
                                 {loader.currentFetchURL
-                                    ? loader.currentFetchURL.substring(
-                                          loader.currentFetchURL.lastIndexOf("/") + 1
-                                      )
+                                    ? loader.currentFetchURL.substring(loader.currentFetchURL.lastIndexOf("/") + 1)
                                     : "none"}
                             </span>
                         </div>
@@ -1220,11 +1172,7 @@
                             e.stopPropagation();
                             return;
                         }
-                        if (
-                            e.target === e.currentTarget &&
-                            !isCropping &&
-                            zoomState.currentZoom === 1
-                        ) {
+                        if (e.target === e.currentTarget && !isCropping && zoomState.currentZoom === 1) {
                             lightboxImage = undefined;
                         }
                     }}
@@ -1384,8 +1332,8 @@
 
         filter: drop-shadow(0 8px 22px rgba(0, 0, 0, 1)) drop-shadow(0 2px 6px rgba(0, 0, 0, 1))
             drop-shadow(0 2px 6px rgba(0, 0, 0, 0.1));
-        -webkit-filter: drop-shadow(0 8px 22px rgba(0, 0, 0, 1))
-            drop-shadow(0 2px 6px rgba(0, 0, 0, 1)) drop-shadow(0 2px 6px rgba(0, 0, 0, 0.1));
+        -webkit-filter: drop-shadow(0 8px 22px rgba(0, 0, 0, 1)) drop-shadow(0 2px 6px rgba(0, 0, 0, 1))
+            drop-shadow(0 2px 6px rgba(0, 0, 0, 0.1));
         will-change: filter, opacity;
     }
 

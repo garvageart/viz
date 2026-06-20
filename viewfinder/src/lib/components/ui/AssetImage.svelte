@@ -116,11 +116,7 @@
         } else {
             // Fallback logic: prefer preview -> thumbnail -> original if no specific variant forced
             // OR if the requested variant is missing
-            path =
-                asset.image_paths?.preview ||
-                asset.image_paths?.thumbnail ||
-                asset.image_paths?.original ||
-                "";
+            path = asset.image_paths?.preview || asset.image_paths?.thumbnail || asset.image_paths?.original || "";
         }
 
         return path ? getFullImagePath(withVersion(path)) : "";

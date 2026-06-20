@@ -23,9 +23,7 @@ test.describe("Material Icon E2E Tests", () => {
         test.slow();
     });
 
-    test("should render all shell/header icons as SVGs and not fallback codepoint text", async ({
-        page
-    }) => {
+    test("should render all shell/header icons as SVGs and not fallback codepoint text", async ({ page }) => {
         // Navigate to the main application page
         await page.goto("/");
         await expect(page.locator(".viz-workspace")).toBeVisible({ timeout: 20000 });
@@ -34,9 +32,7 @@ test.describe("Material Icon E2E Tests", () => {
         await assertNoFallbackIcons(page, "Shell/Header");
     });
 
-    test("should render all AppMenu icons as SVGs and not fallback codepoint text", async ({
-        page
-    }) => {
+    test("should render all AppMenu icons as SVGs and not fallback codepoint text", async ({ page }) => {
         await page.goto("/");
         await expect(page.locator(".viz-workspace")).toBeVisible({ timeout: 20000 });
 
@@ -52,9 +48,7 @@ test.describe("Material Icon E2E Tests", () => {
         await assertNoFallbackIcons(appMenu, "AppMenu");
     });
 
-    test("should render collections page icons as SVGs and not fallback codepoint text", async ({
-        page
-    }) => {
+    test("should render collections page icons as SVGs and not fallback codepoint text", async ({ page }) => {
         // Navigate to /collections
         await page.goto("/collections");
         await page.waitForLoadState("networkidle");
@@ -62,9 +56,7 @@ test.describe("Material Icon E2E Tests", () => {
         await assertNoFallbackIcons(page, "Collections page");
     });
 
-    test("should render photos page icons as SVGs and not fallback codepoint text", async ({
-        page
-    }) => {
+    test("should render photos page icons as SVGs and not fallback codepoint text", async ({ page }) => {
         // Navigate to /photos
         await page.goto("/photos");
         await page.waitForLoadState("networkidle");
@@ -73,9 +65,7 @@ test.describe("Material Icon E2E Tests", () => {
         await assertNoFallbackIcons(page, "Photos page");
     });
 
-    test("should render filter panel icons as SVGs and not fallback codepoint text", async ({
-        page
-    }) => {
+    test("should render filter panel icons as SVGs and not fallback codepoint text", async ({ page }) => {
         // Go to main view to initialize layout
         await page.goto("/");
 
@@ -115,9 +105,7 @@ test.describe("Material Icon E2E Tests", () => {
         await assertNoFallbackIcons(filterPanel, "Filter panel");
     });
 
-    test("should render settings page icons as SVGs and not fallback codepoint text", async ({
-        page
-    }) => {
+    test("should render settings page icons as SVGs and not fallback codepoint text", async ({ page }) => {
         // Navigate directly to settings page under account section
         await page.goto("/settings/account");
         await page.waitForLoadState("networkidle");
@@ -126,9 +114,7 @@ test.describe("Material Icon E2E Tests", () => {
         await assertNoFallbackIcons(page, "Account settings");
 
         // Click Security link in sidebar
-        const securityLink = page
-            .locator(".settings-layout a.nav-link")
-            .filter({ hasText: "Security" });
+        const securityLink = page.locator(".settings-layout a.nav-link").filter({ hasText: "Security" });
         await expect(securityLink).toBeVisible();
         await securityLink.click();
 
@@ -137,9 +123,7 @@ test.describe("Material Icon E2E Tests", () => {
         await assertNoFallbackIcons(page, "Security settings");
     });
 
-    test("should render admin page icons as SVGs and not fallback codepoint text", async ({
-        page
-    }) => {
+    test("should render admin page icons as SVGs and not fallback codepoint text", async ({ page }) => {
         // Go directly to the Admin Dashboard
         await page.goto("/admin");
         await page.waitForLoadState("networkidle");
@@ -239,9 +223,9 @@ test.describe("Material Icon E2E Tests", () => {
         await assertNoFallbackIcons(uploadPanel, "Upload panel");
 
         // Wait for upload progress toast to complete
-        await expect(
-            page.locator(".viz-toast-success").filter({ hasText: "Successfully uploaded" })
-        ).toBeVisible({ timeout: 30000 });
+        await expect(page.locator(".viz-toast-success").filter({ hasText: "Successfully uploaded" })).toBeVisible({
+            timeout: 30000
+        });
     });
 
     test.describe("Unauthenticated Auth Pages", () => {

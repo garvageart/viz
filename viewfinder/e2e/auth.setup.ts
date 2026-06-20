@@ -6,9 +6,7 @@ async function handleOnboarding(page: Page) {
     console.log("Handling onboarding flow...");
 
     // Step 0: Welcome
-    const getStartedBtn = page.locator(
-        'button:has-text("Get Started"), button:has-text("Let\'s Go")'
-    );
+    const getStartedBtn = page.locator('button:has-text("Get Started"), button:has-text("Let\'s Go")');
     if (await getStartedBtn.isVisible()) {
         await getStartedBtn.click();
     }
@@ -29,9 +27,7 @@ async function handleOnboarding(page: Page) {
             }
         }
 
-        const finishBtn = page.locator(
-            'button:has-text("Finish Setup"), button:has-text("Complete Setup")'
-        );
+        const finishBtn = page.locator('button:has-text("Finish Setup"), button:has-text("Complete Setup")');
         if (await finishBtn.isVisible()) {
             await finishBtn.click();
             break;

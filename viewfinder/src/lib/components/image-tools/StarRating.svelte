@@ -23,12 +23,7 @@
         onChange?: (rating: number | null) => void;
     }
 
-    let {
-        value = $bindable(null),
-        readonly = false,
-        static: isStatic = false,
-        onChange
-    }: Props = $props();
+    let { value = $bindable(null), readonly = false, static: isStatic = false, onChange }: Props = $props();
 
     const isReadonly = $derived(readonly || isStatic);
 

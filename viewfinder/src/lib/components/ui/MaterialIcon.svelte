@@ -148,9 +148,7 @@
     });
 
     // Styles (for fallback)
-    let fontSettings = $derived(
-        `'FILL' ${fill ? 1 : 0}, 'wght' ${weight}, 'GRAD' ${grade}, 'opsz' ${opticalSize}`
-    );
+    let fontSettings = $derived(`'FILL' ${fill ? 1 : 0}, 'wght' ${weight}, 'GRAD' ${grade}, 'opsz' ${opticalSize}`);
 
     const fallbackClass = $derived(
         (props.class ? props.class + " " : "") + "material-symbols-" + iconStyle.toLowerCase()

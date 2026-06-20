@@ -1,11 +1,6 @@
 import { thumbHashToDataURL } from "thumbhash";
 import { DateTime, Duration } from "luxon";
-import {
-    downloadImagesZipBlob,
-    signDownload,
-    type CollectionDetailResponse,
-    type ImageAsset
-} from "../api";
+import { downloadImagesZipBlob, signDownload, type CollectionDetailResponse, type ImageAsset } from "../api";
 import { flashModes, LabelColours } from "$lib/images/constants";
 
 /**
@@ -132,13 +127,13 @@ export function getThumbhashURL(asset: ImageAsset): string | undefined {
 }
 
 export const enum ByteUnit {
-    'B' = 'B',
-    'KiB' = 'KiB',
-    'MiB' = 'MiB',
-    'GiB' = 'GiB',
-    'TiB' = 'TiB',
-    'PiB' = 'PiB',
-    'EiB' = 'EiB',
+    "B" = "B",
+    "KiB" = "KiB",
+    "MiB" = "MiB",
+    "GiB" = "GiB",
+    "TiB" = "TiB",
+    "PiB" = "PiB",
+    "EiB" = "EiB"
 }
 
 const byteUnits = [ByteUnit.B, ByteUnit.KiB, ByteUnit.MiB, ByteUnit.GiB, ByteUnit.TiB, ByteUnit.PiB, ByteUnit.EiB];
@@ -180,8 +175,9 @@ export function formatBytes(bytes?: number) {
     if (bytes === undefined || bytes === null || isNaN(bytes)) {
         return null;
     }
-    
-    const locale = typeof window !== "undefined" ? (window.navigator.languages?.[0] || window.navigator.language) : undefined;
+
+    const locale =
+        typeof window !== "undefined" ? window.navigator.languages?.[0] || window.navigator.language : undefined;
     return getByteUnitString(bytes, locale, 1);
 }
 

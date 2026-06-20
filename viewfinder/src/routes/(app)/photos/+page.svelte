@@ -41,11 +41,7 @@
     import { selectionManager, SelectionScopeNames } from "$lib/states/selection.svelte";
     import { toastState } from "$lib/toast-notifcations/notif-state.svelte";
     import type { AssetSortBy, AssetSortOrder } from "$lib/types/asset.js";
-    import {
-        SUPPORTED_IMAGE_TYPES,
-        SUPPORTED_RAW_FILES,
-        type SupportedImageTypes
-    } from "$lib/types/images";
+    import { SUPPORTED_IMAGE_TYPES, SUPPORTED_RAW_FILES, type SupportedImageTypes } from "$lib/types/images";
     import UploadManager, { type ImageUploadSuccess } from "$lib/upload/manager.svelte";
     import { getImageLabel } from "$lib/utils/images.js";
     import { invalidateViz } from "$lib/views/views.svelte";
@@ -105,9 +101,7 @@
     let isPaginating = $state(false);
 
     // Page state
-    let groups: DateGroup[] = $derived(
-        groupImagesByDate(filterManager.apply(galleryState.images)) ?? []
-    );
+    let groups: DateGroup[] = $derived(groupImagesByDate(filterManager.apply(galleryState.images)) ?? []);
 
     let consolidatedGroups: ConsolidatedGroup[] = $derived(getConsolidatedGroups(groups));
 
@@ -141,9 +135,7 @@
                 );
             },
             onDelete: (deletedUIDs) => {
-                galleryState.images = galleryState.images.filter(
-                    (img) => !deletedUIDs.includes(img.uid)
-                );
+                galleryState.images = galleryState.images.filter((img) => !deletedUIDs.includes(img.uid));
                 galleryState.totalCount -= deletedUIDs.length;
             }
         });
@@ -355,10 +347,7 @@
     }
 
     async function addImagesToViz() {
-        const manager = new UploadManager([
-            ...SUPPORTED_RAW_FILES,
-            ...SUPPORTED_IMAGE_TYPES
-        ] as SupportedImageTypes[]);
+        const manager = new UploadManager([...SUPPORTED_RAW_FILES, ...SUPPORTED_IMAGE_TYPES] as SupportedImageTypes[]);
         const uploadedImages = await manager.openPickerAndUpload();
 
         if (uploadedImages.length === 0) {
@@ -429,8 +418,8 @@
                 </div>
                 <div class="selection-actions">
                     <IconButton
-                        iconName={actionMenuItems.find((it) => it.id === "act-add-to-collection")
-                            ?.icon ?? "collections_bookmark"}
+                        iconName={actionMenuItems.find((it) => it.id === "act-add-to-collection")?.icon ??
+                            "collections_bookmark"}
                         class="action"
                         role="tooltip"
                         title="Add to Collection"
@@ -438,9 +427,7 @@
                             modalsManager.open(
                                 CollectionSelectionModal,
                                 {
-                                    imageUidsToAdd: selectionScope.selectedItems.map(
-                                        (img) => img.uid
-                                    ),
+                                    imageUidsToAdd: selectionScope.selectedItems.map((img) => img.uid),
                                     onSelect: handleCollectionSelect
                                 },
                                 { heading: "Select a Collection", width: "90%", height: "80%" }
@@ -492,9 +479,7 @@
                             }
 
                             // Reverse lookup: find the key (Name) for the selected color (Value)
-                            const entry = Object.entries(LabelColours).find(
-                                ([_, colour]) => colour === selectedLabel
-                            );
+                            const entry = Object.entries(LabelColours).find(([_, colour]) => colour === selectedLabel);
                             const labelName = entry ? entry[0] : null;
                             const labelToSend = labelName as ImageLabel | null;
 

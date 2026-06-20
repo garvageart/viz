@@ -16,10 +16,7 @@ interface CollectionMenuOptions {
     selectedCollections?: Collection[];
 }
 
-export function createCollectionMenu(
-    collection: Collection | undefined,
-    opts: CollectionMenuOptions
-) {
+export function createCollectionMenu(collection: Collection | undefined, opts: CollectionMenuOptions) {
     if (!collection) {
         return [];
     }
@@ -58,9 +55,7 @@ export function createCollectionMenu(
                 } else {
                     toastState.addToast({
                         type: "error",
-                        message:
-                            res.data.error ??
-                            `Failed to ${collection.favourited ? "un" : ""}favourite`
+                        message: res.data.error ?? `Failed to ${collection.favourited ? "un" : ""}favourite`
                     });
                 }
             }
@@ -137,8 +132,7 @@ export function createCollectionMenu(
                     ConfirmationModal,
                     {
                         title: targets.length > 1 ? "Delete Collections" : "Delete Collection",
-                        confirmText:
-                            targets.length > 1 ? "Delete Collections" : "Delete Collection",
+                        confirmText: targets.length > 1 ? "Delete Collections" : "Delete Collection",
                         message: confirmMsg,
                         onConfirm: async () => {
                             try {
@@ -154,9 +148,7 @@ export function createCollectionMenu(
 
                                 if (successes.length > 0) {
                                     if (opts.onCollectionsDeleted) {
-                                        opts.onCollectionsDeleted(
-                                            successes.map((s) => s.collection)
-                                        );
+                                        opts.onCollectionsDeleted(successes.map((s) => s.collection));
                                     } else {
                                         for (const success of successes) {
                                             opts.onCollectionDeleted?.(success.collection);

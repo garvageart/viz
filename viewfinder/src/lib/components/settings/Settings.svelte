@@ -31,8 +31,6 @@ Stuff to finish:
         security: "lock"
     };
 
-
-
     // TODO: Import SecuritySettings when created
     interface Props {
         activeSection: string;
@@ -40,23 +38,11 @@ Stuff to finish:
     }
 
     let { activeSection = "general", userSettingsData }: Props = $props();
-    let activeSectionDisplayName = $derived(
-        activeSection.charAt(0).toUpperCase() + activeSection.slice(1)
-    );
+    let activeSectionDisplayName = $derived(activeSection.charAt(0).toUpperCase() + activeSection.slice(1));
 
-    let settings: UserSetting[] = $derived(
-        userSettingsData.filter((s) => s.is_user_editable !== false)
-    );
+    let settings: UserSetting[] = $derived(userSettingsData.filter((s) => s.is_user_editable !== false));
 
-    const groupOrder = [
-        "Account",
-        "General",
-        "Interface",
-        "Images",
-        "Notifications",
-        "Privacy",
-        "Security"
-    ];
+    const groupOrder = ["Account", "General", "Interface", "Images", "Notifications", "Privacy", "Security"];
 
     // custom groups that aren't in the DB settings
     const customGroups = ["Security", "Account"];
@@ -100,9 +86,7 @@ Stuff to finish:
     let currentSettings = $derived(
         settings.filter((s) => (s.group || "General").toLowerCase() === activeSection.toLowerCase())
     );
-    let isCustomGroup = $derived(
-        customGroups.map((g) => g.toLowerCase()).includes(activeSection.toLowerCase())
-    );
+    let isCustomGroup = $derived(customGroups.map((g) => g.toLowerCase()).includes(activeSection.toLowerCase()));
 </script>
 
 <svelte:head>

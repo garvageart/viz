@@ -292,9 +292,7 @@ async function main() {
         const validIcons = await fetchCodepoints();
         generateTypeDefinition(validIcons);
     } else {
-        console.log(
-            "MaterialSymbol.ts already exists, skipping codepoints fetch. (Use --force to update)"
-        );
+        console.log("MaterialSymbol.ts already exists, skipping codepoints fetch. (Use --force to update)");
     }
 
     const validSymbols = loadValidSymbols();
@@ -313,7 +311,10 @@ async function main() {
 
     // Use forward-slash patterns so glob works reliably on Windows.
     const pattern = `${SRC.replace(/\\/g, "/")}/**/*.{svelte,ts,js}`;
-    const files = globSync(pattern, { nodir: true, ignore: ["**/.svelte-kit/**", "**/node_modules/**"] });
+    const files = globSync(pattern, {
+        nodir: true,
+        ignore: ["**/.svelte-kit/**", "**/node_modules/**"]
+    });
 
     console.log("Scanning files with pattern:", pattern);
     console.log("Found files:", files.length);
@@ -634,9 +635,7 @@ async function main() {
                 continue;
             }
 
-            console.log(
-                `Processing ${name} (${style}) weights ${Array.from(requiredWeights).join(",")}`
-            );
+            console.log(`Processing ${name} (${style}) weights ${Array.from(requiredWeights).join(",")}`);
 
             /** @type {Record<string,string>} */
             const variants = {};
@@ -692,9 +691,7 @@ async function main() {
             }
 
             if (Object.keys(variants).length === 0) {
-                console.warn(
-                    `No variants available for ${name} (${style}); skipping component generation.`
-                );
+                console.warn(`No variants available for ${name} (${style}); skipping component generation.`);
                 failedCache[cacheKey] = true;
                 failedCacheChanged = true;
                 continue;
@@ -743,9 +740,7 @@ async function main() {
 
     // write index file
     const indexPath = join(OUT_DIR, "index.ts");
-    const lines = generated.map(
-        (g) => `export { default as ${g.compName} } from './${g.compName}.svelte';`
-    );
+    const lines = generated.map((g) => `export { default as ${g.compName} } from './${g.compName}.svelte';`);
     writeFileSync(indexPath, lines.join("\n") + "\n", "utf8");
     console.log("Wrote index.ts with", generated.length, "icons");
 

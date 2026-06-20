@@ -92,9 +92,7 @@ export const views: VizView<any, any>[] = [
                             const res = await addCollectionImages(collectionUid, { uids: newUIDs });
 
                             if (res.status === 200 && res.data.added) {
-                                let skippedMessage = skippedUidLength
-                                    ? `Skipped ${skippedUidLength} images.`
-                                    : "";
+                                let skippedMessage = skippedUidLength ? `Skipped ${skippedUidLength} images.` : "";
                                 let toastMessage = `Added ${newUIDs.length} image(s) to **${v.name}**`;
 
                                 if (skippedMessage) {

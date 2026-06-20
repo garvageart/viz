@@ -36,18 +36,11 @@
 
 <Sidebar {width} {title}>
     <div class="nav-sidebar-content">
-        <nav
-            class="nav-sidebar-menu"
-            data-sveltekit-preload-data="hover"
-            data-sveltekit-preload-code="hover"
-        >
+        <nav class="nav-sidebar-menu" data-sveltekit-preload-data="hover" data-sveltekit-preload-code="hover">
             <ul class="nav-list">
                 {#each items as item}
                     <li>
-                        <a
-                            href={item.href}
-                            class={["nav-link", isActive(item.href, item.exact) ? "active" : ""]}
-                        >
+                        <a href={item.href} class={["nav-link", isActive(item.href, item.exact) ? "active" : ""]}>
                             {#if item.icon}
                                 <MaterialIcon iconName={item.icon} size="1rem" />
                             {/if}
@@ -86,7 +79,10 @@
         text-decoration: none;
         font-size: var(--viz-font-size-std);
         border-bottom: 2px solid transparent;
-        transition: background-color 0.15s ease, color 0.15s ease, border-bottom-color 0.15s ease;
+        transition:
+            background-color 0.15s ease,
+            color 0.15s ease,
+            border-bottom-color 0.15s ease;
 
         &:hover {
             background-color: var(--viz-80);

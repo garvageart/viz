@@ -13,8 +13,7 @@ export function addTestNotifications() {
     toastState.addToast({
         type: "success",
         title: "Image Uploaded",
-        message:
-            "Your image 'my_photo.jpg' has been successfully uploaded. Go to [My Photos](/photos) to see it.",
+        message: "Your image 'my_photo.jpg' has been successfully uploaded. Go to [My Photos](/photos) to see it.",
         timeout: 0, // Infinite
         actions: [
             { label: "View Photo", onClick: () => alert("Viewing photo!") },
@@ -24,8 +23,7 @@ export function addTestNotifications() {
 
     toastState.addToast({
         type: "warning",
-        message:
-            "Disk space is running low. Please clear some space. More info at https://viz.com/storage",
+        message: "Disk space is running low. Please clear some space. More info at https://viz.com/storage",
         timeout: 0 // Infinite
     });
 

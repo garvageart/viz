@@ -44,14 +44,12 @@ test.describe("Drag & Drop File Upload Flow", () => {
         await uploadIndivBtn.click();
 
         // Assert the Upload Manager successfully starts and pushes progress toasts
-        await expect(
-            page.locator(".viz-toast-success").filter({ hasText: "Successfully uploaded" })
-        ).toBeVisible({ timeout: 25000 });
+        await expect(page.locator(".viz-toast-success").filter({ hasText: "Successfully uploaded" })).toBeVisible({
+            timeout: 25000
+        });
     });
 
-    test("should bypass confirmation modal and upload directly to collection on collection page", async ({
-        page
-    }) => {
+    test("should bypass confirmation modal and upload directly to collection on collection page", async ({ page }) => {
         test.slow();
         page.on("console", (msg) => console.log("PAGE LOG:", msg.text()));
 
@@ -101,9 +99,9 @@ test.describe("Drag & Drop File Upload Flow", () => {
         await expect(modalText).not.toBeVisible({ timeout: 5000 });
 
         // 6. Verify that the upload starts and successful toast appears
-        await expect(
-            page.locator(".viz-toast-success").filter({ hasText: "Successfully uploaded" })
-        ).toBeVisible({ timeout: 25000 });
+        await expect(page.locator(".viz-toast-success").filter({ hasText: "Successfully uploaded" })).toBeVisible({
+            timeout: 25000
+        });
 
         // 7. Verify upload panel minimize/restore works correctly and doesn't freeze Svelte
         const uploadPanel = page.locator("#viz-upload-panel");
@@ -126,9 +124,9 @@ test.describe("Drag & Drop File Upload Flow", () => {
         await performDragAndDrop(page, fileBuffer, fileName);
 
         // Verify duplicate upload success toast shows up without throwing Svelte errors (grid rendering remains intact)
-        await expect(
-            page.locator(".viz-toast-success").filter({ hasText: "Successfully uploaded" })
-        ).toBeVisible({ timeout: 25000 });
+        await expect(page.locator(".viz-toast-success").filter({ hasText: "Successfully uploaded" })).toBeVisible({
+            timeout: 25000
+        });
 
         // Verify toast dismiss button works correctly (UploadPanel reactivity loop fix)
         const toastCloseBtn = page.locator(".viz-toast-close").first();

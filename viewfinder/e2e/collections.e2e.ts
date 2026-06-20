@@ -17,9 +17,7 @@ test.describe("Collection Lifecycle & Context Menus", () => {
         await cleanupTestCollections(request);
     });
 
-    test("should perform full collection lifecycle (Create -> Edit -> Delete)", async ({
-        page
-    }) => {
+    test("should perform full collection lifecycle (Create -> Edit -> Delete)", async ({ page }) => {
         // 1. Open Create Collection Modal
         const createBtn = page.getByRole("button", { name: "Create Collection" }).first();
         await expect(createBtn).toBeVisible({ timeout: 10000 });

@@ -51,9 +51,7 @@
     // VARIABLES
     const key = {};
     const gathering = !browser && hasContext(gatheringKey);
-    const { undefinedPaneInitSize } = (
-        !gathering ? onPaneInit(key) : {}
-    ) as ReturnType<PaneInitFunction>;
+    const { undefinedPaneInitSize } = (!gathering ? onPaneInit(key) : {}) as ReturnType<PaneInitFunction>;
 
     let element: HTMLElement | undefined = $state();
     let sz: number = $state(size ?? undefinedPaneInitSize);
@@ -70,9 +68,7 @@
      * In the case of the object isn't initialized yet, calling this callbacks will do nothing.
      */
 
-    const carefullClientCallbacks = browser
-        ? carefullCallbackSource(() => clientCallbacks)
-        : undefined;
+    const carefullClientCallbacks = browser ? carefullCallbackSource(() => clientCallbacks) : undefined;
 
     const reportGivenSizeChangeSafe = (size: number) => {
         // We put an extra check of `size != sz` here and not in the reactive statement, since we don't want a change

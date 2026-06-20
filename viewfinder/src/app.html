@@ -22,14 +22,12 @@
                 background-image:
                     linear-gradient(
                         to right,
-                        color-mix(in srgb, var(--viz-60, rgba(255, 255, 255, 0.1)) 8%, transparent)
-                            1px,
+                        color-mix(in srgb, var(--viz-60, rgba(255, 255, 255, 0.1)) 8%, transparent) 1px,
                         transparent 1px
                     ),
                     linear-gradient(
                         to bottom,
-                        color-mix(in srgb, var(--viz-60, rgba(255, 255, 255, 0.1)) 8%, transparent)
-                            1px,
+                        color-mix(in srgb, var(--viz-60, rgba(255, 255, 255, 0.1)) 8%, transparent) 1px,
                         transparent 1px
                     );
                 background-size: 40px 40px;
@@ -98,9 +96,7 @@
             (function () {
                 try {
                     const storedTheme = localStorage.getItem("viz:theme");
-                    const osTheme = window.matchMedia("(prefers-color-scheme: dark)").matches
-                        ? "dark"
-                        : "light";
+                    const osTheme = window.matchMedia("(prefers-color-scheme: dark)").matches ? "dark" : "light";
 
                     let theme = osTheme;
 
@@ -114,20 +110,8 @@
                 }
             })();
         </script>
-        <link
-            rel="preload"
-            as="font"
-            type="font/woff2"
-            href="%viz.css.display_font%"
-            crossorigin="anonymous"
-        />
-        <link
-            rel="preload"
-            as="font"
-            type="font/woff2"
-            href="%viz.css.mono_font%"
-            crossorigin="anonymous"
-        />
+        <link rel="preload" as="font" type="font/woff2" href="%viz.css.display_font%" crossorigin="anonymous" />
+        <link rel="preload" as="font" type="font/woff2" href="%viz.css.mono_font%" crossorigin="anonymous" />
 
         %viz.css.theme_style% %sveltekit.head%
     </head>

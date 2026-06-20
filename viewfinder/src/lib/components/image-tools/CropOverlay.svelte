@@ -84,9 +84,7 @@
     }
 
     // Since we are inside the transformed container, we use image-relative coordinates directly.
-    let tStyle = $derived(
-        `left: ${crop.x}px; top: ${crop.y}px; width: ${crop.width}px; height: ${crop.height}px;`
-    );
+    let tStyle = $derived(`left: ${crop.x}px; top: ${crop.y}px; width: ${crop.width}px; height: ${crop.height}px;`);
 
     // Inverse scale for UI elements to keep them constant visual size.
     let invScale = $derived(1 / scale);

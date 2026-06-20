@@ -8,12 +8,7 @@
         enableSelection?: boolean;
     }
 
-    let {
-        label = $bindable(),
-        onSelect,
-        variant = "expanded",
-        enableSelection = true
-    }: Props = $props();
+    let { label = $bindable(), onSelect, variant = "expanded", enableSelection = true }: Props = $props();
 
     let isOpen = $state(false);
     let dropdownContainer = $state<HTMLElement>();

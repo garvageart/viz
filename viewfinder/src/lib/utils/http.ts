@@ -41,9 +41,7 @@ export interface UploadRequestOptions {
     onUploadProgress?: (event: ProgressEvent<XMLHttpRequestEventTarget>) => void;
 }
 
-export const uploadRequest = async <T>(
-    options: UploadRequestOptions
-): Promise<{ data: T; status: number }> => {
+export const uploadRequest = async <T>(options: UploadRequestOptions): Promise<{ data: T; status: number }> => {
     const { onUploadProgress, data, path = "/images" } = options;
 
     return new Promise((resolve, reject) => {

@@ -137,10 +137,7 @@ export default class UploadManager {
                         task.checksum = checksum;
                         task.data.checksum = checksum;
                     } catch (e) {
-                        console.error(
-                            `Failed to calculate checksum for ${task.data.file_name}:`,
-                            e
-                        );
+                        console.error(`Failed to calculate checksum for ${task.data.file_name}:`, e);
                     }
                 }
             })
@@ -158,11 +155,7 @@ export default class UploadManager {
             // Call bulk duplicate check API
             const response = await checkDuplicates({ checksums });
 
-            if (
-                response.status === 200 &&
-                response.data.duplicates &&
-                response.data.duplicates.length > 0
-            ) {
+            if (response.status === 200 && response.data.duplicates && response.data.duplicates.length > 0) {
                 const dupMap = new Map<string, string>(); // checksum -> uid
                 for (const dup of response.data.duplicates) {
                     dupMap.set(dup.checksum, dup.uid);
@@ -242,11 +235,7 @@ export default class UploadManager {
         await waitForUploadCompletion(tasks);
 
         const success = tasks
-            .filter(
-                (t) =>
-                    (t.state === UploadState.DONE || t.state === UploadState.DUPLICATE) &&
-                    t.imageData
-            )
+            .filter((t) => (t.state === UploadState.DONE || t.state === UploadState.DUPLICATE) && t.imageData)
             .map((t) => ({
                 uid: t.imageData!.uid,
                 status: t.imageData!.status,
@@ -292,11 +281,7 @@ export default class UploadManager {
         await waitForUploadCompletion(tasks);
 
         const success = tasks
-            .filter(
-                (t) =>
-                    (t.state === UploadState.DONE || t.state === UploadState.DUPLICATE) &&
-                    t.imageData
-            )
+            .filter((t) => (t.state === UploadState.DONE || t.state === UploadState.DUPLICATE) && t.imageData)
             .map((t) => ({
                 uid: t.imageData!.uid,
                 status: t.imageData!.status,

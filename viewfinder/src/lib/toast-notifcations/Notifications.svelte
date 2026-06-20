@@ -77,9 +77,7 @@
                         size="0.875rem"
                         class="viz-toast-header-icon"
                     />
-                    <span class="viz-toast-type-label"
-                        >{formatCategoryLabel(toast.type || "info")}</span
-                    >
+                    <span class="viz-toast-type-label">{formatCategoryLabel(toast.type || "info")}</span>
                 </div>
                 {#if toast.dismissible}
                     <IconButton

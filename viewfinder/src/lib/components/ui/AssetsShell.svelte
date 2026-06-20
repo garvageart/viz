@@ -56,10 +56,7 @@
     let selectionScope = $derived(grid.scopeId ? selectionManager.getScope(grid.scopeId) : null);
 
     let gridData = $derived.by(() => {
-        const dataSlice = grid.data.slice(
-            0,
-            pagination.limit * (pagination.page === 0 ? 1 : pagination.page + 1)
-        );
+        const dataSlice = grid.data.slice(0, pagination.limit * (pagination.page === 0 ? 1 : pagination.page + 1));
 
         if (columnCount === undefined) {
             return dataSlice;
@@ -72,10 +69,7 @@
             return dataSlice;
         }
 
-        const fillItems = grid.data.slice(
-            dataSlice.length,
-            dataSlice.length + (columnCount - currentRowImageCount)
-        );
+        const fillItems = grid.data.slice(dataSlice.length, dataSlice.length + (columnCount - currentRowImageCount));
         return [...dataSlice, ...fillItems] as typeof dataSlice;
     });
 
@@ -115,12 +109,7 @@
 
 {#snippet toolbarButton(opts: ToolbarButtonProps)}
     {#if opts.dropdown}
-        <Dropdown
-            class="toolbar-button"
-            {...opts.dropdown}
-            title={opts.text}
-            icon={opts.iconName}
-        />
+        <Dropdown class="toolbar-button" {...opts.dropdown} title={opts.text} icon={opts.iconName} />
     {:else}
         <IconButton
             {...opts}
@@ -207,9 +196,7 @@
         {#if noAssetsSnippet}
             {@render noAssetsSnippet()}
         {:else}
-            <p style="text-align: center; margin: 2em; color: var(--viz-10);">
-                No assets to display.
-            </p>
+            <p style="text-align: center; margin: 2em; color: var(--viz-10);">No assets to display.</p>
         {/if}
     </div>
 {:else}

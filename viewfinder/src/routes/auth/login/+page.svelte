@@ -62,11 +62,7 @@
 </script>
 
 <!-- Random background image thing needs to go at some point, maybe with a server/admin administrated background image -->
-<main
-    style="background-image: url('https://picsum.photos/1920/1080/?random={Math.floor(
-        Math.random() * 300
-    )}');"
->
+<main style="background-image: url('https://picsum.photos/1920/1080/?random={Math.floor(Math.random() * 300)}');">
     <span id="viz-title">viz</span>
     <div id="login-container">
         <h1 id="login-heading">Login</h1>
@@ -90,9 +86,7 @@
                 value={loginData.password}
                 oninput={(e) => (loginData.password = e.currentTarget.value)}
             />
-            <Button id="login-submit" type="submit" style="margin-top: 1rem;" onclick={handleLogin}
-                >Login</Button
-            >
+            <Button id="login-submit" type="submit" style="margin-top: 1rem;" onclick={handleLogin}>Login</Button>
         </form>
         <p style="margin-top: 1em;">
             Don't have an account? <a style="font-weight: bold;" href="/auth/register">Register</a>

@@ -13,9 +13,7 @@ test.describe("Settings Workspace & Account UI", () => {
 
     test("should load account settings and handle name updates", async ({ page }) => {
         // Assert active sidebar link is Account
-        const accountLink = page
-            .locator(".settings-layout a.nav-link")
-            .filter({ hasText: "Account" });
+        const accountLink = page.locator(".settings-layout a.nav-link").filter({ hasText: "Account" });
         await expect(accountLink).toHaveClass(/active/);
 
         // Target Name fields inside AccountSettings
@@ -25,9 +23,7 @@ test.describe("Settings Workspace & Account UI", () => {
         await expect(emailInput).toBeVisible();
 
         const currentName = await nameInput.inputValue();
-        const testName = currentName.endsWith(" E2E")
-            ? currentName.replace(" E2E", "")
-            : `${currentName} E2E`;
+        const testName = currentName.endsWith(" E2E") ? currentName.replace(" E2E", "") : `${currentName} E2E`;
 
         // Fill Name field to make form dirty
         await nameInput.fill(testName);
@@ -44,9 +40,7 @@ test.describe("Settings Workspace & Account UI", () => {
 
     test("should navigate to security settings and manage API Keys", async ({ page }) => {
         // Click Security link in sidebar
-        const securityLink = page
-            .locator(".settings-layout a.nav-link")
-            .filter({ hasText: "Security" });
+        const securityLink = page.locator(".settings-layout a.nav-link").filter({ hasText: "Security" });
         await expect(securityLink).toBeVisible();
         await securityLink.click();
 
@@ -67,14 +61,10 @@ test.describe("Settings Workspace & Account UI", () => {
         // Fill key details
         const keyName = `E2E-Key-${Date.now()}`;
         await page.locator(".api-key-modal-inner #input-Name").fill(keyName);
-        await page
-            .locator(".api-key-modal-inner #input-Description")
-            .fill("Created via automated E2E testing");
+        await page.locator(".api-key-modal-inner #input-Description").fill("Created via automated E2E testing");
 
         // Submit Key creation
-        const submitBtn = page
-            .locator(".api-key-modal-inner button")
-            .filter({ hasText: "Create Key" });
+        const submitBtn = page.locator(".api-key-modal-inner button").filter({ hasText: "Create Key" });
         await expect(submitBtn).toBeEnabled();
         await submitBtn.click();
 
@@ -86,9 +76,7 @@ test.describe("Settings Workspace & Account UI", () => {
         await expect(page.locator(".api-key-modal-inner")).not.toBeVisible();
 
         // Verify new key is listed in the table
-        const keyTableRow = page
-            .locator("table.settings-table tbody tr")
-            .filter({ hasText: keyName });
+        const keyTableRow = page.locator("table.settings-table tbody tr").filter({ hasText: keyName });
         await expect(keyTableRow.first()).toBeVisible({ timeout: 10000 });
 
         // 2. Delete the created API Key
@@ -103,9 +91,7 @@ test.describe("Settings Workspace & Account UI", () => {
 
         // Verify deletion toast
         await expect(page.locator(".viz-toast-success")).toBeVisible({ timeout: 10000 });
-        await expect(page.locator(".viz-toast-success")).toContainText(
-            "API Key deleted successfully"
-        );
+        await expect(page.locator(".viz-toast-success")).toContainText("API Key deleted successfully");
 
         // Verify it is removed from the table
         await expect(keyTableRow).not.toBeVisible({ timeout: 10000 });
@@ -118,9 +104,7 @@ test.describe("Settings Workspace & Account UI", () => {
 
         // Look for the active sessions table
         await expect(page.locator('h3:has-text("Active Sessions")')).toBeVisible();
-        const currentSessionRow = page
-            .locator("table.settings-table tbody tr")
-            .filter({ hasText: "Current" });
+        const currentSessionRow = page.locator("table.settings-table tbody tr").filter({ hasText: "Current" });
         await expect(currentSessionRow.first()).toBeVisible({ timeout: 10000 });
 
         // Click Edit/Rename session button
@@ -135,17 +119,13 @@ test.describe("Settings Workspace & Account UI", () => {
         await expect(renameInput).toBeVisible({ timeout: 5000 });
 
         const originalName = await renameInput.inputValue();
-        const newName = originalName.endsWith(" Test")
-            ? originalName.replace(" Test", "")
-            : `${originalName} Test`;
+        const newName = originalName.endsWith(" Test") ? originalName.replace(" Test", "") : `${originalName} Test`;
 
         await renameInput.fill(newName);
         await page.locator('button:has-text("Rename")').click();
 
         // Verify success toast
         await expect(page.locator(".viz-toast-success")).toBeVisible({ timeout: 10000 });
-        await expect(page.locator(".viz-toast-success")).toContainText(
-            "Session renamed successfully"
-        );
+        await expect(page.locator(".viz-toast-success")).toContainText("Session renamed successfully");
     });
 });

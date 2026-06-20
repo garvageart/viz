@@ -179,12 +179,7 @@ export class TabOps {
         }
     }
 
-    private handleDrop(
-        viewId: number,
-        sourceGroupId: string,
-        targetGroupId: string,
-        position: DropPosition
-    ) {
+    private handleDrop(viewId: number, sourceGroupId: string, targetGroupId: string, position: DropPosition) {
         const workspace = workspaceState.workspace;
         if (!workspace) {
             return;

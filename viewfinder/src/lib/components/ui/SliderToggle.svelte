@@ -10,13 +10,7 @@
         id?: string;
     }
 
-    let {
-        label,
-        value = $bindable(),
-        labelPos = "side",
-        id,
-        ...props
-    }: Props & SvelteHTMLElements["div"] = $props();
+    let { label, value = $bindable(), labelPos = "side", id, ...props }: Props & SvelteHTMLElements["div"] = $props();
 
     const uniqueID = generateRandomString(6);
     const switchId = $derived(id || `switch-${uniqueID}`);

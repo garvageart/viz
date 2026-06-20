@@ -59,9 +59,7 @@
         dragData.setData(e.dataTransfer);
         e.dataTransfer.effectAllowed = "copy";
 
-        const img = (e.currentTarget as HTMLElement).querySelector(
-            ".image-card-image"
-        ) as HTMLImageElement;
+        const img = (e.currentTarget as HTMLElement).querySelector(".image-card-image") as HTMLImageElement;
         if (img) {
             e.dataTransfer.setDragImage(img, 0, 0);
         }
@@ -71,14 +69,7 @@
 {#if variant === "mini"}
     <div title={asset.name} class="mini-card">
         <div class="mini-image-wrapper">
-            <AssetImage
-                variant={imageVariant}
-                {asset}
-                {objectFit}
-                {priority}
-                alt={asset.name}
-                loading="lazy"
-            />
+            <AssetImage variant={imageVariant} {asset} {objectFit} {priority} alt={asset.name} loading="lazy" />
         </div>
         <div class="mini-footer">
             <span class="mini-filename">{asset.image_metadata?.file_name ?? asset.name}</span>
@@ -91,18 +82,12 @@
                     {/if}
                     <div class="mini-rating">
                         {#each Array(5) as _, i (i)}
-                            <div
-                                class="dot"
-                                class:filled={i < (asset.image_metadata?.rating ?? 0)}
-                            ></div>
+                            <div class="dot" class:filled={i < (asset.image_metadata?.rating ?? 0)}></div>
                         {/each}
                     </div>
                 </div>
                 {#if asset.image_metadata?.label}
-                    <div
-                        class="mini-label-indicator"
-                        style="background-color: {getImageLabel(asset)}"
-                    ></div>
+                    <div class="mini-label-indicator" style="background-color: {getImageLabel(asset)}"></div>
                 {/if}
             </div>
         </div>
@@ -142,17 +127,11 @@
                     <div class="image-card-date-group">
                         <span class="image-card-date">{imageDate.toLocaleDateString()}</span>
                         <span class="image-card-divider">•</span>
-                        <span class="image-card-time"
-                            >{imageDate.toLocaleTimeString().replace(/:\d{2}$/, "")}</span
-                        >
+                        <span class="image-card-time">{imageDate.toLocaleTimeString().replace(/:\d{2}$/, "")}</span>
                     </div>
                     <div class="image-card-indicators">
                         {#if asset.image_metadata?.label}
-                            <ImageLabelViewer
-                                label={getImageLabel(asset)}
-                                enableSelection={false}
-                                variant="compact"
-                            />
+                            <ImageLabelViewer label={getImageLabel(asset)} enableSelection={false} variant="compact" />
                         {/if}
                         {#if asset.favourited}
                             <MaterialIcon iconName="favorite" size="1rem" fill={true} />

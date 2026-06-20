@@ -8,8 +8,7 @@
     import { copyToClipboard } from "$lib/utils/misc";
     import { modalsManager } from "./manager/ModalManager.svelte";
 
-    let { id, onClose, onSuccess }: { id: string; onClose: () => void; onSuccess: () => void } =
-        $props();
+    let { id, onClose, onSuccess }: { id: string; onClose: () => void; onSuccess: () => void } = $props();
 
     let name = $state("");
     let description = $state("");
@@ -143,10 +142,7 @@
         </div>
         <div class="modal-actions">
             <Button hoverColor="var(--viz-80)" onclick={handleCancel}>Cancel</Button>
-            <Button
-                onclick={handleCreate}
-                disabled={creating || !name || selectedScopes.length === 0}
-            >
+            <Button onclick={handleCreate} disabled={creating || !name || selectedScopes.length === 0}>
                 {creating ? "Creating..." : "Create Key"}
             </Button>
         </div>

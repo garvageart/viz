@@ -6,8 +6,7 @@
         <code>viz</code> is built using SvelteKit
     </p>
     <p>
-        The repo for this project can be found on <strong
-            ><a href="https://github.com/garvageart/viz">GitHub</a></strong
+        The repo for this project can be found on <strong><a href="https://github.com/garvageart/viz">GitHub</a></strong
         >
     </p>
 </div>

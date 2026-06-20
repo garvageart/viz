@@ -122,19 +122,11 @@ export class WSClient {
                         try {
                             this.handleText(String(event.data));
                         } catch (err) {
-                            console.error(
-                                "[WebSocket] Unknown message type, cannot parse:",
-                                err,
-                                event.data
-                            );
+                            console.error("[WebSocket] Unknown message type, cannot parse:", err, event.data);
                         }
                     }
                 } catch (error) {
-                    console.error(
-                        "[WebSocket] Failed to handle incoming message:",
-                        error,
-                        event.data
-                    );
+                    console.error("[WebSocket] Failed to handle incoming message:", error, event.data);
                 }
             };
 
@@ -165,10 +157,7 @@ export class WSClient {
         }
 
         // Check if we've exceeded max attempts (0 means infinite)
-        if (
-            this.options.maxReconnectAttempts > 0 &&
-            this.reconnectAttempts >= this.options.maxReconnectAttempts
-        ) {
+        if (this.options.maxReconnectAttempts > 0 && this.reconnectAttempts >= this.options.maxReconnectAttempts) {
             console.error("[WebSocket] Max reconnect attempts reached");
             return;
         }

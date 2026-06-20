@@ -100,17 +100,9 @@
     </div>
 {/snippet}
 
-<AdminRouteShell
-    heading="Cache Management"
-    description="Monitor and manage the image processing cache"
->
+<AdminRouteShell heading="Cache Management" description="Monitor and manage the image processing cache">
     {#snippet actions()}
-        <Button
-            variant="small"
-            onclick={handleRefresh}
-            disabled={refreshing || loading}
-            title="Refresh Statistics"
-        >
+        <Button variant="small" onclick={handleRefresh} disabled={refreshing || loading} title="Refresh Statistics">
             <MaterialIcon iconName="refresh" class={refreshing ? "spinning" : ""} />
             Refresh
         </Button>
@@ -196,9 +188,7 @@
                     <div class="legend-item">
                         <span class="dot misses"></span>
                         <span class="legend-label">Misses:</span>
-                        <span class="legend-val"
-                            >{cacheStatus.misses.toLocaleString()} requests</span
-                        >
+                        <span class="legend-val">{cacheStatus.misses.toLocaleString()} requests</span>
                     </div>
                 </div>
 
@@ -219,11 +209,9 @@
                         {#if cacheStatus.hit_ratio >= 0.8}
                             Cache health is <b>Optimal</b>. High hit ratio minimizes CPU/GPU load.
                         {:else if cacheStatus.hit_ratio >= 0.5}
-                            Cache health is <b>Acceptable</b>. Consider monitor/window optimization
-                            sizing.
+                            Cache health is <b>Acceptable</b>. Consider monitor/window optimization sizing.
                         {:else}
-                            Cache health is <b>Sub-optimal</b>. High miss rate increases
-                            image-generation latency.
+                            Cache health is <b>Sub-optimal</b>. High miss rate increases image-generation latency.
                         {/if}
                     </span>
                 </div>
@@ -237,16 +225,14 @@
                 </div>
                 <div class="advisory-content">
                     <span>
-                        Viz utilizes a non-destructive image transformation model. When clients
-                        request resizes, crops, or format upgrades, the original image is left
-                        completely unmodified. The processed output (e.g. webp preview) is cached
-                        here for subsequent requests.
+                        Viz utilizes a non-destructive image transformation model. When clients request resizes, crops,
+                        or format upgrades, the original image is left completely unmodified. The processed output (e.g.
+                        webp preview) is cached here for subsequent requests.
                     </span>
                     <span>
-                        <b>Is it safe to clear?</b> Yes. Clearing the cache will instantly free up disk
-                        space. Viz will automatically re-generate any requested thumbnails or previews
-                        on-the-fly as users navigate the platform, though the first load for each size
-                        may experience minor latency.
+                        <b>Is it safe to clear?</b> Yes. Clearing the cache will instantly free up disk space. Viz will automatically
+                        re-generate any requested thumbnails or previews on-the-fly as users navigate the platform, though
+                        the first load for each size may experience minor latency.
                     </span>
                 </div>
             </div>

@@ -105,11 +105,7 @@ export function id(base: string): string {
 /**
  * Create a new element and set attributes
  */
-export function createElement(
-    tagName: string,
-    attributes?: Record<string, any>,
-    parent?: Element
-): HTMLElement {
+export function createElement(tagName: string, attributes?: Record<string, any>, parent?: Element): HTMLElement {
     const element = document.createElement(tagName);
     if (attributes) {
         Object.entries(attributes).forEach(([key, value]) => {

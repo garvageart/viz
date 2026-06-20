@@ -11,17 +11,13 @@ export interface Rect extends Position {
     height: number;
 }
 
-type LegacyClientRect = Pick<
-    Readonly<DOMRect>,
-    "height" | "width" | "left" | "right" | "top" | "bottom"
->;
+type LegacyClientRect = Pick<Readonly<DOMRect>, "height" | "width" | "left" | "right" | "top" | "bottom">;
 
 /**
  * A legacy-typed safer version of `element.getBoundingClientRect()`,
  *  that also invites minification capabilities (muliply calls can be forward to here, and it's pure).
  * */
-export const getElementRect = (element: HTMLElement): LegacyClientRect =>
-    /*@__PURE__*/ element.getBoundingClientRect();
+export const getElementRect = (element: HTMLElement): LegacyClientRect => /*@__PURE__*/ element.getBoundingClientRect();
 
 export const getBordersSizeOffsets: {
     (computedStyle: CSSStyleDeclaration, calcEnds?: true): Sides;
@@ -81,10 +77,7 @@ export const getBordersSizeOffsets: {
  * Notice that for calculating the width and the height without the border, we must use this function instead of using
  *  `Element.clientWidth` and `Element.clientHeight`, beacuse they round the sizes of the pixels to be integer.
  */
-export function elementRectWithoutBorder(
-    element: HTMLElement,
-    computedStyle?: CSSStyleDeclaration
-): Rect {
+export function elementRectWithoutBorder(element: HTMLElement, computedStyle?: CSSStyleDeclaration): Rect {
     if (!computedStyle) {
         computedStyle = calcComputedStyle(element);
     }
@@ -115,8 +108,7 @@ export function getGlobalMousePosition(event: MouseEvent | TouchEvent): Position
     const eventMouse = event as MouseEvent;
     const eventTouch = event as TouchEvent;
 
-    const { clientX, clientY } =
-        "ontouchstart" in window && eventTouch.touches ? eventTouch.touches[0] : eventMouse;
+    const { clientX, clientY } = "ontouchstart" in window && eventTouch.touches ? eventTouch.touches[0] : eventMouse;
 
     return { left: clientX, top: clientY };
 }

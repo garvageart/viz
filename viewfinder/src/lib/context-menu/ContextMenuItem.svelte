@@ -38,11 +38,7 @@
     }
 </script>
 
-<li
-    role="none"
-    onmouseenter={() => (showSubmenu = true)}
-    onmouseleave={() => (showSubmenu = false)}
->
+<li role="none" onmouseenter={() => (showSubmenu = true)} onmouseleave={() => (showSubmenu = false)}>
     <button
         role="menuitem"
         aria-disabled={item.disabled ? "true" : undefined}
@@ -79,17 +75,11 @@
                                     onclick={(e) => onChildClick(child, ci, e)}
                                 >
                                     {#if child.icon}
-                                        <MaterialIcon
-                                            class="icon"
-                                            iconName={child.icon}
-                                            weight={300}
-                                        />
+                                        <MaterialIcon class="icon" iconName={child.icon} weight={300} />
                                     {/if}
                                     <span class="label">{child.label}</span>
                                     {#if child.shortcut}
-                                        <span class="shortcut" aria-hidden="true"
-                                            >{child.shortcut}</span
-                                        >
+                                        <span class="shortcut" aria-hidden="true">{child.shortcut}</span>
                                     {/if}
                                 </button>
                             </li>

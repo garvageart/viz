@@ -32,9 +32,7 @@
         errorMessage = "";
 
         try {
-            const updates = Object.entries(dirtySettings).map(([name, value]) =>
-                updateUserSetting(name, { value })
-            );
+            const updates = Object.entries(dirtySettings).map(([name, value]) => updateUserSetting(name, { value }));
 
             await Promise.all(updates);
 

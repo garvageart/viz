@@ -40,9 +40,7 @@ export function createImageMenu(
             action: async () => {
                 const itemsToUpdate = selectionScope.selectedItems;
                 const setFavourited = !allFavourited;
-                const promises = itemsToUpdate.map((img) =>
-                    updateImage(img.uid, { favourited: setFavourited })
-                );
+                const promises = itemsToUpdate.map((img) => updateImage(img.uid, { favourited: setFavourited }));
                 try {
                     const results = await Promise.all(promises);
                     const success = results.filter((r) => r.status === 200);
@@ -92,9 +90,7 @@ export function createImageMenu(
             disabled: selectionScope.size === 0,
             action: () => {
                 const items = selectionScope.selectedItems;
-                const paths = items
-                    .map((img) => getFullImagePath(img.image_paths.original))
-                    .join("\n");
+                const paths = items.map((img) => getFullImagePath(img.image_paths.original)).join("\n");
                 navigator.clipboard.writeText(paths);
                 toastState.addToast({
                     type: "info",

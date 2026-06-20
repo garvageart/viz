@@ -15,9 +15,7 @@ const THEME_ATTR_PLACEHOLDER = "%THEME_ATTR%";
 const DEFAULT_THEME = "viz-black";
 
 function handleFonts(html: string) {
-    return html
-        .replace(DISPLAY_FONT_PLACEHOLDER, manrope)
-        .replace(MONO_FONT_PLACEHOLDER, robotoMono);
+    return html.replace(DISPLAY_FONT_PLACEHOLDER, manrope).replace(MONO_FONT_PLACEHOLDER, robotoMono);
 }
 
 // uses vite to import the compiled CSS

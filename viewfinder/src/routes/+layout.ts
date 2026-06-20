@@ -54,8 +54,7 @@ export async function load({ url, fetch }) {
 
     if (isConnectionError) {
         error(503, {
-            message:
-                "Could not connect to the Viz server. It might be down for maintenance or restarting."
+            message: "Could not connect to the Viz server. It might be down for maintenance or restarting."
         });
     }
 
@@ -75,8 +74,7 @@ export async function load({ url, fetch }) {
 
     // 4. Handle Protected Routes (everything else)
     if (!isAuthed) {
-        const continueUrl =
-            url.pathname === "/" ? "" : `?continue=${encodeURIComponent(url.pathname)}`;
+        const continueUrl = url.pathname === "/" ? "" : `?continue=${encodeURIComponent(url.pathname)}`;
         redirect(303, `/auth/login${continueUrl}`);
     }
 

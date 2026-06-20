@@ -50,9 +50,7 @@
 
                 for (const coll of collectionItems) {
                     const existingImageUids = coll.images?.map((img) => img.uid) ?? [];
-                    const newImageUids = imageUidsToAdd.filter(
-                        (uid) => !existingImageUids.includes(uid)
-                    );
+                    const newImageUids = imageUidsToAdd.filter((uid) => !existingImageUids.includes(uid));
                     augmentedCollections.push({
                         ...coll,
                         isFullyContained: newImageUids.length === 0 && imageUidsToAdd.length > 0,
@@ -97,9 +95,7 @@
                     if (createRes.status !== 201) {
                         toastState.addToast({
                             type: "error",
-                            message:
-                                createRes.data.error ??
-                                `Failed to create collection (${createRes.status})`,
+                            message: createRes.data.error ?? `Failed to create collection (${createRes.status})`,
                             timeout: 4000
                         });
 

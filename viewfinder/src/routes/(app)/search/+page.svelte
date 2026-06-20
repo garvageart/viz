@@ -151,9 +151,7 @@
     let imageViewMode = $state<AssetGridView>(viewSettings.current);
     // Collections in AssetGrid only support "list" and "thumbnails"
     let collectionViewMode = $state<"list" | "thumbnails">(
-        viewSettings.current === "grid"
-            ? "thumbnails"
-            : (viewSettings.current as "list" | "thumbnails")
+        viewSettings.current === "grid" ? "thumbnails" : (viewSettings.current as "list" | "thumbnails")
     );
 
     // Display options for Images
@@ -552,9 +550,8 @@
                         </span>
                         <div class="search-info-details" style="margin-left: 1rem;">
                             <span>
-                                {collections.length} collection{collections.length === 1
-                                    ? ""
-                                    : "s"}, {search.pagination.count}
+                                {collections.length} collection{collections.length === 1 ? "" : "s"}, {search.pagination
+                                    .count}
                                 image{search.pagination.count === 1 ? "" : "s"}
                             </span>
                         </div>
@@ -607,9 +604,7 @@
                                 <div class="search-section-header">
                                     <h2>Collections ({collections.length})</h2>
                                     {#if collectionSelection.size <= 1}
-                                        <div
-                                            style="display: flex; align-items: center; gap: 0.5rem;"
-                                        >
+                                        <div style="display: flex; align-items: center; gap: 0.5rem;">
                                             <Dropdown
                                                 title="Display"
                                                 class="toolbar-button"
@@ -629,10 +624,7 @@
                                             anchor: { x: number; y: number } | HTMLElement;
                                         }) => {
                                             const { asset } = detail;
-                                            if (
-                                                !collectionSelection.has(asset) ||
-                                                collectionSelection.size <= 1
-                                            ) {
+                                            if (!collectionSelection.has(asset) || collectionSelection.size <= 1) {
                                                 collectionSelection.select(asset);
                                             }
                                             ctxAnchor = detail.anchor;
@@ -648,9 +640,7 @@
                                 <div class="search-section-header">
                                     <h2>Images ({images.length} of {search.pagination.count})</h2>
                                     {#if imageSelection.size <= 1}
-                                        <div
-                                            style="display: flex; align-items: center; gap: 0.5rem;"
-                                        >
+                                        <div style="display: flex; align-items: center; gap: 0.5rem;">
                                             <Dropdown
                                                 title="Display"
                                                 class="toolbar-button"
@@ -680,10 +670,7 @@
                                             anchor: { x: number; y: number } | HTMLElement;
                                         }) => {
                                             const { asset } = detail;
-                                            if (
-                                                !imageSelection.has(asset) ||
-                                                imageSelection.size <= 1
-                                            ) {
+                                            if (!imageSelection.has(asset) || imageSelection.size <= 1) {
                                                 imageSelection.select(asset);
                                             }
 

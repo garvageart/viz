@@ -79,8 +79,7 @@
     let lensModel = $state("XF 35mm f/2.0");
     let assetUid = $state("nIiGNClg0dx0MSC1gHgQa5ST");
 
-    const getExampleDate = () =>
-        DateTime.fromISO("2025-03-01T14:05:07.456Z", { locale: window.navigator.language });
+    const getExampleDate = () => DateTime.fromISO("2025-03-01T14:05:07.456Z", { locale: window.navigator.language });
 
     function clean(val: string): string;
     function clean(val: null | undefined): null;
@@ -259,17 +258,15 @@
                 class={template !== activeTemplate ? "warning-icon" : "success-icon"}
             />
             <span
-                >Current Template: <code class="mono"
-                    >{config?.storage?.storage_path_template || defaultTemplate}</code
-                >
+                >Current Template: <code class="mono">{config?.storage?.storage_path_template || defaultTemplate}</code>
                 {#if template !== activeTemplate}
                     <span class="unsaved-badge">Unsaved changes</span>
                 {/if}
             </span>
         </div>
         <p class="config-note">
-            To save a new template permanently, click the "Save Template" button below to write the
-            changes back to the server config file.
+            To save a new template permanently, click the "Save Template" button below to write the changes back to the
+            server config file.
         </p>
     </div>
 
@@ -281,9 +278,9 @@
                     <div class="designer-header">
                         <h4 class="designer-label">Template Designer</h4>
                         <p>
-                            Use the input below to define your storage path template (slashes are
-                            cleaned for safe paths). You can also click on the available variables
-                            on the right to insert them at your cursor position.
+                            Use the input below to define your storage path template (slashes are cleaned for safe
+                            paths). You can also click on the available variables on the right to insert them at your
+                            cursor position.
                         </p>
                     </div>
 
@@ -302,9 +299,7 @@
                             iconName={saving ? "sync" : "save"}
                             class="{saving ? 'spinning' : ''} save-sptemplate-btn"
                             onclick={handleSaveTemplate}
-                            disabled={template === activeTemplate ||
-                                saving ||
-                                !!templateCompileResult.error}
+                            disabled={template === activeTemplate || saving || !!templateCompileResult.error}
                         >
                             {saving ? "Saving..." : "Save Template"}
                         </IconButton>
@@ -328,9 +323,7 @@
                     bind:value={template}
                     placeholder={defaultTemplate}
                     class="mono-input"
-                    description={selectedPresetName
-                        ? `Preset: ${selectedPresetName}`
-                        : "Custom template"}
+                    description={selectedPresetName ? `Preset: ${selectedPresetName}` : "Custom template"}
                 />
             </div>
 
@@ -359,8 +352,8 @@
                             class="root-dir"
                             title={`${config?.base_directory}/${config?.upload?.location}/${templateCompileResult.path}`}
                         >
-                            {config?.base_directory}/{config?.upload?.location}/<span
-                                class="rendered-path">{templateCompileResult.path}</span
+                            {config?.base_directory}/{config?.upload?.location}/<span class="rendered-path"
+                                >{templateCompileResult.path}</span
                             ></span
                         >
                     {/if}
@@ -379,17 +372,13 @@
                 <div class="context-header">
                     <h4>Template Variables</h4>
                     <p>
-                        Adjust the example variable values below to see how they affect the rendered
-                        path in the preview above.
+                        Adjust the example variable values below to see how they affect the rendered path in the preview
+                        above.
                     </p>
                 </div>
                 <div class="context-grid">
                     <div class="field-item">
-                        <InputText
-                            label="Filename"
-                            bind:value={filename}
-                            placeholder="PHOTO_2193.jpg"
-                        />
+                        <InputText label="Filename" bind:value={filename} placeholder="PHOTO_2193.jpg" />
                     </div>
 
                     <div class="field-item checkbox-field">
@@ -405,11 +394,7 @@
                     </div>
 
                     <div class="field-item">
-                        <InputText
-                            label="Lens Model"
-                            bind:value={lensModel}
-                            placeholder="XF 35mm f/2.0"
-                        />
+                        <InputText label="Lens Model" bind:value={lensModel} placeholder="XF 35mm f/2.0" />
                     </div>
                 </div>
             </div>
@@ -423,11 +408,7 @@
             </div>
 
             <div class="tokens-scrollable">
-                {#snippet tokenCategory(
-                    iconName: MaterialSymbol,
-                    title: string,
-                    children: import("svelte").Snippet
-                )}
+                {#snippet tokenCategory(iconName: MaterialSymbol, title: string, children: import("svelte").Snippet)}
                     <div class="token-category">
                         <div class="category-header">
                             <MaterialIcon {iconName} weight={300} />
@@ -450,9 +431,7 @@
                                             title={"Click to insert {{" + token + "}}"}
                                         >
                                             <span class="token-code">{token}</span>
-                                            <span class="token-val"
-                                                >{getExampleDate().toFormat(token)}</span
-                                            >
+                                            <span class="token-val">{getExampleDate().toFormat(token)}</span>
                                         </button>
                                     {/each}
                                 </div>
@@ -491,21 +470,15 @@
                                     class="token-badge full-width"
                                     onclick={() =>
                                         insertToken(
-                                            token === "collectionStartDateY"
-                                                ? "collection-startDate-y"
-                                                : token
+                                            token === "collectionStartDateY" ? "collection-startDate-y" : token
                                         )}
                                     title={"Click to insert {{" +
-                                        (token === "collectionStartDateY"
-                                            ? "collection-startDate-y"
-                                            : token) +
+                                        (token === "collectionStartDateY" ? "collection-startDate-y" : token) +
                                         "}}"}
                                 >
                                     <div class="badge-left">
                                         <span class="token-code"
-                                            >{token === "collectionStartDateY"
-                                                ? "collection-startDate-y"
-                                                : token}</span
+                                            >{token === "collectionStartDateY" ? "collection-startDate-y" : token}</span
                                         >
                                         <span class="token-val-desc">{desc}</span>
                                     </div>
@@ -1010,11 +983,7 @@
         transition: background-color 150ms cubic-bezier(0.4, 0, 0.2, 1) !important;
 
         &:hover:not(:disabled) {
-            background-color: color-mix(
-                in srgb,
-                var(--viz-primary) 85%,
-                var(--viz-text-color)
-            ) !important;
+            background-color: color-mix(in srgb, var(--viz-primary) 85%, var(--viz-text-color)) !important;
             border-color: transparent !important;
         }
 

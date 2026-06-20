@@ -62,18 +62,10 @@
     >
         <div class="thumb-container">
             {#if thumbnailAsset}
-                <AssetImage
-                    asset={thumbnailAsset}
-                    alt={item.name}
-                    variant="thumbnail"
-                    objectFit="cover"
-                />
+                <AssetImage asset={thumbnailAsset} alt={item.name} variant="thumbnail" objectFit="cover" />
             {:else}
                 <div class="placeholder">
-                    <MaterialIcon
-                        iconName={type === "collection" ? "folder" : "image"}
-                        size="1.2rem"
-                    />
+                    <MaterialIcon iconName={type === "collection" ? "folder" : "image"} size="1.2rem" />
                 </div>
             {/if}
         </div>

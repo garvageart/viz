@@ -50,10 +50,7 @@
         ) => void;
         /** Disable clearing selection when clicking in other grids (useful when multiple grids share one selection set) */
         disableOutsideUnselect?: boolean;
-        onassetcontext?: (detail: {
-            asset: T;
-            anchor: { x: number; y: number } | HTMLElement;
-        }) => void;
+        onassetcontext?: (detail: { asset: T; anchor: { x: number; y: number } | HTMLElement }) => void;
         /** optional explicit column list for table view (order matters). If omitted, inferred from data. */
         columns?: string[];
         /** table config: thumbnail_key is dot-path to thumbnail in each asset, columns overrides visible keys */
@@ -192,9 +189,7 @@
             return;
         }
 
-        const element = assetGridDisplayEl.querySelector(
-            `[data-asset-id="${asset.uid}"]`
-        ) as HTMLElement;
+        const element = assetGridDisplayEl.querySelector(`[data-asset-id="${asset.uid}"]`) as HTMLElement;
         if (!element) {
             return;
         }
@@ -377,7 +372,7 @@
             // maybe unnessary to blur but i wanna make sure lmao
             (imageGridChildren?.item(positionIndexInGrid) as HTMLElement).blur();
             element.focus();
-            
+
             const targetAssetId = element.getAttribute("data-asset-id");
             const targetAsset = allAssetsData.find((a) => a.uid === targetAssetId);
             if (targetAsset) {
@@ -389,9 +384,7 @@
 
         switch (e.key) {
             case "ArrowRight":
-                const elementRight = imageGridChildren?.item(
-                    positionIndexInGrid + 1
-                ) as HTMLElement;
+                const elementRight = imageGridChildren?.item(positionIndexInGrid + 1) as HTMLElement;
                 focusAndSelectElement(elementRight, 1);
                 break;
             case "ArrowLeft":
@@ -399,15 +392,11 @@
                 focusAndSelectElement(elementLeft, -1);
                 break;
             case "ArrowUp":
-                const elementUp = imageGridChildren?.item(
-                    positionIndexInGrid - columnCount
-                ) as HTMLElement;
+                const elementUp = imageGridChildren?.item(positionIndexInGrid - columnCount) as HTMLElement;
                 focusAndSelectElement(elementUp, -columnCount);
                 break;
             case "ArrowDown":
-                const elementDown = imageGridChildren?.item(
-                    positionIndexInGrid + columnCount
-                ) as HTMLElement;
+                const elementDown = imageGridChildren?.item(positionIndexInGrid + columnCount) as HTMLElement;
                 focusAndSelectElement(elementDown, columnCount);
                 break;
             case "Tab":
@@ -417,18 +406,12 @@
                     if (positionIndexInGrid > 0) {
                         e.preventDefault();
                     }
-                    focusAndSelectElement(
-                        imageGridChildren?.item(positionIndexInGrid - 1) as HTMLElement,
-                        -1
-                    );
+                    focusAndSelectElement(imageGridChildren?.item(positionIndexInGrid - 1) as HTMLElement, -1);
                 } else {
                     if (positionIndexInGrid < imageGridChildren?.length! - 1) {
                         e.preventDefault();
                     }
-                    focusAndSelectElement(
-                        imageGridChildren?.item(positionIndexInGrid + 1) as HTMLElement,
-                        1
-                    );
+                    focusAndSelectElement(imageGridChildren?.item(positionIndexInGrid + 1) as HTMLElement, 1);
                 }
                 break;
         }
@@ -923,11 +906,7 @@
             }
 
             &.selected-card {
-                background-color: color-mix(
-                    in srgb,
-                    var(--viz-bg-color) 100%,
-                    var(--viz-primary) 20%
-                );
+                background-color: color-mix(in srgb, var(--viz-bg-color) 100%, var(--viz-primary) 20%);
             }
 
             td {

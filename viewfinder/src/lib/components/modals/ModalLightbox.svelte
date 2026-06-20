@@ -35,14 +35,7 @@
     let modalEl: HTMLElement | undefined = $state();
 </script>
 
-<div
-    {...props}
-    class="viz-modal"
-    style:width
-    style:height
-    style:z-index={zIndex}
-    bind:this={modalEl}
->
+<div {...props} class="viz-modal" style:width style:height style:z-index={zIndex} bind:this={modalEl}>
     <div class="modal-header">
         {#if headerSnippet}
             {@render headerSnippet()}

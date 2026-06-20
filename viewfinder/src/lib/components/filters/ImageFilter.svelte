@@ -229,8 +229,7 @@
                         type="date"
                         value={criteria.date.after ?? ""}
                         onchange={(e) => {
-                            criteria.date.after =
-                                (e.currentTarget as HTMLInputElement).value || undefined;
+                            criteria.date.after = (e.currentTarget as HTMLInputElement).value || undefined;
                             save();
                         }}
                     />
@@ -241,8 +240,7 @@
                         type="date"
                         value={criteria.date.before ?? ""}
                         onchange={(e) => {
-                            criteria.date.before =
-                                (e.currentTarget as HTMLInputElement).value || undefined;
+                            criteria.date.before = (e.currentTarget as HTMLInputElement).value || undefined;
                             save();
                         }}
                     />

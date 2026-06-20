@@ -70,9 +70,7 @@
         const firstEnabled = items.findIndex((i) => !i.disabled && !i.separator);
         activeIndex = firstEnabled === -1 ? 0 : firstEnabled;
         tick().then(() => {
-            const current = contextMenu?.querySelector<HTMLButtonElement>(
-                `[data-index="${activeIndex}"]`
-            );
+            const current = contextMenu?.querySelector<HTMLButtonElement>(`[data-index="${activeIndex}"]`);
             current?.focus();
         });
     }
@@ -124,10 +122,7 @@
             // Flip above if necessary
             const spaceBelow = window.innerHeight - rect.bottom;
             const spaceAbove = rect.top;
-            if (
-                menuRect.height + safeMargin > spaceBelow &&
-                menuRect.height + safeMargin <= spaceAbove
-            ) {
+            if (menuRect.height + safeMargin > spaceBelow && menuRect.height + safeMargin <= spaceAbove) {
                 // flip above using same offset magnitude
                 top = Math.round(rect.top - menuRect.height - offsetY);
             }
@@ -163,8 +158,7 @@
 
                 if (debug) {
                     // Log rects and computed coords for debugging
-                    const aRect =
-                        anchor instanceof HTMLElement ? anchor.getBoundingClientRect() : null;
+                    const aRect = anchor instanceof HTMLElement ? anchor.getBoundingClientRect() : null;
                     const mRect = contextMenu?.getBoundingClientRect();
                     console.log("ContextMenu debug:", {
                         anchorRect: aRect,
@@ -222,10 +216,8 @@
     }
 
     function removeDebugOverlays() {
-        if (debugAnchorEl && debugAnchorEl.parentElement)
-            debugAnchorEl.parentElement.removeChild(debugAnchorEl);
-        if (debugMenuEl && debugMenuEl.parentElement)
-            debugMenuEl.parentElement.removeChild(debugMenuEl);
+        if (debugAnchorEl && debugAnchorEl.parentElement) debugAnchorEl.parentElement.removeChild(debugAnchorEl);
+        if (debugMenuEl && debugMenuEl.parentElement) debugMenuEl.parentElement.removeChild(debugMenuEl);
         debugAnchorEl = null;
         debugMenuEl = null;
     }
@@ -331,9 +323,7 @@
 
     function focusActive() {
         tick().then(() => {
-            const el = contextMenu?.querySelector<HTMLButtonElement>(
-                `[data-index="${activeIndex}"]`
-            );
+            const el = contextMenu?.querySelector<HTMLButtonElement>(`[data-index="${activeIndex}"]`);
             el?.focus();
         });
     }

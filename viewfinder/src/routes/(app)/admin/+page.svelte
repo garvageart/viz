@@ -17,12 +17,8 @@
         version: __APP_VERSION__,
         activeConnections: data.wsStats?.connectedClients ?? 0,
         goroutines: data.systemStats?.num_goroutine ?? 0,
-        allocMemory: data.systemStats?.alloc_memory
-            ? formatBytes(data.systemStats.alloc_memory)
-            : "Unknown",
-        sysMemory: data.systemStats?.sys_memory
-            ? formatBytes(data.systemStats.sys_memory)
-            : "Unknown"
+        allocMemory: data.systemStats?.alloc_memory ? formatBytes(data.systemStats.alloc_memory) : "Unknown",
+        sysMemory: data.systemStats?.sys_memory ? formatBytes(data.systemStats.sys_memory) : "Unknown"
     });
 
     let databaseInfo = $derived({
@@ -33,9 +29,7 @@
     });
 
     let storageInfo = $derived({
-        totalUsed: data.systemStats?.storage_used_bytes
-            ? formatBytes(data.systemStats.storage_used_bytes)
-            : "Unknown",
+        totalUsed: data.systemStats?.storage_used_bytes ? formatBytes(data.systemStats.storage_used_bytes) : "Unknown",
         availableSystemSpace: data.systemStats?.total_available_space_bytes
             ? formatBytes(data.systemStats.total_available_space_bytes)
             : "Unknown",
@@ -56,15 +50,13 @@
 
     let storagePercent = $derived(
         100 -
-            ((data.systemStats?.total_available_space_bytes ?? 0) /
-                (data.systemStats?.total_system_space_bytes ?? 1)) *
+            ((data.systemStats?.total_available_space_bytes ?? 0) / (data.systemStats?.total_system_space_bytes ?? 1)) *
                 100
     );
 
     let formattedSystemStorage = $derived(
         `${formatBytes(
-            (data.systemStats?.total_system_space_bytes ?? 0) -
-                (data.systemStats?.total_available_space_bytes ?? 0)
+            (data.systemStats?.total_system_space_bytes ?? 0) - (data.systemStats?.total_available_space_bytes ?? 0)
         )} of ${storageInfo.totalSystemSpace}`
     );
 
@@ -234,20 +226,14 @@
                                 <span class="card-subtitle">Disk space allocation</span>
                             </div>
                         </div>
-                        <a
-                            href="/admin/storage"
-                            class="icon-link-btn"
-                            title="View Storage Settings"
-                        >
+                        <a href="/admin/storage" class="icon-link-btn" title="View Storage Settings">
                             <MaterialIcon iconName="chevron_right" size="1.25rem" />
                         </a>
                     </div>
                     <div class="card-body">
                         <div class="storage-row">
                             <span class="storage-label">Storage Folder</span>
-                            <span class="storage-value path" title={storageInfo.path}
-                                >{storageInfo.path}</span
-                            >
+                            <span class="storage-value path" title={storageInfo.path}>{storageInfo.path}</span>
                         </div>
                         <div class="storage-row">
                             <span class="storage-label">Image Storage</span>
@@ -256,15 +242,10 @@
                         <div class="storage-row progress-row">
                             <div class="progress-labels">
                                 <span class="storage-label">Server Storage Space</span>
-                                <span class="storage-value font-mono">{formattedSystemStorage}</span
-                                >
+                                <span class="storage-value font-mono">{formattedSystemStorage}</span>
                             </div>
                             <div class="progress-bar-wrapper">
-                                <ProgressBar
-                                    colour="primary"
-                                    variant="large"
-                                    width={storagePercent}
-                                />
+                                <ProgressBar colour="primary" variant="large" width={storagePercent} />
                             </div>
                         </div>
                     </div>
@@ -335,17 +316,24 @@
                             </div>
                             <div class="about-item">
                                 <span class="about-label">OS / Arch</span>
-                                <span class="about-value">{data.serverAbout?.os || "Unknown"}/{data.serverAbout?.architecture || "Unknown"}</span>
+                                <span class="about-value"
+                                    >{data.serverAbout?.os || "Unknown"}/{data.serverAbout?.architecture ||
+                                        "Unknown"}</span
+                                >
                             </div>
                             <div class="about-item">
                                 <span class="about-label">Commit</span>
                                 <span class="about-value font-mono">
                                     {#if commitUrl}
                                         <a href={commitUrl} target="_blank" rel="noreferrer" class="repo-link">
-                                            {data.serverAbout?.sourceCommit ? data.serverAbout.sourceCommit.substring(0, 7) : "Unknown"}
+                                            {data.serverAbout?.sourceCommit
+                                                ? data.serverAbout.sourceCommit.substring(0, 7)
+                                                : "Unknown"}
                                         </a>
                                     {:else}
-                                        {data.serverAbout?.sourceCommit ? data.serverAbout.sourceCommit.substring(0, 7) : "Unknown"}
+                                        {data.serverAbout?.sourceCommit
+                                            ? data.serverAbout.sourceCommit.substring(0, 7)
+                                            : "Unknown"}
                                     {/if}
                                 </span>
                             </div>
@@ -725,7 +713,7 @@
         .repo-link {
             color: inherit;
             text-decoration: underline;
-            
+
             &:hover {
                 color: var(--viz-text-color);
                 text-decoration: none;

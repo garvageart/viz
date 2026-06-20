@@ -10,12 +10,7 @@
     let panelEl = $state<HTMLElement | null>(null);
 </script>
 
-<div
-    id="account-details-panel"
-    bind:this={panelEl}
-    in:slide={{ duration: 100 }}
-    out:slide={{ duration: 100 }}
->
+<div id="account-details-panel" bind:this={panelEl} in:slide={{ duration: 100 }} out:slide={{ duration: 100 }}>
     <div id="account-details">
         <span class="account-name">{data?.name}</span>
         <span class="account-email">{data?.email}</span>

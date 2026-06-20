@@ -176,9 +176,7 @@
         if (nextIndex !== -1 && views[nextIndex]) {
             event.preventDefault();
             group.setActive(views[nextIndex].id);
-            const button = headerEl?.querySelector(
-                `[role="tab"][aria-selected="true"]`
-            ) as HTMLElement;
+            const button = headerEl?.querySelector(`[role="tab"][aria-selected="true"]`) as HTMLElement;
             button?.focus();
         }
     }
@@ -241,10 +239,7 @@
         event.preventDefault();
 
         headerCtxMenu.anchor = { x: event.clientX, y: event.clientY };
-        headerCtxMenu.items = [
-            ...buildLayoutContextMenu(),
-            ...buildPanelContextMenu(group, menuHandlers)
-        ];
+        headerCtxMenu.items = [...buildLayoutContextMenu(), ...buildPanelContextMenu(group, menuHandlers)];
         headerCtxMenu.show = true;
     }
 
@@ -321,12 +316,7 @@
     }
 </script>
 
-<div
-    class="tab-group-panel"
-    use:tabOps.dropTarget={group.id}
-    onclickcapture={handleFocus}
-    role="none"
->
+<div class="tab-group-panel" use:tabOps.dropTarget={group.id} onclickcapture={handleFocus} role="none">
     {#if isFocused}
         <div class="viz-panel-active-overlay"></div>
     {/if}
@@ -391,9 +381,7 @@
 
         {#if scrollWidth > clientWidth}
             <div
-                class="viz-custom-scrollbar {isHoveringHeader || isDraggingScrollbar
-                    ? 'visible'
-                    : ''}"
+                class="viz-custom-scrollbar {isHoveringHeader || isDraggingScrollbar ? 'visible' : ''}"
                 onmousedown={handleScrollbarDragStart}
                 role="slider"
                 tabindex="0"
@@ -458,18 +446,8 @@
     </div>
 </div>
 
-<ContextMenu
-    bind:showMenu={tabCtxMenu.show}
-    items={tabCtxMenu.items}
-    anchor={tabCtxMenu.anchor}
-    offsetY={4}
-/>
-<ContextMenu
-    bind:showMenu={headerCtxMenu.show}
-    items={headerCtxMenu.items}
-    anchor={headerCtxMenu.anchor}
-    offsetY={4}
-/>
+<ContextMenu bind:showMenu={tabCtxMenu.show} items={tabCtxMenu.items} anchor={tabCtxMenu.anchor} offsetY={4} />
+<ContextMenu bind:showMenu={headerCtxMenu.show} items={headerCtxMenu.items} anchor={headerCtxMenu.anchor} offsetY={4} />
 
 <style lang="scss">
     .tab-group-panel {

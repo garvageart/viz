@@ -77,8 +77,7 @@ class JobsState {
 
         this.wsClient = createWSConnection(
             async (event: string, data: unknown) => {
-                const payload =
-                    data && typeof data === "object" ? (data as Record<string, unknown>) : {};
+                const payload = data && typeof data === "object" ? (data as Record<string, unknown>) : {};
                 switch (event) {
                     case "connected":
                         this.connected = true;
@@ -102,12 +101,8 @@ class JobsState {
                                 typeof payload.enqueued_at === "string"
                                     ? payload.enqueued_at
                                     : new Date().toISOString(),
-                            image_uid:
-                                typeof payload.image_uid === "string"
-                                    ? payload.image_uid
-                                    : undefined,
-                            filename:
-                                typeof payload.filename === "string" ? payload.filename : undefined,
+                            image_uid: typeof payload.image_uid === "string" ? payload.image_uid : undefined,
+                            filename: typeof payload.filename === "string" ? payload.filename : undefined,
                             progress: 0,
                             startTime: new Date()
                         };
@@ -116,13 +111,9 @@ class JobsState {
                         this.stats.activeCount = this.activeJobs.length;
 
                         const displayTopic = this.getTopicForJobType(topic);
-                        this.runningByTopic[displayTopic] =
-                            (this.runningByTopic[displayTopic] || 0) + 1;
+                        this.runningByTopic[displayTopic] = (this.runningByTopic[displayTopic] || 0) + 1;
                         if ((this.queuedByTopic[displayTopic] || 0) > 0) {
-                            this.queuedByTopic[displayTopic] = Math.max(
-                                0,
-                                this.queuedByTopic[displayTopic] - 1
-                            );
+                            this.queuedByTopic[displayTopic] = Math.max(0, this.queuedByTopic[displayTopic] - 1);
                         }
                         break;
                     }
@@ -132,8 +123,7 @@ class JobsState {
                             return;
                         }
 
-                        const progress =
-                            typeof payload.progress === "number" ? payload.progress : undefined;
+                        const progress = typeof payload.progress === "number" ? payload.progress : undefined;
                         const step = typeof payload.step === "string" ? payload.step : undefined;
 
                         this.activeJobs = this.activeJobs.map((j) =>
@@ -170,13 +160,9 @@ class JobsState {
                             removed = {
                                 uid,
                                 type: typeof payload.type === "string" ? payload.type : "unknown",
-                                topic:
-                                    typeof payload.topic === "string" ? payload.topic : "unknown",
+                                topic: typeof payload.topic === "string" ? payload.topic : "unknown",
                                 status: "completed",
-                                image_uid:
-                                    typeof payload.image_uid === "string"
-                                        ? payload.image_uid
-                                        : undefined,
+                                image_uid: typeof payload.image_uid === "string" ? payload.image_uid : undefined,
                                 endTime: new Date(),
                                 startTime: new Date()
                             } as UiJob;
@@ -187,13 +173,8 @@ class JobsState {
                         this.stats.totalProcessed++;
                         this.stats.activeCount = this.activeJobs.length;
 
-                        const displayTopic = this.getTopicForJobType(
-                            removed.topic || removed.type || "unknown"
-                        );
-                        this.runningByTopic[displayTopic] = Math.max(
-                            0,
-                            (this.runningByTopic[displayTopic] || 0) - 1
-                        );
+                        const displayTopic = this.getTopicForJobType(removed.topic || removed.type || "unknown");
+                        this.runningByTopic[displayTopic] = Math.max(0, (this.runningByTopic[displayTopic] || 0) - 1);
                         break;
                     }
                     case "job-failed": {
@@ -209,10 +190,7 @@ class JobsState {
                                     ...j,
                                     status: "failed",
                                     endTime: new Date(),
-                                    error:
-                                        typeof payload.error === "string"
-                                            ? payload.error
-                                            : "Unknown error"
+                                    error: typeof payload.error === "string" ? payload.error : "Unknown error"
                                 };
                                 return false;
                             }
@@ -223,19 +201,12 @@ class JobsState {
                             removed = {
                                 uid,
                                 type: typeof payload.type === "string" ? payload.type : "unknown",
-                                topic:
-                                    typeof payload.topic === "string" ? payload.topic : "unknown",
+                                topic: typeof payload.topic === "string" ? payload.topic : "unknown",
                                 status: "failed",
-                                image_uid:
-                                    typeof payload.image_uid === "string"
-                                        ? payload.image_uid
-                                        : undefined,
+                                image_uid: typeof payload.image_uid === "string" ? payload.image_uid : undefined,
                                 endTime: new Date(),
                                 startTime: new Date(),
-                                error:
-                                    typeof payload.error === "string"
-                                        ? payload.error
-                                        : "Unknown error"
+                                error: typeof payload.error === "string" ? payload.error : "Unknown error"
                             } as UiJob;
                         }
 
@@ -243,13 +214,8 @@ class JobsState {
                         this.stats.failedCount++;
                         this.stats.activeCount = this.activeJobs.length;
 
-                        const displayTopic = this.getTopicForJobType(
-                            removed.topic || removed.type || "unknown"
-                        );
-                        this.runningByTopic[displayTopic] = Math.max(
-                            0,
-                            (this.runningByTopic[displayTopic] || 0) - 1
-                        );
+                        const displayTopic = this.getTopicForJobType(removed.topic || removed.type || "unknown");
+                        this.runningByTopic[displayTopic] = Math.max(0, (this.runningByTopic[displayTopic] || 0) - 1);
                         break;
                     }
                 }
@@ -318,8 +284,7 @@ class JobsState {
             }
         } catch (e) {
             toastState.addToast({
-                message:
-                    "Error fetching job types: " + (e instanceof Error ? e.message : String(e)),
+                message: "Error fetching job types: " + (e instanceof Error ? e.message : String(e)),
                 type: "error"
             });
         } finally {
@@ -460,8 +425,7 @@ class JobsState {
             }
         } catch (e) {
             toastState.addToast({
-                message:
-                    "Error updating concurrency: " + (e instanceof Error ? e.message : String(e)),
+                message: "Error updating concurrency: " + (e instanceof Error ? e.message : String(e)),
                 type: "error"
             });
             await this.fetchJobTypes();

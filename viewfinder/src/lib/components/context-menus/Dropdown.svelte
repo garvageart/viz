@@ -57,18 +57,14 @@
     // Derived selected item from items by id
     let selectedItem: MenuItem | undefined = $derived(items?.find((i) => i.id === selectedItemId));
 
-    let currentIcon: MaterialSymbol | undefined = $derived(
-        (selectedItem?.icon as MaterialSymbol | undefined) ?? icon
-    );
+    let currentIcon: MaterialSymbol | undefined = $derived((selectedItem?.icon as MaterialSymbol | undefined) ?? icon);
 
     let menuItems: MenuItem[] = $state([]);
 
     function buildMenuItems(): MenuItem[] {
         return items.map((it) => ({
             ...it,
-            icon:
-                it.icon ??
-                (showSelectionIndicator && selectedItemId === it.id ? "check" : undefined),
+            icon: it.icon ?? (showSelectionIndicator && selectedItemId === it.id ? "check" : undefined),
             // wrap existing action so dropdown selection handling runs first
             action: (e) => handleItemSelect(it, e)
         }));
@@ -131,12 +127,7 @@
             {@render buttonContent()}
         </IconButton>
     {:else}
-        <Button
-            class="viz-dropdown-button {className}"
-            {title}
-            bind:element={buttonEl}
-            onclick={toggleMenu}
-        >
+        <Button class="viz-dropdown-button {className}" {title} bind:element={buttonEl} onclick={toggleMenu}>
             {@render buttonContent()}
         </Button>
     {/if}

@@ -13,10 +13,7 @@
     <div class="error-card">
         <div class="icon-wrapper">
             {#if statusCode === 404}
-                <MaterialIcon
-                    iconName="search_off"
-                    style="font-size: 4rem; color: var(--viz-20);"
-                />
+                <MaterialIcon iconName="search_off" style="font-size: 4rem; color: var(--viz-20);" />
             {:else if statusCode === 403 || statusCode === 401}
                 <MaterialIcon iconName="lock" style="font-size: 4rem; color: var(--viz-20);" />
             {:else}

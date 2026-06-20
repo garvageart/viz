@@ -21,11 +21,7 @@
     } from "$lib/states/index.svelte";
     import { workspaceState } from "$lib/states/workspace.svelte";
     import { toastState } from "$lib/toast-notifcations/notif-state.svelte";
-    import {
-        SUPPORTED_IMAGE_TYPES,
-        SUPPORTED_RAW_FILES,
-        type SupportedImageTypes
-    } from "$lib/types/images";
+    import { SUPPORTED_IMAGE_TYPES, SUPPORTED_RAW_FILES, type SupportedImageTypes } from "$lib/types/images";
     import UploadManager from "$lib/upload/manager.svelte";
     import VizView from "$lib/views/views.svelte";
     import hotkeys from "hotkeys-js";
@@ -82,15 +78,10 @@
     ];
 
     async function triggerUpload(type: "photos" | "folder") {
-        const manager = new UploadManager([
-            ...SUPPORTED_RAW_FILES,
-            ...SUPPORTED_IMAGE_TYPES
-        ] as SupportedImageTypes[]);
+        const manager = new UploadManager([...SUPPORTED_RAW_FILES, ...SUPPORTED_IMAGE_TYPES] as SupportedImageTypes[]);
 
         const uploadedImages =
-            type === "photos"
-                ? await manager.openPickerAndUpload()
-                : await manager.openFolderPickerAndUpload();
+            type === "photos" ? await manager.openPickerAndUpload() : await manager.openFolderPickerAndUpload();
 
         if (uploadedImages.length === 0) {
             return;
@@ -253,22 +244,12 @@
             title="App Menu"
         >
             viz
-            <MaterialIcon
-                iconName="expand_more"
-                weight={300}
-                size="1em"
-                style="margin-left: 0.15em;"
-            />
+            <MaterialIcon iconName="expand_more" weight={300} size="1em" style="margin-left: 0.15em;" />
         </button>
         <AppMenu bind:isOpen={openAppMenu} bind:anchor={appMenuButton} />
         <div class="menu-separator"></div>
         {#if isLayoutPage()}
-            <IconButton
-                class="header-button"
-                iconName="view_quilt"
-                title="Views"
-                onclick={handleViewMenu}
-            />
+            <IconButton class="header-button" iconName="view_quilt" title="Views" onclick={handleViewMenu} />
         {:else}
             <IconButton
                 class="header-button"
@@ -358,12 +339,8 @@
                 onclick={() => (openAccPanel = !openAccPanel)}
                 title={user.data?.name ? `${user.data.name} (${user.data.email})` : "Account"}
             >
-                <figure
-                    style="height: 100%; display: flex; align-items: center; justify-content: center;"
-                >
-                    <span style="font-weight: 800; font-size: 0.9em;"
-                        >{user.data ? user.data.name[0] : "?"}</span
-                    >
+                <figure style="height: 100%; display: flex; align-items: center; justify-content: center;">
+                    <span style="font-weight: 800; font-size: 0.9em;">{user.data ? user.data.name[0] : "?"}</span>
                 </figure>
             </button>
             {#if openAccPanel}

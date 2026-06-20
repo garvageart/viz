@@ -370,32 +370,20 @@ export class FilterScope<F, A extends Asset> {
                     }
                 }
 
-                if (
-                    criteria.shutterSpeed.min !== undefined ||
-                    criteria.shutterSpeed.max !== undefined
-                ) {
+                if (criteria.shutterSpeed.min !== undefined || criteria.shutterSpeed.max !== undefined) {
                     const val = this.parseShutterSpeed(exif.exposure_time);
                     if (val === undefined) {
                         return false;
                     }
-                    if (
-                        criteria.shutterSpeed.min !== undefined &&
-                        val < criteria.shutterSpeed.min
-                    ) {
+                    if (criteria.shutterSpeed.min !== undefined && val < criteria.shutterSpeed.min) {
                         return false;
                     }
-                    if (
-                        criteria.shutterSpeed.max !== undefined &&
-                        val > criteria.shutterSpeed.max
-                    ) {
+                    if (criteria.shutterSpeed.max !== undefined && val > criteria.shutterSpeed.max) {
                         return false;
                     }
                 }
 
-                if (
-                    criteria.focalLength.min !== undefined ||
-                    criteria.focalLength.max !== undefined
-                ) {
+                if (criteria.focalLength.min !== undefined || criteria.focalLength.max !== undefined) {
                     const val = this.parseFocalLength(exif.focal_length);
                     if (val === undefined) {
                         return false;
@@ -446,10 +434,9 @@ export class FilterScope<F, A extends Asset> {
 }
 
 class FilterManager {
-    scopes: Map<
-        string,
-        FilterScope<ImageFilters, ImageAsset> | FilterScope<CollectionFilters, Collection>
-    > = $state(new Map());
+    scopes: Map<string, FilterScope<ImageFilters, ImageAsset> | FilterScope<CollectionFilters, Collection>> = $state(
+        new Map()
+    );
     activeScopeType: "images" | "collections" | null = $state("images");
     keepFilters: boolean = $state(false);
 
@@ -457,10 +444,7 @@ class FilterManager {
     private isInitialized = false;
 
     constructor() {
-        this.scopes.set(
-            "images",
-            new FilterScope("images", DEFAULT_IMAGE_FILTERS, DEFAULT_IMAGE_UI_STATE)
-        );
+        this.scopes.set("images", new FilterScope("images", DEFAULT_IMAGE_FILTERS, DEFAULT_IMAGE_UI_STATE));
         this.scopes.set(
             "collections",
             new FilterScope("collections", DEFAULT_COLLECTION_FILTERS, DEFAULT_COLLECTION_UI_STATE)
@@ -496,10 +480,7 @@ class FilterManager {
         this.isInitialized = true;
     }
 
-    get activeScope():
-        | FilterScope<ImageFilters, ImageAsset>
-        | FilterScope<CollectionFilters, Collection>
-        | undefined {
+    get activeScope(): FilterScope<ImageFilters, ImageAsset> | FilterScope<CollectionFilters, Collection> | undefined {
         if (this.activeScopeType) {
             return this.scopes.get(this.activeScopeType);
         }
@@ -510,10 +491,7 @@ class FilterManager {
     getScope(type: "collections"): FilterScope<CollectionFilters, Collection> | undefined;
     getScope(
         type: "images" | "collections"
-    ):
-        | FilterScope<ImageFilters, ImageAsset>
-        | FilterScope<CollectionFilters, Collection>
-        | undefined {
+    ): FilterScope<ImageFilters, ImageAsset> | FilterScope<CollectionFilters, Collection> | undefined {
         return this.scopes.get(type);
     }
 

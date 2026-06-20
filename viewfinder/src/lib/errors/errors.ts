@@ -152,10 +152,7 @@ export class ForbiddenError extends ApiError {
  * Specific API error for resource not found (404 Not Found).
  */
 export class NotFoundError extends ApiError {
-    constructor(
-        message: string = "The requested resource was not found.",
-        options: VizErrorOptions = {}
-    ) {
+    constructor(message: string = "The requested resource was not found.", options: VizErrorOptions = {}) {
         super(message, 404, {
             code: "NOT_FOUND_ERROR",
             ...options

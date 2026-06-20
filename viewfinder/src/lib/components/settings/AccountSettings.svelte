@@ -87,9 +87,7 @@
         }
     }
 
-    let accountSettings = $derived(
-        userSettingsData.filter((s) => s.name === "privacy_profile_visibility")
-    );
+    let accountSettings = $derived(userSettingsData.filter((s) => s.name === "privacy_profile_visibility"));
 </script>
 
 <div class="account-settings-section">
@@ -104,16 +102,8 @@
 
         <TextInput label="Email" bind:value={settingsUserUpdate.email} disabled={savingAccount} />
         <TextInput label="Name" bind:value={settingsUserUpdate.name} disabled={savingAccount} />
-        <TextInput
-            label="First Name"
-            bind:value={settingsUserUpdate.firstName}
-            disabled={savingAccount}
-        />
-        <TextInput
-            label="Last Name"
-            bind:value={settingsUserUpdate.lastName}
-            disabled={savingAccount}
-        />
+        <TextInput label="First Name" bind:value={settingsUserUpdate.firstName} disabled={savingAccount} />
+        <TextInput label="Last Name" bind:value={settingsUserUpdate.lastName} disabled={savingAccount} />
     </CustomSettingsGroup>
 
     <AutoSettingsGroup

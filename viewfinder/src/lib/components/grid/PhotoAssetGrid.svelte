@@ -53,8 +53,7 @@
         onLoadMore?: () => Promise<void> | void;
     }
 
-    type Props = Omit<ComponentProps<typeof AssetGrid<ImageAsset>>, "assetSnippet"> &
-        PhotoSpecificProps;
+    type Props = Omit<ComponentProps<typeof AssetGrid<ImageAsset>>, "assetSnippet"> & PhotoSpecificProps;
 
     let {
         data = $bindable([]),
@@ -237,9 +236,7 @@
                     continue;
                 }
 
-                const nonDisabledItems = row.items.filter(
-                    (item) => !disabledUids.has(item.asset.uid)
-                );
+                const nonDisabledItems = row.items.filter((item) => !disabledUids.has(item.asset.uid));
                 if (nonDisabledItems.length > 0) {
                     break;
                 }
@@ -290,9 +287,7 @@
                 return; // Should not happen due to skip loop
             }
 
-            const nonDisabledItems = targetRow.items.filter(
-                (item) => !disabledUids.has(item.asset.uid)
-            );
+            const nonDisabledItems = targetRow.items.filter((item) => !disabledUids.has(item.asset.uid));
             if (nonDisabledItems.length === 0) {
                 return;
             }
@@ -474,11 +469,7 @@
                 let lastImage = currentImages[currentImages.length - 1];
                 let searchList = allData && allData.length > 0 ? allData : data;
 
-                while (
-                    lastImage &&
-                    searchList.length > 0 &&
-                    searchList[searchList.length - 1].uid === lastImage.uid
-                ) {
+                while (lastImage && searchList.length > 0 && searchList[searchList.length - 1].uid === lastImage.uid) {
                     const beforeLength = searchList.length;
                     await onLoadMore();
 
@@ -633,8 +624,7 @@
                 const gridRect = photoGridEl.getBoundingClientRect();
                 // viewportTop = gridRect.top + row.top - currentScroll
                 // Visual position in viewport = gridRect.top + (row.top - currentScroll).
-                const currentScroll =
-                    scroller instanceof Window ? window.scrollY : scroller.scrollTop;
+                const currentScroll = scroller instanceof Window ? window.scrollY : scroller.scrollTop;
                 const rowRectTop = usingExternalScroll
                     ? gridRect.top + row.top
                     : gridRect.top + row.top - currentScroll;
@@ -809,10 +799,7 @@
             updateVirtualGrid();
         }
 
-        const debouncedUpdate = debounce(
-            () => requestAnimationFrame(() => untrack(() => updateVirtualGrid())),
-            100
-        );
+        const debouncedUpdate = debounce(() => requestAnimationFrame(() => untrack(() => updateVirtualGrid())), 100);
         resizeObserver = new ResizeObserver((entries) => {
             for (const entry of entries) {
                 if (entry.target === node) {
@@ -862,11 +849,7 @@
 
     // Sync scrollTop to internal scroll
     $effect(() => {
-        if (
-            !usingExternalScroll &&
-            photoGridEl &&
-            Math.abs(photoGridEl.scrollTop - scrollTop) > 1
-        ) {
+        if (!usingExternalScroll && photoGridEl && Math.abs(photoGridEl.scrollTop - scrollTop) > 1) {
             photoGridEl.scrollTop = scrollTop;
         }
         // No explicit update call here needed because the virtualizer is updated via bindings or events
@@ -1074,8 +1057,7 @@
 
 {#snippet inlineHeader(label: string)}
     {@const groupImages = groupLookup.get(label) || []}
-    {@const allSelected =
-        groupImages.length > 0 && groupImages.every((i) => selectedUIDs.has(i.uid))}
+    {@const allSelected = groupImages.length > 0 && groupImages.every((i) => selectedUIDs.has(i.uid))}
     <div class="inline-grid-header">
         <div class="header-content">
             <button
@@ -1122,8 +1104,7 @@
                 selection.select(asset);
             }
             // When dragging, if multiple selected use that set, otherwise drag the single asset
-            const uids =
-                selection.size > 1 ? selection.selectedItems.map((i) => i.uid) : [asset.uid];
+            const uids = selection.size > 1 ? selection.selectedItems.map((i) => i.uid) : [asset.uid];
             try {
                 if (e.dataTransfer) {
                     const dragData = new DragData(VizMimeTypes.IMAGE_UIDS, uids);
@@ -1187,19 +1168,10 @@
             {#if asset.image_metadata?.label || asset.favourited}
                 <div class="right-side">
                     {#if asset.image_metadata?.label}
-                        <ImageLabelViewer
-                            variant="compact"
-                            enableSelection={false}
-                            label={getImageLabel(asset)}
-                        />
+                        <ImageLabelViewer variant="compact" enableSelection={false} label={getImageLabel(asset)} />
                     {/if}
                     {#if asset.favourited}
-                        <MaterialIcon
-                            iconName="favorite"
-                            size="0.8rem"
-                            style="color: white;"
-                            fill={true}
-                        />
+                        <MaterialIcon iconName="favorite" size="0.8rem" style="color: white;" fill={true} />
                     {/if}
                 </div>
             {/if}
@@ -1258,8 +1230,8 @@
             <div
                 style="position: sticky; top: 0; left: 0; z-index: 9999; background: rgba(0,0,0,0.8); color: lime; padding: 0.5rem; pointer-events: none;"
             >
-                Data: {data?.length} | Filtered: {filteredData?.length} | Rows: {virtualizer.rows
-                    ?.length} | Visible: {virtualizer.visibleRows?.length} | TotalH: {virtualizer.totalHeight}
+                Data: {data?.length} | Filtered: {filteredData?.length} | Rows: {virtualizer.rows?.length} | Visible: {virtualizer
+                    .visibleRows?.length} | TotalH: {virtualizer.totalHeight}
                 | Scroll: {scrollTop} | Ext: {usingExternalScroll}
             </div>
         {/if}

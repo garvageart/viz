@@ -18,8 +18,7 @@
     let users = $derived(data.users);
 
     function formatDate(dateStr: string) {
-        return DateTime.fromISO(dateStr)
-            .toLocaleString(DateTime.DATETIME_MED);
+        return DateTime.fromISO(dateStr).toLocaleString(DateTime.DATETIME_MED);
     }
 
     function openCreateModal() {
@@ -164,16 +163,16 @@
                 <span class="warning-text">
                     <MaterialIcon iconName="warning" />
                     <span>
-                        <strong>Warning:</strong> This will permanently delete the user's account, all
-                        their sessions, settings, and onboarding status. This action cannot be undone.
+                        <strong>Warning:</strong> This will permanently delete the user's account, all their sessions, settings,
+                        and onboarding status. This action cannot be undone.
                     </span>
                 </span>
             {:else}
                 <span class="info-text">
                     <MaterialIcon iconName="info" />
                     <span>
-                        This will perform a soft delete. The user will be marked as deleted but data
-                        may remain in the database.
+                        This will perform a soft delete. The user will be marked as deleted but data may remain in the
+                        database.
                     </span>
                 </span>
             {/if}
@@ -181,10 +180,7 @@
     {/if}
 {/snippet}
 
-<AdminRouteShell
-    heading="User Management"
-    description="Manage user accounts, roles, and permissions."
->
+<AdminRouteShell heading="User Management" description="Manage user accounts, roles, and permissions.">
     {#snippet actions()}
         <Button variant="small" onclick={openCreateModal}>
             <MaterialIcon iconName="add" />
@@ -212,9 +208,7 @@
                                     <div
                                         class={[
                                             "avatar-placeholder",
-                                            user.uid === currentUserState.data?.uid
-                                                ? "current-user"
-                                                : ""
+                                            user.uid === currentUserState.data?.uid ? "current-user" : ""
                                         ]}
                                     >
                                         {(user.name?.[0] || user.email?.[0] || "?").toUpperCase()}
@@ -222,9 +216,7 @@
                                     <div class="user-info">
                                         <span class="name"
                                             >{user.name || "No Name"}
-                                            {user.uid === currentUserState.data?.uid
-                                                ? "(You)"
-                                                : ""}</span
+                                            {user.uid === currentUserState.data?.uid ? "(You)" : ""}</span
                                         >
                                         <span class="uid" title={user.uid}>{user.uid}</span>
                                     </div>

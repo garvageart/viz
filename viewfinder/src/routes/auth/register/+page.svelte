@@ -66,11 +66,7 @@
     }
 </script>
 
-<main
-    style="background-image: url('https://picsum.photos/1920/1080/?random={Math.floor(
-        Math.random() * 300
-    )}');"
->
+<main style="background-image: url('https://picsum.photos/1920/1080/?random={Math.floor(Math.random() * 300)}');">
     <span id="viz-title">viz</span>
     <div id="reg-container">
         {#if system.data?.allow_manual_registration}
@@ -110,20 +106,13 @@
                     placeholder="Confirm Password"
                     required
                 />
-                <Button
-                    id="reg-submit"
-                    type="submit"
-                    style="margin-top: 1rem;"
-                    onclick={handleRegister}>Create</Button
-                >
+                <Button id="reg-submit" type="submit" style="margin-top: 1rem;" onclick={handleRegister}>Create</Button>
             </form>
             <p style="margin-top: 1em;">
                 Already have an account? <a style="font-weight: bold;" href="/auth/login">Login</a>
             </p>
         {:else}
-            <span>
-                User registration is disabled for this server. Please contact a server admin.
-            </span>
+            <span> User registration is disabled for this server. Please contact a server admin. </span>
         {/if}
     </div>
     <div id="reg-overlay" style="height: 100%; width: 100%;"></div>

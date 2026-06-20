@@ -33,10 +33,7 @@
         if (targetInSubtree) {
             return node.children.map((child) => {
                 // If this specific child is the target or contains it, give it 100%
-                if (
-                    child.id === maximizedId ||
-                    (child instanceof SplitNode && child.containsNode(maximizedId))
-                ) {
+                if (child.id === maximizedId || (child instanceof SplitNode && child.containsNode(maximizedId))) {
                     return 100;
                 }
                 // Otherwise give siblings 0%
@@ -75,11 +72,7 @@
         // We use a generous tolerance (1%) to account for floating point math.
         const totalSize = sizes.reduce((acc, s) => acc + s.size, 0);
         if (Math.abs(totalSize - 100) > 1) {
-            console.warn(
-                "[LayoutNode] Ignoring invalid resize event (total size != 100):",
-                totalSize,
-                sizes
-            );
+            console.warn("[LayoutNode] Ignoring invalid resize event (total size != 100):", totalSize, sizes);
             return;
         }
 

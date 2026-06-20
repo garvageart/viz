@@ -16,9 +16,7 @@
     } = $props();
 
     const activeMap = $derived(fill ? filledVariants : variants);
-    const inner = $derived(
-        activeMap[String(weight)] || activeMap["400"] || Object.values(activeMap)[0]
-    );
+    const inner = $derived(activeMap[String(weight)] || activeMap["400"] || Object.values(activeMap)[0]);
 </script>
 
 <svg

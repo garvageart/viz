@@ -127,12 +127,7 @@
     });
 </script>
 
-<nav
-    class="filmstrip-container {orientation}"
-    aria-label="Filmstrip"
-    onwheel={handleWheel}
-    bind:this={containerRef}
->
+<nav class="filmstrip-container {orientation}" aria-label="Filmstrip" onwheel={handleWheel} bind:this={containerRef}>
     {#if filmstripImages.length === 0}
         <div class="empty-state">
             <div class="empty-icon-wrapper">
@@ -159,12 +154,7 @@
                 aria-label={`Select image ${image.name}`}
                 bind:this={itemRefs[i]}
             >
-                <ImageCard
-                    asset={image}
-                    variant="mini"
-                    objectFit="contain"
-                    imageVariant="thumbnail"
-                />
+                <ImageCard asset={image} variant="mini" objectFit="contain" imageVariant="thumbnail" />
             </div>
         {/each}
     {/if}
@@ -200,7 +190,7 @@
             .empty-state {
                 flex-direction: row;
                 gap: var(--viz-spacing-sm);
-                
+
                 .empty-text-wrapper {
                     align-items: flex-start;
                     text-align: left;
@@ -222,7 +212,7 @@
             .empty-state {
                 flex-direction: column;
                 gap: var(--viz-spacing-xs);
-                
+
                 .empty-text-wrapper {
                     align-items: center;
                     text-align: center;
@@ -282,7 +272,9 @@
         cursor: pointer;
         background-color: #0d0d0d;
         border: 1px solid var(--viz-80);
-        transition: background-color 0.1s ease, border-color 0.1s ease;
+        transition:
+            background-color 0.1s ease,
+            border-color 0.1s ease;
         flex-shrink: 0;
         box-sizing: border-box;
 

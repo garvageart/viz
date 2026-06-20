@@ -145,14 +145,10 @@
                 });
             },
             onCollectionUpdated: (updatedCol) => {
-                listOfCollectionsData = listOfCollectionsData.map((c) =>
-                    c.uid === updatedCol.uid ? updatedCol : c
-                );
+                listOfCollectionsData = listOfCollectionsData.map((c) => (c.uid === updatedCol.uid ? updatedCol : c));
             },
             onCollectionDeleted: (deletedCol) => {
-                listOfCollectionsData = listOfCollectionsData.filter(
-                    (c) => c.uid !== deletedCol.uid
-                );
+                listOfCollectionsData = listOfCollectionsData.filter((c) => c.uid !== deletedCol.uid);
                 toastState.addToast({
                     message: `Deleted collection ${deletedCol.name}`,
                     type: "success"
@@ -160,9 +156,7 @@
             },
             onCollectionsDeleted: (deletedCols) => {
                 const deletedUids = new Set(deletedCols.map((c) => c.uid));
-                listOfCollectionsData = listOfCollectionsData.filter(
-                    (c) => !deletedUids.has(c.uid)
-                );
+                listOfCollectionsData = listOfCollectionsData.filter((c) => !deletedUids.has(c.uid));
                 selectionScope.clear();
                 toastState.addToast({
                     message:
@@ -190,10 +184,7 @@
         assetDblClick: (_e, asset: Collection) => {
             openCollection(asset, null);
         },
-        onassetcontext: (detail: {
-            asset: Collection;
-            anchor: { x: number; y: number } | HTMLElement;
-        }) => {
+        onassetcontext: (detail: { asset: Collection; anchor: { x: number; y: number } | HTMLElement }) => {
             const { asset, anchor } = detail;
             if (!selectionScope.has(asset) || selectionScope.size <= 1) {
                 selectionScope.select(asset);
@@ -240,9 +231,7 @@
 
 {#snippet noAssetsSnippet()}
     <div id="create_collection-container">
-        <span style="margin: 1em; color: var(--viz-20); font-size: 1.2rem;"
-            >Create your first collection</span
-        >
+        <span style="margin: 1em; color: var(--viz-20); font-size: 1.2rem;">Create your first collection</span>
         <Button
             id="create_collection-button"
             style="padding: 2em 8em; display: flex; align-items: center; justify-content: center;"

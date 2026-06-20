@@ -40,10 +40,7 @@ export class Histogram {
      * @param source - source element
      * @param luminanceWeights - array of weights to convert rgb to luminance
      */
-    constructor(
-        source: HTMLCanvasElement | HTMLImageElement,
-        luminanceWeights: number[] = [0.2126, 0.7152, 0.0722]
-    ) {
+    constructor(source: HTMLCanvasElement | HTMLImageElement, luminanceWeights: number[] = [0.2126, 0.7152, 0.0722]) {
         this._source = source;
         this._canvas = document.createElement("canvas");
         this._ctx = this._canvas.getContext("2d")!;
@@ -120,9 +117,7 @@ export class Histogram {
             const g = imageData.data[i + 1];
             const b = imageData.data[i + 2];
             const l = Math.floor(
-                this._luminanceWeights[0] * r +
-                    this._luminanceWeights[1] * g +
-                    this._luminanceWeights[2] * b
+                this._luminanceWeights[0] * r + this._luminanceWeights[1] * g + this._luminanceWeights[2] * b
             );
 
             histograms.red[r] += 1;

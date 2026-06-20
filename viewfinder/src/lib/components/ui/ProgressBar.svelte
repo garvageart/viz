@@ -2,19 +2,7 @@
     import { SvelteMap } from "svelte/reactivity";
 
     type Variants = "small" | "medium" | "large" | "xlarge";
-    type BarColour =
-        | "primary"
-        | "secondary"
-        | "100"
-        | "90"
-        | "80"
-        | "70"
-        | "60"
-        | "50"
-        | "40"
-        | "30"
-        | "20"
-        | "10";
+    type BarColour = "primary" | "secondary" | "100" | "90" | "80" | "70" | "60" | "50" | "40" | "30" | "20" | "10";
 
     const variantMappings = new SvelteMap<Variants, number>([
         ["small", 3],
@@ -35,10 +23,7 @@
 </script>
 
 <div class="progress-bar-track" class:has-border={height >= 6} style:height="{height}px">
-    <div
-        class="progress-fill"
-        style="width: {width}%; background-color: var(--viz-{colour})"
-    ></div>
+    <div class="progress-fill" style="width: {width}%; background-color: var(--viz-{colour})"></div>
 </div>
 
 <style lang="scss">

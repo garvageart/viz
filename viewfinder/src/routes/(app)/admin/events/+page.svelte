@@ -104,15 +104,7 @@
     }
 </script>
 
-{#snippet statCard({
-    icon,
-    value,
-    label
-}: {
-    icon: MaterialSymbol;
-    value: string | number;
-    label: string;
-})}
+{#snippet statCard({ icon, value, label }: { icon: MaterialSymbol; value: string | number; label: string })}
     <div class="stat-card">
         <MaterialIcon iconName={icon} />
         <div class="stat-content">
@@ -122,15 +114,7 @@
     </div>
 {/snippet}
 
-{#snippet metricCard({
-    icon,
-    value,
-    label
-}: {
-    icon: MaterialSymbol;
-    value: string | number;
-    label: string;
-})}
+{#snippet metricCard({ icon, value, label }: { icon: MaterialSymbol; value: string | number; label: string })}
     <div class="metric-card">
         <div class="metric-icon">
             <MaterialIcon iconName={icon} />
@@ -224,10 +208,7 @@
                                 <span class="event-type-count">{count} events</span>
                             </div>
                             <div class="event-type-bar">
-                                <div
-                                    class="event-type-fill"
-                                    style="width: {getEventFillWidth(count)}%"
-                                ></div>
+                                <div class="event-type-fill" style="width: {getEventFillWidth(count)}%"></div>
                             </div>
                         </div>
                     {/each}
@@ -245,20 +226,11 @@
 
             <div class="history-controls">
                 <div class="filter-group">
-                    <InputSelect
-                        bind:value={historyFilter}
-                        aria-label="Filter by event type"
-                        options={filterOptions}
-                    />
+                    <InputSelect bind:value={historyFilter} aria-label="Filter by event type" options={filterOptions} />
                 </div>
                 <div class="search-group">
                     <MaterialIcon iconName="search" />
-                    <input
-                        id="search-input"
-                        type="text"
-                        bind:value={historySearch}
-                        placeholder="Search events..."
-                    />
+                    <input id="search-input" type="text" bind:value={historySearch} placeholder="Search events..." />
                 </div>
                 <Button variant="mini" onclick={requestClearHistory}>
                     <MaterialIcon iconName="delete_sweep" />
@@ -279,9 +251,7 @@
                                 <div class="summary-content">
                                     <div class="event-header">
                                         <span class="event-type">{event.event}</span>
-                                        <span class="event-time"
-                                            >{formatTimestamp(event.timestamp)}</span
-                                        >
+                                        <span class="event-time">{formatTimestamp(event.timestamp)}</span>
                                     </div>
                                     <MaterialIcon iconName="arrow_drop_down" />
                                 </div>

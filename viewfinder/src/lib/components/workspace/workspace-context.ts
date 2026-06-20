@@ -14,11 +14,7 @@ export type TabHandlers = {
     splitDown: (v: VizView) => void;
 };
 
-export function buildTabContextMenu(
-    view: VizView,
-    group: TabGroup,
-    handlers: TabHandlers
-): MenuItem[] {
+export function buildTabContextMenu(view: VizView, group: TabGroup, handlers: TabHandlers): MenuItem[] {
     const viewIndex = group.views.findIndex((v) => v.id === view.id);
     const isLastTab = viewIndex === group.views.length - 1;
     const isOnlyTab = group.views.length === 1;

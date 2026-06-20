@@ -15,10 +15,7 @@ export class ImageObjectData {
     created_at: Date;
     updated_at: Date;
 
-    constructor(
-        data: Partial<ImageObjectData> &
-            Pick<ImageObjectData, "uid" | "name" | "created_at" | "updated_at">
-    ) {
+    constructor(data: Partial<ImageObjectData> & Pick<ImageObjectData, "uid" | "name" | "created_at" | "updated_at">) {
         this.uid = data.uid;
         this.name = data.name;
         this.description = data.description;

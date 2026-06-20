@@ -68,9 +68,7 @@ test.describe("Advanced Search & Image Filtering", () => {
         await exifHeader.click(); // Expand section
 
         // Wait for EXIF inputs to load
-        const rangeContainer = page
-            .locator(".filter-section", { hasText: "EXIF" })
-            .locator(".range-container");
+        const rangeContainer = page.locator(".filter-section", { hasText: "EXIF" }).locator(".range-container");
         await expect(rangeContainer.first()).toBeVisible({ timeout: 5000 });
 
         // Let's assert a few range sliders exist (e.g. ISO, Aperture, Shutter Speed, Focal Length)
@@ -92,9 +90,7 @@ test.describe("Advanced Search & Image Filtering", () => {
         await keywordsHeader.click();
 
         // Assert empty state or checklist list is rendered
-        const facetContainer = page
-            .locator(".filter-section", { hasText: "Keywords" })
-            .locator(".facet-container");
+        const facetContainer = page.locator(".filter-section", { hasText: "Keywords" }).locator(".facet-container");
         await expect(facetContainer).toBeVisible({ timeout: 5000 });
     });
 });

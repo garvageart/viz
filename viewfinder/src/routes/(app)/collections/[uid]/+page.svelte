@@ -55,11 +55,7 @@
     import { selectionManager, SelectionScopeNames } from "$lib/states/selection.svelte";
     import { toastState } from "$lib/toast-notifcations/notif-state.svelte.js";
     import type { AssetGridArray, AssetGridView } from "$lib/types/asset.js";
-    import {
-        SUPPORTED_IMAGE_TYPES,
-        SUPPORTED_RAW_FILES,
-        type SupportedImageTypes
-    } from "$lib/types/images";
+    import { SUPPORTED_IMAGE_TYPES, SUPPORTED_RAW_FILES, type SupportedImageTypes } from "$lib/types/images";
     import type { ImageUploadSuccess } from "$lib/upload/manager.svelte";
     import UploadManager from "$lib/upload/manager.svelte.js";
     import { getImageLabel } from "$lib/utils/images";
@@ -156,9 +152,7 @@
             }
 
             if (debugMode) {
-                console.log(
-                    `Syncing tab name to "${name}" for view ${view.id}. Data Name: ${data.name}`
-                );
+                console.log(`Syncing tab name to "${name}" for view ${view.id}. Data Name: ${data.name}`);
             }
             view.name = name;
         }
@@ -199,15 +193,11 @@
             collection: data,
             onUpdate: (image: ImageAsset) => {
                 selectionScope.updateItem(image, collectionState.images);
-                collectionState.images = collectionState.images.map((i) =>
-                    i.uid === image.uid ? image : i
-                );
+                collectionState.images = collectionState.images.map((i) => (i.uid === image.uid ? image : i));
             },
             onDelete: (uids: string[]) => {
                 selectionScope.clear();
-                collectionState.images = collectionState.images.filter(
-                    (i) => !uids.includes(i.uid)
-                );
+                collectionState.images = collectionState.images.filter((i) => !uids.includes(i.uid));
                 collectionState.totalCount -= uids.length;
             }
         })
@@ -231,11 +221,7 @@
     let collNameContainer: HTMLElement | undefined = $state();
 
     function handleWindowClick(e: MouseEvent) {
-        if (
-            showCollNameInput &&
-            collNameContainer &&
-            !collNameContainer.contains(e.target as Node)
-        ) {
+        if (showCollNameInput && collNameContainer && !collNameContainer.contains(e.target as Node)) {
             // Clicked outside the edit area
             // Reset to original data if name was empty or if we want to cancel on click-away
             if (name.trim() === "") {
@@ -307,10 +293,7 @@
             lightboxImage = asset;
         },
         // Context menu event from PhotoAssetGrid: { asset, anchor }
-        onassetcontext: (detail: {
-            asset: ImageAsset;
-            anchor: { x: number; y: number } | HTMLElement;
-        }) => {
+        onassetcontext: (detail: { asset: ImageAsset; anchor: { x: number; y: number } | HTMLElement }) => {
             const { asset, anchor } = detail;
             // Make sure this asset is part of the selection for context actions
             if (!selectionScope.has(asset)) {
@@ -343,10 +326,7 @@
 
     async function handleCollectionUpload() {
         // allowed image types will come from the config but for now just hardcode
-        const manager = new UploadManager([
-            ...SUPPORTED_RAW_FILES,
-            ...SUPPORTED_IMAGE_TYPES
-        ] as SupportedImageTypes[]);
+        const manager = new UploadManager([...SUPPORTED_RAW_FILES, ...SUPPORTED_IMAGE_TYPES] as SupportedImageTypes[]);
 
         const uploadedImages = await manager.openPickerAndUpload();
 
@@ -376,9 +356,7 @@
                 }
             });
 
-            const newImages = (await Promise.all(fetchPromises)).filter(
-                (i) => i !== null
-            ) as ImageAsset[];
+            const newImages = (await Promise.all(fetchPromises)).filter((i) => i !== null) as ImageAsset[];
 
             if (newImages.length > 0) {
                 const currentUids = new Set(collectionState.images.map((i) => i.uid));
@@ -422,9 +400,7 @@
                     }
                 });
 
-                const newImages = (await Promise.all(fetchPromises)).filter(
-                    (i) => i !== null
-                ) as ImageAsset[];
+                const newImages = (await Promise.all(fetchPromises)).filter((i) => i !== null) as ImageAsset[];
 
                 if (newImages.length > 0) {
                     const currentUids = new Set(collectionState.images.map((i) => i.uid));
@@ -531,13 +507,9 @@
 
         try {
             const res = await deleteCollectionImages(data.uid, {
-                uids: selectionScope.isSelectAll
-                    ? undefined
-                    : selectionScope.selectedItems.map((i) => i.uid),
+                uids: selectionScope.isSelectAll ? undefined : selectionScope.selectedItems.map((i) => i.uid),
                 all: selectionScope.isSelectAll,
-                exclusions: selectionScope.isSelectAll
-                    ? Array.from(selectionScope.excluded)
-                    : undefined
+                exclusions: selectionScope.isSelectAll ? Array.from(selectionScope.excluded) : undefined
             });
 
             if (res.status === 200 && (res.data?.deleted ?? true)) {
@@ -565,9 +537,7 @@
                         // Simplest is to refresh
                         await invalidateViz({ delay: 200 });
                     } else {
-                        collectionState.images = collectionState.images.filter(
-                            (i) => !removedUIDs.has(i.uid)
-                        );
+                        collectionState.images = collectionState.images.filter((i) => !removedUIDs.has(i.uid));
                         collectionState.totalCount -= count;
                         await invalidateViz({ delay: 200 });
                     }
@@ -891,36 +861,20 @@
         >
             Edit
         </IconButton>
-        <Dropdown
-            title="Options"
-            class="toolbar-button"
-            items={displayMenuItems}
-            showSelectionIndicator={false}
-        >
+        <Dropdown title="Options" class="toolbar-button" items={displayMenuItems} showSelectionIndicator={false}>
             {#snippet trigger({ toggle, showMenu, title })}
-                <IconButton
-                    iconName="settings"
-                    onclick={toggle}
-                    class="toolbar-button {showMenu ? 'active' : ''}"
-                >
+                <IconButton iconName="settings" onclick={toggle} class="toolbar-button {showMenu ? 'active' : ''}">
                     {title}
                 </IconButton>
             {/snippet}
         </Dropdown>
-        <Dropdown
-            class="toolbar-button"
-            icon="more_horiz"
-            showSelectionIndicator={false}
-            items={collectionMenuItems}
-        />
+        <Dropdown class="toolbar-button" icon="more_horiz" showSelectionIndicator={false} items={collectionMenuItems} />
     </div>
 {/snippet}
 
 {#snippet noAssetsSnippet()}
     <div id="add_to_collection-container">
-        <span style="margin: 1em; color: var(--viz-20); font-size: 1.2rem;"
-            >Add images to this collection</span
-        >
+        <span style="margin: 1em; color: var(--viz-20); font-size: 1.2rem;">Add images to this collection</span>
         <Button
             id="add_to_collection-button"
             style="padding: 2em 8em; display: flex; align-items: center; justify-content: center;"
@@ -945,9 +899,7 @@
                 }
 
                 // Reverse lookup: find the key (Name) for the selected color (Value)
-                const entry = Object.entries(LabelColours).find(
-                    ([_, colour]) => colour === selectedLabel
-                );
+                const entry = Object.entries(LabelColours).find(([_, colour]) => colour === selectedLabel);
                 const labelName = entry ? entry[0] : null;
                 const labelToSend = labelName as ImageLabel | null;
 
@@ -1036,11 +988,7 @@
         }}
     >
         <div id="viz-info-container">
-            <div
-                id="coll-metadata"
-                class:std-route={!isLayoutPage()}
-                class:name-input={showCollNameInput}
-            >
+            <div id="coll-metadata" class:std-route={!isLayoutPage()} class:name-input={showCollNameInput}>
                 <span id="coll-name" bind:this={collNameContainer}>
                     {#if showCollNameInput}
                         <InputText
@@ -1073,17 +1021,11 @@
                     {/if}
                     {#if showCollNameInput}
                         {#if name.trim() === ""}
-                            <MaterialIcon
-                                iconName="warning"
-                                style="font-size: 0.9rem;"
-                                title="Name cannot be empty"
-                            />
+                            <MaterialIcon iconName="warning" style="font-size: 0.9rem;" title="Name cannot be empty" />
                         {:else}
                             <div
                                 id="confirm-icons"
-                                style:visibility={name.trim() === data.name.trim()
-                                    ? "hidden"
-                                    : "visible"}
+                                style:visibility={name.trim() === data.name.trim() ? "hidden" : "visible"}
                             >
                                 <IconButton
                                     title="Cancel"
@@ -1112,15 +1054,12 @@
                 </span>
                 <span
                     id="coll-details"
-                    title="Updated at: {DateTime.fromJSDate(new Date(data.updated_at)).toFormat(
-                        'dd.MM.yyyy HH:mm'
-                    )}"
+                    title="Updated at: {DateTime.fromJSDate(new Date(data.updated_at)).toFormat('dd.MM.yyyy HH:mm')}"
                     >{DateTime.fromJSDate(new Date(data.created_at)).toFormat("dd.MM.yyyy")}
                     •
                     {#if searchValue.trim()}
                         {searchData.length}
-                        {searchData.length === 1 ? "image" : "images"} of {collectionState.images
-                            .length}
+                        {searchData.length === 1 ? "image" : "images"} of {collectionState.images.length}
                     {:else}
                         {collectionState.totalCount}
                         {collectionState.totalCount === 1 ? "image" : "images"}

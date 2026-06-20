@@ -12,15 +12,7 @@
         variant?: "floating" | "placed";
     }
 
-    let {
-        onApply,
-        onCancel,
-        onReset,
-        onAspectRatioChange,
-        x = 0,
-        y = 0,
-        variant = "floating"
-    }: Props = $props();
+    let { onApply, onCancel, onReset, onAspectRatioChange, x = 0, y = 0, variant = "floating" }: Props = $props();
 
     let selectedRatioLabel = $state<string>("Free");
 
@@ -64,20 +56,10 @@
     </div>
 
     <div class="crop-actions">
-        <IconButton
-            iconName="restart_alt"
-            class="action-btn reset"
-            onclick={onReset}
-            title="Reset Crop"
-        >
+        <IconButton iconName="restart_alt" class="action-btn reset" onclick={onReset} title="Reset Crop">
             <span>Reset</span>
         </IconButton>
-        <IconButton
-            iconName="close"
-            class="action-btn cancel"
-            onclick={onCancel}
-            title="Cancel Crop"
-        >
+        <IconButton iconName="close" class="action-btn cancel" onclick={onCancel} title="Cancel Crop">
             <span>Cancel</span>
         </IconButton>
         <IconButton iconName="check" class="action-btn apply" onclick={onApply} title="Apply Crop">

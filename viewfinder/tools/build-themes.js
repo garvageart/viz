@@ -16,9 +16,7 @@ if (!fs.existsSync(OUTPUT_DIR)) {
 // Find all viz-*.scss files
 const files = fs
     .readdirSync(SCSS_DIR)
-    .filter(
-        (file) => file.startsWith("viz-") && file.endsWith(".scss") && !file.includes("mixins")
-    );
+    .filter((file) => file.startsWith("viz-") && file.endsWith(".scss") && !file.includes("mixins"));
 
 console.log(`Found ${files.length} theme files.`);
 

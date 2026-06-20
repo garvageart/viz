@@ -92,10 +92,7 @@
         }
 
         const imageUidsData = DragData.getData<string[]>(e.dataTransfer, VizMimeTypes.IMAGE_UIDS);
-        const collectionUidsData = DragData.getData<string[]>(
-            e.dataTransfer,
-            VizMimeTypes.COLLECTION_UIDS
-        );
+        const collectionUidsData = DragData.getData<string[]>(e.dataTransfer, VizMimeTypes.COLLECTION_UIDS);
 
         let changed = false;
 
@@ -198,9 +195,7 @@
         <div class="section">
             <button class="section-header" onclick={() => (showCollections = !showCollections)}>
                 <div class="header-content">
-                    <MaterialIcon
-                        iconName={showCollections ? "keyboard_arrow_down" : "chevron_right"}
-                    />
+                    <MaterialIcon iconName={showCollections ? "keyboard_arrow_down" : "chevron_right"} />
                     <span>Collections</span>
                     <span class="count">({favouriteCollections.length})</span>
                 </div>

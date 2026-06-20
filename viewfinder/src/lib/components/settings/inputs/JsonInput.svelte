@@ -10,13 +10,7 @@
         onchange?: (value: string) => void;
     }
 
-    let {
-        label,
-        value = $bindable(""),
-        description = "",
-        disabled = false,
-        onchange
-    }: Props = $props();
+    let { label, value = $bindable(""), description = "", disabled = false, onchange }: Props = $props();
 
     let error = $state<string | null>(null);
 

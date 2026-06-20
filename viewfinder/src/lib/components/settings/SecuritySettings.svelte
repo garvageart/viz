@@ -256,16 +256,14 @@
 {#snippet deleteKeySnippet()}
     {#if deletingKey}
         <span>
-            Are you sure you want to delete the API key <strong>{deletingKey.name}</strong>? Any
-            applications using this key will lose access immediately.
+            Are you sure you want to delete the API key <strong>{deletingKey.name}</strong>? Any applications using this
+            key will lose access immediately.
         </span>
     {/if}
 {/snippet}
 
 {#snippet revokeSessionSnippet()}
-    <span>
-        Are you sure you want to revoke this session? You will be logged out on that device.
-    </span>
+    <span> Are you sure you want to revoke this session? You will be logged out on that device. </span>
 {/snippet}
 
 <div class="security-settings">
@@ -356,9 +354,7 @@
                                 <td>
                                     <div class="session-info">
                                         <div class="session-main">
-                                            <span class="name"
-                                                >{session.client_name || "Unknown Device"}</span
-                                            >
+                                            <span class="name">{session.client_name || "Unknown Device"}</span>
                                             {#if session.is_current}
                                                 <span class="current-badge">Current</span>
                                             {/if}

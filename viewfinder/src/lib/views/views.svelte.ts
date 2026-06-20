@@ -5,14 +5,11 @@ import type { MenuItem } from "$lib/context-menu/types";
 import { sleep } from "$lib/utils/misc";
 import { DYNAMIC_ROUTE_REGEX } from "$lib/constants";
 
-export type TabDropHandler<T extends any, V = VizView<any, any>> = (
-    data: T,
-    view: V
-) => Promise<void>;
-export type TabActions<
-    Data,
-    C extends Component<any, any, any> | undefined = Component<any, any, any> | undefined
-> = { dropHandler: TabDropHandler<any, VizView<C, Data>>; label: string };
+export type TabDropHandler<T extends any, V = VizView<any, any>> = (data: T, view: V) => Promise<void>;
+export type TabActions<Data, C extends Component<any, any, any> | undefined = Component<any, any, any> | undefined> = {
+    dropHandler: TabDropHandler<any, VizView<C, Data>>;
+    label: string;
+};
 
 // usually this would be bad but the app is client only
 // and doesn't share state with anyone i guess??
@@ -192,11 +189,7 @@ class VizView<
      */
     static fromJSON<
         C extends Component<any, any, any> | undefined = Component<any, any, any> | undefined,
-        Data = C extends Component<infer P, any, any>
-            ? P extends { data: infer D }
-                ? D
-                : any
-            : any
+        Data = C extends Component<infer P, any, any> ? (P extends { data: infer D } ? D : any) : any
     >(
         serialized: SerializedVizView,
         component: C | undefined,

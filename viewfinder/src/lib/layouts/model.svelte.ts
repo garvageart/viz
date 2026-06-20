@@ -42,9 +42,7 @@ function pathMatches(pattern: string | undefined, actual: string | undefined): b
     }
 
     // Escape regex specials, then turn dynamic segments \[param\] into [^/]+
-    const escaped = pattern
-        .replace(/[.*+?^${}()|[\]\\]/g, "\\$&")
-        .replace(/\\\[[^\]]+\\\]/g, "[^/]+");
+    const escaped = pattern.replace(/[.*+?^${}()|[\]\\]/g, "\\$&").replace(/\\\[[^\]]+\\\]/g, "[^/]+");
     const re = new RegExp("^" + escaped + "$");
     return re.test(actual);
 }
@@ -61,13 +59,7 @@ export class TabGroup {
     activeViewId: number | undefined = $state();
     parent: SplitNode | null = null;
 
-    constructor(opts: {
-        id?: string;
-        size?: number;
-        views?: VizView[];
-        activeViewId?: number;
-        locked?: boolean;
-    }) {
+    constructor(opts: { id?: string; size?: number; views?: VizView[]; activeViewId?: number; locked?: boolean }) {
         this.id = opts.id ?? generateKeyId(10);
         this.size = opts.size ?? 100;
         this.locked = opts.locked ?? false;
@@ -383,10 +375,7 @@ export class Workspace {
     /**
      * Finds the TabGroup containing a specific view ID
      */
-    findGroupWithView(
-        viewId: number,
-        startNode: SplitNode | TabGroup = this.root
-    ): TabGroup | null {
+    findGroupWithView(viewId: number, startNode: SplitNode | TabGroup = this.root): TabGroup | null {
         if (startNode instanceof TabGroup) {
             if (startNode.views.some((v) => v.id === viewId)) {
                 return startNode;
@@ -448,12 +437,7 @@ export class Workspace {
         const sourceGroup = this.findGroupWithView(viewId);
         const targetGroup = this.findNode(targetGroupId);
 
-        if (
-            !sourceGroup ||
-            !(targetGroup instanceof TabGroup) ||
-            sourceGroup.locked ||
-            targetGroup.locked
-        ) {
+        if (!sourceGroup || !(targetGroup instanceof TabGroup) || sourceGroup.locked || targetGroup.locked) {
             return; // Cannot move from/to a locked group
         }
 
@@ -516,18 +500,13 @@ export class Workspace {
      * Splits a group and moves a view into the newly created group.
      * If the source group becomes empty, it's cleaned up.
      */
-    splitGroup(
-        groupId: string,
-        viewToMove: VizView,
-        direction: "left" | "right" | "top" | "bottom"
-    ) {
+    splitGroup(groupId: string, viewToMove: VizView, direction: "left" | "right" | "top" | "bottom") {
         const targetGroup = this.findNode(groupId);
         if (!(targetGroup instanceof TabGroup) || targetGroup.locked) return; // Cannot split a locked group
         if (viewToMove.locked) return; // Cannot split a locked view
 
         const parent = targetGroup.parent;
-        const orientation: Orientation =
-            direction === "left" || direction === "right" ? "horizontal" : "vertical";
+        const orientation: Orientation = direction === "left" || direction === "right" ? "horizontal" : "vertical";
         const isAfter = direction === "right" || direction === "bottom";
 
         const sourceGroup = this.findGroupWithView(viewToMove.id);

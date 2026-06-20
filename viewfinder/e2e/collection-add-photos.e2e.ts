@@ -76,9 +76,7 @@ test.describe("Collection Add Photos Timeline & Disabled States", () => {
 
         const photoCount = await photos.count();
         if (photoCount < 3) {
-            console.log(
-                "Not enough photos in database to test complex skipping logic, needs at least 3."
-            );
+            console.log("Not enough photos in database to test complex skipping logic, needs at least 3.");
             return;
         }
 

@@ -10,9 +10,7 @@ const carefullCallbackGenerator =
     ) =>
     (
         value: Parameters<
-            CallbacksObject[Callback] extends (value: unknown) => void
-                ? CallbacksObject[Callback]
-                : never
+            CallbacksObject[Callback] extends (value: unknown) => void ? CallbacksObject[Callback] : never
         >[0]
     ) => {
         const callbackObject = callbackObjectGetter();
@@ -28,8 +26,6 @@ const carefullCallbackGenerator =
  */
 export const carefullCallbackSource = <CallbacksObject extends object>(
     callbackObjectGetter: () => CallbacksObject | undefined
-): (<Callback extends keyof CallbacksObject>(
-    callbackName: Callback
-) => CallbacksObject[Callback]) =>
+): (<Callback extends keyof CallbacksObject>(callbackName: Callback) => CallbacksObject[Callback]) =>
     //@ts-expect-error unassignable
     carefullCallbackGenerator.bind(null, callbackObjectGetter);

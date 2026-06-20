@@ -35,13 +35,7 @@
 <script lang="ts">
     import { onMount, onDestroy, setContext, createEventDispatcher, tick } from "svelte";
     import { writable } from "svelte/store";
-    import type {
-        IPane,
-        IPaneSizingEvent,
-        SplitContext,
-        PaneInitFunction,
-        ClientCallbacks
-    } from "./index.js";
+    import type { IPane, IPaneSizingEvent, SplitContext, PaneInitFunction, ClientCallbacks } from "./index.js";
     import GatheringRound from "./internal/GatheringRound.svelte";
     import { getDimensionName } from "./internal/utils/sizing.js";
     import {
@@ -290,9 +284,7 @@
         }
 
         return {
-            undefinedPaneInitSize: browser
-                ? 0
-                : (100 - ssrPaneDefinedSizeSum) / ssrPaneUndefinedSizeCount
+            undefinedPaneInitSize: browser ? 0 : (100 - ssrPaneDefinedSizeSum) / ssrPaneUndefinedSizeCount
         };
     };
 
@@ -451,9 +443,7 @@
         if (rtl === "auto") {
             // the try catch is to support old browser, flag is preset to false
             try {
-                return (
-                    (containerComputedStyle ?? calcComputedStyle(container!)).direction === "rtl"
-                );
+                return (containerComputedStyle ?? calcComputedStyle(container!)).direction === "rtl";
             } catch (_err) {
                 // We want application to not crush, but don't care about the message
             }
@@ -484,8 +474,7 @@
     }
 
     const isSplitterElement = (node: Node) =>
-        node.nodeType === Node.ELEMENT_NODE &&
-        (node as HTMLElement).classList.contains("splitpanes__splitter");
+        node.nodeType === Node.ELEMENT_NODE && (node as HTMLElement).classList.contains("splitpanes__splitter");
 
     function getOrientedDiff(drag: Position, elementSize: number, isRTL: boolean): number {
         let tdrag = drag[horizontal ? "top" : "left"];
@@ -536,12 +525,8 @@
 
             const globalMousePosition = getGlobalMousePosition(event);
             const containerComputedStyle = calcComputedStyle(container!);
-            const containerRectWithoutBorder = elementRectWithoutBorder(
-                container!,
-                containerComputedStyle
-            );
-            const containerSizeWithoutBorder: number =
-                containerRectWithoutBorder[getCurrentDimensionName()];
+            const containerRectWithoutBorder = elementRectWithoutBorder(container!, containerComputedStyle);
+            const containerSizeWithoutBorder: number = containerRectWithoutBorder[getCurrentDimensionName()];
             const _isRTL = isRTL(containerComputedStyle);
 
             const currentMouseDrag = positionDiff(globalMousePosition, containerRectWithoutBorder);
@@ -740,8 +725,7 @@
         // Here we want the splitter size **including the borders**.
         // We need to use `Element.getBoundingClientRect()` and not `Element.clientWidth` and `Element.clientHeight`,
         //  bacause the latter round the number of pixels to integer, and additionally, they don't include the borders.
-        const splitterSize = (node: Node) =>
-            getElementRect(node as HTMLElement)[getCurrentDimensionName()];
+        const splitterSize = (node: Node) => getElementRect(node as HTMLElement)[getCurrentDimensionName()];
 
         const activeSplitterSize = splitterSize(activeSplitterElement);
 
@@ -764,8 +748,7 @@
         }
 
         const totalSplitterBefore = splittersTotalSizeBefore + activeSplitterDrag;
-        const totalSplitter =
-            splittersTotalSizeBefore + activeSplitterSize + splittersTotalSizeAfter;
+        const totalSplitter = splittersTotalSizeBefore + activeSplitterSize + splittersTotalSizeAfter;
 
         // An explanation to the mathematical computation:
         //
@@ -838,21 +821,16 @@
             }
         }
 
-        const paneBeforeMaxReached =
-            paneBefore.max() < 100 && dragPercentage >= paneBefore.max() + sums.prevPanesSize;
+        const paneBeforeMaxReached = paneBefore.max() < 100 && dragPercentage >= paneBefore.max() + sums.prevPanesSize;
         const paneAfterMaxReached =
             paneAfter.max() < 100 && dragPercentage <= 100 - (paneAfter.max() + sums.nextPanesSize);
         // Prevent dragging beyond pane max.
         if (paneBeforeMaxReached || paneAfterMaxReached) {
             if (paneBeforeMaxReached) {
                 paneBefore.setSz(paneBefore.max());
-                paneAfter.setSz(
-                    Math.max(100 - paneBefore.max() - sums.prevPanesSize - sums.nextPanesSize, 0)
-                );
+                paneAfter.setSz(Math.max(100 - paneBefore.max() - sums.prevPanesSize - sums.nextPanesSize, 0));
             } else {
-                paneBefore.setSz(
-                    Math.max(100 - paneAfter.max() - sums.prevPanesSize - sums.nextPanesSize, 0)
-                );
+                paneBefore.setSz(Math.max(100 - paneAfter.max() - sums.prevPanesSize - sums.nextPanesSize, 0));
                 paneAfter.setSz(paneAfter.max());
             }
         } else {
@@ -874,10 +852,7 @@
             if (typeof paneBeforeIndex === "number") {
                 paneBefore.setSz(
                     Math.min(
-                        Math.max(
-                            dragPercentage - sums.prevPanesSize - sums.prevReachedMinPanes,
-                            paneBefore.min()
-                        ),
+                        Math.max(dragPercentage - sums.prevPanesSize - sums.prevReachedMinPanes, paneBefore.min()),
                         paneBefore.max()
                     )
                 );
@@ -885,10 +860,7 @@
             if (typeof paneAfterIndex === "number") {
                 paneAfter.setSz(
                     Math.min(
-                        Math.max(
-                            100 - dragPercentage - sums.nextPanesSize - sums.nextReachedMinPanes,
-                            paneAfter.min()
-                        ),
+                        Math.max(100 - dragPercentage - sums.nextPanesSize - sums.nextReachedMinPanes, paneAfter.min()),
                         paneAfter.max()
                     )
                 );
@@ -917,11 +889,7 @@
                 });
 
                 panes[paneAfterIndex].setSz(
-                    100 -
-                        sums.prevReachedMinPanes -
-                        panes[0].min() -
-                        sums.prevPanesSize -
-                        sums.nextPanesSize
+                    100 - sums.prevReachedMinPanes - panes[0].min() - sums.prevPanesSize - sums.nextPanesSize
                 );
                 return null;
             } else {
@@ -979,8 +947,7 @@
     }
 
     const getSizeOfPane = (pane: IPane) => pane.sz();
-    const sumPrevPanesSize = (splitterIndex: number) =>
-        sumPartial(panes, 0, splitterIndex, getSizeOfPane);
+    const sumPrevPanesSize = (splitterIndex: number) => sumPartial(panes, 0, splitterIndex, getSizeOfPane);
     const sumNextPanesSize = (splitterIndex: number) =>
         sumPartial(panes, splitterIndex + 1, panes.length, getSizeOfPane);
 
@@ -1084,10 +1051,7 @@
                 if (!(typeof pane.givenSize === "number")) {
                     // add the proportion of the newly added pane if has undefined size
                     const currentSz = pane.isReady ? pane.sz() : undefinedSizesNotReadySz;
-                    const sz = Math.max(
-                        Math.min(currentSz * undefinedScaleFactor, pane.max()),
-                        pane.min()
-                    );
+                    const sz = Math.max(Math.min(currentSz * undefinedScaleFactor, pane.max()), pane.min());
                     pane.setSz(sz);
                 }
                 leftToAllocate -= pane.sz();
@@ -1110,14 +1074,9 @@
     }
 
     // Second loop to adjust sizes now that we know more about the panes constraints.
-    function readjustSizes(
-        leftToAllocate: number,
-        ungrowable: Array<IPane>,
-        unshrinkable: Array<IPane>
-    ): number {
+    function readjustSizes(leftToAllocate: number, ungrowable: Array<IPane>, unshrinkable: Array<IPane>): number {
         const panesCount = panes.length;
-        const panesSizableCount =
-            panesCount - (leftToAllocate > 0 ? ungrowable.length : unshrinkable.length);
+        const panesSizableCount = panesCount - (leftToAllocate > 0 ? ungrowable.length : unshrinkable.length);
         if (panesSizableCount <= 0) {
             return leftToAllocate;
         }
@@ -1133,19 +1092,13 @@
                 const sz = pane.sz();
                 if (leftToAllocate > 0 && !ungrowable.includes(pane)) {
                     // Need to diff the size before and after to get the exact allocated space.
-                    const newPaneSize = Math.max(
-                        Math.min(sz + equalSpaceToAllocate, pane.max()),
-                        pane.min()
-                    );
+                    const newPaneSize = Math.max(Math.min(sz + equalSpaceToAllocate, pane.max()), pane.min());
                     const allocated = newPaneSize - sz;
                     leftToAllocate -= allocated;
                     pane.setSz(newPaneSize);
                 } else if (!unshrinkable.includes(pane)) {
                     // Need to diff the size before and after to get the exact allocated space.
-                    const newPaneSize = Math.max(
-                        Math.min(sz + equalSpaceToAllocate, pane.max()),
-                        pane.min()
-                    );
+                    const newPaneSize = Math.max(Math.min(sz + equalSpaceToAllocate, pane.max()), pane.min());
                     const allocated = newPaneSize - sz;
                     leftToAllocate -= allocated;
                     pane.setSz(newPaneSize);
@@ -1200,9 +1153,7 @@
                         pane.index = newPanes.length;
                         newPanes.push(pane);
                     } else {
-                        console.warn(
-                            "Splitpanes: Internal error - found a <Pane> elements which isn't tracked."
-                        );
+                        console.warn("Splitpanes: Internal error - found a <Pane> elements which isn't tracked.");
                     }
                 }
             }

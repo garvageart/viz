@@ -56,9 +56,7 @@
         })
     );
 
-    const selectedLabel = $derived(
-        normalizedOptions.find((opt) => opt.value === stringValue)?.label ?? ""
-    );
+    const selectedLabel = $derived(normalizedOptions.find((opt) => opt.value === stringValue)?.label ?? "");
 </script>
 
 <Select.Root type="single" value={stringValue} onValueChange={handleValueChange} {disabled} {name}>
@@ -72,12 +70,7 @@
             </label>
         {/if}
         <div class="input-wrapper">
-            <Select.Trigger
-                id={selectId}
-                class="select-trigger {className || ''}"
-                {style}
-                {...props}
-            >
+            <Select.Trigger id={selectId} class="select-trigger {className || ''}" {style} {...props}>
                 <span class="select-value">{selectedLabel || "Select an option..."}</span>
             </Select.Trigger>
             <Select.Portal>
