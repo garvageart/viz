@@ -76,7 +76,7 @@ func ReadConfig() (viper.Viper, error) {
 	v.SetDefault("storage_metrics.enabled", true)
 	v.SetDefault("storage_metrics.interval_seconds", 300)
 
-	v.SetDefault("user_management.allow_manual_registration", true)
+	v.SetDefault("users.allow_manual_registration", true)
 
 	// Cache defaults
 	v.SetDefault("cache.gc_enabled", true)

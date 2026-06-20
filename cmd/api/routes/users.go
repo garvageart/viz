@@ -32,7 +32,7 @@ func AccountsRouter(db *gorm.DB, logger *slog.Logger) *chi.Mux {
 	router := chi.NewRouter()
 
 	router.Post("/", func(res http.ResponseWriter, req *http.Request) {
-		if !config.GetConfig().UserManagement.AllowManualRegistration {
+		if !config.GetConfig().Users.AllowManualRegistration {
 			render.Status(req, http.StatusForbidden)
 			render.JSON(res, req, dto.ErrorResponse{Error: "User Registration disabled, only admin's may register users"})
 			return

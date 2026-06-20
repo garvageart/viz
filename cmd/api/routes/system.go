@@ -225,7 +225,7 @@ func GetSystemStatus(db *gorm.DB, logger *slog.Logger, req *http.Request) (*dto.
 		Initialized:             initialized,
 		UserOnboardingRequired:  userOnboardingRequired,
 		NeedsSuperadmin:         needsSuperadmin,
-		AllowManualRegistration: config.AppConfig.UserManagement.AllowManualRegistration,
+		AllowManualRegistration: config.AppConfig.Users.AllowManualRegistration,
 	}, nil
 }
 

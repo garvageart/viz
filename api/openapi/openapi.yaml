@@ -4307,7 +4307,7 @@ components:
           $ref: "#/components/schemas/LibvipsConfig"
         cache:
           $ref: "#/components/schemas/CacheConfig"
-        user_management:
+        users:
           $ref: "#/components/schemas/UserManagementConfig"
         storage_metrics:
           $ref: "#/components/schemas/StorageMetricsConfig"

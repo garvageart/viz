@@ -747,7 +747,7 @@ export type VizConfig = {
     redis?: QueueConfig;
     libvips?: LibvipsConfig;
     cache?: CacheConfig;
-    user_management?: UserManagementConfig;
+    users?: UserManagementConfig;
     storage_metrics?: StorageMetricsConfig;
     storage?: StorageConfig;
 };

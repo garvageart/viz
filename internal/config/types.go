@@ -105,7 +105,7 @@ type VizConfig struct {
 	Queue          QueueConfig          `json:"redis" mapstructure:"redis"`
 	Libvips        LibvipsConfig        `json:"libvips" mapstructure:"libvips"`
 	Cache          CacheConfig          `json:"cache" mapstructure:"cache"`
-	UserManagement UserManagementConfig `json:"user_management" mapstructure:"user_management"`
+	Users          UserManagementConfig `json:"users" mapstructure:"users"`
 	StorageMetrics StorageMetricsConfig `json:"storage_metrics" mapstructure:"storage_metrics"`
 	Storage        StorageConfig        `json:"storage" mapstructure:"storage"`
 	Security       SecurityConfig       `json:"security" mapstructure:"security"`

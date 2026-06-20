@@ -1699,7 +1699,7 @@ type VizConfig struct {
 	Storage        *StorageConfig        `json:"storage,omitempty"`
 	StorageMetrics *StorageMetricsConfig `json:"storage_metrics,omitempty"`
 	Upload         *UploadConfig         `json:"upload,omitempty"`
-	UserManagement *UserManagementConfig `json:"user_management,omitempty"`
+	Users          *UserManagementConfig `json:"users,omitempty"`
 }
 
 // WSBroadcastRequest defines model for WSBroadcastRequest.
