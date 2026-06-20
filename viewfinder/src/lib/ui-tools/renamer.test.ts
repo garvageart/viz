@@ -1,13 +1,13 @@
-import { describe, expect, it } from "vitest";
 import { DateTime } from "luxon";
-import { buildDateTokens, cleanFilenameSegment, cleanPathSegment } from "./template";
+import { describe, expect, it } from "vitest";
+import type { ImageAsset } from "$lib/api";
 import {
-    getFilenameBasenameAndExtension,
     buildRenameContext,
+    getFilenameBasenameAndExtension,
     renderRenameTemplate,
     safeRenderRenameTemplate
 } from "./renamer";
-import type { ImageAsset } from "$lib/api";
+import { buildDateTokens, cleanFilenameSegment, cleanPathSegment } from "./template";
 
 describe("template.ts utils", () => {
     describe("buildDateTokens", () => {
@@ -56,9 +56,7 @@ describe("template.ts utils", () => {
         });
 
         it("replaces slashes with underscores but leaves other chars", () => {
-            expect(cleanPathSegment("my/folder\\name:still_valid")).toBe(
-                "my_folder_name:still_valid"
-            );
+            expect(cleanPathSegment("my/folder\\name:still_valid")).toBe("my_folder_name:still_valid");
         });
     });
 });

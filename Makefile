@@ -1,6 +1,6 @@
 SHELL := /usr/bin/env bash
 SCRIPTS_DIR := scripts/js
-.PHONY: help build build-api build-frontend generate-icons generate-types generate-types-install fmt lint test docker-build docker-push docker-up docker-down migrate initdb clean image-server image-viz dev run check-go
+.PHONY: help build build-api build-frontend generate-icons generate-types generate-types-install fmt fmt-check lint test docker-build docker-push docker-up docker-down migrate initdb clean image-server image-viz dev run check-go
 
 # Simple Makefile for common tasks across the viz repository.
 # Targets included:
@@ -157,26 +157,40 @@ generate-types-install:
 ### Code hygiene
 fmt:
 	@echo "Formatting Go sources..."
-	@$(GO_CMD) fmt ./...
+	@$(GO_CMD) fmt $$(go list -f '{{.Dir}}/...' -m)
 	@if [ -f "$(VIEWFINDER_DIR)/package.json" ]; then \
 		echo "Formatting frontend (if script exists)..."; \
 		cd $(VIEWFINDER_DIR) && $(PNPM) run format || true; \
 	fi
 
-lint:
+fmt-check:
+	@echo "Checking Go formatting..."
+	@UNFORMATTED=$$(gofmt -l $$(go list -f '{{.Dir}}' -m)); \
+	if [ -n "$$UNFORMATTED" ]; then \
+		echo "[ERROR] The following Go files are not formatted. Run 'make fmt' to format them:"; \
+		echo "$$UNFORMATTED"; \
+		exit 1; \
+	fi
+
+lint: fmt-check
 	@echo "Running linters (golangci-lint if available)..."
 	@if command -v golangci-lint >/dev/null 2>&1; then \
 		golangci-lint run ./...; \
 	else \
 		echo "golangci-lint not found, skipping Go lint. Install it or add a linter."; \
 	fi
+	@if [ -f "$(VIEWFINDER_DIR)/package.json" ]; then \
+		echo "Checking frontend formatting..."; \
+		cd $(VIEWFINDER_DIR) && $(PNPM) run format:check; \
+	fi
+	
 check-go:
 	@echo "Checking Go code for compilation and type errors..."
 	@$(GO_CMD) build ./...
 
 test:
 	@echo "Running Go tests..."
-	@$(GO_CMD) test ./...
+	@$(GO_CMD) test $$(go list -f '{{.Dir}}/...' -m)
 	@if [ -f "$(VIEWFINDER_DIR)/package.json" ]; then \
 		cd $(VIEWFINDER_DIR) && $(PNPM) run test || true; \
 	fi
