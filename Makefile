@@ -1,6 +1,6 @@
 SHELL := /usr/bin/env bash
 SCRIPTS_DIR := scripts/js
-.PHONY: help build build-api build-frontend generate-icons generate-types generate-types-install fmt fmt-check lint test docker-build docker-push docker-up docker-down migrate initdb clean image-server image-viz dev run check-go
+.PHONY: help build build-api build-frontend generate-icons generate-types generate-types-install fmt fmt-check lint test test-go docker-build docker-push docker-up docker-down migrate initdb clean image-server image-viz dev run check-go
 
 # Simple Makefile for common tasks across the viz repository.
 # Targets included:
@@ -188,12 +188,14 @@ check-go:
 	@echo "Checking Go code for compilation and type errors..."
 	@$(GO_CMD) build ./...
 
-test:
-	@echo "Running Go tests..."
-	@$(GO_CMD) test $$(go list -f '{{.Dir}}/...' -m)
+test: test-go
 	@if [ -f "$(VIEWFINDER_DIR)/package.json" ]; then \
 		cd $(VIEWFINDER_DIR) && $(PNPM) run test || true; \
 	fi
+
+test-go:
+	@echo "Running Go tests..."
+	@$(GO_CMD) test $$(go list -f '{{.Dir}}/...' -m)
 
 ### Docker
 docker-build:
