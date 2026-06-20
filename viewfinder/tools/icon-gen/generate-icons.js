@@ -1,4 +1,5 @@
 #!/usr/bin/env node
+// @ts-nocheck
 /**
  * generate-icons.js
  *
@@ -10,7 +11,9 @@
 import { existsSync, mkdirSync, readFileSync, writeFileSync } from "fs";
 import { globSync } from "glob";
 import { dirname, join, resolve } from "path";
+import { parse as parseSvelte } from "svelte/compiler";
 import { optimize } from "svgo";
+import ts from "typescript";
 import { fileURLToPath } from "url";
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
@@ -319,74 +322,195 @@ async function main() {
     console.log("Found files:", files.length);
     if (files.length > 0) console.log("Example file:", files[0]);
 
-    //----------------------------------------------------------------------
-    // PASS 1: Discover which prop names and function/snippet argument positions
-    // are typed as MaterialSymbol anywhere in the source tree.
-    //
-    // This makes icon discovery self-maintaining: adding a new component or
-    // function that accepts a MaterialSymbol parameter is enough — no changes
-    // to this script are needed.
-    //
-    // Discovered structure:
-    //   iconPropNames  — Set<string>  e.g. { "iconName", "icon", "myIcon" }
-    //   iconFuncArgs   — Map<funcName, Set<number>>  e.g. { "tokenCategory" => {0} }
-    //----------------------------------------------------------------------
-
-    /** @type {Set<string>} Prop/variable names typed as MaterialSymbol */
-    const iconPropNames = new Set(["iconName", "icon"]); // safe baseline fallbacks
-
-    /**
-     * Map of function/snippet name -> set of 0-based argument positions that
-     * are typed as MaterialSymbol.
-     * @type {Map<string, Set<number>>}
-     */
+    const iconPropNames = new Set(["iconName", "icon"]);
+    /** @type {Map<string, Set<number>>} */
     const iconFuncArgs = new Map();
+    /** @type {Map<string, { weights: Set<string>, styles: Set<string> }>} */
+    const names = new Map();
 
-    // Matches: `paramName: MaterialSymbol` or `paramName?: MaterialSymbol`
-    // Captures the identifier before the colon.
-    const reMSProp = /\b(\w+)\??:\s*(?:[\w.]+\.)?MaterialSymbol\b/g;
+    function tryAddIcon(candidate, fileWeights = new Set(), fileStyles = new Set()) {
+        const val = candidate.trim();
+        if (val && (!validSymbols || validSymbols.has(val))) {
+            if (!names.has(val)) {
+                names.set(val, { weights: new Set(), styles: new Set() });
+            }
+            const entry = names.get(val);
+            if (entry) {
+                fileWeights.forEach((w) => entry.weights.add(w));
+                fileStyles.forEach((s) => entry.styles.add(s));
+            }
+        }
+    }
 
-    // Matches function/snippet definitions and captures the name + raw param list.
-    // Handles both TS functions and Svelte {#snippet ...} blocks.
-    // e.g.  function foo(a: string, icon: MaterialSymbol)
-    //       {#snippet bar(iconName: MaterialSymbol, title: string)}
-    //       const baz = (x: MaterialSymbol) =>
-    const reFuncDef =
-        /(?:(?:function|snippet)\s+(\w+)|(?:const|let)\s+(\w+)\s*=\s*(?:async\s*)?\()\s*\(?\s*([^)]*MaterialSymbol[^)]*)\)/g;
+    // Helper to recursively walk Svelte AST
+    function walkSvelteAST(node, callback) {
+        if (!node || typeof node !== "object") return;
+        callback(node);
+        for (const key of Object.keys(node)) {
+            const val = node[key];
+            if (Array.isArray(val)) {
+                for (const child of val) {
+                    if (child && typeof child === "object" && typeof child.type === "string") {
+                        walkSvelteAST(child, callback);
+                    }
+                }
+            } else if (val && typeof val === "object" && typeof val.type === "string") {
+                walkSvelteAST(val, callback);
+            }
+        }
+    }
 
+    // Helper to recursively walk TS AST
+    function walkTSAST(node, callback) {
+        if (!node) return;
+        callback(node);
+        ts.forEachChild(node, (child) => walkTSAST(child, callback));
+    }
+
+    // Helper to extract all string literals from a TS AST node
+    function extractStringsFromNode(n) {
+        const results = [];
+        walkTSAST(n, (child) => {
+            if (ts.isStringLiteral(child)) {
+                results.push(child.text);
+            } else if (ts.isNoSubstitutionTemplateLiteral(child)) {
+                results.push(child.text);
+            }
+        });
+        return results;
+    }
+
+    // Weight and style detection Regexes for legacy weight/style context
+    const reWeightDouble = /(?:iconWeight|weight)\s*=\s*"([0-9]{3})"/g;
+    const reWeightSingle = /(?:iconWeight|weight)\s*=\s*'([0-9]{3})'/g;
+    const reWeightExpr = /(?:iconWeight|weight)\s*=\s*{\s*([0-9]{3})\s*}/g;
+    const reWeightObj = /(?:iconWeight|weight)\s*:\s*"([0-9]{3})"/g;
+
+    const reStyleDouble = /iconStyle\s*=\s*"([a-z]+)"/g;
+    const reStyleSingle = /iconStyle\s*=\s*'([a-z]+)'/g;
+    const reStyleExpr = /iconStyle\s*=\s*{\s*"([a-z]+)"\s*}/g;
+    const reStyleObj = /iconStyle\s*:\s*"([a-z]+)"/g;
+
+    const parsedFiles = [];
+
+    // -------------------------------------------------------------
+    // PASS 1: Identify typed identifiers (prop names and func args)
+    // -------------------------------------------------------------
     for (const f of files) {
         if (f.includes("/generated/") || f.includes("/types/MaterialSymbol")) {
             continue;
         }
-        const text = readFileSync(f, "utf8");
+        const sourceText = readFileSync(f, "utf8");
+        const cleanedText = sourceText.replace(/<style[\s\S]*?<\/style>/gi, "");
 
-        // 1a. Collect prop/variable names typed as MaterialSymbol
-        reMSProp.lastIndex = 0;
-        let mp;
-        while ((mp = reMSProp.exec(text)) !== null) {
-            iconPropNames.add(mp[1]);
+        const scriptTexts = [];
+        const expressionsText = [];
+
+        if (f.endsWith(".svelte")) {
+            try {
+                const ast = parseSvelte(cleanedText, { filename: f });
+                if (ast.instance) {
+                    scriptTexts.push({
+                        text: sourceText.slice(ast.instance.content.start, ast.instance.content.end),
+                        name: "instance.ts"
+                    });
+                }
+                if (ast.module) {
+                    scriptTexts.push({
+                        text: sourceText.slice(ast.module.content.start, ast.module.content.end),
+                        name: "module.ts"
+                    });
+                }
+
+                const root = ast.fragment || ast.html;
+                if (root) {
+                    walkSvelteAST(root, (node) => {
+                        if (node.type === "SnippetBlock" && node.parameters && node.parameters.length > 0) {
+                            const start = node.parameters[0].start;
+                            const end = node.parameters[node.parameters.length - 1].end;
+                            const paramsText = sourceText.slice(start, end);
+                            scriptTexts.push({
+                                text: `const ${node.expression.name} = (${paramsText}) => {};`,
+                                name: `snippet_${node.expression.name}.ts`
+                            });
+                        }
+
+                        if (node.expression && node.type !== "SnippetBlock") {
+                            expressionsText.push(sourceText.slice(node.expression.start, node.expression.end));
+                        }
+                        if (node.value && Array.isArray(node.value)) {
+                            for (const v of node.value) {
+                                if (v.type === "MustacheTag" && v.expression) {
+                                    expressionsText.push(sourceText.slice(v.expression.start, v.expression.end));
+                                }
+                            }
+                        }
+                    });
+                }
+            } catch (e) {
+                console.error(`Svelte parse error in ${f}:`, e.message);
+            }
+        } else {
+            scriptTexts.push({ text: sourceText, name: f });
         }
 
-        // 1b. Collect function/snippet names and their MaterialSymbol param positions
-        reFuncDef.lastIndex = 0;
-        let mf;
-        while ((mf = reFuncDef.exec(text)) !== null) {
-            const funcName = mf[1] || mf[2];
-            const rawParams = mf[3];
-            if (!funcName || !rawParams) {
-                continue;
-            }
+        parsedFiles.push({ file: f, scriptTexts, expressionsText, sourceText, cleanedText });
 
-            // Split params on commas (naive but sufficient for non-nested generics)
-            const params = rawParams.split(",");
-            params.forEach((param, idx) => {
-                if (/(?:[\w.]+\.)?MaterialSymbol/.test(param)) {
-                    if (!iconFuncArgs.has(funcName)) {
-                        iconFuncArgs.set(funcName, new Set());
-                    }
-                    const funcSet = iconFuncArgs.get(funcName);
-                    if (funcSet) {
-                        funcSet.add(idx);
+        for (const { text, name } of scriptTexts) {
+            const sourceFile = ts.createSourceFile(name, text, ts.ScriptTarget.Latest, true);
+
+            walkTSAST(sourceFile, (node) => {
+                if (node.type) {
+                    const typeText = node.type.getText(sourceFile);
+                    if (typeText.includes("MaterialSymbol")) {
+                        // 1. Property signature or declaration
+                        if (ts.isPropertySignature(node) || ts.isPropertyDeclaration(node)) {
+                            if (ts.isIdentifier(node.name)) {
+                                iconPropNames.add(node.name.text);
+                            }
+                        }
+                        // 2. Parameter declaration
+                        if (ts.isParameter(node)) {
+                            if (ts.isIdentifier(node.name)) {
+                                iconPropNames.add(node.name.text);
+
+                                const parent = node.parent;
+                                let funcName = null;
+                                if (ts.isFunctionDeclaration(parent) && parent.name) {
+                                    funcName = parent.name.text;
+                                } else if (ts.isArrowFunction(parent) || ts.isFunctionExpression(parent)) {
+                                    if (parent.parent && ts.isVariableDeclaration(parent.parent)) {
+                                        funcName = parent.parent.name.getText(sourceFile);
+                                    }
+                                }
+                                if (funcName) {
+                                    const idx = parent.parameters.indexOf(node);
+                                    if (idx !== -1) {
+                                        if (!iconFuncArgs.has(funcName)) {
+                                            iconFuncArgs.set(funcName, new Set());
+                                        }
+                                        iconFuncArgs.get(funcName).add(idx);
+                                    }
+                                }
+                            } else if (ts.isObjectBindingPattern(node.name) && ts.isTypeLiteralNode(node.type)) {
+                                node.name.elements.forEach((el) => {
+                                    if (ts.isIdentifier(el.name)) {
+                                        const member = node.type.members.find(
+                                            (m) =>
+                                                (ts.isPropertySignature(m) || ts.isPropertyDeclaration(m)) &&
+                                                m.name.getText(sourceFile) === el.name.text
+                                        );
+                                        if (
+                                            member &&
+                                            member.type &&
+                                            member.type.getText(sourceFile).includes("MaterialSymbol")
+                                        ) {
+                                            iconPropNames.add(el.name.text);
+                                        }
+                                    }
+                                });
+                            }
+                        }
                     }
                 }
             });
@@ -399,207 +523,16 @@ async function main() {
         Object.fromEntries(Array.from(iconFuncArgs.entries()).map(([k, v]) => [k, Array.from(v)]))
     );
 
-    //----------------------------------------------------------------------
-    // PASS 2: Scan all source files for icon name strings using the discovered
-    // prop names and function argument positions from Pass 1.
-    //
-    // Three extraction strategies per file:
-    //   A. Prop attributes:  propName="value"  propName={'value'}  propName={expr}
-    //   B. Object literals:  propName: "value"  propName: 'value'
-    //   C. Call-site args:   funcName("value", ...)  at known positions
-    //
-    // All candidates are validated against the MaterialSymbol allowlist.
-    //----------------------------------------------------------------------
-
-    /** @type {Map<string, { weights: Set<string>, styles: Set<string> }>} */
-    const names = new Map();
-
-    // Weight detection
-    const reWeightDouble = /(?:iconWeight|weight)\s*=\s*"([0-9]{3})"/g;
-    const reWeightSingle = /(?:iconWeight|weight)\s*=\s*'([0-9]{3})'/g;
-    const reWeightExpr = /(?:iconWeight|weight)\s*=\s*{\s*([0-9]{3})\s*}/g;
-    const reWeightObj = /(?:iconWeight|weight)\s*:\s*"([0-9]{3})"/g;
-
-    // Style detection
-    const reStyleDouble = /iconStyle\s*=\s*"([a-z]+)"/g;
-    const reStyleSingle = /iconStyle\s*=\s*'([a-z]+)'/g;
-    const reStyleExpr = /iconStyle\s*=\s*{\s*"([a-z]+)"\s*}/g;
-    const reStyleObj = /iconStyle\s*:\s*"([a-z]+)"/g;
-
-    /**
-     * Validate and register a candidate icon name.
-     * @param {string} candidate
-     * @param {Set<string>} fileNames
-     */
-    function tryAddIcon(candidate, fileNames) {
-        const val = candidate.trim();
-        if (val && (!validSymbols || validSymbols.has(val))) {
-            fileNames.add(val);
-        }
-    }
-
-    /**
-     * Extract all string literals from a JS/TS expression string.
-     * Handles simple quoted strings; does not evaluate dynamic expressions.
-     * @param {string} expr
-     * @returns {string[]}
-     */
-    function extractStringsFromExpr(expr) {
-        const results = [];
-        const re = /(?:"([^"\\]+)"|'([^'\\]+)'|`([^`\\]+)`)/g;
-        let sm;
-        while ((sm = re.exec(expr)) !== null) {
-            const v = sm[1] ?? sm[2] ?? sm[3];
-            if (v) {
-                results.push(v);
-            }
-        }
-        return results;
-    }
-
-    /**
-     * Extract the Nth comma-separated argument from a raw argument string.
-     * This is a best-effort regex approach; it handles quoted strings and
-     * simple expressions but will not correctly parse deeply nested calls.
-     * @param {string} argsText  Raw text between the outer parentheses
-     * @param {number} position  0-based argument index
-     * @returns {string[]}  All string literals found at that position
-     */
-    function extractArgAtPosition(argsText, position) {
-        // Split on top-level commas (ignoring commas inside nested parens/brackets)
-        const args = [];
-        let depth = 0;
-        let current = "";
-        for (let i = 0; i < argsText.length; i++) {
-            const ch = argsText[i];
-            if (ch === "(" || ch === "[" || ch === "{") {
-                depth++;
-                current += ch;
-            } else if (ch === ")" || ch === "]" || ch === "}") {
-                depth--;
-                current += ch;
-            } else if (ch === "," && depth === 0) {
-                args.push(current.trim());
-                current = "";
-            } else {
-                current += ch;
-            }
-        }
-        if (current.trim()) {
-            args.push(current.trim());
-        }
-
-        if (position >= args.length) {
-            return [];
-        }
-        return extractStringsFromExpr(args[position]);
-    }
-
-    for (const f of files) {
-        if (f.includes("/generated/") || f.includes("/types/MaterialSymbol")) {
-            continue;
-        }
-        const text = readFileSync(f, "utf8");
-        let m;
-
-        const fileNames = new Set();
-
-        // 2A & 2B. Prop attributes and object literal values
-        for (const propName of iconPropNames) {
-            // propName="value"
-            const reAttrDouble = new RegExp(`${propName}\\s*=\\s*"([^"]+)"`, "g");
-            reAttrDouble.lastIndex = 0;
-            while ((m = reAttrDouble.exec(text)) !== null) {
-                tryAddIcon(m[1], fileNames);
-            }
-
-            // propName='value'
-            const reAttrSingle = new RegExp(`${propName}\\s*=\\s*'([^']+)'`, "g");
-            reAttrSingle.lastIndex = 0;
-            while ((m = reAttrSingle.exec(text)) !== null) {
-                tryAddIcon(m[1], fileNames);
-            }
-
-            // propName={expr} — extract all string literals inside the braces
-            const reAttrExpr = new RegExp(`${propName}\\s*=\\s*\\{([^{}]+)\\}`, "g");
-            reAttrExpr.lastIndex = 0;
-            while ((m = reAttrExpr.exec(text)) !== null) {
-                extractStringsFromExpr(m[1]).forEach((v) => tryAddIcon(v, fileNames));
-            }
-
-            // propName: "value"  (object literal / TS interface usage)
-            const reObjDouble = new RegExp(`${propName}\\s*:\\s*"([^"]+)"`, "g");
-            reObjDouble.lastIndex = 0;
-            while ((m = reObjDouble.exec(text)) !== null) {
-                tryAddIcon(m[1], fileNames);
-            }
-
-            // propName: 'value'
-            const reObjSingle = new RegExp(`${propName}\\s*:\\s*'([^']+)'`, "g");
-            reObjSingle.lastIndex = 0;
-            while ((m = reObjSingle.exec(text)) !== null) {
-                tryAddIcon(m[1], fileNames);
-            }
-        }
-
-        // 2C. Function/snippet call sites at known MaterialSymbol positions
-        for (const [funcName, positions] of iconFuncArgs.entries()) {
-            // Match: funcName( ... ) — capture everything up to the matching close paren.
-            // We use a simple depth-tracking loop on matched positions rather than a
-            // single regex to correctly handle nested calls.
-            const reCallStart = new RegExp(`\\b${funcName}\\s*\\(`, "g");
-            reCallStart.lastIndex = 0;
-            let mc;
-            while ((mc = reCallStart.exec(text)) !== null) {
-                // Walk forward from the opening paren to find the matching close paren
-                let depth = 1;
-                let i = mc.index + mc[0].length;
-                while (i < text.length && depth > 0) {
-                    if (text[i] === "(") {
-                        depth++;
-                    } else if (text[i] === ")") {
-                        depth--;
-                    }
-                    i++;
-                }
-                const argsText = text.slice(mc.index + mc[0].length, i - 1);
-                for (const pos of positions) {
-                    extractArgAtPosition(argsText, pos).forEach((v) => tryAddIcon(v, fileNames));
-                }
-            }
-        }
-        // 2D. Scan for typed variable declarations
-        // Match Record<..., MaterialSymbol> = { ... }
-        const reRecord = /Record\s*<\s*[^>]*?,\s*MaterialSymbol\s*>\s*=\s*\{([\s\S]*?)\}/g;
-        let mr;
-        while ((mr = reRecord.exec(text)) !== null) {
-            extractStringsFromExpr(mr[1]).forEach((v) => tryAddIcon(v, fileNames));
-        }
-
-        // Match MaterialSymbol[] or Array<MaterialSymbol> = [ ... ]
-        const reArray = /(?:MaterialSymbol\[\]|Array\s*<\s*MaterialSymbol\s*>)\s*=\s*\[([\s\S]*?)\]/g;
-        let ma;
-        while ((ma = reArray.exec(text)) !== null) {
-            extractStringsFromExpr(ma[1]).forEach((v) => tryAddIcon(v, fileNames));
-        }
-
-        // Match single variables: : MaterialSymbol = "icon_name"
-        const reSingle = /:\s*MaterialSymbol\s*=\s*(?:"([^"\\]+)"|'([^'\\]+)'|`([^`\\]+)`)/g;
-        let msi;
-        while ((msi = reSingle.exec(text)) !== null) {
-            const candidate = msi[1] ?? msi[2] ?? msi[3];
-            tryAddIcon(candidate, fileNames);
-        }
-
-
-        if (fileNames.size === 0) {
-            continue;
-        }
-
+    // -------------------------------------------------------------
+    // PASS 2: Discover and extract icon usages
+    // -------------------------------------------------------------
+    for (const { file, scriptTexts, expressionsText, sourceText, cleanedText } of parsedFiles) {
+        // Detect local weights and styles in this file
         const foundWeights = new Set();
         [reWeightDouble, reWeightSingle, reWeightExpr, reWeightObj].forEach((r) => {
             r.lastIndex = 0;
-            while ((m = r.exec(text)) !== null) {
+            let m;
+            while ((m = r.exec(sourceText)) !== null) {
                 foundWeights.add(m[1]);
             }
         });
@@ -607,20 +540,82 @@ async function main() {
         const foundStyles = new Set();
         [reStyleDouble, reStyleSingle, reStyleExpr, reStyleObj].forEach((r) => {
             r.lastIndex = 0;
-            while ((m = r.exec(text)) !== null) {
+            let m;
+            while ((m = r.exec(sourceText)) !== null) {
                 foundStyles.add(m[1]);
             }
         });
 
-        for (const n of fileNames) {
-            if (!names.has(n)) {
-                names.set(n, { weights: new Set(), styles: new Set() });
-            }
-            const entry = names.get(n);
-            if (entry) {
-                foundWeights.forEach((w) => entry.weights.add(w));
-                foundStyles.forEach((s) => entry.styles.add(s));
-            }
+        // 1. Svelte Template Static Attributes
+        if (file.endsWith(".svelte")) {
+            try {
+                const ast = parseSvelte(cleanedText, { filename: file });
+                const root = ast.fragment || ast.html;
+                if (root) {
+                    walkSvelteAST(root, (node) => {
+                        if (node.type === "Attribute" && iconPropNames.has(node.name)) {
+                            if (node.value && Array.isArray(node.value)) {
+                                for (const v of node.value) {
+                                    if (v.type === "Text") {
+                                        tryAddIcon(v.data, foundWeights, foundStyles);
+                                    }
+                                }
+                            }
+                        }
+                    });
+                }
+            } catch (e) {}
+        }
+
+        // 2. JS/TS Expressions and Script Blocks
+        const allTsTexts = [...scriptTexts.map((s) => s.text), ...expressionsText];
+        for (const tsText of allTsTexts) {
+            const sourceFile = ts.createSourceFile("expr.ts", tsText, ts.ScriptTarget.Latest, true);
+
+            walkTSAST(sourceFile, (node) => {
+                // Variable declaration with static initializer (e.g. groupIcons)
+                if (
+                    ts.isVariableDeclaration(node) &&
+                    node.type &&
+                    node.type.getText(sourceFile).includes("MaterialSymbol") &&
+                    node.initializer
+                ) {
+                    extractStringsFromNode(node.initializer).forEach((v) => tryAddIcon(v, foundWeights, foundStyles));
+                }
+
+                // Property assignment in object literals (e.g., icon: "settings")
+                if (ts.isPropertyAssignment(node)) {
+                    const propName = node.name.getText(sourceFile);
+                    if (iconPropNames.has(propName)) {
+                        extractStringsFromNode(node.initializer).forEach((v) =>
+                            tryAddIcon(v, foundWeights, foundStyles)
+                        );
+                    }
+                }
+
+                // Binary expression assignments (e.g., currentIcon = "image")
+                if (ts.isBinaryExpression(node) && node.operatorToken.kind === ts.SyntaxKind.EqualsToken) {
+                    const leftName = node.left.getText(sourceFile);
+                    if (iconPropNames.has(leftName)) {
+                        extractStringsFromNode(node.right).forEach((v) => tryAddIcon(v, foundWeights, foundStyles));
+                    }
+                }
+
+                // Call expressions (e.g., tokenCategory("folder", ...))
+                if (ts.isCallExpression(node)) {
+                    const funcName = node.expression.getText(sourceFile);
+                    const positions = iconFuncArgs.get(funcName);
+                    if (positions) {
+                        for (const pos of positions) {
+                            if (pos < node.arguments.length) {
+                                extractStringsFromNode(node.arguments[pos]).forEach((v) =>
+                                    tryAddIcon(v, foundWeights, foundStyles)
+                                );
+                            }
+                        }
+                    }
+                }
+            });
         }
     }
 
