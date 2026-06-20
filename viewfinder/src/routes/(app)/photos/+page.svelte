@@ -418,8 +418,10 @@
                 </div>
                 <div class="selection-actions">
                     <IconButton
-                        iconName={actionMenuItems.find((it) => it.id === "act-add-to-collection")?.icon ??
-                            "collections_bookmark"}
+                        iconName={(() => {
+                            const icon = actionMenuItems.find((it) => it.id === "act-add-to-collection")?.icon;
+                            return typeof icon === "string" ? icon : (icon?.iconName ?? "collections_bookmark");
+                        })()}
                         class="action"
                         role="tooltip"
                         title="Add to Collection"
