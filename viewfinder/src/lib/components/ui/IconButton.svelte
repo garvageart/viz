@@ -61,8 +61,14 @@
         border-radius: var(--viz-border-radius-pill);
         outline: none;
 
+        /* Material icon SVGs have ~20% internal viewBox whitespace around the glyph.
+           Negative margins compensate for this optical padding inside the button. */
+        :global(.viz-material-icon) {
+            padding: -0.25em;
+        }
+
         &.with-children {
-            padding: var(--viz-spacing-xs) var(--viz-spacing-sm);
+            padding: var(--viz-spacing-sm);
         }
 
         &:focus-visible {
@@ -92,7 +98,7 @@
             padding: var(--viz-spacing-xxs);
 
             &.with-children {
-                padding: var(--viz-spacing-xxs) var(--viz-spacing-xs);
+                padding: var(--viz-spacing-xxs) var(--viz-spacing-sm);
             }
         }
 
@@ -101,7 +107,7 @@
             padding: 0;
 
             &.with-children {
-                padding: var(--viz-spacing-xxs);
+                padding: var(--viz-spacing-xs);
             }
         }
     }
