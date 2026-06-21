@@ -167,126 +167,113 @@
     </div>
 
     {#snippet panelSection(name: SectionName, label: string, children: import("svelte").Snippet)}
-            <div class="section" class:expanded={sections[name]}>
-                <button class="section-header" onclick={() => toggleSection(name)}>
-                    <MaterialIcon iconName={sections[name] ? "expand_more" : "chevron_right"} />
-                    <span>{label}</span>
-                </button>
-                {#if sections[name]}
-                    <div class="section-content" transition:slide>
-                        {@render children()}
+        <div class="section" class:expanded={sections[name]}>
+            <button class="section-header" onclick={() => toggleSection(name)}>
+                <MaterialIcon iconName={sections[name] ? "expand_more" : "chevron_right"} />
+                <span>{label}</span>
+            </button>
+            {#if sections[name]}
+                <div class="section-content" transition:slide>
+                    {@render children()}
+                </div>
+            {/if}
+        </div>
+    {/snippet}
+
+    <div class="export-body">
+        <!-- DESTINATION -->
+        {@render panelSection("destination", "Destination", destinationSnippet)}
+        {#snippet destinationSnippet()}
+            <InputSelect
+                label="Export to"
+                options={[{ value: "zip", label: "Download as ZIP" }]}
+                bind:value={settings.destinationMode}
+            />
+        {/snippet}
+
+        <!-- FILE NAMING -->
+        {@render panelSection("naming", "File Naming", namingSnippet)}
+        {#snippet namingSnippet()}
+            <BatchRenameBuilder bind:settings={renameSettings} bind:activeTemplate {assets} format={settings.format} />
+        {/snippet}
+
+        <!-- FILE SETTINGS -->
+        {@render panelSection("settings", "File Settings", settingsSnippet)}
+        {#snippet settingsSnippet()}
+            <div class="control-row">
+                <InputSelect label="Format" options={Array.from(formatOptions)} bind:value={settings.format} />
+                {#if ["jpg", "webp", "avif"].includes(settings.format)}
+                    <div class="quality-slider">
+                        <Slider
+                            id="quality-range"
+                            label="Quality"
+                            min={1}
+                            max={100}
+                            bind:value={settings.quality}
+                            showValue={true}
+                        />
                     </div>
                 {/if}
             </div>
+            <InputSelect label="Color Space" options={Array.from(colorSpaceOptions)} bind:value={settings.colorSpace} />
+            <Checkbox
+                id="strip-meta"
+                label="Remove all metadata (EXIF, XMP, IPTC)"
+                bind:checked={settings.stripMetadata}
+            />
         {/snippet}
 
-        <div class="export-body">
-            <!-- DESTINATION -->
-            {@render panelSection("destination", "Destination", destinationSnippet)}
-            {#snippet destinationSnippet()}
-                <InputSelect
-                    label="Export to"
-                    options={[{ value: "zip", label: "Download as ZIP" }]}
-                    bind:value={settings.destinationMode}
-                />
-            {/snippet}
-
-            <!-- FILE NAMING -->
-            {@render panelSection("naming", "File Naming", namingSnippet)}
-            {#snippet namingSnippet()}
-                <BatchRenameBuilder
-                    bind:settings={renameSettings}
-                    bind:activeTemplate
-                    {assets}
-                    format={settings.format}
-                />
-            {/snippet}
-
-            <!-- FILE SETTINGS -->
-            {@render panelSection("settings", "File Settings", settingsSnippet)}
-            {#snippet settingsSnippet()}
-                <div class="control-row">
-                    <InputSelect label="Format" options={Array.from(formatOptions)} bind:value={settings.format} />
-                    {#if ["jpg", "webp", "avif"].includes(settings.format)}
-                        <div class="quality-slider">
-                            <Slider
-                                id="quality-range"
-                                label="Quality"
-                                min={1}
-                                max={100}
-                                bind:value={settings.quality}
-                                showValue={true}
-                            />
-                        </div>
+        <!-- IMAGE SIZING -->
+        {@render panelSection("sizing", "Image Sizing", sizingSnippet)}
+        {#snippet sizingSnippet()}
+            <InputSelect label="Resize to Fit" options={Array.from(resizeOptions)} bind:value={settings.resizeMode} />
+            {#if settings.resizeMode !== "none"}
+                <div class="control-row dimensions">
+                    {#if ["width", "long-edge", "short-edge", "dimensions"].includes(settings.resizeMode)}
+                        <InputText
+                            id="resize-w"
+                            type="number"
+                            label={settings.resizeMode === "width"
+                                ? "Width"
+                                : settings.resizeMode === "dimensions"
+                                  ? "W"
+                                  : "Edge"}
+                            bind:value={settings.resizeWidth}
+                        />
                     {/if}
+                    {#if ["height", "dimensions"].includes(settings.resizeMode)}
+                        <InputText
+                            id="resize-h"
+                            type="number"
+                            label={settings.resizeMode === "height" ? "Height" : "H"}
+                            bind:value={settings.resizeHeight}
+                        />
+                    {/if}
+                    <span class="unit">px</span>
                 </div>
-                <InputSelect
-                    label="Color Space"
-                    options={Array.from(colorSpaceOptions)}
-                    bind:value={settings.colorSpace}
-                />
-                <Checkbox
-                    id="strip-meta"
-                    label="Remove all metadata (EXIF, XMP, IPTC)"
-                    bind:checked={settings.stripMetadata}
-                />
-            {/snippet}
+            {/if}
+        {/snippet}
 
-            <!-- IMAGE SIZING -->
-            {@render panelSection("sizing", "Image Sizing", sizingSnippet)}
-            {#snippet sizingSnippet()}
-                <InputSelect
-                    label="Resize to Fit"
-                    options={Array.from(resizeOptions)}
-                    bind:value={settings.resizeMode}
-                />
-                {#if settings.resizeMode !== "none"}
-                    <div class="control-row dimensions">
-                        {#if ["width", "long-edge", "short-edge", "dimensions"].includes(settings.resizeMode)}
-                            <InputText
-                                id="resize-w"
-                                type="number"
-                                label={settings.resizeMode === "width"
-                                    ? "Width"
-                                    : settings.resizeMode === "dimensions"
-                                      ? "W"
-                                      : "Edge"}
-                                bind:value={settings.resizeWidth}
-                            />
-                        {/if}
-                        {#if ["height", "dimensions"].includes(settings.resizeMode)}
-                            <InputText
-                                id="resize-h"
-                                type="number"
-                                label={settings.resizeMode === "height" ? "Height" : "H"}
-                                bind:value={settings.resizeHeight}
-                            />
-                        {/if}
-                        <span class="unit">px</span>
-                    </div>
-                {/if}
-            {/snippet}
+        <!-- METADATA (Placeholder) -->
+        {@render panelSection("metadata", "Metadata", metadataSnippet)}
+        {#snippet metadataSnippet()}
+            <p class="placeholder-text">Copyright and Contact Info will be added here.</p>
+        {/snippet}
 
-            <!-- METADATA (Placeholder) -->
-            {@render panelSection("metadata", "Metadata", metadataSnippet)}
-            {#snippet metadataSnippet()}
-                <p class="placeholder-text">Copyright and Contact Info will be added here.</p>
-            {/snippet}
-
-            <!-- WATERMARKING (Placeholder) -->
-            {@render panelSection("watermarking", "Watermarking", watermarkingSnippet)}
-            {#snippet watermarkingSnippet()}
-                <p class="placeholder-text">Watermarking options will be added here.</p>
-            {/snippet}
-        </div>
-
-        <div class="export-footer">
-            <Button variant="small" onclick={handleCancel}>Cancel</Button>
-            <Button variant="small" onclick={handleExport} class="export-btn">
-                Export {assets.length} Item{assets.length === 1 ? "" : "s"}
-            </Button>
-        </div>
+        <!-- WATERMARKING (Placeholder) -->
+        {@render panelSection("watermarking", "Watermarking", watermarkingSnippet)}
+        {#snippet watermarkingSnippet()}
+            <p class="placeholder-text">Watermarking options will be added here.</p>
+        {/snippet}
     </div>
+
+    <div class="export-footer">
+        <Button variant="small" onclick={handleCancel}>Cancel</Button>
+        <Button variant="small" onclick={handleExport} class="export-btn">
+            Export {assets.length} Item{assets.length === 1 ? "" : "s"}
+        </Button>
+    </div>
+</div>
 
 <style lang="scss">
     .export-panel {
