@@ -55,6 +55,9 @@ func ReadConfig() (viper.Viper, error) {
 	v.SetDefault("database.port", 5432)
 	v.SetDefault("database.name", "viz")
 	v.SetDefault("database.user", "postgres")
+	v.SetDefault("database.max_open_conns", 25)
+	v.SetDefault("database.max_idle_conns", 25)
+	v.SetDefault("database.conn_max_lifetime_minutes", 5)
 
 	v.SetDefault("redis.enabled", false)
 	v.SetDefault("redis.host", "localhost")

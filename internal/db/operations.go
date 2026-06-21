@@ -3,6 +3,7 @@ package db
 import (
 	"fmt"
 	"log/slog"
+	"time"
 
 	slogGorm "github.com/orandin/slog-gorm"
 	"gorm.io/driver/postgres"
@@ -33,6 +34,28 @@ func (db *DB) Connect() (*gorm.DB, error) {
 	if err != nil {
 		return client, err
 	}
+
+	sqlDB, err := client.DB()
+	if err != nil {
+		return client, fmt.Errorf("failed to get underlying sql.DB: %w", err)
+	}
+
+	// Limit connection pool parameters to prevent resource exhaustion under
+	// heavy parallel upload load. Values come from viz.json (database block);
+	// defaults (25 / 25 / 5 min) are set in config.go.
+	//
+	//   MaxOpenConns  — caps total concurrent DB connections; excess requests
+	//                   queue rather than spawning new connections unbounded.
+	//   MaxIdleConns  — how many connections stay open between requests;
+	//                   matching MaxOpenConns avoids churn on bursts.
+	//   ConnMaxLifetime — recycles connections before the DB server or a load
+	//                   balancer forcibly closes them (avoids stale-connection
+	//                   errors in long-running deployments).
+	//
+	// See docs/architecture/IMAGE_PROCESSING_MEMORY.md for full context.
+	sqlDB.SetMaxOpenConns(db.MaxOpenConns)
+	sqlDB.SetMaxIdleConns(db.MaxIdleConns)
+	sqlDB.SetConnMaxLifetime(time.Duration(db.ConnMaxLifetimeMinutes) * time.Minute)
 
 	logger.Info("Successfully connected to PostgresSQL", slog.Group("connection",
 		slog.String("user", db.User),

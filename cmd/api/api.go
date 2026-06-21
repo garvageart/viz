@@ -262,11 +262,14 @@ func main() {
 			}
 			return appConfig.Database.User
 		}(),
-		Password:     appConfig.Database.Password,
-		AppName:      utils.AppName,
-		DatabaseName: appConfig.Database.Name,
-		Logger:       logger,
-		LogLevel:     logLevel,
+		Password:               appConfig.Database.Password,
+		AppName:                utils.AppName,
+		DatabaseName:           appConfig.Database.Name,
+		Logger:                 logger,
+		LogLevel:               logLevel,
+		MaxOpenConns:           appConfig.Database.MaxOpenConns,
+		MaxIdleConns:           appConfig.Database.MaxIdleConns,
+		ConnMaxLifetimeMinutes: appConfig.Database.ConnMaxLifetimeMinutes,
 	}
 
 	// Lmao I hate this

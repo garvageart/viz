@@ -29,12 +29,27 @@ type QueueConfig struct {
 }
 
 // DatabaseConfig holds the configuration for the database connection.
+// Connection pool limits are applied at startup via sql.DB setters.
+// Defaults are set in config.go. See docs/architecture/IMAGE_PROCESSING_MEMORY.md.
 type DatabaseConfig struct {
 	Location string `json:"location" mapstructure:"location"`
 	User     string `json:"user" mapstructure:"user"`
 	Password string `json:"password,omitempty" mapstructure:"password"`
 	Name     string `json:"name" mapstructure:"name"`
 	Port     int    `json:"port" mapstructure:"port"`
+
+	// MaxOpenConns is the maximum number of open connections to the database.
+	// Default: 25. Set to 0 for unlimited (not recommended in production).
+	MaxOpenConns int `json:"max_open_conns" mapstructure:"max_open_conns"`
+
+	// MaxIdleConns is the maximum number of idle connections kept in the pool.
+	// Default: 25. Should be ≤ MaxOpenConns.
+	MaxIdleConns int `json:"max_idle_conns" mapstructure:"max_idle_conns"`
+
+	// ConnMaxLifetimeMinutes is how long (in minutes) a connection may be reused
+	// before being recycled. Default: 5. Prevents stale connections from being
+	// held open past server-side or load-balancer timeouts.
+	ConnMaxLifetimeMinutes int `json:"conn_max_lifetime_minutes" mapstructure:"conn_max_lifetime_minutes"`
 }
 
 // LoggingConfig holds the configuration for logging.
