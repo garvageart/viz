@@ -20,10 +20,9 @@
 <style lang="scss">
     .viz-nav-progress {
         position: fixed;
-        top: var(--viz-header-height, 2rem);
         left: 0;
         width: 100%;
-        z-index: 9000;
+        z-index: 1000;
         pointer-events: none;
         transition: opacity 0.4s ease;
 

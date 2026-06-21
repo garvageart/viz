@@ -39,7 +39,7 @@
         onkeydown={handleSearch}
         disabled={loading}
     >
-        <MaterialIcon iconName="search" style="margin: 0 0.2em; color: var(--viz-20);" />
+        <MaterialIcon iconName="search" size="0.95rem" style="color: var(--viz-40);" />
     </button>
     <input
         id={inputId}
@@ -66,7 +66,7 @@
             disabled={loading}
             onclick={() => (value = "")}
         >
-            <MaterialIcon iconName="close" />
+            <MaterialIcon iconName="close" size="0.95rem" />
         </button>
     {/if}
 </div>
@@ -76,30 +76,28 @@
         display: flex;
         align-items: center;
         width: 20%;
-        border: 1px solid;
-        border-color: var(--viz-80);
-        border-radius: 2em;
+        height: 1.625rem; /* Dynamic density height for 2rem high header */
+        border: 1px solid var(--viz-60);
+        border-radius: var(--viz-border-radius-pill);
         background-color: var(--viz-bg-color);
         overflow: hidden;
-        &:focus {
-            border-color: var(--viz-80);
-        }
+        box-sizing: border-box;
     }
 
     .search-button {
         background-color: var(--viz-90);
         border: none;
-        border-radius: 2em;
-        border-top-right-radius: 0%;
-        border-bottom-right-radius: 0%;
+        border-radius: var(--viz-border-radius-pill);
+        border-top-right-radius: 0;
+        border-bottom-right-radius: 0;
         height: 100%;
-        padding: 0.15em 0.4em;
-        font-size: 0.85rem;
+        padding: 0 var(--viz-spacing-sm);
         display: flex;
         align-items: center;
         justify-content: center;
         color: var(--viz-text-color);
         cursor: pointer;
+        transition: background-color 150ms ease;
 
         &:focus {
             box-shadow: 0px 0px 0px 1.5px inset var(--viz-60);
@@ -117,20 +115,19 @@
     }
 
     .search-input__field {
-        font-size: 0.85em;
+        font-size: var(--viz-font-size-xs);
         background-color: var(--viz-bg-color);
         color: var(--viz-text-color);
         outline: none;
         border: none;
         width: 100%;
         height: 100%;
-        border-top-left-radius: 0%;
-        border-bottom-left-radius: 0%;
-        padding: 0 0.5em;
+        border-top-left-radius: 0;
+        border-bottom-left-radius: 0;
+        padding: 0 var(--viz-spacing-sm);
         font-family: var(--viz-display-font);
 
         &::placeholder {
-            font-size: 0.9em;
             color: var(--viz-40);
             font-family: var(--viz-display-font);
         }
@@ -142,26 +139,24 @@
 
     .has-focus {
         outline: 1.5px solid var(--viz-primary);
+        outline-offset: -1px;
     }
 
     .clear-search-button {
         border: none;
         outline: none;
         height: 100%;
-        padding: 0.15em 0.4em;
-        font-size: 1em;
+        padding: 0 var(--viz-spacing-sm);
         display: flex;
         align-items: center;
         justify-content: center;
-        color: var(--viz-80);
+        color: var(--viz-40);
         cursor: pointer;
+        background-color: transparent;
+        transition: color 150ms ease;
 
         &:hover {
-            color: var(--viz-70);
-        }
-
-        &:active {
-            color: var(--viz-60);
+            color: var(--viz-text-color);
         }
     }
 </style>
