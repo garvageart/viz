@@ -12,7 +12,7 @@
     let { statusCode, errorMessage, stackTrace }: Props = $props();
 </script>
 
-<div class="error-container">
+<div class="error-container" style:--error-accent-color={statusCode >= 500 ? 'var(--viz-error-color)' : (statusCode === 404 ? 'var(--viz-info-color)' : 'var(--viz-warning-color)')}>
     <div class="error-card">
         <div class="icon-wrapper">
             {#if statusCode === 404}
@@ -73,32 +73,44 @@
         justify-content: center;
         height: 100vh;
         width: 100vw;
-        background-color: var(--viz-bg-color);
+        background-color: var(--viz-100);
+        background-image:
+            linear-gradient(var(--viz-95) 1px, transparent 1px),
+            linear-gradient(90deg, var(--viz-95) 1px, transparent 1px);
+        background-size: 32px 32px;
+        background-position: center;
         color: var(--viz-text-color);
     }
 
     .error-card {
-        background-color: var(--viz-100);
-        padding: 3rem;
-        border-radius: 12px;
-        box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+        background-color: var(--viz-95);
+        padding: var(--viz-spacing-xl) var(--viz-spacing-lg);
+        border-radius: 0;
+        box-shadow: 0 4px 24px rgba(0, 0, 0, 0.12);
         text-align: center;
         max-width: 500px;
         width: 90%;
         display: flex;
         flex-direction: column;
-        gap: 1.5rem;
-        border: 1px solid var(--viz-60);
+        gap: var(--viz-spacing-md);
+        border: var(--viz-border-thin);
+        border-top: 3px solid var(--error-accent-color);
     }
 
     .icon-wrapper {
         display: flex;
         justify-content: center;
-        margin-bottom: 1rem;
+        margin-bottom: var(--viz-spacing-xs);
+    }
+
+    :global(.code-icon) {
+        font-size: 4rem;
+        color: var(--viz-text-color) !important;
+        opacity: 0.85;
     }
 
     .status-code {
-        font-size: 4rem;
+        font-size: var(--viz-font-size-3xl);
         font-weight: 700;
         color: var(--viz-text-color);
         line-height: 1;
@@ -108,44 +120,41 @@
     .message-container {
         display: flex;
         flex-direction: column;
-        gap: 0.5rem;
+        gap: var(--viz-spacing-xxs);
     }
 
     .error-title {
-        font-size: 1.5rem;
+        font-size: var(--viz-font-size-xl);
         font-weight: 600;
         margin: 0;
+        color: var(--viz-text-color);
     }
 
     .error-message {
-        color: var(--viz-20);
-        font-size: 1rem;
+        color: var(--viz-40);
+        font-size: var(--viz-font-size-sm);
         margin: 0;
         line-height: 1.5;
-    }
-
-    :global(.code-icon) {
-        font-size: 4rem;
-        color: var(--viz-20);
     }
 
     .trace-container {
         text-align: left;
         width: 100%;
-        margin-top: 1rem;
+        margin-top: var(--viz-spacing-sm);
 
         details {
-            background-color: var(--viz-bg-color);
-            border-radius: 0.5em;
-            padding: 0.5rem;
-            border: 1px solid var(--viz-60);
+            background-color: var(--viz-100);
+            border-radius: 0;
+            padding: var(--viz-spacing-sm);
+            border: var(--viz-border-thin);
 
             summary {
                 cursor: pointer;
                 font-weight: 500;
-                color: var(--viz-20);
-                padding: 0.25rem;
+                color: var(--viz-40);
+                padding: var(--viz-spacing-xs);
                 user-select: none;
+                font-size: var(--viz-font-size-sm);
 
                 &:hover {
                     color: var(--viz-text-color);
@@ -154,13 +163,14 @@
         }
 
         .trace-content {
-            margin-top: 0.5rem;
-            padding: 0.5rem;
+            margin-top: var(--viz-spacing-sm);
+            padding: var(--viz-spacing-sm);
             overflow-x: auto;
-            font-size: 0.8rem;
+            font-size: var(--viz-font-size-xs);
             color: var(--viz-text-color);
-            background-color: var(--viz-100);
-            border-radius: 4px;
+            background-color: var(--viz-95);
+            border: var(--viz-border-thin);
+            border-radius: 0;
             font-family: var(--viz-mono-font);
             white-space: pre-wrap;
             word-break: break-word;
@@ -172,21 +182,23 @@
     .actions {
         display: flex;
         justify-content: center;
-        gap: 1rem;
-        margin-top: 1rem;
+        gap: var(--viz-spacing-md);
+        margin-top: var(--viz-spacing-sm);
         flex-wrap: wrap;
     }
 
     :global(.actions-button) {
-        background-color: var(--viz-100);
-        color: var(--viz-text-color);
-        padding: 0.75em 1.5em;
+        background-color: var(--viz-90) !important;
+        color: var(--viz-text-color) !important;
+        border: var(--viz-border-thin) !important;
+        padding: var(--viz-spacing-sm) var(--viz-spacing-std) !important;
         display: flex;
         align-items: center;
-        gap: 0.5em;
+        gap: var(--viz-spacing-xs);
+        border-radius: var(--viz-border-radius-pill) !important;
 
         &:hover {
-            background-color: var(--viz-90);
+            background-color: var(--viz-80) !important;
         }
     }
 </style>
