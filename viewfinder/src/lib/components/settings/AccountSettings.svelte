@@ -38,9 +38,9 @@
 
     let dirty = $derived(
         settingsUserUpdate.firstName !== (currentUser?.first_name || "") ||
-        settingsUserUpdate.lastName !== (currentUser?.last_name || "") ||
-        settingsUserUpdate.name !== (currentUser?.name || "") ||
-        settingsUserUpdate.email !== (currentUser?.email || "")
+            settingsUserUpdate.lastName !== (currentUser?.last_name || "") ||
+            settingsUserUpdate.name !== (currentUser?.name || "") ||
+            settingsUserUpdate.email !== (currentUser?.email || "")
     );
 
     async function saveAccountChanges() {

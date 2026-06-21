@@ -17,7 +17,7 @@ function createTransformEtag(imgEnt: ImageAsset, params: TransformParams): strin
     const rotate = params.rotate ?? 0;
     const flip = params.flip ?? "";
     const kernel = params.kernel ?? "";
-    
+
     return `${checksum}-${w}x${h}-${fmt}-${quality}-${rotate}-${flip}-${kernel}`;
 }
 

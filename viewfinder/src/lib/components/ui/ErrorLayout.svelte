@@ -12,7 +12,14 @@
     let { statusCode, errorMessage, stackTrace }: Props = $props();
 </script>
 
-<div class="error-container" style:--error-accent-color={statusCode >= 500 ? 'var(--viz-error-color)' : (statusCode === 404 ? 'var(--viz-info-color)' : 'var(--viz-warning-color)')}>
+<div
+    class="error-container"
+    style:--error-accent-color={statusCode >= 500
+        ? "var(--viz-error-color)"
+        : statusCode === 404
+          ? "var(--viz-info-color)"
+          : "var(--viz-warning-color)"}
+>
     <div class="error-card">
         <div class="icon-wrapper">
             {#if statusCode === 404}

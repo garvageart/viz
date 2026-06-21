@@ -199,7 +199,9 @@
         font-size: var(--viz-font-size-std) !important;
         padding: var(--viz-spacing-sm) var(--viz-spacing-std) !important;
         border-radius: var(--viz-border-radius-pill) !important;
-        transition: opacity 150ms ease, background-color 150ms ease !important;
+        transition:
+            opacity 150ms ease,
+            background-color 150ms ease !important;
 
         &:hover:not(:disabled) {
             background-color: var(--viz-primary) !important;
