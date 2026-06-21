@@ -230,7 +230,7 @@
 
     .image-card {
         max-height: 25em;
-        background-color: var(--viz-100);
+        background-color: var(--viz-80);
         padding: 0.8em;
         border-radius: 0.5em;
         overflow: hidden;
