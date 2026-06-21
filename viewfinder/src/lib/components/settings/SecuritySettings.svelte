@@ -15,7 +15,6 @@
     import CreatedApiKeyModal from "$lib/components/modals/CreatedApiKeyModal.svelte";
     import { toastState } from "$lib/toast-notifcations/notif-state.svelte";
     import { DateTime } from "luxon";
-    import { onMount } from "svelte";
     import { modalsManager } from "../modals/manager/ModalManager.svelte";
     import RenameSessionModal from "./RenameSessionModal.svelte";
 
@@ -113,7 +112,7 @@
         }
     }
 
-    onMount(loadData);
+    await loadData();
 
     function formatDate(dateStr?: string) {
         if (!dateStr) {

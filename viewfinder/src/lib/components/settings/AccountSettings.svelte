@@ -17,33 +17,31 @@
     let currentUser = $derived(user.data);
 
     let settingsUserUpdate = $state({
-        firstName: "",
-        lastName: "",
-        name: "",
-        email: ""
+        firstName: currentUser?.first_name || "",
+        lastName: currentUser?.last_name || "",
+        name: currentUser?.name || "",
+        email: currentUser?.email || ""
     });
 
     let savingAccount = $state(false);
     let saveAccountStatus: "idle" | "success" | "error" = $state("idle");
-    let dirty = $derived.by(() => {
-        return (
-            settingsUserUpdate.firstName !== currentUser?.first_name ||
-            settingsUserUpdate.lastName !== currentUser?.last_name ||
-            settingsUserUpdate.name !== currentUser?.name ||
-            settingsUserUpdate.email !== currentUser?.email
-        );
-    });
 
-    // This might cause side-effects. I hate it
+    // Sync form values when currentUser loads/changes
     $effect(() => {
         if (currentUser) {
             settingsUserUpdate.firstName = currentUser.first_name || "";
             settingsUserUpdate.lastName = currentUser.last_name || "";
             settingsUserUpdate.name = currentUser.name || "";
             settingsUserUpdate.email = currentUser.email || "";
-            dirty = false;
         }
     });
+
+    let dirty = $derived(
+        settingsUserUpdate.firstName !== (currentUser?.first_name || "") ||
+        settingsUserUpdate.lastName !== (currentUser?.last_name || "") ||
+        settingsUserUpdate.name !== (currentUser?.name || "") ||
+        settingsUserUpdate.email !== (currentUser?.email || "")
+    );
 
     async function saveAccountChanges() {
         if (!dirty || !currentUser) {
@@ -75,7 +73,7 @@
                 type: "success"
             });
 
-            dirty = false;
+            user.data = res.data; // Update global user state
             savingAccount = false;
         } else {
             saveAccountStatus = "error";

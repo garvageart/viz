@@ -11,7 +11,6 @@
     import type { ImageAsset } from "$lib/api";
     import { DbSettings } from "$lib/db/settings";
     import { generateRandomString } from "$lib/utils/misc";
-    import { onMount } from "svelte";
     import { slide } from "svelte/transition";
     import { modalsManager } from "../../modals/manager/ModalManager.svelte";
     import BatchRenameBuilder, { defaultTemplate, type SavedRenameSettings } from "../BatchRenameBuilder.svelte";
@@ -53,17 +52,26 @@
 
     let { id, assets }: Props = $props();
 
+    const settingsDb = new DbSettings<SavedExportSettings>("export_panel_settings");
+    const renameDb = new DbSettings<SavedRenameSettings>("batch_rename_settings");
+
+    const savedExport = await settingsDb.load();
+    const savedRename = await renameDb.load();
+
+    type SectionName = "destination" | "naming" | "settings" | "sizing" | "metadata" | "watermarking";
+
     // Section Toggle State
-    let sections = $state({
+    let sections = $state<Record<SectionName, boolean>>({
         destination: true,
         naming: true,
         settings: true,
         sizing: true,
         metadata: false,
-        watermarking: false
+        watermarking: false,
+        ...savedExport?.sections
     });
 
-    function toggleSection(name: keyof typeof sections) {
+    function toggleSection(name: SectionName) {
         sections[name] = !sections[name];
     }
 
@@ -76,7 +84,8 @@
         resizeHeight: 2048,
         colorSpace: "sRGB",
         stripMetadata: true,
-        destinationMode: "zip"
+        destinationMode: "zip",
+        ...savedExport
     });
 
     let renameSettings = $state<SavedRenameSettings>({
@@ -94,36 +103,12 @@
                 metadataField: "model",
                 sequencePadding: 4
             }
-        ]
+        ],
+        ...savedRename
     });
     let activeTemplate = $state("{{basename}}");
 
-    const settingsDb = new DbSettings<SavedExportSettings>("export_panel_settings");
-    const renameDb = new DbSettings<SavedRenameSettings>("batch_rename_settings");
-    let settingsLoaded = $state(false);
-
-    onMount(async () => {
-        const [savedExport, savedRename] = await Promise.all([settingsDb.load(), renameDb.load()]);
-
-        if (savedExport) {
-            settings = { ...settings, ...savedExport };
-            if (savedExport.sections) {
-                sections = { ...sections, ...savedExport.sections };
-            }
-        }
-
-        if (savedRename) {
-            renameSettings = { ...renameSettings, ...savedRename };
-        }
-
-        settingsLoaded = true;
-    });
-
     $effect(() => {
-        if (!settingsLoaded) {
-            return;
-        }
-
         settingsDb.save({
             ...$state.snapshot(settings),
             sections: $state.snapshot(sections)
@@ -181,155 +166,127 @@
         </div>
     </div>
 
-    <div class="export-body">
-        <!-- DESTINATION -->
-        <div class="section" class:expanded={sections.destination}>
-            <button class="section-header" onclick={() => toggleSection("destination")}>
-                <MaterialIcon iconName={sections.destination ? "expand_more" : "chevron_right"} />
-                <span>Destination</span>
-            </button>
-            {#if sections.destination}
-                <div class="section-content" transition:slide>
-                    <InputSelect
-                        label="Export to"
-                        options={[{ value: "zip", label: "Download as ZIP" }]}
-                        bind:value={settings.destinationMode}
-                    />
-                </div>
-            {/if}
-        </div>
-
-        <!-- FILE NAMING -->
-        <div class="section" class:expanded={sections.naming}>
-            <button class="section-header" onclick={() => toggleSection("naming")}>
-                <MaterialIcon iconName={sections.naming ? "expand_more" : "chevron_right"} />
-                <span>File Naming</span>
-            </button>
-            {#if sections.naming}
-                <div class="section-content" transition:slide>
-                    <BatchRenameBuilder
-                        bind:settings={renameSettings}
-                        bind:activeTemplate
-                        {assets}
-                        format={settings.format}
-                    />
-                </div>
-            {/if}
-        </div>
-
-        <!-- FILE SETTINGS -->
-        <div class="section" class:expanded={sections.settings}>
-            <button class="section-header" onclick={() => toggleSection("settings")}>
-                <MaterialIcon iconName={sections.settings ? "expand_more" : "chevron_right"} />
-                <span>File Settings</span>
-            </button>
-            {#if sections.settings}
-                <div class="section-content" transition:slide>
-                    <div class="control-row">
-                        <InputSelect label="Format" options={Array.from(formatOptions)} bind:value={settings.format} />
-                        {#if ["jpg", "webp", "avif"].includes(settings.format)}
-                            <div class="quality-slider">
-                                <Slider
-                                    id="quality-range"
-                                    label="Quality"
-                                    min={1}
-                                    max={100}
-                                    bind:value={settings.quality}
-                                    showValue={true}
-                                />
-                            </div>
-                        {/if}
+    {#snippet panelSection(name: SectionName, label: string, children: import("svelte").Snippet)}
+            <div class="section" class:expanded={sections[name]}>
+                <button class="section-header" onclick={() => toggleSection(name)}>
+                    <MaterialIcon iconName={sections[name] ? "expand_more" : "chevron_right"} />
+                    <span>{label}</span>
+                </button>
+                {#if sections[name]}
+                    <div class="section-content" transition:slide>
+                        {@render children()}
                     </div>
-                    <InputSelect
-                        label="Color Space"
-                        options={Array.from(colorSpaceOptions)}
-                        bind:value={settings.colorSpace}
-                    />
-                    <Checkbox
-                        id="strip-meta"
-                        label="Remove all metadata (EXIF, XMP, IPTC)"
-                        bind:checked={settings.stripMetadata}
-                    />
-                </div>
-            {/if}
-        </div>
+                {/if}
+            </div>
+        {/snippet}
 
-        <!-- IMAGE SIZING -->
-        <div class="section" class:expanded={sections.sizing}>
-            <button class="section-header" onclick={() => toggleSection("sizing")}>
-                <MaterialIcon iconName={sections.sizing ? "expand_more" : "chevron_right"} />
-                <span>Image Sizing</span>
-            </button>
-            {#if sections.sizing}
-                <div class="section-content" transition:slide>
-                    <InputSelect
-                        label="Resize to Fit"
-                        options={Array.from(resizeOptions)}
-                        bind:value={settings.resizeMode}
-                    />
-                    {#if settings.resizeMode !== "none"}
-                        <div class="control-row dimensions">
-                            {#if ["width", "long-edge", "short-edge", "dimensions"].includes(settings.resizeMode)}
-                                <InputText
-                                    id="resize-w"
-                                    type="number"
-                                    label={settings.resizeMode === "width"
-                                        ? "Width"
-                                        : settings.resizeMode === "dimensions"
-                                          ? "W"
-                                          : "Edge"}
-                                    bind:value={settings.resizeWidth}
-                                />
-                            {/if}
-                            {#if ["height", "dimensions"].includes(settings.resizeMode)}
-                                <InputText
-                                    id="resize-h"
-                                    type="number"
-                                    label={settings.resizeMode === "height" ? "Height" : "H"}
-                                    bind:value={settings.resizeHeight}
-                                />
-                            {/if}
-                            <span class="unit">px</span>
+        <div class="export-body">
+            <!-- DESTINATION -->
+            {@render panelSection("destination", "Destination", destinationSnippet)}
+            {#snippet destinationSnippet()}
+                <InputSelect
+                    label="Export to"
+                    options={[{ value: "zip", label: "Download as ZIP" }]}
+                    bind:value={settings.destinationMode}
+                />
+            {/snippet}
+
+            <!-- FILE NAMING -->
+            {@render panelSection("naming", "File Naming", namingSnippet)}
+            {#snippet namingSnippet()}
+                <BatchRenameBuilder
+                    bind:settings={renameSettings}
+                    bind:activeTemplate
+                    {assets}
+                    format={settings.format}
+                />
+            {/snippet}
+
+            <!-- FILE SETTINGS -->
+            {@render panelSection("settings", "File Settings", settingsSnippet)}
+            {#snippet settingsSnippet()}
+                <div class="control-row">
+                    <InputSelect label="Format" options={Array.from(formatOptions)} bind:value={settings.format} />
+                    {#if ["jpg", "webp", "avif"].includes(settings.format)}
+                        <div class="quality-slider">
+                            <Slider
+                                id="quality-range"
+                                label="Quality"
+                                min={1}
+                                max={100}
+                                bind:value={settings.quality}
+                                showValue={true}
+                            />
                         </div>
                     {/if}
                 </div>
-            {/if}
+                <InputSelect
+                    label="Color Space"
+                    options={Array.from(colorSpaceOptions)}
+                    bind:value={settings.colorSpace}
+                />
+                <Checkbox
+                    id="strip-meta"
+                    label="Remove all metadata (EXIF, XMP, IPTC)"
+                    bind:checked={settings.stripMetadata}
+                />
+            {/snippet}
+
+            <!-- IMAGE SIZING -->
+            {@render panelSection("sizing", "Image Sizing", sizingSnippet)}
+            {#snippet sizingSnippet()}
+                <InputSelect
+                    label="Resize to Fit"
+                    options={Array.from(resizeOptions)}
+                    bind:value={settings.resizeMode}
+                />
+                {#if settings.resizeMode !== "none"}
+                    <div class="control-row dimensions">
+                        {#if ["width", "long-edge", "short-edge", "dimensions"].includes(settings.resizeMode)}
+                            <InputText
+                                id="resize-w"
+                                type="number"
+                                label={settings.resizeMode === "width"
+                                    ? "Width"
+                                    : settings.resizeMode === "dimensions"
+                                      ? "W"
+                                      : "Edge"}
+                                bind:value={settings.resizeWidth}
+                            />
+                        {/if}
+                        {#if ["height", "dimensions"].includes(settings.resizeMode)}
+                            <InputText
+                                id="resize-h"
+                                type="number"
+                                label={settings.resizeMode === "height" ? "Height" : "H"}
+                                bind:value={settings.resizeHeight}
+                            />
+                        {/if}
+                        <span class="unit">px</span>
+                    </div>
+                {/if}
+            {/snippet}
+
+            <!-- METADATA (Placeholder) -->
+            {@render panelSection("metadata", "Metadata", metadataSnippet)}
+            {#snippet metadataSnippet()}
+                <p class="placeholder-text">Copyright and Contact Info will be added here.</p>
+            {/snippet}
+
+            <!-- WATERMARKING (Placeholder) -->
+            {@render panelSection("watermarking", "Watermarking", watermarkingSnippet)}
+            {#snippet watermarkingSnippet()}
+                <p class="placeholder-text">Watermarking options will be added here.</p>
+            {/snippet}
         </div>
 
-        <!-- METADATA (Placeholder) -->
-        <div class="section" class:expanded={sections.metadata}>
-            <button class="section-header" onclick={() => toggleSection("metadata")}>
-                <MaterialIcon iconName={sections.metadata ? "expand_more" : "chevron_right"} />
-                <span>Metadata</span>
-            </button>
-            {#if sections.metadata}
-                <div class="section-content" transition:slide>
-                    <p class="placeholder-text">Copyright and Contact Info will be added here.</p>
-                </div>
-            {/if}
-        </div>
-
-        <!-- WATERMARKING (Placeholder) -->
-        <div class="section" class:expanded={sections.watermarking}>
-            <button class="section-header" onclick={() => toggleSection("watermarking")}>
-                <MaterialIcon iconName={sections.watermarking ? "expand_more" : "chevron_right"} />
-                <span>Watermarking</span>
-            </button>
-            {#if sections.watermarking}
-                <div class="section-content" transition:slide>
-                    <p class="placeholder-text">Watermarking options will be added here.</p>
-                </div>
-            {/if}
+        <div class="export-footer">
+            <Button variant="small" onclick={handleCancel}>Cancel</Button>
+            <Button variant="small" onclick={handleExport} class="export-btn">
+                Export {assets.length} Item{assets.length === 1 ? "" : "s"}
+            </Button>
         </div>
     </div>
-
-    <div class="export-footer">
-        <Button onclick={handleCancel}>Cancel</Button>
-        <Button variant="primary" onclick={handleExport} class="export-btn">
-            Export {assets.length} Item{assets.length === 1 ? "" : "s"}
-        </Button>
-    </div>
-</div>
 
 <style lang="scss">
     .export-panel {
@@ -386,8 +343,6 @@
     :global(.export-panel .export-btn) {
         background-color: var(--viz-primary) !important;
         color: var(--viz-10-dark) !important;
-        padding: var(--viz-spacing-sm) var(--viz-spacing-xl) !important;
-        font-size: var(--viz-font-size-sm) !important;
     }
 
     .export-header {
@@ -415,14 +370,18 @@
     }
 
     .section {
-        border-bottom: 1px solid var(--viz-80);
+        border: none;
 
-        &:last-child {
-            border-bottom: none;
+        & + .section {
+            border-top: 1px solid var(--viz-80);
         }
 
         &.expanded {
             background-color: var(--viz-bg-color);
+
+            .section-header {
+                border-bottom: 1px solid var(--viz-80);
+            }
         }
     }
 
@@ -433,12 +392,15 @@
         padding: var(--viz-spacing-sm) var(--viz-spacing-md);
         background: none;
         border: none;
+        border-bottom: 1px solid transparent;
         color: var(--viz-text-color);
         cursor: pointer;
         font-weight: 600;
         font-size: var(--viz-font-size-sm);
         text-align: left;
-        transition: background-color 0.2s;
+        transition:
+            background-color 0.2s,
+            border-bottom-color 0.2s;
 
         &:hover {
             background-color: var(--viz-90);
