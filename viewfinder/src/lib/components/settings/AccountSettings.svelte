@@ -17,10 +17,10 @@
     let currentUser = $derived(user.data);
 
     let settingsUserUpdate = $state({
-        firstName: currentUser?.first_name || "",
-        lastName: currentUser?.last_name || "",
-        name: currentUser?.name || "",
-        email: currentUser?.email || ""
+        firstName: "",
+        lastName: "",
+        name: "",
+        email: ""
     });
 
     let savingAccount = $state(false);
