@@ -15,6 +15,9 @@
 
     let notifMessage = $state("");
 
+    const bgImageIndex = Math.floor(Math.random() * 300);
+    const bgImageUrl = `url('https://picsum.photos/1920/1080/?random=${bgImageIndex}')`;
+
     function showLoginNotif(message: string, level: "success" | "info" | "warning" | "error") {
         notifMessage = message;
         toastState.addToast({
@@ -61,43 +64,42 @@
     }
 </script>
 
-<!-- Random background image thing needs to go at some point, maybe with a server/admin administrated background image -->
-<main style="background-image: url('https://picsum.photos/1920/1080/?random={Math.floor(Math.random() * 300)}');">
-    <span id="viz-title">viz</span>
-    <div id="login-container">
-        <h1 id="login-heading">Login</h1>
-        <form id="login-form" onsubmit={handleLogin}>
+<main style:background-image={bgImageUrl}>
+    <div class="auth-card">
+        <div class="auth-header">
+            <span class="viz-title">viz</span>
+            <span class="auth-subtitle">digital asset manager</span>
+        </div>
+        <h1 class="auth-heading">Login</h1>
+        <form id="login-form" class="auth-form" onsubmit={handleLogin}>
             <InputText
                 id="login-email"
                 label="Email"
                 name="email"
-                placeholder="Email"
+                placeholder="photos@{location.hostname}"
                 type="email"
                 required
-                value={loginData.email}
-                oninput={(e) => (loginData.email = e.currentTarget.value)}
+                bind:value={loginData.email}
             />
             <InputPassword
                 id="login-password"
                 label="Password"
                 name="password"
-                placeholder="Password"
+                placeholder="••••••••"
                 required
-                value={loginData.password}
-                oninput={(e) => (loginData.password = e.currentTarget.value)}
+                bind:value={loginData.password}
             />
-            <Button id="login-submit" type="submit" style="margin-top: 1rem;" onclick={handleLogin}>Login</Button>
+            <div class="auth-submit-btn-wrapper">
+                <Button id="login-submit" class="auth-submit-btn" type="submit">Login</Button>
+            </div>
         </form>
-        <p style="margin-top: 1em;">
-            Don't have an account? <a style="font-weight: bold;" href="/auth/register">Register</a>
+        <p class="auth-footer">
+            Don't have an account? <a href="/auth/register">Register</a>
         </p>
     </div>
-    <div id="login-overlay" style="height: 100%; width: 100%;"></div>
 </main>
 
 <style lang="scss">
-    @use "sass:color";
-
     main {
         display: flex;
         flex-direction: column;
@@ -107,63 +109,120 @@
         height: 100%;
         background-size: cover;
         background-position: center;
+        position: relative;
+        overflow: hidden;
     }
 
-    #viz-title {
-        color: var(--viz-100-light);
-        font-family: var(--viz-mono-font);
-        font-weight: 700;
-        font-size: 3em;
-        margin: 0.5em;
-        z-index: 2;
-    }
-
-    #login-overlay {
+    // Grid and tint overlay on top of the background image
+    main::before {
+        content: "";
         position: absolute;
         top: 0;
         left: 0;
-        z-index: 1;
-        background-color: rgb(39, 51, 74, 70%);
-        backdrop-filter: blur(26px);
-    }
-
-    #login-container {
-        display: flex;
-        flex-direction: column;
-        align-items: center;
-        padding: 3rem 2rem;
-        width: 30%;
-        background-color: var(--viz-bg-color);
-        box-shadow: 0 -3px 0 var(--viz-primary) inset;
-        z-index: 2;
-    }
-
-    #login-form {
-        width: 100%;
-        display: flex;
-        flex-direction: column;
-        align-items: center;
-        gap: 1rem;
-    }
-
-    :global(#login-form > input:not([type="submit"])) {
-        width: 60%;
-        max-width: 60%;
-        min-height: 2.5rem;
-        font-size: 1.5rem;
-        padding: 0.5rem 2rem;
-        margin-bottom: 1rem;
-    }
-
-    :global(#login-submit) {
-        border: inherit;
-        background-color: transparent;
-        color: inherit;
-        font-family: inherit;
-        font-weight: bold;
-        font-size: inherit;
-        cursor: pointer;
         width: 100%;
         height: 100%;
+        // Use a color-mix to blend the theme's background color with transparency
+        background-color: color-mix(in srgb, var(--viz-100) 65%, transparent);
+        // Grid pattern mapping to structured editorial grid lines
+        background-image:
+            linear-gradient(color-mix(in srgb, var(--viz-60) 20%, transparent) 1px, transparent 1px),
+            linear-gradient(90deg, color-mix(in srgb, var(--viz-60) 20%, transparent) 1px, transparent 1px);
+        background-size: 32px 32px;
+        background-position: center;
+        backdrop-filter: blur(12px);
+        z-index: 1;
+    }
+
+    .auth-card {
+        display: flex;
+        flex-direction: column;
+        width: 100%;
+        max-width: 24rem;
+        background-color: var(--viz-95);
+        border: var(--viz-border-thin);
+        border-top: 3px solid var(--viz-primary);
+        padding: var(--viz-spacing-xl) var(--viz-spacing-lg);
+        z-index: 2;
+        box-shadow: 0 4px 24px rgba(0, 0, 0, 0.12);
+    }
+
+    .auth-header {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        gap: var(--viz-spacing-xs);
+        margin-bottom: var(--viz-spacing-xl);
+    }
+
+    .viz-title {
+        font-family: var(--viz-mono-font);
+        font-weight: 700;
+        font-size: var(--viz-font-size-3xl);
+        color: var(--viz-text-color);
+        letter-spacing: -0.05em;
+    }
+
+    .auth-subtitle {
+        font-size: var(--viz-font-size-xs);
+        font-family: var(--viz-mono-font);
+        color: var(--viz-40);
+        text-transform: lowercase;
+    }
+
+    .auth-heading {
+        font-size: var(--viz-font-size-xl);
+        font-weight: 600;
+        margin-bottom: var(--viz-spacing-md);
+        color: var(--viz-text-color);
+        text-align: center;
+    }
+
+    .auth-form {
+        width: 100%;
+        display: flex;
+        flex-direction: column;
+        gap: var(--viz-spacing-md);
+    }
+
+    .auth-submit-btn-wrapper {
+        margin-top: var(--viz-spacing-sm);
+        width: 100%;
+    }
+
+    // Target the inner button of our custom Button component
+    :global(.auth-submit-btn) {
+        width: 100% !important;
+        background-color: var(--viz-primary) !important;
+        color: #ffffff !important;
+        border: none !important;
+        font-weight: 600 !important;
+        font-size: var(--viz-font-size-std) !important;
+        padding: var(--viz-spacing-sm) var(--viz-spacing-std) !important;
+        border-radius: var(--viz-border-radius-pill) !important;
+        transition: opacity 150ms ease, background-color 150ms ease !important;
+
+        &:hover:not(:disabled) {
+            background-color: var(--viz-primary) !important;
+            opacity: 0.9;
+        }
+    }
+
+    .auth-footer {
+        margin-top: var(--viz-spacing-lg);
+        font-size: var(--viz-font-size-sm);
+        color: var(--viz-40);
+        text-align: center;
+
+        a {
+            color: var(--viz-text-color);
+            font-weight: 600;
+            text-decoration: underline;
+            text-underline-offset: 2px;
+
+            &:hover {
+                color: var(--viz-text-color);
+                text-decoration: underline;
+            }
+        }
     }
 </style>

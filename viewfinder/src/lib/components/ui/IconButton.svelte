@@ -68,7 +68,7 @@
         }
 
         &.with-children {
-            padding: var(--viz-spacing-sm);
+            padding: var(--viz-spacing-xs)
         }
 
         &:focus-visible {

@@ -218,7 +218,7 @@
 
     :global(.toolbar-button) {
         border-radius: 10em;
-        padding: 0.1em 0.3em;
+        // padding: 0.1em 0.3em;
         display: flex;
         align-items: center;
         justify-content: center;

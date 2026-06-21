@@ -101,7 +101,7 @@
         font-weight: 600;
         letter-spacing: 0.05em;
         text-transform: uppercase;
-        color: var(--viz-40);
+        color: var(--viz-20);
         margin: 0;
         white-space: nowrap;
         overflow: hidden;
