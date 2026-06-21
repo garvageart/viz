@@ -129,7 +129,11 @@ func ExifProcess(ctx context.Context, db *gorm.DB, imgEnt entities.ImageAsset, o
 	}
 	defer libvipsImg.Close()
 
-	exifData, fileCreatedAt, fileModifiedAt := imageops.BuildImageEXIF(libvipsImg.Exif())
+	rawExif, err := imageops.GetExifData(originalData)
+	if err != nil {
+		return fmt.Errorf("failed to extract exif: %w", err)
+	}
+	exifData, fileCreatedAt, fileModifiedAt := imageops.BuildImageEXIF(rawExif)
 	imgEnt.Exif = &exifData
 
 	if imgEnt.ImageMetadata == nil {

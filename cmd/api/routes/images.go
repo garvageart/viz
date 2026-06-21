@@ -52,7 +52,7 @@ type ImageUploadError struct {
 
 var ErrImageUnauthorised = errors.New("unauthorized")
 
-func createNewImageEntity(logger *slog.Logger, fileName string, libvipsImg *libvips.Image) (*entities.ImageAsset, error) {
+func createNewImageEntity(logger *slog.Logger, fileName string, libvipsImg *libvips.Image, rawData []byte) (*entities.ImageAsset, error) {
 	logger.Info("Generating ID", slog.String("file", fileName))
 	id, err := uid.Generate()
 
@@ -70,7 +70,10 @@ func createNewImageEntity(logger *slog.Logger, fileName string, libvipsImg *libv
 	)
 
 	logger.Info("reading exif data")
-	exifData := libvipsImg.Exif()
+	exifData, err := imageops.GetExifData(rawData)
+	if err != nil {
+		return nil, fmt.Errorf("failed to extract exif: %w", err)
+	}
 
 	if len(exifData) == 0 {
 		logger.Warn("No exif data found. Blank fields", slog.String("file", fileName))
@@ -401,16 +404,12 @@ func ImagesRouter(db *gorm.DB, logger *slog.Logger) *chi.Mux {
 			return
 		}
 
-		libvipsImg, err := libvips.NewImageFromBuffer(imageFile, libvips.DefaultLoadOptions())
-
+		exifData, err := imageops.GetExifData(imageFile)
 		if err != nil {
 			render.Status(req, http.StatusInternalServerError)
-			render.JSON(res, req, dto.ErrorResponse{Error: "Failed to process image"})
+			render.JSON(res, req, dto.ErrorResponse{Error: "Failed to extract exif"})
 			return
 		}
-		defer libvipsImg.Close()
-
-		exifData := libvipsImg.Exif()
 
 		render.Status(req, http.StatusOK)
 		render.JSON(res, req, exifData)
@@ -604,7 +603,7 @@ func ImagesRouter(db *gorm.DB, logger *slog.Logger) *chi.Mux {
 		}
 		defer libvipsImg.Close()
 
-		imageEntity, err := createNewImageEntity(logger, fileImageUpload.FileName, libvipsImg)
+		imageEntity, err := createNewImageEntity(logger, fileImageUpload.FileName, libvipsImg, imageFileData)
 		if err != nil {
 			logger.Error("Failed to process image data", slog.Any("error", err))
 			render.Status(req, http.StatusInternalServerError)
@@ -743,7 +742,7 @@ func ImagesRouter(db *gorm.DB, logger *slog.Logger) *chi.Mux {
 			return
 		}
 		defer libvipsImg.Close()
-		imageEntity, err := createNewImageEntity(logger, fileName, libvipsImg)
+		imageEntity, err := createNewImageEntity(logger, fileName, libvipsImg, fileBytes)
 
 		if err != nil {
 			logger.Error("Failed to process image data", slog.Any("error", err))
