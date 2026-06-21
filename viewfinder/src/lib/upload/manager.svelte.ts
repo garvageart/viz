@@ -65,10 +65,14 @@ export function processGlobalQueue() {
     for (const task of tasksToStart) {
         activeCount++;
 
-        task.upload().finally(() => {
-            activeCount--;
-            processGlobalQueue();
-        });
+        task.upload()
+            .catch((error) => {
+                console.error(`[UploadManager] Upload failed for file: ${task.data.file_name}`, error);
+            })
+            .finally(() => {
+                activeCount--;
+                processGlobalQueue();
+            });
     }
 }
 

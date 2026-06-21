@@ -12,7 +12,8 @@
     import NavigationProgressBar from "$lib/components/ui/NavigationProgressBar.svelte";
     import { eventsState } from "$lib/states/events.svelte";
     import { historyState } from "$lib/states/history.svelte";
-    import { debugState, themeState, user } from "$lib/states/index.svelte";
+    import { debugState, themeState, user, upload } from "$lib/states/index.svelte";
+    import { UploadState } from "$lib/upload/asset.svelte";
     import { loadingState } from "$lib/states/loading.svelte";
     import "$lib/stores/appReady";
     import "$lib/styles/scss/main.scss";
@@ -32,6 +33,15 @@
             eventsState.destroy();
         }
     });
+
+    function handleBeforeUnload(e: BeforeUnloadEvent) {
+        const hasActiveUploads = upload.files.some(
+            (file) => file.state === UploadState.STARTED || file.state === UploadState.PENDING
+        );
+        if (hasActiveUploads) {
+            e.preventDefault();
+        }
+    }
 
     window.___viewfinderConfig = {
         environment: dev ? "dev" : "prod",
@@ -75,6 +85,8 @@
         loadingState.endNavigation();
     });
 </script>
+
+<svelte:window onbeforeunload={handleBeforeUnload} />
 
 {@render children()}
 <Notifications />

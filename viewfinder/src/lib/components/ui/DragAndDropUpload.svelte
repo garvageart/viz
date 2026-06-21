@@ -394,10 +394,15 @@
                 toastState.addToast({
                     type: "success",
                     message: `Collection created with ${uids.length} image(s)`,
-                    timeout: 4000
+                    timeout: 4000,
+                    actions: [
+                        {
+                            label: "View Collection",
+                            onClick: () => goto(`/collections/${collectionUid}`)
+                        }
+                    ]
                 });
 
-                await invalidateViz({ delay: 200 });
                 goto(`/collections/${collectionUid}`);
             } else {
                 toastState.addToast({
@@ -469,9 +474,15 @@
                         toastState.addToast({
                             type: "success",
                             message: `Collection created with ${uids.length} image(s)`,
-                            timeout: 4000
+                            timeout: 4000,
+                            actions: [
+                                {
+                                    label: "View Collection",
+                                    onClick: () => goto(`/collections/${collectionUid}`)
+                                }
+                            ]
                         });
-                        await invalidateViz({ delay: 200 });
+
                         goto(`/collections/${collectionUid}`);
                         return;
                     } else {
@@ -610,9 +621,14 @@
                     toastState.addToast({
                         type: "success",
                         message: `Collection created with ${uids.length} image(s)`,
-                        timeout: 4000
+                        timeout: 4000,
+                        actions: [
+                            {
+                                label: "View Collection",
+                                onClick: () => goto(`/collections/${collectionUid}`)
+                            }
+                        ]
                     });
-                    goto(`/collections/${collectionUid}`);
                 } else {
                     toastState.addToast({
                         type: "warning",

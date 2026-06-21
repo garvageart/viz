@@ -64,33 +64,38 @@ export class UploadImage implements UploadImageStats {
         }
 
         this.state = UploadState.STARTED;
-        const responseData = await uploadImageWithProgress({
-            data: this.data,
-            onUploadProgress: this.updateProgress,
-            request: this.request
-        });
+        try {
+            const responseData = await uploadImageWithProgress({
+                data: this.data,
+                onUploadProgress: this.updateProgress,
+                request: this.request
+            });
 
-        if (responseData.status !== 200 && responseData.status !== 201) {
-            throw new Error(`Upload failed with status ${responseData.status}`);
+            if (responseData.status !== 200 && responseData.status !== 201) {
+                throw new Error(`Upload failed with status ${responseData.status}`);
+            }
+
+            this.imageData = responseData.data;
+
+            switch (this.imageData.status) {
+                case "duplicate":
+                    this.state = UploadState.DUPLICATE;
+                    break;
+                case "uploaded":
+                case "processing":
+                    this.state = UploadState.DONE;
+                    break;
+                case "failed":
+                    this.state = UploadState.ERROR;
+                    break;
+                default:
+                    this.state = UploadState.DONE;
+            }
+
+            return responseData.data;
+        } catch (error) {
+            this.state = UploadState.ERROR;
+            throw error;
         }
-
-        this.imageData = responseData.data;
-
-        switch (this.imageData.status) {
-            case "duplicate":
-                this.state = UploadState.DUPLICATE;
-                break;
-            case "uploaded":
-            case "processing":
-                this.state = UploadState.DONE;
-                break;
-            case "failed":
-                this.state = UploadState.ERROR;
-                break;
-            default:
-                this.state = UploadState.DONE;
-        }
-
-        return responseData.data;
     }
 }
