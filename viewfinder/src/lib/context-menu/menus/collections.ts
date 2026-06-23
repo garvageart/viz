@@ -1,8 +1,20 @@
 import { goto } from "$app/navigation";
-import { type Collection, createCollection, deleteCollection, updateCollection } from "$lib/api";
+import {
+    type Collection,
+    createCollection,
+    deleteCollection,
+    getDownloadUrl,
+    listCollectionImageUiDs,
+    signDownload,
+    updateCollection
+} from "$lib/api";
 import ConfirmationModal from "$lib/components/modals/ConfirmationModal.svelte";
 import { modalsManager } from "$lib/components/modals/manager/ModalManager.svelte";
+import { download } from "$lib/states/index.svelte";
 import { toastState } from "$lib/toast-notifcations/notif-state.svelte";
+import { DownloadFile, DownloadState } from "$lib/upload/asset.svelte";
+import { processDownloadQueue, waitForDownloadCompletion } from "$lib/upload/manager.svelte";
+import { downloadToFilesystem } from "$lib/utils/files";
 import { copyToClipboard } from "$lib/utils/misc";
 import { invalidateViz } from "$lib/views/views.svelte";
 import type { MenuItem } from "../types";
@@ -83,6 +95,79 @@ export function createCollectionMenu(collection: Collection | undefined, opts: C
                 } catch (err) {
                     toastState.addToast({
                         message: "Duplicate failed: " + (err as Error).message,
+                        type: "error"
+                    });
+                }
+            }
+        },
+        { separator: true, id: `sep-${collection.uid}`, label: "" },
+        {
+            id: `download-collection-${collection.uid}`,
+            label: "Download",
+            icon: "download",
+            disabled: (collection.image_count ?? collection.images?.length ?? 0) === 0,
+            action: async () => {
+                toastState.addToast({
+                    message: `Signing download request...`,
+                    type: "info",
+                    timeout: 2000
+                });
+
+                try {
+                    let uids: string[] = [];
+                    if (collection.images && collection.images.length > 0) {
+                        uids = collection.images.map((i) => i.uid);
+                    } else {
+                        const res = await listCollectionImageUiDs(collection.uid);
+                        if (res.status !== 200) {
+                            throw new Error(`Failed to load collection image UIDs (${res.status})`);
+                        }
+                        uids = res.data;
+                    }
+
+                    if (uids.length === 0) {
+                        toastState.addToast({
+                            message: "Collection has no images",
+                            type: "warning"
+                        });
+                        return;
+                    }
+
+                    const signRes = await signDownload({
+                        uids,
+                        expires_in: 300,
+                        allow_download: true,
+                        allow_embed: false,
+                        show_metadata: true
+                    });
+
+                    if (signRes.status !== 200) {
+                        throw new Error(signRes.data?.error ?? "Failed to sign download request");
+                    }
+
+                    const token = signRes.data.uid;
+                    const zipName = `${collection.name || "collection"}-${Date.now()}.zip`;
+                    const url = getDownloadUrl(token);
+                    const task = new DownloadFile(url, zipName, "POST", { uids });
+
+                    download.files.push(task);
+                    download.stats.total += 1;
+
+                    processDownloadQueue();
+                    await waitForDownloadCompletion([task]);
+
+                    if (task.state === DownloadState.DOWNLOADED && task.data) {
+                        await downloadToFilesystem(zipName, task.data);
+                        toastState.addToast({
+                            message: `Successfully downloaded **${collection.name}**`,
+                            type: "success"
+                        });
+                    } else if (task.state === DownloadState.ERROR) {
+                        throw new Error("Download task encountered an error");
+                    }
+                } catch (e) {
+                    toastState.addToast({
+                        message: `Error downloading images: ${(e as Error).message}`,
                         type: "error"
                     });
                 }

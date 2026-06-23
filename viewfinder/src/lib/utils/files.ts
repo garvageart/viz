@@ -33,3 +33,21 @@ export async function traverseFileTree(item: FileSystemEntry): Promise<File[]> {
 
     return files;
 }
+
+export async function downloadToFilesystem(filename: string, data: Blob, revokeDelayMs?: number) {
+    const url = URL.createObjectURL(data);
+
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = filename;
+    document.body.appendChild(a);
+    a.click();
+    a.remove();
+
+    // Delay to ensure browser has successfully initiated the download
+    if (revokeDelayMs) {
+        setTimeout(() => {
+            URL.revokeObjectURL(url);
+        }, revokeDelayMs);
+    }
+}

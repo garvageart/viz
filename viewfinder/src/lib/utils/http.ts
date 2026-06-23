@@ -67,7 +67,8 @@ export const uploadRequest = async <T>(options: UploadRequestOptions): Promise<{
 
 export async function downloadOriginalImageFile(img: ImageAsset) {
     const uid = img.uid;
-    const fileRes = await getImageFileBlob(uid, {}, { cache: "no-cache" });
+    const fileRes = await fetchOriginalImageFile(img);
+
     if (fileRes.status === 304) {
         if (debugMode) {
             console.log(`Image ${uid} not modified, using cached version for download`);
@@ -92,19 +93,53 @@ export async function downloadOriginalImageFile(img: ImageAsset) {
     URL.revokeObjectURL(url);
 }
 
+export async function fetchOriginalImageFile(img: ImageAsset) {
+    const uid = img.uid;
+    const fileRes = await getImageFileBlob(uid, {}, { cache: "no-cache" });
+
+    return fileRes;
+}
+
 // Helper to perform token-based bulk download given a list of UIDs.
 // The server will create a download token and use it for authentication.
-export async function performImageDownloads(images: ImageAsset[]) {
+export async function performImageDownloads(images: ImageAsset[] | string[]) {
     if (!images || images.length === 0) {
         throw new Error("No image UIDs provided for download");
     }
 
-    const uids = images.map((i) => i.uid);
+    const isStringArray = typeof images[0] === "string";
+    let uids = isStringArray ? (images as string[]) : (images as ImageAsset[]).map((i) => i.uid);
 
     if (uids.length === 1) {
         const uid = uids[0];
-        const img = images.find((i) => i.uid === uid)!;
+        if (isStringArray) {
+            const fileRes = await getImageFileBlob(uid, {}, { cache: "no-cache" });
 
+            if (fileRes.status === 304) {
+                if (debugMode) {
+                    console.log(`Image ${uid} not modified, using cached version for download`);
+                }
+                return;
+            } else if (fileRes.status !== 200) {
+                throw new Error(`Failed to download image: ${fileRes.data.error}`);
+            }
+
+            const filename = `image-${uid}-${Date.now()}`;
+            const blob = fileRes.data;
+            const url = URL.createObjectURL(blob);
+
+            const a = document.createElement("a");
+            a.href = url;
+            a.download = filename;
+            document.body.appendChild(a);
+            a.click();
+            a.remove();
+
+            URL.revokeObjectURL(url);
+            return;
+        }
+
+        const img = (images as ImageAsset[]).find((i) => i.uid === uid)!;
         return downloadOriginalImageFile(img);
     }
 

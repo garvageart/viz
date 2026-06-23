@@ -1,9 +1,9 @@
 import { ImageUploadStatus, checkDuplicates } from "$lib/api";
-import { upload } from "$lib/states/index.svelte";
+import { download, upload } from "$lib/states/index.svelte";
 import type { DirectoryInputElement } from "$lib/types/dom";
 import type { SupportedImageTypes, SupportedRAWFiles } from "$lib/types/images";
 import { calculateSHA1 } from "$lib/utils/crypto";
-import { UploadImage, UploadState } from "./asset.svelte";
+import { DownloadFile, DownloadState, UploadImage, UploadState } from "./asset.svelte";
 
 export interface ImageUploadFileData {
     file_name: string;
@@ -72,6 +72,63 @@ export function processGlobalQueue() {
             .finally(() => {
                 activeCount--;
                 processGlobalQueue();
+            });
+    }
+}
+
+// Module-level state for download queue management
+let activeDownloadCount = $state(0);
+
+/**
+ * Waits for a list of download tasks to complete (success, error, or cancel).
+ */
+export function waitForDownloadCompletion(tasks: DownloadFile[]): Promise<void> {
+    return new Promise((resolve) => {
+        const check = () => {
+            const allDone = tasks.every(
+                (t) =>
+                    t.state === DownloadState.DOWNLOADED ||
+                    t.state === DownloadState.ERROR ||
+                    t.state === DownloadState.CANCELED
+            );
+
+            if (allDone) {
+                resolve();
+            } else {
+                setTimeout(check, 200);
+            }
+        };
+        check();
+    });
+}
+
+/**
+ * Dynamic queue processor for downloads that respects global concurrency.
+ */
+export function processDownloadQueue() {
+    if (activeDownloadCount >= download.concurrency) {
+        return;
+    }
+
+    const pendingTasks = download.files.filter((t) => t.state === DownloadState.PENDING);
+
+    if (pendingTasks.length === 0) {
+        return;
+    }
+
+    const slotsAvailable = download.concurrency - activeDownloadCount;
+    const tasksToStart = pendingTasks.slice(0, slotsAvailable);
+
+    for (const task of tasksToStart) {
+        activeDownloadCount++;
+
+        task.download()
+            .catch((error) => {
+                console.error(`[DownloadManager] Download failed for URL: ${task.url}`, error);
+            })
+            .finally(() => {
+                activeDownloadCount--;
+                processDownloadQueue();
             });
     }
 }

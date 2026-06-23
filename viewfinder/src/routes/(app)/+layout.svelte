@@ -1,7 +1,8 @@
 <script lang="ts">
     import Header from "$lib/components/ui/Header.svelte";
     import UploadPanel from "$lib/components/ui/panels/UploadPanel.svelte";
-    import { sortState, upload } from "$lib/states/index.svelte";
+    import DownloadPanel from "$lib/components/ui/panels/DownloadPanel.svelte";
+    import { download, sortState, upload } from "$lib/states/index.svelte";
     import "$lib/components/panels/viz-panel.scss";
     import { registerReady } from "$lib/stores/appReady";
     import { loadRuntimeConfig } from "$lib/runtime-config";
@@ -44,6 +45,9 @@
     <Header />
     {#if upload.files.length > 0}
         <UploadPanel />
+    {/if}
+    {#if download.files.length > 0}
+        <DownloadPanel />
     {/if}
     <main class="viz-content">
         {#key page.url.href}

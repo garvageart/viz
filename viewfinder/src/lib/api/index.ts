@@ -140,7 +140,7 @@ export async function uploadImageWithProgress(
     const xhr = new XMLHttpRequest();
 
     // Bind XHR instance back to caller's request reference for cancellation support
-    if (options.request !== undefined) {
+    if ("request" in options) {
         options.request = xhr;
     }
 
@@ -177,6 +177,68 @@ export async function uploadImageWithProgress(
         xhr.withCredentials = true;
         xhr.responseType = "json";
         xhr.send(formData);
+    });
+}
+
+export interface DownloadRequestOptions<T = unknown> {
+    method?: "GET" | "POST" | "PUT" | "DELETE";
+    url: string;
+    request?: XMLHttpRequest;
+    data?: T;
+    signal?: AbortSignal;
+    onDownloadProgress?: (event: ProgressEvent<XMLHttpRequestEventTarget>) => void;
+}
+
+export async function downloadRequestWithProgress<TBody = unknown>(
+    options: DownloadRequestOptions<TBody>
+): Promise<{ data: Blob; status: number }> {
+    const { url, method, data: body, onDownloadProgress, signal } = options;
+
+    const xhr = new XMLHttpRequest();
+
+    // Bind XHR instance back to caller's request reference for cancellation support
+    if ("request" in options) {
+        options.request = xhr;
+    }
+
+    return new Promise((resolve, reject) => {
+        xhr.addEventListener("error", (error) => {
+            reject(error);
+        });
+        xhr.addEventListener("load", () => {
+            if (xhr.readyState === 4 && xhr.status >= 200 && xhr.status < 300) {
+                const response = xhr.response as Blob;
+                resolve({ data: response, status: xhr.status });
+            } else {
+                reject({
+                    data: xhr.response as generated.ErrorResponse,
+                    status: xhr.status
+                });
+            }
+        });
+
+        if (onDownloadProgress) {
+            xhr.addEventListener("progress", (event) => {
+                onDownloadProgress(event);
+            });
+        }
+
+        if (signal) {
+            signal.addEventListener("abort", () => {
+                xhr.abort();
+            });
+        }
+
+        xhr.open(method || "GET", url);
+        xhr.withCredentials = true;
+        xhr.responseType = "blob";
+
+        if (body) {
+            xhr.setRequestHeader("Content-Type", "application/json");
+            xhr.send(JSON.stringify(body));
+        } else {
+            xhr.send();
+        }
     });
 }
 
@@ -236,6 +298,15 @@ export async function updateJobTypeConcurrency(
 }
 
 /**
+ * Get the download URL for a given token and optional password
+ */
+export function getDownloadUrl(token: string, password?: string): string {
+    const baseUrl = defaults.baseUrl || "";
+    const queryParams = QS.query(QS.explode({ token, password }));
+    return `${baseUrl}/download${queryParams}`;
+}
+
+/**
  * Download images as a ZIP blob using a token
  * This is a custom implementation because oazapfts doesn't properly handle binary responses
  */
@@ -273,7 +344,7 @@ export async function downloadImagesZipBlob(
             credentials: opts?.credentials || defaults.credentials,
             keepalive: opts?.keepalive || defaults.keepalive,
             integrity: opts?.integrity || defaults.integrity,
-            method: opts?.method || defaults.method,
+            method: opts?.method || defaults.method || "POST",
             redirect: opts?.redirect || defaults.redirect,
             referrer: opts?.referrer || defaults.referrer,
             referrerPolicy: opts?.referrerPolicy || defaults.referrerPolicy,

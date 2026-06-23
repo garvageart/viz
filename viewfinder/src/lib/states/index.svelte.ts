@@ -11,7 +11,7 @@ import {
 import { SettingNames } from "$lib/components/settings/names";
 import type { MenuItem } from "$lib/context-menu/types";
 import type { AssetGridView, AssetSort } from "$lib/types/asset";
-import type { UploadImage } from "$lib/upload/asset.svelte";
+import type { DownloadFile, UploadImage } from "$lib/upload/asset.svelte";
 import { VizCookieStorage, VizLocalStorage } from "$lib/utils/misc";
 
 // Types
@@ -184,6 +184,17 @@ export const viewSettings = new ViewSettingsState();
 
 export let upload = $state({
     files: [] as UploadImage[],
+    concurrency: 2,
+    stats: {
+        errors: 0,
+        duplicates: 0,
+        success: 0,
+        total: 0
+    }
+});
+
+export let download = $state({
+    files: [] as DownloadFile[],
     concurrency: 2,
     stats: {
         errors: 0,

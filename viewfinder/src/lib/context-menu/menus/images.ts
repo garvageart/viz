@@ -4,16 +4,23 @@ import {
     type ImageAsset,
     deleteCollectionImages,
     deleteImagesBulk,
+    getDownloadUrl,
     getFullImagePath,
+    signDownload,
     updateCollection,
     updateImage
 } from "$lib/api";
 import DeleteModal from "$lib/components/modals/DeleteModal.svelte";
 import { modalsManager } from "$lib/components/modals/manager/ModalManager.svelte";
 import ExportPanel, { modalOptions as exportModalOptions } from "$lib/components/ui/panels/ExportPanel.svelte";
+import { download } from "$lib/states/index.svelte";
 import type { SelectionScope } from "$lib/states/selection.svelte";
 import { toastState } from "$lib/toast-notifcations/notif-state.svelte";
+import { DownloadFile, DownloadState } from "$lib/upload/asset.svelte";
+import { processDownloadQueue, waitForDownloadCompletion } from "$lib/upload/manager.svelte";
+import { downloadToFilesystem } from "$lib/utils/files";
 import { invalidateViz } from "$lib/views/views.svelte";
+import { DateTime } from "luxon";
 import type { MenuItem } from "../types";
 
 export interface ImageMenuOptions {
@@ -59,8 +66,7 @@ export function createImageMenu(
                 } catch (err) {
                     toastState.addToast({
                         type: "error",
-                        message: `${setFavourited ? "Favourite" : "Unfavourite"} failed: ${err}`,
-                        timeout: 5000
+                        message: `${setFavourited ? "Favourite" : "Unfavourite"} failed: ${err}`
                     });
                 }
             }
@@ -100,15 +106,84 @@ export function createImageMenu(
             label: "Download Original",
             icon: "download",
             disabled: selectionScope.size === 0,
-            action: () => {
+            action: async () => {
                 const items = selectionScope.selectedItems;
-                for (const img of items) {
-                    const link = document.createElement("a");
-                    link.href = getFullImagePath(img.image_paths.original);
-                    link.download = img.name || img.uid;
-                    document.body.appendChild(link);
-                    link.click();
-                    document.body.removeChild(link);
+
+                try {
+                    if (items.length === 0) {
+                        return;
+                    }
+
+                    if (items.length === 1) {
+                        toastState.addToast({
+                            type: "info",
+                            message: "Starting download...",
+                            timeout: 3000
+                        });
+
+                        const img = items[0];
+                        const url = getFullImagePath(img.image_paths.original);
+                        const filename = img.image_metadata?.file_name
+                            ? img.image_metadata.file_name.split("/").pop()!
+                            : `${img.name || img.uid}.jpg`;
+
+                        const task = new DownloadFile(url, filename, "GET");
+                        download.files.push(task);
+                        download.stats.total += 1;
+
+                        processDownloadQueue();
+                        await waitForDownloadCompletion([task]);
+
+                        if (task.state === DownloadState.DOWNLOADED && task.data) {
+                            await downloadToFilesystem(task.filename, task.data);
+                        }
+                    } else {
+                        toastState.addToast({
+                            type: "info",
+                            message: `Zipping ${items.length} images for download`,
+                            timeout: 3000
+                        });
+
+                        const uids = items.map((img) => img.uid);
+                        const signRes = await signDownload({
+                            uids,
+                            expires_in: 300,
+                            allow_download: true,
+                            allow_embed: false,
+                            show_metadata: true
+                        });
+
+                        if (signRes.status !== 200) {
+                            throw new Error(signRes.data?.error ?? "Failed to sign download request");
+                        }
+
+                        const token = signRes.data.uid;
+                        const zipName = `viz-bulk_export-${DateTime.now().toFormat("yyyyLLdd_HHmmss")}.zip`;
+                        const url = getDownloadUrl(token);
+                        const task = new DownloadFile(url, zipName, "POST", { uids });
+
+                        download.files.push(task);
+                        download.stats.total += 1;
+
+                        processDownloadQueue();
+                        await waitForDownloadCompletion([task]);
+
+                        if (task.state === DownloadState.DOWNLOADED && task.data) {
+                            await downloadToFilesystem(zipName, task.data);
+                            toastState.addToast({
+                                title: zipName,
+                                message: `Successfully downloaded ZIP file`,
+                                type: "success"
+                            });
+                        } else if (task.state === DownloadState.ERROR) {
+                            throw new Error("ZIP download encountered an error");
+                        }
+                    }
+                } catch (e) {
+                    toastState.addToast({
+                        type: "error",
+                        message: `Error downloading: ${(e as Error).message}`
+                    });
                 }
             }
         },
@@ -145,8 +220,7 @@ export function createImageMenu(
                 } catch (err) {
                     toastState.addToast({
                         type: "error",
-                        message: `Remove failed: ${err}`,
-                        timeout: 5000
+                        message: `Remove failed: ${err}`
                     });
                 }
             }
@@ -174,8 +248,7 @@ export function createImageMenu(
                 } catch (err) {
                     toastState.addToast({
                         type: "error",
-                        message: `Update failed: ${err}`,
-                        timeout: 5000
+                        message: `Update failed: ${err}`
                     });
                 }
             }
@@ -221,8 +294,7 @@ export function createImageMenu(
             } catch (err) {
                 toastState.addToast({
                     type: "error",
-                    message: `Delete failed: ${err}`,
-                    timeout: 5000
+                    message: `Delete failed: ${err}`
                 });
             }
         }
