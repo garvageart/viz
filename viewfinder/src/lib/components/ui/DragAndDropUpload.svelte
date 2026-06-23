@@ -11,11 +11,11 @@
     import { traverseFileTree } from "$lib/utils/files";
     import { invalidateViz } from "$lib/views/views.svelte";
     import { fade } from "svelte/transition";
-    import Button from "./Button.svelte";
-    import MaterialIcon from "./MaterialIcon.svelte";
     import CollectionModal from "../modals/CollectionModal.svelte";
     import ConfirmationModal from "../modals/ConfirmationModal.svelte";
     import { modalsManager } from "../modals/manager/ModalManager.svelte";
+    import Button from "./Button.svelte";
+    import MaterialIcon from "./MaterialIcon.svelte";
 
     interface Props {
         scopeId?: string; // might be useful soon
@@ -206,8 +206,7 @@
             console.error("Drop upload error:", err);
             toastState.addToast({
                 type: "error",
-                message: `Upload failed: ${err}`,
-                timeout: 5000
+                message: `Upload failed: ${err}`
             });
         }
     }
@@ -343,8 +342,7 @@
             console.error("Collection/Upload flow failed", err);
             toastState.addToast({
                 type: "error",
-                message: `Operation failed: ${err}`,
-                timeout: 5000
+                message: `Operation failed: ${err}`
             });
         } finally {
             collectionCreatePending = false;
@@ -415,8 +413,7 @@
             console.error("createCollectionFromSelected error", err);
             toastState.addToast({
                 type: "error",
-                message: `Failed to create collection: ${err}`,
-                timeout: 5000
+                message: `Failed to create collection: ${err}`
             });
         }
     }
@@ -647,8 +644,7 @@
             console.error("Add-to-collection drop error:", err);
             toastState.addToast({
                 type: "error",
-                message: `Failed to create collection from dropped images: ${err}`,
-                timeout: 5000
+                message: `Failed to create collection from dropped images: ${err}`
             });
         }
     }

@@ -3,7 +3,7 @@
     import MaterialIcon from "$lib/components/ui/MaterialIcon.svelte";
     import DOMPurify from "dompurify";
     import { fly } from "svelte/transition";
-    import { toastState } from "./notif-state.svelte";
+    import { toastState, type NotifcationType } from "./notif-state.svelte";
 
     function parseNotificationText(text: string) {
         if (!text) {
@@ -41,7 +41,7 @@
         });
     }
 
-    function getToastIcon(type: string) {
+    function getToastIcon(type: NotifcationType) {
         switch (type) {
             case "success":
                 return "check_circle";
@@ -55,7 +55,7 @@
         }
     }
 
-    function formatCategoryLabel(type: string) {
+    function formatCategoryLabel(type: NotifcationType) {
         const label = type || "info";
         return label.charAt(0).toUpperCase() + label.slice(1);
     }
@@ -201,7 +201,6 @@
     .viz-toast-type-label {
         font-size: var(--viz-font-size-xs);
         font-weight: 700;
-        letter-spacing: 0.04em;
         font-family: var(--viz-mono-font);
         line-height: 1;
     }

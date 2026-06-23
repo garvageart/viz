@@ -1,3 +1,5 @@
+export type NotifcationType = "error" | "info" | "success" | "warning";
+
 export interface ToastAction {
     label: string;
     onClick: () => void;
@@ -23,7 +25,7 @@ class ToastState {
     /**
      * Original code: https://svelte.dev/repl/0091c8b604b74ed88bb7b6d174504f50?version=3.35.0
      *
-     * Default timeout is 3000ms (3 seconds)
+     * Default timeout is 5000ms (5 seconds)
      */
     addToast = (toast: Partial<Omit<Toast, "id">> = {}) => {
         // Create a unique ID so we can easily find/remove it
@@ -33,7 +35,6 @@ class ToastState {
         // Setup some sensible defaults for a toast and merge with passed values
         const defaultToast = {
             dismissible: true,
-            timeout: 3000,
             type: "info" as const,
             message: "No message to display"
         };
