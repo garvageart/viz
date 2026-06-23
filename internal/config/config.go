@@ -33,6 +33,9 @@ func ReadConfig() (viper.Viper, error) {
 
 	// Bind specific env vars
 	_ = v.BindEnv("servers.api.port", "API_PORT")
+	_ = v.BindEnv("servers.api.host", "API_HOST")
+	_ = v.BindEnv("servers.viz.port", "VIZ_PORT")
+	_ = v.BindEnv("servers.viz.host", "VIZ_HOST")
 	_ = v.BindEnv("database.host", "DB_HOST")
 	_ = v.BindEnv("database.port", "DB_PORT")
 	_ = v.BindEnv("database.user", "DB_USER")
@@ -45,8 +48,14 @@ func ReadConfig() (viper.Viper, error) {
 	// Set Defaults
 	v.SetDefault("baseUrl", "localhost")
 	v.SetDefault("servers.api.port", 7770)
-	v.SetDefault("servers.api.host", "localhost")
 	v.SetDefault("servers.viz.port", 7777)
+	if utils.IsProduction {
+		v.SetDefault("servers.api.host", "0.0.0.0")
+		v.SetDefault("servers.viz.host", "0.0.0.0")
+	} else {
+		v.SetDefault("servers.api.host", "localhost")
+		v.SetDefault("servers.viz.host", "localhost")
+	}
 
 	v.SetDefault("logging.level", "debug")
 	v.SetDefault("logging.timezone", "utc")
@@ -146,13 +155,6 @@ var (
 	}
 
 	VizServers = func() map[string]*VizServer {
-		var host string
-		if utils.IsProduction {
-			host = "0.0.0.0"
-		} else {
-			host = "localhost"
-		}
-
 		config, err := ReadConfig()
 		if err != nil {
 			panic("Unable to read config file " + err.Error())
@@ -163,7 +165,7 @@ var (
 			result[serverKey] = &VizServer{ServerConfig: &ServerConfig{}}
 
 			result[serverKey].Port = config.GetInt(fmt.Sprintf("servers.%s.port", serverKey))
-			result[serverKey].Host = host
+			result[serverKey].Host = config.GetString(fmt.Sprintf("servers.%s.host", serverKey))
 			result[serverKey].Key = serverKey
 		}
 
