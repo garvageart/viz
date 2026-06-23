@@ -21,6 +21,7 @@
         METADATA_FIELD_OPTIONS,
         DATE_FORMAT_TEMPLATES
     } from "$lib/ui-tools/template";
+    import type { ExportFormats } from "$lib/utils/images";
 
     const previewDate = DateTime.fromISO(DEFAULT_TEMPLATE_EXAMPLE.exampleDateStr);
     const dateTokens = buildDateTokens(previewDate);
@@ -49,13 +50,11 @@
         builderRows: RenameRow[];
     }
 
-    export type RenameFormat = "jpg" | "png" | "webp" | "avif" | "tiff";
-
     interface Props {
         settings: SavedRenameSettings;
         activeTemplate?: string;
         assets: ImageAsset[];
-        format?: RenameFormat;
+        format?: ExportFormats;
     }
 
     let {

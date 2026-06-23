@@ -31,3 +31,7 @@ viewfinder/static/themes/
 *.svg
 *.webp
 *.ico
+
+# WebAssembly/WASM
+viewfinder/static/wasm/vips/
+

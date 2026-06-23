@@ -24,3 +24,7 @@ static/themes/
 *.svg
 *.webp
 *.ico
+
+# WebAssembly/WASM
+static/wasm/vips/
+

@@ -205,8 +205,10 @@ export function formatSeconds(totalSeconds?: number): string | null {
         .trim();
 }
 
+export type ExportFormats = "webp" | "png" | "jpg" | "jpeg" | "avif" | "heif";
+
 export interface TransformParams {
-    format?: "webp" | "png" | "jpg" | "jpeg" | "avif" | "heif";
+    format?: ExportFormats;
     flip?: string;
     kernel?: string;
     width?: number;

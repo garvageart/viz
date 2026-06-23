@@ -72,3 +72,6 @@ viewfinder/node_modules/
 /viewfinder/static/themes
 .antigravitycli
 viewfinder/tools/icon-gen/failed-icons.json
+
+# wasm-vips generated assets
+/viewfinder/static/wasm/

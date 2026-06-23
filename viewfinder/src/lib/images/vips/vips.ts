@@ -3,9 +3,15 @@ import type { ImageAsset } from "$lib/api";
 import type { TransformParams } from "$lib/utils/images";
 
 export interface TransformResult {
-    imageData: Uint8Array;
+    imageData: SharedArrayBuffer;
     transformHash: string;
     ext: string;
+}
+
+export interface TransformInput {
+    params: TransformParams;
+    asset: ImageAsset;
+    originalData: ArrayBuffer | Uint8Array | Blob;
 }
 
 function createTransformEtag(imgEnt: ImageAsset, params: TransformParams): string {
@@ -32,22 +38,28 @@ async function getVipsRuntime(): Promise<VipsModule> {
     if (_vipsRuntime) return _vipsRuntime;
     if (!_vipsInitPromise) {
         // Vips is the default export from wasm-vips and returns an initialized module when called
-        _vipsInitPromise = (Vips as unknown as () => Promise<VipsModule>)();
+        _vipsInitPromise = (
+            Vips as unknown as (opts?: {
+                locateFile?: (fileName: string) => string;
+                mainScriptUrlOrBlob?: string;
+            }) => Promise<VipsModule>
+        )({
+            locateFile: (fileName: string) => `/wasm/vips/${fileName}`,
+            mainScriptUrlOrBlob: "/wasm/vips/vips-es6.js"
+        });
     }
     _vipsRuntime = await _vipsInitPromise;
     return _vipsRuntime;
 }
 
-export async function GenerateTransform(
-    params: TransformParams,
-    imgEnt: ImageAsset,
-    originalData: ArrayBuffer | Uint8Array | Blob
-): Promise<TransformResult> {
+export async function generateTransform(input: TransformInput): Promise<TransformResult> {
+    const { params, asset, originalData } = input;
+
     // Determine output extension: prefer `params.format`, otherwise fall back
     // to the original filename extension. (Keep logic simple like the Go backend.)
     let ext = params.format ?? "";
     if (!ext) {
-        const orig = imgEnt.image_paths?.original ?? imgEnt.image_paths.original;
+        const orig = asset.image_paths?.original ?? asset.image_paths.original;
         if (orig) {
             const maybe = orig.split("?")[0].split(".").pop();
             if (maybe) {
@@ -56,24 +68,50 @@ export async function GenerateTransform(
         }
     }
 
-    const transformEtag = createTransformEtag(imgEnt, params);
+    const transformEtag = createTransformEtag(asset, params);
 
     const finalExt = (params.format ?? ext ?? "jpg").toLowerCase();
 
     // Prepare an Uint8Array input buffer from the incoming data
+    console.debug(
+        "[Worker] generateTransform: originalData type:",
+        typeof originalData,
+        "constructor:",
+        originalData?.constructor?.name
+    );
+
+    if (!originalData) {
+        throw new Error("No image data provided");
+    }
+
     let inputBuffer: Uint8Array;
     if (originalData instanceof Blob) {
         inputBuffer = new Uint8Array(await originalData.arrayBuffer());
-    } else if (originalData instanceof Uint8Array) {
-        inputBuffer = originalData.slice();
+    } else if (ArrayBuffer.isView(originalData)) {
+        inputBuffer = new Uint8Array(originalData.buffer, originalData.byteOffset, originalData.byteLength);
+    } else if (originalData instanceof ArrayBuffer) {
+        inputBuffer = new Uint8Array(originalData);
     } else {
-        inputBuffer = new Uint8Array(originalData).slice();
+        throw new Error("Unsupported image data type");
     }
+
+    console.debug("[Worker] Image buffer size:", inputBuffer.length, "bytes");
 
     const v = await getVipsRuntime();
 
     // Decode into wasm-vips image
-    let img = v.Image.newFromBuffer(inputBuffer);
+    let img;
+    try {
+        img = v.Image.newFromBuffer(inputBuffer);
+    } catch (e) {
+        console.error(
+            "[Worker] Vips.Image.newFromBuffer failed! Buffer size:",
+            inputBuffer.length,
+            "bytes. Error details:",
+            e
+        );
+        throw e;
+    }
 
     // Autorotate based on EXIF
     try {
@@ -165,26 +203,18 @@ export async function GenerateTransform(
     const outExt = "." + finalExt;
     const quality = Math.max(0, Math.min(100, params.quality ?? 85));
 
-    let outBufRaw = img.writeToBuffer(outExt, { Q: quality, strip: true }) as
-        | Uint8Array
-        | ArrayBuffer
-        | Promise<Uint8Array | ArrayBuffer>;
+    let outBufRaw = img.writeToBuffer(outExt, { Q: quality, strip: true });
     if (outBufRaw instanceof Promise) {
         outBufRaw = await outBufRaw;
     }
 
-    let imageData: Uint8Array;
-    const maybe = outBufRaw;
-    if (maybe instanceof Uint8Array) {
-        imageData = maybe;
-    } else if (maybe instanceof ArrayBuffer) {
-        imageData = new Uint8Array(maybe);
-    } else if (ArrayBuffer.isView(maybe)) {
-        const view = maybe as ArrayBufferView;
-        imageData = new Uint8Array(view.buffer as ArrayBuffer, view.byteOffset, view.byteLength);
-    } else {
-        throw new Error("Unsupported buffer type returned from wasm-vips");
-    }
+    const view =
+        outBufRaw instanceof ArrayBuffer
+            ? new Uint8Array(outBufRaw)
+            : new Uint8Array(outBufRaw.buffer, outBufRaw.byteOffset, outBufRaw.byteLength);
+
+    const sharedBuffer = new SharedArrayBuffer(view.byteLength);
+    new Uint8Array(sharedBuffer).set(view);
 
     // free wasm-vips resources when possible
     try {
@@ -192,7 +222,7 @@ export async function GenerateTransform(
     } catch (_) {}
 
     return {
-        imageData,
+        imageData: sharedBuffer,
         transformHash: transformEtag,
         ext: finalExt
     };
