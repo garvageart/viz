@@ -211,7 +211,7 @@ func CollectionsRouter(db *gorm.DB, logger *slog.Logger, wsBroker *libhttp.WSBro
 			}
 
 			// Fetch current page
-			return query.Preload("Thumbnail").Preload("CreatedBy").
+			return query.Preload("Thumbnail").Preload("CreatedBy").Preload("Images").Preload("Images.AddedBy").
 				Order(fmt.Sprintf("%s %s", sortBy, order)).
 				Limit(limit).
 				Offset(page * limit).
@@ -390,7 +390,7 @@ func CollectionsRouter(db *gorm.DB, logger *slog.Logger, wsBroker *libhttp.WSBro
 			}
 
 			// Reload to ensure updated data is sent to clients
-			return tx.Preload("Thumbnail").Preload("CreatedBy").First(&collection, "uid = ?", uid).Error
+			return tx.Preload("Thumbnail").Preload("CreatedBy").Preload("Images").Preload("Images.AddedBy").First(&collection, "uid = ?", uid).Error
 		})
 
 		if err == nil && wsBroker != nil {
@@ -689,7 +689,14 @@ func CollectionsRouter(db *gorm.DB, logger *slog.Logger, wsBroker *libhttp.WSBro
 			collection.ImageCount = int(totalCount)
 			collection.UpdatedAt = now
 
-			if err := tx.Model(&collection).Select("ImageCount", "UpdatedAt").Updates(&collection).Error; err != nil {
+			selectFields := []string{"ImageCount", "UpdatedAt"}
+			if collection.ThumbnailID == nil || *collection.ThumbnailID == "" {
+				firstImgUID := colImage.UIDs[0]
+				collection.ThumbnailID = &firstImgUID
+				selectFields = append(selectFields, "ThumbnailID")
+			}
+
+			if err := tx.Model(&collection).Select(selectFields).Updates(&collection).Error; err != nil {
 				return err
 			}
 
@@ -780,7 +787,33 @@ func CollectionsRouter(db *gorm.DB, logger *slog.Logger, wsBroker *libhttp.WSBro
 			collection.ImageCount = int(totalCount)
 			collection.UpdatedAt = time.Now()
 
-			if err := tx.Model(&collection).Select("ImageCount", "UpdatedAt").Updates(&collection).Error; err != nil {
+			selectFields := []string{"ImageCount", "UpdatedAt"}
+			if collection.ThumbnailID != nil && *collection.ThumbnailID != "" {
+				var count int64
+				if err := tx.Model(&entities.CollectionImage{}).
+					Where("collection_id = ? AND uid = ?", collection.ID, *collection.ThumbnailID).
+					Count(&count).Error; err != nil {
+					return err
+				}
+				if count == 0 {
+					var remaining []entities.CollectionImage
+					if err := tx.Where("collection_id = ?", collection.ID).
+						Order("added_at ASC, id ASC").
+						Limit(1).
+						Find(&remaining).Error; err != nil {
+						return err
+					}
+
+					if len(remaining) > 0 {
+						collection.ThumbnailID = &remaining[0].Uid
+					} else {
+						collection.ThumbnailID = nil
+					}
+					selectFields = append(selectFields, "ThumbnailID")
+				}
+			}
+
+			if err := tx.Model(&collection).Select(selectFields).Updates(&collection).Error; err != nil {
 				return err
 			}
 
