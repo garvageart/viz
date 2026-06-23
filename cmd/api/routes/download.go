@@ -2,13 +2,11 @@ package routes
 
 import (
 	"archive/zip"
-	"context"
 	"fmt"
 	"io"
 	"log/slog"
 	"net/http"
 	"net/url"
-	"os"
 	"path/filepath"
 	"time"
 
@@ -19,71 +17,8 @@ import (
 	"viz/internal/downloads"
 	"viz/internal/dto"
 	"viz/internal/entities"
-	"viz/internal/images"
 	"viz/internal/utils"
 )
-
-// writeImagesToZip queries images for the given uids and writes them into the provided zip.Writer
-// in the order of the provided uids slice. Missing or unreadable files are skipped and logged.
-func writeImagesToZip(ctx context.Context, db *gorm.DB, logger *slog.Logger, zw *zip.Writer, uids []string) error {
-	if len(uids) == 0 {
-		return nil
-	}
-
-	var imgs []entities.ImageAsset
-	if err := db.WithContext(ctx).Where("uid IN ? AND deleted_at IS NULL", uids).Find(&imgs).Error; err != nil {
-		return err
-	}
-
-	imgMap := make(map[string]entities.ImageAsset, len(imgs))
-	for _, im := range imgs {
-		imgMap[im.Uid] = im
-	}
-
-	for _, uid := range uids {
-		imageEntity, ok := imgMap[uid]
-		if !ok {
-			logger.Warn("image not found for export", slog.String("uid", uid))
-			continue
-		}
-
-		diskPath := images.GetImagePath(imageEntity.Uid, imageEntity.ImageMetadata.FileName)
-		f, err := os.Open(diskPath)
-		if err != nil {
-			logger.Error("failed to open image file for export", slog.Any("error", err), slog.String("path", diskPath))
-			continue
-		}
-
-		safeName := filepath.Base(imageEntity.ImageMetadata.FileName)
-		// Use the original filename inside the ZIP (do not prefix with UID)
-		zipFileName := safeName
-
-		fileHeader := &zip.FileHeader{
-			Name:   zipFileName,
-			Method: zip.Deflate,
-		}
-
-		// try to set a meaningful mod time
-		fileHeader.Modified = imageEntity.UpdatedAt
-
-		w, err := zw.CreateHeader(fileHeader)
-		if err != nil {
-			f.Close()
-			logger.Error("failed to create zip entry", slog.Any("error", err))
-			continue
-		}
-
-		if _, err := io.Copy(w, f); err != nil {
-			f.Close()
-			logger.Error("failed to write image to zip", slog.Any("error", err))
-			continue
-		}
-
-		f.Close()
-	}
-
-	return nil
-}
 
 // streamZipResponse streams a zip of the given uids to the http.ResponseWriter using an io.Pipe
 // to avoid buffering the entire archive in memory.
@@ -92,16 +27,29 @@ func streamZipResponse(res http.ResponseWriter, req *http.Request, db *gorm.DB, 
 		filename = fmt.Sprintf("%s_export_%s.zip", utils.AppName, time.Now().Format("20060102T150405"))
 	}
 
+	var imgs []entities.ImageAsset
+	if err := db.WithContext(req.Context()).Where("uid IN ? AND deleted_at IS NULL", uids).Find(&imgs).Error; err != nil {
+		logger.Error("failed to query images for zip size/export calculation", slog.Any("error", err))
+		render.Status(req, http.StatusInternalServerError)
+		render.JSON(res, req, dto.ErrorResponse{Error: "Failed to query export images"})
+		return
+	}
+
 	res.Header().Set("Content-Type", "application/octet-stream")
 	// Provide both filename and filename* (UTF-8) to improve browser compatibility
 	base := filepath.Base(filename)
 	res.Header().Set("Content-Disposition", fmt.Sprintf("attachment; filename=\"%s\"; filename*=UTF-8''%s", base, url.PathEscape(filename)))
+
+	// for progress tracking
+	expectedSize := downloads.CalculateZipSize(imgs, uids, true)
+	res.Header().Set("Content-Length", fmt.Sprintf("%d", expectedSize))
+
 	pr, pw := io.Pipe()
 
 	go func() {
 		// Ensure any writer-side errors are propagated to the reader via CloseWithError
 		zw := zip.NewWriter(pw)
-		if err := writeImagesToZip(req.Context(), db, logger, zw, uids); err != nil {
+		if err := downloads.WriteImagesToZip(req.Context(), logger, zw, imgs, uids); err != nil {
 			logger.Error("error while creating zip", slog.Any("error", err))
 			_ = zw.Close()
 			_ = pw.CloseWithError(err)
