@@ -133,7 +133,7 @@
                 minimized = false;
             }}
             title="Show Upload Panel"
-            style="background-color: var(--viz-primary);"
+            style="background-color: var(--viz-primary); color: white;"
             hoverColor="var(--viz-primary)"
         >
             <MaterialIcon iconName="upload" style="font-size: 1.5rem;" />
@@ -243,21 +243,21 @@
         display: flex;
         flex-direction: column;
         position: absolute;
-        bottom: 2em;
-        left: 2em;
+        bottom: var(--viz-spacing-xxl);
+        right: var(--viz-spacing-xxl);
         background-color: var(--viz-100);
         z-index: 9999;
-        border: 1.5px solid var(--viz-60);
-        border-radius: 0.5em;
+        border: var(--viz-border-thin);
+        border-radius: var(--viz-border-radius-lg);
         max-height: 60vh;
         overflow: hidden;
     }
 
     #viz-upload-panel-minimized {
         position: absolute;
-        bottom: 2em;
-        left: 2em;
-        z-index: 2;
+        bottom: var(--viz-spacing-xxl);
+        right: var(--viz-spacing-xxl);
+        z-index: 9999;
     }
 
     #viz-upload-panel-header {
@@ -266,26 +266,26 @@
         display: flex;
         align-items: center;
         justify-content: space-between;
-        padding: 0 1rem;
-        font-size: 0.9rem;
+        padding: 0 var(--viz-spacing-std);
+        font-size: var(--viz-font-size-sm);
         font-weight: 600;
-        border-bottom: 1px solid var(--viz-60);
+        border-bottom: var(--viz-border-thin);
         background-color: var(--viz-90);
         box-sizing: border-box;
-        gap: 1rem;
+        gap: var(--viz-spacing-std);
     }
 
     #viz-upload-panel-sub_header {
         width: 100%;
         display: flex;
         align-items: center;
-        padding: 0.5rem 1rem;
-        font-size: 0.9rem;
+        padding: var(--viz-spacing-sm) var(--viz-spacing-std);
+        font-size: var(--viz-font-size-sm);
         font-weight: 600;
-        border-bottom: 1px solid var(--viz-60);
+        border-bottom: var(--viz-border-thin);
         background-color: var(--viz-95);
         box-sizing: border-box;
-        gap: 0.5rem;
+        gap: var(--viz-spacing-sm);
     }
 
     .viz-upload-progress-text {
@@ -297,14 +297,14 @@
         display: flex;
         flex-direction: row;
         align-items: center;
-        gap: 0.5rem;
+        gap: var(--viz-spacing-sm);
         font-weight: 600;
     }
 
     .concurrency-control {
         display: flex;
         align-items: center;
-        font-size: 0.75rem;
+        font-size: var(--viz-font-size-xs);
         font-weight: 500;
 
         label {
@@ -315,10 +315,10 @@
 
         input[type="number"] {
             background-color: var(--viz-80);
-            border: 1px solid var(--viz-60);
-            border-radius: 0.25em;
+            border: var(--viz-border-thin);
+            border-radius: var(--viz-border-radius-md);
             color: var(--viz-text-color);
-            padding: 0.25em;
+            padding: var(--viz-spacing-xs);
             text-align: center;
             font-family: var(--viz-mono-font);
 
@@ -345,8 +345,8 @@
         flex-direction: row;
         position: relative;
         width: 100%;
-        padding: 0.5rem 1rem;
-        border-bottom: 1px solid var(--viz-70);
+        padding: var(--viz-spacing-sm) var(--viz-spacing-std);
+        border-bottom: var(--viz-border-thin);
         background-color: var(--viz-100);
         box-sizing: border-box;
 
@@ -358,7 +358,7 @@
     .panel-file {
         display: flex;
         flex-direction: column;
-        gap: 4px;
+        gap: var(--viz-spacing-xs);
         min-width: 0; /* Allow shrinking for text truncation */
         overflow: hidden;
         flex: 1;
@@ -367,7 +367,7 @@
     .panel-file-info-data_container {
         display: flex;
         flex-direction: column;
-        margin-left: 0.5rem;
+        margin-left: var(--viz-spacing-sm);
         width: 100%;
         min-width: 0; /* Critical for nested flex text truncation */
     }
@@ -378,13 +378,13 @@
     }
 
     .panel-file-info-metadata {
-        font-size: 0.8rem;
-        margin-bottom: 0.5rem;
+        font-size: var(--viz-font-size-xs);
+        margin-bottom: var(--viz-spacing-sm);
         width: 100%;
         display: flex;
         justify-content: space-between;
         align-items: center;
-        gap: 0.5rem; /* Add gap between file name and progress */
+        gap: var(--viz-spacing-sm); /* Add gap between file name and progress */
     }
 
     .viz-upload-file-name {
@@ -397,7 +397,7 @@
 
     .viz-upload-progress-text {
         font-weight: 600;
-        font-size: 0.75rem;
+        font-size: var(--viz-font-size-xs);
         color: var(--viz-20);
         min-width: 40px;
         text-align: right;
@@ -405,9 +405,9 @@
 
     .panel-file-info-progress-container {
         width: 100%;
-        height: 4px;
-        background-color: var(--viz-70);
-        border-radius: 2px;
+        height: var(--viz-spacing-xs);
+        background-color: var(--viz-60);
+        border-radius: var(--viz-border-radius-sm);
         overflow: hidden;
         position: relative;
     }
@@ -415,7 +415,7 @@
     .panel-file-info-progress {
         height: 100%;
         background: linear-gradient(90deg, var(--viz-40), var(--viz-20));
-        border-radius: 2px;
+        border-radius: var(--viz-border-radius-sm);
         transition: width 0.3s ease;
         display: block;
     }

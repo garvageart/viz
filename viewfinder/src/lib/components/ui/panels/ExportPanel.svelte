@@ -8,9 +8,19 @@
 </script>
 
 <script lang="ts">
-    import type { ImageAsset } from "$lib/api";
+    import { API_BASE_URL, getImageFileBlob, type ImageAsset } from "$lib/api";
     import { DbSettings } from "$lib/db/settings";
+    import type { TransformInput } from "$lib/images/vips/vips";
+    import { download } from "$lib/states/index.svelte";
+    import { toastState } from "$lib/toast-notifcations/notif-state.svelte";
+    import { DownloadFile, DownloadState } from "$lib/upload/asset.svelte";
+    import { processDownloadQueue, waitForDownloadCompletion } from "$lib/upload/manager.svelte";
+    import { downloadToFilesystem } from "$lib/utils/files";
+    import { type ExportFormats } from "$lib/utils/images";
     import { generateRandomString } from "$lib/utils/misc";
+    import type { exportImagesParallel } from "$lib/workers/image_export";
+    import * as Comlink from "comlink";
+    import JSZip from "jszip";
     import { slide } from "svelte/transition";
     import { modalsManager } from "../../modals/manager/ModalManager.svelte";
     import BatchRenameBuilder, { defaultTemplate, type SavedRenameSettings } from "../BatchRenameBuilder.svelte";
@@ -21,13 +31,15 @@
     import MaterialIcon from "../MaterialIcon.svelte";
     import Slider from "../Slider.svelte";
 
-    export type ExportFormat = "jpg" | "png" | "webp" | "avif" | "tiff";
+    import { safeRenderRenameTemplate } from "$lib/ui-tools/renamer";
+    import { DateTime } from "luxon";
+
     export type ResizeMode = "none" | "width" | "height" | "long-edge" | "short-edge" | "dimensions";
     export type ColorSpace = "sRGB" | "AdobeRGB" | "ProPhoto" | "DisplayP3";
     export type DestinationMode = "zip";
 
     export interface SavedExportSettings {
-        format: ExportFormat;
+        format: ExportFormats;
         quality: number;
         resizeMode: ResizeMode;
         resizeWidth: number;
@@ -141,16 +153,136 @@
         { value: "DisplayP3", label: "Display P3" }
     ] as const;
 
-    function handleExport() {
-        // Implementation will follow in the future using wasm-vips
-        modalsManager.close(id, {
-            ...$state.snapshot(settings),
-            namingMode: renameSettings.namingMode,
-            customName: renameSettings.customName,
-            namingTemplate: activeTemplate,
-            sequenceStart: renameSettings.sequenceStart,
-            sequencePadding: renameSettings.sequencePadding
+    async function handleExport() {
+        modalsManager.close(id);
+
+        const downloadTasks: DownloadFile[] = [];
+        for (const asset of assets) {
+            const url = `${API_BASE_URL}/images/${encodeURIComponent(asset.uid)}/file`;
+            const filename =
+                asset.image_metadata?.original_file_name || asset.image_metadata?.file_name || asset.name || "image";
+            const task = new DownloadFile(url, filename);
+
+            downloadTasks.push(task);
+        }
+
+        download.files.push(...downloadTasks);
+        download.stats.total += downloadTasks.length;
+
+        processDownloadQueue();
+        await waitForDownloadCompletion(downloadTasks);
+
+        const transformInputs: TransformInput[] = [];
+        for (let i = 0; i < downloadTasks.length; i++) {
+            const task = downloadTasks[i];
+            const asset = assets[i];
+            let originalData = $state.snapshot(task.data);
+
+            if (!originalData) {
+                // Try falling back to cached getImageFileBlob
+                const response = await getImageFileBlob(asset.uid, {}, { cache: "force-cache" });
+                if (response.status === 200) {
+                    originalData = response.data;
+                } else {
+                    throw new Error(`Failed to download image: ${task.filename}`);
+                }
+            }
+
+            transformInputs.push({
+                asset: $state.snapshot(asset),
+                params: $state.snapshot({
+                    format: settings.format,
+                    quality: settings.quality,
+                    width: settings.resizeMode !== "none" ? settings.resizeWidth : undefined,
+                    height: settings.resizeMode !== "none" ? settings.resizeHeight : undefined
+                }),
+                originalData
+            });
+        }
+
+        const exportWorker = new Worker(new URL("../../../workers/image_export.ts", import.meta.url), {
+            type: "module"
         });
+        const transformFn = Comlink.wrap<typeof exportImagesParallel>(exportWorker);
+
+        try {
+            const flatResults = [];
+            // Process the transforms sequentially inside the single background worker
+            for (let index = 0; index < transformInputs.length; index++) {
+                const res = await transformFn($state.snapshot(transformInputs), null, index);
+                flatResults.push(...res);
+            }
+
+            const zip = new JSZip();
+
+            for (const r of flatResults) {
+                console.debug("Processing worker result item:", r);
+                if (r.result) {
+                    const imageBuf = r.result.imageData;
+                    const asset = transformInputs[r.index].asset;
+                    const ext = r.result.ext || asset.image_metadata?.file_type?.toLowerCase() || "jpg";
+
+                    let filename = "";
+                    if (renameSettings.namingMode === "original") {
+                        const origFull =
+                            asset.name ||
+                            asset.image_metadata?.original_file_name ||
+                            asset.image_metadata?.file_name ||
+                            "image";
+                        const lastDot = origFull.lastIndexOf(".");
+                        filename = lastDot === -1 ? origFull : origFull.substring(0, lastDot);
+                    } else {
+                        const { name: renderedName } = safeRenderRenameTemplate(activeTemplate, asset, r.index, {
+                            sequenceStart: renameSettings.sequenceStart,
+                            sequencePadding: renameSettings.sequencePadding,
+                            customName: renameSettings.customName
+                        });
+
+                        filename = renderedName || asset.name;
+                    }
+
+                    console.debug("Adding file to zip:", filename + "." + ext, "bytes:", imageBuf.byteLength);
+                    zip.file(filename + "." + ext, new Uint8Array(imageBuf));
+                } else if (r.error) {
+                    console.error("Image transform failed inside worker:", r.error);
+                }
+            }
+
+            let zipName = `viz-bulk_export-${DateTime.now().toFormat("yyyyLLdd_HHmmss")}.zip`;
+
+            // Create a virtual DownloadFile task for zip compilation
+            const zipTask = new DownloadFile("", zipName);
+            zipTask.state = DownloadState.DOWNLOADING;
+            download.files.push(zipTask);
+            download.stats.total += 1;
+
+            console.debug("Generating zip file:", zipName);
+            try {
+                const zipData = await zip.generateAsync({ type: "blob", streamFiles: true }, (metadata) => {
+                    zipTask.progress = metadata.percent;
+                });
+                zipTask.progress = 100;
+                zipTask.state = DownloadState.DOWNLOADED;
+                zipTask.data = zipData;
+                zipTask.endTime = new Date();
+
+                console.debug("ZIP blob generated. Size:", zipData.size);
+
+                await downloadToFilesystem(zipName, zipData);
+
+                toastState.addToast({
+                    title: zipName,
+                    message: "Download Started",
+                    type: "success"
+                });
+            } catch (err) {
+                zipTask.state = DownloadState.ERROR;
+                console.error("ZIP generation failed:", err);
+                throw err;
+            }
+        } finally {
+            exportWorker.terminate();
+        }
     }
 
     function handleCancel() {
@@ -202,7 +334,7 @@
         {#snippet settingsSnippet()}
             <div class="control-row">
                 <InputSelect label="Format" options={Array.from(formatOptions)} bind:value={settings.format} />
-                {#if ["jpg", "webp", "avif"].includes(settings.format)}
+                {#if settings.format === "jpg" || settings.format === "webp" || settings.format === "avif"}
                     <div class="quality-slider">
                         <Slider
                             id="quality-range"

@@ -62,7 +62,6 @@ export const views: VizView<any, any>[] = [
                             toastState.addToast({
                                 type: "success",
                                 message: `No new images to add to **${v.name}**`,
-                                timeout: 5000,
                                 actions: [
                                     {
                                         label: "Open Collection",
@@ -102,7 +101,6 @@ export const views: VizView<any, any>[] = [
                                 toastState.addToast({
                                     type: "success",
                                     message: toastMessage,
-                                    timeout: 5000,
                                     actions: [
                                         {
                                             label: "Open Collection",
