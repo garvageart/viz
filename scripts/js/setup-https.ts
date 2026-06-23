@@ -52,6 +52,10 @@ function ensureCaddyfile() {
     const caddyfilePath = path.join(PROJECT_ROOT, CADDYFILE_NAME);
     const caddyContent = `${DOMAIN} {
 	tls internal
+	header {
+		Cross-Origin-Opener-Policy same-origin
+		Cross-Origin-Embedder-Policy require-corp
+	}
 	reverse_proxy localhost:7777
 }
 `;

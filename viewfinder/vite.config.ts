@@ -1,6 +1,7 @@
 /// <reference types="vitest" />
 import { sveltekit } from "@sveltejs/kit/vite";
 import fs from "fs";
+import path from "path";
 import { fileURLToPath } from "url";
 import { type ProxyOptions, defineConfig } from "vite";
 import devtoolsJson from "vite-plugin-devtools-json";
@@ -51,9 +52,52 @@ if (process.env.NODE_ENV !== "production") {
     (define as any).__servers = config.servers;
 }
 
+function copyWasmVipsFiles() {
+    const srcDir = path.resolve("node_modules/wasm-vips/lib");
+    const destWasmDir = path.resolve("static/wasm/vips");
+
+    if (!fs.existsSync(srcDir)) {
+        return;
+    }
+
+    fs.mkdirSync(destWasmDir, { recursive: true });
+
+    const files = fs.readdirSync(srcDir);
+    for (const file of files) {
+        if (file.endsWith(".wasm") || file === "vips-es6.js" || file === "vips.js") {
+            fs.copyFileSync(path.join(srcDir, file), path.join(destWasmDir, file));
+        }
+    }
+}
+
 export default defineConfig({
-    plugins: [devtoolsJson(), sveltekit()],
+    plugins: [
+        {
+            name: "wasm-vips-copy",
+            buildStart() {
+                copyWasmVipsFiles();
+            }
+        },
+        {
+            name: "isolate",
+            configureServer(server) {
+                server.middlewares.use((_req, res, next) => {
+                    res.setHeader("Cross-Origin-Opener-Policy", "same-origin");
+                    res.setHeader("Cross-Origin-Embedder-Policy", "require-corp");
+                    next();
+                });
+            }
+        },
+        devtoolsJson(),
+        sveltekit()
+    ],
     define: define,
+    optimizeDeps: {
+        exclude: ["wasm-vips"]
+    },
+    worker: {
+        format: "es"
+    },
     build: {
         target: "es2022",
         reportCompressedSize: false,
@@ -109,6 +153,10 @@ export default defineConfig({
         host: "0.0.0.0",
         port: config.servers.viz.port,
         cors: true,
+        headers: {
+            "Cross-Origin-Opener-Policy": "same-origin",
+            "Cross-Origin-Embedder-Policy": "require-corp"
+        },
         proxy: viteProxy,
         allowedHosts: ["viz.localhost", "localhost", "127.0.0.1"],
         watch: {
@@ -118,6 +166,10 @@ export default defineConfig({
     preview: {
         port: config.servers.viz.port,
         cors: true,
+        headers: {
+            "Cross-Origin-Opener-Policy": "same-origin",
+            "Cross-Origin-Embedder-Policy": "require-corp"
+        },
         proxy: viteProxy
     }
 });
