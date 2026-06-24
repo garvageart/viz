@@ -242,7 +242,9 @@
         justify-content: space-between;
         padding: var(--viz-spacing-xs) var(--viz-spacing-sm);
         font-family: var(--viz-display-font);
-        font-size: var(--viz-font-size-sm);
+        // this is hard coded for now because i can't find a good balance between `xs` and `sm`.
+        // `sm` is too big and `xs` is too small
+        font-size: 0.85rem;
         color: var(--viz-text-color);
         border-radius: var(--viz-border-radius-sm);
         cursor: pointer;
@@ -250,16 +252,16 @@
         user-select: none;
         position: relative;
         transition: background-color 80ms ease;
+    }
 
-        &:hover,
-        &:global([data-highlighted]) {
-            background-color: var(--viz-80);
-        }
+    :global(.select-item:hover),
+    :global(.select-item[data-highlighted]) {
+        background-color: var(--viz-80);
+    }
 
-        &:global([data-selected]) {
-            background-color: var(--viz-90);
-            font-weight: 500;
-        }
+    :global(.select-item[data-selected]) {
+        background-color: var(--viz-80);
+        font-weight: 500;
     }
 
     :global(.item-indicator) {
@@ -270,8 +272,8 @@
     }
 
     :global(.select-separator) {
-        height: 1px;
-        background-color: var(--viz-80);
+        border-top: 1px solid var(--viz-80);
+        background-color: var(--viz-60);
         margin: var(--viz-spacing-xxs) 0;
     }
 
