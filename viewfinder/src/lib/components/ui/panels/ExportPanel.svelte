@@ -16,7 +16,13 @@
     import { DownloadFile, DownloadState } from "$lib/upload/asset.svelte";
     import { processDownloadQueue, waitForDownloadCompletion } from "$lib/upload/manager.svelte";
     import { downloadToFilesystem } from "$lib/utils/files";
-    import { type ExportFormats } from "$lib/utils/images";
+    import {
+        type ColorSpace,
+        type DestinationMode,
+        type ExportFormats,
+        type MetadataPolicy,
+        type ResizeMode
+    } from "$lib/utils/images";
     import { generateRandomString } from "$lib/utils/misc";
     import type { exportImagesParallel } from "$lib/workers/image_export";
     import * as Comlink from "comlink";
@@ -34,10 +40,6 @@
     import { safeRenderRenameTemplate } from "$lib/ui-tools/renamer";
     import { DateTime } from "luxon";
 
-    export type ResizeMode = "none" | "width" | "height" | "long-edge" | "short-edge" | "dimensions";
-    export type ColorSpace = "sRGB" | "AdobeRGB" | "ProPhoto" | "DisplayP3";
-    export type DestinationMode = "zip";
-
     export interface SavedExportSettings {
         format: ExportFormats;
         quality: number;
@@ -45,7 +47,9 @@
         resizeWidth: number;
         resizeHeight: number;
         colorSpace: ColorSpace;
-        stripMetadata: boolean;
+        includeMetadata: boolean;
+        metadata: MetadataPolicy;
+        removeLocation: boolean;
         destinationMode: DestinationMode;
         sections?: {
             destination: boolean;
@@ -95,7 +99,9 @@
         resizeWidth: 2048,
         resizeHeight: 2048,
         colorSpace: "sRGB",
-        stripMetadata: true,
+        includeMetadata: true,
+        metadata: "all",
+        removeLocation: false,
         destinationMode: "zip",
         ...savedExport
     });
@@ -147,10 +153,16 @@
     ] as const;
 
     const colorSpaceOptions = [
-        { value: "sRGB", label: "sRGB" },
+        { value: "sRGB", label: "sRGB IEC61966-2.1" },
         { value: "AdobeRGB", label: "Adobe RGB (1998)" },
         { value: "ProPhoto", label: "ProPhoto RGB" },
-        { value: "DisplayP3", label: "Display P3" }
+        { value: "DisplayP3", label: "Display P3" },
+        { value: "Rec2020", label: "Rec. 2020" },
+        { value: "ColorMatch", label: "ColorMatch RGB" },
+        { value: "---", label: "---", type: "separator" },
+        { value: "GrayGamma18", label: "Gray Gamma 1.8" },
+        { value: "GrayGamma22", label: "Gray Gamma 2.2" },
+        { value: "sGray", label: "sGray" }
     ] as const;
 
     async function handleExport() {
@@ -194,7 +206,11 @@
                     format: settings.format,
                     quality: settings.quality,
                     width: settings.resizeMode !== "none" ? settings.resizeWidth : undefined,
-                    height: settings.resizeMode !== "none" ? settings.resizeHeight : undefined
+                    height: settings.resizeMode !== "none" ? settings.resizeHeight : undefined,
+                    resizeMode: settings.resizeMode,
+                    colorSpace: settings.colorSpace,
+                    metadata: settings.includeMetadata ? settings.metadata : "none",
+                    removeLocation: settings.removeLocation
                 }),
                 originalData
             });
@@ -213,72 +229,118 @@
                 flatResults.push(...res);
             }
 
-            const zip = new JSZip();
+            const r = flatResults[0];
+            if (flatResults.length === 1 && r && r.result) {
+                const result = r.result;
+                const imageBuf = result.imageData;
+                const asset = transformInputs[r.index].asset;
+                const ext = result.ext || asset.image_metadata?.file_type?.toLowerCase() || "jpg";
 
-            for (const r of flatResults) {
-                console.debug("Processing worker result item:", r);
-                if (r.result) {
-                    const imageBuf = r.result.imageData;
-                    const asset = transformInputs[r.index].asset;
-                    const ext = r.result.ext || asset.image_metadata?.file_type?.toLowerCase() || "jpg";
+                let filename = "";
+                if (renameSettings.namingMode === "original") {
+                    const origFull =
+                        asset.name ||
+                        asset.image_metadata?.original_file_name ||
+                        asset.image_metadata?.file_name ||
+                        "image";
+                    const lastDot = origFull.lastIndexOf(".");
+                    filename = lastDot === -1 ? origFull : origFull.substring(0, lastDot);
+                } else {
+                    const { name: renderedName } = safeRenderRenameTemplate(activeTemplate, asset, r.index, {
+                        sequenceStart: renameSettings.sequenceStart,
+                        sequencePadding: renameSettings.sequencePadding,
+                        customName: renameSettings.customName
+                    });
 
-                    let filename = "";
-                    if (renameSettings.namingMode === "original") {
-                        const origFull =
-                            asset.name ||
-                            asset.image_metadata?.original_file_name ||
-                            asset.image_metadata?.file_name ||
-                            "image";
-                        const lastDot = origFull.lastIndexOf(".");
-                        filename = lastDot === -1 ? origFull : origFull.substring(0, lastDot);
-                    } else {
-                        const { name: renderedName } = safeRenderRenameTemplate(activeTemplate, asset, r.index, {
-                            sequenceStart: renameSettings.sequenceStart,
-                            sequencePadding: renameSettings.sequencePadding,
-                            customName: renameSettings.customName
-                        });
-
-                        filename = renderedName || asset.name;
-                    }
-
-                    console.debug("Adding file to zip:", filename + "." + ext, "bytes:", imageBuf.byteLength);
-                    zip.file(filename + "." + ext, new Uint8Array(imageBuf));
-                } else if (r.error) {
-                    console.error("Image transform failed inside worker:", r.error);
+                    filename = renderedName || asset.name;
                 }
-            }
 
-            let zipName = `viz-bulk_export-${DateTime.now().toFormat("yyyyLLdd_HHmmss")}.zip`;
+                const fullFilename = `${filename}.${ext}`;
 
-            // Create a virtual DownloadFile task for zip compilation
-            const zipTask = new DownloadFile("", zipName);
-            zipTask.state = DownloadState.DOWNLOADING;
-            download.files.push(zipTask);
-            download.stats.total += 1;
+                const standardBuf = new Uint8Array(new ArrayBuffer(imageBuf.byteLength));
+                standardBuf.set(new Uint8Array(imageBuf));
 
-            console.debug("Generating zip file:", zipName);
-            try {
-                const zipData = await zip.generateAsync({ type: "blob", streamFiles: true }, (metadata) => {
-                    zipTask.progress = metadata.percent;
-                });
-                zipTask.progress = 100;
-                zipTask.state = DownloadState.DOWNLOADED;
-                zipTask.data = zipData;
-                zipTask.endTime = new Date();
-
-                console.debug("ZIP blob generated. Size:", zipData.size);
-
-                await downloadToFilesystem(zipName, zipData);
+                const blob = new Blob([standardBuf], { type: `image/${ext === "jpg" ? "jpeg" : ext}` });
+                await downloadToFilesystem(fullFilename, blob);
 
                 toastState.addToast({
-                    title: zipName,
-                    message: "Download Started",
+                    message: `Successfully exported **${fullFilename}**`,
                     type: "success"
                 });
-            } catch (err) {
-                zipTask.state = DownloadState.ERROR;
-                console.error("ZIP generation failed:", err);
-                throw err;
+            } else {
+                const zip = new JSZip();
+
+                for (const r of flatResults) {
+                    console.debug("Processing worker result item:", r);
+                    if (r.result) {
+                        const imageBuf = r.result.imageData;
+                        const asset = transformInputs[r.index].asset;
+                        const ext = r.result.ext || asset.image_metadata?.file_type?.toLowerCase() || "jpg";
+
+                        let filename = "";
+                        if (renameSettings.namingMode === "original") {
+                            const origFull =
+                                asset.name ||
+                                asset.image_metadata?.original_file_name ||
+                                asset.image_metadata?.file_name ||
+                                "image";
+                            const lastDot = origFull.lastIndexOf(".");
+                            filename = lastDot === -1 ? origFull : origFull.substring(0, lastDot);
+                        } else {
+                            const { name: renderedName } = safeRenderRenameTemplate(activeTemplate, asset, r.index, {
+                                sequenceStart: renameSettings.sequenceStart,
+                                sequencePadding: renameSettings.sequencePadding,
+                                customName: renameSettings.customName
+                            });
+
+                            filename = renderedName || asset.name;
+                        }
+
+                        console.debug("Adding file to zip:", filename + "." + ext, "bytes:", imageBuf.byteLength);
+                        zip.file(filename + "." + ext, new Uint8Array(imageBuf));
+                    } else if (r.error) {
+                        console.error("Image transform failed inside worker:", r.error);
+                    }
+                }
+
+                let zipName = `viz-bulk_export-${DateTime.now().toFormat("yyyyLLdd_HHmmss")}.zip`;
+
+                // Create a virtual DownloadFile task for zip compilation
+                const zipTask = new DownloadFile("", zipName);
+                zipTask.state = DownloadState.DOWNLOADING;
+                download.files.push(zipTask);
+                download.stats.total += 1;
+
+                console.debug("Generating zip file:", zipName);
+                try {
+                    const zipData = await zip.generateAsync({ type: "blob", streamFiles: true }, (metadata) => {
+                        zipTask.progress = metadata.percent;
+                    });
+                    zipTask.progress = 100;
+                    zipTask.state = DownloadState.DOWNLOADED;
+                    zipTask.data = zipData;
+                    zipTask.endTime = new Date();
+
+                    console.debug("ZIP blob generated. Size:", zipData.size);
+
+                    await downloadToFilesystem(zipName, zipData);
+
+                    toastState.addToast({
+                        title: zipName,
+                        message: "Download Started",
+                        type: "success"
+                    });
+                } catch (err) {
+                    zipTask.state = DownloadState.ERROR;
+                    console.error("ZIP generation failed:", err);
+                    toastState.addToast({
+                        title: zipName,
+                        message: "Download Failed",
+                        type: "error"
+                    });
+
+                    throw err;
+                }
             }
         } finally {
             exportWorker.terminate();
@@ -314,14 +376,14 @@
 
     <div class="export-body">
         <!-- DESTINATION -->
-        {@render panelSection("destination", "Destination", destinationSnippet)}
         {#snippet destinationSnippet()}
             <InputSelect
                 label="Export to"
-                options={[{ value: "zip", label: "Download as ZIP" }]}
+                options={[{ value: "zip", label: assets.length > 1 ? "Download as ZIP" : "Download Locally" }]}
                 bind:value={settings.destinationMode}
             />
         {/snippet}
+        {@render panelSection("destination", "Destination", destinationSnippet)}
 
         <!-- FILE NAMING -->
         {@render panelSection("naming", "File Naming", namingSnippet)}
@@ -348,11 +410,30 @@
                 {/if}
             </div>
             <InputSelect label="Color Space" options={Array.from(colorSpaceOptions)} bind:value={settings.colorSpace} />
-            <Checkbox
-                id="strip-meta"
-                label="Remove all metadata (EXIF, XMP, IPTC)"
-                bind:checked={settings.stripMetadata}
-            />
+        {/snippet}
+
+        <!-- METADATA -->
+        {@render panelSection("metadata", "Metadata", metadataSnippet)}
+        {#snippet metadataSnippet()}
+            <div class="metadata-settings">
+                <Checkbox label="Include Original Metadata" bind:checked={settings.includeMetadata} />
+                <Checkbox label="Remove Location Information" bind:checked={settings.removeLocation} />
+
+                {#if settings.includeMetadata}
+                    <div class="metadata-policy-select">
+                        <InputSelect
+                            label=""
+                            options={[
+                                { value: "all", label: "All" },
+                                { value: "except-camera", label: "All Except Camera And Camera Raw Info" },
+                                { value: "copyright", label: "Copyright Only" },
+                                { value: "contact", label: "Copyright And Contact Info Only" }
+                            ]}
+                            bind:value={settings.metadata}
+                        />
+                    </div>
+                {/if}
+            </div>
         {/snippet}
 
         <!-- IMAGE SIZING -->
@@ -384,12 +465,6 @@
                     <span class="unit">px</span>
                 </div>
             {/if}
-        {/snippet}
-
-        <!-- METADATA (Placeholder) -->
-        {@render panelSection("metadata", "Metadata", metadataSnippet)}
-        {#snippet metadataSnippet()}
-            <p class="placeholder-text">Copyright and Contact Info will be added here.</p>
         {/snippet}
 
         <!-- WATERMARKING (Placeholder) -->
@@ -580,5 +655,15 @@
         display: flex;
         justify-content: flex-end;
         gap: var(--viz-spacing-sm);
+    }
+
+    .metadata-settings {
+        display: flex;
+        flex-direction: column;
+        gap: var(--viz-spacing-md);
+    }
+
+    .metadata-policy-select {
+        margin-left: 1.5rem;
     }
 </style>

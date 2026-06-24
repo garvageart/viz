@@ -1,6 +1,7 @@
+import { ExifData } from "libexif-wasm";
 import Vips from "wasm-vips";
 import type { ImageAsset } from "$lib/api";
-import type { TransformParams } from "$lib/utils/images";
+import { type ColorSpace, type MetadataPolicy, type TransformParams, createTransformEtag } from "$lib/utils/images";
 
 export interface TransformResult {
     imageData: SharedArrayBuffer;
@@ -14,27 +15,22 @@ export interface TransformInput {
     originalData: ArrayBuffer | Uint8Array | Blob;
 }
 
-function createTransformEtag(imgEnt: ImageAsset, params: TransformParams): string {
-    const checksum = imgEnt.image_metadata?.checksum ?? "unknown";
-    const w = params.width ?? 0;
-    const h = params.height ?? 0;
-    const fmt = params.format ?? "";
-    const quality = params.quality ?? 0;
-    const rotate = params.rotate ?? 0;
-    const flip = params.flip ?? "";
-    const kernel = params.kernel ?? "";
-
-    return `${checksum}-${w}x${h}-${fmt}-${quality}-${rotate}-${flip}-${kernel}`;
-}
-
 // Cached wasm-vips runtime. Initialized on first use.
 // Reuse the package's own types directly.
 type VipsModule = Awaited<ReturnType<typeof Vips>>;
 
-let _vipsRuntime: VipsModule | null = null;
-let _vipsInitPromise: Promise<VipsModule> | null = null;
+interface ExtendedVipsModule extends VipsModule {
+    FS?: {
+        analyzePath: (path: string) => { exists: boolean };
+        mkdir: (path: string) => void;
+        writeFile: (path: string, data: Uint8Array) => void;
+    };
+}
 
-async function getVipsRuntime(): Promise<VipsModule> {
+let _vipsRuntime: ExtendedVipsModule | null = null;
+let _vipsInitPromise: Promise<ExtendedVipsModule> | null = null;
+
+async function getVipsRuntime(): Promise<ExtendedVipsModule> {
     if (_vipsRuntime) return _vipsRuntime;
     if (!_vipsInitPromise) {
         // Vips is the default export from wasm-vips and returns an initialized module when called
@@ -42,7 +38,7 @@ async function getVipsRuntime(): Promise<VipsModule> {
             Vips as unknown as (opts?: {
                 locateFile?: (fileName: string) => string;
                 mainScriptUrlOrBlob?: string;
-            }) => Promise<VipsModule>
+            }) => Promise<ExtendedVipsModule>
         )({
             locateFile: (fileName: string) => `/wasm/vips/${fileName}`,
             mainScriptUrlOrBlob: "/wasm/vips/vips-es6.js"
@@ -50,6 +46,161 @@ async function getVipsRuntime(): Promise<VipsModule> {
     }
     _vipsRuntime = await _vipsInitPromise;
     return _vipsRuntime;
+}
+
+async function ensureIccProfile(v: ExtendedVipsModule, cs: ColorSpace): Promise<string | null> {
+    let fileName = "";
+
+    if (cs === "sRGB") {
+        return "srgb";
+    } else if (cs === "AdobeRGB") {
+        fileName = "AdobeRGB.icc";
+    } else if (cs === "ProPhoto") {
+        fileName = "ProPhoto.icc";
+    } else if (cs === "DisplayP3") {
+        fileName = "DisplayP3.icc";
+    } else if (cs === "Rec2020") {
+        fileName = "Rec2020.icc";
+    } else if (cs === "ColorMatch") {
+        fileName = "ColorMatch.icc";
+    } else if (cs === "GrayGamma18") {
+        fileName = "GrayGamma18.icc";
+    } else if (cs === "GrayGamma22") {
+        fileName = "GrayGamma22.icc";
+    } else if (cs === "sGray") {
+        fileName = "sGray.icc";
+    }
+
+    if (!fileName) {
+        return null;
+    }
+
+    const virtualPath = `/vips_profiles/${fileName}`;
+
+    try {
+        if (v.FS && v.FS.analyzePath) {
+            const pathInfo = v.FS.analyzePath(virtualPath);
+            if (pathInfo && pathInfo.exists) {
+                return virtualPath;
+            }
+        }
+    } catch (_) {}
+
+    try {
+        const response = await fetch(`/profiles/${fileName}`);
+        if (!response.ok) {
+            throw new Error(`Failed to fetch profile: ${response.statusText}`);
+        }
+        const buffer = await response.arrayBuffer();
+
+        if (v.FS && v.FS.mkdir && v.FS.writeFile) {
+            try {
+                v.FS.mkdir("/vips_profiles");
+            } catch (_) {}
+
+            v.FS.writeFile(virtualPath, new Uint8Array(buffer));
+            console.debug(`[Worker] Loaded ICC profile ${fileName} to virtual path ${virtualPath}`);
+            return virtualPath;
+        }
+    } catch (e) {
+        console.error(`[Worker] Failed to load custom color profile:`, e);
+    }
+
+    return null;
+}
+
+function applyMetadataPolicy(img: Vips.Image, metadataPolicy: MetadataPolicy, removeLocation?: boolean): boolean {
+    if (metadataPolicy === "all" && !removeLocation) {
+        return false;
+    }
+
+    if (metadataPolicy === "none") {
+        return true;
+    }
+
+    try {
+        if (img.getTypeof("exif-data") === 0) {
+            img.remove("xmp-data");
+            if (metadataPolicy !== "except-camera") {
+                img.remove("iptc-data");
+            }
+            return false;
+        }
+
+        const exifBlob = img.getBlob("exif-data");
+        if (!exifBlob) {
+            return false;
+        }
+
+        const exif = ExifData.newFromData(exifBlob);
+
+        if (removeLocation) {
+            exif.ifd[3].entries.forEach((e) => {
+                exif.ifd[3].removeEntry(e);
+            });
+        }
+
+        if (metadataPolicy === "copyright" || metadataPolicy === "contact") {
+            exif.ifd[2].entries.forEach((e) => {
+                exif.ifd[2].removeEntry(e);
+            });
+            if (!removeLocation) {
+                exif.ifd[3].entries.forEach((e) => {
+                    exif.ifd[3].removeEntry(e);
+                });
+            }
+            exif.ifd[4].entries.forEach((e) => {
+                exif.ifd[4].removeEntry(e);
+            });
+
+            // IFD0 (Main info): Keep only Copyright (0x8298) and Artist (0x013b)
+            const allowedTags = ["COPYRIGHT", "ARTIST"];
+            exif.ifd[0].entries.forEach((e) => {
+                if (!allowedTags.includes(e.tag as string)) {
+                    exif.ifd[0].removeEntry(e);
+                }
+            });
+
+            exif.ifd[1].entries.forEach((e) => {
+                exif.ifd[1].removeEntry(e);
+            });
+
+            img.remove("xmp-data");
+            img.remove("iptc-data");
+        } else if (metadataPolicy === "except-camera") {
+            exif.ifd[2].entries.forEach((e) => {
+                exif.ifd[2].removeEntry(e);
+            });
+            if (!removeLocation) {
+                exif.ifd[3].entries.forEach((e) => {
+                    exif.ifd[3].removeEntry(e);
+                });
+            }
+
+            // Strip Make (0x010f) and Model (0x0110)
+            const cameraTags = ["MAKE", "MODEL"];
+            exif.ifd[0].entries.forEach((e) => {
+                if (cameraTags.includes(e.tag as string)) {
+                    exif.ifd[0].removeEntry(e);
+                }
+            });
+            img.remove("xmp-data");
+        }
+
+        try {
+            img.setBlob("exif-data", exif.saveData());
+        } catch (e) {
+            console.warn("Failed to save filtered EXIF back to image", e);
+            exif.free();
+            return true;
+        }
+
+        exif.free();
+        return false;
+    } catch (err) {
+        console.error("EXIF manipulation failed:", err);
+        return false;
+    }
 }
 
 export async function generateTransform(input: TransformInput): Promise<TransformResult> {
@@ -120,15 +271,22 @@ export async function generateTransform(input: TransformInput): Promise<Transfor
         // if autorot not supported for this image, continue
     }
 
-    // Normalize to sRGB when possible. Prefer an ICC transform; fall back to
-    // colourspace conversion.
+    // Color space transformation
     try {
-        try {
-            img = img.iccTransform("srgb");
-        } catch (e) {
-            // If iccTransform failed, try colourspace conversion using the
-            // typed Interpretation enum.
-            img = img.colourspace(v.Interpretation.srgb);
+        const cs = params.colorSpace ?? "sRGB";
+        const profilePath = await ensureIccProfile(v, cs);
+        if (profilePath) {
+            try {
+                img = img.iccTransform(profilePath);
+            } catch (_) {
+                img = img.colourspace(v.Interpretation.srgb);
+            }
+        } else {
+            try {
+                img = img.iccTransform("srgb");
+            } catch (_) {
+                img = img.colourspace(v.Interpretation.srgb);
+            }
         }
     } catch (_) {
         // ignore color transform failures; continue
@@ -150,19 +308,34 @@ export async function generateTransform(input: TransformInput): Promise<Transfor
         img = img.flipVer();
     }
 
-    // Resize (contain behaviour)
+    // Resize
     const srcW = img.width;
     const srcH = img.height;
+    const resizeMode = params.resizeMode ?? "none";
     let scale = 1;
-    if ((params.width && params.width > 0) || (params.height && params.height > 0)) {
-        if (params.width && params.width > 0 && params.height && params.height > 0) {
-            const wScale = params.width / srcW;
-            const hScale = params.height / srcH;
-            scale = Math.min(wScale, hScale);
-        } else if (params.width && params.width > 0) {
-            scale = params.width / srcW;
-        } else if (params.height && params.height > 0) {
-            scale = params.height / srcH;
+
+    if (resizeMode !== "none") {
+        const targetW = params.width ?? 0;
+        const targetH = params.height ?? 0;
+
+        if (resizeMode === "width" && targetW > 0) {
+            scale = targetW / srcW;
+        } else if (resizeMode === "height" && targetH > 0) {
+            scale = targetH / srcH;
+        } else if (resizeMode === "long-edge") {
+            const edge = targetW > 0 ? targetW : targetH;
+            if (edge > 0) {
+                const longest = Math.max(srcW, srcH);
+                scale = edge / longest;
+            }
+        } else if (resizeMode === "short-edge") {
+            const edge = targetW > 0 ? targetW : targetH;
+            if (edge > 0) {
+                const shortest = Math.min(srcW, srcH);
+                scale = edge / shortest;
+            }
+        } else if (resizeMode === "dimensions" && targetW > 0 && targetH > 0) {
+            scale = Math.min(targetW / srcW, targetH / srcH);
         }
     }
 
@@ -202,8 +375,12 @@ export async function generateTransform(input: TransformInput): Promise<Transfor
     // Encode
     const outExt = "." + finalExt;
     const quality = Math.max(0, Math.min(100, params.quality ?? 85));
+    const metadataPolicy = params.metadata ?? "all";
+    const actualPolicy = params.metadata === undefined ? "all" : params.metadata || "none";
+    const removeLocation = !!params.removeLocation;
+    const stripAll = applyMetadataPolicy(img, actualPolicy, removeLocation);
 
-    let outBufRaw = img.writeToBuffer(outExt, { Q: quality, strip: true });
+    let outBufRaw = img.writeToBuffer(outExt, { Q: quality, strip: stripAll });
     if (outBufRaw instanceof Promise) {
         outBufRaw = await outBufRaw;
     }

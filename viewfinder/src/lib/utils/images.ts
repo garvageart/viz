@@ -206,6 +206,19 @@ export function formatSeconds(totalSeconds?: number): string | null {
 }
 
 export type ExportFormats = "webp" | "png" | "jpg" | "jpeg" | "avif" | "heif";
+export type ResizeMode = "none" | "width" | "height" | "long-edge" | "short-edge" | "dimensions";
+export type ColorSpace =
+    | "sRGB"
+    | "AdobeRGB"
+    | "ProPhoto"
+    | "DisplayP3"
+    | "Rec2020"
+    | "ColorMatch"
+    | "GrayGamma18"
+    | "GrayGamma22"
+    | "sGray";
+export type MetadataPolicy = "all" | "copyright" | "contact" | "except-camera" | "none";
+export type DestinationMode = "zip";
 
 export interface TransformParams {
     format?: ExportFormats;
@@ -215,6 +228,10 @@ export interface TransformParams {
     height?: number;
     quality?: number;
     rotate?: number;
+    resizeMode?: ResizeMode;
+    colorSpace?: ColorSpace;
+    metadata?: MetadataPolicy;
+    removeLocation?: boolean;
 }
 
 export function parseTransformParams(pathStr: string): TransformParams {
@@ -226,6 +243,21 @@ export function parseTransformParams(pathStr: string): TransformParams {
     const format = q.get("format");
     if (format) {
         params.format = format as TransformParams["format"];
+    }
+
+    const colorSpace = q.get("colorSpace");
+    if (colorSpace) {
+        params.colorSpace = colorSpace as ColorSpace;
+    }
+
+    const metadata = q.get("metadata");
+    if (metadata) {
+        params.metadata = metadata as MetadataPolicy;
+    }
+
+    const removeLocation = q.get("removeLocation");
+    if (removeLocation) {
+        params.removeLocation = removeLocation === "true";
     }
 
     const flip = q.get("flip");
@@ -281,6 +313,21 @@ export function parseTransformParams(pathStr: string): TransformParams {
     }
 
     return params;
+}
+
+export function createTransformEtag(imgEnt: ImageAsset, params: TransformParams): string {
+    // TODO: "unknown" isn't necessarily something i would actually want in a checksum
+    // it's a lazy fallback
+    const checksum = imgEnt.image_metadata?.checksum ?? "unknown";
+    const w = params.width ?? 0;
+    const h = params.height ?? 0;
+    const fmt = params.format ?? "";
+    const quality = params.quality ?? 0;
+    const rotate = params.rotate ?? 0;
+    const flip = params.flip ?? "";
+    const kernel = params.kernel ?? "";
+
+    return `${checksum}-${w}x${h}-${fmt}-${quality}-${rotate}-${flip}-${kernel}`;
 }
 
 export async function collectionExportPhotos(uids: string[], data: CollectionDetailResponse) {

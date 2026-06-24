@@ -87,6 +87,9 @@ importers:
       jszip:
         specifier: ^3.10.1
         version: 3.10.1
+      libexif-wasm:
+        specifier: ^0.5.3
+        version: 0.5.3
       lodash-es:
         specifier: ^4.18.1
         version: 4.18.1
@@ -1477,6 +1480,10 @@ packages:
   kleur@4.1.5:
     resolution: {integrity: sha512-o+NO+8WrRiQEE4/7nwRJhN1HWpVmJm511pBHUxPLtp0BUISzlBplORYSmTclCnJvQq2tKu/sgl3xVpkc7ZWuQQ==}
     engines: {node: '>=6'}
+
+  libexif-wasm@0.5.3:
+    resolution: {integrity: sha512-/Zg+tf7vkrCvLKaOokByvDV9ZSTsto7uI6Z4wWDWCBW5Rd/BZ0+/davmLzZ6z3aLQBLAjrlhLmFnuheSST1ZdQ==}
+    engines: {node: '>=16.0.0'}
 
   lie@3.3.0:
     resolution: {integrity: sha512-UaiMJzeWRlEujzAuw5LokY1L5ecNQYZKfmyZ9L7wDHb/p5etKaxXhohBcrw0EYby+G/NA52vRSN4N39dxHAIwQ==}
@@ -3203,6 +3210,8 @@ snapshots:
       setimmediate: 1.0.5
 
   kleur@4.1.5: {}
+
+  libexif-wasm@0.5.3: {}
 
   lie@3.3.0:
     dependencies:

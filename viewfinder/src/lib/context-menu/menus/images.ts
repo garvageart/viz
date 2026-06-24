@@ -20,6 +20,7 @@ import { toastState } from "$lib/toast-notifcations/notif-state.svelte";
 import { DownloadFile, DownloadState } from "$lib/upload/asset.svelte";
 import { processDownloadQueue, waitForDownloadCompletion } from "$lib/upload/manager.svelte";
 import { downloadToFilesystem } from "$lib/utils/files";
+import { copyToClipboard } from "$lib/utils/misc";
 import { invalidateViz } from "$lib/views/views.svelte";
 import type { MenuItem } from "../types";
 
@@ -42,7 +43,7 @@ export function createImageMenu(
         {
             id: "act-toggle-favourite",
             label: allFavourited ? "Unfavourite" : "Favourite",
-            icon: allFavourited ? { iconName: "favorite", fill: false } : { iconName: "favorite", fill: true },
+            icon: allFavourited ? { iconName: "favorite", fill: true } : { iconName: "favorite", fill: false },
             disabled: selectionScope.size === 0,
             action: async () => {
                 const itemsToUpdate = selectionScope.selectedItems;
@@ -87,23 +88,22 @@ export function createImageMenu(
         },
         {
             id: "act-copy-path",
-            label: "Copy Path",
+            label: `Copy URL`,
             icon: "content_copy",
             disabled: selectionScope.size === 0,
             action: () => {
                 const items = selectionScope.selectedItems;
                 const paths = items.map((img) => getFullImagePath(img.image_paths.original)).join("\n");
-                navigator.clipboard.writeText(paths);
+                copyToClipboard(paths);
                 toastState.addToast({
                     type: "info",
-                    message: "Paths copied to clipboard",
-                    timeout: 2000
+                    message: "URL(s) copied to clipboard"
                 });
             }
         },
         {
             id: "act-download",
-            label: "Download Original",
+            label: items.length > 1 ? "Download as ZIP" : "Download Original",
             icon: "download",
             disabled: selectionScope.size === 0,
             action: async () => {
