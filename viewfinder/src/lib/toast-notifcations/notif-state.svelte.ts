@@ -33,13 +33,14 @@ class ToastState {
         const id = Math.floor(Math.random() * 10000);
 
         // Setup some sensible defaults for a toast and merge with passed values
-        const defaultToast = {
+        const defaultToast: Partial<Omit<Toast, "id">> = {
             dismissible: true,
-            type: "info" as const,
-            message: "No message to display"
+            type: "info",
+            message: "No message to display",
+            timeout: 5000
         };
 
-        const mergedToast = { ...defaultToast, ...toast, id };
+        const mergedToast = { ...defaultToast, ...toast, id } as Toast;
 
         // If a toast with the same message already exists, move it to the front
         const existing = this.toasts.find((t) => t.message === mergedToast.message);
