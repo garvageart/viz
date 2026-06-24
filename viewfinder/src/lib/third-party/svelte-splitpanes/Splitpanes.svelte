@@ -697,7 +697,9 @@
         // Recalculate total size
         const total = panes.reduce((sum, pane) => sum + pane.sz(), 0);
 
-        if (total !== 100 && total > 0) {
+        // Only re-scale if total is significantly off from 100% (tolerance of 0.01%).
+        // This prevents infinite effect loops caused by floating-point drift from repeated normalization.
+        if (Math.abs(total - 100) > 0.01 && total > 0) {
             for (let i = 0; i < panes.length; i++) {
                 const pane = panes[i];
                 pane.setSz((pane.sz() / total) * 100);

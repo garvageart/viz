@@ -224,7 +224,11 @@ export class SplitNode {
             newNode.size = oldNode.size; // Inherit size
             newNode.parent = this;
             this.children[idx] = newNode;
-            oldNode.parent = null;
+            // Only null the old node's parent if it hasn't been reparented
+            // (e.g., splitGroup wraps oldNode inside newNode before calling replaceChild)
+            if (oldNode.parent === this) {
+                oldNode.parent = null;
+            }
         }
     }
 

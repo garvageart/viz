@@ -46,8 +46,11 @@
     }
 }
 
-.splitpanes--vertical > .splitpanes__splitter,
-.splitpanes--vertical .splitpanes__splitter {
+// DO NOT and I absolutely DO NOT add the following lines below
+// .splitpanes--vertical .splitpanes__splitter
+// This will collapse the panel into itself for stupid extremely
+// stupid reasons
+.splitpanes--vertical > .splitpanes__splitter {
     width: 1px;
     height: 100%;
     cursor: ew-resize;
@@ -62,8 +65,11 @@
     }
 }
 
-.splitpanes--horizontal > .splitpanes__splitter,
-.splitpanes--horizontal .splitpanes__splitter {
+// DO NOT and I absolutely DO NOT add the following lines below
+// .splitpanes--horizontal .splitpanes__splitter
+// This will collapse the panel into itself for stupid extremely
+// stupid reasons
+.splitpanes--horizontal > .splitpanes__splitter {
     height: 1px;
     width: 100%;
     cursor: ns-resize;

@@ -562,6 +562,10 @@
         }
     });
 
+    // Bounded retry counter to handle initial mount timing without infinite loops
+    let _layoutRetryCount = $state(0);
+    const MAX_LAYOUT_RETRIES = 5;
+
     // Build justified rows layout and compute visible rows based on scroll.
     function updateVirtualGrid() {
         if (!photoGridEl) {
@@ -573,6 +577,19 @@
         const paddingLeft = parseFloat(computedStyle.paddingLeft) || 0;
         const paddingRight = parseFloat(computedStyle.paddingRight) || 0;
         const availableWidth = photoGridEl.clientWidth - paddingLeft - paddingRight;
+
+        if (availableWidth <= 0) {
+            // Bounded retry: if the element hasn't been laid out yet (e.g., just mounted in a
+            // new split pane), retry on the next frame. The ResizeObserver is the primary
+            // recovery path, but it may not fire if the pane was created at its final size.
+            // The limit prevents infinite loops when a splitter squeezes the pane to 0px.
+            if (_layoutRetryCount < MAX_LAYOUT_RETRIES) {
+                _layoutRetryCount++;
+                requestAnimationFrame(() => updateVirtualGrid());
+            }
+            return;
+        }
+        _layoutRetryCount = 0;
 
         let vH = photoGridEl.clientHeight;
 
@@ -781,6 +798,15 @@
             });
             resizeObserver.observe(node);
             resizeObserver.observe(parent as HTMLElement);
+
+            // Defer initial layout to after the browser has painted so clientWidth
+            // reflects the actual pane dimensions. The ResizeObserver provides further
+            // updates if the size changes after this.
+            requestAnimationFrame(() => {
+                if (photoGridEl) {
+                    updateVirtualGrid();
+                }
+            });
 
             return {
                 destroy() {
@@ -1228,7 +1254,7 @@
     >
         {#if debugMode}
             <div
-                style="position: sticky; top: 0; left: 0; z-index: 9999; background: rgba(0,0,0,0.8); color: lime; padding: 0.5rem; pointer-events: none;"
+                style="position: sticky; top: 0; left: 0; z-index: 9999; background: rgba(0,0,0,0.8); color: lime; padding: 0.5rem; pointer-events: none; font-size: 11px; white-space: pre-wrap; line-height: 1.3;"
             >
                 Data: {data?.length} | Filtered: {filteredData?.length} | Rows: {virtualizer.rows?.length} | Visible: {virtualizer
                     .visibleRows?.length} | TotalH: {virtualizer.totalHeight}

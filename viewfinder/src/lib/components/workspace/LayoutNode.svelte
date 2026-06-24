@@ -76,10 +76,15 @@
             return;
         }
 
-        // Update sizes in our model
+        // Update sizes in our model.
+        // IMPORTANT: Skip writes where the change is below tolerance (0.01%) to prevent infinite
+        // Splitpanes effect loops caused by floating-point drift from equalize/normalize cycles.
         node.children.forEach((child, i) => {
             if (sizes[i]) {
-                child.size = sizes[i].size;
+                const newSize = sizes[i].size;
+                if (Math.abs(child.size - newSize) > 0.01) {
+                    child.size = newSize;
+                }
             }
         });
     }

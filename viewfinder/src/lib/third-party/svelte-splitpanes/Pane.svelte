@@ -107,7 +107,7 @@
                 sz: () => sz,
                 setSz: (v) => {
                     sz = v;
-                    if (typeof size === "number" && size !== sz) {
+                    if (typeof size === "number" && Math.abs(size - sz) > 0.01) {
                         size = sz;
                     }
                 },
