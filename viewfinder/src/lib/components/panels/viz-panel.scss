@@ -50,6 +50,9 @@
 // .splitpanes--vertical .splitpanes__splitter
 // This will collapse the panel into itself for stupid extremely
 // stupid reasons
+// Reason: descendant selectors cause nested splitters to inherit width from
+// the wrong axis (horizontal's width: 100% wins over vertical's width: 1px
+// on equal-specificity order), collapsing sibling panes to 0.
 .splitpanes--vertical > .splitpanes__splitter {
     width: 1px;
     height: 100%;
