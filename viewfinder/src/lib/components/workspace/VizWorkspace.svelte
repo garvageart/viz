@@ -9,6 +9,7 @@
     import { dev } from "$app/environment";
     import { views } from "$lib/layouts/views";
     import hotkeys from "hotkeys-js";
+    import { DateTime } from "luxon";
 
     interface Props {
         id: string;
@@ -41,7 +42,10 @@
 
     if (dev) {
         $effect(() => {
-            console.log("[Workspace] Workspace state:", workspaceState.workspace?.toJSON());
+            console.log(
+                `[Workspace] ${DateTime.now().toISOTime()}: Workspace state:`,
+                workspaceState.workspace?.toJSON()
+            );
         });
     }
 

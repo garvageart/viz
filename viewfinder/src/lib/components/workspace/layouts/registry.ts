@@ -10,7 +10,7 @@ export function createDefaultLayout(): Workspace {
         orientation: "horizontal",
         children: [
             new SplitNode({
-                size: 30,
+                size: 25,
                 orientation: "vertical",
                 children: [
                     new TabGroup({
@@ -24,7 +24,7 @@ export function createDefaultLayout(): Workspace {
                 ]
             }),
             new TabGroup({
-                size: 70,
+                size: 75,
                 views: collectionsView ? [collectionsView] : []
             })
         ]
