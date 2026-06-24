@@ -1293,9 +1293,91 @@ paths:
               schema:
                 $ref: "#/components/schemas/ErrorResponse"
 
+  /images/export:
+    post:
+      summary: Pre-generate transforms for multiple images
+      operationId: imagesExport
+      security:
+        - BearerAuth: []
+        - CookieAuth: []
+      parameters:
+        - in: query
+          name: format
+          schema:
+            type: string
+            enum: [webp, png, jpg, jpeg, avif, heif]
+          description: Output format for transformation
+        - in: query
+          name: width
+          schema:
+            type: integer
+            minimum: 0
+          description: Width for transformation
+        - in: query
+          name: height
+          schema:
+            type: integer
+            minimum: 0
+          description: Height for transformation
+        - in: query
+          name: quality
+          schema:
+            type: integer
+            minimum: 0
+            maximum: 100
+          description: Quality for transformation (0-100)
+        - in: query
+          name: resizeMode
+          schema:
+            type: string
+            enum: [none, width, height, long-edge, short-edge, dimensions]
+          description: Resize mode
+        - in: query
+          name: colorSpace
+          schema:
+            type: string
+            enum: [sRGB, AdobeRGB, ProPhoto, DisplayP3]
+          description: Color space
+        - in: query
+          name: stripMetadata
+          schema:
+            type: boolean
+          description: Strip metadata
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ImageExportRequest'
+      responses:
+        '200':
+          description: Transforms generated and cached successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/MessageResponse'
+        '400':
+          description: Invalid request
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '401':
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '500':
+          description: Internal server error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
   /images/{uid}/download:
     get:
-      summary: Create short-lived download token and redirect
+      summary: Download image (redirect)
       description: Creates a 5-minute download token and redirects to /images/{uid}/file?download=1&token=...
       operationId: quickDownloadImage
       security:
@@ -2847,6 +2929,15 @@ components:
       description: "Session authentication using a cookie named 'viz-auth_token'. The cookie value is a hex-encoded string of securely-generated random bytes."
 
   schemas:
+    ImageExportRequest:
+      type: object
+      required:
+        - uids
+      properties:
+        uids:
+          type: array
+          items:
+            type: string
     ServerAbout:
       type: object
       required:

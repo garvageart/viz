@@ -293,6 +293,11 @@ type ClientInterface interface {
 
 	CheckDuplicates(ctx context.Context, body CheckDuplicatesJSONRequestBody, reqEditors ...RequestEditorFn) (*http.Response, error)
 
+	// ImagesExportWithBody request with any body
+	ImagesExportWithBody(ctx context.Context, params *ImagesExportParams, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*http.Response, error)
+
+	ImagesExport(ctx context.Context, params *ImagesExportParams, body ImagesExportJSONRequestBody, reqEditors ...RequestEditorFn) (*http.Response, error)
+
 	// UploadImageByUrlWithBody request with any body
 	UploadImageByUrlWithBody(ctx context.Context, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*http.Response, error)
 
@@ -1276,6 +1281,30 @@ func (c *Client) CheckDuplicatesWithBody(ctx context.Context, contentType string
 
 func (c *Client) CheckDuplicates(ctx context.Context, body CheckDuplicatesJSONRequestBody, reqEditors ...RequestEditorFn) (*http.Response, error) {
 	req, err := NewCheckDuplicatesRequest(c.Server, body)
+	if err != nil {
+		return nil, err
+	}
+	req = req.WithContext(ctx)
+	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
+		return nil, err
+	}
+	return c.Client.Do(req)
+}
+
+func (c *Client) ImagesExportWithBody(ctx context.Context, params *ImagesExportParams, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewImagesExportRequestWithBody(c.Server, params, contentType, body)
+	if err != nil {
+		return nil, err
+	}
+	req = req.WithContext(ctx)
+	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
+		return nil, err
+	}
+	return c.Client.Do(req)
+}
+
+func (c *Client) ImagesExport(ctx context.Context, params *ImagesExportParams, body ImagesExportJSONRequestBody, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewImagesExportRequest(c.Server, params, body)
 	if err != nil {
 		return nil, err
 	}
@@ -3926,6 +3955,145 @@ func NewCheckDuplicatesRequestWithBody(server string, contentType string, body i
 	return req, nil
 }
 
+// NewImagesExportRequest calls the generic ImagesExport builder with application/json body
+func NewImagesExportRequest(server string, params *ImagesExportParams, body ImagesExportJSONRequestBody) (*http.Request, error) {
+	var bodyReader io.Reader
+	buf, err := json.Marshal(body)
+	if err != nil {
+		return nil, err
+	}
+	bodyReader = bytes.NewReader(buf)
+	return NewImagesExportRequestWithBody(server, params, "application/json", bodyReader)
+}
+
+// NewImagesExportRequestWithBody generates requests for ImagesExport with any type of body
+func NewImagesExportRequestWithBody(server string, params *ImagesExportParams, contentType string, body io.Reader) (*http.Request, error) {
+	var err error
+
+	serverURL, err := url.Parse(server)
+	if err != nil {
+		return nil, err
+	}
+
+	operationPath := fmt.Sprintf("/images/export")
+	if operationPath[0] == '/' {
+		operationPath = "." + operationPath
+	}
+
+	queryURL, err := serverURL.Parse(operationPath)
+	if err != nil {
+		return nil, err
+	}
+
+	if params != nil {
+		// queryValues collects non-styled parameters (passthrough, JSON)
+		// that are safe to round-trip through url.Values.Encode().
+		queryValues := queryURL.Query()
+		// rawQueryFragments collects pre-encoded query fragments from
+		// styled parameters, preserving literal commas as delimiters
+		// per the OpenAPI spec (e.g. "color=blue,black,brown").
+		var rawQueryFragments []string
+
+		if params.Format != nil {
+
+			if queryFrag, err := runtime.StyleParamWithOptions("form", true, "format", *params.Format, runtime.StyleParamOptions{ParamLocation: runtime.ParamLocationQuery, Type: "string", Format: ""}); err != nil {
+				return nil, err
+			} else {
+				for _, qp := range strings.Split(queryFrag, "&") {
+					rawQueryFragments = append(rawQueryFragments, qp)
+				}
+			}
+
+		}
+
+		if params.Width != nil {
+
+			if queryFrag, err := runtime.StyleParamWithOptions("form", true, "width", *params.Width, runtime.StyleParamOptions{ParamLocation: runtime.ParamLocationQuery, Type: "integer", Format: ""}); err != nil {
+				return nil, err
+			} else {
+				for _, qp := range strings.Split(queryFrag, "&") {
+					rawQueryFragments = append(rawQueryFragments, qp)
+				}
+			}
+
+		}
+
+		if params.Height != nil {
+
+			if queryFrag, err := runtime.StyleParamWithOptions("form", true, "height", *params.Height, runtime.StyleParamOptions{ParamLocation: runtime.ParamLocationQuery, Type: "integer", Format: ""}); err != nil {
+				return nil, err
+			} else {
+				for _, qp := range strings.Split(queryFrag, "&") {
+					rawQueryFragments = append(rawQueryFragments, qp)
+				}
+			}
+
+		}
+
+		if params.Quality != nil {
+
+			if queryFrag, err := runtime.StyleParamWithOptions("form", true, "quality", *params.Quality, runtime.StyleParamOptions{ParamLocation: runtime.ParamLocationQuery, Type: "integer", Format: ""}); err != nil {
+				return nil, err
+			} else {
+				for _, qp := range strings.Split(queryFrag, "&") {
+					rawQueryFragments = append(rawQueryFragments, qp)
+				}
+			}
+
+		}
+
+		if params.ResizeMode != nil {
+
+			if queryFrag, err := runtime.StyleParamWithOptions("form", true, "resizeMode", *params.ResizeMode, runtime.StyleParamOptions{ParamLocation: runtime.ParamLocationQuery, Type: "string", Format: ""}); err != nil {
+				return nil, err
+			} else {
+				for _, qp := range strings.Split(queryFrag, "&") {
+					rawQueryFragments = append(rawQueryFragments, qp)
+				}
+			}
+
+		}
+
+		if params.ColorSpace != nil {
+
+			if queryFrag, err := runtime.StyleParamWithOptions("form", true, "colorSpace", *params.ColorSpace, runtime.StyleParamOptions{ParamLocation: runtime.ParamLocationQuery, Type: "string", Format: ""}); err != nil {
+				return nil, err
+			} else {
+				for _, qp := range strings.Split(queryFrag, "&") {
+					rawQueryFragments = append(rawQueryFragments, qp)
+				}
+			}
+
+		}
+
+		if params.StripMetadata != nil {
+
+			if queryFrag, err := runtime.StyleParamWithOptions("form", true, "stripMetadata", *params.StripMetadata, runtime.StyleParamOptions{ParamLocation: runtime.ParamLocationQuery, Type: "boolean", Format: ""}); err != nil {
+				return nil, err
+			} else {
+				for _, qp := range strings.Split(queryFrag, "&") {
+					rawQueryFragments = append(rawQueryFragments, qp)
+				}
+			}
+
+		}
+
+		if encoded := queryValues.Encode(); encoded != "" {
+			rawQueryFragments = append(rawQueryFragments, encoded)
+		}
+		queryURL.RawQuery = strings.Join(rawQueryFragments, "&")
+	}
+
+	req, err := http.NewRequest(http.MethodPost, queryURL.String(), body)
+	if err != nil {
+		return nil, err
+	}
+
+	req.Header.Add("Content-Type", contentType)
+
+	return req, nil
+}
+
 // NewUploadImageByUrlRequestWithTextBody calls the generic UploadImageByUrl builder with text/plain body
 func NewUploadImageByUrlRequestWithTextBody(server string, body UploadImageByUrlTextRequestBody) (*http.Request, error) {
 	var bodyReader io.Reader
@@ -5278,6 +5446,11 @@ type ClientWithResponsesInterface interface {
 	CheckDuplicatesWithBodyWithResponse(ctx context.Context, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*CheckDuplicatesResponse, error)
 
 	CheckDuplicatesWithResponse(ctx context.Context, body CheckDuplicatesJSONRequestBody, reqEditors ...RequestEditorFn) (*CheckDuplicatesResponse, error)
+
+	// ImagesExportWithBodyWithResponse request with any body
+	ImagesExportWithBodyWithResponse(ctx context.Context, params *ImagesExportParams, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*ImagesExportResponse, error)
+
+	ImagesExportWithResponse(ctx context.Context, params *ImagesExportParams, body ImagesExportJSONRequestBody, reqEditors ...RequestEditorFn) (*ImagesExportResponse, error)
 
 	// UploadImageByUrlWithBodyWithResponse request with any body
 	UploadImageByUrlWithBodyWithResponse(ctx context.Context, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*UploadImageByUrlResponse, error)
@@ -7108,6 +7281,39 @@ func (r CheckDuplicatesResponse) ContentType() string {
 	return ""
 }
 
+type ImagesExportResponse struct {
+	Body         []byte
+	HTTPResponse *http.Response
+	JSON200      *MessageResponse
+	JSON400      *ErrorResponse
+	JSON401      *ErrorResponse
+	JSON500      *ErrorResponse
+}
+
+// Status returns HTTPResponse.Status
+func (r ImagesExportResponse) Status() string {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.Status
+	}
+	return http.StatusText(0)
+}
+
+// StatusCode returns HTTPResponse.StatusCode
+func (r ImagesExportResponse) StatusCode() int {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.StatusCode
+	}
+	return 0
+}
+
+// ContentType is a convenience method to retrieve the Content-Type value from the HTTP response headers
+func (r ImagesExportResponse) ContentType() string {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.Header.Get("Content-Type")
+	}
+	return ""
+}
+
 type UploadImageByUrlResponse struct {
 	Body         []byte
 	HTTPResponse *http.Response
@@ -8587,6 +8793,23 @@ func (c *ClientWithResponses) CheckDuplicatesWithResponse(ctx context.Context, b
 		return nil, err
 	}
 	return ParseCheckDuplicatesResponse(rsp)
+}
+
+// ImagesExportWithBodyWithResponse request with arbitrary body returning *ImagesExportResponse
+func (c *ClientWithResponses) ImagesExportWithBodyWithResponse(ctx context.Context, params *ImagesExportParams, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*ImagesExportResponse, error) {
+	rsp, err := c.ImagesExportWithBody(ctx, params, contentType, body, reqEditors...)
+	if err != nil {
+		return nil, err
+	}
+	return ParseImagesExportResponse(rsp)
+}
+
+func (c *ClientWithResponses) ImagesExportWithResponse(ctx context.Context, params *ImagesExportParams, body ImagesExportJSONRequestBody, reqEditors ...RequestEditorFn) (*ImagesExportResponse, error) {
+	rsp, err := c.ImagesExport(ctx, params, body, reqEditors...)
+	if err != nil {
+		return nil, err
+	}
+	return ParseImagesExportResponse(rsp)
 }
 
 // UploadImageByUrlWithBodyWithResponse request with arbitrary body returning *UploadImageByUrlResponse
@@ -11028,6 +11251,53 @@ func ParseCheckDuplicatesResponse(rsp *http.Response) (*CheckDuplicatesResponse,
 			return nil, err
 		}
 		response.JSON400 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 500:
+		var dest ErrorResponse
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON500 = &dest
+
+	}
+
+	return response, nil
+}
+
+// ParseImagesExportResponse parses an HTTP response from a ImagesExportWithResponse call
+func ParseImagesExportResponse(rsp *http.Response) (*ImagesExportResponse, error) {
+	bodyBytes, err := io.ReadAll(rsp.Body)
+	defer func() { _ = rsp.Body.Close() }()
+	if err != nil {
+		return nil, err
+	}
+
+	response := &ImagesExportResponse{
+		Body:         bodyBytes,
+		HTTPResponse: rsp,
+	}
+
+	switch {
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 200:
+		var dest MessageResponse
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON200 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 400:
+		var dest ErrorResponse
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON400 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 401:
+		var dest ErrorResponse
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON401 = &dest
 
 	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 500:
 		var dest ErrorResponse

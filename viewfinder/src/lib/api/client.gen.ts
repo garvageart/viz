@@ -520,6 +520,9 @@ export type ImageUpdate = {
         keywords?: string[];
     };
 };
+export type ImageExportRequest = {
+    uids: string[];
+};
 export type CollectionListResponse = {
     /** Self link */
     href?: string;
@@ -1688,7 +1691,45 @@ export function updateImage(uid: string, imageUpdate: ImageUpdate, opts?: Oazapf
     }));
 }
 /**
- * Create short-lived download token and redirect
+ * Pre-generate transforms for multiple images
+ */
+export function imagesExport(imageExportRequest: ImageExportRequest, { format, width, height, quality, resizeMode, colorSpace, stripMetadata }: {
+    format?: "webp" | "png" | "jpg" | "jpeg" | "avif" | "heif";
+    width?: number;
+    height?: number;
+    quality?: number;
+    resizeMode?: "none" | "width" | "height" | "long-edge" | "short-edge" | "dimensions";
+    colorSpace?: "sRGB" | "AdobeRGB" | "ProPhoto" | "DisplayP3";
+    stripMetadata?: boolean;
+} = {}, opts?: Oazapfts.RequestOpts) {
+    return oazapfts.fetchJson<{
+        status: 200;
+        data: MessageResponse;
+    } | {
+        status: 400;
+        data: ErrorResponse;
+    } | {
+        status: 401;
+        data: ErrorResponse;
+    } | {
+        status: 500;
+        data: ErrorResponse;
+    }>(`/images/export${QS.query(QS.explode({
+        format,
+        width,
+        height,
+        quality,
+        resizeMode,
+        colorSpace,
+        stripMetadata
+    }))}`, oazapfts.json({
+        ...opts,
+        method: "POST",
+        body: imageExportRequest
+    }));
+}
+/**
+ * Download image (redirect)
  */
 export function quickDownloadImage(uid: string, opts?: Oazapfts.RequestOpts) {
     return oazapfts.fetchJson<{
