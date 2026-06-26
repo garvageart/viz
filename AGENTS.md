@@ -27,13 +27,13 @@ This document provides a comprehensive guide for AI agents and developers workin
 - **Authentication**: Supports both stateful sessions (cookies) for the frontend and stateless API Keys for third-party integrations. Logic is in `internal/auth/`.
 - **API Documentation**: An OpenAPI 3.0 specification is maintained at `api/openapi/openapi.yaml`. This spec is the source of truth for generating both Go DTOs and the TypeScript API client.
 
-### Frontend (`/viz` directory)
+### Frontend (`viewfinder/` directory)
 - **Framework**: SvelteKit, configured as a pure **Single-Page Application (SPA)** using `@sveltejs/adapter-static`.
 - **Language**: TypeScript is used for all Svelte components and modules, ensuring type safety.
 - **Reactivity Model**: Embrace Svelte 5 Runes for all state management (`$state`, `$derived`, `$effect`). Avoid legacy stores (`writable`, `readable`). `$props` are used for component inputs.
-- **Styling**: SCSS (Sass) is the preprocessor of choice. Write component-scoped styles in `<style lang="scss">` blocks. Global styles, variables, and mixins are located in `viz/src/lib/styles/`.
-- **API Client**: The primary client is generated from the OpenAPI spec using `oazapfts`. A custom wrapper in `viz/src/lib/api/index.ts` enhances this client, primarily for handling binary file uploads with the correct `Content-Type`.
-- **State Management**: Global and session-level state is managed through custom modules in `viz/src/lib/states/`. These modules are simple `.ts` files that export state runes.
+- **Styling**: SCSS (Sass) is the preprocessor of choice. Write component-scoped styles in `<style lang="scss">` blocks. Global styles, variables, and mixins are located in `viewfinder/src/lib/styles/`.
+- **API Client**: The primary client is generated from the OpenAPI spec using `oazapfts`. A custom wrapper in `viewfinder/src/lib/api/index.ts` enhances this client, primarily for handling binary file uploads with the correct `Content-Type`.
+- **State Management**: Global and session-level state is managed through custom modules in `viewfinder/src/lib/states/`. These modules are simple `.ts` files that export state runes.
 - **Testing**:
   - **Strategy: E2E-First**: We avoid brittle UI component unit tests (JSDOM) because they require extensive manual mocking of SvelteKit's `$app/*` modules and browser APIs (like IndexedDB or ResizeObserver). The primary focus is on robust E2E testing using Playwright to test features in a real browser environment.
   - **Playwright**: Used for all UI and user flow testing.
@@ -47,7 +47,7 @@ The project relies heavily on code generation from the OpenAPI specification (`a
 The `make generate-types` command orchestrates this entire process:
 1.  **Go DTOs**: It uses `oapi-codegen` to generate Go data transfer objects (structs used in API requests/responses) into `internal/dto/types.gen.go`.
 2.  **GORM Entities**: It runs a **custom tool** (`tools/genentities`) that reads the same OpenAPI spec. Schemas marked with the `x-entity: true` extension are converted into GORM database models in `internal/entities/generated.go`. This tool also generates helper methods (`DTO()` and `FromDTO()`) to convert between the entity and the DTO.
-3.  **TypeScript Client**: It uses `oazapfts` to generate the frontend's TypeScript API client in `viz/src/lib/api/client.gen.ts`.
+3.  **TypeScript Client**: It uses `oazapfts` to generate the frontend's TypeScript API client in `viewfinder/src/lib/api/client.gen.ts`.
 
 ### API Endpoint Creation Workflow
 1.  **Define Schema in OpenAPI**: All new data structures (for both API transfer and database storage) **must** be defined under `components/schemas` in `api/openapi/openapi.yaml`.
@@ -82,9 +82,21 @@ The `make generate-types` command orchestrates this entire process:
     - `workers/`: Implementations of specific background jobs.
   - `transform/`: Data structures and pure functions for image transforms.
 - `tools/genentities`: Custom tool to generate GORM entities from the OpenAPI spec.
-- `viz/`: The SvelteKit frontend application (SPA).
+- `viewfinder/`: The SvelteKit frontend application (SPA).
   - `src/lib/api/`: **Generated** API client. Do not edit `client.gen.ts` manually.
-  - `src/lib/components/`: Reusable Svelte components.
+  - `src/lib/components/`: Svelte components organized by domain:
+    - `ui/`: Atomic inputs, buttons, toasts, tooltips — reusable primitives
+    - `grid/`: AssetGrid (generic), PhotoAssetGrid, AssetSelectGrid — image/collection grids
+    - `panels/`: Sidebar panels and workspace panels (Filmstrip, Metadata, etc.)
+    - `modals/`: Modal dialogs (CollectionModal, CollectionSelectionModal, etc.)
+    - `workspace/`: TabGroupPanel, workspace layout orchestrators
+    - `filters/`, `icons/`, `overlays/`, `context-menus/`: Specialized component groups
+  - `src/lib/states/`: Global reactive state modules (`.svelte.ts`) — `events`, `filter`, `history`, `selection`, `workspace`, `jobs`, `loading`
+  - `src/lib/drag-drop/`: Custom drag-and-drop system (`actions.ts`, `data.ts`, `state.svelte.ts`)
+  - `src/lib/types/`: Shared TypeScript types and interfaces (including `CardVisualState`)
+  - `src/lib/styles/`: Global SCSS variables, mixins, theme system
+  - `src/lib/mime.ts`: `VizMimeTypes` enum (internal MIME type constants)
+  - `src/lib/entities/`, `src/lib/images/`, `src/lib/search/`, `src/lib/sort/`: Domain logic modules
   - `src/routes/`: Client-side pages and routes. Does **not** contain backend logic.
 - `docs/`: Developer, user, and architecture documentation.
 - `scripts/js/`: Node.js-based scripts for maintenance and code generation orchestration.
@@ -95,7 +107,14 @@ The `make generate-types` command orchestrates this entire process:
   - `make dev`: Provides instructions for running the separate backend and frontend development servers.
   - `make docker-up`: The recommended way to start the full stack (API, Viz, Postgres, Redis) for development.
   - `make generate-types`: **Crucial command**. Regenerates Go DTOs, GORM Entities, and the TypeScript API client from the OpenAPI spec.
-- **Package Manager**: All JavaScript packages in this project use **pnpm** (not npm). The `pnpm-lock.yaml` at the project root is the single source of truth. Run all package scripts and Commands (e.g., `pnpm svelte-check`, `pnpm dev`, `pnpm build`) inside the appropriate package directory (e.g., `viewfinder/`).
+- **Package Manager**: All JavaScript packages in this project use **pnpm** (not npm). The `pnpm-lock.yaml` at the project root is the single source of truth. Run all package scripts and commands (e.g., `pnpm dev`, `pnpm build`) inside the `viewfinder/` directory.
+- **Frontend Dev Server**: `cd viewfinder && pnpm dev` (serves on port 7777).
+- **Svelte Check (typecheck)**: `cd viewfinder && pnpm check` (runs `svelte-kit sync && svelte-check`).
+- **Testing**:
+  - Unit tests (logic/state only): `cd viewfinder && pnpm test:unit` (vitest)
+  - E2E tests (Playwright): `cd viewfinder && pnpm test:e2e`
+  - All tests: `cd viewfinder && pnpm test`
+  - Go tests: `make test-go` or `go test ./...`
 - **Docker**:
   - `docker-compose.yml`: Orchestrates all services for a complete production-like environment.
   - `Dockerfile.api`: Builds the Go backend binary, which also serves the static frontend assets.
