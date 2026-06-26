@@ -1,13 +1,17 @@
 <script lang="ts">
     import { type ImageAsset } from "$lib/api";
     import ImageCard from "$lib/components/ui/ImageCard.svelte";
+    import MaterialIcon from "$lib/components/ui/MaterialIcon.svelte";
     import { VizMimeTypes } from "$lib/constants";
+    import ContextMenu from "$lib/context-menu/ContextMenu.svelte";
+    import { createImageMenu } from "$lib/context-menu/menus/images";
     import { DragData } from "$lib/drag-drop/data";
     import { selectionManager } from "$lib/states/selection.svelte";
-    import MaterialIcon from "$lib/components/ui/MaterialIcon.svelte";
 
     let activeScope = $derived(selectionManager.activeScope);
     let activeItem = $derived(activeScope?.active as ImageAsset | undefined);
+
+    $inspect(activeScope);
 
     // activeScope.source contains the list of items
     let filmstripImages = $derived((activeScope?.source as ImageAsset[]) ?? []);
@@ -17,6 +21,23 @@
     let selectedItems = $derived(activeScope?.selected ?? new Set<ImageAsset>());
 
     let selectionAnchor = $state<ImageAsset | null>(null);
+
+    // Context menu state
+    let ctxShowMenu = $state(false);
+    let ctxItems = $derived(
+        createImageMenu(filmstripImages, activeScope, {
+            collection: undefined,
+            onUpdate: (image: ImageAsset) => {
+                activeScope.updateItem(image, filmstripImages);
+                filmstripImages = filmstripImages.map((i) => (i.uid === image.uid ? image : i));
+            },
+            onDelete: (uids: string[]) => {
+                activeScope.clear();
+                filmstripImages = filmstripImages.filter((i) => !uids.includes(i.uid));
+            }
+        })
+    );
+    let ctxAnchor: { x: number; y: number } | HTMLElement | null = $state(null);
 
     function handleImageClick(image: ImageAsset, e: MouseEvent | KeyboardEvent) {
         if (!activeScope) {
@@ -180,6 +201,7 @@
                 ondragend={() => {
                     DragData.clear();
                 }}
+                // oncontextmenu=
                 onclick={(e) => handleImageClick(image, e)}
                 onkeydown={(e) => handleItemKeydown(e, image)}
                 role="button"
@@ -192,6 +214,8 @@
             </div>
         {/each}
     {/if}
+    <!-- Context menu for right-click on assets -->
+    <ContextMenu bind:showMenu={ctxShowMenu} items={ctxItems} anchor={ctxAnchor} offsetY={4} />
 </nav>
 
 <style lang="scss">
