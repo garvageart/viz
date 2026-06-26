@@ -164,9 +164,8 @@
                     }
 
                     // Use the full selection set for drag
-                    const uids = activeScope && activeScope.size > 1
-                        ? activeScope.selectedItems.map((i) => i.uid)
-                        : [image.uid];
+                    const uids =
+                        activeScope && activeScope.size > 1 ? activeScope.selectedItems.map((i) => i.uid) : [image.uid];
 
                     const dragData = new DragData(VizMimeTypes.IMAGE_UIDS, uids);
                     dragData.setData(e.dataTransfer, "filmstrip");

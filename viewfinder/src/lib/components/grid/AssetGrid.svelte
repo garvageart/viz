@@ -755,8 +755,6 @@
         grid-template-columns: repeat(auto-fill, minmax(15em, 1fr));
     }
 
-
-
     .asset-card {
         display: flex;
         flex-direction: column;

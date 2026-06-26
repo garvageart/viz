@@ -1,5 +1,5 @@
 import { generateRandomString } from "$lib/utils/misc";
-import { setDragState, clearDragState } from "./state.svelte";
+import { clearDragState, setDragState } from "./state.svelte";
 
 const REF_MIME_TYPE = "application/x-viz-viz-ref";
 
