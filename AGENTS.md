@@ -95,6 +95,7 @@ The `make generate-types` command orchestrates this entire process:
   - `make dev`: Provides instructions for running the separate backend and frontend development servers.
   - `make docker-up`: The recommended way to start the full stack (API, Viz, Postgres, Redis) for development.
   - `make generate-types`: **Crucial command**. Regenerates Go DTOs, GORM Entities, and the TypeScript API client from the OpenAPI spec.
+- **Package Manager**: All JavaScript packages in this project use **pnpm** (not npm). The `pnpm-lock.yaml` at the project root is the single source of truth. Run all package scripts and Commands (e.g., `pnpm svelte-check`, `pnpm dev`, `pnpm build`) inside the appropriate package directory (e.g., `viewfinder/`).
 - **Docker**:
   - `docker-compose.yml`: Orchestrates all services for a complete production-like environment.
   - `Dockerfile.api`: Builds the Go backend binary, which also serves the static frontend assets.
