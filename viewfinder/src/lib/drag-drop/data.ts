@@ -1,4 +1,5 @@
 import { generateRandomString } from "$lib/utils/misc";
+import { setDragState, clearDragState } from "./state.svelte";
 
 const REF_MIME_TYPE = "application/x-viz-viz-ref";
 
@@ -44,7 +45,7 @@ export class DragData<T> {
         return { type: this.type, payload: this.payload };
     }
 
-    setData(dataTransfer: DataTransfer) {
+    setData(dataTransfer: DataTransfer, source?: string) {
         // 1. Store in-memory with a reference token
         const ref = generateRandomString(16);
         DragData.localRef = ref;
@@ -60,6 +61,9 @@ export class DragData<T> {
 
         // 3. Set the serialized data as fallback (for cross-window or if memory is cleared)
         dataTransfer.setData(this.type, this.toString());
+
+        // 4. Update global drag state so components can reactively track drag operations
+        setDragState(this.type, this.payload, source);
     }
 
     static getData<T>(dataTransfer: DataTransfer, type: string): DragData<T> | undefined {
@@ -88,6 +92,7 @@ export class DragData<T> {
         DragData.localRef = null;
         DragData.localType = null;
         DragData.localPayload = null;
+        clearDragState();
     }
 
     static isType(dataTransfer: DataTransfer, type: string): boolean {
