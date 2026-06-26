@@ -16,11 +16,13 @@
         showMetadata = $bindable(true),
         objectFit = "cover",
         imageVariant = "thumbnail",
-        priority = false
+        priority = false,
+        isSelected = false
     }: {
         asset: ImageAsset;
         variant?: "mini" | "full";
         showMetadata?: boolean;
+        isSelected?: boolean;
     } & Omit<AssetImageProps, "asset" | "variant"> & {
             imageVariant?: AssetImageProps["variant"];
         } = $props();
@@ -95,6 +97,7 @@
 {:else}
     <div
         class="image-card"
+        class:selected={isSelected}
         draggable="true"
         title={asset.name}
         role="button"
@@ -237,6 +240,17 @@
         display: flex;
         flex-direction: column;
         justify-content: flex-start;
+        position: relative;
+
+        &.selected::after {
+            content: "";
+            position: absolute;
+            inset: 0;
+            border: 2px solid var(--viz-primary);
+            border-radius: inherit;
+            pointer-events: none;
+            z-index: 1;
+        }
 
         &:focus {
             outline: none;

@@ -1,6 +1,6 @@
 <script lang="ts">
     import { goto } from "$app/navigation";
-    import { createCollection, updateCollection, type Collection } from "$lib/api";
+    import { addCollectionImages, createCollection, updateCollection, type Collection } from "$lib/api";
     import AssetGrid from "$lib/components/grid/AssetGrid.svelte";
     import AssetsShell from "$lib/components/ui/AssetsShell.svelte";
     import Button from "$lib/components/ui/Button.svelte";
@@ -14,11 +14,14 @@
     import ContextMenu from "$lib/context-menu/ContextMenu.svelte";
     import { createCollectionMenu } from "$lib/context-menu/menus/collections";
     import type { MenuItem } from "$lib/context-menu/types";
+    import { VizMimeTypes } from "$lib/constants";
+    import { DragData } from "$lib/drag-drop/data";
     import { sortCollections } from "$lib/sort/sort";
     import { filterManager } from "$lib/states/filter.svelte";
     import { isLayoutPage, sort } from "$lib/states/index.svelte";
     import { selectionManager, SelectionScopeNames } from "$lib/states/selection.svelte";
     import { toastState } from "$lib/toast-notifcations/notif-state.svelte";
+    import { invalidateViz } from "$lib/views/views.svelte";
     import type { AssetGridArray } from "$lib/types/asset";
     import { untrack, type ComponentProps } from "svelte";
     import type { PageProps } from "./$types";
@@ -55,6 +58,7 @@
     // Modal data for create/edit
     let modalData: Collection | undefined = $state();
     let modalMode: "create" | "edit" = $state("create");
+    let pendingDropUids: string[] | null = $state(null);
 
     function openFilterModal() {
         modalsManager.open(FilterModal, {});
@@ -81,13 +85,21 @@
                         });
 
                         if (res.status === 201) {
+                            const collectionUid = res.data.uid;
+
+                            // Add any dropped image UIDs to the new collection
+                            if (pendingDropUids && pendingDropUids.length > 0) {
+                                await addCollectionImages(collectionUid, { uids: pendingDropUids });
+                                pendingDropUids = null;
+                            }
+
                             toastState.addToast({
                                 message: `Created collection ${res.data.name}`,
                                 type: "success"
                             });
 
                             modalsManager.pop();
-                            goto(`/collections/${res.data.uid}`);
+                            goto(`/collections/${collectionUid}`);
                         } else {
                             toastState.addToast({
                                 message: `Failed to create collection: ${res.data.error || "Unknown error"}`,
@@ -194,13 +206,59 @@
         }
     });
 
+    async function handleCreateDrop(e: DragEvent) {
+        const target = e.currentTarget as HTMLElement;
+        target.classList.remove("drop-target");
+
+        if (!e.dataTransfer) {
+            return;
+        }
+
+        const uidsData = DragData.getData<string[]>(e.dataTransfer, VizMimeTypes.IMAGE_UIDS)?.payload;
+        if (!uidsData || uidsData.length === 0) {
+            return;
+        }
+
+        e.preventDefault();
+        e.stopPropagation();
+
+        pendingDropUids = uidsData;
+        openCollectionModal("create");
+    }
+
+    function handleCreateDragEnter(e: DragEvent) {
+        if (!e.dataTransfer || !DragData.isType(e.dataTransfer, VizMimeTypes.IMAGE_UIDS)) {
+            return;
+        }
+        e.preventDefault();
+        (e.currentTarget as HTMLElement).classList.add("drop-target");
+    }
+
+    function handleCreateDragOver(e: DragEvent) {
+        if (!e.dataTransfer || !DragData.isType(e.dataTransfer, VizMimeTypes.IMAGE_UIDS)) {
+            return;
+        }
+        e.preventDefault();
+        e.dataTransfer.dropEffect = "copy";
+        (e.currentTarget as HTMLElement).classList.add("drop-target");
+    }
+
+    function handleCreateDragLeave(e: DragEvent) {
+        const related = e.relatedTarget as HTMLElement | null;
+        const current = e.currentTarget as HTMLElement;
+        if (related && current.contains(related)) {
+            return;
+        }
+        current.classList.remove("drop-target");
+    }
+
     async function paginate() {
         pagination.page++;
     }
 </script>
 
-{#snippet collectionSnippet(collection: Collection)}
-    <CollectionCard {collection} />
+{#snippet collectionSnippet(collection: Collection, cardState: { isSelected: boolean })}
+    <CollectionCard {collection} isSelected={cardState.isSelected} />
 {/snippet}
 
 {#snippet toolbarSnippet()}
@@ -223,6 +281,10 @@
             onclick={() => {
                 openCollectionModal("create");
             }}
+            ondragenter={handleCreateDragEnter}
+            ondragover={handleCreateDragOver}
+            ondragleave={handleCreateDragLeave}
+            ondrop={handleCreateDrop}
         >
             Create
         </IconButton>
@@ -240,6 +302,10 @@
             onclick={() => {
                 openCollectionModal("create");
             }}
+            ondragenter={handleCreateDragEnter}
+            ondragover={handleCreateDragOver}
+            ondragleave={handleCreateDragLeave}
+            ondrop={handleCreateDrop}
         >
             Create Collection
             <MaterialIcon iconName="add" style="font-size: 2em;" />
@@ -330,5 +396,15 @@
         font-size: inherit;
         height: 100%;
         gap: 0.75rem;
+    }
+
+    :global(.toolbar-button.drop-target) {
+        background-color: var(--viz-80);
+        outline: 2px solid var(--viz-primary);
+    }
+
+    :global(#create_collection-button.drop-target) {
+        outline: 2px solid var(--viz-primary);
+        outline-offset: 2px;
     }
 </style>

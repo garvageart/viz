@@ -379,18 +379,18 @@
     />
 {/if}
 
-{#snippet imageCard(asset: ImageAsset)}
-    <ImageCard {asset} />
+{#snippet imageCard(asset: ImageAsset, cardState: { isSelected: boolean })}
+    <ImageCard {asset} isSelected={cardState.isSelected} />
 {/snippet}
 
-{#snippet collectionCard(collectionData: Collection)}
+{#snippet collectionCard(collectionData: Collection, cardState: { isSelected: boolean })}
     <a
         data-sveltekit-preload-data
         data-asset-id={collectionData.uid}
         class="collection-card-link"
         href="/collections/{collectionData.uid}"
     >
-        <CollectionCard collection={collectionData} />
+        <CollectionCard collection={collectionData} isSelected={cardState.isSelected} />
     </a>
 {/snippet}
 

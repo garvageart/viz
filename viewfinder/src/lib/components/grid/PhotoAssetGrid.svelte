@@ -19,6 +19,7 @@
     import { debounce } from "$lib/utils/misc";
     import hotkeys, { type HotkeysEvent } from "hotkeys-js";
     import { DateTime } from "luxon";
+    import type { CardVisualState } from "$lib/types/snippet";
     import { mount, unmount, untrack, type ComponentProps, type Snippet } from "svelte";
     import { SvelteSet } from "svelte/reactivity";
     import { fade } from "svelte/transition";
@@ -34,7 +35,7 @@
 
     interface PhotoSpecificProps {
         /** Custom photo card snippet - if not provided, uses default photo card */
-        photoCardSnippet?: Snippet<[ImageAsset]>;
+        photoCardSnippet?: Snippet<[ImageAsset, CardVisualState]>;
         /** Complete flat list of all images for cross-group range selection */
         allData?: ImageAsset[];
         /** Unique identifier for selection state management */
@@ -1241,8 +1242,8 @@
     </div>
 {/snippet}
 
-{#snippet imageCard(asset: ImageAsset)}
-    <ImageCard {asset} />
+{#snippet imageCard(asset: ImageAsset, cardState: CardVisualState)}
+    <ImageCard {asset} isSelected={cardState.isSelected} />
 {/snippet}
 
 {#if view === "grid"}

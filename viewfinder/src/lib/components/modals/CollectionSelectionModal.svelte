@@ -12,6 +12,7 @@
     import { invalidateViz } from "$lib/views/views.svelte";
     import { onMount } from "svelte";
     import AssetGrid from "../grid/AssetGrid.svelte";
+    import type { CardVisualState } from "$lib/types/snippet";
     import VizViewContainer from "../panels/VizViewContainer.svelte";
     import Button from "../ui/Button.svelte";
     import CollectionCard from "../ui/CollectionCard.svelte";
@@ -131,7 +132,7 @@
     }
 </script>
 
-{#snippet collectionSnippet(collection: AugmentedCollection)}
+{#snippet collectionSnippet(collection: AugmentedCollection, cardState: CardVisualState)}
     <div
         role="button"
         tabindex="0"
@@ -150,7 +151,7 @@
             }
         }}
     >
-        <CollectionCard {collection} />
+        <CollectionCard {collection} isSelected={cardState.isSelected} />
     </div>
 {/snippet}
 

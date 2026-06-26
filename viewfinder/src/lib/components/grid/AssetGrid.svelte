@@ -4,7 +4,7 @@
     import { debugMode, isLayoutPage, sort, tableColumnSettings } from "$lib/states/index.svelte";
     import { selectionManager } from "$lib/states/selection.svelte";
     import type { AssetGridArray, AssetSortBy } from "$lib/types/asset";
-    import type { SvelteSnippet } from "$lib/types/snippet";
+    import type { CardVisualState, SvelteSnippet } from "$lib/types/snippet";
     import { tryParseDate } from "$lib/utils/dates";
     import { buildGridArray } from "$lib/utils/dom";
     import { snakeToTitle } from "$lib/utils/strings";
@@ -34,7 +34,7 @@
 
     export interface AssetGridProps<T extends { uid: string } & Record<string, any>> {
         data: T[];
-        assetSnippet: SvelteSnippet<[T]>;
+        assetSnippet: SvelteSnippet<[T, CardVisualState]>;
         assetGridArray?: AssetGridArray<T>;
         view?: Omit<AssetGridView, "grid">;
         assetGridDisplayProps?: SvelteHTMLElements["div"];
@@ -594,7 +594,7 @@
         {#if isDisabled}
             <div class="disabled-overlay"></div>
         {/if}
-        {@render assetSnippet(assetData)}
+        {@render assetSnippet(assetData, { isSelected })}
     </div>
 {/snippet}
 
@@ -755,45 +755,26 @@
         grid-template-columns: repeat(auto-fill, minmax(15em, 1fr));
     }
 
-    /* Zebra striping for grid cards (matches table zebra) */
-    .viz-asset-grid-container > .asset-card {
-        background-color: var(--viz-bg-color);
-        transition: background-color 120ms ease-in-out;
-    }
 
-    .viz-asset-grid-container > .asset-card:nth-child(even) {
-        background-color: color-mix(in srgb, var(--viz-bg-color) 78%, white 22%);
-    }
-
-    .viz-asset-grid-container > .asset-card:hover {
-        background-color: color-mix(in srgb, var(--viz-bg-color) 70%, white 30%);
-    }
-
-    .viz-asset-grid-container > .asset-card.selected-card,
-    .viz-asset-grid-container > .asset-card:focus-visible {
-        background-color: color-mix(in srgb, var(--viz-bg-color) 60%, white 40%);
-        outline: 2px solid var(--viz-60);
-        outline-offset: 0px;
-        border-radius: 0.5em;
-    }
-
-    .viz-asset-grid-container.is-active > .asset-card.selected-card,
-    .viz-asset-grid-container.is-active > .asset-card:focus-visible {
-        outline-color: var(--viz-primary);
-    }
 
     .asset-card {
         display: flex;
         flex-direction: column;
         justify-content: flex-start;
-        border-radius: 0.5em;
-        overflow: hidden;
         outline: none;
+        transition: background-color 120ms ease-in-out;
+
+        &:nth-child(even) {
+            background-color: color-mix(in srgb, var(--viz-bg-color) 78%, white 22%);
+        }
+
+        &:hover {
+            background-color: color-mix(in srgb, var(--viz-bg-color) 70%, white 30%);
+        }
 
         &:focus,
         &:focus-visible {
             outline: none;
-            box-shadow: none;
         }
     }
 
