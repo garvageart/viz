@@ -437,7 +437,7 @@ class FilterManager {
     scopes: Map<string, FilterScope<ImageFilters, ImageAsset> | FilterScope<CollectionFilters, Collection>> = $state(
         new Map()
     );
-    activeScopeType: "images" | "collections" | null = $state("images");
+    activeScopeType: "images" | "collections" | null = $state(null);
     keepFilters: boolean = $state(false);
 
     private dbPromise: Promise<IDBPDatabase> | null = null;
