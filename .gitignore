@@ -75,3 +75,6 @@ viewfinder/tools/icon-gen/failed-icons.json
 
 # wasm-vips generated assets
 /viewfinder/static/wasm/
+
+# Swarm-tools task tracking
+.hive/

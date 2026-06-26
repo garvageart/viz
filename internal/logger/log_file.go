@@ -1,3 +1,16 @@
+// Package logger provides file-based logging functionality for the viz application.
+//
+// This package implements a FileLog type that handles writing log data to files
+// in the application's log directory. It supports automatic directory creation
+// and append-only file operations to prevent log data loss.
+//
+// Usage:
+//   - Create a FileLog with Directory and Filename fields
+//   - Call Open() to get a file handle for writing
+//   - Use Write() to log data to the file
+//   - The FilePath() method returns the full path to the log file
+//
+// The package integrates with the slog standard library for structured logging.
 package logger
 
 import (

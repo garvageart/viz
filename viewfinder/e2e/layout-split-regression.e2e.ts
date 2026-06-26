@@ -223,6 +223,8 @@ test.describe("Layout Split Regression", () => {
         // Dump console errors
         console.log("=== CONSOLE ERRORS ===");
         consoleErrors.forEach((e) => console.log(`ERROR: ${e}`));
-        expect(consoleErrors.filter((e) => e.includes("effect_update_depth_exceeded") || e.includes("NaN")).length).toBe(0);
+        expect(
+            consoleErrors.filter((e) => e.includes("effect_update_depth_exceeded") || e.includes("NaN")).length
+        ).toBe(0);
     });
 });

@@ -1,6 +1,6 @@
-import { describe, it, expect } from "vitest";
-import { SplitNode, TabGroup, Workspace } from "./model.svelte";
+import { describe, expect, it } from "vitest";
 import VizView from "$lib/views/views.svelte";
+import { SplitNode, TabGroup, Workspace } from "./model.svelte";
 
 describe("Workspace.splitGroup", () => {
     it("should split right on a tab in a nested layout without collapsing", () => {

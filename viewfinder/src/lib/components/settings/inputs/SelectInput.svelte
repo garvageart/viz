@@ -13,8 +13,6 @@
 
     let { label, value = $bindable(""), options = [], description = "", disabled = false, onchange }: Props = $props();
 
-    
-    
     // Case-insensitive match logic
     const selectedValue = $derived.by(() => {
         if (!value) {
