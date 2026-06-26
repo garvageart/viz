@@ -22,9 +22,4 @@ export const CAN_DEBUG =
     localStorage.getItem("viz:debugMode") === "true";
 export const DYNAMIC_ROUTE_REGEX = /\[.*\].*$/;
 
-export enum VizMimeTypes {
-    IMAGE_UIDS = "application/x-viz.image.uids",
-    IMAGE_URLS = "application/x-viz.image.urls",
-    COLLECTION_UIDS = "application/x-viz.collection.uids",
-    TAB_VIEW = "application/x-viz.tab.view"
-}
+export { VizMimeTypes } from "./mime";
