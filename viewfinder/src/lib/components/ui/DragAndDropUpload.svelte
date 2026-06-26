@@ -3,6 +3,7 @@
     import { addCollectionImages, createCollection, type ImageAsset } from "$lib/api";
     import { VizMimeTypes } from "$lib/constants";
     import { DragData } from "$lib/drag-drop/data";
+    import { dragState } from "$lib/drag-drop/state.svelte";
     import { SelectionScope } from "$lib/states/selection.svelte";
     import { toastState } from "$lib/toast-notifcations/notif-state.svelte";
     import { SUPPORTED_IMAGE_TYPES, SUPPORTED_RAW_FILES, type SupportedImageTypes } from "$lib/types/images";
@@ -211,12 +212,31 @@
         }
     }
 
+    function isRelevantFileDrop(e: DragEvent): boolean {
+        if (!e.dataTransfer?.types) {
+            return false;
+        }
+
+        // Skip if an internal app drag is active - we only want OS file drops here
+        if (dragState.isActive) {
+            return false;
+        }
+
+        // Skip if any app-internal MIME type is present
+        const appMimeTypes = [VizMimeTypes.IMAGE_UIDS, VizMimeTypes.COLLECTION_UIDS, VizMimeTypes.TAB_VIEW];
+        for (const t of appMimeTypes) {
+            if (e.dataTransfer.types.includes(t)) {
+                return false;
+            }
+        }
+
+        // Only handle drops that contain actual files
+        return e.dataTransfer.types.includes("Files") && e.dataTransfer.files.length > 0;
+    }
+
     function withRelevantDrag(handler: (e: DragEvent) => void | Promise<void>) {
         return (e: DragEvent) => {
-            if (
-                e.dataTransfer?.types &&
-                (e.dataTransfer.types.includes("Files") || e.dataTransfer.types.includes(VizMimeTypes.IMAGE_UIDS))
-            ) {
+            if (isRelevantFileDrop(e)) {
                 return handler(e);
             }
         };

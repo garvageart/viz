@@ -1,6 +1,8 @@
 <script lang="ts">
     import { type ImageAsset } from "$lib/api";
     import ImageCard from "$lib/components/ui/ImageCard.svelte";
+    import { VizMimeTypes } from "$lib/constants";
+    import { DragData } from "$lib/drag-drop/data";
     import { selectionManager } from "$lib/states/selection.svelte";
     import MaterialIcon from "$lib/components/ui/MaterialIcon.svelte";
 
@@ -146,6 +148,39 @@
                 class="filmstrip-item"
                 class:active={isActive}
                 class:selected={isSelected}
+                draggable={true}
+                ondragstart={(e: DragEvent) => {
+                    if (!e.dataTransfer) {
+                        return;
+                    }
+
+                    // Select this image if not already in the selection
+                    if (!activeScope?.has(image)) {
+                        if (e.shiftKey || e.ctrlKey || e.metaKey) {
+                            activeScope?.add(image);
+                        } else {
+                            activeScope?.select(image);
+                        }
+                    }
+
+                    // Use the full selection set for drag
+                    const uids = activeScope && activeScope.size > 1
+                        ? activeScope.selectedItems.map((i) => i.uid)
+                        : [image.uid];
+
+                    const dragData = new DragData(VizMimeTypes.IMAGE_UIDS, uids);
+                    dragData.setData(e.dataTransfer, "filmstrip");
+                    e.dataTransfer.effectAllowed = "copy";
+
+                    const target = e.currentTarget as HTMLElement;
+                    const img = target.querySelector("img");
+                    if (img) {
+                        e.dataTransfer.setDragImage(img, 0, 0);
+                    }
+                }}
+                ondragend={() => {
+                    DragData.clear();
+                }}
                 onclick={(e) => handleImageClick(image, e)}
                 onkeydown={(e) => handleItemKeydown(e, image)}
                 role="button"

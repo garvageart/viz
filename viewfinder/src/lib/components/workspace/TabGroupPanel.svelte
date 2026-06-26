@@ -15,8 +15,9 @@
         buildLayoutContextMenu,
         type TabHandlers
     } from "./workspace-context";
-    import type VizView from "$lib/views/views.svelte";
+    import VizView from "$lib/views/views.svelte";
     import { goto } from "$app/navigation";
+    import { VizMimeTypes } from "$lib/constants";
     import { DragData } from "$lib/drag-drop/data";
     import tippy, { type Instance } from "tippy.js";
 
@@ -290,6 +291,58 @@
         }
     }
 
+    async function openCollectionFromDrop(uid: string, name: string) {
+        const collectionPath = `/collections/${uid}`;
+
+        const existingView = group.views.find((v) => v.path === collectionPath);
+        if (existingView) {
+            group.setActive(existingView.id);
+            return;
+        }
+
+        const { default: CollectionPage } = await import("../../../routes/(app)/collections/[uid]/+page.svelte");
+        const newView = new VizView({
+            name,
+            component: CollectionPage as any,
+            path: collectionPath
+        });
+        group.addTab(newView);
+    }
+
+    function handleHeaderDragOver(e: DragEvent) {
+        if (!e.dataTransfer) {
+            return;
+        }
+
+        if (e.dataTransfer.types.includes(VizMimeTypes.COLLECTION_UIDS)) {
+            e.preventDefault();
+            e.dataTransfer.dropEffect = "copy";
+            const target = e.currentTarget as HTMLElement;
+            target.classList.add("drop-active");
+        }
+    }
+
+    function handleHeaderDragLeave(e: DragEvent) {
+        const target = e.currentTarget as HTMLElement;
+        target.classList.remove("drop-active");
+    }
+
+    async function handleHeaderDrop(e: DragEvent) {
+        const target = e.currentTarget as HTMLElement;
+        target.classList.remove("drop-active");
+
+        if (!e.dataTransfer) {
+            return;
+        }
+
+        const data = DragData.getData<{ uid: string; name: string }>(e.dataTransfer, VizMimeTypes.COLLECTION_UIDS);
+        if (data) {
+            e.preventDefault();
+            e.stopPropagation();
+            await openCollectionFromDrop(data.payload.uid, data.payload.name);
+        }
+    }
+
     async function handleTabDrop(e: DragEvent, view: VizView) {
         if (!e.dataTransfer) {
             return;
@@ -313,6 +366,16 @@
                 return;
             }
         }
+
+        // Handle collection drop on any tab - open collection in this group
+        if (e.dataTransfer.types.includes(VizMimeTypes.COLLECTION_UIDS)) {
+            const data = DragData.getData<{ uid: string; name: string }>(e.dataTransfer, VizMimeTypes.COLLECTION_UIDS);
+            if (data) {
+                e.preventDefault();
+                e.stopPropagation();
+                await openCollectionFromDrop(data.payload.uid, data.payload.name);
+            }
+        }
     }
 </script>
 
@@ -328,6 +391,9 @@
         onmouseleave={() => (isHoveringHeader = false)}
         use:tabOps.addToGroup={group.id}
         oncontextmenu={triggerHeaderContextMenu}
+        ondragover={handleHeaderDragOver}
+        ondragleave={handleHeaderDragLeave}
+        ondrop={handleHeaderDrop}
     >
         <div
             bind:this={headerEl}
