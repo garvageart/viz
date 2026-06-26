@@ -186,6 +186,12 @@
         const dragData = new DragData(VizMimeTypes.COLLECTION_UIDS, payload);
         dragData.setData(e.dataTransfer, "collection-grid");
         e.dataTransfer.effectAllowed = "copy";
+
+        const target = e.currentTarget as HTMLElement;
+        const img = target.querySelector("img");
+        if (img) {
+            e.dataTransfer.setDragImage(img, 0, 0);
+        }
     }}
     ondragend={() => {
         DragData.clear();

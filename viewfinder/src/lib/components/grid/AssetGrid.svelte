@@ -42,6 +42,7 @@
         searchValue?: string;
         noAssetsMessage?: string;
         disableMultiSelection?: boolean;
+        assetClick?: () => void;
         assetDblClick?: (
             e: MouseEvent & {
                 currentTarget: EventTarget & (HTMLDivElement | HTMLTableRowElement);
@@ -68,6 +69,7 @@
         searchValue = $bindable(""),
         noAssetsMessage = "No assets found",
         assetDblClick,
+        assetClick,
         disableOutsideUnselect = $bindable(false),
         disableMultiSelection = $bindable(false),
         onassetcontext = $bindable(),
@@ -300,6 +302,8 @@
         } else {
             selection.select(asset);
         }
+
+        assetClick?.();
     }
 
     function handleKeydownCardSelect(asset: T, e: KeyboardEvent) {
@@ -761,14 +765,6 @@
         justify-content: flex-start;
         outline: none;
         transition: background-color 120ms ease-in-out;
-
-        &:nth-child(even) {
-            background-color: color-mix(in srgb, var(--viz-bg-color) 78%, white 22%);
-        }
-
-        &:hover {
-            background-color: color-mix(in srgb, var(--viz-bg-color) 70%, white 30%);
-        }
 
         &:focus,
         &:focus-visible {

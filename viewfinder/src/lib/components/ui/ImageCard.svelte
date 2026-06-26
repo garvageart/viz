@@ -2,10 +2,7 @@
     import { type ImageAsset } from "$lib/api";
     import { VizMimeTypes } from "$lib/constants";
     import { DragData } from "$lib/drag-drop/data";
-    import { getImageLabel, getTakenAt } from "$lib/utils/images";
-    import { normalizeBase64 } from "$lib/utils/misc";
-    import { onMount } from "svelte";
-    import { thumbHashToDataURL } from "thumbhash";
+    import { getImageLabel, getTakenAt, getThumbhashURL } from "$lib/utils/images";
     import ImageLabelViewer from "../image-tools/ImageLabelViewer.svelte";
     import AssetImage, { type AssetImageProps } from "./AssetImage.svelte";
     import MaterialIcon from "./MaterialIcon.svelte";
@@ -28,25 +25,8 @@
         } = $props();
 
     let imageDate = $derived(getTakenAt(asset));
-    let placeholderDataURL = $state<string | undefined>();
+    // let placeholderDataURL = $derived(getThumbhashURL(asset));
     let imageLoaded = $state(false);
-
-    // Generate thumbhash placeholder
-    onMount(() => {
-        if (asset.image_metadata?.thumbhash) {
-            try {
-                const normalizedThumbhash = normalizeBase64(asset.image_metadata.thumbhash);
-                const binaryString = atob(normalizedThumbhash);
-                const bytes = new Uint8Array(binaryString.length);
-                for (let i = 0; i < binaryString.length; i++) {
-                    bytes[i] = binaryString.charCodeAt(i);
-                }
-                placeholderDataURL = thumbHashToDataURL(bytes);
-            } catch (error) {
-                console.warn("Failed to decode thumbhash:", error);
-            }
-        }
-    });
 
     function handleDragStart(e: DragEvent) {
         if (variant === "mini") {

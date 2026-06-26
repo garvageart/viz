@@ -1,4 +1,5 @@
 <script lang="ts">
+    import { page } from "$app/state";
     import { type ImageAsset } from "$lib/api";
     import ImageCard from "$lib/components/ui/ImageCard.svelte";
     import MaterialIcon from "$lib/components/ui/MaterialIcon.svelte";
@@ -6,27 +7,60 @@
     import ContextMenu from "$lib/context-menu/ContextMenu.svelte";
     import { createImageMenu } from "$lib/context-menu/menus/images";
     import { DragData } from "$lib/drag-drop/data";
-    import { selectionManager } from "$lib/states/selection.svelte";
+    import { selectionManager, SelectionScopeNames } from "$lib/states/selection.svelte";
+    import { workspaceState } from "$lib/states/workspace.svelte";
 
     let activeScope = $derived(selectionManager.activeScope);
     let activeItem = $derived(activeScope?.active as ImageAsset | undefined);
 
-    $inspect(activeScope);
-
     // activeScope.source contains the list of items
     let filmstripImages = $derived((activeScope?.source as ImageAsset[]) ?? []);
-
     let activeItemIndex = $derived(filmstripImages.findIndex((img) => img.uid === activeItem?.uid));
-
-    let selectedItems = $derived(activeScope?.selected ?? new Set<ImageAsset>());
+    let selectedItems = $derived(
+        activeScope && activeScope.size > 1
+            ? (activeScope.selectedItems as ImageAsset[])
+            : activeItem
+              ? [activeItem]
+              : []
+    );
 
     let selectionAnchor = $state<ImageAsset | null>(null);
+
+    let collection = $derived.by(() => {
+        if (!activeScope?.id) {
+            return undefined;
+        }
+
+        let collectionUid: string | null = null;
+        if (activeScope.id.startsWith(SelectionScopeNames.COLLECTION_PREFIX)) {
+            collectionUid = activeScope.id.replace(SelectionScopeNames.COLLECTION_PREFIX, "");
+        } else if (activeScope.id.startsWith("filmstrip-collection-")) {
+            collectionUid = activeScope.id.replace("filmstrip-collection-", "");
+        }
+
+        if (!collectionUid) {
+            return undefined;
+        }
+
+        // 1. Try to get it from the workspace views
+        const view = workspaceState.workspace?.findViewWithPath("/collections/" + collectionUid);
+        if (view?.viewData?.data) {
+            return view.viewData.data;
+        }
+
+        // 2. Try to get it from the current page data
+        if (page.data?.uid === collectionUid) {
+            return page.data;
+        }
+
+        return undefined;
+    });
 
     // Context menu state
     let ctxShowMenu = $state(false);
     let ctxItems = $derived(
         createImageMenu(filmstripImages, activeScope, {
-            collection: undefined,
+            collection,
             onUpdate: (image: ImageAsset) => {
                 activeScope.updateItem(image, filmstripImages);
                 filmstripImages = filmstripImages.map((i) => (i.uid === image.uid ? image : i));
@@ -103,6 +137,34 @@
                 }
             }
         }
+    }
+
+    let ctxOffsetY = $state(4);
+
+    function handleContextMenu(e: MouseEvent, image: ImageAsset) {
+        if (!activeScope) {
+            return;
+        }
+
+        e.preventDefault();
+
+        // If the right-clicked image is not already selected, select it as the active item
+        if (!activeScope.has(image)) {
+            activeScope.select(image);
+            selectionAnchor = image;
+        }
+
+        const spaceBelow = window.innerHeight - e.clientY;
+        ctxAnchor = { x: e.clientX, y: e.clientY };
+
+        if (spaceBelow < 320) {
+            // Offset upwards to prevent overlapping/clamping issues near the bottom
+            ctxOffsetY = -200;
+        } else {
+            ctxOffsetY = 4;
+        }
+
+        ctxShowMenu = true;
     }
 
     let containerRef = $state<HTMLElement>();
@@ -185,8 +247,7 @@
                     }
 
                     // Use the full selection set for drag
-                    const uids =
-                        activeScope && activeScope.size > 1 ? activeScope.selectedItems.map((i) => i.uid) : [image.uid];
+                    const uids = selectedItems?.map((i) => i.uid ?? undefined) ?? [image.uid];
 
                     const dragData = new DragData(VizMimeTypes.IMAGE_UIDS, uids);
                     dragData.setData(e.dataTransfer, "filmstrip");
@@ -201,7 +262,7 @@
                 ondragend={() => {
                     DragData.clear();
                 }}
-                // oncontextmenu=
+                oncontextmenu={(e) => handleContextMenu(e, image)}
                 onclick={(e) => handleImageClick(image, e)}
                 onkeydown={(e) => handleItemKeydown(e, image)}
                 role="button"
@@ -215,7 +276,7 @@
         {/each}
     {/if}
     <!-- Context menu for right-click on assets -->
-    <ContextMenu bind:showMenu={ctxShowMenu} items={ctxItems} anchor={ctxAnchor} offsetY={4} />
+    <ContextMenu bind:showMenu={ctxShowMenu} items={ctxItems} anchor={ctxAnchor} offsetY={ctxOffsetY} />
 </nav>
 
 <style lang="scss">

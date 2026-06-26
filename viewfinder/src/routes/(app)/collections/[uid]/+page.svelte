@@ -72,6 +72,7 @@
     import { DateTime } from "luxon";
     import { onDestroy, tick, untrack, type ComponentProps } from "svelte";
     import type { PageProps } from "./$types";
+    import { dev } from "$app/environment";
 
     let { data, view }: PageProps & { view?: VizView } = $props();
 
@@ -301,7 +302,10 @@
             }
             selectionScope.active = asset;
 
-            console.log("asset", $state.snapshot(asset));
+            if (dev) {
+                console.log("asset", $state.snapshot(asset));
+            }
+
             ctxAnchor = anchor;
             ctxShowMenu = true;
         },

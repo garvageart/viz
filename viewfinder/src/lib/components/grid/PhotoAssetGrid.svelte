@@ -64,6 +64,7 @@
         searchValue = $bindable(""),
         noAssetsMessage = "No photos found",
         assetDblClick,
+        assetClick,
         disableOutsideUnselect = $bindable(false),
         onassetcontext = $bindable(),
         assetGridDisplayProps = $bindable({}),
@@ -976,6 +977,8 @@
             selection.select(asset);
             selectionAnchor = asset;
         }
+
+        assetClick?.();
     }
 
     function shouldKeepSelection(target: HTMLElement | null): boolean {

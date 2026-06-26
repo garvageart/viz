@@ -5,12 +5,13 @@ export function createDefaultLayout(): Workspace {
     const collectionsView = viewRegistry.find((v) => v.path === "/collections");
     const filterView = viewRegistry.find((v) => v.name === "Filter");
     const clockView = viewRegistry.find((v) => v.name === "Clock");
+    const filmstripView = viewRegistry.find((v) => v.name === "Filmstrip");
 
     const root = new SplitNode({
         orientation: "horizontal",
         children: [
             new SplitNode({
-                size: 25,
+                size: 20,
                 orientation: "vertical",
                 children: [
                     new TabGroup({
@@ -23,9 +24,19 @@ export function createDefaultLayout(): Workspace {
                     })
                 ]
             }),
-            new TabGroup({
-                size: 75,
-                views: collectionsView ? [collectionsView] : []
+            new SplitNode({
+                size: 80,
+                orientation: "vertical",
+                children: [
+                    new TabGroup({
+                        size: 80,
+                        views: collectionsView ? [collectionsView] : []
+                    }),
+                    new TabGroup({
+                        size: 20,
+                        views: filmstripView ? [filmstripView] : []
+                    })
+                ]
             })
         ]
     });

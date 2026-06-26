@@ -1,6 +1,13 @@
 <script lang="ts">
     import { goto } from "$app/navigation";
-    import { addCollectionImages, createCollection, updateCollection, type Collection } from "$lib/api";
+    import {
+        addCollectionImages,
+        createCollection,
+        listCollectionImages,
+        updateCollection,
+        type Collection,
+        type ImageAsset
+    } from "$lib/api";
     import AssetGrid from "$lib/components/grid/AssetGrid.svelte";
     import AssetsShell from "$lib/components/ui/AssetsShell.svelte";
     import Button from "$lib/components/ui/Button.svelte";
@@ -54,6 +61,41 @@
     const scopeId = $derived(SelectionScopeNames.COLLECTIONS_MAIN);
     const selectionScope = $derived(selectionManager.getScope<Collection>(scopeId));
     const firstSelectedCollection = $derived(selectionScope.selectedItems[0]);
+
+    // Track to discard stale responses when selection changes rapidly
+    let activeFilmstripUid = $state<string | null>(null);
+
+    // When a collection is selected, fetch its images and populate a scope
+    // that the Filmstrip panel reads from (via activeScope.source)
+    $effect(() => {
+        const collection = firstSelectedCollection;
+        const uid = collection?.uid ?? null;
+        activeFilmstripUid = uid;
+
+        if (!uid) {
+            const activeId = selectionManager.activeScopeId;
+            if (activeId?.startsWith("filmstrip-collection-")) {
+                selectionManager.removeScope(activeId);
+            }
+            return;
+        }
+
+        const imageScopeId = `filmstrip-collection-${uid}`;
+
+        listCollectionImages(uid, { limit: 200 }).then((res) => {
+            if (activeFilmstripUid !== uid) {
+                return; // stale response — user selected a different collection
+            }
+
+            if (res.status === 200) {
+                const images = (res.data.items ?? []).map((i) => i.image);
+                const scope = selectionManager.getScope<ImageAsset>(imageScopeId);
+                scope.setSource(images);
+                scope.clear();
+                selectionManager.setActive(imageScopeId);
+            }
+        });
+    });
 
     // Modal data for create/edit
     let modalData: Collection | undefined = $state();
