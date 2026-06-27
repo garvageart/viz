@@ -283,11 +283,19 @@
 
     function handleTabDragLeave(event: DragEvent) {
         const target = event.currentTarget as HTMLElement;
-        target.classList.remove("drop-target-active");
+        const rect = target.getBoundingClientRect();
+        if (
+            event.clientX < rect.left ||
+            event.clientX >= rect.right ||
+            event.clientY < rect.top ||
+            event.clientY >= rect.bottom
+        ) {
+            target.classList.remove("drop-target-active");
 
-        if (dragTooltip) {
-            dragTooltip.destroy();
-            dragTooltip = null;
+            if (dragTooltip) {
+                dragTooltip.destroy();
+                dragTooltip = null;
+            }
         }
     }
 
@@ -324,7 +332,10 @@
 
     function handleHeaderDragLeave(e: DragEvent) {
         const target = e.currentTarget as HTMLElement;
-        target.classList.remove("drop-active");
+        const rect = target.getBoundingClientRect();
+        if (e.clientX < rect.left || e.clientX >= rect.right || e.clientY < rect.top || e.clientY >= rect.bottom) {
+            target.classList.remove("drop-active");
+        }
     }
 
     async function handleHeaderDrop(e: DragEvent) {

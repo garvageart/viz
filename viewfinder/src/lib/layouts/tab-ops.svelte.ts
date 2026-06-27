@@ -46,8 +46,11 @@ export class TabOps {
             });
         };
 
-        const onDragLeave = () => {
-            this.removeOverlay(node);
+        const onDragLeave = (e: DragEvent) => {
+            const rect = node.getBoundingClientRect();
+            if (e.clientX < rect.left || e.clientX >= rect.right || e.clientY < rect.top || e.clientY >= rect.bottom) {
+                this.removeOverlay(node);
+            }
         };
 
         const onDrop = (e: DragEvent) => {
@@ -92,8 +95,11 @@ export class TabOps {
             }
         };
 
-        const onDragLeave = () => {
-            node.classList.remove("drop-active");
+        const onDragLeave = (e: DragEvent) => {
+            const rect = node.getBoundingClientRect();
+            if (e.clientX < rect.left || e.clientX >= rect.right || e.clientY < rect.top || e.clientY >= rect.bottom) {
+                node.classList.remove("drop-active");
+            }
         };
 
         const onDrop = (e: DragEvent) => {
