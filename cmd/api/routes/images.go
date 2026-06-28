@@ -103,6 +103,14 @@ func createNewImageEntity(logger *slog.Logger, fileName string, libvipsImg *libv
 	keywordsPtr := imageops.FindExif(exifData, "Keywords", "Subject")
 	if keywordsPtr != nil {
 		keywords = strings.Split(*keywordsPtr, ",")
+		// Filter out empty strings from comma-separated list
+		filtered := keywords[:0]
+		for _, k := range keywords {
+			if strings.TrimSpace(k) != "" {
+				filtered = append(filtered, k)
+			}
+		}
+		keywords = filtered
 	}
 
 	metadata := dto.ImageMetadata{
@@ -1093,7 +1101,7 @@ func serveTransformedImage(res http.ResponseWriter, req *http.Request, logger *s
 		ext = imgEnt.ImageMetadata.FileType
 	}
 
-	res.Header().Set("Content-Type", "image/"+ext)
+	res.Header().Set("Content-Type", images.ImageContentType(ext))
 
 	// 4. Check our server-side cache
 	cacheKey := strings.Trim(transformETag, `"`)
@@ -1105,6 +1113,8 @@ func serveTransformedImage(res http.ResponseWriter, req *http.Request, logger *s
 		logger.Debug("server-side cache hit", slog.String("key", cacheKey))
 		res.Header().Set("Etag", transformETag)
 		res.Header().Set("Last-Modified", imgEnt.UpdatedAt.UTC().Format(http.TimeFormat))
+		// Prevent XSS if the image is an SVG or other dangerous type
+		res.Header().Set("Content-Security-Policy", "sandbox")
 
 		if isDownload {
 			res.Header().Set("Cache-Control", "private, no-cache, no-store, must-revalidate")

@@ -14,8 +14,6 @@ import (
 	"viz/internal/entities"
 	libvips "viz/internal/images/ops/vips"
 	libos "viz/internal/os"
-
-	"github.com/galdor/go-thumbhash"
 )
 
 type LibvipsImage struct {
@@ -107,55 +105,17 @@ func ReadToImage(imgBytes []byte) (image.Image, string, error) {
 	return img, str, err
 }
 
-func GenerateThumbhash(img image.Image) (hash []byte, err error) {
-	hashBytes := thumbhash.EncodeImage(img)
-	return hashBytes, nil
-}
-
+// ConvertEXIFDateTime parses an EXIF date-time string using the same format
+// list as ParseExifDate. It returns nil if parsing fails.
+// Deprecated: Prefer ParseExifDate for new code — it supports optional timezone
+// offsets and returns a (time.Time, bool) pair.
 func ConvertEXIFDateTime(exifDateTime string) *time.Time {
 	if exifDateTime == "" {
 		return nil
 	}
-
-	// Trim whitespace and common surrounding tokens
-	s := strings.TrimSpace(exifDateTime)
-
-	// Common EXIF/date formats we want to accept. Try them in order.
-	layouts := []string{
-		// Standard EXIF layout
-		"2006:01:02 15:04:05",
-		// Some tools use dash separators
-		"2006-01-02 15:04:05",
-		// RFC3339 / ISO formats
-		time.RFC3339,
-		"2006:01:02T15:04:05Z07:00",
-		"2006-01-02T15:04:05Z07:00",
-		// With/without timezone designator
-		"2006:01:02 15:04:05-07:00",
-		"2006-01-02 15:04:05-07:00",
+	if t, ok := ParseExifDate(&exifDateTime); ok {
+		return &t
 	}
-
-	// Some EXIF values might include extra annotations like "2006:01:02 15:04:05 (some text)".
-	// Strip trailing parenthetical content if present.
-	if idx := strings.Index(s, " ("); idx > 0 {
-		s = strings.TrimSpace(s[:idx])
-	}
-
-	for _, l := range layouts {
-		if t, err := time.Parse(l, s); err == nil {
-			return &t
-		}
-	}
-
-	// As a last resort, try to parse only the date portion if time.Parse fails
-	// e.g., "2006:01:02" or "2006-01-02"
-	dateOnlyLayouts := []string{"2006:01:02", "2006-01-02"}
-	for _, l := range dateOnlyLayouts {
-		if t, err := time.Parse(l, s); err == nil {
-			return &t
-		}
-	}
-
 	return nil
 }
 

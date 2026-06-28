@@ -134,16 +134,6 @@ func ImageProcess(ctx context.Context, db *gorm.DB, imgEnt entities.ImageAsset, 
 		return fmt.Errorf("failed to create thumbnail: %w", err)
 	}
 
-	if onProgress != nil {
-		onProgress("Creating thumbnail for thumbhash", 40)
-	}
-
-	// Create a very small thumbnail for thumbhash (e.g., 32x32)
-	smallThumbData, err := imageops.CreateThumbnailWithSize(originalData, 32, 32)
-	if err != nil {
-		return fmt.Errorf("failed to create small thumbnail for thumbhash: %w", err)
-	}
-
 	loggerFields := watermill.LogFields{
 		"uid":  imgEnt.Uid,
 		"name": imgEnt.Name,
@@ -161,21 +151,20 @@ func ImageProcess(ctx context.Context, db *gorm.DB, imgEnt entities.ImageAsset, 
 		return fmt.Errorf("failed to save thumbnail: %w", err)
 	}
 
-	// Decode the thumbnail bytes to an image and generate the thumbhash from it
-	jobs.Logger.Info("generating thumbhash", loggerFields)
-
+	// Generate thumbhash by downscaling the 200px thumbnail in Go, avoiding a
+	// second libvips thumbnail call and a JPEG encode→decode round-trip.
 	if onProgress != nil {
 		onProgress("Generating thumbhash", 70)
 	}
 
-	// just for debugging purposes in case some thumbhashes take too long
 	thumbhashTimeStart := time.Now()
-	smallThumbImg, _, err := imageops.ReadToImage(smallThumbData)
+
+	thumbImg, _, err := imageops.ReadToImage(thumbData)
 	if err != nil {
 		return fmt.Errorf("failed to decode thumbnail for thumbhash: %w", err)
 	}
 
-	thumbhash, err := imageops.GenerateThumbhash(smallThumbImg)
+	thumbhash, err := imageops.GenerateThumbhash(imageops.DownscaleTo32x32(thumbImg))
 	if err != nil {
 		return fmt.Errorf("failed to generate thumbhash: %w", err)
 	}

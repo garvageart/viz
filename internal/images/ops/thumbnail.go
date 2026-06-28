@@ -2,8 +2,11 @@ package imageops
 
 import (
 	"fmt"
+	"image"
 
 	libvips "viz/internal/images/ops/vips"
+
+	"github.com/galdor/go-thumbhash"
 )
 
 // CreateThumbnailWithSize creates a thumbnail using libvips from the input image bytes.
@@ -41,4 +44,40 @@ func CreateThumbnailWithSize(imgBytes []byte, width, height int) ([]byte, error)
 		return nil, fmt.Errorf("thumbnail encode failed: %w", err)
 	}
 	return data, nil
+}
+
+func GenerateThumbhash(img image.Image) (hash []byte, err error) {
+	hashBytes := thumbhash.EncodeImage(img)
+	return hashBytes, nil
+}
+
+// DownscaleTo32x32 resizes img to 32×32 using nearest-neighbor sampling.
+// This avoids a second libvips call and a JPEG encode→decode cycle when the
+// image is only needed for thumbhash generation.
+func DownscaleTo32x32(img image.Image) image.Image {
+	const targetSize = 32
+	bounds := img.Bounds()
+	srcW := bounds.Dx()
+	srcH := bounds.Dy()
+	if srcW == 0 || srcH == 0 {
+		return img
+	}
+
+	dst := image.NewRGBA(image.Rect(0, 0, targetSize, targetSize))
+
+	for dy := range targetSize {
+		srcY := bounds.Min.Y + (dy*srcH)/targetSize
+		if srcY >= bounds.Max.Y {
+			srcY = bounds.Max.Y - 1
+		}
+		for dx := range targetSize {
+			srcX := bounds.Min.X + (dx*srcW)/targetSize
+			if srcX >= bounds.Max.X {
+				srcX = bounds.Max.X - 1
+			}
+			dst.Set(dx, dy, img.At(srcX, srcY))
+		}
+	}
+
+	return dst
 }

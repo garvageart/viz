@@ -1,5 +1,7 @@
 package images
 
+import "maps"
+
 import "viz/internal/images/transform"
 
 // PermanentTransformName is a type for permanent transform names
@@ -34,7 +36,10 @@ func GetPermanentTransformParams(name PermanentTransformName) (transform.Transfo
 	return params, ok
 }
 
-// GetAllPermanentTransforms returns all permanent transform definitions.
+// GetAllPermanentTransforms returns a copy of all permanent transform definitions.
+// Callers may safely mutate the returned map without affecting internal state.
 func GetAllPermanentTransforms() map[PermanentTransformName]transform.TransformParams {
-	return permanentTransforms
+	out := make(map[PermanentTransformName]transform.TransformParams, len(permanentTransforms))
+	maps.Copy(out, permanentTransforms)
+	return out
 }
