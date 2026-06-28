@@ -129,8 +129,14 @@ func RegisterWorkers(workers ...*Worker) {
 
 				// Transition from queued -> running: decrement queued count for topic.
 				queuedCountsMu.Lock()
+				// When count reaches zero, the entry is deleted from the map
+				// instead of leaving zero-value entries
 				if v, ok := queuedCounts[topic]; ok && v > 0 {
-					queuedCounts[topic] = v - 1
+					if v == 1 {
+						delete(queuedCounts, topic)
+					} else {
+						queuedCounts[topic] = v - 1
+					}
 				}
 				queuedCountsMu.Unlock()
 

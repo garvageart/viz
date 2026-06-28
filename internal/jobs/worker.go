@@ -48,7 +48,7 @@ func (w *Worker) Start() error {
 	defer w.mutex.Unlock()
 
 	if w.canceled {
-		return errors.New("still running")
+		return errors.New("worker was canceled")
 	}
 
 	if w.busy {

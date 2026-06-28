@@ -6,9 +6,10 @@ import (
 )
 
 var (
-	workersMu sync.RWMutex
-	workers   = map[string]*Worker{}
-	persisted = map[string]map[string]any{}
+	workersMu   sync.RWMutex
+	workers     = map[string]*Worker{}
+	persistedMu sync.RWMutex
+	persisted   = map[string]map[string]any{}
 )
 
 // RegisterWorker registers a worker in the in-memory registry. Safe to call multiple times.
@@ -45,6 +46,9 @@ func FindWorker(id string) *Worker {
 
 // SetPersisted sets a key/value pair for a worker id in the in-memory persisted map.
 func SetPersisted(workerID string, key string, value any) error {
+	persistedMu.Lock()
+	defer persistedMu.Unlock()
+
 	if persisted == nil {
 		persisted = map[string]map[string]any{}
 	}
@@ -57,6 +61,9 @@ func SetPersisted(workerID string, key string, value any) error {
 
 // GetPersisted returns a previously persisted value for a worker id/key.
 func GetPersisted(workerID string, key string) any {
+	persistedMu.RLock()
+	defer persistedMu.RUnlock()
+
 	if v, ok := persisted[workerID]; ok {
 		return v[key]
 	}

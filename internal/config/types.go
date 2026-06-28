@@ -92,6 +92,7 @@ type CacheConfig struct {
 	MaxSizeBytes             int64            `json:"max_size_bytes" mapstructure:"max_size_bytes"`
 	MaxAgeDays               int              `json:"max_age_days" mapstructure:"max_age_days"`
 	CleanupIntervalMinutes   int              `json:"cleanup_interval_minutes" mapstructure:"cleanup_interval_minutes"`
+	TrashMaxAgeDays          int              `json:"trash_max_age_days" mapstructure:"trash_max_age_days"`
 	Images                   ImageCacheConfig `json:"images" mapstructure:"images"`
 }
 

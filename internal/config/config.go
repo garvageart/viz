@@ -98,6 +98,7 @@ func ReadConfig() (viper.Viper, error) {
 	v.SetDefault("cache.max_size_bytes", 10*1024*1024*1024)               // 10 GB
 	v.SetDefault("cache.max_age_days", 30)
 	v.SetDefault("cache.clear_permanent_transforms", false)
+	v.SetDefault("cache.trash_max_age_days", 30) // 30 days
 
 	// Security defaults (RFC 9106)
 	v.SetDefault("security.argon2_memory_mb", 64)

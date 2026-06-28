@@ -23,6 +23,9 @@ const (
 	WorkerJobStatusCancelled JobStatus = "cancelled"
 )
 
+// Truncate payload for DB storage if too large
+const MaxPayloadLen = 100_000
+
 // Enqueue creates a persisted WorkerJob and publishes the message to the
 // router. It returns the created WorkerJob UID which is also set as the
 // Watermill message UUID.
@@ -41,9 +44,14 @@ func Enqueue(db *gorm.DB, topic string, payload any, cmd *JobCommand, imageUid *
 	}
 
 	payloadStr := string(payloadBytes)
-	// Truncate payload for DB storage if too large
-	if len(payloadStr) > 10_000 {
-		payloadStr = payloadStr[:10_000]
+
+	if len(payloadStr) > MaxPayloadLen {
+		Logger.Info("truncating large job payload for DB storage", watermill.LogFields{
+			"payload_len": len(payloadStr),
+			"max_payload": MaxPayloadLen,
+			"topic":       topic,
+		})
+		payloadStr = payloadStr[:MaxPayloadLen]
 	}
 
 	wj := entities.WorkerJob{
@@ -69,7 +77,7 @@ func Enqueue(db *gorm.DB, topic string, payload any, cmd *JobCommand, imageUid *
 
 	if err := Publish(topic, msg); err != nil {
 		_ = UpdateWorkerJobStatus(db, uid, WorkerJobStatusFailed, utils.StringPtr("publish_failed"), utils.StringPtr("failed to publish message"), nil, nil)
-		return uid, fmt.Errorf("publish: %w", err)
+		return "", fmt.Errorf("publish: %w", err)
 	}
 
 	return uid, nil
