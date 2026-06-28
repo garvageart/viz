@@ -21,6 +21,7 @@ import (
 	"viz/internal/auth"
 	"viz/internal/config"
 	"viz/internal/db"
+	"viz/internal/debug"
 	"viz/internal/entities"
 	libhttp "viz/internal/http"
 	"viz/internal/images"
@@ -87,6 +88,8 @@ func (server APIServer) Launch(router *chi.Mux) *http.Server {
 	database := server.Database
 	dbClient := database.Client
 
+	healthService := debug.NewHealthService(dbClient)
+
 	server.WSBroker = libhttp.NewWSBroker(logger)
 
 	// API Routes
@@ -96,6 +99,10 @@ func (server APIServer) Launch(router *chi.Mux) *http.Server {
 		r.Mount("/accounts", routes.AccountsRouter(dbClient, logger)) // auth middleware added internally
 		r.Mount("/system", routes.SystemRouter(dbClient, logger))
 		r.Mount("/setup", routes.SetupRouter(dbClient, logger)) // superadmin setup
+		r.Get("/health", func(res http.ResponseWriter, req *http.Request) {
+			render.JSON(res, req, healthService.Check(req.Context()))
+		})
+
 		r.Get("/ping", func(res http.ResponseWriter, req *http.Request) {
 			jsonResponse := map[string]any{"message": "pong"}
 			render.JSON(res, req, jsonResponse)
@@ -374,6 +381,11 @@ func main() {
 		jobs.RunJobQueue(appConfig.Queue, logger, imageWorker, xmpWorker, exifWorker)
 	}()
 
+	// Start the scheduled job scheduler (cron-based periodic jobs)
+	if err := jobs.Start(client, logger, appConfig); err != nil {
+		logger.Error("failed to start job scheduler", slog.Any("error", err))
+	}
+
 	sigCh := make(chan os.Signal, 1)
 	signal.Notify(sigCh, os.Interrupt, syscall.SIGTERM)
 	s := <-sigCh
@@ -395,6 +407,10 @@ func main() {
 
 	if jobs.Router != nil {
 		_ = jobs.Router.Close()
+	}
+
+	if err := jobs.Shutdown(); err != nil {
+		logger.Error("failed to shutdown job scheduler", slog.Any("error", err))
 	}
 
 	time.Sleep(500 * time.Millisecond)
