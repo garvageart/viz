@@ -4,24 +4,19 @@
 package main
 
 import (
+	"fmt"
 	"runtime"
-	"strings"
 )
 
 func main() {
-	pc, file, line, ok := runtime.Caller(0)
-	if !ok {
-		panic("could not get caller info")
-	}
+	// Get Go runtime version
+	goVersion := runtime.Version()
+	// Get OS name (e.g., "linux", "darwin", "windows")
+	osName := runtime.GOOS
+	// Get architecture (e.g., "amd64", "386")
+	arch := runtime.GOARCH
 
-	fn := runtime.FuncForPC(pc)
-	if fn == nil {
-		panic("could not get function info")
-	}
-
-	println("Caller info:")
-	println("File:", file)
-	println("Line:", line)
-	println("Function:", fn.Name())
-	println("Package:", strings.Split(fn.Name(), ".")[0])
+	fmt.Printf("Go Runtime Version: %s\n", goVersion)
+	fmt.Printf("Host OS: %s\n", osName)
+	fmt.Printf("Architecture: %s\n", arch)
 }
