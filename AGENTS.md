@@ -1,61 +1,87 @@
-# Project Context for Agents
+# Viz Repository Guidelines
 
-This document provides core guidelines for AI agents and developers working on the **Viz** project. Adhering to these guidelines is crucial for maintaining code quality and consistency.
+**Last Updated:** June 27, 2026
 
-## 1. Project Overview & Directory Structure
-**Viz** is a high-performance, self-hosted image management and processing platform.
+## Purpose
 
-For detailed architecture, workflows, and setup instructions, refer to:
-* **[Developer Setup & Building](/docs/setup/BUILDING.md)**
-* **[Testing Strategy](/docs/development/internal/testing_strategy.md)**
-* **[UI Design System & Styling](/docs/development/UI_DESIGN_SYSTEM.md)**
+Entry point for agents and humans working on the Viz codebase.
 
-### Key Directory Structure
-* `cmd/api/`: Go backend main entry point and routes.
-* `internal/`: Core Go backend logic (auth, db connection, entities, imageops).
-* `viewfinder/`: The SvelteKit frontend SPA (components, states, styles).
-* `docs/`: Additional documentation.
+## Sources of Truth
 
----
+- **Makefile**: [Makefile](/Makefile)
+- **OpenAPI Specification**: [openapi.yaml](/api/openapi/openapi.yaml) (The single source of truth for Go DTOs, GORM entities, and the Svelte TypeScript client)
+- **Developer Guides**:
+  - Setup & Building: [BUILDING.md](/docs/setup/BUILDING.md)
+  - Testing Strategy: [testing_strategy.md](/docs/development/internal/testing_strategy.md)
+  - UI Design System: [UI_DESIGN_SYSTEM.md](/docs/development/UI_DESIGN_SYSTEM.md)
+- **Code Maps & Guidelines**:
+  - Global Agent Guidelines: [AGENTS.md](/AGENTS.md)
 
-## 2. Code Generation: The Single Source of Truth
-The OpenAPI specification (`api/openapi/openapi.yaml`) is the single source of truth.
-* Whenever schema structures, database entities, or API endpoints change, you **MUST** run:
-  ```bash
-  make generate-types
-  ```
-  This automatically updates Go DTOs (`internal/dto/`), GORM entities (`internal/entities/`), and the TypeScript API client (`viewfinder/src/lib/api/`). Do not modify these files manually.
+## Subtree Guides
 
----
+- `internal/`: Core Go backend logic (auth, db connection, entities, imageops). Refer to [AGENTS.md](/AGENTS.md) for Go conventions.
+- `cmd/api/`: Go backend main entry point and routes.
+- `viewfinder/`: The SvelteKit frontend SPA (components, states, styles). Refer to Svelte 5 and TypeScript conventions in [AGENTS.md](/AGENTS.md).
 
-## 3. General Coding Guidelines
+## Local Agent Progress
 
-### Braces for Control Flows
-* **Rule**: All `if` statements and loops must **never** be inlined. Always use brackets and break to the next line.
-* **Example**:
-  ```typescript
-  // Correct:
-  if (isDisabled) {
-      return;
-  }
+- Use `.agents/TODO.md` for actionable tasks and `.agents/DONE.md` for completed work.
+- These files are local workflow aids and may not exist in every workspace.
 
-  // Incorrect:
-  if (isDisabled) return;
-  ```
-
-### Preserving Comments
-* **Rule**: Do not delete existing comments/docstrings that you did not add unless explicitly asked to do so. If refactoring changes logic significantly, update the comments to be accurate instead of removing them.
-
----
-
-## 4. Language-Specific Conventions
+## Style Notes
 
 ### Go (Backend)
-* **Formatting**: Code must be formatted with `gofmt`.
-* **Error Handling**: Handle all errors explicitly. Do not ignore them.
-* **Logging**: Use standard library structured logging (`slog`) as JSON.
+
+- **Formatting**: Code must be formatted with `gofmt`.
+- **Braces**: All control flow blocks (`if` statements, loops) must **never** be inlined. Always use brackets and break to the next line.
+- **Error Handling**: Handle all errors explicitly. Do not ignore them.
+- **Logging**: Use standard library structured logging (`slog`) as JSON.
 
 ### TypeScript / Svelte (Frontend)
-* **Props**: Define component props using a `Props` interface inside component script blocks.
-* **Universal Load Functions**: Fetch page data inside client-side `+page.ts` or `+layout.ts` `load` functions. Do **NOT** use `+page.server.ts` files (Viz is a pure SPA).
-* **Styling**: SCSS (Sass) preprocessor. Scoped `<style lang="scss">` per component. Reference `var(--viz-spacing-*)` and `var(--viz-font-size-*)` tokens (defined in `docs/development/UI_DESIGN_SYSTEM.md`).
+
+- **Props**: Define component props using a `Props` interface inside component script blocks.
+- **Universal Load Functions**: Fetch page data inside client-side `+page.ts` or `+layout.ts` `load` functions. Do **NOT** use `+page.server.ts` files (Viz is a pure SPA).
+- **Styling**: SCSS (Sass) preprocessor. Scoped `<style lang="scss">` per component. Reference `var(--viz-spacing-*)` and `var(--viz-font-size-*)` tokens (defined in [UI_DESIGN_SYSTEM.md](/docs/development/UI_DESIGN_SYSTEM.md)).
+
+### Commit Messages
+
+- Follow the **Conventional Commits** specification (e.g., `feat(scope): description`, `fix(scope): description`, `chore: description`, `docs: description`).
+- Keep scopes lowercase and descriptive of the affected subtree or module (e.g., `viewfinder`, `selection`, `dnd`, `agents`).
+- Keep commit subjects concise and under 80 characters.
+- Add `--generated by Gemini` when requested.
+
+
+### GitHub Issues
+
+- Titles MUST be concise, imperative, and start with one capitalized prefix plus `: `, for example `Search: Add filter for RAW image formats`.
+- Descriptions MUST begin with a one-sentence bold user story: `**As a <role>, I want <goal>, so that <outcome>.**`
+- Use level-3 Markdown headings for sections within issue descriptions, for example `### Acceptance Criteria`.
+- Follow with behavior, rationale, technical considerations, and constraints.
+- End with `- [ ]` checklist items for the acceptance criteria, each using `MUST`, `SHOULD`, or `MAY`.
+  - Keep the checklist current: once the work for a criterion is implemented **and verified**, mark it done (`- [x]`).
+  - Leave items that are unverified, not yet implemented, or skipped optional (`MAY`) enhancements unchecked.
+  - An issue is complete only when every `MUST` is checked; never tick a box on the strength of a plan alone or an unrun test.
+  - When referencing an issue from a commit that fulfills some of its criteria, update the matching boxes first.
+- Agents MUST create, edit, close, reopen, relabel, or otherwise modify GitHub issues only when explicitly requested by the user.
+
+### Specifications & Documentation
+
+- Markdown headings use a Chicago-style title case, with additional code- and path-aware normalization rules. Always spell the product name as `Viz`.
+- Put option flags before positional arguments unless the command requires another order.
+- Use RFC 3339 UTC timestamps and valid ID, UID, and UUID examples in docs and tests.
+- Refresh `**Last Updated:**` when you change document contents, but leave it unchanged for whitespace-only or formatting-only edits.
+
+Title Case rules (Chicago-style, with code- and path-aware normalization):
+- Capitalize the first word, the first word after a colon, dash, or end punctuation, and all major words, including the second part of a hyphenated major word.
+- Lowercase only articles, short conjunctions, and short prepositions of three letters or fewer when they are not in one of those positions.
+- Preserve known acronyms (for example, API, CLI, HTTP, JSON) and slash-separated acronym groups verbatim.
+- Preserve RFC 2119 / RFC 8174 normative keywords (MUST, SHOULD, MAY, SHALL, REQUIRED, RECOMMENDED, OPTIONAL) as uppercase when used in their normative sense.
+- Preserve inline code spans (`` `foo` ``), file paths (e.g. `docs/foo-bar.md`), and slash commands (e.g. `/grill-me`) verbatim; do not recase their contents.
+- Use `&` instead of `And`/`Or` in headings.
+
+## Safety & Data
+
+- If `git status` shows unexpected changes, assume a human may be editing; ask before using reset-style commands.
+- Do not run `git config` at either the global or repository level.
+- Do not run destructive commands against production data; prefer ephemeral volumes and test fixtures for acceptance tests.
+- Never commit secrets, local configurations, or credentials.

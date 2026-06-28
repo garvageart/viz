@@ -78,3 +78,6 @@ viewfinder/tools/icon-gen/failed-icons.json
 
 # Swarm-tools task tracking
 .hive/
+
+# Private workspace agent configs
+.agents/
