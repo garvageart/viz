@@ -61,6 +61,20 @@ func (server VizServer) ConnectToDatabase(dst ...any) *gorm.DB {
 		panic("error running auto-migration: " + dbError.Error())
 	}
 
+	// Warm up GORM schema cache to prevent concurrent schema parsing race conditions/panics under load.
+	// Because GORM publishes schemas to its shared cache before completing relation and serializer parsing
+	// (to handle self-referencing models), concurrent queries/updates under high load can fetch partially
+	// initialized schemas. This leads to map read/write data races where LookUpField returns nil for valid columns,
+	// causing nil pointer dereferences (specifically callbacks/update.go:238 where field.AutoUpdateTime is dereferenced).
+	// Warming up the schemas sequentially on startup ensures the cache is fully populated and read-only before concurrent handlers run.
+	// See: https://github.com/go-gorm/gorm/issues/7539
+	for _, model := range dst {
+		stmt := &gorm.Statement{DB: client}
+		if err := stmt.Parse(model); err != nil {
+			logger.Warn("Failed to warm up GORM schema cache for model", slog.Any("model", model), slog.Any("error", err))
+		}
+	}
+
 	// Manual migrations after AutoMigrate
 	db.MigrateCollectionImages(client, logger)
 

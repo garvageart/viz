@@ -13,6 +13,8 @@ import (
 	"github.com/spf13/viper"
 )
 
+const ConfigFileName = "viz.json"
+
 // Order of importance:
 // ENV VARIABLES -> VIZ.JSON CONFIG VALUES -> DEFAULT VALUES
 // STICK TO DEFAULTS IF VIZ.JSON VALUES ARE INVALID/FAIL TO PARSE CORRECTLY
@@ -136,11 +138,11 @@ func WriteConfig(cfg VizConfig) error {
 		return fmt.Errorf("failed to marshal config: %w", err)
 	}
 
-	configPath := filepath.Join(libos.CurrentWorkingDirectory, "viz.json")
+	configPath := filepath.Join(libos.CurrentWorkingDirectory, ConfigFileName)
 	err = os.WriteFile(configPath, jsonBytes, 0644)
 	if err != nil {
 		// Fallback to project root
-		configPath = filepath.Join(libos.ProjectRoot, "viz.json")
+		configPath = filepath.Join(libos.ProjectRoot, ConfigFileName)
 		err = os.WriteFile(configPath, jsonBytes, 0644)
 		if err != nil {
 			return fmt.Errorf("failed to write config file: %w", err)

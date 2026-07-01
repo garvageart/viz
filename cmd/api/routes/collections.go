@@ -160,6 +160,8 @@ func CollectionsRouter(db *gorm.DB, logger *slog.Logger, wsBroker *libhttp.WSBro
 			_ = wsBroker.Broadcast("collection-created", collection.DTO())
 		}
 
+		logger.Info("Created collection", slog.String("name", collection.Name))
+
 		render.Status(req, http.StatusCreated)
 		render.JSON(res, req, collection.DTO())
 	})
@@ -389,6 +391,8 @@ func CollectionsRouter(db *gorm.DB, logger *slog.Logger, wsBroker *libhttp.WSBro
 				return err
 			}
 
+			logger.Info("Updated collection", slog.String("name", collection.Name))
+
 			// Reload to ensure updated data is sent to clients
 			return tx.Preload("Thumbnail").Preload("CreatedBy").Preload("Images").Preload("Images.AddedBy").First(&collection, "uid = ?", uid).Error
 		})
@@ -447,6 +451,8 @@ func CollectionsRouter(db *gorm.DB, logger *slog.Logger, wsBroker *libhttp.WSBro
 			if err := tx.Delete(&collection).Error; err != nil {
 				return err
 			}
+
+			logger.Info("Deleted collection", slog.String("name", collection.Name))
 
 			return nil
 		})
