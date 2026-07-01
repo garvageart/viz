@@ -154,9 +154,10 @@ export default class UploadManager {
 
         for (const file of files) {
             // Validate file type
-            const fileType = file.type.split("/")[1];
-            if (!this.allowedTypes.includes(fileType)) {
-                console.warn(`Skipping unsupported file type: ${file.type}`);
+            const mimeExt = file.type ? file.type.split("/")[1] : "";
+            const nameExt = file.name.split(".").pop()?.toLowerCase() || "";
+            if (!this.allowedTypes.includes(mimeExt) && !this.allowedTypes.includes(nameExt)) {
+                console.warn(`Skipping unsupported file type: ${file.name} (${file.type})`);
                 continue;
             }
 

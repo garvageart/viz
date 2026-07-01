@@ -51,3 +51,20 @@ export async function downloadToFilesystem(filename: string, data: Blob, revokeD
         }, revokeDelayMs);
     }
 }
+
+/**
+ * Detect the first directory name from a DataTransferItemList.
+ * Must be called synchronously during the drag/drop event.
+ */
+export function detectFolderName(items: DataTransferItemList | null | undefined): string {
+    if (!items) return "";
+    for (const item of Array.from(items)) {
+        if (item.kind === "file") {
+            const entry = item.webkitGetAsEntry?.();
+            if (entry && entry.isDirectory) {
+                return entry.name;
+            }
+        }
+    }
+    return "";
+}
