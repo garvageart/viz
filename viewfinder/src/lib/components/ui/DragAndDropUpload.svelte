@@ -6,12 +6,16 @@
     import { dragState } from "$lib/drag-drop/state.svelte";
     import { SelectionScope } from "$lib/states/selection.svelte";
     import { toastState } from "$lib/toast-notifcations/notif-state.svelte";
-    import { SUPPORTED_IMAGE_TYPES, SUPPORTED_RAW_FILES, type SupportedImageTypes } from "$lib/types/images";
+    import {
+        SUPPORTED_IMAGE_TYPES,
+        SUPPORTED_RAW_FILES,
+        type AllSupportedImageTypes,
+        type SupportedImageTypes
+    } from "$lib/types/images";
     import { UploadState } from "$lib/upload/asset.svelte";
     import UploadManager, { waitForUploadCompletion, type ImageUploadSuccess } from "$lib/upload/manager.svelte";
-    import { traverseFileTree } from "$lib/utils/files";
+    import { detectFolderName, traverseFileTree } from "$lib/utils/files";
     import { invalidateViz } from "$lib/views/views.svelte";
-    import { fade } from "svelte/transition";
     import CollectionModal from "../modals/CollectionModal.svelte";
     import ConfirmationModal from "../modals/ConfirmationModal.svelte";
     import { modalsManager } from "../modals/manager/ModalManager.svelte";
@@ -24,18 +28,10 @@
         showCollectionCreateBox?: boolean;
         bypassConfirmation?: boolean;
         createCollectionFromSelected?: () => Promise<void>;
-        children?: import("svelte").Snippet;
         onUploadSuccess?: (uploaded: ImageUploadSuccess[]) => void | Promise<void>;
     }
 
-    let {
-        showCollectionCreateBox,
-        bypassConfirmation = false,
-        scopeId,
-        selectionScope,
-        children,
-        onUploadSuccess
-    }: Props = $props();
+    let { showCollectionCreateBox, bypassConfirmation = false, selectionScope, onUploadSuccess }: Props = $props();
 
     // Drag and drop upload state
     let isDragging = $state(false);
@@ -121,7 +117,7 @@
             }
 
             const allFiles: File[] = [];
-            let detectedFolderName = "";
+            const detectedFolderName = detectFolderName(e.dataTransfer.items);
 
             // Use DataTransferItemList for folder support
             if (e.dataTransfer.items) {
@@ -135,9 +131,6 @@
                         const entry = item.webkitGetAsEntry?.();
                         if (entry) {
                             entries.push(entry);
-                            if (entry.isDirectory && !detectedFolderName) {
-                                detectedFolderName = entry.name;
-                            }
                         } else {
                             // Fallback for browsers that don't support webkitGetAsEntry
                             const file = item.getAsFile();
@@ -171,16 +164,20 @@
             // Filter valid files here to avoid processing invalid ones later
             const supportedExtensions = [...SUPPORTED_IMAGE_TYPES, ...SUPPORTED_RAW_FILES];
             const validFiles = allFiles.filter((file) => {
-                const ext = file.type.split("/")[1];
-                return supportedExtensions.includes(ext as any);
+                const mimeExt = file.type ? file.type.split("/")[1] : "";
+                const nameExt = file.name.split(".").pop()?.toLowerCase() || "";
+                return (
+                    supportedExtensions.includes(mimeExt as AllSupportedImageTypes) ||
+                    supportedExtensions.includes(nameExt as AllSupportedImageTypes)
+                );
             });
 
             if (validFiles.length === 0) {
                 toastState.addToast({
                     type: "error",
-                    message: "No supported image files found",
-                    timeout: 4000
+                    message: "No supported image files found"
                 });
+
                 return;
             }
 
@@ -231,7 +228,7 @@
         }
 
         // Only handle drops that contain actual files
-        return e.dataTransfer.types.includes("Files") && e.dataTransfer.files.length > 0;
+        return e.dataTransfer.types.includes("Files");
     }
 
     function withRelevantDrag(handler: (e: DragEvent) => void | Promise<void>) {
@@ -323,9 +320,9 @@
             if (createRes.status !== 201) {
                 toastState.addToast({
                     type: "error",
-                    message: `Failed to create collection (${createRes.status})`,
-                    timeout: 4000
+                    message: `Failed to create collection (${createRes.status})`
                 });
+
                 collectionCreatePending = false;
                 return;
             }
@@ -346,15 +343,17 @@
                     toastState.addToast({
                         type: "success",
                         message: `Added ${uids.length} images to collection **${data.name}**`,
-                        timeout: 4000
+                        actions: [
+                            {
+                                label: "Open Collection",
+                                onClick: () => goto(`/collections/${collectionUid}`)
+                            }
+                        ]
                     });
-                    await invalidateViz({ delay: 200 });
-                    goto(`/collections/${collectionUid}`);
                 } else {
                     toastState.addToast({
                         type: "warning",
-                        message: `Images uploaded but failed to add to collection: **${addRes.status}**`,
-                        timeout: 4000
+                        message: `Images uploaded but failed to add to collection: **${addRes.status}**`
                     });
                 }
             }
@@ -388,54 +387,65 @@
             return;
         }
 
-        try {
-            const uids = items.map((i) => i.uid);
-            const createRes = await createCollection({
-                name: `New collection ${new Date().toLocaleString()}`,
-                description: "Created from selected images",
-                private: false
-            });
+        const uids = items.map((i) => i.uid);
+        const collectionCreateData = {
+            name: `New collection ${new Date().toLocaleString()}`,
+            description: "Created from selected images",
+            private: false
+        };
 
-            if (createRes.status !== 201) {
-                toastState.addToast({
-                    type: "error",
-                    message: `Failed to create collection (${createRes.status})`,
-                    timeout: 4000
-                });
-                return;
-            }
+        modalsManager.open(
+            CollectionModal,
+            {
+                heading: "Create Collection",
+                data: collectionCreateData,
+                buttonText: "Create",
+                modalAction: async (newData) => {
+                    try {
+                        const createRes = await createCollection(newData);
 
-            const collectionUid = createRes.data.uid;
-            const addRes = await addCollectionImages(collectionUid, { uids });
+                        if (createRes.status !== 201) {
+                            toastState.addToast({
+                                type: "error",
+                                message: `Failed to create collection (${createRes.status})`
+                            });
 
-            if (addRes.status === 200) {
-                toastState.addToast({
-                    type: "success",
-                    message: `Collection created with ${uids.length} image(s)`,
-                    timeout: 4000,
-                    actions: [
-                        {
-                            label: "View Collection",
-                            onClick: () => goto(`/collections/${collectionUid}`)
+                            return;
                         }
-                    ]
-                });
 
-                goto(`/collections/${collectionUid}`);
-            } else {
-                toastState.addToast({
-                    type: "warning",
-                    message: `Collection created but failed to add images (${addRes.status})`,
-                    timeout: 4000
-                });
-            }
-        } catch (err) {
-            console.error("createCollectionFromSelected error", err);
-            toastState.addToast({
-                type: "error",
-                message: `Failed to create collection: ${err}`
-            });
-        }
+                        const collectionUid = createRes.data.uid;
+                        modalsManager.pop(); // Close collection creation modal on submit
+
+                        const addRes = await addCollectionImages(collectionUid, { uids });
+
+                        if (addRes.status === 200) {
+                            toastState.addToast({
+                                type: "success",
+                                message: `Collection created with ${uids.length} image(s)`,
+                                actions: [
+                                    {
+                                        label: "View Collection",
+                                        onClick: () => goto(`/collections/${collectionUid}`)
+                                    }
+                                ]
+                            });
+                        } else {
+                            toastState.addToast({
+                                type: "warning",
+                                message: `Collection created but failed to add images (${addRes.status})`
+                            });
+                        }
+                    } catch (err) {
+                        console.error("createCollectionFromSelected error", err);
+                        toastState.addToast({
+                            type: "error",
+                            message: `Failed to create collection: ${err}`
+                        });
+                    }
+                }
+            },
+            { heading: "Create Collection" }
+        );
     }
 
     /**
@@ -470,46 +480,64 @@
                         return;
                     }
 
-                    const createRes = await createCollection({
+                    const collectionCreateData = {
                         name: `New collection ${new Date().toLocaleString()}`,
                         description: "Created from dropped images",
                         private: false
-                    });
+                    };
 
-                    if (createRes.status !== 201) {
-                        toastState.addToast({
-                            type: "error",
-                            message: `Failed to create collection (${createRes.status})`,
-                            timeout: 4000
-                        });
-                        return;
-                    }
+                    modalsManager.open(
+                        CollectionModal,
+                        {
+                            heading: "Create Collection",
+                            data: collectionCreateData,
+                            buttonText: "Create",
+                            modalAction: async (newData) => {
+                                try {
+                                    const createRes = await createCollection(newData);
 
-                    const collectionUid = createRes.data.uid;
-                    const addRes = await addCollectionImages(collectionUid, { uids });
-                    if (addRes.status === 200) {
-                        toastState.addToast({
-                            type: "success",
-                            message: `Collection created with ${uids.length} image(s)`,
-                            timeout: 4000,
-                            actions: [
-                                {
-                                    label: "View Collection",
-                                    onClick: () => goto(`/collections/${collectionUid}`)
+                                    if (createRes.status !== 201) {
+                                        toastState.addToast({
+                                            type: "error",
+                                            message: `Failed to create collection (${createRes.status})`
+                                        });
+
+                                        return;
+                                    }
+
+                                    const collectionUid = createRes.data.uid;
+                                    modalsManager.pop(); // Close collection creation modal on submit
+
+                                    const addRes = await addCollectionImages(collectionUid, { uids });
+                                    if (addRes.status === 200) {
+                                        toastState.addToast({
+                                            type: "success",
+                                            message: `Collection created with ${uids.length} image(s)`,
+                                            actions: [
+                                                {
+                                                    label: "View Collection",
+                                                    onClick: () => goto(`/collections/${collectionUid}`)
+                                                }
+                                            ]
+                                        });
+                                    } else {
+                                        toastState.addToast({
+                                            type: "warning",
+                                            message: `Collection created but failed to add images (${addRes.status})`
+                                        });
+                                    }
+                                } catch (err) {
+                                    console.error("Failed to create collection from internal drag:", err);
+                                    toastState.addToast({
+                                        type: "error",
+                                        message: `Failed to create collection: ${err}`
+                                    });
                                 }
-                            ]
-                        });
-
-                        goto(`/collections/${collectionUid}`);
-                        return;
-                    } else {
-                        toastState.addToast({
-                            type: "warning",
-                            message: `Collection created but failed to add images (${addRes.status})`,
-                            timeout: 4000
-                        });
-                        return;
-                    }
+                            }
+                        },
+                        { heading: "Create Collection" }
+                    );
+                    return;
                 } catch (err) {
                     console.warn("Failed to parse dragged image UIDs", err);
                     return;
@@ -517,6 +545,7 @@
             }
 
             const allFiles: File[] = [];
+            const detectedFolderName = detectFolderName(e.dataTransfer.items);
 
             if (e.dataTransfer.items) {
                 const items = Array.from(e.dataTransfer.items);
@@ -561,105 +590,118 @@
             if (validFiles.length === 0) {
                 toastState.addToast({
                     type: "error",
-                    message: "No supported image files found to add to collection",
-                    timeout: 4000
+                    message: "No supported image files found to add to collection"
                 });
+
                 return;
             }
 
-            const manager = new UploadManager([
-                ...SUPPORTED_RAW_FILES,
-                ...SUPPORTED_IMAGE_TYPES
-            ] as SupportedImageTypes[]);
-            const tasks = manager.addFiles(validFiles);
-
-            toastState.addToast({
-                type: "success",
-                message: `Uploading ${tasks.length} file(s) to create collection...`,
-                timeout: 2500
-            });
-
-            // Start uploads with concurrency control
-            await manager.start(tasks);
-
-            // Wait for completion
-            await waitForUploadCompletion(tasks);
-
-            const uploadedImages = tasks
-                .filter((t) => t.state === UploadState.DONE || t.state === UploadState.DUPLICATE)
-                .map((t) => t.imageData)
-                .filter((img): img is ImageUploadSuccess => !!img);
-
-            if (uploadedImages.length > 0) {
-                toastState.addToast({
-                    type: "success",
-                    message: `Successfully uploaded ${uploadedImages.length} file(s)`,
-                    timeout: 3000
-                });
-
-                try {
-                    await invalidateViz({ delay: 200 });
-                } catch (err) {
-                    console.error("Failed to fetch uploaded images:", err);
-                }
-            }
-
-            if (!uploadedImages || uploadedImages.length === 0) {
-                toastState.addToast({
-                    type: "error",
-                    message: "Upload failed, no images available to add to collection",
-                    timeout: 4000
-                });
-                return;
-            }
-
-            // Create collection
-            const createRes = await createCollection({
-                name: `New collection ${new Date().toLocaleString()}`,
+            const collectionCreateData = {
+                name: detectedFolderName || `New collection ${new Date().toLocaleString()}`,
                 description: "Created from dropped images",
                 private: false
-            });
+            };
 
-            if (createRes.status !== 201) {
-                toastState.addToast({
-                    type: "error",
-                    message: `Failed to create collection (${createRes.status})`,
-                    timeout: 4000
-                });
-                return;
-            }
+            modalsManager.open(
+                CollectionModal,
+                {
+                    heading: "Create Collection",
+                    data: collectionCreateData,
+                    buttonText: "Create & Upload",
+                    modalAction: async (newData) => {
+                        try {
+                            const createRes = await createCollection(newData);
 
-            const collectionUid = createRes.data.uid;
-            const uids = uploadedImages.map((i: any) => i.uid).filter(Boolean);
+                            if (createRes.status !== 201) {
+                                toastState.addToast({
+                                    type: "error",
+                                    message: `Failed to create collection (${createRes.status})`
+                                });
 
-            if (uids.length > 0) {
-                const addRes = await addCollectionImages(collectionUid, { uids });
-                if (addRes.status === 200) {
-                    toastState.addToast({
-                        type: "success",
-                        message: `Collection created with ${uids.length} image(s)`,
-                        timeout: 4000,
-                        actions: [
-                            {
-                                label: "View Collection",
-                                onClick: () => goto(`/collections/${collectionUid}`)
+                                return;
                             }
-                        ]
-                    });
-                } else {
-                    toastState.addToast({
-                        type: "warning",
-                        message: `Collection created but failed to add images (${addRes.status})`,
-                        timeout: 4000
-                    });
-                }
-            } else {
-                toastState.addToast({
-                    type: "warning",
-                    message: "Collection created but no uploaded image UIDs found",
-                    timeout: 4000
-                });
-            }
+
+                            const collectionUid = createRes.data.uid;
+                            modalsManager.pop(); // Close collection creation modal on submit
+
+                            const manager = new UploadManager([
+                                ...SUPPORTED_RAW_FILES,
+                                ...SUPPORTED_IMAGE_TYPES
+                            ] as SupportedImageTypes[]);
+                            const tasks = manager.addFiles(validFiles);
+
+                            toastState.addToast({
+                                type: "success",
+                                message: `Uploading ${tasks.length} file(s) to create collection...`,
+                                timeout: 2500
+                            });
+
+                            // Start uploads with concurrency control
+                            await manager.start(tasks);
+
+                            // Wait for completion
+                            await waitForUploadCompletion(tasks);
+
+                            const uploadedImages = tasks
+                                .filter((t) => t.state === UploadState.DONE || t.state === UploadState.DUPLICATE)
+                                .map((t) => t.imageData)
+                                .filter((img): img is ImageUploadSuccess => !!img);
+
+                            if (uploadedImages.length > 0) {
+                                try {
+                                    await invalidateViz();
+                                } catch (err) {
+                                    console.error("Failed to fetch uploaded images:", err);
+                                }
+                            }
+
+                            if (!uploadedImages || uploadedImages.length === 0) {
+                                toastState.addToast({
+                                    type: "error",
+                                    message: "Upload failed, no images available to add to collection"
+                                });
+
+                                return;
+                            }
+
+                            const uids = uploadedImages.map((i: any) => i.uid).filter(Boolean);
+
+                            if (uids.length > 0) {
+                                const addRes = await addCollectionImages(collectionUid, { uids });
+                                if (addRes.status === 200) {
+                                    toastState.addToast({
+                                        type: "success",
+                                        message: `Collection created with ${uids.length} image(s)`,
+                                        actions: [
+                                            {
+                                                label: "View Collection",
+                                                onClick: () => goto(`/collections/${collectionUid}`)
+                                            }
+                                        ]
+                                    });
+                                } else {
+                                    toastState.addToast({
+                                        type: "warning",
+                                        message: `Collection created but failed to add images (${addRes.status})`
+                                    });
+                                }
+                            } else {
+                                toastState.addToast({
+                                    type: "warning",
+                                    message: "Collection created but no uploaded image UIDs found"
+                                });
+                            }
+                        } catch (err) {
+                            console.error("Add-to-collection drop error:", err);
+                            toastState.addToast({
+                                type: "error",
+                                message: `Failed to create collection from dropped images: ${err}`
+                            });
+                        }
+                    }
+                },
+                { heading: "Create Collection" }
+            );
         } catch (err) {
             console.error("Add-to-collection drop error:", err);
             toastState.addToast({
@@ -696,11 +738,20 @@
 />
 
 {#if isDragging && !isInternalDrag}
-    <div class="drop-overlay" transition:fade={{ duration: 150 }}>
+    <div class="drop-overlay">
         <div class="drop-overlay-content">
-            <MaterialIcon iconName="upload" style="font-size: 4rem; margin-bottom: 1rem; color: var(--viz-10-dark);" />
-            <p style="font-size: 1.5rem; font-weight: 600;">Drop files to upload</p>
-            <p style="font-size: 1rem; opacity: 0.8;">Supports images and folders</p>
+            <MaterialIcon iconName="upload" class="upload-icon" />
+            <p class="title-text">Drop files to upload</p>
+            <p class="sub-text">Supports images, RAW files, and folders</p>
+
+            <div class="supported-formats">
+                {#each SUPPORTED_IMAGE_TYPES.map( (ext) => (ext === "jpg" ? "jpeg" : ext) ).filter((v, i, a) => a.indexOf(v) === i) as ext}
+                    <span class="format-badge">{ext.toUpperCase()}</span>
+                {/each}
+                {#if SUPPORTED_RAW_FILES.length > 0}
+                    <span class="format-badge">RAW</span>
+                {/if}
+            </div>
 
             {#if showCollectionCreateBox}
                 <div
@@ -740,10 +791,7 @@
                         await handleDropCreateCollection?.(e);
                     }}
                 >
-                    <MaterialIcon
-                        iconName="collections_bookmark"
-                        style="font-size: 1.6rem; margin-bottom: 0.25rem; color: var(--viz-10-dark);"
-                    />
+                    <MaterialIcon iconName="collections_bookmark" class="collection-icon" />
                     <span>Add to Collection</span>
                 </div>
             {/if}
@@ -754,15 +802,18 @@
 <style lang="scss">
     .drop-overlay {
         position: fixed;
+        height: 100%;
+        width: 100%;
         inset: 0;
         z-index: 1000;
-        color: var(--viz-10-dark);
-        background: rgba(0, 0, 0, 0.85);
-        backdrop-filter: blur(8px);
+        color: var(--viz-text-color);
+        background: color-mix(in srgb, var(--viz-100) 90%, transparent);
+        backdrop-filter: blur(6px);
         display: flex;
         align-items: center;
         justify-content: center;
         pointer-events: none;
+        padding: var(--viz-spacing-xxl);
     }
 
     .drop-overlay-content {
@@ -770,12 +821,57 @@
         flex-direction: column;
         align-items: center;
         justify-content: center;
-        color: var(--viz-10-dark);
         pointer-events: auto;
-        border: 2px solid var(--viz-primary);
-        border-radius: 1rem;
+        border: 1px solid var(--viz-60);
+        border-radius: var(--viz-border-radius-lg);
         padding: 3rem 4rem;
-        background: rgba(0, 0, 0, 0.5);
+        background: color-mix(in srgb, var(--viz-primary) 3%, var(--viz-95));
+        box-shadow: 0 12px 40px rgba(0, 0, 0, 0.2);
+        max-width: 32rem;
+        width: 100%;
+    }
+
+    :global(.upload-icon) {
+        font-size: 5rem;
+        margin-bottom: var(--viz-spacing-md);
+        color: var(--viz-text-color);
+    }
+
+    .title-text {
+        font-size: var(--viz-font-size-2xl);
+        font-weight: 600;
+        margin: 0 0 var(--viz-spacing-xs) 0;
+        color: var(--viz-text-color);
+    }
+
+    .sub-text {
+        font-size: var(--viz-font-size-std);
+        margin: 0;
+        color: var(--viz-40);
+    }
+
+    .supported-formats {
+        display: flex;
+        gap: var(--viz-spacing-sm);
+        margin-top: var(--viz-spacing-md);
+        justify-content: center;
+        flex-wrap: wrap;
+    }
+
+    .format-badge {
+        font-family: var(--viz-mono-font);
+        font-size: var(--viz-font-size-xs);
+        background: var(--viz-90);
+        color: var(--viz-text-color);
+        padding: var(--viz-spacing-xxs) var(--viz-spacing-sm);
+        border-radius: var(--viz-border-radius-sm);
+        border: 1px solid var(--viz-60);
+    }
+
+    :global(.collection-icon) {
+        font-size: 1.8rem;
+        margin-bottom: var(--viz-spacing-xxs);
+        color: var(--viz-text-color);
     }
 
     .add-to-collection-box {
@@ -784,24 +880,27 @@
         flex-direction: column;
         align-items: center;
         justify-content: center;
-        width: 12rem;
-        height: 4.25rem;
-        background-color: var(--viz-10-light);
-        border: 2px solid var(--viz-primary);
-        color: var(--viz-10-dark);
-        border-radius: 0.75rem;
-        gap: 0.25rem;
+        width: 100%;
+        margin-top: var(--viz-spacing-xl);
+        padding: var(--viz-spacing-std) var(--viz-spacing-lg);
+        background-color: var(--viz-90);
+        border: 1px solid var(--viz-60);
+        color: var(--viz-text-color);
+        border-radius: var(--viz-border-radius-md);
+        gap: var(--viz-spacing-xxs);
         font-weight: 600;
-        margin-top: 1rem;
-        padding: 0.75rem 1rem;
+        cursor: pointer;
+        box-sizing: border-box;
 
-        &:focus {
-            outline: 3px solid rgba(0, 0, 0, 0.35);
+        &:focus-visible {
+            outline: 3px solid var(--viz-primary);
             outline-offset: 2px;
         }
 
-        &:hover {
-            background: var(--viz-20-light);
+        &:hover,
+        &.hover {
+            border-color: var(--viz-60);
+            background-color: color-mix(in srgb, var(--viz-primary) 10%, var(--viz-90));
         }
     }
 </style>
