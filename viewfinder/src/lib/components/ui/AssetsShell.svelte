@@ -214,6 +214,12 @@
     .selection-info {
         display: flex;
         align-items: center;
+        white-space: nowrap;
+        flex-shrink: 0; /* Prevent container from shrinking and squeezing children */
+
+        span {
+            white-space: nowrap; /* Force text to stay on a single line */
+        }
     }
 
     :global(.toolbar-button) {

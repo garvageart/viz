@@ -55,6 +55,7 @@
         justify-content: center;
         flex-direction: row;
         text-align: center;
+        white-space: nowrap;
         transition:
             background-color 150ms cubic-bezier(0.4, 0, 0.2, 1) 0ms,
             border-color 150ms ease;

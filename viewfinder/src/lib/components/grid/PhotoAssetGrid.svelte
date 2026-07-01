@@ -593,6 +593,25 @@
         }
         _layoutRetryCount = 0;
 
+        // Dynamically adjust targetRowHeight based on available width if not explicitly locked in gridConfig.
+        // This ensures more photos fit proportionally in a row on smaller viewports or narrow split-panes.
+        let targetHeight = gridConfig.targetRowHeight || 240;
+        if (!gridConfig.targetRowHeight) {
+            if (availableWidth < 600) {
+                targetHeight = 140;
+            } else if (availableWidth < 900) {
+                targetHeight = 180;
+            } else if (availableWidth < 1200) {
+                targetHeight = 220;
+            } else {
+                targetHeight = 260;
+            }
+        }
+        virtualizer.updateConfig({
+            ...gridConfig,
+            targetRowHeight: targetHeight
+        });
+
         let vH = photoGridEl.clientHeight;
 
         // If using external scroll, grid might be fully expanded, so clientHeight is huge.
@@ -1368,6 +1387,11 @@
             overflow: visible;
             contain: none;
         }
+
+        @media (max-width: 768px) {
+            padding: 0 0.5rem;
+            margin: 0.5em auto;
+        }
     }
 
     .viz-photo-grid-container {
@@ -1472,13 +1496,17 @@
         }
 
         h3 {
-            font-size: 1.1rem;
+            font-size: var(--viz-font-size-std);
             font-weight: 500;
             color: var(--viz-text-color);
             margin: 0;
             white-space: nowrap;
             overflow: hidden;
             text-overflow: ellipsis;
+
+            @media (max-width: 768px) {
+                font-size: 0.9rem;
+            }
         }
     }
 
@@ -1599,6 +1627,7 @@
         padding: 0.5rem;
         font-size: 0.9rem;
         pointer-events: auto;
+        font-size: var(--viz-font-size-sm);
     }
 
     .asset-photo:hover .photo-overlay {
@@ -1620,7 +1649,6 @@
     }
 
     .photo-date {
-        font-size: 0.85rem;
         color: rgba(255, 255, 255, 0.85);
     }
 

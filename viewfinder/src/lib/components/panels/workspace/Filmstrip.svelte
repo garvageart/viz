@@ -282,8 +282,8 @@
 <style lang="scss">
     .filmstrip-container {
         display: flex;
-        gap: 0.5rem;
-        padding: 0.5rem;
+        gap: var(--viz-spacing-sm);
+        padding: var(--viz-spacing-sm);
         align-items: center;
         box-sizing: border-box;
         width: 100%;
@@ -302,8 +302,8 @@
 
             .filmstrip-item {
                 height: 100%;
-                min-width: 7em;
-                max-width: 10em;
+                min-width: 8rem;
+                max-width: 8rem;
             }
 
             .empty-state {
@@ -323,9 +323,9 @@
             overflow-y: auto;
 
             .filmstrip-item {
-                width: 100%;
-                min-height: 7em;
-                max-height: 10em;
+                height: 100%;
+                min-height: 8rem;
+                max-height: 8rem;
             }
 
             .empty-state {
@@ -386,7 +386,6 @@
         position: relative;
         display: flex;
         flex-direction: column;
-        border-radius: 2px;
         overflow: hidden;
         cursor: pointer;
         background-color: #0d0d0d;

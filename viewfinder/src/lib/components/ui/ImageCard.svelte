@@ -148,12 +148,12 @@
 
     .mini-footer {
         padding: var(--viz-spacing-xs);
-        background-color: var(--viz-100);
+        background-color: var(--viz-90);
         display: flex;
         flex-direction: column;
         gap: var(--viz-spacing-xxs);
         border-top: var(--viz-border-thin);
-        border-top-color: var(--viz-90);
+        border-top-color: var(--viz-85);
 
         .mini-filename {
             font-size: 0.7rem;
@@ -194,8 +194,8 @@
             .dot {
                 width: 0.25rem;
                 height: 0.25rem;
-                border-radius: 50%;
-                background-color: var(--viz-80);
+                border-radius: var(--viz-border-radius-pill);
+                background-color: var(--viz-70);
 
                 &.filled {
                     background-color: var(--viz-10);
