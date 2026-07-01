@@ -11,6 +11,16 @@
 
     let minimized = $state(false);
 
+    const isUploading = $derived(
+        upload.files.some(
+            (f) =>
+                f.state !== UploadState.DONE &&
+                f.state !== UploadState.ERROR &&
+                f.state !== UploadState.CANCELED &&
+                f.state !== UploadState.DUPLICATE
+        )
+    );
+
     let listEl: HTMLDivElement | null = $state(null);
 
     let prevCompletedCount = $state(0);
@@ -127,6 +137,11 @@
 
 {#if minimized}
     <div id="viz-upload-panel-minimized" in:scale={{ duration: 250 }} out:scale={{ duration: 250 }}>
+        {#if isUploading}
+            <svg class="upload-stroke-container">
+                <rect class="upload-stroke-rect" rx="20" ry="20" pathLength="100" />
+            </svg>
+        {/if}
         <Button
             id="viz-upload-panel-minimized-button"
             onclick={() => {
@@ -244,7 +259,7 @@
         flex-direction: column;
         position: absolute;
         bottom: var(--viz-spacing-xxl);
-        right: var(--viz-spacing-xxl);
+        left: var(--viz-spacing-xxl);
         background-color: var(--viz-100);
         z-index: 9999;
         border: var(--viz-border-thin);
@@ -256,8 +271,40 @@
     #viz-upload-panel-minimized {
         position: absolute;
         bottom: var(--viz-spacing-xxl);
-        right: var(--viz-spacing-xxl);
+        left: var(--viz-spacing-xxl);
         z-index: 9999;
+        display: flex;
+        position: absolute;
+    }
+
+    .upload-stroke-container {
+        position: absolute;
+        inset: -2px;
+        width: calc(100% + 4px);
+        height: calc(100% + 4px);
+        pointer-events: none;
+        z-index: 10000;
+    }
+
+    .upload-stroke-rect {
+        width: calc(100% - 2px);
+        height: calc(100% - 2px);
+        x: 1px;
+        y: 1px;
+        fill: none;
+        stroke: white;
+        stroke-width: 2px;
+        stroke-dasharray: 25 75;
+        animation: stroke-move 2s linear infinite;
+    }
+
+    @keyframes stroke-move {
+        0% {
+            stroke-dashoffset: 0;
+        }
+        100% {
+            stroke-dashoffset: -100;
+        }
     }
 
     #viz-upload-panel-header {

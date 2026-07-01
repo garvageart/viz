@@ -207,7 +207,7 @@
         flex-direction: column;
         position: absolute;
         bottom: var(--viz-spacing-xxl);
-        left: var(--viz-spacing-xxl);
+        right: var(--viz-spacing-xxl);
         background-color: var(--viz-100);
         z-index: 9999;
         border: var(--viz-border-thin);
@@ -220,7 +220,7 @@
     #viz-download-panel-minimized {
         position: absolute;
         bottom: var(--viz-spacing-xxl);
-        left: var(--viz-spacing-xxl);
+        right: var(--viz-spacing-xxl);
         z-index: 9999;
     }
 
