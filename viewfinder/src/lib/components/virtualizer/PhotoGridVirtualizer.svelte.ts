@@ -118,7 +118,7 @@ export class PhotoGridVirtualizer {
 
             for (const g of smallGroupBatch) {
                 // Inject Header Item
-                const headerItem: any = {
+                const headerItem = {
                     uid: `header-item-${g.label}`,
                     isHeaderItem: true,
                     headerLabel: g.label,
@@ -127,7 +127,7 @@ export class PhotoGridVirtualizer {
                     height: 100,
                     // Add date for robust handling
                     taken_at: g.startDate.toISO()
-                };
+                } as unknown as ImageWithDateLabel;
                 mixedItems.push(headerItem);
                 mixedItems.push(...g.allImages);
             }

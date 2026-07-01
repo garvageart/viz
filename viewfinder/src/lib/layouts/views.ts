@@ -6,8 +6,8 @@ import Filmstrip from "$lib/components/panels/workspace/Filmstrip.svelte";
 import FilterPanel from "$lib/components/panels/workspace/FilterPanel.svelte";
 import HistogramPanel from "$lib/components/panels/workspace/HistogramPanel.svelte";
 import ImagePreview from "$lib/components/panels/workspace/ImagePreview.svelte";
+import Print from "$lib/components/panels/workspace/Print.svelte";
 import DifferentContent from "$lib/components/panels/workspace/generic/DifferentContent.svelte";
-import EvenMoreDifferent from "$lib/components/panels/workspace/generic/EvenMoreDifferent.svelte";
 import SomeContent from "$lib/components/panels/workspace/generic/SomeContent.svelte";
 import { VizMimeTypes } from "$lib/constants";
 import { workspaceState } from "$lib/states/workspace.svelte";
@@ -15,6 +15,7 @@ import { toastState } from "$lib/toast-notifcations/notif-state.svelte";
 import VizView, { invalidateViz } from "$lib/views/views.svelte";
 import Collections from "../../routes/(app)/collections/+page.svelte";
 import CollectionPage from "../../routes/(app)/collections/[uid]/+page.svelte";
+import PhotosPage from "../../routes/(app)/photos/+page.svelte";
 
 // Only one instance of a view/panel and its component
 // can exist in the layout so we declare all of them here
@@ -28,12 +29,17 @@ export const views: VizView<any, any>[] = [
         component: DifferentContent
     }),
     new VizView({
-        name: "Timezone",
-        component: EvenMoreDifferent
+        name: "Print",
+        component: Print
     }),
     new VizView({
         name: "Welcome Text",
         component: DevWelcomeText
+    }),
+    new VizView({
+        name: "Photos",
+        component: PhotosPage,
+        path: "/photos"
     }),
     new VizView({
         name: "Collections",
