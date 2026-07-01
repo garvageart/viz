@@ -1,6 +1,6 @@
 <script lang="ts" module>
-    import { workspaceState } from "$lib/states/workspace.svelte";
     import { TabGroup } from "$lib/layouts/model.svelte";
+    import { workspaceState } from "$lib/states/workspace.svelte";
 
     export function openCollection(collection: Collection, currentGroup: TabGroup | null) {
         const collectionPath = `/collections/${collection.uid}`;
@@ -67,15 +67,16 @@
 <script lang="ts">
     import { goto } from "$app/navigation";
     import { page } from "$app/state";
+    import { addCollectionImages, getImage, type Collection } from "$lib/api";
     import { VizMimeTypes } from "$lib/constants";
     import { DragData } from "$lib/drag-drop/data";
-    import VizView from "$lib/views/views.svelte";
-    import CollectionPage from "../../../routes/(app)/collections/[uid]/+page.svelte";
-    import type { SvelteHTMLElements } from "svelte/elements";
-    import { addCollectionImages, getFullImagePath, getImage, type Collection } from "$lib/api";
     import { toastState } from "$lib/toast-notifcations/notif-state.svelte";
-    import { invalidateViz } from "$lib/views/views.svelte";
+    import VizView, { invalidateViz } from "$lib/views/views.svelte";
+    import { DateTime } from "luxon";
+    import type { SvelteHTMLElements } from "svelte/elements";
+    import CollectionPage from "../../../routes/(app)/collections/[uid]/+page.svelte";
     import AssetImage from "./AssetImage.svelte";
+    import MaterialIcon from "./MaterialIcon.svelte";
 
     interface Props {
         collection: Collection;
@@ -83,6 +84,17 @@
     }
 
     let { collection, isSelected = false, ...props }: Props & SvelteHTMLElements["div"] = $props();
+
+    let relativeUpdated = $derived(collection.updated_at ? DateTime.fromISO(collection.updated_at).toRelative() : "");
+    let createdDate = $derived(
+        collection.created_at
+            ? new Date(collection.created_at).toLocaleDateString(undefined, {
+                  year: "numeric",
+                  month: "short",
+                  day: "numeric"
+              })
+            : ""
+    );
 
     let thumbnail = $derived(collection.thumbnail);
     let isDropTarget = $state(false);
@@ -205,20 +217,54 @@
         {#if thumbnail}
             <AssetImage asset={thumbnail} variant="preview" alt={collection.name} class="collection-image" />
         {:else}
-            <div class="coll-no_thumbnail"></div>
+            <div class="coll-no_thumbnail">
+                <MaterialIcon iconName="folder_open" class="placeholder-icon" />
+            </div>
+        {/if}
+
+        {#if collection.private}
+            <div class="private-badge" title="Private Collection">
+                <MaterialIcon iconName="lock" style="font-size: var(--viz-font-size-sm);" />
+            </div>
         {/if}
     </div>
     <div class="metadata">
-        <span class="coll-name" title={collection.name}>{collection.name}</span>
-        <span class="coll-created_at">{new Date(collection.created_at).toLocaleDateString()}</span>
-        <span class="coll-image_count"
-            >{collection.image_count}
-            {collection.image_count === 1 ? "image" : "images"}</span
-        >
+        <div class="metadata-header">
+            <span class="coll-name" title={collection.name}>{collection.name}</span>
+            <span class="items-badge">{collection.image_count} {collection.image_count === 1 ? "item" : "items"}</span>
+        </div>
+        <div class="metadata-footer">
+            <span class="coll-created_at" title="Created {createdDate}">{createdDate}</span>
+            {#if relativeUpdated}
+                <span class="coll-updated_at" title="Updated {relativeUpdated}">Updated {relativeUpdated}</span>
+            {/if}
+        </div>
     </div>
 </div>
 
 <style lang="scss">
+    .coll-card {
+        min-width: 100%;
+        max-width: 100%;
+        height: auto;
+        background-color: var(--viz-95);
+        border: var(--viz-border-thin);
+        border-radius: var(--viz-border-radius-md);
+        position: relative;
+        overflow: hidden;
+        cursor: pointer;
+        display: flex;
+        flex-direction: column;
+        transition:
+            background-color 0.2s cubic-bezier(0.4, 0, 0.2, 1),
+            border-color 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+
+        &:hover {
+            background-color: var(--viz-90);
+            border-color: var(--viz-primary);
+        }
+    }
+
     .coll-card.selected::after {
         content: "";
         position: absolute;
@@ -226,81 +272,135 @@
         border: 2px solid var(--viz-primary);
         border-radius: inherit;
         pointer-events: none;
-        z-index: 1;
+        z-index: 2;
     }
 
-    .coll-card.selected .image-container {
-        background-color: color-mix(in srgb, var(--viz-80) 60%, white 40%);
-    }
-
-    .coll-name {
-        font-size: 1em;
-        font-weight: bold;
-        font-family: var(--viz-display-font);
-        color: var(--viz-text-color);
-        border: none;
-        outline: none;
-        padding: 0.2em 0em;
-        white-space: nowrap;
-        overflow: hidden;
-        text-overflow: ellipsis;
-    }
-
-    .coll-image_count {
-        margin-bottom: 0.5em;
-    }
-
-    .coll-card {
-        min-width: 100%;
-        max-width: 100%;
-        height: auto;
+    .coll-card.selected {
         background-color: var(--viz-90);
-        transition: background-color 0.1s ease;
-        text-align: left;
-        overflow: overlay;
-        border-radius: 0.5em;
-        position: relative;
+        border-color: var(--viz-primary);
     }
 
     .coll-card.drop-target {
-        background-color: color-mix(in srgb, var(--viz-primary) 25%, var(--viz-90));
+        background-color: color-mix(in srgb, var(--viz-primary) 12%, var(--viz-90));
+        border-color: var(--viz-primary);
     }
 
     .coll-card.drop-target::after {
         content: "";
         position: absolute;
         inset: 0;
-        border: 2px solid var(--viz-primary);
+        border: 2px dashed var(--viz-primary);
         border-radius: inherit;
         pointer-events: none;
-        z-index: 1;
-        background-color: color-mix(in srgb, var(--viz-primary) 12%, transparent);
-    }
-
-    .coll-card.drop-target .image-container {
-        background-color: color-mix(in srgb, var(--viz-primary) 25%, var(--viz-80));
+        z-index: 2;
+        background-color: color-mix(in srgb, var(--viz-primary) 8%, transparent);
     }
 
     .image-container {
-        height: 13em;
-        background-color: var(--viz-80);
-        pointer-events: none;
+        position: relative;
+        height: 12rem;
+        background-color: var(--viz-90);
+        overflow: hidden;
         display: flex;
         align-items: center;
         justify-content: center;
+        border-bottom: var(--viz-border-thin);
+    }
+
+    :global(.collection-image) {
+        width: 100%;
+        height: 100%;
+        object-fit: cover;
     }
 
     .coll-no_thumbnail {
-        background-color: var(--viz-40);
-        width: 60%;
-        height: 90%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        width: 100%;
+        height: 100%;
+        background: linear-gradient(135deg, var(--viz-90) 0%, var(--viz-80) 100%);
+        color: var(--viz-40);
+
+        :global(.placeholder-icon) {
+            font-size: 3rem;
+            opacity: 0.6;
+            filter: drop-shadow(0 2px 4px rgba(0, 0, 0, 0.05));
+        }
+    }
+
+    .private-badge {
+        position: absolute;
+        top: var(--viz-spacing-sm);
+        left: var(--viz-spacing-sm);
+        background-color: rgba(0, 0, 0, 0.75);
+        backdrop-filter: blur(4px);
+        color: var(--viz-error-color);
+        border-radius: var(--viz-border-radius-pill);
+        width: 1.6rem;
+        height: 1.6rem;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        z-index: 1;
+        pointer-events: none;
+        border: 1px solid rgba(255, 255, 255, 0.1);
     }
 
     .metadata {
         display: flex;
         flex-direction: column;
-        padding: 1em;
-        max-height: 10em;
+        padding: var(--viz-spacing-md);
+        gap: var(--viz-spacing-xs);
+    }
+
+    .metadata-header {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: var(--viz-spacing-sm);
+
+        .items-badge {
+            font-family: var(--viz-mono-font);
+            font-size: var(--viz-font-size-xs);
+            background-color: var(--viz-80);
+            color: var(--viz-40);
+            padding: 0.1rem 0.4rem;
+            border-radius: var(--viz-border-radius-sm);
+            border: var(--viz-border-thin);
+            border-color: var(--viz-75);
+            white-space: nowrap;
+            font-weight: 500;
+            line-height: 1;
+            display: inline-flex;
+            align-items: center;
+        }
+    }
+
+    .coll-name {
+        font-size: var(--viz-font-size-sm);
+        font-weight: 600;
+        font-family: var(--viz-display-font);
+        color: var(--viz-text-color);
+        white-space: nowrap;
         overflow: hidden;
+        text-overflow: ellipsis;
+        flex: 1;
+    }
+
+    .metadata-footer {
+        display: flex;
+        flex-direction: column;
+        gap: var(--viz-spacing-xxs);
+    }
+
+    .coll-created_at,
+    .coll-updated_at {
+        font-family: var(--viz-mono-font);
+        font-size: var(--viz-font-size-xs);
+        color: var(--viz-40);
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
     }
 </style>
