@@ -18,6 +18,7 @@
     import FilterModal from "$lib/components/modals/FilterModal.svelte";
     import { modalsManager } from "$lib/components/modals/manager/ModalManager.svelte";
     import VizViewContainer from "$lib/components/panels/VizViewContainer.svelte";
+    import DragAndDropUpload from "$lib/components/ui/DragAndDropUpload.svelte";
     import ContextMenu from "$lib/context-menu/ContextMenu.svelte";
     import { createCollectionMenu } from "$lib/context-menu/menus/collections";
     import type { MenuItem } from "$lib/context-menu/types";
@@ -393,6 +394,8 @@
 
     <!-- Context menu for right-click on collections -->
     <ContextMenu bind:showMenu={ctxShowMenu} items={ctxItems} anchor={ctxAnchor} offsetY={4} />
+
+    <DragAndDropUpload showCollectionCreateBox={true} />
 </VizViewContainer>
 
 <style lang="scss">

@@ -34,6 +34,7 @@
     import CollectionModal from "$lib/components/modals/CollectionModal.svelte";
     import FilterModal from "$lib/components/modals/FilterModal.svelte";
     import AddPhotosModal from "$lib/components/modals/AddPhotosModal.svelte";
+    import ConfirmationModal from "$lib/components/modals/ConfirmationModal.svelte";
     import { modalsManager } from "$lib/components/modals/manager/ModalManager.svelte";
     import VizViewContainer from "$lib/components/panels/VizViewContainer.svelte";
     import AssetsShell from "$lib/components/ui/AssetsShell.svelte";
@@ -496,7 +497,7 @@
         }
     }
 
-    async function handleDeleteSelected() {
+    function handleDeleteSelected() {
         // Delete selected images from this collection (client-side selection)
         if (selectionScope.size === 0) {
             toastState.addToast({ type: "info", message: "No images selected" });
@@ -504,11 +505,20 @@
         }
 
         const count = selectionScope.size;
-        const ok = confirm(`Remove ${count} selected image(s) from collection "${data.name}"?`);
-        if (!ok) {
-            return;
-        }
+        modalsManager.open(
+            ConfirmationModal,
+            {
+                title: "Remove Images",
+                message: `Remove ${count} selected image(s) from collection "${data.name}"?`,
+                confirmText: "Remove",
+                onConfirm: executeDeleteSelected
+            },
+            { heading: "Remove Images" }
+        );
+    }
 
+    async function executeDeleteSelected() {
+        const count = selectionScope.size;
         try {
             const res = await deleteCollectionImages(data.uid, {
                 uids: selectionScope.isSelectAll ? undefined : selectionScope.selectedItems.map((i) => i.uid),

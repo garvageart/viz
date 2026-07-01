@@ -673,6 +673,12 @@
     .selection-info {
         display: flex;
         align-items: center;
+        white-space: nowrap;
+        flex-shrink: 0;
+
+        span {
+            white-space: nowrap;
+        }
     }
 
     :global(.selection-toolbar) {
