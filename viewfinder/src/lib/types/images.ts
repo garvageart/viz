@@ -19,8 +19,19 @@ import type { APIPagination } from "$lib/api/adapters";
 import type CollectionData from "$lib/entities/collection";
 import type { User } from "./users";
 
-export type SupportedImageTypes = "jpeg" | "jpg" | "png" | "tiff";
-export const SUPPORTED_IMAGE_TYPES: SupportedImageTypes[] = ["jpeg", "jpg", "png", "tiff"];
+export type SupportedImageTypes = "jpeg" | "jpg" | "png" | "tiff" | "webp" | "avif" | "gif" | "heic" | "heif" | "svg";
+export const SUPPORTED_IMAGE_TYPES: SupportedImageTypes[] = [
+    "jpeg",
+    "jpg",
+    "png",
+    "tiff",
+    "webp",
+    "avif",
+    "gif",
+    "heic",
+    "heif",
+    "svg"
+];
 
 /**
  * Taken from https://docs.photoprism.app/developer-guide/media/raw/
@@ -110,6 +121,8 @@ export const SUPPORTED_RAW_FILES: SupportedRAWFiles[] = [
     "srw",
     "x3f"
 ];
+
+export type AllSupportedImageTypes = SupportedRAWFiles | SupportedImageTypes;
 
 /**
  * @deprecated Use ImageObjectData entity class instead

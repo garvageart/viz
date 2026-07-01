@@ -9,6 +9,12 @@ const (
 	JPG  SupportedImageTypes = "jpg"
 	PNG  SupportedImageTypes = "png"
 	TIFF SupportedImageTypes = "tiff"
+	WEBP SupportedImageTypes = "webp"
+	AVIF SupportedImageTypes = "avif"
+	GIF  SupportedImageTypes = "gif"
+	HEIC SupportedImageTypes = "heic"
+	HEIF SupportedImageTypes = "heif"
+	SVG  SupportedImageTypes = "svg"
 )
 
 var SUPPORTED_IMAGE_TYPES = []SupportedImageTypes{
@@ -16,6 +22,12 @@ var SUPPORTED_IMAGE_TYPES = []SupportedImageTypes{
 	JPG,
 	PNG,
 	TIFF,
+	WEBP,
+	AVIF,
+	GIF,
+	HEIC,
+	HEIF,
+	SVG,
 }
 
 /*
