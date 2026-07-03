@@ -66,7 +66,11 @@ export async function load({ url, fetch }) {
             // Already logged in? Go home or to continue path
             const queryParams = new URLSearchParams(url.search);
             const continueQuery = queryParams.get("continue");
-            redirect(303, continueQuery ? decodeURIComponent(continueQuery) : "/");
+            const continueUrl = continueQuery ? decodeURIComponent(continueQuery) : "";
+            // Only allow same-origin relative paths — blocks javascript:, data:, https://evil, //evil
+            const safeContinue =
+                continueUrl && continueUrl.startsWith("/") && !continueUrl.startsWith("//") ? continueUrl : "/";
+            redirect(303, safeContinue);
         }
         // Not logged in, stay on auth page
         return;
@@ -98,7 +102,7 @@ export async function load({ url, fetch }) {
     if (continueQuery) {
         const decoded = decodeURIComponent(continueQuery).trim();
         // Avoid infinite redirect loop
-        if (decoded && decoded !== url.pathname) {
+        if (decoded && decoded !== url.pathname && decoded.startsWith("/") && !decoded.startsWith("//")) {
             redirect(303, decoded);
         }
     }
