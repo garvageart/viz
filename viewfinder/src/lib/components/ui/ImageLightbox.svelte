@@ -5,7 +5,15 @@
     import { setRating } from "$lib/images/exif";
     import { toastState } from "$lib/toast-notifcations/notif-state.svelte";
     import { downloadOriginalImageFile } from "$lib/utils/http";
-    import { formatBytes, getFlashMode, getImageLabel, getTakenAt, getThumbhashURL } from "$lib/utils/images";
+    import { copyToClipboard } from "$lib/utils/misc";
+    import {
+        formatBytes,
+        getFlashMode,
+        getImageLabel,
+        getTakenAt,
+        getThumbhashURL,
+        getWhiteBalance
+    } from "$lib/utils/images";
     import hotkeys from "hotkeys-js";
     import { onMount, untrack } from "svelte";
     import type { MouseEventHandler, PointerEventHandler, WheelEventHandler } from "svelte/elements";
@@ -19,6 +27,8 @@
     import MaterialIcon from "./MaterialIcon.svelte";
     import { dev } from "$app/environment";
     import { ImageLoader } from "$lib/images/loader/image-loader.svelte";
+    import { modalsManager } from "$lib/components/modals/manager/ModalManager.svelte";
+    import ExportPanel, { modalOptions as exportModalOptions } from "$lib/components/ui/panels/ExportPanel.svelte";
 
     interface Props {
         lightboxImage: ImageAsset | undefined;
@@ -35,11 +45,12 @@
     );
 
     // Element Bindings
-    let imageEl: HTMLImageElement = $state()!;
-    let canvasEl: HTMLCanvasElement = $state()!;
-    let imageContainerEl: HTMLDivElement = $state()!;
-    let zoomTargetEl: HTMLDivElement = $state()!;
+    let imageEl = $state<HTMLImageElement>();
+    let canvasEl = $state<HTMLCanvasElement>();
+    let imageContainerEl = $state<HTMLDivElement>();
+    let zoomTargetEl = $state<HTMLDivElement>();
     let showImageStateDebugPanel = $state(false);
+    let currentPreloadImg = $state<HTMLImageElement | null>(null);
 
     class ImageZoomState {
         currentZoom = $state(1);
@@ -183,14 +194,24 @@
 
             // Load high-resolution image in background to avoid flicker
             const preloadImg = new Image();
+            currentPreloadImg = preloadImg;
             preloadImg.onload = () => {
                 loader.completeZoomUpgrade(fullURL);
+                currentPreloadImg = null;
+            };
+            preloadImg.onerror = () => {
+                currentPreloadImg = null;
             };
             preloadImg.src = fullURL;
         }, 300);
 
         return () => {
             clearTimeout(timeoutId);
+            // Abort any pending preload
+            if (currentPreloadImg) {
+                currentPreloadImg.src = "";
+                currentPreloadImg = null;
+            }
         };
     });
 
@@ -331,18 +352,25 @@
     let imageDimensions = $state<{ width: number; height: number } | null>(null);
 
     function updateImageDimensions() {
-        if (imageEl && imageEl.clientWidth > 0 && imageEl.clientHeight > 0) {
-            const newWidth = imageEl.clientWidth;
-            const newHeight = imageEl.clientHeight;
+        if (!imageEl || !imageContainerEl) {
+            return;
+        }
 
+        const displayWidth = imageEl.clientWidth;
+        const displayHeight = imageEl.clientHeight;
+
+        if (displayWidth > 0 && displayHeight > 0) {
+            // Image has rendered — use its actual CSS-constrained dimensions.
+            // This reflects all constraints (padding on .image-wrapper in crop mode, etc.)
+            // and is always correct regardless of layout changes.
             untrack(() => {
                 if (imageDimensions && currentCrop) {
                     const oldWidth = imageDimensions.width;
                     const oldHeight = imageDimensions.height;
 
-                    if (oldWidth > 0 && oldHeight > 0 && (oldWidth !== newWidth || oldHeight !== newHeight)) {
-                        const scaleX = newWidth / oldWidth;
-                        const scaleY = newHeight / oldHeight;
+                    if (oldWidth > 0 && oldHeight > 0 && (oldWidth !== displayWidth || oldHeight !== displayHeight)) {
+                        const scaleX = displayWidth / oldWidth;
+                        const scaleY = displayHeight / oldHeight;
 
                         currentCrop = {
                             x: currentCrop.x * scaleX,
@@ -354,11 +382,35 @@
                 }
 
                 imageDimensions = {
-                    width: newWidth,
-                    height: newHeight
+                    width: displayWidth,
+                    height: displayHeight
                 };
             });
+            return;
         }
+
+        // Image not yet rendered — compute fallback from API metadata so .zoom-target
+        // gets explicit dimensions early. The placeholder will then scale correctly.
+        if (!lightboxImage?.width || !lightboxImage?.height) {
+            return;
+        }
+
+        const containerWidth = imageContainerEl.clientWidth;
+        const containerHeight = imageContainerEl.clientHeight;
+        const scale = Math.min(1, containerWidth / lightboxImage.width, containerHeight / lightboxImage.height);
+        const fallbackWidth = Math.round(lightboxImage.width * scale);
+        const fallbackHeight = Math.round(lightboxImage.height * scale);
+
+        if (fallbackWidth <= 0 || fallbackHeight <= 0) {
+            return;
+        }
+
+        untrack(() => {
+            imageDimensions = {
+                width: fallbackWidth,
+                height: fallbackHeight
+            };
+        });
     }
 
     // Reactively track image dimension changes (window resize, crop layout changes)
@@ -457,19 +509,24 @@
         if (!isCropping) {
             // Enter crop mode
             isCropping = true;
-            // Reset zoom to ensure user sees the whole image context for cropping
-            zoomState.currentZoom = 1;
-            zoomState.currentPositionX = 0;
-            zoomState.currentPositionY = 0;
-
+            // Preserve current zoom and position for cropping
+            // Ensure crop area reflects current view
             if (imageEl.complete) {
                 restoreCrop();
+                updateImageDimensions();
             }
         } else {
             // Exit crop mode (cancel)
             isCropping = false;
             currentCrop = null;
             cropMenuPosition = null;
+            // Remove explicit image dimensions so .zoom-target loses its explicit
+            // width/height constraint. This breaks the circular dependency where
+            // imageDimensions -> .zoom-target explicit size -> <img> constrained ->
+            // updateImageDimensions reads constrained size -> writes it back.
+            // The ResizeObserver on imageEl will fire after reflow and set the
+            // correct full-container dimensions.
+            imageDimensions = null;
         }
     }
 
@@ -591,6 +648,10 @@
         zoomState.currentZoom = 1;
         zoomState.currentPositionX = 0;
         zoomState.currentPositionY = 0;
+        // Remove explicit image dimensions so the cropped (or overridden) image
+        // reflows to fill the container. The new image onload will fire
+        // handleLoad() -> updateImageDimensions() to set correct dimensions.
+        imageDimensions = null;
     }
 
     function handleCropReset() {
@@ -717,7 +778,8 @@
                 return;
             }
 
-            // If not cropping, let Lightbox handle it or close explicitly
+            // If not cropping, close the lightbox
+            e.preventDefault();
             lightboxImage = undefined;
         };
 
@@ -751,49 +813,75 @@
                     <div class="card-row main-row">
                         <MaterialIcon iconName="image" class="exif-material-icon" />
                         <div class="card-values">
-                            {#if editNameMode}
-                                <InputText
-                                    bind:value={lightboxImage!.name}
-                                    class="value-big"
-                                    style="min-height: auto; padding: 0.5rem;"
-                                    spellcheck="false"
-                                    autofocus={true}
-                                    onblur={async (e) => {
-                                        editNameMode = false;
-                                        if (e.currentTarget.value.trim() === lightboxImage!.name) {
-                                            return;
-                                        }
-
-                                        try {
-                                            const res = await updateImage(lightboxImage!.uid, {
-                                                name: lightboxImage!.name
-                                            });
-
-                                            if (res.status === 200) {
-                                                lightboxImage = res.data;
-                                                onImageUpdated?.(res.data);
-                                            }
-                                        } catch (error) {}
-                                    }}
-                                    onkeydown={(e) => {
-                                        if (e.key === "Enter") {
-                                            e.currentTarget.blur();
-                                        } else if (e.key === "Escape") {
+                            <div class="name-row">
+                                {#if editNameMode}
+                                    <InputText
+                                        bind:value={lightboxImage!.name}
+                                        class="value-big"
+                                        style="min-height: auto; padding: 0.5rem;"
+                                        spellcheck="false"
+                                        autofocus={true}
+                                        onblur={async (e) => {
                                             editNameMode = false;
-                                        }
-                                    }}
-                                />
-                            {:else}
-                                <div
-                                    role="button"
-                                    tabindex="0"
-                                    onclick={() => (editNameMode = true)}
-                                    onkeydown={() => (editNameMode = true)}
-                                    class="value-big"
-                                >
-                                    {lightboxImage?.name}
-                                </div>
-                            {/if}
+                                            if (e.currentTarget.value.trim() === lightboxImage!.name) {
+                                                return;
+                                            }
+
+                                            try {
+                                                const res = await updateImage(lightboxImage!.uid, {
+                                                    name: lightboxImage!.name
+                                                });
+
+                                                if (res.status === 200) {
+                                                    lightboxImage = res.data;
+                                                    onImageUpdated?.(res.data);
+                                                }
+                                            } catch (error) {}
+                                        }}
+                                        onkeydown={(e) => {
+                                            if (e.key === "Enter") {
+                                                e.currentTarget.blur();
+                                            } else if (e.key === "Escape") {
+                                                editNameMode = false;
+                                            }
+                                        }}
+                                    />
+                                {:else}
+                                    <div
+                                        role="button"
+                                        tabindex="0"
+                                        onclick={() => (editNameMode = true)}
+                                        onkeydown={() => (editNameMode = true)}
+                                        class="value-big"
+                                    >
+                                        {lightboxImage?.name}
+                                    </div>
+                                    <button
+                                        class="copy-filename-btn"
+                                        title="Copy filename"
+                                        onclick={() => {
+                                            if (lightboxImage?.name) {
+                                                copyToClipboard(lightboxImage.name);
+                                                toastState.addToast({
+                                                    type: "success",
+                                                    title: lightboxImage.name,
+                                                    message: "Filename copied to clipboard",
+                                                    timeout: 2000
+                                                });
+                                            }
+                                        }}
+                                    >
+                                        <MaterialIcon iconName="content_copy" class="exif-material-icon" />
+                                    </button>
+                                {/if}
+                                {#if lightboxImage?.image_metadata?.file_type}
+                                    <span class="file-type-badge"
+                                        >{lightboxImage.image_metadata.file_type
+                                            .replace("image/", "")
+                                            .toUpperCase()}</span
+                                    >
+                                {/if}
+                            </div>
                         </div>
                     </div>
                     <div class="card-row meta-row">
@@ -881,6 +969,19 @@
                                 </div>
                             </div>
                         </div>
+                        {#if lightboxImage?.exif?.white_balance}
+                            <div class="card-row meta-row">
+                                <MaterialIcon iconName="light_mode" class="exif-material-icon" />
+                                <div class="card-values">
+                                    <div class="value-sub">
+                                        {getWhiteBalance(lightboxImage.exif.white_balance)}
+                                        {#if lightboxImage?.exif?.color_temperature}
+                                            &nbsp;· {lightboxImage.exif.color_temperature}K
+                                        {/if}
+                                    </div>
+                                </div>
+                            </div>
+                        {/if}
                     </div>
 
                     <div class="exif-card">
@@ -942,6 +1043,85 @@
     </div>
 {/snippet}
 
+{#snippet zoomStateDebug()}
+    <div class="lightbox-debug-panel">
+        <h3>Zoom & Loader State</h3>
+        <div class="debug-grid">
+            <span class="debug-label">Initial Load:</span>
+            <span class="debug-val" class:loaded={loader.initialImageLoaded}>
+                {loader.initialImageLoaded ? "Loaded" : "Loading"}
+            </span>
+
+            <span class="debug-label">Load State:</span>
+            <span
+                class="debug-val"
+                class:loaded-state={loader.loadState === "loaded"}
+                class:loading-state={loader.loadState === "loading"}
+                class:error-state={loader.loadState === "error"}
+            >
+                {loader.loadState}
+            </span>
+
+            <span class="debug-label">UID:</span>
+            <span class="debug-val mono">
+                {lightboxImage?.uid || "none"}
+            </span>
+
+            <span class="debug-label">Last UID:</span>
+            <span class="debug-val mono">
+                {loader.lastLoadedImageUid || "none"}
+            </span>
+
+            <span class="debug-label">Current Zoom:</span>
+            <span class="debug-val">
+                {zoomState.currentZoom.toFixed(4)}x ({Math.round(zoomState.currentZoom * 100)}%)
+            </span>
+
+            <span class="debug-label">Coords:</span>
+            <span class="debug-val mono">
+                X: {Math.round(zoomState.currentPositionX)}px, Y: {Math.round(zoomState.currentPositionY)}px
+            </span>
+
+            <span class="debug-label">Display URL:</span>
+            <span class="debug-val url" title={loader.displayURL}>
+                {loader.displayURL ? loader.displayURL.substring(loader.displayURL.lastIndexOf("/") + 1) : "none"}
+            </span>
+
+            <span class="debug-label">Zoomed URL:</span>
+            <span class="debug-val url" title={loader.zoomedImageURL}>
+                {loader.zoomedImageURL
+                    ? loader.zoomedImageURL.substring(loader.zoomedImageURL.lastIndexOf("/") + 1)
+                    : "none"}
+            </span>
+
+            <span class="debug-label">Fetch Type:</span>
+            <span class="debug-val mono">
+                {loader.fetchType}
+            </span>
+
+            <span class="debug-label">Fetch Status:</span>
+            <span
+                class="debug-val"
+                class:loaded-state={loader.fetchEndTime !== null}
+                class:loading-state={loader.fetchStartTime !== null && loader.fetchEndTime === null}
+            >
+                {loader.fetchEndTime !== null
+                    ? `Completed (${loader.fetchDuration}ms)`
+                    : loader.fetchStartTime !== null
+                      ? "Pending"
+                      : "Idle"}
+            </span>
+
+            <span class="debug-label">Fetch URL:</span>
+            <span class="debug-val url" title={loader.currentFetchURL}>
+                {loader.currentFetchURL
+                    ? loader.currentFetchURL.substring(loader.currentFetchURL.lastIndexOf("/") + 1)
+                    : "none"}
+            </span>
+        </div>
+    </div>
+{/snippet}
+
 <Lightbox
     bind:show
     backgroundOpacity={0.95}
@@ -953,6 +1133,8 @@
                 lightboxImage = undefined;
             }
         } else {
+            // In crop mode, clicking overlay closes the floating crop menu if open,
+            // otherwise toggles crop mode
             if (cropMenuPosition) {
                 cropMenuPosition = null;
             } else {
@@ -969,15 +1151,18 @@
                     e.stopPropagation();
                     return;
                 }
-                if (isCropping) {
-                    const target = e.target as HTMLElement;
-                    if (!target.closest("button") && !target.closest(".crop-tools-container")) {
-                        e.stopPropagation();
+                // Only handle clicks on the container background (not on buttons or image)
+                if (e.currentTarget === imageContainerEl) {
+                    if (isCropping) {
+                        // Close floating crop menu if open, otherwise exit crop mode
                         if (cropMenuPosition) {
                             cropMenuPosition = null;
                         } else {
                             toggleCropMode();
                         }
+                    } else if (zoomState.currentZoom === 1) {
+                        // Close lightbox when not cropping and at default zoom
+                        lightboxImage = undefined;
                     }
                 }
             }}
@@ -991,8 +1176,7 @@
                 iconName="close"
                 onclick={() => {
                     if (isCropping) {
-                        isCropping = false;
-                        cropMenuPosition = null;
+                        toggleCropMode();
                     } else {
                         lightboxImage = undefined;
                     }
@@ -1004,7 +1188,6 @@
                         <IconButton
                             class="lightbox-button-icon"
                             hoverColor="transparent"
-                            style={lightboxMaterialIconColour}
                             title="Toggle Placeholder"
                             iconName="blur_linear"
                             onclick={() => {
@@ -1014,7 +1197,6 @@
                         <IconButton
                             class="lightbox-button-icon"
                             hoverColor="transparent"
-                            style={lightboxMaterialIconColour}
                             title="Toggle Zoom & Image State Debug"
                             iconName="report"
                             onclick={() => {
@@ -1025,7 +1207,6 @@
                     <IconButton
                         class="lightbox-button-icon"
                         hoverColor="transparent"
-                        style={lightboxMaterialIconColour}
                         title="Crop"
                         iconName="crop"
                         onclick={toggleCropMode}
@@ -1033,8 +1214,7 @@
                     <IconButton
                         class="lightbox-button-icon"
                         hoverColor="transparent"
-                        style={lightboxMaterialIconColour}
-                        title="Download"
+                        title="Download Original"
                         iconName="download"
                         onclick={() => {
                             downloadOriginalImageFile(lightboxImage!);
@@ -1043,7 +1223,17 @@
                     <IconButton
                         class="lightbox-button-icon"
                         hoverColor="transparent"
-                        style={lightboxMaterialIconColour}
+                        title="Export"
+                        iconName="ios_share"
+                        onclick={(e) => {
+                            e.stopPropagation();
+
+                            modalsManager.open(ExportPanel, { assets: [lightboxImage!] }, exportModalOptions);
+                        }}
+                    />
+                    <IconButton
+                        class="lightbox-button-icon"
+                        hoverColor="transparent"
                         title={`${showMetadata ? "Hide" : "Show"} Info`}
                         onclick={(e) => {
                             e.stopPropagation();
@@ -1056,6 +1246,7 @@
 
             <div
                 class="image-wrapper"
+                class:is-crop={isCropping}
                 bind:this={imageContainerEl}
                 role="presentation"
                 onclick={(e) => {
@@ -1063,92 +1254,20 @@
                         e.stopPropagation();
                         return;
                     }
-                    if (e.target === imageContainerEl && !isCropping && zoomState.currentZoom === 1) {
-                        lightboxImage = undefined;
+                    // Only close on clicking the wrapper background, not on children
+                    if (e.target === e.currentTarget) {
+                        if (isCropping) {
+                            // Exit crop mode
+                            toggleCropMode();
+                        } else if (zoomState.currentZoom === 1) {
+                            // Close lightbox when not cropping and at default zoom
+                            lightboxImage = undefined;
+                        }
                     }
                 }}
             >
                 {#if dev && showImageStateDebugPanel}
-                    <div class="lightbox-debug-panel">
-                        <h3>Zoom & Loader State</h3>
-                        <div class="debug-grid">
-                            <span class="debug-label">Initial Load:</span>
-                            <span class="debug-val" class:loaded={loader.initialImageLoaded}>
-                                {loader.initialImageLoaded ? "Loaded" : "Loading"}
-                            </span>
-
-                            <span class="debug-label">Load State:</span>
-                            <span
-                                class="debug-val"
-                                class:loaded-state={loader.loadState === "loaded"}
-                                class:loading-state={loader.loadState === "loading"}
-                                class:error-state={loader.loadState === "error"}
-                            >
-                                {loader.loadState}
-                            </span>
-
-                            <span class="debug-label">UID:</span>
-                            <span class="debug-val mono">
-                                {lightboxImage?.uid || "none"}
-                            </span>
-
-                            <span class="debug-label">Last UID:</span>
-                            <span class="debug-val mono">
-                                {loader.lastLoadedImageUid || "none"}
-                            </span>
-
-                            <span class="debug-label">Current Zoom:</span>
-                            <span class="debug-val">
-                                {zoomState.currentZoom.toFixed(4)}x ({Math.round(zoomState.currentZoom * 100)}%)
-                            </span>
-
-                            <span class="debug-label">Coords:</span>
-                            <span class="debug-val mono">
-                                X: {Math.round(zoomState.currentPositionX)}px, Y: {Math.round(
-                                    zoomState.currentPositionY
-                                )}px
-                            </span>
-
-                            <span class="debug-label">Display URL:</span>
-                            <span class="debug-val url" title={loader.displayURL}>
-                                {loader.displayURL
-                                    ? loader.displayURL.substring(loader.displayURL.lastIndexOf("/") + 1)
-                                    : "none"}
-                            </span>
-
-                            <span class="debug-label">Zoomed URL:</span>
-                            <span class="debug-val url" title={loader.zoomedImageURL}>
-                                {loader.zoomedImageURL
-                                    ? loader.zoomedImageURL.substring(loader.zoomedImageURL.lastIndexOf("/") + 1)
-                                    : "none"}
-                            </span>
-
-                            <span class="debug-label">Fetch Type:</span>
-                            <span class="debug-val mono">
-                                {loader.fetchType}
-                            </span>
-
-                            <span class="debug-label">Fetch Status:</span>
-                            <span
-                                class="debug-val"
-                                class:loaded-state={loader.fetchEndTime !== null}
-                                class:loading-state={loader.fetchStartTime !== null && loader.fetchEndTime === null}
-                            >
-                                {loader.fetchEndTime !== null
-                                    ? `Completed (${loader.fetchDuration}ms)`
-                                    : loader.fetchStartTime !== null
-                                      ? "Pending"
-                                      : "Idle"}
-                            </span>
-
-                            <span class="debug-label">Fetch URL:</span>
-                            <span class="debug-val url" title={loader.currentFetchURL}>
-                                {loader.currentFetchURL
-                                    ? loader.currentFetchURL.substring(loader.currentFetchURL.lastIndexOf("/") + 1)
-                                    : "none"}
-                            </span>
-                        </div>
-                    </div>
+                    {@render zoomStateDebug()}
                 {/if}
                 <div
                     class="zoom-target"
@@ -1168,12 +1287,21 @@
                     onpointerup={handlePointerUp}
                     onpointercancel={handlePointerUp}
                     onclick={(e) => {
+                        // If dragging was in progress, ignore
                         if (wasDragging) {
                             e.stopPropagation();
                             return;
                         }
-                        if (e.target === e.currentTarget && !isCropping && zoomState.currentZoom === 1) {
-                            lightboxImage = undefined;
+                        // Click on background
+                        if (e.target === e.currentTarget) {
+                            if (isCropping) {
+                                // Exit crop mode and reset state
+                                toggleCropMode();
+                                return;
+                            }
+                            if (!isCropping && zoomState.currentZoom === 1) {
+                                lightboxImage = undefined;
+                            }
                         }
                     }}
                 >
@@ -1215,9 +1343,22 @@
                 </div>
 
                 {#if zoomState.currentZoom > 1}
-                    <div class="zoom-indicator-badge">
+                    <div class="zoom-indicator-badge" role="status" aria-live="polite">
                         Zoom: {Math.round(zoomState.currentZoom * 100)}%
                     </div>
+                {/if}
+
+                {#if isCropping && cropMenuPosition}
+                    <CropTools
+                        x={cropMenuPosition.x}
+                        y={cropMenuPosition.y}
+                        onApply={handleCropApply}
+                        onReset={handleCropReset}
+                        onCancel={() => {
+                            cropMenuPosition = null;
+                        }}
+                        onAspectRatioChange={handleAspectRatioChange}
+                    />
                 {/if}
             </div>
 
@@ -1245,20 +1386,8 @@
                     </button>
                 </div>
             {/if}
-
-            {#if isCropping && cropMenuPosition}
-                <CropTools
-                    x={cropMenuPosition.x}
-                    y={cropMenuPosition.y}
-                    onApply={handleCropApply}
-                    onReset={handleCropReset}
-                    onCancel={() => {
-                        toggleCropMode();
-                    }}
-                    onAspectRatioChange={handleAspectRatioChange}
-                />
-            {/if}
         </div>
+
         {#if isCropping}
             <div class="metadata-editor">
                 <CropTools
@@ -1292,7 +1421,8 @@
         display: flex;
         justify-content: center;
         align-items: center;
-        width: 100%;
+        flex: 1 1 0%;
+        min-width: 0;
         height: 100%;
         pointer-events: auto;
     }
@@ -1301,7 +1431,7 @@
         position: absolute;
         top: 1em;
         right: 1em;
-        z-index: 10;
+        z-index: 200;
         pointer-events: auto;
         display: flex;
         gap: 0.5em;
@@ -1311,7 +1441,7 @@
         position: absolute;
         top: 1em;
         left: 1em;
-        z-index: 10;
+        z-index: 200;
         pointer-events: auto;
     }
 
@@ -1353,6 +1483,11 @@
         width: 100%;
         overflow: hidden;
         pointer-events: auto;
+        box-sizing: border-box;
+    }
+
+    .image-wrapper.is-crop {
+        padding: var(--viz-spacing-xxl);
     }
 
     .zoom-target {
@@ -1389,6 +1524,10 @@
         z-index: 1;
         opacity: 1;
         image-rendering: auto;
+        /* Force fill parent so the placeholder matches the image display area.
+           .zoom-target gets explicit dimensions from imageDimensions early via the
+           API data fallback, so min-height: 100% resolves to the correct size. */
+        width: 100%;
         min-height: 100%;
     }
 
@@ -1403,12 +1542,6 @@
 
     :global(.lightbox-image.main.loading) {
         opacity: 0;
-    }
-
-    // to give space for seeing cropping
-    :global(.lightbox-image.is-crop) {
-        max-width: 97vw;
-        max-height: 97vh;
     }
 
     .lightbox-nav {
@@ -1435,25 +1568,28 @@
     }
 
     .metadata-editor {
-        background-color: var(--viz-bg-color);
-        padding: 1em;
-        border-radius: 0.5em;
+        background-color: var(--viz-90);
+        padding: var(--viz-spacing-std);
+        border-radius: var(--viz-border-radius-lg);
+        border-left: 1px solid var(--viz-60);
         color: var(--viz-10);
         height: 100%;
         width: auto;
         max-width: 20vw;
         min-width: 20vw;
-        z-index: 100;
         pointer-events: auto;
         box-sizing: border-box;
         font-size: 0.85rem;
+        overflow-y: auto;
     }
 
     .metadata-header {
         font-size: 1rem;
         display: flex;
         align-items: center;
-        margin-bottom: 1em;
+        margin-bottom: var(--viz-spacing-sm);
+        padding-bottom: var(--viz-spacing-sm);
+        border-bottom: 1px solid var(--viz-85);
         gap: 0.5em;
     }
 
@@ -1463,13 +1599,22 @@
 
     .exif-card-group {
         display: flex;
-        gap: 0.5em;
+        gap: 0;
+    }
+
+    .exif-card-group > .exif-card:first-child {
+        border-right: none;
+        border-radius: var(--viz-border-radius-md) 0 0 var(--viz-border-radius-md);
+    }
+
+    .exif-card-group > .exif-card:last-child {
+        border-radius: 0 var(--viz-border-radius-md) var(--viz-border-radius-md) 0;
     }
 
     .exif-cards {
         display: flex;
         flex-direction: column;
-        gap: 0.75em;
+        gap: var(--viz-spacing-sm);
     }
 
     .exif-card {
@@ -1477,13 +1622,13 @@
         color: var(--viz-text-color);
         box-sizing: border-box;
         width: 100%;
-        padding: 0.6em 0.8em;
-        border-radius: 0.5em;
+        padding: 0.55em 0.75em;
+        border-radius: var(--viz-border-radius-md);
+        border: 1px solid transparent;
         display: flex;
         flex-direction: column;
         justify-content: center;
-        gap: 0.4em;
-        box-shadow: 0 1px 0 rgba(0, 0, 0, 0.04) inset;
+        gap: 0.35em;
     }
 
     .card-row {
@@ -1495,12 +1640,13 @@
     }
 
     :global(.exif-material-icon) {
-        color: var(--viz-10);
+        color: var(--viz-30);
         display: inline-flex;
         align-items: center;
         justify-content: center;
         line-height: 1;
         vertical-align: middle;
+        font-size: 1.1em;
     }
 
     .card-values {
@@ -1516,8 +1662,60 @@
     }
 
     :global(.value-big) {
-        font-size: 1.1em;
+        font-size: 1em;
         font-weight: 600;
+        letter-spacing: -0.01em;
+    }
+
+    .name-row {
+        display: flex;
+        align-items: center;
+        gap: 0.4em;
+        min-width: 0;
+    }
+
+    .name-row > :global(.value-big) {
+        flex: 1 1 auto;
+        min-width: 0;
+    }
+
+    .copy-filename-btn {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        background: none;
+        border: none;
+        cursor: pointer;
+        padding: 0.15em;
+        border-radius: var(--viz-border-radius-sm);
+        opacity: 0;
+        transition: opacity 120ms ease;
+        flex-shrink: 0;
+        color: var(--viz-30);
+    }
+
+    .card-row:hover .copy-filename-btn {
+        opacity: 1;
+    }
+
+    .copy-filename-btn:hover {
+        color: var(--viz-text-color);
+        background: var(--viz-85);
+    }
+
+    :global(.file-type-badge) {
+        display: inline-block;
+        font-size: 0.6rem;
+        font-weight: 600;
+        font-family: var(--viz-mono-font);
+        letter-spacing: 0.04em;
+        padding: 0.1em 0.45em;
+        border-radius: var(--viz-border-radius-sm);
+        background: var(--viz-85);
+        color: var(--viz-30);
+        border: 1px solid var(--viz-75);
+        line-height: 1.4;
+        flex-shrink: 0;
     }
 
     .value-sub {
@@ -1533,10 +1731,14 @@
     }
 
     .rating-container {
-        margin-top: 0.75em;
+        margin-top: var(--viz-spacing-std);
+        padding: var(--viz-spacing-sm) var(--viz-spacing-std) var(--viz-spacing-sm) var(--viz-spacing-std);
+        background: var(--viz-100);
+        border-radius: var(--viz-border-radius-md);
         display: flex;
         align-items: center;
         gap: 0.5em;
+        border: 1px solid transparent;
     }
 
     .zoom-target.can-pan {

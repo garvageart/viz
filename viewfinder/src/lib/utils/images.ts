@@ -417,3 +417,23 @@ export function getFlashMode(flash?: number) {
 
     return flash & 1 ? "Fired" : "Did not fire";
 }
+
+const WHITE_BALANCE_MAP: Record<string, string> = {
+    "0": "Auto",
+    "1": "Manual"
+};
+
+export function getWhiteBalance(wb?: string | null): string | null {
+    if (!wb) {
+        return null;
+    }
+
+    const trimmed = wb.trim();
+    if (trimmed in WHITE_BALANCE_MAP) {
+        return WHITE_BALANCE_MAP[trimmed];
+    }
+
+    // If it's not a known numeric code, return the value as-is
+    // (some cameras or tools may store descriptive strings)
+    return trimmed;
+}
