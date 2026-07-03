@@ -44,5 +44,6 @@
         border-radius: var(--viz-border-radius-sm);
         position: relative;
         overflow: hidden;
+        transition: width 0.3s ease;
     }
 </style>

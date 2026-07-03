@@ -2,7 +2,9 @@
  * loading.svelte.ts
  *
  * Centralized state for tracking navigation progress.
- * Only tracks network requests that occur during an active navigation.
+ * Progress is driven purely by real request completions — no timers,
+ * no trickle, no simulated progress.  Monotonic within a session so
+ * the bar never regresses when new requests are discovered.
  */
 import { untrack } from "svelte";
 
@@ -11,38 +13,39 @@ class LoadingState {
     private totalRequestsInSession = $state(0);
     private completedRequestsInSession = $state(0);
 
-    // Whether we are currently in a "navigation" phase
+    /** Whether we are currently in a "navigation" phase */
     isNavigating = $state(false);
 
-    /** Calculated progress (0-100) based on requests in the current navigation */
+    /**
+     * Progress (0–100), driven purely by request data.
+     * Monotonic — never decreases within a single navigation session.
+     */
     progress = $state(100);
 
     private updateProgress() {
+        let newProgress: number;
+
         if (!this.isNavigating) {
-            this.progress = 100;
-            return;
+            newProgress = 100;
+        } else if (this.totalRequestsInSession === 0) {
+            // No requests yet — show a hint of activity
+            newProgress = 15;
+        } else {
+            // Pure request-ratio progress, scaled to 15–95
+            const ratio = this.completedRequestsInSession / this.totalRequestsInSession;
+            newProgress = 15 + ratio * 80;
+            newProgress = Math.min(newProgress, 95);
         }
 
-        if (this.totalRequestsInSession === 0) {
-            this.progress = 15; // Initial jump
-            return;
+        // Ratchet — never go backwards within a navigation session
+        if (newProgress > this.progress) {
+            this.progress = newProgress;
         }
-
-        // Calculate progress based on completed vs total
-        const baseProgress = (this.completedRequestsInSession / this.totalRequestsInSession) * 100;
-
-        // Scale to 15-95 range so it doesn't hit 100 until we say so
-        const weightedProgress = 15 + baseProgress * 0.8;
-
-        this.progress = Math.min(weightedProgress, 95);
     }
 
     startRequest() {
         untrack(() => {
-            // Only track requests that happen during navigation
-            if (!this.isNavigating) {
-                return;
-            }
+            if (!this.isNavigating) return;
 
             this.activeRequests++;
             this.totalRequestsInSession++;
@@ -52,9 +55,7 @@ class LoadingState {
 
     endRequest() {
         untrack(() => {
-            if (!this.isNavigating) {
-                return;
-            }
+            if (!this.isNavigating) return;
 
             this.activeRequests = Math.max(0, this.activeRequests - 1);
             this.completedRequestsInSession++;
@@ -67,13 +68,14 @@ class LoadingState {
         this.completedRequestsInSession = 0;
         this.activeRequests = 0;
         this.isNavigating = true;
+        this.progress = 0; // Reset so monotonic guard starts fresh
         this.updateProgress();
     }
 
     endNavigation() {
+        this.progress = 100;
         this.isNavigating = false;
         this.activeRequests = 0;
-        this.updateProgress();
     }
 }
 

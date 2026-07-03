@@ -1,6 +1,7 @@
 <script lang="ts">
     import { dev } from "$app/environment";
     import { afterNavigate, beforeNavigate } from "$app/navigation";
+    import { fade } from "svelte/transition";
 
     if (dev) {
         import("material-symbols/index.css");
@@ -73,15 +74,11 @@
         toggleFullscreen();
     });
 
-    let showNavProgress = $state(false);
-
     beforeNavigate(() => {
-        showNavProgress = true;
         loadingState.startNavigation();
     });
 
     afterNavigate(() => {
-        showNavProgress = false;
         loadingState.endNavigation();
     });
 </script>
@@ -92,10 +89,11 @@
 <Notifications />
 <ModalRenderer />
 
-{#if showNavProgress}
+{#if loadingState.isNavigating}
     <div
         class="nav-progress-container"
         class:app={!page.url.pathname.startsWith("/auth") && modalsManager.modals.length === 0}
+        transition:fade={{ duration: 400 }}
     >
         <NavigationProgressBar />
     </div>
