@@ -329,8 +329,10 @@
             {#each previewItems as item}
                 <div class="preview-row">
                     <span class="preview-orig" title={item.original}>{item.original}</span>
-                    <MaterialIcon iconName="arrow_forward" weight={500} class="preview-arrow" />
-                    <span class="preview-new" title={item.preview}>{item.preview}</span>
+                    {#if item.preview.trim() !== item.original.trim()}
+                        <MaterialIcon iconName="arrow_forward" weight={500} class="preview-arrow" />
+                        <span class="preview-new" title={item.preview}>{item.preview}</span>
+                    {/if}
                 </div>
             {/each}
             {#if assets.length > 3}

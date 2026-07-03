@@ -3,7 +3,8 @@
 
     export let modalOptions: ModalOptions = $state({
         height: "80%",
-        width: "40%"
+        width: "40%",
+        applyPadding: false
     });
 </script>
 
@@ -379,7 +380,7 @@
         {#snippet destinationSnippet()}
             <InputSelect
                 label="Export to"
-                options={[{ value: "zip", label: assets.length > 1 ? "Download as ZIP" : "Download Locally" }]}
+                options={[{ value: "zip", label: assets.length > 1 ? "Download as ZIP" : "Local Computer" }]}
                 bind:value={settings.destinationMode}
             />
         {/snippet}

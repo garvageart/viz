@@ -231,7 +231,8 @@
     <div class="metadata">
         <div class="metadata-header">
             <span class="coll-name" title={collection.name}>{collection.name}</span>
-            <span class="items-badge">{collection.image_count} {collection.image_count === 1 ? "item" : "items"}</span>
+            <span class="items-badge">{collection.image_count} {collection.image_count === 1 ? "image" : "images"}</span
+            >
         </div>
         <div class="metadata-footer">
             <span class="coll-created_at" title="Created {createdDate}">{createdDate}</span>
@@ -247,8 +248,8 @@
         min-width: 100%;
         max-width: 100%;
         height: auto;
-        background-color: var(--viz-95);
-        border: var(--viz-border-thin);
+        background-color: var(--viz-90);
+        outline: 1px solid var(--viz-70);
         border-radius: var(--viz-border-radius-md);
         position: relative;
         overflow: hidden;
@@ -265,19 +266,10 @@
         }
     }
 
-    .coll-card.selected::after {
-        content: "";
-        position: absolute;
-        inset: 0;
-        border: 2px solid var(--viz-primary);
-        border-radius: inherit;
-        pointer-events: none;
-        z-index: 2;
-    }
-
     .coll-card.selected {
-        background-color: var(--viz-90);
-        border-color: var(--viz-primary);
+        outline: 2px solid var(--viz-primary);
+        pointer-events: none;
+        // z-index: 2;
     }
 
     .coll-card.drop-target {
@@ -402,5 +394,10 @@
         white-space: nowrap;
         overflow: hidden;
         text-overflow: ellipsis;
+    }
+
+    .coll-created_at {
+        font-weight: 500;
+        color: var(--viz-30);
     }
 </style>

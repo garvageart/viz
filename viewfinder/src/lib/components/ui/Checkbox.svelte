@@ -134,10 +134,6 @@
             background-color: var(--viz-primary);
             border-color: var(--viz-primary);
             color: #ffffff;
-            /* Inset highlight shadow for premium 3D feel */
-            box-shadow:
-                inset 0 1px 1px rgba(255, 255, 255, 0.2),
-                0 1px 2px rgba(0, 0, 0, 0.1);
 
             polyline {
                 stroke-dashoffset: 0;

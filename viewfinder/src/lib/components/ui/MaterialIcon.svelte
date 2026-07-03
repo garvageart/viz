@@ -5,12 +5,12 @@
  font ligatures (as a fallback).
 -->
 <script lang="ts">
-    import type { MaterialSymbol } from "$lib/types/MaterialSymbol";
-    import type { SvelteHTMLElements } from "svelte/elements";
-    import { registerReady } from "$lib/stores/appReady";
-    import { SvelteMap, SvelteSet } from "svelte/reactivity";
-    import type { Component } from "svelte";
     import { building, dev } from "$app/environment";
+    import { registerReady } from "$lib/stores/appReady";
+    import type { MaterialSymbol } from "$lib/types/MaterialSymbol";
+    import type { Component } from "svelte";
+    import type { SvelteHTMLElements } from "svelte/elements";
+    import { SvelteMap, SvelteSet } from "svelte/reactivity";
 
     // Global Font Loading State
     // We keep this global so we don't try to load the same font multiple times.
@@ -27,6 +27,12 @@
 
     // Props
     type IconStyle = "sharp" | "outlined" | "rounded" | "filled";
+    const familyMap: Record<IconStyle, string> = {
+        sharp: "Material Symbols Sharp",
+        outlined: "Material Symbols Outlined",
+        rounded: "Material Symbols Rounded",
+        filled: "Material Symbols Filled"
+    };
 
     export interface IconProps {
         /** The Material Symbol name */
@@ -41,7 +47,7 @@
         grade?: -25 | 0 | 200;
         /** Optical size (20, 24, 40, 48). Defaults to `24`. */
         opticalSize?: 20 | 24 | 40 | 48;
-        /** Custom size (e.g. "1rem", "24px"). Defaults to `1.5rem`. */
+        /** Custom size (e.g. "1rem", "24px"). Defaults to `1.5em`. */
         size?: string;
     }
 
@@ -60,21 +66,6 @@
     let GeneratedComponent: Component | null = $state(null);
 
     // Helpers
-    function familyForStyle(style: string) {
-        switch (style) {
-            case "outlined":
-                return "Material Symbols Outlined";
-            case "sharp":
-                return "Material Symbols Sharp";
-            case "rounded":
-                return "Material Symbols Rounded";
-            case "filled":
-                return "Material Symbols Filled";
-            default:
-                return "Material Icons";
-        }
-    }
-
     function normalizeName(n: string) {
         return String(n)
             .replace(/[^a-z0-9]+/gi, " ")
@@ -97,7 +88,7 @@
         return fontLoadMap.get(family);
     }
 
-    async function loadGeneratedIcon(name: string, style: IconStyle) {
+    async function loadGeneratedIcon(name: MaterialSymbol, style: IconStyle) {
         const base = normalizeName(name);
         const styleSuffix = style === "sharp" ? "" : normalizeName(style);
         const filename = `/Icon${base}${styleSuffix}.svelte`;
@@ -105,14 +96,14 @@
         // 1. Try Eager (Build/Prerender)
         const eagerKey = Object.keys(ICON_MODULES_EAGER).find((k) => k.endsWith(filename));
         if (building && eagerKey) {
-            return (ICON_MODULES_EAGER[eagerKey] as any).default;
+            return (ICON_MODULES_EAGER[eagerKey] as { default: Component }).default;
         }
 
         // 2. Try Lazy (Runtime/Dev)
         const lazyKey = Object.keys(ICON_MODULES).find((k) => k.endsWith(filename));
         if (lazyKey) {
             try {
-                const mod = await (ICON_MODULES[lazyKey] as any)();
+                const mod = await (ICON_MODULES[lazyKey] as () => Promise<{ default: Component }>)();
                 return mod.default;
             } catch (err) {
                 // Silent failure expected for icons that haven't been generated
@@ -143,7 +134,7 @@
     // Ensure font is loaded as fallback (or primary if no generated icon)
     $effect(() => {
         if (!GeneratedComponent) {
-            ensureFontLoaded(familyForStyle(iconStyle));
+            ensureFontLoaded(familyMap[iconStyle]);
         }
     });
 
