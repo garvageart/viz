@@ -2,40 +2,61 @@
     import { page } from "$app/state";
     import { type ImageAsset } from "$lib/api";
     import ImageCard from "$lib/components/ui/ImageCard.svelte";
+    import ImageLightbox from "$lib/components/ui/ImageLightbox.svelte";
     import MaterialIcon from "$lib/components/ui/MaterialIcon.svelte";
     import { VizMimeTypes } from "$lib/constants";
     import ContextMenu from "$lib/context-menu/ContextMenu.svelte";
     import { createImageMenu } from "$lib/context-menu/menus/images";
     import { DragData } from "$lib/drag-drop/data";
-    import { selectionManager, SelectionScopeNames } from "$lib/states/selection.svelte";
+    import { selectionManager, SelectionScope, SelectionScopeNames } from "$lib/states/selection.svelte";
     import { workspaceState } from "$lib/states/workspace.svelte";
 
-    let activeScope = $derived(selectionManager.activeScope);
-    let activeItem = $derived(activeScope?.active as ImageAsset | undefined);
-
-    // activeScope.source contains the list of items
-    let filmstripImages = $derived((activeScope?.source as ImageAsset[]) ?? []);
-    let activeItemIndex = $derived(filmstripImages.findIndex((img) => img.uid === activeItem?.uid));
-    let selectedItems = $derived(
-        activeScope && activeScope.size > 1
-            ? (activeScope.selectedItems as ImageAsset[])
-            : activeItem
-              ? [activeItem]
-              : []
-    );
-
-    let selectionAnchor = $state<ImageAsset | null>(null);
-
-    let collection = $derived.by(() => {
+    let filmstripScope = $derived.by((): SelectionScope<ImageAsset> | undefined => {
+        const activeScope = selectionManager.activeScope;
         if (!activeScope?.id) {
             return undefined;
         }
 
+        const isCollectionContext =
+            activeScope.id.startsWith(SelectionScopeNames.COLLECTION_PREFIX) ||
+            activeScope.id.startsWith(SelectionScopeNames.FILMSTRIP_COLLECTION_PREFIX);
+
+        if (isCollectionContext) {
+            const uid = activeScope.id.replace(/^(collection-|filmstrip-collection-)/, "");
+            return selectionManager.getScope<ImageAsset>(`${SelectionScopeNames.FILMSTRIP_COLLECTION_PREFIX}${uid}`);
+        }
+
+        // General context (photos, search) — share the active scope.
+        return activeScope as SelectionScope<ImageAsset>;
+    });
+
+    // The filmstrip reads data from the active scope's .source (which is
+    // populated by whichever grid or page the user is interacting with).
+    // For collection contexts we use a dedicated "filmstrip-collection-{uid}"
+    // child scope for SELECTION operations so the filmstrip keeps its own
+    // selected/active state decoupled from the grid — but the image data
+    // always comes from the active scope (whose source PhotoAssetGrid or
+    // the collections-list page already populated).
+    let filmstripImages = $derived((selectionManager.activeScope?.source as ImageAsset[]) ?? []);
+
+    let activeItem = $derived(filmstripScope?.active);
+    let activeItemIndex = $derived(filmstripImages.findIndex((img) => img.uid === activeItem?.uid));
+    let selectedItems = $derived(
+        filmstripScope && filmstripScope.size > 1 ? filmstripScope.selectedItems : activeItem ? [activeItem] : []
+    );
+
+    let selectionAnchor = $state<ImageAsset>();
+
+    let collection = $derived.by(() => {
+        if (!filmstripScope?.id) {
+            return undefined;
+        }
+
         let collectionUid: string | null = null;
-        if (activeScope.id.startsWith(SelectionScopeNames.COLLECTION_PREFIX)) {
-            collectionUid = activeScope.id.replace(SelectionScopeNames.COLLECTION_PREFIX, "");
-        } else if (activeScope.id.startsWith("filmstrip-collection-")) {
-            collectionUid = activeScope.id.replace("filmstrip-collection-", "");
+        if (filmstripScope.id.startsWith(SelectionScopeNames.COLLECTION_PREFIX)) {
+            collectionUid = filmstripScope.id.replace(SelectionScopeNames.COLLECTION_PREFIX, "");
+        } else if (filmstripScope.id.startsWith(SelectionScopeNames.FILMSTRIP_COLLECTION_PREFIX)) {
+            collectionUid = filmstripScope.id.replace(SelectionScopeNames.FILMSTRIP_COLLECTION_PREFIX, "");
         }
 
         if (!collectionUid) {
@@ -59,67 +80,71 @@
     // Context menu state
     let ctxShowMenu = $state(false);
     let ctxItems = $derived(
-        createImageMenu(filmstripImages, activeScope, {
+        createImageMenu(filmstripImages, filmstripScope ?? selectionManager.activeScope, {
             collection,
             onUpdate: (image: ImageAsset) => {
-                activeScope.updateItem(image, filmstripImages);
-                filmstripImages = filmstripImages.map((i) => (i.uid === image.uid ? image : i));
+                if (filmstripScope) {
+                    filmstripScope.updateItem(image, filmstripImages);
+                    filmstripImages = filmstripImages.map((i) => (i.uid === image.uid ? image : i));
+                }
             },
             onDelete: (uids: string[]) => {
-                activeScope.clear();
-                filmstripImages = filmstripImages.filter((i) => !uids.includes(i.uid));
+                if (filmstripScope) {
+                    filmstripScope.clear();
+                    filmstripImages = filmstripImages.filter((i) => !uids.includes(i.uid));
+                }
             }
         })
     );
     let ctxAnchor: { x: number; y: number } | HTMLElement | null = $state(null);
 
     function handleImageClick(image: ImageAsset, e: MouseEvent | KeyboardEvent) {
-        if (!activeScope) {
+        const scope = filmstripScope;
+        if (!scope) {
             return;
         }
 
         if (e.shiftKey) {
             const ids = filmstripImages.map((i) => i.uid);
             const endIndex = ids.indexOf(image.uid);
-            const anchor = selectionAnchor || activeScope.active;
+            const anchor = selectionAnchor || scope.active;
             const startIndex = anchor ? ids.indexOf(anchor.uid) : -1;
 
             if (startIndex !== -1 && endIndex !== -1) {
-                activeScope.selected.clear();
+                scope.selected.clear();
 
                 const start = Math.min(startIndex, endIndex);
                 const end = Math.max(startIndex, endIndex);
 
                 for (let i = start; i <= end; i++) {
-                    activeScope.add(filmstripImages[i]);
+                    scope.add(filmstripImages[i]);
                 }
-                activeScope.active = image;
+                scope.active = image;
             } else {
-                activeScope.add(image);
-                activeScope.active = image;
+                scope.add(image);
+                scope.active = image;
                 selectionAnchor = image;
             }
         } else if (e.ctrlKey || e.metaKey) {
-            activeScope.toggle(image);
-            if (activeScope.has(image)) {
+            scope.toggle(image);
+            if (scope.has(image)) {
                 selectionAnchor = image;
             } else if (selectionAnchor?.uid === image.uid) {
-                selectionAnchor = activeScope.active || null;
+                selectionAnchor = scope.active;
             }
         } else {
-            activeScope.select(image);
+            scope.select(image);
             selectionAnchor = image;
         }
     }
 
     function handleItemKeydown(e: KeyboardEvent, image: ImageAsset) {
+        e.preventDefault();
         if (e.key === "Enter" || e.key === " ") {
-            e.preventDefault();
             handleImageClick(image, e);
         } else if (e.key === "ArrowLeft" || e.key === "ArrowUp") {
-            e.preventDefault();
             e.stopPropagation();
-            if (activeScope) {
+            if (filmstripScope) {
                 const idx = filmstripImages.findIndex((img) => img.uid === image.uid);
                 if (idx > 0) {
                     const targetImage = filmstripImages[idx - 1];
@@ -127,9 +152,8 @@
                 }
             }
         } else if (e.key === "ArrowRight" || e.key === "ArrowDown") {
-            e.preventDefault();
             e.stopPropagation();
-            if (activeScope) {
+            if (filmstripScope) {
                 const idx = filmstripImages.findIndex((img) => img.uid === image.uid);
                 if (idx !== -1 && idx < filmstripImages.length - 1) {
                     const targetImage = filmstripImages[idx + 1];
@@ -142,15 +166,16 @@
     let ctxOffsetY = $state(4);
 
     function handleContextMenu(e: MouseEvent, image: ImageAsset) {
-        if (!activeScope) {
+        const scope = filmstripScope;
+        if (!scope) {
             return;
         }
 
         e.preventDefault();
 
         // If the right-clicked image is not already selected, select it as the active item
-        if (!activeScope.has(image)) {
-            activeScope.select(image);
+        if (!scope.has(image)) {
+            scope.select(image);
             selectionAnchor = image;
         }
 
@@ -200,8 +225,7 @@
             if (el) {
                 el.scrollIntoView({
                     behavior: "instant",
-                    block: "nearest",
-                    inline: "center"
+                    block: "nearest"
                 });
 
                 if (document.activeElement && containerRef?.contains(document.activeElement)) {
@@ -210,6 +234,39 @@
             }
         }
     });
+
+    let lightboxImage = $state<ImageAsset>();
+    function openLightbox(asset: ImageAsset) {
+        lightboxImage = asset;
+    }
+
+    function nextLightboxImage() {
+        if (!lightboxImage || filmstripImages.length === 0) {
+            return;
+        }
+
+        const idx = filmstripImages.findIndex((i) => i.uid === lightboxImage!.uid);
+        if (idx === -1) {
+            return;
+        }
+
+        const nextIdx = (idx + 1) % filmstripImages.length;
+        lightboxImage = filmstripImages[nextIdx];
+    }
+
+    function prevLightboxImage() {
+        if (!lightboxImage || filmstripImages.length === 0) {
+            return;
+        }
+
+        const idx = filmstripImages.findIndex((i) => i.uid === lightboxImage!.uid);
+        if (idx === -1) {
+            return;
+        }
+
+        const nextIdx = (idx - 1 + filmstripImages.length) % filmstripImages.length;
+        lightboxImage = filmstripImages[nextIdx];
+    }
 </script>
 
 <nav class="filmstrip-container {orientation}" aria-label="Filmstrip" onwheel={handleWheel} bind:this={containerRef}>
@@ -226,7 +283,7 @@
     {:else}
         {#each filmstripImages as image, i (image.uid)}
             {@const isActive = activeItem?.uid === image.uid}
-            {@const isSelected = activeScope?.has(image) ?? false}
+            {@const isSelected = filmstripScope?.has(image) ?? false}
             <div
                 class="filmstrip-item"
                 class:active={isActive}
@@ -238,11 +295,11 @@
                     }
 
                     // Select this image if not already in the selection
-                    if (!activeScope?.has(image)) {
+                    if (!filmstripScope?.has(image)) {
                         if (e.shiftKey || e.ctrlKey || e.metaKey) {
-                            activeScope?.add(image);
+                            filmstripScope?.add(image);
                         } else {
-                            activeScope?.select(image);
+                            filmstripScope?.select(image);
                         }
                     }
 
@@ -264,6 +321,7 @@
                 }}
                 oncontextmenu={(e) => handleContextMenu(e, image)}
                 onclick={(e) => handleImageClick(image, e)}
+                ondblclick={() => openLightbox(image)}
                 onkeydown={(e) => handleItemKeydown(e, image)}
                 role="button"
                 tabindex="0"
@@ -278,6 +336,13 @@
     <!-- Context menu for right-click on assets -->
     <ContextMenu bind:showMenu={ctxShowMenu} items={ctxItems} anchor={ctxAnchor} offsetY={ctxOffsetY} />
 </nav>
+
+<ImageLightbox
+    bind:lightboxImage
+    {nextLightboxImage}
+    {prevLightboxImage}
+    onImageUpdated={(image) => filmstripScope?.updateItem(image, filmstripImages)}
+/>
 
 <style lang="scss">
     .filmstrip-container {

@@ -39,7 +39,6 @@
         }
 
         initialized = true;
-        filterManager.setActiveScopeType("collections");
     });
 
     if (dev) {

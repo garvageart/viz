@@ -260,7 +260,7 @@
             return;
         }
 
-        const nextIdx = (idx - 1 + allImagesFlat.length) % allImagesFlat.length;
+        const nextIdx = (idx + 1) % allImagesFlat.length;
         lightboxImage = allImagesFlat[nextIdx];
     }
 
@@ -274,7 +274,7 @@
             return;
         }
 
-        const nextIdx = (idx + 1) % allImagesFlat.length;
+        const nextIdx = (idx - 1 + allImagesFlat.length) % allImagesFlat.length;
         lightboxImage = allImagesFlat[nextIdx];
     }
 

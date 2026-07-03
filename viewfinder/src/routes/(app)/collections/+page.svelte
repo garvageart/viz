@@ -38,7 +38,6 @@
 
     $effect(() => {
         untrack(() => {
-            filterManager.setActiveScopeType("collections");
             if (!filterManager.keepFilters) {
                 filterManager.resetActiveScope();
             }
@@ -71,17 +70,20 @@
     $effect(() => {
         const collection = firstSelectedCollection;
         const uid = collection?.uid ?? null;
+
+        // Capture previous UID before overwriting
+        const prevUid = activeFilmstripUid;
         activeFilmstripUid = uid;
 
+        // Clean up previous scope when selection changes or is cleared
+        if (prevUid && prevUid !== uid) {
+            selectionManager.removeScope(`${SelectionScopeNames.FILMSTRIP_COLLECTION_PREFIX}${prevUid}`);
+        }
         if (!uid) {
-            const activeId = selectionManager.activeScopeId;
-            if (activeId?.startsWith("filmstrip-collection-")) {
-                selectionManager.removeScope(activeId);
-            }
             return;
         }
 
-        const imageScopeId = `filmstrip-collection-${uid}`;
+        const imageScopeId = `${SelectionScopeNames.FILMSTRIP_COLLECTION_PREFIX}${uid}`;
 
         listCollectionImages(uid, { limit: 200 }).then((res) => {
             if (activeFilmstripUid !== uid) {
@@ -93,6 +95,10 @@
                 const scope = selectionManager.getScope<ImageAsset>(imageScopeId);
                 scope.setSource(images);
                 scope.clear();
+                // Make the populated scope active so the Filmstrip reads it.
+                // Safe: the filter derivation treats filmstrip-collection-*
+                // scopes as "collections" mode, so this won't switch the
+                // filter panel to image filters while on the collections page.
                 selectionManager.setActive(imageScopeId);
             }
         });

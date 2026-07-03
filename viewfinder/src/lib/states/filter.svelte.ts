@@ -2,6 +2,7 @@ import { type IDBPDatabase } from "idb";
 import { DateTime } from "luxon";
 import { type Collection, type ImageAsset } from "$lib/api";
 import { initDB } from "$lib/db/client";
+import { SelectionScopeNames, selectionManager } from "$lib/states/selection.svelte";
 import { getImageLabel } from "$lib/utils/images";
 
 export type Asset = ImageAsset | Collection;
@@ -437,7 +438,29 @@ class FilterManager {
     scopes: Map<string, FilterScope<ImageFilters, ImageAsset> | FilterScope<CollectionFilters, Collection>> = $state(
         new Map()
     );
-    activeScopeType: "images" | "collections" | null = $state(null);
+    /**
+     * Derives the active filter scope from the current selection scope.
+     * When browsing the collections list the filter panel shows "no collection filters";
+     * when viewing images (in a collection, photos page, search, filmstrip) it shows image filters.
+     * No manual syncing needed — follows the selection scope automatically.
+     */
+    activeScopeType: "images" | "collections" = $derived.by((): "images" | "collections" => {
+        const scopeId = selectionManager.activeScopeId;
+
+        if (!scopeId) {
+            return "images";
+        }
+
+        if (
+            scopeId === SelectionScopeNames.COLLECTIONS_MAIN ||
+            scopeId === SelectionScopeNames.SEARCH_COLLECTIONS ||
+            scopeId.startsWith(SelectionScopeNames.FILMSTRIP_COLLECTION_PREFIX)
+        ) {
+            return "collections";
+        }
+
+        return "images";
+    });
     keepFilters: boolean = $state(false);
 
     private dbPromise: Promise<IDBPDatabase> | null = null;
@@ -481,10 +504,7 @@ class FilterManager {
     }
 
     get activeScope(): FilterScope<ImageFilters, ImageAsset> | FilterScope<CollectionFilters, Collection> | undefined {
-        if (this.activeScopeType) {
-            return this.scopes.get(this.activeScopeType);
-        }
-        return undefined;
+        return this.scopes.get(this.activeScopeType);
     }
 
     getScope(type: "images"): FilterScope<ImageFilters, ImageAsset> | undefined;
@@ -493,10 +513,6 @@ class FilterManager {
         type: "images" | "collections"
     ): FilterScope<ImageFilters, ImageAsset> | FilterScope<CollectionFilters, Collection> | undefined {
         return this.scopes.get(type);
-    }
-
-    setActiveScopeType(type: "images" | "collections" | null) {
-        this.activeScopeType = type;
     }
 
     toggleKeepFilters() {

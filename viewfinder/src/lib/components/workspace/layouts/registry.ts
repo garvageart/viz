@@ -29,11 +29,11 @@ export function createDefaultLayout(): Workspace {
                 orientation: "vertical",
                 children: [
                     new TabGroup({
-                        size: 80,
+                        size: 75,
                         views: collectionsView ? [collectionsView] : []
                     }),
                     new TabGroup({
-                        size: 20,
+                        size: 25,
                         views: filmstripView ? [filmstripView] : []
                     })
                 ]

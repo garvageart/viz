@@ -1,4 +1,5 @@
 import { SvelteMap, SvelteSet } from "svelte/reactivity";
+import type { Collection, CollectionDetailResponse } from "$lib/api";
 
 export enum SelectionScopeNames {
     DEFAULT = "default",
@@ -6,8 +7,10 @@ export enum SelectionScopeNames {
     PHOTOS_MAIN = "photos-main",
     COLLECTIONS_MAIN = "collections-main",
     COLLECTION_PREFIX = "collection-",
+    FILMSTRIP_COLLECTION_PREFIX = "filmstrip-collection-",
     SEARCH_IMAGES = "search-images",
-    SEARCH_COLLECTIONS = "search-collections"
+    SEARCH_COLLECTIONS = "search-collections",
+    FILMSTRIP = "filmstrip"
 }
 
 export class SelectionScope<T extends { uid: string } = any> {
@@ -19,6 +22,8 @@ export class SelectionScope<T extends { uid: string } = any> {
     active = $state<T | undefined>(undefined);
     source = $state<T[]>([]); // All items available in this scope
     id: string;
+    /** Optional parent collection */
+    collection: Collection | CollectionDetailResponse | undefined = $state();
 
     constructor(id: string = SelectionScopeNames.DEFAULT) {
         this.id = id;
@@ -67,6 +72,7 @@ export class SelectionScope<T extends { uid: string } = any> {
         this.excluded.clear();
         this.isSelectAll = false;
         this.active = undefined;
+        this.collection = undefined;
     }
 
     toggle(item: T) {

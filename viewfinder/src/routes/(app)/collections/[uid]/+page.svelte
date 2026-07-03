@@ -87,7 +87,6 @@
 
     $effect(() => {
         untrack(() => {
-            filterManager.setActiveScopeType("images");
             if (!filterManager.keepFilters) {
                 filterManager.resetActiveScope();
             }
@@ -161,7 +160,7 @@
     });
 
     // Lightbox
-    let lightboxImage: ImageAsset | undefined = $state();
+    let lightboxImage = $state<ImageAsset>();
     let show = $derived(lightboxImage !== undefined);
 
     // Search stuff

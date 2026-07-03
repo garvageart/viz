@@ -91,6 +91,8 @@
         const source = allData || data;
         if (source) {
             selection.setSource(source);
+            // Filter scope type is now derived from selection scope automatically,
+            // so no manual setActiveScopeType() needed.
             if (filterManager.activeScope && filterManager.activeScope.isImageScope()) {
                 filterManager.activeScope.updateFacets(source);
             }
@@ -1675,7 +1677,7 @@
         color: var(--viz-text-color);
         background-color: var(--viz-100);
         text-align: left;
-        font-size: 0.85rem;
+        font-size: var(--viz-font-size-xs);
         line-height: 1.2;
         box-sizing: border-box;
         position: relative;
