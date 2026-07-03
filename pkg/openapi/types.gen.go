@@ -999,6 +999,9 @@ type ImageEXIF struct {
 	// Aperture Aperture
 	Aperture *string `json:"aperture,omitempty"`
 
+	// ColorTemperature Color temperature in Kelvin
+	ColorTemperature *string `json:"color_temperature,omitempty"`
+
 	// Copyright Copyright
 	Copyright *string `json:"copyright,omitempty"`
 

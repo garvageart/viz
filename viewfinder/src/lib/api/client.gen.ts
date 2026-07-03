@@ -254,6 +254,8 @@ export type ImageExif = {
     flash?: number;
     /** White balance */
     white_balance?: string;
+    /** Color temperature in Kelvin */
+    color_temperature?: string;
     /** Lens make */
     lens_make?: string;
     /** Lens model */

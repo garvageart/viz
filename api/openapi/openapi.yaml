@@ -3747,6 +3747,7 @@ components:
         f_number: { type: string, description: F-number }
         flash: { type: integer, description: Flash fired }
         white_balance: { type: string, description: White balance }
+        color_temperature: { type: string, description: Color temperature in Kelvin }
         lens_make: { type: string, description: Lens make }
         lens_model: { type: string, description: Lens model }
         focal_length_in_35mm_format:

@@ -134,6 +134,7 @@ func ExifProcess(ctx context.Context, db *gorm.DB, imgEnt entities.ImageAsset, o
 		return fmt.Errorf("failed to extract exif: %w", err)
 	}
 	exifData, fileCreatedAt, fileModifiedAt := imageops.BuildImageEXIF(rawExif)
+	imageops.HandleExifQuirks(&exifData, originalData)
 	imgEnt.Exif = &exifData
 
 	if imgEnt.ImageMetadata == nil {

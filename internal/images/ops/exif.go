@@ -7,10 +7,11 @@ import (
 	"strings"
 	"time"
 
+	"viz/internal/dto"
+
 	exif "github.com/dsoprea/go-exif/v3"
 	exifcommon "github.com/dsoprea/go-exif/v3/common"
 	"github.com/trimmer-io/go-xmp/xmp"
-	"viz/internal/dto"
 )
 
 func ReadExif(bytes []byte) (data map[string]any, err error) {
@@ -146,6 +147,27 @@ func FindExifInt(exifData map[string]string, keys ...string) *int {
 	return nil
 }
 
+// HandleExifQuirks applies post-hoc corrections and enrichments that the primary
+// EXIF extraction (libvips) cannot handle — for example, MakerNote proprietary
+// tags that libvips never surfaces.
+//
+// Currently handled quirks:
+//   - FujiFilm ColorTemperature (MakerNote tag 0x1005) via GoMetadata parsing
+func HandleExifQuirks(exif *dto.ImageEXIF, rawData []byte) {
+	if exif == nil || len(rawData) == 0 {
+		return
+	}
+
+	// ColorTemperature: libvips doesn't parse MakerNote proprietary tags.
+	// Fall back to GoMetadata which handles the FujiFilm MakerNote IFD
+	// (8-byte "FUJIFILM" prefix + LE IFD at offset [12..15]).
+	if exif.ColorTemperature == nil {
+		if ct := ExtractFujiColorTemperature(rawData); ct != nil {
+			exif.ColorTemperature = ct
+		}
+	}
+}
+
 // BuildImageEXIF normalizes libvips EXIF map into a dto.ImageEXIF and returns
 // parsed created/modified times (with sensible fallbacks).
 func BuildImageEXIF(exifData map[string]string) (dto.ImageEXIF, time.Time, time.Time) {
@@ -169,6 +191,7 @@ func BuildImageEXIF(exifData map[string]string) (dto.ImageEXIF, time.Time, time.
 		ExposureTime:        FindExif(exifData, "ExposureTime"),
 		Flash:               FindExifInt(exifData, "Flash"),
 		WhiteBalance:        FindExif(exifData, "WhiteBalance"),
+		ColorTemperature:    FindExif(exifData, "ColorTemperature", "ColorTemp", "Kelvin", "Temperature"),
 		LensModel:           FindExif(exifData, "LensModel"),
 		Rating:              FindExif(exifData, "Rating"),
 		Orientation:         FindExif(exifData, "Orientation"),
@@ -179,6 +202,9 @@ func BuildImageEXIF(exifData map[string]string) (dto.ImageEXIF, time.Time, time.
 		OffsetTimeOriginal:  FindExif(exifData, "OffsetTimeOriginal"),
 		OffsetTimeDigitized: FindExif(exifData, "OffsetTimeDigitized"),
 	}
+
+	// Handle quirks
+	// --
 	// Normalize aperture values which may be reported in mixed formats by
 	// different tools (e.g. "5.66 EV (f/7.1" or "5.66 EV (f/7.1)"). Prefer
 	// the explicit f-number when available ("f/7.1"). Also trim stray

@@ -83,6 +83,9 @@ func createNewImageEntity(logger *slog.Logger, fileName string, libvipsImg *libv
 
 	exif, fileCreatedAt, fileModifiedAt := imageops.BuildImageEXIF(exifData)
 
+	// Apply post-hoc corrections and enrichments (MakerNote tags, etc.)
+	imageops.HandleExifQuirks(&exif, rawData)
+
 	// If EXIF contains a rating-like value, parse it and set the initial
 	// canonical rating on the image entity (clamped to 0..5). We store the
 	// raw EXIF rating in Exif.Rating as provenance but the top-level Rating
