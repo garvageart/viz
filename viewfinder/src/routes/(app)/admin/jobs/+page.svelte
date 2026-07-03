@@ -1,4 +1,5 @@
 <script lang="ts">
+    import { type WorkerInfo } from "$lib/api";
     import AdminRouteShell from "$lib/components/admin/AdminRouteShell.svelte";
     import Button from "$lib/components/ui/Button.svelte";
     import IconButton from "$lib/components/ui/IconButton.svelte";
@@ -10,6 +11,7 @@
 
     let activeTab = $state<"all" | "success" | "failed">("all");
     let searchQuery = $state("");
+    let workerTypes = $derived(jobsState.workers.types.toSorted((a, b) => a.name.localeCompare(b.name)));
 
     function getEndTimeDate(job: any): Date {
         if (!job.endTime) {
@@ -107,6 +109,75 @@
         <div class="stat-content">
             <span class="stat-value">{value}</span>
             <span class="stat-label">{label}</span>
+        </div>
+    </div>
+{/snippet}
+
+{#snippet workerCard(job: WorkerInfo)}
+    <div class="worker-card">
+        <div class="worker-header">
+            <div class="worker-id">
+                <span class="worker-name">{jobsState.getTopicForJobType(job.name)}</span>
+                <span
+                    class="worker-dot {(jobsState.runningByTopic[jobsState.getTopicForJobType(job.name)] || 0) > 0
+                        ? 'active'
+                        : 'idle'}"
+                ></span>
+            </div>
+            <div class="worker-stats">
+                <span class="stat-badge running" title="Active">
+                    {jobsState.runningByTopic[jobsState.getTopicForJobType(job.name)] || 0}
+                </span>
+                <span class="stat-badge queued" title="Queued">
+                    {jobsState.queuedByTopic[jobsState.getTopicForJobType(job.name)] || 0}
+                </span>
+            </div>
+        </div>
+
+        <div class="worker-actions">
+            <IconButton
+                iconName="refresh"
+                variant="small"
+                class="worker-icon-btn"
+                onclick={() => {
+                    jobsState.rescanAll(job.name);
+                }}
+                title="Rescan All"
+            ></IconButton>
+            <IconButton
+                iconName="search"
+                variant="small"
+                class="worker-icon-btn"
+                onclick={() => {
+                    jobsState.rescanMissing(job.name);
+                }}
+                title="Rescan Missing"
+            ></IconButton>
+        </div>
+
+        <div class="concurrency-row">
+            <span class="concurrency-label">Concurrency</span>
+            <div class="concurrency-input">
+                <Button
+                    class="step-btn"
+                    onclick={() => {
+                        jobsState.setWorkerConcurrency(
+                            job.name,
+                            Math.max(1, (jobsState.workers.concurrency[job.name] || 5) - 1)
+                        );
+                    }}>-</Button
+                >
+                <span class="step-value">{jobsState.workers.concurrency[job.name] || 5}</span>
+                <Button
+                    class="step-btn"
+                    onclick={() => {
+                        jobsState.setWorkerConcurrency(
+                            job.name,
+                            Math.min(50, (jobsState.workers.concurrency[job.name] || 5) + 1)
+                        );
+                    }}>+</Button
+                >
+            </div>
         </div>
     </div>
 {/snippet}
@@ -366,77 +437,8 @@
                         </div>
                     {:else}
                         <div class="job-types-list">
-                            {#each jobsState.workers.types as job}
-                                <div class="worker-card">
-                                    <div class="worker-header">
-                                        <div class="worker-id">
-                                            <span class="worker-name">{jobsState.getTopicForJobType(job.name)}</span>
-                                            <span
-                                                class="worker-dot {(jobsState.runningByTopic[
-                                                    jobsState.getTopicForJobType(job.name)
-                                                ] || 0) > 0
-                                                    ? 'active'
-                                                    : 'idle'}"
-                                            ></span>
-                                        </div>
-                                        <div class="worker-stats">
-                                            <span class="stat-badge running" title="Active">
-                                                {jobsState.runningByTopic[jobsState.getTopicForJobType(job.name)] || 0}
-                                            </span>
-                                            <span class="stat-badge queued" title="Queued">
-                                                {jobsState.queuedByTopic[jobsState.getTopicForJobType(job.name)] || 0}
-                                            </span>
-                                        </div>
-                                    </div>
-
-                                    <div class="worker-actions">
-                                        <IconButton
-                                            iconName="refresh"
-                                            variant="small"
-                                            class="worker-icon-btn"
-                                            onclick={() => {
-                                                jobsState.rescanAll(job.name);
-                                            }}
-                                            title="Rescan All"
-                                        ></IconButton>
-                                        <IconButton
-                                            iconName="search"
-                                            variant="small"
-                                            class="worker-icon-btn"
-                                            onclick={() => {
-                                                jobsState.rescanMissing(job.name);
-                                            }}
-                                            title="Rescan Missing"
-                                        ></IconButton>
-                                    </div>
-
-                                    <div class="concurrency-row">
-                                        <span class="concurrency-label">Concurrency</span>
-                                        <div class="concurrency-input">
-                                            <Button
-                                                class="step-btn"
-                                                onclick={() => {
-                                                    jobsState.setWorkerConcurrency(
-                                                        job.name,
-                                                        Math.max(1, (jobsState.workers.concurrency[job.name] || 5) - 1)
-                                                    );
-                                                }}>-</Button
-                                            >
-                                            <span class="step-value"
-                                                >{jobsState.workers.concurrency[job.name] || 5}</span
-                                            >
-                                            <Button
-                                                class="step-btn"
-                                                onclick={() => {
-                                                    jobsState.setWorkerConcurrency(
-                                                        job.name,
-                                                        Math.min(50, (jobsState.workers.concurrency[job.name] || 5) + 1)
-                                                    );
-                                                }}>+</Button
-                                            >
-                                        </div>
-                                    </div>
-                                </div>
+                            {#each workerTypes as job}
+                                {@render workerCard(job)}
                             {/each}
                         </div>
                     {/if}
