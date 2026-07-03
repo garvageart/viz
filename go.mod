@@ -1,6 +1,6 @@
 module viz
 
-go 1.25.8
+go 1.26
 
 require (
 	github.com/ajg/form v1.7.1 // indirect
@@ -34,6 +34,7 @@ require (
 )
 
 require (
+	github.com/FlavioCFOliveira/GoMetadata v1.0.4
 	github.com/aymerick/raymond v2.0.2+incompatible // indirect
 	github.com/davecgh/go-spew v1.1.2-0.20180830191138-d8f796af33cc // indirect
 	github.com/mattn/go-sqlite3 v1.14.47 // indirect
