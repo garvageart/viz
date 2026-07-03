@@ -1,8 +1,10 @@
 <script lang="ts">
+    import { getContext } from "svelte";
     import { generateKeyId } from "$lib/utils/layout";
     import { Select } from "bits-ui";
     import type { SvelteHTMLElements } from "svelte/elements";
     import MaterialIcon from "./MaterialIcon.svelte";
+    import { ContextKeys } from "$lib/context-keys";
 
     interface Props {
         label?: string;
@@ -66,6 +68,9 @@
     );
 
     const selectedLabel = $derived(normalizedOptions.find((opt) => opt.value === stringValue)?.label ?? "");
+
+    const getModalZIndex = getContext<(() => number) | undefined>(ContextKeys.ModalZIndex);
+    const modalZIndex = $derived(getModalZIndex?.());
 </script>
 
 <Select.Root type="single" value={stringValue} onValueChange={handleValueChange} {disabled} {name}>
@@ -83,7 +88,12 @@
                 <span class="select-value">{selectedLabel || "Select an option..."}</span>
             </Select.Trigger>
             <Select.Portal>
-                <Select.Content class="select-content" sideOffset={4} align={contentAlign}>
+                <Select.Content
+                    class="select-content"
+                    sideOffset={4}
+                    align={contentAlign}
+                    style={modalZIndex ? `z-index: ${modalZIndex + 10};` : undefined}
+                >
                     <Select.Viewport class="select-viewport">
                         {#each normalizedOptions as item}
                             {#if item.type === "separator" || item.value === "---"}

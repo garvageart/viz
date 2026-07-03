@@ -26,7 +26,7 @@ const DEFAULT_MODAL_OPTIONS: ModalOptions = {
 
 export class ModalsManager {
     modals = $state<ModalInstance<any, any>[]>([]);
-    baseZIndex = 1000;
+    baseZIndex = 100000;
 
     open<T extends Record<string, any>, R = any>(
         component: Component<T>,

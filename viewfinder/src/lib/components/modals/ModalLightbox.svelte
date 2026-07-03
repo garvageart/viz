@@ -1,9 +1,11 @@
 <script lang="ts">
+    import { setContext } from "svelte";
     import MaterialIcon from "$lib/components/ui/MaterialIcon.svelte";
     import type { MaterialSymbol } from "$lib/types/MaterialSymbol";
     import type { Snippet } from "svelte";
     import type { SvelteHTMLElements } from "svelte/elements";
     import IconButton from "../ui/IconButton.svelte";
+    import { ContextKeys } from "$lib/context-keys";
 
     type Props = {
         children: Snippet;
@@ -31,6 +33,8 @@
         onclickClose,
         ...props
     }: Props = $props();
+
+    setContext(ContextKeys.ModalZIndex, () => zIndex);
 
     let modalEl: HTMLElement | undefined = $state();
 </script>
