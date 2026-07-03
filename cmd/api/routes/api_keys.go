@@ -37,7 +37,7 @@ func APIKeysRouter(db *gorm.DB, logger *slog.Logger) *chi.Mux {
 		}
 
 		var existingCount int64
-		if err := db.Model(&entities.APIKey{}).Where("user_uid = ?", authUser.Uid).Count(&existingCount).Error; err == nil {
+		if err := db.Model(&entities.APIKey{}).Where("user_id = ?", authUser.Uid).Count(&existingCount).Error; err == nil {
 			if existingCount >= 50 {
 				render.Status(req, http.StatusTooManyRequests)
 				render.JSON(res, req, dto.ErrorResponse{Error: "API key limit reached"})
@@ -95,7 +95,7 @@ func APIKeysRouter(db *gorm.DB, logger *slog.Logger) *chi.Mux {
 		var keys []entities.APIKey
 		q := db.Order("created_at desc").Model(&entities.APIKey{})
 		if authUser.Role != "admin" && authUser.Role != "superadmin" {
-			q = q.Where("user_uid = ?", authUser.Uid)
+			q = q.Where("user_id = ?", authUser.Uid)
 		}
 
 		if err := q.Find(&keys).Error; err != nil {
@@ -124,7 +124,7 @@ func APIKeysRouter(db *gorm.DB, logger *slog.Logger) *chi.Mux {
 		var ent entities.APIKey
 		q := db.Where("uid = ?", keyUid).Preload("User")
 		if authUser.Role != "admin" && authUser.Role != "superadmin" {
-			q = q.Where("user_uid = ?", authUser.Uid)
+			q = q.Where("user_id = ?", authUser.Uid)
 		}
 
 		if err := q.First(&ent).Error; err != nil {
@@ -155,7 +155,7 @@ func APIKeysRouter(db *gorm.DB, logger *slog.Logger) *chi.Mux {
 		if err := db.Transaction(func(tx *gorm.DB) error {
 			tq := tx.Model(&entities.APIKey{}).Where("uid = ?", keyUid)
 			if authUser.Role != "admin" && authUser.Role != "superadmin" {
-				tq = tq.Where("user_uid = ?", authUser.Uid)
+				tq = tq.Where("user_id = ?", authUser.Uid)
 			}
 
 			if err := tq.Updates(updates).Error; err != nil {
@@ -186,7 +186,7 @@ func APIKeysRouter(db *gorm.DB, logger *slog.Logger) *chi.Mux {
 		var existing entities.APIKey
 		q := db.Where("uid = ?", keyUid).Model(&entities.APIKey{}).Preload("User")
 		if authUser.Role != "admin" && authUser.Role != "superadmin" {
-			q = q.Where("user_uid = ?", authUser.Uid)
+			q = q.Where("user_id = ?", authUser.Uid)
 		}
 
 		if err := q.First(&existing).Error; err != nil {
@@ -259,7 +259,7 @@ func APIKeysRouter(db *gorm.DB, logger *slog.Logger) *chi.Mux {
 		if err := db.Transaction(func(tx *gorm.DB) error {
 			tq := tx.Where("uid = ?", keyUid)
 			if authUser.Role != "admin" && authUser.Role != "superadmin" {
-				tq = tq.Where("user_uid = ?", authUser.Uid)
+				tq = tq.Where("user_id = ?", authUser.Uid)
 			}
 			if err := tq.Delete(&entities.APIKey{}).Error; err != nil {
 				return err
