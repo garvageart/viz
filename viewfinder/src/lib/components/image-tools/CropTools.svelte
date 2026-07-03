@@ -38,7 +38,12 @@
     class="crop-tools-menu {variant}"
     {style}
     onclick={(e) => e.stopPropagation()}
-    onkeydown={(e) => e.stopPropagation()}
+    onkeydown={(e) => {
+        if (e.key === "Enter") {
+            onApply();
+        }
+        e.stopPropagation();
+    }}
     role="menu"
     tabindex="0"
 >
