@@ -1,5 +1,4 @@
 export { default as IconFullscreen } from './IconFullscreen.svelte';
-export { default as IconPassword } from './IconPassword.svelte';
 export { default as IconClose } from './IconClose.svelte';
 export { default as IconCollectionsBookmark } from './IconCollectionsBookmark.svelte';
 export { default as IconMoreHoriz } from './IconMoreHoriz.svelte';
@@ -115,12 +114,10 @@ export { default as IconNotifications } from './IconNotifications.svelte';
 export { default as IconShield } from './IconShield.svelte';
 export { default as IconLogout } from './IconLogout.svelte';
 export { default as IconImageNotSupported } from './IconImageNotSupported.svelte';
-export { default as IconDescription } from './IconDescription.svelte';
 export { default as IconStar } from './IconStar.svelte';
 export { default as IconRestartAlt } from './IconRestartAlt.svelte';
 export { default as IconUnfoldMore } from './IconUnfoldMore.svelte';
 export { default as IconUnfoldMoreRounded } from './IconUnfoldMoreRounded.svelte';
-export { default as IconFlip } from './IconFlip.svelte';
 export { default as IconKeyboardArrowUp } from './IconKeyboardArrowUp.svelte';
 export { default as IconKeyboardArrowDown } from './IconKeyboardArrowDown.svelte';
 export { default as IconAdminPanelSettings } from './IconAdminPanelSettings.svelte';

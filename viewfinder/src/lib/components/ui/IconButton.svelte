@@ -10,7 +10,7 @@
         variant?: "primary" | "small" | "mini";
         element?: HTMLButtonElement;
         tooltipParams?: TooltipParams | string | null;
-        onclick: MouseEventHandler<HTMLButtonElement>;
+        onclick?: MouseEventHandler<HTMLButtonElement>;
     }
 
     type Props = ButtonProps & Partial<IconProps>;
