@@ -469,13 +469,13 @@ async function main() {
                     if (typeText.includes("MaterialSymbol")) {
                         // 1. Property signature or declaration
                         if (ts.isPropertySignature(node) || ts.isPropertyDeclaration(node)) {
-                            if (ts.isIdentifier(node.name)) {
+                            if (ts.isIdentifier(node.name) && node.name.text !== "name") {
                                 iconPropNames.add(node.name.text);
                             }
                         }
                         // 2. Parameter declaration
                         if (ts.isParameter(node)) {
-                            if (ts.isIdentifier(node.name)) {
+                            if (ts.isIdentifier(node.name) && node.name.text !== "name") {
                                 iconPropNames.add(node.name.text);
 
                                 const parent = node.parent;

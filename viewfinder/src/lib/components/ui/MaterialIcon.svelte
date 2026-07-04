@@ -90,8 +90,8 @@
         return fontLoadMap.get(family);
     }
 
-    async function loadGeneratedIcon(name: MaterialSymbol, style: IconStyle) {
-        const base = normalizeName(name);
+    async function loadGeneratedIcon(symbolName: MaterialSymbol, style: IconStyle) {
+        const base = normalizeName(symbolName);
         const styleSuffix = style === "sharp" ? "" : normalizeName(style);
         const filename = `/Icon${base}${styleSuffix}.svelte`;
 
