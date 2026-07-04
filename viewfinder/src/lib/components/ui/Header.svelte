@@ -260,11 +260,11 @@
         {/if}
         <div class="menu-separator"></div>
         <div class="icon-group-container">
-            <a class="page-nav-btn" href="/photos" title="Go to Photos">
-                <IconButton class="header-button" iconName="imagesmode" />
+            <a class="page-nav-btn" href="/photos">
+                <IconButton class="header-button" iconName="imagesmode" title="Go to Photos" />
             </a>
-            <a class="page-nav-btn" href="/collections" title="Go to Collections">
-                <IconButton class="header-button" iconName="photo_album" />
+            <a class="page-nav-btn" href="/collections">
+                <IconButton class="header-button" iconName="photo_album" title="Go to Collections" />
             </a>
         </div>
     </div>
