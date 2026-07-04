@@ -47,7 +47,7 @@ export function tooltip(node: HTMLElement, params: TooltipParams | string | null
             theme: "viz",
             delay: [350, 0],
             interactive: !!comp,
-            allowHTML: true,
+            arrow: false,
             content: contentNode,
             appendTo: "parent",
             ...tippyOptions,
