@@ -385,7 +385,7 @@ export type ImageAsset = {
     created_at: string;
     /** Update time */
     updated_at: string;
-    /** Taken time */
+    /** The most appropriate taken/creation timestamp for an image. Priority will be: EXIF Original -> EXIF Modify -> metadata file_created_at -> image.created_at */
     taken_at?: string | null;
 };
 export type CollectionImage = {
@@ -510,6 +510,8 @@ export type ImageUpdate = {
     description?: string | null;
     /** Is private */
     "private"?: boolean;
+    /** The most appropriate taken/creation timestamp for an image. Priority will be: EXIF Original -> EXIF Modify -> metadata file_created_at -> image.created_at */
+    taken_at?: string | null;
     /** Is favourited */
     favourited?: boolean;
     exif?: ImageExif;

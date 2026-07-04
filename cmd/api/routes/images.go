@@ -1291,4 +1291,8 @@ func updateImageFromDTO(image *entities.ImageAsset, update dto.ImageUpdate) {
 	if update.OwnerUid != nil {
 		image.OwnerID = update.OwnerUid
 	}
+
+	if update.TakenAt != nil {
+		image.TakenAt = update.TakenAt
+	}
 }

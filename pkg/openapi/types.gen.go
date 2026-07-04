@@ -980,7 +980,7 @@ type ImageAsset struct {
 	// Processed Is processed
 	Processed bool `json:"processed"`
 
-	// TakenAt Taken time
+	// TakenAt The most appropriate taken/creation timestamp for an image. Priority will be: EXIF Original -> EXIF Modify -> metadata file_created_at -> image.created_at
 	TakenAt *time.Time `json:"taken_at,omitempty"`
 
 	// Uid Image UID
@@ -1224,6 +1224,9 @@ type ImageUpdate struct {
 
 	// Private Is private
 	Private *bool `json:"private,omitempty"`
+
+	// TakenAt The most appropriate taken/creation timestamp for an image. Priority will be: EXIF Original -> EXIF Modify -> metadata file_created_at -> image.created_at
+	TakenAt *time.Time `json:"taken_at,omitempty"`
 }
 
 // ImageUploadRequest defines model for ImageUploadRequest.
