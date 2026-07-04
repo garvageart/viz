@@ -32,6 +32,7 @@
     import MaterialIcon from "../ui/MaterialIcon.svelte";
     import AssetGrid from "./AssetGrid.svelte";
     import TimelineScrubber from "./TimelineScrubber.svelte";
+    import type { MouseEventHandler } from "svelte/elements";
 
     interface PhotoSpecificProps {
         /** Custom photo card snippet - if not provided, uses default photo card */
@@ -178,6 +179,9 @@
         if (!filteredData.length) {
             return;
         }
+
+        suppressScrollOnce = false; // Reset scroll suppression so keyboard moves scroll targeted item into view
+        scrollToTopOnNext = true; // Keyboard nav always scrolls the selected row to the top of the viewport
 
         if (!selection.active) {
             const searchList = allData && allData.length > 0 ? allData : filteredData;
@@ -368,7 +372,14 @@
                 // Store the component instance on the Tippy instance for cleanup
                 (instance as any)._svelteTooltipComponent = mount(PhotoTooltip, {
                     target: contentNode,
-                    props: { asset }
+                    props: {
+                        asset,
+                        clickHandler: (e: MouseEvent & { currentTarget: EventTarget & HTMLElement }) => {
+                            if (assetDblClick) {
+                                assetDblClick(e as unknown as MouseEvent & { currentTarget: EventTarget & (HTMLDivElement | HTMLTableRowElement) }, asset);
+                            }
+                        }
+                    }
                 });
                 instance.setContent(contentNode);
             },
@@ -522,6 +533,7 @@
     let isSyncingScroll = false; // Flag to prevent loop
     let isScrubbing = $state(false);
     let suppressScrollOnce = false;
+    let scrollToTopOnNext = false; // When true, keyboard nav scrolls selected row to the top of the viewport
 
     let photoGridEl: HTMLDivElement | undefined = $state();
 
@@ -645,7 +657,7 @@
         virtualizer.updateScroll(scrollTop, vH);
     }
 
-    function scrollToAsset(asset: ImageAsset) {
+    function scrollToAsset(asset: ImageAsset, forceToTop = false) {
         if (!photoGridEl || !virtualizer.rows.length) {
             return;
         }
@@ -661,58 +673,32 @@
                 continue;
             }
             if (row.items.some((i) => i.asset.uid === asset.uid)) {
-                const gridRect = photoGridEl.getBoundingClientRect();
-                // viewportTop = gridRect.top + row.top - currentScroll
-                // Visual position in viewport = gridRect.top + (row.top - currentScroll).
-                const currentScroll = scroller instanceof Window ? window.scrollY : scroller.scrollTop;
-                const rowRectTop = usingExternalScroll
-                    ? gridRect.top + row.top
-                    : gridRect.top + row.top - currentScroll;
-
                 // If using external scroll we know offsets
                 if (usingExternalScroll && scroller instanceof HTMLElement) {
-                    const parentRect = scroller.getBoundingClientRect();
-                    const relativeTop = rowRectTop - parentRect.top;
-                    const viewBottom = scroller.clientHeight;
+                    const rowTop = row.top;
+                    const rowBottom = row.top + row.height;
+                    const viewportTop = scroller.scrollTop - gridOffsetTop;
+                    const viewportBottom = viewportTop + scroller.clientHeight;
                     const scrollPaddingTop = 100; // Offset for sticky header/toolbar
-                    const scrollPaddingBottom = 20;
 
-                    if (relativeTop < scrollPaddingTop) {
-                        scroller.scrollBy({
-                            top: relativeTop - scrollPaddingTop,
-                            behavior: "instant"
-                        });
-                    } else if (relativeTop + row.height > viewBottom - scrollPaddingBottom) {
-                        scroller.scrollBy({
-                            top: relativeTop + row.height - viewBottom + scrollPaddingBottom,
-                            behavior: "instant"
-                        });
+                    if (forceToTop || rowTop < viewportTop + scrollPaddingTop || rowBottom > viewportBottom) {
+                        // Scroll so that the selected row is at the top of the viewport
+                        scroller.scrollTop = Math.max(0, rowTop + gridOffsetTop - scrollPaddingTop);
                     }
                     return;
                 }
 
-                // Default
-                const rowRectBottom = rowRectTop + row.height;
-                let viewTop = 0;
-                let viewBottom = window.innerHeight;
-
+                // Default (internal scroll within photoGridEl)
                 if (scroller instanceof HTMLElement) {
-                    const rect = scroller.getBoundingClientRect();
-                    viewTop = rect.top;
-                    viewBottom = rect.bottom;
-                }
+                    const rowTop = row.top;
+                    const rowBottom = row.top + row.height;
+                    const viewportTop = scroller.scrollTop;
+                    const viewportBottom = scroller.scrollTop + scroller.clientHeight;
+                    const scrollPaddingTop = 100; // Offset for sticky header/toolbar
 
-                const scrollPadding = 20;
-                if (rowRectTop < viewTop) {
-                    scroller.scrollBy({
-                        top: rowRectTop - viewTop - scrollPadding,
-                        behavior: "instant"
-                    });
-                } else if (rowRectBottom > viewBottom) {
-                    scroller.scrollBy({
-                        top: rowRectBottom - viewBottom + scrollPadding,
-                        behavior: "instant"
-                    });
+                    if (forceToTop || rowTop < viewportTop + scrollPaddingTop || rowBottom > viewportBottom) {
+                        scroller.scrollTop = Math.max(0, rowTop - scrollPaddingTop);
+                    }
                 }
                 break;
             }
@@ -729,14 +715,16 @@
                 if (activeUid !== lastActiveUID) {
                     lastActiveUID = activeUid;
                     if (!suppressScrollOnce) {
-                        scrollToAsset(currentActive);
+                        scrollToAsset(currentActive, scrollToTopOnNext);
                     }
                 }
                 suppressScrollOnce = false;
+                scrollToTopOnNext = false;
             });
         } else if (!currentActive) {
             lastActiveUID = null;
             suppressScrollOnce = false;
+            scrollToTopOnNext = false;
         }
     });
 
@@ -962,7 +950,12 @@
             return;
         }
         onFocus(); // Ensure this grid is active on click
-        suppressScrollOnce = true;
+
+        // Only suppress scroll for mouse clicks — keyboard nav explicitly manages
+        // suppressScrollOnce and scrollToTopOnNext in handleKeyNav, and we must not override those.
+        if (e instanceof MouseEvent) {
+            suppressScrollOnce = true;
+        }
 
         if (e.shiftKey) {
             const selectionData = allData && allData.length > 0 ? allData : filteredData;

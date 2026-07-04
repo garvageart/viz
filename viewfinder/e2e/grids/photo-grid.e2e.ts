@@ -312,9 +312,7 @@ test.describe("PhotoAssetGrid Functionality", () => {
         expect(Math.abs(finalScroll - initialScroll)).toBeLessThan(5); // should be stable within a few pixels tolerance
     });
 
-    test("should not scroll parent when navigating visible items, but scroll parent when navigating off-screen", async ({
-        page
-    }) => {
+    test("should scroll selected asset toward the top of viewport on ArrowDown", async ({ page }) => {
         const photos = page.locator(".asset-photo");
         await expect(async () => {
             expect(await photos.count()).toBeGreaterThan(2);
@@ -322,7 +320,68 @@ test.describe("PhotoAssetGrid Functionality", () => {
 
         const container = page.locator(".viz-view-container");
 
-        // Start on first photo
+        // Click the first photo to establish selection
+        await photos.first().click();
+        await expect(photos.first()).toHaveClass(/selected-photo/);
+
+        // Record starting scroll
+        const initialScroll = await container.evaluate((el) => el.scrollTop);
+
+        // Press ArrowDown enough times to force a scroll (move past the visible row)
+        for (let i = 0; i < 5; i++) {
+            await page.keyboard.press("ArrowDown");
+            await page.waitForTimeout(100);
+        }
+
+        // Scroll should have moved down from the initial position
+        const scrollAfterDown = await container.evaluate((el) => el.scrollTop);
+        expect(scrollAfterDown).toBeGreaterThan(initialScroll);
+    });
+
+    test("should position selected row near the top of viewport on keyboard nav", async ({ page }) => {
+        const photos = page.locator(".asset-photo");
+        await expect(async () => {
+            expect(await photos.count()).toBeGreaterThan(2);
+        }).toPass({ timeout: 10000 });
+
+        const container = page.locator(".viz-view-container");
+
+        // Click the first photo to select it
+        await photos.first().click();
+        await expect(photos.first()).toHaveClass(/selected-photo/);
+
+        // Navigate down several rows to trigger scroll-to-top
+        for (let i = 0; i < 5; i++) {
+            await page.keyboard.press("ArrowDown");
+            await page.waitForTimeout(100);
+        }
+
+        // Find the currently selected photo and verify it's near the top of the container
+        const selectedPhoto = page.locator(".asset-photo.selected-photo").first();
+        await expect(selectedPhoto).toBeVisible();
+
+        const containerBox = await container.boundingBox();
+        const selectedBox = await selectedPhoto.boundingBox();
+        expect(containerBox).toBeTruthy();
+        expect(selectedBox).toBeTruthy();
+
+        if (containerBox && selectedBox) {
+            // The selected photo should be in the top half of the container viewport
+            // (accounting for ~100px scroll padding for toolbars/headers)
+            const relativeTop = selectedBox.y - containerBox.y;
+            expect(relativeTop).toBeLessThan(containerBox.height / 2);
+        }
+    });
+
+    test("should not scroll when clicking a visible photo with the mouse", async ({ page }) => {
+        const photos = page.locator(".asset-photo");
+        await expect(async () => {
+            expect(await photos.count()).toBeGreaterThan(2);
+        }).toPass({ timeout: 10000 });
+
+        const container = page.locator(".viz-view-container");
+
+        // Click the first photo to establish selection
         const firstPhoto = photos.first();
         await firstPhoto.click();
         await expect(firstPhoto).toHaveClass(/selected-photo/);
@@ -330,19 +389,27 @@ test.describe("PhotoAssetGrid Functionality", () => {
         // Record scroll position
         const initialScroll = await container.evaluate((el) => el.scrollTop);
 
-        // Navigate Left and Right (visible items)
-        await page.keyboard.press("ArrowRight");
+        // Click the second visible photo with the mouse
+        const secondPhoto = photos.nth(1);
+        await secondPhoto.click();
+        await expect(secondPhoto).toHaveClass(/selected-photo/);
+
         await page.waitForTimeout(100);
 
-        // Scroll should remain perfectly still
-        let currentScroll = await container.evaluate((el) => el.scrollTop);
+        // Scroll should stay put — mouse clicks suppress scroll
+        const currentScroll = await container.evaluate((el) => el.scrollTop);
         expect(Math.abs(currentScroll - initialScroll)).toBeLessThan(2);
 
-        await page.keyboard.press("ArrowLeft");
-        await page.waitForTimeout(100);
+        // Click a third photo with Ctrl (multi-select), scroll still shouldn't move
+        if ((await photos.count()) > 2) {
+            const thirdPhoto = photos.nth(2);
+            await thirdPhoto.click({ modifiers: ["Control"] });
+            await expect(thirdPhoto).toHaveClass(/selected-photo/);
 
-        currentScroll = await container.evaluate((el) => el.scrollTop);
-        expect(Math.abs(currentScroll - initialScroll)).toBeLessThan(2);
+            await page.waitForTimeout(100);
+            const scrollAfterCtrl = await container.evaluate((el) => el.scrollTop);
+            expect(Math.abs(scrollAfterCtrl - initialScroll)).toBeLessThan(2);
+        }
     });
 
     test("should support zooming in the lightbox using mouse wheel and trackpad pinch", async ({ page }) => {
