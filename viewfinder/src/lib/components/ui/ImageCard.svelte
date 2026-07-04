@@ -49,12 +49,12 @@
 </script>
 
 {#if variant === "mini"}
-    <div title={asset.name} class="mini-card">
+    <div title={asset.name || asset.image_metadata?.file_name} class="mini-card">
         <div class="mini-image-wrapper">
-            <AssetImage variant={imageVariant} {asset} {objectFit} {priority} alt={asset.name} loading="lazy" />
+            <AssetImage variant={imageVariant} {asset} {objectFit} {priority} alt={asset.name || asset.image_metadata?.file_name} loading="lazy" />
         </div>
         <div class="mini-footer">
-            <span class="mini-filename">{asset.image_metadata?.file_name ?? asset.name}</span>
+            <span class="mini-filename">{asset.name || asset.image_metadata?.file_name}</span>
             <div class="mini-meta">
                 <div class="mini-left">
                     {#if asset.favourited}
@@ -79,7 +79,7 @@
         class="image-card"
         class:selected={isSelected}
         draggable="true"
-        title={asset.name}
+        title={asset.name || asset.image_metadata?.file_name}
         role="button"
         tabindex="0"
         data-asset-id={asset.uid}
@@ -94,8 +94,8 @@
                 variant={imageVariant}
                 {objectFit}
                 {priority}
-                alt="{asset.name}{asset.uploaded_by ? ` by ${asset.uploaded_by.name}` : ''}"
-                title="{asset.name}{asset.uploaded_by ? ` by ${asset.uploaded_by.name}` : ''}"
+                alt="{(asset.name || asset.image_metadata?.file_name) ?? ''}{asset.uploaded_by ? ` by ${asset.uploaded_by.name}` : ''}"
+                title="{(asset.name || asset.image_metadata?.file_name) ?? ''}{asset.uploaded_by ? ` by ${asset.uploaded_by.name}` : ''}"
                 loading="lazy"
                 crossorigin="use-credentials"
                 onload={() => (imageLoaded = true)}
@@ -103,8 +103,8 @@
         </div>
         {#if showMetadata}
             <div class="image-card-meta">
-                <span class="image-card-name" title={asset.image_metadata?.file_name}
-                    >{asset.image_metadata?.file_name ?? asset.name}</span
+                <span class="image-card-name" title={asset.name || asset.image_metadata?.file_name}
+                    >{asset.name || asset.image_metadata?.file_name}</span
                 >
                 <div class="image-card-details" title="Photo taken at {imageDate.toLocaleString()}">
                     <div class="image-card-date-group">
