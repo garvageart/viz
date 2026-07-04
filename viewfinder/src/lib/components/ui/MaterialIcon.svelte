@@ -25,6 +25,8 @@
     // Lazy: Loaded on demand in the browser/dev to save bundle size.
     const ICON_MODULES = import.meta.glob("$lib/components/icons/generated/**/*.svelte");
 
+    import { tooltip } from "$lib/components/tooltips/tooltip";
+
     // Props
     type IconStyle = "sharp" | "outlined" | "rounded" | "filled";
     const familyMap: Record<IconStyle, string> = {
@@ -150,7 +152,7 @@
     );
 </script>
 
-<span class="viz-material-icon" style:width={size} style:height={size} style:flex-shrink="0">
+<span use:tooltip={props.title} class="viz-material-icon" style:width={size} style:height={size} style:flex-shrink="0">
     {#if GeneratedComponent}
         <GeneratedComponent {...props} className={props.class || ""} {weight} {fill} {size} />
     {:else}

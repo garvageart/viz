@@ -20,6 +20,7 @@
     import "$lib/styles/scss/main.scss";
     import Notifications from "$lib/toast-notifcations/Notifications.svelte";
     import { toggleFullscreen } from "$lib/utils/misc";
+    import "$lib/components/tooltips/tooltip.scss";
     import "@fontsource-variable/geist/index.css";
     import "@fontsource-variable/manrope/index.css";
     import "@fontsource-variable/roboto-mono/index.css";

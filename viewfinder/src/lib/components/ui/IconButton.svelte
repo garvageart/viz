@@ -1,11 +1,16 @@
 <script lang="ts">
-    import type { HTMLButtonAttributes } from "svelte/elements";
+    import type { HTMLButtonAttributes, MouseEventHandler } from "svelte/elements";
     import MaterialIcon, { type IconProps } from "./MaterialIcon.svelte";
+    import { tooltip } from "$lib/components/tooltips/tooltip";
+
+    import type { TooltipParams } from "$lib/components/tooltips/tooltip";
 
     interface ButtonProps extends HTMLButtonAttributes {
         hoverColor?: string;
         variant?: "primary" | "small" | "mini";
         element?: HTMLButtonElement;
+        tooltipParams?: TooltipParams | string | null;
+        onclick: MouseEventHandler<HTMLButtonElement>;
     }
 
     type Props = ButtonProps & Partial<IconProps>;
@@ -17,16 +22,19 @@
         weight = 400,
         grade = 0,
         opticalSize = 24,
+        size,
         children,
         hoverColor = "var(--viz-80)",
         variant = "primary",
         element = $bindable(),
+        tooltipParams,
         ...props
     }: Props = $props();
 </script>
 
 <button
     type="button"
+    use:tooltip={tooltipParams ?? props.title}
     {...props}
     bind:this={element}
     class="{variant} {props.class || ''}"
@@ -35,7 +43,7 @@
     style:--button-hover-bg={hoverColor}
 >
     {#if iconName}
-        <MaterialIcon {iconName} {iconStyle} {fill} {grade} {opticalSize} />
+        <MaterialIcon {iconName} {size} {iconStyle} {fill} {grade} {opticalSize} />
     {/if}
     {@render children?.()}
 </button>

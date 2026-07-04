@@ -4,17 +4,30 @@
     import { getImageLabel, getTakenAt } from "$lib/utils/images";
     import { DateTime } from "luxon";
     import ImageLabelViewer from "../image-tools/ImageLabelViewer.svelte";
+    import IconButton from "$lib/components/ui/IconButton.svelte";
+    import type { MouseEventHandler } from "svelte/elements";
 
-    let { asset }: { asset: ImageAsset } = $props();
+    let { asset, clickHandler }: { asset: ImageAsset; clickHandler?: MouseEventHandler<HTMLElement> } = $props();
     let takenAt = $derived(getTakenAt(asset));
 </script>
 
 <div class="photo-tooltip-content">
-    {#if asset.image_metadata?.file_name}
-        <div class="tooltip-row">
-            <span class="tooltip-value tooltip-label" title={asset.image_metadata.file_name}
-                >{asset.image_metadata.file_name}</span
+    {#if asset.name || asset.image_metadata?.file_name}
+        <div class="tooltip-row top-row">
+            <span class="tooltip-value tooltip-label" title={asset.name || asset.image_metadata?.file_name}
+                >{asset.name || asset.image_metadata?.file_name}</span
             >
+
+            {#if clickHandler}
+                <IconButton
+                    iconName="edit"
+                    class="edit-button"
+                    size="1rem"
+                    onclick={(e) => {
+                        clickHandler?.(e);
+                    }}
+                />
+            {/if}
         </div>
     {/if}
     {#if takenAt}
@@ -31,29 +44,26 @@
 </div>
 
 <style lang="scss">
-    :global(.tippy-box[data-theme~="viz"]) {
-        background-color: var(--viz-100);
-        color: var(--viz-text-color);
-        border: 1px solid var(--viz-80);
-        border-radius: 0.5rem;
-        min-width: 15vw;
-    }
-
-    :global(.tippy-box[data-theme~="viz"][data-placement^="bottom"] > .tippy-arrow::before) {
-        border-bottom-color: var(--viz-100);
-    }
-
     .photo-tooltip-content {
         display: flex;
         flex-direction: column;
         gap: 2px;
         text-align: left;
+        min-width: 15vw;
     }
 
     .tooltip-row {
         display: flex;
         align-items: center;
-        gap: 8px;
+        gap: var(--viz-spacing-xs);
+
+        :global(.edit-button) {
+            padding: var(--viz-spacing-xs)
+        }
+    }
+
+    .top-row {
+        justify-content: space-between;
     }
 
     .tooltip-label {
