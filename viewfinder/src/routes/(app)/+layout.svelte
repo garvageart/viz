@@ -9,6 +9,7 @@
     import { onMount, untrack } from "svelte";
     import { page } from "$app/state";
     import { invalidateViz } from "$lib/views/views.svelte";
+    import { dev } from "$app/environment";
 
     let { children } = $props();
 
@@ -16,6 +17,10 @@
         // Watch sort state for changes
         const { by, order } = sortState.value;
         sortState.save();
+
+        if (dev) {
+            console.log("Sort state changed:", by, order);
+        }
 
         untrack(() => {
             invalidateViz();

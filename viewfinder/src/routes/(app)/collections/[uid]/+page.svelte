@@ -32,7 +32,7 @@
     import ImageLabelViewer from "$lib/components/image-tools/ImageLabelViewer.svelte";
     import StarRating from "$lib/components/image-tools/StarRating.svelte";
     import CollectionModal from "$lib/components/modals/CollectionModal.svelte";
-    import FilterModal from "$lib/components/modals/FilterModal.svelte";
+    import FilterModal, { FilterModalOptions } from "$lib/components/modals/FilterModal.svelte";
     import AddPhotosModal from "$lib/components/modals/AddPhotosModal.svelte";
     import ConfirmationModal from "$lib/components/modals/ConfirmationModal.svelte";
     import { modalsManager } from "$lib/components/modals/manager/ModalManager.svelte";
@@ -52,6 +52,7 @@
     import { ImagePaginationState } from "$lib/images/state.svelte";
     import { sortCollectionImages } from "$lib/sort/sort.js";
     import { filterManager } from "$lib/states/filter.svelte";
+    import ActiveFiltersTooltip from "$lib/components/tooltips/ActiveFiltersTooltip.svelte";
     import { debugMode, isLayoutPage, sort, viewSettings } from "$lib/states/index.svelte";
     import { selectionManager, SelectionScopeNames } from "$lib/states/selection.svelte";
     import { toastState } from "$lib/toast-notifcations/notif-state.svelte.js";
@@ -763,7 +764,7 @@
     });
 
     function openFilterModal() {
-        modalsManager.open(FilterModal, {});
+        modalsManager.open(FilterModal, {}, FilterModalOptions);
     }
 
     function openEditCollectionModal() {
@@ -836,7 +837,7 @@
             <IconButton
                 iconName="filter_list"
                 class="toolbar-button"
-                title="Filter"
+                tooltipParams={{ component: ActiveFiltersTooltip, placement: "bottom-start" }}
                 aria-label="Filter"
                 onclick={openFilterModal}
             >

@@ -11,17 +11,5 @@
 </script>
 
 <AdminRouteShell heading="Storage Settings" description="Manage storage settings for your application.">
-    <div class="storage-container">
-        <StorageTemplate config={data}></StorageTemplate>
-    </div>
+    <StorageTemplate config={data} />
 </AdminRouteShell>
-
-<style lang="scss">
-    .storage-container {
-        display: flex;
-        flex-direction: column;
-        gap: var(--viz-spacing-xl);
-        max-width: 90%;
-        margin: 0 auto;
-    }
-</style>

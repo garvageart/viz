@@ -14,7 +14,7 @@
     import ImageLabelViewer from "$lib/components/image-tools/ImageLabelViewer.svelte";
     import StarRating from "$lib/components/image-tools/StarRating.svelte";
     import CollectionSelectionModal from "$lib/components/modals/CollectionSelectionModal.svelte";
-    import FilterModal from "$lib/components/modals/FilterModal.svelte";
+    import FilterModal, { FilterModalOptions } from "$lib/components/modals/FilterModal.svelte";
     import { modalsManager } from "$lib/components/modals/manager/ModalManager.svelte";
     import VizViewContainer from "$lib/components/panels/VizViewContainer.svelte";
     import Button from "$lib/components/ui/Button.svelte";
@@ -37,7 +37,9 @@
         type DateGroup
     } from "$lib/photo-layout/index.js";
     import { filterManager } from "$lib/states/filter.svelte";
-    import { viewSettings } from "$lib/states/index.svelte";
+    import ActiveFiltersTooltip from "$lib/components/tooltips/ActiveFiltersTooltip.svelte";
+    import { sort, viewSettings } from "$lib/states/index.svelte";
+    import { sortCollectionImages } from "$lib/sort/sort.js";
     import { selectionManager, SelectionScopeNames } from "$lib/states/selection.svelte";
     import { toastState } from "$lib/toast-notifcations/notif-state.svelte";
     import type { AssetSortBy, AssetSortOrder } from "$lib/types/asset.js";
@@ -84,10 +86,6 @@
 
     let { data } = $props();
 
-    // Local sort state
-    let sortBy = $state<AssetSortBy>("taken_at");
-    let sortOrder = $state<AssetSortOrder>("DESC");
-
     $effect(() => {
         untrack(() => {
             if (!filterManager.keepFilters) {
@@ -99,8 +97,10 @@
     let galleryState = $derived(new ImagePaginationState(data));
     let isPaginating = $state(false);
 
-    // Page state
-    let groups: DateGroup[] = $derived(groupImagesByDate(filterManager.apply(galleryState.images)) ?? []);
+    // Page state — sort client-side using persisted SortState
+    let sortedImages = $derived(sortCollectionImages(filterManager.apply(galleryState.images), sort));
+
+    let groups: DateGroup[] = $derived(groupImagesByDate(sortedImages) ?? []);
 
     let consolidatedGroups: ConsolidatedGroup[] = $derived(getConsolidatedGroups(groups));
 
@@ -174,8 +174,8 @@
         const res = await listImages({
             limit: galleryState.pagination.limit,
             page: nextPage,
-            sortBy,
-            order: sortOrder
+            sortBy: sort.by,
+            order: sort.order
         });
 
         if (res.status === 200) {
@@ -199,6 +199,9 @@
         lightboxImage = asset;
     }
 
+    // When hitting the end of loaded images, paginate and auto-advance
+    let pendingNextUid = $state<string | null>(null);
+
     function nextLightboxImage() {
         if (!lightboxImage || allImagesFlat.length === 0) {
             return;
@@ -209,7 +212,15 @@
             return;
         }
 
-        const nextIdx = (idx + 1) % allImagesFlat.length;
+        const nextIdx = idx + 1;
+        if (nextIdx >= allImagesFlat.length) {
+            if (galleryState.hasMore) {
+                pendingNextUid = lightboxImage.uid;
+                paginate();
+            }
+            return;
+        }
+
         lightboxImage = allImagesFlat[nextIdx];
     }
 
@@ -223,9 +234,25 @@
             return;
         }
 
-        const nextIdx = (idx - 1 + allImagesFlat.length) % allImagesFlat.length;
-        lightboxImage = allImagesFlat[nextIdx];
+        const prevIdx = idx - 1;
+        if (prevIdx < 0) {
+            return;
+        }
+
+        lightboxImage = allImagesFlat[prevIdx];
     }
+
+    // Auto-advance after pagination loads more images
+    $effect(() => {
+        if (!pendingNextUid || allImagesFlat.length === 0) {
+            return;
+        }
+        const idx = allImagesFlat.findIndex((i) => i.uid === pendingNextUid);
+        if (idx !== -1 && idx + 1 < allImagesFlat.length) {
+            pendingNextUid = null;
+            lightboxImage = allImagesFlat[idx + 1];
+        }
+    });
 
     let pendingNewRaw: ImageUploadSuccess[] = [];
     let addImagesDebounceTimer: number | undefined;
@@ -558,7 +585,7 @@
                             { id: "sort-taken_at", label: "Taken At" }
                         ]}
                         selectedItemId={(() => {
-                            switch (sortBy) {
+                            switch (sort.by) {
                                 case "name":
                                     return "sort-name";
                                 case "created_at":
@@ -574,16 +601,16 @@
                         onSelect={(item) => {
                             switch (item.id) {
                                 case "sort-name":
-                                    sortBy = "name";
+                                    sort.by = "name";
                                     break;
                                 case "sort-created_at":
-                                    sortBy = "created_at";
+                                    sort.by = "created_at";
                                     break;
                                 case "sort-updated_at":
-                                    sortBy = "updated_at";
+                                    sort.by = "updated_at";
                                     break;
                                 case "sort-taken_at":
-                                    sortBy = "taken_at";
+                                    sort.by = "taken_at";
                                     break;
                             }
                             galleryState.images = [];
@@ -593,11 +620,11 @@
                         }}
                     />
                     <IconButton
-                        iconName={sortOrder === "ASC" ? "arrow_upward" : "arrow_downward"}
+                        iconName={sort.order === "ASC" ? "arrow_upward" : "arrow_downward"}
                         class="toolbar-button"
-                        title={`Toggle Sort Order (${sortOrder})`}
+                        title={`Toggle Sort Order (${sort.order})`}
                         onclick={() => {
-                            sortOrder = sortOrder === "ASC" ? "DESC" : "ASC";
+                            sort.order = sort.order === "ASC" ? "DESC" : "ASC";
                             galleryState.images = [];
                             galleryState.pagination.page = -1;
                             galleryState.hasMore = true;
@@ -609,10 +636,10 @@
                     <IconButton
                         iconName="filter_list"
                         class="toolbar-button"
-                        title="Filter"
+                        tooltipParams={{ component: ActiveFiltersTooltip, placement: "bottom-start" }}
                         aria-label="Filter"
                         onclick={() => {
-                            modalsManager.open(FilterModal, {});
+                            modalsManager.open(FilterModal, {}, FilterModalOptions);
                         }}
                     >
                         Filter

@@ -15,7 +15,7 @@
     import IconButton from "$lib/components/ui/IconButton.svelte";
     import MaterialIcon from "$lib/components/ui/MaterialIcon.svelte";
     import CollectionModal from "$lib/components/modals/CollectionModal.svelte";
-    import FilterModal from "$lib/components/modals/FilterModal.svelte";
+    import FilterModal, { FilterModalOptions } from "$lib/components/modals/FilterModal.svelte";
     import { modalsManager } from "$lib/components/modals/manager/ModalManager.svelte";
     import VizViewContainer from "$lib/components/panels/VizViewContainer.svelte";
     import DragAndDropUpload from "$lib/components/ui/DragAndDropUpload.svelte";
@@ -110,7 +110,7 @@
     let pendingDropUids: string[] | null = $state(null);
 
     function openFilterModal() {
-        modalsManager.open(FilterModal, {});
+        modalsManager.open(FilterModal, {}, FilterModalOptions);
     }
 
     function openCollectionModal(mode: "create" | "edit", initialData?: Collection) {
