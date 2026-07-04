@@ -7,7 +7,7 @@
     "300": "<path d=\"M352.54-352.54Q300-405.08 300-480t52.54-127.46T480-660t127.46 52.54T660-480t-52.54 127.46T480-300t-127.46-52.54M200-457.31H50v-45.38h150zm710 0H760v-45.38h150zM457.31-760v-150h45.38v150zm0 710v-150h45.38v150zM267.39-662.62l-93.08-90.46 32.23-33.61L296.77-694zm486.69 488.7-91.46-92.7L693.61-298l92.08 91.08zM662-693.61l91.08-92.08 33.61 31.61-92.08 91.46zM173.92-206.54 266-298l31.23 31.23-90.69 92.85z\" />",
     "400": "<path d=\"M338.5-338.5Q280-397 280-480t58.5-141.5T480-680t141.5 58.5T680-480t-58.5 141.5T480-280t-141.5-58.5M200-450H40v-60h160zm720 0H760v-60h160zM450-760v-160h60v160zm0 720v-160h60v160zM262-658l-100-97 43-44 96 100zm494 496-98-100 41-41 99 98zm-99-537 98-99 44 42-99 98zM162-205l99-98 42 42-98 99z\" />"
 };
-    let { size = "1.5em", className = "", title = "IconLightMode", viewBox = "0 -960 960 960", weight = "400", fill = false, ...rest } = $props();
+    let { size = "1.5em", className = "", title = "light_mode", viewBox = "0 -960 960 960", weight = "400", fill = false, ...rest } = $props();
     
     const activeMap = $derived(fill ? filledVariants : variants);
     const inner = $derived(activeMap[String(weight)] || activeMap["400"] || Object.values(activeMap)[0]);

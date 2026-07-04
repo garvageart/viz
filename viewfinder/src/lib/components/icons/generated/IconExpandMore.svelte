@@ -3,7 +3,7 @@
     "400": "<path d=\"M480-345 240-585l56-56 184 184 184-184 56 56z\" />"
 };
     const filledVariants: Record<string, string> = {};
-    let { size = "1.5em", className = "", title = "IconExpandMore", viewBox = "0 -960 960 960", weight = "400", fill = false, ...rest } = $props();
+    let { size = "1.5em", className = "", title = "expand_more", viewBox = "0 -960 960 960", weight = "400", fill = false, ...rest } = $props();
     
     const activeMap = $derived(fill ? filledVariants : variants);
     const inner = $derived(activeMap[String(weight)] || activeMap["400"] || Object.values(activeMap)[0]);

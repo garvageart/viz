@@ -5,7 +5,7 @@
     const filledVariants: Record<string, string> = {
     "400": "<path d=\"M120-120v-720h339v60H180v600h600v-279h60v339zm262-219-42-43 398-398H519v-60h321v321h-60v-218z\" />"
 };
-    let { size = "1.5em", className = "", title = "IconOpenInNew", viewBox = "0 -960 960 960", weight = "400", fill = false, ...rest } = $props();
+    let { size = "1.5em", className = "", title = "open_in_new", viewBox = "0 -960 960 960", weight = "400", fill = false, ...rest } = $props();
     
     const activeMap = $derived(fill ? filledVariants : variants);
     const inner = $derived(activeMap[String(weight)] || activeMap["400"] || Object.values(activeMap)[0]);

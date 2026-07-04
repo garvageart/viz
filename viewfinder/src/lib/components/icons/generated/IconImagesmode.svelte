@@ -7,7 +7,7 @@
     "300": "<path d=\"M267.16-287.77h429.76L567.23-460.31 446.38-306.23l-82.23-107.38zM140-140v-680h680v680zm230.31-449.79q12.38-12.48 12.38-30.3 0-17.83-12.48-30.22-12.48-12.38-30.31-12.38-17.82 0-30.21 12.48-12.38 12.48-12.38 30.3 0 17.83 12.48 30.22 12.48 12.38 30.31 12.38 17.82 0 30.21-12.48\" />",
     "400": "<path d=\"M236-277h489L578-473 446-302l-93-127zM120-120v-720h720v720zm255.5-464.62q14.5-14.62 14.5-35.5t-14.62-35.38-35.5-14.5-35.38 14.62-14.5 35.5 14.62 35.38 35.5 14.5 35.38-14.62\" />"
 };
-    let { size = "1.5em", className = "", title = "IconImagesmode", viewBox = "0 -960 960 960", weight = "400", fill = false, ...rest } = $props();
+    let { size = "1.5em", className = "", title = "imagesmode", viewBox = "0 -960 960 960", weight = "400", fill = false, ...rest } = $props();
     
     const activeMap = $derived(fill ? filledVariants : variants);
     const inner = $derived(activeMap[String(weight)] || activeMap["400"] || Object.values(activeMap)[0]);

@@ -303,7 +303,11 @@ async function main() {
     /** @type {Record<string, boolean>} */
     let failedCache = {};
     let failedCacheChanged = false;
-    if (existsSync(failedCachePath) && !force) {
+    if (force) {
+        // Clear failed cache if forcing a rebuild
+        failedCache = {};
+        failedCacheChanged = true;
+    } else if (existsSync(failedCachePath)) {
         try {
             failedCache = JSON.parse(readFileSync(failedCachePath, "utf8"));
         } catch (e) {
@@ -714,6 +718,11 @@ async function main() {
                 continue;
             }
 
+            if (failedCache[cacheKey]) {
+                delete failedCache[cacheKey];
+                failedCacheChanged = true;
+            }
+
             const variantsJson = JSON.stringify(variants, null, 4);
             const filledJson = JSON.stringify(filledVariants, null, 4);
 
@@ -762,8 +771,16 @@ async function main() {
     console.log("Wrote index.ts with", generated.length, "icons");
 
     if (failedCacheChanged) {
-        writeFileSync(failedCachePath, JSON.stringify(failedCache, null, 4), "utf8");
-        console.log("Updated failed-icons.json cache.");
+        if (Object.keys(failedCache).length === 0) {
+            const { unlinkSync } = await import("fs");
+            if (existsSync(failedCachePath)) {
+                unlinkSync(failedCachePath);
+                console.log("Deleted empty failed-icons.json.");
+            }
+        } else {
+            writeFileSync(failedCachePath, JSON.stringify(failedCache, null, 4), "utf8");
+            console.log("Updated failed-icons.json cache.");
+        }
     }
 }
 

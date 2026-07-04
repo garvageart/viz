@@ -7,7 +7,7 @@
     "300": "<path d=\"M379.15-258.31 168.62-468.85l32.61-32.23 177.92 177.93 379-379.39 32.62 32.62z\" />",
     "400": "<path d=\"M378-246 154-470l43-43 181 181 384-384 43 43z\" />"
 };
-    let { size = "1.5em", className = "", title = "IconCheck", viewBox = "0 -960 960 960", weight = "400", fill = false, ...rest } = $props();
+    let { size = "1.5em", className = "", title = "check", viewBox = "0 -960 960 960", weight = "400", fill = false, ...rest } = $props();
     
     const activeMap = $derived(fill ? filledVariants : variants);
     const inner = $derived(activeMap[String(weight)] || activeMap["400"] || Object.values(activeMap)[0]);
