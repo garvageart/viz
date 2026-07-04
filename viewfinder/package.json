@@ -53,6 +53,7 @@
     },
     "dependencies": {
         "@immich/justified-layout-wasm": "^0.4.3",
+        "@internationalized/date": "^3.12.2",
         "@oazapfts/runtime": "^1.2.0",
         "@zoom-image/core": "^0.42.0",
         "@zoom-image/svelte": "^0.3.9",

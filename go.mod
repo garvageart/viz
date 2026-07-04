@@ -16,7 +16,6 @@ require (
 
 require (
 	github.com/ThreeDotsLabs/watermill v1.5.2
-	github.com/cshum/vipsgen v1.3.10
 	github.com/dromara/carbon/v2 v2.6.16
 	github.com/dsoprea/go-exif/v3 v3.0.1
 	github.com/go-co-op/gocron/v2 v2.21.2
