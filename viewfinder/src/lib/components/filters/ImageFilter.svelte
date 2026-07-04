@@ -10,13 +10,14 @@
 </script>
 
 <script lang="ts">
+    import Calendar from "$lib/components/ui/Calendar.svelte";
+    import type { ImageFacets, ImageFilters } from "$lib/states/filter.svelte";
     import { slide } from "svelte/transition";
+    import StarRating from "../image-tools/StarRating.svelte";
     import MaterialIcon from "../ui/MaterialIcon.svelte";
     import ChecklistFacet from "./ChecklistFacet.svelte";
-    import RangeInput from "./RangeInput.svelte";
-    import StarRating from "../image-tools/StarRating.svelte";
-    import type { ImageFilters, ImageFacets } from "$lib/states/filter.svelte";
     import LabelFacet from "./LabelFacet.svelte";
+    import RangeInput from "./RangeInput.svelte";
 
     interface Props {
         criteria: ImageFilters;
@@ -26,6 +27,57 @@
     }
 
     let { criteria = $bindable(), facets, uiState = $bindable(), save }: Props = $props();
+
+    // Convert an ISO date string from criteria to a JS Date for the Calendar.
+    // Falls back to today when absent.
+    function isoToDate(iso: string | undefined): Date {
+        return iso ? new Date(iso) : new Date();
+    }
+
+    // Convert a JS Date from Calendar back to an ISO date-only string (YYYY-MM-DD)
+    // used by the filter criteria.
+    function dateToIso(d: Date): string {
+        return d.toISOString().slice(0, 10);
+    }
+
+    // Derive the locale's date format as a placeholder string, e.g. "DD/MM/YYYY".
+    // Uses a sample date with distinct day/month/year values so field order and
+    // separators are detected correctly for any locale.
+    function getLocaleDatePlaceholder(): string {
+        const sample = new Date(2024, 10, 23); // Nov 23, 2024 — all parts distinct
+        return new Intl.DateTimeFormat(undefined, {
+            year: "numeric",
+            month: "2-digit",
+            day: "2-digit"
+        })
+            .formatToParts(sample)
+            .map(({ type, value }) => {
+                if (type === "year") {
+                    return "YYYY";
+                }
+                if (type === "month") {
+                    return "MM";
+                }
+                if (type === "day") {
+                    return "DD";
+                }
+                return value;
+            })
+            .join("");
+    }
+
+    // Format a criteria ISO string for display in the calendar trigger button.
+    function formatCriteriaDate(iso: string | undefined): string {
+        if (!iso) {
+            return getLocaleDatePlaceholder();
+        }
+
+        return new Date(iso).toLocaleDateString(undefined, {
+            year: "numeric",
+            month: "short",
+            day: "numeric"
+        });
+    }
 </script>
 
 <!-- Rating -->
@@ -211,6 +263,42 @@
     {/if}
 </div>
 
+{#snippet dateField(label: string, value: string | undefined, onChange: (d: Date) => void, onClear: () => void)}
+    <div class="date-field">
+        <span class="label">{label}</span>
+        <Calendar value={isoToDate(value)} showTime={false} align="start" onchange={onChange}>
+            {#snippet children()}
+                <div class="date-trigger" class:active={!!value}>
+                    <div class="date-meta">
+                        <MaterialIcon iconName="calendar_today" size="0.9rem" />
+                        <span>{formatCriteriaDate(value)}</span>
+                    </div>
+                    {#if value}
+                        <span
+                            class="date-clear-btn"
+                            role="button"
+                            tabindex="0"
+                            title="Clear"
+                            onclick={(e) => {
+                                e.stopPropagation();
+                                onClear();
+                            }}
+                            onkeydown={(e) => {
+                                if (e.key === "Enter" || e.key === " ") {
+                                    e.stopPropagation();
+                                    onClear();
+                                }
+                            }}
+                        >
+                            <MaterialIcon iconName="close" size="0.8rem" />
+                        </span>
+                    {/if}
+                </div>
+            {/snippet}
+        </Calendar>
+    </div>
+{/snippet}
+
 <!-- Date -->
 <div class="filter-section">
     <button class="section-header" onclick={() => toggleSection("date", uiState, save)}>
@@ -223,28 +311,30 @@
     {#if uiState.expanded.date}
         <div class="section-content" transition:slide={{ duration: 200 }}>
             <div class="date-inputs">
-                <div class="date-field">
-                    <span class="label">After</span>
-                    <input
-                        type="date"
-                        value={criteria.date.after ?? ""}
-                        onchange={(e) => {
-                            criteria.date.after = (e.currentTarget as HTMLInputElement).value || undefined;
-                            save();
-                        }}
-                    />
-                </div>
-                <div class="date-field">
-                    <span class="label">Before</span>
-                    <input
-                        type="date"
-                        value={criteria.date.before ?? ""}
-                        onchange={(e) => {
-                            criteria.date.before = (e.currentTarget as HTMLInputElement).value || undefined;
-                            save();
-                        }}
-                    />
-                </div>
+                {@render dateField(
+                    "After",
+                    criteria.date.after,
+                    (d) => {
+                        criteria.date.after = dateToIso(d);
+                        save();
+                    },
+                    () => {
+                        criteria.date.after = undefined;
+                        save();
+                    }
+                )}
+                {@render dateField(
+                    "Before",
+                    criteria.date.before,
+                    (d) => {
+                        criteria.date.before = dateToIso(d);
+                        save();
+                    },
+                    () => {
+                        criteria.date.before = undefined;
+                        save();
+                    }
+                )}
             </div>
         </div>
     {/if}
@@ -284,52 +374,82 @@
         padding: 0.5rem 0;
         display: flex;
         flex-direction: column;
-        gap: 0.5rem;
+        gap: var(--viz-spacing-sm);
     }
 
     .rating-row {
         display: flex;
         align-items: center;
-        gap: 0.5rem;
+        gap: var(--viz-spacing-sm);
         font-size: 0.9rem;
         color: var(--viz-60);
     }
 
     .date-inputs {
         display: flex;
-        flex-direction: column;
-        gap: 0.5rem;
+        flex-direction: row;
+        width: 100%;
+        gap: var(--viz-spacing-sm);
     }
 
     .date-field {
         display: flex;
         flex-direction: column;
-        gap: 0.25rem;
+        gap: var(--viz-spacing-xs);
+        width: 100%;
 
         .label {
             font-size: 0.8rem;
             color: var(--viz-60);
         }
+    }
 
-        input[type="date"] {
-            background: var(--viz-100);
-            border: none;
-            box-shadow: 0 -1px 0 var(--viz-60) inset;
+    :global(.date-trigger) {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: var(--viz-spacing-sm);
+        width: 100%;
+        background: var(--viz-100);
+        box-shadow: 0 -1px 0 var(--viz-60) inset;
+        color: var(--viz-40);
+        padding: var(--viz-spacing-sm) var(--viz-spacing-sm);
+        font-family: var(--viz-display-font);
+        font-size: var(--viz-font-size-xs);
+        text-wrap: nowrap;
+        cursor: pointer;
+        transition:
+            box-shadow 0.15s,
+            color 0.15s;
+
+        .date-meta {
+            display: flex;
+            align-items: center;
+            gap: 0.25rem;
+        }
+
+        &.active {
             color: var(--viz-text-color);
-            padding: 4px 8px;
-            border-radius: 0;
-            font-family: var(--viz-display-font);
+            box-shadow: 0 -1px 0 var(--viz-primary) inset;
+        }
 
-            &:focus {
-                box-shadow: 0 -2px 0 var(--viz-primary) inset;
-                outline: none;
-            }
+        &:hover {
+            box-shadow: 0 -2px 0 var(--viz-primary) inset;
+            color: var(--viz-text-color);
+        }
+    }
 
-            &::-webkit-calendar-picker-indicator {
-                filter: invert(1);
-                opacity: 0.6;
-                cursor: pointer;
-            }
+    :global(.date-clear-btn) {
+        display: flex;
+        align-items: center;
+        background: none;
+        border: none;
+        padding: 0;
+        cursor: pointer;
+        color: var(--viz-50);
+
+        &:hover {
+            color: var(--viz-text-color);
         }
     }
 

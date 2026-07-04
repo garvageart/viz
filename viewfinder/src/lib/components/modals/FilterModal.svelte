@@ -1,3 +1,12 @@
+<script module>
+    import type { ModalOptions } from "$lib/components/modals/manager/ModalManager.svelte";
+
+    export const FilterModalOptions: ModalOptions = {
+        heading: "Filter Images",
+        applyPadding: false
+    };
+</script>
+
 <script lang="ts">
     import FilterPanel from "../panels/workspace/FilterPanel.svelte";
 </script>

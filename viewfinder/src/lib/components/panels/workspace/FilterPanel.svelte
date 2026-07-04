@@ -59,13 +59,12 @@
         height: 100%;
         overflow-y: scroll;
         overflow-x: hidden;
-        padding: 0.5rem;
+        padding: var(--viz-spacing-sm);
         color: var(--viz-text-color);
         position: relative;
     }
 
     .filter-panel-footer {
-        // flex-shrink: 0;
         border-top: 1px solid var(--viz-80);
         position: relative;
     }
@@ -74,9 +73,9 @@
         display: flex;
         justify-content: flex-start;
         align-items: center;
-        padding: 0.2rem 0.5rem;
+        padding: var(--viz-spacing-sm);
         background-color: var(--viz-bg-color);
-        gap: 0.5rem;
+        gap: var(--viz-spacing-sm);
         width: 100%;
     }
 </style>
