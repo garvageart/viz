@@ -376,7 +376,12 @@
                         asset,
                         clickHandler: (e: MouseEvent & { currentTarget: EventTarget & HTMLElement }) => {
                             if (assetDblClick) {
-                                assetDblClick(e as unknown as MouseEvent & { currentTarget: EventTarget & (HTMLDivElement | HTMLTableRowElement) }, asset);
+                                assetDblClick(
+                                    e as unknown as MouseEvent & {
+                                        currentTarget: EventTarget & (HTMLDivElement | HTMLTableRowElement);
+                                    },
+                                    asset
+                                );
                             }
                         }
                     }

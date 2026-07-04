@@ -227,9 +227,11 @@
     let updatedData = $derived<ImageUpdate>({
         name: lightboxImage?.name ?? "",
         taken_at: lightboxImage?.taken_at,
-        image_metadata: lightboxImage?.image_metadata ? {
-            label: lightboxImage.image_metadata.label
-        } : undefined
+        image_metadata: lightboxImage?.image_metadata
+            ? {
+                  label: lightboxImage.image_metadata.label
+              }
+            : undefined
     });
 
     let lastSavedData = $state<ImageUpdate | null>(null);
@@ -243,9 +245,11 @@
                 lastSavedData = {
                     name: image.name,
                     taken_at: image.taken_at,
-                    image_metadata: image.image_metadata ? {
-                        label: image.image_metadata.label
-                    } : undefined
+                    image_metadata: image.image_metadata
+                        ? {
+                              label: image.image_metadata.label
+                          }
+                        : undefined
                 };
             });
         } else {
@@ -291,9 +295,11 @@
                         lastSavedData = {
                             name: updatedImage.data.name,
                             taken_at: updatedImage.data.taken_at,
-                            image_metadata: updatedImage.data.image_metadata ? {
-                                label: updatedImage.data.image_metadata.label
-                            } : undefined
+                            image_metadata: updatedImage.data.image_metadata
+                                ? {
+                                      label: updatedImage.data.image_metadata.label
+                                  }
+                                : undefined
                         };
                     } else {
                         throw new ApiError(updatedImage.data.error || "Unknown error", updatedImage.status);
@@ -959,13 +965,17 @@
                                     <div
                                         role="button"
                                         tabindex="0"
-                                        title={lightboxImage?.name || lightboxImage?.image_metadata?.file_name || "Untitled"}
+                                        title={lightboxImage?.name ||
+                                            lightboxImage?.image_metadata?.file_name ||
+                                            "Untitled"}
                                         onclick={() => {
-                                            editingName = lightboxImage?.name || lightboxImage?.image_metadata?.file_name || "";
+                                            editingName =
+                                                lightboxImage?.name || lightboxImage?.image_metadata?.file_name || "";
                                             editNameMode = true;
                                         }}
                                         onkeydown={() => {
-                                            editingName = lightboxImage?.name || lightboxImage?.image_metadata?.file_name || "";
+                                            editingName =
+                                                lightboxImage?.name || lightboxImage?.image_metadata?.file_name || "";
                                             editNameMode = true;
                                         }}
                                         class="value-big"
@@ -976,7 +986,8 @@
                                         class="copy-filename-btn"
                                         title="Copy filename"
                                         onclick={() => {
-                                            const nameToCopy = lightboxImage?.name || lightboxImage?.image_metadata?.file_name;
+                                            const nameToCopy =
+                                                lightboxImage?.name || lightboxImage?.image_metadata?.file_name;
                                             if (nameToCopy) {
                                                 copyToClipboard(nameToCopy);
                                                 toastState.addToast({
@@ -1001,7 +1012,11 @@
                             </div>
                         </div>
                     </div>
-                    <Calendar value={getTakenAt(lightboxImage!)} bind:open={calendarOpen} onchange={(d) => handleDateChange(d)}>
+                    <Calendar
+                        value={getTakenAt(lightboxImage!)}
+                        bind:open={calendarOpen}
+                        onchange={(d) => handleDateChange(d)}
+                    >
                         {#snippet children()}
                             <div class="card-row meta-row" role="button">
                                 <MaterialIcon iconName="calendar_today" class="exif-material-icon" />

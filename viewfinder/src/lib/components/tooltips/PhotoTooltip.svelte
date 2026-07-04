@@ -58,7 +58,7 @@
         gap: var(--viz-spacing-xs);
 
         :global(.edit-button) {
-            padding: var(--viz-spacing-xs)
+            padding: var(--viz-spacing-xs);
         }
     }
 

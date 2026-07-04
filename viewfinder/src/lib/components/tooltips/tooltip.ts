@@ -1,6 +1,6 @@
-import tippy, { type Props } from "tippy.js";
+import { type Component, mount, unmount } from "svelte";
+import tippy, { type Instance, type Props } from "tippy.js";
 import "tippy.js/dist/tippy.css";
-import { mount, unmount, type Component } from "svelte";
 
 export interface TooltipParams extends Partial<Omit<Props, "content">> {
     content?: string | null;
@@ -8,26 +8,31 @@ export interface TooltipParams extends Partial<Omit<Props, "content">> {
     props?: Record<string, any>;
 }
 
+type TippyOptions = Omit<Partial<Props>, "content"> & {
+    component?: Component<any>;
+    props?: Record<string, any>;
+};
+
 export function tooltip(node: HTMLElement, params: TooltipParams | string | null | undefined) {
     if (!params) {
         return;
     }
 
-    let instance: ReturnType<typeof tippy>;
+    let instance: Instance<Props> | undefined;
     let activeComponent: Record<string, any> | null = null;
 
     const setupTippy = (opts: TooltipParams | string) => {
         const isString = typeof opts === "string";
         const contentVal = isString ? opts : opts.content;
         const comp = isString ? null : opts.component;
-        const compProps = isString ? {} : (opts.props || {});
-        const tippyOptions: Partial<Props> & { component?: Component<any>; props?: Record<string, any> } = isString ? {} : { ...opts };
+        const compProps = isString ? {} : opts.props || {};
+        const tippyOptions: TippyOptions = isString ? {} : { ...opts };
 
         // Clean up component-specific configurations from tippyOptions
         delete tippyOptions.component;
         delete tippyOptions.props;
 
-        let contentNode: HTMLElement | string = contentVal || "";
+        let contentNode: HTMLElement | string = contentVal ?? "";
 
         if (comp) {
             const container = document.createElement("div");
@@ -89,4 +94,3 @@ export function tooltip(node: HTMLElement, params: TooltipParams | string | null
         }
     };
 }
-
