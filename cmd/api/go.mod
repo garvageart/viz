@@ -1,6 +1,6 @@
 module viz/api
 
-go 1.25.0
+go 1.26
 
 require (
 	github.com/dromara/carbon/v2 v2.6.16

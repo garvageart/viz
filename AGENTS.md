@@ -1,6 +1,6 @@
 # Viz Repository Guidelines
 
-**Last Updated:** July 1, 2026
+**Last Updated:** July 4, 2026
 
 ## Purpose
 
@@ -27,7 +27,7 @@ Entry point for agents and humans working on the Viz codebase.
 - **Package manager**: `pnpm` (not npm or yarn).
 - **Frontend directory**: `viewfinder/` — not `src/`, `frontend/`, or `web/`.
 - **Lockfile**: `pnpm-lock.yaml` at repository root (not inside `viewfinder/`).
-- **Go workspace**: `go.work` at root (Go 1.25.8) with two modules: root (`.`) and `./cmd/api`.
+- **Go workspace**: `go.work` at root (Go 1.26) with two modules: root (`.`) and `./cmd/api`.
 - **Runtime data**: `var/` directory for local library, logs, trash, and cache — gitignored.
 - **Resource identifiers**: All API entities use `uid` (string) as the primary identifier, not numeric IDs or UUIDs.
 - **Docker services**: `make docker-up` starts Postgres 18, Redis 8, and the Viz server on port 7770. See [docker-compose.yml](/docker/docker-compose.yml).
@@ -40,7 +40,7 @@ Entry point for agents and humans working on the Viz codebase.
 
 ## Environment & Toolchain
 
-- **Go**: 1.25.8 (per `go.mod` and `go.work`)
+- **Go**: 1.26 (per `go.mod` and `go.work`)
 - **Node**: >=24.13.0 (per `viewfinder/package.json`; `.node-version` at root)
 - **libvips**: 8.18.0 (see `.libvips-version` at root; used via CGO bindings in `internal/images/ops`)
 - **Package manager**: `pnpm` (not npm or yarn)
