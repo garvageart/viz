@@ -1,0 +1,567 @@
+<script lang="ts">
+    import { getContext } from "svelte";
+    import InputSelect from "$lib/components/ui/InputSelect.svelte";
+    import MaterialIcon from "$lib/components/ui/MaterialIcon.svelte";
+    import { localeState } from "$lib/states/locale.svelte";
+    import { untrack } from "svelte";
+    import { CalendarDateTime, type DateValue } from "@internationalized/date";
+    import { DatePicker, TimeField, Select } from "bits-ui";
+    import { ContextKeys } from "$lib/context-keys";
+
+    interface Props {
+        value: Date;
+        open?: boolean;
+        showTime?: boolean;
+        align?: "start" | "center" | "end";
+        side?: "top" | "bottom" | "left" | "right";
+        onchange?: (date: Date) => void;
+        children?: import("svelte").Snippet;
+    }
+
+    let {
+        value = $bindable(),
+        open = $bindable(false),
+        showTime = true,
+        align = "center",
+        side = "bottom",
+        onchange,
+        children
+    }: Props = $props();
+
+    // When Calendar is rendered inside a modal, read its z-index from context so the
+    // popover always appears on top. Falls back to 0 (CSS z-index handles it).
+    const getModalZIndex = getContext<(() => number) | undefined>(ContextKeys.ModalZIndex);
+    const popoverZIndex = $derived(getModalZIndex ? getModalZIndex() + 1 : 0);
+
+    function toCalendarDateTime(d: Date): CalendarDateTime {
+        return new CalendarDateTime(
+            d.getFullYear(),
+            d.getMonth() + 1,
+            d.getDate(),
+            d.getHours(),
+            d.getMinutes(),
+            d.getSeconds()
+        );
+    }
+
+    function getMsWithoutMs(d: Date): number {
+        const copy = new Date(d);
+        copy.setMilliseconds(0);
+        return copy.getTime();
+    }
+
+    let selected = $state<CalendarDateTime>(toCalendarDateTime(value));
+    let lastMs = getMsWithoutMs(value);
+
+    // Sync selected state only when the actual time value (in ms) changes from the parent,
+    // avoiding resets on parent reference-only updates.
+    $effect(() => {
+        const currentMs = getMsWithoutMs(value);
+        if (currentMs !== lastMs) {
+            selected = toCalendarDateTime(value);
+            lastMs = currentMs;
+        }
+    });
+
+    function handleDateSelect(v: DateValue | undefined) {
+        if (!v) {
+            return;
+        }
+        selected = v as CalendarDateTime;
+        lastMs = new Date(
+            selected.year,
+            selected.month - 1,
+            selected.day,
+            selected.hour,
+            selected.minute,
+            selected.second
+        ).getTime();
+        emitDate();
+    }
+
+    function handleTimeSelect(v: DateValue | undefined) {
+        if (!v) {
+            return;
+        }
+        selected = v as CalendarDateTime;
+        lastMs = new Date(
+            selected.year,
+            selected.month - 1,
+            selected.day,
+            selected.hour,
+            selected.minute,
+            selected.second
+        ).getTime();
+        emitDate();
+    }
+
+    function emitDate() {
+        const jsDate = new Date(
+            selected.year,
+            selected.month - 1,
+            selected.day,
+            selected.hour,
+            selected.minute,
+            selected.second
+        );
+        onchange?.(jsDate);
+    }
+
+    function handleOpenChange(o: boolean) {
+        open = o;
+    }
+
+    // Month and Year dropdown data
+    const monthsOptions = Array.from({ length: 12 }, (_, i) => ({
+        value: String(i + 1),
+        label: new Date(0, i).toLocaleString(undefined, { month: "long" })
+    }));
+    const yearsOptions = Array.from({ length: 205 }, (_, i) => {
+        const yr = 1900 + i;
+        return { value: String(yr), label: String(yr) };
+    });
+
+    // Bind selected month/year to calendar date
+    let selectedMonth = $derived(String(selected.month));
+    let selectedYear = $derived(String(selected.year));
+
+    let selectedMonthLabel = $derived(monthsOptions.find((opt) => opt.value === selectedMonth)!.label);
+    let selectedYearLabel = $derived(yearsOptions.find((opt) => opt.value === selectedYear)!.label);
+
+    // Returns the number of days in the given month of the given year.
+    function daysInMonth(year: number, month: number): number {
+        return new Date(year, month, 0).getDate();
+    }
+
+    function handleMonthChange(val: string) {
+        const month = Number(val);
+        // Clamp the day to the max valid day for the new month to avoid invalid dates
+        // (e.g. selecting March when day is 30 or 31).
+        const maxDay = daysInMonth(selected.year, month);
+        const day = Math.min(selected.day, maxDay);
+        selected = new CalendarDateTime(selected.year, month, day, selected.hour, selected.minute, selected.second);
+        lastMs = new Date(
+            selected.year,
+            selected.month - 1,
+            selected.day,
+            selected.hour,
+            selected.minute,
+            selected.second
+        ).getTime();
+        emitDate();
+    }
+
+    function handleYearChange(val: string) {
+        const year = Number(val);
+        // Clamp day for leap-year edge cases (e.g. Feb 29 in a non-leap year).
+        const maxDay = daysInMonth(year, selected.month);
+        const day = Math.min(selected.day, maxDay);
+        selected = new CalendarDateTime(year, selected.month, day, selected.hour, selected.minute, selected.second);
+        lastMs = new Date(
+            selected.year,
+            selected.month - 1,
+            selected.day,
+            selected.hour,
+            selected.minute,
+            selected.second
+        ).getTime();
+        emitDate();
+    }
+</script>
+
+<DatePicker.Root
+    weekdayFormat="short"
+    fixedWeeks={true}
+    value={selected}
+    onValueChange={handleDateSelect}
+    bind:open
+    onOpenChange={handleOpenChange}
+    initialFocus={true}
+    locale={localeState}
+>
+    {#if children}
+        <DatePicker.Input class="cal-hidden-input">
+            {#snippet children({ segments })}
+                {#each segments as { part, value }, i (part + i)}
+                    <DatePicker.Segment {part}>
+                        {value}
+                    </DatePicker.Segment>
+                {/each}
+            {/snippet}
+        </DatePicker.Input>
+        <DatePicker.Trigger class="calendar-trigger-slot">
+            {@render children()}
+        </DatePicker.Trigger>
+    {:else}
+        <DatePicker.Trigger class="calendar-trigger">
+            <MaterialIcon iconName="edit_calendar" />
+        </DatePicker.Trigger>
+    {/if}
+    <DatePicker.Portal>
+        <DatePicker.Content
+            sideOffset={6}
+            class="calendar-popover"
+            trapFocus={false}
+            onFocusOutside={(e) => e.preventDefault()}
+            onkeydown={(e) => e.stopPropagation()}
+            style={popoverZIndex ? `z-index: ${popoverZIndex}` : undefined}
+            {align}
+            {side}
+        >
+            <DatePicker.Calendar>
+                {#snippet children({ months, weekdays })}
+                    <DatePicker.Header class="calendar-header">
+                        <DatePicker.PrevButton class="calendar-nav-btn">
+                            <MaterialIcon iconName="chevron_left" />
+                        </DatePicker.PrevButton>
+                        <div class="calendar-header-selects">
+                            <InputSelect
+                                class="calendar-select-trigger month"
+                                contentAlign="end"
+                                options={monthsOptions}
+                                value={selectedMonth}
+                                title={selectedMonthLabel}
+                                onchange={handleMonthChange}
+                            />
+                            <InputSelect
+                                class="calendar-select-trigger year"
+                                contentAlign="end"
+                                options={yearsOptions}
+                                value={selectedYear}
+                                title={selectedYearLabel}
+                                onchange={handleYearChange}
+                            />
+                        </div>
+                        <DatePicker.NextButton class="calendar-nav-btn">
+                            <MaterialIcon iconName="chevron_right" />
+                        </DatePicker.NextButton>
+                    </DatePicker.Header>
+                    <div class="calendar-grid-wrapper">
+                        {#each months as month (month.value)}
+                            <DatePicker.Grid class="calendar-grid">
+                                <DatePicker.GridHead>
+                                    <DatePicker.GridRow class="calendar-grid-row">
+                                        {#each weekdays as day (day)}
+                                            <DatePicker.HeadCell class="calendar-head-cell">
+                                                {day.slice(0, 2)}
+                                            </DatePicker.HeadCell>
+                                        {/each}
+                                    </DatePicker.GridRow>
+                                </DatePicker.GridHead>
+                                <DatePicker.GridBody>
+                                    {#each month.weeks as weekDates (weekDates)}
+                                        <DatePicker.GridRow class="calendar-grid-row">
+                                            {#each weekDates as date (date)}
+                                                <DatePicker.Cell {date} month={month.value} class="calendar-cell">
+                                                    <DatePicker.Day class="calendar-day">
+                                                        <span class="calendar-day-dot"></span>
+                                                        <span class="calendar-day-val">{date.day}</span>
+                                                    </DatePicker.Day>
+                                                </DatePicker.Cell>
+                                            {/each}
+                                        </DatePicker.GridRow>
+                                    {/each}
+                                </DatePicker.GridBody>
+                            </DatePicker.Grid>
+                        {/each}
+                    </div>
+                {/snippet}
+            </DatePicker.Calendar>
+            {#if showTime}
+                <div class="time-picker-section">
+                    <TimeField.Root
+                        value={selected}
+                        onValueChange={handleTimeSelect}
+                        granularity="second"
+                        locale={localeState}
+                    >
+                        <TimeField.Label class="time-label">Time</TimeField.Label>
+                        <TimeField.Input class="time-input">
+                            {#snippet children({ segments })}
+                                {#each segments as { part, value }, i (part + i)}
+                                    {#if part === "literal"}
+                                        <span class="time-separator">{value}</span>
+                                    {:else}
+                                        <TimeField.Segment {part} class="time-segment">
+                                            {value}
+                                        </TimeField.Segment>
+                                    {/if}
+                                {/each}
+                            {/snippet}
+                        </TimeField.Input>
+                    </TimeField.Root>
+                </div>
+            {/if}
+        </DatePicker.Content>
+    </DatePicker.Portal>
+</DatePicker.Root>
+
+<style lang="scss">
+    :global(.calendar-popover) {
+        display: flex;
+        flex-direction: column;
+        padding: var(--viz-spacing-xs);
+        /* Define a base cell size that can be overridden by the container */
+        --calendar-cell-size: 1.6rem;
+        border-radius: var(--viz-border-radius-md);
+        background: var(--viz-95);
+        border: 1px solid var(--viz-75);
+        box-shadow: 0 8px 24px rgba(0, 0, 0, 0.3);
+        z-index: 10000;
+    }
+
+    :global([data-calendar-root]) {
+        display: flex;
+        flex-direction: column;
+        gap: var(--viz-spacing-sm);
+    }
+
+    :global(.calendar-header) {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: var(--viz-spacing-xs);
+    }
+
+    :global(.calendar-nav-btn) {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        border-radius: var(--viz-border-radius-sm);
+        background: transparent;
+        border: 1px solid transparent;
+        color: var(--viz-20);
+        cursor: pointer;
+        transition: all 120ms ease;
+    }
+
+    :global(.calendar-nav-btn:hover) {
+        background: var(--viz-85);
+        border-color: var(--viz-70);
+    }
+
+    :global(.calendar-header-selects) {
+        display: flex;
+        align-items: center;
+        gap: var(--viz-spacing-xs);
+        flex: 1;
+        justify-content: center;
+        min-width: 0;
+
+        :global(.input-container) {
+            width: auto !important;
+            flex: initial !important;
+            gap: 0 !important;
+        }
+
+        :global(.input-wrapper) {
+            width: auto !important;
+        }
+    }
+
+    :global(.calendar-select-trigger) {
+        display: inline-flex !important;
+        align-items: center !important;
+        justify-content: space-between !important;
+        min-height: 1.75rem !important;
+        height: 1.75rem !important;
+        padding: 0 var(--viz-spacing-xs) !important;
+        font-size: var(--viz-font-size-xs) !important;
+        font-weight: 600 !important;
+        color: var(--viz-10) !important;
+        background-color: var(--viz-90) !important;
+        border: 1px solid var(--viz-80) !important;
+        border-radius: var(--viz-border-radius-sm) !important;
+        box-shadow: 0 -1px 0 var(--viz-primary) inset !important;
+
+        &:hover {
+            background-color: var(--viz-85) !important;
+        }
+
+        &:focus {
+            border-color: var(--viz-primary) !important;
+            box-shadow: 0 0 0 1px var(--viz-primary) !important;
+        }
+    }
+
+    :global(.calendar-select-trigger.month) {
+        width: 6.2rem !important;
+    }
+
+    :global(.calendar-select-trigger.year) {
+        width: 4.5rem !important;
+    }
+
+    :global(.calendar-grid) {
+        width: 100%;
+        border-collapse: separate;
+        border-spacing: 0.5px;
+    }
+
+    :global(.calendar-grid-row) {
+        display: flex;
+        justify-content: space-between;
+        width: 100%;
+    }
+
+    :global(.calendar-head-cell) {
+        width: var(--calendar-cell-size);
+        height: var(--calendar-cell-size);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 0.7rem;
+        font-weight: 600;
+        color: var(--viz-40);
+        text-transform: uppercase;
+        aspect-ratio: 1;
+    }
+
+    :global(.calendar-cell) {
+        padding: 1px !important;
+    }
+
+    :global(.calendar-day) {
+        position: relative;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        width: var(--calendar-cell-size);
+        height: var(--calendar-cell-size);
+        border-radius: var(--viz-border-radius-sm);
+        border: 1px solid transparent;
+        background: transparent;
+        color: var(--viz-20);
+        font-size: var(--viz-font-size-xs);
+        aspect-ratio: 1;
+        font-weight: 400;
+        cursor: pointer;
+        transition: all 120ms ease;
+    }
+
+    :global(.calendar-day:hover) {
+        background: color-mix(in srgb, var(--viz-primary) 12%, transparent);
+        border-color: var(--viz-primary);
+    }
+
+    :global(.calendar-cell[data-selected]) :global(.calendar-day) {
+        color: var(--viz-10);
+        font-weight: 500;
+        box-shadow: 0 -2px 0 var(--viz-primary) inset;
+    }
+
+    :global(.calendar-cell[data-today]) :global(.calendar-day) {
+        color: var(--viz-text-color);
+        gap: var(--viz-spacing-xxs);
+        outline: 1.5px solid var(--viz-primary);
+    }
+
+    :global(.calendar-cell[data-today]) :global(.calendar-day-dot) {
+        display: block;
+        background: var(--viz-primary);
+    }
+
+    :global(.calendar-cell[data-selected]) :global(.calendar-day-dot) {
+        background: var(--viz-10);
+    }
+
+    :global(.calendar-day:focus-visible) {
+        outline: 2px solid var(--viz-primary);
+        outline-offset: 1px;
+    }
+
+    :global(.calendar-cell[data-outside-month]) :global(.calendar-day) {
+        color: var(--viz-60);
+    }
+
+    :global(.calendar-day-dot) {
+        display: none;
+        position: absolute;
+        top: 2px;
+        width: 3px;
+        height: 3px;
+        border-radius: var(--viz-border-radius-pill);
+        background: var(--viz-10);
+        transition: all 120ms ease;
+    }
+
+    :global(.time-picker-section) {
+        border-top: 1px solid var(--viz-75);
+        padding-top: var(--viz-spacing-sm);
+    }
+
+    :global(.time-label) {
+        display: block;
+        font-size: 0.75rem;
+        font-weight: 600;
+        color: var(--viz-40);
+        margin-bottom: 0.35rem;
+    }
+
+    :global(.time-input) {
+        display: flex;
+        align-items: center;
+        padding: var(--viz-spacing-xs) var(--viz-spacing-xs);
+        background: var(--viz-100);
+        border: 1px solid var(--viz-75);
+        border-radius: var(--viz-border-radius-sm);
+        font-size: var(--viz-font-size-sm);
+        font-weight: 400;
+        color: var(--viz-20);
+        font-family: var(--viz-mono-font);
+    }
+
+    :global(.time-separator) {
+        color: var(--viz-40);
+    }
+
+    :global(.time-segment) {
+        padding: var(--viz-spacing-xxs) var(--viz-spacing-xs);
+        border-radius: var(--viz-border-radius-sm);
+        color: var(--viz-20);
+
+        &:focus-visible {
+            outline: 1px solid var(--viz-primary);
+            background: var(--viz-80) !important;
+            outline: 1px solid var(--viz-primary) !important;
+        }
+    }
+
+    :global(.calendar-trigger-slot) {
+        display: inline-flex;
+        align-items: center;
+        cursor: pointer;
+        background: transparent;
+        border: none;
+        padding: 0;
+        color: inherit;
+        width: 100%;
+        text-align: left;
+    }
+
+    :global(.calendar-trigger) {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        background: transparent;
+        border: none;
+        cursor: pointer;
+        color: var(--viz-30);
+        padding: 0.2rem;
+        border-radius: var(--viz-border-radius-sm);
+        transition: all 120ms ease;
+    }
+
+    :global(.calendar-trigger:hover) {
+        background: var(--viz-85);
+        color: var(--viz-20);
+    }
+
+    :global(.cal-hidden-input) {
+        position: absolute;
+        width: 0;
+        height: 0;
+        opacity: 0;
+        pointer-events: none;
+    }
+</style>
