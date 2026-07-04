@@ -1,5 +1,5 @@
 <script lang="ts">
-    import { getFullImagePath, updateImage, type ImageAsset, Label as ImageLabel } from "$lib/api";
+    import { getFullImagePath, updateImage, type ImageAsset, Label as ImageLabel, type ImageUpdate } from "$lib/api";
     import { LabelColours } from "$lib/images/constants";
     import { calculateZoomTo, constrainTranslation } from "$lib/images/zoom/zoom-utils";
     import { setRating } from "$lib/images/exif";
@@ -29,6 +29,10 @@
     import { ImageLoader } from "$lib/images/loader/image-loader.svelte";
     import { modalsManager } from "$lib/components/modals/manager/ModalManager.svelte";
     import ExportPanel, { modalOptions as exportModalOptions } from "$lib/components/ui/panels/ExportPanel.svelte";
+    import Calendar from "$lib/components/ui/Calendar.svelte";
+    import isEqual from "lodash-es/isEqual";
+    import { ApiError } from "$lib/errors/errors";
+    import { isEmpty } from "lodash-es";
 
     interface Props {
         lightboxImage: ImageAsset | undefined;
@@ -218,6 +222,92 @@
     let direction = $state<"left" | "right">("right");
     let showMetadata = $state(true);
     let editNameMode = $state(false);
+    let editingName = $state("");
+    let calendarOpen = $state(false);
+    let updatedData = $derived<ImageUpdate>({
+        name: lightboxImage?.name ?? "",
+        taken_at: lightboxImage?.taken_at,
+        image_metadata: lightboxImage?.image_metadata ? {
+            label: lightboxImage.image_metadata.label
+        } : undefined
+    });
+
+    let lastSavedData = $state<ImageUpdate | null>(null);
+
+    // Reset lastSavedData when the active image changes (by tracking uid)
+    $effect(() => {
+        const currentUid = lightboxImage?.uid;
+        if (currentUid) {
+            untrack(() => {
+                const image = lightboxImage!;
+                lastSavedData = {
+                    name: image.name,
+                    taken_at: image.taken_at,
+                    image_metadata: image.image_metadata ? {
+                        label: image.image_metadata.label
+                    } : undefined
+                };
+            });
+        } else {
+            lastSavedData = null;
+        }
+    });
+
+    $effect(() => {
+        const currentData = updatedData;
+        const savedData = lastSavedData;
+        const currentUid = lightboxImage?.uid;
+
+        if (!currentUid) {
+            return;
+        }
+
+        if (!savedData) {
+            return;
+        }
+
+        if (isEqual(currentData, savedData)) {
+            return;
+        }
+
+        // Delay triggering updates if user is currently typing/editing the name or picking a date
+        if (editNameMode || calendarOpen) {
+            return;
+        }
+
+        untrack(() => {
+            updateImage(currentUid, currentData)
+                .then((updatedImage) => {
+                    if (updatedImage.status === 200) {
+                        toastState.addToast({
+                            type: "success",
+                            title: "Image Updated",
+                            message: `Image metadata updated successfully.`
+                        });
+
+                        lightboxImage = updatedImage.data;
+                        onImageUpdated?.(updatedImage.data);
+
+                        lastSavedData = {
+                            name: updatedImage.data.name,
+                            taken_at: updatedImage.data.taken_at,
+                            image_metadata: updatedImage.data.image_metadata ? {
+                                label: updatedImage.data.image_metadata.label
+                            } : undefined
+                        };
+                    } else {
+                        throw new ApiError(updatedImage.data.error || "Unknown error", updatedImage.status);
+                    }
+                })
+                .catch((err) => {
+                    toastState.addToast({
+                        type: "error",
+                        title: "Update Failed",
+                        message: `Failed to update image metadata: ${err.message || err}`
+                    });
+                });
+        });
+    });
 
     function zoomTo(newZoom: number, clientX: number, clientY: number) {
         if (!imageDimensions || !imageContainerEl || !zoomTargetEl) {
@@ -714,6 +804,10 @@
                 return;
             }
 
+            if (document.querySelector(".calendar-popover")) {
+                return;
+            }
+
             const activeEl = document.activeElement;
             const isInputFocused =
                 activeEl &&
@@ -739,6 +833,10 @@
                 return;
             }
 
+            if (document.querySelector(".calendar-popover")) {
+                return;
+            }
+
             const activeEl = document.activeElement;
             const isInputFocused =
                 activeEl &&
@@ -757,6 +855,10 @@
 
         const handleEsc = (e: KeyboardEvent) => {
             if (!show) {
+                return;
+            }
+
+            if (document.querySelector(".calendar-popover")) {
                 return;
             }
 
@@ -799,6 +901,24 @@
         return formatBytes(size) ?? "—";
     }
 
+    // TODO(user-setting): Make timezone display configurable (IANA name vs abbreviation vs offset).
+    // `timeZoneName: "short"` varies by locale — some return the abbreviation (SAST),
+    // others return the offset (GMT+2). Let the user pick their preference.
+    function getTimezoneAbbreviation(): string {
+        const parts = new Intl.DateTimeFormat("en", { timeZoneName: "short" }).formatToParts();
+        return parts.find((p) => p.type === "timeZoneName")?.value ?? "";
+    }
+
+    // TODO(backend): Add taken_at / file_created_at to ImageUpdate so the
+    // calendar date+time picker can persist changes to the server.
+    function handleDateChange(newDate: Date) {
+        if (!lightboxImage) {
+            return;
+        }
+
+        lightboxImage.taken_at = newDate.toISOString();
+    }
+
     const lightboxMaterialIconColour = "color: var(--viz-10-dark); fill: var(--viz-10-dark);";
 </script>
 
@@ -816,27 +936,16 @@
                             <div class="name-row">
                                 {#if editNameMode}
                                     <InputText
-                                        bind:value={lightboxImage!.name}
+                                        bind:value={editingName}
                                         class="value-big"
                                         style="min-height: auto; padding: 0.5rem;"
                                         spellcheck="false"
                                         autofocus={true}
-                                        onblur={async (e) => {
-                                            editNameMode = false;
-                                            if (e.currentTarget.value.trim() === lightboxImage!.name) {
-                                                return;
+                                        onblur={() => {
+                                            if (editNameMode && lightboxImage) {
+                                                lightboxImage.name = editingName.trim();
+                                                editNameMode = false;
                                             }
-
-                                            try {
-                                                const res = await updateImage(lightboxImage!.uid, {
-                                                    name: lightboxImage!.name
-                                                });
-
-                                                if (res.status === 200) {
-                                                    lightboxImage = res.data;
-                                                    onImageUpdated?.(res.data);
-                                                }
-                                            } catch (error) {}
                                         }}
                                         onkeydown={(e) => {
                                             if (e.key === "Enter") {
@@ -850,21 +959,29 @@
                                     <div
                                         role="button"
                                         tabindex="0"
-                                        onclick={() => (editNameMode = true)}
-                                        onkeydown={() => (editNameMode = true)}
+                                        title={lightboxImage?.name || lightboxImage?.image_metadata?.file_name || "Untitled"}
+                                        onclick={() => {
+                                            editingName = lightboxImage?.name || lightboxImage?.image_metadata?.file_name || "";
+                                            editNameMode = true;
+                                        }}
+                                        onkeydown={() => {
+                                            editingName = lightboxImage?.name || lightboxImage?.image_metadata?.file_name || "";
+                                            editNameMode = true;
+                                        }}
                                         class="value-big"
                                     >
-                                        {lightboxImage?.name}
+                                        {lightboxImage?.name || lightboxImage?.image_metadata?.file_name || "Untitled"}
                                     </div>
                                     <button
                                         class="copy-filename-btn"
                                         title="Copy filename"
                                         onclick={() => {
-                                            if (lightboxImage?.name) {
-                                                copyToClipboard(lightboxImage.name);
+                                            const nameToCopy = lightboxImage?.name || lightboxImage?.image_metadata?.file_name;
+                                            if (nameToCopy) {
+                                                copyToClipboard(nameToCopy);
                                                 toastState.addToast({
                                                     type: "success",
-                                                    title: lightboxImage.name,
+                                                    title: nameToCopy,
                                                     message: "Filename copied to clipboard",
                                                     timeout: 2000
                                                 });
@@ -884,22 +1001,29 @@
                             </div>
                         </div>
                     </div>
-                    <div class="card-row meta-row">
-                        <MaterialIcon iconName="calendar_today" class="exif-material-icon" />
-                        <div class="card-values">
-                            <div class="value-big">
-                                {#if lightboxImage?.image_metadata?.file_created_at}
-                                    {getTakenAt(lightboxImage).toLocaleDateString(undefined, {
-                                        year: "numeric",
-                                        month: "long",
-                                        day: "numeric"
-                                    })}
-                                {:else}
-                                    Unknown Date
-                                {/if}
+                    <Calendar value={getTakenAt(lightboxImage!)} bind:open={calendarOpen} onchange={(d) => handleDateChange(d)}>
+                        {#snippet children()}
+                            <div class="card-row meta-row" role="button">
+                                <MaterialIcon iconName="calendar_today" class="exif-material-icon" />
+                                <div class="card-values">
+                                    <div class="value-big">
+                                        {getTakenAt(lightboxImage!).toLocaleDateString(undefined, {
+                                            year: "numeric",
+                                            month: "long",
+                                            day: "numeric"
+                                        })}
+                                    </div>
+                                    <div class="value-sub">
+                                        {getTakenAt(lightboxImage!).toLocaleTimeString(undefined, {
+                                            hour: "numeric",
+                                            minute: "numeric"
+                                        })}
+                                        {getTimezoneAbbreviation()}
+                                    </div>
+                                </div>
                             </div>
-                        </div>
-                    </div>
+                        {/snippet}
+                    </Calendar>
                 </div>
                 <!-- Camera/Exposure card -->
                 <div class="exif-card">
@@ -1015,26 +1139,20 @@
             <div class="rating-container">
                 <ImageLabelViewer
                     variant="compact"
-                    label={getImageLabel(lightboxImage!)}
-                    onSelect={async (selectedLabel) => {
+                    label={lightboxImage ? getImageLabel(lightboxImage) : null}
+                    onSelect={(selectedLabel) => {
                         if (!lightboxImage) {
                             return;
                         }
 
                         const entry = Object.entries(LabelColours).find(([_, colour]) => colour === selectedLabel);
                         const labelToSend = entry ? (entry[0] as ImageLabel) : null;
-                        try {
-                            const res = await updateImage(lightboxImage.uid, {
-                                image_metadata: {
-                                    label: labelToSend
-                                }
-                            });
-
-                            if (res.status === 200) {
-                                lightboxImage = res.data;
-                                onImageUpdated?.(res.data);
-                            }
-                        } catch (error) {}
+                        if (lightboxImage.image_metadata) {
+                            lightboxImage.image_metadata = {
+                                ...lightboxImage.image_metadata,
+                                label: labelToSend
+                            };
+                        }
                     }}
                 />
                 <StarRating value={starRating} onChange={setImageRating} />
@@ -1309,22 +1427,32 @@
                         bind:this={imageEl}
                         src={loader.displayURL}
                         class="lightbox-image main {isCropping ? 'is-crop' : ''}"
-                        class:loading={!loader.initialImageLoaded}
+                        class:hidden-main={!loader.initialImageLoaded}
                         alt={lightboxImage!.name}
                         title={lightboxImage!.name}
                         loading="eager"
                         crossorigin="use-credentials"
                         data-image-id={lightboxImage!.uid}
-                        onload={() => loader.handleLoad()}
+                        onload={() => {
+                            // Clear explicit zoom-target dimensions so the image can
+                            // reflow to its natural CSS size (undoing any early constraint
+                            // from the fallback in updateImageDimensions). Then capture
+                            // the correct dimensions after layout.
+                            imageDimensions = null;
+                            requestAnimationFrame(() => {
+                                loader.handleLoad();
+                            });
+                        }}
                         onerror={() => loader.handleError()}
                         ondragstart={(e) => e.preventDefault()}
                         oncontextmenu={handleContextMenu}
                     />
 
-                    {#if thumbhashURL && !loader.initialImageLoaded}
+                    {#if thumbhashURL}
                         <img
                             src={thumbhashURL}
                             class="lightbox-image placeholder"
+                            class:loaded={loader.initialImageLoaded}
                             alt="Placeholder for {lightboxImage!.name}"
                             aria-hidden="true"
                             style={`aspect-ratio: ${lightboxImage!.width} / ${lightboxImage!.height};`}
@@ -1517,12 +1645,12 @@
         width: auto;
         height: auto;
         pointer-events: auto;
-        transition: opacity 0.2s ease-in-out;
     }
 
     :global(.lightbox-image.placeholder) {
         z-index: 1;
         opacity: 1;
+        transition: opacity 0.3s ease-in-out;
         image-rendering: auto;
         /* Force fill parent so the placeholder matches the image display area.
            .zoom-target gets explicit dimensions from imageDimensions early via the
@@ -1531,16 +1659,16 @@
         min-height: 100%;
     }
 
-    :global(.lightbox-image.placeholder.hidden) {
+    :global(.lightbox-image.placeholder.loaded) {
         opacity: 0;
     }
 
     :global(.lightbox-image.main) {
         z-index: 2;
-        opacity: 1;
+        transition: opacity 0.3s ease-in-out;
     }
 
-    :global(.lightbox-image.main.loading) {
+    :global(.lightbox-image.main.hidden-main) {
         opacity: 0;
     }
 
