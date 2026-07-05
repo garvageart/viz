@@ -1,0 +1,3 @@
+[submodule "internal/images/ops/dng/libdng"]
+	path = internal/images/ops/dng/libdng
+	url = https://github.com/garvageart/libdng.git
