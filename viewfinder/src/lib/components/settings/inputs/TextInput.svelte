@@ -24,13 +24,12 @@
 
 <SettingRow {label} {description} {disabled}>
     {#snippet control()}
-        <InputText
-            id="input-{label}"
-            style="background-color: var(--viz-90);"
-            {type}
-            bind:value
-            oninput={handleInput}
-            {disabled}
-        />
+        <InputText id="input-{label}" class="settings-text-input" {type} bind:value oninput={handleInput} {disabled} />
     {/snippet}
 </SettingRow>
+
+<style lang="scss">
+    :global(.settings-text-input input) {
+        background-color: var(--viz-90);
+    }
+</style>

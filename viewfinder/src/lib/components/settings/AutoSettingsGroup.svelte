@@ -1,6 +1,6 @@
 <script lang="ts">
     import type { UserSetting } from "$lib/api";
-    import { updateUserSetting } from "$lib/api";
+    import { updateUserSettingsBatch } from "$lib/api";
     import { fade } from "svelte/transition";
     import { toastState } from "$lib/toast-notifcations/notif-state.svelte";
     import SettingItemsList from "./SettingItemsList.svelte";
@@ -32,26 +32,33 @@
         errorMessage = "";
 
         try {
-            const updates = Object.entries(dirtySettings).map(([name, value]) => updateUserSetting(name, { value }));
-
-            await Promise.all(updates);
-
-            // Update local state to reflect saved changes
-            settings = settings.map((s) => ({
-                ...s,
-                value: dirtySettings[s.name] ?? s.value
+            const updates = Object.entries(dirtySettings).map(([name, value]) => ({
+                name,
+                value
             }));
 
-            dirtySettings = {};
-            saveStatus = "success";
+            const res = await updateUserSettingsBatch({ settings: updates });
 
-            setTimeout(() => {
-                saveStatus = "idle";
-            }, 3000);
+            if (res.status === 200) {
+                // Update local state to reflect saved changes
+                settings = settings.map((s) => ({
+                    ...s,
+                    value: dirtySettings[s.name] ?? s.value
+                }));
+
+                dirtySettings = {};
+                saveStatus = "success";
+
+                setTimeout(() => {
+                    saveStatus = "idle";
+                }, 3000);
+            } else {
+                throw new Error(res.data?.error || "Failed to save settings");
+            }
         } catch (e) {
             console.error("Failed to save settings", e);
             saveStatus = "error";
-            errorMessage = "Failed to save changes. Please try again.";
+            errorMessage = e instanceof Error ? e.message : "Failed to save changes. Please try again.";
         } finally {
             saving = false;
         }
@@ -88,7 +95,7 @@
         {#if hasChanges || saveStatus === "success"}
             <div class="actions" transition:fade>
                 {#if hasChanges}
-                    <Button variant="small" disabled={saving} onclick={saveChanges}>
+                    <Button variant="small" class="btn-save" disabled={saving} onclick={saveChanges}>
                         {saving ? "Saving..." : "Save Changes"}
                     </Button>
                 {/if}
@@ -96,7 +103,7 @@
         {/if}
     </header>
 
-    <SettingItemsList {settings} {dirtySettings} bind:saveStatus bind:saving />
+    <SettingItemsList {settings} bind:dirtySettings bind:saveStatus bind:saving />
 </div>
 
 <style lang="scss">

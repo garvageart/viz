@@ -112,7 +112,7 @@
         }
     }
 
-    await loadData();
+    loadData();
 
     function formatDate(dateStr?: string) {
         if (!dateStr) {
@@ -281,48 +281,52 @@
             {#if loading}
                 <div class="loading-state">Loading...</div>
             {:else}
-                <table class="settings-table">
-                    <thead>
-                        <tr>
-                            <th>Name</th>
-                            <th>Created</th>
-                            <th>Last Used</th>
-                            <th style="text-align: right;">Actions</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        {#each apiKeys as key}
+                <div class="table-container">
+                    <table class="settings-table">
+                        <thead>
                             <tr>
-                                <td>
-                                    <div class="key-info">
-                                        <span class="name">{key.name}</span>
-                                        {#if key.description}
-                                            <span class="description">{key.description}</span>
-                                        {/if}
-                                    </div>
-                                </td>
-                                <td>{formatDate(key.created_at)}</td>
-                                <td>{key.last_used_at ? formatDate(key.last_used_at) : "Never"}</td>
-                                <td>
-                                    <div class="actions-cell">
-                                        <button
-                                            class="action-btn delete"
-                                            onclick={() => openDeleteKeyConfirm(key)}
-                                            title="Delete Key"
-                                        >
-                                            <MaterialIcon iconName="delete" />
-                                        </button>
-                                    </div>
-                                </td>
+                                <th>Name</th>
+                                <th>Created</th>
+                                <th>Last Used</th>
+                                <th class="text-right">Actions</th>
                             </tr>
-                        {/each}
-                        {#if apiKeys.length === 0}
-                            <tr>
-                                <td colspan="4" class="empty-row">No API keys created yet.</td>
-                            </tr>
-                        {/if}
-                    </tbody>
-                </table>
+                        </thead>
+                        <tbody>
+                            {#each apiKeys as key}
+                                <tr>
+                                    <td>
+                                        <div class="key-info">
+                                            <span class="name">{key.name}</span>
+                                            {#if key.description}
+                                                <span class="description">{key.description}</span>
+                                            {/if}
+                                        </div>
+                                    </td>
+                                    <td class="mono-text">{formatDate(key.created_at)}</td>
+                                    <td class="mono-text"
+                                        >{key.last_used_at ? formatDate(key.last_used_at) : "Never"}</td
+                                    >
+                                    <td>
+                                        <div class="actions-cell">
+                                            <button
+                                                class="action-btn delete"
+                                                onclick={() => openDeleteKeyConfirm(key)}
+                                                title="Delete Key"
+                                            >
+                                                <MaterialIcon iconName="delete" />
+                                            </button>
+                                        </div>
+                                    </td>
+                                </tr>
+                            {/each}
+                            {#if apiKeys.length === 0}
+                                <tr>
+                                    <td colspan="4" class="empty-row">No API keys created yet.</td>
+                                </tr>
+                            {/if}
+                        </tbody>
+                    </table>
+                </div>
             {/if}
         </div>
     </section>
@@ -339,55 +343,58 @@
             {#if loading}
                 <div class="loading-state">Loading...</div>
             {:else}
-                <table class="settings-table">
-                    <thead>
-                        <tr>
-                            <th>Device / Browser</th>
-                            <th>Last Active</th>
-                            <th style="text-align: right;">Actions</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        {#each sessions as session}
+                <div class="table-container">
+                    <table class="settings-table">
+                        <thead>
                             <tr>
-                                <td>
-                                    <div class="session-info">
-                                        <div class="session-main">
-                                            <span class="name">{session.client_name || "Unknown Device"}</span>
-                                            {#if session.is_current}
-                                                <span class="current-badge">Current</span>
+                                <th>Device / Browser</th>
+                                <th>Last Active</th>
+                                <th class="text-right">Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {#each sessions as session}
+                                <tr>
+                                    <td>
+                                        <div class="session-info">
+                                            <div class="session-main">
+                                                <span class="name">{session.client_name || "Unknown Device"}</span>
+                                                {#if session.is_current}
+                                                    <span class="current-badge">Current</span>
+                                                {/if}
+                                            </div>
+                                            <span class="details">
+                                                {session.browser} on {session.os} •
+                                                <span class="mono-text">{session.ip_address}</span>
+                                            </span>
+                                        </div>
+                                    </td>
+                                    <td class="mono-text">{formatDate(session.last_active_at)}</td>
+                                    <td>
+                                        <div class="actions-cell">
+                                            <button
+                                                class="action-btn"
+                                                onclick={() => openRenameSessionModal(session)}
+                                                title="Rename Session"
+                                            >
+                                                <MaterialIcon iconName="edit" />
+                                            </button>
+                                            {#if !session.is_current}
+                                                <button
+                                                    class="action-btn revoke"
+                                                    onclick={() => openRevokeConfirm(session)}
+                                                    title="Revoke Session"
+                                                >
+                                                    <MaterialIcon iconName="logout" />
+                                                </button>
                                             {/if}
                                         </div>
-                                        <span class="details">
-                                            {session.browser} on {session.os} • {session.ip_address}
-                                        </span>
-                                    </div>
-                                </td>
-                                <td>{formatDate(session.last_active_at)}</td>
-                                <td>
-                                    <div class="actions-cell">
-                                        <button
-                                            class="action-btn"
-                                            onclick={() => openRenameSessionModal(session)}
-                                            title="Rename Session"
-                                        >
-                                            <MaterialIcon iconName="edit" />
-                                        </button>
-                                        {#if !session.is_current}
-                                            <button
-                                                class="action-btn revoke"
-                                                onclick={() => openRevokeConfirm(session)}
-                                                title="Revoke Session"
-                                            >
-                                                <MaterialIcon iconName="logout" />
-                                            </button>
-                                        {/if}
-                                    </div>
-                                </td>
-                            </tr>
-                        {/each}
-                    </tbody>
-                </table>
+                                    </td>
+                                </tr>
+                            {/each}
+                        </tbody>
+                    </table>
+                </div>
             {/if}
         </div>
     </section>
@@ -397,50 +404,68 @@
     .security-settings {
         display: flex;
         flex-direction: column;
-        gap: 2.5rem;
+        gap: var(--viz-spacing-xxl);
+        width: 100%;
     }
 
     .settings-section {
         display: flex;
         flex-direction: column;
-        gap: 1.25rem;
+        gap: var(--viz-spacing-md);
+        width: 100%;
     }
 
     .section-header {
         display: flex;
         justify-content: space-between;
         align-items: flex-start;
+        padding-bottom: var(--viz-spacing-sm);
+        border-bottom: var(--viz-border-thin);
 
         h3 {
             margin: 0;
-            font-size: 1.1rem;
+            font-size: 1.25rem;
             font-weight: 600;
+            color: var(--viz-text-color);
         }
 
         p {
-            margin: 0.25rem 0 0 0;
-            font-size: 0.9rem;
+            margin: var(--viz-spacing-xxs) 0 0 0;
+            font-size: var(--viz-font-size-sm);
             color: var(--viz-40);
         }
+    }
+
+    .table-container {
+        border: var(--viz-border-thin);
+        border-radius: var(--viz-border-radius-md);
+        overflow: hidden;
+        width: 100%;
+        background-color: var(--viz-100);
     }
 
     .settings-table {
         width: 100%;
         border-collapse: collapse;
-        font-size: 0.9rem;
+        font-size: var(--viz-font-size-sm);
 
         th {
             text-align: left;
-            padding: 0.75rem 1rem;
+            padding: var(--viz-spacing-md) var(--viz-spacing-std);
             color: var(--viz-40);
-            font-weight: 500;
-            border-bottom: 1px solid var(--viz-90);
+            font-weight: 600;
+            font-size: var(--viz-font-size-xs);
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+            border-bottom: var(--viz-border-thin);
+            background-color: var(--viz-90);
         }
 
         td {
-            padding: 1rem;
-            border-bottom: 1px solid var(--viz-95);
+            padding: var(--viz-spacing-std);
+            border-bottom: var(--viz-border-thin);
             vertical-align: middle;
+            color: var(--viz-text-color);
         }
 
         tr:last-child td {
@@ -448,10 +473,19 @@
         }
     }
 
+    .text-right {
+        text-align: right !important;
+    }
+
+    .mono-text {
+        font-family: var(--viz-mono-font);
+        font-size: var(--viz-font-size-xs);
+    }
+
     .key-info {
         display: flex;
         flex-direction: column;
-        gap: 0.125rem;
+        gap: var(--viz-spacing-xxs);
 
         .name {
             font-weight: 500;
@@ -459,7 +493,7 @@
         }
 
         .description {
-            font-size: 0.8rem;
+            font-size: var(--viz-font-size-xs);
             color: var(--viz-40);
         }
     }
@@ -467,7 +501,7 @@
     .session-info {
         display: flex;
         flex-direction: column;
-        gap: 0.125rem;
+        gap: var(--viz-spacing-xxs);
 
         .name {
             font-weight: 500;
@@ -475,7 +509,7 @@
         }
 
         .details {
-            font-size: 0.8rem;
+            font-size: var(--viz-font-size-xs);
             color: var(--viz-40);
         }
     }
@@ -483,14 +517,14 @@
     .session-main {
         display: flex;
         align-items: center;
-        gap: 0.5rem;
+        gap: var(--viz-spacing-sm);
     }
 
     .current-badge {
         padding: 0.125rem 0.375rem;
         background: color-mix(in srgb, var(--viz-success-color) 15%, var(--viz-95));
         color: var(--viz-success-color);
-        border-radius: 0.25rem;
+        border-radius: var(--viz-border-radius-sm);
         font-size: 0.7rem;
         font-weight: 600;
         text-transform: uppercase;
@@ -499,44 +533,50 @@
     .actions-cell {
         display: flex;
         justify-content: flex-end;
-        gap: 0.5rem;
+        gap: var(--viz-spacing-sm);
     }
 
     .action-btn {
         display: flex;
         align-items: center;
         justify-content: center;
-        width: 2rem;
-        height: 2rem;
+        width: 2.25rem;
+        height: 2.25rem;
         border: none;
         background: transparent;
-        border-radius: 0.25rem;
+        border-radius: var(--viz-border-radius-pill);
         cursor: pointer;
         color: var(--viz-40);
-        transition: all 0.2s;
+        transition:
+            background-color 0.15s ease,
+            color 0.15s ease;
 
         &:hover {
-            background: var(--viz-90);
+            background-color: var(--viz-80);
             color: var(--viz-text-color);
         }
 
         &.delete:hover,
         &.revoke:hover {
-            background-color: rgba(239, 68, 68, 0.1);
-            color: #ef4444;
+            background-color: color-mix(in srgb, var(--viz-error-color) 15%, var(--viz-95));
+            color: var(--viz-error-color);
         }
     }
 
     .empty-row {
         text-align: center;
-        padding: 2rem !important;
+        padding: var(--viz-spacing-xxl) !important;
         color: var(--viz-40);
         font-style: italic;
     }
 
     .loading-state {
-        padding: 2rem;
+        padding: var(--viz-spacing-xxl);
         text-align: center;
         color: var(--viz-40);
+        background-color: var(--viz-100);
+        border: var(--viz-border-thin);
+        border-radius: var(--viz-border-radius-md);
+        font-family: var(--viz-display-font);
     }
 </style>

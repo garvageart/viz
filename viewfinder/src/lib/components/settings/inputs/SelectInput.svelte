@@ -39,7 +39,7 @@
     {#snippet control()}
         <InputSelect
             id="select-{label}"
-            style="background-color: var(--viz-90);"
+            class="settings-select-input"
             value={selectedValue}
             onchange={handleChange}
             {disabled}
@@ -47,3 +47,9 @@
         />
     {/snippet}
 </SettingRow>
+
+<style lang="scss">
+    :global(.settings-select-input) {
+        background-color: var(--viz-90) !important;
+    }
+</style>

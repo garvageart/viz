@@ -21,7 +21,7 @@
                 hoverColor="var(--viz-80)"
                 style="display: flex; flex-direction:column; justify-content: center; align-items: center; width: 100%;"
             >
-                Admin Panel
+                Admin
             </Button>
         </a>
     {/if}

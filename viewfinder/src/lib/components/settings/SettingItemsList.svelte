@@ -12,7 +12,12 @@
         saveStatus: "idle" | "success" | "error";
     }
 
-    let { settings, dirtySettings, saving = $bindable(false), saveStatus = $bindable("idle") }: Props = $props();
+    let {
+        settings,
+        dirtySettings = $bindable(),
+        saving = $bindable(false),
+        saveStatus = $bindable("idle")
+    }: Props = $props();
 
     function formatLabel(name: string): string {
         return name
@@ -43,87 +48,92 @@
     }
 </script>
 
-<div class="settings-list">
-    {#each settings as setting (setting.name)}
-        <div class="setting-item">
-            {#if setting.value_type === "boolean"}
-                {@const currentVal = getToggleValue(setting.name, setting.value)}
-                <SliderToggleInput
-                    label={setting.display_name?.trim() ? setting.display_name : formatLabel(setting.name)}
-                    description={setting.description}
-                    value={currentVal}
-                    disabled={!setting.is_user_editable || saving}
-                    onchange={(val) => {
-                        // val comes from SliderToggleInput which binds to SliderToggle which uses "on"/"off"
-                        // We need to store "true"/"false" in dirtySettings for the API
-                        const newVal = val === "on" ? "true" : "false";
-                        handleSettingChange(setting, newVal);
-                    }}
-                />
-            {:else if setting.value_type === "enum"}
-                <SelectInput
-                    label={setting.display_name?.trim() ? setting.display_name : formatLabel(setting.name)}
-                    description={setting.description}
-                    value={dirtySettings[setting.name] ?? setting.value}
-                    options={setting.allowed_values || []}
-                    disabled={!setting.is_user_editable || saving}
-                    onchange={(val) => handleSettingChange(setting, val)}
-                />
-            {:else if setting.value_type === "integer"}
-                <TextInput
-                    type="number"
-                    label={setting.display_name?.trim() ? setting.display_name : formatLabel(setting.name)}
-                    description={setting.description}
-                    value={dirtySettings[setting.name] ?? setting.value}
-                    disabled={!setting.is_user_editable || saving}
-                    onchange={(val) => handleSettingChange(setting, val)}
-                />
-            {:else if setting.value_type === "json"}
-                <JsonInput
-                    label={setting.display_name?.trim() ? setting.display_name : formatLabel(setting.name)}
-                    description={setting.description}
-                    value={dirtySettings[setting.name] ?? setting.value}
-                    disabled={!setting.is_user_editable || saving}
-                    onchange={(val) => handleSettingChange(setting, val)}
-                />
-            {:else}
-                <TextInput
-                    type="text"
-                    label={setting.display_name?.trim() ? setting.display_name : formatLabel(setting.name)}
-                    description={setting.description}
-                    value={dirtySettings[setting.name] ?? setting.value}
-                    disabled={!setting.is_user_editable || saving}
-                    onchange={(val) => handleSettingChange(setting, val)}
-                />
-            {/if}
-        </div>
-    {/each}
-
-    {#if settings.length === 0}
-        <div class="empty-state">No settings available in this group.</div>
-    {/if}
-</div>
+{#if settings.length === 0}
+    <div class="empty-state">No settings available in this group.</div>
+{:else}
+    <div class="settings-card">
+        {#each settings as setting, i (setting.name)}
+            <div class="setting-item" class:last-item={i === settings.length - 1}>
+                {#if setting.value_type === "boolean"}
+                    {@const currentVal = getToggleValue(setting.name, setting.value)}
+                    <SliderToggleInput
+                        label={setting.display_name?.trim() ? setting.display_name : formatLabel(setting.name)}
+                        description={setting.description}
+                        value={currentVal}
+                        disabled={!setting.is_user_editable || saving}
+                        onchange={(val) => {
+                            const newVal = val === "on" ? "true" : "false";
+                            handleSettingChange(setting, newVal);
+                        }}
+                    />
+                {:else if setting.value_type === "enum"}
+                    <SelectInput
+                        label={setting.display_name?.trim() ? setting.display_name : formatLabel(setting.name)}
+                        description={setting.description}
+                        value={dirtySettings[setting.name] ?? setting.value}
+                        options={setting.allowed_values || []}
+                        disabled={!setting.is_user_editable || saving}
+                        onchange={(val) => handleSettingChange(setting, val)}
+                    />
+                {:else if setting.value_type === "integer"}
+                    <TextInput
+                        type="number"
+                        label={setting.display_name?.trim() ? setting.display_name : formatLabel(setting.name)}
+                        description={setting.description}
+                        value={dirtySettings[setting.name] ?? setting.value}
+                        disabled={!setting.is_user_editable || saving}
+                        onchange={(val) => handleSettingChange(setting, val)}
+                    />
+                {:else if setting.value_type === "json"}
+                    <JsonInput
+                        label={setting.display_name?.trim() ? setting.display_name : formatLabel(setting.name)}
+                        description={setting.description}
+                        value={dirtySettings[setting.name] ?? setting.value}
+                        disabled={!setting.is_user_editable || saving}
+                        onchange={(val) => handleSettingChange(setting, val)}
+                    />
+                {:else}
+                    <TextInput
+                        type="text"
+                        label={setting.display_name?.trim() ? setting.display_name : formatLabel(setting.name)}
+                        description={setting.description}
+                        value={dirtySettings[setting.name] ?? setting.value}
+                        disabled={!setting.is_user_editable || saving}
+                        onchange={(val) => handleSettingChange(setting, val)}
+                    />
+                {/if}
+            </div>
+        {/each}
+    </div>
+{/if}
 
 <style lang="scss">
-    .settings-list {
+    .settings-card {
         display: flex;
         flex-direction: column;
-        align-items: center;
         width: 100%;
-        gap: 1.5rem;
+        background-color: var(--viz-100);
+        border: var(--viz-border-thin);
+        border-radius: var(--viz-border-radius-md);
+        overflow: hidden;
     }
 
     .setting-item {
         width: 100%;
-        display: flex;
-        flex-direction: column;
+        border-bottom: var(--viz-border-thin);
+
+        &.last-item {
+            border-bottom: none;
+        }
     }
 
     .empty-state {
-        padding: 2rem;
+        padding: var(--viz-spacing-xxl);
         text-align: center;
         color: var(--viz-40);
         background-color: var(--viz-100);
-        border-radius: 0.5rem;
+        border: var(--viz-border-thin);
+        border-radius: var(--viz-border-radius-md);
+        font-family: var(--viz-display-font);
     }
 </style>

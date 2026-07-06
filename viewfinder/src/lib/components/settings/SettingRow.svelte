@@ -27,17 +27,12 @@
 <style lang="scss">
     .setting-row {
         display: grid;
-        grid-template-columns: 1fr 15rem;
+        grid-template-columns: 1fr 18rem;
         align-items: center;
         column-gap: var(--viz-spacing-lg);
         width: 100%;
-        border-radius: var(--viz-border-radius-lg);
         font-family: var(--viz-display-font);
-        padding: var(--viz-spacing-std);
-        background: var(--viz-100);
-        border-radius: 0.75rem;
-        padding: 1.5rem;
-        border: 1px solid var(--viz-80);
+        padding: var(--viz-spacing-std) var(--viz-spacing-lg);
         box-sizing: border-box;
 
         &.disabled {
@@ -69,13 +64,13 @@
     }
 
     .label {
-        font-size: var(--viz-font-size-std);
+        font-size: var(--viz-font-size-sm);
         font-weight: 600;
         color: var(--viz-text-color);
     }
 
     .description {
-        font-size: var(--viz-font-size-sm);
+        font-size: var(--viz-font-size-xs);
         color: var(--viz-40);
     }
 
@@ -83,7 +78,7 @@
         display: flex;
         justify-content: flex-end;
         align-items: center;
-        width: 15rem;
+        width: 18rem;
         flex-shrink: 0;
     }
 </style>

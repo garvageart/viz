@@ -96,21 +96,23 @@ Stuff to finish:
 </svelte:head>
 
 <div class="settings-layout">
-    <NavSidebar title="Settings" items={navItems} />
+    <NavSidebar title="Settings" items={navItems} width="18rem" />
 
     <main class="settings-content">
-        {#if isCustomGroup}
-            {#if activeSection.toLowerCase() === "security"}
-                <SecuritySettings />
-            {:else if activeSection.toLowerCase() === "account"}
-                <AccountsSettings {userSettingsData} />
+        <div class="settings-container">
+            {#if isCustomGroup}
+                {#if activeSection.toLowerCase() === "security"}
+                    <SecuritySettings />
+                {:else if activeSection.toLowerCase() === "account"}
+                    <AccountsSettings {userSettingsData} />
+                {/if}
+            {:else}
+                <AutoSettingsGroup
+                    settings={currentSettings}
+                    title={activeSection.charAt(0).toUpperCase() + activeSection.slice(1)}
+                />
             {/if}
-        {:else}
-            <AutoSettingsGroup
-                settings={currentSettings}
-                title={activeSection.charAt(0).toUpperCase() + activeSection.slice(1)}
-            />
-        {/if}
+        </div>
     </main>
 </div>
 
@@ -125,8 +127,18 @@ Stuff to finish:
 
     .settings-content {
         flex: 1;
-        padding: 2rem 15rem;
+        padding: var(--viz-spacing-lg) var(--viz-spacing-xl);
         overflow-y: auto;
         background-color: var(--viz-bg-color);
+        display: flex;
+        justify-content: center;
+    }
+
+    .settings-container {
+        width: 100%;
+        max-width: 52rem;
+        display: flex;
+        flex-direction: column;
+        gap: var(--viz-spacing-xl);
     }
 </style>

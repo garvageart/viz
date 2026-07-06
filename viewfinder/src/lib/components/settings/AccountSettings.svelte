@@ -4,8 +4,7 @@
     import { user } from "$lib/states/index.svelte";
     import { toastState } from "$lib/toast-notifcations/notif-state.svelte";
     import AutoSettingsGroup from "./AutoSettingsGroup.svelte";
-    import CustomSettingsGroup from "./CustomSettingsGroup.svelte";
-    import TextInput from "./inputs/TextInput.svelte";
+    import InputText from "$lib/components/ui/InputText.svelte";
     import Button from "$lib/components/ui/Button.svelte";
 
     interface Props {
@@ -89,20 +88,60 @@
 </script>
 
 <div class="account-settings-section">
-    <CustomSettingsGroup title="Account">
-        {#snippet actions()}
+    <div class="settings-group">
+        <header class="group-header">
+            <div>
+                <h2>Account Profile</h2>
+                <p class="group-description">Manage your personal profile information.</p>
+            </div>
             {#if dirty}
-                <Button variant="small" onclick={saveAccountChanges} disabled={savingAccount}>
-                    {savingAccount ? "Saving..." : "Save Changes"}
-                </Button>
+                <div class="actions">
+                    <Button variant="small" class="btn-save" onclick={saveAccountChanges} disabled={savingAccount}>
+                        {savingAccount ? "Saving..." : "Save Changes"}
+                    </Button>
+                </div>
             {/if}
-        {/snippet}
+        </header>
 
-        <TextInput label="Email" bind:value={settingsUserUpdate.email} disabled={savingAccount} />
-        <TextInput label="Name" bind:value={settingsUserUpdate.name} disabled={savingAccount} />
-        <TextInput label="First Name" bind:value={settingsUserUpdate.firstName} disabled={savingAccount} />
-        <TextInput label="Last Name" bind:value={settingsUserUpdate.lastName} disabled={savingAccount} />
-    </CustomSettingsGroup>
+        <div class="profile-card">
+            <div class="profile-grid">
+                <div class="grid-span-2">
+                    <InputText
+                        id="input-Email"
+                        label="Email"
+                        type="email"
+                        bind:value={settingsUserUpdate.email}
+                        disabled={savingAccount}
+                        required
+                    />
+                </div>
+                <div class="grid-span-2">
+                    <InputText
+                        id="input-Name"
+                        label="Name"
+                        bind:value={settingsUserUpdate.name}
+                        disabled={savingAccount}
+                    />
+                </div>
+                <div class="grid-col">
+                    <InputText
+                        id="input-First-Name"
+                        label="First Name"
+                        bind:value={settingsUserUpdate.firstName}
+                        disabled={savingAccount}
+                    />
+                </div>
+                <div class="grid-col">
+                    <InputText
+                        id="input-Last-Name"
+                        label="Last Name"
+                        bind:value={settingsUserUpdate.lastName}
+                        disabled={savingAccount}
+                    />
+                </div>
+            </div>
+        </div>
+    </div>
 
     <AutoSettingsGroup
         settings={accountSettings}
@@ -115,6 +154,68 @@
     .account-settings-section {
         display: flex;
         flex-direction: column;
-        gap: 3rem;
+        gap: var(--viz-spacing-xxl);
+        width: 100%;
+    }
+
+    .settings-group {
+        display: flex;
+        flex-direction: column;
+        gap: var(--viz-spacing-md);
+        width: 100%;
+    }
+
+    .group-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: flex-start;
+        padding-bottom: var(--viz-spacing-sm);
+        border-bottom: var(--viz-border-thin);
+
+        h2 {
+            font-size: 1.5rem;
+            font-weight: 600;
+            color: var(--viz-text-color);
+            margin: 0 0 var(--viz-spacing-xs) 0;
+        }
+
+        .group-description {
+            color: var(--viz-40);
+            margin: 0;
+            font-size: var(--viz-font-size-sm);
+        }
+    }
+
+    .actions {
+        display: flex;
+        align-items: center;
+    }
+
+    .profile-card {
+        background-color: var(--viz-100);
+        border: var(--viz-border-thin);
+        border-radius: var(--viz-border-radius-md);
+        padding: var(--viz-spacing-lg);
+        box-sizing: border-box;
+        width: 100%;
+    }
+
+    .profile-grid {
+        display: grid;
+        grid-template-columns: repeat(2, 1fr);
+        gap: var(--viz-spacing-std);
+        width: 100%;
+    }
+
+    .grid-span-2 {
+        grid-column: span 2;
+    }
+
+    .grid-col {
+        grid-column: span 1;
+    }
+
+    :global(.profile-grid .input-container input) {
+        background-color: var(--viz-90);
     }
 </style>

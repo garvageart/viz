@@ -2,33 +2,32 @@
     import { createApiKey } from "$lib/api";
     import { scopes, Scope } from "$lib/auth/scopes.gen";
     import Button from "$lib/components/ui/Button.svelte";
-    import MaterialIcon from "$lib/components/ui/MaterialIcon.svelte";
-    import TextInput from "$lib/components/settings/inputs/TextInput.svelte";
+    import IconButton from "$lib/components/ui/IconButton.svelte";
+    import InputText from "$lib/components/ui/InputText.svelte";
     import { toastState } from "$lib/toast-notifcations/notif-state.svelte";
     import { copyToClipboard } from "$lib/utils/misc";
     import { modalsManager } from "./manager/ModalManager.svelte";
 
     let { id, onClose, onSuccess }: { id: string; onClose: () => void; onSuccess: () => void } = $props();
 
-    let name = $state("");
-    let description = $state("");
+    let keyMeta = $state({
+        name: "",
+        description: "",
+        scopes: [] as Scope[]
+    });
+
+    let selectedScopes = $derived(keyMeta.scopes);
     let creating = $state(false);
     let createdToken = $state<string | null>(null);
 
-    let selectedScopes = $state<Scope[]>([Scope.FullAccess]); // Default to Full Access
-
     function toggleScope(scope: Scope) {
         if (scope === Scope.FullAccess) {
-            // If selecting *, clear others or just ensure it's the only one needed (backend handles logic)
-            // But for UI UX, if * is selected, maybe disable others or select all?
-            // Let's just toggle it.
             if (selectedScopes.includes(Scope.FullAccess)) {
                 selectedScopes = [];
             } else {
                 selectedScopes = [Scope.FullAccess];
             }
         } else {
-            // If * was selected, deselect it when picking specific scopes
             if (selectedScopes.includes(Scope.FullAccess)) {
                 selectedScopes = selectedScopes.filter((s) => s !== Scope.FullAccess);
             }
@@ -41,12 +40,12 @@
         }
     }
 
-    function isSelected(scope: Scope) {
+    function isScopeSelected(scope: Scope) {
         return selectedScopes.includes(scope);
     }
 
     async function handleCreate() {
-        if (!name) {
+        if (!keyMeta.name) {
             return;
         }
 
@@ -60,11 +59,7 @@
 
         creating = true;
         try {
-            const res = await createApiKey({
-                name: name,
-                description: description || null,
-                scopes: selectedScopes
-            });
+            const res = await createApiKey(keyMeta);
 
             if (res.status === 201) {
                 createdToken = res.data.consumer_key;
@@ -106,34 +101,37 @@
 
 <div class="api-key-modal-inner">
     {#if createdToken}
-        <p>Please copy your new API Key. You won't be able to see it again!</p>
+        <span class="warning-text">Please copy your new API Key. You won't be able to see it again!</span>
         <div class="key-display">
             <code>{createdToken}</code>
-            <Button onclick={handleCopy}>
-                <MaterialIcon iconName="content_copy" /> Copy
-            </Button>
+            <IconButton onclick={handleCopy} variant="small">Copy</IconButton>
         </div>
         <div class="modal-actions">
-            <Button onclick={handleClose}>Close</Button>
+            <IconButton onclick={handleClose} variant="small">Close</IconButton>
         </div>
     {:else}
         <div class="form-content">
-            <TextInput label="Name" bind:value={name} />
-            <TextInput label="Description" bind:value={description} />
+            <InputText id="input-Name" label="Name" bind:value={keyMeta.name} required class="modal-input" />
+            <InputText
+                id="input-Description"
+                label="Description"
+                bind:value={keyMeta.description}
+                class="modal-input"
+            />
 
             <div class="scopes-section">
                 <h4>Scopes</h4>
                 <div class="scopes-list">
                     {#each scopes as scope}
-                        <label class="scope-item">
+                        <label class="scope-item" class:selected={isScopeSelected(scope.value)}>
                             <input
                                 type="checkbox"
-                                checked={isSelected(scope.value)}
+                                checked={isScopeSelected(scope.value)}
                                 onchange={() => toggleScope(scope.value)}
                             />
                             <div class="scope-info">
-                                <span class="scope-value">{scope.value}</span>
                                 <span class="scope-label">{scope.label}</span>
+                                <span class="scope-value">{scope.value}</span>
                             </div>
                         </label>
                     {/each}
@@ -142,7 +140,7 @@
         </div>
         <div class="modal-actions">
             <Button hoverColor="var(--viz-80)" onclick={handleCancel}>Cancel</Button>
-            <Button onclick={handleCreate} disabled={creating || !name || selectedScopes.length === 0}>
+            <Button onclick={handleCreate} disabled={creating || !keyMeta.name || selectedScopes.length === 0}>
                 {creating ? "Creating..." : "Create Key"}
             </Button>
         </div>
@@ -154,92 +152,123 @@
         display: flex;
         flex-direction: column;
         width: 100%;
+        color: var(--viz-text-color);
+        font-family: var(--viz-display-font);
+    }
+
+    .warning-text {
+        color: var(--viz-warning-color);
+        font-size: var(--viz-font-size-sm);
+        margin: 0 0 var(--viz-spacing-std) 0;
     }
 
     .form-content {
         display: flex;
         flex-direction: column;
-        gap: 1rem;
+        gap: var(--viz-spacing-std);
         overflow-y: auto;
+    }
+
+    :global(.modal-input input) {
+        background-color: var(--viz-90) !important;
     }
 
     .key-display {
         background-color: var(--viz-100);
-        padding: 1rem;
-        border-radius: 0.5rem;
+        border: var(--viz-border-thin);
+        padding: var(--viz-spacing-std);
+        border-radius: var(--viz-border-radius-md);
         display: flex;
         justify-content: space-between;
         align-items: center;
+        gap: var(--viz-spacing-std);
+        margin-bottom: var(--viz-spacing-std);
 
         code {
             font-family: var(--viz-mono-font);
+            font-size: var(--viz-font-size-sm);
             word-break: break-all;
             flex-grow: 1;
-            margin-right: 0.5rem;
+            color: var(--viz-text-color);
         }
     }
 
     .scopes-section {
         display: flex;
         flex-direction: column;
-        gap: 0.5rem;
+        gap: var(--viz-spacing-xs);
 
         h4 {
-            font-size: 0.9rem;
+            font-size: var(--viz-font-size-sm);
             font-weight: 600;
-            color: var(--viz-text-color);
+            color: var(--viz-40);
             margin: 0;
         }
     }
 
     .scopes-list {
         display: grid;
-        grid-template-columns: 1fr 1fr;
-        gap: 0.5rem;
-        max-height: 13rem;
+        grid-template-columns: repeat(2, 1fr);
+        gap: var(--viz-spacing-xs);
+        max-height: 15rem;
         overflow-y: auto;
-        border: 1px solid var(--viz-80);
-        padding: 0.5rem;
-        border-radius: 0.25rem;
+        border: var(--viz-border-thin);
+        padding: var(--viz-spacing-xs);
+        border-radius: var(--viz-border-radius-md);
+        background-color: var(--viz-100);
     }
 
     .scope-item {
         display: flex;
-        align-items: center;
-        gap: 0.5rem;
-        font-size: 0.85rem;
+        align-items: flex-start;
+        gap: var(--viz-spacing-sm);
+        padding: var(--viz-spacing-xs) var(--viz-spacing-sm);
+        border-radius: var(--viz-border-radius-sm);
         cursor: pointer;
         user-select: none;
+        transition: background-color 0.15s ease;
 
         &:hover {
-            background-color: var(--viz-100);
+            background-color: var(--viz-90);
+        }
+
+        &.selected {
+            background-color: var(--viz-90);
         }
 
         input[type="checkbox"] {
-            accent-color: var(--viz-80);
-            width: 1rem;
-            height: 1rem;
+            accent-color: var(--viz-primary);
+            width: 0.875rem;
+            height: 0.875rem;
+            margin-top: 0.125rem;
+            cursor: pointer;
         }
     }
 
     .scope-info {
         display: flex;
         flex-direction: column;
+        gap: 0;
     }
 
     .scope-label {
-        font-weight: 500;
+        font-weight: 600;
+        font-size: var(--viz-font-size-xs);
+        color: var(--viz-text-color);
+        line-height: 1.2;
     }
 
     .scope-value {
-        color: var(--viz-10);
-        font-size: 0.75rem;
+        color: var(--viz-40);
+        font-size: 0.7rem;
+        font-family: var(--viz-mono-font);
+        line-height: 1.2;
     }
 
     .modal-actions {
         display: flex;
         justify-content: flex-end;
-        gap: 0.5rem;
-        margin-top: 1rem;
+        gap: var(--viz-spacing-std);
+        margin-top: var(--viz-spacing-xl);
     }
 </style>

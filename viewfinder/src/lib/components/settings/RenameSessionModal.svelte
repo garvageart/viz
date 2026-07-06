@@ -30,7 +30,7 @@
     }
 </script>
 
-<div class="rename-modal">
+<div class="rename-modal" id="rename-session-modal">
     <h2>Rename Session</h2>
     <p>Enter a new name for this session to help you identify it later.</p>
     <InputText label="Session Name" bind:value={newName} placeholder="e.g. Chrome on MacBook" />
