@@ -1593,8 +1593,11 @@ export function uploadImageByUrl(body: string, opts?: Oazapfts.RequestOpts) {
 /**
  * Get a processed image file
  */
-export function getImageFile(uid: string, { format, width, height, quality, download, token, password }: {
-    format?: "webp" | "png" | "jpg" | "jpeg" | "avif" | "heif";
+export function getImageFile(uid: string, { format, bitdepth, resizeMode, colorSpace, width, height, quality, download, token, password }: {
+    format?: ImageFormat;
+    bitdepth?: ImageBitDepth;
+    resizeMode?: ImageResizeMode;
+    colorSpace?: ImageColorSpace;
     width?: number;
     height?: number;
     quality?: number;
@@ -1618,6 +1621,9 @@ export function getImageFile(uid: string, { format, width, height, quality, down
         data: ErrorResponse;
     }>(`/images/${encodeURIComponent(uid)}/file${QS.query(QS.explode({
         format,
+        bitdepth,
+        resizeMode,
+        colorSpace,
         width,
         height,
         quality,
@@ -1697,13 +1703,14 @@ export function updateImage(uid: string, imageUpdate: ImageUpdate, opts?: Oazapf
 /**
  * Pre-generate transforms for multiple images
  */
-export function imagesExport(imageExportRequest: ImageExportRequest, { format, width, height, quality, resizeMode, colorSpace, stripMetadata }: {
-    format?: "webp" | "png" | "jpg" | "jpeg" | "avif" | "heif";
+export function imagesExport(imageExportRequest: ImageExportRequest, { format, bitdepth, resizeMode, colorSpace, width, height, quality, stripMetadata }: {
+    format?: ImageFormat;
+    bitdepth?: ImageBitDepth;
+    resizeMode?: ImageResizeMode;
+    colorSpace?: ImageColorSpace;
     width?: number;
     height?: number;
     quality?: number;
-    resizeMode?: "none" | "width" | "height" | "long-edge" | "short-edge" | "dimensions";
-    colorSpace?: "sRGB" | "AdobeRGB" | "ProPhoto" | "DisplayP3";
     stripMetadata?: boolean;
 } = {}, opts?: Oazapfts.RequestOpts) {
     return oazapfts.fetchJson<{
@@ -1720,11 +1727,12 @@ export function imagesExport(imageExportRequest: ImageExportRequest, { format, w
         data: ErrorResponse;
     }>(`/images/export${QS.query(QS.explode({
         format,
+        bitdepth,
+        resizeMode,
+        colorSpace,
         width,
         height,
         quality,
-        resizeMode,
-        colorSpace,
         stripMetadata
     }))}`, oazapfts.json({
         ...opts,
@@ -2587,6 +2595,35 @@ export enum ImageUploadStatus {
     Duplicate = "duplicate",
     Failed = "failed",
     Processing = "processing"
+}
+export enum ImageFormat {
+    Webp = "webp",
+    Png = "png",
+    Jpg = "jpg",
+    Jpeg = "jpeg",
+    Avif = "avif",
+    Heif = "heif",
+    Tiff = "tiff"
+}
+export enum ImageBitDepth {
+    $8 = 8,
+    $10 = 10,
+    $12 = 12,
+    $16 = 16
+}
+export enum ImageResizeMode {
+    None = "none",
+    Width = "width",
+    Height = "height",
+    LongEdge = "long-edge",
+    ShortEdge = "short-edge",
+    Dimensions = "dimensions"
+}
+export enum ImageColorSpace {
+    SRgb = "sRGB",
+    AdobeRgb = "AdobeRGB",
+    ProPhoto = "ProPhoto",
+    DisplayP3 = "DisplayP3"
 }
 export enum Value_type {
     Boolean = "boolean",

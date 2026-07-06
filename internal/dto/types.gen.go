@@ -62,6 +62,117 @@ func (e AdminUserUpdateRole) Valid() bool {
 	}
 }
 
+// Defines values for ImageBitDepth.
+const (
+	N10 ImageBitDepth = 10
+	N12 ImageBitDepth = 12
+	N16 ImageBitDepth = 16
+	N8  ImageBitDepth = 8
+)
+
+// Valid indicates whether the value is a known member of the ImageBitDepth enum.
+func (e ImageBitDepth) Valid() bool {
+	switch e {
+	case N10:
+		return true
+	case N12:
+		return true
+	case N16:
+		return true
+	case N8:
+		return true
+	default:
+		return false
+	}
+}
+
+// Defines values for ImageColorSpace.
+const (
+	AdobeRGB  ImageColorSpace = "AdobeRGB"
+	DisplayP3 ImageColorSpace = "DisplayP3"
+	ProPhoto  ImageColorSpace = "ProPhoto"
+	SRGB      ImageColorSpace = "sRGB"
+)
+
+// Valid indicates whether the value is a known member of the ImageColorSpace enum.
+func (e ImageColorSpace) Valid() bool {
+	switch e {
+	case AdobeRGB:
+		return true
+	case DisplayP3:
+		return true
+	case ProPhoto:
+		return true
+	case SRGB:
+		return true
+	default:
+		return false
+	}
+}
+
+// Defines values for ImageFormat.
+const (
+	Avif ImageFormat = "avif"
+	Heif ImageFormat = "heif"
+	Jpeg ImageFormat = "jpeg"
+	Jpg  ImageFormat = "jpg"
+	Png  ImageFormat = "png"
+	Tiff ImageFormat = "tiff"
+	Webp ImageFormat = "webp"
+)
+
+// Valid indicates whether the value is a known member of the ImageFormat enum.
+func (e ImageFormat) Valid() bool {
+	switch e {
+	case Avif:
+		return true
+	case Heif:
+		return true
+	case Jpeg:
+		return true
+	case Jpg:
+		return true
+	case Png:
+		return true
+	case Tiff:
+		return true
+	case Webp:
+		return true
+	default:
+		return false
+	}
+}
+
+// Defines values for ImageResizeMode.
+const (
+	Dimensions ImageResizeMode = "dimensions"
+	Height     ImageResizeMode = "height"
+	LongEdge   ImageResizeMode = "long-edge"
+	None       ImageResizeMode = "none"
+	ShortEdge  ImageResizeMode = "short-edge"
+	Width      ImageResizeMode = "width"
+)
+
+// Valid indicates whether the value is a known member of the ImageResizeMode enum.
+func (e ImageResizeMode) Valid() bool {
+	switch e {
+	case Dimensions:
+		return true
+	case Height:
+		return true
+	case LongEdge:
+		return true
+	case None:
+		return true
+	case ShortEdge:
+		return true
+	case Width:
+		return true
+	default:
+		return false
+	}
+}
+
 // Defines values for ImageUploadStatus.
 const (
 	ImageUploadStatusDuplicate  ImageUploadStatus = "duplicate"
@@ -365,120 +476,6 @@ func (e ListImagesParamsSortBy) Valid() bool {
 	case ListImagesParamsSortByTakenAt:
 		return true
 	case ListImagesParamsSortByUpdatedAt:
-		return true
-	default:
-		return false
-	}
-}
-
-// Defines values for ImagesExportParamsFormat.
-const (
-	ImagesExportParamsFormatAvif ImagesExportParamsFormat = "avif"
-	ImagesExportParamsFormatHeif ImagesExportParamsFormat = "heif"
-	ImagesExportParamsFormatJpeg ImagesExportParamsFormat = "jpeg"
-	ImagesExportParamsFormatJpg  ImagesExportParamsFormat = "jpg"
-	ImagesExportParamsFormatPng  ImagesExportParamsFormat = "png"
-	ImagesExportParamsFormatWebp ImagesExportParamsFormat = "webp"
-)
-
-// Valid indicates whether the value is a known member of the ImagesExportParamsFormat enum.
-func (e ImagesExportParamsFormat) Valid() bool {
-	switch e {
-	case ImagesExportParamsFormatAvif:
-		return true
-	case ImagesExportParamsFormatHeif:
-		return true
-	case ImagesExportParamsFormatJpeg:
-		return true
-	case ImagesExportParamsFormatJpg:
-		return true
-	case ImagesExportParamsFormatPng:
-		return true
-	case ImagesExportParamsFormatWebp:
-		return true
-	default:
-		return false
-	}
-}
-
-// Defines values for ImagesExportParamsResizeMode.
-const (
-	Dimensions ImagesExportParamsResizeMode = "dimensions"
-	Height     ImagesExportParamsResizeMode = "height"
-	LongEdge   ImagesExportParamsResizeMode = "long-edge"
-	None       ImagesExportParamsResizeMode = "none"
-	ShortEdge  ImagesExportParamsResizeMode = "short-edge"
-	Width      ImagesExportParamsResizeMode = "width"
-)
-
-// Valid indicates whether the value is a known member of the ImagesExportParamsResizeMode enum.
-func (e ImagesExportParamsResizeMode) Valid() bool {
-	switch e {
-	case Dimensions:
-		return true
-	case Height:
-		return true
-	case LongEdge:
-		return true
-	case None:
-		return true
-	case ShortEdge:
-		return true
-	case Width:
-		return true
-	default:
-		return false
-	}
-}
-
-// Defines values for ImagesExportParamsColorSpace.
-const (
-	AdobeRGB  ImagesExportParamsColorSpace = "AdobeRGB"
-	DisplayP3 ImagesExportParamsColorSpace = "DisplayP3"
-	ProPhoto  ImagesExportParamsColorSpace = "ProPhoto"
-	SRGB      ImagesExportParamsColorSpace = "sRGB"
-)
-
-// Valid indicates whether the value is a known member of the ImagesExportParamsColorSpace enum.
-func (e ImagesExportParamsColorSpace) Valid() bool {
-	switch e {
-	case AdobeRGB:
-		return true
-	case DisplayP3:
-		return true
-	case ProPhoto:
-		return true
-	case SRGB:
-		return true
-	default:
-		return false
-	}
-}
-
-// Defines values for GetImageFileParamsFormat.
-const (
-	GetImageFileParamsFormatAvif GetImageFileParamsFormat = "avif"
-	GetImageFileParamsFormatHeif GetImageFileParamsFormat = "heif"
-	GetImageFileParamsFormatJpeg GetImageFileParamsFormat = "jpeg"
-	GetImageFileParamsFormatJpg  GetImageFileParamsFormat = "jpg"
-	GetImageFileParamsFormatPng  GetImageFileParamsFormat = "png"
-	GetImageFileParamsFormatWebp GetImageFileParamsFormat = "webp"
-)
-
-// Valid indicates whether the value is a known member of the GetImageFileParamsFormat enum.
-func (e GetImageFileParamsFormat) Valid() bool {
-	switch e {
-	case GetImageFileParamsFormatAvif:
-		return true
-	case GetImageFileParamsFormatHeif:
-		return true
-	case GetImageFileParamsFormatJpeg:
-		return true
-	case GetImageFileParamsFormatJpg:
-		return true
-	case GetImageFileParamsFormatPng:
-		return true
-	case GetImageFileParamsFormatWebp:
 		return true
 	default:
 		return false
@@ -994,6 +991,12 @@ type ImageAsset struct {
 	Width int32 `json:"width"`
 }
 
+// ImageBitDepth Bit depth for transformation (8, 10, 12, or 16)
+type ImageBitDepth int
+
+// ImageColorSpace Color space
+type ImageColorSpace string
+
 // ImageEXIF defines model for ImageEXIF.
 type ImageEXIF struct {
 	// Aperture Aperture
@@ -1137,6 +1140,9 @@ type ImageExportRequest struct {
 	Uids []string `json:"uids"`
 }
 
+// ImageFormat Output format for transformation
+type ImageFormat string
+
 // ImageMetadata defines model for ImageMetadata.
 type ImageMetadata struct {
 	// Checksum File checksum
@@ -1196,6 +1202,9 @@ type ImagePaths struct {
 	// Thumbnail Path to thumbnail
 	Thumbnail string `json:"thumbnail"`
 }
+
+// ImageResizeMode Resize mode
+type ImageResizeMode string
 
 // ImageUpdate defines model for ImageUpdate.
 type ImageUpdate struct {
@@ -2132,8 +2141,10 @@ type ListImagesParamsSortBy string
 
 // ImagesExportParams defines parameters for ImagesExport.
 type ImagesExportParams struct {
-	// Format Output format for transformation
-	Format *ImagesExportParamsFormat `form:"format,omitempty" json:"format,omitempty"`
+	Format     *ImageFormat     `form:"format,omitempty" json:"format,omitempty"`
+	Bitdepth   *ImageBitDepth   `form:"bitdepth,omitempty" json:"bitdepth,omitempty"`
+	ResizeMode *ImageResizeMode `form:"resizeMode,omitempty" json:"resizeMode,omitempty"`
+	ColorSpace *ImageColorSpace `form:"colorSpace,omitempty" json:"colorSpace,omitempty"`
 
 	// Width Width for transformation
 	Width *int `form:"width,omitempty" json:"width,omitempty"`
@@ -2144,24 +2155,9 @@ type ImagesExportParams struct {
 	// Quality Quality for transformation (0-100)
 	Quality *int `form:"quality,omitempty" json:"quality,omitempty"`
 
-	// ResizeMode Resize mode
-	ResizeMode *ImagesExportParamsResizeMode `form:"resizeMode,omitempty" json:"resizeMode,omitempty"`
-
-	// ColorSpace Color space
-	ColorSpace *ImagesExportParamsColorSpace `form:"colorSpace,omitempty" json:"colorSpace,omitempty"`
-
 	// StripMetadata Strip metadata
 	StripMetadata *bool `form:"stripMetadata,omitempty" json:"stripMetadata,omitempty"`
 }
-
-// ImagesExportParamsFormat defines parameters for ImagesExport.
-type ImagesExportParamsFormat string
-
-// ImagesExportParamsResizeMode defines parameters for ImagesExport.
-type ImagesExportParamsResizeMode string
-
-// ImagesExportParamsColorSpace defines parameters for ImagesExport.
-type ImagesExportParamsColorSpace string
 
 // UploadImageByUrlTextBody defines parameters for UploadImageByUrl.
 type UploadImageByUrlTextBody = string
@@ -2174,8 +2170,10 @@ type GetImageExifParams struct {
 
 // GetImageFileParams defines parameters for GetImageFile.
 type GetImageFileParams struct {
-	// Format Output format for transformation
-	Format *GetImageFileParamsFormat `form:"format,omitempty" json:"format,omitempty"`
+	Format     *ImageFormat     `form:"format,omitempty" json:"format,omitempty"`
+	Bitdepth   *ImageBitDepth   `form:"bitdepth,omitempty" json:"bitdepth,omitempty"`
+	ResizeMode *ImageResizeMode `form:"resizeMode,omitempty" json:"resizeMode,omitempty"`
+	ColorSpace *ImageColorSpace `form:"colorSpace,omitempty" json:"colorSpace,omitempty"`
 
 	// Width Width for transformation
 	Width *int `form:"width,omitempty" json:"width,omitempty"`
@@ -2195,9 +2193,6 @@ type GetImageFileParams struct {
 	// Password Password for password-protected tokens (optional)
 	Password *string `form:"password,omitempty" json:"password,omitempty"`
 }
-
-// GetImageFileParamsFormat defines parameters for GetImageFile.
-type GetImageFileParamsFormat string
 
 // GetImageFileParamsDownload defines parameters for GetImageFile.
 type GetImageFileParamsDownload string

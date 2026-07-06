@@ -1072,9 +1072,19 @@ paths:
                 - in: query
                   name: format
                   schema:
-                      type: string
-                      enum: [webp, png, jpg, jpeg, avif, heif]
-                  description: Output format for transformation
+                      $ref: "#/components/schemas/ImageFormat"
+                - in: query
+                  name: bitdepth
+                  schema:
+                      $ref: "#/components/schemas/ImageBitDepth"
+                - in: query
+                  name: resizeMode
+                  schema:
+                      $ref: "#/components/schemas/ImageResizeMode"
+                - in: query
+                  name: colorSpace
+                  schema:
+                      $ref: "#/components/schemas/ImageColorSpace"
                 - in: query
                   name: width
                   schema:
@@ -1304,9 +1314,19 @@ paths:
                 - in: query
                   name: format
                   schema:
-                      type: string
-                      enum: [webp, png, jpg, jpeg, avif, heif]
-                  description: Output format for transformation
+                      $ref: "#/components/schemas/ImageFormat"
+                - in: query
+                  name: bitdepth
+                  schema:
+                      $ref: "#/components/schemas/ImageBitDepth"
+                - in: query
+                  name: resizeMode
+                  schema:
+                      $ref: "#/components/schemas/ImageResizeMode"
+                - in: query
+                  name: colorSpace
+                  schema:
+                      $ref: "#/components/schemas/ImageColorSpace"
                 - in: query
                   name: width
                   schema:
@@ -1326,18 +1346,6 @@ paths:
                       minimum: 0
                       maximum: 100
                   description: Quality for transformation (0-100)
-                - in: query
-                  name: resizeMode
-                  schema:
-                      type: string
-                      enum: [none, width, height, long-edge, short-edge, dimensions]
-                  description: Resize mode
-                - in: query
-                  name: colorSpace
-                  schema:
-                      type: string
-                      enum: [sRGB, AdobeRGB, ProPhoto, DisplayP3]
-                  description: Color space
                 - in: query
                   name: stripMetadata
                   schema:
@@ -3034,6 +3042,23 @@ components:
             type: string
             enum: [uploaded, duplicate, failed, processing]
             description: The status of the image upload
+
+        ImageFormat:
+            type: string
+            enum: [webp, png, jpg, jpeg, avif, heif, tiff]
+            description: Output format for transformation
+        ImageBitDepth:
+            type: integer
+            enum: [8, 10, 12, 16]
+            description: Bit depth for transformation (8, 10, 12, or 16)
+        ImageResizeMode:
+            type: string
+            enum: [none, width, height, long-edge, short-edge, dimensions]
+            description: Resize mode
+        ImageColorSpace:
+            type: string
+            enum: [sRGB, AdobeRGB, ProPhoto, DisplayP3]
+            description: Color space
 
         DuplicateCheckRequest:
             type: object

@@ -4006,6 +4006,42 @@ func NewImagesExportRequestWithBody(server string, params *ImagesExportParams, c
 
 		}
 
+		if params.Bitdepth != nil {
+
+			if queryFrag, err := runtime.StyleParamWithOptions("form", true, "bitdepth", *params.Bitdepth, runtime.StyleParamOptions{ParamLocation: runtime.ParamLocationQuery, Type: "integer", Format: ""}); err != nil {
+				return nil, err
+			} else {
+				for _, qp := range strings.Split(queryFrag, "&") {
+					rawQueryFragments = append(rawQueryFragments, qp)
+				}
+			}
+
+		}
+
+		if params.ResizeMode != nil {
+
+			if queryFrag, err := runtime.StyleParamWithOptions("form", true, "resizeMode", *params.ResizeMode, runtime.StyleParamOptions{ParamLocation: runtime.ParamLocationQuery, Type: "string", Format: ""}); err != nil {
+				return nil, err
+			} else {
+				for _, qp := range strings.Split(queryFrag, "&") {
+					rawQueryFragments = append(rawQueryFragments, qp)
+				}
+			}
+
+		}
+
+		if params.ColorSpace != nil {
+
+			if queryFrag, err := runtime.StyleParamWithOptions("form", true, "colorSpace", *params.ColorSpace, runtime.StyleParamOptions{ParamLocation: runtime.ParamLocationQuery, Type: "string", Format: ""}); err != nil {
+				return nil, err
+			} else {
+				for _, qp := range strings.Split(queryFrag, "&") {
+					rawQueryFragments = append(rawQueryFragments, qp)
+				}
+			}
+
+		}
+
 		if params.Width != nil {
 
 			if queryFrag, err := runtime.StyleParamWithOptions("form", true, "width", *params.Width, runtime.StyleParamOptions{ParamLocation: runtime.ParamLocationQuery, Type: "integer", Format: ""}); err != nil {
@@ -4033,30 +4069,6 @@ func NewImagesExportRequestWithBody(server string, params *ImagesExportParams, c
 		if params.Quality != nil {
 
 			if queryFrag, err := runtime.StyleParamWithOptions("form", true, "quality", *params.Quality, runtime.StyleParamOptions{ParamLocation: runtime.ParamLocationQuery, Type: "integer", Format: ""}); err != nil {
-				return nil, err
-			} else {
-				for _, qp := range strings.Split(queryFrag, "&") {
-					rawQueryFragments = append(rawQueryFragments, qp)
-				}
-			}
-
-		}
-
-		if params.ResizeMode != nil {
-
-			if queryFrag, err := runtime.StyleParamWithOptions("form", true, "resizeMode", *params.ResizeMode, runtime.StyleParamOptions{ParamLocation: runtime.ParamLocationQuery, Type: "string", Format: ""}); err != nil {
-				return nil, err
-			} else {
-				for _, qp := range strings.Split(queryFrag, "&") {
-					rawQueryFragments = append(rawQueryFragments, qp)
-				}
-			}
-
-		}
-
-		if params.ColorSpace != nil {
-
-			if queryFrag, err := runtime.StyleParamWithOptions("form", true, "colorSpace", *params.ColorSpace, runtime.StyleParamOptions{ParamLocation: runtime.ParamLocationQuery, Type: "string", Format: ""}); err != nil {
 				return nil, err
 			} else {
 				for _, qp := range strings.Split(queryFrag, "&") {
@@ -4348,6 +4360,42 @@ func NewGetImageFileRequest(server string, uid string, params *GetImageFileParam
 		if params.Format != nil {
 
 			if queryFrag, err := runtime.StyleParamWithOptions("form", true, "format", *params.Format, runtime.StyleParamOptions{ParamLocation: runtime.ParamLocationQuery, Type: "string", Format: ""}); err != nil {
+				return nil, err
+			} else {
+				for _, qp := range strings.Split(queryFrag, "&") {
+					rawQueryFragments = append(rawQueryFragments, qp)
+				}
+			}
+
+		}
+
+		if params.Bitdepth != nil {
+
+			if queryFrag, err := runtime.StyleParamWithOptions("form", true, "bitdepth", *params.Bitdepth, runtime.StyleParamOptions{ParamLocation: runtime.ParamLocationQuery, Type: "integer", Format: ""}); err != nil {
+				return nil, err
+			} else {
+				for _, qp := range strings.Split(queryFrag, "&") {
+					rawQueryFragments = append(rawQueryFragments, qp)
+				}
+			}
+
+		}
+
+		if params.ResizeMode != nil {
+
+			if queryFrag, err := runtime.StyleParamWithOptions("form", true, "resizeMode", *params.ResizeMode, runtime.StyleParamOptions{ParamLocation: runtime.ParamLocationQuery, Type: "string", Format: ""}); err != nil {
+				return nil, err
+			} else {
+				for _, qp := range strings.Split(queryFrag, "&") {
+					rawQueryFragments = append(rawQueryFragments, qp)
+				}
+			}
+
+		}
+
+		if params.ColorSpace != nil {
+
+			if queryFrag, err := runtime.StyleParamWithOptions("form", true, "colorSpace", *params.ColorSpace, runtime.StyleParamOptions{ParamLocation: runtime.ParamLocationQuery, Type: "string", Format: ""}); err != nil {
 				return nil, err
 			} else {
 				for _, qp := range strings.Split(queryFrag, "&") {
