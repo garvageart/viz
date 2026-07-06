@@ -11,24 +11,7 @@
     import { selectionManager, SelectionScope, SelectionScopeNames } from "$lib/states/selection.svelte";
     import { workspaceState } from "$lib/states/workspace.svelte";
 
-    let filmstripScope = $derived.by((): SelectionScope<ImageAsset> | undefined => {
-        const activeScope = selectionManager.activeScope;
-        if (!activeScope?.id) {
-            return undefined;
-        }
-
-        const isCollectionContext =
-            activeScope.id.startsWith(SelectionScopeNames.COLLECTION_PREFIX) ||
-            activeScope.id.startsWith(SelectionScopeNames.FILMSTRIP_COLLECTION_PREFIX);
-
-        if (isCollectionContext) {
-            const uid = activeScope.id.replace(/^(collection-|filmstrip-collection-)/, "");
-            return selectionManager.getScope<ImageAsset>(`${SelectionScopeNames.FILMSTRIP_COLLECTION_PREFIX}${uid}`);
-        }
-
-        // General context (photos, search) — share the active scope.
-        return activeScope as SelectionScope<ImageAsset>;
-    });
+    let filmstripScope = $derived(selectionManager.activeScope as SelectionScope<ImageAsset> | undefined);
 
     // The filmstrip reads data from the active scope's .source (which is
     // populated by whichever grid or page the user is interacting with).

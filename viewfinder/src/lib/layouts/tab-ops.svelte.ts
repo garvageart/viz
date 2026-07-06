@@ -121,7 +121,7 @@ export class TabOps {
             // Force merge by calling moveTab directly
             const workspace = workspaceState.workspace;
             if (workspace) {
-                workspace.moveTab(viewId, targetGroupId);
+                workspace.moveTabToGroup(viewId, targetGroupId);
             }
         };
 
@@ -196,7 +196,7 @@ export class TabOps {
         }
 
         if (position === "center") {
-            workspace.moveTab(viewId, targetGroupId);
+            workspace.moveTabToGroup(viewId, targetGroupId);
         } else {
             workspace.splitGroup(targetGroupId, view, position);
         }

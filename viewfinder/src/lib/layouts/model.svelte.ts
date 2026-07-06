@@ -1,3 +1,4 @@
+import type { DropPosition } from "$lib/layouts/tab-ops.svelte";
 import { generateKeyId } from "$lib/utils/layout";
 import VizView, { type SerializedVizView } from "$lib/views/views.svelte";
 
@@ -435,9 +436,40 @@ export class Workspace {
     }
 
     /**
+     * Moves a tab within its current group to another position in its current group
+     */
+    moveTab(viewId: number, direction: string) {
+        const sourceGroup = this.findGroupWithView(viewId);
+        if (!sourceGroup) {
+            return;
+        }
+
+        const idx = sourceGroup.views.findIndex((v) => v.id === viewId);
+        if (idx === -1) {
+            return;
+        }
+
+        let v = sourceGroup.views[idx];
+
+        if (direction === "left") {
+            if (idx > 0) {
+                sourceGroup.views[idx] = sourceGroup.views[idx - 1];
+                sourceGroup.views[idx - 1] = v;
+            }
+        } else if (direction === "right") {
+            if (idx < sourceGroup.views.length - 1) {
+                sourceGroup.views[idx] = sourceGroup.views[idx + 1];
+                sourceGroup.views[idx + 1] = v;
+            }
+        }
+
+        sourceGroup.setActive(v.id);
+    }
+
+    /**
      * Moves a tab from its current group to a target group
      */
-    moveTab(viewId: number, targetGroupId: string, index?: number) {
+    moveTabToGroup(viewId: number, targetGroupId: string, index?: number) {
         const sourceGroup = this.findGroupWithView(viewId);
         const targetGroup = this.findNode(targetGroupId);
 
@@ -504,10 +536,15 @@ export class Workspace {
      * Splits a group and moves a view into the newly created group.
      * If the source group becomes empty, it's cleaned up.
      */
-    splitGroup(groupId: string, viewToMove: VizView, direction: "left" | "right" | "top" | "bottom") {
+    splitGroup(groupId: string, viewToMove: VizView, direction: Omit<DropPosition, "center">) {
         const targetGroup = this.findNode(groupId);
-        if (!(targetGroup instanceof TabGroup) || targetGroup.locked) return; // Cannot split a locked group
-        if (viewToMove.locked) return; // Cannot split a locked view
+        if (!(targetGroup instanceof TabGroup) || targetGroup.locked) {
+            return; // Cannot split a locked group
+        }
+
+        if (viewToMove.locked) {
+            return; // Cannot split a locked view
+        }
 
         const parent = targetGroup.parent;
         const orientation: Orientation = direction === "left" || direction === "right" ? "horizontal" : "vertical";

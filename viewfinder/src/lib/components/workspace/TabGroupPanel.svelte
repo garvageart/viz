@@ -195,6 +195,9 @@
     });
 
     const menuHandlers: TabHandlers = {
+        moveTab: (v, direction) => {
+            workspaceState.workspace?.moveTab(v.id, direction);
+        },
         closeTab: (v) => {
             group.removeTab(v.id);
             workspaceState.workspace?.cleanupNode(group);

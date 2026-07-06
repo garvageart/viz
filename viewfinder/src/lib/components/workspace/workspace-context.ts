@@ -12,6 +12,7 @@ export type TabHandlers = {
     toggleTabLock: (v: VizView) => void;
     splitRight: (v: VizView) => void;
     splitDown: (v: VizView) => void;
+    moveTab: (v: VizView, pos: "left" | "right") => void;
 };
 
 export function buildTabContextMenu(view: VizView, group: TabGroup, handlers: TabHandlers): MenuItem[] {
@@ -33,6 +34,34 @@ export function buildTabContextMenu(view: VizView, group: TabGroup, handlers: Ta
             action: () => handlers.toggleTabLock(view),
             icon: view.locked ? "lock_open" : "lock",
             danger: false
+        },
+        { id: "separator-move", label: "", separator: true },
+        {
+            id: "move-tab",
+            label: "Move Tab",
+            icon: "move_item",
+            children: [
+                {
+                    id: "move-left",
+                    label: "Move Left",
+                    action: () => handlers.moveTab(view, "left"),
+                    icon: {
+                        iconName: "move_selection_left",
+                        fill: true
+                    },
+                    disabled: viewIndex === 0 || isOnlyTab
+                },
+                {
+                    id: "move-right",
+                    label: "Move Right",
+                    action: () => handlers.moveTab(view, "right"),
+                    icon: {
+                        iconName: "move_selection_right",
+                        fill: true
+                    },
+                    disabled: isLastTab || isOnlyTab
+                }
+            ]
         },
         { id: "separator-lock", label: "", separator: true },
         {

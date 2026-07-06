@@ -476,12 +476,12 @@
 <div class="histogram-container" bind:this={histogramEl}>
     <div class="controls">
         <InputSelect
-            id="channel"
+            id="channel-name"
+            class="channel-name"
             bind:value={selectedChannel}
             onchange={() => scheduleRender()}
             labelPosition="side"
             label="Channel"
-            style="font-size: 0.75rem;"
             options={[
                 { value: "all", label: "All (RGB)" },
                 { value: "red", label: "Red" },
@@ -526,6 +526,13 @@
         overflow-y: auto;
         overflow-x: hidden;
         container-type: inline-size;
+
+        :global(.channel-name) {
+            font-size: var(--viz-font-size-xs);
+            padding: var(--viz-spacing-sm);
+            min-height: var(--viz-spacing-std);
+            font-weight: 500;
+        }
 
         canvas {
             display: block;
