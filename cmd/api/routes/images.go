@@ -608,9 +608,13 @@ func ImagesRouter(db *gorm.DB, logger *slog.Logger) *chi.Mux {
 
 		libvipsImg, err := libvips.NewImageFromBuffer(imageFileData, libvips.DefaultLoadOptions())
 		if err != nil {
-			render.Status(req, http.StatusBadRequest)
-			render.JSON(res, req, dto.ErrorResponse{Error: "Invalid image data"})
-			return
+			// Fallback: Try explicit RAW load via dcraw if generic load fails
+			libvipsImg, err = libvips.NewDcrawloadBuffer(imageFileData, &libvips.DcrawloadBufferOptions{})
+			if err != nil {
+				render.Status(req, http.StatusBadRequest)
+				render.JSON(res, req, dto.ErrorResponse{Error: "Invalid image data"})
+				return
+			}
 		}
 		defer libvipsImg.Close()
 
@@ -748,9 +752,13 @@ func ImagesRouter(db *gorm.DB, logger *slog.Logger) *chi.Mux {
 		fileName, _ := strings.CutPrefix(urlParsed.Path, "/")
 		libvipsImg, err := libvips.NewImageFromBuffer(fileBytes, libvips.DefaultLoadOptions())
 		if err != nil {
-			render.Status(req, http.StatusBadRequest)
-			render.JSON(res, req, dto.ErrorResponse{Error: "Invalid request body"})
-			return
+			// Fallback: Try explicit RAW load via dcraw if generic load fails
+			libvipsImg, err = libvips.NewDcrawloadBuffer(fileBytes, &libvips.DcrawloadBufferOptions{})
+			if err != nil {
+				render.Status(req, http.StatusBadRequest)
+				render.JSON(res, req, dto.ErrorResponse{Error: "Invalid request body"})
+				return
+			}
 		}
 		defer libvipsImg.Close()
 		imageEntity, err := createNewImageEntity(logger, fileName, libvipsImg, fileBytes)

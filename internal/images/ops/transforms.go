@@ -62,6 +62,12 @@ func ParseTransformParams(pathStr string) (*transform.TransformParams, error) {
 		}
 	}
 
+	if bitdepthParam := q.Get("bitdepth"); bitdepthParam != "" {
+		if bd, err := strconv.Atoi(bitdepthParam); err == nil {
+			params.BitDepth = bd
+		}
+	}
+
 	return params, nil
 }
 
@@ -190,11 +196,35 @@ func GenerateTransform(params *transform.TransformParams, imgEnt entities.ImageA
 	case "webp":
 		imageData, err = libvipsImg.WebpsaveBuffer(&libvips.WebpsaveBufferOptions{Q: int(params.Quality)})
 	case "png":
-		imageData, err = libvipsImg.PngsaveBuffer(&libvips.PngsaveBufferOptions{Filter: libvips.PngFilterNone, Interlace: false, Palette: false, Compression: int(params.Quality)})
+		pngOpts := &libvips.PngsaveBufferOptions{
+			Filter:      libvips.PngFilterNone,
+			Interlace:   false,
+			Palette:     false,
+			Compression: int(params.Quality),
+		}
+
+		if params.BitDepth > 0 {
+			pngOpts.Bitdepth = params.BitDepth
+		}
+
+		imageData, err = libvipsImg.PngsaveBuffer(pngOpts)
 	case "jpg", "jpeg":
 		imageData, err = libvipsImg.JpegsaveBuffer(&libvips.JpegsaveBufferOptions{Q: int(params.Quality), Interlace: true})
 	case "avif", "heif":
-		imageData, err = libvipsImg.HeifsaveBuffer(&libvips.HeifsaveBufferOptions{Q: int(params.Quality), Bitdepth: 8, Effort: 5, Lossless: false})
+		heifBitDepth := 8
+		if params.BitDepth > 0 {
+			heifBitDepth = params.BitDepth
+		}
+
+		imageData, err = libvipsImg.HeifsaveBuffer(&libvips.HeifsaveBufferOptions{Q: int(params.Quality), Bitdepth: heifBitDepth, Effort: 5, Lossless: false})
+	case "tiff":
+		tiffOpts := libvips.DefaultTiffsaveBufferOptions()
+		tiffOpts.Q = int(params.Quality)
+		if params.BitDepth > 0 {
+			tiffOpts.Bitdepth = params.BitDepth
+		}
+
+		imageData, err = libvipsImg.TiffsaveBuffer(tiffOpts)
 	default:
 		imageData, err = libvipsImg.RawsaveBuffer(&libvips.RawsaveBufferOptions{Keep: libvips.KeepAll})
 	}
