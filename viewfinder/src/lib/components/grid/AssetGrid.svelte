@@ -125,8 +125,8 @@
         } else if (Array.isArray(columns) && columns.length > 0) {
             return columns;
         } else {
-            // Filter inferred keys by persisted selection
-            return tableKeys.filter((key) => tableColumnSettings.value.includes(key));
+            // Filter and sort by the order of tableColumnSettings.value
+            return tableColumnSettings.value.filter((key) => tableKeys.includes(key));
         }
     });
 
@@ -163,7 +163,7 @@
 
         const dt = tryParseDate(v);
         if (dt) {
-            return dt.toLocaleString(DateTime.DATETIME_MED);
+            return dt.setZone("local").toLocaleString(DateTime.DATETIME_FULL);
         }
 
         if (v === null || v === undefined) {
@@ -568,7 +568,9 @@
         role="button"
         tabindex={isDisabled ? -1 : 0}
         onclick={(e) => {
-            if (isDisabled) return;
+            if (isDisabled) {
+                return;
+            }
             e.preventDefault();
             handleImageCardSelect(assetData, e);
         }}
@@ -614,7 +616,9 @@
         role="button"
         tabindex={isDisabled ? -1 : 0}
         onclick={(e) => {
-            if (isDisabled) return;
+            if (isDisabled) {
+                return;
+            }
             handleImageCardSelect(assetData, e);
         }}
         onkeydown={(e) => {
@@ -628,11 +632,23 @@
 
             assetDblClick?.(e, assetData);
         }}
+        oncontextmenu={(e: MouseEvent & { currentTarget: HTMLElement }) => {
+            e.preventDefault();
+            if (isDisabled) {
+                return;
+            }
+            if (!selection.has(assetData) || selection.size <= 1) {
+                selection.select(assetData);
+            }
+            onassetcontext?.({
+                asset: assetData,
+                anchor: { x: e.clientX, y: e.clientY }
+            });
+        }}
     >
         <td class="asset-snippet-cell">
             <div class="asset-snippet-inner" title={formatValueForKey(asset, "name")}>
                 {#if getNestedValue(asset, table?.thumbnail_key) || asset.image_paths}
-                    <!-- I hate this -->
                     <img
                         class="asset-table-thumb"
                         src={getFullImagePath(
@@ -646,11 +662,9 @@
                         crossorigin="use-credentials"
                     />
                 {:else}
-                    <!-- shitty fallback it works -->
-                    <!-- TODO: need this to be better -->
-                    <span class="asset-preview-fallback">
-                        {asset.name ?? asset.image_metadata?.file_name ?? asset.uid}
-                    </span>
+                    <div class="asset-table-thumb-fallback">
+                        <MaterialIcon iconName="image" />
+                    </div>
                 {/if}
                 <div class="asset-snippet-meta">
                     <div class="asset-snippet-name">
@@ -666,6 +680,7 @@
         {#each visibleKeys as key}
             <td>{formatValueForKey(asset, key)}</td>
         {/each}
+        <td class="actions-cell"></td>
     </tr>
 {/snippet}
 
@@ -687,7 +702,9 @@
                 }}
             >
                 <tr>
-                    <th>Preview</th>
+                    <th class="preview-header">
+                        Preview
+                    </th>
                     {#each visibleKeys as key}
                         <th>
                             <button
@@ -699,13 +716,24 @@
                                     }
                                 }}
                             >
-                                <MaterialIcon
-                                    iconName={`arrow_${sort.by === key && sort.order === "ASC" ? "upward" : "downward"}`}
-                                />
-                                {snakeToTitle(key)}
+                                <span>{snakeToTitle(key)}</span>
+                                <span class="sort-icon" class:active={sort.by === key}>
+                                    <MaterialIcon
+                                        iconName={sort.by === key && sort.order === "ASC" ? "arrow_upward" : "arrow_downward"}
+                                    />
+                                </span>
                             </button>
                         </th>
                     {/each}
+                    <th class="settings-header">
+                        <button
+                            class="column-selector-btn"
+                            onclick={openColumnSelector}
+                            title="Select columns"
+                        >
+                            <MaterialIcon iconName="settings" />
+                        </button>
+                    </th>
                 </tr>
             </thead>
             <tbody>
@@ -792,16 +820,17 @@
 
     .viz-asset-table-container {
         width: 100%;
-        margin: 2em 0em;
+        margin: var(--viz-spacing-md) 0;
         background: transparent;
         box-sizing: border-box;
-        overflow-x: hidden;
+        overflow-x: auto;
 
         table {
             width: 100%;
-            table-layout: fixed;
-            border-collapse: collapse;
-            font-size: 0.95rem;
+            table-layout: auto;
+            border-collapse: separate;
+            border-spacing: 0;
+            font-size: var(--viz-font-size-sm);
             color: var(--viz-text-color);
             display: table;
         }
@@ -822,45 +851,103 @@
 
         thead th {
             position: sticky;
-            /* Offset sticky headers by the toolbar height so headers sit below any sticky toolbar */
             top: 0px;
             z-index: 2;
             color: var(--viz-text-color);
-            background-color: var(--viz-bg-color);
+            background-color: var(--viz-90);
             text-align: left;
             font-weight: 600;
-            padding: 0.6rem 0.75rem;
+            padding: var(--viz-spacing-sm) var(--viz-spacing-md);
             vertical-align: middle;
-            border-bottom: 1px solid var(--viz-90);
+            border-bottom: 2px solid var(--viz-60);
+
+            &.settings-header {
+                width: 3.5rem;
+                min-width: 3.5rem;
+                text-align: right;
+                padding-right: var(--viz-spacing-md);
+
+                .column-selector-btn {
+                    background: transparent;
+                    border: none;
+                    color: var(--viz-40);
+                    cursor: pointer;
+                    padding: var(--viz-spacing-xxs);
+                    border-radius: var(--viz-border-radius-pill);
+                    display: inline-flex;
+                    align-items: center;
+                    justify-content: center;
+                    transition: background-color 0.2s, color 0.2s;
+
+                    &:hover {
+                        background-color: var(--viz-80);
+                        color: var(--viz-text-color);
+                    }
+
+                    :global(.material-symbols-outlined) {
+                        font-size: 1.125rem;
+                    }
+                }
+            }
 
             button {
                 display: inline-flex;
                 align-items: center;
-                gap: 0.5rem;
+                gap: var(--viz-spacing-xs);
                 background: transparent;
                 border: none;
                 color: inherit;
                 cursor: pointer;
                 font: inherit;
-                padding: 0;
+                padding: var(--viz-spacing-xs) var(--viz-spacing-sm);
+                border-radius: var(--viz-border-radius-pill);
+                transition: background-color 0.2s, color 0.2s;
+
+                &:hover {
+                    background-color: var(--viz-80);
+                    color: var(--viz-text-color);
+                }
+
+                .sort-icon {
+                    display: inline-flex;
+                    align-items: center;
+                    font-size: var(--viz-font-size-xs);
+                    opacity: 0;
+                    transition: opacity 0.2s;
+
+                    &.active {
+                        opacity: 1;
+                        color: var(--viz-primary);
+                    }
+                }
+
+                &:hover .sort-icon {
+                    opacity: 0.5;
+                    &.active {
+                        opacity: 1;
+                    }
+                }
             }
         }
 
         tbody tr {
             transition: background 120ms ease-in-out;
-            background-color: var(--viz-bg-color);
+            background-color: var(--viz-100);
 
             &:nth-child(even) {
-                background-color: color-mix(in srgb, var(--viz-bg-color) 80%, white 15%);
+                background-color: var(--viz-95);
             }
 
             &:hover {
-                background: color-mix(in srgb, var(--viz-bg-color) 70%, white 10%);
+                background-color: var(--viz-80);
             }
 
-            &.selected-card,
-            &:focus-visible {
-                background: color-mix(in srgb, var(--viz-bg-color) 60%, white 12%);
+            &.selected-card {
+                background-color: color-mix(in srgb, var(--viz-100) 85%, var(--viz-primary) 15%);
+                
+                td {
+                    border-bottom-color: color-mix(in srgb, var(--viz-60) 50%, var(--viz-primary) 50%);
+                }
             }
 
             /* Table row selection accent: show a left indicator inside the preview cell */
@@ -874,58 +961,79 @@
                 content: "";
                 position: absolute;
                 left: 4px;
-                top: 8px;
-                bottom: 8px;
-                width: 2px;
+                top: var(--viz-spacing-sm);
+                bottom: var(--viz-spacing-sm);
+                width: 3px;
+                border-radius: var(--viz-border-radius-pill);
                 background: var(--viz-primary);
             }
 
-            &.selected-card {
-                background-color: color-mix(in srgb, var(--viz-bg-color) 100%, var(--viz-primary) 20%);
-            }
-
             td {
-                padding: 0.6rem 0.75rem;
+                padding: var(--viz-spacing-sm) var(--viz-spacing-md);
                 vertical-align: middle;
-                border-bottom: 1px solid var(--viz-100);
+                border-bottom: 1px solid var(--viz-60);
                 white-space: nowrap;
                 overflow: hidden;
                 text-overflow: ellipsis;
+            }
+
+            td.actions-cell {
+                width: 3.5rem;
+                min-width: 3.5rem;
+                padding: 0;
             }
         }
     }
 
     // Preview column: thumbnail + meta stacked
     .asset-snippet-cell {
-        width: 220px;
-        max-width: 260px;
-        min-width: 160px;
-        padding: 0.5rem;
+        min-width: 220px;
+        padding: var(--viz-spacing-xs) var(--viz-spacing-sm);
         vertical-align: middle;
         display: flex;
         align-items: center;
-        gap: 0.75rem;
+        gap: var(--viz-spacing-md);
 
         .asset-snippet-inner {
             display: flex;
             align-items: center;
-            gap: 0.75rem;
+            gap: var(--viz-spacing-md);
+            overflow: hidden;
+            width: 100%;
         }
 
         .asset-table-thumb,
         img {
-            width: 6em;
-            height: 4em;
-            object-fit: contain;
-            border-radius: 0.4em;
+            width: 5.5em;
+            height: 3.6em;
+            object-fit: cover;
+            border-radius: var(--viz-border-radius-md);
             flex-shrink: 0;
-            background: var(--viz-80);
+            background: var(--viz-90);
+            border: var(--viz-border-thin);
+        }
+
+        .asset-table-thumb-fallback {
+            width: 5.5em;
+            height: 3.6em;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            background-color: var(--viz-90);
+            border-radius: var(--viz-border-radius-md);
+            color: var(--viz-40);
+            border: var(--viz-border-thin);
+            flex-shrink: 0;
+
+            :global(.material-symbols-outlined) {
+                font-size: 1.25rem;
+            }
         }
 
         .asset-snippet-meta {
             display: flex;
             flex-direction: column;
-            gap: 0.25rem;
+            gap: var(--viz-spacing-xxs);
             overflow: hidden;
         }
 
@@ -934,11 +1042,11 @@
             white-space: nowrap;
             overflow: hidden;
             text-overflow: ellipsis;
-            max-width: 16rem;
+            max-width: 14rem;
         }
 
         .asset-snippet-sub {
-            font-size: 0.85rem;
+            font-size: var(--viz-font-size-xs);
             color: var(--viz-40);
         }
     }
@@ -946,13 +1054,5 @@
     // Values columns should wrap gracefully on small widths
     .viz-asset-table-container tbody td:not(.asset-snippet-cell) {
         max-width: 18ch;
-    }
-
-    // Responsive adjustments
-    @media (max-width: 800px) {
-        .asset-snippet-cell {
-            width: 160px;
-            min-width: 120px;
-        }
     }
 </style>

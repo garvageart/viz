@@ -285,6 +285,28 @@ export class PhotoGridVirtualizer {
         return Math.max(0, low);
     }
 
+    private findGroup(label: string): ConsolidatedGroup | undefined {
+        const groups = this.previousGroups;
+
+        let low = 0;
+        let high = groups.length - 1;
+
+        while (low <= high) {
+            const mid = Math.floor((high + low) / 2);
+            if (groups[mid].label === label) {
+                return groups[mid];
+            }
+            if (groups[mid].label < label) {
+                low = mid + 1;
+            } else {
+                high = mid - 1;
+            }
+        }
+
+        // Not found
+        return undefined;
+    }
+
     private computeGroup(group: ConsolidatedGroup, width: number): GroupCacheEntry {
         const rows: CachedRow[] = [];
         let cursorY = 0;

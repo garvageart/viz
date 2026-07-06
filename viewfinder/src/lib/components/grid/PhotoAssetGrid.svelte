@@ -1244,7 +1244,10 @@
                 <div class="multi-select-ring" transition:fade={{ duration: 120 }}></div>
             {/if}
         {:else}
-            <span class="asset-preview-fallback">{asset.name ?? asset.uid}</span>
+            <div class="tile-image-fallback">
+                <MaterialIcon iconName="image" size="2rem" />
+                <span class="fallback-filename">{asset.name ?? asset.image_metadata?.file_name ?? asset.uid}</span>
+            </div>
         {/if}
 
         <div class="photo-overlay">
@@ -1652,15 +1655,36 @@
         color: rgba(255, 255, 255, 0.85);
     }
 
-    .asset-preview-fallback {
+    .tile-image-fallback {
+        position: absolute;
+        inset: 0;
         display: flex;
+        flex-direction: column;
         align-items: center;
         justify-content: center;
-        height: 100%;
-        padding: 1rem;
+        background-color: var(--viz-90);
+        color: var(--viz-40);
+        border: var(--viz-border-thin);
+        border-radius: var(--viz-border-radius-md);
+        padding: var(--viz-spacing-sm);
+        gap: var(--viz-spacing-xs);
+        box-sizing: border-box;
         text-align: center;
-        color: var(--viz-60);
-        font-size: 0.9rem;
+        overflow: hidden;
+
+        :global(.material-symbols-outlined) {
+            opacity: 0.6;
+        }
+
+        .fallback-filename {
+            font-size: var(--viz-font-size-xs);
+            color: var(--viz-30);
+            max-width: 90%;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            font-weight: 500;
+        }
     }
 
     .inline-date-tile {
