@@ -4,28 +4,12 @@
     background-color: var(--viz-100);
     color: var(--viz-text-color);
     border: 1px solid var(--viz-80);
-    border-radius: 0.5rem;
+    border-radius: var(--viz-border-radius-sm);
     font-family: var(--viz-display-font);
-    font-size: var(--viz-font-size-sm);
+    font-size: var(--viz-font-size-xs);
     font-weight: 500;
 
     .tippy-content {
-        padding: var(--viz-spacing-sm);
+        padding: var(--viz-spacing-xs);
     }
-}
-
-.tippy-box[data-theme~="viz"][data-placement^="bottom"] > .tippy-arrow::before {
-    border-bottom-color: var(--viz-100);
-}
-
-.tippy-box[data-theme~="viz"][data-placement^="top"] > .tippy-arrow::before {
-    border-top-color: var(--viz-100);
-}
-
-.tippy-box[data-theme~="viz"][data-placement^="left"] > .tippy-arrow::before {
-    border-left-color: var(--viz-100);
-}
-
-.tippy-box[data-theme~="viz"][data-placement^="right"] > .tippy-arrow::before {
-    border-right-color: var(--viz-100);
 }

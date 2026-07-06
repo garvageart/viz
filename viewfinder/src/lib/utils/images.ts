@@ -205,7 +205,8 @@ export function formatSeconds(totalSeconds?: number): string | null {
         .trim();
 }
 
-export type ExportFormats = "webp" | "png" | "jpg" | "jpeg" | "avif" | "heif";
+export type ExportFormats = "webp" | "png" | "jpg" | "jpeg" | "avif" | "heif" | "tiff";
+export type BitDepths = 8 | 10 | 12 | 16;
 export type ResizeMode = "none" | "width" | "height" | "long-edge" | "short-edge" | "dimensions";
 export type ColorSpace =
     | "sRGB"
@@ -232,6 +233,7 @@ export interface TransformParams {
     colorSpace?: ColorSpace;
     metadata?: MetadataPolicy;
     removeLocation?: boolean;
+    bitDepth?: number;
 }
 
 export function parseTransformParams(pathStr: string): TransformParams {
@@ -312,6 +314,14 @@ export function parseTransformParams(pathStr: string): TransformParams {
         }
     }
 
+    const bitdepthParam = q.get("bitdepth");
+    if (bitdepthParam) {
+        const bd = parseInt(bitdepthParam, 10);
+        if (!isNaN(bd)) {
+            params.bitDepth = bd;
+        }
+    }
+
     return params;
 }
 
@@ -326,8 +336,9 @@ export function createTransformEtag(imgEnt: ImageAsset, params: TransformParams)
     const rotate = params.rotate ?? 0;
     const flip = params.flip ?? "";
     const kernel = params.kernel ?? "";
+    const bitDepth = params.bitDepth ?? 0;
 
-    return `${checksum}-${w}x${h}-${fmt}-${quality}-${rotate}-${flip}-${kernel}`;
+    return `${checksum}-${w}x${h}-${fmt}-${quality}-${rotate}-${flip}-${kernel}-${bitDepth}`;
 }
 
 export async function collectionExportPhotos(uids: string[], data: CollectionDetailResponse) {

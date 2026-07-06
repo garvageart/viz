@@ -65,9 +65,7 @@
 
     $effect(() => {
         themeState.ls.set(themeState.value);
-        if (typeof document !== "undefined") {
-            document.documentElement.setAttribute("data-theme", themeState.resolved);
-        }
+        document.documentElement.setAttribute("data-theme", themeState.resolved);
     });
 
     hotkeys("shift+f", (e) => {

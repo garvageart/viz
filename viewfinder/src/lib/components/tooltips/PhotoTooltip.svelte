@@ -49,7 +49,9 @@
         flex-direction: column;
         gap: 2px;
         text-align: left;
+        font-size: var(--viz-font-size-sm);
         min-width: 15vw;
+        padding: var(--viz-spacing-xs);
     }
 
     .tooltip-row {

@@ -18,6 +18,7 @@
     import { processDownloadQueue, waitForDownloadCompletion } from "$lib/upload/manager.svelte";
     import { downloadToFilesystem } from "$lib/utils/files";
     import {
+        type BitDepths,
         type ColorSpace,
         type DestinationMode,
         type ExportFormats,
@@ -52,6 +53,7 @@
         metadata: MetadataPolicy;
         removeLocation: boolean;
         destinationMode: DestinationMode;
+        bitDepth: BitDepths;
         sections?: {
             destination: boolean;
             naming: boolean;
@@ -104,7 +106,31 @@
         metadata: "all",
         removeLocation: false,
         destinationMode: "zip",
+        bitDepth: 8,
         ...savedExport
+    });
+
+    const formatBitDepths: Record<string, BitDepths[]> = {
+        avif: [8, 10, 12],
+        png: [8, 16],
+        tiff: [8, 16],
+        jpg: [8],
+        webp: [8]
+    };
+
+    const bitDepthOptions = $derived.by(() => {
+        const depths = formatBitDepths[settings.format] || [];
+        if (depths.length <= 1) {
+            return [];
+        }
+        return depths.map((d) => ({ value: `${d}`, label: `${d}-bit` }));
+    });
+
+    $effect(() => {
+        const allowed = formatBitDepths[settings.format] || [8];
+        if (!allowed.includes(settings.bitDepth)) {
+            settings.bitDepth = allowed[0];
+        }
     });
 
     let renameSettings = $state<SavedRenameSettings>({
@@ -211,7 +237,8 @@
                     resizeMode: settings.resizeMode,
                     colorSpace: settings.colorSpace,
                     metadata: settings.includeMetadata ? settings.metadata : "none",
-                    removeLocation: settings.removeLocation
+                    removeLocation: settings.removeLocation,
+                    bitDepth: settings.bitDepth ? settings.bitDepth : undefined
                 }),
                 originalData
             });
@@ -397,7 +424,7 @@
         {#snippet settingsSnippet()}
             <div class="control-row">
                 <InputSelect label="Format" options={Array.from(formatOptions)} bind:value={settings.format} />
-                {#if settings.format === "jpg" || settings.format === "webp" || settings.format === "avif"}
+                {#if ["jpg", "webp", "avif"].includes(settings.format)}
                     <div class="quality-slider">
                         <Slider
                             id="quality-range"
@@ -410,7 +437,16 @@
                     </div>
                 {/if}
             </div>
-            <InputSelect label="Color Space" options={Array.from(colorSpaceOptions)} bind:value={settings.colorSpace} />
+            <div class="control-row">
+                <InputSelect
+                    label="Color Space"
+                    options={Array.from(colorSpaceOptions)}
+                    bind:value={settings.colorSpace}
+                />
+                {#if ["png", "tiff", "avif"].includes(settings.format)}
+                    <InputSelect label="Bit Depth" options={bitDepthOptions} bind:value={settings.bitDepth} />
+                {/if}
+            </div>
         {/snippet}
 
         <!-- METADATA -->

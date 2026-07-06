@@ -1,10 +1,10 @@
 <script lang="ts">
-    import { getContext } from "svelte";
+    import { ContextKeys } from "$lib/context-keys";
     import { generateKeyId } from "$lib/utils/layout";
     import { Select } from "bits-ui";
+    import { getContext } from "svelte";
     import type { SvelteHTMLElements } from "svelte/elements";
     import MaterialIcon from "./MaterialIcon.svelte";
-    import { ContextKeys } from "$lib/context-keys";
 
     interface Props {
         label?: string;
@@ -238,7 +238,7 @@
     :global(.select-viewport) {
         max-height: 15rem; // Scroll boundary
         overflow-y: auto;
-        width: 100%;
+        // width: 100%;
         box-sizing: border-box;
         display: flex;
         flex-direction: column;

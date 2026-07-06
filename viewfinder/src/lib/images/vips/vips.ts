@@ -380,7 +380,12 @@ export async function generateTransform(input: TransformInput): Promise<Transfor
     const removeLocation = !!params.removeLocation;
     const stripAll = applyMetadataPolicy(img, actualPolicy, removeLocation);
 
-    let outBufRaw = img.writeToBuffer(outExt, { Q: quality, strip: stripAll });
+    const writeOptions: Record<string, any> = { Q: quality, strip: stripAll };
+    if (params.bitDepth && params.bitDepth > 0) {
+        writeOptions.bitdepth = params.bitDepth;
+    }
+
+    let outBufRaw = img.writeToBuffer(outExt, writeOptions);
     if (outBufRaw instanceof Promise) {
         outBufRaw = await outBufRaw;
     }

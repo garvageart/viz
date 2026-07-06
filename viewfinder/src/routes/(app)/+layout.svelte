@@ -2,14 +2,13 @@
     import Header from "$lib/components/ui/Header.svelte";
     import UploadPanel from "$lib/components/ui/panels/UploadPanel.svelte";
     import DownloadPanel from "$lib/components/ui/panels/DownloadPanel.svelte";
-    import { download, sortState, upload } from "$lib/states/index.svelte";
+    import { debugMode, download, sortState, upload } from "$lib/states/index.svelte";
     import "$lib/components/panels/viz-panel.scss";
     import { registerReady } from "$lib/stores/appReady";
     import { loadRuntimeConfig } from "$lib/runtime-config";
     import { onMount, untrack } from "svelte";
     import { page } from "$app/state";
     import { invalidateViz } from "$lib/views/views.svelte";
-    import { dev } from "$app/environment";
 
     let { children } = $props();
 
@@ -18,10 +17,11 @@
         const { by, order } = sortState.value;
         sortState.save();
 
-        if (dev) {
+        if (debugMode) {
             console.log("Sort state changed:", by, order);
         }
 
+        // I forgot why the fuck this was put here
         untrack(() => {
             invalidateViz();
         });
