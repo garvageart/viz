@@ -391,9 +391,17 @@
             style: "justify-content: space-between; gap: 0.5rem;"
         }}
     >
-        <div id="viz-info-container">
-            <div id="coll-metadata" class:std-route={!isLayoutPage()}>
-                <span id="coll-name">Collections</span>
+        <div id="viz-info-container" class:std-route={!isLayoutPage()}>
+            <div id="coll-header-row">
+                <div id="coll-name-container">
+                    <span id="coll-name">Collections</span>
+                </div>
+                <div id="coll-meta-chips">
+                    <div class="meta-chip">
+                        <MaterialIcon iconName="folder" size="1rem" />
+                        <span>{displayData.length} {displayData.length === 1 ? 'collection' : 'collections'}</span>
+                    </div>
+                </div>
             </div>
         </div>
     </AssetsShell>
@@ -416,28 +424,76 @@
         max-width: 100%;
         display: flex;
         flex-direction: column;
+        margin: 1.5em 0 1em 0;
+        padding: 0 1rem;
+        box-sizing: border-box;
+
+        &.std-route {
+            padding: 0 2rem;
+        }
+    }
+
+    #coll-header-row {
+        display: flex;
+        flex-direction: row;
         justify-content: space-between;
-        margin: 1em 0em;
+        align-items: center;
+        flex-wrap: wrap;
+        gap: var(--viz-spacing-md);
+        width: 100%;
+
+        @media (max-width: 768px) {
+            flex-direction: column;
+            align-items: flex-start;
+        }
+    }
+
+    #coll-name-container {
+        display: flex;
+        align-items: center;
+        min-height: 2.5rem;
+        flex: 1;
+        min-width: 200px;
     }
 
     #coll-name {
+        font-size: var(--viz-font-size-3xl);
+        font-family: var(--viz-display-font);
+        font-weight: 700;
         color: var(--viz-text-color);
-        font-weight: bold;
-        font-size: 1.5rem;
+        line-height: 1.2;
+        word-wrap: break-word;
+        white-space: normal;
     }
 
-    #coll-metadata {
-        padding: 0.5rem 1rem;
+    #coll-meta-chips {
         display: flex;
-        flex-direction: column;
-        overflow: hidden;
-        color: var(--viz-60);
-        font-family: var(--viz-mono-font);
-        gap: 1rem;
-        max-width: 40rem;
+        flex-direction: row;
+        align-items: center;
+        gap: var(--viz-spacing-sm);
+        flex-wrap: wrap;
 
-        &.std-route {
-            padding: 0.5rem 2rem;
+        @media (max-width: 768px) {
+            margin-top: var(--viz-spacing-xs);
+        }
+    }
+
+    .meta-chip {
+        display: flex;
+        align-items: center;
+        gap: var(--viz-spacing-xs);
+        background-color: var(--viz-90);
+        border: var(--viz-border-thin);
+        border-color: var(--viz-80);
+        border-radius: var(--viz-border-radius-pill);
+        padding: 0.35rem 0.75rem;
+        font-family: var(--viz-mono-font);
+        font-size: var(--viz-font-size-xs);
+        color: var(--viz-40);
+        box-shadow: 0 1px 2px rgba(0, 0, 0, 0.05);
+
+        span {
+            font-weight: 500;
         }
     }
 

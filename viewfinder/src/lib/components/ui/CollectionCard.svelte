@@ -85,14 +85,14 @@
 
     let { collection, isSelected = false, ...props }: Props & SvelteHTMLElements["div"] = $props();
 
-    let relativeUpdated = $derived(collection.updated_at ? DateTime.fromISO(collection.updated_at).toRelative() : "");
+    let relativeUpdated = $derived(
+        collection.updated_at
+            ? DateTime.fromISO(collection.updated_at).setZone("local").toRelative()
+            : ""
+    );
     let createdDate = $derived(
         collection.created_at
-            ? new Date(collection.created_at).toLocaleDateString(undefined, {
-                  year: "numeric",
-                  month: "short",
-                  day: "numeric"
-              })
+            ? DateTime.fromISO(collection.created_at).setZone("local").toLocaleString(DateTime.DATE_MED)
             : ""
     );
 
@@ -223,8 +223,10 @@
         {/if}
 
         {#if collection.private}
-            <div class="private-badge" title="Private Collection">
-                <MaterialIcon iconName="lock" style="font-size: var(--viz-font-size-sm);" />
+            <div class="card-overlays">
+                <div class="overlay-badge private-badge" title="Private Collection">
+                    <MaterialIcon iconName="lock" size="0.8rem" />
+                </div>
             </div>
         {/if}
     </div>
@@ -248,28 +250,27 @@
         min-width: 100%;
         max-width: 100%;
         height: auto;
-        background-color: var(--viz-90);
-        outline: 1px solid var(--viz-70);
+        background-color: var(--viz-95);
+        border: var(--viz-border-thin);
         border-radius: var(--viz-border-radius-md);
         position: relative;
         overflow: hidden;
         cursor: pointer;
         display: flex;
         flex-direction: column;
-        transition:
-            background-color 0.2s cubic-bezier(0.4, 0, 0.2, 1),
-            border-color 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+        transition: border-color 0.15s ease-in-out, background-color 0.15s ease-in-out, box-shadow 0.15s ease-in-out;
+        box-sizing: border-box;
 
         &:hover {
             background-color: var(--viz-90);
-            border-color: var(--viz-primary);
+            border-color: var(--viz-60);
         }
     }
 
     .coll-card.selected {
-        outline: 2px solid var(--viz-primary);
+        border-color: var(--viz-primary);
+        box-shadow: 0 0 0 1px var(--viz-primary);
         pointer-events: none;
-        // z-index: 2;
     }
 
     .coll-card.drop-target {
@@ -321,22 +322,34 @@
         }
     }
 
-    .private-badge {
+    .card-overlays {
         position: absolute;
         top: var(--viz-spacing-sm);
         left: var(--viz-spacing-sm);
-        background-color: rgba(0, 0, 0, 0.75);
-        backdrop-filter: blur(4px);
-        color: var(--viz-error-color);
-        border-radius: var(--viz-border-radius-pill);
-        width: 1.6rem;
-        height: 1.6rem;
+        right: var(--viz-spacing-sm);
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        pointer-events: none;
+        z-index: 2;
+    }
+
+    .overlay-badge {
         display: flex;
         align-items: center;
         justify-content: center;
-        z-index: 1;
-        pointer-events: none;
-        border: 1px solid rgba(255, 255, 255, 0.1);
+        border-radius: var(--viz-border-radius-pill);
+        backdrop-filter: blur(4px);
+        box-shadow: 0 2px 4px rgba(0, 0, 0, 0.15);
+        border: 1px solid rgba(255, 255, 255, 0.12);
+        box-sizing: border-box;
+
+        &.private-badge {
+            background-color: rgba(0, 0, 0, 0.55);
+            color: var(--viz-error-color);
+            width: 1.5rem;
+            height: 1.5rem;
+        }
     }
 
     .metadata {
@@ -344,6 +357,7 @@
         flex-direction: column;
         padding: var(--viz-spacing-md);
         gap: var(--viz-spacing-xs);
+        box-sizing: border-box;
     }
 
     .metadata-header {
@@ -355,12 +369,12 @@
         .items-badge {
             font-family: var(--viz-mono-font);
             font-size: var(--viz-font-size-xs);
-            background-color: var(--viz-80);
+            background-color: var(--viz-90);
             color: var(--viz-40);
-            padding: 0.1rem 0.4rem;
+            padding: 0.15rem 0.45rem;
             border-radius: var(--viz-border-radius-sm);
             border: var(--viz-border-thin);
-            border-color: var(--viz-75);
+            border-color: var(--viz-80);
             white-space: nowrap;
             font-weight: 500;
             line-height: 1;

@@ -1001,84 +1001,76 @@
             style: "justify-content: space-between; gap: 0.5rem;"
         }}
     >
-        <div id="viz-info-container">
-            <div id="coll-metadata" class:std-route={!isLayoutPage()} class:name-input={showCollNameInput}>
-                <span id="coll-name" bind:this={collNameContainer}>
+        <div id="viz-info-container" class:std-route={!isLayoutPage()}>
+            <div id="coll-header-row">
+                <div id="coll-name-container" bind:this={collNameContainer}>
                     {#if showCollNameInput}
                         <InputText
                             autocorrect="off"
                             spellcheck="false"
                             id="coll-name-input"
-                            style="padding: 0% 0.5rem;"
+                            style="font-size: var(--viz-font-size-3xl); font-weight: bold; padding: 0.25rem 0.5rem;"
                             title={name}
                             bind:value={name}
+                            focused={true}
+                            onkeydown={async (e) => {
+                                if (e.key === "Enter") {
+                                    if (name.trim() !== "" && name.trim() !== data.name.trim()) {
+                                        updateCollectionDetails({ name });
+                                    }
+                                    showCollNameInput = false;
+                                } else if (e.key === "Escape") {
+                                    name = data.name;
+                                    showCollNameInput = false;
+                                }
+                            }}
                         />
                     {:else}
-                        <span
-                            id="coll-name-display"
+                        <!-- svelte-ignore a11y_click_events_have_key_events -->
+                        <div
+                            id="coll-name-display-wrapper"
                             role="button"
                             tabindex="0"
-                            title={"Click to edit name"}
                             onclick={(e) => {
                                 e.stopPropagation();
                                 showCollNameInput = true;
                             }}
-                            onkeydown={(e) => {
-                                if (e.key === "Enter" || e.key === " ") {
-                                    e.stopPropagation();
-                                    showCollNameInput = true;
-                                }
-                            }}
                         >
-                            {name}
+                            <span id="coll-name-display" title="Click to edit name">
+                                {name}
+                            </span>
+                            <MaterialIcon iconName="edit" class="title-edit-icon" size="1.2rem" />
+                        </div>
+                    {/if}
+                </div>
+
+                <div id="coll-meta-chips">
+                    <div class="meta-chip">
+                        <MaterialIcon iconName="image" size="1rem" />
+                        <span>
+                            {#if searchValue.trim()}
+                                {searchData.length} of {collectionState.images.length}
+                            {:else}
+                                {collectionState.totalCount} {collectionState.totalCount === 1 ? 'image' : 'images'}
+                            {/if}
                         </span>
-                    {/if}
-                    {#if showCollNameInput}
-                        {#if name.trim() === ""}
-                            <MaterialIcon iconName="warning" style="font-size: 0.9rem;" title="Name cannot be empty" />
+                    </div>
+
+                    <div class="meta-chip" title="Updated at: {DateTime.fromISO(data.updated_at).setZone('local').toLocaleString(DateTime.DATETIME_SHORT)}">
+                        <MaterialIcon iconName="calendar_today" size="1rem" />
+                        <span>Created {DateTime.fromISO(data.created_at).setZone('local').toLocaleString(DateTime.DATE_SHORT)}</span>
+                    </div>
+
+                    <div class="meta-chip privacy-chip" class:private={data.private}>
+                        {#if data.private}
+                            <MaterialIcon iconName="lock" size="1rem" />
+                            <span>Private</span>
                         {:else}
-                            <div
-                                id="confirm-icons"
-                                style:visibility={name.trim() === data.name.trim() ? "hidden" : "visible"}
-                            >
-                                <IconButton
-                                    title="Cancel"
-                                    class="name-confirm-btn"
-                                    onclick={() => {
-                                        name = data.name;
-                                        showCollNameInput = false;
-                                    }}
-                                    iconName="close"
-                                />
-                                <IconButton
-                                    title="Confirm"
-                                    class="name-confirm-btn"
-                                    onclick={async () => {
-                                        updateCollectionDetails({
-                                            name: name
-                                        });
-                                        await tick();
-                                        showCollNameInput = false;
-                                    }}
-                                    iconName="check"
-                                />
-                            </div>
+                            <MaterialIcon iconName="visibility" size="1rem" />
+                            <span>Public</span>
                         {/if}
-                    {/if}
-                </span>
-                <span
-                    id="coll-details"
-                    title="Updated at: {DateTime.fromJSDate(new Date(data.updated_at)).toFormat('dd.MM.yyyy HH:mm')}"
-                    >{DateTime.fromJSDate(new Date(data.created_at)).toFormat("dd.MM.yyyy")}
-                    •
-                    {#if searchValue.trim()}
-                        {searchData.length}
-                        {searchData.length === 1 ? "image" : "images"} of {collectionState.images.length}
-                    {:else}
-                        {collectionState.totalCount}
-                        {collectionState.totalCount === 1 ? "image" : "images"}
-                    {/if}
-                </span>
+                    </div>
+                </div>
             </div>
         </div>
     </AssetsShell>
@@ -1098,57 +1090,111 @@
         max-width: 100%;
         display: flex;
         flex-direction: column;
-        justify-content: space-between;
-        margin: 1em 0em;
+        margin: 1.5em 0 1em 0;
+        padding: 0 1rem;
+        box-sizing: border-box;
+
+        &.std-route {
+            padding: 0 2rem;
+        }
     }
 
-    #coll-name {
-        color: var(--viz-text-color);
-        font-weight: bold;
+    #coll-header-row {
+        display: flex;
+        flex-direction: row;
+        justify-content: space-between;
+        align-items: center;
+        flex-wrap: wrap;
+        gap: var(--viz-spacing-md);
+        width: 100%;
+
+        @media (max-width: 768px) {
+            flex-direction: column;
+            align-items: flex-start;
+        }
+    }
+
+    #coll-name-container {
+        display: flex;
+        align-items: center;
+        min-height: 2.5rem;
+        flex: 1;
+        min-width: 200px;
+
+        :global(.input-container) {
+            width: 100%;
+            max-width: 40rem;
+        }
+    }
+
+    #coll-name-display-wrapper {
+        display: inline-flex;
+        align-items: center;
+        gap: var(--viz-spacing-sm);
+        cursor: pointer;
+        max-width: 100%;
+        outline: none;
+
+        #coll-name-display {
+            font-size: var(--viz-font-size-3xl);
+            font-family: var(--viz-display-font);
+            font-weight: 700;
+            color: var(--viz-text-color);
+            line-height: 1.2;
+            word-wrap: break-word;
+            white-space: normal;
+        }
+
+        :global(.title-edit-icon) {
+            opacity: 0;
+            color: var(--viz-40);
+            transition: opacity 0.15s ease-in-out;
+        }
+
+        &:hover :global(.title-edit-icon) {
+            opacity: 1;
+        }
+    }
+
+    #coll-meta-chips {
         display: flex;
         flex-direction: row;
         align-items: center;
-        gap: 0.5rem;
-        min-height: 2.5rem;
+        gap: var(--viz-spacing-sm);
+        flex-wrap: wrap;
 
-        #coll-name-display {
-            font-size: 1.5rem;
-            line-height: 2.5rem;
-            width: 100%;
-            word-wrap: normal;
-            white-space: nowrap;
-            overflow: hidden;
-            text-overflow: ellipsis;
-            cursor: pointer;
-        }
-
-        :global(.input-container) {
-            flex: 1;
-        }
-
-        #confirm-icons {
-            display: flex;
-            flex-direction: row;
-            flex-shrink: 0;
-        }
-
-        :global(.name-confirm-btn) {
-            font-size: 0.75rem;
+        @media (max-width: 768px) {
+            margin-top: var(--viz-spacing-xs);
         }
     }
 
-    #coll-metadata {
-        padding: 0.5rem 1rem;
+    .meta-chip {
         display: flex;
-        flex-direction: column;
-        overflow: hidden;
-        color: var(--viz-60);
+        align-items: center;
+        gap: var(--viz-spacing-xs);
+        background-color: var(--viz-90);
+        border: var(--viz-border-thin);
+        border-color: var(--viz-80);
+        border-radius: var(--viz-border-radius-pill);
+        padding: 0.35rem 0.75rem;
         font-family: var(--viz-mono-font);
-        gap: 1rem;
-        max-width: 40rem;
+        font-size: var(--viz-font-size-xs);
+        color: var(--viz-40);
+        box-shadow: 0 1px 2px rgba(0, 0, 0, 0.05);
 
-        &.std-route {
-            padding: 0.5rem 2rem;
+        span {
+            font-weight: 500;
+        }
+
+        &.privacy-chip {
+            background-color: var(--viz-90);
+            color: var(--viz-40);
+
+            &.private {
+                background-color: color-mix(in srgb, var(--viz-error-color) 8%, var(--viz-90));
+                border-color: color-mix(in srgb, var(--viz-error-color) 15%, var(--viz-80));
+                color: var(--viz-error-color);
+            }
         }
     }
 

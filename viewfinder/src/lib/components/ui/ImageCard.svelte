@@ -97,6 +97,7 @@
     >
         <div class="image-container">
             <AssetImage
+                class="card-image"
                 {asset}
                 variant={imageVariant}
                 {objectFit}
@@ -111,6 +112,18 @@
                 crossorigin="use-credentials"
                 onload={() => (imageLoaded = true)}
             />
+            {#if asset.favourited || asset.image_metadata?.label}
+                <div class="card-overlays">
+                    {#if asset.image_metadata?.label}
+                        <div class="overlay-badge label-badge" style="background-color: {getImageLabel(asset)}" title="Label Color"></div>
+                    {/if}
+                    {#if asset.favourited}
+                        <div class="overlay-badge favorite-badge" title="Favourited">
+                            <MaterialIcon iconName="favorite" size="0.8rem" fill={true} />
+                        </div>
+                    {/if}
+                </div>
+            {/if}
         </div>
         {#if showMetadata}
             <div class="image-card-meta">
@@ -122,14 +135,6 @@
                         <span class="image-card-date">{imageDate.toLocaleDateString()}</span>
                         <span class="image-card-divider">•</span>
                         <span class="image-card-time">{imageDate.toLocaleTimeString().replace(/:\d{2}$/, "")}</span>
-                    </div>
-                    <div class="image-card-indicators">
-                        {#if asset.image_metadata?.label}
-                            <ImageLabelViewer label={getImageLabel(asset)} enableSelection={false} variant="compact" />
-                        {/if}
-                        {#if asset.favourited}
-                            <MaterialIcon iconName="favorite" size="1rem" fill={true} />
-                        {/if}
                     </div>
                 </div>
             </div>
@@ -224,23 +229,21 @@
 
     .image-card {
         max-height: 25em;
-        background-color: var(--viz-80);
-        padding: 0.8em;
-        border-radius: 0.5em;
+        background-color: var(--viz-95);
+        border: var(--viz-border-thin);
+        border-radius: var(--viz-border-radius-md);
         overflow: hidden;
         display: flex;
         flex-direction: column;
         justify-content: flex-start;
         position: relative;
+        transition: border-color 0.15s ease-in-out, background-color 0.15s ease-in-out, box-shadow 0.15s ease-in-out;
+        box-sizing: border-box;
 
-        &.selected::after {
-            content: "";
-            position: absolute;
-            inset: 0;
-            border: 2px solid var(--viz-primary);
-            border-radius: inherit;
+        &.selected {
+            border-color: var(--viz-primary);
+            box-shadow: 0 0 0 1px var(--viz-primary);
             pointer-events: none;
-            z-index: 1;
         }
 
         &:focus {
@@ -249,29 +252,32 @@
 
         &:hover {
             background-color: var(--viz-90);
+            border-color: var(--viz-60);
         }
     }
 
     .image-card-meta {
-        margin-top: 0.5rem;
+        padding: var(--viz-spacing-md);
         display: flex;
         justify-content: space-between;
         align-items: flex-start;
         flex-direction: column;
-        font-size: 0.9rem;
+        gap: var(--viz-spacing-xs);
+        box-sizing: border-box;
     }
 
     .image-card-name {
-        font-weight: bold;
-        margin-bottom: 0.2em;
+        font-size: var(--viz-font-size-sm);
+        font-weight: 600;
+        color: var(--viz-text-color);
         white-space: nowrap;
         overflow: hidden;
         text-overflow: ellipsis;
         max-width: 100%;
+        margin: 0;
     }
 
     .image-card-details {
-        color: var(--viz-20);
         display: flex;
         align-items: center;
         width: 100%;
@@ -279,27 +285,69 @@
     }
 
     .image-card-divider {
-        color: var(--viz-40);
+        color: var(--viz-30);
     }
 
-    .image-card-time {
-        font-size: 0.9rem;
-    }
-
-    .image-card-indicators {
+    .image-card-date-group {
         display: flex;
         align-items: center;
-        gap: 0.25rem;
-        margin-left: auto;
-        min-height: 1.2em;
+        gap: var(--viz-spacing-xs);
+        font-family: var(--viz-mono-font);
+        font-size: var(--viz-font-size-xs);
+        color: var(--viz-40);
     }
 
     .image-container {
         height: 13em;
-        background-color: var(--viz-80);
+        background-color: var(--viz-90);
         display: flex;
         justify-content: center;
         align-items: center;
         position: relative;
+        overflow: hidden;
+        border-bottom: var(--viz-border-thin);
+
+        :global(.card-image) {
+            width: 100%;
+            height: 100%;
+        }
+    }
+
+    .card-overlays {
+        position: absolute;
+        top: var(--viz-spacing-sm);
+        left: var(--viz-spacing-sm);
+        right: var(--viz-spacing-sm);
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        pointer-events: none;
+        z-index: 2;
+    }
+
+    .overlay-badge {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        border-radius: var(--viz-border-radius-pill);
+        backdrop-filter: blur(4px);
+        box-shadow: 0 2px 4px rgba(0, 0, 0, 0.15);
+        border: 1px solid rgba(255, 255, 255, 0.12);
+        box-sizing: border-box;
+
+        &.favorite-badge {
+            background-color: rgba(0, 0, 0, 0.55);
+            color: var(--viz-error-color);
+            width: 1.5rem;
+            height: 1.5rem;
+            margin-left: auto; /* push heart to right if label is absent */
+        }
+
+        &.label-badge {
+            width: 0.65rem;
+            height: 0.65rem;
+            border-radius: var(--viz-border-radius-pill);
+            box-shadow: 0 1px 3px rgba(0, 0, 0, 0.2);
+        }
     }
 </style>
