@@ -10,21 +10,26 @@ const file = fileURLToPath(new URL("package.json", import.meta.url));
 const pkg = JSON.parse(fs.readFileSync(file, "utf8"));
 // In Docker we can pass VIZ_CONFIG_PATH (e.g., /app/viz.json)
 const configPath = process.env.VIZ_CONFIG_PATH || "../viz.json";
-let config: any;
+const defaultServers = {
+    api: { host: "localhost", port: Number(process.env.API_PORT ?? 7770) },
+    viz: { port: Number(process.env.VITE_VIZ_PORT ?? 7777) }
+};
+
+let config: any = { servers: defaultServers };
 try {
-    config = JSON.parse(fs.readFileSync(configPath, "utf8"));
+    const fileConfig = JSON.parse(fs.readFileSync(configPath, "utf8"));
+    config = {
+        ...fileConfig,
+        servers: {
+            api: { ...defaultServers.api, ...fileConfig.servers?.api },
+            viz: { ...defaultServers.viz, ...fileConfig.servers?.viz }
+        }
+    };
 } catch (err) {
     if (process.env.VIZ_CONFIG_PATH) {
         // Fail fast for unexpected Docker build context issues.
         throw new Error(`VIZ_CONFIG_PATH set to '${process.env.VIZ_CONFIG_PATH}' but file not found: ${err}`);
     }
-
-    config = {
-        servers: {
-            api: { host: "localhost", port: Number(process.env.API_PORT ?? 7770) },
-            viz: { port: Number(process.env.VITE_VIZ_PORT ?? 7777) }
-        }
-    };
 }
 const define = {
     __APP_VERSION__: JSON.stringify(pkg.version)

@@ -111,6 +111,7 @@ func ReadConfig() (viper.Viper, error) {
 	if err != nil {
 		if _, ok := err.(viper.ConfigFileNotFoundError); ok {
 			// Config file not found; ignore error and use defaults
+			// TODO: log this somehow
 			return *v, nil
 		} else {
 			return viper.Viper{}, fmt.Errorf("error reading config file: %w", err)
