@@ -98,7 +98,7 @@
     }
 
     .input-label {
-        font-size: var(--viz-font-size-sm); // UI Typography Token
+        font-size: var(--viz-font-size-lg); // UI Typography Token
         font-weight: 500;
         color: var(--viz-40);
     }
@@ -109,7 +109,7 @@
     }
 
     .input-description {
-        font-size: var(--viz-font-size-xs); // UI Typography Token
+        font-size: var(--viz-font-size-std); // UI Typography Token
         color: var(--viz-60);
         padding-left: var(--viz-spacing-sm); // UI Spacing Token
     }
@@ -125,7 +125,7 @@
         border: none;
         box-shadow: 0 -1px 0 var(--viz-60) inset;
         font-family: var(--viz-display-font);
-        font-size: var(--viz-font-size-sm);
+        font-size: var(--viz-font-size-lg);
         padding: var(--viz-spacing-sm) 2.5rem var(--viz-spacing-sm) var(--viz-spacing-std); // UI Padding Tokens
         margin-bottom: 0;
 

@@ -1,7 +1,13 @@
+<script module lang="ts">
+    export const modalOptions: ModalOptions = {
+        width: "40%"
+    };
+</script>
+
 <script lang="ts">
     import Button from "$lib/components/ui/Button.svelte";
     import type { Snippet } from "svelte";
-    import { modalsManager } from "./manager/ModalManager.svelte";
+    import { modalsManager, type ModalOptions } from "./manager/ModalManager.svelte";
 
     interface Props {
         id: string;
@@ -80,6 +86,7 @@
             display: flex;
             flex-direction: column;
             gap: 0.5rem;
+            font-size: var(--viz-font-size-lg);
         }
 
         .confirm-actions {

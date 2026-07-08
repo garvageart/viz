@@ -45,7 +45,7 @@
 
         .token-code {
             font-family: var(--viz-mono-font);
-            font-size: var(--viz-font-size-xs);
+            font-size: var(--viz-font-size-std);
             font-weight: 600;
             color: var(--viz-text-color);
             background-color: var(--viz-95);
@@ -56,7 +56,7 @@
 
         .token-val {
             font-family: var(--viz-mono-font);
-            font-size: var(--viz-font-size-xs);
+            font-size: var(--viz-font-size-std);
             color: var(--viz-40);
         }
     }

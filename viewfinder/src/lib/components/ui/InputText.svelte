@@ -85,13 +85,13 @@
     }
 
     .input-label {
-        font-size: 0.875rem;
+        font-size: var(--viz-font-size-sm);
         font-weight: 500;
         color: var(--viz-40);
     }
 
     .input-description {
-        font-size: 0.85rem;
+        font-size: var(--viz-font-size-sm);
         color: var(--viz-60);
         padding-left: 0.5rem;
     }
@@ -100,16 +100,16 @@
         box-sizing: border-box;
         width: 100%;
         max-width: 100%;
-        min-height: 2.5rem;
+        min-height: 2rem;
         color: var(--viz-text-color);
         background-color: var(--viz-100);
         outline: none;
         border: none;
         box-shadow: 0 -1px 0 var(--viz-60) inset;
         font-family: var(--viz-display-font);
-        font-size: var(--viz-font-size-sm);
+        font-size: var(--viz-font-size-std);
         padding: 0.5rem 1rem;
-        margin-bottom: 0; /* Changed from 1rem */
+        margin-bottom: 0;
 
         &::placeholder {
             color: var(--viz-40);

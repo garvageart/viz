@@ -304,7 +304,7 @@
 
         h2 {
             margin: 0;
-            font-size: var(--viz-font-size-lg);
+            font-size: var(--viz-font-size-xl);
             font-weight: 600;
             color: var(--viz-text-color);
         }
@@ -315,7 +315,7 @@
         background-color: var(--viz-90);
         border: var(--viz-border-thin);
         border-radius: var(--viz-border-radius-pill);
-        font-size: var(--viz-font-size-xs);
+        font-size: var(--viz-font-size-std);
         font-family: var(--viz-mono-font);
         font-weight: 600;
         color: var(--viz-30);
@@ -355,7 +355,7 @@
         }
 
         .stat-value {
-            font-size: var(--viz-font-size-xl);
+            font-size: var(--viz-font-size-2xl);
             font-weight: 700;
             font-family: var(--viz-mono-font);
             line-height: 1.2;
@@ -363,7 +363,7 @@
         }
 
         .stat-label {
-            font-size: var(--viz-font-size-xs);
+            font-size: var(--viz-font-size-std);
             color: var(--viz-40);
         }
     }
@@ -408,7 +408,7 @@
         }
 
         .metric-value {
-            font-size: var(--viz-font-size-xl);
+            font-size: var(--viz-font-size-2xl);
             font-weight: 700;
             font-family: var(--viz-mono-font);
             line-height: 1.2;
@@ -416,7 +416,7 @@
         }
 
         .metric-label {
-            font-size: var(--viz-font-size-xs);
+            font-size: var(--viz-font-size-std);
             color: var(--viz-40);
         }
     }
@@ -445,13 +445,13 @@
 
     .event-type-name {
         font-weight: 600;
-        font-size: var(--viz-font-size-sm);
+        font-size: var(--viz-font-size-lg);
         color: var(--viz-text-color);
         font-family: var(--viz-mono-font);
     }
 
     .event-type-count {
-        font-size: var(--viz-font-size-xs);
+        font-size: var(--viz-font-size-std);
         color: var(--viz-40);
         font-family: var(--viz-mono-font);
     }
@@ -504,14 +504,14 @@
 
         :global(.viz-material-icon) {
             color: var(--viz-40);
-            font-size: var(--viz-font-size-std);
+            font-size: var(--viz-font-size-xl);
         }
 
         input {
             border: none;
             background: transparent;
             flex: 1;
-            font-size: var(--viz-font-size-sm);
+            font-size: var(--viz-font-size-lg);
             color: var(--viz-text-color);
             height: 100%;
             padding: 0;
@@ -535,13 +535,13 @@
         border-radius: var(--viz-border-radius-md);
 
         :global(.viz-material-icon) {
-            font-size: var(--viz-font-size-3xl);
+            font-size: var(--viz-font-size-5xl);
             margin-bottom: var(--viz-spacing-sm);
         }
 
         p {
             margin: 0;
-            font-size: var(--viz-font-size-sm);
+            font-size: var(--viz-font-size-lg);
             font-weight: 500;
         }
     }
@@ -633,7 +633,7 @@
         display: inline-block;
         font-family: var(--viz-mono-font);
         font-weight: 600;
-        font-size: var(--viz-font-size-xs);
+        font-size: var(--viz-font-size-std);
         padding: var(--viz-spacing-xxs) var(--viz-spacing-sm);
         background-color: var(--viz-100);
         border: var(--viz-border-thin);
@@ -642,7 +642,7 @@
     }
 
     .event-time {
-        font-size: var(--viz-font-size-xs);
+        font-size: var(--viz-font-size-std);
         color: var(--viz-40);
         font-family: var(--viz-mono-font);
     }
@@ -661,7 +661,7 @@
         gap: var(--viz-spacing-xs);
 
         strong {
-            font-size: var(--viz-font-size-xs);
+            font-size: var(--viz-font-size-std);
             font-weight: 600;
             color: var(--viz-40);
             text-transform: uppercase;
@@ -674,7 +674,7 @@
             background-color: var(--viz-95);
             border: var(--viz-border-thin);
             border-radius: var(--viz-border-radius-md);
-            font-size: var(--viz-font-size-xs);
+            font-size: var(--viz-font-size-std);
             font-family: var(--viz-mono-font);
             color: var(--viz-text-color);
             word-break: break-all;
@@ -687,7 +687,7 @@
             border: var(--viz-border-thin);
             border-radius: var(--viz-border-radius-md);
             overflow-x: auto;
-            font-size: var(--viz-font-size-xs);
+            font-size: var(--viz-font-size-std);
             font-family: var(--viz-mono-font);
             color: var(--viz-text-color);
             line-height: 1.5;

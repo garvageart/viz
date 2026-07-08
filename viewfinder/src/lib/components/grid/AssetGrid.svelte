@@ -784,7 +784,7 @@
         max-width: 100%;
         text-overflow: clip;
         justify-content: center;
-        grid-template-columns: repeat(auto-fill, minmax(15em, 1fr));
+        grid-template-columns: repeat(auto-fill, minmax(17rem, 1fr));
     }
 
     .asset-card {
@@ -830,7 +830,7 @@
             table-layout: auto;
             border-collapse: separate;
             border-spacing: 0;
-            font-size: var(--viz-font-size-sm);
+            font-size: var(--viz-font-size-lg);
             color: var(--viz-text-color);
             display: table;
         }
@@ -911,7 +911,7 @@
                 .sort-icon {
                     display: inline-flex;
                     align-items: center;
-                    font-size: var(--viz-font-size-xs);
+                    font-size: var(--viz-font-size-std);
                     opacity: 0;
                     transition: opacity 0.2s;
 
@@ -931,7 +931,7 @@
         }
 
         tbody tr {
-            transition: background 120ms ease-in-out;
+            transition: background-color 120ms ease-in-out;
             background-color: var(--viz-100);
 
             &:nth-child(even) {
@@ -1046,7 +1046,7 @@
         }
 
         .asset-snippet-sub {
-            font-size: var(--viz-font-size-xs);
+            font-size: var(--viz-font-size-std);
             color: var(--viz-40);
         }
     }

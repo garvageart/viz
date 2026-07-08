@@ -256,7 +256,7 @@
     {#if filmstripImages.length === 0}
         <div class="empty-state">
             <div class="empty-icon-wrapper">
-                <MaterialIcon iconName="image_not_supported" size="1.5rem" />
+                <MaterialIcon iconName="image_not_supported" size="2rem" />
             </div>
             <div class="empty-text-wrapper">
                 <span class="empty-title">No assets in this view</span>
@@ -350,8 +350,8 @@
 
             .filmstrip-item {
                 height: 100%;
-                min-width: 8rem;
-                max-width: 8rem;
+                min-width: 12rem;
+                max-width: 12rem;
             }
 
             .empty-state {
@@ -372,8 +372,8 @@
 
             .filmstrip-item {
                 height: 100%;
-                min-height: 8rem;
-                max-height: 8rem;
+                min-height: 12rem;
+                max-height: 12rem;
             }
 
             .empty-state {
@@ -417,14 +417,14 @@
         }
 
         .empty-title {
-            font-size: var(--viz-font-size-sm);
+            font-size: var(--viz-font-size-lg);
             font-weight: 600;
             color: var(--viz-text-color);
             font-family: var(--viz-display-font);
         }
 
         .empty-subtitle {
-            font-size: var(--viz-font-size-xs);
+            font-size: var(--viz-font-size-std);
             color: var(--viz-40);
             font-family: var(--viz-mono-font);
         }

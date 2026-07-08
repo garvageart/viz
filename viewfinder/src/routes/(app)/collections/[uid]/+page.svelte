@@ -820,8 +820,8 @@
     onUploadSuccess={handleDropUploadSuccess}
 />
 
-{#snippet imageCard(asset: ImageAsset)}
-    <ImageCard {asset} />
+{#snippet imageCard(asset: ImageAsset, cardState: { isSelected: boolean })}
+    <ImageCard {asset} isSelected={cardState.isSelected} />
 {/snippet}
 
 {#snippet toolbarSnippet()}
@@ -1009,7 +1009,7 @@
                             autocorrect="off"
                             spellcheck="false"
                             id="coll-name-input"
-                            style="font-size: var(--viz-font-size-3xl); font-weight: bold; padding: 0.25rem 0.5rem;"
+                            style="font-size: var(--viz-font-size-5xl); font-weight: bold; padding: 0.25rem 0.5rem;"
                             title={name}
                             bind:value={name}
                             focused={true}
@@ -1051,14 +1051,23 @@
                             {#if searchValue.trim()}
                                 {searchData.length} of {collectionState.images.length}
                             {:else}
-                                {collectionState.totalCount} {collectionState.totalCount === 1 ? 'image' : 'images'}
+                                {collectionState.totalCount} {collectionState.totalCount === 1 ? "image" : "images"}
                             {/if}
                         </span>
                     </div>
 
-                    <div class="meta-chip" title="Updated at: {DateTime.fromISO(data.updated_at).setZone('local').toLocaleString(DateTime.DATETIME_SHORT)}">
+                    <div
+                        class="meta-chip"
+                        title="Updated at: {DateTime.fromISO(data.updated_at)
+                            .setZone('local')
+                            .toLocaleString(DateTime.DATETIME_SHORT)}"
+                    >
                         <MaterialIcon iconName="calendar_today" size="1rem" />
-                        <span>Created {DateTime.fromISO(data.created_at).setZone('local').toLocaleString(DateTime.DATE_SHORT)}</span>
+                        <span
+                            >Created {DateTime.fromISO(data.created_at)
+                                .setZone("local")
+                                .toLocaleString(DateTime.DATE_SHORT)}</span
+                        >
                     </div>
 
                     <div class="meta-chip privacy-chip" class:private={data.private}>
@@ -1136,7 +1145,7 @@
         outline: none;
 
         #coll-name-display {
-            font-size: var(--viz-font-size-3xl);
+            font-size: var(--viz-font-size-5xl);
             font-family: var(--viz-display-font);
             font-weight: 700;
             color: var(--viz-text-color);
@@ -1178,7 +1187,7 @@
         border-radius: var(--viz-border-radius-pill);
         padding: 0.35rem 0.75rem;
         font-family: var(--viz-mono-font);
-        font-size: var(--viz-font-size-xs);
+        font-size: var(--viz-font-size-std);
         color: var(--viz-40);
         box-shadow: 0 1px 2px rgba(0, 0, 0, 0.05);
 

@@ -1,6 +1,5 @@
 <script lang="ts">
     import IconButton from "../ui/IconButton.svelte";
-    import MaterialIcon from "../ui/MaterialIcon.svelte";
 
     interface Props {
         onApply: () => void;
@@ -77,65 +76,76 @@
     .crop-tools-menu {
         display: flex;
         flex-direction: column;
-        gap: 0.8em;
-        background: var(--viz-bg-color);
-        padding: 0.8em;
-        border-radius: 0.5em;
+        gap: var(--viz-spacing-md);
+        background-color: var(--viz-95);
+        padding: var(--viz-spacing-md);
+        border-radius: var(--viz-border-radius-lg);
+        border: var(--viz-border-thin);
+        border-color: var(--viz-80);
         z-index: 9999;
         pointer-events: auto;
-        min-width: 200px;
+        min-width: 20rem;
         box-sizing: border-box;
+        font-family: var(--viz-display-font);
 
         &.floating {
             position: fixed;
-            box-shadow: 0 4px 16px rgba(0, 0, 0, 0.4);
-            border: 1px solid var(--viz-80);
-            /* Basic collision avoidance: translate up/left if near edges? */
+            background-color: var(--viz-95);
+            border-color: var(--viz-80);
+            box-shadow: var(--viz-shadow-lg, 0 10px 25px -5px rgba(0, 0, 0, 0.3), 0 8px 10px -6px rgba(0, 0, 0, 0.3));
             transform: translate(0, 0);
         }
 
         &.placed {
-            /* Sidebar styling to match metadata editor look */
             height: auto;
             width: 100%;
-            background: var(--viz-bg-color);
-            /* If parent doesn't constrain width, we might want a max-width, but parent likely handles it */
+            background-color: var(--viz-95);
+            border: var(--viz-border-thin);
+            border-color: var(--viz-80);
+            border-radius: var(--viz-border-radius-lg);
+            padding: var(--viz-spacing-md);
+            gap: var(--viz-spacing-sm);
         }
     }
 
     .menu-header {
-        font-size: 0.85em;
         font-weight: 600;
-        color: var(--viz-30);
-        text-transform: uppercase;
-        letter-spacing: 0.05em;
-        margin-bottom: 0.2em;
+        color: var(--viz-40);
+        margin-bottom: var(--viz-spacing-xxs);
     }
 
     .crop-presets {
         display: grid;
-        grid-template-columns: 1fr 1fr 1fr;
-        gap: 0.4em;
+        grid-template-columns: repeat(3, 1fr);
+        gap: var(--viz-spacing-xs);
     }
 
     .preset-btn {
-        background: var(--viz-90);
-        border: 1px solid transparent;
-        color: var(--viz-text-color);
-        padding: 0.4em;
-        border-radius: 0.3em;
+        background-color: var(--viz-90);
+        border: var(--viz-border-thin);
+        border-color: var(--viz-80);
+        color: var(--viz-30);
+        padding: var(--viz-spacing-sm) var(--viz-spacing-xs);
+        border-radius: var(--viz-border-radius-md);
         cursor: pointer;
-        font-size: 0.85em;
+        font-size: var(--viz-font-size-xs);
+        font-family: var(--viz-mono-font);
+        font-weight: 500;
         text-align: center;
-        transition: all 0.2s;
+        transition:
+            background-color 0.15s ease,
+            border-color 0.15s ease,
+            color 0.15s ease;
 
         &:hover {
-            background: var(--viz-80);
+            background-color: var(--viz-80);
+            color: var(--viz-10);
+            border-color: var(--viz-70);
         }
 
         &.active {
-            background: var(--viz-primary);
-            color: white;
+            background-color: var(--viz-primary);
+            color: var(--viz-95);
             border-color: var(--viz-primary);
         }
     }
@@ -143,45 +153,88 @@
     .crop-actions {
         display: flex;
         justify-content: space-between;
-        gap: 0.5em;
-        border-top: 1px solid var(--viz-10);
-        padding-top: 0.8em;
-        margin-top: 0.2em;
+        gap: var(--viz-spacing-xs);
+        border-top: var(--viz-border-thin);
+        border-color: var(--viz-60);
+        padding-top: var(--viz-spacing-md);
+        margin-top: var(--viz-spacing-xxs);
 
         :global(.action-btn) {
-            display: flex;
+            display: inline-flex;
             align-items: center;
             justify-content: center;
-            font-weight: 500;
-            // padding: 0.5em 0.8em;
-            font-size: 0.9em;
+            font-size: var(--viz-font-size-std) !important;
             flex: 1;
-            transition: background-color 0.2s;
+            padding: 0.4rem 0.6rem !important;
+            border-radius: var(--viz-border-radius-pill) !important;
+            border: var(--viz-border-thin) !important;
+            transition: all 0.15s ease-in-out !important;
+            height: 2rem !important;
+        }
+
+        :global(.action-btn span) {
+            font-family: var(--viz-display-font);
+            font-weight: 600;
         }
 
         :global(.action-btn.apply) {
-            color: #4caf50;
-            background-color: rgba(76, 175, 80, 0.1);
+            color: var(--viz-success-color) !important;
+            background-color: rgba(34, 197, 94, 0.08) !important;
+            border-color: rgba(34, 197, 94, 0.2) !important;
         }
+
         :global(.action-btn.apply:hover) {
-            background-color: rgba(76, 175, 80, 0.2);
+            background-color: rgba(34, 197, 94, 0.16) !important;
+            border-color: rgba(34, 197, 94, 0.4) !important;
         }
 
         :global(.action-btn.cancel) {
-            color: #f44336;
-            background-color: rgba(244, 67, 54, 0.1);
+            color: var(--viz-error-color) !important;
+            background-color: rgba(239, 68, 68, 0.08) !important;
+            border-color: rgba(239, 68, 68, 0.2) !important;
         }
+
         :global(.action-btn.cancel:hover) {
-            background-color: rgba(244, 67, 54, 0.2);
+            background-color: rgba(239, 68, 68, 0.16) !important;
+            border-color: rgba(239, 68, 68, 0.4) !important;
         }
 
         :global(.action-btn.reset) {
-            color: var(--viz-text-color);
-            background-color: var(--viz-80);
+            color: var(--viz-text-color) !important;
+            background-color: var(--viz-90) !important;
+            border-color: var(--viz-80) !important;
         }
 
         :global(.action-btn.reset:hover) {
-            background-color: var(--viz-70);
+            background-color: var(--viz-80) !important;
+            border-color: var(--viz-70) !important;
+        }
+    }
+
+    // Light theme contrast overrides
+    :global([data-theme="light"]) {
+        .crop-actions {
+            :global(.action-btn.apply) {
+                color: #ffffff !important;
+                background-color: #15803d !important; // Solid high-contrast green
+                border-color: #15803d !important;
+            }
+
+            :global(.action-btn.apply:hover) {
+                background-color: #166534 !important; // Darker solid green
+                border-color: #166534 !important;
+            }
+
+            :global(.action-btn.cancel) {
+                color: #ffffff !important;
+                background-color: #b91c1c !important; // Solid high-contrast red
+                border-color: #b91c1c !important;
+            }
+
+            :global(.action-btn.cancel:hover) {
+                background-color: #991b1b !important; // Darker solid red
+                border-color: #991b1b !important;
+            }
         }
     }
 </style>

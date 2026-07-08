@@ -537,13 +537,13 @@
     }
 
     :global(.export-panel .input-label) {
-        font-size: var(--viz-font-size-xs) !important;
+        font-size: var(--viz-font-size-std) !important;
     }
 
     :global(.export-panel .select-trigger) {
         min-height: 2rem !important;
         padding: var(--viz-spacing-xs) 2rem var(--viz-spacing-xs) var(--viz-spacing-sm) !important;
-        font-size: var(--viz-font-size-sm) !important;
+        font-size: var(--viz-font-size-lg) !important;
         background-position: right var(--viz-spacing-sm) center !important;
         min-width: 0 !important;
     }
@@ -551,16 +551,16 @@
     :global(.export-panel input:not([type="submit"]):not([type="checkbox"]):not([type="range"])) {
         min-height: 2rem !important;
         padding: var(--viz-spacing-xs) var(--viz-spacing-sm) !important;
-        font-size: var(--viz-font-size-sm) !important;
+        font-size: var(--viz-font-size-lg) !important;
         min-width: 0 !important;
     }
 
     :global(.export-panel .slider-label) {
-        font-size: var(--viz-font-size-xs) !important;
+        font-size: var(--viz-font-size-std) !important;
     }
 
     :global(.export-panel .slider-value) {
-        font-size: var(--viz-font-size-xs) !important;
+        font-size: var(--viz-font-size-std) !important;
     }
 
     :global(.export-panel input[type="range"]) {
@@ -568,7 +568,7 @@
     }
 
     :global(.export-panel .label-text) {
-        font-size: var(--viz-font-size-xs) !important;
+        font-size: var(--viz-font-size-std) !important;
     }
 
     :global(.export-panel .export-btn) {
@@ -583,12 +583,12 @@
 
         h2 {
             margin: 0;
-            font-size: var(--viz-font-size-std);
+            font-size: var(--viz-font-size-xl);
             font-weight: 600;
         }
 
         .asset-summary {
-            font-size: var(--viz-font-size-xs);
+            font-size: var(--viz-font-size-std);
             color: var(--viz-40);
             margin-top: var(--viz-spacing-xxs);
         }
@@ -627,7 +627,7 @@
         color: var(--viz-text-color);
         cursor: pointer;
         font-weight: 600;
-        font-size: var(--viz-font-size-sm);
+        font-size: var(--viz-font-size-lg);
         text-align: left;
         transition:
             background-color 0.2s,
@@ -665,7 +665,7 @@
             }
             .unit {
                 margin-bottom: var(--viz-spacing-sm);
-                font-size: var(--viz-font-size-xs);
+                font-size: var(--viz-font-size-std);
                 color: var(--viz-50);
             }
         }
@@ -680,7 +680,7 @@
 
     .placeholder-text {
         font-style: italic;
-        font-size: var(--viz-font-size-xs);
+        font-size: var(--viz-font-size-std);
         color: var(--viz-50);
         margin: 0;
     }

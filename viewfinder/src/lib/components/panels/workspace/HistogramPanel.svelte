@@ -517,18 +517,18 @@
         flex-direction: column;
         box-sizing: border-box;
         height: 100%;
-        padding: 0.5rem;
+        padding: var(--viz-spacing-std);
         color: var(--viz-text-color);
         position: relative;
         background-color: var(--viz-bg-color);
-        font-size: 0.75rem;
-        gap: 0.75rem;
+        font-size: var(--viz-font-size-std);
+        gap: var(--viz-spacing-std);
         overflow-y: auto;
         overflow-x: hidden;
         container-type: inline-size;
 
         :global(.channel-name) {
-            font-size: var(--viz-font-size-xs);
+            font-size: var(--viz-font-size-std);
             padding: var(--viz-spacing-sm);
             min-height: var(--viz-spacing-std);
             font-weight: 500;

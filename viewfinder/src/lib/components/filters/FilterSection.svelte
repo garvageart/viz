@@ -46,7 +46,6 @@
         cursor: pointer;
         color: var(--viz-text-color);
         font-weight: 600;
-        font-size: 0.8rem;
         text-align: left;
         transition: color 0.2s;
 

@@ -92,7 +92,7 @@
 
     .slider-label {
         font-family: var(--viz-display-font), sans-serif;
-        font-size: var(--viz-font-size-sm);
+        font-size: var(--viz-font-size-lg);
         font-weight: 600;
         color: var(--viz-40);
     }
@@ -104,14 +104,14 @@
 
     .slider-value {
         font-family: var(--viz-mono-font), monospace;
-        font-size: var(--viz-font-size-sm);
+        font-size: var(--viz-font-size-lg);
         font-weight: 800;
         color: var(--viz-text-color);
     }
 
     .slider-description {
         font-family: var(--viz-display-font), sans-serif;
-        font-size: var(--viz-font-size-xs);
+        font-size: var(--viz-font-size-std);
         color: var(--viz-60);
         padding-left: var(--viz-spacing-xxs);
     }

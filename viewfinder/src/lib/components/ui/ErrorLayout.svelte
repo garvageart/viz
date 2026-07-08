@@ -117,7 +117,7 @@
     }
 
     .status-code {
-        font-size: var(--viz-font-size-3xl);
+        font-size: var(--viz-font-size-5xl);
         font-weight: 700;
         color: var(--viz-text-color);
         line-height: 1;
@@ -131,7 +131,7 @@
     }
 
     .error-title {
-        font-size: var(--viz-font-size-xl);
+        font-size: var(--viz-font-size-3xl);
         font-weight: 600;
         margin: 0;
         color: var(--viz-text-color);
@@ -139,7 +139,7 @@
 
     .error-message {
         color: var(--viz-40);
-        font-size: var(--viz-font-size-sm);
+        font-size: var(--viz-font-size-lg);
         margin: 0;
         line-height: 1.5;
     }
@@ -161,7 +161,7 @@
                 color: var(--viz-40);
                 padding: var(--viz-spacing-xs);
                 user-select: none;
-                font-size: var(--viz-font-size-sm);
+                font-size: var(--viz-font-size-lg);
 
                 &:hover {
                     color: var(--viz-text-color);
@@ -173,7 +173,7 @@
             margin-top: var(--viz-spacing-sm);
             padding: var(--viz-spacing-sm);
             overflow-x: auto;
-            font-size: var(--viz-font-size-xs);
+            font-size: var(--viz-font-size-std);
             color: var(--viz-text-color);
             background-color: var(--viz-95);
             border: var(--viz-border-thin);

@@ -77,17 +77,12 @@
     .header {
         display: flex;
         justify-content: space-between;
-        font-size: 0.8rem;
         color: var(--viz-60);
     }
 
     .label {
         font-weight: 500;
         color: var(--viz-text-color);
-    }
-
-    .range-display {
-        font-size: 0.75rem;
     }
 
     .inputs {
@@ -102,7 +97,7 @@
         :global(input) {
             min-height: 2rem;
             padding: 4px 8px;
-            font-size: 0.9rem;
+            font-size: 1rem;
         }
     }
 

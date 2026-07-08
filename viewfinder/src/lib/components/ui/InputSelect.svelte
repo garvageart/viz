@@ -156,7 +156,7 @@
     }
 
     .input-label {
-        font-size: var(--viz-font-size-sm);
+        font-size: var(--viz-font-size-lg);
         font-weight: 500;
         color: var(--viz-40);
     }
@@ -167,7 +167,7 @@
     }
 
     .input-description {
-        font-size: var(--viz-font-size-xs);
+        font-size: var(--viz-font-size-std);
         color: var(--viz-60);
         padding-left: var(--viz-spacing-sm);
     }
@@ -182,14 +182,14 @@
             justify-content: space-between;
             width: 100%;
             max-width: 100%;
-            min-height: 2.5rem; // Standard density height
+            min-height: 2rem; // Standard density height
             color: var(--viz-text-color);
             background-color: var(--viz-100);
             outline: none;
             border: none;
             box-shadow: 0 -1px 0 var(--viz-60) inset;
             font-family: var(--viz-display-font);
-            font-size: var(--viz-font-size-sm);
+            font-size: var(--viz-font-size-std);
             padding: var(--viz-spacing-sm) 2rem var(--viz-spacing-sm) var(--viz-spacing-std);
             cursor: pointer;
             text-align: left;
@@ -199,7 +199,7 @@
             background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 24 24' stroke='%23888888' stroke-width='2'%3E%3Cpath stroke-linecap='round' stroke-linejoin='round' d='M19 9l-7 7-7-7'/%3E%3C/svg%3E");
             background-repeat: no-repeat;
             background-position: right var(--viz-spacing-md) center;
-            background-size: var(--viz-font-size-sm);
+            background-size: var(--viz-font-size-lg);
 
             &:hover:not(:disabled) {
                 box-shadow: 0 -1px 0 var(--viz-40) inset;
@@ -252,9 +252,7 @@
         justify-content: space-between;
         padding: var(--viz-spacing-xs) var(--viz-spacing-sm);
         font-family: var(--viz-display-font);
-        // this is hard coded for now because i can't find a good balance between `xs` and `sm`.
-        // `sm` is too big and `xs` is too small
-        font-size: 0.85rem;
+        font-size: 1rem;
         color: var(--viz-text-color);
         border-radius: var(--viz-border-radius-sm);
         cursor: pointer;
@@ -288,7 +286,7 @@
     }
 
     :global(.select-group-label) {
-        font-size: var(--viz-font-size-xs);
+        font-size: var(--viz-font-size-std);
         font-weight: 700;
         color: var(--viz-40);
         padding: var(--viz-spacing-xs) var(--viz-spacing-sm);

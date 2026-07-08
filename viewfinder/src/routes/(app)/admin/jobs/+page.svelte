@@ -457,7 +457,7 @@
 
     .dashboard-content-grid {
         display: grid;
-        grid-template-columns: 1fr 22rem;
+        grid-template-columns: 1fr 25rem;
         gap: var(--viz-spacing-xl);
         align-items: start;
 
@@ -540,14 +540,14 @@
 
             h2 {
                 margin: 0;
-                font-size: var(--viz-font-size-lg);
+                font-size: var(--viz-font-size-2xl);
                 font-weight: 600;
                 color: var(--viz-text-color);
             }
 
             :global(.title-icon) {
                 color: var(--viz-40);
-                font-size: var(--viz-font-size-xl);
+                font-size: var(--viz-font-size-3xl);
 
                 &.highlight {
                     color: var(--viz-primary);
@@ -580,14 +580,14 @@
 
             h2 {
                 margin: 0;
-                font-size: var(--viz-font-size-lg);
+                font-size: var(--viz-font-size-2xl);
                 font-weight: 600;
                 color: var(--viz-text-color);
             }
 
             :global(.title-icon) {
                 color: var(--viz-40);
-                font-size: var(--viz-font-size-xl);
+                font-size: var(--viz-font-size-3xl);
             }
         }
     }
@@ -603,7 +603,7 @@
         background: transparent;
         border: none;
         padding: var(--viz-spacing-xs) var(--viz-spacing-md);
-        font-size: var(--viz-font-size-xs);
+        font-size: var(--viz-font-size-std);
         font-weight: 600;
         text-transform: uppercase;
         letter-spacing: 0.05em;
@@ -692,7 +692,7 @@
             border: none;
             background: transparent;
             padding: var(--viz-spacing-sm) var(--viz-spacing-md);
-            font-size: var(--viz-font-size-sm);
+            font-size: var(--viz-font-size-lg);
             color: var(--viz-text-color);
             font-family: var(--viz-display-font);
             outline: none;
@@ -728,7 +728,7 @@
 
         h3 {
             margin: 0;
-            font-size: var(--viz-font-size-md);
+            font-size: var(--viz-font-size-lg);
             font-weight: 600;
             color: var(--viz-text-color);
         }
@@ -739,7 +739,7 @@
         background-color: var(--viz-90);
         border: var(--viz-border-thin);
         border-radius: var(--viz-border-radius-pill);
-        font-size: var(--viz-font-size-xs);
+        font-size: var(--viz-font-size-std);
         font-family: var(--viz-mono-font);
         font-weight: 600;
         color: var(--viz-30);
@@ -788,7 +788,7 @@
                 color 0.2s ease;
 
             :global(.viz-material-icon) {
-                font-size: var(--viz-font-size-xl);
+                font-size: var(--viz-font-size-3xl);
             }
         }
 
@@ -799,7 +799,7 @@
         }
 
         .stat-value {
-            font-size: var(--viz-font-size-xl);
+            font-size: var(--viz-font-size-3xl);
             font-weight: 700;
             font-family: var(--viz-mono-font);
             line-height: 1.2;
@@ -807,7 +807,7 @@
         }
 
         .stat-label {
-            font-size: var(--viz-font-size-xs);
+            font-size: var(--viz-font-size-std);
             color: var(--viz-40);
         }
 
@@ -916,7 +916,7 @@
 
             .job-title {
                 font-weight: 700;
-                font-size: var(--viz-font-size-sm);
+                font-size: var(--viz-font-size-lg);
                 white-space: nowrap;
                 overflow: hidden;
                 text-overflow: ellipsis;
@@ -927,7 +927,7 @@
                 display: flex;
                 align-items: center;
                 gap: var(--viz-spacing-xs);
-                font-size: var(--viz-font-size-xs);
+                font-size: var(--viz-font-size-std);
                 color: var(--viz-40);
 
                 .job-type-tag {
@@ -955,7 +955,7 @@
             display: flex;
             justify-content: space-between;
             align-items: center;
-            font-size: var(--viz-font-size-xs);
+            font-size: var(--viz-font-size-std);
 
             .job-step {
                 font-weight: 600;
@@ -1014,7 +1014,7 @@
             background-color: var(--viz-80);
 
             :global(.viz-material-icon) {
-                font-size: var(--viz-font-size-lg);
+                font-size: var(--viz-font-size-2xl);
             }
         }
 
@@ -1049,7 +1049,7 @@
             gap: var(--viz-spacing-md);
 
             .job-title-text {
-                font-size: var(--viz-font-size-sm);
+                font-size: var(--viz-font-size-lg);
                 font-weight: 600;
                 color: var(--viz-text-color);
                 white-space: nowrap;
@@ -1061,7 +1061,7 @@
                 background-color: var(--viz-80);
                 padding: 2px var(--viz-spacing-xs);
                 border-radius: var(--viz-border-radius-sm);
-                font-size: var(--viz-font-size-xs);
+                font-size: var(--viz-font-size-std);
                 font-weight: 600;
                 text-transform: uppercase;
                 font-family: var(--viz-mono-font);
@@ -1073,7 +1073,7 @@
             display: flex;
             align-items: center;
             gap: var(--viz-spacing-xs);
-            font-size: var(--viz-font-size-xs);
+            font-size: var(--viz-font-size-std);
             color: var(--viz-40);
 
             .job-duration,
@@ -1122,7 +1122,7 @@
 
                 .worker-name {
                     font-weight: 700;
-                    font-size: var(--viz-font-size-sm);
+                    font-size: var(--viz-font-size-lg);
                     color: var(--viz-text-color);
                 }
 
@@ -1148,7 +1148,7 @@
                 .stat-badge {
                     padding: 2px var(--viz-spacing-xs);
                     border-radius: var(--viz-border-radius-sm);
-                    font-size: var(--viz-font-size-xs);
+                    font-size: var(--viz-font-size-std);
                     font-weight: 700;
                     font-family: var(--viz-mono-font);
 
@@ -1181,7 +1181,7 @@
             border-top: var(--viz-border-thin);
 
             .concurrency-label {
-                font-size: var(--viz-font-size-xs);
+                font-size: var(--viz-font-size-std);
                 font-weight: 600;
                 color: var(--viz-40);
             }
@@ -1209,7 +1209,7 @@
                 .step-value {
                     width: 2rem;
                     text-align: center;
-                    font-size: var(--viz-font-size-xs);
+                    font-size: var(--viz-font-size-std);
                     font-weight: 700;
                     font-family: var(--viz-mono-font);
                     color: var(--viz-text-color);
@@ -1224,7 +1224,7 @@
         gap: var(--viz-spacing-sm);
         padding: var(--viz-spacing-xs) var(--viz-spacing-md);
         border-radius: var(--viz-border-radius-pill);
-        font-size: var(--viz-font-size-xs);
+        font-size: var(--viz-font-size-std);
         font-weight: 700;
         background-color: var(--viz-90);
         color: var(--viz-40);
@@ -1282,12 +1282,12 @@
         border-radius: var(--viz-border-radius-md);
 
         :global(.empty-icon) {
-            font-size: var(--viz-font-size-3xl);
+            font-size: var(--viz-font-size-5xl);
             margin-bottom: var(--viz-spacing-sm);
         }
 
         p {
-            font-size: var(--viz-font-size-sm);
+            font-size: var(--viz-font-size-lg);
             font-weight: 500;
             margin: 0;
         }
@@ -1300,7 +1300,7 @@
         gap: var(--viz-spacing-sm);
         padding: var(--viz-spacing-xl);
         color: var(--viz-40);
-        font-size: var(--viz-font-size-xs);
+        font-size: var(--viz-font-size-std);
     }
 
     .spinner-small {

@@ -48,7 +48,7 @@
 
         h1 {
             margin: 0;
-            font-size: var(--viz-font-size-xl);
+            font-size: var(--viz-font-size-2xl);
             font-weight: 600;
         }
 
@@ -56,7 +56,7 @@
             display: block;
             margin: var(--viz-spacing-xxs) 0 0 0;
             color: var(--viz-40);
-            font-size: var(--viz-font-size-xs);
+            font-size: var(--viz-font-size-lg);
         }
     }
 

@@ -69,12 +69,11 @@
 
     .account-name {
         font-weight: 600;
-        font-size: 1rem;
+        font-size: var(--viz-font-size-lg);
         color: var(--viz-text-color);
     }
 
     .account-email {
-        font-size: 0.8rem;
         color: var(--viz-60);
     }
 </style>

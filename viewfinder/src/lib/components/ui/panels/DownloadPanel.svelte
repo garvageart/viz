@@ -231,7 +231,7 @@
         align-items: center;
         justify-content: space-between;
         padding: 0 var(--viz-spacing-std);
-        font-size: var(--viz-font-size-sm);
+        font-size: var(--viz-font-size-lg);
         font-weight: 600;
         border-bottom: var(--viz-border-thin);
         background-color: var(--viz-90);
@@ -301,7 +301,7 @@
     }
 
     .viz-download-file-name {
-        font-size: var(--viz-font-size-xs);
+        font-size: var(--viz-font-size-std);
         overflow: hidden;
         text-overflow: ellipsis;
         white-space: nowrap;
@@ -313,7 +313,7 @@
     .panel-file-right {
         display: flex;
         align-items: center;
-        font-size: var(--viz-font-size-xs);
+        font-size: var(--viz-font-size-std);
         min-width: 45px;
         text-align: right;
         justify-content: flex-end;

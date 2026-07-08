@@ -369,7 +369,7 @@
     #viz-title {
         font-family: var(--viz-mono-font);
         font-weight: 700;
-        font-size: var(--viz-font-size-std);
+        font-size: var(--viz-font-size-xl);
         display: flex;
         align-items: center;
         gap: var(--viz-spacing-xxs);
@@ -436,8 +436,8 @@
     }
 
     #account-button {
-        height: 1.75rem;
-        width: 1.75rem;
+        height: 2rem;
+        width: 2rem;
         display: flex;
         align-items: center;
         justify-content: center;
@@ -478,7 +478,7 @@
     }
 
     :global(.header-button) {
-        font-size: 0.8rem !important;
+        font-size: 1rem !important;
         padding: var(--viz-spacing-xxs) var(--viz-spacing-xs) !important;
         border: 1px solid transparent !important;
         background-color: transparent !important;
@@ -516,7 +516,7 @@
         color: var(--viz-error-color);
         padding: var(--viz-spacing-xxs) var(--viz-spacing-xs);
         border-radius: var(--viz-border-radius-sm);
-        font-size: var(--viz-font-size-xs);
+        font-size: var(--viz-font-size-std);
         font-weight: 600;
         text-transform: uppercase;
         letter-spacing: 0.05em;

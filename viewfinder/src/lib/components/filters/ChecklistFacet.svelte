@@ -78,7 +78,7 @@
         display: flex;
         align-items: center;
         justify-content: space-between;
-        font-size: 0.85rem;
+        font-size: 1rem;
         color: var(--viz-60);
 
         /* Align checkbox properly */
@@ -88,7 +88,7 @@
         }
 
         :global(.label-text) {
-            font-size: 0.85rem;
+            font-size: 1rem;
             white-space: nowrap;
             overflow: hidden;
             text-overflow: ellipsis;
@@ -96,14 +96,12 @@
     }
 
     .count {
-        font-size: 0.75rem;
         opacity: 0.7;
         margin-left: 8px;
     }
 
     .empty {
         font-style: italic;
-        font-size: 0.8rem;
         opacity: 0.6;
         color: var(--viz-60);
     }

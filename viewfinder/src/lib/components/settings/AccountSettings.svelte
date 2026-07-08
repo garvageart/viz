@@ -161,7 +161,7 @@
     .settings-group {
         display: flex;
         flex-direction: column;
-        gap: var(--viz-spacing-md);
+        gap: var(--viz-spacing-lg);
         width: 100%;
     }
 
@@ -173,16 +173,15 @@
         border-bottom: var(--viz-border-thin);
 
         h2 {
-            font-size: 1.5rem;
+            font-size: var(--viz-font-size-xl);
             font-weight: 600;
             color: var(--viz-text-color);
-            margin: 0 0 var(--viz-spacing-xs) 0;
         }
 
         .group-description {
             color: var(--viz-40);
             margin: 0;
-            font-size: var(--viz-font-size-sm);
+            font-size: var(--viz-font-size-lg);
         }
     }
 

@@ -380,7 +380,7 @@
         border-radius: var(--viz-border-radius-md);
 
         .builder-label {
-            font-size: var(--viz-font-size-sm);
+            font-size: var(--viz-font-size-lg);
             font-weight: 600;
             color: var(--viz-20);
         }
@@ -422,7 +422,7 @@
             }
 
             .rule-fallback-desc {
-                font-size: var(--viz-font-size-xs);
+                font-size: var(--viz-font-size-std);
                 color: var(--viz-50);
                 font-style: italic;
                 padding-left: var(--viz-spacing-xs);
@@ -457,7 +457,7 @@
         margin-top: var(--viz-spacing-xs);
 
         .preview-title {
-            font-size: var(--viz-font-size-sm);
+            font-size: var(--viz-font-size-lg);
             font-weight: 600;
             color: var(--viz-20);
             display: block;
@@ -474,7 +474,7 @@
             display: flex;
             align-items: center;
             gap: var(--viz-spacing-sm);
-            font-size: var(--viz-font-size-xs);
+            font-size: var(--viz-font-size-std);
             width: 100%;
             overflow: hidden;
 
@@ -495,13 +495,13 @@
             }
 
             :global(.preview-arrow) {
-                font-size: var(--viz-font-size-sm);
+                font-size: var(--viz-font-size-lg);
                 color: var(--viz-20);
             }
         }
 
         .preview-more {
-            font-size: var(--viz-font-size-xs);
+            font-size: var(--viz-font-size-std);
             color: var(--viz-40);
             font-style: italic;
             margin-top: var(--viz-spacing-xxs);

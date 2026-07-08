@@ -431,7 +431,7 @@
 
         p {
             margin: var(--viz-spacing-xxs) 0 0 0;
-            font-size: var(--viz-font-size-sm);
+            font-size: var(--viz-font-size-lg);
             color: var(--viz-40);
         }
     }
@@ -447,14 +447,14 @@
     .settings-table {
         width: 100%;
         border-collapse: collapse;
-        font-size: var(--viz-font-size-sm);
+        font-size: var(--viz-font-size-lg);
 
         th {
             text-align: left;
             padding: var(--viz-spacing-md) var(--viz-spacing-std);
             color: var(--viz-40);
             font-weight: 600;
-            font-size: var(--viz-font-size-xs);
+            font-size: var(--viz-font-size-std);
             text-transform: uppercase;
             letter-spacing: 0.05em;
             border-bottom: var(--viz-border-thin);
@@ -479,7 +479,7 @@
 
     .mono-text {
         font-family: var(--viz-mono-font);
-        font-size: var(--viz-font-size-xs);
+        font-size: var(--viz-font-size-std);
     }
 
     .key-info {
@@ -493,7 +493,7 @@
         }
 
         .description {
-            font-size: var(--viz-font-size-xs);
+            font-size: var(--viz-font-size-std);
             color: var(--viz-40);
         }
     }
@@ -509,7 +509,7 @@
         }
 
         .details {
-            font-size: var(--viz-font-size-xs);
+            font-size: var(--viz-font-size-std);
             color: var(--viz-40);
         }
     }

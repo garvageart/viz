@@ -225,7 +225,7 @@
         {#if collection.private}
             <div class="card-overlays">
                 <div class="overlay-badge private-badge" title="Private Collection">
-                    <MaterialIcon iconName="lock" size="0.8rem" />
+                    <MaterialIcon iconName="lock" size="1rem" />
                 </div>
             </div>
         {/if}
@@ -258,7 +258,6 @@
         cursor: pointer;
         display: flex;
         flex-direction: column;
-        transition: border-color 0.15s ease-in-out, background-color 0.15s ease-in-out, box-shadow 0.15s ease-in-out;
         box-sizing: border-box;
 
         &:hover {
@@ -291,7 +290,7 @@
 
     .image-container {
         position: relative;
-        height: 12rem;
+        height: 15rem;
         background-color: var(--viz-90);
         overflow: hidden;
         display: flex;
@@ -368,7 +367,7 @@
 
         .items-badge {
             font-family: var(--viz-mono-font);
-            font-size: var(--viz-font-size-xs);
+            font-size: var(--viz-font-size-std);
             background-color: var(--viz-90);
             color: var(--viz-40);
             padding: 0.15rem 0.45rem;
@@ -384,7 +383,7 @@
     }
 
     .coll-name {
-        font-size: var(--viz-font-size-sm);
+        font-size: var(--viz-font-size-lg);
         font-weight: 600;
         font-family: var(--viz-display-font);
         color: var(--viz-text-color);
@@ -403,7 +402,7 @@
     .coll-created_at,
     .coll-updated_at {
         font-family: var(--viz-mono-font);
-        font-size: var(--viz-font-size-xs);
+        font-size: var(--viz-font-size-std);
         color: var(--viz-40);
         white-space: nowrap;
         overflow: hidden;

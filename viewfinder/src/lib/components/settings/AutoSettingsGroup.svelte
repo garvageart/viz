@@ -118,19 +118,19 @@
         display: flex;
         justify-content: space-between;
         align-items: flex-start;
-        padding-bottom: 1rem;
-        border-bottom: 1px solid var(--viz-60);
+        padding-bottom: var(--viz-spacing-sm);
+        border-bottom: var(--viz-border-thin);
 
         h2 {
-            font-size: 1.5rem;
+            font-size: var(--viz-font-size-xl);
             font-weight: 600;
             color: var(--viz-text-color);
-            margin: 0 0 0.5rem 0;
         }
 
         .group-description {
             color: var(--viz-40);
             margin: 0;
+            font-size: var(--viz-font-size-lg);
         }
     }
 

@@ -76,7 +76,7 @@
     // Sorting (MenuItem[] for Dropdown)
     let sortOptions: MenuItem[] = [
         { id: "sort-name", label: "Name" },
-        { id: "sort-created_at", label: "Created At" },
+        { id: "sort-recently_added", label: "Recently Added" },
         { id: "sort-updated_at", label: "Updated At" },
         { id: "sort-taken_at", label: "Taken At" }
     ];
@@ -85,8 +85,8 @@
         switch (sort.by) {
             case "name":
                 return "sort-name";
-            case "created_at":
-                return "sort-created_at";
+            case "recently_added":
+                return "sort-recently_added";
             case "updated_at":
                 return "sort-updated_at";
             case "taken_at":
@@ -156,8 +156,8 @@
                                 case "sort-name":
                                     sort.by = "name";
                                     break;
-                                case "sort-created_at":
-                                    sort.by = "created_at";
+                                case "sort-recently_added":
+                                    sort.by = "recently_added";
                                     break;
                                 case "sort-updated_at":
                                     sort.by = "updated_at";
@@ -224,7 +224,6 @@
 
     :global(.toolbar-button) {
         border-radius: 10em;
-        // padding: 0.1em 0.3em;
         display: flex;
         align-items: center;
         justify-content: center;

@@ -270,7 +270,7 @@
             {#snippet children()}
                 <div class="date-trigger" class:active={!!value}>
                     <div class="date-meta">
-                        <MaterialIcon iconName="calendar_today" size="0.9rem" />
+                        <MaterialIcon iconName="calendar_today" size="1rem" />
                         <span>{formatCriteriaDate(value)}</span>
                     </div>
                     {#if value}
@@ -290,7 +290,7 @@
                                 }
                             }}
                         >
-                            <MaterialIcon iconName="close" size="0.8rem" />
+                            <MaterialIcon iconName="close" size="0.9rem" />
                         </span>
                     {/if}
                 </div>
@@ -360,7 +360,7 @@
         cursor: pointer;
         color: var(--viz-text-color);
         font-weight: 600;
-        font-size: 0.8rem;
+        font-size: var(--viz-font-size-std);
         text-align: left;
         transition: color 0.2s;
 
@@ -381,7 +381,7 @@
         display: flex;
         align-items: center;
         gap: var(--viz-spacing-sm);
-        font-size: 0.9rem;
+        font-size: var(--viz-font-size-std);
         color: var(--viz-60);
     }
 
@@ -399,7 +399,7 @@
         width: 100%;
 
         .label {
-            font-size: 0.8rem;
+            font-size: var(--viz-font-size-std);
             color: var(--viz-60);
         }
     }
@@ -415,7 +415,7 @@
         color: var(--viz-40);
         padding: var(--viz-spacing-sm) var(--viz-spacing-sm);
         font-family: var(--viz-display-font);
-        font-size: var(--viz-font-size-xs);
+        font-size: var(--viz-font-size-std);
         text-wrap: nowrap;
         cursor: pointer;
         transition:

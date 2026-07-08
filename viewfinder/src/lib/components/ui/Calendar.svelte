@@ -366,7 +366,7 @@
         min-height: 1.75rem !important;
         height: 1.75rem !important;
         padding: 0 var(--viz-spacing-xs) !important;
-        font-size: var(--viz-font-size-xs) !important;
+        font-size: var(--viz-font-size-std) !important;
         font-weight: 600 !important;
         color: var(--viz-10) !important;
         background-color: var(--viz-90) !important;
@@ -432,7 +432,7 @@
         border: 1px solid transparent;
         background: transparent;
         color: var(--viz-20);
-        font-size: var(--viz-font-size-xs);
+        font-size: var(--viz-font-size-std);
         aspect-ratio: 1;
         font-weight: 400;
         cursor: pointer;
@@ -505,7 +505,7 @@
         background: var(--viz-100);
         border: 1px solid var(--viz-75);
         border-radius: var(--viz-border-radius-sm);
-        font-size: var(--viz-font-size-sm);
+        font-size: var(--viz-font-size-lg);
         font-weight: 400;
         color: var(--viz-20);
         font-family: var(--viz-mono-font);

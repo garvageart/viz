@@ -838,14 +838,14 @@
     }
 
     .title-text {
-        font-size: var(--viz-font-size-2xl);
+        font-size: var(--viz-font-size-4xl);
         font-weight: 600;
         margin: 0 0 var(--viz-spacing-xs) 0;
         color: var(--viz-text-color);
     }
 
     .sub-text {
-        font-size: var(--viz-font-size-std);
+        font-size: var(--viz-font-size-xl);
         margin: 0;
         color: var(--viz-40);
     }
@@ -860,7 +860,7 @@
 
     .format-badge {
         font-family: var(--viz-mono-font);
-        font-size: var(--viz-font-size-xs);
+        font-size: var(--viz-font-size-std);
         background: var(--viz-90);
         color: var(--viz-text-color);
         padding: var(--viz-spacing-xxs) var(--viz-spacing-sm);

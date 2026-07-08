@@ -556,7 +556,7 @@
 
     .tab-group-header {
         background-color: var(--viz-100);
-        font-size: 0.8rem;
+        font-size: 1rem;
         display: flex;
         align-items: center;
         position: relative;
@@ -564,7 +564,7 @@
         width: 100%;
         min-width: 0;
         flex-shrink: 0;
-        height: 1.8em;
+        height: 1.8rem;
         transition: background-color 0.2s;
 
         &:global(.drop-active) {
@@ -593,13 +593,13 @@
         display: flex;
         align-items: center;
         position: relative;
-        padding: 0.2em 0.5em;
+        padding: var(--viz-spacing-sm) var(--viz-spacing-xs);
         cursor: default;
         height: 100%;
         max-width: 11em;
         overflow: hidden;
-        gap: 0.3em;
-        font-size: 0.85em;
+        gap: var(--viz-spacing-xs);
+        font-size: var(--viz-font-size-sm);
         font-weight: 450;
         border: none;
         background: transparent;

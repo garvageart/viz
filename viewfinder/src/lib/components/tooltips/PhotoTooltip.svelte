@@ -22,7 +22,7 @@
                 <IconButton
                     iconName="edit"
                     class="edit-button"
-                    size="1rem"
+                    size="1.5rem"
                     onclick={(e) => {
                         clickHandler?.(e);
                     }}
@@ -32,13 +32,13 @@
     {/if}
     {#if takenAt}
         <div class="tooltip-row">
-            <MaterialIcon iconName="calendar_clock" grade={-25} weight={300} size="1rem" />
+            <MaterialIcon iconName="calendar_clock" grade={-25} weight={300} />
             <span class="tooltip-value">{DateTime.fromJSDate(takenAt).toFormat("dd LLL yyyy • HH:mm")}</span>
             <ImageLabelViewer label={getImageLabel(asset)} variant="compact" enableSelection={false} />
         </div>
     {/if}
     <div class="tooltip-row">
-        <MaterialIcon iconName="person" weight={300} size="1rem" />
+        <MaterialIcon iconName="person" weight={300} />
         <span class="tooltip-value">{asset.owner?.name}</span>
     </div>
 </div>
@@ -49,7 +49,7 @@
         flex-direction: column;
         gap: 2px;
         text-align: left;
-        font-size: var(--viz-font-size-sm);
+        font-size: var(--viz-font-size-lg);
         min-width: 15vw;
         padding: var(--viz-spacing-xs);
     }

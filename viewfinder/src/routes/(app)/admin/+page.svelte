@@ -125,7 +125,7 @@
 
 {#snippet headerActions()}
     <div class="last-updated-badge">
-        <MaterialIcon iconName="sync" size="0.95rem" class="sync-icon" />
+        <MaterialIcon iconName="sync" size="1rem" class="sync-icon" />
         <span>Updated {DateTime.fromJSDate(lastUpdated).toFormat("HH:mm:ss")}</span>
     </div>
 {/snippet}
@@ -382,7 +382,7 @@
         border: var(--viz-border-thin);
         border-radius: var(--viz-border-radius-sm);
         padding: var(--viz-spacing-xs) var(--viz-spacing-sm);
-        font-size: var(--viz-font-size-xs);
+        font-size: var(--viz-font-size-std);
         color: var(--viz-text-color);
         font-family: var(--viz-mono-font);
         letter-spacing: -0.02em;
@@ -423,7 +423,7 @@
     }
 
     .section-title {
-        font-size: var(--viz-font-size-lg);
+        font-size: var(--viz-font-size-xl);
         font-weight: 600;
         color: var(--viz-text-color);
         margin: 0;
@@ -546,7 +546,7 @@
     }
 
     .stat-label {
-        font-size: var(--viz-font-size-xs);
+        font-size: var(--viz-font-size-std);
         color: var(--viz-40);
         margin-top: var(--viz-spacing-xxs);
     }
@@ -576,7 +576,7 @@
         gap: var(--viz-spacing-sm);
 
         h4 {
-            font-size: var(--viz-font-size-std);
+            font-size: var(--viz-font-size-xl);
             font-weight: 600;
             color: var(--viz-text-color);
             margin: 0;
@@ -584,7 +584,7 @@
     }
 
     .card-subtitle {
-        font-size: var(--viz-font-size-xs);
+        font-size: var(--viz-font-size-lg);
         color: var(--viz-40);
         display: block;
         margin-top: 2px;
@@ -626,7 +626,7 @@
         display: flex;
         justify-content: space-between;
         align-items: center;
-        font-size: var(--viz-font-size-sm);
+        font-size: var(--viz-font-size-lg);
         gap: var(--viz-spacing-md);
 
         .storage-label {
@@ -640,7 +640,7 @@
 
             &.path {
                 font-family: var(--viz-mono-font);
-                font-size: var(--viz-font-size-xs);
+                font-size: var(--viz-font-size-std);
                 word-break: break-all;
                 max-width: 12rem;
                 text-align: right;
@@ -700,12 +700,12 @@
         }
 
         .about-label {
-            font-size: var(--viz-font-size-sm);
+            font-size: var(--viz-font-size-lg);
             color: var(--viz-40);
         }
 
         .about-value {
-            font-size: var(--viz-font-size-sm);
+            font-size: var(--viz-font-size-lg);
             color: var(--viz-text-color);
             font-weight: 500;
         }
@@ -723,16 +723,12 @@
 
     .version-tag {
         font-family: var(--viz-mono-font);
-        font-size: var(--viz-font-size-xs);
+        font-size: var(--viz-font-size-std);
         padding: 0.25rem 0.6rem;
         background-color: var(--viz-90);
         color: var(--viz-text-color);
         border: var(--viz-border-thin);
         border-radius: var(--viz-border-radius-sm);
         font-weight: 600;
-    }
-
-    #uptime-value {
-        font-size: var(--viz-font-size-lg);
     }
 </style>

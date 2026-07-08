@@ -64,13 +64,13 @@
     }
 
     .label {
-        font-size: var(--viz-font-size-sm);
+        font-size: var(--viz-font-size-lg);
         font-weight: 600;
         color: var(--viz-text-color);
     }
 
     .description {
-        font-size: var(--viz-font-size-xs);
+        font-size: var(--viz-font-size-std);
         color: var(--viz-40);
     }
 

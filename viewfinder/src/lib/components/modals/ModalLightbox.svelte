@@ -82,7 +82,7 @@
         padding: 0.25rem;
 
         h1 {
-            font-size: 1rem;
+            font-size: var(--viz-font-size-lg);
             position: absolute;
             left: 0;
             right: 0;

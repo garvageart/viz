@@ -103,6 +103,7 @@
         justify-content: center;
         width: 1rem;
         height: 1rem;
+        font-size: 1rem;
         border: var(--viz-border-thin);
         border-radius: var(--viz-border-radius-sm);
         background-color: var(--viz-95);
@@ -165,7 +166,7 @@
     }
 
     .label-text {
-        font-size: var(--viz-font-size-sm);
+        font-size: var(--viz-font-size-lg);
         font-weight: 500;
         color: var(--viz-40);
         transition: color 0.12s ease;

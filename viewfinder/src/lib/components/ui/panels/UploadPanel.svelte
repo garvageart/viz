@@ -314,7 +314,7 @@
         align-items: center;
         justify-content: space-between;
         padding: 0 var(--viz-spacing-std);
-        font-size: var(--viz-font-size-sm);
+        font-size: var(--viz-font-size-lg);
         font-weight: 600;
         border-bottom: var(--viz-border-thin);
         background-color: var(--viz-90);
@@ -327,7 +327,7 @@
         display: flex;
         align-items: center;
         padding: var(--viz-spacing-sm) var(--viz-spacing-std);
-        font-size: var(--viz-font-size-sm);
+        font-size: var(--viz-font-size-lg);
         font-weight: 600;
         border-bottom: var(--viz-border-thin);
         background-color: var(--viz-95);
@@ -351,7 +351,7 @@
     .concurrency-control {
         display: flex;
         align-items: center;
-        font-size: var(--viz-font-size-xs);
+        font-size: var(--viz-font-size-std);
         font-weight: 500;
 
         label {
@@ -425,7 +425,7 @@
     }
 
     .panel-file-info-metadata {
-        font-size: var(--viz-font-size-xs);
+        font-size: var(--viz-font-size-std);
         margin-bottom: var(--viz-spacing-sm);
         width: 100%;
         display: flex;
@@ -444,7 +444,7 @@
 
     .viz-upload-progress-text {
         font-weight: 600;
-        font-size: var(--viz-font-size-xs);
+        font-size: var(--viz-font-size-std);
         color: var(--viz-20);
         min-width: 40px;
         text-align: right;

@@ -42,7 +42,7 @@
                     <li>
                         <a href={item.href} class={["nav-link", isActive(item.href, item.exact) ? "active" : ""]}>
                             {#if item.icon}
-                                <MaterialIcon iconName={item.icon} size="1rem" />
+                                <MaterialIcon iconName={item.icon} size="1.5rem" />
                             {/if}
                             <span>{item.label}</span>
                         </a>
@@ -77,7 +77,7 @@
         padding: var(--viz-spacing-xs) var(--viz-spacing-md);
         color: var(--viz-20);
         text-decoration: none;
-        font-size: var(--viz-font-size-std);
+        font-size: var(--viz-font-size-lg);
         border-bottom: 2px solid transparent;
         transition:
             background-color 0.15s ease,

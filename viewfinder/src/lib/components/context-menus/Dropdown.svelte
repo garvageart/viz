@@ -150,7 +150,7 @@
     }
 
     .viz-dropdown-title {
-        margin: 0em 0.2rem;
+        margin: 0 var(--viz-spacing-xs);
         white-space: nowrap;
         overflow: hidden;
         text-overflow: ellipsis;
@@ -159,21 +159,16 @@
     :global(.viz-dropdown-button) {
         display: flex;
         align-items: center;
-        border-radius: 10em;
+        border-radius: var(--viz-border-radius-pill);
         white-space: nowrap;
-        cursor: pointer;
 
-        &:focus {
-            outline: 2px solid var(--viz-60);
+        &:focus,
+        &:active {
             background-color: var(--viz-80);
         }
 
         &:hover {
             background-color: var(--viz-90);
-        }
-
-        &:active {
-            background-color: var(--viz-80);
         }
     }
 </style>

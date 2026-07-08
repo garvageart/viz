@@ -158,7 +158,7 @@
 
     .warning-text {
         color: var(--viz-warning-color);
-        font-size: var(--viz-font-size-sm);
+        font-size: var(--viz-font-size-lg);
         margin: 0 0 var(--viz-spacing-std) 0;
     }
 
@@ -186,7 +186,7 @@
 
         code {
             font-family: var(--viz-mono-font);
-            font-size: var(--viz-font-size-sm);
+            font-size: var(--viz-font-size-lg);
             word-break: break-all;
             flex-grow: 1;
             color: var(--viz-text-color);
@@ -199,7 +199,7 @@
         gap: var(--viz-spacing-xs);
 
         h4 {
-            font-size: var(--viz-font-size-sm);
+            font-size: var(--viz-font-size-lg);
             font-weight: 600;
             color: var(--viz-40);
             margin: 0;
@@ -253,7 +253,7 @@
 
     .scope-label {
         font-weight: 600;
-        font-size: var(--viz-font-size-xs);
+        font-size: var(--viz-font-size-std);
         color: var(--viz-text-color);
         line-height: 1.2;
     }

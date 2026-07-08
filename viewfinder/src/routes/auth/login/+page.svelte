@@ -157,20 +157,20 @@
     .viz-title {
         font-family: var(--viz-mono-font);
         font-weight: 700;
-        font-size: var(--viz-font-size-3xl);
+        font-size: var(--viz-font-size-5xl);
         color: var(--viz-text-color);
         letter-spacing: -0.05em;
     }
 
     .auth-subtitle {
-        font-size: var(--viz-font-size-xs);
+        font-size: var(--viz-font-size-std);
         font-family: var(--viz-mono-font);
         color: var(--viz-40);
         text-transform: lowercase;
     }
 
     .auth-heading {
-        font-size: var(--viz-font-size-xl);
+        font-size: var(--viz-font-size-3xl);
         font-weight: 600;
         margin-bottom: var(--viz-spacing-md);
         color: var(--viz-text-color);
@@ -196,7 +196,7 @@
         color: #ffffff !important;
         border: none !important;
         font-weight: 600 !important;
-        font-size: var(--viz-font-size-std) !important;
+        font-size: var(--viz-font-size-xl) !important;
         padding: var(--viz-spacing-sm) var(--viz-spacing-std) !important;
         border-radius: var(--viz-border-radius-pill) !important;
         transition:
@@ -211,7 +211,7 @@
 
     .auth-footer {
         margin-top: var(--viz-spacing-lg);
-        font-size: var(--viz-font-size-sm);
+        font-size: var(--viz-font-size-lg);
         color: var(--viz-40);
         text-align: center;
 

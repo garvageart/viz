@@ -270,7 +270,7 @@
     .users-table {
         width: 100%;
         border-collapse: collapse;
-        font-size: var(--viz-font-size-sm);
+        font-size: var(--viz-font-size-lg);
 
         tr {
             transition: background-color 0.15s ease;
@@ -285,7 +285,7 @@
             padding: var(--viz-spacing-md) var(--viz-spacing-sm);
             color: var(--viz-40);
             font-weight: 600;
-            font-size: var(--viz-font-size-xs);
+            font-size: var(--viz-font-size-std);
             text-transform: uppercase;
             letter-spacing: 0.05em;
             border-bottom: var(--viz-border-thin);
@@ -318,7 +318,7 @@
         align-items: center;
         justify-content: center;
         font-weight: 600;
-        font-size: var(--viz-font-size-sm);
+        font-size: var(--viz-font-size-lg);
         border: var(--viz-border-thin);
 
         &.current-user {
@@ -339,7 +339,7 @@
     }
 
     .uid {
-        font-size: var(--viz-font-size-xs);
+        font-size: var(--viz-font-size-std);
         color: var(--viz-40);
         font-family: var(--viz-mono-font);
     }
@@ -348,7 +348,7 @@
         display: inline-block;
         padding: var(--viz-spacing-xxs) var(--viz-spacing-sm);
         border-radius: var(--viz-border-radius-sm);
-        font-size: var(--viz-font-size-xs);
+        font-size: var(--viz-font-size-std);
         font-weight: 600;
         text-transform: uppercase;
         letter-spacing: 0.05em;
@@ -411,7 +411,7 @@
         display: flex;
         align-items: flex-start;
         gap: var(--viz-spacing-sm);
-        font-size: var(--viz-font-size-sm);
+        font-size: var(--viz-font-size-lg);
         margin: 0;
         line-height: 1.5;
         width: 100%;

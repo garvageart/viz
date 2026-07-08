@@ -60,7 +60,7 @@
         border: 1px solid var(--viz-60);
         outline: none;
         font-family: var(--viz-mono-font);
-        font-size: var(--viz-font-size-sm);
+        font-size: var(--viz-font-size-lg);
         resize: vertical;
         transition:
             border-color 0.15s ease,
@@ -98,7 +98,7 @@
 
     .error-message {
         display: block;
-        font-size: var(--viz-font-size-xs);
+        font-size: var(--viz-font-size-std);
         color: var(--viz-error-color);
         margin-top: var(--viz-spacing-xs);
         font-family: var(--viz-display-font);

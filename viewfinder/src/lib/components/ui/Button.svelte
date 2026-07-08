@@ -31,7 +31,7 @@
         cursor: pointer;
         color: var(--viz-text-color);
         font-weight: 500;
-        font-size: var(--viz-font-size-std);
+        font-size: var(--viz-font-size-xl);
         letter-spacing: 0.02em;
         height: max-content;
         background-color: var(--viz-90);
@@ -72,12 +72,12 @@
         }
 
         &.small {
-            font-size: var(--viz-font-size-sm);
+            font-size: var(--viz-font-size-lg);
             padding: var(--viz-spacing-xs) var(--viz-spacing-md);
         }
 
         &.mini {
-            font-size: var(--viz-font-size-xs);
+            font-size: var(--viz-font-size-std);
             padding: var(--viz-spacing-xxs) var(--viz-spacing-sm);
         }
     }

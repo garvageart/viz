@@ -39,7 +39,7 @@
         onkeydown={handleSearch}
         disabled={loading}
     >
-        <MaterialIcon iconName="search" size="0.95rem" style="color: var(--viz-40);" />
+        <MaterialIcon iconName="search" size="1.2rem" style="color: var(--viz-40);" />
     </button>
     <input
         id={inputId}
@@ -76,7 +76,7 @@
         display: flex;
         align-items: center;
         width: 20%;
-        height: 1.625rem; /* Dynamic density height for 2rem high header */
+        height: 1.8rem;
         border: 1px solid var(--viz-60);
         border-radius: var(--viz-border-radius-pill);
         background-color: var(--viz-bg-color);
@@ -115,7 +115,7 @@
     }
 
     .search-input__field {
-        font-size: var(--viz-font-size-xs);
+        font-size: var(--viz-font-size-std);
         background-color: var(--viz-bg-color);
         color: var(--viz-text-color);
         outline: none;

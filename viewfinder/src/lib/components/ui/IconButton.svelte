@@ -102,7 +102,7 @@
         }
 
         &.small {
-            font-size: var(--viz-font-size-sm);
+            font-size: var(--viz-font-size-lg);
             padding: var(--viz-spacing-xxs);
 
             &.with-children {
@@ -111,7 +111,7 @@
         }
 
         &.mini {
-            font-size: var(--viz-font-size-xs);
+            font-size: var(--viz-font-size-std);
             padding: 0;
 
             &.with-children {

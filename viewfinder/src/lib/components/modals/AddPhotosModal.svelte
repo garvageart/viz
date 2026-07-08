@@ -230,7 +230,7 @@
                         icon="sort"
                         items={[
                             { id: "sort-name", label: "Name" },
-                            { id: "sort-created_at", label: "Created At" },
+                            { id: "sort-recently_added", label: "Recently Added" },
                             { id: "sort-updated_at", label: "Updated At" },
                             { id: "sort-taken_at", label: "Taken At" }
                         ]}
@@ -238,8 +238,8 @@
                             switch (sortBy) {
                                 case "name":
                                     return "sort-name";
-                                case "created_at":
-                                    return "sort-created_at";
+                                case "recently_added":
+                                    return "sort-recently_added";
                                 case "updated_at":
                                     return "sort-updated_at";
                                 case "taken_at":
@@ -253,8 +253,8 @@
                                 case "sort-name":
                                     sortBy = "name";
                                     break;
-                                case "sort-created_at":
-                                    sortBy = "created_at";
+                                case "sort-recently_added":
+                                    sortBy = "recently_added";
                                     break;
                                 case "sort-updated_at":
                                     sortBy = "updated_at";
@@ -377,7 +377,7 @@
 
         .loading-text {
             font-family: var(--viz-mono-font);
-            font-size: var(--viz-font-size-xs);
+            font-size: var(--viz-font-size-std);
         }
     }
 
@@ -418,7 +418,7 @@
         height: 100%;
         padding: var(--viz-spacing-xxl);
         color: var(--viz-40);
-        font-size: var(--viz-font-size-lg);
+        font-size: var(--viz-font-size-2xl);
         text-align: center;
     }
 
@@ -449,7 +449,7 @@
 
     .selection-status {
         font-family: var(--viz-mono-font);
-        font-size: var(--viz-font-size-sm);
+        font-size: var(--viz-font-size-lg);
 
         .selection-count {
             font-weight: 600;

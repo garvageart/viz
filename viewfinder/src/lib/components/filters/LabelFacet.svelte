@@ -60,7 +60,6 @@
         display: flex;
         align-items: center;
         justify-content: space-between;
-        font-size: 0.85rem;
         color: var(--viz-60);
         cursor: pointer;
 
@@ -71,26 +70,24 @@
         }
 
         .label-name {
-            font-size: 0.85rem;
             color: var(--viz-text-color);
         }
     }
 
     .color-indicator {
-        width: 0.75em;
-        height: 0.75em;
+        width: 1em;
+        height: 1em;
         border: 1px solid var(--viz-60);
     }
 
     .count {
-        font-size: 0.75rem;
+        font-size: 1rem;
         opacity: 0.7;
         margin-left: 8px;
     }
 
     .empty {
         font-style: italic;
-        font-size: 0.8rem;
         opacity: 0.6;
         color: var(--viz-60);
     }

@@ -66,7 +66,7 @@
                 <div class="mini-left">
                     {#if asset.favourited}
                         <div class="mini-favorite">
-                            <MaterialIcon iconName="favorite" size="0.75rem" fill={true} />
+                            <MaterialIcon iconName="favorite" size="1rem" fill={true} />
                         </div>
                     {/if}
                     <div class="mini-rating">
@@ -115,11 +115,15 @@
             {#if asset.favourited || asset.image_metadata?.label}
                 <div class="card-overlays">
                     {#if asset.image_metadata?.label}
-                        <div class="overlay-badge label-badge" style="background-color: {getImageLabel(asset)}" title="Label Color"></div>
+                        <div
+                            class="overlay-badge label-badge"
+                            style="background-color: {getImageLabel(asset)}"
+                            title="Label Color"
+                        ></div>
                     {/if}
                     {#if asset.favourited}
                         <div class="overlay-badge favorite-badge" title="Favourited">
-                            <MaterialIcon iconName="favorite" size="0.8rem" fill={true} />
+                            <MaterialIcon iconName="favorite" size="1rem" fill={true} />
                         </div>
                     {/if}
                 </div>
@@ -172,7 +176,7 @@
         border-top-color: var(--viz-85);
 
         .mini-filename {
-            font-size: 0.7rem;
+            font-size: var(--viz-font-size-sm);
             font-weight: 600;
             color: var(--viz-40);
             white-space: nowrap;
@@ -205,11 +209,11 @@
 
         .mini-rating {
             display: flex;
-            gap: var(--viz-spacing-xxs);
+            gap: var(--viz-spacing-xs);
 
             .dot {
-                width: 0.25rem;
-                height: 0.25rem;
+                width: 0.35rem;
+                height: 0.35rem;
                 border-radius: var(--viz-border-radius-pill);
                 background-color: var(--viz-70);
 
@@ -228,32 +232,29 @@
     }
 
     .image-card {
-        max-height: 25em;
+        min-width: 100%;
+        max-width: 100%;
+        height: auto;
         background-color: var(--viz-95);
         border: var(--viz-border-thin);
         border-radius: var(--viz-border-radius-md);
+        position: relative;
         overflow: hidden;
+        cursor: pointer;
         display: flex;
         flex-direction: column;
-        justify-content: flex-start;
-        position: relative;
-        transition: border-color 0.15s ease-in-out, background-color 0.15s ease-in-out, box-shadow 0.15s ease-in-out;
         box-sizing: border-box;
-
-        &.selected {
-            border-color: var(--viz-primary);
-            box-shadow: 0 0 0 1px var(--viz-primary);
-            pointer-events: none;
-        }
-
-        &:focus {
-            outline: none;
-        }
 
         &:hover {
             background-color: var(--viz-90);
             border-color: var(--viz-60);
         }
+    }
+
+    .image-card.selected {
+        border-color: var(--viz-primary);
+        box-shadow: 0 0 0 1px var(--viz-primary);
+        pointer-events: none;
     }
 
     .image-card-meta {
@@ -267,7 +268,7 @@
     }
 
     .image-card-name {
-        font-size: var(--viz-font-size-sm);
+        font-size: var(--viz-font-size-lg);
         font-weight: 600;
         color: var(--viz-text-color);
         white-space: nowrap;
@@ -293,7 +294,7 @@
         align-items: center;
         gap: var(--viz-spacing-xs);
         font-family: var(--viz-mono-font);
-        font-size: var(--viz-font-size-xs);
+        font-size: var(--viz-font-size-std);
         color: var(--viz-40);
     }
 

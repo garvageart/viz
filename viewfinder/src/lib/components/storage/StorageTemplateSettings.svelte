@@ -514,14 +514,14 @@
             h3 {
                 margin: 0;
                 font-family: var(--viz-display-font);
-                font-size: var(--viz-font-size-xl);
+                font-size: var(--viz-font-size-3xl);
                 font-weight: 600;
                 color: var(--viz-text-color);
             }
 
             p {
                 margin: var(--viz-spacing-xxs) 0 0;
-                font-size: var(--viz-font-size-xs);
+                font-size: var(--viz-font-size-std);
                 color: var(--viz-40);
             }
         }
@@ -539,7 +539,7 @@
             display: flex;
             align-items: center;
             gap: var(--viz-spacing-sm);
-            font-size: var(--viz-font-size-sm);
+            font-size: var(--viz-font-size-lg);
             font-weight: 500;
             color: var(--viz-text-color);
 
@@ -561,18 +561,18 @@
                 padding: var(--viz-spacing-xxs) var(--viz-spacing-xs);
                 border: var(--viz-border-thin);
                 border-radius: var(--viz-border-radius-sm);
-                font-size: var(--viz-font-size-xs);
+                font-size: var(--viz-font-size-std);
             }
         }
 
         .config-note {
             margin: 0;
-            font-size: var(--viz-font-size-xs);
+            font-size: var(--viz-font-size-std);
             color: var(--viz-40);
         }
 
         .unsaved-badge {
-            font-size: var(--viz-font-size-xs);
+            font-size: var(--viz-font-size-std);
             font-weight: 600;
             background-color: color-mix(in srgb, var(--viz-warning-color) 12%, var(--viz-95));
             color: color-mix(in srgb, var(--viz-warning-color) 70%, var(--viz-text-color));
@@ -625,14 +625,14 @@
 
                 .designer-label {
                     margin: 0;
-                    font-size: var(--viz-font-size-std);
+                    font-size: var(--viz-font-size-xl);
                     font-weight: 600;
                     color: var(--viz-text-color);
                 }
 
                 p {
                     margin: var(--viz-spacing-xs) 0 0;
-                    font-size: var(--viz-font-size-xs);
+                    font-size: var(--viz-font-size-std);
                     color: var(--viz-40);
                 }
             }
@@ -683,7 +683,7 @@
             }
 
             .preview-title {
-                font-size: var(--viz-font-size-xs);
+                font-size: var(--viz-font-size-std);
                 text-transform: uppercase;
                 letter-spacing: 0.05em;
                 color: #8f96a3;
@@ -694,7 +694,7 @@
         .preview-body {
             padding: var(--viz-spacing-lg);
             font-family: var(--viz-mono-font);
-            font-size: var(--viz-font-size-sm);
+            font-size: var(--viz-font-size-lg);
             word-break: break-all;
             line-height: 1.5;
 
@@ -719,7 +719,7 @@
         .preview-footer {
             background-color: #121418;
             padding: var(--viz-spacing-xs) var(--viz-spacing-md);
-            font-size: var(--viz-font-size-xs);
+            font-size: var(--viz-font-size-std);
             color: var(--viz-20-dark);
             border-top: 1px solid #1f2229;
         }
@@ -744,14 +744,14 @@
         .context-header {
             h4 {
                 margin: 0;
-                font-size: var(--viz-font-size-std);
+                font-size: var(--viz-font-size-xl);
                 font-weight: 600;
                 color: var(--viz-text-color);
             }
 
             p {
                 margin: var(--viz-spacing-xs) 0 0;
-                font-size: var(--viz-font-size-xs);
+                font-size: var(--viz-font-size-std);
                 color: var(--viz-40);
             }
         }
@@ -791,14 +791,14 @@
 
         h4 {
             margin: 0;
-            font-size: var(--viz-font-size-std);
+            font-size: var(--viz-font-size-xl);
             font-weight: 600;
             color: var(--viz-text-color);
         }
 
         p {
             margin: var(--viz-spacing-xs) 0 0;
-            font-size: var(--viz-font-size-xs);
+            font-size: var(--viz-font-size-std);
             color: var(--viz-40);
         }
     }
@@ -843,7 +843,7 @@
 
             h5 {
                 margin: 0;
-                font-size: var(--viz-font-size-sm);
+                font-size: var(--viz-font-size-lg);
             }
         }
     }
@@ -860,7 +860,7 @@
         gap: var(--viz-spacing-xs);
 
         .unit-title {
-            font-size: var(--viz-font-size-xs);
+            font-size: var(--viz-font-size-std);
             font-weight: 600;
             color: var(--viz-30);
         }
@@ -905,7 +905,7 @@
 
         .token-code {
             font-family: var(--viz-mono-font);
-            font-size: var(--viz-font-size-xs);
+            font-size: var(--viz-font-size-std);
             font-weight: 600;
             color: var(--viz-text-color);
             background-color: var(--viz-95);
@@ -916,7 +916,7 @@
 
         .token-val {
             font-family: var(--viz-mono-font);
-            font-size: var(--viz-font-size-xs);
+            font-size: var(--viz-font-size-std);
             color: var(--viz-40);
         }
 
@@ -932,12 +932,12 @@
             }
 
             .token-val-desc {
-                font-size: var(--viz-font-size-xs);
+                font-size: var(--viz-font-size-std);
                 color: var(--viz-40);
             }
 
             .token-example-val {
-                font-size: var(--viz-font-size-sm);
+                font-size: var(--viz-font-size-lg);
                 font-weight: 600;
 
                 .null-val {

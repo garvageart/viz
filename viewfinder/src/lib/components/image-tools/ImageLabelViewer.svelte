@@ -119,13 +119,12 @@
         display: inline-flex;
         align-items: center;
         gap: 0.5em;
-        width: 1.25em;
-        height: 1.25em;
+        width: var(--viz-font-size-std);
+        height: var(--viz-font-size-std);
         border: 1px solid var(--viz-60);
         background-color: var(--viz-bg-color);
         color: var(--viz-text-color);
         cursor: pointer;
-        font-size: 0.9em;
         padding: 0;
 
         &:disabled {
@@ -144,8 +143,8 @@
     }
 
     .label-selector-trigger {
-        height: 0.75rem;
-        width: 0.75rem;
+        width: var(--viz-font-size-std);
+        height: var(--viz-font-size-std);
         outline: none;
         border: 1px solid var(--viz-60);
         background-color: var(--viz-bg-color);
@@ -169,9 +168,9 @@
         z-index: 1000;
         background-color: var(--viz-bg-color);
         border: 1px solid var(--viz-60);
-        padding: 0.5rem;
+        padding: var(--viz-spacing-sm);
         display: flex;
-        gap: 0.5rem;
+        gap: var(--viz-spacing-sm);
         width: max-content;
         box-shadow: 0 4px 6px -1px rgb(0 0 0 / 0.1);
         border-radius: 0.25rem;

@@ -149,7 +149,7 @@
             onkeydown={(e) => e.preventDefault()}
         >
             <div class="thumb-inner">
-                <MaterialIcon iconName="unfold_more" iconStyle="rounded" class="thumb-icon" />
+                <MaterialIcon iconName="unfold_more" iconStyle="rounded" class="thumb-icon" size="2rem" />
             </div>
         </div>
     </div>
@@ -161,7 +161,7 @@
         top: 0;
         right: 0;
         bottom: 0;
-        width: 3rem; /* Hit area width */
+        width: 4rem; /* Hit area width */
         z-index: 100;
         user-select: none;
         touch-action: none;
@@ -171,8 +171,8 @@
     .scrubber-thumb {
         position: absolute;
         right: 0.25rem;
-        width: 3rem;
-        height: 3rem;
+        width: 4.5rem;
+        height: 4.5rem;
         cursor: grab;
         display: flex;
         align-items: center;
@@ -189,8 +189,8 @@
     }
 
     .thumb-inner {
-        width: 3rem;
-        height: 3rem;
+        width: 4rem;
+        height: 4rem;
         background-color: var(--viz-primary);
         color: var(--viz-10-dark);
         border-radius: 50%;
@@ -210,8 +210,8 @@
 
     .scrubber-thumb:hover .thumb-inner,
     .scrubber-thumb.active .thumb-inner {
-        width: 3rem;
-        height: 3rem;
+        width: 4rem;
+        height: 4rem;
         box-shadow:
             0 2px 6px rgba(0, 0, 0, 0.25),
             0 8px 16px rgba(0, 0, 0, 0.2);
@@ -232,7 +232,7 @@
         box-shadow: 0 4px 20px rgba(0, 0, 0, 0.4);
         padding: 0.5rem 1rem;
         border-radius: 0.5rem;
-        font-size: 0.95rem;
+        font-size: 1rem;
         font-weight: 600;
         white-space: nowrap;
         pointer-events: none;

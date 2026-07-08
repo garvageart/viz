@@ -457,7 +457,7 @@
     }
 
     #coll-name {
-        font-size: var(--viz-font-size-3xl);
+        font-size: var(--viz-font-size-5xl);
         font-family: var(--viz-display-font);
         font-weight: 700;
         color: var(--viz-text-color);
@@ -488,7 +488,7 @@
         border-radius: var(--viz-border-radius-pill);
         padding: 0.35rem 0.75rem;
         font-family: var(--viz-mono-font);
-        font-size: var(--viz-font-size-xs);
+        font-size: var(--viz-font-size-std);
         color: var(--viz-40);
         box-shadow: 0 1px 2px rgba(0, 0, 0, 0.05);
 

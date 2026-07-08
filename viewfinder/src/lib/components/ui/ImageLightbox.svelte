@@ -1,11 +1,16 @@
 <script lang="ts">
-    import { getFullImagePath, updateImage, type ImageAsset, Label as ImageLabel, type ImageUpdate } from "$lib/api";
+    import { dev } from "$app/environment";
+    import { getFullImagePath, Label as ImageLabel, updateImage, type ImageAsset, type ImageUpdate } from "$lib/api";
+    import { modalsManager } from "$lib/components/modals/manager/ModalManager.svelte";
+    import Calendar from "$lib/components/ui/Calendar.svelte";
+    import ExportPanel, { modalOptions as exportModalOptions } from "$lib/components/ui/panels/ExportPanel.svelte";
+    import { ApiError } from "$lib/errors/errors";
     import { LabelColours } from "$lib/images/constants";
-    import { calculateZoomTo, constrainTranslation } from "$lib/images/zoom/zoom-utils";
     import { setRating } from "$lib/images/exif";
+    import { ImageLoader } from "$lib/images/loader/image-loader.svelte";
+    import { calculateZoomTo, constrainTranslation } from "$lib/images/zoom/zoom-utils";
     import { toastState } from "$lib/toast-notifcations/notif-state.svelte";
     import { downloadOriginalImageFile } from "$lib/utils/http";
-    import { copyToClipboard } from "$lib/utils/misc";
     import {
         formatBytes,
         getFlashMode,
@@ -14,7 +19,9 @@
         getThumbhashURL,
         getWhiteBalance
     } from "$lib/utils/images";
+    import { copyToClipboard } from "$lib/utils/misc";
     import hotkeys from "hotkeys-js";
+    import isEqual from "lodash-es/isEqual";
     import { onMount, untrack } from "svelte";
     import type { MouseEventHandler, PointerEventHandler, WheelEventHandler } from "svelte/elements";
     import CropOverlay from "../image-tools/CropOverlay.svelte";
@@ -25,14 +32,6 @@
     import InputText from "./InputText.svelte";
     import Lightbox from "./Lightbox.svelte";
     import MaterialIcon from "./MaterialIcon.svelte";
-    import { dev } from "$app/environment";
-    import { ImageLoader } from "$lib/images/loader/image-loader.svelte";
-    import { modalsManager } from "$lib/components/modals/manager/ModalManager.svelte";
-    import ExportPanel, { modalOptions as exportModalOptions } from "$lib/components/ui/panels/ExportPanel.svelte";
-    import Calendar from "$lib/components/ui/Calendar.svelte";
-    import isEqual from "lodash-es/isEqual";
-    import { ApiError } from "$lib/errors/errors";
-    import { isEmpty } from "lodash-es";
 
     interface Props {
         lightboxImage: ImageAsset | undefined;
@@ -1592,7 +1591,8 @@
         display: inline-flex;
         align-items: center;
         justify-content: center;
-        padding: 0.25em;
+        padding: var(--viz-spacing-sm);
+        font-size: var(--viz-font-size-lg);
         background: transparent !important;
         border: none;
         opacity: 1;
@@ -1722,12 +1722,11 @@
         min-width: 20vw;
         pointer-events: auto;
         box-sizing: border-box;
-        font-size: 0.85rem;
         overflow-y: auto;
     }
 
     .metadata-header {
-        font-size: 1rem;
+        font-size: var(--viz-font-size-lg);
         display: flex;
         align-items: center;
         margin-bottom: var(--viz-spacing-sm);
@@ -1789,7 +1788,7 @@
         justify-content: center;
         line-height: 1;
         vertical-align: middle;
-        font-size: 1.1em;
+        font-size: 1.5em;
     }
 
     .card-values {
@@ -1802,12 +1801,6 @@
 		   be ellipsized instead of forcing the container to overflow */
         min-width: 0;
         flex: 1 1 auto;
-    }
-
-    :global(.value-big) {
-        font-size: 1em;
-        font-weight: 600;
-        letter-spacing: -0.01em;
     }
 
     .name-row {
@@ -1848,7 +1841,7 @@
 
     :global(.file-type-badge) {
         display: inline-block;
-        font-size: 0.6rem;
+        font-size: var(--viz-font-size-std);
         font-weight: 600;
         font-family: var(--viz-mono-font);
         letter-spacing: 0.04em;
@@ -1862,7 +1855,13 @@
     }
 
     .value-sub {
-        font-size: 0.9em;
+        font-size: var(--viz-font-size-std);
+    }
+
+    :global(.value-big) {
+        font-size: var(--viz-font-size-std);
+        font-weight: 600;
+        letter-spacing: -0.01em;
     }
 
     :global(.value-big),
@@ -1902,7 +1901,7 @@
         padding: var(--viz-spacing-sm) var(--viz-spacing-lg);
         border-radius: 0;
         font-family: var(--viz-mono-font);
-        font-size: var(--viz-font-size-sm);
+        font-size: var(--viz-font-size-lg);
         font-weight: 600;
         letter-spacing: 0.05em;
         z-index: 10;
@@ -1922,7 +1921,7 @@
         padding: var(--viz-spacing-md);
         z-index: 100;
         font-family: var(--viz-mono-font);
-        font-size: var(--viz-font-size-xs);
+        font-size: var(--viz-font-size-std);
         color: var(--viz-text-color);
         max-width: 20rem;
         box-shadow: 0 4px 12px rgba(0, 0, 0, 0.25);
@@ -1930,7 +1929,7 @@
 
         h3 {
             margin: 0 0 var(--viz-spacing-sm) 0;
-            font-size: var(--viz-font-size-sm);
+            font-size: var(--viz-font-size-lg);
             font-weight: 600;
             border-bottom: var(--viz-border-thin);
             padding-bottom: var(--viz-spacing-xs);

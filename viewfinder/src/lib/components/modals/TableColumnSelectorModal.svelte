@@ -153,7 +153,7 @@
                                 />
                                 <span class="checkbox-custom"></span>
                                 <div class="icon-wrapper">
-                                    <MaterialIcon iconName={getIconForKey(key)} weight={300} size="1.1rem" />
+                                    <MaterialIcon iconName={getIconForKey(key)} weight={300} size="1.5rem" />
                                 </div>
                                 <span class="column-name">{snakeToSentence(key)}</span>
                             </label>
@@ -204,7 +204,7 @@
                                 />
                                 <span class="checkbox-custom"></span>
                                 <div class="icon-wrapper">
-                                    <MaterialIcon iconName={getIconForKey(key)} weight={300} size="1.1rem" />
+                                    <MaterialIcon iconName={getIconForKey(key)} weight={300} size="1.5rem" />
                                 </div>
                                 <span class="column-name">{snakeToSentence(key)}</span>
                             </label>
@@ -228,7 +228,7 @@
     .subtitle {
         color: var(--viz-40);
         margin-bottom: var(--viz-spacing-md);
-        font-size: var(--viz-font-size-sm);
+        font-size: var(--viz-font-size-lg);
     }
 
     .selector-content {
@@ -259,7 +259,7 @@
     }
 
     .section-title {
-        font-size: var(--viz-font-size-xs);
+        font-size: var(--viz-font-size-std);
         text-transform: uppercase;
         letter-spacing: 0.05em;
         color: var(--viz-40);
@@ -273,7 +273,7 @@
         padding: var(--viz-spacing-md);
         text-align: center;
         color: var(--viz-30);
-        font-size: var(--viz-font-size-sm);
+        font-size: var(--viz-font-size-lg);
         background: var(--viz-95);
         border-radius: var(--viz-border-radius-md);
         border: 1px dashed var(--viz-60);
@@ -363,7 +363,7 @@
         }
 
         .column-name {
-            font-size: var(--viz-font-size-sm);
+            font-size: var(--viz-font-size-lg);
             font-weight: 500;
         }
     }

@@ -580,7 +580,7 @@
                         icon="sort"
                         items={[
                             { id: "sort-name", label: "Name" },
-                            { id: "sort-created_at", label: "Created At" },
+                            { id: "sort-recently_added", label: "Recently Added" },
                             { id: "sort-updated_at", label: "Updated At" },
                             { id: "sort-taken_at", label: "Taken At" }
                         ]}
@@ -588,8 +588,8 @@
                             switch (sort.by) {
                                 case "name":
                                     return "sort-name";
-                                case "created_at":
-                                    return "sort-created_at";
+                                case "recently_added":
+                                    return "sort-recently_added";
                                 case "updated_at":
                                     return "sort-updated_at";
                                 case "taken_at":
@@ -603,8 +603,8 @@
                                 case "sort-name":
                                     sort.by = "name";
                                     break;
-                                case "sort-created_at":
-                                    sort.by = "created_at";
+                                case "sort-recently_added":
+                                    sort.by = "recently_added";
                                     break;
                                 case "sort-updated_at":
                                     sort.by = "updated_at";
@@ -718,7 +718,7 @@
 
     .selection-count {
         font-weight: 600;
-        font-size: var(--viz-font-size-sm);
+        font-size: var(--viz-font-size-lg);
     }
 
     .selection-menu-wrapper {
@@ -762,7 +762,7 @@
     .no-assets-title {
         margin: var(--viz-spacing-std);
         color: var(--viz-40);
-        font-size: var(--viz-font-size-xl);
+        font-size: var(--viz-font-size-3xl);
         font-weight: 500;
     }
 
@@ -774,7 +774,7 @@
     }
 
     :global(.add-icon) {
-        font-size: var(--viz-font-size-2xl) !important;
+        font-size: var(--viz-font-size-4xl) !important;
     }
 
     #viz-no_assets {

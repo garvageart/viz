@@ -74,7 +74,7 @@
                 <div class="viz-toast-type-container">
                     <MaterialIcon
                         iconName={getToastIcon(toast.type || "info")}
-                        size="0.875rem"
+                        size="1rem"
                         class="viz-toast-header-icon"
                     />
                     <span class="viz-toast-type-label">{formatCategoryLabel(toast.type || "info")}</span>
@@ -119,7 +119,7 @@
         position: fixed;
         right: var(--viz-spacing-lg);
         bottom: var(--viz-spacing-lg);
-        width: 22rem;
+        width: 25rem;
         max-width: calc(100vw - var(--viz-spacing-lg) * 2);
         display: flex;
         flex-direction: column;
@@ -130,7 +130,7 @@
     }
 
     .viz-toast {
-        font-size: var(--viz-font-size-sm);
+        font-size: var(--viz-font-size-lg);
         width: 100%;
         display: flex;
         flex-direction: column;
@@ -186,7 +186,6 @@
         padding-left: calc(var(--viz-spacing-md) + 4px); // Account for left vertical strip
         background-color: color-mix(in srgb, var(--toast-accent-color) 35%, var(--viz-90));
         border-bottom: 1px solid color-mix(in srgb, var(--toast-accent-color) 40%, var(--viz-60));
-        height: 1.75rem;
         box-sizing: border-box;
     }
 
@@ -199,9 +198,9 @@
     }
 
     .viz-toast-type-label {
-        font-size: var(--viz-font-size-xs);
-        font-weight: 700;
+        font-size: var(--viz-font-size-std);
         font-family: var(--viz-mono-font);
+        font-weight: 700;
         line-height: 1;
     }
 
@@ -224,16 +223,15 @@
 
     .viz-toast-title {
         font-weight: 700;
-        font-size: var(--viz-font-size-sm);
+        font-size: var(--viz-font-size-lg);
         line-height: 1.2;
         margin: 0;
         color: var(--viz-text-color);
     }
 
     .viz-toast-message {
-        font-size: var(--viz-font-size-xs);
+        font-size: var(--viz-font-size-std);
         line-height: 1.5;
-        color: var(--viz-30);
         overflow-wrap: break-word;
         word-break: break-word;
     }
@@ -273,7 +271,7 @@
         color: var(--viz-text-color);
         padding: var(--viz-spacing-xxs) var(--viz-spacing-sm);
         border-radius: var(--viz-border-radius-pill); // Pill shape strictly for interactive actions
-        font-size: var(--viz-font-size-xs);
+        font-size: var(--viz-font-size-std);
         cursor: pointer;
         font-weight: 600;
         font-family: var(--viz-display-font);

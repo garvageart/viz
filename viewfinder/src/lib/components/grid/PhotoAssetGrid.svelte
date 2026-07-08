@@ -1121,7 +1121,7 @@
                 <MaterialIcon
                     iconName={allSelected ? "check_circle" : "radio_button_unchecked"}
                     fill={allSelected}
-                    size="1.2rem"
+                    size="1.5rem"
                 />
             </button>
             <h3>{label}</h3>
@@ -1220,7 +1220,7 @@
                         <ImageLabelViewer variant="compact" enableSelection={false} label={getImageLabel(asset)} />
                     {/if}
                     {#if asset.favourited}
-                        <MaterialIcon iconName="favorite" size="0.8rem" style="color: white;" fill={true} />
+                        <MaterialIcon iconName="favorite" size="1rem" style="color: white;" fill={true} />
                     {/if}
                 </div>
             {/if}
@@ -1245,7 +1245,7 @@
             {/if}
         {:else}
             <div class="tile-image-fallback">
-                <MaterialIcon iconName="image" size="2rem" />
+                <MaterialIcon iconName="image" size="2.5rem" />
                 <span class="fallback-filename">{asset.name ?? asset.image_metadata?.file_name ?? asset.uid}</span>
             </div>
         {/if}
@@ -1499,7 +1499,7 @@
         }
 
         h3 {
-            font-size: var(--viz-font-size-std);
+            font-size: var(--viz-font-size-xl);
             font-weight: 500;
             color: var(--viz-text-color);
             margin: 0;
@@ -1630,7 +1630,7 @@
         padding: 0.5rem;
         font-size: 0.9rem;
         pointer-events: auto;
-        font-size: var(--viz-font-size-sm);
+        font-size: var(--viz-font-size-lg);
     }
 
     .asset-photo:hover .photo-overlay {
@@ -1677,7 +1677,7 @@
         }
 
         .fallback-filename {
-            font-size: var(--viz-font-size-xs);
+            font-size: var(--viz-font-size-std);
             color: var(--viz-30);
             max-width: 90%;
             white-space: nowrap;
@@ -1699,7 +1699,7 @@
         color: var(--viz-text-color);
         background-color: var(--viz-100);
         text-align: left;
-        font-size: var(--viz-font-size-xs);
+        font-size: var(--viz-font-size-std);
         line-height: 1.2;
         box-sizing: border-box;
         position: relative;

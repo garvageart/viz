@@ -153,7 +153,7 @@
         justify-content: space-between;
         align-items: center;
         gap: var(--viz-spacing-md);
-        font-size: var(--viz-font-size-sm);
+        font-size: var(--viz-font-size-lg);
     }
 
     .filter-label {
@@ -177,8 +177,8 @@
 
     .color-dot {
         display: inline-block;
-        width: var(--viz-font-size-sm);
-        height: var(--viz-font-size-sm);
+        width: var(--viz-font-size-lg);
+        height: var(--viz-font-size-lg);
         border-radius: var(--viz-border-radius-pill);
     }
 </style>
