@@ -425,8 +425,9 @@ func GetCacheStatus() (dto.CacheStatusResponse, error) {
 	}, nil
 }
 
-// ClearCache removes all cached transform files and resets persistent metrics.
-func ClearCache(logger *slog.Logger) error {
+// ClearCache removes cached transform files and resets persistent metrics.
+// If keepPermanent is true, it preserves pre-generated permanent transforms.
+func ClearCache(logger *slog.Logger, db *gorm.DB, keepPermanent bool) error {
 	if redisClient != nil {
 		ctx, cancel := context.WithTimeout(context.Background(), 2*time.Second)
 		defer cancel()
@@ -443,16 +444,55 @@ func ClearCache(logger *slog.Logger) error {
 		return fmt.Errorf("failed to read images directory: %w", err)
 	}
 
+	permanentHashes := make(map[string]bool)
+	if keepPermanent && db != nil {
+		var err error
+		permanentHashes, err = GetPermanentTransformHashes(db)
+		if err != nil {
+			logger.Error("failed to build permanent transform list for cache clear", slog.Any("error", err))
+			return fmt.Errorf("failed to build permanent transform list: %w", err)
+		}
+	}
+
 	for _, e := range entries {
 		if !e.IsDir() {
 			continue
 		}
 		uid := e.Name()
-		if err := PurgeTransformsForUID(uid); err != nil {
-			return fmt.Errorf("failed to purge transforms for UID %s: %w", uid, err)
+
+		if keepPermanent {
+			dir := filepath.Join(GetImageDir(uid), "transforms")
+			files, err := os.ReadDir(dir)
+			if err != nil {
+				if os.IsNotExist(err) {
+					continue
+				}
+				return fmt.Errorf("failed to read transforms directory for UID %s: %w", uid, err)
+			}
+
+			for _, f := range files {
+				if f.IsDir() {
+					continue
+				}
+
+				base := f.Name()
+				hash := strings.TrimSuffix(base, filepath.Ext(base))
+				if permanentHashes[hash] {
+					continue
+				}
+
+				p := filepath.Join(dir, base)
+				if err := os.Remove(p); err != nil && !os.IsNotExist(err) {
+					logger.Warn("failed to remove dynamic transform file", slog.String("path", p), slog.Any("error", err))
+				}
+			}
+		} else {
+			if err := PurgeTransformsForUID(uid); err != nil {
+				return fmt.Errorf("failed to purge transforms for UID %s: %w", uid, err)
+			}
 		}
 
-		logger.Debug("cleared transform cache for UID", slog.String("uid", uid))
+		logger.Debug("cleared transform cache for UID", slog.String("uid", uid), slog.Bool("keep_permanent", keepPermanent))
 	}
 	return nil
 }

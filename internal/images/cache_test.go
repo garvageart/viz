@@ -308,7 +308,7 @@ func TestCacheMetricsPersistence(t *testing.T) {
 	}
 
 	// Test ClearCache
-	if err := ClearCache(logger); err != nil {
+	if err := ClearCache(logger, nil, false); err != nil {
 		t.Fatalf("failed to clear cache: %v", err)
 	}
 

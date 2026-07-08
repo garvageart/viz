@@ -3,6 +3,7 @@ package transform
 import (
 	"fmt"
 	"net/url"
+	"reflect"
 	"strconv"
 	"viz/internal/entities"
 	"viz/internal/utils"
@@ -56,5 +57,29 @@ func CreateTransformEtag(imgEnt entities.ImageAsset, params *TransformParams) *s
 	if imgEnt.ImageMetadata != nil {
 		checksum = imgEnt.ImageMetadata.Checksum
 	}
-	return utils.StringPtr(fmt.Sprintf("%s-%dx%d-%s-%d-%d-%s-%s-%d", checksum, params.Width, params.Height, params.Format, params.Quality, params.Rotate, params.Flip, params.Kernel, params.BitDepth))
+
+	base := fmt.Sprintf("%s-%dx%d", checksum, params.Width, params.Height)
+
+	val := reflect.ValueOf(*params)
+	for i := 0; i < val.NumField(); i++ {
+		field := val.Field(i)
+		fieldName := val.Type().Field(i).Name
+
+		if fieldName == "Width" || fieldName == "Height" {
+			continue
+		}
+
+		switch field.Kind() {
+		case reflect.String:
+			if str := field.String(); str != "" {
+				base = fmt.Sprintf("%s-%s", base, str)
+			}
+		case reflect.Int, reflect.Int64:
+			if num := field.Int(); num != 0 {
+				base = fmt.Sprintf("%s-%d", base, num)
+			}
+		}
+	}
+
+	return utils.StringPtr(base)
 }

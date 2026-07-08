@@ -1,11 +1,12 @@
 <script lang="ts">
-    import { invalidate } from "$app/navigation";
+    import { goto, invalidate } from "$app/navigation";
     import { page } from "$app/state";
     import { clearImageCache } from "$lib/api";
     import Button from "$lib/components/ui/Button.svelte";
-    import ConfirmationModal from "$lib/components/modals/ConfirmationModal.svelte";
+    import ConfirmationModal, { modalOptions } from "$lib/components/modals/ConfirmationModal.svelte";
+    import Checkbox from "$lib/components/ui/Checkbox.svelte";
     import { formatBytes } from "$lib/utils/images";
-    import { toastState } from "$lib/toast-notifcations/notif-state.svelte";
+    import { toastState, type Toast } from "$lib/toast-notifcations/notif-state.svelte";
     import AdminRouteShell from "$lib/components/admin/AdminRouteShell.svelte";
     import MaterialIcon from "$lib/components/ui/MaterialIcon.svelte";
     import { modalsManager } from "$lib/components/modals/manager/ModalManager.svelte";
@@ -18,6 +19,7 @@
     let cacheStatus = $derived(data.cacheStatus);
     let loading = $state(false);
     let refreshing = $state(false);
+    let keepPermanent = $state(true);
 
     function openClearConfirm() {
         modalsManager.open(
@@ -25,9 +27,10 @@
             {
                 title: "Clear Image Cache",
                 confirmText: "Clear Cache",
-                onConfirm: handleClearCache
+                onConfirm: handleClearCache,
+                children: confirmBody
             },
-            { heading: "Clear Image Cache" }
+            { heading: "Clear Image Cache", ...modalOptions }
         );
     }
 
@@ -35,7 +38,7 @@
         loading = true;
 
         try {
-            const response = await clearImageCache();
+            const response = await clearImageCache({ keepPermanent });
             if (response.status !== 200) {
                 toastState.addToast({
                     type: "error",
@@ -43,10 +46,22 @@
                 });
                 return;
             }
-            toastState.addToast({
+
+            const toastOptions: Partial<Omit<Toast, "id">> = {
                 type: "success",
                 message: "Image cache cleared successfully."
-            });
+            };
+
+            if (!keepPermanent) {
+                toastOptions.actions = [
+                    {
+                        label: "Rescan",
+                        onClick: () => goto("/admin/jobs")
+                    }
+                ];
+            }
+
+            toastState.addToast(toastOptions);
             await invalidateViz();
         } catch (e) {
             toastState.addToast({
@@ -97,6 +112,15 @@
         </div>
         <div class="card-value">{value}</div>
         <span class="card-desc">{desc}</span>
+    </div>
+{/snippet}
+
+{#snippet confirmBody()}
+    <div
+        style="display: flex; flex-direction: column; gap: var(--viz-spacing-md); margin-bottom: var(--viz-spacing-md);"
+    >
+        <span>Are you sure you want to clear the image cache? This will delete cached transformations.</span>
+        <Checkbox label="Keep permanent transforms (thumbnails & previews)" bind:checked={keepPermanent} />
     </div>
 {/snippet}
 
@@ -270,7 +294,7 @@
         }
 
         .card-title {
-            font-size: var(--viz-font-size-sm);
+            font-size: var(--viz-font-size-lg);
             color: var(--viz-40);
             font-weight: 500;
         }
@@ -285,7 +309,7 @@
 
         .card-desc {
             display: block;
-            font-size: var(--viz-font-size-xs);
+            font-size: var(--viz-font-size-std);
             color: var(--viz-30);
             margin: var(--viz-spacing-xs) 0 0 0;
             line-height: 1.4;
@@ -341,7 +365,7 @@
             padding-bottom: var(--viz-spacing-sm);
 
             h3 {
-                font-size: var(--viz-font-size-lg);
+                font-size: var(--viz-font-size-xl);
                 font-weight: 600;
                 margin: 0;
             }
@@ -382,7 +406,7 @@
         display: flex;
         align-items: center;
         gap: var(--viz-spacing-xs);
-        font-size: var(--viz-font-size-sm);
+        font-size: var(--viz-font-size-lg);
 
         .dot {
             width: var(--viz-spacing-sm);
@@ -414,7 +438,7 @@
         gap: var(--viz-spacing-sm);
         padding: var(--viz-spacing-md);
         border-radius: var(--viz-border-radius-md);
-        font-size: var(--viz-font-size-sm);
+        font-size: var(--viz-font-size-lg);
         line-height: 1.5;
 
         &.healthy {
@@ -437,7 +461,7 @@
     }
 
     .advisory-content {
-        font-size: var(--viz-font-size-sm);
+        font-size: var(--viz-font-size-lg);
         color: var(--viz-40);
         line-height: 1.6;
 

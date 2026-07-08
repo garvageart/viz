@@ -87,7 +87,8 @@ func AdminRouter(db *gorm.DB, logger *slog.Logger, storageStats *images.StorageS
 
 	// Clear image cache
 	r.Delete("/cache", func(res http.ResponseWriter, req *http.Request) {
-		err := images.ClearCache(logger)
+		keepPermanent := req.URL.Query().Get("keep_permanent") == "true"
+		err := images.ClearCache(logger, db, keepPermanent)
 		if err != nil {
 			logger.Error("failed to clear image cache", slog.Any("error", err))
 			render.Status(req, http.StatusInternalServerError)
