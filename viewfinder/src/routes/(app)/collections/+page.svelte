@@ -9,27 +9,26 @@
         type ImageAsset
     } from "$lib/api";
     import AssetGrid from "$lib/components/grid/AssetGrid.svelte";
-    import AssetsShell from "$lib/components/ui/AssetsShell.svelte";
-    import Button from "$lib/components/ui/Button.svelte";
-    import CollectionCard, { openCollection } from "$lib/components/ui/CollectionCard.svelte";
-    import IconButton from "$lib/components/ui/IconButton.svelte";
-    import MaterialIcon from "$lib/components/ui/MaterialIcon.svelte";
     import CollectionModal from "$lib/components/modals/CollectionModal.svelte";
     import FilterModal, { FilterModalOptions } from "$lib/components/modals/FilterModal.svelte";
     import { modalsManager } from "$lib/components/modals/manager/ModalManager.svelte";
     import VizViewContainer from "$lib/components/panels/VizViewContainer.svelte";
+    import AssetsShell from "$lib/components/ui/AssetsShell.svelte";
+    import Button from "$lib/components/ui/Button.svelte";
+    import CollectionCard, { openCollection } from "$lib/components/ui/CollectionCard.svelte";
     import DragAndDropUpload from "$lib/components/ui/DragAndDropUpload.svelte";
+    import IconButton from "$lib/components/ui/IconButton.svelte";
+    import MaterialIcon from "$lib/components/ui/MaterialIcon.svelte";
+    import { VizMimeTypes } from "$lib/constants";
     import ContextMenu from "$lib/context-menu/ContextMenu.svelte";
     import { createCollectionMenu } from "$lib/context-menu/menus/collections";
     import type { MenuItem } from "$lib/context-menu/types";
-    import { VizMimeTypes } from "$lib/constants";
     import { DragData } from "$lib/drag-drop/data";
     import { sortCollections } from "$lib/sort/sort";
     import { filterManager } from "$lib/states/filter.svelte";
     import { isLayoutPage, sort } from "$lib/states/index.svelte";
     import { selectionManager, SelectionScopeNames } from "$lib/states/selection.svelte";
     import { toastState } from "$lib/toast-notifcations/notif-state.svelte";
-    import { invalidateViz } from "$lib/views/views.svelte";
     import type { AssetGridArray } from "$lib/types/asset";
     import { untrack, type ComponentProps } from "svelte";
     import type { PageProps } from "./$types";
@@ -399,7 +398,7 @@
                 <div id="coll-meta-chips">
                     <div class="meta-chip">
                         <MaterialIcon iconName="folder" size="1rem" />
-                        <span>{displayData.length} {displayData.length === 1 ? 'collection' : 'collections'}</span>
+                        <span>{displayData.length} {displayData.length === 1 ? "collection" : "collections"}</span>
                     </div>
                 </div>
             </div>
@@ -424,7 +423,7 @@
         max-width: 100%;
         display: flex;
         flex-direction: column;
-        margin: 1.5em 0 1em 0;
+        margin: var(--viz-spacing-xxl) 0;
         padding: 0 1rem;
         box-sizing: border-box;
 

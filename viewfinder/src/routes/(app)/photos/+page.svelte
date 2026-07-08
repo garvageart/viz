@@ -668,6 +668,9 @@
                 bind:view={viewSettings.current}
                 data={galleryState.images}
                 groupedData={consolidatedGroups}
+                gridConfig={{
+                    headerHeight: 40
+                }}
                 showDateHeaders={true}
                 {scopeId}
                 onLoadMore={() => paginate()}
@@ -694,6 +697,7 @@
         width: 100%;
         height: auto;
         min-height: 100%; /* Important for virtualization filling container */
+        margin: var(--viz-spacing-xl) 0;
     }
 
     .selection-info {

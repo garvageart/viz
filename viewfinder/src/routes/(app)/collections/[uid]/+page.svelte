@@ -1099,7 +1099,7 @@
         max-width: 100%;
         display: flex;
         flex-direction: column;
-        margin: 1.5em 0 1em 0;
+        margin: var(--viz-spacing-xxl) 0;
         padding: 0 1rem;
         box-sizing: border-box;
 

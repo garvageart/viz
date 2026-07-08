@@ -776,7 +776,6 @@
 <style lang="scss">
     .viz-asset-grid-container {
         box-sizing: border-box;
-        margin: 2rem 0;
         padding: 0 1rem;
         display: grid;
         gap: 1em;
