@@ -10,7 +10,9 @@ tmp
 
 # Misc files
 auth/*.json
+viz.json
 .aiexclude
+
 #Security
 .crt
 .key
