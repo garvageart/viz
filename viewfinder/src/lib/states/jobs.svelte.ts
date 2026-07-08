@@ -7,7 +7,8 @@ import {
     getJobStats,
     getJobsSnapshot,
     listAvailableWorkers,
-    updateJobTypeConcurrency
+    updateJobTypeConcurrency,
+    listJobs
 } from "$lib/api";
 import { type WSClient, createWSConnection } from "$lib/api/websocket";
 import { toastState } from "$lib/toast-notifcations/notif-state.svelte";
@@ -65,7 +66,7 @@ class JobsState {
         this.connectWS();
 
         if (!this.initialLoadDone) {
-            await Promise.all([this.loadJobStats(), this.fetchJobTypes()]);
+            await Promise.all([this.loadJobStats(), this.fetchJobTypes(), this.loadJobHistory()]);
             this.initialLoadDone = true;
         }
     }
@@ -396,10 +397,10 @@ class JobsState {
                     const topic = this.getTopicForJobType(jobId);
                     this.queuedByTopic[topic] = (this.queuedByTopic[topic] || 0) + count;
                 }
-            } else {
+            } else if (res.status === 200) {
                 toastState.addToast({
-                    message: `Failed to start rescan missing for ${jobId}`,
-                    type: "error"
+                    message: res.data.message,
+                    type: "info"
                 });
             }
         } catch (e) {
@@ -449,6 +450,43 @@ class JobsState {
         }
 
         return 0;
+    }
+
+    async loadJobHistory() {
+        try {
+            const [completedRes, failedRes] = await Promise.all([
+                listJobs({ status: "completed", limit: 50 }),
+                listJobs({ status: "failed", limit: 50 })
+            ]);
+
+            if (completedRes.status === 200) {
+                this.completedJobs = (completedRes.data.items || []).map((j) => {
+                    return {
+                        ...j,
+                        startTime: j.started_at ? new Date(j.started_at) : new Date(j.enqueued_at),
+                        endTime: j.completed_at ? new Date(j.completed_at) : undefined,
+                        error: j.error_msg || undefined
+                    } as UiJob;
+                });
+                this.stats.completedCount = completedRes.data.total || this.completedJobs.length;
+            }
+
+            if (failedRes.status === 200) {
+                this.failedJobs = (failedRes.data.items || []).map((j) => {
+                    return {
+                        ...j,
+                        startTime: j.started_at ? new Date(j.started_at) : new Date(j.enqueued_at),
+                        endTime: j.completed_at ? new Date(j.completed_at) : undefined,
+                        error: j.error_msg || undefined
+                    } as UiJob;
+                });
+                this.stats.failedCount = failedRes.data.total || this.failedJobs.length;
+            }
+
+            this.stats.totalProcessed = this.stats.completedCount + this.stats.failedCount;
+        } catch (e) {
+            console.warn("Failed to load job history:", e);
+        }
     }
 }
 
