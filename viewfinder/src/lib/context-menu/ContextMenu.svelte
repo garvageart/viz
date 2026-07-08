@@ -328,12 +328,13 @@
         });
     }
 
-    function activate(index: number, event: MouseEvent | KeyboardEvent) {
-        const item = items[index];
+    function activate(target: number | MenuItem, event: MouseEvent | KeyboardEvent) {
+        const item = typeof target === "number" ? items[target] : target;
         if (!item || item.disabled || item.separator) {
             return;
         }
 
+        const index = typeof target === "number" ? target : -1;
         item.action?.(event);
         onselect?.({ item, index });
         showMenu = false;
@@ -361,7 +362,7 @@
                             {item}
                             index={i}
                             active={i === activeIndex}
-                            onselect={(detail) => activate(i, detail.event)}
+                            onselect={(detail) => activate(detail.item, detail.event)}
                         />
                     {/if}
                 {/each}
@@ -372,7 +373,7 @@
 
 <style>
     .context-menu {
-        min-width: 10rem;
+        min-width: 15rem;
         list-style: none;
         box-shadow:
             0 10px 30px rgba(0, 0, 0, 0.35),

@@ -1,6 +1,7 @@
 <script lang="ts">
     import MaterialIcon from "../components/ui/MaterialIcon.svelte";
     import type { MenuItem } from "./types";
+    import ContextMenuItem from "./ContextMenuItem.svelte";
 
     interface Props {
         item: MenuItem;
@@ -28,12 +29,8 @@
         onselect?.({ item, index, event: e });
     }
 
-    function onChildClick(child: MenuItem, childIndex: number, e: MouseEvent) {
-        if (child.disabled || child.separator) {
-            return;
-        }
-        child.action?.(e);
-        onselect?.({ item: child, index: childIndex, event: e });
+    function onChildSelect(detail: { item: MenuItem; index: number; event: MouseEvent }) {
+        onselect?.(detail);
         showSubmenu = false;
     }
 </script>
@@ -58,7 +55,7 @@
         {#if item.shortcut}
             <span class="shortcut" aria-hidden="true">{item.shortcut}</span>
         {/if}
-        {#if item.children}
+        {#if item.children && item.children.length > 0}
             <span class="submenu-arrow" aria-hidden="true">▸</span>
         {/if}
     </button>
@@ -68,29 +65,9 @@
                 <ul>
                     {#each item.children as child, ci}
                         {#if child.separator}
-                            <li class="ctx-seperator" role="separator" aria-hidden="true"></li>
+                            <li class="ctx-separator" role="separator" aria-hidden="true"></li>
                         {:else}
-                            <li role="none">
-                                <button
-                                    role="menuitem"
-                                    aria-disabled={child.disabled ? "true" : undefined}
-                                    class:disabled={!!child.disabled}
-                                    tabindex={-1}
-                                    onclick={(e) => onChildClick(child, ci, e)}
-                                >
-                                    {#if child.icon}
-                                        {#if typeof child.icon === "string"}
-                                            <MaterialIcon class="icon" iconName={child.icon} weight={300} />
-                                        {:else}
-                                            <MaterialIcon class="icon" weight={300} {...child.icon} />
-                                        {/if}
-                                    {/if}
-                                    <span class="label">{child.label}</span>
-                                    {#if child.shortcut}
-                                        <span class="shortcut" aria-hidden="true">{child.shortcut}</span>
-                                    {/if}
-                                </button>
-                            </li>
+                            <ContextMenuItem item={child} index={ci} active={false} onselect={onChildSelect} />
                         {/if}
                     {/each}
                 </ul>
@@ -100,6 +77,12 @@
 </li>
 
 <style>
+    ul {
+        margin: 0;
+        padding: 0;
+        list-style: none;
+    }
+
     li {
         display: flex;
         list-style-type: none;
@@ -110,11 +93,11 @@
     li > button {
         display: grid;
         grid-template-columns: auto 1fr auto;
-        gap: 0.3rem;
+        gap: var(--viz-spacing-xs);
         align-items: center;
-        font-size: 0.8em;
+        font-size: 1em;
         font-weight: 500;
-        padding: 0.15rem 0.5rem;
+        padding: var(--viz-spacing-xs) var(--viz-spacing-sm);
         text-align: left;
         width: 100%;
         border: 0px;
@@ -157,50 +140,7 @@
         overflow: hidden;
         z-index: 995;
         box-sizing: border-box;
-        min-width: 10rem;
-    }
-
-    .submenu ul {
-        margin: 0;
-        padding: 0;
-        list-style: none;
-    }
-
-    .submenu ul li {
-        width: 100%;
-        list-style: none;
-    }
-
-    .submenu ul li > button {
-        display: grid;
-        grid-template-columns: auto 1fr auto;
-        gap: 0.3rem;
-        align-items: center;
-        font-size: 0.8em;
-        font-weight: 500;
-        padding: 0.15rem 0.5rem;
-        text-align: left;
-        width: 100%;
-        border: 0px;
-        color: var(--viz-text-color);
-        background-color: var(--viz-100);
-        cursor: pointer;
-        transition: background-color 0.1s ease;
-        box-sizing: border-box;
-    }
-
-    .submenu ul li > button:hover {
-        background-color: var(--viz-90);
-    }
-
-    .submenu ul li > button.disabled {
-        color: var(--viz-70);
-        cursor: default;
-        opacity: 0.5;
-    }
-
-    .submenu ul li > button.disabled:hover {
-        background-color: var(--viz-100);
+        min-width: 15rem;
     }
 
     .submenu-arrow {
