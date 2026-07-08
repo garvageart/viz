@@ -292,6 +292,7 @@ func main() {
 		entities.UserWithPassword{},
 		entities.SettingDefault{},
 		entities.SettingOverride{},
+		entities.ImageTransform{},
 	)
 	apiServer.VizServer.Database.Client = client
 

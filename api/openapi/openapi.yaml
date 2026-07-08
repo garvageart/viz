@@ -876,7 +876,7 @@ paths:
                   schema:
                       type: string
                       default: taken_at
-                      enum: [taken_at, created_at, updated_at, name]
+                      enum: [taken_at, recently_added, updated_at, name]
                       description: Key which images are sorted by
                 - name: order
                   in: query
@@ -1444,7 +1444,7 @@ paths:
                   schema:
                       type: string
                       default: updated_at
-                      enum: [name, created_at, updated_at]
+                      enum: [name, recently_added, updated_at]
                       description: Key which collections are sorted by
                 - in: query
                   name: order
@@ -1522,7 +1522,7 @@ paths:
                   schema:
                       type: string
                       default: taken_at
-                      enum: [taken_at, created_at, updated_at, name]
+                      enum: [taken_at, recently_added, updated_at, name]
                       description: Key which images are sorted by
                 - in: query
                   name: order
@@ -1687,7 +1687,7 @@ paths:
                   schema:
                       type: string
                       default: taken_at
-                      enum: [taken_at, created_at, updated_at, name]
+                      enum: [taken_at, recently_added, updated_at, name]
                       description: Key which images are sorted by
                 - in: query
                   name: order
@@ -2154,6 +2154,13 @@ paths:
             security:
                 - BearerAuth: [admin:write]
                 - CookieAuth: []
+            parameters:
+                - in: query
+                  name: keep_permanent
+                  schema:
+                      type: boolean
+                  required: false
+                  description: If true, permanent transforms will not be cleared
             responses:
                 "200":
                     description: Cache cleared
@@ -2441,6 +2448,12 @@ paths:
                         schema:
                             $ref: "#/components/schemas/WorkerJobCreateRequest"
             responses:
+                "200":
+                    description: Received job ID
+                    content:
+                        application/json:
+                            schema:
+                                $ref: "#/components/schemas/WorkerJobEnqueueResponse"
                 "202":
                     description: Accepted
                     content:
@@ -4486,3 +4499,44 @@ components:
                     type: string
                     description: Previous page link
             required: [images, collections, page, limit]
+
+        ImageTransform:
+            x-entity: true
+            type: object
+            properties:
+                uid:
+                    type: string
+                    description: Unique ID for the transform
+                image_uid:
+                    type: string
+                    description: UID of the parent image asset
+                cache_key:
+                    type: string
+                    description: Unique ETag string for this transform
+                file_name:
+                    type: string
+                    description: File name on disk
+                file_size_bytes:
+                    type: integer
+                    format: int64
+                    description: Size of the transform file in bytes
+                width:
+                    type: integer
+                    description: Width of the transformed image
+                height:
+                    type: integer
+                    description: Height of the transformed image
+                format:
+                    type: string
+                    description: Image format
+                quality:
+                    type: integer
+                    description: Compression quality (0-100)
+                is_permanent:
+                    type: boolean
+                    description: True if this is a pre-generated permanent thumbnail or preview
+                last_accessed_at:
+                    type: string
+                    format: date-time
+                    description: Timestamp when this transform was last requested
+            required: [uid, image_uid, cache_key, file_name, file_size_bytes, width, height, format, quality, is_permanent, last_accessed_at]

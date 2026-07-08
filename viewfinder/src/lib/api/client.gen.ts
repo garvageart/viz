@@ -1482,7 +1482,7 @@ export function executeSearch(q: string, { limit, page }: {
 export function listImages({ limit, page, sortBy, order }: {
     limit?: number;
     page?: number;
-    sortBy?: "taken_at" | "created_at" | "updated_at" | "name";
+    sortBy?: "taken_at" | "recently_added" | "updated_at" | "name";
     order?: string;
 } = {}, opts?: Oazapfts.RequestOpts) {
     return oazapfts.fetchJson<{
@@ -1762,7 +1762,7 @@ export function quickDownloadImage(uid: string, opts?: Oazapfts.RequestOpts) {
 export function listCollections({ limit, page, sortBy, order }: {
     limit?: number;
     page?: number;
-    sortBy?: "name" | "created_at" | "updated_at";
+    sortBy?: "name" | "recently_added" | "updated_at";
     order?: "ASC" | "DESC";
 } = {}, opts?: Oazapfts.RequestOpts) {
     return oazapfts.fetchJson<{
@@ -1806,7 +1806,7 @@ export function createCollection(collectionCreate: CollectionCreate, opts?: Oaza
  * Get collection detail
  */
 export function getCollection(uid: string, { sortBy, order }: {
-    sortBy?: "taken_at" | "created_at" | "updated_at" | "name";
+    sortBy?: "taken_at" | "recently_added" | "updated_at" | "name";
     order?: "ASC" | "DESC";
 } = {}, opts?: Oazapfts.RequestOpts) {
     return oazapfts.fetchJson<{
@@ -1887,7 +1887,7 @@ export function listCollectionImageUiDs(uid: string, opts?: Oazapfts.RequestOpts
 export function listCollectionImages(uid: string, { limit, page, sortBy, order }: {
     limit?: number;
     page?: number;
-    sortBy?: "taken_at" | "created_at" | "updated_at" | "name";
+    sortBy?: "taken_at" | "recently_added" | "updated_at" | "name";
     order?: "ASC" | "DESC";
 } = {}, opts?: Oazapfts.RequestOpts) {
     return oazapfts.fetchJson<{
@@ -2156,7 +2156,9 @@ export function getCacheStatus(opts?: Oazapfts.RequestOpts) {
 /**
  * Clear the image cache
  */
-export function clearImageCache(opts?: Oazapfts.RequestOpts) {
+export function clearImageCache({ keepPermanent }: {
+    keepPermanent?: boolean;
+} = {}, opts?: Oazapfts.RequestOpts) {
     return oazapfts.fetchJson<{
         status: 200;
         data: MessageResponse;
@@ -2169,7 +2171,9 @@ export function clearImageCache(opts?: Oazapfts.RequestOpts) {
     } | {
         status: 500;
         data: ErrorResponse;
-    }>("/admin/cache", {
+    }>(`/admin/cache${QS.query(QS.explode({
+        keep_permanent: keepPermanent
+    }))}`, {
         ...opts,
         method: "DELETE"
     });
@@ -2316,6 +2320,9 @@ export function registerWorker(workerRegisterRequest: WorkerRegisterRequest, opt
  */
 export function createJob(workerJobCreateRequest: WorkerJobCreateRequest, opts?: Oazapfts.RequestOpts) {
     return oazapfts.fetchJson<{
+        status: 200;
+        data: WorkerJobEnqueueResponse;
+    } | {
         status: 202;
         data: WorkerJobEnqueueResponse;
     } | {
