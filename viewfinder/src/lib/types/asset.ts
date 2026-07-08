@@ -14,7 +14,7 @@ export type AssetGridArray<T> = {
 
 export type AssetSortOrder = "ASC" | "DESC";
 
-export type AssetSortBy = "name" | "created_at" | "updated_at" | "taken_at";
+export type AssetSortBy = "name" | "recently_added" | "updated_at" | "taken_at";
 
 export type AssetGroupBy = "none" | "year" | "month" | "day";
 

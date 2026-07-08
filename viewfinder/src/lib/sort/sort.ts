@@ -18,7 +18,7 @@ export function sortCollectionImages(assets: ImageAsset[], sort: AssetSort) {
     switch (sort.by) {
         case "name":
             return orderBy(assets, "name", order);
-        case "created_at":
+        case "recently_added":
             return orderBy(assets, (img) => new Date(img.created_at).getTime(), order);
         case "updated_at":
             return orderBy(assets, (img) => new Date(img.updated_at).getTime(), order);
@@ -34,7 +34,7 @@ export function sortCollections(collections: Collection[], sort: AssetSort) {
     switch (sort.by) {
         case "name":
             return orderBy(collections, "name", order);
-        case "created_at":
+        case "recently_added":
             return orderBy(collections, (col) => new Date(col.created_at).getTime(), order);
         case "updated_at":
             return orderBy(collections, (col) => new Date(col.updated_at).getTime(), order);

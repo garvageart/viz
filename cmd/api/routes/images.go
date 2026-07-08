@@ -195,7 +195,7 @@ func ImagesRouter(db *gorm.DB, logger *slog.Logger) *chi.Mux {
 		}
 
 		sortBy := "taken_at"
-		allowedSortBy := []string{"taken_at", "created_at", "updated_at", "name"}
+		allowedSortBy := []string{"taken_at", "recently_added", "updated_at", "name"}
 		if slices.Contains(allowedSortBy, sortByParam) {
 			sortBy = sortByParam
 		}
@@ -203,6 +203,11 @@ func ImagesRouter(db *gorm.DB, logger *slog.Logger) *chi.Mux {
 		order := "DESC"
 		if strings.ToUpper(orderParam) == "ASC" {
 			order = "ASC"
+		}
+
+		dbSortBy := sortBy
+		if sortBy == "recently_added" {
+			dbSortBy = "created_at"
 		}
 
 		var images []entities.ImageAsset
@@ -227,10 +232,10 @@ func ImagesRouter(db *gorm.DB, logger *slog.Logger) *chi.Mux {
 			}
 
 			var orderClause string
-			if sortBy == "taken_at" {
+			if dbSortBy == "taken_at" {
 				orderClause = fmt.Sprintf("taken_at %s NULLS LAST, name %s", order, order)
 			} else {
-				orderClause = fmt.Sprintf("%s %s", sortBy, order)
+				orderClause = fmt.Sprintf("%s %s", dbSortBy, order)
 			}
 
 			pageOffset := max(page*limit, 0)

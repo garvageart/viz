@@ -45,7 +45,7 @@ func findCollectionImages(db *gorm.DB, collection entities.Collection, limit, of
 		Joins("JOIN collection_images ON collection_images.uid = images.uid").
 		Where("collection_images.collection_id = ?", collection.ID)
 
-	allowedSortBy := []string{"taken_at", "created_at", "updated_at", "name"}
+	allowedSortBy := []string{"taken_at", "recently_added", "updated_at", "name"}
 	validSortBy := slices.Contains(allowedSortBy, sortBy)
 
 	if !validSortBy {
@@ -60,6 +60,8 @@ func findCollectionImages(db *gorm.DB, collection entities.Collection, limit, of
 	var orderClause string
 	if sortBy == "taken_at" {
 		orderClause = fmt.Sprintf("images.taken_at %s NULLS LAST, images.name %s", upperOrder, upperOrder)
+	} else if sortBy == "recently_added" {
+		orderClause = fmt.Sprintf("images.created_at %s", upperOrder)
 	} else {
 		orderClause = fmt.Sprintf("images.%s %s", sortBy, upperOrder)
 	}
@@ -181,7 +183,7 @@ func CollectionsRouter(db *gorm.DB, logger *slog.Logger, wsBroker *libhttp.WSBro
 		if sortBy == "" {
 			sortBy = "updated_at"
 		}
-		allowedSortBy := []string{"name", "created_at", "updated_at"}
+		allowedSortBy := []string{"name", "recently_added", "updated_at"}
 		if !slices.Contains(allowedSortBy, sortBy) {
 			sortBy = "updated_at"
 		}
@@ -190,6 +192,11 @@ func CollectionsRouter(db *gorm.DB, logger *slog.Logger, wsBroker *libhttp.WSBro
 		order := "DESC"
 		if strings.ToUpper(orderParam) == "ASC" {
 			order = "ASC"
+		}
+
+		dbSortBy := sortBy
+		if sortBy == "recently_added" {
+			dbSortBy = "created_at"
 		}
 
 		var collections []entities.Collection
@@ -214,7 +221,7 @@ func CollectionsRouter(db *gorm.DB, logger *slog.Logger, wsBroker *libhttp.WSBro
 
 			// Fetch current page
 			return query.Preload("Thumbnail").Preload("CreatedBy").Preload("Images").Preload("Images.AddedBy").
-				Order(fmt.Sprintf("%s %s", sortBy, order)).
+				Order(fmt.Sprintf("%s %s", dbSortBy, order)).
 				Limit(limit).
 				Offset(page * limit).
 				Find(&collections).Error
