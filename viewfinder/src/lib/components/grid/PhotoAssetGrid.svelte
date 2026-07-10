@@ -5,6 +5,7 @@
 <script lang="ts" generics>
     import { getFullImagePath, type ImageAsset } from "$lib/api";
     import PhotoTooltip from "$lib/components/tooltips/PhotoTooltip.svelte";
+    import { mountTooltipComponent } from "$lib/components/tooltips/tooltip";
     import {
         PhotoGridVirtualizer,
         type PhotoGridConfig
@@ -32,7 +33,6 @@
     import MaterialIcon from "../ui/MaterialIcon.svelte";
     import AssetGrid from "./AssetGrid.svelte";
     import TimelineScrubber from "./TimelineScrubber.svelte";
-    import type { MouseEventHandler } from "svelte/elements";
 
     interface PhotoSpecificProps {
         /** Custom photo card snippet - if not provided, uses default photo card */
@@ -353,13 +353,11 @@
         // Initialize delegated Tippy instance on the grid container
         const delegatedTippy = delegate(photoGridEl, {
             target: ".asset-photo", // Delegate tooltips to elements matching this selector
-            allowHTML: true,
-            theme: "viz",
+            theme: "viz no-padding",
             followCursor: "initial",
             plugins: [followCursor],
             arrow: false,
-            delay: [500, 0],
-            moveTransition: "opacity 0.1s ease-out",
+            delay: [350, 0],
             interactive: true,
             onShow(instance: Instance<TippyProps>) {
                 const assetEl = instance.reference as HTMLElement;
@@ -368,31 +366,27 @@
                     return false; // Don't show tooltip if asset data isn't found
                 }
 
-                const contentNode = document.createElement("div");
-                // Store the component instance on the Tippy instance for cleanup
-                (instance as any)._svelteTooltipComponent = mount(PhotoTooltip, {
-                    target: contentNode,
-                    props: {
-                        asset,
-                        clickHandler: (e: MouseEvent & { currentTarget: EventTarget & HTMLElement }) => {
-                            if (assetDblClick) {
-                                assetDblClick(
-                                    e as unknown as MouseEvent & {
-                                        currentTarget: EventTarget & (HTMLDivElement | HTMLTableRowElement);
-                                    },
-                                    asset
-                                );
-                            }
+                const { node, destroy } = mountTooltipComponent(PhotoTooltip, {
+                    asset,
+                    clickHandler: (e: MouseEvent & { currentTarget: EventTarget & HTMLElement }) => {
+                        if (assetDblClick) {
+                            assetDblClick(
+                                e as unknown as MouseEvent & {
+                                    currentTarget: EventTarget & (HTMLDivElement | HTMLTableRowElement);
+                                },
+                                asset
+                            );
                         }
                     }
                 });
-                instance.setContent(contentNode);
+                (instance as any)._destroyComponent = destroy;
+                instance.setContent(node);
             },
             onHidden(instance: Instance<TippyProps>) {
-                const component = (instance as any)._svelteTooltipComponent;
-                if (component) {
-                    unmount(component);
-                    (instance as any)._svelteTooltipComponent = undefined;
+                const destroy = (instance as any)._destroyComponent;
+                if (destroy) {
+                    destroy();
+                    (instance as any)._destroyComponent = undefined;
                 }
                 instance.setContent(""); // Clear content
             },

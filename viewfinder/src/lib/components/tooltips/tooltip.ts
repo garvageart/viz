@@ -2,16 +2,33 @@ import { type Component, mount, unmount } from "svelte";
 import tippy, { type Instance, type Props } from "tippy.js";
 import "tippy.js/dist/tippy.css";
 
-export interface TooltipParams extends Partial<Omit<Props, "content">> {
-    content?: string | null;
-    component?: Component<any>;
-    props?: Record<string, any>;
-}
-
 type TippyOptions = Omit<Partial<Props>, "content"> & {
     component?: Component<any>;
     props?: Record<string, any>;
+    applyPadding?: boolean;
 };
+
+export interface TooltipParams extends TippyOptions {
+    content?: string | null;
+}
+
+export function mountTooltipComponent<T extends Record<string, any>>(
+    component: Component<T>,
+    props: T
+): { node: HTMLElement; destroy: () => void } {
+    const container = document.createElement("div");
+    const instance = mount(component, {
+        target: container,
+        props
+    });
+
+    return {
+        node: container,
+        destroy() {
+            unmount(instance);
+        }
+    };
+}
 
 export function tooltip(node: HTMLElement, params: TooltipParams | string | null | undefined) {
     if (!params) {
@@ -19,7 +36,7 @@ export function tooltip(node: HTMLElement, params: TooltipParams | string | null
     }
 
     let instance: Instance<Props> | undefined;
-    let activeComponent: Record<string, any> | null = null;
+    let destroyComponent: (() => void) | null = null;
 
     const setupTippy = (opts: TooltipParams | string) => {
         const isString = typeof opts === "string";
@@ -31,20 +48,25 @@ export function tooltip(node: HTMLElement, params: TooltipParams | string | null
         // Clean up component-specific configurations from tippyOptions
         delete tippyOptions.component;
         delete tippyOptions.props;
+        const applyPadding = tippyOptions.applyPadding ?? true;
+        delete tippyOptions.applyPadding;
+
+        let theme = tippyOptions.theme || "viz";
+        if (!applyPadding) {
+            theme += " no-padding";
+        }
+        delete tippyOptions.theme;
 
         let contentNode: HTMLElement | string = contentVal ?? "";
 
         if (comp) {
-            const container = document.createElement("div");
-            activeComponent = mount(comp, {
-                target: container,
-                props: compProps
-            });
-            contentNode = container;
+            const mounted = mountTooltipComponent(comp, compProps);
+            contentNode = mounted.node;
+            destroyComponent = mounted.destroy;
         }
 
         instance = tippy(node, {
-            theme: "viz",
+            theme,
             delay: [350, 0],
             interactive: !!comp,
             arrow: false,
@@ -52,9 +74,9 @@ export function tooltip(node: HTMLElement, params: TooltipParams | string | null
             appendTo: "parent",
             ...tippyOptions,
             onDestroy(inst) {
-                if (activeComponent) {
-                    unmount(activeComponent);
-                    activeComponent = null;
+                if (destroyComponent) {
+                    destroyComponent();
+                    destroyComponent = null;
                 }
                 if (tippyOptions.onDestroy) {
                     tippyOptions.onDestroy(inst);
@@ -71,9 +93,9 @@ export function tooltip(node: HTMLElement, params: TooltipParams | string | null
 
     return {
         update(newParams: TooltipParams | string | null | undefined) {
-            if (activeComponent) {
-                unmount(activeComponent);
-                activeComponent = null;
+            if (destroyComponent) {
+                destroyComponent();
+                destroyComponent = null;
             }
             if (instance) {
                 instance.destroy();
@@ -84,9 +106,9 @@ export function tooltip(node: HTMLElement, params: TooltipParams | string | null
             }
         },
         destroy() {
-            if (activeComponent) {
-                unmount(activeComponent);
-                activeComponent = null;
+            if (destroyComponent) {
+                destroyComponent();
+                destroyComponent = null;
             }
             if (instance) {
                 instance.destroy();

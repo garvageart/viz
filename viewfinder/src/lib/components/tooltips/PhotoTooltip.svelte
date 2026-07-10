@@ -44,14 +44,20 @@
 </div>
 
 <style lang="scss">
+    /* Apply border-radius to tippy box when it contains the photo tooltip content */
+    :global(.tippy-box[data-theme~="viz"]:has(.photo-tooltip-content)) {
+        border-radius: var(--viz-border-radius-lg);
+    }
+
     .photo-tooltip-content {
         display: flex;
         flex-direction: column;
-        gap: 2px;
         text-align: left;
         font-size: var(--viz-font-size-lg);
         min-width: 15vw;
-        padding: var(--viz-spacing-xs);
+        gap: var(--viz-spacing-xxs);
+        padding: var(--viz-spacing-sm);
+        background-color: var(--viz-bg-color);
     }
 
     .tooltip-row {

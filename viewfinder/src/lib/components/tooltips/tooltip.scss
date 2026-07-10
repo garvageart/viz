@@ -8,8 +8,15 @@
     font-family: var(--viz-display-font);
     font-size: var(--viz-font-size-std);
     font-weight: 500;
+    overflow: hidden;
 
     .tippy-content {
         padding: var(--viz-spacing-xs);
+    }
+}
+
+.tippy-box[data-theme~="no-padding"] {
+    .tippy-content {
+        padding: 0;
     }
 }
