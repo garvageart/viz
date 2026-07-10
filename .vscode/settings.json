@@ -57,5 +57,6 @@
         "*.ts": "${capture}.spec.ts,${capture}.mock.ts"
     },
     "svelte.enable-ts-plugin": true,
-    "typescript.preferences.importModuleSpecifier": "non-relative"
+    "js/ts.preferences.importModuleSpecifier": "non-relative",
+    "js/ts.experimental.useTsgo": false
 }
