@@ -1,6 +1,6 @@
-import fs from 'node:fs';
-import path from 'node:path';
-import { fileURLToPath } from 'node:url';
+import fs from "node:fs";
+import path from "node:path";
+import { fileURLToPath } from "node:url";
 
 /**
  * Mapping dictionary for CSS custom properties.
@@ -9,13 +9,13 @@ import { fileURLToPath } from 'node:url';
  * @type {Record<string, string>}
  */
 const REPLACEMENT_MAP = {
-    'var(--viz-font-size-xs)': 'var(--viz-font-size-std)',
-    'var(--viz-font-size-sm)': 'var(--viz-font-size-lg)',
-    'var(--viz-font-size-std)': 'var(--viz-font-size-xl)',
-    'var(--viz-font-size-lg)': 'var(--viz-font-size-2xl)',
-    'var(--viz-font-size-xl)': 'var(--viz-font-size-3xl)',
-    'var(--viz-font-size-2xl)': 'var(--viz-font-size-4xl)',
-    'var(--viz-font-size-3xl)': 'var(--viz-font-size-5xl)'
+    "var(--viz-font-size-xs)": "var(--viz-font-size-std)",
+    "var(--viz-font-size-sm)": "var(--viz-font-size-lg)",
+    "var(--viz-font-size-std)": "var(--viz-font-size-xl)",
+    "var(--viz-font-size-lg)": "var(--viz-font-size-2xl)",
+    "var(--viz-font-size-xl)": "var(--viz-font-size-3xl)",
+    "var(--viz-font-size-2xl)": "var(--viz-font-size-4xl)",
+    "var(--viz-font-size-3xl)": "var(--viz-font-size-5xl)"
 };
 
 /**
@@ -24,13 +24,13 @@ const REPLACEMENT_MAP = {
  * @type {Record<string, string>}
  */
 const SASS_REPLACEMENT_MAP = {
-    '$viz-font-size-xs': '$viz-font-size-std',
-    '$viz-font-size-sm': '$viz-font-size-lg',
-    '$viz-font-size-std': '$viz-font-size-xl',
-    '$viz-font-size-lg': '$viz-font-size-2xl',
-    '$viz-font-size-xl': '$viz-font-size-3xl',
-    '$viz-font-size-2xl': '$viz-font-size-4xl',
-    '$viz-font-size-3xl': '$viz-font-size-5xl'
+    "$viz-font-size-xs": "$viz-font-size-std",
+    "$viz-font-size-sm": "$viz-font-size-lg",
+    "$viz-font-size-std": "$viz-font-size-xl",
+    "$viz-font-size-lg": "$viz-font-size-2xl",
+    "$viz-font-size-xl": "$viz-font-size-3xl",
+    "$viz-font-size-2xl": "$viz-font-size-4xl",
+    "$viz-font-size-3xl": "$viz-font-size-5xl"
 };
 
 /**
@@ -44,30 +44,25 @@ const MAP = { ...REPLACEMENT_MAP, ...SASS_REPLACEMENT_MAP };
  * @param {string} string - The raw string to escape.
  * @returns {string} The escaped string safe for RegExp construction.
  */
-const escapeRegExp = (string) => string.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+const escapeRegExp = (string) => string.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
 
 /**
  * Consolidated regex pattern matching any key in the replacement map.
  * @type {RegExp}
  */
-const pattern = new RegExp(
-    Object.keys(MAP)
-        .map(escapeRegExp)
-        .join('|'),
-    'g'
-);
+const pattern = new RegExp(Object.keys(MAP).map(escapeRegExp).join("|"), "g");
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
 // Target viewfinder/src directory relative to this script
-const srcDir = path.resolve(__dirname, '../src');
+const srcDir = path.resolve(__dirname, "../src");
 
-const dryRun = process.argv.includes('--dry-run') || process.argv.includes('-d');
+const dryRun = process.argv.includes("--dry-run") || process.argv.includes("-d");
 
 console.log(`Starting font token migration...`);
 console.log(`Source directory: ${srcDir}`);
-console.log(`Mode: ${dryRun ? 'DRY RUN (no files will be modified)' : 'LIVE MIGRATION'}\n`);
+console.log(`Mode: ${dryRun ? "DRY RUN (no files will be modified)" : "LIVE MIGRATION"}\n`);
 
 let processedFilesCount = 0;
 let modifiedFilesCount = 0;
@@ -86,7 +81,7 @@ function walk(dir) {
             walk(fullPath);
         } else if (entry.isFile()) {
             const ext = path.extname(entry.name);
-            if (['.svelte', '.scss', '.ts', '.js'].includes(ext)) {
+            if ([".svelte", ".scss", ".ts", ".js"].includes(ext)) {
                 processFile(fullPath);
             }
         }
@@ -101,7 +96,7 @@ function walk(dir) {
 function processFile(filePath) {
     processedFilesCount++;
     const relativePath = path.relative(srcDir, filePath);
-    const content = fs.readFileSync(filePath, 'utf8');
+    const content = fs.readFileSync(filePath, "utf8");
 
     if (!pattern.test(content)) {
         return;
@@ -111,9 +106,9 @@ function processFile(filePath) {
     pattern.lastIndex = 0;
 
     let fileReplacementsCount = 0;
-    
+
     if (dryRun) {
-        const lines = content.split('\n');
+        const lines = content.split("\n");
         console.log(`\nFile: src/${relativePath}`);
         for (let i = 0; i < lines.length; i++) {
             const line = lines[i];
@@ -123,7 +118,7 @@ function processFile(filePath) {
                 console.log(`  Line ${i + 1}:`);
                 console.log(`    - ${line.trim()}`);
                 console.log(`    + ${replacedLine.trim()}`);
-                
+
                 // Count replacements in this line
                 const matches = line.match(pattern);
                 if (matches) {
@@ -140,11 +135,11 @@ function processFile(filePath) {
         if (matches) {
             fileReplacementsCount = matches.length;
         }
-        
+
         const updatedContent = content.replace(pattern, (match) => MAP[match]);
-        fs.writeFileSync(filePath, updatedContent, 'utf8');
+        fs.writeFileSync(filePath, updatedContent, "utf8");
         console.log(`Updated: src/${relativePath} (${fileReplacementsCount} replacement(s))`);
-        
+
         totalReplacementsCount += fileReplacementsCount;
         modifiedFilesCount++;
     }
@@ -154,7 +149,7 @@ try {
     walk(srcDir);
     console.log(`\nMigration completed.`);
     console.log(`Total files scanned: ${processedFilesCount}`);
-    console.log(`Total files ${dryRun ? 'that would be modified' : 'modified'}: ${modifiedFilesCount}`);
+    console.log(`Total files ${dryRun ? "that would be modified" : "modified"}: ${modifiedFilesCount}`);
     console.log(`Total token replacements: ${totalReplacementsCount}`);
 } catch (error) {
     console.error(`Error during migration:`, error);

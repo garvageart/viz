@@ -86,9 +86,7 @@
     let { collection, isSelected = false, ...props }: Props & SvelteHTMLElements["div"] = $props();
 
     let relativeUpdated = $derived(
-        collection.updated_at
-            ? DateTime.fromISO(collection.updated_at).setZone("local").toRelative()
-            : ""
+        collection.updated_at ? DateTime.fromISO(collection.updated_at).setZone("local").toRelative() : ""
     );
     let createdDate = $derived(
         collection.created_at

@@ -7,8 +7,8 @@ import {
     getJobStats,
     getJobsSnapshot,
     listAvailableWorkers,
-    updateJobTypeConcurrency,
-    listJobs
+    listJobs,
+    updateJobTypeConcurrency
 } from "$lib/api";
 import { type WSClient, createWSConnection } from "$lib/api/websocket";
 import { toastState } from "$lib/toast-notifcations/notif-state.svelte";

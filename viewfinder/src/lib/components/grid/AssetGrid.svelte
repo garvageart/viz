@@ -702,9 +702,7 @@
                 }}
             >
                 <tr>
-                    <th class="preview-header">
-                        Preview
-                    </th>
+                    <th class="preview-header"> Preview </th>
                     {#each visibleKeys as key}
                         <th>
                             <button
@@ -719,18 +717,16 @@
                                 <span>{snakeToTitle(key)}</span>
                                 <span class="sort-icon" class:active={sort.by === key}>
                                     <MaterialIcon
-                                        iconName={sort.by === key && sort.order === "ASC" ? "arrow_upward" : "arrow_downward"}
+                                        iconName={sort.by === key && sort.order === "ASC"
+                                            ? "arrow_upward"
+                                            : "arrow_downward"}
                                     />
                                 </span>
                             </button>
                         </th>
                     {/each}
                     <th class="settings-header">
-                        <button
-                            class="column-selector-btn"
-                            onclick={openColumnSelector}
-                            title="Select columns"
-                        >
+                        <button class="column-selector-btn" onclick={openColumnSelector} title="Select columns">
                             <MaterialIcon iconName="settings" />
                         </button>
                     </th>
@@ -876,7 +872,9 @@
                     display: inline-flex;
                     align-items: center;
                     justify-content: center;
-                    transition: background-color 0.2s, color 0.2s;
+                    transition:
+                        background-color 0.2s,
+                        color 0.2s;
 
                     &:hover {
                         background-color: var(--viz-80);
@@ -900,7 +898,9 @@
                 font: inherit;
                 padding: var(--viz-spacing-xs) var(--viz-spacing-sm);
                 border-radius: var(--viz-border-radius-pill);
-                transition: background-color 0.2s, color 0.2s;
+                transition:
+                    background-color 0.2s,
+                    color 0.2s;
 
                 &:hover {
                     background-color: var(--viz-80);
@@ -943,7 +943,7 @@
 
             &.selected-card {
                 background-color: color-mix(in srgb, var(--viz-100) 85%, var(--viz-primary) 15%);
-                
+
                 td {
                     border-bottom-color: color-mix(in srgb, var(--viz-60) 50%, var(--viz-primary) 50%);
                 }
