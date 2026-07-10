@@ -208,10 +208,6 @@ func AuthRouter(db *gorm.DB, logger *slog.Logger) *chi.Mux {
 		provider := req.FormValue("provider")
 
 		switch provider {
-		case "google":
-			oauthConfig = oauth.GoogleOAuthConfig
-		case "github":
-			oauthConfig = oauth.GithubOAuthConfig
 		default:
 			providerErr := errors.New("unsupported provider")
 			if provider != "" {
@@ -275,33 +271,7 @@ func AuthRouter(db *gorm.DB, logger *slog.Logger) *chi.Mux {
 		}
 
 		switch provider {
-		case "google":
-			resp, err := oauth.GoogleOAuthHandler(res, req, logger)
-			if err != nil {
 
-				libhttp.ServerError(res, req, err, logger, nil,
-					"Error getting user data from Google",
-					"We encountered an issue while trying to fetch your Google profile. Please try again.",
-				)
-				return
-			}
-
-			actualUserData.Email = resp.Email
-			actualUserData.Name = resp.Name
-			actualUserData.Picture = resp.Picture
-		case "github":
-			resp, err := oauth.GithubOAuthHandler(res, req, logger)
-			if err != nil {
-				libhttp.ServerError(res, req, err, logger, nil,
-					"Error getting user data from Github",
-					"We encountered an issue while trying to fetch your Github profile. Please try again.",
-				)
-				return
-			}
-
-			actualUserData.Email = resp.GetEmail()
-			actualUserData.Name = resp.GetName()
-			actualUserData.Picture = resp.GetAvatarURL()
 		default:
 			res.WriteHeader(http.StatusBadRequest)
 			res.Write([]byte("OAuth provider unsupported"))
