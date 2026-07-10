@@ -58,11 +58,12 @@ func findCollectionImages(db *gorm.DB, collection entities.Collection, limit, of
 	}
 
 	var orderClause string
-	if sortBy == "taken_at" {
+	switch sortBy {
+	case "taken_at":
 		orderClause = fmt.Sprintf("images.taken_at %s NULLS LAST, images.name %s", upperOrder, upperOrder)
-	} else if sortBy == "recently_added" {
+	case "recently_added":
 		orderClause = fmt.Sprintf("images.created_at %s", upperOrder)
-	} else {
+	default:
 		orderClause = fmt.Sprintf("images.%s %s", sortBy, upperOrder)
 	}
 
