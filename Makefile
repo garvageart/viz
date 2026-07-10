@@ -161,7 +161,7 @@ fmt:
 		for dir in $$(go list -f '{{.Dir}}' -m); do (cd $$dir && $(GO_CMD) fmt ./...); done; \
 	fi
 	@if [ -f "$(VIEWFINDER_DIR)/package.json" ]; then \
-		if ! cd $(VIEWFINDER_DIR) && $(PNPM) run format:check 2>/dev/null; then \
+		if ! (cd $(VIEWFINDER_DIR) && $(PNPM) run format:check 2>/dev/null); then \
 			echo "Formatting frontend..."; \
 			cd $(VIEWFINDER_DIR) && $(PNPM) run format || true; \
 		fi; \
