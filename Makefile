@@ -156,12 +156,14 @@ generate-types-install:
 
 ### Code hygiene
 fmt:
+	@echo "Checking Go formatting..."
 	@if [ -n "$$(gofmt -l $$(go list -f '{{.Dir}}' -m))" ]; then \
 		echo "Formatting Go sources..."; \
 		for dir in $$(go list -f '{{.Dir}}' -m); do (cd $$dir && $(GO_CMD) fmt ./...); done; \
 	fi
 	@if [ -f "$(VIEWFINDER_DIR)/package.json" ]; then \
-		if ! (cd $(VIEWFINDER_DIR) && $(PNPM) run format:check 2>/dev/null); then \
+		echo "Checking frontend formatting..."; \
+		if ! (cd $(VIEWFINDER_DIR) && $(PNPM) run format:check >/dev/null 2>&1); then \
 			echo "Formatting frontend..."; \
 			cd $(VIEWFINDER_DIR) && $(PNPM) run format || true; \
 		fi; \
