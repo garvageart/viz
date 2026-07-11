@@ -583,7 +583,18 @@
     }
 
     // On splitter dbl click or dbl tap maximize this pane.
-    function onSplitterDblClick(_event: MouseEvent, splitterPane: IPane) {
+    function onSplitterDblClick(event: MouseEvent, splitterPane: IPane) {
+        if (event.ctrlKey || event.metaKey) {
+            event.preventDefault();
+            event.stopPropagation();
+            const equalSize = 100 / panes.length;
+            for (let i = 0; i < panes.length; i++) {
+                panes[i].setSz(equalSize);
+            }
+            dispatch("resized", prepareResizeEvent());
+            return;
+        }
+
         if (dblClickSplitter) {
             const splitterIndex = splitterPane.index;
 

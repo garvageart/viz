@@ -99,7 +99,7 @@
         style="height: 100%; width: 100%;"
     >
         {#each node.children as child, i (child.id)}
-            <Pane id={child.id} size={paneSizes[i]} minSize={maximizedId ? 0 : undefined}>
+            <Pane id={child.id} size={paneSizes[i]} minSize={maximizedId ? 0 : 10}>
                 <LayoutNode node={child} />
             </Pane>
         {/each}

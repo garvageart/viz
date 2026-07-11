@@ -8,7 +8,6 @@
     import { createDefaultLayout } from "./layouts/registry";
     import { dev } from "$app/environment";
     import { views } from "$lib/layouts/views";
-    import { filterManager } from "$lib/states/filter.svelte";
     import hotkeys from "hotkeys-js";
     import { DateTime } from "luxon";
 
