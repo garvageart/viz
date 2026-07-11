@@ -2,8 +2,7 @@
     import { type ImageAsset } from "$lib/api";
     import { VizMimeTypes } from "$lib/constants";
     import { DragData } from "$lib/drag-drop/data";
-    import { getImageLabel, getTakenAt, getThumbhashURL } from "$lib/utils/images";
-    import ImageLabelViewer from "../image-tools/ImageLabelViewer.svelte";
+    import { getImageLabel, getTakenAt } from "$lib/utils/images";
     import AssetImage, { type AssetImageProps } from "./AssetImage.svelte";
     import MaterialIcon from "./MaterialIcon.svelte";
 
@@ -167,7 +166,7 @@
     }
 
     .mini-footer {
-        padding: var(--viz-spacing-xs);
+        padding: var(--viz-spacing-sm);
         background-color: var(--viz-90);
         display: flex;
         flex-direction: column;
@@ -204,7 +203,7 @@
             display: flex;
             align-items: center;
             justify-content: center;
-            color: var(--viz-error-color);
+            color: var(--viz-color-tag-red);
         }
 
         .mini-rating {
