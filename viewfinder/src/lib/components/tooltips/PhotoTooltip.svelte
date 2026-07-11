@@ -63,7 +63,7 @@
     .tooltip-row {
         display: flex;
         align-items: center;
-        gap: var(--viz-spacing-xs);
+        gap: var(--viz-spacing-sm);
 
         :global(.edit-button) {
             padding: var(--viz-spacing-xs);

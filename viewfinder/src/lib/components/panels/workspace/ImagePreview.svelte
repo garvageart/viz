@@ -102,7 +102,7 @@
     }
 
     .info {
-        padding: 0.75rem 1rem;
+        padding: var(--viz-spacing-std);
         background-color: var(--viz-bg-color);
         border-top: 1px solid var(--viz-80);
         display: flex;
@@ -112,7 +112,7 @@
         box-sizing: border-box;
 
         .filename {
-            font-size: 0.9rem;
+            font-size: var(--viz-font-size-lg);
             font-weight: 500;
             color: var(--viz-text-color);
             white-space: nowrap;
@@ -124,7 +124,6 @@
             display: flex;
             align-items: center;
             gap: 0.5rem;
-            font-size: 0.75rem;
             color: var(--viz-40);
         }
     }
@@ -137,9 +136,6 @@
         justify-content: center;
         color: var(--viz-60);
         gap: 0.5rem;
-
-        .text {
-            font-size: 0.9rem;
-        }
+        font-size: var(--viz-font-size-lg);
     }
 </style>

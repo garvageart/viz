@@ -12,6 +12,7 @@
 </script>
 
 <script lang="ts">
+    import { dev } from "$app/environment";
     import { goto } from "$app/navigation";
     import {
         addCollectionImages,
@@ -19,24 +20,25 @@
         deleteCollection,
         deleteCollectionImages,
         getImage,
+        Label as ImageLabel,
         listCollectionImages,
         listCollectionImageUiDs,
         updateCollection,
         updateImage,
         type CollectionUpdate,
-        type ImageAsset,
-        Label as ImageLabel
+        type ImageAsset
     } from "$lib/api";
     import Dropdown from "$lib/components/context-menus/Dropdown.svelte";
     import PhotoAssetGrid from "$lib/components/grid/PhotoAssetGrid.svelte";
     import ImageLabelViewer from "$lib/components/image-tools/ImageLabelViewer.svelte";
     import StarRating from "$lib/components/image-tools/StarRating.svelte";
-    import CollectionModal from "$lib/components/modals/CollectionModal.svelte";
-    import FilterModal, { FilterModalOptions } from "$lib/components/modals/FilterModal.svelte";
     import AddPhotosModal from "$lib/components/modals/AddPhotosModal.svelte";
+    import CollectionModal from "$lib/components/modals/CollectionModal.svelte";
     import ConfirmationModal from "$lib/components/modals/ConfirmationModal.svelte";
+    import FilterModal, { FilterModalOptions } from "$lib/components/modals/FilterModal.svelte";
     import { modalsManager } from "$lib/components/modals/manager/ModalManager.svelte";
     import VizViewContainer from "$lib/components/panels/VizViewContainer.svelte";
+    import ActiveFiltersTooltip from "$lib/components/tooltips/ActiveFiltersTooltip.svelte";
     import AssetsShell from "$lib/components/ui/AssetsShell.svelte";
     import Button from "$lib/components/ui/Button.svelte";
     import DragAndDropUpload from "$lib/components/ui/DragAndDropUpload.svelte";
@@ -50,9 +52,14 @@
     import type { MenuItem } from "$lib/context-menu/types";
     import { LabelColours } from "$lib/images/constants";
     import { ImagePaginationState } from "$lib/images/state.svelte";
+    import {
+        getConsolidatedGroups,
+        groupImagesByDate,
+        type ConsolidatedGroup,
+        type DateGroup
+    } from "$lib/photo-layout/index.js";
     import { sortCollectionImages } from "$lib/sort/sort.js";
     import { filterManager } from "$lib/states/filter.svelte";
-    import ActiveFiltersTooltip from "$lib/components/tooltips/ActiveFiltersTooltip.svelte";
     import { debugMode, isLayoutPage, sort, viewSettings } from "$lib/states/index.svelte";
     import { selectionManager, SelectionScopeNames } from "$lib/states/selection.svelte";
     import { toastState } from "$lib/toast-notifcations/notif-state.svelte.js";
@@ -61,20 +68,13 @@
     import type { ImageUploadSuccess } from "$lib/upload/manager.svelte";
     import UploadManager from "$lib/upload/manager.svelte.js";
     import { getImageLabel } from "$lib/utils/images";
-    import type VizView from "$lib/views/views.svelte";
-    import {
-        getConsolidatedGroups,
-        groupImagesByDate,
-        type ConsolidatedGroup,
-        type DateGroup
-    } from "$lib/photo-layout/index.js";
     import { VizLocalStorage } from "$lib/utils/misc.js";
+    import type VizView from "$lib/views/views.svelte";
     import { invalidateViz } from "$lib/views/views.svelte";
     import hotkeys from "hotkeys-js";
     import { DateTime } from "luxon";
-    import { onDestroy, tick, untrack, type ComponentProps } from "svelte";
+    import { onDestroy, untrack, type ComponentProps } from "svelte";
     import type { PageProps } from "./$types";
-    import { dev } from "$app/environment";
 
     let { data, view }: PageProps & { view?: VizView } = $props();
 
@@ -1102,6 +1102,7 @@
         margin: var(--viz-spacing-xxl) 0;
         padding: 0 1rem;
         box-sizing: border-box;
+        container-type: inline-size;
 
         &.std-route {
             padding: 0 2rem;
@@ -1117,7 +1118,7 @@
         gap: var(--viz-spacing-md);
         width: 100%;
 
-        @media (max-width: 768px) {
+        @container (max-width: 768px) {
             flex-direction: column;
             align-items: flex-start;
         }
@@ -1150,8 +1151,8 @@
             font-weight: 700;
             color: var(--viz-text-color);
             line-height: 1.2;
-            word-wrap: break-word;
-            white-space: normal;
+            text-wrap: nowrap;
+            padding: 0.25rem 0.5rem;
         }
 
         :global(.title-edit-icon) {
@@ -1172,7 +1173,7 @@
         gap: var(--viz-spacing-sm);
         flex-wrap: wrap;
 
-        @media (max-width: 768px) {
+        @container (max-width: 768px) {
             margin-top: var(--viz-spacing-xs);
         }
     }

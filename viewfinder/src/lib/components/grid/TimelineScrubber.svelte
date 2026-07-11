@@ -224,7 +224,7 @@
 
     .scrubber-bubble {
         position: absolute;
-        right: 3.5rem;
+        right: 5.5rem;
         top: 0; /* Set via inline style */
         transform: translateY(-50%);
         background-color: var(--viz-10);
@@ -232,12 +232,11 @@
         box-shadow: 0 4px 20px rgba(0, 0, 0, 0.4);
         padding: 0.5rem 1rem;
         border-radius: 0.5rem;
-        font-size: 1rem;
+        font-size: var(--viz-font-size-lg);
         font-weight: 600;
         white-space: nowrap;
         pointer-events: none;
         z-index: 101;
-        // border: 1px solid rgba(255, 255, 255, 0.08);
         transform-origin: right center;
     }
 </style>
