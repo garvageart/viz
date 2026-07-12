@@ -23,6 +23,7 @@ import (
 	"gorm.io/gorm"
 
 	"viz/internal/config"
+	dbops "viz/internal/db"
 	"viz/internal/downloads"
 	"viz/internal/dto"
 	"viz/internal/entities"
@@ -217,14 +218,7 @@ func ImagesRouter(db *gorm.DB, logger *slog.Logger) *chi.Mux {
 			query := tx.Model(&entities.ImageAsset{}).Where("deleted_at IS NULL")
 
 			// Access Control: Filter private images
-			authUser, ok := libhttp.UserFromContext(req)
-			if ok {
-				// Show: Public OR (Private AND Owned by me)
-				query = query.Where("private = ? OR (private = ? AND owner_id = ?)", false, true, authUser.Uid)
-			} else {
-				// Show: Only Public
-				query = query.Where("private = ?", false)
-			}
+			query = dbops.ApplyImageAccessControlFilter(query, req)
 
 			// Count total non-deleted images for pagination metadata
 			if err := query.Count(&total).Error; err != nil {
@@ -326,7 +320,11 @@ func ImagesRouter(db *gorm.DB, logger *slog.Logger) *chi.Mux {
 		}
 
 		var imgEnt entities.ImageAsset
-		if result := db.Model(&entities.ImageAsset{}).Where("uid = ? AND deleted_at IS NULL", uid).First(&imgEnt); result.Error != nil {
+		query := db.Model(&entities.ImageAsset{}).Where("uid = ? AND deleted_at IS NULL", uid)
+		if req.URL.Query().Get("token") == "" {
+			query = dbops.ApplyImageAccessControlFilter(query, req)
+		}
+		if result := query.First(&imgEnt); result.Error != nil {
 			if result.Error == gorm.ErrRecordNotFound {
 				render.Status(req, http.StatusNotFound)
 				render.JSON(res, req, dto.ErrorResponse{Error: "Image not found"})
@@ -351,20 +349,6 @@ func ImagesRouter(db *gorm.DB, logger *slog.Logger) *chi.Mux {
 			if !validateDownloadRequest(res, req, db, uid) {
 				return
 			}
-		} else {
-			// Access Control: If private, only owner can view (unless using a valid download token logic, which is handled above)
-			if imgEnt.Private {
-				// Allow admins (cookie or API key) to bypass owner checks
-				if !libhttp.IsAdminFromRequest(req) {
-					authUser, ok := libhttp.UserFromContext(req)
-					if !ok || (imgEnt.OwnerID != nil && *imgEnt.OwnerID != authUser.Uid) {
-						// Return 404 to avoid leaking existence
-						render.Status(req, http.StatusNotFound)
-						render.JSON(res, req, dto.ErrorResponse{Error: "Image not found"})
-						return
-					}
-				}
-			}
 		}
 
 		hasTransformParams := params.Format != "" || params.Width > 0 || params.Height > 0 || params.Quality > 0 || params.Rotate > 0 || params.Flip != ""
@@ -381,7 +365,9 @@ func ImagesRouter(db *gorm.DB, logger *slog.Logger) *chi.Mux {
 		simple := req.URL.Query().Get("simple") == "true"
 
 		var imgEnt entities.ImageAsset
-		result := db.Model(&entities.ImageAsset{}).Where("uid = ? AND deleted_at IS NULL", uid).First(&imgEnt)
+		query := db.Model(&entities.ImageAsset{}).Where("uid = ? AND deleted_at IS NULL", uid)
+		query = dbops.ApplyImageAccessControlFilter(query, req)
+		result := query.First(&imgEnt)
 
 		if result.Error != nil {
 			if result.Error == gorm.ErrRecordNotFound {
@@ -435,7 +421,9 @@ func ImagesRouter(db *gorm.DB, logger *slog.Logger) *chi.Mux {
 		uid := chi.URLParam(req, "uid")
 
 		var imgEnt entities.ImageAsset
-		result := db.Preload("Owner").Preload("UploadedBy").Model(&entities.ImageAsset{}).Where("uid = ? AND deleted_at IS NULL", uid).First(&imgEnt)
+		query := db.Preload("Owner").Preload("UploadedBy").Model(&entities.ImageAsset{}).Where("uid = ? AND deleted_at IS NULL", uid)
+		query = dbops.ApplyImageAccessControlFilter(query, req)
+		result := query.First(&imgEnt)
 
 		if result.Error != nil {
 			if result.Error == gorm.ErrRecordNotFound {
@@ -447,19 +435,6 @@ func ImagesRouter(db *gorm.DB, logger *slog.Logger) *chi.Mux {
 			render.Status(req, http.StatusInternalServerError)
 			render.JSON(res, req, dto.ErrorResponse{Error: "Failed to retrieve image"})
 			return
-		}
-
-		// Access Control: If private, only owner can view (admins may bypass)
-		if imgEnt.Private {
-			if !libhttp.IsAdminFromRequest(req) {
-				authUser, ok := libhttp.UserFromContext(req)
-				if !ok || (imgEnt.OwnerID != nil && *imgEnt.OwnerID != authUser.Uid) {
-					// Return 404 to avoid leaking existence
-					render.Status(req, http.StatusNotFound)
-					render.JSON(res, req, dto.ErrorResponse{Error: "Image not found"})
-					return
-				}
-			}
 		}
 
 		render.Status(req, http.StatusOK)
@@ -478,7 +453,9 @@ func ImagesRouter(db *gorm.DB, logger *slog.Logger) *chi.Mux {
 
 		var img entities.ImageAsset
 		err := db.Transaction(func(tx *gorm.DB) error {
-			if e := tx.First(&img, "uid = ? AND deleted_at IS NULL", uid); e.Error != nil {
+			query := tx.Model(&entities.ImageAsset{}).Where("uid = ? AND deleted_at IS NULL", uid)
+			query = dbops.ApplyImageAccessControlFilter(query, req)
+			if e := query.First(&img); e.Error != nil {
 				return e.Error
 			}
 
@@ -898,7 +875,9 @@ func ImagesRouter(db *gorm.DB, logger *slog.Logger) *chi.Mux {
 
 			// Check ownership before deleting
 			var img entities.ImageAsset
-			if err := db.Select("owner_id").First(&img, "uid = ?", id).Error; err != nil {
+			query := db.Select("owner_id")
+			query = dbops.ApplyImageAccessControlFilter(query, req)
+			if err := query.First(&img, "uid = ?", id).Error; err != nil {
 				if err != gorm.ErrRecordNotFound {
 					logger.Error("failed to check ownership", slog.String("uid", id), slog.Any("error", err))
 					e := "failed to check ownership"
@@ -1031,7 +1010,9 @@ func ImagesRouter(db *gorm.DB, logger *slog.Logger) *chi.Mux {
 
 		var results []dto.DuplicateCheckResult
 
-		err := db.Model(&entities.ImageAsset{}).
+		query := db.Model(&entities.ImageAsset{})
+		query = dbops.ApplyImageAccessControlFilter(query, req)
+		err := query.
 			Select("uid, image_metadata->>'checksum' as checksum").
 			Where("image_metadata->>'checksum' IN ?", body.Checksums).
 			Find(&results).Error
