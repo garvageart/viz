@@ -11,6 +11,7 @@ import (
 	"time"
 
 	"viz/internal/config"
+	"viz/internal/dto"
 	"viz/internal/entities"
 	libvips "viz/internal/images/ops/vips"
 	libos "viz/internal/os"
@@ -276,4 +277,32 @@ func LessByTakenAtDesc(a, b entities.ImageAsset) bool {
 	}
 
 	return ta.After(tb)
+}
+
+// HasExifDateTime returns true if the EXIF metadata contains a valid, parseable date/time.
+func HasExifDateTime(exif *dto.ImageEXIF) bool {
+	if exif == nil {
+		return false
+	}
+
+	if exif.DateTimeOriginal != nil {
+		effectiveOffset := GetEffectiveExifOffset(exif)
+		if _, ok := ParseExifDate(exif.DateTimeOriginal, effectiveOffset); ok {
+			return true
+		}
+	}
+
+	if exif.DateTime != nil {
+		if _, ok := ParseExifDate(exif.DateTime, exif.OffsetTime); ok {
+			return true
+		}
+	}
+
+	if exif.ModifyDate != nil {
+		if _, ok := ParseExifDate(exif.ModifyDate, exif.OffsetTime); ok {
+			return true
+		}
+	}
+
+	return false
 }

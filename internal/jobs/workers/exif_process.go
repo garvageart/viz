@@ -271,10 +271,19 @@ func ExifProcess(ctx context.Context, db *gorm.DB, imgEnt entities.ImageAsset, o
 		dbImage.ImageMetadata.Keywords = imgEnt.ImageMetadata.Keywords
 	}
 
+	// Only overwrite the database taken_at if the file has actual EXIF date/time data
+	// or if the database taken_at is currently nil/zero.
+	finalTakenAt := takenAt
+	if dbImage.TakenAt != nil && !dbImage.TakenAt.IsZero() {
+		if !imageops.HasExifDateTime(imgEnt.Exif) {
+			finalTakenAt = *dbImage.TakenAt
+		}
+	}
+
 	if err := db.Model(&entities.ImageAsset{}).
 		Where("uid = ?", imgEnt.Uid).
 		Update("exif", imgEnt.Exif).
-		Update("taken_at", takenAt).
+		Update("taken_at", finalTakenAt).
 		Update("image_metadata", dbImage.ImageMetadata).
 		Error; err != nil {
 		return fmt.Errorf("failed to update db image exif: %w", err)
