@@ -7,6 +7,7 @@
         label?: string;
         id?: string;
         disabled?: boolean;
+        variant?: "square" | "round";
         onchange?: (e: Event & { currentTarget: HTMLInputElement }) => void;
     }
 
@@ -15,6 +16,7 @@
         label,
         id,
         disabled = false,
+        variant = "square",
         onchange,
         ...props
     }: Props & SvelteHTMLElements["div"] = $props();
@@ -37,12 +39,19 @@
             }
         }
     }
+
+    function handleChange(e: Event & { currentTarget: HTMLInputElement }) {
+        checked = e.currentTarget.checked;
+        if (onchange) {
+            onchange(e);
+        }
+    }
 </script>
 
 <div class="checkbox-wrapper" class:disabled {...props}>
-    <input type="checkbox" id={uniqueId} bind:checked {disabled} {onchange} onkeydown={handleKeydown} />
+    <input type="checkbox" id={uniqueId} {checked} {disabled} onchange={handleChange} onkeydown={handleKeydown} />
     <label for={uniqueId}>
-        <span class="viz-checkbox" aria-hidden="true">
+        <span class="viz-checkbox" class:round={variant === "round"} aria-hidden="true">
             <svg
                 viewBox="0 0 24 24"
                 fill="none"
@@ -114,6 +123,10 @@
             box-shadow 0.12s ease;
         flex-shrink: 0;
         cursor: pointer;
+
+        &.round {
+            border-radius: var(--viz-border-radius-pill);
+        }
     }
 
     /* Checkmark SVG styling & self-drawing polyline */

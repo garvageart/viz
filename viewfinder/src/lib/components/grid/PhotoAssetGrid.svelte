@@ -33,6 +33,7 @@
     import MaterialIcon from "../ui/MaterialIcon.svelte";
     import AssetGrid from "./AssetGrid.svelte";
     import TimelineScrubber from "./TimelineScrubber.svelte";
+    import Checkbox from "$lib/components/ui/Checkbox.svelte";
 
     interface PhotoSpecificProps {
         /** Custom photo card snippet - if not provided, uses default photo card */
@@ -1007,7 +1008,7 @@
         // 2. Keep if clicking interactive elements (buttons, links, form controls)
         if (
             target.closest(
-                "button, a, input, select, textarea, [role='button'], [role='menuitem'], [role='tab'], [role='checkbox']"
+                "button, a, input, select, textarea, label, .checkbox-wrapper, [role='button'], [role='menuitem'], [role='tab'], [role='checkbox']"
             )
         ) {
             return true;
@@ -1103,21 +1104,19 @@
     {@const allSelected = groupImages.length > 0 && groupImages.every((i) => selectedUIDs.has(i.uid))}
     <div class="inline-grid-header">
         <div class="header-content">
-            <button
+            <Checkbox
                 class="header-select-btn"
-                class:selected={allSelected}
+                variant="round"
+                checked={allSelected}
                 onclick={(e) => {
+                    e.stopPropagation();
+                }}
+                onchange={(e) => {
                     e.stopPropagation();
                     handleGroupSelect(label);
                 }}
-                title={allSelected ? "Deselect group" : "Select group"}
-            >
-                <MaterialIcon
-                    iconName={allSelected ? "check_circle" : "radio_button_unchecked"}
-                    fill={allSelected}
-                    size="1.5rem"
-                />
-            </button>
+            />
+
             <h3>{label}</h3>
         </div>
     </div>
@@ -1448,26 +1447,17 @@
             max-width: 100%;
             display: flex;
             align-items: center;
+            gap: var(--viz-spacing-xs);
 
-            &:hover .header-select-btn {
+            &:hover :global(.header-select-btn) {
                 width: 1.2rem;
                 opacity: 1;
                 margin-right: 0.5rem;
             }
         }
 
-        .header-select-btn {
-            background: none;
-            border: none;
-            padding: 0;
-            cursor: pointer;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            color: var(--viz-60);
+        :global(.header-select-btn) {
             flex-shrink: 0;
-
-            /* Hidden state by default */
             width: 0;
             opacity: 0;
             margin-right: 0;
@@ -1478,18 +1468,6 @@
                 opacity 0.2s ease-out,
                 margin-right 0.2s ease-out,
                 color 0.15s;
-
-            &.selected {
-                color: var(--viz-primary);
-                /* Visible state when selected */
-                width: 1.2rem;
-                opacity: 1;
-                margin-right: 0.5rem;
-            }
-
-            &:hover {
-                color: var(--viz-primary);
-            }
         }
 
         h3 {
