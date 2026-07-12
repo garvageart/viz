@@ -1,12 +1,13 @@
 <script lang="ts">
-    import { getContext } from "svelte";
+    import IconButton from "$lib/components/ui/IconButton.svelte";
     import InputSelect from "$lib/components/ui/InputSelect.svelte";
     import MaterialIcon from "$lib/components/ui/MaterialIcon.svelte";
-    import { localeState } from "$lib/states/locale.svelte";
-    import { untrack } from "svelte";
-    import { CalendarDateTime, type DateValue } from "@internationalized/date";
-    import { DatePicker, TimeField, Select } from "bits-ui";
     import { ContextKeys } from "$lib/context-keys";
+    import { localeState } from "$lib/states/locale.svelte";
+    import { calendarDateTimeToDate, toCalendarDateTime } from "$lib/utils/dates";
+    import { CalendarDateTime, type DateValue } from "@internationalized/date";
+    import { DatePicker, TimeField } from "bits-ui";
+    import { getContext } from "svelte";
 
     interface Props {
         value: Date;
@@ -15,6 +16,7 @@
         align?: "start" | "center" | "end";
         side?: "top" | "bottom" | "left" | "right";
         onchange?: (date: Date) => void;
+        onclose?: () => void;
         children?: import("svelte").Snippet;
     }
 
@@ -25,6 +27,7 @@
         align = "center",
         side = "bottom",
         onchange,
+        onclose,
         children
     }: Props = $props();
 
@@ -32,17 +35,6 @@
     // popover always appears on top. Falls back to 0 (CSS z-index handles it).
     const getModalZIndex = getContext<(() => number) | undefined>(ContextKeys.ModalZIndex);
     const popoverZIndex = $derived(getModalZIndex ? getModalZIndex() + 1 : 0);
-
-    function toCalendarDateTime(d: Date): CalendarDateTime {
-        return new CalendarDateTime(
-            d.getFullYear(),
-            d.getMonth() + 1,
-            d.getDate(),
-            d.getHours(),
-            d.getMinutes(),
-            d.getSeconds()
-        );
-    }
 
     function getMsWithoutMs(d: Date): number {
         const copy = new Date(d);
@@ -52,6 +44,7 @@
 
     let selected = $state<CalendarDateTime>(toCalendarDateTime(value));
     let lastMs = getMsWithoutMs(value);
+    let isDateSelecting = false;
 
     // Sync selected state only when the actual time value (in ms) changes from the parent,
     // avoiding resets on parent reference-only updates.
@@ -67,16 +60,17 @@
         if (!v) {
             return;
         }
+
+        isDateSelecting = true;
+
         selected = v as CalendarDateTime;
-        lastMs = new Date(
-            selected.year,
-            selected.month - 1,
-            selected.day,
-            selected.hour,
-            selected.minute,
-            selected.second
-        ).getTime();
+        lastMs = calendarDateTimeToDate(selected).getTime();
+
         emitDate();
+
+        setTimeout(() => {
+            isDateSelecting = false;
+        }, 0);
     }
 
     function handleTimeSelect(v: DateValue | undefined) {
@@ -84,30 +78,30 @@
             return;
         }
         selected = v as CalendarDateTime;
-        lastMs = new Date(
-            selected.year,
-            selected.month - 1,
-            selected.day,
-            selected.hour,
-            selected.minute,
-            selected.second
-        ).getTime();
+        lastMs = calendarDateTimeToDate(selected).getTime();
         emitDate();
     }
 
     function emitDate() {
-        const jsDate = new Date(
-            selected.year,
-            selected.month - 1,
-            selected.day,
-            selected.hour,
-            selected.minute,
-            selected.second
-        );
+        const jsDate = calendarDateTimeToDate(selected);
+        jsDate.setMilliseconds(value.getMilliseconds());
         onchange?.(jsDate);
     }
 
+    function closeCalendar() {
+        open = false;
+        onclose?.();
+    }
+
     function handleOpenChange(o: boolean) {
+        if (!o && isDateSelecting && showTime) {
+            open = true;
+            return;
+        }
+
+        if (open && !o) {
+            onclose?.();
+        }
         open = o;
     }
 
@@ -116,6 +110,7 @@
         value: String(i + 1),
         label: new Date(0, i).toLocaleString(undefined, { month: "long" })
     }));
+
     const yearsOptions = Array.from({ length: 205 }, (_, i) => {
         const yr = 1900 + i;
         return { value: String(yr), label: String(yr) };
@@ -139,15 +134,10 @@
         // (e.g. selecting March when day is 30 or 31).
         const maxDay = daysInMonth(selected.year, month);
         const day = Math.min(selected.day, maxDay);
+
         selected = new CalendarDateTime(selected.year, month, day, selected.hour, selected.minute, selected.second);
-        lastMs = new Date(
-            selected.year,
-            selected.month - 1,
-            selected.day,
-            selected.hour,
-            selected.minute,
-            selected.second
-        ).getTime();
+        lastMs = calendarDateTimeToDate(selected).getTime();
+
         emitDate();
     }
 
@@ -156,15 +146,10 @@
         // Clamp day for leap-year edge cases (e.g. Feb 29 in a non-leap year).
         const maxDay = daysInMonth(year, selected.month);
         const day = Math.min(selected.day, maxDay);
+
         selected = new CalendarDateTime(year, selected.month, day, selected.hour, selected.minute, selected.second);
-        lastMs = new Date(
-            selected.year,
-            selected.month - 1,
-            selected.day,
-            selected.hour,
-            selected.minute,
-            selected.second
-        ).getTime();
+        lastMs = calendarDateTimeToDate(selected).getTime();
+
         emitDate();
     }
 </script>
@@ -202,12 +187,29 @@
             sideOffset={6}
             class="calendar-popover"
             trapFocus={false}
-            onFocusOutside={(e) => e.preventDefault()}
-            onkeydown={(e) => e.stopPropagation()}
+            onFocusOutside={(e) => {
+                e.preventDefault();
+            }}
+            onkeydown={(e) => {
+                e.stopPropagation();
+            }}
             style={popoverZIndex ? `z-index: ${popoverZIndex}` : undefined}
             {align}
             {side}
         >
+            <div class="popover-top-bar">
+                <div class="popover-header">
+                    <MaterialIcon iconName="edit_calendar" />
+                    <span class="popover-title">{showTime ? "Select Date & Time" : "Select Date"}</span>
+                </div>
+                <IconButton
+                    iconName="close"
+                    type="button"
+                    class="popover-close-btn"
+                    onclick={closeCalendar}
+                    aria-label="Close"
+                />
+            </div>
             <DatePicker.Calendar>
                 {#snippet children({ months, weekdays })}
                     <DatePicker.Header class="calendar-header">
@@ -297,6 +299,44 @@
 </DatePicker.Root>
 
 <style lang="scss">
+    .popover-top-bar {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        padding: var(--viz-spacing-xs) var(--viz-spacing-sm);
+        border-bottom: 1px solid var(--viz-75);
+        margin-bottom: var(--viz-spacing-xs);
+    }
+
+    .popover-header {
+        display: flex;
+        align-items: center;
+        gap: var(--viz-spacing-sm);
+        color: var(--viz-20);
+    }
+
+    .popover-title {
+        font-weight: 600;
+    }
+
+    :global(.popover-close-btn) {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        background: transparent;
+        border: none;
+        cursor: pointer;
+        color: var(--viz-30);
+        padding: 0.2rem;
+        border-radius: var(--viz-border-radius-sm);
+        transition: all 120ms ease;
+
+        &:hover {
+            background: var(--viz-85);
+            color: var(--viz-20);
+        }
+    }
+
     :global(.calendar-popover) {
         display: flex;
         flex-direction: column;
@@ -492,7 +532,6 @@
 
     :global(.time-label) {
         display: block;
-        font-size: 0.75rem;
         font-weight: 600;
         color: var(--viz-40);
         margin-bottom: 0.35rem;
