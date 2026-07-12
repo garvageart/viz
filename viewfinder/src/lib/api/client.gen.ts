@@ -440,6 +440,12 @@ export type ImagesResponse = {
     added_by?: User;
     image: ImageAsset;
 };
+export type TimelineBucket = {
+    /** Start of the day, month, or year bucket (UTC) */
+    id: string;
+    /** Number of assets in this bucket */
+    count: number;
+};
 export type ImagesListResponse = {
     /** Self link */
     href?: string;
@@ -1472,6 +1478,100 @@ export function executeSearch(q: string, { limit, page }: {
         q,
         limit,
         page
+    }))}`, {
+        ...opts
+    });
+}
+/**
+ * List all trashed images (soft-deleted)
+ */
+export function listTrash({ limit, page }: {
+    limit?: number;
+    page?: number;
+} = {}, opts?: Oazapfts.RequestOpts) {
+    return oazapfts.fetchJson<{
+        status: 200;
+        data: {
+            items: ImagesResponse[];
+            page: number;
+            limit: number;
+            count: number;
+        };
+    } | {
+        status: 500;
+        data: ErrorResponse;
+    }>(`/trash${QS.query(QS.explode({
+        limit,
+        page
+    }))}`, {
+        ...opts
+    });
+}
+/**
+ * Empty the trash (permanently delete all soft-deleted images)
+ */
+export function emptyTrash(opts?: Oazapfts.RequestOpts) {
+    return oazapfts.fetchJson<{
+        status: 200;
+        data: MessageResponse;
+    } | {
+        status: 500;
+        data: ErrorResponse;
+    }>("/trash", {
+        ...opts,
+        method: "DELETE"
+    });
+}
+/**
+ * Restore a soft-deleted image from the trash
+ */
+export function restoreImage(uid: string, opts?: Oazapfts.RequestOpts) {
+    return oazapfts.fetchJson<{
+        status: 200;
+        data: MessageResponse;
+    } | {
+        status: 404;
+        data: ErrorResponse;
+    } | {
+        status: 500;
+        data: ErrorResponse;
+    }>(`/trash/${encodeURIComponent(uid)}/restore`, {
+        ...opts,
+        method: "POST"
+    });
+}
+/**
+ * Permanently delete a single image from the trash
+ */
+export function deleteTrashImage(uid: string, opts?: Oazapfts.RequestOpts) {
+    return oazapfts.fetchJson<{
+        status: 200;
+        data: MessageResponse;
+    } | {
+        status: 404;
+        data: ErrorResponse;
+    } | {
+        status: 500;
+        data: ErrorResponse;
+    }>(`/trash/${encodeURIComponent(uid)}`, {
+        ...opts,
+        method: "DELETE"
+    });
+}
+/**
+ * Get timeline buckets grouped by day, month, or year
+ */
+export function getTimelineBuckets({ precision }: {
+    precision?: "day" | "month" | "year";
+} = {}, opts?: Oazapfts.RequestOpts) {
+    return oazapfts.fetchJson<{
+        status: 200;
+        data: TimelineBucket[];
+    } | {
+        status: 500;
+        data: ErrorResponse;
+    }>(`/timeline/buckets${QS.query(QS.explode({
+        precision
     }))}`, {
         ...opts
     });

@@ -389,6 +389,21 @@ type ClientInterface interface {
 
 	// GetSystemStatus request
 	GetSystemStatus(ctx context.Context, reqEditors ...RequestEditorFn) (*http.Response, error)
+
+	// GetTimelineBuckets request
+	GetTimelineBuckets(ctx context.Context, params *GetTimelineBucketsParams, reqEditors ...RequestEditorFn) (*http.Response, error)
+
+	// EmptyTrash request
+	EmptyTrash(ctx context.Context, reqEditors ...RequestEditorFn) (*http.Response, error)
+
+	// ListTrash request
+	ListTrash(ctx context.Context, params *ListTrashParams, reqEditors ...RequestEditorFn) (*http.Response, error)
+
+	// DeleteTrashImage request
+	DeleteTrashImage(ctx context.Context, uid string, reqEditors ...RequestEditorFn) (*http.Response, error)
+
+	// RestoreImage request
+	RestoreImage(ctx context.Context, uid string, reqEditors ...RequestEditorFn) (*http.Response, error)
 }
 
 func (c *Client) RegisterUserWithBody(ctx context.Context, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*http.Response, error) {
@@ -1701,6 +1716,66 @@ func (c *Client) UpdateSystemConfig(ctx context.Context, body UpdateSystemConfig
 
 func (c *Client) GetSystemStatus(ctx context.Context, reqEditors ...RequestEditorFn) (*http.Response, error) {
 	req, err := NewGetSystemStatusRequest(c.Server)
+	if err != nil {
+		return nil, err
+	}
+	req = req.WithContext(ctx)
+	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
+		return nil, err
+	}
+	return c.Client.Do(req)
+}
+
+func (c *Client) GetTimelineBuckets(ctx context.Context, params *GetTimelineBucketsParams, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewGetTimelineBucketsRequest(c.Server, params)
+	if err != nil {
+		return nil, err
+	}
+	req = req.WithContext(ctx)
+	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
+		return nil, err
+	}
+	return c.Client.Do(req)
+}
+
+func (c *Client) EmptyTrash(ctx context.Context, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewEmptyTrashRequest(c.Server)
+	if err != nil {
+		return nil, err
+	}
+	req = req.WithContext(ctx)
+	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
+		return nil, err
+	}
+	return c.Client.Do(req)
+}
+
+func (c *Client) ListTrash(ctx context.Context, params *ListTrashParams, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewListTrashRequest(c.Server, params)
+	if err != nil {
+		return nil, err
+	}
+	req = req.WithContext(ctx)
+	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
+		return nil, err
+	}
+	return c.Client.Do(req)
+}
+
+func (c *Client) DeleteTrashImage(ctx context.Context, uid string, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewDeleteTrashImageRequest(c.Server, uid)
+	if err != nil {
+		return nil, err
+	}
+	req = req.WithContext(ctx)
+	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
+		return nil, err
+	}
+	return c.Client.Do(req)
+}
+
+func (c *Client) RestoreImage(ctx context.Context, uid string, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewRestoreImageRequest(c.Server, uid)
 	if err != nil {
 		return nil, err
 	}
@@ -5275,6 +5350,221 @@ func NewGetSystemStatusRequest(server string) (*http.Request, error) {
 	return req, nil
 }
 
+// NewGetTimelineBucketsRequest generates requests for GetTimelineBuckets
+func NewGetTimelineBucketsRequest(server string, params *GetTimelineBucketsParams) (*http.Request, error) {
+	var err error
+
+	serverURL, err := url.Parse(server)
+	if err != nil {
+		return nil, err
+	}
+
+	operationPath := fmt.Sprintf("/timeline/buckets")
+	if operationPath[0] == '/' {
+		operationPath = "." + operationPath
+	}
+
+	queryURL, err := serverURL.Parse(operationPath)
+	if err != nil {
+		return nil, err
+	}
+
+	if params != nil {
+		// queryValues collects non-styled parameters (passthrough, JSON)
+		// that are safe to round-trip through url.Values.Encode().
+		queryValues := queryURL.Query()
+		// rawQueryFragments collects pre-encoded query fragments from
+		// styled parameters, preserving literal commas as delimiters
+		// per the OpenAPI spec (e.g. "color=blue,black,brown").
+		var rawQueryFragments []string
+
+		if params.Precision != nil {
+
+			if queryFrag, err := runtime.StyleParamWithOptions("form", true, "precision", *params.Precision, runtime.StyleParamOptions{ParamLocation: runtime.ParamLocationQuery, Type: "string", Format: ""}); err != nil {
+				return nil, err
+			} else {
+				for _, qp := range strings.Split(queryFrag, "&") {
+					rawQueryFragments = append(rawQueryFragments, qp)
+				}
+			}
+
+		}
+
+		if encoded := queryValues.Encode(); encoded != "" {
+			rawQueryFragments = append(rawQueryFragments, encoded)
+		}
+		queryURL.RawQuery = strings.Join(rawQueryFragments, "&")
+	}
+
+	req, err := http.NewRequest(http.MethodGet, queryURL.String(), nil)
+	if err != nil {
+		return nil, err
+	}
+
+	return req, nil
+}
+
+// NewEmptyTrashRequest generates requests for EmptyTrash
+func NewEmptyTrashRequest(server string) (*http.Request, error) {
+	var err error
+
+	serverURL, err := url.Parse(server)
+	if err != nil {
+		return nil, err
+	}
+
+	operationPath := fmt.Sprintf("/trash")
+	if operationPath[0] == '/' {
+		operationPath = "." + operationPath
+	}
+
+	queryURL, err := serverURL.Parse(operationPath)
+	if err != nil {
+		return nil, err
+	}
+
+	req, err := http.NewRequest(http.MethodDelete, queryURL.String(), nil)
+	if err != nil {
+		return nil, err
+	}
+
+	return req, nil
+}
+
+// NewListTrashRequest generates requests for ListTrash
+func NewListTrashRequest(server string, params *ListTrashParams) (*http.Request, error) {
+	var err error
+
+	serverURL, err := url.Parse(server)
+	if err != nil {
+		return nil, err
+	}
+
+	operationPath := fmt.Sprintf("/trash")
+	if operationPath[0] == '/' {
+		operationPath = "." + operationPath
+	}
+
+	queryURL, err := serverURL.Parse(operationPath)
+	if err != nil {
+		return nil, err
+	}
+
+	if params != nil {
+		// queryValues collects non-styled parameters (passthrough, JSON)
+		// that are safe to round-trip through url.Values.Encode().
+		queryValues := queryURL.Query()
+		// rawQueryFragments collects pre-encoded query fragments from
+		// styled parameters, preserving literal commas as delimiters
+		// per the OpenAPI spec (e.g. "color=blue,black,brown").
+		var rawQueryFragments []string
+
+		if params.Limit != nil {
+
+			if queryFrag, err := runtime.StyleParamWithOptions("form", true, "limit", *params.Limit, runtime.StyleParamOptions{ParamLocation: runtime.ParamLocationQuery, Type: "integer", Format: ""}); err != nil {
+				return nil, err
+			} else {
+				for _, qp := range strings.Split(queryFrag, "&") {
+					rawQueryFragments = append(rawQueryFragments, qp)
+				}
+			}
+
+		}
+
+		if params.Page != nil {
+
+			if queryFrag, err := runtime.StyleParamWithOptions("form", true, "page", *params.Page, runtime.StyleParamOptions{ParamLocation: runtime.ParamLocationQuery, Type: "integer", Format: ""}); err != nil {
+				return nil, err
+			} else {
+				for _, qp := range strings.Split(queryFrag, "&") {
+					rawQueryFragments = append(rawQueryFragments, qp)
+				}
+			}
+
+		}
+
+		if encoded := queryValues.Encode(); encoded != "" {
+			rawQueryFragments = append(rawQueryFragments, encoded)
+		}
+		queryURL.RawQuery = strings.Join(rawQueryFragments, "&")
+	}
+
+	req, err := http.NewRequest(http.MethodGet, queryURL.String(), nil)
+	if err != nil {
+		return nil, err
+	}
+
+	return req, nil
+}
+
+// NewDeleteTrashImageRequest generates requests for DeleteTrashImage
+func NewDeleteTrashImageRequest(server string, uid string) (*http.Request, error) {
+	var err error
+
+	var pathParam0 string
+
+	pathParam0, err = runtime.StyleParamWithOptions("simple", false, "uid", uid, runtime.StyleParamOptions{ParamLocation: runtime.ParamLocationPath, Type: "string", Format: ""})
+	if err != nil {
+		return nil, err
+	}
+
+	serverURL, err := url.Parse(server)
+	if err != nil {
+		return nil, err
+	}
+
+	operationPath := fmt.Sprintf("/trash/%s", pathParam0)
+	if operationPath[0] == '/' {
+		operationPath = "." + operationPath
+	}
+
+	queryURL, err := serverURL.Parse(operationPath)
+	if err != nil {
+		return nil, err
+	}
+
+	req, err := http.NewRequest(http.MethodDelete, queryURL.String(), nil)
+	if err != nil {
+		return nil, err
+	}
+
+	return req, nil
+}
+
+// NewRestoreImageRequest generates requests for RestoreImage
+func NewRestoreImageRequest(server string, uid string) (*http.Request, error) {
+	var err error
+
+	var pathParam0 string
+
+	pathParam0, err = runtime.StyleParamWithOptions("simple", false, "uid", uid, runtime.StyleParamOptions{ParamLocation: runtime.ParamLocationPath, Type: "string", Format: ""})
+	if err != nil {
+		return nil, err
+	}
+
+	serverURL, err := url.Parse(server)
+	if err != nil {
+		return nil, err
+	}
+
+	operationPath := fmt.Sprintf("/trash/%s/restore", pathParam0)
+	if operationPath[0] == '/' {
+		operationPath = "." + operationPath
+	}
+
+	queryURL, err := serverURL.Parse(operationPath)
+	if err != nil {
+		return nil, err
+	}
+
+	req, err := http.NewRequest(http.MethodPost, queryURL.String(), nil)
+	if err != nil {
+		return nil, err
+	}
+
+	return req, nil
+}
+
 func (c *Client) applyEditors(ctx context.Context, req *http.Request, additionalEditors []RequestEditorFn) error {
 	for _, r := range c.RequestEditors {
 		if err := r(ctx, req); err != nil {
@@ -5618,6 +5908,21 @@ type ClientWithResponsesInterface interface {
 
 	// GetSystemStatusWithResponse request
 	GetSystemStatusWithResponse(ctx context.Context, reqEditors ...RequestEditorFn) (*GetSystemStatusResponse, error)
+
+	// GetTimelineBucketsWithResponse request
+	GetTimelineBucketsWithResponse(ctx context.Context, params *GetTimelineBucketsParams, reqEditors ...RequestEditorFn) (*GetTimelineBucketsResponse, error)
+
+	// EmptyTrashWithResponse request
+	EmptyTrashWithResponse(ctx context.Context, reqEditors ...RequestEditorFn) (*EmptyTrashResponse, error)
+
+	// ListTrashWithResponse request
+	ListTrashWithResponse(ctx context.Context, params *ListTrashParams, reqEditors ...RequestEditorFn) (*ListTrashResponse, error)
+
+	// DeleteTrashImageWithResponse request
+	DeleteTrashImageWithResponse(ctx context.Context, uid string, reqEditors ...RequestEditorFn) (*DeleteTrashImageResponse, error)
+
+	// RestoreImageWithResponse request
+	RestoreImageWithResponse(ctx context.Context, uid string, reqEditors ...RequestEditorFn) (*RestoreImageResponse, error)
 }
 
 type RegisterUserResponse struct {
@@ -8217,6 +8522,168 @@ func (r GetSystemStatusResponse) ContentType() string {
 	return ""
 }
 
+type GetTimelineBucketsResponse struct {
+	Body         []byte
+	HTTPResponse *http.Response
+	JSON200      *[]TimelineBucket
+	JSON500      *ErrorResponse
+}
+
+// Status returns HTTPResponse.Status
+func (r GetTimelineBucketsResponse) Status() string {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.Status
+	}
+	return http.StatusText(0)
+}
+
+// StatusCode returns HTTPResponse.StatusCode
+func (r GetTimelineBucketsResponse) StatusCode() int {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.StatusCode
+	}
+	return 0
+}
+
+// ContentType is a convenience method to retrieve the Content-Type value from the HTTP response headers
+func (r GetTimelineBucketsResponse) ContentType() string {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.Header.Get("Content-Type")
+	}
+	return ""
+}
+
+type EmptyTrashResponse struct {
+	Body         []byte
+	HTTPResponse *http.Response
+	JSON200      *MessageResponse
+	JSON500      *ErrorResponse
+}
+
+// Status returns HTTPResponse.Status
+func (r EmptyTrashResponse) Status() string {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.Status
+	}
+	return http.StatusText(0)
+}
+
+// StatusCode returns HTTPResponse.StatusCode
+func (r EmptyTrashResponse) StatusCode() int {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.StatusCode
+	}
+	return 0
+}
+
+// ContentType is a convenience method to retrieve the Content-Type value from the HTTP response headers
+func (r EmptyTrashResponse) ContentType() string {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.Header.Get("Content-Type")
+	}
+	return ""
+}
+
+type ListTrashResponse struct {
+	Body         []byte
+	HTTPResponse *http.Response
+	JSON200      *struct {
+		Count int              `json:"count"`
+		Items []ImagesResponse `json:"items"`
+		Limit int              `json:"limit"`
+		Page  int              `json:"page"`
+	}
+	JSON500 *ErrorResponse
+}
+
+// Status returns HTTPResponse.Status
+func (r ListTrashResponse) Status() string {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.Status
+	}
+	return http.StatusText(0)
+}
+
+// StatusCode returns HTTPResponse.StatusCode
+func (r ListTrashResponse) StatusCode() int {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.StatusCode
+	}
+	return 0
+}
+
+// ContentType is a convenience method to retrieve the Content-Type value from the HTTP response headers
+func (r ListTrashResponse) ContentType() string {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.Header.Get("Content-Type")
+	}
+	return ""
+}
+
+type DeleteTrashImageResponse struct {
+	Body         []byte
+	HTTPResponse *http.Response
+	JSON200      *MessageResponse
+	JSON404      *ErrorResponse
+	JSON500      *ErrorResponse
+}
+
+// Status returns HTTPResponse.Status
+func (r DeleteTrashImageResponse) Status() string {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.Status
+	}
+	return http.StatusText(0)
+}
+
+// StatusCode returns HTTPResponse.StatusCode
+func (r DeleteTrashImageResponse) StatusCode() int {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.StatusCode
+	}
+	return 0
+}
+
+// ContentType is a convenience method to retrieve the Content-Type value from the HTTP response headers
+func (r DeleteTrashImageResponse) ContentType() string {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.Header.Get("Content-Type")
+	}
+	return ""
+}
+
+type RestoreImageResponse struct {
+	Body         []byte
+	HTTPResponse *http.Response
+	JSON200      *MessageResponse
+	JSON404      *ErrorResponse
+	JSON500      *ErrorResponse
+}
+
+// Status returns HTTPResponse.Status
+func (r RestoreImageResponse) Status() string {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.Status
+	}
+	return http.StatusText(0)
+}
+
+// StatusCode returns HTTPResponse.StatusCode
+func (r RestoreImageResponse) StatusCode() int {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.StatusCode
+	}
+	return 0
+}
+
+// ContentType is a convenience method to retrieve the Content-Type value from the HTTP response headers
+func (r RestoreImageResponse) ContentType() string {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.Header.Get("Content-Type")
+	}
+	return ""
+}
+
 // RegisterUserWithBodyWithResponse request with arbitrary body returning *RegisterUserResponse
 func (c *ClientWithResponses) RegisterUserWithBodyWithResponse(ctx context.Context, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*RegisterUserResponse, error) {
 	rsp, err := c.RegisterUserWithBody(ctx, contentType, body, reqEditors...)
@@ -9176,6 +9643,51 @@ func (c *ClientWithResponses) GetSystemStatusWithResponse(ctx context.Context, r
 		return nil, err
 	}
 	return ParseGetSystemStatusResponse(rsp)
+}
+
+// GetTimelineBucketsWithResponse request returning *GetTimelineBucketsResponse
+func (c *ClientWithResponses) GetTimelineBucketsWithResponse(ctx context.Context, params *GetTimelineBucketsParams, reqEditors ...RequestEditorFn) (*GetTimelineBucketsResponse, error) {
+	rsp, err := c.GetTimelineBuckets(ctx, params, reqEditors...)
+	if err != nil {
+		return nil, err
+	}
+	return ParseGetTimelineBucketsResponse(rsp)
+}
+
+// EmptyTrashWithResponse request returning *EmptyTrashResponse
+func (c *ClientWithResponses) EmptyTrashWithResponse(ctx context.Context, reqEditors ...RequestEditorFn) (*EmptyTrashResponse, error) {
+	rsp, err := c.EmptyTrash(ctx, reqEditors...)
+	if err != nil {
+		return nil, err
+	}
+	return ParseEmptyTrashResponse(rsp)
+}
+
+// ListTrashWithResponse request returning *ListTrashResponse
+func (c *ClientWithResponses) ListTrashWithResponse(ctx context.Context, params *ListTrashParams, reqEditors ...RequestEditorFn) (*ListTrashResponse, error) {
+	rsp, err := c.ListTrash(ctx, params, reqEditors...)
+	if err != nil {
+		return nil, err
+	}
+	return ParseListTrashResponse(rsp)
+}
+
+// DeleteTrashImageWithResponse request returning *DeleteTrashImageResponse
+func (c *ClientWithResponses) DeleteTrashImageWithResponse(ctx context.Context, uid string, reqEditors ...RequestEditorFn) (*DeleteTrashImageResponse, error) {
+	rsp, err := c.DeleteTrashImage(ctx, uid, reqEditors...)
+	if err != nil {
+		return nil, err
+	}
+	return ParseDeleteTrashImageResponse(rsp)
+}
+
+// RestoreImageWithResponse request returning *RestoreImageResponse
+func (c *ClientWithResponses) RestoreImageWithResponse(ctx context.Context, uid string, reqEditors ...RequestEditorFn) (*RestoreImageResponse, error) {
+	rsp, err := c.RestoreImage(ctx, uid, reqEditors...)
+	if err != nil {
+		return nil, err
+	}
+	return ParseRestoreImageResponse(rsp)
 }
 
 // ParseRegisterUserResponse parses an HTTP response from a RegisterUserWithResponse call
@@ -12368,6 +12880,190 @@ func ParseGetSystemStatusResponse(rsp *http.Response) (*GetSystemStatusResponse,
 			return nil, err
 		}
 		response.JSON200 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 500:
+		var dest ErrorResponse
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON500 = &dest
+
+	}
+
+	return response, nil
+}
+
+// ParseGetTimelineBucketsResponse parses an HTTP response from a GetTimelineBucketsWithResponse call
+func ParseGetTimelineBucketsResponse(rsp *http.Response) (*GetTimelineBucketsResponse, error) {
+	bodyBytes, err := io.ReadAll(rsp.Body)
+	defer func() { _ = rsp.Body.Close() }()
+	if err != nil {
+		return nil, err
+	}
+
+	response := &GetTimelineBucketsResponse{
+		Body:         bodyBytes,
+		HTTPResponse: rsp,
+	}
+
+	switch {
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 200:
+		var dest []TimelineBucket
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON200 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 500:
+		var dest ErrorResponse
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON500 = &dest
+
+	}
+
+	return response, nil
+}
+
+// ParseEmptyTrashResponse parses an HTTP response from a EmptyTrashWithResponse call
+func ParseEmptyTrashResponse(rsp *http.Response) (*EmptyTrashResponse, error) {
+	bodyBytes, err := io.ReadAll(rsp.Body)
+	defer func() { _ = rsp.Body.Close() }()
+	if err != nil {
+		return nil, err
+	}
+
+	response := &EmptyTrashResponse{
+		Body:         bodyBytes,
+		HTTPResponse: rsp,
+	}
+
+	switch {
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 200:
+		var dest MessageResponse
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON200 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 500:
+		var dest ErrorResponse
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON500 = &dest
+
+	}
+
+	return response, nil
+}
+
+// ParseListTrashResponse parses an HTTP response from a ListTrashWithResponse call
+func ParseListTrashResponse(rsp *http.Response) (*ListTrashResponse, error) {
+	bodyBytes, err := io.ReadAll(rsp.Body)
+	defer func() { _ = rsp.Body.Close() }()
+	if err != nil {
+		return nil, err
+	}
+
+	response := &ListTrashResponse{
+		Body:         bodyBytes,
+		HTTPResponse: rsp,
+	}
+
+	switch {
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 200:
+		var dest struct {
+			Count int              `json:"count"`
+			Items []ImagesResponse `json:"items"`
+			Limit int              `json:"limit"`
+			Page  int              `json:"page"`
+		}
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON200 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 500:
+		var dest ErrorResponse
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON500 = &dest
+
+	}
+
+	return response, nil
+}
+
+// ParseDeleteTrashImageResponse parses an HTTP response from a DeleteTrashImageWithResponse call
+func ParseDeleteTrashImageResponse(rsp *http.Response) (*DeleteTrashImageResponse, error) {
+	bodyBytes, err := io.ReadAll(rsp.Body)
+	defer func() { _ = rsp.Body.Close() }()
+	if err != nil {
+		return nil, err
+	}
+
+	response := &DeleteTrashImageResponse{
+		Body:         bodyBytes,
+		HTTPResponse: rsp,
+	}
+
+	switch {
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 200:
+		var dest MessageResponse
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON200 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 404:
+		var dest ErrorResponse
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON404 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 500:
+		var dest ErrorResponse
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON500 = &dest
+
+	}
+
+	return response, nil
+}
+
+// ParseRestoreImageResponse parses an HTTP response from a RestoreImageWithResponse call
+func ParseRestoreImageResponse(rsp *http.Response) (*RestoreImageResponse, error) {
+	bodyBytes, err := io.ReadAll(rsp.Body)
+	defer func() { _ = rsp.Body.Close() }()
+	if err != nil {
+		return nil, err
+	}
+
+	response := &RestoreImageResponse{
+		Body:         bodyBytes,
+		HTTPResponse: rsp,
+	}
+
+	switch {
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 200:
+		var dest MessageResponse
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON200 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 404:
+		var dest ErrorResponse
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON404 = &dest
 
 	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 500:
 		var dest ErrorResponse

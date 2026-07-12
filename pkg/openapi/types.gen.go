@@ -524,6 +524,27 @@ func (e ListJobsParamsStatus) Valid() bool {
 	}
 }
 
+// Defines values for GetTimelineBucketsParamsPrecision.
+const (
+	Day   GetTimelineBucketsParamsPrecision = "day"
+	Month GetTimelineBucketsParamsPrecision = "month"
+	Year  GetTimelineBucketsParamsPrecision = "year"
+)
+
+// Valid indicates whether the value is a known member of the GetTimelineBucketsParamsPrecision enum.
+func (e GetTimelineBucketsParamsPrecision) Valid() bool {
+	switch e {
+	case Day:
+		return true
+	case Month:
+		return true
+	case Year:
+		return true
+	default:
+		return false
+	}
+}
+
 // APIKey defines model for APIKey.
 type APIKey struct {
 	// CreatedAt Creation time
@@ -1725,6 +1746,15 @@ type SystemStatusResponse struct {
 	UserOnboardingRequired bool `json:"user_onboarding_required"`
 }
 
+// TimelineBucket defines model for TimelineBucket.
+type TimelineBucket struct {
+	// Count Number of assets in this bucket
+	Count int `json:"count"`
+
+	// Id Start of the day, month, or year bucket (UTC)
+	Id time.Time `json:"id"`
+}
+
 // UploadConfig defines model for UploadConfig.
 type UploadConfig struct {
 	// Location Upload location
@@ -2299,6 +2329,24 @@ type ExecuteSearchParams struct {
 	Limit *int `form:"limit,omitempty" json:"limit,omitempty"`
 
 	// Page Page number
+	Page *int `form:"page,omitempty" json:"page,omitempty"`
+}
+
+// GetTimelineBucketsParams defines parameters for GetTimelineBuckets.
+type GetTimelineBucketsParams struct {
+	// Precision Grouping precision for the timeline (day, month, or year)
+	Precision *GetTimelineBucketsParamsPrecision `form:"precision,omitempty" json:"precision,omitempty"`
+}
+
+// GetTimelineBucketsParamsPrecision defines parameters for GetTimelineBuckets.
+type GetTimelineBucketsParamsPrecision string
+
+// ListTrashParams defines parameters for ListTrash.
+type ListTrashParams struct {
+	// Limit Max items
+	Limit *int `form:"limit,omitempty" json:"limit,omitempty"`
+
+	// Page Page index
 	Page *int `form:"page,omitempty" json:"page,omitempty"`
 }
 

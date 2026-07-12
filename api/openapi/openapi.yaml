@@ -851,6 +851,169 @@ paths:
                             schema:
                                 $ref: "#/components/schemas/ErrorResponse"
 
+    /trash:
+        get:
+            summary: List all trashed images (soft-deleted)
+            operationId: listTrash
+            security:
+                - BearerAuth: [images:read]
+                - CookieAuth: []
+            parameters:
+                - name: limit
+                  in: query
+                  schema:
+                      type: integer
+                      default: 100
+                  description: Max items
+                - name: page
+                  in: query
+                  schema:
+                      type: integer
+                      default: 0
+                  description: Page index
+            responses:
+                "200":
+                    description: List of trashed images
+                    content:
+                        application/json:
+                            schema:
+                                type: object
+                                properties:
+                                    items:
+                                        type: array
+                                        items:
+                                            $ref: "#/components/schemas/ImagesResponse"
+                                    page:
+                                        type: integer
+                                    limit:
+                                        type: integer
+                                    count:
+                                        type: integer
+                                required: [items, page, limit, count]
+                "500":
+                    description: Server error
+                    content:
+                        application/json:
+                            schema:
+                                $ref: "#/components/schemas/ErrorResponse"
+
+        delete:
+            summary: Empty the trash (permanently delete all soft-deleted images)
+            operationId: emptyTrash
+            security:
+                - BearerAuth: [images:delete]
+                - CookieAuth: []
+            responses:
+                "200":
+                    description: Trash emptied successfully
+                    content:
+                        application/json:
+                            schema:
+                                $ref: "#/components/schemas/MessageResponse"
+                "500":
+                    description: Server error
+                    content:
+                        application/json:
+                            schema:
+                                $ref: "#/components/schemas/ErrorResponse"
+
+    /trash/{uid}/restore:
+        post:
+            summary: Restore a soft-deleted image from the trash
+            operationId: restoreImage
+            security:
+                - BearerAuth: [images:update]
+                - CookieAuth: []
+            parameters:
+                - name: uid
+                  in: path
+                  required: true
+                  schema:
+                      type: string
+            responses:
+                "200":
+                    description: Image restored successfully
+                    content:
+                        application/json:
+                            schema:
+                                $ref: "#/components/schemas/MessageResponse"
+                "404":
+                    description: Image not found in trash
+                    content:
+                        application/json:
+                            schema:
+                                $ref: "#/components/schemas/ErrorResponse"
+                "500":
+                    description: Server error
+                    content:
+                        application/json:
+                            schema:
+                                $ref: "#/components/schemas/ErrorResponse"
+
+    /trash/{uid}:
+        delete:
+            summary: Permanently delete a single image from the trash
+            operationId: deleteTrashImage
+            security:
+                - BearerAuth: [images:delete]
+                - CookieAuth: []
+            parameters:
+                - name: uid
+                  in: path
+                  required: true
+                  schema:
+                      type: string
+            responses:
+                "200":
+                    description: Image permanently deleted
+                    content:
+                        application/json:
+                            schema:
+                                $ref: "#/components/schemas/MessageResponse"
+                "404":
+                    description: Image not found in trash
+                    content:
+                        application/json:
+                            schema:
+                                $ref: "#/components/schemas/ErrorResponse"
+                "500":
+                    description: Server error
+                    content:
+                        application/json:
+                            schema:
+                                $ref: "#/components/schemas/ErrorResponse"
+
+    /timeline/buckets:
+        get:
+            summary: Get timeline buckets grouped by day, month, or year
+            operationId: getTimelineBuckets
+            security:
+                - BearerAuth: [images:read]
+                - CookieAuth: []
+            parameters:
+                - name: precision
+                  in: query
+                  schema:
+                      type: string
+                      enum: [day, month, year]
+                      default: day
+                  description: Grouping precision for the timeline (day, month, or year)
+            responses:
+                "200":
+                    description: List of timeline buckets
+                    content:
+                        application/json:
+                            schema:
+                                type: array
+                                items:
+                                    $ref: "#/components/schemas/TimelineBucket"
+                "500":
+                    description: Server error
+                    content:
+                        application/json:
+                            schema:
+                                $ref: "#/components/schemas/ErrorResponse"
+
     /images:
         get:
             summary: List all images with pagination
@@ -4539,4 +4702,29 @@ components:
                     type: string
                     format: date-time
                     description: Timestamp when this transform was last requested
-            required: [uid, image_uid, cache_key, file_name, file_size_bytes, width, height, format, quality, is_permanent, last_accessed_at]
+            required:
+                [
+                    uid,
+                    image_uid,
+                    cache_key,
+                    file_name,
+                    file_size_bytes,
+                    width,
+                    height,
+                    format,
+                    quality,
+                    is_permanent,
+                    last_accessed_at
+                ]
+
+        TimelineBucket:
+            type: object
+            properties:
+                id:
+                    type: string
+                    format: date-time
+                    description: Start of the day, month, or year bucket (UTC)
+                count:
+                    type: integer
+                    description: Number of assets in this bucket
+            required: [id, count]
