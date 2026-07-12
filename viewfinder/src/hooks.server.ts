@@ -1,6 +1,4 @@
-import manrope from "@fontsource-variable/manrope/index.css?url";
-// import clearSans from '@fontsource/clear-sans/index.css?url';
-// import publicSans from '@fontsource-variable/public-sans/index.css?url';
+import geist from "@fontsource-variable/geist/index.css?url";
 import robotoMono from "@fontsource-variable/roboto-mono/files/roboto-mono-latin-wght-normal.woff2?url";
 import type { Handle } from "@sveltejs/kit";
 import { VizCookieStorage } from "$lib/utils/misc";
@@ -15,7 +13,7 @@ const THEME_ATTR_PLACEHOLDER = "%THEME_ATTR%";
 const DEFAULT_THEME = "viz-black";
 
 function handleFonts(html: string) {
-    return html.replace(DISPLAY_FONT_PLACEHOLDER, manrope).replace(MONO_FONT_PLACEHOLDER, robotoMono);
+    return html.replace(DISPLAY_FONT_PLACEHOLDER, geist).replace(MONO_FONT_PLACEHOLDER, robotoMono);
 }
 
 // uses vite to import the compiled CSS
