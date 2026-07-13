@@ -74,7 +74,12 @@ See `LICENSE` for details.
 
 ---
 
-## Questions or feedback?
-Open an issue or reach out via the repository discussions.
+## Questions or Feedback?
 
-Copyright (c) 2025 Les
+We welcome questions, feedback, and contributions! Here is how you can get in touch:
+
+- **Bugs & Feature Requests**: If you find a bug or have a new feature idea, please search the existing issues or open a new one.
+- **Support & Discussions**: For setup help, general questions, or architectural ideas, please start a thread in the repository discussions.
+- **Contributions**: Pull requests are welcome! If you are interested in contributing code or documentation, feel free to open a pull request or start a discussion to align on changes.
+
+Copyright (c) 2026 Les
