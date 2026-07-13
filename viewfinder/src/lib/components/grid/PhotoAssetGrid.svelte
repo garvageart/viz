@@ -1461,7 +1461,6 @@
             width: 0;
             opacity: 0;
             margin-right: 0;
-            overflow: hidden;
 
             transition:
                 width 0.2s ease-out,
