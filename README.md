@@ -54,7 +54,7 @@ See [**docs/BUILDING.md**](./docs/BUILDING.md) for detailed setup instructions, 
 - **Framework**: go-chi Router
 - **Database**: PostgreSQL (via GORM)
 - **Queue**: In-Memory or Redis (via Watermill)
-- **Search**: PostgreSQL Full-Text Search
+- **Search**: Full-Text Token-Based Search
 - **Image Processing**: libvips
 
 ### [Frontend](./viewfinder/README.md)
