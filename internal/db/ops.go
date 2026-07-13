@@ -39,7 +39,7 @@ func GetTimelineBuckets(db *gorm.DB, req *http.Request) ([]dto.TimelineBucket, e
 
 	switch db.Dialector.Name() {
 	case "postgres":
-		selectQuery = fmt.Sprintf("date_trunc('%s', taken_at) AS id, COUNT(id) AS count", precision)
+		selectQuery = fmt.Sprintf("date_trunc('%s', taken_at AT TIME ZONE 'UTC') AS id, COUNT(id) AS count", precision)
 	case "sqlite":
 		var strftimeFmt string
 		switch precision {
