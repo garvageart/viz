@@ -256,7 +256,6 @@
                                             {#each weekDates as date (date)}
                                                 <DatePicker.Cell {date} month={month.value} class="calendar-cell">
                                                     <DatePicker.Day class="calendar-day">
-                                                        <span class="calendar-day-dot"></span>
                                                         <span class="calendar-day-val">{date.day}</span>
                                                     </DatePicker.Day>
                                                 </DatePicker.Cell>
@@ -469,7 +468,7 @@
         width: var(--calendar-cell-size);
         height: var(--calendar-cell-size);
         border-radius: var(--viz-border-radius-sm);
-        border: 1px solid transparent;
+        border: 1.5px solid transparent;
         background: transparent;
         color: var(--viz-20);
         font-size: var(--viz-font-size-std);
@@ -486,23 +485,13 @@
 
     :global(.calendar-cell[data-selected]) :global(.calendar-day) {
         color: var(--viz-10);
-        font-weight: 500;
-        box-shadow: 0 -2px 0 var(--viz-primary) inset;
+        font-weight: 600;
     }
 
     :global(.calendar-cell[data-today]) :global(.calendar-day) {
         color: var(--viz-text-color);
         gap: var(--viz-spacing-xxs);
-        outline: 1.5px solid var(--viz-primary);
-    }
-
-    :global(.calendar-cell[data-today]) :global(.calendar-day-dot) {
-        display: block;
-        background: var(--viz-primary);
-    }
-
-    :global(.calendar-cell[data-selected]) :global(.calendar-day-dot) {
-        background: var(--viz-10);
+        border: 1.5px solid var(--viz-primary);
     }
 
     :global(.calendar-day:focus-visible) {

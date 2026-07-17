@@ -180,7 +180,8 @@
                 onRename: async (newName) => {
                     const res = await updateSession(session.uid, {
                         clientName: newName
-                    } as any);
+                    });
+
                     if (res.status === 200) {
                         sessions = sessions.map((s) =>
                             s.uid === session.uid
@@ -194,6 +195,7 @@
                                   }
                                 : s
                         );
+
                         toastState.addToast({
                             message: "Session renamed successfully",
                             type: "success"

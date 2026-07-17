@@ -31,12 +31,11 @@
 </script>
 
 <div class="rename-modal" id="rename-session-modal">
-    <h2>Rename Session</h2>
-    <p>Enter a new name for this session to help you identify it later.</p>
+    <span>Enter a new name for this session to help you identify it later.</span>
     <InputText label="Session Name" bind:value={newName} placeholder="e.g. Chrome on MacBook" />
     <div class="modal-actions">
-        <Button hoverColor="var(--viz-80)" onclick={handleCancel}>Cancel</Button>
-        <Button onclick={handleRename} disabled={loading}>
+        <Button variant="small" hoverColor="var(--viz-80)" onclick={handleCancel}>Cancel</Button>
+        <Button variant="small" onclick={handleRename} disabled={loading}>
             {loading ? "Renaming..." : "Rename Session"}
         </Button>
     </div>
@@ -44,22 +43,14 @@
 
 <style lang="scss">
     .rename-modal {
-        padding: 1.5rem;
         display: flex;
         flex-direction: column;
         gap: 1.25rem;
         color: var(--viz-text-color);
         width: 100%;
 
-        h2 {
-            margin: 0;
-            font-size: 1.5rem;
-        }
-
-        p {
+        span {
             color: var(--viz-40);
-            margin: 0;
-            font-size: 0.95rem;
         }
     }
 
