@@ -58,35 +58,39 @@ if (process.env.NODE_ENV !== "production") {
     (define as any).__servers = config.servers;
 }
 
-function copyWasmVipsFiles() {
-    const srcDir = path.resolve("node_modules/wasm-vips/lib");
-    const destWasmDir = path.resolve("static/wasm/vips");
-
-    if (fs.existsSync(srcDir)) {
-        fs.mkdirSync(destWasmDir, { recursive: true });
-        const files = fs.readdirSync(srcDir);
-        for (const file of files) {
-            if (file.endsWith(".wasm") || file === "vips-es6.js" || file === "vips.js") {
-                fs.copyFileSync(path.join(srcDir, file), path.join(destWasmDir, file));
-            }
+function copyFiles(srcDir: string, destDir: string, filterFn: (file: string) => boolean) {
+    if (!fs.existsSync(srcDir)) {
+        return;
+    }
+    fs.mkdirSync(destDir, { recursive: true });
+    for (const file of fs.readdirSync(srcDir)) {
+        if (filterFn(file)) {
+            fs.copyFileSync(path.join(srcDir, file), path.join(destDir, file));
         }
+    }
+}
+
+function copyImageProcessWasmFiles() {
+    const require = createRequire(import.meta.url);
+
+    try {
+        const pkgPath = require.resolve("wasm-vips/package.json");
+        const srcDir = path.join(path.dirname(pkgPath), "lib");
+        const destWasmDir = path.resolve("static/wasm/vips");
+        copyFiles(
+            srcDir,
+            destWasmDir,
+            (file) => file.endsWith(".wasm") || file === "vips-es6.js" || file === "vips.js"
+        );
+    } catch (e) {
+        console.error("Failed to copy wasm-vips files:", e);
     }
 
     try {
-        const require = createRequire(import.meta.url);
         const pkgPath = require.resolve("libexif-wasm/package.json");
-        const exifSrcDir = path.join(path.dirname(pkgPath), "dist/output");
+        const srcDir = path.join(path.dirname(pkgPath), "dist/output");
         const destExifDir = path.resolve("static/wasm/libexif");
-
-        if (fs.existsSync(exifSrcDir)) {
-            fs.mkdirSync(destExifDir, { recursive: true });
-            const files = fs.readdirSync(exifSrcDir);
-            for (const file of files) {
-                if (file.endsWith(".wasm") || file.endsWith(".js")) {
-                    fs.copyFileSync(path.join(exifSrcDir, file), path.join(destExifDir, file));
-                }
-            }
-        }
+        copyFiles(srcDir, destExifDir, (file) => file.endsWith(".wasm") || file.endsWith(".js"));
     } catch (e) {
         console.error("Failed to copy libexif-wasm files:", e);
     }
@@ -95,9 +99,9 @@ function copyWasmVipsFiles() {
 export default defineConfig({
     plugins: [
         {
-            name: "wasm-vips-copy",
+            name: "image-process-wasm-copy",
             buildStart() {
-                copyWasmVipsFiles();
+                copyImageProcessWasmFiles();
             }
         },
         {
