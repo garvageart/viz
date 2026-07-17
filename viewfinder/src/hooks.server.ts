@@ -1,4 +1,4 @@
-import geist from "@fontsource-variable/geist/index.css?url";
+import geist from "@fontsource-variable/geist/files/geist-latin-wght-normal.woff2?url";
 import robotoMono from "@fontsource-variable/roboto-mono/files/roboto-mono-latin-wght-normal.woff2?url";
 import type { Handle } from "@sveltejs/kit";
 import { VizCookieStorage } from "$lib/utils/misc";
