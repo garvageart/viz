@@ -1,6 +1,7 @@
 import { ExifData } from "libexif-wasm";
 import Vips from "wasm-vips";
 import type { ImageAsset } from "$lib/api";
+import { SUPPORTED_IMAGE_TYPES, type SupportedImageTypes } from "$lib/types/images";
 import { type ColorSpace, type MetadataPolicy, type TransformParams, createTransformEtag } from "$lib/utils/images";
 
 export interface TransformResult {
@@ -109,7 +110,7 @@ async function ensureIccProfile(v: ExtendedVipsModule, cs: ColorSpace): Promise<
     return null;
 }
 
-function applyMetadataPolicy(img: Vips.Image, metadataPolicy: MetadataPolicy, removeLocation?: boolean): boolean {
+export async function applyMetadataPolicy(img: Vips.Image, metadataPolicy: MetadataPolicy, removeLocation: boolean) {
     if (metadataPolicy === "all" && !removeLocation) {
         return false;
     }
@@ -188,7 +189,10 @@ function applyMetadataPolicy(img: Vips.Image, metadataPolicy: MetadataPolicy, re
         }
 
         try {
-            img.setBlob("exif-data", exif.saveData());
+            const rawExif = exif.saveData();
+            // avoids reading the whole WASM heap
+            const safeExif = new Uint8Array(rawExif).slice();
+            img.setBlob("exif-data", safeExif.buffer);
         } catch (e) {
             console.warn("Failed to save filtered EXIF back to image", e);
             exif.free();
@@ -220,8 +224,7 @@ export async function generateTransform(input: TransformInput): Promise<Transfor
     }
 
     const transformEtag = createTransformEtag(asset, params);
-
-    const finalExt = (params.format ?? ext ?? "jpg").toLowerCase();
+    const finalExt = (params.format ?? ext ?? "jpg").toLowerCase() as SupportedImageTypes;
 
     // Prepare an Uint8Array input buffer from the incoming data
     console.debug(
@@ -375,33 +378,65 @@ export async function generateTransform(input: TransformInput): Promise<Transfor
     // Encode
     const outExt = "." + finalExt;
     const quality = Math.max(0, Math.min(100, params.quality ?? 85));
-    const metadataPolicy = params.metadata ?? "all";
     const actualPolicy = params.metadata === undefined ? "all" : params.metadata || "none";
     const removeLocation = !!params.removeLocation;
-    const stripAll = applyMetadataPolicy(img, actualPolicy, removeLocation);
+    const stripAll = await applyMetadataPolicy(img, actualPolicy, removeLocation);
+
+    // JPEGs cannot have an alpha channel. If the image has transparency,
+    // not sure whether to keep this yet or not
+    // since libvips doesn't seem to crash when you take it out
+    // but it is technically wrong
+
+    // if (finalExt === "jpg" || finalExt === "jpeg") {
+    //     if (img.hasAlpha()) {
+    //         const flatImg = img.flatten({ background: [255, 255, 255] });
+    //         img.delete();
+    //         img = flatImg;
+    //     }
+    // }
 
     const writeOptions: Record<string, any> = { Q: quality, strip: stripAll };
-    if (params.bitDepth && params.bitDepth > 0) {
+
+    // Passing 'bitdepth' to jpegsave or webpsave
+    // causes an immediate fatal crash obviously
+    const supportsBitDepth = SUPPORTED_IMAGE_TYPES.filter((v) => !v.startsWith("jp") || v === "webp").includes(
+        finalExt
+    );
+
+    if (params.bitDepth && params.bitDepth > 0 && supportsBitDepth) {
         writeOptions.bitdepth = params.bitDepth;
     }
 
-    let outBufRaw = img.writeToBuffer(outExt, writeOptions);
-    if (outBufRaw instanceof Promise) {
-        outBufRaw = await outBufRaw;
-    }
-
-    const view =
-        outBufRaw instanceof ArrayBuffer
-            ? new Uint8Array(outBufRaw)
-            : new Uint8Array(outBufRaw.buffer, outBufRaw.byteOffset, outBufRaw.byteLength);
-
-    const sharedBuffer = new SharedArrayBuffer(view.byteLength);
-    new Uint8Array(sharedBuffer).set(view);
-
-    // free wasm-vips resources when possible
+    let outBufRaw: Uint8Array<ArrayBufferLike>;
+    let sharedBuffer: SharedArrayBuffer;
     try {
+        outBufRaw = img.writeToBuffer(outExt, writeOptions);
+        if (outBufRaw instanceof Promise) {
+            outBufRaw = await outBufRaw;
+        }
+
+        const view =
+            outBufRaw instanceof ArrayBuffer
+                ? new Uint8Array(outBufRaw)
+                : new Uint8Array(outBufRaw.buffer, outBufRaw.byteOffset, outBufRaw.byteLength);
+
+        sharedBuffer = new SharedArrayBuffer(view.byteLength);
+        new Uint8Array(sharedBuffer).set(view);
+    } catch (saveErr) {
+        console.error("[Worker vips.ts] Write To Buffer Error:", saveErr);
+        if (saveErr instanceof Error) {
+            console.error("[Worker vips.ts] Error message:", saveErr.message);
+            console.error("[Worker vips.ts] Error stack:", saveErr.stack);
+        }
+
+        throw saveErr;
+    } finally {
+        // free wasm-vips resources
+        // do not switch to `using` keyword, not supported
+        // in Safari yet and neither is it ubiquitus
+        // https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Statements/using
         img.delete();
-    } catch (_) {}
+    }
 
     return {
         imageData: sharedBuffer,

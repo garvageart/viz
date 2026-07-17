@@ -244,9 +244,19 @@
             });
         }
 
-        const exportWorker = new Worker(new URL("../../../workers/image_export.ts", import.meta.url), {
-            type: "module"
-        });
+        let exportWorker;
+        try {
+            exportWorker = new Worker(new URL("../../../workers/image_export.ts", import.meta.url), {
+                type: "module"
+            });
+            exportWorker.addEventListener("error", (e) => {
+                console.error("[ExportPanel] Worker error event:", e.message, e.filename, e.lineno, e);
+            });
+        } catch (workerErr) {
+            console.error("[ExportPanel] Failed to create web worker:", workerErr);
+            throw workerErr;
+        }
+
         const transformFn = Comlink.wrap<typeof exportImagesParallel>(exportWorker);
 
         try {
@@ -331,6 +341,7 @@
                     }
                 }
 
+                // TODO: Consider whether this can be a setting of its own
                 let zipName = `viz-bulk_export-${DateTime.now().toFormat("yyyyLLdd_HHmmss")}.zip`;
 
                 // Create a virtual DownloadFile task for zip compilation
@@ -370,6 +381,13 @@
                     throw err;
                 }
             }
+        } catch (execErr) {
+            console.error("[ExportPanel] Fatal error during worker execution:", execErr);
+            toastState.addToast({
+                title: "Export Failed",
+                message: execErr instanceof Error ? execErr.message : String(execErr),
+                type: "error"
+            });
         } finally {
             exportWorker.terminate();
         }

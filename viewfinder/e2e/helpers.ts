@@ -1,4 +1,5 @@
 import { type APIRequestContext, type Page } from "@playwright/test";
+import { defaults, deleteImagesBulk } from "../src/lib/api/client.gen";
 
 /**
  * Cleans up any test-created collections from the database.
@@ -76,4 +77,36 @@ export async function performDragAndDrop(page: Page, fileBuffer: Buffer, fileNam
         },
         [fileBuffer.toString("base64"), fileName]
     );
+}
+
+/**
+ * Cleans up specific E2E photos by their exact UIDs.
+ */
+export async function cleanupTestPhotos(request: APIRequestContext, uids: string[]) {
+    if (!uids || uids.length === 0) {
+        return;
+    }
+
+    try {
+        // Extract session cookies from Playwright to authenticate native fetch calls
+        const state = await request.storageState();
+        const cookieHeader = state.cookies.map((c) => `${c.name}=${c.value}`).join("; ");
+
+        // Playwright test runner might use a different base URL, default to localhost:7777
+        const baseUrl = process.env.PLAYWRIGHT_TEST_BASE_URL || "http://localhost:7777";
+        defaults.baseUrl = `${baseUrl}/api`;
+
+        const authOpts = {
+            headers: { Cookie: cookieHeader }
+        };
+
+        console.log(`Cleaning up leftover E2E photos via SDK: ${uids.join(", ")}`);
+        const deleteRes = await deleteImagesBulk({ uids, force: true }, authOpts);
+
+        if (deleteRes.status !== 200 && deleteRes.status !== 207) {
+            console.error(`Failed to delete photos: ${deleteRes.status}`);
+        }
+    } catch (err) {
+        console.error("Error during photo cleanup:", err);
+    }
 }

@@ -1,6 +1,7 @@
 /// <reference types="vitest" />
 import { sveltekit } from "@sveltejs/kit/vite";
 import fs from "fs";
+import { createRequire } from "module";
 import path from "path";
 import { fileURLToPath } from "url";
 import { type ProxyOptions, defineConfig } from "vite";
@@ -61,17 +62,33 @@ function copyWasmVipsFiles() {
     const srcDir = path.resolve("node_modules/wasm-vips/lib");
     const destWasmDir = path.resolve("static/wasm/vips");
 
-    if (!fs.existsSync(srcDir)) {
-        return;
+    if (fs.existsSync(srcDir)) {
+        fs.mkdirSync(destWasmDir, { recursive: true });
+        const files = fs.readdirSync(srcDir);
+        for (const file of files) {
+            if (file.endsWith(".wasm") || file === "vips-es6.js" || file === "vips.js") {
+                fs.copyFileSync(path.join(srcDir, file), path.join(destWasmDir, file));
+            }
+        }
     }
 
-    fs.mkdirSync(destWasmDir, { recursive: true });
+    try {
+        const require = createRequire(import.meta.url);
+        const pkgPath = require.resolve("libexif-wasm/package.json");
+        const exifSrcDir = path.join(path.dirname(pkgPath), "dist/output");
+        const destExifDir = path.resolve("static/wasm/libexif");
 
-    const files = fs.readdirSync(srcDir);
-    for (const file of files) {
-        if (file.endsWith(".wasm") || file === "vips-es6.js" || file === "vips.js") {
-            fs.copyFileSync(path.join(srcDir, file), path.join(destWasmDir, file));
+        if (fs.existsSync(exifSrcDir)) {
+            fs.mkdirSync(destExifDir, { recursive: true });
+            const files = fs.readdirSync(exifSrcDir);
+            for (const file of files) {
+                if (file.endsWith(".wasm") || file.endsWith(".js")) {
+                    fs.copyFileSync(path.join(exifSrcDir, file), path.join(destExifDir, file));
+                }
+            }
         }
+    } catch (e) {
+        console.error("Failed to copy libexif-wasm files:", e);
     }
 }
 
@@ -98,7 +115,10 @@ export default defineConfig({
     ],
     define: define,
     optimizeDeps: {
-        exclude: ["wasm-vips"]
+        exclude: ["wasm-vips", "libexif-wasm"],
+        esbuildOptions: {
+            target: "es2022"
+        }
     },
     worker: {
         format: "es"

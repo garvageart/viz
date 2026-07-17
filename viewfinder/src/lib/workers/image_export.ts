@@ -1,11 +1,14 @@
 import * as Comlink from "comlink";
-import { type TransformInput, type TransformResult, generateTransform } from "$lib/images/vips/vips";
+import type { TransformInput, TransformResult } from "$lib/images/vips/vips";
 
 export async function exportImagesParallel(
     images: TransformInput[],
     sharedCounter?: Int32Array | null,
     staticIndex?: number
 ) {
+    // Dynamically import vips here to avoid top-level await blocking Comlink initialization
+    const { generateTransform } = await import("$lib/images/vips/vips");
+
     const results: { result?: TransformResult; error?: string; index: number }[] = [];
 
     // If we have a shared counter, use Atomics for parallel coordination
