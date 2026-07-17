@@ -144,6 +144,15 @@ func TestEngineApply(t *testing.T) {
 			wantWhereContain: []string{"favourited = ?"},
 		},
 		{
+			name: "User Alias",
+			criteria: SearchCriteria{
+				Filters: map[string]string{
+					"user": "les",
+				},
+			},
+			wantWhereContain: []string{"users.name = ?"},
+		},
+		{
 			name: "Text Search with EXIF",
 			criteria: SearchCriteria{
 				Text: []string{"fujifilm"},
@@ -218,7 +227,7 @@ func TestEngineApplyCollections(t *testing.T) {
 			name: "Basic Filters",
 			criteria: SearchCriteria{
 				Filters: map[string]string{
-					"owner": "jane",
+					"owner": "les",
 				},
 			},
 			wantWhereContain: []string{"users.name = ?"},
@@ -249,6 +258,15 @@ func TestEngineApplyCollections(t *testing.T) {
 				},
 			},
 			wantWhereContain: []string{"favourited = ?"},
+		},
+		{
+			name: "User Alias",
+			criteria: SearchCriteria{
+				Filters: map[string]string{
+					"user": "les",
+				},
+			},
+			wantWhereContain: []string{"users.name = ?"},
 		},
 	}
 

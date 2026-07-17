@@ -71,8 +71,14 @@ func (e *Engine) Apply(db *gorm.DB, criteria SearchCriteria) *gorm.DB {
 		query = query.Where("image_metadata->>'file_type' = ?", val)
 	}
 
-	// 4. User Filters (e.g. owner:john)
-	if user, ok := criteria.Filters["owner"]; ok {
+	// 4. User Filters (e.g. owner:john or user:john)
+	// Note: This might have to change in future because
+	// a single `user` might not be the `owner`
+	user, ok := criteria.Filters["owner"]
+	if !ok {
+		user, ok = criteria.Filters["user"]
+	}
+	if ok {
 		query = query.Joins("JOIN users ON users.uid = images.owner_id").
 			Where("users.name = ?", user)
 	}
@@ -168,7 +174,11 @@ func (e *Engine) ApplyCollections(db *gorm.DB, criteria SearchCriteria) *gorm.DB
 	}
 
 	// 2. User Filters
-	if user, ok := criteria.Filters["owner"]; ok {
+	user, ok := criteria.Filters["owner"]
+	if !ok {
+		user, ok = criteria.Filters["user"]
+	}
+	if ok {
 		query = query.Joins("JOIN users ON users.uid = collections.owner_id").
 			Where("users.name = ?", user)
 	}
@@ -198,6 +208,12 @@ func (e *Engine) ApplyCollections(db *gorm.DB, criteria SearchCriteria) *gorm.DB
 		case "false":
 			query = query.Where("favourited = ? OR favourited IS NULL", false)
 		}
+	}
+
+	// Date filters do not apply to collections.
+	// If the user specified a date filter, we hide collections entirely unless they explicitly provided a text search.
+	if (!criteria.DateRange.Min.IsZero() || !criteria.DateRange.Max.IsZero()) && len(criteria.Text) == 0 {
+		query = query.Where("1 = 0")
 	}
 
 	return query
