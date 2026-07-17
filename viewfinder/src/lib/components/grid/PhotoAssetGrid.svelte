@@ -54,6 +54,8 @@
         disabledUids?: Set<string>;
         /** Callback to load more images for pagination when selecting a group */
         onLoadMore?: () => Promise<void> | void;
+        /** Explicit height of sticky headers above the grid. If omitted, falls back to gridOffsetTop (which assumes everything above is sticky) */
+        stickyHeaderHeight?: number;
     }
 
     type Props = Omit<ComponentProps<typeof AssetGrid<ImageAsset>>, "assetSnippet"> & PhotoSpecificProps;
@@ -80,7 +82,8 @@
         gridConfig = {},
         onselectAll,
         disabledUids = new Set(),
-        onLoadMore
+        onLoadMore,
+        stickyHeaderHeight
     }: Props = $props();
 
     // Selection Management
@@ -543,16 +546,18 @@
     let containerViewportHeight = $state(0);
     let gridOffsetTop = $state(0);
 
+    let scrubberTopOffset = $derived(stickyHeaderHeight !== undefined ? stickyHeaderHeight : gridOffsetTop);
+
     const dateLabel = $derived(virtualizer.getDateLabel(scrollTop));
 
     // For the scrubber, we want it to represent the entire scrollable area of the container.
     // We pass values that make its internal ratio calculation match the container's.
     // Scrubber track will be positioned below the sticky toolbar.
     const scrubberTotalHeight = $derived(
-        usingExternalScroll ? containerScrollHeight - gridOffsetTop : virtualizer.totalHeight
+        usingExternalScroll ? containerScrollHeight - scrubberTopOffset : virtualizer.totalHeight
     );
     const scrubberViewportHeight = $derived(
-        usingExternalScroll ? containerViewportHeight - gridOffsetTop : virtualizer.viewportHeight
+        usingExternalScroll ? containerViewportHeight - scrubberTopOffset : virtualizer.viewportHeight
     );
     let scrubberScrollTop = $derived(usingExternalScroll ? containerScrollTop : scrollTop);
 
@@ -1299,7 +1304,7 @@
                 {#each virtualizer.visibleRows as row (row.id)}
                     {#if row.type === "header"}
                         <div
-                            style={`position: absolute; top: ${row.top}px; left: 0; right: 0; height: ${row.height}px; width: 100%; z-index: 1;`}
+                            style={`position: absolute; top: ${row.top}px; left: 0; right: 0; height: ${row.height}px; width: 100%;`}
                         >
                             {@render inlineHeader(row.label)}
                         </div>
@@ -1330,7 +1335,7 @@
             <div
                 class="scrubber-sticky-container"
                 style={usingExternalScroll
-                    ? `position: sticky; top: ${gridOffsetTop}px; height: ${scrubberViewportHeight}px;`
+                    ? `position: sticky; top: ${scrubberTopOffset}px; height: ${scrubberViewportHeight}px;`
                     : "height: 100%;"}
             >
                 <TimelineScrubber

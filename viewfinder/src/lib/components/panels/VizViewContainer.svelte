@@ -17,6 +17,8 @@
         paginate?: () => void;
         randomLatency?: boolean;
         focusScrollElement?: HTMLElement | null;
+        /** Disables overflow properties and sets height to auto, allowing the parent to handle scrolling natively */
+        disableScroll?: boolean;
     }
 
     let {
@@ -29,6 +31,7 @@
         paginate,
         randomLatency = $bindable(false),
         focusScrollElement,
+        disableScroll = false,
         ...props
     }: SvelteHTMLElements["div"] & Props = $props();
 
@@ -45,9 +48,9 @@
     let viewContainer: HTMLElement | undefined = $state();
     let isLoading = $state(true);
 
-    const shouldEnableScroll = $derived(isLayoutPage() || hasMore || (data && data.length > 0));
+    const shouldEnableScroll = $derived(!disableScroll && (isLayoutPage() || hasMore || (data && data.length > 0)));
 
-    const initStyle = $derived(`${isLoading ? "height: 100%;" : ""} ${style}`);
+    const initStyle = $derived(`${isLoading && !disableScroll ? "height: 100%;" : ""} ${style}`);
     let pageData = $derived.by(() => {
         if (dev && randomLatency) {
             const randomLatency = Math.floor(Math.random() * 2000) + 500; // Random latency between 1 and 3 seconds in dev mode
@@ -147,7 +150,9 @@
 </svelte:head>
 <div
     {...props}
-    class="viz-view-container no-select {shouldEnableScroll ? 'scrollable' : ''} {props.class}"
+    class="viz-view-container no-select {shouldEnableScroll ? 'scrollable' : ''} {disableScroll
+        ? 'disable-scroll'
+        : ''} {props.class}"
     onscroll={onScroll}
     onresize={onResize}
     style="{initStyle} {style}"
@@ -205,6 +210,11 @@
 
     .viz-view-container.scrollable {
         overflow: auto;
+    }
+
+    .viz-view-container.disable-scroll {
+        overflow: visible;
+        height: auto;
     }
 
     .viz-view-container > :global(*) {

@@ -44,6 +44,8 @@
     let images = $derived(search.data.images.data);
     let totalResults = $derived(collections.length + images.length);
 
+    const staticSearchValue = search.value;
+
     let timeFound = $state(0);
 
     // Lightbox
@@ -592,11 +594,14 @@
                     name="Search Results"
                     data={images}
                     hasMore={search.pagination.hasMore}
-                    paginate={() => paginateSearch()}
+                    paginate={paginateSearch}
+                    disableNameInTitle={true}
+                    disableScroll={true}
+                    style="background: transparent;"
                 >
                     {#if totalResults === 0}
                         <div class="no-results">
-                            <p>No results found for "{search.value}"</p>
+                            <span>No results found for "{staticSearchValue}"</span>
                         </div>
                     {:else}
                         {#if collections.length > 0}
@@ -612,6 +617,7 @@
                                                 items={collectionDisplayMenuItems}
                                                 selectedItemId={collectionDisplaySelectedId}
                                                 showSelectionIndicator={false}
+                                                onSelect={(item) => item.action?.(new MouseEvent("click"))}
                                             />
                                         </div>
                                     {/if}
@@ -648,6 +654,8 @@
                                                 items={imageDisplayMenuItems}
                                                 selectedItemId={imageDisplaySelectedId}
                                                 showSelectionIndicator={false}
+                                                // i hate this
+                                                onSelect={(item) => item.action?.(new MouseEvent("click"))}
                                             />
                                         </div>
                                     {/if}
@@ -661,6 +669,7 @@
                                         groupedData={consolidatedGroups}
                                         showDateHeaders={true}
                                         scopeId={imageScopeId}
+                                        stickyHeaderHeight={64}
                                         onLoadMore={() => paginateSearch()}
                                         assetDblClick={(_e, asset) => {
                                             openLightbox(asset);
@@ -763,7 +772,7 @@
         }
 
         h2 {
-            font-size: 1em;
+            font-size: var(--viz-font-size-lg);
             font-family: var(--viz-display-font);
             color: var(--viz-text-color);
         }
@@ -797,6 +806,8 @@
 
     .collection-group-container {
         width: 100%;
+        padding: var(--viz-spacing-std);
+        box-sizing: border-box;
         display: flex;
         flex-direction: column;
         align-items: center;
@@ -808,5 +819,7 @@
         padding: 0; /* Remove padding that might push content out of bounds */
         box-sizing: border-box;
         width: 100%;
+        height: auto;
+        min-height: 100%; /* Important for virtualization filling container */
     }
 </style>
