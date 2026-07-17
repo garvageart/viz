@@ -26,5 +26,5 @@ static/themes/
 *.ico
 
 # WebAssembly/WASM
-static/wasm/vips/
+static/wasm/
 
