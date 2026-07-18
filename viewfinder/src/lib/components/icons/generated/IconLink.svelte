@@ -1,12 +1,20 @@
 <script lang="ts">
     const variants: Record<string, string> = {
-    "400": "<path d=\"M440-280H280q-83 0-141.5-58.5T80-480t58.5-141.5T280-680h160v80H280q-50 0-85 35t-35 85 35 85 85 35h160zM320-440v-80h320v80zm200 160v-80h160q50 0 85-35t35-85-35-85-85-35H520v-80h160q83 0 141.5 58.5T880-480t-58.5 141.5T680-280z\" />"
-};
+        "400": '<path d="M440-280H280q-83 0-141.5-58.5T80-480t58.5-141.5T280-680h160v80H280q-50 0-85 35t-35 85 35 85 85 35h160zM320-440v-80h320v80zm200 160v-80h160q50 0 85-35t35-85-35-85-85-35H520v-80h160q83 0 141.5 58.5T880-480t-58.5 141.5T680-280z" />'
+    };
     const filledVariants: Record<string, string> = {
-    "400": "<path d=\"M450-280H280q-83 0-141.5-58.5T80-480t58.5-141.5T280-680h170v60H280q-58.33 0-99.17 40.76-40.83 40.77-40.83 99Q140-422 180.83-381q40.84 41 99.17 41h170zM325-450v-60h310v60zm185 170v-60h170q58.33 0 99.17-40.76 40.83-40.77 40.83-99Q820-538 779.17-579q-40.84-41-99.17-41H510v-60h170q83 0 141.5 58.5T880-480t-58.5 141.5T680-280z\" />"
-};
-    let { size = "1.5em", className = "", title = "link", viewBox = "0 -960 960 960", weight = "400", fill = false, ...rest } = $props();
-    
+        "400": '<path d="M450-280H280q-83 0-141.5-58.5T80-480t58.5-141.5T280-680h170v60H280q-58.33 0-99.17 40.76-40.83 40.77-40.83 99Q140-422 180.83-381q40.84 41 99.17 41h170zM325-450v-60h310v60zm185 170v-60h170q58.33 0 99.17-40.76 40.83-40.77 40.83-99Q820-538 779.17-579q-40.84-41-99.17-41H510v-60h170q83 0 141.5 58.5T880-480t-58.5 141.5T680-280z" />'
+    };
+    let {
+        size = "1.5em",
+        className = "",
+        title = "link",
+        viewBox = "0 -960 960 960",
+        weight = "400",
+        fill = false,
+        ...rest
+    } = $props();
+
     const activeMap = $derived(fill ? filledVariants : variants);
     const inner = $derived(activeMap[String(weight)] || activeMap["400"] || Object.values(activeMap)[0]);
 </script>
@@ -15,7 +23,7 @@
     class={className}
     width={size}
     height={size}
-    viewBox={viewBox}
+    {viewBox}
     fill="currentColor"
     xmlns="http://www.w3.org/2000/svg"
     aria-label={title}

@@ -1,12 +1,20 @@
 <script lang="ts">
     const variants: Record<string, string> = {
-    "400": "<path d=\"M560-240 320-480l240-240 56 56-184 184 184 184z\" />"
-};
+        "400": '<path d="M560-240 320-480l240-240 56 56-184 184 184 184z" />'
+    };
     const filledVariants: Record<string, string> = {
-    "400": "<path d=\"M561-240 320-481l241-241 43 43-198 198 198 198z\" />"
-};
-    let { size = "1.5em", className = "", title = "chevron_left", viewBox = "0 -960 960 960", weight = "400", fill = false, ...rest } = $props();
-    
+        "400": '<path d="M561-240 320-481l241-241 43 43-198 198 198 198z" />'
+    };
+    let {
+        size = "1.5em",
+        className = "",
+        title = "chevron_left",
+        viewBox = "0 -960 960 960",
+        weight = "400",
+        fill = false,
+        ...rest
+    } = $props();
+
     const activeMap = $derived(fill ? filledVariants : variants);
     const inner = $derived(activeMap[String(weight)] || activeMap["400"] || Object.values(activeMap)[0]);
 </script>
@@ -15,7 +23,7 @@
     class={className}
     width={size}
     height={size}
-    viewBox={viewBox}
+    {viewBox}
     fill="currentColor"
     xmlns="http://www.w3.org/2000/svg"
     aria-label={title}
