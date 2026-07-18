@@ -1,23 +1,17 @@
-node_modules
-.cache
-.svelte-kit
-build
-dist
-tmp
-var
-target
-playwright-report
-test-results
-
-# Go files and Go build files
-*.go
-go.sum
-go.work
-go.work.sum
-migrations
+# Node / Caches / Build outputs
+**/node_modules
+**/.cache
+**/.svelte-kit
+**/build
+**/dist
+**/tmp
+**/var
+**/target
+**/playwright-report
+**/test-results
 
 # Generated files
-viewfinder/static/themes/
+**/static/themes/
 **/client.gen.ts
 **/types.gen.go
 **/generated.go
@@ -33,5 +27,4 @@ viewfinder/static/themes/
 *.ico
 
 # WebAssembly/WASM
-viewfinder/static/wasm/vips/
-
+**/static/wasm/

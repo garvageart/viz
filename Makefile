@@ -163,10 +163,10 @@ fmt:
 	fi
 	@if [ -f "$(VIEWFINDER_DIR)/package.json" ]; then \
 		echo "Checking frontend formatting..."; \
-		DIFF_FILES=$$(cd $(VIEWFINDER_DIR) && $(PNPM) exec prettier --list-different . 2>/dev/null); \
+		DIFF_FILES=$$(cd $(VIEWFINDER_DIR) && $(PNPM) exec prettier --ignore-path ../.prettierignore --list-different . 2>/dev/null); \
 		if [ -n "$$DIFF_FILES" ]; then \
 			echo "Formatting unformatted frontend files..."; \
-			cd $(VIEWFINDER_DIR) && $(PNPM) exec prettier --write $$DIFF_FILES || true; \
+			cd $(VIEWFINDER_DIR) && $(PNPM) exec prettier --ignore-path ../.prettierignore --write $$DIFF_FILES || true; \
 		fi; \
 	fi
 
