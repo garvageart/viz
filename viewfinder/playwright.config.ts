@@ -6,6 +6,9 @@ dotenv.config({ path: "../.env", override: true });
 /**
  * See https://playwright.dev/docs/test-configuration.
  */
+const isPreview = !!process.env.PLAYWRIGHT_PREVIEW;
+const port = isPreview ? 7778 : 7777;
+
 export default defineConfig({
     testDir: "e2e",
     testMatch: "**/*.e2e.ts",
@@ -29,7 +32,7 @@ export default defineConfig({
     /* Shared settings for all the projects below. See https://playwright.dev/docs/api/class-testoptions. */
     use: {
         /* Base URL to use in actions like `await page.goto('/')`. */
-        baseURL: "http://localhost:7777",
+        baseURL: `http://localhost:${port}`,
 
         /* Collect trace when retrying the failed test. See https://playwright.dev/docs/trace-viewer */
         trace: "on-first-retry"
@@ -53,10 +56,10 @@ export default defineConfig({
         }
     ],
 
-    /* Run your local dev server before starting the tests */
+    /* Run your local server before starting the tests */
     webServer: {
-        command: "pnpm dev",
-        url: "http://localhost:7777",
-        reuseExistingServer: !process.env.CI
+        command: isPreview || process.env.CI ? `pnpm preview --port ${port}` : "pnpm dev",
+        url: `http://localhost:${port}`,
+        reuseExistingServer: !isPreview && !process.env.CI
     }
 });
