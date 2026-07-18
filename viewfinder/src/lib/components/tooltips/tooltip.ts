@@ -30,7 +30,7 @@ export function mountTooltipComponent<T extends Record<string, any>>(
     };
 }
 
-export function tooltip(node: HTMLElement, params: TooltipParams | string | null | undefined) {
+export function tooltip(node: HTMLElement, params?: TooltipParams | string) {
     if (!params) {
         return;
     }
@@ -45,16 +45,12 @@ export function tooltip(node: HTMLElement, params: TooltipParams | string | null
         const compProps = isString ? {} : opts.props || {};
         const tippyOptions: TippyOptions = isString ? {} : { ...opts };
 
-        // Clean up component-specific configurations from tippyOptions
-        delete tippyOptions.component;
-        delete tippyOptions.props;
         const applyPadding = tippyOptions.applyPadding ?? true;
-        delete tippyOptions.applyPadding;
-
         let theme = tippyOptions.theme || "viz";
         if (!applyPadding) {
             theme += " no-padding";
         }
+
         delete tippyOptions.theme;
 
         let contentNode: HTMLElement | string = contentVal ?? "";
