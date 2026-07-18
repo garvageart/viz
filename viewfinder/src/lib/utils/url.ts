@@ -73,3 +73,54 @@ export function getGitCommitUrl(repoUrl: string | null | undefined, commit: stri
 
     return "";
 }
+
+/**
+ * Safely validates and sanitizes a redirect target URL to prevent Open Redirect
+ * and XSS vulnerabilities (GHSA-8244-8vpr-vp9c & GHSA-qp2h-w794-2vhf).
+ *
+ * Guarantees that the returned URL is a relative path starting with '/' and
+ * strictly belonging to the same origin.
+ */
+export function getSafeRedirectUrl(inputUrl: string | null | undefined, fallback = "/"): string {
+    if (!inputUrl) {
+        return fallback;
+    }
+
+    try {
+        const decoded = decodeURIComponent(inputUrl).trim();
+
+        // 1. Must start with '/'
+        if (!decoded.startsWith("/")) {
+            return fallback;
+        }
+
+        // 2. Reject protocol-relative URLs, backslash paths, or control characters.
+        // Browsers normalize '\' to '/' when resolving relative URLs (e.g. /\evil.com -> //evil.com).
+        if (
+            decoded.startsWith("//") ||
+            decoded.startsWith("/\\") ||
+            decoded.startsWith("\\") ||
+            decoded.includes("\\")
+        ) {
+            return fallback;
+        }
+
+        // 3. Parse with URL constructor against a dummy origin to verify origin stability
+        const dummyOrigin = "http://localhost";
+        const parsed = new URL(decoded, dummyOrigin);
+
+        // Ensure origin is unchanged (did not escape to external domain or non-http scheme like javascript:)
+        if (parsed.origin !== dummyOrigin) {
+            return fallback;
+        }
+
+        // 4. Ensure pathname starts with / and does not start with //
+        if (!parsed.pathname.startsWith("/") || parsed.pathname.startsWith("//")) {
+            return fallback;
+        }
+
+        return parsed.pathname + parsed.search + parsed.hash;
+    } catch {
+        return fallback;
+    }
+}

@@ -74,8 +74,7 @@ function copyImageProcessWasmFiles() {
     const require = createRequire(import.meta.url);
 
     try {
-        const pkgPath = require.resolve("wasm-vips/package.json");
-        const srcDir = path.join(path.dirname(pkgPath), "lib");
+        const srcDir = path.resolve("node_modules/wasm-vips/lib");
         const destWasmDir = path.resolve("static/wasm/vips");
         copyFiles(
             srcDir,

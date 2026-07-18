@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { getGitBranchUrl, getGitCommitUrl, parseGitWebUrl } from "./url";
+import { getGitBranchUrl, getGitCommitUrl, getSafeRedirectUrl, parseGitWebUrl } from "./url";
 
 describe("url utils", () => {
     describe("parseGitWebUrl", () => {
@@ -73,6 +73,40 @@ describe("url utils", () => {
 
         it("returns empty string for unrecognized providers", () => {
             expect(getGitCommitUrl("https://git.local.domain/repo", "vikstarr123")).toBe("");
+        });
+    });
+
+    describe("getSafeRedirectUrl", () => {
+        it("returns fallback for null, undefined, or empty strings", () => {
+            expect(getSafeRedirectUrl(null)).toBe("/");
+            expect(getSafeRedirectUrl(undefined, "/home")).toBe("/home");
+            expect(getSafeRedirectUrl("")).toBe("/");
+        });
+
+        it("allows valid same-origin relative URLs", () => {
+            expect(getSafeRedirectUrl("/photos")).toBe("/photos");
+            expect(getSafeRedirectUrl("/search?q=since:2024#grid")).toBe("/search?q=since:2024#grid");
+            expect(getSafeRedirectUrl("/settings/general")).toBe("/settings/general");
+        });
+
+        it("blocks external absolute URLs (GHSA-8244-8vpr-vp9c)", () => {
+            expect(getSafeRedirectUrl("https://evil.com")).toBe("/");
+            expect(getSafeRedirectUrl("http://evil.com/path")).toBe("/");
+            expect(getSafeRedirectUrl("javascript:alert(1)")).toBe("/");
+        });
+
+        it("blocks protocol-relative URLs (GHSA-8244-8vpr-vp9c)", () => {
+            expect(getSafeRedirectUrl("//evil.com")).toBe("/");
+            expect(getSafeRedirectUrl("//evil.com/path")).toBe("/");
+        });
+
+        it("blocks backslash open-redirect bypasses (GHSA-qp2h-w794-2vhf)", () => {
+            expect(getSafeRedirectUrl("/\\evil.com")).toBe("/");
+            expect(getSafeRedirectUrl("/\\\\evil.com")).toBe("/");
+            expect(getSafeRedirectUrl("/\\/evil.com")).toBe("/");
+            expect(getSafeRedirectUrl("\\\\evil.com")).toBe("/");
+            expect(getSafeRedirectUrl("%2F%5Cevil.com")).toBe("/");
+            expect(getSafeRedirectUrl("/path\\evil.com")).toBe("/");
         });
     });
 });

@@ -13,6 +13,7 @@
     import { formatLabel } from "$lib/settings/utils";
     import ProgressBar from "$lib/components/ui/ProgressBar.svelte";
     import { page } from "$app/state";
+    import { getSafeRedirectUrl } from "$lib/utils/url";
 
     let isLoading = $state(false);
     let currentStep = $state(0);
@@ -26,7 +27,7 @@
             !system.data?.user_onboarding_required
         ) {
             const continueUrl = page.url.searchParams.get("continue");
-            goto(continueUrl ? decodeURIComponent(continueUrl) : "/");
+            goto(getSafeRedirectUrl(continueUrl, "/"));
         }
     });
 
@@ -205,7 +206,7 @@
                 user.data = res.data;
 
                 const continueUrl = page.url.searchParams.get("continue");
-                goto(continueUrl ? decodeURIComponent(continueUrl) : "/");
+                goto(getSafeRedirectUrl(continueUrl, "/"));
             } else {
                 toastState.addToast({
                     message: res.data.error || "Onboarding failed.",

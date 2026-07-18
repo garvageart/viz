@@ -3,6 +3,7 @@ import { error, redirect } from "@sveltejs/kit";
 import { getSystemStatus, initApi } from "$lib/api";
 import { fetchCurrentUser } from "$lib/auth/auth_methods";
 import { system, user } from "$lib/states/index.svelte.js";
+import { getSafeRedirectUrl } from "$lib/utils/url";
 
 export const ssr = false;
 export const csr = true;
@@ -66,10 +67,7 @@ export async function load({ url, fetch }) {
             // Already logged in? Go home or to continue path
             const queryParams = new URLSearchParams(url.search);
             const continueQuery = queryParams.get("continue");
-            const continueUrl = continueQuery ? decodeURIComponent(continueQuery) : "";
-            // Only allow same-origin relative paths — blocks javascript:, data:, https://evil, //evil
-            const safeContinue =
-                continueUrl && continueUrl.startsWith("/") && !continueUrl.startsWith("//") ? continueUrl : "/";
+            const safeContinue = getSafeRedirectUrl(continueQuery, "/");
             redirect(303, safeContinue);
         }
         // Not logged in, stay on auth page
@@ -100,10 +98,10 @@ export async function load({ url, fetch }) {
     const continueQuery = queryParams.get("continue");
 
     if (continueQuery) {
-        const decoded = decodeURIComponent(continueQuery).trim();
+        const safeContinue = getSafeRedirectUrl(continueQuery, "");
         // Avoid infinite redirect loop
-        if (decoded && decoded !== url.pathname && decoded.startsWith("/") && !decoded.startsWith("//")) {
-            redirect(303, decoded);
+        if (safeContinue && safeContinue !== url.pathname) {
+            redirect(303, safeContinue);
         }
     }
 }
