@@ -139,12 +139,7 @@ func (h *setupHandlers) SetupSuperadmin(w http.ResponseWriter, req *http.Request
 		}
 
 		// Set first_run_complete to true
-		firstRunSettingOverride := entities.SettingOverride{
-			UserId: "", // Global setting
-			Name:   "first_run_complete",
-			Value:  "true",
-		}
-		if err := tx.Create(&firstRunSettingOverride).Error; err != nil {
+		if err := settings.SetSetting(tx, "first_run_complete", "true", nil); err != nil {
 			return err
 		}
 
