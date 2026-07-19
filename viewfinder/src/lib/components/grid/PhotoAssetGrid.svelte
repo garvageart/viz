@@ -6,6 +6,7 @@
     import { getFullImagePath, type ImageAsset } from "$lib/api";
     import PhotoTooltip from "$lib/components/tooltips/PhotoTooltip.svelte";
     import { mountTooltipComponent } from "$lib/components/tooltips/tooltip";
+    import Checkbox from "$lib/components/ui/Checkbox.svelte";
     import {
         PhotoGridVirtualizer,
         type PhotoGridConfig
@@ -16,12 +17,12 @@
     import { filterManager } from "$lib/states/filter.svelte";
     import { debugMode, isLayoutPage } from "$lib/states/index.svelte";
     import { selectionManager } from "$lib/states/selection.svelte";
+    import type { CardVisualState } from "$lib/types/snippet";
     import { getImageLabel, getTakenAt } from "$lib/utils/images";
     import { debounce } from "$lib/utils/misc";
     import hotkeys, { type HotkeysEvent } from "hotkeys-js";
     import { DateTime } from "luxon";
-    import type { CardVisualState } from "$lib/types/snippet";
-    import { mount, unmount, untrack, type ComponentProps, type Snippet } from "svelte";
+    import { untrack, type ComponentProps, type Snippet } from "svelte";
     import { SvelteSet } from "svelte/reactivity";
     import { fade } from "svelte/transition";
     import { delegate, followCursor, type Instance, type Props as TippyProps } from "tippy.js";
@@ -33,7 +34,6 @@
     import MaterialIcon from "../ui/MaterialIcon.svelte";
     import AssetGrid from "./AssetGrid.svelte";
     import TimelineScrubber from "./TimelineScrubber.svelte";
-    import Checkbox from "$lib/components/ui/Checkbox.svelte";
 
     interface PhotoSpecificProps {
         /** Custom photo card snippet - if not provided, uses default photo card */
@@ -1659,6 +1659,10 @@
         }
     }
 
+    .justified-item {
+        container-type: inline-size;
+    }
+
     .inline-date-tile {
         width: 100%;
         height: 100%;
@@ -1667,22 +1671,22 @@
         justify-content: flex-end;
         align-items: flex-start;
         padding: 1rem;
-        font-weight: 700;
+        font-weight: 500;
         color: var(--viz-text-color);
         background-color: var(--viz-100);
         text-align: left;
-        font-size: var(--viz-font-size-std);
+        font-size: var(--viz-font-size-lg);
         line-height: 1.2;
         box-sizing: border-box;
         position: relative;
+        transition: all 0.2s ease;
 
         .date-text {
-            display: -webkit-box;
-            line-clamp: 3;
-            -webkit-line-clamp: 3;
-            -webkit-box-orient: vertical;
+            display: block;
+            width: min-content;
+            word-break: normal;
+            overflow-wrap: normal;
             overflow: hidden;
-            word-break: break-word;
             text-transform: uppercase;
             letter-spacing: 0.05em;
         }
@@ -1692,10 +1696,21 @@
             content: "";
             position: absolute;
             left: 10%;
-            top: 20%;
-            bottom: 20%;
-            width: 1px;
-            background: var(--viz-60);
+            top: 10%;
+            bottom: 30%;
+            width: 0;
+            border-left: 1px solid var(--viz-60);
+        }
+
+        @container (max-width: 10rem) {
+            padding: var(--viz-spacing-lg);
+            font-size: var(--viz-font-size-std);
+            line-height: 1.15;
+
+            &::before {
+                top: var(--viz-spacing-xl);
+                bottom: var(--viz-spacing-xl);
+            }
         }
     }
 </style>
