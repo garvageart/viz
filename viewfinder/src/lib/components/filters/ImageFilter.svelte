@@ -382,7 +382,6 @@
         align-items: center;
         gap: var(--viz-spacing-sm);
         font-size: var(--viz-font-size-std);
-        color: var(--viz-60);
     }
 
     .date-inputs {

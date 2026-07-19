@@ -1627,10 +1627,6 @@
         gap: 0.5rem;
     }
 
-    .photo-date {
-        color: rgba(255, 255, 255, 0.85);
-    }
-
     .tile-image-fallback {
         position: absolute;
         inset: 0;
