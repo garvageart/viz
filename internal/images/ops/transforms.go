@@ -194,7 +194,20 @@ func GenerateTransform(params *transform.TransformParams, imgEnt entities.ImageA
 	var imageData []byte
 	switch params.Format {
 	case "webp":
-		imageData, err = libvipsImg.WebpsaveBuffer(&libvips.WebpsaveBufferOptions{Q: int(params.Quality)})
+		opts := &libvips.WebpsaveBufferOptions{
+			Q:      int(params.Quality),
+			Effort: 2,
+		}
+		imageData, err = libvipsImg.WebpsaveBuffer(opts)
+		if err != nil {
+			// WebP buffer encoding failed on ultra-high resolution image; fallback gracefully to JPEG
+			var jpegErr error
+			imageData, jpegErr = libvipsImg.JpegsaveBuffer(&libvips.JpegsaveBufferOptions{Q: int(params.Quality), Interlace: true})
+			if jpegErr == nil {
+				ext = "jpg"
+				err = nil
+			}
+		}
 	case "png":
 		pngOpts := &libvips.PngsaveBufferOptions{
 			Filter:      libvips.PngFilterNone,

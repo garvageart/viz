@@ -1157,9 +1157,20 @@ func serveTransformedImage(res http.ResponseWriter, req *http.Request, logger *s
 		return
 	}
 
+	if tresult.Ext != ext {
+		logger.Warn("image format changed during transform",
+			slog.String("uid", imgEnt.Uid),
+			slog.String("requested_format", ext),
+			slog.String("output_format", tresult.Ext),
+		)
+	}
+
+	// Reflect actual generated extension in Content-Type header (e.g. image/jpeg if fallback occurred)
+	res.Header().Set("Content-Type", images.ImageContentType(tresult.Ext))
+
 	// Write to cache in the background
 	go func() {
-		if err := images.WriteCachedTransform(imgEnt.Uid, cacheKey, ext, tresult.ImageData); err != nil {
+		if err := images.WriteCachedTransform(imgEnt.Uid, cacheKey, tresult.Ext, tresult.ImageData); err != nil {
 			logger.Warn("failed to write on-demand transform to cache", slog.Any("error", err))
 		}
 	}()
