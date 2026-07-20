@@ -202,7 +202,7 @@ test: test-go
 
 test-go:
 	@echo "Running Go tests..."
-	@for dir in $$(go list -f '{{.Dir}}' -m); do (cd $$dir && $(GO_CMD) test ./...); done
+	@for dir in $$(go list -f '{{.Dir}}' -m); do (cd $$dir && $(GO_CMD) test ./...) || exit 1; done
 
 ### Docker
 docker-build:
