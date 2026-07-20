@@ -6,6 +6,8 @@
     import MaterialIcon from "$lib/components/ui/MaterialIcon.svelte";
     import { jobsState } from "$lib/states/jobs.svelte";
     import type { MaterialSymbol } from "$lib/types/MaterialSymbol.js";
+    import { tryParseDate } from "$lib/utils/dates";
+    import { DateTime } from "luxon";
     import { onMount } from "svelte";
     import { fade } from "svelte/transition";
 
@@ -396,7 +398,7 @@
                                         {/if}
                                         <span class="separator">•</span>
                                         <span class="job-time">
-                                            {getEndTimeDate(job).toLocaleTimeString()}
+                                            {getEndTimeDate(job).toLocaleString()}
                                         </span>
                                     </div>
                                 </div>
