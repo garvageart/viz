@@ -9,8 +9,26 @@ export function tryParseDate(v: any): DateTime | undefined {
 
     if (typeof v === "string") {
         const s = v.trim();
-        // Try ISO first
+        // Try ISO-8601 / RFC3339 first (e.g. "2026-07-20T13:20:21Z", "2026-07-20")
         let dt = DateTime.fromISO(s);
+        if (dt.isValid) {
+            return dt;
+        }
+
+        // Try SQL / space format (e.g. "2026-07-20 13:20:21")
+        dt = DateTime.fromSQL(s);
+        if (dt.isValid) {
+            return dt;
+        }
+
+        // Try format "yyyy-MM-dd HH:mm:ss"
+        dt = DateTime.fromFormat(s, "yyyy-MM-dd HH:mm:ss");
+        if (dt.isValid) {
+            return dt;
+        }
+
+        // Try format "yyyy-MM-dd"
+        dt = DateTime.fromFormat(s, "yyyy-MM-dd");
         if (dt.isValid) {
             return dt;
         }

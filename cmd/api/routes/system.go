@@ -43,9 +43,14 @@ func SystemRouter(db *gorm.DB, logger *slog.Logger) chi.Router {
 		appVersion = utils.GetAppVersion()
 	}
 
+	buildData := dto.BuildData{
+		Id:   &config.BuildID,
+		Date: &config.BuildDate,
+	}
+
 	serverAbout := dto.ServerAbout{
 		Version:       appVersion,
-		Build:         &config.BuildID,
+		Build:         &buildData,
 		Go:            &gov,
 		Repository:    &config.Repository,
 		RepositoryUrl: &config.RepositoryUrl,

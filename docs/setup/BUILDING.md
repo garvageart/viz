@@ -126,6 +126,7 @@ From the project root:
 go build -ldflags="\
   -X 'viz/internal/config.Version=1.0.0' \
   -X 'viz/internal/config.BuildID=manual' \
+  -X 'viz/internal/config.RawBuildDate=$(date -u +"%Y-%m-%dT%H:%M:%SZ")' \
   -X 'viz/internal/config.SourceCommit=$(git rev-parse HEAD)' \
   -X 'viz/internal/config.SourceRef=$(git rev-parse --abbrev-ref HEAD)' \
   -X 'viz/internal/config.SourceUrl=https://github.com/garvageart/viz' \

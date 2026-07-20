@@ -16,6 +16,7 @@ SCRIPTS_DIR := scripts/js
 VERSION := $(shell cat version.txt 2>/dev/null || echo "0.0.0-dev")
 COMMIT := $(shell git rev-parse HEAD 2>/dev/null || echo "unknown")
 REF := $(shell git rev-parse --abbrev-ref HEAD 2>/dev/null || echo "unknown")
+BUILD_DATE := $(shell date -u +"%Y-%m-%dT%H:%M:%SZ" 2>/dev/null || echo "")
 GIT_REMOTE ?= origin
 REPO_URL ?= $(shell git remote get-url $(GIT_REMOTE) 2>/dev/null || git config --get remote.origin.url 2>/dev/null || echo "unknown")
 REPO_NAME ?= $(shell basename $(REPO_URL) .git 2>/dev/null || echo "viz")
@@ -270,6 +271,7 @@ dev-api:
 	$(GO_CMD) run $(GO_FLAGS) -ldflags="\
 	  -X 'viz/internal/config.Version=$(VERSION)' \
 	  -X 'viz/internal/config.BuildID=local-dev' \
+	  -X 'viz/internal/config.RawBuildDate=$(BUILD_DATE)' \
 	  -X 'viz/internal/config.SourceCommit=$(COMMIT)' \
 	  -X 'viz/internal/config.SourceRef=$(REF)' \
 	  -X 'viz/internal/config.SourceUrl=$(REPO_URL)' \

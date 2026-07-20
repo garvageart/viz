@@ -3122,6 +3122,17 @@ components:
                     type: array
                     items:
                         type: string
+        BuildData:
+            type: object
+            properties:
+                id:
+                    type: string
+                    description: The unique build identifier or CI pipeline run ID that produced this server artifact.
+                date:
+                    type: string
+                    format: date-time
+                    description: The date and time when this build artifact was created. Valid formats include RFC3339 (e.g. '2026-07-20T13:20:21Z'), RFC3339Nano, space-separated date-time ('2026-07-20 13:20:21'), ISO local ('2026-07-20T13:20:21'), or date-only ('2026-07-20').
+
         ServerAbout:
             type: object
             required:
@@ -3131,8 +3142,7 @@ components:
                     type: string
                     description: The semantic version string of the Viz server API (e.g., '0.1.0-dev').
                 build:
-                    type: string
-                    description: The unique build identifier or CI pipeline run ID that produced this server artifact.
+                    $ref: "#/components/schemas/BuildData"
                 go:
                     type: string
                     description: The version of the Go compiler and runtime used to build the server executable (e.g., 'go1.22.0').

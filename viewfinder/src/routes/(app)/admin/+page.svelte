@@ -6,10 +6,20 @@
     import ProgressBar from "$lib/components/ui/ProgressBar.svelte";
     import type { MaterialSymbol } from "$lib/types/MaterialSymbol.js";
     import { formatBytes, formatSeconds } from "$lib/utils/images";
+    import { tryParseDate } from "$lib/utils/dates";
     import { parseGitWebUrl, getGitBranchUrl, getGitCommitUrl } from "$lib/utils/url";
     import { Duration, DateTime } from "luxon";
 
     let { data } = $props();
+
+    function formatBuildDate(dateStr?: string): string {
+        if (!dateStr) {
+            return "Unknown";
+        }
+
+        const dt = tryParseDate(dateStr);
+        return dt && dt.isValid ? dt.toLocaleString(DateTime.DATETIME_SHORT_WITH_SECONDS) : dateStr;
+    }
 
     let lastUpdated = $state(new Date());
 
@@ -300,7 +310,13 @@
                             </div>
                             <div class="about-item">
                                 <span class="about-label">Build ID</span>
-                                <span class="about-value font-mono">{data.serverAbout?.build || "Unknown"}</span>
+                                <span class="about-value font-mono">{data.serverAbout?.build?.id || "Unknown"}</span>
+                            </div>
+                            <div class="about-item">
+                                <span class="about-label">Build Date</span>
+                                <span class="about-value font-mono"
+                                    >{formatBuildDate(data.serverAbout?.build?.date)}</span
+                                >
                             </div>
                             <div class="about-item">
                                 <span class="about-label">Go Runtime</span>

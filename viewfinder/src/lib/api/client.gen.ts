@@ -18,11 +18,16 @@ export const servers = {
     }) => `http://${host}:${port}`,
     productionApi: "/api"
 };
+export type BuildData = {
+    /** The unique build identifier or CI pipeline run ID that produced this server artifact. */
+    id?: string;
+    /** The date and time when this build artifact was created. Valid formats include RFC3339 (e.g. '2026-07-20T13:20:21Z'), RFC3339Nano, space-separated date-time ('2026-07-20 13:20:21'), ISO local ('2026-07-20T13:20:21'), or date-only ('2026-07-20'). */
+    date?: string;
+};
 export type ServerAbout = {
     /** The semantic version string of the Viz server API (e.g., '0.1.0-dev'). */
     version: string;
-    /** The unique build identifier or CI pipeline run ID that produced this server artifact. */
-    build?: string;
+    build?: BuildData;
     /** The version of the Go compiler and runtime used to build the server executable (e.g., 'go1.22.0'). */
     go?: string;
     /** The target operating system the server was compiled for (e.g., 'linux', 'darwin', 'windows'). */
