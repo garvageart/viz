@@ -1484,6 +1484,8 @@
                     {/if}
                 </div>
 
+                <!-- TODO: Change this to a general action status indicator to support all actions -->
+                <!-- e.g. "Date Change: 11-06-2026, 20:42:01" -->
                 {#if zoomState.currentZoom > 1}
                     <div class="zoom-indicator-badge" role="status" aria-live="polite">
                         Zoom: {Math.round(zoomState.currentZoom * 100)}%
@@ -1893,22 +1895,14 @@
 
     .zoom-indicator-badge {
         position: absolute;
-        bottom: var(--viz-spacing-lg);
-        left: 50%;
-        transform: translateX(-50%);
-        background-color: rgba(0, 0, 0, 0.75);
+        bottom: 5%;
+        background-color: color-mix(in srgb, var(--viz-100-dark) 90%, transparent);
         color: var(--viz-10-dark);
         padding: var(--viz-spacing-sm) var(--viz-spacing-lg);
-        border-radius: 0;
-        font-family: var(--viz-mono-font);
         font-size: var(--viz-font-size-lg);
         font-weight: 600;
-        letter-spacing: 0.05em;
         z-index: 10;
         pointer-events: none;
-        backdrop-filter: blur(4px);
-        border: 1px solid rgba(255, 255, 255, 0.1);
-        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.25);
     }
 
     .lightbox-debug-panel {
