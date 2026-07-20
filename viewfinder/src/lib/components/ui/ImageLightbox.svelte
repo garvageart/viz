@@ -1941,11 +1941,6 @@
             gap: var(--viz-spacing-xs) var(--viz-spacing-sm);
         }
 
-        .debug-label {
-            color: var(--viz-40);
-            font-weight: 500;
-        }
-
         .debug-val {
             font-weight: 600;
             word-break: break-all;
@@ -1961,15 +1956,6 @@
 
             &.error-state {
                 color: var(--viz-error-color);
-            }
-
-            &.mono {
-                color: var(--viz-30);
-            }
-
-            &.url {
-                font-size: 0.7rem;
-                color: var(--viz-30);
             }
         }
     }
