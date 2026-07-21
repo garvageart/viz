@@ -44,7 +44,7 @@ Entry point for agents and humans working on the Viz codebase.
 - **Node**: >=26.5.0 (per `viewfinder/package.json` and `.nvmrc`)
 - **libvips**: 8.18.0 (see `.libvips-version` at root; used via CGO bindings in `internal/images/ops`)
 - **Package manager**: `pnpm` (not npm or yarn)
-- **Docker**: Postgres 18-alpine + Redis 8-alpine + server (see `docker/docker-compose.yml`)
+- **Docker**: Postgres 18-alpine + Redis 8-alpine + server + frontend (see `docker/docker-compose.yml`)
 - **Image processing**: libvips 8.18.0 via CGO bindings — C heap memory, Go GC is blind to it
 
 ## Troubleshooting
