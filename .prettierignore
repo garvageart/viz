@@ -27,6 +27,7 @@ archive/
 **/static/wasm/
 **/types.gen.go
 **/generated.go
+**/icons/generated/
 
 # Media / Assets
 *.png
