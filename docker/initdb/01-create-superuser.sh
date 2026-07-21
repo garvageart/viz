@@ -1,6 +1,8 @@
 #!/bin/sh
 set -euo pipefail
 
+# TODO: Evaluate if this is necessary and/or can be done differently
+
 # This script runs during Postgres container initialization (first time only).
 # It ensures a role exists matching POSTGRES_USER and grants SUPERUSER privileges.
 # Uses the environment variables provided by the postgres image: POSTGRES_USER, POSTGRES_PASSWORD, POSTGRES_DB
