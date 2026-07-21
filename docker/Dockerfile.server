@@ -7,18 +7,14 @@ WORKDIR /app
 ARG PNPM_VERSION=latest
 RUN npm install -g pnpm@${PNPM_VERSION}
 
-# Copy workspace configuration and package files
+# Copy workspace configuration and all source files
 COPY pnpm-lock.yaml pnpm-workspace.yaml package.json .npmrc ./
-COPY viewfinder/package.json ./viewfinder/
-COPY scripts/js/package.json ./scripts/js/
-
-# Install dependencies across all workspace packages
-RUN pnpm install --frozen-lockfile --recursive
-
-# Copy the rest of the frontend, scripts, and root prettier configuration
 COPY viewfinder ./viewfinder
 COPY scripts/js ./scripts/js
 COPY .prettierrc .prettierignore ./
+
+# Install dependencies (runs after files are in place to preserve node_modules)
+RUN pnpm install --frozen-lockfile
 
 # Build frontend
 WORKDIR /app
