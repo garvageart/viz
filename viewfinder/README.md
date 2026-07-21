@@ -35,7 +35,7 @@ Viewfinder is built on a modern stack designed for reactivity and type safety.
 
 ### Prerequisites
 
-- **Node.js**: v24.13.0 or higher (recommended)
+- **Node.js**: v26.5.0 or higher (recommended)
 - **pnpm**: v8 or higher
 
 ### Environment Setup
