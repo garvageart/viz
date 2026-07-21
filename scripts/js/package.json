@@ -14,7 +14,8 @@
         "gen:api:install": "tsx gen-api.ts --install-tools",
         "gen:api:build": "tsx gen-api.ts --build",
         "format": "prettier --write .",
-        "setup:https": "tsx setup-https.ts"
+        "setup:https": "tsx setup-https.ts",
+        "release": "tsx release.ts"
     },
     "keywords": [],
     "author": "Les <hello@lesis.online>",

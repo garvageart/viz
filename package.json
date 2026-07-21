@@ -1,6 +1,7 @@
 {
     "name": "viz-monorepo",
     "private": true,
+    "version": "0.14.19",
     "license": "AGPL-3.0",
     "scripts": {
         "dev": "pnpm -r --filter \"@viz/*\" dev",
@@ -12,7 +13,8 @@
         "format": "pnpm -r --filter \"@viz/*\" format",
         "format:check": "pnpm -r --filter \"@viz/*\" format:check",
         "gen:api": "pnpm --filter @viz/scripts gen:api",
-        "setup:https": "pnpm --filter @viz/scripts setup:https"
+        "setup:https": "pnpm --filter @viz/scripts setup:https",
+        "release": "pnpm --filter @viz/scripts run release"
     },
     "keywords": [],
     "devDependencies": {
