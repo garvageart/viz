@@ -52,7 +52,7 @@ Entry point for agents and humans working on the Viz codebase.
 - **libvips EXIF strings**: `vips_image_get_string` returns image-owned pointers. Never `g_free()` or `free()` them — causes heap corruption (`SIGABRT: malloc_consolidate()`). The `VipsImage` owns them and releases them on `g_object_unref`. See `internal/images/ops/cache.go:GetExifData`.
 - **C heap vs Go GC**: RSS will appear much higher than `runtime.MemStats` because libvips allocates through glibc/GLib. This is expected, not a leak (unless it grows unbounded across operations).
 
-## Architecture Decisions
+### Architecture Notes
 
 - **Image processing memory model**: See [IMAGE_PROCESSING_MEMORY.md](/docs/architecture/IMAGE_PROCESSING_MEMORY.md) for the EXIF leak fix, memory model, and production tuning via `viz.json`.
 
@@ -62,6 +62,7 @@ Entry point for agents and humans working on the Viz codebase.
 
 - **If-Statements & Loops**: All control flow blocks must **never** be inlined. Always use brackets and break to the next line.
   - *Rationale*: Consistency across backend (Go) and frontend (TypeScript) makes code easier to scan, simplifies setting breakpoints during debugging, and reduces errors during block updates.
+
   - **Example**:
     ```typescript
     // Correct:
