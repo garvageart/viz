@@ -6,6 +6,7 @@
         "dev": "pnpm -r --filter \"@viz/*\" dev",
         "build": "pnpm -r --filter \"@viz/*\" build",
         "test": "pnpm -r --filter \"@viz/*\" test",
+        "test:unit": "pnpm -r --filter \"@viz/*\" test:unit",
         "check": "pnpm -r --filter \"@viz/*\" check",
         "lint": "pnpm -r --filter \"@viz/*\" lint",
         "format": "pnpm -r --filter \"@viz/*\" format",
