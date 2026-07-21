@@ -167,7 +167,7 @@ fmt:
 	fi
 	@$(PNPM) exec prettier --ignore-path .prettierignore --cache --log-level warn --write viewfinder/ scripts/js/
 
-fmt-check:
+fmt-check-go:
 	@echo "Checking Go formatting..."
 	@UNFORMATTED=$$(gofmt -l $$(go list -f '{{.Dir}}' -m)); \
 	if [ -n "$$UNFORMATTED" ]; then \
@@ -175,8 +175,12 @@ fmt-check:
 		echo "$$UNFORMATTED"; \
 		exit 1; \
 	fi
-	@echo "Checking frontend & monorepo formatting..."
-	@$(PNPM) run format:check
+
+fmt-check: fmt-check-go
+	@if command -v $(PNPM) >/dev/null 2>&1; then \
+		echo "Checking frontend & monorepo formatting..."; \
+		$(PNPM) run format:check; \
+	fi
 
 lint: fmt-check
 	@echo "Running linters (golangci-lint if available)..."
