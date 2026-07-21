@@ -1,5 +1,6 @@
 <script lang="ts">
     import Button from "$lib/components/ui/Button.svelte";
+    import Checkbox from "$lib/components/ui/Checkbox.svelte";
     import { modalsManager } from "./manager/ModalManager.svelte";
 
     interface Props {
@@ -9,6 +10,8 @@
     }
 
     let { id, itemCount, itemName }: Props = $props();
+
+    let deletePermanently = $state(false);
 
     function handleSoftDelete() {
         modalsManager.close(id, "delete");
@@ -24,38 +27,47 @@
 </script>
 
 <div class="delete-modal-content">
-    <p class="delete-message">
+    <span class="delete-message">
         {#if itemCount === 1}
-            Are you sure you want to delete "{itemName || "this item"}"?
+            Are you sure you want to delete <span class="item-name">{itemName || "this item"}?</span>
         {:else}
-            Are you sure you want to delete these {itemCount} items?
+            Are you sure you want to delete these <span class="item-name">{itemCount} items?</span>
         {/if}
-    </p>
-    <p class="delete-warning">
-        "Delete" moves the items to the Trash folder, allowing you to restore them later. "Delete Permanently" deletes
-        them forever and cannot be undone.
-    </p>
+    </span>
+
+    <span class="delete-warning">
+        <strong>Delete</strong> moves the items to the Trash folder, allowing you to restore them later.
+        <strong>Delete Permanently</strong>
+        deletes them forever and cannot be undone.
+    </span>
+
+    <span class="delete-checkbox">
+        <Checkbox bind:checked={deletePermanently} label="Delete Permanently" />
+    </span>
 
     <div class="delete-actions">
         <Button variant="small" onclick={handleCancel} class="cancel-btn">Cancel</Button>
 
         <div class="confirm-group">
-            <Button
-                variant="small"
-                onclick={handleSoftDelete}
-                class="soft-delete-btn"
-                style="background-color: var(--viz-100); color: var(--viz-text-color);"
-            >
-                Delete
-            </Button>
-            <Button
-                variant="small"
-                onclick={handlePermanentDelete}
-                class="permanent-delete-btn"
-                style="background-color: var(--viz-danger, #ef4444); color: white;"
-            >
-                Delete Permanently
-            </Button>
+            {#if deletePermanently}
+                <Button
+                    variant="small"
+                    onclick={handlePermanentDelete}
+                    class="permanent-delete-btn"
+                    style="background-color: var(--viz-error-color, #ef4444); color: white;"
+                >
+                    Delete Permanently
+                </Button>
+            {:else}
+                <Button
+                    variant="small"
+                    onclick={handleSoftDelete}
+                    class="soft-delete-btn"
+                    style="background-color: var(--viz-primary); color: var(--viz-text-color-light);"
+                >
+                    Delete
+                </Button>
+            {/if}
         </div>
     </div>
 </div>
@@ -67,18 +79,17 @@
         width: 100%;
         color: var(--viz-text-color);
         box-sizing: border-box;
+        gap: var(--viz-spacing-std);
+        font-size: var(--viz-font-size-lg);
 
         .delete-message {
-            font-size: 1.1rem;
-            font-weight: 500;
-            margin-bottom: 0.75rem;
+            .item-name {
+                font-weight: 600;
+            }
         }
 
         .delete-warning {
-            font-size: 0.9rem;
-            color: var(--viz-text-muted, #888);
             line-height: 1.4;
-            margin-bottom: 1.5rem;
         }
 
         .delete-actions {
@@ -87,11 +98,6 @@
             align-items: center;
             gap: 1rem;
             width: 100%;
-
-            .confirm-group {
-                display: flex;
-                gap: 0.75rem;
-            }
         }
     }
 </style>
