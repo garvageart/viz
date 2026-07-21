@@ -1843,7 +1843,7 @@
 
     :global(.file-type-badge) {
         display: inline-block;
-        font-size: var(--viz-font-size-std);
+        font-size: var(--viz-font-size-sm);
         font-weight: 600;
         font-family: var(--viz-mono-font);
         letter-spacing: 0.04em;
@@ -1852,8 +1852,6 @@
         background: var(--viz-85);
         color: var(--viz-30);
         border: 1px solid var(--viz-75);
-        line-height: 1.4;
-        flex-shrink: 0;
     }
 
     .value-sub {
