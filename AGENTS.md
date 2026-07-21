@@ -60,11 +60,13 @@ Entry point for agents and humans working on the Viz codebase.
 
 ### General (All Languages)
 
-- **If-Statements & Loops**: All control flow blocks must **never** be inlined. Always use brackets and break to the next line.
-  - *Rationale*: Consistency across backend (Go) and frontend (TypeScript) makes code easier to scan, simplifies setting breakpoints during debugging, and reduces errors during block updates.
+#### If-Statements & Loops
+All control flow blocks must **never** be inlined. Always use brackets and break to the next line.
 
-  - **Example**:
-    ```typescript
+  - ***Rationale***: Consistency across backend (Go) and frontend (TypeScript) makes code easier to scan, simplifies setting breakpoints during debugging, and reduces errors during block updates.
+
+**Example**
+```typescript
     // Correct:
     if (isDisabled) {
         return;
@@ -72,9 +74,11 @@ Entry point for agents and humans working on the Viz codebase.
 
     // Incorrect:
     if (isDisabled) return;
-    ```
-- **Preserving Comments**: Do not delete comments you did not add unless explicitly told to do so.
-  - If refactoring changes logic significantly, update the comments to reflect the new logic rather than removing them.
+```
+#### Preserving Comments
+Do not delete comments you did not add unless explicitly told to do so.
+
+If refactoring changes logic significantly, update the comments to reflect the new logic rather than removing them.
 
 ### Go (Backend)
 
