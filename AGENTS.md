@@ -104,7 +104,8 @@ If refactoring changes logic significantly, update the comments to reflect the n
 - Use `.agents/TODO.md` for actionable tasks and `.agents/DONE.md` for completed work.
 - These files are local workflow aids and may not exist in every workspace. The `.agents/` directory is gitignored and ephemeral.
 
-**DO NOT** commit any LLM related files to the repository that is not explicitly requested or expected by the project maintainers. This includes `.agents/` files, LLM-generated code, or any other artifacts that are not part of the official codebase. They will not be accepted into the repository.
+> [!IMPORTANT]
+> **DO NOT** commit any LLM related files to the repository that is not explicitly requested or expected by the project maintainers. This includes `.agents/` files, LLM-generated code, or any other artifacts that are not part of the official codebase. They will not be accepted into the repository.
 
 ### Model Attribution
 
