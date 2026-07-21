@@ -46,8 +46,7 @@
         }}
         onblur={(e) => {
             props.onblur?.(e);
-        }}
-    ></textarea>
+        }}></textarea>
     {#if description}
         <div class="textarea-description">{description}</div>
     {/if}

@@ -41,8 +41,7 @@
             {disabled}
             class="json-input"
             class:error={!!error}
-            rows="5"
-        ></textarea>
+            rows="5"></textarea>
         {#if error}
             <span class="error-message">{error}</span>
         {/if}

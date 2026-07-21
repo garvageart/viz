@@ -1,3 +1,12 @@
+# Agent / CLI / Workspace caches
+.agents
+.antigravitycli
+.hive
+.gemini
+
+# Archive / Legacy
+archive/
+
 # Node / Caches / Build outputs
 **/node_modules
 **/.cache
@@ -7,17 +16,19 @@
 **/tmp
 **/var
 **/target
+**/coverage
 **/playwright-report
 **/test-results
+**/e2e/screenshots/
+**/blob-report/
 
-# Generated files
+# Non-user generated outputs (except API files)
 **/static/themes/
-**/client.gen.ts
+**/static/wasm/
 **/types.gen.go
 **/generated.go
-**/generated/**
 
-# Media/Assets
+# Media / Assets
 *.png
 *.jpg
 *.jpeg
@@ -25,6 +36,5 @@
 *.svg
 *.webp
 *.ico
+*.wasm
 
-# WebAssembly/WASM
-**/static/wasm/

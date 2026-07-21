@@ -34,8 +34,7 @@ export type GridRow = GridRowHeader | GridRowImages;
 
 // Cached row stores relativeTop (y-pos relative to the group start)
 type CachedRow =
-    | (Omit<GridRowHeader, "top"> & { relativeTop: number })
-    | (Omit<GridRowImages, "top"> & { relativeTop: number });
+    (Omit<GridRowHeader, "top"> & { relativeTop: number }) | (Omit<GridRowImages, "top"> & { relativeTop: number });
 
 type GroupCacheEntry = {
     rows: CachedRow[];
