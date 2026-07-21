@@ -12,8 +12,8 @@ COPY pnpm-lock.yaml pnpm-workspace.yaml package.json ./
 COPY viewfinder/package.json ./viewfinder/
 COPY scripts/js/package.json ./scripts/js/
 
-# Install dependencies
-RUN pnpm install --frozen-lockfile
+# Install dependencies (including devDependencies required for build)
+RUN pnpm install --frozen-lockfile --prod=false
 
 # Copy the rest of the frontend, scripts, and root prettier configuration
 COPY viewfinder ./viewfinder
