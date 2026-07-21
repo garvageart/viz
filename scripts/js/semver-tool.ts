@@ -3,16 +3,7 @@ import semver, { ReleaseType } from "semver";
 
 const versionFile = "../../version.txt";
 const version = await fs.readFile(versionFile, "utf8");
-const releases = [
-    "major",
-    "premajor",
-    "minor",
-    "preminor",
-    "patch",
-    "prepatch",
-    "prerelease",
-    "release"
-] as const;
+const releases = ["major", "premajor", "minor", "preminor", "patch", "prepatch", "prerelease", "release"] as const;
 interface Args {
     command: string;
     args: string[];

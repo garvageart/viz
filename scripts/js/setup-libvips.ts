@@ -1,7 +1,7 @@
-import fs from "node:fs/promises";
-import path from "node:path";
-import os from "node:os";
 import { execSync, spawnSync } from "node:child_process";
+import fs from "node:fs/promises";
+import os from "node:os";
+import path from "node:path";
 import { fileURLToPath } from "node:url";
 
 const PROJECT_ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..", "..");
@@ -93,18 +93,14 @@ async function installWindows() {
         try {
             execSync("pkg-config --version", { stdio: "ignore" });
         } catch (e) {
-            log(
-                "pkg-config not found in PATH. Adding mingw-w64-x86_64-pkg-config to installation."
-            );
+            log("pkg-config not found in PATH. Adding mingw-w64-x86_64-pkg-config to installation.");
             packages.push("mingw-w64-x86_64-pkg-config");
         }
 
         runCommand("pacman", ["-S", "--noconfirm", ...packages]);
         success("Dependencies (libvips, gcc, pkg-config) installed via pacman.");
     } catch (e) {
-        error(
-            `Failed to install dependencies via pacman. Ensure you've run 'pacman -Syu' recently.`
-        );
+        error(`Failed to install dependencies via pacman. Ensure you've run 'pacman -Syu' recently.`);
         throw e;
     }
 
@@ -167,9 +163,7 @@ async function installMacOS() {
     try {
         execSync("brew --version", { stdio: "ignore" });
     } catch (e) {
-        throw new Error(
-            "Homebrew is not installed. Please install Homebrew first: https://brew.sh/"
-        );
+        throw new Error("Homebrew is not installed. Please install Homebrew first: https://brew.sh/");
     }
 
     log("Installing vips and dependencies via Homebrew...");
@@ -400,24 +394,13 @@ async function installLinux(requiredVersion: string) {
     try {
         execSync("which pacman", { stdio: "ignore" });
         log("Detected pacman-based system. Installing libvips and dependencies...");
-        const packages = [
-            "libvips",
-            "gcc",
-            "pkgconf",
-            "imagemagick",
-            "libheif",
-            "libjxl",
-            "openslide",
-            "poppler"
-        ];
+        const packages = ["libvips", "gcc", "pkgconf", "imagemagick", "libheif", "libjxl", "openslide", "poppler"];
         runCommand("sudo", ["pacman", "-S", "--noconfirm", ...packages]);
         success("Installation complete via pacman.");
         return;
     } catch (e) {}
 
-    throw new Error(
-        "Unsupported Linux distribution. Please install libvips-dev, gcc, and pkg-config manually."
-    );
+    throw new Error("Unsupported Linux distribution. Please install libvips-dev, gcc, and pkg-config manually.");
 }
 
 async function verify(requiredVersion: string) {
@@ -433,12 +416,8 @@ async function verify(requiredVersion: string) {
         if (installedVersion === requiredVersion) {
             success(`Found matching binary: ${vipsVersionOutput}`);
         } else {
-            error(
-                `Version mismatch! Target: ${requiredVersion}, Installed: ${installedVersion || vipsVersionOutput}`
-            );
-            error(
-                "The installed version does not match the required version specified in .libvips-version."
-            );
+            error(`Version mismatch! Target: ${requiredVersion}, Installed: ${installedVersion || vipsVersionOutput}`);
+            error("The installed version does not match the required version specified in .libvips-version.");
         }
     } catch (e) {
         error("vips binary not found in PATH.");

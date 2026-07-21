@@ -3,11 +3,10 @@
  * Auto-generates TypeScript API wrapper functions from OpenAPI spec
  * Run: bun scripts/js/gen-api-functions.ts
  */
-
-import { readFileSync, writeFileSync } from "node:fs";
-import { join, dirname } from "node:path";
-import { fileURLToPath } from "node:url";
 import { load as loadYaml } from "js-yaml";
+import { readFileSync, writeFileSync } from "node:fs";
+import { dirname, join } from "node:path";
+import { fileURLToPath } from "node:url";
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = dirname(__filename);
@@ -100,9 +99,7 @@ function generateFunction(path: string, method: string, operation: any): string 
 
     if (pathParams.length > 0 || queryParams.length > 0) {
         const pathObj =
-            pathParams.length > 0
-                ? `path: { ${pathParams.map((p) => `${p}: params.${p}`).join(", ")} }`
-                : "";
+            pathParams.length > 0 ? `path: { ${pathParams.map((p) => `${p}: params.${p}`).join(", ")} }` : "";
         const queryObj =
             queryParams.length > 0
                 ? `query: { ${queryParams.map((p: any) => `${p.name}: params.${p.name}`).join(", ")} }`

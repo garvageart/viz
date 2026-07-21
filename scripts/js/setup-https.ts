@@ -1,7 +1,7 @@
+import { execSync } from "node:child_process";
 import fs from "node:fs";
 import os from "node:os";
 import path from "node:path";
-import { execSync } from "node:child_process";
 import { fileURLToPath } from "node:url";
 
 const __filename = fileURLToPath(import.meta.url);
@@ -86,9 +86,7 @@ function updateHostsFile() {
         // Check if entry already exists (naively)
         const exists = lines.some((line) => {
             const trimmed = line.trim();
-            return (
-                !trimmed.startsWith("#") && trimmed.includes(DOMAIN) && trimmed.includes(TARGET_IP)
-            );
+            return !trimmed.startsWith("#") && trimmed.includes(DOMAIN) && trimmed.includes(TARGET_IP);
         });
 
         if (exists) {
@@ -105,9 +103,7 @@ function updateHostsFile() {
         } catch (err: any) {
             if (err.code === "EACCES" || err.code === "EPERM") {
                 log.error("Permission denied writing to hosts file.");
-                log.warn(
-                    "Please run this script with Administrator privileges (sudo or Run as Administrator)."
-                );
+                log.warn("Please run this script with Administrator privileges (sudo or Run as Administrator).");
                 if (os.platform() !== "win32") {
                     console.log(`\n  sudo npx tsx scripts/js/setup-https.ts\n`);
                 }

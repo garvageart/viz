@@ -1,7 +1,7 @@
-import { createApi } from "unsplash-js";
 import dotenv from "dotenv";
-import path from "path";
 import fs from "fs";
+import path from "path";
+import { AssetFull, createApi } from "unsplash-js";
 
 const sleep = (ms: number) => new Promise((resolve) => setTimeout(resolve, ms));
 const config = JSON.parse(fs.readFileSync("../viz.json", "utf8"));
@@ -25,21 +25,28 @@ async function main() {
     });
 
     console.log("Fetching random images from Unsplash...");
-    const result = await unsplash.photos.getRandom({ count: 30 });
+    const { data: randomData, error: fetchError } = await unsplash.GET("/photos/random", {
+        params: {
+            query: {
+                count: 30
+            }
+        }
+    });
 
-    if (result.type === "error") {
-        throw new Error(`Failed to fetch random images from Unsplash: ${result.errors.join(", ")}`);
+    if (fetchError || !randomData) {
+        throw new Error(`Failed to fetch random images from Unsplash: ${JSON.stringify(fetchError)}`);
     }
 
-    const randomImgs = Array.isArray(result.response) ? result.response : [result.response];
+    const randomImgs = (Array.isArray(randomData) ? randomData : [randomData]) as AssetFull[];
 
     const promises: Promise<Response>[] = [];
 
     console.log("Ingesting random images from Unsplash...");
     for (let i = 0; i < randomImgs.length; i++) {
-        const url = randomImgs[i].urls.full;
-        const photoTaker = randomImgs[i].user.name;
-        const photoTakerPortfolio = randomImgs[i].user.links.portfolio;
+        const img = randomImgs[i];
+        const url = img.urls.full;
+        const photoTaker = img.user.name;
+        const photoTakerPortfolio = img.user.social.portfolio_url ?? img.user.links.html;
 
         await sleep(500);
 
@@ -55,7 +62,7 @@ async function main() {
                     photoTaker: photoTaker,
                     photoTakerPortfolio: photoTakerPortfolio,
                     source: "unsplash",
-                    exif: randomImgs[i].exif
+                    exif: img.exif
                 })
             })
         );
@@ -67,9 +74,7 @@ async function main() {
             for (const res of responses) {
                 if (!res.ok || res.status !== 201) {
                     const errorText = await res.text();
-                    throw new Error(
-                        `Failed to ingest image. Status: ${res.status}. Body: ${errorText}`
-                    );
+                    throw new Error(`Failed to ingest image. Status: ${res.status}. Body: ${errorText}`);
                 }
 
                 console.log(await res.json());
@@ -89,16 +94,15 @@ async function main() {
     // https://help.unsplash.com/api-guidelines/guideline-triggering-a-download
     console.log("Tracking downloads...");
     const downloadPromises = randomImgs.map((img) => {
-        return unsplash.photos
-            .trackDownload({
-                downloadLocation: img.links.download_location
+        return unsplash
+            .GET("/photos/{id}/download", {
+                params: {
+                    path: { id: img.id }
+                }
             })
-            .then((trackResult) => {
-                if (trackResult.type === "error") {
-                    console.error(
-                        `Failed to track download for ${img.id}:`,
-                        trackResult.errors.join(", ")
-                    );
+            .then(({ error: downloadError }) => {
+                if (downloadError) {
+                    console.error(`Failed to track download for ${img.id}:`, downloadError);
                 } else {
                     console.log(`Download tracked for ${img.id}`);
                 }
