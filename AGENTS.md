@@ -41,7 +41,7 @@ Entry point for agents and humans working on the Viz codebase.
 ## Environment & Toolchain
 
 - **Go**: 1.26 (per `go.mod` and `go.work`)
-- **Node**: >=26.5.0 (per `viewfinder/package.json`; `.nvmrc` at root)
+- **Node**: >=26.5.0 (per `viewfinder/package.json` and `.nvmrc`)
 - **libvips**: 8.18.0 (see `.libvips-version` at root; used via CGO bindings in `internal/images/ops`)
 - **Package manager**: `pnpm` (not npm or yarn)
 - **Docker**: Postgres 18-alpine + Redis 8-alpine + server (see `docker/docker-compose.yml`)
