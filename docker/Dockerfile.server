@@ -21,8 +21,8 @@ COPY scripts/js ./scripts/js
 COPY .prettierrc .prettierignore ./
 
 # Build frontend
-WORKDIR /app/viewfinder
-RUN pnpm run build
+WORKDIR /app
+RUN pnpm --filter @viz/viewfinder run build
 
 # Stage 2: Backend Build
 FROM golang:1.26-bookworm AS backend-builder
