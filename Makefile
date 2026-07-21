@@ -165,8 +165,7 @@ fmt:
 		echo "Formatting Go sources..."; \
 		for dir in $$(go list -f '{{.Dir}}' -m); do (cd $$dir && $(GO_CMD) fmt ./...); done; \
 	fi
-	@echo "Formatting frontend & monorepo files..."
-	@$(PNPM) run format
+	@$(PNPM) exec prettier --ignore-path .prettierignore --cache --log-level warn --write viewfinder/ scripts/js/
 
 fmt-check:
 	@echo "Checking Go formatting..."
