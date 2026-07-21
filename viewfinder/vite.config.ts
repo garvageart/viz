@@ -1,11 +1,12 @@
-/// <reference types="vitest" />
+/// <reference types="vitest/config" />
 import { sveltekit } from "@sveltejs/kit/vite";
 import fs from "fs";
 import { createRequire } from "module";
 import path from "path";
 import { fileURLToPath } from "url";
-import { type ProxyOptions, defineConfig } from "vite";
+import { type ProxyOptions } from "vite";
 import devtoolsJson from "vite-plugin-devtools-json";
+import { defineConfig } from "vitest/config";
 
 const file = fileURLToPath(new URL("package.json", import.meta.url));
 const pkg = JSON.parse(fs.readFileSync(file, "utf8"));
@@ -119,15 +120,17 @@ export default defineConfig({
     define: define,
     optimizeDeps: {
         exclude: ["wasm-vips", "libexif-wasm"],
-        esbuildOptions: {
-            target: "es2022"
+        rolldownOptions: {
+            transform: {
+                target: "es2023"
+            }
         }
     },
     worker: {
         format: "es"
     },
     build: {
-        target: "es2022",
+        target: "es2023",
         reportCompressedSize: false,
         rollupOptions: {
             external: ["material-symbols/index.css"]

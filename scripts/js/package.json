@@ -20,15 +20,15 @@
     "author": "Les <hello@lesis.online>",
     "devDependencies": {
         "@types/js-yaml": "^4.0.9",
-        "@types/node": "^24.12.3",
+        "@types/node": "^26.1.1",
         "@types/semver": "^7.7.1",
-        "js-yaml": "^4.1.1",
-        "oazapfts": "^6.4.0",
-        "tsx": "^4.21.0"
+        "js-yaml": "^5.2.1",
+        "oazapfts": "^7.5.0",
+        "tsx": "^4.23.1"
     },
     "dependencies": {
         "dotenv": "^17.4.2",
-        "semver": "^7.8.0",
-        "unsplash-js": "^7.0.20"
+        "semver": "^7.8.5",
+        "unsplash-js": "^8.0.0"
     }
 }

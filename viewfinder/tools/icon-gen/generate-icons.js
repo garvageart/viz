@@ -13,8 +13,10 @@ import { globSync } from "glob";
 import { dirname, join, resolve } from "path";
 import { parse as parseSvelte } from "svelte/compiler";
 import { optimize } from "svgo";
-import ts from "typescript";
+import * as tsModule from "typescript";
 import { fileURLToPath } from "url";
+
+const ts = tsModule.default || tsModule;
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
 const ROOT = resolve(__dirname, "../../");
