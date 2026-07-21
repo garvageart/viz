@@ -1,4 +1,7 @@
 SHELL := /usr/bin/env bash
+# Prepend nvm-managed node to PATH so make targets use the correct node version
+# even though make spawns bash subshells (not zsh where nvm is normally sourced).
+export PATH := $(HOME)/.nvm/versions/node/$(shell cat $(CURDIR)/.nvmrc 2>/dev/null || echo "node")/bin:$(PATH)
 SCRIPTS_DIR := scripts/js
 .PHONY: help build build-api build-frontend generate-icons generate-types generate-types-install fmt fmt-check lint test test-go docker-build docker-push docker-up docker-down migrate initdb clean image-server image-viz dev run check-go
 
@@ -162,14 +165,8 @@ fmt:
 		echo "Formatting Go sources..."; \
 		for dir in $$(go list -f '{{.Dir}}' -m); do (cd $$dir && $(GO_CMD) fmt ./...); done; \
 	fi
-	@if [ -f "$(VIEWFINDER_DIR)/package.json" ]; then \
-		echo "Checking frontend formatting..."; \
-		DIFF_FILES=$$(cd $(VIEWFINDER_DIR) && $(PNPM) exec prettier --ignore-path ../.prettierignore --list-different . 2>/dev/null); \
-		if [ -n "$$DIFF_FILES" ]; then \
-			echo "Formatting unformatted frontend files..."; \
-			cd $(VIEWFINDER_DIR) && $(PNPM) exec prettier --ignore-path ../.prettierignore --write $$DIFF_FILES || true; \
-		fi; \
-	fi
+	@echo "Formatting frontend & monorepo files..."
+	@$(PNPM) run format
 
 fmt-check:
 	@echo "Checking Go formatting..."
@@ -179,6 +176,8 @@ fmt-check:
 		echo "$$UNFORMATTED"; \
 		exit 1; \
 	fi
+	@echo "Checking frontend & monorepo formatting..."
+	@$(PNPM) run format:check
 
 lint: fmt-check
 	@echo "Running linters (golangci-lint if available)..."
