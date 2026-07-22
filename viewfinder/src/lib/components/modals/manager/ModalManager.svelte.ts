@@ -1,9 +1,13 @@
 import type { Component } from "svelte";
 import { generateRandomString } from "$lib/utils/misc";
 
+export type ModalComponent<T extends Record<string, any> = Record<string, any>> = Component<T> & {
+    modalOptions?: ModalOptions;
+};
+
 export interface ModalInstance<T extends Record<string, any> = Record<string, any>, R = any> {
     id: string;
-    component: Component<T>;
+    component: ModalComponent<T>;
     props: Omit<T, "id">;
     resolve: (result: R | undefined) => void;
     index: number;
@@ -29,11 +33,12 @@ export class ModalsManager {
     baseZIndex = 100000;
 
     open<T extends Record<string, any>, R = any>(
-        component: Component<T>,
+        component: ModalComponent<T>,
         props: Omit<T, "id">,
         options?: ModalOptions
     ): Promise<R | undefined> {
         const id = generateRandomString(8);
+        const compOptions = component.modalOptions;
 
         const promise = new Promise<R | undefined>((resolve) => {
             this.modals.push({
@@ -42,7 +47,7 @@ export class ModalsManager {
                 props,
                 resolve,
                 index: this.baseZIndex + this.modals.length * 10,
-                options: { ...DEFAULT_MODAL_OPTIONS, ...options }
+                options: { ...DEFAULT_MODAL_OPTIONS, ...compOptions, ...options }
             });
         });
 

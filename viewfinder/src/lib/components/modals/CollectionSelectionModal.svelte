@@ -1,3 +1,12 @@
+<script module lang="ts">
+    import type { ModalOptions } from "./manager/ModalManager.svelte";
+
+    export const modalOptions: ModalOptions = {
+        width: "90%",
+        height: "80%"
+    };
+</script>
+
 <script lang="ts">
     import { goto } from "$app/navigation";
     import {

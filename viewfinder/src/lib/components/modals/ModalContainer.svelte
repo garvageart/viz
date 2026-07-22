@@ -13,6 +13,7 @@
 />
 
 {#each modalsManager.modals as modal (modal.id)}
+    {@const compOptions = modal.component.modalOptions}
     <Lightbox
         show={true}
         onclick={() => {
@@ -23,10 +24,10 @@
         zIndex={modal.index}
     >
         <ModalLightbox
-            heading={modal.options?.heading}
-            width={modal.options?.width}
-            height={modal.options?.height}
-            applyPadding={modal.options?.applyPadding}
+            heading={modal.options?.heading ?? compOptions?.heading}
+            width={compOptions?.width ?? modal.options?.width ?? "50%"}
+            height={compOptions?.height ?? modal.options?.height}
+            applyPadding={modal.options?.applyPadding ?? compOptions?.applyPadding}
             zIndex={modal.index + 1}
             onclickClose={() => modalsManager.dismiss(modal.id, "close-button")}
         >

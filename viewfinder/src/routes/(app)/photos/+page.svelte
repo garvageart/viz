@@ -150,7 +150,7 @@
                             imageUidsToAdd: selectionScope.selectedItems.map((img) => img.uid),
                             onSelect: handleCollectionSelect
                         },
-                        { heading: "Select a Collection", width: "90%", height: "80%" }
+                        { heading: "Select a Collection" }
                     );
                 }
             }
@@ -458,7 +458,7 @@
                                     imageUidsToAdd: selectionScope.selectedItems.map((img) => img.uid),
                                     onSelect: handleCollectionSelect
                                 },
-                                { heading: "Select a Collection", width: "90%", height: "80%" }
+                                { heading: "Select a Collection" }
                             );
                         }}
                         ondragenter={(e) => {
@@ -492,7 +492,7 @@
                                     imageUidsToAdd: uidsData,
                                     onSelect: handleCollectionSelect
                                 },
-                                { heading: "Select a Collection", width: "90%", height: "80%" }
+                                { heading: "Select a Collection" }
                             );
                         }}
                     >

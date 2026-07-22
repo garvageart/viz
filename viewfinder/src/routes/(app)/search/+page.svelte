@@ -125,7 +125,7 @@
                 imageUidsToAdd: imageUidsForCollection,
                 onSelect: handleCollectionSelect
             },
-            { heading: "Select a Collection", width: "90%", height: "80%" }
+            { heading: "Select a Collection" }
         );
     }
 
