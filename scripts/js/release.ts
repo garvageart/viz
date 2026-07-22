@@ -1,4 +1,5 @@
 import { execSync } from "child_process";
+import fsSync from "fs";
 import fs from "fs/promises";
 import path from "path";
 import readline from "readline";
@@ -59,97 +60,173 @@ async function main() {
 
     console.log(`Current version: ${currentVersion}`);
 
-    // Calculate version bump suggestions
-    const suggestPatch = semver.inc(currentVersion, "patch");
-    const suggestMinor = semver.inc(currentVersion, "minor");
-    const suggestMajor = semver.inc(currentVersion, "major");
+    // Back up original file contents for recovery in case of cancellation/errors
+    const originalVersionTxt = await fs.readFile(versionFile, "utf8").catch(() => null);
+    const originalRootPkg = await fs.readFile(rootPkgFile, "utf8").catch(() => null);
+    const originalViewfinderPkg = await fs.readFile(viewfinderPkgFile, "utf8").catch(() => null);
+    const originalChangelog = await fs.readFile(changelogFile, "utf8").catch(() => null);
 
-    console.log("\nSelect release type:");
-    console.log(`1) Patch  --> ${suggestPatch}`);
-    console.log(`2) Minor  --> ${suggestMinor}`);
-    console.log(`3) Major  --> ${suggestMajor}`);
-    console.log("4) Custom version");
+    let isReleaseFinalized = false;
 
-    const choice = await askQuestion("Enter choice [1-4]: ");
-    let nextVersion: string | null = null;
+    const cleanupSync = () => {
+        if (!isReleaseFinalized) {
+            console.log("\nCleaning up modified files...");
+            try {
+                if (originalVersionTxt !== null) {
+                    fsSync.writeFileSync(versionFile, originalVersionTxt, "utf8");
+                } else {
+                    fsSync.rmSync(versionFile, { force: true });
+                }
 
-    if (choice === "1") {
-        nextVersion = suggestPatch;
-    } else if (choice === "2") {
-        nextVersion = suggestMinor;
-    } else if (choice === "3") {
-        nextVersion = suggestMajor;
-    } else if (choice === "4") {
-        const customVer = await askQuestion("Enter custom version (e.g. 0.1.0): ");
-        nextVersion = semver.valid(customVer.trim());
-    }
+                if (originalRootPkg !== null) {
+                    fsSync.writeFileSync(rootPkgFile, originalRootPkg, "utf8");
+                }
 
-    if (!nextVersion) {
-        console.error("Error: Invalid version selection.");
-        process.exit(1);
-    }
+                if (originalViewfinderPkg !== null) {
+                    fsSync.writeFileSync(viewfinderPkgFile, originalViewfinderPkg, "utf8");
+                }
 
-    console.log(`\nReleasing version: v${nextVersion}`);
+                if (originalChangelog !== null) {
+                    fsSync.writeFileSync(changelogFile, originalChangelog, "utf8");
+                } else {
+                    fsSync.rmSync(changelogFile, { force: true });
+                }
+                console.log("Cleanup complete.");
+            } catch (err: any) {
+                console.error(`Warning: Cleanup failed: ${err.message}`);
+            }
+        }
+    };
 
-    // 3. Update version.txt
-    await fs.writeFile(versionFile, nextVersion, "utf8");
+    // Handle interrupts (Ctrl+C) and termination signals
+    process.on("SIGINT", () => {
+        cleanupSync();
+        process.exit(130);
+    });
 
-    // 4. Update package.json files
-    await updatePackageJson(rootPkgFile, nextVersion);
-    await updatePackageJson(viewfinderPkgFile, nextVersion);
+    process.on("SIGTERM", () => {
+        cleanupSync();
+        process.exit(143);
+    });
 
-    // 5. Generate CHANGELOG.md updates
-    let lastTag = "";
     try {
-        lastTag = execSync("git describe --tags --abbrev=0", { stdio: ["ignore", "pipe", "ignore"] })
-            .toString()
-            .trim();
-    } catch {
-        // No tags exist yet
+        // Calculate version bump suggestions
+        const suggestPatch = semver.inc(currentVersion, "patch");
+        const suggestMinor = semver.inc(currentVersion, "minor");
+        const suggestMajor = semver.inc(currentVersion, "major");
+
+        console.log("\nSelect release type:");
+        console.log(`1) Patch  --> ${suggestPatch}`);
+        console.log(`2) Minor  --> ${suggestMinor}`);
+        console.log(`3) Major  --> ${suggestMajor}`);
+        console.log("4) Custom version");
+
+        const choice = await askQuestion("Enter choice [1-4]: ");
+        let nextVersion: string | null = null;
+
+        if (choice === "1") {
+            nextVersion = suggestPatch;
+        } else if (choice === "2") {
+            nextVersion = suggestMinor;
+        } else if (choice === "3") {
+            nextVersion = suggestMajor;
+        } else if (choice === "4") {
+            const customVer = await askQuestion("Enter custom version (e.g. 0.1.0): ");
+            nextVersion = semver.valid(customVer.trim());
+        }
+
+        if (!nextVersion) {
+            console.error("Error: Invalid version selection.");
+            return;
+        }
+
+        const releaseType = await askQuestion(
+            "\nSelect release type:\n\n" +
+                "1) Release candidate  --> rc\n" +
+                "2) Stable release     --> stable (default)\n\n" +
+                "Enter choice [1-2]: "
+        );
+
+        if (releaseType === "1") {
+            nextVersion += "-rc";
+        }
+
+        console.log(`\nReleasing version: v${nextVersion}`);
+
+        // 3. Update version.txt
+        await fs.writeFile(versionFile, nextVersion, "utf8");
+
+        // 4. Update package.json files
+        await updatePackageJson(rootPkgFile, nextVersion);
+        await updatePackageJson(viewfinderPkgFile, nextVersion);
+
+        // 5. Generate CHANGELOG.md updates
+        let lastTag = "";
+        try {
+            lastTag = execSync("git describe --tags --abbrev=0", { stdio: ["ignore", "pipe", "ignore"] })
+                .toString()
+                .trim();
+        } catch {
+            // No tags exist yet
+        }
+
+        console.log("Compiling changelog updates...");
+        const dateStr = new Date().toISOString().slice(0, 10);
+        let logCommits = "";
+        try {
+            const range = lastTag ? `${lastTag}..HEAD` : "HEAD";
+            logCommits = execSync(`git log ${range} --oneline --pretty=format:"* %s (%h)"`, {
+                stdio: ["ignore", "pipe", "ignore"]
+            })
+                .toString()
+                .trim();
+        } catch (err: any) {
+            console.error(`Warning: Could not compile commit history: ${err.message}`);
+        }
+
+        let changelogHeader = `## [${nextVersion}] - ${dateStr}\n\n`;
+        if (logCommits) {
+            changelogHeader += logCommits + "\n\n";
+        } else {
+            changelogHeader += "* Maintenance release.\n\n";
+        }
+
+        let existingChangelog = "";
+        try {
+            existingChangelog = await fs.readFile(changelogFile, "utf8");
+        } catch {
+            // CHANGELOG.md doesn't exist yet
+        }
+
+        await fs.writeFile(changelogFile, changelogHeader + existingChangelog, "utf8");
+
+        // Print changelog for confirmation
+        console.log("\nChangelog for v" + nextVersion + ":\n\n" + changelogHeader);
+
+        const releaseConfirm = await askQuestion("\nConfirm release? [y/N]: ");
+
+        if (releaseConfirm.toLowerCase() !== "y") {
+            console.log("Release cancelled.");
+            return;
+        }
+
+        // 6. Stage and commit
+        console.log("Staging and committing files...");
+        execSync("git add version.txt package.json viewfinder/package.json CHANGELOG.md");
+        execSync(`git commit -S -m "chore(release): bump version to ${nextVersion}"`);
+        execSync(`git tag -s -m "Release v${nextVersion}" "v${nextVersion}"`);
+
+        isReleaseFinalized = true;
+
+        console.log("\n==================================================");
+        console.log(`Release v${nextVersion} created locally!`);
+        console.log("==================================================");
+        console.log("Next steps:");
+        console.log("1. Run: git push origin main --follow-tags");
+        console.log("==================================================");
+    } finally {
+        cleanupSync();
     }
-
-    console.log("Compiling changelog updates...");
-    const dateStr = new Date().toISOString().slice(0, 10);
-    let logCommits = "";
-    try {
-        const range = lastTag ? `${lastTag}..HEAD` : "HEAD";
-        logCommits = execSync(`git log ${range} --oneline --pretty=format:"* %s (%h)"`, {
-            stdio: ["ignore", "pipe", "ignore"]
-        })
-            .toString()
-            .trim();
-    } catch (err: any) {
-        console.error(`Warning: Could not compile commit history: ${err.message}`);
-    }
-
-    let changelogHeader = `## [${nextVersion}] - ${dateStr}\n\n`;
-    if (logCommits) {
-        changelogHeader += logCommits + "\n\n";
-    } else {
-        changelogHeader += "* Maintenance release.\n\n";
-    }
-
-    let existingChangelog = "";
-    try {
-        existingChangelog = await fs.readFile(changelogFile, "utf8");
-    } catch {
-        // CHANGELOG.md doesn't exist yet
-    }
-
-    await fs.writeFile(changelogFile, changelogHeader + existingChangelog, "utf8");
-
-    // 6. Stage and commit
-    console.log("Staging and committing files...");
-    execSync("git add version.txt package.json viewfinder/package.json CHANGELOG.md");
-    execSync(`git commit -S -m "chore(release): bump version to ${nextVersion}"`);
-    execSync(`git tag -s -m "Release v${nextVersion}" "v${nextVersion}"`);
-
-    console.log("\n==================================================");
-    console.log(`Release v${nextVersion} created locally!`);
-    console.log("==================================================");
-    console.log("Next steps:");
-    console.log("1. Run: git push origin main --follow-tags");
-    console.log("==================================================");
 }
 
 main().catch((err) => {
