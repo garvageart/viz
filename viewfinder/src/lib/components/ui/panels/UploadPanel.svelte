@@ -25,6 +25,15 @@
 
     let prevCompletedCount = $state(0);
     let prevFilesCount = $state(0);
+    let completedFiles = $derived(
+        upload.files.filter(
+            (f) =>
+                f.state === UploadState.DONE ||
+                f.state === UploadState.ERROR ||
+                f.state === UploadState.CANCELED ||
+                f.state === UploadState.DUPLICATE
+        ).length
+    );
 
     const prefersReducedMotion = () =>
         typeof window !== "undefined" &&
@@ -40,16 +49,9 @@
 
     $effect(() => {
         // for every x amount of photos (20 for now), refresh Viz to show latest images
-        const completedCount = upload.files.filter(
-            (f) =>
-                f.state === UploadState.DONE ||
-                f.state === UploadState.ERROR ||
-                f.state === UploadState.CANCELED ||
-                f.state === UploadState.DUPLICATE
-        ).length;
         const refreshThreshold = 20;
 
-        if (completedCount > 0 && completedCount % refreshThreshold === 0) {
+        if (completedFiles > 0 && completedFiles % refreshThreshold === 0) {
             invalidateViz({ delay: 500 });
         }
     });
@@ -83,19 +85,10 @@
             return;
         }
 
-        // compute completed items
-        const completed = upload.files.filter(
-            (f) =>
-                f.state === UploadState.DONE ||
-                f.state === UploadState.ERROR ||
-                f.state === UploadState.CANCELED ||
-                f.state === UploadState.DUPLICATE
-        ).length;
-
         const filesCount = upload.files.length;
 
         // Scroll whenever files are added or completed
-        if (completed > prevCompletedCount || filesCount > prevFilesCount) {
+        if (completedFiles > prevCompletedCount || filesCount > prevFilesCount) {
             try {
                 const behavior = prefersReducedMotion() ? "auto" : "smooth";
 
@@ -130,7 +123,7 @@
             }
         }
 
-        prevCompletedCount = completed;
+        prevCompletedCount = completedFiles;
         prevFilesCount = filesCount;
     });
 </script>
@@ -152,7 +145,7 @@
             hoverColor="var(--viz-primary)"
         >
             <MaterialIcon iconName="upload" style="font-size: 1.5rem;" />
-            <span>{upload.files.length} uploading file{upload.files.length === 1 ? "" : "s"}</span>
+            <span>{completedFiles}/{upload.files.length} uploading file{upload.files.length === 1 ? "" : "s"}</span>
         </Button>
     </div>
 {:else}
