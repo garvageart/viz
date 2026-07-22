@@ -3,7 +3,7 @@
 
     interface Props extends HTMLButtonAttributes {
         hoverColor?: string;
-        variant?: "primary" | "small" | "mini";
+        variant?: "big" | "primary" | "small" | "mini";
         element?: HTMLButtonElement;
     }
 
@@ -31,12 +31,12 @@
         cursor: pointer;
         color: var(--viz-text-color);
         font-weight: 500;
-        font-size: var(--viz-font-size-xl);
+        font-size: var(--viz-font-size-lg);
         letter-spacing: 0.02em;
         height: max-content;
         background-color: var(--viz-90);
         border: var(--viz-border-thin);
-        padding: var(--viz-spacing-sm) var(--viz-spacing-std);
+        padding: var(--viz-spacing-xs) var(--viz-spacing-md);
         display: inline-flex;
         align-items: center;
         justify-content: center;
@@ -69,6 +69,11 @@
 
         &:active:not(:disabled) {
             background-color: var(--viz-75);
+        }
+
+        &.big {
+            font-size: var(--viz-font-size-xl);
+            padding: var(--viz-spacing-sm) var(--viz-spacing-std);
         }
 
         &.small {

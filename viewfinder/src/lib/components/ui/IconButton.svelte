@@ -7,7 +7,7 @@
 
     interface ButtonProps extends HTMLButtonAttributes {
         hoverColor?: string;
-        variant?: "primary" | "small" | "mini";
+        variant?: "big" | "primary" | "small" | "mini";
         element?: HTMLButtonElement;
         tooltipParams?: TooltipParams | string | null;
     }
@@ -99,6 +99,15 @@
             opacity: 0.5;
             background-color: transparent;
             border-color: transparent;
+        }
+
+        &.big {
+            font-size: var(--viz-font-size-xl);
+            padding: var(--viz-spacing-sm);
+
+            &.with-children {
+                padding: var(--viz-spacing-sm) var(--viz-spacing-std);
+            }
         }
 
         &.small {
