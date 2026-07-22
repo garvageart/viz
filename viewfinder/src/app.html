@@ -16,6 +16,7 @@
             body {
                 height: 100%;
                 margin: 0;
+                background-color: var(--viz-bg-color);
             }
 
             #app-splash {
@@ -23,18 +24,10 @@
                 display: flex;
                 align-items: center;
                 justify-content: center;
-                background: var(--viz-100, #0c0f17);
+                background: var(--viz-bg-color);
                 background-image:
-                    linear-gradient(
-                        to right,
-                        color-mix(in srgb, var(--viz-60, rgba(255, 255, 255, 0.1)) 8%, transparent) 1px,
-                        transparent 1px
-                    ),
-                    linear-gradient(
-                        to bottom,
-                        color-mix(in srgb, var(--viz-60, rgba(255, 255, 255, 0.1)) 8%, transparent) 1px,
-                        transparent 1px
-                    );
+                    linear-gradient(to right, color-mix(in srgb, var(--viz-60) 8%, transparent) 1px, transparent 1px),
+                    linear-gradient(to bottom, color-mix(in srgb, var(--viz-60) 8%, transparent) 1px, transparent 1px);
                 background-size: 40px 40px;
                 background-position: center;
                 position: fixed;
@@ -51,23 +44,88 @@
                 animation: splash-fade-in 0.4s ease-out forwards;
             }
 
+            #app-splash .splash-viewfinder {
+                position: relative;
+                padding: 1rem 2rem;
+                display: inline-flex;
+                align-items: center;
+                justify-content: center;
+            }
+
+            #app-splash .corner {
+                position: absolute;
+                width: 8px;
+                height: 8px;
+                border-color: var(--viz-primary);
+                border-style: solid;
+                opacity: 0.85;
+            }
+
+            #app-splash .corner.top-left {
+                top: 0;
+                left: 0;
+                border-width: 1.5px 0 0 1.5px;
+            }
+
+            #app-splash .corner.top-right {
+                top: 0;
+                right: 0;
+                border-width: 1.5px 1.5px 0 0;
+            }
+
+            #app-splash .corner.bottom-left {
+                bottom: 0;
+                left: 0;
+                border-width: 0 0 1.5px 1.5px;
+            }
+
+            #app-splash .corner.bottom-right {
+                bottom: 0;
+                right: 0;
+                border-width: 0 1.5px 1.5px 0;
+            }
+
+            #app-splash .splash-loader {
+                width: 52px;
+                height: 3px;
+                background-color: color-mix(in srgb, var(--viz-text-color) 15%, transparent);
+                margin: 1.25rem auto 0;
+                position: relative;
+                overflow: hidden;
+                border-radius: 3px;
+            }
+
+            #app-splash .splash-loader::after {
+                content: "";
+                position: absolute;
+                top: 0;
+                left: 0;
+                bottom: 0;
+                width: 40%;
+                background-color: var(--viz-primary);
+                border-radius: 3px;
+                animation: splash-slide 1s ease-in-out infinite;
+            }
+
+            @keyframes splash-slide {
+                0% {
+                    left: -40%;
+                }
+
+                100% {
+                    left: 100%;
+                }
+            }
+
             #app-splash .splash-text {
                 font-family: "Roboto Mono Variable", "Roboto Mono", monospace;
-                font-size: 2.8rem;
+                font-size: 3rem;
                 font-weight: 700;
-                letter-spacing: -0.02em;
-                color: var(--viz-text-color, #f8fafc);
+                color: var(--viz-text-color);
                 margin: 0;
                 text-transform: lowercase;
                 display: inline-flex;
                 align-items: center;
-            }
-
-            #app-splash .splash-text::after {
-                content: "_";
-                color: var(--viz-primary, #3b82f6);
-                animation: splash-cursor-blink 0.8s step-end infinite;
-                margin-left: 2px;
             }
 
             @keyframes splash-fade-in {
@@ -75,19 +133,10 @@
                     opacity: 0;
                     transform: translateY(4px);
                 }
+
                 to {
                     opacity: 1;
                     transform: translateY(0);
-                }
-            }
-
-            @keyframes splash-cursor-blink {
-                from,
-                to {
-                    color: transparent;
-                }
-                50% {
-                    color: var(--viz-primary, #3b82f6);
                 }
             }
 
@@ -124,7 +173,14 @@
     <body>
         <div id="app-splash" aria-hidden="true">
             <div class="splash-inner">
-                <h1 class="splash-text">viz</h1>
+                <div class="splash-viewfinder">
+                    <span class="corner top-left"></span>
+                    <span class="corner top-right"></span>
+                    <span class="corner bottom-left"></span>
+                    <span class="corner bottom-right"></span>
+                    <h1 class="splash-text">viz</h1>
+                </div>
+                <div class="splash-loader"></div>
             </div>
         </div>
         <div style="display: contents">%sveltekit.body%</div>
