@@ -115,7 +115,7 @@
                     if (activeItem) {
                         activeItem.scrollIntoView({
                             behavior: behavior as ScrollBehavior,
-                            block: "nearest"
+                            block: "end"
                         });
                     }
                 } else if (filesCount > prevFilesCount) {
@@ -385,6 +385,7 @@
         overflow-y: auto;
         flex: 1;
         min-height: 0;
+        padding-bottom: var(--viz-spacing-xs);
     }
 
     .panel-file-info {

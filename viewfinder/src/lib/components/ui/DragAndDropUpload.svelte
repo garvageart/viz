@@ -1,6 +1,6 @@
 <script lang="ts">
     import { goto } from "$app/navigation";
-    import { addCollectionImages, createCollection, type ImageAsset } from "$lib/api";
+    import { addCollectionImages, createCollection, type Collection, type ImageAsset } from "$lib/api";
     import { VizMimeTypes } from "$lib/constants";
     import { DragData } from "$lib/drag-drop/data";
     import { dragState } from "$lib/drag-drop/state.svelte";
@@ -17,6 +17,7 @@
     import { detectFolderName, traverseFileTree } from "$lib/utils/files";
     import { invalidateViz } from "$lib/views/views.svelte";
     import CollectionModal from "../modals/CollectionModal.svelte";
+    import CollectionSelectionModal from "../modals/CollectionSelectionModal.svelte";
     import ConfirmationModal from "../modals/ConfirmationModal.svelte";
     import { modalsManager } from "../modals/manager/ModalManager.svelte";
     import Button from "./Button.svelte";
@@ -45,8 +46,9 @@
 
     let collectionCreatePending = $state(false);
 
-    // Small drop-target state for 'Add to Collection' box
+    // Small drop-target state for 'Add to Collection' boxes
     let addBoxHover = $state(false);
+    let addExistingBoxHover = $state(false);
 
     async function processUploads(files: File[]) {
         const manager = new UploadManager([...SUPPORTED_RAW_FILES, ...SUPPORTED_IMAGE_TYPES] as SupportedImageTypes[]);
@@ -54,8 +56,7 @@
 
         toastState.addToast({
             type: "success",
-            message: `Starting upload of ${tasks.length} file(s)...`,
-            timeout: 2500
+            message: `Starting upload of ${tasks.length} file(s)...`
         });
 
         // Start uploads with concurrency control
@@ -72,8 +73,7 @@
         if (uploadedImages.length > 0) {
             toastState.addToast({
                 type: "success",
-                message: `Successfully uploaded ${uploadedImages.length} file(s)`,
-                timeout: 3000
+                message: `Successfully uploaded ${uploadedImages.length} file(s)`
             });
 
             try {
@@ -155,8 +155,7 @@
             if (allFiles.length === 0) {
                 toastState.addToast({
                     type: "info",
-                    message: "No files to upload",
-                    timeout: 3000
+                    message: "No files to upload"
                 });
                 return;
             }
@@ -184,7 +183,7 @@
             uploadCandidates = validFiles;
             suggestedCollectionName = detectedFolderName || `New Collection ${new Date().toLocaleDateString()}`;
 
-            if (bypassConfirmation) {
+            if (!detectedFolderName || bypassConfirmation) {
                 await processUploads(validFiles);
                 uploadCandidates = [];
                 return;
@@ -380,8 +379,7 @@
         if (!items || items.length === 0) {
             toastState.addToast({
                 type: "info",
-                message: "Select images first, or drag files here to upload",
-                timeout: 3000
+                message: "Select images first, or drag files here to upload"
             });
 
             return;
@@ -474,8 +472,7 @@
                     if (uids.length === 0) {
                         toastState.addToast({
                             type: "info",
-                            message: "No images to add to collection",
-                            timeout: 3000
+                            message: "No images to add to collection"
                         });
                         return;
                     }
@@ -575,8 +572,7 @@
             if (allFiles.length === 0) {
                 toastState.addToast({
                     type: "info",
-                    message: "No files to add to collection",
-                    timeout: 3000
+                    message: "No files to add to collection"
                 });
                 return;
             }
@@ -632,8 +628,7 @@
 
                             toastState.addToast({
                                 type: "success",
-                                message: `Uploading ${tasks.length} file(s) to create collection...`,
-                                timeout: 2500
+                                message: `Uploading ${tasks.length} file(s) to create collection...`
                             });
 
                             // Start uploads with concurrency control
@@ -710,11 +705,232 @@
             });
         }
     }
+
+    /**
+     * Add selected images to an existing collection via SelectionScope (click/keyboard path).
+     */
+    async function addSelectedToExistingCollection() {
+        if (!selectionScope) {
+            return;
+        }
+        const items = selectionScope.selectedItems;
+        if (!items || items.length === 0) {
+            toastState.addToast({
+                type: "info",
+                message: "Select images first, or drag files here to add to an existing collection"
+            });
+            return;
+        }
+
+        const uids = items.map((i) => i.uid);
+        modalsManager.open(
+            CollectionSelectionModal,
+            {
+                imageUidsToAdd: uids,
+                onSelect: async (collection: Collection, newImageUids: string[]) => {
+                    if (newImageUids.length > 0) {
+                        const addRes = await addCollectionImages(collection.uid, { uids: newImageUids });
+                        if (addRes.status === 200) {
+                            toastState.addToast({
+                                type: "success",
+                                message: `Added ${newImageUids.length} image(s) to **${collection.name}**`,
+                                actions: [
+                                    {
+                                        label: "View Collection",
+                                        onClick: () => goto(`/collections/${collection.uid}`)
+                                    }
+                                ]
+                            });
+                            await invalidateViz();
+                        }
+                    }
+                }
+            },
+            { heading: "Add to Existing Collection" }
+        );
+    }
+
+    /**
+     * Handle drop specifically onto the "Existing Collection" box.
+     * Opens CollectionSelectionModal to let the user select a collection,
+     * then uploads dropped files (or adds internal dragged images) into it.
+     */
+    async function handleDropExistingCollection(e: DragEvent) {
+        e.preventDefault();
+        e.stopPropagation();
+        isDragging = false;
+        dragCounter = 0;
+        isInternalDrag = false;
+
+        if (!e.dataTransfer) {
+            return;
+        }
+
+        try {
+            // Check for internal drag of images first
+            const dt = e.dataTransfer;
+            const dragData = DragData.getData<string[]>(dt, VizMimeTypes.IMAGE_UIDS);
+            if (dragData) {
+                const uids: string[] = dragData.payload;
+                if (uids.length === 0) {
+                    toastState.addToast({
+                        type: "info",
+                        message: "No images to add to collection"
+                    });
+                    return;
+                }
+
+                modalsManager.open(
+                    CollectionSelectionModal,
+                    {
+                        imageUidsToAdd: uids,
+                        onSelect: async (collection: Collection, newImageUids: string[]) => {
+                            if (newImageUids.length > 0) {
+                                const addRes = await addCollectionImages(collection.uid, { uids: newImageUids });
+                                if (addRes.status === 200) {
+                                    toastState.addToast({
+                                        type: "success",
+                                        message: `Added ${newImageUids.length} image(s) to **${collection.name}**`,
+                                        actions: [
+                                            {
+                                                label: "View Collection",
+                                                onClick: () => goto(`/collections/${collection.uid}`)
+                                            }
+                                        ]
+                                    });
+                                    await invalidateViz();
+                                }
+                            }
+                        }
+                    },
+                    { heading: "Add to Existing Collection" }
+                );
+                return;
+            }
+
+            // Extract dropped files
+            const allFiles: File[] = [];
+            if (e.dataTransfer.items) {
+                const items = Array.from(e.dataTransfer.items);
+                const entries: FileSystemEntry[] = [];
+                for (const item of items) {
+                    if (item.kind === "file") {
+                        const entry = item.webkitGetAsEntry?.();
+                        if (entry) {
+                            entries.push(entry);
+                        } else {
+                            const file = item.getAsFile();
+                            if (file) {
+                                allFiles.push(file);
+                            }
+                        }
+                    }
+                }
+
+                for (const entry of entries) {
+                    const files = await traverseFileTree(entry);
+                    allFiles.push(...files);
+                }
+            } else {
+                allFiles.push(...Array.from(e.dataTransfer.files));
+            }
+
+            if (allFiles.length === 0) {
+                toastState.addToast({
+                    type: "info",
+                    message: "No files to add to collection"
+                });
+                return;
+            }
+
+            const supportedExtensions = [...SUPPORTED_IMAGE_TYPES, ...SUPPORTED_RAW_FILES];
+            const validFiles = allFiles.filter((file) => {
+                const mimeExt = file.type ? file.type.split("/")[1] : "";
+                const nameExt = file.name.split(".").pop()?.toLowerCase() || "";
+                return (
+                    supportedExtensions.includes(mimeExt as AllSupportedImageTypes) ||
+                    supportedExtensions.includes(nameExt as AllSupportedImageTypes)
+                );
+            });
+
+            if (validFiles.length === 0) {
+                toastState.addToast({
+                    type: "error",
+                    message: "No supported image files found to add to collection"
+                });
+                return;
+            }
+
+            // Open CollectionSelectionModal for dropped files
+            modalsManager.open(
+                CollectionSelectionModal,
+                {
+                    imageUidsToAdd: [],
+                    onSelect: async (collection: Collection) => {
+                        try {
+                            const manager = new UploadManager([
+                                ...SUPPORTED_RAW_FILES,
+                                ...SUPPORTED_IMAGE_TYPES
+                            ] as SupportedImageTypes[]);
+                            const tasks = manager.addFiles(validFiles);
+
+                            toastState.addToast({
+                                type: "success",
+                                message: `Uploading ${tasks.length} file(s) to add to **${collection.name}**`
+                            });
+
+                            await manager.start(tasks);
+                            await waitForUploadCompletion(tasks);
+
+                            const uploadedImages = tasks
+                                .filter((t) => t.state === UploadState.DONE || t.state === UploadState.DUPLICATE)
+                                .map((t) => t.imageData)
+                                .filter((img): img is ImageUploadSuccess => !!img);
+
+                            if (uploadedImages.length > 0) {
+                                const uids = uploadedImages.map((i: any) => i.uid).filter(Boolean);
+                                if (uids.length > 0) {
+                                    const addRes = await addCollectionImages(collection.uid, { uids });
+                                    if (addRes.status === 200) {
+                                        toastState.addToast({
+                                            type: "success",
+                                            message: `Added ${uids.length} image(s) to **${collection.name}**`,
+                                            actions: [
+                                                {
+                                                    label: "View Collection",
+                                                    onClick: () => goto(`/collections/${collection.uid}`)
+                                                }
+                                            ]
+                                        });
+                                    }
+                                }
+                                await invalidateViz();
+                            }
+                        } catch (err) {
+                            console.error("Add to existing collection upload error:", err);
+                            toastState.addToast({
+                                type: "error",
+                                message: `Failed to upload images for collection: ${err}`
+                            });
+                        }
+                    }
+                },
+                { heading: "Add to Existing Collection" }
+            );
+        } catch (err) {
+            console.error("Add to existing collection error:", err);
+            toastState.addToast({
+                type: "error",
+                message: `Failed to add to existing collection: ${err}`
+            });
+        }
+    }
 </script>
 
 {#snippet uploadConfirmSnippet()}
     <p>
-        You dropped {uploadCandidates.length} file(s). How would you like to upload them?
+        You dropped folder <strong>"{suggestedCollectionName}"</strong> containing {uploadCandidates.length} file(s). How
+        would you like to upload them?
     </p>
 {/snippet}
 
@@ -754,45 +970,84 @@
             </div>
 
             {#if showCollectionCreateBox}
-                <div
-                    class="add-to-collection-box"
-                    class:hover={addBoxHover}
-                    role="button"
-                    tabindex="0"
-                    aria-label="Add to Collection — drop images here or press Enter to create from selected images"
-                    onclick={async () => {
-                        // Keyboard/click activation: create collection from selected images (if any)
-                        await createCollectionFromSelected?.();
-                    }}
-                    onkeydown={async (e: KeyboardEvent) => {
-                        if (e.key === "Enter" || e.key === " ") {
-                            e.preventDefault();
+                <div class="collection-boxes-container">
+                    <div
+                        class="add-to-collection-box"
+                        class:hover={addBoxHover}
+                        role="button"
+                        tabindex="0"
+                        aria-label="New Collection — drop images here or press Enter to create from selected images"
+                        onclick={async () => {
                             await createCollectionFromSelected?.();
-                        }
-                    }}
-                    ondragenter={(e) => {
-                        e.preventDefault();
-                        addBoxHover = true;
-                    }}
-                    ondragleave={(e) => {
-                        e.preventDefault();
-                        addBoxHover = false;
-                    }}
-                    ondragover={(e) => {
-                        e.preventDefault();
-                        if (e.dataTransfer) {
-                            e.dataTransfer.dropEffect = "copy";
-                        }
+                        }}
+                        onkeydown={async (e: KeyboardEvent) => {
+                            if (e.key === "Enter" || e.key === " ") {
+                                e.preventDefault();
+                                await createCollectionFromSelected?.();
+                            }
+                        }}
+                        ondragenter={(e) => {
+                            e.preventDefault();
+                            addBoxHover = true;
+                        }}
+                        ondragleave={(e) => {
+                            e.preventDefault();
+                            addBoxHover = false;
+                        }}
+                        ondragover={(e) => {
+                            e.preventDefault();
+                            if (e.dataTransfer) {
+                                e.dataTransfer.dropEffect = "copy";
+                            }
+                            addBoxHover = true;
+                        }}
+                        ondrop={async (e) => {
+                            addBoxHover = false;
+                            await handleDropCreateCollection?.(e);
+                        }}
+                    >
+                        <MaterialIcon iconName="library_add" class="collection-icon" />
+                        <span>New Collection</span>
+                    </div>
 
-                        addBoxHover = true;
-                    }}
-                    ondrop={async (e) => {
-                        addBoxHover = false;
-                        await handleDropCreateCollection?.(e);
-                    }}
-                >
-                    <MaterialIcon iconName="collections_bookmark" class="collection-icon" />
-                    <span>Add to Collection</span>
+                    <div
+                        class="add-to-collection-box"
+                        class:hover={addExistingBoxHover}
+                        role="button"
+                        tabindex="0"
+                        aria-label="Existing Collection — drop images here to add to an existing collection"
+                        onclick={async () => {
+                            await addSelectedToExistingCollection();
+                        }}
+                        onkeydown={async (e: KeyboardEvent) => {
+                            if (e.key === "Enter" || e.key === " ") {
+                                e.preventDefault();
+                                await addSelectedToExistingCollection();
+                            }
+                        }}
+                        ondragenter={(e) => {
+                            e.preventDefault();
+                            addExistingBoxHover = true;
+                        }}
+                        ondragleave={(e) => {
+                            e.preventDefault();
+                            addExistingBoxHover = false;
+                        }}
+                        ondragover={(e) => {
+                            e.preventDefault();
+                            if (e.dataTransfer) {
+                                e.dataTransfer.dropEffect = "copy";
+                            }
+                            addExistingBoxHover = true;
+                        }}
+                        ondrop={async (e) => {
+                            addExistingBoxHover = false;
+                            await handleDropExistingCollection(e);
+                        }}
+                    >
+                        <MaterialIcon iconName="collections_bookmark" class="collection-icon" />
+                        <span>Existing Collection</span>
+                    </div>
                 </div>
             {/if}
         </div>
@@ -827,7 +1082,7 @@
         padding: 3rem 4rem;
         background: color-mix(in srgb, var(--viz-primary) 3%, var(--viz-95));
         box-shadow: 0 12px 40px rgba(0, 0, 0, 0.2);
-        max-width: 32rem;
+        max-width: 36rem;
         width: 100%;
     }
 
@@ -874,15 +1129,26 @@
         color: var(--viz-text-color);
     }
 
+    .collection-boxes-container {
+        display: flex;
+        gap: var(--viz-spacing-md);
+        width: 100%;
+        margin-top: var(--viz-spacing-xl);
+
+        @media (max-width: 480px) {
+            flex-direction: column;
+        }
+    }
+
     .add-to-collection-box {
+        flex: 1;
         pointer-events: auto;
         display: flex;
         flex-direction: column;
         align-items: center;
         justify-content: center;
         width: 100%;
-        margin-top: var(--viz-spacing-xl);
-        padding: var(--viz-spacing-std) var(--viz-spacing-lg);
+        padding: var(--viz-spacing-std) var(--viz-spacing-sm);
         background-color: var(--viz-90);
         border: 1px solid var(--viz-60);
         color: var(--viz-text-color);
