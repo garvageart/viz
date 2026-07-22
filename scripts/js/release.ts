@@ -40,6 +40,8 @@ async function updatePackageJson(filePath: string, nextVersion: string) {
 }
 
 async function main() {
+    process.chdir(rootDir);
+
     // 1. Verify working directory is clean
     try {
         execSync("git diff-index --quiet HEAD --", { stdio: "ignore" });
@@ -198,7 +200,16 @@ async function main() {
             // CHANGELOG.md doesn't exist yet
         }
 
-        await fs.writeFile(changelogFile, changelogHeader + existingChangelog, "utf8");
+        let updatedChangelog = "";
+        const insertIndex = existingChangelog.indexOf("## ");
+        if (insertIndex !== -1) {
+            updatedChangelog =
+                existingChangelog.slice(0, insertIndex) + changelogHeader + existingChangelog.slice(insertIndex);
+        } else {
+            updatedChangelog = changelogHeader + existingChangelog;
+        }
+
+        await fs.writeFile(changelogFile, updatedChangelog, "utf8");
 
         // Print changelog for confirmation
         console.log("\nChangelog for v" + nextVersion + ":\n\n" + changelogHeader);
@@ -221,9 +232,19 @@ async function main() {
         console.log("\n==================================================");
         console.log(`Release v${nextVersion} created locally!`);
         console.log("==================================================");
-        console.log("Next steps:");
-        console.log("1. Run: git push origin main --follow-tags");
-        console.log("==================================================");
+
+        const pushConfirm = await askQuestion("\nPush changes to origin now? [y/N]: ");
+        if (pushConfirm.toLowerCase() === "y") {
+            console.log("\nPushing changes and tags to origin...");
+            execSync("git push origin main --follow-tags", { stdio: "inherit" });
+            console.log("\n==================================================");
+            console.log("Push complete!");
+            console.log("==================================================");
+        } else {
+            console.log("\nNext steps:");
+            console.log("1. Run: git push origin main --follow-tags");
+            console.log("==================================================");
+        }
     } finally {
         cleanupSync();
     }
