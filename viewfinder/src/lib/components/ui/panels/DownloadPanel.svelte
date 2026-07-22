@@ -209,7 +209,7 @@
         bottom: var(--viz-spacing-xxl);
         right: var(--viz-spacing-xxl);
         background-color: var(--viz-100);
-        z-index: 9999;
+        z-index: 900;
         border: var(--viz-border-thin);
         border-radius: var(--viz-border-radius-lg);
         max-height: 50vh;
@@ -221,7 +221,7 @@
         position: absolute;
         bottom: var(--viz-spacing-xxl);
         right: var(--viz-spacing-xxl);
-        z-index: 9999;
+        z-index: 900;
     }
 
     #viz-download-panel-header {
