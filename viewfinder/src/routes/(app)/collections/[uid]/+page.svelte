@@ -40,6 +40,7 @@
     import VizViewContainer from "$lib/components/panels/VizViewContainer.svelte";
     import ActiveFiltersTooltip from "$lib/components/tooltips/ActiveFiltersTooltip.svelte";
     import AssetsShell from "$lib/components/ui/AssetsShell.svelte";
+    import Badge from "$lib/components/ui/Badge.svelte";
     import Button from "$lib/components/ui/Button.svelte";
     import DragAndDropUpload from "$lib/components/ui/DragAndDropUpload.svelte";
     import IconButton from "$lib/components/ui/IconButton.svelte";
@@ -1045,8 +1046,7 @@
                 </div>
 
                 <div id="coll-meta-chips">
-                    <div class="meta-chip">
-                        <MaterialIcon iconName="image" size="1rem" />
+                    <Badge pill={true} variant="neutral" iconName="image" iconSize="1rem">
                         <span>
                             {#if searchValue.trim()}
                                 {searchData.length} of {collectionState.images.length}
@@ -1054,31 +1054,33 @@
                                 {collectionState.totalCount} {collectionState.totalCount === 1 ? "image" : "images"}
                             {/if}
                         </span>
-                    </div>
+                    </Badge>
 
-                    <div
-                        class="meta-chip"
+                    <Badge
+                        pill={true}
+                        variant="neutral"
+                        iconName="calendar_today"
+                        iconSize="1rem"
                         title="Updated at: {DateTime.fromISO(data.updated_at)
                             .setZone('local')
                             .toLocaleString(DateTime.DATETIME_SHORT)}"
                     >
-                        <MaterialIcon iconName="calendar_today" size="1rem" />
                         <span
                             >Created {DateTime.fromISO(data.created_at)
                                 .setZone("local")
                                 .toLocaleString(DateTime.DATE_SHORT)}</span
                         >
-                    </div>
+                    </Badge>
 
-                    <div class="meta-chip privacy-chip" class:private={data.private}>
-                        {#if data.private}
-                            <MaterialIcon iconName="lock" size="1rem" />
+                    {#if data.private}
+                        <Badge pill={true} variant="error" iconName="lock" iconSize="1rem">
                             <span>Private</span>
-                        {:else}
-                            <MaterialIcon iconName="visibility" size="1rem" />
+                        </Badge>
+                    {:else}
+                        <Badge pill={true} variant="neutral" iconName="visibility" iconSize="1rem">
                             <span>Public</span>
-                        {/if}
-                    </div>
+                        </Badge>
+                    {/if}
                 </div>
             </div>
         </div>
@@ -1175,36 +1177,6 @@
 
         @container (max-width: 768px) {
             margin-top: var(--viz-spacing-xs);
-        }
-    }
-
-    .meta-chip {
-        display: flex;
-        align-items: center;
-        gap: var(--viz-spacing-xs);
-        background-color: var(--viz-90);
-        border: var(--viz-border-thin);
-        border-color: var(--viz-80);
-        border-radius: var(--viz-border-radius-pill);
-        padding: 0.35rem 0.75rem;
-        font-family: var(--viz-mono-font);
-        font-size: var(--viz-font-size-std);
-        color: var(--viz-40);
-        box-shadow: 0 1px 2px rgba(0, 0, 0, 0.05);
-
-        span {
-            font-weight: 500;
-        }
-
-        &.privacy-chip {
-            background-color: var(--viz-90);
-            color: var(--viz-40);
-
-            &.private {
-                background-color: color-mix(in srgb, var(--viz-error-color) 8%, var(--viz-90));
-                border-color: color-mix(in srgb, var(--viz-error-color) 15%, var(--viz-80));
-                color: var(--viz-error-color);
-            }
         }
     }
 

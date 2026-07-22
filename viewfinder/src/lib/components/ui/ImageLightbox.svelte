@@ -23,6 +23,7 @@
     import hotkeys from "hotkeys-js";
     import isEqual from "lodash-es/isEqual";
     import { onMount, untrack } from "svelte";
+    import Badge from "./Badge.svelte";
     import type { MouseEventHandler, PointerEventHandler, WheelEventHandler } from "svelte/elements";
     import CropOverlay from "../image-tools/CropOverlay.svelte";
     import CropTools from "../image-tools/CropTools.svelte";
@@ -1002,11 +1003,9 @@
                                     </button>
                                 {/if}
                                 {#if lightboxImage?.image_metadata?.file_type}
-                                    <span class="file-type-badge"
-                                        >{lightboxImage.image_metadata.file_type
-                                            .replace("image/", "")
-                                            .toUpperCase()}</span
-                                    >
+                                    <Badge variant="default" class="file-type-badge">
+                                        {lightboxImage.image_metadata.file_type.replace("image/", "").toUpperCase()}
+                                    </Badge>
                                 {/if}
                             </div>
                         </div>

@@ -1,6 +1,7 @@
 <script lang="ts">
     import { type WorkerInfo } from "$lib/api";
     import AdminRouteShell from "$lib/components/admin/AdminRouteShell.svelte";
+    import Badge from "$lib/components/ui/Badge.svelte";
     import Button from "$lib/components/ui/Button.svelte";
     import IconButton from "$lib/components/ui/IconButton.svelte";
     import MaterialIcon from "$lib/components/ui/MaterialIcon.svelte";
@@ -242,7 +243,7 @@
                             <MaterialIcon iconName="bolt" class="title-icon highlight" />
                             <h2>Realtime Processing</h2>
                         </div>
-                        <span class="badge highlight">{jobsState.activeJobs.length}</span>
+                        <Badge variant="info">{jobsState.activeJobs.length}</Badge>
                     </div>
 
                     <div class="jobs-list active-list">

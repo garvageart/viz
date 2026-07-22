@@ -1,4 +1,5 @@
 <script lang="ts">
+    import Badge from "$lib/components/ui/Badge.svelte";
     import Button from "$lib/components/ui/Button.svelte";
     import MaterialIcon from "$lib/components/ui/MaterialIcon.svelte";
     import { toastState } from "$lib/toast-notifcations/notif-state.svelte";
@@ -221,7 +222,7 @@
             <div class="section-header">
                 <MaterialIcon iconName="history" />
                 <h2>Event History</h2>
-                <span class="badge">{history.length}</span>
+                <Badge variant="neutral">{history.length}</Badge>
             </div>
 
             <div class="history-controls">
@@ -308,17 +309,6 @@
             font-weight: 600;
             color: var(--viz-text-color);
         }
-    }
-
-    .badge {
-        padding: 2px var(--viz-spacing-sm);
-        background-color: var(--viz-90);
-        border: var(--viz-border-thin);
-        border-radius: var(--viz-border-radius-pill);
-        font-size: var(--viz-font-size-std);
-        font-family: var(--viz-mono-font);
-        font-weight: 600;
-        color: var(--viz-30);
     }
 
     .stats-grid {
