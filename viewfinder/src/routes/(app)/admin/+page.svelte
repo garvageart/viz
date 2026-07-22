@@ -294,7 +294,7 @@
                     <div class="card-header">
                         <div class="card-title-group">
                             <div class="stat-icon version">
-                                <MaterialIcon iconName="terminal" />
+                                <MaterialIcon iconName="dns" />
                             </div>
                             <div>
                                 <h4>Server Information</h4>
@@ -303,78 +303,80 @@
                         </div>
                     </div>
                     <div class="card-body">
-                        <div class="about-grid">
-                            <div class="about-item">
-                                <span class="about-label">Version</span>
-                                <span class="about-value version-tag">v{data.serverAbout?.version || "Unknown"}</span>
-                            </div>
-                            <div class="about-item">
-                                <span class="about-label">Build ID</span>
-                                <span class="about-value font-mono">{data.serverAbout?.build?.id || "Unknown"}</span>
-                            </div>
-                            <div class="about-item">
-                                <span class="about-label">Build Date</span>
-                                <span class="about-value font-mono"
-                                    >{formatBuildDate(data.serverAbout?.build?.date)}</span
-                                >
-                            </div>
-                            <div class="about-item">
-                                <span class="about-label">Go Runtime</span>
-                                <span class="about-value">{data.serverAbout?.go || "Unknown"}</span>
-                            </div>
-                            <div class="about-item">
-                                <span class="about-label">libvips</span>
-                                <span class="about-value font-mono">v{data.serverAbout?.libvips || "Unknown"}</span>
-                            </div>
-                            <div class="about-item">
-                                <span class="about-label">Environment</span>
-                                <span class="about-value">{data.serverAbout?.environment || "Unknown"}</span>
-                            </div>
-                            <div class="about-item">
-                                <span class="about-label">OS / Arch</span>
-                                <span class="about-value"
-                                    >{data.serverAbout?.os || "Unknown"}/{data.serverAbout?.architecture ||
-                                        "Unknown"}</span
-                                >
-                            </div>
-                            <div class="about-item">
-                                <span class="about-label">Commit</span>
-                                <span class="about-value font-mono">
-                                    {#if commitUrl}
-                                        <a href={commitUrl} target="_blank" rel="noreferrer" class="repo-link">
-                                            {data.serverAbout?.sourceCommit
-                                                ? data.serverAbout.sourceCommit.substring(0, 7)
-                                                : "Unknown"}
-                                        </a>
-                                    {:else}
-                                        {data.serverAbout?.sourceCommit
-                                            ? data.serverAbout.sourceCommit.substring(0, 7)
-                                            : "Unknown"}
-                                    {/if}
-                                </span>
-                            </div>
-                            <div class="about-item">
-                                <span class="about-label">Branch</span>
-                                <span class="about-value font-mono">
-                                    {#if branchUrl}
-                                        <a href={branchUrl} target="_blank" rel="noreferrer" class="repo-link">
-                                            {data.serverAbout?.sourceRef || "Unknown"}
-                                        </a>
-                                    {:else}
-                                        {data.serverAbout?.sourceRef || "Unknown"}
-                                    {/if}
-                                </span>
-                            </div>
-                            {#if repoWebUrl}
-                                <div class="about-item">
-                                    <span class="about-label">Repository</span>
-                                    <span class="about-value">
-                                        <a href={repoWebUrl} target="_blank" rel="noreferrer" class="repo-link">
-                                            {data.serverAbout?.repository || "Source Code"}
-                                        </a>
-                                    </span>
+                        <div class="server-info-layout">
+                            <div class="version-section">
+                                <div class="version-badge-container">
+                                    <MaterialIcon iconName="sell" size="1.25rem" />
+                                    <span class="version">v{data.serverAbout?.version || "Unknown"}</span>
                                 </div>
-                            {/if}
+                                <div class="env-badge {data.serverAbout?.environment || 'unknown'}">
+                                    {data.serverAbout?.environment || "Unknown"}
+                                </div>
+                            </div>
+                            <div class="build-info-bar">
+                                <span class="build-tag">Build #{data.serverAbout?.build?.id || "Unknown"}</span>
+                                <span class="build-date">{formatBuildDate(data.serverAbout?.build?.date)}</span>
+                            </div>
+
+                            <div class="server-details-grid">
+                                <div class="details-group">
+                                    <h5>Source</h5>
+                                    {#if repoWebUrl}
+                                        <div class="detail-row">
+                                            <span class="label">Repository</span>
+                                            <span class="value">
+                                                <a href={repoWebUrl} target="_blank" rel="noreferrer" class="repo-link">
+                                                    <MaterialIcon iconName="open_in_new" size="0.9rem" />
+                                                    {data.serverAbout?.repository || "Source Code"}
+                                                </a>
+                                            </span>
+                                        </div>
+                                    {/if}
+                                    <div class="detail-row">
+                                        <span class="label">Location</span>
+                                        <span class="value font-mono">
+                                            {#if branchUrl}
+                                                <a href={branchUrl} target="_blank" rel="noreferrer" class="repo-link">
+                                                    {data.serverAbout?.sourceRef || "Unknown"}
+                                                </a>
+                                            {:else}
+                                                {data.serverAbout?.sourceRef || "Unknown"}
+                                            {/if}
+                                            <span class="at-separator">@</span>
+                                            {#if commitUrl}
+                                                <a href={commitUrl} target="_blank" rel="noreferrer" class="repo-link">
+                                                    {data.serverAbout?.sourceCommit
+                                                        ? data.serverAbout.sourceCommit.substring(0, 7)
+                                                        : "Unknown"}
+                                                </a>
+                                            {:else}
+                                                {data.serverAbout?.sourceCommit
+                                                    ? data.serverAbout.sourceCommit.substring(0, 7)
+                                                    : "Unknown"}
+                                            {/if}
+                                        </span>
+                                    </div>
+                                </div>
+
+                                <div class="details-group">
+                                    <h5>Runtime</h5>
+                                    <div class="detail-row">
+                                        <span class="label">Go Runtime</span>
+                                        <span class="value">{data.serverAbout?.go || "Unknown"}</span>
+                                    </div>
+                                    <div class="detail-row">
+                                        <span class="label">libvips</span>
+                                        <span class="value font-mono">v{data.serverAbout?.libvips || "Unknown"}</span>
+                                    </div>
+                                    <div class="detail-row">
+                                        <span class="label">OS / Arch</span>
+                                        <span class="value"
+                                            >{data.serverAbout?.os || "Unknown"} / {data.serverAbout?.architecture ||
+                                                "Unknown"}</span
+                                        >
+                                    </div>
+                                </div>
+                            </div>
                         </div>
                     </div>
                 </div>
@@ -444,8 +446,7 @@
         color: var(--viz-text-color);
         margin: 0;
         padding-left: var(--viz-spacing-sm);
-        border-left: 4px solid var(--viz-primary);
-        line-height: 1.2;
+        border-left: 2px solid var(--viz-primary);
     }
 
     .stats-grid {
@@ -482,54 +483,56 @@
         align-items: center;
         justify-content: center;
         flex-shrink: 0;
+        color: #fff;
         transition:
             background-color 0.2s ease,
             color 0.2s ease;
 
         &.version {
             background-color: #3b82f6;
-            color: #ffffff;
         }
+
         &.connections {
             background-color: #10b981;
-            color: #ffffff;
         }
+
         &.cache {
             background-color: #f59e0b;
             color: var(--viz-10-dark);
         }
+
         &.uptime {
             background-color: #8b5cf6;
-            color: #ffffff;
         }
+
         &.db {
             background-color: #6366f1;
-            color: #ffffff;
         }
+
         &.storage {
             background-color: #ec4899;
-            color: #ffffff;
         }
+
         &.users {
             background-color: #14b8a6;
-            color: #ffffff;
         }
+
         &.images {
             background-color: #f43f5e;
-            color: #ffffff;
         }
+
         &.goroutines {
             background-color: #0d9488;
-            color: #ffffff;
         }
+
         &.alloc-memory {
             background-color: #d946af;
-            color: #ffffff;
         }
+
         &.sys-memory {
             background-color: #a855f7;
-            color: #ffffff;
         }
+
         &.storage-path {
             background-color: #22c55e;
             color: var(--viz-10-dark);
@@ -694,57 +697,149 @@
         border: var(--viz-border-thin);
     }
 
-    .about-grid {
+    .server-info-layout {
         display: flex;
         flex-direction: column;
+        gap: var(--viz-spacing-md);
     }
 
-    .about-item {
+    .version-section {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        padding: var(--viz-spacing-sm);
+        background: var(--viz-85);
+        border: var(--viz-border-thin);
+        border-radius: var(--viz-border-radius-md);
+
+        .version-badge-container {
+            display: flex;
+            align-items: center;
+            gap: var(--viz-spacing-sm);
+            color: var(--viz-text-color);
+        }
+
+        .version {
+            font-family: var(--viz-mono-font);
+            font-size: var(--viz-font-size-lg);
+            font-weight: 700;
+            color: var(--viz-text-color);
+        }
+    }
+
+    .build-info-bar {
         display: flex;
         justify-content: space-between;
         align-items: center;
+        padding: var(--viz-spacing-xs) 0;
         border-bottom: 1px dashed var(--viz-80);
-        padding: var(--viz-spacing-sm) 0;
+        margin-bottom: var(--viz-spacing-xs);
 
-        &:first-child {
-            padding-top: 0;
+        .build-tag {
+            font-weight: 600;
+            font-family: var(--viz-mono-font);
+            color: var(--viz-text-color);
+            font-size: var(--viz-font-size-std);
         }
+
+        .build-date {
+            color: var(--viz-40);
+            font-size: var(--viz-font-size-std);
+        }
+    }
+
+    .env-badge {
+        font-size: var(--viz-font-size-sm);
+        font-weight: 600;
+        text-transform: uppercase;
+        letter-spacing: 0.05em;
+        padding: 0.15rem 0.4rem;
+        border-radius: var(--viz-border-radius-sm);
+        border: var(--viz-border-thin);
+        display: inline-block;
+        color: var(--viz-20);
+        background-color: var(--viz-90);
+    }
+
+    .version-tag {
+        font-family: var(--viz-mono-font);
+        font-size: var(--viz-font-size-std);
+        padding: 0.15rem 0.5rem;
+        background-color: var(--viz-90);
+        color: var(--viz-text-color);
+        border: var(--viz-border-thin);
+        border-radius: var(--viz-border-radius-sm);
+        font-weight: 600;
+    }
+
+    .server-details-grid {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: var(--viz-spacing-md);
+
+        @media (max-width: 640px) {
+            grid-template-columns: 1fr;
+        }
+    }
+
+    .details-group {
+        display: flex;
+        flex-direction: column;
+        gap: var(--viz-spacing-xs);
+
+        h5 {
+            font-size: var(--viz-font-size-sm);
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+            color: var(--viz-40);
+            margin: 0 0 var(--viz-spacing-xs) 0;
+            font-weight: 600;
+        }
+    }
+
+    .detail-row {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        padding: var(--viz-spacing-xs) 0;
+        border-bottom: 1px solid var(--viz-85, rgba(255, 255, 255, 0.05));
 
         &:last-child {
             border-bottom: none;
-            padding-bottom: 0;
         }
 
-        .about-label {
-            font-size: var(--viz-font-size-lg);
+        .label {
             color: var(--viz-40);
         }
 
-        .about-value {
-            font-size: var(--viz-font-size-lg);
+        .value {
             color: var(--viz-text-color);
             font-weight: 500;
+            display: flex;
+            align-items: center;
+            gap: var(--viz-spacing-xs);
+
+            &.font-mono {
+                font-family: var(--viz-mono-font);
+            }
+
+            .at-separator {
+                color: var(--viz-40);
+                margin: 0 4px;
+            }
         }
 
         .repo-link {
             color: inherit;
             text-decoration: underline;
+            display: inline-flex;
+            align-items: center;
+            gap: 4px;
 
             &:hover {
                 color: var(--viz-text-color);
                 text-decoration: none;
             }
         }
-    }
-
-    .version-tag {
-        font-family: var(--viz-mono-font);
-        font-size: var(--viz-font-size-std);
-        padding: 0.25rem 0.6rem;
-        background-color: var(--viz-90);
-        color: var(--viz-text-color);
-        border: var(--viz-border-thin);
-        border-radius: var(--viz-border-radius-sm);
-        font-weight: 600;
     }
 </style>
