@@ -419,7 +419,7 @@
                         if (addRes.status === 200) {
                             toastState.addToast({
                                 type: "success",
-                                message: `Collection created with ${uids.length} image(s)`,
+                                message: `**${createRes.data.name}** collection created with ${uids.length} image(s)`,
                                 actions: [
                                     {
                                         label: "View Collection",
