@@ -9,6 +9,7 @@
     import { tryParseDate } from "$lib/utils/dates";
     import { parseGitWebUrl, getGitBranchUrl, getGitCommitUrl } from "$lib/utils/url";
     import { Duration, DateTime } from "luxon";
+    import type { Snippet } from "svelte";
 
     let { data } = $props();
 
@@ -133,6 +134,44 @@
     {/if}
 {/snippet}
 
+{#snippet card({
+    icon,
+    iconClass,
+    title,
+    subtitle,
+    href = undefined,
+    body
+}: {
+    icon: MaterialSymbol;
+    iconClass: string;
+    title: string;
+    subtitle: string;
+    href?: string;
+    body: Snippet;
+})}
+    <div class="custom-card">
+        <div class="card-header">
+            <div class="card-title-group">
+                <div class={["stat-icon", iconClass]}>
+                    <MaterialIcon iconName={icon} />
+                </div>
+                <div>
+                    <h4>{title}</h4>
+                    <span class="card-subtitle">{subtitle}</span>
+                </div>
+            </div>
+            {#if href}
+                <a {href} class="icon-link-btn">
+                    <MaterialIcon iconName="chevron_right" size="1.25rem" />
+                </a>
+            {/if}
+        </div>
+        <div class="card-body">
+            {@render body()}
+        </div>
+    </div>
+{/snippet}
+
 {#snippet headerActions()}
     <div class="last-updated-badge">
         <MaterialIcon iconName="sync" size="1rem" class="sync-icon" />
@@ -140,248 +179,206 @@
     </div>
 {/snippet}
 
-<AdminRouteShell heading="Dashboard" description="System overview and metrics" actions={headerActions}>
-    <div class="dashboard-container">
-        <div class="dashboard-grid">
-            <!-- Left Column: Core Application Metrics & Health -->
-            <div class="dashboard-main-column">
-                <!-- App Usage section -->
-                <section class="section">
-                    <h3 class="section-title">Application Usage</h3>
-                    <div class="stats-grid">
-                        {@render statCard({
-                            icon: "image",
-                            iconClass: "images",
-                            value: databaseInfo.images,
-                            label: "Total Images",
-                            href: "/photos"
-                        })}
+{#snippet healthBody()}
+    <div class="metric-row">
+        <span class="metric-label">Concurrent Tasks</span>
+        <span class="metric-value">{systemInfo.goroutines}</span>
+    </div>
+    <div class="metric-row">
+        <span class="metric-label">App Memory</span>
+        <span class="metric-value font-mono">{systemInfo.allocMemory}</span>
+    </div>
+    <div class="metric-row">
+        <span class="metric-label">Server Memory</span>
+        <span class="metric-value font-mono">{systemInfo.sysMemory}</span>
+    </div>
+    <div class="metric-row">
+        <span class="metric-label">DB Connections</span>
+        <span class="metric-value">{databaseInfo.connections}</span>
+    </div>
+    <div class="metric-row">
+        <span class="metric-label">DB Size</span>
+        <span class="metric-value font-mono">{databaseInfo.size}</span>
+    </div>
+{/snippet}
 
-                        {@render statCard({
-                            icon: "group",
-                            iconClass: "users",
-                            value: databaseInfo.users,
-                            label: "Total Users",
-                            href: "/admin/users"
-                        })}
+{#snippet storageBody()}
+    <div class="storage-row">
+        <span class="storage-label">Storage Folder</span>
+        <span class="storage-value path" title={storageInfo.path}>{storageInfo.path}</span>
+    </div>
+    <div class="storage-row">
+        <span class="storage-label">Image Storage</span>
+        <span class="storage-value">{storageInfo.totalUsed}</span>
+    </div>
+    <div class="storage-row progress-row">
+        <div class="progress-labels">
+            <span class="storage-label">Server Space</span>
+            <span class="storage-value font-mono">{formattedSystemStorage}</span>
+        </div>
+        <div class="progress-bar-wrapper">
+            <ProgressBar colour="primary" variant="large" width={storagePercent} />
+        </div>
+    </div>
+{/snippet}
 
-                        {@render statCard({
-                            icon: "hub",
-                            iconClass: "connections",
-                            value: systemInfo.activeConnections,
-                            label: "Active Clients",
-                            href: "/admin/events"
-                        })}
+{#snippet cacheBody()}
+    <div class="storage-row">
+        <span class="storage-label">Total Cache Size</span>
+        <span class="storage-value">{storageInfo.cacheSize}</span>
+    </div>
+    <div class="storage-row">
+        <span class="storage-label">Cached Items</span>
+        <span class="storage-value font-mono">{storageInfo.cacheItems}</span>
+    </div>
+{/snippet}
 
-                        {@render statCard({
-                            icon: "database",
-                            iconClass: "db",
-                            value: databaseInfo.connections,
-                            label: "Database Connections"
-                        })}
+{#snippet serverInfoBody()}
+    <div class="server-info-layout">
+        <div class="version-section">
+            <div class="version-badge-container">
+                <MaterialIcon iconName="sell" size="1.25rem" />
+                <span class="version">v{data.serverAbout?.version || "Unknown"}</span>
+            </div>
+            <div class="env-badge {data.serverAbout?.environment || 'unknown'}">
+                {data.serverAbout?.environment || "Unknown"}
+            </div>
+        </div>
+        <div class="build-info-bar">
+            <span class="build-tag">Build #{data.serverAbout?.build?.id || "Unknown"}</span>
+            <span class="build-date">{formatBuildDate(data.serverAbout?.build?.date)}</span>
+        </div>
+
+        <div class="server-details-grid">
+            <div class="details-group">
+                <h5>Source</h5>
+                {#if repoWebUrl}
+                    <div class="detail-row">
+                        <span class="label">Repository</span>
+                        <span class="value">
+                            <a href={repoWebUrl} target="_blank" rel="noreferrer" class="repo-link">
+                                <MaterialIcon iconName="open_in_new" size="0.9rem" />
+                                {data.serverAbout?.repository || "Source Code"}
+                            </a>
+                        </span>
                     </div>
-                </section>
-
-                <!-- Resource Usage section -->
-                <section class="section">
-                    <h3 class="section-title">System Resources</h3>
-                    <div class="stats-grid">
-                        {@render statCard({
-                            icon: "schedule",
-                            iconClass: "uptime",
-                            value: formattedLiveUptime,
-                            label: "System Uptime",
-                            id: "uptime-value",
-                            mono: true
-                        })}
-
-                        {@render statCard({
-                            icon: "compare_arrows",
-                            iconClass: "goroutines",
-                            value: systemInfo.goroutines,
-                            label: "Concurrent Tasks",
-                            href: "/admin/jobs"
-                        })}
-
-                        {@render statCard({
-                            icon: "memory",
-                            iconClass: "alloc-memory",
-                            value: systemInfo.allocMemory,
-                            label: "App Memory Usage",
-                            mono: true
-                        })}
-
-                        {@render statCard({
-                            icon: "memory_alt",
-                            iconClass: "sys-memory",
-                            value: systemInfo.sysMemory,
-                            label: "Total Server Memory",
-                            mono: true
-                        })}
-                    </div>
-                </section>
+                {/if}
+                <div class="detail-row">
+                    <span class="label">Location</span>
+                    <span class="value font-mono">
+                        {#if branchUrl}
+                            <a href={branchUrl} target="_blank" rel="noreferrer" class="repo-link">
+                                {data.serverAbout?.sourceRef || "Unknown"}
+                            </a>
+                        {:else}
+                            {data.serverAbout?.sourceRef || "Unknown"}
+                        {/if}
+                        <span class="at-separator">@</span>
+                        {#if commitUrl}
+                            <a href={commitUrl} target="_blank" rel="noreferrer" class="repo-link">
+                                {data.serverAbout?.sourceCommit
+                                    ? data.serverAbout.sourceCommit.substring(0, 7)
+                                    : "Unknown"}
+                            </a>
+                        {:else}
+                            {data.serverAbout?.sourceCommit ? data.serverAbout.sourceCommit.substring(0, 7) : "Unknown"}
+                        {/if}
+                    </span>
+                </div>
             </div>
 
-            <!-- Right Column: Storage, Cache, and System Details -->
-            <div class="dashboard-sidebar-column">
-                <!-- Storage Card -->
-                <div class="custom-card storage-card">
-                    <div class="card-header">
-                        <div class="card-title-group">
-                            <div class="stat-icon storage">
-                                <MaterialIcon iconName="hard_drive" />
-                            </div>
-                            <div>
-                                <h4>Storage Status</h4>
-                                <span class="card-subtitle">Disk space allocation</span>
-                            </div>
-                        </div>
-                        <a href="/admin/storage" class="icon-link-btn" title="View Storage Settings">
-                            <MaterialIcon iconName="chevron_right" size="1.25rem" />
-                        </a>
-                    </div>
-                    <div class="card-body">
-                        <div class="storage-row">
-                            <span class="storage-label">Storage Folder</span>
-                            <span class="storage-value path" title={storageInfo.path}>{storageInfo.path}</span>
-                        </div>
-                        <div class="storage-row">
-                            <span class="storage-label">Image Storage</span>
-                            <span class="storage-value">{storageInfo.totalUsed}</span>
-                        </div>
-                        <div class="storage-row progress-row">
-                            <div class="progress-labels">
-                                <span class="storage-label">Server Storage Space</span>
-                                <span class="storage-value font-mono">{formattedSystemStorage}</span>
-                            </div>
-                            <div class="progress-bar-wrapper">
-                                <ProgressBar colour="primary" variant="large" width={storagePercent} />
-                            </div>
-                        </div>
-                    </div>
+            <div class="details-group">
+                <h5>Runtime</h5>
+                <div class="detail-row">
+                    <span class="label">Go Runtime</span>
+                    <span class="value">{data.serverAbout?.go || "Unknown"}</span>
                 </div>
-
-                <!-- Cache Card -->
-                <div class="custom-card cache-card">
-                    <div class="card-header">
-                        <div class="card-title-group">
-                            <div class="stat-icon cache">
-                                <MaterialIcon iconName="memory" />
-                            </div>
-                            <div>
-                                <h4>Cache Status</h4>
-                                <span class="card-subtitle">Stores optimized images for faster loading.</span>
-                            </div>
-                        </div>
-                        <a href="/admin/cache" class="icon-link-btn" title="View Cache Settings">
-                            <MaterialIcon iconName="chevron_right" size="1.25rem" />
-                        </a>
-                    </div>
-                    <div class="card-body">
-                        <div class="storage-row">
-                            <span class="storage-label">Total Cache Size</span>
-                            <span class="storage-value">{storageInfo.cacheSize}</span>
-                        </div>
-                        <div class="storage-row">
-                            <span class="storage-label">Cached Items</span>
-                            <span class="storage-value font-mono">{storageInfo.cacheItems}</span>
-                        </div>
-                    </div>
+                <div class="detail-row">
+                    <span class="label">libvips</span>
+                    <span class="value font-mono">v{data.serverAbout?.libvips || "Unknown"}</span>
                 </div>
-
-                <!-- Server Information Card -->
-                <div class="custom-card about-card">
-                    <div class="card-header">
-                        <div class="card-title-group">
-                            <div class="stat-icon version">
-                                <MaterialIcon iconName="dns" />
-                            </div>
-                            <div>
-                                <h4>Server Information</h4>
-                                <span class="card-subtitle">Environment & Build</span>
-                            </div>
-                        </div>
-                    </div>
-                    <div class="card-body">
-                        <div class="server-info-layout">
-                            <div class="version-section">
-                                <div class="version-badge-container">
-                                    <MaterialIcon iconName="sell" size="1.25rem" />
-                                    <span class="version">v{data.serverAbout?.version || "Unknown"}</span>
-                                </div>
-                                <div class="env-badge {data.serverAbout?.environment || 'unknown'}">
-                                    {data.serverAbout?.environment || "Unknown"}
-                                </div>
-                            </div>
-                            <div class="build-info-bar">
-                                <span class="build-tag">Build #{data.serverAbout?.build?.id || "Unknown"}</span>
-                                <span class="build-date">{formatBuildDate(data.serverAbout?.build?.date)}</span>
-                            </div>
-
-                            <div class="server-details-grid">
-                                <div class="details-group">
-                                    <h5>Source</h5>
-                                    {#if repoWebUrl}
-                                        <div class="detail-row">
-                                            <span class="label">Repository</span>
-                                            <span class="value">
-                                                <a href={repoWebUrl} target="_blank" rel="noreferrer" class="repo-link">
-                                                    <MaterialIcon iconName="open_in_new" size="0.9rem" />
-                                                    {data.serverAbout?.repository || "Source Code"}
-                                                </a>
-                                            </span>
-                                        </div>
-                                    {/if}
-                                    <div class="detail-row">
-                                        <span class="label">Location</span>
-                                        <span class="value font-mono">
-                                            {#if branchUrl}
-                                                <a href={branchUrl} target="_blank" rel="noreferrer" class="repo-link">
-                                                    {data.serverAbout?.sourceRef || "Unknown"}
-                                                </a>
-                                            {:else}
-                                                {data.serverAbout?.sourceRef || "Unknown"}
-                                            {/if}
-                                            <span class="at-separator">@</span>
-                                            {#if commitUrl}
-                                                <a href={commitUrl} target="_blank" rel="noreferrer" class="repo-link">
-                                                    {data.serverAbout?.sourceCommit
-                                                        ? data.serverAbout.sourceCommit.substring(0, 7)
-                                                        : "Unknown"}
-                                                </a>
-                                            {:else}
-                                                {data.serverAbout?.sourceCommit
-                                                    ? data.serverAbout.sourceCommit.substring(0, 7)
-                                                    : "Unknown"}
-                                            {/if}
-                                        </span>
-                                    </div>
-                                </div>
-
-                                <div class="details-group">
-                                    <h5>Runtime</h5>
-                                    <div class="detail-row">
-                                        <span class="label">Go Runtime</span>
-                                        <span class="value">{data.serverAbout?.go || "Unknown"}</span>
-                                    </div>
-                                    <div class="detail-row">
-                                        <span class="label">libvips</span>
-                                        <span class="value font-mono">v{data.serverAbout?.libvips || "Unknown"}</span>
-                                    </div>
-                                    <div class="detail-row">
-                                        <span class="label">OS / Arch</span>
-                                        <span class="value"
-                                            >{data.serverAbout?.os || "Unknown"} / {data.serverAbout?.architecture ||
-                                                "Unknown"}</span
-                                        >
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
+                <div class="detail-row">
+                    <span class="label">OS / Arch</span>
+                    <span class="value"
+                        >{data.serverAbout?.os || "Unknown"} / {data.serverAbout?.architecture || "Unknown"}</span
+                    >
                 </div>
             </div>
         </div>
+    </div>
+{/snippet}
+
+<AdminRouteShell heading="Dashboard" description="System overview and metrics" actions={headerActions}>
+    <div class="dashboard-container">
+        <!-- Primary metrics strip -->
+        <div class="metrics-strip">
+            {@render statCard({
+                icon: "image",
+                iconClass: "images",
+                value: databaseInfo.images,
+                label: "Total Images",
+                href: "/photos"
+            })}
+            {@render statCard({
+                icon: "group",
+                iconClass: "users",
+                value: databaseInfo.users,
+                label: "Total Users",
+                href: "/admin/users"
+            })}
+            {@render statCard({
+                icon: "schedule",
+                iconClass: "uptime",
+                value: formattedLiveUptime,
+                label: "System Uptime",
+                id: "uptime-value",
+                mono: true
+            })}
+            {@render statCard({
+                icon: "hub",
+                iconClass: "connections",
+                value: systemInfo.activeConnections,
+                label: "Active Clients",
+                href: "/admin/events"
+            })}
+        </div>
+
+        <!-- Secondary 3-column grid -->
+        <div class="dashboard-grid">
+            {@render card({
+                icon: "monitor_heart",
+                iconClass: "goroutines",
+                title: "System Health",
+                subtitle: "Runtime & database metrics",
+                href: "/admin/jobs",
+                body: healthBody
+            })}
+            {@render card({
+                icon: "hard_drive",
+                iconClass: "storage",
+                title: "Storage",
+                subtitle: "Disk space allocation",
+                href: "/admin/storage",
+                body: storageBody
+            })}
+            {@render card({
+                icon: "memory",
+                iconClass: "cache",
+                title: "Cache",
+                subtitle: "Optimized image store",
+                href: "/admin/cache",
+                body: cacheBody
+            })}
+        </div>
+
+        <!-- Server Information — full width -->
+        {@render card({
+            icon: "dns",
+            iconClass: "version",
+            title: "Server Information",
+            subtitle: "Environment & Build",
+            body: serverInfoBody
+        })}
     </div>
 </AdminRouteShell>
 
@@ -410,49 +407,33 @@
         }
     }
 
-    .dashboard-grid {
+    .metrics-strip {
         display: grid;
-        grid-template-columns: 2fr 1fr;
-        gap: var(--viz-spacing-lg);
-        align-items: start;
+        grid-template-columns: repeat(4, 1fr);
+        gap: var(--viz-spacing-md);
 
-        @media (max-width: 1024px) {
+        @media (max-width: 900px) {
+            grid-template-columns: repeat(2, 1fr);
+        }
+
+        @media (max-width: 480px) {
             grid-template-columns: 1fr;
-            gap: var(--viz-spacing-lg);
         }
     }
 
-    .dashboard-main-column {
-        display: flex;
-        flex-direction: column;
-        gap: var(--viz-spacing-xl);
-    }
-
-    .dashboard-sidebar-column {
-        display: flex;
-        flex-direction: column;
-        gap: var(--viz-spacing-lg);
-    }
-
-    .section {
-        display: flex;
-        flex-direction: column;
-        gap: var(--viz-spacing-md);
-    }
-
-    .section-title {
-        font-size: var(--viz-font-size-xl);
-        font-weight: 600;
-        color: var(--viz-text-color);
-        margin: 0;
-        padding-left: var(--viz-spacing-sm);
-        border-left: 2px solid var(--viz-primary);
-    }
-
-    .stats-grid {
+    .dashboard-grid {
         display: grid;
-        grid-template-columns: repeat(auto-fit, minmax(13rem, 1fr));
-        gap: var(--viz-spacing-md);
+        grid-template-columns: repeat(3, 1fr);
+        gap: var(--viz-spacing-lg);
+        align-items: stretch;
+
+        @media (max-width: 1024px) {
+            grid-template-columns: 1fr 1fr;
+        }
+
+        @media (max-width: 640px) {
+            grid-template-columns: 1fr;
+        }
     }
 
     .stat-card {
@@ -638,6 +619,34 @@
             justify-content: space-between;
             align-items: center;
             width: 100%;
+        }
+    }
+
+    .metric-row {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        padding: var(--viz-spacing-xs) 0;
+        border-bottom: 1px solid var(--viz-85);
+        font-size: var(--viz-font-size-lg);
+
+        &:last-child {
+            border-bottom: none;
+        }
+
+        .metric-label {
+            color: var(--viz-40);
+            font-weight: 500;
+        }
+
+        .metric-value {
+            color: var(--viz-text-color);
+            font-weight: 600;
+
+            &.font-mono {
+                font-family: var(--viz-mono-font);
+                letter-spacing: -0.04em;
+            }
         }
     }
 
