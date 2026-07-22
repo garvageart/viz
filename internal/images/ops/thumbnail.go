@@ -6,7 +6,7 @@ import (
 
 	libvips "viz/internal/images/ops/vips"
 
-	"github.com/galdor/go-thumbhash"
+	"go.n16f.net/thumbhash"
 )
 
 // CreateThumbnailWithSize creates a thumbnail using libvips from the input image bytes.
