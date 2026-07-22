@@ -33,14 +33,14 @@ require (
 
 require (
 	github.com/rogpeppe/go-internal v1.14.1 // indirect
-	golang.org/x/image v0.32.0 // indirect
+	golang.org/x/image v0.44.0 // indirect
 )
 
 require (
 	github.com/FlavioCFOliveira/GoMetadata v1.3.0
 	github.com/aymerick/raymond v2.0.2+incompatible // indirect
 	github.com/davecgh/go-spew v1.1.2-0.20180830191138-d8f796af33cc // indirect
-	github.com/mattn/go-sqlite3 v1.14.47 // indirect
+	github.com/mattn/go-sqlite3 v1.14.48 // indirect
 	github.com/mfridman/interpolate v0.0.2 // indirect
 	github.com/pmezard/go-difflib v1.0.1-0.20181226105442-5d4384ee4fb2 // indirect
 	github.com/samber/slog-common v0.22.0 // indirect
