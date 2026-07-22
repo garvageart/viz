@@ -6,6 +6,7 @@
     import ImageLabelViewer from "../image-tools/ImageLabelViewer.svelte";
     import IconButton from "$lib/components/ui/IconButton.svelte";
     import type { MouseEventHandler } from "svelte/elements";
+    import Badge from "$lib/components/ui/Badge.svelte";
 
     interface Props {
         asset: ImageAsset;
@@ -36,6 +37,7 @@
         if (size !== undefined && size !== null) {
             return formatBytes(size);
         }
+
         return null;
     });
 
@@ -44,30 +46,78 @@
         if (!exif?.model) {
             return null;
         }
+
         const make = exif.make || "";
         if (make && exif.model.startsWith(make)) {
             return exif.model.replace(new RegExp(`^${make}\\s+`, "i"), "");
         }
+
         return exif.model;
     });
 
-    let apertureVal = $derived(asset.exif?.f_number ?? asset.exif?.aperture);
+    let rawAperture = $derived(asset.exif?.f_number ?? asset.exif?.aperture);
+    let apertureVal = $derived.by(() => {
+        if (rawAperture === undefined || rawAperture === null) {
+            return null;
+        }
+        const str = String(rawAperture).trim();
+        if (str.startsWith("f/") || str.startsWith("ƒ/")) {
+            return str;
+        }
+
+        return `f/${str}`;
+    });
+
+    let focalLengthVal = $derived.by(() => {
+        const val = asset.exif?.focal_length;
+        if (!val) {
+            return null;
+        }
+
+        const str = String(val).trim();
+        if (str.endsWith("mm") || str.endsWith("MM")) {
+            return str;
+        }
+
+        return `${str}mm`;
+    });
+
+    let shutterSpeedVal = $derived.by(() => {
+        const val = asset.exif?.exposure_time;
+        if (!val) {
+            return null;
+        }
+
+        return String(val).trim();
+    });
+
+    let isoVal = $derived.by(() => {
+        const val = asset.exif?.iso;
+        if (val === undefined || val === null) {
+            return null;
+        }
+
+        const str = String(val).trim();
+        if (str.toUpperCase().startsWith("ISO")) {
+            return str.toUpperCase();
+        }
+
+        return `ISO ${str}`;
+    });
 
     let hasExif = $derived(
         !!(
             asset.exif?.make ||
             asset.exif?.model ||
             asset.exif?.lens_model ||
-            asset.exif?.focal_length ||
+            focalLengthVal ||
             apertureVal ||
-            asset.exif?.exposure_time ||
-            asset.exif?.iso
+            shutterSpeedVal ||
+            isoVal
         )
     );
 
-    let hasExposure = $derived(
-        !!(asset.exif?.focal_length || apertureVal || asset.exif?.exposure_time || asset.exif?.iso)
-    );
+    let hasExposure = $derived(!!(focalLengthVal || apertureVal || shutterSpeedVal || isoVal));
 </script>
 
 <div class="photo-tooltip-content">
@@ -89,21 +139,19 @@
     {#if asset.private || asset.favourited || fileExtension}
         <div class="metadata-row">
             {#if asset.private}
-                <div class="badge private-badge" title="Private">
-                    <MaterialIcon iconName="lock" size="0.8rem" />
+                <Badge variant="error" iconName="lock" iconSize="0.8rem" title="Private">
                     <span>Private</span>
-                </div>
+                </Badge>
             {/if}
             {#if asset.favourited}
-                <div class="badge favorite-badge" title="Favourited">
-                    <MaterialIcon iconName="star" fill={true} size="0.8rem" />
+                <Badge variant="warning" iconName="star" iconFill={true} iconSize="0.8rem" title="Favourited">
                     <span>Favourited</span>
-                </div>
+                </Badge>
             {/if}
             {#if fileExtension}
-                <div class="badge ext-badge">
+                <Badge variant="default">
                     <span>{fileExtension}</span>
-                </div>
+                </Badge>
             {/if}
         </div>
     {/if}
@@ -172,24 +220,28 @@
 
             {#if hasExposure}
                 <div class="exif-dials">
-                    {#if asset.exif?.focal_length}
+                    {#if focalLengthVal}
                         <div class="dial-item" title="Focal Length">
-                            <span class="dial-value font-mono">{asset.exif.focal_length}</span>
+                            <span class="dial-value font-mono">{focalLengthVal}</span>
+                            <span class="dial-label">Focal</span>
                         </div>
                     {/if}
                     {#if apertureVal}
                         <div class="dial-item" title="Aperture">
                             <span class="dial-value font-mono">{apertureVal}</span>
+                            <span class="dial-label">Aperture</span>
                         </div>
                     {/if}
-                    {#if asset.exif?.exposure_time}
+                    {#if shutterSpeedVal}
                         <div class="dial-item" title="Shutter Speed">
-                            <span class="dial-value font-mono">{asset.exif.exposure_time}</span>
+                            <span class="dial-value font-mono">{shutterSpeedVal}</span>
+                            <span class="dial-label">Shutter</span>
                         </div>
                     {/if}
-                    {#if asset.exif?.iso}
+                    {#if isoVal}
                         <div class="dial-item" title="ISO">
-                            <span class="dial-value font-mono">ISO {asset.exif.iso}</span>
+                            <span class="dial-value font-mono">{isoVal}</span>
+                            <span class="dial-label">ISO</span>
                         </div>
                     {/if}
                 </div>
@@ -209,7 +261,7 @@
         display: flex;
         flex-direction: column;
         text-align: left;
-        width: 20rem;
+        width: 25rem;
         background-color: var(--viz-100);
         padding: var(--viz-spacing-std);
         gap: var(--viz-spacing-md);
@@ -221,33 +273,6 @@
         flex-wrap: wrap;
         gap: var(--viz-spacing-xs);
         margin-top: calc(-1 * var(--viz-spacing-xs));
-    }
-
-    .badge {
-        display: inline-flex;
-        align-items: center;
-        justify-content: center;
-        background-color: var(--viz-80);
-        color: var(--viz-text-color);
-        padding: var(--viz-spacing-xxs) var(--viz-spacing-xs);
-        border-radius: var(--viz-border-radius-sm);
-        font-size: var(--viz-font-size-sm);
-        font-family: var(--viz-mono-font);
-        font-weight: 600;
-        gap: var(--viz-spacing-xs);
-        border: var(--viz-border-thin);
-
-        &.favorite-badge {
-            background-color: color-mix(in srgb, var(--viz-warning-color) 15%, var(--viz-95));
-            border-color: color-mix(in srgb, var(--viz-warning-color) 35%, var(--viz-80));
-            color: var(--viz-warning-color);
-        }
-
-        &.private-badge {
-            background-color: color-mix(in srgb, var(--viz-error-color) 15%, var(--viz-95));
-            border-color: color-mix(in srgb, var(--viz-error-color) 35%, var(--viz-80));
-            color: var(--viz-error-color);
-        }
     }
 
     .tooltip-row {
@@ -357,25 +382,26 @@
     }
 
     .exif-dials {
-        display: flex;
-        justify-content: space-between;
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(0, 1fr));
         background-color: var(--viz-95);
-        border: var(--viz-border-thin);
+        border: 1px solid var(--viz-80);
         border-radius: var(--viz-border-radius-md);
-        padding: var(--viz-spacing-sm);
-        gap: var(--viz-spacing-xs);
+        padding: var(--viz-spacing-xs) 0;
         margin-top: var(--viz-spacing-xs);
+        box-sizing: border-box;
     }
 
     .dial-item {
-        flex: 1;
         display: flex;
         flex-direction: column;
         align-items: center;
         justify-content: center;
         text-align: center;
-        border-right: var(--viz-border-thin);
-        padding: var(--viz-spacing-xs);
+        padding: var(--viz-spacing-xs) var(--viz-spacing-xxs);
+        border-right: 1px solid var(--viz-85);
+        min-width: 0;
+        box-sizing: border-box;
 
         &:last-child {
             border-right: none;
@@ -387,5 +413,18 @@
         font-size: var(--viz-font-size-sm);
         color: var(--viz-text-color);
         font-weight: 600;
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        max-width: 100%;
+        line-height: 1.2;
+    }
+
+    .dial-label {
+        font-size: var(--viz-font-size-xs);
+        color: var(--viz-40);
+        font-weight: 500;
+        margin-top: 2px;
+        line-height: 1;
     }
 </style>
