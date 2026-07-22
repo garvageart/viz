@@ -10,6 +10,7 @@ import {
 } from "$lib/api";
 import { SettingNames } from "$lib/components/settings/names";
 import type { MenuItem } from "$lib/context-menu/types";
+import { DbSettings } from "$lib/db/settings";
 import type { AssetGridView, AssetSort } from "$lib/types/asset";
 import type { DownloadFile, UploadImage } from "$lib/upload/asset.svelte";
 import { VizCookieStorage, VizLocalStorage } from "$lib/utils/misc";
@@ -182,16 +183,35 @@ class ViewSettingsState {
 
 export const viewSettings = new ViewSettingsState();
 
-export let upload = $state({
-    files: [] as UploadImage[],
-    concurrency: 2,
-    stats: {
+class UploadState {
+    private storage = new DbSettings<number>("upload.concurrency");
+
+    files: UploadImage[] = $state([]);
+    concurrency: number = $state(2);
+    stats = $state({
         errors: 0,
         duplicates: 0,
         success: 0,
         total: 0
+    });
+
+    constructor() {
+        this.storage.load().then((stored) => {
+            if (stored !== undefined) {
+                this.concurrency = stored;
+            }
+
+            $effect.root(() => {
+                $effect(() => {
+                    this.storage.save(this.concurrency);
+                });
+            });
+        });
     }
-});
+}
+
+export const uploadState = new UploadState();
+export let upload = uploadState;
 
 export let download = $state({
     files: [] as DownloadFile[],
