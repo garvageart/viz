@@ -205,6 +205,10 @@ export function formatSeconds(totalSeconds?: number): string | null {
         .trim();
 }
 
+export function getImageMegapixels(image: ImageAsset) {
+    return Math.floor((image.width * image.height) / 1_000_000);
+}
+
 export type ExportFormats = "webp" | "png" | "jpg" | "jpeg" | "avif" | "heif" | "tiff";
 export type BitDepths = 8 | 10 | 12 | 16;
 export type ResizeMode = "none" | "width" | "height" | "long-edge" | "short-edge" | "dimensions";
