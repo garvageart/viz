@@ -22,6 +22,7 @@
     import Dropdown from "../context-menus/Dropdown.svelte";
     import Button from "../ui/Button.svelte";
     import type { MenuItem } from "$lib/context-menu/types";
+    import LoadingSpinner from "$lib/components/ui/LoadingSpinner.svelte";
 
     interface Props {
         id: string; // modal ID from modalsManager
@@ -217,7 +218,7 @@
 <div class="add-photos-modal-container">
     {#if isLoading && !initialDataLoaded}
         <div class="loading-state">
-            <span class="loading-spinner"></span>
+            <LoadingSpinner />
             <span class="loading-text">Loading library timeline...</span>
         </div>
     {:else}
@@ -354,7 +355,6 @@
         min-height: 0;
         color: var(--viz-text-color);
         box-sizing: border-box;
-        background-color: var(--viz-100);
     }
 
     .loading-state {
@@ -365,15 +365,6 @@
         flex: 1;
         gap: var(--viz-spacing-std);
         color: var(--viz-40);
-
-        .loading-spinner {
-            width: 2rem;
-            height: 2rem;
-            border: 2px solid var(--viz-80);
-            border-top-color: var(--viz-primary);
-            border-radius: 50%;
-            animation: spin 0.8s linear infinite;
-        }
 
         .loading-text {
             font-family: var(--viz-mono-font);
