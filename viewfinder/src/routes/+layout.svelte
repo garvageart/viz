@@ -1,4 +1,5 @@
 <script lang="ts">
+    import { updated } from "$app/stores";
     import { dev } from "$app/environment";
     import { afterNavigate, beforeNavigate } from "$app/navigation";
     import { fade } from "svelte/transition";
@@ -60,6 +61,17 @@
     });
 
     $effect(() => {
+        const handlePreloadError = (e: Event) => {
+            e.preventDefault();
+            window.location.reload();
+        };
+        window.addEventListener("vite:preloadError", handlePreloadError);
+        return () => {
+            window.removeEventListener("vite:preloadError", handlePreloadError);
+        };
+    });
+
+    $effect(() => {
         debugState.storage.set(debugState.value);
     });
 
@@ -73,8 +85,11 @@
         toggleFullscreen();
     });
 
-    beforeNavigate(() => {
+    beforeNavigate(({ to, willUnload }) => {
         loadingState.startNavigation();
+        if ($updated && !willUnload && to) {
+            location.href = to.url.href;
+        }
     });
 
     afterNavigate(() => {

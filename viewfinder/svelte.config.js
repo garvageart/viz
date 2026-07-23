@@ -34,7 +34,10 @@ const config = {
         adapter: adapter({
             pages: "../build/viewfinder",
             fallback: "index.html"
-        })
+        }),
+        version: {
+            pollInterval: 60000
+        }
     }
 };
 

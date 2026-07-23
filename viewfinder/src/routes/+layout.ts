@@ -16,7 +16,7 @@ export async function load({ url, fetch }) {
     if (!system.fetched) {
         system.loading = true;
 
-        if (browser && window.__VIZ_CONFIG__) {
+        if (browser && window.__VIZ_CONFIG__?.system) {
             system.data = window.__VIZ_CONFIG__.system;
             system.fetched = true;
             // Optional: clear it so we don't rely on stale data later if we ever re-fetch?
