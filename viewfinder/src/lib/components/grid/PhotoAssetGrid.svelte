@@ -1702,7 +1702,7 @@
             border-left: 1px solid var(--viz-60);
         }
 
-        @container (max-width: 10rem) {
+        @container (max-width: 5rem) {
             padding: var(--viz-spacing-lg);
             font-size: var(--viz-font-size-std);
             line-height: 1.15;
