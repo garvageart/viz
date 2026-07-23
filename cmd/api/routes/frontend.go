@@ -92,7 +92,7 @@ func (h *FrontendHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	// Returning 404 Not Found prevents the browser from receiving HTML for missing JS/CSS chunks,
 	// allowing Vite and SvelteKit to cleanly trigger chunk preload error recovery (auto-reload).
 	hasExtension := filepath.Ext(cleanPath) != ""
-	if strings.HasPrefix(r.URL.Path, "/_app/") || hasExtension {
+	if cleanPath != "index.html" && cleanPath != "." && (strings.HasPrefix(r.URL.Path, "/_app/") || hasExtension) {
 		http.Error(w, "Asset Not Found", http.StatusNotFound)
 		return
 	}
