@@ -2,7 +2,6 @@ package routes
 
 import (
 	"bytes"
-	"encoding/json"
 	"fmt"
 	"log/slog"
 	"net/http"
@@ -80,7 +79,21 @@ func (h *FrontendHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 
 	// If it's a static file (and not index.html), serve it directly
 	if isStaticFile && cleanPath != "index.html" && cleanPath != "." {
+		if strings.HasPrefix(r.URL.Path, "/_app/immutable/") {
+			w.Header().Set("Cache-Control", "public, max-age=31536000, immutable")
+		} else if strings.HasPrefix(r.URL.Path, "/_app/") {
+			w.Header().Set("Cache-Control", "public, max-age=3600")
+		}
 		http.ServeFile(w, r, fullPath)
+		return
+	}
+
+	// Any path with a file extension or under /_app/ that does not exist on disk is a missing asset.
+	// Returning 404 Not Found prevents the browser from receiving HTML for missing JS/CSS chunks,
+	// allowing Vite and SvelteKit to cleanly trigger chunk preload error recovery (auto-reload).
+	hasExtension := filepath.Ext(cleanPath) != ""
+	if strings.HasPrefix(r.URL.Path, "/_app/") || hasExtension {
+		http.Error(w, "Asset Not Found", http.StatusNotFound)
 		return
 	}
 
@@ -148,21 +161,9 @@ func (h *FrontendHandler) serveIndex(w http.ResponseWriter, r *http.Request) {
 	responseHtml := bytes.Replace(indexData, []byte(ThemeStylePlaceholder), []byte(criticalCss), 1)
 	responseHtml = bytes.Replace(responseHtml, []byte(ThemeAttrPlaceholder), []byte(themeAttr), 1)
 
-	// Inject System Status
-	status, err := GetSystemStatus(h.DB, h.Logger, r)
-	configJson := "{}"
-	if err == nil {
-		if b, err := json.Marshal(&status); err == nil {
-			configJson = string(b)
-		}
-	} else {
-		h.Logger.Error("failed to get system status for injection", slog.Any("error", err))
-	}
-
-	configScript := fmt.Sprintf("<script>window.__VIZ_CONFIG__ = window.__VIZ_CONFIG__ || {}; window.__VIZ_CONFIG__.system = %s;</script>", configJson)
-	// Inject before </head>. If </head> is missing (unlikely), it won't inject, which is acceptable fallback.
-	responseHtml = bytes.Replace(responseHtml, []byte("</head>"), []byte(configScript+"</head>"), 1)
-
+	w.Header().Set("Cache-Control", "no-cache, no-store, must-revalidate")
+	w.Header().Set("Pragma", "no-cache")
+	w.Header().Set("Expires", "0")
 	w.Header().Set("Content-Type", "text/html; charset=utf-8")
 	w.Write(responseHtml)
 }
