@@ -240,13 +240,13 @@ async function main() {
         const pushConfirm = await askQuestion("\nPush changes to origin now? [y/N]: ");
         if (pushConfirm.toLowerCase() === "y") {
             console.log("\nPushing release commit and tag atomically to origin...");
-            execSync(`git push origin ${currentBranch} v${nextVersion}`, { stdio: "inherit" });
+            execSync(`git push --atomic origin ${currentBranch} v${nextVersion}`, { stdio: "inherit" });
             console.log("\n==================================================");
             console.log("Push complete!");
             console.log("==================================================");
         } else {
             console.log("\nNext steps:");
-            console.log(`1. Run: git push origin ${currentBranch} v${nextVersion}`);
+            console.log(`1. Run: git push --atomic origin ${currentBranch} v${nextVersion}`);
             console.log("==================================================");
         }
     } finally {
