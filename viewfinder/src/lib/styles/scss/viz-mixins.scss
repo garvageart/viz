@@ -1,5 +1,6 @@
 @use "sass:color";
 @use "sass:string";
+@use "viz-engine" as engine;
 
 @function str-replace($string, $search, $replace: "") {
     $index: string.index($string, $search);
@@ -57,33 +58,88 @@
     $flip-bg-pct: 0%,
     $flip-text-color: null,
     $flip-text-pct: 0%,
-    $suffix: ""
+    $suffix: "",
+    $direct-light: false
 ) {
     $bg: $bg-color;
     $base: $base-color;
     $text: $text-color;
 
-    // If flip colors are provided, tint the originals by the flip percentage.
-    // We pass the flip color as the FIRST argument so `$flip-*-pct` represents
-    // how much of the flip color to include.
-    @if $flip-bg-color != null {
-        $bg: color.mix($flip-bg-color, $bg, $flip-bg-pct);
-        $base: color.mix($flip-bg-color, $base, $flip-bg-pct);
-    }
+    // If direct-light is true, the colors are already light-mode values.
+    // Skip flip and inversion; use light-mode border/hover mixing.
+    @if not $direct-light {
+        @if $flip-bg-color != null {
+            $bg: color.mix($flip-bg-color, $bg, $flip-bg-pct);
+            $base: color.mix($flip-bg-color, $base, $flip-bg-pct);
+        }
 
-    @if $flip-text-color != null {
-        $text: color.mix($flip-text-color, $text, $flip-text-pct);
-    }
+        @if $flip-text-color != null {
+            $text: color.mix($flip-text-color, $text, $flip-text-pct);
+        }
 
-    @if $is-light-theme {
-        $bg: color.change($bg, $lightness: 100% - color.channel($bg, "lightness", $space: hsl), $space: hsl);
-        $base: color.change($base, $lightness: 100% - color.channel($base, "lightness", $space: hsl), $space: hsl);
-        $text: color.change($text, $lightness: 100% - color.channel($text, "lightness", $space: hsl), $space: hsl);
+        @if $is-light-theme {
+            $bg: color.change($bg, $lightness: 100% - color.channel($bg, "lightness", $space: hsl), $space: hsl);
+            $base: color.change($base, $lightness: 100% - color.channel($base, "lightness", $space: hsl), $space: hsl);
+            $text: color.change($text, $lightness: 100% - color.channel($text, "lightness", $space: hsl), $space: hsl);
+        }
     }
 
     --viz-bg-color#{$suffix}: #{$bg};
     @if $suffix == "" {
+        $border-color: engine.oklch-lighten($base, 10);
+        $hover-color: engine.oklch-lighten($base, 14);
+        $popover-color: engine.oklch-lighten($bg, 6);
+        $input-color: engine.oklch-lighten($bg, 2);
+        $border-strong-color: engine.oklch-lighten($base, 20);
+        @if $is-light-theme or $direct-light {
+            $border-color: engine.oklch-darken($base, 20);
+            $hover-color: engine.oklch-darken($bg, 18);
+            $popover-color: engine.oklch-darken($bg, 8);
+            $input-color: engine.oklch-darken($bg, 3);
+            $border-strong-color: engine.oklch-darken($base, 30);
+        }
         --viz-text-color: #{$text};
+        --viz-border-subtle: #{$border-color};
+        --viz-border-strong: #{$border-strong-color};
+        --viz-border-thin: 1px solid var(--viz-border-subtle);
+        --viz-surface-base: var(--viz-bg-color);
+        --viz-surface-panel: var(--viz-header-bg, var(--viz-100));
+        --viz-surface-card: var(--viz-card-bg, var(--viz-95));
+        --viz-surface-hover: #{$hover-color};
+        --viz-surface-popover: #{$popover-color};
+        --viz-surface-input: #{$input-color};
+        --viz-text-primary: var(--viz-text-color);
+        --viz-text-secondary: var(--viz-40);
+        --viz-text-muted: var(--viz-30);
+
+        --viz-error-color: #ef4444;
+        --viz-warning-color: #d97706;
+        --viz-success-color: #059669;
+        --viz-info-color: #2563eb;
+
+        $status-roles: (
+            "error": var(--viz-error-color),
+            "warning": var(--viz-warning-color),
+            "success": var(--viz-success-color),
+            "info": var(--viz-info-color),
+            "primary": var(--viz-primary)
+        );
+
+        @each $role, $color in $status-roles {
+            @if $is-light-theme or $direct-light {
+                --viz-status-bg-#{$role}: #{$color};
+                --viz-status-border-#{$role}: color-mix(in srgb, #{$color} 80%, black);
+                --viz-status-hover-#{$role}: color-mix(in srgb, #{$color} 90%, black);
+                --viz-status-hover-border-#{$role}: color-mix(in srgb, #{$color} 60%, black);
+                --viz-status-text-#{$role}: #ffffff;
+            } @else {
+                --viz-status-bg-#{$role}: color-mix(in srgb, #{$color} 14%, var(--viz-surface-card));
+                --viz-status-border-#{$role}: color-mix(in srgb, #{$color} 40%, var(--viz-border-subtle));
+                --viz-status-hover-#{$role}: color-mix(in srgb, #{$color} 24%, var(--viz-surface-card));
+                --viz-status-hover-border-#{$role}: color-mix(in srgb, #{$color} 65%, black);
+                --viz-status-text-#{$role}: #{$color};
+            }
+        }
     }
 
     // Apply scrollbar arrows using the calculated text color
@@ -91,16 +147,30 @@
 
     @for $j from 0 through 19 {
         $level: 100 - $j * 5;
-        $mixPct: $j * 5%;
 
-        @if $is-light-theme {
-            // Light theme: viz-100 is the (lightness-inverted) base; lower
-            // levels should be progressively darker by mixing with black.
-            --viz-#{$level}#{$suffix}: #{color.mix(black, $base, $mixPct)};
+        @if $is-light-theme or $direct-light {
+            --viz-#{$level}#{$suffix}: #{engine.oklch-step($base, $j, true)};
         } @else {
-            // Dark theme: viz-100 is the provided base; lower levels should
-            // be progressively lighter by mixing with white.
-            --viz-#{$level}#{$suffix}: #{color.mix(white, $base, $mixPct)};
+            --viz-#{$level}#{$suffix}: #{engine.oklch-step($base, $j)};
+        }
+    }
+}
+
+/// Reusable status tint mixin for buttons, badges, icons, and banners.
+@mixin status-tint($role, $interactive: false) {
+    background-color: var(--viz-status-bg-#{$role});
+    border: 1px solid var(--viz-status-border-#{$role});
+    color: var(--viz-status-text-#{$role});
+
+    :global(.viz-material-icon),
+    :global(svg) {
+        color: var(--viz-status-text-#{$role});
+    }
+
+    @if $interactive {
+        &:hover {
+            background-color: var(--viz-status-hover-#{$role});
+            border-color: var(--viz-status-hover-border-#{$role});
         }
     }
 }
@@ -121,16 +191,104 @@
 }
 
 /// Global theme bootstrapper. Register all color modes and media queries.
+@function invert-lightness($color) {
+    @return color.change($color, $lightness: 100% - color.channel($color, "lightness", $space: hsl), $space: hsl);
+}
+
 @mixin register-theme-core(
     $bg-color,
     $text-color,
     $base-color,
     $primary-color,
+    $secondary-color: null,
+    $accent-color: null,
+    $header-bg: null,
+    $sidebar-bg: null,
+    $card-bg: null,
     $flip-bg-color: null,
     $flip-bg-pct: 0%,
     $flip-text-color: null,
-    $flip-text-pct: 0%
+    $flip-text-pct: 0%,
+    $light-bg: null,
+    $light-text: null,
+    $light-base: null,
+    $light-primary: null,
+    $light-secondary: null,
+    $light-accent: null,
+    $light-header-bg: null,
+    $light-sidebar-bg: null,
+    $light-card-bg: null
 ) {
+    $sec: $secondary-color;
+    @if $sec == null {
+        $sec: color.adjust($primary-color, $hue: 30deg);
+    }
+    $acc: $accent-color;
+    @if $acc == null {
+        $acc: color.adjust($primary-color, $hue: -30deg);
+    }
+    $hdr: $header-bg;
+    @if $hdr == null {
+        $hdr: $bg-color;
+    }
+    $sdb: $sidebar-bg;
+    @if $sdb == null {
+        $sdb: $base-color;
+    }
+    $crd: $card-bg;
+    @if $crd == null {
+        $crd: color.mix($base-color, $bg-color, 90%);
+    }
+
+    $has-light-override: $light-bg != null;
+
+    $l-bg: null;
+    @if $has-light-override {
+        $l-bg: $light-bg;
+    } @else {
+        $l-bg: invert-lightness($bg-color);
+    }
+
+    $l-text: $light-text;
+    @if $l-text == null {
+        $l-text: invert-lightness($text-color);
+    }
+
+    $l-base: $light-base;
+    @if $l-base == null {
+        $l-base: invert-lightness($base-color);
+    }
+
+    $l-primary: $light-primary;
+    @if $l-primary == null {
+        $l-primary: $primary-color;
+    }
+
+    $l-sec: $light-secondary;
+    @if $l-sec == null {
+        $l-sec: $sec;
+    }
+
+    $l-acc: $light-accent;
+    @if $l-acc == null {
+        $l-acc: $acc;
+    }
+
+    $l-hdr: $light-header-bg;
+    @if $l-hdr == null {
+        $l-hdr: invert-lightness($hdr);
+    }
+
+    $l-sdb: $light-sidebar-bg;
+    @if $l-sdb == null {
+        $l-sdb: invert-lightness($sdb);
+    }
+
+    $l-crd: $light-card-bg;
+    @if $l-crd == null {
+        $l-crd: invert-lightness($crd);
+    }
+
     :root {
         --viz-bg-color: #{$bg-color};
         --viz-text-color: #{$text-color};
@@ -141,6 +299,28 @@
                 $space: hsl
             )};
         --viz-primary: #{$primary-color};
+        --viz-secondary: #{$sec};
+        --viz-accent: #{$acc};
+        --viz-header-bg: #{$hdr};
+        --viz-sidebar-bg: #{$sdb};
+        --viz-card-bg: #{$crd};
+
+        --viz-surface-base: #{$bg-color};
+        --viz-surface-panel: #{$hdr};
+        --viz-surface-card: #{$crd};
+        --viz-surface-hover: #{engine.oklch-lighten($base-color, 8)};
+        --viz-surface-popover: #{engine.oklch-lighten($bg-color, 6)};
+        --viz-surface-input: #{engine.oklch-lighten($bg-color, 2)};
+        --viz-border-subtle: #{engine.oklch-lighten($base-color, 10)};
+        --viz-border-strong: #{engine.oklch-lighten($base-color, 20)};
+        --viz-text-primary: #{$text-color};
+        --viz-text-secondary: #{engine.oklch-lighten($base-color, 30)};
+        --viz-text-muted: #{engine.oklch-lighten($base-color, 40)};
+
+        --viz-primary-hover: #{engine.oklch-lighten($primary-color, 6)};
+        --viz-primary-active: #{engine.oklch-darken($primary-color, 6)};
+        --viz-secondary-hover: #{engine.oklch-lighten($sec, 6)};
+        --viz-accent-hover: #{engine.oklch-lighten($acc, 6)};
 
         @include generate-viz-colors(
             $bg-color: $bg-color,
@@ -166,20 +346,41 @@
     $light-theme-sel: ':root[data-theme="light"], [data-theme="light"]';
 
     #{$light-theme-sel} {
-        @include generate-viz-colors(
-            $bg-color: $bg-color,
-            $text-color: $text-color,
-            $base-color: $base-color,
-            $is-light-theme: true,
-            $flip-bg-color: $flip-bg-color,
-            $flip-bg-pct: $flip-bg-pct,
-            $flip-text-color: $flip-text-color,
-            $flip-text-pct: $flip-text-pct
-        );
+        --viz-header-bg: #{$l-hdr};
+        --viz-sidebar-bg: #{$l-sdb};
+        --viz-card-bg: #{$l-crd};
+
+        @if $has-light-override {
+            @include generate-viz-colors(
+                $bg-color: $l-bg,
+                $text-color: $l-text,
+                $base-color: $l-base,
+                $is-light-theme: false,
+                $direct-light: true
+            );
+            --viz-primary: #{$l-primary};
+            --viz-secondary: #{$l-sec};
+            --viz-accent: #{$l-acc};
+        } @else {
+            @include generate-viz-colors(
+                $bg-color: $bg-color,
+                $text-color: $text-color,
+                $base-color: $base-color,
+                $is-light-theme: true,
+                $flip-bg-color: $flip-bg-color,
+                $flip-bg-pct: $flip-bg-pct,
+                $flip-text-color: $flip-text-color,
+                $flip-text-pct: $flip-text-pct
+            );
+        }
     }
 
     :root[data-theme="dark"],
     [data-theme="dark"] {
+        --viz-header-bg: #{$hdr};
+        --viz-sidebar-bg: #{$sdb};
+        --viz-card-bg: #{$crd};
+
         @include generate-viz-colors(
             $bg-color: $bg-color,
             $text-color: $text-color,
@@ -190,6 +391,10 @@
 
     @media (prefers-color-scheme: dark) {
         :root:not([data-theme]) {
+            --viz-header-bg: #{$hdr};
+            --viz-sidebar-bg: #{$sdb};
+            --viz-card-bg: #{$crd};
+
             @include generate-viz-colors(
                 $bg-color: $bg-color,
                 $text-color: $text-color,
@@ -201,16 +406,33 @@
 
     @media (prefers-color-scheme: light) {
         :root:not([data-theme]) {
-            @include generate-viz-colors(
-                $bg-color: $bg-color,
-                $text-color: $text-color,
-                $base-color: $base-color,
-                $is-light-theme: true,
-                $flip-bg-color: $flip-bg-color,
-                $flip-bg-pct: $flip-bg-pct,
-                $flip-text-color: $flip-text-color,
-                $flip-text-pct: $flip-text-pct
-            );
+            --viz-header-bg: #{$l-hdr};
+            --viz-sidebar-bg: #{$l-sdb};
+            --viz-card-bg: #{$l-crd};
+
+            @if $has-light-override {
+                @include generate-viz-colors(
+                    $bg-color: $l-bg,
+                    $text-color: $l-text,
+                    $base-color: $l-base,
+                    $is-light-theme: false,
+                    $direct-light: true
+                );
+                --viz-primary: #{$l-primary};
+                --viz-secondary: #{$l-sec};
+                --viz-accent: #{$l-acc};
+            } @else {
+                @include generate-viz-colors(
+                    $bg-color: $bg-color,
+                    $text-color: $text-color,
+                    $base-color: $base-color,
+                    $is-light-theme: true,
+                    $flip-bg-color: $flip-bg-color,
+                    $flip-bg-pct: $flip-bg-pct,
+                    $flip-text-color: $flip-text-color,
+                    $flip-text-pct: $flip-text-pct
+                );
+            }
         }
     }
 }

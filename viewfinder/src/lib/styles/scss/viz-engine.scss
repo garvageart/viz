@@ -1,0 +1,53 @@
+@use "sass:color";
+@use "sass:math";
+
+@function channel($c, $ch) {
+    @return color.channel($c, $ch, $space: oklch);
+}
+
+@function oklch-lighten($color, $delta) {
+    $l: channel($color, "lightness");
+    $c: channel($color, "chroma");
+    $h: channel($color, "hue");
+    $a: color.alpha($color);
+    $new-l: math.min($l + $delta, 95%);
+    @return color.change($color, $lightness: $new-l, $space: oklch);
+}
+
+@function oklch-darken($color, $delta) {
+    $l: channel($color, "lightness");
+    $c: channel($color, "chroma");
+    $h: channel($color, "hue");
+    $a: color.alpha($color);
+    $new-l: math.max($l - $delta, 5%);
+    @return color.change($color, $lightness: $new-l, $space: oklch);
+}
+
+@function oklch-mix($color1, $color2, $weight: 50%) {
+    $l1: channel($color1, "lightness");
+    $c1: channel($color1, "chroma");
+    $h1: channel($color1, "hue");
+    $a1: color.alpha($color1);
+    $l2: channel($color2, "lightness");
+    $c2: channel($color2, "chroma");
+    $h2: channel($color2, "hue");
+    $a2: color.alpha($color2);
+    $w: math.div($weight, 100%);
+    $l: $l1 * (1 - $w) + $l2 * $w;
+    $c: $c1 * (1 - $w) + $c2 * $w;
+    $h: $h1 * (1 - $w) + $h2 * $w;
+    $a: $a1 * (1 - $w) + $a2 * $w;
+    @return color.change($color1, $lightness: $l, $chroma: $c, $hue: $h, $alpha: $a, $space: oklch);
+}
+
+@function oklch-step($color, $steps, $is-light: false) {
+    $l: channel($color, "lightness");
+    $delta: $steps * 4.5;
+    $new-l: 0%;
+    @if $is-light {
+        $new-l: math.max($l - $delta, 5%);
+    } @else {
+        $new-l: math.min($l + $delta, 95%);
+    }
+    @return color.change($color, $lightness: $new-l, $space: oklch);
+}

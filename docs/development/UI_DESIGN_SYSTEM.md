@@ -67,64 +67,73 @@ Corner styling follows a strict functional convention:
 
 ---
 
-## 4. Color & Theme Mix System
+## 4. Color, Surface Elevation & Status Tint System
 
-The application registers color modes dynamically via the `@mixin register-theme-core` located in `viz-mixins.scss`. It automatically generates custom variables for both `:root[data-theme="light"]` and `:root[data-theme="dark"]`.
+The application registers theme colors dynamically via the OKLCH theme engine in `viz-mixins.scss` for both light and dark modes (`:root[data-theme="light"]` and `:root[data-theme="dark"]`).
 
-### Status Accents
-* **Info**: `var(--viz-info-color)` (`#3b82f6`)
-* **Success**: `var(--viz-success-color)` (`#22c55e`)
-* **Warning**: `var(--viz-warning-color)` (`#facc15`)
+### Surface Elevation Tokens
+Layout components must strictly adhere to the semantic surface elevation hierarchy:
+* **`--viz-surface-base`**: Main page canvas.
+* **`--viz-surface-panel`**: Navigation headers, sidebars, toolbars, and workspace tab headers.
+* **`--viz-surface-card`**: Content cards, collection grid items, and table container surfaces.
+* **`--viz-surface-hover`**: Interactive hover state highlights across list items, context options, and table rows.
+* **`--viz-surface-popover`**: Floating dropdowns, context menus, tooltips, and overlay containers. In dark mode, popovers elevate smoothly using `$base` slate-navy hue steps.
+
+### Status Accents & Tint Strategy
 * **Error**: `var(--viz-error-color)` (`#ef4444`)
+* **Warning**: `var(--viz-warning-color)` (`#f59e0b`)
+* **Success**: `var(--viz-success-color)` (`#10b981`)
+* **Info**: `var(--viz-info-color)` (`#3b82f6`)
 
-### Theme-Aware Inset Palettes
-Rather than hardcoding static grays or whites, the system mixes base colors dynamically using steps (`--viz-100` down to `--viz-5`):
-* **`var(--viz-100)`**: The primary background color.
-* **`var(--viz-95)`**: Soft overlay color (card backgrounds, toast alerts).
-* **`var(--viz-90)`**: Subsection backgrounds (header bars, toolbar fills).
-* **`var(--viz-80)`**: Hover backgrounds.
-* **`var(--viz-60)`**: Hairline border frames.
-* **`var(--viz-40)` / `var(--viz-30)`**: Secondary/muted text.
-
-### Relative Color-Mix Blending
-To prevent accessibility contrast failure across themes, overlay components utilize native CSS `color-mix()` blending against active theme bases:
-```scss
-// Blends status color with the background for cohesive, accessible container tinting
-background-color: color-mix(in srgb, var(--toast-accent-color) 25%, var(--viz-95));
-border: 1px solid color-mix(in srgb, var(--toast-accent-color) 45%, var(--viz-60));
-```
+Status elements use `@mixin status-tint($role, $interactive: false)`:
+* **Light Mode Strategy**: Solid status background colors with `#ffffff` text for high AA/AAA contrast.
+* **Dark Mode Strategy**: Subtle status background tints mixed into `var(--viz-surface-card)` with bright status text.
+* **Hover Borders**: Status hover borders step down (darken) cleanly on mouseover (`--viz-status-hover-border-*`).
 
 ---
 
 ## 5. Standard Component Guidelines
 
 ### Input Fields (`InputText`, `InputSelect`, `InputPassword`)
-1. **Dimensions**: All inputs must feature a `min-height: 2.5rem` density height to enforce form alignment.
-2. **Labeling**: Labels sit above inputs using `--viz-font-size-sm` (`0.875rem`) in semi-bold `var(--viz-40)`. If required, place a red `*` (`--viz-error-color`) to the right of the text.
-3. **Borders**: Render flat bottom borders using `box-shadow: 0 -1px 0 var(--viz-60) inset` to achieve crisp editorial hairlines. On focus, transition to `box-shadow: 0 -2px 0 var(--viz-primary) inset`.
-4. **Icons**: All dropdown icons and visibility toggles must be positioned absolutely on the right and colored neutrally (`var(--viz-text-color)`) with a minor opacity offset (`0.75`) to avoid text overlap.
+1. **Dimensions**: All inputs feature a `min-height: 2.5rem` density height to enforce form alignment.
+2. **Labeling**: Labels sit above inputs using `--viz-font-size-sm` (`0.875rem`) in semi-bold `var(--viz-text-secondary)`. If required, place a red `*` (`--viz-error-color`) to the right of the text.
+3. **Borders**: Render flat bottom borders using `border: 1px solid var(--viz-border-subtle)`. On focus, transition to `border-color: var(--viz-primary)`.
+4. **Icons**: All dropdown icons and visibility toggles sit on the right and color neutrally (`var(--viz-text-primary)`).
 
 ### Buttons (`Button`, `IconButton`)
-1. **Interactive Styling**: Always use `border-radius: var(--viz-border-radius-pill)` for buttons.
-2. **Access Indicator**: Include `:focus-visible` outlines mapping to a double outline ring:
+1. **Interactive Styling**: Always use `border-radius: var(--viz-border-radius-pill)` for action buttons.
+2. **Variants**: Supports `primary`, `danger`, `warning`, `success`, `info`, and `ghost` variants using `@include m.status-tint(...)`.
+3. **Access Indicator**: Include `:focus-visible` outlines mapping to a double outline ring:
    ```scss
    &:focus-visible {
-       box-shadow: 0 0 0 2px var(--viz-bg-color), 0 0 0 4px var(--viz-primary);
+       box-shadow: 0 0 0 2px var(--viz-surface-base), 0 0 0 4px var(--viz-primary);
    }
    ```
 
+### Profile Avatar Badges (`AvatarBadge`)
+* Standalone component for user profile initial placeholders used in the main header and account panel.
+* Renders with `var(--viz-surface-card)` neutral background, `1px solid var(--viz-border-subtle)` frame, and `var(--viz-text-primary)` initial.
+
+### Icon Badges (`IconBadge`)
+* Standalone component wrapping `MaterialIcon` with solid background fills and no borders (`border: none`).
+* Supports preset status variants (`primary`, `info`, `warning`, `error`, `success`, `neutral`), custom background colors (`bgColor`), custom icon colors (`color`), and shapes (`rounded`, `circle`, `pill`).
+
+### Badges (`Badge`)
+* Used for counts, statuses, tags, and role indicators.
+* Supports variants (`default`, `neutral`, `warning`, `error`, `info`, `success`, `outline`) and size scaling (`small`, `std`, `lg`). Non-interactive badges omit hover background shifts by default.
+
 ### Header Navigation Density
-To maximize professional DAM screen workspace, the main header navigation is designed strictly at **`2rem`** (`32px`) height. Icons inside the header reside at a compact **`0.8rem`** sizing to ensure high-density toolbars.
+To maximize professional DAM screen workspace, the main header navigation is designed strictly at **`3rem`** height. Account buttons utilize `<AvatarBadge size="2rem" />`.
 
 ### Toast Notifications
 * Toast card containers float bottom-right and use rounded borders (`var(--viz-border-radius-md)`).
-* Cards must use high-contrast neutral text overlays and neutral card backgrounds (`var(--viz-95)` / `var(--viz-90)`).
-* Visual categorizations are color-coded **only** in the status indicator strips (`4px` left borders) and matching minor category icons to ensure perfect AA contrast ratios.
+* Cards use high-contrast neutral text overlays and card backgrounds.
+* Visual categorizations are color-coded in status indicator strips (`4px` left borders) and category icons.
 
 ---
 
 ## 6. Development Conventions
 
-1. **No Inline Styling**: Inline `style="..."` statements are strictly forbidden as they override theme variables. Write clean, scoped SCSS blocks inside Svelte components.
+1. **No Hardcoded Hex Colors in Component Styles**: Always reference semantic design tokens (`var(--viz-surface-card)`, `var(--viz-border-subtle)`, `var(--viz-text-primary)`) or component props (`bgColor`, `color`).
 2. **Use Relative tokens**: Always reference `var(--viz-spacing-*)` and `var(--viz-font-size-*)` tokens for all layout geometry. Do not commit hardcoded pixel sizes.
-3. **Clean Initial Connection States**: Reactively track WebSockets using an `eventsState.initialized` flag alongside `eventsState.connected` to eliminate brief layout flashes (FOUC) on client-side loading.
+3. **Clean Initial Connection States**: Reactively track WebSockets using an `eventsState.initialized` flag alongside `eventsState.connected` to eliminate layout flashes (FOUC).

@@ -1,16 +1,27 @@
 @use "sass:color";
 @use "viz-mixins" as m;
 
-$bg-color: #111111;
-$base-color: #222222;
-$text-color: #f7f9f9;
-$primary-color: #1885df;
+// Viz Black (Obsidian & Electric Violet)
+$bg-color: #09090b;
+$base-color: #18181b;
+$text-color: #f4f4f5;
+$primary-color: #3b82f6; // Royal Blue
+$secondary-color: #a855f7; // Electric Violet
+$accent-color: #06b6d4; // Cyan Pop
+$header-bg: #121216; // Deep Obsidian Header
+$sidebar-bg: #0c0c0e; // Dark Sidebar
+$card-bg: #1a1a1e; // Elevated Card Surface
 
 @include m.register-theme-core(
     $bg-color: $bg-color,
     $text-color: $text-color,
     $base-color: $base-color,
     $primary-color: $primary-color,
+    $secondary-color: $secondary-color,
+    $accent-color: $accent-color,
+    $header-bg: $header-bg,
+    $sidebar-bg: $sidebar-bg,
+    $card-bg: $card-bg,
     $flip-bg-color: white,
     $flip-bg-pct: 0%,
     $flip-text-color: black,

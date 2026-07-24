@@ -11,6 +11,100 @@
         monospace;
 }
 
+/* Theme Transition */
+@property --viz-surface-base {
+    syntax: "<color>";
+    inherits: true;
+    initial-value: #000;
+}
+@property --viz-surface-panel {
+    syntax: "<color>";
+    inherits: true;
+    initial-value: #000;
+}
+@property --viz-surface-card {
+    syntax: "<color>";
+    inherits: true;
+    initial-value: #000;
+}
+@property --viz-surface-hover {
+    syntax: "<color>";
+    inherits: true;
+    initial-value: #000;
+}
+@property --viz-surface-popover {
+    syntax: "<color>";
+    inherits: true;
+    initial-value: #000;
+}
+@property --viz-surface-input {
+    syntax: "<color>";
+    inherits: true;
+    initial-value: #000;
+}
+@property --viz-border-subtle {
+    syntax: "<color>";
+    inherits: true;
+    initial-value: #000;
+}
+@property --viz-border-strong {
+    syntax: "<color>";
+    inherits: true;
+    initial-value: #000;
+}
+@property --viz-text-primary {
+    syntax: "<color>";
+    inherits: true;
+    initial-value: #000;
+}
+@property --viz-text-secondary {
+    syntax: "<color>";
+    inherits: true;
+    initial-value: #000;
+}
+@property --viz-text-muted {
+    syntax: "<color>";
+    inherits: true;
+    initial-value: #000;
+}
+@property --viz-primary {
+    syntax: "<color>";
+    inherits: true;
+    initial-value: #000;
+}
+@property --viz-error-color {
+    syntax: "<color>";
+    inherits: true;
+    initial-value: #f00;
+}
+@property --viz-success-color {
+    syntax: "<color>";
+    inherits: true;
+    initial-value: #0f0;
+}
+@property --viz-warning-color {
+    syntax: "<color>";
+    inherits: true;
+    initial-value: #ff0;
+}
+@property --viz-info-color {
+    syntax: "<color>";
+    inherits: true;
+    initial-value: #00f;
+}
+
+*,
+*::before,
+*::after {
+    transition-duration: 0.2s;
+    transition-property: background-color, background, box-shadow;
+    transition-timing-function: ease;
+}
+
+html {
+    transition: background-color 0.2s ease;
+}
+
 /* Colours */
 :root {
     --viz-error-color: #{v.$viz-error-color};
@@ -81,7 +175,7 @@
     --viz-border-radius-md: #{v.$viz-border-radius-md};
     --viz-border-radius-lg: #{v.$viz-border-radius-lg};
     --viz-border-radius-pill: #{v.$viz-border-radius-pill};
-    --viz-border-thin: 1px solid var(--viz-60);
+    --viz-border-thin: 1px solid var(--viz-border-subtle, var(--viz-border-subtle));
     --viz-border-thick: 2px solid var(--viz-primary);
 }
 
@@ -93,17 +187,17 @@
     --viz-scrollbar-button-height: 14px;
 
     /* Colors */
-    --viz-scrollbar-bg: var(--viz-100);
-    --viz-scrollbar-corner-bg: var(--viz-100);
-    --viz-scrollbar-thumb-bg: var(--viz-60);
-    --viz-scrollbar-thumb-hover-bg: var(--viz-80);
-    --viz-scrollbar-thumb-active-bg: var(--viz-90);
+    --viz-scrollbar-bg: var(--viz-surface-panel);
+    --viz-scrollbar-corner-bg: var(--viz-surface-panel);
+    --viz-scrollbar-thumb-bg: var(--viz-border-subtle);
+    --viz-scrollbar-thumb-hover-bg: var(--viz-surface-hover);
+    --viz-scrollbar-thumb-active-bg: var(--viz-text-secondary);
 
     /* Arrow Buttons */
-    --viz-scrollbar-button-arrow-color: var(--viz-text-color);
+    --viz-scrollbar-button-arrow-color: var(--viz-text-primary);
     --viz-scrollbar-button-bg: transparent;
-    --viz-scrollbar-button-hover-bg: var(--viz-80);
-    --viz-scrollbar-button-active-bg: var(--viz-70);
+    --viz-scrollbar-button-hover-bg: var(--viz-surface-hover);
+    --viz-scrollbar-button-active-bg: var(--viz-text-secondary);
 
     /* Arrow Fit */
     --viz-scrollbar-arrow-scale: 240%;
@@ -112,8 +206,8 @@
 html {
     font-family: var(--viz-display-font);
     font-weight: 400;
-    background-color: var(--viz-bg-color);
-    color: var(--viz-text-color);
+    background-color: var(--viz-surface-base);
+    color: var(--viz-text-primary);
     font-size: 12px;
     margin: 0;
     padding: 0;
@@ -150,7 +244,7 @@ button {
     font-family: var(--viz-display-font);
     font-weight: 400;
     background-color: transparent;
-    color: var(--viz-text-color);
+    color: var(--viz-text-primary);
     border: none;
     cursor: pointer;
     padding: 0;

@@ -1,16 +1,27 @@
 @use "sass:color";
 @use "viz-mixins" as m;
 
-$bg-color: #0f1726;
-$base-color: color.adjust(color.mix($bg-color, white, 89%), $saturation: 20%, $lightness: -4%);
-$text-color: #f7f9f9;
-$primary-color: #1885df;
+// Viz Blue (Slate Navy & Sky Cyan)
+$bg-color: #0f172a; // Slate 900 Canvas
+$base-color: #1e293b; // Slate 800 Surface tone
+$text-color: #f8fafc; // Slate 50 Text
+$primary-color: #38bdf8; // Sky Cyan Primary
+$secondary-color: #818cf8; // Indigo Secondary
+$accent-color: #34d399; // Emerald Green Accent
+$header-bg: #1e1b4b; // Deep Indigo-Navy Header
+$sidebar-bg: #0b1329; // Dark Midnight Slate Sidebar
+$card-bg: #1c2638; // Slate Card Surface
 
 @include m.register-theme-core(
     $bg-color: $bg-color,
     $text-color: $text-color,
     $base-color: $base-color,
     $primary-color: $primary-color,
+    $secondary-color: $secondary-color,
+    $accent-color: $accent-color,
+    $header-bg: $header-bg,
+    $sidebar-bg: $sidebar-bg,
+    $card-bg: $card-bg,
     $flip-bg-color: white,
     $flip-bg-pct: 0%,
     $flip-text-color: black,

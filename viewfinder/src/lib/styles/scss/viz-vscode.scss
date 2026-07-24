@@ -1,0 +1,38 @@
+@use "sass:color";
+@use "viz-mixins" as m;
+
+// Official VS Code Dark+ Palette:
+// - Primary: #007acc (VS Code Blue)
+// - Secondary: #0e639c (VS Code Selection Blue)
+// - Accent: #4ec9b0 (VS Code Teal / Class Name)
+// - Background: #1e1e1e (VS Code Dark Canvas)
+// - Base: #252526 (VS Code Tool Fills)
+// - Header BG: #323233 (VS Code Title Bar)
+// - Sidebar BG: #252526 (VS Code Activity & Side Bar)
+// - Card BG: #2d2d2d (VS Code Widget Panel)
+
+$bg-color: #1e1e1e;
+$base-color: #252526;
+$text-color: #cccccc;
+$primary-color: #007acc;
+$secondary-color: #0e639c;
+$accent-color: #4ec9b0;
+$header-bg: #323233;
+$sidebar-bg: #252526;
+$card-bg: #2d2d2d;
+
+@include m.register-theme-core(
+    $bg-color: $bg-color,
+    $text-color: $text-color,
+    $base-color: $base-color,
+    $primary-color: $primary-color,
+    $secondary-color: $secondary-color,
+    $accent-color: $accent-color,
+    $header-bg: $header-bg,
+    $sidebar-bg: $sidebar-bg,
+    $card-bg: $card-bg,
+    $flip-bg-color: white,
+    $flip-bg-pct: 0%,
+    $flip-text-color: black,
+    $flip-text-pct: 15%
+);
