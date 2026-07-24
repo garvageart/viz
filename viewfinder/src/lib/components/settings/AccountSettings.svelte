@@ -1,11 +1,11 @@
 <script lang="ts">
     import type { UserSetting, UserUpdate } from "$lib/api";
     import { updateCurrentUser } from "$lib/api";
+    import Button from "$lib/components/ui/Button.svelte";
+    import InputText from "$lib/components/ui/InputText.svelte";
     import { user } from "$lib/states/index.svelte";
     import { toastState } from "$lib/toast-notifcations/notif-state.svelte";
     import AutoSettingsGroup from "./AutoSettingsGroup.svelte";
-    import InputText from "$lib/components/ui/InputText.svelte";
-    import Button from "$lib/components/ui/Button.svelte";
 
     interface Props {
         userSettingsData: UserSetting[];

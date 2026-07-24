@@ -1,6 +1,10 @@
 <script lang="ts">
     import { dev } from "$app/environment";
-    import { getFullImagePath, Label as ImageLabel, updateImage, type ImageAsset, type ImageUpdate } from "$lib/api";
+    import hotkeys from "hotkeys-js";
+    import isEqual from "lodash-es/isEqual";
+    import { onMount, untrack } from "svelte";
+    import type { MouseEventHandler, PointerEventHandler, WheelEventHandler } from "svelte/elements";
+    import { type ImageAsset, Label as ImageLabel, type ImageUpdate, getFullImagePath, updateImage } from "$lib/api";
     import { modalsManager } from "$lib/components/modals/manager/ModalManager.svelte";
     import Calendar from "$lib/components/ui/Calendar.svelte";
     import ExportPanel, { modalOptions as exportModalOptions } from "$lib/components/ui/panels/ExportPanel.svelte";
@@ -20,15 +24,11 @@
         getWhiteBalance
     } from "$lib/utils/images";
     import { copyToClipboard } from "$lib/utils/misc";
-    import hotkeys from "hotkeys-js";
-    import isEqual from "lodash-es/isEqual";
-    import { onMount, untrack } from "svelte";
-    import Badge from "./Badge.svelte";
-    import type { MouseEventHandler, PointerEventHandler, WheelEventHandler } from "svelte/elements";
     import CropOverlay from "../image-tools/CropOverlay.svelte";
     import CropTools from "../image-tools/CropTools.svelte";
     import ImageLabelViewer from "../image-tools/ImageLabelViewer.svelte";
     import StarRating from "../image-tools/StarRating.svelte";
+    import Badge from "./Badge.svelte";
     import IconButton from "./IconButton.svelte";
     import InputText from "./InputText.svelte";
     import Lightbox from "./Lightbox.svelte";

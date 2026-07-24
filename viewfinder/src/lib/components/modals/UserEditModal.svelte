@@ -1,12 +1,12 @@
 <script lang="ts">
-    import { Role, type User } from "$lib/api";
-    import type { UserRole } from "$lib/types/users";
-    import Button from "$lib/components/ui/Button.svelte";
-    import InputText from "$lib/components/ui/InputText.svelte";
-    import InputSelect from "$lib/components/ui/InputSelect.svelte";
-    import { modalsManager } from "./manager/ModalManager.svelte";
     import { untrack } from "svelte";
+    import { Role, type User } from "$lib/api";
+    import Button from "$lib/components/ui/Button.svelte";
+    import InputSelect from "$lib/components/ui/InputSelect.svelte";
+    import InputText from "$lib/components/ui/InputText.svelte";
+    import type { UserRole } from "$lib/types/users";
     import { snakeToSentence, toSentenceCase } from "$lib/utils/strings";
+    import { modalsManager } from "./manager/ModalManager.svelte";
 
     interface Props {
         id: string;

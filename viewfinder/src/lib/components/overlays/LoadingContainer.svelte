@@ -1,5 +1,6 @@
 <script lang="ts">
     import LoadingSpinner from "../ui/LoadingSpinner.svelte";
+
     let { color }: { color?: string } = $props();
 </script>
 

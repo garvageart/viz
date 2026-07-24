@@ -1,7 +1,9 @@
 <script lang="ts">
     import { goto } from "$app/navigation";
+    import hotkeys from "hotkeys-js";
+    import { type ComponentProps, onMount } from "svelte";
     import type { Collection, ImageAsset } from "$lib/api";
-    import { addCollectionImages, updateImage, Label as ImageLabel } from "$lib/api";
+    import { Label as ImageLabel, addCollectionImages, updateImage } from "$lib/api";
     import Dropdown from "$lib/components/context-menus/Dropdown.svelte";
     import AssetGrid from "$lib/components/grid/AssetGrid.svelte";
     import PhotoAssetGrid from "$lib/components/grid/PhotoAssetGrid.svelte";
@@ -24,21 +26,19 @@
     import { DragData } from "$lib/drag-drop/data";
     import { LabelColours } from "$lib/images/constants";
     import {
-        getConsolidatedGroups,
-        groupImagesByDate,
         type ConsolidatedGroup,
-        type DateGroup
+        type DateGroup,
+        getConsolidatedGroups,
+        groupImagesByDate
     } from "$lib/photo-layout";
     import { paginateSearch, performSearch } from "$lib/search/execute";
     import { isLayoutPage, search, viewSettings } from "$lib/states/index.svelte";
-    import { selectionManager, SelectionScopeNames } from "$lib/states/selection.svelte";
+    import { SelectionScopeNames, selectionManager } from "$lib/states/selection.svelte";
     import { toastState } from "$lib/toast-notifcations/notif-state.svelte";
     import type { AssetGridView } from "$lib/types/asset";
     import { downloadOriginalImageFile } from "$lib/utils/http";
     import { getImageLabel } from "$lib/utils/images";
     import { invalidateViz } from "$lib/views/views.svelte";
-    import hotkeys from "hotkeys-js";
-    import { onMount, type ComponentProps } from "svelte";
 
     let collections = $derived(search.data.collections.data);
     let images = $derived(search.data.images.data);

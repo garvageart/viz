@@ -13,11 +13,11 @@ Stuff to finish:
 - Custom settings (Security, API Keys, Profile, Change Password etc etc)
 -->
 <script lang="ts">
-    import type { UserSetting } from "$lib/api";
     import { SvelteSet } from "svelte/reactivity";
-    import AutoSettingsGroup from "../settings/AutoSettingsGroup.svelte";
+    import type { UserSetting } from "$lib/api";
     import NavSidebar, { type NavItem } from "$lib/components/ui/Sidebar/NavSidebar.svelte";
     import { type MaterialSymbol } from "$lib/types/MaterialSymbol";
+    import AutoSettingsGroup from "../settings/AutoSettingsGroup.svelte";
     import AccountsSettings from "./AccountSettings.svelte";
     import SecuritySettings from "./SecuritySettings.svelte";
 

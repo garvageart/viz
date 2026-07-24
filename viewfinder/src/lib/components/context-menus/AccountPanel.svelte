@@ -1,7 +1,7 @@
 <script lang="ts">
+    import { slide } from "svelte/transition";
     import { logoutUser } from "$lib/auth/auth_methods";
     import { user } from "$lib/states/index.svelte";
-    import { slide } from "svelte/transition";
     import Badge from "../ui/Badge.svelte";
     import MaterialIcon from "../ui/MaterialIcon.svelte";
 

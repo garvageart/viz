@@ -3,8 +3,8 @@
     import { login } from "$lib/api";
     import { fetchCurrentUser } from "$lib/auth/auth_methods";
     import Button from "$lib/components/ui/Button.svelte";
-    import InputText from "$lib/components/ui/InputText.svelte";
     import InputPassword from "$lib/components/ui/InputPassword.svelte";
+    import InputText from "$lib/components/ui/InputText.svelte";
     import { system } from "$lib/states/index.svelte";
     import { toastState } from "$lib/toast-notifcations/notif-state.svelte";
 
@@ -113,7 +113,7 @@
         overflow: hidden;
     }
 
-    // Grid and tint overlay on top of the background image
+    /* Grid and tint overlay on top of the background image */
     main::before {
         content: "";
         position: absolute;
@@ -121,9 +121,9 @@
         left: 0;
         width: 100%;
         height: 100%;
-        // Use a color-mix to blend the theme's background color with transparency
+        /* Use a color-mix to blend the theme's background color with transparency */
         background-color: color-mix(in srgb, var(--viz-100) 65%, transparent);
-        // Grid pattern mapping to structured editorial grid lines
+        /* Grid pattern mapping to structured editorial grid lines */
         background-image:
             linear-gradient(color-mix(in srgb, var(--viz-60) 20%, transparent) 1px, transparent 1px),
             linear-gradient(90deg, color-mix(in srgb, var(--viz-60) 20%, transparent) 1px, transparent 1px);
@@ -189,7 +189,7 @@
         width: 100%;
     }
 
-    // Target the inner button of our custom Button component
+    /* Target the inner button of our custom Button component */
     :global(.auth-submit-btn) {
         width: 100% !important;
         background-color: var(--viz-primary) !important;

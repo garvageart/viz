@@ -9,19 +9,19 @@
 
 <script lang="ts">
     import { goto } from "$app/navigation";
+    import { onMount } from "svelte";
     import {
+        type Collection,
+        type CollectionListResponse,
         addCollectionImages,
         createCollection,
-        listCollections,
-        type Collection,
-        type CollectionListResponse
+        listCollections
     } from "$lib/api";
     import { selectionManager } from "$lib/states/selection.svelte";
     import { toastState } from "$lib/toast-notifcations/notif-state.svelte";
-    import { invalidateViz } from "$lib/views/views.svelte";
-    import { onMount } from "svelte";
-    import AssetGrid from "../grid/AssetGrid.svelte";
     import type { CardVisualState } from "$lib/types/snippet";
+    import { invalidateViz } from "$lib/views/views.svelte";
+    import AssetGrid from "../grid/AssetGrid.svelte";
     import VizViewContainer from "../panels/VizViewContainer.svelte";
     import Button from "../ui/Button.svelte";
     import CollectionCard from "../ui/CollectionCard.svelte";

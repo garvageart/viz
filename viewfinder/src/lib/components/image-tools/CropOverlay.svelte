@@ -1,5 +1,5 @@
 <script lang="ts">
-    import { calculateCrop, type CropRect, type DragAction } from "../../images/zoom/crop-utils";
+    import { type CropRect, type DragAction, calculateCrop } from "../../images/zoom/crop-utils";
 
     interface Props {
         width: number;

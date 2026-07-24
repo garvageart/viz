@@ -1,7 +1,7 @@
 <script lang="ts">
+    import { goto } from "$app/navigation";
     import Button from "$lib/components/ui/Button.svelte";
     import MaterialIcon from "$lib/components/ui/MaterialIcon.svelte";
-    import { goto } from "$app/navigation";
 
     interface Props {
         statusCode: number;

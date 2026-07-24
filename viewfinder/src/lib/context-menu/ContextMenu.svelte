@@ -4,8 +4,8 @@
 -->
 <script lang="ts">
     import { tick } from "svelte";
-    import ContextMenuItem from "./ContextMenuItem.svelte";
     import type { SvelteHTMLElements } from "svelte/elements";
+    import ContextMenuItem from "./ContextMenuItem.svelte";
     import type { MenuItem } from "./types";
 
     type Anchor = { x: number; y: number } | HTMLElement | null;

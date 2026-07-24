@@ -1,15 +1,15 @@
 <script lang="ts">
-    import { Workspace, type SerializedWorkspace } from "$lib/layouts/model.svelte";
-    import LayoutNode from "./LayoutNode.svelte";
-    import { VizLocalStorage } from "$lib/utils/misc";
-    import { onMount } from "svelte";
-    import { debugMode } from "$lib/states/index.svelte";
-    import { workspaceState } from "$lib/states/workspace.svelte";
-    import { createDefaultLayout } from "./layouts/registry";
     import { dev } from "$app/environment";
-    import { views } from "$lib/layouts/views";
     import hotkeys from "hotkeys-js";
     import { DateTime } from "luxon";
+    import { onMount } from "svelte";
+    import { type SerializedWorkspace, Workspace } from "$lib/layouts/model.svelte";
+    import { views } from "$lib/layouts/views";
+    import { debugMode } from "$lib/states/index.svelte";
+    import { workspaceState } from "$lib/states/workspace.svelte";
+    import { VizLocalStorage } from "$lib/utils/misc";
+    import LayoutNode from "./LayoutNode.svelte";
+    import { createDefaultLayout } from "./layouts/registry";
 
     interface Props {
         id: string;

@@ -1,12 +1,12 @@
 <script lang="ts">
-    import { getContext, onMount, onDestroy, hasContext } from "svelte";
+    import { browser } from "$app/environment";
+    import { getContext, hasContext, onDestroy, onMount } from "svelte";
+    import { generateRandomString } from "$lib/utils/misc";
     import { KEY } from "./Splitpanes.svelte";
     import type { ClientCallbacks, IPane, PaneInitFunction, SplitContext } from "./index.js";
     import { gatheringKey } from "./internal/GatheringRound.svelte";
-    import { getDimensionName } from "./internal/utils/sizing.js";
     import { carefullCallbackSource } from "./internal/utils/functions";
-    import { generateRandomString } from "$lib/utils/misc";
-    import { browser } from "$app/environment";
+    import { getDimensionName } from "./internal/utils/sizing.js";
 
     const {
         ssrRegisterPaneSize,

@@ -1,13 +1,15 @@
 <script lang="ts">
     import { goto } from "$app/navigation";
+    import hotkeys from "hotkeys-js";
+    import { onDestroy, untrack } from "svelte";
     import {
+        type Collection,
+        type ImageAsset,
+        Label as ImageLabel,
         addCollectionImages,
         getImage,
         listImages,
-        updateImage,
-        Label as ImageLabel,
-        type Collection,
-        type ImageAsset
+        updateImage
     } from "$lib/api";
     import Dropdown from "$lib/components/context-menus/Dropdown.svelte";
     import PhotoAssetGrid from "$lib/components/grid/PhotoAssetGrid.svelte";
@@ -17,6 +19,7 @@
     import FilterModal, { FilterModalOptions } from "$lib/components/modals/FilterModal.svelte";
     import { modalsManager } from "$lib/components/modals/manager/ModalManager.svelte";
     import VizViewContainer from "$lib/components/panels/VizViewContainer.svelte";
+    import ActiveFiltersTooltip from "$lib/components/tooltips/ActiveFiltersTooltip.svelte";
     import Button from "$lib/components/ui/Button.svelte";
     import DragAndDropUpload from "$lib/components/ui/DragAndDropUpload.svelte";
     import IconButton from "$lib/components/ui/IconButton.svelte";
@@ -31,24 +34,21 @@
     import { LabelColours } from "$lib/images/constants.js";
     import { ImagePaginationState } from "$lib/images/state.svelte.js";
     import {
-        getConsolidatedGroups,
-        groupImagesByDate,
         type ConsolidatedGroup,
-        type DateGroup
+        type DateGroup,
+        getConsolidatedGroups,
+        groupImagesByDate
     } from "$lib/photo-layout/index.js";
-    import { filterManager } from "$lib/states/filter.svelte";
-    import ActiveFiltersTooltip from "$lib/components/tooltips/ActiveFiltersTooltip.svelte";
-    import { sort, viewSettings } from "$lib/states/index.svelte";
     import { sortCollectionImages } from "$lib/sort/sort.js";
-    import { selectionManager, SelectionScopeNames } from "$lib/states/selection.svelte";
+    import { filterManager } from "$lib/states/filter.svelte";
+    import { sort, viewSettings } from "$lib/states/index.svelte";
+    import { SelectionScopeNames, selectionManager } from "$lib/states/selection.svelte";
     import { toastState } from "$lib/toast-notifcations/notif-state.svelte";
     import type { AssetSortBy, AssetSortOrder } from "$lib/types/asset.js";
     import { SUPPORTED_IMAGE_TYPES, SUPPORTED_RAW_FILES, type SupportedImageTypes } from "$lib/types/images";
     import UploadManager, { type ImageUploadSuccess } from "$lib/upload/manager.svelte";
     import { getImageLabel } from "$lib/utils/images.js";
     import { invalidateViz } from "$lib/views/views.svelte";
-    import hotkeys from "hotkeys-js";
-    import { onDestroy, untrack } from "svelte";
 
     // Display options as MenuItem[] for Dropdown
     const displayMenuItems: MenuItem[] = [

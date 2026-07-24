@@ -1,9 +1,9 @@
 <script lang="ts">
-    import type { Collection } from "$lib/api";
     import { untrack } from "svelte";
+    import type { Collection } from "$lib/api";
     import Button from "../ui/Button.svelte";
-    import SliderToggle from "../ui/SliderToggle.svelte";
     import InputText from "../ui/InputText.svelte";
+    import SliderToggle from "../ui/SliderToggle.svelte";
     import TextArea from "../ui/TextArea.svelte";
 
     type CollectionFormData = {

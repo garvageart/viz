@@ -1,7 +1,7 @@
 <script lang="ts">
-    import { getFullImagePath, type ImageAsset } from "$lib/api";
-    import { getThumbhashURL } from "$lib/utils/images";
     import type { HTMLImgAttributes } from "svelte/elements";
+    import { type ImageAsset, getFullImagePath } from "$lib/api";
+    import { getThumbhashURL } from "$lib/utils/images";
 
     export type ImageVariant = "thumbnail" | "preview" | "original";
 

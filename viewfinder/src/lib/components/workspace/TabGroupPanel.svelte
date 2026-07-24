@@ -1,25 +1,25 @@
 <script lang="ts">
-    import type { TabGroup } from "$lib/layouts/model.svelte";
-    import MaterialIcon from "../ui/MaterialIcon.svelte";
-    import LoadingContainer from "../overlays/LoadingContainer.svelte";
-    import { setContext, untrack } from "svelte";
-    import { tabOps } from "$lib/layouts/tab-ops.svelte";
-    import { workspaceState } from "$lib/states/workspace.svelte";
     import { dev } from "$app/environment";
-    import { resetAndReloadLayout } from "$lib/dev/components.svelte";
+    import { goto } from "$app/navigation";
+    import { setContext, untrack } from "svelte";
+    import tippy, { type Instance } from "tippy.js";
+    import { VizMimeTypes } from "$lib/constants";
     import ContextMenu from "$lib/context-menu/ContextMenu.svelte";
     import type { MenuItem } from "$lib/context-menu/types";
-    import {
-        buildTabContextMenu,
-        buildPanelContextMenu,
-        buildLayoutContextMenu,
-        type TabHandlers
-    } from "./workspace-context";
-    import VizView from "$lib/views/views.svelte";
-    import { goto } from "$app/navigation";
-    import { VizMimeTypes } from "$lib/constants";
+    import { resetAndReloadLayout } from "$lib/dev/components.svelte";
     import { DragData } from "$lib/drag-drop/data";
-    import tippy, { type Instance } from "tippy.js";
+    import type { TabGroup } from "$lib/layouts/model.svelte";
+    import { tabOps } from "$lib/layouts/tab-ops.svelte";
+    import { workspaceState } from "$lib/states/workspace.svelte";
+    import VizView from "$lib/views/views.svelte";
+    import LoadingContainer from "../overlays/LoadingContainer.svelte";
+    import MaterialIcon from "../ui/MaterialIcon.svelte";
+    import {
+        type TabHandlers,
+        buildLayoutContextMenu,
+        buildPanelContextMenu,
+        buildTabContextMenu
+    } from "./workspace-context";
 
     interface Props {
         group: TabGroup;

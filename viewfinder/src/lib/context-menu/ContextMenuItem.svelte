@@ -1,7 +1,7 @@
 <script lang="ts">
     import MaterialIcon from "../components/ui/MaterialIcon.svelte";
-    import type { MenuItem } from "./types";
     import ContextMenuItem from "./ContextMenuItem.svelte";
+    import type { MenuItem } from "./types";
 
     interface Props {
         item: MenuItem;

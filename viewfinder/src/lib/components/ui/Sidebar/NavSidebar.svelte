@@ -10,9 +10,9 @@
 </script>
 
 <script lang="ts">
-    import Sidebar from "./Sidebar.svelte";
     import { page } from "$app/state";
     import MaterialIcon from "../MaterialIcon.svelte";
+    import Sidebar from "./Sidebar.svelte";
 
     interface Props {
         title?: string;

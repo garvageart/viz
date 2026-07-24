@@ -1,12 +1,12 @@
 <script lang="ts">
-    import type { ImageAsset } from "$lib/api";
-    import MaterialIcon from "$lib/components/ui/MaterialIcon.svelte";
-    import { getImageLabel, getTakenAt, formatBytes, getImageMegapixels } from "$lib/utils/images";
     import { DateTime } from "luxon";
-    import ImageLabelViewer from "../image-tools/ImageLabelViewer.svelte";
-    import IconButton from "$lib/components/ui/IconButton.svelte";
     import type { MouseEventHandler } from "svelte/elements";
+    import type { ImageAsset } from "$lib/api";
     import Badge from "$lib/components/ui/Badge.svelte";
+    import IconButton from "$lib/components/ui/IconButton.svelte";
+    import MaterialIcon from "$lib/components/ui/MaterialIcon.svelte";
+    import { formatBytes, getImageLabel, getImageMegapixels, getTakenAt } from "$lib/utils/images";
+    import ImageLabelViewer from "../image-tools/ImageLabelViewer.svelte";
 
     interface Props {
         asset: ImageAsset;

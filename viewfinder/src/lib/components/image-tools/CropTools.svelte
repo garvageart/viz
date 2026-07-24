@@ -211,12 +211,12 @@
         }
     }
 
-    // Light theme contrast overrides
+    /* Light theme contrast overrides */
     :global([data-theme="light"]) {
         .crop-actions {
             :global(.action-btn.apply) {
                 color: #ffffff !important;
-                background-color: #15803d !important; // Solid high-contrast green
+                background-color: #15803d !important; /* Solid high-contrast green */
                 border-color: #15803d !important;
             }
 

@@ -1,19 +1,19 @@
 <script lang="ts">
     import { goto } from "$app/navigation";
-    import { addCollectionImages, createCollection, type Collection, type ImageAsset } from "$lib/api";
+    import { type Collection, type ImageAsset, addCollectionImages, createCollection } from "$lib/api";
     import { VizMimeTypes } from "$lib/constants";
     import { DragData } from "$lib/drag-drop/data";
     import { dragState } from "$lib/drag-drop/state.svelte";
     import { SelectionScope } from "$lib/states/selection.svelte";
     import { toastState } from "$lib/toast-notifcations/notif-state.svelte";
     import {
+        type AllSupportedImageTypes,
         SUPPORTED_IMAGE_TYPES,
         SUPPORTED_RAW_FILES,
-        type AllSupportedImageTypes,
         type SupportedImageTypes
     } from "$lib/types/images";
     import { UploadState } from "$lib/upload/asset.svelte";
-    import UploadManager, { waitForUploadCompletion, type ImageUploadSuccess } from "$lib/upload/manager.svelte";
+    import UploadManager, { type ImageUploadSuccess, waitForUploadCompletion } from "$lib/upload/manager.svelte";
     import { detectFolderName, traverseFileTree } from "$lib/utils/files";
     import { invalidateViz } from "$lib/views/views.svelte";
     import CollectionModal from "../modals/CollectionModal.svelte";

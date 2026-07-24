@@ -1,18 +1,18 @@
 <script lang="ts">
     import { invalidateAll } from "$app/navigation";
-    import { adminCreateUser, adminDeleteUser, adminUpdateUser, Role, type User } from "$lib/api";
+    import { DateTime } from "luxon";
+    import { Role, type User, adminCreateUser, adminDeleteUser, adminUpdateUser } from "$lib/api";
     import AdminRouteShell from "$lib/components/admin/AdminRouteShell.svelte";
     import ConfirmationModal from "$lib/components/modals/ConfirmationModal.svelte";
-    import { modalsManager } from "$lib/components/modals/manager/ModalManager.svelte";
     import UserCreateModal from "$lib/components/modals/UserCreateModal.svelte";
     import UserEditModal from "$lib/components/modals/UserEditModal.svelte";
+    import { modalsManager } from "$lib/components/modals/manager/ModalManager.svelte";
     import Button from "$lib/components/ui/Button.svelte";
     import IconButton from "$lib/components/ui/IconButton.svelte";
     import MaterialIcon from "$lib/components/ui/MaterialIcon.svelte";
     import SliderToggle from "$lib/components/ui/SliderToggle.svelte";
     import { user as currentUserState } from "$lib/states/index.svelte";
     import { toastState } from "$lib/toast-notifcations/notif-state.svelte";
-    import { DateTime } from "luxon";
 
     let { data } = $props();
     let users = $derived(data.users);

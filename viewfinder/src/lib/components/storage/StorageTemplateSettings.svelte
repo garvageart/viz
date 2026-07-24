@@ -1,5 +1,7 @@
 <script lang="ts">
     import { invalidateAll } from "$app/navigation";
+    import Handlebars from "handlebars";
+    import { DateTime } from "luxon";
     import type { VizConfig } from "$lib/api";
     import { api } from "$lib/api";
     import Checkbox from "$lib/components/ui/Checkbox.svelte";
@@ -9,11 +11,9 @@
     import MaterialIcon from "$lib/components/ui/MaterialIcon.svelte";
     import { toastState } from "$lib/toast-notifcations/notif-state.svelte";
     import { type MaterialSymbol } from "$lib/types/MaterialSymbol";
+    import { DEFAULT_TEMPLATE_EXAMPLE, buildDateTokens, cleanPathSegment } from "$lib/ui-tools/template";
     import { copyToClipboard } from "$lib/utils/misc";
     import { toSentenceCase } from "$lib/utils/strings";
-    import Handlebars from "handlebars";
-    import { DateTime } from "luxon";
-    import { buildDateTokens, cleanPathSegment, DEFAULT_TEMPLATE_EXAMPLE } from "$lib/ui-tools/template";
 
     interface Props {
         config: VizConfig;

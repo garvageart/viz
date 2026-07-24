@@ -1,12 +1,13 @@
 <script lang="ts">
     import { goto } from "$app/navigation";
+    import { type ComponentProps, untrack } from "svelte";
     import {
+        type Collection,
+        type ImageAsset,
         addCollectionImages,
         createCollection,
         listCollectionImages,
-        updateCollection,
-        type Collection,
-        type ImageAsset
+        updateCollection
     } from "$lib/api";
     import AssetGrid from "$lib/components/grid/AssetGrid.svelte";
     import CollectionModal from "$lib/components/modals/CollectionModal.svelte";
@@ -14,6 +15,7 @@
     import { modalsManager } from "$lib/components/modals/manager/ModalManager.svelte";
     import VizViewContainer from "$lib/components/panels/VizViewContainer.svelte";
     import AssetsShell from "$lib/components/ui/AssetsShell.svelte";
+    import Badge from "$lib/components/ui/Badge.svelte";
     import Button from "$lib/components/ui/Button.svelte";
     import CollectionCard, { openCollection } from "$lib/components/ui/CollectionCard.svelte";
     import DragAndDropUpload from "$lib/components/ui/DragAndDropUpload.svelte";
@@ -27,12 +29,10 @@
     import { sortCollections } from "$lib/sort/sort";
     import { filterManager } from "$lib/states/filter.svelte";
     import { isLayoutPage, sort } from "$lib/states/index.svelte";
-    import { selectionManager, SelectionScopeNames } from "$lib/states/selection.svelte";
+    import { SelectionScopeNames, selectionManager } from "$lib/states/selection.svelte";
     import { toastState } from "$lib/toast-notifcations/notif-state.svelte";
     import type { AssetGridArray } from "$lib/types/asset";
-    import { untrack, type ComponentProps } from "svelte";
     import type { PageProps } from "./$types";
-    import Badge from "$lib/components/ui/Badge.svelte";
 
     let { data }: PageProps = $props();
 

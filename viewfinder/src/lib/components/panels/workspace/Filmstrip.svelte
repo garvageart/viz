@@ -8,7 +8,7 @@
     import ContextMenu from "$lib/context-menu/ContextMenu.svelte";
     import { createImageMenu } from "$lib/context-menu/menus/images";
     import { DragData } from "$lib/drag-drop/data";
-    import { selectionManager, SelectionScope, SelectionScopeNames } from "$lib/states/selection.svelte";
+    import { SelectionScope, SelectionScopeNames, selectionManager } from "$lib/states/selection.svelte";
     import { workspaceState } from "$lib/states/workspace.svelte";
 
     let filmstripScope = $derived(selectionManager.activeScope as SelectionScope<ImageAsset> | undefined);

@@ -9,11 +9,16 @@
 </script>
 
 <script lang="ts">
-    import { API_BASE_URL, getImageFileBlob, type ImageAsset } from "$lib/api";
+    import * as Comlink from "comlink";
+    import JSZip from "jszip";
+    import { DateTime } from "luxon";
+    import { slide } from "svelte/transition";
+    import { API_BASE_URL, type ImageAsset, getImageFileBlob } from "$lib/api";
     import { DbSettings } from "$lib/db/settings";
     import type { TransformInput } from "$lib/images/vips/vips";
     import { download } from "$lib/states/index.svelte";
     import { toastState } from "$lib/toast-notifcations/notif-state.svelte";
+    import { safeRenderRenameTemplate } from "$lib/ui-tools/renamer";
     import { DownloadFile, DownloadState } from "$lib/upload/asset.svelte";
     import { processDownloadQueue, waitForDownloadCompletion } from "$lib/upload/manager.svelte";
     import { downloadToFilesystem } from "$lib/utils/files";
@@ -27,20 +32,14 @@
     } from "$lib/utils/images";
     import { generateRandomString } from "$lib/utils/misc";
     import type { exportImagesParallel } from "$lib/workers/image_export";
-    import * as Comlink from "comlink";
-    import JSZip from "jszip";
-    import { slide } from "svelte/transition";
     import { modalsManager } from "../../modals/manager/ModalManager.svelte";
-    import BatchRenameBuilder, { defaultTemplate, type SavedRenameSettings } from "../BatchRenameBuilder.svelte";
+    import BatchRenameBuilder, { type SavedRenameSettings, defaultTemplate } from "../BatchRenameBuilder.svelte";
     import Button from "../Button.svelte";
     import Checkbox from "../Checkbox.svelte";
     import InputSelect from "../InputSelect.svelte";
     import InputText from "../InputText.svelte";
     import MaterialIcon from "../MaterialIcon.svelte";
     import Slider from "../Slider.svelte";
-
-    import { safeRenderRenameTemplate } from "$lib/ui-tools/renamer";
-    import { DateTime } from "luxon";
 
     export interface SavedExportSettings {
         format: ExportFormats;
@@ -548,7 +547,7 @@
         overflow: hidden;
     }
 
-    // Target all inner input wrappers & fields to make them compact/slim
+    /* Target all inner input wrappers & fields to make them compact/slim */
     :global(.export-panel .input-container) {
         gap: var(--viz-spacing-xs) !important;
         min-width: 0 !important;

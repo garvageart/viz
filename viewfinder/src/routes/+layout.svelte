@@ -1,14 +1,13 @@
 <script lang="ts">
-    import { updated } from "$app/stores";
     import { dev } from "$app/environment";
     import { afterNavigate, beforeNavigate } from "$app/navigation";
-    import { fade } from "svelte/transition";
-
-    if (dev) {
-        import("material-symbols/index.css");
-    }
-
     import { page } from "$app/state";
+    import { updated } from "$app/stores";
+    import "@fontsource-variable/geist/index.css";
+    import "@fontsource-variable/manrope/index.css";
+    import "@fontsource-variable/roboto-mono/index.css";
+    import hotkeys from "hotkeys-js";
+    import { fade } from "svelte/transition";
     import ModalRenderer from "$lib/components/modals/ModalContainer.svelte";
     import { modalsManager } from "$lib/components/modals/manager/ModalManager.svelte";
     import "$lib/components/tooltips/tooltip.scss";
@@ -22,10 +21,10 @@
     import Notifications from "$lib/toast-notifcations/Notifications.svelte";
     import { UploadState } from "$lib/upload/asset.svelte";
     import { toggleFullscreen } from "$lib/utils/misc";
-    import "@fontsource-variable/geist/index.css";
-    import "@fontsource-variable/manrope/index.css";
-    import "@fontsource-variable/roboto-mono/index.css";
-    import hotkeys from "hotkeys-js";
+
+    if (dev) {
+        import("material-symbols/index.css");
+    }
 
     historyState.init();
 

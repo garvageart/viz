@@ -3,13 +3,20 @@
 </script>
 
 <script lang="ts" generics>
-    import { getFullImagePath, type ImageAsset } from "$lib/api";
+    import hotkeys, { type HotkeysEvent } from "hotkeys-js";
+    import { DateTime } from "luxon";
+    import { type ComponentProps, type Snippet, untrack } from "svelte";
+    import { SvelteSet } from "svelte/reactivity";
+    import { fade } from "svelte/transition";
+    import { type Instance, type Props as TippyProps, delegate, followCursor } from "tippy.js";
+    import "tippy.js/dist/tippy.css";
+    import { type ImageAsset, getFullImagePath } from "$lib/api";
     import PhotoTooltip from "$lib/components/tooltips/PhotoTooltip.svelte";
     import { mountTooltipComponent } from "$lib/components/tooltips/tooltip";
     import Checkbox from "$lib/components/ui/Checkbox.svelte";
     import {
-        PhotoGridVirtualizer,
-        type PhotoGridConfig
+        type PhotoGridConfig,
+        PhotoGridVirtualizer
     } from "$lib/components/virtualizer/PhotoGridVirtualizer.svelte.js";
     import { VizMimeTypes } from "$lib/constants";
     import { DragData } from "$lib/drag-drop/data";
@@ -20,13 +27,6 @@
     import type { CardVisualState } from "$lib/types/snippet";
     import { getImageLabel, getTakenAt } from "$lib/utils/images";
     import { debounce } from "$lib/utils/misc";
-    import hotkeys, { type HotkeysEvent } from "hotkeys-js";
-    import { DateTime } from "luxon";
-    import { untrack, type ComponentProps, type Snippet } from "svelte";
-    import { SvelteSet } from "svelte/reactivity";
-    import { fade } from "svelte/transition";
-    import { delegate, followCursor, type Instance, type Props as TippyProps } from "tippy.js";
-    import "tippy.js/dist/tippy.css";
     import ImageLabelViewer from "../image-tools/ImageLabelViewer.svelte";
     import StarRating from "../image-tools/StarRating.svelte";
     import AssetImage from "../ui/AssetImage.svelte";

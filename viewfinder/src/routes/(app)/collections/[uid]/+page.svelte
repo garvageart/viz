@@ -14,19 +14,22 @@
 <script lang="ts">
     import { dev } from "$app/environment";
     import { goto } from "$app/navigation";
+    import hotkeys from "hotkeys-js";
+    import { DateTime } from "luxon";
+    import { type ComponentProps, onDestroy, untrack } from "svelte";
     import {
+        type CollectionUpdate,
+        type ImageAsset,
+        Label as ImageLabel,
         addCollectionImages,
         createCollection,
         deleteCollection,
         deleteCollectionImages,
         getImage,
-        Label as ImageLabel,
-        listCollectionImages,
         listCollectionImageUiDs,
+        listCollectionImages,
         updateCollection,
-        updateImage,
-        type CollectionUpdate,
-        type ImageAsset
+        updateImage
     } from "$lib/api";
     import Dropdown from "$lib/components/context-menus/Dropdown.svelte";
     import PhotoAssetGrid from "$lib/components/grid/PhotoAssetGrid.svelte";
@@ -54,15 +57,15 @@
     import { LabelColours } from "$lib/images/constants";
     import { ImagePaginationState } from "$lib/images/state.svelte";
     import {
-        getConsolidatedGroups,
-        groupImagesByDate,
         type ConsolidatedGroup,
-        type DateGroup
+        type DateGroup,
+        getConsolidatedGroups,
+        groupImagesByDate
     } from "$lib/photo-layout/index.js";
     import { sortCollectionImages } from "$lib/sort/sort.js";
     import { filterManager } from "$lib/states/filter.svelte";
     import { debugMode, isLayoutPage, sort, viewSettings } from "$lib/states/index.svelte";
-    import { selectionManager, SelectionScopeNames } from "$lib/states/selection.svelte";
+    import { SelectionScopeNames, selectionManager } from "$lib/states/selection.svelte";
     import { toastState } from "$lib/toast-notifcations/notif-state.svelte.js";
     import type { AssetGridArray, AssetGridView } from "$lib/types/asset.js";
     import { SUPPORTED_IMAGE_TYPES, SUPPORTED_RAW_FILES, type SupportedImageTypes } from "$lib/types/images";
@@ -72,9 +75,6 @@
     import { VizLocalStorage } from "$lib/utils/misc.js";
     import type VizView from "$lib/views/views.svelte";
     import { invalidateViz } from "$lib/views/views.svelte";
-    import hotkeys from "hotkeys-js";
-    import { DateTime } from "luxon";
-    import { onDestroy, untrack, type ComponentProps } from "svelte";
     import type { PageProps } from "./$types";
 
     let { data, view }: PageProps & { view?: VizView } = $props();

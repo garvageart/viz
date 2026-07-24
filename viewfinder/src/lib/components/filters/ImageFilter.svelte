@@ -10,9 +10,9 @@
 </script>
 
 <script lang="ts">
+    import { slide } from "svelte/transition";
     import Calendar from "$lib/components/ui/Calendar.svelte";
     import type { ImageFacets, ImageFilters } from "$lib/states/filter.svelte";
-    import { slide } from "svelte/transition";
     import StarRating from "../image-tools/StarRating.svelte";
     import MaterialIcon from "../ui/MaterialIcon.svelte";
     import ChecklistFacet from "./ChecklistFacet.svelte";

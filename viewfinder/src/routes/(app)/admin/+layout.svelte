@@ -1,8 +1,9 @@
 <script lang="ts">
-    import { onMount } from "svelte";
     import { goto } from "$app/navigation";
-    import { user } from "$lib/states/index.svelte";
+    import { onMount } from "svelte";
     import NavSidebar, { type NavItem } from "$lib/components/ui/Sidebar/NavSidebar.svelte";
+    import { user } from "$lib/states/index.svelte";
+    import { toastState } from "$lib/toast-notifcations/notif-state.svelte";
 
     const adminNavItems: NavItem[] = [
         { label: "Dashboard", href: "/admin", icon: "dashboard", exact: true },
@@ -12,7 +13,6 @@
         { label: "Cache", href: "/admin/cache", icon: "memory" },
         { label: "Storage", href: "/admin/storage", icon: "hard_drive" }
     ];
-    import { toastState } from "$lib/toast-notifcations/notif-state.svelte";
 
     let { children } = $props();
     let authed = $state(false);

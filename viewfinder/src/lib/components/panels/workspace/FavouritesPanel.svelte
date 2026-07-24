@@ -1,12 +1,12 @@
 <script lang="ts">
     import { onMount } from "svelte";
-    import { api, executeSearch, type ImageAsset, type Collection } from "$lib/api";
-    import CompactListItem from "./CompactListItem.svelte";
+    import { fade, slide } from "svelte/transition";
+    import { type Collection, type ImageAsset, api, executeSearch } from "$lib/api";
     import MaterialIcon from "$lib/components/ui/MaterialIcon.svelte";
-    import { slide, fade } from "svelte/transition";
-    import { initDB } from "$lib/db/client";
     import { VizMimeTypes } from "$lib/constants";
+    import { initDB } from "$lib/db/client";
     import { DragData } from "$lib/drag-drop/data";
+    import CompactListItem from "./CompactListItem.svelte";
 
     let favouriteImages = $state<ImageAsset[]>([]);
     let favouriteCollections = $state<Collection[]>([]);

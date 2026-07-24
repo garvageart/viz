@@ -1,11 +1,11 @@
 <script lang="ts">
-    import { SplitNode, TabGroup } from "$lib/layouts/model.svelte";
-    import { Splitpanes, Pane } from "$lib/third-party/svelte-splitpanes";
-    import TabGroupPanel from "./TabGroupPanel.svelte";
     import { DEFAULT_THEME } from "$lib/constants";
-    import LayoutNode from "./LayoutNode.svelte";
-    import { debugEvent } from "$lib/utils/dom";
+    import { SplitNode, TabGroup } from "$lib/layouts/model.svelte";
     import { workspaceState } from "$lib/states/workspace.svelte";
+    import { Pane, Splitpanes } from "$lib/third-party/svelte-splitpanes";
+    import { debugEvent } from "$lib/utils/dom";
+    import LayoutNode from "./LayoutNode.svelte";
+    import TabGroupPanel from "./TabGroupPanel.svelte";
 
     interface Props {
         node: SplitNode | TabGroup;

@@ -6,11 +6,12 @@
 -->
 <script lang="ts">
     import { building, dev } from "$app/environment";
-    import { registerReady } from "$lib/stores/appReady";
-    import type { MaterialSymbol } from "$lib/types/MaterialSymbol";
     import type { Component } from "svelte";
     import type { SvelteHTMLElements } from "svelte/elements";
     import { SvelteMap, SvelteSet } from "svelte/reactivity";
+    import { tooltip } from "$lib/components/tooltips/tooltip";
+    import { registerReady } from "$lib/stores/appReady";
+    import type { MaterialSymbol } from "$lib/types/MaterialSymbol";
 
     // Global Font Loading State
     // We keep this global so we don't try to load the same font multiple times.
@@ -24,8 +25,6 @@
     });
     // Lazy: Loaded on demand in the browser/dev to save bundle size.
     const ICON_MODULES = import.meta.glob("$lib/components/icons/generated/**/*.svelte");
-
-    import { tooltip } from "$lib/components/tooltips/tooltip";
 
     // Props
     type IconStyle = "sharp" | "outlined" | "rounded" | "filled";

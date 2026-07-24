@@ -5,9 +5,9 @@
 </script>
 
 <script lang="ts">
-    import Button from "$lib/components/ui/Button.svelte";
     import type { Snippet } from "svelte";
-    import { modalsManager, type ModalOptions } from "./manager/ModalManager.svelte";
+    import Button from "$lib/components/ui/Button.svelte";
+    import { type ModalOptions, modalsManager } from "./manager/ModalManager.svelte";
 
     interface Props {
         id: string;

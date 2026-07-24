@@ -1,28 +1,28 @@
 <script lang="ts">
     import { onDestroy, onMount } from "svelte";
-    import { listImages, listCollectionImageUiDs, addCollectionImages, type ImageAsset } from "$lib/api";
-    import { selectionManager } from "$lib/states/selection.svelte";
-    import { toastState } from "$lib/toast-notifcations/notif-state.svelte";
-    import { invalidateViz } from "$lib/views/views.svelte";
-    import { modalsManager } from "./manager/ModalManager.svelte";
+    import { type ImageAsset, addCollectionImages, listCollectionImageUiDs, listImages } from "$lib/api";
+    import LoadingSpinner from "$lib/components/ui/LoadingSpinner.svelte";
+    import type { MenuItem } from "$lib/context-menu/types";
     import { ImagePaginationState } from "$lib/images/state.svelte";
     import {
-        getConsolidatedGroups,
-        groupImagesByDate,
         type ConsolidatedGroup,
-        type DateGroup
+        type DateGroup,
+        getConsolidatedGroups,
+        groupImagesByDate
     } from "$lib/photo-layout";
     import { filterManager } from "$lib/states/filter.svelte";
     import { viewSettings } from "$lib/states/index.svelte";
+    import { selectionManager } from "$lib/states/selection.svelte";
+    import { toastState } from "$lib/toast-notifcations/notif-state.svelte";
     import type { AssetSortBy, AssetSortOrder } from "$lib/types/asset";
+    import { invalidateViz } from "$lib/views/views.svelte";
+    import Dropdown from "../context-menus/Dropdown.svelte";
     import PhotoAssetGrid from "../grid/PhotoAssetGrid.svelte";
     import VizViewContainer from "../panels/VizViewContainer.svelte";
-    import AssetToolbar from "../ui/toolbars/AssetToolbar.svelte";
-    import IconButton from "../ui/IconButton.svelte";
-    import Dropdown from "../context-menus/Dropdown.svelte";
     import Button from "../ui/Button.svelte";
-    import type { MenuItem } from "$lib/context-menu/types";
-    import LoadingSpinner from "$lib/components/ui/LoadingSpinner.svelte";
+    import IconButton from "../ui/IconButton.svelte";
+    import AssetToolbar from "../ui/toolbars/AssetToolbar.svelte";
+    import { modalsManager } from "./manager/ModalManager.svelte";
 
     interface Props {
         id: string; // modal ID from modalsManager

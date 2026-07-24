@@ -1,11 +1,11 @@
 <script lang="ts">
-    import { onMount, onDestroy } from "svelte";
-    import { computeHistogram, type HistogramData } from "$lib/histogram";
-    import { getFullImagePath, type ImageAsset } from "$lib/api";
-    import InputSelect from "$lib/components/ui/InputSelect.svelte";
-    import { selectionManager } from "$lib/states/selection.svelte";
+    import { onDestroy, onMount } from "svelte";
+    import { type ImageAsset, getFullImagePath } from "$lib/api";
     import IconButton from "$lib/components/ui/IconButton.svelte";
+    import InputSelect from "$lib/components/ui/InputSelect.svelte";
+    import { type HistogramData, computeHistogram } from "$lib/histogram";
     import type { HistogramChannels } from "$lib/histogram/types";
+    import { selectionManager } from "$lib/states/selection.svelte";
     import type { HistogramChannelData } from "$lib/third-party/photo-histogram/js";
 
     let activeScope = $derived(selectionManager.activeScope);

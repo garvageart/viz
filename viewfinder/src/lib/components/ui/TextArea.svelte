@@ -1,6 +1,7 @@
 <script lang="ts">
-    import { generateRandomString } from "$lib/utils/misc";
     import type { SvelteHTMLElements } from "svelte/elements";
+    import { generateRandomString } from "$lib/utils/misc";
+
     interface Props {
         label?: string;
         description?: string;

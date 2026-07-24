@@ -1,9 +1,8 @@
 <script lang="ts">
     import type { HTMLButtonAttributes, MouseEventHandler } from "svelte/elements";
-    import MaterialIcon, { type IconProps } from "./MaterialIcon.svelte";
     import { tooltip } from "$lib/components/tooltips/tooltip";
-
     import type { TooltipParams } from "$lib/components/tooltips/tooltip";
+    import MaterialIcon, { type IconProps } from "./MaterialIcon.svelte";
 
     interface ButtonProps extends HTMLButtonAttributes {
         hoverColor?: string;

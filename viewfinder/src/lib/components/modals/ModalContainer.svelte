@@ -1,7 +1,7 @@
 <script lang="ts">
-    import { modalsManager } from "./manager/ModalManager.svelte";
     import Lightbox from "../ui/Lightbox.svelte";
     import ModalLightbox from "./ModalLightbox.svelte";
+    import { modalsManager } from "./manager/ModalManager.svelte";
 </script>
 
 <svelte:window

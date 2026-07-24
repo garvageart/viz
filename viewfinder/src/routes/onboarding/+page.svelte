@@ -1,18 +1,18 @@
 <script lang="ts">
     import { goto } from "$app/navigation";
-    import { system, user, toggleTheme, getTheme } from "$lib/states/index.svelte";
-    import { setupSuperadmin, doUserOnboarding, getUserSettings, type UserSetting } from "$lib/api";
-    import InputText from "$lib/components/ui/InputText.svelte";
-    import InputSelect from "$lib/components/ui/InputSelect.svelte";
-    import InputPassword from "$lib/components/ui/InputPassword.svelte";
-    import Button from "$lib/components/ui/Button.svelte";
-    import MaterialIcon from "$lib/components/ui/MaterialIcon.svelte";
-    import { toastState } from "$lib/toast-notifcations/notif-state.svelte";
+    import { page } from "$app/state";
     import { onMount } from "svelte";
     import { fade } from "svelte/transition";
-    import { formatLabel } from "$lib/settings/utils";
+    import { type UserSetting, doUserOnboarding, getUserSettings, setupSuperadmin } from "$lib/api";
+    import Button from "$lib/components/ui/Button.svelte";
+    import InputPassword from "$lib/components/ui/InputPassword.svelte";
+    import InputSelect from "$lib/components/ui/InputSelect.svelte";
+    import InputText from "$lib/components/ui/InputText.svelte";
+    import MaterialIcon from "$lib/components/ui/MaterialIcon.svelte";
     import ProgressBar from "$lib/components/ui/ProgressBar.svelte";
-    import { page } from "$app/state";
+    import { formatLabel } from "$lib/settings/utils";
+    import { getTheme, system, toggleTheme, user } from "$lib/states/index.svelte";
+    import { toastState } from "$lib/toast-notifcations/notif-state.svelte";
     import { getSafeRedirectUrl } from "$lib/utils/url";
 
     let isLoading = $state(false);

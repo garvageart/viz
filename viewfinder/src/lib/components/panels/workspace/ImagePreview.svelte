@@ -1,5 +1,5 @@
 <script lang="ts">
-    import { getFullImagePath, type ImageAsset } from "$lib/api";
+    import { type ImageAsset, getFullImagePath } from "$lib/api";
     import ImageLabelViewer from "$lib/components/image-tools/ImageLabelViewer.svelte";
     import AssetImage from "$lib/components/ui/AssetImage.svelte";
     import MaterialIcon from "$lib/components/ui/MaterialIcon.svelte";

@@ -1,10 +1,10 @@
 <script lang="ts">
+    import { fade } from "svelte/transition";
     import type { UserSetting } from "$lib/api";
     import { updateUserSettingsBatch } from "$lib/api";
-    import { fade } from "svelte/transition";
+    import Button from "$lib/components/ui/Button.svelte";
     import { toastState } from "$lib/toast-notifcations/notif-state.svelte";
     import SettingItemsList from "./SettingItemsList.svelte";
-    import Button from "$lib/components/ui/Button.svelte";
 
     interface Props {
         settings?: UserSetting[];

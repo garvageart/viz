@@ -1,11 +1,11 @@
 <script lang="ts">
+    import { untrack } from "svelte";
+    import { scale } from "svelte/transition";
     import IconButton from "$lib/components/ui/IconButton.svelte";
     import { upload } from "$lib/states/index.svelte";
     import { UploadState } from "$lib/upload/asset.svelte";
     import { processGlobalQueue, waitForUploadCompletion } from "$lib/upload/manager.svelte";
     import { invalidateViz } from "$lib/views/views.svelte";
-    import { untrack } from "svelte";
-    import { scale } from "svelte/transition";
     import Button from "../Button.svelte";
     import MaterialIcon from "../MaterialIcon.svelte";
 

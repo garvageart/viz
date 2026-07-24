@@ -3,25 +3,25 @@
 </script>
 
 <script lang="ts">
+    import { DateTime } from "luxon";
     import type { ImageAsset } from "$lib/api";
     import { safeRenderRenameTemplate } from "$lib/ui-tools/renamer";
-    import InputText from "./InputText.svelte";
-    import InputSelect from "./InputSelect.svelte";
-    import IconButton from "./IconButton.svelte";
-    import MaterialIcon from "./MaterialIcon.svelte";
-    import TokenChip from "./TokenChip.svelte";
-    import { generateRandomString } from "$lib/utils/misc";
-    import { DateTime } from "luxon";
     import {
-        buildDateTokens,
+        DATE_FORMAT_OPTIONS,
+        DATE_FORMAT_TEMPLATES,
         DEFAULT_TEMPLATE_EXAMPLE,
+        METADATA_FIELD_OPTIONS,
         NAMING_OPTIONS,
         ROW_TYPES,
-        DATE_FORMAT_OPTIONS,
-        METADATA_FIELD_OPTIONS,
-        DATE_FORMAT_TEMPLATES
+        buildDateTokens
     } from "$lib/ui-tools/template";
     import type { ExportFormats } from "$lib/utils/images";
+    import { generateRandomString } from "$lib/utils/misc";
+    import IconButton from "./IconButton.svelte";
+    import InputSelect from "./InputSelect.svelte";
+    import InputText from "./InputText.svelte";
+    import MaterialIcon from "./MaterialIcon.svelte";
+    import TokenChip from "./TokenChip.svelte";
 
     const previewDate = DateTime.fromISO(DEFAULT_TEMPLATE_EXAMPLE.exampleDateStr);
     const dateTokens = buildDateTokens(previewDate);

@@ -1,11 +1,11 @@
 <script lang="ts">
-    import type { ImageAsset, Collection } from "$lib/api";
+    import { slide } from "svelte/transition";
+    import type { Collection, ImageAsset } from "$lib/api";
+    import AssetImage from "$lib/components/ui/AssetImage.svelte";
+    import MaterialIcon from "$lib/components/ui/MaterialIcon.svelte";
     import { VizMimeTypes } from "$lib/constants";
     import { DragData } from "$lib/drag-drop/data";
-    import MaterialIcon from "$lib/components/ui/MaterialIcon.svelte";
-    import { slide } from "svelte/transition";
     import { formatBytes } from "$lib/utils/images";
-    import AssetImage from "$lib/components/ui/AssetImage.svelte";
 
     interface Props {
         item: ImageAsset | Collection;

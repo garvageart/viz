@@ -1,10 +1,10 @@
 <script lang="ts">
+    import { untrack } from "svelte";
+    import { scale } from "svelte/transition";
     import IconButton from "$lib/components/ui/IconButton.svelte";
     import { download } from "$lib/states/index.svelte";
     import { DownloadState } from "$lib/upload/asset.svelte";
     import { processDownloadQueue, waitForDownloadCompletion } from "$lib/upload/manager.svelte";
-    import { untrack } from "svelte";
-    import { scale } from "svelte/transition";
     import Button from "../Button.svelte";
     import MaterialIcon from "../MaterialIcon.svelte";
 

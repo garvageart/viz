@@ -1,15 +1,15 @@
 <script lang="ts">
+    import type { EventRecord, WsMetricsResponse, WsStatsResponse } from "$lib/api";
+    import AdminRouteShell from "$lib/components/admin/AdminRouteShell.svelte";
+    import ConfirmationModal from "$lib/components/modals/ConfirmationModal.svelte";
+    import { modalsManager } from "$lib/components/modals/manager/ModalManager.svelte";
     import Badge from "$lib/components/ui/Badge.svelte";
     import Button from "$lib/components/ui/Button.svelte";
+    import InputSelect from "$lib/components/ui/InputSelect.svelte";
     import MaterialIcon from "$lib/components/ui/MaterialIcon.svelte";
     import { toastState } from "$lib/toast-notifcations/notif-state.svelte";
-    import type { PageData } from "./$types";
-    import type { WsStatsResponse, WsMetricsResponse, EventRecord } from "$lib/api";
-    import ConfirmationModal from "$lib/components/modals/ConfirmationModal.svelte";
-    import AdminRouteShell from "$lib/components/admin/AdminRouteShell.svelte";
-    import { modalsManager } from "$lib/components/modals/manager/ModalManager.svelte";
-    import InputSelect from "$lib/components/ui/InputSelect.svelte";
     import type { MaterialSymbol } from "$lib/types/MaterialSymbol.js";
+    import type { PageData } from "./$types";
 
     type EventHistoryItem = EventRecord;
 

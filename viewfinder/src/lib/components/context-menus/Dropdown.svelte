@@ -1,10 +1,10 @@
 <script lang="ts">
-    import type { MaterialSymbol } from "$lib/types/MaterialSymbol";
-    import ContextMenu from "$lib/context-menu/ContextMenu.svelte";
-    import IconButton from "../ui/IconButton.svelte";
-    import Button from "../ui/Button.svelte";
-    import type { MenuItem } from "$lib/context-menu/types";
     import type { Snippet } from "svelte";
+    import ContextMenu from "$lib/context-menu/ContextMenu.svelte";
+    import type { MenuItem } from "$lib/context-menu/types";
+    import type { MaterialSymbol } from "$lib/types/MaterialSymbol";
+    import Button from "../ui/Button.svelte";
+    import IconButton from "../ui/IconButton.svelte";
 
     interface Props {
         class?: string;

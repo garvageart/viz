@@ -1,11 +1,11 @@
 <script lang="ts">
     import { setContext } from "svelte";
-    import MaterialIcon from "$lib/components/ui/MaterialIcon.svelte";
-    import type { MaterialSymbol } from "$lib/types/MaterialSymbol";
     import type { Snippet } from "svelte";
     import type { SvelteHTMLElements } from "svelte/elements";
-    import IconButton from "../ui/IconButton.svelte";
+    import MaterialIcon from "$lib/components/ui/MaterialIcon.svelte";
     import { ContextKeys } from "$lib/context-keys";
+    import type { MaterialSymbol } from "$lib/types/MaterialSymbol";
+    import IconButton from "../ui/IconButton.svelte";
 
     type Props = {
         children: Snippet;

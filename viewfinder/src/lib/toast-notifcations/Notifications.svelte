@@ -1,9 +1,9 @@
 <script lang="ts">
-    import IconButton from "$lib/components/ui/IconButton.svelte";
-    import MaterialIcon from "$lib/components/ui/MaterialIcon.svelte";
     import DOMPurify from "dompurify";
     import { fly } from "svelte/transition";
-    import { toastState, type NotifcationType } from "./notif-state.svelte";
+    import IconButton from "$lib/components/ui/IconButton.svelte";
+    import MaterialIcon from "$lib/components/ui/MaterialIcon.svelte";
+    import { type NotifcationType, toastState } from "./notif-state.svelte";
 
     function parseNotificationText(text: string) {
         if (!text) {
@@ -146,7 +146,7 @@
             background-color 150ms ease,
             border-color 150ms ease;
 
-        // Map type-based accent colors (used for colored background mixes and left cue bars)
+        /* Map type-based accent colors (used for colored background mixes and left cue bars) */
         &:global(.viz-toast-info) {
             --toast-accent-color: var(--viz-info-color);
         }
@@ -160,12 +160,12 @@
             --toast-accent-color: var(--viz-error-color);
         }
 
-        // Richly colored background & border that automatically aligns with dark/light themes
+        /* Richly colored background & border that automatically aligns with dark/light themes */
         background-color: color-mix(in srgb, var(--toast-accent-color) 25%, var(--viz-95));
         border: 1px solid color-mix(in srgb, var(--toast-accent-color) 45%, var(--viz-60));
         color: var(--viz-text-color);
 
-        // Dynamic color bar on the left edge (DAM aesthetic)
+        /* Dynamic color bar on the left edge (DAM aesthetic) */
         &::before {
             content: "";
             position: absolute;

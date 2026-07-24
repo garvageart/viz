@@ -1,8 +1,8 @@
 <script lang="ts">
-    import type { MaterialSymbol } from "$lib/types/MaterialSymbol";
-    import MaterialIcon from "./MaterialIcon.svelte";
     import type { Snippet } from "svelte";
     import type { HTMLAttributes } from "svelte/elements";
+    import type { MaterialSymbol } from "$lib/types/MaterialSymbol";
+    import MaterialIcon from "./MaterialIcon.svelte";
 
     interface Props extends HTMLAttributes<HTMLDivElement> {
         variant?: "default" | "warning" | "error" | "info" | "success" | "neutral" | "outline";

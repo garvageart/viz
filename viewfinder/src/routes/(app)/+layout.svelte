@@ -1,13 +1,13 @@
 <script lang="ts">
-    import Header from "$lib/components/ui/Header.svelte";
-    import UploadPanel from "$lib/components/ui/panels/UploadPanel.svelte";
-    import DownloadPanel from "$lib/components/ui/panels/DownloadPanel.svelte";
-    import { debugMode, download, sortState, upload } from "$lib/states/index.svelte";
-    import "$lib/components/panels/viz-panel.scss";
-    import { registerReady } from "$lib/stores/appReady";
-    import { loadRuntimeConfig } from "$lib/runtime-config";
-    import { onMount, untrack } from "svelte";
     import { page } from "$app/state";
+    import { onMount, untrack } from "svelte";
+    import "$lib/components/panels/viz-panel.scss";
+    import Header from "$lib/components/ui/Header.svelte";
+    import DownloadPanel from "$lib/components/ui/panels/DownloadPanel.svelte";
+    import UploadPanel from "$lib/components/ui/panels/UploadPanel.svelte";
+    import { loadRuntimeConfig } from "$lib/runtime-config";
+    import { debugMode, download, sortState, upload } from "$lib/states/index.svelte";
+    import { registerReady } from "$lib/stores/appReady";
     import { invalidateViz } from "$lib/views/views.svelte";
 
     let { children } = $props();

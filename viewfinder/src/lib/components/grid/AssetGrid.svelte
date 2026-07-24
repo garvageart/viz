@@ -1,5 +1,9 @@
 <script lang="ts" generics="T extends { uid: string } & Record<string, any>">
     import { dev } from "$app/environment";
+    import hotkeys from "hotkeys-js";
+    import { DateTime } from "luxon";
+    import { untrack } from "svelte";
+    import type { SvelteHTMLElements } from "svelte/elements";
     import { getFullImagePath } from "$lib/api";
     import { debugMode, isLayoutPage, sort, tableColumnSettings } from "$lib/states/index.svelte";
     import { selectionManager } from "$lib/states/selection.svelte";
@@ -8,10 +12,6 @@
     import { tryParseDate } from "$lib/utils/dates";
     import { buildGridArray } from "$lib/utils/dom";
     import { snakeToTitle } from "$lib/utils/strings";
-    import hotkeys from "hotkeys-js";
-    import { DateTime } from "luxon";
-    import { untrack } from "svelte";
-    import type { SvelteHTMLElements } from "svelte/elements";
     import type { AssetGridView } from "../grid/PhotoAssetGrid.svelte";
     import TableColumnSelectorModal from "../modals/TableColumnSelectorModal.svelte";
     import { modalsManager } from "../modals/manager/ModalManager.svelte";
@@ -984,7 +984,7 @@
         }
     }
 
-    // Preview column: thumbnail + meta stacked
+    /* Preview column: thumbnail + meta stacked */
     .asset-snippet-cell {
         min-width: 220px;
         padding: var(--viz-spacing-xs) var(--viz-spacing-sm);
@@ -1050,7 +1050,7 @@
         }
     }
 
-    // Values columns should wrap gracefully on small widths
+    /* Values columns should wrap gracefully on small widths */
     .viz-asset-table-container tbody td:not(.asset-snippet-cell) {
         max-width: 18ch;
     }

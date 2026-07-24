@@ -1,11 +1,11 @@
 <script lang="ts">
-    import Button from "$lib/components/ui/Button.svelte";
-    import InputText from "$lib/components/ui/InputText.svelte";
-    import InputSelect from "$lib/components/ui/InputSelect.svelte";
-    import InputPassword from "$lib/components/ui/InputPassword.svelte";
-    import { modalsManager } from "./manager/ModalManager.svelte";
     import { Role } from "$lib/api";
+    import Button from "$lib/components/ui/Button.svelte";
+    import InputPassword from "$lib/components/ui/InputPassword.svelte";
+    import InputSelect from "$lib/components/ui/InputSelect.svelte";
+    import InputText from "$lib/components/ui/InputText.svelte";
     import { toSentenceCase } from "$lib/utils/strings";
+    import { modalsManager } from "./manager/ModalManager.svelte";
 
     interface Props {
         id: string;

@@ -1,4 +1,7 @@
 <script lang="ts">
+    import { DateTime } from "luxon";
+    import { onMount } from "svelte";
+    import { fade } from "svelte/transition";
     import { type WorkerInfo } from "$lib/api";
     import AdminRouteShell from "$lib/components/admin/AdminRouteShell.svelte";
     import Badge from "$lib/components/ui/Badge.svelte";
@@ -8,9 +11,6 @@
     import { jobsState } from "$lib/states/jobs.svelte";
     import type { MaterialSymbol } from "$lib/types/MaterialSymbol.js";
     import { tryParseDate } from "$lib/utils/dates";
-    import { DateTime } from "luxon";
-    import { onMount } from "svelte";
-    import { fade } from "svelte/transition";
 
     let activeTab = $state<"all" | "success" | "failed">("all");
     let searchQuery = $state("");

@@ -1,20 +1,20 @@
 <script lang="ts">
+    import { DateTime } from "luxon";
     import {
+        type ApiKey,
+        type Session,
         deleteApiKey,
         deleteSession,
         getCurrentSession,
         getSessions,
         listApiKeys,
-        updateSession,
-        type ApiKey,
-        type Session
+        updateSession
     } from "$lib/api";
-    import Button from "$lib/components/ui/Button.svelte";
-    import MaterialIcon from "$lib/components/ui/MaterialIcon.svelte";
     import ConfirmationModal from "$lib/components/modals/ConfirmationModal.svelte";
     import CreatedApiKeyModal from "$lib/components/modals/CreatedApiKeyModal.svelte";
+    import Button from "$lib/components/ui/Button.svelte";
+    import MaterialIcon from "$lib/components/ui/MaterialIcon.svelte";
     import { toastState } from "$lib/toast-notifcations/notif-state.svelte";
-    import { DateTime } from "luxon";
     import { modalsManager } from "../modals/manager/ModalManager.svelte";
     import RenameSessionModal from "./RenameSessionModal.svelte";
 

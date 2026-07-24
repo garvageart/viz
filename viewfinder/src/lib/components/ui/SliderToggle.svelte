@@ -1,7 +1,7 @@
 <!-- Modified from here: https://svelte.dev/playground/d65a4e9f0ae74d1eb1b08d13e428af32?version=5.36.8 -->
 <script lang="ts">
-    import { generateRandomString } from "$lib/utils/misc";
     import type { MouseEventHandler, SvelteHTMLElements } from "svelte/elements";
+    import { generateRandomString } from "$lib/utils/misc";
 
     interface Props {
         label: string;

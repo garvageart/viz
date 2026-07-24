@@ -2,6 +2,8 @@
     import { dev } from "$app/environment";
     import { goto } from "$app/navigation";
     import { page } from "$app/state";
+    import hotkeys from "hotkeys-js";
+    import { untrack } from "svelte";
     import Dropdown from "$lib/components/context-menus/Dropdown.svelte";
     import { CLIENT_IS_PRODUCTION, DYNAMIC_ROUTE_REGEX } from "$lib/constants";
     import ContextMenu from "$lib/context-menu/ContextMenu.svelte";
@@ -24,8 +26,6 @@
     import { SUPPORTED_IMAGE_TYPES, SUPPORTED_RAW_FILES, type SupportedImageTypes } from "$lib/types/images";
     import UploadManager from "$lib/upload/manager.svelte";
     import VizView from "$lib/views/views.svelte";
-    import hotkeys from "hotkeys-js";
-    import { untrack } from "svelte";
     import OpenAccountPanel from "../context-menus/AccountPanel.svelte";
     import AppMenu from "../context-menus/AppMenu.svelte";
     import IconButton from "./IconButton.svelte";

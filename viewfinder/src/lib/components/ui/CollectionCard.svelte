@@ -67,13 +67,13 @@
 <script lang="ts">
     import { goto } from "$app/navigation";
     import { page } from "$app/state";
-    import { addCollectionImages, getImage, type Collection } from "$lib/api";
+    import { DateTime } from "luxon";
+    import type { SvelteHTMLElements } from "svelte/elements";
+    import { type Collection, addCollectionImages, getImage } from "$lib/api";
     import { VizMimeTypes } from "$lib/constants";
     import { DragData } from "$lib/drag-drop/data";
     import { toastState } from "$lib/toast-notifcations/notif-state.svelte";
     import VizView, { invalidateViz } from "$lib/views/views.svelte";
-    import { DateTime } from "luxon";
-    import type { SvelteHTMLElements } from "svelte/elements";
     import CollectionPage from "../../../routes/(app)/collections/[uid]/+page.svelte";
     import AssetImage from "./AssetImage.svelte";
     import MaterialIcon from "./MaterialIcon.svelte";

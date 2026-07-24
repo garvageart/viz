@@ -1,10 +1,10 @@
 <script lang="ts">
     import { dev } from "$app/environment";
     import { page } from "$app/state";
+    import { type Snippet, onDestroy, untrack } from "svelte";
+    import type { SvelteHTMLElements } from "svelte/elements";
     import { isLayoutPage } from "$lib/states/index.svelte";
     import { isElementScrollable } from "$lib/utils/dom";
-    import { onDestroy, untrack, type Snippet } from "svelte";
-    import type { SvelteHTMLElements } from "svelte/elements";
     import LoadingContainer from "../overlays/LoadingContainer.svelte";
 
     interface Props {

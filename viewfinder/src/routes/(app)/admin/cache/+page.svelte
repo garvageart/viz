@@ -2,17 +2,16 @@
     import { goto, invalidate } from "$app/navigation";
     import { page } from "$app/state";
     import { clearImageCache } from "$lib/api";
-    import Button from "$lib/components/ui/Button.svelte";
-    import ConfirmationModal, { modalOptions } from "$lib/components/modals/ConfirmationModal.svelte";
-    import Checkbox from "$lib/components/ui/Checkbox.svelte";
-    import { formatBytes } from "$lib/utils/images";
-    import { toastState, type Toast } from "$lib/toast-notifcations/notif-state.svelte";
     import AdminRouteShell from "$lib/components/admin/AdminRouteShell.svelte";
-    import MaterialIcon from "$lib/components/ui/MaterialIcon.svelte";
+    import ConfirmationModal, { modalOptions } from "$lib/components/modals/ConfirmationModal.svelte";
     import { modalsManager } from "$lib/components/modals/manager/ModalManager.svelte";
-    import { invalidateViz } from "$lib/views/views.svelte";
-
+    import Button from "$lib/components/ui/Button.svelte";
+    import Checkbox from "$lib/components/ui/Checkbox.svelte";
+    import MaterialIcon from "$lib/components/ui/MaterialIcon.svelte";
+    import { type Toast, toastState } from "$lib/toast-notifcations/notif-state.svelte";
     import type { MaterialSymbol } from "$lib/types/MaterialSymbol.js";
+    import { formatBytes } from "$lib/utils/images";
+    import { invalidateViz } from "$lib/views/views.svelte";
 
     let { data } = $props();
 

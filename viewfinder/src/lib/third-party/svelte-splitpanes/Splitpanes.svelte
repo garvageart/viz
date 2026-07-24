@@ -1,5 +1,6 @@
 <script module lang="ts">
     import "./internal/default-theme.scss";
+
     export const KEY = {};
 
     type ResultType = boolean | { passive: boolean };
@@ -33,22 +34,22 @@
 
 <!-- svelte-ignore state_referenced_locally -->
 <script lang="ts">
-    import { onMount, onDestroy, setContext, createEventDispatcher, tick } from "svelte";
+    import { browser } from "$app/environment";
+    import { createEventDispatcher, onDestroy, onMount, setContext, tick } from "svelte";
     import { writable } from "svelte/store";
-    import type { IPane, IPaneSizingEvent, SplitContext, PaneInitFunction, ClientCallbacks } from "./index.js";
+    import { generateKeyId } from "$lib/utils/layout";
+    import type { ClientCallbacks, IPane, IPaneSizingEvent, PaneInitFunction, SplitContext } from "./index.js";
     import GatheringRound from "./internal/GatheringRound.svelte";
-    import { getDimensionName } from "./internal/utils/sizing.js";
+    import { forEachPartial, sumPartial } from "./internal/utils/array.js";
     import {
         type Position,
         elementRectWithoutBorder,
+        getElementRect,
         getGlobalMousePosition,
-        positionDiff,
-        getElementRect
+        positionDiff
     } from "./internal/utils/position.js";
-    import { forEachPartial, sumPartial } from "./internal/utils/array.js";
+    import { getDimensionName } from "./internal/utils/sizing.js";
     import { calcComputedStyle } from "./internal/utils/styling.js";
-    import { generateKeyId } from "$lib/utils/layout";
-    import { browser } from "$app/environment";
 
     // TYPE DECLARATIONS ----------------
 
@@ -65,7 +66,7 @@
     //  since this is another (possibly) breaking change already?
 
     // eslint-disable-next-line
-    interface $$Events {
+    interface $Events {
         /**
          * When clicking (or touching) a pane.
          *

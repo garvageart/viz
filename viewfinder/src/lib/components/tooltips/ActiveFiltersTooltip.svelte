@@ -1,6 +1,6 @@
 <script lang="ts">
-    import { filterManager } from "$lib/states/filter.svelte";
     import { LabelColours } from "$lib/images/constants";
+    import { filterManager } from "$lib/states/filter.svelte";
     import type { ImageFilters } from "$lib/states/filter.svelte";
 
     const scope = $derived(filterManager.activeScope);

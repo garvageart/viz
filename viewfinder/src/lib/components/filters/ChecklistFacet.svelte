@@ -1,6 +1,6 @@
 <script lang="ts">
-    import Checkbox from "$lib/components/ui/Checkbox.svelte";
     import Button from "$lib/components/ui/Button.svelte";
+    import Checkbox from "$lib/components/ui/Checkbox.svelte";
 
     interface Props {
         title: string;

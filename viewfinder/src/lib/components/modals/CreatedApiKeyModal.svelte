@@ -1,6 +1,6 @@
 <script lang="ts">
     import { createApiKey } from "$lib/api";
-    import { scopes, Scope } from "$lib/auth/scopes.gen";
+    import { Scope, scopes } from "$lib/auth/scopes.gen";
     import Button from "$lib/components/ui/Button.svelte";
     import IconButton from "$lib/components/ui/IconButton.svelte";
     import InputText from "$lib/components/ui/InputText.svelte";
