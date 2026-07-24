@@ -5,6 +5,15 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.18.0] - 2026-07-24
+
+* style(ui): apply Design System 2.0 surface tokens across workspace components, modals & tooltips (7fc3940a)
+* style(splashscreen): refine splashscreen logo branding and add stepped dot loader (7ca4c409)
+* refactor(admin): standardize layout, icon badges and status controls across admin pages (85ae3483)
+* feat(ui): create AvatarBadge and IconBadge reusable UI components (29382290)
+* feat(ui): Design System 2.0 theme engine, OKLCH mixins, surface elevation & VS Code theme (a6f740ab)
+* fix(api): strip leading slash from path in FrontendHandler and add 404 logging (85b5e2b6)
+
 ## [0.17.0] - 2026-07-24
 
 * style(ui): format Svelte components and sort imports (4d5c7c00)
