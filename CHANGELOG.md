@@ -5,6 +5,11 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.18.1] - 2026-07-24
+
+* fix: change default theme back to viz-black and add TODO notice (06b0c097)
+* chore: remove personal migration script out of git (01682397)
+
 ## [0.18.0] - 2026-07-24
 
 * style(ui): apply Design System 2.0 surface tokens across workspace components, modals & tooltips (7fc3940a)
