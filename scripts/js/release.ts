@@ -3,7 +3,7 @@ import fsSync from "fs";
 import fs from "fs/promises";
 import path from "path";
 import readline from "readline";
-import semver, { ReleaseType } from "semver";
+import semver from "semver";
 import { fileURLToPath } from "url";
 
 const __filename = fileURLToPath(import.meta.url);
@@ -233,16 +233,20 @@ async function main() {
         console.log(`Release v${nextVersion} created locally!`);
         console.log("==================================================");
 
+        const currentBranch = execSync("git rev-parse --abbrev-ref HEAD", { stdio: ["ignore", "pipe", "ignore"] })
+            .toString()
+            .trim();
+
         const pushConfirm = await askQuestion("\nPush changes to origin now? [y/N]: ");
         if (pushConfirm.toLowerCase() === "y") {
-            console.log("\nPushing changes and tags to origin...");
-            execSync("git push origin main --follow-tags", { stdio: "inherit" });
+            console.log("\nPushing release commit and tag atomically to origin...");
+            execSync(`git push origin ${currentBranch} v${nextVersion}`, { stdio: "inherit" });
             console.log("\n==================================================");
             console.log("Push complete!");
             console.log("==================================================");
         } else {
             console.log("\nNext steps:");
-            console.log("1. Run: git push origin main --follow-tags");
+            console.log(`1. Run: git push origin ${currentBranch} v${nextVersion}`);
             console.log("==================================================");
         }
     } finally {
