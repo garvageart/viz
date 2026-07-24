@@ -10,7 +10,8 @@ const DISPLAY_FONT_PLACEHOLDER = "%viz.css.display_font%";
 const MONO_FONT_PLACEHOLDER = "%viz.css.mono_font%";
 const THEME_ATTR_PLACEHOLDER = "%THEME_ATTR%";
 
-const DEFAULT_THEME = "viz-vscode";
+// TODO: add theme selection from user settings
+const DEFAULT_THEME = "viz-black";
 
 function handleFonts(html: string) {
     return html.replace(DISPLAY_FONT_PLACEHOLDER, geist).replace(MONO_FONT_PLACEHOLDER, robotoMono);
