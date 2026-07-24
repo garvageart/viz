@@ -87,13 +87,15 @@
         &:hover {
             background-color: var(--viz-surface-hover);
             color: var(--viz-text-primary);
-            border-bottom-color: var(--viz-primary);
+            border-bottom-color: var(--viz-primary-hover);
         }
 
         &.active {
-            background-color: var(--viz-surface-panel);
+            background-color: var(--viz-surface-hover);
             color: var(--viz-text-primary);
-            border-bottom-color: var(--viz-primary);
+            font-weight: 600;
+            border-bottom: 3px solid var(--viz-primary);
+            padding-left: calc(var(--viz-spacing-md) - 3px);
         }
     }
 </style>
