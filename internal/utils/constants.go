@@ -1,6 +1,7 @@
 package utils
 
 import (
+	"os"
 	"testing"
 )
 
@@ -14,13 +15,9 @@ var (
 	IsDevelopment = !IsProduction && !IsTest
 
 	Environment = func() string {
-		switch true {
-		case IsProduction:
-			return "production"
-		case IsTest:
-			return "test"
-		default:
-			return "development"
+		if env := os.Getenv("ENV"); env != "" {
+			return env
 		}
+		return "development"
 	}()
 )
