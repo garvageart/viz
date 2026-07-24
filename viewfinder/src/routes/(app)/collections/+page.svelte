@@ -32,6 +32,7 @@
     import type { AssetGridArray } from "$lib/types/asset";
     import { untrack, type ComponentProps } from "svelte";
     import type { PageProps } from "./$types";
+    import Badge from "$lib/components/ui/Badge.svelte";
 
     let { data }: PageProps = $props();
 
@@ -396,10 +397,9 @@
                     <span id="coll-name">Collections</span>
                 </div>
                 <div id="coll-meta-chips">
-                    <div class="meta-chip">
-                        <MaterialIcon iconName="folder" size="1rem" />
+                    <Badge pill={true} iconFill={true} variant="neutral" iconName="folder" iconSize="1rem">
                         <span>{displayData.length} {displayData.length === 1 ? "collection" : "collections"}</span>
-                    </div>
+                    </Badge>
                 </div>
             </div>
         </div>
@@ -474,25 +474,6 @@
 
         @media (max-width: 768px) {
             margin-top: var(--viz-spacing-xs);
-        }
-    }
-
-    .meta-chip {
-        display: flex;
-        align-items: center;
-        gap: var(--viz-spacing-xs);
-        background-color: var(--viz-90);
-        border: var(--viz-border-thin);
-        border-color: var(--viz-80);
-        border-radius: var(--viz-border-radius-pill);
-        padding: 0.35rem 0.75rem;
-        font-family: var(--viz-mono-font);
-        font-size: var(--viz-font-size-std);
-        color: var(--viz-40);
-        box-shadow: 0 1px 2px rgba(0, 0, 0, 0.05);
-
-        span {
-            font-weight: 500;
         }
     }
 
