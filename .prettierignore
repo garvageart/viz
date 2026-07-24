@@ -3,6 +3,7 @@
 .antigravitycli
 .hive
 .gemini
+.*ignore
 
 # Archive / Legacy
 archive/

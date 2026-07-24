@@ -58,5 +58,7 @@
     },
     "svelte.enable-ts-plugin": true,
     "js/ts.preferences.importModuleSpecifier": "non-relative",
-    "js/ts.experimental.useTsgo": false
+    "js/ts.experimental.useTsgo": false,
+    "prettier.configPath": ".prettierrc",
+    "prettier.ignorePath": ".prettierignore"
 }
