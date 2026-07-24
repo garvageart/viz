@@ -46,7 +46,7 @@
 
             #app-splash .splash-viewfinder {
                 position: relative;
-                padding: 1rem 2rem;
+                padding: 1.25rem 2.5rem;
                 display: inline-flex;
                 align-items: center;
                 justify-content: center;
@@ -54,73 +54,85 @@
 
             #app-splash .corner {
                 position: absolute;
-                width: 8px;
-                height: 8px;
+                width: 12px;
+                height: 12px;
                 border-color: var(--viz-primary);
                 border-style: solid;
-                opacity: 0.85;
+                opacity: 1;
             }
 
             #app-splash .corner.top-left {
                 top: 0;
                 left: 0;
-                border-width: 1.5px 0 0 1.5px;
+                border-width: 2.5px 0 0 2.5px;
             }
 
             #app-splash .corner.top-right {
                 top: 0;
                 right: 0;
-                border-width: 1.5px 1.5px 0 0;
+                border-width: 2.5px 2.5px 0 0;
             }
 
             #app-splash .corner.bottom-left {
                 bottom: 0;
                 left: 0;
-                border-width: 0 0 1.5px 1.5px;
+                border-width: 0 0 2.5px 2.5px;
             }
 
             #app-splash .corner.bottom-right {
                 bottom: 0;
                 right: 0;
-                border-width: 0 1.5px 1.5px 0;
+                border-width: 0 2.5px 2.5px 0;
             }
 
-            #app-splash .splash-loader {
-                width: 52px;
-                height: 3px;
-                background-color: color-mix(in srgb, var(--viz-text-color) 15%, transparent);
-                margin: 1.25rem auto 0;
-                position: relative;
-                overflow: hidden;
-                border-radius: 3px;
+            #app-splash .splash-dots {
+                display: flex;
+                justify-content: center;
+                align-items: center;
+                gap: 6px;
+                margin: 2rem auto 0;
             }
 
-            #app-splash .splash-loader::after {
-                content: "";
-                position: absolute;
-                top: 0;
-                left: 0;
-                bottom: 0;
-                width: 40%;
-                background-color: var(--viz-primary);
-                border-radius: 3px;
-                animation: splash-slide 1s ease-in-out infinite;
+            #app-splash .splash-dots .dot {
+                width: 6px;
+                height: 6px;
+                border-radius: 50%;
+                background-color: var(--viz-text-color);
+                animation: splash-dot-step 1.2s steps(1) infinite;
             }
 
-            @keyframes splash-slide {
+            #app-splash .splash-dots .dot:nth-child(1) {
+                animation-delay: 0s;
+            }
+
+            #app-splash .splash-dots .dot:nth-child(2) {
+                animation-delay: 0.4s;
+            }
+
+            #app-splash .splash-dots .dot:nth-child(3) {
+                animation-delay: 0.8s;
+            }
+
+            @keyframes splash-dot-step {
                 0% {
-                    left: -40%;
+                    opacity: 1;
+                    transform: scale(1.15);
                 }
-
+                33.33% {
+                    opacity: 0.25;
+                    transform: scale(0.75);
+                }
                 100% {
-                    left: 100%;
+                    opacity: 0.25;
+                    transform: scale(0.75);
                 }
             }
 
             #app-splash .splash-text {
                 font-family: "Roboto Mono Variable", "Roboto Mono", monospace;
-                font-size: 3rem;
-                font-weight: 700;
+                font-size: 3.25rem;
+                font-weight: 800;
+                letter-spacing: -0.03em;
                 color: var(--viz-text-color);
                 margin: 0;
                 text-transform: lowercase;
@@ -180,7 +192,11 @@
                     <span class="corner bottom-right"></span>
                     <h1 class="splash-text">viz</h1>
                 </div>
-                <div class="splash-loader"></div>
+                <div class="splash-dots">
+                    <span class="dot"></span>
+                    <span class="dot"></span>
+                    <span class="dot"></span>
+                </div>
             </div>
         </div>
         <div style="display: contents">%sveltekit.body%</div>
