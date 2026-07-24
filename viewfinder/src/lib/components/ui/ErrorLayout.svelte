@@ -80,17 +80,17 @@
         justify-content: center;
         height: 100vh;
         width: 100vw;
-        background-color: var(--viz-100);
+        background-color: var(--viz-surface-panel);
         background-image:
-            linear-gradient(var(--viz-95) 1px, transparent 1px),
-            linear-gradient(90deg, var(--viz-95) 1px, transparent 1px);
+            linear-gradient(var(--viz-surface-card) 1px, transparent 1px),
+            linear-gradient(90deg, var(--viz-surface-card) 1px, transparent 1px);
         background-size: 32px 32px;
         background-position: center;
-        color: var(--viz-text-color);
+        color: var(--viz-text-primary);
     }
 
     .error-card {
-        background-color: var(--viz-95);
+        background-color: var(--viz-surface-card);
         padding: var(--viz-spacing-xl) var(--viz-spacing-lg);
         border-radius: 0;
         box-shadow: 0 4px 24px rgba(0, 0, 0, 0.12);
@@ -112,14 +112,14 @@
 
     :global(.code-icon) {
         font-size: 4rem;
-        color: var(--viz-text-color) !important;
+        color: var(--viz-text-primary) !important;
         opacity: 0.85;
     }
 
     .status-code {
         font-size: var(--viz-font-size-5xl);
         font-weight: 700;
-        color: var(--viz-text-color);
+        color: var(--viz-text-primary);
         line-height: 1;
         font-family: var(--viz-mono-font);
     }
@@ -134,11 +134,11 @@
         font-size: var(--viz-font-size-3xl);
         font-weight: 600;
         margin: 0;
-        color: var(--viz-text-color);
+        color: var(--viz-text-primary);
     }
 
     .error-message {
-        color: var(--viz-40);
+        color: var(--viz-text-secondary);
         font-size: var(--viz-font-size-lg);
         margin: 0;
         line-height: 1.5;
@@ -150,7 +150,7 @@
         margin-top: var(--viz-spacing-sm);
 
         details {
-            background-color: var(--viz-100);
+            background-color: var(--viz-surface-panel);
             border-radius: 0;
             padding: var(--viz-spacing-sm);
             border: var(--viz-border-thin);
@@ -158,13 +158,13 @@
             summary {
                 cursor: pointer;
                 font-weight: 500;
-                color: var(--viz-40);
+                color: var(--viz-text-secondary);
                 padding: var(--viz-spacing-xs);
                 user-select: none;
                 font-size: var(--viz-font-size-lg);
 
                 &:hover {
-                    color: var(--viz-text-color);
+                    color: var(--viz-text-primary);
                 }
             }
         }
@@ -174,8 +174,8 @@
             padding: var(--viz-spacing-sm);
             overflow-x: auto;
             font-size: var(--viz-font-size-std);
-            color: var(--viz-text-color);
-            background-color: var(--viz-95);
+            color: var(--viz-text-primary);
+            background-color: var(--viz-surface-card);
             border: var(--viz-border-thin);
             border-radius: 0;
             font-family: var(--viz-mono-font);
@@ -195,8 +195,8 @@
     }
 
     :global(.actions-button) {
-        background-color: var(--viz-90) !important;
-        color: var(--viz-text-color) !important;
+        background-color: var(--viz-surface-panel) !important;
+        color: var(--viz-text-primary) !important;
         border: var(--viz-border-thin) !important;
         padding: var(--viz-spacing-sm) var(--viz-spacing-std) !important;
         display: flex;
@@ -205,7 +205,7 @@
         border-radius: var(--viz-border-radius-pill) !important;
 
         &:hover {
-            background-color: var(--viz-80) !important;
+            background-color: var(--viz-surface-hover) !important;
         }
     }
 </style>

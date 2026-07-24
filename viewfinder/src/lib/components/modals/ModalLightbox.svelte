@@ -62,7 +62,7 @@
 <style lang="scss">
     .viz-modal {
         max-height: 100%;
-        background-color: var(--viz-bg-color);
+        background-color: var(--viz-card-bg, var(--viz-surface-base));
         display: flex;
         flex-direction: column;
         justify-content: center;
@@ -78,7 +78,7 @@
         justify-content: flex-end;
         align-items: center;
         box-sizing: border-box;
-        border-bottom: 1px solid var(--viz-80);
+        border-bottom: 1px solid var(--viz-surface-hover);
         padding: 0.25rem;
 
         h1 {

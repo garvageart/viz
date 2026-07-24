@@ -101,24 +101,24 @@
         text-align: left;
         width: 100%;
         border: 0px;
-        color: var(--viz-text-color);
-        background-color: var(--viz-100);
+        color: var(--viz-text-primary);
+        background-color: var(--viz-surface-popover);
         cursor: pointer;
         transition: background-color 0.1s ease;
     }
 
     li > button:hover {
-        background-color: var(--viz-90);
+        background-color: var(--viz-surface-hover);
     }
 
     li > button.disabled {
-        color: var(--viz-70);
+        color: var(--viz-border-subtle);
         cursor: default;
         opacity: 0.5;
     }
 
     li > button.disabled:hover {
-        background-color: var(--viz-100);
+        background-color: var(--viz-surface-popover);
     }
 
     .shortcut {
@@ -132,7 +132,7 @@
         /* overlap slightly with parent to avoid hover gap */
         left: calc(100% - 6px);
         top: 0.15rem;
-        background: var(--viz-100);
+        background: var(--viz-surface-popover);
         box-shadow:
             0 5px 10px rgba(0, 0, 0, 0.15),
             0 2px 8px rgba(0, 0, 0, 0.3);
@@ -147,5 +147,16 @@
         opacity: 0.7;
         margin-left: 0.5rem;
         font-size: 0.9em;
+    }
+
+    .ctx-separator {
+        height: 0;
+        background: transparent;
+        border: none;
+        border-top: 1px solid color-mix(in srgb, var(--viz-surface-hover) 70%, transparent);
+        margin: var(--viz-spacing-xs) 0;
+        width: 100%;
+        list-style: none;
+        box-sizing: border-box;
     }
 </style>

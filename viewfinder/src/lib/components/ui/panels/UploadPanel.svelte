@@ -154,7 +154,7 @@
             <div id="upload-panel-header-info">
                 <Button
                     style="background-color: transparent; padding: 0em;"
-                    hoverColor="var(--viz-80)"
+                    hoverColor="var(--viz-surface-hover)"
                     title="Minimize Upload Panel"
                     onclick={() => {
                         minimized = true;
@@ -184,7 +184,7 @@
             <IconButton
                 iconName="cancel"
                 style="background-color: transparent; padding: 0em;"
-                hoverColor="var(--viz-80)"
+                hoverColor="var(--viz-surface-hover)"
                 title="Cancel All Uploads"
                 onclick={() => {
                     upload.files.forEach((file) => {
@@ -211,7 +211,7 @@
                     {#if file.state === UploadState.STARTED}
                         <Button
                             style="background-color: transparent; padding: 0em;"
-                            hoverColor="var(--viz-80)"
+                            hoverColor="var(--viz-surface-hover)"
                             title="Cancel Upload"
                             onclick={() => {
                                 file.cancelRequest();
@@ -253,7 +253,7 @@
         position: absolute;
         bottom: var(--viz-spacing-xxl);
         left: var(--viz-spacing-xxl);
-        background-color: var(--viz-100);
+        background-color: var(--viz-surface-panel);
         z-index: 900;
         border: var(--viz-border-thin);
         border-radius: var(--viz-border-radius-lg);
@@ -310,7 +310,7 @@
         font-size: var(--viz-font-size-lg);
         font-weight: 600;
         border-bottom: var(--viz-border-thin);
-        background-color: var(--viz-90);
+        background-color: var(--viz-surface-panel);
         box-sizing: border-box;
         gap: var(--viz-spacing-std);
     }
@@ -323,7 +323,7 @@
         font-size: var(--viz-font-size-lg);
         font-weight: 600;
         border-bottom: var(--viz-border-thin);
-        background-color: var(--viz-95);
+        background-color: var(--viz-surface-card);
         box-sizing: border-box;
         gap: var(--viz-spacing-sm);
     }
@@ -354,17 +354,17 @@
         }
 
         input[type="number"] {
-            background-color: var(--viz-80);
+            background-color: var(--viz-surface-hover);
             border: var(--viz-border-thin);
             border-radius: var(--viz-border-radius-md);
-            color: var(--viz-text-color);
+            color: var(--viz-text-primary);
             padding: var(--viz-spacing-xs);
             text-align: center;
             font-family: var(--viz-mono-font);
 
             &:focus {
                 outline: none;
-                border-color: var(--viz-40);
+                border-color: var(--viz-text-secondary);
             }
         }
     }
@@ -388,11 +388,11 @@
         width: 100%;
         padding: var(--viz-spacing-sm) var(--viz-spacing-std);
         border-bottom: var(--viz-border-thin);
-        background-color: var(--viz-100);
+        background-color: var(--viz-surface-panel);
         box-sizing: border-box;
 
         &:hover {
-            background-color: var(--viz-90);
+            background-color: var(--viz-surface-panel);
         }
     }
 
@@ -439,7 +439,7 @@
     .viz-upload-progress-text {
         font-weight: 600;
         font-size: var(--viz-font-size-std);
-        color: var(--viz-20);
+        color: var(--viz-text-secondary);
         min-width: 40px;
         text-align: right;
     }
@@ -447,7 +447,7 @@
     .panel-file-info-progress-container {
         width: 100%;
         height: var(--viz-spacing-xs);
-        background-color: var(--viz-60);
+        background-color: var(--viz-border-subtle);
         border-radius: var(--viz-border-radius-sm);
         overflow: hidden;
         position: relative;
@@ -455,7 +455,7 @@
 
     .panel-file-info-progress {
         height: 100%;
-        background: linear-gradient(90deg, var(--viz-40), var(--viz-20));
+        background: linear-gradient(90deg, var(--viz-text-secondary), var(--viz-text-secondary));
         border-radius: var(--viz-border-radius-sm);
         transition: width 0.3s ease;
         display: block;
@@ -465,7 +465,7 @@
         background: linear-gradient(
             90deg,
             var(--viz-success-color),
-            color-mix(in srgb, var(--viz-success-color) 60%, var(--viz-40))
+            color-mix(in srgb, var(--viz-success-color) 60%, var(--viz-text-secondary))
         );
     }
 
@@ -473,7 +473,7 @@
         background: linear-gradient(
             90deg,
             var(--viz-error-color),
-            color-mix(in srgb, var(--viz-error-color) 60%, var(--viz-40))
+            color-mix(in srgb, var(--viz-error-color) 60%, var(--viz-text-secondary))
         );
     }
 
@@ -481,7 +481,7 @@
         background: linear-gradient(
             90deg,
             var(--viz-warning-color),
-            color-mix(in srgb, var(--viz-warning-color) 60%, var(--viz-40))
+            color-mix(in srgb, var(--viz-warning-color) 60%, var(--viz-text-secondary))
         );
     }
 </style>

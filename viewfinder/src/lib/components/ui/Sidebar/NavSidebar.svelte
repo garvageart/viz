@@ -75,7 +75,7 @@
         align-items: center;
         gap: var(--viz-spacing-sm);
         padding: var(--viz-spacing-xs) var(--viz-spacing-md);
-        color: var(--viz-20);
+        color: var(--viz-text-secondary);
         text-decoration: none;
         font-size: var(--viz-font-size-lg);
         border-bottom: 2px solid transparent;
@@ -85,14 +85,14 @@
             border-bottom-color 0.15s ease;
 
         &:hover {
-            background-color: var(--viz-80);
-            color: var(--viz-text-color);
+            background-color: var(--viz-surface-hover);
+            color: var(--viz-text-primary);
             border-bottom-color: var(--viz-primary);
         }
 
         &.active {
-            background-color: var(--viz-90);
-            color: var(--viz-text-color);
+            background-color: var(--viz-surface-panel);
+            color: var(--viz-text-primary);
             border-bottom-color: var(--viz-primary);
         }
     }

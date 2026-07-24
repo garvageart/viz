@@ -275,7 +275,12 @@
 
             <!-- Add Row Button -->
             <div class="builder-actions">
-                <IconButton iconName="add" variant="small" onclick={addRow} style="border: 1px solid var(--viz-70);">
+                <IconButton
+                    iconName="add"
+                    variant="small"
+                    onclick={addRow}
+                    style="border: 1px solid var(--viz-border-subtle);"
+                >
                     Add Element
                 </IconButton>
             </div>
@@ -375,14 +380,14 @@
         flex-direction: column;
         gap: var(--viz-spacing-xs);
         padding: var(--viz-spacing-sm);
-        background-color: var(--viz-95);
+        background-color: var(--viz-surface-card);
         border: var(--viz-border-thin);
         border-radius: var(--viz-border-radius-md);
 
         .builder-label {
             font-size: var(--viz-font-size-lg);
             font-weight: 600;
-            color: var(--viz-20);
+            color: var(--viz-text-secondary);
         }
 
         .rules-list {
@@ -397,7 +402,7 @@
             gap: var(--viz-spacing-xs);
             width: 100%;
             padding: var(--viz-spacing-xxs) 0;
-            border-bottom: 1px solid var(--viz-90);
+            border-bottom: 1px solid var(--viz-surface-panel);
 
             &:last-child {
                 border-bottom: none;
@@ -423,7 +428,7 @@
 
             .rule-fallback-desc {
                 font-size: var(--viz-font-size-std);
-                color: var(--viz-50);
+                color: var(--viz-text-secondary);
                 font-style: italic;
                 padding-left: var(--viz-spacing-xs);
             }
@@ -450,7 +455,7 @@
     }
 
     .rename-preview-box {
-        background-color: var(--viz-90);
+        background-color: var(--viz-surface-panel);
         border: var(--viz-border-thin);
         border-radius: var(--viz-border-radius-md);
         padding: var(--viz-spacing-xs) var(--viz-spacing-sm);
@@ -459,7 +464,7 @@
         .preview-title {
             font-size: var(--viz-font-size-lg);
             font-weight: 600;
-            color: var(--viz-20);
+            color: var(--viz-text-secondary);
             display: block;
             margin-bottom: var(--viz-spacing-xs);
         }
@@ -486,23 +491,23 @@
             }
 
             .preview-orig {
-                color: var(--viz-20);
+                color: var(--viz-text-secondary);
             }
 
             .preview-new {
-                color: var(--viz-text-color);
+                color: var(--viz-text-primary);
                 font-weight: 600;
             }
 
             :global(.preview-arrow) {
                 font-size: var(--viz-font-size-lg);
-                color: var(--viz-20);
+                color: var(--viz-text-secondary);
             }
         }
 
         .preview-more {
             font-size: var(--viz-font-size-std);
-            color: var(--viz-40);
+            color: var(--viz-text-secondary);
             font-style: italic;
             margin-top: var(--viz-spacing-xxs);
         }

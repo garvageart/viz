@@ -382,14 +382,17 @@
         max-width: calc(100vw - 1em);
         overflow: visible;
         /* Prevent horizontal scrollbar on ancestor containers by avoiding sub-pixel overflow */
+        background-color: var(--viz-surface-popover);
         box-sizing: border-box;
         display: flex;
     }
 
     .context-menu-options {
         display: inline-flex;
-        background-color: var(--viz-100);
-        color: var(--viz-text-color);
+        background-color: var(--viz-surface-popover);
+        color: var(--viz-text-primary);
+        border: 1px solid var(--viz-border-subtle);
+        box-shadow: 0 12px 36px rgba(0, 0, 0, 0.4);
         flex-direction: column;
         border-radius: 0.5rem;
         width: 100%;
@@ -412,12 +415,16 @@
         border-bottom-right-radius: 0.5rem;
     }
 
-    :global(.ctx-separator) {
+    .ctx-separator {
         height: 0 !important;
-        border-top: 1px solid var(--viz-60) !important;
-        margin: var(--viz-spacing-xs) var(--viz-spacing-sm) !important;
+        background: transparent !important;
+        border: none !important;
+        border-top: 1px solid var(--viz-border-subtle) !important;
+        margin: var(--viz-spacing-xxs) 0 !important;
         list-style: none !important;
         display: block !important;
         padding: 0 !important;
+        width: 100% !important;
+        box-sizing: border-box !important;
     }
 </style>

@@ -747,7 +747,7 @@
     }
 
     :global(.on-enter) {
-        background-color: var(--viz-80);
+        background-color: var(--viz-surface-hover);
         outline: 2px solid var(--viz-primary);
     }
 
@@ -765,7 +765,7 @@
 
     .no-assets-title {
         margin: var(--viz-spacing-std);
-        color: var(--viz-40);
+        color: var(--viz-text-secondary);
         font-size: var(--viz-font-size-3xl);
         font-weight: 500;
     }

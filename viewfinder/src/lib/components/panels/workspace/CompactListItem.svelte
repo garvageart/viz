@@ -121,14 +121,14 @@
     .compact-item {
         display: flex;
         flex-direction: column;
-        background-color: var(--viz-100);
+        background-color: var(--viz-surface-panel);
         border-radius: 0.25rem;
         border: 1px solid transparent;
         transition: background-color 0.2s;
         overflow: hidden;
 
         &:hover {
-            background-color: var(--viz-95);
+            background-color: var(--viz-surface-card);
         }
     }
 
@@ -148,7 +148,7 @@
         flex-shrink: 0;
         border-radius: 0.25rem;
         overflow: hidden;
-        background-color: var(--viz-80);
+        background-color: var(--viz-surface-hover);
         display: flex;
         align-items: center;
         justify-content: center;
@@ -159,7 +159,7 @@
         }
 
         .placeholder {
-            color: var(--viz-60);
+            color: var(--viz-border-subtle);
             display: flex;
         }
     }
@@ -176,27 +176,27 @@
         white-space: nowrap;
         overflow: hidden;
         text-overflow: ellipsis;
-        color: var(--viz-text-color);
+        color: var(--viz-text-primary);
     }
 
     .expand-btn {
         background: none;
         border: none;
-        color: var(--viz-60);
+        color: var(--viz-border-subtle);
         cursor: pointer;
         padding: 0;
         display: flex;
         align-items: center;
 
         &:hover {
-            color: var(--viz-text-color);
+            color: var(--viz-text-primary);
         }
     }
 
     .details {
         padding: 0.5rem;
-        border-top: 1px solid var(--viz-90);
-        background-color: var(--viz-95);
+        border-top: 1px solid var(--viz-surface-panel);
+        background-color: var(--viz-surface-card);
         font-size: 0.75rem;
     }
 
@@ -207,13 +207,13 @@
         margin-top: 0.25rem;
 
         .label {
-            color: var(--viz-40);
+            color: var(--viz-text-secondary);
             text-align: right;
             white-space: nowrap;
         }
 
         .value {
-            color: var(--viz-text-color);
+            color: var(--viz-text-primary);
             overflow: hidden;
             text-overflow: ellipsis;
             white-space: nowrap;

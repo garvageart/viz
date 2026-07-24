@@ -18,7 +18,7 @@
 
 <style lang="scss">
     .token-chip-btn {
-        background-color: var(--viz-100);
+        background-color: var(--viz-surface-panel);
         border: var(--viz-border-thin);
         border-radius: var(--viz-border-radius-md);
         padding: var(--viz-spacing-xxs) var(--viz-spacing-xs);
@@ -34,12 +34,12 @@
 
         &:hover {
             border-color: var(--viz-primary);
-            background-color: var(--viz-80);
+            background-color: var(--viz-surface-hover);
         }
 
         &:focus-visible {
             box-shadow:
-                0 0 0 2px var(--viz-100),
+                0 0 0 2px var(--viz-surface-panel),
                 0 0 0 4px var(--viz-primary);
         }
 
@@ -47,17 +47,17 @@
             font-family: var(--viz-mono-font);
             font-size: var(--viz-font-size-std);
             font-weight: 600;
-            color: var(--viz-text-color);
-            background-color: var(--viz-95);
+            color: var(--viz-text-primary);
+            background-color: var(--viz-surface-card);
             padding: 1px 3px;
             border-radius: var(--viz-border-radius-sm);
-            border: 1px solid var(--viz-60);
+            border: 1px solid var(--viz-border-subtle);
         }
 
         .token-val {
             font-family: var(--viz-mono-font);
             font-size: var(--viz-font-size-std);
-            color: var(--viz-40);
+            color: var(--viz-text-secondary);
         }
     }
 </style>

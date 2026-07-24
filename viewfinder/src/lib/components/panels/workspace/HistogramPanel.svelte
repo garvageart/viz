@@ -518,9 +518,9 @@
         box-sizing: border-box;
         height: 100%;
         padding: var(--viz-spacing-std);
-        color: var(--viz-text-color);
+        color: var(--viz-text-primary);
         position: relative;
-        background-color: var(--viz-bg-color);
+        background-color: var(--viz-surface-base);
         font-size: var(--viz-font-size-std);
         gap: var(--viz-spacing-std);
         overflow-y: auto;

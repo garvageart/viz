@@ -121,9 +121,9 @@
         gap: 0.5em;
         width: var(--viz-font-size-std);
         height: var(--viz-font-size-std);
-        border: 1px solid var(--viz-60);
-        background-color: var(--viz-bg-color);
-        color: var(--viz-text-color);
+        border: 1px solid var(--viz-border-subtle);
+        background-color: var(--viz-surface-base);
+        color: var(--viz-text-primary);
         cursor: pointer;
         padding: 0;
 
@@ -146,8 +146,8 @@
         width: var(--viz-font-size-std);
         height: var(--viz-font-size-std);
         outline: none;
-        border: 1px solid var(--viz-60);
-        background-color: var(--viz-bg-color);
+        border: 1px solid var(--viz-border-subtle);
+        background-color: var(--viz-surface-base);
         cursor: pointer;
         padding: 0;
 
@@ -166,8 +166,8 @@
         top: calc(100% + 4px);
         left: 0;
         z-index: 1000;
-        background-color: var(--viz-bg-color);
-        border: 1px solid var(--viz-60);
+        background-color: var(--viz-surface-base);
+        border: 1px solid var(--viz-border-subtle);
         padding: var(--viz-spacing-sm);
         display: flex;
         gap: var(--viz-spacing-sm);

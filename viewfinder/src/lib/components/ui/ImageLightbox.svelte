@@ -1700,7 +1700,7 @@
 
     .lightbox-nav-btn {
         border: none;
-        color: var(--viz-10);
+        color: var(--viz-text-primary);
         width: 3em;
         height: 3em;
         display: inline-flex;
@@ -1712,11 +1712,11 @@
     }
 
     .metadata-editor {
-        background-color: var(--viz-90);
+        background-color: var(--viz-surface-panel);
         padding: var(--viz-spacing-std);
         border-radius: var(--viz-border-radius-lg);
-        border-left: 1px solid var(--viz-60);
-        color: var(--viz-10);
+        border-left: 1px solid var(--viz-border-subtle);
+        color: var(--viz-text-primary);
         height: 100%;
         width: auto;
         max-width: 20vw;
@@ -1728,11 +1728,13 @@
 
     .metadata-header {
         font-size: var(--viz-font-size-lg);
+        font-weight: 700;
+        color: var(--viz-text-primary);
         display: flex;
         align-items: center;
         margin-bottom: var(--viz-spacing-sm);
         padding-bottom: var(--viz-spacing-sm);
-        border-bottom: 1px solid var(--viz-85);
+        border-bottom: 1px solid var(--viz-border-subtle);
         gap: 0.5em;
     }
 
@@ -1761,13 +1763,13 @@
     }
 
     .exif-card {
-        background: var(--viz-100);
-        color: var(--viz-text-color);
+        background: var(--viz-surface-card);
+        color: var(--viz-text-primary);
         box-sizing: border-box;
         width: 100%;
         padding: 0.55em 0.75em;
         border-radius: var(--viz-border-radius-md);
-        border: 1px solid transparent;
+        border: 1px solid var(--viz-border-subtle);
         display: flex;
         flex-direction: column;
         justify-content: center;
@@ -1783,7 +1785,6 @@
     }
 
     :global(.exif-material-icon) {
-        color: var(--viz-30);
         display: inline-flex;
         align-items: center;
         justify-content: center;
@@ -1828,7 +1829,7 @@
         opacity: 0;
         transition: opacity 120ms ease;
         flex-shrink: 0;
-        color: var(--viz-30);
+        color: var(--viz-text-muted);
     }
 
     .card-row:hover .copy-filename-btn {
@@ -1836,8 +1837,8 @@
     }
 
     .copy-filename-btn:hover {
-        color: var(--viz-text-color);
-        background: var(--viz-85);
+        color: var(--viz-text-primary);
+        background: var(--viz-surface-hover);
     }
 
     :global(.file-type-badge) {
@@ -1848,24 +1849,24 @@
         letter-spacing: 0.04em;
         padding: 0.1em 0.45em;
         border-radius: var(--viz-border-radius-sm);
-        background: var(--viz-85);
-        color: var(--viz-30);
-        border: 1px solid var(--viz-75);
+        background: var(--viz-surface-hover);
+        color: var(--viz-text-primary);
+        border: 1px solid var(--viz-border-subtle);
     }
 
     .value-sub {
         font-size: var(--viz-font-size-std);
+        color: var(--viz-text-secondary);
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
     }
 
     :global(.value-big) {
         font-size: var(--viz-font-size-std);
         font-weight: 600;
         letter-spacing: -0.01em;
-    }
-
-    :global(.value-big),
-    .value-sub {
-        color: var(--viz-20);
+        color: var(--viz-text-primary);
         white-space: nowrap;
         overflow: hidden;
         text-overflow: ellipsis;
@@ -1874,12 +1875,12 @@
     .rating-container {
         margin-top: var(--viz-spacing-std);
         padding: var(--viz-spacing-sm) var(--viz-spacing-std) var(--viz-spacing-sm) var(--viz-spacing-std);
-        background: var(--viz-100);
+        background: var(--viz-surface-card);
         border-radius: var(--viz-border-radius-md);
         display: flex;
         align-items: center;
         gap: 0.5em;
-        border: 1px solid transparent;
+        border: 1px solid var(--viz-border-subtle);
     }
 
     .zoom-target.can-pan {
@@ -1906,14 +1907,14 @@
         position: absolute;
         top: var(--viz-spacing-std);
         left: var(--viz-spacing-std);
-        background: var(--viz-95);
+        background: var(--viz-surface-card);
         border: var(--viz-border-thin);
         border-radius: var(--viz-border-radius-md);
         padding: var(--viz-spacing-md);
         z-index: 100;
         font-family: var(--viz-mono-font);
         font-size: var(--viz-font-size-std);
-        color: var(--viz-text-color);
+        color: var(--viz-text-primary);
         max-width: 20rem;
         box-shadow: 0 4px 12px rgba(0, 0, 0, 0.25);
         pointer-events: auto;

@@ -107,7 +107,7 @@
         height: 100%;
         width: 100%;
         overflow: hidden;
-        background-color: var(--viz-100);
+        background-color: var(--viz-surface-panel);
     }
 
     .loading {
@@ -115,6 +115,6 @@
         align-items: center;
         justify-content: center;
         height: 100%;
-        color: var(--viz-60);
+        color: var(--viz-border-subtle);
     }
 </style>

@@ -32,7 +32,7 @@
                 iconName={filterManager.keepFilters ? "keep" : "keep_off"}
                 variant="mini"
                 title="Keep Filters while browsing"
-                style={filterManager.keepFilters ? "background-color: var(--viz-80);" : ""}
+                style={filterManager.keepFilters ? "background-color: var(--viz-surface-hover);" : ""}
                 onclick={() => filterManager.toggleKeepFilters()}
             />
             <IconButton
@@ -50,7 +50,7 @@
         display: flex;
         flex-direction: column;
         height: 100%;
-        background-color: var(--viz-bg-color);
+        background-color: var(--viz-surface-base);
     }
 
     .filter-panel {
@@ -60,12 +60,12 @@
         overflow-y: scroll;
         overflow-x: hidden;
         padding: var(--viz-spacing-sm);
-        color: var(--viz-text-color);
+        color: var(--viz-text-primary);
         position: relative;
     }
 
     .filter-panel-footer {
-        border-top: 1px solid var(--viz-80);
+        border-top: 1px solid var(--viz-surface-hover);
         position: relative;
     }
 
@@ -74,7 +74,7 @@
         justify-content: flex-start;
         align-items: center;
         padding: var(--viz-spacing-sm);
-        background-color: var(--viz-bg-color);
+        background-color: var(--viz-surface-base);
         gap: var(--viz-spacing-sm);
         width: 100%;
     }

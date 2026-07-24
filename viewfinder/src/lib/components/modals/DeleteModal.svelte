@@ -63,7 +63,7 @@
                     variant="small"
                     onclick={handleSoftDelete}
                     class="soft-delete-btn"
-                    style="background-color: var(--viz-primary); color: var(--viz-text-color-light);"
+                    style="background-color: var(--viz-primary); color: var(--viz-text-primary);"
                 >
                     Delete
                 </Button>
@@ -77,7 +77,7 @@
         display: flex;
         flex-direction: column;
         width: 100%;
-        color: var(--viz-text-color);
+        color: var(--viz-text-primary);
         box-sizing: border-box;
         gap: var(--viz-spacing-std);
         font-size: var(--viz-font-size-lg);

@@ -262,7 +262,7 @@
         flex-direction: column;
         text-align: left;
         width: 25rem;
-        background-color: var(--viz-100);
+        background-color: var(--viz-surface-panel);
         padding: var(--viz-spacing-std);
         gap: var(--viz-spacing-md);
         overflow: hidden;
@@ -293,7 +293,7 @@
         font-family: var(--viz-display-font);
         font-size: var(--viz-font-size-std);
         font-weight: 600;
-        color: var(--viz-text-color);
+        color: var(--viz-text-primary);
         white-space: nowrap;
         overflow: hidden;
         text-overflow: ellipsis;
@@ -312,7 +312,7 @@
 
     .divider {
         height: 1px;
-        background-color: var(--viz-60);
+        background-color: var(--viz-border-subtle);
         margin: 0;
     }
 
@@ -330,13 +330,13 @@
     }
 
     .meta-label {
-        color: var(--viz-40);
+        color: var(--viz-text-secondary);
         font-family: var(--viz-display-font);
         font-weight: 500;
     }
 
     .meta-value {
-        color: var(--viz-text-color);
+        color: var(--viz-text-primary);
         font-family: var(--viz-display-font);
         font-weight: 500;
         text-align: right;
@@ -348,7 +348,7 @@
     }
 
     .meta-sub {
-        color: var(--viz-40);
+        color: var(--viz-text-secondary);
         margin-left: var(--viz-spacing-xs);
     }
 
@@ -363,13 +363,12 @@
         display: flex;
         align-items: center;
         gap: var(--viz-spacing-xs);
-        color: var(--viz-30);
+        color: var(--viz-text-primary);
         white-space: nowrap;
         overflow: hidden;
         text-overflow: ellipsis;
 
         :global(.viz-material-icon) {
-            color: var(--viz-40);
             flex-shrink: 0;
         }
     }
@@ -384,8 +383,8 @@
     .exif-dials {
         display: grid;
         grid-template-columns: repeat(auto-fit, minmax(0, 1fr));
-        background-color: var(--viz-95);
-        border: 1px solid var(--viz-80);
+        background-color: var(--viz-surface-popover);
+        border: 1px solid var(--viz-border-subtle);
         border-radius: var(--viz-border-radius-md);
         padding: var(--viz-spacing-xs) 0;
         margin-top: var(--viz-spacing-xs);
@@ -399,7 +398,7 @@
         justify-content: center;
         text-align: center;
         padding: var(--viz-spacing-xs) var(--viz-spacing-xxs);
-        border-right: 1px solid var(--viz-85);
+        border-right: 1px solid var(--viz-border-subtle);
         min-width: 0;
         box-sizing: border-box;
 
@@ -411,7 +410,7 @@
     .dial-value {
         font-family: var(--viz-mono-font);
         font-size: var(--viz-font-size-sm);
-        color: var(--viz-text-color);
+        color: var(--viz-text-primary);
         font-weight: 600;
         white-space: nowrap;
         overflow: hidden;
@@ -422,7 +421,7 @@
 
     .dial-label {
         font-size: var(--viz-font-size-xs);
-        color: var(--viz-40);
+        color: var(--viz-text-secondary);
         font-weight: 500;
         margin-top: 2px;
         line-height: 1;

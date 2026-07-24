@@ -30,9 +30,9 @@
         z-index: 99;
         padding: 0 2em;
         height: var(--viz-toolbar-height);
-        background-color: var(--viz-100);
+        background-color: var(--viz-surface-panel);
         backdrop-filter: blur(5px);
-        border-bottom: 1px solid var(--viz-60);
+        border-bottom: 1px solid var(--viz-border-subtle);
         font-size: var(--viz-font-size-std);
         width: 100%;
         max-width: 100%;

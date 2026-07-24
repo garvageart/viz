@@ -60,7 +60,7 @@
         display: flex;
         align-items: center;
         justify-content: space-between;
-        color: var(--viz-60);
+        color: var(--viz-border-subtle);
         cursor: pointer;
 
         .label-row {
@@ -70,14 +70,14 @@
         }
 
         .label-name {
-            color: var(--viz-text-color);
+            color: var(--viz-text-primary);
         }
     }
 
     .color-indicator {
         width: 1em;
         height: 1em;
-        border: 1px solid var(--viz-60);
+        border: 1px solid var(--viz-border-subtle);
     }
 
     .count {
@@ -89,6 +89,6 @@
     .empty {
         font-style: italic;
         opacity: 0.6;
-        color: var(--viz-60);
+        color: var(--viz-border-subtle);
     }
 </style>

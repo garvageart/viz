@@ -342,7 +342,9 @@
 
 {#snippet noAssetsSnippet()}
     <div id="create_collection-container">
-        <span style="margin: 1em; color: var(--viz-20); font-size: 1.2rem;">Create your first collection</span>
+        <span style="margin: 1em; color: var(--viz-text-secondary); font-size: 1.2rem;"
+            >Create your first collection</span
+        >
         <Button
             id="create_collection-button"
             style="padding: 2em 8em; display: flex; align-items: center; justify-content: center;"
@@ -459,7 +461,7 @@
         font-size: var(--viz-font-size-5xl);
         font-family: var(--viz-display-font);
         font-weight: 700;
-        color: var(--viz-text-color);
+        color: var(--viz-text-primary);
         line-height: 1.2;
         word-wrap: break-word;
         white-space: normal;
@@ -486,7 +488,7 @@
     }
 
     :global(.toolbar-button.drop-target) {
-        background-color: var(--viz-80);
+        background-color: var(--viz-surface-hover);
         outline: 2px solid var(--viz-primary);
     }
 

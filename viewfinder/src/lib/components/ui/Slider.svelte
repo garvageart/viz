@@ -94,7 +94,7 @@
         font-family: var(--viz-display-font), sans-serif;
         font-size: var(--viz-font-size-lg);
         font-weight: 600;
-        color: var(--viz-40);
+        color: var(--viz-text-secondary);
     }
 
     .required-asterisk {
@@ -106,20 +106,20 @@
         font-family: var(--viz-mono-font), monospace;
         font-size: var(--viz-font-size-lg);
         font-weight: 800;
-        color: var(--viz-text-color);
+        color: var(--viz-text-primary);
     }
 
     .slider-description {
         font-family: var(--viz-display-font), sans-serif;
         font-size: var(--viz-font-size-std);
-        color: var(--viz-60);
+        color: var(--viz-border-subtle);
         padding-left: var(--viz-spacing-xxs);
     }
 
     input[type="range"] {
         width: 100%;
         height: 4px;
-        background: var(--viz-90);
+        background: var(--viz-surface-panel);
         border: var(--viz-border-thin);
         border-radius: 0; // Flat sharp track
         outline: none;
@@ -138,8 +138,8 @@
             appearance: none;
             width: 6px;
             height: 16px;
-            background: var(--viz-text-color);
-            border: 1px solid var(--viz-60);
+            background: var(--viz-surface-hover);
+            border: 1px solid var(--viz-border-subtle);
             border-radius: 0; // Flat, sharp tick mark thumb
             cursor: ew-resize;
             margin-top: -6px; // Center vertically on track
@@ -162,8 +162,8 @@
         &::-moz-range-thumb {
             width: 6px;
             height: 16px;
-            background: var(--viz-text-color);
-            border: 1px solid var(--viz-60);
+            background: var(--viz-surface-hover);
+            border: 1px solid var(--viz-border-subtle);
             border-radius: 0;
             cursor: ew-resize;
             transition:
@@ -179,12 +179,12 @@
         &:focus-visible {
             &::-webkit-slider-thumb {
                 box-shadow:
-                    0 0 0 2px var(--viz-100),
+                    0 0 0 2px var(--viz-surface-panel),
                     0 0 0 4px var(--viz-primary);
             }
             &::-moz-range-thumb {
                 box-shadow:
-                    0 0 0 2px var(--viz-100),
+                    0 0 0 2px var(--viz-surface-panel),
                     0 0 0 4px var(--viz-primary);
             }
         }

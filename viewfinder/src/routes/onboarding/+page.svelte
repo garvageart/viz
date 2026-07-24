@@ -443,13 +443,13 @@
         justify-content: center;
         align-items: center;
         min-height: 100vh;
-        background-color: var(--viz-bg-color);
+        background-color: var(--viz-surface-base);
         padding: 1rem;
         position: relative;
     }
 
     .card {
-        background: var(--viz-bg-color);
+        background: var(--viz-surface-base);
         border-radius: 1rem;
         box-shadow: 0 10px 25px rgba(0, 0, 0, 0.2);
         width: 100%;
@@ -493,27 +493,27 @@
         font-size: 2rem;
         font-weight: 700;
         margin-bottom: 0.5rem;
-        color: var(--viz-text-color);
+        color: var(--viz-text-primary);
     }
 
     h2 {
         font-size: 1.5rem;
-        color: var(--viz-text-color);
+        color: var(--viz-text-primary);
         margin-bottom: 0.25rem;
         text-transform: capitalize;
     }
 
     .subtitle {
-        color: var(--viz-40);
+        color: var(--viz-text-secondary);
         margin-bottom: 1rem;
     }
 
     .info-box {
-        background: var(--viz-100);
+        background: var(--viz-surface-panel);
         border: 1px solid var(--viz-primary);
         padding: 1rem;
         border-radius: 0.5rem;
-        color: var(--viz-text-color);
+        color: var(--viz-text-primary);
         font-size: 0.95rem;
         line-height: 1.5;
 
@@ -557,6 +557,6 @@
         justify-content: center;
         align-items: center;
         height: 100%;
-        color: var(--viz-40);
+        color: var(--viz-text-secondary);
     }
 </style>

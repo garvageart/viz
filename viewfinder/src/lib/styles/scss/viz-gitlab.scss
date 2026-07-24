@@ -1,0 +1,38 @@
+@use "sass:color";
+@use "viz-mixins" as m;
+
+// Official GitLab Multi-Color Palette:
+// - Primary: #fc6d26 (GitLab Tan Orange)
+// - Secondary: #7b58cf (GitLab Bright Purple)
+// - Accent: #108548 (GitLab Pipeline Green)
+// - Background: #18171d (GitLab Dark Charcoal Canvas)
+// - Base: #282732 (GitLab Surface Tone)
+// - Header BG: #211936 (Deep GitLab Purple Header)
+// - Sidebar BG: #121118 (Dark Sidebar)
+// - Card BG: #22212d (Card & Modal Surface)
+
+$bg-color: #18171d;
+$base-color: #282732;
+$text-color: #f2f2f5;
+$primary-color: #fc6d26;
+$secondary-color: #7b58cf;
+$accent-color: #108548;
+$header-bg: #211936;
+$sidebar-bg: #121118;
+$card-bg: #22212d;
+
+@include m.register-theme-core(
+    $bg-color: $bg-color,
+    $text-color: $text-color,
+    $base-color: $base-color,
+    $primary-color: $primary-color,
+    $secondary-color: $secondary-color,
+    $accent-color: $accent-color,
+    $header-bg: $header-bg,
+    $sidebar-bg: $sidebar-bg,
+    $card-bg: $card-bg,
+    $flip-bg-color: white,
+    $flip-bg-pct: 0%,
+    $flip-text-color: black,
+    $flip-text-pct: 15%
+);

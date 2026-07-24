@@ -303,7 +303,7 @@
         align-items: center;
         justify-content: space-between;
         padding: var(--viz-spacing-xs) var(--viz-spacing-sm);
-        border-bottom: 1px solid var(--viz-75);
+        border-bottom: 1px solid var(--viz-surface-hover);
         margin-bottom: var(--viz-spacing-xs);
     }
 
@@ -311,7 +311,7 @@
         display: flex;
         align-items: center;
         gap: var(--viz-spacing-sm);
-        color: var(--viz-20);
+        color: var(--viz-text-secondary);
     }
 
     .popover-title {
@@ -325,14 +325,14 @@
         background: transparent;
         border: none;
         cursor: pointer;
-        color: var(--viz-30);
+        color: var(--viz-text-muted);
         padding: 0.2rem;
         border-radius: var(--viz-border-radius-sm);
         transition: all 120ms ease;
 
         &:hover {
-            background: var(--viz-85);
-            color: var(--viz-20);
+            background: var(--viz-surface-hover);
+            color: var(--viz-text-secondary);
         }
     }
 
@@ -343,8 +343,8 @@
         /* Define a base cell size that can be overridden by the container */
         --calendar-cell-size: 1.6rem;
         border-radius: var(--viz-border-radius-md);
-        background: var(--viz-95);
-        border: 1px solid var(--viz-75);
+        background: var(--viz-surface-popover);
+        border: 1px solid var(--viz-border-subtle);
         box-shadow: 0 8px 24px rgba(0, 0, 0, 0.3);
         z-index: 10000;
     }
@@ -369,14 +369,14 @@
         border-radius: var(--viz-border-radius-sm);
         background: transparent;
         border: 1px solid transparent;
-        color: var(--viz-20);
+        color: var(--viz-text-secondary);
         cursor: pointer;
         transition: all 120ms ease;
     }
 
     :global(.calendar-nav-btn:hover) {
-        background: var(--viz-85);
-        border-color: var(--viz-70);
+        background: var(--viz-surface-hover);
+        border-color: var(--viz-border-subtle);
     }
 
     :global(.calendar-header-selects) {
@@ -407,14 +407,14 @@
         padding: 0 var(--viz-spacing-xs) !important;
         font-size: var(--viz-font-size-std) !important;
         font-weight: 600 !important;
-        color: var(--viz-10) !important;
-        background-color: var(--viz-90) !important;
-        border: 1px solid var(--viz-80) !important;
+        color: var(--viz-text-primary) !important;
+        background-color: var(--viz-surface-panel) !important;
+        border: 1px solid var(--viz-surface-hover) !important;
         border-radius: var(--viz-border-radius-sm) !important;
         box-shadow: 0 -1px 0 var(--viz-primary) inset !important;
 
         &:hover {
-            background-color: var(--viz-85) !important;
+            background-color: var(--viz-surface-hover) !important;
         }
 
         &:focus {
@@ -451,7 +451,7 @@
         justify-content: center;
         font-size: 0.7rem;
         font-weight: 600;
-        color: var(--viz-40);
+        color: var(--viz-text-secondary);
         text-transform: uppercase;
         aspect-ratio: 1;
     }
@@ -470,7 +470,7 @@
         border-radius: var(--viz-border-radius-sm);
         border: 1.5px solid transparent;
         background: transparent;
-        color: var(--viz-20);
+        color: var(--viz-text-secondary);
         font-size: var(--viz-font-size-std);
         aspect-ratio: 1;
         font-weight: 400;
@@ -484,12 +484,12 @@
     }
 
     :global(.calendar-cell[data-selected]) :global(.calendar-day) {
-        color: var(--viz-10);
+        color: var(--viz-text-primary);
         font-weight: 600;
     }
 
     :global(.calendar-cell[data-today]) :global(.calendar-day) {
-        color: var(--viz-text-color);
+        color: var(--viz-text-primary);
         gap: var(--viz-spacing-xxs);
         border: 1.5px solid var(--viz-primary);
     }
@@ -500,7 +500,7 @@
     }
 
     :global(.calendar-cell[data-outside-month]) :global(.calendar-day) {
-        color: var(--viz-60);
+        color: var(--viz-border-subtle);
     }
 
     :global(.calendar-day-dot) {
@@ -510,19 +510,19 @@
         width: 3px;
         height: 3px;
         border-radius: var(--viz-border-radius-pill);
-        background: var(--viz-10);
+        background: var(--viz-primary);
         transition: all 120ms ease;
     }
 
     :global(.time-picker-section) {
-        border-top: 1px solid var(--viz-75);
+        border-top: 1px solid var(--viz-surface-hover);
         padding-top: var(--viz-spacing-sm);
     }
 
     :global(.time-label) {
         display: block;
         font-weight: 600;
-        color: var(--viz-40);
+        color: var(--viz-text-secondary);
         margin-bottom: 0.35rem;
     }
 
@@ -530,27 +530,27 @@
         display: flex;
         align-items: center;
         padding: var(--viz-spacing-xs) var(--viz-spacing-xs);
-        background: var(--viz-100);
-        border: 1px solid var(--viz-75);
+        background: var(--viz-surface-panel);
+        border: 1px solid var(--viz-surface-hover);
         border-radius: var(--viz-border-radius-sm);
         font-size: var(--viz-font-size-lg);
         font-weight: 400;
-        color: var(--viz-20);
+        color: var(--viz-text-secondary);
         font-family: var(--viz-mono-font);
     }
 
     :global(.time-separator) {
-        color: var(--viz-40);
+        color: var(--viz-text-secondary);
     }
 
     :global(.time-segment) {
         padding: var(--viz-spacing-xxs) var(--viz-spacing-xs);
         border-radius: var(--viz-border-radius-sm);
-        color: var(--viz-20);
+        color: var(--viz-text-secondary);
 
         &:focus-visible {
             outline: 1px solid var(--viz-primary);
-            background: var(--viz-80) !important;
+            background: var(--viz-surface-hover) !important;
             outline: 1px solid var(--viz-primary) !important;
         }
     }
@@ -574,15 +574,15 @@
         background: transparent;
         border: none;
         cursor: pointer;
-        color: var(--viz-30);
+        color: var(--viz-text-muted);
         padding: 0.2rem;
         border-radius: var(--viz-border-radius-sm);
         transition: all 120ms ease;
     }
 
     :global(.calendar-trigger:hover) {
-        background: var(--viz-85);
-        color: var(--viz-20);
+        background: var(--viz-surface-hover);
+        color: var(--viz-text-secondary);
     }
 
     :global(.cal-hidden-input) {

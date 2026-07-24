@@ -74,35 +74,35 @@
     .textarea-label {
         font-size: 0.875rem;
         font-weight: 500;
-        color: var(--viz-40);
+        color: var(--viz-text-secondary);
     }
 
     .textarea-description {
         font-size: 0.85rem;
-        color: var(--viz-60);
+        color: var(--viz-text-muted);
         padding-left: 0.5rem;
     }
 
     textarea {
         max-width: 100%;
         min-height: 2.5rem;
-        color: var(--viz-text-color);
-        background-color: var(--viz-100);
+        color: var(--viz-text-primary);
+        background-color: var(--viz-surface-panel);
         outline: none;
         border: none;
-        box-shadow: 0 -1px 0 var(--viz-60) inset;
+        box-shadow: 0 -1px 0 var(--viz-border-subtle) inset;
         font-family: var(--viz-display-font);
         font-size: var(--viz-font-size-lg);
         padding: 0.5rem 1rem;
         margin-bottom: 0;
 
         &::placeholder {
-            color: var(--viz-40);
+            color: var(--viz-text-secondary);
             font-family: var(--viz-display-font);
         }
 
         &:focus::placeholder {
-            color: var(--viz-60);
+            color: var(--viz-border-subtle);
             opacity: 1;
         }
 
@@ -111,14 +111,14 @@
         }
 
         &:focus {
-            background-color: var(--viz-100);
+            background-color: var(--viz-surface-panel);
             box-shadow: 0 -2px 0 var(--viz-primary) inset;
         }
 
         &:-webkit-autofill,
         &:-webkit-autofill:focus {
-            -webkit-text-fill-color: var(--viz-text-color);
-            -webkit-box-shadow: 0 0 0px 1000px var(--viz-100) inset;
+            -webkit-text-fill-color: var(--viz-text-primary);
+            -webkit-box-shadow: 0 0 0px 1000px var(--viz-surface-panel) inset;
             -webkit-box-shadow: 0 -5px 0 var(--viz-primary) inset;
             transition:
                 background-color 0s 600000s,

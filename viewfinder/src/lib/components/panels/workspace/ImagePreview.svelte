@@ -65,13 +65,13 @@
             </div>
         {:else if selectionCount > 0}
             <div class="placeholder">
-                <MaterialIcon iconName="photo_library" opticalSize={48} style="font-size: 4rem; opacity: 0.5;" />
+                <MaterialIcon iconName="photo_library" opticalSize={48} style="font-size: 4rem;" />
                 <span class="text">{selectionCount} items selected</span>
             </div>
         {/if}
     {:else}
         <div class="placeholder">
-            <MaterialIcon iconName="image" opticalSize={48} style="font-size: 4rem; opacity: 0.5;" />
+            <MaterialIcon iconName="image" opticalSize={48} style="font-size: 4rem;" />
             <span class="text">No image(s) selected</span>
         </div>
     {/if}
@@ -85,7 +85,7 @@
         flex-direction: column;
         height: 100%;
         padding: 0.5rem;
-        color: var(--viz-text-color);
+        color: var(--viz-text-primary);
         position: relative;
         box-sizing: border-box;
         justify-content: space-between;
@@ -103,8 +103,8 @@
 
     .info {
         padding: var(--viz-spacing-std);
-        background-color: var(--viz-bg-color);
-        border-top: 1px solid var(--viz-80);
+        background-color: var(--viz-surface-base);
+        border-top: 1px solid var(--viz-surface-hover);
         display: flex;
         flex-direction: column;
         gap: 0.25rem;
@@ -114,7 +114,7 @@
         .filename {
             font-size: var(--viz-font-size-lg);
             font-weight: 500;
-            color: var(--viz-text-color);
+            color: var(--viz-text-primary);
             white-space: nowrap;
             overflow: hidden;
             text-overflow: ellipsis;
@@ -124,7 +124,7 @@
             display: flex;
             align-items: center;
             gap: 0.5rem;
-            color: var(--viz-40);
+            color: var(--viz-text-secondary);
         }
     }
 
@@ -134,7 +134,6 @@
         flex-direction: column;
         align-items: center;
         justify-content: center;
-        color: var(--viz-60);
         gap: 0.5rem;
         font-size: var(--viz-font-size-lg);
     }

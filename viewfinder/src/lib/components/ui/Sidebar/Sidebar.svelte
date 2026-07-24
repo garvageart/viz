@@ -64,7 +64,7 @@
 
 <style lang="scss">
     .viz-sidebar {
-        background-color: var(--viz-100);
+        background-color: var(--viz-sidebar-bg, var(--viz-surface-panel));
         border-right: var(--viz-border-thin);
         height: 100%;
         display: flex;
@@ -101,7 +101,7 @@
         font-weight: 600;
         letter-spacing: 0.05em;
         text-transform: uppercase;
-        color: var(--viz-20);
+        color: var(--viz-text-secondary);
         margin: 0;
         white-space: nowrap;
         overflow: hidden;
@@ -116,9 +116,9 @@
     }
 
     :global(.sidebar-toggle-btn) {
-        color: var(--viz-30) !important;
+        color: var(--viz-text-muted) !important;
         &:hover {
-            background-color: var(--viz-90) !important;
+            background-color: var(--viz-surface-panel) !important;
         }
     }
 

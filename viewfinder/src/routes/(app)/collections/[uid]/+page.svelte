@@ -889,7 +889,9 @@
 
 {#snippet noAssetsSnippet()}
     <div id="add_to_collection-container">
-        <span style="margin: 1em; color: var(--viz-20); font-size: 1.2rem;">Add images to this collection</span>
+        <span style="margin: 1em; color: var(--viz-text-secondary); font-size: 1.2rem;"
+            >Add images to this collection</span
+        >
         <Button
             id="add_to_collection-button"
             style="padding: 2em 8em; display: flex; align-items: center; justify-content: center;"
@@ -1151,7 +1153,7 @@
             font-size: var(--viz-font-size-5xl);
             font-family: var(--viz-display-font);
             font-weight: 700;
-            color: var(--viz-text-color);
+            color: var(--viz-text-primary);
             line-height: 1.2;
             text-wrap: nowrap;
             padding: 0.25rem 0.5rem;
@@ -1159,7 +1161,7 @@
 
         :global(.title-edit-icon) {
             opacity: 0;
-            color: var(--viz-40);
+            color: var(--viz-text-secondary);
             transition: opacity 0.15s ease-in-out;
         }
 

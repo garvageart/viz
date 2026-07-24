@@ -19,7 +19,7 @@
     .collection-filter-container {
         font-size: var(--viz-font-size-lg);
         padding: 1rem;
-        color: var(--viz-60);
+        color: var(--viz-border-subtle);
         font-style: italic;
         text-wrap: auto;
         text-align: center;

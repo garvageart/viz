@@ -66,12 +66,12 @@
     .label {
         font-size: var(--viz-font-size-lg);
         font-weight: 600;
-        color: var(--viz-text-color);
+        color: var(--viz-text-primary);
     }
 
     .description {
         font-size: var(--viz-font-size-std);
-        color: var(--viz-40);
+        color: var(--viz-text-secondary);
     }
 
     .control-wrapper {

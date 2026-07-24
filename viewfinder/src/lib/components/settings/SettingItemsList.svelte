@@ -112,7 +112,7 @@
         display: flex;
         flex-direction: column;
         width: 100%;
-        background-color: var(--viz-100);
+        background-color: var(--viz-surface-panel);
         border: var(--viz-border-thin);
         border-radius: var(--viz-border-radius-md);
         overflow: hidden;
@@ -130,8 +130,8 @@
     .empty-state {
         padding: var(--viz-spacing-xxl);
         text-align: center;
-        color: var(--viz-40);
-        background-color: var(--viz-100);
+        color: var(--viz-text-secondary);
+        background-color: var(--viz-surface-panel);
         border: var(--viz-border-thin);
         border-radius: var(--viz-border-radius-md);
         font-family: var(--viz-display-font);

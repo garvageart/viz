@@ -1,0 +1,53 @@
+@use "sass:color";
+@use "viz-mixins" as m;
+
+// GitHub-inspired palette
+// - Primary: #0969da (GitHub blue)
+// - Secondary: #8250df (GitHub purple)
+// - Accent: #1a7f37 (GitHub green)
+// - Background: #0d1117 (GitHub dark canvas)
+// - Base: #161b22 (GitHub dark surface)
+// - Header BG: #161b22 (GitHub dark header)
+// - Sidebar BG: #0d1117 (GitHub dark sidebar)
+// - Card BG: #21262d (GitHub dark card)
+
+$bg-color: #0d1117;
+$base-color: #161b22;
+$text-color: #c9d1d9;
+$primary-color: #58a6ff;
+$secondary-color: #bc8cff;
+$accent-color: #3fb950;
+$header-bg: #161b22;
+$sidebar-bg: #0d1117;
+$card-bg: #21262d;
+
+@include m.register-theme-core(
+    $bg-color: $bg-color,
+    $text-color: $text-color,
+    $base-color: $base-color,
+    $primary-color: $primary-color,
+    $secondary-color: $secondary-color,
+    $accent-color: $accent-color,
+    $header-bg: $header-bg,
+    $sidebar-bg: $sidebar-bg,
+    $card-bg: $card-bg,
+    $flip-bg-color: white,
+    $flip-bg-pct: 0%,
+    $flip-text-color: black,
+    $flip-text-pct: 15%,
+    $light-bg: #ffffff,
+    $light-text: #1f2328,
+    $light-base: #afb8c1,
+    $light-primary: #0969da,
+    $light-secondary: #8250df,
+    $light-accent: #1a7f37,
+    $light-header-bg: #e8eaed,
+    $light-sidebar-bg: #f6f8fa,
+    $light-card-bg: #ffffff
+);
+
+:root[data-theme="dark"],
+[data-theme="dark"] {
+    --viz-border-subtle: #30363d;
+    --viz-surface-hover: #2a313b;
+}

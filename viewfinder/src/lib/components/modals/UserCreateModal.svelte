@@ -48,7 +48,7 @@
         options={Object.values(Role).map((r) => ({ value: r, label: toSentenceCase(r) }))}
     />
     <div class="modal-actions">
-        <Button hoverColor="var(--viz-80)" onclick={handleCancel}>Cancel</Button>
+        <Button hoverColor="var(--viz-surface-hover)" onclick={handleCancel}>Cancel</Button>
         <Button onclick={handleSave} disabled={loading}>
             {loading ? "Creating..." : "Create User"}
         </Button>
@@ -60,7 +60,7 @@
         display: flex;
         flex-direction: column;
         gap: 1.5rem;
-        color: var(--viz-text-color);
+        color: var(--viz-text-primary);
         width: 100%;
     }
 

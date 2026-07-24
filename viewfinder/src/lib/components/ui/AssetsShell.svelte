@@ -101,7 +101,7 @@
     function printGridAsTable() {
         console.log(
             `%cGrid Array at ${DateTime.now().toFormat("dd.MM.yyyy HH:mm:ss")}`,
-            "font-weight: bold; color: var(--viz-100); font-size: 18px;"
+            "font-weight: bold; color: var(--viz-surface-panel); font-size: 18px;"
         );
         console.table(assetGridArray?.map((i) => i.map((j) => j.asset?.name ?? j.asset?.uid)));
     }
@@ -196,7 +196,7 @@
         {#if noAssetsSnippet}
             {@render noAssetsSnippet()}
         {:else}
-            <p style="text-align: center; margin: 2em; color: var(--viz-10);">No assets to display.</p>
+            <p style="text-align: center; margin: 2em; color: var(--viz-text-primary);">No assets to display.</p>
         {/if}
     </div>
 {:else}
@@ -230,11 +230,11 @@
         white-space: nowrap;
 
         &:hover {
-            background-color: var(--viz-90);
+            background-color: var(--viz-surface-panel);
         }
 
         &:active {
-            background-color: var(--viz-80);
+            background-color: var(--viz-surface-hover);
         }
     }
 

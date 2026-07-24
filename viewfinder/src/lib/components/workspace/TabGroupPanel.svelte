@@ -555,7 +555,7 @@
     }
 
     .tab-group-header {
-        background-color: var(--viz-100);
+        background-color: var(--viz-surface-panel);
         font-size: 1rem;
         display: flex;
         align-items: center;
@@ -568,7 +568,7 @@
         transition: background-color 0.2s;
 
         &:global(.drop-active) {
-            background-color: var(--viz-90);
+            background-color: var(--viz-surface-panel);
         }
     }
 
@@ -607,7 +607,7 @@
         transition: background-color 0.15s ease;
 
         &:hover {
-            background-color: var(--viz-90);
+            background-color: var(--viz-surface-hover);
         }
 
         &.active {
@@ -634,7 +634,7 @@
         overflow: hidden;
         display: flex;
         flex-direction: column;
-        background-color: var(--viz-bg-color);
+        background-color: var(--viz-surface-base);
     }
 
     .viz-custom-scrollbar {
@@ -655,7 +655,7 @@
     }
 
     .viz-custom-scrollbar-thumb {
-        background-color: color-mix(in srgb, var(--viz-40) 50%, transparent);
+        background-color: color-mix(in srgb, var(--viz-text-secondary) 50%, transparent);
         height: 100%;
         cursor: pointer;
         position: absolute;
@@ -668,7 +668,7 @@
         align-items: center;
         height: 100%;
         flex-shrink: 0;
-        background-color: var(--viz-100);
+        background-color: var(--viz-surface-panel);
         z-index: 2;
     }
 
@@ -692,7 +692,7 @@
         height: 100%;
         padding: 2rem;
         text-align: center;
-        color: var(--viz-60);
+        color: var(--viz-border-subtle);
     }
 
     .error-container {

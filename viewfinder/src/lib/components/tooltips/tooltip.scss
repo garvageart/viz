@@ -1,9 +1,10 @@
 /* Tippy Tooltip styles for the 'viz' theme */
 
 .tippy-box[data-theme~="viz"] {
-    background-color: var(--viz-100);
-    color: var(--viz-text-color);
-    border: 1px solid var(--viz-80);
+    background-color: var(--viz-surface-popover);
+    color: var(--viz-text-primary);
+    border: 1px solid var(--viz-border-subtle);
+    box-shadow: 0 6px 18px rgba(0, 0, 0, 0.35);
     border-radius: var(--viz-border-radius-sm);
     font-family: var(--viz-display-font);
     font-size: var(--viz-font-size-std);

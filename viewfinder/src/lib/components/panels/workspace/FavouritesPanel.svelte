@@ -269,8 +269,8 @@
         flex-direction: column;
         height: 100%;
         overflow-y: auto;
-        background-color: var(--viz-bg-color);
-        color: var(--viz-text-color);
+        background-color: var(--viz-surface-base);
+        color: var(--viz-text-primary);
         padding: 0.5rem;
         gap: 0.75rem;
         box-sizing: border-box;
@@ -288,7 +288,7 @@
         width: 100%;
         background: none;
         border: none;
-        color: var(--viz-text-color);
+        color: var(--viz-text-primary);
         cursor: pointer;
         padding: 0.25rem;
         font-family: inherit;
@@ -298,7 +298,7 @@
         border-radius: 0.25rem;
 
         &:hover {
-            background-color: var(--viz-90);
+            background-color: var(--viz-surface-panel);
             opacity: 0.9;
         }
     }
@@ -328,7 +328,7 @@
     .empty-state {
         padding: 1rem;
         text-align: center;
-        color: var(--viz-60);
+        color: var(--viz-border-subtle);
         font-style: italic;
         font-size: 0.85rem;
     }
@@ -352,7 +352,7 @@
         align-items: center;
         justify-content: center;
         pointer-events: none;
-        border: 1px solid var(--viz-60);
+        border: 1px solid var(--viz-border-subtle);
         border-radius: 1rem;
         padding: 2rem;
         background: rgba(0, 0, 0, 0.5);

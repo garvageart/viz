@@ -4,9 +4,12 @@
     import type { TooltipParams } from "$lib/components/tooltips/tooltip";
     import MaterialIcon, { type IconProps } from "./MaterialIcon.svelte";
 
+    type IconButtonVariant =
+        "primary" | "secondary" | "danger" | "warning" | "success" | "info" | "ghost" | "big" | "small" | "mini";
+
     interface ButtonProps extends HTMLButtonAttributes {
         hoverColor?: string;
-        variant?: "big" | "primary" | "small" | "mini";
+        variant?: IconButtonVariant;
         element?: HTMLButtonElement;
         tooltipParams?: TooltipParams | string | null;
     }
@@ -22,7 +25,7 @@
         opticalSize = 24,
         size,
         children,
-        hoverColor = "var(--viz-80)",
+        hoverColor,
         variant = "primary",
         element = $bindable(),
         tooltipParams,
@@ -38,7 +41,7 @@
     class="{variant} {props.class || ''}"
     class:with-children={!!children}
     aria-label={props["aria-label"] ?? props.title}
-    style:--button-hover-bg={hoverColor}
+    style={hoverColor ? `--button-hover-bg: ${hoverColor}` : undefined}
 >
     {#if iconName}
         <MaterialIcon {iconName} {size} {iconStyle} {fill} {grade} {opticalSize} />
@@ -47,9 +50,11 @@
 </button>
 
 <style lang="scss">
+    @use "$lib/styles/scss/viz-mixins.scss" as m;
+
     button {
         cursor: pointer;
-        color: var(--viz-text-color);
+        color: var(--viz-text-primary);
         font-weight: 500;
         letter-spacing: 0.02em;
         height: max-content;
@@ -80,17 +85,17 @@
 
         &:focus-visible {
             box-shadow:
-                0 0 0 2px var(--viz-bg-color),
+                0 0 0 2px var(--viz-surface-base),
                 0 0 0 4px var(--viz-primary);
         }
 
         &:hover:not(:disabled) {
-            background-color: var(--button-hover-bg);
-            border-color: var(--viz-80);
+            background-color: var(--button-hover-bg, var(--viz-surface-hover));
+            border-color: var(--viz-surface-hover);
         }
 
         &:active:not(:disabled) {
-            background-color: var(--viz-75);
+            background-color: var(--viz-surface-hover);
         }
 
         &:disabled {
@@ -98,6 +103,32 @@
             opacity: 0.5;
             background-color: transparent;
             border-color: transparent;
+        }
+
+        &.danger {
+            @include m.status-tint("error", true);
+        }
+
+        &.warning {
+            @include m.status-tint("warning", true);
+        }
+
+        &.success {
+            @include m.status-tint("success", true);
+        }
+
+        &.info {
+            @include m.status-tint("info", true);
+        }
+
+        &.ghost {
+            background-color: transparent;
+            border-color: transparent;
+            color: var(--viz-text-primary);
+
+            &:hover:not(:disabled) {
+                background-color: var(--viz-surface-hover);
+            }
         }
 
         &.big {

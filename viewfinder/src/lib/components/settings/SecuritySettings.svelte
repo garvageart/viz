@@ -428,13 +428,13 @@
             margin: 0;
             font-size: 1.25rem;
             font-weight: 600;
-            color: var(--viz-text-color);
+            color: var(--viz-text-primary);
         }
 
         p {
             margin: var(--viz-spacing-xxs) 0 0 0;
             font-size: var(--viz-font-size-lg);
-            color: var(--viz-40);
+            color: var(--viz-text-secondary);
         }
     }
 
@@ -443,7 +443,7 @@
         border-radius: var(--viz-border-radius-md);
         overflow: hidden;
         width: 100%;
-        background-color: var(--viz-100);
+        background-color: var(--viz-surface-panel);
     }
 
     .settings-table {
@@ -454,20 +454,20 @@
         th {
             text-align: left;
             padding: var(--viz-spacing-md) var(--viz-spacing-std);
-            color: var(--viz-40);
+            color: var(--viz-text-secondary);
             font-weight: 600;
             font-size: var(--viz-font-size-std);
             text-transform: uppercase;
             letter-spacing: 0.05em;
             border-bottom: var(--viz-border-thin);
-            background-color: var(--viz-90);
+            background-color: var(--viz-surface-panel);
         }
 
         td {
             padding: var(--viz-spacing-std);
             border-bottom: var(--viz-border-thin);
             vertical-align: middle;
-            color: var(--viz-text-color);
+            color: var(--viz-text-primary);
         }
 
         tr:last-child td {
@@ -491,12 +491,12 @@
 
         .name {
             font-weight: 500;
-            color: var(--viz-text-color);
+            color: var(--viz-text-primary);
         }
 
         .description {
             font-size: var(--viz-font-size-std);
-            color: var(--viz-40);
+            color: var(--viz-text-secondary);
         }
     }
 
@@ -507,12 +507,12 @@
 
         .name {
             font-weight: 500;
-            color: var(--viz-text-color);
+            color: var(--viz-text-primary);
         }
 
         .details {
             font-size: var(--viz-font-size-std);
-            color: var(--viz-40);
+            color: var(--viz-text-secondary);
         }
     }
 
@@ -524,7 +524,7 @@
 
     .current-badge {
         padding: 0.125rem 0.375rem;
-        background: color-mix(in srgb, var(--viz-success-color) 15%, var(--viz-95));
+        background: color-mix(in srgb, var(--viz-success-color) 15%, var(--viz-surface-card));
         color: var(--viz-success-color);
         border-radius: var(--viz-border-radius-sm);
         font-size: 0.7rem;
@@ -548,19 +548,19 @@
         background: transparent;
         border-radius: var(--viz-border-radius-pill);
         cursor: pointer;
-        color: var(--viz-40);
+        color: var(--viz-text-secondary);
         transition:
             background-color 0.15s ease,
             color 0.15s ease;
 
         &:hover {
-            background-color: var(--viz-80);
-            color: var(--viz-text-color);
+            background-color: var(--viz-surface-hover);
+            color: var(--viz-text-primary);
         }
 
         &.delete:hover,
         &.revoke:hover {
-            background-color: color-mix(in srgb, var(--viz-error-color) 15%, var(--viz-95));
+            background-color: color-mix(in srgb, var(--viz-error-color) 15%, var(--viz-surface-card));
             color: var(--viz-error-color);
         }
     }
@@ -568,15 +568,15 @@
     .empty-row {
         text-align: center;
         padding: var(--viz-spacing-xxl) !important;
-        color: var(--viz-40);
+        color: var(--viz-text-secondary);
         font-style: italic;
     }
 
     .loading-state {
         padding: var(--viz-spacing-xxl);
         text-align: center;
-        color: var(--viz-40);
-        background-color: var(--viz-100);
+        color: var(--viz-text-secondary);
+        background-color: var(--viz-surface-panel);
         border: var(--viz-border-thin);
         border-radius: var(--viz-border-radius-md);
         font-family: var(--viz-display-font);

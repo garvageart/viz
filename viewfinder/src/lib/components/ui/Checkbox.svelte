@@ -84,12 +84,12 @@
         /* Cohesive hover feedback */
         &:hover:not(.disabled) {
             .viz-checkbox {
-                border-color: var(--viz-40);
-                background-color: var(--viz-90);
+                border-color: var(--viz-text-secondary);
+                background-color: var(--viz-surface-panel);
             }
 
             .label-text {
-                color: var(--viz-text-color);
+                color: var(--viz-text-primary);
             }
         }
     }
@@ -115,7 +115,7 @@
         font-size: 1rem;
         border: var(--viz-border-thin);
         border-radius: var(--viz-border-radius-sm);
-        background-color: var(--viz-95);
+        background-color: var(--viz-surface-card);
         color: transparent;
         transition:
             background-color 0.12s ease,
@@ -155,7 +155,7 @@
         }
 
         .label-text {
-            color: var(--viz-text-color);
+            color: var(--viz-text-primary);
         }
     }
 
@@ -163,7 +163,7 @@
     input[type="checkbox"]:focus-visible + label {
         .viz-checkbox {
             box-shadow:
-                0 0 0 2px var(--viz-bg-color),
+                0 0 0 2px var(--viz-surface-base),
                 0 0 0 4px var(--viz-primary);
             border-color: var(--viz-primary);
         }
@@ -181,7 +181,7 @@
     .label-text {
         font-size: var(--viz-font-size-lg);
         font-weight: 500;
-        color: var(--viz-40);
+        color: var(--viz-text-secondary);
         transition: color 0.12s ease;
     }
 </style>

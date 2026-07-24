@@ -111,7 +111,7 @@
         display: inline-flex;
         align-items: center;
         gap: 0.1em;
-        color: var(--viz-text-color);
+        color: var(--viz-text-primary);
 
         &.readonly {
             pointer-events: none;
@@ -128,7 +128,7 @@
             transform 0.1s ease;
 
         &.filled {
-            color: var(--viz-text-color);
+            color: var(--viz-text-primary);
         }
     }
 
@@ -140,11 +140,11 @@
         outline: none;
 
         &:hover {
-            color: var(--viz-text-color);
+            color: var(--viz-text-primary);
         }
 
         &:focus-visible {
-            color: var(--viz-text-color);
+            color: var(--viz-text-primary);
         }
     }
 </style>

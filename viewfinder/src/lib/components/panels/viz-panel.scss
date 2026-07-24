@@ -1,6 +1,6 @@
 .splitpanes.viz-theme {
     .splitpanes__pane {
-        background-color: var(--viz-bg-color);
+        background-color: var(--viz-surface-base);
     }
 
     .splitpanes__pane__active {
@@ -13,7 +13,7 @@
 .splitpanes__splitter {
     position: relative;
     z-index: 999; // this overlaying on stuff like the lightbox. it's not that serious, it shouldn't be this high
-    background-color: var(--viz-60);
+    background-color: var(--viz-border-subtle);
     box-sizing: border-box;
     flex-shrink: 0;
     pointer-events: auto;

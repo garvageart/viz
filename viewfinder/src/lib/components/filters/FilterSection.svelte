@@ -28,7 +28,7 @@
 
 <style lang="scss">
     .filter-section {
-        border-bottom: 1px solid var(--viz-80);
+        border-bottom: 1px solid var(--viz-surface-hover);
 
         &:last-child {
             border-bottom: none;
@@ -44,14 +44,14 @@
         border: none;
         padding: 0.2rem;
         cursor: pointer;
-        color: var(--viz-text-color);
+        color: var(--viz-text-primary);
         font-weight: 600;
         text-align: left;
         transition: color 0.2s;
 
         &:hover {
-            color: var(--viz-20);
-            background-color: var(--viz-90);
+            color: var(--viz-text-secondary);
+            background-color: var(--viz-surface-panel);
         }
     }
 

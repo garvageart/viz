@@ -29,13 +29,13 @@
 <style lang="scss">
     .progress-bar-track {
         width: 100%;
-        background-color: var(--viz-90);
+        background-color: var(--viz-surface-panel);
         overflow: hidden;
         box-sizing: border-box;
 
         &.has-border {
             border: var(--viz-border-thin);
-            border-color: var(--viz-70);
+            border-color: var(--viz-border-subtle);
         }
     }
 

@@ -342,7 +342,7 @@
 
 <style lang="scss">
     .filter-section {
-        border-bottom: 1px solid var(--viz-80);
+        border-bottom: 1px solid var(--viz-surface-hover);
 
         &:last-child {
             border-bottom: none;
@@ -358,15 +358,15 @@
         border: none;
         padding: 0.2rem;
         cursor: pointer;
-        color: var(--viz-text-color);
+        color: var(--viz-text-primary);
         font-weight: 600;
         font-size: var(--viz-font-size-std);
         text-align: left;
         transition: color 0.2s;
 
         &:hover {
-            color: var(--viz-20);
-            background-color: var(--viz-90);
+            color: var(--viz-text-secondary);
+            background-color: var(--viz-surface-panel);
         }
     }
 
@@ -399,7 +399,7 @@
 
         .label {
             font-size: var(--viz-font-size-std);
-            color: var(--viz-60);
+            color: var(--viz-border-subtle);
         }
     }
 
@@ -409,9 +409,9 @@
         justify-content: space-between;
         gap: var(--viz-spacing-sm);
         width: 100%;
-        background: var(--viz-100);
-        box-shadow: 0 -1px 0 var(--viz-60) inset;
-        color: var(--viz-40);
+        background: var(--viz-surface-panel);
+        box-shadow: 0 -1px 0 var(--viz-border-subtle) inset;
+        color: var(--viz-text-secondary);
         padding: var(--viz-spacing-sm) var(--viz-spacing-sm);
         font-family: var(--viz-display-font);
         font-size: var(--viz-font-size-std);
@@ -428,13 +428,13 @@
         }
 
         &.active {
-            color: var(--viz-text-color);
+            color: var(--viz-text-primary);
             box-shadow: 0 -1px 0 var(--viz-primary) inset;
         }
 
         &:hover {
             box-shadow: 0 -2px 0 var(--viz-primary) inset;
-            color: var(--viz-text-color);
+            color: var(--viz-text-primary);
         }
     }
 
@@ -445,15 +445,15 @@
         border: none;
         padding: 0;
         cursor: pointer;
-        color: var(--viz-50);
+        color: var(--viz-text-secondary);
 
         &:hover {
-            color: var(--viz-text-color);
+            color: var(--viz-text-primary);
         }
     }
 
     :global(.arrow-icon) {
         font-size: 1.2rem;
-        color: var(--viz-60);
+        color: var(--viz-border-subtle);
     }
 </style>

@@ -125,7 +125,7 @@
             <div id="download-panel-header-info">
                 <Button
                     style="background-color: transparent; padding: 0em;"
-                    hoverColor="var(--viz-80)"
+                    hoverColor="var(--viz-surface-hover)"
                     title="Minimize Download Panel"
                     onclick={() => {
                         minimized = true;
@@ -145,7 +145,7 @@
             <IconButton
                 iconName="cancel"
                 style="background-color: transparent; padding: 0em;"
-                hoverColor="var(--viz-80)"
+                hoverColor="var(--viz-surface-hover)"
                 title="Cancel All Downloads"
                 onclick={() => {
                     download.files.forEach((file) => {
@@ -208,7 +208,7 @@
         position: absolute;
         bottom: var(--viz-spacing-xxl);
         right: var(--viz-spacing-xxl);
-        background-color: var(--viz-100);
+        background-color: var(--viz-surface-panel);
         z-index: 900;
         border: var(--viz-border-thin);
         border-radius: var(--viz-border-radius-lg);
@@ -234,7 +234,7 @@
         font-size: var(--viz-font-size-lg);
         font-weight: 600;
         border-bottom: var(--viz-border-thin);
-        background-color: var(--viz-90);
+        background-color: var(--viz-surface-panel);
         box-sizing: border-box;
     }
 
@@ -264,13 +264,13 @@
         width: 100%;
         padding: var(--viz-spacing-sm) var(--viz-spacing-std);
         border-bottom: var(--viz-border-thin);
-        background-color: var(--viz-100);
+        background-color: var(--viz-surface-panel);
         box-sizing: border-box;
         justify-content: space-between;
         align-items: center;
 
         &:hover {
-            background-color: var(--viz-90);
+            background-color: var(--viz-surface-panel);
         }
     }
 
@@ -287,7 +287,7 @@
         padding: 0.15rem;
         margin-right: var(--viz-spacing-xs);
         cursor: pointer;
-        color: var(--viz-text-color);
+        color: var(--viz-text-primary);
         opacity: 0.6;
         display: flex;
         align-items: center;
@@ -296,7 +296,7 @@
 
         &:hover {
             opacity: 1;
-            background-color: var(--viz-80);
+            background-color: var(--viz-surface-hover);
         }
     }
 
@@ -307,7 +307,7 @@
         white-space: nowrap;
         font-weight: 500;
         display: block;
-        color: var(--viz-text-color);
+        color: var(--viz-text-primary);
     }
 
     .panel-file-right {
@@ -321,7 +321,7 @@
 
     .viz-download-progress-text {
         font-weight: 600;
-        color: var(--viz-40);
+        color: var(--viz-text-secondary);
     }
 
     .status-text {

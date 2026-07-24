@@ -542,8 +542,8 @@
         flex-direction: column;
         height: 100%;
         width: 100%;
-        background-color: var(--viz-bg-color);
-        color: var(--viz-text-color);
+        background-color: var(--viz-surface-base);
+        color: var(--viz-text-primary);
         overflow: hidden;
     }
 
@@ -595,8 +595,8 @@
 
     .export-header {
         padding: var(--viz-spacing-sm) var(--viz-spacing-md);
-        border-bottom: 1px solid var(--viz-80);
-        background-color: var(--viz-bg-color);
+        border-bottom: 1px solid var(--viz-surface-hover);
+        background-color: var(--viz-surface-base);
 
         h2 {
             margin: 0;
@@ -606,7 +606,7 @@
 
         .asset-summary {
             font-size: var(--viz-font-size-std);
-            color: var(--viz-40);
+            color: var(--viz-text-secondary);
             margin-top: var(--viz-spacing-xxs);
         }
     }
@@ -621,14 +621,14 @@
         border: none;
 
         & + .section {
-            border-top: 1px solid var(--viz-80);
+            border-top: 1px solid var(--viz-surface-hover);
         }
 
         &.expanded {
-            background-color: var(--viz-bg-color);
+            background-color: var(--viz-surface-base);
 
             .section-header {
-                border-bottom: 1px solid var(--viz-80);
+                border-bottom: 1px solid var(--viz-surface-hover);
             }
         }
     }
@@ -641,7 +641,7 @@
         background: none;
         border: none;
         border-bottom: 1px solid transparent;
-        color: var(--viz-text-color);
+        color: var(--viz-text-primary);
         cursor: pointer;
         font-weight: 600;
         font-size: var(--viz-font-size-lg);
@@ -651,7 +651,7 @@
             border-bottom-color 0.2s;
 
         &:hover {
-            background-color: var(--viz-90);
+            background-color: var(--viz-surface-panel);
         }
 
         span {
@@ -683,7 +683,7 @@
             .unit {
                 margin-bottom: var(--viz-spacing-sm);
                 font-size: var(--viz-font-size-std);
-                color: var(--viz-50);
+                color: var(--viz-text-secondary);
             }
         }
     }
@@ -698,14 +698,14 @@
     .placeholder-text {
         font-style: italic;
         font-size: var(--viz-font-size-std);
-        color: var(--viz-50);
+        color: var(--viz-text-secondary);
         margin: 0;
     }
 
     .export-footer {
         padding: var(--viz-spacing-md) var(--viz-spacing-std);
-        border-top: 1px solid var(--viz-80);
-        background-color: var(--viz-100);
+        border-top: 1px solid var(--viz-surface-hover);
+        background-color: var(--viz-surface-panel);
         display: flex;
         justify-content: flex-end;
         gap: var(--viz-spacing-sm);

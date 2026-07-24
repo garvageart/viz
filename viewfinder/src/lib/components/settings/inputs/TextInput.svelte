@@ -30,6 +30,6 @@
 
 <style lang="scss">
     :global(.settings-text-input input) {
-        background-color: var(--viz-90);
+        background-color: var(--viz-surface-panel);
     }
 </style>

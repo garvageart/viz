@@ -716,7 +716,7 @@
         width: 100%;
         position: sticky;
         top: 0;
-        background-color: var(--viz-100);
+        background-color: var(--viz-surface-panel);
     }
 
     .selection-info {
@@ -750,7 +750,7 @@
     }
 
     :global(.on-enter) {
-        background-color: var(--viz-80);
+        background-color: var(--viz-surface-hover);
         outline: 2px solid var(--viz-primary);
     }
 
@@ -766,7 +766,7 @@
             display: flex;
             justify-content: space-between;
             align-items: center;
-            border-bottom: 1px solid var(--viz-20);
+            border-bottom: 1px solid var(--viz-text-secondary);
             padding: 0.25rem 1rem;
             font-size: 0.9rem;
         }
@@ -774,7 +774,7 @@
         h2 {
             font-size: var(--viz-font-size-lg);
             font-family: var(--viz-display-font);
-            color: var(--viz-text-color);
+            color: var(--viz-text-primary);
         }
     }
 

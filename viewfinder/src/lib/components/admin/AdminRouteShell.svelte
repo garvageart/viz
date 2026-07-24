@@ -44,7 +44,7 @@
         align-items: center;
         padding: var(--viz-spacing-md) var(--viz-spacing-lg);
         border-bottom: var(--viz-border-thin);
-        background-color: var(--viz-bg-color);
+        background-color: var(--viz-surface-base);
 
         h1 {
             margin: 0;
@@ -55,7 +55,7 @@
         .description {
             display: block;
             margin: var(--viz-spacing-xxs) 0 0 0;
-            color: var(--viz-40);
+            color: var(--viz-text-secondary);
             font-size: var(--viz-font-size-lg);
         }
     }

@@ -826,7 +826,7 @@
             border-collapse: separate;
             border-spacing: 0;
             font-size: var(--viz-font-size-lg);
-            color: var(--viz-text-color);
+            color: var(--viz-text-primary);
             display: table;
         }
 
@@ -848,13 +848,13 @@
             position: sticky;
             top: 0px;
             z-index: 2;
-            color: var(--viz-text-color);
-            background-color: var(--viz-90);
+            color: var(--viz-text-primary);
+            background-color: var(--viz-surface-panel);
             text-align: left;
             font-weight: 600;
             padding: var(--viz-spacing-sm) var(--viz-spacing-md);
             vertical-align: middle;
-            border-bottom: 2px solid var(--viz-60);
+            border-bottom: 2px solid var(--viz-border-subtle);
 
             &.settings-header {
                 width: 3.5rem;
@@ -865,7 +865,7 @@
                 .column-selector-btn {
                     background: transparent;
                     border: none;
-                    color: var(--viz-40);
+                    color: var(--viz-text-secondary);
                     cursor: pointer;
                     padding: var(--viz-spacing-xxs);
                     border-radius: var(--viz-border-radius-pill);
@@ -877,8 +877,8 @@
                         color 0.2s;
 
                     &:hover {
-                        background-color: var(--viz-80);
-                        color: var(--viz-text-color);
+                        background-color: var(--viz-surface-hover);
+                        color: var(--viz-text-primary);
                     }
 
                     :global(.material-symbols-outlined) {
@@ -903,8 +903,8 @@
                     color 0.2s;
 
                 &:hover {
-                    background-color: var(--viz-80);
-                    color: var(--viz-text-color);
+                    background-color: var(--viz-surface-hover);
+                    color: var(--viz-text-primary);
                 }
 
                 .sort-icon {
@@ -931,21 +931,21 @@
 
         tbody tr {
             transition: background-color 120ms ease-in-out;
-            background-color: var(--viz-100);
+            background-color: var(--viz-surface-panel);
 
             &:nth-child(even) {
-                background-color: var(--viz-95);
+                background-color: var(--viz-surface-card);
             }
 
             &:hover {
-                background-color: var(--viz-80);
+                background-color: var(--viz-surface-hover);
             }
 
             &.selected-card {
-                background-color: color-mix(in srgb, var(--viz-100) 85%, var(--viz-primary) 15%);
+                background-color: color-mix(in srgb, var(--viz-surface-panel) 85%, var(--viz-primary) 15%);
 
                 td {
-                    border-bottom-color: color-mix(in srgb, var(--viz-60) 50%, var(--viz-primary) 50%);
+                    border-bottom-color: color-mix(in srgb, var(--viz-border-subtle) 50%, var(--viz-primary) 50%);
                 }
             }
 
@@ -970,7 +970,7 @@
             td {
                 padding: var(--viz-spacing-sm) var(--viz-spacing-md);
                 vertical-align: middle;
-                border-bottom: 1px solid var(--viz-60);
+                border-bottom: 1px solid var(--viz-border-subtle);
                 white-space: nowrap;
                 overflow: hidden;
                 text-overflow: ellipsis;
@@ -1008,7 +1008,7 @@
             object-fit: cover;
             border-radius: var(--viz-border-radius-md);
             flex-shrink: 0;
-            background: var(--viz-90);
+            background: var(--viz-surface-panel);
             border: var(--viz-border-thin);
         }
 
@@ -1018,9 +1018,9 @@
             display: flex;
             align-items: center;
             justify-content: center;
-            background-color: var(--viz-90);
+            background-color: var(--viz-surface-panel);
             border-radius: var(--viz-border-radius-md);
-            color: var(--viz-40);
+            color: var(--viz-text-secondary);
             border: var(--viz-border-thin);
             flex-shrink: 0;
 
@@ -1046,7 +1046,7 @@
 
         .asset-snippet-sub {
             font-size: var(--viz-font-size-std);
-            color: var(--viz-40);
+            color: var(--viz-text-secondary);
         }
     }
 

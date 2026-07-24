@@ -80,7 +80,7 @@
         display: flex;
         flex-direction: column;
         width: 100%;
-        color: var(--viz-text-color);
+        color: var(--viz-text-primary);
 
         .confirmation-content {
             display: flex;

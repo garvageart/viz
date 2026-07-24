@@ -100,7 +100,7 @@
     .input-label {
         font-size: var(--viz-font-size-lg); // UI Typography Token
         font-weight: 500;
-        color: var(--viz-40);
+        color: var(--viz-text-secondary);
     }
 
     .required-asterisk {
@@ -110,7 +110,7 @@
 
     .input-description {
         font-size: var(--viz-font-size-std); // UI Typography Token
-        color: var(--viz-60);
+        color: var(--viz-text-muted);
         padding-left: var(--viz-spacing-sm); // UI Spacing Token
     }
 
@@ -119,35 +119,35 @@
         width: 100%;
         max-width: 100%;
         min-height: 2.5rem; // Standard density height
-        color: var(--viz-text-color);
-        background-color: var(--viz-100);
+        color: var(--viz-text-primary);
+        background-color: var(--viz-surface-panel);
         outline: none;
         border: none;
-        box-shadow: 0 -1px 0 var(--viz-60) inset;
+        box-shadow: 0 -1px 0 var(--viz-border-subtle) inset;
         font-family: var(--viz-display-font);
         font-size: var(--viz-font-size-lg);
         padding: var(--viz-spacing-sm) 2.5rem var(--viz-spacing-sm) var(--viz-spacing-std); // UI Padding Tokens
         margin-bottom: 0;
 
         &::placeholder {
-            color: var(--viz-40);
+            color: var(--viz-text-secondary);
             font-family: var(--viz-display-font);
         }
 
         &:focus::placeholder {
-            color: var(--viz-60);
+            color: var(--viz-border-subtle);
             opacity: 1;
         }
 
         &:focus {
-            background-color: var(--viz-100);
+            background-color: var(--viz-surface-panel);
             box-shadow: 0 -2px 0 var(--viz-primary) inset;
         }
 
         &:-webkit-autofill,
         &:-webkit-autofill:focus {
-            -webkit-text-fill-color: var(--viz-text-color);
-            -webkit-box-shadow: 0 0 0px 1000px var(--viz-100) inset;
+            -webkit-text-fill-color: var(--viz-text-primary);
+            -webkit-box-shadow: 0 0 0px 1000px var(--viz-surface-panel) inset;
             -webkit-box-shadow: 0 -5px 0 var(--viz-primary) inset;
             transition:
                 background-color 0s 600000s,
@@ -162,7 +162,7 @@
         transform: translateY(-50%);
         background-color: transparent;
         border: none;
-        color: var(--viz-40);
+        color: var(--viz-text-secondary);
         cursor: pointer;
         display: inline-flex;
         align-items: center;
@@ -177,7 +177,7 @@
         z-index: 3;
 
         &:hover:not(:disabled) {
-            color: var(--viz-text-color);
+            color: var(--viz-text-primary);
             opacity: 1;
         }
 

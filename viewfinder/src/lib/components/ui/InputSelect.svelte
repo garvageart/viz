@@ -158,7 +158,7 @@
     .input-label {
         font-size: var(--viz-font-size-lg);
         font-weight: 500;
-        color: var(--viz-40);
+        color: var(--viz-text-secondary);
     }
 
     .required-asterisk {
@@ -168,7 +168,7 @@
 
     .input-description {
         font-size: var(--viz-font-size-std);
-        color: var(--viz-60);
+        color: var(--viz-text-muted);
         padding-left: var(--viz-spacing-sm);
     }
 
@@ -183,11 +183,11 @@
             width: 100%;
             max-width: 100%;
             min-height: 2rem; // Standard density height
-            color: var(--viz-text-color);
-            background-color: var(--viz-100);
+            color: var(--viz-text-primary);
+            background-color: var(--viz-surface-panel);
             outline: none;
             border: none;
-            box-shadow: 0 -1px 0 var(--viz-60) inset;
+            box-shadow: 0 -1px 0 var(--viz-border-subtle) inset;
             font-family: var(--viz-display-font);
             font-size: var(--viz-font-size-std);
             padding: var(--viz-spacing-sm) 2rem var(--viz-spacing-sm) var(--viz-spacing-std);
@@ -202,11 +202,11 @@
             background-size: var(--viz-font-size-std);
 
             &:hover:not(:disabled) {
-                box-shadow: 0 -1px 0 var(--viz-40) inset;
+                box-shadow: 0 -1px 0 var(--viz-text-secondary) inset;
             }
 
             &:focus {
-                background-color: var(--viz-100);
+                background-color: var(--viz-surface-panel);
                 box-shadow: 0 -2px 0 var(--viz-primary) inset;
             }
 
@@ -225,7 +225,7 @@
     }
 
     :global(.select-content) {
-        background-color: var(--viz-95);
+        background-color: var(--viz-surface-popover);
         border: var(--viz-border-thin);
         border-radius: var(--viz-border-radius-md);
         box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
@@ -253,7 +253,7 @@
         padding: var(--viz-spacing-xs) var(--viz-spacing-sm);
         font-family: var(--viz-display-font);
         font-size: 1rem;
-        color: var(--viz-text-color);
+        color: var(--viz-text-primary);
         border-radius: var(--viz-border-radius-sm);
         cursor: pointer;
         outline: none;
@@ -264,11 +264,11 @@
 
     :global(.select-item:hover),
     :global(.select-item[data-highlighted]) {
-        background-color: var(--viz-80);
+        background-color: var(--viz-surface-hover);
     }
 
     :global(.select-item[data-selected]) {
-        background-color: var(--viz-80);
+        background-color: var(--viz-surface-hover);
         font-weight: 500;
     }
 
@@ -280,15 +280,15 @@
     }
 
     :global(.select-separator) {
-        border-top: 1px solid var(--viz-80);
-        background-color: var(--viz-60);
+        border-top: 1px solid var(--viz-surface-hover);
+        background-color: var(--viz-border-subtle);
         margin: var(--viz-spacing-xxs) 0;
     }
 
     :global(.select-group-label) {
         font-size: var(--viz-font-size-std);
         font-weight: 700;
-        color: var(--viz-40);
+        color: var(--viz-text-secondary);
         padding: var(--viz-spacing-xs) var(--viz-spacing-sm);
         text-transform: uppercase;
         letter-spacing: 0.05em;

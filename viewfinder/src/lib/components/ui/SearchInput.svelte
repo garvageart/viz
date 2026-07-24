@@ -39,7 +39,7 @@
         onkeydown={handleSearch}
         disabled={loading}
     >
-        <MaterialIcon iconName="search" size="1.2rem" style="color: var(--viz-40);" />
+        <MaterialIcon iconName="search" size="1.2rem" style="color: var(--viz-text-secondary);" />
     </button>
     <input
         id={inputId}
@@ -77,15 +77,15 @@
         align-items: center;
         width: 20%;
         height: 1.8rem;
-        border: 1px solid var(--viz-60);
+        border: 1px solid var(--viz-border-subtle);
         border-radius: var(--viz-border-radius-pill);
-        background-color: var(--viz-bg-color);
+        background-color: var(--viz-surface-base);
         overflow: hidden;
         box-sizing: border-box;
     }
 
     .search-button {
-        background-color: var(--viz-90);
+        background-color: var(--viz-surface-panel);
         border: none;
         border-radius: var(--viz-border-radius-pill);
         border-top-right-radius: 0;
@@ -95,29 +95,29 @@
         display: flex;
         align-items: center;
         justify-content: center;
-        color: var(--viz-text-color);
+        color: var(--viz-text-primary);
         cursor: pointer;
         transition: background-color 150ms ease;
 
         &:focus {
-            box-shadow: 0px 0px 0px 1.5px inset var(--viz-60);
+            box-shadow: 0px 0px 0px 1.5px inset var(--viz-border-subtle);
             outline: none;
-            background-color: var(--viz-80);
+            background-color: var(--viz-surface-hover);
         }
 
         &:hover {
-            background-color: var(--viz-80);
+            background-color: var(--viz-surface-hover);
         }
 
         &:active {
-            background-color: var(--viz-90);
+            background-color: var(--viz-surface-panel);
         }
     }
 
     .search-input__field {
         font-size: var(--viz-font-size-std);
-        background-color: var(--viz-bg-color);
-        color: var(--viz-text-color);
+        background-color: var(--viz-surface-base);
+        color: var(--viz-text-primary);
         outline: none;
         border: none;
         width: 100%;
@@ -128,12 +128,12 @@
         font-family: var(--viz-display-font);
 
         &::placeholder {
-            color: var(--viz-40);
+            color: var(--viz-text-secondary);
             font-family: var(--viz-display-font);
         }
 
         &:focus::placeholder {
-            color: var(--viz-text-color);
+            color: var(--viz-text-primary);
         }
     }
 
@@ -150,13 +150,13 @@
         display: flex;
         align-items: center;
         justify-content: center;
-        color: var(--viz-40);
+        color: var(--viz-text-secondary);
         cursor: pointer;
         background-color: transparent;
         transition: color 150ms ease;
 
         &:hover {
-            color: var(--viz-text-color);
+            color: var(--viz-text-primary);
         }
     }
 </style>

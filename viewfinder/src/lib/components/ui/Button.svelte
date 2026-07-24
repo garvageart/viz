@@ -1,19 +1,16 @@
 <script lang="ts">
     import type { HTMLButtonAttributes } from "svelte/elements";
 
+    type ButtonVariant =
+        "primary" | "secondary" | "danger" | "warning" | "success" | "info" | "ghost" | "big" | "small" | "mini";
+
     interface Props extends HTMLButtonAttributes {
         hoverColor?: string;
-        variant?: "big" | "primary" | "small" | "mini";
+        variant?: ButtonVariant;
         element?: HTMLButtonElement;
     }
 
-    let {
-        children,
-        hoverColor = "var(--viz-80)",
-        variant = "primary",
-        element = $bindable(),
-        ...props
-    }: Props = $props();
+    let { children, hoverColor, variant = "primary", element = $bindable(), ...props }: Props = $props();
 </script>
 
 <button
@@ -21,26 +18,29 @@
     bind:this={element}
     class="{variant} {props.class || ''}"
     aria-label={props["aria-label"] ?? props.title}
-    style:--button-hover-bg={hoverColor}
+    style={hoverColor ? `--button-hover-bg: ${hoverColor}` : undefined}
 >
     {@render children?.()}
 </button>
 
 <style lang="scss">
+    @use "$lib/styles/scss/viz-mixins.scss" as m;
+
     button {
         cursor: pointer;
-        color: var(--viz-text-color);
+        color: var(--viz-text-primary);
         font-weight: 500;
         font-size: var(--viz-font-size-lg);
         letter-spacing: 0.02em;
         height: max-content;
-        background-color: var(--viz-90);
+        background-color: var(--viz-surface-panel);
         border: var(--viz-border-thin);
         padding: var(--viz-spacing-xs) var(--viz-spacing-md);
         display: inline-flex;
         align-items: center;
         justify-content: center;
         flex-direction: row;
+        gap: var(--viz-spacing-xs);
         text-align: center;
         position: relative;
         transition:
@@ -51,24 +51,50 @@
 
         &:focus-visible {
             box-shadow:
-                0 0 0 2px var(--viz-bg-color),
+                0 0 0 2px var(--viz-surface-base),
                 0 0 0 4px var(--viz-primary);
         }
 
         &:disabled {
             cursor: not-allowed;
             opacity: 0.5;
-            background-color: var(--viz-95);
-            border-color: var(--viz-80);
+            background-color: var(--viz-surface-card);
+            border-color: var(--viz-surface-hover);
         }
 
         &:hover:not(:disabled) {
-            background-color: var(--button-hover-bg);
-            border-color: var(--viz-70);
+            background-color: var(--button-hover-bg, var(--viz-surface-hover));
+            border-color: var(--viz-border-subtle);
         }
 
         &:active:not(:disabled) {
-            background-color: var(--viz-75);
+            background-color: var(--viz-surface-hover);
+        }
+
+        &.danger {
+            @include m.status-tint("error", true);
+        }
+
+        &.warning {
+            @include m.status-tint("warning", true);
+        }
+
+        &.success {
+            @include m.status-tint("success", true);
+        }
+
+        &.info {
+            @include m.status-tint("info", true);
+        }
+
+        &.ghost {
+            background-color: transparent;
+            border-color: transparent;
+            color: var(--viz-text-primary);
+
+            &:hover:not(:disabled) {
+                background-color: var(--viz-surface-hover);
+            }
         }
 
         &.big {

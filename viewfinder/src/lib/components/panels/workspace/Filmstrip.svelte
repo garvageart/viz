@@ -389,7 +389,7 @@
     }
 
     .empty-state {
-        color: var(--viz-40);
+        color: var(--viz-text-secondary);
         padding: var(--viz-spacing-sm);
         width: 100%;
         height: 100%;
@@ -402,12 +402,12 @@
             display: flex;
             align-items: center;
             justify-content: center;
-            color: var(--viz-60);
-            background-color: var(--viz-95);
+            color: var(--viz-border-subtle);
+            background-color: var(--viz-surface-card);
             border-radius: var(--viz-border-radius-md);
             padding: var(--viz-spacing-xs);
             border: var(--viz-border-thin);
-            border-color: var(--viz-90);
+            border-color: var(--viz-surface-panel);
         }
 
         .empty-text-wrapper {
@@ -419,13 +419,13 @@
         .empty-title {
             font-size: var(--viz-font-size-lg);
             font-weight: 600;
-            color: var(--viz-text-color);
+            color: var(--viz-text-primary);
             font-family: var(--viz-display-font);
         }
 
         .empty-subtitle {
             font-size: var(--viz-font-size-std);
-            color: var(--viz-40);
+            color: var(--viz-text-secondary);
             font-family: var(--viz-mono-font);
         }
     }
@@ -437,7 +437,6 @@
         overflow: hidden;
         cursor: pointer;
         background-color: #0d0d0d;
-        border: 1px solid var(--viz-80);
         transition:
             background-color 0.1s ease,
             border-color 0.1s ease;
@@ -452,7 +451,7 @@
 
         &:hover {
             background-color: #1a1a1a;
-            border-color: var(--viz-70);
+            border-color: var(--viz-border-subtle);
         }
 
         &.active {

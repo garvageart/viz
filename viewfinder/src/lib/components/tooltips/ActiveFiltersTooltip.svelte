@@ -131,13 +131,13 @@
     }
 
     .no-filters-msg {
-        color: var(--viz-40);
+        color: var(--viz-text-secondary);
         font-style: italic;
     }
 
     .tooltip-header {
         font-weight: 700;
-        border-bottom: 1px solid var(--viz-80);
+        border-bottom: 1px solid var(--viz-surface-hover);
         padding-bottom: var(--viz-spacing-xs);
         margin-bottom: var(--viz-spacing-xxs);
     }
@@ -157,7 +157,7 @@
     }
 
     .filter-label {
-        color: var(--viz-40);
+        color: var(--viz-text-secondary);
         font-weight: 500;
     }
 

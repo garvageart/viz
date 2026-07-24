@@ -77,12 +77,12 @@
     .header {
         display: flex;
         justify-content: space-between;
-        color: var(--viz-60);
+        color: var(--viz-border-subtle);
     }
 
     .label {
         font-weight: 500;
-        color: var(--viz-text-color);
+        color: var(--viz-text-primary);
     }
 
     .inputs {
@@ -102,6 +102,6 @@
     }
 
     .separator {
-        color: var(--viz-60);
+        color: var(--viz-border-subtle);
     }
 </style>

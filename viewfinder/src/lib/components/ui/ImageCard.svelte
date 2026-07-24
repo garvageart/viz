@@ -152,6 +152,9 @@
         height: 100%;
         width: 100%;
         overflow: hidden;
+        background-color: var(--viz-surface-card);
+        border: 1px solid var(--viz-border-subtle);
+        box-sizing: border-box;
     }
 
     .mini-image-wrapper {
@@ -162,22 +165,22 @@
         display: flex;
         align-items: center;
         justify-content: center;
-        background-color: var(--viz-90);
+        background-color: var(--viz-surface-panel);
     }
 
     .mini-footer {
         padding: var(--viz-spacing-sm);
-        background-color: var(--viz-90);
+        background-color: var(--viz-surface-card);
         display: flex;
         flex-direction: column;
         gap: var(--viz-spacing-xxs);
         border-top: var(--viz-border-thin);
-        border-top-color: var(--viz-85);
+        border-top-color: var(--viz-border-subtle);
 
         .mini-filename {
             font-size: var(--viz-font-size-sm);
             font-weight: 600;
-            color: var(--viz-40);
+            color: var(--viz-text-secondary);
             white-space: nowrap;
             overflow: hidden;
             text-overflow: ellipsis;
@@ -214,10 +217,10 @@
                 width: 0.35rem;
                 height: 0.35rem;
                 border-radius: var(--viz-border-radius-pill);
-                background-color: var(--viz-70);
+                background-color: var(--viz-border-subtle);
 
                 &.filled {
-                    background-color: var(--viz-10);
+                    background-color: var(--viz-primary);
                 }
             }
         }
@@ -234,8 +237,8 @@
         min-width: 100%;
         max-width: 100%;
         height: auto;
-        background-color: var(--viz-95);
-        border: var(--viz-border-thin);
+        background-color: var(--viz-surface-card);
+        border: 1px solid var(--viz-border-subtle);
         border-radius: var(--viz-border-radius-md);
         position: relative;
         overflow: hidden;
@@ -245,8 +248,8 @@
         box-sizing: border-box;
 
         &:hover {
-            background-color: var(--viz-90);
-            border-color: var(--viz-60);
+            background-color: var(--viz-surface-hover);
+            border-color: var(--viz-primary);
         }
     }
 
@@ -269,7 +272,7 @@
     .image-card-name {
         font-size: var(--viz-font-size-lg);
         font-weight: 600;
-        color: var(--viz-text-color);
+        color: var(--viz-text-primary);
         white-space: nowrap;
         overflow: hidden;
         text-overflow: ellipsis;
@@ -285,7 +288,7 @@
     }
 
     .image-card-divider {
-        color: var(--viz-30);
+        color: var(--viz-text-muted);
     }
 
     .image-card-date-group {
@@ -294,18 +297,18 @@
         gap: var(--viz-spacing-xs);
         font-family: var(--viz-mono-font);
         font-size: var(--viz-font-size-std);
-        color: var(--viz-40);
+        color: var(--viz-text-secondary);
     }
 
     .image-container {
         height: 13em;
-        background-color: var(--viz-90);
+        background-color: var(--viz-surface-panel);
         display: flex;
         justify-content: center;
         align-items: center;
         position: relative;
         overflow: hidden;
-        border-bottom: var(--viz-border-thin);
+        border-bottom: 1px solid var(--viz-border-subtle);
 
         :global(.card-image) {
             width: 100%;

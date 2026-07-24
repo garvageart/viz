@@ -79,7 +79,7 @@
         align-items: center;
         justify-content: space-between;
         font-size: 1rem;
-        color: var(--viz-60);
+        color: var(--viz-border-subtle);
 
         /* Align checkbox properly */
         :global(.checkbox-wrapper) {
@@ -103,7 +103,7 @@
     .empty {
         font-style: italic;
         opacity: 0.6;
-        color: var(--viz-60);
+        color: var(--viz-border-subtle);
     }
 
     /* Override Button styling to look like a link or simple toggle */

@@ -1061,8 +1061,8 @@
         width: 100%;
         inset: 0;
         z-index: 1000;
-        color: var(--viz-text-color);
-        background: color-mix(in srgb, var(--viz-100) 90%, transparent);
+        color: var(--viz-text-primary);
+        background: color-mix(in srgb, var(--viz-surface-panel) 90%, transparent);
         backdrop-filter: blur(6px);
         display: flex;
         align-items: center;
@@ -1077,10 +1077,10 @@
         align-items: center;
         justify-content: center;
         pointer-events: auto;
-        border: 1px solid var(--viz-60);
+        border: 1px solid var(--viz-border-subtle);
         border-radius: var(--viz-border-radius-lg);
         padding: 3rem 4rem;
-        background: color-mix(in srgb, var(--viz-primary) 3%, var(--viz-95));
+        background: color-mix(in srgb, var(--viz-primary) 3%, var(--viz-surface-card));
         box-shadow: 0 12px 40px rgba(0, 0, 0, 0.2);
         max-width: 36rem;
         width: 100%;
@@ -1089,20 +1089,20 @@
     :global(.upload-icon) {
         font-size: 5rem;
         margin-bottom: var(--viz-spacing-md);
-        color: var(--viz-text-color);
+        color: var(--viz-text-primary);
     }
 
     .title-text {
         font-size: var(--viz-font-size-4xl);
         font-weight: 600;
         margin: 0 0 var(--viz-spacing-xs) 0;
-        color: var(--viz-text-color);
+        color: var(--viz-text-primary);
     }
 
     .sub-text {
         font-size: var(--viz-font-size-xl);
         margin: 0;
-        color: var(--viz-40);
+        color: var(--viz-text-secondary);
     }
 
     .supported-formats {
@@ -1116,17 +1116,17 @@
     .format-badge {
         font-family: var(--viz-mono-font);
         font-size: var(--viz-font-size-std);
-        background: var(--viz-90);
-        color: var(--viz-text-color);
+        background: var(--viz-surface-panel);
+        color: var(--viz-text-primary);
         padding: var(--viz-spacing-xxs) var(--viz-spacing-sm);
         border-radius: var(--viz-border-radius-sm);
-        border: 1px solid var(--viz-60);
+        border: 1px solid var(--viz-border-subtle);
     }
 
     :global(.collection-icon) {
         font-size: 1.8rem;
         margin-bottom: var(--viz-spacing-xxs);
-        color: var(--viz-text-color);
+        color: var(--viz-text-primary);
     }
 
     .collection-boxes-container {
@@ -1149,9 +1149,9 @@
         justify-content: center;
         width: 100%;
         padding: var(--viz-spacing-std) var(--viz-spacing-sm);
-        background-color: var(--viz-90);
-        border: 1px solid var(--viz-60);
-        color: var(--viz-text-color);
+        background-color: var(--viz-surface-panel);
+        border: 1px solid var(--viz-border-subtle);
+        color: var(--viz-text-primary);
         border-radius: var(--viz-border-radius-md);
         gap: var(--viz-spacing-xxs);
         font-weight: 600;
@@ -1165,8 +1165,8 @@
 
         &:hover,
         &.hover {
-            border-color: var(--viz-60);
-            background-color: color-mix(in srgb, var(--viz-primary) 10%, var(--viz-90));
+            border-color: var(--viz-border-subtle);
+            background-color: color-mix(in srgb, var(--viz-primary) 10%, var(--viz-surface-panel));
         }
     }
 </style>

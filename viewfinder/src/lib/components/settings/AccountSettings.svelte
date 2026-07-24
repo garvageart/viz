@@ -175,11 +175,11 @@
         h2 {
             font-size: var(--viz-font-size-xl);
             font-weight: 600;
-            color: var(--viz-text-color);
+            color: var(--viz-text-primary);
         }
 
         .group-description {
-            color: var(--viz-40);
+            color: var(--viz-text-secondary);
             margin: 0;
             font-size: var(--viz-font-size-lg);
         }
@@ -191,7 +191,7 @@
     }
 
     .profile-card {
-        background-color: var(--viz-100);
+        background-color: var(--viz-surface-panel);
         border: var(--viz-border-thin);
         border-radius: var(--viz-border-radius-md);
         padding: var(--viz-spacing-lg);
@@ -215,6 +215,6 @@
     }
 
     :global(.profile-grid .input-container input) {
-        background-color: var(--viz-90);
+        background-color: var(--viz-surface-panel);
     }
 </style>

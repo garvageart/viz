@@ -139,7 +139,7 @@
             </div>
         </div>
         <div class="modal-actions">
-            <Button hoverColor="var(--viz-80)" onclick={handleCancel}>Cancel</Button>
+            <Button hoverColor="var(--viz-surface-hover)" onclick={handleCancel}>Cancel</Button>
             <Button onclick={handleCreate} disabled={creating || !keyMeta.name || selectedScopes.length === 0}>
                 {creating ? "Creating..." : "Create Key"}
             </Button>
@@ -152,7 +152,7 @@
         display: flex;
         flex-direction: column;
         width: 100%;
-        color: var(--viz-text-color);
+        color: var(--viz-text-primary);
         font-family: var(--viz-display-font);
     }
 
@@ -170,11 +170,11 @@
     }
 
     :global(.modal-input input) {
-        background-color: var(--viz-90) !important;
+        background-color: var(--viz-surface-panel) !important;
     }
 
     .key-display {
-        background-color: var(--viz-100);
+        background-color: var(--viz-surface-panel);
         border: var(--viz-border-thin);
         padding: var(--viz-spacing-std);
         border-radius: var(--viz-border-radius-md);
@@ -189,7 +189,7 @@
             font-size: var(--viz-font-size-lg);
             word-break: break-all;
             flex-grow: 1;
-            color: var(--viz-text-color);
+            color: var(--viz-text-primary);
         }
     }
 
@@ -201,7 +201,7 @@
         h4 {
             font-size: var(--viz-font-size-lg);
             font-weight: 600;
-            color: var(--viz-40);
+            color: var(--viz-text-secondary);
             margin: 0;
         }
     }
@@ -215,7 +215,7 @@
         border: var(--viz-border-thin);
         padding: var(--viz-spacing-xs);
         border-radius: var(--viz-border-radius-md);
-        background-color: var(--viz-100);
+        background-color: var(--viz-surface-panel);
     }
 
     .scope-item {
@@ -229,11 +229,11 @@
         transition: background-color 0.15s ease;
 
         &:hover {
-            background-color: var(--viz-90);
+            background-color: var(--viz-surface-panel);
         }
 
         &.selected {
-            background-color: var(--viz-90);
+            background-color: var(--viz-surface-panel);
         }
 
         input[type="checkbox"] {
@@ -254,12 +254,12 @@
     .scope-label {
         font-weight: 600;
         font-size: var(--viz-font-size-std);
-        color: var(--viz-text-color);
+        color: var(--viz-text-primary);
         line-height: 1.2;
     }
 
     .scope-value {
-        color: var(--viz-40);
+        color: var(--viz-text-secondary);
         font-size: 0.7rem;
         font-family: var(--viz-mono-font);
         line-height: 1.2;

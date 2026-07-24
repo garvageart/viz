@@ -54,9 +54,9 @@
         width: 100%;
         padding: var(--viz-spacing-sm);
         border-radius: var(--viz-border-radius-md);
-        background-color: var(--viz-95);
-        color: var(--viz-text-color);
-        border: 1px solid var(--viz-60);
+        background-color: var(--viz-surface-card);
+        color: var(--viz-text-primary);
+        border: 1px solid var(--viz-border-subtle);
         outline: none;
         font-family: var(--viz-mono-font);
         font-size: var(--viz-font-size-lg);
@@ -67,31 +67,31 @@
             background-color 0.15s ease;
 
         &:hover:not(:disabled) {
-            border-color: var(--viz-40);
+            border-color: var(--viz-text-secondary);
         }
 
         &:focus {
             border-color: var(--viz-primary);
             box-shadow:
-                0 0 0 2px var(--viz-95),
+                0 0 0 2px var(--viz-surface-card),
                 0 0 0 4px var(--viz-primary);
         }
 
         &.error {
             border-color: var(--viz-error-color);
-            background-color: color-mix(in srgb, var(--viz-error-color) 4%, var(--viz-95));
+            background-color: color-mix(in srgb, var(--viz-error-color) 4%, var(--viz-surface-card));
 
             &:focus {
                 border-color: var(--viz-error-color);
                 box-shadow:
-                    0 0 0 2px var(--viz-95),
+                    0 0 0 2px var(--viz-surface-card),
                     0 0 0 4px var(--viz-error-color);
             }
         }
 
         &:disabled {
             cursor: not-allowed;
-            background-color: var(--viz-90);
+            background-color: var(--viz-surface-panel);
         }
     }
 

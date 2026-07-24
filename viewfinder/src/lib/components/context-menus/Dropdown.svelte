@@ -164,11 +164,11 @@
 
         &:focus,
         &:active {
-            background-color: var(--viz-80);
+            background-color: var(--viz-surface-hover);
         }
 
         &:hover {
-            background-color: var(--viz-90);
+            background-color: var(--viz-surface-panel);
         }
     }
 </style>

@@ -161,9 +161,9 @@
         }
 
         /* Richly colored background & border that automatically aligns with dark/light themes */
-        background-color: color-mix(in srgb, var(--toast-accent-color) 25%, var(--viz-95));
-        border: 1px solid color-mix(in srgb, var(--toast-accent-color) 45%, var(--viz-60));
-        color: var(--viz-text-color);
+        background-color: color-mix(in srgb, var(--toast-accent-color) 25%, var(--viz-surface-card));
+        border: 1px solid color-mix(in srgb, var(--toast-accent-color) 45%, var(--viz-border-subtle));
+        color: var(--viz-text-primary);
 
         /* Dynamic color bar on the left edge (DAM aesthetic) */
         &::before {
@@ -184,8 +184,8 @@
         justify-content: space-between;
         padding: var(--viz-spacing-xs) var(--viz-spacing-md);
         padding-left: calc(var(--viz-spacing-md) + 4px); // Account for left vertical strip
-        background-color: color-mix(in srgb, var(--toast-accent-color) 35%, var(--viz-90));
-        border-bottom: 1px solid color-mix(in srgb, var(--toast-accent-color) 40%, var(--viz-60));
+        background-color: color-mix(in srgb, var(--toast-accent-color) 35%, var(--viz-surface-panel));
+        border-bottom: 1px solid color-mix(in srgb, var(--toast-accent-color) 40%, var(--viz-border-subtle));
         box-sizing: border-box;
     }
 
@@ -193,7 +193,7 @@
         display: flex;
         align-items: center;
         gap: var(--viz-spacing-xs);
-        color: var(--viz-text-color);
+        color: var(--viz-text-primary);
         opacity: 0.95;
     }
 
@@ -208,7 +208,7 @@
         display: inline-flex;
         align-items: center;
         justify-content: center;
-        color: var(--viz-text-color);
+        color: var(--viz-text-primary);
         opacity: 0.75;
     }
 
@@ -226,7 +226,7 @@
         font-size: var(--viz-font-size-lg);
         line-height: 1.2;
         margin: 0;
-        color: var(--viz-text-color);
+        color: var(--viz-text-primary);
     }
 
     .viz-toast-message {
@@ -239,7 +239,7 @@
     /* selectors for markdown formatting inside the message */
     .viz-toast-message :global(strong) {
         font-weight: 700;
-        color: var(--viz-text-color);
+        color: var(--viz-text-primary);
     }
 
     .viz-toast-message :global(em) {
@@ -266,9 +266,9 @@
     }
 
     .viz-toast-action-btn {
-        background-color: var(--viz-90);
+        background-color: var(--viz-surface-panel);
         border: var(--viz-border-thin);
-        color: var(--viz-text-color);
+        color: var(--viz-text-primary);
         padding: var(--viz-spacing-xxs) var(--viz-spacing-sm);
         border-radius: var(--viz-border-radius-pill); // Pill shape strictly for interactive actions
         font-size: var(--viz-font-size-std);
@@ -280,12 +280,12 @@
             border-color 150ms ease;
 
         &:hover {
-            background-color: var(--viz-80);
-            border-color: var(--viz-60);
+            background-color: var(--viz-surface-hover);
+            border-color: var(--viz-border-subtle);
         }
 
         &:active {
-            background-color: var(--viz-75);
+            background-color: var(--viz-surface-hover);
         }
 
         &:focus-visible {
@@ -295,7 +295,7 @@
     }
 
     :global(.viz-toast-close) {
-        color: var(--viz-text-color) !important;
+        color: var(--viz-text-primary) !important;
         opacity: 0.5;
         border: none !important;
         background-color: transparent !important;

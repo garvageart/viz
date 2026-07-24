@@ -1477,7 +1477,7 @@
         h3 {
             font-size: var(--viz-font-size-xl);
             font-weight: 500;
-            color: var(--viz-text-color);
+            color: var(--viz-text-primary);
             margin: 0;
             white-space: nowrap;
             overflow: hidden;
@@ -1543,7 +1543,7 @@
 
     .asset-photo.multi-selected-photo {
         outline: 2px solid var(--viz-primary);
-        background: var(--viz-bg-color);
+        background: var(--viz-surface-base);
     }
 
     .viz-photo-grid-container.is-active .asset-photo.multi-selected-photo {
@@ -1551,7 +1551,7 @@
     }
 
     .asset-photo.selected-photo {
-        outline: 2px solid var(--viz-60);
+        outline: 2px solid var(--viz-border-subtle);
     }
 
     .viz-photo-grid-container.is-active .asset-photo.selected-photo {
@@ -1634,8 +1634,8 @@
         flex-direction: column;
         align-items: center;
         justify-content: center;
-        background-color: var(--viz-90);
-        color: var(--viz-40);
+        background-color: var(--viz-surface-panel);
+        color: var(--viz-text-secondary);
         border: var(--viz-border-thin);
         border-radius: var(--viz-border-radius-md);
         padding: var(--viz-spacing-sm);
@@ -1650,7 +1650,7 @@
 
         .fallback-filename {
             font-size: var(--viz-font-size-std);
-            color: var(--viz-30);
+            color: var(--viz-text-muted);
             max-width: 90%;
             white-space: nowrap;
             overflow: hidden;
@@ -1672,8 +1672,8 @@
         align-items: flex-start;
         padding: 1rem;
         font-weight: 500;
-        color: var(--viz-text-color);
-        background-color: var(--viz-100);
+        color: var(--viz-text-primary);
+        background-color: var(--viz-surface-panel);
         text-align: left;
         font-size: var(--viz-font-size-lg);
         line-height: 1.2;
@@ -1699,7 +1699,7 @@
             top: 10%;
             bottom: 30%;
             width: 0;
-            border-left: 1px solid var(--viz-60);
+            border-left: 1px solid var(--viz-border-subtle);
         }
 
         @container (max-width: 5rem) {

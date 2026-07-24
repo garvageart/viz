@@ -77,11 +77,11 @@
         display: flex;
         flex-direction: column;
         gap: var(--viz-spacing-md);
-        background-color: var(--viz-95);
+        background-color: var(--viz-surface-card);
         padding: var(--viz-spacing-md);
         border-radius: var(--viz-border-radius-lg);
         border: var(--viz-border-thin);
-        border-color: var(--viz-80);
+        border-color: var(--viz-surface-hover);
         z-index: 9999;
         pointer-events: auto;
         min-width: 20rem;
@@ -90,8 +90,8 @@
 
         &.floating {
             position: fixed;
-            background-color: var(--viz-95);
-            border-color: var(--viz-80);
+            background-color: var(--viz-surface-card);
+            border-color: var(--viz-surface-hover);
             box-shadow: var(--viz-shadow-lg, 0 10px 25px -5px rgba(0, 0, 0, 0.3), 0 8px 10px -6px rgba(0, 0, 0, 0.3));
             transform: translate(0, 0);
         }
@@ -99,9 +99,9 @@
         &.placed {
             height: auto;
             width: 100%;
-            background-color: var(--viz-95);
+            background-color: var(--viz-surface-card);
             border: var(--viz-border-thin);
-            border-color: var(--viz-80);
+            border-color: var(--viz-surface-hover);
             border-radius: var(--viz-border-radius-lg);
             padding: var(--viz-spacing-md);
             gap: var(--viz-spacing-sm);
@@ -110,7 +110,7 @@
 
     .menu-header {
         font-weight: 600;
-        color: var(--viz-40);
+        color: var(--viz-text-secondary);
         margin-bottom: var(--viz-spacing-xxs);
     }
 
@@ -121,10 +121,10 @@
     }
 
     .preset-btn {
-        background-color: var(--viz-90);
+        background-color: var(--viz-surface-panel);
         border: var(--viz-border-thin);
-        border-color: var(--viz-80);
-        color: var(--viz-30);
+        border-color: var(--viz-surface-hover);
+        color: var(--viz-text-muted);
         padding: var(--viz-spacing-sm) var(--viz-spacing-xs);
         border-radius: var(--viz-border-radius-md);
         cursor: pointer;
@@ -138,14 +138,14 @@
             color 0.15s ease;
 
         &:hover {
-            background-color: var(--viz-80);
-            color: var(--viz-10);
-            border-color: var(--viz-70);
+            background-color: var(--viz-surface-hover);
+            color: var(--viz-text-primary);
+            border-color: var(--viz-border-subtle);
         }
 
         &.active {
             background-color: var(--viz-primary);
-            color: var(--viz-95);
+            color: var(--viz-surface-card);
             border-color: var(--viz-primary);
         }
     }
@@ -155,7 +155,7 @@
         justify-content: space-between;
         gap: var(--viz-spacing-xs);
         border-top: var(--viz-border-thin);
-        border-color: var(--viz-60);
+        border-color: var(--viz-border-subtle);
         padding-top: var(--viz-spacing-md);
         margin-top: var(--viz-spacing-xxs);
 
@@ -200,14 +200,14 @@
         }
 
         :global(.action-btn.reset) {
-            color: var(--viz-text-color) !important;
-            background-color: var(--viz-90) !important;
-            border-color: var(--viz-80) !important;
+            color: var(--viz-text-primary) !important;
+            background-color: var(--viz-surface-panel) !important;
+            border-color: var(--viz-surface-hover) !important;
         }
 
         :global(.action-btn.reset:hover) {
-            background-color: var(--viz-80) !important;
-            border-color: var(--viz-70) !important;
+            background-color: var(--viz-surface-hover) !important;
+            border-color: var(--viz-border-subtle) !important;
         }
     }
 

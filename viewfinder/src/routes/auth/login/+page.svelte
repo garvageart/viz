@@ -122,11 +122,11 @@
         width: 100%;
         height: 100%;
         /* Use a color-mix to blend the theme's background color with transparency */
-        background-color: color-mix(in srgb, var(--viz-100) 65%, transparent);
+        background-color: color-mix(in srgb, var(--viz-surface-panel) 65%, transparent);
         /* Grid pattern mapping to structured editorial grid lines */
         background-image:
-            linear-gradient(color-mix(in srgb, var(--viz-60) 20%, transparent) 1px, transparent 1px),
-            linear-gradient(90deg, color-mix(in srgb, var(--viz-60) 20%, transparent) 1px, transparent 1px);
+            linear-gradient(color-mix(in srgb, var(--viz-border-subtle) 20%, transparent) 1px, transparent 1px),
+            linear-gradient(90deg, color-mix(in srgb, var(--viz-border-subtle) 20%, transparent) 1px, transparent 1px);
         background-size: 32px 32px;
         background-position: center;
         backdrop-filter: blur(12px);
@@ -138,7 +138,7 @@
         flex-direction: column;
         width: 100%;
         max-width: 24rem;
-        background-color: var(--viz-95);
+        background-color: var(--viz-surface-card);
         border: var(--viz-border-thin);
         border-top: 3px solid var(--viz-primary);
         padding: var(--viz-spacing-xl) var(--viz-spacing-lg);
@@ -158,14 +158,14 @@
         font-family: var(--viz-mono-font);
         font-weight: 700;
         font-size: var(--viz-font-size-5xl);
-        color: var(--viz-text-color);
+        color: var(--viz-text-primary);
         letter-spacing: -0.05em;
     }
 
     .auth-subtitle {
         font-size: var(--viz-font-size-std);
         font-family: var(--viz-mono-font);
-        color: var(--viz-40);
+        color: var(--viz-text-secondary);
         text-transform: lowercase;
     }
 
@@ -173,7 +173,7 @@
         font-size: var(--viz-font-size-3xl);
         font-weight: 600;
         margin-bottom: var(--viz-spacing-md);
-        color: var(--viz-text-color);
+        color: var(--viz-text-primary);
         text-align: center;
     }
 
@@ -212,17 +212,17 @@
     .auth-footer {
         margin-top: var(--viz-spacing-lg);
         font-size: var(--viz-font-size-lg);
-        color: var(--viz-40);
+        color: var(--viz-text-secondary);
         text-align: center;
 
         a {
-            color: var(--viz-text-color);
+            color: var(--viz-text-primary);
             font-weight: 600;
             text-decoration: underline;
             text-underline-offset: 2px;
 
             &:hover {
-                color: var(--viz-text-color);
+                color: var(--viz-text-primary);
                 text-decoration: underline;
             }
         }

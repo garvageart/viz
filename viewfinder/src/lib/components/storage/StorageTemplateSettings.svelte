@@ -483,7 +483,7 @@
 
 <style lang="scss">
     .storage-template-card {
-        background-color: var(--viz-100);
+        background-color: var(--viz-surface-panel);
         border: var(--viz-border-thin);
         border-radius: var(--viz-border-radius-md);
         display: flex;
@@ -504,10 +504,10 @@
             justify-content: center;
             width: 2.5rem;
             height: 2.5rem;
-            background-color: var(--viz-95);
+            background-color: var(--viz-surface-card);
             border: var(--viz-border-thin);
             border-radius: var(--viz-border-radius-md);
-            color: var(--viz-text-color);
+            color: var(--viz-text-primary);
         }
 
         .header-text {
@@ -516,19 +516,19 @@
                 font-family: var(--viz-display-font);
                 font-size: var(--viz-font-size-3xl);
                 font-weight: 600;
-                color: var(--viz-text-color);
+                color: var(--viz-text-primary);
             }
 
             p {
                 margin: var(--viz-spacing-xxs) 0 0;
                 font-size: var(--viz-font-size-std);
-                color: var(--viz-40);
+                color: var(--viz-text-secondary);
             }
         }
     }
 
     .active-badge-bar {
-        background-color: var(--viz-95);
+        background-color: var(--viz-surface-card);
         border-bottom: var(--viz-border-thin);
         padding: var(--viz-spacing-md) var(--viz-spacing-lg);
         display: flex;
@@ -541,14 +541,14 @@
             gap: var(--viz-spacing-sm);
             font-size: var(--viz-font-size-lg);
             font-weight: 500;
-            color: var(--viz-text-color);
+            color: var(--viz-text-primary);
 
             :global(span.material-symbols-outlined) {
                 font-size: 1.1rem;
             }
 
             :global(.warning-icon) {
-                color: color-mix(in srgb, var(--viz-warning-color) 75%, var(--viz-text-color));
+                color: color-mix(in srgb, var(--viz-warning-color) 75%, var(--viz-text-primary));
             }
 
             :global(.success-icon) {
@@ -557,7 +557,7 @@
 
             .mono {
                 font-family: var(--viz-mono-font);
-                background-color: var(--viz-90);
+                background-color: var(--viz-surface-panel);
                 padding: var(--viz-spacing-xxs) var(--viz-spacing-xs);
                 border: var(--viz-border-thin);
                 border-radius: var(--viz-border-radius-sm);
@@ -568,15 +568,15 @@
         .config-note {
             margin: 0;
             font-size: var(--viz-font-size-std);
-            color: var(--viz-40);
+            color: var(--viz-text-secondary);
         }
 
         .unsaved-badge {
             font-size: var(--viz-font-size-std);
             font-weight: 600;
-            background-color: color-mix(in srgb, var(--viz-warning-color) 12%, var(--viz-95));
-            color: color-mix(in srgb, var(--viz-warning-color) 70%, var(--viz-text-color));
-            border: 1px solid color-mix(in srgb, var(--viz-warning-color) 30%, var(--viz-60));
+            background-color: color-mix(in srgb, var(--viz-warning-color) 12%, var(--viz-surface-card));
+            color: color-mix(in srgb, var(--viz-warning-color) 70%, var(--viz-text-primary));
+            border: 1px solid color-mix(in srgb, var(--viz-warning-color) 30%, var(--viz-border-subtle));
             padding: 2px var(--viz-spacing-xs);
             border-radius: var(--viz-border-radius-pill);
             margin-left: var(--viz-spacing-sm);
@@ -627,13 +627,13 @@
                     margin: 0;
                     font-size: var(--viz-font-size-xl);
                     font-weight: 600;
-                    color: var(--viz-text-color);
+                    color: var(--viz-text-primary);
                 }
 
                 p {
                     margin: var(--viz-spacing-xs) 0 0;
                     font-size: var(--viz-font-size-std);
-                    color: var(--viz-40);
+                    color: var(--viz-text-secondary);
                 }
             }
 
@@ -652,7 +652,7 @@
         position: relative;
 
         :global(input.mono-input) {
-            background-color: var(--viz-80);
+            background-color: var(--viz-surface-hover);
             font-family: var(--viz-mono-font) !important;
             font-weight: 700 !important;
         }
@@ -677,9 +677,9 @@
             border-bottom: $preview-panel-border;
 
             :global(.preview-copy-btn) {
-                color: var(--viz-text-color-light);
+                color: var(--viz-text-primary);
                 padding: var(--viz-spacing-xs) var(--viz-spacing-sm);
-                border-color: var(--viz-40);
+                border-color: var(--viz-text-secondary);
             }
 
             .preview-title {
@@ -746,13 +746,13 @@
                 margin: 0;
                 font-size: var(--viz-font-size-xl);
                 font-weight: 600;
-                color: var(--viz-text-color);
+                color: var(--viz-text-primary);
             }
 
             p {
                 margin: var(--viz-spacing-xs) 0 0;
                 font-size: var(--viz-font-size-std);
-                color: var(--viz-40);
+                color: var(--viz-text-secondary);
             }
         }
 
@@ -778,7 +778,7 @@
     }
 
     .tokens-section {
-        background-color: var(--viz-90);
+        background-color: var(--viz-surface-panel);
         display: flex;
         flex-direction: column;
         height: 100%;
@@ -793,13 +793,13 @@
             margin: 0;
             font-size: var(--viz-font-size-xl);
             font-weight: 600;
-            color: var(--viz-text-color);
+            color: var(--viz-text-primary);
         }
 
         p {
             margin: var(--viz-spacing-xs) 0 0;
             font-size: var(--viz-font-size-std);
-            color: var(--viz-40);
+            color: var(--viz-text-secondary);
         }
     }
 
@@ -819,11 +819,11 @@
             background: transparent;
         }
         &::-webkit-scrollbar-thumb {
-            background: var(--viz-80);
+            background: var(--viz-surface-hover);
             border-radius: var(--viz-border-radius-pill);
         }
         &::-webkit-scrollbar-thumb:hover {
-            background: var(--viz-70);
+            background: var(--viz-border-subtle);
         }
     }
 
@@ -862,7 +862,7 @@
         .unit-title {
             font-size: var(--viz-font-size-std);
             font-weight: 600;
-            color: var(--viz-30);
+            color: var(--viz-text-muted);
         }
     }
 
@@ -878,7 +878,7 @@
     }
 
     .token-badge {
-        background-color: var(--viz-100);
+        background-color: var(--viz-surface-panel);
         border: var(--viz-border-thin);
         border-radius: var(--viz-border-radius-md);
         padding: var(--viz-spacing-xs) var(--viz-spacing-sm);
@@ -893,12 +893,12 @@
 
         &:hover {
             border-color: var(--viz-primary);
-            background-color: var(--viz-80);
+            background-color: var(--viz-surface-hover);
         }
 
         &:focus-visible {
             box-shadow:
-                0 0 0 2px var(--viz-100),
+                0 0 0 2px var(--viz-surface-panel),
                 0 0 0 4px var(--viz-primary);
             outline: none;
         }
@@ -907,17 +907,17 @@
             font-family: var(--viz-mono-font);
             font-size: var(--viz-font-size-std);
             font-weight: 600;
-            color: var(--viz-text-color);
-            background-color: var(--viz-95);
+            color: var(--viz-text-primary);
+            background-color: var(--viz-surface-card);
             padding: 2px 4px;
             border-radius: var(--viz-border-radius-sm);
-            border: 1px solid var(--viz-60);
+            border: 1px solid var(--viz-border-subtle);
         }
 
         .token-val {
             font-family: var(--viz-mono-font);
             font-size: var(--viz-font-size-std);
-            color: var(--viz-40);
+            color: var(--viz-text-secondary);
         }
 
         &.full-width {
@@ -933,7 +933,7 @@
 
             .token-val-desc {
                 font-size: var(--viz-font-size-std);
-                color: var(--viz-40);
+                color: var(--viz-text-secondary);
             }
 
             .token-example-val {
@@ -941,7 +941,7 @@
                 font-weight: 600;
 
                 .null-val {
-                    color: var(--viz-30);
+                    color: var(--viz-text-muted);
                     font-style: italic;
                 }
             }
@@ -957,14 +957,14 @@
         transition: background-color 150ms cubic-bezier(0.4, 0, 0.2, 1) !important;
 
         &:hover:not(:disabled) {
-            background-color: color-mix(in srgb, var(--viz-primary) 85%, var(--viz-text-color)) !important;
+            background-color: color-mix(in srgb, var(--viz-primary) 85%, var(--viz-text-primary)) !important;
             border-color: transparent !important;
         }
 
         &:disabled {
-            background-color: var(--viz-95) !important;
+            background-color: var(--viz-surface-card) !important;
             border: var(--viz-border-thin) !important;
-            color: var(--viz-40) !important;
+            color: var(--viz-text-secondary) !important;
             box-shadow: none !important;
         }
     }

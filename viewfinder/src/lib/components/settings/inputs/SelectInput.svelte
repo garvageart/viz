@@ -50,6 +50,6 @@
 
 <style lang="scss">
     :global(.settings-select-input) {
-        background-color: var(--viz-90) !important;
+        background-color: var(--viz-surface-panel) !important;
     }
 </style>

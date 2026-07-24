@@ -194,7 +194,7 @@
         flex-direction: column;
         width: 100%;
         height: 100%;
-        color: var(--viz-text-color);
+        color: var(--viz-text-primary);
         box-sizing: border-box;
 
         .modal-actions {

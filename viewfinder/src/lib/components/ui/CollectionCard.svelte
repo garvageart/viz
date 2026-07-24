@@ -76,6 +76,7 @@
     import VizView, { invalidateViz } from "$lib/views/views.svelte";
     import CollectionPage from "../../../routes/(app)/collections/[uid]/+page.svelte";
     import AssetImage from "./AssetImage.svelte";
+    import Badge from "./Badge.svelte";
     import MaterialIcon from "./MaterialIcon.svelte";
 
     interface Props {
@@ -231,8 +232,10 @@
     <div class="metadata">
         <div class="metadata-header">
             <span class="coll-name" title={collection.name}>{collection.name}</span>
-            <span class="items-badge">{collection.image_count} {collection.image_count === 1 ? "image" : "images"}</span
-            >
+            <Badge variant="neutral" pill={false}>
+                {collection.image_count}
+                {collection.image_count === 1 ? "image" : "images"}
+            </Badge>
         </div>
         <div class="metadata-footer">
             <span class="coll-created_at" title="Created {createdDate}">{createdDate}</span>
@@ -248,8 +251,8 @@
         min-width: 100%;
         max-width: 100%;
         height: auto;
-        background-color: var(--viz-95);
-        border: var(--viz-border-thin);
+        background-color: var(--viz-surface-card);
+        border: 1px solid var(--viz-border-subtle);
         border-radius: var(--viz-border-radius-md);
         position: relative;
         overflow: hidden;
@@ -257,10 +260,11 @@
         display: flex;
         flex-direction: column;
         box-sizing: border-box;
+        transition: all 150ms ease;
 
         &:hover {
-            background-color: var(--viz-90);
-            border-color: var(--viz-60);
+            background-color: var(--viz-surface-hover);
+            border-color: var(--viz-border-strong);
         }
     }
 
@@ -271,7 +275,7 @@
     }
 
     .coll-card.drop-target {
-        background-color: color-mix(in srgb, var(--viz-primary) 12%, var(--viz-90));
+        background-color: color-mix(in srgb, var(--viz-primary) 12%, var(--viz-surface-panel));
         border-color: var(--viz-primary);
     }
 
@@ -289,7 +293,7 @@
     .image-container {
         position: relative;
         height: 15rem;
-        background-color: var(--viz-90);
+        background-color: var(--viz-surface-panel);
         overflow: hidden;
         display: flex;
         align-items: center;
@@ -309,8 +313,8 @@
         justify-content: center;
         width: 100%;
         height: 100%;
-        background: linear-gradient(135deg, var(--viz-90) 0%, var(--viz-80) 100%);
-        color: var(--viz-40);
+        background: linear-gradient(135deg, var(--viz-surface-panel) 0%, var(--viz-surface-hover) 100%);
+        color: var(--viz-text-secondary);
 
         :global(.placeholder-icon) {
             font-size: 3rem;
@@ -362,29 +366,13 @@
         align-items: center;
         justify-content: space-between;
         gap: var(--viz-spacing-sm);
-
-        .items-badge {
-            font-family: var(--viz-mono-font);
-            font-size: var(--viz-font-size-std);
-            background-color: var(--viz-90);
-            color: var(--viz-40);
-            padding: 0.15rem 0.45rem;
-            border-radius: var(--viz-border-radius-sm);
-            border: var(--viz-border-thin);
-            border-color: var(--viz-80);
-            white-space: nowrap;
-            font-weight: 500;
-            line-height: 1;
-            display: inline-flex;
-            align-items: center;
-        }
     }
 
     .coll-name {
         font-size: var(--viz-font-size-lg);
         font-weight: 600;
         font-family: var(--viz-display-font);
-        color: var(--viz-text-color);
+        color: var(--viz-text-primary);
         white-space: nowrap;
         overflow: hidden;
         text-overflow: ellipsis;
@@ -401,7 +389,7 @@
     .coll-updated_at {
         font-family: var(--viz-mono-font);
         font-size: var(--viz-font-size-std);
-        color: var(--viz-40);
+        color: var(--viz-text-secondary);
         white-space: nowrap;
         overflow: hidden;
         text-overflow: ellipsis;
@@ -409,6 +397,6 @@
 
     .coll-created_at {
         font-weight: 500;
-        color: var(--viz-30);
+        color: var(--viz-text-muted);
     }
 </style>

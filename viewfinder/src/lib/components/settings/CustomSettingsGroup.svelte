@@ -45,17 +45,17 @@
         justify-content: space-between;
         align-items: flex-start;
         padding-bottom: 1rem;
-        border-bottom: 1px solid var(--viz-60);
+        border-bottom: 1px solid var(--viz-border-subtle);
 
         h2 {
             font-size: 1.5rem;
             font-weight: 600;
-            color: var(--viz-text-color);
+            color: var(--viz-text-primary);
             margin: 0 0 0.5rem 0;
         }
 
         .group-description {
-            color: var(--viz-40);
+            color: var(--viz-text-secondary);
             margin: 0;
         }
     }

@@ -124,11 +124,11 @@
         h2 {
             font-size: var(--viz-font-size-xl);
             font-weight: 600;
-            color: var(--viz-text-color);
+            color: var(--viz-text-primary);
         }
 
         .group-description {
-            color: var(--viz-40);
+            color: var(--viz-text-secondary);
             margin: 0;
             font-size: var(--viz-font-size-lg);
         }

@@ -122,14 +122,14 @@ Stuff to finish:
         width: 100%;
         height: 100%;
         overflow: hidden;
-        background-color: var(--viz-100);
+        background-color: var(--viz-surface-panel);
     }
 
     .settings-content {
         flex: 1;
         padding: var(--viz-spacing-lg) var(--viz-spacing-xl);
         overflow-y: auto;
-        background-color: var(--viz-bg-color);
+        background-color: var(--viz-surface-base);
         display: flex;
         justify-content: center;
     }

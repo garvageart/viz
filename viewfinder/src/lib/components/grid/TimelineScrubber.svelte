@@ -227,8 +227,8 @@
         right: 5.5rem;
         top: 0; /* Set via inline style */
         transform: translateY(-50%);
-        background-color: var(--viz-10);
-        color: var(--viz-100);
+        background-color: var(--viz-surface-card);
+        color: var(--viz-text-primary);
         box-shadow: 0 4px 20px rgba(0, 0, 0, 0.4);
         padding: 0.5rem 1rem;
         border-radius: 0.5rem;
