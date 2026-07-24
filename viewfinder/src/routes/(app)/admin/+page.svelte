@@ -4,6 +4,7 @@
     import { DateTime, Duration } from "luxon";
     import type { Snippet } from "svelte";
     import AdminRouteShell from "$lib/components/admin/AdminRouteShell.svelte";
+    import IconBadge from "$lib/components/ui/IconBadge.svelte";
     import MaterialIcon from "$lib/components/ui/MaterialIcon.svelte";
     import ProgressBar from "$lib/components/ui/ProgressBar.svelte";
     import type { MaterialSymbol } from "$lib/types/MaterialSymbol.js";
@@ -96,7 +97,7 @@
 
 {#snippet statCard({
     icon,
-    iconClass,
+    variant = "primary",
     label,
     value,
     id = undefined,
@@ -104,7 +105,7 @@
     mono = false
 }: {
     icon: MaterialSymbol;
-    iconClass: string;
+    variant?: "primary" | "info" | "warning" | "error" | "success" | "neutral";
     label: string;
     value: string | number | null | undefined;
     id?: string;
@@ -113,9 +114,7 @@
 })}
     {#if href}
         <a {href} class="stat-card">
-            <div class={["stat-icon", iconClass]}>
-                <MaterialIcon iconName={icon} />
-            </div>
+            <IconBadge iconName={icon} {variant} size="1.35rem" />
             <div class="stat-content">
                 <span class="stat-value" class:font-mono={mono} {id}>{value}</span>
                 <span class="stat-label">{label}</span>
@@ -123,9 +122,7 @@
         </a>
     {:else}
         <div class="stat-card">
-            <div class={["stat-icon", iconClass]}>
-                <MaterialIcon iconName={icon} />
-            </div>
+            <IconBadge iconName={icon} {variant} size="1.35rem" />
             <div class="stat-content">
                 <span class="stat-value" class:font-mono={mono} {id}>{value}</span>
                 <span class="stat-label">{label}</span>
@@ -136,14 +133,14 @@
 
 {#snippet card({
     icon,
-    iconClass,
+    variant = "primary",
     title,
     subtitle,
     href = undefined,
     body
 }: {
     icon: MaterialSymbol;
-    iconClass: string;
+    variant?: "primary" | "info" | "warning" | "error" | "success" | "neutral";
     title: string;
     subtitle: string;
     href?: string;
@@ -152,9 +149,7 @@
     <div class="custom-card">
         <div class="card-header">
             <div class="card-title-group">
-                <div class={["stat-icon", iconClass]}>
-                    <MaterialIcon iconName={icon} />
-                </div>
+                <IconBadge iconName={icon} {variant} size="1.35rem" />
                 <div>
                     <h4>{title}</h4>
                     <span class="card-subtitle">{subtitle}</span>
@@ -314,21 +309,21 @@
         <div class="metrics-strip">
             {@render statCard({
                 icon: "image",
-                iconClass: "images",
+                variant: "primary",
                 value: databaseInfo.images,
                 label: "Total Images",
                 href: "/photos"
             })}
             {@render statCard({
                 icon: "group",
-                iconClass: "users",
+                variant: "info",
                 value: databaseInfo.users,
                 label: "Total Users",
                 href: "/admin/users"
             })}
             {@render statCard({
                 icon: "schedule",
-                iconClass: "uptime",
+                variant: "success",
                 value: formattedLiveUptime,
                 label: "System Uptime",
                 id: "uptime-value",
@@ -336,7 +331,7 @@
             })}
             {@render statCard({
                 icon: "hub",
-                iconClass: "connections",
+                variant: "warning",
                 value: systemInfo.activeConnections,
                 label: "Active Clients",
                 href: "/admin/events"
@@ -347,7 +342,7 @@
         <div class="dashboard-grid">
             {@render card({
                 icon: "monitor_heart",
-                iconClass: "goroutines",
+                variant: "info",
                 title: "System Health",
                 subtitle: "Runtime & database metrics",
                 href: "/admin/jobs",
@@ -355,7 +350,7 @@
             })}
             {@render card({
                 icon: "hard_drive",
-                iconClass: "storage",
+                variant: "warning",
                 title: "Storage",
                 subtitle: "Disk space allocation",
                 href: "/admin/storage",
@@ -363,7 +358,7 @@
             })}
             {@render card({
                 icon: "memory",
-                iconClass: "cache",
+                variant: "success",
                 title: "Cache",
                 subtitle: "Optimized image store",
                 href: "/admin/cache",
@@ -374,7 +369,7 @@
         <!-- Server Information — full width -->
         {@render card({
             icon: "dns",
-            iconClass: "version",
+            variant: "primary",
             title: "Server Information",
             subtitle: "Environment & Build",
             body: serverInfoBody
@@ -393,12 +388,12 @@
         display: inline-flex;
         align-items: center;
         gap: var(--viz-spacing-xs);
-        background-color: var(--viz-95);
+        background-color: var(--viz-surface-card);
         border: var(--viz-border-thin);
         border-radius: var(--viz-border-radius-sm);
         padding: var(--viz-spacing-xs) var(--viz-spacing-sm);
         font-size: var(--viz-font-size-std);
-        color: var(--viz-text-color);
+        color: var(--viz-text-primary);
         font-family: var(--viz-mono-font);
         letter-spacing: -0.02em;
 
@@ -437,7 +432,7 @@
     }
 
     .stat-card {
-        background-color: var(--viz-95);
+        background-color: var(--viz-surface-card);
         border: var(--viz-border-thin);
         border-radius: var(--viz-border-radius-md);
         padding: var(--viz-spacing-md) var(--viz-spacing-lg);
@@ -451,77 +446,8 @@
         color: inherit;
 
         &:hover {
-            border-color: var(--viz-70);
-            background-color: var(--viz-90);
-        }
-    }
-
-    .stat-icon {
-        width: 2.75rem;
-        height: 2.75rem;
-        border-radius: var(--viz-border-radius-md);
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        flex-shrink: 0;
-        color: #fff;
-        transition:
-            background-color 0.2s ease,
-            color 0.2s ease;
-
-        &.version {
-            background-color: #3b82f6;
-        }
-
-        &.connections {
-            background-color: #10b981;
-        }
-
-        &.cache {
-            background-color: #f59e0b;
-            color: var(--viz-10-dark);
-        }
-
-        &.uptime {
-            background-color: #8b5cf6;
-        }
-
-        &.db {
-            background-color: #6366f1;
-        }
-
-        &.storage {
-            background-color: #ec4899;
-        }
-
-        &.users {
-            background-color: #14b8a6;
-        }
-
-        &.images {
-            background-color: #f43f5e;
-        }
-
-        &.goroutines {
-            background-color: #0d9488;
-        }
-
-        &.alloc-memory {
-            background-color: #d946af;
-        }
-
-        &.sys-memory {
-            background-color: #a855f7;
-        }
-
-        &.storage-path {
-            background-color: #22c55e;
-            color: var(--viz-10-dark);
-        }
-
-        :global(svg),
-        :global(.material-icons) {
-            font-size: 1.35rem;
+            border-color: var(--viz-border-subtle);
+            background-color: var(--viz-surface-panel);
         }
     }
 
@@ -537,7 +463,7 @@
         font-weight: 700;
         font-family: var(--viz-display-font);
         line-height: 1.2;
-        color: var(--viz-text-color);
+        color: var(--viz-text-primary);
 
         &.font-mono {
             font-family: var(--viz-mono-font);
@@ -547,12 +473,12 @@
 
     .stat-label {
         font-size: var(--viz-font-size-std);
-        color: var(--viz-40);
+        color: var(--viz-text-secondary);
         margin-top: var(--viz-spacing-xxs);
     }
 
     .custom-card {
-        background-color: var(--viz-95);
+        background-color: var(--viz-surface-card);
         border: var(--viz-border-thin);
         border-radius: var(--viz-border-radius-lg);
         padding: var(--viz-spacing-lg);
@@ -578,14 +504,14 @@
         h4 {
             font-size: var(--viz-font-size-xl);
             font-weight: 600;
-            color: var(--viz-text-color);
+            color: var(--viz-text-primary);
             margin: 0;
         }
     }
 
     .card-subtitle {
         font-size: var(--viz-font-size-lg);
-        color: var(--viz-40);
+        color: var(--viz-text-secondary);
         display: block;
         margin-top: 2px;
     }
@@ -597,15 +523,15 @@
         width: 1.75rem;
         height: 1.75rem;
         border-radius: var(--viz-border-radius-pill);
-        color: var(--viz-30);
+        color: var(--viz-text-muted);
         text-decoration: none;
         transition:
             background-color 0.15s ease,
             color 0.15s ease;
 
         &:hover {
-            background-color: var(--viz-80);
-            color: var(--viz-text-color);
+            background-color: var(--viz-surface-hover);
+            color: var(--viz-text-primary);
         }
     }
 
@@ -627,7 +553,7 @@
         justify-content: space-between;
         align-items: center;
         padding: var(--viz-spacing-xs) 0;
-        border-bottom: 1px solid var(--viz-85);
+        border-bottom: 1px solid var(--viz-surface-hover);
         font-size: var(--viz-font-size-lg);
 
         &:last-child {
@@ -635,12 +561,12 @@
         }
 
         .metric-label {
-            color: var(--viz-40);
+            color: var(--viz-text-secondary);
             font-weight: 500;
         }
 
         .metric-value {
-            color: var(--viz-text-color);
+            color: var(--viz-text-primary);
             font-weight: 600;
 
             &.font-mono {
@@ -658,12 +584,12 @@
         gap: var(--viz-spacing-md);
 
         .storage-label {
-            color: var(--viz-40);
+            color: var(--viz-text-secondary);
             font-weight: 500;
         }
 
         .storage-value {
-            color: var(--viz-text-color);
+            color: var(--viz-text-primary);
             font-weight: 600;
 
             &.path {
@@ -717,7 +643,7 @@
         align-items: center;
         justify-content: space-between;
         padding: var(--viz-spacing-sm);
-        background: var(--viz-85);
+        background: var(--viz-surface-hover);
         border: var(--viz-border-thin);
         border-radius: var(--viz-border-radius-md);
 
@@ -725,14 +651,14 @@
             display: flex;
             align-items: center;
             gap: var(--viz-spacing-sm);
-            color: var(--viz-text-color);
+            color: var(--viz-text-primary);
         }
 
         .version {
             font-family: var(--viz-mono-font);
             font-size: var(--viz-font-size-lg);
             font-weight: 700;
-            color: var(--viz-text-color);
+            color: var(--viz-text-primary);
         }
     }
 
@@ -741,18 +667,18 @@
         justify-content: space-between;
         align-items: center;
         padding: var(--viz-spacing-xs) 0;
-        border-bottom: 1px dashed var(--viz-80);
+        border-bottom: 1px dashed var(--viz-surface-hover);
         margin-bottom: var(--viz-spacing-xs);
 
         .build-tag {
             font-weight: 600;
             font-family: var(--viz-mono-font);
-            color: var(--viz-text-color);
+            color: var(--viz-text-primary);
             font-size: var(--viz-font-size-std);
         }
 
         .build-date {
-            color: var(--viz-40);
+            color: var(--viz-text-secondary);
             font-size: var(--viz-font-size-std);
         }
     }
@@ -766,16 +692,16 @@
         border-radius: var(--viz-border-radius-sm);
         border: var(--viz-border-thin);
         display: inline-block;
-        color: var(--viz-20);
-        background-color: var(--viz-90);
+        color: var(--viz-text-secondary);
+        background-color: var(--viz-surface-panel);
     }
 
     .version-tag {
         font-family: var(--viz-mono-font);
         font-size: var(--viz-font-size-std);
         padding: 0.15rem 0.5rem;
-        background-color: var(--viz-90);
-        color: var(--viz-text-color);
+        background-color: var(--viz-surface-panel);
+        color: var(--viz-text-primary);
         border: var(--viz-border-thin);
         border-radius: var(--viz-border-radius-sm);
         font-weight: 600;
@@ -800,7 +726,7 @@
             font-size: var(--viz-font-size-sm);
             text-transform: uppercase;
             letter-spacing: 0.05em;
-            color: var(--viz-40);
+            color: var(--viz-text-secondary);
             margin: 0 0 var(--viz-spacing-xs) 0;
             font-weight: 600;
         }
@@ -818,11 +744,11 @@
         }
 
         .label {
-            color: var(--viz-40);
+            color: var(--viz-text-secondary);
         }
 
         .value {
-            color: var(--viz-text-color);
+            color: var(--viz-text-primary);
             font-weight: 500;
             display: flex;
             align-items: center;
@@ -833,7 +759,7 @@
             }
 
             .at-separator {
-                color: var(--viz-40);
+                color: var(--viz-text-secondary);
                 margin: 0 4px;
             }
         }
@@ -846,7 +772,7 @@
             gap: 4px;
 
             &:hover {
-                color: var(--viz-text-color);
+                color: var(--viz-text-primary);
                 text-decoration: none;
             }
         }

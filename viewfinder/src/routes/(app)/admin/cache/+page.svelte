@@ -7,6 +7,7 @@
     import { modalsManager } from "$lib/components/modals/manager/ModalManager.svelte";
     import Button from "$lib/components/ui/Button.svelte";
     import Checkbox from "$lib/components/ui/Checkbox.svelte";
+    import IconBadge from "$lib/components/ui/IconBadge.svelte";
     import MaterialIcon from "$lib/components/ui/MaterialIcon.svelte";
     import { type Toast, toastState } from "$lib/toast-notifcations/notif-state.svelte";
     import type { MaterialSymbol } from "$lib/types/MaterialSymbol.js";
@@ -93,20 +94,20 @@
 
 {#snippet metricCard({
     icon,
-    iconClass,
+    variant,
     title,
     value,
     desc
 }: {
     icon: MaterialSymbol;
-    iconClass: string;
+    variant: "info" | "warning" | "success" | "primary";
     title: string;
     value: string | number;
     desc: string;
 })}
     <div class="metric-card">
         <div class="card-header">
-            <MaterialIcon iconName={icon} class={["icon-accent", iconClass]} />
+            <IconBadge iconName={icon} {variant} size="1.25rem" />
             <span class="card-title">{title}</span>
         </div>
         <div class="card-value">{value}</div>
@@ -149,7 +150,7 @@
         <div class="metrics-grid">
             {@render metricCard({
                 icon: "folder_special",
-                iconClass: "size",
+                variant: "info",
                 title: "Total Size",
                 value: formatBytes(cacheStatus.size) ?? "0 B",
                 desc: "Total disk footprint of cached image transformations"
@@ -157,7 +158,7 @@
 
             {@render metricCard({
                 icon: "photo_library",
-                iconClass: "items",
+                variant: "warning",
                 title: "Cached Items",
                 value: cacheStatus.items.toLocaleString(),
                 desc: "Count of distinct transformed images currently stored"
@@ -165,7 +166,7 @@
 
             {@render metricCard({
                 icon: "speed",
-                iconClass: "hits",
+                variant: "success",
                 title: "Cache Hits",
                 value: cacheStatus.hits.toLocaleString(),
                 desc: "Transform requests served directly from local cache"
@@ -173,7 +174,7 @@
 
             {@render metricCard({
                 icon: "trending_up",
-                iconClass: "ratio",
+                variant: "primary",
                 title: "Hit Ratio",
                 value: `${(cacheStatus.hit_ratio * 100).toFixed(2)}%`,
                 desc: "Efficiency of cache serving requests without re-processing"
@@ -278,7 +279,7 @@
     }
 
     .metric-card {
-        background-color: var(--viz-95);
+        background-color: var(--viz-surface-card);
         border: var(--viz-border-thin);
         border-radius: var(--viz-border-radius-md);
         padding: var(--viz-spacing-lg);
@@ -294,7 +295,7 @@
 
         .card-title {
             font-size: var(--viz-font-size-lg);
-            color: var(--viz-40);
+            color: var(--viz-text-secondary);
             font-weight: 500;
         }
 
@@ -303,40 +304,15 @@
             font-weight: 700;
             font-family: var(--viz-mono-font);
             margin: var(--viz-spacing-xs) 0;
-            color: var(--viz-text-color);
+            color: var(--viz-text-primary);
         }
 
         .card-desc {
             display: block;
             font-size: var(--viz-font-size-std);
-            color: var(--viz-30);
+            color: var(--viz-text-muted);
             margin: var(--viz-spacing-xs) 0 0 0;
             line-height: 1.4;
-        }
-
-        :global(.icon-accent) {
-            padding: var(--viz-spacing-xs);
-            border-radius: var(--viz-border-radius-sm);
-        }
-
-        :global(.icon-accent.size) {
-            color: var(--viz-info-color);
-            background-color: color-mix(in srgb, var(--viz-info-color) 12%, var(--viz-95));
-        }
-
-        :global(.icon-accent.items) {
-            color: var(--viz-warning-color);
-            background-color: color-mix(in srgb, var(--viz-warning-color) 12%, var(--viz-95));
-        }
-
-        :global(.icon-accent.hits) {
-            color: var(--viz-success-color);
-            background-color: color-mix(in srgb, var(--viz-success-color) 12%, var(--viz-95));
-        }
-
-        :global(.icon-accent.ratio) {
-            color: var(--viz-primary);
-            background-color: color-mix(in srgb, var(--viz-primary) 12%, var(--viz-95));
         }
     }
 
@@ -348,7 +324,7 @@
 
     .visualization-card,
     .advisory-card {
-        background-color: var(--viz-95);
+        background-color: var(--viz-surface-card);
         border: var(--viz-border-thin);
         border-radius: var(--viz-border-radius-md);
         padding: var(--viz-spacing-xl);
@@ -375,7 +351,7 @@
         display: flex;
         height: var(--viz-spacing-std);
         width: 100%;
-        background-color: var(--viz-90);
+        background-color: var(--viz-surface-panel);
         border-radius: var(--viz-border-radius-pill);
         overflow: hidden;
         margin-bottom: var(--viz-spacing-lg);
@@ -422,7 +398,7 @@
         }
 
         .legend-label {
-            color: var(--viz-40);
+            color: var(--viz-text-secondary);
         }
 
         .legend-val {
@@ -441,27 +417,27 @@
         line-height: 1.5;
 
         &.healthy {
-            background-color: color-mix(in srgb, var(--viz-success-color) 12%, var(--viz-95));
-            border: 1px solid color-mix(in srgb, var(--viz-success-color) 25%, var(--viz-60));
-            color: var(--viz-text-color);
+            background-color: color-mix(in srgb, var(--viz-success-color) 12%, var(--viz-surface-card));
+            border: 1px solid color-mix(in srgb, var(--viz-success-color) 25%, var(--viz-border-subtle));
+            color: var(--viz-text-primary);
         }
 
         &.warning {
-            background-color: color-mix(in srgb, var(--viz-warning-color) 12%, var(--viz-95));
-            border: 1px solid color-mix(in srgb, var(--viz-warning-color) 25%, var(--viz-60));
-            color: var(--viz-text-color);
+            background-color: color-mix(in srgb, var(--viz-warning-color) 12%, var(--viz-surface-card));
+            border: 1px solid color-mix(in srgb, var(--viz-warning-color) 25%, var(--viz-border-subtle));
+            color: var(--viz-text-primary);
         }
 
         &.critical {
-            background-color: color-mix(in srgb, var(--viz-error-color) 12%, var(--viz-95));
-            border: 1px solid color-mix(in srgb, var(--viz-error-color) 25%, var(--viz-60));
-            color: var(--viz-text-color);
+            background-color: color-mix(in srgb, var(--viz-error-color) 12%, var(--viz-surface-card));
+            border: 1px solid color-mix(in srgb, var(--viz-error-color) 25%, var(--viz-border-subtle));
+            color: var(--viz-text-primary);
         }
     }
 
     .advisory-content {
         font-size: var(--viz-font-size-lg);
-        color: var(--viz-40);
+        color: var(--viz-text-secondary);
         line-height: 1.6;
 
         span {
@@ -474,7 +450,7 @@
         }
 
         b {
-            color: var(--viz-text-color);
+            color: var(--viz-text-primary);
             font-weight: 600;
         }
     }

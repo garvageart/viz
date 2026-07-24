@@ -45,13 +45,13 @@
         width: 100%;
         height: 100%;
         overflow: hidden;
-        background-color: var(--viz-100);
+        background-color: var(--viz-surface-panel);
     }
 
     .admin-content {
         flex: 1;
         overflow-y: auto;
-        background-color: var(--viz-bg-color);
+        background-color: var(--viz-surface-base);
         display: flex;
         flex-direction: column;
     }

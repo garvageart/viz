@@ -5,6 +5,7 @@
     import { modalsManager } from "$lib/components/modals/manager/ModalManager.svelte";
     import Badge from "$lib/components/ui/Badge.svelte";
     import Button from "$lib/components/ui/Button.svelte";
+    import IconBadge from "$lib/components/ui/IconBadge.svelte";
     import InputSelect from "$lib/components/ui/InputSelect.svelte";
     import MaterialIcon from "$lib/components/ui/MaterialIcon.svelte";
     import { toastState } from "$lib/toast-notifcations/notif-state.svelte";
@@ -107,7 +108,7 @@
 
 {#snippet statCard({ icon, value, label }: { icon: MaterialSymbol; value: string | number; label: string })}
     <div class="stat-card">
-        <MaterialIcon iconName={icon} />
+        <IconBadge iconName={icon} variant="primary" size="1.25rem" />
         <div class="stat-content">
             <span class="stat-value">{value}</span>
             <span class="stat-label">{label}</span>
@@ -117,9 +118,7 @@
 
 {#snippet metricCard({ icon, value, label }: { icon: MaterialSymbol; value: string | number; label: string })}
     <div class="metric-card">
-        <div class="metric-icon">
-            <MaterialIcon iconName={icon} />
-        </div>
+        <IconBadge iconName={icon} variant="info" size="1.25rem" />
         <div class="metric-content">
             <span class="metric-value">{value}</span>
             <span class="metric-label">{label}</span>
@@ -132,7 +131,7 @@
         <!-- Connection Stats -->
         <section class="content-section">
             <div class="section-header">
-                <MaterialIcon iconName="link" />
+                <IconBadge iconName="link" variant="neutral" size="1.1rem" padding="0.4rem" />
                 <h2>Connection Statistics</h2>
             </div>
             <div class="stats-grid">
@@ -165,7 +164,7 @@
         <!-- Performance Metrics -->
         <section class="content-section">
             <div class="section-header">
-                <MaterialIcon iconName="analytics" />
+                <IconBadge iconName="analytics" variant="neutral" size="1.1rem" padding="0.4rem" />
                 <h2>Performance Metrics</h2>
             </div>
             <div class="metrics-grid">
@@ -198,7 +197,7 @@
             <!-- Event Types Distribution -->
             <section class="content-section">
                 <div class="section-header">
-                    <MaterialIcon iconName="bar_chart" />
+                    <IconBadge iconName="bar_chart" variant="neutral" size="1.1rem" padding="0.4rem" />
                     <h2>Event Types Distribution</h2>
                 </div>
                 <div class="event-types">
@@ -220,7 +219,7 @@
         <!-- Event History -->
         <section class="content-section">
             <div class="section-header">
-                <MaterialIcon iconName="history" />
+                <IconBadge iconName="history" variant="neutral" size="1.1rem" padding="0.4rem" />
                 <h2>Event History</h2>
                 <Badge variant="neutral">{history.length}</Badge>
             </div>
@@ -283,7 +282,7 @@
     }
 
     .content-section {
-        background-color: var(--viz-95);
+        background-color: var(--viz-surface-card);
         border: var(--viz-border-thin);
         border-radius: var(--viz-border-radius-md);
         padding: var(--viz-spacing-xl);
@@ -300,14 +299,14 @@
         padding-bottom: var(--viz-spacing-sm);
 
         :global(.viz-material-icon) {
-            color: var(--viz-40);
+            color: var(--viz-text-secondary);
         }
 
         h2 {
             margin: 0;
             font-size: var(--viz-font-size-xl);
             font-weight: 600;
-            color: var(--viz-text-color);
+            color: var(--viz-text-primary);
         }
     }
 
@@ -322,20 +321,13 @@
         align-items: center;
         gap: var(--viz-spacing-md);
         padding: var(--viz-spacing-lg);
-        background-color: var(--viz-90);
+        background-color: var(--viz-surface-panel);
         border: var(--viz-border-thin);
         border-radius: var(--viz-border-radius-md);
         transition: border-color 0.2s ease;
 
         &:hover {
-            border-color: var(--viz-70);
-        }
-
-        :global(.viz-material-icon) {
-            color: var(--viz-primary);
-            background-color: color-mix(in srgb, var(--viz-primary) 12%, var(--viz-90));
-            padding: var(--viz-spacing-sm);
-            border-radius: var(--viz-border-radius-md);
+            border-color: var(--viz-border-subtle);
         }
 
         .stat-content {
@@ -349,12 +341,12 @@
             font-weight: 700;
             font-family: var(--viz-mono-font);
             line-height: 1.2;
-            color: var(--viz-text-color);
+            color: var(--viz-text-primary);
         }
 
         .stat-label {
             font-size: var(--viz-font-size-std);
-            color: var(--viz-40);
+            color: var(--viz-text-secondary);
         }
     }
 
@@ -369,26 +361,13 @@
         align-items: center;
         gap: var(--viz-spacing-md);
         padding: var(--viz-spacing-lg);
-        background-color: var(--viz-90);
+        background-color: var(--viz-surface-panel);
         border: var(--viz-border-thin);
         border-radius: var(--viz-border-radius-md);
         transition: border-color 0.2s ease;
 
         &:hover {
-            border-color: var(--viz-70);
-        }
-
-        .metric-icon {
-            display: flex;
-            align-items: center;
-            justify-content: center;
-
-            :global(.viz-material-icon) {
-                color: var(--viz-info-color);
-                background-color: color-mix(in srgb, var(--viz-info-color) 12%, var(--viz-90));
-                padding: var(--viz-spacing-sm);
-                border-radius: var(--viz-border-radius-md);
-            }
+            border-color: var(--viz-border-subtle);
         }
 
         .metric-content {
@@ -402,12 +381,12 @@
             font-weight: 700;
             font-family: var(--viz-mono-font);
             line-height: 1.2;
-            color: var(--viz-text-color);
+            color: var(--viz-text-primary);
         }
 
         .metric-label {
             font-size: var(--viz-font-size-std);
-            color: var(--viz-40);
+            color: var(--viz-text-secondary);
         }
     }
 
@@ -419,7 +398,7 @@
 
     .event-type-card {
         padding: var(--viz-spacing-md);
-        background-color: var(--viz-90);
+        background-color: var(--viz-surface-panel);
         border: var(--viz-border-thin);
         border-radius: var(--viz-border-radius-md);
         display: flex;
@@ -436,19 +415,19 @@
     .event-type-name {
         font-weight: 600;
         font-size: var(--viz-font-size-lg);
-        color: var(--viz-text-color);
+        color: var(--viz-text-primary);
         font-family: var(--viz-mono-font);
     }
 
     .event-type-count {
         font-size: var(--viz-font-size-std);
-        color: var(--viz-40);
+        color: var(--viz-text-secondary);
         font-family: var(--viz-mono-font);
     }
 
     .event-type-bar {
         height: var(--viz-spacing-xs);
-        background-color: var(--viz-80);
+        background-color: var(--viz-surface-hover);
         border-radius: var(--viz-border-radius-pill);
         overflow: hidden;
     }
@@ -485,7 +464,7 @@
         padding: 0 var(--viz-spacing-md);
         border: var(--viz-border-thin);
         border-radius: var(--viz-border-radius-md);
-        background-color: var(--viz-100);
+        background-color: var(--viz-surface-panel);
         transition: border-color 0.15s ease;
 
         &:focus-within {
@@ -493,7 +472,7 @@
         }
 
         :global(.viz-material-icon) {
-            color: var(--viz-40);
+            color: var(--viz-text-secondary);
             font-size: var(--viz-font-size-xl);
         }
 
@@ -502,13 +481,13 @@
             background: transparent;
             flex: 1;
             font-size: var(--viz-font-size-lg);
-            color: var(--viz-text-color);
+            color: var(--viz-text-primary);
             height: 100%;
             padding: 0;
             outline: none;
 
             &::placeholder {
-                color: var(--viz-40);
+                color: var(--viz-text-secondary);
             }
         }
     }
@@ -519,8 +498,8 @@
         align-items: center;
         justify-content: center;
         padding: var(--viz-spacing-xxl) var(--viz-spacing-std);
-        color: var(--viz-40);
-        background-color: var(--viz-90);
+        color: var(--viz-text-secondary);
+        background-color: var(--viz-surface-panel);
         border: var(--viz-border-thin);
         border-radius: var(--viz-border-radius-md);
 
@@ -551,16 +530,16 @@
             background: transparent;
         }
         &::-webkit-scrollbar-thumb {
-            background: var(--viz-80);
+            background: var(--viz-surface-hover);
             border-radius: var(--viz-border-radius-pill);
         }
         &::-webkit-scrollbar-thumb:hover {
-            background: var(--viz-70);
+            background: var(--viz-border-subtle);
         }
     }
 
     .event-item {
-        background-color: var(--viz-90);
+        background-color: var(--viz-surface-panel);
         border: var(--viz-border-thin);
         border-radius: var(--viz-border-radius-md);
         overflow: hidden;
@@ -569,7 +548,7 @@
         &[open] {
             .summary-content {
                 border-bottom: var(--viz-border-thin);
-                background-color: var(--viz-80);
+                background-color: var(--viz-surface-hover);
 
                 :global(.viz-material-icon) {
                     transform: rotate(180deg);
@@ -592,7 +571,7 @@
 
         &:hover {
             .summary-content {
-                background-color: var(--viz-80);
+                background-color: var(--viz-surface-hover);
             }
         }
     }
@@ -602,11 +581,11 @@
         justify-content: space-between;
         align-items: center;
         padding: var(--viz-spacing-md) var(--viz-spacing-lg);
-        color: var(--viz-text-color);
+        color: var(--viz-text-primary);
         transition: background-color 0.15s ease;
 
         :global(.viz-material-icon) {
-            color: var(--viz-40);
+            color: var(--viz-text-secondary);
             transition: transform 0.2s ease;
         }
     }
@@ -625,21 +604,21 @@
         font-weight: 600;
         font-size: var(--viz-font-size-std);
         padding: var(--viz-spacing-xxs) var(--viz-spacing-sm);
-        background-color: var(--viz-100);
+        background-color: var(--viz-surface-panel);
         border: var(--viz-border-thin);
-        color: var(--viz-text-color);
+        color: var(--viz-text-primary);
         border-radius: var(--viz-border-radius-sm);
     }
 
     .event-time {
         font-size: var(--viz-font-size-std);
-        color: var(--viz-40);
+        color: var(--viz-text-secondary);
         font-family: var(--viz-mono-font);
     }
 
     .event-details {
         padding: var(--viz-spacing-lg);
-        background-color: var(--viz-100);
+        background-color: var(--viz-surface-panel);
         display: flex;
         flex-direction: column;
         gap: var(--viz-spacing-md);
@@ -653,7 +632,7 @@
         strong {
             font-size: var(--viz-font-size-std);
             font-weight: 600;
-            color: var(--viz-40);
+            color: var(--viz-text-secondary);
             text-transform: uppercase;
             letter-spacing: 0.05em;
         }
@@ -661,25 +640,25 @@
         code {
             display: block;
             padding: var(--viz-spacing-sm);
-            background-color: var(--viz-95);
+            background-color: var(--viz-surface-card);
             border: var(--viz-border-thin);
             border-radius: var(--viz-border-radius-md);
             font-size: var(--viz-font-size-std);
             font-family: var(--viz-mono-font);
-            color: var(--viz-text-color);
+            color: var(--viz-text-primary);
             word-break: break-all;
         }
 
         pre {
             margin: 0;
             padding: var(--viz-spacing-md);
-            background-color: var(--viz-95);
+            background-color: var(--viz-surface-card);
             border: var(--viz-border-thin);
             border-radius: var(--viz-border-radius-md);
             overflow-x: auto;
             font-size: var(--viz-font-size-std);
             font-family: var(--viz-mono-font);
-            color: var(--viz-text-color);
+            color: var(--viz-text-primary);
             line-height: 1.5;
         }
     }

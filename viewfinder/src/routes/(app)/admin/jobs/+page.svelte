@@ -6,6 +6,7 @@
     import AdminRouteShell from "$lib/components/admin/AdminRouteShell.svelte";
     import Badge from "$lib/components/ui/Badge.svelte";
     import Button from "$lib/components/ui/Button.svelte";
+    import IconBadge from "$lib/components/ui/IconBadge.svelte";
     import IconButton from "$lib/components/ui/IconButton.svelte";
     import MaterialIcon from "$lib/components/ui/MaterialIcon.svelte";
     import { jobsState } from "$lib/states/jobs.svelte";
@@ -370,19 +371,21 @@
                                 class:success={job.status === "completed"}
                                 class:failure={job.status === "failed"}
                             >
-                                <div class="job-status-icon">
-                                    {#if job.status === "completed"}
-                                        <MaterialIcon iconName="check_circle" />
-                                    {:else}
-                                        <MaterialIcon iconName="error" />
-                                    {/if}
-                                </div>
+                                <IconBadge
+                                    iconName={job.status === "completed" ? "check" : "error"}
+                                    variant={job.status === "completed" ? "success" : "error"}
+                                    shape="circle"
+                                    size="1.1rem"
+                                    padding="0.45rem"
+                                />
                                 <div class="job-body">
                                     <div class="job-title-row">
                                         <span class="job-title-text" title={job.filename || job.image_uid || job.uid}>
                                             {job.filename || job.image_uid || job.uid}
                                         </span>
-                                        <span class="job-type-tag">{job.type || job.topic}</span>
+                                        <Badge variant="neutral" size="std"
+                                            >{(job.type || job.topic).toUpperCase()}</Badge
+                                        >
                                     </div>
                                     <div class="job-meta-row">
                                         {#if job.status === "completed"}
@@ -484,7 +487,7 @@
     }
 
     .dashboard-section {
-        background-color: var(--viz-95);
+        background-color: var(--viz-surface-card);
         border: var(--viz-border-thin);
         border-radius: var(--viz-border-radius-md);
         padding: var(--viz-spacing-xl);
@@ -515,10 +518,10 @@
             min-height: 20rem;
 
             :global(.worker-icon-btn) {
-                border-color: var(--viz-60);
+                border-color: var(--viz-border-subtle);
 
                 &:hover:not(:disabled) {
-                    border-color: var(--viz-80);
+                    border-color: var(--viz-surface-hover);
                 }
 
                 &:disabled {
@@ -545,11 +548,11 @@
                 margin: 0;
                 font-size: var(--viz-font-size-2xl);
                 font-weight: 600;
-                color: var(--viz-text-color);
+                color: var(--viz-text-primary);
             }
 
             :global(.title-icon) {
-                color: var(--viz-40);
+                color: var(--viz-text-secondary);
                 font-size: var(--viz-font-size-3xl);
 
                 &.highlight {
@@ -585,11 +588,11 @@
                 margin: 0;
                 font-size: var(--viz-font-size-2xl);
                 font-weight: 600;
-                color: var(--viz-text-color);
+                color: var(--viz-text-primary);
             }
 
             :global(.title-icon) {
-                color: var(--viz-40);
+                color: var(--viz-text-secondary);
                 font-size: var(--viz-font-size-3xl);
             }
         }
@@ -610,7 +613,7 @@
         font-weight: 600;
         text-transform: uppercase;
         letter-spacing: 0.05em;
-        color: var(--viz-40);
+        color: var(--viz-text-secondary);
         cursor: pointer;
         display: flex;
         align-items: center;
@@ -622,11 +625,11 @@
         margin-bottom: -2px;
 
         &:hover {
-            color: var(--viz-text-color);
+            color: var(--viz-text-primary);
         }
 
         &.active {
-            color: var(--viz-text-color);
+            color: var(--viz-text-primary);
             border-bottom-color: var(--viz-primary);
 
             .tab-badge {
@@ -636,7 +639,7 @@
         }
 
         &.success.active {
-            color: var(--viz-text-color);
+            color: var(--viz-text-primary);
             border-bottom-color: var(--viz-success-color);
 
             .tab-badge {
@@ -646,7 +649,7 @@
         }
 
         &.failed.active {
-            color: var(--viz-text-color);
+            color: var(--viz-text-primary);
             border-bottom-color: var(--viz-error-color);
 
             .tab-badge {
@@ -659,9 +662,9 @@
             font-family: var(--viz-mono-font);
             font-size: 10px;
             padding: 1px var(--viz-spacing-xs);
-            background-color: var(--viz-80);
+            background-color: var(--viz-surface-hover);
             border-radius: var(--viz-border-radius-sm);
-            color: var(--viz-40);
+            color: var(--viz-text-secondary);
             transition:
                 background-color 0.15s ease,
                 color 0.15s ease;
@@ -674,8 +677,8 @@
         align-items: center;
         width: 100%;
         min-height: 2.5rem;
-        background-color: var(--viz-90);
-        box-shadow: 0 -1px 0 var(--viz-60) inset;
+        background-color: var(--viz-surface-panel);
+        box-shadow: 0 -1px 0 var(--viz-border-subtle) inset;
         transition: box-shadow 0.2s ease;
 
         &:focus-within {
@@ -686,7 +689,7 @@
             display: flex;
             align-items: center;
             padding-left: var(--viz-spacing-md);
-            color: var(--viz-40);
+            color: var(--viz-text-secondary);
             pointer-events: none;
         }
 
@@ -696,19 +699,19 @@
             background: transparent;
             padding: var(--viz-spacing-sm) var(--viz-spacing-md);
             font-size: var(--viz-font-size-lg);
-            color: var(--viz-text-color);
+            color: var(--viz-text-primary);
             font-family: var(--viz-display-font);
             outline: none;
 
             &::placeholder {
-                color: var(--viz-40);
+                color: var(--viz-text-secondary);
             }
         }
 
         .clear-search-btn {
             border: none;
             background: transparent;
-            color: var(--viz-40);
+            color: var(--viz-text-secondary);
             cursor: pointer;
             padding: 0 var(--viz-spacing-md);
             display: flex;
@@ -717,7 +720,7 @@
             transition: color 0.15s ease;
 
             &:hover {
-                color: var(--viz-text-color);
+                color: var(--viz-text-primary);
             }
         }
     }
@@ -733,19 +736,19 @@
             margin: 0;
             font-size: var(--viz-font-size-lg);
             font-weight: 600;
-            color: var(--viz-text-color);
+            color: var(--viz-text-primary);
         }
     }
 
     .badge {
         padding: 2px var(--viz-spacing-sm);
-        background-color: var(--viz-90);
+        background-color: var(--viz-surface-panel);
         border: var(--viz-border-thin);
         border-radius: var(--viz-border-radius-pill);
         font-size: var(--viz-font-size-std);
         font-family: var(--viz-mono-font);
         font-weight: 600;
-        color: var(--viz-30);
+        color: var(--viz-text-muted);
 
         &.highlight {
             background-color: var(--viz-primary);
@@ -765,7 +768,7 @@
         align-items: center;
         gap: var(--viz-spacing-md);
         padding: var(--viz-spacing-lg);
-        background-color: var(--viz-95);
+        background-color: var(--viz-surface-card);
         border: var(--viz-border-thin);
         border-radius: var(--viz-border-radius-md);
         transition:
@@ -773,8 +776,8 @@
             background-color 0.2s ease;
 
         &:hover {
-            border-color: var(--viz-70);
-            background-color: var(--viz-90);
+            border-color: var(--viz-border-subtle);
+            background-color: var(--viz-surface-panel);
         }
 
         .stat-icon {
@@ -784,8 +787,8 @@
             width: 3rem;
             height: 3rem;
             border-radius: var(--viz-border-radius-md);
-            background-color: var(--viz-90);
-            color: var(--viz-text-color);
+            background-color: var(--viz-surface-panel);
+            color: var(--viz-text-primary);
             transition:
                 background-color 0.2s ease,
                 color 0.2s ease;
@@ -806,16 +809,16 @@
             font-weight: 700;
             font-family: var(--viz-mono-font);
             line-height: 1.2;
-            color: var(--viz-text-color);
+            color: var(--viz-text-primary);
         }
 
         .stat-label {
             font-size: var(--viz-font-size-std);
-            color: var(--viz-40);
+            color: var(--viz-text-secondary);
         }
 
         &.active {
-            border-color: color-mix(in srgb, var(--viz-primary) 40%, var(--viz-60));
+            border-color: color-mix(in srgb, var(--viz-primary) 40%, var(--viz-border-subtle));
 
             .stat-icon {
                 background-color: var(--viz-primary);
@@ -824,7 +827,7 @@
         }
 
         &.completed {
-            border-color: color-mix(in srgb, var(--viz-success-color) 40%, var(--viz-60));
+            border-color: color-mix(in srgb, var(--viz-success-color) 40%, var(--viz-border-subtle));
 
             .stat-icon {
                 background-color: var(--viz-success-color);
@@ -833,7 +836,7 @@
         }
 
         &.failed {
-            border-color: color-mix(in srgb, var(--viz-error-color) 40%, var(--viz-60));
+            border-color: color-mix(in srgb, var(--viz-error-color) 40%, var(--viz-border-subtle));
 
             .stat-icon {
                 background-color: var(--viz-error-color);
@@ -842,7 +845,7 @@
         }
 
         &.total {
-            border-color: color-mix(in srgb, var(--viz-info-color) 40%, var(--viz-60));
+            border-color: color-mix(in srgb, var(--viz-info-color) 40%, var(--viz-border-subtle));
 
             .stat-icon {
                 background-color: var(--viz-info-color);
@@ -867,16 +870,16 @@
             background: transparent;
         }
         &::-webkit-scrollbar-thumb {
-            background: var(--viz-80);
+            background: var(--viz-surface-hover);
             border-radius: var(--viz-border-radius-pill);
         }
         &::-webkit-scrollbar-thumb:hover {
-            background: var(--viz-70);
+            background: var(--viz-border-subtle);
         }
     }
 
     .job-card {
-        background-color: var(--viz-90);
+        background-color: var(--viz-surface-panel);
         border: var(--viz-border-thin);
         border-radius: var(--viz-border-radius-md);
         overflow: hidden;
@@ -884,7 +887,7 @@
         transition: border-color 0.2s ease;
 
         &:hover {
-            border-color: var(--viz-70);
+            border-color: var(--viz-border-subtle);
         }
 
         &.active {
@@ -908,7 +911,7 @@
             justify-content: center;
             width: 2.5rem;
             height: 2.5rem;
-            background-color: var(--viz-80);
+            background-color: var(--viz-surface-hover);
             border-radius: var(--viz-border-radius-md);
             color: var(--viz-info-color);
         }
@@ -923,7 +926,7 @@
                 white-space: nowrap;
                 overflow: hidden;
                 text-overflow: ellipsis;
-                color: var(--viz-text-color);
+                color: var(--viz-text-primary);
             }
 
             .job-meta {
@@ -931,10 +934,10 @@
                 align-items: center;
                 gap: var(--viz-spacing-xs);
                 font-size: var(--viz-font-size-std);
-                color: var(--viz-40);
+                color: var(--viz-text-secondary);
 
                 .job-type-tag {
-                    background-color: var(--viz-80);
+                    background-color: var(--viz-surface-hover);
                     padding: 2px var(--viz-spacing-xs);
                     border-radius: var(--viz-border-radius-sm);
                     font-weight: 600;
@@ -962,12 +965,12 @@
 
             .job-step {
                 font-weight: 600;
-                color: var(--viz-text-color);
+                color: var(--viz-text-primary);
             }
 
             .progress-value {
                 font-weight: 700;
-                color: var(--viz-text-color);
+                color: var(--viz-text-primary);
                 font-family: var(--viz-mono-font);
             }
         }
@@ -975,7 +978,7 @@
 
     .progress-bar-container {
         height: var(--viz-spacing-xs);
-        background-color: var(--viz-80);
+        background-color: var(--viz-surface-hover);
         border-radius: var(--viz-border-radius-sm);
         overflow: hidden;
         position: relative;
@@ -994,7 +997,7 @@
         align-items: center;
         gap: var(--viz-spacing-md);
         padding: var(--viz-spacing-md) var(--viz-spacing-lg);
-        background-color: var(--viz-90);
+        background-color: var(--viz-surface-panel);
         border: var(--viz-border-thin);
         border-radius: var(--viz-border-radius-md);
         flex-shrink: 0;
@@ -1003,38 +1006,16 @@
             background-color 0.2s ease;
 
         &:hover {
-            border-color: var(--viz-70);
-            background-color: var(--viz-80);
-        }
-
-        .job-status-icon {
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            width: 2.25rem;
-            height: 2.25rem;
-            border-radius: 50%;
-            background-color: var(--viz-80);
-
-            :global(.viz-material-icon) {
-                font-size: var(--viz-font-size-2xl);
-            }
+            border-color: var(--viz-border-subtle);
+            background-color: var(--viz-surface-hover);
         }
 
         &.success {
             border-left: 4px solid var(--viz-success-color);
-            .job-status-icon {
-                color: #ffffff;
-                background-color: var(--viz-success-color);
-            }
         }
 
         &.failure {
             border-left: 4px solid var(--viz-error-color);
-            .job-status-icon {
-                color: #ffffff;
-                background-color: var(--viz-error-color);
-            }
         }
 
         .job-body {
@@ -1054,21 +1035,10 @@
             .job-title-text {
                 font-size: var(--viz-font-size-lg);
                 font-weight: 600;
-                color: var(--viz-text-color);
+                color: var(--viz-text-primary);
                 white-space: nowrap;
                 overflow: hidden;
                 text-overflow: ellipsis;
-            }
-
-            .job-type-tag {
-                background-color: var(--viz-80);
-                padding: 2px var(--viz-spacing-xs);
-                border-radius: var(--viz-border-radius-sm);
-                font-size: var(--viz-font-size-std);
-                font-weight: 600;
-                text-transform: uppercase;
-                font-family: var(--viz-mono-font);
-                color: var(--viz-30);
             }
         }
 
@@ -1077,7 +1047,7 @@
             align-items: center;
             gap: var(--viz-spacing-xs);
             font-size: var(--viz-font-size-std);
-            color: var(--viz-40);
+            color: var(--viz-text-secondary);
 
             .job-duration,
             .job-time {
@@ -1085,7 +1055,7 @@
             }
 
             .job-error-text {
-                color: var(--viz-text-color);
+                color: var(--viz-text-primary);
                 font-family: var(--viz-mono-font);
                 white-space: nowrap;
                 overflow: hidden;
@@ -1102,14 +1072,14 @@
     }
 
     .worker-card {
-        background-color: var(--viz-90);
+        background-color: var(--viz-surface-panel);
         border: var(--viz-border-thin);
         border-radius: var(--viz-border-radius-md);
         padding: var(--viz-spacing-md);
         transition: border-color 0.2s ease;
 
         &:hover {
-            border-color: var(--viz-70);
+            border-color: var(--viz-border-subtle);
         }
 
         .worker-header {
@@ -1126,7 +1096,7 @@
                 .worker-name {
                     font-weight: 700;
                     font-size: var(--viz-font-size-lg);
-                    color: var(--viz-text-color);
+                    color: var(--viz-text-primary);
                 }
 
                 .worker-dot {
@@ -1139,7 +1109,7 @@
                         box-shadow: 0 0 4px var(--viz-success-color);
                     }
                     &.idle {
-                        background-color: var(--viz-60);
+                        background-color: var(--viz-border-subtle);
                     }
                 }
             }
@@ -1161,8 +1131,8 @@
                         border: 1px solid var(--viz-info-color);
                     }
                     &.queued {
-                        background-color: var(--viz-80);
-                        color: var(--viz-text-color);
+                        background-color: var(--viz-surface-hover);
+                        color: var(--viz-text-primary);
                         border: var(--viz-border-thin);
                     }
                 }
@@ -1186,13 +1156,13 @@
             .concurrency-label {
                 font-size: var(--viz-font-size-std);
                 font-weight: 600;
-                color: var(--viz-40);
+                color: var(--viz-text-secondary);
             }
 
             .concurrency-input {
                 display: flex;
                 align-items: center;
-                background-color: var(--viz-80);
+                background-color: var(--viz-surface-hover);
                 border-radius: var(--viz-border-radius-pill);
                 overflow: hidden;
                 border: var(--viz-border-thin);
@@ -1205,7 +1175,7 @@
 
                     &:hover {
                         border: inherit;
-                        background-color: var(--viz-70);
+                        background-color: var(--viz-border-subtle);
                     }
                 }
 
@@ -1215,7 +1185,7 @@
                     font-size: var(--viz-font-size-std);
                     font-weight: 700;
                     font-family: var(--viz-mono-font);
-                    color: var(--viz-text-color);
+                    color: var(--viz-text-primary);
                 }
             }
         }
@@ -1229,8 +1199,8 @@
         border-radius: var(--viz-border-radius-pill);
         font-size: var(--viz-font-size-std);
         font-weight: 700;
-        background-color: var(--viz-90);
-        color: var(--viz-40);
+        background-color: var(--viz-surface-panel);
+        color: var(--viz-text-secondary);
         border: var(--viz-border-thin);
         transition:
             background-color 0.2s ease,
@@ -1241,7 +1211,7 @@
             width: 6px;
             height: 6px;
             border-radius: 50%;
-            background-color: var(--viz-60);
+            background-color: var(--viz-border-subtle);
         }
 
         .status-text {
@@ -1249,9 +1219,9 @@
         }
 
         &.connected {
-            background-color: color-mix(in srgb, var(--viz-success-color) 8%, var(--viz-95));
-            color: var(--viz-text-color);
-            border-color: color-mix(in srgb, var(--viz-success-color) 30%, var(--viz-60));
+            background-color: color-mix(in srgb, var(--viz-success-color) 8%, var(--viz-surface-card));
+            color: var(--viz-text-primary);
+            border-color: color-mix(in srgb, var(--viz-success-color) 30%, var(--viz-border-subtle));
 
             .status-dot {
                 background-color: var(--viz-success-color);
@@ -1278,10 +1248,10 @@
         align-items: center;
         justify-content: center;
         flex: 1;
-        color: var(--viz-40);
+        color: var(--viz-text-secondary);
         text-align: center;
         padding: var(--viz-spacing-xxl) var(--viz-spacing-std);
-        border: 2px dashed var(--viz-80);
+        border: 2px dashed var(--viz-surface-hover);
         border-radius: var(--viz-border-radius-md);
 
         :global(.empty-icon) {
@@ -1302,14 +1272,14 @@
         justify-content: center;
         gap: var(--viz-spacing-sm);
         padding: var(--viz-spacing-xl);
-        color: var(--viz-40);
+        color: var(--viz-text-secondary);
         font-size: var(--viz-font-size-std);
     }
 
     .spinner-small {
         width: 1rem;
         height: 1rem;
-        border: 2px solid var(--viz-80);
+        border: 2px solid var(--viz-surface-hover);
         border-top-color: var(--viz-primary);
         border-radius: 50%;
         animation: spin 1s linear infinite;

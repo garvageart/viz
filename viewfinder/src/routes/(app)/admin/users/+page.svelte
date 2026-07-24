@@ -257,7 +257,7 @@
 
 <style lang="scss">
     .content-section {
-        background-color: var(--viz-95);
+        background-color: var(--viz-surface-card);
         border: var(--viz-border-thin);
         border-radius: var(--viz-border-radius-md);
         padding: var(--viz-spacing-xl);
@@ -276,14 +276,14 @@
             transition: background-color 0.15s ease;
 
             &:hover {
-                background-color: var(--viz-90);
+                background-color: var(--viz-surface-panel);
             }
         }
 
         th {
             text-align: left;
             padding: var(--viz-spacing-md) var(--viz-spacing-sm);
-            color: var(--viz-40);
+            color: var(--viz-text-secondary);
             font-weight: 600;
             font-size: var(--viz-font-size-std);
             text-transform: uppercase;
@@ -311,8 +311,8 @@
     .avatar-placeholder {
         width: 2rem;
         height: 2rem;
-        background: var(--viz-90);
-        color: var(--viz-text-color);
+        background: var(--viz-surface-panel);
+        color: var(--viz-text-primary);
         border-radius: var(--viz-border-radius-pill);
         display: flex;
         align-items: center;
@@ -335,12 +335,12 @@
 
     .name {
         font-weight: 500;
-        color: var(--viz-text-color);
+        color: var(--viz-text-primary);
     }
 
     .uid {
         font-size: var(--viz-font-size-std);
-        color: var(--viz-40);
+        color: var(--viz-text-secondary);
         font-family: var(--viz-mono-font);
     }
 
@@ -355,20 +355,20 @@
 
         &.admin,
         &.superadmin {
-            background: color-mix(in srgb, var(--viz-success-color) 12%, var(--viz-95));
-            color: var(--viz-text-color);
-            border: 1px solid color-mix(in srgb, var(--viz-success-color) 25%, var(--viz-60));
+            background: color-mix(in srgb, var(--viz-success-color) 12%, var(--viz-surface-card));
+            color: var(--viz-text-primary);
+            border: 1px solid color-mix(in srgb, var(--viz-success-color) 25%, var(--viz-border-subtle));
         }
 
         &.user {
-            background: var(--viz-90);
-            color: var(--viz-text-color);
+            background: var(--viz-surface-panel);
+            color: var(--viz-text-primary);
             border: var(--viz-border-thin);
         }
 
         &.guest {
-            background: var(--viz-95);
-            color: var(--viz-40);
+            background: var(--viz-surface-card);
+            color: var(--viz-text-secondary);
             border: var(--viz-border-thin);
         }
     }
@@ -380,11 +380,11 @@
     }
 
     .action-btn {
-        color: var(--viz-40);
+        color: var(--viz-text-secondary);
         transition: color 0.15s ease;
 
         &:hover {
-            color: var(--viz-text-color);
+            color: var(--viz-text-primary);
         }
 
         &.delete:hover {
@@ -418,9 +418,9 @@
     }
 
     .warning-text {
-        color: var(--viz-text-color);
-        background-color: color-mix(in srgb, var(--viz-error-color) 12%, var(--viz-95));
-        border: 1px solid color-mix(in srgb, var(--viz-error-color) 25%, var(--viz-60));
+        color: var(--viz-text-primary);
+        background-color: color-mix(in srgb, var(--viz-error-color) 12%, var(--viz-surface-card));
+        border: 1px solid color-mix(in srgb, var(--viz-error-color) 25%, var(--viz-border-subtle));
 
         :global(.viz-material-icon) {
             color: var(--viz-error-color);
@@ -428,9 +428,9 @@
     }
 
     .info-text {
-        color: var(--viz-text-color);
-        background-color: color-mix(in srgb, var(--viz-info-color) 12%, var(--viz-95));
-        border: 1px solid color-mix(in srgb, var(--viz-info-color) 25%, var(--viz-60));
+        color: var(--viz-text-primary);
+        background-color: color-mix(in srgb, var(--viz-info-color) 12%, var(--viz-surface-card));
+        border: 1px solid color-mix(in srgb, var(--viz-info-color) 25%, var(--viz-border-subtle));
 
         :global(.viz-material-icon) {
             color: var(--viz-info-color);
