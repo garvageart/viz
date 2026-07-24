@@ -63,9 +63,9 @@ func (h *FrontendHandler) getIndexContent() ([]byte, error) {
 }
 
 func (h *FrontendHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
-	path := r.URL.Path
+	path := strings.TrimPrefix(r.URL.Path, "/")
 	// Default to index.html for root
-	if path == "/" {
+	if path == "" {
 		path = "index.html"
 	}
 
@@ -93,6 +93,7 @@ func (h *FrontendHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	// allowing Vite and SvelteKit to cleanly trigger chunk preload error recovery (auto-reload).
 	hasExtension := filepath.Ext(cleanPath) != ""
 	if cleanPath != "index.html" && cleanPath != "." && (strings.HasPrefix(r.URL.Path, "/_app/") || hasExtension) {
+		h.Logger.Debug("asset not found", slog.String("path", fullPath))
 		http.Error(w, "Asset Not Found", http.StatusNotFound)
 		return
 	}
