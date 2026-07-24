@@ -21,8 +21,8 @@
         "test": "pnpm run test:unit --run && pnpm run test:e2e",
         "test:e2e": "playwright test --reporter=list",
         "test:e2e:prod": "pnpm build && PLAYWRIGHT_PREVIEW=1 playwright test --reporter=list",
-        "format": "prettier --config ../.prettierrc --ignore-path ../.prettierignore --write .",
-        "format:check": "prettier --config ../.prettierrc --ignore-path ../.prettierignore --check .",
+        "format": "prettier --config .prettierrc --ignore-path .prettierignore --write .",
+        "format:check": "prettier --config .prettierrc --ignore-path .prettierignore --check .",
         "gen:api": "oazapfts ../api/openapi/openapi.yaml src/lib/api/client.gen.ts --useEnumType"
     },
     "devDependencies": {

@@ -165,7 +165,8 @@ fmt:
 		echo "Formatting Go sources..."; \
 		for dir in $$(go list -f '{{.Dir}}' -m); do (cd $$dir && $(GO_CMD) fmt ./...); done; \
 	fi
-	@$(PNPM) exec prettier --ignore-path .prettierignore --cache --log-level warn --write viewfinder/ scripts/js/
+	@$(PNPM) --filter @viz/viewfinder run format
+	@$(PNPM) --filter @viz/scripts run format
 
 fmt-check-go:
 	@echo "Checking Go formatting..."

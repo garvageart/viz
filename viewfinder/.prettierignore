@@ -1,0 +1,29 @@
+node_modules
+.cache
+.svelte-kit
+build
+dist
+tmp
+var
+target
+playwright-report
+test-results
+
+# Generated files
+static/themes/
+**/client.gen.ts
+**/types.gen.go
+**/generated.go
+**/generated/**
+
+# Media/Assets
+*.png
+*.jpg
+*.jpeg
+*.gif
+*.svg
+*.webp
+*.ico
+
+# WebAssembly/WASM
+static/wasm/
