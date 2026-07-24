@@ -131,6 +131,7 @@ export default defineConfig({
     },
     build: {
         target: "es2023",
+        emptyOutDir: true,
         reportCompressedSize: false,
         rollupOptions: {
             external: ["material-symbols/index.css"]
