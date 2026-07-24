@@ -6,6 +6,7 @@
 
     interface Props extends HTMLAttributes<HTMLDivElement> {
         variant?: "default" | "warning" | "error" | "info" | "success" | "neutral" | "outline";
+        size?: "small" | "std" | "lg";
         pill?: boolean;
         iconName?: MaterialSymbol;
         iconFill?: boolean;
@@ -15,6 +16,7 @@
 
     let {
         variant = "default",
+        size = "std",
         pill = false,
         iconName,
         iconFill = false,
@@ -25,7 +27,7 @@
     }: Props = $props();
 </script>
 
-<div class="viz-badge {variant} {className}" class:is-pill={pill} {...props}>
+<div class="viz-badge {variant} size-{size} {className}" class:is-pill={pill} {...props}>
     {#if iconName}
         <MaterialIcon {iconName} fill={iconFill} size={iconSize} />
     {/if}
@@ -33,6 +35,8 @@
 </div>
 
 <style lang="scss">
+    @use "$lib/styles/scss/viz-mixins.scss" as m;
+
     .viz-badge {
         display: inline-flex;
         align-items: center;
@@ -48,52 +52,58 @@
         box-sizing: border-box;
         border: 1px solid transparent;
 
+        &.size-small {
+            font-size: var(--viz-font-size-sm);
+            padding: 0.15rem 0.35rem;
+        }
+
+        &.size-std {
+            font-size: var(--viz-font-size-std);
+            padding: 0.2rem 0.5rem;
+        }
+
+        &.size-lg {
+            font-size: var(--viz-font-size-lg);
+            padding: 0.3rem 0.65rem;
+        }
+
         &.is-pill {
             border-radius: var(--viz-border-radius-pill);
             padding: 0.35rem 0.75rem;
-            font-size: var(--viz-font-size-std);
         }
 
         &.default {
-            background-color: var(--viz-80);
-            color: var(--viz-text-color);
-            border-color: var(--viz-70);
+            background-color: var(--viz-surface-hover);
+            color: var(--viz-text-primary);
+            border-color: var(--viz-border-strong);
         }
 
         &.neutral {
-            background-color: var(--viz-90);
-            color: var(--viz-40);
-            border-color: var(--viz-80);
+            background-color: var(--viz-surface-panel);
+            color: var(--viz-text-secondary);
+            border-color: var(--viz-border-subtle);
         }
 
         &.warning {
-            background-color: color-mix(in srgb, var(--viz-warning-color) 15%, var(--viz-95));
-            border-color: color-mix(in srgb, var(--viz-warning-color) 35%, var(--viz-80));
-            color: var(--viz-warning-color);
+            @include m.status-tint("warning");
         }
 
         &.error {
-            background-color: color-mix(in srgb, var(--viz-error-color) 15%, var(--viz-95));
-            border-color: color-mix(in srgb, var(--viz-error-color) 35%, var(--viz-80));
-            color: var(--viz-error-color);
+            @include m.status-tint("error");
         }
 
         &.info {
-            background-color: color-mix(in srgb, var(--viz-primary) 15%, var(--viz-95));
-            border-color: color-mix(in srgb, var(--viz-primary) 35%, var(--viz-80));
-            color: var(--viz-primary);
+            @include m.status-tint("info");
         }
 
         &.success {
-            background-color: color-mix(in srgb, var(--viz-success-color, #10b981) 15%, var(--viz-95));
-            border-color: color-mix(in srgb, var(--viz-success-color, #10b981) 35%, var(--viz-80));
-            color: var(--viz-success-color, #10b981);
+            @include m.status-tint("success");
         }
 
         &.outline {
             background-color: transparent;
-            border-color: var(--viz-70);
-            color: var(--viz-text-color);
+            border-color: var(--viz-border-subtle);
+            color: var(--viz-text-primary);
         }
     }
 </style>

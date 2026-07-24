@@ -2,7 +2,9 @@
     import { slide } from "svelte/transition";
     import { logoutUser } from "$lib/auth/auth_methods";
     import { user } from "$lib/states/index.svelte";
+    import AvatarBadge from "../ui/AvatarBadge.svelte";
     import Badge from "../ui/Badge.svelte";
+    import Button from "../ui/Button.svelte";
     import MaterialIcon from "../ui/MaterialIcon.svelte";
 
     let { openAccPanel = $bindable(false) }: { openAccPanel: boolean } = $props();
@@ -25,14 +27,12 @@
 <div id="account-details-panel" bind:this={panelEl} in:slide={{ duration: 100 }} out:slide={{ duration: 100 }}>
     <!-- User Profile Header -->
     <div class="user-header">
-        <div class="avatar-badge">
-            <span>{user.data?.name ? user.data.name[0].toUpperCase() : "?"}</span>
-        </div>
+        <AvatarBadge size="3rem" />
         <div class="user-info">
             <span class="user-name">{user.data?.name || "Guest User"}</span>
             <span class="user-email">{user.data?.email || "No email"}</span>
             {#if user.isAdmin}
-                <Badge variant="neutral" iconName="shield" iconSize="0.9rem">Admin</Badge>
+                <Badge variant="info" iconName="shield" iconSize="0.9rem">Admin</Badge>
             {:else}
                 <Badge variant="neutral">User</Badge>
             {/if}
@@ -68,7 +68,8 @@
 
     <!-- Footer Logout -->
     <div class="logout-container">
-        <button
+        <Button
+            variant="danger"
             class="logout-btn"
             onclick={() => {
                 openAccPanel = false;
@@ -77,7 +78,7 @@
         >
             <MaterialIcon iconName="logout" size="1.2rem" />
             <span>Log Out</span>
-        </button>
+        </Button>
     </div>
 </div>
 
@@ -90,8 +91,8 @@
         right: 0;
         z-index: 500;
         width: 20rem;
-        background-color: var(--viz-bg-color);
-        border: 1px solid var(--viz-70);
+        background-color: var(--viz-surface-panel);
+        border: 1px solid var(--viz-border-subtle);
         border-radius: var(--viz-border-radius-lg);
         box-shadow:
             0 16px 40px rgba(0, 0, 0, 0.35),
@@ -108,21 +109,6 @@
         padding: var(--viz-spacing-xs) 0;
     }
 
-    .avatar-badge {
-        width: 3rem;
-        height: 3rem;
-        border-radius: 50%;
-        background-color: var(--viz-85);
-        border: 1px solid var(--viz-70);
-        color: var(--viz-text-color);
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        font-weight: 700;
-        font-size: var(--viz-font-size-2xl);
-        flex-shrink: 0;
-    }
-
     .user-info {
         display: flex;
         flex-direction: column;
@@ -133,7 +119,7 @@
     .user-name {
         font-weight: 700;
         font-size: var(--viz-font-size-lg);
-        color: var(--viz-text-color);
+        color: var(--viz-text-primary);
         overflow: hidden;
         text-overflow: ellipsis;
         white-space: nowrap;
@@ -141,7 +127,7 @@
 
     .user-email {
         font-size: var(--viz-font-size-std);
-        color: var(--viz-30);
+        color: var(--viz-text-secondary);
         overflow: hidden;
         text-overflow: ellipsis;
         white-space: nowrap;
@@ -149,7 +135,7 @@
 
     .divider {
         height: 1px;
-        background-color: var(--viz-75);
+        background-color: var(--viz-border-strong, var(--viz-border-subtle));
         margin: var(--viz-spacing-xxs) 0;
     }
 
@@ -163,12 +149,12 @@
         display: flex;
         align-items: center;
         gap: var(--viz-spacing-std);
-        padding: var(--viz-spacing-sm);
+        padding: var(--viz-spacing-sm) var(--viz-spacing-md);
         border-radius: var(--viz-border-radius-md);
         text-decoration: none;
-        color: var(--viz-text-color);
-        background: var(--viz-100);
-        border: 1px solid var(--viz-90);
+        color: var(--viz-text-primary);
+        background-color: var(--viz-surface-panel);
+        border: 1px solid var(--viz-border-subtle);
         width: 100%;
         text-align: left;
         cursor: pointer;
@@ -176,8 +162,8 @@
         transition: all 150ms ease;
 
         &:hover {
-            background-color: var(--viz-95);
-            border-color: var(--viz-75);
+            background-color: var(--viz-surface-hover);
+            border-color: var(--viz-border-strong);
         }
     }
 
@@ -185,7 +171,7 @@
         display: flex;
         align-items: center;
         justify-content: center;
-        color: var(--viz-20);
+        color: var(--viz-text-primary);
         min-width: 1.5rem;
     }
 
@@ -198,38 +184,17 @@
         .title {
             font-weight: 600;
             font-size: var(--viz-font-size-lg);
-            color: var(--viz-text-color);
+            color: var(--viz-text-primary);
         }
     }
 
     .logout-container {
         padding-top: var(--viz-spacing-xxs);
-    }
 
-    .logout-btn {
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        gap: var(--viz-spacing-sm);
-        width: 100%;
-        padding: var(--viz-spacing-sm) var(--viz-spacing-md);
-        border: 1px solid color-mix(in srgb, var(--viz-error-color, #ef4444) 30%, var(--viz-75));
-        background-color: color-mix(in srgb, var(--viz-error-color, #ef4444) 8%, var(--viz-95));
-        color: var(--viz-error-color, #ef4444);
-        font-size: var(--viz-font-size-lg);
-        font-weight: 600;
-        border-radius: var(--viz-border-radius-md);
-        cursor: pointer;
-        box-sizing: border-box;
-        transition: all 150ms cubic-bezier(0.4, 0, 0.2, 1);
-
-        &:hover {
-            background-color: color-mix(in srgb, var(--viz-error-color, #ef4444) 16%, var(--viz-90));
-            border-color: color-mix(in srgb, var(--viz-error-color, #ef4444) 50%, var(--viz-60));
-        }
-
-        &:active {
-            background-color: color-mix(in srgb, var(--viz-error-color, #ef4444) 24%, var(--viz-85));
+        :global(.logout-btn) {
+            width: 100%;
+            font-weight: 700;
+            letter-spacing: 0.03em;
         }
     }
 </style>

@@ -28,6 +28,7 @@
     import VizView from "$lib/views/views.svelte";
     import OpenAccountPanel from "../context-menus/AccountPanel.svelte";
     import AppMenu from "../context-menus/AppMenu.svelte";
+    import AvatarBadge from "./AvatarBadge.svelte";
     import IconButton from "./IconButton.svelte";
     import MaterialIcon from "./MaterialIcon.svelte";
     import SearchInput from "./SearchInput.svelte";
@@ -339,9 +340,7 @@
                 onclick={() => (openAccPanel = !openAccPanel)}
                 title={user.data?.name ? `${user.data.name} (${user.data.email})` : "Account"}
             >
-                <figure style="height: 100%; display: flex; align-items: center; justify-content: center;">
-                    <span style="font-weight: 800; font-size: 0.9em;">{user.data ? user.data.name[0] : "?"}</span>
-                </figure>
+                <AvatarBadge size="2rem" />
             </button>
             {#if openAccPanel}
                 <OpenAccountPanel bind:openAccPanel />
@@ -354,7 +353,7 @@
 
 <style lang="scss">
     header {
-        background-color: var(--viz-bg-color);
+        background-color: var(--viz-surface-base);
         height: var(--viz-header-height);
         padding: 0 var(--viz-spacing-md);
         display: flex;
@@ -376,7 +375,7 @@
         background: transparent;
         border: none;
         border-bottom: 2px solid transparent;
-        color: var(--viz-text-color);
+        color: var(--viz-text-primary);
         cursor: pointer;
         padding: var(--viz-spacing-xxs) 0;
         border-radius: 0;
@@ -404,7 +403,7 @@
     }
 
     .menu-separator {
-        background-color: var(--viz-60);
+        background-color: var(--viz-border-subtle);
         height: 50%;
         width: 1px;
     }
@@ -443,8 +442,8 @@
         justify-content: center;
         border-radius: var(--viz-border-radius-pill);
         border: var(--viz-border-thin);
-        border-color: var(--viz-60);
-        background-color: var(--viz-90);
+        border-color: var(--viz-border-subtle);
+        background-color: var(--viz-surface-panel);
         cursor: pointer;
         outline: none;
         transition:
@@ -452,29 +451,20 @@
             border-color 150ms ease;
 
         &:hover {
-            background-color: var(--viz-80);
-            border-color: var(--viz-50);
+            background-color: var(--viz-surface-hover);
+            border-color: var(--viz-text-secondary);
         }
 
         &:focus-visible {
             box-shadow:
-                0 0 0 2px var(--viz-bg-color),
+                0 0 0 2px var(--viz-surface-base),
                 0 0 0 4px var(--viz-primary);
         }
     }
 
-    figure {
-        display: block;
-        margin-block-start: 0em;
-        margin-block-end: 0em;
-        margin-inline-start: 0px;
-        margin-inline-end: 0px;
-        unicode-bidi: isolate;
-    }
-
     :global(.header-upload-dropdown) {
         margin: 0 var(--viz-spacing-sm);
-        color: var(--viz-text-color);
+        color: var(--viz-text-primary);
     }
 
     :global(.header-button) {
@@ -484,12 +474,12 @@
         background-color: transparent !important;
 
         &:hover {
-            background-color: var(--viz-90) !important;
-            border-color: var(--viz-80) !important;
+            background-color: var(--viz-surface-hover) !important;
+            border-color: var(--viz-surface-hover) !important;
         }
 
         &:active {
-            background-color: var(--viz-80) !important;
+            background-color: var(--viz-surface-hover) !important;
         }
     }
 
