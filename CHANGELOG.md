@@ -5,6 +5,18 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.17.0] - 2026-07-24
+
+* style(ui): format Svelte components and sort imports (4d5c7c00)
+* chore(fmt): fix Svelte plugin order and Prettier monorepo config (57b27906)
+* fix(ui): swap old chip for new `Badge` component (80cc1800)
+* fix(viewfinder): enable emptyOutDir in vite.config.ts (c20b7e98)
+* fix: make inline date tile style conform at 5rem instead of 10rem (e0c24530)
+* fix(api): exclude index.html from missing asset check in FrontendHandler (e5174c98)
+* fix(viewfinder): handle deployment updates and chunk preload errors (76792c3f)
+* fix(api): prevent index.html fallback on missing static assets (a6bc3cb6)
+* fix: show completed amount of uploads in minimized form (9fad5471)
+
 ## [0.16.1] - 2026-07-22
 
 * fix(viewfinder): adjust upload and download panel z-index below image lightbox (9d59146f)
