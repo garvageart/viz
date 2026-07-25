@@ -5,6 +5,15 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.18.5] - 2026-07-25
+
+* chore: enable prettier caching in package format scripts (a34171e8)
+* style(viewfinder): style search button with primary theme color (ce6c0ccb)
+* refactor(viewfinder): update CropTools action buttons to component color variants (25c04280)
+* feat(viewfinder): add secondary variant styles to button components (3f3381d1)
+* chore(fmt): add --log-level warn to workspace prettier format scripts (855b9eee)
+* chore(viewfinder): restore local prettier config files and update format scripts (cee7f2c0)
+
 ## [0.18.4] - 2026-07-24
 
 * fix(release): push branch and tag atomically to avoid duplicate CI builds (97dd1c53)
