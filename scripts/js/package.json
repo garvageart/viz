@@ -13,7 +13,7 @@
         "gen:api": "tsx gen-api.ts",
         "gen:api:install": "tsx gen-api.ts --install-tools",
         "gen:api:build": "tsx gen-api.ts --build",
-        "format": "prettier --log-level warn --write .",
+        "format": "prettier --cache --log-level warn --write .",
         "setup:https": "tsx setup-https.ts",
         "release": "tsx release.ts"
     },
