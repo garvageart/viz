@@ -2,6 +2,7 @@
     import { createApiKey } from "$lib/api";
     import { Scope, scopes } from "$lib/auth/scopes.gen";
     import Button from "$lib/components/ui/Button.svelte";
+    import Checkbox from "$lib/components/ui/Checkbox.svelte";
     import IconButton from "$lib/components/ui/IconButton.svelte";
     import InputText from "$lib/components/ui/InputText.svelte";
     import { toastState } from "$lib/toast-notifcations/notif-state.svelte";
@@ -124,8 +125,7 @@
                 <div class="scopes-list">
                     {#each scopes as scope}
                         <label class="scope-item" class:selected={isScopeSelected(scope.value)}>
-                            <input
-                                type="checkbox"
+                            <Checkbox
                                 checked={isScopeSelected(scope.value)}
                                 onchange={() => toggleScope(scope.value)}
                             />
@@ -139,9 +139,13 @@
             </div>
         </div>
         <div class="modal-actions">
-            <Button hoverColor="var(--viz-surface-hover)" onclick={handleCancel}>Cancel</Button>
-            <Button onclick={handleCreate} disabled={creating || !keyMeta.name || selectedScopes.length === 0}>
-                {creating ? "Creating..." : "Create Key"}
+            <Button variant="danger" onclick={handleCancel}>Cancel</Button>
+            <Button
+                variant="info"
+                onclick={handleCreate}
+                disabled={creating || !keyMeta.name || selectedScopes.length === 0}
+            >
+                {creating ? "Creating..." : "Create"}
             </Button>
         </div>
     {/if}
@@ -235,14 +239,6 @@
         &.selected {
             background-color: var(--viz-surface-panel);
         }
-
-        input[type="checkbox"] {
-            accent-color: var(--viz-primary);
-            width: 0.875rem;
-            height: 0.875rem;
-            margin-top: 0.125rem;
-            cursor: pointer;
-        }
     }
 
     .scope-info {
@@ -253,14 +249,13 @@
 
     .scope-label {
         font-weight: 600;
-        font-size: var(--viz-font-size-std);
         color: var(--viz-text-primary);
         line-height: 1.2;
     }
 
     .scope-value {
         color: var(--viz-text-secondary);
-        font-size: 0.7rem;
+        font-size: var(--viz-font-size-sm);
         font-family: var(--viz-mono-font);
         line-height: 1.2;
     }
