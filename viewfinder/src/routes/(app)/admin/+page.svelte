@@ -639,10 +639,11 @@
     }
 
     .version-section {
-        display: flex;
+        display: inline-flex;
         align-items: center;
-        justify-content: space-between;
-        padding: var(--viz-spacing-sm);
+        gap: var(--viz-spacing-lg);
+        align-self: flex-start;
+        padding: var(--viz-spacing-sm) var(--viz-spacing-md);
         background: var(--viz-surface-hover);
         border: var(--viz-border-thin);
         border-radius: var(--viz-border-radius-md);
@@ -663,8 +664,9 @@
     }
 
     .build-info-bar {
-        display: flex;
-        justify-content: space-between;
+        display: inline-flex;
+        gap: var(--viz-spacing-lg);
+        align-self: flex-start;
         align-items: center;
         padding: var(--viz-spacing-xs) 0;
         border-bottom: 1px dashed var(--viz-surface-hover);
