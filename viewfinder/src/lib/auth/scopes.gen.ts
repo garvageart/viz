@@ -35,6 +35,9 @@ export enum Scope {
     UsersDelete = "users:delete",
     UserSettingsRead = "user-settings:read",
     UserSettingsUpdate = "user-settings:update",
+    SessionsRead = "sessions:read",
+    SessionsUpdate = "sessions:update",
+    SessionsDelete = "sessions:delete",
     DownloadsCreate = "downloads:create",
     EventsRead = "events:read"
 }
@@ -76,6 +79,9 @@ export const scopes: ScopeItem[] = [
     { value: Scope.UsersDelete, label: "Delete Users" },
     { value: Scope.UserSettingsRead, label: "Read User Settings" },
     { value: Scope.UserSettingsUpdate, label: "Update User Settings" },
+    { value: Scope.SessionsRead, label: "Read Sessions" },
+    { value: Scope.SessionsUpdate, label: "Update Sessions" },
+    { value: Scope.SessionsDelete, label: "Delete Sessions" },
     { value: Scope.DownloadsCreate, label: "Create Downloads" },
     { value: Scope.EventsRead, label: "Read Events" }
 ];

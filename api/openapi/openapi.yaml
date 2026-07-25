@@ -553,6 +553,7 @@ paths:
             operationId: getSessions
             security:
                 - CookieAuth: []
+                - BearerAuth: [sessions:read]
             responses:
                 "200":
                     description: List of sessions
@@ -573,6 +574,7 @@ paths:
             operationId: deleteSessions
             security:
                 - CookieAuth: []
+                - BearerAuth: [sessions:delete]
             responses:
                 "200":
                     description: All sessions logged out
@@ -593,6 +595,7 @@ paths:
             operationId: getSessionById
             security:
                 - CookieAuth: []
+                - BearerAuth: [sessions:read]
             parameters:
                 - name: uid
                   in: path
@@ -623,6 +626,7 @@ paths:
             operationId: updateSession
             security:
                 - CookieAuth: []
+                - BearerAuth: [sessions:update]
             parameters:
                 - name: uid
                   in: path
@@ -665,6 +669,7 @@ paths:
             operationId: deleteSession
             security:
                 - CookieAuth: []
+                - BearerAuth: [sessions:delete]
             parameters:
                 - name: uid
                   in: path
@@ -3103,6 +3108,9 @@ components:
                 users:delete: Delete Users
                 user-settings:read: Read User Settings
                 user-settings:update: Update User Settings
+                sessions:read: Read Sessions
+                sessions:update: Update Sessions
+                sessions:delete: Delete Sessions
                 downloads:create: Create Downloads
                 events:read: Read Events
 
