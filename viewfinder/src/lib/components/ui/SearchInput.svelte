@@ -39,7 +39,7 @@
         onkeydown={handleSearch}
         disabled={loading}
     >
-        <MaterialIcon iconName="search" size="1.2rem" style="color: var(--viz-text-secondary);" />
+        <MaterialIcon iconName="search" size="1.2rem" />
     </button>
     <input
         id={inputId}
@@ -85,7 +85,7 @@
     }
 
     .search-button {
-        background-color: var(--viz-surface-panel);
+        background-color: var(--viz-primary);
         border: none;
         border-radius: var(--viz-border-radius-pill);
         border-top-right-radius: 0;
@@ -95,22 +95,22 @@
         display: flex;
         align-items: center;
         justify-content: center;
-        color: var(--viz-text-primary);
+        color: #ffffff;
         cursor: pointer;
         transition: background-color 150ms ease;
 
         &:focus {
             box-shadow: 0px 0px 0px 1.5px inset var(--viz-border-subtle);
             outline: none;
-            background-color: var(--viz-surface-hover);
+            background-color: var(--viz-primary-hover, var(--viz-primary));
         }
 
         &:hover {
-            background-color: var(--viz-surface-hover);
+            background-color: var(--viz-primary-hover, var(--viz-primary));
         }
 
         &:active {
-            background-color: var(--viz-surface-panel);
+            background-color: var(--viz-primary-active, var(--viz-primary));
         }
     }
 
