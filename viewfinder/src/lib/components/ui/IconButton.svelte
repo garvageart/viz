@@ -14,7 +14,7 @@
         tooltipParams?: TooltipParams | string | null;
     }
 
-    type Props = ButtonProps & Partial<IconProps>;
+    type Props = ButtonProps & IconProps;
 
     let {
         iconName,
