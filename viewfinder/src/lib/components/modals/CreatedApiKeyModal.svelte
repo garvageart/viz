@@ -105,10 +105,10 @@
         <span class="warning-text">Please copy your new API Key. You won't be able to see it again!</span>
         <div class="key-display">
             <code>{createdToken}</code>
-            <IconButton onclick={handleCopy} variant="small">Copy</IconButton>
+            <IconButton iconName="content_copy" onclick={handleCopy} variant="small">Copy</IconButton>
         </div>
         <div class="modal-actions">
-            <IconButton onclick={handleClose} variant="small">Close</IconButton>
+            <IconButton iconName="close" onclick={handleClose} variant="small">Close</IconButton>
         </div>
     {:else}
         <div class="form-content">
