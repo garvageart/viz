@@ -87,6 +87,17 @@
             @include m.status-tint("info", true);
         }
 
+        &.secondary {
+            background-color: var(--viz-surface-panel);
+            border-color: var(--viz-surface-hover);
+            color: var(--viz-text-primary);
+
+            &:hover:not(:disabled) {
+                background-color: var(--viz-surface-hover);
+                border-color: var(--viz-border-subtle);
+            }
+        }
+
         &.ghost {
             background-color: transparent;
             border-color: transparent;
