@@ -60,13 +60,13 @@
     </div>
 
     <div class="crop-actions">
-        <IconButton iconName="restart_alt" class="action-btn reset" onclick={onReset} title="Reset Crop">
+        <IconButton iconName="restart_alt" variant="secondary" class="action-btn" onclick={onReset} title="Reset Crop">
             <span>Reset</span>
         </IconButton>
-        <IconButton iconName="close" class="action-btn cancel" onclick={onCancel} title="Cancel Crop">
+        <IconButton iconName="close" variant="danger" class="action-btn" onclick={onCancel} title="Cancel Crop">
             <span>Cancel</span>
         </IconButton>
-        <IconButton iconName="check" class="action-btn apply" onclick={onApply} title="Apply Crop">
+        <IconButton iconName="check" variant="success" class="action-btn" onclick={onApply} title="Apply Crop">
             <span>Apply</span>
         </IconButton>
     </div>
@@ -124,13 +124,10 @@
         background-color: var(--viz-surface-panel);
         border: var(--viz-border-thin);
         border-color: var(--viz-surface-hover);
-        color: var(--viz-text-muted);
         padding: var(--viz-spacing-sm) var(--viz-spacing-xs);
         border-radius: var(--viz-border-radius-md);
         cursor: pointer;
-        font-size: var(--viz-font-size-xs);
-        font-family: var(--viz-mono-font);
-        font-weight: 500;
+        font-weight: 600;
         text-align: center;
         transition:
             background-color 0.15s ease,
@@ -163,78 +160,16 @@
             display: inline-flex;
             align-items: center;
             justify-content: center;
-            font-size: var(--viz-font-size-std) !important;
+            font-size: var(--viz-font-size-std);
             flex: 1;
-            padding: 0.4rem 0.6rem !important;
-            border-radius: var(--viz-border-radius-pill) !important;
-            border: var(--viz-border-thin) !important;
-            transition: all 0.15s ease-in-out !important;
-            height: 2rem !important;
+            padding: 0.4rem 0.6rem;
+            border-radius: var(--viz-border-radius-pill);
+            height: 2rem;
         }
 
         :global(.action-btn span) {
             font-family: var(--viz-display-font);
             font-weight: 600;
-        }
-
-        :global(.action-btn.apply) {
-            color: var(--viz-success-color) !important;
-            background-color: rgba(34, 197, 94, 0.08) !important;
-            border-color: rgba(34, 197, 94, 0.2) !important;
-        }
-
-        :global(.action-btn.apply:hover) {
-            background-color: rgba(34, 197, 94, 0.16) !important;
-            border-color: rgba(34, 197, 94, 0.4) !important;
-        }
-
-        :global(.action-btn.cancel) {
-            color: var(--viz-error-color) !important;
-            background-color: rgba(239, 68, 68, 0.08) !important;
-            border-color: rgba(239, 68, 68, 0.2) !important;
-        }
-
-        :global(.action-btn.cancel:hover) {
-            background-color: rgba(239, 68, 68, 0.16) !important;
-            border-color: rgba(239, 68, 68, 0.4) !important;
-        }
-
-        :global(.action-btn.reset) {
-            color: var(--viz-text-primary) !important;
-            background-color: var(--viz-surface-panel) !important;
-            border-color: var(--viz-surface-hover) !important;
-        }
-
-        :global(.action-btn.reset:hover) {
-            background-color: var(--viz-surface-hover) !important;
-            border-color: var(--viz-border-subtle) !important;
-        }
-    }
-
-    /* Light theme contrast overrides */
-    :global([data-theme="light"]) {
-        .crop-actions {
-            :global(.action-btn.apply) {
-                color: #ffffff !important;
-                background-color: #15803d !important; /* Solid high-contrast green */
-                border-color: #15803d !important;
-            }
-
-            :global(.action-btn.apply:hover) {
-                background-color: #166534 !important; // Darker solid green
-                border-color: #166534 !important;
-            }
-
-            :global(.action-btn.cancel) {
-                color: #ffffff !important;
-                background-color: #b91c1c !important; // Solid high-contrast red
-                border-color: #b91c1c !important;
-            }
-
-            :global(.action-btn.cancel:hover) {
-                background-color: #991b1b !important; // Darker solid red
-                border-color: #991b1b !important;
-            }
         }
     }
 </style>
