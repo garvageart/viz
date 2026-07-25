@@ -5,6 +5,16 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.18.6] - 2026-07-25
+
+* fix: replace custom sidebar buttons with native material icon buttons (ac05e2ae)
+* fix: make MaterialIcon props mandatory (0df54d36)
+* fix: swap Button for IconButton (9848ad4f)
+* fix: add icons to api key buttons (a2422285)
+* refactor: rework api key modal with UI components (28749aa8)
+* fix: change photo tooltip edit button to open button (d5e62600)
+* feat(auth): add API scopes for session management endpoints (624c2850)
+
 ## [0.18.5] - 2026-07-25
 
 * chore: enable prettier caching in package format scripts (a34171e8)
