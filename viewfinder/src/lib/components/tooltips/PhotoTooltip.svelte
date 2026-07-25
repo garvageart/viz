@@ -126,8 +126,9 @@
 
         {#if clickHandler}
             <IconButton
-                iconName="edit"
-                class="edit-button"
+                iconName="open_in_full"
+                title="Open"
+                class="info-button"
                 size="1.25rem"
                 onclick={(e) => {
                     clickHandler?.(e);
@@ -280,7 +281,7 @@
         align-items: center;
         gap: var(--viz-spacing-sm);
 
-        :global(.edit-button) {
+        :global(.info-button) {
             padding: var(--viz-spacing-xs);
         }
     }
