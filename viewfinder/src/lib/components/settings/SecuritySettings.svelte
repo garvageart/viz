@@ -12,7 +12,7 @@
     } from "$lib/api";
     import ConfirmationModal from "$lib/components/modals/ConfirmationModal.svelte";
     import CreatedApiKeyModal from "$lib/components/modals/CreatedApiKeyModal.svelte";
-    import Button from "$lib/components/ui/Button.svelte";
+    import IconButton from "$lib/components/ui/IconButton.svelte";
     import MaterialIcon from "$lib/components/ui/MaterialIcon.svelte";
     import { toastState } from "$lib/toast-notifcations/notif-state.svelte";
     import { modalsManager } from "../modals/manager/ModalManager.svelte";
@@ -274,9 +274,7 @@
                 <h3>API Keys</h3>
                 <p>Personal access tokens for API access.</p>
             </div>
-            <Button variant="mini" onclick={openApiKeyModal}>
-                <MaterialIcon iconName="add" /> Create Key
-            </Button>
+            <IconButton variant="info" iconName="add" onclick={openApiKeyModal}><span>Create New Key</span></IconButton>
         </div>
 
         <div class="keys-list">
