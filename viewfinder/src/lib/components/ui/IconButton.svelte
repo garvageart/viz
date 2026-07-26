@@ -1,15 +1,13 @@
 <script lang="ts">
-    import type { HTMLButtonAttributes, MouseEventHandler } from "svelte/elements";
+    import type { HTMLButtonAttributes } from "svelte/elements";
     import { tooltip } from "$lib/components/tooltips/tooltip";
     import type { TooltipParams } from "$lib/components/tooltips/tooltip";
+    import type { ButtonVariant } from "$lib/components/ui/Button.svelte";
     import MaterialIcon, { type IconProps } from "./MaterialIcon.svelte";
-
-    type IconButtonVariant =
-        "primary" | "secondary" | "danger" | "warning" | "success" | "info" | "ghost" | "big" | "small" | "mini";
 
     interface ButtonProps extends HTMLButtonAttributes {
         hoverColor?: string;
-        variant?: IconButtonVariant;
+        variant?: ButtonVariant;
         element?: HTMLButtonElement;
         tooltipParams?: TooltipParams | string | null;
     }
@@ -80,7 +78,7 @@
         }
 
         &.with-children {
-            padding: var(--viz-spacing-xs);
+            padding: var(--viz-spacing-xs) var(--viz-spacing-sm);
         }
 
         &:focus-visible {

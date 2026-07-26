@@ -1,8 +1,10 @@
+<script module lang="ts">
+    export type ButtonVariant =
+        "primary" | "secondary" | "danger" | "warning" | "success" | "info" | "ghost" | "big" | "small" | "mini";
+</script>
+
 <script lang="ts">
     import type { HTMLButtonAttributes } from "svelte/elements";
-
-    type ButtonVariant =
-        "primary" | "secondary" | "danger" | "warning" | "success" | "info" | "ghost" | "big" | "small" | "mini";
 
     interface Props extends HTMLButtonAttributes {
         hoverColor?: string;

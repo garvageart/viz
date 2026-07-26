@@ -1,6 +1,5 @@
 <script lang="ts">
     import type { SvelteHTMLElements } from "svelte/elements";
-    import type { MaterialSymbol } from "$lib/types/MaterialSymbol";
     import MaterialIcon, { type IconProps } from "./MaterialIcon.svelte";
 
     type Variant = "primary" | "info" | "warning" | "error" | "success" | "neutral";

@@ -316,6 +316,7 @@
         <Dropdown
             class="header-button header-upload-dropdown"
             icon="upload"
+            variant="success"
             title="Upload"
             items={uploadMenuItems}
             showSelectionIndicator={false}
@@ -459,27 +460,6 @@
             box-shadow:
                 0 0 0 2px var(--viz-surface-base),
                 0 0 0 4px var(--viz-primary);
-        }
-    }
-
-    :global(.header-upload-dropdown) {
-        margin: 0 var(--viz-spacing-sm);
-        color: var(--viz-text-primary);
-    }
-
-    :global(.header-button) {
-        font-size: 1rem !important;
-        padding: var(--viz-spacing-xxs) var(--viz-spacing-xs) !important;
-        border: 1px solid transparent !important;
-        background-color: transparent !important;
-
-        &:hover {
-            background-color: var(--viz-surface-hover) !important;
-            border-color: var(--viz-surface-hover) !important;
-        }
-
-        &:active {
-            background-color: var(--viz-surface-hover) !important;
         }
     }
 

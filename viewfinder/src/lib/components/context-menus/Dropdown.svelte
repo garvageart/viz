@@ -3,7 +3,7 @@
     import ContextMenu from "$lib/context-menu/ContextMenu.svelte";
     import type { MenuItem } from "$lib/context-menu/types";
     import type { MaterialSymbol } from "$lib/types/MaterialSymbol";
-    import Button from "../ui/Button.svelte";
+    import Button, { type ButtonVariant } from "../ui/Button.svelte";
     import IconButton from "../ui/IconButton.svelte";
 
     interface Props {
@@ -17,6 +17,8 @@
         title?: string;
         /** Icon to show on the button */
         icon?: MaterialSymbol;
+        /** Button variant */
+        variant?: ButtonVariant;
         /** Called when an item is selected */
         onSelect?: (item: MenuItem) => void;
         /** If true, show check icons for selected item. Set to false for action menus. Default: true */
@@ -43,6 +45,7 @@
         showMenu = $bindable(false),
         title,
         icon,
+        variant = "primary",
         onSelect,
         showSelectionIndicator = true,
         align = "left",
@@ -57,7 +60,9 @@
     // Derived selected item from items by id
     let selectedItem: MenuItem | undefined = $derived(items?.find((i) => i.id === selectedItemId));
 
-    let currentIcon: MaterialSymbol | undefined = $derived((selectedItem?.icon as MaterialSymbol | undefined) ?? icon);
+    // Prefer an explicit dropdown icon prop for the button. If none is provided,
+    // fall back to the selected item's icon.
+    let currentIcon: MaterialSymbol | undefined = $derived(icon ?? (selectedItem?.icon as MaterialSymbol | undefined));
 
     let menuItems: MenuItem[] = $state([]);
 
@@ -104,9 +109,7 @@
 
 {#snippet buttonContent()}
     {#if selectedItem && selectedItem.label}
-        {#if showSelectionIndicator}
-            <span class="viz-dropdown-title">{selectedItem.label}</span>
-        {/if}
+        <span class="viz-dropdown-title">{selectedItem.label}</span>
     {:else if title}
         <span class="viz-dropdown-title">{title}</span>
     {/if}
@@ -117,8 +120,8 @@
         {@render trigger({ toggle: toggleMenu, showMenu, title })}
     {:else if currentIcon}
         <IconButton
+            {variant}
             class="viz-dropdown-button {className}"
-            weight={300}
             iconName={currentIcon}
             {title}
             bind:element={buttonEl}
@@ -127,7 +130,7 @@
             {@render buttonContent()}
         </IconButton>
     {:else}
-        <Button class="viz-dropdown-button {className}" {title} bind:element={buttonEl} onclick={toggleMenu}>
+        <Button {variant} class="viz-dropdown-button {className}" {title} bind:element={buttonEl} onclick={toggleMenu}>
             {@render buttonContent()}
         </Button>
     {/if}
@@ -159,6 +162,7 @@
     :global(.viz-dropdown-button) {
         display: flex;
         align-items: center;
+        gap: var(--viz-spacing-xs);
         border-radius: var(--viz-border-radius-pill);
         white-space: nowrap;
 
