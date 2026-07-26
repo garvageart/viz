@@ -81,8 +81,9 @@
             selectedItemId = item.id;
         }
         showMenu = false;
-        // Call item's own action if present (forward the event)
-        item.action?.(e);
+        if (!onSelect) {
+            item.action?.(e);
+        }
     }
 
     function toggleMenu() {
