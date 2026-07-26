@@ -126,19 +126,21 @@
         );
 
         @each $role, $color in $status-roles {
-            @if $is-light-theme or $direct-light {
-                --viz-status-bg-#{$role}: #{$color};
-                --viz-status-border-#{$role}: color-mix(in srgb, #{$color} 80%, black);
-                --viz-status-hover-#{$role}: color-mix(in srgb, #{$color} 90%, black);
-                --viz-status-hover-border-#{$role}: color-mix(in srgb, #{$color} 60%, black);
-                --viz-status-text-#{$role}: #ffffff;
-            } @else {
-                --viz-status-bg-#{$role}: color-mix(in srgb, #{$color} 14%, var(--viz-surface-card));
-                --viz-status-border-#{$role}: color-mix(in srgb, #{$color} 40%, var(--viz-border-subtle));
-                --viz-status-hover-#{$role}: color-mix(in srgb, #{$color} 24%, var(--viz-surface-card));
-                --viz-status-hover-border-#{$role}: color-mix(in srgb, #{$color} 65%, black);
-                --viz-status-text-#{$role}: #{$color};
-            }
+            // TODO: Decide if this can be done a different way bc this is not rendering
+            // correctly
+            // @if $is-light-theme or $direct-light {
+            --viz-status-bg-#{$role}: #{$color};
+            --viz-status-border-#{$role}: color-mix(in srgb, #{$color} 80%, black);
+            --viz-status-hover-#{$role}: color-mix(in srgb, #{$color} 90%, black);
+            --viz-status-hover-border-#{$role}: color-mix(in srgb, #{$color} 60%, black);
+            --viz-status-text-#{$role}: #ffffff;
+            // } @else {
+            //     --viz-status-bg-#{$role}: color-mix(in srgb, #{$color} 14%, var(--viz-surface-card));
+            //     --viz-status-border-#{$role}: color-mix(in srgb, #{$color} 40%, var(--viz-border-subtle));
+            //     --viz-status-hover-#{$role}: color-mix(in srgb, #{$color} 24%, var(--viz-surface-card));
+            //     --viz-status-hover-border-#{$role}: color-mix(in srgb, #{$color} 65%, black);
+            //     --viz-status-text-#{$role}: #{$color};
+            // }
         }
     }
 
