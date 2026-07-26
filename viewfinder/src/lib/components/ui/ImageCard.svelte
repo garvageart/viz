@@ -16,7 +16,7 @@
         isSelected = false
     }: {
         asset: ImageAsset;
-        variant?: "mini" | "full";
+        variant?: "mini" | "full" | "basic";
         showMetadata?: boolean;
         isSelected?: boolean;
     } & Omit<AssetImageProps, "asset" | "variant"> & {
@@ -80,6 +80,34 @@
             </div>
         </div>
     </div>
+{:else if variant === "basic"}
+    <div
+        class="image-card basic-card"
+        class:selected={isSelected}
+        draggable="true"
+        title={asset.name || asset.image_metadata?.file_name}
+        role="button"
+        tabindex="0"
+        data-asset-id={asset.uid}
+        ondragstart={handleDragStart}
+        ondragend={() => {
+            DragData.clear();
+        }}
+    >
+        <div class="image-container basic-container">
+            <AssetImage
+                class="card-image"
+                {asset}
+                variant={imageVariant}
+                {objectFit}
+                {priority}
+                alt={(asset.name || asset.image_metadata?.file_name) ?? ""}
+                loading="lazy"
+                crossorigin="use-credentials"
+                onload={() => (imageLoaded = true)}
+            />
+        </div>
+    </div>
 {:else}
     <div
         class="image-card"
@@ -101,12 +129,8 @@
                 variant={imageVariant}
                 {objectFit}
                 {priority}
-                alt="{(asset.name || asset.image_metadata?.file_name) ?? ''}{asset.uploaded_by
-                    ? ` by ${asset.uploaded_by.name}`
-                    : ''}"
-                title="{(asset.name || asset.image_metadata?.file_name) ?? ''}{asset.uploaded_by
-                    ? ` by ${asset.uploaded_by.name}`
-                    : ''}"
+                alt={`${(asset.name || asset.image_metadata?.file_name) ?? ""}${asset.uploaded_by ? ` by ${asset.uploaded_by.name}` : ""}`}
+                title={`${(asset.name || asset.image_metadata?.file_name) ?? ""}${asset.uploaded_by ? ` by ${asset.uploaded_by.name}` : ""}`}
                 loading="lazy"
                 crossorigin="use-credentials"
                 onload={() => (imageLoaded = true)}

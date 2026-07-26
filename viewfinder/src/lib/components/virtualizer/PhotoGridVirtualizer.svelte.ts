@@ -58,7 +58,7 @@ export class PhotoGridVirtualizer {
     containerWidth = $state(0);
     targetRowHeight = $state(280);
     gridGap = $state(8);
-    headerHeight = $state(60);
+    headerHeight = $state(20);
 
     // Internal
     private groupCache = new Map<string, GroupCacheEntry>();

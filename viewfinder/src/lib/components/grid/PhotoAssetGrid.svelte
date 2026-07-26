@@ -1,5 +1,5 @@
 <script module lang="ts">
-    export type AssetGridView = "grid" | "list" | "thumbnails";
+    export type AssetGridView = "grid" | "list" | "thumbnails" | "basic";
 </script>
 
 <script lang="ts" generics>
@@ -474,10 +474,10 @@
             }
         } else {
             selection.addMultiple(enabledImages);
-            // Set anchor to last item of group for shift-selection
+            // Set anchor to first item of group for shift-selection without auto-scrolling to bottom
             if (enabledImages.length > 0) {
                 suppressScrollOnce = true;
-                selection.active = enabledImages[enabledImages.length - 1];
+                selection.active = enabledImages[0];
             }
 
             // If onLoadMore is provided and this group reaches the end of the currently loaded list,
@@ -510,7 +510,7 @@
                     currentImages = updatedImages.filter((i) => !disabledUids.has(i.uid));
                     if (currentImages.length > 0) {
                         suppressScrollOnce = true;
-                        selection.active = currentImages[currentImages.length - 1];
+                        selection.active = currentImages[0];
                         lastImage = currentImages[currentImages.length - 1];
                     } else {
                         break;

@@ -4,7 +4,9 @@
     import { DateTime } from "luxon";
     import { untrack } from "svelte";
     import type { SvelteHTMLElements } from "svelte/elements";
-    import { getFullImagePath } from "$lib/api";
+    import { type Instance, type Props as TippyProps, delegate, followCursor } from "tippy.js";
+    import "tippy.js/dist/tippy.css";
+    import { type ImageAsset, getFullImagePath } from "$lib/api";
     import { debugMode, isLayoutPage, sort, tableColumnSettings } from "$lib/states/index.svelte";
     import { selectionManager } from "$lib/states/selection.svelte";
     import type { AssetGridArray, AssetSortBy } from "$lib/types/asset";
@@ -15,6 +17,8 @@
     import type { AssetGridView } from "../grid/PhotoAssetGrid.svelte";
     import TableColumnSelectorModal from "../modals/TableColumnSelectorModal.svelte";
     import { modalsManager } from "../modals/manager/ModalManager.svelte";
+    import PhotoTooltip from "../tooltips/PhotoTooltip.svelte";
+    import { mountTooltipComponent } from "../tooltips/tooltip";
     import MaterialIcon from "../ui/MaterialIcon.svelte";
 
     interface DisplayableAsset {
@@ -89,11 +93,153 @@
         selectionManager.setActive(scopeId);
     }
 
-    // HTML Elements
+    // HTML Elements & Virtualization State
     let assetGridDisplayEl: HTMLDivElement | undefined = $state();
+    let scrollTop = $state(0);
+    let viewportHeight = $state(800);
+    let containerWidth = $state(0);
 
     let allAssetsData = $derived.by(() => {
         return data;
+    });
+
+    // Virtualization Calculations
+    let estimatedItemHeight = $derived(view === "list" || sort.display === "list" ? 54 : view === "basic" ? 270 : 260);
+    let itemsPerRow = $derived.by(() => {
+        if (view === "list" || sort.display === "list") {
+            return 1;
+        }
+        if (containerWidth <= 0) {
+            return columnCount && columnCount > 0 ? columnCount : 4;
+        }
+        const itemWidth = view === "basic" ? 352 : 272; // 22rem vs 17rem
+        const gap = view === "basic" ? 8 : 16;
+        const count = Math.floor((containerWidth + gap) / (itemWidth + gap));
+        return Math.max(1, count);
+    });
+
+    let totalRows = $derived(Math.ceil(allAssetsData.length / itemsPerRow));
+
+    let visibleRowBounds = $derived.by(() => {
+        if (allAssetsData.length === 0) {
+            return { startRow: 0, endRow: 0 };
+        }
+        const bufferRows = 4;
+        const startRow = Math.max(0, Math.floor(scrollTop / estimatedItemHeight) - bufferRows);
+        const endRow = Math.min(totalRows, Math.ceil((scrollTop + viewportHeight) / estimatedItemHeight) + bufferRows);
+        return { startRow, endRow };
+    });
+
+    let visibleSlice = $derived.by(() => {
+        const { startRow, endRow } = visibleRowBounds;
+        const startIndex = startRow * itemsPerRow;
+        const endIndex = Math.min(allAssetsData.length, endRow * itemsPerRow);
+        const topSpace = startRow * estimatedItemHeight;
+        const bottomSpace = Math.max(0, (totalRows - endRow) * estimatedItemHeight);
+        return {
+            items: allAssetsData.slice(startIndex, endIndex),
+            startIndex,
+            paddingTop: topSpace,
+            paddingBottom: bottomSpace
+        };
+    });
+
+    $effect(() => {
+        function updateScrollFromWindow() {
+            if (!assetGridDisplayEl) {
+                return;
+            }
+            containerWidth = assetGridDisplayEl.clientWidth || assetGridDisplayEl.getBoundingClientRect().width;
+
+            if (
+                assetGridDisplayEl.scrollHeight > assetGridDisplayEl.clientHeight &&
+                assetGridDisplayEl.clientHeight > 0
+            ) {
+                // Internal scroll container
+                scrollTop = assetGridDisplayEl.scrollTop;
+                viewportHeight = assetGridDisplayEl.clientHeight;
+            } else {
+                // Window/Document scroll container
+                const rect = assetGridDisplayEl.getBoundingClientRect();
+                viewportHeight = window.innerHeight;
+                scrollTop = Math.max(0, -rect.top);
+            }
+        }
+
+        updateScrollFromWindow();
+        window.addEventListener("scroll", updateScrollFromWindow, { passive: true });
+        window.addEventListener("resize", updateScrollFromWindow, { passive: true });
+
+        return () => {
+            window.removeEventListener("scroll", updateScrollFromWindow);
+            window.removeEventListener("resize", updateScrollFromWindow);
+        };
+    });
+
+    $effect(() => {
+        if (!assetGridDisplayEl || view !== "basic") {
+            return;
+        }
+
+        const delegatedTippy = delegate(assetGridDisplayEl, {
+            target: ".basic-grid-card",
+            theme: "viz no-padding",
+            followCursor: "initial",
+            plugins: [followCursor],
+            arrow: false,
+            delay: [350, 0],
+            interactive: true,
+            onShow(instance: Instance<TippyProps>) {
+                const cardEl = instance.reference as HTMLElement;
+                const assetId = cardEl.getAttribute("data-asset-id");
+                const asset = allAssetsData.find((a) => a.uid === assetId);
+                if (!asset || !("image_paths" in asset) || !("image_metadata" in asset)) {
+                    return false;
+                }
+
+                const imageAsset = asset as unknown as ImageAsset;
+
+                const { node, destroy } = mountTooltipComponent(PhotoTooltip, {
+                    asset: imageAsset,
+                    clickHandler: (e: MouseEvent & { currentTarget: EventTarget & HTMLElement }) => {
+                        if (assetDblClick) {
+                            assetDblClick(
+                                e as unknown as MouseEvent & {
+                                    currentTarget: EventTarget & (HTMLDivElement | HTMLTableRowElement);
+                                },
+                                asset
+                            );
+                        }
+                    }
+                });
+                (instance as any)._destroyComponent = destroy;
+                instance.setContent(node);
+            },
+            onHidden(instance: Instance<TippyProps>) {
+                const destroy = (instance as any)._destroyComponent;
+                if (destroy) {
+                    destroy();
+                    (instance as any)._destroyComponent = undefined;
+                }
+                instance.setContent("");
+            },
+            popperOptions: {
+                modifiers: [
+                    {
+                        name: "preventOverflow",
+                        options: {
+                            boundary: "window",
+                            altBoundary: true,
+                            padding: 12
+                        }
+                    }
+                ]
+            }
+        });
+
+        return () => {
+            delegatedTippy.destroy();
+        };
     });
 
     // Table column keys (safe: only primitive values)
@@ -105,7 +251,7 @@
             return;
         }
 
-        const sample = allAssetsData[0] as any;
+        const sample = allAssetsData[0];
         tableKeys = Object.keys(sample).filter((k) => {
             const v = sample[k];
             return (
@@ -693,6 +839,12 @@
         use:unselectImagesOnClickOutsideAssetContainer
         onclick={handleContainerClick}
         onfocusin={onFocus}
+        onscroll={(e) => {
+            const target = e.currentTarget;
+            scrollTop = target.scrollTop;
+            viewportHeight = target.clientHeight;
+            containerWidth = target.clientWidth;
+        }}
     >
         <table>
             <thead
@@ -733,9 +885,19 @@
                 </tr>
             </thead>
             <tbody>
-                {#each allAssetsData as asset}
+                {#if visibleSlice.paddingTop > 0}
+                    <tr class="virtual-spacer" style="height: {visibleSlice.paddingTop}px;">
+                        <td colspan={visibleKeys.length + 2}></td>
+                    </tr>
+                {/if}
+                {#each visibleSlice.items as asset}
                     {@render assetComponentListOption(asset)}
                 {/each}
+                {#if visibleSlice.paddingBottom > 0}
+                    <tr class="virtual-spacer" style="height: {visibleSlice.paddingBottom}px;">
+                        <td colspan={visibleKeys.length + 2}></td>
+                    </tr>
+                {/if}
             </tbody>
         </table>
     </div>
@@ -753,18 +915,70 @@
     {/if}
 {:else if view === "list" || sort.display === "list"}
     {@render assetTable()}
-{:else if view === "thumbnails"}
+{:else if view === "thumbnails" || view === "basic"}
     <div
         bind:this={assetGridDisplayEl}
         class="viz-asset-grid-container {assetGridDisplayProps.class}"
+        class:is-basic-view={view === "basic"}
         class:is-active={selectionManager.activeScopeId === scopeId}
+        style="padding-top: {visibleSlice.paddingTop}px; padding-bottom: {visibleSlice.paddingBottom}px; {assetGridDisplayProps.style ??
+            ''}"
         {...assetGridDisplayProps}
         use:unselectImagesOnClickOutsideAssetContainer
         onclick={handleContainerClick}
         onfocusin={onFocus}
+        onscroll={(e) => {
+            const target = e.currentTarget;
+            scrollTop = target.scrollTop;
+            viewportHeight = target.clientHeight;
+            containerWidth = target.clientWidth;
+        }}
     >
-        {#each allAssetsData as asset}
-            {@render assetComponentCard(asset)}
+        {#each visibleSlice.items as asset}
+            {#if view === "basic"}
+                <div
+                    class="asset-card basic-grid-card"
+                    class:selected-card={selectedUIDs.has(asset.uid) || selection.active?.uid === asset.uid}
+                    class:disabled-asset={disabledUids.has(asset.uid)}
+                    data-asset-id={asset.uid}
+                    role="button"
+                    tabindex={disabledUids.has(asset.uid) ? -1 : 0}
+                    onclick={(e) => {
+                        if (disabledUids.has(asset.uid)) return;
+                        e.preventDefault();
+                        handleImageCardSelect(asset, e);
+                    }}
+                    onkeydown={(e) => {
+                        e.preventDefault();
+                        handleKeydownCardSelect(asset, e);
+                    }}
+                    ondblclick={(e) => {
+                        if (e.ctrlKey) {
+                            e.preventDefault();
+                            return;
+                        }
+                        assetDblClick?.(e, asset);
+                    }}
+                >
+                    {#if disabledUids.has(asset.uid)}
+                        <div class="disabled-overlay"></div>
+                    {/if}
+                    <img
+                        class="basic-thumb-img"
+                        src={getFullImagePath(
+                            getNestedValue(asset, table?.thumbnail_key) ??
+                                asset.image_paths?.thumbnail ??
+                                asset.image_paths?.preview ??
+                                ""
+                        )}
+                        alt={asset.name ?? asset.image_metadata?.file_name ?? ""}
+                        loading="lazy"
+                        crossorigin="use-credentials"
+                    />
+                </div>
+            {:else}
+                {@render assetComponentCard(asset)}
+            {/if}
         {/each}
     </div>
 {/if}
@@ -772,7 +986,8 @@
 <style lang="scss">
     .viz-asset-grid-container {
         box-sizing: border-box;
-        padding: 0 var(--viz-spacing-xxl);
+        padding-left: var(--viz-spacing-xxl);
+        padding-right: var(--viz-spacing-xxl);
         margin: var(--viz-spacing-xxl) auto;
         display: grid;
         gap: 1em;
@@ -781,6 +996,36 @@
         text-overflow: clip;
         justify-content: center;
         grid-template-columns: repeat(auto-fill, minmax(17rem, 1fr));
+
+        &.is-basic-view {
+            grid-template-columns: repeat(auto-fill, minmax(22rem, 1fr));
+            gap: var(--viz-spacing-sm);
+        }
+    }
+
+    .basic-grid-card {
+        overflow: hidden;
+        aspect-ratio: 4 / 3;
+        background-color: var(--viz-surface-panel);
+        border: 1px solid transparent;
+        cursor: pointer;
+        transition: border-color 0.15s ease;
+
+        &:hover {
+            border-color: var(--viz-primary);
+        }
+
+        &.selected-card {
+            border-color: var(--viz-primary);
+            box-shadow: 0 0 0 2px var(--viz-primary);
+        }
+
+        .basic-thumb-img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+            display: block;
+        }
     }
 
     .asset-card {
