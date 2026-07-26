@@ -5,7 +5,6 @@ import path from "path";
 import readline from "readline";
 import semver from "semver";
 import { fileURLToPath } from "url";
-import packageJson from "./package.json" with { type: "json" };
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -14,6 +13,7 @@ const rootDir = path.resolve(__dirname, "../..");
 const versionFile = path.join(rootDir, "version.txt");
 const rootPkgFile = path.join(rootDir, "package.json");
 const viewfinderPkgFile = path.join(rootDir, "viewfinder/package.json");
+const scriptsPkgFile = path.join(rootDir, "scripts/js/package.json");
 const changelogFile = path.join(rootDir, "CHANGELOG.md");
 
 function askQuestion(query: string): Promise<string> {
@@ -31,8 +31,10 @@ function askQuestion(query: string): Promise<string> {
 
 async function updatePackageJson(filePath: string, nextVersion: string) {
     try {
-        packageJson.version = nextVersion;
-        await fs.writeFile(filePath, JSON.stringify(packageJson, null, 4) + "\n", "utf8");
+        const content = await fs.readFile(filePath, "utf8");
+        const pkg = JSON.parse(content);
+        pkg.version = nextVersion;
+        await fs.writeFile(filePath, JSON.stringify(pkg, null, 4) + "\n", "utf8");
     } catch (err: any) {
         console.error(`Warning: Could not update ${path.basename(filePath)}: ${err.message}`);
     }
@@ -161,6 +163,7 @@ async function main() {
         // 4. Update package.json files
         await updatePackageJson(rootPkgFile, nextVersion);
         await updatePackageJson(viewfinderPkgFile, nextVersion);
+        await updatePackageJson(scriptsPkgFile, nextVersion);
 
         // 5. Generate CHANGELOG.md updates
         let lastTag = "";
