@@ -40,7 +40,7 @@
                 <h3 class="sidebar-heading">{title}</h3>
             {/if}
         {:else}
-            <div out:slide={{ axis: "x", duration: 300 }} style:display="inline-flex">
+            <div style:display="inline-flex">
                 <IconButton
                     iconName="arrow_menu_open"
                     title="Expand Sidebar"
@@ -52,7 +52,7 @@
         {/if}
     </div>
     {#if open}
-        <div class="sidebar-content" transition:slide={{ axis: "x", duration: 300 }}>
+        <div class="sidebar-content">
             {@render children?.()}
         </div>
     {/if}
@@ -82,13 +82,6 @@
         gap: var(--viz-spacing-sm);
         height: var(--viz-header-height);
         box-sizing: border-box;
-        transition: border-bottom 0.3s ease;
-
-        &.closed {
-            border-bottom: none;
-            justify-content: center;
-            padding: var(--viz-spacing-sm) 0;
-        }
     }
 
     .sidebar-heading {
@@ -106,9 +99,10 @@
 
     .sidebar-content {
         width: 100%;
-        height: calc(100% - var(--viz-header-height));
+        overflow-x: hidden;
         overflow-y: auto;
         box-sizing: border-box;
+        white-space: nowrap;
     }
 
     :global(.sidebar-toggle-btn) {
@@ -116,10 +110,5 @@
         &:hover {
             background-color: var(--viz-surface-panel) !important;
         }
-    }
-
-    :global(.sidebar-toggle-btn.open-btn) {
-        width: 80%;
-        margin: 0 auto;
     }
 </style>

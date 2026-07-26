@@ -59,6 +59,7 @@
         flex-direction: column;
         gap: 0.5rem;
         padding: 1rem 0;
+        width: 100%;
     }
 
     .nav-list {
@@ -68,6 +69,7 @@
         display: flex;
         flex-direction: column;
         gap: 0;
+        width: 100%;
     }
 
     .nav-link {
@@ -79,6 +81,7 @@
         text-decoration: none;
         font-size: var(--viz-font-size-lg);
         border-bottom: 2px solid transparent;
+        white-space: nowrap;
         transition:
             background-color 0.15s ease,
             color 0.15s ease,
