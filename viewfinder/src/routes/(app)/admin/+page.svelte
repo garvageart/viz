@@ -4,6 +4,7 @@
     import { DateTime, Duration } from "luxon";
     import type { Snippet } from "svelte";
     import AdminRouteShell from "$lib/components/admin/AdminRouteShell.svelte";
+    import Badge from "$lib/components/ui/Badge.svelte";
     import IconBadge from "$lib/components/ui/IconBadge.svelte";
     import MaterialIcon from "$lib/components/ui/MaterialIcon.svelte";
     import ProgressBar from "$lib/components/ui/ProgressBar.svelte";
@@ -207,12 +208,13 @@
         <span class="storage-value">{storageInfo.totalUsed}</span>
     </div>
     <div class="storage-row progress-row">
-        <div class="progress-labels">
-            <span class="storage-label">Server Space</span>
-            <span class="storage-value font-mono">{formattedSystemStorage}</span>
-        </div>
         <div class="progress-bar-wrapper">
-            <ProgressBar colour="primary" variant="large" width={storagePercent} />
+            <ProgressBar
+                variant="large"
+                label="Server Space"
+                valueLabel={formattedSystemStorage}
+                width={storagePercent}
+            />
         </div>
     </div>
 {/snippet}
@@ -224,7 +226,7 @@
     </div>
     <div class="storage-row">
         <span class="storage-label">Cached Items</span>
-        <span class="storage-value font-mono">{storageInfo.cacheItems}</span>
+        <span class="storage-value font-mono">{storageInfo.cacheItems.toLocaleString()}</span>
     </div>
 {/snippet}
 
@@ -236,7 +238,9 @@
                 <span class="version">v{data.serverAbout?.version || "Unknown"}</span>
             </div>
             <div class="env-badge {data.serverAbout?.environment || 'unknown'}">
-                {data.serverAbout?.environment || "Unknown"}
+                <Badge variant="info">
+                    {data.serverAbout?.environment || "Unknown"}
+                </Badge>
             </div>
         </div>
         <div class="build-info-bar">
@@ -613,7 +617,7 @@
             flex-direction: column;
             align-items: stretch;
             gap: var(--viz-spacing-xs);
-            margin-top: var(--viz-spacing-xs);
+            margin-top: var(--viz-spacing-std);
         }
 
         .progress-labels {
@@ -686,16 +690,8 @@
     }
 
     .env-badge {
-        font-size: var(--viz-font-size-sm);
-        font-weight: 600;
         text-transform: uppercase;
         letter-spacing: 0.05em;
-        padding: 0.15rem 0.4rem;
-        border-radius: var(--viz-border-radius-sm);
-        border: var(--viz-border-thin);
-        display: inline-block;
-        color: var(--viz-text-secondary);
-        background-color: var(--viz-surface-panel);
     }
 
     .version-tag {
