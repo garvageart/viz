@@ -5,6 +5,14 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.19.1] - 2026-07-26
+
+* feat(photos): add display menu dynamic items and showDates/showBasic toggles (0c0c13bd)
+* feat(grid): implement virtualized "basic" grid view with tippy tooltips (6a33c214)
+* feat(state): add "basic" view type and showDates/showBasic toggles to ViewSettingsState (ef55bcb2)
+* refactor(admin): redesign cache page with ProgressBar and IconButton, add health status indicator (14e60945)
+* refactor(ui): extract shared ButtonVariant type, add variant to Dropdown, clean up Header button styles (4a6dd250)
+
 ## [0.19.0] - 2026-07-26
 
 * style(viewfinder): use design system spacing variables for asset grid padding and margin (ee204e59)
