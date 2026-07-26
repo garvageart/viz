@@ -312,14 +312,6 @@ func main() {
 
 	settings.SeedDefaultSettings(client, logger)
 
-	// http server stuff
-	if apiPortEnv := os.Getenv("API_PORT"); apiPortEnv != "" {
-		var p int
-		if _, err := fmt.Sscanf(apiPortEnv, "%d", &p); err == nil {
-			apiServer.VizServer.Port = p
-		}
-	}
-
 	var libvipsLogLevel libvips.LogLevel = libvips.LogLevelInfo
 	if appConfig.Libvips.MatchSystemLogging {
 		switch logLevel {
