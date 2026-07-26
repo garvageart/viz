@@ -8,6 +8,7 @@
     import IconBadge from "$lib/components/ui/IconBadge.svelte";
     import InputSelect from "$lib/components/ui/InputSelect.svelte";
     import MaterialIcon from "$lib/components/ui/MaterialIcon.svelte";
+    import SearchInput from "$lib/components/ui/SearchInput.svelte";
     import { toastState } from "$lib/toast-notifcations/notif-state.svelte";
     import type { MaterialSymbol } from "$lib/types/MaterialSymbol.js";
     import type { PageData } from "./$types";
@@ -106,101 +107,79 @@
     }
 </script>
 
-{#snippet statCard({ icon, value, label }: { icon: MaterialSymbol; value: string | number; label: string })}
-    <div class="stat-card">
-        <IconBadge iconName={icon} variant="primary" size="1.25rem" />
-        <div class="stat-content">
-            <span class="stat-value">{value}</span>
-            <span class="stat-label">{label}</span>
-        </div>
-    </div>
-{/snippet}
-
-{#snippet metricCard({ icon, value, label }: { icon: MaterialSymbol; value: string | number; label: string })}
-    <div class="metric-card">
-        <IconBadge iconName={icon} variant="info" size="1.25rem" />
-        <div class="metric-content">
-            <span class="metric-value">{value}</span>
-            <span class="metric-label">{label}</span>
-        </div>
-    </div>
-{/snippet}
-
 <AdminRouteShell heading="Event Monitor" description="WebSocket metrics and event history">
     <div class="admin-page-content">
-        <!-- Connection Stats -->
-        <section class="content-section">
-            <div class="section-header">
-                <IconBadge iconName="link" variant="neutral" size="1.1rem" padding="0.4rem" />
-                <h2>Connection Statistics</h2>
-            </div>
-            <div class="stats-grid">
-                {@render statCard({
-                    icon: "sensors",
-                    value: stats.connectedClients,
-                    label: "Connected Clients"
-                })}
-
-                {@render statCard({
-                    icon: "timeline",
-                    value: metrics.totalEvents,
-                    label: "Total Events"
-                })}
-
-                {@render statCard({
-                    icon: "schedule",
-                    value: new Date(stats.timestamp).toLocaleTimeString(),
-                    label: "Last Updated"
-                })}
-
-                {@render statCard({
-                    icon: "groups",
-                    value: stats.clientIds.length,
-                    label: "Active Clients"
-                })}
-            </div>
-        </section>
-
-        <!-- Performance Metrics -->
-        <section class="content-section">
-            <div class="section-header">
-                <IconBadge iconName="analytics" variant="neutral" size="1.1rem" padding="0.4rem" />
-                <h2>Performance Metrics</h2>
-            </div>
-            <div class="metrics-grid">
-                {@render metricCard({
-                    icon: "speed",
-                    value: metrics.totalEvents,
-                    label: "Total Events"
-                })}
-
-                {@render metricCard({
-                    icon: "trending_up",
-                    value: metrics.connectedClients,
-                    label: "Active Connections"
-                })}
-
-                {@render metricCard({
-                    icon: "lightbulb",
-                    value: Object.keys(metrics.eventsByType).length,
-                    label: "Event Types"
-                })}
-
-                {@render metricCard({
-                    icon: "update",
-                    value: new Date(metrics.timestamp).toLocaleTimeString(),
-                    label: "Last Update"
-                })}
-            </div>
-        </section>
-        {#if Object.keys(metrics.eventsByType || {}).length > 0}
-            <!-- Event Types Distribution -->
-            <section class="content-section">
-                <div class="section-header">
-                    <IconBadge iconName="bar_chart" variant="neutral" size="1.1rem" padding="0.4rem" />
-                    <h2>Event Types Distribution</h2>
+        <!-- 1. Live Connections Module -->
+        <div class="module-card connection-module">
+            <div class="module-header">
+                <IconBadge iconName="sensors" bgColor="#10b981" color="#ffffff" size="1.1rem" padding="0.4rem" />
+                <div class="header-text">
+                    <h2>Live Connections</h2>
+                    <span class="header-subtitle">Real-time WebSocket client connection status</span>
                 </div>
-                <div class="event-types">
+                <Badge variant="success" size="lg">{stats.connectedClients} Connected</Badge>
+            </div>
+            <div class="connection-metric-grid">
+                <div class="metric-block">
+                    <span class="metric-number">{stats.connectedClients}</span>
+                    <span class="metric-caption">Connected Clients</span>
+                </div>
+                <div class="metric-block">
+                    <span class="metric-number">{stats.clientIds.length}</span>
+                    <span class="metric-caption">Active Client IDs</span>
+                </div>
+                <div class="metric-block">
+                    <span class="metric-number">{new Date(stats.timestamp).toLocaleTimeString()}</span>
+                    <span class="metric-caption">Last Sync Time</span>
+                </div>
+            </div>
+        </div>
+
+        <!-- 2. Telemetry Banner Module -->
+        <div class="module-card telemetry-module">
+            <div class="module-header">
+                <IconBadge iconName="timeline" bgColor="#3b82f6" color="#ffffff" size="1.1rem" padding="0.4rem" />
+                <div class="header-text">
+                    <h2>Stream Telemetry</h2>
+                    <span class="header-subtitle">Event throughput and active data channels</span>
+                </div>
+            </div>
+            <div class="telemetry-bar">
+                <div class="telemetry-item">
+                    <IconBadge iconName="speed" bgColor="#2563eb" color="#ffffff" size="1.25rem" />
+                    <div class="telemetry-data">
+                        <span class="telemetry-val">{metrics.totalEvents}</span>
+                        <span class="telemetry-lbl">Total Events Streamed</span>
+                    </div>
+                </div>
+                <div class="telemetry-item">
+                    <IconBadge iconName="category" bgColor="#8b5cf6" color="#ffffff" size="1.25rem" />
+                    <div class="telemetry-data">
+                        <span class="telemetry-val">{Object.keys(metrics.eventsByType || {}).length}</span>
+                        <span class="telemetry-lbl">Registered Event Types</span>
+                    </div>
+                </div>
+                <div class="telemetry-item">
+                    <IconBadge iconName="update" bgColor="#0284c7" color="#ffffff" size="1.25rem" />
+                    <div class="telemetry-data">
+                        <span class="telemetry-val">{new Date(metrics.timestamp).toLocaleTimeString()}</span>
+                        <span class="telemetry-lbl">Metrics Timestamp</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        {#if Object.keys(metrics.eventsByType || {}).length > 0}
+            <!-- 3. Distribution Grid Module -->
+            <div class="module-card distribution-module">
+                <div class="module-header">
+                    <IconBadge iconName="bar_chart" bgColor="#10b981" color="#ffffff" size="1.1rem" padding="0.4rem" />
+                    <div class="header-text">
+                        <h2>Event Distribution</h2>
+                        <span class="header-subtitle">Traffic frequency breakdown by event type</span>
+                    </div>
+                </div>
+                <div class="event-types-grid">
                     {#each Object.entries(metrics.eventsByType || {}) as [type, count]}
                         <div class="event-type-card">
                             <div class="event-type-info">
@@ -213,64 +192,74 @@
                         </div>
                     {/each}
                 </div>
-            </section>
+            </div>
         {/if}
 
-        <!-- Event History -->
-        <section class="content-section">
-            <div class="section-header">
-                <IconBadge iconName="history" variant="neutral" size="1.1rem" padding="0.4rem" />
-                <h2>Event History</h2>
-                <Badge variant="neutral">{history.length}</Badge>
+        <!-- 4. Direct Stream Console Controls & Log Feed -->
+        <div class="console-controls">
+            <SearchInput
+                inputId="event-history-search"
+                placeholder="Search event type, client ID, or payload..."
+                bind:value={historySearch}
+                style="flex: 1; min-width: 280px; height: 2.5rem;"
+            />
+            <div class="filter-group">
+                <InputSelect bind:value={historyFilter} aria-label="Filter by event type" options={filterOptions} />
             </div>
+            <Button variant="danger" onclick={requestClearHistory}>
+                <MaterialIcon iconName="delete_sweep" size="1.1rem" />
+                <span>Clear Logs</span>
+            </Button>
+        </div>
 
-            <div class="history-controls">
-                <div class="filter-group">
-                    <InputSelect bind:value={historyFilter} aria-label="Filter by event type" options={filterOptions} />
+        <div class="stream-console-container">
+            <div class="console-header">
+                <div class="console-title">
+                    <IconBadge iconName="history" bgColor="#f43f5e" color="#ffffff" size="1rem" padding="0.3rem" />
+                    <span>Real-time Stream Console</span>
                 </div>
-                <div class="search-group">
-                    <MaterialIcon iconName="search" />
-                    <input id="search-input" type="text" bind:value={historySearch} placeholder="Search events..." />
-                </div>
-                <Button variant="mini" onclick={requestClearHistory}>
-                    <MaterialIcon iconName="delete_sweep" />
-                    Clear History
-                </Button>
+                <Badge variant="neutral" size="std">{filteredHistory.length} / {history.length} Logs</Badge>
             </div>
 
             {#if filteredHistory.length === 0}
                 <div class="empty-state">
-                    <MaterialIcon iconName="inbox" />
-                    <p>No events found</p>
+                    <IconBadge
+                        iconName="inbox"
+                        bgColor="var(--viz-surface-hover)"
+                        color="var(--viz-text-secondary)"
+                        size="2rem"
+                        padding="0.75rem"
+                    />
+                    <p>No event records found</p>
+                    <span class="empty-subtext">Try clearing search filters or wait for incoming WebSocket streams</span
+                    >
                 </div>
             {:else}
-                <div class="history-list">
+                <div class="stream-feed">
                     {#each filteredHistory as event}
-                        <details class="event-item">
-                            <summary class="event-summary">
-                                <div class="summary-content">
-                                    <div class="event-header">
-                                        <span class="event-type">{event.event}</span>
-                                        <span class="event-time">{formatTimestamp(event.timestamp)}</span>
-                                    </div>
-                                    <MaterialIcon iconName="arrow_drop_down" />
+                        <details class="stream-card">
+                            <summary class="stream-summary">
+                                <div class="stream-main">
+                                    <Badge variant="outline" size="std">{event.event}</Badge>
+                                    <span class="client-tag font-mono">
+                                        <MaterialIcon iconName="devices" size="0.85rem" />
+                                        {event?.data?.clientId ?? "system"}
+                                    </span>
+                                </div>
+                                <div class="stream-right">
+                                    <span class="timestamp font-mono">{formatTimestamp(event.timestamp)}</span>
+                                    <MaterialIcon iconName="chevron_right" class="expand-icon" size="1.2rem" />
                                 </div>
                             </summary>
-                            <div class="event-details">
-                                <div class="event-field">
-                                    <strong>Client ID:</strong>
-                                    <code>{event?.data?.clientId ?? "—"}</code>
-                                </div>
-                                <div class="event-field">
-                                    <strong>Data:</strong>
-                                    <pre>{formatJSON(event.data)}</pre>
-                                </div>
+                            <div class="stream-payload">
+                                <div class="payload-title">JSON Payload</div>
+                                <pre class="json-box">{formatJSON(event.data)}</pre>
                             </div>
                         </details>
                     {/each}
                 </div>
             {/if}
-        </section>
+        </div>
     </div>
 </AdminRouteShell>
 
@@ -278,121 +267,117 @@
     .admin-page-content {
         display: flex;
         flex-direction: column;
-        gap: var(--viz-spacing-xl);
-    }
-
-    .content-section {
-        background-color: var(--viz-surface-card);
-        border: var(--viz-border-thin);
-        border-radius: var(--viz-border-radius-md);
-        padding: var(--viz-spacing-xl);
-        display: flex;
-        flex-direction: column;
         gap: var(--viz-spacing-lg);
     }
 
-    .section-header {
+    .module-card {
+        background-color: var(--viz-surface-card);
+        border: var(--viz-border-thin);
+        border-radius: var(--viz-border-radius-md);
+        padding: var(--viz-spacing-lg);
+        display: flex;
+        flex-direction: column;
+        gap: var(--viz-spacing-md);
+    }
+
+    .module-header {
         display: flex;
         align-items: center;
         gap: var(--viz-spacing-sm);
-        border-bottom: var(--viz-border-thin);
-        padding-bottom: var(--viz-spacing-sm);
 
-        :global(.viz-material-icon) {
+        .header-text {
+            display: flex;
+            flex-direction: column;
+            gap: 2px;
+            flex: 1;
+        }
+
+        .header-subtitle {
             color: var(--viz-text-secondary);
         }
 
         h2 {
             margin: 0;
-            font-size: var(--viz-font-size-xl);
+            font-size: var(--viz-font-size-lg);
             font-weight: 600;
             color: var(--viz-text-primary);
         }
     }
 
-    .stats-grid {
+    .connection-metric-grid {
         display: grid;
-        grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+        grid-template-columns: repeat(3, 1fr);
         gap: var(--viz-spacing-md);
-    }
 
-    .stat-card {
-        display: flex;
-        align-items: center;
-        gap: var(--viz-spacing-md);
-        padding: var(--viz-spacing-lg);
-        background-color: var(--viz-surface-panel);
-        border: var(--viz-border-thin);
-        border-radius: var(--viz-border-radius-md);
-        transition: border-color 0.2s ease;
-
-        &:hover {
-            border-color: var(--viz-border-subtle);
+        @media (max-width: 768px) {
+            grid-template-columns: 1fr;
         }
 
-        .stat-content {
+        .metric-block {
             display: flex;
             flex-direction: column;
             gap: var(--viz-spacing-xxs);
-        }
+            padding: var(--viz-spacing-md) var(--viz-spacing-lg);
+            background-color: var(--viz-surface-panel);
+            border: var(--viz-border-thin);
+            border-radius: var(--viz-border-radius-md);
 
-        .stat-value {
-            font-size: var(--viz-font-size-2xl);
-            font-weight: 700;
-            font-family: var(--viz-mono-font);
-            line-height: 1.2;
-            color: var(--viz-text-primary);
-        }
+            .metric-number {
+                font-size: var(--viz-font-size-3xl);
+                font-weight: 700;
+                font-family: var(--viz-mono-font);
+                color: var(--viz-text-primary);
+                line-height: 1.1;
+            }
 
-        .stat-label {
-            font-size: var(--viz-font-size-std);
-            color: var(--viz-text-secondary);
+            .metric-caption {
+                font-size: var(--viz-font-size-std);
+                color: var(--viz-text-secondary);
+                font-weight: 500;
+            }
         }
     }
 
-    .metrics-grid {
+    .telemetry-bar {
         display: grid;
-        grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+        grid-template-columns: repeat(3, 1fr);
         gap: var(--viz-spacing-md);
-    }
 
-    .metric-card {
-        display: flex;
-        align-items: center;
-        gap: var(--viz-spacing-md);
-        padding: var(--viz-spacing-lg);
-        background-color: var(--viz-surface-panel);
-        border: var(--viz-border-thin);
-        border-radius: var(--viz-border-radius-md);
-        transition: border-color 0.2s ease;
-
-        &:hover {
-            border-color: var(--viz-border-subtle);
+        @media (max-width: 768px) {
+            grid-template-columns: 1fr;
         }
 
-        .metric-content {
+        .telemetry-item {
             display: flex;
-            flex-direction: column;
-            gap: var(--viz-spacing-xxs);
-        }
+            align-items: center;
+            gap: var(--viz-spacing-md);
+            padding: var(--viz-spacing-md) var(--viz-spacing-lg);
+            background-color: var(--viz-surface-panel);
+            border: var(--viz-border-thin);
+            border-radius: var(--viz-border-radius-md);
 
-        .metric-value {
-            font-size: var(--viz-font-size-2xl);
-            font-weight: 700;
-            font-family: var(--viz-mono-font);
-            line-height: 1.2;
-            color: var(--viz-text-primary);
-        }
+            .telemetry-data {
+                display: flex;
+                flex-direction: column;
+                gap: 2px;
+            }
 
-        .metric-label {
-            font-size: var(--viz-font-size-std);
-            color: var(--viz-text-secondary);
+            .telemetry-val {
+                font-size: var(--viz-font-size-xl);
+                font-weight: 700;
+                font-family: var(--viz-mono-font);
+                color: var(--viz-text-primary);
+            }
+
+            .telemetry-lbl {
+                color: var(--viz-text-secondary);
+            }
         }
     }
 
-    .event-types {
-        display: flex;
-        flex-direction: column;
+    .event-types-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
         gap: var(--viz-spacing-md);
     }
 
@@ -414,19 +399,18 @@
 
     .event-type-name {
         font-weight: 600;
-        font-size: var(--viz-font-size-lg);
+        font-size: var(--viz-font-size-std);
         color: var(--viz-text-primary);
         font-family: var(--viz-mono-font);
     }
 
     .event-type-count {
-        font-size: var(--viz-font-size-std);
         color: var(--viz-text-secondary);
         font-family: var(--viz-mono-font);
     }
 
     .event-type-bar {
-        height: var(--viz-spacing-xs);
+        height: 6px;
         background-color: var(--viz-surface-hover);
         border-radius: var(--viz-border-radius-pill);
         overflow: hidden;
@@ -439,56 +423,39 @@
         transition: width 0.3s ease;
     }
 
-    .history-controls {
+    .console-controls {
         display: flex;
+        align-items: center;
         gap: var(--viz-spacing-md);
-        margin-bottom: var(--viz-spacing-md);
         flex-wrap: wrap;
-        align-items: center;
+
+        .filter-group {
+            width: 12.5rem;
+        }
     }
 
-    .filter-group {
-        display: flex;
-        align-items: center;
-        gap: var(--viz-spacing-xs);
-        width: 12.5rem;
-    }
-
-    .search-group {
-        display: flex;
-        align-items: center;
-        gap: var(--viz-spacing-sm);
-        flex: 1;
-        max-width: 400px;
-        height: 2.5rem;
-        padding: 0 var(--viz-spacing-md);
+    .stream-console-container {
+        background-color: var(--viz-surface-card);
         border: var(--viz-border-thin);
         border-radius: var(--viz-border-radius-md);
+        overflow: hidden;
+    }
+
+    .console-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        padding: var(--viz-spacing-sm) var(--viz-spacing-lg);
         background-color: var(--viz-surface-panel);
-        transition: border-color 0.15s ease;
+        border-bottom: var(--viz-border-thin);
 
-        &:focus-within {
-            border-color: var(--viz-primary);
-        }
-
-        :global(.viz-material-icon) {
-            color: var(--viz-text-secondary);
-            font-size: var(--viz-font-size-xl);
-        }
-
-        input {
-            border: none;
-            background: transparent;
-            flex: 1;
-            font-size: var(--viz-font-size-lg);
+        .console-title {
+            display: flex;
+            align-items: center;
+            gap: var(--viz-spacing-sm);
+            font-weight: 600;
+            font-size: var(--viz-font-size-std);
             color: var(--viz-text-primary);
-            height: 100%;
-            padding: 0;
-            outline: none;
-
-            &::placeholder {
-                color: var(--viz-text-secondary);
-            }
         }
     }
 
@@ -499,29 +466,26 @@
         justify-content: center;
         padding: var(--viz-spacing-xxl) var(--viz-spacing-std);
         color: var(--viz-text-secondary);
-        background-color: var(--viz-surface-panel);
-        border: var(--viz-border-thin);
-        border-radius: var(--viz-border-radius-md);
-
-        :global(.viz-material-icon) {
-            font-size: var(--viz-font-size-5xl);
-            margin-bottom: var(--viz-spacing-sm);
-        }
+        text-align: center;
 
         p {
-            margin: 0;
+            margin: var(--viz-spacing-xs) 0 0 0;
             font-size: var(--viz-font-size-lg);
-            font-weight: 500;
+            font-weight: 600;
+            color: var(--viz-text-primary);
+        }
+
+        .empty-subtext {
+            color: var(--viz-text-muted);
+            margin-top: var(--viz-spacing-xxs);
         }
     }
 
-    .history-list {
+    .stream-feed {
         display: flex;
         flex-direction: column;
-        gap: var(--viz-spacing-sm);
         max-height: 60vh;
         overflow-y: auto;
-        padding-right: var(--viz-spacing-xs);
 
         &::-webkit-scrollbar {
             width: 6px;
@@ -533,130 +497,92 @@
             background: var(--viz-surface-hover);
             border-radius: var(--viz-border-radius-pill);
         }
-        &::-webkit-scrollbar-thumb:hover {
-            background: var(--viz-border-subtle);
-        }
     }
 
-    .event-item {
-        background-color: var(--viz-surface-panel);
-        border: var(--viz-border-thin);
-        border-radius: var(--viz-border-radius-md);
-        overflow: hidden;
-        flex-shrink: 0;
+    .stream-card {
+        border-bottom: var(--viz-border-thin);
+        transition: background-color 0.15s ease;
+
+        &:last-child {
+            border-bottom: none;
+        }
 
         &[open] {
-            .summary-content {
-                border-bottom: var(--viz-border-thin);
+            .stream-summary {
                 background-color: var(--viz-surface-hover);
 
-                :global(.viz-material-icon) {
-                    transform: rotate(180deg);
+                :global(.expand-icon) {
+                    transform: rotate(90deg);
                 }
             }
         }
     }
 
-    .event-summary {
-        cursor: pointer;
-        list-style: none;
-        padding: 0;
-
-        &::marker {
-            content: "";
-        }
-        &::-webkit-details-marker {
-            display: none;
-        }
-
-        &:hover {
-            .summary-content {
-                background-color: var(--viz-surface-hover);
-            }
-        }
-    }
-
-    .summary-content {
+    .stream-summary {
         display: flex;
         justify-content: space-between;
         align-items: center;
         padding: var(--viz-spacing-md) var(--viz-spacing-lg);
-        color: var(--viz-text-primary);
+        cursor: pointer;
+        list-style: none;
+        user-select: none;
         transition: background-color 0.15s ease;
 
-        :global(.viz-material-icon) {
+        &::marker {
+            display: none;
+        }
+
+        &:hover {
+            background-color: var(--viz-surface-hover);
+        }
+
+        .stream-main {
+            display: flex;
+            align-items: center;
+            gap: var(--viz-spacing-md);
+        }
+
+        .client-tag {
+            display: inline-flex;
+            align-items: center;
+            gap: var(--viz-spacing-xs);
+            color: var(--viz-text-secondary);
+        }
+
+        .stream-right {
+            display: flex;
+            align-items: center;
+            gap: var(--viz-spacing-md);
+        }
+
+        .timestamp {
+            color: var(--viz-text-muted);
+        }
+
+        :global(.expand-icon) {
             color: var(--viz-text-secondary);
             transition: transform 0.2s ease;
         }
     }
 
-    .event-header {
-        display: flex;
-        align-items: center;
-        gap: var(--viz-spacing-md);
-        flex: 1;
-        min-width: 0;
-    }
+    .stream-payload {
+        padding: var(--viz-spacing-md) var(--viz-spacing-lg);
+        background-color: var(--viz-surface-base);
+        border-top: var(--viz-border-thin);
 
-    .event-type {
-        display: inline-block;
-        font-family: var(--viz-mono-font);
-        font-weight: 600;
-        font-size: var(--viz-font-size-std);
-        padding: var(--viz-spacing-xxs) var(--viz-spacing-sm);
-        background-color: var(--viz-surface-panel);
-        border: var(--viz-border-thin);
-        color: var(--viz-text-primary);
-        border-radius: var(--viz-border-radius-sm);
-    }
-
-    .event-time {
-        font-size: var(--viz-font-size-std);
-        color: var(--viz-text-secondary);
-        font-family: var(--viz-mono-font);
-    }
-
-    .event-details {
-        padding: var(--viz-spacing-lg);
-        background-color: var(--viz-surface-panel);
-        display: flex;
-        flex-direction: column;
-        gap: var(--viz-spacing-md);
-    }
-
-    .event-field {
-        display: flex;
-        flex-direction: column;
-        gap: var(--viz-spacing-xs);
-
-        strong {
-            font-size: var(--viz-font-size-std);
-            font-weight: 600;
-            color: var(--viz-text-secondary);
-            text-transform: uppercase;
-            letter-spacing: 0.05em;
-        }
-
-        code {
-            display: block;
-            padding: var(--viz-spacing-sm);
-            background-color: var(--viz-surface-card);
-            border: var(--viz-border-thin);
-            border-radius: var(--viz-border-radius-md);
-            font-size: var(--viz-font-size-std);
+        .payload-title {
+            color: var(--viz-text-muted);
             font-family: var(--viz-mono-font);
-            color: var(--viz-text-primary);
-            word-break: break-all;
+            margin-bottom: var(--viz-spacing-xs);
         }
 
-        pre {
+        .json-box {
             margin: 0;
             padding: var(--viz-spacing-md);
             background-color: var(--viz-surface-card);
             border: var(--viz-border-thin);
             border-radius: var(--viz-border-radius-md);
             overflow-x: auto;
-            font-size: var(--viz-font-size-std);
             font-family: var(--viz-mono-font);
             color: var(--viz-text-primary);
             line-height: 1.5;
