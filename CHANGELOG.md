@@ -5,6 +5,16 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.19.0] - 2026-07-26
+
+* style(viewfinder): use design system spacing variables for asset grid padding and margin (ee204e59)
+* fix(ui): resolve navigation sidebar expansion transition stutter (8fd6c7d6)
+* feat(viewfinder): redesign admin events page into modular telemetry stream console (e4af8ae2)
+* style(ui): improve icon badge contrast and update storage preview tokens (af947474)
+* fix: remove padding on active link in sidebar (fb3d641c)
+* style(viewfinder): adjust version and build info width in admin dashboard (698392fb)
+* docs(rfc): rename protocol to PhoCon and expand TUS acronym (ae270a45)
+
 ## [0.18.6] - 2026-07-25
 
 * fix: replace custom sidebar buttons with native material icon buttons (ac05e2ae)
