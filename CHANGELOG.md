@@ -5,6 +5,11 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.20.4] - 2026-07-26
+
+* fix: use explicit paths for git add (2279a50a)
+* lmao i'm an idiot (ff58ec96)
+
 ## [0.20.3] - 2026-07-26
 
 * fix: update git index before finding diff and import packageJSON directly (3dbe063d)
