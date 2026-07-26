@@ -51,29 +51,62 @@
     import { invalidateViz } from "$lib/views/views.svelte";
 
     // Display options as MenuItem[] for Dropdown
-    const displayMenuItems: MenuItem[] = [
-        {
-            id: "display-grid",
-            label: "Grid",
-            action: () => {
-                viewSettings.setView("grid");
+    let displayMenuItems: MenuItem[] = $derived.by(() => {
+        const baseItems: MenuItem[] = [
+            {
+                id: "display-grid",
+                label: "Grid",
+                icon: viewSettings.current === "grid" ? ("check" as const) : undefined,
+                action: () => {
+                    viewSettings.setView("grid");
+                }
+            },
+            {
+                id: "display-list",
+                label: "List",
+                icon: viewSettings.current === "list" ? ("check" as const) : undefined,
+                action: () => {
+                    viewSettings.setView("list");
+                }
+            },
+            {
+                id: "display-cards",
+                label: "Thumbnails",
+                icon: viewSettings.current === "thumbnails" ? ("check" as const) : undefined,
+                action: () => {
+                    viewSettings.setView("thumbnails");
+                }
             }
-        },
-        {
-            id: "display-list",
-            label: "List",
-            action: () => {
-                viewSettings.setView("list");
-            }
-        },
-        {
-            id: "display-cards",
-            label: "Thumbnails",
-            action: () => {
-                viewSettings.setView("thumbnails");
-            }
+        ];
+
+        if (viewSettings.current === "grid") {
+            baseItems.push(
+                { id: "display-separator", label: "", separator: true },
+                {
+                    id: "display-show-dates",
+                    label: "Show Dates",
+                    icon: viewSettings.showDates ? ("check_box" as const) : ("check_box_outline_blank" as const),
+                    action: () => {
+                        viewSettings.toggleShowDates();
+                    }
+                }
+            );
+        } else if (viewSettings.current === "thumbnails") {
+            baseItems.push(
+                { id: "display-separator-thumb", label: "", separator: true },
+                {
+                    id: "display-basic-thumb",
+                    label: "Basic",
+                    icon: viewSettings.showBasic ? ("check_box" as const) : ("check_box_outline_blank" as const),
+                    action: () => {
+                        viewSettings.toggleShowBasic();
+                    }
+                }
+            );
         }
-    ];
+
+        return baseItems;
+    });
 
     function getDisplaySelectedId(): string | undefined {
         const map: Record<string, string> = {
@@ -100,9 +133,19 @@
     // Page state — sort client-side using persisted SortState
     let sortedImages = $derived(sortCollectionImages(filterManager.apply(galleryState.images), sort));
 
-    let groups: DateGroup[] = $derived(groupImagesByDate(sortedImages) ?? []);
+    let groups: DateGroup[] = $derived.by(() => {
+        if (viewSettings.showDates) {
+            return groupImagesByDate(sortedImages) ?? [];
+        }
+        return [];
+    });
 
-    let consolidatedGroups: ConsolidatedGroup[] = $derived(getConsolidatedGroups(groups));
+    let consolidatedGroups: ConsolidatedGroup[] = $derived.by(() => {
+        if (viewSettings.showDates) {
+            return getConsolidatedGroups(groups);
+        }
+        return [];
+    });
 
     // Lightbox
     let lightboxImage: ImageAsset | undefined = $state();
@@ -665,13 +708,13 @@
         <div class="photo-group-container">
             <PhotoAssetGrid
                 bind:allData={allImagesFlat}
-                bind:view={viewSettings.current}
+                view={viewSettings.current === "thumbnails" && viewSettings.showBasic ? "basic" : viewSettings.current}
                 data={galleryState.images}
-                groupedData={consolidatedGroups}
+                groupedData={viewSettings.showDates ? consolidatedGroups : undefined}
                 gridConfig={{
                     headerHeight: 40
                 }}
-                showDateHeaders={true}
+                showDateHeaders={viewSettings.showDates}
                 {scopeId}
                 onLoadMore={() => paginate()}
                 assetDblClick={(_e, asset) => {

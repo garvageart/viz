@@ -240,29 +240,22 @@
 
     let imageGridArray: AssetGridArray<ImageAsset> | undefined = $state();
 
-    const showDatesStorage = new VizLocalStorage<boolean>("showDatesCollection");
-    let showDates = $state(showDatesStorage.get() ?? false);
-
-    $effect(() => {
-        showDatesStorage.set(showDates);
-    });
-
     let groups: DateGroup[] = $derived.by(() => {
-        if (showDates) {
+        if (viewSettings.showDates) {
             return groupImagesByDate(displayData) ?? [];
         }
         return [];
     });
 
     let consolidatedGroups: ConsolidatedGroup[] = $derived.by(() => {
-        if (showDates) {
+        if (viewSettings.showDates) {
             return getConsolidatedGroups(groups);
         }
         return [];
     });
 
     let allImagesFlat = $derived.by(() => {
-        if (showDates) {
+        if (viewSettings.showDates) {
             return consolidatedGroups.flatMap((g) => g.allImages);
         }
         return undefined;
@@ -281,13 +274,13 @@
     // Grid props
     let grid: ComponentProps<typeof PhotoAssetGrid> = $derived({
         photoCardSnippet: imageCard,
-        view: viewSettings.current,
+        view: viewSettings.current === "thumbnails" && viewSettings.showBasic ? "basic" : viewSettings.current,
         assetGridArray: imageGridArray,
         data: displayData,
         scopeId: scopeId,
-        groupedData: showDates ? consolidatedGroups : undefined,
-        showDateHeaders: showDates,
-        allData: showDates ? allImagesFlat : undefined,
+        groupedData: viewSettings.showDates ? consolidatedGroups : undefined,
+        showDateHeaders: viewSettings.showDates,
+        allData: viewSettings.showDates ? allImagesFlat : undefined,
         onLoadMore: () => paginate(),
         assetGridDisplayProps: {
             style: `padding: 0em ${isLayoutPage() ? "1em" : "2em"};`
@@ -753,9 +746,21 @@
                 {
                     id: "display-show-dates",
                     label: "Show Dates",
-                    icon: showDates ? ("check_box" as const) : ("check_box_outline_blank" as const),
+                    icon: viewSettings.showDates ? ("check_box" as const) : ("check_box_outline_blank" as const),
                     action: () => {
-                        showDates = !showDates;
+                        viewSettings.toggleShowDates();
+                    }
+                }
+            );
+        } else if (viewSettings.current === "thumbnails") {
+            baseItems.push(
+                { id: "display-separator-thumb", label: "", separator: true },
+                {
+                    id: "display-basic-thumb",
+                    label: "Basic",
+                    icon: viewSettings.showBasic ? ("check_box" as const) : ("check_box_outline_blank" as const),
+                    action: () => {
+                        viewSettings.toggleShowBasic();
                     }
                 }
             );
