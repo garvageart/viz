@@ -30,6 +30,20 @@ export function isElementScrollable(element: HTMLElement) {
     return element.scrollHeight > element.clientHeight || element.scrollWidth > element.clientWidth;
 }
 
+export function getScrollParent(node: HTMLElement): HTMLElement | Window {
+    let parent = node.parentElement;
+    while (parent) {
+        const style = window.getComputedStyle(parent);
+        if (/(auto|scroll)/.test(style.overflowY)) {
+            return parent;
+        }
+
+        parent = parent.parentElement;
+    }
+
+    return window;
+}
+
 // Taken from here: https://stackoverflow.com/a/58393617
 export function getHTMLGridColumsAndRows(element: HTMLElement) {
     // calc computed style

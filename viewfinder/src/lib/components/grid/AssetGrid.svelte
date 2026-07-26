@@ -9,17 +9,17 @@
     import { type ImageAsset, getFullImagePath } from "$lib/api";
     import { debugMode, isLayoutPage, sort, tableColumnSettings } from "$lib/states/index.svelte";
     import { selectionManager } from "$lib/states/selection.svelte";
-    import type { AssetGridArray, AssetSortBy } from "$lib/types/asset";
+    import type { AssetGridArray, AssetGridView, AssetSortBy } from "$lib/types/asset";
     import type { CardVisualState, SvelteSnippet } from "$lib/types/snippet";
     import { tryParseDate } from "$lib/utils/dates";
-    import { buildGridArray } from "$lib/utils/dom";
+    import { buildGridArray, getScrollParent } from "$lib/utils/dom";
     import { snakeToTitle } from "$lib/utils/strings";
-    import type { AssetGridView } from "../grid/PhotoAssetGrid.svelte";
     import TableColumnSelectorModal from "../modals/TableColumnSelectorModal.svelte";
     import { modalsManager } from "../modals/manager/ModalManager.svelte";
     import PhotoTooltip from "../tooltips/PhotoTooltip.svelte";
     import { mountTooltipComponent } from "../tooltips/tooltip";
     import MaterialIcon from "../ui/MaterialIcon.svelte";
+    import { getEstimatedItemHeight } from "./assetGridView";
 
     interface DisplayableAsset {
         uid: string;
@@ -104,7 +104,10 @@
     });
 
     // Virtualization Calculations
-    let estimatedItemHeight = $derived(view === "list" || sort.display === "list" ? 54 : view === "basic" ? 270 : 260);
+    let estimatedItemHeight = $derived.by(() => {
+        const fallbackHeight = view === "list" || sort.display === "list" ? 54 : view === "basic" ? 270 : 260;
+        return getEstimatedItemHeight(view, fallbackHeight);
+    });
     let itemsPerRow = $derived.by(() => {
         if (view === "list" || sort.display === "list") {
             return 1;
@@ -124,7 +127,7 @@
         if (allAssetsData.length === 0) {
             return { startRow: 0, endRow: 0 };
         }
-        const bufferRows = 4;
+        const bufferRows = 8;
         const startRow = Math.max(0, Math.floor(scrollTop / estimatedItemHeight) - bufferRows);
         const endRow = Math.min(totalRows, Math.ceil((scrollTop + viewportHeight) / estimatedItemHeight) + bufferRows);
         return { startRow, endRow };
@@ -144,35 +147,68 @@
         };
     });
 
+    function computeContentWidth(el: HTMLElement): number {
+        const style = window.getComputedStyle(el);
+        const pl = parseFloat(style.paddingLeft) || 0;
+        const pr = parseFloat(style.paddingRight) || 0;
+        return el.clientWidth - pl - pr;
+    }
+
     $effect(() => {
-        function updateScrollFromWindow() {
+        if (!assetGridDisplayEl) {
+            return;
+        }
+
+        const scrollParent = getScrollParent(assetGridDisplayEl);
+
+        let gridOffsetTop = 0;
+
+        function recomputeOffset() {
+            if (!assetGridDisplayEl || !(scrollParent instanceof HTMLElement)) {
+                return;
+            }
+            const parentRect = scrollParent.getBoundingClientRect();
+            const gridRect = assetGridDisplayEl.getBoundingClientRect();
+            gridOffsetTop = gridRect.top - parentRect.top + scrollParent.scrollTop;
+        }
+
+        function updateScrollPosition() {
             if (!assetGridDisplayEl) {
                 return;
             }
-            containerWidth = assetGridDisplayEl.clientWidth || assetGridDisplayEl.getBoundingClientRect().width;
 
-            if (
-                assetGridDisplayEl.scrollHeight > assetGridDisplayEl.clientHeight &&
-                assetGridDisplayEl.clientHeight > 0
-            ) {
-                // Internal scroll container
-                scrollTop = assetGridDisplayEl.scrollTop;
-                viewportHeight = assetGridDisplayEl.clientHeight;
+            containerWidth = computeContentWidth(assetGridDisplayEl);
+
+            if (scrollParent instanceof HTMLElement) {
+                viewportHeight = scrollParent.clientHeight;
+                scrollTop = Math.max(0, scrollParent.scrollTop - gridOffsetTop);
             } else {
-                // Window/Document scroll container
                 const rect = assetGridDisplayEl.getBoundingClientRect();
                 viewportHeight = window.innerHeight;
                 scrollTop = Math.max(0, -rect.top);
             }
         }
 
-        updateScrollFromWindow();
-        window.addEventListener("scroll", updateScrollFromWindow, { passive: true });
-        window.addEventListener("resize", updateScrollFromWindow, { passive: true });
+        recomputeOffset();
+        updateScrollPosition();
+
+        const scrollTarget = scrollParent instanceof HTMLElement ? scrollParent : window;
+        scrollTarget.addEventListener("scroll", updateScrollPosition, { passive: true });
+        window.addEventListener("resize", updateScrollPosition, { passive: true });
+
+        const ro = new ResizeObserver(() => {
+            recomputeOffset();
+            updateScrollPosition();
+        });
+        ro.observe(assetGridDisplayEl);
+        if (scrollParent instanceof HTMLElement) {
+            ro.observe(scrollParent);
+        }
 
         return () => {
-            window.removeEventListener("scroll", updateScrollFromWindow);
-            window.removeEventListener("resize", updateScrollFromWindow);
+            scrollTarget.removeEventListener("scroll", updateScrollPosition);
+            window.removeEventListener("resize", updateScrollPosition);
+            ro.disconnect();
         };
     });
 
@@ -395,12 +431,10 @@
             assetGridArray = buildAssetGridArray(assetGridDisplayEl);
         };
 
-        // Use requestAnimationFrame to ensure DOM is updated
         requestAnimationFrame(() => {
             updateGridArray();
         });
 
-        // Watch for resize changes
         const resizeObserver = new ResizeObserver(() => {
             requestAnimationFrame(() => {
                 updateGridArray();

@@ -1,7 +1,3 @@
-<script module lang="ts">
-    export type AssetGridView = "grid" | "list" | "thumbnails" | "basic";
-</script>
-
 <script lang="ts" generics>
     import hotkeys, { type HotkeysEvent } from "hotkeys-js";
     import { DateTime } from "luxon";
@@ -25,6 +21,7 @@
     import { debugMode, isLayoutPage } from "$lib/states/index.svelte";
     import { selectionManager } from "$lib/states/selection.svelte";
     import type { CardVisualState } from "$lib/types/snippet";
+    import { getScrollParent } from "$lib/utils/dom";
     import { getImageLabel, getTakenAt } from "$lib/utils/images";
     import { debounce } from "$lib/utils/misc";
     import ImageLabelViewer from "../image-tools/ImageLabelViewer.svelte";
@@ -732,19 +729,6 @@
             scrollToTopOnNext = false;
         }
     });
-
-    function getScrollParent(node: HTMLElement): HTMLElement | Window {
-        let parent = node.parentElement;
-        while (parent) {
-            const style = window.getComputedStyle(parent);
-            if (/(auto|scroll)/.test(style.overflowY)) {
-                return parent;
-            }
-
-            parent = parent.parentElement;
-        }
-        return window;
-    }
 
     // Action to initialize grid and setup observers
     function initGrid(node: HTMLDivElement) {

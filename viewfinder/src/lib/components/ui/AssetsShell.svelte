@@ -56,21 +56,27 @@
     let selectionScope = $derived(grid.scopeId ? selectionManager.getScope(grid.scopeId) : null);
 
     let gridData = $derived.by(() => {
-        const dataSlice = grid.data.slice(0, pagination.limit * (pagination.page === 0 ? 1 : pagination.page + 1));
+        const allData = grid.data;
 
         if (columnCount === undefined) {
-            return dataSlice;
+            return allData;
         }
 
         // NOTE: in future this might be an option in the settings
         // fill available space in the last row
-        const currentRowImageCount = dataSlice.length % columnCount;
+        const currentRowImageCount = allData.length % columnCount;
         if (currentRowImageCount === 0) {
-            return dataSlice;
+            return allData;
         }
 
-        const fillItems = grid.data.slice(dataSlice.length, dataSlice.length + (columnCount - currentRowImageCount));
-        return [...dataSlice, ...fillItems] as typeof dataSlice;
+        // For paginated views, only fill if we have loaded all data
+        const hasLoadedAll = !pagination || pagination.page > 0 || allData.length <= pagination.limit;
+        if (!hasLoadedAll) {
+            return allData;
+        }
+
+        const fillItems = grid.data.slice(allData.length, allData.length + (columnCount - currentRowImageCount));
+        return [...allData, ...fillItems] as typeof allData;
     });
 
     // Sorting (MenuItem[] for Dropdown)
