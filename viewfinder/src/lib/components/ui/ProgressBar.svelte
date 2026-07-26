@@ -32,10 +32,12 @@
 </script>
 
 <div class="progress-bar-container">
-    <div class="labels">
-        <span class="title-label">{label}</span>
-        <span class="val-label">{valueLabel}</span>
-    </div>
+    {#if label || valueLabel}
+        <div class="labels">
+            <span class="title-label">{label}</span>
+            <span class="val-label">{valueLabel}</span>
+        </div>
+    {/if}
     <div
         class="progress-bar-track"
         style="background-color: {trackColour}"
