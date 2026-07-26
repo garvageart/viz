@@ -36,8 +36,6 @@ func ReadConfig() (viper.Viper, error) {
 	// Bind specific env vars
 	_ = v.BindEnv("servers.api.port", "API_PORT")
 	_ = v.BindEnv("servers.api.host", "API_HOST")
-	_ = v.BindEnv("servers.viz.port", "VIZ_PORT")
-	_ = v.BindEnv("servers.viz.host", "VIZ_HOST")
 	_ = v.BindEnv("database.host", "DB_HOST")
 	_ = v.BindEnv("database.port", "DB_PORT")
 	_ = v.BindEnv("database.user", "DB_USER")
