@@ -5,6 +5,18 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.20.5] - 2026-07-26
+
+* chore(config): remove unused VIZ_PORT and VIZ_HOST env bindings (a5443996)
+* docs: add comprehensive environment variables reference (a85dcfd1)
+* docs: align design system docs with implemented token values (bd65f743)
+* fix(api): remove redundant manual API_PORT env var read (70c6a1be)
+* chore(viewfinder): expand design token autocomplete snippets to cover full SCSS system (c7a17b72)
+* chore: switch VS Code default formatter to Svelte extension (5e115389)
+* feat(admin): improve user management UI and type safety (1e653cb6)
+* feat(viewfinder): unify grid virtualisation and fix filmstrip focus loss (1bfa85e8)
+* fix: remove fade for nav progress bar (9ed17450)
+
 ## [0.20.4] - 2026-07-26
 
 * fix: use explicit paths for git add (2279a50a)
