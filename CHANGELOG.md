@@ -5,6 +5,14 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.20.0] - 2026-07-26
+
+* fix(photos): use correct image count for empty state check (f2f8cef3)
+* fix(styles): use direct light-theme status badge colors for all themes (41bad3ab)
+* fix(dropdown): prevent item action firing when onSelect callback is present (488c5f86)
+* fix(grid): improve virtualization scroll tracking and asset grid layout (32e2a365)
+* fix(collections): prevent image_count mismatch when adding images with duplicates (a3f167fb)
+
 ## [0.19.1] - 2026-07-26
 
 * feat(photos): add display menu dynamic items and showDates/showBasic toggles (0c0c13bd)
