@@ -7,28 +7,100 @@
     ],
     "description": "Insert a Viz Spacing Token (xxs=2px, xs=4px, sm=8px, md=12px, std=16px, lg=20px, xl=24px, xxl=32px)"
   },
+  "Viz Padding Dynamic": {
+    "scope": "css,scss,svelte",
+    "prefix": "viz-padding",
+    "body": [
+      "var(--viz-padding-${1|xs,sm,md,std,lg,xl,2xl|})"
+    ],
+    "description": "Insert a Viz Padding Token (xs=4px, sm=8px, md=12px, std=16px, lg=20px, xl=24px, 2xl=32px)"
+  },
   "Viz Font Size Dynamic": {
     "scope": "css,scss,svelte",
     "prefix": "viz-font-size",
     "body": [
-      "var(--viz-font-size-${1|xs,sm,std,lg,xl,2xl,3xl|})"
+      "var(--viz-font-size-${1|xs,sm,std,lg,xl,2xl,3xl,4xl,5xl|})"
     ],
-    "description": "Insert a Viz Font Size Token (xs=12px, sm=14px, std=16px, lg=18px, xl=20px, 2xl=24px, 3xl=30px)"
+    "description": "Insert a Viz Font Size Token (xs=10px, sm=11px, std=12px, lg=14px, xl=16px, 2xl=18px, 3xl=20px, 4xl=24px, 5xl=30px)"
   },
-  "Viz Border Dynamic": {
+  "Viz Border Radius Dynamic": {
+    "scope": "css,scss,svelte",
+    "prefix": "viz-radius",
+    "body": [
+      "var(--viz-border-radius-${1|sm,md,lg,pill|})"
+    ],
+    "description": "Insert a Viz Border Radius Token (sm=2px, md=4px, lg=8px, pill=9999px)"
+  },
+  "Viz Border Shorthand": {
     "scope": "css,scss,svelte",
     "prefix": "viz-border",
     "body": [
-      "var(--viz-border-${1|thin,thick,radius-sm,radius-md,radius-lg,radius-pill|})"
+      "var(--viz-border-${1|thin,thick|})"
     ],
-    "description": "Insert a Viz Border or Corner Radius Token (thin, thick, radius-sm, radius-md, radius-lg, radius-pill)"
+    "description": "Insert a Viz Border Shorthand (thin=1px solid subtle, thick=2px solid primary)"
   },
-  "Viz Theme Color Dynamic": {
+  "Viz Surface Color": {
     "scope": "css,scss,svelte",
-    "prefix": "viz-color",
+    "prefix": "viz-surface",
     "body": [
-      "var(--viz-${1|100,95,90,80,60,40,30,info-color,success-color,warning-color,error-color|})"
+      "var(--viz-surface-${1|base,panel,card,hover,popover,input|})"
     ],
-    "description": "Insert a Viz Theme Palette Color (100 to 30) or Status Accent (info, success, warning, error)"
+    "description": "Insert a Viz Surface Colour Token (base, panel, card, hover, popover, input)"
+  },
+  "Viz Text Color": {
+    "scope": "css,scss,svelte",
+    "prefix": "viz-text",
+    "body": [
+      "var(--viz-text-${1|primary,secondary,muted|})"
+    ],
+    "description": "Insert a Viz Text Colour Token (primary, secondary, muted)"
+  },
+  "Viz Brand Color": {
+    "scope": "css,scss,svelte",
+    "prefix": "viz-brand",
+    "body": [
+      "var(--viz-${1|primary,secondary,accent|})"
+    ],
+    "description": "Insert a Viz Brand Colour Token (primary, secondary, accent)"
+  },
+  "Viz Status Color": {
+    "scope": "css,scss,svelte",
+    "prefix": "viz-status",
+    "body": [
+      "var(--viz-status-${1|bg,border,text,hover,hover-border}-${2|error,warning,success,info,primary|})"
+    ],
+    "description": "Insert a Viz Status Colour Token (bg/border/text/hover for error/warning/success/info/primary)"
+  },
+  "Viz Tag Color": {
+    "scope": "css,scss,svelte",
+    "prefix": "viz-color-tag",
+    "body": [
+      "var(--viz-color-tag-${1|red,orange,yellow,purple,pink,green,blue|})"
+    ],
+    "description": "Insert a Viz Label Tag Colour (red, orange, yellow, purple, pink, green, blue)"
+  },
+  "Viz Layout Token": {
+    "scope": "css,scss,svelte",
+    "prefix": "viz-layout",
+    "body": [
+      "var(--viz-${1|header-height,sidebar-width-expanded,sidebar-width-collapsed|})"
+    ],
+    "description": "Insert a Viz Layout Token (header-height=3rem, sidebar-width-expanded=20rem, sidebar-width-collapsed=3.5rem)"
+  },
+  "Viz Font Family": {
+    "scope": "css,scss,svelte",
+    "prefix": "viz-font",
+    "body": [
+      "var(--viz-${1|display-font,mono-font|})"
+    ],
+    "description": "Insert a Viz Font Family Token (display-font, mono-font)"
+  },
+  "Viz Theme Palette": {
+    "scope": "css,scss,svelte",
+    "prefix": "viz-palette",
+    "body": [
+      "var(--viz-${1|100,95,90,80,60,40,30|})"
+    ],
+    "description": "Insert a Viz Theme Palette Colour (100 lightest to 30 darkest)"
   }
 }
