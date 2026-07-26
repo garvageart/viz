@@ -225,8 +225,8 @@ async function main() {
         }
 
         // 6. Stage and commit
-        console.log("Staging and committing files...");
-        execSync("git add version.txt package.json viewfinder/package.json CHANGELOG.md");
+        console.log("Staging and committing files...\n");
+        execSync(`git add ${versionFile} ${rootPkgFile} ${viewfinderPkgFile} ${scriptsPkgFile} ${changelogFile}`);
         execSync(`git commit -S -m "chore(release): bump version to ${nextVersion}"`);
         execSync(`git tag -s -m "Release v${nextVersion}" "v${nextVersion}"`);
 
@@ -242,7 +242,7 @@ async function main() {
 
         const pushConfirm = await askQuestion("\nPush changes to origin now? [y/N]: ");
         if (pushConfirm.toLowerCase() === "y") {
-            console.log("\nPushing release commit and tag atomically to origin...");
+            console.log("\nPushing release commit and tag atomically to origin...\n");
             execSync(`git push --atomic origin ${currentBranch} v${nextVersion}`, { stdio: "inherit" });
             console.log("\n==================================================");
             console.log("Push complete!");
