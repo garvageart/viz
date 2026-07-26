@@ -5,10 +5,11 @@
     import AdminRouteShell from "$lib/components/admin/AdminRouteShell.svelte";
     import ConfirmationModal, { modalOptions } from "$lib/components/modals/ConfirmationModal.svelte";
     import { modalsManager } from "$lib/components/modals/manager/ModalManager.svelte";
-    import Button from "$lib/components/ui/Button.svelte";
     import Checkbox from "$lib/components/ui/Checkbox.svelte";
     import IconBadge from "$lib/components/ui/IconBadge.svelte";
+    import IconButton from "$lib/components/ui/IconButton.svelte";
     import MaterialIcon from "$lib/components/ui/MaterialIcon.svelte";
+    import ProgressBar from "$lib/components/ui/ProgressBar.svelte";
     import { type Toast, toastState } from "$lib/toast-notifcations/notif-state.svelte";
     import type { MaterialSymbol } from "$lib/types/MaterialSymbol.js";
     import { formatBytes } from "$lib/utils/images";
@@ -126,23 +127,27 @@
 
 <AdminRouteShell heading="Cache Management" description="Monitor and manage the image processing cache">
     {#snippet actions()}
-        <Button variant="small" onclick={handleRefresh} disabled={refreshing || loading} title="Refresh Statistics">
-            <MaterialIcon iconName="refresh" class={refreshing ? "spinning" : ""} />
-            Refresh
-        </Button>
-        <Button
-            variant="small"
-            onclick={openClearConfirm}
-            disabled={loading || refreshing}
-            hoverColor="var(--viz-alert-color)"
+        <IconButton
+            iconName="refresh"
+            variant="secondary"
+            onclick={handleRefresh}
+            disabled={refreshing || loading}
+            title="Refresh Statistics"
         >
-            <MaterialIcon iconName="delete_sweep" />
+            Refresh
+        </IconButton>
+        <IconButton
+            iconName="delete_sweep"
+            onclick={openClearConfirm}
+            disabled={refreshing || loading}
+            variant="danger"
+        >
             {#if loading}
                 Clearing...
             {:else}
                 Clear Cache
             {/if}
-        </Button>
+        </IconButton>
     {/snippet}
 
     <div class="cache-container">
@@ -163,22 +168,6 @@
                 value: cacheStatus.items.toLocaleString(),
                 desc: "Count of distinct transformed images currently stored"
             })}
-
-            {@render metricCard({
-                icon: "speed",
-                variant: "success",
-                title: "Cache Hits",
-                value: cacheStatus.hits.toLocaleString(),
-                desc: "Transform requests served directly from local cache"
-            })}
-
-            {@render metricCard({
-                icon: "trending_up",
-                variant: "primary",
-                title: "Hit Ratio",
-                value: `${(cacheStatus.hit_ratio * 100).toFixed(2)}%`,
-                desc: "Efficiency of cache serving requests without re-processing"
-            })}
         </div>
 
         <!-- Details & Visualization Section -->
@@ -187,57 +176,53 @@
             <div class="visualization-card">
                 <div class="section-title">
                     <MaterialIcon iconName="analytics" />
-                    <h3>Cache Efficiency Ratio</h3>
+                    <h3>Efficiency</h3>
                 </div>
 
                 <div class="efficiency-bar-container">
-                    <div
-                        class="bar-fill hits"
-                        style="width: {cacheStatus.hit_ratio * 100}%"
-                        title="Hits: {(cacheStatus.hit_ratio * 100).toFixed(2)}%"
-                    ></div>
-                    <div
-                        class="bar-fill misses"
-                        style="width: {(1 - cacheStatus.hit_ratio) * 100}%"
-                        title="Misses: {((1 - cacheStatus.hit_ratio) * 100).toFixed(2)}%"
-                    ></div>
-                </div>
-
-                <div class="efficiency-legend">
-                    <div class="legend-item">
-                        <span class="dot hits"></span>
-                        <span class="legend-label">Hits:</span>
-                        <span class="legend-val">{cacheStatus.hits.toLocaleString()} requests</span>
-                    </div>
-                    <div class="legend-item">
-                        <span class="dot misses"></span>
-                        <span class="legend-label">Misses:</span>
-                        <span class="legend-val">{cacheStatus.misses.toLocaleString()} requests</span>
-                    </div>
-                </div>
-
-                <div
-                    class="efficiency-status"
-                    class:healthy={cacheStatus.hit_ratio >= 0.8}
-                    class:warning={cacheStatus.hit_ratio < 0.8 && cacheStatus.hit_ratio >= 0.5}
-                    class:critical={cacheStatus.hit_ratio < 0.5}
-                >
-                    <MaterialIcon
-                        iconName={cacheStatus.hit_ratio >= 0.8
-                            ? "check_circle"
-                            : cacheStatus.hit_ratio >= 0.5
-                              ? "warning"
-                              : "error"}
+                    <ProgressBar
+                        label="Cache Hit Ratio"
+                        valueLabel={`${(cacheStatus.hit_ratio * 100).toFixed(2)}%`}
+                        variant="large"
+                        colour="var(--viz-success-color)"
+                        trackColour="var(--viz-warning-color)"
+                        width={cacheStatus.hit_ratio * 100 - (1 - cacheStatus.hit_ratio) * 100}
                     />
-                    <span>
-                        {#if cacheStatus.hit_ratio >= 0.8}
-                            Cache health is <b>Optimal</b>. High hit ratio minimizes CPU/GPU load.
-                        {:else if cacheStatus.hit_ratio >= 0.5}
-                            Cache health is <b>Acceptable</b>. Consider monitor/window optimization sizing.
-                        {:else}
-                            Cache health is <b>Sub-optimal</b>. High miss rate increases image-generation latency.
-                        {/if}
-                    </span>
+                    <div
+                        class="efficiency-status"
+                        class:healthy={cacheStatus.hit_ratio >= 0.8}
+                        class:warning={cacheStatus.hit_ratio < 0.8 && cacheStatus.hit_ratio >= 0.5}
+                        class:critical={cacheStatus.hit_ratio < 0.5}
+                    >
+                        <MaterialIcon
+                            iconName={cacheStatus.hit_ratio >= 0.8
+                                ? "check_circle"
+                                : cacheStatus.hit_ratio >= 0.5
+                                  ? "warning"
+                                  : "error"}
+                        />
+                        <span>
+                            {#if cacheStatus.hit_ratio >= 0.8}
+                                Cache health is <b>Optimal</b>. High hit ratio minimizes CPU/GPU load.
+                            {:else if cacheStatus.hit_ratio >= 0.5}
+                                Cache health is <b>Acceptable</b>. Consider monitor/window optimization sizing.
+                            {:else}
+                                Cache health is <b>Sub-optimal</b>. High miss rate increases image-generation latency.
+                            {/if}
+                        </span>
+                    </div>
+                    <div class="info-container">
+                        <div class="efficiency-info">
+                            <IconBadge iconName="speed" size="1.25rem" variant="success" />
+                            <div class="meta">
+                                <div class="label">Cache Hits</div>
+                                <div class="value">{cacheStatus.hits.toLocaleString()}</div>
+                            </div>
+
+                            <div class="divider"></div>
+                            <span>Transform requests served directly from local cache</span>
+                        </div>
+                    </div>
                 </div>
             </div>
 
@@ -309,7 +294,6 @@
 
         .card-desc {
             display: block;
-            font-size: var(--viz-font-size-std);
             color: var(--viz-text-muted);
             margin: var(--viz-spacing-xs) 0 0 0;
             line-height: 1.4;
@@ -349,61 +333,47 @@
 
     .efficiency-bar-container {
         display: flex;
-        height: var(--viz-spacing-std);
+        flex-direction: column;
+        gap: var(--viz-spacing-std);
         width: 100%;
-        background-color: var(--viz-surface-panel);
-        border-radius: var(--viz-border-radius-pill);
-        overflow: hidden;
         margin-bottom: var(--viz-spacing-lg);
-    }
 
-    .bar-fill {
-        height: 100%;
-        transition: width 0.3s ease;
+        .info-container {
+            display: flex;
+            align-items: flex-start;
+            gap: var(--viz-spacing-lg);
+            padding: var(--viz-spacing-lg);
+            border-radius: var(--viz-border-radius-md);
+            font-size: var(--viz-font-size-lg);
+            background-color: var(--viz-surface-panel);
+            border: var(--viz-border-thin);
+            color: var(--viz-text-primary);
 
-        &.hits {
-            background-color: var(--viz-success-color);
-        }
+            .efficiency-info {
+                display: flex;
+                flex-direction: row;
+                gap: var(--viz-spacing-std);
+                font-size: var(--viz-font-size-lg);
+                align-items: center;
 
-        &.misses {
-            background-color: var(--viz-warning-color);
-        }
-    }
+                .divider {
+                    width: 1px;
+                    align-self: stretch;
+                    background-color: var(--viz-border-strong, var(--viz-border-subtle));
+                }
 
-    .efficiency-legend {
-        display: flex;
-        flex-wrap: wrap;
-        gap: var(--viz-spacing-lg);
-        margin-bottom: var(--viz-spacing-lg);
-    }
+                .meta {
+                    .label {
+                        font-weight: 500;
+                        color: var(--viz-text-muted);
+                    }
 
-    .legend-item {
-        display: flex;
-        align-items: center;
-        gap: var(--viz-spacing-xs);
-        font-size: var(--viz-font-size-lg);
-
-        .dot {
-            width: var(--viz-spacing-sm);
-            height: var(--viz-spacing-sm);
-            border-radius: var(--viz-border-radius-pill);
-
-            &.hits {
-                background-color: var(--viz-success-color);
+                    .value {
+                        font-weight: 700;
+                        font-family: var(--viz-mono-font);
+                    }
+                }
             }
-
-            &.misses {
-                background-color: var(--viz-warning-color);
-            }
-        }
-
-        .legend-label {
-            color: var(--viz-text-secondary);
-        }
-
-        .legend-val {
-            font-weight: 600;
-            font-family: var(--viz-mono-font);
         }
     }
 
@@ -452,19 +422,6 @@
         b {
             color: var(--viz-text-primary);
             font-weight: 600;
-        }
-    }
-
-    :global(.spinning) {
-        animation: spin 1s linear infinite;
-    }
-
-    @keyframes spin {
-        from {
-            transform: rotate(0deg);
-        }
-        to {
-            transform: rotate(360deg);
         }
     }
 </style>

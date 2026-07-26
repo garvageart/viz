@@ -2,7 +2,6 @@
     import { SvelteMap } from "svelte/reactivity";
 
     type Variants = "small" | "medium" | "large" | "xlarge";
-    type BarColour = "primary" | "secondary" | "100" | "90" | "80" | "70" | "60" | "50" | "40" | "30" | "20" | "10";
 
     const variantMappings = new SvelteMap<Variants, number>([
         ["small", 3],
@@ -13,23 +12,60 @@
 
     interface Props {
         width: number;
+        label?: string;
+        valueLabel?: string;
         variant?: Variants;
-        colour?: BarColour;
+        colour?: string;
+        trackColour?: string;
     }
 
-    let { width = $bindable(), variant = "medium", colour = "primary" }: Props = $props();
+    let {
+        width = $bindable(),
+        label,
+        valueLabel,
+        variant = "medium",
+        colour = "var(--viz-primary)",
+        trackColour = "var(--viz-secondary)"
+    }: Props = $props();
 
     let height = $derived(variantMappings.get(variant) ?? 6);
 </script>
 
-<div class="progress-bar-track" class:has-border={height >= 6} style:height="{height}px">
-    <div class="progress-fill" style="width: {width}%; background-color: var(--viz-{colour})"></div>
+<div class="progress-bar-container">
+    <div class="labels">
+        <span class="title-label">{label}</span>
+        <span class="val-label">{valueLabel}</span>
+    </div>
+    <div
+        class="progress-bar-track"
+        style="background-color: {trackColour}"
+        class:has-border={height >= 6}
+        style:height="{height}px"
+    >
+        <div class="progress-fill" style="width: {width}%; background-color: {colour};"></div>
+    </div>
 </div>
 
 <style lang="scss">
+    .progress-bar-container {
+        width: 100%;
+        display: flex;
+        flex-direction: column;
+
+        .labels {
+            font-size: var(--viz-font-size-lg);
+            margin-bottom: var(--viz-spacing-xs);
+            display: flex;
+            justify-content: space-between;
+
+            .title-label {
+                font-weight: bold;
+            }
+        }
+    }
+
     .progress-bar-track {
         width: 100%;
-        background-color: var(--viz-surface-panel);
         overflow: hidden;
         box-sizing: border-box;
 
@@ -41,7 +77,6 @@
 
     .progress-fill {
         height: 100%;
-        border-radius: var(--viz-border-radius-sm);
         position: relative;
         overflow: hidden;
         transition: width 0.3s ease;
