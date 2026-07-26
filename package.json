@@ -1,25 +1,36 @@
 {
-    "name": "viz-monorepo",
+    "name": "@viz/scripts",
+    "version": "0.20.3",
+    "description": "Internal JavaScript scripts for the Viz project",
     "private": true,
-    "version": "0.20.2",
+    "type": "module",
     "license": "AGPL-3.0",
+    "packageManager": "pnpm@10.11.0",
+    "bugsEmail": "igotissues@lesis.online",
+    "bugsUrl": "https://lesis.online/contact/bug-report",
     "scripts": {
-        "dev": "pnpm -r --filter \"@viz/*\" dev",
-        "build": "pnpm -r --filter \"@viz/*\" build",
-        "test": "pnpm -r --filter \"@viz/*\" test",
-        "test:unit": "pnpm -r --filter \"@viz/*\" test:unit",
-        "check": "pnpm -r --filter \"@viz/*\" check",
-        "lint": "pnpm -r --filter \"@viz/*\" lint",
-        "format": "pnpm -r --filter \"@viz/*\" format",
-        "format:check": "pnpm -r --filter \"@viz/*\" format:check",
-        "gen:api": "pnpm --filter @viz/scripts gen:api",
-        "setup:https": "pnpm --filter @viz/scripts setup:https",
-        "release": "pnpm --filter @viz/scripts run release"
+        "test": "echo \"Error: no test specified\" && exit 1",
+        "gen:api": "tsx gen-api.ts",
+        "gen:api:install": "tsx gen-api.ts --install-tools",
+        "gen:api:build": "tsx gen-api.ts --build",
+        "format": "prettier --cache --log-level warn --write .",
+        "setup:https": "tsx setup-https.ts",
+        "release": "tsx release.ts"
     },
     "keywords": [],
+    "author": "Les <hello@lesis.online>",
     "devDependencies": {
-        "@trivago/prettier-plugin-sort-imports": "^6.0.2",
-        "prettier": "^3.9.5",
-        "prettier-plugin-svelte": "^4.1.1"
+        "@types/js-yaml": "^4.0.9",
+        "@types/node": "^26.1.1",
+        "@types/semver": "^7.7.1",
+        "js-yaml": "^5.2.1",
+        "oazapfts": "^7.5.0",
+        "tsx": "^4.23.1"
+    },
+    "dependencies": {
+        "dotenv": "^17.4.2",
+        "googleapis": "^144.0.0",
+        "semver": "^7.8.5",
+        "unsplash-js": "^8.0.0"
     }
 }

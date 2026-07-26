@@ -5,6 +5,13 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.20.3] - 2026-07-26
+
+* fix: update git index before finding diff and import packageJSON directly (3dbe063d)
+* fix: minor admin dashboard adjustments (8ad067b4)
+* fix: conditionally render labels (eaa105bf)
+* style(ui): swap colour and track colour defaults (b27cb2b6)
+
 ## [0.20.2] - 2026-07-26
 
 * chore: add new generated icons (84194996)
