@@ -1,20 +1,35 @@
 <script lang="ts">
-    import { user } from "$lib/states/index.svelte";
+    import type { User } from "$lib/api";
+    import { user as userState } from "$lib/states/index.svelte";
 
     interface Props {
-        name?: string;
+        user?: User;
         size?: string;
         fontSize?: string;
         class?: string;
+        showCurrentUser?: boolean;
     }
 
-    let { name = user.data?.name, size = "2.2rem", fontSize, class: className = "" }: Props = $props();
+    let {
+        user = userState.data,
+        size = "2.2rem",
+        fontSize,
+        class: className = "",
+        showCurrentUser = false
+    }: Props = $props();
 
+    let userData = $derived(userState.data);
+
+    let name = $derived(user?.name);
+    let isCurrentUser = $derived(userData?.uid === user?.uid);
     let initial = $derived(name && name.trim().length > 0 ? name.trim()[0].toUpperCase() : "?");
 </script>
 
 <div
     class="viz-avatar-badge {className}"
+    class:current-user={showCurrentUser && isCurrentUser}
+    role="img"
+    aria-label={name}
     style:width={size}
     style:height={size}
     style:font-size={fontSize || `calc(${size} * 0.45)`}
@@ -38,5 +53,10 @@
         flex-shrink: 0;
         box-sizing: border-box;
         user-select: none;
+
+        &.current-user {
+            outline: 2px solid var(--viz-primary);
+            outline-offset: 1px;
+        }
     }
 </style>

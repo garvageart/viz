@@ -4,14 +4,13 @@
     import Button from "$lib/components/ui/Button.svelte";
     import InputSelect from "$lib/components/ui/InputSelect.svelte";
     import InputText from "$lib/components/ui/InputText.svelte";
-    import type { UserRole } from "$lib/types/users";
-    import { snakeToSentence, toSentenceCase } from "$lib/utils/strings";
+    import { toSentenceCase } from "$lib/utils/strings";
     import { modalsManager } from "./manager/ModalManager.svelte";
 
     interface Props {
         id: string;
         user: User;
-        onSave: (updatedData: any) => Promise<void>;
+        onSave: (updatedData: typeof editForm) => Promise<void>;
     }
 
     let { id, user, onSave }: Props = $props();

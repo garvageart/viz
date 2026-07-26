@@ -9,7 +9,7 @@
 
     interface Props {
         id: string;
-        onSave: (data: any) => Promise<void>;
+        onSave: (data: typeof createForm) => Promise<void>;
     }
 
     let { id, onSave }: Props = $props();
@@ -19,7 +19,7 @@
         name: "",
         email: "",
         password: "",
-        role: "user"
+        role: "user" as Role
     });
 
     async function handleSave() {

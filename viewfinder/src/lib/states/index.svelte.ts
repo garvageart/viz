@@ -17,7 +17,7 @@ import { VizCookieStorage, VizLocalStorage } from "$lib/utils/misc";
 
 // Types
 interface UserState {
-    data: User | null;
+    data?: User;
     loading: boolean;
     fetched: boolean;
     error?: string | null;
@@ -61,7 +61,7 @@ export let sidebar = $state({
 export let showHeader = $state(true);
 
 export let user = $state<UserState>({
-    data: null,
+    data: undefined,
     loading: false,
     fetched: false,
     error: null,

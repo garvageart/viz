@@ -7,6 +7,7 @@
     import UserCreateModal from "$lib/components/modals/UserCreateModal.svelte";
     import UserEditModal from "$lib/components/modals/UserEditModal.svelte";
     import { modalsManager } from "$lib/components/modals/manager/ModalManager.svelte";
+    import AvatarBadge from "$lib/components/ui/AvatarBadge.svelte";
     import Button from "$lib/components/ui/Button.svelte";
     import IconButton from "$lib/components/ui/IconButton.svelte";
     import MaterialIcon from "$lib/components/ui/MaterialIcon.svelte";
@@ -31,14 +32,15 @@
                             message: "Please fill in all required fields",
                             type: "error"
                         });
-                        throw new Error("Validation failed");
+
+                        return;
                     }
 
                     const res = await adminCreateUser({
                         name: createForm.name,
                         email: createForm.email,
                         password: createForm.password,
-                        role: createForm.role as Role
+                        role: createForm.role
                     });
 
                     if (res.status === 201) {
@@ -67,12 +69,21 @@
             {
                 user,
                 onSave: async (editForm) => {
+                    if (!editForm.name || !editForm.email) {
+                        toastState.addToast({
+                            message: "Please fill in all required fields",
+                            type: "error"
+                        });
+
+                        return;
+                    }
+
                     const res = await adminUpdateUser(user.uid, {
                         first_name: editForm.first_name,
                         last_name: editForm.last_name,
                         name: editForm.name,
                         email: editForm.email,
-                        role: editForm.role as Role
+                        role: editForm.role
                     });
 
                     if (res.status === 200) {
@@ -182,10 +193,9 @@
 
 <AdminRouteShell heading="User Management" description="Manage user accounts, roles, and permissions.">
     {#snippet actions()}
-        <Button variant="small" onclick={openCreateModal}>
-            <MaterialIcon iconName="add" />
-            Create User
-        </Button>
+        <IconButton iconName="add" variant="info" onclick={openCreateModal}>
+            <span>Create User</span>
+        </IconButton>
     {/snippet}
 
     <section class="content-section">
@@ -205,14 +215,7 @@
                         <tr>
                             <td>
                                 <div class="user-cell">
-                                    <div
-                                        class={[
-                                            "avatar-placeholder",
-                                            user.uid === currentUserState.data?.uid ? "current-user" : ""
-                                        ]}
-                                    >
-                                        {(user.name?.[0] || user.email?.[0] || "?").toUpperCase()}
-                                    </div>
+                                    <AvatarBadge {user} showCurrentUser={true} />
                                     <div class="user-info">
                                         <span class="name"
                                             >{user.name || "No Name"}
@@ -257,7 +260,7 @@
 
 <style lang="scss">
     .content-section {
-        background-color: var(--viz-surface-card);
+        background-color: var(--viz-surface-panel);
         border: var(--viz-border-thin);
         border-radius: var(--viz-border-radius-md);
         padding: var(--viz-spacing-xl);
@@ -305,7 +308,7 @@
     .user-cell {
         display: flex;
         align-items: center;
-        gap: var(--viz-spacing-sm);
+        gap: var(--viz-spacing-std);
     }
 
     .avatar-placeholder {
@@ -320,11 +323,6 @@
         font-weight: 600;
         font-size: var(--viz-font-size-lg);
         border: var(--viz-border-thin);
-
-        &.current-user {
-            outline: 2px solid var(--viz-primary);
-            outline-offset: 1px;
-        }
     }
 
     .user-info {
