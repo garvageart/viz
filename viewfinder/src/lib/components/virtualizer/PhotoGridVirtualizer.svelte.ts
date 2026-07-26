@@ -5,7 +5,7 @@ import type { ConsolidatedGroup, ImageWithDateLabel } from "$lib/photo-layout";
 import { getTakenAt } from "$lib/utils/images";
 
 export type GridItem = {
-    asset: ImageWithDateLabel;
+    asset: { uid: string } & Record<string, any>;
     width: number;
     height: number;
     left: number;
@@ -58,7 +58,7 @@ export class PhotoGridVirtualizer {
     containerWidth = $state(0);
     targetRowHeight = $state(280);
     gridGap = $state(8);
-    headerHeight = $state(20);
+    headerHeight = $state(40);
 
     // Internal
     private groupCache = new Map<string, GroupCacheEntry>();
@@ -121,20 +121,16 @@ export class PhotoGridVirtualizer {
                     uid: `header-item-${g.label}`,
                     isHeaderItem: true,
                     headerLabel: g.label,
-                    // Dummy dimensions for aspect ratio calculation if needed (handled in computeImages)
                     width: 100,
                     height: 100,
-                    // Add date for robust handling
                     taken_at: g.startDate.toISO()
                 } as unknown as ImageWithDateLabel;
                 mixedItems.push(headerItem);
                 mixedItems.push(...g.allImages);
             }
 
-            // We treat this batch as a single "mixed" group
             const batchId = `batch-${smallGroupBatch[0].label}`;
 
-            // We calculate layout. Header items need a specific aspect ratio.
             const { rows, height } = this.computeImages(mixedItems, width, batchId);
 
             for (const r of rows) {
@@ -165,27 +161,19 @@ export class PhotoGridVirtualizer {
                 let cached = this.groupCache.get(cacheKey);
 
                 if (!cached) {
-                    // Compute Layout for this group
                     cached = this.computeGroup(group, width);
                     this.groupCache.set(cacheKey, cached);
                 } else {
-                    // IMPORTANT: Update asset references in the cached rows.
-                    // Because SelectionScope.updateItem or parent derivation might replace the asset object,
-                    // we must ensure the virtualizer rows point to the NEW objects
-                    // so that Svelte components rendering them are reactive and show latest metadata.
                     let imageIdx = 0;
                     for (const row of cached.rows) {
                         if (row.type === "images") {
                             for (const item of row.items) {
-                                // JustifiedLayout preserves order, so we can just match by index.
-                                // group.allImages[imageIdx] should correspond 1:1 with the original items.
                                 item.asset = group.allImages[imageIdx++];
                             }
                         }
                     }
                 }
 
-                // Apply absolute positions
                 for (const r of cached.rows) {
                     allRows.push({
                         ...r,
@@ -202,7 +190,6 @@ export class PhotoGridVirtualizer {
         this.rows = allRows;
         this.totalHeight = currentTop;
 
-        // Immediate visible update
         this.updateVisible();
     }
 
@@ -216,7 +203,6 @@ export class PhotoGridVirtualizer {
         }
         this.containerWidth = width;
 
-        // Compute straight images, no header
         const { rows, height } = this.computeImages(images as ImageWithDateLabel[], width, "flat");
 
         const finalRows: GridRow[] = rows.map((r) => ({
@@ -227,6 +213,140 @@ export class PhotoGridVirtualizer {
         this.rows = finalRows;
         this.totalHeight = height;
         this.updateVisible();
+    }
+
+    /**
+     * Updates layout for a fixed-column grid (thumbnails, basic views).
+     * Computes columns from container width and item width, then creates
+     * evenly-spaced rows with absolute positioning.
+     */
+    updateGrid<T extends { uid: string }>(
+        items: T[],
+        width: number,
+        config: {
+            columns?: number;
+            itemWidth?: number;
+            rowHeight?: number;
+            aspectRatio?: number;
+            gap: number;
+        }
+    ) {
+        if (width <= 0) {
+            return;
+        }
+        this.containerWidth = width;
+        this.groupCache.clear();
+
+        const { gap } = config;
+
+        // Compute column count
+        let columns: number;
+        if (config.columns && config.columns > 0) {
+            columns = config.columns;
+        } else if (config.itemWidth && config.itemWidth > 0) {
+            columns = Math.max(1, Math.floor((width + gap) / (config.itemWidth + gap)));
+        } else {
+            columns = 4;
+        }
+
+        // Compute actual column width (fill available space)
+        const columnWidth = (width - gap * (columns - 1)) / columns;
+
+        // Compute row height
+        let rowHeight: number;
+        if (config.aspectRatio && config.aspectRatio > 0) {
+            rowHeight = Math.round(columnWidth * config.aspectRatio);
+        } else if (config.rowHeight && config.rowHeight > 0) {
+            rowHeight = config.rowHeight;
+        } else {
+            rowHeight = 260;
+        }
+
+        const allRows: GridRow[] = [];
+        let currentTop = 0;
+
+        for (let i = 0; i < items.length; i += columns) {
+            const rowItems: GridItem[] = [];
+            const count = Math.min(columns, items.length - i);
+
+            for (let col = 0; col < count; col++) {
+                rowItems.push({
+                    asset: items[i + col],
+                    width: columnWidth,
+                    height: rowHeight,
+                    left: col * (columnWidth + gap)
+                });
+            }
+
+            allRows.push({
+                type: "images",
+                id: `grid-row-${allRows.length}`,
+                items: rowItems,
+                top: currentTop,
+                height: rowHeight,
+                groupId: "grid"
+            });
+
+            currentTop += rowHeight + gap;
+        }
+
+        this.rows = allRows;
+        this.totalHeight = items.length > 0 ? currentTop - gap : 0;
+        this.updateVisible();
+    }
+
+    /**
+     * Updates layout for a single-column list (table/list view).
+     * Each item occupies a full-width row.
+     */
+    updateList<T extends { uid: string }>(items: T[], width: number, rowHeight: number) {
+        if (width <= 0) {
+            return;
+        }
+        this.containerWidth = width;
+        this.groupCache.clear();
+
+        const allRows: GridRow[] = [];
+        let currentTop = 0;
+
+        for (let i = 0; i < items.length; i++) {
+            allRows.push({
+                type: "images",
+                id: `list-row-${i}`,
+                items: [
+                    {
+                        asset: items[i],
+                        width: width,
+                        height: rowHeight,
+                        left: 0
+                    }
+                ],
+                top: currentTop,
+                height: rowHeight,
+                groupId: "list"
+            });
+
+            currentTop += rowHeight;
+        }
+
+        this.rows = allRows;
+        this.totalHeight = currentTop;
+        this.updateVisible();
+    }
+
+    /**
+     * Returns the computed column count for the current grid layout.
+     * Only valid after calling updateGrid().
+     */
+    getGridColumns(): number {
+        if (this.rows.length === 0) {
+            return 0;
+        }
+        const firstRow = this.rows[0];
+        if (firstRow.type === "images") {
+            return firstRow.items.length;
+        }
+        return 0;
     }
 
     updateScroll(scrollTop: number, viewportHeight: number) {
@@ -311,8 +431,7 @@ export class PhotoGridVirtualizer {
         let cursorY = 0;
 
         // 1. Add Header Row
-        // We use the group label and date
-        const headerHeight = this.headerHeight; // Configurable
+        const headerHeight = this.headerHeight;
         const headerRow: CachedRow = {
             type: "header",
             id: `header-${group.label}`,
@@ -355,54 +474,34 @@ export class PhotoGridVirtualizer {
             const item = items[i];
             if (item.isHeaderItem) {
                 // Use a fixed aspect ratio for inline headers (e.g. narrow vertical strip)
-                // Row height is typically ~250-300px. A ratio of 0.5 gives ~125-150px width.
                 aspectRatios[i] = 0.5;
             } else {
                 aspectRatios[i] = (item.width || 4) / (item.height || 3);
             }
         }
 
-        // Filter out bad items if necessary, but simpler to just run it
-
         const layout = new JustifiedLayout(aspectRatios, {
             rowHeight: this.targetRowHeight,
             rowWidth: width,
             spacing: this.gridGap,
-            heightTolerance: 0.15 // Allow some flex to avoid cropping
+            heightTolerance: 0.15
         });
 
         const rows: CachedRow[] = [];
         let rowIndex = 0;
 
-        // Convert JustifiedLayout boxes to GridRowImages
-        // The library returns a flat list of boxes. We need to chunk them by "top" position.
-
         let currentRowItems: GridItem[] = [];
         let currentRowTop = -1;
         let currentRowHeight = 0;
 
-        // JustifiedLayout output geometry
-
         for (let i = 0; i < items.length; i++) {
             const box = layout.getPosition(i);
-            const asset = items[i]; // Corresponding asset
+            const asset = items[i];
 
-            // If new row detected (based on Top position change)
-            // Note: Floating point comparison needs epsilon
             if (currentRowTop === -1) {
                 currentRowTop = box.top;
                 currentRowHeight = box.height;
             } else if (Math.abs(box.top - currentRowTop) > 1) {
-                // Check if the NEW row we are about to start contains a header item
-                // The current item `asset` is the first item of the new row (conceptually)
-                // However, JustifiedLayout has already computed positions.
-                // We might need to manually shift things if we want extra gaps?
-                // Actually, the `JustifiedLayout` library handles spacing.
-                // If we want EXTRA gap for rows with headers, we might need to post-process?
-                // Or: simpler approach - just check if the previous row had a header?
-                // No, we want gap ABOVE the row with header.
-
-                // Push previous row
                 rows.push({
                     type: "images",
                     id: `${groupId}-imgrow-${rowIndex++}`,
@@ -412,7 +511,6 @@ export class PhotoGridVirtualizer {
                     groupId
                 });
 
-                // Start new row
                 currentRowItems = [];
                 currentRowTop = box.top;
                 currentRowHeight = box.height;
@@ -440,21 +538,16 @@ export class PhotoGridVirtualizer {
 
         // Post-process rows to add gap above rows with header items
         let cummulativeOffset = 0;
-        const GAP_ABOVE_HEADER = this.gridGap; // Pixel gap
+        const GAP_ABOVE_HEADER = this.gridGap;
 
         for (let i = 0; i < rows.length; i++) {
             const row = rows[i];
 
-            // Apply accumulated offset to current row
             row.relativeTop += cummulativeOffset;
 
-            // Check if we need to add a gap before this row
             if (row.type === "images") {
-                const hasHeader = row.items.some((item) => item.asset.isHeaderItem);
+                const hasHeader = row.items.some((item) => (item.asset as ImageWithDateLabel).isHeaderItem);
 
-                // Add gap if this row has a header.
-                // This ensures that even the first row of a batch gets separation from whatever came before (e.g. a previous large group).
-                // We don't need to worry about Large Groups here because they don't use isHeaderItem (they use separate GridRowHeader objects).
                 if (hasHeader) {
                     row.relativeTop += GAP_ABOVE_HEADER;
                     cummulativeOffset += GAP_ABOVE_HEADER;
@@ -467,15 +560,10 @@ export class PhotoGridVirtualizer {
 
     // Helper to find the "Active" header (sticky)
     getActiveHeader(scrollTop: number): GridRowHeader | null {
-        // We want the header of the group that covers the top of the screen.
-        // Or essentially, the last header that has (top <= scrollTop).
-        // Since rows are sorted by top, we can search.
-
         let low = 0;
         let high = this.rows.length - 1;
         let candidate: GridRowHeader | null = null;
 
-        // Binary search for the last row with top <= scrollTop
         while (low <= high) {
             const mid = (low + high) >>> 1;
             const row = this.rows[mid];
@@ -484,25 +572,17 @@ export class PhotoGridVirtualizer {
                 if (row.type === "header") {
                     candidate = row;
                 }
-                // Even if it's an image row, its group header might be the candidate.
-                // But simpler: just find the row at scrollTop, then find that row's group header.
                 low = mid + 1;
             } else {
                 high = mid - 1;
             }
         }
 
-        // Refined approach:
-        // Find the row currently at scrollTop.
-        // Identify its group.
-        // Return that group's header.
-
         const idx = Math.max(0, Math.min(this.findStartIndex(scrollTop), this.rows.length - 1));
         if (this.rows.length === 0) {
             return null;
         }
 
-        // Scan backwards from the visible start to find the nearest header
         for (let i = idx; i >= 0; i--) {
             if (this.rows[i].type === "header") {
                 return this.rows[i] as GridRowHeader;
@@ -515,7 +595,6 @@ export class PhotoGridVirtualizer {
     // Helper to get the NEXT header (for pushing effect)
     getNextHeader(scrollTop: number): GridRowHeader | null {
         const idx = this.findStartIndex(scrollTop);
-        // We look forward from the current viewport top
         for (let i = idx; i < this.rows.length; i++) {
             const row = this.rows[i];
             if (row.type === "header" && row.top > scrollTop) {
@@ -528,19 +607,17 @@ export class PhotoGridVirtualizer {
     getDateLabel(scrollTop: number): string {
         const header = this.getActiveHeader(scrollTop);
         if (header) {
-            return header.label; // Already formatted by the grouping logic usually
+            return header.label;
         }
 
-        // Fallback: Check the row at the current scroll position
         if (this.rows.length > 0) {
             const idx = Math.max(0, Math.min(this.findStartIndex(scrollTop), this.rows.length - 1));
             const row = this.rows[idx];
             if (row.type === "images" && row.items.length > 0) {
-                const asset = row.items[0].asset;
+                const asset = row.items[0].asset as ImageWithDateLabel;
                 if (asset.isHeaderItem && asset.headerLabel) {
                     return asset.headerLabel;
                 }
-                // Format date generic if no specific label found
                 return DateTime.fromJSDate(getTakenAt(asset)).toFormat("LLL yyyy");
             }
         }

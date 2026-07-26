@@ -318,7 +318,7 @@
                 currentX += item.width + virtualizer.gridGap;
             }
 
-            handleImageCardSelect(closestItem.asset, e);
+            handleImageCardSelect(closestItem.asset as ImageAsset, e);
         }
     }
 
@@ -557,7 +557,6 @@
         usingExternalScroll ? containerViewportHeight - scrubberTopOffset : virtualizer.viewportHeight
     );
     let scrubberScrollTop = $derived(usingExternalScroll ? containerScrollTop : scrollTop);
-
     let scrubberScrollTopState = $derived(scrubberScrollTop);
 
     $effect(() => {
@@ -1279,7 +1278,6 @@
             use:unselectImagesOnClickOutsideAssetContainer
             onclick={handleContainerClick}
             onkeydown={onFocus}
-            onfocusin={onFocus}
             role="grid"
             aria-label="Photo Grid"
             tabindex="0"
@@ -1302,10 +1300,10 @@
                                     style={`position: absolute; left: ${item.left}px; width: ${item.width}px; height:${row.height}px;`}
                                     class="justified-item"
                                 >
-                                    {#if item.asset.isHeaderItem}
-                                        {@render inlineDateTile(item.asset.headerLabel || "")}
+                                    {#if (item.asset as ImageWithDateLabel).isHeaderItem}
+                                        {@render inlineDateTile((item.asset as ImageWithDateLabel).headerLabel || "")}
                                     {:else}
-                                        {@render defaultPhotoCard(item.asset)}
+                                        {@render defaultPhotoCard(item.asset as ImageWithDateLabel)}
                                     {/if}
                                 </div>
                             {/each}
@@ -1683,7 +1681,7 @@
             top: 10%;
             bottom: 30%;
             width: 0;
-            border-left: 1px solid var(--viz-border-subtle);
+            border-left: 3px solid var(--viz-accent);
         }
 
         @container (max-width: 5rem) {
