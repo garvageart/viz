@@ -95,7 +95,6 @@
             color: var(--viz-text-primary);
             font-weight: 600;
             border-bottom: 3px solid var(--viz-primary);
-            padding-left: calc(var(--viz-spacing-md) - 3px);
         }
     }
 </style>
