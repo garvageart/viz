@@ -33,12 +33,12 @@ export async function fetchCurrentUser(): Promise<User | null> {
 
             return result.data;
         } else {
-            user.data = null;
+            user.data = undefined;
             user.error = null;
             return null;
         }
     } catch (err: any) {
-        user.data = null;
+        user.data = undefined;
         user.error = err?.message ?? "Failed to fetch current user";
         user.connectionError = true;
         return null;
@@ -49,7 +49,7 @@ export async function fetchCurrentUser(): Promise<User | null> {
 }
 
 export function clearUser() {
-    user.data = null;
+    user.data = undefined;
     user.settings = null;
     user.error = null;
     user.fetched = true;
