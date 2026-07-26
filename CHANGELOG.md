@@ -5,6 +5,10 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.20.2] - 2026-07-26
+
+* chore: add new generated icons (84194996)
+
 ## [0.20.1] - 2026-07-26
 
 * style: increase header height and change sidebar expanded to rem (48dda3bf)
