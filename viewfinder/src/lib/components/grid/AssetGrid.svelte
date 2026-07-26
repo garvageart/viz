@@ -772,7 +772,8 @@
 <style lang="scss">
     .viz-asset-grid-container {
         box-sizing: border-box;
-        padding: 0 1rem;
+        padding: 0 var(--viz-spacing-xxl);
+        margin: var(--viz-spacing-xxl) auto;
         display: grid;
         gap: 1em;
         width: 100%;

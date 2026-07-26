@@ -1375,8 +1375,8 @@
         position: relative;
         height: 100%;
         width: 100%;
-        padding: 0 1rem;
-        margin: 1em auto;
+        padding: 0 var(--viz-spacing-xxl);
+        margin: var(--viz-spacing-xxl) auto;
         overflow: hidden;
         flex: 1;
         display: flex;
