@@ -24,8 +24,8 @@
         label,
         valueLabel,
         variant = "medium",
-        colour = "var(--viz-primary)",
-        trackColour = "var(--viz-secondary)"
+        colour = "var(--viz-secondary)",
+        trackColour = "var(--viz-primary)"
     }: Props = $props();
 
     let height = $derived(variantMappings.get(variant) ?? 6);
