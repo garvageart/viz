@@ -666,21 +666,24 @@ func CollectionsRouter(db *gorm.DB, logger *slog.Logger, wsBroker *libhttp.WSBro
 				return ErrCollectionUnauthorised
 			}
 
-			// Verify all images exist in one query
-			var count int64
-			if err := tx.Model(&entities.ImageAsset{}).Where("uid IN ?", colImage.UIDs).Count(&count).Error; err != nil {
+			// Find which UIDs actually exist — silently skip missing ones
+			// rather than failing the entire batch.
+			var existingUIDs []string
+			if err := tx.Model(&entities.ImageAsset{}).
+				Where("uid IN ?", colImage.UIDs).
+				Pluck("uid", &existingUIDs).Error; err != nil {
 				return err
 			}
 
-			if count != int64(len(colImage.UIDs)) {
-				return gorm.ErrRecordNotFound
+			if len(existingUIDs) == 0 {
+				return nil // nothing to insert
 			}
 
 			now := time.Now()
 
 			// Prepare bulk insert for join table
-			newColImages := make([]entities.CollectionImage, len(colImage.UIDs))
-			for i, imgUID := range colImage.UIDs {
+			newColImages := make([]entities.CollectionImage, len(existingUIDs))
+			for i, imgUID := range existingUIDs {
 				newColImages[i] = entities.CollectionImage{
 					CollectionID: &collection.ID,
 					Uid:          imgUID,
@@ -705,7 +708,7 @@ func CollectionsRouter(db *gorm.DB, logger *slog.Logger, wsBroker *libhttp.WSBro
 
 			selectFields := []string{"ImageCount", "UpdatedAt"}
 			if collection.ThumbnailID == nil || *collection.ThumbnailID == "" {
-				firstImgUID := colImage.UIDs[0]
+				firstImgUID := existingUIDs[0]
 				collection.ThumbnailID = &firstImgUID
 				selectFields = append(selectFields, "ThumbnailID")
 			}
@@ -718,7 +721,7 @@ func CollectionsRouter(db *gorm.DB, logger *slog.Logger, wsBroker *libhttp.WSBro
 				_ = wsBroker.Broadcast("collection-updated", map[string]interface{}{
 					"uid":    collection.Uid,
 					"action": "images-added",
-					"count":  len(colImage.UIDs),
+					"count":  int(totalCount),
 				})
 			}
 

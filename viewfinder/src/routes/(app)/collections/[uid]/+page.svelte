@@ -333,7 +333,7 @@
             return;
         }
 
-        const uids = uploadedImages.map((img) => img.uid);
+        const uids = [...new Set(uploadedImages.map((img) => img.uid))];
         const response = await addCollectionImages(data.uid, {
             uids: uids
         });
@@ -375,7 +375,7 @@
         if (!uploadedImages || uploadedImages.length === 0) {
             return;
         }
-        const uids = uploadedImages.map((img) => img.uid).filter(Boolean);
+        const uids = [...new Set(uploadedImages.map((img) => img.uid).filter(Boolean))];
         if (uids.length === 0) {
             return;
         }

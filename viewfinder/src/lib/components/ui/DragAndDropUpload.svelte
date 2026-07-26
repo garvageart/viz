@@ -333,8 +333,9 @@
 
             const uploadedImages = await processUploads(uploadCandidates);
 
-            // 3. Add to Collection
-            const uids = uploadedImages.filter((img) => img && img.uid).map((i: any) => i.uid);
+            // 3. Add to Collection (deduplicate UIDs — duplicates would be silently
+            // skipped by the backend but cause a count mismatch in the existence check)
+            const uids = [...new Set(uploadedImages.filter((img) => img && img.uid).map((i: any) => i.uid))];
 
             if (uids.length > 0) {
                 const addRes = await addCollectionImages(collectionUid, { uids });
@@ -468,7 +469,7 @@
             const dragData = DragData.getData<string[]>(dt, VizMimeTypes.IMAGE_UIDS);
             if (dragData) {
                 try {
-                    const uids: string[] = dragData.payload;
+                    const uids: string[] = [...new Set(dragData.payload)];
                     if (uids.length === 0) {
                         toastState.addToast({
                             type: "info",
@@ -659,7 +660,7 @@
                                 return;
                             }
 
-                            const uids = uploadedImages.map((i: any) => i.uid).filter(Boolean);
+                            const uids = [...new Set(uploadedImages.map((i) => i.uid).filter(Boolean))];
 
                             if (uids.length > 0) {
                                 const addRes = await addCollectionImages(collectionUid, { uids });
@@ -888,7 +889,7 @@
                                 .filter((img): img is ImageUploadSuccess => !!img);
 
                             if (uploadedImages.length > 0) {
-                                const uids = uploadedImages.map((i: any) => i.uid).filter(Boolean);
+                                const uids = [...new Set(uploadedImages.map((i) => i.uid).filter(Boolean))];
                                 if (uids.length > 0) {
                                     const addRes = await addCollectionImages(collection.uid, { uids });
                                     if (addRes.status === 200) {
