@@ -5,6 +5,7 @@ import path from "path";
 import readline from "readline";
 import semver from "semver";
 import { fileURLToPath } from "url";
+import packageJson from "./package.json" with { type: "json" };
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -30,10 +31,8 @@ function askQuestion(query: string): Promise<string> {
 
 async function updatePackageJson(filePath: string, nextVersion: string) {
     try {
-        const content = await fs.readFile(filePath, "utf8");
-        const pkg = JSON.parse(content);
-        pkg.version = nextVersion;
-        await fs.writeFile(filePath, JSON.stringify(pkg, null, 4) + "\n", "utf8");
+        packageJson.version = nextVersion;
+        await fs.writeFile(filePath, JSON.stringify(packageJson, null, 4) + "\n", "utf8");
     } catch (err: any) {
         console.error(`Warning: Could not update ${path.basename(filePath)}: ${err.message}`);
     }
@@ -44,6 +43,7 @@ async function main() {
 
     // 1. Verify working directory is clean
     try {
+        execSync("git update-index --refresh", { stdio: "ignore" });
         execSync("git diff-index --quiet HEAD --", { stdio: "ignore" });
     } catch {
         console.error("Error: Working directory has uncommitted changes. Please commit or stash them first.");
