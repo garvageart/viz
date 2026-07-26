@@ -5,12 +5,12 @@
 $bg-color: #09090b;
 $base-color: #18181b;
 $text-color: #f4f4f5;
-$primary-color: #3b82f6; // Royal Blue
-$secondary-color: #a855f7; // Electric Violet
-$accent-color: #06b6d4; // Cyan Pop
-$header-bg: #121216; // Deep Obsidian Header
-$sidebar-bg: #0c0c0e; // Dark Sidebar
-$card-bg: #1a1a1e; // Elevated Card Surface
+$primary-color: #3b82f6;
+$secondary-color: #a855f7;
+$accent-color: #06d410;
+$header-bg: #121216;
+$sidebar-bg: #0c0c0e;
+$card-bg: #1a1a1e;
 
 @include m.register-theme-core(
     $bg-color: $bg-color,

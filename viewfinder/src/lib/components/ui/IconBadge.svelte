@@ -32,7 +32,7 @@
         warning: "var(--viz-warning-color)",
         error: "var(--viz-error-color)",
         success: "var(--viz-success-color)",
-        neutral: "var(--viz-surface-panel)"
+        neutral: "var(--viz-surface-hover)"
     };
 
     let computedBg = $derived(bgColor || variantBgMap[variant]);

@@ -677,7 +677,7 @@
             border-bottom: $preview-panel-border;
 
             :global(.preview-copy-btn) {
-                color: var(--viz-text-primary);
+                color: var(--viz-20-dark);
                 padding: var(--viz-spacing-xs) var(--viz-spacing-sm);
                 border-color: var(--viz-text-secondary);
             }
@@ -686,8 +686,7 @@
                 font-size: var(--viz-font-size-std);
                 text-transform: uppercase;
                 letter-spacing: 0.05em;
-                color: #8f96a3;
-                font-weight: 600;
+                color: var(--viz-20-dark);
             }
         }
 
@@ -699,12 +698,12 @@
             line-height: 1.5;
 
             .root-dir {
-                color: #57606a;
+                color: #888a8d;
             }
 
             .rendered-path {
                 color: #2ea043;
-                font-weight: 500;
+                font-weight: 600;
             }
 
             .error-msg {
