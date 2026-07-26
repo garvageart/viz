@@ -168,7 +168,13 @@ export const tableColumnSettings = new TableColumnSettings();
 
 class ViewSettingsState {
     storage = new VizLocalStorage<AssetGridView>("viewSettings");
+    showDatesStorage = new VizLocalStorage<boolean>("showDatesSetting");
+    showBasicStorage = new VizLocalStorage<boolean>("showBasicSetting");
+
     current: AssetGridView = $state(this.storage.get() ?? "grid");
+    showDates: boolean = $state(this.showDatesStorage.get() ?? false);
+    showBasic: boolean = $state(this.showBasicStorage.get() ?? false);
+
     displayOptions: MenuItem[] = [
         { id: "view-grid", label: "Grid" },
         { id: "view-list", label: "List" },
@@ -178,6 +184,16 @@ class ViewSettingsState {
     setView(view: AssetGridView) {
         this.current = view;
         this.storage.set(view);
+    }
+
+    toggleShowDates() {
+        this.showDates = !this.showDates;
+        this.showDatesStorage.set(this.showDates);
+    }
+
+    toggleShowBasic() {
+        this.showBasic = !this.showBasic;
+        this.showBasicStorage.set(this.showBasic);
     }
 }
 
