@@ -106,7 +106,6 @@
     <div
         class="nav-progress-container"
         class:app={!page.url.pathname.startsWith("/auth") && modalsManager.modals.length === 0}
-        transition:fade={{ duration: 400 }}
     >
         <NavigationProgressBar />
     </div>
