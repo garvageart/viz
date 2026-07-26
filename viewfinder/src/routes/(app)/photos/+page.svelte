@@ -700,7 +700,7 @@
             </AssetToolbar>
         {/if}
     {/if}
-    {#if groups.length === 0}
+    {#if galleryState.images.length === 0}
         <div id="viz-no_assets">
             {@render noAssetsSnippet()}
         </div>
