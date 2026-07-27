@@ -1072,6 +1072,10 @@
         height: 100%;
     }
 
+    .max-width-column {
+        max-width: 100%;
+    }
+
     .basic-grid-card {
         overflow: hidden;
         background-color: var(--viz-surface-panel);
