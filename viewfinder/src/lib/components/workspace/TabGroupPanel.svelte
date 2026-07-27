@@ -183,12 +183,18 @@
     }
 
     // Context Menus
-    let tabCtxMenu = $state<{ show: boolean; items: MenuItem[]; anchor: any }>({
+    interface HeaderMenuState {
+        show: boolean;
+        items: MenuItem[];
+        anchor: any;
+    }
+
+    let tabCtxMenu = $state<HeaderMenuState>({
         show: false,
         items: [],
         anchor: null
     });
-    let headerCtxMenu = $state<{ show: boolean; items: MenuItem[]; anchor: any }>({
+    let headerCtxMenu = $state<HeaderMenuState>({
         show: false,
         items: [],
         anchor: null
@@ -314,7 +320,7 @@
         const { default: CollectionPage } = await import("../../../routes/(app)/collections/[uid]/+page.svelte");
         const newView = new VizView({
             name,
-            component: CollectionPage as any,
+            component: CollectionPage,
             path: collectionPath
         });
         group.addTab(newView);
@@ -423,6 +429,7 @@
             {#each group.views as view}
                 <button
                     class="tab-button"
+                    title={view.name}
                     class:active={group.activeViewId === view.id}
                     role="tab"
                     aria-selected={group.activeViewId === view.id}
@@ -583,6 +590,7 @@
         white-space: nowrap;
         scrollbar-width: none;
         -ms-overflow-style: none;
+
         &::-webkit-scrollbar {
             display: none;
         }
@@ -594,6 +602,8 @@
         align-items: center;
         position: relative;
         padding: var(--viz-spacing-sm) var(--viz-spacing-xs);
+        /* right side wasn't balanced properly */
+        padding-right: 0.4rem;
         cursor: default;
         height: 100%;
         max-width: 11em;
