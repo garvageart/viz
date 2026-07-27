@@ -37,6 +37,8 @@
                 }
             ]
         >;
+        /** Hide the button title text (icon-only mode) */
+        hideTitle?: boolean;
     }
 
     let {
@@ -51,7 +53,8 @@
         align = "left",
         debug = false,
         class: className,
-        trigger
+        trigger,
+        hideTitle = false
     }: Props = $props();
 
     let buttonEl: HTMLButtonElement | undefined = $state(undefined);
@@ -109,10 +112,12 @@
 />
 
 {#snippet buttonContent()}
-    {#if selectedItem && selectedItem.label}
-        <span class="viz-dropdown-title">{selectedItem.label}</span>
-    {:else if title}
-        <span class="viz-dropdown-title">{title}</span>
+    {#if !hideTitle}
+        {#if selectedItem && selectedItem.label}
+            <span class="viz-dropdown-title">{selectedItem.label}</span>
+        {:else if title}
+            <span class="viz-dropdown-title">{title}</span>
+        {/if}
     {/if}
 {/snippet}
 
