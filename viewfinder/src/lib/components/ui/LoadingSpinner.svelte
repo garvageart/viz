@@ -1,10 +1,11 @@
 <script lang="ts">
-    type SpinnerSize = "small" | "medium" | "large";
+    type SpinnerSize = "small" | "standard" | "medium" | "large";
 
-    let { color, size = "medium" }: { color?: string; size?: SpinnerSize } = $props();
+    let { color, size = "standard" }: { color?: string; size?: SpinnerSize } = $props();
 
     const sizeMap: Record<SpinnerSize, string> = {
         small: "24",
+        standard: "36",
         medium: "48",
         large: "64"
     };
