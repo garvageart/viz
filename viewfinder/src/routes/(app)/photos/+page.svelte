@@ -831,4 +831,22 @@
         justify-content: center;
         align-items: center;
     }
+
+    @media (max-width: 40rem) {
+        .selection-actions {
+            gap: var(--viz-spacing-sm);
+        }
+
+        .selection-actions :global(.action span:not(.viz-material-icon)) {
+            display: none;
+        }
+
+        .toolbar-group {
+            gap: var(--viz-spacing-xs);
+        }
+
+        .toolbar-group :global(.toolbar-button span:not(.viz-material-icon)) {
+            display: none;
+        }
+    }
 </style>

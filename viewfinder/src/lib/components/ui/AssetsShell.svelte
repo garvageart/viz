@@ -251,4 +251,14 @@
         justify-content: center;
         align-items: center;
     }
+
+    @media (max-width: 40rem) {
+        #asset-tools {
+            gap: var(--viz-spacing-xs);
+        }
+
+        :global(.toolbar-button span:not(.viz-material-icon)) {
+            display: none;
+        }
+    }
 </style>

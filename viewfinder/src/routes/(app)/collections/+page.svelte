@@ -496,4 +496,10 @@
         outline: 2px solid var(--viz-primary);
         outline-offset: 2px;
     }
+
+    @media (max-width: 40rem) {
+        #coll-tools :global(.toolbar-button span:not(.viz-material-icon)) {
+            display: none;
+        }
+    }
 </style>

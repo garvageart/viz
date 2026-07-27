@@ -822,4 +822,19 @@
         height: auto;
         min-height: 100%; /* Important for virtualization filling container */
     }
+
+    @media (max-width: 40rem) {
+        .toolbar-content {
+            gap: var(--viz-spacing-sm);
+            flex-wrap: wrap;
+        }
+
+        .selection-info span {
+            font-size: var(--viz-font-size-sm);
+        }
+
+        :global(.asset-toolbar .toolbar-button span:not(.viz-material-icon)) {
+            display: none;
+        }
+    }
 </style>

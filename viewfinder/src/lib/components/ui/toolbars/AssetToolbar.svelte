@@ -41,4 +41,11 @@
         flex-direction: row;
         box-sizing: border-box;
     }
+
+    @media (max-width: 40rem) {
+        .viz-toolbar-container {
+            padding: 0 var(--viz-spacing-sm);
+            height: 2.5rem;
+        }
+    }
 </style>
