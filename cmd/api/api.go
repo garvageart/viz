@@ -8,7 +8,6 @@ import (
 	"net/http"
 	"os"
 	"os/signal"
-	"slices"
 	"syscall"
 	"time"
 
@@ -53,7 +52,7 @@ func (server APIServer) Launch(router *chi.Mux) *http.Server {
 	allowedHosts := append(config.AppConfig.AllowedHosts, config.DefaultAllowedHosts...)
 	router.Use(cors.Handler(cors.Options{
 		AllowOriginFunc: func(r *http.Request, origin string) bool {
-			return slices.Contains(allowedHosts, origin)
+			return config.MatchOrigin(origin, allowedHosts)
 		},
 		AllowedMethods:   []string{"GET", "POST", "PUT", "PATCH", "OPTIONS", "DELETE"},
 		AllowedHeaders:   []string{"Accept", "Authorization", "Content-Type", "X-CSRF-Token", libhttp.APIKeyName, "If-None-Match", "If-Modified-Since"},
