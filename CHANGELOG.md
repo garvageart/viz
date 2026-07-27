@@ -5,6 +5,10 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.22.4] - 2026-07-27
+
+* fix(api): populate user context on API key auth (91f21637)
+
 ## [0.22.3] - 2026-07-27
 
 * fix(security): fix CORS allowed hosts wildcard matching and add comprehensive tests (71592547)
