@@ -86,9 +86,12 @@
 
     let { collection, isSelected = false, ...props }: Props & SvelteHTMLElements["div"] = $props();
 
-    let relativeUpdated = $derived(
-        collection.updated_at ? DateTime.fromISO(collection.updated_at).setZone("local").toRelative() : ""
+    let dateNow = $state(DateTime.now().setZone("local"));
+    let relativeUpdated = $derived(DateTime.fromISO(collection.updated_at).setZone("local"));
+    let updatedTimeDiff = $derived(
+        dateNow.diff(relativeUpdated, "minutes").minutes < 2 ? "just now" : relativeUpdated.toRelative()
     );
+
     let createdDate = $derived(
         collection.created_at
             ? DateTime.fromISO(collection.created_at).setZone("local").toLocaleString(DateTime.DATE_MED)
@@ -239,9 +242,7 @@
         </div>
         <div class="metadata-footer">
             <span class="coll-created_at" title="Created {createdDate}">{createdDate}</span>
-            {#if relativeUpdated}
-                <span class="coll-updated_at" title="Updated {relativeUpdated}">Updated {relativeUpdated}</span>
-            {/if}
+            <span class="coll-updated_at" title="Updated {updatedTimeDiff}">Updated {updatedTimeDiff}</span>
         </div>
     </div>
 </div>
