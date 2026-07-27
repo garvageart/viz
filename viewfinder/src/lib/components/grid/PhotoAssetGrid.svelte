@@ -358,7 +358,7 @@
             followCursor: "initial",
             plugins: [followCursor],
             arrow: false,
-            delay: [350, 0],
+            delay: [600, 0],
             interactive: true,
             onShow(instance: Instance<TippyProps>) {
                 const assetEl = instance.reference as HTMLElement;
