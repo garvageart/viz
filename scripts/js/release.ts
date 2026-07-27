@@ -219,7 +219,7 @@ async function main() {
 
         const releaseConfirm = await askQuestion("\nConfirm release? [y/N]: ");
 
-        if (releaseConfirm.toLowerCase() !== "y") {
+        if (releaseConfirm.toLowerCase() === "n") {
             console.log("Release cancelled.");
             return;
         }
