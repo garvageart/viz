@@ -27,6 +27,10 @@
     }: Props & Omit<SvelteHTMLElements["input"], "type"> = $props();
 
     const inputId = $derived(props.id ?? generateRandomString(6));
+    const fillPercent = $derived(((value - min) / (max - min)) * 100);
+    const trackBackground = $derived(
+        `linear-gradient(to right, var(--viz-secondary) ${fillPercent}%, var(--viz-surface-panel) ${fillPercent}%)`
+    );
 </script>
 
 <div class="slider-container" class:disabled>
@@ -53,6 +57,7 @@
         {step}
         {disabled}
         bind:value
+        style:background={trackBackground}
         oninput={(e) => {
             props.oninput?.(e);
         }}
@@ -105,7 +110,7 @@
     .slider-value {
         font-family: var(--viz-mono-font), monospace;
         font-size: var(--viz-font-size-lg);
-        font-weight: 800;
+        font-weight: bold;
         color: var(--viz-text-primary);
     }
 
@@ -118,8 +123,7 @@
 
     input[type="range"] {
         width: 100%;
-        height: 4px;
-        background: var(--viz-surface-panel);
+        height: 6px;
         border: var(--viz-border-thin);
         border-radius: 0; // Flat sharp track
         outline: none;
@@ -137,8 +141,8 @@
             -webkit-appearance: none;
             appearance: none;
             width: 6px;
-            height: 16px;
-            background: var(--viz-surface-hover);
+            height: var(--viz-font-size-2xl);
+            background: var(--viz-primary);
             border: 1px solid var(--viz-border-subtle);
             border-radius: 0; // Flat, sharp tick mark thumb
             cursor: ew-resize;
