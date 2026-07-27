@@ -1,8 +1,13 @@
 <script lang="ts">
     import { goto } from "$app/navigation";
+    import { DYNAMIC_ROUTE_REGEX } from "$lib/constants";
     import ContextMenu from "$lib/context-menu/ContextMenu.svelte";
     import type { MenuItem } from "$lib/context-menu/types";
-    import { user } from "$lib/states/index.svelte";
+    import { views } from "$lib/layouts/views";
+    import { isMobile, user } from "$lib/states/index.svelte";
+    import { workspaceState } from "$lib/states/workspace.svelte";
+    import { toastState } from "$lib/toast-notifcations/notif-state.svelte";
+    import VizView from "$lib/views/views.svelte";
 
     let { isOpen = $bindable(false), anchor = $bindable() } = $props<{
         isOpen?: boolean;
@@ -48,8 +53,85 @@
         ]
     };
 
+    function buildViewMenuItems(): MenuItem[] {
+        const workspace = workspaceState.workspace;
+
+        const activeViewNames = new Set<string>();
+        if (workspace) {
+            const groups = workspace.getAllTabGroups();
+            for (const group of groups) {
+                for (const view of group.views) {
+                    if (view && view.name) {
+                        activeViewNames.add(view.name);
+                    }
+                }
+            }
+        }
+
+        return views
+            .filter((view) => !view.path || !DYNAMIC_ROUTE_REGEX.test(view.path))
+            .sort((a, b) => a.name.localeCompare(b.name))
+            .map((view) => ({
+                id: `view-${view.name}`,
+                label: view.name,
+                action: () => {
+                    if (!workspace) {
+                        toastState.addToast({
+                            title: "No Workspace",
+                            type: "error",
+                            message: "No workspace available."
+                        });
+                        return;
+                    }
+
+                    let targetGroup = workspace.activeGroup;
+
+                    if (!targetGroup) {
+                        targetGroup = workspace.getAllTabGroups()[0];
+                        if (!targetGroup) {
+                            toastState.addToast({
+                                title: "No Panels Available",
+                                type: "error",
+                                message: "There are no panels to add the view to."
+                            });
+                            return;
+                        }
+                        workspace.setActiveGroup(targetGroup.id);
+                    }
+
+                    const existingView = targetGroup.views.find((v) => v.name === view.name);
+
+                    if (existingView) {
+                        targetGroup.setActive(existingView.id);
+                    } else {
+                        const newView = VizView.fromJSON(view.toJSON(), view.component);
+                        targetGroup.addTab(newView);
+                    }
+                },
+                disabled: activeViewNames.has(view.name)
+            }));
+    }
+
+    function buildWorkspaceItem(): MenuItem {
+        if (isMobile) {
+            return {
+                id: "views",
+                label: "Views",
+                icon: "view_quilt",
+                children: buildViewMenuItems()
+            };
+        }
+
+        return {
+            id: "workspace",
+            label: "Workspace",
+            icon: "space_dashboard",
+            action: () => goto("/")
+        };
+    }
+
     const menuItems: MenuItem[] = [
-        { id: "workspace", label: "Workspace", icon: "space_dashboard", action: () => goto("/") },
+        buildWorkspaceItem(),
         { id: "divider-1", label: "", separator: true },
         { id: "photos", label: "Photos", icon: "photo", action: () => goto("/photos") },
         {

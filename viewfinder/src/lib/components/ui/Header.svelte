@@ -6,19 +6,16 @@
     import { untrack } from "svelte";
     import Dropdown from "$lib/components/context-menus/Dropdown.svelte";
     import ThemeContextMenu from "$lib/components/context-menus/ThemeContextMenu.svelte";
-    import { CLIENT_IS_PRODUCTION, DYNAMIC_ROUTE_REGEX } from "$lib/constants";
-    import ContextMenu from "$lib/context-menu/ContextMenu.svelte";
+    import ViewsContextMenu from "$lib/components/context-menus/ViewsContextMenu.svelte";
+    import { CLIENT_IS_PRODUCTION } from "$lib/constants";
     import type { MenuItem } from "$lib/context-menu/types";
-    import { views } from "$lib/layouts/views";
     import { performSearch } from "$lib/search/execute";
     import { eventsState } from "$lib/states/events.svelte";
     import { historyState } from "$lib/states/history.svelte";
-    import { debugState, getTheme, isLayoutPage, search, toggleTheme, user } from "$lib/states/index.svelte";
-    import { workspaceState } from "$lib/states/workspace.svelte";
+    import { debugState, getTheme, isLayoutPage, isMobile, search, toggleTheme, user } from "$lib/states/index.svelte";
     import { toastState } from "$lib/toast-notifcations/notif-state.svelte";
     import { SUPPORTED_IMAGE_TYPES, SUPPORTED_RAW_FILES, type SupportedImageTypes } from "$lib/types/images";
     import UploadManager from "$lib/upload/manager.svelte";
-    import VizView from "$lib/views/views.svelte";
     import OpenAccountPanel from "../context-menus/AccountPanel.svelte";
     import AppMenu from "../context-menus/AppMenu.svelte";
     import AvatarBadge from "./AvatarBadge.svelte";
@@ -28,17 +25,6 @@
 
     let searchElement = $state<HTMLInputElement | undefined>();
     let searchInputHasFocus = $derived(searchElement && document.activeElement === searchElement);
-    let isMobile = $state(false);
-
-    $effect(() => {
-        const mql = window.matchMedia("(max-width: 40rem)");
-        isMobile = mql.matches;
-        const handler = (e: MediaQueryListEvent) => {
-            isMobile = e.matches;
-        };
-        mql.addEventListener("change", handler);
-        return () => mql.removeEventListener("change", handler);
-    });
 
     $effect(() => {
         if (page.url.pathname === "/search") {
@@ -111,24 +97,6 @@
     let openAppMenu = $state(false);
     let appMenuButton: HTMLButtonElement | undefined = $state();
 
-    const activeViewNames = $derived.by(() => {
-        const names = new Set<string>();
-        const workspace = workspaceState.workspace;
-        if (!workspace) {
-            return names;
-        }
-
-        const groups = workspace.getAllTabGroups();
-        for (const group of groups) {
-            for (const view of group.views) {
-                if (view && view.name) {
-                    names.add(view.name);
-                }
-            }
-        }
-        return names;
-    });
-
     // Context Menu for Theme
     let themeCtxShowMenu = $state(false);
     let themeCtxAnchor = $state<{ x: number; y: number } | null>(null);
@@ -142,53 +110,11 @@
     // Context Menu for Views
     let viewCtxShowMenu = $state(false);
     let viewCtxAnchor = $state<{ x: number; y: number } | null>(null);
-    let viewCtxItems = $state<MenuItem[]>([]);
 
     function handleViewMenu(e: MouseEvent) {
         e.preventDefault();
         e.stopPropagation();
         viewCtxAnchor = { x: e.clientX, y: e.clientY };
-
-        const workspace = workspaceState.workspace;
-        if (!workspace) {
-            return;
-        }
-
-        viewCtxItems = views
-            .filter((view) => !view.path || !DYNAMIC_ROUTE_REGEX.test(view.path))
-            .sort((a, b) => a.name.localeCompare(b.name))
-            .map((view) => ({
-                id: view.name,
-                label: view.name,
-                action: () => {
-                    let targetGroup = workspace.activeGroup;
-
-                    // Fallback to the first available group if no panel is focused
-                    if (!targetGroup) {
-                        targetGroup = workspace.getAllTabGroups()[0];
-                        if (!targetGroup) {
-                            toastState.addToast({
-                                title: "No Panels Available",
-                                type: "error",
-                                message: "There are no panels to add the view to."
-                            });
-                            return;
-                        }
-                        workspace.setActiveGroup(targetGroup.id);
-                    }
-
-                    const existingView = targetGroup.views.find((v) => v.name === view.name);
-
-                    if (existingView) {
-                        targetGroup.setActive(existingView.id);
-                    } else {
-                        // Create a new view instance (duplicate template)
-                        const newView = VizView.fromJSON(view.toJSON(), view.component);
-                        targetGroup.addTab(newView);
-                    }
-                },
-                disabled: activeViewNames.has(view.name)
-            }));
         viewCtxShowMenu = true;
     }
 </script>
@@ -337,7 +263,7 @@
 </header>
 
 <ThemeContextMenu bind:showMenu={themeCtxShowMenu} bind:anchor={themeCtxAnchor} />
-<ContextMenu bind:showMenu={viewCtxShowMenu} bind:items={viewCtxItems} anchor={viewCtxAnchor} />
+<ViewsContextMenu bind:showMenu={viewCtxShowMenu} bind:anchor={viewCtxAnchor} />
 
 <style lang="scss">
     header {
