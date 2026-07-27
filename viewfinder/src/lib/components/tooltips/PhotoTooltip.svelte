@@ -137,8 +137,8 @@
         {/if}
     </div>
 
-    {#if asset.private || asset.favourited || fileExtension}
-        <div class="metadata-row">
+    <div class="metadata-row">
+        {#if asset.private || asset.favourited || fileExtension}
             {#if asset.private}
                 <Badge variant="error" iconName="lock" iconSize="0.8rem" title="Private">
                     <span>Private</span>
@@ -154,8 +154,11 @@
                     <span>{fileExtension}</span>
                 </Badge>
             {/if}
-        </div>
-    {/if}
+        {/if}
+        <span class="label">
+            <ImageLabelViewer label={getImageLabel(asset)} variant="compact" enableSelection={false} />
+        </span>
+    </div>
 
     {#if asset.description}
         <div class="tooltip-description">{asset.description}</div>
@@ -190,15 +193,6 @@
             <div class="metadata-item">
                 <span class="meta-label">Owner</span>
                 <span class="meta-value">{asset.owner.name}</span>
-            </div>
-        {/if}
-
-        {#if asset.image_metadata?.label}
-            <div class="metadata-item">
-                <span class="meta-label">Label</span>
-                <span class="meta-value">
-                    <ImageLabelViewer label={getImageLabel(asset)} variant="compact" enableSelection={false} />
-                </span>
             </div>
         {/if}
     </div>
@@ -271,6 +265,7 @@
 
     .metadata-row {
         display: flex;
+        align-items: center;
         flex-wrap: wrap;
         gap: var(--viz-spacing-xs);
         margin-top: calc(-1 * var(--viz-spacing-xs));
