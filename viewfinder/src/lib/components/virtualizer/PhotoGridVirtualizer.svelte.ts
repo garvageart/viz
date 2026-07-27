@@ -249,8 +249,11 @@ export class PhotoGridVirtualizer {
             columns = 4;
         }
 
-        // Compute actual column width (fill available space)
-        const columnWidth = (width - gap * (columns - 1)) / columns;
+        // Compute actual column width (fill available space, capped at itemWidth if provided)
+        let columnWidth = (width - gap * (columns - 1)) / columns;
+        if (config.itemWidth && config.itemWidth > 0 && columnWidth > config.itemWidth) {
+            columnWidth = config.itemWidth;
+        }
 
         // Compute row height
         let rowHeight: number;

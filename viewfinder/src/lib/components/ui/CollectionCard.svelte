@@ -248,7 +248,7 @@
 
 <style lang="scss">
     .coll-card {
-        min-width: 0;
+        min-width: 100%;
         max-width: 100%;
         height: auto;
         background-color: var(--viz-surface-card);
