@@ -14,7 +14,7 @@
         type PhotoGridConfig,
         PhotoGridVirtualizer
     } from "$lib/components/virtualizer/PhotoGridVirtualizer.svelte.js";
-    import { VizMimeTypes } from "$lib/constants";
+    import { IS_MOBILE, VizMimeTypes } from "$lib/constants";
     import { DragData } from "$lib/drag-drop/data";
     import type { ConsolidatedGroup, ImageWithDateLabel } from "$lib/photo-layout";
     import { filterManager } from "$lib/states/filter.svelte";
@@ -347,7 +347,7 @@
     }
 
     $effect(() => {
-        if (!photoGridEl) {
+        if (!photoGridEl || IS_MOBILE) {
             return;
         }
 
@@ -370,6 +370,7 @@
                 const { node, destroy } = mountTooltipComponent(PhotoTooltip, {
                     asset,
                     clickHandler: (e: MouseEvent & { currentTarget: EventTarget & HTMLElement }) => {
+                        instance.hide();
                         if (assetDblClick) {
                             assetDblClick(
                                 e as unknown as MouseEvent & {

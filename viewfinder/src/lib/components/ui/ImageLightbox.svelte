@@ -4,10 +4,13 @@
     import isEqual from "lodash-es/isEqual";
     import { onMount, untrack } from "svelte";
     import type { MouseEventHandler, PointerEventHandler, WheelEventHandler } from "svelte/elements";
+    import { slide } from "svelte/transition";
+    import { hideAll } from "tippy.js";
     import { type ImageAsset, Label as ImageLabel, type ImageUpdate, getFullImagePath, updateImage } from "$lib/api";
     import { modalsManager } from "$lib/components/modals/manager/ModalManager.svelte";
     import Calendar from "$lib/components/ui/Calendar.svelte";
     import ExportPanel, { modalOptions as exportModalOptions } from "$lib/components/ui/panels/ExportPanel.svelte";
+    import { IS_MOBILE } from "$lib/constants";
     import { ApiError } from "$lib/errors/errors";
     import { LabelColours } from "$lib/images/constants";
     import { setRating } from "$lib/images/exif";
@@ -44,6 +47,12 @@
     let { lightboxImage = $bindable(), prevLightboxImage, nextLightboxImage, onImageUpdated }: Props = $props();
 
     let show = $derived(lightboxImage !== undefined);
+
+    $effect(() => {
+        if (show) {
+            hideAll();
+        }
+    });
     let imageToLoad = $derived(
         lightboxImage ? getFullImagePath(lightboxImage.image_paths?.preview || lightboxImage.image_paths?.original) : ""
     );
@@ -95,6 +104,12 @@
         tx: 0,
         ty: 0
     };
+
+    // Swipe state
+    let swipeStartX = 0;
+    let swipeStartY = 0;
+    let isSwiping = false;
+    const SWIPE_THRESHOLD = 50;
 
     // Crop State
     let isCropping = $state(false);
@@ -220,7 +235,7 @@
     });
 
     let direction = $state<"left" | "right">("right");
-    let showMetadata = $state(true);
+    let showMetadata = $state(!IS_MOBILE);
     let editNameMode = $state(false);
     let editingName = $state("");
     let calendarOpen = $state(false);
@@ -543,6 +558,41 @@
 
         direction = "right";
         nextLightboxImage?.();
+    }
+
+    function handleSwipeStart(e: TouchEvent) {
+        if (zoomState.currentZoom > 1 || isCropping) {
+            return;
+        }
+        swipeStartX = e.touches[0].clientX;
+        swipeStartY = e.touches[0].clientY;
+        isSwiping = true;
+    }
+
+    function handleSwipeMove(e: TouchEvent) {
+        if (!isSwiping) {
+            return;
+        }
+        const dx = e.touches[0].clientX - swipeStartX;
+        const dy = e.touches[0].clientY - swipeStartY;
+        if (Math.abs(dy) > Math.abs(dx)) {
+            isSwiping = false;
+        }
+    }
+
+    function handleSwipeEnd(e: TouchEvent) {
+        if (!isSwiping) {
+            return;
+        }
+        isSwiping = false;
+        const dx = e.changedTouches[0].clientX - swipeStartX;
+        if (Math.abs(dx) >= SWIPE_THRESHOLD) {
+            if (dx > 0) {
+                goToPrev();
+            } else {
+                goToNext();
+            }
+        }
     }
 
     function restoreCrop() {
@@ -929,9 +979,17 @@
 </script>
 
 {#snippet metadataEditor()}
-    <div class="metadata-editor">
+    <div class="metadata-editor" transition:slide={{ duration: 200, axis: "x" }}>
         <div class="metadata-header">
             <h3>Metadata</h3>
+            {#if IS_MOBILE}
+                <IconButton
+                    iconName="close"
+                    class="metadata-close-btn"
+                    title="Close"
+                    onclick={() => (showMetadata = false)}
+                />
+            {/if}
         </div>
         <div class="metadata-exif-box">
             <div class="exif-cards">
@@ -1359,7 +1417,17 @@
                         onclick={(e) => {
                             e.stopPropagation();
 
-                            modalsManager.open(ExportPanel, { assets: [lightboxImage!] }, exportModalOptions);
+                            modalsManager
+                                .open(
+                                    ExportPanel,
+                                    {
+                                        assets: [lightboxImage!]
+                                    },
+                                    exportModalOptions
+                                )
+                                .then(() => {
+                                    lightboxImage = undefined;
+                                });
                         }}
                     />
                     <IconButton
@@ -1726,12 +1794,31 @@
         overflow-y: auto;
     }
 
+    @media (max-width: 40rem) {
+        .metadata-editor {
+            position: fixed;
+            top: 0;
+            right: 0;
+            transform: none;
+            width: 95%;
+            max-width: none;
+            min-width: 0;
+            height: 100%;
+            border-radius: 0;
+            border-left: 1px solid var(--viz-border-subtle);
+            border-top: none;
+            z-index: 10000;
+            box-shadow: -4px 0 20px rgba(0, 0, 0, 0.3);
+        }
+    }
+
     .metadata-header {
         font-size: var(--viz-font-size-lg);
         font-weight: 700;
         color: var(--viz-text-primary);
         display: flex;
         align-items: center;
+        justify-content: space-between;
         margin-bottom: var(--viz-spacing-sm);
         padding-bottom: var(--viz-spacing-sm);
         border-bottom: 1px solid var(--viz-border-subtle);

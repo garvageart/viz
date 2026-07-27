@@ -8,6 +8,7 @@
     import "tippy.js/dist/tippy.css";
     import { type ImageAsset, getFullImagePath } from "$lib/api";
     import { PhotoGridVirtualizer } from "$lib/components/virtualizer/PhotoGridVirtualizer.svelte.js";
+    import { IS_MOBILE } from "$lib/constants";
     import { debugMode, isLayoutPage, sort, tableColumnSettings } from "$lib/states/index.svelte";
     import { selectionManager } from "$lib/states/selection.svelte";
     import type { AssetGridArray, AssetGridView, AssetSortBy } from "$lib/types/asset";
@@ -295,7 +296,7 @@
 
     // Tippy tooltip delegation
     $effect(() => {
-        if (!assetGridDisplayEl || view !== "basic") {
+        if (!assetGridDisplayEl || view !== "basic" || IS_MOBILE) {
             return;
         }
 
@@ -320,6 +321,7 @@
                 const { node, destroy } = mountTooltipComponent(PhotoTooltip, {
                     asset: imageAsset,
                     clickHandler: (e: MouseEvent & { currentTarget: EventTarget & HTMLElement }) => {
+                        instance.hide();
                         if (assetDblClick) {
                             assetDblClick(
                                 e as unknown as MouseEvent & {
