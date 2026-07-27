@@ -3,13 +3,14 @@
     import hotkeys from "hotkeys-js";
     import { DateTime } from "luxon";
     import { onMount } from "svelte";
+    import { IS_MOBILE_VIEWPORT } from "$lib/constants";
     import { type SerializedWorkspace, Workspace } from "$lib/layouts/model.svelte";
     import { views } from "$lib/layouts/views";
     import { debugMode } from "$lib/states/index.svelte";
     import { workspaceState } from "$lib/states/workspace.svelte";
     import { VizLocalStorage } from "$lib/utils/misc";
     import LayoutNode from "./LayoutNode.svelte";
-    import { createDefaultLayout } from "./layouts/registry";
+    import { createDefaultLayout, createMobileDefaultLayout } from "./layouts/registry";
 
     interface Props {
         id: string;
@@ -31,10 +32,10 @@
                 }
             } catch (e) {
                 console.error("[Workspace] Failed to hydrate layout", e);
-                workspaceState.workspace = createDefaultLayout();
+                workspaceState.workspace = IS_MOBILE_VIEWPORT ? createMobileDefaultLayout() : createDefaultLayout();
             }
         } else {
-            workspaceState.workspace = createDefaultLayout();
+            workspaceState.workspace = IS_MOBILE_VIEWPORT ? createMobileDefaultLayout() : createDefaultLayout();
         }
 
         initialized = true;

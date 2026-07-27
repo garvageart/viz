@@ -105,4 +105,16 @@
     .modal-content.padding {
         padding: 1rem;
     }
+
+    @media (max-width: 40rem) {
+        .viz-modal {
+            width: 95% !important;
+            max-height: 90vh;
+            border-radius: var(--viz-border-radius-md);
+        }
+
+        .modal-content.padding {
+            padding: var(--viz-spacing-sm);
+        }
+    }
 </style>

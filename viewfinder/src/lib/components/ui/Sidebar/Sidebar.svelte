@@ -1,5 +1,6 @@
 <script lang="ts">
-    import { slide } from "svelte/transition";
+    import { onMount } from "svelte";
+    import { IS_MOBILE_VIEWPORT } from "$lib/constants";
     import IconButton from "../IconButton.svelte";
 
     interface Props {
@@ -18,11 +19,18 @@
 
     let sidebarEl: HTMLElement;
     let sidebarWidthState = $derived(open ? sidebarWidth : "var(--viz-sidebar-width-collapsed)");
+
+    onMount(() => {
+        if (IS_MOBILE_VIEWPORT) {
+            open = false;
+        }
+    });
 </script>
 
 <nav
     bind:this={sidebarEl}
     class="viz-sidebar"
+    class:open
     style:width={sidebarWidthState}
     style:min-width={sidebarWidthState}
     style:max-width={sidebarWidthState}
@@ -109,6 +117,20 @@
         color: var(--viz-text-muted) !important;
         &:hover {
             background-color: var(--viz-surface-panel) !important;
+        }
+    }
+
+    @media (max-width: 40rem) {
+        .viz-sidebar.open {
+            position: fixed;
+            top: 0;
+            left: 0;
+            height: 100vh;
+            z-index: 1000;
+            width: 100% !important;
+            min-width: 100% !important;
+            max-width: 100% !important;
+            box-shadow: 4px 0 20px rgba(0, 0, 0, 0.3);
         }
     }
 </style>

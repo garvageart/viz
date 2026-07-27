@@ -43,3 +43,15 @@ export function createDefaultLayout(): Workspace {
 
     return new Workspace(root);
 }
+
+export function createMobileDefaultLayout(): Workspace {
+    const photosView = viewRegistry.find((v) => v.path === "/photos");
+    const collectionsView = viewRegistry.find((v) => v.path === "/collections");
+
+    const root = new TabGroup({
+        size: 100,
+        views: [photosView, collectionsView].filter(Boolean) as typeof viewRegistry
+    });
+
+    return new Workspace(root);
+}

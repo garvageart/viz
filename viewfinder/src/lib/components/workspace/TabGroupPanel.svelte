@@ -704,4 +704,15 @@
         opacity: 0.7;
         margin-left: 0.25em;
     }
+
+    @media (max-width: 40rem) {
+        .tab-group-header {
+            height: 2.2rem;
+        }
+
+        .tab-button {
+            padding: var(--viz-spacing-sm) var(--viz-spacing-sm);
+            font-size: var(--viz-font-size-std);
+        }
+    }
 </style>
