@@ -5,6 +5,14 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.22.2] - 2026-07-27
+
+* chore(images): add wasm-vips test suite TODO and JPEG interlace notes (3c18810c)
+* feat(ui): add standard size to LoadingSpinner (51f55bda)
+* feat(ui): add weight prop to Badge and restyle CollectionCard badge (3214fadf)
+* feat(core): add reactive isMobile state and migrate from static IS_MOBILE constants (5440680e)
+* feat(ui): extract ViewsContextMenu and add views submenu to mobile AppMenu (5fbfbb08)
+
 ## [0.22.1] - 2026-07-27
 
 * fix(db): lazily initialise IndexedDB connection in DbSettings (01177f83)
