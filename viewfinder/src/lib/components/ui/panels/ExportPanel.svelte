@@ -66,9 +66,10 @@
     interface Props {
         id: string;
         assets: ImageAsset[];
+        onExport?: (imgs: Awaited<ReturnType<typeof exportImagesParallel>>) => void;
     }
 
-    let { id, assets }: Props = $props();
+    let { id, assets, onExport }: Props = $props();
 
     const settingsDb = new DbSettings<SavedExportSettings>("export_panel_settings");
     const renameDb = new DbSettings<SavedRenameSettings>("batch_rename_settings");
@@ -192,10 +193,16 @@
     ] as const;
 
     async function handleExport() {
+        // Capture all needed state before closing the modal
+        const exportSettings = $state.snapshot(settings);
+        const exportRenameSettings = $state.snapshot(renameSettings);
+        const exportTemplate = activeTemplate;
+        const exportAssets = $state.snapshot(assets);
+
         modalsManager.close(id);
 
         const downloadTasks: DownloadFile[] = [];
-        for (const asset of assets) {
+        for (const asset of exportAssets) {
             const url = `${API_BASE_URL}/images/${encodeURIComponent(asset.uid)}/file`;
             const filename =
                 asset.image_metadata?.original_file_name || asset.image_metadata?.file_name || asset.name || "image";
@@ -213,7 +220,7 @@
         const transformInputs: TransformInput[] = [];
         for (let i = 0; i < downloadTasks.length; i++) {
             const task = downloadTasks[i];
-            const asset = assets[i];
+            const asset = exportAssets[i];
             let originalData = $state.snapshot(task.data);
 
             if (!originalData) {
@@ -229,15 +236,15 @@
             transformInputs.push({
                 asset: $state.snapshot(asset),
                 params: $state.snapshot({
-                    format: settings.format,
-                    quality: settings.quality,
-                    width: settings.resizeMode !== "none" ? settings.resizeWidth : undefined,
-                    height: settings.resizeMode !== "none" ? settings.resizeHeight : undefined,
-                    resizeMode: settings.resizeMode,
-                    colorSpace: settings.colorSpace,
-                    metadata: settings.includeMetadata ? settings.metadata : "none",
-                    removeLocation: settings.removeLocation,
-                    bitDepth: settings.bitDepth ? settings.bitDepth : undefined
+                    format: exportSettings.format,
+                    quality: exportSettings.quality,
+                    width: exportSettings.resizeMode !== "none" ? exportSettings.resizeWidth : undefined,
+                    height: exportSettings.resizeMode !== "none" ? exportSettings.resizeHeight : undefined,
+                    resizeMode: exportSettings.resizeMode,
+                    colorSpace: exportSettings.colorSpace,
+                    metadata: exportSettings.includeMetadata ? exportSettings.metadata : "none",
+                    removeLocation: exportSettings.removeLocation,
+                    bitDepth: exportSettings.bitDepth ? exportSettings.bitDepth : undefined
                 }),
                 originalData
             });
@@ -250,6 +257,7 @@
             });
             exportWorker.addEventListener("error", (e) => {
                 console.error("[ExportPanel] Worker error event:", e.message, e.filename, e.lineno, e);
+                throw e;
             });
         } catch (workerErr) {
             console.error("[ExportPanel] Failed to create web worker:", workerErr);
@@ -258,11 +266,11 @@
 
         const transformFn = Comlink.wrap<typeof exportImagesParallel>(exportWorker);
 
+        const flatResults: Awaited<ReturnType<typeof exportImagesParallel>> = [];
         try {
-            const flatResults = [];
             // Process the transforms sequentially inside the single background worker
             for (let index = 0; index < transformInputs.length; index++) {
-                const res = await transformFn($state.snapshot(transformInputs), null, index);
+                const res = await transformFn(transformInputs, null, index);
                 flatResults.push(...res);
             }
 
@@ -274,7 +282,7 @@
                 const ext = result.ext || asset.image_metadata?.file_type?.toLowerCase() || "jpg";
 
                 let filename = "";
-                if (renameSettings.namingMode === "original") {
+                if (exportRenameSettings.namingMode === "original") {
                     const origFull =
                         asset.name ||
                         asset.image_metadata?.original_file_name ||
@@ -283,10 +291,10 @@
                     const lastDot = origFull.lastIndexOf(".");
                     filename = lastDot === -1 ? origFull : origFull.substring(0, lastDot);
                 } else {
-                    const { name: renderedName } = safeRenderRenameTemplate(activeTemplate, asset, r.index, {
-                        sequenceStart: renameSettings.sequenceStart,
-                        sequencePadding: renameSettings.sequencePadding,
-                        customName: renameSettings.customName
+                    const { name: renderedName } = safeRenderRenameTemplate(exportTemplate, asset, r.index, {
+                        sequenceStart: exportRenameSettings.sequenceStart,
+                        sequencePadding: exportRenameSettings.sequencePadding,
+                        customName: exportRenameSettings.customName
                     });
 
                     filename = renderedName || asset.name;
@@ -315,7 +323,7 @@
                         const ext = r.result.ext || asset.image_metadata?.file_type?.toLowerCase() || "jpg";
 
                         let filename = "";
-                        if (renameSettings.namingMode === "original") {
+                        if (exportRenameSettings.namingMode === "original") {
                             const origFull =
                                 asset.name ||
                                 asset.image_metadata?.original_file_name ||
@@ -324,10 +332,10 @@
                             const lastDot = origFull.lastIndexOf(".");
                             filename = lastDot === -1 ? origFull : origFull.substring(0, lastDot);
                         } else {
-                            const { name: renderedName } = safeRenderRenameTemplate(activeTemplate, asset, r.index, {
-                                sequenceStart: renameSettings.sequenceStart,
-                                sequencePadding: renameSettings.sequencePadding,
-                                customName: renameSettings.customName
+                            const { name: renderedName } = safeRenderRenameTemplate(exportTemplate, asset, r.index, {
+                                sequenceStart: exportRenameSettings.sequenceStart,
+                                sequencePadding: exportRenameSettings.sequencePadding,
+                                customName: exportRenameSettings.customName
                             });
 
                             filename = renderedName || asset.name;
@@ -388,8 +396,10 @@
                 type: "error"
             });
         } finally {
-            exportWorker.terminate();
+            exportWorker?.terminate();
         }
+
+        onExport?.(flatResults);
     }
 
     function handleCancel() {
@@ -424,7 +434,7 @@
         {#snippet destinationSnippet()}
             <InputSelect
                 label="Export to"
-                options={[{ value: "zip", label: assets.length > 1 ? "Download as ZIP" : "Local Computer" }]}
+                options={[{ value: "zip", label: assets.length > 1 ? "Download as ZIP" : "Local" }]}
                 bind:value={settings.destinationMode}
             />
         {/snippet}

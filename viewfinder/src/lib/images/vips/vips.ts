@@ -397,6 +397,21 @@ export async function generateTransform(input: TransformInput): Promise<Transfor
 
     const writeOptions: Record<string, any> = { Q: quality, strip: stripAll };
 
+    // JPEG-specific: match the encoding efficiency of camera/editor output
+    // Note: for fuck's sake. Think about reasonable defaults (these are fine)
+    // but also advanced settings if users choose
+    if (finalExt === "jpg" || finalExt === "jpeg") {
+        writeOptions.optimize_coding = true;
+        writeOptions.interlace = true;
+        writeOptions.trellis_quant = true;
+        writeOptions.optimize_scans = true;
+        // "auto" switches to 4:4:4 above Q=90, which inflates files
+        // dramatically vs the 4:2:0 originals most cameras produce.
+        // Force 4:2:0 always — visually lossless for photos and
+        // keeps file sizes reasonable even at Q=100.
+        writeOptions.subsample_mode = "on";
+    }
+
     // Passing 'bitdepth' to jpegsave or webpsave
     // causes an immediate fatal crash obviously
     const supportsBitDepth = SUPPORTED_IMAGE_TYPES.filter((v) => !v.startsWith("jp") || v === "webp").includes(

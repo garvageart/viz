@@ -1,3 +1,5 @@
+import { sleep } from "$lib/utils/misc";
+
 /**
  * Recursively traverse file system entries to collect all files,
  * including those in nested folders.
@@ -44,12 +46,10 @@ export async function downloadToFilesystem(filename: string, data: Blob, revokeD
     a.click();
     a.remove();
 
-    // Delay to ensure browser has successfully initiated the download
-    if (revokeDelayMs) {
-        setTimeout(() => {
-            URL.revokeObjectURL(url);
-        }, revokeDelayMs);
-    }
+    // Default 1s delay ensures mobile browsers finish initiating the download
+    // before the blob URL is revoked. Pass 0 to revoke immediately.
+    await sleep(revokeDelayMs ?? 1000);
+    URL.revokeObjectURL(url);
 }
 
 /**
