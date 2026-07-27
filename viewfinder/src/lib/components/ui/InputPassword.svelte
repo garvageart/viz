@@ -89,7 +89,7 @@
         min-width: 0%;
         position: relative;
         width: 100%;
-        gap: var(--viz-spacing-sm); // UI Spacing Token
+        gap: var(--viz-spacing-sm);
     }
 
     .input-wrapper {
@@ -98,20 +98,19 @@
     }
 
     .input-label {
-        font-size: var(--viz-font-size-lg); // UI Typography Token
         font-weight: 500;
         color: var(--viz-text-secondary);
     }
 
     .required-asterisk {
         color: var(--viz-error-color);
-        margin-left: var(--viz-spacing-xxs); // UI Spacing Token
+        margin-left: var(--viz-spacing-xxs);
     }
 
     .input-description {
-        font-size: var(--viz-font-size-std); // UI Typography Token
+        font-size: var(--viz-font-size-std);
         color: var(--viz-text-muted);
-        padding-left: var(--viz-spacing-sm); // UI Spacing Token
+        padding-left: var(--viz-spacing-sm);
     }
 
     input {
@@ -126,7 +125,7 @@
         box-shadow: 0 -1px 0 var(--viz-border-subtle) inset;
         font-family: var(--viz-display-font);
         font-size: var(--viz-font-size-lg);
-        padding: var(--viz-spacing-sm) 2.5rem var(--viz-spacing-sm) var(--viz-spacing-std); // UI Padding Tokens
+        padding: var(--viz-spacing-sm) 2.5rem var(--viz-spacing-sm) var(--viz-spacing-std);
         margin-bottom: 0;
 
         &::placeholder {
@@ -157,7 +156,7 @@
 
     .password-toggle-btn {
         position: absolute;
-        right: var(--viz-spacing-md); // UI Spacing Token
+        right: var(--viz-spacing-md);
         top: 50%;
         transform: translateY(-50%);
         background-color: transparent;

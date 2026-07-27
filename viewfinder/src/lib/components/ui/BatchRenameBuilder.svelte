@@ -15,6 +15,7 @@
         ROW_TYPES,
         buildDateTokens
     } from "$lib/ui-tools/template";
+    import { decodeHtmlEntities } from "$lib/utils/dom";
     import type { ExportFormats } from "$lib/utils/images";
     import { generateRandomString } from "$lib/utils/misc";
     import IconButton from "./IconButton.svelte";
@@ -183,7 +184,7 @@
 
             return {
                 original: originalName,
-                preview: error ? error : `${name}.${format}`
+                preview: error ? error : `${decodeHtmlEntities(name)}.${format}`
             };
         });
     });
@@ -464,7 +465,6 @@
         .preview-title {
             font-size: var(--viz-font-size-lg);
             font-weight: 600;
-            color: var(--viz-text-secondary);
             display: block;
             margin-bottom: var(--viz-spacing-xs);
         }

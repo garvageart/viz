@@ -25,6 +25,12 @@ export function debugEvent(event: CustomEvent, printAsString: boolean = false) {
     console.log("Detail:", event.detail);
 }
 
+export function decodeHtmlEntities(str: string): string {
+    const el = document.createElement("textarea");
+    el.innerHTML = str;
+    return el.value;
+}
+
 // Taken from here: https://stackoverflow.com/a/29956714
 export function isElementScrollable(element: HTMLElement) {
     return element.scrollHeight > element.clientHeight || element.scrollWidth > element.clientWidth;

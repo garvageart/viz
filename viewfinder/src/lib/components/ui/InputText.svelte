@@ -85,7 +85,6 @@
     }
 
     .input-label {
-        font-size: var(--viz-font-size-sm);
         font-weight: 500;
         color: var(--viz-text-secondary);
     }
