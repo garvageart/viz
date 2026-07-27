@@ -5,6 +5,14 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.22.5] - 2026-07-27
+
+* fix: increase the photoTooltip delay (46e7ef57)
+* fix(grid): add missing max-width-column CSS class (5d2c87a6)
+* fix(grid): cap column width at itemWidth in virtualizer (bc5f7944)
+* fix(ui): collection card min-width overriding grid layout (4e922c84)
+* fix(api): handle NULL private field in collections (4c324100)
+
 ## [0.22.4] - 2026-07-27
 
 * fix(api): populate user context on API key auth (91f21637)
