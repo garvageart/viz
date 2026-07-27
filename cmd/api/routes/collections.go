@@ -143,11 +143,17 @@ func CollectionsRouter(db *gorm.DB, logger *slog.Logger, wsBroker *libhttp.WSBro
 
 		authUser, _ := libhttp.UserFromContext(req)
 
+		// Default private to false if not specified
+		private := false
+		if create.Private != nil {
+			private = *create.Private
+		}
+
 		// Map request -> entity for persistence
 		collection := entities.Collection{
 			Uid:         colUid,
 			Name:        create.Name,
-			Private:     create.Private,
+			Private:     &private,
 			Description: create.Description,
 			CreatedByID: &authUser.Uid,
 			OwnerID:     &authUser.Uid,
@@ -209,10 +215,10 @@ func CollectionsRouter(db *gorm.DB, logger *slog.Logger, wsBroker *libhttp.WSBro
 			authUser, ok := libhttp.UserFromContext(req)
 			if ok {
 				// Show: Public OR (Private AND Owned by me)
-				query = query.Where("private = ? OR (private = ? AND owner_id = ?)", false, true, authUser.Uid)
+				query = query.Where("(private = ? OR private IS NULL) OR (private = ? AND owner_id = ?)", false, true, authUser.Uid)
 			} else {
 				// Show: Only Public
-				query = query.Where("private = ?", false)
+				query = query.Where("private = ? OR private IS NULL", false)
 			}
 
 			// Count total collections
