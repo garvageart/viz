@@ -592,4 +592,44 @@
         opacity: 0;
         pointer-events: none;
     }
+
+    @media (max-width: 40rem) {
+        :global(.calendar-popover) {
+            --calendar-cell-size: 2.4rem;
+            width: 95vw;
+            max-width: none;
+            padding: var(--viz-spacing-sm);
+        }
+
+        :global(.calendar-day) {
+            font-size: var(--viz-font-size-lg);
+        }
+
+        :global(.calendar-head-cell) {
+            font-size: var(--viz-font-size-sm);
+        }
+
+        :global(.calendar-select-trigger) {
+            min-height: 2.25rem !important;
+            height: 2.25rem !important;
+            font-size: var(--viz-font-size-lg) !important;
+        }
+
+        :global(.calendar-select-trigger.month) {
+            width: 7.5rem !important;
+        }
+
+        :global(.calendar-select-trigger.year) {
+            width: 5.5rem !important;
+        }
+
+        :global(.time-input) {
+            font-size: var(--viz-font-size-xl);
+            padding: var(--viz-spacing-sm);
+        }
+
+        :global(.time-segment) {
+            padding: var(--viz-spacing-xs) var(--viz-spacing-sm);
+        }
+    }
 </style>

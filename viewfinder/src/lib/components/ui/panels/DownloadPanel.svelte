@@ -360,4 +360,22 @@
             background: var(--viz-error-color);
         }
     }
+
+    @media (max-width: 40rem) {
+        #viz-download-panel {
+            width: 90%;
+            max-width: 90%;
+            right: auto;
+            left: 50%;
+            transform: translateX(-50%);
+            bottom: var(--viz-spacing-std);
+        }
+
+        #viz-download-panel-minimized {
+            right: auto;
+            left: 50%;
+            transform: translateX(-50%);
+            bottom: var(--viz-spacing-std);
+        }
+    }
 </style>

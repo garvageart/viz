@@ -847,7 +847,7 @@
                 aria-label="Filter"
                 onclick={openFilterModal}
             >
-                Filter
+                <span>Filter</span>
             </IconButton>
         {/if}
         <IconButton
@@ -857,7 +857,7 @@
             aria-label="Add Photos"
             onclick={openAddPhotosModal}
         >
-            Add Photos
+            <span>Add Photos</span>
         </IconButton>
         <IconButton
             iconName="upload"
@@ -869,7 +869,7 @@
                 handleCollectionUpload();
             }}
         >
-            Upload
+            <span>Upload</span>
         </IconButton>
         <IconButton
             iconName="edit"
@@ -879,7 +879,7 @@
             aria-label="Edit Collection"
             onclick={openEditCollectionModal}
         >
-            Edit
+            <span>Edit</span>
         </IconButton>
         <Dropdown title="Options" class="toolbar-button" items={displayMenuItems} showSelectionIndicator={false}>
             {#snippet trigger({ toggle, showMenu, title })}
@@ -1017,7 +1017,7 @@
                             autocorrect="off"
                             spellcheck="false"
                             id="coll-name-input"
-                            style="font-size: var(--viz-font-size-5xl); font-weight: bold; padding: 0.25rem 0.5rem;"
+                            style="font-weight: bold; padding: 0.25rem 0.5rem; min-height: 0;"
                             title={name}
                             bind:value={name}
                             focused={true}
@@ -1138,7 +1138,8 @@
         align-items: center;
         min-height: 2.5rem;
         flex: 1;
-        min-width: 200px;
+        min-width: 0;
+        overflow: hidden;
 
         :global(.input-container) {
             width: 100%;
@@ -1151,7 +1152,7 @@
         align-items: center;
         gap: var(--viz-spacing-sm);
         cursor: pointer;
-        max-width: 100%;
+        // max-width: 100%;
         outline: none;
 
         #coll-name-display {
@@ -1161,6 +1162,9 @@
             color: var(--viz-text-primary);
             line-height: 1.2;
             text-wrap: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            max-width: 100%;
             padding: 0.25rem 0.5rem;
         }
 
@@ -1200,5 +1204,29 @@
         font-size: inherit;
         height: 100%;
         gap: 0.75rem;
+    }
+
+    @media (max-width: 40rem) {
+        #coll-tools :global(.toolbar-button span:not(.viz-material-icon)) {
+            display: none;
+        }
+
+        .selection-actions {
+            gap: var(--viz-spacing-sm);
+        }
+
+        .selection-actions :global(.star-rating) {
+            display: none;
+        }
+
+        #coll-name-container :global(#coll-name-input),
+        #coll-name-display-wrapper #coll-name-display {
+            font-size: var(--viz-font-size-3xl);
+        }
+
+        #coll-name-container :global(input:not([type="submit"])) {
+            min-height: auto;
+            padding: 0.25rem 0.5rem;
+        }
     }
 </style>

@@ -484,4 +484,20 @@
             color-mix(in srgb, var(--viz-warning-color) 60%, var(--viz-text-secondary))
         );
     }
+
+    @media (max-width: 40rem) {
+        #viz-upload-panel {
+            width: 90%;
+            max-width: 90%;
+            left: 50%;
+            transform: translateX(-50%);
+            bottom: var(--viz-spacing-std);
+        }
+
+        #viz-upload-panel-minimized {
+            left: 50%;
+            transform: translateX(-50%);
+            bottom: var(--viz-spacing-std);
+        }
+    }
 </style>
