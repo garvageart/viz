@@ -232,7 +232,7 @@
     <div class="metadata">
         <div class="metadata-header">
             <span class="coll-name" title={collection.name}>{collection.name}</span>
-            <Badge variant="neutral" pill={false}>
+            <Badge variant="info" weight="regular" pill={false}>
                 {collection.image_count}
                 {collection.image_count === 1 ? "image" : "images"}
             </Badge>

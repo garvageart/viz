@@ -7,6 +7,7 @@
     interface Props extends HTMLAttributes<HTMLDivElement> {
         variant?: "default" | "warning" | "error" | "info" | "success" | "neutral" | "outline";
         size?: "small" | "std" | "lg";
+        weight?: "regular" | "bold";
         pill?: boolean;
         iconName?: MaterialSymbol;
         iconFill?: boolean;
@@ -17,6 +18,7 @@
     let {
         variant = "default",
         size = "std",
+        weight = "bold",
         pill = false,
         iconName,
         iconFill = false,
@@ -27,7 +29,7 @@
     }: Props = $props();
 </script>
 
-<div class="viz-badge {variant} size-{size} {className}" class:is-pill={pill} {...props}>
+<div class="viz-badge {variant} size-{size} {className}" class:bold={weight === "bold"} class:is-pill={pill} {...props}>
     {#if iconName}
         <MaterialIcon {iconName} fill={iconFill} size={iconSize} />
     {/if}
@@ -46,11 +48,14 @@
         border-radius: var(--viz-border-radius-sm);
         font-size: var(--viz-font-size-sm);
         font-family: var(--viz-mono-font);
-        font-weight: 600;
         line-height: 1;
         width: max-content;
         box-sizing: border-box;
         border: 1px solid transparent;
+
+        &.bold {
+            font-weight: bold;
+        }
 
         &.size-small {
             font-size: var(--viz-font-size-sm);
