@@ -3,14 +3,81 @@
     import { onMount, untrack } from "svelte";
     import "$lib/components/panels/viz-panel.scss";
     import Header from "$lib/components/ui/Header.svelte";
+    import LoadingSpinner from "$lib/components/ui/LoadingSpinner.svelte";
+    import MaterialIcon from "$lib/components/ui/MaterialIcon.svelte";
     import DownloadPanel from "$lib/components/ui/panels/DownloadPanel.svelte";
     import UploadPanel from "$lib/components/ui/panels/UploadPanel.svelte";
+    import { IS_MOBILE } from "$lib/constants";
     import { loadRuntimeConfig } from "$lib/runtime-config";
     import { debugMode, download, sortState, upload } from "$lib/states/index.svelte";
     import { registerReady } from "$lib/stores/appReady";
     import { invalidateViz } from "$lib/views/views.svelte";
 
     let { children } = $props();
+
+    // Pull-to-refresh
+    let pullDistance = $state(0);
+    let isRefreshing = $state(false);
+    let isSpringingBack = $state(false);
+    let touchStartY = 0;
+    let layoutEl: HTMLElement | undefined = $state();
+    const THRESHOLD = 45;
+    const MAX_PULL = 60;
+
+    function isScrolledAtTop(e: TouchEvent): boolean {
+        let node: HTMLElement | null = e.target as HTMLElement;
+        while (node && node !== layoutEl) {
+            if (node.scrollHeight > node.clientHeight && node.scrollTop > 0) {
+                return false;
+            }
+            node = node.parentElement;
+        }
+
+        return true;
+    }
+
+    function onPtrTouchStart(e: TouchEvent) {
+        if (isRefreshing || !layoutEl) {
+            return;
+        }
+
+        touchStartY = e.touches[0].clientY;
+    }
+
+    function onPtrTouchMove(e: TouchEvent) {
+        if (isRefreshing || touchStartY === 0 || !layoutEl) {
+            return;
+        }
+
+        if (!isScrolledAtTop(e)) {
+            return;
+        }
+
+        const delta = e.touches[0].clientY - touchStartY;
+        if (delta > 0) {
+            pullDistance = Math.min(delta, MAX_PULL);
+            e.preventDefault();
+        }
+    }
+
+    function onPtrTouchEnd() {
+        if (pullDistance >= THRESHOLD && !isRefreshing) {
+            isRefreshing = true;
+            window.location.reload();
+            return;
+        }
+
+        if (pullDistance > 0) {
+            isSpringingBack = true;
+            pullDistance = 0;
+        }
+
+        touchStartY = 0;
+    }
+
+    function onPtrTransitionEnd() {
+        isSpringingBack = false;
+    }
 
     $effect(() => {
         // Watch sort state for changes
@@ -46,8 +113,26 @@
     }
 </script>
 
-<div class="viz-app-layout">
+<div
+    class="viz-app-layout"
+    bind:this={layoutEl}
+    role="presentation"
+    ontouchstart={IS_MOBILE ? onPtrTouchStart : undefined}
+    ontouchmove={IS_MOBILE ? onPtrTouchMove : undefined}
+    ontouchend={IS_MOBILE ? onPtrTouchEnd : undefined}
+>
     <Header />
+    <!-- TODO: needs more work -->
+    {#if IS_MOBILE && (pullDistance > 0 || isRefreshing || isSpringingBack)}
+        <div
+            class="ptr-indicator"
+            style:transform="translateY({pullDistance - 48}px)"
+            ontransitionend={onPtrTransitionEnd}
+            role="presentation"
+        >
+            <LoadingSpinner color="var(--viz-accent)" size="medium" />
+        </div>
+    {/if}
     {#if upload.files.length > 0}
         <UploadPanel />
     {/if}
@@ -77,5 +162,20 @@
         overflow: hidden;
         width: 100%;
         position: relative;
+    }
+
+    .ptr-indicator {
+        position: absolute;
+        top: var(--viz-header-height);
+        left: 50%;
+        margin-left: -24px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        width: 48px;
+        height: 48px;
+        z-index: 1000;
+        pointer-events: none;
+        transition: transform 0.25s cubic-bezier(0, 0, 0.2, 1);
     }
 </style>
