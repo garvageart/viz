@@ -176,6 +176,9 @@ func AuthMiddleware(db *gorm.DB, logger *slog.Logger) func(next http.Handler) ht
 
 				r = r.WithContext(context.WithValue(r.Context(), ctxAPIKey, &key))
 				r = r.WithContext(context.WithValue(r.Context(), ctxAPIKeyAuth, true))
+				if key.User != nil {
+					r = WithUser(r, key.User)
+				}
 				next.ServeHTTP(w, r)
 				return
 			}
