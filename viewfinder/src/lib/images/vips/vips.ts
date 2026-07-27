@@ -31,6 +31,9 @@ interface ExtendedVipsModule extends VipsModule {
 let _vipsRuntime: ExtendedVipsModule | null = null;
 let _vipsInitPromise: Promise<ExtendedVipsModule> | null = null;
 
+// TODO: Use wasm-vips test suite for users
+// either directly by importing code here
+// or linking users to https://wasm-vips.kleisauke.nl/test/
 async function getVipsRuntime(): Promise<ExtendedVipsModule> {
     if (_vipsRuntime) return _vipsRuntime;
     if (!_vipsInitPromise) {
@@ -402,6 +405,8 @@ export async function generateTransform(input: TransformInput): Promise<Transfor
     // but also advanced settings if users choose
     if (finalExt === "jpg" || finalExt === "jpeg") {
         writeOptions.optimize_coding = true;
+
+        // mhmmmm, not sure about this right now
         writeOptions.interlace = true;
         writeOptions.trellis_quant = true;
         writeOptions.optimize_scans = true;
