@@ -89,7 +89,7 @@
 
     // Compute grid layout parameters
     let isListView = $derived(view === "list" || sort.display === "list");
-    let gridItemWidth = $derived(view === "basic" ? 352 : 272);
+    let gridItemWidth = $derived(view === "basic" ? 352 : 300);
     let gridGap = $state(8);
     let gridRowHeight = $derived(view === "basic" ? 264 : 260);
 
@@ -1064,12 +1064,18 @@
     }
 
     .grid-row {
+        display: flex;
+        justify-content: space-between;
+        align-items: stretch;
+        gap: var(--viz-spacing-sm);
         left: 0;
         right: 0;
     }
 
     .grid-item {
         height: 100%;
+        flex: 1;
+        position: static;
     }
 
     .max-width-column {

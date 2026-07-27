@@ -272,6 +272,8 @@ export class PhotoGridVirtualizer {
             const rowItems: GridItem[] = [];
             const count = Math.min(columns, items.length - i);
 
+            // Standard grid layout: items at fixed positions with consistent gap
+            // All rows use the same positioning logic
             for (let col = 0; col < count; col++) {
                 rowItems.push({
                     asset: items[i + col],
