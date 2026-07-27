@@ -14,11 +14,11 @@
         type PhotoGridConfig,
         PhotoGridVirtualizer
     } from "$lib/components/virtualizer/PhotoGridVirtualizer.svelte.js";
-    import { IS_MOBILE, VizMimeTypes } from "$lib/constants";
+    import { VizMimeTypes } from "$lib/constants";
     import { DragData } from "$lib/drag-drop/data";
     import type { ConsolidatedGroup, ImageWithDateLabel } from "$lib/photo-layout";
     import { filterManager } from "$lib/states/filter.svelte";
-    import { debugMode, isLayoutPage } from "$lib/states/index.svelte";
+    import { debugMode, isLayoutPage, isMobile } from "$lib/states/index.svelte";
     import { selectionManager } from "$lib/states/selection.svelte";
     import type { CardVisualState } from "$lib/types/snippet";
     import { getScrollParent } from "$lib/utils/dom";
@@ -347,7 +347,7 @@
     }
 
     $effect(() => {
-        if (!photoGridEl || IS_MOBILE) {
+        if (!photoGridEl || isMobile) {
             return;
         }
 

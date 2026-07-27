@@ -3,10 +3,9 @@
     import hotkeys from "hotkeys-js";
     import { DateTime } from "luxon";
     import { onMount } from "svelte";
-    import { IS_MOBILE_VIEWPORT } from "$lib/constants";
     import { type SerializedWorkspace, Workspace } from "$lib/layouts/model.svelte";
     import { views } from "$lib/layouts/views";
-    import { debugMode } from "$lib/states/index.svelte";
+    import { debugMode, isMobile } from "$lib/states/index.svelte";
     import { workspaceState } from "$lib/states/workspace.svelte";
     import { VizLocalStorage } from "$lib/utils/misc";
     import LayoutNode from "./LayoutNode.svelte";
@@ -32,10 +31,10 @@
                 }
             } catch (e) {
                 console.error("[Workspace] Failed to hydrate layout", e);
-                workspaceState.workspace = IS_MOBILE_VIEWPORT ? createMobileDefaultLayout() : createDefaultLayout();
+                workspaceState.workspace = isMobile ? createMobileDefaultLayout() : createDefaultLayout();
             }
         } else {
-            workspaceState.workspace = IS_MOBILE_VIEWPORT ? createMobileDefaultLayout() : createDefaultLayout();
+            workspaceState.workspace = isMobile ? createMobileDefaultLayout() : createDefaultLayout();
         }
 
         initialized = true;

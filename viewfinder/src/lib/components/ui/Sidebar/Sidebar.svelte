@@ -1,6 +1,6 @@
 <script lang="ts">
     import { onMount } from "svelte";
-    import { IS_MOBILE_VIEWPORT } from "$lib/constants";
+    import { isMobile } from "$lib/states/index.svelte";
     import IconButton from "../IconButton.svelte";
 
     interface Props {
@@ -21,7 +21,7 @@
     let sidebarWidthState = $derived(open ? sidebarWidth : "var(--viz-sidebar-width-collapsed)");
 
     onMount(() => {
-        if (IS_MOBILE_VIEWPORT) {
+        if (isMobile) {
             open = false;
         }
     });

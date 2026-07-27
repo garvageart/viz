@@ -315,3 +315,5 @@ export function getTheme() {
 export function toggleTheme() {
     themeState.toggle();
 }
+
+export let isMobile = new MediaQuery("(max-width: 40rem)").current;

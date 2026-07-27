@@ -10,12 +10,12 @@
     import { modalsManager } from "$lib/components/modals/manager/ModalManager.svelte";
     import Calendar from "$lib/components/ui/Calendar.svelte";
     import ExportPanel, { modalOptions as exportModalOptions } from "$lib/components/ui/panels/ExportPanel.svelte";
-    import { IS_MOBILE } from "$lib/constants";
     import { ApiError } from "$lib/errors/errors";
     import { LabelColours } from "$lib/images/constants";
     import { setRating } from "$lib/images/exif";
     import { ImageLoader } from "$lib/images/loader/image-loader.svelte";
     import { calculateZoomTo, constrainTranslation } from "$lib/images/zoom/zoom-utils";
+    import { isMobile } from "$lib/states/index.svelte";
     import { toastState } from "$lib/toast-notifcations/notif-state.svelte";
     import { downloadOriginalImageFile } from "$lib/utils/http";
     import {
@@ -235,7 +235,7 @@
     });
 
     let direction = $state<"left" | "right">("right");
-    let showMetadata = $state(!IS_MOBILE);
+    let showMetadata = $state(!isMobile);
     let editNameMode = $state(false);
     let editingName = $state("");
     let calendarOpen = $state(false);
@@ -982,7 +982,7 @@
     <div class="metadata-editor" transition:slide={{ duration: 200, axis: "x" }}>
         <div class="metadata-header">
             <h3>Metadata</h3>
-            {#if IS_MOBILE}
+            {#if isMobile}
                 <IconButton
                     iconName="close"
                     class="metadata-close-btn"

@@ -8,8 +8,7 @@
     import "tippy.js/dist/tippy.css";
     import { type ImageAsset, getFullImagePath } from "$lib/api";
     import { PhotoGridVirtualizer } from "$lib/components/virtualizer/PhotoGridVirtualizer.svelte.js";
-    import { IS_MOBILE } from "$lib/constants";
-    import { debugMode, isLayoutPage, sort, tableColumnSettings } from "$lib/states/index.svelte";
+    import { debugMode, isLayoutPage, isMobile, sort, tableColumnSettings } from "$lib/states/index.svelte";
     import { selectionManager } from "$lib/states/selection.svelte";
     import type { AssetGridArray, AssetGridView, AssetSortBy } from "$lib/types/asset";
     import type { CardVisualState, SvelteSnippet } from "$lib/types/snippet";
@@ -296,7 +295,7 @@
 
     // Tippy tooltip delegation
     $effect(() => {
-        if (!assetGridDisplayEl || view !== "basic" || IS_MOBILE) {
+        if (!assetGridDisplayEl || view !== "basic" || isMobile) {
             return;
         }
 

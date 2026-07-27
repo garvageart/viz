@@ -4,12 +4,10 @@
     import "$lib/components/panels/viz-panel.scss";
     import Header from "$lib/components/ui/Header.svelte";
     import LoadingSpinner from "$lib/components/ui/LoadingSpinner.svelte";
-    import MaterialIcon from "$lib/components/ui/MaterialIcon.svelte";
     import DownloadPanel from "$lib/components/ui/panels/DownloadPanel.svelte";
     import UploadPanel from "$lib/components/ui/panels/UploadPanel.svelte";
-    import { IS_MOBILE } from "$lib/constants";
     import { loadRuntimeConfig } from "$lib/runtime-config";
-    import { debugMode, download, sortState, upload } from "$lib/states/index.svelte";
+    import { debugMode, download, isMobile, sortState, upload } from "$lib/states/index.svelte";
     import { registerReady } from "$lib/stores/appReady";
     import { invalidateViz } from "$lib/views/views.svelte";
 
@@ -117,20 +115,20 @@
     class="viz-app-layout"
     bind:this={layoutEl}
     role="presentation"
-    ontouchstart={IS_MOBILE ? onPtrTouchStart : undefined}
-    ontouchmove={IS_MOBILE ? onPtrTouchMove : undefined}
-    ontouchend={IS_MOBILE ? onPtrTouchEnd : undefined}
+    ontouchstart={isMobile ? onPtrTouchStart : undefined}
+    ontouchmove={isMobile ? onPtrTouchMove : undefined}
+    ontouchend={isMobile ? onPtrTouchEnd : undefined}
 >
     <Header />
     <!-- TODO: needs more work -->
-    {#if IS_MOBILE && (pullDistance > 0 || isRefreshing || isSpringingBack)}
+    {#if isMobile && (pullDistance > 0 || isRefreshing || isSpringingBack)}
         <div
             class="ptr-indicator"
             style:transform="translateY({pullDistance - 48}px)"
             ontransitionend={onPtrTransitionEnd}
             role="presentation"
         >
-            <LoadingSpinner color="var(--viz-accent)" size="medium" />
+            <LoadingSpinner color="var(--viz-accent)" size="standard" />
         </div>
     {/if}
     {#if upload.files.length > 0}
@@ -165,17 +163,20 @@
     }
 
     .ptr-indicator {
+        background-color: var(--viz-surface-popover);
+        border-radius: var(--viz-border-radius-pill);
         position: absolute;
         top: var(--viz-header-height);
         left: 50%;
-        margin-left: -24px;
+        margin-left: -1rem;
         display: flex;
         align-items: center;
         justify-content: center;
-        width: 48px;
-        height: 48px;
+        width: 3rem;
+        height: 3rem;
         z-index: 1000;
         pointer-events: none;
         transition: transform 0.25s cubic-bezier(0, 0, 0.2, 1);
+        box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
     }
 </style>
