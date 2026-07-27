@@ -5,9 +5,8 @@
     import hotkeys from "hotkeys-js";
     import { untrack } from "svelte";
     import Dropdown from "$lib/components/context-menus/Dropdown.svelte";
-    import ThemeContextMenu from "$lib/components/context-menus/ThemeContextMenu.svelte";
-    import ViewsContextMenu from "$lib/components/context-menus/ViewsContextMenu.svelte";
     import { CLIENT_IS_PRODUCTION } from "$lib/constants";
+    import { createWorkspaceViewsMenu } from "$lib/context-menu/menus/workspaceViews";
     import type { MenuItem } from "$lib/context-menu/types";
     import { performSearch } from "$lib/search/execute";
     import { eventsState } from "$lib/states/events.svelte";
@@ -110,13 +109,6 @@
     // Context Menu for Views
     let viewCtxShowMenu = $state(false);
     let viewCtxAnchor = $state<{ x: number; y: number } | null>(null);
-
-    function handleViewMenu(e: MouseEvent) {
-        e.preventDefault();
-        e.stopPropagation();
-        viewCtxAnchor = { x: e.clientX, y: e.clientY };
-        viewCtxShowMenu = true;
-    }
 </script>
 
 <svelte:window
@@ -161,7 +153,7 @@
         <AppMenu bind:isOpen={openAppMenu} bind:anchor={appMenuButton} />
         <div class="header-separator menu"></div>
         {#if isLayoutPage()}
-            <IconButton class="header-button" iconName="view_quilt" title="Views" onclick={handleViewMenu} />
+            <Dropdown icon="view_quilt" items={createWorkspaceViewsMenu()} />
         {:else}
             <IconButton
                 class="header-button"
@@ -198,7 +190,7 @@
         <div class="header-separator"></div>
         <SearchInput
             inputId="header-search"
-            placeholder="Search (Ctrl/Cmd + K)"
+            placeholder="Search{isMobile ? '(Ctrl/Cmd + K)' : ''}"
             bind:searchInputHasFocus
             bind:loading={search.loading}
             bind:value={search.value}
@@ -261,9 +253,6 @@
         </div>
     </div>
 </header>
-
-<ThemeContextMenu bind:showMenu={themeCtxShowMenu} bind:anchor={themeCtxAnchor} />
-<ViewsContextMenu bind:showMenu={viewCtxShowMenu} bind:anchor={viewCtxAnchor} />
 
 <style lang="scss">
     header {
