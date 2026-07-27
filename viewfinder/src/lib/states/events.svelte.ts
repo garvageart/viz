@@ -1,3 +1,4 @@
+import { page } from "$app/state";
 import { WSClient } from "$lib/api/websocket";
 import { performSearch } from "$lib/search/execute";
 import { debounce } from "$lib/utils/misc";
@@ -19,7 +20,7 @@ class EventsState {
 
         // If the user is currently on the search page, trigger a fresh search
         // so results (e.g., deleted collections) are reflected immediately.
-        if (typeof window !== "undefined" && window.location.pathname === "/search") {
+        if (typeof window !== "undefined" && page.url.pathname.endsWith("/search")) {
             try {
                 await performSearch();
             } catch (e) {
