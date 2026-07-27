@@ -5,6 +5,18 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.20.7] - 2026-07-27
+
+* fix: auto-confirm release by default (96033d39)
+* feat(ui): add pull-to-refresh for mobile (e105120b)
+* fix(ui): move image label into tooltip metadata row (1dd51284)
+* feat(ui): mobile responsive sidebar, workspace defaults, tabs, and modals (0c3672fe)
+* feat(ui): mobile responsive toolbars across asset pages (62eba427)
+* feat(ui): mobile responsive header with theme toggle in account panel (323342f8)
+* feat(ui): extract ThemeContextMenu component and add Dropdown hideTitle prop (4ea265dd)
+* feat(ui): add IS_MOBILE_VIEWPORT constant and LoadingSpinner size variants (3c6aa398)
+* test(viewfinder): add unit tests for PhotoGridVirtualizer (6b61729b)
+
 ## [0.20.6] - 2026-07-26
 
 * fix: replace `user.data` null with undefined (ef488563)
