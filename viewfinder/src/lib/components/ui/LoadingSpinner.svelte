@@ -1,13 +1,21 @@
 <script lang="ts">
-    let { color }: { color?: string } = $props();
+    type SpinnerSize = "small" | "medium" | "large";
+
+    let { color, size = "medium" }: { color?: string; size?: SpinnerSize } = $props();
+
+    const sizeMap: Record<SpinnerSize, string> = {
+        small: "24",
+        medium: "48",
+        large: "64"
+    };
 </script>
 
 <svg
     xmlns="http://www.w3.org/2000/svg"
     viewBox="0 0 100 100"
     preserveAspectRatio="xMidYMid"
-    width="64"
-    height="64"
+    width={sizeMap[size]}
+    height={sizeMap[size]}
     style="shape-rendering: auto; display: block; background: transparent;"
     xmlns:xlink="http://www.w3.org/1999/xlink"
     ><g
