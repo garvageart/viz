@@ -14,6 +14,8 @@ import (
 	"viz/internal/settings"
 )
 
+var DefaultAllowedHosts = []string{"*.localhost", "localhost", "127.0.0.1"}
+
 type VizServer struct {
 	*ServerConfig
 	Logger   *slog.Logger

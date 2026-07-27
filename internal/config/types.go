@@ -114,6 +114,7 @@ type StorageConfig struct {
 // VizConfig is the root configuration structure.
 type VizConfig struct {
 	BaseURL        string               `json:"baseUrl" mapstructure:"baseUrl"`
+	AllowedHosts   []string             `json:"allowed_hosts" mapstructure:"allowed_hosts"`
 	Logging        LoggingConfig        `json:"logging" mapstructure:"logging"`
 	BaseDir        string               `json:"base_directory" mapstructure:"base_directory"`
 	Upload         UploadConfig         `json:"upload" mapstructure:"upload"`

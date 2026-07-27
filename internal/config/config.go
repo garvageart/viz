@@ -47,6 +47,7 @@ func ReadConfig() (viper.Viper, error) {
 
 	// Set Defaults
 	v.SetDefault("baseUrl", "localhost")
+	v.SetDefault("allowed_hosts", []string{})
 	v.SetDefault("servers.api.port", 7770)
 	v.SetDefault("servers.viz.port", 7777)
 	if utils.IsProduction {

@@ -94,6 +94,8 @@
     afterNavigate(() => {
         loadingState.endNavigation();
     });
+
+    // page.
 </script>
 
 <svelte:window onbeforeunload={handleBeforeUnload} />

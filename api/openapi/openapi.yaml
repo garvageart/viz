@@ -4506,6 +4506,11 @@ components:
                 baseUrl:
                     type: string
                     description: Base URL of the application
+                allowed_hosts:
+                    type: array
+                    items:
+                        type: string
+                    description: Hostnames and IPs the dev server is allowed to respond to (Vite allowedHosts)
                 logging:
                     $ref: "#/components/schemas/LoggingConfig"
                 base_directory:

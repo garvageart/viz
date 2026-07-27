@@ -8,7 +8,7 @@ import (
 	"net/http"
 	"os"
 	"os/signal"
-	"strings"
+	"slices"
 	"syscall"
 	"time"
 
@@ -50,23 +50,10 @@ func (server APIServer) Launch(router *chi.Mux) *http.Server {
 	serverLogger := slog.NewLogLogger(logger.Handler(), slog.LevelDebug)
 
 	// Setup general middleware - CORS must be first!
+	allowedHosts := append(config.AppConfig.AllowedHosts, config.DefaultAllowedHosts...)
 	router.Use(cors.Handler(cors.Options{
-		// TODO: maybe make this configurable by admin since this might
-		// some people might not want to allow all origins for API
 		AllowOriginFunc: func(r *http.Request, origin string) bool {
-			if utils.IsDevelopment {
-				return true
-			}
-			allowedOrigins := os.Getenv("ALLOWED_ORIGINS")
-			if allowedOrigins == "" {
-				return false
-			}
-			for _, allowed := range strings.Split(allowedOrigins, ",") {
-				if origin == strings.TrimSpace(allowed) {
-					return true
-				}
-			}
-			return false
+			return slices.Contains(allowedHosts, origin)
 		},
 		AllowedMethods:   []string{"GET", "POST", "PUT", "PATCH", "OPTIONS", "DELETE"},
 		AllowedHeaders:   []string{"Accept", "Authorization", "Content-Type", "X-CSRF-Token", libhttp.APIKeyName, "If-None-Match", "If-Modified-Since"},
