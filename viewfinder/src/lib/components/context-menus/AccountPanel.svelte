@@ -1,15 +1,18 @@
 <script lang="ts">
     import { slide } from "svelte/transition";
     import { logoutUser } from "$lib/auth/auth_methods";
-    import { user } from "$lib/states/index.svelte";
+    import { getTheme, toggleTheme, user } from "$lib/states/index.svelte";
     import AvatarBadge from "../ui/AvatarBadge.svelte";
     import Badge from "../ui/Badge.svelte";
     import Button from "../ui/Button.svelte";
     import MaterialIcon from "../ui/MaterialIcon.svelte";
+    import ThemeContextMenu from "./ThemeContextMenu.svelte";
 
     let { openAccPanel = $bindable(false) }: { openAccPanel: boolean } = $props();
 
     let panelEl = $state<HTMLElement | null>(null);
+    let themeCtxShowMenu = $state(false);
+    let themeCtxAnchor = $state<{ x: number; y: number } | null>(null);
 
     function handleClickOutside(event: MouseEvent) {
         if (panelEl && !panelEl.contains(event.target as Node)) {
@@ -19,6 +22,12 @@
             }
             openAccPanel = false;
         }
+    }
+
+    function handleThemeContext(e: MouseEvent) {
+        e.preventDefault();
+        themeCtxAnchor = { x: e.clientX, y: e.clientY };
+        themeCtxShowMenu = true;
     }
 </script>
 
@@ -52,6 +61,18 @@
             </div>
         </a>
 
+        <div class="mobile-theme-toggle">
+            <button class="menu-item" onclick={() => toggleTheme()} oncontextmenu={handleThemeContext}>
+                <div class="menu-icon">
+                    <MaterialIcon iconName={getTheme() === "dark" ? "dark_mode" : "light_mode"} size="1.3rem" />
+                </div>
+                <div class="menu-text">
+                    <span class="title">Toggle Theme</span>
+                    <span class="subtitle">Hold for options</span>
+                </div>
+            </button>
+        </div>
+
         {#if user.isAdmin}
             <a href="/admin" class="menu-item" onclick={() => (openAccPanel = false)}>
                 <div class="menu-icon">
@@ -81,6 +102,8 @@
         </Button>
     </div>
 </div>
+
+<ThemeContextMenu bind:showMenu={themeCtxShowMenu} bind:anchor={themeCtxAnchor} />
 
 <style lang="scss">
     #account-details-panel {
@@ -195,6 +218,21 @@
             width: 100%;
             font-weight: 700;
             letter-spacing: 0.03em;
+        }
+    }
+
+    .mobile-theme-toggle {
+        display: none;
+    }
+
+    .subtitle {
+        font-size: var(--viz-font-size-xs);
+        color: var(--viz-text-muted);
+    }
+
+    @media (max-width: 40rem) {
+        .mobile-theme-toggle {
+            display: block;
         }
     }
 </style>

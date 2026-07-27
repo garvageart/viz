@@ -142,6 +142,12 @@
         outline-offset: -1px;
     }
 
+    @media (max-width: 40rem) {
+        .search-input {
+            width: 100%;
+        }
+    }
+
     .clear-search-button {
         border: none;
         outline: none;

@@ -5,6 +5,7 @@
     import hotkeys from "hotkeys-js";
     import { untrack } from "svelte";
     import Dropdown from "$lib/components/context-menus/Dropdown.svelte";
+    import ThemeContextMenu from "$lib/components/context-menus/ThemeContextMenu.svelte";
     import { CLIENT_IS_PRODUCTION, DYNAMIC_ROUTE_REGEX } from "$lib/constants";
     import ContextMenu from "$lib/context-menu/ContextMenu.svelte";
     import type { MenuItem } from "$lib/context-menu/types";
@@ -12,15 +13,7 @@
     import { performSearch } from "$lib/search/execute";
     import { eventsState } from "$lib/states/events.svelte";
     import { historyState } from "$lib/states/history.svelte";
-    import {
-        debugState,
-        getTheme,
-        isLayoutPage,
-        search,
-        themeState,
-        toggleTheme,
-        user
-    } from "$lib/states/index.svelte";
+    import { debugState, getTheme, isLayoutPage, search, toggleTheme, user } from "$lib/states/index.svelte";
     import { workspaceState } from "$lib/states/workspace.svelte";
     import { toastState } from "$lib/toast-notifcations/notif-state.svelte";
     import { SUPPORTED_IMAGE_TYPES, SUPPORTED_RAW_FILES, type SupportedImageTypes } from "$lib/types/images";
@@ -35,6 +28,17 @@
 
     let searchElement = $state<HTMLInputElement | undefined>();
     let searchInputHasFocus = $derived(searchElement && document.activeElement === searchElement);
+    let isMobile = $state(false);
+
+    $effect(() => {
+        const mql = window.matchMedia("(max-width: 40rem)");
+        isMobile = mql.matches;
+        const handler = (e: MediaQueryListEvent) => {
+            isMobile = e.matches;
+        };
+        mql.addEventListener("change", handler);
+        return () => mql.removeEventListener("change", handler);
+    });
 
     $effect(() => {
         if (page.url.pathname === "/search") {
@@ -126,50 +130,31 @@
     });
 
     // Context Menu for Theme
-    let ctxShowMenu = $state(false);
-    let ctxAnchor = $state<{ x: number; y: number } | null>(null);
-    let ctxItems = $state<MenuItem[]>([]);
+    let themeCtxShowMenu = $state(false);
+    let themeCtxAnchor = $state<{ x: number; y: number } | null>(null);
 
     function handleThemeContext(e: MouseEvent) {
         e.preventDefault();
-        ctxAnchor = { x: e.clientX, y: e.clientY };
-        ctxItems = [
-            {
-                id: "theme-default-system",
-                label: "System",
-                icon: "settings_brightness",
-                action: () => themeState.setPreferredTheme("system"),
-                disabled: themeState.preferredTheme === "system"
-            },
-            {
-                id: "theme-default-light",
-                label: "Light",
-                icon: "light_mode",
-                action: () => themeState.setPreferredTheme("light"),
-                disabled: themeState.preferredTheme === "light"
-            },
-            {
-                id: "theme-default-dark",
-                label: "Dark",
-                icon: "dark_mode",
-                action: () => themeState.setPreferredTheme("dark"),
-                disabled: themeState.preferredTheme === "dark"
-            }
-        ];
-        ctxShowMenu = true;
+        themeCtxAnchor = { x: e.clientX, y: e.clientY };
+        themeCtxShowMenu = true;
     }
+
+    // Context Menu for Views
+    let viewCtxShowMenu = $state(false);
+    let viewCtxAnchor = $state<{ x: number; y: number } | null>(null);
+    let viewCtxItems = $state<MenuItem[]>([]);
 
     function handleViewMenu(e: MouseEvent) {
         e.preventDefault();
         e.stopPropagation();
-        ctxAnchor = { x: e.clientX, y: e.clientY };
+        viewCtxAnchor = { x: e.clientX, y: e.clientY };
 
         const workspace = workspaceState.workspace;
         if (!workspace) {
             return;
         }
 
-        ctxItems = views
+        viewCtxItems = views
             .filter((view) => !view.path || !DYNAMIC_ROUTE_REGEX.test(view.path))
             .sort((a, b) => a.name.localeCompare(b.name))
             .map((view) => ({
@@ -204,7 +189,7 @@
                 },
                 disabled: activeViewNames.has(view.name)
             }));
-        ctxShowMenu = true;
+        viewCtxShowMenu = true;
     }
 </script>
 
@@ -248,7 +233,7 @@
             <MaterialIcon iconName="expand_more" weight={300} size="1em" style="margin-left: 0.15em;" />
         </button>
         <AppMenu bind:isOpen={openAppMenu} bind:anchor={appMenuButton} />
-        <div class="menu-separator"></div>
+        <div class="header-separator menu"></div>
         {#if isLayoutPage()}
             <IconButton class="header-button" iconName="view_quilt" title="Views" onclick={handleViewMenu} />
         {:else}
@@ -259,7 +244,7 @@
                 onclick={() => goto("/")}
             />
         {/if}
-        <div class="menu-separator"></div>
+        <div class="header-separator"></div>
         <div class="icon-group-container">
             <a class="page-nav-btn" href="/photos">
                 <IconButton class="header-button" iconName="imagesmode" title="Go to Photos" />
@@ -284,7 +269,7 @@
             disabled={!historyState.canGoForward}
             onclick={() => history.forward()}
         />
-        <div class="menu-separator"></div>
+        <div class="header-separator"></div>
         <SearchInput
             inputId="header-search"
             placeholder="Search (Ctrl/Cmd + K)"
@@ -321,6 +306,7 @@
             items={uploadMenuItems}
             showSelectionIndicator={false}
             align="right"
+            hideTitle={isMobile}
         />
         {#if dev || !CLIENT_IS_PRODUCTION}
             <IconButton
@@ -350,7 +336,8 @@
     </div>
 </header>
 
-<ContextMenu bind:showMenu={ctxShowMenu} bind:items={ctxItems} anchor={ctxAnchor} />
+<ThemeContextMenu bind:showMenu={themeCtxShowMenu} bind:anchor={themeCtxAnchor} />
+<ContextMenu bind:showMenu={viewCtxShowMenu} bind:items={viewCtxItems} anchor={viewCtxAnchor} />
 
 <style lang="scss">
     header {
@@ -403,10 +390,14 @@
         align-items: center;
     }
 
-    .menu-separator {
+    .header-separator {
         background-color: var(--viz-border-subtle);
         height: 50%;
         width: 1px;
+
+        &.menu {
+            background-color: var(--viz-accent);
+        }
     }
 
     .icon-group-container {
@@ -512,6 +503,46 @@
         }
         100% {
             opacity: 0.4;
+        }
+    }
+
+    @media (max-width: 40rem) {
+        header {
+            padding: 0 var(--viz-spacing-sm);
+        }
+
+        #left-menu-container {
+            gap: var(--viz-spacing-xs);
+        }
+
+        .center-container {
+            flex: 1;
+            width: auto;
+            padding: 0 var(--viz-spacing-sm);
+
+            :global(.header-button:nth-child(1)),
+            :global(.header-button:nth-child(2)),
+            :global(.header-separator) {
+                display: none;
+            }
+        }
+
+        :global(#debug-button),
+        :global(#theme-toggle) {
+            display: none;
+        }
+
+        .icon-group-container {
+            display: none;
+        }
+
+        #left-menu-container > :global(.header-separator),
+        #left-menu-container > :global(.header-button) {
+            display: none;
+        }
+
+        .header-button-container {
+            gap: var(--viz-spacing-xs);
         }
     }
 </style>
