@@ -190,7 +190,7 @@
         <div class="header-separator"></div>
         <SearchInput
             inputId="header-search"
-            placeholder="Search{isMobile ? '(Ctrl/Cmd + K)' : ''}"
+            placeholder="Search{!isMobile ? ' (Ctrl/Cmd + K)' : ''}"
             bind:searchInputHasFocus
             bind:loading={search.loading}
             bind:value={search.value}
