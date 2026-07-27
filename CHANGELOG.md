@@ -5,6 +5,15 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.22.0] - 2026-07-27
+
+* feat(config): configurable allowed hosts for API CORS and Vite dev server (79060e1d)
+* fix(ui): batch rename HTML entity decoding and CSS cleanup (b43b4e8f)
+* feat(ui): mobile lightbox swipe navigation and tooltip suppression (77e0903e)
+* feat(ui): mobile responsive layouts for panels, calendar, and collections (b0284cd3)
+* feat(ui): fill slider track up to current value (1127e121)
+* fix(export): optimise JPEG encoding and add server-side fallback (12a22c82)
+
 ## [0.21.0] - 2026-07-27
 
 * feat(ui): animate splash screen dots between accent and text-secondary colors (5833ea27)

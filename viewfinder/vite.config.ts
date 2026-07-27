@@ -190,8 +190,7 @@ export default defineConfig({
             "Cross-Origin-Embedder-Policy": "require-corp"
         },
         proxy: viteProxy,
-        // gosh
-        allowedHosts: Array.from(new Set(["*.localhost", "localhost", "127.0.0.1", ...config.allowed_hosts])),
+        allowedHosts: Array.from(new Set(["*.localhost", "localhost", "127.0.0.1", ...(config.allowed_hosts || [])])),
         watch: {
             usePolling: true
         }
