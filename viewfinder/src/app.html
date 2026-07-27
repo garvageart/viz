@@ -97,8 +97,8 @@
                 width: 6px;
                 height: 6px;
                 border-radius: 50%;
-                background-color: var(--viz-text-color);
-                animation: splash-dot-step 1.2s steps(1) infinite;
+                background-color: var(--viz-accent);
+                animation: splash-dot-step 1.2s steps(2) infinite;
             }
 
             #app-splash .splash-dots .dot:nth-child(1) {
@@ -114,17 +114,16 @@
             }
 
             @keyframes splash-dot-step {
-                0% {
+                0%,
+                100% {
+                    background-color: var(--viz-accent);
                     opacity: 1;
                     transform: scale(1.15);
                 }
-                33.33% {
-                    opacity: 0.25;
-                    transform: scale(0.75);
-                }
-                100% {
-                    opacity: 0.25;
-                    transform: scale(0.75);
+                50% {
+                    background-color: var(--viz-secondary);
+                    opacity: 0.8;
+                    transform: scale(0.85);
                 }
             }
 
