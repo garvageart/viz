@@ -6,12 +6,12 @@
     import { toastState } from "$lib/toast-notifcations/notif-state.svelte";
 
     const adminNavItems: NavItem[] = [
-        { label: "Dashboard", href: "/admin", icon: "dashboard", exact: true },
-        { label: "Users", href: "/admin/users", icon: "group" },
-        { label: "Jobs", href: "/admin/jobs", icon: "compare_arrows" },
-        { label: "Events", href: "/admin/events", icon: "hub" },
-        { label: "Cache", href: "/admin/cache", icon: "memory" },
-        { label: "Storage", href: "/admin/storage", icon: "hard_drive" }
+        { label: "Dashboard", href: "/admin", iconName: "dashboard", exact: true },
+        { label: "Users", href: "/admin/users", iconName: "group" },
+        { label: "Jobs", href: "/admin/jobs", iconName: "compare_arrows" },
+        { label: "Events", href: "/admin/events", iconName: "hub" },
+        { label: "Cache", href: "/admin/cache", iconName: "memory" },
+        { label: "Storage", href: "/admin/storage", iconName: "hard_drive" }
     ];
 
     let { children } = $props();

@@ -44,11 +44,11 @@
         tabindex={active ? 0 : -1}
         onclick={onClick}
     >
-        {#if item.icon}
-            {#if typeof item.icon === "string"}
-                <MaterialIcon class="icon" iconName={item.icon} weight={300} />
+        {#if item.iconName}
+            {#if typeof item.iconName === "string"}
+                <MaterialIcon class="icon" iconName={item.iconName} weight={300} />
             {:else}
-                <MaterialIcon class="icon" weight={300} {...item.icon} />
+                <MaterialIcon class="icon" weight={300} {...item.iconName} />
             {/if}
         {/if}
         <span class="label">{item.label}</span>

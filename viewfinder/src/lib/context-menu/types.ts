@@ -8,7 +8,7 @@ export type MenuItem = {
     disabled?: boolean;
     danger?: boolean;
     separator?: boolean;
-    icon?: MaterialSymbol | IconProps; // optional icon name/class or icon props
+    iconName?: MaterialSymbol | IconProps; // optional icon name/class or icon props
     shortcut?: string; // optional keyboard shortcut label
     children?: MenuItem[]; // optional submenu
 };

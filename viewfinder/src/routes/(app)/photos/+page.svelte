@@ -44,7 +44,6 @@
     import { sort, viewSettings } from "$lib/states/index.svelte";
     import { SelectionScopeNames, selectionManager } from "$lib/states/selection.svelte";
     import { toastState } from "$lib/toast-notifcations/notif-state.svelte";
-    import type { AssetSortBy, AssetSortOrder } from "$lib/types/asset.js";
     import { SUPPORTED_IMAGE_TYPES, SUPPORTED_RAW_FILES, type SupportedImageTypes } from "$lib/types/images";
     import UploadManager, { type ImageUploadSuccess } from "$lib/upload/manager.svelte";
     import { getImageLabel } from "$lib/utils/images.js";
@@ -56,7 +55,7 @@
             {
                 id: "display-grid",
                 label: "Grid",
-                icon: viewSettings.current === "grid" ? ("check" as const) : undefined,
+                iconName: viewSettings.current === "grid" ? ("check" as const) : undefined,
                 action: () => {
                     viewSettings.setView("grid");
                 }
@@ -64,7 +63,7 @@
             {
                 id: "display-list",
                 label: "List",
-                icon: viewSettings.current === "list" ? ("check" as const) : undefined,
+                iconName: viewSettings.current === "list" ? ("check" as const) : undefined,
                 action: () => {
                     viewSettings.setView("list");
                 }
@@ -72,7 +71,7 @@
             {
                 id: "display-cards",
                 label: "Thumbnails",
-                icon: viewSettings.current === "thumbnails" ? ("check" as const) : undefined,
+                iconName: viewSettings.current === "thumbnails" ? ("check" as const) : undefined,
                 action: () => {
                     viewSettings.setView("thumbnails");
                 }
@@ -85,7 +84,7 @@
                 {
                     id: "display-show-dates",
                     label: "Show Dates",
-                    icon: viewSettings.showDates ? ("check_box" as const) : ("check_box_outline_blank" as const),
+                    iconName: viewSettings.showDates ? ("check_box" as const) : ("check_box_outline_blank" as const),
                     action: () => {
                         viewSettings.toggleShowDates();
                     }
@@ -97,7 +96,7 @@
                 {
                     id: "display-basic-thumb",
                     label: "Basic",
-                    icon: viewSettings.showBasic ? ("check_box" as const) : ("check_box_outline_blank" as const),
+                    iconName: viewSettings.showBasic ? ("check_box" as const) : ("check_box_outline_blank" as const),
                     action: () => {
                         viewSettings.toggleShowBasic();
                     }
@@ -185,7 +184,7 @@
             {
                 id: "act-add-to-collection",
                 label: "Add to Collection",
-                icon: "collections_bookmark",
+                iconName: "collections_bookmark",
                 action: () => {
                     modalsManager.open(
                         CollectionSelectionModal,
@@ -488,7 +487,7 @@
                 <div class="selection-actions">
                     <IconButton
                         iconName={(() => {
-                            const icon = actionMenuItems.find((it) => it.id === "act-add-to-collection")?.icon;
+                            const icon = actionMenuItems.find((it) => it.id === "act-add-to-collection")?.iconName;
                             return typeof icon === "string" ? icon : (icon?.iconName ?? "collections_bookmark");
                         })()}
                         class="action"
@@ -607,7 +606,7 @@
                 <div class="selection-menu-wrapper">
                     <Dropdown
                         class="toolbar-button"
-                        icon="more_horiz"
+                        iconName="more_horiz"
                         items={actionMenuItems}
                         showSelectionIndicator={false}
                         align="right"
@@ -620,7 +619,7 @@
                     <Dropdown
                         title="Sort"
                         class="toolbar-button"
-                        icon="sort"
+                        iconName="sort"
                         items={[
                             { id: "sort-name", label: "Name" },
                             { id: "sort-recently_added", label: "Recently Added" },
@@ -690,7 +689,7 @@
                     <Dropdown
                         title="Display"
                         class="toolbar-button"
-                        icon="list_alt"
+                        iconName="list_alt"
                         items={displayMenuItems}
                         selectedItemId={getDisplaySelectedId()}
                         showSelectionIndicator={false}

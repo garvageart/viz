@@ -43,7 +43,7 @@ export function createImageMenu(
         {
             id: "act-toggle-favourite",
             label: allFavourited ? "Unfavourite" : "Favourite",
-            icon: allFavourited ? { iconName: "favorite", fill: true } : { iconName: "favorite", fill: false },
+            iconName: allFavourited ? { iconName: "favorite", fill: true } : { iconName: "favorite", fill: false },
             disabled: selectionScope.size === 0,
             action: async () => {
                 const itemsToUpdate = selectionScope.selectedItems;
@@ -75,7 +75,7 @@ export function createImageMenu(
         {
             id: "act-export",
             label: "Export",
-            icon: "ios_share",
+            iconName: "ios_share",
             disabled: selectionScope.size === 0,
             action: () => {
                 modalsManager.open(ExportPanel, { assets: items }, exportModalOptions);
@@ -89,7 +89,7 @@ export function createImageMenu(
         {
             id: "act-copy-path",
             label: `Copy URL`,
-            icon: "content_copy",
+            iconName: "content_copy",
             disabled: selectionScope.size === 0,
             action: () => {
                 const items = selectionScope.selectedItems;
@@ -104,7 +104,7 @@ export function createImageMenu(
         {
             id: "act-download",
             label: items.length > 1 ? "Download as ZIP" : "Download Original",
-            icon: "download",
+            iconName: "download",
             disabled: selectionScope.size === 0,
             action: async () => {
                 const items = selectionScope.selectedItems;
@@ -198,7 +198,7 @@ export function createImageMenu(
         actionMenuItems.push({
             id: "act-remove-from-collection",
             label: "Remove from Collection",
-            icon: "layers_clear",
+            iconName: "layers_clear",
             disabled: selectionScope.size === 0,
             action: async () => {
                 const items = selectionScope.selectedItems;
@@ -229,7 +229,7 @@ export function createImageMenu(
         actionMenuItems.push({
             id: "act-set-as-thumbnail",
             label: "Set as Collection Thumbnail",
-            icon: "image",
+            iconName: "image",
             disabled: selectionScope.size !== 1,
             action: async () => {
                 const asset = selectionScope.selectedItems[0];
@@ -258,7 +258,7 @@ export function createImageMenu(
     actionMenuItems.push({
         id: "act-delete",
         label: "Delete",
-        icon: "delete",
+        iconName: "delete",
         danger: true,
         disabled: selectionScope.size === 0,
         action: async () => {

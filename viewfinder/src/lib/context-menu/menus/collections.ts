@@ -37,13 +37,13 @@ export function createCollectionMenu(collection: Collection | undefined, opts: C
         {
             id: `open-${collection.uid}`,
             label: "Open",
-            icon: "open_in_new",
+            iconName: "open_in_new",
             action: () => goto(`/collections/${collection.uid}`)
         },
         {
             id: `edit-${collection.uid}`,
             label: "Edit",
-            icon: "edit",
+            iconName: "edit",
             action: () => {
                 opts.editCollection?.(collection);
             }
@@ -51,7 +51,7 @@ export function createCollectionMenu(collection: Collection | undefined, opts: C
         {
             id: `favourite-${collection.uid}`,
             label: collection.favourited ? "Unfavourite" : "Favourite",
-            icon: "favorite",
+            iconName: "favorite",
             action: async () => {
                 const res = await updateCollection(collection.uid, {
                     favourited: collection.favourited ? false : true
@@ -75,7 +75,7 @@ export function createCollectionMenu(collection: Collection | undefined, opts: C
         {
             id: `duplicate-${collection.uid}`,
             label: "Duplicate",
-            icon: "content_copy",
+            iconName: "content_copy",
             action: async () => {
                 try {
                     const res = await createCollection({
@@ -104,7 +104,7 @@ export function createCollectionMenu(collection: Collection | undefined, opts: C
         {
             id: `download-collection-${collection.uid}`,
             label: "Download",
-            icon: "download",
+            iconName: "download",
             disabled: (collection.image_count ?? collection.images?.length ?? 0) === 0,
             action: async () => {
                 toastState.addToast({
@@ -177,7 +177,7 @@ export function createCollectionMenu(collection: Collection | undefined, opts: C
         {
             id: `copylink-${collection.uid}`,
             label: "Copy link",
-            icon: "link",
+            iconName: "link",
             action: async () => {
                 try {
                     const url = `${location.origin}/collections/${collection.uid}`;
@@ -200,7 +200,7 @@ export function createCollectionMenu(collection: Collection | undefined, opts: C
                 opts.selectedCollections && opts.selectedCollections.length > 1
                     ? `Delete ${opts.selectedCollections.length} collections`
                     : "Delete",
-            icon: "delete",
+            iconName: "delete",
             danger: true,
             action: () => {
                 const targets =

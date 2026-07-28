@@ -8,7 +8,6 @@
     import UserEditModal from "$lib/components/modals/UserEditModal.svelte";
     import { modalsManager } from "$lib/components/modals/manager/ModalManager.svelte";
     import AvatarBadge from "$lib/components/ui/AvatarBadge.svelte";
-    import Button from "$lib/components/ui/Button.svelte";
     import IconButton from "$lib/components/ui/IconButton.svelte";
     import MaterialIcon from "$lib/components/ui/MaterialIcon.svelte";
     import SliderToggle from "$lib/components/ui/SliderToggle.svelte";

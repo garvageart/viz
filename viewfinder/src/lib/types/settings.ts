@@ -11,6 +11,6 @@ export interface Settings {
 
 export type DropdownOption = {
     title: string;
-    icon?: MaterialSymbol;
+    iconName?: MaterialSymbol;
     disabled?: boolean;
 };

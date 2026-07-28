@@ -32,20 +32,20 @@ export function buildTabContextMenu(view: VizView, group: TabGroup, handlers: Ta
             id: view.locked ? "unlock-tab" : "lock-tab",
             label: view.locked ? "Unlock Tab" : "Lock Tab",
             action: () => handlers.toggleTabLock(view),
-            icon: view.locked ? "lock_open" : "lock",
+            iconName: view.locked ? "lock_open" : "lock",
             danger: false
         },
         { id: "separator-move", label: "", separator: true },
         {
             id: "move-tab",
             label: "Move Tab",
-            icon: "move_item",
+            iconName: "move_item",
             children: [
                 {
                     id: "move-left",
                     label: "Move Left",
                     action: () => handlers.moveTab(view, "left"),
-                    icon: {
+                    iconName: {
                         iconName: "move_selection_left",
                         fill: true
                     },
@@ -55,7 +55,7 @@ export function buildTabContextMenu(view: VizView, group: TabGroup, handlers: Ta
                     id: "move-right",
                     label: "Move Right",
                     action: () => handlers.moveTab(view, "right"),
-                    icon: {
+                    iconName: {
                         iconName: "move_selection_right",
                         fill: true
                     },
@@ -68,21 +68,21 @@ export function buildTabContextMenu(view: VizView, group: TabGroup, handlers: Ta
             id: "close",
             label: "Close Tab",
             action: () => handlers.closeTab(view),
-            icon: "close",
+            iconName: "close",
             disabled: view.locked
         },
         {
             id: "close-others",
             label: "Close Other Tabs",
             action: () => handlers.closeOtherTabs(view),
-            icon: "tab_close",
+            iconName: "tab_close",
             disabled: view.locked || isOnlyTab
         },
         {
             id: "close-right",
             label: "Close Tabs to the Right",
             action: () => handlers.closeTabsToRight(view),
-            icon: "close_fullscreen",
+            iconName: "close_fullscreen",
             disabled: view.locked || isLastTab || isOnlyTab
         },
         { id: "separator1", label: "", separator: true },
@@ -90,14 +90,14 @@ export function buildTabContextMenu(view: VizView, group: TabGroup, handlers: Ta
             id: "split-right",
             label: "Split Right",
             action: () => handlers.splitRight(view),
-            icon: "vertical_split",
+            iconName: "vertical_split",
             disabled: view.locked
         },
         {
             id: "split-down",
             label: "Split Down",
             action: () => handlers.splitDown(view),
-            icon: "horizontal_split",
+            iconName: "horizontal_split",
             disabled: view.locked
         },
         { id: "separator3", label: "", separator: true },
@@ -105,7 +105,7 @@ export function buildTabContextMenu(view: VizView, group: TabGroup, handlers: Ta
             id: "close-all",
             label: "Close All Tabs in this Group",
             action: () => handlers.closeAllTabs(),
-            icon: "cancel_presentation",
+            iconName: "cancel_presentation",
             danger: true,
             disabled: group.locked
         }
@@ -131,7 +131,7 @@ export function buildLayoutContextMenu(): MenuItem[] {
                     // Optionally lock all children nodes as well
                 }
             },
-            icon: isLayoutLocked ? "lock_open" : "lock"
+            iconName: isLayoutLocked ? "lock_open" : "lock"
         }
     ];
 }
@@ -148,7 +148,7 @@ export function buildPanelContextMenu(group: TabGroup, handlers?: TabHandlers): 
             action: () => {
                 workspaceState.workspace?.toggleMaximize(group.id);
             },
-            icon: isMaximized ? "close_fullscreen" : "open_in_full"
+            iconName: isMaximized ? "close_fullscreen" : "open_in_full"
         },
         {
             id: `lock-panel-${group.id}`,
@@ -156,7 +156,7 @@ export function buildPanelContextMenu(group: TabGroup, handlers?: TabHandlers): 
             action: () => {
                 group.locked = !group.locked;
             },
-            icon: group.locked ? "lock_open" : "lock"
+            iconName: group.locked ? "lock_open" : "lock"
         },
         {
             id: `lock-all-tabs-${group.id}`,
@@ -166,7 +166,7 @@ export function buildPanelContextMenu(group: TabGroup, handlers?: TabHandlers): 
                     view.locked = nextLockedState;
                 }
             },
-            icon: allLocked ? "checklist" : "checklist_rtl"
+            iconName: allLocked ? "checklist" : "checklist_rtl"
         }
     ];
 
@@ -176,7 +176,7 @@ export function buildPanelContextMenu(group: TabGroup, handlers?: TabHandlers): 
             id: `close-panel-${group.id}`,
             label: "Close Panel",
             action: () => handlers.closePanel(),
-            icon: "cancel_presentation",
+            iconName: "cancel_presentation",
             danger: true
         });
     }

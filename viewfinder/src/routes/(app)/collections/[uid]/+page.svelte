@@ -72,7 +72,6 @@
     import type { ImageUploadSuccess } from "$lib/upload/manager.svelte";
     import UploadManager from "$lib/upload/manager.svelte.js";
     import { getImageLabel } from "$lib/utils/images";
-    import { VizLocalStorage } from "$lib/utils/misc.js";
     import type VizView from "$lib/views/views.svelte";
     import { invalidateViz } from "$lib/views/views.svelte";
     import type { PageProps } from "./$types";
@@ -692,13 +691,13 @@
         {
             id: "duplicate-collection",
             label: "Duplicate Collection",
-            icon: "content_copy",
+            iconName: "content_copy",
             action: handleDuplicateCollection
         },
         {
             id: "delete-collection",
             label: "Delete Collection",
-            icon: "delete",
+            iconName: "delete",
             action: handleDeleteCollection
         }
     ];
@@ -714,7 +713,7 @@
         const removeAction: MenuItem = {
             id: "remove-selected",
             label: "Remove from Collection",
-            icon: "cancel",
+            iconName: "cancel",
             disabled: selectionScope.size === 0,
             action: handleDeleteSelected
         };
@@ -733,7 +732,7 @@
             return {
                 id: `display-${idx}`,
                 label: o.label,
-                icon: isActive ? ("check" as const) : undefined,
+                iconName: isActive ? "check" : undefined,
                 action: () => {
                     viewSettings.setView(o.label.toLowerCase() as AssetGridView);
                 }
@@ -746,7 +745,7 @@
                 {
                     id: "display-show-dates",
                     label: "Show Dates",
-                    icon: viewSettings.showDates ? ("check_box" as const) : ("check_box_outline_blank" as const),
+                    iconName: viewSettings.showDates ? ("check_box" as const) : ("check_box_outline_blank" as const),
                     action: () => {
                         viewSettings.toggleShowDates();
                     }
@@ -758,7 +757,7 @@
                 {
                     id: "display-basic-thumb",
                     label: "Basic",
-                    icon: viewSettings.showBasic ? ("check_box" as const) : ("check_box_outline_blank" as const),
+                    iconName: viewSettings.showBasic ? ("check_box" as const) : ("check_box_outline_blank" as const),
                     action: () => {
                         viewSettings.toggleShowBasic();
                     }
@@ -888,7 +887,12 @@
                 </IconButton>
             {/snippet}
         </Dropdown>
-        <Dropdown class="toolbar-button" icon="more_horiz" showSelectionIndicator={false} items={collectionMenuItems} />
+        <Dropdown
+            class="toolbar-button"
+            iconName="more_horiz"
+            showSelectionIndicator={false}
+            items={collectionMenuItems}
+        />
     </div>
 {/snippet}
 
@@ -972,7 +976,7 @@
     <div style="margin-left: auto; display: flex; gap: 0.5rem; align-items: center;">
         <Dropdown
             class="toolbar-button"
-            icon="more_horiz"
+            iconName="more_horiz"
             showSelectionIndicator={false}
             items={selectionToolbarItems}
             align="right"

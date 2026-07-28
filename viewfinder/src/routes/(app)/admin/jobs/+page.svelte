@@ -94,13 +94,13 @@
 </script>
 
 {#snippet statCard({
-    icon,
+    iconName: icon,
     value,
     label,
     cardClass,
     delay
 }: {
-    icon: MaterialSymbol;
+    iconName: MaterialSymbol;
     value: string | number;
     label: string;
     cardClass: string;
@@ -201,7 +201,7 @@
         <section class="dashboard-section stats-section">
             <div class="stats-grid">
                 {@render statCard({
-                    icon: "pending",
+                    iconName: "pending",
                     value: jobsState.stats.activeCount,
                     label: "Active Jobs",
                     cardClass: "active",
@@ -209,7 +209,7 @@
                 })}
 
                 {@render statCard({
-                    icon: "check_circle",
+                    iconName: "check_circle",
                     value: jobsState.stats.completedCount,
                     label: "Completed",
                     cardClass: "completed",
@@ -217,7 +217,7 @@
                 })}
 
                 {@render statCard({
-                    icon: "error",
+                    iconName: "error",
                     value: jobsState.stats.failedCount,
                     label: "Failed",
                     cardClass: "failed",
@@ -225,7 +225,7 @@
                 })}
 
                 {@render statCard({
-                    icon: "analytics",
+                    iconName: "analytics",
                     value: jobsState.stats.totalProcessed,
                     label: "Total Processed",
                     cardClass: "total",

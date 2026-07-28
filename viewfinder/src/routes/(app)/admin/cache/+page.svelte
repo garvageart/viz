@@ -94,13 +94,13 @@
 </script>
 
 {#snippet metricCard({
-    icon,
+    iconName: icon,
     variant,
     title,
     value,
     desc
 }: {
-    icon: MaterialSymbol;
+    iconName: MaterialSymbol;
     variant: "info" | "warning" | "success" | "primary";
     title: string;
     value: string | number;
@@ -154,7 +154,7 @@
         <!-- Metrics Cards Grid -->
         <div class="metrics-grid">
             {@render metricCard({
-                icon: "folder_special",
+                iconName: "folder_special",
                 variant: "info",
                 title: "Total Size",
                 value: formatBytes(cacheStatus.size) ?? "0 B",
@@ -162,7 +162,7 @@
             })}
 
             {@render metricCard({
-                icon: "photo_library",
+                iconName: "photo_library",
                 variant: "warning",
                 title: "Cached Items",
                 value: cacheStatus.items.toLocaleString(),

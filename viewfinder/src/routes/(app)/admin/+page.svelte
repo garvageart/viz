@@ -97,7 +97,7 @@
 </script>
 
 {#snippet statCard({
-    icon,
+    iconName: icon,
     variant = "primary",
     label,
     value,
@@ -105,7 +105,7 @@
     href = undefined,
     mono = false
 }: {
-    icon: MaterialSymbol;
+    iconName: MaterialSymbol;
     variant?: "primary" | "info" | "warning" | "error" | "success" | "neutral";
     label: string;
     value: string | number | null | undefined;
@@ -133,14 +133,14 @@
 {/snippet}
 
 {#snippet card({
-    icon,
+    iconName: icon,
     variant = "primary",
     title,
     subtitle,
     href = undefined,
     body
 }: {
-    icon: MaterialSymbol;
+    iconName: MaterialSymbol;
     variant?: "primary" | "info" | "warning" | "error" | "success" | "neutral";
     title: string;
     subtitle: string;
@@ -312,21 +312,21 @@
         <!-- Primary metrics strip -->
         <div class="metrics-strip">
             {@render statCard({
-                icon: "image",
+                iconName: "image",
                 variant: "primary",
                 value: databaseInfo.images,
                 label: "Total Images",
                 href: "/photos"
             })}
             {@render statCard({
-                icon: "group",
+                iconName: "group",
                 variant: "info",
                 value: databaseInfo.users,
                 label: "Total Users",
                 href: "/admin/users"
             })}
             {@render statCard({
-                icon: "schedule",
+                iconName: "schedule",
                 variant: "success",
                 value: formattedLiveUptime,
                 label: "System Uptime",
@@ -334,7 +334,7 @@
                 mono: true
             })}
             {@render statCard({
-                icon: "hub",
+                iconName: "hub",
                 variant: "warning",
                 value: systemInfo.activeConnections,
                 label: "Active Clients",
@@ -345,7 +345,7 @@
         <!-- Secondary 3-column grid -->
         <div class="dashboard-grid">
             {@render card({
-                icon: "monitor_heart",
+                iconName: "monitor_heart",
                 variant: "info",
                 title: "System Health",
                 subtitle: "Runtime & database metrics",
@@ -353,7 +353,7 @@
                 body: healthBody
             })}
             {@render card({
-                icon: "hard_drive",
+                iconName: "hard_drive",
                 variant: "warning",
                 title: "Storage",
                 subtitle: "Disk space allocation",
@@ -361,7 +361,7 @@
                 body: storageBody
             })}
             {@render card({
-                icon: "memory",
+                iconName: "memory",
                 variant: "success",
                 title: "Cache",
                 subtitle: "Optimized image store",
@@ -372,7 +372,7 @@
 
         <!-- Server Information — full width -->
         {@render card({
-            icon: "dns",
+            iconName: "dns",
             variant: "primary",
             title: "Server Information",
             subtitle: "Environment & Build",

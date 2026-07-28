@@ -6,21 +6,21 @@ export function themeContextMenu() {
         {
             id: "theme-default-system",
             label: "System",
-            icon: "settings_brightness",
+            iconName: "settings_brightness",
             action: () => themeState.setPreferredTheme("system"),
             disabled: themeState.preferredTheme === "system"
         },
         {
             id: "theme-default-light",
             label: "Light",
-            icon: "light_mode",
+            iconName: "light_mode",
             action: () => themeState.setPreferredTheme("light"),
             disabled: themeState.preferredTheme === "light"
         },
         {
             id: "theme-default-dark",
             label: "Dark",
-            icon: "dark_mode",
+            iconName: "dark_mode",
             action: () => themeState.setPreferredTheme("dark"),
             disabled: themeState.preferredTheme === "dark"
         }

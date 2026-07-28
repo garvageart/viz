@@ -107,7 +107,7 @@
             {
                 id: "act-add-to-collection",
                 label: "Add to Collection",
-                icon: "collections_bookmark",
+                iconName: "collections_bookmark",
                 action: () => {
                     openAddToCollectionModal();
                 }
@@ -510,7 +510,7 @@
                 <div class="toolbar-right">
                     <Dropdown
                         class="toolbar-button"
-                        icon="more_horiz"
+                        iconName="more_horiz"
                         items={imageActionMenuItems}
                         showSelectionIndicator={false}
                         align="right"
@@ -535,7 +535,7 @@
                 <div class="toolbar-right">
                     <Dropdown
                         class="toolbar-button"
-                        icon="more_horiz"
+                        iconName="more_horiz"
                         items={collectionActionMenuItems}
                         showSelectionIndicator={false}
                         align="right"
@@ -613,7 +613,7 @@
                                             <Dropdown
                                                 title="Display"
                                                 class="toolbar-button"
-                                                icon="list_alt"
+                                                iconName="list_alt"
                                                 items={collectionDisplayMenuItems}
                                                 selectedItemId={collectionDisplaySelectedId}
                                                 showSelectionIndicator={false}
@@ -650,7 +650,7 @@
                                             <Dropdown
                                                 title="Display"
                                                 class="toolbar-button"
-                                                icon="list_alt"
+                                                iconName="list_alt"
                                                 items={imageDisplayMenuItems}
                                                 selectedItemId={imageDisplaySelectedId}
                                                 showSelectionIndicator={false}
