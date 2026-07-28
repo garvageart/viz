@@ -150,8 +150,8 @@ func PurgeTransformsForUID(uid string) error {
 }
 
 var (
-	cacheHits   uint64
-	cacheMisses uint64
+	cacheHits   atomic.Uint64
+	cacheMisses atomic.Uint64
 
 	redisClient    *goredis.Client
 	redisKeyHits   = "viz:cache:hits"
@@ -160,7 +160,7 @@ var (
 	statsFileName  = "cache_stats.json"
 	statsFilePath  string
 	statsFileMutex sync.Mutex
-	dirtyStats     uint32 // 1 if stats changed in memory and need flush
+	dirtyStats     atomic.Uint32 // 1 if stats changed in memory and need flush
 )
 
 type cacheStats struct {
@@ -231,8 +231,8 @@ func loadCacheStatsFromFile(logger *slog.Logger) {
 		return
 	}
 
-	atomic.StoreUint64(&cacheHits, stats.Hits)
-	atomic.StoreUint64(&cacheMisses, stats.Misses)
+	cacheHits.Store(stats.Hits)
+	cacheMisses.Store(stats.Misses)
 	logger.Debug("Loaded cache stats from file", slog.Uint64("hits", stats.Hits), slog.Uint64("misses", stats.Misses))
 }
 
@@ -249,13 +249,13 @@ func SaveCacheStats(logger *slog.Logger) {
 	statsFileMutex.Lock()
 	defer statsFileMutex.Unlock()
 
-	if atomic.SwapUint32(&dirtyStats, 0) == 0 {
+	if dirtyStats.Swap(0) == 0 {
 		return
 	}
 
 	stats := cacheStats{
-		Hits:   atomic.LoadUint64(&cacheHits),
-		Misses: atomic.LoadUint64(&cacheMisses),
+		Hits:   cacheHits.Load(),
+		Misses: cacheMisses.Load(),
 	}
 
 	data, err := json.MarshalIndent(stats, "", "  ")
@@ -306,8 +306,8 @@ func IncrementCacheHits() {
 			return
 		}
 	}
-	atomic.AddUint64(&cacheHits, 1)
-	atomic.StoreUint32(&dirtyStats, 1)
+	cacheHits.Add(1)
+	dirtyStats.Store(1)
 }
 
 // IncrementCacheMisses atomically increments the server-side cache misses count.
@@ -319,8 +319,8 @@ func IncrementCacheMisses() {
 			return
 		}
 	}
-	atomic.AddUint64(&cacheMisses, 1)
-	atomic.StoreUint32(&dirtyStats, 1)
+	cacheMisses.Add(1)
+	dirtyStats.Store(1)
 }
 
 // GetCacheStatus calculates and returns the current status of the image transform cache.
@@ -391,7 +391,7 @@ func GetCacheStatus() (dto.CacheStatusResponse, error) {
 		case goredis.Nil:
 			hits = 0
 		default:
-			hits = atomic.LoadUint64(&cacheHits)
+			hits = cacheHits.Load()
 		}
 
 		mStr, err2 := redisClient.Get(ctx, redisKeyMisses).Result()
@@ -404,11 +404,11 @@ func GetCacheStatus() (dto.CacheStatusResponse, error) {
 		case goredis.Nil:
 			misses = 0
 		default:
-			misses = atomic.LoadUint64(&cacheMisses)
+			misses = cacheMisses.Load()
 		}
 	} else {
-		hits = atomic.LoadUint64(&cacheHits)
-		misses = atomic.LoadUint64(&cacheMisses)
+		hits = cacheHits.Load()
+		misses = cacheMisses.Load()
 	}
 
 	var hitRatio float64
@@ -434,9 +434,9 @@ func ClearCache(logger *slog.Logger, db *gorm.DB, keepPermanent bool) error {
 		redisClient.Set(ctx, redisKeyHits, 0, 0)
 		redisClient.Set(ctx, redisKeyMisses, 0, 0)
 	}
-	atomic.StoreUint64(&cacheHits, 0)
-	atomic.StoreUint64(&cacheMisses, 0)
-	atomic.StoreUint32(&dirtyStats, 1)
+	cacheHits.Store(0)
+	cacheMisses.Store(0)
+	dirtyStats.Store(1)
 	SaveCacheStats(logger)
 
 	entries, err := os.ReadDir(Library)

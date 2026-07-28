@@ -7,7 +7,6 @@ import (
 	"log/slog"
 	"os"
 	"path/filepath"
-	"sync/atomic"
 	"testing"
 	"time"
 
@@ -248,9 +247,9 @@ func TestCacheMetricsPersistence(t *testing.T) {
 	// Reset global state in case of prior tests
 	redisClient = nil
 	statsFilePath = ""
-	atomic.StoreUint64(&cacheHits, 0)
-	atomic.StoreUint64(&cacheMisses, 0)
-	atomic.StoreUint32(&dirtyStats, 0)
+	cacheHits.Store(0)
+	cacheMisses.Store(0)
+	dirtyStats.Store(0)
 
 	// Save and redirect global Directory to tempDir to protect live directory
 	oldDirectory := Library
@@ -260,9 +259,9 @@ func TestCacheMetricsPersistence(t *testing.T) {
 		Library = oldDirectory
 		redisClient = nil
 		statsFilePath = ""
-		atomic.StoreUint64(&cacheHits, 0)
-		atomic.StoreUint64(&cacheMisses, 0)
-		atomic.StoreUint32(&dirtyStats, 0)
+		cacheHits.Store(0)
+		cacheMisses.Store(0)
+		dirtyStats.Store(0)
 	})
 
 	// Initialize local file cache
@@ -289,8 +288,8 @@ func TestCacheMetricsPersistence(t *testing.T) {
 	SaveCacheStats(logger)
 
 	// Reset in-memory values
-	atomic.StoreUint64(&cacheHits, 0)
-	atomic.StoreUint64(&cacheMisses, 0)
+	cacheHits.Store(0)
+	cacheMisses.Store(0)
 
 	// Reload from file
 	loadCacheStatsFromFile(logger)
