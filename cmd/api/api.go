@@ -30,6 +30,7 @@ import (
 	"viz/internal/jobs"
 	"viz/internal/jobs/workers"
 	imalog "viz/internal/logger"
+	libos "viz/internal/os"
 	"viz/internal/settings"
 	"viz/internal/utils"
 )
@@ -232,6 +233,15 @@ func main() {
 	}
 
 	appConfig := config.AppConfig
+
+	logger.Debug("initializing server storage and working paths",
+		slog.String("project_root", libos.ProjectRoot),
+		slog.String("current_working_directory", libos.CurrentWorkingDirectory),
+		slog.String("base_directory", images.BaseDirectory),
+		slog.String("library_directory", images.Library),
+		slog.String("trash_directory", images.TrashDirectory),
+		slog.String("logs_directory", imalog.LogDirectoryDefault),
+	)
 
 	apiServer.Database = &db.DB{
 		Address: func() string {
