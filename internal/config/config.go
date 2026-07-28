@@ -14,10 +14,15 @@ import (
 )
 
 const ConfigFileName = "viz.json"
+const DefaultDataDirectory = "./data"
 
+// ReadConfig reads the config file and environment variables
+// to create a viper instance that can be used throughout the application
+//
 // Order of importance:
-// ENV VARIABLES -> VIZ.JSON CONFIG VALUES -> DEFAULT VALUES
-// STICK TO DEFAULTS IF VIZ.JSON VALUES ARE INVALID/FAIL TO PARSE CORRECTLY
+// Env Variables -> viz.json -> Defaults
+//
+// Defaults will apply if config or environments values fail to parse
 func ReadConfig() (viper.Viper, error) {
 	// Load environment variables from .env if present in project root
 	_ = godotenv.Load(filepath.Join(libos.ProjectRoot, ".env"))
@@ -34,8 +39,8 @@ func ReadConfig() (viper.Viper, error) {
 	v.AutomaticEnv()
 
 	// Bind specific env vars
-	_ = v.BindEnv("servers.api.port", "API_PORT")
-	_ = v.BindEnv("servers.api.host", "API_HOST")
+	_ = v.BindEnv("server.port", "API_PORT")
+	_ = v.BindEnv("server.host", "API_HOST")
 	_ = v.BindEnv("database.host", "DB_HOST")
 	_ = v.BindEnv("database.port", "DB_PORT")
 	_ = v.BindEnv("database.user", "DB_USER")
@@ -46,20 +51,20 @@ func ReadConfig() (viper.Viper, error) {
 	_ = v.BindEnv("upload.location", "UPLOAD_LOCATION")
 
 	// Set Defaults
-	v.SetDefault("baseUrl", "localhost")
+	v.SetDefault("base_url", "localhost")
+	v.SetDefault("base_directory", DefaultDataDirectory)
+	v.SetDefault("upload.location", "library")
+	v.SetDefault("timezone", "utc")
 	v.SetDefault("allowed_hosts", []string{})
-	v.SetDefault("servers.api.port", 7770)
-	v.SetDefault("servers.viz.port", 7777)
+	v.SetDefault("server.port", 7770)
+	v.SetDefault("server.port", 7777)
 	if utils.IsProduction {
-		v.SetDefault("servers.api.host", "0.0.0.0")
-		v.SetDefault("servers.viz.host", "0.0.0.0")
+		v.SetDefault("server.host", "0.0.0.0")
 	} else {
-		v.SetDefault("servers.api.host", "localhost")
-		v.SetDefault("servers.viz.host", "localhost")
+		v.SetDefault("server.host", "localhost")
 	}
 
 	v.SetDefault("logging.level", "debug")
-	v.SetDefault("logging.timezone", "utc")
 
 	v.SetDefault("database.location", "database")
 	v.SetDefault("database.port", 5432)
@@ -152,26 +157,30 @@ func WriteConfig(cfg VizConfig) error {
 }
 
 var (
-	ServerKeys = map[string]string{
-		"api": "api",
-		"viz": "viz",
+	BaseDirectory string
+)
+
+func init() {
+	cfg, err := ReadConfig()
+	if err != nil {
+		panic(err)
 	}
 
-	VizServers = func() map[string]*VizServer {
-		config, err := ReadConfig()
-		if err != nil {
-			panic("Unable to read config file " + err.Error())
-		}
+	if err := cfg.Unmarshal(&AppConfig); err != nil {
+		panic(fmt.Errorf("failed to unmarshal config into AppConfig: %w", err))
+	}
 
-		result := map[string]*VizServer{}
-		for _, serverKey := range ServerKeys {
-			result[serverKey] = &VizServer{ServerConfig: &ServerConfig{}}
+	baseDir := cfg.GetString("base_directory")
+	if strings.TrimSpace(baseDir) == "" {
+		panic("base directory is not set in config")
+	}
 
-			result[serverKey].Port = config.GetInt(fmt.Sprintf("servers.%s.port", serverKey))
-			result[serverKey].Host = config.GetString(fmt.Sprintf("servers.%s.host", serverKey))
-			result[serverKey].Key = serverKey
-		}
+	if !filepath.IsAbs(baseDir) {
+		baseDir = filepath.Join(libos.ProjectRoot, baseDir)
+	}
 
-		return result
-	}()
-)
+	AppConfig.BaseDir = baseDir
+	BaseDirectory = baseDir
+
+	libos.MustCreateDirectory(baseDir)
+}
