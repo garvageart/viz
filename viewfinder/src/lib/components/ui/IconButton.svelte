@@ -33,11 +33,9 @@
 
     let childrenEl: HTMLSpanElement | undefined = $state();
     let hasVisibleChildren = $derived.by(() => {
-        tick().then(() => {
-            if (childrenEl) {
-                return childrenEl.childNodes.length > 0 && childrenEl.textContent?.trim() !== "";
-            }
-        });
+        if (childrenEl) {
+            return childrenEl.childNodes.length > 0 && childrenEl.textContent?.trim() !== "";
+        }
     });
 </script>
 
