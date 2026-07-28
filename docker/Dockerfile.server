@@ -7,11 +7,10 @@ WORKDIR /app
 ARG PNPM_VERSION=latest
 RUN npm install -g pnpm@${PNPM_VERSION}
 
-# Copy workspace configuration and all source files
+# Copy workspace configuration and package manifests first for optimal layer caching
 COPY pnpm-lock.yaml pnpm-workspace.yaml package.json .npmrc ./
-COPY viewfinder ./viewfinder
-COPY scripts/js ./scripts/js
-COPY .prettierrc .prettierignore ./
+COPY viewfinder/package.json ./viewfinder/
+COPY scripts/js/package.json ./scripts/js/
 
 # Set pnpm fetch timeout to 10 minutes and increase retries for CI network resilience
 ENV NPM_CONFIG_FETCH_TIMEOUT=600000
@@ -21,6 +20,11 @@ ENV NPM_CONFIG_FETCH_RETRIES=5
 RUN --mount=type=cache,id=pnpm,target=/root/.local/share/pnpm/store \
     pnpm install --frozen-lockfile --fetch-timeout 600000
 
+# Copy source code after dependencies are installed
+COPY viewfinder ./viewfinder
+COPY scripts/js ./scripts/js
+COPY .prettierrc .prettierignore ./
+
 # Build frontend
 WORKDIR /app
 RUN pnpm --filter @viz/viewfinder run build
@@ -28,8 +32,10 @@ RUN pnpm --filter @viz/viewfinder run build
 # Stage 2: Backend Build
 FROM golang:1.26-bookworm AS backend-builder
 
-# Install build tools and required dependencies to build libvips from source.
-RUN apt-get update && \
+# Install build tools and required dependencies with apt layer caching
+RUN --mount=type=cache,target=/var/cache/apt,sharing=locked \
+    --mount=type=cache,target=/var/lib/apt,sharing=locked \
+    apt-get update && \
     apt-get install -y --no-install-recommends \
     build-essential pkg-config git ca-certificates curl \
     meson ninja-build python3 python3-pip python3-setuptools \
@@ -38,21 +44,24 @@ RUN apt-get update && \
     libxml2-dev libexif-dev libpoppler-glib-dev libgsf-1-dev libopenjp2-7-dev \
     libjxl-dev libimagequant-dev libarchive-dev librsvg2-dev \
     libopenslide-dev libmatio-dev libcfitsio-dev libcgif-dev \
-    libmagickwand-dev libraw-dev libnifti-dev && \
-    rm -rf /var/lib/apt/lists/*
+    libmagickwand-dev libraw-dev libnifti-dev
 
-# Download, build and install libvips
+# Download, build and install libvips with BuildKit build cache
 COPY .libvips-version /tmp/.libvips-version
-RUN set -eux; \
+RUN --mount=type=cache,target=/tmp/vips-build-cache \
+    set -eux; \
     VIPS_VERSION=$(cat /tmp/.libvips-version | tr -d '[:space:]'); \
-    mkdir -p /tmp/build && cd /tmp/build; \
-    curl -fsSL "https://github.com/libvips/libvips/releases/download/v${VIPS_VERSION}/vips-${VIPS_VERSION}.tar.xz" -o vips.tar.xz; \
-    tar xJf vips.tar.xz; \
-    cd vips-${VIPS_VERSION}; \
-    meson setup build --prefix=/usr ; \
+    mkdir -p /tmp/vips-build-cache && cd /tmp/vips-build-cache; \
+    if [ ! -d "vips-${VIPS_VERSION}" ]; then \
+        curl -fsSL "https://github.com/libvips/libvips/releases/download/v${VIPS_VERSION}/vips-${VIPS_VERSION}.tar.xz" -o vips.tar.xz; \
+        tar xJf vips.tar.xz; \
+        cd "vips-${VIPS_VERSION}"; \
+        meson setup build --prefix=/usr; \
+    else \
+        cd "vips-${VIPS_VERSION}"; \
+    fi; \
     ninja -C build; \
     ninja -C build install; \
-    rm -rf /tmp/build; \
     ldconfig || true; \
     mkdir -p /vips-libs && cp -d /usr/lib/libvips.so* /usr/lib/*-linux-gnu/libvips.so* /vips-libs/ 2>/dev/null || true
 
