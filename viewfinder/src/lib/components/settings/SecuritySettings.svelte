@@ -12,6 +12,7 @@
     } from "$lib/api";
     import ConfirmationModal from "$lib/components/modals/ConfirmationModal.svelte";
     import CreatedApiKeyModal from "$lib/components/modals/CreatedApiKeyModal.svelte";
+    import Badge from "$lib/components/ui/Badge.svelte";
     import IconButton from "$lib/components/ui/IconButton.svelte";
     import MaterialIcon from "$lib/components/ui/MaterialIcon.svelte";
     import { toastState } from "$lib/toast-notifcations/notif-state.svelte";
@@ -272,7 +273,7 @@
         <div class="section-header">
             <div class="header-info">
                 <h3>API Keys</h3>
-                <p>Personal access tokens for API access.</p>
+                <span>Personal access tokens for API access.</span>
             </div>
             <IconButton variant="info" iconName="add" onclick={openApiKeyModal}><span>Create New Key</span></IconButton>
         </div>
@@ -335,7 +336,7 @@
         <div class="section-header">
             <div class="header-info">
                 <h3>Active Sessions</h3>
-                <p>Devices that are currently logged into your account.</p>
+                <span>Devices that are currently logged into your account.</span>
             </div>
         </div>
 
@@ -358,13 +359,17 @@
                                     <td>
                                         <div class="session-info">
                                             <div class="session-main">
-                                                <span class="name">{session.client_name || "Unknown Device"}</span>
+                                                <span class="name"
+                                                    >{session.client_name ||
+                                                        `${session.browser} on ${session.os}`}</span
+                                                >
                                                 {#if session.is_current}
-                                                    <span class="current-badge">Current</span>
+                                                    <Badge variant="success" size="small" weight="regular"
+                                                        >Current</Badge
+                                                    >
                                                 {/if}
                                             </div>
                                             <span class="details">
-                                                {session.browser} on {session.os} •
                                                 <span class="mono-text">{session.ip_address}</span>
                                             </span>
                                         </div>
@@ -422,17 +427,20 @@
         padding-bottom: var(--viz-spacing-sm);
         border-bottom: var(--viz-border-thin);
 
-        h3 {
-            margin: 0;
-            font-size: 1.25rem;
-            font-weight: 600;
-            color: var(--viz-text-primary);
-        }
+        .header-info {
+            gap: var(--viz-spacing-sm);
 
-        p {
-            margin: var(--viz-spacing-xxs) 0 0 0;
-            font-size: var(--viz-font-size-lg);
-            color: var(--viz-text-secondary);
+            h3 {
+                margin: 0;
+                font-size: 1.25rem;
+                font-weight: 600;
+                color: var(--viz-text-primary);
+            }
+
+            span {
+                font-size: var(--viz-font-size-lg);
+                color: var(--viz-text-secondary);
+            }
         }
     }
 
@@ -456,7 +464,6 @@
             font-weight: 600;
             font-size: var(--viz-font-size-std);
             text-transform: uppercase;
-            letter-spacing: 0.05em;
             border-bottom: var(--viz-border-thin);
             background-color: var(--viz-surface-panel);
         }
@@ -518,16 +525,6 @@
         display: flex;
         align-items: center;
         gap: var(--viz-spacing-sm);
-    }
-
-    .current-badge {
-        padding: 0.125rem 0.375rem;
-        background: color-mix(in srgb, var(--viz-success-color) 15%, var(--viz-surface-card));
-        color: var(--viz-success-color);
-        border-radius: var(--viz-border-radius-sm);
-        font-size: 0.7rem;
-        font-weight: 600;
-        text-transform: uppercase;
     }
 
     .actions-cell {

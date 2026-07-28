@@ -57,13 +57,13 @@
         {
             id: "upload-photos",
             label: "Upload Photos",
-            icon: "photo_library",
+            iconName: "photo_library",
             action: () => triggerUpload("photos")
         },
         {
             id: "upload-folder",
             label: "Upload Folder",
-            icon: "folder_open",
+            iconName: "folder_open",
             action: () => triggerUpload("folder")
         }
     ];
@@ -154,7 +154,7 @@
         <AppMenu bind:isOpen={openAppMenu} bind:anchor={appMenuButton} />
         <div class="header-separator menu"></div>
         {#if isLayoutPage()}
-            <Dropdown icon="view_quilt" items={createWorkspaceViewsMenu()} />
+            <Dropdown iconName="view_quilt" items={createWorkspaceViewsMenu()} />
         {:else}
             <IconButton
                 class="header-button"
@@ -219,7 +219,7 @@
         />
         <Dropdown
             class="header-button header-upload-dropdown"
-            icon="upload"
+            iconName="upload"
             variant="success"
             title="Upload"
             items={uploadMenuItems}

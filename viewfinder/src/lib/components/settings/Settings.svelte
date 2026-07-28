@@ -79,7 +79,7 @@ Stuff to finish:
         groups.map((group) => ({
             label: group.charAt(0).toUpperCase() + group.slice(1),
             href: `/settings/${group.toLowerCase()}`,
-            icon: groupIcons[group.toLowerCase()] || "settings"
+            iconName: groupIcons[group.toLowerCase()] || "settings"
         }))
     );
 

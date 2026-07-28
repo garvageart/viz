@@ -16,7 +16,7 @@
         /** Button text when no selection (or for action menus that don't track selection) */
         title?: string;
         /** Icon to show on the button */
-        icon?: MaterialSymbol;
+        iconName?: MaterialSymbol;
         /** Button variant */
         variant?: ButtonVariant;
         /** Called when an item is selected */
@@ -46,7 +46,7 @@
         selectedItemId = $bindable(),
         showMenu = $bindable(false),
         title,
-        icon,
+        iconName: icon,
         variant = "primary",
         onSelect,
         showSelectionIndicator = true,
@@ -65,7 +65,9 @@
 
     // Prefer an explicit dropdown icon prop for the button. If none is provided,
     // fall back to the selected item's icon.
-    let currentIcon: MaterialSymbol | undefined = $derived(icon ?? (selectedItem?.icon as MaterialSymbol | undefined));
+    let currentIcon: MaterialSymbol | undefined = $derived(
+        icon ?? (selectedItem?.iconName as MaterialSymbol | undefined)
+    );
 
     let menuItems: MenuItem[] = $state([]);
     let hideTitleState = $derived(hideTitle || (!title && !(selectedItem && selectedItem.label)));
@@ -73,7 +75,7 @@
     function buildMenuItems(): MenuItem[] {
         return items.map((it) => ({
             ...it,
-            icon: it.icon ?? (showSelectionIndicator && selectedItemId === it.id ? "check" : undefined),
+            iconName: it.iconName ?? (showSelectionIndicator && selectedItemId === it.id ? "check" : undefined),
             // wrap existing action so dropdown selection handling runs first
             action: (e) => handleItemSelect(it, e)
         }));

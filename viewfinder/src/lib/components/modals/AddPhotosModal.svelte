@@ -228,7 +228,7 @@
                     <Dropdown
                         title="Sort"
                         class="toolbar-button"
-                        icon="sort"
+                        iconName="sort"
                         items={[
                             { id: "sort-name", label: "Name" },
                             { id: "sort-recently_added", label: "Recently Added" },
@@ -287,7 +287,7 @@
                     <Dropdown
                         title="Display"
                         class="toolbar-button"
-                        icon="list_alt"
+                        iconName="list_alt"
                         items={displayMenuItems}
                         selectedItemId={getDisplaySelectedId()}
                         showSelectionIndicator={false}

@@ -115,7 +115,7 @@
 
 {#snippet toolbarButton(opts: ToolbarButtonProps)}
     {#if opts.dropdown}
-        <Dropdown class="toolbar-button" {...opts.dropdown} title={opts.text} icon={opts.iconName} />
+        <Dropdown class="toolbar-button" {...opts.dropdown} title={opts.text} iconName={opts.iconName} />
     {:else}
         <IconButton
             {...opts}

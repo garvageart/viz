@@ -16,7 +16,7 @@
         height?: string;
         applyPadding?: boolean;
         zIndex?: number;
-        icon?: MaterialSymbol;
+        iconName?: MaterialSymbol;
         onclickClose?: () => void;
     } & SvelteHTMLElements["div"];
 
@@ -29,7 +29,7 @@
         height,
         applyPadding = false,
         zIndex = 9999,
-        icon,
+        iconName: icon,
         onclickClose,
         ...props
     }: Props = $props();

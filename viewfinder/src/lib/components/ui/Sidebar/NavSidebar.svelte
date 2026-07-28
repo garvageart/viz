@@ -4,7 +4,7 @@
     export interface NavItem {
         label: string;
         href: string;
-        icon?: MaterialSymbol;
+        iconName?: MaterialSymbol;
         exact?: boolean;
     }
 </script>
@@ -41,8 +41,8 @@
                 {#each items as item}
                     <li>
                         <a href={item.href} class={["nav-link", isActive(item.href, item.exact) ? "active" : ""]}>
-                            {#if item.icon}
-                                <MaterialIcon iconName={item.icon} size="1.5rem" />
+                            {#if item.iconName}
+                                <MaterialIcon iconName={item.iconName} size="1.5rem" />
                             {/if}
                             <span>{item.label}</span>
                         </a>

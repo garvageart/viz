@@ -13,37 +13,37 @@
     const adminSettings: MenuItem = {
         id: "admin",
         label: "Admin",
-        icon: "admin_panel_settings",
+        iconName: "admin_panel_settings",
         children: [
             {
                 id: "admin-system",
                 label: "Dashboard",
-                icon: "dashboard",
+                iconName: "dashboard",
                 action: () => goto("/admin")
             },
             {
                 id: "admin-users",
                 label: "Users",
-                icon: "group",
+                iconName: "group",
                 action: () => goto("/admin/users")
             },
-            { id: "admin-jobs", label: "Jobs", icon: "work", action: () => goto("/admin/jobs") },
+            { id: "admin-jobs", label: "Jobs", iconName: "work", action: () => goto("/admin/jobs") },
             {
                 id: "admin-events",
                 label: "Events",
-                icon: "event",
+                iconName: "event",
                 action: () => goto("/admin/events")
             },
             {
                 id: "admin-cache",
                 label: "Cache",
-                icon: "cached",
+                iconName: "cached",
                 action: () => goto("/admin/cache")
             },
             {
                 id: "admin-storage",
                 label: "Storage",
-                icon: "hard_drive",
+                iconName: "hard_drive",
                 action: () => goto("/admin/storage")
             }
         ]
@@ -54,7 +54,7 @@
             return {
                 id: "views",
                 label: "Views",
-                icon: "view_quilt",
+                iconName: "view_quilt",
                 children: createWorkspaceViewsMenu()
             };
         }
@@ -62,7 +62,7 @@
         return {
             id: "workspace",
             label: "Workspace",
-            icon: "space_dashboard",
+            iconName: "space_dashboard",
             action: () => goto("/")
         };
     }
@@ -70,19 +70,19 @@
     const menuItems: MenuItem[] = [
         buildWorkspaceItem(),
         { id: "divider-1", label: "", separator: true },
-        { id: "photos", label: "Photos", icon: "photo", action: () => goto("/photos") },
+        { id: "photos", label: "Photos", iconName: "photo", action: () => goto("/photos") },
         {
             id: "collections",
             label: "Collections",
-            icon: "photo_album",
+            iconName: "photo_album",
             action: () => goto("/collections")
         },
         { id: "divider-2", label: "", separator: true },
-        { id: "settings", label: "Settings", icon: "settings", action: () => goto("/settings") },
+        { id: "settings", label: "Settings", iconName: "settings", action: () => goto("/settings") },
         {
             id: "help",
             label: "Help & Support",
-            icon: "help",
+            iconName: "help",
             // TODO: Change this (configurable via build injection __VIZ_CONFIG__)
             action: () => {
                 location.href = "https://github.com/garvageart/viz/issues";
@@ -92,7 +92,7 @@
             id: "shortcuts",
             label: "Keyboard Shortcuts",
             shortcut: "?",
-            icon: "keyboard",
+            iconName: "keyboard",
             // TODO: Centralise keyboard shortcuts in a manager
             action: () => alert("Keyboard shortcuts:\n\nCtrl/Cmd + K: Search\nEsc: Close panels")
         }
