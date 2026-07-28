@@ -573,6 +573,7 @@ func ImagesRouter(db *gorm.DB, logger *slog.Logger) *chi.Mux {
 			return
 		}
 
+		var checksum string
 		if fileImageUpload.Checksum != nil && *fileImageUpload.Checksum != "" {
 			calculatedChecksum, err := images.CalculateImageChecksum(imageFileData)
 			if err != nil {
@@ -586,6 +587,32 @@ func ImagesRouter(db *gorm.DB, logger *slog.Logger) *chi.Mux {
 				render.JSON(res, req, dto.ErrorResponse{Error: "Checksum mismatch"})
 				return
 			}
+			checksum = *fileImageUpload.Checksum
+		} else {
+			var err error
+			checksum, err = images.CalculateImageChecksum(imageFileData)
+			if err != nil {
+				render.Status(req, http.StatusInternalServerError)
+				render.JSON(res, req, dto.ErrorResponse{Error: "Failed to calculate checksum"})
+				return
+			}
+		}
+
+		// Fast duplicate check before heavy libvips image decoding/thumbnail processing
+		var existing entities.ImageAsset
+		dupErr := db.Where("image_metadata->>'checksum' = ?", checksum).First(&existing).Error
+		if dupErr == nil {
+			render.Status(req, http.StatusOK)
+			render.JSON(res, req, dto.ImageUploadResponse{
+				Uid:    existing.Uid,
+				Status: dto.ImageUploadStatusDuplicate,
+			})
+			return
+		} else if dupErr != gorm.ErrRecordNotFound {
+			logger.Error("Failed to check for duplicates", slog.Any("error", dupErr))
+			render.Status(req, http.StatusInternalServerError)
+			render.JSON(res, req, dto.ErrorResponse{Error: "Failed to check for duplicates"})
+			return
 		}
 
 		libvipsImg, err := libvips.NewImageFromBuffer(imageFileData, libvips.DefaultLoadOptions())
@@ -612,38 +639,9 @@ func ImagesRouter(db *gorm.DB, logger *slog.Logger) *chi.Mux {
 		imageEntity.UploadedByID = &authUser.Uid
 		imageEntity.OwnerID = &authUser.Uid
 
-		var checksum string
-		if fileImageUpload.Checksum != nil && *fileImageUpload.Checksum != "" {
-			checksum = *fileImageUpload.Checksum
-		} else {
-			checksum, err = images.CalculateImageChecksum(imageFileData)
-			if err != nil {
-				logger.Error("Failed to create image", slog.Any("error", err))
-				render.Status(req, http.StatusInternalServerError)
-				render.JSON(res, req, dto.ErrorResponse{Error: "Failed to create image"})
-				return
-			}
-		}
-
 		fileSize := int64(len(imageFileData))
 		imageEntity.ImageMetadata.FileSize = &fileSize
 		imageEntity.ImageMetadata.Checksum = checksum
-
-		var existing entities.ImageAsset
-		dupErr := db.Where("image_metadata->>'checksum' = ?", checksum).First(&existing).Error
-		if dupErr == nil {
-			render.Status(req, http.StatusOK)
-			render.JSON(res, req, dto.ImageUploadResponse{
-				Uid:    existing.Uid,
-				Status: dto.ImageUploadStatusDuplicate,
-			})
-			return
-		} else if dupErr != gorm.ErrRecordNotFound {
-			logger.Error("Failed to check for duplicates", slog.Any("error", dupErr))
-			render.Status(req, http.StatusInternalServerError)
-			render.JSON(res, req, dto.ErrorResponse{Error: "Failed to check for duplicates"})
-			return
-		}
 
 		logger.Info("adding images to database", slog.String("uid", imageEntity.Uid))
 		dbCreateTx := db.Create(&imageEntity)
