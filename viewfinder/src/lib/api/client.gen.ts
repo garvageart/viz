@@ -756,7 +756,11 @@ export type StorageConfig = {
 };
 export type VizConfig = {
     /** Base URL of the application */
-    baseUrl?: string;
+    base_url?: string;
+    /** Hostnames and IPs server is allowed to respond to */
+    allowed_hosts?: string[];
+    /** Timezone of the application (default UTC) */
+    timezone?: string;
     logging?: LoggingConfig;
     /** Base directory path */
     base_directory?: string;

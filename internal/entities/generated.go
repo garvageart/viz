@@ -7,6 +7,52 @@ import (
 	"viz/internal/dto"
 )
 
+// User is a GORM entity inferred from dto.User
+type User struct {
+	ID        uint           `gorm:"primarykey" json:"-"`
+	DeletedAt gorm.DeletedAt `gorm:"index" json:"-"`
+	CreatedAt time.Time
+	UpdatedAt time.Time
+	// Email Email
+	Email string
+	// FirstName First name
+	FirstName string
+	// LastName Last name
+	LastName string
+	// Name Name
+	Name string
+	// Role User role
+	Role dto.UserRole `gorm:"type:text"`
+	// Uid User UID
+	Uid string `gorm:"uniqueIndex"`
+}
+
+func (e User) DTO() dto.User {
+	return dto.User{
+		CreatedAt: e.CreatedAt,
+		UpdatedAt: e.UpdatedAt,
+		Email:     e.Email,
+		FirstName: e.FirstName,
+		LastName:  e.LastName,
+		Name:      e.Name,
+		Role:      e.Role,
+		Uid:       e.Uid,
+	}
+}
+
+func UserFromDTO(d dto.User) User {
+	return User{
+		CreatedAt: d.CreatedAt,
+		UpdatedAt: d.UpdatedAt,
+		Email:     d.Email,
+		FirstName: d.FirstName,
+		LastName:  d.LastName,
+		Name:      d.Name,
+		Role:      d.Role,
+		Uid:       d.Uid,
+	}
+}
+
 // DownloadToken is a GORM entity inferred from dto.DownloadToken
 type DownloadToken struct {
 	ID        uint           `gorm:"primarykey" json:"-"`
@@ -58,141 +104,6 @@ func DownloadTokenFromDTO(d dto.DownloadToken) DownloadToken {
 		Password:      d.Password,
 		ShowMetadata:  d.ShowMetadata,
 		Uid:           d.Uid,
-	}
-}
-
-// CollectionImage is a GORM entity inferred from dto.CollectionImage
-type CollectionImage struct {
-	ID        uint           `gorm:"primarykey" json:"-"`
-	DeletedAt gorm.DeletedAt `gorm:"index" json:"-"`
-	CreatedAt time.Time
-	UpdatedAt time.Time
-	// AddedAt Added timestamp
-	AddedAt   time.Time
-	AddedByID *string
-	AddedBy   *User `gorm:"foreignKey:AddedByID;references:Uid"`
-	// Uid Image UID
-	Uid          string `gorm:"uniqueIndex:idx_collection_images_collection_id_uid,priority:2"`
-	CollectionID *uint  `gorm:"uniqueIndex:idx_collection_images_collection_id_uid,priority:1"`
-}
-
-func (e CollectionImage) DTO() dto.CollectionImage {
-	return dto.CollectionImage{
-		AddedAt: e.AddedAt,
-		AddedBy: func() *dto.User {
-			if e.AddedBy != nil {
-				d := e.AddedBy.DTO()
-				return &d
-			}
-			return nil
-		}(),
-		Uid: e.Uid,
-	}
-}
-
-func CollectionImageFromDTO(d dto.CollectionImage) CollectionImage {
-	return CollectionImage{
-		AddedAt: d.AddedAt,
-		AddedByID: func() *string {
-			if d.AddedBy != nil {
-				return &d.AddedBy.Uid
-			}
-			return nil
-		}(),
-		Uid: d.Uid,
-	}
-}
-
-// Session is a GORM entity inferred from dto.Session
-type Session struct {
-	ID        uint           `gorm:"primarykey" json:"-"`
-	DeletedAt gorm.DeletedAt `gorm:"index" json:"-"`
-	CreatedAt time.Time
-	UpdatedAt time.Time
-	// ClientId Client ID
-	ClientId *string
-	// ClientIp Client IP
-	ClientIp *string
-	// ClientName Client name
-	ClientName *string
-	// ExpiresAt Expiry time
-	ExpiresAt *time.Time
-	// LastActive Last active time
-	LastActive *time.Time
-	// LoginAt Login time
-	LoginAt *time.Time
-	// LoginIp Login IP
-	LoginIp *string
-	// RefId Reference ID
-	RefId *string
-	// Status Session status
-	Status *int
-	// Timeout Timeout in seconds
-	Timeout *int64
-	// Token Session token
-	Token string
-	// Uid Session UID
-	Uid    string `gorm:"uniqueIndex"`
-	UserID *string
-	User   *User `gorm:"foreignKey:UserID;references:Uid"`
-	// UserAgent User agent
-	UserAgent *string
-	// UserUid User UID
-	UserUid string
-}
-
-func (e Session) DTO() dto.Session {
-	return dto.Session{
-		CreatedAt:  e.CreatedAt,
-		UpdatedAt:  e.UpdatedAt,
-		ClientId:   e.ClientId,
-		ClientIp:   e.ClientIp,
-		ClientName: e.ClientName,
-		ExpiresAt:  e.ExpiresAt,
-		LastActive: e.LastActive,
-		LoginAt:    e.LoginAt,
-		LoginIp:    e.LoginIp,
-		RefId:      e.RefId,
-		Status:     e.Status,
-		Timeout:    e.Timeout,
-		Token:      e.Token,
-		Uid:        e.Uid,
-		User: func() *dto.User {
-			if e.User != nil {
-				d := e.User.DTO()
-				return &d
-			}
-			return nil
-		}(),
-		UserAgent: e.UserAgent,
-		UserUid:   e.UserUid,
-	}
-}
-
-func SessionFromDTO(d dto.Session) Session {
-	return Session{
-		CreatedAt:  d.CreatedAt,
-		UpdatedAt:  d.UpdatedAt,
-		ClientId:   d.ClientId,
-		ClientIp:   d.ClientIp,
-		ClientName: d.ClientName,
-		ExpiresAt:  d.ExpiresAt,
-		LastActive: d.LastActive,
-		LoginAt:    d.LoginAt,
-		LoginIp:    d.LoginIp,
-		RefId:      d.RefId,
-		Status:     d.Status,
-		Timeout:    d.Timeout,
-		Token:      d.Token,
-		Uid:        d.Uid,
-		UserID: func() *string {
-			if d.User != nil {
-				return &d.User.Uid
-			}
-			return nil
-		}(),
-		UserAgent: d.UserAgent,
-		UserUid:   d.UserUid,
 	}
 }
 
@@ -293,86 +204,6 @@ func ImageAssetFromDTO(d dto.ImageAsset) ImageAsset {
 	}
 }
 
-// SettingDefault is a GORM entity inferred from dto.SettingDefault
-type SettingDefault struct {
-	ID        uint           `gorm:"primarykey" json:"-"`
-	DeletedAt gorm.DeletedAt `gorm:"index" json:"-"`
-	CreatedAt time.Time
-	UpdatedAt time.Time
-	// AllowedValues List of valid choices if type is enum.
-	AllowedValues *[]string `gorm:"serializer:json;type:JSONB"`
-	// Description Description for UI
-	Description string
-	// DisplayName A readable and UI-friendly name for the setting (not required but highly recommended).
-	DisplayName string
-	// Group Category/group for the setting (e.g., General, Notifications).
-	Group string
-	// IsUserEditable Describes whether a user can edit this setting.
-	IsUserEditable bool
-	// Name Unique name for the setting (primary key).
-	Name string `gorm:"uniqueIndex:idx_setting_defaults_name,priority:1"`
-	// Value The default value everyone gets.
-	Value string
-	// ValueType Data type of the setting.
-	ValueType dto.SettingDefaultValueType `gorm:"type:text"`
-}
-
-func (e SettingDefault) DTO() dto.SettingDefault {
-	return dto.SettingDefault{
-		AllowedValues:  e.AllowedValues,
-		Description:    e.Description,
-		DisplayName:    e.DisplayName,
-		Group:          e.Group,
-		IsUserEditable: e.IsUserEditable,
-		Name:           e.Name,
-		Value:          e.Value,
-		ValueType:      e.ValueType,
-	}
-}
-
-func SettingDefaultFromDTO(d dto.SettingDefault) SettingDefault {
-	return SettingDefault{
-		AllowedValues:  d.AllowedValues,
-		Description:    d.Description,
-		DisplayName:    d.DisplayName,
-		Group:          d.Group,
-		IsUserEditable: d.IsUserEditable,
-		Name:           d.Name,
-		Value:          d.Value,
-		ValueType:      d.ValueType,
-	}
-}
-
-// SettingOverride is a GORM entity inferred from dto.SettingOverride
-type SettingOverride struct {
-	ID        uint           `gorm:"primarykey" json:"-"`
-	DeletedAt gorm.DeletedAt `gorm:"index" json:"-"`
-	CreatedAt time.Time
-	UpdatedAt time.Time
-	// Name Links to SettingDefault.name.
-	Name string `gorm:"uniqueIndex:idx_setting_overrides_user_name,priority:2"`
-	// UserId Links to the users table.
-	UserId string `gorm:"uniqueIndex:idx_setting_overrides_user_name,priority:1"`
-	// Value The user's chosen value for the setting.
-	Value string
-}
-
-func (e SettingOverride) DTO() dto.SettingOverride {
-	return dto.SettingOverride{
-		Name:   e.Name,
-		UserId: e.UserId,
-		Value:  e.Value,
-	}
-}
-
-func SettingOverrideFromDTO(d dto.SettingOverride) SettingOverride {
-	return SettingOverride{
-		Name:   d.Name,
-		UserId: d.UserId,
-		Value:  d.Value,
-	}
-}
-
 // CollectionDetailResponse is a GORM entity inferred from dto.CollectionDetailResponse
 type CollectionDetailResponse struct {
 	ID          uint           `gorm:"primarykey" json:"-"`
@@ -463,6 +294,36 @@ func CollectionDetailResponseFromDTO(d dto.CollectionDetailResponse) CollectionD
 	}
 }
 
+// SettingOverride is a GORM entity inferred from dto.SettingOverride
+type SettingOverride struct {
+	ID        uint           `gorm:"primarykey" json:"-"`
+	DeletedAt gorm.DeletedAt `gorm:"index" json:"-"`
+	CreatedAt time.Time
+	UpdatedAt time.Time
+	// Name Links to SettingDefault.name.
+	Name string `gorm:"uniqueIndex:idx_setting_overrides_user_name,priority:2"`
+	// UserId Links to the users table.
+	UserId string `gorm:"uniqueIndex:idx_setting_overrides_user_name,priority:1"`
+	// Value The user's chosen value for the setting.
+	Value string
+}
+
+func (e SettingOverride) DTO() dto.SettingOverride {
+	return dto.SettingOverride{
+		Name:   e.Name,
+		UserId: e.UserId,
+		Value:  e.Value,
+	}
+}
+
+func SettingOverrideFromDTO(d dto.SettingOverride) SettingOverride {
+	return SettingOverride{
+		Name:   d.Name,
+		UserId: d.UserId,
+		Value:  d.Value,
+	}
+}
+
 // APIKey is a GORM entity inferred from dto.APIKey
 type APIKey struct {
 	ID        uint           `gorm:"primarykey" json:"-"`
@@ -533,114 +394,6 @@ func APIKeyFromDTO(d dto.APIKey) APIKey {
 			}
 			return nil
 		}(),
-	}
-}
-
-// User is a GORM entity inferred from dto.User
-type User struct {
-	ID        uint           `gorm:"primarykey" json:"-"`
-	DeletedAt gorm.DeletedAt `gorm:"index" json:"-"`
-	CreatedAt time.Time
-	UpdatedAt time.Time
-	// Email Email
-	Email string
-	// FirstName First name
-	FirstName string
-	// LastName Last name
-	LastName string
-	// Name Name
-	Name string
-	// Role User role
-	Role dto.UserRole `gorm:"type:text"`
-	// Uid User UID
-	Uid string `gorm:"uniqueIndex"`
-}
-
-func (e User) DTO() dto.User {
-	return dto.User{
-		CreatedAt: e.CreatedAt,
-		UpdatedAt: e.UpdatedAt,
-		Email:     e.Email,
-		FirstName: e.FirstName,
-		LastName:  e.LastName,
-		Name:      e.Name,
-		Role:      e.Role,
-		Uid:       e.Uid,
-	}
-}
-
-func UserFromDTO(d dto.User) User {
-	return User{
-		CreatedAt: d.CreatedAt,
-		UpdatedAt: d.UpdatedAt,
-		Email:     d.Email,
-		FirstName: d.FirstName,
-		LastName:  d.LastName,
-		Name:      d.Name,
-		Role:      d.Role,
-		Uid:       d.Uid,
-	}
-}
-
-// ImageTransform is a GORM entity inferred from dto.ImageTransform
-type ImageTransform struct {
-	ID        uint           `gorm:"primarykey" json:"-"`
-	DeletedAt gorm.DeletedAt `gorm:"index" json:"-"`
-	CreatedAt time.Time
-	UpdatedAt time.Time
-	// CacheKey Unique ETag string for this transform
-	CacheKey string
-	// FileName File name on disk
-	FileName string
-	// FileSizeBytes Size of the transform file in bytes
-	FileSizeBytes int64
-	// Format Image format
-	Format string
-	// Height Height of the transformed image
-	Height int
-	// ImageUid UID of the parent image asset
-	ImageUid string
-	// IsPermanent True if this is a pre-generated permanent thumbnail or preview
-	IsPermanent bool
-	// LastAccessedAt Timestamp when this transform was last requested
-	LastAccessedAt time.Time
-	// Quality Compression quality (0-100)
-	Quality int
-	// Uid Unique ID for the transform
-	Uid string `gorm:"uniqueIndex"`
-	// Width Width of the transformed image
-	Width int
-}
-
-func (e ImageTransform) DTO() dto.ImageTransform {
-	return dto.ImageTransform{
-		CacheKey:       e.CacheKey,
-		FileName:       e.FileName,
-		FileSizeBytes:  e.FileSizeBytes,
-		Format:         e.Format,
-		Height:         e.Height,
-		ImageUid:       e.ImageUid,
-		IsPermanent:    e.IsPermanent,
-		LastAccessedAt: e.LastAccessedAt,
-		Quality:        e.Quality,
-		Uid:            e.Uid,
-		Width:          e.Width,
-	}
-}
-
-func ImageTransformFromDTO(d dto.ImageTransform) ImageTransform {
-	return ImageTransform{
-		CacheKey:       d.CacheKey,
-		FileName:       d.FileName,
-		FileSizeBytes:  d.FileSizeBytes,
-		Format:         d.Format,
-		Height:         d.Height,
-		ImageUid:       d.ImageUid,
-		IsPermanent:    d.IsPermanent,
-		LastAccessedAt: d.LastAccessedAt,
-		Quality:        d.Quality,
-		Uid:            d.Uid,
-		Width:          d.Width,
 	}
 }
 
@@ -820,6 +573,253 @@ func WorkerJobFromDTO(d dto.WorkerJob) WorkerJob {
 		Topic:       d.Topic,
 		Type:        d.Type,
 		Uid:         d.Uid,
+	}
+}
+
+// CollectionImage is a GORM entity inferred from dto.CollectionImage
+type CollectionImage struct {
+	ID           uint           `gorm:"primarykey" json:"-"`
+	DeletedAt    gorm.DeletedAt `gorm:"index" json:"-"`
+	CreatedAt    time.Time
+	UpdatedAt    time.Time
+	CollectionID *uint `gorm:"uniqueIndex:idx_collection_images_collection_id_uid,priority:1"`
+	// AddedAt Added timestamp
+	AddedAt   time.Time
+	AddedByID *string
+	AddedBy   *User `gorm:"foreignKey:AddedByID;references:Uid"`
+	// Uid Image UID
+	Uid string `gorm:"uniqueIndex:idx_collection_images_collection_id_uid,priority:2"`
+}
+
+func (e CollectionImage) DTO() dto.CollectionImage {
+	return dto.CollectionImage{
+		AddedAt: e.AddedAt,
+		AddedBy: func() *dto.User {
+			if e.AddedBy != nil {
+				d := e.AddedBy.DTO()
+				return &d
+			}
+			return nil
+		}(),
+		Uid: e.Uid,
+	}
+}
+
+func CollectionImageFromDTO(d dto.CollectionImage) CollectionImage {
+	return CollectionImage{
+		AddedAt: d.AddedAt,
+		AddedByID: func() *string {
+			if d.AddedBy != nil {
+				return &d.AddedBy.Uid
+			}
+			return nil
+		}(),
+		Uid: d.Uid,
+	}
+}
+
+// ImageTransform is a GORM entity inferred from dto.ImageTransform
+type ImageTransform struct {
+	ID        uint           `gorm:"primarykey" json:"-"`
+	DeletedAt gorm.DeletedAt `gorm:"index" json:"-"`
+	CreatedAt time.Time
+	UpdatedAt time.Time
+	// CacheKey Unique ETag string for this transform
+	CacheKey string
+	// FileName File name on disk
+	FileName string
+	// FileSizeBytes Size of the transform file in bytes
+	FileSizeBytes int64
+	// Format Image format
+	Format string
+	// Height Height of the transformed image
+	Height int
+	// ImageUid UID of the parent image asset
+	ImageUid string
+	// IsPermanent True if this is a pre-generated permanent thumbnail or preview
+	IsPermanent bool
+	// LastAccessedAt Timestamp when this transform was last requested
+	LastAccessedAt time.Time
+	// Quality Compression quality (0-100)
+	Quality int
+	// Uid Unique ID for the transform
+	Uid string `gorm:"uniqueIndex"`
+	// Width Width of the transformed image
+	Width int
+}
+
+func (e ImageTransform) DTO() dto.ImageTransform {
+	return dto.ImageTransform{
+		CacheKey:       e.CacheKey,
+		FileName:       e.FileName,
+		FileSizeBytes:  e.FileSizeBytes,
+		Format:         e.Format,
+		Height:         e.Height,
+		ImageUid:       e.ImageUid,
+		IsPermanent:    e.IsPermanent,
+		LastAccessedAt: e.LastAccessedAt,
+		Quality:        e.Quality,
+		Uid:            e.Uid,
+		Width:          e.Width,
+	}
+}
+
+func ImageTransformFromDTO(d dto.ImageTransform) ImageTransform {
+	return ImageTransform{
+		CacheKey:       d.CacheKey,
+		FileName:       d.FileName,
+		FileSizeBytes:  d.FileSizeBytes,
+		Format:         d.Format,
+		Height:         d.Height,
+		ImageUid:       d.ImageUid,
+		IsPermanent:    d.IsPermanent,
+		LastAccessedAt: d.LastAccessedAt,
+		Quality:        d.Quality,
+		Uid:            d.Uid,
+		Width:          d.Width,
+	}
+}
+
+// Session is a GORM entity inferred from dto.Session
+type Session struct {
+	ID        uint           `gorm:"primarykey" json:"-"`
+	DeletedAt gorm.DeletedAt `gorm:"index" json:"-"`
+	CreatedAt time.Time
+	UpdatedAt time.Time
+	// ClientId Client ID
+	ClientId *string
+	// ClientIp Client IP
+	ClientIp *string
+	// ClientName Client name
+	ClientName *string
+	// ExpiresAt Expiry time
+	ExpiresAt *time.Time
+	// LastActive Last active time
+	LastActive *time.Time
+	// LoginAt Login time
+	LoginAt *time.Time
+	// LoginIp Login IP
+	LoginIp *string
+	// RefId Reference ID
+	RefId *string
+	// Status Session status
+	Status *int
+	// Timeout Timeout in seconds
+	Timeout *int64
+	// Token Session token
+	Token string
+	// Uid Session UID
+	Uid    string `gorm:"uniqueIndex"`
+	UserID *string
+	User   *User `gorm:"foreignKey:UserID;references:Uid"`
+	// UserAgent User agent
+	UserAgent *string
+	// UserUid User UID
+	UserUid string
+}
+
+func (e Session) DTO() dto.Session {
+	return dto.Session{
+		CreatedAt:  e.CreatedAt,
+		UpdatedAt:  e.UpdatedAt,
+		ClientId:   e.ClientId,
+		ClientIp:   e.ClientIp,
+		ClientName: e.ClientName,
+		ExpiresAt:  e.ExpiresAt,
+		LastActive: e.LastActive,
+		LoginAt:    e.LoginAt,
+		LoginIp:    e.LoginIp,
+		RefId:      e.RefId,
+		Status:     e.Status,
+		Timeout:    e.Timeout,
+		Token:      e.Token,
+		Uid:        e.Uid,
+		User: func() *dto.User {
+			if e.User != nil {
+				d := e.User.DTO()
+				return &d
+			}
+			return nil
+		}(),
+		UserAgent: e.UserAgent,
+		UserUid:   e.UserUid,
+	}
+}
+
+func SessionFromDTO(d dto.Session) Session {
+	return Session{
+		CreatedAt:  d.CreatedAt,
+		UpdatedAt:  d.UpdatedAt,
+		ClientId:   d.ClientId,
+		ClientIp:   d.ClientIp,
+		ClientName: d.ClientName,
+		ExpiresAt:  d.ExpiresAt,
+		LastActive: d.LastActive,
+		LoginAt:    d.LoginAt,
+		LoginIp:    d.LoginIp,
+		RefId:      d.RefId,
+		Status:     d.Status,
+		Timeout:    d.Timeout,
+		Token:      d.Token,
+		Uid:        d.Uid,
+		UserID: func() *string {
+			if d.User != nil {
+				return &d.User.Uid
+			}
+			return nil
+		}(),
+		UserAgent: d.UserAgent,
+		UserUid:   d.UserUid,
+	}
+}
+
+// SettingDefault is a GORM entity inferred from dto.SettingDefault
+type SettingDefault struct {
+	ID        uint           `gorm:"primarykey" json:"-"`
+	DeletedAt gorm.DeletedAt `gorm:"index" json:"-"`
+	CreatedAt time.Time
+	UpdatedAt time.Time
+	// AllowedValues List of valid choices if type is enum.
+	AllowedValues *[]string `gorm:"serializer:json;type:JSONB"`
+	// Description Description for UI
+	Description string
+	// DisplayName A readable and UI-friendly name for the setting (not required but highly recommended).
+	DisplayName string
+	// Group Category/group for the setting (e.g., General, Notifications).
+	Group string
+	// IsUserEditable Describes whether a user can edit this setting.
+	IsUserEditable bool
+	// Name Unique name for the setting (primary key).
+	Name string `gorm:"uniqueIndex:idx_setting_defaults_name,priority:1"`
+	// Value The default value everyone gets.
+	Value string
+	// ValueType Data type of the setting.
+	ValueType dto.SettingDefaultValueType `gorm:"type:text"`
+}
+
+func (e SettingDefault) DTO() dto.SettingDefault {
+	return dto.SettingDefault{
+		AllowedValues:  e.AllowedValues,
+		Description:    e.Description,
+		DisplayName:    e.DisplayName,
+		Group:          e.Group,
+		IsUserEditable: e.IsUserEditable,
+		Name:           e.Name,
+		Value:          e.Value,
+		ValueType:      e.ValueType,
+	}
+}
+
+func SettingDefaultFromDTO(d dto.SettingDefault) SettingDefault {
+	return SettingDefault{
+		AllowedValues:  d.AllowedValues,
+		Description:    d.Description,
+		DisplayName:    d.DisplayName,
+		Group:          d.Group,
+		IsUserEditable: d.IsUserEditable,
+		Name:           d.Name,
+		Value:          d.Value,
+		ValueType:      d.ValueType,
 	}
 }
 

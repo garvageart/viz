@@ -1891,11 +1891,14 @@ type UserUpdate struct {
 
 // VizConfig defines model for VizConfig.
 type VizConfig struct {
-	// BaseUrl Base URL of the application
-	BaseUrl *string `json:"baseUrl,omitempty"`
+	// AllowedHosts Hostnames and IPs server is allowed to respond to
+	AllowedHosts *[]string `json:"allowed_hosts,omitempty"`
 
 	// BaseDirectory Base directory path
-	BaseDirectory  *string               `json:"base_directory,omitempty"`
+	BaseDirectory *string `json:"base_directory,omitempty"`
+
+	// BaseUrl Base URL of the application
+	BaseUrl        *string               `json:"base_url,omitempty"`
 	Cache          *CacheConfig          `json:"cache,omitempty"`
 	Database       *DatabaseConfig       `json:"database,omitempty"`
 	Libvips        *LibvipsConfig        `json:"libvips,omitempty"`
@@ -1903,8 +1906,11 @@ type VizConfig struct {
 	Redis          *QueueConfig          `json:"redis,omitempty"`
 	Storage        *StorageConfig        `json:"storage,omitempty"`
 	StorageMetrics *StorageMetricsConfig `json:"storage_metrics,omitempty"`
-	Upload         *UploadConfig         `json:"upload,omitempty"`
-	Users          *UserManagementConfig `json:"users,omitempty"`
+
+	// Timezone Timezone of the application (default UTC)
+	Timezone *string               `json:"timezone,omitempty"`
+	Upload   *UploadConfig         `json:"upload,omitempty"`
+	Users    *UserManagementConfig `json:"users,omitempty"`
 }
 
 // WSBroadcastRequest defines model for WSBroadcastRequest.

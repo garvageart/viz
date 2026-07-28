@@ -4503,14 +4503,17 @@ components:
         VizConfig:
             type: object
             properties:
-                baseUrl:
+                base_url:
                     type: string
                     description: Base URL of the application
                 allowed_hosts:
                     type: array
                     items:
                         type: string
-                    description: Hostnames and IPs the dev server is allowed to respond to (Vite allowedHosts)
+                    description: Hostnames and IPs server is allowed to respond to
+                timezone:
+                    type: string
+                    description: Timezone of the application (default UTC)
                 logging:
                     $ref: "#/components/schemas/LoggingConfig"
                 base_directory:
