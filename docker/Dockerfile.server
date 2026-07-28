@@ -5,7 +5,7 @@ WORKDIR /app
 
 # Install pnpm (can be overridden at build time via --build-arg PNPM_VERSION=...)
 ARG PNPM_VERSION=latest
-RUN npm install -g pnpm@${PNPM_VERSION}
+RUN npm install -g pnpm@${PNPM_VERSION} --fetch-retries 5 --fetch-retry-mintimeout 20000 --fetch-retry-maxtimeout 120000
 
 # Copy workspace configuration and package manifests first for optimal layer caching
 COPY pnpm-lock.yaml pnpm-workspace.yaml package.json .npmrc ./
