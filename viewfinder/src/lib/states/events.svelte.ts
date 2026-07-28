@@ -15,19 +15,19 @@ class EventsState {
     initialized = $state(false);
     private wasDisconnected = false;
 
-    private debouncedInvalidate = debounce(async () => {
-        console.debug("[Events] Triggering debounced soft refresh");
+    private debouncedInvalidate = debounce(async (resourcePath?: string) => {
+        console.debug(`[Events] Triggering debounced soft refresh for path: ${resourcePath ?? "all"}`);
         invalidateViz({ delay: 100, skipInvalidateAll: true });
 
-        // Target collections API endpoints so /collections view updates live without resetting /photos grid
-        try {
-            await invalidate((url) => url.pathname.includes("/collections"));
-        } catch (e) {
-            console.warn("[Events] Targeted collections invalidation failed:", e);
+        if (resourcePath) {
+            try {
+                await invalidate((url) => url.pathname.includes(resourcePath));
+            } catch (e) {
+                console.warn(`[Events] Targeted invalidation failed for ${resourcePath}:`, e);
+            }
         }
 
         // If the user is currently on the search page, trigger a fresh search
-        // so results (e.g., deleted collections) are reflected immediately.
         if (typeof window !== "undefined" && page.url.pathname.endsWith("/search")) {
             try {
                 await performSearch();
@@ -104,7 +104,14 @@ class EventsState {
             case "collection-updated":
             case "collection-deleted":
                 console.debug(`[Events] Collection event: ${event}`);
-                this.debouncedInvalidate();
+                this.debouncedInvalidate("/collections");
+                break;
+
+            case "image-created":
+            case "image-updated":
+            case "image-deleted":
+                console.debug(`[Events] Image event: ${event}`);
+                this.debouncedInvalidate("/images");
                 break;
 
             case "server-online":
