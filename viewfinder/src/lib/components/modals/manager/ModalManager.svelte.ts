@@ -23,7 +23,7 @@ export interface ModalOptions {
 }
 
 const DEFAULT_MODAL_OPTIONS: ModalOptions = {
-    width: "50%",
+    width: "40%",
     applyPadding: true,
     closeOnOverlayClick: true
 };
