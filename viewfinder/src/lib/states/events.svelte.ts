@@ -1,3 +1,4 @@
+import { invalidate } from "$app/navigation";
 import { page } from "$app/state";
 import { WSClient } from "$lib/api/websocket";
 import { performSearch } from "$lib/search/execute";
@@ -15,8 +16,15 @@ class EventsState {
     private wasDisconnected = false;
 
     private debouncedInvalidate = debounce(async () => {
-        console.debug("[Events] Triggering debounced refresh");
-        invalidateViz({ delay: 100 });
+        console.debug("[Events] Triggering debounced soft refresh");
+        invalidateViz({ delay: 100, skipInvalidateAll: true });
+
+        // Target collections API endpoints so /collections view updates live without resetting /photos grid
+        try {
+            await invalidate((url) => url.pathname.includes("/collections"));
+        } catch (e) {
+            console.warn("[Events] Targeted collections invalidation failed:", e);
+        }
 
         // If the user is currently on the search page, trigger a fresh search
         // so results (e.g., deleted collections) are reflected immediately.
