@@ -1,4 +1,5 @@
 <script lang="ts">
+    import { tick } from "svelte";
     import type { HTMLButtonAttributes } from "svelte/elements";
     import { tooltip } from "$lib/components/tooltips/tooltip";
     import type { TooltipParams } from "$lib/components/tooltips/tooltip";
@@ -29,6 +30,15 @@
         tooltipParams,
         ...props
     }: Props = $props();
+
+    let childrenEl: HTMLSpanElement | undefined = $state();
+    let hasVisibleChildren = $derived.by(() => {
+        tick().then(() => {
+            if (childrenEl) {
+                return childrenEl.childNodes.length > 0 && childrenEl.textContent?.trim() !== "";
+            }
+        });
+    });
 </script>
 
 <button
@@ -37,18 +47,24 @@
     {...props}
     bind:this={element}
     class="{variant} {props.class || ''}"
-    class:with-children={!!children}
+    class:with-children={hasVisibleChildren}
     aria-label={props["aria-label"] ?? props.title}
     style={hoverColor ? `--button-hover-bg: ${hoverColor}` : undefined}
 >
     {#if iconName}
         <MaterialIcon {iconName} {size} {iconStyle} {fill} {grade} {opticalSize} />
     {/if}
-    {@render children?.()}
+    <span class="icon-button-content" bind:this={childrenEl}>
+        {@render children?.()}
+    </span>
 </button>
 
 <style lang="scss">
     @use "$lib/styles/scss/viz-mixins.scss" as m;
+
+    .icon-button-content {
+        display: contents;
+    }
 
     button {
         cursor: pointer;

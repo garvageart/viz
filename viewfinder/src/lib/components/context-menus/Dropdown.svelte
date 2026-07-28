@@ -68,6 +68,7 @@
     let currentIcon: MaterialSymbol | undefined = $derived(icon ?? (selectedItem?.icon as MaterialSymbol | undefined));
 
     let menuItems: MenuItem[] = $state([]);
+    let hideTitleState = $derived(hideTitle || (!title && !(selectedItem && selectedItem.label)));
 
     function buildMenuItems(): MenuItem[] {
         return items.map((it) => ({
@@ -112,12 +113,10 @@
 />
 
 {#snippet buttonContent()}
-    {#if !hideTitle}
-        {#if selectedItem && selectedItem.label}
-            <span class="viz-dropdown-title">{selectedItem.label}</span>
-        {:else if title}
-            <span class="viz-dropdown-title">{title}</span>
-        {/if}
+    {#if selectedItem && selectedItem.label}
+        <span class="viz-dropdown-title">{selectedItem.label}</span>
+    {:else if title}
+        <span class="viz-dropdown-title">{title}</span>
     {/if}
 {/snippet}
 
@@ -133,11 +132,15 @@
             bind:element={buttonEl}
             onclick={toggleMenu}
         >
-            {@render buttonContent()}
+            {#if !hideTitleState}
+                {@render buttonContent()}
+            {/if}
         </IconButton>
     {:else}
         <Button {variant} class="viz-dropdown-button {className}" {title} bind:element={buttonEl} onclick={toggleMenu}>
-            {@render buttonContent()}
+            {#if !hideTitleState}
+                {@render buttonContent()}
+            {/if}
         </Button>
     {/if}
 
@@ -168,7 +171,6 @@
     :global(.viz-dropdown-button) {
         display: flex;
         align-items: center;
-        gap: var(--viz-spacing-xs);
         border-radius: var(--viz-border-radius-pill);
         white-space: nowrap;
 
