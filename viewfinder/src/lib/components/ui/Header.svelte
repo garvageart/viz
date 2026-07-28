@@ -264,7 +264,6 @@
         display: flex;
         align-items: center;
         border-bottom: var(--viz-border-thin);
-        /* I'm sure I can get used to it */
         border-color: var(--viz-secondary);
         position: relative;
         justify-content: space-between;
