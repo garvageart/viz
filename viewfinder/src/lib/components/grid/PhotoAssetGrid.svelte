@@ -1,7 +1,7 @@
 <script lang="ts" generics>
     import hotkeys, { type HotkeysEvent } from "hotkeys-js";
     import { DateTime } from "luxon";
-    import { type ComponentProps, type Snippet, untrack } from "svelte";
+    import { type ComponentProps, type Snippet, onMount, untrack } from "svelte";
     import { SvelteSet } from "svelte/reactivity";
     import { fade } from "svelte/transition";
     import { type Instance, type Props as TippyProps, delegate, followCursor } from "tippy.js";
@@ -107,6 +107,7 @@
     // For the timeline view, `data` might be the flattened version of `groupedData`.
     let filteredData = $derived(filterManager.apply(data) as ImageAsset[]);
 
+    // this is sort weird to track idk
     function onFocus() {
         selectionManager.setActive(scopeId);
     }
@@ -180,6 +181,8 @@
         if (!filteredData.length) {
             return;
         }
+
+        onFocus();
 
         suppressScrollOnce = false; // Reset scroll suppression so keyboard moves scroll targeted item into view
         scrollToTopOnNext = true; // Keyboard nav always scrolls the selected row to the top of the viewport
@@ -322,7 +325,7 @@
         }
     }
 
-    $effect(() => {
+    onMount(() => {
         hotkeys("ctrl+a", handleSelectAll);
         hotkeys("escape", handleEscape);
         hotkeys("left,right,up,down,shift+left,shift+right,shift+up,shift+down", handleKeyNav);
@@ -412,7 +415,7 @@
 
     // ALL GRID IMAGE RENDERING STUFF
     // ----------------------------
-    const isMultiSelecting = $derived(selection.size > 1);
+    let isMultiSelecting = $derived(selection.size > 1);
 
     // Count date labels so we can hide the inline badge in the trivial case
     // where there is only one date group and that group contains a single image.
@@ -1094,14 +1097,16 @@
     <div class="inline-grid-header">
         <div class="header-content">
             <Checkbox
-                class="header-select-btn"
+                class={!allSelected ? "header-select-btn" : ""}
                 variant="round"
+                size="large"
                 checked={allSelected}
                 onclick={(e) => {
                     e.stopPropagation();
                 }}
                 onchange={(e) => {
                     e.stopPropagation();
+                    onFocus();
                     handleGroupSelect(label);
                 }}
             />
@@ -1162,6 +1167,9 @@
         tabindex="0"
         onfocus={() => prefetchLightboxImage(asset)}
         onclick={(e) => {
+            if ((e.currentTarget as HTMLElement).dataset.longPressHandled === "true") {
+                return;
+            }
             e.preventDefault();
             e.stopPropagation();
             handleImageCardSelect(asset, e);
@@ -1172,7 +1180,50 @@
                 handleImageCardSelect(asset, e);
             }
         }}
+        // this is fucking shocking gosh
+        // i think using an action here would be better
+        // something like use:handleTouch
+        ontouchstart={(e: TouchEvent) => {
+            if (isMobile && !isDisabled) {
+                const target = e.currentTarget as HTMLElement;
+                const timer = setTimeout(() => {
+                    e.preventDefault();
+                    e.stopPropagation();
+
+                    selection.toggle(asset);
+                    target.dataset.longPressHandled = "true";
+
+                    setTimeout(() => {
+                        delete target.dataset.longPressHandled;
+                    }, 150);
+                }, 500);
+                target.dataset.longPressTimer = String(timer);
+            }
+        }}
+        ontouchend={(e: TouchEvent) => {
+            const target = e.currentTarget as HTMLElement;
+            const timer = target.dataset.longPressTimer;
+            if (timer) {
+                clearTimeout(Number(timer));
+                delete target.dataset.longPressTimer;
+            }
+        }}
+        ontouchcancel={(e: TouchEvent) => {
+            const target = e.currentTarget as HTMLElement;
+            const timer = target.dataset.longPressTimer;
+            if (timer) {
+                clearTimeout(Number(timer));
+                delete target.dataset.longPressTimer;
+            }
+        }}
         oncontextmenu={(e: MouseEvent & { currentTarget: HTMLElement }) => {
+            if (isMobile && e.currentTarget.dataset.longPressHandled === "true") {
+                e.preventDefault();
+                e.stopPropagation();
+                delete e.currentTarget.dataset.longPressHandled;
+                return;
+            }
+
             e.preventDefault();
             e.stopPropagation();
             suppressScrollOnce = true;
@@ -1232,16 +1283,18 @@
             </div>
         {/if}
 
-        <div class="photo-overlay">
-            <div class="photo-overlay-inner">
-                <div class="photo-name">{asset.name}</div>
-                <div class="photo-meta">
-                    <div class="photo-date">
-                        {DateTime.fromJSDate(getTakenAt(asset)).toFormat("dd LLL yyyy • HH:mm")}
+        {#if !isMobile}
+            <div class="photo-overlay">
+                <div class="photo-overlay-inner">
+                    <div class="photo-name">{asset.name}</div>
+                    <div class="photo-meta">
+                        <div class="photo-date">
+                            {DateTime.fromJSDate(getTakenAt(asset)).toFormat("dd LLL yyyy • HH:mm")}
+                        </div>
                     </div>
                 </div>
             </div>
-        </div>
+        {/if}
 
         {#if isDisabled}
             <div class="disabled-overlay"></div>
@@ -1278,6 +1331,7 @@
             onscroll={handleGridScroll}
             use:unselectImagesOnClickOutsideAssetContainer
             onclick={handleContainerClick}
+            // FIXME: this is triggering haphazardly
             onkeydown={onFocus}
             role="grid"
             aria-label="Photo Grid"
@@ -1287,6 +1341,7 @@
                 {#each virtualizer.visibleRows as row (row.id)}
                     {#if row.type === "header"}
                         <div
+                            class="header-row"
                             style={`position: absolute; top: ${row.top}px; left: 0; right: 0; height: ${row.height}px; width: 100%;`}
                         >
                             {@render inlineHeader(row.label)}
@@ -1401,6 +1456,17 @@
         width: 2.5rem; /* Width of scrubber area */
         pointer-events: none;
         z-index: 10;
+
+        @media (max-width: 768px) {
+            opacity: 0;
+            transition: opacity 0.2s ease;
+
+            &:active,
+            &:hover {
+                opacity: 1;
+                pointer-events: auto;
+            }
+        }
     }
 
     .scrubber-sticky-container {
@@ -1424,11 +1490,10 @@
     .inline-grid-header {
         display: flex;
         flex-direction: column;
-        justify-content: flex-end;
         height: 100%;
         width: 100%;
         box-sizing: border-box;
-        padding: 0.5rem 0;
+        justify-content: center;
 
         .header-content {
             width: fit-content;
@@ -1438,9 +1503,16 @@
             gap: var(--viz-spacing-xs);
 
             &:hover :global(.header-select-btn) {
-                width: 1.2rem;
+                width: 1.5rem;
                 opacity: 1;
-                margin-right: 0.5rem;
+            }
+
+            @media (max-width: 768px) {
+                gap: var(--viz-spacing-sm);
+
+                &:hover :global(.header-select-btn) {
+                    margin-right: 0;
+                }
             }
         }
 
@@ -1455,20 +1527,21 @@
                 opacity 0.2s ease-out,
                 margin-right 0.2s ease-out,
                 color 0.15s;
+
+            @media (max-width: 768px) {
+                order: 1;
+                opacity: 1;
+                margin-right: 0;
+            }
         }
 
         h3 {
-            font-size: var(--viz-font-size-xl);
+            font-size: var(--viz-font-size-2xl);
             font-weight: 500;
             color: var(--viz-text-primary);
             margin: 0;
             white-space: nowrap;
-            overflow: hidden;
             text-overflow: ellipsis;
-
-            @media (max-width: 768px) {
-                font-size: 0.9rem;
-            }
         }
     }
 
@@ -1691,6 +1764,18 @@
             line-height: 1.15;
 
             &::before {
+                top: var(--viz-spacing-xl);
+                bottom: var(--viz-spacing-xl);
+            }
+        }
+
+        @container (max-width: 10rem) {
+            padding: var(--viz-spacing-xl);
+            font-size: var(--viz-font-size-std);
+            line-height: 1.15;
+
+            &::before {
+                border-left: 2px solid var(--viz-accent);
                 top: var(--viz-spacing-xl);
                 bottom: var(--viz-spacing-xl);
             }

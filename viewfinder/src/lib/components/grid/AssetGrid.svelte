@@ -763,12 +763,46 @@
             if (isDisabled) {
                 return;
             }
+            if ((e.currentTarget as HTMLElement).dataset.longPressHandled === "true") {
+                return;
+            }
             e.preventDefault();
             handleImageCardSelect(assetData, e);
         }}
         onkeydown={(e) => {
             e.preventDefault();
             handleKeydownCardSelect(assetData, e);
+        }}
+        ontouchstart={(e: TouchEvent) => {
+            if (isMobile && !isDisabled) {
+                const target = e.currentTarget as HTMLElement;
+                const timer = setTimeout(() => {
+                    e.preventDefault();
+                    e.stopPropagation();
+                    selection.toggle(assetData);
+                    target.dataset.longPressHandled = "true";
+                    setTimeout(() => {
+                        delete target.dataset.longPressHandled;
+                    }, 150);
+                }, 500);
+                target.dataset.longPressTimer = String(timer);
+            }
+        }}
+        ontouchend={(e: TouchEvent) => {
+            const target = e.currentTarget as HTMLElement;
+            const timer = target.dataset.longPressTimer;
+            if (timer) {
+                clearTimeout(Number(timer));
+                delete target.dataset.longPressTimer;
+            }
+        }}
+        ontouchcancel={(e: TouchEvent) => {
+            const target = e.currentTarget as HTMLElement;
+            const timer = target.dataset.longPressTimer;
+            if (timer) {
+                clearTimeout(Number(timer));
+                delete target.dataset.longPressTimer;
+            }
         }}
         ondblclick={(e) => {
             if (e.ctrlKey) {
@@ -779,6 +813,12 @@
             assetDblClick?.(e, assetData);
         }}
         oncontextmenu={(e: MouseEvent & { currentTarget: HTMLElement }) => {
+            if (isMobile && e.currentTarget.dataset.longPressHandled === "true") {
+                e.preventDefault();
+                e.stopPropagation();
+                delete e.currentTarget.dataset.longPressHandled;
+                return;
+            }
             e.preventDefault();
             if (!selection.has(assetData) || selection.size <= 1) {
                 selection.select(assetData);
@@ -997,12 +1037,62 @@
                                             if (disabledUids.has(item.asset.uid)) {
                                                 return;
                                             }
+                                            if ((e.currentTarget as HTMLElement).dataset.longPressHandled === "true") {
+                                                return;
+                                            }
                                             e.preventDefault();
                                             handleImageCardSelect(item.asset as T, e);
                                         }}
                                         onkeydown={(e) => {
                                             e.preventDefault();
                                             handleKeydownCardSelect(item.asset as T, e);
+                                        }}
+                                        ontouchstart={(e: TouchEvent) => {
+                                            if (isMobile && !disabledUids.has(item.asset.uid)) {
+                                                const target = e.currentTarget as HTMLElement;
+                                                const timer = setTimeout(() => {
+                                                    e.preventDefault();
+                                                    e.stopPropagation();
+                                                    selection.toggle(item.asset as T);
+                                                    target.dataset.longPressHandled = "true";
+                                                    setTimeout(() => {
+                                                        delete target.dataset.longPressHandled;
+                                                    }, 150);
+                                                }, 500);
+                                                target.dataset.longPressTimer = String(timer);
+                                            }
+                                        }}
+                                        ontouchend={(e: TouchEvent) => {
+                                            const target = e.currentTarget as HTMLElement;
+                                            const timer = target.dataset.longPressTimer;
+                                            if (timer) {
+                                                clearTimeout(Number(timer));
+                                                delete target.dataset.longPressTimer;
+                                            }
+                                        }}
+                                        ontouchcancel={(e: TouchEvent) => {
+                                            const target = e.currentTarget as HTMLElement;
+                                            const timer = target.dataset.longPressTimer;
+                                            if (timer) {
+                                                clearTimeout(Number(timer));
+                                                delete target.dataset.longPressTimer;
+                                            }
+                                        }}
+                                        oncontextmenu={(e: MouseEvent & { currentTarget: HTMLElement }) => {
+                                            if (isMobile && e.currentTarget.dataset.longPressHandled === "true") {
+                                                e.preventDefault();
+                                                e.stopPropagation();
+                                                delete e.currentTarget.dataset.longPressHandled;
+                                                return;
+                                            }
+                                            e.preventDefault();
+                                            if (!selection.has(item.asset as T) || selection.size <= 1) {
+                                                selection.select(item.asset as T);
+                                            }
+                                            onassetcontext?.({
+                                                asset: item.asset as T,
+                                                anchor: { x: e.clientX, y: e.clientY }
+                                            });
                                         }}
                                         ondblclick={(e) => {
                                             if (e.ctrlKey) {
