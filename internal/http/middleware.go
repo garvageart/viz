@@ -16,6 +16,7 @@ import (
 	"viz/internal/crypto"
 	"viz/internal/dto"
 	"viz/internal/entities"
+	"viz/internal/http/cors"
 )
 
 // Simple in-memory session->user cache to avoid DB lookups on every request.
@@ -274,7 +275,7 @@ func AuthMiddleware(db *gorm.DB, logger *slog.Logger) func(next http.Handler) ht
 					etag := fmt.Sprintf("W/\"%d-%s\"", u.UpdatedAt.UnixNano(), u.Uid)
 					w.Header().Set("Cache-Control", "no-cache, no-store, must-revalidate")
 					w.Header().Set("ETag", etag)
-					w.Header().Set(APIUserVersion, etag)
+					w.Header().Set(cors.APIUserVersion, etag)
 				}
 			}
 
@@ -370,6 +371,7 @@ func UserAuthMiddleware(next http.Handler) http.Handler {
 
 // SecurityHeaders middleware sets common security headers globally.
 func SecurityHeaders(next http.Handler) http.Handler {
+	// TODO: Maybe a helmet.json file for config?
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		w.Header().Set("X-Content-Type-Options", "nosniff")
 		w.Header().Set("X-Frame-Options", "DENY")
@@ -395,7 +397,7 @@ func getAPIKeyFromRequest(r *http.Request) string {
 		}
 	}
 
-	apiKey := r.Header.Get(APIKeyName)
+	apiKey := r.Header.Get(cors.APIKeyName)
 	if apiKey != "" {
 		return apiKey
 	}

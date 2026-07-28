@@ -5,11 +5,12 @@ import (
 	"fmt"
 	"log/slog"
 	"net/http"
-	"os"
 	"strings"
 	"sync"
 	"sync/atomic"
 	"time"
+	"viz/internal/config"
+	"viz/internal/utils"
 
 	"github.com/gorilla/websocket"
 )
@@ -72,7 +73,7 @@ func NewWSBroker(logger *slog.Logger) *WSBroker {
 			WriteBufferSize: 1024,
 			CheckOrigin: func(r *http.Request) bool {
 				// In development, allow any origin
-				if os.Getenv("ENV") != "production" {
+				if !utils.IsProduction {
 					return true
 				}
 
@@ -91,12 +92,12 @@ func NewWSBroker(logger *slog.Logger) *WSBroker {
 					return true
 				}
 
-				allowedOrigins := os.Getenv("ALLOWED_ORIGINS")
-				if allowedOrigins == "" {
+				allowedOrigins := config.AppConfig.AllowedHosts
+				if len(allowedOrigins) == 0 {
 					return false // Fail safe if no origins configured
 				}
 
-				for _, allowed := range strings.Split(allowedOrigins, ",") {
+				for _, allowed := range allowedOrigins {
 					if origin == strings.TrimSpace(allowed) {
 						return true
 					}
