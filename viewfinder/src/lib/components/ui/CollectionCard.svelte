@@ -221,7 +221,7 @@
             <AssetImage asset={thumbnail} variant="preview" alt={collection.name} class="collection-image" />
         {:else}
             <div class="coll-no_thumbnail">
-                <MaterialIcon iconName="folder_open" class="placeholder-icon" />
+                <MaterialIcon iconName="folder_open" fill={true} size="2.5rem" class="placeholder-icon" />
             </div>
         {/if}
 
@@ -285,7 +285,7 @@
         content: "";
         position: absolute;
         inset: 0;
-        border: 2px dashed var(--viz-primary);
+        border: 2px solid var(--viz-primary);
         border-radius: inherit;
         pointer-events: none;
         z-index: 2;
@@ -319,7 +319,6 @@
         color: var(--viz-text-secondary);
 
         :global(.placeholder-icon) {
-            font-size: 3rem;
             opacity: 0.6;
             filter: drop-shadow(0 2px 4px rgba(0, 0, 0, 0.05));
         }
