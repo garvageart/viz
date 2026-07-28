@@ -5,6 +5,14 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.23.2] - 2026-07-28
+
+* style(viewfinder): bold deleted collection names in success toast notifications (5d1d3858)
+* refactor(viewfinder): rename icon to iconName in context menus and admin routes (93e241c3)
+* style(viewfinder): refine PhotoAssetGrid, CollectionCard, and DownloadPanel UI (b15add1b)
+* fix(viewfinder): simplify IconButton reactivity and update generated icon exports (68adf3b5)
+* refactor(viewfinder): rename icon to iconName across component props (43bc6357)
+
 ## [0.23.1] - 2026-07-28
 
 * fix: use base directory variable (68a3b4b3)
