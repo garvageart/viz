@@ -6,7 +6,7 @@
 
 <script lang="ts">
     import type { Snippet } from "svelte";
-    import Button from "$lib/components/ui/Button.svelte";
+    import Button, { type ButtonVariant } from "$lib/components/ui/Button.svelte";
     import { type ModalOptions, modalsManager } from "./manager/ModalManager.svelte";
 
     interface Props {
@@ -16,6 +16,7 @@
         children?: Snippet<[any]>;
         actions?: Snippet<[any]>;
         confirmText?: string;
+        buttonVariant?: Extract<ButtonVariant, "primary" | "info" | "success" | "danger">;
         cancelText?: string;
         onConfirm?: () => void;
         onCancel?: () => void;
@@ -29,6 +30,7 @@
         actions,
         confirmText = "Confirm",
         cancelText = "Cancel",
+        buttonVariant = "primary",
         onConfirm,
         onCancel
     }: Props = $props();
@@ -64,7 +66,7 @@
         {:else}
             <Button variant="small" onclick={handleCancel}>{cancelText}</Button>
             <Button
-                variant="small"
+                variant={buttonVariant}
                 class="onconfirm-btn"
                 style="background-color: var(--viz-primary); color: var(--viz-10-dark);"
                 onclick={handleConfirm}
