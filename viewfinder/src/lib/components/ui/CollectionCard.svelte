@@ -190,6 +190,7 @@
     class:selected={isSelected}
     class:drop-target={isDropTarget}
     data-asset-id={collection.uid}
+    title={collection.name}
     draggable={true}
     ondragstart={(e: DragEvent) => {
         if (!e.dataTransfer) {

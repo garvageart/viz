@@ -123,24 +123,21 @@
     <div transition:scale={{ duration: 250 }} id="viz-download-panel">
         <div id="viz-download-panel-header">
             <div id="download-panel-header-info">
-                <Button
-                    style="background-color: transparent; padding: 0em;"
-                    hoverColor="var(--viz-surface-hover)"
+                <IconButton
+                    iconName="arrow_downward_alt"
                     title="Minimize Download Panel"
                     onclick={() => {
                         minimized = true;
                     }}
-                >
-                    <MaterialIcon iconName="arrow_downward_alt" />
-                </Button>
-                <p>
+                />
+                <span>
                     Downloads ({download.files.filter(
                         (f) =>
                             f.state === DownloadState.DOWNLOADED ||
                             f.state === DownloadState.ERROR ||
                             f.state === DownloadState.CANCELED
                     ).length}/{download.files.length})
-                </p>
+                </span>
             </div>
             <IconButton
                 iconName="cancel"
@@ -201,8 +198,8 @@
 
 <style lang="scss">
     #viz-download-panel {
-        width: 25%;
-        max-width: 25%;
+        width: 20%;
+        max-width: 20%;
         display: flex;
         flex-direction: column;
         position: absolute;
@@ -225,12 +222,11 @@
     }
 
     #viz-download-panel-header {
-        height: 2.5rem;
         width: 100%;
         display: flex;
         align-items: center;
         justify-content: space-between;
-        padding: 0 var(--viz-spacing-std);
+        padding: var(--viz-spacing-sm);
         font-size: var(--viz-font-size-lg);
         font-weight: 600;
         border-bottom: var(--viz-border-thin);

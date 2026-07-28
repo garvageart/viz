@@ -1727,6 +1727,7 @@
         justify-content: flex-end;
         align-items: flex-start;
         padding: 1rem;
+        border-left: 1.5px solid var(--viz-secondary);
         font-weight: 500;
         color: var(--viz-text-primary);
         background-color: var(--viz-surface-panel);
@@ -1769,7 +1770,9 @@
             }
         }
 
-        @container (max-width: 10rem) {
+        /* Inline tile width is 100 */
+        /* See PhotoGridVirtualizer.svelte.ts */
+        @container (max-width: 100px) {
             padding: var(--viz-spacing-xl);
             font-size: var(--viz-font-size-std);
             line-height: 1.15;
