@@ -8,6 +8,7 @@
         id?: string;
         disabled?: boolean;
         variant?: "square" | "round";
+        size?: "regular" | "large";
         onchange?: (e: Event & { currentTarget: HTMLInputElement }) => void;
     }
 
@@ -17,6 +18,8 @@
         id,
         disabled = false,
         variant = "square",
+        size = "regular",
+        class: classes,
         onchange,
         ...props
     }: Props & SvelteHTMLElements["div"] = $props();
@@ -48,10 +51,10 @@
     }
 </script>
 
-<div class="checkbox-wrapper" class:disabled {...props}>
+<div class="checkbox-wrapper {classes}" {...props} class:disabled>
     <input type="checkbox" id={uniqueId} {checked} {disabled} onchange={handleChange} onkeydown={handleKeydown} />
     <label for={uniqueId}>
-        <span class="viz-checkbox" class:round={variant === "round"} aria-hidden="true">
+        <span class="viz-checkbox" class:large={size === "large"} class:round={variant === "round"} aria-hidden="true">
             <svg
                 viewBox="0 0 24 24"
                 fill="none"
@@ -123,6 +126,11 @@
             box-shadow 0.12s ease;
         flex-shrink: 0;
         cursor: pointer;
+
+        &.large {
+            width: 1.2rem;
+            height: 1.2rem;
+        }
 
         &.round {
             border-radius: var(--viz-border-radius-pill);

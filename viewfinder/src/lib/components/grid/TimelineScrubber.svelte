@@ -206,6 +206,11 @@
         :global(.thumb-icon) {
             font-size: 1.25rem;
         }
+
+        @media (max-width: 768px) {
+            width: 3.5rem;
+            height: 3.5rem;
+        }
     }
 
     .scrubber-thumb:hover .thumb-inner,
