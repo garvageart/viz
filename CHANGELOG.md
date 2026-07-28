@@ -5,6 +5,19 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.23.0] - 2026-07-28
+
+* chore: update env, gitignore, docker-compose, and docs (0066a37c)
+* chore(api): update OpenAPI spec and regenerate types (20d4ab88)
+* feat(settings): add colour_scheme default setting (efdd3128)
+* feat(frontend): add frontend constants package (e1918d0a)
+* refactor(api): use consolidated config and new package structure (ef6fc007)
+* refactor(images): simplify init, rename Directory to Library (65c06b82)
+* refactor(db): move query helpers to internal/db/queries (85b87fd1)
+* refactor(http): extract CORS, URL validation, and DB helpers into subpackages (742b4135)
+* refactor(config): consolidate config init and flatten server structure (a79cc8e0)
+* refactor(os): fix ProjectRoot detection and extract directory helpers (888f4d02)
+
 ## [0.22.10] - 2026-07-28
 
 * fix: remove the actual colour lmao (194283aa)
