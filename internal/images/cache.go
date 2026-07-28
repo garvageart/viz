@@ -328,7 +328,7 @@ func GetCacheStatus() (dto.CacheStatusResponse, error) {
 	var totalSize int64
 	var totalItems int64
 
-	entries, err := os.ReadDir(Directory)
+	entries, err := os.ReadDir(Library)
 	if err != nil {
 		return dto.CacheStatusResponse{}, fmt.Errorf("failed to read images directory: %w", err)
 	}
@@ -338,7 +338,7 @@ func GetCacheStatus() (dto.CacheStatusResponse, error) {
 			continue
 		}
 
-		transformsPath := filepath.Join(Directory, e.Name(), "transforms")
+		transformsPath := filepath.Join(Library, e.Name(), "transforms")
 		info, err := os.Stat(transformsPath)
 		if err != nil {
 			if os.IsNotExist(err) {
@@ -439,7 +439,7 @@ func ClearCache(logger *slog.Logger, db *gorm.DB, keepPermanent bool) error {
 	atomic.StoreUint32(&dirtyStats, 1)
 	SaveCacheStats(logger)
 
-	entries, err := os.ReadDir(Directory)
+	entries, err := os.ReadDir(Library)
 	if err != nil {
 		return fmt.Errorf("failed to read images directory: %w", err)
 	}
@@ -680,7 +680,7 @@ func StartTransformCacheGC(ctx context.Context, logger *slog.Logger, db *gorm.DB
 		defer ticker.Stop()
 
 		doCleanup := func() {
-			PerformTransformCacheCleanup(Directory, logger, db, config.AppConfig.Cache, GetPermanentTransformHashes)
+			PerformTransformCacheCleanup(Library, logger, db, config.AppConfig.Cache, GetPermanentTransformHashes)
 		}
 
 		// do startup run

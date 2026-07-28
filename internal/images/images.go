@@ -1,72 +1,29 @@
 package images
 
 import (
-	"os"
 	"path/filepath"
 	"strings"
 	"viz/internal/config"
-	libos "viz/internal/os"
+	"viz/internal/os"
 )
 
 var (
-	Directory = func() string {
-		cfg, err := config.ReadConfig()
-		if err != nil {
-			panic(err)
-		}
-		baseDir := cfg.GetString("base_directory")
-		if strings.TrimSpace(baseDir) == "" {
-			panic("base directory is not set in config")
-		}
-
-		if !filepath.IsAbs(baseDir) {
-			baseDir = filepath.Join(libos.ProjectRoot, baseDir)
-		}
-
-		if _, err := os.Stat(baseDir); os.IsNotExist(err) {
-			if mkerr := os.MkdirAll(baseDir, 0o755); mkerr != nil {
-				panic(mkerr)
-			}
-		}
-
-		dir := cfg.GetString("upload.location")
-		if strings.TrimSpace(dir) == "" {
-			panic("upload location is not set in config")
-		}
-
-		dir = filepath.Join(baseDir, dir)
-
-		if _, err := os.Stat(dir); os.IsNotExist(err) {
-			err := os.MkdirAll(dir, os.ModePerm)
-			if err != nil {
-				panic(err)
-			}
-		}
-		return dir
-	}()
-
-	TrashDirectory = func() string {
-		cfg, err := config.ReadConfig()
-		if err != nil {
-			panic(err)
-		}
-		baseDir := cfg.GetString("base_directory")
-		if strings.TrimSpace(baseDir) == "" {
-			panic("base directory is not set in config")
-		}
-
-		if !filepath.IsAbs(baseDir) {
-			baseDir = filepath.Join(libos.ProjectRoot, baseDir)
-		}
-
-		trash := filepath.Join(baseDir, "trash")
-
-		if _, err := os.Stat(trash); os.IsNotExist(err) {
-			err := os.MkdirAll(trash, os.ModePerm)
-			if err != nil {
-				panic(err)
-			}
-		}
-		return trash
-	}()
+	BaseDirectory  = config.AppConfig.BaseDir
+	Library        = config.AppConfig.Upload.Location
+	TrashDirectory string
 )
+
+func init() {
+	upload := config.AppConfig.Upload.Location
+	if strings.TrimSpace(upload) == "" {
+		panic("upload location is not set in config")
+	}
+
+	upload = filepath.Join(BaseDirectory, upload)
+	os.MustCreateDirectory(upload)
+	Library = upload
+
+	trash := filepath.Join(BaseDirectory, "trash")
+	os.MustCreateDirectory(trash)
+	TrashDirectory = trash
+}

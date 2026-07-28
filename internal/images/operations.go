@@ -19,15 +19,15 @@ func DecodeThumbhashString(encoded string) ([]byte, error) {
 }
 
 func CreateImageDir(uid string) error {
-	return os.MkdirAll(filepath.Join(Directory, uid), os.ModePerm)
+	return os.MkdirAll(filepath.Join(Library, uid), os.ModePerm)
 }
 
 func DeleteImageDir(uid string) error {
-	return os.RemoveAll(filepath.Join(Directory, uid))
+	return os.RemoveAll(filepath.Join(Library, uid))
 }
 
 func GetImageDir(uid string) string {
-	return filepath.Join(Directory, uid)
+	return filepath.Join(Library, uid)
 }
 
 func ReadImageDir(uid string) ([]os.DirEntry, error) {
