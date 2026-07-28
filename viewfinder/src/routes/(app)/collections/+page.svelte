@@ -222,8 +222,8 @@
                 toastState.addToast({
                     message:
                         deletedCols.length > 1
-                            ? `Deleted ${deletedCols.length} collections`
-                            : `Deleted collection ${deletedCols[0].name}`,
+                            ? `Deleted **${deletedCols.length} collections**`
+                            : `Deleted collection **${deletedCols[0].name}**`,
                     type: "success"
                 });
             }
