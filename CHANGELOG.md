@@ -5,6 +5,15 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.23.5] - 2026-07-28
+
+* chore: update golang packages (65153e62)
+* ci(docker): add -x flag to go mod download in Dockerfile.server (073928f4)
+* ci(docker): add Go module and build cache mounts to Dockerfile.server (f62ca697)
+* ci(docker): set NPM_CONFIG_STORE_DIR to match BuildKit cache mount path (f627cb0c)
+* ci(docker): add npm fetch retry flags to pnpm installation in Dockerfile.server (9576a092)
+* ci(docker): optimize layer caching order and add BuildKit apt and libvips compilation mounts (8477d072)
+
 ## [0.23.4] - 2026-07-28
 
 * style(viewfinder): remove fixed font size from TextArea label (f6a4ee69)
