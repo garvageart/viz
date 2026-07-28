@@ -30,6 +30,14 @@ var defaultSettings = []entities.SettingDefault{
 		"Choose your preferred theme: Light, Dark, or System Default.",
 	),
 	StringSetting(
+		"colour_scheme",
+		"Colour Theme",
+		"viz-black",
+		true,
+		"General",
+		"Choose your preferred colour CSS colour scheme",
+	),
+	StringSetting(
 		"language",
 		"Display Langauge",
 		"en-GB",
