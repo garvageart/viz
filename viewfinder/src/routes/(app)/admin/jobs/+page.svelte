@@ -463,7 +463,7 @@
 
     .dashboard-content-grid {
         display: grid;
-        grid-template-columns: 1fr 25rem;
+        grid-template-columns: minmax(0, 1fr) 25rem;
         gap: var(--viz-spacing-xl);
         align-items: start;
 
