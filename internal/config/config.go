@@ -57,7 +57,6 @@ func ReadConfig() (viper.Viper, error) {
 	v.SetDefault("timezone", "utc")
 	v.SetDefault("allowed_hosts", []string{})
 	v.SetDefault("server.port", 7770)
-	v.SetDefault("server.port", 7777)
 	if utils.IsProduction {
 		v.SetDefault("server.host", "0.0.0.0")
 	} else {

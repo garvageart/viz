@@ -203,7 +203,10 @@ func main() {
 	logger := libhttp.SetupChiLogger("api", logLevel, useLocal)
 
 	// looool?
-	apiServer := APIServer{Server: &libhttp.Server{ServerConfig: &config.ServerConfig{}}}
+	apiServer := APIServer{Server: &libhttp.Server{ServerConfig: &config.ServerConfig{
+		Host: config.AppConfig.Server.Host,
+		Port: config.AppConfig.Server.Port,
+	}}}
 	apiServer.LogLevel = logLevel
 	apiServer.Logger = logger
 	apiServer.Key = "api"
