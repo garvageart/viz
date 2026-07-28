@@ -18,6 +18,8 @@ services:
       - REDIS_HOST=redis
       - ENV=production
     volumes:
+    # TODO: This will change to /app/data
+    # Images will then go by default to /app/data/library
       - viz-data:/app/var
       - ../viz.json:/app/viz.json
     networks:
@@ -33,6 +35,7 @@ services:
       - POSTGRES_PASSWORD=${DB_PASSWORD:-postgres}
       - POSTGRES_DB=${DB_NAME:-viz}
     volumes:
+    # TODO: This will change to /app/data/postgresql (or /app/data/db)
       - viz-db-data:/var/lib/postgresql
       - ./initdb:/docker-entrypoint-initdb.d
     healthcheck:

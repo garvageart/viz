@@ -202,7 +202,8 @@ func main() {
 	useLocal := config.AppConfig.Logging.Timezone == "local"
 	logger := libhttp.SetupChiLogger("api", logLevel, useLocal)
 
-	apiServer := APIServer{}
+	// looool?
+	apiServer := APIServer{Server: &libhttp.Server{ServerConfig: &config.ServerConfig{}}}
 	apiServer.LogLevel = logLevel
 	apiServer.Logger = logger
 	apiServer.Key = "api"

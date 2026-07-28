@@ -16,7 +16,7 @@ This document lists every environment variable recognised by the Viz API server,
 | `DB_USER` | No | `postgres` | API server |
 | `DB_PASSWORD` | **Yes** | — | API server |
 | `DB_NAME` | No | `viz` | API server |
-| `BASE_DIRECTORY` | No | `./var` | API server |
+| `BASE_DIRECTORY` | No | `./data` | API server |
 | `UPLOAD_LOCATION` | No | `library` | API server |
 
 ---
@@ -28,8 +28,6 @@ This document lists every environment variable recognised by the Viz API server,
 | `ENV` | `development` | Runtime environment. Set to `production` in Docker. Controls log verbosity, host binding defaults, and feature flags. Also accepts `environment` or `env` (case-insensitive). |
 | `API_PORT` | `7770` | Port the Go API server listens on. |
 | `API_HOST` | `localhost` (`0.0.0.0` when `ENV=production`) | Bind address for the API server. |
-| `VIZ_PORT` | `7777` | Port for the frontend dev server (Vite). |
-| `VIZ_HOST` | `localhost` (`0.0.0.0` when `ENV=production`) | Bind address for the frontend dev server. |
 | `ALLOWED_ORIGINS` | — | Comma-separated list of allowed CORS origins. When unset, defaults to the server's own origin. |
 | `VIZ_FRONTEND_BUILD_PATH` | — | Custom filesystem path to a pre-built frontend. When unset, serves the embedded SPA from the binary. |
 
@@ -68,7 +66,7 @@ Additional Redis settings are available in `viz.json`: `redis.host` (default `lo
 
 | Variable | Config Key | Default | Description |
 | :--- | :--- | :--- | :--- |
-| `BASE_DIRECTORY` | `base_directory` | `./var` | Root directory for the library, database, cache, and trash. |
+| `BASE_DIRECTORY` | `base_directory` | `./data` | Root directory for the library, database, cache, and trash. |
 | `UPLOAD_LOCATION` | `upload.location` | `library` | Sub-directory or storage mode for uploaded images. |
 
 ---
@@ -91,7 +89,7 @@ These control the authentication cookie behaviour, primarily useful when running
 | :--- | :--- | :--- |
 | `LOG_SHOW_RECORD` | `false` | Set to `true` to print individual structured log records to stdout. |
 
-Additional logging settings are in `viz.json`: `logging.level` (default `debug`), `logging.timezone` (default `utc`).
+Additional logging settings are in `viz.json`: `logging.level` (default `debug`). Timezone is a top-level config key (`timezone`, default `utc`).
 
 ---
 
@@ -154,10 +152,7 @@ All settings below can be set via environment variables (see sections above) or 
 
 ```json
 {
-    "servers": {
-        "api": { "port": 7770, "host": "localhost" },
-        "viz": { "port": 7777, "host": "localhost" }
-    },
+    "server": { "port": 7770, "host": "localhost" },
     "database": {
         "host": "localhost",
         "port": 5432,
@@ -179,11 +174,11 @@ All settings below can be set via environment variables (see sections above) or 
         "read_timeout_seconds": 3,
         "write_timeout_seconds": 3
     },
+    "timezone": "utc",
     "logging": {
-        "level": "debug",
-        "timezone": "utc"
+        "level": "debug"
     },
-    "base_directory": "./var",
+    "base_directory": "./data",
     "upload": { "location": "library" },
     "libvips": {
         "match_system_logging": false,

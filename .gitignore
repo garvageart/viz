@@ -2,7 +2,7 @@
 archive
 references
 logs
-var
+data
 resources/test
 resources/internal
 security
@@ -54,7 +54,6 @@ Thumbs.db
 vite.config.js.timestamp-*
 vite.config.ts.timestamp-*
 /personal
-/scripts/personal/mount-var.ps1
 
 # Local caches and generated artifacts
 .cache/

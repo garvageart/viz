@@ -25,10 +25,10 @@ func TestZipSizeCalculationAndWriting(t *testing.T) {
 	defer os.RemoveAll(tempDir)
 
 	// Redirect global images.Directory to our temp dir
-	oldDirectory := images.Directory
-	images.Directory = tempDir
+	oldDirectory := images.Library
+	images.Library = tempDir
 	defer func() {
-		images.Directory = oldDirectory
+		images.Library = oldDirectory
 	}()
 
 	// Define test files with different sizes and paths
