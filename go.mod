@@ -3,7 +3,7 @@ module viz
 go 1.26
 
 require (
-	github.com/ajg/form v1.8.0 // indirect
+	github.com/ajg/form v1.9.0 // indirect
 	github.com/go-chi/chi/v5 v5.3.1
 	github.com/go-chi/render v1.0.3
 	go.uber.org/multierr v1.11.0 // indirect
@@ -18,13 +18,14 @@ require (
 	github.com/ThreeDotsLabs/watermill v1.5.2
 	github.com/dromara/carbon/v2 v2.6.16
 	github.com/dsoprea/go-exif/v3 v3.0.1
+	github.com/go-chi/cors v1.2.2
 	github.com/go-co-op/gocron/v2 v2.22.0
 	github.com/go-errors/errors v1.5.1
 	github.com/gorilla/websocket v1.5.3
 	github.com/jfberry/raymond v1.1.0
 	github.com/oapi-codegen/runtime v1.6.0
 	github.com/orandin/slog-gorm v1.4.0
-	github.com/pressly/goose/v3 v3.27.2
+	github.com/pressly/goose/v3 v3.27.3
 	github.com/samber/slog-multi v1.8.0
 	github.com/spf13/viper v1.21.0
 	github.com/stretchr/testify v1.11.1
@@ -46,7 +47,7 @@ require (
 	github.com/samber/slog-common v0.22.0 // indirect
 	github.com/sethvargo/go-retry v0.4.0 // indirect
 	go.uber.org/atomic v1.11.0 // indirect
-	go.yaml.in/yaml/v3 v3.0.4 // indirect
+	go.yaml.in/yaml/v3 v3.0.5 // indirect
 )
 
 require (
