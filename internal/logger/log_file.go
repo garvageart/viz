@@ -20,7 +20,7 @@ import (
 	"path/filepath"
 	"strings"
 
-	libos "viz/internal/os"
+	"viz/internal/config"
 	"viz/internal/utils"
 )
 
@@ -39,9 +39,7 @@ var (
 		"-", LogFileDate,
 	)
 
-	LogDirectoryDefault = func() string {
-		return filepath.Join(libos.CurrentWorkingDirectory, "var", "logs")
-	}()
+	LogDirectoryDefault = filepath.Join(config.BaseDirectory, "logs")
 
 	LogFileDefaults = FileLog{
 		Directory: LogDirectoryDefault,
