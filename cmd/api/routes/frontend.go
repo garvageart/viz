@@ -11,12 +11,7 @@ import (
 	"sync"
 
 	"gorm.io/gorm"
-)
-
-const (
-	DefaultTheme          = "viz-blue"
-	ThemeStylePlaceholder = "%viz.css.theme_style%"
-	ThemeAttrPlaceholder  = "%THEME_ATTR%"
+	"viz/internal/frontend"
 )
 
 type FrontendHandler struct {
@@ -53,7 +48,7 @@ func (h *FrontendHandler) getIndexContent() ([]byte, error) {
 		return h.indexContent, nil
 	}
 
-	content, err := os.ReadFile(filepath.Join(h.BuildPath, "index.html"))
+	content, err := os.ReadFile(filepath.Join(h.BuildPath, frontend.IndexHtml))
 	if err != nil {
 		return nil, err
 	}
@@ -66,7 +61,7 @@ func (h *FrontendHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	path := strings.TrimPrefix(r.URL.Path, "/")
 	// Default to index.html for root
 	if path == "" {
-		path = "index.html"
+		path = frontend.IndexHtml
 	}
 
 	// Clean path to prevent directory traversal
@@ -78,7 +73,7 @@ func (h *FrontendHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	isStaticFile := err == nil && !info.IsDir()
 
 	// If it's a static file (and not index.html), serve it directly
-	if isStaticFile && cleanPath != "index.html" && cleanPath != "." {
+	if isStaticFile && cleanPath != frontend.IndexHtml && cleanPath != "." {
 		if strings.HasPrefix(r.URL.Path, "/_app/immutable/") {
 			w.Header().Set("Cache-Control", "public, max-age=31536000, immutable")
 		} else if strings.HasPrefix(r.URL.Path, "/_app/") {
@@ -92,7 +87,7 @@ func (h *FrontendHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	// Returning 404 Not Found prevents the browser from receiving HTML for missing JS/CSS chunks,
 	// allowing Vite and SvelteKit to cleanly trigger chunk preload error recovery (auto-reload).
 	hasExtension := filepath.Ext(cleanPath) != ""
-	if cleanPath != "index.html" && cleanPath != "." && (strings.HasPrefix(r.URL.Path, "/_app/") || hasExtension) {
+	if cleanPath != frontend.IndexHtml && cleanPath != "." && (strings.HasPrefix(r.URL.Path, "/_app/") || hasExtension) {
 		h.Logger.Debug("asset not found", slog.String("path", fullPath))
 		http.Error(w, "Asset Not Found", http.StatusNotFound)
 		return
@@ -124,12 +119,12 @@ func (h *FrontendHandler) serveIndex(w http.ResponseWriter, r *http.Request) {
 
 	// Theme logic
 	cookie, err := r.Cookie("viz:theme")
-	themeValue := DefaultTheme
+	themeValue := frontend.DefaultTheme
 	if err == nil {
 		themeValue = cookie.Value
 	}
 
-	colorTheme := "viz-blue"
+	colorTheme := "viz-black"
 	modeTheme := "light"
 
 	if strings.HasPrefix(themeValue, "viz-") {
@@ -159,8 +154,8 @@ func (h *FrontendHandler) serveIndex(w http.ResponseWriter, r *http.Request) {
 	// Replace placeholders
 	// Note: Doing string replacement on every request might be slow for high load,
 	// but fine for this scale. For optimization, use bytes.Replace.
-	responseHtml := bytes.Replace(indexData, []byte(ThemeStylePlaceholder), []byte(criticalCss), 1)
-	responseHtml = bytes.Replace(responseHtml, []byte(ThemeAttrPlaceholder), []byte(themeAttr), 1)
+	responseHtml := bytes.Replace(indexData, []byte(frontend.ThemeStylePlaceholder), []byte(criticalCss), 1)
+	responseHtml = bytes.Replace(responseHtml, []byte(frontend.ThemeAttrPlaceholder), []byte(themeAttr), 1)
 
 	w.Header().Set("Cache-Control", "no-cache, no-store, must-revalidate")
 	w.Header().Set("Pragma", "no-cache")

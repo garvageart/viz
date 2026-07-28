@@ -23,6 +23,7 @@ import (
 	"viz/internal/debug"
 	"viz/internal/entities"
 	libhttp "viz/internal/http"
+	libcors "viz/internal/http/cors"
 	"viz/internal/images"
 	imageops "viz/internal/images/ops"
 	libvips "viz/internal/images/ops/vips"
@@ -34,12 +35,11 @@ import (
 )
 
 var (
-	ServerConfig       = config.VizServers["api"]
 	StorageStatsHolder *images.StorageStatsHolder
 )
 
 type APIServer struct {
-	*config.VizServer
+	*libhttp.Server
 }
 
 // TODO: Create a `createServer/Router` function that returns a router
@@ -49,17 +49,7 @@ func (server APIServer) Launch(router *chi.Mux) *http.Server {
 	serverLogger := slog.NewLogLogger(logger.Handler(), slog.LevelDebug)
 
 	// Setup general middleware - CORS must be first!
-	allowedHosts := append(config.AppConfig.AllowedHosts, config.DefaultAllowedHosts...)
-	router.Use(cors.Handler(cors.Options{
-		AllowOriginFunc: func(r *http.Request, origin string) bool {
-			return config.MatchOrigin(origin, allowedHosts)
-		},
-		AllowedMethods:   []string{"GET", "POST", "PUT", "PATCH", "OPTIONS", "DELETE"},
-		AllowedHeaders:   []string{"Accept", "Authorization", "Content-Type", "X-CSRF-Token", libhttp.APIKeyName, "If-None-Match", "If-Modified-Since"},
-		ExposedHeaders:   []string{"Set-Cookie", "Content-Disposition"},
-		AllowCredentials: true,
-		MaxAge:           300,
-	}))
+	router.Use(cors.Handler(libcors.GetDefaults()))
 	router.Use(libhttp.SecurityHeaders)
 	router.Use(middleware.RequestLogger(&middleware.DefaultLogFormatter{
 		Logger: serverLogger,
@@ -170,7 +160,7 @@ func (server APIServer) Launch(router *chi.Mux) *http.Server {
 	// Serve Frontend (SPA + Static Files)
 	frontendPath := os.Getenv("VIZ_FRONTEND_BUILD_PATH")
 	if frontendPath == "" {
-		frontendPath = "../../build/viz" // Default for dev/local
+		frontendPath = "../../build/viewfinder" // Default for dev/local
 	}
 
 	frontendHandler := routes.NewFrontendHandler(frontendPath, logger, dbClient)
@@ -180,7 +170,7 @@ func (server APIServer) Launch(router *chi.Mux) *http.Server {
 	srv := &http.Server{Addr: address, Handler: router}
 
 	go func() {
-		logger.Info(fmt.Sprintf("Hey, you want some pics? 👀 - %s: %s", ServerConfig.Key, address))
+		logger.Info(fmt.Sprintf("Hey, you want some pics? 👀: %s", address))
 
 		if server.LogLevel == slog.LevelDebug {
 			var allRoutes []string
@@ -207,26 +197,15 @@ func (server APIServer) Launch(router *chi.Mux) *http.Server {
 func main() {
 	router := chi.NewRouter()
 
-	v, err := config.ReadConfig()
-	if err != nil {
-		errorMsg := fmt.Sprintf("failed to read config file: %v", err)
-		panic(errorMsg)
-	}
-
-	var appConfig config.VizConfig
-	if err := v.Unmarshal(&config.AppConfig); err != nil {
-		errorMsg := fmt.Sprintf("failed to unmarshal config: %v", err)
-		panic(errorMsg)
-	}
-
 	// setup logging stuff
 	logLevel := imalog.GetLevelFromString(config.AppConfig.Logging.Level)
 	useLocal := config.AppConfig.Logging.Timezone == "local"
 	logger := libhttp.SetupChiLogger("api", logLevel, useLocal)
 
-	apiServer := APIServer{VizServer: ServerConfig}
-	apiServer.VizServer.LogLevel = logLevel
-	apiServer.VizServer.Logger = logger
+	apiServer := APIServer{}
+	apiServer.LogLevel = logLevel
+	apiServer.Logger = logger
+	apiServer.Key = "api"
 
 	// db stuff
 	if os.Getenv("POSTGRES_PASSWORD") != "" {
@@ -248,7 +227,7 @@ func main() {
 		panic("UPLOAD_LOCATION environment variable is required")
 	}
 
-	appConfig = config.AppConfig
+	appConfig := config.AppConfig
 
 	apiServer.Database = &db.DB{
 		Address: func() string {
@@ -294,7 +273,7 @@ func main() {
 		entities.SettingOverride{},
 		entities.ImageTransform{},
 	)
-	apiServer.VizServer.Database.Client = client
+	apiServer.Database.Client = client
 
 	settings.SeedDefaultSettings(client, logger)
 

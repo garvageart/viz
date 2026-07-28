@@ -175,7 +175,7 @@ func TrashRouter(db *gorm.DB, logger *slog.Logger) chi.Router {
 
 		// Restore files: Move from trash back to library directory
 		src := filepath.Join(images.TrashDirectory, img.Uid)
-		dst := filepath.Join(images.Directory, img.Uid)
+		dst := filepath.Join(images.Library, img.Uid)
 
 		err := db.Transaction(func(tx *gorm.DB) error {
 			// Clear DeletedAt in DB (Restore)

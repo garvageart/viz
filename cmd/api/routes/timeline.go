@@ -8,7 +8,7 @@ import (
 	"github.com/go-chi/render"
 	"gorm.io/gorm"
 
-	"viz/internal/db"
+	"viz/internal/db/queries"
 	"viz/internal/dto"
 )
 
@@ -17,7 +17,7 @@ func TimelineRouter(dbClient *gorm.DB, logger *slog.Logger) chi.Router {
 	r := chi.NewRouter()
 
 	r.Get("/buckets", func(res http.ResponseWriter, req *http.Request) {
-		buckets, err := db.GetTimelineBuckets(dbClient.WithContext(req.Context()), req)
+		buckets, err := queries.GetTimelineBuckets(dbClient.WithContext(req.Context()), req)
 		if err != nil {
 			logger.Error("failed to get timeline buckets", slog.Any("error", err))
 			render.Status(req, http.StatusInternalServerError)

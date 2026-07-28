@@ -23,7 +23,7 @@ import (
 	"gorm.io/gorm"
 
 	"viz/internal/config"
-	dbops "viz/internal/db"
+	"viz/internal/db/queries"
 	"viz/internal/downloads"
 	"viz/internal/dto"
 	"viz/internal/entities"
@@ -215,13 +215,13 @@ func ImagesRouter(db *gorm.DB, logger *slog.Logger) *chi.Mux {
 		var total int64
 
 		if err := db.WithContext(req.Context()).Transaction(func(tx *gorm.DB) error {
-			query := tx.Model(&entities.ImageAsset{}).Where("deleted_at IS NULL")
+			txQuery := tx.Model(&entities.ImageAsset{}).Where("deleted_at IS NULL")
 
 			// Access Control: Filter private images
-			query = dbops.ApplyImageAccessControlFilter(query, req)
+			txQuery = queries.ApplyImageAccessControlFilter(txQuery, req)
 
 			// Count total non-deleted images for pagination metadata
-			if err := query.Count(&total).Error; err != nil {
+			if err := txQuery.Count(&total).Error; err != nil {
 				return err
 			}
 
@@ -233,7 +233,7 @@ func ImagesRouter(db *gorm.DB, logger *slog.Logger) *chi.Mux {
 			}
 
 			pageOffset := max(page*limit, 0)
-			if err := query.Preload("Owner").Preload("UploadedBy").Order(orderClause).Offset(pageOffset).Limit(limit).Find(&images).Error; err != nil {
+			if err := txQuery.Preload("Owner").Preload("UploadedBy").Order(orderClause).Offset(pageOffset).Limit(limit).Find(&images).Error; err != nil {
 				return err
 			}
 
@@ -322,7 +322,7 @@ func ImagesRouter(db *gorm.DB, logger *slog.Logger) *chi.Mux {
 		var imgEnt entities.ImageAsset
 		query := db.Model(&entities.ImageAsset{}).Where("uid = ? AND deleted_at IS NULL", uid)
 		if req.URL.Query().Get("token") == "" {
-			query = dbops.ApplyImageAccessControlFilter(query, req)
+			query = queries.ApplyImageAccessControlFilter(query, req)
 		}
 		if result := query.First(&imgEnt); result.Error != nil {
 			if result.Error == gorm.ErrRecordNotFound {
@@ -366,7 +366,7 @@ func ImagesRouter(db *gorm.DB, logger *slog.Logger) *chi.Mux {
 
 		var imgEnt entities.ImageAsset
 		query := db.Model(&entities.ImageAsset{}).Where("uid = ? AND deleted_at IS NULL", uid)
-		query = dbops.ApplyImageAccessControlFilter(query, req)
+		query = queries.ApplyImageAccessControlFilter(query, req)
 		result := query.First(&imgEnt)
 
 		if result.Error != nil {
@@ -422,7 +422,7 @@ func ImagesRouter(db *gorm.DB, logger *slog.Logger) *chi.Mux {
 
 		var imgEnt entities.ImageAsset
 		query := db.Preload("Owner").Preload("UploadedBy").Model(&entities.ImageAsset{}).Where("uid = ? AND deleted_at IS NULL", uid)
-		query = dbops.ApplyImageAccessControlFilter(query, req)
+		query = queries.ApplyImageAccessControlFilter(query, req)
 		result := query.First(&imgEnt)
 
 		if result.Error != nil {
@@ -454,7 +454,7 @@ func ImagesRouter(db *gorm.DB, logger *slog.Logger) *chi.Mux {
 		var img entities.ImageAsset
 		err := db.Transaction(func(tx *gorm.DB) error {
 			query := tx.Model(&entities.ImageAsset{}).Where("uid = ? AND deleted_at IS NULL", uid)
-			query = dbops.ApplyImageAccessControlFilter(query, req)
+			query = queries.ApplyImageAccessControlFilter(query, req)
 			if e := query.First(&img); e.Error != nil {
 				return e.Error
 			}
@@ -845,7 +845,7 @@ func ImagesRouter(db *gorm.DB, logger *slog.Logger) *chi.Mux {
 			return
 		}
 
-		libDir := images.Directory
+		libDir := images.Library
 		trashDir := images.TrashDirectory
 
 		if !body.Force {
@@ -876,7 +876,7 @@ func ImagesRouter(db *gorm.DB, logger *slog.Logger) *chi.Mux {
 			// Check ownership before deleting
 			var img entities.ImageAsset
 			query := db.Select("owner_id")
-			query = dbops.ApplyImageAccessControlFilter(query, req)
+			query = queries.ApplyImageAccessControlFilter(query, req)
 			if err := query.First(&img, "uid = ?", id).Error; err != nil {
 				if err != gorm.ErrRecordNotFound {
 					logger.Error("failed to check ownership", slog.String("uid", id), slog.Any("error", err))
@@ -1011,7 +1011,7 @@ func ImagesRouter(db *gorm.DB, logger *slog.Logger) *chi.Mux {
 		var results []dto.DuplicateCheckResult
 
 		query := db.Model(&entities.ImageAsset{})
-		query = dbops.ApplyImageAccessControlFilter(query, req)
+		query = queries.ApplyImageAccessControlFilter(query, req)
 		err := query.
 			Select("uid, image_metadata->>'checksum' as checksum").
 			Where("image_metadata->>'checksum' IN ?", body.Checksums).

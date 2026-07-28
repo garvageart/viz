@@ -17,7 +17,7 @@ import (
 	"viz/internal/entities"
 	libhttp "viz/internal/http"
 	"viz/internal/images"
-	"viz/internal/images/ops"
+	imageops "viz/internal/images/ops"
 	"viz/internal/images/transform"
 	"viz/internal/jobs"
 	"viz/internal/jobs/workers"
@@ -187,7 +187,7 @@ func handleXMPGeneration(db *gorm.DB, logger *slog.Logger, body dto.WorkerJobCre
 	switch command {
 	case "missing":
 		// Scan filesystem first to find UIDs without XMP files
-		libraryPath := images.Directory
+		libraryPath := images.Library
 		entries, err := os.ReadDir(libraryPath)
 		if err != nil {
 			render.Status(req, http.StatusInternalServerError)
