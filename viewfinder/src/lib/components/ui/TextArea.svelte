@@ -72,7 +72,6 @@
     }
 
     .textarea-label {
-        font-size: 0.875rem;
         font-weight: 500;
         color: var(--viz-text-secondary);
     }
