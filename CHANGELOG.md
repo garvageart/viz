@@ -5,6 +5,14 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.22.8] - 2026-07-28
+
+* style(header): update border color and button spacing (ba061b00)
+* feat(photos): compact selection toolbar on mobile (16d61de5)
+* feat(grid): improve mobile photo grid layout (c9976db5)
+* fix(dropdown): correct hideTitleState and IconButton children detection (00020269)
+* feat(grid): add long-press to select on mobile (3fd87fc8)
+
 ## [0.22.7] - 2026-07-27
 
 * fix: AssetGrid items not taking up full width of row (9bea9596)
