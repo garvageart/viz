@@ -84,7 +84,7 @@ ARG REPOSITORY_URL
 
 # Download Go dependencies with BuildKit module cache
 RUN --mount=type=cache,target=/go/pkg/mod \
-    go mod download
+    go mod download -x
 
 # Copy the rest of the backend code
 COPY . .
