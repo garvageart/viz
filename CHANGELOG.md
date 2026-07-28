@@ -5,6 +5,16 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.23.4] - 2026-07-28
+
+* style(viewfinder): remove fixed font size from TextArea label (f6a4ee69)
+* style(viewfinder): update CollectionCard placeholder icon and drop target border (7640569b)
+* style(viewfinder): reduce default modal dialog width to 40% (1115ce8b)
+* style(viewfinder): update CollectionModal submit button variant to info (1be99522)
+* feat(viewfinder): add buttonVariant prop to ConfirmationModal (75e5b011)
+* refactor(viewfinder): pass resourcePath argument to debouncedInvalidate in eventsState (fce4adab)
+* refactor(viewfinder): optimize websocket event invalidation to prevent photo grid resets (b224b28b)
+
 ## [0.23.3] - 2026-07-28
 
 * ci(docker): increase pnpm fetch timeout and enable store cache mount (c22158d8)
