@@ -765,7 +765,6 @@
 
     .selection-count {
         font-weight: 600;
-        font-size: var(--viz-font-size-lg);
     }
 
     .selection-menu-wrapper {
@@ -839,6 +838,22 @@
 
         .selection-actions :global(.action span:not(.viz-material-icon)) {
             display: none;
+        }
+
+        .selection-actions :global(.star-rating) {
+            display: none;
+        }
+
+        .selection-info {
+            gap: 0;
+        }
+
+        :global(.clear-selection-btn) {
+            margin-right: var(--viz-spacing-xs) !important;
+        }
+
+        .selection-count {
+            font-size: var(--viz-font-size-std);
         }
 
         .toolbar-group {
