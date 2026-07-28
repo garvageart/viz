@@ -82,14 +82,17 @@ ARG SOURCE_URL
 ARG REPOSITORY
 ARG REPOSITORY_URL
 
-# Download Go dependencies
-RUN go mod download
+# Download Go dependencies with BuildKit module cache
+RUN --mount=type=cache,target=/go/pkg/mod \
+    go mod download
 
 # Copy the rest of the backend code
 COPY . .
 
-# Build backend
-RUN VERSION=${VERSION:-$(cat version.txt)} && \
+# Build backend with Go build and module cache
+RUN --mount=type=cache,target=/go/pkg/mod \
+    --mount=type=cache,target=/root/.cache/go-build \
+    VERSION=${VERSION:-$(cat version.txt)} && \
     BUILD_DATE=${BUILD_DATE:-$(date -u +"%Y-%m-%dT%H:%M:%SZ")} && \
     go build -ldflags="\
       -X 'viz/internal/config.Version=${VERSION}' \
