@@ -5,6 +5,10 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.23.7] - 2026-07-29
+
+* fix(docker): copy viewfinder source code before pnpm install in Dockerfile.server (161447ce)
+
 ## [0.23.6] - 2026-07-29
 
 * refactor(viewfinder): update WebSocket event resource targets and load fetch contexts (e1324b81)
