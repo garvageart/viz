@@ -10,11 +10,18 @@ import { defaults, servers } from "./client.gen";
 // Initialize defaults for the underlying oazapfts runtime
 defaults.baseUrl = servers.productionApi;
 defaults.credentials = "include";
+defaults.fetch = trackedFetch;
 
-let currentFetch: typeof globalThis.fetch = globalThis.fetch; // Default to window.fetch initially
+let currentFetch: typeof globalThis.fetch | null = null;
+
+function getFetch(customFetch?: typeof globalThis.fetch): typeof globalThis.fetch {
+    return customFetch ?? currentFetch ?? globalThis.fetch;
+}
 
 /**
  * A wrapper around fetch that tracks request lifecycle in loadingState.
+ * Dynamically delegates to currentFetch (if explicitly set via initApi) or globalThis.fetch
+ * (which SvelteKit patches during load() calls) so SvelteKit's load tracking works automatically.
  */
 async function trackedFetch(input: RequestInfo | URL, init?: RequestInit): Promise<Response> {
     loadingState.startRequest();
@@ -23,7 +30,8 @@ async function trackedFetch(input: RequestInfo | URL, init?: RequestInit): Promi
             cache: "no-store" as const,
             ...init
         };
-        const response = await currentFetch(input, fetchInit);
+        const fetchImpl = getFetch();
+        const response = await fetchImpl(input, fetchInit);
         return response;
     } finally {
         loadingState.endRequest();
@@ -32,13 +40,14 @@ async function trackedFetch(input: RequestInfo | URL, init?: RequestInit): Promi
 
 /**
  * Initializes the API client with SvelteKit's enhanced fetch function.
- * This must be called once in the root layout load function or similar entry point.
+ * This can be called in the root layout load function or entry point.
  *
  * @param fetch - SvelteKit's enhanced fetch from the load context.
  */
-export function initApi(fetch: typeof globalThis.fetch) {
-    currentFetch = fetch;
-    // Also explicitly set the fetch on the generated defaults
+export function initApi(fetch?: typeof globalThis.fetch) {
+    if (fetch) {
+        currentFetch = fetch;
+    }
     generated.defaults.fetch = trackedFetch;
 }
 
@@ -262,8 +271,8 @@ export async function getJobsSnapshot(): Promise<{
     status: number;
 }> {
     const base = API_BASE_URL; // Use the exported API_BASE_URL
-    // Use `currentFetch` for custom fetch calls
-    const res = await currentFetch(`${base}/jobs/snapshot`, {
+    const fetchImpl = getFetch();
+    const res = await fetchImpl(`${base}/jobs/snapshot`, {
         credentials: "include"
     });
     const data = await res.json().catch(() => ({}));
@@ -277,8 +286,8 @@ export async function updateJobTypeConcurrency(
     const base = API_BASE_URL; // Use the exported API_BASE_URL
     const url = `${base}/jobs/types/${encodeURIComponent(jobType)}/concurrency`;
     try {
-        // Use `currentFetch` for custom fetch calls
-        const res = await currentFetch(url, {
+        const fetchImpl = getFetch();
+        const res = await fetchImpl(url, {
             method: "PUT",
             credentials: "include",
             headers: {
@@ -325,7 +334,7 @@ export async function downloadImagesZipBlob(
     const baseUrl = defaults.baseUrl || "";
     const queryParams = QS.query(QS.explode({ token, password }));
     const url = `${baseUrl}/download${queryParams}`;
-    const fetchToUse = opts?.fetch || currentFetch; // Use currentFetch if not overridden by opts
+    const fetchToUse = getFetch(opts?.fetch);
 
     try {
         const defaultHeaders = defaults.headers;
@@ -415,7 +424,7 @@ export async function getImageFileBlob(
     const baseUrl = API_BASE_URL;
     const queryParams = QS.query(QS.explode(params));
     const url = `${baseUrl}/images/${encodeURIComponent(uid)}/file${queryParams}`;
-    const fetchToUse = opts?.fetch || currentFetch; // Use currentFetch if not overridden by opts
+    const fetchToUse = getFetch(opts?.fetch);
 
     try {
         const defaultHeaders = defaults.headers;

@@ -1,6 +1,6 @@
-import { error } from "@sveltejs/kit";
 import type { EventRecord, WsMetricsResponse, WsStatsResponse } from "$lib/api";
 import { getEventsSince, getWsMetrics, getWsStats } from "$lib/api";
+import { sendVizAPIRequest } from "$lib/utils/http";
 import type { PageLoad } from "./$types";
 
 interface PageLoadData {
@@ -10,28 +10,15 @@ interface PageLoadData {
 }
 
 export const load: PageLoad = async (): Promise<PageLoadData> => {
-    const [statsRes, metricsRes, historyRes] = await Promise.all([
-        getWsStats(),
-        getWsMetrics(),
-        getEventsSince({ limit: 50 })
+    const [stats, metrics, historyRes] = await Promise.all([
+        sendVizAPIRequest(getWsStats(), "Failed to load stats"),
+        sendVizAPIRequest(getWsMetrics(), "Failed to load metrics"),
+        sendVizAPIRequest(getEventsSince({ limit: 50 }), "Failed to load history")
     ]);
 
-    // Throw error if any response is not 2xx
-    if (statsRes.status !== 200) {
-        throw error(statsRes.status, `Failed to load stats: ${statsRes.status}`);
-    }
-
-    if (metricsRes.status !== 200) {
-        throw error(metricsRes.status, `Failed to load metrics: ${metricsRes.status}`);
-    }
-
-    if (historyRes.status !== 200) {
-        throw error(historyRes.status, `Failed to load history: ${historyRes.status}`);
-    }
-
     return {
-        stats: statsRes.data,
-        metrics: metricsRes.data,
-        history: "events" in historyRes.data ? historyRes.data.events || [] : []
+        stats,
+        metrics,
+        history: "events" in historyRes ? historyRes.events || [] : []
     };
 };

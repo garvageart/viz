@@ -1,5 +1,6 @@
-import { error, redirect } from "@sveltejs/kit";
+import { redirect } from "@sveltejs/kit";
 import { getUserSettings } from "$lib/api";
+import { sendVizAPIRequest } from "$lib/utils/http";
 import type { PageLoad } from "./$types";
 
 export const load: PageLoad = async ({ params }) => {
@@ -7,15 +8,10 @@ export const load: PageLoad = async ({ params }) => {
         redirect(307, "/settings/general");
     }
 
-    const response = await getUserSettings();
-    if (response.status !== 200) {
-        error(response.status, {
-            message: response.data.error
-        });
-    }
+    const settings = await sendVizAPIRequest(getUserSettings(), "Failed to load user settings");
 
     return {
-        settings: response.data,
+        settings,
         section: params.section
     };
 };
