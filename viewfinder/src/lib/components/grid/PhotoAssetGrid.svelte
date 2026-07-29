@@ -1,7 +1,7 @@
 <script lang="ts" generics>
     import hotkeys, { type HotkeysEvent } from "hotkeys-js";
     import { DateTime } from "luxon";
-    import { type ComponentProps, type Snippet, onMount, untrack } from "svelte";
+    import { type Snippet, onMount, untrack } from "svelte";
     import { SvelteSet } from "svelte/reactivity";
     import { fade } from "svelte/transition";
     import { type Instance, type Props as TippyProps, delegate, followCursor } from "tippy.js";
@@ -10,6 +10,7 @@
     import PhotoTooltip from "$lib/components/tooltips/PhotoTooltip.svelte";
     import { mountTooltipComponent } from "$lib/components/tooltips/tooltip";
     import Checkbox from "$lib/components/ui/Checkbox.svelte";
+    import Favourite from "$lib/components/ui/Favourite.svelte";
     import {
         type PhotoGridConfig,
         PhotoGridVirtualizer
@@ -1243,7 +1244,7 @@
                         <ImageLabelViewer variant="compact" enableSelection={false} label={getImageLabel(asset)} />
                     {/if}
                     {#if asset.favourited}
-                        <MaterialIcon iconName="favorite" size="1rem" style="color: white;" fill={true} />
+                        <Favourite />
                     {/if}
                 </div>
             {/if}

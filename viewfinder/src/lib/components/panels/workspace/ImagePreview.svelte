@@ -2,6 +2,7 @@
     import { type ImageAsset, getFullImagePath } from "$lib/api";
     import ImageLabelViewer from "$lib/components/image-tools/ImageLabelViewer.svelte";
     import AssetImage from "$lib/components/ui/AssetImage.svelte";
+    import Favourite from "$lib/components/ui/Favourite.svelte";
     import MaterialIcon from "$lib/components/ui/MaterialIcon.svelte";
     import ContextMenu from "$lib/context-menu/ContextMenu.svelte";
     import { createImageMenu } from "$lib/context-menu/menus/images";
@@ -59,7 +60,7 @@
                         "IMG"}
                     <ImageLabelViewer label={getImageLabel(activeItem)} variant="compact" enableSelection={false} />
                     {#if activeItem.favourited}
-                        <MaterialIcon iconName="favorite" style="font-size: 0.8rem;" fill={true} />
+                        <Favourite />
                     {/if}
                 </span>
             </div>

@@ -43,7 +43,7 @@ export function createImageMenu(
         {
             id: "act-toggle-favourite",
             label: allFavourited ? "Unfavourite" : "Favourite",
-            iconName: allFavourited ? { iconName: "favorite", fill: true } : { iconName: "favorite", fill: false },
+            iconName: allFavourited ? { iconName: "star", fill: true } : { iconName: "star", fill: false },
             disabled: selectionScope.size === 0,
             action: async () => {
                 const itemsToUpdate = selectionScope.selectedItems;

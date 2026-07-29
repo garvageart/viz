@@ -1,5 +1,7 @@
 <script lang="ts">
     import { type ImageAsset } from "$lib/api";
+    import ImageLabelViewer from "$lib/components/image-tools/ImageLabelViewer.svelte";
+    import Favourite from "$lib/components/ui/Favourite.svelte";
     import { VizMimeTypes } from "$lib/constants";
     import { DragData } from "$lib/drag-drop/data";
     import { getImageLabel, getTakenAt } from "$lib/utils/images";
@@ -65,7 +67,7 @@
                 <div class="mini-left">
                     {#if asset.favourited}
                         <div class="mini-favorite">
-                            <MaterialIcon iconName="favorite" size="1rem" fill={true} />
+                            <Favourite />
                         </div>
                     {/if}
                     <div class="mini-rating">
@@ -135,22 +137,6 @@
                 crossorigin="use-credentials"
                 onload={() => (imageLoaded = true)}
             />
-            {#if asset.favourited || asset.image_metadata?.label}
-                <div class="card-overlays">
-                    {#if asset.image_metadata?.label}
-                        <div
-                            class="overlay-badge label-badge"
-                            style="background-color: {getImageLabel(asset)}"
-                            title="Label Color"
-                        ></div>
-                    {/if}
-                    {#if asset.favourited}
-                        <div class="overlay-badge favorite-badge" title="Favourited">
-                            <MaterialIcon iconName="favorite" size="1rem" fill={true} />
-                        </div>
-                    {/if}
-                </div>
-            {/if}
         </div>
         {#if showMetadata}
             <div class="image-card-meta">
@@ -162,6 +148,16 @@
                         <span class="image-card-date">{imageDate.toLocaleDateString()}</span>
                         <span class="image-card-divider">•</span>
                         <span class="image-card-time">{imageDate.toLocaleTimeString().replace(/:\d{2}$/, "")}</span>
+                    </div>
+                    <div class="meta-badges">
+                        {#if asset.favourited}
+                            <Favourite />
+                        {/if}
+                        {#if asset.image_metadata?.label}
+                            <div class="image-card-label" title={asset.image_metadata.label}>
+                                <ImageLabelViewer variant="compact" label={getImageLabel(asset)} />
+                            </div>
+                        {/if}
                     </div>
                 </div>
             </div>
@@ -309,6 +305,13 @@
         align-items: center;
         width: 100%;
         justify-content: space-between;
+
+        .meta-badges {
+            display: flex;
+            flex-direction: row;
+            align-items: center;
+            gap: var(--viz-spacing-sm);
+        }
     }
 
     .image-card-divider {
@@ -325,7 +328,8 @@
     }
 
     .image-container {
-        height: 13em;
+        flex: 1;
+        min-height: 0;
         background-color: var(--viz-surface-panel);
         display: flex;
         justify-content: center;
@@ -337,44 +341,6 @@
         :global(.card-image) {
             width: 100%;
             height: 100%;
-        }
-    }
-
-    .card-overlays {
-        position: absolute;
-        top: var(--viz-spacing-sm);
-        left: var(--viz-spacing-sm);
-        right: var(--viz-spacing-sm);
-        display: flex;
-        justify-content: space-between;
-        align-items: center;
-        pointer-events: none;
-        z-index: 2;
-    }
-
-    .overlay-badge {
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        border-radius: var(--viz-border-radius-pill);
-        backdrop-filter: blur(4px);
-        box-shadow: 0 2px 4px rgba(0, 0, 0, 0.15);
-        border: 1px solid rgba(255, 255, 255, 0.12);
-        box-sizing: border-box;
-
-        &.favorite-badge {
-            background-color: rgba(0, 0, 0, 0.55);
-            color: var(--viz-error-color);
-            width: 1.5rem;
-            height: 1.5rem;
-            margin-left: auto; /* push heart to right if label is absent */
-        }
-
-        &.label-badge {
-            width: 0.65rem;
-            height: 0.65rem;
-            border-radius: var(--viz-border-radius-pill);
-            box-shadow: 0 1px 3px rgba(0, 0, 0, 0.2);
         }
     }
 </style>

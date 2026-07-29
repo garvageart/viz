@@ -51,7 +51,7 @@ export function createCollectionMenu(collection: Collection | undefined, opts: C
         {
             id: `favourite-${collection.uid}`,
             label: collection.favourited ? "Unfavourite" : "Favourite",
-            iconName: "favorite",
+            iconName: "star",
             action: async () => {
                 const res = await updateCollection(collection.uid, {
                     favourited: collection.favourited ? false : true

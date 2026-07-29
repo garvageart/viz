@@ -244,7 +244,7 @@
         <div class="drop-overlay" transition:fade={{ duration: 150 }}>
             <div class="drop-overlay-content">
                 <MaterialIcon
-                    iconName="favorite"
+                    iconName="star"
                     style="font-size: 3rem; margin-bottom: 0.5rem; color: white;"
                     fill={true}
                 />
