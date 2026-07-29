@@ -104,14 +104,14 @@ class EventsState {
             case "collection-updated":
             case "collection-deleted":
                 console.debug(`[Events] Collection event: ${event}`);
-                this.debouncedInvalidate("/collections");
+                this.debouncedInvalidate("collection");
                 break;
 
             case "image-created":
             case "image-updated":
             case "image-deleted":
                 console.debug(`[Events] Image event: ${event}`);
-                this.debouncedInvalidate("/images");
+                this.debouncedInvalidate("image");
                 break;
 
             case "server-online":

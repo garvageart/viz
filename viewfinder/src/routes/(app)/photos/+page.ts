@@ -3,13 +3,16 @@ import { listImages } from "$lib/api";
 import { sort } from "$lib/states/index.svelte";
 import type { PageLoad } from "./$types";
 
-export const load: PageLoad = async () => {
-    const response = await listImages({
-        limit: 100,
-        page: 0,
-        sortBy: sort.by,
-        order: sort.order
-    });
+export const load: PageLoad = async ({ fetch }) => {
+    const response = await listImages(
+        {
+            limit: 100,
+            page: 0,
+            sortBy: sort.by,
+            order: sort.order
+        },
+        { fetch }
+    );
 
     if (response.status === 200) {
         return response.data;
