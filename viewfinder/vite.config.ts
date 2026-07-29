@@ -192,7 +192,7 @@ export default defineConfig({
         proxy: viteProxy,
         allowedHosts: Array.from(new Set(["*.localhost", "localhost", "127.0.0.1", ...(config.allowed_hosts || [])])),
         watch: {
-            usePolling: true
+            usePolling: false
         }
     },
     preview: {
