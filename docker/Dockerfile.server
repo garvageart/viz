@@ -18,7 +18,7 @@ ENV NPM_CONFIG_FETCH_TIMEOUT=600000
 ENV NPM_CONFIG_FETCH_RETRIES=5
 
 # Install dependencies with BuildKit store cache
-RUN --mount=type=cache,id=pnpm,target=/root/.local/share/pnpm/store \
+RUN --mount=type=cache,id=viz-cache,target=/root/.local/share/pnpm/store \
     pnpm install --frozen-lockfile --prod=false --fetch-timeout 600000
 
 # Copy workspace source code after pnpm install so source edits do not invalidate dependency layer
@@ -33,8 +33,8 @@ RUN pnpm --filter @viz/viewfinder run build
 FROM golang:1.26-bookworm AS backend-builder
 
 # Install build tools and required dependencies with apt package caching
-RUN --mount=type=cache,target=/var/cache/apt,sharing=locked \
-    --mount=type=cache,target=/var/lib/apt,sharing=locked \
+RUN --mount=type=cache,id=viz-cache,target=/var/cache/apt,sharing=locked \
+    --mount=type=cache,id=viz-cache,target=/var/lib/apt,sharing=locked \
     rm -f /etc/apt/apt.conf.d/docker-clean && \
     echo 'Binary::apt::APT::Keep-Downloaded-Packages "true";' > /etc/apt/apt.conf.d/keep-cache && \
     apt-get update && \
@@ -50,7 +50,7 @@ RUN --mount=type=cache,target=/var/cache/apt,sharing=locked \
 
 # Download, build and install libvips with BuildKit build cache
 COPY .libvips-version /tmp/.libvips-version
-RUN --mount=type=cache,target=/tmp/vips-build-cache \
+RUN --mount=type=cache,id=viz-cache,target=/tmp/vips-build-cache \
     set -eux; \
     VIPS_VERSION=$(cat /tmp/.libvips-version | tr -d '[:space:]'); \
     CACHE_DIR="/tmp/vips-build-cache/vips-${VIPS_VERSION}-installed"; \
@@ -84,7 +84,7 @@ COPY go.mod go.sum go.work go.work.sum ./
 COPY cmd/api/go.mod cmd/api/go.sum ./cmd/api/
 
 # Download Go dependencies with BuildKit module cache
-RUN --mount=type=cache,target=/go/pkg/mod \
+RUN --mount=type=cache,id=viz-cache,target=/go/pkg/mod \
     go mod download -x
 
 # Copy the rest of the backend code
@@ -101,8 +101,8 @@ ARG REPOSITORY
 ARG REPOSITORY_URL
 
 # Build backend with Go build and module cache
-RUN --mount=type=cache,target=/go/pkg/mod \
-    --mount=type=cache,target=/root/.cache/go-build \
+RUN --mount=type=cache,id=viz-cache,target=/go/pkg/mod \
+    --mount=type=cache,id=viz-cache,target=/root/.cache/go-build \
     VERSION=${VERSION:-$(cat version.txt)} && \
     BUILD_DATE=${BUILD_DATE:-$(date -u +"%Y-%m-%dT%H:%M:%SZ")} && \
     go build -ldflags="\
@@ -120,8 +120,8 @@ RUN --mount=type=cache,target=/go/pkg/mod \
 FROM debian:bookworm-slim
 
 # Install runtime dependencies for libvips with apt package caching
-RUN --mount=type=cache,target=/var/cache/apt,sharing=locked \
-    --mount=type=cache,target=/var/lib/apt,sharing=locked \
+RUN --mount=type=cache,id=viz-cache,target=/var/cache/apt,sharing=locked \
+    --mount=type=cache,id=viz-cache,target=/var/lib/apt,sharing=locked \
     rm -f /etc/apt/apt.conf.d/docker-clean && \
     echo 'Binary::apt::APT::Keep-Downloaded-Packages "true";' > /etc/apt/apt.conf.d/keep-cache && \
     apt-get update && \
