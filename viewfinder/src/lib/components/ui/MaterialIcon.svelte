@@ -24,6 +24,7 @@
         eager: true
     });
     // Lazy: Loaded on demand in the browser/dev to save bundle size.
+    // TODO: likely get rid of this
     const ICON_MODULES = import.meta.glob("$lib/components/icons/generated/**/*.svelte");
 
     // Props
@@ -63,9 +64,6 @@
         ...props
     }: IconProps & SvelteHTMLElements["span"] = $props();
 
-    // State
-    let GeneratedComponent: Component | null = $state(null);
-
     // Helpers
     function normalizeName(n: string) {
         return String(n)
@@ -89,50 +87,36 @@
         return fontLoadMap.get(family);
     }
 
-    async function loadGeneratedIcon(symbolName: MaterialSymbol, style: IconStyle) {
+    // Synchronous Eager Icon Lookup
+    function getGeneratedIcon(symbolName: MaterialSymbol, style: IconStyle): Component | null {
+        if (!symbolName) {
+            return null;
+        }
+
         const base = normalizeName(symbolName);
         const styleSuffix = style === "sharp" ? "" : normalizeName(style);
         const filename = `/Icon${base}${styleSuffix}.svelte`;
 
-        // 1. Try Eager (Build/Prerender)
+        // Synchronously check eager glob map
         const eagerKey = Object.keys(ICON_MODULES_EAGER).find((k) => k.endsWith(filename));
-        if (building && eagerKey) {
+        if (eagerKey) {
             return (ICON_MODULES_EAGER[eagerKey] as { default: Component }).default;
-        }
-
-        // 2. Try Lazy (Runtime/Dev)
-        const lazyKey = Object.keys(ICON_MODULES).find((k) => k.endsWith(filename));
-        if (lazyKey) {
-            try {
-                const mod = await (ICON_MODULES[lazyKey] as () => Promise<{ default: Component }>)();
-                return mod.default;
-            } catch (err) {
-                // Silent failure expected for icons that haven't been generated
-            }
         }
 
         return null;
     }
 
-    // Effects
-    // Load generated component when iconName or iconStyle changes
+    // Derived Component (synchronous, 0ms frame delay)
+    let GeneratedComponent = $derived(getGeneratedIcon(iconName, iconStyle));
+
+    // Warn in dev if missing and not already warned
     $effect(() => {
-        if (!iconName) {
-            GeneratedComponent = null;
-            return;
+        if (iconName && !GeneratedComponent && dev && !warnedMissing.has(`${iconName}-${iconStyle}`)) {
+            warnedMissing.add(`${iconName}-${iconStyle}`);
         }
-
-        loadGeneratedIcon(iconName, iconStyle).then((comp) => {
-            GeneratedComponent = comp;
-
-            // Warn only in dev if missing and not already warned
-            if (!comp && dev && !warnedMissing.has(`${iconName}-${iconStyle}`)) {
-                warnedMissing.add(`${iconName}-${iconStyle}`);
-            }
-        });
     });
 
-    // Ensure font is loaded as fallback (or primary if no generated icon)
+    // Ensure font is loaded as fallback if no generated icon component exists
     $effect(() => {
         if (!GeneratedComponent) {
             ensureFontLoaded(familyMap[iconStyle]);
