@@ -235,7 +235,7 @@
 
     let grid: ComponentProps<typeof AssetGrid<Collection>> = $derived({
         assetSnippet: collectionSnippet,
-        view: "thumbnails",
+        view: "grid",
         assetGridArray: collectionGridArray,
         data: displayData,
         scopeId: scopeId,
@@ -385,7 +385,6 @@
 >
     <AssetsShell
         bind:grid
-        gridComponent={AssetGrid}
         {pagination}
         {noAssetsSnippet}
         {toolbarSnippet}

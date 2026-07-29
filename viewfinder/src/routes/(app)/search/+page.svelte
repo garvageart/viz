@@ -36,6 +36,7 @@
     import { SelectionScopeNames, selectionManager } from "$lib/states/selection.svelte";
     import { toastState } from "$lib/toast-notifcations/notif-state.svelte";
     import type { AssetGridView } from "$lib/types/asset";
+    import type { CardVisualState } from "$lib/types/snippet";
     import { downloadOriginalImageFile } from "$lib/utils/http";
     import { getImageLabel } from "$lib/utils/images";
     import { invalidateViz } from "$lib/views/views.svelte";
@@ -151,10 +152,7 @@
 
     // View Modes
     let imageViewMode = $state<AssetGridView>(viewSettings.current);
-    // Collections in AssetGrid only support "list" and "thumbnails"
-    let collectionViewMode = $state<"list" | "thumbnails">(
-        viewSettings.current === "grid" ? "thumbnails" : (viewSettings.current as "list" | "thumbnails")
-    );
+    let collectionViewMode = $state<AssetGridView>(viewSettings.current);
 
     // Display options for Images
     const imageDisplayMenuItems: MenuItem[] = [
@@ -169,9 +167,9 @@
             action: () => (imageViewMode = "list")
         },
         {
-            id: "img-display-thumbnails",
-            label: "Thumbnails",
-            action: () => (imageViewMode = "thumbnails")
+            id: "img-display-grid",
+            label: "Grid",
+            action: () => (imageViewMode = "grid")
         }
     ];
 
@@ -181,8 +179,8 @@
                 return "img-display-grid";
             case "list":
                 return "img-display-list";
-            case "thumbnails":
-                return "img-display-thumbnails";
+            case "custom":
+                return "img-display-custom";
         }
     });
 
@@ -195,8 +193,8 @@
         },
         {
             id: "col-display-thumbnails",
-            label: "Thumbnails",
-            action: () => (collectionViewMode = "thumbnails")
+            label: "Grid",
+            action: () => (collectionViewMode = "grid")
         }
     ];
 
@@ -204,8 +202,10 @@
         switch (collectionViewMode) {
             case "list":
                 return "col-display-list";
-            case "thumbnails":
+            case "grid":
                 return "col-display-thumbnails";
+            default:
+                return undefined;
         }
     });
 
@@ -661,17 +661,51 @@
                                     {/if}
                                 </div>
 
-                                <div class="photo-group-container">
+                                {#snippet imageCard(asset: ImageAsset, visualState: CardVisualState)}
+                                    <ImageCard {asset} isSelected={visualState.isSelected} />
+                                {/snippet}
+
+                                {#snippet justifiedGrid()}
                                     <PhotoAssetGrid
                                         bind:allData={allImagesFlat}
-                                        view={imageViewMode}
                                         data={images}
                                         groupedData={consolidatedGroups}
                                         showDateHeaders={true}
                                         scopeId={imageScopeId}
                                         stickyHeaderHeight={64}
                                         onLoadMore={() => paginateSearch()}
-                                        assetDblClick={(_e, asset) => {
+                                        assetDblClick={(_e: MouseEvent, asset: ImageAsset) => {
+                                            openLightbox(asset);
+                                        }}
+                                        onassetcontext={(detail: {
+                                            asset: ImageAsset;
+                                            anchor: { x: number; y: number } | HTMLElement;
+                                        }) => {
+                                            const { asset } = detail;
+                                            if (!imageSelection.has(asset) || imageSelection.size <= 1) {
+                                                imageSelection.select(asset);
+                                            }
+
+                                            ctxAnchor = detail.anchor;
+                                            ctxItems = imageActionMenuItems;
+                                            ctxShowMenu = true;
+                                        }}
+                                    />
+                                {/snippet}
+
+                                <div class="photo-group-container">
+                                    <AssetGrid
+                                        data={images}
+                                        view={imageViewMode}
+                                        assetSnippet={imageCard}
+                                        customSnippet={justifiedGrid}
+                                        scopeId={imageScopeId}
+                                        assetDblClick={(
+                                            _e: MouseEvent & {
+                                                currentTarget: EventTarget & (HTMLDivElement | HTMLTableRowElement);
+                                            },
+                                            asset: ImageAsset
+                                        ) => {
                                             openLightbox(asset);
                                         }}
                                         onassetcontext={(detail: {

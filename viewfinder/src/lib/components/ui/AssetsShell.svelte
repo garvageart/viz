@@ -10,13 +10,11 @@
     import type { IPagination } from "$lib/types/asset";
     import Dropdown from "../context-menus/Dropdown.svelte";
     import AssetGrid from "../grid/AssetGrid.svelte";
-    import PhotoAssetGrid from "../grid/PhotoAssetGrid.svelte";
     import IconButton from "./IconButton.svelte";
     import AssetToolbar from "./toolbars/AssetToolbar.svelte";
 
     type Props = {
-        grid: ComponentProps<typeof AssetGrid<T>> | ComponentProps<typeof PhotoAssetGrid>;
-        gridComponent?: Component<any>;
+        grid: ComponentProps<typeof AssetGrid<T>>;
         pagination?: IPagination;
         children?: Snippet;
         selectionToolbarSnippet?: Snippet;
@@ -36,7 +34,6 @@
 
     let {
         grid = $bindable(),
-        gridComponent = AssetGrid,
         pagination = $bindable({
             limit: 25,
             page: 0
@@ -181,7 +178,7 @@
                     title="Toggle Sort Order ({sort.order})"
                     onclick={toggleSortOrder}
                 />
-                {#if dev && grid.view === "thumbnails"}
+                {#if dev && grid.view === "grid"}
                     {@render toolbarButton({
                         iconName: "grid_view",
                         text: "Print Grid",
@@ -206,8 +203,7 @@
         {/if}
     </div>
 {:else}
-    {@const GridComp = gridComponent}
-    <GridComp {...grid} bind:assetGridArray bind:data={gridData} bind:columnCount />
+    <AssetGrid {...grid} bind:assetGridArray bind:data={gridData} bind:columnCount />
 {/if}
 
 <style lang="scss">

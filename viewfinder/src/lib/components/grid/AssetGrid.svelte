@@ -2,7 +2,7 @@
     import { dev } from "$app/environment";
     import hotkeys from "hotkeys-js";
     import { DateTime } from "luxon";
-    import { untrack } from "svelte";
+    import { type Snippet, untrack } from "svelte";
     import type { SvelteHTMLElements } from "svelte/elements";
     import { type Instance, type Props as TippyProps, delegate, followCursor } from "tippy.js";
     import "tippy.js/dist/tippy.css";
@@ -24,8 +24,9 @@
     export interface AssetGridProps<T extends { uid: string } & Record<string, any>> {
         data: T[];
         assetSnippet: SvelteSnippet<[T, CardVisualState]>;
+        customSnippet?: Snippet;
         assetGridArray?: AssetGridArray<T>;
-        view?: Omit<AssetGridView, "grid">;
+        view?: AssetGridView;
         assetGridDisplayProps?: SvelteHTMLElements["div"];
         columnCount?: number;
         searchValue?: string;
@@ -53,6 +54,7 @@
     let {
         data = $bindable(),
         assetSnippet,
+        customSnippet,
         assetGridArray = $bindable(),
         columnCount = $bindable(),
         searchValue = $bindable(""),
@@ -62,7 +64,7 @@
         disableOutsideUnselect = $bindable(false),
         disableMultiSelection = $bindable(false),
         onassetcontext = $bindable(),
-        view = $bindable("thumbnails"),
+        view = $bindable("grid"),
         assetGridDisplayProps = $bindable({}),
         columns = $bindable(),
         table = $bindable(),
@@ -91,9 +93,9 @@
     let isListView = $derived(view === "list" || sort.display === "list");
 
     // TODO: pass this in as configuration perhaps?
-    let gridItemWidth = $derived(view === "basic" ? 352 : 270);
+    let gridItemWidth = $derived(view === "custom" ? 352 : 270);
     let gridGap = $state(8);
-    let gridRowHeight = $derived(view === "basic" ? 264 : 260);
+    let gridRowHeight = $derived(view === "custom" ? 264 : 260);
 
     // Column count: use explicit prop if set, otherwise compute
     let computedColumnCount = $derived.by(() => {
@@ -176,7 +178,7 @@
                 columns: columnCount && columnCount > 0 ? columnCount : undefined,
                 itemWidth: gridItemWidth,
                 rowHeight: gridRowHeight,
-                aspectRatio: view === "basic" ? 3 / 4 : undefined,
+                aspectRatio: view === "custom" ? 3 / 4 : undefined,
                 gap: gridGap
             });
         }
@@ -297,7 +299,7 @@
 
     // Tippy tooltip delegation
     $effect(() => {
-        if (!assetGridDisplayEl || view !== "basic" || isMobile) {
+        if (!assetGridDisplayEl || view !== "custom" || isMobile) {
             return;
         }
 
@@ -333,14 +335,15 @@
                         }
                     }
                 });
-                (instance as any)._destroyComponent = destroy;
+                (instance as ExtendedTippyInstance)._destroyComponent = destroy;
                 instance.setContent(node);
             },
             onHidden(instance: Instance<TippyProps>) {
-                const destroy = (instance as any)._destroyComponent;
+                const extInst = instance as ExtendedTippyInstance;
+                const destroy = extInst._destroyComponent;
                 if (destroy) {
                     destroy();
-                    (instance as any)._destroyComponent = undefined;
+                    extInst._destroyComponent = undefined;
                 }
                 instance.setContent("");
             },
@@ -415,13 +418,25 @@
         return cur;
     }
 
+    interface ExtendedTippyInstance extends Instance<TippyProps> {
+        _destroyComponent?: () => void;
+    }
+
+    function getAssetThumbSrc(asset: Record<string, any>): string {
+        return getFullImagePath(asset.image_paths?.thumbnail ?? asset.image_paths?.preview ?? "");
+    }
+
+    function getAssetAltText(asset: Record<string, any>): string {
+        return asset.name ?? asset.image_metadata?.file_name ?? "";
+    }
+
     // Format a value for display: dates are formatted with Luxon, objects stringified, null/undefined -> ''
     function formatValueForKey(obj: Record<string, any> | undefined, key?: string) {
         let v: any = undefined;
         if (key) {
             v = getNestedValue(obj, key);
             if (v === undefined && obj) {
-                v = (obj as any)[key];
+                v = obj[key];
             }
         } else {
             v = obj;
@@ -1003,11 +1018,14 @@
     {/if}
 {:else if isListView}
     {@render assetTable()}
-{:else if view === "thumbnails" || view === "basic"}
+{:else if view === "custom"}
+    {#if customSnippet}
+        {@render customSnippet()}
+    {/if}
+{:else}
     <div
         bind:this={assetGridDisplayEl}
         class="viz-asset-grid-container {assetGridDisplayProps.class}"
-        class:is-basic-view={view === "basic"}
         class:is-active={selectionManager.activeScopeId === scopeId}
         {...assetGridDisplayProps}
         use:unselectImagesOnClickOutsideAssetContainer
@@ -1026,104 +1044,7 @@
                                 class="grid-item"
                                 style="position: absolute; left: {item.left}px; width: {item.width}px; height: {row.height}px;"
                             >
-                                {#if view === "basic"}
-                                    <div
-                                        class="asset-card basic-grid-card"
-                                        class:selected-card={selectedUIDs.has(item.asset.uid) ||
-                                            selection.active?.uid === item.asset.uid}
-                                        class:disabled-asset={disabledUids.has(item.asset.uid)}
-                                        data-asset-id={item.asset.uid}
-                                        role="button"
-                                        tabindex={disabledUids.has(item.asset.uid) ? -1 : 0}
-                                        onclick={(e) => {
-                                            if (disabledUids.has(item.asset.uid)) {
-                                                return;
-                                            }
-                                            if ((e.currentTarget as HTMLElement).dataset.longPressHandled === "true") {
-                                                return;
-                                            }
-                                            e.preventDefault();
-                                            handleImageCardSelect(item.asset as T, e);
-                                        }}
-                                        onkeydown={(e) => {
-                                            e.preventDefault();
-                                            handleKeydownCardSelect(item.asset as T, e);
-                                        }}
-                                        ontouchstart={(e: TouchEvent) => {
-                                            if (isMobile && !disabledUids.has(item.asset.uid)) {
-                                                const target = e.currentTarget as HTMLElement;
-                                                const timer = setTimeout(() => {
-                                                    e.preventDefault();
-                                                    e.stopPropagation();
-                                                    selection.toggle(item.asset as T);
-                                                    target.dataset.longPressHandled = "true";
-                                                    setTimeout(() => {
-                                                        delete target.dataset.longPressHandled;
-                                                    }, 150);
-                                                }, 500);
-                                                target.dataset.longPressTimer = String(timer);
-                                            }
-                                        }}
-                                        ontouchend={(e: TouchEvent) => {
-                                            const target = e.currentTarget as HTMLElement;
-                                            const timer = target.dataset.longPressTimer;
-                                            if (timer) {
-                                                clearTimeout(Number(timer));
-                                                delete target.dataset.longPressTimer;
-                                            }
-                                        }}
-                                        ontouchcancel={(e: TouchEvent) => {
-                                            const target = e.currentTarget as HTMLElement;
-                                            const timer = target.dataset.longPressTimer;
-                                            if (timer) {
-                                                clearTimeout(Number(timer));
-                                                delete target.dataset.longPressTimer;
-                                            }
-                                        }}
-                                        oncontextmenu={(e: MouseEvent & { currentTarget: HTMLElement }) => {
-                                            if (isMobile && e.currentTarget.dataset.longPressHandled === "true") {
-                                                e.preventDefault();
-                                                e.stopPropagation();
-                                                delete e.currentTarget.dataset.longPressHandled;
-                                                return;
-                                            }
-                                            e.preventDefault();
-                                            if (!selection.has(item.asset as T) || selection.size <= 1) {
-                                                selection.select(item.asset as T);
-                                            }
-                                            onassetcontext?.({
-                                                asset: item.asset as T,
-                                                anchor: { x: e.clientX, y: e.clientY }
-                                            });
-                                        }}
-                                        ondblclick={(e) => {
-                                            if (e.ctrlKey) {
-                                                e.preventDefault();
-                                                return;
-                                            }
-                                            assetDblClick?.(e, item.asset as T);
-                                        }}
-                                    >
-                                        {#if disabledUids.has(item.asset.uid)}
-                                            <div class="disabled-overlay"></div>
-                                        {/if}
-                                        <img
-                                            class="basic-thumb-img"
-                                            src={getFullImagePath(
-                                                (item.asset as any).image_paths?.thumbnail ??
-                                                    (item.asset as any).image_paths?.preview ??
-                                                    ""
-                                            )}
-                                            alt={(item.asset as any).name ??
-                                                (item.asset as any).image_metadata?.file_name ??
-                                                ""}
-                                            loading="lazy"
-                                            crossorigin="use-credentials"
-                                        />
-                                    </div>
-                                {:else}
-                                    {@render assetComponentCard(item.asset as T)}
-                                {/if}
+                                {@render assetComponentCard(item.asset as T)}
                             </div>
                         {/each}
                     </div>

@@ -61,10 +61,10 @@
             }
         },
         {
-            id: "display-cards",
-            label: "Thumbnails",
+            id: "display-custom",
+            label: "Custom",
             action: () => {
-                viewSettings.setView("thumbnails");
+                viewSettings.setView("custom");
             }
         }
     ];
@@ -310,7 +310,6 @@
                         <div class="photo-group-container">
                             <PhotoAssetGrid
                                 bind:allData={allImagesFlat}
-                                bind:view={viewSettings.current}
                                 data={filteredImages}
                                 groupedData={consolidatedGroups}
                                 showDateHeaders={true}

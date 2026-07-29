@@ -29,59 +29,56 @@
     import AssetImage from "../ui/AssetImage.svelte";
     import ImageCard from "../ui/ImageCard.svelte";
     import MaterialIcon from "../ui/MaterialIcon.svelte";
-    import AssetGrid from "./AssetGrid.svelte";
     import TimelineScrubber from "./TimelineScrubber.svelte";
 
-    interface PhotoSpecificProps {
-        /** Custom photo card snippet - if not provided, uses default photo card */
-        photoCardSnippet?: Snippet<[ImageAsset, CardVisualState]>;
-        /** Complete flat list of all images for cross-group range selection */
-        allData?: ImageAsset[];
-        /** Unique identifier for selection state management */
-        scopeId?: string;
-        /** Grouped data for timeline view with headers */
-        groupedData?: ConsolidatedGroup[];
-        /** Whether to show date headers in the grid (requires groupedData) */
-        showDateHeaders?: boolean;
-        /** Virtualized grid layout configuration */
-        gridConfig?: PhotoGridConfig;
-        /** Callback triggered when Select All (Ctrl+A) is pressed */
-        onselectAll?: () => void;
-        /** Set of image UIDs that should be marked as disabled in the grid*/
-        disabledUids?: Set<string>;
-        /** Callback to load more images for pagination when selecting a group */
-        onLoadMore?: () => Promise<void> | void;
-        /** Explicit height of sticky headers above the grid. If omitted, falls back to gridOffsetTop (which assumes everything above is sticky) */
-        stickyHeaderHeight?: number;
+    interface ExtendedTippyInstance extends Instance<TippyProps> {
+        _destroyComponent?: () => void;
     }
 
-    type Props = Omit<ComponentProps<typeof AssetGrid<ImageAsset>>, "assetSnippet"> & PhotoSpecificProps;
+    interface PhotoSpecificProps {
+        data: ImageAsset[];
+        allData?: ImageAsset[];
+        groupedData?: ConsolidatedGroup[];
+        photoCardSnippet?: Snippet<[ImageAsset, CardVisualState]>;
+        gridConfig?: PhotoGridConfig;
+        showDateHeaders?: boolean;
+        scopeId?: string;
+        searchValue?: string;
+        noAssetsMessage?: string;
+        disabledUids?: Set<string>;
+        stickyHeaderHeight?: number;
+        assetClick?: () => void;
+        assetDblClick?: (
+            e: MouseEvent & {
+                currentTarget: EventTarget & (HTMLDivElement | HTMLTableRowElement);
+            },
+            asset: ImageAsset
+        ) => void;
+        onassetcontext?: (detail: { asset: ImageAsset; anchor: { x: number; y: number } | HTMLElement }) => void;
+        onLoadMore?: () => Promise<void> | void;
+        onselectAll?: () => void;
+        disableOutsideUnselect?: boolean;
+    }
 
     let {
         data = $bindable([]),
-        allData = $bindable(), // Complete flat list of all images for cross-group range selection
-        assetGridArray = $bindable(),
-        columnCount = $bindable(),
+        allData = $bindable(),
+        groupedData,
+        photoCardSnippet,
+        gridConfig = {},
+        showDateHeaders = false,
+        scopeId = "default",
         searchValue = $bindable(""),
         noAssetsMessage = "No photos found",
-        assetDblClick,
-        assetClick,
-        disableOutsideUnselect = $bindable(false),
-        onassetcontext = $bindable(),
-        assetGridDisplayProps = $bindable({}),
-        view = $bindable("grid"),
-        columns = $bindable(),
-        table = $bindable(),
-        photoCardSnippet,
-        scopeId = "photos-default",
-        groupedData = $bindable([]),
-        showDateHeaders = $bindable(true),
-        gridConfig = {},
-        onselectAll,
         disabledUids = new Set(),
+        stickyHeaderHeight,
+        assetClick,
+        assetDblClick,
+        onassetcontext,
         onLoadMore,
-        stickyHeaderHeight
-    }: Props = $props();
+        onselectAll,
+        disableOutsideUnselect = false
+    }: PhotoSpecificProps = $props();
 
     // Selection Management
     let selection = $derived(selectionManager.getScope<ImageAsset>(scopeId));
@@ -112,12 +109,9 @@
         selectionManager.setActive(scopeId);
     }
 
+    // Short-cuts / hotkeys handling
     function handleSelectAll(e: KeyboardEvent) {
         if (selectionManager.activeScopeId !== scopeId) {
-            return;
-        }
-
-        if (view !== "grid") {
             return;
         }
 
@@ -136,13 +130,11 @@
         if (selectionManager.activeScopeId !== scopeId) {
             return;
         }
-        if (view !== "grid") {
-            return;
-        }
         if (selection.selected.size === 0 && !selection.active) {
             return;
         }
 
+        e.preventDefault();
         selection.clear();
     }
 
@@ -170,9 +162,6 @@
 
     function handleKeyNav(e: KeyboardEvent, handler: HotkeysEvent) {
         if (selectionManager.activeScopeId !== scopeId) {
-            return;
-        }
-        if (view !== "grid") {
             return;
         }
 
@@ -338,7 +327,7 @@
     });
 
     // Styling stuff
-    const assetLookup = $derived(new Map(data.map((a) => [a.uid, a])));
+    const assetLookup = $derived(new Map(data.map((a: ImageAsset) => [a.uid, a])));
 
     function getAssetFromElement(el: HTMLElement): ImageAsset | undefined {
         const assetId = el.dataset.assetId;
@@ -346,7 +335,7 @@
             return undefined;
         }
 
-        return assetLookup.get(assetId) || allData?.find((a) => a.uid === assetId);
+        return assetLookup.get(assetId) ?? allData?.find((a: ImageAsset) => a.uid === assetId);
     }
 
     $effect(() => {
@@ -384,14 +373,15 @@
                         }
                     }
                 });
-                (instance as any)._destroyComponent = destroy;
+                (instance as ExtendedTippyInstance)._destroyComponent = destroy;
                 instance.setContent(node);
             },
             onHidden(instance: Instance<TippyProps>) {
-                const destroy = (instance as any)._destroyComponent;
+                const extInst = instance as ExtendedTippyInstance;
+                const destroy = extInst._destroyComponent;
                 if (destroy) {
                     destroy();
-                    (instance as any)._destroyComponent = undefined;
+                    extInst._destroyComponent = undefined;
                 }
                 instance.setContent(""); // Clear content
             },
@@ -1265,7 +1255,7 @@
                     variant="thumbnail"
                     draggable="false"
                     class="tile-image"
-                    alt={asset.name ?? asset.image_metadata?.file_name ?? ""}
+                    alt={asset?.name ?? asset?.image_metadata?.file_name ?? ""}
                     loading="lazy"
                     initialLoaded={isCached}
                     onload={() => {
@@ -1279,14 +1269,14 @@
         {:else}
             <div class="tile-image-fallback">
                 <MaterialIcon iconName="image" size="2.5rem" />
-                <span class="fallback-filename">{asset.name ?? asset.image_metadata?.file_name ?? asset.uid}</span>
+                <span class="fallback-filename">{asset?.name ?? asset?.image_metadata?.file_name ?? asset?.uid}</span>
             </div>
         {/if}
 
         {#if !isMobile}
             <div class="photo-overlay">
                 <div class="photo-overlay-inner">
-                    <div class="photo-name">{asset.name}</div>
+                    <div class="photo-name">{asset?.name}</div>
                     <div class="photo-meta">
                         <div class="photo-date">
                             {DateTime.fromJSDate(getTakenAt(asset)).toFormat("dd LLL yyyy • HH:mm")}
@@ -1306,106 +1296,85 @@
     <ImageCard {asset} isSelected={cardState.isSelected} />
 {/snippet}
 
-{#if view === "grid"}
-    <div
-        class="grid-container"
-        class:use-external-scroll={usingExternalScroll}
-        onclick={handleOuterContainerClick}
-        role="presentation"
-    >
-        {#if debugMode}
-            <div
-                style="position: sticky; top: 0; left: 0; z-index: 9999; background: rgba(0,0,0,0.8); color: lime; padding: 0.5rem; pointer-events: none; font-size: 11px; white-space: pre-wrap; line-height: 1.3;"
-            >
-                Data: {data?.length} | Filtered: {filteredData?.length} | Rows: {virtualizer.rows?.length} | Visible: {virtualizer
-                    .visibleRows?.length} | TotalH: {virtualizer.totalHeight}
-                | Scroll: {scrollTop} | Ext: {usingExternalScroll}
-            </div>
-        {/if}
-
+<div
+    class="grid-container"
+    class:use-external-scroll={usingExternalScroll}
+    onclick={handleOuterContainerClick}
+    role="presentation"
+>
+    {#if debugMode}
         <div
-            use:initGrid
-            class="viz-photo-grid-container no-select scrollbar-hidden"
-            class:is-active={selectionManager.activeScopeId === scopeId}
-            class:use-external-scroll={usingExternalScroll}
-            onscroll={handleGridScroll}
-            use:unselectImagesOnClickOutsideAssetContainer
-            onclick={handleContainerClick}
-            // FIXME: this is triggering haphazardly
-            onkeydown={onFocus}
-            role="grid"
-            aria-label="Photo Grid"
-            tabindex="0"
+            style="position: sticky; top: 0; left: 0; z-index: 9999; background: rgba(0,0,0,0.8); color: lime; padding: 0.5rem; pointer-events: none; font-size: 11px; white-space: pre-wrap; line-height: 1.3;"
         >
-            <div style={`height: ${virtualizer.totalHeight}px; position: relative; width: 100%;`}>
-                {#each virtualizer.visibleRows as row (row.id)}
-                    {#if row.type === "header"}
-                        <div
-                            class="header-row"
-                            style={`position: absolute; top: ${row.top}px; left: 0; right: 0; height: ${row.height}px; width: 100%;`}
-                        >
-                            {@render inlineHeader(row.label)}
-                        </div>
-                    {:else if row.type === "images"}
-                        <div
-                            class="justified-row"
-                            style={`position:absolute; top:${row.top}px; left:0; right:0; height:${row.height}px;`}
-                        >
-                            {#each row.items as item (item.asset.uid)}
-                                <div
-                                    style={`position: absolute; left: ${item.left}px; width: ${item.width}px; height:${row.height}px;`}
-                                    class="justified-item"
-                                >
-                                    {#if (item.asset as ImageWithDateLabel).isHeaderItem}
-                                        {@render inlineDateTile((item.asset as ImageWithDateLabel).headerLabel || "")}
-                                    {:else}
-                                        {@render defaultPhotoCard(item.asset as ImageWithDateLabel)}
-                                    {/if}
-                                </div>
-                            {/each}
-                        </div>
-                    {/if}
-                {/each}
-            </div>
+            Data: {data?.length} | Filtered: {filteredData?.length} | Rows: {virtualizer.rows?.length} | Visible: {virtualizer
+                .visibleRows?.length} | TotalH: {virtualizer.totalHeight}
+            | Scroll: {scrollTop} | Ext: {usingExternalScroll}
         </div>
+    {/if}
 
-        <div class="scrubber-wrapper">
-            <div
-                class="scrubber-sticky-container"
-                style={usingExternalScroll
-                    ? `position: sticky; top: ${scrubberTopOffset}px; height: ${scrubberViewportHeight}px;`
-                    : "height: 100%;"}
-            >
-                <TimelineScrubber
-                    bind:scrollTop={scrubberScrollTopState}
-                    totalHeight={scrubberTotalHeight}
-                    viewportHeight={scrubberViewportHeight}
-                    {dateLabel}
-                    bind:isDragging={isScrubbing}
-                />
-            </div>
+    <div
+        use:initGrid
+        class="viz-photo-grid-container no-select scrollbar-hidden"
+        class:is-active={selectionManager.activeScopeId === scopeId}
+        class:use-external-scroll={usingExternalScroll}
+        onscroll={handleGridScroll}
+        use:unselectImagesOnClickOutsideAssetContainer
+        onclick={handleContainerClick}
+        // FIXME: this is triggering haphazardly
+        onkeydown={onFocus}
+        role="grid"
+        aria-label="Photo Grid"
+        tabindex="0"
+    >
+        <div style={`height: ${virtualizer.totalHeight}px; position: relative; width: 100%;`}>
+            {#each virtualizer.visibleRows as row (row.id)}
+                {#if row.type === "header"}
+                    <div
+                        class="header-row"
+                        style={`position: absolute; top: ${row.top}px; left: 0; right: 0; height: ${row.height}px; width: 100%;`}
+                    >
+                        {@render inlineHeader(row.label)}
+                    </div>
+                {:else if row.type === "images"}
+                    <div
+                        class="justified-row"
+                        style={`position:absolute; top:${row.top}px; left:0; right:0; height:${row.height}px;`}
+                    >
+                        {#each row.items as item (item.asset.uid)}
+                            <div
+                                style={`position: absolute; left: ${item.left}px; width: ${item.width}px; height:${row.height}px;`}
+                                class="justified-item"
+                            >
+                                {#if (item.asset as ImageWithDateLabel).isHeaderItem}
+                                    {@render inlineDateTile((item.asset as ImageWithDateLabel).headerLabel || "")}
+                                {:else}
+                                    {@render defaultPhotoCard(item.asset as ImageWithDateLabel)}
+                                {/if}
+                            </div>
+                        {/each}
+                    </div>
+                {/if}
+            {/each}
         </div>
     </div>
-{:else}
-    <!-- Delegate to AssetGrid for list/table/thumbnails view -->
-    <AssetGrid
-        bind:data={filteredData}
-        bind:assetGridArray
-        bind:columnCount
-        bind:searchValue
-        bind:view
-        {noAssetsMessage}
-        {assetDblClick}
-        {disableOutsideUnselect}
-        {onassetcontext}
-        {columns}
-        {table}
-        {assetGridDisplayProps}
-        {scopeId}
-        {disabledUids}
-        assetSnippet={photoCardSnippet ?? imageCard}
-    />
-{/if}
+
+    <div class="scrubber-wrapper">
+        <div
+            class="scrubber-sticky-container"
+            style={usingExternalScroll
+                ? `position: sticky; top: ${scrubberTopOffset}px; height: ${scrubberViewportHeight}px;`
+                : "height: 100%;"}
+        >
+            <TimelineScrubber
+                bind:scrollTop={scrubberScrollTopState}
+                totalHeight={scrubberTotalHeight}
+                viewportHeight={scrubberViewportHeight}
+                {dateLabel}
+                bind:isDragging={isScrubbing}
+            />
+        </div>
+    </div>
+</div>
 
 <style lang="scss">
     /* Photo grid (virtualized) styles */

@@ -12,6 +12,7 @@
         updateImage
     } from "$lib/api";
     import Dropdown from "$lib/components/context-menus/Dropdown.svelte";
+    import AssetGrid from "$lib/components/grid/AssetGrid.svelte";
     import PhotoAssetGrid from "$lib/components/grid/PhotoAssetGrid.svelte";
     import ImageLabelViewer from "$lib/components/image-tools/ImageLabelViewer.svelte";
     import StarRating from "$lib/components/image-tools/StarRating.svelte";
@@ -20,9 +21,11 @@
     import { modalsManager } from "$lib/components/modals/manager/ModalManager.svelte";
     import VizViewContainer from "$lib/components/panels/VizViewContainer.svelte";
     import ActiveFiltersTooltip from "$lib/components/tooltips/ActiveFiltersTooltip.svelte";
+    import BasicImageCard from "$lib/components/ui/BasicImageCard.svelte";
     import Button from "$lib/components/ui/Button.svelte";
     import DragAndDropUpload from "$lib/components/ui/DragAndDropUpload.svelte";
     import IconButton from "$lib/components/ui/IconButton.svelte";
+    import ImageCard from "$lib/components/ui/ImageCard.svelte";
     import ImageLightbox from "$lib/components/ui/ImageLightbox.svelte";
     import MaterialIcon from "$lib/components/ui/MaterialIcon.svelte";
     import AssetToolbar from "$lib/components/ui/toolbars/AssetToolbar.svelte";
@@ -45,6 +48,7 @@
     import { SelectionScopeNames, selectionManager } from "$lib/states/selection.svelte";
     import { toastState } from "$lib/toast-notifcations/notif-state.svelte";
     import { SUPPORTED_IMAGE_TYPES, SUPPORTED_RAW_FILES, type SupportedImageTypes } from "$lib/types/images";
+    import type { CardVisualState } from "$lib/types/snippet";
     import UploadManager, { type ImageUploadSuccess } from "$lib/upload/manager.svelte";
     import { getImageLabel } from "$lib/utils/images.js";
     import { invalidateViz } from "$lib/views/views.svelte";
@@ -69,11 +73,11 @@
                 }
             },
             {
-                id: "display-cards",
-                label: "Thumbnails",
-                iconName: viewSettings.current === "thumbnails" ? ("check" as const) : undefined,
+                id: "display-custom",
+                label: "Custom",
+                iconName: viewSettings.current === "custom" ? ("check" as const) : undefined,
                 action: () => {
-                    viewSettings.setView("thumbnails");
+                    viewSettings.setView("custom");
                 }
             }
         ];
@@ -90,18 +94,6 @@
                     }
                 }
             );
-        } else if (viewSettings.current === "thumbnails") {
-            baseItems.push(
-                { id: "display-separator-thumb", label: "", separator: true },
-                {
-                    id: "display-basic-thumb",
-                    label: "Basic",
-                    iconName: viewSettings.showBasic ? ("check_box" as const) : ("check_box_outline_blank" as const),
-                    action: () => {
-                        viewSettings.toggleShowBasic();
-                    }
-                }
-            );
         }
 
         return baseItems;
@@ -111,7 +103,7 @@
         const map: Record<string, string> = {
             grid: "display-grid",
             list: "display-list",
-            thumbnails: "display-cards"
+            custom: "display-custom"
         };
         return map[(viewSettings.current as string) ?? ""];
     }
@@ -704,10 +696,13 @@
             {@render noAssetsSnippet()}
         </div>
     {:else}
-        <div class="photo-group-container">
+        {#snippet imageCard(asset: ImageAsset, visualState: CardVisualState)}
+            <ImageCard {asset} isSelected={visualState.isSelected} />
+        {/snippet}
+
+        {#snippet justifiedGrid()}
             <PhotoAssetGrid
                 bind:allData={allImagesFlat}
-                view={viewSettings.current === "thumbnails" && viewSettings.showBasic ? "basic" : viewSettings.current}
                 data={galleryState.images}
                 groupedData={viewSettings.showDates ? consolidatedGroups : undefined}
                 gridConfig={{
@@ -716,10 +711,30 @@
                 showDateHeaders={viewSettings.showDates}
                 {scopeId}
                 onLoadMore={() => paginate()}
-                assetDblClick={(_e, asset) => {
+                assetDblClick={(_e: MouseEvent, asset: ImageAsset) => {
                     openLightbox(asset);
                 }}
-                onassetcontext={(detail) => {
+                onassetcontext={(detail: { asset: ImageAsset; anchor: { x: number; y: number } | HTMLElement }) => {
+                    ctxAnchor = detail.anchor;
+                    ctxShowMenu = true;
+                }}
+            />
+        {/snippet}
+
+        <div class="photo-group-container">
+            <AssetGrid
+                data={galleryState.images}
+                view={viewSettings.current}
+                assetSnippet={imageCard}
+                customSnippet={justifiedGrid}
+                {scopeId}
+                assetDblClick={(
+                    _e: MouseEvent & { currentTarget: EventTarget & (HTMLDivElement | HTMLTableRowElement) },
+                    asset: ImageAsset
+                ) => {
+                    openLightbox(asset);
+                }}
+                onassetcontext={(detail: { asset: ImageAsset; anchor: { x: number; y: number } | HTMLElement }) => {
                     ctxAnchor = detail.anchor;
                     ctxShowMenu = true;
                 }}

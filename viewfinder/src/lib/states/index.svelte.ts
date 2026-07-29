@@ -178,7 +178,7 @@ class ViewSettingsState {
     displayOptions: MenuItem[] = [
         { id: "view-grid", label: "Grid" },
         { id: "view-list", label: "List" },
-        { id: "view-thumbnails", label: "Thumbnails" }
+        { id: "view-custom", label: "Custom" }
     ];
 
     setView(view: AssetGridView) {

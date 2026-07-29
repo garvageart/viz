@@ -32,6 +32,7 @@
         updateImage
     } from "$lib/api";
     import Dropdown from "$lib/components/context-menus/Dropdown.svelte";
+    import AssetGrid from "$lib/components/grid/AssetGrid.svelte";
     import PhotoAssetGrid from "$lib/components/grid/PhotoAssetGrid.svelte";
     import ImageLabelViewer from "$lib/components/image-tools/ImageLabelViewer.svelte";
     import StarRating from "$lib/components/image-tools/StarRating.svelte";
@@ -44,6 +45,7 @@
     import ActiveFiltersTooltip from "$lib/components/tooltips/ActiveFiltersTooltip.svelte";
     import AssetsShell from "$lib/components/ui/AssetsShell.svelte";
     import Badge from "$lib/components/ui/Badge.svelte";
+    import BasicImageCard from "$lib/components/ui/BasicImageCard.svelte";
     import Button from "$lib/components/ui/Button.svelte";
     import DragAndDropUpload from "$lib/components/ui/DragAndDropUpload.svelte";
     import IconButton from "$lib/components/ui/IconButton.svelte";
@@ -271,26 +273,21 @@
     );
 
     // Grid props
-    let grid: ComponentProps<typeof PhotoAssetGrid> = $derived({
-        photoCardSnippet: imageCard,
-        view: viewSettings.current === "thumbnails" && viewSettings.showBasic ? "basic" : viewSettings.current,
+    let grid: ComponentProps<typeof AssetGrid<ImageAsset>> = $derived({
+        assetSnippet: imageCard,
+        customSnippet: justifiedGrid,
+        view: viewSettings.current,
         assetGridArray: imageGridArray,
         data: displayData,
         scopeId: scopeId,
-        groupedData: viewSettings.showDates ? consolidatedGroups : undefined,
-        showDateHeaders: viewSettings.showDates,
-        allData: viewSettings.showDates ? allImagesFlat : undefined,
-        onLoadMore: () => paginate(),
         assetGridDisplayProps: {
             style: `padding: 0em ${isLayoutPage() ? "1em" : "2em"};`
         },
-        assetDblClick: (_e: MouseEvent, asset: ImageAsset) => {
+        assetDblClick: (_e, asset: ImageAsset) => {
             lightboxImage = asset;
         },
-        // Context menu event from PhotoAssetGrid: { asset, anchor }
         onassetcontext: (detail: { asset: ImageAsset; anchor: { x: number; y: number } | HTMLElement }) => {
             const { asset, anchor } = detail;
-            // Make sure this asset is part of the selection for context actions
             if (!selectionScope.has(asset)) {
                 selectionScope.select(asset);
             }
@@ -749,14 +746,10 @@
                     action: () => {
                         viewSettings.toggleShowDates();
                     }
-                }
-            );
-        } else if (viewSettings.current === "thumbnails") {
-            baseItems.push(
-                { id: "display-separator-thumb", label: "", separator: true },
+                },
                 {
                     id: "display-basic-thumb",
-                    label: "Basic",
+                    label: "Custom",
                     iconName: viewSettings.showBasic ? ("check_box" as const) : ("check_box_outline_blank" as const),
                     action: () => {
                         viewSettings.toggleShowBasic();
@@ -827,6 +820,30 @@
 
 {#snippet imageCard(asset: ImageAsset, cardState: { isSelected: boolean })}
     <ImageCard {asset} isSelected={cardState.isSelected} />
+{/snippet}
+
+{#snippet justifiedGrid()}
+    <PhotoAssetGrid
+        photoCardSnippet={imageCard}
+        data={displayData}
+        allData={viewSettings.showDates ? allImagesFlat : undefined}
+        groupedData={viewSettings.showDates ? consolidatedGroups : undefined}
+        showDateHeaders={viewSettings.showDates}
+        {scopeId}
+        onLoadMore={() => paginate()}
+        assetDblClick={(_e: MouseEvent, asset: ImageAsset) => {
+            lightboxImage = asset;
+        }}
+        onassetcontext={(detail: { asset: ImageAsset; anchor: { x: number; y: number } | HTMLElement }) => {
+            const { asset, anchor } = detail;
+            if (!selectionScope.has(asset)) {
+                selectionScope.select(asset);
+            }
+            selectionScope.active = asset;
+            ctxAnchor = anchor;
+            ctxShowMenu = true;
+        }}
+    />
 {/snippet}
 
 {#snippet toolbarSnippet()}
@@ -1004,7 +1021,6 @@
 >
     <AssetsShell
         bind:grid
-        gridComponent={PhotoAssetGrid}
         pagination={collectionState.pagination}
         {noAssetsSnippet}
         {selectionToolbarSnippet}
