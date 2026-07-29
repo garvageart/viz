@@ -16,12 +16,13 @@
     import PhotoAssetGrid from "$lib/components/grid/PhotoAssetGrid.svelte";
     import ImageLabelViewer from "$lib/components/image-tools/ImageLabelViewer.svelte";
     import StarRating from "$lib/components/image-tools/StarRating.svelte";
-    import CollectionSelectionModal from "$lib/components/modals/CollectionSelectionModal.svelte";
+    import CollectionSelectionModal, {
+        modalOptions as collectionModalOptions
+    } from "$lib/components/modals/CollectionSelectionModal.svelte";
     import FilterModal, { FilterModalOptions } from "$lib/components/modals/FilterModal.svelte";
     import { modalsManager } from "$lib/components/modals/manager/ModalManager.svelte";
     import VizViewContainer from "$lib/components/panels/VizViewContainer.svelte";
     import ActiveFiltersTooltip from "$lib/components/tooltips/ActiveFiltersTooltip.svelte";
-    import BasicImageCard from "$lib/components/ui/BasicImageCard.svelte";
     import Button from "$lib/components/ui/Button.svelte";
     import DragAndDropUpload from "$lib/components/ui/DragAndDropUpload.svelte";
     import IconButton from "$lib/components/ui/IconButton.svelte";
@@ -57,9 +58,17 @@
     let displayMenuItems: MenuItem[] = $derived.by(() => {
         const baseItems: MenuItem[] = [
             {
-                id: "display-grid",
+                id: "display-custom",
                 label: "Grid",
-                iconName: viewSettings.current === "grid" ? ("check" as const) : undefined,
+                iconName: viewSettings.current === "custom" ? "check" : undefined,
+                action: () => {
+                    viewSettings.setView("custom");
+                }
+            },
+            {
+                id: "display-grid",
+                label: "Thumbnails",
+                iconName: viewSettings.current === "grid" ? "check" : undefined,
                 action: () => {
                     viewSettings.setView("grid");
                 }
@@ -67,28 +76,20 @@
             {
                 id: "display-list",
                 label: "List",
-                iconName: viewSettings.current === "list" ? ("check" as const) : undefined,
+                iconName: viewSettings.current === "list" ? "check" : undefined,
                 action: () => {
                     viewSettings.setView("list");
-                }
-            },
-            {
-                id: "display-custom",
-                label: "Custom",
-                iconName: viewSettings.current === "custom" ? ("check" as const) : undefined,
-                action: () => {
-                    viewSettings.setView("custom");
                 }
             }
         ];
 
-        if (viewSettings.current === "grid") {
+        if (viewSettings.current === "custom") {
             baseItems.push(
                 { id: "display-separator", label: "", separator: true },
                 {
                     id: "display-show-dates",
                     label: "Show Dates",
-                    iconName: viewSettings.showDates ? ("check_box" as const) : ("check_box_outline_blank" as const),
+                    iconName: viewSettings.showDates ? "check_box" : "check_box_outline_blank",
                     action: () => {
                         viewSettings.toggleShowDates();
                     }
@@ -122,18 +123,30 @@
     let isPaginating = $state(false);
 
     // Page state — sort client-side using persisted SortState
-    let sortedImages = $derived(sortCollectionImages(filterManager.apply(galleryState.images), sort));
+    let sortedFilteredImages = $derived.by(() => {
+        console.time("sort time");
+        const sData = sortCollectionImages(filterManager.apply(galleryState.images), sort);
+        console.timeEnd("sort time");
+
+        return sData;
+    });
 
     let groups: DateGroup[] = $derived.by(() => {
-        if (viewSettings.showDates) {
-            return groupImagesByDate(sortedImages) ?? [];
+        console.time("group time");
+        if (viewSettings.showDates || viewSettings.current === "custom") {
+            const gData = groupImagesByDate(sortedFilteredImages);
+            console.timeEnd("group time");
+            return gData;
         }
         return [];
     });
 
     let consolidatedGroups: ConsolidatedGroup[] = $derived.by(() => {
-        if (viewSettings.showDates) {
-            return getConsolidatedGroups(groups);
+        console.time("consolidate time");
+        if (viewSettings.showDates || viewSettings.current === "custom") {
+            const gData = getConsolidatedGroups(groups);
+            console.timeEnd("consolidate time");
+            return gData;
         }
         return [];
     });
@@ -155,9 +168,6 @@
     onDestroy(() => {
         selectionManager.removeScope(scopeId);
     });
-
-    // Flat list of all images for cross-group range selection
-    let allImagesFlat = $derived(consolidatedGroups.flatMap((g) => g.allImages));
 
     // Action menu items for selected images
     let actionMenuItems: MenuItem[] = $derived.by(() => {
@@ -184,7 +194,7 @@
                             imageUidsToAdd: selectionScope.selectedItems.map((img) => img.uid),
                             onSelect: handleCollectionSelect
                         },
-                        { heading: "Select a Collection" }
+                        { heading: "Select a Collection", ...collectionModalOptions }
                     );
                 }
             }
@@ -237,17 +247,17 @@
     let pendingNextUid = $state<string | null>(null);
 
     function nextLightboxImage() {
-        if (!lightboxImage || allImagesFlat.length === 0) {
+        if (!lightboxImage || sortedFilteredImages.length === 0) {
             return;
         }
 
-        const idx = allImagesFlat.findIndex((i) => i.uid === lightboxImage!.uid);
+        const idx = sortedFilteredImages.findIndex((i) => i.uid === lightboxImage!.uid);
         if (idx === -1) {
             return;
         }
 
         const nextIdx = idx + 1;
-        if (nextIdx >= allImagesFlat.length) {
+        if (nextIdx >= sortedFilteredImages.length) {
             if (galleryState.hasMore) {
                 pendingNextUid = lightboxImage.uid;
                 paginate();
@@ -255,15 +265,15 @@
             return;
         }
 
-        lightboxImage = allImagesFlat[nextIdx];
+        lightboxImage = sortedFilteredImages[nextIdx];
     }
 
     function prevLightboxImage() {
-        if (!lightboxImage || allImagesFlat.length === 0) {
+        if (!lightboxImage || sortedFilteredImages.length === 0) {
             return;
         }
 
-        const idx = allImagesFlat.findIndex((i) => i.uid === lightboxImage!.uid);
+        const idx = sortedFilteredImages.findIndex((i) => i.uid === lightboxImage!.uid);
         if (idx === -1) {
             return;
         }
@@ -273,18 +283,18 @@
             return;
         }
 
-        lightboxImage = allImagesFlat[prevIdx];
+        lightboxImage = sortedFilteredImages[prevIdx];
     }
 
     // Auto-advance after pagination loads more images
     $effect(() => {
-        if (!pendingNextUid || allImagesFlat.length === 0) {
+        if (!pendingNextUid || sortedFilteredImages.length === 0) {
             return;
         }
-        const idx = allImagesFlat.findIndex((i) => i.uid === pendingNextUid);
-        if (idx !== -1 && idx + 1 < allImagesFlat.length) {
+        const idx = sortedFilteredImages.findIndex((i) => i.uid === pendingNextUid);
+        if (idx !== -1 && idx + 1 < sortedFilteredImages.length) {
             pendingNextUid = null;
-            lightboxImage = allImagesFlat[idx + 1];
+            lightboxImage = sortedFilteredImages[idx + 1];
         }
     });
 
@@ -383,27 +393,21 @@
         return results;
     }
 
-    function scheduleAddImages(newRaw: ImageUploadSuccess[]) {
+    async function scheduleAddImages(newRaw: ImageUploadSuccess[]) {
         if (!newRaw || newRaw.length === 0) {
             return;
         }
 
         pendingNewRaw.push(...newRaw);
 
-        if (addImagesDebounceTimer) {
-            clearTimeout(addImagesDebounceTimer);
+        const batch = pendingNewRaw.slice();
+        pendingNewRaw = [];
+        // addImagesDebounceTimer = undefined;
+
+        const imagesToAdd = await resolveRawToImages(batch);
+        if (imagesToAdd.length > 0) {
+            galleryState.images.push(...imagesToAdd);
         }
-
-        addImagesDebounceTimer = window.setTimeout(async () => {
-            const batch = pendingNewRaw.slice();
-            pendingNewRaw = [];
-            addImagesDebounceTimer = undefined;
-
-            const imagesToAdd = await resolveRawToImages(batch);
-            if (imagesToAdd.length > 0) {
-                galleryState.images.push(...imagesToAdd);
-            }
-        }, ADD_IMAGES_DEBOUNCE_MS) as unknown as number;
     }
 
     async function addImagesToViz() {
@@ -492,7 +496,7 @@
                                     imageUidsToAdd: selectionScope.selectedItems.map((img) => img.uid),
                                     onSelect: handleCollectionSelect
                                 },
-                                { heading: "Select a Collection" }
+                                { heading: "Select a Collection", ...collectionModalOptions }
                             );
                         }}
                         ondragenter={(e) => {
@@ -526,11 +530,11 @@
                                     imageUidsToAdd: uidsData,
                                     onSelect: handleCollectionSelect
                                 },
-                                { heading: "Select a Collection" }
+                                { heading: "Select a Collection", ...collectionModalOptions }
                             );
                         }}
                     >
-                        Add to Collection
+                        <span>Add to Collection</span>
                     </IconButton>
                     <ImageLabelViewer
                         variant="expanded"
@@ -702,7 +706,7 @@
 
         {#snippet justifiedGrid()}
             <PhotoAssetGrid
-                bind:allData={allImagesFlat}
+                bind:allData={sortedFilteredImages}
                 data={galleryState.images}
                 groupedData={viewSettings.showDates ? consolidatedGroups : undefined}
                 gridConfig={{

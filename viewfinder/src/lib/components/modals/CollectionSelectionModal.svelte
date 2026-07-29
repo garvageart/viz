@@ -2,8 +2,8 @@
     import type { ModalOptions } from "./manager/ModalManager.svelte";
 
     export const modalOptions: ModalOptions = {
-        width: "90%",
-        height: "80%"
+        width: "80%",
+        height: "90%"
     };
 </script>
 
@@ -176,14 +176,13 @@
     </VizViewContainer>
 
     <div class="modal-actions">
-        <Button variant="small" onclick={openCreateCollectionModal}>Create Collection</Button>
+        <Button variant="info" onclick={openCreateCollectionModal}><span>Create Collection</span></Button>
         <Button
-            variant="small"
-            style="background-color: var(--viz-primary);"
+            variant="success"
             disabled={!selectedCollection || selectedCollection.isFullyContained}
             onclick={() => handleSelect(selectedCollection!)}
         >
-            Confirm
+            <span>Confirm</span>
         </Button>
     </div>
 </div>

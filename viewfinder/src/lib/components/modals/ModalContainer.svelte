@@ -25,8 +25,8 @@
     >
         <ModalLightbox
             heading={modal.options?.heading ?? compOptions?.heading}
-            width={compOptions?.width ?? modal.options?.width ?? "50%"}
-            height={compOptions?.height ?? modal.options?.height}
+            width={modal.options?.width ?? compOptions?.width ?? "50%"}
+            height={modal.options?.height ?? compOptions?.height}
             applyPadding={modal.options?.applyPadding ?? compOptions?.applyPadding}
             zIndex={modal.index + 1}
             onclickClose={() => modalsManager.dismiss(modal.id, "close-button")}

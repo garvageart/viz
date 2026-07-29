@@ -18,7 +18,9 @@
     import { detectFolderName, traverseFileTree } from "$lib/utils/files";
     import { invalidateViz } from "$lib/views/views.svelte";
     import CollectionModal from "../modals/CollectionModal.svelte";
-    import CollectionSelectionModal from "../modals/CollectionSelectionModal.svelte";
+    import CollectionSelectionModal, {
+        modalOptions as collectionModalOptions
+    } from "../modals/CollectionSelectionModal.svelte";
     import ConfirmationModal from "../modals/ConfirmationModal.svelte";
     import { modalsManager } from "../modals/manager/ModalManager.svelte";
     import Button from "./Button.svelte";
@@ -745,7 +747,7 @@
                     }
                 }
             },
-            { heading: "Add to Existing Collection" }
+            { heading: "Add to Existing Collection", ...collectionModalOptions }
         );
     }
 
@@ -802,7 +804,7 @@
                             }
                         }
                     },
-                    { heading: "Add to Existing Collection" }
+                    { heading: "Add to Existing Collection", ...collectionModalOptions }
                 );
                 return;
             }
@@ -911,7 +913,7 @@
                         }
                     }
                 },
-                { heading: "Add to Existing Collection" }
+                { heading: "Add to Existing Collection", ...collectionModalOptions }
             );
         } catch (err) {
             console.error("Add to existing collection error:", err);
