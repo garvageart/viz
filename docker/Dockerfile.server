@@ -7,10 +7,10 @@ WORKDIR /app
 ARG PNPM_VERSION=latest
 RUN npm install -g pnpm@${PNPM_VERSION} --fetch-retries 5 --fetch-retry-mintimeout 20000 --fetch-retry-maxtimeout 120000
 
-# Copy workspace configuration and package manifests first for optimal layer caching
-COPY pnpm-lock.yaml pnpm-workspace.yaml package.json .npmrc ./
-COPY viewfinder/package.json ./viewfinder/
-COPY scripts/js/package.json ./scripts/js/
+# Copy workspace configuration and source code
+COPY pnpm-lock.yaml pnpm-workspace.yaml package.json .npmrc .prettierrc .prettierignore ./
+COPY viewfinder ./viewfinder
+COPY scripts/js ./scripts/js
 
 # Set pnpm store directory, fetch timeout, and retries for CI network resilience
 ENV NPM_CONFIG_STORE_DIR=/root/.local/share/pnpm/store
@@ -20,11 +20,6 @@ ENV NPM_CONFIG_FETCH_RETRIES=5
 # Install dependencies with BuildKit store cache
 RUN --mount=type=cache,id=pnpm,target=/root/.local/share/pnpm/store \
     pnpm install --frozen-lockfile --prod=false --fetch-timeout 600000
-
-# Copy source code after dependencies are installed
-COPY viewfinder ./viewfinder
-COPY scripts/js ./scripts/js
-COPY .prettierrc .prettierignore ./
 
 # Build frontend
 WORKDIR /app
