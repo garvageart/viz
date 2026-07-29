@@ -220,7 +220,7 @@
         </div>
         <div class="header-text">
             <h3>Storage Path Template</h3>
-            <p>Customize the directory and naming structure of your stored media assets.</p>
+            <span>Customize the directory and naming structure of your stored media assets.</span>
         </div>
     </div>
 
@@ -228,6 +228,7 @@
     <div class="active-badge-bar">
         <div class="info-tag">
             <MaterialIcon
+                fill={true}
                 iconName={template !== activeTemplate ? "warning" : "check_circle"}
                 class={template !== activeTemplate ? "warning-icon" : "success-icon"}
             />
@@ -238,10 +239,10 @@
                 {/if}
             </span>
         </div>
-        <p class="config-note">
+        <span class="config-note">
             To save a new template permanently, click the "Save Template" button below to write the changes back to the
             server config file.
-        </p>
+        </span>
     </div>
 
     <div class="designer-grid">
@@ -251,11 +252,11 @@
                 <div class="label-row">
                     <div class="designer-header">
                         <h4 class="designer-label">Template Designer</h4>
-                        <p>
+                        <span>
                             Use the input below to define your storage path template (slashes are cleaned for safe
                             paths). You can also click on the available variables on the right to insert them at your
                             cursor position.
-                        </p>
+                        </span>
                     </div>
 
                     <div class="action-buttons">
@@ -306,7 +307,7 @@
                 <div class="preview-header">
                     <span class="preview-title">Preview</span>
                     <IconButton
-                        variant="mini"
+                        variant="primary"
                         class="preview-copy-btn"
                         iconName={copied ? "check" : "content_copy"}
                         onclick={copyTemplate}
@@ -326,9 +327,9 @@
                             class="root-dir"
                             title={`${config?.base_directory}/${config?.upload?.location}/${templateCompileResult.path}`}
                         >
-                            {config?.base_directory}/{config?.upload?.location}/<span class="rendered-path"
-                                >{templateCompileResult.path}</span
-                            ></span
+                            <span class="base-directory">{config?.base_directory}/{config?.upload?.location}</span><span
+                                class="path-seperator">/</span
+                            ><span class="rendered-path">{templateCompileResult.path}</span></span
                         >
                     {/if}
                 </div>
@@ -345,10 +346,10 @@
             <div class="context-section">
                 <div class="context-header">
                     <h4>Template Variables</h4>
-                    <p>
+                    <span>
                         Adjust the example variable values below to see how they affect the rendered path in the preview
                         above.
-                    </p>
+                    </span>
                 </div>
                 <div class="context-grid">
                     <div class="field-item">
@@ -378,7 +379,7 @@
         <div class="tokens-section">
             <div class="tokens-header">
                 <h4>Available Variables</h4>
-                <p>Click any token below to insert it at your cursor position.</p>
+                <span>Click any token below to insert it at your cursor position.</span>
             </div>
 
             <div class="tokens-scrollable">
@@ -519,7 +520,7 @@
                 color: var(--viz-text-primary);
             }
 
-            p {
+            span {
                 margin: var(--viz-spacing-xxs) 0 0;
                 font-size: var(--viz-font-size-std);
                 color: var(--viz-text-secondary);
@@ -630,7 +631,7 @@
                     color: var(--viz-text-primary);
                 }
 
-                p {
+                span {
                     margin: var(--viz-spacing-xs) 0 0;
                     font-size: var(--viz-font-size-std);
                     color: var(--viz-text-secondary);
@@ -677,9 +678,14 @@
             border-bottom: $preview-panel-border;
 
             :global(.preview-copy-btn) {
-                color: var(--viz-20-dark);
+                color: var(--viz-text-color-light);
                 padding: var(--viz-spacing-xs) var(--viz-spacing-sm);
                 border-color: var(--viz-text-secondary);
+            }
+
+            :global(.preview-copy-btn:hover) {
+                color: var(--viz-text-color-dark);
+                background-color: var(--viz-surface-hover);
             }
 
             .preview-title {
@@ -694,11 +700,24 @@
             padding: var(--viz-spacing-lg);
             font-family: var(--viz-mono-font);
             font-size: var(--viz-font-size-lg);
-            word-break: break-all;
-            line-height: 1.5;
+            word-break: normal;
 
             .root-dir {
+                text-wrap: nowrap;
                 color: #888a8d;
+                display: inline-flex;
+            }
+
+            .base-directory {
+                display: block;
+                overflow: hidden;
+                text-overflow: ellipsis;
+                white-space: nowrap;
+                width: 40%;
+            }
+
+            .path-seperator {
+                margin-left: 0 var(--viz-spacing-sm);
             }
 
             .rendered-path {
@@ -748,7 +767,7 @@
                 color: var(--viz-text-primary);
             }
 
-            p {
+            span {
                 margin: var(--viz-spacing-xs) 0 0;
                 font-size: var(--viz-font-size-std);
                 color: var(--viz-text-secondary);
@@ -795,7 +814,7 @@
             color: var(--viz-text-primary);
         }
 
-        p {
+        span {
             margin: var(--viz-spacing-xs) 0 0;
             font-size: var(--viz-font-size-std);
             color: var(--viz-text-secondary);

@@ -215,8 +215,14 @@
                         <div class="efficiency-info">
                             <IconBadge iconName="speed" size="1.25rem" variant="success" />
                             <div class="meta">
-                                <div class="label">Cache Hits</div>
+                                <div class="label">Hits</div>
                                 <div class="value">{cacheStatus.hits.toLocaleString()}</div>
+                            </div>
+                            <div class="divider"></div>
+                            <IconBadge iconName="speed" size="1.25rem" variant="warning" />
+                            <div class="meta">
+                                <div class="label">Misses</div>
+                                <div class="value">{cacheStatus.misses.toLocaleString()}</div>
                             </div>
 
                             <div class="divider"></div>
