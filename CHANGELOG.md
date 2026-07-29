@@ -5,6 +5,12 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.23.6] - 2026-07-29
+
+* refactor(viewfinder): update WebSocket event resource targets and load fetch contexts (e1324b81)
+* ci(docker): disable docker-clean and enable apt archive caching in Dockerfile.server (152d13cb)
+* fix(docker): add --prod=false to pnpm install in Dockerfile.server (10c916c9)
+
 ## [0.23.5] - 2026-07-28
 
 * chore: update golang packages (65153e62)
