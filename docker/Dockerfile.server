@@ -7,10 +7,10 @@ WORKDIR /app
 ARG PNPM_VERSION=latest
 RUN npm install -g pnpm@${PNPM_VERSION} --fetch-retries 5 --fetch-retry-mintimeout 20000 --fetch-retry-maxtimeout 120000
 
-# Copy workspace configuration and source code
+# Copy workspace package configuration first for maximum Docker cache hits
 COPY pnpm-lock.yaml pnpm-workspace.yaml package.json .npmrc .prettierrc .prettierignore ./
-COPY viewfinder ./viewfinder
-COPY scripts/js ./scripts/js
+COPY viewfinder/package.json ./viewfinder/
+COPY scripts/js/package.json ./scripts/js/
 
 # Set pnpm store directory, fetch timeout, and retries for CI network resilience
 ENV NPM_CONFIG_STORE_DIR=/root/.local/share/pnpm/store
@@ -20,6 +20,10 @@ ENV NPM_CONFIG_FETCH_RETRIES=5
 # Install dependencies with BuildKit store cache
 RUN --mount=type=cache,id=pnpm,target=/root/.local/share/pnpm/store \
     pnpm install --frozen-lockfile --prod=false --fetch-timeout 600000
+
+# Copy workspace source code after pnpm install so source edits do not invalidate dependency layer
+COPY viewfinder ./viewfinder
+COPY scripts/js ./scripts/js
 
 # Build frontend
 WORKDIR /app
@@ -49,19 +53,29 @@ COPY .libvips-version /tmp/.libvips-version
 RUN --mount=type=cache,target=/tmp/vips-build-cache \
     set -eux; \
     VIPS_VERSION=$(cat /tmp/.libvips-version | tr -d '[:space:]'); \
-    mkdir -p /tmp/vips-build-cache && cd /tmp/vips-build-cache; \
-    if [ ! -d "vips-${VIPS_VERSION}" ]; then \
-        curl -fsSL "https://github.com/libvips/libvips/releases/download/v${VIPS_VERSION}/vips-${VIPS_VERSION}.tar.xz" -o vips.tar.xz; \
-        tar xJf vips.tar.xz; \
-        cd "vips-${VIPS_VERSION}"; \
-        meson setup build --prefix=/usr; \
+    CACHE_DIR="/tmp/vips-build-cache/vips-${VIPS_VERSION}-installed"; \
+    if [ -d "$CACHE_DIR" ] && [ -f "$CACHE_DIR/libvips.so" ]; then \
+        echo "Using persistent BuildKit cache for libvips v${VIPS_VERSION}..."; \
+        cp -d $CACHE_DIR/*.so* /usr/lib/ 2>/dev/null || true; \
+        cp -d $CACHE_DIR/*.so* /usr/lib/*-linux-gnu/ 2>/dev/null || true; \
+        mkdir -p /vips-libs && cp -d $CACHE_DIR/*.so* /vips-libs/; \
+        ldconfig || true; \
     else \
+        mkdir -p /tmp/vips-build-cache && cd /tmp/vips-build-cache; \
+        if [ ! -d "vips-${VIPS_VERSION}" ]; then \
+            curl -fsSL "https://github.com/libvips/libvips/releases/download/v${VIPS_VERSION}/vips-${VIPS_VERSION}.tar.xz" -o vips.tar.xz; \
+            tar xJf vips.tar.xz; \
+        fi; \
         cd "vips-${VIPS_VERSION}"; \
-    fi; \
-    ninja -C build; \
-    ninja -C build install; \
-    ldconfig || true; \
-    mkdir -p /vips-libs && cp -d /usr/lib/libvips.so* /usr/lib/*-linux-gnu/libvips.so* /vips-libs/ 2>/dev/null || true
+        if [ ! -d "build" ]; then \
+            meson setup build --prefix=/usr; \
+        fi; \
+        ninja -C build; \
+        ninja -C build install; \
+        ldconfig || true; \
+        mkdir -p /vips-libs && cp -d /usr/lib/libvips.so* /usr/lib/*-linux-gnu/libvips.so* /vips-libs/ 2>/dev/null || true; \
+        mkdir -p "$CACHE_DIR" && cp -d /vips-libs/* "$CACHE_DIR/"; \
+    fi
 
 WORKDIR /app
 
@@ -69,7 +83,14 @@ WORKDIR /app
 COPY go.mod go.sum go.work go.work.sum ./
 COPY cmd/api/go.mod cmd/api/go.sum ./cmd/api/
 
-# Accept build arguments for version injection
+# Download Go dependencies with BuildKit module cache
+RUN --mount=type=cache,target=/go/pkg/mod \
+    go mod download -x
+
+# Copy the rest of the backend code
+COPY . .
+
+# Accept build arguments for version injection (placed after go mod download to avoid invalidating mod cache)
 ARG VERSION
 ARG BUILD_ID
 ARG BUILD_DATE
@@ -78,13 +99,6 @@ ARG SOURCE_REF
 ARG SOURCE_URL
 ARG REPOSITORY
 ARG REPOSITORY_URL
-
-# Download Go dependencies with BuildKit module cache
-RUN --mount=type=cache,target=/go/pkg/mod \
-    go mod download -x
-
-# Copy the rest of the backend code
-COPY . .
 
 # Build backend with Go build and module cache
 RUN --mount=type=cache,target=/go/pkg/mod \
