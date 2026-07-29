@@ -2,7 +2,7 @@
     import MaterialIcon from "$lib/components/ui/MaterialIcon.svelte";
 
     interface Props {
-        size: string;
+        size?: string;
     }
 
     let { size = "1rem" }: Props = $props();
