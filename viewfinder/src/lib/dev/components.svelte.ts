@@ -15,7 +15,7 @@ export function measureComponentRenderTimes(message?: string) {
         const endTime = window.performance.now();
 
         if (message) {
-            console.log(message, startTime - endTime, "ms");
+            console.log(message, endTime - startTime, "ms");
         }
 
         console.log(`Render time for component: ${endTime - startTime} ms`);
