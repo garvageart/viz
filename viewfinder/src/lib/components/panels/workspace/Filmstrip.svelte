@@ -1,6 +1,6 @@
 <script lang="ts">
     import { page } from "$app/state";
-    import { type ImageAsset } from "$lib/api";
+    import { type Collection, type CollectionDetailResponse, type ImageAsset } from "$lib/api";
     import ImageCard from "$lib/components/ui/ImageCard.svelte";
     import ImageLightbox from "$lib/components/ui/ImageLightbox.svelte";
     import MaterialIcon from "$lib/components/ui/MaterialIcon.svelte";
@@ -30,6 +30,10 @@
 
     let selectionAnchor = $state<ImageAsset>();
 
+    function isCollectionData(data: unknown): data is Collection | CollectionDetailResponse {
+        return typeof data === "object" && data !== null && "uid" in data;
+    }
+
     let collection = $derived.by(() => {
         if (!filmstripScope?.id) {
             return undefined;
@@ -47,13 +51,13 @@
         }
 
         // 1. Try to get it from the workspace views
-        const view = workspaceState.workspace?.findViewWithPath("/collections/" + collectionUid);
-        if (view?.viewData?.data) {
-            return view.viewData.data;
+        const viewData = workspaceState.workspace?.findViewWithPath("/collections/" + collectionUid)?.viewData?.data;
+        if (isCollectionData(viewData)) {
+            return viewData;
         }
 
         // 2. Try to get it from the current page data
-        if (page.data?.uid === collectionUid) {
+        if (page.data?.uid === collectionUid && isCollectionData(page.data)) {
             return page.data;
         }
 

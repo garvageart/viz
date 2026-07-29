@@ -1,5 +1,5 @@
 <script lang="ts" module>
-    import { TabGroup } from "$lib/layouts/model.svelte";
+    import { type LayoutNode, TabGroup } from "$lib/layouts/model.svelte";
     import { workspaceState } from "$lib/states/workspace.svelte";
 
     export function openCollection(collection: Collection, currentGroup: TabGroup | null) {
@@ -29,7 +29,7 @@
         console.debug(`[openCollection] No match found. Creating new view.`);
         const view = new VizView({
             name: collection.name,
-            component: CollectionPage as any,
+            component: CollectionPage,
             path: collectionPath
         });
 
@@ -39,7 +39,7 @@
             targetGroup.addTab(view);
         } else {
             // Fallback: find first TabGroup in the tree
-            const findFirstGroup = (node: any): TabGroup | null => {
+            const findFirstGroup = (node: LayoutNode): TabGroup | null => {
                 if (node instanceof TabGroup) {
                     return node;
                 }

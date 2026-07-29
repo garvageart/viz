@@ -90,7 +90,7 @@ export class FilterScope<F, A extends Asset> {
     type: "images" | "collections";
     criteria: F = $state() as F;
     facets: any = $state();
-    uiState: { expanded: Record<string, boolean> } = $state() as any;
+    uiState: { expanded: Record<string, boolean> } = $state({ expanded: {} });
 
     constructor(
         type: "images" | "collections",

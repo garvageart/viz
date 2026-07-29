@@ -24,6 +24,7 @@ export interface SerializedTabGroup {
 }
 
 export type SerializedNode = SerializedSplitNode | SerializedTabGroup;
+export type LayoutNode = SplitNode | TabGroup;
 
 export interface SerializedWorkspace {
     root: SerializedNode;

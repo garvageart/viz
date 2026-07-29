@@ -6,7 +6,10 @@ import { debugMode } from "$lib/states/index.svelte";
 import { sleep } from "$lib/utils/misc";
 
 export type TabDropHandler<T extends any, V = VizView<any, any>> = (data: T, view: V) => Promise<void>;
-export type TabActions<Data, C extends Component<any, any, any> | undefined = Component<any, any, any> | undefined> = {
+export type TabActions<
+    Data extends Record<string, any> = Record<string, any>,
+    C extends Component<any, any, any> | undefined = Component<any, any, any> | undefined
+> = {
     dropHandler: TabDropHandler<any, VizView<C, Data>>;
     label: string;
 };
@@ -39,11 +42,7 @@ export async function invalidateViz(opts?: { delay?: number; skipInvalidateAll?:
     if (opts?.skipInvalidateAll) {
         return;
     }
-    try {
-        return await invalidateAll();
-    } catch (e) {
-        console.warn("[Views] Failed to invalidateAll:", e);
-    }
+    await invalidateAll();
 }
 
 export interface SerializedVizView {
@@ -57,7 +56,7 @@ export interface SerializedVizView {
 
 class VizView<
     C extends Component<any, any, any> | undefined = Component<any, any, any> | undefined,
-    Data = C extends Component<infer P, any, any> ? (P extends { data: infer D } ? D : any) : any
+    Data extends Record<string, any> = Record<string, any>
 > {
     name = $state<string>("");
     opticalCenterFix = $state<number | undefined>(undefined);
@@ -92,28 +91,22 @@ class VizView<
     }) {
         this.name = opts.name;
         this.component = opts.component;
+        this.opticalCenterFix = opts.opticalCenterFix;
         this.path = opts.path;
         this.openPathFromTab = opts.openPathFromTab;
-        this.opticalCenterFix = opts.opticalCenterFix ?? 0;
+        this.id = opts.id ?? idCount++;
+        this.isActive = opts.isActive ?? false;
+        this.locked = opts.locked ?? false;
+        this.menuItems = opts.menuItems;
 
         if (opts.tabDropHandlers) {
             this.tabDropHandlers = opts.tabDropHandlers;
         }
 
-        if (opts.id !== undefined) {
-            this.id = opts.id;
-            // Update the global counter to ensure subsequent auto-generated IDs
-            // do not collide with IDs from hydrated/serialized views.
-            if (this.id >= idCount) {
-                idCount = this.id + 1;
-            }
-        } else {
-            this.id = idCount++;
+        // Ensure idCount stays ahead
+        if (this.id >= idCount) {
+            idCount = this.id + 1;
         }
-
-        this.isActive = opts.isActive ?? false;
-        this.locked = opts.locked ?? false;
-        this.menuItems = opts.menuItems;
     }
 
     getTabDropHandler(mimeType: string) {
@@ -135,18 +128,12 @@ class VizView<
         }
     }
 
-    async getComponentData(): Promise<void | {
-        type: "loaded";
-        status: number;
-        data: any;
-    }> {
-        // Register dependency on invalidationVersion first so even views without path
-        // will re-evaluate derivedViewData (and thus re-render) when invalidation happens.
-        const version = invalidationState.version;
-
-        if (!this.path || DYNAMIC_ROUTE_REGEX.test(this.path)) {
-            return;
+    async getComponentData() {
+        if (!this.path) {
+            return undefined;
         }
+
+        const version = invalidationState.version;
 
         if (debugMode) {
             console.log(`Loading data ${this.path}`);
@@ -157,7 +144,11 @@ class VizView<
 
         const result = await preloadData(urlWithCacheBust);
         if (result.type === "loaded" && result.status === 200) {
-            this.viewData = result as any;
+            this.viewData = {
+                type: "loaded",
+                status: result.status,
+                data: result.data as Data
+            };
             return result;
         }
     }
@@ -168,8 +159,7 @@ class VizView<
     });
 
     /**
-     * Serializes the view to a plain object for localStorage
-     * Excludes component and viewData which cannot be serialized
+     * Serializes the view state for persistence
      */
     toJSON(): SerializedVizView {
         return {
@@ -177,7 +167,7 @@ class VizView<
             opticalCenterFix: this.opticalCenterFix,
             id: this.id,
             isActive: this.isActive,
-            locked: this.locked,
+            locked: this.locked ?? false,
             path: this.path
         };
     }
@@ -189,7 +179,7 @@ class VizView<
      */
     static fromJSON<
         C extends Component<any, any, any> | undefined = Component<any, any, any> | undefined,
-        Data = C extends Component<infer P, any, any> ? (P extends { data: infer D } ? D : any) : any
+        Data extends Record<string, any> = Record<string, any>
     >(
         serialized: SerializedVizView,
         component: C | undefined,
