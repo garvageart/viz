@@ -4,7 +4,7 @@
 
     let statusCode = $derived(page.status);
     let errorMessage = $derived(page.error?.message ?? "An unexpected error occurred.");
-    let stackTrace = $derived((page.error as any)?.stack);
+    let stackTrace = $derived((page.error as Error | null)?.stack);
 </script>
 
 <ErrorLayout {statusCode} {errorMessage} {stackTrace} />

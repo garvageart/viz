@@ -1,13 +1,11 @@
 <script lang="ts">
     import { dev } from "$app/environment";
     import { afterNavigate, beforeNavigate } from "$app/navigation";
-    import { page } from "$app/state";
-    import { updated } from "$app/stores";
+    import { page, updated } from "$app/state";
     import "@fontsource-variable/geist/index.css";
     import "@fontsource-variable/manrope/index.css";
     import "@fontsource-variable/roboto-mono/index.css";
     import hotkeys from "hotkeys-js";
-    import { fade } from "svelte/transition";
     import ModalRenderer from "$lib/components/modals/ModalContainer.svelte";
     import { modalsManager } from "$lib/components/modals/manager/ModalManager.svelte";
     import "$lib/components/tooltips/tooltip.scss";
@@ -86,7 +84,7 @@
 
     beforeNavigate(({ to, willUnload }) => {
         loadingState.startNavigation();
-        if ($updated && !willUnload && to) {
+        if (updated && !willUnload && to) {
             location.href = to.url.href;
         }
     });

@@ -1,5 +1,5 @@
 <script lang="ts">
-    import { onDestroy, onMount } from "svelte";
+    import { onMount } from "svelte";
     import { type ImageAsset, getFullImagePath } from "$lib/api";
     import IconButton from "$lib/components/ui/IconButton.svelte";
     import InputSelect from "$lib/components/ui/InputSelect.svelte";
@@ -70,7 +70,6 @@
 
     let canvasEl: HTMLCanvasElement;
     let ctx: CanvasRenderingContext2D | undefined = $state();
-    let resizeObserver: ResizeObserver | undefined = $state();
 
     // UI / selection state
     let selectedChannel = $state<HistogramChannels>("all");
@@ -413,35 +412,15 @@
     onMount(() => {
         ctx = canvasEl.getContext("2d") || undefined;
 
-        if (typeof ResizeObserver !== "undefined") {
-            resizeObserver = new ResizeObserver(() => {
-                resizeCanvas();
-                scheduleRender();
-            });
-            resizeObserver.observe(histogramEl);
-        } else {
-            const onResize = () => {
-                resizeCanvas();
-                scheduleRender();
-            };
-            window.addEventListener("resize", onResize);
-            resizeObserver = {
-                disconnect: () => window.removeEventListener("resize", onResize)
-            } as any;
-        }
+        const observer = new ResizeObserver(() => {
+            resizeCanvas();
+            scheduleRender();
+        });
+        observer.observe(histogramEl);
 
-        canvasEl.addEventListener("pointerdown", pointerDown);
-        canvasEl.addEventListener("pointermove", pointerMove);
-        window.addEventListener("pointerup", pointerUp);
-
-        // initial render
         scheduleRender();
-    });
 
-    onDestroy(() => {
-        canvasEl.removeEventListener("pointerdown", pointerDown);
-        canvasEl.removeEventListener("pointermove", pointerMove);
-        window.removeEventListener("pointerup", pointerUp);
+        return () => observer.disconnect();
     });
 
     function resetCanvas() {
@@ -461,14 +440,6 @@
             scheduleRender();
         } else {
             clearCanvas();
-        }
-    });
-
-    onDestroy(() => {
-        if (resizeObserver) {
-            try {
-                resizeObserver.disconnect();
-            } catch (e) {}
         }
     });
 </script>
@@ -493,7 +464,14 @@
 
         <IconButton iconName="refresh" onclick={resetCanvas} title="Reset Histogram" />
     </div>
-    <canvas class="no-select" oncontextmenu={(e) => e.preventDefault()} bind:this={canvasEl}></canvas>
+    <canvas
+        class="no-select"
+        oncontextmenu={(e) => e.preventDefault()}
+        onpointerdown={pointerDown}
+        onpointermove={pointerMove}
+        onpointerup={pointerUp}
+        bind:this={canvasEl}
+    ></canvas>
     {#snippet stat(label: string, value: string)}
         <div class="stat-row" title={value}>
             <strong>{label}:</strong>

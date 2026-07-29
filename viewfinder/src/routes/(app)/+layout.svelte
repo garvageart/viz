@@ -6,7 +6,6 @@
     import LoadingSpinner from "$lib/components/ui/LoadingSpinner.svelte";
     import DownloadPanel from "$lib/components/ui/panels/DownloadPanel.svelte";
     import UploadPanel from "$lib/components/ui/panels/UploadPanel.svelte";
-    import { loadRuntimeConfig } from "$lib/runtime-config";
     import { debugMode, download, isMobile, sortState, upload } from "$lib/states/index.svelte";
     import { registerReady } from "$lib/stores/appReady";
     import { invalidateViz } from "$lib/views/views.svelte";
@@ -91,24 +90,6 @@
             invalidateViz();
         });
     });
-
-    // Fetch runtime config early and have the app wait for it before marking ready
-    if (typeof window !== "undefined") {
-        onMount(() => {
-            const p = loadRuntimeConfig();
-            registerReady(p);
-            p.finally(() => {
-                // warn if still using localhost fallback (client exports this helper)
-                import("$lib/api")
-                    .then((m) => {
-                        try {
-                            m.warnIfLocalhostFallback();
-                        } catch (e) {}
-                    })
-                    .catch(() => {});
-            });
-        });
-    }
 </script>
 
 <div

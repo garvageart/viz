@@ -7,6 +7,7 @@
     import { SelectionScope } from "$lib/states/selection.svelte";
     import { toastState } from "$lib/toast-notifcations/notif-state.svelte";
     import {
+        ALL_SUPPORTED_IMAGES,
         type AllSupportedImageTypes,
         SUPPORTED_IMAGE_TYPES,
         SUPPORTED_RAW_FILES,
@@ -161,14 +162,11 @@
             }
 
             // Filter valid files here to avoid processing invalid ones later
-            const supportedExtensions = [...SUPPORTED_IMAGE_TYPES, ...SUPPORTED_RAW_FILES];
+            const supportedExtensions: readonly string[] = ALL_SUPPORTED_IMAGES;
             const validFiles = allFiles.filter((file) => {
                 const mimeExt = file.type ? file.type.split("/")[1] : "";
                 const nameExt = file.name.split(".").pop()?.toLowerCase() || "";
-                return (
-                    supportedExtensions.includes(mimeExt as AllSupportedImageTypes) ||
-                    supportedExtensions.includes(nameExt as AllSupportedImageTypes)
-                );
+                return supportedExtensions.includes(mimeExt) || supportedExtensions.includes(nameExt);
             });
 
             if (validFiles.length === 0) {
@@ -578,10 +576,10 @@
                 return;
             }
 
-            const supportedExtensions = [...SUPPORTED_IMAGE_TYPES, ...SUPPORTED_RAW_FILES];
+            const supportedExtensions: readonly string[] = ALL_SUPPORTED_IMAGES;
             const validFiles = allFiles.filter((file) => {
                 const ext = file.type.split("/")[1];
-                return supportedExtensions.includes(ext as any);
+                return supportedExtensions.includes(ext);
             });
 
             if (validFiles.length === 0) {
@@ -844,14 +842,11 @@
                 return;
             }
 
-            const supportedExtensions = [...SUPPORTED_IMAGE_TYPES, ...SUPPORTED_RAW_FILES];
+            const supportedExtensions: readonly string[] = ALL_SUPPORTED_IMAGES;
             const validFiles = allFiles.filter((file) => {
                 const mimeExt = file.type ? file.type.split("/")[1] : "";
                 const nameExt = file.name.split(".").pop()?.toLowerCase() || "";
-                return (
-                    supportedExtensions.includes(mimeExt as AllSupportedImageTypes) ||
-                    supportedExtensions.includes(nameExt as AllSupportedImageTypes)
-                );
+                return supportedExtensions.includes(mimeExt) || supportedExtensions.includes(nameExt);
             });
 
             if (validFiles.length === 0) {

@@ -122,8 +122,8 @@ export const SUPPORTED_RAW_FILES: SupportedRAWFiles[] = [
     "x3f"
 ];
 
-export type AllSupportedImageTypes = SupportedRAWFiles | SupportedImageTypes;
-
+export type AllSupportedImageTypes = (SupportedRAWFiles | SupportedImageTypes)[];
+export const ALL_SUPPORTED_IMAGES: AllSupportedImageTypes = [...SUPPORTED_IMAGE_TYPES, ...SUPPORTED_RAW_FILES];
 /**
  * @deprecated Use ImageObjectData entity class instead
  */

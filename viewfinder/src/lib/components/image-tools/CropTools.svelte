@@ -15,7 +15,7 @@
 
     let selectedRatioLabel = $state<string>("Free");
 
-    const ratios = [
+    const ratios: Array<{ label: string; value: number | null | "original" }> = [
         { label: "Free", value: null },
         { label: "Original", value: "original" },
         { label: "1:1", value: 1 },
@@ -52,7 +52,7 @@
         {#each ratios as ratio}
             <button
                 class="preset-btn {selectedRatioLabel === ratio.label ? 'active' : ''}"
-                onclick={() => selectRatio(ratio.label, ratio.value as any)}
+                onclick={() => selectRatio(ratio.label, ratio.value)}
             >
                 {ratio.label}
             </button>
