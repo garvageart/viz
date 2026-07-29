@@ -126,7 +126,7 @@
                 // flip above using same offset magnitude
                 top = Math.round(rect.top - menuRect.height - offsetY);
             }
-        } else if (anchor && typeof (anchor as any).x === "number") {
+        } else if (anchor && typeof anchor.x === "number") {
             const a = anchor as { x: number; y: number };
             left = Math.round(a.x + offsetX);
             top = Math.round(a.y + offsetY);
