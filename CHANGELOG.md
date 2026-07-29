@@ -5,6 +5,12 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.23.10] - 2026-07-29
+
+* chore(build): update Vite watch config and Go workspace sum (d508dde1)
+* ui(viewfinder): update StorageTemplateSettings layout and admin cache metrics (1912e841)
+* refactor(viewfinder): auto-bind fetch in API client and use sendVizAPIRequest in load functions (a69662b2)
+
 ## [0.23.9] - 2026-07-29
 
 * perf(docker): optimize Dockerfile layer order and build context for fast CI caching (de36c48d)
