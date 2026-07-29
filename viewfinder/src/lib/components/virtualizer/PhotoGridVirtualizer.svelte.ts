@@ -239,21 +239,22 @@ export class PhotoGridVirtualizer {
 
         const { gap } = config;
 
-        // Compute column count
+        // Target item width (default 300px)
+        const targetWidth = config.itemWidth && config.itemWidth > 0 ? config.itemWidth : 300;
+
+        // Compute max columns that fit inside container
         let columns: number;
         if (config.columns && config.columns > 0) {
             columns = config.columns;
-        } else if (config.itemWidth && config.itemWidth > 0) {
-            columns = Math.max(1, Math.floor((width + gap) / (config.itemWidth + gap)));
         } else {
-            columns = 4;
+            columns = Math.max(1, Math.floor((width + gap) / (targetWidth + gap)));
         }
 
-        // Compute actual column width (fill available space, capped at itemWidth if provided)
-        let columnWidth = (width - gap * (columns - 1)) / columns;
-        if (config.itemWidth && config.itemWidth > 0 && columnWidth > config.itemWidth) {
-            columnWidth = config.itemWidth;
-        }
+        // Compute fluid column width so columns fill 100% of container width
+        const columnWidth = (width - gap * (columns - 1)) / columns;
+
+        // Grid items start at the left edge of the container
+        const startLeft = 0;
 
         // Compute row height
         let rowHeight: number;
@@ -272,14 +273,12 @@ export class PhotoGridVirtualizer {
             const rowItems: GridItem[] = [];
             const count = Math.min(columns, items.length - i);
 
-            // Standard grid layout: items at fixed positions with consistent gap
-            // All rows use the same positioning logic
             for (let col = 0; col < count; col++) {
                 rowItems.push({
                     asset: items[i + col],
                     width: columnWidth,
                     height: rowHeight,
-                    left: col * (columnWidth + gap)
+                    left: Math.round(startLeft + col * (columnWidth + gap))
                 });
             }
 

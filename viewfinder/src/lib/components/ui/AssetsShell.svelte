@@ -51,7 +51,7 @@
     }: Props = $props();
 
     let assetGridArray: typeof grid.assetGridArray = $state();
-    let columnCount: number | undefined = $derived(assetGridArray?.[0]?.length);
+    let columnCount = $state<number | undefined>(undefined);
 
     let selectionScope = $derived(grid.scopeId ? selectionManager.getScope(grid.scopeId) : null);
 

@@ -89,7 +89,9 @@
 
     // Compute grid layout parameters
     let isListView = $derived(view === "list" || sort.display === "list");
-    let gridItemWidth = $derived(view === "basic" ? 352 : 300);
+
+    // TODO: pass this in as configuration perhaps?
+    let gridItemWidth = $derived(view === "basic" ? 352 : 270);
     let gridGap = $state(8);
     let gridRowHeight = $derived(view === "basic" ? 264 : 260);
 
@@ -1134,8 +1136,6 @@
 <style lang="scss">
     .viz-asset-grid-container {
         box-sizing: border-box;
-        padding-left: var(--viz-spacing-xxl);
-        padding-right: var(--viz-spacing-xxl);
         margin: var(--viz-spacing-xxl) auto;
         width: 100%;
         max-width: 100%;
@@ -1164,7 +1164,6 @@
 
     .grid-item {
         height: 100%;
-        flex: 1;
         position: static;
     }
 
