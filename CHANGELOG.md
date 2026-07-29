@@ -5,6 +5,10 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.23.9] - 2026-07-29
+
+* perf(docker): optimize Dockerfile layer order and build context for fast CI caching (de36c48d)
+
 ## [0.23.8] - 2026-07-29
 
 * fix(viewfinder): fix grid column fluid scaling and single item layout (02a5e3cc)
