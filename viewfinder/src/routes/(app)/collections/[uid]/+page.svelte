@@ -45,15 +45,15 @@
     import ActiveFiltersTooltip from "$lib/components/tooltips/ActiveFiltersTooltip.svelte";
     import AssetsShell from "$lib/components/ui/AssetsShell.svelte";
     import Badge from "$lib/components/ui/Badge.svelte";
-    import BasicImageCard from "$lib/components/ui/BasicImageCard.svelte";
     import Button from "$lib/components/ui/Button.svelte";
     import DragAndDropUpload from "$lib/components/ui/DragAndDropUpload.svelte";
     import IconButton from "$lib/components/ui/IconButton.svelte";
-    import ImageCard from "$lib/components/ui/ImageCard.svelte";
+    import ImageCard, { type ImageVariant } from "$lib/components/ui/ImageCard.svelte";
     import ImageLightbox from "$lib/components/ui/ImageLightbox.svelte";
     import InputText from "$lib/components/ui/InputText.svelte";
     import MaterialIcon from "$lib/components/ui/MaterialIcon.svelte";
     import ContextMenu from "$lib/context-menu/ContextMenu.svelte";
+    import { getImageGridDisplay } from "$lib/context-menu/menus/image-grid-display";
     import { createImageMenu } from "$lib/context-menu/menus/images";
     import type { MenuItem } from "$lib/context-menu/types";
     import { LabelColours } from "$lib/images/constants";
@@ -69,7 +69,7 @@
     import { debugMode, isLayoutPage, sort, viewSettings } from "$lib/states/index.svelte";
     import { SelectionScopeNames, selectionManager } from "$lib/states/selection.svelte";
     import { toastState } from "$lib/toast-notifcations/notif-state.svelte.js";
-    import type { AssetGridArray, AssetGridView } from "$lib/types/asset.js";
+    import type { AssetGridArray } from "$lib/types/asset.js";
     import { SUPPORTED_IMAGE_TYPES, SUPPORTED_RAW_FILES, type SupportedImageTypes } from "$lib/types/images";
     import type { ImageUploadSuccess } from "$lib/upload/manager.svelte";
     import UploadManager from "$lib/upload/manager.svelte.js";
@@ -240,10 +240,9 @@
     });
 
     let imageGridArray: AssetGridArray<ImageAsset> | undefined = $state();
-
     let groups: DateGroup[] = $derived.by(() => {
         if (viewSettings.showDates) {
-            return groupImagesByDate(displayData) ?? [];
+            return groupImagesByDate(displayData);
         }
         return [];
     });
@@ -259,8 +258,12 @@
         if (viewSettings.showDates) {
             return consolidatedGroups.flatMap((g) => g.allImages);
         }
-        return undefined;
     });
+
+    let gridCtxMenu = $derived(getImageGridDisplay());
+    let imageThumbnailVariant = $derived<Omit<ImageVariant, "mini">>(
+        viewSettings.current === "grid" && viewSettings.simple ? "simple" : "full"
+    );
 
     // Toolbar stuff
     let toolbarOpacity = $state(0);
@@ -723,44 +726,6 @@
         return list;
     });
 
-    let displayMenuItems: MenuItem[] = $derived.by(() => {
-        const baseItems: MenuItem[] = viewSettings.displayOptions.map((o, idx) => {
-            const isActive = viewSettings.current === o.label.toLowerCase();
-            return {
-                id: `display-${idx}`,
-                label: o.label,
-                iconName: isActive ? "check" : undefined,
-                action: () => {
-                    viewSettings.setView(o.label.toLowerCase() as AssetGridView);
-                }
-            };
-        });
-
-        if (viewSettings.current === "grid") {
-            baseItems.push(
-                { id: "display-separator", label: "", separator: true },
-                {
-                    id: "display-show-dates",
-                    label: "Show Dates",
-                    iconName: viewSettings.showDates ? ("check_box" as const) : ("check_box_outline_blank" as const),
-                    action: () => {
-                        viewSettings.toggleShowDates();
-                    }
-                },
-                {
-                    id: "display-basic-thumb",
-                    label: "Custom",
-                    iconName: viewSettings.showBasic ? ("check_box" as const) : ("check_box_outline_blank" as const),
-                    action: () => {
-                        viewSettings.toggleShowBasic();
-                    }
-                }
-            );
-        }
-
-        return baseItems;
-    });
-
     function openFilterModal() {
         modalsManager.open(FilterModal, {}, FilterModalOptions);
     }
@@ -818,13 +783,16 @@
     onUploadSuccess={handleDropUploadSuccess}
 />
 
-{#snippet imageCard(asset: ImageAsset, cardState: { isSelected: boolean })}
-    <ImageCard {asset} isSelected={cardState.isSelected} />
+{#snippet imageCard(asset: ImageAsset, state: { isSelected: boolean })}
+    {#if imageThumbnailVariant === "simple"}
+        <ImageCard {asset} variant={"simple"} isSelected={state.isSelected} />
+    {:else}
+        <ImageCard {asset} isSelected={state.isSelected} />
+    {/if}
 {/snippet}
 
 {#snippet justifiedGrid()}
     <PhotoAssetGrid
-        photoCardSnippet={imageCard}
         data={displayData}
         allData={viewSettings.showDates ? allImagesFlat : undefined}
         groupedData={viewSettings.showDates ? consolidatedGroups : undefined}
@@ -897,7 +865,7 @@
         >
             <span>Edit</span>
         </IconButton>
-        <Dropdown title="Options" class="toolbar-button" items={displayMenuItems} showSelectionIndicator={false}>
+        <Dropdown title="Options" class="toolbar-button" items={gridCtxMenu} showSelectionIndicator={false}>
             {#snippet trigger({ toggle, showMenu, title })}
                 <IconButton iconName="settings" onclick={toggle} class="toolbar-button {showMenu ? 'active' : ''}">
                     {title}
@@ -925,8 +893,8 @@
             aria-label="Select Photos"
             onclick={async () => handleCollectionUpload()}
         >
-            Select Photos
-            <MaterialIcon iconName="add" style="font-size: 2em;" />
+            <span>Select Photos</span>
+            <MaterialIcon iconName="add" style="font-size: 2rem;" />
         </Button>
     </div>
 {/snippet}
@@ -1041,7 +1009,7 @@
                             title={name}
                             bind:value={name}
                             focused={true}
-                            onkeydown={async (e) => {
+                            onkeydown={(e) => {
                                 if (e.key === "Enter") {
                                     if (name.trim() !== "" && name.trim() !== data.name.trim()) {
                                         updateCollectionDetails({ name });
@@ -1050,6 +1018,11 @@
                                 } else if (e.key === "Escape") {
                                     name = data.name;
                                     showCollNameInput = false;
+                                }
+                            }}
+                            onblur={() => {
+                                if (name.trim() !== "" && name.trim() !== data.name.trim()) {
+                                    updateCollectionDetails({ name });
                                 }
                             }}
                         />

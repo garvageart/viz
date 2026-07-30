@@ -16,9 +16,7 @@
     import PhotoAssetGrid from "$lib/components/grid/PhotoAssetGrid.svelte";
     import ImageLabelViewer from "$lib/components/image-tools/ImageLabelViewer.svelte";
     import StarRating from "$lib/components/image-tools/StarRating.svelte";
-    import CollectionSelectionModal, {
-        modalOptions as collectionModalOptions
-    } from "$lib/components/modals/CollectionSelectionModal.svelte";
+    import CollectionSelectionModal from "$lib/components/modals/CollectionSelectionModal.svelte";
     import FilterModal, { FilterModalOptions } from "$lib/components/modals/FilterModal.svelte";
     import { modalsManager } from "$lib/components/modals/manager/ModalManager.svelte";
     import VizViewContainer from "$lib/components/panels/VizViewContainer.svelte";
@@ -32,6 +30,7 @@
     import AssetToolbar from "$lib/components/ui/toolbars/AssetToolbar.svelte";
     import { VizMimeTypes } from "$lib/constants.js";
     import ContextMenu from "$lib/context-menu/ContextMenu.svelte";
+    import { getImageGridDisplay } from "$lib/context-menu/menus/image-grid-display.js";
     import { createImageMenu } from "$lib/context-menu/menus/images.js";
     import type { MenuItem } from "$lib/context-menu/types";
     import { DragData } from "$lib/drag-drop/data.js";
@@ -55,50 +54,7 @@
     import { invalidateViz } from "$lib/views/views.svelte";
 
     // Display options as MenuItem[] for Dropdown
-    let displayMenuItems: MenuItem[] = $derived.by(() => {
-        const baseItems: MenuItem[] = [
-            {
-                id: "display-custom",
-                label: "Grid",
-                iconName: viewSettings.current === "custom" ? "check" : undefined,
-                action: () => {
-                    viewSettings.setView("custom");
-                }
-            },
-            {
-                id: "display-grid",
-                label: "Thumbnails",
-                iconName: viewSettings.current === "grid" ? "check" : undefined,
-                action: () => {
-                    viewSettings.setView("grid");
-                }
-            },
-            {
-                id: "display-list",
-                label: "List",
-                iconName: viewSettings.current === "list" ? "check" : undefined,
-                action: () => {
-                    viewSettings.setView("list");
-                }
-            }
-        ];
-
-        if (viewSettings.current === "custom") {
-            baseItems.push(
-                { id: "display-separator", label: "", separator: true },
-                {
-                    id: "display-show-dates",
-                    label: "Show Dates",
-                    iconName: viewSettings.showDates ? "check_box" : "check_box_outline_blank",
-                    action: () => {
-                        viewSettings.toggleShowDates();
-                    }
-                }
-            );
-        }
-
-        return baseItems;
-    });
+    let displayMenuItems: MenuItem[] = $derived(getImageGridDisplay());
 
     function getDisplaySelectedId(): string | undefined {
         const map: Record<string, string> = {
@@ -124,28 +80,21 @@
 
     // Page state — sort client-side using persisted SortState
     let sortedFilteredImages = $derived.by(() => {
-        console.time("sort time");
         const sData = sortCollectionImages(filterManager.apply(galleryState.images), sort);
-        console.timeEnd("sort time");
-
         return sData;
     });
 
     let groups: DateGroup[] = $derived.by(() => {
-        console.time("group time");
-        if (viewSettings.showDates || viewSettings.current === "custom") {
+        if (viewSettings.showDates) {
             const gData = groupImagesByDate(sortedFilteredImages);
-            console.timeEnd("group time");
             return gData;
         }
         return [];
     });
 
     let consolidatedGroups: ConsolidatedGroup[] = $derived.by(() => {
-        console.time("consolidate time");
-        if (viewSettings.showDates || viewSettings.current === "custom") {
+        if (groups.length) {
             const gData = getConsolidatedGroups(groups);
-            console.timeEnd("consolidate time");
             return gData;
         }
         return [];
@@ -194,7 +143,7 @@
                             imageUidsToAdd: selectionScope.selectedItems.map((img) => img.uid),
                             onSelect: handleCollectionSelect
                         },
-                        { heading: "Select a Collection", ...collectionModalOptions }
+                        { heading: "Select a Collection" }
                     );
                 }
             }
@@ -496,7 +445,7 @@
                                     imageUidsToAdd: selectionScope.selectedItems.map((img) => img.uid),
                                     onSelect: handleCollectionSelect
                                 },
-                                { heading: "Select a Collection", ...collectionModalOptions }
+                                { heading: "Select a Collection" }
                             );
                         }}
                         ondragenter={(e) => {
@@ -530,7 +479,7 @@
                                     imageUidsToAdd: uidsData,
                                     onSelect: handleCollectionSelect
                                 },
-                                { heading: "Select a Collection", ...collectionModalOptions }
+                                { heading: "Select a Collection" }
                             );
                         }}
                     >

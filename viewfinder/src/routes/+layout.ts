@@ -1,6 +1,6 @@
 import { browser } from "$app/environment";
 import { error, redirect } from "@sveltejs/kit";
-import { getSystemStatus } from "$lib/api";
+import { api, getSystemStatus } from "$lib/api";
 import { fetchCurrentUser } from "$lib/auth/auth_methods";
 import { system, user } from "$lib/states/index.svelte.js";
 import { getSafeRedirectUrl } from "$lib/utils/url";
@@ -9,6 +9,8 @@ export const ssr = false;
 export const csr = true;
 
 export async function load({ url, fetch }) {
+    api.defaults.fetch = fetch;
+
     // Fetch system status if not already fetched
     if (!system.fetched) {
         system.loading = true;
