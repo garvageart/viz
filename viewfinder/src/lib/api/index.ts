@@ -10,98 +10,9 @@ import { defaults, servers } from "./client.gen";
 // Initialize defaults for the underlying oazapfts runtime
 defaults.baseUrl = servers.productionApi;
 defaults.credentials = "include";
-defaults.fetch = trackedFetch;
-
-let currentFetch: typeof globalThis.fetch | null = null;
-
-function getFetch(customFetch?: typeof globalThis.fetch): typeof globalThis.fetch {
-    return customFetch ?? currentFetch ?? globalThis.fetch;
-}
-
-/**
- * A wrapper around fetch that tracks request lifecycle in loadingState.
- * Dynamically delegates to currentFetch (if explicitly set via initApi) or globalThis.fetch
- * (which SvelteKit patches during load() calls) so SvelteKit's load tracking works automatically.
- */
-async function trackedFetch(input: RequestInfo | URL, init?: RequestInit): Promise<Response> {
-    loadingState.startRequest();
-    try {
-        const fetchInit = {
-            cache: "no-store" as const,
-            ...init
-        };
-        const fetchImpl = getFetch();
-        const response = await fetchImpl(input, fetchInit);
-        return response;
-    } finally {
-        loadingState.endRequest();
-    }
-}
-
-/**
- * Initializes the API client with SvelteKit's enhanced fetch function.
- * This can be called in the root layout load function or entry point.
- *
- * @param fetch - SvelteKit's enhanced fetch from the load context.
- */
-export function initApi(fetch?: typeof globalThis.fetch) {
-    if (fetch) {
-        currentFetch = fetch;
-    }
-    generated.defaults.fetch = trackedFetch;
-}
-
-// Create a proxy for the generated API functions
-type GeneratedApi = typeof generated; // Get the type of the generated API module
-
-// Proxy the 'generated' module directly to leverage its types and properties
-const apiProxy: GeneratedApi = new Proxy(generated, {
-    get(target: GeneratedApi, prop: keyof GeneratedApi) {
-        const originalMethod = target[prop];
-
-        // If it's a non-function property (like a type, defaults, servers), return it directly
-        if (typeof originalMethod !== "function") {
-            return originalMethod;
-        }
-
-        // Return a new function that wraps the original generated API method
-        return function (this: any, ...methodArgs: any[]): ReturnType<typeof originalMethod> {
-            const finalArgs = [...methodArgs];
-
-            let opts: Oazapfts.RequestOpts | undefined = undefined;
-            let optsIndex = -1;
-
-            if (
-                finalArgs.length > 0 &&
-                typeof finalArgs[finalArgs.length - 1] === "object" &&
-                finalArgs[finalArgs.length - 1] !== null
-            ) {
-                opts = finalArgs[finalArgs.length - 1] as Oazapfts.RequestOpts;
-                optsIndex = finalArgs.length - 1;
-            }
-
-            // Inject the trackedFetch into the options
-            const injectedOpts: Oazapfts.RequestOpts = {
-                credentials: "include",
-                ...opts,
-                fetch: trackedFetch
-            };
-
-            if (optsIndex !== -1) {
-                finalArgs[optsIndex] = injectedOpts;
-            } else {
-                finalArgs.push(injectedOpts);
-            }
-
-            return (originalMethod as (...args: any[]) => any).apply(this, finalArgs) as ReturnType<
-                typeof originalMethod
-            >;
-        };
-    }
-});
 
 // Export the proxied API client as 'api'
-export const api = apiProxy;
+export const api = generated;
 
 // Re-export other non-function exports like defaults, servers, and all types separately
 export * from "./client.gen"; // This re-exports all types from the generated client.
@@ -109,25 +20,6 @@ export { defaults, servers };
 
 // Exports from the old client.ts and custom functions ---
 export const API_BASE_URL = defaults.baseUrl; // Export the configured base URL
-
-let doneFallback = false;
-
-export function warnIfLocalhostFallback() {
-    if (doneFallback) {
-        return;
-    }
-
-    try {
-        if (typeof window !== "undefined" && API_BASE_URL.includes("localhost")) {
-            console.warn(
-                "Frontend is using a localhost fallback for API URL. Build-time config not injected or runtime config not set."
-            );
-            doneFallback = true;
-        }
-    } catch (e) {
-        // ignore
-    }
-}
 
 export interface UploadImageOptions {
     data: ImageUploadFileData;
@@ -271,39 +163,12 @@ export async function getJobsSnapshot(): Promise<{
     status: number;
 }> {
     const base = API_BASE_URL; // Use the exported API_BASE_URL
-    const fetchImpl = getFetch();
-    const res = await fetchImpl(`${base}/jobs/snapshot`, {
+    // TODO: Document in OpenAPI yaml
+    const res = await fetch(`${base}/jobs/snapshot`, {
         credentials: "include"
     });
     const data = await res.json().catch(() => ({}));
     return { data, status: res.status };
-}
-
-export async function updateJobTypeConcurrency(
-    jobType: string,
-    body: { concurrency: number }
-): Promise<{ data: any; status: number }> {
-    const base = API_BASE_URL; // Use the exported API_BASE_URL
-    const url = `${base}/jobs/types/${encodeURIComponent(jobType)}/concurrency`;
-    try {
-        const fetchImpl = getFetch();
-        const res = await fetchImpl(url, {
-            method: "PUT",
-            credentials: "include",
-            headers: {
-                "Content-Type": "application/json"
-            },
-            body: JSON.stringify(body)
-        });
-
-        const data = await res.json().catch(() => ({}));
-        return { data, status: res.status };
-    } catch (err) {
-        return {
-            data: { error: err instanceof Error ? err.message : String(err) },
-            status: 500
-        };
-    }
 }
 
 /**
@@ -334,7 +199,7 @@ export async function downloadImagesZipBlob(
     const baseUrl = defaults.baseUrl || "";
     const queryParams = QS.query(QS.explode({ token, password }));
     const url = `${baseUrl}/download${queryParams}`;
-    const fetchToUse = getFetch(opts?.fetch);
+    const fetchToUse = opts?.fetch ?? fetch;
 
     try {
         const defaultHeaders = defaults.headers;
@@ -424,7 +289,7 @@ export async function getImageFileBlob(
     const baseUrl = API_BASE_URL;
     const queryParams = QS.query(QS.explode(params));
     const url = `${baseUrl}/images/${encodeURIComponent(uid)}/file${queryParams}`;
-    const fetchToUse = getFetch(opts?.fetch);
+    const fetchToUse = opts?.fetch ?? fetch;
 
     try {
         const defaultHeaders = defaults.headers;

@@ -7,8 +7,7 @@ import {
     getJobStats,
     getJobsSnapshot,
     listAvailableWorkers,
-    listJobs,
-    updateJobTypeConcurrency
+    listJobs
 } from "$lib/api";
 import { type WSClient, createWSConnection } from "$lib/api/websocket";
 import { toastState } from "$lib/toast-notifcations/notif-state.svelte";
@@ -411,27 +410,8 @@ class JobsState {
         }
     }
 
-    async setWorkerConcurrency(jobId: string, value: number) {
-        this.workers.concurrency[jobId] = value;
-        try {
-            const res = await updateJobTypeConcurrency(jobId, {
-                concurrency: value
-            });
-            if (res.status !== 200) {
-                toastState.addToast({
-                    message: `Failed to update concurrency for ${jobId}`,
-                    type: "error"
-                });
-                await this.fetchJobTypes();
-            }
-        } catch (e) {
-            toastState.addToast({
-                message: "Error updating concurrency: " + (e instanceof Error ? e.message : String(e)),
-                type: "error"
-            });
-            await this.fetchJobTypes();
-        }
-    }
+    // TODO: Document in OpenAPI file
+    async setWorkerConcurrency(jobId: string, value: number) {}
 
     private getCountFromResData(data: unknown) {
         if (!data || typeof data !== "object") {

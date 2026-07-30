@@ -1,4 +1,5 @@
 import { goto } from "$app/navigation";
+import type { RequestOpts } from "@oazapfts/runtime";
 import { type User, defaults, getCurrentUser, getUserSettings, logout } from "$lib/api";
 import { user } from "$lib/states/index.svelte";
 import { cookieMethods } from "$lib/utils/cookie";
@@ -11,10 +12,10 @@ interface OAuthResponseUserData {
     picture: string;
 }
 
-export async function fetchCurrentUser(): Promise<User | null> {
+export async function fetchCurrentUser(opts: RequestOpts = {}): Promise<User | null> {
     user.loading = true;
     try {
-        const result = await getCurrentUser();
+        const result = await getCurrentUser(opts);
 
         if (result.status === 200) {
             user.data = result.data;
@@ -23,7 +24,7 @@ export async function fetchCurrentUser(): Promise<User | null> {
 
             // Fetch settings
             try {
-                const settingsRes = await getUserSettings();
+                const settingsRes = await getUserSettings(opts);
                 if (settingsRes.status === 200) {
                     user.settings = settingsRes.data;
                 }
