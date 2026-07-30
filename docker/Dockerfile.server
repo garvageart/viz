@@ -43,6 +43,7 @@ WORKDIR /app
 # Copy Go workspace files
 COPY go.mod go.sum go.work go.work.sum ./
 COPY cmd/api/go.mod cmd/api/go.sum ./cmd/api/
+COPY version.txt ./
 
 # Accept build arguments for version injection
 ARG VERSION
@@ -60,6 +61,7 @@ RUN --mount=type=cache,id=go-pkg,target=/go/pkg/mod,sharing=locked \
     go mod download
 
 # Build backend with zero-layer bind mounting and BuildKit cache
+# Output to /tmp to avoid writing into the read-only bind mount at /app
 RUN --mount=type=bind,target=. \
     --mount=type=cache,id=go-pkg,target=/go/pkg/mod,sharing=locked \
     --mount=type=cache,id=go-build,target=/root/.cache/go-build,sharing=locked \
@@ -74,7 +76,9 @@ RUN --mount=type=bind,target=. \
     -X 'viz/internal/config.SourceUrl=${SOURCE_URL}' \
     -X 'viz/internal/config.Repository=${REPOSITORY}' \
     -X 'viz/internal/config.RepositoryUrl=${REPOSITORY_URL}'" \
-    -o /app/viz-server ./cmd/api
+    -o /tmp/viz-server ./cmd/api
+
+RUN cp /tmp/viz-server /app/viz-server && chmod +x /app/viz-server
 
 
 # Stage 3: Final Production Image
