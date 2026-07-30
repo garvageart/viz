@@ -5,6 +5,13 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.25.4] - 2026-07-30
+
+* feat(scripts): prompt to stash uncommitted changes during release and display pop reminder (4d8a32ca)
+* chore(docker): parameterize registry URLs and add base image build targets (d079775e)
+* fix: going back to what i know works (589d07a0)
+* fix: forgot corepack install (2127207d)
+
 ## [0.25.3] - 2026-07-30
 
 * fix: more docker stuff (544a14da)
