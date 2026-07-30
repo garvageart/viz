@@ -24,3 +24,9 @@ A [`viz-theme.scss.tmpl`](../viz/src/lib/styles/scss/viz-theme.scss.tmpl) file c
 idk this makes sense to me now and I'm sure a final solution could be figured out and way better than this idea. I just don't want non-developers to be writing CSS just make their environment look good for themselves.
 
 Authored by [`@garvageart`](https://github.com/garvageart)
+
+## Admin UI: Missing Files Inspector
+Implement a "Show Missing Files" diagnostic tool in the Admin UI (Settings / Storage) that:
+1. Compares PostgreSQL `images` table entries against expected physical file paths in `/app/var/library/<UID>/<name>`.
+2. Identifies and highlights orphaned DB records where original media files are missing on disk.
+3. Provides quick admin actions to purge orphaned metadata rows or trigger targeted re-uploads.
