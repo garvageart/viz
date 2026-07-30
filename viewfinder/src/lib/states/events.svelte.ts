@@ -1,8 +1,8 @@
 import { invalidate } from "$app/navigation";
 import { page } from "$app/state";
 import { WSClient } from "$lib/api/websocket";
+import { DataKeys } from "$lib/dependency-keys";
 import { performSearch } from "$lib/search/execute";
-import { debounce } from "$lib/utils/misc";
 import { invalidateViz } from "$lib/views/views.svelte";
 
 /**
@@ -13,35 +13,36 @@ class EventsState {
     private client: WSClient | null = null;
     connected = $state(false);
     initialized = $state(false);
-    private wasDisconnected = false;
+    private wasDisconnected = $state(false);
+    private INVALIDATION_DELAY = 300;
 
-    private debouncedInvalidate = debounce(async (resourcePath?: string) => {
+    private invalidateApp = async (resourcePath?: string) => {
         console.debug(`[Events] Triggering debounced soft refresh for path: ${resourcePath ?? "all"}`);
-        invalidateViz({ delay: 100, skipInvalidateAll: true });
+        invalidateViz({ skipInvalidateAll: true });
 
         if (resourcePath) {
             try {
-                await invalidate((url) => url.pathname.includes(resourcePath));
+                await invalidate(resourcePath);
             } catch (e) {
                 console.warn(`[Events] Targeted invalidation failed for ${resourcePath}:`, e);
             }
         }
 
         // If the user is currently on the search page, trigger a fresh search
-        if (typeof window !== "undefined" && page.url.pathname.endsWith("/search")) {
+        if (page.url.pathname.endsWith("/search")) {
             try {
                 await performSearch();
             } catch (e) {
                 console.error("[Events] performSearch failed:", e);
             }
         }
-    }, 300);
+    };
 
     /**
      * Initialize the global WebSocket connection.
      */
     init() {
-        if (typeof window === "undefined" || this.client) {
+        if (this.client) {
             return;
         }
 
@@ -104,23 +105,22 @@ class EventsState {
             case "collection-updated":
             case "collection-deleted":
                 console.debug(`[Events] Collection event: ${event}`);
-                this.debouncedInvalidate("collection");
+                this.invalidateApp(DataKeys.Collection);
+                this.invalidateApp(DataKeys.Collections);
                 break;
 
             case "image-created":
             case "image-updated":
             case "image-deleted":
                 console.debug(`[Events] Image event: ${event}`);
-                this.debouncedInvalidate("image");
+                this.invalidateApp(DataKeys.Photos);
                 break;
 
             case "server-online":
                 console.debug("[Events] Server came back online, wasDisconnected:", this.wasDisconnected);
                 if (this.wasDisconnected) {
                     console.debug("[Events] Reloading page after server came back online...");
-                    if (typeof window !== "undefined") {
-                        window.location.reload();
-                    }
+                    window.location.reload();
                 }
                 break;
         }
