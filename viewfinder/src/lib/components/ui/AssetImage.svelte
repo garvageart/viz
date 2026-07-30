@@ -3,7 +3,7 @@
     import { type ImageAsset, getFullImagePath } from "$lib/api";
     import { getThumbhashURL } from "$lib/utils/images";
 
-    export type ImageVariant = "thumbnail" | "preview" | "original";
+    export type ImageResolution = "thumbnail" | "preview" | "original";
 
     export type AssetImageProps = {
         /** The Image asset object from the API */
@@ -19,11 +19,11 @@
          */
         priority?: boolean;
         /**
-         * Force a specific image size variant.
+         * Force a specific image size resolution.
          * If unset, uses srcset to let the browser decide based on viewport.
          * Useful for grids where you know you only need thumbnails.
          */
-        variant?: ImageVariant;
+        resolution?: ImageResolution;
         /**
          * Binding to the internal image element
          */
@@ -48,10 +48,10 @@
         asset,
         objectFit = "cover",
         priority = false,
-        variant,
+        resolution,
         imageElement = $bindable(),
         naked = false,
-        initialLoaded = false,
+        initialLoaded = $bindable(false),
         src: srcOverride,
         ...rest
     }: Props = $props();
@@ -77,7 +77,7 @@
      */
     const srcset = $derived.by(() => {
         // If a specific variant or src override is requested, do not generate a srcset
-        if (variant || srcOverride) {
+        if (resolution || srcOverride) {
             return undefined;
         }
 
@@ -102,7 +102,7 @@
 
     /**
      * Fallback src used if srcset is not supported or as the initial load source.
-     * Also acts as the primary src when a specific variant is requested.
+     * Also acts as the primary src when a specific resolution is requested.
      */
     const src = $derived.by(() => {
         if (srcOverride) {
@@ -111,8 +111,8 @@
 
         let path = "";
 
-        if (variant && asset.image_paths?.[variant]) {
-            path = asset.image_paths[variant]!;
+        if (resolution && asset.image_paths?.[resolution]) {
+            path = asset.image_paths[resolution]!;
         } else {
             // Fallback logic: prefer preview -> thumbnail -> original if no specific variant forced
             // OR if the requested variant is missing
@@ -181,11 +181,11 @@
 <style lang="scss">
     .asset-image-container {
         position: relative;
-        width: var(--asset-width, 100%);
-        height: var(--asset-height, 100%);
+        width: 100%;
+        height: 100%;
         overflow: hidden;
         display: block;
-        background-color: var(--viz-surface-panel); /* Darker background while loading */
+        background: linear-gradient(135deg, var(--viz-surface-panel) 0%, var(--viz-surface-hover) 100%);
     }
 
     .placeholder {

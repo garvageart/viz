@@ -6,24 +6,27 @@
     import { DragData } from "$lib/drag-drop/data";
     import { getImageLabel, getTakenAt } from "$lib/utils/images";
     import AssetImage, { type AssetImageProps } from "./AssetImage.svelte";
-    import MaterialIcon from "./MaterialIcon.svelte";
+
+    export type ImageVariant = "mini" | "full" | "simple";
+
+    type Props = {
+        asset: ImageAsset;
+        variant?: ImageVariant;
+        showMetadata?: boolean;
+        isSelected?: boolean;
+    } & Omit<AssetImageProps, "asset" | "variant"> & {
+            resolution?: AssetImageProps["resolution"];
+        };
 
     let {
         asset,
         variant = "full",
         showMetadata = $bindable(true),
         objectFit = "cover",
-        imageVariant = "thumbnail",
+        resolution = "thumbnail",
         priority = false,
         isSelected = false
-    }: {
-        asset: ImageAsset;
-        variant?: "mini" | "full" | "basic";
-        showMetadata?: boolean;
-        isSelected?: boolean;
-    } & Omit<AssetImageProps, "asset" | "variant"> & {
-            imageVariant?: AssetImageProps["variant"];
-        } = $props();
+    }: Props = $props();
 
     let imageDate = $derived(getTakenAt(asset));
     // let placeholderDataURL = $derived(getThumbhashURL(asset));
@@ -53,7 +56,7 @@
     <div title={asset.name || asset.image_metadata?.file_name} class="mini-card">
         <div class="mini-image-wrapper">
             <AssetImage
-                variant={imageVariant}
+                {resolution}
                 {asset}
                 {objectFit}
                 {priority}
@@ -82,9 +85,9 @@
             </div>
         </div>
     </div>
-{:else if variant === "basic"}
+{:else if variant === "simple"}
     <div
-        class="image-card basic-card"
+        class="image-card simple"
         class:selected={isSelected}
         draggable="true"
         title={asset.name || asset.image_metadata?.file_name}
@@ -96,11 +99,11 @@
             DragData.clear();
         }}
     >
-        <div class="image-container basic-container">
+        <div class="image-container">
             <AssetImage
                 class="card-image"
                 {asset}
-                variant={imageVariant}
+                {resolution}
                 {objectFit}
                 {priority}
                 alt={(asset.name || asset.image_metadata?.file_name) ?? ""}
@@ -127,15 +130,15 @@
         <div class="image-container">
             <AssetImage
                 class="card-image"
+                bind:initialLoaded={imageLoaded}
                 {asset}
-                variant={imageVariant}
+                {resolution}
                 {objectFit}
                 {priority}
                 alt={`${(asset.name || asset.image_metadata?.file_name) ?? ""}${asset.uploaded_by ? ` by ${asset.uploaded_by.name}` : ""}`}
                 title={`${(asset.name || asset.image_metadata?.file_name) ?? ""}${asset.uploaded_by ? ` by ${asset.uploaded_by.name}` : ""}`}
                 loading="lazy"
                 crossorigin="use-credentials"
-                onload={() => (imageLoaded = true)}
             />
         </div>
         {#if showMetadata}
@@ -256,7 +259,7 @@
     .image-card {
         min-width: 100%;
         max-width: 100%;
-        height: auto;
+        height: 100%;
         background-color: var(--viz-surface-card);
         border: 1px solid var(--viz-border-subtle);
         border-radius: var(--viz-border-radius-md);
@@ -266,6 +269,10 @@
         display: flex;
         flex-direction: column;
         box-sizing: border-box;
+
+        &.simple {
+            border-radius: 0;
+        }
 
         &:hover {
             background-color: var(--viz-surface-hover);
@@ -330,13 +337,15 @@
     .image-container {
         flex: 1;
         min-height: 0;
-        background-color: var(--viz-surface-panel);
         display: flex;
-        justify-content: center;
         align-items: center;
-        position: relative;
-        overflow: hidden;
-        border-bottom: 1px solid var(--viz-border-subtle);
+        justify-content: center;
+        color: var(--viz-text-secondary);
+
+        :global(.placeholder-icon) {
+            opacity: 0.6;
+            filter: drop-shadow(0 2px 4px rgba(0, 0, 0, 0.05));
+        }
 
         :global(.card-image) {
             width: 100%;
