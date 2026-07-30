@@ -316,7 +316,7 @@
                 aria-label={`Select image ${image.name}`}
                 bind:this={itemRefs[i]}
             >
-                <ImageCard asset={image} variant="mini" objectFit="contain" imageVariant="thumbnail" />
+                <ImageCard asset={image} variant="mini" objectFit="contain" resolution="thumbnail" />
             </div>
         {/each}
     {/if}
