@@ -138,7 +138,7 @@
     }
 
     .has-focus {
-        outline: 1.5px solid var(--viz-primary);
+        outline: 1.5px solid var(--viz-secondary);
         outline-offset: -1px;
     }
 

@@ -52,7 +52,7 @@
             return exif.model.replace(new RegExp(`^${make}\\s+`, "i"), "");
         }
 
-        return exif.model;
+        return `${exif.make} ${exif.model}`;
     });
 
     let rawAperture = $derived(asset.exif?.f_number ?? asset.exif?.aperture);
