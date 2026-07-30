@@ -6,6 +6,7 @@ if [ "$(id -u)" = '0' ]; then
     mkdir -p /app/var/logs /app/var/logs/http /app/var/trash /app/var/cache
 
     # Fast O(1) probe: test if the volume supports POSIX ownership (chown)
+    # I hate AI
     touch /app/var/.perm_probe 2>/dev/null || true
     if chown viz:viz /app/var/.perm_probe >/dev/null 2>&1; then
         rm -f /app/var/.perm_probe
