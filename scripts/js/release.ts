@@ -43,13 +43,23 @@ async function updatePackageJson(filePath: string, nextVersion: string) {
 async function main() {
     process.chdir(rootDir);
 
+    let didStash = false;
+
     // 1. Verify working directory is clean
     try {
         execSync("git update-index --refresh", { stdio: "ignore" });
         execSync("git diff-index --quiet HEAD --", { stdio: "ignore" });
     } catch {
-        console.error("Error: Working directory has uncommitted changes. Please commit or stash them first.");
-        process.exit(1);
+        console.log("Uncommitted changes detected in working directory.");
+        const stashAns = await askQuestion("Would you like to stash your changes before proceeding? [y/N]: ");
+        if (stashAns.trim().toLowerCase() === "y") {
+            console.log("Stashing uncommitted changes...");
+            execSync("git stash push -m 'Auto-stash before release'", { stdio: "inherit" });
+            didStash = true;
+        } else {
+            console.error("Error: Working directory has uncommitted changes. Please commit or stash them first.");
+            process.exit(1);
+        }
     }
 
     // 2. Get current version
@@ -250,6 +260,11 @@ async function main() {
         } else {
             console.log("\nNext steps:");
             console.log(`1. Run: git push --atomic origin ${currentBranch} v${nextVersion}`);
+            console.log("==================================================");
+        }
+
+        if (didStash) {
+            console.log("\n📌 REMINDER: Remember to re-apply your stashed changes using: git stash pop");
             console.log("==================================================");
         }
     } finally {
