@@ -107,7 +107,6 @@ ARG REPOSITORY
 ARG REPOSITORY_URL
 
 # Build backend with Go build and module cache
-# Added -trimpath and ldflags -s -w for smaller, reproducible binaries
 ENV CGO_ENABLED=1
 RUN --mount=type=cache,id=go-pkg,target=/go/pkg/mod,sharing=locked \
     --mount=type=cache,id=go-build,target=/root/.cache/go-build,sharing=locked \
@@ -133,11 +132,10 @@ RUN rm -f /etc/apt/apt.conf.d/docker-clean && \
     echo 'Binary::apt::APT::Keep-Downloaded-Packages "true";' > /etc/apt/apt.conf.d/keep-cache
 
 # Install runtime dependencies for libvips with apt package caching via inline flags
-# (Keeps the final image clean of apt config mutations)
 RUN --mount=type=cache,id=apt-cache,target=/var/cache/apt,sharing=locked \
     --mount=type=cache,id=apt-lib,target=/var/lib/apt,sharing=locked \
     apt-get update && \
-    apt-get install -y --no-install-recommends -o APT::Keep-Downloaded-Packages=true \
+    apt-get install -y --no-install-recommends \
     libglib2.0-0 libexpat1 libjpeg62-turbo libpng16-16 libtiff6 \
     libwebp7 libheif1 libopenexr-3-1-30 liborc-0.4-0 libgirepository-1.0-1 \
     libxml2 libexif12 libpoppler-glib8 libgsf-1-114 libopenjp2-7 \
