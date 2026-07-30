@@ -5,6 +5,19 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.25.0] - 2026-07-30
+
+* feat(viewfinder): add getImageGridDisplay context menu builder for grid view options (a8c8d0fb)
+* docs(project): add note for Admin UI Missing Files Inspector feature (bd4cf0f5)
+* fix(viewfinder): improve photo camera EXIF model label and SearchInput focus outline (0c4e640b)
+* refactor(viewfinder): update grid and workspace panels to use resolution prop (615026c0)
+* refactor(viewfinder): rename AssetImage prop to resolution and update ImageCard variants (f23a2005)
+* refactor(viewfinder): simplify view settings state and route options (1182608c)
+* fix(docker): move apt docker-clean removal into separate layer for persistent deb caching (52e10fc8)
+* fix(docker): silence chown stderr when probing volume POSIX support in entrypoint (bc5d1ca9)
+* perf(docker): add BuildKit npm cache mount for corepack installation (391a48d8)
+* fix(docker): add fallback for non-POSIX exFAT/NTFS volume mounts in entrypoint (8083ac21)
+
 ## [0.24.1] - 2026-07-30
 
 * fix(docker): optimize BuildKit cache mounts and entrypoint volume permissions (98fcb513)
