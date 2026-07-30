@@ -219,6 +219,8 @@ buildx-server:
 	@echo "Building server image with buildx and local cache ($(BUILDX_CACHE_SERVER_DIR))"
 	@mkdir -p $(BUILDX_CACHE_SERVER_DIR)
 	@docker buildx build --progress=plain \
+		--build-arg REGISTRY_URL=$(REGISTRY_HOST) \
+		--build-arg REPOSITORY=$(REGISTRY_USER)/$(REPO_NAME) \
 		--cache-to=type=local,dest=$(BUILDX_CACHE_SERVER_DIR) \
 		--cache-from=type=local,src=$(BUILDX_CACHE_SERVER_DIR) \
 		-f docker/Dockerfile.server -t viz-server:local --load .
@@ -236,11 +238,23 @@ docker-down:
 
 image-server:
 	@echo "Building server image"
-	@docker build -f docker/Dockerfile.server -t $(REGISTRY)/viz-server:$(TAG) .
+	@docker build -f docker/Dockerfile.server \
+		--build-arg REGISTRY_URL=$(REGISTRY_HOST) \
+		--build-arg REPOSITORY=$(REGISTRY_USER)/$(REPO_NAME) \
+		-t $(REGISTRY)/viz-server:$(TAG) .
 
 docker-push: image-server
 	@echo "Pushing image to $(REGISTRY)"
 	@docker push $(REGISTRY)/viz-server:$(TAG)
+
+image-base:
+	@echo "Building base image (libvips + Go CGO toolchain)..."
+	@docker build -f docker/Dockerfile.base -t $(REGISTRY)/viz-base:latest -t $(REGISTRY)/viz-base:$(TAG) .
+
+docker-push-base: image-base
+	@echo "Pushing base image to $(REGISTRY)..."
+	@docker push $(REGISTRY)/viz-base:latest
+	@docker push $(REGISTRY)/viz-base:$(TAG)
 
 ### Database / Migrations (best-effort)
 migrate:
@@ -311,9 +325,9 @@ ci-build: check-env
 	$(MAKE) generate-types-install USE_HOST_CACHE=0; \
 	# Build server image with buildx (load into local daemon). Adjust cache flags to your CI.
 	if docker buildx version >/dev/null 2>&1; then \
-		docker buildx build --progress=plain --tag $(REGISTRY)/viz-server:$(TAG) -f docker/Dockerfile.server --load .; \
+		docker buildx build --progress=plain --build-arg REGISTRY_URL=$(REGISTRY_HOST) --build-arg REPOSITORY=$(REGISTRY_USER)/$(REPO_NAME) --tag $(REGISTRY)/viz-server:$(TAG) -f docker/Dockerfile.server --load .; \
 	else \
-		docker build -f docker/Dockerfile.server -t $(REGISTRY)/viz-server:$(TAG) .; \
+		docker build -f docker/Dockerfile.server --build-arg REGISTRY_URL=$(REGISTRY_HOST) --build-arg REPOSITORY=$(REGISTRY_USER)/$(REPO_NAME) -t $(REGISTRY)/viz-server:$(TAG) .; \
 	fi
 
 

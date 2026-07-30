@@ -1,3 +1,7 @@
+ARG REGISTRY_URL
+ARG REPOSITORY
+ARG BASE_IMAGE=${REGISTRY_URL}/${REPOSITORY}/viz-base:latest
+
 # Stage 1: Frontend Build
 FROM node:26-slim AS frontend-builder
 
@@ -5,53 +9,34 @@ WORKDIR /app
 
 # Install pnpm (can be overridden at build time via --build-arg PNPM_VERSION=...)
 ARG PNPM_VERSION=latest
-RUN npm install -g corepack@latest && \
+RUN --mount=type=cache,id=npm-cache,target=/root/.npm \
+    npm install -g corepack@latest && \
     corepack enable && \
     corepack prepare pnpm@${PNPM_VERSION} --activate
 
-# Copy workspace configuration and all source files
-COPY pnpm-lock.yaml pnpm-workspace.yaml package.json .npmrc ./
+# Copy workspace configuration FIRST to maximize standard layer caching
+COPY pnpm-lock.yaml pnpm-workspace.yaml package.json .npmrc .prettierrc .prettierignore ./
+COPY viewfinder/package.json ./viewfinder/
+COPY scripts/js/package.json ./scripts/js/
+
+# Set pnpm store directory
+ENV NPM_CONFIG_STORE_DIR=/root/.local/share/pnpm/store
+
+# Install dependencies with BuildKit store cache
+RUN --mount=type=cache,id=pnpm-store,target=/root/.local/share/pnpm/store \
+    pnpm install --frozen-lockfile
+
+# Copy the rest of the source files AFTER installing dependencies
 COPY viewfinder ./viewfinder
 COPY scripts/js ./scripts/js
-COPY .prettierrc .prettierignore ./
-
-# Install dependencies (runs after files are in place to preserve node_modules)
-RUN pnpm install --frozen-lockfile
 
 # Build frontend
 WORKDIR /app
 RUN pnpm --filter @viz/viewfinder run build
 
+
 # Stage 2: Backend Build
-FROM golang:1.26-bookworm AS backend-builder
-
-# Install build tools and required dependencies to build libvips from source.
-RUN apt-get update && \
-    apt-get install -y --no-install-recommends \
-    build-essential pkg-config git ca-certificates curl \
-    meson ninja-build python3 python3-pip python3-setuptools \
-    libglib2.0-dev libexpat1-dev libjpeg-dev libpng-dev libtiff-dev \
-    libwebp-dev libheif-dev libopenexr-dev liborc-0.4-dev libgirepository1.0-dev \
-    libxml2-dev libexif-dev libpoppler-glib-dev libgsf-1-dev libopenjp2-7-dev \
-    libjxl-dev libimagequant-dev libarchive-dev librsvg2-dev \
-    libopenslide-dev libmatio-dev libcfitsio-dev libcgif-dev \
-    libmagickwand-dev libraw-dev libnifti-dev && \
-    rm -rf /var/lib/apt/lists/*
-
-# Download, build and install libvips
-COPY .libvips-version /tmp/.libvips-version
-RUN set -eux; \
-    VIPS_VERSION=$(cat /tmp/.libvips-version | tr -d '[:space:]'); \
-    mkdir -p /tmp/build && cd /tmp/build; \
-    curl -fsSL "https://github.com/libvips/libvips/releases/download/v${VIPS_VERSION}/vips-${VIPS_VERSION}.tar.xz" -o vips.tar.xz; \
-    tar xJf vips.tar.xz; \
-    cd vips-${VIPS_VERSION}; \
-    meson setup build --prefix=/usr ; \
-    ninja -C build; \
-    ninja -C build install; \
-    rm -rf /tmp/build; \
-    ldconfig || true; \
-    mkdir -p /vips-libs && cp -d /usr/lib/libvips.so* /usr/lib/*-linux-gnu/libvips.so* /vips-libs/ 2>/dev/null || true
+FROM ${BASE_IMAGE} AS backend-builder
 
 WORKDIR /app
 
@@ -69,14 +54,16 @@ ARG SOURCE_URL
 ARG REPOSITORY
 ARG REPOSITORY_URL
 
-# Download Go dependencies
-RUN go mod download
+# Download Go dependencies with BuildKit cache
+RUN --mount=type=cache,id=go-pkg,target=/go/pkg/mod,sharing=locked \
+    --mount=type=cache,id=go-build,target=/root/.cache/go-build,sharing=locked \
+    go mod download
 
-# Copy the rest of the backend code
-COPY . .
-
-# Build backend
-RUN VERSION=${VERSION:-$(cat version.txt)} && \
+# Build backend with zero-layer bind mounting and BuildKit cache
+RUN --mount=type=bind,target=. \
+    --mount=type=cache,id=go-pkg,target=/go/pkg/mod,sharing=locked \
+    --mount=type=cache,id=go-build,target=/root/.cache/go-build,sharing=locked \
+    VERSION=${VERSION:-$(cat version.txt)} && \
     BUILD_DATE=${BUILD_DATE:-$(date -u +"%Y-%m-%dT%H:%M:%SZ")} && \
     go build -trimpath -ldflags="-s -w \
     -X 'viz/internal/config.Version=${VERSION}' \
@@ -89,21 +76,25 @@ RUN VERSION=${VERSION:-$(cat version.txt)} && \
     -X 'viz/internal/config.RepositoryUrl=${REPOSITORY_URL}'" \
     -o /app/viz-server ./cmd/api
 
+
 # Stage 3: Final Production Image
 FROM debian:bookworm-slim
 
-# Install runtime dependencies for libvips
-RUN apt-get update && \
+# Install runtime dependencies for libvips with BuildKit apt caching
+RUN --mount=type=cache,id=apt-cache,target=/var/cache/apt,sharing=locked \
+    --mount=type=cache,id=apt-lib,target=/var/lib/apt,sharing=locked \
+    rm -f /etc/apt/apt.conf.d/docker-clean && \
+    echo 'Binary::apt::APT::Keep-Downloaded-Packages "true";' > /etc/apt/apt.conf.d/keep-cache && \
+    apt-get update && \
     apt-get install -y --no-install-recommends \
     libglib2.0-0 libexpat1 libjpeg62-turbo libpng16-16 libtiff6 \
     libwebp7 libheif1 libopenexr-3-1-30 liborc-0.4-0 libgirepository-1.0-1 \
     libxml2 libexif12 libpoppler-glib8 libgsf-1-114 libopenjp2-7 \
     libjxl0.7 libimagequant0 libarchive13 librsvg2-2 libopenslide0 libmatio11 \
     libcfitsio10 libcgif0 libmagickwand-6.q16-6 libraw20 libnifti2-2 \
-    ca-certificates gosu && \
-    rm -rf /var/lib/apt/lists/*
+    ca-certificates gosu
 
-# Copy libvips from backend-builder
+# Copy libvips from base image
 COPY --from=backend-builder /vips-libs/ /usr/lib/
 RUN ldconfig
 
@@ -113,11 +104,18 @@ RUN groupadd -r viz && useradd -r -g viz viz
 WORKDIR /app
 
 # Copy binary and version file from backend-builder
-COPY --from=backend-builder /app/viz-server /app/viz-server
-COPY --from=backend-builder /app/version.txt /app/version.txt
+COPY --from=backend-builder --chown=viz:viz /app/viz-server /app/viz-server
+COPY --from=backend-builder --chown=viz:viz /app/version.txt /app/version.txt
 
 # Copy built frontend from frontend-builder
-COPY --from=frontend-builder /app/build/viewfinder /app/frontend
+COPY --from=frontend-builder --chown=viz:viz /app/build/viewfinder /app/frontend
+
+# Copy entrypoint script
+COPY docker/docker-entrypoint.sh /usr/local/bin/
+RUN chmod +x /usr/local/bin/docker-entrypoint.sh
+
+# Set ownership
+RUN chown -R viz:viz /app
 
 # Set environment variables
 ENV VIZ_FRONTEND_BUILD_PATH=/app/frontend

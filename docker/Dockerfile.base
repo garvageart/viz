@@ -1,0 +1,55 @@
+FROM golang:1.26-bookworm AS base-builder
+
+# Disable apt docker-clean hook
+RUN rm -f /etc/apt/apt.conf.d/docker-clean && \
+    echo 'Binary::apt::APT::Keep-Downloaded-Packages "true";' > /etc/apt/apt.conf.d/keep-cache
+
+# Install build tools and required dependencies
+RUN --mount=type=cache,id=apt-cache,target=/var/cache/apt,sharing=locked \
+    --mount=type=cache,id=apt-lib,target=/var/lib/apt,sharing=locked \
+    apt-get update && \
+    apt-get install -y --no-install-recommends \
+    build-essential pkg-config git ca-certificates curl \
+    meson ninja-build python3 python3-pip python3-setuptools \
+    libglib2.0-dev libexpat1-dev libjpeg-dev libpng-dev libtiff-dev \
+    libwebp-dev libheif-dev libopenexr-dev liborc-0.4-dev libgirepository1.0-dev \
+    libxml2-dev libexif-dev libpoppler-glib-dev libgsf-1-dev libopenjp2-7-dev \
+    libjxl-dev libimagequant-dev libarchive-dev librsvg2-dev \
+    libopenslide-dev libmatio-dev libcfitsio-dev libcgif-dev \
+    libmagickwand-dev libraw-dev libnifti-dev
+
+# Download, build and install libvips with BuildKit build cache
+COPY .libvips-version /tmp/.libvips-version
+RUN --mount=type=cache,id=vips-build-cache,target=/tmp/vips-build-cache,sharing=locked \
+    set -eux; \
+    VIPS_VERSION=$(cat /tmp/.libvips-version | tr -d '[:space:]'); \
+    CACHE_DIR="/tmp/vips-build-cache/vips-${VIPS_VERSION}-installed"; \
+    if [ -d "$CACHE_DIR" ] && [ -f "$CACHE_DIR/libvips.so" ]; then \
+    echo "Using persistent BuildKit cache for libvips v${VIPS_VERSION}..."; \
+    cp -d $CACHE_DIR/*.so* /usr/lib/ 2>/dev/null || true; \
+    cp -d $CACHE_DIR/*.so* /usr/lib/*-linux-gnu/ 2>/dev/null || true; \
+    mkdir -p /vips-libs && cp -d $CACHE_DIR/*.so* /vips-libs/; \
+    ldconfig || true; \
+    else \
+    mkdir -p /tmp/vips-build-cache && cd /tmp/vips-build-cache; \
+    if [ ! -d "vips-${VIPS_VERSION}" ]; then \
+    curl -fsSL "https://github.com/libvips/libvips/releases/download/v${VIPS_VERSION}/vips-${VIPS_VERSION}.tar.xz" -o vips.tar.xz; \
+    tar xJf vips.tar.xz; \
+    fi; \
+    cd "vips-${VIPS_VERSION}"; \
+    if [ ! -d "build" ]; then \
+    meson setup build --prefix=/usr; \
+    fi; \
+    ninja -C build; \
+    ninja -C build install; \
+    ldconfig || true; \
+    mkdir -p /vips-libs && cp -d /usr/lib/libvips.so* /usr/lib/*-linux-gnu/libvips.so* /vips-libs/ 2>/dev/null || true; \
+    mkdir -p "$CACHE_DIR" && cp -d /vips-libs/* "$CACHE_DIR/"; \
+    fi
+
+FROM golang:1.26-bookworm
+COPY --from=base-builder /usr/local /usr/local
+COPY --from=base-builder /usr/lib /usr/lib
+COPY --from=base-builder /vips-libs/ /vips-libs/
+
+RUN ldconfig
