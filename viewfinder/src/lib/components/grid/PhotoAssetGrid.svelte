@@ -27,7 +27,7 @@
     import { debounce } from "$lib/utils/misc";
     import ImageLabelViewer from "../image-tools/ImageLabelViewer.svelte";
     import StarRating from "../image-tools/StarRating.svelte";
-    import AssetImage from "../ui/AssetImage.svelte";
+    import AssetImage, { type ImageResolution } from "../ui/AssetImage.svelte";
     import ImageCard from "../ui/ImageCard.svelte";
     import MaterialIcon from "../ui/MaterialIcon.svelte";
     import TimelineScrubber from "./TimelineScrubber.svelte";
@@ -40,7 +40,7 @@
         data: ImageAsset[];
         allData?: ImageAsset[];
         groupedData?: ConsolidatedGroup[];
-        photoCardSnippet?: Snippet<[ImageAsset, CardVisualState]>;
+        photoCardSnippet?: Snippet<[ImageAsset, ImageResolution, CardVisualState]>;
         gridConfig?: PhotoGridConfig;
         showDateHeaders?: boolean;
         scopeId?: string;
@@ -1253,7 +1253,7 @@
             <div class="tile-image-container" style={`height: 100%;`}>
                 <AssetImage
                     {asset}
-                    variant="thumbnail"
+                    resolution="thumbnail"
                     draggable="false"
                     class="tile-image"
                     alt={asset?.name ?? asset?.image_metadata?.file_name ?? ""}

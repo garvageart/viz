@@ -218,7 +218,7 @@
 >
     <div class="image-container">
         {#if thumbnail}
-            <AssetImage asset={thumbnail} variant="preview" alt={collection.name} class="collection-image" />
+            <AssetImage asset={thumbnail} resolution="preview" alt={collection.name} class="collection-image" />
         {:else}
             <div class="coll-no_thumbnail">
                 <MaterialIcon iconName="folder_open" fill={true} size="2.5rem" class="placeholder-icon" />

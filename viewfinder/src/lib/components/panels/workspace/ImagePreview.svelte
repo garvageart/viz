@@ -47,7 +47,7 @@
             <div class="image-wrapper">
                 <AssetImage
                     asset={activeItem}
-                    variant="preview"
+                    resolution="preview"
                     objectFit="contain"
                     alt={activeItem.name}
                     loading="lazy"
