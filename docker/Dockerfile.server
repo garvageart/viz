@@ -34,11 +34,13 @@ RUN pnpm --filter @viz/viewfinder run build
 # Stage 2: Backend Build
 FROM golang:1.26-bookworm AS backend-builder
 
+# Disable apt docker-clean hook so downloaded deb packages persist in BuildKit cache
+RUN rm -f /etc/apt/apt.conf.d/docker-clean && \
+    echo 'Binary::apt::APT::Keep-Downloaded-Packages "true";' > /etc/apt/apt.conf.d/keep-cache
+
 # Install build tools and required dependencies with apt package caching
-RUN --mount=type=cache,id=apt-cache,target=/var/cache/apt/archives,sharing=locked \
-    --mount=type=cache,id=apt-lib,target=/var/lib/apt/lists,sharing=locked \
-    rm -f /etc/apt/apt.conf.d/docker-clean && \
-    echo 'Binary::apt::APT::Keep-Downloaded-Packages "true";' > /etc/apt/apt.conf.d/keep-cache && \
+RUN --mount=type=cache,id=apt-cache,target=/var/cache/apt,sharing=locked \
+    --mount=type=cache,id=apt-lib,target=/var/lib/apt,sharing=locked \
     apt-get update && \
     apt-get install -y --no-install-recommends \
     build-essential pkg-config git ca-certificates curl \
@@ -126,10 +128,14 @@ RUN --mount=type=cache,id=go-pkg,target=/go/pkg/mod,sharing=locked \
 # Stage 3: Final Production Image
 FROM debian:bookworm-slim
 
+# Disable apt docker-clean hook so downloaded deb packages persist in BuildKit cache
+RUN rm -f /etc/apt/apt.conf.d/docker-clean && \
+    echo 'Binary::apt::APT::Keep-Downloaded-Packages "true";' > /etc/apt/apt.conf.d/keep-cache
+
 # Install runtime dependencies for libvips with apt package caching via inline flags
 # (Keeps the final image clean of apt config mutations)
-RUN --mount=type=cache,id=apt-cache,target=/var/cache/apt/archives,sharing=locked \
-    --mount=type=cache,id=apt-lib,target=/var/lib/apt/lists,sharing=locked \
+RUN --mount=type=cache,id=apt-cache,target=/var/cache/apt,sharing=locked \
+    --mount=type=cache,id=apt-lib,target=/var/lib/apt,sharing=locked \
     apt-get update && \
     apt-get install -y --no-install-recommends -o APT::Keep-Downloaded-Packages=true \
     libglib2.0-0 libexpat1 libjpeg62-turbo libpng16-16 libtiff6 \
