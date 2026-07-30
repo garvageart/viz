@@ -41,6 +41,8 @@ FROM ${BASE_IMAGE} AS backend-builder
 WORKDIR /app
 
 # Copy Go workspace files
+# not sure why copying it earlier didn't work but whatever
+COPY .gitignore Makefile
 COPY go.mod go.sum go.work go.work.sum ./
 COPY cmd/api/go.mod cmd/api/go.sum ./cmd/api/
 COPY version.txt ./
