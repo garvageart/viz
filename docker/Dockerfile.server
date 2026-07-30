@@ -5,27 +5,27 @@ WORKDIR /app
 
 # Use modern corepack to manage pnpm instead of global npm installs
 ARG PNPM_VERSION=latest
-RUN --mount=type=cache,id=npm-cache,target=/root/.npm \
-    npm install -g corepack@latest && corepack enable && corepack prepare pnpm@${PNPM_VERSION} --activate
+RUN corepack enable && corepack prepare pnpm@${PNPM_VERSION} --activate
 
 # Copy workspace package configuration first for maximum Docker cache hits
 COPY pnpm-lock.yaml pnpm-workspace.yaml package.json .npmrc .prettierrc .prettierignore ./
 COPY viewfinder/package.json ./viewfinder/
 COPY scripts/js/package.json ./scripts/js/
 
-# Set pnpm store directory, fetch timeout, and retries for CI network resilience
 ENV NPM_CONFIG_STORE_DIR=/root/.local/share/pnpm/store
 ENV NPM_CONFIG_FETCH_TIMEOUT=600000
 ENV NPM_CONFIG_FETCH_RETRIES=5
 ENV CI=true
 
-# Install dependencies with BuildKit store cache
-RUN --mount=type=cache,id=pnpm-store,target=/root/.local/share/pnpm/store \
-    pnpm install --frozen-lockfile --prod=false
+# Install dependencies with ignore scripts
+RUN --mount=type=cache,id=pnpm,target=/root/.local/share/pnpm/store \
+    pnpm install --frozen-lockfile --prod=false --ignore-scripts
 
-# Copy workspace source code after pnpm install so source edits do not invalidate dependency layer
+# Copy workspace source code 
 COPY viewfinder ./viewfinder
 COPY scripts/js ./scripts/js
+
+RUN pnpm rebuild && pnpm run -r prepare --if-present
 
 # Build frontend
 RUN pnpm --filter @viz/viewfinder run build
