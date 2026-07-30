@@ -19,7 +19,7 @@ ENV NPM_CONFIG_FETCH_RETRIES=5
 ENV CI=true
 
 # Install dependencies with BuildKit store cache
-RUN --mount=type=cache,id=viz-cache,target=/root/.local/share/pnpm/store \
+RUN --mount=type=cache,id=pnpm-store,target=/root/.local/share/pnpm/store \
     pnpm install --frozen-lockfile --prod=false
 
 # Copy workspace source code after pnpm install so source edits do not invalidate dependency layer
@@ -34,8 +34,8 @@ RUN pnpm --filter @viz/viewfinder run build
 FROM golang:1.26-bookworm AS backend-builder
 
 # Install build tools and required dependencies with apt package caching
-RUN --mount=type=cache,id=viz-cache,target=/var/cache/apt,sharing=locked \
-    --mount=type=cache,id=viz-cache,target=/var/lib/apt,sharing=locked \
+RUN --mount=type=cache,id=apt-cache,target=/var/cache/apt/archives,sharing=locked \
+    --mount=type=cache,id=apt-lib,target=/var/lib/apt/lists,sharing=locked \
     rm -f /etc/apt/apt.conf.d/docker-clean && \
     echo 'Binary::apt::APT::Keep-Downloaded-Packages "true";' > /etc/apt/apt.conf.d/keep-cache && \
     apt-get update && \
@@ -51,7 +51,7 @@ RUN --mount=type=cache,id=viz-cache,target=/var/cache/apt,sharing=locked \
 
 # Download, build and install libvips with BuildKit build cache
 COPY .libvips-version /tmp/.libvips-version
-RUN --mount=type=cache,id=viz-cache,target=/tmp/vips-build-cache,sharing=locked \
+RUN --mount=type=cache,id=vips-build-cache,target=/tmp/vips-build-cache,sharing=locked \
     set -eux; \
     VIPS_VERSION=$(cat /tmp/.libvips-version | tr -d '[:space:]'); \
     CACHE_DIR="/tmp/vips-build-cache/vips-${VIPS_VERSION}-installed"; \
@@ -85,8 +85,8 @@ COPY go.mod go.sum go.work go.work.sum ./
 COPY cmd/api/go.mod cmd/api/go.sum ./cmd/api/
 
 # Download Go dependencies for all workspace modules with persistent BuildKit cache
-RUN --mount=type=cache,id=viz-cache,target=/go/pkg,sharing=locked \
-    --mount=type=cache,id=viz-cache,target=/root/.cache/go-build,sharing=locked \
+RUN --mount=type=cache,id=go-pkg,target=/go/pkg/mod,sharing=locked \
+    --mount=type=cache,id=go-build,target=/root/.cache/go-build,sharing=locked \
     go mod download -x all && \
     (cd cmd/api && go mod download -x all)
 
@@ -106,8 +106,8 @@ ARG REPOSITORY_URL
 # Build backend with Go build and module cache
 # Added -trimpath and ldflags -s -w for smaller, reproducible binaries
 ENV CGO_ENABLED=1
-RUN --mount=type=cache,id=viz-cache,target=/go/pkg,sharing=locked \
-    --mount=type=cache,id=viz-cache,target=/root/.cache/go-build,sharing=locked \
+RUN --mount=type=cache,id=go-pkg,target=/go/pkg/mod,sharing=locked \
+    --mount=type=cache,id=go-build,target=/root/.cache/go-build,sharing=locked \
     VERSION=${VERSION:-$(cat version.txt)} && \
     BUILD_DATE=${BUILD_DATE:-$(date -u +"%Y-%m-%dT%H:%M:%SZ")} && \
     go build -trimpath -ldflags="-s -w \
@@ -127,8 +127,8 @@ FROM debian:bookworm-slim
 
 # Install runtime dependencies for libvips with apt package caching via inline flags
 # (Keeps the final image clean of apt config mutations)
-RUN --mount=type=cache,id=viz-cache,target=/var/cache/apt,sharing=locked \
-    --mount=type=cache,id=viz-cache,target=/var/lib/apt,sharing=locked \
+RUN --mount=type=cache,id=apt-cache,target=/var/cache/apt/archives,sharing=locked \
+    --mount=type=cache,id=apt-lib,target=/var/lib/apt/lists,sharing=locked \
     apt-get update && \
     apt-get install -y --no-install-recommends -o APT::Keep-Downloaded-Packages=true \
     libglib2.0-0 libexpat1 libjpeg62-turbo libpng16-16 libtiff6 \
@@ -136,7 +136,7 @@ RUN --mount=type=cache,id=viz-cache,target=/var/cache/apt,sharing=locked \
     libxml2 libexif12 libpoppler-glib8 libgsf-1-114 libopenjp2-7 \
     libjxl0.7 libimagequant0 libarchive13 librsvg2-2 libopenslide0 libmatio11 \
     libcfitsio10 libcgif0 libmagickwand-6.q16-6 libraw20 libnifti2-2 \
-    ca-certificates
+    ca-certificates gosu
 
 # Copy libvips from backend-builder
 COPY --from=backend-builder /vips-libs/ /usr/lib/
@@ -154,11 +154,12 @@ COPY --from=backend-builder --chown=viz:viz /app/version.txt /app/version.txt
 # Copy built frontend from frontend-builder
 COPY --from=frontend-builder --chown=viz:viz /app/build/viewfinder /app/frontend
 
+# Copy entrypoint script
+COPY docker/docker-entrypoint.sh /usr/local/bin/
+RUN chmod +x /usr/local/bin/docker-entrypoint.sh
+
 # Set ownership
 RUN chown -R viz:viz /app
-
-# Switch to non-root user
-USER viz
 
 # Set environment variables
 ENV VIZ_FRONTEND_BUILD_PATH=/app/frontend
@@ -167,5 +168,5 @@ ENV PORT=7770
 # Expose the server port
 EXPOSE 7770
 
-# Start the application
+ENTRYPOINT ["docker-entrypoint.sh"]
 CMD ["/app/viz-server"]
