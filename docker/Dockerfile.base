@@ -50,6 +50,7 @@ RUN --mount=type=cache,id=vips-build-cache,target=/tmp/vips-build-cache,sharing=
 FROM golang:1.26-bookworm
 COPY --from=base-builder /usr/local /usr/local
 COPY --from=base-builder /usr/lib /usr/lib
+COPY --from=base-builder /usr/include /usr/include
 COPY --from=base-builder /usr/share/pkgconfig /usr/share/pkgconfig
 COPY --from=base-builder /vips-libs/ /vips-libs/
 
