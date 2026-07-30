@@ -5,6 +5,24 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.24.0] - 2026-07-30
+
+* refactor(viewfinder): update +layout.ts load function to pass fetch explicitly (71face4d)
+* refactor(viewfinder): clean up job concurrency stubs and forward RequestOpts in auth methods (550bece6)
+* fix(viewfinder): resolve real-time WebSocket UI invalidation using DataKeys dependency enum (380c8b26)
+* perf(docker): unify BuildKit cache mounts under id=viz-cache and remove hardcoded BASE_DIRECTORY (e8608bf6)
+* fix(tools): fix trailing whitespace in generated MaterialSymbol type definition (ca970781)
+* fix: make favourite badge size optional (7ac8ff0e)
+* chore(dev): fix render time measurement calculation (704086eb)
+* fix(docker): install corepack globally in Dockerfile.server (186a5863)
+* fix(viewfinder): update collection selection modal options and lightbox resolution (515222ae)
+* feat(ui): update favourite star icon and favourite badge component (89eab2df)
+* fix(viewfinder): update layout initialization and runtime config bindings (151996df)
+* perf(docker): unify BuildKit cache mounts under id=viz-cache (073abc92)
+* refactor(viewfinder): improve component lifecycle and event handling (e5c87d31)
+* refactor(viewfinder): isolate PhotoAssetGrid and compose customSnippet in AssetGrid (b3b85c53)
+* refactor(viewfinder): eliminate as any type casts across frontend state and components (36d7f8f6)
+
 ## [0.23.11] - 2026-07-29
 
 * perf(docker): unify BuildKit cache mounts under id=viz-cache (d0765efd)
