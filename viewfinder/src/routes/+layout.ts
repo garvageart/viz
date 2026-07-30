@@ -1,6 +1,6 @@
 import { browser } from "$app/environment";
 import { error, redirect } from "@sveltejs/kit";
-import { getSystemStatus, initApi } from "$lib/api";
+import { getSystemStatus } from "$lib/api";
 import { fetchCurrentUser } from "$lib/auth/auth_methods";
 import { system, user } from "$lib/states/index.svelte.js";
 import { getSafeRedirectUrl } from "$lib/utils/url";
@@ -9,9 +9,6 @@ export const ssr = false;
 export const csr = true;
 
 export async function load({ url, fetch }) {
-    // Initialize API client with SvelteKit's enhanced fetch
-    initApi(fetch);
-
     // Fetch system status if not already fetched
     if (!system.fetched) {
         system.loading = true;
@@ -22,7 +19,7 @@ export async function load({ url, fetch }) {
             // Optional: clear it so we don't rely on stale data later if we ever re-fetch?
             window.__VIZ_CONFIG__ = undefined;
         } else {
-            const res = await getSystemStatus();
+            const res = await getSystemStatus({ fetch });
             if (res.status === 200) {
                 system.data = res.data;
                 system.fetched = true;
@@ -48,7 +45,7 @@ export async function load({ url, fetch }) {
 
     // 2. Ensure we have the user state
     if (!user.fetched) {
-        await fetchCurrentUser();
+        await fetchCurrentUser({ fetch });
     }
 
     const isConnectionError = !!user.connectionError;
