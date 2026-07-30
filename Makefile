@@ -3,7 +3,7 @@ SHELL := /usr/bin/env bash
 # even though make spawns bash subshells (not zsh where nvm is normally sourced).
 export PATH := $(HOME)/.nvm/versions/node/$(shell cat $(CURDIR)/.nvmrc 2>/dev/null || echo "node")/bin:$(PATH)
 SCRIPTS_DIR := scripts/js
-.PHONY: help build build-api build-frontend generate-icons generate-types generate-types-install fmt fmt-check fmt-check-go lint test test-go docker-build docker-push docker-up docker-down migrate initdb clean image-server image-viz dev run check-go
+.PHONY: help build build-api build-frontend generate-icons generate-types generate-types-install fmt fmt-check fmt-check-go lint test test-go docker-build docker-push docker-up docker-down migrate initdb clean image-server image-viz dev run check-go buildx-server buildx-build
 
 # Simple Makefile for common tasks across the viz repository.
 # Targets included:
