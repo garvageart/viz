@@ -4,3 +4,7 @@ packages:
 allowBuilds:
   '@parcel/watcher': false
   esbuild: false
+peerDependencyRules:
+  allowedVersions:
+    prettier-plugin-svelte: 4.x
+    typescript: 6.x
