@@ -5,6 +5,13 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.26.10] - 2026-07-31
+
+* test(viewfinder): drop unused imports in DevWelcomeText test (668e94fd)
+* fix(viewfinder): load jest-dom matcher types in tsconfig (cc40acdd)
+* feat: add archived flag to collections (6d4ab061)
+* chore: mark ServerError for removal (4c89aed4)
+
 ## [0.26.9] - 2026-07-31
 
 * fix(viewfinder): guard screen.orientation access in IS_MOBILE (8f5eeb43)
