@@ -10,7 +10,7 @@ const IS_BROWSER_ENV =
 
 export const IS_MOBILE =
     typeof navigator !== "undefined" && typeof screen !== "undefined"
-        ? /iPhone|iPad|iPod|Android/i.test(navigator.userAgent) || screen.orientation.type === "portrait-primary"
+        ? /iPhone|iPad|iPod|Android/i.test(navigator.userAgent) || screen.orientation?.type === "portrait-primary"
         : false;
 
 export const IS_MOBILE_VIEWPORT =
