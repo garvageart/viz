@@ -137,3 +137,9 @@ EXPOSE 7770
 
 ENTRYPOINT ["docker-entrypoint.sh"]
 CMD ["/app/viz-server"]
+
+
+# Stage 4: Database Image (baked-in init scripts)
+FROM postgres:18-alpine AS db
+
+COPY docker/initdb/01-create-superuser.sh /docker-entrypoint-initdb.d/

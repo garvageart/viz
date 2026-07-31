@@ -1,11 +1,26 @@
+# Production deployment template for self-hosted instances.
+#
+# Compose-level variables:
+#   REPO_HOST          - container registry host (e.g. git.example.com)
+#   REPOSITORY         - owner/repo holding the viz-server image (e.g. you/viz)
+#   DATABASE_LOCATION  - host path for the PostgreSQL data directory
+#   IMAGE_TAG          - viz-server image tag to deploy (default: latest)
+#
+# Server environment variables (DB_USER, DB_PASSWORD, DB_NAME, ENV, API_PORT, ...)
+# are read from the root .env file and documented in docs/setup/ENVIRONMENT_VARIABLES.md.
+
+name: viz
+networks:
+  default:
+    name: viz_default
+
+volumes:
+  data:
+
 services:
   server:
-    build:
-      context: ..
-      dockerfile: docker/Dockerfile
+    image: ${REPO_HOST:?}/${REPOSITORY:?}/viz-server:${IMAGE_TAG:-latest}
     restart: unless-stopped
-    ports:
-      - "7770:7770"
     depends_on:
       db:
         condition: service_healthy
@@ -17,13 +32,14 @@ services:
       - DB_HOST=db
       - REDIS_HOST=redis
       - ENV=production
+      - API_HOST=0.0.0.0
     volumes:
-      # TODO: This will change to /app/data
-      # Images will then go by default to /app/data/library
-      - viz-data:/app/data
+      - data:/app/data
       - ../viz.json:/app/viz.json
+    ports:
+      - 7780:7770
     networks:
-      - viz-net
+      - default
 
   db:
     build:
@@ -38,27 +54,14 @@ services:
       - POSTGRES_PASSWORD=${DB_PASSWORD:-postgres}
       - POSTGRES_DB=${DB_NAME:-viz}
     volumes:
-      # TODO: This will change to /app/data/postgresql (or /app/data/db)
-      - viz-db-data:/var/lib/postgresql/data
+      - ${DATABASE_LOCATION:?}:/var/lib/postgresql/data
     healthcheck:
       test:
         ["CMD-SHELL", "pg_isready -U $${DB_USER:-postgres} -d $${DB_NAME:-viz}"]
       interval: 10s
       timeout: 5s
       retries: 5
-    networks:
-      - viz-net
 
   redis:
     image: redis:8-alpine
     restart: unless-stopped
-    networks:
-      - viz-net
-
-networks:
-  viz-net:
-    driver: bridge
-
-volumes:
-  viz-db-data:
-  viz-data:

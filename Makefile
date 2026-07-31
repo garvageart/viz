@@ -223,7 +223,7 @@ buildx-server:
 		--build-arg REPOSITORY=$(REGISTRY_USER)/$(REPO_NAME) \
 		--cache-to=type=local,dest=$(BUILDX_CACHE_SERVER_DIR) \
 		--cache-from=type=local,src=$(BUILDX_CACHE_SERVER_DIR) \
-		-f docker/Dockerfile.server -t viz-server:local --load .
+		-f docker/Dockerfile -t viz-server:local --load .
 
 buildx-build: buildx-server
 	@echo "buildx build complete. Use the image 'viz-server:local'."
@@ -238,7 +238,7 @@ docker-down:
 
 image-server:
 	@echo "Building server image"
-	@docker build -f docker/Dockerfile.server \
+	@docker build -f docker/Dockerfile \
 		--build-arg REGISTRY_URL=$(REGISTRY_HOST) \
 		--build-arg REPOSITORY=$(REGISTRY_USER)/$(REPO_NAME) \
 		-t $(REGISTRY)/viz-server:$(TAG) .
@@ -325,9 +325,9 @@ ci-build: check-env
 	$(MAKE) generate-types-install USE_HOST_CACHE=0; \
 	# Build server image with buildx (load into local daemon). Adjust cache flags to your CI.
 	if docker buildx version >/dev/null 2>&1; then \
-		docker buildx build --progress=plain --build-arg REGISTRY_URL=$(REGISTRY_HOST) --build-arg REPOSITORY=$(REGISTRY_USER)/$(REPO_NAME) --tag $(REGISTRY)/viz-server:$(TAG) -f docker/Dockerfile.server --load .; \
+		docker buildx build --progress=plain --build-arg REGISTRY_URL=$(REGISTRY_HOST) --build-arg REPOSITORY=$(REGISTRY_USER)/$(REPO_NAME) --tag $(REGISTRY)/viz-server:$(TAG) -f docker/Dockerfile --load .; \
 	else \
-		docker build -f docker/Dockerfile.server --build-arg REGISTRY_URL=$(REGISTRY_HOST) --build-arg REPOSITORY=$(REGISTRY_USER)/$(REPO_NAME) -t $(REGISTRY)/viz-server:$(TAG) .; \
+		docker build -f docker/Dockerfile --build-arg REGISTRY_URL=$(REGISTRY_HOST) --build-arg REPOSITORY=$(REGISTRY_USER)/$(REPO_NAME) -t $(REGISTRY)/viz-server:$(TAG) .; \
 	fi
 
 
