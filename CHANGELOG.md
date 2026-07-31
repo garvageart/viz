@@ -5,6 +5,14 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.26.3] - 2026-07-31
+
+* style(viewfinder): polish onboarding flow (8ba24afb)
+* fix(viewfinder): use danger variant for permanent delete button (bf6f8878)
+* feat(viewfinder): resolve modal options per instance at render time (2c545035)
+* docs: document deployment variables and refresh .env.example (40949fef)
+* feat(docker): bake db init scripts into image and rename Dockerfile.server (b6f9530f)
+
 ## [0.26.2] - 2026-07-31
 
 * fix: clean up asset grid styles (1be6cc5a)
