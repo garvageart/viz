@@ -9,9 +9,7 @@
     import PhotoAssetGrid from "$lib/components/grid/PhotoAssetGrid.svelte";
     import ImageLabelViewer from "$lib/components/image-tools/ImageLabelViewer.svelte";
     import StarRating from "$lib/components/image-tools/StarRating.svelte";
-    import CollectionSelectionModal, {
-        modalOptions as collectionModalOptions
-    } from "$lib/components/modals/CollectionSelectionModal.svelte";
+    import CollectionSelectionModal from "$lib/components/modals/CollectionSelectionModal.svelte";
     import { modalsManager } from "$lib/components/modals/manager/ModalManager.svelte";
     import VizViewContainer from "$lib/components/panels/VizViewContainer.svelte";
     import CollectionCard from "$lib/components/ui/CollectionCard.svelte";
@@ -128,7 +126,7 @@
                 imageUidsToAdd: imageUidsForCollection,
                 onSelect: handleCollectionSelect
             },
-            { heading: "Select a Collection", ...collectionModalOptions }
+            { heading: "Select a Collection" }
         );
     }
 
@@ -455,7 +453,7 @@
                                         imageUidsToAdd: imageUidsForCollection,
                                         onSelect: handleCollectionSelect
                                     },
-                                    { heading: "Select a Collection", ...collectionModalOptions }
+                                    { heading: "Select a Collection" }
                                 );
                             }}
                         >

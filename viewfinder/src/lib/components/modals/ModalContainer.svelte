@@ -2,6 +2,8 @@
     import Lightbox from "../ui/Lightbox.svelte";
     import ModalLightbox from "./ModalLightbox.svelte";
     import { modalsManager } from "./manager/ModalManager.svelte";
+
+    let modalInstances = $state<Record<string, any>>({});
 </script>
 
 <svelte:window
@@ -13,25 +15,27 @@
 />
 
 {#each modalsManager.modals as modal (modal.id)}
-    {@const compOptions = modal.component.modalOptions}
+    {@const instance = modalInstances[modal.id]}
+    {@const compOptions = instance?.modalOptions || modal.component.modalOptions}
+    {@const merged = { ...modal.options, ...compOptions }}
     <Lightbox
         show={true}
         onclick={() => {
-            if (modal.options?.closeOnOverlayClick !== false) {
+            if (merged.closeOnOverlayClick !== false) {
                 modalsManager.dismiss(modal.id, "overlay-click");
             }
         }}
         zIndex={modal.index}
     >
         <ModalLightbox
-            heading={modal.options?.heading ?? compOptions?.heading}
-            width={modal.options?.width ?? compOptions?.width ?? "50%"}
-            height={modal.options?.height ?? compOptions?.height}
-            applyPadding={modal.options?.applyPadding ?? compOptions?.applyPadding}
+            heading={merged.heading}
+            width={merged.width ?? "50%"}
+            height={merged.height}
+            applyPadding={merged.applyPadding}
             zIndex={modal.index + 1}
             onclickClose={() => modalsManager.dismiss(modal.id, "close-button")}
         >
-            <modal.component {...modal.props} id={modal.id} />
+            <modal.component bind:this={modalInstances[modal.id]} {...modal.props} id={modal.id} />
         </ModalLightbox>
     </Lightbox>
 {/each}

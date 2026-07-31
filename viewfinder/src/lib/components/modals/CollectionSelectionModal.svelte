@@ -1,12 +1,3 @@
-<script module lang="ts">
-    import type { ModalOptions } from "./manager/ModalManager.svelte";
-
-    export const modalOptions: ModalOptions = {
-        width: "80%",
-        height: "90%"
-    };
-</script>
-
 <script lang="ts">
     import { goto } from "$app/navigation";
     import { onMount } from "svelte";
@@ -26,6 +17,7 @@
     import Button from "../ui/Button.svelte";
     import CollectionCard from "../ui/CollectionCard.svelte";
     import CollectionModal from "./CollectionModal.svelte";
+    import type { ModalOptions } from "./manager/ModalManager.svelte";
     import { modalsManager } from "./manager/ModalManager.svelte";
 
     interface AugmentedCollection extends Collection {
@@ -40,6 +32,12 @@
     }
 
     let { id, onSelect, imageUidsToAdd = [] }: Props = $props();
+
+    export const modalOptions: ModalOptions = $state({
+        width: "95%",
+        height: "95%",
+        applyPadding: false
+    });
 
     const scopeId = "collection-selection-modal";
 
@@ -164,44 +162,90 @@
     </div>
 {/snippet}
 
-<div class="collection-selection-modal-inner" role="dialog" aria-modal="true" tabindex="-1">
-    <VizViewContainer bind:data={collections} bind:hasMore={shouldUpdate} name="Collections">
-        <AssetGrid
-            data={collections}
-            assetSnippet={collectionSnippet}
-            {scopeId}
-            disableMultiSelection={true}
-            disableOutsideUnselect={true}
-        />
-    </VizViewContainer>
-
-    <div class="modal-actions">
-        <Button variant="info" onclick={openCreateCollectionModal}><span>Create Collection</span></Button>
-        <Button
-            variant="success"
-            disabled={!selectedCollection || selectedCollection.isFullyContained}
-            onclick={() => handleSelect(selectedCollection!)}
+<div class="collection-selection-modal-container" role="dialog" aria-modal="true" tabindex="-1">
+    <div class="modal-body">
+        <VizViewContainer
+            class="asset-container"
+            bind:data={collections}
+            bind:hasMore={shouldUpdate}
+            name="Collections"
         >
-            <span>Confirm</span>
-        </Button>
+            <AssetGrid
+                data={collections}
+                assetSnippet={collectionSnippet}
+                {scopeId}
+                disableMultiSelection={true}
+                disableOutsideUnselect={true}
+            />
+        </VizViewContainer>
+    </div>
+
+    <div class="modal-footer">
+        <div class="selection-status">
+            {#if selectedCollection}
+                <span class="selection-count">{selectedCollection.name}</span>
+            {/if}
+        </div>
+        <div class="footer-actions">
+            <Button variant="info" onclick={openCreateCollectionModal}><span>Create Collection</span></Button>
+            <Button
+                variant="success"
+                disabled={!selectedCollection || selectedCollection.isFullyContained}
+                onclick={() => handleSelect(selectedCollection!)}
+            >
+                <span>Confirm</span>
+            </Button>
+        </div>
     </div>
 </div>
 
 <style lang="scss">
-    .collection-selection-modal-inner {
+    .collection-selection-modal-container {
         display: flex;
         flex-direction: column;
         width: 100%;
         height: 100%;
+        min-height: 0;
         color: var(--viz-text-primary);
+        background-color: var(--viz-bg-color);
         box-sizing: border-box;
+    }
 
-        .modal-actions {
-            display: flex;
-            justify-content: flex-end;
-            margin-top: 1rem;
-            gap: 0.5rem;
+    .modal-body {
+        display: flex;
+        flex-direction: column;
+        flex: 1;
+        min-height: 0;
+        position: relative;
+
+        :global(.asset-container) {
+            padding: var(--viz-spacing-std);
+            box-sizing: border-box;
         }
+    }
+
+    .modal-footer {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        padding: var(--viz-spacing-std);
+        border-top: var(--viz-border-thin);
+        background-color: var(--viz-surface-card);
+        flex-shrink: 0;
+    }
+
+    .selection-status {
+        font-family: var(--viz-mono-font);
+        font-size: var(--viz-font-size-lg);
+
+        .selection-count {
+            font-weight: 600;
+        }
+    }
+
+    .footer-actions {
+        display: flex;
+        gap: var(--viz-spacing-sm);
     }
 
     .collection-card-wrapper {

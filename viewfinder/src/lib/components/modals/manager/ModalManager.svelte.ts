@@ -22,15 +22,15 @@ export interface ModalOptions {
     closeOnOverlayClick?: boolean;
 }
 
-const DEFAULT_MODAL_OPTIONS: ModalOptions = {
-    width: "40%",
-    applyPadding: true,
-    closeOnOverlayClick: true
-};
-
 export class ModalsManager {
     modals = $state<ModalInstance<any, any>[]>([]);
     baseZIndex = 100000;
+
+    private DEFAULT_MODAL_OPTIONS: ModalOptions = $state({
+        width: "40%",
+        applyPadding: true,
+        closeOnOverlayClick: true
+    });
 
     open<T extends Record<string, any>, R = any>(
         component: ModalComponent<T>,
@@ -38,7 +38,6 @@ export class ModalsManager {
         options?: ModalOptions
     ): Promise<R | undefined> {
         const id = generateRandomString(8);
-        const compOptions = component.modalOptions;
 
         const promise = new Promise<R | undefined>((resolve) => {
             this.modals.push({
@@ -47,7 +46,7 @@ export class ModalsManager {
                 props,
                 resolve,
                 index: this.baseZIndex + this.modals.length * 10,
-                options: { ...DEFAULT_MODAL_OPTIONS, ...compOptions, ...options }
+                options: { ...this.DEFAULT_MODAL_OPTIONS, ...options }
             });
         });
 
