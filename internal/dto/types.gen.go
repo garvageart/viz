@@ -693,6 +693,9 @@ type CacheStatusResponse struct {
 
 // Collection defines model for Collection.
 type Collection struct {
+	// Archived Is archived
+	Archived *bool `json:"archived,omitempty"`
+
 	// CreatedAt Creation time
 	CreatedAt time.Time `json:"created_at"`
 	CreatedBy *User     `json:"created_by,omitempty"`
@@ -800,6 +803,9 @@ type CollectionListResponse struct {
 
 // CollectionUpdate defines model for CollectionUpdate.
 type CollectionUpdate struct {
+	// Archived Is archived
+	Archived *bool `json:"archived,omitempty"`
+
 	// Description Collection description
 	Description *string `json:"description,omitempty"`
 

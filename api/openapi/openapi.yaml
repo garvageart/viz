@@ -4067,7 +4067,8 @@ components:
                 uid: { type: string, description: Collection UID }
                 name: { type: string, description: Collection name }
                 image_count: { type: integer, description: Number of images }
-                private: { type: boolean, nullable: true, description: Is private }
+                private: { type: boolean, description: Is private }
+                archived: { type: boolean, description: Is archived }
                 favourited: { type: boolean, description: Is favourited }
                 images:
                     type: array
@@ -4100,6 +4101,7 @@ components:
                 thumbnailUID: { type: string, description: Thumbnail image UID }
                 description: { type: string, description: Collection description }
                 private: { type: boolean, description: Is private }
+                archived: { type: boolean, description: Is archived }
                 favourited: { type: boolean, description: Is favourited }
                 ownerUID: { type: string, description: Owner UID }
 

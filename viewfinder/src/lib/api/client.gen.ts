@@ -408,7 +408,9 @@ export type Collection = {
     /** Number of images */
     image_count: number;
     /** Is private */
-    "private"?: boolean | null;
+    "private"?: boolean;
+    /** Is archived */
+    archived?: boolean;
     /** Is favourited */
     favourited?: boolean;
     /** List of images */
@@ -591,6 +593,8 @@ export type CollectionUpdate = {
     description?: string;
     /** Is private */
     "private"?: boolean;
+    /** Is archived */
+    archived?: boolean;
     /** Is favourited */
     favourited?: boolean;
     /** Owner UID */

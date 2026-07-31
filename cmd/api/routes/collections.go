@@ -212,6 +212,9 @@ func CollectionsRouter(db *gorm.DB, logger *slog.Logger, wsBroker *libhttp.WSBro
 		if err := db.Transaction(func(tx *gorm.DB) error {
 			query := tx.Model(&entities.Collection{})
 
+			// First get non-archived collections
+			query = query.Where("archived = ? OR archived IS NULL", false)
+
 			authUser, ok := libhttp.UserFromContext(req)
 			if ok {
 				// Show: Public OR (Private AND Owned by me)
