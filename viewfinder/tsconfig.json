@@ -25,6 +25,7 @@
         ".svelte-kit/types/**/$types.d.ts",
         "vite.config.js",
         "vite.config.ts",
+        "vitest-setup-client.ts",
         "src/**/*.js",
         "src/**/*.ts",
         "src/**/*.svelte",
