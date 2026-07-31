@@ -245,21 +245,21 @@
                         class="step-form"
                     >
                         <div class="step-content">
-                            <h1>Welcome to Viz</h1>
+                            <h1>viz</h1>
                             <div class="info-box">
-                                <p>
+                                <span>
                                     <strong>You are the first user!</strong>
-                                </p>
-                                <p>
+                                </span>
+                                <span>
                                     As the first user, you will be granted <strong>Superadmin</strong>
                                     privileges. This gives you full control over the system, including managing other users,
                                     system settings, and more.
-                                </p>
-                                <p>Let's get your account set up.</p>
+                                </span>
+                                <span>Let's get your account set up.</span>
                             </div>
                         </div>
-                        <div class="actions centered">
-                            <Button type="submit">Get Started</Button>
+                        <div class="actions">
+                            <Button variant="info" type="submit">Get Started</Button>
                         </div>
                     </form>
 
@@ -276,7 +276,7 @@
                     >
                         <div class="step-content">
                             <h2>Account Details</h2>
-                            <p class="subtitle">Set your login credentials.</p>
+                            <span class="subtitle">Set your login credentials.</span>
                             <InputText label="Name" bind:value={superadminForm.name} required />
                             <InputText label="Email" type="email" bind:value={superadminForm.email} required />
                             <InputPassword label="Password" bind:value={superadminForm.password} required />
@@ -307,7 +307,7 @@
                     >
                         <div class="step-content">
                             <h2>Your Profile</h2>
-                            <p class="subtitle">Tell us a bit about yourself.</p>
+                            <span class="subtitle">Tell us a bit about yourself.</span>
                             <InputText label="First Name" bind:value={superadminForm.firstName} />
                             <InputText label="Last Name" bind:value={superadminForm.lastName} />
                         </div>
@@ -337,8 +337,10 @@
                     >
                         <div class="step-content center-text">
                             <h1>Welcome, {user.data?.name || "Traveler"}!</h1>
-                            <p>We're glad you're here.</p>
-                            <p>Before you dive in, we need to gather a few details to personalize your experience.</p>
+                            <span>We're glad you're here.</span>
+                            <span
+                                >Before you dive in, we need to gather a few details to personalize your experience.</span
+                            >
                         </div>
                         <div class="actions centered">
                             <Button type="submit">Let's Go</Button>
@@ -356,7 +358,7 @@
                     >
                         <div class="step-content">
                             <h2>Personal Details</h2>
-                            <p class="subtitle">How should we address you?</p>
+                            <span class="subtitle">How should we address you?</span>
                             <InputText label="First Name" bind:value={userForm.firstName} required />
                             <InputText label="Last Name" bind:value={userForm.lastName} required />
                         </div>
@@ -385,7 +387,7 @@
                     >
                         <div class="step-content">
                             <h2>{groupName.replace(/_/g, " ")} Settings</h2>
-                            <p class="subtitle">Customize your experience.</p>
+                            <span class="subtitle">Customize your experience.</span>
 
                             <div class="settings-list">
                                 {#each settings as setting}
@@ -490,14 +492,12 @@
     }
 
     h1 {
-        font-size: 2rem;
         font-weight: 700;
         margin-bottom: 0.5rem;
         color: var(--viz-text-primary);
     }
 
     h2 {
-        font-size: 1.5rem;
         color: var(--viz-text-primary);
         margin-bottom: 0.25rem;
         text-transform: capitalize;
@@ -509,15 +509,17 @@
     }
 
     .info-box {
+        display: flex;
+        flex-direction: column;
         background: var(--viz-surface-panel);
         border: 1px solid var(--viz-primary);
         padding: 1rem;
         border-radius: 0.5rem;
         color: var(--viz-text-primary);
-        font-size: 0.95rem;
+        font-size: var(--viz-font-size-xl);
         line-height: 1.5;
 
-        p {
+        span {
             margin-bottom: 0.5rem;
             &:last-child {
                 margin-bottom: 0;
