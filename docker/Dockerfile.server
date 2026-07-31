@@ -62,9 +62,6 @@ RUN --mount=type=cache,id=go-pkg,target=/go/pkg/mod,sharing=locked \
     --mount=type=cache,id=go-build,target=/root/.cache/go-build,sharing=locked \
     go mod download -x
 
-# just copy everything lol
-COPY . ./
-
 # Build backend with zero-layer bind mounting and BuildKit cache
 # Output to /tmp to avoid writing into the read-only bind mount at /app
 RUN --mount=type=bind,target=. \
@@ -84,6 +81,12 @@ RUN --mount=type=bind,target=. \
     -o /tmp/viz-server ./cmd/api
 
 RUN cp /tmp/viz-server /app/viz-server && chmod +x /app/viz-server
+
+# only necessary stuff now :)
+COPY cmd/api/ ./cmd/api/
+COPY internal/ ./internal/
+COPY resources/ ./resources/
+COPY tools/migrations/ ./tools/migrations/
 
 # Stage 3: Final Production Image
 FROM debian:bookworm-slim
