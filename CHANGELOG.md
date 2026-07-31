@@ -5,6 +5,12 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.26.9] - 2026-07-31
+
+* fix(viewfinder): guard screen.orientation access in IS_MOBILE (8f5eeb43)
+* test(viewfinder): add component tests with @testing-library/svelte (012fe3f2)
+* test(viewfinder): migrate unit tests to happy-dom and testing-library (1c80da9b)
+
 ## [0.26.8] - 2026-07-31
 
 * refactor: clean up nested if statements and use node:fs glob (7c2a4b27)
