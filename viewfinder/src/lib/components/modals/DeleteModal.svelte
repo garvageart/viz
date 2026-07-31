@@ -51,7 +51,7 @@
         <div class="confirm-group">
             {#if deletePermanently}
                 <Button
-                    variant="small"
+                    variant="danger"
                     onclick={handlePermanentDelete}
                     class="permanent-delete-btn"
                     style="background-color: var(--viz-error-color, #ef4444); color: white;"
