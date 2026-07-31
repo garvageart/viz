@@ -600,12 +600,38 @@
         let targetColIdx = assetColIdx;
 
         switch (e.key) {
-            case "ArrowRight":
+            case "ArrowRight": {
+                const currentRow = virtualizer.rows[assetRowIdx];
                 targetColIdx++;
+                if (currentRow.type === "images" && targetColIdx >= currentRow.items.length) {
+                    targetRowIdx++;
+                    targetColIdx = 0;
+                    while (targetRowIdx < virtualizer.rows.length && virtualizer.rows[targetRowIdx].type !== "images") {
+                        targetRowIdx++;
+                    }
+                    if (targetRowIdx >= virtualizer.rows.length) {
+                        return; // End of the grid; stay put
+                    }
+                }
                 break;
-            case "ArrowLeft":
+            }
+            case "ArrowLeft": {
                 targetColIdx--;
+                if (targetColIdx < 0) {
+                    targetRowIdx--;
+                    while (targetRowIdx >= 0 && virtualizer.rows[targetRowIdx].type !== "images") {
+                        targetRowIdx--;
+                    }
+                    if (targetRowIdx < 0) {
+                        return; // Start of the grid; stay put
+                    }
+                    const prevRow = virtualizer.rows[targetRowIdx];
+                    if (prevRow.type === "images") {
+                        targetColIdx = prevRow.items.length - 1;
+                    }
+                }
                 break;
+            }
             case "ArrowUp":
                 targetRowIdx--;
                 break;
