@@ -1040,13 +1040,13 @@
                             <span id="coll-name-display" title="Click to edit name">
                                 {name}
                             </span>
-                            <MaterialIcon iconName="edit" class="title-edit-icon" size="1.2rem" />
+                            <MaterialIcon iconName="edit" class="title-edit-icon" size="1.5rem" />
                         </div>
                     {/if}
                 </div>
 
                 <div id="coll-meta-chips">
-                    <Badge pill={true} variant="neutral" iconName="image" iconSize="1rem">
+                    <Badge pill={true} variant="info" weight="regular" iconName="image" iconSize="1.5rem">
                         <span>
                             {#if searchValue.trim()}
                                 {searchData.length} of {collectionState.images.length}
@@ -1058,9 +1058,10 @@
 
                     <Badge
                         pill={true}
-                        variant="neutral"
+                        variant="info"
+                        weight="regular"
                         iconName="calendar_today"
-                        iconSize="1rem"
+                        iconSize="1.5rem"
                         title="Updated at: {DateTime.fromISO(data.updated_at)
                             .setZone('local')
                             .toLocaleString(DateTime.DATETIME_SHORT)}"
@@ -1073,11 +1074,11 @@
                     </Badge>
 
                     {#if data.private}
-                        <Badge pill={true} variant="error" iconName="lock" iconSize="1rem">
+                        <Badge pill={true} variant="error" iconName="lock" iconSize="1.5rem">
                             <span>Private</span>
                         </Badge>
                     {:else}
-                        <Badge pill={true} variant="neutral" iconName="visibility" iconSize="1rem">
+                        <Badge pill={true} variant="info" weight="regular" iconName="visibility" iconSize="1.5rem">
                             <span>Public</span>
                         </Badge>
                     {/if}
@@ -1145,7 +1146,6 @@
         align-items: center;
         gap: var(--viz-spacing-sm);
         cursor: pointer;
-        // max-width: 100%;
         outline: none;
 
         #coll-name-display {
@@ -1159,6 +1159,10 @@
             text-overflow: ellipsis;
             max-width: 100%;
             padding: 0.25rem 0.5rem;
+
+            &:hover {
+                box-shadow: inset 0 -1px 0 0 var(--viz-primary);
+            }
         }
 
         :global(.title-edit-icon) {
@@ -1169,6 +1173,23 @@
 
         &:hover :global(.title-edit-icon) {
             opacity: 1;
+        }
+    }
+
+    #coll-name-container :global(#coll-name-input) {
+        font-family: var(--viz-display-font);
+        font-size: var(--viz-font-size-5xl);
+        font-weight: 700;
+        line-height: 1.2;
+        color: var(--viz-text-primary);
+        background-color: var(--viz-surface-panel);
+        box-shadow: inset 0 -1px 0 0 var(--viz-border-subtle);
+        border: none;
+        border-radius: 0;
+
+        &:focus {
+            background-color: var(--viz-surface-panel);
+            box-shadow: inset 0 -2px 0 0 var(--viz-primary);
         }
     }
 
