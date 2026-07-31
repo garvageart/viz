@@ -398,7 +398,14 @@
                     <span id="coll-name">Collections</span>
                 </div>
                 <div id="coll-meta-chips">
-                    <Badge pill={true} iconFill={true} variant="neutral" iconName="folder" iconSize="1rem">
+                    <Badge
+                        pill={true}
+                        iconFill={true}
+                        weight="regular"
+                        variant="info"
+                        iconName="folder"
+                        iconSize="1rem"
+                    >
                         <span>{displayData.length} {displayData.length === 1 ? "collection" : "collections"}</span>
                     </Badge>
                 </div>
