@@ -5,6 +5,11 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.26.6] - 2026-07-31
+
+* style(viewfinder): restyle collections count badge (a3a504e0)
+* fix(viewfinder): make inline name edits size to content and match display (1d49e026)
+
 ## [0.26.5] - 2026-07-31
 
 * fix(viewfinder): match collection name input to display and prevent edit shift (757f360c)
