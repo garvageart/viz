@@ -33,7 +33,7 @@ class EventsState {
             try {
                 await performSearch();
             } catch (e) {
-                console.error("[Events] performSearch failed:", e);
+                console.error("[Events] failed to perform search:", e);
             }
         }
     };
@@ -92,14 +92,7 @@ class EventsState {
     }
 
     private handleEvent(event: string, data: any) {
-        console.debug(
-            "[Events] handleEvent received event:",
-            event,
-            "data:",
-            data,
-            "wasDisconnected state:",
-            this.wasDisconnected
-        );
+        console.debug("[Events] received event:", event, "data:", data, "disconnected state:", this.wasDisconnected);
         switch (event) {
             case "collection-created":
             case "collection-updated":
@@ -122,6 +115,7 @@ class EventsState {
                     console.debug("[Events] Reloading page after server came back online...");
                     window.location.reload();
                 }
+
                 break;
         }
     }
