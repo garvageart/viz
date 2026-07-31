@@ -29,7 +29,6 @@
     }: Props = $props();
 
     let imageDate = $derived(getTakenAt(asset));
-    // let placeholderDataURL = $derived(getThumbhashURL(asset));
     let imageLoaded = $state(false);
 
     function handleDragStart(e: DragEvent) {
@@ -169,102 +168,14 @@
 {/if}
 
 <style lang="scss">
-    .mini-card {
-        display: flex;
-        flex-direction: column;
-        height: 100%;
-        width: 100%;
-        overflow: hidden;
-        background-color: var(--viz-surface-card);
-        border: 1px solid var(--viz-border-subtle);
-        box-sizing: border-box;
-    }
-
-    .mini-image-wrapper {
-        flex: 1;
-        width: 100%;
-        height: 0;
-        position: relative;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        background-color: var(--viz-surface-panel);
-    }
-
-    .mini-footer {
-        padding: var(--viz-spacing-sm);
-        background-color: var(--viz-surface-card);
-        display: flex;
-        flex-direction: column;
-        gap: var(--viz-spacing-xxs);
-        border-top: var(--viz-border-thin);
-        border-top-color: var(--viz-border-subtle);
-
-        .mini-filename {
-            font-size: var(--viz-font-size-sm);
-            font-weight: 600;
-            color: var(--viz-text-secondary);
-            white-space: nowrap;
-            overflow: hidden;
-            text-overflow: ellipsis;
-            text-align: center;
-            width: 100%;
-        }
-
-        .mini-meta {
-            display: flex;
-            align-items: center;
-            justify-content: space-between;
-            gap: var(--viz-spacing-xs);
-            height: 0.75rem;
-        }
-
-        .mini-left {
-            display: flex;
-            align-items: center;
-            gap: var(--viz-spacing-xs);
-        }
-
-        .mini-favorite {
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            color: var(--viz-color-tag-red);
-        }
-
-        .mini-rating {
-            display: flex;
-            gap: var(--viz-spacing-xs);
-
-            .dot {
-                width: 0.35rem;
-                height: 0.35rem;
-                border-radius: var(--viz-border-radius-pill);
-                background-color: var(--viz-border-subtle);
-
-                &.filled {
-                    background-color: var(--viz-primary);
-                }
-            }
-        }
-
-        .mini-label-indicator {
-            width: 0.5rem;
-            height: 0.5rem;
-            border-radius: 1px;
-            flex-shrink: 0;
-        }
-    }
-
     .image-card {
         min-width: 100%;
         max-width: 100%;
         height: 100%;
         background-color: var(--viz-surface-card);
-        border: 1px solid var(--viz-border-subtle);
+        border: 1px solid transparent;
         border-radius: var(--viz-border-radius-md);
         position: relative;
-        overflow: hidden;
         cursor: pointer;
         display: flex;
         flex-direction: column;
@@ -350,6 +261,93 @@
         :global(.card-image) {
             width: 100%;
             height: 100%;
+        }
+    }
+
+    .mini-card {
+        display: flex;
+        flex-direction: column;
+        height: 100%;
+        width: 100%;
+        overflow: hidden;
+        background-color: var(--viz-surface-card);
+        border: 1px solid var(--viz-border-subtle);
+        box-sizing: border-box;
+    }
+
+    .mini-image-wrapper {
+        flex: 1;
+        width: 100%;
+        height: 0;
+        position: relative;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        background-color: var(--viz-surface-panel);
+    }
+
+    .mini-footer {
+        padding: var(--viz-spacing-sm);
+        background-color: var(--viz-surface-card);
+        display: flex;
+        flex-direction: column;
+        gap: var(--viz-spacing-xxs);
+        border-top: var(--viz-border-thin);
+        border-top-color: var(--viz-border-subtle);
+
+        .mini-filename {
+            font-size: var(--viz-font-size-sm);
+            font-weight: 600;
+            color: var(--viz-text-secondary);
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            text-align: center;
+            width: 100%;
+        }
+
+        .mini-meta {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: var(--viz-spacing-xs);
+            height: 0.75rem;
+        }
+
+        .mini-left {
+            display: flex;
+            align-items: center;
+            gap: var(--viz-spacing-xs);
+        }
+
+        .mini-favorite {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: var(--viz-color-tag-red);
+        }
+
+        .mini-rating {
+            display: flex;
+            gap: var(--viz-spacing-xs);
+
+            .dot {
+                width: 0.35rem;
+                height: 0.35rem;
+                border-radius: var(--viz-border-radius-pill);
+                background-color: var(--viz-border-subtle);
+
+                &.filled {
+                    background-color: var(--viz-primary);
+                }
+            }
+        }
+
+        .mini-label-indicator {
+            width: 0.5rem;
+            height: 0.5rem;
+            border-radius: 1px;
+            flex-shrink: 0;
         }
     }
 </style>

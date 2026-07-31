@@ -1061,7 +1061,6 @@
         width: 100%;
         max-width: 100%;
         text-overflow: clip;
-        overflow-y: auto;
         position: relative;
 
         &.is-basic-view {
@@ -1093,11 +1092,9 @@
     }
 
     .basic-grid-card {
-        overflow: hidden;
         background-color: var(--viz-surface-panel);
         border: 1px solid transparent;
         cursor: pointer;
-        transition: border-color 0.15s ease;
         width: 100%;
         height: 100%;
 

@@ -24,7 +24,7 @@
     import Button from "$lib/components/ui/Button.svelte";
     import DragAndDropUpload from "$lib/components/ui/DragAndDropUpload.svelte";
     import IconButton from "$lib/components/ui/IconButton.svelte";
-    import ImageCard from "$lib/components/ui/ImageCard.svelte";
+    import ImageCard, { type ImageVariant } from "$lib/components/ui/ImageCard.svelte";
     import ImageLightbox from "$lib/components/ui/ImageLightbox.svelte";
     import MaterialIcon from "$lib/components/ui/MaterialIcon.svelte";
     import AssetToolbar from "$lib/components/ui/toolbars/AssetToolbar.svelte";
@@ -99,6 +99,10 @@
         }
         return [];
     });
+
+    let imageThumbnailVariant = $derived<Omit<ImageVariant, "mini">>(
+        viewSettings.current === "grid" && viewSettings.simple ? "simple" : "full"
+    );
 
     // Lightbox
     let lightboxImage: ImageAsset | undefined = $state();
@@ -649,8 +653,12 @@
             {@render noAssetsSnippet()}
         </div>
     {:else}
-        {#snippet imageCard(asset: ImageAsset, visualState: CardVisualState)}
-            <ImageCard {asset} isSelected={visualState.isSelected} />
+        {#snippet imageCard(asset: ImageAsset, state: { isSelected: boolean })}
+            {#if imageThumbnailVariant === "simple"}
+                <ImageCard {asset} variant={"simple"} isSelected={state.isSelected} />
+            {:else}
+                <ImageCard {asset} isSelected={state.isSelected} />
+            {/if}
         {/snippet}
 
         {#snippet justifiedGrid()}
@@ -708,6 +716,7 @@
         height: auto;
         min-height: 100%; /* Important for virtualization filling container */
         margin: var(--viz-spacing-xl) 0;
+        padding: var(--viz-spacing-xxl);
     }
 
     .selection-info {

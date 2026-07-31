@@ -51,7 +51,6 @@ export function getImageGridDisplay() {
                 label: "Simple",
                 iconName: viewSettings.simple ? "check_box" : "check_box_outline_blank",
                 action: () => {
-                    console.log("hello?");
                     viewSettings.toggleShowSimple();
                 }
             }
