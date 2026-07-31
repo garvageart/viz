@@ -8,9 +8,8 @@
  * repository across common categories, runs SVGO optimization, and writes
  * Svelte components to `src/lib/components/icons/generated/`.
  */
-import { existsSync, mkdirSync, readFileSync, writeFileSync } from "fs";
-import { globSync } from "glob";
-import { dirname, join, resolve } from "path";
+import { existsSync, glob, globSync, mkdirSync, readFileSync, writeFileSync } from "fs";
+import path, { dirname, join, resolve } from "path";
 import { parse as parseSvelte } from "svelte/compiler";
 import { optimize } from "svgo";
 import * as tsModule from "typescript";
@@ -320,8 +319,8 @@ async function main() {
     // Use forward-slash patterns so glob works reliably on Windows.
     const pattern = `${SRC.replace(/\\/g, "/")}/**/*.{svelte,ts,js}`;
     const files = globSync(pattern, {
-        nodir: true,
-        ignore: ["**/.svelte-kit/**", "**/node_modules/**"]
+        withFileTypes: true,
+        exclude: ["**/.svelte-kit/**", "**/node_modules/**"]
     });
 
     console.log("Scanning files with pattern:", pattern);
@@ -336,16 +335,18 @@ async function main() {
 
     function tryAddIcon(candidate, fileWeights = new Set(), fileStyles = new Set()) {
         const val = candidate.trim();
-        if (val && (!validSymbols || validSymbols.has(val))) {
-            if (!names.has(val)) {
-                names.set(val, { weights: new Set(), styles: new Set() });
-            }
-            const entry = names.get(val);
-            if (entry) {
-                fileWeights.forEach((w) => entry.weights.add(w));
-                fileStyles.forEach((s) => entry.styles.add(s));
-            }
+        if (!val || (validSymbols && !validSymbols.has(val))) {
+            return;
         }
+        if (!names.has(val)) {
+            names.set(val, { weights: new Set(), styles: new Set() });
+        }
+        const entry = names.get(val);
+        if (!entry) {
+            return;
+        }
+        fileWeights.forEach((w) => entry.weights.add(w));
+        fileStyles.forEach((s) => entry.styles.add(s));
     }
 
     // Helper to recursively walk Svelte AST
@@ -403,18 +404,20 @@ async function main() {
     // PASS 1: Identify typed identifiers (prop names and func args)
     // -------------------------------------------------------------
     for (const f of files) {
-        if (f.includes("/generated/") || f.includes("/types/MaterialSymbol")) {
+        if (f.parentPath.includes("/generated/") || f.parentPath.includes("/types/MaterialSymbol")) {
             continue;
         }
-        const sourceText = readFileSync(f, "utf8");
+
+        const fullFilePath = path.join(f.parentPath, f.name);
+        const sourceText = readFileSync(fullFilePath, "utf8");
         const cleanedText = sourceText.replace(/<style[\s\S]*?<\/style>/gi, "");
 
         const scriptTexts = [];
         const expressionsText = [];
 
-        if (f.endsWith(".svelte")) {
+        if (fullFilePath.endsWith(".svelte")) {
             try {
-                const ast = parseSvelte(cleanedText, { filename: f });
+                const ast = parseSvelte(cleanedText, { filename: fullFilePath });
                 if (ast.instance) {
                     scriptTexts.push({
                         text: sourceText.slice(ast.instance.content.start, ast.instance.content.end),
@@ -454,70 +457,78 @@ async function main() {
                     });
                 }
             } catch (e) {
-                console.error(`Svelte parse error in ${f}:`, e.message);
+                console.error(`Svelte parse error in ${fullFilePath}:`, e.message);
             }
         } else {
-            scriptTexts.push({ text: sourceText, name: f });
+            scriptTexts.push({ text: sourceText, name: fullFilePath });
         }
 
-        parsedFiles.push({ file: f, scriptTexts, expressionsText, sourceText, cleanedText });
+        parsedFiles.push({ file: fullFilePath, scriptTexts, expressionsText, sourceText, cleanedText });
 
         for (const { text, name } of scriptTexts) {
             const sourceFile = ts.createSourceFile(name, text, ts.ScriptTarget.Latest, true);
 
             walkTSAST(sourceFile, (node) => {
-                if (node.type) {
-                    const typeText = node.type.getText(sourceFile);
-                    if (typeText.includes("MaterialSymbol")) {
-                        // 1. Property signature or declaration
-                        if (ts.isPropertySignature(node) || ts.isPropertyDeclaration(node)) {
-                            if (ts.isIdentifier(node.name) && node.name.text !== "name") {
-                                iconPropNames.add(node.name.text);
-                            }
-                        }
-                        // 2. Parameter declaration
-                        if (ts.isParameter(node)) {
-                            if (ts.isIdentifier(node.name) && node.name.text !== "name") {
-                                iconPropNames.add(node.name.text);
+                if (!node.type) {
+                    return;
+                }
+                const typeText = node.type.getText(sourceFile);
+                if (!typeText.includes("MaterialSymbol")) {
+                    return;
+                }
 
-                                const parent = node.parent;
-                                let funcName = null;
-                                if (ts.isFunctionDeclaration(parent) && parent.name) {
-                                    funcName = parent.name.text;
-                                } else if (ts.isArrowFunction(parent) || ts.isFunctionExpression(parent)) {
-                                    if (parent.parent && ts.isVariableDeclaration(parent.parent)) {
-                                        funcName = parent.parent.name.getText(sourceFile);
-                                    }
-                                }
-                                if (funcName) {
-                                    const idx = parent.parameters.indexOf(node);
-                                    if (idx !== -1) {
-                                        if (!iconFuncArgs.has(funcName)) {
-                                            iconFuncArgs.set(funcName, new Set());
-                                        }
-                                        iconFuncArgs.get(funcName).add(idx);
-                                    }
-                                }
-                            } else if (ts.isObjectBindingPattern(node.name) && ts.isTypeLiteralNode(node.type)) {
-                                node.name.elements.forEach((el) => {
-                                    if (ts.isIdentifier(el.name)) {
-                                        const member = node.type.members.find(
-                                            (m) =>
-                                                (ts.isPropertySignature(m) || ts.isPropertyDeclaration(m)) &&
-                                                m.name.getText(sourceFile) === el.name.text
-                                        );
-                                        if (
-                                            member &&
-                                            member.type &&
-                                            member.type.getText(sourceFile).includes("MaterialSymbol")
-                                        ) {
-                                            iconPropNames.add(el.name.text);
-                                        }
-                                    }
-                                });
-                            }
+                // 1. Property signature or declaration
+                if (ts.isPropertySignature(node) || ts.isPropertyDeclaration(node)) {
+                    if (ts.isIdentifier(node.name) && node.name.text !== "name") {
+                        iconPropNames.add(node.name.text);
+                    }
+                    return;
+                }
+
+                // 2. Parameter declaration
+                if (!ts.isParameter(node)) {
+                    return;
+                }
+
+                if (ts.isIdentifier(node.name) && node.name.text !== "name") {
+                    iconPropNames.add(node.name.text);
+
+                    const parent = node.parent;
+                    let funcName = null;
+                    if (ts.isFunctionDeclaration(parent) && parent.name) {
+                        funcName = parent.name.text;
+                    } else if (ts.isArrowFunction(parent) || ts.isFunctionExpression(parent)) {
+                        if (parent.parent && ts.isVariableDeclaration(parent.parent)) {
+                            funcName = parent.parent.name.getText(sourceFile);
                         }
                     }
+                    if (!funcName) {
+                        return;
+                    }
+                    const idx = parent.parameters.indexOf(node);
+                    if (idx === -1) {
+                        return;
+                    }
+                    const args = iconFuncArgs.get(funcName) ?? new Set();
+                    args.add(idx);
+                    iconFuncArgs.set(funcName, args);
+                    return;
+                }
+
+                if (ts.isObjectBindingPattern(node.name) && ts.isTypeLiteralNode(node.type)) {
+                    node.name.elements.forEach((el) => {
+                        if (!ts.isIdentifier(el.name)) {
+                            return;
+                        }
+                        const member = node.type.members.find(
+                            (m) =>
+                                (ts.isPropertySignature(m) || ts.isPropertyDeclaration(m)) &&
+                                m.name.getText(sourceFile) === el.name.text
+                        );
+                        if (member && member.type && member.type.getText(sourceFile).includes("MaterialSymbol")) {
+                            iconPropNames.add(el.name.text);
+                        }
+                    });
                 }
             });
         }
@@ -559,13 +570,15 @@ async function main() {
                 const root = ast.fragment || ast.html;
                 if (root) {
                     walkSvelteAST(root, (node) => {
-                        if (node.type === "Attribute" && iconPropNames.has(node.name)) {
-                            if (node.value && Array.isArray(node.value)) {
-                                for (const v of node.value) {
-                                    if (v.type === "Text") {
-                                        tryAddIcon(v.data, foundWeights, foundStyles);
-                                    }
-                                }
+                        if (node.type !== "Attribute" || !iconPropNames.has(node.name)) {
+                            return;
+                        }
+                        if (!node.value || !Array.isArray(node.value)) {
+                            return;
+                        }
+                        for (const v of node.value) {
+                            if (v.type === "Text") {
+                                tryAddIcon(v.data, foundWeights, foundStyles);
                             }
                         }
                     });
