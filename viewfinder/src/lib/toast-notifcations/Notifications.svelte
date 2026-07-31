@@ -3,7 +3,7 @@
     import { fly } from "svelte/transition";
     import IconButton from "$lib/components/ui/IconButton.svelte";
     import MaterialIcon from "$lib/components/ui/MaterialIcon.svelte";
-    import { type NotifcationType, toastState } from "./notif-state.svelte";
+    import { type NotifcationType, toasts } from "./toasts.svelte";
 
     function parseNotificationText(text: string) {
         if (!text) {
@@ -62,7 +62,7 @@
 </script>
 
 <section id="viz-toast-section">
-    {#each toastState.toasts as toast (toast.id)}
+    {#each toasts.toasts as toast (toast.id)}
         <article
             data-toast-id={toast.id}
             class="viz-toast viz-toast-{toast.type || 'info'}"
@@ -86,7 +86,7 @@
                         title="Dismiss"
                         aria-label="Dismiss notification"
                         variant="mini"
-                        onclick={() => toastState.dismissToast(toast.id)}
+                        onclick={() => toasts.dismiss(toast.id)}
                     />
                 {/if}
             </header>

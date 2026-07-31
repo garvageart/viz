@@ -8,11 +8,10 @@
     import InputPassword from "$lib/components/ui/InputPassword.svelte";
     import InputSelect from "$lib/components/ui/InputSelect.svelte";
     import InputText from "$lib/components/ui/InputText.svelte";
-    import MaterialIcon from "$lib/components/ui/MaterialIcon.svelte";
     import ProgressBar from "$lib/components/ui/ProgressBar.svelte";
     import { formatLabel } from "$lib/settings/utils";
-    import { getTheme, system, toggleTheme, user } from "$lib/states/index.svelte";
-    import { toastState } from "$lib/toast-notifcations/notif-state.svelte";
+    import { system, user } from "$lib/states/index.svelte";
+    import { toasts } from "$lib/toast-notifcations/toasts.svelte";
     import { getSafeRedirectUrl } from "$lib/utils/url";
 
     let isLoading = $state(false);
@@ -94,14 +93,14 @@
                         userForm.lastName = user.data.last_name || "";
                     }
                 } else {
-                    toastState.addToast({
+                    toasts.add({
                         message: res.data.error || "Failed to load settings.",
                         type: "error"
                     });
                 }
             } catch (e) {
                 console.error(e);
-                toastState.addToast({
+                toasts.add({
                     message: "An unexpected error occurred while loading settings.",
                     type: "error"
                 });
@@ -131,7 +130,7 @@
     // Actions
     async function handleSuperadminSubmit() {
         if (superadminForm.password !== superadminForm.confirmPassword) {
-            toastState.addToast({
+            toasts.add({
                 message: "Passwords do not match.",
                 type: "error"
             });
@@ -149,7 +148,7 @@
             });
 
             if (res.status === 201) {
-                toastState.addToast({
+                toasts.add({
                     message: "Superadmin setup complete!",
                     type: "success"
                 });
@@ -160,14 +159,14 @@
 
                 goto("/");
             } else {
-                toastState.addToast({
+                toasts.add({
                     message: res.data.error || "Setup failed.",
                     type: "error"
                 });
             }
         } catch (err) {
             console.error(err);
-            toastState.addToast({
+            toasts.add({
                 message: "An unexpected error occurred.",
                 type: "error"
             });
@@ -196,7 +195,7 @@
             });
 
             if (res.status === 200) {
-                toastState.addToast({ message: "Welcome aboard!", type: "success" });
+                toasts.add({ message: "Welcome aboard!", type: "success" });
 
                 // Invalidate system state to force re-fetch of status flags
                 // This ensures the router knows onboarding is complete
@@ -208,14 +207,14 @@
                 const continueUrl = page.url.searchParams.get("continue");
                 goto(getSafeRedirectUrl(continueUrl, "/"));
             } else {
-                toastState.addToast({
+                toasts.add({
                     message: res.data.error || "Onboarding failed.",
                     type: "error"
                 });
             }
         } catch (err) {
             console.error(err);
-            toastState.addToast({
+            toasts.add({
                 message: "An unexpected error occurred.",
                 type: "error"
             });

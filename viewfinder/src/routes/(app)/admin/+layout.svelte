@@ -3,7 +3,7 @@
     import { onMount } from "svelte";
     import NavSidebar, { type NavItem } from "$lib/components/ui/Sidebar/NavSidebar.svelte";
     import { user } from "$lib/states/index.svelte";
-    import { toastState } from "$lib/toast-notifcations/notif-state.svelte";
+    import { toasts } from "$lib/toast-notifcations/toasts.svelte";
 
     const adminNavItems: NavItem[] = [
         { label: "Dashboard", href: "/admin", iconName: "dashboard", exact: true },
@@ -21,7 +21,7 @@
         authed = !!user.data && (user.data.role === "admin" || user.data.role === "superadmin");
         if (!authed) {
             // Add a small delay before redirecting to allow the toast to be
-            toastState.addToast({
+            toasts.add({
                 message: "You do not have permission to access the admin panel.",
                 type: "error"
             });

@@ -5,7 +5,7 @@
     import Checkbox from "$lib/components/ui/Checkbox.svelte";
     import IconButton from "$lib/components/ui/IconButton.svelte";
     import InputText from "$lib/components/ui/InputText.svelte";
-    import { toastState } from "$lib/toast-notifcations/notif-state.svelte";
+    import { toasts } from "$lib/toast-notifcations/toasts.svelte";
     import { copyToClipboard } from "$lib/utils/misc";
     import { modalsManager } from "./manager/ModalManager.svelte";
 
@@ -51,7 +51,7 @@
         }
 
         if (selectedScopes.length === 0) {
-            toastState.addToast({
+            toasts.add({
                 message: "Please select at least one scope",
                 type: "error"
             });
@@ -66,13 +66,13 @@
                 createdToken = res.data.consumer_key;
                 onSuccess();
             } else {
-                toastState.addToast({
+                toasts.add({
                     message: res.data.error || "Failed to create API key",
                     type: "error"
                 });
             }
         } catch (e) {
-            toastState.addToast({ message: "Error creating key", type: "error" });
+            toasts.add({ message: "Error creating key", type: "error" });
         } finally {
             creating = false;
         }
@@ -81,7 +81,7 @@
     function handleCopy() {
         if (createdToken) {
             copyToClipboard(createdToken);
-            toastState.addToast({
+            toasts.add({
                 message: "API Key copied to clipboard",
                 type: "success",
                 dismissible: true

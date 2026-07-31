@@ -72,7 +72,7 @@
     import { type Collection, addCollectionImages, getImage } from "$lib/api";
     import { VizMimeTypes } from "$lib/constants";
     import { DragData } from "$lib/drag-drop/data";
-    import { toastState } from "$lib/toast-notifcations/notif-state.svelte";
+    import { toasts } from "$lib/toast-notifcations/toasts.svelte";
     import VizView, { invalidateViz } from "$lib/views/views.svelte";
     import CollectionPage from "../../../routes/(app)/collections/[uid]/+page.svelte";
     import AssetImage from "./AssetImage.svelte";
@@ -158,7 +158,7 @@
         const newUIDs = uidsData.filter((uid) => !existingUIDs.has(uid));
 
         if (newUIDs.length === 0) {
-            toastState.addToast({
+            toasts.add({
                 type: "info",
                 message: `No new images to add to **${collection.name}**`,
                 timeout: 3000
@@ -168,14 +168,14 @@
 
         const res = await addCollectionImages(collection.uid, { uids: newUIDs });
         if (res.status === 200) {
-            toastState.addToast({
+            toasts.add({
                 type: "success",
                 message: `Added ${newUIDs.length} image(s) to **${collection.name}**`,
                 timeout: 3000
             });
             await invalidateViz({ delay: 200 });
         } else {
-            toastState.addToast({
+            toasts.add({
                 type: "error",
                 message: `Failed to add images: ${res.data?.error || "Unknown error"}`,
                 timeout: 3000

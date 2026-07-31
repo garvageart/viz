@@ -16,7 +16,7 @@ import { modalsManager } from "$lib/components/modals/manager/ModalManager.svelt
 import ExportPanel, { modalOptions as exportModalOptions } from "$lib/components/ui/panels/ExportPanel.svelte";
 import { download } from "$lib/states/index.svelte";
 import type { SelectionScope } from "$lib/states/selection.svelte";
-import { toastState } from "$lib/toast-notifcations/notif-state.svelte";
+import { toasts } from "$lib/toast-notifcations/toasts.svelte";
 import { DownloadFile, DownloadState } from "$lib/upload/asset.svelte";
 import { processDownloadQueue, waitForDownloadCompletion } from "$lib/upload/manager.svelte";
 import { downloadToFilesystem } from "$lib/utils/files";
@@ -53,7 +53,7 @@ export function createImageMenu(
                     const results = await Promise.all(promises);
                     const success = results.filter((r) => r.status === 200);
                     if (success.length > 0) {
-                        toastState.addToast({
+                        toasts.add({
                             type: "success",
                             message: `${setFavourited ? "Favourited" : "Unfavourited"} ${success.length} images`,
                             timeout: 3000
@@ -65,7 +65,7 @@ export function createImageMenu(
                         await invalidateViz({ delay: 200, skipInvalidateAll: true });
                     }
                 } catch (err) {
-                    toastState.addToast({
+                    toasts.add({
                         type: "error",
                         message: `${setFavourited ? "Favourite" : "Unfavourite"} failed: ${err}`
                     });
@@ -95,7 +95,7 @@ export function createImageMenu(
                 const items = selectionScope.selectedItems;
                 const paths = items.map((img) => getFullImagePath(img.image_paths.original)).join("\n");
                 copyToClipboard(paths);
-                toastState.addToast({
+                toasts.add({
                     type: "info",
                     message: "URL(s) copied to clipboard"
                 });
@@ -115,7 +115,7 @@ export function createImageMenu(
                     }
 
                     if (items.length === 1) {
-                        toastState.addToast({
+                        toasts.add({
                             type: "info",
                             message: "Starting download...",
                             timeout: 3000
@@ -138,7 +138,7 @@ export function createImageMenu(
                             await downloadToFilesystem(task.filename, task.data);
                         }
                     } else {
-                        toastState.addToast({
+                        toasts.add({
                             type: "info",
                             message: `Zipping ${items.length} images for download`,
                             timeout: 3000
@@ -170,7 +170,7 @@ export function createImageMenu(
 
                         if (task.state === DownloadState.DOWNLOADED && task.data) {
                             await downloadToFilesystem(zipName, task.data);
-                            toastState.addToast({
+                            toasts.add({
                                 title: zipName,
                                 message: `Successfully downloaded ZIP file`,
                                 type: "success"
@@ -180,7 +180,7 @@ export function createImageMenu(
                         }
                     }
                 } catch (e) {
-                    toastState.addToast({
+                    toasts.add({
                         type: "error",
                         message: `Error downloading: ${(e as Error).message}`
                     });
@@ -208,7 +208,7 @@ export function createImageMenu(
                         uids
                     });
                     if (res.status === 200) {
-                        toastState.addToast({
+                        toasts.add({
                             type: "success",
                             message: `Removed ${uids.length} images from ${collection.name}`,
                             timeout: 3000
@@ -218,7 +218,7 @@ export function createImageMenu(
                         await invalidateViz({ delay: 200 });
                     }
                 } catch (err) {
-                    toastState.addToast({
+                    toasts.add({
                         type: "error",
                         message: `Remove failed: ${err}`
                     });
@@ -238,7 +238,7 @@ export function createImageMenu(
                         thumbnailUID: asset.uid
                     });
                     if (res.status === 200) {
-                        toastState.addToast({
+                        toasts.add({
                             type: "success",
                             message: "Collection thumbnail updated",
                             timeout: 3000
@@ -246,7 +246,7 @@ export function createImageMenu(
                         await invalidateViz({ delay: 200 });
                     }
                 } catch (err) {
-                    toastState.addToast({
+                    toasts.add({
                         type: "error",
                         message: `Update failed: ${err}`
                     });
@@ -282,7 +282,7 @@ export function createImageMenu(
                 const isPermanent = action === "permanent";
                 const res = await deleteImagesBulk({ uids, force: isPermanent });
                 if (res.status === 200) {
-                    toastState.addToast({
+                    toasts.add({
                         type: "success",
                         message: `${isPermanent ? "Permanently deleted" : "Moved to Trash"} ${uids.length} image${uids.length === 1 ? "" : "s"}`,
                         timeout: 3000
@@ -292,7 +292,7 @@ export function createImageMenu(
                     await invalidateViz({ delay: 200 });
                 }
             } catch (err) {
-                toastState.addToast({
+                toasts.add({
                     type: "error",
                     message: `Delete failed: ${err}`
                 });

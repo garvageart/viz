@@ -16,7 +16,7 @@
     import { ImageLoader } from "$lib/images/loader/image-loader.svelte";
     import { calculateZoomTo, constrainTranslation } from "$lib/images/zoom/zoom-utils";
     import { isMobile } from "$lib/states/index.svelte";
-    import { toastState } from "$lib/toast-notifcations/notif-state.svelte";
+    import { toasts } from "$lib/toast-notifcations/toasts.svelte";
     import { downloadOriginalImageFile } from "$lib/utils/http";
     import {
         formatBytes,
@@ -298,7 +298,7 @@
             updateImage(currentUid, currentData)
                 .then((updatedImage) => {
                     if (updatedImage.status === 200) {
-                        toastState.addToast({
+                        toasts.add({
                             type: "success",
                             title: "Image Updated",
                             message: `Image metadata updated successfully.`
@@ -321,7 +321,7 @@
                     }
                 })
                 .catch((err) => {
-                    toastState.addToast({
+                    toasts.add({
                         type: "error",
                         title: "Update Failed",
                         message: `Failed to update image metadata: ${err.message || err}`
@@ -780,7 +780,7 @@
             overriddenImages[lightboxImage.uid] = dataURL;
         }
 
-        toastState.addToast({
+        toasts.add({
             type: "success",
             title: "Crop Applied (Client-side)",
             message: `Image updated in view.`,
@@ -844,7 +844,7 @@
             }
         } catch (err) {
             const ratingErr = err as Error;
-            toastState.addToast({
+            toasts.add({
                 type: "error",
                 title: "Failed to update rating",
                 message: ratingErr.message
@@ -1047,7 +1047,7 @@
                                                 lightboxImage?.name || lightboxImage?.image_metadata?.file_name;
                                             if (nameToCopy) {
                                                 copyToClipboard(nameToCopy);
-                                                toastState.addToast({
+                                                toasts.add({
                                                     type: "success",
                                                     title: nameToCopy,
                                                     message: "Filename copied to clipboard",

@@ -18,7 +18,7 @@ export interface Toast {
 class ToastState {
     toasts = $state<Toast[]>([]);
 
-    dismissToast = (id: number) => {
+    dismiss = (id: number) => {
         this.toasts = this.toasts.filter((toast) => toast.id !== id);
     };
 
@@ -27,7 +27,7 @@ class ToastState {
      *
      * Default timeout is 5000ms (5 seconds)
      */
-    addToast = (toast: Partial<Omit<Toast, "id">> = {}) => {
+    add = (toast: Partial<Omit<Toast, "id">> = {}) => {
         // Create a unique ID so we can easily find/remove it
         // if it is dismissible/has a timeout.
         const id = Math.floor(Math.random() * 10000);
@@ -52,7 +52,7 @@ class ToastState {
 
             // Reset timeout for existing toast
             if (updated.timeout && updated.timeout > 0) {
-                setTimeout(() => this.dismissToast(existingId), updated.timeout);
+                setTimeout(() => this.dismiss(existingId), updated.timeout);
             }
             return;
         }
@@ -62,9 +62,9 @@ class ToastState {
 
         // If toast is dismissible and has a timeout, dismiss it after "timeout" amount of time.
         if (mergedToast.timeout && mergedToast.timeout > 0) {
-            setTimeout(() => this.dismissToast(mergedToast.id), mergedToast.timeout);
+            setTimeout(() => this.dismiss(mergedToast.id), mergedToast.timeout);
         }
     };
 }
 
-export const toastState = new ToastState();
+export const toasts = new ToastState();

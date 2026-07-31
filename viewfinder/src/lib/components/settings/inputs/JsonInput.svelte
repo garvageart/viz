@@ -1,5 +1,4 @@
 <script lang="ts">
-    import { toastState } from "$lib/toast-notifcations/notif-state.svelte";
     import SettingRow from "../SettingRow.svelte";
 
     interface Props {

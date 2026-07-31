@@ -9,7 +9,7 @@
     import InputSelect from "$lib/components/ui/InputSelect.svelte";
     import InputText from "$lib/components/ui/InputText.svelte";
     import MaterialIcon from "$lib/components/ui/MaterialIcon.svelte";
-    import { toastState } from "$lib/toast-notifcations/notif-state.svelte";
+    import { toasts } from "$lib/toast-notifcations/toasts.svelte";
     import { type MaterialSymbol } from "$lib/types/MaterialSymbol";
     import { DEFAULT_TEMPLATE_EXAMPLE, buildDateTokens, cleanPathSegment } from "$lib/ui-tools/template";
     import { copyToClipboard } from "$lib/utils/misc";
@@ -49,19 +49,19 @@
 
             const response = await api.updateSystemConfig(updatedConfig);
             if (response.status === 200) {
-                toastState.addToast({
+                toasts.add({
                     type: "success",
                     message: "Storage path template saved successfully."
                 });
                 await invalidateAll();
             } else {
-                toastState.addToast({
+                toasts.add({
                     type: "error",
                     message: response.data?.error || "Failed to save configuration."
                 });
             }
         } catch (e) {
-            toastState.addToast({
+            toasts.add({
                 type: "error",
                 message: (e as Error).message || "An unexpected error occurred."
             });

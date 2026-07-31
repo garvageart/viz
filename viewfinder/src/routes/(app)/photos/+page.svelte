@@ -46,9 +46,8 @@
     import { filterManager } from "$lib/states/filter.svelte";
     import { sort, viewSettings } from "$lib/states/index.svelte";
     import { SelectionScopeNames, selectionManager } from "$lib/states/selection.svelte";
-    import { toastState } from "$lib/toast-notifcations/notif-state.svelte";
+    import { toasts } from "$lib/toast-notifcations/toasts.svelte.js";
     import { SUPPORTED_IMAGE_TYPES, SUPPORTED_RAW_FILES, type SupportedImageTypes } from "$lib/types/images";
-    import type { CardVisualState } from "$lib/types/snippet";
     import UploadManager, { type ImageUploadSuccess } from "$lib/upload/manager.svelte";
     import { getImageLabel } from "$lib/utils/images.js";
     import { invalidateViz } from "$lib/views/views.svelte";
@@ -257,7 +256,7 @@
 
     async function handleCollectionSelect(collection: Collection, newImageUids: string[]) {
         if (newImageUids.length === 0) {
-            toastState.addToast({
+            toasts.add({
                 type: "info",
                 message: "No new images to add.",
                 timeout: 3000
@@ -272,7 +271,7 @@
 
             if (res.status === 200) {
                 let message = `Added ${newImageUids.length} image(s) to collection **${collection.name}**`;
-                toastState.addToast({
+                toasts.add({
                     type: "success",
                     message: message,
                     timeout: 3000,
@@ -289,14 +288,14 @@
                 // Trigger refresh
                 await invalidateViz({ delay: 200 });
             } else {
-                toastState.addToast({
+                toasts.add({
                     type: "error",
                     message: res.data?.error ?? "Failed to add images to collection",
                     timeout: 3000
                 });
             }
         } catch (error) {
-            toastState.addToast({
+            toasts.add({
                 type: "error",
                 message: `Failed to add images to collection: ${(error as Error).message}`,
                 timeout: 3000

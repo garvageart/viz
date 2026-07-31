@@ -30,7 +30,7 @@
     import { filterManager } from "$lib/states/filter.svelte";
     import { isLayoutPage, sort } from "$lib/states/index.svelte";
     import { SelectionScopeNames, selectionManager } from "$lib/states/selection.svelte";
-    import { toastState } from "$lib/toast-notifcations/notif-state.svelte";
+    import { toasts } from "$lib/toast-notifcations/toasts.svelte";
     import type { AssetGridArray } from "$lib/types/asset";
     import type { PageProps } from "./$types";
 
@@ -142,7 +142,7 @@
                                 pendingDropUids = null;
                             }
 
-                            toastState.addToast({
+                            toasts.add({
                                 message: `Created collection ${res.data.name}`,
                                 type: "success"
                             });
@@ -150,7 +150,7 @@
                             modalsManager.pop();
                             goto(`/collections/${collectionUid}`);
                         } else {
-                            toastState.addToast({
+                            toasts.add({
                                 message: `Failed to create collection: ${res.data.error || "Unknown error"}`,
                                 type: "error"
                             });
@@ -171,14 +171,14 @@
                                 c.uid === modalData!.uid ? res.data : c
                             );
 
-                            toastState.addToast({
+                            toasts.add({
                                 message: `Updated collection ${res.data.name}`,
                                 type: "success"
                             });
 
                             modalsManager.pop();
                         } else {
-                            toastState.addToast({
+                            toasts.add({
                                 message: `Failed to update collection: ${res.data.error || "Unknown error"}`,
                                 type: "error"
                             });
@@ -200,7 +200,7 @@
             },
             onCollectionDuplicated: (newCol) => {
                 listOfCollectionsData = [newCol, ...listOfCollectionsData];
-                toastState.addToast({
+                toasts.add({
                     message: `Duplicated collection ${newCol.name}`,
                     type: "success"
                 });
@@ -210,7 +210,7 @@
             },
             onCollectionDeleted: (deletedCol) => {
                 listOfCollectionsData = listOfCollectionsData.filter((c) => c.uid !== deletedCol.uid);
-                toastState.addToast({
+                toasts.add({
                     message: `Deleted collection ${deletedCol.name}`,
                     type: "success"
                 });
@@ -219,7 +219,7 @@
                 const deletedUids = new Set(deletedCols.map((c) => c.uid));
                 listOfCollectionsData = listOfCollectionsData.filter((c) => !deletedUids.has(c.uid));
                 selectionScope.clear();
-                toastState.addToast({
+                toasts.add({
                     message:
                         deletedCols.length > 1
                             ? `Deleted **${deletedCols.length} collections**`

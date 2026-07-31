@@ -5,10 +5,9 @@
     import { DragData } from "$lib/drag-drop/data";
     import { dragState } from "$lib/drag-drop/state.svelte";
     import { SelectionScope } from "$lib/states/selection.svelte";
-    import { toastState } from "$lib/toast-notifcations/notif-state.svelte";
+    import { toasts } from "$lib/toast-notifcations/toasts.svelte";
     import {
         ALL_SUPPORTED_IMAGES,
-        type AllSupportedImageTypes,
         SUPPORTED_IMAGE_TYPES,
         SUPPORTED_RAW_FILES,
         type SupportedImageTypes
@@ -55,7 +54,7 @@
         const manager = new UploadManager([...SUPPORTED_RAW_FILES, ...SUPPORTED_IMAGE_TYPES] as SupportedImageTypes[]);
         const tasks = manager.addFiles(files);
 
-        toastState.addToast({
+        toasts.add({
             type: "success",
             message: `Starting upload of ${tasks.length} file(s)...`
         });
@@ -72,7 +71,7 @@
             .filter((img): img is ImageUploadSuccess => !!img);
 
         if (uploadedImages.length > 0) {
-            toastState.addToast({
+            toasts.add({
                 type: "success",
                 message: `Successfully uploaded ${uploadedImages.length} file(s)`
             });
@@ -154,7 +153,7 @@
             }
 
             if (allFiles.length === 0) {
-                toastState.addToast({
+                toasts.add({
                     type: "info",
                     message: "No files to upload"
                 });
@@ -170,7 +169,7 @@
             });
 
             if (validFiles.length === 0) {
-                toastState.addToast({
+                toasts.add({
                     type: "error",
                     message: "No supported image files found"
                 });
@@ -199,7 +198,7 @@
             );
         } catch (err) {
             console.error("Drop upload error:", err);
-            toastState.addToast({
+            toasts.add({
                 type: "error",
                 message: `Upload failed: ${err}`
             });
@@ -315,7 +314,7 @@
             // 1. Create Collection
             const createRes = await createCollection(data);
             if (createRes.status !== 201) {
-                toastState.addToast({
+                toasts.add({
                     type: "error",
                     message: `Failed to create collection (${createRes.status})`
                 });
@@ -338,7 +337,7 @@
             if (uids.length > 0) {
                 const addRes = await addCollectionImages(collectionUid, { uids });
                 if (addRes.status === 200) {
-                    toastState.addToast({
+                    toasts.add({
                         type: "success",
                         message: `Added ${uids.length} images to collection **${data.name}**`,
                         actions: [
@@ -349,7 +348,7 @@
                         ]
                     });
                 } else {
-                    toastState.addToast({
+                    toasts.add({
                         type: "warning",
                         message: `Images uploaded but failed to add to collection: **${addRes.status}**`
                     });
@@ -357,7 +356,7 @@
             }
         } catch (err) {
             console.error("Collection/Upload flow failed", err);
-            toastState.addToast({
+            toasts.add({
                 type: "error",
                 message: `Operation failed: ${err}`
             });
@@ -376,7 +375,7 @@
         }
         const items = selectionScope.selectedItems;
         if (!items || items.length === 0) {
-            toastState.addToast({
+            toasts.add({
                 type: "info",
                 message: "Select images first, or drag files here to upload"
             });
@@ -402,7 +401,7 @@
                         const createRes = await createCollection(newData);
 
                         if (createRes.status !== 201) {
-                            toastState.addToast({
+                            toasts.add({
                                 type: "error",
                                 message: `Failed to create collection (${createRes.status})`
                             });
@@ -416,7 +415,7 @@
                         const addRes = await addCollectionImages(collectionUid, { uids });
 
                         if (addRes.status === 200) {
-                            toastState.addToast({
+                            toasts.add({
                                 type: "success",
                                 message: `**${createRes.data.name}** collection created with ${uids.length} image(s)`,
                                 actions: [
@@ -427,14 +426,14 @@
                                 ]
                             });
                         } else {
-                            toastState.addToast({
+                            toasts.add({
                                 type: "warning",
                                 message: `Collection created but failed to add images (${addRes.status})`
                             });
                         }
                     } catch (err) {
                         console.error("createCollectionFromSelected error", err);
-                        toastState.addToast({
+                        toasts.add({
                             type: "error",
                             message: `Failed to create collection: ${err}`
                         });
@@ -469,7 +468,7 @@
                 try {
                     const uids: string[] = [...new Set(dragData.payload)];
                     if (uids.length === 0) {
-                        toastState.addToast({
+                        toasts.add({
                             type: "info",
                             message: "No images to add to collection"
                         });
@@ -493,7 +492,7 @@
                                     const createRes = await createCollection(newData);
 
                                     if (createRes.status !== 201) {
-                                        toastState.addToast({
+                                        toasts.add({
                                             type: "error",
                                             message: `Failed to create collection (${createRes.status})`
                                         });
@@ -506,7 +505,7 @@
 
                                     const addRes = await addCollectionImages(collectionUid, { uids });
                                     if (addRes.status === 200) {
-                                        toastState.addToast({
+                                        toasts.add({
                                             type: "success",
                                             message: `Collection created with ${uids.length} image(s)`,
                                             actions: [
@@ -517,14 +516,14 @@
                                             ]
                                         });
                                     } else {
-                                        toastState.addToast({
+                                        toasts.add({
                                             type: "warning",
                                             message: `Collection created but failed to add images (${addRes.status})`
                                         });
                                     }
                                 } catch (err) {
                                     console.error("Failed to create collection from internal drag:", err);
-                                    toastState.addToast({
+                                    toasts.add({
                                         type: "error",
                                         message: `Failed to create collection: ${err}`
                                     });
@@ -569,7 +568,7 @@
             }
 
             if (allFiles.length === 0) {
-                toastState.addToast({
+                toasts.add({
                     type: "info",
                     message: "No files to add to collection"
                 });
@@ -583,7 +582,7 @@
             });
 
             if (validFiles.length === 0) {
-                toastState.addToast({
+                toasts.add({
                     type: "error",
                     message: "No supported image files found to add to collection"
                 });
@@ -608,7 +607,7 @@
                             const createRes = await createCollection(newData);
 
                             if (createRes.status !== 201) {
-                                toastState.addToast({
+                                toasts.add({
                                     type: "error",
                                     message: `Failed to create collection (${createRes.status})`
                                 });
@@ -625,7 +624,7 @@
                             ] as SupportedImageTypes[]);
                             const tasks = manager.addFiles(validFiles);
 
-                            toastState.addToast({
+                            toasts.add({
                                 type: "success",
                                 message: `Uploading ${tasks.length} file(s) to create collection...`
                             });
@@ -650,7 +649,7 @@
                             }
 
                             if (!uploadedImages || uploadedImages.length === 0) {
-                                toastState.addToast({
+                                toasts.add({
                                     type: "error",
                                     message: "Upload failed, no images available to add to collection"
                                 });
@@ -663,7 +662,7 @@
                             if (uids.length > 0) {
                                 const addRes = await addCollectionImages(collectionUid, { uids });
                                 if (addRes.status === 200) {
-                                    toastState.addToast({
+                                    toasts.add({
                                         type: "success",
                                         message: `Collection created with ${uids.length} image(s)`,
                                         actions: [
@@ -674,20 +673,20 @@
                                         ]
                                     });
                                 } else {
-                                    toastState.addToast({
+                                    toasts.add({
                                         type: "warning",
                                         message: `Collection created but failed to add images (${addRes.status})`
                                     });
                                 }
                             } else {
-                                toastState.addToast({
+                                toasts.add({
                                     type: "warning",
                                     message: "Collection created but no uploaded image UIDs found"
                                 });
                             }
                         } catch (err) {
                             console.error("Add-to-collection drop error:", err);
-                            toastState.addToast({
+                            toasts.add({
                                 type: "error",
                                 message: `Failed to create collection from dropped images: ${err}`
                             });
@@ -698,7 +697,7 @@
             );
         } catch (err) {
             console.error("Add-to-collection drop error:", err);
-            toastState.addToast({
+            toasts.add({
                 type: "error",
                 message: `Failed to create collection from dropped images: ${err}`
             });
@@ -714,7 +713,7 @@
         }
         const items = selectionScope.selectedItems;
         if (!items || items.length === 0) {
-            toastState.addToast({
+            toasts.add({
                 type: "info",
                 message: "Select images first, or drag files here to add to an existing collection"
             });
@@ -730,7 +729,7 @@
                     if (newImageUids.length > 0) {
                         const addRes = await addCollectionImages(collection.uid, { uids: newImageUids });
                         if (addRes.status === 200) {
-                            toastState.addToast({
+                            toasts.add({
                                 type: "success",
                                 message: `Added ${newImageUids.length} image(s) to **${collection.name}**`,
                                 actions: [
@@ -772,7 +771,7 @@
             if (dragData) {
                 const uids: string[] = dragData.payload;
                 if (uids.length === 0) {
-                    toastState.addToast({
+                    toasts.add({
                         type: "info",
                         message: "No images to add to collection"
                     });
@@ -787,7 +786,7 @@
                             if (newImageUids.length > 0) {
                                 const addRes = await addCollectionImages(collection.uid, { uids: newImageUids });
                                 if (addRes.status === 200) {
-                                    toastState.addToast({
+                                    toasts.add({
                                         type: "success",
                                         message: `Added ${newImageUids.length} image(s) to **${collection.name}**`,
                                         actions: [
@@ -835,7 +834,7 @@
             }
 
             if (allFiles.length === 0) {
-                toastState.addToast({
+                toasts.add({
                     type: "info",
                     message: "No files to add to collection"
                 });
@@ -850,7 +849,7 @@
             });
 
             if (validFiles.length === 0) {
-                toastState.addToast({
+                toasts.add({
                     type: "error",
                     message: "No supported image files found to add to collection"
                 });
@@ -870,7 +869,7 @@
                             ] as SupportedImageTypes[]);
                             const tasks = manager.addFiles(validFiles);
 
-                            toastState.addToast({
+                            toasts.add({
                                 type: "success",
                                 message: `Uploading ${tasks.length} file(s) to add to **${collection.name}**`
                             });
@@ -888,7 +887,7 @@
                                 if (uids.length > 0) {
                                     const addRes = await addCollectionImages(collection.uid, { uids });
                                     if (addRes.status === 200) {
-                                        toastState.addToast({
+                                        toasts.add({
                                             type: "success",
                                             message: `Added ${uids.length} image(s) to **${collection.name}**`,
                                             actions: [
@@ -904,7 +903,7 @@
                             }
                         } catch (err) {
                             console.error("Add to existing collection upload error:", err);
-                            toastState.addToast({
+                            toasts.add({
                                 type: "error",
                                 message: `Failed to upload images for collection: ${err}`
                             });
@@ -915,7 +914,7 @@
             );
         } catch (err) {
             console.error("Add to existing collection error:", err);
-            toastState.addToast({
+            toasts.add({
                 type: "error",
                 message: `Failed to add to existing collection: ${err}`
             });

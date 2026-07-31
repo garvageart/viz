@@ -9,8 +9,7 @@
     import InputSelect from "$lib/components/ui/InputSelect.svelte";
     import MaterialIcon from "$lib/components/ui/MaterialIcon.svelte";
     import SearchInput from "$lib/components/ui/SearchInput.svelte";
-    import { toastState } from "$lib/toast-notifcations/notif-state.svelte";
-    import type { MaterialSymbol } from "$lib/types/MaterialSymbol.js";
+    import { toasts } from "$lib/toast-notifcations/toasts.svelte";
     import type { PageData } from "./$types";
 
     type EventHistoryItem = EventRecord;
@@ -29,7 +28,7 @@
     let historySearch = $state("");
 
     function showMessage(message: string, type: "success" | "error" | "info" = "info"): void {
-        toastState.addToast({ message, type });
+        toasts.add({ message, type });
     }
 
     function requestClearHistory() {

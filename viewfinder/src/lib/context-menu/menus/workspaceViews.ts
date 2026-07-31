@@ -2,7 +2,7 @@ import { DYNAMIC_ROUTE_REGEX } from "$lib/constants";
 import type { MenuItem } from "$lib/context-menu/types";
 import { views } from "$lib/layouts/views";
 import { workspaceState } from "$lib/states/workspace.svelte";
-import { toastState } from "$lib/toast-notifcations/notif-state.svelte";
+import { toasts } from "$lib/toast-notifcations/toasts.svelte";
 import VizView from "$lib/views/views.svelte";
 
 export function createWorkspaceViewsMenu() {
@@ -28,7 +28,7 @@ export function createWorkspaceViewsMenu() {
             label: view.name,
             action: () => {
                 if (!workspace) {
-                    toastState.addToast({
+                    toasts.add({
                         title: "No Workspace",
                         type: "error",
                         message: "No workspace available."
@@ -41,7 +41,7 @@ export function createWorkspaceViewsMenu() {
                 if (!targetGroup) {
                     targetGroup = workspace.getAllTabGroups()[0];
                     if (!targetGroup) {
-                        toastState.addToast({
+                        toasts.add({
                             title: "No Panels Available",
                             type: "error",
                             message: "There are no panels to add the view to."

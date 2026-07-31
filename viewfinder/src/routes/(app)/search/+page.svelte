@@ -34,7 +34,7 @@
     import { paginateSearch, performSearch } from "$lib/search/execute";
     import { isLayoutPage, search, viewSettings } from "$lib/states/index.svelte";
     import { SelectionScopeNames, selectionManager } from "$lib/states/selection.svelte";
-    import { toastState } from "$lib/toast-notifcations/notif-state.svelte";
+    import { toasts } from "$lib/toast-notifcations/toasts.svelte";
     import type { AssetGridView } from "$lib/types/asset";
     import type { CardVisualState } from "$lib/types/snippet";
     import { downloadOriginalImageFile } from "$lib/utils/http";
@@ -96,7 +96,7 @@
                 // Ideally, we'd remove them from the local 'images' array if it were mutable in this context
                 // Since 'images' is derived from search.data, we might need to trigger a re-search or just let it be.
                 // For now, we'll just toast.
-                toastState.addToast({
+                toasts.add({
                     type: "success",
                     message: `${deletedUIDs.length} image(s) deleted.`
                 });
@@ -138,7 +138,7 @@
             onCollectionUpdated: () => performSearch(),
             onCollectionsDeleted: (deletedCols) => {
                 collectionSelection.clear();
-                toastState.addToast({
+                toasts.add({
                     message:
                         deletedCols.length > 1
                             ? `Deleted **${deletedCols.length} collections**`
@@ -308,7 +308,7 @@
 
     async function handleCollectionSelect(collection: Collection, newImageUids: string[]) {
         if (newImageUids.length === 0) {
-            toastState.addToast({
+            toasts.add({
                 type: "info",
                 message: "No new images to add.",
                 timeout: 3000
@@ -322,7 +322,7 @@
             });
 
             if (res.status === 200) {
-                toastState.addToast({
+                toasts.add({
                     type: "success",
                     message: `Added ${newImageUids.length} image(s) to collection **${collection.name}**`,
                     timeout: 3000,
@@ -339,14 +339,14 @@
                 // Trigger refresh
                 await invalidateViz({ delay: 200 });
             } else {
-                toastState.addToast({
+                toasts.add({
                     type: "error",
                     message: res.data?.error ?? "Failed to add images to collection",
                     timeout: 3000
                 });
             }
         } catch (error) {
-            toastState.addToast({
+            toasts.add({
                 type: "error",
                 message: `Failed to add images to collection: ${(error as Error).message}`,
                 timeout: 3000
@@ -564,7 +564,7 @@
                         onclick={() => {
                             // Placeholder for now as filter modal isn't fully integrated into search logic
                             // But we keep the button for consistency and future wiring
-                            toastState.addToast({
+                            toasts.add({
                                 type: "info",
                                 message: "Filtering search results is coming soon",
                                 timeout: 3000

@@ -4,7 +4,7 @@
     import Button from "$lib/components/ui/Button.svelte";
     import InputText from "$lib/components/ui/InputText.svelte";
     import { user } from "$lib/states/index.svelte";
-    import { toastState } from "$lib/toast-notifcations/notif-state.svelte";
+    import { toasts } from "$lib/toast-notifcations/toasts.svelte";
     import AutoSettingsGroup from "./AutoSettingsGroup.svelte";
 
     interface Props {
@@ -66,7 +66,7 @@
 
         const res = await updateCurrentUser(updates);
         if (res.status === 200) {
-            toastState.addToast({
+            toasts.add({
                 dismissible: true,
                 message: "Account updated",
                 type: "success"
@@ -76,7 +76,7 @@
             savingAccount = false;
         } else {
             saveAccountStatus = "error";
-            toastState.addToast({
+            toasts.add({
                 dismissible: true,
                 message: res.data.error || "Failed to update account",
                 type: "error"

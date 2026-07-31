@@ -11,7 +11,7 @@ import {
 import ConfirmationModal from "$lib/components/modals/ConfirmationModal.svelte";
 import { modalsManager } from "$lib/components/modals/manager/ModalManager.svelte";
 import { download } from "$lib/states/index.svelte";
-import { toastState } from "$lib/toast-notifcations/notif-state.svelte";
+import { toasts } from "$lib/toast-notifcations/toasts.svelte";
 import { DownloadFile, DownloadState } from "$lib/upload/asset.svelte";
 import { processDownloadQueue, waitForDownloadCompletion } from "$lib/upload/manager.svelte";
 import { downloadToFilesystem } from "$lib/utils/files";
@@ -58,14 +58,14 @@ export function createCollectionMenu(collection: Collection | undefined, opts: C
                 });
 
                 if (res.status === 200) {
-                    toastState.addToast({
+                    toasts.add({
                         type: "success",
                         message: `Collection ${collection.favourited ? "un" : ""}favourited`
                     });
                     opts.onCollectionUpdated?.(res.data);
                     await invalidateViz({ delay: 200, skipInvalidateAll: true });
                 } else {
-                    toastState.addToast({
+                    toasts.add({
                         type: "error",
                         message: res.data.error ?? `Failed to ${collection.favourited ? "un" : ""}favourite`
                     });
@@ -87,13 +87,13 @@ export function createCollectionMenu(collection: Collection | undefined, opts: C
                     if (res.status === 201) {
                         opts.onCollectionDuplicated?.(res.data);
                     } else {
-                        toastState.addToast({
+                        toasts.add({
                             message: res.data.error ?? `Duplicate failed (${res.status})`,
                             type: "error"
                         });
                     }
                 } catch (err) {
-                    toastState.addToast({
+                    toasts.add({
                         message: "Duplicate failed: " + (err as Error).message,
                         type: "error"
                     });
@@ -107,7 +107,7 @@ export function createCollectionMenu(collection: Collection | undefined, opts: C
             iconName: "download",
             disabled: (collection.image_count ?? collection.images?.length ?? 0) === 0,
             action: async () => {
-                toastState.addToast({
+                toasts.add({
                     message: `Signing download request...`,
                     type: "info",
                     timeout: 2000
@@ -126,7 +126,7 @@ export function createCollectionMenu(collection: Collection | undefined, opts: C
                     }
 
                     if (uids.length === 0) {
-                        toastState.addToast({
+                        toasts.add({
                             message: "Collection has no images",
                             type: "warning"
                         });
@@ -158,7 +158,7 @@ export function createCollectionMenu(collection: Collection | undefined, opts: C
 
                     if (task.state === DownloadState.DOWNLOADED && task.data) {
                         await downloadToFilesystem(zipName, task.data);
-                        toastState.addToast({
+                        toasts.add({
                             message: `Successfully downloaded **${collection.name}**`,
                             type: "success"
                         });
@@ -166,7 +166,7 @@ export function createCollectionMenu(collection: Collection | undefined, opts: C
                         throw new Error("Download task encountered an error");
                     }
                 } catch (e) {
-                    toastState.addToast({
+                    toasts.add({
                         message: `Error downloading images: ${(e as Error).message}`,
                         type: "error"
                     });
@@ -182,12 +182,12 @@ export function createCollectionMenu(collection: Collection | undefined, opts: C
                 try {
                     const url = `${location.origin}/collections/${collection.uid}`;
                     copyToClipboard(url);
-                    toastState.addToast({
+                    toasts.add({
                         message: "Link copied to clipboard",
                         type: "success"
                     });
                 } catch (err) {
-                    toastState.addToast({
+                    toasts.add({
                         message: "Failed to copy link",
                         type: "error"
                     });
@@ -250,13 +250,13 @@ export function createCollectionMenu(collection: Collection | undefined, opts: C
                                             return `${f.collection.name}: status ${f.res.status}`;
                                         })
                                         .join("; ");
-                                    toastState.addToast({
+                                    toasts.add({
                                         message: `Failed to delete some collections: ${errorMsg}`,
                                         type: "error"
                                     });
                                 }
                             } catch (err) {
-                                toastState.addToast({
+                                toasts.add({
                                     message: `Failed to delete: ${err}`,
                                     type: "error"
                                 });

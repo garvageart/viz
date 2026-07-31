@@ -13,7 +13,7 @@
     import { filterManager } from "$lib/states/filter.svelte";
     import { viewSettings } from "$lib/states/index.svelte";
     import { selectionManager } from "$lib/states/selection.svelte";
-    import { toastState } from "$lib/toast-notifcations/notif-state.svelte";
+    import { toasts } from "$lib/toast-notifcations/toasts.svelte";
     import type { AssetSortBy, AssetSortOrder } from "$lib/types/asset";
     import { invalidateViz } from "$lib/views/views.svelte";
     import Dropdown from "../context-menus/Dropdown.svelte";
@@ -109,14 +109,14 @@
                 galleryState = new ImagePaginationState(imagesRes.data);
                 initialDataLoaded = true;
             } else {
-                toastState.addToast({
+                toasts.add({
                     type: "error",
                     message: imagesRes.data?.error ?? "Failed to load images"
                 });
             }
         } catch (error) {
             console.error("Error loading initial data in AddPhotosModal:", error);
-            toastState.addToast({
+            toasts.add({
                 type: "error",
                 message: `Failed to load images: ${(error as Error).message}`
             });
@@ -185,7 +185,7 @@
             });
 
             if (res.status === 200) {
-                toastState.addToast({
+                toasts.add({
                     type: "success",
                     message: `Added ${selectedUids.length} image(s) to collection **${collectionName}**`,
                     timeout: 3000
@@ -193,13 +193,13 @@
                 await invalidateViz({ delay: 200 });
                 modalsManager.close(id, true);
             } else {
-                toastState.addToast({
+                toasts.add({
                     type: "error",
                     message: res.data?.error ?? "Failed to add images to collection"
                 });
             }
         } catch (error) {
-            toastState.addToast({
+            toasts.add({
                 type: "error",
                 message: `Error adding images: ${(error as Error).message}`
             });

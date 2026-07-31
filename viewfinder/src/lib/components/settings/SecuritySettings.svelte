@@ -15,7 +15,7 @@
     import Badge from "$lib/components/ui/Badge.svelte";
     import IconButton from "$lib/components/ui/IconButton.svelte";
     import MaterialIcon from "$lib/components/ui/MaterialIcon.svelte";
-    import { toastState } from "$lib/toast-notifcations/notif-state.svelte";
+    import { toasts } from "$lib/toast-notifcations/toasts.svelte";
     import { modalsManager } from "../modals/manager/ModalManager.svelte";
     import RenameSessionModal from "./RenameSessionModal.svelte";
 
@@ -104,7 +104,7 @@
                 apiKeys = apiKeysRes.data.items;
             }
         } catch (e) {
-            toastState.addToast({
+            toasts.add({
                 message: "Error loading security settings",
                 type: "error"
             });
@@ -156,18 +156,18 @@
             const res = await deleteApiKey(deletingKey.uid);
             if (res.status === 200) {
                 apiKeys = apiKeys.filter((k) => k.uid !== deletingKey?.uid);
-                toastState.addToast({
+                toasts.add({
                     message: "API Key deleted successfully",
                     type: "success"
                 });
             } else {
-                toastState.addToast({
+                toasts.add({
                     message: "Failed to delete API key",
                     type: "error"
                 });
             }
         } catch (e) {
-            toastState.addToast({ message: "Error deleting key", type: "error" });
+            toasts.add({ message: "Error deleting key", type: "error" });
         } finally {
             deletingKey = null;
         }
@@ -197,12 +197,12 @@
                                 : s
                         );
 
-                        toastState.addToast({
+                        toasts.add({
                             message: "Session renamed successfully",
                             type: "success"
                         });
                     } else {
-                        toastState.addToast({
+                        toasts.add({
                             message: "Failed to rename session",
                             type: "error"
                         });
@@ -237,18 +237,18 @@
             const res = await deleteSession(revokingSession.uid);
             if (res.status === 200) {
                 sessions = sessions.filter((s) => s.uid !== revokingSession?.uid);
-                toastState.addToast({
+                toasts.add({
                     message: "Session revoked successfully",
                     type: "success"
                 });
             } else {
-                toastState.addToast({
+                toasts.add({
                     message: "Failed to revoke session",
                     type: "error"
                 });
             }
         } catch (e) {
-            toastState.addToast({ message: "Error revoking session", type: "error" });
+            toasts.add({ message: "Error revoking session", type: "error" });
         } finally {
             revokingSession = null;
         }

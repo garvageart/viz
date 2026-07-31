@@ -3,7 +3,7 @@
     import type { UserSetting } from "$lib/api";
     import { updateUserSettingsBatch } from "$lib/api";
     import Button from "$lib/components/ui/Button.svelte";
-    import { toastState } from "$lib/toast-notifcations/notif-state.svelte";
+    import { toasts } from "$lib/toast-notifcations/toasts.svelte";
     import SettingItemsList from "./SettingItemsList.svelte";
 
     interface Props {
@@ -66,7 +66,7 @@
 
     $effect(() => {
         if (saveStatus === "success") {
-            toastState.addToast({
+            toasts.add({
                 dismissible: true,
                 message: "Settings saved",
                 type: "success"
@@ -74,7 +74,7 @@
         }
 
         if (saveStatus === "error") {
-            toastState.addToast({
+            toasts.add({
                 dismissible: true,
                 message: `${errorMessage}`,
                 type: "error"

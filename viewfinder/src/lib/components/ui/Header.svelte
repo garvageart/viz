@@ -13,7 +13,7 @@
     import { eventsState } from "$lib/states/events.svelte";
     import { historyState } from "$lib/states/history.svelte";
     import { debugState, getTheme, isLayoutPage, isMobile, search, toggleTheme, user } from "$lib/states/index.svelte";
-    import { toastState } from "$lib/toast-notifcations/notif-state.svelte";
+    import { toasts } from "$lib/toast-notifcations/toasts.svelte";
     import { SUPPORTED_IMAGE_TYPES, SUPPORTED_RAW_FILES, type SupportedImageTypes } from "$lib/types/images";
     import UploadManager from "$lib/upload/manager.svelte";
     import OpenAccountPanel from "../context-menus/AccountPanel.svelte";
@@ -79,7 +79,7 @@
         }
 
         if (page.url.pathname !== "/") {
-            toastState.addToast({
+            toasts.add({
                 title: "Upload Success",
                 type: "success",
                 message: `${uploadedImages.length} image(s) successfully uploaded`,

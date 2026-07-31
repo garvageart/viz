@@ -10,7 +10,7 @@ import {
     listJobs
 } from "$lib/api";
 import { type WSClient, createWSConnection } from "$lib/api/websocket";
-import { toastState } from "$lib/toast-notifcations/notif-state.svelte";
+import { toasts } from "$lib/toast-notifcations/toasts.svelte";
 
 export type UiJob = WorkerJob & {
     filename?: string;
@@ -223,7 +223,7 @@ class JobsState {
             (err) => {
                 console.error("WebSocket error:", err);
                 if (this.connected) {
-                    toastState.addToast({
+                    toasts.add({
                         message: "WebSocket connection error",
                         type: "error"
                     });
@@ -233,7 +233,7 @@ class JobsState {
             () => (this.connected = true),
             (code: number, reason: string) => {
                 if (this.connected && code !== 1000 && code !== 1001 && code !== 1005) {
-                    toastState.addToast({
+                    toasts.add({
                         message: `WebSocket disconnected (${code}): ${reason}`,
                         type: "error"
                     });
@@ -277,13 +277,13 @@ class JobsState {
                     }
                 });
             } else {
-                toastState.addToast({
+                toasts.add({
                     message: "Failed to fetch job types",
                     type: "error"
                 });
             }
         } catch (e) {
-            toastState.addToast({
+            toasts.add({
                 message: "Error fetching job types: " + (e instanceof Error ? e.message : String(e)),
                 type: "error"
             });
@@ -358,7 +358,7 @@ class JobsState {
         try {
             const res = await createJob({ type: jobId, command: Command.All });
             if (res.status === 202) {
-                toastState.addToast({
+                toasts.add({
                     message: res.data.message || `Rescan all for ${jobId} started`,
                     type: "success"
                 });
@@ -369,13 +369,13 @@ class JobsState {
                     this.queuedByTopic[topic] = (this.queuedByTopic[topic] || 0) + count;
                 }
             } else {
-                toastState.addToast({
+                toasts.add({
                     message: `Failed to start rescan all for ${jobId}`,
                     type: "error"
                 });
             }
         } catch (e) {
-            toastState.addToast({
+            toasts.add({
                 message: "Error starting rescan: " + (e instanceof Error ? e.message : String(e)),
                 type: "error"
             });
@@ -386,7 +386,7 @@ class JobsState {
         try {
             const res = await createJob({ type: jobId, command: Command.Missing });
             if (res.status === 202) {
-                toastState.addToast({
+                toasts.add({
                     message: res.data.message || `Rescan missing for ${jobId} started`,
                     type: "success"
                 });
@@ -397,13 +397,13 @@ class JobsState {
                     this.queuedByTopic[topic] = (this.queuedByTopic[topic] || 0) + count;
                 }
             } else if (res.status === 200) {
-                toastState.addToast({
+                toasts.add({
                     message: res.data.message,
                     type: "info"
                 });
             }
         } catch (e) {
-            toastState.addToast({
+            toasts.add({
                 message: "Error starting rescan: " + (e instanceof Error ? e.message : String(e)),
                 type: "error"
             });

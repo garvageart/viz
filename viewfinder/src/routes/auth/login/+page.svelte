@@ -6,7 +6,7 @@
     import InputPassword from "$lib/components/ui/InputPassword.svelte";
     import InputText from "$lib/components/ui/InputText.svelte";
     import { system } from "$lib/states/index.svelte";
-    import { toastState } from "$lib/toast-notifcations/notif-state.svelte";
+    import { toasts } from "$lib/toast-notifcations/toasts.svelte";
 
     let loginData = $state({
         email: "",
@@ -20,7 +20,7 @@
 
     function showLoginNotif(message: string, level: "success" | "info" | "warning" | "error") {
         notifMessage = message;
-        toastState.addToast({
+        toasts.add({
             message,
             type: level
         });

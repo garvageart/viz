@@ -1,7 +1,7 @@
 <script lang="ts">
     import { invalidateAll } from "$app/navigation";
     import { DateTime } from "luxon";
-    import { Role, type User, adminCreateUser, adminDeleteUser, adminUpdateUser } from "$lib/api";
+    import { type User, adminCreateUser, adminDeleteUser, adminUpdateUser } from "$lib/api";
     import AdminRouteShell from "$lib/components/admin/AdminRouteShell.svelte";
     import ConfirmationModal from "$lib/components/modals/ConfirmationModal.svelte";
     import UserCreateModal from "$lib/components/modals/UserCreateModal.svelte";
@@ -12,7 +12,7 @@
     import MaterialIcon from "$lib/components/ui/MaterialIcon.svelte";
     import SliderToggle from "$lib/components/ui/SliderToggle.svelte";
     import { user as currentUserState } from "$lib/states/index.svelte";
-    import { toastState } from "$lib/toast-notifcations/notif-state.svelte";
+    import { toasts } from "$lib/toast-notifcations/toasts.svelte.js";
 
     let { data } = $props();
     let users = $derived(data.users);
@@ -27,7 +27,7 @@
             {
                 onSave: async (createForm) => {
                     if (!createForm.name || !createForm.email || !createForm.password) {
-                        toastState.addToast({
+                        toasts.add({
                             message: "Please fill in all required fields",
                             type: "error"
                         });
@@ -44,13 +44,13 @@
 
                     if (res.status === 201) {
                         users.push(res.data);
-                        toastState.addToast({
+                        toasts.add({
                             message: "User created successfully",
                             type: "success"
                         });
                         invalidateAll();
                     } else {
-                        toastState.addToast({
+                        toasts.add({
                             message: res.data.error || "Failed to create user",
                             type: "error"
                         });
@@ -69,7 +69,7 @@
                 user,
                 onSave: async (editForm) => {
                     if (!editForm.name || !editForm.email) {
-                        toastState.addToast({
+                        toasts.add({
                             message: "Please fill in all required fields",
                             type: "error"
                         });
@@ -87,13 +87,13 @@
 
                     if (res.status === 200) {
                         users = users.map((u) => (u.uid === res.data.uid ? res.data : u));
-                        toastState.addToast({
+                        toasts.add({
                             message: "User updated successfully",
                             type: "success"
                         });
                         invalidateAll();
                     } else {
-                        toastState.addToast({
+                        toasts.add({
                             message: res.data.error || "Failed to update user",
                             type: "error"
                         });
@@ -112,7 +112,7 @@
 
     function openDeleteConfirm(user: User) {
         if (user.uid === currentUserState.data?.uid) {
-            toastState.addToast({
+            toasts.add({
                 message: "You cannot delete your own account",
                 type: "warning"
             });
@@ -139,13 +139,13 @@
 
                     if (res.status === 200) {
                         users = users.filter((u) => u.uid !== userToDelete?.uid);
-                        toastState.addToast({
+                        toasts.add({
                             message: "User deleted successfully",
                             type: "success"
                         });
                         invalidateAll();
                     } else {
-                        toastState.addToast({
+                        toasts.add({
                             message: res.data.error || "Failed to delete user",
                             type: "error"
                         });

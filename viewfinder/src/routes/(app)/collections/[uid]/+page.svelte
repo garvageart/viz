@@ -68,7 +68,7 @@
     import { filterManager } from "$lib/states/filter.svelte";
     import { debugMode, isLayoutPage, sort, viewSettings } from "$lib/states/index.svelte";
     import { SelectionScopeNames, selectionManager } from "$lib/states/selection.svelte";
-    import { toastState } from "$lib/toast-notifcations/notif-state.svelte.js";
+    import { toasts } from "$lib/toast-notifcations/toasts.svelte.js";
     import type { AssetGridArray } from "$lib/types/asset.js";
     import { SUPPORTED_IMAGE_TYPES, SUPPORTED_RAW_FILES, type SupportedImageTypes } from "$lib/types/images";
     import type { ImageUploadSuccess } from "$lib/upload/manager.svelte";
@@ -136,7 +136,7 @@
             collectionState.hasMore = !!res.data.next;
         } else {
             // Avoid infinite loop on failure
-            toastState.addToast({
+            toasts.add({
                 type: "error",
                 title: `Image Load Failure: ${res.status}`,
                 message: `Failed to load more images for collection: ${res.data?.error ?? "Unknown error"}`
@@ -338,7 +338,7 @@
         });
 
         if (response.data.added) {
-            toastState.addToast({
+            toasts.add({
                 message: `Added ${uids.length} photo(s) to collection`,
                 type: "success",
                 timeout: 3000
@@ -382,7 +382,7 @@
         try {
             const res = await addCollectionImages(data.uid, { uids });
             if (res.status === 200 && (res.data?.added ?? true)) {
-                toastState.addToast({
+                toasts.add({
                     message: `Added ${uids.length} photo(s) to collection`,
                     type: "success",
                     timeout: 3000
@@ -412,7 +412,7 @@
 
                 await invalidateViz({ delay: 200 });
             } else {
-                toastState.addToast({
+                toasts.add({
                     type: "warning",
                     message: `Uploaded but failed to add to collection: ${res.status}`
                 });
@@ -420,7 +420,7 @@
             }
         } catch (err) {
             console.error("handleDropUploadSuccess error", err);
-            toastState.addToast({
+            toasts.add({
                 type: "error",
                 message: `Failed to add uploaded images to collection: ${err}`
             });
@@ -438,7 +438,7 @@
         );
 
         if (response.status !== 200) {
-            toastState.addToast({
+            toasts.add({
                 type: "error",
                 message: `Failed to update collection: ${response.data || "Unknown error"}`
             });
@@ -448,7 +448,7 @@
 
         await invalidateViz({ delay: 200 });
 
-        toastState.addToast({
+        toasts.add({
             title: response.data.name,
             type: "success",
             message: `Successfully updated collection`
@@ -467,7 +467,7 @@
         try {
             const res = await deleteCollection(data.uid);
             if (res.status === 204) {
-                toastState.addToast({
+                toasts.add({
                     type: "success",
                     message: `Deleted collection ${data.name}`,
                     timeout: 3000
@@ -476,14 +476,14 @@
                 goto("/collections");
             } else {
                 const errMsg = res.data.error ?? "Unknown error";
-                toastState.addToast({
+                toasts.add({
                     type: "error",
                     message: `Failed to delete collection: ${errMsg}`
                 });
             }
         } catch (err) {
             console.error("deleteCollection error", err);
-            toastState.addToast({
+            toasts.add({
                 type: "error",
                 message: `Failed to delete collection: ${err}`
             });
@@ -493,7 +493,7 @@
     function handleDeleteSelected() {
         // Delete selected images from this collection (client-side selection)
         if (selectionScope.size === 0) {
-            toastState.addToast({ type: "info", message: "No images selected" });
+            toasts.add({ type: "info", message: "No images selected" });
             return;
         }
 
@@ -520,7 +520,7 @@
             });
 
             if (res.status === 200 && (res.data?.deleted ?? true)) {
-                toastState.addToast({
+                toasts.add({
                     type: "success",
                     message: `Removed ${count} image(s) from collection`,
                     timeout: 2500
@@ -551,11 +551,11 @@
                 }
             } else {
                 const errMsg = res.data.error ?? "Failed to remove images";
-                toastState.addToast({ type: "error", message: errMsg });
+                toasts.add({ type: "error", message: errMsg });
             }
         } catch (err) {
             console.error("deleteCollectionImages error", err);
-            toastState.addToast({
+            toasts.add({
                 type: "error",
                 message: `Failed to remove images: ${err}`
             });
@@ -579,7 +579,7 @@
                         uids: uidsToCopy
                     });
                     if (addRes.status === 200) {
-                        toastState.addToast({
+                        toasts.add({
                             message: "Collection duplicated with images",
                             type: "success"
                         });
@@ -587,7 +587,7 @@
                         await invalidateViz({ delay: 200 });
                         goto(`/collections/${newCollectionUid}`);
                     } else {
-                        toastState.addToast({
+                        toasts.add({
                             message: `Collection duplicated but failed to copy images (${addRes.status})`,
                             type: "warning"
                         });
@@ -595,7 +595,7 @@
                         goto(`/collections/${newCollectionUid}`); // Still navigate to the new collection
                     }
                 } else {
-                    toastState.addToast({
+                    toasts.add({
                         message: "Collection duplicated (no images to copy)",
                         type: "success"
                     });
@@ -603,14 +603,14 @@
                     goto(`/collections/${newCollectionUid}`);
                 }
             } else {
-                toastState.addToast({
+                toasts.add({
                     title: "Duplicate Collection Failed",
                     message: res.data.error ?? "Unknown error occurred during duplication",
                     type: "error"
                 });
             }
         } catch (err) {
-            toastState.addToast({
+            toasts.add({
                 title: "Duplicate Collection Failed",
                 message: (err as Error).message ?? "Unknown error occurred during duplication",
                 type: "error"

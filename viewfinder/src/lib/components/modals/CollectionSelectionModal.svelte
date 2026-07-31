@@ -9,7 +9,7 @@
         listCollections
     } from "$lib/api";
     import { selectionManager } from "$lib/states/selection.svelte";
-    import { toastState } from "$lib/toast-notifcations/notif-state.svelte";
+    import { toasts } from "$lib/toast-notifcations/toasts.svelte";
     import type { CardVisualState } from "$lib/types/snippet";
     import { invalidateViz } from "$lib/views/views.svelte";
     import AssetGrid from "../grid/AssetGrid.svelte";
@@ -74,7 +74,7 @@
 
     function handleSelect(collection: AugmentedCollection) {
         if (collection.isFullyContained) {
-            toastState.addToast({
+            toasts.add({
                 type: "info",
                 message: "All images already exist in this collection.",
                 timeout: 3000
@@ -101,7 +101,7 @@
                     });
 
                     if (createRes.status !== 201) {
-                        toastState.addToast({
+                        toasts.add({
                             type: "error",
                             message: createRes.data.error ?? `Failed to create collection (${createRes.status})`,
                             timeout: 4000
@@ -116,7 +116,7 @@
                     });
 
                     if (addRes.status === 200) {
-                        toastState.addToast({
+                        toasts.add({
                             type: "success",
                             message: `Collection created with ${imageUidsToAdd.length} image(s)`,
                             timeout: 4000
@@ -126,7 +126,7 @@
                         modalsManager.close(id); // Close Selection Modal
                         goto(`/collections/${collectionUid}`);
                     } else {
-                        toastState.addToast({
+                        toasts.add({
                             type: "warning",
                             message: `Collection created but failed to add images (${addRes.status})`,
                             timeout: 4000

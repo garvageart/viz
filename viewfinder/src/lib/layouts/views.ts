@@ -11,7 +11,7 @@ import DifferentContent from "$lib/components/panels/workspace/generic/Different
 import SomeContent from "$lib/components/panels/workspace/generic/SomeContent.svelte";
 import { VizMimeTypes } from "$lib/constants";
 import { workspaceState } from "$lib/states/workspace.svelte";
-import { toastState } from "$lib/toast-notifcations/notif-state.svelte";
+import { toasts } from "$lib/toast-notifcations/toasts.svelte";
 import VizView, { invalidateViz } from "$lib/views/views.svelte";
 import Collections from "../../routes/(app)/collections/+page.svelte";
 import CollectionPage from "../../routes/(app)/collections/[uid]/+page.svelte";
@@ -65,7 +65,7 @@ export const views: VizView<any, any>[] = [
                         const newUIDs = data.filter((uid) => !existingUIDs?.includes(uid));
 
                         if (newUIDs.length === 0) {
-                            toastState.addToast({
+                            toasts.add({
                                 type: "success",
                                 message: `No new images to add to **${v.name}**`,
                                 actions: [
@@ -104,7 +104,7 @@ export const views: VizView<any, any>[] = [
                                     toastMessage += `. ${skippedMessage}`;
                                 }
 
-                                toastState.addToast({
+                                toasts.add({
                                     type: "success",
                                     message: toastMessage,
                                     actions: [
@@ -127,7 +127,7 @@ export const views: VizView<any, any>[] = [
                                 });
                                 await invalidateViz({ delay: 200 });
                             } else {
-                                toastState.addToast({
+                                toasts.add({
                                     type: "error",
                                     message: `Failed to add images: ${res.data?.error || "Unknown error"}`
                                 });

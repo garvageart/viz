@@ -10,7 +10,7 @@
     import IconButton from "$lib/components/ui/IconButton.svelte";
     import MaterialIcon from "$lib/components/ui/MaterialIcon.svelte";
     import ProgressBar from "$lib/components/ui/ProgressBar.svelte";
-    import { type Toast, toastState } from "$lib/toast-notifcations/notif-state.svelte";
+    import { type Toast, toasts } from "$lib/toast-notifcations/toasts.svelte.js";
     import type { MaterialSymbol } from "$lib/types/MaterialSymbol.js";
     import { formatBytes } from "$lib/utils/images";
     import { invalidateViz } from "$lib/views/views.svelte";
@@ -41,7 +41,7 @@
         try {
             const response = await clearImageCache({ keepPermanent });
             if (response.status !== 200) {
-                toastState.addToast({
+                toasts.add({
                     type: "error",
                     message: response.data.error || "Failed to clear image cache."
                 });
@@ -62,10 +62,10 @@
                 ];
             }
 
-            toastState.addToast(toastOptions);
+            toasts.add(toastOptions);
             await invalidateViz();
         } catch (e) {
-            toastState.addToast({
+            toasts.add({
                 type: "error",
                 message: "Error clearing cache."
             });
@@ -78,12 +78,12 @@
         refreshing = true;
         try {
             await invalidate(page.url.pathname);
-            toastState.addToast({
+            toasts.add({
                 type: "success",
                 message: "Cache statistics refreshed."
             });
         } catch (e) {
-            toastState.addToast({
+            toasts.add({
                 type: "error",
                 message: "Failed to refresh cache statistics."
             });

@@ -17,7 +17,7 @@
     import { DbSettings } from "$lib/db/settings";
     import type { TransformInput } from "$lib/images/vips/vips";
     import { download } from "$lib/states/index.svelte";
-    import { toastState } from "$lib/toast-notifcations/notif-state.svelte";
+    import { toasts } from "$lib/toast-notifcations/toasts.svelte";
     import { safeRenderRenameTemplate } from "$lib/ui-tools/renamer";
     import { DownloadFile, DownloadState } from "$lib/upload/asset.svelte";
     import { processDownloadQueue, waitForDownloadCompletion } from "$lib/upload/manager.svelte";
@@ -308,7 +308,7 @@
                 const blob = new Blob([standardBuf], { type: `image/${ext === "jpg" ? "jpeg" : ext}` });
                 await downloadToFilesystem(fullFilename, blob);
 
-                toastState.addToast({
+                toasts.add({
                     message: `Successfully exported **${fullFilename}**`,
                     type: "success"
                 });
@@ -371,7 +371,7 @@
 
                     await downloadToFilesystem(zipName, zipData);
 
-                    toastState.addToast({
+                    toasts.add({
                         title: zipName,
                         message: "Download Started",
                         type: "success"
@@ -379,7 +379,7 @@
                 } catch (err) {
                     zipTask.state = DownloadState.ERROR;
                     console.error("ZIP generation failed:", err);
-                    toastState.addToast({
+                    toasts.add({
                         title: zipName,
                         message: "Download Failed",
                         type: "error"
@@ -390,7 +390,7 @@
             }
         } catch (execErr) {
             console.error("[ExportPanel] Fatal error during worker execution:", execErr);
-            toastState.addToast({
+            toasts.add({
                 title: "Export Failed",
                 message: execErr instanceof Error ? execErr.message : String(execErr),
                 type: "error"
