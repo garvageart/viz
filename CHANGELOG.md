@@ -5,6 +5,17 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.26.0] - 2026-07-31
+
+* fix: copy everything (64d0d72e)
+* fix: ugh (40261541)
+* fix: copy Makefile in backend-builder (0e7bece7)
+* fix: copy Makefile into docker (33b67654)
+* fix: add `fmt-check-go` to .PHONY (b64854f3)
+* fix: avoid building into read only mount (2bd08993)
+* fix(docker): copy /usr/include from builder into viz-base final stage (a936fdd1)
+* fix(docker): copy /usr/share/pkgconfig from builder into viz-base final stage (c699a0e5)
+
 ## [0.25.4] - 2026-07-30
 
 * feat(scripts): prompt to stash uncommitted changes during release and display pop reminder (4d8a32ca)
