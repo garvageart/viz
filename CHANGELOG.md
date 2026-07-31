@@ -5,6 +5,11 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.26.5] - 2026-07-31
+
+* fix(viewfinder): match collection name input to display and prevent edit shift (757f360c)
+* fix(docker): add apt retries to base image install (3abf887c)
+
 ## [0.26.4] - 2026-07-31
 
 * fix: add overflow auto to clip image (3a849eea)
