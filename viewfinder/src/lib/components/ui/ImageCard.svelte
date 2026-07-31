@@ -180,6 +180,7 @@
         display: flex;
         flex-direction: column;
         box-sizing: border-box;
+        overflow: auto;
 
         &.simple {
             border-radius: 0;
