@@ -1,5 +1,6 @@
 /// <reference types="vitest/config" />
 import { sveltekit } from "@sveltejs/kit/vite";
+import { svelteTesting } from "@testing-library/svelte/vite";
 import fs from "fs";
 import { createRequire } from "module";
 import path from "path";
@@ -115,6 +116,7 @@ export default defineConfig({
             }
         },
         devtoolsJson(),
+        svelteTesting(),
         sveltekit()
     ],
     define: define,
@@ -139,9 +141,10 @@ export default defineConfig({
     },
     test: {
         globals: true, // This enables global APIs like 'expect', 'vi'
-        environment: "jsdom", // Default to jsdom for client-side tests
+        environment: "happy-dom", // Full browser environment incl. IndexedDB (replaces jsdom)
+        clearMocks: true,
         setupFiles: ["./vitest-setup-client.ts"], // Apply this to all client tests
-        // Common include/exclude patterns for all test projects
+        // viz is a pure SPA — every test runs in the browser environment above.
         include: [
             "src/tests/**/*.spec.ts",
             "src/**/*.spec.{js,ts}",
@@ -154,31 +157,6 @@ export default defineConfig({
             "src/lib/third-party/**",
             "src/lib/third-party/**/tests/**",
             "e2e/**" // Exclude Playwright E2E tests
-        ],
-        projects: [
-            {
-                extends: "./vite.config.ts", // Extend the base config
-                test: {
-                    name: "client",
-                    clearMocks: true
-                    // No need to redefine include/exclude or setupFiles here if they are in the top-level
-                }
-            },
-            {
-                extends: "./vite.config.ts",
-                test: {
-                    name: "server",
-                    environment: "node",
-                    // keep server tests narrow to server-specific locations to avoid loading UI/component tests
-                    include: ["src/lib/server/**", "src/**/*.server.spec.{js,ts}", "src/**/*.server.test.{js,ts}"],
-                    exclude: [
-                        "src/tests/**",
-                        "src/**/*.svelte.spec.{js,ts}",
-                        "src/lib/third-party/**/tests/**",
-                        "e2e/**"
-                    ]
-                }
-            }
         ]
     },
     server: {
