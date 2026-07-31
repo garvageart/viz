@@ -2,6 +2,8 @@
 
 This document lists every environment variable recognised by the Viz API server, frontend dev server, and testing infrastructure. Variables are grouped by subsystem. Defaults shown in parentheses.
 
+> A starter file is provided at `.env.example` — copy it to `.env` and fill in the secret values.
+
 ---
 
 ## Quick Reference
@@ -143,6 +145,17 @@ The `docker/docker-compose.yml` passes these to the `server` and `db` services:
 | `POSTGRES_USER` | db | `postgres` | PostgreSQL username for the container. |
 | `POSTGRES_PASSWORD` | db | `postgres` | PostgreSQL password for the container. |
 | `POSTGRES_DB` | db | `viz` | PostgreSQL database name for the container. |
+
+### `docker/docker-compose.prod.yml` (self-hosting template)
+
+Interpolated by Docker Compose at deploy time. Set these in the shell or the root `.env`:
+
+| Variable | Required | Default | Description |
+| :--- | :---: | :--- | :--- |
+| `REPO_HOST` | **Yes** | — | Container registry host holding the `viz-server` image. |
+| `REPOSITORY` | **Yes** | — | Registry owner/repo containing the `viz-server` image. |
+| `DATABASE_LOCATION` | **Yes** | — | Host path for the PostgreSQL data directory. |
+| `IMAGE_TAG` | No | `latest` | `viz-server` image tag to deploy. |
 
 ---
 
