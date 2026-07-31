@@ -2,7 +2,12 @@ ARG REGISTRY_URL
 ARG REPOSITORY
 ARG BASE_IMAGE=${REGISTRY_URL}/${REPOSITORY}/viz-base:latest
 
-# Stage 1: Frontend Build
+# Stage 1: Database Image (baked-in init scripts)
+FROM postgres:18-alpine AS db
+
+COPY docker/initdb/01-create-superuser.sh /docker-entrypoint-initdb.d/
+
+# Stage 2: Frontend Build
 FROM node:26-slim AS frontend-builder
 
 WORKDIR /app
@@ -35,7 +40,7 @@ WORKDIR /app
 RUN pnpm --filter @viz/viewfinder run build
 
 
-# Stage 2: Backend Build
+# Stage 3: Backend Build
 FROM ${BASE_IMAGE} AS backend-builder
 
 WORKDIR /app
@@ -88,8 +93,8 @@ COPY internal/ ./internal/
 COPY resources/ ./resources/
 COPY tools/migrations/ ./tools/migrations/
 
-# Stage 3: Final Production Image
-FROM debian:bookworm-slim
+# Stage 4: Final Production Image
+FROM debian:bookworm-slim AS server
 
 # Install runtime dependencies for libvips with BuildKit apt caching
 RUN --mount=type=cache,id=apt-cache,target=/var/cache/apt,sharing=locked \
@@ -137,9 +142,3 @@ EXPOSE 7770
 
 ENTRYPOINT ["docker-entrypoint.sh"]
 CMD ["/app/viz-server"]
-
-
-# Stage 4: Database Image (baked-in init scripts)
-FROM postgres:18-alpine AS db
-
-COPY docker/initdb/01-create-superuser.sh /docker-entrypoint-initdb.d/
