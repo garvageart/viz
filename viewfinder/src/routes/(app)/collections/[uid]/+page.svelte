@@ -1137,7 +1137,6 @@
 
         :global(.input-container) {
             width: 100%;
-            max-width: 40rem;
         }
     }
 
@@ -1186,6 +1185,9 @@
         box-shadow: inset 0 -1px 0 0 var(--viz-border-subtle);
         border: none;
         border-radius: 0;
+        width: auto;
+        max-width: 100%;
+        field-sizing: content;
 
         &:focus {
             background-color: var(--viz-surface-panel);

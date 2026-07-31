@@ -1002,7 +1002,6 @@
                                     <InputText
                                         bind:value={editingName}
                                         class="value-big"
-                                        style="min-height: auto; padding: 0.5rem;"
                                         spellcheck="false"
                                         autofocus={true}
                                         onblur={() => {
@@ -1902,6 +1901,26 @@
     .name-row > :global(.value-big) {
         flex: 1 1 auto;
         min-width: 0;
+        padding: 0.25rem 0;
+    }
+
+    .name-row > :global(.input-container) {
+        flex: 1 1 auto;
+        min-width: 0;
+        padding: 0;
+        width: auto;
+    }
+
+    .name-row :global(input.value-big) {
+        width: auto;
+        max-width: 100%;
+        field-sizing: content;
+        min-height: 0;
+        height: auto;
+        padding: 0.25rem 0;
+        background-color: var(--viz-surface-panel);
+        box-shadow: inset 0 -1px 0 0 var(--viz-primary);
+        border: none;
     }
 
     .copy-filename-btn {
