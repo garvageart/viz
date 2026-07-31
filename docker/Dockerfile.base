@@ -55,3 +55,8 @@ COPY --from=base-builder /usr/share/pkgconfig /usr/share/pkgconfig
 COPY --from=base-builder /vips-libs/ /vips-libs/
 
 RUN ldconfig
+
+# Pre-download the Go module cache so backend builds don't hit proxy.golang.org
+COPY go.mod go.sum go.work go.work.sum ./
+COPY cmd/api/go.mod cmd/api/go.sum ./cmd/api/
+RUN go mod download -x

@@ -68,15 +68,12 @@ ARG SOURCE_URL
 ARG REPOSITORY
 ARG REPOSITORY_URL
 
-# Download Go dependencies with BuildKit cache
-RUN --mount=type=cache,id=go-pkg,target=/go/pkg/mod,sharing=locked \
-    --mount=type=cache,id=go-build,target=/root/.cache/go-build,sharing=locked \
+# Download Go dependencies (warm module cache is baked into viz-base)
+RUN --mount=type=cache,id=go-build,target=/root/.cache/go-build,sharing=locked \
     go mod download -x
 
 # Build backend with zero-layer bind mounting and BuildKit cache
-# Output to /tmp to avoid writing into the read-only bind mount at /app
 RUN --mount=type=bind,target=. \
-    --mount=type=cache,id=go-pkg,target=/go/pkg/mod,sharing=locked \
     --mount=type=cache,id=go-build,target=/root/.cache/go-build,sharing=locked \
     VERSION=${VERSION:-$(cat version.txt)} && \
     BUILD_DATE=${BUILD_DATE:-$(date -u +"%Y-%m-%dT%H:%M:%SZ")} && \
