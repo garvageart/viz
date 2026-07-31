@@ -1,14 +1,15 @@
 ARG REGISTRY_URL
 ARG REPOSITORY
 ARG BASE_IMAGE=${REGISTRY_URL}/${REPOSITORY}/viz-base:latest
+ARG FRONTEND_DEPS_IMAGE=${REGISTRY_URL}/${REPOSITORY}/viz-frontend-deps:latest
 
 # Stage 1: Database Image (baked-in init scripts)
 FROM postgres:18-alpine AS db
 
 COPY docker/initdb/01-create-superuser.sh /docker-entrypoint-initdb.d/
 
-# Stage 2: Frontend Build
-FROM node:26-slim AS frontend-builder
+# Stage 2: Frontend Dependencies (published to the registry to avoid npm downloads in CI)
+FROM node:26-slim AS frontend-deps
 
 WORKDIR /app
 
@@ -31,6 +32,11 @@ ENV NPM_CONFIG_STORE_DIR=/root/.local/share/pnpm/store
 RUN --mount=type=cache,id=pnpm-store,target=/root/.local/share/pnpm/store \
     pnpm install --frozen-lockfile
 
+# Stage 3: Frontend Build
+FROM ${FRONTEND_DEPS_IMAGE} AS frontend-builder
+
+WORKDIR /app
+
 # Copy the rest of the source files AFTER installing dependencies
 COPY viewfinder ./viewfinder
 COPY scripts/js ./scripts/js
@@ -40,7 +46,7 @@ WORKDIR /app
 RUN pnpm --filter @viz/viewfinder run build
 
 
-# Stage 3: Backend Build
+# Stage 4: Backend Build
 FROM ${BASE_IMAGE} AS backend-builder
 
 WORKDIR /app
@@ -93,7 +99,7 @@ COPY internal/ ./internal/
 COPY resources/ ./resources/
 COPY tools/migrations/ ./tools/migrations/
 
-# Stage 4: Final Production Image
+# Stage 5: Final Production Image
 FROM debian:bookworm-slim AS server
 
 # Install runtime dependencies for libvips with BuildKit apt caching
