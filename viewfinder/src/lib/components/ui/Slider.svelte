@@ -104,7 +104,7 @@
 
     .required-asterisk {
         color: var(--viz-error-color);
-        margin-left: 2px;
+        margin-left: var(--viz-spacing-xxs);
     }
 
     .slider-value {

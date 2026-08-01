@@ -74,6 +74,11 @@
     .textarea-label {
         font-weight: 500;
         color: var(--viz-text-secondary);
+
+        .required-asterisk {
+            color: var(--viz-error-color);
+            margin-left: var(--viz-spacing-xxs);
+        }
     }
 
     .textarea-description {
