@@ -3,14 +3,21 @@
 	Inspiration: https://www.w3.org/WAI/ARIA/apg/patterns/menu/
 -->
 <script lang="ts">
-    import { tick } from "svelte";
+    import { getContext, tick } from "svelte";
     import type { SvelteHTMLElements } from "svelte/elements";
+    import { ContextKeys } from "$lib/context-keys";
     import ContextMenuItem from "./ContextMenuItem.svelte";
     import type { MenuItem } from "./types";
 
     type Anchor = { x: number; y: number } | HTMLElement | null;
 
     let contextMenu: HTMLDivElement | undefined = $state();
+
+    // ModalLightbox provides its z-index via context. The menu portals to
+    // document.body, so it must float above the modal overlay (base 100000)
+    // rather than the hardcoded 10000 used on regular pages.
+    let getModalZIndex = getContext<() => number | undefined>(ContextKeys.ModalZIndex);
+    let menuZIndex = $derived(Math.max(10000, (getModalZIndex?.() ?? 0) + 1));
     let activeIndex = $state(0);
     // Start off-screen to avoid any layout shift / scrollbars until we compute proper coords
     let position = $state<{ top: number; left: number }>({
@@ -53,7 +60,7 @@
 
     let {
         showMenu = $bindable(false),
-        items = $bindable([] as MenuItem[]),
+        items = $bindable([]),
         anchor = $bindable(null),
         offsetX = 0,
         offsetY = 0,
@@ -350,7 +357,7 @@
         role="menu"
         bind:this={contextMenu}
         use:portal
-        style={`position: ${cssPosition || "absolute"}; top:${position.top}px; left:${position.left}px; z-index: 10000; visibility: ${positioned ? "visible" : "hidden"}; ${htmlProps?.style ?? ""}`}
+        style={`position: ${cssPosition || "absolute"}; top:${position.top}px; left:${position.left}px; z-index: ${menuZIndex}; visibility: ${positioned ? "visible" : "hidden"}; ${htmlProps?.style ?? ""}`}
     >
         <div class="context-menu-options">
             <ul role="menu" aria-orientation="vertical">
