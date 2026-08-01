@@ -8,9 +8,17 @@
         value: "on" | "off";
         labelPos?: "side" | "top";
         id?: string;
+        disabled?: boolean;
     }
 
-    let { label, value = $bindable(), labelPos = "side", id, ...props }: Props & SvelteHTMLElements["div"] = $props();
+    let {
+        label,
+        value = $bindable(),
+        labelPos = "side",
+        id,
+        disabled = false,
+        ...props
+    }: Props & SvelteHTMLElements["div"] = $props();
 
     const uniqueID = generateRandomString(6);
     const switchId = $derived(id || `switch-${uniqueID}`);
@@ -21,32 +29,22 @@
     };
 </script>
 
-<div {...props} class="toggle-slider {labelPos === 'side' ? 'side' : 'top'}">
+<div {...props} class="toggle-slider {labelPos === 'side' ? 'side' : 'top'}" class:disabled>
     <label for={switchId} id={`${switchId}-label`}>{label}</label>
     <button
         id={switchId}
         type="button"
-        style={labelPos === "side" ? "margin-left: 0.5em;" : ""}
         role="switch"
         aria-checked={value === "on"}
         data-checked={value === "on"}
         aria-labelledby={`${switchId}-label`}
+        {disabled}
         onclick={handleClick}
     >
     </button>
 </div>
 
 <style lang="scss">
-    :root {
-        --gray: #ccc;
-    }
-
-    :global([role="switch"][aria-checked="true"] :first-child),
-    :global([role="switch"][aria-checked="false"] :last-child) {
-        display: none;
-        color: #fff;
-    }
-
     .toggle-slider {
         display: flex;
         align-items: center;
@@ -55,6 +53,10 @@
             flex-direction: row;
             align-items: center;
             justify-content: space-between;
+
+            button {
+                margin-left: 0.5em;
+            }
         }
 
         &.top {
@@ -67,46 +69,53 @@
 
     .toggle-slider button {
         width: 3em;
-        height: 1.6em;
+        height: 1.5em;
+        padding: 0;
         position: relative;
-        background: var(--gray);
-        border: none;
+        box-sizing: border-box;
+        border: 1px solid var(--viz-primary);
+        border-radius: var(--viz-border-radius-pill);
+        background-color: var(--viz-surface-input);
+        cursor: pointer;
+        transition:
+            background-color 0.2s ease,
+            border-color 0.2s ease;
     }
 
     .toggle-slider button::before {
         content: "";
         position: absolute;
-        width: 1.3em;
-        height: 1.3em;
-        background: #fff;
-        top: 0.13em;
-        right: 1.5em;
-        transition: transform 0.3s;
+        top: 0.05em;
+        left: 0.1em;
+        width: 1.2em;
+        height: 1.2em;
+        box-sizing: border-box;
+        border-radius: 50%;
+        background-color: var(--viz-bg-color);
+        border: 1px solid var(--viz-border-strong);
+        transition: transform 0.2s ease;
     }
 
     .toggle-slider button[aria-checked="true"] {
         background-color: var(--viz-primary);
+        border-color: var(--viz-primary);
     }
 
     .toggle-slider button[aria-checked="true"]::before {
-        transform: translateX(1.3em);
-        transition: transform 0.3s;
+        transform: translateX(1.4em);
     }
 
-    .toggle-slider button:focus {
-        box-shadow: 0 0px 0px 1px var(--viz-primary);
+    .toggle-slider.disabled {
+        opacity: 0.5;
+        cursor: not-allowed;
     }
 
-    .toggle-slider button {
-        border-radius: 1.5em;
+    .toggle-slider.disabled button {
+        cursor: not-allowed;
     }
 
-    .toggle-slider button::before {
-        border-radius: 100%;
-    }
-
-    .toggle-slider button:focus {
-        box-shadow: 0 0px 8px var(--viz-primary);
-        border-radius: 1.5em;
+    .toggle-slider button:focus-visible {
+        outline: 2px solid var(--viz-primary);
+        outline-offset: 2px;
     }
 </style>
