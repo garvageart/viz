@@ -2,6 +2,7 @@
     import { onDestroy, onMount } from "svelte";
     import { type ImageAsset, addCollectionImages, listCollectionImageUiDs, listImages } from "$lib/api";
     import LoadingSpinner from "$lib/components/ui/LoadingSpinner.svelte";
+    import { getImageGridDisplay } from "$lib/context-menu/menus/image-grid-display";
     import type { MenuItem } from "$lib/context-menu/types";
     import { ImagePaginationState } from "$lib/images/state.svelte";
     import {
@@ -10,11 +11,11 @@
         getConsolidatedGroups,
         groupImagesByDate
     } from "$lib/photo-layout";
+    import { applySortSelection, currentSortId, sortOptions, toggleSortOrder } from "$lib/sort/sort";
     import { filterManager } from "$lib/states/filter.svelte";
-    import { viewSettings } from "$lib/states/index.svelte";
+    import { sort, viewSettings } from "$lib/states/index.svelte";
     import { selectionManager } from "$lib/states/selection.svelte";
     import { toasts } from "$lib/toast-notifcations/toasts.svelte";
-    import type { AssetSortBy, AssetSortOrder } from "$lib/types/asset";
     import { invalidateViz } from "$lib/views/views.svelte";
     import Dropdown from "../context-menus/Dropdown.svelte";
     import PhotoAssetGrid from "../grid/PhotoAssetGrid.svelte";
@@ -22,7 +23,7 @@
     import Button from "../ui/Button.svelte";
     import IconButton from "../ui/IconButton.svelte";
     import AssetToolbar from "../ui/toolbars/AssetToolbar.svelte";
-    import { modalsManager } from "./manager/ModalManager.svelte";
+    import { type ModalOptions, modalsManager } from "./manager/ModalManager.svelte";
 
     interface Props {
         id: string; // modal ID from modalsManager
@@ -35,39 +36,18 @@
     const scopeId = "add-photos-modal";
     const selectionScope = selectionManager.getScope<ImageAsset>(scopeId);
 
+    export const modalOptions: ModalOptions = {
+        width: "95%",
+        height: "90%",
+        applyPadding: false
+    };
+
     let existingUids = $state<Set<string>>(new Set());
     let isLoading = $state(true);
     let initialDataLoaded = $state(false);
 
-    // Local sort state
-    let sortBy = $state<AssetSortBy>("taken_at");
-    let sortOrder = $state<AssetSortOrder>("DESC");
-
     // Display options for Dropdown
-    const displayMenuItems: MenuItem[] = [
-        {
-            id: "display-grid",
-            label: "Grid",
-            action: () => {
-                viewSettings.setView("grid");
-            }
-        },
-        {
-            id: "display-list",
-            label: "List",
-            action: () => {
-                viewSettings.setView("grid"); // PhotoAssetGrid mostly supports grid, but we keep option consistent
-                viewSettings.setView("list");
-            }
-        },
-        {
-            id: "display-custom",
-            label: "Custom",
-            action: () => {
-                viewSettings.setView("custom");
-            }
-        }
-    ];
+    const displayMenuItems: MenuItem[] = getImageGridDisplay();
 
     function getDisplaySelectedId(): string | undefined {
         const map: Record<string, string> = {
@@ -101,8 +81,8 @@
             const imagesRes = await listImages({
                 limit: 100,
                 page: 0,
-                sortBy,
-                order: sortOrder
+                sortBy: sort.by,
+                order: sort.order
             });
 
             if (imagesRes.status === 200) {
@@ -149,8 +129,8 @@
             const res = await listImages({
                 limit: galleryState.pagination.limit,
                 page: nextPage,
-                sortBy,
-                order: sortOrder
+                sortBy: sort.by,
+                order: sort.order
             });
 
             if (res.status === 200) {
@@ -229,41 +209,10 @@
                         title="Sort"
                         class="toolbar-button"
                         iconName="sort"
-                        items={[
-                            { id: "sort-name", label: "Name" },
-                            { id: "sort-recently_added", label: "Recently Added" },
-                            { id: "sort-updated_at", label: "Updated At" },
-                            { id: "sort-taken_at", label: "Taken At" }
-                        ]}
-                        selectedItemId={(() => {
-                            switch (sortBy) {
-                                case "name":
-                                    return "sort-name";
-                                case "recently_added":
-                                    return "sort-recently_added";
-                                case "updated_at":
-                                    return "sort-updated_at";
-                                case "taken_at":
-                                    return "sort-taken_at";
-                                default:
-                                    return undefined;
-                            }
-                        })()}
+                        items={sortOptions}
+                        selectedItemId={currentSortId()}
                         onSelect={(item) => {
-                            switch (item.id) {
-                                case "sort-name":
-                                    sortBy = "name";
-                                    break;
-                                case "sort-recently_added":
-                                    sortBy = "recently_added";
-                                    break;
-                                case "sort-updated_at":
-                                    sortBy = "updated_at";
-                                    break;
-                                case "sort-taken_at":
-                                    sortBy = "taken_at";
-                                    break;
-                            }
+                            applySortSelection(item.id);
                             galleryState.images = [];
                             galleryState.pagination.page = -1;
                             galleryState.hasMore = true;
@@ -271,11 +220,11 @@
                         }}
                     />
                     <IconButton
-                        iconName={sortOrder === "ASC" ? "arrow_upward" : "arrow_downward"}
+                        iconName={sort.order === "ASC" ? "arrow_upward" : "arrow_downward"}
                         class="toolbar-button"
-                        title={`Toggle Sort Order (${sortOrder})`}
+                        title={`Toggle Sort Order (${sort.order})`}
                         onclick={() => {
-                            sortOrder = sortOrder === "ASC" ? "DESC" : "ASC";
+                            toggleSortOrder();
                             galleryState.images = [];
                             galleryState.pagination.page = -1;
                             galleryState.hasMore = true;
@@ -291,7 +240,6 @@
                         items={displayMenuItems}
                         selectedItemId={getDisplaySelectedId()}
                         showSelectionIndicator={false}
-                        onSelect={(item) => item.action?.(new MouseEvent("click"))}
                     />
                 </div>
             </AssetToolbar>
@@ -331,14 +279,9 @@
                 {/if}
             </div>
             <div class="footer-actions">
-                <Button variant="small" onclick={handleCancel} disabled={isLoading}>Cancel</Button>
-                <Button
-                    variant="small"
-                    style="background-color: var(--viz-primary);"
-                    disabled={selectionScope.size === 0 || isLoading}
-                    onclick={handleAdd}
-                >
-                    Add to Collection
+                <Button variant="primary" onclick={handleCancel} disabled={isLoading}><span>Cancel</span></Button>
+                <Button variant="info" disabled={selectionScope.size === 0 || isLoading} onclick={handleAdd}>
+                    <span>Add to Collection</span>
                 </Button>
             </div>
         </div>

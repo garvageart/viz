@@ -1,6 +1,8 @@
 import { orderBy } from "lodash-es";
 import type { Collection, ImageAsset } from "$lib/api";
-import type { AssetSort } from "$lib/types/asset";
+import type { MenuItem } from "$lib/context-menu/types";
+import { sort } from "$lib/states/index.svelte";
+import type { AssetSort, AssetSortBy } from "$lib/types/asset";
 import { getTakenAt } from "$lib/utils/images";
 
 function getCollectionDate(collection: Collection): Date {
@@ -44,4 +46,48 @@ export function sortCollections(collections: Collection[], sort: AssetSort) {
         default:
             return collections;
     }
+}
+
+// Sorting (MenuItem[] for Dropdown)
+export const sortOptions: MenuItem[] = [
+    { id: "sort-name", label: "Name" },
+    { id: "sort-recently_added", label: "Recently Added" },
+    { id: "sort-updated_at", label: "Updated At" },
+    { id: "sort-taken_at", label: "Taken At" }
+];
+
+const sortIdByKey: Record<AssetSortBy, string> = {
+    name: "sort-name",
+    recently_added: "sort-recently_added",
+    updated_at: "sort-updated_at",
+    taken_at: "sort-taken_at"
+};
+
+export function sortIdFromKey(key: AssetSortBy): string {
+    return sortIdByKey[key];
+}
+
+export function currentSortId(): string {
+    return sortIdByKey[sort.by];
+}
+
+export function sortByFromId(itemId: string): AssetSortBy | undefined {
+    for (const [by, id] of Object.entries(sortIdByKey) as [AssetSortBy, string][]) {
+        if (id === itemId) {
+            return by;
+        }
+    }
+    return undefined;
+}
+
+export function applySortSelection(itemId: string): AssetSortBy | undefined {
+    const by = sortByFromId(itemId);
+    if (by) {
+        sort.by = by;
+    }
+    return by;
+}
+
+export function toggleSortOrder() {
+    sort.order = sort.order === "ASC" ? "DESC" : "ASC";
 }

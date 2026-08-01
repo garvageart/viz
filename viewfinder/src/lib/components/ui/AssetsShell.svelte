@@ -4,6 +4,7 @@
     import { type Component, type ComponentProps, type Snippet } from "svelte";
     import type { HTMLButtonAttributes } from "svelte/elements";
     import type { MenuItem } from "$lib/context-menu/types";
+    import { applySortSelection, currentSortId, sortOptions, toggleSortOrder } from "$lib/sort/sort";
     import { sort } from "$lib/states/index.svelte";
     import { selectionManager } from "$lib/states/selection.svelte";
     import type { MaterialSymbol } from "$lib/types/MaterialSymbol";
@@ -76,31 +77,6 @@
         return [...allData, ...fillItems] as typeof allData;
     });
 
-    // Sorting (MenuItem[] for Dropdown)
-    let sortOptions: MenuItem[] = [
-        { id: "sort-name", label: "Name" },
-        { id: "sort-recently_added", label: "Recently Added" },
-        { id: "sort-updated_at", label: "Updated At" },
-        { id: "sort-taken_at", label: "Taken At" }
-    ];
-
-    function currentSortId() {
-        switch (sort.by) {
-            case "name":
-                return "sort-name";
-            case "recently_added":
-                return "sort-recently_added";
-            case "updated_at":
-                return "sort-updated_at";
-            case "taken_at":
-                return "sort-taken_at";
-        }
-    }
-
-    function toggleSortOrder() {
-        sort.order = sort.order === "ASC" ? "DESC" : "ASC";
-    }
-
     function printGridAsTable() {
         console.log(
             `%cGrid Array at ${DateTime.now().toFormat("dd.MM.yyyy HH:mm:ss")}`,
@@ -155,20 +131,7 @@
                         items: sortOptions,
                         selectedItemId: currentSortId(),
                         onSelect: (item) => {
-                            switch (item.id) {
-                                case "sort-name":
-                                    sort.by = "name";
-                                    break;
-                                case "sort-recently_added":
-                                    sort.by = "recently_added";
-                                    break;
-                                case "sort-updated_at":
-                                    sort.by = "updated_at";
-                                    break;
-                                case "sort-taken_at":
-                                    sort.by = "taken_at";
-                                    break;
-                            }
+                            applySortSelection(item.id);
                         }
                     }
                 })}

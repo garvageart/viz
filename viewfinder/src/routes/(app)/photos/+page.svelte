@@ -42,7 +42,7 @@
         getConsolidatedGroups,
         groupImagesByDate
     } from "$lib/photo-layout/index.js";
-    import { sortCollectionImages } from "$lib/sort/sort.js";
+    import { applySortSelection, currentSortId, sortCollectionImages, sortOptions } from "$lib/sort/sort.js";
     import { filterManager } from "$lib/states/filter.svelte";
     import { sort, viewSettings } from "$lib/states/index.svelte";
     import { SelectionScopeNames, selectionManager } from "$lib/states/selection.svelte";
@@ -568,41 +568,10 @@
                         title="Sort"
                         class="toolbar-button"
                         iconName="sort"
-                        items={[
-                            { id: "sort-name", label: "Name" },
-                            { id: "sort-recently_added", label: "Recently Added" },
-                            { id: "sort-updated_at", label: "Updated At" },
-                            { id: "sort-taken_at", label: "Taken At" }
-                        ]}
-                        selectedItemId={(() => {
-                            switch (sort.by) {
-                                case "name":
-                                    return "sort-name";
-                                case "recently_added":
-                                    return "sort-recently_added";
-                                case "updated_at":
-                                    return "sort-updated_at";
-                                case "taken_at":
-                                    return "sort-taken_at";
-                                default:
-                                    return undefined;
-                            }
-                        })()}
+                        items={sortOptions}
+                        selectedItemId={currentSortId()}
                         onSelect={(item) => {
-                            switch (item.id) {
-                                case "sort-name":
-                                    sort.by = "name";
-                                    break;
-                                case "sort-recently_added":
-                                    sort.by = "recently_added";
-                                    break;
-                                case "sort-updated_at":
-                                    sort.by = "updated_at";
-                                    break;
-                                case "sort-taken_at":
-                                    sort.by = "taken_at";
-                                    break;
-                            }
+                            applySortSelection(item.id);
                             galleryState.images = [];
                             galleryState.pagination.page = -1;
                             galleryState.hasMore = true;
@@ -632,7 +601,7 @@
                             modalsManager.open(FilterModal, {}, FilterModalOptions);
                         }}
                     >
-                        Filter
+                        <span>Filter</span>
                     </IconButton>
                     <Dropdown
                         title="Display"
@@ -641,7 +610,6 @@
                         items={displayMenuItems}
                         selectedItemId={getDisplaySelectedId()}
                         showSelectionIndicator={false}
-                        onSelect={(item) => item.action?.(new MouseEvent("click"))}
                     />
                 </div>
             </AssetToolbar>
