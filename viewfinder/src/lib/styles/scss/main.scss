@@ -1,8 +1,6 @@
 @use "sass:color";
 @use "variables" as v;
 
-@use "./sassflexboxgrid/main.scss";
-
 /* Fonts */
 :root {
     --viz-display-font: "Geist Variable", sans-serif;

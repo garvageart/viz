@@ -18,7 +18,7 @@ function handleFonts(html: string) {
 }
 
 // uses vite to import the compiled CSS
-const themeImporters = import.meta.glob("$lib/styles/scss/viz-*.scss", {
+const themeImporters = import.meta.glob("$lib/styles/scss/themes/viz-*.scss", {
     query: "?inline",
     import: "default"
 });
@@ -52,16 +52,17 @@ export const handle: Handle = async ({ event, resolve }) => {
     }
 
     const themeFile = colorTheme;
-    const themePath = `/src/lib/styles/scss/${themeFile}.scss`;
+    const themePath = `${themeFile}.scss`;
+    const importedThemePath = Object.keys(themeImporters).filter((key) => key.endsWith(themePath))[0];
     const cacheKey = `${colorTheme}`;
     let criticalCss = "";
 
     if (criticalCssCache.has(cacheKey)) {
         criticalCss = criticalCssCache.get(cacheKey)!;
-    } else if (themeImporters[themePath]) {
+    } else if (themeImporters[importedThemePath]) {
         try {
             // Load the entire CSS content, as it contains both light and dark modes
-            const cssContent = (await themeImporters[themePath]()) as string;
+            const cssContent = (await themeImporters[importedThemePath]()) as string;
             if (cssContent) {
                 criticalCss = `<style id="generated-theme">${cssContent}</style>`;
                 criticalCssCache.set(cacheKey, criticalCss);
