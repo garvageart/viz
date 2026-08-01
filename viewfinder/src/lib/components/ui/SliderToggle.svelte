@@ -25,6 +25,7 @@
     <label for={switchId} id={`${switchId}-label`}>{label}</label>
     <button
         id={switchId}
+        type="button"
         style={labelPos === "side" ? "margin-left: 0.5em;" : ""}
         role="switch"
         aria-checked={value === "on"}
