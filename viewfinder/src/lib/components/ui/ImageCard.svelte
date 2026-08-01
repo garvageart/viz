@@ -173,7 +173,7 @@
         max-width: 100%;
         height: 100%;
         background-color: var(--viz-surface-card);
-        border: 1px solid transparent;
+        border: 1px solid var(--viz-border-subtle);
         border-radius: var(--viz-border-radius-md);
         position: relative;
         cursor: pointer;
@@ -183,6 +183,7 @@
         overflow: auto;
 
         &.simple {
+            border-color: transparent;
             border-radius: 0;
         }
 
@@ -190,12 +191,12 @@
             background-color: var(--viz-surface-hover);
             border-color: var(--viz-primary);
         }
-    }
 
-    .image-card.selected {
-        border-color: var(--viz-primary);
-        box-shadow: 0 0 0 1px var(--viz-primary);
-        pointer-events: none;
+        &.selected {
+            border-color: var(--viz-primary);
+            box-shadow: 0 0 0 1px var(--viz-primary);
+            pointer-events: none;
+        }
     }
 
     .image-card-meta {
