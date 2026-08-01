@@ -404,7 +404,7 @@
                         weight="regular"
                         variant="info"
                         iconName="folder"
-                        iconSize="1rem"
+                        iconSize="1.5rem"
                     >
                         <span>{displayData.length} {displayData.length === 1 ? "collection" : "collections"}</span>
                     </Badge>
