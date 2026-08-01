@@ -5,6 +5,14 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.26.12] - 2026-08-01
+
+* refactor(settings): use native SliderToggle disabled prop (73cd73c7)
+* feat(ui): add disabled state and token-based styling to SliderToggle (190fa627)
+* fix: change slider toggle to button to avoid being capture by forms when submit button exists (d56771df)
+* chore: move themes into specific directory (51468ab2)
+* fix: remove hard-defined font-sizes (a3214a8d)
+
 ## [0.26.11] - 2026-08-01
 
 * chore(viewfinder): drop redundant add-photos modal options override (57d440e6)
