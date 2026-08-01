@@ -757,10 +757,7 @@
                 collectionName: data.name
             },
             {
-                heading: "Add Photos to Collection",
-                width: "95%",
-                height: "90%",
-                applyPadding: false
+                heading: "Add Photos to Collection"
             }
         );
     }
