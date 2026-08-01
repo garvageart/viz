@@ -84,7 +84,7 @@
 
     beforeNavigate(({ to, willUnload }) => {
         loadingState.startNavigation();
-        if (updated && !willUnload && to) {
+        if (updated.current && !willUnload && to) {
             location.href = to.url.href;
         }
     });
@@ -92,8 +92,6 @@
     afterNavigate(() => {
         loadingState.endNavigation();
     });
-
-    // page.
 </script>
 
 <svelte:window onbeforeunload={handleBeforeUnload} />
