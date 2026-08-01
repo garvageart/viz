@@ -39,7 +39,7 @@ Docs: https://www.bits-ui.com/docs/components/switch
     <label for={switchId} id={`${switchId}-label`}>{label}</label>
     <Switch.Root
         id={switchId}
-        checked={checked}
+        {checked}
         onCheckedChange={handleCheckedChange}
         {disabled}
         aria-labelledby={`${switchId}-label`}
@@ -50,11 +50,6 @@ Docs: https://www.bits-ui.com/docs/components/switch
 </div>
 
 <style lang="scss">
-    $track-width: 3.6em;
-    $track-height: 2em;
-    $thumb-size: 1.6em;
-    $thumb-inset: 0.2em;
-
     .toggle-slider {
         display: flex;
         align-items: center;
@@ -89,9 +84,9 @@ Docs: https://www.bits-ui.com/docs/components/switch
         display: flex;
         align-items: center;
         flex-shrink: 0;
-        width: $track-width;
-        height: $track-height;
-        padding: $thumb-inset;
+        width: 3.6em;
+        height: 2em;
+        padding: 0.2em;
         box-sizing: border-box;
         border: none;
         border-radius: var(--viz-border-radius-pill);
@@ -115,8 +110,8 @@ Docs: https://www.bits-ui.com/docs/components/switch
 
     :global(.switch-thumb) {
         flex-shrink: 0;
-        width: $thumb-size;
-        height: $thumb-size;
+        width: 1.6em;
+        height: 1.6em;
         box-sizing: border-box;
         border-radius: 50%;
         background-color: #ffffff;
@@ -125,7 +120,7 @@ Docs: https://www.bits-ui.com/docs/components/switch
     }
 
     :global(.switch-thumb[data-state="checked"]) {
-        transform: translateX($track-width - $thumb-size - ($thumb-inset * 2));
+        transform: translateX(1.6em);
     }
 
     .toggle-slider.disabled {
