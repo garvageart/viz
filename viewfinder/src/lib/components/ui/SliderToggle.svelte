@@ -1,6 +1,11 @@
-<!-- Modified from here: https://svelte.dev/playground/d65a4e9f0ae74d1eb1b08d13e428af32?version=5.36.8 -->
+<!--
+@component
+Toggle switch built on bits-ui's Switch.
+Docs: https://www.bits-ui.com/docs/components/switch
+-->
 <script lang="ts">
-    import type { MouseEventHandler, SvelteHTMLElements } from "svelte/elements";
+    import { Switch } from "bits-ui";
+    import type { SvelteHTMLElements } from "svelte/elements";
     import { generateRandomString } from "$lib/utils/misc";
 
     interface Props {
@@ -23,28 +28,33 @@
     const uniqueID = generateRandomString(6);
     const switchId = $derived(id || `switch-${uniqueID}`);
 
-    const handleClick: MouseEventHandler<HTMLButtonElement> = (e) => {
-        e.preventDefault();
-        value = value === "on" ? "off" : "on";
-    };
+    let checked = $derived(value === "on");
+
+    function handleCheckedChange(next: boolean) {
+        value = next ? "on" : "off";
+    }
 </script>
 
 <div {...props} class="toggle-slider {labelPos === 'side' ? 'side' : 'top'}" class:disabled>
     <label for={switchId} id={`${switchId}-label`}>{label}</label>
-    <button
+    <Switch.Root
         id={switchId}
-        type="button"
-        role="switch"
-        aria-checked={value === "on"}
-        data-checked={value === "on"}
-        aria-labelledby={`${switchId}-label`}
+        checked={checked}
+        onCheckedChange={handleCheckedChange}
         {disabled}
-        onclick={handleClick}
+        aria-labelledby={`${switchId}-label`}
+        class="switch-track"
     >
-    </button>
+        <Switch.Thumb class="switch-thumb" />
+    </Switch.Root>
 </div>
 
 <style lang="scss">
+    $track-width: 3.6em;
+    $track-height: 2em;
+    $thumb-size: 1.6em;
+    $thumb-inset: 0.2em;
+
     .toggle-slider {
         display: flex;
         align-items: center;
@@ -54,7 +64,7 @@
             align-items: center;
             justify-content: space-between;
 
-            button {
+            :global(.switch-track) {
                 margin-left: 0.5em;
             }
         }
@@ -63,59 +73,67 @@
             flex-direction: column;
             align-items: flex-start;
             justify-content: space-between;
-            height: 3.2em;
+            height: 3.4em;
+        }
+
+        label {
+            cursor: pointer;
+            color: var(--viz-text-secondary);
+            font-size: var(--viz-font-size-lg);
+            user-select: none;
         }
     }
 
-    .toggle-slider button {
-        width: 3em;
-        height: 1.5em;
-        padding: 0;
+    :global(.switch-track) {
         position: relative;
+        display: flex;
+        align-items: center;
+        flex-shrink: 0;
+        width: $track-width;
+        height: $track-height;
+        padding: $thumb-inset;
         box-sizing: border-box;
-        border: 1px solid var(--viz-primary);
+        border: none;
         border-radius: var(--viz-border-radius-pill);
         background-color: var(--viz-surface-input);
+        box-shadow: inset 0 0 0 1px var(--viz-border-strong);
         cursor: pointer;
         transition:
-            background-color 0.2s ease,
-            border-color 0.2s ease;
+            background-color 0.18s ease,
+            box-shadow 0.18s ease;
     }
 
-    .toggle-slider button::before {
-        content: "";
-        position: absolute;
-        top: 0.05em;
-        left: 0.1em;
-        width: 1.2em;
-        height: 1.2em;
+    :global(.switch-track[data-state="checked"]) {
+        background-color: var(--viz-primary);
+        box-shadow: inset 0 0 0 1px var(--viz-primary);
+    }
+
+    :global(.switch-track:focus-visible) {
+        outline: 2px solid var(--viz-primary);
+        outline-offset: 2px;
+    }
+
+    :global(.switch-thumb) {
+        flex-shrink: 0;
+        width: $thumb-size;
+        height: $thumb-size;
         box-sizing: border-box;
         border-radius: 50%;
-        background-color: var(--viz-bg-color);
-        border: 1px solid var(--viz-border-strong);
-        transition: transform 0.2s ease;
+        background-color: #ffffff;
+        box-shadow: 0 1px 3px rgba(0, 0, 0, 0.28);
+        transition: transform 0.18s ease;
     }
 
-    .toggle-slider button[aria-checked="true"] {
-        background-color: var(--viz-primary);
-        border-color: var(--viz-primary);
-    }
-
-    .toggle-slider button[aria-checked="true"]::before {
-        transform: translateX(1.4em);
+    :global(.switch-thumb[data-state="checked"]) {
+        transform: translateX($track-width - $thumb-size - ($thumb-inset * 2));
     }
 
     .toggle-slider.disabled {
         opacity: 0.5;
         cursor: not-allowed;
-    }
 
-    .toggle-slider.disabled button {
-        cursor: not-allowed;
-    }
-
-    .toggle-slider button:focus-visible {
-        outline: 2px solid var(--viz-primary);
-        outline-offset: 2px;
+        :global(.switch-track) {
+            cursor: not-allowed;
+        }
     }
 </style>
