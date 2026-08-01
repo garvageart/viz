@@ -5,6 +5,14 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.26.11] - 2026-08-01
+
+* chore(viewfinder): drop redundant add-photos modal options override (57d440e6)
+* style(viewfinder): give image cards a subtle border (25bd5617)
+* refactor(viewfinder): centralize sort dropdown key matching in sort.ts (d09a379c)
+* fix(viewfinder): float dropdown menus above modal overlays (35cca735)
+* fix(viewfinder): keep admin dashboard uptime ticking smoothly (b9c05076)
+
 ## [0.26.10] - 2026-07-31
 
 * test(viewfinder): drop unused imports in DevWelcomeText test (668e94fd)
