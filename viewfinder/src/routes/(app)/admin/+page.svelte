@@ -24,6 +24,7 @@
         return dt && dt.isValid ? dt.toLocaleString(DateTime.DATETIME_SHORT_WITH_SECONDS) : dateStr;
     }
 
+    let clock = $state(0);
     let lastUpdated = $state(new Date());
 
     let systemInfo = $derived({
@@ -58,7 +59,7 @@
     let branchUrl = $derived(getGitBranchUrl(data.serverAbout?.repositoryUrl, data.serverAbout?.sourceRef));
     let commitUrl = $derived(getGitCommitUrl(data.serverAbout?.repositoryUrl, data.serverAbout?.sourceCommit));
 
-    let liveUptimeSeconds = $derived(data.systemStats?.uptime_seconds || 0);
+    let liveUptimeSeconds = $derived((data.systemStats?.uptime_seconds ?? 0) + clock);
     let formattedLiveUptime = $derived(formatSeconds(liveUptimeSeconds));
 
     let storagePercent = $derived(
@@ -74,9 +75,7 @@
     );
 
     $effect(() => {
-        const interval = setInterval(() => {
-            liveUptimeSeconds++;
-        }, 1000);
+        const interval = setInterval(() => clock++, 1000);
 
         return () => clearInterval(interval);
     });
@@ -86,7 +85,6 @@
             () => {
                 invalidate(page.route.id ?? page.url.pathname).then(() => {
                     lastUpdated = new Date();
-                    liveUptimeSeconds = data.systemStats?.uptime_seconds || 0;
                 });
             },
             Duration.fromObject({ seconds: 30 }).as("milliseconds")
