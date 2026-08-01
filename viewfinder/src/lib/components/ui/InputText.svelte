@@ -90,7 +90,6 @@
     }
 
     .input-description {
-        font-size: var(--viz-font-size-sm);
         color: var(--viz-text-muted);
         padding-left: 0.5rem;
     }
@@ -106,7 +105,6 @@
         border: none;
         box-shadow: 0 -1px 0 var(--viz-border-subtle) inset;
         font-family: var(--viz-display-font);
-        font-size: var(--viz-font-size-std);
         padding: 0.5rem 1rem;
         margin-bottom: 0;
 
