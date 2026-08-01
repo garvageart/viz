@@ -183,7 +183,7 @@ export type UserUpdate = {
     /** Email address */
     email?: string | null;
 };
-export type UserSetting = {
+export type Setting = {
     /** Setting unique name */
     name: string;
     /** Readable name */
@@ -209,7 +209,7 @@ export type UserOnboardingBody = {
     /** Last name */
     last_name: string;
     /** User-specific setting overrides */
-    settings: UserSetting[];
+    settings: Setting[];
 };
 export type UserPasswordUpdate = {
     /** Current password */
@@ -655,32 +655,6 @@ export type DownloadToken = {
     created_at: string;
     /** When this token was last updated */
     updated_at: string;
-};
-export type SettingDefault = {
-    /** Unique name for the setting (primary key). */
-    name: string;
-    /** A readable and UI-friendly name for the setting (not required but highly recommended). */
-    display_name: string;
-    /** The default value everyone gets. */
-    value: string;
-    /** Data type of the setting. */
-    value_type: Value_type;
-    /** List of valid choices if type is enum. */
-    allowed_values?: string[] | null;
-    /** Describes whether a user can edit this setting. */
-    is_user_editable: boolean;
-    /** Category/group for the setting (e.g., General, Notifications). */
-    group: string;
-    /** Description for UI */
-    description: string;
-};
-export type SettingOverride = {
-    /** Links to the users table. */
-    user_id: string;
-    /** Links to SettingDefault.name. */
-    name: string;
-    /** The user's chosen value for the setting. */
-    value: string;
 };
 export type LoggingConfig = {
     /** Logging level */
@@ -1414,7 +1388,7 @@ export function deleteSession(uid: string, opts?: Oazapfts.RequestOpts) {
 export function getUserSettings(opts?: Oazapfts.RequestOpts) {
     return oazapfts.fetchJson<{
         status: 200;
-        data: UserSetting[];
+        data: Setting[];
     } | {
         status: 401;
         data: ErrorResponse;
@@ -1434,7 +1408,7 @@ export function updateUserSetting(name: string, body: {
 }, opts?: Oazapfts.RequestOpts) {
     return oazapfts.fetchJson<{
         status: 200;
-        data: UserSetting;
+        data: Setting;
     } | {
         status: 400;
         data: ErrorResponse;
@@ -1458,7 +1432,7 @@ export function updateUserSetting(name: string, body: {
 export function updateUserSettingsBatch(userSettingUpdateRequest: UserSettingUpdateRequest, opts?: Oazapfts.RequestOpts) {
     return oazapfts.fetchJson<{
         status: 200;
-        data: UserSetting[];
+        data: Setting[];
     } | {
         status: 400;
         data: ErrorResponse;
@@ -2122,30 +2096,19 @@ export function signDownload(signDownloadRequest?: SignDownloadRequest, opts?: O
     }));
 }
 /**
- * List all setting definitions
+ * Get all settings (admin)
  */
-export function listSettingDefinitions(opts?: Oazapfts.RequestOpts) {
+export function getAdminSettings(opts?: Oazapfts.RequestOpts) {
     return oazapfts.fetchJson<{
         status: 200;
-        data: SettingDefault[];
+        data: Setting[];
     } | {
         status: 401;
         data: ErrorResponse;
-    }>("/admin/settings/definitions", {
-        ...opts
-    });
-}
-/**
- * List all overrides (debug/admin)
- */
-export function listSettingOverrides(opts?: Oazapfts.RequestOpts) {
-    return oazapfts.fetchJson<{
-        status: 200;
-        data: SettingOverride[];
     } | {
-        status: 401;
+        status: 500;
         data: ErrorResponse;
-    }>("/admin/settings/overrides", {
+    }>("/admin/settings", {
         ...opts
     });
 }
@@ -2744,13 +2707,6 @@ export enum ImageColorSpace {
     AdobeRgb = "AdobeRGB",
     ProPhoto = "ProPhoto",
     DisplayP3 = "DisplayP3"
-}
-export enum Value_type {
-    Boolean = "boolean",
-    String = "string",
-    Integer = "integer",
-    Enum = "enum",
-    Json = "json"
 }
 export enum Command {
     All = "all",

@@ -712,7 +712,7 @@ paths:
                             schema:
                                 type: array
                                 items:
-                                    $ref: "#/components/schemas/UserSetting"
+                                    $ref: "#/components/schemas/Setting"
                 "401":
                     description: Unauthorized
                     content:
@@ -756,7 +756,7 @@ paths:
                     content:
                         application/json:
                             schema:
-                                $ref: "#/components/schemas/UserSetting"
+                                $ref: "#/components/schemas/Setting"
                 "400":
                     description: Bad request (invalid value or not editable)
                     content:
@@ -796,7 +796,7 @@ paths:
                             schema:
                                 type: array
                                 items:
-                                    $ref: "#/components/schemas/UserSetting"
+                                    $ref: "#/components/schemas/Setting"
                 "400":
                     description: Bad request (invalid value or not editable for any setting)
                     content:
@@ -2078,47 +2078,31 @@ paths:
                             schema:
                                 $ref: "#/components/schemas/ErrorResponse"
 
-    /admin/settings/definitions:
+    /admin/settings:
         get:
-            summary: List all setting definitions
-            operationId: listSettingDefinitions
+            summary: Get all settings (admin)
+            description: Returns the merged settings (system defaults + overrides) in the same shape as the user settings endpoint.
+            operationId: getAdminSettings
             security:
                 - BearerAuth: [admin:read]
                 - CookieAuth: []
             responses:
                 "200":
-                    description: List of setting definitions
+                    description: List of settings
                     content:
                         application/json:
                             schema:
                                 type: array
                                 items:
-                                    $ref: "#/components/schemas/SettingDefault"
+                                    $ref: "#/components/schemas/Setting"
                 "401":
                     description: Unauthorized
                     content:
                         application/json:
                             schema:
                                 $ref: "#/components/schemas/ErrorResponse"
-
-    /admin/settings/overrides:
-        get:
-            summary: List all overrides (debug/admin)
-            operationId: listSettingOverrides
-            security:
-                - BearerAuth: [admin:read]
-                - CookieAuth: []
-            responses:
-                "200":
-                    description: List of all overrides
-                    content:
-                        application/json:
-                            schema:
-                                type: array
-                                items:
-                                    $ref: "#/components/schemas/SettingOverride"
-                "401":
-                    description: Unauthorized
+                "500":
+                    description: Server error
                     content:
                         application/json:
                             schema:
@@ -3724,9 +3708,9 @@ components:
                     description: The user's chosen value for the setting.
             required: [user_id, name, value]
 
-        UserSetting:
+        Setting:
             type: object
-            description: The effective setting for a user (merged Default and Override).
+            description: The effective setting (merged default and override).
             properties:
                 name:
                     type: string
@@ -4451,7 +4435,7 @@ components:
                     type: array
                     description: User-specific setting overrides
                     items:
-                        $ref: "#/components/schemas/UserSetting"
+                        $ref: "#/components/schemas/Setting"
             required: [first_name, last_name, settings]
 
         ImageUpdate:

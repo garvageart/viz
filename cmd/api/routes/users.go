@@ -474,25 +474,13 @@ func AccountsRouter(db *gorm.DB, logger *slog.Logger) *chi.Mux {
 							overrideMap[o.Name] = o
 						}
 
-						userSettings := make([]dto.UserSetting, 0, len(defaults))
+						userSettings := make([]dto.Setting, 0, len(defaults))
 						for _, def := range defaults {
-							isEditable := def.IsUserEditable
-							userSetting := dto.UserSetting{
-								Name:           def.Name,
-								DefaultValue:   def.Value,
-								ValueType:      string(def.ValueType),
-								AllowedValues:  def.AllowedValues,
-								IsUserEditable: &isEditable,
-								Description:    def.Description,
-								Group:          def.Group,
-							}
-
+							value := def.Value
 							if override, ok := overrideMap[def.Name]; ok {
-								userSetting.Value = override.Value
-							} else {
-								userSetting.Value = def.Value
+								value = override.Value
 							}
-							userSettings = append(userSettings, userSetting)
+							userSettings = append(userSettings, buildUserSetting(def, value))
 						}
 
 						render.JSON(res, req, userSettings)
@@ -565,19 +553,87 @@ func AccountsRouter(db *gorm.DB, logger *slog.Logger) *chi.Mux {
 						}
 
 						// Return the merged setting for the updated one
-						isEditable := userSettingDefaults.IsUserEditable
-						userSetting := dto.UserSetting{
-							Name:           userSettingDefaults.Name,
-							DefaultValue:   userSettingDefaults.Value,
-							ValueType:      string(userSettingDefaults.ValueType),
-							AllowedValues:  userSettingDefaults.AllowedValues,
-							IsUserEditable: &isEditable,
-							Description:    userSettingDefaults.Description,
-							Group:          userSettingDefaults.Group,
-							Value:          override.Value, // The newly set override value
-						}
+						userSetting := buildUserSetting(userSettingDefaults, override.Value)
 
 						render.JSON(res, req, userSetting)
+					})
+
+					r.Put("/", func(res http.ResponseWriter, req *http.Request) {
+						user, _ := libhttp.UserFromContext(req)
+
+						var body dto.UserSettingUpdateRequest
+						if err := render.DecodeJSON(req.Body, &body); err != nil {
+							render.Status(req, http.StatusBadRequest)
+							render.JSON(res, req, dto.ErrorResponse{Error: "Invalid request body"})
+							return
+						}
+
+						if len(body.Settings) == 0 {
+							render.Status(req, http.StatusBadRequest)
+							render.JSON(res, req, dto.ErrorResponse{Error: "No settings provided"})
+							return
+						}
+
+						// Validate all settings up-front so a single bad value prevents any writes.
+						type pendingUpdate struct {
+							def   entities.SettingDefault
+							value string
+						}
+						pending := make([]pendingUpdate, 0, len(body.Settings))
+
+						for _, setting := range body.Settings {
+							var def entities.SettingDefault
+							if err := db.Where("name = ?", setting.Name).First(&def).Error; err != nil {
+								render.Status(req, http.StatusBadRequest)
+								render.JSON(res, req, dto.ErrorResponse{Error: fmt.Sprintf("Setting '%s' not found", setting.Name)})
+								return
+							}
+
+							if !def.IsUserEditable {
+								render.Status(req, http.StatusBadRequest)
+								render.JSON(res, req, dto.ErrorResponse{Error: fmt.Sprintf("Setting '%s' is not user editable", setting.Name)})
+								return
+							}
+
+							if err := validateSettingValue(setting.Value, def); err != nil {
+								render.Status(req, http.StatusBadRequest)
+								render.JSON(res, req, dto.ErrorResponse{Error: err.Error()})
+								return
+							}
+
+							pending = append(pending, pendingUpdate{def: def, value: setting.Value})
+						}
+
+						// Apply all overrides in a single transaction.
+						if err := db.Transaction(func(tx *gorm.DB) error {
+							for _, update := range pending {
+								override := entities.SettingOverride{
+									UserId: user.Uid,
+									Name:   update.def.Name,
+									Value:  update.value,
+								}
+								if err := tx.Clauses(clause.OnConflict{
+									Columns:   []clause.Column{{Name: "user_id"}, {Name: "name"}},
+									DoUpdates: clause.AssignmentColumns([]string{"value"}),
+								}).Create(&override).Error; err != nil {
+									return err
+								}
+							}
+							return nil
+						}); err != nil {
+							logger.Error("failed to save setting overrides", slog.Any("error", err))
+							render.Status(req, http.StatusInternalServerError)
+							render.JSON(res, req, dto.ErrorResponse{Error: "Failed to save settings"})
+							return
+						}
+
+						// Return the merged settings for all updated entries.
+						result := make([]dto.Setting, 0, len(pending))
+						for _, update := range pending {
+							result = append(result, buildUserSetting(update.def, update.value))
+						}
+
+						render.JSON(res, req, result)
 					})
 				})
 			})
@@ -585,6 +641,22 @@ func AccountsRouter(db *gorm.DB, logger *slog.Logger) *chi.Mux {
 	})
 
 	return router
+}
+
+// buildUserSetting constructs the merged user setting DTO from a definition and effective value.
+func buildUserSetting(def entities.SettingDefault, value string) dto.Setting {
+	isEditable := def.IsUserEditable
+	return dto.Setting{
+		Name:           def.Name,
+		DisplayName:    def.DisplayName,
+		DefaultValue:   def.Value,
+		Value:          value,
+		ValueType:      string(def.ValueType),
+		AllowedValues:  def.AllowedValues,
+		IsUserEditable: &isEditable,
+		Description:    def.Description,
+		Group:          def.Group,
+	}
 }
 
 // validateSettingValue checks if the provided value conforms to the setting definition.

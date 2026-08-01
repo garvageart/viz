@@ -3,7 +3,7 @@
     import { page } from "$app/state";
     import { onMount } from "svelte";
     import { fade } from "svelte/transition";
-    import { type UserSetting, doUserOnboarding, getUserSettings, setupSuperadmin } from "$lib/api";
+    import { type Setting, doUserOnboarding, getUserSettings, setupSuperadmin } from "$lib/api";
     import Button from "$lib/components/ui/Button.svelte";
     import InputPassword from "$lib/components/ui/InputPassword.svelte";
     import InputSelect from "$lib/components/ui/InputSelect.svelte";
@@ -46,12 +46,12 @@
         lastName: ""
     });
 
-    let userSettings = $state<UserSetting[]>([]);
+    let userSettings = $state<Setting[]>([]);
     let userSettingsValues = $state<Record<string, string>>({});
 
     // Group settings by their 'group' field
     let settingsGroups = $derived.by(() => {
-        const groups: Record<string, UserSetting[]> = {};
+        const groups: Record<string, Setting[]> = {};
         for (const s of userSettings) {
             const g = s.group || "General";
             if (!groups[g]) {

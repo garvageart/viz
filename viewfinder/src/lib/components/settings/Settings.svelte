@@ -14,7 +14,7 @@ Stuff to finish:
 -->
 <script lang="ts">
     import { SvelteSet } from "svelte/reactivity";
-    import type { UserSetting } from "$lib/api";
+    import type { Setting } from "$lib/api";
     import NavSidebar, { type NavItem } from "$lib/components/ui/Sidebar/NavSidebar.svelte";
     import { type MaterialSymbol } from "$lib/types/MaterialSymbol";
     import AutoSettingsGroup from "../settings/AutoSettingsGroup.svelte";
@@ -34,13 +34,13 @@ Stuff to finish:
     // TODO: Import SecuritySettings when created
     interface Props {
         activeSection: string;
-        userSettingsData: UserSetting[];
+        userSettingsData: Setting[];
     }
 
     let { activeSection = "general", userSettingsData }: Props = $props();
     let activeSectionDisplayName = $derived(activeSection.charAt(0).toUpperCase() + activeSection.slice(1));
 
-    let settings: UserSetting[] = $derived(userSettingsData.filter((s) => s.is_user_editable !== false));
+    let settings: Setting[] = $derived(userSettingsData.filter((s) => s.is_user_editable !== false));
 
     const groupOrder = ["Account", "General", "Interface", "Images", "Notifications", "Privacy", "Security"];
 

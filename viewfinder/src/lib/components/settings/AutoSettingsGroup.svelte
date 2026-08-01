@@ -1,13 +1,13 @@
 <script lang="ts">
     import { fade } from "svelte/transition";
-    import type { UserSetting } from "$lib/api";
+    import type { Setting } from "$lib/api";
     import { updateUserSettingsBatch } from "$lib/api";
     import Button from "$lib/components/ui/Button.svelte";
     import { toasts } from "$lib/toast-notifcations/toasts.svelte";
     import SettingItemsList from "./SettingItemsList.svelte";
 
     interface Props {
-        settings?: UserSetting[];
+        settings?: Setting[];
         title: string;
         description?: string;
     }

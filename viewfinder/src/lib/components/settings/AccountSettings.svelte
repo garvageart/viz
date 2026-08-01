@@ -1,5 +1,5 @@
 <script lang="ts">
-    import type { UserSetting, UserUpdate } from "$lib/api";
+    import type { Setting, UserUpdate } from "$lib/api";
     import { updateCurrentUser } from "$lib/api";
     import Button from "$lib/components/ui/Button.svelte";
     import InputText from "$lib/components/ui/InputText.svelte";
@@ -8,7 +8,7 @@
     import AutoSettingsGroup from "./AutoSettingsGroup.svelte";
 
     interface Props {
-        userSettingsData: UserSetting[];
+        userSettingsData: Setting[];
     }
 
     let { userSettingsData }: Props = $props();

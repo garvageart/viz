@@ -1591,6 +1591,36 @@ type SessionUpdate struct {
 	Status *int `json:"status,omitempty"`
 }
 
+// Setting The effective setting (merged default and override).
+type Setting struct {
+	// AllowedValues Allowed values if enum
+	AllowedValues *[]string `json:"allowed_values,omitempty"`
+
+	// DefaultValue Default value
+	DefaultValue string `json:"default_value"`
+
+	// Description Setting description
+	Description string `json:"description"`
+
+	// DisplayName Readable name
+	DisplayName string `json:"display_name"`
+
+	// Group Setting group
+	Group string `json:"group"`
+
+	// IsUserEditable Whether user can edit
+	IsUserEditable *bool `json:"is_user_editable,omitempty"`
+
+	// Name Setting unique name
+	Name string `json:"name"`
+
+	// Value The effective value (override if exists, else default).
+	Value string `json:"value"`
+
+	// ValueType Type of the value
+	ValueType string `json:"value_type"`
+}
+
 // SettingDefault Defines a setting available in the system.
 type SettingDefault struct {
 	// AllowedValues List of valid choices if type is enum.
@@ -1826,7 +1856,7 @@ type UserOnboardingBody struct {
 	LastName string `json:"last_name"`
 
 	// Settings User-specific setting overrides
-	Settings []UserSetting `json:"settings"`
+	Settings []Setting `json:"settings"`
 }
 
 // UserPasswordUpdate defines model for UserPasswordUpdate.
@@ -1836,36 +1866,6 @@ type UserPasswordUpdate struct {
 
 	// New New password
 	New string `json:"new"`
-}
-
-// UserSetting The effective setting for a user (merged Default and Override).
-type UserSetting struct {
-	// AllowedValues Allowed values if enum
-	AllowedValues *[]string `json:"allowed_values,omitempty"`
-
-	// DefaultValue Default value
-	DefaultValue string `json:"default_value"`
-
-	// Description Setting description
-	Description string `json:"description"`
-
-	// DisplayName Readable name
-	DisplayName string `json:"display_name"`
-
-	// Group Setting group
-	Group string `json:"group"`
-
-	// IsUserEditable Whether user can edit
-	IsUserEditable *bool `json:"is_user_editable,omitempty"`
-
-	// Name Setting unique name
-	Name string `json:"name"`
-
-	// Value The effective value (override if exists, else default).
-	Value string `json:"value"`
-
-	// ValueType Type of the value
-	ValueType string `json:"value_type"`
 }
 
 // UserSettingUpdateRequest defines model for UserSettingUpdateRequest.

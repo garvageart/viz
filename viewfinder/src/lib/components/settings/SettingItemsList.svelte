@@ -1,12 +1,12 @@
 <script lang="ts">
-    import type { UserSetting } from "$lib/api";
+    import type { Setting } from "$lib/api";
     import JsonInput from "./inputs/JsonInput.svelte";
     import SelectInput from "./inputs/SelectInput.svelte";
     import SliderToggleInput from "./inputs/SliderToggleInput.svelte";
     import TextInput from "./inputs/TextInput.svelte";
 
     interface Props {
-        settings: UserSetting[];
+        settings: Setting[];
         dirtySettings: Record<string, string>;
         saving: boolean;
         saveStatus: "idle" | "success" | "error";
@@ -31,7 +31,7 @@
         return val === "true" ? "on" : "off";
     }
 
-    function handleSettingChange(setting: UserSetting, newValue: any) {
+    function handleSettingChange(setting: Setting, newValue: any) {
         // If the new value matches the original value, remove from dirty list
         if (String(newValue) === setting.value) {
             const newDirty = { ...dirtySettings };

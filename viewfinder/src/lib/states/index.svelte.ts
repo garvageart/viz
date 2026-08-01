@@ -3,9 +3,9 @@ import { MediaQuery } from "svelte/reactivity";
 import {
     type Collection,
     type ImageAsset,
+    type Setting,
     type SystemStatusResponse,
     type User,
-    type UserSetting,
     updateUserSetting
 } from "$lib/api";
 import { SettingNames } from "$lib/components/settings/names";
@@ -23,7 +23,7 @@ interface UserState {
     error?: string | null;
     isAdmin: boolean;
     connectionError?: boolean;
-    settings?: UserSetting[] | null;
+    settings?: Setting[] | null;
 }
 
 export let system = $state<{

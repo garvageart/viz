@@ -7,10 +7,11 @@ import (
 	"runtime"
 	"time"
 
+	"log/slog"
+
 	"github.com/go-chi/chi/v5"
 	"github.com/go-chi/render"
 	"gorm.io/gorm"
-	"log/slog"
 
 	"viz/internal/crypto"
 
@@ -160,6 +161,24 @@ func AdminRouter(db *gorm.DB, logger *slog.Logger, storageStats *images.StorageS
 		}
 
 		render.JSON(res, req, stats)
+	})
+
+	// Settings (admin) - mirrors the user settings endpoint shape
+	r.Get("/settings", func(res http.ResponseWriter, req *http.Request) {
+		var defaults []entities.SettingDefault
+		if err := db.Order("group, name").Find(&defaults).Error; err != nil {
+			logger.Error("failed to list settings", slog.Any("error", err))
+			render.Status(req, http.StatusInternalServerError)
+			render.JSON(res, req, dto.ErrorResponse{Error: "Failed to list settings"})
+			return
+		}
+
+		userSettings := make([]dto.Setting, 0, len(defaults))
+		for _, def := range defaults {
+			userSettings = append(userSettings, buildUserSetting(def, def.Value))
+		}
+
+		render.JSON(res, req, userSettings)
 	})
 
 	// User Management

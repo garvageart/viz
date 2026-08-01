@@ -214,15 +214,12 @@ type ClientInterface interface {
 	// Corresponds with POST /admin/healthcheck (the `AdminHealthcheck` operationId).
 	AdminHealthcheck(ctx context.Context, reqEditors ...RequestEditorFn) (*http.Response, error)
 
-	// ListSettingDefinitions List all setting definitions
+	// GetAdminSettings Get all settings (admin)
 	//
-	// Corresponds with GET /admin/settings/definitions (the `ListSettingDefinitions` operationId).
-	ListSettingDefinitions(ctx context.Context, reqEditors ...RequestEditorFn) (*http.Response, error)
-
-	// ListSettingOverrides List all overrides (debug/admin)
+	// Returns the merged settings (system defaults + overrides) in the same shape as the user settings endpoint.
 	//
-	// Corresponds with GET /admin/settings/overrides (the `ListSettingOverrides` operationId).
-	ListSettingOverrides(ctx context.Context, reqEditors ...RequestEditorFn) (*http.Response, error)
+	// Corresponds with GET /admin/settings (the `GetAdminSettings` operationId).
+	GetAdminSettings(ctx context.Context, reqEditors ...RequestEditorFn) (*http.Response, error)
 
 	// GetSystemStats Get system statistics (uptime, memory)
 	//
@@ -1144,26 +1141,13 @@ func (c *Client) AdminHealthcheck(ctx context.Context, reqEditors ...RequestEdit
 	return c.Client.Do(req)
 }
 
-// ListSettingDefinitions List all setting definitions
+// GetAdminSettings Get all settings (admin)
 //
-// Corresponds with GET /admin/settings/definitions (the `ListSettingDefinitions` operationId).
-func (c *Client) ListSettingDefinitions(ctx context.Context, reqEditors ...RequestEditorFn) (*http.Response, error) {
-	req, err := NewListSettingDefinitionsRequest(c.Server)
-	if err != nil {
-		return nil, err
-	}
-	req = req.WithContext(ctx)
-	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
-		return nil, err
-	}
-	return c.Client.Do(req)
-}
-
-// ListSettingOverrides List all overrides (debug/admin)
+// Returns the merged settings (system defaults + overrides) in the same shape as the user settings endpoint.
 //
-// Corresponds with GET /admin/settings/overrides (the `ListSettingOverrides` operationId).
-func (c *Client) ListSettingOverrides(ctx context.Context, reqEditors ...RequestEditorFn) (*http.Response, error) {
-	req, err := NewListSettingOverridesRequest(c.Server)
+// Corresponds with GET /admin/settings (the `GetAdminSettings` operationId).
+func (c *Client) GetAdminSettings(ctx context.Context, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewGetAdminSettingsRequest(c.Server)
 	if err != nil {
 		return nil, err
 	}
@@ -3193,8 +3177,8 @@ func NewAdminHealthcheckRequest(server string) (*http.Request, error) {
 	return req, nil
 }
 
-// NewListSettingDefinitionsRequest constructs an http.Request for the ListSettingDefinitions method
-func NewListSettingDefinitionsRequest(server string) (*http.Request, error) {
+// NewGetAdminSettingsRequest constructs an http.Request for the GetAdminSettings method
+func NewGetAdminSettingsRequest(server string) (*http.Request, error) {
 	var err error
 
 	serverURL, err := url.Parse(server)
@@ -3202,34 +3186,7 @@ func NewListSettingDefinitionsRequest(server string) (*http.Request, error) {
 		return nil, err
 	}
 
-	operationPath := fmt.Sprintf("/admin/settings/definitions")
-	if operationPath[0] == '/' {
-		operationPath = "." + operationPath
-	}
-
-	queryURL, err := serverURL.Parse(operationPath)
-	if err != nil {
-		return nil, err
-	}
-
-	req, err := http.NewRequest(http.MethodGet, queryURL.String(), nil)
-	if err != nil {
-		return nil, err
-	}
-
-	return req, nil
-}
-
-// NewListSettingOverridesRequest constructs an http.Request for the ListSettingOverrides method
-func NewListSettingOverridesRequest(server string) (*http.Request, error) {
-	var err error
-
-	serverURL, err := url.Parse(server)
-	if err != nil {
-		return nil, err
-	}
-
-	operationPath := fmt.Sprintf("/admin/settings/overrides")
+	operationPath := fmt.Sprintf("/admin/settings")
 	if operationPath[0] == '/' {
 		operationPath = "." + operationPath
 	}
@@ -6700,19 +6657,14 @@ type ClientWithResponsesInterface interface {
 	// Corresponds with POST /admin/healthcheck (the `AdminHealthcheck` operationId).
 	AdminHealthcheckWithResponse(ctx context.Context, reqEditors ...RequestEditorFn) (*AdminHealthcheckResponse, error)
 
-	// ListSettingDefinitionsWithResponse List all setting definitions
+	// GetAdminSettingsWithResponse Get all settings (admin)
+	//
+	// Returns the merged settings (system defaults + overrides) in the same shape as the user settings endpoint.
 	//
 	// Returns a wrapper object for the known response body format(s).
 	//
-	// Corresponds with GET /admin/settings/definitions (the `ListSettingDefinitions` operationId).
-	ListSettingDefinitionsWithResponse(ctx context.Context, reqEditors ...RequestEditorFn) (*ListSettingDefinitionsResponse, error)
-
-	// ListSettingOverridesWithResponse List all overrides (debug/admin)
-	//
-	// Returns a wrapper object for the known response body format(s).
-	//
-	// Corresponds with GET /admin/settings/overrides (the `ListSettingOverrides` operationId).
-	ListSettingOverridesWithResponse(ctx context.Context, reqEditors ...RequestEditorFn) (*ListSettingOverridesResponse, error)
+	// Corresponds with GET /admin/settings (the `GetAdminSettings` operationId).
+	GetAdminSettingsWithResponse(ctx context.Context, reqEditors ...RequestEditorFn) (*GetAdminSettingsResponse, error)
 
 	// GetSystemStatsWithResponse Get system statistics (uptime, memory)
 	//
@@ -7719,7 +7671,7 @@ type GetUserSettingsResponse struct {
 	Body         []byte
 	HTTPResponse *http.Response
 	// JSON200 the response for an HTTP 200 `application/json` response
-	JSON200 *[]UserSetting
+	JSON200 *[]Setting
 	// JSON401 the response for an HTTP 401 `application/json` response
 	JSON401 *ErrorResponse
 	// JSON500 the response for an HTTP 500 `application/json` response
@@ -7727,7 +7679,7 @@ type GetUserSettingsResponse struct {
 }
 
 // GetJSON200 returns the response for an HTTP 200 `application/json` response
-func (r GetUserSettingsResponse) GetJSON200() *[]UserSetting {
+func (r GetUserSettingsResponse) GetJSON200() *[]Setting {
 	return r.JSON200
 }
 
@@ -7774,7 +7726,7 @@ type UpdateUserSettingResponse struct {
 	Body         []byte
 	HTTPResponse *http.Response
 	// JSON200 the response for an HTTP 200 `application/json` response
-	JSON200 *UserSetting
+	JSON200 *Setting
 	// JSON400 the response for an HTTP 400 `application/json` response
 	JSON400 *ErrorResponse
 	// JSON404 the response for an HTTP 404 `application/json` response
@@ -7784,7 +7736,7 @@ type UpdateUserSettingResponse struct {
 }
 
 // GetJSON200 returns the response for an HTTP 200 `application/json` response
-func (r UpdateUserSettingResponse) GetJSON200() *UserSetting {
+func (r UpdateUserSettingResponse) GetJSON200() *Setting {
 	return r.JSON200
 }
 
@@ -7836,7 +7788,7 @@ type UpdateUserSettingsBatchResponse struct {
 	Body         []byte
 	HTTPResponse *http.Response
 	// JSON200 the response for an HTTP 200 `application/json` response
-	JSON200 *[]UserSetting
+	JSON200 *[]Setting
 	// JSON400 the response for an HTTP 400 `application/json` response
 	JSON400 *ErrorResponse
 	// JSON401 the response for an HTTP 401 `application/json` response
@@ -7846,7 +7798,7 @@ type UpdateUserSettingsBatchResponse struct {
 }
 
 // GetJSON200 returns the response for an HTTP 200 `application/json` response
-func (r UpdateUserSettingsBatchResponse) GetJSON200() *[]UserSetting {
+func (r UpdateUserSettingsBatchResponse) GetJSON200() *[]Setting {
 	return r.JSON200
 }
 
@@ -8135,32 +8087,39 @@ func (r AdminHealthcheckResponse) ContentType() string {
 	return ""
 }
 
-type ListSettingDefinitionsResponse struct {
+type GetAdminSettingsResponse struct {
 	Body         []byte
 	HTTPResponse *http.Response
 	// JSON200 the response for an HTTP 200 `application/json` response
-	JSON200 *[]SettingDefault
+	JSON200 *[]Setting
 	// JSON401 the response for an HTTP 401 `application/json` response
 	JSON401 *ErrorResponse
+	// JSON500 the response for an HTTP 500 `application/json` response
+	JSON500 *ErrorResponse
 }
 
 // GetJSON200 returns the response for an HTTP 200 `application/json` response
-func (r ListSettingDefinitionsResponse) GetJSON200() *[]SettingDefault {
+func (r GetAdminSettingsResponse) GetJSON200() *[]Setting {
 	return r.JSON200
 }
 
 // GetJSON401 returns the response for an HTTP 401 `application/json` response
-func (r ListSettingDefinitionsResponse) GetJSON401() *ErrorResponse {
+func (r GetAdminSettingsResponse) GetJSON401() *ErrorResponse {
 	return r.JSON401
 }
 
+// GetJSON500 returns the response for an HTTP 500 `application/json` response
+func (r GetAdminSettingsResponse) GetJSON500() *ErrorResponse {
+	return r.JSON500
+}
+
 // GetBody returns the raw response body bytes
-func (r ListSettingDefinitionsResponse) GetBody() []byte {
+func (r GetAdminSettingsResponse) GetBody() []byte {
 	return r.Body
 }
 
 // Status returns HTTPResponse.Status
-func (r ListSettingDefinitionsResponse) Status() string {
+func (r GetAdminSettingsResponse) Status() string {
 	if r.HTTPResponse != nil {
 		return r.HTTPResponse.Status
 	}
@@ -8168,7 +8127,7 @@ func (r ListSettingDefinitionsResponse) Status() string {
 }
 
 // StatusCode returns HTTPResponse.StatusCode
-func (r ListSettingDefinitionsResponse) StatusCode() int {
+func (r GetAdminSettingsResponse) StatusCode() int {
 	if r.HTTPResponse != nil {
 		return r.HTTPResponse.StatusCode
 	}
@@ -8176,55 +8135,7 @@ func (r ListSettingDefinitionsResponse) StatusCode() int {
 }
 
 // ContentType is a convenience method to retrieve the Content-Type value from the HTTP response headers
-func (r ListSettingDefinitionsResponse) ContentType() string {
-	if r.HTTPResponse != nil {
-		return r.HTTPResponse.Header.Get("Content-Type")
-	}
-	return ""
-}
-
-type ListSettingOverridesResponse struct {
-	Body         []byte
-	HTTPResponse *http.Response
-	// JSON200 the response for an HTTP 200 `application/json` response
-	JSON200 *[]SettingOverride
-	// JSON401 the response for an HTTP 401 `application/json` response
-	JSON401 *ErrorResponse
-}
-
-// GetJSON200 returns the response for an HTTP 200 `application/json` response
-func (r ListSettingOverridesResponse) GetJSON200() *[]SettingOverride {
-	return r.JSON200
-}
-
-// GetJSON401 returns the response for an HTTP 401 `application/json` response
-func (r ListSettingOverridesResponse) GetJSON401() *ErrorResponse {
-	return r.JSON401
-}
-
-// GetBody returns the raw response body bytes
-func (r ListSettingOverridesResponse) GetBody() []byte {
-	return r.Body
-}
-
-// Status returns HTTPResponse.Status
-func (r ListSettingOverridesResponse) Status() string {
-	if r.HTTPResponse != nil {
-		return r.HTTPResponse.Status
-	}
-	return http.StatusText(0)
-}
-
-// StatusCode returns HTTPResponse.StatusCode
-func (r ListSettingOverridesResponse) StatusCode() int {
-	if r.HTTPResponse != nil {
-		return r.HTTPResponse.StatusCode
-	}
-	return 0
-}
-
-// ContentType is a convenience method to retrieve the Content-Type value from the HTTP response headers
-func (r ListSettingOverridesResponse) ContentType() string {
+func (r GetAdminSettingsResponse) ContentType() string {
 	if r.HTTPResponse != nil {
 		return r.HTTPResponse.Header.Get("Content-Type")
 	}
@@ -12380,30 +12291,19 @@ func (c *ClientWithResponses) AdminHealthcheckWithResponse(ctx context.Context, 
 	return ParseAdminHealthcheckResponse(rsp)
 }
 
-// ListSettingDefinitionsWithResponse List all setting definitions
+// GetAdminSettingsWithResponse Get all settings (admin)
+//
+// Returns the merged settings (system defaults + overrides) in the same shape as the user settings endpoint.
 //
 // Returns a wrapper object for the known response body format(s).
 //
-// Corresponds with GET /admin/settings/definitions (the `ListSettingDefinitions` operationId).
-func (c *ClientWithResponses) ListSettingDefinitionsWithResponse(ctx context.Context, reqEditors ...RequestEditorFn) (*ListSettingDefinitionsResponse, error) {
-	rsp, err := c.ListSettingDefinitions(ctx, reqEditors...)
+// Corresponds with GET /admin/settings (the `GetAdminSettings` operationId).
+func (c *ClientWithResponses) GetAdminSettingsWithResponse(ctx context.Context, reqEditors ...RequestEditorFn) (*GetAdminSettingsResponse, error) {
+	rsp, err := c.GetAdminSettings(ctx, reqEditors...)
 	if err != nil {
 		return nil, err
 	}
-	return ParseListSettingDefinitionsResponse(rsp)
-}
-
-// ListSettingOverridesWithResponse List all overrides (debug/admin)
-//
-// Returns a wrapper object for the known response body format(s).
-//
-// Corresponds with GET /admin/settings/overrides (the `ListSettingOverrides` operationId).
-func (c *ClientWithResponses) ListSettingOverridesWithResponse(ctx context.Context, reqEditors ...RequestEditorFn) (*ListSettingOverridesResponse, error) {
-	rsp, err := c.ListSettingOverrides(ctx, reqEditors...)
-	if err != nil {
-		return nil, err
-	}
-	return ParseListSettingOverridesResponse(rsp)
+	return ParseGetAdminSettingsResponse(rsp)
 }
 
 // GetSystemStatsWithResponse Get system statistics (uptime, memory)
@@ -13918,7 +13818,7 @@ func ParseGetUserSettingsResponse(rsp *http.Response) (*GetUserSettingsResponse,
 
 	switch {
 	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 200:
-		var dest []UserSetting
+		var dest []Setting
 		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
 			return nil, err
 		}
@@ -13958,7 +13858,7 @@ func ParseUpdateUserSettingResponse(rsp *http.Response) (*UpdateUserSettingRespo
 
 	switch {
 	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 200:
-		var dest UserSetting
+		var dest Setting
 		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
 			return nil, err
 		}
@@ -14005,7 +13905,7 @@ func ParseUpdateUserSettingsBatchResponse(rsp *http.Response) (*UpdateUserSettin
 
 	switch {
 	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 200:
-		var dest []UserSetting
+		var dest []Setting
 		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
 			return nil, err
 		}
@@ -14218,22 +14118,22 @@ func ParseAdminHealthcheckResponse(rsp *http.Response) (*AdminHealthcheckRespons
 	return response, nil
 }
 
-// ParseListSettingDefinitionsResponse parses an HTTP response from a ListSettingDefinitionsWithResponse call
-func ParseListSettingDefinitionsResponse(rsp *http.Response) (*ListSettingDefinitionsResponse, error) {
+// ParseGetAdminSettingsResponse parses an HTTP response from a GetAdminSettingsWithResponse call
+func ParseGetAdminSettingsResponse(rsp *http.Response) (*GetAdminSettingsResponse, error) {
 	bodyBytes, err := io.ReadAll(rsp.Body)
 	defer func() { _ = rsp.Body.Close() }()
 	if err != nil {
 		return nil, err
 	}
 
-	response := &ListSettingDefinitionsResponse{
+	response := &GetAdminSettingsResponse{
 		Body:         bodyBytes,
 		HTTPResponse: rsp,
 	}
 
 	switch {
 	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 200:
-		var dest []SettingDefault
+		var dest []Setting
 		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
 			return nil, err
 		}
@@ -14246,38 +14146,12 @@ func ParseListSettingDefinitionsResponse(rsp *http.Response) (*ListSettingDefini
 		}
 		response.JSON401 = &dest
 
-	}
-
-	return response, nil
-}
-
-// ParseListSettingOverridesResponse parses an HTTP response from a ListSettingOverridesWithResponse call
-func ParseListSettingOverridesResponse(rsp *http.Response) (*ListSettingOverridesResponse, error) {
-	bodyBytes, err := io.ReadAll(rsp.Body)
-	defer func() { _ = rsp.Body.Close() }()
-	if err != nil {
-		return nil, err
-	}
-
-	response := &ListSettingOverridesResponse{
-		Body:         bodyBytes,
-		HTTPResponse: rsp,
-	}
-
-	switch {
-	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 200:
-		var dest []SettingOverride
-		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
-			return nil, err
-		}
-		response.JSON200 = &dest
-
-	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 401:
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 500:
 		var dest ErrorResponse
 		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
 			return nil, err
 		}
-		response.JSON401 = &dest
+		response.JSON500 = &dest
 
 	}
 
