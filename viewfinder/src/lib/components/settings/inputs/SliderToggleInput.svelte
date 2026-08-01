@@ -30,9 +30,7 @@
 <SettingRow {label} {description} {disabled}>
     {#snippet control()}
         <div class="toggle-wrapper">
-            <div class:pointer-events-none={disabled} class:opacity-50={disabled}>
-                <SliderToggle id={toggleId} {label} bind:value labelPos="side" />
-            </div>
+            <SliderToggle id={toggleId} {label} bind:value labelPos="side" {disabled} />
         </div>
     {/snippet}
 </SettingRow>
@@ -50,13 +48,5 @@
         :global(.toggle-slider button) {
             margin-left: 0 !important;
         }
-    }
-
-    .pointer-events-none {
-        pointer-events: none;
-    }
-
-    .opacity-50 {
-        opacity: 0.5;
     }
 </style>
