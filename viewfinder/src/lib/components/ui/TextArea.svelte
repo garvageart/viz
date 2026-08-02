@@ -1,11 +1,18 @@
 <script lang="ts">
-    import type { SvelteHTMLElements } from "svelte/elements";
+    import type { FormEventHandler, SvelteHTMLElements } from "svelte/elements";
     import { generateRandomString } from "$lib/utils/misc";
+
+    type TextAreaResize = "none" | "both" | "horizontal" | "vertical";
 
     interface Props {
         label?: string;
         description?: string;
         disabled?: boolean;
+        resize?: TextAreaResize;
+        rows?: number;
+        minHeight?: string;
+        maxHeight?: string;
+        autoGrow?: boolean;
     }
 
     let {
@@ -13,11 +20,63 @@
         label,
         description,
         disabled = false,
+        resize = "none",
+        rows = 3,
+        minHeight = "4rem",
+        maxHeight = "24rem",
+        autoGrow = false,
         ...props
     }: Props & SvelteHTMLElements["textarea"] = $props();
 
     const fallbackId = generateRandomString(6);
     const inputId = $derived(props.id ?? fallbackId);
+
+    let textareaEl = $state<HTMLTextAreaElement | undefined>();
+
+    const parseStyleNumber = (raw: string) => {
+        if (raw === "none") {
+            return;
+        }
+
+        // eslint-disable-next-line unicorn/prefer-number-coercion
+        const value = Number.parseFloat(raw);
+        if (Number.isNaN(value)) {
+            return;
+        }
+
+        return value;
+    };
+
+    const autosize = (element: HTMLTextAreaElement | undefined) => {
+        if (!element || !autoGrow || element.scrollHeight === 0) {
+            return;
+        }
+
+        element.style.minHeight = "0";
+        element.style.height = "auto";
+
+        const style = getComputedStyle(element);
+        const borderTopWidth = parseStyleNumber(style.borderTopWidth) ?? 0;
+        const borderBottomWidth = parseStyleNumber(style.borderBottomWidth) ?? 0;
+        const height = element.scrollHeight + borderTopWidth + borderBottomWidth;
+
+        element.style.height = `${height}px`;
+
+        // Show scrollbar only if there is a max-height and content exceeds it
+        const maxHeight = parseStyleNumber(style.maxHeight);
+        const hasMaxHeight = maxHeight !== undefined;
+        element.style.overflow = hasMaxHeight && height > maxHeight ? "auto" : "hidden";
+    };
+
+    $effect(() => {
+        void value;
+        autosize(textareaEl);
+    });
+
+    const handleInput: FormEventHandler<HTMLTextAreaElement> = (e) => {
+        props.oninput?.(e);
+        autosize(textareaEl);
+    };
 </script>
 
 <div class="textarea-container" class:disabled>
@@ -34,11 +93,14 @@
         id={inputId}
         name={props.name}
         placeholder={props.placeholder}
+        {rows}
+        bind:this={textareaEl}
         bind:value
         {disabled}
-        oninput={(e) => {
-            props.oninput?.(e);
-        }}
+        style:--textarea-resize={autoGrow ? "none" : resize}
+        style:--textarea-min-height={minHeight}
+        style:--textarea-max-height={maxHeight}
+        oninput={handleInput}
         onchange={(e) => {
             props.onchange?.(e);
         }}
@@ -87,29 +149,31 @@
     }
 
     textarea {
+        box-sizing: border-box;
+        width: 100%;
         max-width: 100%;
-        min-height: 2.5rem;
+        min-height: var(--textarea-min-height);
+        max-height: var(--textarea-max-height);
+        resize: var(--textarea-resize);
+        overflow-y: auto;
         color: var(--viz-text-primary);
-        background-color: var(--viz-surface-panel);
+        background-color: var(--viz-surface-card);
         outline: none;
         border: none;
         box-shadow: 0 -1px 0 var(--viz-border-subtle) inset;
         font-family: var(--viz-display-font);
+        line-height: 1.5;
         padding: 0.5rem 1rem;
         margin-bottom: 0;
 
         &::placeholder {
-            color: var(--viz-text-secondary);
+            opacity: 0.7;
             font-family: var(--viz-display-font);
         }
 
         &:focus::placeholder {
             color: var(--viz-border-subtle);
             opacity: 1;
-        }
-
-        &:focus {
-            box-shadow: 0 -2px 0 var(--viz-primary) inset;
         }
 
         &:focus {
