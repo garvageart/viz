@@ -115,7 +115,7 @@
 
     loadData();
 
-    function formatDate(dateStr?: string) {
+    function formatRelativeDate(dateStr?: string) {
         if (!dateStr) {
             return "Never";
         }
@@ -303,9 +303,13 @@
                                             {/if}
                                         </div>
                                     </td>
-                                    <td class="mono-text">{formatDate(key.created_at)}</td>
-                                    <td class="mono-text"
-                                        >{key.last_used_at ? formatDate(key.last_used_at) : "Never"}</td
+                                    <td class="mono-text" title={new Date(key.created_at).toLocaleString()}
+                                        >{formatRelativeDate(key.created_at)}</td
+                                    >
+                                    <td
+                                        class="mono-text"
+                                        title={key.last_used_at ? new Date(key.last_used_at).toLocaleString() : "Never"}
+                                        >{key.last_used_at ? formatRelativeDate(key.last_used_at) : "Never"}</td
                                     >
                                     <td>
                                         <div class="actions-cell">
@@ -365,7 +369,7 @@
                                                 >
                                                 {#if session.is_current}
                                                     <Badge variant="success" size="small" weight="regular"
-                                                        >Current</Badge
+                                                        ><span>Current</span></Badge
                                                     >
                                                 {/if}
                                             </div>
@@ -374,9 +378,15 @@
                                             </span>
                                         </div>
                                     </td>
-                                    <td class="mono-text">{formatDate(session.last_active_at)}</td>
+                                    <td
+                                        class="mono-text"
+                                        title={session.last_active_at
+                                            ? new Date(session.last_active_at).toLocaleString()
+                                            : "Never"}>{formatRelativeDate(session.last_active_at)}</td
+                                    >
                                     <td>
                                         <div class="actions-cell">
+                                            <!-- TODO: Replace these with IconButton -->
                                             <button
                                                 class="action-btn"
                                                 onclick={() => openRenameSessionModal(session)}
@@ -460,10 +470,8 @@
         th {
             text-align: left;
             padding: var(--viz-spacing-md) var(--viz-spacing-std);
-            color: var(--viz-text-secondary);
             font-weight: 600;
-            font-size: var(--viz-font-size-std);
-            text-transform: uppercase;
+            font-size: var(--viz-font-size-lg);
             border-bottom: var(--viz-border-thin);
             background-color: var(--viz-surface-panel);
         }
