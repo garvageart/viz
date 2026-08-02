@@ -185,7 +185,6 @@
         height: 100%;
         overflow: hidden;
         display: block;
-        background: linear-gradient(135deg, var(--viz-surface-panel) 0%, var(--viz-surface-hover) 100%);
     }
 
     .placeholder {
@@ -205,15 +204,14 @@
     }
 
     .main-image {
-        width: var(--asset-width, 100%);
-        height: var(--asset-height, 100%);
+        width: 100%;
+        height: 100%;
         max-width: 100%;
         max-height: 100%;
         display: block;
         opacity: 0;
         transition: opacity 0.3s ease-in;
         position: relative;
-        // z-index: 2;
 
         &.visible {
             opacity: 1;

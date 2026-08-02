@@ -172,7 +172,6 @@
         min-width: 100%;
         max-width: 100%;
         height: 100%;
-        background-color: var(--viz-surface-card);
         border: 1px solid var(--viz-border-subtle);
         border-radius: var(--viz-border-radius-md);
         position: relative;
@@ -200,6 +199,8 @@
     }
 
     .image-card-meta {
+        background-color: var(--viz-surface-card);
+        border-top: 1px solid var(--viz-border-subtle);
         padding: var(--viz-spacing-md);
         display: flex;
         justify-content: space-between;
@@ -254,11 +255,7 @@
         align-items: center;
         justify-content: center;
         color: var(--viz-text-secondary);
-
-        :global(.placeholder-icon) {
-            opacity: 0.6;
-            filter: drop-shadow(0 2px 4px rgba(0, 0, 0, 0.05));
-        }
+        background: linear-gradient(135deg, var(--viz-surface-panel) 0%, var(--viz-surface-hover) 100%);
 
         :global(.card-image) {
             width: 100%;
@@ -285,7 +282,6 @@
         display: flex;
         align-items: center;
         justify-content: center;
-        background-color: var(--viz-surface-panel);
     }
 
     .mini-footer {
