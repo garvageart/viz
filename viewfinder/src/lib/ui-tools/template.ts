@@ -1,4 +1,5 @@
 import { DateTime } from "luxon";
+import type { NormalizedOption } from "$lib/components/ui/InputSelect.svelte";
 
 export interface DateTokens {
     y: string;
@@ -70,8 +71,8 @@ export const DEFAULT_TEMPLATE_EXAMPLE = {
 };
 
 // Shared Option Configurations for Naming / Renaming
-export const NAMING_OPTIONS = [
-    { value: "", label: "Presets", type: "label" },
+export const NAMING_OPTIONS: NormalizedOption[] = [
+    { label: "Presets", type: "label" },
     { value: "original", label: "Original Name" },
     { value: "custom", label: "Custom Name Only" },
     { value: "sequence", label: "Sequence Only" },
@@ -82,7 +83,7 @@ export const NAMING_OPTIONS = [
     { value: "template", label: "Custom Template" }
 ] as const;
 
-export const ROW_TYPES = [
+export const ROW_TYPES: NormalizedOption[] = [
     { value: "original", label: "Original Name" },
     { value: "text", label: "Custom Text" },
     { value: "sequence", label: "Sequence Number" },
@@ -90,7 +91,7 @@ export const ROW_TYPES = [
     { value: "metadata", label: "Metadata" }
 ] as const;
 
-export const DATE_FORMAT_OPTIONS = [
+export const DATE_FORMAT_OPTIONS: NormalizedOption[] = [
     { value: "YYYY-MM-DD", label: "YYYY-MM-DD (e.g. 2025-03-01)" },
     { value: "YYYYMMDD", label: "YYYYMMDD (e.g. 20250301)" },
     { value: "YYMMDD", label: "YYMMDD (e.g. 250301)" },
@@ -99,7 +100,7 @@ export const DATE_FORMAT_OPTIONS = [
     { value: "DD", label: "Day (e.g. 01)" }
 ] as const;
 
-export const METADATA_FIELD_OPTIONS = [
+export const METADATA_FIELD_OPTIONS: NormalizedOption[] = [
     { value: "make", label: "Camera Make" },
     { value: "model", label: "Camera Model" },
     { value: "lensModel", label: "Lens Model" }

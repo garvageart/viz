@@ -1,15 +1,8 @@
-<script lang="ts">
-    import { Select } from "bits-ui";
-    import { getContext } from "svelte";
-    import type { SvelteHTMLElements } from "svelte/elements";
-    import { ContextKeys } from "$lib/context-keys";
-    import { generateKeyId } from "$lib/utils/layout";
-    import MaterialIcon from "./MaterialIcon.svelte";
-
-    type OptionsSeperator = { type: "separator" | "label"; label?: string };
-    type OptionItem = { value: string; label: string; type: "item" };
-    type NormalizedOption = OptionItem | OptionsSeperator;
-    type InputOption =
+<script module lang="ts">
+    export type OptionItem = { value: string; label: string; type?: "item" };
+    export type OptionsSeperator = { type: "separator" | "label"; label?: string };
+    export type NormalizedOption = OptionItem | OptionsSeperator;
+    export type InputOption =
         | string
         | {
               value: string;
@@ -17,6 +10,15 @@
               type?: "item" | "separator" | "label";
           }
         | OptionsSeperator;
+</script>
+
+<script lang="ts">
+    import { Select } from "bits-ui";
+    import { getContext } from "svelte";
+    import type { SvelteHTMLElements } from "svelte/elements";
+    import { ContextKeys } from "$lib/context-keys";
+    import { generateKeyId } from "$lib/utils/layout";
+    import MaterialIcon from "./MaterialIcon.svelte";
 
     interface Props {
         label?: string;
