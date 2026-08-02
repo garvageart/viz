@@ -83,7 +83,6 @@ export function createImageMenu(
         },
         {
             id: "divider-1",
-            label: "",
             separator: true
         },
         {
@@ -189,7 +188,6 @@ export function createImageMenu(
         },
         {
             id: "divider-2",
-            label: "",
             separator: true
         }
     ];
@@ -252,6 +250,11 @@ export function createImageMenu(
                     });
                 }
             }
+        });
+
+        actionMenuItems.push({
+            id: "divider-3",
+            separator: true
         });
     }
 
