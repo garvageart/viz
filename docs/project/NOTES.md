@@ -1,32 +1,43 @@
 # NOTES
+
 A document of general notes and random sporadic stuff that myself (Les) and maybe other developers can use to dump stuff in.
 
-**General rule of thumb for this document:** if you point or section gets too big, it likely needs its own document.
-
-## Infrustructure for custom themes (Using --viz-100 - --viz-5)
-The idea is that currently I just have two test themes, [`viz-blue`](../viz/src/lib/styles/scss/viz-blue.scss) and [`viz-black`](../viz/src/lib/styles/scss/viz-black.scss) written in SCSS, compiled by Vite and imported at runtime by the [`hooks.server.ts`](../viz/src/hooks.server.ts) file. However, this app is a SPA and embedded into the [`cmd/api`](../cmd/api/main.go) file (name needs to change to server tbh) and whatever SCSS is used needs to get compiled again.
-
-We could use [`https://github.com/bep/godartsass`](https://github.com/bep/godartsass) to compile at runtime or maybe just a seperate process that could be launched once when necessary.
-
-Themes are based on these five SCSS variables:
-
-````scss
-// viz-black.scss
-$bg-color: #191919;
-$base-color: #1f1f1f;
-$text-color: #f7f9f9;
-$primary-color: #1885df;
-$secondary-color: #06589b;
-````
-
-A [`viz-theme.scss.tmpl`](../viz/src/lib/styles/scss/viz-theme.scss.tmpl) file could be used maybe based on what the current structure of the theme files look like and then all those variables can just be injected from wherever they are set (user settings for example)
-
-idk this makes sense to me now and I'm sure a final solution could be figured out and way better than this idea. I just don't want non-developers to be writing CSS just make their environment look good for themselves.
-
-Authored by [`@garvageart`](https://github.com/garvageart)
+> [!NOTE]
+>
+> **General rule of thumb for this document**: if your point or section gets too big, it likely needs its own document.
 
 ## Admin UI: Missing Files Inspector
+
 Implement a "Show Missing Files" diagnostic tool in the Admin UI (Settings / Storage) that:
+
 1. Compares PostgreSQL `images` table entries against expected physical file paths in `/app/var/library/<UID>/<name>`.
 2. Identifies and highlights orphaned DB records where original media files are missing on disk.
 3. Provides quick admin actions to purge orphaned metadata rows or trigger targeted re-uploads.
+
+## Settings
+
+Refer to the [User Settings Doc](SETTINGS.md) for a running document.
+
+### Admin Settings
+
+UI needs more work (and more settings), and a likely restructure. Maybe moving away from the strict navbar/sidebar.
+
+## UI/UX
+
+Could be presented better. A (public) design system and Figma file could be useful as a reference. UI is fine, maybe even a bit good but presentation of information in the right places can be better.
+
+Way too much grouping and listing of information which is fine in some place, but some immediate "good to know" information could be presented in a more thought out way.
+
+### Accessibility
+
+I'm really anal about this. This is really important and I cannot stress this enough. Keyboard navigation, good contrast, and screen reading should be good.
+
+## Plugins
+
+On my mind constantly, research is being done here and there and I have some ideas but I'm not fussy right now.
+
+## Resigns
+
+### Search
+
+Search needs to be entirely redone. I think support search tokens visually (e.g. `make:fujifilm`). The search bar also needs to become more of a pallete, in the same way VS Code's command pallete works. Supporting things like `Recently Added` for example, Quick Actions 
