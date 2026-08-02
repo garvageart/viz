@@ -177,7 +177,13 @@
             </div>
             <!-- Description -->
             <div class="exif-card description">
-                <TextArea placeholder="Add a description" rows={3} maxHeight="2rem" resize="none" />
+                <TextArea
+                    class="exif-description"
+                    placeholder="Add a description"
+                    rows={3}
+                    maxHeight="2rem"
+                    resize="none"
+                />
             </div>
             <!-- Camera/Exposure card -->
             <div class="exif-card">
@@ -394,8 +400,9 @@
         justify-content: center;
         gap: 0.35em;
 
-        &.description {
-            padding: inherit 0;
+        :global(.exif-description) {
+            background-color: var(--viz-surface-card);
+            padding: 0;
         }
     }
 
