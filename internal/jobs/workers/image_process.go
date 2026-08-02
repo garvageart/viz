@@ -115,9 +115,7 @@ func ImageProcess(ctx context.Context, db *gorm.DB, imgEnt entities.ImageAsset, 
 	}
 
 	if imgEnt.ImageMetadata.Checksum == "" {
-		if onProgress != nil {
-			onProgress("Calculating image checksum", 10)
-		}
+		onProgress("Calculating image checksum", 10)
 
 		checksum, err := images.CalculateImageChecksum(originalData)
 		if err != nil {
@@ -128,7 +126,7 @@ func ImageProcess(ctx context.Context, db *gorm.DB, imgEnt entities.ImageAsset, 
 	}
 
 	// Create a display thumbnail from the image
-	// Update - 28/12/2025: this is redundant if we have transforms, but this can be used for something else maybe
+	// This is just used to create thumbhash placeholders, it is not saved to disk anymore
 	thumbData, err := imageops.CreateThumbnailWithSize(originalData, 200, 0)
 	if err != nil {
 		return fmt.Errorf("failed to create thumbnail: %w", err)
@@ -139,23 +137,9 @@ func ImageProcess(ctx context.Context, db *gorm.DB, imgEnt entities.ImageAsset, 
 		"name": imgEnt.Name,
 	}
 
-	jobs.Logger.Info("saving thumbnail to disk", loggerFields)
-
-	if onProgress != nil {
-		onProgress("Saving thumbnail to disk", 55)
-	}
-
-	// Save the thumbnail to disk
-	err = images.SaveImage(thumbData, imgEnt.Uid, fmt.Sprintf("%s-thumbnail", imgEnt.Uid)+".jpeg")
-	if err != nil {
-		return fmt.Errorf("failed to save thumbnail: %w", err)
-	}
-
 	// Generate thumbhash by downscaling the 200px thumbnail in Go, avoiding a
 	// second libvips thumbnail call and a JPEG encode→decode round-trip.
-	if onProgress != nil {
-		onProgress("Generating thumbhash", 70)
-	}
+	onProgress("Generating thumbhash", 50)
 
 	thumbhashTimeStart := time.Now()
 
@@ -181,9 +165,7 @@ func ImageProcess(ctx context.Context, db *gorm.DB, imgEnt entities.ImageAsset, 
 	var transformParams *transform.TransformParams
 	var terr error
 
-	if onProgress != nil {
-		onProgress("Generating transforms", 80)
-	}
+	onProgress("Generating transforms", 80)
 
 	// Generate thumbnail transform (permanent paths)
 	tstart := time.Now()
@@ -267,9 +249,7 @@ func ImageProcess(ctx context.Context, db *gorm.DB, imgEnt entities.ImageAsset, 
 		}
 	}
 
-	if onProgress != nil {
-		onProgress("Updating database", 90)
-	}
+	onProgress("Updating database", 90)
 
 	err = db.Transaction(func(tx *gorm.DB) error {
 		// Update image entity in DB
@@ -284,9 +264,7 @@ func ImageProcess(ctx context.Context, db *gorm.DB, imgEnt entities.ImageAsset, 
 		return fmt.Errorf("transaction failed: %w", err)
 	}
 
-	if onProgress != nil {
-		onProgress("Completed", 100)
-	}
+	onProgress("Completed", 100)
 
 	return nil
 }
