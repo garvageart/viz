@@ -76,9 +76,9 @@ export const NAMING_OPTIONS = [
     { value: "custom", label: "Custom Name Only" },
     { value: "sequence", label: "Sequence Only" },
     { value: "original-sequence", label: "Original Name + Sequence" },
-    { value: "---", label: "", type: "separator" },
+    { type: "separator" },
     { value: "builder", label: "Batch Rename" },
-    { value: "---", label: "", type: "separator" },
+    { type: "separator" },
     { value: "template", label: "Custom Template" }
 ] as const;
 

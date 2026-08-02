@@ -6,19 +6,24 @@
     import { generateKeyId } from "$lib/utils/layout";
     import MaterialIcon from "./MaterialIcon.svelte";
 
+    type OptionsSeperator = { type: "separator" | "label"; label?: string };
+    type OptionItem = { value: string; label: string; type: "item" };
+    type NormalizedOption = OptionItem | OptionsSeperator;
+    type InputOption =
+        | string
+        | {
+              value: string;
+              label: string;
+              type?: "item" | "separator" | "label";
+          }
+        | OptionsSeperator;
+
     interface Props {
         label?: string;
         labelPosition?: "top" | "side";
         description?: string;
         value?: string | number | boolean;
-        options: Array<
-            | string
-            | {
-                  value: string;
-                  label: string;
-                  type?: "item" | "separator" | "label";
-              }
-        >;
+        options: Array<InputOption>;
         disabled?: boolean;
         required?: boolean;
         name?: string;
@@ -58,16 +63,38 @@
         }
     }
 
+    function isItemOption(opt: NormalizedOption): opt is OptionItem {
+        return opt.type === "item";
+    }
+
+    function isInputItemOption(
+        opt: InputOption
+    ): opt is { value: string; label: string; type?: "item" | "separator" | "label" } {
+        return typeof opt === "object" && opt !== null && "value" in opt;
+    }
+
     const normalizedOptions = $derived(
-        options.map((opt) => {
+        options.map((opt): NormalizedOption => {
             if (typeof opt === "string") {
-                return { value: opt, label: opt, type: "item" as const };
+                return { value: opt, label: opt, type: "item" };
             }
-            return { type: "item" as const, ...opt };
+
+            if (isInputItemOption(opt)) {
+                return {
+                    type: opt.type === "separator" || opt.type === "label" ? opt.type : "item",
+                    value: opt.value,
+                    label: opt.label
+                };
+            }
+
+            return { type: opt.type, label: opt.label };
         })
     );
 
-    const selectedLabel = $derived(normalizedOptions.find((opt) => opt.value === stringValue)?.label ?? "");
+    const selectedLabel = $derived(
+        normalizedOptions.find((opt): opt is OptionItem => opt.type === "item" && opt.value === stringValue)?.label ??
+            ""
+    );
 
     const getModalZIndex = getContext<(() => number) | undefined>(ContextKeys.ModalZIndex);
     const modalZIndex = $derived(getModalZIndex?.());
@@ -96,11 +123,11 @@
                 >
                     <Select.Viewport class="select-viewport">
                         {#each normalizedOptions as item}
-                            {#if item.type === "separator" || item.value === "---"}
+                            {#if item.type === "separator"}
                                 <div class="select-separator" role="separator"></div>
                             {:else if item.type === "label"}
                                 <div class="select-group-label" role="presentation">{item.label}</div>
-                            {:else}
+                            {:else if isItemOption(item)}
                                 <Select.Item class="select-item" value={item.value} label={item.label}>
                                     {#snippet children({ selected })}
                                         <span class="item-label">{item.label}</span>
