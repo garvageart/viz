@@ -157,7 +157,7 @@
         resize: var(--textarea-resize);
         overflow-y: auto;
         color: var(--viz-text-primary);
-        background-color: var(--viz-surface-card);
+        background-color: var(--viz-surface-panel);
         outline: none;
         border: none;
         box-shadow: 0 -1px 0 var(--viz-border-subtle) inset;
