@@ -91,7 +91,7 @@ Docs: https://www.bits-ui.com/docs/components/switch
         border: none;
         border-radius: var(--viz-border-radius-pill);
         background-color: var(--viz-surface-input);
-        box-shadow: inset 0 0 0 1px var(--viz-border-strong);
+        box-shadow: inset 0 0 0 1px var(--viz-primary);
         cursor: pointer;
         transition:
             background-color 0.18s ease,
