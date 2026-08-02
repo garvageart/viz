@@ -32,7 +32,8 @@ var (
 	sessionCache   = make(map[string]*sessionCacheEntry)
 	// Default maximum time to cache an authenticated session locally.
 	// Keep small to reduce window where revocations aren't seen.
-	sessionCacheTTL = 60 * time.Second
+	sessionCacheTTL            = 60 * time.Second
+	keySessionLastUsedDuration = 5 * time.Minute
 )
 
 // SetSessionCache stores a user for a session token. expiresAt will be the
@@ -175,6 +176,15 @@ func AuthMiddleware(db *gorm.DB, logger *slog.Logger) func(next http.Handler) ht
 					return
 				}
 
+				if key.LastUsedAt == nil || time.Since(*key.LastUsedAt) > keySessionLastUsedDuration {
+					uid := key.Uid
+					go func() {
+						if err := db.Model(&entities.APIKey{}).Where("uid = ?", uid).Update("last_used_at", time.Now()).Error; err != nil {
+							logger.Error("failed to update api key last_used_at", slog.Any("error", err))
+						}
+					}()
+				}
+
 				r = r.WithContext(context.WithValue(r.Context(), ctxAPIKey, &key))
 				r = r.WithContext(context.WithValue(r.Context(), ctxAPIKeyAuth, true))
 				if key.User != nil {
@@ -226,7 +236,7 @@ func AuthMiddleware(db *gorm.DB, logger *slog.Logger) func(next http.Handler) ht
 					return
 				}
 
-				if sess.LastActive == nil || time.Since(*sess.LastActive) > 5*time.Minute {
+				if sess.LastActive == nil || time.Since(*sess.LastActive) > keySessionLastUsedDuration {
 					go func(uid string) {
 						if err := db.Model(&entities.Session{}).Where("uid = ?", uid).Update("last_active", time.Now()).Error; err != nil {
 							logger.Error("failed to update session last_active", slog.Any("error", err))
