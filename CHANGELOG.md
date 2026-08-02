@@ -5,6 +5,30 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.27.0] - 2026-08-02
+
+* refactor(ui): export and reuse input select option types (248b3b7b)
+* fix(api): persist last_used_at on api key authentication (2f2e6bf8)
+* chore: don't save processed thumbanail to disk (db67a93d)
+* fix: delegate image background colour to image card (b8f6a7ff)
+* fix: properly type seperator by narrowing prop type (878350c2)
+* fix: properly type seperator (sort of) (a31d1e21)
+* fix: add seperator by delete icon for collection images (87e8f6da)
+* fix(ui): use surface-panel background for TextArea (8a6ddd82)
+* fix(ui): apply exif-description styles to MetadataPanel textarea (2a56bfbf)
+* docs(project): update NOTES.md (bd582370)
+* fix(ui): align SliderToggle border to primary color (376f4b2e)
+* feat(ui): enhance TextArea stability and add tests (a0afbc63)
+* feat(ui): rework image lightbox with DatePicker, MetadataPanel, and crop typing (1fd525b0)
+* feat(ui): add generic Table component (8e099b3b)
+* feat(context-menu): support snippet context menu items (90f1066b)
+* fix(ui): inline SCSS variables in SliderToggle to satisfy prettier (9250ef32)
+* fix: align all required asterisks to be red (25e0c238)
+* fix(ui): increase collections badge icon size (70ed0159)
+* fix(routes): simplify navigation logic in root layout (9f3977b1)
+* chore(ui): update SliderToggle component (d2161255)
+* feat(settings): unify settings API and migrate frontend to Setting type (c97cade0)
+
 ## [0.26.12] - 2026-08-01
 
 * refactor(settings): use native SliderToggle disabled prop (73cd73c7)
