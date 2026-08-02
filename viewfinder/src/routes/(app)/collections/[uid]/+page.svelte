@@ -46,6 +46,7 @@
     import AssetsShell from "$lib/components/ui/AssetsShell.svelte";
     import Badge from "$lib/components/ui/Badge.svelte";
     import Button from "$lib/components/ui/Button.svelte";
+    import Checkbox from "$lib/components/ui/Checkbox.svelte";
     import DragAndDropUpload from "$lib/components/ui/DragAndDropUpload.svelte";
     import IconButton from "$lib/components/ui/IconButton.svelte";
     import ImageCard, { type ImageVariant } from "$lib/components/ui/ImageCard.svelte";
@@ -260,7 +261,12 @@
         }
     });
 
-    let gridCtxMenu = $derived(getImageGridDisplay());
+    let gridCtxMenu = $derived(
+        getImageGridDisplay({
+            showDates: showDatesContent,
+            showSimple: showSimpleContent
+        })
+    );
     let imageThumbnailVariant = $derived<Omit<ImageVariant, "mini">>(
         viewSettings.current === "grid" && viewSettings.simple ? "simple" : "full"
     );
@@ -762,6 +768,14 @@
         );
     }
 </script>
+
+{#snippet showDatesContent()}
+    <Checkbox checked={viewSettings.showDates} onchange={() => viewSettings.toggleShowDates()} label="Show Dates" />
+{/snippet}
+
+{#snippet showSimpleContent()}
+    <Checkbox checked={viewSettings.simple} onchange={() => viewSettings.toggleShowSimple()} label="Simple" />
+{/snippet}
 
 <svelte:window onclick={handleWindowClick} />
 

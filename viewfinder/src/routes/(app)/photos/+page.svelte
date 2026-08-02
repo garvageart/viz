@@ -22,6 +22,7 @@
     import VizViewContainer from "$lib/components/panels/VizViewContainer.svelte";
     import ActiveFiltersTooltip from "$lib/components/tooltips/ActiveFiltersTooltip.svelte";
     import Button from "$lib/components/ui/Button.svelte";
+    import Checkbox from "$lib/components/ui/Checkbox.svelte";
     import DragAndDropUpload from "$lib/components/ui/DragAndDropUpload.svelte";
     import IconButton from "$lib/components/ui/IconButton.svelte";
     import ImageCard, { type ImageVariant } from "$lib/components/ui/ImageCard.svelte";
@@ -53,7 +54,12 @@
     import { invalidateViz } from "$lib/views/views.svelte";
 
     // Display options as MenuItem[] for Dropdown
-    let displayMenuItems: MenuItem[] = $derived(getImageGridDisplay());
+    let displayMenuItems: MenuItem[] = $derived(
+        getImageGridDisplay({
+            showDates: showDatesContent,
+            showSimple: showSimpleContent
+        })
+    );
 
     function getDisplaySelectedId(): string | undefined {
         const map: Record<string, string> = {
@@ -385,6 +391,14 @@
 <svelte:head>
     <title>Photos</title>
 </svelte:head>
+
+{#snippet showDatesContent()}
+    <Checkbox checked={viewSettings.showDates} onchange={() => viewSettings.toggleShowDates()} label="Show Dates" />
+{/snippet}
+
+{#snippet showSimpleContent()}
+    <Checkbox checked={viewSettings.simple} onchange={() => viewSettings.toggleShowSimple()} label="Simple" />
+{/snippet}
 
 <DragAndDropUpload {scopeId} {selectionScope} showCollectionCreateBox={true} />
 

@@ -36,29 +36,41 @@
 </script>
 
 <li role="none" onmouseenter={() => (showSubmenu = true)} onmouseleave={() => (showSubmenu = false)}>
-    <button
-        role="menuitem"
-        aria-disabled={item.disabled ? "true" : undefined}
-        class:disabled={!!item.disabled}
-        data-index={index}
-        tabindex={active ? 0 : -1}
-        onclick={onClick}
-    >
-        {#if item.iconName}
-            {#if typeof item.iconName === "string"}
-                <MaterialIcon class="icon" iconName={item.iconName} weight={300} />
-            {:else}
-                <MaterialIcon class="icon" weight={300} {...item.iconName} />
+    {#if item.content}
+        <div
+            role="menuitem"
+            class="ctx-content"
+            class:disabled={!!item.disabled}
+            data-index={index}
+            tabindex={active ? 0 : -1}
+        >
+            {@render item.content()}
+        </div>
+    {:else}
+        <button
+            role="menuitem"
+            aria-disabled={item.disabled ? "true" : undefined}
+            class:disabled={!!item.disabled}
+            data-index={index}
+            tabindex={active ? 0 : -1}
+            onclick={onClick}
+        >
+            {#if item.iconName}
+                {#if typeof item.iconName === "string"}
+                    <MaterialIcon class="icon" iconName={item.iconName} weight={300} />
+                {:else}
+                    <MaterialIcon class="icon" weight={300} {...item.iconName} />
+                {/if}
             {/if}
-        {/if}
-        <span class="label">{item.label}</span>
-        {#if item.shortcut}
-            <span class="shortcut" aria-hidden="true">{item.shortcut}</span>
-        {/if}
-        {#if item.children && item.children.length > 0}
-            <span class="submenu-arrow" aria-hidden="true">▸</span>
-        {/if}
-    </button>
+            <span class="label">{item.label}</span>
+            {#if item.shortcut}
+                <span class="shortcut" aria-hidden="true">{item.shortcut}</span>
+            {/if}
+            {#if item.children && item.children.length > 0}
+                <span class="submenu-arrow" aria-hidden="true">▸</span>
+            {/if}
+        </button>
+    {/if}
     {#if item.children && item.children.length > 0}
         {#if showSubmenu}
             <div class="submenu" role="menu">
@@ -119,6 +131,24 @@
 
     li > button.disabled:hover {
         background-color: var(--viz-surface-popover);
+    }
+
+    .ctx-content {
+        display: flex;
+        align-items: center;
+        width: 100%;
+        padding: var(--viz-spacing-xs) var(--viz-spacing-sm);
+        box-sizing: border-box;
+        cursor: pointer;
+
+        &.disabled {
+            opacity: 0.5;
+            pointer-events: none;
+        }
+    }
+
+    li:hover > .ctx-content {
+        background-color: var(--viz-surface-hover);
     }
 
     .shortcut {

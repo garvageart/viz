@@ -77,7 +77,7 @@
         const firstEnabled = items.findIndex((i) => !i.disabled && !i.separator);
         activeIndex = firstEnabled === -1 ? 0 : firstEnabled;
         tick().then(() => {
-            const current = contextMenu?.querySelector<HTMLButtonElement>(`[data-index="${activeIndex}"]`);
+            const current = contextMenu?.querySelector<HTMLElement>(`[data-index="${activeIndex}"]`);
             current?.focus();
         });
     }
@@ -330,7 +330,7 @@
 
     function focusActive() {
         tick().then(() => {
-            const el = contextMenu?.querySelector<HTMLButtonElement>(`[data-index="${activeIndex}"]`);
+            const el = contextMenu?.querySelector<HTMLElement>(`[data-index="${activeIndex}"]`);
             el?.focus();
         });
     }
@@ -357,6 +357,7 @@
         role="menu"
         bind:this={contextMenu}
         use:portal
+        onclick={(e) => e.stopPropagation()}
         style={`position: ${cssPosition || "absolute"}; top:${position.top}px; left:${position.left}px; z-index: ${menuZIndex}; visibility: ${positioned ? "visible" : "hidden"}; ${htmlProps?.style ?? ""}`}
     >
         <div class="context-menu-options">
@@ -418,6 +419,16 @@
     }
 
     ul > :global(li:last-child > button) {
+        border-bottom-left-radius: 0.5rem;
+        border-bottom-right-radius: 0.5rem;
+    }
+
+    ul > :global(li:first-child > .ctx-content) {
+        border-top-left-radius: 0.5rem;
+        border-top-right-radius: 0.5rem;
+    }
+
+    ul > :global(li:last-child > .ctx-content) {
         border-bottom-left-radius: 0.5rem;
         border-bottom-right-radius: 0.5rem;
     }

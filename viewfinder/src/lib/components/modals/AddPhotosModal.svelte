@@ -21,6 +21,7 @@
     import PhotoAssetGrid from "../grid/PhotoAssetGrid.svelte";
     import VizViewContainer from "../panels/VizViewContainer.svelte";
     import Button from "../ui/Button.svelte";
+    import Checkbox from "../ui/Checkbox.svelte";
     import IconButton from "../ui/IconButton.svelte";
     import AssetToolbar from "../ui/toolbars/AssetToolbar.svelte";
     import { type ModalOptions, modalsManager } from "./manager/ModalManager.svelte";
@@ -47,7 +48,10 @@
     let initialDataLoaded = $state(false);
 
     // Display options for Dropdown
-    const displayMenuItems: MenuItem[] = getImageGridDisplay();
+    const displayMenuItems: MenuItem[] = getImageGridDisplay({
+        showDates: showDatesContent,
+        showSimple: showSimpleContent
+    });
 
     function getDisplaySelectedId(): string | undefined {
         const map: Record<string, string> = {
@@ -194,6 +198,14 @@
         modalsManager.close(id);
     }
 </script>
+
+{#snippet showDatesContent()}
+    <Checkbox checked={viewSettings.showDates} onchange={() => viewSettings.toggleShowDates()} label="Show Dates" />
+{/snippet}
+
+{#snippet showSimpleContent()}
+    <Checkbox checked={viewSettings.simple} onchange={() => viewSettings.toggleShowSimple()} label="Simple" />
+{/snippet}
 
 <div class="add-photos-modal-container">
     {#if isLoading && !initialDataLoaded}

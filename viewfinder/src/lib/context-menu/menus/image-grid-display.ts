@@ -1,7 +1,13 @@
+import type { Snippet } from "svelte";
 import type { MenuItem } from "$lib/context-menu/types";
 import { viewSettings } from "$lib/states/index.svelte";
 
-export function getImageGridDisplay() {
+export interface ImageGridDisplayRenderers {
+    showDates?: Snippet<[]>;
+    showSimple?: Snippet<[]>;
+}
+
+export function getImageGridDisplay(renderers: ImageGridDisplayRenderers = {}): MenuItem[] {
     const baseItems: MenuItem[] = [
         {
             id: "display-custom",
@@ -35,7 +41,7 @@ export function getImageGridDisplay() {
             {
                 id: "display-show-dates",
                 label: "Show Dates",
-                iconName: viewSettings.showDates ? "check_box" : "check_box_outline_blank",
+                content: renderers.showDates,
                 action: () => {
                     viewSettings.toggleShowDates();
                 }
@@ -49,7 +55,7 @@ export function getImageGridDisplay() {
             {
                 id: "display-show-simple",
                 label: "Simple",
-                iconName: viewSettings.simple ? "check_box" : "check_box_outline_blank",
+                content: renderers.showSimple,
                 action: () => {
                     viewSettings.toggleShowSimple();
                 }
