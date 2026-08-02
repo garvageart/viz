@@ -4,7 +4,7 @@ import type { MaterialSymbol } from "$lib/types/MaterialSymbol";
 
 export type MenuItem = {
     id: string;
-    label: string;
+    label?: string;
     action?: (event: MouseEvent | KeyboardEvent) => void;
     disabled?: boolean;
     danger?: boolean;

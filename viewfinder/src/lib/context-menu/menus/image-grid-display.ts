@@ -37,7 +37,7 @@ export function getImageGridDisplay(renderers: ImageGridDisplayRenderers = {}): 
 
     if (viewSettings.current === "custom") {
         baseItems.push(
-            { id: "display-separator", label: "", separator: true },
+            { id: "display-separator", separator: true },
             {
                 id: "display-show-dates",
                 label: "Show Dates",
@@ -51,7 +51,7 @@ export function getImageGridDisplay(renderers: ImageGridDisplayRenderers = {}): 
 
     if (viewSettings.current === "grid") {
         baseItems.push(
-            { id: "display-separator", label: "", separator: true },
+            { id: "display-separator", separator: true },
             {
                 id: "display-show-simple",
                 label: "Simple",

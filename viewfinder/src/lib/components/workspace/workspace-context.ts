@@ -24,7 +24,7 @@ export function buildTabContextMenu(view: VizView, group: TabGroup, handlers: Ta
 
     if (view.menuItems && view.menuItems.length > 0) {
         items.push(...view.menuItems);
-        items.push({ id: "separator-custom", label: "", separator: true });
+        items.push({ id: "separator-custom", separator: true });
     }
 
     items.push(
@@ -35,7 +35,7 @@ export function buildTabContextMenu(view: VizView, group: TabGroup, handlers: Ta
             iconName: view.locked ? "lock_open" : "lock",
             danger: false
         },
-        { id: "separator-move", label: "", separator: true },
+        { id: "separator-move", separator: true },
         {
             id: "move-tab",
             label: "Move Tab",
@@ -63,7 +63,7 @@ export function buildTabContextMenu(view: VizView, group: TabGroup, handlers: Ta
                 }
             ]
         },
-        { id: "separator-lock", label: "", separator: true },
+        { id: "separator-lock", separator: true },
         {
             id: "close",
             label: "Close Tab",
@@ -85,7 +85,7 @@ export function buildTabContextMenu(view: VizView, group: TabGroup, handlers: Ta
             iconName: "close_fullscreen",
             disabled: view.locked || isLastTab || isOnlyTab
         },
-        { id: "separator1", label: "", separator: true },
+        { id: "separator1", separator: true },
         {
             id: "split-right",
             label: "Split Right",
@@ -100,7 +100,7 @@ export function buildTabContextMenu(view: VizView, group: TabGroup, handlers: Ta
             iconName: "horizontal_split",
             disabled: view.locked
         },
-        { id: "separator3", label: "", separator: true },
+        { id: "separator3", separator: true },
         {
             id: "close-all",
             label: "Close All Tabs in this Group",
@@ -171,7 +171,7 @@ export function buildPanelContextMenu(group: TabGroup, handlers?: TabHandlers): 
     ];
 
     if (handlers?.closePanel) {
-        items.push({ id: "sep-panel-close", label: "", separator: true });
+        items.push({ id: "sep-panel-close", separator: true });
         items.push({
             id: `close-panel-${group.id}`,
             label: "Close Panel",

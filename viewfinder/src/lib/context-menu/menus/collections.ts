@@ -100,7 +100,7 @@ export function createCollectionMenu(collection: Collection | undefined, opts: C
                 }
             }
         },
-        { separator: true, id: `sep-${collection.uid}`, label: "" },
+        { separator: true, id: `sep-${collection.uid}` },
         {
             id: `download-collection-${collection.uid}`,
             label: "Download",
@@ -173,7 +173,7 @@ export function createCollectionMenu(collection: Collection | undefined, opts: C
                 }
             }
         },
-        { separator: true, id: `sep-${collection.uid}`, label: "" },
+        { separator: true, id: `sep-${collection.uid}` },
         {
             id: `copylink-${collection.uid}`,
             label: "Copy link",

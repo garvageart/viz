@@ -69,7 +69,7 @@
 
     const menuItems: MenuItem[] = [
         buildWorkspaceItem(),
-        { id: "divider-1", label: "", separator: true },
+        { id: "divider-1", separator: true },
         { id: "photos", label: "Photos", iconName: "photo", action: () => goto("/photos") },
         {
             id: "collections",
@@ -77,7 +77,7 @@
             iconName: "photo_album",
             action: () => goto("/collections")
         },
-        { id: "divider-2", label: "", separator: true },
+        { id: "divider-2", separator: true },
         { id: "settings", label: "Settings", iconName: "settings", action: () => goto("/settings") },
         {
             id: "help",
@@ -100,7 +100,7 @@
 
     if (user.isAdmin) {
         menuItems.splice(4, 0, adminSettings);
-        menuItems.splice(4, 0, { id: "divider-admin", label: "", separator: true });
+        menuItems.splice(4, 0, { id: "divider-admin", separator: true });
     }
 </script>
 
