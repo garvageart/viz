@@ -11,7 +11,7 @@
 
 <script lang="ts">
     import { slide } from "svelte/transition";
-    import Calendar from "$lib/components/ui/Calendar.svelte";
+    import Calendar from "$lib/components/ui/DatePicker.svelte";
     import type { ImageFacets, ImageFilters } from "$lib/states/filter.svelte";
     import StarRating from "../image-tools/StarRating.svelte";
     import MaterialIcon from "../ui/MaterialIcon.svelte";

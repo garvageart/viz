@@ -5,7 +5,7 @@
         onApply: () => void;
         onCancel: () => void;
         onReset: () => void;
-        onAspectRatioChange: (ratio: number | null | "original") => void;
+        onAspectRatioChange: (ratio: number | "original" | undefined) => void;
         x?: number;
         y?: number;
         variant?: "floating" | "placed";
@@ -15,8 +15,8 @@
 
     let selectedRatioLabel = $state<string>("Free");
 
-    const ratios: Array<{ label: string; value: number | null | "original" }> = [
-        { label: "Free", value: null },
+    const ratios: Array<{ label: string; value: number | "original" | undefined }> = [
+        { label: "Free", value: undefined },
         { label: "Original", value: "original" },
         { label: "1:1", value: 1 },
         { label: "4:5", value: 4 / 5 },
@@ -25,7 +25,7 @@
         { label: "2:3", value: 2 / 3 }
     ];
 
-    function selectRatio(label: string, value: number | null | "original") {
+    function selectRatio(label: string, value: number | "original" | undefined) {
         selectedRatioLabel = label;
         onAspectRatioChange(value);
     }

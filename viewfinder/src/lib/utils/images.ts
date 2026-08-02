@@ -232,6 +232,13 @@ export interface TransformParams {
     bitDepth?: number;
 }
 
+export interface CropCoords {
+    x: number;
+    y: number;
+    width: number;
+    height: number;
+}
+
 export function parseTransformParams(pathStr: string): TransformParams {
     const url = new URL(pathStr, window.location.origin); // not really true, just there so the thing doesn't break
     const q = url.searchParams;

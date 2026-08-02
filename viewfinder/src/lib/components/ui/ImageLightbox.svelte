@@ -8,8 +8,9 @@
     import { hideAll } from "tippy.js";
     import { type ImageAsset, Label as ImageLabel, type ImageUpdate, getFullImagePath, updateImage } from "$lib/api";
     import { modalsManager } from "$lib/components/modals/manager/ModalManager.svelte";
-    import Calendar from "$lib/components/ui/Calendar.svelte";
+    import Calendar from "$lib/components/ui/DatePicker.svelte";
     import ExportPanel, { modalOptions as exportModalOptions } from "$lib/components/ui/panels/ExportPanel.svelte";
+    import MetadataPanel from "$lib/components/ui/panels/MetadataPanel.svelte";
     import { ApiError } from "$lib/errors/errors";
     import { LabelColours } from "$lib/images/constants";
     import { setRating } from "$lib/images/exif";
@@ -19,6 +20,7 @@
     import { toasts } from "$lib/toast-notifcations/toasts.svelte";
     import { downloadOriginalImageFile } from "$lib/utils/http";
     import {
+        type CropCoords,
         formatBytes,
         getFlashMode,
         getImageLabel,
@@ -113,17 +115,12 @@
 
     // Crop State
     let isCropping = $state(false);
-    let cropAspectRatio = $state<number | null>(null);
-    let currentCrop = $state<{
-        x: number;
-        y: number;
-        width: number;
-        height: number;
-    } | null>(null);
-    let cropMenuPosition = $state<{ x: number; y: number } | null>(null);
+    let cropAspectRatio = $state<number>();
+    let currentCrop = $state<CropCoords>();
+    let cropMenuPosition = $state<{ x: number; y: number }>();
 
     // Store crop edits (original/natural coordinates) to restore them when re-entering crop mode
-    let cropEdits = $state<Record<string, { x: number; y: number; width: number; height: number }>>({});
+    let cropEdits = $state<Record<string, CropCoords>>({});
 
     let overriddenImages = $state<Record<string, string>>({});
 
@@ -664,8 +661,8 @@
         } else {
             // Exit crop mode (cancel)
             isCropping = false;
-            currentCrop = null;
-            cropMenuPosition = null;
+            currentCrop = undefined;
+            cropMenuPosition = undefined;
             // Remove explicit image dimensions so .zoom-target loses its explicit
             // width/height constraint. This breaks the circular dependency where
             // imageDimensions -> .zoom-target explicit size -> <img> constrained ->
@@ -676,12 +673,12 @@
         }
     }
 
-    function handleAspectRatioChange(ratio: number | null | "original") {
+    function handleAspectRatioChange(ratio: number | "original" | undefined) {
         if (!imageEl || !currentCrop) {
             return;
         }
 
-        let targetRatio: number | null = null;
+        let targetRatio: number | undefined;
 
         if (ratio === "original") {
             if (lightboxImage?.width && lightboxImage?.height) {
@@ -789,8 +786,8 @@
 
         // Exit mode
         isCropping = false;
-        currentCrop = null;
-        cropMenuPosition = null;
+        currentCrop = undefined;
+        cropMenuPosition = undefined;
         zoomState.currentZoom = 1;
         zoomState.currentPositionX = 0;
         zoomState.currentPositionY = 0;
@@ -978,259 +975,6 @@
     const lightboxMaterialIconColour = "color: var(--viz-10-dark); fill: var(--viz-10-dark);";
 </script>
 
-{#snippet metadataEditor()}
-    <div class="metadata-editor" transition:slide={{ duration: 200, axis: "x" }}>
-        <div class="metadata-header">
-            <h3>Metadata</h3>
-            {#if isMobile}
-                <IconButton
-                    iconName="close"
-                    class="metadata-close-btn"
-                    title="Close"
-                    onclick={() => (showMetadata = false)}
-                />
-            {/if}
-        </div>
-        <div class="metadata-exif-box">
-            <div class="exif-cards">
-                <div class="exif-card">
-                    <div class="card-row main-row">
-                        <MaterialIcon iconName="image" class="exif-material-icon" />
-                        <div class="card-values">
-                            <div class="name-row">
-                                {#if editNameMode}
-                                    <InputText
-                                        bind:value={editingName}
-                                        class="value-big"
-                                        spellcheck="false"
-                                        autofocus={true}
-                                        onblur={() => {
-                                            if (editNameMode && lightboxImage) {
-                                                lightboxImage.name = editingName.trim();
-                                                editNameMode = false;
-                                            }
-                                        }}
-                                        onkeydown={(e) => {
-                                            if (e.key === "Enter") {
-                                                e.currentTarget.blur();
-                                            } else if (e.key === "Escape") {
-                                                editNameMode = false;
-                                            }
-                                        }}
-                                    />
-                                {:else}
-                                    <div
-                                        role="button"
-                                        tabindex="0"
-                                        title={lightboxImage?.name ||
-                                            lightboxImage?.image_metadata?.file_name ||
-                                            "Untitled"}
-                                        onclick={() => {
-                                            editingName =
-                                                lightboxImage?.name || lightboxImage?.image_metadata?.file_name || "";
-                                            editNameMode = true;
-                                        }}
-                                        onkeydown={() => {
-                                            editingName =
-                                                lightboxImage?.name || lightboxImage?.image_metadata?.file_name || "";
-                                            editNameMode = true;
-                                        }}
-                                        class="value-big"
-                                    >
-                                        {lightboxImage?.name || lightboxImage?.image_metadata?.file_name || "Untitled"}
-                                    </div>
-                                    <button
-                                        class="copy-filename-btn"
-                                        title="Copy filename"
-                                        onclick={() => {
-                                            const nameToCopy =
-                                                lightboxImage?.name || lightboxImage?.image_metadata?.file_name;
-                                            if (nameToCopy) {
-                                                copyToClipboard(nameToCopy);
-                                                toasts.add({
-                                                    type: "success",
-                                                    title: nameToCopy,
-                                                    message: "Filename copied to clipboard",
-                                                    timeout: 2000
-                                                });
-                                            }
-                                        }}
-                                    >
-                                        <MaterialIcon iconName="content_copy" class="exif-material-icon" />
-                                    </button>
-                                {/if}
-                                {#if lightboxImage?.image_metadata?.file_type}
-                                    <Badge variant="default" class="file-type-badge">
-                                        {lightboxImage.image_metadata.file_type.replace("image/", "").toUpperCase()}
-                                    </Badge>
-                                {/if}
-                            </div>
-                        </div>
-                    </div>
-                    <Calendar
-                        value={getTakenAt(lightboxImage!)}
-                        bind:open={calendarOpen}
-                        onchange={(d) => handleDateChange(d)}
-                    >
-                        {#snippet children()}
-                            <div class="card-row meta-row" role="button">
-                                <MaterialIcon iconName="calendar_today" class="exif-material-icon" />
-                                <div class="card-values">
-                                    <div class="value-big">
-                                        {getTakenAt(lightboxImage!).toLocaleDateString(undefined, {
-                                            year: "numeric",
-                                            month: "long",
-                                            day: "numeric"
-                                        })}
-                                    </div>
-                                    <div class="value-sub">
-                                        {getTakenAt(lightboxImage!).toLocaleTimeString(undefined, {
-                                            hour: "numeric",
-                                            minute: "numeric"
-                                        })}
-                                        {getTimezoneAbbreviation()}
-                                    </div>
-                                </div>
-                            </div>
-                        {/snippet}
-                    </Calendar>
-                </div>
-                <!-- Camera/Exposure card -->
-                <div class="exif-card">
-                    <div class="card-row main-row">
-                        <div class="card-values">
-                            {#if lightboxImage?.exif?.model && lightboxImage?.exif?.make}
-                                <div class="value-big">
-                                    {lightboxImage.exif.make}
-                                    {lightboxImage.exif.model.replace(new RegExp(`^${lightboxImage.exif.make} `), "")}
-                                </div>
-                            {:else}
-                                <div class="value-big">Unknown Camera</div>
-                            {/if}
-
-                            {#if lightboxImage?.exif?.lens_model}
-                                <div class="value-sub">
-                                    {lightboxImage.exif.lens_model}
-                                </div>
-                            {:else}
-                                <div class="value-sub">Unknown Lens Make</div>
-                            {/if}
-
-                            {#if lightboxImage?.exif?.focal_length}
-                                <div class="value-sub">
-                                    {lightboxImage.exif.focal_length}
-                                </div>
-                            {:else}
-                                <div class="value-sub">Unknown Focal Length</div>
-                            {/if}
-                        </div>
-                    </div>
-                </div>
-                <div class="exif-card-group">
-                    <div class="exif-card">
-                        <div class="card-row main-row">
-                            <MaterialIcon iconName="camera" class="exif-material-icon" />
-                            <div class="card-values">
-                                <div class="value-sub">
-                                    {lightboxImage?.exif?.f_number ?? lightboxImage?.exif?.aperture ?? "—"}
-                                </div>
-                                <div class="value-sub">
-                                    {lightboxImage?.exif?.exposure_time ?? "—"}
-                                </div>
-                            </div>
-                        </div>
-                        <div class="card-row meta-row">
-                            <MaterialIcon iconName="tune" class="exif-material-icon" />
-                            <div class="card-values">
-                                <div class="value-sub">
-                                    ISO {lightboxImage?.exif?.iso ?? "—"}
-                                </div>
-                                <div class="value-sub">
-                                    {lightboxImage?.exif?.exposure_value ?? "—"}
-                                </div>
-                            </div>
-                        </div>
-                        <div class="card-row meta-row">
-                            <MaterialIcon
-                                iconName="flash_on"
-                                fill={true}
-                                style="color: #FFC107; fill: #FFC107;"
-                                class="exif-material-icon"
-                            />
-                            <div class="card-values">
-                                <div class="value-sub">
-                                    Flash {getFlashMode(lightboxImage?.exif?.flash) ?? "—"}
-                                </div>
-                            </div>
-                        </div>
-                        {#if lightboxImage?.exif?.white_balance}
-                            <div class="card-row meta-row">
-                                <MaterialIcon iconName="light_mode" class="exif-material-icon" />
-                                <div class="card-values">
-                                    <div class="value-sub">
-                                        {getWhiteBalance(lightboxImage.exif.white_balance)}
-                                        {#if lightboxImage?.exif?.color_temperature}
-                                            &nbsp;· {lightboxImage.exif.color_temperature}K
-                                        {/if}
-                                    </div>
-                                </div>
-                            </div>
-                        {/if}
-                    </div>
-
-                    <div class="exif-card">
-                        <div class="card-row main-row">
-                            <div class="card-values">
-                                <div class="value-sub">
-                                    {lightboxImage?.width} x {lightboxImage?.height}
-                                </div>
-                            </div>
-                        </div>
-                        <div class="card-row main-row">
-                            <MaterialIcon iconName="aspect_ratio" class="exif-material-icon" />
-                            <div class="card-values">
-                                <div class="value-sub">
-                                    {Math.floor((lightboxImage?.width! * lightboxImage?.height!) / 1_000_000)} MP
-                                </div>
-                                <div class="value-sub">{formatFileSize()}</div>
-                            </div>
-                        </div>
-                        <div class="card-row meta-row">
-                            <MaterialIcon iconName="palette" class="exif-material-icon" />
-                            <div class="card-values">
-                                <div class="value-sub">
-                                    {lightboxImage?.image_metadata?.color_space ?? "—"}
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-            </div>
-            <div class="rating-container">
-                <ImageLabelViewer
-                    variant="compact"
-                    label={lightboxImage ? getImageLabel(lightboxImage) : null}
-                    onSelect={(selectedLabel) => {
-                        if (!lightboxImage) {
-                            return;
-                        }
-
-                        const entry = Object.entries(LabelColours).find(([_, colour]) => colour === selectedLabel);
-                        const labelToSend = entry ? (entry[0] as ImageLabel) : null;
-                        if (lightboxImage.image_metadata) {
-                            lightboxImage.image_metadata = {
-                                ...lightboxImage.image_metadata,
-                                label: labelToSend
-                            };
-                        }
-                    }}
-                />
-                <StarRating value={starRating} onChange={setImageRating} />
-            </div>
-        </div>
-    </div>
-{/snippet}
-
 {#snippet zoomStateDebug()}
     <div class="lightbox-debug-panel">
         <h3>Zoom & Loader State</h3>
@@ -1324,7 +1068,7 @@
             // In crop mode, clicking overlay closes the floating crop menu if open,
             // otherwise toggles crop mode
             if (cropMenuPosition) {
-                cropMenuPosition = null;
+                cropMenuPosition = undefined;
             } else {
                 toggleCropMode();
             }
@@ -1344,7 +1088,7 @@
                     if (isCropping) {
                         // Close floating crop menu if open, otherwise exit crop mode
                         if (cropMenuPosition) {
-                            cropMenuPosition = null;
+                            cropMenuPosition = undefined;
                         } else {
                             toggleCropMode();
                         }
@@ -1565,7 +1309,7 @@
                         onApply={handleCropApply}
                         onReset={handleCropReset}
                         onCancel={() => {
-                            cropMenuPosition = null;
+                            cropMenuPosition = undefined;
                         }}
                         onAspectRatioChange={handleAspectRatioChange}
                     />
@@ -1611,7 +1355,7 @@
                 />
             </div>
         {:else if showMetadata}
-            {@render metadataEditor()}
+            <MetadataPanel asset={lightboxImage!} bind:show={showMetadata} showCloseIcon={isMobile} {onImageUpdated} />
         {/if}
     </div>
 </Lightbox>
@@ -1778,98 +1522,6 @@
         pointer-events: auto;
     }
 
-    .metadata-editor {
-        background-color: var(--viz-surface-panel);
-        padding: var(--viz-spacing-std);
-        border-radius: var(--viz-border-radius-lg);
-        border-left: 1px solid var(--viz-border-subtle);
-        color: var(--viz-text-primary);
-        height: 100%;
-        width: auto;
-        max-width: 20vw;
-        min-width: 20vw;
-        pointer-events: auto;
-        box-sizing: border-box;
-        overflow-y: auto;
-    }
-
-    @media (max-width: 40rem) {
-        .metadata-editor {
-            position: fixed;
-            top: 0;
-            right: 0;
-            transform: none;
-            width: 95%;
-            max-width: none;
-            min-width: 0;
-            height: 100%;
-            border-radius: 0;
-            border-left: 1px solid var(--viz-border-subtle);
-            border-top: none;
-            z-index: 10000;
-            box-shadow: -4px 0 20px rgba(0, 0, 0, 0.3);
-        }
-    }
-
-    .metadata-header {
-        font-size: var(--viz-font-size-lg);
-        font-weight: 700;
-        color: var(--viz-text-primary);
-        display: flex;
-        align-items: center;
-        justify-content: space-between;
-        margin-bottom: var(--viz-spacing-sm);
-        padding-bottom: var(--viz-spacing-sm);
-        border-bottom: 1px solid var(--viz-border-subtle);
-        gap: 0.5em;
-    }
-
-    .metadata-exif-box {
-        display: block;
-    }
-
-    .exif-card-group {
-        display: flex;
-        gap: 0;
-    }
-
-    .exif-card-group > .exif-card:first-child {
-        border-right: none;
-        border-radius: var(--viz-border-radius-md) 0 0 var(--viz-border-radius-md);
-    }
-
-    .exif-card-group > .exif-card:last-child {
-        border-radius: 0 var(--viz-border-radius-md) var(--viz-border-radius-md) 0;
-    }
-
-    .exif-cards {
-        display: flex;
-        flex-direction: column;
-        gap: var(--viz-spacing-sm);
-    }
-
-    .exif-card {
-        background: var(--viz-surface-card);
-        color: var(--viz-text-primary);
-        box-sizing: border-box;
-        width: 100%;
-        padding: 0.55em 0.75em;
-        border-radius: var(--viz-border-radius-md);
-        border: 1px solid var(--viz-border-subtle);
-        display: flex;
-        flex-direction: column;
-        justify-content: center;
-        gap: 0.35em;
-    }
-
-    .card-row {
-        display: flex;
-        align-items: center;
-        gap: 0.6em;
-        /* Allow nested flex children to shrink when content is long */
-        min-width: 0;
-    }
-
     :global(.exif-material-icon) {
         display: inline-flex;
         align-items: center;
@@ -1877,116 +1529,6 @@
         line-height: 1;
         vertical-align: middle;
         font-size: 1.5em;
-    }
-
-    .card-values {
-        display: flex;
-        flex-direction: column;
-        gap: 0.1em;
-        justify-content: center;
-
-        /* Flex items inside a row often need a min-width:0 so long text can
-		   be ellipsized instead of forcing the container to overflow */
-        min-width: 0;
-        flex: 1 1 auto;
-    }
-
-    .name-row {
-        display: flex;
-        align-items: center;
-        gap: 0.4em;
-        min-width: 0;
-    }
-
-    .name-row > :global(.value-big) {
-        flex: 1 1 auto;
-        min-width: 0;
-        padding: 0.25rem 0;
-    }
-
-    .name-row > :global(.input-container) {
-        flex: 1 1 auto;
-        min-width: 0;
-        padding: 0;
-        width: auto;
-    }
-
-    .name-row :global(input.value-big) {
-        width: auto;
-        max-width: 100%;
-        field-sizing: content;
-        min-height: 0;
-        height: auto;
-        padding: 0.25rem 0;
-        background-color: var(--viz-surface-panel);
-        box-shadow: inset 0 -1px 0 0 var(--viz-primary);
-        border: none;
-    }
-
-    .copy-filename-btn {
-        display: inline-flex;
-        align-items: center;
-        justify-content: center;
-        background: none;
-        border: none;
-        cursor: pointer;
-        padding: 0.15em;
-        border-radius: var(--viz-border-radius-sm);
-        opacity: 0;
-        transition: opacity 120ms ease;
-        flex-shrink: 0;
-        color: var(--viz-text-muted);
-    }
-
-    .card-row:hover .copy-filename-btn {
-        opacity: 1;
-    }
-
-    .copy-filename-btn:hover {
-        color: var(--viz-text-primary);
-        background: var(--viz-surface-hover);
-    }
-
-    :global(.file-type-badge) {
-        display: inline-block;
-        font-size: var(--viz-font-size-sm);
-        font-weight: 600;
-        font-family: var(--viz-mono-font);
-        letter-spacing: 0.04em;
-        padding: 0.1em 0.45em;
-        border-radius: var(--viz-border-radius-sm);
-        background: var(--viz-surface-hover);
-        color: var(--viz-text-primary);
-        border: 1px solid var(--viz-border-subtle);
-    }
-
-    .value-sub {
-        font-size: var(--viz-font-size-std);
-        color: var(--viz-text-secondary);
-        white-space: nowrap;
-        overflow: hidden;
-        text-overflow: ellipsis;
-    }
-
-    :global(.value-big) {
-        font-size: var(--viz-font-size-std);
-        font-weight: 600;
-        letter-spacing: -0.01em;
-        color: var(--viz-text-primary);
-        white-space: nowrap;
-        overflow: hidden;
-        text-overflow: ellipsis;
-    }
-
-    .rating-container {
-        margin-top: var(--viz-spacing-std);
-        padding: var(--viz-spacing-sm) var(--viz-spacing-std) var(--viz-spacing-sm) var(--viz-spacing-std);
-        background: var(--viz-surface-card);
-        border-radius: var(--viz-border-radius-md);
-        display: flex;
-        align-items: center;
-        gap: 0.5em;
-        border: 1px solid var(--viz-border-subtle);
     }
 
     .zoom-target.can-pan {
