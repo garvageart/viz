@@ -11,7 +11,7 @@ import {
 import { SettingNames } from "$lib/components/settings/names";
 import type { MenuItem } from "$lib/context-menu/types";
 import { DbSettings } from "$lib/db/settings";
-import type { AssetGridView, AssetSort } from "$lib/types/asset";
+import type { AssetGridView } from "$lib/types/asset";
 import type { DownloadFile, UploadImage } from "$lib/upload/asset.svelte";
 import { VizCookieStorage, VizLocalStorage } from "$lib/utils/misc";
 
@@ -111,38 +111,6 @@ class DebugState {
 }
 export const debugState = new DebugState();
 export let debugMode = debugState.value;
-
-class SortState {
-    private storage = new VizLocalStorage<AssetSort>("sort");
-    private defaults: AssetSort = {
-        display: "cover",
-        group: {
-            by: "year",
-            order: "ASC"
-        },
-        by: "taken_at",
-        order: "DESC"
-    } as const;
-
-    value: AssetSort = $state(this.storage.get() ?? this.defaults);
-
-    constructor() {
-        if (typeof window !== "undefined") {
-            $effect.root(() => {
-                $effect(() => {
-                    this.save();
-                });
-            });
-        }
-    }
-
-    save() {
-        this.storage.set(this.value);
-    }
-}
-
-export const sortState = new SortState();
-export let sort = sortState.value;
 
 export class TableColumnSettings {
     storage = new VizLocalStorage<string[]>("tableColumnSettings");
@@ -251,7 +219,7 @@ class ThemeState {
     value: ThemeOption = $state(this.getInitialTheme());
     preferredTheme: ThemeOption = $state(this.getInitialPreference());
 
-    private media = typeof window !== "undefined" ? new MediaQuery("prefers-color-scheme: dark") : undefined;
+    private media = new MediaQuery("prefers-color-scheme: dark");
     systemPref = $derived((this.media?.current ?? false) ? "dark" : "light");
 
     resolved = $derived(this.value === "system" ? this.systemPref : this.value);

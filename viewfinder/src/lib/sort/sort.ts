@@ -1,7 +1,7 @@
 import { orderBy } from "lodash-es";
 import type { Collection, ImageAsset } from "$lib/api";
 import type { MenuItem } from "$lib/context-menu/types";
-import { sort } from "$lib/states/index.svelte";
+import type { SortState } from "$lib/states/sort.svelte";
 import type { AssetSort, AssetSortBy } from "$lib/types/asset";
 import { getTakenAt } from "$lib/utils/images";
 
@@ -67,8 +67,8 @@ export function sortIdFromKey(key: AssetSortBy): string {
     return sortIdByKey[key];
 }
 
-export function currentSortId(): string {
-    return sortIdByKey[sort.by];
+export function currentSortId(state: SortState): string {
+    return sortIdByKey[state.value.by];
 }
 
 export function sortByFromId(itemId: string): AssetSortBy | undefined {
@@ -80,14 +80,14 @@ export function sortByFromId(itemId: string): AssetSortBy | undefined {
     return undefined;
 }
 
-export function applySortSelection(itemId: string): AssetSortBy | undefined {
+export function applySortSelection(state: SortState, itemId: string): AssetSortBy | undefined {
     const by = sortByFromId(itemId);
     if (by) {
-        sort.by = by;
+        state.value.by = by;
     }
     return by;
 }
 
-export function toggleSortOrder() {
-    sort.order = sort.order === "ASC" ? "DESC" : "ASC";
+export function toggleSortOrder(state: SortState) {
+    state.value.order = state.value.order === "ASC" ? "DESC" : "ASC";
 }

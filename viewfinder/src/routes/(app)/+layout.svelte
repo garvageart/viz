@@ -1,14 +1,13 @@
 <script lang="ts">
     import { page } from "$app/state";
-    import { onMount, untrack } from "svelte";
+    import { onMount } from "svelte";
     import "$lib/components/panels/viz-panel.scss";
     import Header from "$lib/components/ui/Header.svelte";
     import LoadingSpinner from "$lib/components/ui/LoadingSpinner.svelte";
     import DownloadPanel from "$lib/components/ui/panels/DownloadPanel.svelte";
     import UploadPanel from "$lib/components/ui/panels/UploadPanel.svelte";
-    import { debugMode, download, isMobile, sortState, upload } from "$lib/states/index.svelte";
+    import { debugMode, download, isMobile, upload } from "$lib/states/index.svelte";
     import { registerReady } from "$lib/stores/appReady";
-    import { invalidateViz } from "$lib/views/views.svelte";
 
     let { children } = $props();
 
@@ -75,21 +74,6 @@
     function onPtrTransitionEnd() {
         isSpringingBack = false;
     }
-
-    $effect(() => {
-        // Watch sort state for changes
-        const { by, order } = sortState.value;
-        sortState.save();
-
-        if (debugMode) {
-            console.log("Sort state changed:", by, order);
-        }
-
-        // I forgot why the fuck this was put here
-        untrack(() => {
-            invalidateViz();
-        });
-    });
 </script>
 
 <div

@@ -45,8 +45,9 @@
     } from "$lib/photo-layout/index.js";
     import { applySortSelection, currentSortId, sortCollectionImages, sortOptions } from "$lib/sort/sort.js";
     import { filterManager } from "$lib/states/filter.svelte";
-    import { sort, viewSettings } from "$lib/states/index.svelte";
+    import { viewSettings } from "$lib/states/index.svelte";
     import { SelectionScopeNames, selectionManager } from "$lib/states/selection.svelte";
+    import { photosSort } from "$lib/states/sort.svelte";
     import { toasts } from "$lib/toast-notifcations/toasts.svelte.js";
     import { SUPPORTED_IMAGE_TYPES, SUPPORTED_RAW_FILES, type SupportedImageTypes } from "$lib/types/images";
     import UploadManager, { type ImageUploadSuccess } from "$lib/upload/manager.svelte";
@@ -96,7 +97,7 @@
 
     // Page state — sort client-side using persisted SortState
     let sortedFilteredImages = $derived.by(() => {
-        const sData = sortCollectionImages(filterManager.apply(galleryState.images), sort);
+        const sData = sortCollectionImages(filterManager.apply(galleryState.images), photosSort.value);
         return sData;
     });
 
@@ -187,8 +188,8 @@
         const res = await listImages({
             limit: galleryState.pagination.limit,
             page: nextPage,
-            sortBy: sort.by,
-            order: sort.order
+            sortBy: photosSort.value.by,
+            order: photosSort.value.order
         });
 
         if (res.status === 200) {
@@ -594,9 +595,9 @@
                         class="toolbar-button"
                         iconName="sort"
                         items={sortOptions}
-                        selectedItemId={currentSortId()}
+                        selectedItemId={currentSortId(photosSort)}
                         onSelect={(item) => {
-                            applySortSelection(item.id);
+                            applySortSelection(photosSort, item.id);
                             galleryState.images = [];
                             galleryState.pagination.page = -1;
                             galleryState.hasMore = true;
@@ -604,11 +605,11 @@
                         }}
                     />
                     <IconButton
-                        iconName={sort.order === "ASC" ? "arrow_upward" : "arrow_downward"}
+                        iconName={photosSort.value.order === "ASC" ? "arrow_upward" : "arrow_downward"}
                         class="toolbar-button"
-                        title={`Toggle Sort Order (${sort.order})`}
+                        title={`Toggle Sort Order (${photosSort.value.order})`}
                         onclick={() => {
-                            sort.order = sort.order === "ASC" ? "DESC" : "ASC";
+                            photosSort.value.order = photosSort.value.order === "ASC" ? "DESC" : "ASC";
                             galleryState.images = [];
                             galleryState.pagination.page = -1;
                             galleryState.hasMore = true;
@@ -679,6 +680,7 @@
                 data={galleryState.images}
                 view={viewSettings.current}
                 assetSnippet={imageCard}
+                sortState={photosSort}
                 customSnippet={justifiedGrid}
                 {scopeId}
                 assetDblClick={(

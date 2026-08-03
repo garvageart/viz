@@ -28,8 +28,9 @@
     import { DragData } from "$lib/drag-drop/data";
     import { sortCollections } from "$lib/sort/sort";
     import { filterManager } from "$lib/states/filter.svelte";
-    import { isLayoutPage, sort } from "$lib/states/index.svelte";
+    import { isLayoutPage } from "$lib/states/index.svelte";
     import { SelectionScopeNames, selectionManager } from "$lib/states/selection.svelte";
+    import { collectionsSort } from "$lib/states/sort.svelte";
     import { toasts } from "$lib/toast-notifcations/toasts.svelte";
     import type { AssetGridArray } from "$lib/types/asset";
     import type { PageProps } from "./$types";
@@ -52,7 +53,7 @@
     let listOfCollectionsData = $derived(data?.items ?? []);
 
     let shouldUpdate = $derived(!!data?.next);
-    let displayData = $derived(sortCollections(listOfCollectionsData, sort));
+    let displayData = $derived(sortCollections(listOfCollectionsData, collectionsSort.value));
 
     let fadeOpacity = false;
     let toolbarOpacity = $state(1);
@@ -388,6 +389,7 @@
         {pagination}
         {noAssetsSnippet}
         {toolbarSnippet}
+        sortState={collectionsSort}
         toolbarProps={{
             style: "justify-content: space-between; gap: 0.5rem;"
         }}

@@ -8,8 +8,9 @@
     import "tippy.js/dist/tippy.css";
     import { type ImageAsset, getFullImagePath } from "$lib/api";
     import { PhotoGridVirtualizer } from "$lib/components/virtualizer/PhotoGridVirtualizer.svelte.js";
-    import { debugMode, isLayoutPage, isMobile, sort, tableColumnSettings } from "$lib/states/index.svelte";
+    import { debugMode, isLayoutPage, isMobile, tableColumnSettings } from "$lib/states/index.svelte";
     import { selectionManager } from "$lib/states/selection.svelte";
+    import { type SortState, photosSort } from "$lib/states/sort.svelte";
     import type { AssetGridArray, AssetGridView, AssetSortBy } from "$lib/types/asset";
     import type { CardVisualState, SvelteSnippet } from "$lib/types/snippet";
     import { tryParseDate } from "$lib/utils/dates";
@@ -49,6 +50,8 @@
         /** Unique identifier for selection state management */
         scopeId?: string;
         disabledUids?: Set<string>;
+        /** Sort state that drives display mode and table-header sorting */
+        sortState?: SortState;
     }
 
     let {
@@ -69,7 +72,8 @@
         columns = $bindable(),
         table = $bindable(),
         scopeId = "default",
-        disabledUids = new Set()
+        disabledUids = new Set(),
+        sortState = photosSort
     }: AssetGridProps<T> = $props();
 
     // Selection Management
@@ -90,7 +94,7 @@
     let allAssetsData = $derived(data);
 
     // Compute grid layout parameters
-    let isListView = $derived(view === "list" || sort.display === "list");
+    let isListView = $derived(view === "list" || sortState.value.display === "list");
 
     // TODO: pass this in as configuration perhaps?
     let gridItemWidth = $derived(view === "custom" ? 352 : 270);
@@ -280,7 +284,7 @@
     $effect(() => {
         const _data = data;
         const _view = view;
-        const _sortDisplay = sort.display;
+        const _sortDisplay = sortState.value.display;
 
         if (assetGridDisplayEl) {
             untrack(() => {
@@ -982,17 +986,17 @@
                         <th>
                             <button
                                 onclick={() => {
-                                    if (sort.by === key) {
-                                        sort.order = sort.order === "ASC" ? "DESC" : "ASC";
+                                    if (sortState.value.by === key) {
+                                        sortState.value.order = sortState.value.order === "ASC" ? "DESC" : "ASC";
                                     } else {
-                                        sort.by = key as AssetSortBy;
+                                        sortState.value.by = key as AssetSortBy;
                                     }
                                 }}
                             >
                                 <span>{snakeToTitle(key)}</span>
-                                <span class="sort-icon" class:active={sort.by === key}>
+                                <span class="sort-icon" class:active={sortState.value.by === key}>
                                     <MaterialIcon
-                                        iconName={sort.by === key && sort.order === "ASC"
+                                        iconName={sortState.value.by === key && sortState.value.order === "ASC"
                                             ? "arrow_upward"
                                             : "arrow_downward"}
                                     />

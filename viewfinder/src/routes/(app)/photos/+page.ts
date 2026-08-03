@@ -1,5 +1,5 @@
 import { listImages } from "$lib/api";
-import { sort } from "$lib/states/index.svelte";
+import { photosSort } from "$lib/states/sort.svelte";
 import { sendVizAPIRequest } from "$lib/utils/http";
 import type { PageLoad } from "./$types";
 
@@ -8,8 +8,8 @@ export const load: PageLoad = async () => {
         listImages({
             limit: 100,
             page: 0,
-            sortBy: sort.by,
-            order: sort.order
+            sortBy: photosSort.value.by,
+            order: photosSort.value.order
         }),
         "Failed to load images"
     );

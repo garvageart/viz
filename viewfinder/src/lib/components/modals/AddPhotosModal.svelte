@@ -13,8 +13,9 @@
     } from "$lib/photo-layout";
     import { applySortSelection, currentSortId, sortOptions, toggleSortOrder } from "$lib/sort/sort";
     import { filterManager } from "$lib/states/filter.svelte";
-    import { sort, viewSettings } from "$lib/states/index.svelte";
+    import { viewSettings } from "$lib/states/index.svelte";
     import { selectionManager } from "$lib/states/selection.svelte";
+    import { photosSort } from "$lib/states/sort.svelte";
     import { toasts } from "$lib/toast-notifcations/toasts.svelte";
     import { invalidateViz } from "$lib/views/views.svelte";
     import Dropdown from "../context-menus/Dropdown.svelte";
@@ -85,8 +86,8 @@
             const imagesRes = await listImages({
                 limit: 100,
                 page: 0,
-                sortBy: sort.by,
-                order: sort.order
+                sortBy: photosSort.value.by,
+                order: photosSort.value.order
             });
 
             if (imagesRes.status === 200) {
@@ -133,8 +134,8 @@
             const res = await listImages({
                 limit: galleryState.pagination.limit,
                 page: nextPage,
-                sortBy: sort.by,
-                order: sort.order
+                sortBy: photosSort.value.by,
+                order: photosSort.value.order
             });
 
             if (res.status === 200) {
@@ -222,9 +223,9 @@
                         class="toolbar-button"
                         iconName="sort"
                         items={sortOptions}
-                        selectedItemId={currentSortId()}
+                        selectedItemId={currentSortId(photosSort)}
                         onSelect={(item) => {
-                            applySortSelection(item.id);
+                            applySortSelection(photosSort, item.id);
                             galleryState.images = [];
                             galleryState.pagination.page = -1;
                             galleryState.hasMore = true;
@@ -232,11 +233,11 @@
                         }}
                     />
                     <IconButton
-                        iconName={sort.order === "ASC" ? "arrow_upward" : "arrow_downward"}
+                        iconName={photosSort.value.order === "ASC" ? "arrow_upward" : "arrow_downward"}
                         class="toolbar-button"
-                        title={`Toggle Sort Order (${sort.order})`}
+                        title={`Toggle Sort Order (${photosSort.value.order})`}
                         onclick={() => {
-                            toggleSortOrder();
+                            toggleSortOrder(photosSort);
                             galleryState.images = [];
                             galleryState.pagination.page = -1;
                             galleryState.hasMore = true;

@@ -67,8 +67,9 @@
     } from "$lib/photo-layout/index.js";
     import { sortCollectionImages } from "$lib/sort/sort.js";
     import { filterManager } from "$lib/states/filter.svelte";
-    import { debugMode, isLayoutPage, sort, viewSettings } from "$lib/states/index.svelte";
+    import { debugMode, isLayoutPage, viewSettings } from "$lib/states/index.svelte";
     import { SelectionScopeNames, selectionManager } from "$lib/states/selection.svelte";
+    import { collectionDetailSort } from "$lib/states/sort.svelte";
     import { toasts } from "$lib/toast-notifcations/toasts.svelte.js";
     import type { AssetGridArray } from "$lib/types/asset.js";
     import { SUPPORTED_IMAGE_TYPES, SUPPORTED_RAW_FILES, type SupportedImageTypes } from "$lib/types/images";
@@ -113,6 +114,29 @@
     let collectionState = $derived(new ImagePaginationState(data?.images, data?.image_count));
     let isPaginating = $state(false);
 
+    // Refetch from page 0 when the collection sort changes so pagination stays
+    // consistent with the server-sorted continuation (skips the initial mount
+    // and identical hydrated values).
+    let prevSortKey: string | null = null;
+    $effect(() => {
+        const sortKey = `${collectionDetailSort.value.by}:${collectionDetailSort.value.order}`;
+        if (prevSortKey === null) {
+            prevSortKey = sortKey;
+            return;
+        }
+        if (sortKey === prevSortKey) {
+            return;
+        }
+        prevSortKey = sortKey;
+
+        untrack(() => {
+            collectionState.images = [];
+            collectionState.pagination.page = -1;
+            collectionState.hasMore = true;
+            paginate();
+        });
+    });
+
     // Compute image facet values (cameras, lenses, tags, labels, ranges) from the
     // full loaded image set so the filter panel always has values to offer.
     $effect(() => {
@@ -134,8 +158,8 @@
         const res = await listCollectionImages(data.uid, {
             limit: collectionState.pagination.limit,
             page: nextPage,
-            sortBy: sort.by,
-            order: sort.order
+            sortBy: collectionDetailSort.value.by,
+            order: collectionDetailSort.value.order
         });
 
         if (res.status === 200) {
@@ -288,8 +312,8 @@
     // Display Data
     let displayData = $derived(
         searchValue.trim()
-            ? sortCollectionImages(searchData, sort)
-            : sortCollectionImages(filterManager.apply(collectionState.images), sort)
+            ? sortCollectionImages(searchData, collectionDetailSort.value)
+            : sortCollectionImages(filterManager.apply(collectionState.images), collectionDetailSort.value)
     );
 
     // Grid props
@@ -1021,6 +1045,7 @@
         {noAssetsSnippet}
         {selectionToolbarSnippet}
         {toolbarSnippet}
+        sortState={collectionDetailSort}
         toolbarProps={{
             style: "justify-content: space-between; gap: 0.5rem;"
         }}

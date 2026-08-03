@@ -5,8 +5,8 @@
     import type { HTMLButtonAttributes } from "svelte/elements";
     import type { MenuItem } from "$lib/context-menu/types";
     import { applySortSelection, currentSortId, sortOptions, toggleSortOrder } from "$lib/sort/sort";
-    import { sort } from "$lib/states/index.svelte";
     import { selectionManager } from "$lib/states/selection.svelte";
+    import { type SortState, photosSort } from "$lib/states/sort.svelte";
     import type { MaterialSymbol } from "$lib/types/MaterialSymbol";
     import type { IPagination } from "$lib/types/asset";
     import Dropdown from "../context-menus/Dropdown.svelte";
@@ -24,6 +24,7 @@
         showToolbars?: boolean;
         toolbarProps?: Omit<ComponentProps<typeof AssetToolbar>, "children">;
         selectionToolbarProps?: Omit<ComponentProps<typeof AssetToolbar>, "children">;
+        sortState?: SortState;
     };
 
     type ToolbarButtonProps = {
@@ -45,7 +46,8 @@
         showToolbars = $bindable(true),
         toolbarProps,
         selectionToolbarSnippet,
-        selectionToolbarProps
+        selectionToolbarProps,
+        sortState = photosSort
     }: Props = $props();
 
     let assetGridArray: typeof grid.assetGridArray = $state();
@@ -129,17 +131,17 @@
                     title: "Sort by",
                     dropdown: {
                         items: sortOptions,
-                        selectedItemId: currentSortId(),
+                        selectedItemId: currentSortId(sortState),
                         onSelect: (item) => {
-                            applySortSelection(item.id);
+                            applySortSelection(sortState, item.id);
                         }
                     }
                 })}
                 <IconButton
-                    iconName={sort.order === "ASC" ? "arrow_upward" : "arrow_downward"}
+                    iconName={sortState.value.order === "ASC" ? "arrow_upward" : "arrow_downward"}
                     class="toolbar-button"
-                    title="Toggle Sort Order ({sort.order})"
-                    onclick={toggleSortOrder}
+                    title="Toggle Sort Order ({sortState.value.order})"
+                    onclick={() => toggleSortOrder(sortState)}
                 />
                 {#if dev && grid.view === "grid"}
                     {@render toolbarButton({
@@ -166,7 +168,7 @@
         {/if}
     </div>
 {:else}
-    <AssetGrid {...grid} bind:assetGridArray bind:data={gridData} bind:columnCount />
+    <AssetGrid {...grid} {sortState} bind:assetGridArray bind:data={gridData} bind:columnCount />
 {/if}
 
 <style lang="scss">
