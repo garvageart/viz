@@ -117,6 +117,26 @@ Layout components must strictly adhere to the semantic surface elevation hierarc
 * **`--viz-secondary`**: Supporting brand colour (defaults to `primary` hue + 30°).
 * **`--viz-accent`**: Feature pop colour (defaults to `primary` hue − 30°).
 
+### Accent & Secondary Usage Rules
+
+`--viz-secondary` and `--viz-accent` are decorative, non-semantic brand colours. They are only ever used at small surface area, where a contrast miss is visually harmless — neither token participates in the build-time WCAG audit and neither is registered for theme transitions.
+
+**Where `--viz-secondary` should be used:**
+* The active or filled portion of quantitative indicators (progress fills, range and scale fills). It expresses "supporting, in-progress" state.
+* Subtle supporting accents paired with `--viz-primary`, never more prominent than the primary element it accompanies.
+
+**Where `--viz-accent` should be used:**
+* Thin decorative feature marks (1–3px), brand flourishes, and flourish details on tiles or surfaces.
+* Transient, non-critical loading indicators (spinners, pull-to-refresh).
+
+**Where they should never be used:**
+* Keyboard focus and focus-visible outlines — these must use `--viz-primary` (with the surface-base double ring).
+* Hairline section dividers and structural borders — these must use `--viz-border-subtle`.
+* Status signalling — error, warning, success, and info states must use the status tokens and `status-tint` mixin.
+* Solid background fills with text on top (buttons, badges, containers) — use `--viz-primary` or the status tint strategy, where text contrast is verified.
+* Text, labels, metadata, and informational numeric values (counts, ranges, stats) — use the `--viz-text-*` tokens. Accent and secondary must never carry readable information; their use is purely decorative.
+* Large background surfaces — use the `--viz-surface-*` tokens.
+
 ### Status Accents & Tint Strategy
 * **Error**: `var(--viz-error-color)` (`#ef4444`)
 * **Warning**: `var(--viz-warning-color)` (`#facc15`)

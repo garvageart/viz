@@ -331,6 +331,17 @@
         color: var(--viz-border-subtle);
         font-style: italic;
         font-size: 0.85rem;
+        position: relative;
+
+        &::after {
+            content: "";
+            display: block;
+            width: 1.5rem;
+            height: 2px;
+            margin: var(--viz-spacing-sm) auto 0;
+            background-color: var(--viz-accent);
+            opacity: 0.5;
+        }
     }
 
     .drop-overlay {

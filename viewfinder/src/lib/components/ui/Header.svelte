@@ -152,7 +152,7 @@
             <MaterialIcon iconName="expand_more" weight={300} size="1em" style="margin-left: 0.15em;" />
         </button>
         <AppMenu bind:isOpen={openAppMenu} bind:anchor={appMenuButton} />
-        <div class="header-separator menu"></div>
+        <div class="header-separator"></div>
         {#if isLayoutPage()}
             <Dropdown iconName="view_quilt" items={createWorkspaceViewsMenu()} />
         {:else}
@@ -165,6 +165,7 @@
         {/if}
         <div class="header-separator"></div>
         <div class="icon-group-container">
+            <!-- FIXME: This is bad and invalid HTML. Maybe create a Link button instead? -->
             <a class="page-nav-btn" href="/photos">
                 <IconButton class="header-button" iconName="imagesmode" title="Go to Photos" />
             </a>
@@ -279,7 +280,7 @@
         gap: var(--viz-spacing-xxs);
         background: transparent;
         border: none;
-        border-bottom: 2px solid transparent;
+        border-bottom: 2px solid var(--viz-accent);
         color: var(--viz-text-primary);
         cursor: pointer;
         padding: var(--viz-spacing-xxs) 0;
@@ -311,10 +312,6 @@
         background-color: var(--viz-border-subtle);
         height: 50%;
         width: 1px;
-
-        &.menu {
-            background-color: var(--viz-accent);
-        }
     }
 
     .icon-group-container {
@@ -328,6 +325,11 @@
         justify-content: center;
         align-items: center;
         text-decoration: none;
+
+        &:focus,
+        &:focus-visible {
+            outline: 1px solid var(--viz-primary);
+        }
     }
 
     .center-container {

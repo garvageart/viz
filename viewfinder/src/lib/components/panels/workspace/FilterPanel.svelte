@@ -31,7 +31,7 @@
             <IconButton
                 iconName={filterManager.keepFilters ? "keep" : "keep_off"}
                 variant="mini"
-                title="Keep Filters while browsing"
+                title="Keep filters while browsing"
                 style={filterManager.keepFilters ? "background-color: var(--viz-surface-hover);" : ""}
                 onclick={() => filterManager.toggleKeepFilters()}
             />
@@ -59,13 +59,13 @@
         height: 100%;
         overflow-y: scroll;
         overflow-x: hidden;
-        padding: var(--viz-spacing-sm);
+        padding: 0 var(--viz-spacing-sm);
         color: var(--viz-text-primary);
         position: relative;
     }
 
     .filter-panel-footer {
-        border-top: 1px solid var(--viz-surface-hover);
+        border-top: var(--viz-border-thin);
         position: relative;
     }
 

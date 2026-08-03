@@ -303,5 +303,16 @@
         padding: var(--viz-spacing-xxl);
         text-align: center;
         color: var(--viz-text-secondary);
+        position: relative;
+
+        &::after {
+            content: "";
+            display: block;
+            width: 1.5rem;
+            height: 2px;
+            margin: var(--viz-spacing-sm) auto 0;
+            background-color: var(--viz-accent);
+            opacity: 0.5;
+        }
     }
 </style>

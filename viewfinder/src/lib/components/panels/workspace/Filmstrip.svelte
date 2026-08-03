@@ -406,7 +406,7 @@
             display: flex;
             align-items: center;
             justify-content: center;
-            color: var(--viz-border-subtle);
+            color: color-mix(in srgb, var(--viz-accent) 35%, var(--viz-border-subtle));
             background-color: var(--viz-surface-card);
             border-radius: var(--viz-border-radius-md);
             padding: var(--viz-spacing-xs);
