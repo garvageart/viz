@@ -5,6 +5,14 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.28.1] - 2026-08-03
+
+* refactor(ui): drop SvelteSnippet alias in favour of svelte's Snippet type (2c63e429)
+* refactor(ui): trim ImageLightbox unused imports and debug panel style (81914853)
+* style(ui): refine accent borders on panel and header link (2b4cd1b9)
+* feat(ui): add small checkbox variant for context menu items (39cdb90e)
+* feat(ui): independent per-section sort state backed by IndexedDB (27778f15)
+
 ## [0.28.0] - 2026-08-03
 
 * docs: add user settings planning document (d3056810)
