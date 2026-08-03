@@ -83,6 +83,17 @@
     let galleryState = $derived(new ImagePaginationState(data));
     let isPaginating = $state(false);
 
+    // Compute image facet values (cameras, lenses, tags, labels, ranges) from the
+    // full loaded image set so the filter panel always has values to offer.
+    $effect(() => {
+        const scope = filterManager.activeScope;
+        if (!scope || !scope.isImageScope()) {
+            return;
+        }
+        void galleryState.images.length;
+        scope.updateFacets(galleryState.images);
+    });
+
     // Page state — sort client-side using persisted SortState
     let sortedFilteredImages = $derived.by(() => {
         const sData = sortCollectionImages(filterManager.apply(galleryState.images), sort);

@@ -113,6 +113,17 @@
     let collectionState = $derived(new ImagePaginationState(data?.images, data?.image_count));
     let isPaginating = $state(false);
 
+    // Compute image facet values (cameras, lenses, tags, labels, ranges) from the
+    // full loaded image set so the filter panel always has values to offer.
+    $effect(() => {
+        const scope = filterManager.activeScope;
+        if (!scope || !scope.isImageScope()) {
+            return;
+        }
+        void collectionState.images.length;
+        scope.updateFacets(collectionState.images);
+    });
+
     async function paginate() {
         if (isPaginating || !collectionState.hasMore) {
             return;

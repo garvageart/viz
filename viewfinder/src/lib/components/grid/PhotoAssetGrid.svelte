@@ -91,11 +91,6 @@
         const source = allData || data;
         if (source) {
             selection.setSource(source);
-            // Filter scope type is now derived from selection scope automatically,
-            // so no manual setActiveScopeType() needed.
-            if (filterManager.activeScope && filterManager.activeScope.isImageScope()) {
-                filterManager.activeScope.updateFacets(source);
-            }
         }
     });
 
@@ -1383,8 +1378,7 @@
         position: relative;
         height: 100%;
         width: 100%;
-        padding: 0 var(--viz-spacing-xxl);
-        margin: var(--viz-spacing-xxl) auto;
+        margin: inherit auto;
         overflow: hidden;
         flex: 1;
         display: flex;
