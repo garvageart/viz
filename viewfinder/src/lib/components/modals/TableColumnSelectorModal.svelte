@@ -2,6 +2,7 @@
     import { tableColumnSettings } from "$lib/states/index.svelte";
     import type { MaterialSymbol } from "$lib/types/MaterialSymbol";
     import { snakeToSentence } from "$lib/utils/strings";
+    import Checkbox from "../ui/Checkbox.svelte";
     import MaterialIcon from "../ui/MaterialIcon.svelte";
 
     interface Props {
@@ -131,8 +132,52 @@
     }
 </script>
 
+{#snippet columnRow(key: string, active: boolean, index: number)}
+    <li class="column-item" class:is-active={active}>
+        <div class="item-content">
+            <Checkbox
+                checked={active}
+                onchange={() => {
+                    toggleColumn(key);
+                }}
+            />
+            <div class="icon-wrapper">
+                <MaterialIcon iconName={getIconForKey(key)} weight={300} size="1.5rem" />
+            </div>
+            <span class="column-name" title={snakeToSentence(key)}>{snakeToSentence(key)}</span>
+        </div>
+
+        {#if active}
+            <div class="reorder-actions">
+                <button
+                    class="reorder-btn"
+                    disabled={index === 0}
+                    onclick={() => {
+                        moveColumn(index, -1);
+                    }}
+                    title="Move up"
+                    aria-label="Move column up"
+                >
+                    <MaterialIcon iconName="keyboard_arrow_up" weight={300} size="1.1rem" />
+                </button>
+                <button
+                    class="reorder-btn"
+                    disabled={index === selectedColumns.length - 1}
+                    onclick={() => {
+                        moveColumn(index, 1);
+                    }}
+                    title="Move down"
+                    aria-label="Move column down"
+                >
+                    <MaterialIcon iconName="keyboard_arrow_down" weight={300} size="1.1rem" />
+                </button>
+            </div>
+        {/if}
+    </li>
+{/snippet}
+
 <div id="viz-column-selector-modal">
-    <p class="subtitle">Select and re-order columns to display in the list view</p>
+    <span class="subtitle">Select and re-order columns to display in the list view</span>
 
     <div class="selector-content">
         <div class="section-container">
@@ -142,45 +187,7 @@
             {:else}
                 <ul class="column-list">
                     {#each selectedColumns as key, index (key)}
-                        <li class="column-item is-active">
-                            <label class="item-label">
-                                <input
-                                    type="checkbox"
-                                    checked={true}
-                                    onchange={() => {
-                                        toggleColumn(key);
-                                    }}
-                                />
-                                <span class="checkbox-custom"></span>
-                                <div class="icon-wrapper">
-                                    <MaterialIcon iconName={getIconForKey(key)} weight={300} size="1.5rem" />
-                                </div>
-                                <span class="column-name">{snakeToSentence(key)}</span>
-                            </label>
-
-                            <div class="reorder-actions">
-                                <button
-                                    class="reorder-btn"
-                                    disabled={index === 0}
-                                    onclick={() => {
-                                        moveColumn(index, -1);
-                                    }}
-                                    title="Move up"
-                                >
-                                    <MaterialIcon iconName="keyboard_arrow_up" weight={300} size="1.1rem" />
-                                </button>
-                                <button
-                                    class="reorder-btn"
-                                    disabled={index === selectedColumns.length - 1}
-                                    onclick={() => {
-                                        moveColumn(index, 1);
-                                    }}
-                                    title="Move down"
-                                >
-                                    <MaterialIcon iconName="keyboard_arrow_down" weight={300} size="1.1rem" />
-                                </button>
-                            </div>
-                        </li>
+                        {@render columnRow(key, true, index)}
                     {/each}
                 </ul>
             {/if}
@@ -192,23 +199,8 @@
                 <div class="empty-state">All columns are currently active.</div>
             {:else}
                 <ul class="column-list">
-                    {#each inactiveColumns as key (key)}
-                        <li class="column-item">
-                            <label class="item-label">
-                                <input
-                                    type="checkbox"
-                                    checked={false}
-                                    onchange={() => {
-                                        toggleColumn(key);
-                                    }}
-                                />
-                                <span class="checkbox-custom"></span>
-                                <div class="icon-wrapper">
-                                    <MaterialIcon iconName={getIconForKey(key)} weight={300} size="1.5rem" />
-                                </div>
-                                <span class="column-name">{snakeToSentence(key)}</span>
-                            </label>
-                        </li>
+                    {#each inactiveColumns as key, index (key)}
+                        {@render columnRow(key, false, index)}
                     {/each}
                 </ul>
             {/if}
@@ -219,7 +211,6 @@
 <style lang="scss">
     #viz-column-selector-modal {
         width: 100%;
-        max-width: 650px;
         margin: 0 auto;
         color: var(--viz-text-primary);
         font-family: var(--viz-display-font), sans-serif;
@@ -259,14 +250,15 @@
     }
 
     .section-title {
-        font-size: var(--viz-font-size-std);
-        text-transform: uppercase;
-        letter-spacing: 0.05em;
-        color: var(--viz-text-secondary);
+        font-size: var(--viz-font-size-lg);
         font-weight: 700;
         margin: 0;
-        padding-bottom: var(--viz-spacing-xs);
+        padding: var(--viz-spacing-sm) 0;
         border-bottom: var(--viz-border-thin);
+        position: sticky;
+        top: 0;
+        background: var(--viz-card-bg, var(--viz-surface-base));
+        z-index: 1;
     }
 
     .empty-state {
@@ -292,79 +284,46 @@
         display: flex;
         align-items: center;
         justify-content: space-between;
+        gap: var(--viz-spacing-sm);
         background: var(--viz-surface-card);
-        padding: var(--viz-spacing-sm) var(--viz-spacing-md);
+        padding: var(--viz-padding-sm) var(--viz-spacing-md);
         border-radius: var(--viz-border-radius-md);
-        border: 1px solid var(--viz-surface-panel);
+        border: var(--viz-border-thin);
         transition:
             border-color 0.2s,
             background-color 0.2s;
 
         &:hover {
-            border-color: var(--viz-border-subtle);
+            border-color: var(--viz-border-strong);
             background: var(--viz-surface-panel);
         }
 
         &.is-active {
-            border-color: color-mix(in srgb, var(--viz-primary) 30%, var(--viz-surface-panel));
+            border-color: var(--viz-primary);
+            background: var(--viz-surface-panel);
         }
     }
 
-    .item-label {
+    .item-content {
         display: flex;
         align-items: center;
         gap: var(--viz-spacing-md);
-        cursor: pointer;
         flex-grow: 1;
-        user-select: none;
-
-        input[type="checkbox"] {
-            display: none;
-        }
-
-        .checkbox-custom {
-            width: 1.125rem;
-            height: 1.125rem;
-            border: var(--viz-border-thin);
-            border-radius: var(--viz-border-radius-sm);
-            background-color: var(--viz-surface-panel);
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            transition:
-                background-color 0.2s,
-                border-color 0.2s;
-
-            &::after {
-                content: "";
-                width: 0.3rem;
-                height: 0.5rem;
-                border: solid white;
-                border-width: 0 2px 2px 0;
-                transform: rotate(45deg) scale(0);
-                transition: transform 0.15s ease;
-                margin-bottom: 2px;
-            }
-        }
-
-        input[type="checkbox"]:checked + .checkbox-custom {
-            background-color: var(--viz-primary);
-            border-color: var(--viz-primary);
-
-            &::after {
-                transform: rotate(45deg) scale(1);
-            }
-        }
+        min-width: 0;
 
         .icon-wrapper {
             display: flex;
             align-items: center;
+            flex-shrink: 0;
             color: var(--viz-text-secondary);
         }
 
         .column-name {
             font-size: var(--viz-font-size-lg);
             font-weight: 500;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
         }
     }
 
@@ -372,6 +331,7 @@
         display: flex;
         align-items: center;
         gap: var(--viz-spacing-xs);
+        flex-shrink: 0;
     }
 
     .reorder-btn {
@@ -395,8 +355,16 @@
         }
 
         &:disabled {
-            color: var(--viz-surface-panel);
+            color: var(--viz-text-muted);
             cursor: not-allowed;
+            opacity: 0.5;
+        }
+
+        &:focus-visible {
+            outline: none;
+            box-shadow:
+                0 0 0 2px var(--viz-surface-base),
+                0 0 0 4px var(--viz-primary);
         }
     }
 </style>
