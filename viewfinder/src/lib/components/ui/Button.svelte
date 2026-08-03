@@ -13,6 +13,10 @@
     }
 
     let { children, hoverColor, variant = "primary", element = $bindable(), ...props }: Props = $props();
+
+    let buttonStyle = $derived(
+        hoverColor ? `${props.style ? `${props.style}; ` : ""}--button-hover-bg: ${hoverColor}` : props.style
+    );
 </script>
 
 <button
@@ -20,7 +24,7 @@
     bind:this={element}
     class="{variant} {props.class || ''}"
     aria-label={props["aria-label"] ?? props.title}
-    style={hoverColor ? `--button-hover-bg: ${hoverColor}` : undefined}
+    style={buttonStyle}
 >
     {@render children?.()}
 </button>

@@ -37,6 +37,10 @@
             return childrenEl.childNodes.length > 0 && childrenEl.textContent?.trim() !== "";
         }
     });
+
+    let buttonStyle = $derived(
+        hoverColor ? `${props.style ? `${props.style}; ` : ""}--button-hover-bg: ${hoverColor}` : props.style
+    );
 </script>
 
 <button
@@ -47,7 +51,7 @@
     class="{variant} {props.class || ''}"
     class:with-children={hasVisibleChildren}
     aria-label={props["aria-label"] ?? props.title}
-    style={hoverColor ? `--button-hover-bg: ${hoverColor}` : undefined}
+    style={buttonStyle}
 >
     {#if iconName}
         <MaterialIcon {iconName} {size} {iconStyle} {fill} {grade} {opticalSize} />
