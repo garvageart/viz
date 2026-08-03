@@ -4,38 +4,22 @@
     import isEqual from "lodash-es/isEqual";
     import { onMount, untrack } from "svelte";
     import type { MouseEventHandler, PointerEventHandler, WheelEventHandler } from "svelte/elements";
-    import { slide } from "svelte/transition";
     import { hideAll } from "tippy.js";
-    import { type ImageAsset, Label as ImageLabel, type ImageUpdate, getFullImagePath, updateImage } from "$lib/api";
+    import { type ImageAsset, type ImageUpdate, getFullImagePath, updateImage } from "$lib/api";
     import { modalsManager } from "$lib/components/modals/manager/ModalManager.svelte";
-    import Calendar from "$lib/components/ui/DatePicker.svelte";
     import ExportPanel, { modalOptions as exportModalOptions } from "$lib/components/ui/panels/ExportPanel.svelte";
     import MetadataPanel from "$lib/components/ui/panels/MetadataPanel.svelte";
     import { ApiError } from "$lib/errors/errors";
-    import { LabelColours } from "$lib/images/constants";
     import { setRating } from "$lib/images/exif";
     import { ImageLoader } from "$lib/images/loader/image-loader.svelte";
     import { calculateZoomTo, constrainTranslation } from "$lib/images/zoom/zoom-utils";
     import { isMobile } from "$lib/states/index.svelte";
     import { toasts } from "$lib/toast-notifcations/toasts.svelte";
     import { downloadOriginalImageFile } from "$lib/utils/http";
-    import {
-        type CropCoords,
-        formatBytes,
-        getFlashMode,
-        getImageLabel,
-        getTakenAt,
-        getThumbhashURL,
-        getWhiteBalance
-    } from "$lib/utils/images";
-    import { copyToClipboard } from "$lib/utils/misc";
+    import { type CropCoords, formatBytes, getThumbhashURL } from "$lib/utils/images";
     import CropOverlay from "../image-tools/CropOverlay.svelte";
     import CropTools from "../image-tools/CropTools.svelte";
-    import ImageLabelViewer from "../image-tools/ImageLabelViewer.svelte";
-    import StarRating from "../image-tools/StarRating.svelte";
-    import Badge from "./Badge.svelte";
     import IconButton from "./IconButton.svelte";
-    import InputText from "./InputText.svelte";
     import Lightbox from "./Lightbox.svelte";
     import MaterialIcon from "./MaterialIcon.svelte";
 
@@ -1553,7 +1537,7 @@
 
     .lightbox-debug-panel {
         position: absolute;
-        top: var(--viz-spacing-std);
+        top: 5%;
         left: var(--viz-spacing-std);
         background: var(--viz-surface-card);
         border: var(--viz-border-thin);
