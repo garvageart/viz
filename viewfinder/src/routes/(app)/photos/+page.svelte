@@ -405,11 +405,21 @@
 </svelte:head>
 
 {#snippet showDatesContent()}
-    <Checkbox checked={viewSettings.showDates} onchange={() => viewSettings.toggleShowDates()} label="Show Dates" />
+    <Checkbox
+        checked={viewSettings.showDates}
+        onchange={() => viewSettings.toggleShowDates()}
+        label="Show Dates"
+        size="small"
+    />
 {/snippet}
 
 {#snippet showSimpleContent()}
-    <Checkbox checked={viewSettings.simple} onchange={() => viewSettings.toggleShowSimple()} label="Simple" />
+    <Checkbox
+        checked={viewSettings.simple}
+        onchange={() => viewSettings.toggleShowSimple()}
+        label="Simple"
+        size="small"
+    />
 {/snippet}
 
 <DragAndDropUpload {scopeId} {selectionScope} showCollectionCreateBox={true} />

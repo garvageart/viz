@@ -8,7 +8,7 @@
         id?: string;
         disabled?: boolean;
         variant?: "square" | "round";
-        size?: "regular" | "large";
+        size?: "small" | "regular" | "large";
         onchange?: (e: Event & { currentTarget: HTMLInputElement }) => void;
     }
 
@@ -51,10 +51,22 @@
     }
 </script>
 
-<div class="checkbox-wrapper {classes}" {...props} class:disabled>
+<div
+    class="checkbox-wrapper {classes}"
+    {...props}
+    class:disabled
+    class:small={size === "small"}
+    class:large={size === "large"}
+>
     <input type="checkbox" id={uniqueId} {checked} {disabled} onchange={handleChange} onkeydown={handleKeydown} />
     <label for={uniqueId}>
-        <span class="viz-checkbox" class:large={size === "large"} class:round={variant === "round"} aria-hidden="true">
+        <span
+            class="viz-checkbox"
+            class:small={size === "small"}
+            class:large={size === "large"}
+            class:round={variant === "round"}
+            aria-hidden="true"
+        >
             <svg
                 viewBox="0 0 24 24"
                 fill="none"
@@ -127,6 +139,16 @@
         flex-shrink: 0;
         cursor: pointer;
 
+        &.small {
+            width: 0.75rem;
+            height: 0.75rem;
+
+            svg {
+                width: 0.5rem;
+                height: 0.5rem;
+            }
+        }
+
         &.large {
             width: 1.2rem;
             height: 1.2rem;
@@ -188,8 +210,23 @@
 
     .label-text {
         font-size: var(--viz-font-size-lg);
-        font-weight: 500;
         color: var(--viz-text-secondary);
         transition: color 0.12s ease;
+    }
+
+    .checkbox-wrapper.small {
+        label {
+            gap: var(--viz-spacing-xs);
+        }
+
+        .label-text {
+            font-size: 1rem;
+            font-weight: 500;
+            color: var(--viz-text-primary);
+        }
+    }
+
+    .checkbox-wrapper.large .label-text {
+        font-size: var(--viz-font-size-xl);
     }
 </style>

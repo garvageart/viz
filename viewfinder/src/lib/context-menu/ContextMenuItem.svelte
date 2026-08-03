@@ -107,7 +107,7 @@
         grid-template-columns: auto 1fr auto;
         gap: var(--viz-spacing-xs);
         align-items: center;
-        font-size: 1em;
+        font-size: 1rem;
         font-weight: 500;
         padding: var(--viz-spacing-xs) var(--viz-spacing-sm);
         text-align: left;
@@ -152,7 +152,7 @@
 
     .shortcut {
         opacity: 0.6;
-        font-size: 0.8em;
+        font-size: 1rem;
         margin-left: auto;
     }
 
