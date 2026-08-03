@@ -157,7 +157,11 @@
                         {/if}
                         {#if asset.image_metadata?.label}
                             <div class="image-card-label" title={asset.image_metadata.label}>
-                                <ImageLabelViewer variant="compact" label={getImageLabel(asset)} />
+                                <ImageLabelViewer
+                                    variant="compact"
+                                    enableSelection={false}
+                                    label={getImageLabel(asset)}
+                                />
                             </div>
                         {/if}
                     </div>
@@ -169,6 +173,7 @@
 
 <style lang="scss">
     .image-card {
+        background-color: var(--viz-surface-card);
         min-width: 100%;
         max-width: 100%;
         height: 100%;
@@ -194,12 +199,10 @@
         &.selected {
             border-color: var(--viz-primary);
             box-shadow: 0 0 0 1px var(--viz-primary);
-            pointer-events: none;
         }
     }
 
     .image-card-meta {
-        background-color: var(--viz-surface-card);
         border-top: 1px solid var(--viz-border-subtle);
         padding: var(--viz-spacing-md);
         display: flex;

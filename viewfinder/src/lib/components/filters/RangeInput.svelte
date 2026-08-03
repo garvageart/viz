@@ -77,7 +77,7 @@
     .header {
         display: flex;
         justify-content: space-between;
-        color: var(--viz-border-subtle);
+        color: var(--viz-text-secondary);
     }
 
     .label {

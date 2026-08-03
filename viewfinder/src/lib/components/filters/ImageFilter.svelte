@@ -399,7 +399,6 @@
 
         .label {
             font-size: var(--viz-font-size-std);
-            color: var(--viz-border-subtle);
         }
     }
 
@@ -454,6 +453,6 @@
 
     :global(.arrow-icon) {
         font-size: 1.2rem;
-        color: var(--viz-border-subtle);
+        color: var(--viz-primary);
     }
 </style>

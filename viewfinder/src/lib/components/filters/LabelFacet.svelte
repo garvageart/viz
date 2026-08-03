@@ -45,7 +45,7 @@
     {/each}
 
     {#if sortedLabels.length === 0}
-        <div class="empty">No labels found</div>
+        <span class="empty">No labels found</span>
     {/if}
 </div>
 
@@ -60,7 +60,7 @@
         display: flex;
         align-items: center;
         justify-content: space-between;
-        color: var(--viz-border-subtle);
+        color: var(--viz-text-secondary);
         cursor: pointer;
 
         .label-row {
@@ -82,13 +82,11 @@
 
     .count {
         font-size: 1rem;
-        opacity: 0.7;
         margin-left: 8px;
     }
 
     .empty {
         font-style: italic;
-        opacity: 0.6;
-        color: var(--viz-border-subtle);
+        color: var(--viz-text-secondary);
     }
 </style>

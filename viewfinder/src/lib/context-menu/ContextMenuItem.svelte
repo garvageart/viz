@@ -126,7 +126,6 @@
     li > button.disabled {
         color: var(--viz-border-subtle);
         cursor: default;
-        opacity: 0.5;
     }
 
     li > button.disabled:hover {

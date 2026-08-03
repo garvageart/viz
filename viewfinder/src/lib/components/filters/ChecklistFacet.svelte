@@ -50,7 +50,7 @@
         {/each}
 
         {#if filteredItems.length === 0}
-            <div class="empty">No items found</div>
+            <span class="empty">No items found</span>
         {/if}
     </div>
 
@@ -79,7 +79,7 @@
         align-items: center;
         justify-content: space-between;
         font-size: 1rem;
-        color: var(--viz-border-subtle);
+        color: var(--viz-text-secondary);
 
         /* Align checkbox properly */
         :global(.checkbox-wrapper) {
@@ -96,14 +96,12 @@
     }
 
     .count {
-        opacity: 0.7;
         margin-left: 8px;
     }
 
     .empty {
         font-style: italic;
-        opacity: 0.6;
-        color: var(--viz-border-subtle);
+        color: var(--viz-text-secondary);
     }
 
     /* Override Button styling to look like a link or simple toggle */
