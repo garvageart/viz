@@ -1691,7 +1691,7 @@
         justify-content: flex-end;
         align-items: flex-start;
         padding: 1rem;
-        border-left: 1.5px solid var(--viz-secondary);
+        border-left: 3px solid var(--viz-accent);
         font-weight: 500;
         color: var(--viz-text-primary);
         background-color: var(--viz-surface-panel);
@@ -1720,7 +1720,6 @@
             top: 10%;
             bottom: 30%;
             width: 0;
-            border-left: 3px solid var(--viz-accent);
         }
 
         @container (max-width: 5rem) {

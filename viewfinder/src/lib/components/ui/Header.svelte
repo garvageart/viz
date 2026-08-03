@@ -280,7 +280,7 @@
         gap: var(--viz-spacing-xxs);
         background: transparent;
         border: none;
-        border-bottom: 2px solid var(--viz-accent);
+        border-bottom: 2px solid transparent;
         color: var(--viz-text-primary);
         cursor: pointer;
         padding: var(--viz-spacing-xxs) 0;
