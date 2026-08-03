@@ -34,6 +34,7 @@ require (
 
 require (
 	github.com/rogpeppe/go-internal v1.14.1 // indirect
+	github.com/tphakala/simd v1.6.0
 	golang.org/x/image v0.44.0 // indirect
 )
 

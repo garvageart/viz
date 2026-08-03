@@ -87,6 +87,11 @@ func CalculateDHash(data []byte) (uint64, error) {
 
 // HammingDistance returns the number of differing bits between two hashes.
 // This is the standard measure of perceptual distance for dHash values.
+//
+// There is an opportunity here to use a SIMD opperation, hence, the inclusion
+// of the github.com/tphakala/simd Go module/library.
+//
+// This will be tested and validated to see if it's worth it
 func HammingDistance(a, b uint64) int {
 	x := a ^ b
 	count := 0
