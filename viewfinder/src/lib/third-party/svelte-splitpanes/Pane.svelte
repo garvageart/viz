@@ -1,6 +1,6 @@
 <script lang="ts">
     import { browser } from "$app/environment";
-    import { getContext, hasContext, onDestroy, onMount } from "svelte";
+    import { type Snippet, getContext, hasContext, onDestroy, onMount } from "svelte";
     import { generateRandomString } from "$lib/utils/misc";
     import { KEY } from "./Splitpanes.svelte";
     import type { ClientCallbacks, IPane, PaneInitFunction, SplitContext } from "./index.js";
@@ -27,7 +27,7 @@
         smoothExpand?: boolean;
         id?: string;
         paneKeyId?: string;
-        children?: import("svelte").Snippet;
+        children?: Snippet;
     }
 
     let {

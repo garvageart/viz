@@ -35,7 +35,7 @@
 <!-- svelte-ignore state_referenced_locally -->
 <script lang="ts">
     import { browser } from "$app/environment";
-    import { createEventDispatcher, onDestroy, onMount, setContext, tick } from "svelte";
+    import { type Snippet, createEventDispatcher, onDestroy, onMount, setContext, tick } from "svelte";
     import { writable } from "svelte/store";
     import { generateKeyId } from "$lib/utils/layout";
     import type { ClientCallbacks, IPane, IPaneSizingEvent, PaneInitFunction, SplitContext } from "./index.js";
@@ -178,7 +178,7 @@
         class?: string;
         id: string;
         keyId?: string;
-        children?: import("svelte").Snippet;
+        children?: Snippet;
     }
 
     let {

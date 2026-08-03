@@ -1,7 +1,7 @@
 <script lang="ts">
     import { CalendarDateTime, type DateValue } from "@internationalized/date";
     import { DatePicker, TimeField } from "bits-ui";
-    import { getContext } from "svelte";
+    import { type Snippet, getContext } from "svelte";
     import IconButton from "$lib/components/ui/IconButton.svelte";
     import InputSelect from "$lib/components/ui/InputSelect.svelte";
     import MaterialIcon from "$lib/components/ui/MaterialIcon.svelte";
@@ -17,7 +17,7 @@
         side?: "top" | "bottom" | "left" | "right";
         onchange?: (date: Date) => void;
         onclose?: () => void;
-        children?: import("svelte").Snippet;
+        children?: Snippet;
     }
 
     let {

@@ -12,7 +12,7 @@
     import { selectionManager } from "$lib/states/selection.svelte";
     import { type SortState, photosSort } from "$lib/states/sort.svelte";
     import type { AssetGridArray, AssetGridView, AssetSortBy } from "$lib/types/asset";
-    import type { CardVisualState, SvelteSnippet } from "$lib/types/snippet";
+    import type { CardVisualState } from "$lib/types/snippet";
     import { tryParseDate } from "$lib/utils/dates";
     import { getScrollParent } from "$lib/utils/dom";
     import { snakeToTitle } from "$lib/utils/strings";
@@ -24,7 +24,7 @@
 
     export interface AssetGridProps<T extends { uid: string } & Record<string, any>> {
         data: T[];
-        assetSnippet: SvelteSnippet<[T, CardVisualState]>;
+        assetSnippet: Snippet<[T, CardVisualState]>;
         customSnippet?: Snippet;
         assetGridArray?: AssetGridArray<T>;
         view?: AssetGridView;

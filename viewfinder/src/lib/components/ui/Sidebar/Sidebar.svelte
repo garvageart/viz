@@ -1,11 +1,11 @@
 <script lang="ts">
-    import { onMount } from "svelte";
+    import { type Snippet, onMount } from "svelte";
     import { isMobile } from "$lib/states/index.svelte";
     import IconButton from "../IconButton.svelte";
 
     interface Props {
         open?: boolean;
-        children?: import("svelte").Snippet;
+        children?: Snippet;
         title?: string;
         width?: string;
     }

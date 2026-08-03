@@ -12,6 +12,7 @@
     import * as Comlink from "comlink";
     import JSZip from "jszip";
     import { DateTime } from "luxon";
+    import { type Snippet } from "svelte";
     import { slide } from "svelte/transition";
     import { API_BASE_URL, type ImageAsset, getImageFileBlob } from "$lib/api";
     import { DbSettings } from "$lib/db/settings";
@@ -415,7 +416,7 @@
         </div>
     </div>
 
-    {#snippet panelSection(name: SectionName, label: string, children: import("svelte").Snippet)}
+    {#snippet panelSection(name: SectionName, label: string, children: Snippet)}
         <div class="section" class:expanded={sections[name]}>
             <button class="section-header" onclick={() => toggleSection(name)}>
                 <MaterialIcon iconName={sections[name] ? "expand_more" : "chevron_right"} />

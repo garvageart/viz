@@ -2,6 +2,7 @@
     import { invalidateAll } from "$app/navigation";
     import Handlebars from "handlebars";
     import { DateTime } from "luxon";
+    import { type Snippet } from "svelte";
     import type { VizConfig } from "$lib/api";
     import { api } from "$lib/api";
     import Checkbox from "$lib/components/ui/Checkbox.svelte";
@@ -383,7 +384,7 @@
             </div>
 
             <div class="tokens-scrollable">
-                {#snippet tokenCategory(iconName: MaterialSymbol, title: string, children: import("svelte").Snippet)}
+                {#snippet tokenCategory(iconName: MaterialSymbol, title: string, children: Snippet)}
                     <div class="token-category">
                         <div class="category-header">
                             <MaterialIcon {iconName} weight={300} />
