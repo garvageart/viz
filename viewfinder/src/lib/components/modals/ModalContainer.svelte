@@ -8,6 +8,9 @@
 
 <svelte:window
     onkeydown={(e) => {
+        // NOTE: Escape dismissal is hand-rolled here. native `<dialog>` +
+        // `showModal()` handles Escape for free when the modal system migrates.
+        // see ModalLightbox.svelte for more context
         if (e.key === "Escape") {
             modalsManager.pop();
         }

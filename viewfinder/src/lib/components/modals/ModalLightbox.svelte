@@ -1,5 +1,5 @@
 <script lang="ts">
-    import { setContext } from "svelte";
+    import { onMount, setContext } from "svelte";
     import type { Snippet } from "svelte";
     import type { SvelteHTMLElements } from "svelte/elements";
     import MaterialIcon from "$lib/components/ui/MaterialIcon.svelte";
@@ -37,9 +37,76 @@
     setContext(ContextKeys.ModalZIndex, () => zIndex);
 
     let modalEl: HTMLElement | undefined = $state();
+
+    const FOCUSABLE_SELECTOR = 'button, [href], input, select, textarea, [tabindex]:not([tabindex="-1"])';
+
+    // NOTE: The focus trap and Enter-submit handling below are manually managed for now.
+    // Native `<dialog>` + `showModal()` provides focus trapping, implicit
+    // Enter-submission, and Escape dismissal for free — revisit when the modal
+    // system is migrated to `<dialog>`.
+
+    function getFocusable(): HTMLElement[] {
+        if (!modalEl) {
+            return [];
+        }
+        return Array.from(modalEl.querySelectorAll<HTMLElement>(FOCUSABLE_SELECTOR)).filter(
+            (el) => !el.hasAttribute("disabled") && el.getAttribute("aria-hidden") !== "true"
+        );
+    }
+
+    function isInteractiveTarget(target: EventTarget | null): boolean {
+        if (!(target instanceof HTMLElement)) {
+            return false;
+        }
+        if (target.tagName === "BUTTON" || target.tagName === "SELECT" || target.tagName === "TEXTAREA") {
+            return true;
+        }
+        if (target.tagName === "INPUT") {
+            return ["checkbox", "radio"].includes((target as HTMLInputElement).type);
+        }
+        return false;
+    }
+
+    function handleKeyDown(e: KeyboardEvent) {
+        if (e.key === "Tab") {
+            const focusable = getFocusable();
+            if (focusable.length === 0) {
+                return;
+            }
+            const first = focusable[0];
+            const last = focusable[focusable.length - 1];
+            const active = document.activeElement;
+
+            if (e.shiftKey) {
+                if (active === first || active === modalEl || !modalEl?.contains(active)) {
+                    e.preventDefault();
+                    last.focus();
+                }
+            } else {
+                if (active === last || active === modalEl || !modalEl?.contains(active)) {
+                    e.preventDefault();
+                    first.focus();
+                }
+            }
+            return;
+        }
+
+        if (e.key === "Enter" && !isInteractiveTarget(e.target)) {
+            e.preventDefault();
+            modalEl?.querySelector<HTMLFormElement>("form")?.requestSubmit();
+        }
+    }
+
+    onMount(() => {
+        modalEl?.focus();
+        modalEl?.addEventListener("keydown", handleKeyDown);
+        return () => {
+            modalEl?.removeEventListener("keydown", handleKeyDown);
+        };
+    });
 </script>
 
-<div {...props} class="viz-modal" style:width style:height style:z-index={zIndex} bind:this={modalEl}>
+<div {...props} class="viz-modal" tabindex="-1" style:width style:height style:z-index={zIndex} bind:this={modalEl}>
     <div class="modal-header">
         {#if headerSnippet}
             {@render headerSnippet()}

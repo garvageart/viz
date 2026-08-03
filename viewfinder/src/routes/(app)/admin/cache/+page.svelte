@@ -3,7 +3,7 @@
     import { page } from "$app/state";
     import { clearImageCache } from "$lib/api";
     import AdminRouteShell from "$lib/components/admin/AdminRouteShell.svelte";
-    import ConfirmationModal, { modalOptions } from "$lib/components/modals/ConfirmationModal.svelte";
+    import ConfirmationModal from "$lib/components/modals/ConfirmationModal.svelte";
     import { modalsManager } from "$lib/components/modals/manager/ModalManager.svelte";
     import Checkbox from "$lib/components/ui/Checkbox.svelte";
     import IconBadge from "$lib/components/ui/IconBadge.svelte";
@@ -31,7 +31,7 @@
                 onConfirm: handleClearCache,
                 children: confirmBody
             },
-            { heading: "Clear Image Cache", ...modalOptions }
+            { heading: "Clear Image Cache" }
         );
     }
 

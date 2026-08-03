@@ -1,9 +1,3 @@
-<script module lang="ts">
-    export const modalOptions: ModalOptions = {
-        width: "40%"
-    };
-</script>
-
 <script lang="ts">
     import type { Snippet } from "svelte";
     import Button, { type ButtonVariant } from "$lib/components/ui/Button.svelte";
@@ -16,7 +10,10 @@
         children?: Snippet<[any]>;
         actions?: Snippet<[any]>;
         confirmText?: string;
-        buttonVariant?: Extract<ButtonVariant, "primary" | "info" | "success" | "danger">;
+        buttonVariant?: Extract<
+            ButtonVariant,
+            "primary" | "secondary" | "danger" | "warning" | "success" | "info" | "ghost"
+        >;
         cancelText?: string;
         onConfirm?: () => void;
         onCancel?: () => void;
@@ -35,6 +32,19 @@
         onCancel
     }: Props = $props();
 
+    export const modalOptions: ModalOptions = {
+        width: "25%"
+    };
+
+    let confirmButtonStyle = $derived(
+        buttonVariant === "primary" ? "background-color: var(--viz-primary); color: var(--viz-10-dark);" : undefined
+    );
+
+    function handleConfirmSubmit(e: SubmitEvent) {
+        e.preventDefault();
+        handleConfirm();
+    }
+
     function handleConfirm() {
         if (onConfirm) {
             onConfirm();
@@ -52,29 +62,26 @@
 </script>
 
 <div class="confirmation-modal">
-    <div class="confirmation-content">
-        {#if children}
-            {@render children({ id })}
-        {:else if message}
-            <span>{message}</span>
-        {/if}
-    </div>
+    <form id="confirmation-form" onsubmit={handleConfirmSubmit}>
+        <div class="confirmation-content">
+            {#if children}
+                {@render children({ id })}
+            {:else if message}
+                <span>{message}</span>
+            {/if}
+        </div>
 
-    <div class="confirm-actions">
-        {#if actions}
-            {@render actions({ id })}
-        {:else}
-            <Button variant="small" onclick={handleCancel}>{cancelText}</Button>
-            <Button
-                variant={buttonVariant}
-                class="onconfirm-btn"
-                style="background-color: var(--viz-primary); color: var(--viz-10-dark);"
-                onclick={handleConfirm}
-            >
-                {confirmText}
-            </Button>
-        {/if}
-    </div>
+        <div class="confirm-actions">
+            {#if actions}
+                {@render actions({ id })}
+            {:else}
+                <Button type="button" variant="small" onclick={handleCancel}>{cancelText}</Button>
+                <Button type="submit" variant={buttonVariant} class="onconfirm-btn" style={confirmButtonStyle}>
+                    {confirmText}
+                </Button>
+            {/if}
+        </div>
+    </form>
 </div>
 
 <style lang="scss">
@@ -97,9 +104,5 @@
             justify-content: flex-end;
             margin-top: 0.5rem;
         }
-    }
-
-    :global(.onconfirm-btn:hover) {
-        background-color: var(--viz-primary);
     }
 </style>

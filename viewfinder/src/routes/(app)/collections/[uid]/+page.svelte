@@ -472,15 +472,21 @@
         });
     }
 
-    async function handleDeleteCollection() {
-        const ok = confirm(
-            `Delete collection "${data.name}"? This will remove the collection record. This action cannot be undone.`
+    function handleDeleteCollection() {
+        modalsManager.open(
+            ConfirmationModal,
+            {
+                title: "Delete Collection",
+                message: `Delete collection "${data.name}"? This will remove the collection record. This action cannot be undone.`,
+                confirmText: "Delete",
+                buttonVariant: "danger",
+                onConfirm: executeDeleteCollection
+            },
+            { heading: "Delete Collection" }
         );
+    }
 
-        if (!ok) {
-            return;
-        }
-
+    async function executeDeleteCollection() {
         try {
             const res = await deleteCollection(data.uid);
             if (res.status === 204) {

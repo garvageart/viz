@@ -219,6 +219,7 @@ export function createCollectionMenu(collection: Collection | undefined, opts: C
                         title: targets.length > 1 ? "Delete Collections" : "Delete Collection",
                         confirmText: targets.length > 1 ? "Delete Collections" : "Delete Collection",
                         message: confirmMsg,
+                        buttonVariant: "danger",
                         onConfirm: async () => {
                             try {
                                 const results = await Promise.all(
