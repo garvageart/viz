@@ -77,6 +77,7 @@
     import CollectionPage from "../../../routes/(app)/collections/[uid]/+page.svelte";
     import AssetImage from "./AssetImage.svelte";
     import Badge from "./Badge.svelte";
+    import Favourite from "./Favourite.svelte";
     import MaterialIcon from "./MaterialIcon.svelte";
 
     interface Props {
@@ -246,6 +247,12 @@
             <span class="coll-updated_at" title="Updated {updatedTimeDiff}">Updated {updatedTimeDiff}</span>
         </div>
     </div>
+
+    {#if collection.favourited}
+        <div class="favourite-indicator">
+            <Favourite />
+        </div>
+    {/if}
 </div>
 
 <style lang="scss">
@@ -321,6 +328,7 @@
         :global(.placeholder-icon) {
             opacity: 0.6;
             filter: drop-shadow(0 2px 4px rgba(0, 0, 0, 0.05));
+            color: color-mix(in srgb, var(--viz-accent) 35%, var(--viz-text-secondary));
         }
     }
 
@@ -399,5 +407,13 @@
     .coll-created_at {
         font-weight: 500;
         color: var(--viz-text-muted);
+    }
+
+    .favourite-indicator {
+        position: absolute;
+        bottom: var(--viz-spacing-sm);
+        right: var(--viz-spacing-sm);
+        z-index: 2;
+        pointer-events: none;
     }
 </style>
