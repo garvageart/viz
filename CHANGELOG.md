@@ -5,6 +5,19 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.28.0] - 2026-08-03
+
+* docs: add user settings planning document (d3056810)
+* style(ui): colour token and accessibility cleanup (1b265d41)
+* refactor(ui): TableColumnSelectorModal row snippet and Checkbox (912b91e0)
+* feat(ui): show favourite indicator on collection cards (d7bc6b05)
+* fix(ui): preserve caller style prop on Button and IconButton (e7c69a31)
+* feat(ui): confirmation modal colour variants, form submit, and focus trap (4f710a41)
+* fix(ui): compute filter facets from the full loaded set regardless of view (a1b507e2)
+* feat(ui): accent & secondary colour usage rules and decorative flourishes (6369ab87)
+* chore: add github.com/tphakala/simd library to explore SIMD explorations in the Golang codebase (e3bf4eaa)
+* refactor: show full date on relative date string title (4bd423cb)
+
 ## [0.27.0] - 2026-08-02
 
 * refactor(ui): export and reuse input select option types (248b3b7b)
