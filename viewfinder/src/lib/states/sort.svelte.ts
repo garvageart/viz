@@ -19,18 +19,24 @@ function createDefaults(): AssetSort {
 
 export class SortState {
     private storage: DbSettings<AssetSort>;
+    private readyPromise: Promise<void>;
 
     value: AssetSort = $state(createDefaults());
 
     constructor(readonly section: string) {
         this.storage = new DbSettings<AssetSort>(`sort.${section}`);
-        this.load();
+        this.readyPromise = this.load();
 
         $effect.root(() => {
             $effect(() => {
                 this.storage.save($state.snapshot(this.value));
             });
         });
+    }
+
+    /** Resolves once persisted sort settings have been applied (or none were stored). */
+    ready(): Promise<void> {
+        return this.readyPromise;
     }
 
     private async load() {

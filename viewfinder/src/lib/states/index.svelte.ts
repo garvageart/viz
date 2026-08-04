@@ -169,6 +169,8 @@ export const viewSettings = new ViewSettingsState();
 
 class UploadState {
     private storage = new DbSettings<number>("upload.concurrency");
+    private readyPromise: Promise<void>;
+    private loaded = $state(false);
 
     files: UploadImage[] = $state([]);
     concurrency: number = $state(2);
@@ -180,17 +182,30 @@ class UploadState {
     });
 
     constructor() {
-        this.storage.load().then((stored) => {
-            if (stored !== undefined) {
-                this.concurrency = stored;
-            }
+        this.readyPromise = this.init();
 
-            $effect.root(() => {
-                $effect(() => {
+        $effect.root(() => {
+            $effect(() => {
+                // Only persist once the stored value has been applied, so we never
+                // overwrite it with the default on first paint.
+                if (this.loaded) {
                     this.storage.save(this.concurrency);
-                });
+                }
             });
         });
+    }
+
+    /** Resolves once persisted settings have been applied (or none were stored). */
+    ready(): Promise<void> {
+        return this.readyPromise;
+    }
+
+    private async init() {
+        const stored = await this.storage.load();
+        if (stored !== undefined) {
+            this.concurrency = stored;
+        }
+        this.loaded = true;
     }
 }
 

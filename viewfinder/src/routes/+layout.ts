@@ -3,6 +3,7 @@ import { error, redirect } from "@sveltejs/kit";
 import { api, getSystemStatus } from "$lib/api";
 import { fetchCurrentUser } from "$lib/auth/auth_methods";
 import { system, user } from "$lib/states/index.svelte.js";
+import { collectionDetailSort, collectionsSort, photosSort } from "$lib/states/sort.svelte";
 import { getSafeRedirectUrl } from "$lib/utils/url";
 
 export const ssr = false;
@@ -10,6 +11,10 @@ export const csr = true;
 
 export async function load({ url, fetch }) {
     api.defaults.fetch = fetch;
+
+    // Hydrate persisted sort settings once for the app so page loads read the
+    // correct value without awaiting in each load function.
+    await Promise.all([photosSort.ready(), collectionsSort.ready(), collectionDetailSort.ready()]);
 
     // Fetch system status if not already fetched
     if (!system.fetched) {
