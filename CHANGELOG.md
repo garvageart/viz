@@ -5,6 +5,16 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.28.3] - 2026-08-04
+
+* refactor(ui): move export panel heading into modal options (804df4d5)
+* fix(grid): anchor timeline scrubber to grid-container (f2180268)
+* fix(ui): keep Add to Collection drag-into highlight on child transitions (44db9a67)
+* chore(release): bump version to 0.28.2 (0466f619)
+* test(e2e): cover sort persistence across photos pagination (f4130b2a)
+* fix(states): hydrate persisted settings before page loads use them (2bf7746e)
+* feat(ui): replace handwritten tables with reusable Table component (74e60bd2)
+
 ## [0.28.2] - 2026-08-04
 
 * test(e2e): cover sort persistence across photos pagination (f4130b2a)
