@@ -491,6 +491,10 @@
                             e.currentTarget.classList.add("on-enter");
                         }}
                         ondragleave={(e) => {
+                            const related = e.relatedTarget;
+                            if (related instanceof Node && e.currentTarget.contains(related)) {
+                                return;
+                            }
                             e.currentTarget.classList.remove("on-enter");
                         }}
                         ondragover={(e) => {
@@ -769,8 +773,8 @@
     }
 
     :global(.on-enter) {
-        background-color: var(--viz-surface-hover);
-        outline: 2px solid var(--viz-primary);
+        background-color: var(--viz-surface-hover) !important;
+        outline: 2px solid var(--viz-primary) !important;
     }
 
     .selection-actions {
