@@ -526,38 +526,42 @@
     let scrollToTopOnNext = false; // When true, keyboard nav scrolls selected row to the top of the viewport
 
     let photoGridEl: HTMLDivElement | undefined = $state();
+    let gridContainerEl: HTMLDivElement | undefined = $state();
 
     // absolute container metrics for the scrubber
     let containerScrollTop = $state(0);
     let containerScrollHeight = $state(0);
     let containerViewportHeight = $state(0);
     let gridOffsetTop = $state(0);
+    let gridContentHeight = $state(0);
+    let gridRightInset = $state(0);
 
     let scrubberTopOffset = $derived(stickyHeaderHeight !== undefined ? stickyHeaderHeight : gridOffsetTop);
 
     const dateLabel = $derived(virtualizer.getDateLabel(scrollTop));
 
-    // For the scrubber, we want it to represent the entire scrollable area of the container.
+    // For the scrubber, we want it to represent the entire scrollable area of the grid-container.
     // We pass values that make its internal ratio calculation match the container's.
     // Scrubber track will be positioned below the sticky toolbar.
     const scrubberTotalHeight = $derived(
-        usingExternalScroll ? containerScrollHeight - scrubberTopOffset : virtualizer.totalHeight
+        usingExternalScroll ? Math.max(0, gridContentHeight - scrubberTopOffset) : virtualizer.totalHeight
     );
     const scrubberViewportHeight = $derived(
         usingExternalScroll ? containerViewportHeight - scrubberTopOffset : virtualizer.viewportHeight
     );
-    let scrubberScrollTop = $derived(usingExternalScroll ? containerScrollTop : scrollTop);
+    let scrubberScrollTop = $derived(usingExternalScroll ? Math.max(0, containerScrollTop - gridOffsetTop) : scrollTop);
     let scrubberScrollTopState = $derived(scrubberScrollTop);
 
     $effect(() => {
         if (isScrubbing) {
             if (usingExternalScroll && scrollParent instanceof HTMLElement) {
                 isSyncingScroll = true;
-                scrollParent.scrollTop = scrubberScrollTopState;
+                const pageScroll = Math.max(0, scrubberScrollTopState + gridOffsetTop);
+                scrollParent.scrollTop = pageScroll;
                 // Derived containerScrollTop will update via scroll event,
                 // but we force update for virtualizer responsiveness.
-                containerScrollTop = scrubberScrollTopState;
-                scrollTop = Math.max(0, containerScrollTop - gridOffsetTop);
+                containerScrollTop = pageScroll;
+                scrollTop = Math.max(0, pageScroll - gridOffsetTop);
                 virtualizer.updateScroll(scrollTop, containerViewportHeight);
                 requestAnimationFrame(() => {
                     isSyncingScroll = false;
@@ -728,16 +732,22 @@
         const parent = getScrollParent(node);
 
         const updateMetrics = () => {
-            if (!photoGridEl || !scrollParent || !(scrollParent instanceof HTMLElement)) return;
+            if (!photoGridEl || !gridContainerEl || !scrollParent || !(scrollParent instanceof HTMLElement)) return;
 
             const parentRect = scrollParent.getBoundingClientRect();
-            const gridRect = photoGridEl.getBoundingClientRect();
+            const gridRect = gridContainerEl.getBoundingClientRect();
 
-            // Accurate offset calculation relative to scrollable content start
+            // Accurate offset calculation relative to scrollable content start.
+            // The scrubber is anchored to the grid-container (not the inner
+            // viz-photo-grid-container), so measure that element.
             gridOffsetTop = Math.max(0, gridRect.top - parentRect.top + scrollParent.scrollTop);
             containerViewportHeight = scrollParent.clientHeight;
             containerScrollHeight = scrollParent.scrollHeight;
             containerScrollTop = scrollParent.scrollTop;
+            gridContentHeight = gridContainerEl.scrollHeight;
+            // Overhang so the scrubber hugs the right edge of the scroll container
+            // even when the grid is inset by ancestor padding.
+            gridRightInset = Math.max(0, parentRect.left + scrollParent.clientWidth - gridRect.right);
 
             // Update virtualizer's view of things
             virtualizer.viewportHeight = containerViewportHeight;
@@ -747,6 +757,7 @@
             if (debugMode) {
                 console.log("[PhotoGrid Scroller] Metrics updated:", {
                     gridOffsetTop,
+                    gridContentHeight,
                     containerScrollTop,
                     containerScrollHeight,
                     containerViewportHeight,
@@ -1288,11 +1299,8 @@
     </div>
 {/snippet}
 
-{#snippet imageCard(asset: ImageAsset, cardState: CardVisualState)}
-    <ImageCard {asset} isSelected={cardState.isSelected} />
-{/snippet}
-
 <div
+    bind:this={gridContainerEl}
     class="grid-container"
     class:use-external-scroll={usingExternalScroll}
     onclick={handleOuterContainerClick}
@@ -1354,7 +1362,7 @@
         </div>
     </div>
 
-    <div class="scrubber-wrapper">
+    <div class="scrubber-wrapper" style={usingExternalScroll ? `right: -${gridRightInset}px;` : undefined}>
         <div
             class="scrubber-sticky-container"
             style={usingExternalScroll
@@ -1378,7 +1386,7 @@
         position: relative;
         height: 100%;
         width: 100%;
-        margin: inherit auto;
+        margin: auto;
         overflow: hidden;
         flex: 1;
         display: flex;
