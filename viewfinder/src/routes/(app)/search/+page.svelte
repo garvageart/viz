@@ -625,10 +625,7 @@
                                 <div class="collection-group-container">
                                     <AssetGrid
                                         {...collectionsGrid}
-                                        onassetcontext={(detail: {
-                                            asset: Collection;
-                                            anchor: { x: number; y: number } | HTMLElement;
-                                        }) => {
+                                        onassetcontext={(detail) => {
                                             const { asset } = detail;
                                             if (!collectionSelection.has(asset) || collectionSelection.size <= 1) {
                                                 collectionSelection.select(asset);
@@ -677,10 +674,7 @@
                                         assetDblClick={(_e: MouseEvent, asset: ImageAsset) => {
                                             openLightbox(asset);
                                         }}
-                                        onassetcontext={(detail: {
-                                            asset: ImageAsset;
-                                            anchor: { x: number; y: number } | HTMLElement;
-                                        }) => {
+                                        onassetcontext={(detail) => {
                                             const { asset } = detail;
                                             if (!imageSelection.has(asset) || imageSelection.size <= 1) {
                                                 imageSelection.select(asset);
@@ -708,10 +702,7 @@
                                         ) => {
                                             openLightbox(asset);
                                         }}
-                                        onassetcontext={(detail: {
-                                            asset: ImageAsset;
-                                            anchor: { x: number; y: number } | HTMLElement;
-                                        }) => {
+                                        onassetcontext={(detail) => {
                                             const { asset } = detail;
                                             if (!imageSelection.has(asset) || imageSelection.size <= 1) {
                                                 imageSelection.select(asset);

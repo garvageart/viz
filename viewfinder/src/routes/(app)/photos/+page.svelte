@@ -682,7 +682,7 @@
                 assetDblClick={(_e: MouseEvent, asset: ImageAsset) => {
                     openLightbox(asset);
                 }}
-                onassetcontext={(detail: { asset: ImageAsset; anchor: { x: number; y: number } | HTMLElement }) => {
+                onassetcontext={(detail) => {
                     ctxAnchor = detail.anchor;
                     ctxShowMenu = true;
                 }}
@@ -703,7 +703,7 @@
                 ) => {
                     openLightbox(asset);
                 }}
-                onassetcontext={(detail: { asset: ImageAsset; anchor: { x: number; y: number } | HTMLElement }) => {
+                onassetcontext={(detail) => {
                     ctxAnchor = detail.anchor;
                     ctxShowMenu = true;
                 }}
