@@ -669,9 +669,8 @@
                                         groupedData={consolidatedGroups}
                                         showDateHeaders={true}
                                         scopeId={imageScopeId}
-                                        stickyHeaderHeight={64}
                                         onLoadMore={() => paginateSearch()}
-                                        assetDblClick={(_e: MouseEvent, asset: ImageAsset) => {
+                                        assetDblClick={(_e, asset) => {
                                             openLightbox(asset);
                                         }}
                                         onassetcontext={(detail) => {
@@ -694,12 +693,7 @@
                                         assetSnippet={imageCard}
                                         customSnippet={justifiedGrid}
                                         scopeId={imageScopeId}
-                                        assetDblClick={(
-                                            _e: MouseEvent & {
-                                                currentTarget: EventTarget & (HTMLDivElement | HTMLTableRowElement);
-                                            },
-                                            asset: ImageAsset
-                                        ) => {
+                                        assetDblClick={(_e, asset) => {
                                             openLightbox(asset);
                                         }}
                                         onassetcontext={(detail) => {

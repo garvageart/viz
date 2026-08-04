@@ -862,7 +862,7 @@
             showDateHeaders={viewSettings.showDates}
             {scopeId}
             onLoadMore={() => paginate()}
-            assetDblClick={(_e: MouseEvent, asset: ImageAsset) => {
+            assetDblClick={(_e, asset) => {
                 lightboxImage = asset;
             }}
             onassetcontext={(detail) => {
