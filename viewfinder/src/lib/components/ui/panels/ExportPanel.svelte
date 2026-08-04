@@ -72,6 +72,10 @@
 
     let { id, assets, onExport }: Props = $props();
 
+    export const modalOptions: ModalOptions = {
+        heading: "Export Options"
+    };
+
     const settingsDb = new DbSettings<SavedExportSettings>("export_panel_settings");
     const renameDb = new DbSettings<SavedRenameSettings>("batch_rename_settings");
 
@@ -410,7 +414,6 @@
 
 <div class="export-panel">
     <div class="export-header">
-        <h2>Export Options</h2>
         <div class="asset-summary">
             {assets.length} item(s) selected
         </div>
@@ -609,16 +612,11 @@
         border-bottom: 1px solid var(--viz-surface-hover);
         background-color: var(--viz-surface-base);
 
-        h2 {
-            margin: 0;
-            font-size: var(--viz-font-size-xl);
-            font-weight: 600;
-        }
-
         .asset-summary {
-            font-size: var(--viz-font-size-std);
+            font-size: var(--viz-font-size-lg);
+            font-style: italic;
             color: var(--viz-text-secondary);
-            margin-top: var(--viz-spacing-xxs);
+            margin: var(--viz-spacing-xxs) 0;
         }
     }
 
