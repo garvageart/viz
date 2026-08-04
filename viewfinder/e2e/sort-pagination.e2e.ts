@@ -1,4 +1,4 @@
-import { expect, test } from "@playwright/test";
+import { type Page, expect, test } from "@playwright/test";
 
 interface ImageRequest {
     page: number;
@@ -10,7 +10,7 @@ interface ImageRequest {
  * Seeds a persisted sort preference into the app's IndexedDB `settings` store.
  * The key mirrors what `SortState("photos")` uses: `sort.photos`.
  */
-async function seedSortPreference(page: import("@playwright/test").Page, value: object) {
+async function seedSortPreference(page: Page, value: object) {
     await page.goto("/");
     await page.evaluate(async (sortValue) => {
         const openDb = (): Promise<IDBDatabase> =>
