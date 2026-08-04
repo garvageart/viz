@@ -574,9 +574,6 @@
     });
 
     // Bounded retry counter to handle initial mount timing without infinite loops
-    let _layoutRetryCount = $state(0);
-    const MAX_LAYOUT_RETRIES = 5;
-
     // Build justified rows layout and compute visible rows based on scroll.
     function updateVirtualGrid() {
         if (!photoGridEl) {
@@ -590,17 +587,9 @@
         const availableWidth = photoGridEl.clientWidth - paddingLeft - paddingRight;
 
         if (availableWidth <= 0) {
-            // Bounded retry: if the element hasn't been laid out yet (e.g., just mounted in a
-            // new split pane), retry on the next frame. The ResizeObserver is the primary
-            // recovery path, but it may not fire if the pane was created at its final size.
-            // The limit prevents infinite loops when a splitter squeezes the pane to 0px.
-            if (_layoutRetryCount < MAX_LAYOUT_RETRIES) {
-                _layoutRetryCount++;
-                requestAnimationFrame(() => updateVirtualGrid());
-            }
+            requestAnimationFrame(() => updateVirtualGrid());
             return;
         }
-        _layoutRetryCount = 0;
 
         // Dynamically adjust targetRowHeight based on available width if not explicitly locked in gridConfig.
         // This ensures more photos fit proportionally in a row on smaller viewports or narrow split-panes.
