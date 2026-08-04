@@ -21,6 +21,7 @@
     import PhotoTooltip from "../tooltips/PhotoTooltip.svelte";
     import { mountTooltipComponent } from "../tooltips/tooltip";
     import MaterialIcon from "../ui/MaterialIcon.svelte";
+    import Table from "../ui/Table.svelte";
 
     export interface AssetGridProps<T extends { uid: string } & Record<string, any>> {
         data: T[];
@@ -156,6 +157,12 @@
     let scrollParent: HTMLElement | Window | undefined = $state();
     let isSyncingScroll = false;
 
+    // List view: the virtualizer assumes a fixed row height. We measure the real
+    // rendered row height so spacers match the actual content height, otherwise
+    // the content jumps when a virtual spacer appears/disappears.
+    const LIST_ROW_HEIGHT_FALLBACK = 54;
+    let listRowHeight = $state(LIST_ROW_HEIGHT_FALLBACK);
+
     function computeContentWidth(el: HTMLElement): number {
         const style = window.getComputedStyle(el);
         const pl = parseFloat(style.paddingLeft) || 0;
@@ -176,7 +183,7 @@
         containerWidth = width;
 
         if (isListView) {
-            virtualizer.updateList(allAssetsData, width, 54);
+            virtualizer.updateList(allAssetsData, width, listRowHeight);
         } else {
             virtualizer.updateGrid(allAssetsData, width, {
                 columns: columnCount && columnCount > 0 ? columnCount : undefined,
@@ -235,7 +242,9 @@
         }
 
         recomputeOffset();
-        updateScrollPosition();
+        untrack(() => {
+            updateScrollPosition();
+        });
 
         if (parent !== assetGridDisplayEl && parent !== window) {
             usingExternalScroll = true;
@@ -246,8 +255,10 @@
 
             const ro = new ResizeObserver(() => {
                 recomputeOffset();
-                updateScrollPosition();
-                updateVirtualizerLayout();
+                untrack(() => {
+                    updateScrollPosition();
+                    updateVirtualizerLayout();
+                });
             });
             ro.observe(assetGridDisplayEl);
             if (parent instanceof HTMLElement) {
@@ -255,7 +266,9 @@
             }
 
             requestAnimationFrame(() => {
-                updateVirtualizerLayout();
+                untrack(() => {
+                    updateVirtualizerLayout();
+                });
             });
 
             return () => {
@@ -266,12 +279,16 @@
         }
 
         // Self-scrolling case
-        updateVirtualizerLayout();
+        untrack(() => {
+            updateVirtualizerLayout();
+        });
 
         const ro = new ResizeObserver(() => {
             recomputeOffset();
-            updateScrollPosition();
-            updateVirtualizerLayout();
+            untrack(() => {
+                updateScrollPosition();
+                updateVirtualizerLayout();
+            });
         });
         ro.observe(assetGridDisplayEl);
 
@@ -287,6 +304,28 @@
         const _sortDisplay = sortState.value.display;
 
         if (assetGridDisplayEl) {
+            untrack(() => {
+                updateVirtualizerLayout();
+            });
+        }
+    });
+
+    // Measure the real list row height so the virtualizer's assumed height matches
+    // the rendered rows. Without this, spacer heights are off and the table content
+    // shifts when a virtual spacer is added/removed while scrolling.
+    $effect(() => {
+        if (!assetGridDisplayEl || !isListView) {
+            return;
+        }
+
+        const rowEl = assetGridDisplayEl.querySelector("tbody tr.asset-card");
+        if (!rowEl) {
+            return;
+        }
+
+        const height = rowEl.getBoundingClientRect().height;
+        if (Math.abs(height - listRowHeight) > 1) {
+            listRowHeight = height;
             untrack(() => {
                 updateVirtualizerLayout();
             });
@@ -403,6 +442,26 @@
         }
     });
 
+    // Virtual scroll offset spacers rendered OUTSIDE the table so they never
+    // influence column-width layout (a colspan cell inside the table caused the
+    // columns to shift a few px when a spacer appeared/disappeared while scrolling).
+    let tableTopSpacerHeight = $derived.by(() => {
+        const firstImage = virtualizer.visibleRows.find((r) => r.type === "images");
+        if (!firstImage || firstImage.top <= 0) {
+            return 0;
+        }
+        return firstImage.top;
+    });
+
+    let tableBottomSpacerHeight = $derived.by(() => {
+        const images = virtualizer.visibleRows.filter((r) => r.type === "images");
+        if (images.length === 0) {
+            return 0;
+        }
+        const last = images[images.length - 1];
+        return Math.max(0, virtualizer.totalHeight - last.top - last.height);
+    });
+
     // helper: get nested value by dot path
     function getNestedValue(obj: Record<string, any> | undefined, path?: string) {
         if (!obj || !path) {
@@ -465,6 +524,30 @@
 
         return String(v);
     }
+
+    // The table uses table-layout: fixed so columns don't shift as virtualized rows
+    // change, but we still want content-appropriate widths. Derive each column's
+    // width from the widest displayed value so e.g. a short "created_at" column
+    // doesn't stretch to fill half the table.
+    const PREVIEW_COLUMN_WIDTH = "calc(2 * var(--viz-spacing-sm) + 5.5em + var(--viz-spacing-md) + 14rem)";
+
+    let tableColumnWidths = $derived.by(() => {
+        const widths: Record<string, string> = {};
+        for (const key of visibleKeys) {
+            let maxChars = key.length;
+            for (let i = 0; i < allAssetsData.length; i++) {
+                const text = formatValueForKey(allAssetsData[i], key);
+                if (text.length > maxChars) {
+                    maxChars = text.length;
+                }
+            }
+            // ~0.6em average glyph width at the table font-size, plus horizontal
+            // cell padding; cap so a single huge value doesn't blow the column up.
+            const chars = Math.min(maxChars + 1, 40);
+            widths[key] = `calc(${chars} * 0.6em + 2 * var(--viz-spacing-md))`;
+        }
+        return widths;
+    });
 
     // Inspecting/Debugging
     if (debugMode) {
@@ -963,6 +1046,45 @@
     </tr>
 {/snippet}
 
+{#snippet assetTableHeader()}
+    <th class="preview-header" style={`width: ${PREVIEW_COLUMN_WIDTH};`}> Preview </th>
+    {#each visibleKeys as key}
+        <th style={`width: ${tableColumnWidths[key]};`}>
+            <button
+                onclick={() => {
+                    if (sortState.value.by === key) {
+                        sortState.value.order = sortState.value.order === "ASC" ? "DESC" : "ASC";
+                    } else {
+                        sortState.value.by = key as AssetSortBy;
+                    }
+                }}
+            >
+                <span>{snakeToTitle(key)}</span>
+                <span class="sort-icon" class:active={sortState.value.by === key}>
+                    <MaterialIcon
+                        iconName={sortState.value.by === key && sortState.value.order === "ASC"
+                            ? "arrow_upward"
+                            : "arrow_downward"}
+                    />
+                </span>
+            </button>
+        </th>
+    {/each}
+    <th class="settings-header">
+        <button class="column-selector-btn" onclick={openColumnSelector} title="Select columns">
+            <MaterialIcon iconName="view_column" />
+        </button>
+    </th>
+{/snippet}
+
+{#snippet assetTableBody()}
+    {#each virtualizer.visibleRows as row (row.id)}
+        {#if row.type === "images"}
+            {@render assetComponentListOption(row.items[0].asset as T)}
+        {/if}
+    {/each}
+{/snippet}
+
 {#snippet assetTable()}
     <div
         bind:this={assetGridDisplayEl}
@@ -973,66 +1095,21 @@
         onclick={handleContainerClick}
         onscroll={handleGridScroll}
     >
-        <table>
-            <thead
-                oncontextmenu={(e) => {
-                    e.preventDefault();
-                    openColumnSelector();
-                }}
-            >
-                <tr>
-                    <th class="preview-header"> Preview </th>
-                    {#each visibleKeys as key}
-                        <th>
-                            <button
-                                onclick={() => {
-                                    if (sortState.value.by === key) {
-                                        sortState.value.order = sortState.value.order === "ASC" ? "DESC" : "ASC";
-                                    } else {
-                                        sortState.value.by = key as AssetSortBy;
-                                    }
-                                }}
-                            >
-                                <span>{snakeToTitle(key)}</span>
-                                <span class="sort-icon" class:active={sortState.value.by === key}>
-                                    <MaterialIcon
-                                        iconName={sortState.value.by === key && sortState.value.order === "ASC"
-                                            ? "arrow_upward"
-                                            : "arrow_downward"}
-                                    />
-                                </span>
-                            </button>
-                        </th>
-                    {/each}
-                    <th class="settings-header">
-                        <button class="column-selector-btn" onclick={openColumnSelector} title="Select columns">
-                            <MaterialIcon iconName="settings" />
-                        </button>
-                    </th>
-                </tr>
-            </thead>
-            <tbody>
-                {#each virtualizer.visibleRows as row (row.id)}
-                    {#if row.type === "images"}
-                        {#if row.top > 0 && virtualizer.visibleRows.indexOf(row) === 0}
-                            <tr class="virtual-spacer" style="height: {row.top}px;">
-                                <td colspan={visibleKeys.length + 2}></td>
-                            </tr>
-                        {/if}
-                        {@render assetComponentListOption(row.items[0].asset as T)}
-                    {/if}
-                {/each}
-                {#if virtualizer.visibleRows.length > 0}
-                    {@const lastRow = virtualizer.visibleRows[virtualizer.visibleRows.length - 1]}
-                    {@const bottomPad = virtualizer.totalHeight - lastRow.top - lastRow.height}
-                    {#if bottomPad > 0}
-                        <tr class="virtual-spacer" style="height: {bottomPad}px;">
-                            <td colspan={visibleKeys.length + 2}></td>
-                        </tr>
-                    {/if}
-                {/if}
-            </tbody>
-        </table>
+        {#if tableTopSpacerHeight > 0}
+            <div class="virtual-spacer" style="height: {tableTopSpacerHeight}px;"></div>
+        {/if}
+        <Table
+            data={allAssetsData}
+            header={assetTableHeader}
+            body={assetTableBody}
+            onheadercontextmenu={(e) => {
+                e.preventDefault();
+                openColumnSelector();
+            }}
+        />
+        {#if tableBottomSpacerHeight > 0}
+            <div class="virtual-spacer" style="height: {tableBottomSpacerHeight}px;"></div>
+        {/if}
     </div>
 {/snippet}
 
@@ -1185,172 +1262,181 @@
         box-sizing: border-box;
         overflow-x: auto;
 
-        table {
+        :global(.viz-table-container) {
             width: 100%;
-            table-layout: auto;
+            border: none;
+            border-radius: 0;
+            background: transparent;
+            overflow: visible;
+        }
+
+        :global(.viz-table) {
+            width: 100%;
+            table-layout: fixed;
             border-collapse: separate;
             border-spacing: 0;
             font-size: var(--viz-font-size-lg);
             color: var(--viz-text-primary);
             display: table;
         }
+    }
 
-        thead,
-        tbody {
-            display: table-row-group;
-        }
+    .viz-asset-table-container :global(.viz-table thead),
+    .viz-asset-table-container :global(.viz-table tbody) {
+        display: table-row-group;
+    }
 
-        tr {
-            display: table-row;
-        }
+    .viz-asset-table-container :global(.viz-table tr) {
+        display: table-row;
+    }
 
-        th,
-        td {
-            display: table-cell;
-        }
+    .viz-asset-table-container :global(.viz-table th),
+    .viz-asset-table-container :global(.viz-table td) {
+        display: table-cell;
+    }
 
-        thead th {
-            position: sticky;
-            top: 0px;
-            z-index: 2;
-            color: var(--viz-text-primary);
-            background-color: var(--viz-surface-panel);
-            text-align: left;
-            font-weight: 600;
-            padding: var(--viz-spacing-sm) var(--viz-spacing-md);
-            vertical-align: middle;
-            border-bottom: 2px solid var(--viz-border-subtle);
+    .viz-asset-table-container :global(.viz-table thead th) {
+        position: sticky;
+        top: 0px;
+        z-index: 2;
+        color: var(--viz-text-primary);
+        background-color: color-mix(in srgb, var(--viz-surface-base) 72%, transparent);
+        backdrop-filter: blur(8px);
+        -webkit-backdrop-filter: blur(8px);
+        text-align: left;
+        font-weight: 600;
+        padding: var(--viz-spacing-sm) var(--viz-spacing-md);
+        vertical-align: middle;
+        border-bottom: 2px solid var(--viz-border-subtle);
+    }
 
-            &.settings-header {
-                width: 3.5rem;
-                min-width: 3.5rem;
-                text-align: right;
-                padding-right: var(--viz-spacing-md);
+    .viz-asset-table-container :global(.viz-table thead th.settings-header) {
+        width: 3.5rem;
+        min-width: 3.5rem;
+        text-align: right;
+        padding-right: var(--viz-spacing-md);
+    }
 
-                .column-selector-btn {
-                    background: transparent;
-                    border: none;
-                    color: var(--viz-text-secondary);
-                    cursor: pointer;
-                    padding: var(--viz-spacing-xxs);
-                    border-radius: var(--viz-border-radius-pill);
-                    display: inline-flex;
-                    align-items: center;
-                    justify-content: center;
-                    transition:
-                        background-color 0.2s,
-                        color 0.2s;
+    .viz-asset-table-container :global(.viz-table thead th.settings-header .column-selector-btn) {
+        background: transparent;
+        border: none;
+        color: var(--viz-text-secondary);
+        cursor: pointer;
+        padding: var(--viz-spacing-xxs);
+        border-radius: var(--viz-border-radius-pill);
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        transition:
+            background-color 0.2s,
+            color 0.2s;
+    }
 
-                    &:hover {
-                        background-color: var(--viz-surface-hover);
-                        color: var(--viz-text-primary);
-                    }
+    .viz-asset-table-container :global(.viz-table thead th.settings-header .column-selector-btn:hover) {
+        background-color: var(--viz-surface-hover);
+        color: var(--viz-text-primary);
+    }
 
-                    :global(.material-symbols-outlined) {
-                        font-size: 1.125rem;
-                    }
-                }
-            }
+    .viz-asset-table-container
+        :global(.viz-table thead th.settings-header .column-selector-btn .material-symbols-outlined) {
+        font-size: 1.125rem;
+    }
 
-            button {
-                display: inline-flex;
-                align-items: center;
-                gap: var(--viz-spacing-xs);
-                background: transparent;
-                border: none;
-                color: inherit;
-                cursor: pointer;
-                font: inherit;
-                padding: var(--viz-spacing-xs) var(--viz-spacing-sm);
-                border-radius: var(--viz-border-radius-pill);
-                transition:
-                    background-color 0.2s,
-                    color 0.2s;
+    .viz-asset-table-container :global(.viz-table thead th button) {
+        display: inline-flex;
+        align-items: center;
+        gap: var(--viz-spacing-xs);
+        background: transparent;
+        border: none;
+        color: inherit;
+        cursor: pointer;
+        font: inherit;
+        padding: var(--viz-spacing-xs) var(--viz-spacing-sm);
+        border-radius: var(--viz-border-radius-pill);
+        transition:
+            background-color 0.2s,
+            color 0.2s;
+    }
 
-                &:hover {
-                    background-color: var(--viz-surface-hover);
-                    color: var(--viz-text-primary);
-                }
+    .viz-asset-table-container :global(.viz-table thead th button:hover) {
+        background-color: var(--viz-surface-hover);
+        color: var(--viz-text-primary);
+    }
 
-                .sort-icon {
-                    display: inline-flex;
-                    align-items: center;
-                    font-size: var(--viz-font-size-std);
-                    opacity: 0;
-                    transition: opacity 0.2s;
+    .viz-asset-table-container :global(.viz-table thead th button .sort-icon) {
+        display: inline-flex;
+        align-items: center;
+        font-size: var(--viz-font-size-std);
+        opacity: 0;
+        transition: opacity 0.2s;
+    }
 
-                    &.active {
-                        opacity: 1;
-                        color: var(--viz-primary);
-                    }
-                }
+    .viz-asset-table-container :global(.viz-table thead th button .sort-icon.active) {
+        opacity: 1;
+        color: var(--viz-primary);
+    }
 
-                &:hover .sort-icon {
-                    opacity: 0.5;
-                    &.active {
-                        opacity: 1;
-                    }
-                }
-            }
-        }
+    .viz-asset-table-container :global(.viz-table thead th button:hover .sort-icon) {
+        opacity: 0.5;
+    }
 
-        tbody tr {
-            transition: background-color 120ms ease-in-out;
-            background-color: var(--viz-surface-panel);
+    .viz-asset-table-container :global(.viz-table thead th button:hover .sort-icon.active) {
+        opacity: 1;
+    }
 
-            &:nth-child(even) {
-                background-color: var(--viz-surface-card);
-            }
+    .viz-asset-table-container :global(.viz-table tbody tr) {
+        transition: background-color 120ms ease-in-out;
+        background-color: transparent;
+    }
 
-            &:hover {
-                background-color: var(--viz-surface-hover);
-            }
+    .viz-asset-table-container :global(.viz-table tbody tr:hover) {
+        background-color: var(--viz-surface-hover);
+    }
 
-            &.selected-card {
-                background-color: color-mix(in srgb, var(--viz-surface-panel) 85%, var(--viz-primary) 15%);
+    .viz-asset-table-container :global(.viz-table tbody tr.selected-card) {
+        background-color: color-mix(in srgb, var(--viz-primary) 12%, transparent);
+    }
 
-                td {
-                    border-bottom-color: color-mix(in srgb, var(--viz-border-subtle) 50%, var(--viz-primary) 50%);
-                }
-            }
+    .viz-asset-table-container :global(.viz-table tbody tr.selected-card td) {
+        border-bottom-color: color-mix(in srgb, var(--viz-border-subtle) 50%, var(--viz-primary) 50%);
+    }
 
-            /* Table row selection accent: show a left indicator inside the preview cell */
-            &.selected-card td:first-child,
-            &:focus-visible td:first-child {
-                position: relative;
-            }
+    /* Table row selection accent: show a left indicator inside the preview cell */
+    .viz-asset-table-container :global(.viz-table tbody tr.selected-card td:first-child),
+    .viz-asset-table-container :global(.viz-table tbody tr:focus-visible td:first-child) {
+        position: relative;
+    }
 
-            &.selected-card td:first-child::before,
-            &:focus-visible td:first-child::before {
-                content: "";
-                position: absolute;
-                left: 4px;
-                top: var(--viz-spacing-sm);
-                bottom: var(--viz-spacing-sm);
-                width: 3px;
-                border-radius: var(--viz-border-radius-pill);
-                background: var(--viz-primary);
-            }
+    .viz-asset-table-container :global(.viz-table tbody tr.selected-card td:first-child::before),
+    .viz-asset-table-container :global(.viz-table tbody tr:focus-visible td:first-child::before) {
+        content: "";
+        position: absolute;
+        left: 4px;
+        top: var(--viz-spacing-sm);
+        bottom: var(--viz-spacing-sm);
+        width: 3px;
+        border-radius: var(--viz-border-radius-pill);
+        background: var(--viz-primary);
+    }
 
-            td {
-                padding: var(--viz-spacing-sm) var(--viz-spacing-md);
-                vertical-align: middle;
-                border-bottom: 1px solid var(--viz-border-subtle);
-                white-space: nowrap;
-                overflow: hidden;
-                text-overflow: ellipsis;
-            }
+    .viz-asset-table-container :global(.viz-table tbody td) {
+        padding: var(--viz-spacing-sm) var(--viz-spacing-md);
+        vertical-align: middle;
+        border-bottom: 1px solid var(--viz-border-subtle);
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+    }
 
-            td.actions-cell {
-                width: 3.5rem;
-                min-width: 3.5rem;
-                padding: 0;
-            }
-        }
+    .viz-asset-table-container :global(.viz-table tbody td.actions-cell) {
+        width: 3.5rem;
+        min-width: 3.5rem;
+        padding: 0;
     }
 
     /* Preview column: thumbnail + meta stacked */
     .asset-snippet-cell {
+        /* idk about this hardcoded value but it makes sense based on the virtualisation */
         min-width: 220px;
         padding: var(--viz-spacing-xs) var(--viz-spacing-sm);
         vertical-align: middle;
@@ -1415,8 +1501,7 @@
         }
     }
 
-    /* Values columns should wrap gracefully on small widths */
-    .viz-asset-table-container tbody td:not(.asset-snippet-cell) {
-        max-width: 18ch;
-    }
+    /* With table-layout: fixed, columns are sized from the header row, so value
+       cells clip/ellipsize instead of driving column widths (prevents jitter
+       as virtualized rows change). */
 </style>

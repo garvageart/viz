@@ -27,6 +27,8 @@
         data: T[];
         columns?: TableColumn<T>[];
         rows?: Snippet<[T]>;
+        header?: Snippet;
+        body?: Snippet;
         emptyMessage?: string;
         sortable?: boolean;
         sort?: TableSort;
@@ -34,19 +36,23 @@
         columnsEditable?: boolean;
         availableKeys?: string[];
         columnSelectorOpen?: boolean;
+        onheadercontextmenu?: (e: MouseEvent) => void;
     }
 
     let {
         data,
         columns = [],
         rows,
+        header,
+        body,
         emptyMessage = "No data",
         sortable = false,
         sort = $bindable({ key: "", order: "asc" }),
         onsort,
         columnsEditable = false,
         availableKeys,
-        columnSelectorOpen = $bindable(false)
+        columnSelectorOpen = $bindable(false),
+        onheadercontextmenu
     }: Props<T> = $props();
 
     let inferredKeys: string[] = $derived.by(() => {
@@ -138,55 +144,67 @@
 
 <div class="viz-table-container">
     <table class="viz-table">
-        <thead>
+        <thead oncontextmenu={onheadercontextmenu}>
             <tr>
-                {#each effectiveColumns as col (col.key)}
-                    <th
-                        class="align-{col.align ?? 'left'}"
-                        class:sortable={canSort(col)}
-                        style={col.width ? `width: ${col.width}` : undefined}
-                        aria-sort={sort.key === col.key ? (sort.order === "asc" ? "ascending" : "descending") : "none"}
-                    >
-                        {#if canSort(col)}
-                            <button class="header-sort-btn" onclick={() => handleSort(col.key)}>
-                                <span>{col.header ?? snakeToTitle(col.key)}</span>
-                                <span class="sort-icon" class:active={sort.key === col.key}>
-                                    <MaterialIcon
-                                        iconName={sort.key === col.key && sort.order === "asc"
-                                            ? "arrow_upward"
-                                            : "arrow_downward"}
-                                        size="1rem"
-                                    />
-                                </span>
-                            </button>
-                        {:else}
-                            {col.header ?? snakeToTitle(col.key)}
-                        {/if}
-                    </th>
-                {/each}
+                {#if header}
+                    {@render header()}
+                {:else}
+                    {#each effectiveColumns as col (col.key)}
+                        <th
+                            class="align-{col.align ?? 'left'}"
+                            class:sortable={canSort(col)}
+                            style={col.width ? `width: ${col.width}` : undefined}
+                            aria-sort={sort.key === col.key
+                                ? sort.order === "asc"
+                                    ? "ascending"
+                                    : "descending"
+                                : "none"}
+                        >
+                            {#if canSort(col)}
+                                <button class="header-sort-btn" onclick={() => handleSort(col.key)}>
+                                    <span>{col.header ?? snakeToTitle(col.key)}</span>
+                                    <span class="sort-icon" class:active={sort.key === col.key}>
+                                        <MaterialIcon
+                                            iconName={sort.key === col.key && sort.order === "asc"
+                                                ? "arrow_upward"
+                                                : "arrow_downward"}
+                                            size="1rem"
+                                        />
+                                    </span>
+                                </button>
+                            {:else}
+                                {col.header ?? snakeToTitle(col.key)}
+                            {/if}
+                        </th>
+                    {/each}
+                {/if}
             </tr>
         </thead>
         <tbody>
-            {#each data as row, index (getRowKey(row, index))}
-                {#if rows}
-                    {@render rows(row)}
-                {:else}
-                    <tr>
-                        {#each effectiveColumns as col (col.key)}
-                            <td
-                                class="align-{col.align ?? 'left'} {col.class ?? ''}"
-                                style={col.width ? `width: ${col.width}` : undefined}
-                            >
-                                {#if col.cell}
-                                    {@render col.cell(row)}
-                                {:else}
-                                    {formatValue(getNestedValue(row, col.key))}
-                                {/if}
-                            </td>
-                        {/each}
-                    </tr>
-                {/if}
-            {/each}
+            {#if body}
+                {@render body()}
+            {:else}
+                {#each data as row, index (getRowKey(row, index))}
+                    {#if rows}
+                        {@render rows(row)}
+                    {:else}
+                        <tr>
+                            {#each effectiveColumns as col (col.key)}
+                                <td
+                                    class="align-{col.align ?? 'left'} {col.class ?? ''}"
+                                    style={col.width ? `width: ${col.width}` : undefined}
+                                >
+                                    {#if col.cell}
+                                        {@render col.cell(row)}
+                                    {:else}
+                                        {formatValue(getNestedValue(row, col.key))}
+                                    {/if}
+                                </td>
+                            {/each}
+                        </tr>
+                    {/if}
+                {/each}
+            {/if}
         </tbody>
     </table>
     {#if data.length === 0}
@@ -213,11 +231,9 @@
             th {
                 text-align: left;
                 padding: var(--viz-spacing-md) var(--viz-spacing-sm);
-                color: var(--viz-text-secondary);
+                // color: var(--viz-text-secondary);
                 font-weight: 600;
-                font-size: var(--viz-font-size-std);
-                text-transform: uppercase;
-                letter-spacing: 0.05em;
+                font-size: var(--viz-font-size-lg);
                 border-bottom: var(--viz-border-thin);
                 white-space: nowrap;
 

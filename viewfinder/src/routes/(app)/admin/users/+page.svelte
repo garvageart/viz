@@ -11,6 +11,7 @@
     import IconButton from "$lib/components/ui/IconButton.svelte";
     import MaterialIcon from "$lib/components/ui/MaterialIcon.svelte";
     import SliderToggle from "$lib/components/ui/SliderToggle.svelte";
+    import Table, { type TableColumn } from "$lib/components/ui/Table.svelte";
     import { user as currentUserState } from "$lib/states/index.svelte";
     import { toasts } from "$lib/toast-notifcations/toasts.svelte.js";
 
@@ -156,6 +157,14 @@
             { heading: "Delete User" }
         );
     }
+
+    const userColumns: TableColumn<User>[] = [
+        { key: "user", header: "User" },
+        { key: "email", header: "Email" },
+        { key: "role", header: "Role" },
+        { key: "created_at", header: "Joined" },
+        { key: "actions", header: "Actions", align: "right" }
+    ];
 </script>
 
 {#snippet deleteConfirmSnippet()}
@@ -190,6 +199,48 @@
     {/if}
 {/snippet}
 
+{#snippet usersRow(user: User)}
+    <tr>
+        <td>
+            <div class="user-cell">
+                <AvatarBadge {user} showCurrentUser={true} />
+                <div class="user-info">
+                    <span class="name"
+                        >{user.name || "No Name"}
+                        {user.uid === currentUserState.data?.uid ? "(You)" : ""}</span
+                    >
+                    <span class="uid" title={user.uid}>{user.uid}</span>
+                </div>
+            </div>
+        </td>
+        <td>{user.email}</td>
+        <td>
+            <span class="role-badge {user.role}">{user.role}</span>
+        </td>
+        <td>{formatDate(user.created_at)}</td>
+        <td>
+            <div class="actions-cell">
+                <IconButton
+                    iconName="person_edit"
+                    grade={-25}
+                    variant="small"
+                    class="action-btn edit"
+                    onclick={() => openEditModal(user)}
+                    title="Edit User"
+                />
+                <IconButton
+                    iconName="person_remove"
+                    grade={-25}
+                    variant="small"
+                    class="action-btn delete"
+                    onclick={() => openDeleteConfirm(user)}
+                    title="Delete User"
+                />
+            </div>
+        </td>
+    </tr>
+{/snippet}
+
 <AdminRouteShell heading="User Management" description="Manage user accounts, roles, and permissions.">
     {#snippet actions()}
         <IconButton iconName="add" variant="info" onclick={openCreateModal}>
@@ -199,60 +250,7 @@
 
     <section class="content-section">
         <div class="users-table-container">
-            <table class="users-table">
-                <thead>
-                    <tr>
-                        <th>User</th>
-                        <th>Email</th>
-                        <th>Role</th>
-                        <th>Joined</th>
-                        <th style="text-align: right;">Actions</th>
-                    </tr>
-                </thead>
-                <tbody>
-                    {#each users as user}
-                        <tr>
-                            <td>
-                                <div class="user-cell">
-                                    <AvatarBadge {user} showCurrentUser={true} />
-                                    <div class="user-info">
-                                        <span class="name"
-                                            >{user.name || "No Name"}
-                                            {user.uid === currentUserState.data?.uid ? "(You)" : ""}</span
-                                        >
-                                        <span class="uid" title={user.uid}>{user.uid}</span>
-                                    </div>
-                                </div>
-                            </td>
-                            <td>{user.email}</td>
-                            <td>
-                                <span class="role-badge {user.role}">{user.role}</span>
-                            </td>
-                            <td>{formatDate(user.created_at)}</td>
-                            <td>
-                                <div class="actions-cell">
-                                    <IconButton
-                                        iconName="person_edit"
-                                        grade={-25}
-                                        variant="small"
-                                        class="action-btn edit"
-                                        onclick={() => openEditModal(user)}
-                                        title="Edit User"
-                                    />
-                                    <IconButton
-                                        iconName="person_remove"
-                                        grade={-25}
-                                        variant="small"
-                                        class="action-btn delete"
-                                        onclick={() => openDeleteConfirm(user)}
-                                        title="Delete User"
-                                    />
-                                </div>
-                            </td>
-                        </tr>
-                    {/each}
-                </tbody>
-            </table>
+            <Table data={users} columns={userColumns} rows={usersRow} emptyMessage="No users found." />
         </div>
     </section>
 </AdminRouteShell>
@@ -269,39 +267,51 @@
         overflow-x: auto;
     }
 
-    .users-table {
+    .users-table-container :global(.viz-table-container) {
+        width: 100%;
+        border: none;
+        border-radius: 0;
+        background: transparent;
+        overflow: visible;
+    }
+
+    .users-table-container :global(.viz-table) {
         width: 100%;
         border-collapse: collapse;
         font-size: var(--viz-font-size-lg);
+    }
 
-        tr {
-            transition: background-color 0.15s ease;
+    .users-table-container :global(.viz-table tr) {
+        transition: background-color 0.15s ease;
+    }
 
-            &:hover {
-                background-color: var(--viz-surface-panel);
-            }
-        }
+    .users-table-container :global(.viz-table tr:hover) {
+        background-color: var(--viz-surface-panel);
+    }
 
-        th {
-            text-align: left;
-            padding: var(--viz-spacing-md) var(--viz-spacing-sm);
-            color: var(--viz-text-secondary);
-            font-weight: 600;
-            font-size: var(--viz-font-size-std);
-            text-transform: uppercase;
-            letter-spacing: 0.05em;
-            border-bottom: var(--viz-border-thin);
-        }
+    .users-table-container :global(.viz-table thead th) {
+        text-align: left;
+        padding: var(--viz-spacing-md) var(--viz-spacing-sm);
+        color: var(--viz-text-secondary);
+        font-weight: 600;
+        font-size: var(--viz-font-size-std);
+        text-transform: uppercase;
+        letter-spacing: 0.05em;
+        border-bottom: var(--viz-border-thin);
+    }
 
-        td {
-            padding: var(--viz-spacing-md) var(--viz-spacing-sm);
-            border-bottom: var(--viz-border-thin);
-            vertical-align: middle;
-        }
+    .users-table-container :global(.viz-table thead th.align-right) {
+        text-align: right;
+    }
 
-        tr:last-child td {
-            border-bottom: none;
-        }
+    .users-table-container :global(.viz-table td) {
+        padding: var(--viz-spacing-md) var(--viz-spacing-sm);
+        border-bottom: var(--viz-border-thin);
+        vertical-align: middle;
+    }
+
+    .users-table-container :global(.viz-table tr:last-child td) {
+        border-bottom: none;
     }
 
     .user-cell {

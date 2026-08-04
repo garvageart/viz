@@ -15,6 +15,7 @@
     import Badge from "$lib/components/ui/Badge.svelte";
     import IconButton from "$lib/components/ui/IconButton.svelte";
     import MaterialIcon from "$lib/components/ui/MaterialIcon.svelte";
+    import Table, { type TableColumn } from "$lib/components/ui/Table.svelte";
     import { toasts } from "$lib/toast-notifcations/toasts.svelte";
     import { modalsManager } from "../modals/manager/ModalManager.svelte";
     import RenameSessionModal from "./RenameSessionModal.svelte";
@@ -253,6 +254,19 @@
             revokingSession = null;
         }
     }
+
+    const apiKeysColumns: TableColumn<ApiKey>[] = [
+        { key: "name", header: "Name" },
+        { key: "created_at", header: "Created" },
+        { key: "last_used_at", header: "Last Used" },
+        { key: "actions", header: "Actions", align: "right" }
+    ];
+
+    const sessionsColumns: TableColumn<ExtendedSession>[] = [
+        { key: "device", header: "Device / Browser" },
+        { key: "last_active", header: "Last Active" },
+        { key: "actions", header: "Actions", align: "right" }
+    ];
 </script>
 
 {#snippet deleteKeySnippet()}
@@ -266,6 +280,67 @@
 
 {#snippet revokeSessionSnippet()}
     <span> Are you sure you want to revoke this session? You will be logged out on that device. </span>
+{/snippet}
+
+{#snippet apiKeysRow(key: ApiKey)}
+    <tr>
+        <td>
+            <div class="key-info">
+                <span class="name">{key.name}</span>
+                {#if key.description}
+                    <span class="description">{key.description}</span>
+                {/if}
+            </div>
+        </td>
+        <td class="mono-text" title={new Date(key.created_at).toLocaleString()}>{formatRelativeDate(key.created_at)}</td
+        >
+        <td class="mono-text" title={key.last_used_at ? new Date(key.last_used_at).toLocaleString() : "Never"}
+            >{key.last_used_at ? formatRelativeDate(key.last_used_at) : "Never"}</td
+        >
+        <td>
+            <div class="actions-cell">
+                <button class="action-btn delete" onclick={() => openDeleteKeyConfirm(key)} title="Delete Key">
+                    <MaterialIcon iconName="delete" />
+                </button>
+            </div>
+        </td>
+    </tr>
+{/snippet}
+
+{#snippet sessionsRow(session: ExtendedSession)}
+    <tr>
+        <td>
+            <div class="session-info">
+                <div class="session-main">
+                    <span class="name">{session.client_name || `${session.browser} on ${session.os}`}</span>
+                    {#if session.is_current}
+                        <Badge variant="success" size="small" weight="regular"><span>Current</span></Badge>
+                    {/if}
+                </div>
+                <span class="details">
+                    <span class="mono-text">{session.ip_address}</span>
+                </span>
+            </div>
+        </td>
+        <td
+            class="mono-text"
+            title={session.last_active_at ? new Date(session.last_active_at).toLocaleString() : "Never"}
+            >{formatRelativeDate(session.last_active_at)}</td
+        >
+        <td>
+            <div class="actions-cell">
+                <!-- TODO: Replace these with IconButton -->
+                <button class="action-btn" onclick={() => openRenameSessionModal(session)} title="Rename Session">
+                    <MaterialIcon iconName="edit" />
+                </button>
+                {#if !session.is_current}
+                    <button class="action-btn revoke" onclick={() => openRevokeConfirm(session)} title="Revoke Session">
+                        <MaterialIcon iconName="logout" />
+                    </button>
+                {/if}
+            </div>
+        </td>
+    </tr>
 {/snippet}
 
 <div class="security-settings">
@@ -282,56 +357,12 @@
             {#if loading}
                 <div class="loading-state">Loading...</div>
             {:else}
-                <div class="table-container">
-                    <table class="settings-table">
-                        <thead>
-                            <tr>
-                                <th>Name</th>
-                                <th>Created</th>
-                                <th>Last Used</th>
-                                <th class="text-right">Actions</th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            {#each apiKeys as key}
-                                <tr>
-                                    <td>
-                                        <div class="key-info">
-                                            <span class="name">{key.name}</span>
-                                            {#if key.description}
-                                                <span class="description">{key.description}</span>
-                                            {/if}
-                                        </div>
-                                    </td>
-                                    <td class="mono-text" title={new Date(key.created_at).toLocaleString()}
-                                        >{formatRelativeDate(key.created_at)}</td
-                                    >
-                                    <td
-                                        class="mono-text"
-                                        title={key.last_used_at ? new Date(key.last_used_at).toLocaleString() : "Never"}
-                                        >{key.last_used_at ? formatRelativeDate(key.last_used_at) : "Never"}</td
-                                    >
-                                    <td>
-                                        <div class="actions-cell">
-                                            <button
-                                                class="action-btn delete"
-                                                onclick={() => openDeleteKeyConfirm(key)}
-                                                title="Delete Key"
-                                            >
-                                                <MaterialIcon iconName="delete" />
-                                            </button>
-                                        </div>
-                                    </td>
-                                </tr>
-                            {/each}
-                            {#if apiKeys.length === 0}
-                                <tr>
-                                    <td colspan="4" class="empty-row">No API keys created yet.</td>
-                                </tr>
-                            {/if}
-                        </tbody>
-                    </table>
-                </div>
+                <Table
+                    data={apiKeys}
+                    columns={apiKeysColumns}
+                    rows={apiKeysRow}
+                    emptyMessage="No API keys created yet."
+                />
             {/if}
         </div>
     </section>
@@ -348,68 +379,12 @@
             {#if loading}
                 <div class="loading-state">Loading...</div>
             {:else}
-                <div class="table-container">
-                    <table class="settings-table">
-                        <thead>
-                            <tr>
-                                <th>Device / Browser</th>
-                                <th>Last Active</th>
-                                <th class="text-right">Actions</th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            {#each sessions as session}
-                                <tr>
-                                    <td>
-                                        <div class="session-info">
-                                            <div class="session-main">
-                                                <span class="name"
-                                                    >{session.client_name ||
-                                                        `${session.browser} on ${session.os}`}</span
-                                                >
-                                                {#if session.is_current}
-                                                    <Badge variant="success" size="small" weight="regular"
-                                                        ><span>Current</span></Badge
-                                                    >
-                                                {/if}
-                                            </div>
-                                            <span class="details">
-                                                <span class="mono-text">{session.ip_address}</span>
-                                            </span>
-                                        </div>
-                                    </td>
-                                    <td
-                                        class="mono-text"
-                                        title={session.last_active_at
-                                            ? new Date(session.last_active_at).toLocaleString()
-                                            : "Never"}>{formatRelativeDate(session.last_active_at)}</td
-                                    >
-                                    <td>
-                                        <div class="actions-cell">
-                                            <!-- TODO: Replace these with IconButton -->
-                                            <button
-                                                class="action-btn"
-                                                onclick={() => openRenameSessionModal(session)}
-                                                title="Rename Session"
-                                            >
-                                                <MaterialIcon iconName="edit" />
-                                            </button>
-                                            {#if !session.is_current}
-                                                <button
-                                                    class="action-btn revoke"
-                                                    onclick={() => openRevokeConfirm(session)}
-                                                    title="Revoke Session"
-                                                >
-                                                    <MaterialIcon iconName="logout" />
-                                                </button>
-                                            {/if}
-                                        </div>
-                                    </td>
-                                </tr>
-                            {/each}
-                        </tbody>
-                    </table>
-                </div>
+                <Table
+                    data={sessions}
+                    columns={sessionsColumns}
+                    rows={sessionsRow}
+                    emptyMessage="No active sessions."
+                />
             {/if}
         </div>
     </section>
@@ -454,42 +429,43 @@
         }
     }
 
-    .table-container {
-        border: var(--viz-border-thin);
-        border-radius: var(--viz-border-radius-md);
-        overflow: hidden;
-        width: 100%;
-        background-color: var(--viz-surface-panel);
-    }
-
-    .settings-table {
+    .security-settings :global(.viz-table) {
         width: 100%;
         border-collapse: collapse;
         font-size: var(--viz-font-size-lg);
-
-        th {
-            text-align: left;
-            padding: var(--viz-spacing-md) var(--viz-spacing-std);
-            font-weight: 600;
-            font-size: var(--viz-font-size-lg);
-            border-bottom: var(--viz-border-thin);
-            background-color: var(--viz-surface-panel);
-        }
-
-        td {
-            padding: var(--viz-spacing-std);
-            border-bottom: var(--viz-border-thin);
-            vertical-align: middle;
-            color: var(--viz-text-primary);
-        }
-
-        tr:last-child td {
-            border-bottom: none;
-        }
     }
 
-    .text-right {
-        text-align: right !important;
+    .security-settings :global(.viz-table thead th) {
+        text-align: left;
+        padding: var(--viz-spacing-md) var(--viz-spacing-std);
+        font-weight: 600;
+        font-size: var(--viz-font-size-lg);
+        border-bottom: var(--viz-border-thin);
+        background-color: var(--viz-surface-panel);
+    }
+
+    .security-settings :global(.viz-table thead th.align-right) {
+        text-align: right;
+    }
+
+    .security-settings :global(td) {
+        padding: var(--viz-spacing-std);
+        border-bottom: var(--viz-border-thin);
+        vertical-align: middle;
+        color: var(--viz-text-primary);
+    }
+
+    .security-settings :global(tr:last-child td) {
+        border-bottom: none;
+    }
+
+    .security-settings :global(.empty-state) {
+        font-style: italic;
+        position: static;
+    }
+
+    .security-settings :global(.empty-state::after) {
+        display: none;
     }
 
     .mono-text {
@@ -566,13 +542,6 @@
             background-color: color-mix(in srgb, var(--viz-error-color) 15%, var(--viz-surface-card));
             color: var(--viz-error-color);
         }
-    }
-
-    .empty-row {
-        text-align: center;
-        padding: var(--viz-spacing-xxl) !important;
-        color: var(--viz-text-secondary);
-        font-style: italic;
     }
 
     .loading-state {
