@@ -854,26 +854,28 @@
 {/snippet}
 
 {#snippet justifiedGrid()}
-    <PhotoAssetGrid
-        data={displayData}
-        allData={viewSettings.showDates ? allImagesFlat : undefined}
-        groupedData={viewSettings.showDates ? consolidatedGroups : undefined}
-        showDateHeaders={viewSettings.showDates}
-        {scopeId}
-        onLoadMore={() => paginate()}
-        assetDblClick={(_e: MouseEvent, asset: ImageAsset) => {
-            lightboxImage = asset;
-        }}
-        onassetcontext={(detail: { asset: ImageAsset; anchor: { x: number; y: number } | HTMLElement }) => {
-            const { asset, anchor } = detail;
-            if (!selectionScope.has(asset)) {
-                selectionScope.select(asset);
-            }
-            selectionScope.active = asset;
-            ctxAnchor = anchor;
-            ctxShowMenu = true;
-        }}
-    />
+    <div class="viz-justified-grid" style="padding: 0em {isLayoutPage() ? '1em' : '2em'};">
+        <PhotoAssetGrid
+            data={displayData}
+            allData={viewSettings.showDates ? allImagesFlat : undefined}
+            groupedData={viewSettings.showDates ? consolidatedGroups : undefined}
+            showDateHeaders={viewSettings.showDates}
+            {scopeId}
+            onLoadMore={() => paginate()}
+            assetDblClick={(_e: MouseEvent, asset: ImageAsset) => {
+                lightboxImage = asset;
+            }}
+            onassetcontext={(detail) => {
+                const { asset, anchor } = detail;
+                if (!selectionScope.has(asset)) {
+                    selectionScope.select(asset);
+                }
+                selectionScope.active = asset;
+                ctxAnchor = anchor;
+                ctxShowMenu = true;
+            }}
+        />
+    </div>
 {/snippet}
 
 {#snippet toolbarSnippet()}
