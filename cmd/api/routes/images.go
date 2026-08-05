@@ -36,7 +36,6 @@ import (
 	"viz/internal/jobs/workers"
 	libos "viz/internal/os"
 	"viz/internal/uid"
-	"viz/internal/utils"
 )
 
 type ImageUpload struct {
@@ -543,7 +542,7 @@ func ImagesRouter(db *gorm.DB, logger *slog.Logger, wsBroker *libhttp.WSBroker) 
 		}
 
 		fileImageUpload.FileName = req.FormValue("file_name")
-		fileImageUpload.Checksum = utils.StringPtr(req.FormValue("checksum"))
+		fileImageUpload.Checksum = new(req.FormValue("checksum"))
 
 		// Get the file and header from the form
 		file, header, err := req.FormFile("data")

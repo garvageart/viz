@@ -19,7 +19,6 @@ import (
 	"viz/internal/entities"
 	libhttp "viz/internal/http"
 	"viz/internal/uid"
-	"viz/internal/utils"
 )
 
 var ErrCollectionUnauthorised = errors.New("unauthorized")
@@ -652,7 +651,7 @@ func CollectionsRouter(db *gorm.DB, logger *slog.Logger, wsBroker *libhttp.WSBro
 		err := render.DecodeJSON(req.Body, &colImage)
 		if err != nil {
 			render.Status(req, http.StatusBadRequest)
-			render.JSON(res, req, dto.AddImagesResponse{Added: false, Error: utils.StringPtr("Invalid request body")})
+			render.JSON(res, req, dto.AddImagesResponse{Added: false, Error: new("Invalid request body")})
 			return
 		}
 
@@ -736,13 +735,13 @@ func CollectionsRouter(db *gorm.DB, logger *slog.Logger, wsBroker *libhttp.WSBro
 		if err != nil {
 			if err == gorm.ErrRecordNotFound {
 				render.Status(req, http.StatusNotFound)
-				render.JSON(res, req, dto.AddImagesResponse{Added: false, Error: utils.StringPtr("Collection or image not found")})
+				render.JSON(res, req, dto.AddImagesResponse{Added: false, Error: new("Collection or image not found")})
 				return
 			}
 
 			if err == ErrCollectionUnauthorised {
 				render.Status(req, http.StatusForbidden)
-				render.JSON(res, req, dto.AddImagesResponse{Added: false, Error: utils.StringPtr("Unauthorized")})
+				render.JSON(res, req, dto.AddImagesResponse{Added: false, Error: new("Unauthorized")})
 				return
 			}
 
@@ -767,7 +766,7 @@ func CollectionsRouter(db *gorm.DB, logger *slog.Logger, wsBroker *libhttp.WSBro
 
 		if err := render.DecodeJSON(req.Body, &body); err != nil {
 			render.Status(req, http.StatusBadRequest)
-			render.JSON(res, req, dto.AddImagesResponse{Added: false, Error: utils.StringPtr("invalid request body")})
+			render.JSON(res, req, dto.AddImagesResponse{Added: false, Error: new("invalid request body")})
 			return
 		}
 
@@ -850,13 +849,13 @@ func CollectionsRouter(db *gorm.DB, logger *slog.Logger, wsBroker *libhttp.WSBro
 		if err != nil {
 			if err == gorm.ErrRecordNotFound {
 				render.Status(req, http.StatusNotFound)
-				render.JSON(res, req, dto.DeleteImagesResponse{Deleted: false, Error: utils.StringPtr("collection not found")})
+				render.JSON(res, req, dto.DeleteImagesResponse{Deleted: false, Error: new("collection not found")})
 				return
 			}
 
 			if err == ErrCollectionUnauthorised {
 				render.Status(req, http.StatusForbidden)
-				render.JSON(res, req, dto.DeleteImagesResponse{Deleted: false, Error: utils.StringPtr("unauthorized")})
+				render.JSON(res, req, dto.DeleteImagesResponse{Deleted: false, Error: new("unauthorized")})
 				return
 			}
 

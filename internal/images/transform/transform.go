@@ -6,7 +6,6 @@ import (
 	"reflect"
 	"strconv"
 	"viz/internal/entities"
-	"viz/internal/utils"
 )
 
 // TransformParams defines the parameters for an image transformation.
@@ -81,5 +80,5 @@ func CreateTransformEtag(imgEnt entities.ImageAsset, params *TransformParams) *s
 		}
 	}
 
-	return utils.StringPtr(base)
+	return new(base)
 }

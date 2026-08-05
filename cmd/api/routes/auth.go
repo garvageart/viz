@@ -26,7 +26,6 @@ import (
 	"viz/internal/entities"
 	libhttp "viz/internal/http"
 	"viz/internal/uid"
-	"viz/internal/utils"
 )
 
 type VizAuthCodeFlow struct {
@@ -110,7 +109,7 @@ func AuthRouter(db *gorm.DB, logger *slog.Logger) *chi.Mux {
 			Uid:        uid.MustGenerate(),
 			UserUid:    row.UID,
 			ClientIp:   &req.RemoteAddr,
-			UserAgent:  utils.StringPtr(req.UserAgent()),
+			UserAgent:  new(req.UserAgent()),
 			LastActive: &lastActive,
 			ExpiresAt:  &expiryTime,
 		}

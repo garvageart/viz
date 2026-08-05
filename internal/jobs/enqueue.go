@@ -10,7 +10,6 @@ import (
 	"gorm.io/gorm"
 
 	"viz/internal/entities"
-	"viz/internal/utils"
 )
 
 type JobStatus string
@@ -76,7 +75,7 @@ func Enqueue(db *gorm.DB, topic string, payload any, cmd *JobCommand, imageUid *
 	}
 
 	if err := Publish(topic, msg); err != nil {
-		_ = UpdateWorkerJobStatus(db, uid, WorkerJobStatusFailed, utils.StringPtr("publish_failed"), utils.StringPtr("failed to publish message"), nil, nil)
+		_ = UpdateWorkerJobStatus(db, uid, WorkerJobStatusFailed, new("publish_failed"), new("failed to publish message"), nil, nil)
 		return "", fmt.Errorf("publish: %w", err)
 	}
 

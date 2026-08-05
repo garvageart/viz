@@ -167,7 +167,7 @@ func (h *setupHandlers) SetupSuperadmin(w http.ResponseWriter, req *http.Request
 		Uid:        uid.MustGenerate(),
 		UserUid:    id,
 		ClientIp:   &req.RemoteAddr,
-		UserAgent:  utils.StringPtr(req.UserAgent()),
+		UserAgent:  new(req.UserAgent()),
 		LastActive: &lastActive,
 		ExpiresAt:  &expiryTime,
 	}

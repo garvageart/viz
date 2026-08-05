@@ -15,7 +15,6 @@ import (
 	libhttp "viz/internal/http"
 	"viz/internal/images"
 	"viz/internal/jobs"
-	"viz/internal/utils"
 
 	"gorm.io/gorm"
 )
@@ -40,7 +39,7 @@ func NewImageWorker(db *gorm.DB, wsBroker *libhttp.WSBroker) *jobs.Worker {
 
 		if job.Image.ImageMetadata == nil {
 			err = fmt.Errorf("job %s failed: image metadata is nil for image %s", JobTypeImageProcess, job.Image.Uid)
-			_ = jobs.UpdateWorkerJobStatus(db, msg.UUID, jobs.WorkerJobStatusFailed, utils.StringPtr("worker_error"), utils.StringPtr(jobs.Truncate(err.Error(), 1024)), nil, nil)
+			_ = jobs.UpdateWorkerJobStatus(db, msg.UUID, jobs.WorkerJobStatusFailed, new("worker_error"), new(jobs.Truncate(err.Error(), 1024)), nil, nil)
 			return nil // Return nil to avoid retry loop for unrecoverable error
 		}
 
@@ -84,7 +83,7 @@ func NewImageWorker(db *gorm.DB, wsBroker *libhttp.WSBroker) *jobs.Worker {
 				})
 			}
 			// persist concise error
-			_ = jobs.UpdateWorkerJobStatus(db, msg.UUID, jobs.WorkerJobStatusFailed, utils.StringPtr("worker_error"), utils.StringPtr(jobs.Truncate(err.Error(), 1024)), nil, nil)
+			_ = jobs.UpdateWorkerJobStatus(db, msg.UUID, jobs.WorkerJobStatusFailed, new("worker_error"), new(jobs.Truncate(err.Error(), 1024)), nil, nil)
 			return err
 		}
 

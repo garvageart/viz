@@ -4,7 +4,6 @@ import (
 	"os"
 	"testing"
 	"viz/internal/dto"
-	"viz/internal/utils"
 )
 
 func TestHasExifDateTime(t *testing.T) {
@@ -21,7 +20,7 @@ func TestHasExifDateTime(t *testing.T) {
 
 	// Case 3: DateTimeOriginal is set
 	withDateTimeOriginal := &dto.ImageEXIF{
-		DateTimeOriginal: utils.StringPtr("2026:07:12 12:00:00"),
+		DateTimeOriginal: new("2026:07:12 12:00:00"),
 	}
 	if !HasExifDateTime(withDateTimeOriginal) {
 		t.Error("Expected true for exif with DateTimeOriginal")
@@ -29,7 +28,7 @@ func TestHasExifDateTime(t *testing.T) {
 
 	// Case 4: DateTime is set
 	withDateTime := &dto.ImageEXIF{
-		DateTime: utils.StringPtr("2026:07:12 12:00:00"),
+		DateTime: new("2026:07:12 12:00:00"),
 	}
 	if !HasExifDateTime(withDateTime) {
 		t.Error("Expected true for exif with DateTime")
@@ -37,7 +36,7 @@ func TestHasExifDateTime(t *testing.T) {
 
 	// Case 5: ModifyDate is set
 	withModifyDate := &dto.ImageEXIF{
-		ModifyDate: utils.StringPtr("2026:07:12 12:00:00"),
+		ModifyDate: new("2026:07:12 12:00:00"),
 	}
 	if !HasExifDateTime(withModifyDate) {
 		t.Error("Expected true for exif with ModifyDate")
