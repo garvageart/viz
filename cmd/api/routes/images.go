@@ -170,7 +170,7 @@ func moveDirWithFallback(src, dst string) error {
 	return libos.MoveDirWithFallback(src, dst)
 }
 
-func ImagesRouter(db *gorm.DB, logger *slog.Logger) *chi.Mux {
+func ImagesRouter(db *gorm.DB, logger *slog.Logger, wsBroker *libhttp.WSBroker) *chi.Mux {
 	router := chi.NewRouter()
 
 	// List images with pagination
@@ -506,6 +506,8 @@ func ImagesRouter(db *gorm.DB, logger *slog.Logger) *chi.Mux {
 			logger.Error("failed to enqueue xmp generation job", slog.Any("error", err))
 		}
 
+		_ = wsBroker.Broadcast("image-updated", img.DTO())
+
 		render.Status(req, http.StatusOK)
 		render.JSON(res, req, img.DTO())
 	})
@@ -673,6 +675,8 @@ func ImagesRouter(db *gorm.DB, logger *slog.Logger) *chi.Mux {
 			return
 		}
 
+		_ = wsBroker.Broadcast("image-created", imageEntity.DTO())
+
 		logger.Info("upload images success", slog.String("id", imageEntity.Uid))
 
 		render.Status(req, http.StatusCreated)
@@ -815,6 +819,8 @@ func ImagesRouter(db *gorm.DB, logger *slog.Logger) *chi.Mux {
 			render.JSON(res, req, dto.ErrorResponse{Error: "Failed to process image"})
 			return
 		}
+
+		_ = wsBroker.Broadcast("image-created", imageEntity.DTO())
 
 		logger.Info("upload images success", slog.String("id", imageEntity.Uid))
 
@@ -976,6 +982,14 @@ func ImagesRouter(db *gorm.DB, logger *slog.Logger) *chi.Mux {
 		resp := dto.DeleteAssetsResponse{
 			Results: &resultsArr,
 			Message: msg,
+		}
+
+		for _, r := range resultsArr {
+			if r.Deleted {
+				_ = wsBroker.Broadcast("image-deleted", map[string]interface{}{
+					"uid": r.Uid,
+				})
+			}
 		}
 
 		if anyFailed {

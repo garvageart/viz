@@ -109,7 +109,7 @@ func (server APIServer) Launch(router *chi.Mux) *http.Server {
 					auth.ImagesUpdateScope,
 					auth.ImagesUploadScope,
 				}))
-				r.Mount("/images", routes.ImagesRouter(dbClient, logger))
+				r.Mount("/images", routes.ImagesRouter(dbClient, logger, server.WSBroker))
 			})
 			r.Group(func(r chi.Router) {
 				r.Use(libhttp.ScopeMiddleware([]auth.Scope{

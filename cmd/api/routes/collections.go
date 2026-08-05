@@ -165,9 +165,7 @@ func CollectionsRouter(db *gorm.DB, logger *slog.Logger, wsBroker *libhttp.WSBro
 			return
 		}
 
-		if wsBroker != nil {
-			_ = wsBroker.Broadcast("collection-created", collection.DTO())
-		}
+		_ = wsBroker.Broadcast("collection-created", collection.DTO())
 
 		logger.Info("Created collection", slog.String("name", collection.Name))
 
@@ -414,7 +412,7 @@ func CollectionsRouter(db *gorm.DB, logger *slog.Logger, wsBroker *libhttp.WSBro
 			return tx.Preload("Thumbnail").Preload("CreatedBy").Preload("Images").Preload("Images.AddedBy").First(&collection, "uid = ?", uid).Error
 		})
 
-		if err == nil && wsBroker != nil {
+		if err == nil {
 			_ = wsBroker.Broadcast("collection-updated", map[string]interface{}{
 				"uid":    collection.Uid,
 				"action": "updated",
@@ -474,7 +472,7 @@ func CollectionsRouter(db *gorm.DB, logger *slog.Logger, wsBroker *libhttp.WSBro
 			return nil
 		})
 
-		if err == nil && wsBroker != nil {
+		if err == nil {
 			_ = wsBroker.Broadcast("collection-deleted", map[string]interface{}{
 				"uid": uid,
 			})
@@ -726,13 +724,11 @@ func CollectionsRouter(db *gorm.DB, logger *slog.Logger, wsBroker *libhttp.WSBro
 				return err
 			}
 
-			if wsBroker != nil {
-				_ = wsBroker.Broadcast("collection-updated", map[string]interface{}{
-					"uid":    collection.Uid,
-					"action": "images-added",
-					"count":  int(totalCount),
-				})
-			}
+			_ = wsBroker.Broadcast("collection-updated", map[string]interface{}{
+				"uid":    collection.Uid,
+				"action": "images-added",
+				"count":  int(totalCount),
+			})
 
 			return nil
 		})
@@ -843,12 +839,10 @@ func CollectionsRouter(db *gorm.DB, logger *slog.Logger, wsBroker *libhttp.WSBro
 				return err
 			}
 
-			if wsBroker != nil {
-				_ = wsBroker.Broadcast("collection-updated", map[string]interface{}{
-					"uid":    collection.Uid,
-					"action": "images-removed",
-				})
-			}
+			_ = wsBroker.Broadcast("collection-updated", map[string]interface{}{
+				"uid":    collection.Uid,
+				"action": "images-removed",
+			})
 
 			return nil
 		})
