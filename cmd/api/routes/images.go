@@ -519,6 +519,7 @@ func ImagesRouter(db *gorm.DB, logger *slog.Logger, wsBroker *libhttp.WSBroker) 
 		uid := chi.URLParam(req, "uid")
 
 		// Create a short-lived opaque token and redirect to the file URL
+		// TODO: Look at making token TTL configurable
 		token, err := downloads.CreateToken(db, []string{uid}, 5*time.Minute)
 		if err != nil {
 			render.Status(req, http.StatusInternalServerError)
