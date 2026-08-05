@@ -40,7 +40,7 @@ var defaultSettings = []entities.SettingDefault{
 	),
 	EnumSetting(
 		"timezone",
-		"",
+		"Timezone",
 		"Africa/Johannesburg",
 		imaTime.Timezones,
 		true,
@@ -49,7 +49,7 @@ var defaultSettings = []entities.SettingDefault{
 	),
 	BoolSetting(
 		"first_run_complete",
-		"",
+		"First Run Complete",
 		false,
 		false,
 		"System",
@@ -57,7 +57,7 @@ var defaultSettings = []entities.SettingDefault{
 	),
 	BoolSetting(
 		"onboarding_complete",
-		"",
+		"Onboarding Complete",
 		false,
 		false,
 		"User",

@@ -5,12 +5,23 @@ import (
 	"fmt"
 	"log/slog"
 	"strconv"
+	"strings"
 
 	"viz/internal/dto"
 	"viz/internal/entities"
+	"viz/internal/utils"
 
 	"gorm.io/gorm"
 )
+
+// FormatDisplayName derives a human-readable display name from a setting name key.
+func FormatDisplayName(name string) string {
+	parts := strings.Split(name, "_")
+	for i, part := range parts {
+		parts[i] = utils.Capitalize(part)
+	}
+	return strings.Join(parts, " ")
+}
 
 // CleanupSettingDefaults removes duplicate entries from the setting_defaults table
 // to prepare for unique constraints. It keeps the entry with the smallest ID.

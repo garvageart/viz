@@ -646,9 +646,13 @@ func AccountsRouter(db *gorm.DB, logger *slog.Logger) *chi.Mux {
 // buildUserSetting constructs the merged user setting DTO from a definition and effective value.
 func buildUserSetting(def entities.SettingDefault, value string) dto.Setting {
 	isEditable := def.IsUserEditable
+	displayName := strings.TrimSpace(def.DisplayName)
+	if displayName == "" {
+		displayName = settings.FormatDisplayName(def.Name)
+	}
 	return dto.Setting{
 		Name:           def.Name,
-		DisplayName:    def.DisplayName,
+		DisplayName:    displayName,
 		DefaultValue:   def.Value,
 		Value:          value,
 		ValueType:      string(def.ValueType),
