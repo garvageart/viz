@@ -8,7 +8,6 @@ import {
     type User,
     updateUserSetting
 } from "$lib/api";
-import { SettingNames } from "$lib/components/settings/names";
 import type { MenuItem } from "$lib/context-menu/types";
 import { DbSettings } from "$lib/db/settings";
 import type { AssetGridView } from "$lib/types/asset";
@@ -228,7 +227,7 @@ export let continuePath = $state<string | null>(null);
 export type ThemeOption = "light" | "dark" | "system";
 
 class ThemeState {
-    ls = new VizLocalStorage<ThemeOption>(SettingNames.Theme);
+    ls = new VizLocalStorage<ThemeOption>("theme");
     prefLs = new VizLocalStorage<ThemeOption>("preferred_theme");
 
     value: ThemeOption = $state(this.getInitialTheme());
@@ -264,7 +263,7 @@ class ThemeState {
         this.preferredTheme = theme;
         this.prefLs.set(theme);
         try {
-            await updateUserSetting(SettingNames.Theme, { value: theme });
+            await updateUserSetting("theme", { value: theme });
         } catch (e) {
             console.error("Failed to sync theme preference", e);
         }
