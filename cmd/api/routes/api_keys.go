@@ -150,7 +150,7 @@ func APIKeysRouter(db *gorm.DB, logger *slog.Logger) *chi.Mux {
 		}
 
 		keyUid := chi.URLParam(req, "uid")
-		updates := map[string]interface{}{"revoked": true, "revoked_at": time.Now()}
+		updates := map[string]any{"revoked": true, "revoked_at": time.Now()}
 
 		if err := db.Transaction(func(tx *gorm.DB) error {
 			tq := tx.Model(&entities.APIKey{}).Where("uid = ?", keyUid)
@@ -209,7 +209,7 @@ func APIKeysRouter(db *gorm.DB, logger *slog.Logger) *chi.Mux {
 
 		if err := db.Transaction(func(tx *gorm.DB) error {
 			// Revoke old
-			if err := tx.Model(&entities.APIKey{}).Where("uid = ?", keyUid).Updates(map[string]interface{}{"revoked": true, "revoked_at": time.Now()}).Error; err != nil {
+			if err := tx.Model(&entities.APIKey{}).Where("uid = ?", keyUid).Updates(map[string]any{"revoked": true, "revoked_at": time.Now()}).Error; err != nil {
 				return err
 			}
 

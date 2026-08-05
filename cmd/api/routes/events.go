@@ -6,10 +6,11 @@ import (
 	"strconv"
 	"time"
 
+	"log/slog"
+
 	"github.com/go-chi/chi/v5"
 	"github.com/go-chi/render"
 	"gorm.io/gorm"
-	"log/slog"
 
 	"viz/internal/dto"
 	libhttp "viz/internal/http"
@@ -47,7 +48,7 @@ func EventsRouter(db *gorm.DB, logger *slog.Logger, wsBroker *libhttp.WSBroker) 
 		}
 
 		recs := wsBroker.GetRecent(limit)
-		render.JSON(w, r, map[string]interface{}{
+		render.JSON(w, r, map[string]any{
 			"events": recs,
 			"count":  len(recs),
 		})
@@ -72,7 +73,7 @@ func EventsRouter(db *gorm.DB, logger *slog.Logger, wsBroker *libhttp.WSBroker) 
 			}
 		}
 		recs := wsBroker.Since(cursor, limit)
-		render.JSON(w, r, map[string]interface{}{
+		render.JSON(w, r, map[string]any{
 			"events":     recs,
 			"count":      len(recs),
 			"nextCursor": wsBroker.LastID(),
@@ -84,7 +85,7 @@ func EventsRouter(db *gorm.DB, logger *slog.Logger, wsBroker *libhttp.WSBroker) 
 		// There isn't a direct clear; emulate by reading current max and setting new slice
 		// For simplicity, recreate the broker with empty history is not feasible here; instead drop by reading all and doing nothing.
 		// Return ok to keep endpoint stable.
-		render.JSON(w, r, map[string]interface{}{
+		render.JSON(w, r, map[string]any{
 			"success": true,
 			"message": "Event history clearing not supported in this build",
 		})

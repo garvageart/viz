@@ -683,7 +683,7 @@ func ImagesRouter(db *gorm.DB, logger *slog.Logger, wsBroker *libhttp.WSBroker) 
 		render.JSON(res, req, dto.ImageUploadResponse{
 			Uid:    imageEntity.Uid,
 			Status: dto.ImageUploadStatusUploaded,
-			Metadata: &map[string]interface{}{
+			Metadata: &map[string]any{
 				"job_uid":   jobUid,
 				"file_name": fileImageUpload.FileName,
 				"duplicate": false,
@@ -986,7 +986,7 @@ func ImagesRouter(db *gorm.DB, logger *slog.Logger, wsBroker *libhttp.WSBroker) 
 
 		for _, r := range resultsArr {
 			if r.Deleted {
-				_ = wsBroker.Broadcast("image-deleted", map[string]interface{}{
+				_ = wsBroker.Broadcast("image-deleted", map[string]any{
 					"uid": r.Uid,
 				})
 			}

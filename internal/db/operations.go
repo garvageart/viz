@@ -89,7 +89,7 @@ func (db *DB) Disconnect(client *gorm.DB) error {
 	return sqlDB.Close()
 }
 
-func (db *DB) Delete(value interface{}, conds ...interface{}) (*gorm.DB, error) {
+func (db *DB) Delete(value any, conds ...any) (*gorm.DB, error) {
 	result := db.Client.Delete(value, conds...)
 
 	if result.Error != nil {
@@ -99,7 +99,7 @@ func (db *DB) Delete(value interface{}, conds ...interface{}) (*gorm.DB, error) 
 	return result, nil
 }
 
-func (db *DB) Exists(dest interface{}, conds ...interface{}) (bool, error) {
+func (db *DB) Exists(dest any, conds ...any) (bool, error) {
 	result := db.Client.Take(dest, conds...)
 
 	if result.Error != nil {

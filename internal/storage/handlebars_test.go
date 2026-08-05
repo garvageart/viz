@@ -19,7 +19,7 @@ func TestGetContextMap(t *testing.T) {
 
 	ctx := GetContextMap(testTime, filename, assetUid, &collectionName, &collectionStart, make, model, lensModel, seq)
 
-	expected := map[string]interface{}{
+	expected := map[string]any{
 		"y":                      "2026",
 		"yy":                     "26",
 		"M":                      "6",

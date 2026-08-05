@@ -16,7 +16,7 @@ func CompileHandlebars(templateStr string) (*raymond.Template, error) {
 
 // Render compiles and renders the Handlebars template with the given context.
 // Disables HTML escaping for string values to keep path separators and special characters intact.
-func Render(templateStr string, context map[string]interface{}) (string, error) {
+func Render(templateStr string, context map[string]any) (string, error) {
 	tpl, err := CompileHandlebars(templateStr)
 	if err != nil {
 		return "", err
@@ -26,8 +26,8 @@ func Render(templateStr string, context map[string]interface{}) (string, error) 
 
 // RenderTemplate executes a pre-compiled Handlebars template with the given context.
 // Disables HTML escaping for string values to keep path separators and special characters intact.
-func RenderTemplate(tpl *raymond.Template, context map[string]interface{}) (string, error) {
-	safeContext := make(map[string]interface{})
+func RenderTemplate(tpl *raymond.Template, context map[string]any) (string, error) {
+	safeContext := make(map[string]any)
 	for k, v := range context {
 		if str, ok := v.(string); ok {
 			safeContext[k] = raymond.SafeString(str)
@@ -45,11 +45,11 @@ func cleanPathSegment(val string) string {
 }
 
 // GetContextMap builds a template context map from the asset metadata.
-func GetContextMap(t time.Time, filename, assetUid string, collectionName *string, collectionStartDate *time.Time, make, model, lensModel string, seq int) map[string]interface{} {
+func GetContextMap(t time.Time, filename, assetUid string, collectionName *string, collectionStartDate *time.Time, make, model, lensModel string, seq int) map[string]any {
 	c := carbon.CreateFromStdTime(t)
 	_, week := t.ISOWeek()
 
-	tokenContext := map[string]interface{}{
+	tokenContext := map[string]any{
 		// Luxon tokens mapped to Carbon
 		"y":    c.Format("Y"),
 		"yy":   c.Format("y"),

@@ -98,7 +98,7 @@ func SessionsRouter(db *gorm.DB, logger *slog.Logger) *chi.Mux {
 			return
 		}
 
-		updates := make(map[string]interface{})
+		updates := make(map[string]any)
 		if updatePayload.ClientName != nil {
 			updates["client_name"] = *updatePayload.ClientName
 		}

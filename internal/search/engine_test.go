@@ -95,7 +95,7 @@ func TestEngineApply(t *testing.T) {
 		Statement: &gorm.Statement{
 			Clauses: make(map[string]clause.Clause),
 			Table:   "images",
-			Vars:    make([]interface{}, 0),
+			Vars:    make([]any, 0),
 		},
 		Config: &gorm.Config{
 			DryRun: true,
@@ -211,7 +211,7 @@ func TestEngineApplyCollections(t *testing.T) {
 		Statement: &gorm.Statement{
 			Clauses: make(map[string]clause.Clause),
 			Table:   "collections",
-			Vars:    make([]interface{}, 0),
+			Vars:    make([]any, 0),
 		},
 		Config: &gorm.Config{
 			DryRun: true,

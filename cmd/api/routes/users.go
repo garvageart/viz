@@ -207,7 +207,7 @@ func AccountsRouter(db *gorm.DB, logger *slog.Logger) *chi.Mux {
 
 				txErr := db.Transaction(func(tx *gorm.DB) error {
 					// Update User Profile
-					updates := make(map[string]interface{})
+					updates := make(map[string]any)
 					if body.FirstName != "" {
 						updates["first_name"] = body.FirstName
 					}
@@ -295,7 +295,7 @@ func AccountsRouter(db *gorm.DB, logger *slog.Logger) *chi.Mux {
 					return
 				}
 
-				updateFields := make(map[string]interface{})
+				updateFields := make(map[string]any)
 				if updates.FirstName != nil {
 					updateFields["first_name"] = *updates.FirstName
 				}

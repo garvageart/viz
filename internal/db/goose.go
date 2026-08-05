@@ -3,9 +3,10 @@ package db
 import (
 	"context"
 	"fmt"
+	"log/slog"
+
 	"github.com/pressly/goose/v3"
 	"gorm.io/gorm"
-	"log/slog"
 
 	"viz/internal/logger"
 	"viz/tools/migrations"
@@ -15,23 +16,23 @@ type gooseLogger struct {
 	logger *slog.Logger
 }
 
-func (g *gooseLogger) Fatal(v ...interface{}) {
+func (g *gooseLogger) Fatal(v ...any) {
 	g.logger.Log(context.Background(), logger.LevelFatal, fmt.Sprint(v...))
 }
 
-func (g *gooseLogger) Fatalf(format string, v ...interface{}) {
+func (g *gooseLogger) Fatalf(format string, v ...any) {
 	g.logger.Log(context.Background(), logger.LevelFatal, fmt.Sprintf(format, v...))
 }
 
-func (g *gooseLogger) Print(v ...interface{}) {
+func (g *gooseLogger) Print(v ...any) {
 	g.logger.Info(fmt.Sprint(v...))
 }
 
-func (g *gooseLogger) Println(v ...interface{}) {
+func (g *gooseLogger) Println(v ...any) {
 	g.logger.Info(fmt.Sprintln(v...))
 }
 
-func (g *gooseLogger) Printf(format string, v ...interface{}) {
+func (g *gooseLogger) Printf(format string, v ...any) {
 	g.logger.Info(fmt.Sprintf(format, v...))
 }
 

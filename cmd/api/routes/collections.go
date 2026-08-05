@@ -412,7 +412,7 @@ func CollectionsRouter(db *gorm.DB, logger *slog.Logger, wsBroker *libhttp.WSBro
 		})
 
 		if err == nil {
-			_ = wsBroker.Broadcast("collection-updated", map[string]interface{}{
+			_ = wsBroker.Broadcast("collection-updated", map[string]any{
 				"uid":    collection.Uid,
 				"action": "updated",
 			})
@@ -472,7 +472,7 @@ func CollectionsRouter(db *gorm.DB, logger *slog.Logger, wsBroker *libhttp.WSBro
 		})
 
 		if err == nil {
-			_ = wsBroker.Broadcast("collection-deleted", map[string]interface{}{
+			_ = wsBroker.Broadcast("collection-deleted", map[string]any{
 				"uid": uid,
 			})
 		}
@@ -723,7 +723,7 @@ func CollectionsRouter(db *gorm.DB, logger *slog.Logger, wsBroker *libhttp.WSBro
 				return err
 			}
 
-			_ = wsBroker.Broadcast("collection-updated", map[string]interface{}{
+			_ = wsBroker.Broadcast("collection-updated", map[string]any{
 				"uid":    collection.Uid,
 				"action": "images-added",
 				"count":  int(totalCount),
@@ -838,7 +838,7 @@ func CollectionsRouter(db *gorm.DB, logger *slog.Logger, wsBroker *libhttp.WSBro
 				return err
 			}
 
-			_ = wsBroker.Broadcast("collection-updated", map[string]interface{}{
+			_ = wsBroker.Broadcast("collection-updated", map[string]any{
 				"uid":    collection.Uid,
 				"action": "images-removed",
 			})

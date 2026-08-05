@@ -44,18 +44,18 @@ type WSBroker struct {
 
 // WSMessage represents a message to be sent via WebSocket
 type WSMessage struct {
-	Event    string      `json:"event"`
-	Data     interface{} `json:"data"`
-	ClientID string      `json:"-"`  // If empty, broadcast to all
-	ID       uint64      `json:"id"` // Monotonic ID for message tracking
+	Event    string `json:"event"`
+	Data     any    `json:"data"`
+	ClientID string `json:"-"`  // If empty, broadcast to all
+	ID       uint64 `json:"id"` // Monotonic ID for message tracking
 }
 
 // WSRecord is a stored history record
 type WSRecord struct {
-	ID        uint64      `json:"id"`
-	Timestamp time.Time   `json:"timestamp"`
-	Event     string      `json:"event"`
-	Data      interface{} `json:"data"`
+	ID        uint64    `json:"id"`
+	Timestamp time.Time `json:"timestamp"`
+	Event     string    `json:"event"`
+	Data      any       `json:"data"`
 }
 
 // NewWSBroker creates and starts a new WebSocket broker
@@ -195,7 +195,7 @@ func (b *WSBroker) sendToClient(clientID string, msg *WSMessage) {
 }
 
 // Broadcast sends an event to all connected clients
-func (b *WSBroker) Broadcast(eventType string, data interface{}) error {
+func (b *WSBroker) Broadcast(eventType string, data any) error {
 	select {
 	case b.broadcast <- &WSMessage{
 		Event: eventType,
@@ -208,7 +208,7 @@ func (b *WSBroker) Broadcast(eventType string, data interface{}) error {
 }
 
 // SendToClient sends an event to a specific client by ID
-func (b *WSBroker) SendToClient(clientID, eventType string, data interface{}) error {
+func (b *WSBroker) SendToClient(clientID, eventType string, data any) error {
 	select {
 	case b.broadcast <- &WSMessage{
 		Event:    eventType,
@@ -262,7 +262,7 @@ func (b *WSBroker) ServeWS(w http.ResponseWriter, r *http.Request) {
 	// Send connection confirmation
 	connectionMsg := &WSMessage{
 		Event: "connected",
-		Data: map[string]interface{}{
+		Data: map[string]any{
 			"clientId": clientID,
 			"message":  "Connected to WebSocket stream",
 		},
@@ -275,7 +275,7 @@ func (b *WSBroker) ServeWS(w http.ResponseWriter, r *http.Request) {
 	// Send server-online event to indicate the server is online/operational
 	serverOnlineMsg := &WSMessage{
 		Event: "server-online",
-		Data: map[string]interface{}{
+		Data: map[string]any{
 			"message": "Server is online",
 		},
 		ID: 0,
@@ -365,7 +365,7 @@ func (c *WSClient) writePump() {
 }
 
 // appendHistory appends to in-memory history with max length
-func (b *WSBroker) appendHistory(id uint64, eventType string, data interface{}) {
+func (b *WSBroker) appendHistory(id uint64, eventType string, data any) {
 	b.historyMu.Lock()
 	defer b.historyMu.Unlock()
 

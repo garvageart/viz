@@ -19,7 +19,7 @@ func NewProgressCallback(
 	}
 
 	return func(step string, progress int) {
-		wsBroker.Broadcast("job-progress", map[string]interface{}{
+		wsBroker.Broadcast("job-progress", map[string]any{
 			"uid":       jobId,
 			"jobId":     jobId,
 			"type":      jobType,

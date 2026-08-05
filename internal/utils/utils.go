@@ -100,8 +100,8 @@ func JsonToMap(jsonString string) (map[string]any, error) {
 }
 
 // From https://gist.github.com/bxcodec/c2a25cfc75f6b21a0492951706bc80b8
-func StructToMap(item interface{}) map[string]interface{} {
-	res := map[string]interface{}{}
+func StructToMap(item any) map[string]any {
+	res := map[string]any{}
 	if item == nil {
 		return res
 	}

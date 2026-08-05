@@ -261,7 +261,7 @@ func EnumSetting(name string, displayName string, value string, allowedValues []
 }
 
 // Helper function for JSON settings
-func JsonSetting(name string, displayName string, value interface{}, isUserEditable bool, group, description string) entities.SettingDefault {
+func JsonSetting(name string, displayName string, value any, isUserEditable bool, group, description string) entities.SettingDefault {
 	jsonBytes, err := json.Marshal(value)
 	if err != nil {
 		panic(fmt.Sprintf("failed to marshal JSON for setting %s: %v", name, err))

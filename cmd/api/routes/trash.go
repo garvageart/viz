@@ -88,7 +88,7 @@ func TrashRouter(db *gorm.DB, logger *slog.Logger) chi.Router {
 		}
 
 		render.Status(req, http.StatusOK)
-		render.JSON(res, req, map[string]interface{}{
+		render.JSON(res, req, map[string]any{
 			"items": items,
 			"page":  page,
 			"limit": limit,
