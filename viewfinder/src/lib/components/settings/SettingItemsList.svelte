@@ -54,7 +54,7 @@
         // If setting is saved as overridden on server, delete the override
         if (setting.is_overridden) {
             try {
-                const res = await resetUserSetting({ name: setting.name });
+                const res = await resetUserSetting(setting.name);
                 if (res.status === 200) {
                     setting.value = setting.default_value;
                     setting.is_overridden = false;

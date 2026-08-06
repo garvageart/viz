@@ -1,6 +1,6 @@
 <script lang="ts">
     import type { Snippet } from "svelte";
-    import Icon from "$lib/components/ui/Icon.svelte";
+    import MaterialIcon from "$lib/components/ui/MaterialIcon.svelte";
 
     interface Props {
         label: string;
@@ -35,7 +35,7 @@
                     {disabled}
                     onclick={onreset}
                 >
-                    <Icon name="undo" size={13} />
+                    <MaterialIcon iconName="undo" size="0.85rem" />
                     <span>Reset</span>
                 </button>
             {/if}
