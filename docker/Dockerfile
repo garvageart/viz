@@ -32,9 +32,6 @@ ENV NPM_CONFIG_STORE_DIR=/root/.local/share/pnpm/store
 RUN --mount=type=cache,id=pnpm-store,target=/root/.local/share/pnpm/store \
     pnpm install --frozen-lockfile
 
-# Pre-install Playwright Chromium & OS dependencies for zero-latency CI E2E testing
-RUN pnpm --filter @viz/viewfinder exec playwright install --with-deps chromium
-
 # Stage 3: Frontend Build
 FROM ${FRONTEND_DEPS_IMAGE} AS frontend-builder
 
