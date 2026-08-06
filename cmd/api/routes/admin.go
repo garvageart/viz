@@ -175,7 +175,7 @@ func AdminRouter(db *gorm.DB, logger *slog.Logger, storageStats *images.StorageS
 
 		userSettings := make([]dto.Setting, 0, len(defaults))
 		for _, def := range defaults {
-			userSettings = append(userSettings, buildUserSetting(def, def.Value))
+			userSettings = append(userSettings, buildUserSetting(def, def.Value, false))
 		}
 
 		render.JSON(res, req, userSettings)

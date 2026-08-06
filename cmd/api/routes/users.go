@@ -477,10 +477,11 @@ func AccountsRouter(db *gorm.DB, logger *slog.Logger) *chi.Mux {
 						userSettings := make([]dto.Setting, 0, len(defaults))
 						for _, def := range defaults {
 							value := def.Value
-							if override, ok := overrideMap[def.Name]; ok {
+							override, isOverridden := overrideMap[def.Name]
+							if isOverridden {
 								value = override.Value
 							}
-							userSettings = append(userSettings, buildUserSetting(def, value))
+							userSettings = append(userSettings, buildUserSetting(def, value, isOverridden))
 						}
 
 						render.JSON(res, req, userSettings)
@@ -528,8 +529,9 @@ func AccountsRouter(db *gorm.DB, logger *slog.Logger) *chi.Mux {
 							return
 						}
 
-						// Validate the new value based on definition
-						if err := validateSettingValue(reqBody.Value, userSettingDefaults); err != nil {
+						// Validate and normalize the new value based on definition
+						normalizedValue, err := validateSettingValue(reqBody.Value, userSettingDefaults)
+						if err != nil {
 							render.Status(req, http.StatusBadRequest)
 							render.JSON(res, req, dto.ErrorResponse{Error: err.Error()})
 							return
@@ -538,7 +540,7 @@ func AccountsRouter(db *gorm.DB, logger *slog.Logger) *chi.Mux {
 						override := entities.SettingOverride{
 							UserId: user.Uid,
 							Name:   settingName,
-							Value:  reqBody.Value,
+							Value:  normalizedValue,
 						}
 
 						// Use Upsert to create or update the override
@@ -553,7 +555,7 @@ func AccountsRouter(db *gorm.DB, logger *slog.Logger) *chi.Mux {
 						}
 
 						// Return the merged setting for the updated one
-						userSetting := buildUserSetting(userSettingDefaults, override.Value)
+						userSetting := buildUserSetting(userSettingDefaults, override.Value, true)
 
 						render.JSON(res, req, userSetting)
 					})
@@ -595,13 +597,14 @@ func AccountsRouter(db *gorm.DB, logger *slog.Logger) *chi.Mux {
 								return
 							}
 
-							if err := validateSettingValue(setting.Value, def); err != nil {
+							normalizedValue, err := validateSettingValue(setting.Value, def)
+							if err != nil {
 								render.Status(req, http.StatusBadRequest)
 								render.JSON(res, req, dto.ErrorResponse{Error: err.Error()})
 								return
 							}
 
-							pending = append(pending, pendingUpdate{def: def, value: setting.Value})
+							pending = append(pending, pendingUpdate{def: def, value: normalizedValue})
 						}
 
 						// Apply all overrides in a single transaction.
@@ -630,10 +633,44 @@ func AccountsRouter(db *gorm.DB, logger *slog.Logger) *chi.Mux {
 						// Return the merged settings for all updated entries.
 						result := make([]dto.Setting, 0, len(pending))
 						for _, update := range pending {
-							result = append(result, buildUserSetting(update.def, update.value))
+							result = append(result, buildUserSetting(update.def, update.value, true))
 						}
 
 						render.JSON(res, req, result)
+					})
+
+					r.Delete("/", func(res http.ResponseWriter, req *http.Request) {
+						user, _ := libhttp.UserFromContext(req)
+
+						settingName := req.URL.Query().Get("name")
+						if settingName == "" {
+							render.Status(req, http.StatusBadRequest)
+							render.JSON(res, req, dto.ErrorResponse{Error: "Setting name is required"})
+							return
+						}
+
+						var userSettingDefaults entities.SettingDefault
+						if err := db.Where("name = ?", settingName).First(&userSettingDefaults).Error; err != nil {
+							if err == gorm.ErrRecordNotFound {
+								render.Status(req, http.StatusNotFound)
+								render.JSON(res, req, dto.ErrorResponse{Error: "Setting not found"})
+								return
+							}
+							logger.Error("failed to fetch setting definition", slog.Any("error", err))
+							render.Status(req, http.StatusInternalServerError)
+							render.JSON(res, req, dto.ErrorResponse{Error: "Failed to fetch settings"})
+							return
+						}
+
+						if err := db.Where("user_id = ? AND name = ?", user.Uid, settingName).Delete(&entities.SettingOverride{}).Error; err != nil {
+							logger.Error("failed to delete setting override", slog.Any("error", err))
+							render.Status(req, http.StatusInternalServerError)
+							render.JSON(res, req, dto.ErrorResponse{Error: "Failed to reset setting"})
+							return
+						}
+
+						userSetting := buildUserSetting(userSettingDefaults, userSettingDefaults.Value, false)
+						render.JSON(res, req, userSetting)
 					})
 				})
 			})
@@ -644,7 +681,7 @@ func AccountsRouter(db *gorm.DB, logger *slog.Logger) *chi.Mux {
 }
 
 // buildUserSetting constructs the merged user setting DTO from a definition and effective value.
-func buildUserSetting(def entities.SettingDefault, value string) dto.Setting {
+func buildUserSetting(def entities.SettingDefault, value string, isOverridden bool) dto.Setting {
 	isEditable := def.IsUserEditable
 	displayName := strings.TrimSpace(def.DisplayName)
 	if displayName == "" {
@@ -660,43 +697,52 @@ func buildUserSetting(def entities.SettingDefault, value string) dto.Setting {
 		IsUserEditable: &isEditable,
 		Description:    def.Description,
 		Group:          def.Group,
+		IsOverridden:   isOverridden,
 	}
 }
 
-// validateSettingValue checks if the provided value conforms to the setting definition.
-func validateSettingValue(value string, def entities.SettingDefault) error {
+// validateSettingValue checks if the provided value conforms to the setting definition and normalizes canonical values.
+func validateSettingValue(value string, def entities.SettingDefault) (string, error) {
+	trimmed := strings.TrimSpace(value)
 	switch dto.SettingDefaultValueType(def.ValueType) {
 	case dto.Boolean:
-		if !(strings.EqualFold(value, "true") || strings.EqualFold(value, "false")) {
-			return fmt.Errorf("invalid boolean value: %s", value)
-		}
-	case dto.Integer:
-		_, err := strconv.Atoi(value)
+		b, err := strconv.ParseBool(trimmed)
 		if err != nil {
-			return fmt.Errorf("invalid integer value: %s", value)
+			return "", fmt.Errorf("invalid boolean value: %s", value)
 		}
+		if b {
+			return "true", nil
+		}
+		return "false", nil
+	case dto.Integer:
+		_, err := strconv.Atoi(trimmed)
+		if err != nil {
+			return "", fmt.Errorf("invalid integer value: %s", value)
+		}
+		return trimmed, nil
 	case dto.Enum:
 		if def.AllowedValues != nil && len(*def.AllowedValues) > 0 {
 			found := false
 			for _, v := range *def.AllowedValues {
-				if v == value {
+				if v == trimmed {
 					found = true
 					break
 				}
 			}
 			if !found {
-				return fmt.Errorf("value '%s' is not in allowed values: %v", value, *def.AllowedValues)
+				return "", fmt.Errorf("value '%s' is not in allowed values: %v", value, *def.AllowedValues)
 			}
 		}
+		return trimmed, nil
 	case dto.Json:
 		var js json.RawMessage
-		if err := json.Unmarshal([]byte(value), &js); err != nil {
-			return fmt.Errorf("invalid JSON value: %s", value)
+		if err := json.Unmarshal([]byte(trimmed), &js); err != nil {
+			return "", fmt.Errorf("invalid JSON value: %s", value)
 		}
+		return trimmed, nil
 	case dto.String:
-		// Any string is valid
+		return value, nil
 	default:
-		return fmt.Errorf("unknown setting value type: %s", def.ValueType)
+		return "", fmt.Errorf("unknown setting value type: %s", def.ValueType)
 	}
-	return nil
 }
