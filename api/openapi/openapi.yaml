@@ -815,6 +815,51 @@ paths:
                         application/json:
                             schema:
                                 $ref: "#/components/schemas/ErrorResponse"
+        delete:
+            summary: Reset a user setting override
+            description: Removes the user override for a setting, reverting it to system default.
+            operationId: resetUserSetting
+            security:
+                - BearerAuth: []
+                - CookieAuth: []
+            parameters:
+                - in: query
+                  name: name
+                  required: true
+                  schema:
+                      type: string
+                  description: Setting name to reset
+            responses:
+                "200":
+                    description: Setting reset to default
+                    content:
+                        application/json:
+                            schema:
+                                $ref: "#/components/schemas/Setting"
+                "400":
+                    description: Bad request (missing setting name)
+                    content:
+                        application/json:
+                            schema:
+                                $ref: "#/components/schemas/ErrorResponse"
+                "401":
+                    description: Unauthorized
+                    content:
+                        application/json:
+                            schema:
+                                $ref: "#/components/schemas/ErrorResponse"
+                "404":
+                    description: Setting not found
+                    content:
+                        application/json:
+                            schema:
+                                $ref: "#/components/schemas/ErrorResponse"
+                "500":
+                    description: Server error
+                    content:
+                        application/json:
+                            schema:
+                                $ref: "#/components/schemas/ErrorResponse"
 
     /search:
         get:
@@ -3742,7 +3787,10 @@ components:
                 description:
                     type: string
                     description: Setting description
-            required: [name, display_name, value, default_value, value_type, group, description]
+                is_overridden:
+                    type: boolean
+                    description: Whether this setting is currently overridden by the user
+            required: [name, display_name, value, default_value, value_type, group, description, is_overridden]
 
         SignedExportResponse:
             type: object

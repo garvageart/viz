@@ -151,6 +151,13 @@ type ClientInterface interface {
 	// Corresponds with PUT /accounts/me/password (the `UpdatePassword` operationId).
 	UpdatePassword(ctx context.Context, body UpdatePasswordJSONRequestBody, reqEditors ...RequestEditorFn) (*http.Response, error)
 
+	// ResetUserSetting Reset a user setting override
+	//
+	// Removes the user override for a setting, reverting it to system default.
+	//
+	// Corresponds with DELETE /accounts/me/settings (the `ResetUserSetting` operationId).
+	ResetUserSetting(ctx context.Context, params *ResetUserSettingParams, reqEditors ...RequestEditorFn) (*http.Response, error)
+
 	// GetUserSettings Get all user settings
 	//
 	// Returns a merged list of settings (system defaults + user overrides).
@@ -978,6 +985,23 @@ func (c *Client) UpdatePasswordWithBody(ctx context.Context, contentType string,
 // Corresponds with PUT /accounts/me/password (the `UpdatePassword` operationId).
 func (c *Client) UpdatePassword(ctx context.Context, body UpdatePasswordJSONRequestBody, reqEditors ...RequestEditorFn) (*http.Response, error) {
 	req, err := NewUpdatePasswordRequest(c.Server, body)
+	if err != nil {
+		return nil, err
+	}
+	req = req.WithContext(ctx)
+	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
+		return nil, err
+	}
+	return c.Client.Do(req)
+}
+
+// ResetUserSetting Reset a user setting override
+//
+// Removes the user override for a setting, reverting it to system default.
+//
+// Corresponds with DELETE /accounts/me/settings (the `ResetUserSetting` operationId).
+func (c *Client) ResetUserSetting(ctx context.Context, params *ResetUserSettingParams, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewResetUserSettingRequest(c.Server, params)
 	if err != nil {
 		return nil, err
 	}
@@ -2908,6 +2932,56 @@ func NewUpdatePasswordRequestWithBody(server string, contentType string, body io
 	}
 
 	req.Header.Add("Content-Type", contentType)
+
+	return req, nil
+}
+
+// NewResetUserSettingRequest constructs an http.Request for the ResetUserSetting method
+func NewResetUserSettingRequest(server string, params *ResetUserSettingParams) (*http.Request, error) {
+	var err error
+
+	serverURL, err := url.Parse(server)
+	if err != nil {
+		return nil, err
+	}
+
+	operationPath := fmt.Sprintf("/accounts/me/settings")
+	if operationPath[0] == '/' {
+		operationPath = "." + operationPath
+	}
+
+	queryURL, err := serverURL.Parse(operationPath)
+	if err != nil {
+		return nil, err
+	}
+
+	if params != nil {
+		// queryValues collects non-styled parameters (passthrough, JSON)
+		// that are safe to round-trip through url.Values.Encode().
+		queryValues := queryURL.Query()
+		// rawQueryFragments collects pre-encoded query fragments from
+		// styled parameters, preserving literal commas as delimiters
+		// per the OpenAPI spec (e.g. "color=blue,black,brown").
+		var rawQueryFragments []string
+
+		if queryFrag, err := runtime.StyleParamWithOptions("form", true, "name", params.Name, runtime.StyleParamOptions{ParamLocation: runtime.ParamLocationQuery, Type: "string", Format: ""}); err != nil {
+			return nil, err
+		} else {
+			for _, qp := range strings.Split(queryFrag, "&") {
+				rawQueryFragments = append(rawQueryFragments, qp)
+			}
+		}
+
+		if encoded := queryValues.Encode(); encoded != "" {
+			rawQueryFragments = append(rawQueryFragments, encoded)
+		}
+		queryURL.RawQuery = strings.Join(rawQueryFragments, "&")
+	}
+
+	req, err := http.NewRequest(http.MethodDelete, queryURL.String(), nil)
+	if err != nil {
+		return nil, err
+	}
 
 	return req, nil
 }
@@ -6584,6 +6658,15 @@ type ClientWithResponsesInterface interface {
 	// Corresponds with PUT /accounts/me/password (the `UpdatePassword` operationId).
 	UpdatePasswordWithResponse(ctx context.Context, body UpdatePasswordJSONRequestBody, reqEditors ...RequestEditorFn) (*UpdatePasswordResponse, error)
 
+	// ResetUserSettingWithResponse Reset a user setting override
+	//
+	// Removes the user override for a setting, reverting it to system default.
+	//
+	// Returns a wrapper object for the known response body format(s).
+	//
+	// Corresponds with DELETE /accounts/me/settings (the `ResetUserSetting` operationId).
+	ResetUserSettingWithResponse(ctx context.Context, params *ResetUserSettingParams, reqEditors ...RequestEditorFn) (*ResetUserSettingResponse, error)
+
 	// GetUserSettingsWithResponse Get all user settings
 	//
 	// Returns a merged list of settings (system defaults + user overrides).
@@ -7661,6 +7744,75 @@ func (r UpdatePasswordResponse) StatusCode() int {
 
 // ContentType is a convenience method to retrieve the Content-Type value from the HTTP response headers
 func (r UpdatePasswordResponse) ContentType() string {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.Header.Get("Content-Type")
+	}
+	return ""
+}
+
+type ResetUserSettingResponse struct {
+	Body         []byte
+	HTTPResponse *http.Response
+	// JSON200 the response for an HTTP 200 `application/json` response
+	JSON200 *Setting
+	// JSON400 the response for an HTTP 400 `application/json` response
+	JSON400 *ErrorResponse
+	// JSON401 the response for an HTTP 401 `application/json` response
+	JSON401 *ErrorResponse
+	// JSON404 the response for an HTTP 404 `application/json` response
+	JSON404 *ErrorResponse
+	// JSON500 the response for an HTTP 500 `application/json` response
+	JSON500 *ErrorResponse
+}
+
+// GetJSON200 returns the response for an HTTP 200 `application/json` response
+func (r ResetUserSettingResponse) GetJSON200() *Setting {
+	return r.JSON200
+}
+
+// GetJSON400 returns the response for an HTTP 400 `application/json` response
+func (r ResetUserSettingResponse) GetJSON400() *ErrorResponse {
+	return r.JSON400
+}
+
+// GetJSON401 returns the response for an HTTP 401 `application/json` response
+func (r ResetUserSettingResponse) GetJSON401() *ErrorResponse {
+	return r.JSON401
+}
+
+// GetJSON404 returns the response for an HTTP 404 `application/json` response
+func (r ResetUserSettingResponse) GetJSON404() *ErrorResponse {
+	return r.JSON404
+}
+
+// GetJSON500 returns the response for an HTTP 500 `application/json` response
+func (r ResetUserSettingResponse) GetJSON500() *ErrorResponse {
+	return r.JSON500
+}
+
+// GetBody returns the raw response body bytes
+func (r ResetUserSettingResponse) GetBody() []byte {
+	return r.Body
+}
+
+// Status returns HTTPResponse.Status
+func (r ResetUserSettingResponse) Status() string {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.Status
+	}
+	return http.StatusText(0)
+}
+
+// StatusCode returns HTTPResponse.StatusCode
+func (r ResetUserSettingResponse) StatusCode() int {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.StatusCode
+	}
+	return 0
+}
+
+// ContentType is a convenience method to retrieve the Content-Type value from the HTTP response headers
+func (r ResetUserSettingResponse) ContentType() string {
 	if r.HTTPResponse != nil {
 		return r.HTTPResponse.Header.Get("Content-Type")
 	}
@@ -12164,6 +12316,21 @@ func (c *ClientWithResponses) UpdatePasswordWithResponse(ctx context.Context, bo
 	return ParseUpdatePasswordResponse(rsp)
 }
 
+// ResetUserSettingWithResponse Reset a user setting override
+//
+// Removes the user override for a setting, reverting it to system default.
+//
+// Returns a wrapper object for the known response body format(s).
+//
+// Corresponds with DELETE /accounts/me/settings (the `ResetUserSetting` operationId).
+func (c *ClientWithResponses) ResetUserSettingWithResponse(ctx context.Context, params *ResetUserSettingParams, reqEditors ...RequestEditorFn) (*ResetUserSettingResponse, error) {
+	rsp, err := c.ResetUserSetting(ctx, params, reqEditors...)
+	if err != nil {
+		return nil, err
+	}
+	return ParseResetUserSettingResponse(rsp)
+}
+
 // GetUserSettingsWithResponse Get all user settings
 //
 // Returns a merged list of settings (system defaults + user overrides).
@@ -13790,6 +13957,60 @@ func ParseUpdatePasswordResponse(rsp *http.Response) (*UpdatePasswordResponse, e
 			return nil, err
 		}
 		response.JSON401 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 500:
+		var dest ErrorResponse
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON500 = &dest
+
+	}
+
+	return response, nil
+}
+
+// ParseResetUserSettingResponse parses an HTTP response from a ResetUserSettingWithResponse call
+func ParseResetUserSettingResponse(rsp *http.Response) (*ResetUserSettingResponse, error) {
+	bodyBytes, err := io.ReadAll(rsp.Body)
+	defer func() { _ = rsp.Body.Close() }()
+	if err != nil {
+		return nil, err
+	}
+
+	response := &ResetUserSettingResponse{
+		Body:         bodyBytes,
+		HTTPResponse: rsp,
+	}
+
+	switch {
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 200:
+		var dest Setting
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON200 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 400:
+		var dest ErrorResponse
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON400 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 401:
+		var dest ErrorResponse
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON401 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 404:
+		var dest ErrorResponse
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON404 = &dest
 
 	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 500:
 		var dest ErrorResponse

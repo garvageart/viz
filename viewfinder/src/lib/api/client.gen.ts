@@ -202,6 +202,8 @@ export type Setting = {
     group: string;
     /** Setting description */
     description: string;
+    /** Whether this setting is currently overridden by the user */
+    is_overridden: boolean;
 };
 export type UserOnboardingBody = {
     /** First name */
@@ -1447,6 +1449,32 @@ export function updateUserSettingsBatch(userSettingUpdateRequest: UserSettingUpd
         method: "PUT",
         body: userSettingUpdateRequest
     }));
+}
+/**
+ * Reset a user setting override
+ */
+export function resetUserSetting(name: string, opts?: Oazapfts.RequestOpts) {
+    return oazapfts.fetchJson<{
+        status: 200;
+        data: Setting;
+    } | {
+        status: 400;
+        data: ErrorResponse;
+    } | {
+        status: 401;
+        data: ErrorResponse;
+    } | {
+        status: 404;
+        data: ErrorResponse;
+    } | {
+        status: 500;
+        data: ErrorResponse;
+    }>(`/accounts/me/settings${QS.query(QS.explode({
+        name
+    }))}`, {
+        ...opts,
+        method: "DELETE"
+    });
 }
 /**
  * Search for images and collections

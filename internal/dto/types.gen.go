@@ -1608,6 +1608,9 @@ type Setting struct {
 	// Group Setting group
 	Group string `json:"group"`
 
+	// IsOverridden Whether this setting is currently overridden by the user
+	IsOverridden bool `json:"is_overridden"`
+
 	// IsUserEditable Whether user can edit
 	IsUserEditable *bool `json:"is_user_editable,omitempty"`
 
@@ -2079,6 +2082,12 @@ type WorkerRegisterRequest struct {
 type WorkersListResponse struct {
 	// Items List of workers
 	Items []WorkerInfo `json:"items"`
+}
+
+// ResetUserSettingParams defines parameters for ResetUserSetting.
+type ResetUserSettingParams struct {
+	// Name Setting name to reset
+	Name string `form:"name" json:"name"`
 }
 
 // UpdateUserSettingJSONBody defines parameters for UpdateUserSetting.
