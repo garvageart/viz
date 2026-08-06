@@ -16,6 +16,7 @@ Stuff to finish:
     import { SvelteSet } from "svelte/reactivity";
     import type { Setting } from "$lib/api";
     import NavSidebar, { type NavItem } from "$lib/components/ui/Sidebar/NavSidebar.svelte";
+    import { formatSectionTitle, slugifyGroup } from "$lib/settings/utils";
     import { type MaterialSymbol } from "$lib/types/MaterialSymbol";
     import AutoSettingsGroup from "../settings/AutoSettingsGroup.svelte";
     import AccountsSettings from "./AccountSettings.svelte";
@@ -31,14 +32,15 @@ Stuff to finish:
         security: "lock"
     };
 
-    // TODO: Import SecuritySettings when created
     interface Props {
         activeSection: string;
         userSettingsData: Setting[];
     }
 
     let { activeSection = "general", userSettingsData }: Props = $props();
-    let activeSectionDisplayName = $derived(activeSection.charAt(0).toUpperCase() + activeSection.slice(1));
+
+    let activeSlug = $derived(slugifyGroup(activeSection));
+    let activeSectionDisplayName = $derived(formatSectionTitle(activeSection));
 
     let settings: Setting[] = $derived(userSettingsData.filter((s) => s.is_user_editable !== false));
 
@@ -76,17 +78,19 @@ Stuff to finish:
     });
 
     let navItems: NavItem[] = $derived(
-        groups.map((group) => ({
-            label: group.charAt(0).toUpperCase() + group.slice(1),
-            href: `/settings/${group.toLowerCase()}`,
-            iconName: groupIcons[group.toLowerCase()] || "settings"
-        }))
+        groups.map((group) => {
+            const slug = slugifyGroup(group);
+            return {
+                label: formatSectionTitle(group),
+                href: `/settings/${slug}`,
+                iconName: groupIcons[slug] || "settings"
+            };
+        })
     );
 
-    let currentSettings = $derived(
-        settings.filter((s) => (s.group || "General").toLowerCase() === activeSection.toLowerCase())
-    );
-    let isCustomGroup = $derived(customGroups.map((g) => g.toLowerCase()).includes(activeSection.toLowerCase()));
+    let currentSettings = $derived(settings.filter((s) => slugifyGroup(s.group || "General") === activeSlug));
+    let activeGroupOriginalName = $derived(groups.find((g) => slugifyGroup(g) === activeSlug) || activeSection);
+    let isCustomGroup = $derived(customGroups.map(slugifyGroup).includes(activeSlug));
 </script>
 
 <svelte:head>
@@ -101,16 +105,13 @@ Stuff to finish:
     <main class="settings-content">
         <div class="settings-container">
             {#if isCustomGroup}
-                {#if activeSection.toLowerCase() === "security"}
+                {#if activeSlug === "security"}
                     <SecuritySettings />
-                {:else if activeSection.toLowerCase() === "account"}
+                {:else if activeSlug === "account"}
                     <AccountsSettings {userSettingsData} />
                 {/if}
             {:else}
-                <AutoSettingsGroup
-                    settings={currentSettings}
-                    title={activeSection.charAt(0).toUpperCase() + activeSection.slice(1)}
-                />
+                <AutoSettingsGroup settings={currentSettings} title={formatSectionTitle(activeGroupOriginalName)} />
             {/if}
         </div>
     </main>

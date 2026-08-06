@@ -8,10 +8,21 @@
         options?: string[];
         description?: string;
         disabled?: boolean;
+        isOverridden?: boolean;
+        onreset?: () => void;
         onchange?: (value: string) => void;
     }
 
-    let { label, value = $bindable(""), options = [], description = "", disabled = false, onchange }: Props = $props();
+    let {
+        label,
+        value = $bindable(""),
+        options = [],
+        description = "",
+        disabled = false,
+        isOverridden = false,
+        onreset,
+        onchange
+    }: Props = $props();
 
     // Case-insensitive match logic
     const selectedValue = $derived.by(() => {
@@ -35,7 +46,7 @@
     }
 </script>
 
-<SettingRow {label} {description} {disabled}>
+<SettingRow {label} {description} {disabled} {isOverridden} {onreset}>
     {#snippet control()}
         <InputSelect
             id="select-{label}"

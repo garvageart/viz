@@ -1,5 +1,8 @@
 <script lang="ts">
     import type { Setting } from "$lib/api";
+    import { resetUserSetting } from "$lib/api";
+    import { formatLabel } from "$lib/settings/utils";
+    import { toasts } from "$lib/toast-notifcations/toasts.svelte";
     import JsonInput from "./inputs/JsonInput.svelte";
     import SelectInput from "./inputs/SelectInput.svelte";
     import SliderToggleInput from "./inputs/SliderToggleInput.svelte";
@@ -18,13 +21,6 @@
         saving = $bindable(false),
         saveStatus = $bindable("idle")
     }: Props = $props();
-
-    function formatLabel(name: string): string {
-        return name
-            .replace(/^[a-z]+_/, "")
-            .replace(/_/g, " ")
-            .replace(/\b\w/g, (l) => l.toUpperCase());
-    }
 
     function getToggleValue(settingName: string, originalValue: string): "on" | "off" {
         const val = dirtySettings[settingName] ?? originalValue;
@@ -46,6 +42,40 @@
 
         saveStatus = "idle";
     }
+
+    async function handleReset(setting: Setting) {
+        // Clear local dirty state if present
+        if (dirtySettings[setting.name] !== undefined) {
+            const newDirty = { ...dirtySettings };
+            delete newDirty[setting.name];
+            dirtySettings = newDirty;
+        }
+
+        // If setting is saved as overridden on server, delete the override
+        if (setting.is_overridden) {
+            try {
+                const res = await resetUserSetting({ name: setting.name });
+                if (res.status === 200) {
+                    setting.value = setting.default_value;
+                    setting.is_overridden = false;
+                    toasts.add({
+                        dismissible: true,
+                        message: `Reset ${setting.display_name || setting.name} to default`,
+                        type: "success"
+                    });
+                } else {
+                    throw new Error("Failed to reset setting");
+                }
+            } catch (e) {
+                console.error("Failed to reset setting override", e);
+                toasts.add({
+                    dismissible: true,
+                    message: e instanceof Error ? e.message : "Failed to reset setting",
+                    type: "error"
+                });
+            }
+        }
+    }
 </script>
 
 {#if settings.length === 0}
@@ -53,6 +83,7 @@
 {:else}
     <div class="settings-card">
         {#each settings as setting, i (setting.name)}
+            {@const isOverridden = setting.is_overridden || dirtySettings[setting.name] !== undefined}
             <div class="setting-item" class:last-item={i === settings.length - 1}>
                 {#if setting.value_type === "boolean"}
                     {@const currentVal = getToggleValue(setting.name, setting.value)}
@@ -61,6 +92,8 @@
                         description={setting.description}
                         value={currentVal}
                         disabled={!setting.is_user_editable || saving}
+                        {isOverridden}
+                        onreset={() => handleReset(setting)}
                         onchange={(val) => {
                             const newVal = val === "on" ? "true" : "false";
                             handleSettingChange(setting, newVal);
@@ -73,6 +106,8 @@
                         value={dirtySettings[setting.name] ?? setting.value}
                         options={setting.allowed_values || []}
                         disabled={!setting.is_user_editable || saving}
+                        {isOverridden}
+                        onreset={() => handleReset(setting)}
                         onchange={(val) => handleSettingChange(setting, val)}
                     />
                 {:else if setting.value_type === "integer"}
@@ -82,6 +117,8 @@
                         description={setting.description}
                         value={dirtySettings[setting.name] ?? setting.value}
                         disabled={!setting.is_user_editable || saving}
+                        {isOverridden}
+                        onreset={() => handleReset(setting)}
                         onchange={(val) => handleSettingChange(setting, val)}
                     />
                 {:else if setting.value_type === "json"}
@@ -90,6 +127,8 @@
                         description={setting.description}
                         value={dirtySettings[setting.name] ?? setting.value}
                         disabled={!setting.is_user_editable || saving}
+                        {isOverridden}
+                        onreset={() => handleReset(setting)}
                         onchange={(val) => handleSettingChange(setting, val)}
                     />
                 {:else}
@@ -99,6 +138,8 @@
                         description={setting.description}
                         value={dirtySettings[setting.name] ?? setting.value}
                         disabled={!setting.is_user_editable || saving}
+                        {isOverridden}
+                        onreset={() => handleReset(setting)}
                         onchange={(val) => handleSettingChange(setting, val)}
                     />
                 {/if}

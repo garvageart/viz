@@ -6,10 +6,20 @@
         value?: string;
         description?: string;
         disabled?: boolean;
+        isOverridden?: boolean;
+        onreset?: () => void;
         onchange?: (value: string) => void;
     }
 
-    let { label, value = $bindable(""), description = "", disabled = false, onchange }: Props = $props();
+    let {
+        label,
+        value = $bindable(""),
+        description = "",
+        disabled = false,
+        isOverridden = false,
+        onreset,
+        onchange
+    }: Props = $props();
 
     let error = $state<string | null>(null);
 
@@ -30,7 +40,7 @@
     }
 </script>
 
-<SettingRow {label} {description} {disabled} stacked={true}>
+<SettingRow {label} {description} {disabled} stacked={true} {isOverridden} {onreset}>
     {#snippet control()}
         <textarea
             id="json-{label}"

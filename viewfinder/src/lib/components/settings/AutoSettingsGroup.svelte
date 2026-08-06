@@ -43,7 +43,8 @@
                 // Update local state to reflect saved changes
                 settings = settings.map((s) => ({
                     ...s,
-                    value: dirtySettings[s.name] ?? s.value
+                    value: dirtySettings[s.name] ?? s.value,
+                    is_overridden: dirtySettings[s.name] !== undefined ? true : s.is_overridden
                 }));
 
                 dirtySettings = {};

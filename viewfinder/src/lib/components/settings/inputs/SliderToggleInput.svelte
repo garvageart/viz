@@ -7,10 +7,20 @@
         value?: "on" | "off";
         description?: string;
         disabled?: boolean;
+        isOverridden?: boolean;
+        onreset?: () => void;
         onchange?: (value: string) => void;
     }
 
-    let { label, value = $bindable("off"), description = "", disabled = false, onchange }: Props = $props();
+    let {
+        label,
+        value = $bindable("off"),
+        description = "",
+        disabled = false,
+        isOverridden = false,
+        onreset,
+        onchange
+    }: Props = $props();
 
     const toggleId = $derived(`toggle-${label.replace(/\s+/g, "-").toLowerCase()}`);
 
@@ -27,7 +37,7 @@
     });
 </script>
 
-<SettingRow {label} {description} {disabled}>
+<SettingRow {label} {description} {disabled} {isOverridden} {onreset}>
     {#snippet control()}
         <div class="toggle-wrapper">
             <SliderToggle id={toggleId} {label} bind:value labelPos="side" {disabled} />

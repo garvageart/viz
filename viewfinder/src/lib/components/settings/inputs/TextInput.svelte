@@ -8,10 +8,21 @@
         type?: "text" | "number" | "password" | "email";
         description?: string;
         disabled?: boolean;
+        isOverridden?: boolean;
+        onreset?: () => void;
         onchange?: (value: string) => void;
     }
 
-    let { label, value = $bindable(""), type = "text", description = "", disabled = false, onchange }: Props = $props();
+    let {
+        label,
+        value = $bindable(""),
+        type = "text",
+        description = "",
+        disabled = false,
+        isOverridden = false,
+        onreset,
+        onchange
+    }: Props = $props();
 
     function handleInput(event: Event) {
         const target = event.target as HTMLInputElement;
@@ -22,7 +33,7 @@
     }
 </script>
 
-<SettingRow {label} {description} {disabled}>
+<SettingRow {label} {description} {disabled} {isOverridden} {onreset}>
     {#snippet control()}
         <InputText id="input-{label}" class="settings-text-input" {type} bind:value oninput={handleInput} {disabled} />
     {/snippet}

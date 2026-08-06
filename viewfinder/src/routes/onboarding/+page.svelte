@@ -190,7 +190,10 @@
                     allowed_values: setting.allowed_values,
                     is_user_editable: setting.is_user_editable,
                     group: setting.group,
-                    description: setting.description
+                    description: setting.description,
+                    is_overridden:
+                        userSettingsValues[setting.name] !== undefined &&
+                        userSettingsValues[setting.name] !== setting.default_value
                 }))
             });
 
