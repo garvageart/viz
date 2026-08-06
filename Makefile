@@ -197,7 +197,7 @@ lint: fmt-check
 	
 check-go:
 	@echo "Checking Go code for compilation and type errors..."
-	@$(GO_CMD) build ./...
+	@for dir in $$(go list -f '{{.Dir}}' -m); do (cd $$dir && $(GO_CMD) build ./...) || exit 1; done
 
 test: test-go
 	@if [ -f "$(VIEWFINDER_DIR)/package.json" ]; then \
