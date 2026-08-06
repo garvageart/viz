@@ -5,6 +5,24 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.28.4] - 2026-08-06
+
+* fix(build): update check-go in makefile to type-check all go workspace modules (e524ea6a)
+* feat(viewfinder): add reset button and URL slugification to settings system (90c90a2e)
+* feat(api): implement boolean normalization and delete setting override route (42be7d18)
+* refactor(tests): centralize in-memory test database setup into internal/tests (b77b5558)
+* feat(api): add setting override reset endpoint and is_overridden field to openapi spec (7ae4e7cf)
+* chore: replace `interface{}` with `any` (64565902)
+* chore: replace utils.StringPtr with new (0537c729)
+* chore: leave note for download token TTL configuration (66f03363)
+* feat(api): add websocket broadcasting to image routes and remove nil guards (97bb8dcd)
+* refactor(viewfinder): remove stale settings types, enums, and unused components (8cced0d1)
+* fix(api): ensure display_name is populated for all settings (b8683191)
+* fix: remove more explict typing on grid props (b9d18d15)
+* fix: remove old unncessary code for max retries grid rendering (4ed40884)
+* fix: wrap justified layout in div to apply padding (a237e358)
+* fix: remove explicit typing on PhotoAssetGrid prop values (2a0206c9)
+
 ## [0.28.3] - 2026-08-04
 
 * refactor(ui): move export panel heading into modal options (804df4d5)
