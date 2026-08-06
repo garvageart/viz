@@ -2,7 +2,6 @@ package routes_test
 
 import (
 	"encoding/json"
-	"fmt"
 	"io"
 	"net/http"
 	"net/http/httptest"
@@ -10,44 +9,22 @@ import (
 	"testing"
 	"time"
 
+	"log/slog"
+
 	"github.com/go-chi/chi/v5"
 	"github.com/stretchr/testify/assert"
-	"gorm.io/driver/sqlite"
 	"gorm.io/gorm"
-	"log/slog"
 
 	"viz/api/routes"
 	"viz/internal/dto"
 	"viz/internal/entities"
 	"viz/internal/images"
+	"viz/internal/tests"
 )
 
 // Helper function to create a new test logger
 func newTestLogger() *slog.Logger {
 	return slog.New(slog.NewTextHandler(io.Discard, nil))
-}
-
-// Helper function to create a new in-memory SQLite database
-func newTestDB(t *testing.T) *gorm.DB {
-	// Use a unique database name to prevent data collision between concurrent/subsequent tests
-	dbName := fmt.Sprintf("file:memdb-%d?mode=memory&cache=shared", time.Now().UnixNano())
-	db, err := gorm.Open(sqlite.Open(dbName), &gorm.Config{})
-	assert.NoError(t, err)
-	// Auto-migrate all entities
-	err = db.AutoMigrate(
-		&entities.User{},
-		&entities.ImageAsset{},
-		&entities.Collection{},
-		&entities.Session{},
-		&entities.APIKey{},
-		&entities.DownloadToken{},
-		&entities.WorkerJob{},
-		&entities.UserWithPassword{},
-		&entities.SettingDefault{},
-		&entities.SettingOverride{},
-	)
-	assert.NoError(t, err)
-	return db
 }
 
 // Helper function to create an admin user and session token
@@ -74,7 +51,7 @@ func createAdminSession(t *testing.T, db *gorm.DB) string {
 }
 
 func TestAdminSystemStats(t *testing.T) {
-	db := newTestDB(t)
+	db := tests.NewTestDB(t)
 	token := createAdminSession(t, db)
 	logger := newTestLogger()
 	storageStats := images.NewStorageStatsHolder(os.TempDir()) // Use temp dir for stats
@@ -115,7 +92,7 @@ func TestAdminSystemStats(t *testing.T) {
 }
 
 func TestAdminDatabaseStats(t *testing.T) {
-	db := newTestDB(t)
+	db := tests.NewTestDB(t)
 	token := createAdminSession(t, db)
 	logger := newTestLogger()
 	storageStats := images.NewStorageStatsHolder(os.TempDir())

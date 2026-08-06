@@ -1,29 +1,18 @@
 package jobs
 
 import (
-	"fmt"
 	"testing"
 	"time"
 
 	"viz/internal/entities"
+	"viz/internal/tests"
 	"viz/internal/uid"
 
 	"github.com/stretchr/testify/require"
-	"gorm.io/driver/sqlite"
-	"gorm.io/gorm"
 )
 
-func newTestWorkerJobDB(t *testing.T) *gorm.DB {
-	t.Helper()
-	db, err := gorm.Open(sqlite.Open(fmt.Sprintf("file:mem-workerjob-%d?mode=memory&cache=shared", time.Now().UnixNano())), &gorm.Config{})
-	require.NoError(t, err)
-	err = db.AutoMigrate(&entities.WorkerJob{})
-	require.NoError(t, err)
-	return db
-}
-
 func TestWorkerJobCreate(t *testing.T) {
-	db := newTestWorkerJobDB(t)
+	db := tests.NewTestDB(t)
 
 	imageUid := uid.MustGenerate()
 	workerUid := uid.MustGenerate()

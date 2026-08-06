@@ -1,32 +1,22 @@
 package jobs
 
 import (
-	"fmt"
 	"io"
 	"os"
 	"path/filepath"
 	"testing"
 	"time"
 
+	"log/slog"
+
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
-	"gorm.io/driver/sqlite"
 	"gorm.io/gorm"
-	"log/slog"
 
 	"viz/internal/config"
 	"viz/internal/entities"
+	"viz/internal/tests"
 )
-
-// newTestTrashDB creates an in-memory SQLite database for testing.
-func newTestTrashDB(t *testing.T) *gorm.DB {
-	t.Helper()
-	db, err := gorm.Open(sqlite.Open(fmt.Sprintf("file:mem-trash-%d?mode=memory&cache=shared", time.Now().UnixNano())), &gorm.Config{})
-	require.NoError(t, err)
-	err = db.AutoMigrate(&entities.ImageAsset{}, &entities.Collection{}, &entities.User{})
-	require.NoError(t, err)
-	return db
-}
 
 // testLogger returns a discard logger for tests.
 func testLogger() *slog.Logger {
@@ -46,7 +36,7 @@ func insertTrashImage(t *testing.T, db *gorm.DB, uid string, deletedAt time.Time
 }
 
 func TestPurgeExpiredTrash_RemovesExpiredImages(t *testing.T) {
-	db := newTestTrashDB(t)
+	db := tests.NewTestDB(t)
 	logger := testLogger()
 
 	// Insert images with deleted_at well before the 30-day cutoff
@@ -66,7 +56,7 @@ func TestPurgeExpiredTrash_RemovesExpiredImages(t *testing.T) {
 }
 
 func TestPurgeExpiredTrash_KeepsRecentSoftDeletes(t *testing.T) {
-	db := newTestTrashDB(t)
+	db := tests.NewTestDB(t)
 	logger := testLogger()
 
 	// Insert images with deleted_at that is recent (within the 30-day window)
@@ -94,7 +84,7 @@ func TestPurgeExpiredTrash_KeepsRecentSoftDeletes(t *testing.T) {
 }
 
 func TestPurgeExpiredTrash_RemovesTrashDirectories(t *testing.T) {
-	db := newTestTrashDB(t)
+	db := tests.NewTestDB(t)
 	logger := testLogger()
 
 	// Create a temp base directory
@@ -135,7 +125,7 @@ func TestPurgeExpiredTrash_RemovesTrashDirectories(t *testing.T) {
 }
 
 func TestPurgeExpiredTrash_MissingTrashDir(t *testing.T) {
-	db := newTestTrashDB(t)
+	db := tests.NewTestDB(t)
 	logger := testLogger()
 
 	tmpDir, err := os.MkdirTemp("", "viz-trash-test-*")
@@ -159,7 +149,7 @@ func TestPurgeExpiredTrash_MissingTrashDir(t *testing.T) {
 }
 
 func TestPurgeExpiredTrash_NoExpiredImages(t *testing.T) {
-	db := newTestTrashDB(t)
+	db := tests.NewTestDB(t)
 	logger := testLogger()
 
 	// Only images with no deleted_at (still active)
