@@ -1,7 +1,7 @@
-ARG REGISTRY_URL
-ARG REPOSITORY
-ARG BASE_IMAGE=${REGISTRY_URL}/${REPOSITORY}/viz-base:latest
-ARG FRONTEND_DEPS_IMAGE=${REGISTRY_URL}/${REPOSITORY}/viz-frontend-deps:latest
+ARG REGISTRY_URL=""
+ARG REPOSITORY=""
+ARG BASE_IMAGE=${REGISTRY_URL:+${REGISTRY_URL}/${REPOSITORY}/}viz-base:latest
+ARG FRONTEND_DEPS_IMAGE=${REGISTRY_URL:+${REGISTRY_URL}/${REPOSITORY}/}viz-frontend-deps:latest
 
 # Stage 1: Database Image (baked-in init scripts)
 FROM postgres:18-alpine AS db
