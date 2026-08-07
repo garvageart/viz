@@ -14,27 +14,36 @@ async function handleOnboarding(page: Page) {
     // Steps 1..N: Settings & Details
     let maxLoops = 15;
     while (maxLoops--) {
-        // Fill all visible text inputs for validation
-        const inputs = page.locator('input[type="text"], input:not([type])');
+        // Fill all visible inputs (text, email, password) for onboarding form validation
+        const inputs = page.locator(
+            'input[type="text"], input[type="email"], input[type="password"], input:not([type])'
+        );
         const count = await inputs.count();
         for (let i = 0; i < count; i++) {
             const input = inputs.nth(i);
             if ((await input.isVisible()) && (await input.isEditable())) {
                 const val = await input.inputValue();
                 if (!val) {
-                    await input.fill("E2E Test");
+                    const type = await input.getAttribute("type");
+                    if (type === "email") {
+                        await input.fill(process.env.E2E_TEST_EMAIL!);
+                    } else if (type === "password") {
+                        await input.fill(process.env.E2E_TEST_PASSWORD!);
+                    } else {
+                        await input.fill(process.env.E2E_TEST_USERNAME!);
+                    }
                 }
             }
         }
 
         const finishBtn = page.locator('button:has-text("Finish Setup"), button:has-text("Complete Setup")');
-        if (await finishBtn.isVisible()) {
+        if ((await finishBtn.isVisible()) && (await finishBtn.isEnabled())) {
             await finishBtn.click();
             break;
         }
 
         const nextBtn = page.locator('button:has-text("Next")');
-        if (await nextBtn.isVisible()) {
+        if ((await nextBtn.isVisible()) && (await nextBtn.isEnabled())) {
             await nextBtn.click();
         } else {
             // Check if we are already done or redirecting
