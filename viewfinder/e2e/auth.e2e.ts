@@ -3,10 +3,9 @@ import { expect, test } from "@playwright/test";
 test.use({ storageState: { cookies: [], origins: [] } });
 
 // Ensure tests run unauthenticated by clearing cookies and storage
-test.beforeEach(async ({ page }) => {
-    // Navigate to app origin so localStorage/sessionStorage can be cleared
+test.beforeEach(async ({ page, context }) => {
+    await context.clearCookies();
     await page.goto("/auth/login");
-    await page.context().clearCookies();
     await page.evaluate(() => {
         localStorage.clear();
         sessionStorage.clear();

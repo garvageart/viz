@@ -1,4 +1,7 @@
 import { type Page, expect, test as setup } from "@playwright/test";
+import * as fs from "fs";
+import * as path from "path";
+import { performDragAndDrop } from "./helpers";
 
 const authFile = "e2e/.auth/user.json";
 
@@ -137,10 +140,32 @@ setup("authenticate", async ({ page }) => {
         }
     }
 
+    // Seed a sample photo for downstream photo grid & export tests
+    console.log("Seeding sample photo for E2E tests...");
+    await page.goto("/photos");
+    await page.waitForLoadState("networkidle");
+    const imagePath = path.join(process.cwd(), "../resources/test/images/DSCF0355.jpg");
+    if (fs.existsSync(imagePath)) {
+        const fileBuffer = fs.readFileSync(imagePath);
+        const fileName = path.basename(imagePath);
+        await performDragAndDrop(page, fileBuffer, fileName);
+        const submitBtn = page.locator("button.primary, button[type='submit']").first();
+        if (await submitBtn.isVisible({ timeout: 5000 }).catch(() => false)) {
+            await submitBtn.click();
+            await page
+                .locator(".viz-toast-success")
+                .first()
+                .waitFor({ timeout: 15000 })
+                .catch(() => {});
+        }
+    }
+
     // Warm up routes to avoid lazy compilation timeouts in Vite dev mode
     console.log("Warming up routes...");
     await page.goto("/photos").catch(() => {});
     await page.goto("/collections").catch(() => {});
+    await page.goto("/admin").catch(() => {});
+    await page.goto("/").catch(() => {});
 
     // Save state
     await page.context().storageState({ path: authFile });
