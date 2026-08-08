@@ -1121,6 +1121,7 @@
                         />
                     {/if}
                     <IconButton
+                        id="act-crop"
                         class="lightbox-button-icon"
                         hoverColor="transparent"
                         title="Crop"
@@ -1264,6 +1265,7 @@
                             class:loaded={loader.initialImageLoaded}
                             alt="Placeholder for {lightboxImage!.name}"
                             aria-hidden="true"
+                            data-thumbhash={lightboxImage!.image_metadata?.thumbhash}
                             style={`aspect-ratio: ${lightboxImage!.width} / ${lightboxImage!.height};`}
                         />
                     {/if}
