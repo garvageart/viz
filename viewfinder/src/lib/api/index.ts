@@ -2,7 +2,6 @@
 import type * as Oazapfts from "@oazapfts/runtime";
 // Import type for RequestOpts
 import * as QS from "@oazapfts/runtime/query";
-import { loadingState } from "$lib/states/loading.svelte";
 import type { ImageUploadFileData } from "$lib/upload/manager.svelte";
 import * as generated from "./client.gen";
 import { defaults, servers } from "./client.gen";

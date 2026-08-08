@@ -41,8 +41,12 @@ export async function downloadToFilesystem(filename: string, data: Blob, revokeD
 
     const a = document.createElement("a");
     a.href = url;
+    a.setAttribute("download", filename);
     a.download = filename;
+    a.target = "_blank";
+    a.style.display = "none";
     document.body.appendChild(a);
+
     a.click();
     a.remove();
 

@@ -33,6 +33,7 @@
     } from "$lib/utils/images";
     import { generateRandomString } from "$lib/utils/misc";
     import type { exportImagesParallel } from "$lib/workers/image_export";
+    import ImageExportWorker from "$lib/workers/image_export?worker";
     import { modalsManager } from "../../modals/manager/ModalManager.svelte";
     import BatchRenameBuilder, { type SavedRenameSettings, defaultTemplate } from "../BatchRenameBuilder.svelte";
     import Button from "../Button.svelte";
@@ -226,7 +227,7 @@
         for (let i = 0; i < downloadTasks.length; i++) {
             const task = downloadTasks[i];
             const asset = exportAssets[i];
-            let originalData = $state.snapshot(task.data);
+            let originalData = task.data;
 
             if (!originalData) {
                 // Try falling back to cached getImageFileBlob
@@ -257,9 +258,7 @@
 
         let exportWorker;
         try {
-            exportWorker = new Worker(new URL("../../../workers/image_export.ts", import.meta.url), {
-                type: "module"
-            });
+            exportWorker = new ImageExportWorker();
             exportWorker.addEventListener("error", (e) => {
                 console.error("[ExportPanel] Worker error event:", e.message, e.filename, e.lineno, e);
                 throw e;
@@ -307,10 +306,9 @@
 
                 const fullFilename = `${filename}.${ext}`;
 
-                const standardBuf = new Uint8Array(new ArrayBuffer(imageBuf.byteLength));
+                const standardBuf = new Uint8Array(imageBuf.byteLength);
                 standardBuf.set(new Uint8Array(imageBuf));
-
-                const blob = new Blob([standardBuf], { type: `image/${ext === "jpg" ? "jpeg" : ext}` });
+                const blob = new Blob([standardBuf as BlobPart], { type: `image/${ext === "jpg" ? "jpeg" : ext}` });
                 await downloadToFilesystem(fullFilename, blob);
 
                 toasts.add({
@@ -412,7 +410,7 @@
     }
 </script>
 
-<div class="export-panel">
+<div id="viz-export-panel" class="export-panel">
     <div class="export-header">
         <div class="asset-summary">
             {assets.length} item(s) selected
@@ -544,7 +542,7 @@
 
     <div class="export-footer">
         <Button variant="small" onclick={handleCancel}>Cancel</Button>
-        <Button variant="small" onclick={handleExport} class="export-btn">
+        <Button id="perform-export" variant="small" onclick={handleExport} class="export-btn">
             Export {assets.length} Item{assets.length === 1 ? "" : "s"}
         </Button>
     </div>
