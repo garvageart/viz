@@ -123,8 +123,8 @@ setup("authenticate", async ({ page }) => {
     // Seed 4 sample photos for downstream tests (2 via Drag & Drop, 2 via Upload Button)
     console.log("Seeding 4 sample photos (2 via D&D, 2 via Header Upload Button)...");
     await page.goto("/photos");
-    await page.waitForLoadState("networkidle");
-    await expect(page.locator(".viz-view-container, .viz-photo-grid-container, main#main").first()).toBeVisible({
+    await page.waitForLoadState("domcontentloaded");
+    await expect(page.locator(".viz-workspace, main#main, .viz-photo-grid-container").first()).toBeVisible({
         timeout: 25000
     });
 

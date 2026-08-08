@@ -102,7 +102,9 @@ COPY resources/ ./resources/
 COPY tools/migrations/ ./tools/migrations/
 
 # Stage 5: Final Production Image
+ARG FRONTEND_BUILDER_IMAGE=frontend-builder
 FROM debian:bookworm-slim AS server
+ARG FRONTEND_BUILDER_IMAGE=frontend-builder
 
 # Install runtime dependencies for libvips with BuildKit apt caching
 RUN --mount=type=cache,id=apt-cache,target=/var/cache/apt,sharing=locked \
@@ -131,8 +133,8 @@ WORKDIR /app
 COPY --from=backend-builder --chown=viz:viz /app/viz-server /app/viz-server
 COPY --from=backend-builder --chown=viz:viz /app/version.txt /app/version.txt
 
-# Copy built frontend from frontend-builder
-COPY --from=frontend-builder --chown=viz:viz /app/build/viewfinder /app/frontend
+# Copy built frontend from frontend-builder (or pre-built viz-frontend-builder tag)
+COPY --from=${FRONTEND_BUILDER_IMAGE} --chown=viz:viz /app/build/viewfinder /app/frontend
 
 # Copy entrypoint script
 COPY docker/docker-entrypoint.sh /usr/local/bin/
