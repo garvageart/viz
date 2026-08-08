@@ -5,6 +5,20 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.29.0] - 2026-08-08
+
+* chore(viewfinder): add test:e2e:prod-build script to package.json (734ca107)
+* test(viewfinder): verify thumbhash decoding via thumbhash library and resolve lightbox E2E interactions (867597ee)
+* test(viewfinder): E2E test suite reliability, Playwright setup, and selectors (42a9c85d)
+* fix(viewfinder): UI components, context menu focus states, and build tool scripts (ef4680ef)
+* refactor(viewfinder): core SPA application architecture and reactive state management (4993543d)
+* fix(viewfinder): Web Worker bundling, WASM-VIPS transferability, and export pipeline (b81ee974)
+* fix(viewfinder): optimize Playwright E2E test setup, admin permissions, and CI retries (83ad89c4)
+* chore: remove generate icons from build command (1e20f6a9)
+* fix(viewfinder): fill email and password inputs during onboarding E2E test setup (78cc0ecd)
+* fix(docker): handle empty REGISTRY_URL cleanly in Dockerfile ARGs (0b67983e)
+* fix(docker): remove in-docker playwright installation to prevent build OOM kills (7b6a18aa)
+
 ## [0.28.7] - 2026-08-06
 
 * fix(docker): use workspace pnpm exec playwright in frontend-deps stage (24e0f261)
