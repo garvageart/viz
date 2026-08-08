@@ -27,7 +27,7 @@ test.describe("Drag & Drop File Upload Flow", () => {
         page.on("console", (msg) => console.log("PAGE LOG:", msg.text()));
 
         // Get the test image path
-        const imagePath = path.join(process.cwd(), "../resources/test/images/DSCF0355.jpg");
+        const imagePath = path.join(process.cwd(), "../resources/test/samples/DSCF0355.jpg");
         expect(fs.existsSync(imagePath)).toBe(true);
 
         const fileBuffer = fs.readFileSync(imagePath);
@@ -77,7 +77,7 @@ test.describe("Drag & Drop File Upload Flow", () => {
         });
 
         // 4. Perform Drag & Drop
-        const imagePath = path.join(process.cwd(), "../resources/test/images/DSCF0355.jpg");
+        const imagePath = path.join(process.cwd(), "../resources/test/samples/DSCF0355.jpg");
         expect(fs.existsSync(imagePath)).toBe(true);
 
         const fileBuffer = fs.readFileSync(imagePath);

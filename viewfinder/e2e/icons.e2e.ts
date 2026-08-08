@@ -196,7 +196,7 @@ test.describe("Material Icon E2E Tests", () => {
         await expect(page.locator(".viz-view-container")).toBeVisible({ timeout: 20000 });
 
         // Get test image
-        const imagePath = path.join(process.cwd(), "../resources/test/images/DSCF0355.jpg");
+        const imagePath = path.join(process.cwd(), "../resources/test/samples/DSCF0355.jpg");
         expect(fs.existsSync(imagePath)).toBe(true);
 
         const fileBuffer = fs.readFileSync(imagePath);
