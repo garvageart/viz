@@ -102,7 +102,7 @@ Stuff to finish:
 <div class="settings-layout">
     <NavSidebar title="Settings" items={navItems} width="18rem" />
 
-    <main class="settings-content">
+    <div class="settings-content">
         <div class="settings-container">
             {#if isCustomGroup}
                 {#if activeSlug === "security"}
@@ -114,7 +114,7 @@ Stuff to finish:
                 <AutoSettingsGroup settings={currentSettings} title={formatSectionTitle(activeGroupOriginalName)} />
             {/if}
         </div>
-    </main>
+    </div>
 </div>
 
 <style lang="scss">

@@ -34,9 +34,9 @@
 {#if authed}
     <div class="admin-layout">
         <NavSidebar title="Admin" items={adminNavItems} />
-        <main class="admin-content">
+        <div class="admin-content">
             {@render children()}
-        </main>
+        </div>
     </div>
 {/if}
 

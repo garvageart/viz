@@ -102,12 +102,12 @@
     {#if download.files.length > 0}
         <DownloadPanel />
     {/if}
-    <main class="viz-content">
+    <main id="main" class="viz-content" tabindex="-1">
         {@render children()}
     </main>
 </div>
 
-<style>
+<style lang="scss">
     .viz-app-layout {
         display: flex;
         flex-direction: column;

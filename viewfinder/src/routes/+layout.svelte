@@ -96,6 +96,8 @@
 
 <svelte:window onbeforeunload={handleBeforeUnload} />
 
+<a href="#main" class="skip-to-main" aria-label="Skip to main content"> Skip to main content </a>
+
 {@render children()}
 <Notifications />
 <ModalRenderer />
@@ -110,6 +112,31 @@
 {/if}
 
 <style lang="scss">
+    .skip-to-main {
+        position: absolute;
+        top: -20rem;
+        left: 50%;
+        transform: translateX(-50%);
+        background: var(--viz-secondary);
+        color: var(--viz-text-color-light);
+        padding: var(--viz-spacing-std) var(--viz-spacing-xxl);
+        border: var(--viz-border-thin);
+        border-top: none;
+        font-weight: 600;
+        font-size: var(--viz-font-size-md);
+        z-index: 10000;
+        text-decoration: none;
+        transition: top 0.2s cubic-bezier(0, 0, 0.2, 1);
+        box-shadow: 0 6px 20px rgba(0, 0, 0, 0.35);
+
+        &:focus,
+        &:focus-visible {
+            top: 0;
+            outline: 3px solid var(--viz-accent);
+            outline-offset: -3px;
+        }
+    }
+
     .nav-progress-container {
         position: fixed;
         top: 0;

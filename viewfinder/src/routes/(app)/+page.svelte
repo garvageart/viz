@@ -8,49 +8,11 @@
     <title>viz</title>
 </svelte:head>
 
-<a href="#main" class="skip-to-main" aria-label="Skip to main content">
-    <p>Skip to main content</p>
-</a>
-
-<main id="main" class="no-select">
-    <div class="viz-content-container" bind:this={vizContentContainer}>
-        <VizWorkspace id="viz-content" />
-    </div>
-</main>
+<div class="viz-content-container" bind:this={vizContentContainer}>
+    <VizWorkspace id="viz-content" />
+</div>
 
 <style lang="scss">
-    main {
-        display: flex;
-        flex-direction: row;
-        align-items: center;
-        width: 100%;
-        height: 100%;
-    }
-
-    .skip-to-main {
-        left: -999px;
-        position: absolute;
-        top: 0;
-        width: 1px;
-        height: 1px;
-        overflow: hidden;
-        z-index: -999;
-        display: block;
-
-        &:focus,
-        &:focus-visible {
-            color: var(--viz-text-primary);
-            background: var(--viz-secondary);
-            left: auto;
-            height: auto;
-            width: auto;
-            padding: 0.2em 3em;
-            outline: var(--viz-text-primary) dashed 2px;
-            outline-offset: -2px;
-            z-index: 999;
-        }
-    }
-
     .viz-content-container {
         display: flex;
         flex-direction: column;

@@ -64,7 +64,7 @@
     }
 </script>
 
-<main style:background-image={bgImageUrl}>
+<main id="main" class="auth-page-container" style:background-image={bgImageUrl} tabindex="-1">
     <div class="auth-card">
         <div class="auth-header">
             <span class="viz-title">viz</span>
@@ -100,7 +100,7 @@
 </main>
 
 <style lang="scss">
-    main {
+    .auth-page-container {
         display: flex;
         flex-direction: column;
         align-items: center;
@@ -114,7 +114,7 @@
     }
 
     /* Grid and tint overlay on top of the background image */
-    main::before {
+    .auth-page-container::before {
         content: "";
         position: absolute;
         top: 0;
