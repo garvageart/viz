@@ -2,6 +2,7 @@ ARG REGISTRY_URL=""
 ARG REPOSITORY=""
 ARG BASE_IMAGE=${REGISTRY_URL:+${REGISTRY_URL}/${REPOSITORY}/}viz-base:latest
 ARG FRONTEND_DEPS_IMAGE=${REGISTRY_URL:+${REGISTRY_URL}/${REPOSITORY}/}viz-frontend-deps:latest
+ARG FRONTEND_BUILDER_IMAGE=frontend-builder
 
 # Stage 1: Database Image (baked-in init scripts)
 FROM postgres:18-alpine AS db
@@ -101,10 +102,11 @@ COPY internal/ ./internal/
 COPY resources/ ./resources/
 COPY tools/migrations/ ./tools/migrations/
 
-# Stage 5: Final Production Image
-ARG FRONTEND_BUILDER_IMAGE=frontend-builder
+# Stage 5: Alias stage for frontend build output
+FROM ${FRONTEND_BUILDER_IMAGE} AS frontend-build-stage
+
+# Stage 6: Final Production Image
 FROM debian:bookworm-slim AS server
-ARG FRONTEND_BUILDER_IMAGE=frontend-builder
 
 # Install runtime dependencies for libvips with BuildKit apt caching
 RUN --mount=type=cache,id=apt-cache,target=/var/cache/apt,sharing=locked \
@@ -133,8 +135,8 @@ WORKDIR /app
 COPY --from=backend-builder --chown=viz:viz /app/viz-server /app/viz-server
 COPY --from=backend-builder --chown=viz:viz /app/version.txt /app/version.txt
 
-# Copy built frontend from frontend-builder (or pre-built viz-frontend-builder tag)
-COPY --from=${FRONTEND_BUILDER_IMAGE} --chown=viz:viz /app/build/viewfinder /app/frontend
+# Copy built frontend from alias stage
+COPY --from=frontend-build-stage --chown=viz:viz /app/build/viewfinder /app/frontend
 
 # Copy entrypoint script
 COPY docker/docker-entrypoint.sh /usr/local/bin/
