@@ -1,7 +1,7 @@
 <script lang="ts">
     import { goto } from "$app/navigation";
     import hotkeys from "hotkeys-js";
-    import { type ComponentProps, onMount } from "svelte";
+    import { type ComponentProps, onMount, untrack } from "svelte";
     import type { Collection, ImageAsset } from "$lib/api";
     import { Label as ImageLabel, addCollectionImages, updateImage } from "$lib/api";
     import Dropdown from "$lib/components/context-menus/Dropdown.svelte";
@@ -58,6 +58,13 @@
 
     const imageSelection = selectionManager.getScope<ImageAsset>(imageScopeId);
     const collectionSelection = selectionManager.getScope<Collection>(collectionScopeId);
+
+    $effect(() => {
+        untrack(() => {
+            selectionManager.setActive(imageScopeId);
+        });
+    });
+
     let disableOutsideUnselect = $derived(isLayoutPage());
 
     // Modal state for collection selection
@@ -155,32 +162,35 @@
     let collectionViewMode = $state<AssetGridView>(viewSettings.current);
 
     // Display options for Images
-    const imageDisplayMenuItems: MenuItem[] = [
+    let imageDisplayMenuItems: MenuItem[] = $derived([
+        {
+            id: "img-display-custom",
+            label: "Grid",
+            iconName: imageViewMode === "custom" ? "check" : undefined,
+            action: () => (imageViewMode = "custom")
+        },
         {
             id: "img-display-grid",
-            label: "Grid",
+            label: "Thumbnails",
+            iconName: imageViewMode === "grid" ? "check" : undefined,
             action: () => (imageViewMode = "grid")
         },
         {
             id: "img-display-list",
             label: "List",
+            iconName: imageViewMode === "list" ? "check" : undefined,
             action: () => (imageViewMode = "list")
-        },
-        {
-            id: "img-display-grid",
-            label: "Grid",
-            action: () => (imageViewMode = "grid")
         }
-    ];
+    ]);
 
     let imageDisplaySelectedId = $derived.by(() => {
         switch (imageViewMode) {
+            case "custom":
+                return "img-display-custom";
             case "grid":
                 return "img-display-grid";
             case "list":
                 return "img-display-list";
-            case "custom":
-                return "img-display-custom";
         }
     });
 

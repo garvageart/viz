@@ -1,5 +1,5 @@
 import { invalidateAll, preloadData } from "$app/navigation";
-import type { Component } from "svelte";
+import { type Component, untrack } from "svelte";
 import { DYNAMIC_ROUTE_REGEX } from "$lib/constants";
 import type { MenuItem } from "$lib/context-menu/types";
 import { debugMode } from "$lib/states/index.svelte";
@@ -154,8 +154,9 @@ class VizView<
     }
 
     derivedViewData = $derived.by(() => {
-        // Return a promise that resolves with the component data
-        return this.getComponentData();
+        void invalidationState.version;
+        void this.path;
+        return untrack(() => this.getComponentData());
     });
 
     /**

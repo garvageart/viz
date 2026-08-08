@@ -20,24 +20,35 @@
     const storage = new VizLocalStorage<SerializedWorkspace>("workspaceLayout");
     let initialized = $state(false);
 
-    onMount(() => {
-        const stored = storage.get();
-        workspaceState.workspace = new Workspace(undefined, views);
-        if (stored) {
-            try {
-                workspaceState.workspace.load(stored);
-                if (debugMode) {
-                    console.log("[Workspace] Hydrated from storage");
+    function initWorkspace() {
+        if (!workspaceState.workspace) {
+            const stored = storage.get();
+            workspaceState.workspace = new Workspace(undefined, views);
+            if (stored) {
+                try {
+                    workspaceState.workspace.load(stored);
+                    if (debugMode) {
+                        console.log("[Workspace] Hydrated from storage");
+                    }
+                } catch (e) {
+                    console.error("[Workspace] Failed to hydrate layout", e);
+                    workspaceState.workspace = isMobile ? createMobileDefaultLayout() : createDefaultLayout();
                 }
-            } catch (e) {
-                console.error("[Workspace] Failed to hydrate layout", e);
+            } else {
                 workspaceState.workspace = isMobile ? createMobileDefaultLayout() : createDefaultLayout();
             }
-        } else {
-            workspaceState.workspace = isMobile ? createMobileDefaultLayout() : createDefaultLayout();
         }
-
         initialized = true;
+    }
+
+    if (typeof window !== "undefined") {
+        initWorkspace();
+    }
+
+    onMount(() => {
+        if (!initialized) {
+            initWorkspace();
+        }
     });
 
     if (dev) {

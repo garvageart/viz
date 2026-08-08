@@ -1,7 +1,5 @@
 <script lang="ts">
     import VizWorkspace from "$lib/components/workspace/VizWorkspace.svelte";
-    import { search } from "$lib/states/index.svelte";
-    import SearchPage from "./search/+page.svelte";
 
     let vizContentContainer: HTMLDivElement | undefined = $state();
 </script>
@@ -15,13 +13,9 @@
 </a>
 
 <main id="main" class="no-select">
-    {#if search.value !== "" && search.enableHomePageSearch}
-        <SearchPage />
-    {:else}
-        <div class="viz-content-container" bind:this={vizContentContainer}>
-            <VizWorkspace id="viz-content" />
-        </div>
-    {/if}
+    <div class="viz-content-container" bind:this={vizContentContainer}>
+        <VizWorkspace id="viz-content" />
+    </div>
 </main>
 
 <style lang="scss">
@@ -46,7 +40,7 @@
         &:focus,
         &:focus-visible {
             color: var(--viz-text-primary);
-            background: var(--viz-primary);
+            background: var(--viz-secondary);
             left: auto;
             height: auto;
             width: auto;

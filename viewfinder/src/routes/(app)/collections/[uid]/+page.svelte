@@ -92,6 +92,7 @@
 
     $effect(() => {
         untrack(() => {
+            selectionManager.setActive(scopeId);
             if (!filterManager.keepFilters) {
                 filterManager.resetActiveScope();
             }
@@ -209,6 +210,11 @@
     // Selection
     const scopeId = $derived(SelectionScopeNames.COLLECTION_PREFIX + data.uid);
     const selectionScope = $derived(selectionManager.getScope<ImageAsset>(scopeId));
+
+    $effect(() => {
+        selectionManager.setActive(scopeId);
+    });
+
     let selectionFirstImage = $derived.by(() => {
         if (selectionScope.size === 0) {
             return undefined;
@@ -899,6 +905,7 @@
             </IconButton>
         {/if}
         <IconButton
+            id="add-photos"
             iconName="add_photo_alternate"
             class="toolbar-button"
             title="Add Photos"

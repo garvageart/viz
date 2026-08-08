@@ -84,6 +84,15 @@
     let galleryState = $derived(new ImagePaginationState(data));
     let isPaginating = $state(false);
 
+    $effect(() => {
+        untrack(() => {
+            selectionManager.setActive(SelectionScopeNames.PHOTOS_MAIN);
+            if (!filterManager.keepFilters) {
+                filterManager.resetActiveScope();
+            }
+        });
+    });
+
     // Compute image facet values (cameras, lenses, tags, labels, ranges) from the
     // full loaded image set so the filter panel always has values to offer.
     $effect(() => {
@@ -127,6 +136,11 @@
     // Selection (shared across groups)
     const scopeId = SelectionScopeNames.PHOTOS_MAIN;
     const selectionScope = selectionManager.getScope<ImageAsset>(scopeId);
+
+    $effect(() => {
+        selectionManager.setActive(scopeId);
+    });
+
     let selectionFirstImage = $derived.by(() => {
         const items = selectionScope.selectedItems;
         if (items.length === 0) {

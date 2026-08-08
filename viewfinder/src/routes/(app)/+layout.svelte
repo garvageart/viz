@@ -103,9 +103,7 @@
         <DownloadPanel />
     {/if}
     <main class="viz-content">
-        {#key page.url.href}
-            {@render children()}
-        {/key}
+        {@render children()}
     </main>
 </div>
 

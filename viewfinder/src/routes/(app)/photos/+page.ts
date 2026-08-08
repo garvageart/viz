@@ -1,9 +1,12 @@
 import { listImages } from "$lib/api";
+import { DataKeys } from "$lib/dependency-keys";
 import { photosSort } from "$lib/states/sort.svelte";
 import { sendVizAPIRequest } from "$lib/utils/http";
 import type { PageLoad } from "./$types";
 
-export const load: PageLoad = async () => {
+export const load: PageLoad = async ({ depends }) => {
+    depends(DataKeys.Photos);
+
     return sendVizAPIRequest(
         listImages({
             limit: 100,

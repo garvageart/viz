@@ -39,6 +39,7 @@
 
     $effect(() => {
         untrack(() => {
+            selectionManager.setActive(SelectionScopeNames.COLLECTIONS_MAIN);
             if (!filterManager.keepFilters) {
                 filterManager.resetActiveScope();
             }
