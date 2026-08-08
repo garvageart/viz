@@ -1158,6 +1158,7 @@
                         }}
                     />
                     <IconButton
+                        id="lightbox-toggle-info"
                         class="lightbox-button-icon"
                         hoverColor="transparent"
                         title={`${showMetadata ? "Hide" : "Show"} Info`}

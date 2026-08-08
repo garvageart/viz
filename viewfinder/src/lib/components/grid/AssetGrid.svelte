@@ -650,6 +650,12 @@
             return;
         }
 
+        if (e.key === "Escape" || e.key === "Esc") {
+            e.preventDefault();
+            selection.clear();
+            return;
+        }
+
         const validKeys = ["ArrowLeft", "ArrowRight", "ArrowUp", "ArrowDown", "Tab"];
         if (!validKeys.includes(e.key) && !e.shiftKey && !e.metaKey) {
             return;
@@ -857,13 +863,9 @@
     });
 
     hotkeys("escape", (e) => {
-        if (selectionManager.activeScopeId !== scopeId) {
-            return;
-        }
         if (selection.size === 0 && !selection.active) {
             return;
         }
-
         selection.clear();
     });
 

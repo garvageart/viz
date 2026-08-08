@@ -219,6 +219,7 @@
             oncontextmenu={handleThemeContext}
         />
         <Dropdown
+            id="viz-upload-btn"
             class="header-button header-upload-dropdown"
             iconName="upload"
             variant="success"

@@ -40,6 +40,11 @@ WORKDIR /app
 # Copy the rest of the source files AFTER installing dependencies
 COPY viewfinder ./viewfinder
 COPY scripts/js ./scripts/js
+COPY resources/test/images ./resources/test/images
+
+# Pre-install Playwright Chromium browser binaries into image layer to eliminate runtime downloads in CI
+ENV PLAYWRIGHT_BROWSERS_PATH=/root/.cache/ms-playwright
+RUN pnpm --filter @viz/viewfinder exec playwright install --with-deps chromium
 
 # Build frontend
 WORKDIR /app

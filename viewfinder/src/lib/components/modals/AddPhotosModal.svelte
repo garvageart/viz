@@ -218,7 +218,7 @@
     />
 {/snippet}
 
-<div class="add-photos-modal-container">
+<div id="add-photos-modal" class="add-photos-modal-container">
     {#if isLoading && !initialDataLoaded}
         <div class="loading-state">
             <LoadingSpinner />
@@ -301,9 +301,16 @@
                     <span class="no-selection">Select photos to add</span>
                 {/if}
             </div>
-            <div class="footer-actions">
-                <Button variant="primary" onclick={handleCancel} disabled={isLoading}><span>Cancel</span></Button>
-                <Button variant="info" disabled={selectionScope.size === 0 || isLoading} onclick={handleAdd}>
+            <div class="footer-actions modal-actions">
+                <Button id="add-photos-cancel" variant="primary" onclick={handleCancel} disabled={isLoading}
+                    ><span>Cancel</span></Button
+                >
+                <Button
+                    id="add-photos-submit"
+                    variant="info"
+                    disabled={selectionScope.size === 0 || isLoading}
+                    onclick={handleAdd}
+                >
                     <span>Add to Collection</span>
                 </Button>
             </div>

@@ -38,6 +38,7 @@
 <li role="none" onmouseenter={() => (showSubmenu = true)} onmouseleave={() => (showSubmenu = false)}>
     {#if item.content}
         <div
+            id={item.id}
             role="menuitem"
             class="ctx-content"
             class:disabled={!!item.disabled}
@@ -48,6 +49,7 @@
         </div>
     {:else}
         <button
+            id={item.id}
             role="menuitem"
             aria-disabled={item.disabled ? "true" : undefined}
             class:disabled={!!item.disabled}

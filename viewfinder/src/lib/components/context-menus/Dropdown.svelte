@@ -7,6 +7,7 @@
     import IconButton from "../ui/IconButton.svelte";
 
     interface Props {
+        id?: string;
         class?: string;
         /** Menu items to render directly in ContextMenu */
         items: MenuItem[];
@@ -42,6 +43,7 @@
     }
 
     let {
+        id,
         items,
         selectedItemId = $bindable(),
         showMenu = $bindable(false),
@@ -127,6 +129,7 @@
         {@render trigger({ toggle: toggleMenu, showMenu, title })}
     {:else if currentIcon}
         <IconButton
+            {id}
             {variant}
             class="viz-dropdown-button {className}"
             iconName={currentIcon}
@@ -139,7 +142,14 @@
             {/if}
         </IconButton>
     {:else}
-        <Button {variant} class="viz-dropdown-button {className}" {title} bind:element={buttonEl} onclick={toggleMenu}>
+        <Button
+            {id}
+            {variant}
+            class="viz-dropdown-button {className}"
+            {title}
+            bind:element={buttonEl}
+            onclick={toggleMenu}
+        >
             {#if !hideTitleState}
                 {@render buttonContent()}
             {/if}
