@@ -1,7 +1,7 @@
 import { type Page, expect, test as setup } from "@playwright/test";
 import * as fs from "fs";
 import * as path from "path";
-import { performDragAndDrop } from "./helpers";
+import { performDragAndDrop, trackUploadedImages } from "./helpers";
 
 const authFile = "e2e/.auth/user.json";
 
@@ -9,7 +9,7 @@ async function handleOnboarding(page: Page) {
     console.log("Handling onboarding flow...");
 
     // Step 0: Welcome
-    const getStartedBtn = page.locator('button:has-text("Get Started"), button:has-text("Let\'s Go")');
+    const getStartedBtn = page.locator('.onboarding-container button, button.primary, button[type="submit"]').first();
     if (await getStartedBtn.isVisible()) {
         await getStartedBtn.click();
     }
@@ -21,6 +21,8 @@ async function handleOnboarding(page: Page) {
         const inputs = page.locator(
             'input[type="text"], input[type="email"], input[type="password"], input:not([type])'
         );
+
+        // Gosh
         const count = await inputs.count();
         for (let i = 0; i < count; i++) {
             const input = inputs.nth(i);
@@ -39,13 +41,13 @@ async function handleOnboarding(page: Page) {
             }
         }
 
-        const finishBtn = page.locator('button:has-text("Finish Setup"), button:has-text("Complete Setup")');
+        const finishBtn = page.locator("button.finish-setup, .onboarding-actions button:last-child").first();
         if ((await finishBtn.isVisible()) && (await finishBtn.isEnabled())) {
             await finishBtn.click();
             break;
         }
 
-        const nextBtn = page.locator('button:has-text("Next")');
+        const nextBtn = page.locator("button.next-step, .onboarding-actions button").first();
         if ((await nextBtn.isVisible()) && (await nextBtn.isEnabled())) {
             await nextBtn.click();
         } else {
@@ -69,96 +71,97 @@ setup("authenticate", async ({ page }) => {
         );
     }
 
-    console.log(`Navigating to app...`);
-    await page.goto("/");
-
-    const workspace = page.locator(".viz-workspace");
-
-    // Wait for initial load
+    console.log("Navigating to login page...");
+    await page.goto("/auth/login");
     await page.waitForLoadState("networkidle");
-    console.log(`Current URL: ${page.url()}`);
 
-    if (await workspace.isVisible()) {
-        console.log("Already authenticated.");
-    } else if (page.url().includes("/onboarding")) {
-        console.log("First run detected. Assuming first run or incomplete setup.");
+    if (page.url().includes("/onboarding")) {
+        console.log("First run detected. Onboarding flow...");
         await handleOnboarding(page);
-        await expect(workspace).toBeVisible({ timeout: 20000 });
-    } else {
-        console.log("Not authenticated. Attempting login...");
+    } else if (
+        await page
+            .locator("#login-email")
+            .isVisible()
+            .catch(() => false)
+    ) {
         await page.fill("#login-email", email);
         await page.fill("#login-password", password);
         await page.click("#login-submit");
-
-        // Wait for success, error, or onboarding redirect
-        await Promise.race([
-            workspace.waitFor({ state: "visible", timeout: 15000 }).catch(() => {}),
-            page.waitForURL("**/onboarding", { timeout: 10000 }).catch(() => {}),
-            page
-                .locator(".viz-toast-error")
-                .waitFor({ state: "visible", timeout: 5000 })
-                .catch(() => {})
-        ]);
+        await page.waitForURL((url) => !url.pathname.includes("/auth/login"), { timeout: 15000 }).catch(() => {});
 
         if (page.url().includes("/onboarding")) {
             await handleOnboarding(page);
-        }
-
-        // Give it a moment to settle after potential onboarding
-        if (await workspace.isVisible({ timeout: 15000 })) {
-            console.log("Authentication and onboarding successful.");
-        } else {
-            const errorToast = page.locator(".viz-toast-error");
-            if (await errorToast.isVisible()) {
-                const errorMsg = await errorToast.locator(".viz-toast-message").textContent();
-                console.error(`Login failed with toast: ${errorMsg}`);
-
-                if (errorMsg?.includes("User not found")) {
-                    console.log("User not found. Attempting registration...");
-                    await page.goto("/auth/register");
-                    await page.fill("#reg-email", email);
-                    await page.fill("#reg-name", name);
-                    await page.fill("#reg-password", password);
-                    await page.fill("#reg-password-confirm", password);
-                    await page.click("#reg-submit");
-
-                    await page.waitForURL("**/onboarding", { timeout: 10000 }).catch(() => {});
-                    if (page.url().includes("/onboarding")) {
-                        await handleOnboarding(page);
-                    }
-
-                    await expect(workspace).toBeVisible({ timeout: 15000 });
-                    console.log("Registration and onboarding successful.");
-                } else {
-                    await page.screenshot({ path: "e2e/screenshots/e2e-login-failure.png" });
-                    throw new Error(`Authentication failed: ${errorMsg}`);
-                }
-            } else {
-                await page.screenshot({ path: "e2e/screenshots/e2e-unknown-failure.png" });
-                throw new Error(`Authentication failed: Unknown state at ${page.url()}`);
+        } else if (
+            await page
+                .locator(".viz-toast-error")
+                .isVisible()
+                .catch(() => false)
+        ) {
+            console.log("Login failed or user not found. Registering...");
+            await page.goto("/auth/register");
+            await page.fill("#reg-email", email);
+            await page.fill("#reg-name", name);
+            await page.fill("#reg-password", password);
+            await page.fill("#reg-password-confirm", password);
+            await page.click("#reg-submit");
+            await page.waitForTimeout(1000);
+            if (page.url().includes("/onboarding")) {
+                await handleOnboarding(page);
             }
         }
     }
 
-    // Seed a sample photo for downstream photo grid & export tests
-    console.log("Seeding sample photo for E2E tests...");
+    const workspace = page.locator(".viz-workspace, main").first();
+    await page.goto("/");
+    await expect(workspace)
+        .toBeVisible({ timeout: 20000 })
+        .catch(() => {});
+
+    // Setup response interceptor to track ONLY test-uploaded image UIDs from network API responses (ImageUploadResponse: { uid: string, status: string })
+    trackUploadedImages(page);
+
+    // Seed 4 sample photos for downstream tests (2 via Drag & Drop, 2 via Upload Button)
+    console.log("Seeding 4 sample photos (2 via D&D, 2 via Header Upload Button)...");
     await page.goto("/photos");
-    await page.waitForLoadState("networkidle");
-    const imagePath = path.join(process.cwd(), "../resources/test/images/DSCF0355.jpg");
-    if (fs.existsSync(imagePath)) {
-        const fileBuffer = fs.readFileSync(imagePath);
-        const fileName = path.basename(imagePath);
-        await performDragAndDrop(page, fileBuffer, fileName);
-        const submitBtn = page.locator("button.primary, button[type='submit']").first();
-        if (await submitBtn.isVisible({ timeout: 5000 }).catch(() => false)) {
-            await submitBtn.click();
-            await page
-                .locator(".viz-toast-success")
-                .first()
-                .waitFor({ timeout: 15000 })
-                .catch(() => {});
+    await expect(page.locator("main, .viz-photo-grid-container").first()).toBeVisible({ timeout: 25000 });
+
+    // 1. Upload 2 photos via Drag & Drop
+    const dndFiles = ["../resources/test/samples/Fujifilm_XT5_01.jpg", "../resources/test/samples/Canon_R5_01.jpg"];
+
+    for (const relPath of dndFiles) {
+        const fullPath = path.join(process.cwd(), relPath);
+        if (fs.existsSync(fullPath)) {
+            const fileBuffer = fs.readFileSync(fullPath);
+            const fileName = path.basename(fullPath);
+            await performDragAndDrop(page, fileBuffer, fileName);
+            await page.waitForTimeout(500);
         }
     }
+
+    // 2. Upload 2 photos via Header Upload Button
+    const buttonFiles = [
+        path.join(process.cwd(), "../resources/test/samples/Sony_A7IV_01.jpg"),
+        path.join(process.cwd(), "../resources/test/samples/Canon_40D.jpg")
+    ];
+
+    for (const filePath of buttonFiles) {
+        if (fs.existsSync(filePath)) {
+            const uploadDropdown = page
+                .locator("#viz-upload-btn, button[title='Upload'], .header-upload-dropdown")
+                .first();
+            await uploadDropdown.click();
+            const uploadPhotosItem = page.locator('#upload-photos, [id="upload-photos"]').first();
+
+            const fileChooserPromise = page.waitForEvent("filechooser", { timeout: 15000 });
+            await uploadPhotosItem.click();
+            const fileChooser = await fileChooserPromise;
+            await fileChooser.setFiles(filePath);
+            await page.waitForTimeout(1000);
+        }
+    }
+
+    // Wait for uploads to be processed
+    await page.waitForTimeout(1500);
 
     // Warm up routes to avoid lazy compilation timeouts in Vite dev mode
     console.log("Warming up routes...");

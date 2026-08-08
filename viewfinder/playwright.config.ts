@@ -46,13 +46,21 @@ export default defineConfig({
             testMatch: /auth\.setup\.ts/
         },
         {
+            name: "teardown",
+            testMatch: /teardown\.setup\.ts/,
+            use: {
+                storageState: "e2e/.auth/user.json"
+            }
+        },
+        {
             name: "chromium",
             use: {
                 ...devices["Desktop Chrome"],
                 // Use prepared auth state.
                 storageState: "e2e/.auth/user.json"
             },
-            dependencies: ["setup"]
+            dependencies: ["setup"],
+            teardown: "teardown"
         }
     ],
 

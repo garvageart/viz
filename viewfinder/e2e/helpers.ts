@@ -1,5 +1,65 @@
 import { type APIRequestContext, type Page } from "@playwright/test";
+import fs from "fs";
+import path from "path";
 import { defaults, deleteImagesBulk } from "../src/lib/api/client.gen";
+
+/**
+ * Intercepts POST /api/images responses on a page and records uploaded image UIDs for teardown cleanup.
+ */
+export function trackUploadedImages(page: Page) {
+    page.on("response", async (response) => {
+        if (response.url().includes("/api/images") && response.request().method() === "POST") {
+            try {
+                const json = (await response.json()) as { uid?: string };
+                if (json && typeof json.uid === "string" && json.uid.length > 0) {
+                    recordTestImageUid(json.uid);
+                }
+            } catch {
+                // Ignore non-JSON
+            }
+        }
+    });
+}
+
+/**
+ * Intercepts POST /api/collections responses on a page and pushes created collection UIDs into target array.
+ */
+export function trackCreatedCollections(page: Page, targetArray: string[]) {
+    page.on("response", async (response) => {
+        if (response.url().includes("/api/collections") && response.request().method() === "POST") {
+            try {
+                const json = (await response.json()) as { uid?: string };
+                if (json && typeof json.uid === "string" && json.uid.length > 0) {
+                    if (!targetArray.includes(json.uid)) {
+                        targetArray.push(json.uid);
+                    }
+                }
+            } catch {
+                // Ignore non-JSON
+            }
+        }
+    });
+}
+
+function recordTestImageUid(uid: string) {
+    const authDir = path.join(process.cwd(), "e2e/.auth");
+    if (!fs.existsSync(authDir)) {
+        fs.mkdirSync(authDir, { recursive: true });
+    }
+    const filePath = path.join(authDir, "test_images.json");
+    let uids: string[] = [];
+    if (fs.existsSync(filePath)) {
+        try {
+            uids = JSON.parse(fs.readFileSync(filePath, "utf-8"));
+        } catch {
+            uids = [];
+        }
+    }
+    if (!uids.includes(uid)) {
+        uids.push(uid);
+        fs.writeFileSync(filePath, JSON.stringify(uids));
+    }
+}
 
 /**
  * Cleans up any test-created collections from the database.
@@ -29,9 +89,27 @@ export async function cleanupTestCollections(request: APIRequestContext) {
 }
 
 /**
+ * Cleans up specific test-created collections by their UIDs.
+ */
+export async function cleanupSpecificCollections(request: APIRequestContext, uids: string[]) {
+    if (!uids || uids.length === 0) {
+        return;
+    }
+
+    for (const uid of uids) {
+        try {
+            await request.delete(`/api/collections/${uid}`);
+        } catch (err) {
+            console.error(`Error deleting collection ${uid}:`, err);
+        }
+    }
+}
+
+/**
  * Reusable helper to simulate file drag-and-drop upload inside the browser page context.
  */
 export async function performDragAndDrop(page: Page, fileBuffer: Buffer, fileName: string) {
+    trackUploadedImages(page);
     await page.evaluate(
         ([base64Str, name]) => {
             const binStr = atob(base64Str);
@@ -92,8 +170,9 @@ export async function cleanupTestPhotos(request: APIRequestContext, uids: string
         const state = await request.storageState();
         const cookieHeader = state.cookies.map((c) => `${c.name}=${c.value}`).join("; ");
 
-        // Playwright test runner might use a different base URL, default to localhost:7777
-        const baseUrl = process.env.PLAYWRIGHT_TEST_BASE_URL || "http://localhost:7777";
+        // Playwright test runner might use a different base URL
+        const port = process.env.PLAYWRIGHT_PREVIEW ? 7778 : 7777;
+        const baseUrl = process.env.PLAYWRIGHT_TEST_BASE_URL || `http://localhost:${port}`;
         defaults.baseUrl = `${baseUrl}/api`;
 
         const authOpts = {

@@ -1,27 +1,33 @@
 import { expect, test } from "@playwright/test";
-import { cleanupTestCollections } from "./helpers";
+import { cleanupSpecificCollections, trackCreatedCollections } from "./helpers";
 
 test.describe("Collection Add Photos Timeline & Disabled States", () => {
-    test.beforeEach(async ({ page, request }) => {
-        await cleanupTestCollections(request);
+    let createdUids: string[] = [];
+
+    test.beforeEach(async ({ page }) => {
+        createdUids = [];
+        trackCreatedCollections(page, createdUids);
         test.slow();
-        // Go directly to collections workspace page
         await page.goto("/collections");
         await page.waitForLoadState("networkidle");
-
-        // Wait for the view container to appear
-        await expect(page.locator(".viz-view-container")).toBeVisible({ timeout: 20000 });
+        await expect(page.locator(".viz-workspace, main").first()).toBeVisible({ timeout: 20000 });
     });
 
     test.afterEach(async ({ request }) => {
-        await cleanupTestCollections(request);
+        if (createdUids.length > 0) {
+            await cleanupSpecificCollections(request, createdUids);
+        }
     });
 
     test("should display photos modal, add a photo, disable it, and handle keyboard skip navigation", async ({
         page
     }) => {
         // 1. Create a collection
-        const createBtn = page.getByRole("button", { name: "Create Collection" }).first();
+        const createBtn = page
+            .locator(
+                "#create-collection, #create_collection-button, button.create-collection-btn, button.viz-button-info, .header-actions button"
+            )
+            .first();
         await expect(createBtn).toBeVisible({ timeout: 10000 });
         await createBtn.click();
 
@@ -42,16 +48,18 @@ test.describe("Collection Add Photos Timeline & Disabled States", () => {
         await page.waitForLoadState("networkidle");
 
         // Wait for card to appear in the grid and double click it to go to collection details page
-        const collCard = page.locator(".coll-card").filter({ hasText: collectionName });
+        const collCard = page.locator(".asset-card, .coll-card").filter({ hasText: collectionName });
         await expect(collCard.first()).toBeVisible({ timeout: 15000 });
         await collCard.first().dblclick();
 
         // Wait for collection details page to load
+        await page.waitForURL(/\/collections\/.+/, { timeout: 15000 });
         await page.waitForLoadState("networkidle");
-        await expect(page).toHaveURL(/\/collections\/.+/);
 
         // 2. Open Add Photos Modal
-        const addPhotosBtn = page.getByRole("button", { name: "Add Photos" }).first();
+        const addPhotosBtn = page
+            .locator("#add-photos, button.add-photos-btn, button.viz-button-info, .header-actions button")
+            .first();
         await expect(addPhotosBtn).toBeVisible({ timeout: 15000 });
         await addPhotosBtn.click();
 
@@ -89,8 +97,8 @@ test.describe("Collection Add Photos Timeline & Disabled States", () => {
         await secondPhoto.click();
         await expect(secondPhoto).toHaveClass(/selected-photo/);
 
-        // Click "Add to Collection" (confirm button in modal)
-        const confirmBtn = modal.locator('button:has-text("Add to Collection")').first();
+        // Click confirm button in modal
+        const confirmBtn = page.locator("#add-photos-submit, .modal-actions button.viz-button-info").first();
         await expect(confirmBtn).toBeVisible();
         await confirmBtn.click();
 
@@ -131,7 +139,7 @@ test.describe("Collection Add Photos Timeline & Disabled States", () => {
         await expect(secondPhoto).not.toHaveClass(/selected-photo/);
 
         // Close the modal
-        const cancelBtn = modal.locator('button:has-text("Cancel")').first();
+        const cancelBtn = modal.locator(".modal-actions button:first-child").first();
         await expect(cancelBtn).toBeVisible();
         await cancelBtn.click();
         await expect(modal).not.toBeVisible();

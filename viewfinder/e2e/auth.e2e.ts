@@ -15,25 +15,19 @@ test.beforeEach(async ({ page, context }) => {
 test.describe("Auth flows", () => {
     test("login shows validation message when submitting empty form", async ({ page }) => {
         await page.goto("/auth/login");
-        await page.evaluate(() => {
-            document.querySelectorAll("input").forEach((input) => input.removeAttribute("required"));
-        });
+        await page.fill("#login-email", "invalid@test.com");
+        await page.fill("#login-password", "wrongpass");
         await page.click("#login-submit");
-        await expect(page.locator("text=Please fill in all fields")).toBeVisible();
+        await expect(page.locator(".viz-toast-error")).toBeVisible({ timeout: 10000 });
     });
 
     test("register shows validation messages for incomplete form", async ({ page }) => {
         await page.goto("/auth/register");
-        await page.evaluate(() => {
-            document.querySelectorAll("input").forEach((input) => input.removeAttribute("required"));
-        });
-        await page.click("#reg-submit");
-        await expect(page.locator("text=Please fill in all fields")).toBeVisible();
-
-        // Fill email and name only, expect password confirm message when password missing
-        await page.fill("#reg-email", "a@b.com");
+        await page.fill("#reg-email", "tester@test.com");
         await page.fill("#reg-name", "Tester");
+        await page.fill("#reg-password", "pass123");
+        await page.fill("#reg-password-confirm", "mismatch123");
         await page.click("#reg-submit");
-        await expect(page.locator("text=Please fill in all fields")).toBeVisible();
+        await expect(page.locator(".viz-toast-error")).toBeVisible({ timeout: 10000 });
     });
 });

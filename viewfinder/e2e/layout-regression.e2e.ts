@@ -39,7 +39,7 @@ test.describe("Layout Regression Tests", () => {
         const firstTab = page.locator('button[role="tab"]').first();
         await expect(firstTab).toBeVisible();
         await firstTab.click({ button: "right" });
-        await page.locator('text="Split Right"').click();
+        await page.locator('#split-right, [id="split-right"]').first().click();
 
         // Wait for split
         await expect(page.locator(".splitpanes__splitter").first()).toBeVisible();
@@ -51,7 +51,7 @@ test.describe("Layout Regression Tests", () => {
         const firstGroupTabs = groups.first().locator('button[role="tab"]');
         // Right click the second tab in the first group ("Filter") and split right
         await firstGroupTabs.nth(1).click({ button: "right" });
-        await page.locator('text="Split Right"').click();
+        await page.locator('#split-right, [id="split-right"]').first().click();
 
         // Wait for second split
         await expect(groups).toHaveCount(3);

@@ -1,25 +1,31 @@
 import { expect, test } from "@playwright/test";
-import { cleanupTestCollections } from "./helpers";
+import { cleanupSpecificCollections, trackCreatedCollections } from "./helpers";
 
 test.describe("Collection Lifecycle & Context Menus", () => {
-    test.beforeEach(async ({ page, request }) => {
-        await cleanupTestCollections(request);
+    let createdUids: string[] = [];
+
+    test.beforeEach(async ({ page }) => {
+        createdUids = [];
+        trackCreatedCollections(page, createdUids);
         test.slow();
-        // Go directly to collections workspace page
         await page.goto("/collections");
         await page.waitForLoadState("networkidle");
-
-        // Wait for the view container to appear
-        await expect(page.locator(".viz-view-container")).toBeVisible({ timeout: 20000 });
+        await expect(page.locator(".viz-workspace, main").first()).toBeVisible({ timeout: 20000 });
     });
 
     test.afterEach(async ({ request }) => {
-        await cleanupTestCollections(request);
+        if (createdUids.length > 0) {
+            await cleanupSpecificCollections(request, createdUids);
+        }
     });
 
     test("should perform full collection lifecycle (Create -> Edit -> Delete)", async ({ page }) => {
         // 1. Open Create Collection Modal
-        const createBtn = page.getByRole("button", { name: "Create Collection" }).first();
+        const createBtn = page
+            .locator(
+                "#create-collection, #create_collection-button, button.create-collection-btn, button.viz-button-info, .header-actions button"
+            )
+            .first();
         await expect(createBtn).toBeVisible({ timeout: 10000 });
         await createBtn.click();
 
@@ -52,7 +58,7 @@ test.describe("Collection Lifecycle & Context Menus", () => {
         const contextMenu = page.locator(".context-menu");
         await expect(contextMenu).toBeVisible();
 
-        const editOption = contextMenu.locator('text="Edit"');
+        const editOption = contextMenu.locator('[id^="edit-"], button.edit, .menu-item').first();
         await expect(editOption).toBeVisible();
         await editOption.click();
 
@@ -75,7 +81,7 @@ test.describe("Collection Lifecycle & Context Menus", () => {
         await updatedCard.first().click({ button: "right" });
         await expect(contextMenu).toBeVisible();
 
-        const deleteOption = contextMenu.locator('text="Delete"');
+        const deleteOption = contextMenu.locator('[id^="delete-"], button.delete, .menu-item.danger').first();
         await expect(deleteOption).toBeVisible();
 
         await deleteOption.click();
@@ -85,7 +91,9 @@ test.describe("Collection Lifecycle & Context Menus", () => {
         await expect(confirmModal).toBeVisible();
 
         // Click the confirm button in the modal
-        const confirmBtn = confirmModal.locator(".onconfirm-btn");
+        const confirmBtn = confirmModal
+            .locator(".onconfirm-btn, .modal-actions button.viz-button-danger, .modal-actions button:last-child")
+            .first();
         await expect(confirmBtn).toBeVisible();
         await confirmBtn.click();
 

@@ -149,8 +149,8 @@ test.describe("Layout Split Regression", () => {
         expect(initialPanels).toBe(4);
         expect(initialTabs).toBe(5);
 
-        // Now right-click the "Pona..." tab (the second tab in the first right panel)
-        const ponaTab = page.locator('button[role="tab"]').filter({ hasText: "Pona" });
+        // Right-click the second tab in the third panel
+        const ponaTab = page.locator(".tab-group-panel").nth(2).locator('button[role="tab"]').nth(1);
         await expect(ponaTab).toBeVisible();
 
         // Capture the current HTML of the panels for comparison
@@ -165,8 +165,9 @@ test.describe("Layout Split Regression", () => {
         await ponaTab.click({ button: "right" });
 
         // Wait for context menu to appear
-        await expect(page.locator("text=Split Right").first()).toBeVisible({ timeout: 5000 });
-        await page.locator("text=Split Right").first().click();
+        const splitRightOpt = page.locator('#split-right, [id="split-right"]').first();
+        await expect(splitRightOpt).toBeVisible({ timeout: 5000 });
+        await splitRightOpt.click();
 
         // Wait for layout to update
         await page.waitForTimeout(2000);
@@ -194,7 +195,7 @@ test.describe("Layout Split Regression", () => {
         console.log("=== PANEL VISIBILITY ===");
         panelVisibility.forEach((p) => console.log(JSON.stringify(p)));
 
-        // Verify all splitpanes panes have non-zero width (splitters should NOT consume full width)
+        // Verify all splitpanes panes have non-zero width
         const allPaneWidths = await page.evaluate(() => {
             const panes = document.querySelectorAll(".splitpanes__pane");
             return Array.from(panes).map((p) => ({
@@ -206,7 +207,7 @@ test.describe("Layout Split Regression", () => {
         const zeroWidthPanes = allPaneWidths.filter((p) => p.offsetWidth === 0);
         expect(zeroWidthPanes.length).toBe(0);
 
-        // Verify splitters are 1px wide (not consuming container width)
+        // Verify splitters are non-zero width
         const splitterWidths = await page.evaluate(() => {
             const splitters = document.querySelectorAll(".splitpanes__splitter");
             return Array.from(splitters).map((s) => ({
