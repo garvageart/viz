@@ -123,7 +123,10 @@ setup("authenticate", async ({ page }) => {
     // Seed 4 sample photos for downstream tests (2 via Drag & Drop, 2 via Upload Button)
     console.log("Seeding 4 sample photos (2 via D&D, 2 via Header Upload Button)...");
     await page.goto("/photos");
-    await expect(page.locator("main, .viz-photo-grid-container").first()).toBeVisible({ timeout: 25000 });
+    await page.waitForLoadState("networkidle");
+    await expect(page.locator(".viz-view-container, .viz-photo-grid-container, main#main").first()).toBeVisible({
+        timeout: 25000
+    });
 
     // 1. Upload 2 photos via Drag & Drop
     const dndFiles = ["../resources/test/samples/Fujifilm_XT5_01.jpg", "../resources/test/samples/Canon_R5_01.jpg"];
