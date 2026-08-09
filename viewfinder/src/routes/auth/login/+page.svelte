@@ -76,6 +76,8 @@
                 id="login-email"
                 label="Email"
                 name="email"
+                // TODO: Get the domain from the system config once that setting
+                // is enabled
                 placeholder="photos@{location.hostname}"
                 type="email"
                 required
@@ -90,12 +92,14 @@
                 bind:value={loginData.password}
             />
             <div class="auth-submit-btn-wrapper">
-                <Button id="login-submit" class="auth-submit-btn" type="submit">Login</Button>
+                <Button id="login-submit" class="auth-submit-btn" type="submit"><span>Login</span></Button>
             </div>
         </form>
-        <p class="auth-footer">
-            Don't have an account? <a href="/auth/register">Register</a>
-        </p>
+        {#if system.data?.allow_manual_registration}
+            <span class="auth-footer">
+                Don't have an account? <a href="/auth/register">Register</a>
+            </span>
+        {/if}
     </div>
 </main>
 

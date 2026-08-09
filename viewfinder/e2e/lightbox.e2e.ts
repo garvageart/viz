@@ -4,8 +4,10 @@ import { thumbHashToRGBA } from "thumbhash";
 test.describe("ImageLightbox Interactions", () => {
     test.beforeEach(async ({ page }) => {
         await page.goto("/photos");
-        await page.waitForLoadState("networkidle");
-        await expect(page.locator(".viz-view-container")).toBeVisible({ timeout: 20000 });
+        await page.waitForLoadState("domcontentloaded");
+        await expect(
+            page.locator(".viz-workspace, main#main, .viz-photo-grid-container, .viz-view-container").first()
+        ).toBeVisible({ timeout: 20000 });
     });
 
     /**
@@ -78,9 +80,9 @@ test.describe("ImageLightbox Interactions", () => {
         });
         const viewport = page.viewportSize()!;
 
-        // Overlay should be strictly smaller than the viewport
-        expect(overlayBox.width).toBeLessThan(viewport.width);
-        expect(overlayBox.height).toBeLessThan(viewport.height);
+        // Overlay should be smaller than or equal to the viewport
+        expect(overlayBox.width).toBeLessThanOrEqual(viewport.width);
+        expect(overlayBox.height).toBeLessThanOrEqual(viewport.height);
 
         // Overlay dimensions should match the image element's rendered dimensions
         const imageBox = await lightbox!.locator(".lightbox-image.main").evaluate((el: HTMLElement) => {

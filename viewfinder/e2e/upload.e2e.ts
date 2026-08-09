@@ -48,8 +48,10 @@ test.describe("Drag & Drop File Upload Flow", () => {
 
         // 1. Go to collections page
         await page.goto("/collections");
-        await page.waitForLoadState("networkidle");
-        await expect(page.locator(".viz-view-container")).toBeVisible({ timeout: 20000 });
+        await page.waitForLoadState("domcontentloaded");
+        await expect(
+            page.locator(".viz-workspace, main#main, .viz-collections-container, .viz-view-container").first()
+        ).toBeVisible({ timeout: 20000 });
         await page.waitForTimeout(1000);
 
         // 2. Create a collection to drop onto
@@ -130,7 +132,7 @@ test.describe("Drag & Drop File Upload Flow", () => {
     }) => {
         // Go directly to the Photos page
         await page.goto("/photos");
-        await page.waitForLoadState("networkidle");
+        await page.waitForLoadState("domcontentloaded");
         await expect(page.locator(".viz-workspace, main").first()).toBeVisible({ timeout: 20000 });
 
         // Simulate dragging and dropping a non-file, internal type (like VizMimeTypes.TAB_VIEW)

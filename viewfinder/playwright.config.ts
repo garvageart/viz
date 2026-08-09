@@ -47,10 +47,7 @@ export default defineConfig({
         },
         {
             name: "teardown",
-            testMatch: /teardown\.setup\.ts/,
-            use: {
-                storageState: "e2e/.auth/user.json"
-            }
+            testMatch: /teardown\.setup\.ts/
         },
         {
             name: "chromium",

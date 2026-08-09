@@ -8,6 +8,7 @@
     import UserEditModal from "$lib/components/modals/UserEditModal.svelte";
     import { modalsManager } from "$lib/components/modals/manager/ModalManager.svelte";
     import AvatarBadge from "$lib/components/ui/AvatarBadge.svelte";
+    import Badge from "$lib/components/ui/Badge.svelte";
     import IconButton from "$lib/components/ui/IconButton.svelte";
     import MaterialIcon from "$lib/components/ui/MaterialIcon.svelte";
     import SliderToggle from "$lib/components/ui/SliderToggle.svelte";
@@ -215,7 +216,7 @@
         </td>
         <td>{user.email}</td>
         <td>
-            <span class="role-badge {user.role}">{user.role}</span>
+            <Badge variant="info"><span>{user.role.toLocaleUpperCase()}</span></Badge>
         </td>
         <td>{formatDate(user.created_at)}</td>
         <td>
@@ -320,20 +321,6 @@
         gap: var(--viz-spacing-std);
     }
 
-    .avatar-placeholder {
-        width: 2rem;
-        height: 2rem;
-        background: var(--viz-surface-panel);
-        color: var(--viz-text-primary);
-        border-radius: var(--viz-border-radius-pill);
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        font-weight: 600;
-        font-size: var(--viz-font-size-lg);
-        border: var(--viz-border-thin);
-    }
-
     .user-info {
         display: flex;
         flex-direction: column;
@@ -351,52 +338,10 @@
         font-family: var(--viz-mono-font);
     }
 
-    .role-badge {
-        display: inline-block;
-        padding: var(--viz-spacing-xxs) var(--viz-spacing-sm);
-        border-radius: var(--viz-border-radius-sm);
-        font-size: var(--viz-font-size-std);
-        font-weight: 600;
-        text-transform: uppercase;
-        letter-spacing: 0.05em;
-
-        &.admin,
-        &.superadmin {
-            background: color-mix(in srgb, var(--viz-success-color) 12%, var(--viz-surface-card));
-            color: var(--viz-text-primary);
-            border: 1px solid color-mix(in srgb, var(--viz-success-color) 25%, var(--viz-border-subtle));
-        }
-
-        &.user {
-            background: var(--viz-surface-panel);
-            color: var(--viz-text-primary);
-            border: var(--viz-border-thin);
-        }
-
-        &.guest {
-            background: var(--viz-surface-card);
-            color: var(--viz-text-secondary);
-            border: var(--viz-border-thin);
-        }
-    }
-
     .actions-cell {
         display: flex;
         justify-content: flex-end;
         gap: var(--viz-spacing-sm);
-    }
-
-    .action-btn {
-        color: var(--viz-text-secondary);
-        transition: color 0.15s ease;
-
-        &:hover {
-            color: var(--viz-text-primary);
-        }
-
-        &.delete:hover {
-            color: var(--viz-error-color);
-        }
     }
 
     .force-delete-option {

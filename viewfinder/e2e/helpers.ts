@@ -4,6 +4,22 @@ import path from "path";
 import { defaults, deleteImagesBulk } from "../src/lib/api/client.gen";
 
 /**
+ * Reads the cached user admin status from e2e/.auth/user_info.json saved during auth setup.
+ */
+export function isUserAdmin(): boolean {
+    const userInfoPath = path.join(process.cwd(), "e2e/.auth/user_info.json");
+    if (fs.existsSync(userInfoPath)) {
+        try {
+            const info = JSON.parse(fs.readFileSync(userInfoPath, "utf-8"));
+            return !!info.isAdmin;
+        } catch {
+            return false;
+        }
+    }
+    return false;
+}
+
+/**
  * Intercepts POST /api/images responses on a page and records uploaded image UIDs for teardown cleanup.
  */
 export function trackUploadedImages(page: Page) {

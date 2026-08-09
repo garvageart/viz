@@ -8,28 +8,20 @@ const authFile = "e2e/.auth/user.json";
 async function handleOnboarding(page: Page) {
     console.log("Handling onboarding flow...");
 
-    // Step 0: Welcome
-    const getStartedBtn = page.locator('.onboarding-container button, button.primary, button[type="submit"]').first();
-    if (await getStartedBtn.isVisible()) {
-        await getStartedBtn.click();
-    }
-
-    // Steps 1..N: Settings & Details
     let maxLoops = 15;
-    while (maxLoops--) {
+    while (maxLoops-- && page.url().includes("/onboarding")) {
         // Fill all visible inputs (text, email, password) for onboarding form validation
         const inputs = page.locator(
             'input[type="text"], input[type="email"], input[type="password"], input:not([type])'
         );
 
-        // Gosh
         const count = await inputs.count();
         for (let i = 0; i < count; i++) {
             const input = inputs.nth(i);
-            if ((await input.isVisible()) && (await input.isEditable())) {
-                const val = await input.inputValue();
+            if ((await input.isVisible().catch(() => false)) && (await input.isEditable().catch(() => false))) {
+                const val = await input.inputValue().catch(() => "");
                 if (!val) {
-                    const type = await input.getAttribute("type");
+                    const type = await input.getAttribute("type").catch(() => "text");
                     if (type === "email") {
                         await input.fill(process.env.E2E_TEST_EMAIL!);
                     } else if (type === "password") {
@@ -41,26 +33,73 @@ async function handleOnboarding(page: Page) {
             }
         }
 
-        const finishBtn = page.locator("button.finish-setup, .onboarding-actions button:last-child").first();
-        if ((await finishBtn.isVisible()) && (await finishBtn.isEnabled())) {
+        // Finish or Next button
+        const finishBtn = page.locator("button.finish-setup, button:has-text('Finish')").first();
+        if ((await finishBtn.isVisible().catch(() => false)) && (await finishBtn.isEnabled().catch(() => false))) {
             await finishBtn.click();
-            break;
-        }
-
-        const nextBtn = page.locator("button.next-step, .onboarding-actions button").first();
-        if ((await nextBtn.isVisible()) && (await nextBtn.isEnabled())) {
-            await nextBtn.click();
-        } else {
-            // Check if we are already done or redirecting
             await page.waitForTimeout(1000);
             if (!page.url().includes("/onboarding")) break;
         }
-        await page.waitForTimeout(500); // Wait for transition
+
+        const actionBtn = page
+            .locator(
+                '.step-form .actions button[type="submit"], .actions button:last-child, .onboarding-container button[type="submit"]'
+            )
+            .first();
+        if ((await actionBtn.isVisible().catch(() => false)) && (await actionBtn.isEnabled().catch(() => false))) {
+            await actionBtn.click();
+            await page.waitForTimeout(600);
+        } else {
+            await page.waitForTimeout(1000);
+            if (!page.url().includes("/onboarding")) break;
+        }
+    }
+}
+
+async function performLogin(page: Page, email: string, pass: string) {
+    if (
+        !page.url().includes("/auth/login") &&
+        !(await page
+            .locator("#login-email")
+            .isVisible()
+            .catch(() => false))
+    ) {
+        return;
+    }
+    await page.fill("#login-email", email);
+    await page.fill("#login-password", pass);
+    await page.click("#login-submit");
+    await page.waitForTimeout(2000);
+}
+
+async function registerTestUser(page: Page, email: string, name: string, pass: string) {
+    const statusRes = await page.request.get("/api/system/status").catch(() => null);
+    if (!statusRes || !statusRes.ok()) {
+        return;
+    }
+
+    const status = await statusRes.json();
+    if (!status.allow_manual_registration) {
+        console.log("Manual user registration is disabled.");
+        return;
+    }
+
+    console.log("Registering test user...");
+    await page.goto("/auth/register");
+    await page.fill("#reg-email", email);
+    await page.fill("#reg-name", name);
+    await page.fill("#reg-password", pass);
+    await page.fill("#reg-password-confirm", pass);
+    await page.click("#reg-submit");
+    await page.waitForTimeout(1500);
+
+    if (page.url().includes("/onboarding")) {
+        await handleOnboarding(page);
     }
 }
 
 setup("authenticate", async ({ page }) => {
-    setup.setTimeout(60000);
+    setup.setTimeout(120000);
     const email = process.env.E2E_TEST_EMAIL;
     const password = process.env.E2E_TEST_PASSWORD;
     const name = process.env.E2E_TEST_USERNAME;
@@ -78,41 +117,26 @@ setup("authenticate", async ({ page }) => {
     if (page.url().includes("/onboarding")) {
         console.log("First run detected. Onboarding flow...");
         await handleOnboarding(page);
-    } else if (
-        await page
-            .locator("#login-email")
-            .isVisible()
-            .catch(() => false)
-    ) {
-        await page.fill("#login-email", email);
-        await page.fill("#login-password", password);
-        await page.click("#login-submit");
-        await page.waitForURL((url) => !url.pathname.includes("/auth/login"), { timeout: 15000 }).catch(() => {});
+        await page.waitForTimeout(1000);
+    }
 
-        if (page.url().includes("/onboarding")) {
-            await handleOnboarding(page);
-        } else if (
-            await page
-                .locator(".viz-toast-error")
-                .isVisible()
-                .catch(() => false)
-        ) {
-            console.log("Login failed or user not found. Registering...");
-            await page.goto("/auth/register");
-            await page.fill("#reg-email", email);
-            await page.fill("#reg-name", name);
-            await page.fill("#reg-password", password);
-            await page.fill("#reg-password-confirm", password);
-            await page.click("#reg-submit");
-            await page.waitForTimeout(1000);
-            if (page.url().includes("/onboarding")) {
-                await handleOnboarding(page);
-            }
-        }
+    await performLogin(page, email, password);
+
+    if (page.url().includes("/auth/login")) {
+        await registerTestUser(page, email, name, password);
+    }
+
+    await page.goto("/");
+    await page.waitForLoadState("domcontentloaded");
+
+    if (page.url().includes("/onboarding")) {
+        console.log("User onboarding flow detected. Completing onboarding...");
+        await handleOnboarding(page);
+        await page.goto("/");
+        await page.waitForLoadState("domcontentloaded");
     }
 
     const workspace = page.locator(".viz-workspace, main").first();
-    await page.goto("/");
     await expect(workspace)
         .toBeVisible({ timeout: 20000 })
         .catch(() => {});
@@ -124,6 +148,13 @@ setup("authenticate", async ({ page }) => {
     console.log("Seeding 4 sample photos (2 via D&D, 2 via Header Upload Button)...");
     await page.goto("/photos");
     await page.waitForLoadState("domcontentloaded");
+
+    if (page.url().includes("/onboarding")) {
+        console.log("Onboarding still active. Completing onboarding...");
+        await handleOnboarding(page);
+        await page.goto("/photos");
+        await page.waitForLoadState("domcontentloaded");
+    }
     await expect(page.locator(".viz-workspace, main#main, .viz-photo-grid-container").first()).toBeVisible({
         timeout: 25000
     });
@@ -142,23 +173,19 @@ setup("authenticate", async ({ page }) => {
     }
 
     // 2. Upload 2 photos via Header Upload Button
-    const buttonFiles = [
-        path.join(process.cwd(), "../resources/test/samples/Sony_A7IV_01.jpg"),
-        path.join(process.cwd(), "../resources/test/samples/Canon_40D.jpg")
-    ];
+    const buttonFiles = ["../resources/test/samples/Sony_A7IV_01.jpg", "../resources/test/samples/Canon_40D.jpg"];
 
     for (const filePath of buttonFiles) {
-        if (fs.existsSync(filePath)) {
-            const uploadDropdown = page
-                .locator("#viz-upload-btn, button[title='Upload'], .header-upload-dropdown")
-                .first();
+        const fullPath = path.join(process.cwd(), filePath);
+        if (fs.existsSync(fullPath)) {
+            const uploadDropdown = page.locator("#viz-upload-btn, .header-upload-dropdown").first();
             await uploadDropdown.click();
             const uploadPhotosItem = page.locator('#upload-photos, [id="upload-photos"]').first();
 
             const fileChooserPromise = page.waitForEvent("filechooser", { timeout: 15000 });
             await uploadPhotosItem.click();
             const fileChooser = await fileChooserPromise;
-            await fileChooser.setFiles(filePath);
+            await fileChooser.setFiles(fullPath);
             await page.waitForTimeout(1000);
         }
     }
@@ -172,6 +199,13 @@ setup("authenticate", async ({ page }) => {
     await page.goto("/collections").catch(() => {});
     await page.goto("/admin").catch(() => {});
     await page.goto("/").catch(() => {});
+
+    // Save user info (role and admin status) once for all downstream tests to inspect without extra API calls
+    const meRes = await page.request.get("/api/users/me").catch(() => null);
+    const me = meRes?.ok() ? await meRes.json().catch(() => null) : null;
+    const isAdmin = me?.role === "admin" || me?.role === "superadmin";
+    const userInfoPath = path.join(process.cwd(), "e2e/.auth/user_info.json");
+    fs.writeFileSync(userInfoPath, JSON.stringify({ role: me?.role || "user", isAdmin }));
 
     // Save state
     await page.context().storageState({ path: authFile });

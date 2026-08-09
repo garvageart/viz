@@ -1,8 +1,18 @@
 import { expect, test } from "@playwright/test";
+import { isUserAdmin } from "./helpers";
 
 test.describe("Admin Panel Dashboard & Metrics", () => {
     test.beforeEach(async ({ page }) => {
         test.slow();
+
+        if (!isUserAdmin()) {
+            test.skip(
+                true,
+                "Current authenticated user role is not admin or superadmin. Skipping admin panel E2E tests."
+            );
+            return;
+        }
+
         // Go directly to the Admin Dashboard
         await page.goto("/admin");
         await page.waitForLoadState("networkidle");

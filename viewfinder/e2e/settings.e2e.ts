@@ -25,16 +25,16 @@ test.describe("Settings Workspace & Account UI", () => {
         await expect(accountLink).toHaveClass(/active/);
 
         // Target Name fields inside AccountSettings
-        const nameInput = page.locator("#input-Name");
+        const firstNameInput = page.locator("#input-First-Name");
         const emailInput = page.locator("#input-Email");
-        await expect(nameInput).toBeVisible();
+        await expect(firstNameInput).toBeVisible();
         await expect(emailInput).toBeVisible();
 
-        const currentName = await nameInput.inputValue();
+        const currentName = await firstNameInput.inputValue();
         const testName = currentName.endsWith(" E2E") ? currentName.replace(" E2E", "") : `${currentName} E2E`;
 
-        // Fill Name field to make form dirty
-        await nameInput.fill(testName);
+        // Fill First Name field to make form dirty
+        await firstNameInput.fill(testName);
 
         // Verify "Save Changes" button appears
         const saveBtn = page.locator("button.btn-save");

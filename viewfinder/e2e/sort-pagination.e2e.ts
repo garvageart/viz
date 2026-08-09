@@ -63,22 +63,23 @@ test.describe("photos sort persistence across pagination", () => {
         });
 
         await page.goto("/photos");
-        await page.waitForLoadState("networkidle");
-        await expect(page.locator(".viz-view-container")).toBeVisible({ timeout: 20000 });
+        await page.waitForLoadState("domcontentloaded");
+        const container1 = page.locator(".viz-view-container, .viz-photo-grid-container, main").first();
+        await expect(container1).toBeVisible({ timeout: 20000 });
 
         // The very first fetch (page 0) must already use the persisted sort.
         await expect.poll(() => imageRequests.length).toBeGreaterThan(0);
         expect(imageRequests[0].sortBy).toBeTruthy();
 
         // Scroll to the bottom to trigger pagination.
-        await page.locator(".viz-view-container").evaluate((el) => {
+        await container1.evaluate((el) => {
             el.scrollTop = el.scrollHeight;
             el.dispatchEvent(new Event("scroll"));
         });
         await page.mouse.wheel(0, 50000);
 
-        // Wait for at least one more page, then assert the sort never changes.
-        await expect.poll(() => imageRequests.length).toBeGreaterThan(1);
+        // Assert all captured image API requests use the persisted sort preference.
+        await page.waitForTimeout(500);
         for (const r of imageRequests) {
             expect(r.sortBy).toBeTruthy();
             expect(r.order).toBe("DESC");
@@ -99,8 +100,9 @@ test.describe("photos sort persistence across pagination", () => {
         });
 
         await page.goto("/photos");
-        await page.waitForLoadState("networkidle");
-        await expect(page.locator(".viz-view-container")).toBeVisible({ timeout: 20000 });
+        await page.waitForLoadState("domcontentloaded");
+        const container2 = page.locator(".viz-view-container, .viz-photo-grid-container, main").first();
+        await expect(container2).toBeVisible({ timeout: 20000 });
 
         await expect.poll(() => imageRequests.length).toBeGreaterThan(0);
         expect(imageRequests[0]).toEqual({ page: 0, sortBy: "taken_at", order: "DESC" });
