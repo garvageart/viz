@@ -5,6 +5,21 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.29.1] - 2026-08-09
+
+* test(e2e): configure fixed 1920x1080 viewport size in playwright config (c0d53744)
+* test(e2e): seed sample collection and fix strict mode locator in upload test (33466024)
+* style(viewfinder): enlarge toast notification container and typography (db1f0e03)
+* feat(viewfinder): refine E2E auth setup, teardown state, and conditional registration UI (10d74f8c)
+* feat(api): cascade-delete user collections and nullify image ownership in HardDeleteUser (58054ae3)
+* build(docker): remove Playwright browser download from frontend-builder stage (0bdcdee7)
+* fix(docker): define alias stage for FRONTEND_BUILDER_IMAGE to resolve buildx variable expansion issue (2de82e82)
+* fix(docker, test): reuse pre-built frontend image and replace networkidle in auth setup (bbfce6c9)
+* fix(docker, test): configure global PLAYWRIGHT_BROWSERS_PATH and stabilize auth setup wait condition (25ef46bb)
+* test(viewfinder): verify skip-to-main focus navigation across auth and app routes (5bd7a0de)
+* feat(viewfinder): elevate skip-to-main link to root layout and enforce single main landmark rule (926d105c)
+* fix(docker, test): track sample image DSCF0355.jpg and update test paths (8ea7d38f)
+
 ## [0.29.0] - 2026-08-08
 
 * chore(viewfinder): add test:e2e:prod-build script to package.json (734ca107)
