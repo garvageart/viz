@@ -193,6 +193,17 @@ setup("authenticate", async ({ page }) => {
     // Wait for uploads to be processed
     await page.waitForTimeout(1500);
 
+    // Seed sample collection for downstream grid & layout E2E tests
+    console.log("Seeding sample collection...");
+    await page.request
+        .post("/api/collections", {
+            data: {
+                name: "E2E-Sample-Collection",
+                description: "Seeded sample collection for E2E grid testing"
+            }
+        })
+        .catch(() => null);
+
     // Warm up routes to avoid lazy compilation timeouts in Vite dev mode
     console.log("Warming up routes...");
     await page.goto("/photos").catch(() => {});

@@ -74,7 +74,7 @@ test.describe("Drag & Drop File Upload Flow", () => {
         await expect(modal).not.toBeVisible();
 
         // 3. Verify we are on the newly created collection detail page
-        await expect(page.locator("#coll-name-display, .collection-header, .viz-view-container")).toBeVisible({
+        await expect(page.locator("#coll-name-display, .collection-header, .viz-view-container").first()).toBeVisible({
             timeout: 15000
         });
 
