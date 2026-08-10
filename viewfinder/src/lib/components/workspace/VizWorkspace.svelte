@@ -42,10 +42,6 @@
         initialized = true;
     }
 
-    if (typeof window !== "undefined") {
-        initWorkspace();
-    }
-
     onMount(() => {
         if (!initialized) {
             initWorkspace();
@@ -63,22 +59,12 @@
 
     $effect(() => {
         if (initialized && workspaceState.workspace) {
-            // Explicitly read reactive properties of the workspace tree to register deep dependencies
-            const trackNode = (node: any) => {
-                if (!node) return;
-                const _active = node.activeViewId;
-                const _views = node.views?.length;
-                const _size = node.size;
-                const _locked = node.locked;
-                if (node.children) {
-                    node.children.forEach(trackNode);
-                }
-            };
-            trackNode(workspaceState.workspace.root);
-            const _activeGroup = workspaceState.workspace.activeGroupId;
-            const _maximizedGroup = workspaceState.workspace.maximizedGroupId;
-
+            // toJSON() reads every reactive field of the workspace tree, so its
+            // call here registers the deep dependencies; only the two ids that
+            // it does not serialize need explicit reads.
             const serialized = workspaceState.workspace.toJSON();
+            void workspaceState.workspace.activeGroupId;
+            void workspaceState.workspace.maximizedGroupId;
             storage.set(serialized);
             if (debugMode) {
                 console.log("[Workspace] Layout saved");
@@ -86,17 +72,20 @@
         }
     });
 
-    $effect(() => {
+    onMount(() => {
         if (!initialized) {
             return;
         }
 
-        hotkeys("`", (event, handler) => {
+        hotkeys("`", (e) => {
             // Prevent default behavior (e.g. typing ` in an input, if filter logic fails)
-            event.preventDefault();
+            e.preventDefault();
             const ws = workspaceState.workspace;
             if (ws && ws.activeGroupId) {
                 ws.toggleMaximize(ws.activeGroupId);
+                // The maximize re-render can bounce focus onto the focusable
+                // <main> wrapper, drawing a huge native ring. Drop it.
+                (document.activeElement as HTMLElement | null)?.blur();
             }
         });
 
