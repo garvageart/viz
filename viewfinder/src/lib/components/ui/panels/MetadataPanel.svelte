@@ -1,5 +1,4 @@
 <script lang="ts">
-    import { slide } from "svelte/transition";
     import type { ImageAsset, Label } from "$lib/api";
     import ImageLabelViewer from "$lib/components/image-tools/ImageLabelViewer.svelte";
     import StarRating from "$lib/components/image-tools/StarRating.svelte";
@@ -11,18 +10,22 @@
     import TextArea from "$lib/components/ui/TextArea.svelte";
     import { LabelColours } from "$lib/images/constants";
     import { setRating } from "$lib/images/exif";
+    import { SelectionScope, selectionManager } from "$lib/states/selection.svelte";
     import { toasts } from "$lib/toast-notifcations/toasts.svelte";
     import { formatBytes, getFlashMode, getImageLabel, getTakenAt, getWhiteBalance } from "$lib/utils/images";
     import { copyToClipboard } from "$lib/utils/misc";
 
     interface Props {
-        asset: ImageAsset;
-        show: boolean;
+        asset?: ImageAsset;
+        show?: boolean;
         showCloseIcon?: boolean;
         onImageUpdated?: (updatedAsset: ImageAsset) => void;
     }
 
     let { asset, show = $bindable(false), showCloseIcon = $bindable(false), onImageUpdated }: Props = $props();
+
+    let activeScope = $derived(selectionManager.activeScope as SelectionScope<ImageAsset>);
+    let currentAsset = $derived(asset ?? activeScope?.active);
 
     let editingState = $state({
         isEditing: false,
@@ -36,29 +39,33 @@
     }
 
     function handleDateChange(newDate: Date) {
-        asset.taken_at = newDate.toISOString();
+        if (!currentAsset) {
+            return;
+        }
+
+        currentAsset.taken_at = newDate.toISOString();
     }
 
-    let starRating = $derived<number | null>(asset?.image_metadata?.rating ?? null);
+    let starRating = $derived<number | null>(currentAsset?.image_metadata?.rating ?? null);
     let updatingRating = $state(false);
 
     async function setImageRating(newRating: number | null) {
-        if (updatingRating) {
+        if (updatingRating || !currentAsset) {
             return;
         }
 
         updatingRating = true;
         const prev = starRating;
         try {
-            const newSuccessfulRating = await setRating(asset, prev, newRating);
+            const newSuccessfulRating = await setRating(currentAsset, prev, newRating);
 
-            if (asset && asset.image_metadata) {
-                asset.image_metadata = {
-                    ...asset.image_metadata,
+            if (currentAsset.image_metadata) {
+                currentAsset.image_metadata = {
+                    ...currentAsset.image_metadata,
                     rating: newSuccessfulRating
                 };
 
-                onImageUpdated?.(asset);
+                onImageUpdated?.(currentAsset);
             }
         } catch (err) {
             const ratingErr = err as Error;
@@ -73,260 +80,274 @@
     }
 </script>
 
-<div class="metadata-editor" transition:slide={{ duration: 200, axis: "x" }}>
+<div class="metadata-editor">
     <div class="metadata-header">
         <h3>Metadata</h3>
         {#if showCloseIcon}
             <IconButton iconName="close" class="metadata-close-btn" title="Close" onclick={() => (show = false)} />
         {/if}
     </div>
-    <div class="metadata-exif-box">
-        <div class="exif-cards">
-            <div class="exif-card">
-                <div class="card-row main-row">
-                    <MaterialIcon iconName="image" class="exif-material-icon" />
-                    <div class="card-values">
-                        <div class="name-row">
-                            {#if editingState.isEditing}
-                                <InputText
-                                    bind:value={editingState.name}
-                                    class="value-big"
-                                    spellcheck="false"
-                                    autofocus={true}
-                                    onblur={() => {
-                                        if (editingState.isEditing && asset) {
-                                            asset.name = editingState.name.trim();
-                                            editingState.isEditing = false;
-                                        }
-                                    }}
-                                    onkeydown={(e) => {
-                                        if (e.key === "Enter") {
-                                            e.currentTarget.blur();
-                                        } else if (e.key === "Escape") {
-                                            editingState.isEditing = false;
-                                        }
-                                    }}
-                                />
-                            {:else}
-                                <div
-                                    role="button"
-                                    tabindex="0"
-                                    title={asset?.name || asset?.image_metadata?.file_name || "Untitled"}
-                                    onclick={() => {
-                                        editingState.name = asset?.name || asset?.image_metadata?.file_name || "";
-                                        editingState.isEditing = true;
-                                    }}
-                                    onkeydown={() => {
-                                        editingState.name = asset?.name || asset?.image_metadata?.file_name || "";
-                                        editingState.isEditing = true;
-                                    }}
-                                    class="value-big"
-                                >
-                                    {asset?.name || asset?.image_metadata?.file_name || "Untitled"}
-                                </div>
-                                <button
-                                    class="copy-filename-btn"
-                                    title="Copy filename"
-                                    onclick={() => {
-                                        const nameToCopy = asset?.name || asset?.image_metadata?.file_name;
-                                        if (nameToCopy) {
-                                            copyToClipboard(nameToCopy);
-                                            toasts.add({
-                                                type: "success",
-                                                title: nameToCopy,
-                                                message: "Filename copied to clipboard",
-                                                timeout: 2000
-                                            });
-                                        }
-                                    }}
-                                >
-                                    <MaterialIcon iconName="content_copy" class="exif-material-icon" />
-                                </button>
-                            {/if}
-                            {#if asset?.image_metadata?.file_type}
-                                <Badge variant="default" class="file-type-badge">
-                                    {asset.image_metadata.file_type.replace("image/", "").toUpperCase()}
-                                </Badge>
-                            {/if}
+    {#if currentAsset}
+        <div class="metadata-exif-box">
+            <div class="exif-cards">
+                <div class="exif-card">
+                    <div class="card-row main-row">
+                        <MaterialIcon iconName="image" class="exif-material-icon" />
+                        <div class="card-values">
+                            <div class="name-row">
+                                {#if editingState.isEditing}
+                                    <InputText
+                                        bind:value={editingState.name}
+                                        class="value-big"
+                                        spellcheck="false"
+                                        autofocus={true}
+                                        onblur={() => {
+                                            if (editingState.isEditing && currentAsset) {
+                                                currentAsset.name = editingState.name.trim();
+                                                editingState.isEditing = false;
+                                            }
+                                        }}
+                                        onkeydown={(e) => {
+                                            if (e.key === "Enter") {
+                                                e.currentTarget.blur();
+                                            } else if (e.key === "Escape") {
+                                                editingState.isEditing = false;
+                                            }
+                                        }}
+                                    />
+                                {:else}
+                                    <div
+                                        role="button"
+                                        tabindex="0"
+                                        title={currentAsset?.name ||
+                                            currentAsset?.image_metadata?.file_name ||
+                                            "Untitled"}
+                                        onclick={() => {
+                                            editingState.name =
+                                                currentAsset?.name || currentAsset?.image_metadata?.file_name || "";
+                                            editingState.isEditing = true;
+                                        }}
+                                        onkeydown={() => {
+                                            editingState.name =
+                                                currentAsset?.name || currentAsset?.image_metadata?.file_name || "";
+                                            editingState.isEditing = true;
+                                        }}
+                                        class="value-big"
+                                    >
+                                        {currentAsset?.name || currentAsset?.image_metadata?.file_name || "Untitled"}
+                                    </div>
+                                    <button
+                                        class="copy-filename-btn"
+                                        title="Copy filename"
+                                        onclick={() => {
+                                            const nameToCopy =
+                                                currentAsset?.name || currentAsset?.image_metadata?.file_name;
+                                            if (nameToCopy) {
+                                                copyToClipboard(nameToCopy);
+                                                toasts.add({
+                                                    type: "success",
+                                                    title: nameToCopy,
+                                                    message: "Filename copied to clipboard",
+                                                    timeout: 2000
+                                                });
+                                            }
+                                        }}
+                                    >
+                                        <MaterialIcon iconName="content_copy" class="exif-material-icon" />
+                                    </button>
+                                {/if}
+                                {#if currentAsset?.image_metadata?.file_type}
+                                    <Badge variant="default" class="file-type-badge">
+                                        {currentAsset.image_metadata.file_type.replace("image/", "").toUpperCase()}
+                                    </Badge>
+                                {/if}
+                            </div>
                         </div>
                     </div>
+                    <DatePicker
+                        value={getTakenAt(currentAsset)}
+                        bind:open={calendarOpen}
+                        onchange={(d) => handleDateChange(d)}
+                    >
+                        {#snippet children()}
+                            <div class="card-row meta-row" role="button">
+                                <MaterialIcon iconName="calendar_today" class="exif-material-icon" />
+                                <div class="card-values">
+                                    <div class="value-big">
+                                        {getTakenAt(currentAsset).toLocaleDateString(undefined, {
+                                            year: "numeric",
+                                            month: "long",
+                                            day: "numeric"
+                                        })}
+                                    </div>
+                                    <div class="value-sub">
+                                        {getTakenAt(currentAsset).toLocaleTimeString(undefined, {
+                                            hour: "numeric",
+                                            minute: "numeric"
+                                        })}
+                                        {getTimezoneAbbreviation()}
+                                    </div>
+                                </div>
+                            </div>
+                        {/snippet}
+                    </DatePicker>
                 </div>
-                <DatePicker value={getTakenAt(asset)} bind:open={calendarOpen} onchange={(d) => handleDateChange(d)}>
-                    {#snippet children()}
-                        <div class="card-row meta-row" role="button">
-                            <MaterialIcon iconName="calendar_today" class="exif-material-icon" />
-                            <div class="card-values">
+                <!-- Description -->
+                <div class="exif-card description">
+                    <TextArea
+                        class="exif-description"
+                        placeholder="Add a description"
+                        rows={3}
+                        maxHeight="2rem"
+                        resize="none"
+                    />
+                </div>
+                <!-- Camera/Exposure card -->
+                <div class="exif-card">
+                    <div class="card-row main-row">
+                        <div class="card-values">
+                            {#if currentAsset?.exif?.model && currentAsset?.exif?.make}
                                 <div class="value-big">
-                                    {getTakenAt(asset).toLocaleDateString(undefined, {
-                                        year: "numeric",
-                                        month: "long",
-                                        day: "numeric"
-                                    })}
+                                    {currentAsset.exif.make}
+                                    {currentAsset.exif.model.replace(new RegExp(`^${currentAsset.exif.make} `), "")}
                                 </div>
+                            {:else}
+                                <div class="value-big">Unknown Camera</div>
+                            {/if}
+
+                            {#if currentAsset?.exif?.lens_model}
                                 <div class="value-sub">
-                                    {getTakenAt(asset).toLocaleTimeString(undefined, {
-                                        hour: "numeric",
-                                        minute: "numeric"
-                                    })}
-                                    {getTimezoneAbbreviation()}
+                                    {currentAsset.exif.lens_model}
                                 </div>
-                            </div>
+                            {:else}
+                                <div class="value-sub">Unknown Lens Make</div>
+                            {/if}
+
+                            {#if currentAsset?.exif?.focal_length}
+                                <div class="value-sub">
+                                    {currentAsset.exif.focal_length}
+                                </div>
+                            {:else}
+                                <div class="value-sub">Unknown Focal Length</div>
+                            {/if}
                         </div>
-                    {/snippet}
-                </DatePicker>
-            </div>
-            <!-- Description -->
-            <div class="exif-card description">
-                <TextArea
-                    class="exif-description"
-                    placeholder="Add a description"
-                    rows={3}
-                    maxHeight="2rem"
-                    resize="none"
-                />
-            </div>
-            <!-- Camera/Exposure card -->
-            <div class="exif-card">
-                <div class="card-row main-row">
-                    <div class="card-values">
-                        {#if asset?.exif?.model && asset?.exif?.make}
-                            <div class="value-big">
-                                {asset.exif.make}
-                                {asset.exif.model.replace(new RegExp(`^${asset.exif.make} `), "")}
-                            </div>
-                        {:else}
-                            <div class="value-big">Unknown Camera</div>
-                        {/if}
-
-                        {#if asset?.exif?.lens_model}
-                            <div class="value-sub">
-                                {asset.exif.lens_model}
-                            </div>
-                        {:else}
-                            <div class="value-sub">Unknown Lens Make</div>
-                        {/if}
-
-                        {#if asset?.exif?.focal_length}
-                            <div class="value-sub">
-                                {asset.exif.focal_length}
-                            </div>
-                        {:else}
-                            <div class="value-sub">Unknown Focal Length</div>
-                        {/if}
                     </div>
                 </div>
-            </div>
-            <div class="exif-card-group">
-                <div class="exif-card">
-                    <div class="card-row main-row">
-                        <MaterialIcon iconName="camera" class="exif-material-icon" />
-                        <div class="card-values">
-                            <div class="value-sub">
-                                {asset?.exif?.f_number ?? asset?.exif?.aperture ?? "—"}
-                            </div>
-                            <div class="value-sub">
-                                {asset?.exif?.exposure_time ?? "—"}
-                            </div>
-                        </div>
-                    </div>
-                    <div class="card-row meta-row">
-                        <MaterialIcon iconName="tune" class="exif-material-icon" />
-                        <div class="card-values">
-                            <div class="value-sub">
-                                ISO {asset?.exif?.iso ?? "—"}
-                            </div>
-                            <div class="value-sub">
-                                {asset?.exif?.exposure_value ?? "—"}
-                            </div>
-                        </div>
-                    </div>
-                    <div class="card-row meta-row">
-                        <MaterialIcon
-                            iconName="flash_on"
-                            fill={true}
-                            style="color: #FFC107; fill: #FFC107;"
-                            class="exif-material-icon"
-                        />
-                        <div class="card-values">
-                            <div class="value-sub">
-                                Flash {getFlashMode(asset?.exif?.flash) ?? "—"}
-                            </div>
-                        </div>
-                    </div>
-                    {#if asset?.exif?.white_balance}
-                        <div class="card-row meta-row">
-                            <MaterialIcon iconName="light_mode" class="exif-material-icon" />
+                <div class="exif-card-group">
+                    <div class="exif-card">
+                        <div class="card-row main-row">
+                            <MaterialIcon iconName="camera" class="exif-material-icon" />
                             <div class="card-values">
                                 <div class="value-sub">
-                                    {getWhiteBalance(asset.exif.white_balance)}
-                                    {#if asset?.exif?.color_temperature}
-                                        &nbsp;· {asset.exif.color_temperature}K
-                                    {/if}
+                                    {currentAsset?.exif?.f_number ?? currentAsset?.exif?.aperture ?? "—"}
+                                </div>
+                                <div class="value-sub">
+                                    {currentAsset?.exif?.exposure_time ?? "—"}
                                 </div>
                             </div>
                         </div>
-                    {/if}
-                </div>
+                        <div class="card-row meta-row">
+                            <MaterialIcon iconName="tune" class="exif-material-icon" />
+                            <div class="card-values">
+                                <div class="value-sub">
+                                    ISO {currentAsset?.exif?.iso ?? "—"}
+                                </div>
+                                <div class="value-sub">
+                                    {currentAsset?.exif?.exposure_value ?? "—"}
+                                </div>
+                            </div>
+                        </div>
+                        <div class="card-row meta-row">
+                            <MaterialIcon
+                                iconName="flash_on"
+                                fill={true}
+                                style="color: #FFC107; fill: #FFC107;"
+                                class="exif-material-icon"
+                            />
+                            <div class="card-values">
+                                <div class="value-sub">
+                                    Flash {getFlashMode(currentAsset?.exif?.flash) ?? "—"}
+                                </div>
+                            </div>
+                        </div>
+                        {#if currentAsset?.exif?.white_balance}
+                            <div class="card-row meta-row">
+                                <MaterialIcon iconName="light_mode" class="exif-material-icon" />
+                                <div class="card-values">
+                                    <div class="value-sub">
+                                        {getWhiteBalance(currentAsset.exif.white_balance)}
+                                        {#if currentAsset?.exif?.color_temperature}
+                                            &nbsp;· {currentAsset.exif.color_temperature}K
+                                        {/if}
+                                    </div>
+                                </div>
+                            </div>
+                        {/if}
+                    </div>
 
-                <div class="exif-card">
-                    <div class="card-row main-row">
-                        <div class="card-values">
-                            <div class="value-sub">
-                                {asset?.width} x {asset?.height}
+                    <div class="exif-card">
+                        <div class="card-row main-row">
+                            <div class="card-values">
+                                <div class="value-sub">
+                                    {currentAsset?.width} x {currentAsset?.height}
+                                </div>
                             </div>
                         </div>
-                    </div>
-                    <div class="card-row main-row">
-                        <MaterialIcon iconName="aspect_ratio" class="exif-material-icon" />
-                        <div class="card-values">
-                            <div class="value-sub">
-                                {Math.floor((asset?.width! * asset?.height!) / 1_000_000)} MP
+                        <div class="card-row main-row">
+                            <MaterialIcon iconName="aspect_ratio" class="exif-material-icon" />
+                            <div class="card-values">
+                                <div class="value-sub">
+                                    {Math.floor((currentAsset?.width! * currentAsset?.height!) / 1_000_000)} MP
+                                </div>
+                                <div class="value-sub">
+                                    {formatBytes(currentAsset.image_metadata?.file_size) ?? "—"}
+                                </div>
                             </div>
-                            <div class="value-sub">{formatBytes(asset.image_metadata?.file_size) ?? "—"}</div>
                         </div>
-                    </div>
-                    <div class="card-row meta-row">
-                        <MaterialIcon iconName="palette" class="exif-material-icon" />
-                        <div class="card-values">
-                            <div class="value-sub">
-                                {asset?.image_metadata?.color_space ?? "—"}
+                        <div class="card-row meta-row">
+                            <MaterialIcon iconName="palette" class="exif-material-icon" />
+                            <div class="card-values">
+                                <div class="value-sub">
+                                    {currentAsset?.image_metadata?.color_space ?? "—"}
+                                </div>
                             </div>
                         </div>
                     </div>
                 </div>
             </div>
+            <div class="rating-container">
+                <ImageLabelViewer
+                    variant="compact"
+                    label={getImageLabel(currentAsset)}
+                    onSelect={(selectedLabel) => {
+                        const entry = Object.entries(LabelColours).find(([_, colour]) => colour === selectedLabel);
+                        const labelToSend = entry ? (entry[0] as Label) : null;
+                        if (currentAsset.image_metadata) {
+                            currentAsset.image_metadata = {
+                                ...currentAsset.image_metadata,
+                                label: labelToSend
+                            };
+                        }
+                    }}
+                />
+                <StarRating value={starRating} onChange={setImageRating} />
+            </div>
         </div>
-        <div class="rating-container">
-            <ImageLabelViewer
-                variant="compact"
-                label={getImageLabel(asset)}
-                onSelect={(selectedLabel) => {
-                    const entry = Object.entries(LabelColours).find(([_, colour]) => colour === selectedLabel);
-                    const labelToSend = entry ? (entry[0] as Label) : null;
-                    if (asset.image_metadata) {
-                        asset.image_metadata = {
-                            ...asset.image_metadata,
-                            label: labelToSend
-                        };
-                    }
-                }}
-            />
-            <StarRating value={starRating} onChange={setImageRating} />
+    {:else}
+        <div class="metadata-empty">
+            <MaterialIcon iconName="image" opticalSize={48} size="3rem" />
+            <span class="metadata-empty-text">No image selected</span>
         </div>
-    </div>
+    {/if}
 </div>
 
 <style lang="scss">
     .metadata-editor {
-        background-color: var(--viz-surface-panel);
+        background-color: var(--viz-bg-color);
         padding: var(--viz-spacing-std);
-        border-radius: var(--viz-border-radius-lg);
-        border-left: 1px solid var(--viz-border-subtle);
         color: var(--viz-text-primary);
         height: 100%;
         width: auto;
-        max-width: 20vw;
-        min-width: 20vw;
         pointer-events: auto;
         box-sizing: border-box;
         overflow-y: auto;
@@ -365,6 +386,22 @@
 
     .metadata-exif-box {
         display: block;
+    }
+
+    .metadata-empty {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        gap: 0.5rem;
+        height: 100%;
+        min-height: 10rem;
+        color: var(--viz-text-secondary);
+        text-align: center;
+    }
+
+    .metadata-empty-text {
+        font-size: var(--viz-font-size-lg);
     }
 
     .exif-card-group {
