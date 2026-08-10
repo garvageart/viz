@@ -4,6 +4,7 @@
     import isEqual from "lodash-es/isEqual";
     import { onMount, untrack } from "svelte";
     import type { MouseEventHandler, PointerEventHandler, WheelEventHandler } from "svelte/elements";
+    import { slide } from "svelte/transition";
     import { hideAll } from "tippy.js";
     import { type ImageAsset, type ImageUpdate, getFullImagePath, updateImage } from "$lib/api";
     import { modalsManager } from "$lib/components/modals/manager/ModalManager.svelte";
@@ -216,7 +217,7 @@
     });
 
     let direction = $state<"left" | "right">("right");
-    let showMetadata = $state(!isMobile);
+    let showSidePanel = $state(!isMobile);
     let editNameMode = $state(false);
     let editingName = $state("");
     let calendarOpen = $state(false);
@@ -1162,10 +1163,11 @@
                         id="lightbox-toggle-info"
                         class="lightbox-button-icon"
                         hoverColor="transparent"
-                        title={`${showMetadata ? "Hide" : "Show"} Info`}
+                        // TODO: Make i18n safe
+                        title={`${showSidePanel ? "Hide" : "Show"} Info`}
                         onclick={(e) => {
                             e.stopPropagation();
-                            showMetadata = !showMetadata;
+                            showSidePanel = !showSidePanel;
                         }}
                         iconName="info"
                     />
@@ -1305,44 +1307,46 @@
 
             {#if prevLightboxImage && nextLightboxImage && !isCropping}
                 <div class="lightbox-nav">
-                    <button
+                    <IconButton
+                        iconName="arrow_back"
                         class="lightbox-nav-btn prev lightbox-button-icon"
-                        aria-label="Previous image"
+                        style={lightboxMaterialIconColour}
+                        title="Previous image"
                         onclick={(e) => {
                             e.stopPropagation();
                             goToPrev();
                         }}
-                    >
-                        <MaterialIcon iconName="arrow_back" style={lightboxMaterialIconColour} />
-                    </button>
-                    <button
+                    />
+                    <IconButton
+                        iconName="arrow_forward"
                         class="lightbox-nav-btn next lightbox-button-icon"
-                        aria-label="Next image"
+                        style={lightboxMaterialIconColour}
+                        title="Next image"
                         onclick={(e) => {
                             e.stopPropagation();
                             goToNext();
                         }}
-                    >
-                        <MaterialIcon iconName="arrow_forward" style={lightboxMaterialIconColour} />
-                    </button>
+                    />
                 </div>
             {/if}
         </div>
 
-        {#if isCropping}
-            <div class="metadata-editor">
-                <CropTools
-                    variant="placed"
-                    onApply={handleCropApply}
-                    onReset={handleCropReset}
-                    onCancel={() => {
-                        toggleCropMode();
-                    }}
-                    onAspectRatioChange={handleAspectRatioChange}
-                />
+        {#if showSidePanel}
+            <div class="side-panel" class:crop-mode={isCropping} transition:slide={{ axis: "x" }}>
+                {#if isCropping}
+                    <CropTools
+                        variant="placed"
+                        onApply={handleCropApply}
+                        onReset={handleCropReset}
+                        onCancel={() => {
+                            toggleCropMode();
+                        }}
+                        onAspectRatioChange={handleAspectRatioChange}
+                    />
+                {:else}
+                    <MetadataPanel asset={lightboxImage!} showCloseIcon={isMobile} {onImageUpdated} />
+                {/if}
             </div>
-        {:else if showMetadata}
-            <MetadataPanel asset={lightboxImage!} bind:show={showMetadata} showCloseIcon={isMobile} {onImageUpdated} />
         {/if}
     </div>
 </Lightbox>
@@ -1487,6 +1491,7 @@
     }
 
     .lightbox-nav {
+        gap: var(--viz-spacing-md);
         position: absolute;
         top: 50%;
         right: 2em;
@@ -1496,15 +1501,12 @@
         pointer-events: none;
     }
 
-    .lightbox-nav-btn {
+    :global(.lightbox-nav-btn) {
         border: none;
         color: var(--viz-text-primary);
-        width: 3em;
-        height: 3em;
         display: inline-flex;
         align-items: center;
         justify-content: center;
-        border-radius: 0.3em;
         cursor: pointer;
         pointer-events: auto;
     }
@@ -1536,6 +1538,22 @@
         font-weight: 600;
         z-index: 10;
         pointer-events: none;
+    }
+
+    .side-panel {
+        background-color: var(--viz-surface-panel);
+        height: 100%;
+        width: auto;
+        max-width: 20vw;
+        min-width: 20vw;
+        pointer-events: auto;
+        box-sizing: border-box;
+        overflow-y: auto;
+        border-left: 1px solid var(--viz-border-subtle);
+
+        &.crop-mode {
+            padding: var(--viz-spacing-std);
+        }
     }
 
     .lightbox-debug-panel {

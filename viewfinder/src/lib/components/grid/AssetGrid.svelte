@@ -1166,7 +1166,6 @@
 <style lang="scss">
     .viz-asset-grid-container {
         box-sizing: border-box;
-        margin: inherit auto;
         width: 100%;
         max-width: 100%;
         text-overflow: clip;

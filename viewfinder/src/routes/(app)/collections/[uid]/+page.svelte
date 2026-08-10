@@ -331,7 +331,7 @@
         data: displayData,
         scopeId: scopeId,
         assetGridDisplayProps: {
-            style: `padding: 0em ${isLayoutPage() ? "1em" : "2em"};`
+            style: `padding: 2em ${isLayoutPage() ? "1em" : "2em"};`
         },
         assetDblClick: (_e, asset: ImageAsset) => {
             lightboxImage = asset;
@@ -860,7 +860,7 @@
 {/snippet}
 
 {#snippet justifiedGrid()}
-    <div class="viz-justified-grid" style="padding: 0em {isLayoutPage() ? '1em' : '2em'};">
+    <div class="viz-justified-grid" style="padding: 2em {isLayoutPage() ? '1em' : '2em'};">
         <PhotoAssetGrid
             data={displayData}
             allData={viewSettings.showDates ? allImagesFlat : undefined}
@@ -1145,15 +1145,15 @@
                         >
                     </Badge>
 
-                    {#if data.private}
-                        <Badge pill={true} variant="error" iconName="lock" iconSize="1.5rem">
-                            <span>Private</span>
-                        </Badge>
-                    {:else}
-                        <Badge pill={true} variant="info" weight="regular" iconName="visibility" iconSize="1.5rem">
-                            <span>Public</span>
-                        </Badge>
-                    {/if}
+                    <Badge
+                        pill={true}
+                        variant="info"
+                        weight="regular"
+                        iconName={isPrivate ? "visibility_off" : "visibility"}
+                        iconSize="1.5rem"
+                    >
+                        <span>{isPrivate ? "Private" : "Public"}</span>
+                    </Badge>
                 </div>
             </div>
         </div>
@@ -1174,7 +1174,7 @@
         max-width: 100%;
         display: flex;
         flex-direction: column;
-        margin: var(--viz-spacing-xxl) 0;
+        margin: var(--viz-spacing-lg) 0;
         padding: 0 1rem;
         box-sizing: border-box;
         container-type: inline-size;

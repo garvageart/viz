@@ -344,12 +344,6 @@
         }
     }
 
-    @keyframes spin {
-        to {
-            transform: rotate(360deg);
-        }
-    }
-
     .modal-body {
         display: flex;
         flex-direction: column;
@@ -369,6 +363,7 @@
         display: flex;
         flex-direction: column;
         box-sizing: border-box;
+        padding: 2rem;
         width: 100%;
         height: auto;
         min-height: 100%;

@@ -140,14 +140,10 @@
     <div class="metadata-row">
         {#if asset.private || asset.favourited || fileExtension}
             {#if asset.private}
-                <Badge variant="error" iconName="lock" iconSize="0.8rem" title="Private">
-                    <span>Private</span>
-                </Badge>
+                <Badge variant="error" iconName="lock" iconSize="0.8rem" title="Private"></Badge>
             {/if}
             {#if asset.favourited}
-                <Badge variant="warning" iconName="star" iconFill={true} iconSize="0.8rem" title="Favourited">
-                    <span>Favourited</span>
-                </Badge>
+                <Badge variant="warning" iconName="star" iconFill={true} iconSize="0.8rem" title="Favourited"></Badge>
             {/if}
             {#if fileExtension}
                 <Badge variant="default">

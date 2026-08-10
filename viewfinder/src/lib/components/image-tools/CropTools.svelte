@@ -1,4 +1,5 @@
 <script lang="ts">
+    import Button from "$lib/components/ui/Button.svelte";
     import IconButton from "../ui/IconButton.svelte";
 
     interface Props {
@@ -46,16 +47,17 @@
     role="menu"
     tabindex="0"
 >
-    <div class="menu-header">Crop Tools</div>
+    <h3 class="menu-header">Crop Tools</h3>
 
     <div class="crop-presets">
         {#each ratios as ratio}
-            <button
+            <Button
+                variant={selectedRatioLabel === ratio.label ? "info" : "secondary"}
                 class="preset-btn {selectedRatioLabel === ratio.label ? 'active' : ''}"
                 onclick={() => selectRatio(ratio.label, ratio.value)}
             >
-                {ratio.label}
-            </button>
+                <span>{ratio.label}</span>
+            </Button>
         {/each}
     </div>
 
@@ -77,11 +79,9 @@
         display: flex;
         flex-direction: column;
         gap: var(--viz-spacing-md);
-        background-color: var(--viz-surface-card);
+        background-color: var(--viz-surface-panel);
         padding: var(--viz-spacing-md);
         border-radius: var(--viz-border-radius-lg);
-        border: var(--viz-border-thin);
-        border-color: var(--viz-surface-hover);
         z-index: 9999;
         pointer-events: auto;
         min-width: 20rem;
@@ -91,60 +91,26 @@
         &.floating {
             position: fixed;
             background-color: var(--viz-surface-card);
-            border-color: var(--viz-surface-hover);
+            border: var(--viz-border-thin);
             box-shadow: var(--viz-shadow-lg, 0 10px 25px -5px rgba(0, 0, 0, 0.3), 0 8px 10px -6px rgba(0, 0, 0, 0.3));
             transform: translate(0, 0);
-        }
-
-        &.placed {
-            height: auto;
-            width: 100%;
-            background-color: var(--viz-surface-card);
-            border: var(--viz-border-thin);
-            border-color: var(--viz-surface-hover);
-            border-radius: var(--viz-border-radius-lg);
-            padding: var(--viz-spacing-md);
-            gap: var(--viz-spacing-sm);
         }
     }
 
     .menu-header {
         font-weight: 600;
-        color: var(--viz-text-secondary);
         margin-bottom: var(--viz-spacing-xxs);
     }
 
     .crop-presets {
         display: grid;
         grid-template-columns: repeat(3, 1fr);
-        gap: var(--viz-spacing-xs);
+        gap: var(--viz-spacing-sm);
     }
 
-    .preset-btn {
-        background-color: var(--viz-surface-panel);
-        border: var(--viz-border-thin);
-        border-color: var(--viz-surface-hover);
-        padding: var(--viz-spacing-sm) var(--viz-spacing-xs);
-        border-radius: var(--viz-border-radius-md);
-        cursor: pointer;
-        font-weight: 600;
-        text-align: center;
-        transition:
-            background-color 0.15s ease,
-            border-color 0.15s ease,
-            color 0.15s ease;
-
-        &:hover {
-            background-color: var(--viz-surface-hover);
-            color: var(--viz-text-primary);
-            border-color: var(--viz-border-subtle);
-        }
-
-        &.active {
-            background-color: var(--viz-primary);
-            color: var(--viz-surface-card);
-            border-color: var(--viz-primary);
-        }
+    :global(.preset-btn) {
+        padding: var(--viz-spacing-sm) !important;
+        border-radius: var(--viz-border-radius-md) !important;
     }
 
     .crop-actions {

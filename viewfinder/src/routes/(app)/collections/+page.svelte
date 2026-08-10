@@ -242,7 +242,7 @@
         data: displayData,
         scopeId: scopeId,
         assetGridDisplayProps: {
-            style: `padding: 0em ${isLayoutPage() ? "1em" : "2em"};`
+            style: `padding: 1em ${isLayoutPage() ? "1em" : "2em"};`
         },
         assetDblClick: (_e, asset: Collection) => {
             openCollection(asset, null);
@@ -434,7 +434,7 @@
         max-width: 100%;
         display: flex;
         flex-direction: column;
-        margin: var(--viz-spacing-xxl) 0;
+        margin: var(--viz-spacing-lg) 0;
         padding: 0 1rem;
         box-sizing: border-box;
 
