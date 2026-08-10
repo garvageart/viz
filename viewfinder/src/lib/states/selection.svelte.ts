@@ -57,6 +57,26 @@ export class SelectionScope<T extends { uid: string } = any> {
         this.selected.delete(item.uid);
     }
 
+    /**
+     * Removes items by UID from the selection (and source), handling select-all mode.
+     */
+    removeUids(uids: Iterable<string>) {
+        const uidSet = new Set(uids);
+        for (const uid of uidSet) {
+            if (this.isSelectAll) {
+                this.excluded.add(uid);
+            } else {
+                this.selected.delete(uid);
+            }
+        }
+
+        this.source = this.source.filter((i) => !uidSet.has(i.uid));
+
+        if (this.active && uidSet.has(this.active.uid)) {
+            this.active = undefined;
+        }
+    }
+
     has(item: T) {
         if (!item || !item.uid) {
             return false;
@@ -205,6 +225,11 @@ export class SelectionScope<T extends { uid: string } = any> {
 }
 
 export class SelectionManager {
+    // scopes is a plain (non-reactive) Map on purpose: getScope() both reads and
+    // mutates it from $derived contexts, so a reactive collection triggers
+    // Svelte's state_unsafe_mutation. The active scope is resolved from this map
+    // on demand (see activeScope getter); scope removal invalidates it by
+    // clearing activeScopeId so reactive consumers don't cache a removed scope.
     scopes = new Map<string, SelectionScope>();
     activeScopeId = $state<string | null>(null);
 
@@ -248,6 +273,9 @@ export class SelectionManager {
 
     removeScope(scopeId: string) {
         this.scopes.delete(scopeId);
+        if (this.activeScopeId === scopeId) {
+            this.activeScopeId = null;
+        }
     }
 
     /**

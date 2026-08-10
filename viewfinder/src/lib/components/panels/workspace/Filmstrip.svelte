@@ -91,6 +91,11 @@
             return;
         }
 
+        // Make the scope the filmstrip operates on the active scope so
+        // selection-driven panels (metadata, histogram, preview) pick up the
+        // selection — mirrors how grids call setActive(scopeId) on click.
+        selectionManager.setActive(scope.id);
+
         if (e.shiftKey) {
             const ids = filmstripImages.map((i) => i.uid);
             const endIndex = ids.indexOf(image.uid);
@@ -283,6 +288,9 @@
 
                     // Select this image if not already in the selection
                     if (!filmstripScope?.has(image)) {
+                        if (filmstripScope) {
+                            selectionManager.setActive(filmstripScope.id);
+                        }
                         if (e.shiftKey || e.ctrlKey || e.metaKey) {
                             filmstripScope?.add(image);
                         } else {
