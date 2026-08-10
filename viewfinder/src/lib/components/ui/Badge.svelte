@@ -31,7 +31,9 @@
 
 <div class="viz-badge {variant} size-{size} {className}" class:bold={weight === "bold"} class:is-pill={pill} {...props}>
     {#if iconName}
-        <MaterialIcon {iconName} fill={iconFill} size={iconSize} />
+        <span class="viz-badge-icon">
+            <MaterialIcon {iconName} fill={iconFill} size={iconSize} />
+        </span>
     {/if}
     {@render children?.()}
 </div>
@@ -75,6 +77,18 @@
         &.is-pill {
             border-radius: var(--viz-border-radius-pill);
             padding: 0.35rem 0.75rem;
+        }
+
+        /*
+        Ensure an icon-only badge is as tall as a text-only badge: the icon box
+        (MaterialIcon width/height = iconSize) can be shorter than the text
+        line-height (font-size x line-height: 1), so enforce a 1em line box.
+         */
+        .viz-badge-icon {
+            display: inline-flex;
+            align-items: center;
+            min-height: 1em;
+            line-height: 1;
         }
 
         &.default {
