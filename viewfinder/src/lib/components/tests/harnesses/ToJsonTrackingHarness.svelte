@@ -1,5 +1,5 @@
 <script lang="ts">
-    import type { Workspace } from "./model.svelte";
+    import type { Workspace } from "$lib/layouts/model.svelte";
 
     let { workspace, onRerun }: { workspace: Workspace; onRerun: () => void } = $props();
 

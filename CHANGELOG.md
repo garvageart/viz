@@ -5,6 +5,15 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.29.3] - 2026-08-10
+
+* test(e2e): retry flaky tests once (d05e35e4)
+* style(ui): remove redundant metadata editor background (68bf40f4)
+* fix(ui): align icon-only badge height with text badges (f9f55d3b)
+* refactor(workspace): derive layout-persistence tracking from toJSON and tidy init (6f7d4656)
+* fix(workspace): prevent edge-drop zone from hijacking tab drags near the workspace edge (a59ca39b)
+* feat(workspace): add dedicated Clock panel with live time, date, and timezone (479b5e73)
+
 ## [0.29.2] - 2026-08-10
 
 * style(ui): polish crop tools, lightbox side panel, badges, and grid padding (6841f3b9)
