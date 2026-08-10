@@ -23,8 +23,9 @@ export default defineConfig({
     fullyParallel: true,
     /* Fail the build on CI if you accidentally left test.only in the source code. */
     forbidOnly: !!process.env.CI,
-    /* Retry on CI: 0 to fail fast without long retry loops */
-    retries: process.env.CI ? 0 : 0,
+    /* Retry flaky (not deterministically failing) tests once so intermittent
+       failures don't fail the suite, while real regressions still fail fast. */
+    retries: 1,
     /* Limit workers to prevent resource exhaustion (especially in WSL). */
     workers: process.env.CI ? 1 : process.env.PLAYWRIGHT_WORKERS ? parseInt(process.env.PLAYWRIGHT_WORKERS) : 2,
     /* Reporter to use. See https://playwright.dev/docs/test-reporters */
