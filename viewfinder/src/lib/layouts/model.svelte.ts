@@ -4,6 +4,7 @@ import VizView, { type SerializedVizView } from "$lib/views/views.svelte";
 
 // Types
 export type Orientation = "horizontal" | "vertical";
+export type RootEdge = "left" | "right" | "top" | "bottom";
 
 export interface SerializedSplitNode {
     type: "split";
@@ -156,7 +157,8 @@ export class TabGroup {
                 }
 
                 return VizView.fromJSON(serializedView, matchedView.component, {
-                    tabDropHandlers: matchedView.tabDropHandlers
+                    tabDropHandlers: matchedView.tabDropHandlers,
+                    menuItems: matchedView.menuItems
                 });
             })
             .filter((v) => v !== null) as VizView[];
@@ -591,8 +593,95 @@ export class Workspace {
     }
 
     /**
-     * Returns all TabGroups in the tree
+     * Moves a view out of its current group into a brand new root-level column
+     * (left/right) or row (top/bottom) that spans the full workspace. Existing
+     * columns/rows keep their sizes; the largest one gives up half of itself to
+     * make room for the new column/row.
      */
+    splitToRoot(edge: RootEdge, viewId: number): TabGroup | null {
+        if (this.root.locked) {
+            return null;
+        }
+
+        const sourceGroup = this.findGroupWithView(viewId);
+        const view = sourceGroup?.views.find((v) => v.id === viewId);
+        if (!sourceGroup || !view || view.locked || sourceGroup.locked) {
+            return null;
+        }
+
+        // Remove view from source first
+        sourceGroup.removeTab(viewId);
+
+        const newGroup = new TabGroup({ views: [view] });
+        newGroup.setActive(view.id);
+        this.setActiveGroup(newGroup.id);
+
+        this.insertColumnOrRow(newGroup, edge);
+
+        this.cleanupNode(sourceGroup); // Cleanup source group if it becomes empty
+        return newGroup;
+    }
+
+    /**
+     * Inserts an already-populated group as a new root-level column (left/right)
+     * or row (top/bottom), e.g. for opening a view directly in its own column.
+     */
+    addRootGroup(group: TabGroup, edge: RootEdge): void {
+        if (this.root.locked) {
+            return;
+        }
+        this.insertColumnOrRow(group, edge);
+    }
+
+    private insertColumnOrRow(node: SplitNode | TabGroup, edge: RootEdge) {
+        const orientation: Orientation = edge === "left" || edge === "right" ? "horizontal" : "vertical";
+        const isBefore = edge === "left" || edge === "top";
+
+        const root = this.root;
+        if (root instanceof TabGroup || root.orientation !== orientation) {
+            // The root isn't already split in the needed direction: wrap it so the
+            // new column/row spans the full workspace height/width. The existing
+            // root keeps half its size; the new column/row takes the other half.
+            const newRoot = new SplitNode({
+                orientation,
+                children: isBefore ? [node, root] : [root, node]
+            });
+            const share = root.size / 2;
+            root.size = share;
+            node.size = share;
+            this.root = newRoot;
+            return;
+        }
+
+        // Same orientation: insert as a sibling. Existing columns/rows keep their
+        // exact size; only the largest one gives up half of itself to the new
+        // column/row, so the layout doesn't jump around.
+        node.parent = root;
+        const index = isBefore ? 0 : root.children.length;
+        root.children.splice(index, 0, node);
+        this.rebalanceForNewChild(root, node);
+    }
+
+    private rebalanceForNewChild(container: SplitNode, newNode: SplitNode | TabGroup) {
+        let biggest: SplitNode | TabGroup | null = null;
+        for (const child of container.children) {
+            if (child === newNode) {
+                continue;
+            }
+            if (!biggest || child.size > biggest.size) {
+                biggest = child;
+            }
+        }
+
+        if (!biggest) {
+            container.normalizeSizes();
+            return;
+        }
+
+        const share = biggest.size / 2;
+        biggest.size = share;
+        newNode.size = share;
+    }
     getAllTabGroups(startNode: SplitNode | TabGroup = this.root): TabGroup[] {
         if (startNode instanceof TabGroup) {
             return [startNode];

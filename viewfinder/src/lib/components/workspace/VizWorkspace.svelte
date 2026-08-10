@@ -4,6 +4,7 @@
     import { DateTime } from "luxon";
     import { onMount } from "svelte";
     import { type SerializedWorkspace, Workspace } from "$lib/layouts/model.svelte";
+    import { tabOps } from "$lib/layouts/tab-ops.svelte";
     import { views } from "$lib/layouts/views";
     import { debugMode, isMobile } from "$lib/states/index.svelte";
     import { workspaceState } from "$lib/states/workspace.svelte";
@@ -105,7 +106,7 @@
     });
 </script>
 
-<div {id} class="viz-workspace">
+<div {id} class="viz-workspace" use:tabOps.edgeDropTarget>
     {#if initialized && workspaceState.workspace}
         <LayoutNode node={workspaceState.workspace.root} />
     {:else}
@@ -115,6 +116,7 @@
 
 <style lang="scss">
     .viz-workspace {
+        position: relative;
         height: 100%;
         width: 100%;
         overflow: hidden;

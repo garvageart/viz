@@ -22,11 +22,6 @@ export function buildTabContextMenu(view: VizView, group: TabGroup, handlers: Ta
 
     const items: MenuItem[] = [];
 
-    if (view.menuItems && view.menuItems.length > 0) {
-        items.push(...view.menuItems);
-        items.push({ id: "separator-custom", separator: true });
-    }
-
     items.push(
         {
             id: view.locked ? "unlock-tab" : "lock-tab",
@@ -111,6 +106,16 @@ export function buildTabContextMenu(view: VizView, group: TabGroup, handlers: Ta
         }
     );
 
+    if (view.menuItems && view.menuItems.length > 0) {
+        items.push({ id: "separator-custom", separator: true });
+        items.push(
+            ...view.menuItems.map((item) => ({
+                ...item,
+                action: item.action ? (event: MouseEvent | KeyboardEvent) => item.action?.call(view, event) : undefined
+            }))
+        );
+    }
+
     return items;
 }
 
@@ -140,8 +145,34 @@ export function buildPanelContextMenu(group: TabGroup, handlers?: TabHandlers): 
     const allLocked = group.views.length > 0 && group.views.every((v) => v.locked);
     const nextLockedState = !allLocked;
     const isMaximized = workspaceState.workspace?.maximizedGroupId === group.id;
+    const activeView = group.activeView;
+    const canSplitToRoot =
+        !!activeView && !activeView.locked && !group.locked && !workspaceState.workspace?.root.locked;
 
     const items: MenuItem[] = [
+        {
+            id: `new-column-${group.id}`,
+            label: "New Column",
+            action: () => {
+                if (activeView) {
+                    workspaceState.workspace?.splitToRoot("right", activeView.id);
+                }
+            },
+            iconName: "vertical_split",
+            disabled: !canSplitToRoot
+        },
+        {
+            id: `new-row-${group.id}`,
+            label: "New Row",
+            action: () => {
+                if (activeView) {
+                    workspaceState.workspace?.splitToRoot("bottom", activeView.id);
+                }
+            },
+            iconName: "horizontal_split",
+            disabled: !canSplitToRoot
+        },
+        { id: `separator-layout-${group.id}`, separator: true },
         {
             id: `maximize-panel-${group.id}`,
             label: isMaximized ? "Restore Panel" : "Maximize Panel",

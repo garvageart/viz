@@ -1,6 +1,5 @@
 <script lang="ts">
     import { dev } from "$app/environment";
-    import { goto } from "$app/navigation";
     import { setContext, untrack } from "svelte";
     import tippy, { type Instance } from "tippy.js";
     import { VizMimeTypes } from "$lib/constants";
@@ -9,7 +8,8 @@
     import { resetAndReloadLayout } from "$lib/dev/components.svelte";
     import { DragData } from "$lib/drag-drop/data";
     import type { TabGroup } from "$lib/layouts/model.svelte";
-    import { tabOps } from "$lib/layouts/tab-ops.svelte";
+    import { edgeDrag, tabOps } from "$lib/layouts/tab-ops.svelte";
+    import { openCollectionTab } from "$lib/layouts/tabs/collection";
     import { workspaceState } from "$lib/states/workspace.svelte";
     import VizView from "$lib/views/views.svelte";
     import LoadingContainer from "../overlays/LoadingContainer.svelte";
@@ -247,6 +247,7 @@
 
     function triggerHeaderContextMenu(event: MouseEvent) {
         event.preventDefault();
+        event.stopPropagation();
 
         headerCtxMenu.anchor = { x: event.clientX, y: event.clientY };
         headerCtxMenu.items = [...buildLayoutContextMenu(), ...buildPanelContextMenu(group, menuHandlers)];
@@ -257,7 +258,7 @@
     let dragTooltip: Instance | null = $state(null);
 
     function handleTabDragOver(e: DragEvent, view: VizView) {
-        if (!e.dataTransfer) {
+        if (!e.dataTransfer || edgeDrag.active) {
             return;
         }
 
@@ -308,26 +309,8 @@
         }
     }
 
-    async function openCollectionFromDrop(uid: string, name: string) {
-        const collectionPath = `/collections/${uid}`;
-
-        const existingView = group.views.find((v) => v.path === collectionPath);
-        if (existingView) {
-            group.setActive(existingView.id);
-            return;
-        }
-
-        const { default: CollectionPage } = await import("../../../routes/(app)/collections/[uid]/+page.svelte");
-        const newView = new VizView({
-            name,
-            component: CollectionPage,
-            path: collectionPath
-        });
-        group.addTab(newView);
-    }
-
     function handleHeaderDragOver(e: DragEvent) {
-        if (!e.dataTransfer) {
+        if (!e.dataTransfer || edgeDrag.active) {
             return;
         }
 
@@ -351,7 +334,7 @@
         const target = e.currentTarget as HTMLElement;
         target.classList.remove("drop-active");
 
-        if (!e.dataTransfer) {
+        if (!e.dataTransfer || edgeDrag.active) {
             return;
         }
 
@@ -359,12 +342,12 @@
         if (data) {
             e.preventDefault();
             e.stopPropagation();
-            await openCollectionFromDrop(data.payload.uid, data.payload.name);
+            openCollectionTab(group, data.payload.uid, data.payload.name);
         }
     }
 
     async function handleTabDrop(e: DragEvent, view: VizView) {
-        if (!e.dataTransfer) {
+        if (!e.dataTransfer || edgeDrag.active) {
             return;
         }
 
@@ -393,7 +376,7 @@
             if (data) {
                 e.preventDefault();
                 e.stopPropagation();
-                await openCollectionFromDrop(data.payload.uid, data.payload.name);
+                openCollectionTab(group, data.payload.uid, data.payload.name);
             }
         }
     }
@@ -435,17 +418,7 @@
                     aria-selected={group.activeViewId === view.id}
                     tabindex={group.activeViewId === view.id ? 0 : -1}
                     onclick={() => {
-                        // TODO: make this configurable in user settings
-                        // first make it active and end it
-                        if (group.activeViewId !== view.id) {
-                            group.setActive(view.id);
-                            return;
-                        }
-
-                        // if the user clicks again and there's a path, go to it
-                        if (view.path && view.openPathFromTab) {
-                            goto(view.path);
-                        }
+                        group.setActive(view.id);
                     }}
                     oncontextmenu={(e) => triggerTabContextMenu(e, view)}
                     use:tabOps.draggable={{ viewId: view.id, sourceGroupId: group.id }}

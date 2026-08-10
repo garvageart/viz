@@ -1,7 +1,8 @@
 import { VizMimeTypes } from "$lib/constants";
 import { DragData } from "$lib/drag-drop/data";
 import { workspaceState } from "$lib/states/workspace.svelte";
-import { TabGroup } from "./model.svelte";
+import { type RootEdge, TabGroup } from "./model.svelte";
+import { createCollectionView } from "./tabs/collection";
 
 export interface TabDragData {
     viewId: number;
@@ -9,6 +10,14 @@ export interface TabDragData {
 }
 
 export type DropPosition = "left" | "right" | "top" | "bottom" | "center";
+
+// Shared reactive state for root-level edge drops. Set by the workspace edge
+// drop target (capture phase); consulted by per-group drop targets so they
+// suppress their overlays/handlers while an edge zone is active.
+export const edgeDrag = $state({
+    active: false,
+    edge: null as RootEdge | null
+});
 
 export class TabOps {
     draggable = (node: HTMLElement, data: TabDragData) => {
@@ -41,6 +50,13 @@ export class TabOps {
 
     dropTarget = (node: HTMLElement, targetGroupId: string) => {
         const onDragOver = (e: DragEvent) => {
+            if (edgeDrag.active) {
+                // A root-level edge zone takes precedence: suppress this group's
+                // overlay and let the event bubble to the workspace edge handler.
+                this.removeOverlay(node);
+                return;
+            }
+
             DragData.handleDragOver(e, VizMimeTypes.TAB_VIEW, {
                 onMatch: () => this.updateOverlay(node, e)
             });
@@ -54,6 +70,11 @@ export class TabOps {
         };
 
         const onDrop = (e: DragEvent) => {
+            if (edgeDrag.active) {
+                this.removeOverlay(node);
+                return;
+            }
+
             e.preventDefault();
             this.removeOverlay(node);
 
@@ -86,6 +107,11 @@ export class TabOps {
 
     addToGroup = (node: HTMLElement, targetGroupId: string) => {
         const onDragOver = (e: DragEvent) => {
+            if (edgeDrag.active) {
+                node.classList.remove("drop-active");
+                return;
+            }
+
             if (
                 DragData.handleDragOver(e, VizMimeTypes.TAB_VIEW, {
                     onMatch: () => node.classList.add("drop-active")
@@ -103,6 +129,11 @@ export class TabOps {
         };
 
         const onDrop = (e: DragEvent) => {
+            if (edgeDrag.active) {
+                node.classList.remove("drop-active");
+                return;
+            }
+
             node.classList.remove("drop-active");
             if (!e.dataTransfer || !DragData.isType(e.dataTransfer, VizMimeTypes.TAB_VIEW)) {
                 return;
@@ -200,6 +231,186 @@ export class TabOps {
         } else {
             workspace.splitGroup(targetGroupId, view, position);
         }
+    }
+
+    /**
+     * Workspace-root drop target: dragging a tab/view near the outer edge of the
+     * workspace shows an edge overlay and creates a new root-level column
+     * (left/right) or row (top/bottom) on drop. Listens in the capture phase so
+     * it takes precedence over the nested per-group drop targets.
+     */
+    edgeDropTarget = (node: HTMLElement) => {
+        const EDGE_BAND = 70; // px from the workspace edge that triggers the zone
+        // Safety net: clear a stale overlay shortly after the last in-band
+        // dragover in case a drag ends or is cancelled without a dragend/mouseup
+        // reaching us (e.g. dropped outside the window or focus lost mid-drag).
+        const STALE_TIMEOUT = 3000;
+        let staleTimer: ReturnType<typeof setTimeout> | null = null;
+
+        const clear = () => {
+            if (staleTimer) {
+                clearTimeout(staleTimer);
+                staleTimer = null;
+            }
+            this.clearEdge(node);
+        };
+
+        const scheduleClear = () => {
+            if (staleTimer) {
+                clearTimeout(staleTimer);
+            }
+            staleTimer = setTimeout(() => {
+                clear();
+            }, STALE_TIMEOUT);
+        };
+
+        const onDragOver = (e: DragEvent) => {
+            if (!e.dataTransfer) {
+                return;
+            }
+
+            if (
+                !DragData.isType(e.dataTransfer, VizMimeTypes.TAB_VIEW) &&
+                !DragData.isType(e.dataTransfer, VizMimeTypes.COLLECTION_UIDS)
+            ) {
+                return;
+            }
+
+            const rect = node.getBoundingClientRect();
+            const distLeft = e.clientX - rect.left;
+            const distRight = rect.right - e.clientX;
+            const distTop = e.clientY - rect.top;
+            const distBottom = rect.bottom - e.clientY;
+
+            const minDist = Math.min(distLeft, distRight, distTop, distBottom);
+            if (minDist > EDGE_BAND) {
+                clear();
+                return;
+            }
+
+            const edge: RootEdge =
+                minDist === distLeft
+                    ? "left"
+                    : minDist === distRight
+                      ? "right"
+                      : minDist === distTop
+                        ? "top"
+                        : "bottom";
+
+            e.preventDefault();
+            e.dataTransfer.dropEffect = "move";
+
+            if (!edgeDrag.active || edgeDrag.edge !== edge) {
+                edgeDrag.active = true;
+                edgeDrag.edge = edge;
+                this.updateEdgeOverlay(node, edge);
+            }
+            // Refresh the staleness guard so it only fires once the drag truly ends.
+            scheduleClear();
+        };
+
+        const onDragLeave = (e: DragEvent) => {
+            const rect = node.getBoundingClientRect();
+            if (e.clientX < rect.left || e.clientX >= rect.right || e.clientY < rect.top || e.clientY >= rect.bottom) {
+                clear();
+            }
+        };
+
+        const onDrop = (e: DragEvent) => {
+            if (!edgeDrag.active) {
+                return;
+            }
+
+            const edge = edgeDrag.edge;
+            clear();
+            e.preventDefault();
+            e.stopPropagation();
+
+            if (!edge || !e.dataTransfer) {
+                return;
+            }
+
+            const workspace = workspaceState.workspace;
+            if (!workspace) {
+                return;
+            }
+
+            if (DragData.isType(e.dataTransfer, VizMimeTypes.TAB_VIEW)) {
+                const dragData = DragData.getData<TabDragData>(e.dataTransfer, VizMimeTypes.TAB_VIEW);
+                if (!dragData) {
+                    return;
+                }
+                workspace.splitToRoot(edge, dragData.payload.viewId);
+                return;
+            }
+
+            if (DragData.isType(e.dataTransfer, VizMimeTypes.COLLECTION_UIDS)) {
+                const data = DragData.getData<{ uid: string; name: string }>(
+                    e.dataTransfer,
+                    VizMimeTypes.COLLECTION_UIDS
+                );
+                if (!data) {
+                    return;
+                }
+                const collectionView = createCollectionView(data.payload.uid, data.payload.name);
+                const group = new TabGroup({ views: [collectionView] });
+                group.setActive(collectionView.id);
+                workspace.addRootGroup(group, edge);
+            }
+        };
+
+        const onDragEnd = () => {
+            clear();
+        };
+
+        // Fallback for browsers/scenarios where dragend is not delivered: a
+        // mouseup fires once the drag operation completes, so clear then too.
+        const onMouseUp = () => {
+            if (edgeDrag.active) {
+                clear();
+            }
+        };
+
+        // Capture phase so edge zones resolve before any nested group handler.
+        node.addEventListener("dragover", onDragOver, true);
+        node.addEventListener("dragleave", onDragLeave, true);
+        node.addEventListener("drop", onDrop, true);
+        document.addEventListener("dragend", onDragEnd);
+        window.addEventListener("mouseup", onMouseUp);
+
+        return {
+            destroy: () => {
+                node.removeEventListener("dragover", onDragOver, true);
+                node.removeEventListener("dragleave", onDragLeave, true);
+                node.removeEventListener("drop", onDrop, true);
+                document.removeEventListener("dragend", onDragEnd);
+                window.removeEventListener("mouseup", onMouseUp);
+                clear();
+            }
+        };
+    };
+
+    private clearEdge(node: HTMLElement) {
+        if (edgeDrag.active) {
+            edgeDrag.active = false;
+        }
+        if (edgeDrag.edge !== null) {
+            edgeDrag.edge = null;
+        }
+        const overlay = node.querySelector(".edge-drop-overlay");
+        if (overlay) {
+            overlay.remove();
+        }
+    }
+
+    private updateEdgeOverlay(node: HTMLElement, edge: RootEdge) {
+        let overlay = node.querySelector(".edge-drop-overlay") as HTMLElement;
+        if (!overlay) {
+            overlay = document.createElement("div");
+            overlay.className = "edge-drop-overlay";
+            node.appendChild(overlay);
+        }
+        overlay.dataset.edge = edge;
     }
 }
 

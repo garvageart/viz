@@ -409,6 +409,161 @@ describe("Workspace Layout System", () => {
     });
 
     // ----------------------------------------------------
+    // Workspace.splitToRoot & addRootGroup (root-level columns/rows)
+    // ----------------------------------------------------
+    describe("Workspace.splitToRoot & addRootGroup", () => {
+        function buildTwoColumnWorkspace() {
+            const leftView = new VizView({ name: "Left", id: 1, isActive: true });
+            const spareView = new VizView({ name: "Spare", id: 11, isActive: true });
+            const rightView = new VizView({ name: "Right", id: 2, isActive: true });
+            const leftGroup = new TabGroup({
+                id: "g-left",
+                size: 25,
+                views: [leftView, spareView],
+                activeViewId: 1
+            });
+            const rightGroup = new TabGroup({
+                id: "g-right",
+                size: 75,
+                views: [rightView],
+                activeViewId: 2
+            });
+            const root = new SplitNode({
+                id: "root",
+                orientation: "horizontal",
+                size: 100,
+                children: [leftGroup, rightGroup]
+            });
+            const workspace = new Workspace(root, [leftView, spareView, rightView]);
+            workspace.setActiveGroup("g-left");
+            return { workspace, root, leftGroup, rightGroup, leftView, spareView, rightView };
+        }
+
+        it("splits a view into a new rightmost column without resizing existing columns", () => {
+            const { workspace, root, leftView, leftGroup, rightGroup } = buildTwoColumnWorkspace();
+
+            const newGroup = workspace.splitToRoot("right", leftView.id);
+
+            expect(newGroup).not.toBeNull();
+            expect(root.children.length).toBe(3);
+            expect(root.children[0]).toBe(leftGroup);
+            expect(root.children[1]).toBe(rightGroup);
+            expect(root.children[2]).toBe(newGroup);
+            expect(newGroup?.views[0].name).toBe("Left");
+            expect(leftGroup.views.length).toBe(1);
+            expect(leftGroup.views[0].name).toBe("Spare");
+            // Existing sizes preserved; the largest column (75) halves to make room.
+            expect(leftGroup.size).toBeCloseTo(25, 2);
+            expect(rightGroup.size).toBeCloseTo(37.5, 2);
+            expect(newGroup?.size).toBeCloseTo(37.5, 2);
+        });
+
+        it("splits a view into a new leftmost column without resizing existing columns", () => {
+            const { workspace, root, spareView, leftGroup, rightGroup } = buildTwoColumnWorkspace();
+
+            const newGroup = workspace.splitToRoot("left", spareView.id);
+
+            expect(newGroup).not.toBeNull();
+            expect(root.children[0]).toBe(newGroup);
+            expect(root.children[1]).toBe(leftGroup);
+            expect(root.children[2]).toBe(rightGroup);
+            expect(newGroup?.views[0].name).toBe("Spare");
+            expect(leftGroup.views.length).toBe(1);
+            expect(leftGroup.size).toBeCloseTo(25, 2);
+            expect(rightGroup.size).toBeCloseTo(37.5, 2);
+            expect(newGroup?.size).toBeCloseTo(37.5, 2);
+        });
+
+        it("wraps a horizontal root in a vertical split when adding a top row", () => {
+            const { workspace, root, spareView, leftGroup } = buildTwoColumnWorkspace();
+
+            const newGroup = workspace.splitToRoot("top", spareView.id);
+
+            expect(workspace.root).toBeInstanceOf(SplitNode);
+            const newRoot = workspace.root as SplitNode;
+            expect(newRoot.orientation).toBe("vertical");
+            expect(newRoot.children.length).toBe(2);
+            expect(newRoot.children[0]).toBe(newGroup);
+            expect(newRoot.children[1]).toBe(root);
+            expect(newGroup?.size).toBe(50);
+            expect(root.size).toBe(50);
+            expect(root.children.length).toBe(2);
+            expect(leftGroup.views.length).toBe(1);
+        });
+
+        it("wraps a single-group root into a horizontal split for a new column", () => {
+            const view = new VizView({ name: "Solo", id: 1, isActive: true });
+            const group = new TabGroup({ id: "g-solo", size: 100, views: [view], activeViewId: 1 });
+            const workspace = new Workspace(group, [view]);
+
+            const newGroup = workspace.splitToRoot("right", view.id);
+
+            // The emptied source group is cleaned up and the root collapses onto
+            // the new group, leaving a single-column workspace.
+            expect(workspace.root).toBeInstanceOf(TabGroup);
+            expect(workspace.root).toBe(newGroup);
+            expect(newGroup?.views[0].name).toBe("Solo");
+            expect(group.views.length).toBe(0);
+        });
+
+        it("cleans up the source group when it becomes empty", () => {
+            const { workspace, root, rightView, leftGroup, rightGroup } = buildTwoColumnWorkspace();
+
+            const newGroup = workspace.splitToRoot("right", rightView.id);
+
+            expect(newGroup).not.toBeNull();
+            // rightGroup emptied -> removed from root. SplitNode.removeChild()
+            // equalizes the remaining root columns ([50, 50]) — pre-existing
+            // cleanup behavior for a whole column disappearing.
+            expect(root.children.length).toBe(2);
+            expect(root.children[0]).toBe(leftGroup);
+            expect(root.children[1]).toBe(newGroup);
+            expect(rightGroup.views.length).toBe(0);
+            expect(newGroup?.views[0].name).toBe("Right");
+            expect(leftGroup.size).toBeCloseTo(50, 2);
+            expect(newGroup?.size).toBeCloseTo(50, 2);
+        });
+
+        it("refuses to move locked views or move from locked groups/roots", () => {
+            const { workspace, leftView } = buildTwoColumnWorkspace();
+            leftView.locked = true;
+            expect(workspace.splitToRoot("right", leftView.id)).toBeNull();
+            leftView.locked = false;
+            expect(workspace.splitToRoot("right", leftView.id)).not.toBeNull();
+
+            const w2 = buildTwoColumnWorkspace();
+            w2.workspace.root.locked = true;
+            expect(w2.workspace.splitToRoot("right", w2.leftView.id)).toBeNull();
+
+            const w3 = buildTwoColumnWorkspace();
+            const group = w3.workspace.findGroupWithView(w3.leftView.id);
+            if (group) {
+                group.locked = true;
+            }
+            expect(w3.workspace.splitToRoot("right", w3.leftView.id)).toBeNull();
+
+            // unknown view id
+            expect(w3.workspace.splitToRoot("right", 999)).toBeNull();
+        });
+
+        it("addRootGroup inserts a populated group without resizing existing columns", () => {
+            const { workspace, root, leftGroup, rightGroup } = buildTwoColumnWorkspace();
+            const extra = new VizView({ name: "Extra", id: 9, isActive: true });
+            const extraGroup = new TabGroup({ id: "g-extra", views: [extra], activeViewId: 9 });
+
+            workspace.addRootGroup(extraGroup, "right");
+
+            expect(root.children.length).toBe(3);
+            expect(root.children[2]).toBe(extraGroup);
+            expect(extraGroup.parent).toBe(root);
+            // Existing columns keep their sizes; the largest (75) halves for the new one.
+            expect(leftGroup.size).toBeCloseTo(25, 2);
+            expect(rightGroup.size).toBeCloseTo(37.5, 2);
+            expect(extraGroup.size).toBeCloseTo(37.5, 2);
+        });
+    });
+
+    // ----------------------------------------------------
     // Serialization & Hydration Tests
     // ----------------------------------------------------
     describe("Workspace Serialization and Hydration", () => {
