@@ -246,12 +246,20 @@ export class TabOps {
         // reaching us (e.g. dropped outside the window or focus lost mid-drag).
         const STALE_TIMEOUT = 3000;
         let staleTimer: ReturnType<typeof setTimeout> | null = null;
+        // Tracks whether the cursor has been in the workspace interior (outside
+        // the edge band) during this drag. The edge zone only arms once the
+        // cursor enters the band from the interior — a drag that starts inside
+        // the band (e.g. dragging a tab from the top row of tab headers, which
+        // sits right below the workspace edge) is a normal tab drag, not an
+        // edge-drop, and must not be hijacked.
+        let hasBeenInterior = false;
 
         const clear = () => {
             if (staleTimer) {
                 clearTimeout(staleTimer);
                 staleTimer = null;
             }
+            hasBeenInterior = false;
             this.clearEdge(node);
         };
 
@@ -283,8 +291,19 @@ export class TabOps {
             const distBottom = rect.bottom - e.clientY;
 
             const minDist = Math.min(distLeft, distRight, distTop, distBottom);
-            if (minDist > EDGE_BAND) {
-                clear();
+            const inBand = minDist <= EDGE_BAND;
+
+            if (!inBand) {
+                hasBeenInterior = true;
+                this.clearEdge(node);
+                return;
+            }
+
+            // Only arm the edge zone when the cursor entered the band from the
+            // interior. A drag that begins inside the band (e.g. dragging a tab
+            // from the top row of tab headers, which sits right below the
+            // workspace edge) is a normal tab drag, not an edge-drop.
+            if (!hasBeenInterior) {
                 return;
             }
 
