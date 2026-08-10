@@ -36,27 +36,15 @@
     style:max-width={sidebarWidthState}
 >
     <div class="sidebar-header" class:closed={!open}>
-        {#if open}
-            <IconButton
-                iconName="arrow_menu_close"
-                title="Collapse Sidebar"
-                onclick={() => (open = !open)}
-                variant="small"
-                class="sidebar-toggle-btn"
-            ></IconButton>
-            {#if title}
-                <h3 class="sidebar-heading">{title}</h3>
-            {/if}
-        {:else}
-            <div style:display="inline-flex">
-                <IconButton
-                    iconName="arrow_menu_open"
-                    title="Expand Sidebar"
-                    onclick={() => (open = true)}
-                    variant="small"
-                    class="sidebar-toggle-btn open-btn"
-                ></IconButton>
-            </div>
+        <IconButton
+            weight={300}
+            iconName={open ? "keyboard_double_arrow_left" : "keyboard_double_arrow_right"}
+            title={open ? "Collapse Sidebar" : "Expand Sidebar"}
+            onclick={() => (open = !open)}
+            variant="small"
+        />
+        {#if open && title}
+            <h3 class="sidebar-heading">{title}</h3>
         {/if}
     </div>
     {#if open}
@@ -98,7 +86,6 @@
         font-weight: 600;
         letter-spacing: 0.05em;
         text-transform: uppercase;
-        color: var(--viz-text-secondary);
         margin: 0;
         white-space: nowrap;
         overflow: hidden;
@@ -111,13 +98,6 @@
         overflow-y: auto;
         box-sizing: border-box;
         white-space: nowrap;
-    }
-
-    :global(.sidebar-toggle-btn) {
-        color: var(--viz-text-muted) !important;
-        &:hover {
-            background-color: var(--viz-surface-panel) !important;
-        }
     }
 
     @media (max-width: 40rem) {
