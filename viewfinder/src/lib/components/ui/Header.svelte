@@ -154,7 +154,7 @@
         <AppMenu bind:isOpen={openAppMenu} bind:anchor={appMenuButton} />
         <div class="header-separator"></div>
         {#if isLayoutPage()}
-            <Dropdown iconName="view_quilt" items={createWorkspaceViewsMenu()} />
+            <Dropdown iconName="view_quilt" items={createWorkspaceViewsMenu()} showSelectionIndicator={false} />
         {:else}
             <IconButton
                 class="header-button"
