@@ -343,7 +343,6 @@
 
 <style lang="scss">
     .metadata-editor {
-        background-color: var(--viz-bg-color);
         padding: var(--viz-spacing-std);
         color: var(--viz-text-primary);
         height: 100%;
