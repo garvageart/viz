@@ -67,41 +67,45 @@
         };
     }
 
-    const menuItems: MenuItem[] = [
-        buildWorkspaceItem(),
-        { id: "divider-1", separator: true },
-        { id: "photos", label: "Photos", iconName: "photo", action: () => goto("/photos") },
-        {
-            id: "collections",
-            label: "Collections",
-            iconName: "photo_album",
-            action: () => goto("/collections")
-        },
-        { id: "divider-2", separator: true },
-        { id: "settings", label: "Settings", iconName: "settings", action: () => goto("/settings") },
-        {
-            id: "help",
-            label: "Help & Support",
-            iconName: "help",
-            // TODO: Change this (configurable via build injection __VIZ_CONFIG__)
-            action: () => {
-                location.href = "https://github.com/garvageart/viz/issues";
+    let menuItems: MenuItem[] = $derived.by(() => {
+        const items: MenuItem[] = [
+            buildWorkspaceItem(),
+            { id: "divider-1", separator: true },
+            { id: "photos", label: "Photos", iconName: "photo", action: () => goto("/photos") },
+            {
+                id: "collections",
+                label: "Collections",
+                iconName: "photo_album",
+                action: () => goto("/collections")
+            },
+            { id: "divider-2", separator: true },
+            { id: "settings", label: "Settings", iconName: "settings", action: () => goto("/settings") },
+            {
+                id: "help",
+                label: "Help & Support",
+                iconName: "help",
+                // TODO: Change this (configurable via build injection __VIZ_CONFIG__)
+                action: () => {
+                    location.href = "https://github.com/garvageart/viz/issues";
+                }
+            },
+            {
+                id: "shortcuts",
+                label: "Keyboard Shortcuts",
+                shortcut: "?",
+                iconName: "keyboard",
+                // TODO: Centralise keyboard shortcuts in a manager
+                action: () => alert("Keyboard shortcuts:\n\nCtrl/Cmd + K: Search\nEsc: Close panels")
             }
-        },
-        {
-            id: "shortcuts",
-            label: "Keyboard Shortcuts",
-            shortcut: "?",
-            iconName: "keyboard",
-            // TODO: Centralise keyboard shortcuts in a manager
-            action: () => alert("Keyboard shortcuts:\n\nCtrl/Cmd + K: Search\nEsc: Close panels")
-        }
-    ];
+        ];
 
-    if (user.isAdmin) {
-        menuItems.splice(4, 0, adminSettings);
-        menuItems.splice(4, 0, { id: "divider-admin", separator: true });
-    }
+        if (user.isAdmin) {
+            items.splice(4, 0, adminSettings);
+            items.splice(4, 0, { id: "divider-admin", separator: true });
+        }
+
+        return items;
+    });
 </script>
 
 <ContextMenu
