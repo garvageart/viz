@@ -40,6 +40,14 @@
          * without fade-in or placeholder.
          */
         initialLoaded?: boolean;
+        /**
+         * Placeholder shown while the main image loads.
+         * - "thumbhash": low-res ThumbHash blur-up placeholder (default)
+         * - "thumbnail": the asset's (typically cached) thumbnail as a sharp, instant placeholder
+         * - "none": no placeholder
+         * @default "thumbhash"
+         */
+        placeholder?: "thumbhash" | "thumbnail" | "none";
     };
 
     type Props = AssetImageProps & HTMLImgAttributes;
@@ -52,6 +60,7 @@
         imageElement = $bindable(),
         naked = false,
         initialLoaded = $bindable(false),
+        placeholder = "thumbhash",
         src: srcOverride,
         ...rest
     }: Props = $props();
@@ -126,6 +135,19 @@
      * Instant-load placeholder from ThumbHash
      */
     const thumbhash = $derived(getThumbhashURL(asset));
+
+    /**
+     * The asset's thumbnail used as a sharp, instant placeholder. Typically
+     * already cached (e.g. from the grid), so it avoids a blurry ThumbHash flash
+     * while a higher-resolution variant loads.
+     */
+    const thumbPlaceholder = $derived.by(() => {
+        const path = asset.image_paths?.thumbnail;
+        if (!path) {
+            return "";
+        }
+        return getFullImagePath(withVersion(path));
+    });
 </script>
 
 {#if naked}
@@ -148,10 +170,19 @@
     />
 {:else}
     <div class="asset-image-container {rest.class ?? ''}" style={rest.style}>
-        {#if thumbhash && !loaded}
+        {#if placeholder === "thumbhash" && thumbhash}
             <img
                 src={thumbhash}
                 class="placeholder"
+                class:hidden={loaded}
+                style:object-fit={objectFit}
+                alt=""
+                aria-hidden="true"
+            />
+        {:else if placeholder === "thumbnail" && thumbPlaceholder}
+            <img
+                src={thumbPlaceholder}
+                class="placeholder placeholder-thumb"
                 class:hidden={loaded}
                 style:object-fit={objectFit}
                 alt=""
@@ -168,6 +199,7 @@
             fetchpriority={priority ? "high" : "auto"}
             class="main-image"
             class:visible={loaded}
+            class:instant={placeholder === "thumbnail"}
             style:object-fit={objectFit}
             onload={(e) => {
                 loaded = true;
@@ -203,6 +235,12 @@
         }
     }
 
+    .placeholder-thumb {
+        filter: none;
+        transform: none;
+        transition: none;
+    }
+
     .main-image {
         width: 100%;
         height: 100%;
@@ -215,6 +253,10 @@
 
         &.visible {
             opacity: 1;
+        }
+
+        &.instant {
+            transition: none;
         }
     }
 </style>

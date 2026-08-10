@@ -6,15 +6,14 @@
     import MaterialIcon from "$lib/components/ui/MaterialIcon.svelte";
     import ContextMenu from "$lib/context-menu/ContextMenu.svelte";
     import { createImageMenu } from "$lib/context-menu/menus/images";
-    import { selectionManager } from "$lib/states/selection.svelte";
+    import { SelectionScope, selectionManager } from "$lib/states/selection.svelte";
     import { getImageLabel } from "$lib/utils/images";
 
-    let activeScope = $derived(selectionManager.activeScope);
-    let activeItem = $derived(activeScope?.active as ImageAsset | undefined);
+    let activeScope = $derived(selectionManager.activeScope as SelectionScope<ImageAsset> | undefined);
+    let activeItem = $derived(activeScope?.active);
     let isImage = $derived(!!activeItem?.image_paths);
 
     let selectionCount = $derived(activeScope?.size ?? 0);
-    let imageSrc = $derived(activeItem?.image_paths?.preview ? getFullImagePath(activeItem.image_paths.preview) : null);
 
     let showMenu = $state(false);
     let menuAnchor = $state<{ x: number; y: number } | HTMLElement | null>(null);
@@ -25,7 +24,10 @@
 
         return createImageMenu([activeItem], activeScope, {
             onDelete(deletedUIDs) {
-                activeScope?.remove(deletedUIDs);
+                activeScope.removeUids(deletedUIDs);
+            },
+            onUpdate(updated) {
+                activeScope.updateItem(updated, activeScope.source);
             }
         });
     });
@@ -43,14 +45,15 @@
 
 <div class="preview-container" role="presentation" oncontextmenu={handleContextMenu}>
     {#if isImage}
-        {#if activeItem && imageSrc}
+        {#if activeItem}
             <div class="image-wrapper">
                 <AssetImage
                     asset={activeItem}
                     resolution="preview"
                     objectFit="contain"
                     alt={activeItem.name}
-                    loading="lazy"
+                    priority
+                    placeholder="thumbnail"
                 />
             </div>
             <div class="info">
@@ -66,13 +69,13 @@
             </div>
         {:else if selectionCount > 0}
             <div class="placeholder">
-                <MaterialIcon iconName="photo_library" opticalSize={48} style="font-size: 4rem;" />
+                <MaterialIcon iconName="photo_library" opticalSize={48} size="3rem" />
                 <span class="text">{selectionCount} items selected</span>
             </div>
         {/if}
     {:else}
         <div class="placeholder">
-            <MaterialIcon iconName="image" opticalSize={48} style="font-size: 4rem;" />
+            <MaterialIcon iconName="image" opticalSize={48} size="3rem" />
             <span class="text">No image(s) selected</span>
         </div>
     {/if}
@@ -85,7 +88,7 @@
         display: flex;
         flex-direction: column;
         height: 100%;
-        padding: 0.5rem;
+        padding: var(--viz-spacing-std);
         color: var(--viz-text-primary);
         position: relative;
         box-sizing: border-box;
