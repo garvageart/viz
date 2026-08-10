@@ -1,5 +1,6 @@
 <script lang="ts" module>
-    import { type LayoutNode, TabGroup } from "$lib/layouts/model.svelte";
+    import type { TabGroup } from "$lib/layouts/model.svelte";
+    import { createCollectionView } from "$lib/layouts/tabs/collection";
     import { workspaceState } from "$lib/states/workspace.svelte";
 
     export function openCollection(collection: Collection, currentGroup: TabGroup | null) {
@@ -27,40 +28,23 @@
         }
 
         console.debug(`[openCollection] No match found. Creating new view.`);
-        const view = new VizView({
-            name: collection.name,
-            component: CollectionPage,
-            path: collectionPath
-        });
+        const view = createCollectionView(collection.uid, collection.name);
 
         // Add to current group if provided, otherwise add to active workspace group or root/first group found
         const targetGroup = currentGroup || workspace.activeGroup;
         if (targetGroup) {
             targetGroup.addTab(view);
-        } else {
-            // Fallback: find first TabGroup in the tree
-            const findFirstGroup = (node: LayoutNode): TabGroup | null => {
-                if (node instanceof TabGroup) {
-                    return node;
-                }
-                if (node.children) {
-                    for (const child of node.children) {
-                        const found = findFirstGroup(child);
-                        if (found) {
-                            return found;
-                        }
-                    }
-                }
-                return null;
-            };
-            const firstGroup = findFirstGroup(workspace.root);
-            if (firstGroup) {
-                firstGroup.addTab(view);
-            } else {
-                console.warn("No TabGroup found to add view to");
-                goto(collectionPath, { state: { from: page.url.pathname } });
-            }
+            return;
         }
+
+        const firstGroup = workspace.getAllTabGroups()[0];
+        if (firstGroup) {
+            firstGroup.addTab(view);
+            return;
+        }
+
+        console.warn("No TabGroup found to add view to");
+        goto(collectionPath, { state: { from: page.url.pathname } });
     }
 </script>
 
@@ -73,8 +57,7 @@
     import { VizMimeTypes } from "$lib/constants";
     import { DragData } from "$lib/drag-drop/data";
     import { toasts } from "$lib/toast-notifcations/toasts.svelte";
-    import VizView, { invalidateViz } from "$lib/views/views.svelte";
-    import CollectionPage from "../../../routes/(app)/collections/[uid]/+page.svelte";
+    import { invalidateViz } from "$lib/views/views.svelte";
     import AssetImage from "./AssetImage.svelte";
     import Badge from "./Badge.svelte";
     import Favourite from "./Favourite.svelte";

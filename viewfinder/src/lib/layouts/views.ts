@@ -1,4 +1,3 @@
-import { addCollectionImages } from "$lib/api";
 import type { CollectionDetailResponse } from "$lib/api/client.gen";
 import DevWelcomeText from "$lib/components/misc/DevWelcomeText.svelte";
 import FavouritesPanel from "$lib/components/panels/workspace/FavouritesPanel.svelte";
@@ -9,10 +8,9 @@ import ImagePreview from "$lib/components/panels/workspace/ImagePreview.svelte";
 import Print from "$lib/components/panels/workspace/Print.svelte";
 import DifferentContent from "$lib/components/panels/workspace/generic/DifferentContent.svelte";
 import SomeContent from "$lib/components/panels/workspace/generic/SomeContent.svelte";
-import { VizMimeTypes } from "$lib/constants";
-import { workspaceState } from "$lib/states/workspace.svelte";
-import { toasts } from "$lib/toast-notifcations/toasts.svelte";
-import VizView, { invalidateViz } from "$lib/views/views.svelte";
+import MetadataPanel from "$lib/components/ui/panels/MetadataPanel.svelte";
+import { collectionRoutePath, collectionTabDropHandlers, collectionTabMenuItems } from "$lib/layouts/tabs/collection";
+import VizView from "$lib/views/views.svelte";
 import Collections from "../../routes/(app)/collections/+page.svelte";
 import CollectionPage from "../../routes/(app)/collections/[uid]/+page.svelte";
 import PhotosPage from "../../routes/(app)/photos/+page.svelte";
@@ -49,94 +47,9 @@ export const views: VizView<any, any>[] = [
     new VizView<typeof CollectionPage, CollectionDetailResponse>({
         name: "Collection",
         component: CollectionPage,
-        path: "/collections/[uid]",
-        // I hate this now that I look at it again. This needs to be done elsewhere tbh
-        tabDropHandlers: new Map([
-            [
-                VizMimeTypes.IMAGE_UIDS,
-                {
-                    label: "Add to Collection",
-                    dropHandler: async (data: string[], v) => {
-                        if (!v.path) {
-                            return;
-                        }
-
-                        const existingUIDs = v.viewData?.data.images.items.map((i) => i.image.uid);
-                        const newUIDs = data.filter((uid) => !existingUIDs?.includes(uid));
-
-                        if (newUIDs.length === 0) {
-                            toasts.add({
-                                type: "success",
-                                message: `No new images to add to **${v.name}**`,
-                                actions: [
-                                    {
-                                        label: "Open Collection",
-                                        onClick: () => {
-                                            const workspace = workspaceState.workspace;
-                                            if (!workspace) {
-                                                return;
-                                            }
-
-                                            const group = workspace.findGroupWithView(v.id);
-                                            if (group) {
-                                                group.setActive(v.id);
-                                                workspace.setActiveGroup(group.id);
-                                            }
-                                        }
-                                    }
-                                ]
-                            });
-                            return;
-                        }
-
-                        const skippedUidLength = data.length - newUIDs.length;
-
-                        const match = v.path.match(/\/collections\/([^\/?]+)/);
-                        if (match && match[1] && match[1] !== "[uid]") {
-                            const collectionUid = match[1];
-                            const res = await addCollectionImages(collectionUid, { uids: newUIDs });
-
-                            if (res.status === 200 && res.data.added) {
-                                let skippedMessage = skippedUidLength ? `Skipped ${skippedUidLength} images.` : "";
-                                let toastMessage = `Added ${newUIDs.length} image(s) to **${v.name}**`;
-
-                                if (skippedMessage) {
-                                    toastMessage += `. ${skippedMessage}`;
-                                }
-
-                                toasts.add({
-                                    type: "success",
-                                    message: toastMessage,
-                                    actions: [
-                                        {
-                                            label: "Open Collection",
-                                            onClick: () => {
-                                                const workspace = workspaceState.workspace;
-                                                if (!workspace) {
-                                                    return;
-                                                }
-
-                                                const group = workspace.findGroupWithView(v.id);
-                                                if (group) {
-                                                    group.setActive(v.id);
-                                                    workspace.setActiveGroup(group.id);
-                                                }
-                                            }
-                                        }
-                                    ]
-                                });
-                                await invalidateViz({ delay: 200 });
-                            } else {
-                                toasts.add({
-                                    type: "error",
-                                    message: `Failed to add images: ${res.data?.error || "Unknown error"}`
-                                });
-                            }
-                        }
-                    }
-                }
-            ]
-        ])
+        path: collectionRoutePath,
+        menuItems: collectionTabMenuItems,
+        tabDropHandlers: collectionTabDropHandlers
     }),
     new VizView({
         name: "Filter",
@@ -149,6 +62,10 @@ export const views: VizView<any, any>[] = [
     new VizView({
         name: "Preview",
         component: ImagePreview
+    }),
+    new VizView({
+        name: "Metadata",
+        component: MetadataPanel
     }),
     new VizView({
         name: "Histogram",

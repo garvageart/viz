@@ -73,7 +73,6 @@ class VizView<
         | undefined
     >(undefined);
     path = $state<string | undefined>(undefined);
-    openPathFromTab? = $state<boolean>(false);
     menuItems?: MenuItem[];
     tabDropHandlers = new Map<string, TabActions<Data, C>>();
 
@@ -82,7 +81,6 @@ class VizView<
         component?: C;
         opticalCenterFix?: number;
         path?: string;
-        openPathFromTab?: boolean;
         id?: number;
         isActive?: boolean;
         locked?: boolean;
@@ -93,7 +91,6 @@ class VizView<
         this.component = opts.component;
         this.opticalCenterFix = opts.opticalCenterFix;
         this.path = opts.path;
-        this.openPathFromTab = opts.openPathFromTab;
         this.id = opts.id ?? idCount++;
         this.isActive = opts.isActive ?? false;
         this.locked = opts.locked ?? false;
@@ -184,7 +181,7 @@ class VizView<
     >(
         serialized: SerializedVizView,
         component: C | undefined,
-        opts?: { tabDropHandlers?: Map<string, TabActions<Data, C>> }
+        opts?: { tabDropHandlers?: Map<string, TabActions<Data, C>>; menuItems?: MenuItem[] }
     ): VizView<C, Data> {
         return new VizView({
             name: serialized.name,
@@ -194,7 +191,8 @@ class VizView<
             id: serialized.id,
             isActive: serialized.isActive,
             locked: serialized.locked ?? false,
-            tabDropHandlers: opts?.tabDropHandlers
+            tabDropHandlers: opts?.tabDropHandlers,
+            menuItems: opts?.menuItems
         });
     }
 }
