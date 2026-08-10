@@ -5,6 +5,17 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.29.2] - 2026-08-10
+
+* style(ui): polish crop tools, lightbox side panel, badges, and grid padding (6841f3b9)
+* test(e2e): use $lib alias import in helpers (c114ee30)
+* feat(metadata): support selection-driven mode alongside prop-based mode (cab7f4d6)
+* fix(menu): make mobile workspace views submenu disabled states reactive (1603df94)
+* fix(preview): use sharp thumbnail placeholder and eager loading to remove image flash (20081a8a)
+* fix(selection): resolve active-scope reactivity and add bulk uid removal (85676c18)
+* refactor(workspace): modularize collection tab handling and open-collection menu item (126a1190)
+* feat(workspace): add root-level columns and rows via edge drag and header menu (6292c1e4)
+
 ## [0.29.1] - 2026-08-09
 
 * test(e2e): configure fixed 1920x1080 viewport size in playwright config (c0d53744)
