@@ -1,7 +1,7 @@
 import { type APIRequestContext, type Page } from "@playwright/test";
 import fs from "fs";
 import path from "path";
-import { defaults, deleteImagesBulk } from "../src/lib/api/client.gen";
+import { defaults, deleteImagesBulk } from "$lib/api";
 
 /**
  * Reads the cached user admin status from e2e/.auth/user_info.json saved during auth setup.
