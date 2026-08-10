@@ -1139,7 +1139,7 @@
                             .toLocaleString(DateTime.DATETIME_SHORT)}"
                     >
                         <span
-                            >Created {DateTime.fromISO(data.created_at)
+                            >{DateTime.fromISO(data.created_at)
                                 .setZone("local")
                                 .toLocaleString(DateTime.DATE_SHORT)}</span
                         >
