@@ -1,28 +1,24 @@
 <script lang="ts">
     import { dev } from "$app/environment";
-    import hotkeys from "hotkeys-js";
-    import isEqual from "lodash-es/isEqual";
+    import hotkeys, { type HotkeysEvent } from "hotkeys-js";
     import { onMount, untrack } from "svelte";
     import type { MouseEventHandler, PointerEventHandler, WheelEventHandler } from "svelte/elements";
     import { slide } from "svelte/transition";
     import { hideAll } from "tippy.js";
-    import { type ImageAsset, type ImageUpdate, getFullImagePath, updateImage } from "$lib/api";
+    import { type ImageAsset, getFullImagePath } from "$lib/api";
     import { modalsManager } from "$lib/components/modals/manager/ModalManager.svelte";
     import ExportPanel, { modalOptions as exportModalOptions } from "$lib/components/ui/panels/ExportPanel.svelte";
     import MetadataPanel from "$lib/components/ui/panels/MetadataPanel.svelte";
-    import { ApiError } from "$lib/errors/errors";
-    import { setRating } from "$lib/images/exif";
     import { ImageLoader } from "$lib/images/loader/image-loader.svelte";
     import { calculateZoomTo, constrainTranslation } from "$lib/images/zoom/zoom-utils";
     import { isMobile } from "$lib/states/index.svelte";
     import { toasts } from "$lib/toast-notifcations/toasts.svelte";
     import { downloadOriginalImageFile } from "$lib/utils/http";
-    import { type CropCoords, formatBytes, getThumbhashURL } from "$lib/utils/images";
+    import { type CropCoords, getThumbhashURL } from "$lib/utils/images";
     import CropOverlay from "../image-tools/CropOverlay.svelte";
     import CropTools from "../image-tools/CropTools.svelte";
     import IconButton from "./IconButton.svelte";
     import Lightbox from "./Lightbox.svelte";
-    import MaterialIcon from "./MaterialIcon.svelte";
 
     interface Props {
         lightboxImage: ImageAsset | undefined;
@@ -40,6 +36,7 @@
             hideAll();
         }
     });
+
     let imageToLoad = $derived(
         lightboxImage ? getFullImagePath(lightboxImage.image_paths?.preview || lightboxImage.image_paths?.original) : ""
     );
@@ -91,12 +88,6 @@
         tx: 0,
         ty: 0
     };
-
-    // Swipe state
-    let swipeStartX = 0;
-    let swipeStartY = 0;
-    let isSwiping = false;
-    const SWIPE_THRESHOLD = 50;
 
     // Crop State
     let isCropping = $state(false);
@@ -216,101 +207,7 @@
         };
     });
 
-    let direction = $state<"left" | "right">("right");
     let showSidePanel = $state(!isMobile);
-    let editNameMode = $state(false);
-    let editingName = $state("");
-    let calendarOpen = $state(false);
-    let updatedData = $derived<ImageUpdate>({
-        name: lightboxImage?.name ?? "",
-        taken_at: lightboxImage?.taken_at,
-        image_metadata: lightboxImage?.image_metadata
-            ? {
-                  label: lightboxImage.image_metadata.label
-              }
-            : undefined
-    });
-
-    let lastSavedData = $state<ImageUpdate | null>(null);
-
-    // Reset lastSavedData when the active image changes (by tracking uid)
-    $effect(() => {
-        const currentUid = lightboxImage?.uid;
-        if (currentUid) {
-            untrack(() => {
-                const image = lightboxImage!;
-                lastSavedData = {
-                    name: image.name,
-                    taken_at: image.taken_at,
-                    image_metadata: image.image_metadata
-                        ? {
-                              label: image.image_metadata.label
-                          }
-                        : undefined
-                };
-            });
-        } else {
-            lastSavedData = null;
-        }
-    });
-
-    $effect(() => {
-        const currentData = updatedData;
-        const savedData = lastSavedData;
-        const currentUid = lightboxImage?.uid;
-
-        if (!currentUid) {
-            return;
-        }
-
-        if (!savedData) {
-            return;
-        }
-
-        if (isEqual(currentData, savedData)) {
-            return;
-        }
-
-        // Delay triggering updates if user is currently typing/editing the name or picking a date
-        if (editNameMode || calendarOpen) {
-            return;
-        }
-
-        untrack(() => {
-            updateImage(currentUid, currentData)
-                .then((updatedImage) => {
-                    if (updatedImage.status === 200) {
-                        toasts.add({
-                            type: "success",
-                            title: "Image Updated",
-                            message: `Image metadata updated successfully.`
-                        });
-
-                        lightboxImage = updatedImage.data;
-                        onImageUpdated?.(updatedImage.data);
-
-                        lastSavedData = {
-                            name: updatedImage.data.name,
-                            taken_at: updatedImage.data.taken_at,
-                            image_metadata: updatedImage.data.image_metadata
-                                ? {
-                                      label: updatedImage.data.image_metadata.label
-                                  }
-                                : undefined
-                        };
-                    } else {
-                        throw new ApiError(updatedImage.data.error || "Unknown error", updatedImage.status);
-                    }
-                })
-                .catch((err) => {
-                    toasts.add({
-                        type: "error",
-                        title: "Update Failed",
-                        message: `Failed to update image metadata: ${err.message || err}`
-                    });
-                });
-        });
-    });
 
     function zoomTo(newZoom: number, clientX: number, clientY: number) {
         if (!imageDimensions || !imageContainerEl || !zoomTargetEl) {
@@ -529,7 +426,6 @@
             return;
         }
 
-        direction = "left";
         prevLightboxImage?.();
     }
 
@@ -538,44 +434,50 @@
             return;
         }
 
-        direction = "right";
         nextLightboxImage?.();
     }
 
-    function handleSwipeStart(e: TouchEvent) {
-        if (zoomState.currentZoom > 1 || isCropping) {
-            return;
-        }
-        swipeStartX = e.touches[0].clientX;
-        swipeStartY = e.touches[0].clientY;
-        isSwiping = true;
-    }
+    // TODO: See if this needs to be reimplemeted, leave commented out for now
+    // -------
+    // Swipe state
+    // let swipeStartX = 0;
+    // let swipeStartY = 0;
+    // let isSwiping = false;
+    // const SWIPE_THRESHOLD = 50;
+    // function handleSwipeStart(e: TouchEvent) {
+    //     if (zoomState.currentZoom > 1 || isCropping) {
+    //         return;
+    //     }
+    //     swipeStartX = e.touches[0].clientX;
+    //     swipeStartY = e.touches[0].clientY;
+    //     isSwiping = true;
+    // }
 
-    function handleSwipeMove(e: TouchEvent) {
-        if (!isSwiping) {
-            return;
-        }
-        const dx = e.touches[0].clientX - swipeStartX;
-        const dy = e.touches[0].clientY - swipeStartY;
-        if (Math.abs(dy) > Math.abs(dx)) {
-            isSwiping = false;
-        }
-    }
+    // function handleSwipeMove(e: TouchEvent) {
+    //     if (!isSwiping) {
+    //         return;
+    //     }
+    //     const dx = e.touches[0].clientX - swipeStartX;
+    //     const dy = e.touches[0].clientY - swipeStartY;
+    //     if (Math.abs(dy) > Math.abs(dx)) {
+    //         isSwiping = false;
+    //     }
+    // }
 
-    function handleSwipeEnd(e: TouchEvent) {
-        if (!isSwiping) {
-            return;
-        }
-        isSwiping = false;
-        const dx = e.changedTouches[0].clientX - swipeStartX;
-        if (Math.abs(dx) >= SWIPE_THRESHOLD) {
-            if (dx > 0) {
-                goToPrev();
-            } else {
-                goToNext();
-            }
-        }
-    }
+    // function handleSwipeEnd(e: TouchEvent) {
+    //     if (!isSwiping) {
+    //         return;
+    //     }
+    //     isSwiping = false;
+    //     const dx = e.changedTouches[0].clientX - swipeStartX;
+    //     if (Math.abs(dx) >= SWIPE_THRESHOLD) {
+    //         if (dx > 0) {
+    //             goToPrev();
+    //         } else {
+    //             goToNext();
+    //         }
+    //     }
+    // }
 
     function restoreCrop() {
         if (!imageEl || !lightboxImage) {
@@ -803,47 +705,14 @@
         }
     };
 
-    let starRating = $derived<number | null>(lightboxImage?.image_metadata?.rating ?? null);
-    let updatingRating = $state(false);
-
-    async function setImageRating(newRating: number | null) {
-        if (!lightboxImage || updatingRating) {
-            return;
-        }
-
-        updatingRating = true;
-        const prev = starRating;
-        try {
-            const newSuccessfulRating = await setRating(lightboxImage, prev, newRating);
-
-            if (lightboxImage && lightboxImage.image_metadata) {
-                lightboxImage.image_metadata = {
-                    ...lightboxImage.image_metadata,
-                    rating: newSuccessfulRating
-                };
-
-                onImageUpdated?.(lightboxImage);
-            }
-        } catch (err) {
-            const ratingErr = err as Error;
-            toasts.add({
-                type: "error",
-                title: "Failed to update rating",
-                message: ratingErr.message
-            });
-        } finally {
-            updatingRating = false;
-        }
-    }
-
     onMount(() => {
-        const handleLeftRight = (e: KeyboardEvent, handler: any) => {
-            if (!show || isCropping) {
-                return;
+        function isHotkeyBlocked() {
+            if (!show) {
+                return true;
             }
 
             if (document.querySelector(".calendar-popover")) {
-                return;
+                return true;
             }
 
             const activeEl = document.activeElement;
@@ -854,7 +723,11 @@
                     activeEl.tagName === "SELECT" ||
                     activeEl.getAttribute("contenteditable") === "true");
 
-            if (isInputFocused || editNameMode) {
+            return isInputFocused;
+        }
+
+        const handleLeftRight = (e: KeyboardEvent, handler: HotkeysEvent) => {
+            if (isHotkeyBlocked() || isCropping) {
                 return;
             }
 
@@ -867,23 +740,7 @@
         };
 
         const handleEnter = (e: KeyboardEvent) => {
-            if (!show || !isCropping) {
-                return;
-            }
-
-            if (document.querySelector(".calendar-popover")) {
-                return;
-            }
-
-            const activeEl = document.activeElement;
-            const isInputFocused =
-                activeEl &&
-                (activeEl.tagName === "INPUT" ||
-                    activeEl.tagName === "TEXTAREA" ||
-                    activeEl.tagName === "SELECT" ||
-                    activeEl.getAttribute("contenteditable") === "true");
-
-            if (isInputFocused || editNameMode) {
+            if (isHotkeyBlocked() || !isCropping) {
                 return;
             }
 
@@ -892,23 +749,7 @@
         };
 
         const handleEsc = (e: KeyboardEvent) => {
-            if (!show) {
-                return;
-            }
-
-            if (document.querySelector(".calendar-popover")) {
-                return;
-            }
-
-            const activeEl = document.activeElement;
-            const isInputFocused =
-                activeEl &&
-                (activeEl.tagName === "INPUT" ||
-                    activeEl.tagName === "TEXTAREA" ||
-                    activeEl.tagName === "SELECT" ||
-                    activeEl.getAttribute("contenteditable") === "true");
-
-            if (isInputFocused || editNameMode) {
+            if (isHotkeyBlocked()) {
                 return;
             }
 
@@ -933,29 +774,6 @@
             hotkeys.unbind("esc", handleEsc);
         };
     });
-
-    function formatFileSize() {
-        const size = lightboxImage?.image_metadata?.file_size;
-        return formatBytes(size) ?? "—";
-    }
-
-    // TODO(user-setting): Make timezone display configurable (IANA name vs abbreviation vs offset).
-    // `timeZoneName: "short"` varies by locale — some return the abbreviation (SAST),
-    // others return the offset (GMT+2). Let the user pick their preference.
-    function getTimezoneAbbreviation(): string {
-        const parts = new Intl.DateTimeFormat("en", { timeZoneName: "short" }).formatToParts();
-        return parts.find((p) => p.type === "timeZoneName")?.value ?? "";
-    }
-
-    // TODO(backend): Add taken_at / file_created_at to ImageUpdate so the
-    // calendar date+time picker can persist changes to the server.
-    function handleDateChange(newDate: Date) {
-        if (!lightboxImage) {
-            return;
-        }
-
-        lightboxImage.taken_at = newDate.toISOString();
-    }
 
     const lightboxMaterialIconColour = "color: var(--viz-10-dark); fill: var(--viz-10-dark);";
 </script>
@@ -1044,7 +862,10 @@
     backgroundOpacity={0.95}
     closeOnEsc={!isCropping}
     onclick={() => {
-        if (wasDragging) return;
+        if (wasDragging) {
+            return;
+        }
+
         if (!isCropping) {
             if (zoomState.currentZoom === 1) {
                 lightboxImage = undefined;
@@ -1068,19 +889,22 @@
                     e.stopPropagation();
                     return;
                 }
+
                 // Only handle clicks on the container background (not on buttons or image)
-                if (e.currentTarget === imageContainerEl) {
-                    if (isCropping) {
-                        // Close floating crop menu if open, otherwise exit crop mode
-                        if (cropMenuPosition) {
-                            cropMenuPosition = undefined;
-                        } else {
-                            toggleCropMode();
-                        }
-                    } else if (zoomState.currentZoom === 1) {
-                        // Close lightbox when not cropping and at default zoom
-                        lightboxImage = undefined;
+                if (e.currentTarget !== imageContainerEl) {
+                    return;
+                }
+
+                if (isCropping) {
+                    // Close floating crop menu if open, otherwise exit crop mode
+                    if (cropMenuPosition) {
+                        cropMenuPosition = undefined;
+                    } else {
+                        toggleCropMode();
                     }
+                } else if (zoomState.currentZoom === 1) {
+                    // Close lightbox when not cropping and at default zoom
+                    lightboxImage = undefined;
                 }
             }}
             role="presentation"
