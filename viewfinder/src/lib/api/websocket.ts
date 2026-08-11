@@ -47,7 +47,7 @@ export class WSClient {
 
         // If the base URL is relative (e.g., "/api"), resolve it to an absolute URL
         // using the current window location. WebSockets require absolute URLs.
-        if (base.startsWith("/") && typeof window !== "undefined") {
+        if (base.startsWith("/")) {
             base = window.location.origin + base;
         }
 
@@ -63,8 +63,20 @@ export class WSClient {
             maxReconnectAttempts: options.maxReconnectAttempts ?? 5
         };
 
+        // beforeunload/unload fire only when the page is really going away (tab
+        // close, reload, navigation) — never on a tab switch. Close the socket
+        // with a proper close frame so the server and any proxy in between see
+        // an orderly shutdown instead of a dropped TCP connection. unload is
+        // also what Playwright's page.close() fires, covering the e2e harness.
+        window.addEventListener("beforeunload", this.handleBeforeUnload);
+        window.addEventListener("unload", this.handleBeforeUnload);
+
         this.connect();
     }
+
+    private handleBeforeUnload = () => {
+        this.close();
+    };
 
     private handleText = (text: string) => {
         // Server may batch messages into a single frame separated by newlines.
@@ -194,8 +206,11 @@ export class WSClient {
             this.reconnectTimeout = null;
         }
 
+        window.removeEventListener("beforeunload", this.handleBeforeUnload);
+        window.removeEventListener("unload", this.handleBeforeUnload);
+
         if (this.ws) {
-            this.ws.close();
+            this.ws.close(1001, "going away");
             this.ws = null;
         }
     }
