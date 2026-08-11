@@ -438,7 +438,6 @@
         background: transparent !important;
         border: none !important;
         border-top: 1px solid var(--viz-border-subtle) !important;
-        margin: var(--viz-spacing-xxs) 0 !important;
         list-style: none !important;
         display: block !important;
         padding: 0 !important;

@@ -67,16 +67,17 @@
             <span class="mini-filename">{asset.name || asset.image_metadata?.file_name}</span>
             <div class="mini-meta">
                 <div class="mini-left">
-                    {#if asset.favourited}
-                        <div class="mini-favorite">
-                            <Favourite />
-                        </div>
-                    {/if}
                     <div class="mini-rating">
                         {#each Array(5) as _, i (i)}
                             <div class="dot" class:filled={i < (asset.image_metadata?.rating ?? 0)}></div>
                         {/each}
                     </div>
+
+                    {#if asset.favourited}
+                        <div class="mini-favorite">
+                            <Favourite />
+                        </div>
+                    {/if}
                 </div>
                 {#if asset.image_metadata?.label}
                     <div class="mini-label-indicator" style="background-color: {getImageLabel(asset)}"></div>
@@ -318,7 +319,7 @@
         .mini-left {
             display: flex;
             align-items: center;
-            gap: var(--viz-spacing-xs);
+            gap: var(--viz-spacing-sm);
         }
 
         .mini-favorite {
