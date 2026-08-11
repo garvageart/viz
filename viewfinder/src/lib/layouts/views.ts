@@ -6,9 +6,9 @@ import Filmstrip from "$lib/components/panels/workspace/Filmstrip.svelte";
 import FilterPanel from "$lib/components/panels/workspace/FilterPanel.svelte";
 import HistogramPanel from "$lib/components/panels/workspace/HistogramPanel.svelte";
 import ImagePreview from "$lib/components/panels/workspace/ImagePreview.svelte";
+import MetadataWorkspacePanel from "$lib/components/panels/workspace/MetadataWorkspacePanel.svelte";
 import Print from "$lib/components/panels/workspace/Print.svelte";
 import DifferentContent from "$lib/components/panels/workspace/generic/DifferentContent.svelte";
-import MetadataPanel from "$lib/components/ui/panels/MetadataPanel.svelte";
 import { collectionRoutePath, collectionTabDropHandlers, collectionTabMenuItems } from "$lib/layouts/tabs/collection";
 import VizView from "$lib/views/views.svelte";
 import Collections from "../../routes/(app)/collections/+page.svelte";
@@ -65,7 +65,7 @@ export const views: VizView<any, any>[] = [
     }),
     new VizView({
         name: "Metadata",
-        component: MetadataPanel
+        component: MetadataWorkspacePanel
     }),
     new VizView({
         name: "Histogram",
