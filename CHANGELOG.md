@@ -5,6 +5,12 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.30.4] - 2026-08-11
+
+* fix(viewfinder): update selection scope sync in grid and card hover styling (3480f95a)
+* refactor(viewfinder): clean up filmstrip item selection, keydown, and lightbox navigation (1b9d2c14)
+* perf(viewfinder): optimize histogram calculation and worker caching (4bfb251a)
+
 ## [0.30.3] - 2026-08-11
 
 * fix(viewfinder): refresh AssetGrid layout when data changes (daf8b8ad)
