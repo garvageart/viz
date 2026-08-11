@@ -1,6 +1,6 @@
 <script lang="ts">
     import { goto } from "$app/navigation";
-    import NavSidebar, { type NavItem } from "$lib/components/ui/Sidebar/NavSidebar.svelte";
+    import NavSidebar, { type NavItem } from "$lib/components/ui/sidebar/NavSidebar.svelte";
     import { user } from "$lib/states/index.svelte";
     import { toasts } from "$lib/toast-notifcations/toasts.svelte";
 

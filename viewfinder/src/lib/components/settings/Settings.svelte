@@ -15,7 +15,7 @@ Stuff to finish:
 <script lang="ts">
     import { SvelteSet } from "svelte/reactivity";
     import type { Setting } from "$lib/api";
-    import NavSidebar, { type NavItem } from "$lib/components/ui/Sidebar/NavSidebar.svelte";
+    import NavSidebar, { type NavItem } from "$lib/components/ui/sidebar/NavSidebar.svelte";
     import { formatSectionTitle, slugifyGroup } from "$lib/settings/utils";
     import { type MaterialSymbol } from "$lib/types/MaterialSymbol";
     import AutoSettingsGroup from "../settings/AutoSettingsGroup.svelte";
