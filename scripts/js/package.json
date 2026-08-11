@@ -21,11 +21,11 @@
     "author": "Les <hello@lesis.online>",
     "devDependencies": {
         "@types/js-yaml": "^4.0.9",
-        "@types/node": "^26.1.2",
-        "@types/semver": "^7.7.1",
-        "js-yaml": "^5.2.2",
+        "@types/node": "^26.2.0",
+        "@types/semver": "^7.8.0",
+        "js-yaml": "^5.2.3",
         "oazapfts": "^7.5.0",
-        "tsx": "^4.23.1"
+        "tsx": "^4.23.12"
     },
     "dependencies": {
         "dotenv": "^17.4.2",
