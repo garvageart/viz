@@ -4,6 +4,14 @@ import { type CollectionDetailResponse, type ImageAsset, downloadImagesZipBlob, 
 import { LabelColours, flashModes } from "$lib/images/constants";
 
 /**
+ * Type guard: true only for real image assets (which carry image_paths), not
+ * for other selectable entities such as collections.
+ */
+export function isAssetImage(value: unknown): value is ImageAsset {
+    return typeof value === "object" && value !== null && "image_paths" in value;
+}
+
+/**
  * Converts a date in EXIF format to a format that
  * can be parsed by the native ````Date```` object.
  *
@@ -126,7 +134,7 @@ export function getThumbhashURL(asset: ImageAsset): string | undefined {
     }
 }
 
-export const enum ByteUnit {
+export enum ByteUnit {
     B = "B",
     KiB = "KiB",
     MiB = "MiB",
@@ -136,7 +144,7 @@ export const enum ByteUnit {
     EiB = "EiB"
 }
 
-const byteUnits = [ByteUnit.B, ByteUnit.KiB, ByteUnit.MiB, ByteUnit.GiB, ByteUnit.TiB, ByteUnit.PiB, ByteUnit.EiB];
+const byteUnits = Object.values(ByteUnit);
 
 /**
  * Convert bytes to best human readable unit and number of that unit.
@@ -205,8 +213,15 @@ export function formatSeconds(totalSeconds?: number): string | null {
         .trim();
 }
 
-export function getImageMegapixels(image: ImageAsset) {
-    return Math.floor((image.width * image.height) / 1_000_000);
+export function getImageMegapixels(image: ImageAsset, precision = 0) {
+    const megapixels = (image.width * image.height) / 1_000_000;
+    precision = Math.max(0, precision);
+    return precision > 0 ? megapixels.toFixed(precision) : Math.floor(megapixels);
+}
+
+/** Format a raw pixel count as megapixels with the given decimal precision (e.g. 12.4) */
+export function formatMegapixels(pixelCount: number, precision = 1) {
+    return (pixelCount / 1_000_000).toFixed(precision);
 }
 
 export type ExportFormats = "webp" | "png" | "jpg" | "jpeg" | "avif" | "heif" | "tiff";
