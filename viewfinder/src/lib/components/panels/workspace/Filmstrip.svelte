@@ -10,6 +10,7 @@
     import { DragData } from "$lib/drag-drop/data";
     import { SelectionScope, SelectionScopeNames, selectionManager } from "$lib/states/selection.svelte";
     import { workspaceState } from "$lib/states/workspace.svelte";
+    import { isAssetImage } from "$lib/utils/images";
 
     let filmstripScope = $derived(selectionManager.activeScope as SelectionScope<ImageAsset> | undefined);
 
@@ -20,7 +21,7 @@
     // selected/active state decoupled from the grid — but the image data
     // always comes from the active scope (whose source PhotoAssetGrid or
     // the collections-list page already populated).
-    let filmstripImages = $derived((selectionManager.activeScope?.source as ImageAsset[]) ?? []);
+    let filmstripImages = $derived((filmstripScope?.source ?? []).filter(isAssetImage));
 
     let activeItem = $derived(filmstripScope?.active);
     let activeItemIndex = $derived(filmstripImages.findIndex((img) => img.uid === activeItem?.uid));
@@ -86,72 +87,97 @@
     let ctxAnchor: { x: number; y: number } | HTMLElement | null = $state(null);
 
     function handleImageClick(image: ImageAsset, e: MouseEvent | KeyboardEvent) {
-        const scope = filmstripScope;
-        if (!scope) {
+        if (!filmstripScope) {
             return;
         }
 
         // Make the scope the filmstrip operates on the active scope so
         // selection-driven panels (metadata, histogram, preview) pick up the
         // selection — mirrors how grids call setActive(scopeId) on click.
-        selectionManager.setActive(scope.id);
+        selectionManager.setActive(filmstripScope.id);
 
         if (e.shiftKey) {
-            const ids = filmstripImages.map((i) => i.uid);
-            const endIndex = ids.indexOf(image.uid);
-            const anchor = selectionAnchor || scope.active;
-            const startIndex = anchor ? ids.indexOf(anchor.uid) : -1;
+            handleRangeSelect(image);
+            return;
+        }
 
-            if (startIndex !== -1 && endIndex !== -1) {
-                scope.selected.clear();
+        if (e.ctrlKey || e.metaKey) {
+            handleToggleSelect(image);
+            return;
+        }
 
-                const start = Math.min(startIndex, endIndex);
-                const end = Math.max(startIndex, endIndex);
+        filmstripScope.select(image);
+        selectionAnchor = image;
+    }
 
-                for (let i = start; i <= end; i++) {
-                    scope.add(filmstripImages[i]);
-                }
-                scope.active = image;
-            } else {
-                scope.add(image);
-                scope.active = image;
-                selectionAnchor = image;
-            }
-        } else if (e.ctrlKey || e.metaKey) {
-            scope.toggle(image);
-            if (scope.has(image)) {
-                selectionAnchor = image;
-            } else if (selectionAnchor?.uid === image.uid) {
-                selectionAnchor = scope.active;
-            }
-        } else {
-            scope.select(image);
-            selectionAnchor = image;
+    function handleRangeSelect(targetImage: ImageAsset) {
+        if (!filmstripScope) {
+            return;
+        }
+
+        const anchor = selectionAnchor || filmstripScope.active;
+        const startIndex = anchor ? filmstripImages.findIndex((i) => i.uid === anchor.uid) : -1;
+        const endIndex = filmstripImages.findIndex((i) => i.uid === targetImage.uid);
+
+        if (startIndex === -1 || endIndex === -1) {
+            filmstripScope.add(targetImage);
+            filmstripScope.active = targetImage;
+            selectionAnchor = targetImage;
+            return;
+        }
+
+        filmstripScope.selected.clear();
+        const start = Math.min(startIndex, endIndex);
+        const end = Math.max(startIndex, endIndex);
+
+        for (let i = start; i <= end; i++) {
+            filmstripScope.add(filmstripImages[i]);
+        }
+        filmstripScope.active = targetImage;
+    }
+
+    function handleToggleSelect(targetImage: ImageAsset) {
+        if (!filmstripScope) {
+            return;
+        }
+
+        filmstripScope.toggle(targetImage);
+        if (filmstripScope.has(targetImage)) {
+            selectionAnchor = targetImage;
+        } else if (selectionAnchor?.uid === targetImage.uid) {
+            selectionAnchor = filmstripScope.active;
         }
     }
 
     function handleItemKeydown(e: KeyboardEvent, image: ImageAsset) {
-        e.preventDefault();
+        if (!filmstripScope) {
+            return;
+        }
+
         if (e.key === "Enter" || e.key === " ") {
+            e.preventDefault();
             handleImageClick(image, e);
-        } else if (e.key === "ArrowLeft" || e.key === "ArrowUp") {
-            e.stopPropagation();
-            if (filmstripScope) {
-                const idx = filmstripImages.findIndex((img) => img.uid === image.uid);
-                if (idx > 0) {
-                    const targetImage = filmstripImages[idx - 1];
-                    handleImageClick(targetImage, e);
-                }
-            }
-        } else if (e.key === "ArrowRight" || e.key === "ArrowDown") {
-            e.stopPropagation();
-            if (filmstripScope) {
-                const idx = filmstripImages.findIndex((img) => img.uid === image.uid);
-                if (idx !== -1 && idx < filmstripImages.length - 1) {
-                    const targetImage = filmstripImages[idx + 1];
-                    handleImageClick(targetImage, e);
-                }
-            }
+            return;
+        }
+
+        const isPrevious = e.key === "ArrowLeft" || e.key === "ArrowUp";
+        const isNext = e.key === "ArrowRight" || e.key === "ArrowDown";
+
+        if (!isPrevious && !isNext) {
+            return;
+        }
+
+        e.preventDefault();
+        e.stopPropagation();
+
+        const currentIdx = filmstripImages.findIndex((img) => img.uid === image.uid);
+        if (currentIdx === -1) {
+            return;
+        }
+
+        const targetIdx = isPrevious ? currentIdx - 1 : currentIdx + 1;
+        if (targetIdx >= 0 && targetIdx < filmstripImages.length) {
+            handleImageClick(filmstripImages[targetIdx], e);
         }
     }
 
@@ -212,18 +238,22 @@
     });
 
     $effect(() => {
-        if (activeItemIndex !== -1 && itemRefs[activeItemIndex]) {
-            const el = itemRefs[activeItemIndex];
-            if (el) {
-                el.scrollIntoView({
-                    behavior: "instant",
-                    block: "nearest"
-                });
+        if (activeItemIndex === -1) {
+            return;
+        }
 
-                if (document.activeElement && containerRef?.contains(document.activeElement)) {
-                    el.focus();
-                }
-            }
+        const el = itemRefs[activeItemIndex];
+        if (!el) {
+            return;
+        }
+
+        el.scrollIntoView({
+            behavior: "instant",
+            block: "nearest"
+        });
+
+        if (document.activeElement && containerRef?.contains(document.activeElement)) {
+            el.focus();
         }
     });
 
@@ -232,7 +262,7 @@
         lightboxImage = asset;
     }
 
-    function nextLightboxImage() {
+    function navigateLightbox(delta: -1 | 1) {
         if (!lightboxImage || filmstripImages.length === 0) {
             return;
         }
@@ -242,22 +272,16 @@
             return;
         }
 
-        const nextIdx = (idx + 1) % filmstripImages.length;
+        const nextIdx = (idx + delta + filmstripImages.length) % filmstripImages.length;
         lightboxImage = filmstripImages[nextIdx];
     }
 
     function prevLightboxImage() {
-        if (!lightboxImage || filmstripImages.length === 0) {
-            return;
-        }
+        navigateLightbox(-1);
+    }
 
-        const idx = filmstripImages.findIndex((i) => i.uid === lightboxImage!.uid);
-        if (idx === -1) {
-            return;
-        }
-
-        const nextIdx = (idx - 1 + filmstripImages.length) % filmstripImages.length;
-        lightboxImage = filmstripImages[nextIdx];
+    function nextLightboxImage() {
+        navigateLightbox(1);
     }
 </script>
 

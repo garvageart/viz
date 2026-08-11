@@ -52,7 +52,6 @@
     import { SUPPORTED_IMAGE_TYPES, SUPPORTED_RAW_FILES, type SupportedImageTypes } from "$lib/types/images";
     import UploadManager, { type ImageUploadSuccess } from "$lib/upload/manager.svelte";
     import { getImageLabel } from "$lib/utils/images.js";
-    import { invalidateViz } from "$lib/views/views.svelte";
 
     // Display options as MenuItem[] for Dropdown
     let displayMenuItems: MenuItem[] = $derived(
@@ -230,7 +229,7 @@
     // When hitting the end of loaded images, paginate and auto-advance
     let pendingNextUid = $state<string | null>(null);
 
-    function nextLightboxImage() {
+    function navigateLightbox(delta: -1 | 1) {
         if (!lightboxImage || sortedFilteredImages.length === 0) {
             return;
         }
@@ -240,9 +239,13 @@
             return;
         }
 
-        const nextIdx = idx + 1;
+        const nextIdx = idx + delta;
+        if (nextIdx < 0) {
+            return;
+        }
+
         if (nextIdx >= sortedFilteredImages.length) {
-            if (galleryState.hasMore) {
+            if (galleryState.hasMore && delta === 1) {
                 pendingNextUid = lightboxImage.uid;
                 paginate();
             }
@@ -253,21 +256,11 @@
     }
 
     function prevLightboxImage() {
-        if (!lightboxImage || sortedFilteredImages.length === 0) {
-            return;
-        }
+        navigateLightbox(-1);
+    }
 
-        const idx = sortedFilteredImages.findIndex((i) => i.uid === lightboxImage!.uid);
-        if (idx === -1) {
-            return;
-        }
-
-        const prevIdx = idx - 1;
-        if (prevIdx < 0) {
-            return;
-        }
-
-        lightboxImage = sortedFilteredImages[prevIdx];
+    function nextLightboxImage() {
+        navigateLightbox(1);
     }
 
     // Auto-advance after pagination loads more images
@@ -314,9 +307,6 @@
                         }
                     ]
                 });
-
-                // Trigger refresh
-                await invalidateViz({ delay: 200 });
             } else {
                 toasts.add({
                     type: "error",

@@ -259,7 +259,7 @@
         lightboxImage = asset;
     }
 
-    function nextLightboxImage() {
+    function navigateLightbox(delta: -1 | 1) {
         if (!lightboxImage || allImagesFlat.length === 0) {
             return;
         }
@@ -269,22 +269,16 @@
             return;
         }
 
-        const nextIdx = (idx + 1) % allImagesFlat.length;
+        const nextIdx = (idx + delta + allImagesFlat.length) % allImagesFlat.length;
         lightboxImage = allImagesFlat[nextIdx];
     }
 
     function prevLightboxImage() {
-        if (!lightboxImage || allImagesFlat.length === 0) {
-            return;
-        }
+        navigateLightbox(-1);
+    }
 
-        const idx = allImagesFlat.findIndex((i) => i.uid === lightboxImage!.uid);
-        if (idx === -1) {
-            return;
-        }
-
-        const nextIdx = (idx - 1 + allImagesFlat.length) % allImagesFlat.length;
-        lightboxImage = allImagesFlat[nextIdx];
+    function nextLightboxImage() {
+        navigateLightbox(1);
     }
 
     async function handleCollectionSelect(collection: Collection, newImageUids: string[]) {
