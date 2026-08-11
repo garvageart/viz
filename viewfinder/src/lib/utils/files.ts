@@ -60,15 +60,71 @@ export async function downloadToFilesystem(filename: string, data: Blob, revokeD
  * Detect the first directory name from a DataTransferItemList.
  * Must be called synchronously during the drag/drop event.
  */
-export function detectFolderName(items: DataTransferItemList | null | undefined): string {
-    if (!items) return "";
+export function detectFolderName(items: DataTransferItemList | null | undefined) {
+    if (!items) {
+        return null;
+    }
+
     for (const item of Array.from(items)) {
-        if (item.kind === "file") {
-            const entry = item.webkitGetAsEntry?.();
-            if (entry && entry.isDirectory) {
-                return entry.name;
-            }
+        if (item.kind !== "file") {
+            continue;
+        }
+
+        const entry = item.webkitGetAsEntry?.();
+        if (entry && entry.isDirectory) {
+            return entry.name;
         }
     }
-    return "";
+
+    return null;
+}
+
+/**
+ * Extract all files from a DataTransfer, including files inside dropped folders.
+ * Returns the flat file list plus the name of the first detected folder.
+ * Must be called during the drag/drop event while the DataTransfer is still valid.
+ */
+export async function extractFilesFromDataTransfer(
+    dt: DataTransfer
+): Promise<{ files: File[]; folderName: string | null }> {
+    const folderName = detectFolderName(dt.items);
+    const allFiles: File[] = [];
+
+    // Use DataTransferItemList for folder support
+    if (dt.items) {
+        const items = Array.from(dt.items);
+
+        // Note: Extract all entries synchronously FIRST before any async operations
+        // DataTransferItem entries become invalid after the first async operation
+        const entries: FileSystemEntry[] = [];
+        for (const item of items) {
+            if (item.kind !== "file") {
+                continue;
+            }
+
+            const entry = item.webkitGetAsEntry?.();
+            if (entry) {
+                entries.push(entry);
+                continue;
+            }
+
+            // Fallback for browsers that don't support webkitGetAsEntry
+            const file = item.getAsFile();
+            if (file) {
+                allFiles.push(file);
+            }
+        }
+
+        // Now process all entries asynchronously
+        for (const entry of entries) {
+            const files = await traverseFileTree(entry);
+            allFiles.push(...files);
+        }
+    } else {
+        // Fallback to files list (doesn't support folders)
+        const files = Array.from(dt.files);
+        allFiles.push(...files);
+    }
+
+    return { files: allFiles, folderName };
 }

@@ -14,7 +14,7 @@
     } from "$lib/types/images";
     import { UploadState } from "$lib/upload/asset.svelte";
     import UploadManager, { type ImageUploadSuccess, waitForUploadCompletion } from "$lib/upload/manager.svelte";
-    import { detectFolderName, traverseFileTree } from "$lib/utils/files";
+    import { detectFolderName, extractFilesFromDataTransfer, traverseFileTree } from "$lib/utils/files";
     import { invalidateViz } from "$lib/views/views.svelte";
     import CollectionModal from "../modals/CollectionModal.svelte";
     import CollectionSelectionModal from "../modals/CollectionSelectionModal.svelte";
@@ -97,6 +97,22 @@
      * Handle dropped files and folders.
      * Supports single file, multiple files, and entire folders.
      */
+    function isSupportedFile(file: File): boolean {
+        const supportedExtensions: readonly string[] = ALL_SUPPORTED_IMAGES;
+        const mimeExt = file.type.split("/")[1] ?? "";
+        const nameExt = file.name.split(".").pop()?.toLowerCase() ?? "";
+
+        if (supportedExtensions.includes(mimeExt)) {
+            return true;
+        }
+
+        return supportedExtensions.includes(nameExt);
+    }
+
+    function filterSupportedFiles(files: File[]): File[] {
+        return files.filter(isSupportedFile);
+    }
+
     async function handleDrop(e: DragEvent) {
         e.preventDefault();
         isDragging = false;
@@ -114,41 +130,9 @@
                 return;
             }
 
-            const allFiles: File[] = [];
-            const detectedFolderName = detectFolderName(e.dataTransfer.items);
-
-            // Use DataTransferItemList for folder support
-            if (e.dataTransfer.items) {
-                const items = Array.from(e.dataTransfer.items);
-
-                // Note: Extract all entries synchronously FIRST before any async operations
-                // DataTransferItem entries become invalid after the first async operation
-                const entries: FileSystemEntry[] = [];
-                for (const item of items) {
-                    if (item.kind === "file") {
-                        const entry = item.webkitGetAsEntry?.();
-                        if (entry) {
-                            entries.push(entry);
-                        } else {
-                            // Fallback for browsers that don't support webkitGetAsEntry
-                            const file = item.getAsFile();
-                            if (file) {
-                                allFiles.push(file);
-                            }
-                        }
-                    }
-                }
-
-                // Now process all entries asynchronously
-                for (const entry of entries) {
-                    const files = await traverseFileTree(entry);
-                    allFiles.push(...files);
-                }
-            } else {
-                // Fallback to files list (doesn't support folders)
-                const files = Array.from(e.dataTransfer.files);
-                allFiles.push(...files);
-            }
+            const { files: allFiles, folderName: detectedFolderName } = await extractFilesFromDataTransfer(
+                e.dataTransfer
+            );
 
             if (allFiles.length === 0) {
                 toasts.add({
@@ -159,12 +143,7 @@
             }
 
             // Filter valid files here to avoid processing invalid ones later
-            const supportedExtensions: readonly string[] = ALL_SUPPORTED_IMAGES;
-            const validFiles = allFiles.filter((file) => {
-                const mimeExt = file.type ? file.type.split("/")[1] : "";
-                const nameExt = file.name.split(".").pop()?.toLowerCase() || "";
-                return supportedExtensions.includes(mimeExt) || supportedExtensions.includes(nameExt);
-            });
+            const validFiles = filterSupportedFiles(allFiles);
 
             if (validFiles.length === 0) {
                 toasts.add({
