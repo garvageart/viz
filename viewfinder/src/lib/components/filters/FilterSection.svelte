@@ -1,7 +1,6 @@
 <script lang="ts">
     import type { Snippet } from "svelte";
     import { slide } from "svelte/transition";
-    import { toggleSection } from "./ImageFilter.svelte";
 
     interface Props {
         heading: string;

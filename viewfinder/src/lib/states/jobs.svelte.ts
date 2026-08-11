@@ -411,7 +411,7 @@ class JobsState {
     }
 
     // TODO: Document in OpenAPI file
-    async setWorkerConcurrency(jobId: string, value: number) {}
+    async setWorkerConcurrency(_jobId: string, _value: number) {}
 
     private getCountFromResData(data: unknown) {
         if (!data || typeof data !== "object") {

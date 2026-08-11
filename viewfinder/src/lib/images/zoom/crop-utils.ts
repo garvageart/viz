@@ -3,7 +3,6 @@ export type DragAction = "move" | "nw" | "ne" | "sw" | "se" | "n" | "e" | "s" | 
 
 export function calculateCrop(
     action: DragAction,
-    currentCrop: CropRect,
     startCrop: CropRect,
     dx: number,
     dy: number,

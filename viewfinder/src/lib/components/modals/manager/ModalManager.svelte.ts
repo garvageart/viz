@@ -64,7 +64,7 @@ export class ModalsManager {
         }
     }
 
-    dismiss(id: string, reason?: string) {
+    dismiss(id: string) {
         const index = this.modals.findIndex((m) => m.id === id);
 
         if (index !== -1) {
@@ -79,7 +79,7 @@ export class ModalsManager {
     pop() {
         if (this.modals.length > 0) {
             const modal = this.modals[this.modals.length - 1];
-            this.dismiss(modal.id, "popped");
+            this.dismiss(modal.id);
         }
     }
 

@@ -9,12 +9,6 @@ function getCollectionDate(collection: Collection): Date {
     return new Date(collection.updated_at || collection.created_at);
 }
 
-function getMostRecentImageDate(img: ImageAsset): number {
-    // For most recent: prioritize when it was added/uploaded to the system
-    // created_at = when uploaded, updated_at = when modified, file_created_at = original file date
-    return new Date(img.updated_at || img.created_at).getTime();
-}
-
 export function sortCollectionImages(assets: ImageAsset[], sort: AssetSort) {
     const order = sort.order.toLowerCase() as "asc" | "desc";
     switch (sort.by) {

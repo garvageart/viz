@@ -44,8 +44,6 @@
     let uploadCandidates: File[] = $state([]);
     let suggestedCollectionName = $state("");
 
-    let collectionCreatePending = $state(false);
-
     // Small drop-target state for 'Add to Collection' boxes
     let addBoxHover = $state(false);
     let addExistingBoxHover = $state(false);
@@ -235,11 +233,11 @@
         };
     }
 
-    function handleDragStart(e: DragEvent) {
+    function handleDragStart() {
         internalDragActive = true;
     }
 
-    function handleDragEnd(e: DragEvent) {
+    function handleDragEnd() {
         internalDragActive = false;
         isDragging = false;
         dragCounter = 0;
@@ -309,7 +307,6 @@
     }
 
     async function handleCollectionSubmit(data: any) {
-        collectionCreatePending = true;
         try {
             // 1. Create Collection
             const createRes = await createCollection(data);
@@ -319,7 +316,6 @@
                     message: `Failed to create collection (${createRes.status})`
                 });
 
-                collectionCreatePending = false;
                 return;
             }
 
@@ -361,7 +357,6 @@
                 message: `Operation failed: ${err}`
             });
         } finally {
-            collectionCreatePending = false;
             uploadCandidates = [];
         }
     }

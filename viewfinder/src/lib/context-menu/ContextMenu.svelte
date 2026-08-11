@@ -244,18 +244,6 @@
         };
     }
 
-    function isEventInside(target: EventTarget | null): boolean {
-        if (!contextMenu) {
-            return false;
-        }
-
-        if (target instanceof Node) {
-            return target === contextMenu || contextMenu.contains(target);
-        }
-
-        return false;
-    }
-
     function onWindowPointerDown(e: PointerEvent) {
         if (!showMenu) {
             return;

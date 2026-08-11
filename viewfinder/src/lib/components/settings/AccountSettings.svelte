@@ -23,7 +23,6 @@
     });
 
     let savingAccount = $state(false);
-    let saveAccountStatus: "idle" | "success" | "error" = $state("idle");
 
     // Sync form values when currentUser loads/changes
     $effect(() => {
@@ -48,7 +47,6 @@
         }
 
         savingAccount = true;
-        saveAccountStatus = "idle";
 
         const updates: UserUpdate = {};
         if (settingsUserUpdate.firstName !== (currentUser.first_name || "")) {
@@ -75,7 +73,6 @@
             user.data = res.data; // Update global user state
             savingAccount = false;
         } else {
-            saveAccountStatus = "error";
             toasts.add({
                 dismissible: true,
                 message: res.data.error || "Failed to update account",

@@ -1,5 +1,4 @@
 <script lang="ts">
-    import { tick } from "svelte";
     import type { HTMLButtonAttributes } from "svelte/elements";
     import { tooltip } from "$lib/components/tooltips/tooltip";
     import type { TooltipParams } from "$lib/components/tooltips/tooltip";

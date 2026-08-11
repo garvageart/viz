@@ -45,6 +45,48 @@ export interface CollectionFilters {}
 
 export interface CollectionFacets {}
 
+function parseFStop(val: string | undefined): number | undefined {
+    if (!val) {
+        return undefined;
+    }
+    const clean = val.toLowerCase().replace("f/", "").replace("f", "").trim();
+    const num = parseFloat(clean);
+    return isNaN(num) ? undefined : num;
+}
+
+function parseISO(val: string | undefined): number | undefined {
+    if (!val) {
+        return undefined;
+    }
+    const num = parseFloat(val);
+    return isNaN(num) ? undefined : num;
+}
+
+function parseFocalLength(val: string | undefined): number | undefined {
+    if (!val) {
+        return undefined;
+    }
+    const clean = val.toLowerCase().replace("mm", "").trim();
+    const num = parseFloat(clean);
+    return isNaN(num) ? undefined : num;
+}
+
+function parseShutterSpeed(val: string | undefined): number | undefined {
+    if (!val) {
+        return undefined;
+    }
+    if (val.includes("/")) {
+        const [num, den] = val.split("/");
+        const n = parseFloat(num);
+        const d = parseFloat(den);
+        if (!isNaN(n) && !isNaN(d) && d !== 0) {
+            return n / d;
+        }
+    }
+    const num = parseFloat(val);
+    return isNaN(num) ? undefined : num;
+}
+
 interface SavedScopeState {
     criteria: any;
     uiState: { expanded: Record<string, boolean> };
@@ -86,7 +128,7 @@ const DEFAULT_COLLECTION_UI_STATE = { expanded: {} };
 const DB_KEY = "filter-manager-state";
 const SETTINGS_STORE = "settings";
 
-export class FilterScope<F, A extends Asset> {
+export class FilterScope<F> {
     type: "images" | "collections";
     criteria: F = $state() as F;
     facets: any = $state();
@@ -125,54 +167,12 @@ export class FilterScope<F, A extends Asset> {
         }
     }
 
-    isImageScope(): this is FilterScope<ImageFilters, ImageAsset> {
+    isImageScope(): this is FilterScope<ImageFilters> {
         return this.type === "images";
     }
 
-    isCollectionScope(): this is FilterScope<CollectionFilters, Collection> {
+    isCollectionScope(): this is FilterScope<CollectionFilters> {
         return this.type === "collections";
-    }
-
-    private parseFStop(val: string | undefined): number | undefined {
-        if (!val) {
-            return undefined;
-        }
-        const clean = val.toLowerCase().replace("f/", "").replace("f", "").trim();
-        const num = parseFloat(clean);
-        return isNaN(num) ? undefined : num;
-    }
-
-    private parseISO(val: string | undefined): number | undefined {
-        if (!val) {
-            return undefined;
-        }
-        const num = parseFloat(val);
-        return isNaN(num) ? undefined : num;
-    }
-
-    private parseFocalLength(val: string | undefined): number | undefined {
-        if (!val) {
-            return undefined;
-        }
-        const clean = val.toLowerCase().replace("mm", "").trim();
-        const num = parseFloat(clean);
-        return isNaN(num) ? undefined : num;
-    }
-
-    private parseShutterSpeed(val: string | undefined): number | undefined {
-        if (!val) {
-            return undefined;
-        }
-        if (val.includes("/")) {
-            const [num, den] = val.split("/");
-            const n = parseFloat(num);
-            const d = parseFloat(den);
-            if (!isNaN(n) && !isNaN(d) && d !== 0) {
-                return n / d;
-            }
-        }
-        const num = parseFloat(val);
-        return isNaN(num) ? undefined : num;
     }
 
     updateFacets<T extends Asset>(items: T[]) {
@@ -217,7 +217,7 @@ export class FilterScope<F, A extends Asset> {
                         labels.set(label, (labels.get(label) || 0) + 1);
                     }
 
-                    const iso = this.parseISO(exif.iso);
+                    const iso = parseISO(exif.iso);
                     if (iso !== undefined) {
                         if (iso < minIso) {
                             minIso = iso;
@@ -227,7 +227,7 @@ export class FilterScope<F, A extends Asset> {
                         }
                     }
 
-                    const f = this.parseFStop(exif.aperture ?? exif.f_number);
+                    const f = parseFStop(exif.aperture ?? exif.f_number);
                     if (f !== undefined) {
                         if (f < minF) {
                             minF = f;
@@ -237,7 +237,7 @@ export class FilterScope<F, A extends Asset> {
                         }
                     }
 
-                    const ss = this.parseShutterSpeed(exif.exposure_time);
+                    const ss = parseShutterSpeed(exif.exposure_time);
                     if (ss !== undefined) {
                         if (ss < minSS) {
                             minSS = ss;
@@ -247,7 +247,7 @@ export class FilterScope<F, A extends Asset> {
                         }
                     }
 
-                    const fl = this.parseFocalLength(exif.focal_length);
+                    const fl = parseFocalLength(exif.focal_length);
                     if (fl !== undefined) {
                         if (fl < minFL) {
                             minFL = fl;
@@ -346,7 +346,7 @@ export class FilterScope<F, A extends Asset> {
                 }
 
                 if (criteria.iso.min !== undefined || criteria.iso.max !== undefined) {
-                    const val = this.parseISO(exif.iso);
+                    const val = parseISO(exif.iso);
                     if (val === undefined) {
                         return false;
                     }
@@ -359,7 +359,7 @@ export class FilterScope<F, A extends Asset> {
                 }
 
                 if (criteria.fStop.min !== undefined || criteria.fStop.max !== undefined) {
-                    const val = this.parseFStop(exif.aperture ?? exif.f_number);
+                    const val = parseFStop(exif.aperture ?? exif.f_number);
                     if (val === undefined) {
                         return false;
                     }
@@ -372,7 +372,7 @@ export class FilterScope<F, A extends Asset> {
                 }
 
                 if (criteria.shutterSpeed.min !== undefined || criteria.shutterSpeed.max !== undefined) {
-                    const val = this.parseShutterSpeed(exif.exposure_time);
+                    const val = parseShutterSpeed(exif.exposure_time);
                     if (val === undefined) {
                         return false;
                     }
@@ -385,7 +385,7 @@ export class FilterScope<F, A extends Asset> {
                 }
 
                 if (criteria.focalLength.min !== undefined || criteria.focalLength.max !== undefined) {
-                    const val = this.parseFocalLength(exif.focal_length);
+                    const val = parseFocalLength(exif.focal_length);
                     if (val === undefined) {
                         return false;
                     }
@@ -435,9 +435,7 @@ export class FilterScope<F, A extends Asset> {
 }
 
 class FilterManager {
-    scopes: Map<string, FilterScope<ImageFilters, ImageAsset> | FilterScope<CollectionFilters, Collection>> = $state(
-        new Map()
-    );
+    scopes: Map<string, FilterScope<ImageFilters> | FilterScope<CollectionFilters>> = $state(new Map());
     /**
      * Derives the active filter scope from the current selection scope.
      * When browsing the collections list the filter panel shows "no collection filters";
@@ -501,15 +499,13 @@ class FilterManager {
         this.isInitialized = true;
     }
 
-    get activeScope(): FilterScope<ImageFilters, ImageAsset> | FilterScope<CollectionFilters, Collection> | undefined {
+    get activeScope(): FilterScope<ImageFilters> | FilterScope<CollectionFilters> | undefined {
         return this.scopes.get(this.activeScopeType);
     }
 
-    getScope(type: "images"): FilterScope<ImageFilters, ImageAsset> | undefined;
-    getScope(type: "collections"): FilterScope<CollectionFilters, Collection> | undefined;
-    getScope(
-        type: "images" | "collections"
-    ): FilterScope<ImageFilters, ImageAsset> | FilterScope<CollectionFilters, Collection> | undefined {
+    getScope(type: "images"): FilterScope<ImageFilters> | undefined;
+    getScope(type: "collections"): FilterScope<CollectionFilters> | undefined;
+    getScope(type: "images" | "collections"): FilterScope<ImageFilters> | FilterScope<CollectionFilters> | undefined {
         return this.scopes.get(type);
     }
 

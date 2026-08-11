@@ -1,14 +1,12 @@
 <script lang="ts">
     import VizWorkspace from "$lib/components/workspace/VizWorkspace.svelte";
-
-    let vizContentContainer: HTMLDivElement | undefined = $state();
 </script>
 
 <svelte:head>
     <title>viz</title>
 </svelte:head>
 
-<div class="viz-content-container" bind:this={vizContentContainer}>
+<div class="viz-content-container">
     <VizWorkspace id="viz-content" />
 </div>
 

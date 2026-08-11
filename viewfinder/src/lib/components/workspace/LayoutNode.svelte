@@ -3,7 +3,6 @@
     import { SplitNode, TabGroup } from "$lib/layouts/model.svelte";
     import { workspaceState } from "$lib/states/workspace.svelte";
     import { Pane, Splitpanes } from "$lib/third-party/svelte-splitpanes";
-    import { debugEvent } from "$lib/utils/dom";
     import LayoutNode from "./LayoutNode.svelte";
     import TabGroupPanel from "./TabGroupPanel.svelte";
 

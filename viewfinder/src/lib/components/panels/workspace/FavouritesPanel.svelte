@@ -74,11 +74,11 @@
         }
     }
 
-    function handleDragStart(e: DragEvent) {
+    function handleDragStart() {
         isInternalDrag = true;
     }
 
-    function handleDragEnd(e: DragEvent) {
+    function handleDragEnd() {
         isInternalDrag = false;
         isDraggingOver = false;
         dragCounter = 0;
@@ -172,10 +172,7 @@
     });
 
     $effect(() => {
-        // Track dependencies
-        const _c = showCollections;
-        const _i = showImages;
-        saveSettings();
+        void saveSettings();
     });
 </script>
 

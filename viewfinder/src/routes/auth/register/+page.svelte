@@ -15,13 +15,10 @@
         name: ""
     });
 
-    let notifMessage = $state("");
-
     const bgImageIndex = Math.floor(Math.random() * 300);
     const bgImageUrl = `url('https://picsum.photos/1920/1080/?random=${bgImageIndex}')`;
 
     function showRegNotif(message: string, level: "success" | "info" | "warning" | "error") {
-        notifMessage = message;
         toasts.add({
             message,
             type: level

@@ -5,7 +5,7 @@
  font ligatures (as a fallback).
 -->
 <script lang="ts">
-    import { building, dev } from "$app/environment";
+    import { dev } from "$app/environment";
     import type { Component } from "svelte";
     import type { SvelteHTMLElements } from "svelte/elements";
     import { SvelteMap, SvelteSet } from "svelte/reactivity";
@@ -23,9 +23,6 @@
     const ICON_MODULES_EAGER = import.meta.glob("$lib/components/icons/generated/**/*.svelte", {
         eager: true
     });
-    // Lazy: Loaded on demand in the browser/dev to save bundle size.
-    // TODO: likely get rid of this
-    const ICON_MODULES = import.meta.glob("$lib/components/icons/generated/**/*.svelte");
 
     // Props
     type IconStyle = "sharp" | "outlined" | "rounded" | "filled";

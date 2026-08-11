@@ -456,12 +456,11 @@ export class Ui {
 
     private renderSingleHistogram(): void {
         const channel = this.selectedChannel();
-        const step = this.viewBoxWidth / 256;
         const offBottom = this.viewBoxHeight + 10;
         const offLeft = -10;
         const offRight = this.viewBoxWidth + 10;
 
-        const { hist, count: total } = this.getChannelData(channel);
+        const { hist } = this.getChannelData(channel);
         let max = Math.max(...hist);
         // increase max so largest is 10% from the top of hist
         max *= 1.1;
@@ -503,7 +502,6 @@ export class Ui {
     }
 
     private renderColorHistogram(): void {
-        const step = this.viewBoxWidth / 256;
         const offBottom = this.viewBoxHeight + 10;
         const offLeft = -10;
         const offRight = this.viewBoxWidth + 10;
@@ -538,15 +536,7 @@ export class Ui {
 
             // Determine the sorted order of RGB values
             const sorted = this.sortChannels(r, g, b);
-            const [lowest, mid, highest] = sorted.values;
             const { indices } = sorted;
-
-            // Map the values to the appropriate builders based on their rank
-            const valueMap = new Map([
-                [0, lowest], // lowest channel
-                [1, mid], // middle channel
-                [2, highest] // highest channel
-            ]);
 
             // For each position, plot or skip based on the channel's rank
             const positions = ["red", "green", "blue", "redGreen", "redBlue", "greenBlue", "redGreenBlue"] as const;
@@ -618,7 +608,7 @@ export class Ui {
             this.colors.redGreenBlue
         ];
 
-        Object.entries(builders).forEach(([key, builder], idx) => {
+        Object.entries(builders).forEach(([, builder], idx) => {
             builder.lineTo(offRight, offBottom).lineTo(offLeft, offBottom);
             builder.build({
                 fill: fillColors[idx],
@@ -670,7 +660,7 @@ export class Ui {
             percentile: document.getElementById(this.id.inputPercentile) as HTMLInputElement
         };
 
-        const { hist, count: totalCount } = this.getChannelData(channel);
+        const { count: totalCount } = this.getChannelData(channel);
         const stats = {
             mean: this.histogram.mean,
             median: this.histogram.median,

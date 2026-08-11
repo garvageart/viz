@@ -106,7 +106,7 @@
     // Proactive pagination effect: triggers if sentinel is intersecting
     $effect(() => {
         // Depend on data length to re-trigger if we're still intersecting after a load
-        const _trigger = data?.length;
+        void data?.length;
         if (hasMore && isSentinelIntersecting) {
             untrack(() => loadMore());
         }
@@ -114,7 +114,7 @@
 
     // Fill screen effect: ensures we have enough content to scroll
     $effect(() => {
-        const _trigger = data?.length;
+        void data?.length;
         if (hasMore && viewContainer && !isElementScrollable(viewContainer)) {
             untrack(() => loadMore());
         }

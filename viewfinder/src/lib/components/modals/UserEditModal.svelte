@@ -31,7 +31,7 @@
     }
 
     function handleCancel() {
-        modalsManager.dismiss(id, "cancel");
+        modalsManager.dismiss(id);
     }
 </script>
 

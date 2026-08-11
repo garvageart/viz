@@ -106,10 +106,6 @@
         themeCtxAnchor = { x: e.clientX, y: e.clientY };
         themeCtxShowMenu = true;
     }
-
-    // Context Menu for Views
-    let viewCtxShowMenu = $state(false);
-    let viewCtxAnchor = $state<{ x: number; y: number } | null>(null);
 </script>
 
 <svelte:window

@@ -96,7 +96,7 @@
 
     function handleCancel() {
         onClose();
-        modalsManager.dismiss(id, "cancel");
+        modalsManager.dismiss(id);
     }
 </script>
 

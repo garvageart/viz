@@ -9,7 +9,7 @@
         onChange: (selected: string[]) => void;
     }
 
-    let { title, items, selected, onChange }: Props = $props();
+    let { items, selected, onChange }: Props = $props();
 
     let searchTerm = $state("");
     let isExpanded = $state(false);

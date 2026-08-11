@@ -18,7 +18,7 @@ async function assertNoFallbackIcons(locator: Page | Locator, contextName: strin
 }
 
 test.describe("Material Icon E2E Tests", () => {
-    test.beforeEach(async ({ page }) => {
+    test.beforeEach(async () => {
         // Triples the default timeout to accommodate slow Vite dynamic compilation in dev server under parallel worker loads
         test.slow();
     });

@@ -283,8 +283,6 @@
     });
 
     let pendingNewRaw: ImageUploadSuccess[] = [];
-    let addImagesDebounceTimer: number | undefined;
-    const ADD_IMAGES_DEBOUNCE_MS = 550;
 
     async function handleCollectionSelect(collection: Collection, newImageUids: string[]) {
         if (newImageUids.length === 0) {

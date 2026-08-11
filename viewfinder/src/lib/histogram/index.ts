@@ -20,7 +20,7 @@ export function ensureImageLoaded(img: HTMLImageElement): Promise<void> {
             resolve();
         };
 
-        const onError = (e: Event) => {
+        const onError = () => {
             cleanup();
             reject(new Error("Image failed to load"));
         };

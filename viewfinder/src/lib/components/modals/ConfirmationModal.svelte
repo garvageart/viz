@@ -21,7 +21,6 @@
 
     let {
         id,
-        title,
         message,
         children,
         actions,
@@ -57,7 +56,7 @@
             onCancel();
         }
 
-        modalsManager.dismiss(id, "cancel");
+        modalsManager.dismiss(id);
     }
 </script>
 

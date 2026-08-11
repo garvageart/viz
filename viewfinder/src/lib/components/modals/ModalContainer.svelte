@@ -25,7 +25,7 @@
         show={true}
         onclick={() => {
             if (merged.closeOnOverlayClick !== false) {
-                modalsManager.dismiss(modal.id, "overlay-click");
+                modalsManager.dismiss(modal.id);
             }
         }}
         zIndex={modal.index}
@@ -36,7 +36,7 @@
             height={merged.height}
             applyPadding={merged.applyPadding}
             zIndex={modal.index + 1}
-            onclickClose={() => modalsManager.dismiss(modal.id, "close-button")}
+            onclickClose={() => modalsManager.dismiss(modal.id)}
         >
             <modal.component bind:this={modalInstances[modal.id]} {...modal.props} id={modal.id} />
         </ModalLightbox>

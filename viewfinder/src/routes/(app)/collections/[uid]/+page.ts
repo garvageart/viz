@@ -4,7 +4,7 @@ import { collectionDetailSort } from "$lib/states/sort.svelte";
 import { sendVizAPIRequest } from "$lib/utils/http";
 import type { PageLoad } from "./$types";
 
-export const load: PageLoad = async ({ params, depends, route, url }) => {
+export const load: PageLoad = async ({ params, depends }) => {
     depends(DataKeys.Collection);
 
     return sendVizAPIRequest(

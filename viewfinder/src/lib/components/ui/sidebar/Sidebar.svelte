@@ -17,7 +17,6 @@
         children
     }: Props = $props();
 
-    let sidebarEl: HTMLElement;
     let sidebarWidthState = $derived(open ? sidebarWidth : "var(--viz-sidebar-width-collapsed)");
 
     onMount(() => {
@@ -28,7 +27,6 @@
 </script>
 
 <nav
-    bind:this={sidebarEl}
     class="viz-sidebar"
     class:open
     style:width={sidebarWidthState}

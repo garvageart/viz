@@ -7,10 +7,14 @@
     import { type Instance, type Props as TippyProps, delegate, followCursor } from "tippy.js";
     import "tippy.js/dist/tippy.css";
     import { type ImageAsset, getFullImagePath } from "$lib/api";
+    import ImageLabelViewer from "$lib/components/image-tools/ImageLabelViewer.svelte";
+    import StarRating from "$lib/components/image-tools/StarRating.svelte";
     import PhotoTooltip from "$lib/components/tooltips/PhotoTooltip.svelte";
     import { mountTooltipComponent } from "$lib/components/tooltips/tooltip";
+    import AssetImage, { type ImageResolution } from "$lib/components/ui/AssetImage.svelte";
     import Checkbox from "$lib/components/ui/Checkbox.svelte";
     import Favourite from "$lib/components/ui/Favourite.svelte";
+    import MaterialIcon from "$lib/components/ui/MaterialIcon.svelte";
     import {
         type PhotoGridConfig,
         PhotoGridVirtualizer
@@ -25,11 +29,6 @@
     import { getScrollParent } from "$lib/utils/dom";
     import { getImageLabel, getTakenAt } from "$lib/utils/images";
     import { debounce } from "$lib/utils/misc";
-    import ImageLabelViewer from "../image-tools/ImageLabelViewer.svelte";
-    import StarRating from "../image-tools/StarRating.svelte";
-    import AssetImage, { type ImageResolution } from "../ui/AssetImage.svelte";
-    import ImageCard from "../ui/ImageCard.svelte";
-    import MaterialIcon from "../ui/MaterialIcon.svelte";
     import TimelineScrubber from "./TimelineScrubber.svelte";
 
     interface ExtendedTippyInstance extends Instance<TippyProps> {
@@ -65,12 +64,10 @@
         data = $bindable([]),
         allData = $bindable(),
         groupedData,
-        photoCardSnippet,
         gridConfig = {},
         showDateHeaders = false,
         scopeId = "default",
         searchValue = $bindable(""),
-        noAssetsMessage = "No photos found",
         disabledUids = new Set(),
         stickyHeaderHeight,
         assetClick,
@@ -403,31 +400,6 @@
     // ----------------------------
     let isMultiSelecting = $derived(selection.size > 1);
 
-    // Count date labels so we can hide the inline badge in the trivial case
-    // where there is only one date group and that group contains a single image.
-    // NOTE: In unified view, we rely on Headers, so inline badges might be redundant or controlled by logic.
-    const dateGroupCounts = $derived.by(() => {
-        const counts: Record<string, number> = {};
-        // Use allData or groupedData source to get reliable labels
-        const source =
-            allData && allData.length > 0
-                ? allData
-                : groupedData && groupedData.length > 0
-                  ? groupedData.flatMap((g) => g.allImages)
-                  : filteredData;
-
-        for (const d of source) {
-            const label = (d as ImageWithDateLabel).dateLabel ?? "";
-            if (!label) {
-                continue;
-            }
-
-            counts[label] = (counts[label] || 0) + 1;
-        }
-
-        return counts;
-    });
-
     const groupLookup = $derived.by(() => {
         const map = new Map<string, ImageAsset[]>();
         if (groupedData) {
@@ -506,8 +478,6 @@
             }
         }
     }
-
-    const dateGroupCount = $derived(Object.keys(dateGroupCounts).length);
 
     // Virtualized photo-grid state
     // We use a stable instance and update its config via effect to avoid recreation and potential scroll jumps.
@@ -840,9 +810,10 @@
     // Re-run layout when data changes
     $effect(() => {
         // Explicitly depend on data sources to ensure layout updates
-        const _data = data;
-        const _grouped = groupedData;
-        const _filtered = filteredData;
+        // Update: Mhmmmm???? idk
+        void data;
+        void groupedData;
+        void filteredData;
 
         if (photoGridEl) {
             untrack(() => {
@@ -873,28 +844,6 @@
             virtualizer.updateScroll(scrollTop, virtualizer.viewportHeight);
         }
     });
-
-    function getSizedPreviewUrl(asset: ImageAsset): string {
-        const checksum = asset.image_metadata?.checksum;
-
-        if (asset.image_paths?.thumbnail) {
-            // Append fingerprint param to thumbnail URL so it can be cached as an immutable resource
-            let url = asset.image_paths.thumbnail;
-            if (checksum) {
-                url = url + (url.includes("?") ? "&" : "?") + `v=${checksum}`;
-            }
-            return getFullImagePath(url);
-        }
-
-        // Use a smaller preview size for grid thumbnails to reduce bandwidth/cpu.
-        const PREVIEW_SIZE = 400;
-        let url = `/images/${asset.uid}/file?format=webp&w=${PREVIEW_SIZE}&h=${PREVIEW_SIZE}&quality=85`;
-        if (checksum) {
-            url = url + `&v=${checksum}`;
-        }
-
-        return getFullImagePath(url);
-    }
 
     // Lightbox prefetch helpers
     // Simple in-memory cache to avoid repeated prefetches for the same asset UID

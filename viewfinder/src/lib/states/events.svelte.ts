@@ -14,7 +14,6 @@ class EventsState {
     connected = $state(false);
     initialized = $state(false);
     private wasDisconnected = $state(false);
-    private INVALIDATION_DELAY = 300;
 
     private invalidateApp = async (resourcePath?: string) => {
         console.debug(`[Events] Triggering debounced soft refresh for path: ${resourcePath ?? "all"}`);

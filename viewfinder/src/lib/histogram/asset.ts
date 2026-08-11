@@ -3,7 +3,7 @@ import { type ImageAsset, getFullImagePath } from "$lib/api";
 import { computeHistogram } from "$lib/histogram";
 import type { HistogramApi } from "$lib/histogram/worker";
 import HistogramWorker from "$lib/histogram/worker?worker";
-import { type HistogramData, Histogram as PHHistogram } from "$lib/third-party/photo-histogram/js/histogram";
+import { type HistogramData } from "$lib/third-party/photo-histogram/js/histogram";
 
 /**
  * Memoized, worker-accelerated histogram computation for an image asset.
@@ -12,7 +12,6 @@ import { type HistogramData, Histogram as PHHistogram } from "$lib/third-party/p
  * already-viewed image is instant, and the heavy fetch/decode/tally work runs
  * in a Comlink-backed Web Worker when available.
  */
-
 const cache = new Map<string, Promise<HistogramData>>();
 
 function assetKey(asset: ImageAsset): string {

@@ -155,7 +155,6 @@
     let gridOffsetTop = $state(0);
     let usingExternalScroll = $state(false);
     let scrollParent: HTMLElement | Window | undefined = $state();
-    let isSyncingScroll = false;
 
     // List view: the virtualizer assumes a fixed row height. We measure the real
     // rendered row height so spacers match the actual content height, otherwise
@@ -299,10 +298,6 @@
 
     // Re-run layout when data changes
     $effect(() => {
-        const _data = data;
-        const _view = view;
-        const _sortDisplay = sortState.value.display;
-
         if (assetGridDisplayEl) {
             untrack(() => {
                 updateVirtualizerLayout();
@@ -483,14 +478,6 @@
 
     interface ExtendedTippyInstance extends Instance<TippyProps> {
         _destroyComponent?: () => void;
-    }
-
-    function getAssetThumbSrc(asset: Record<string, any>): string {
-        return getFullImagePath(asset.image_paths?.thumbnail ?? asset.image_paths?.preview ?? "");
-    }
-
-    function getAssetAltText(asset: Record<string, any>): string {
-        return asset.name ?? asset.image_metadata?.file_name ?? "";
     }
 
     // Format a value for display: dates are formatted with Luxon, objects stringified, null/undefined -> ''
@@ -862,7 +849,7 @@
         selection.selectMultiple(allAssetsData);
     });
 
-    hotkeys("escape", (e) => {
+    hotkeys("escape", () => {
         if (selection.size === 0 && !selection.active) {
             return;
         }

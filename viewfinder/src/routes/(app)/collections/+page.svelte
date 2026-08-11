@@ -56,9 +56,6 @@
     let shouldUpdate = $derived(!!data?.next);
     let displayData = $derived(sortCollections(listOfCollectionsData, collectionsSort.value));
 
-    let fadeOpacity = false;
-    let toolbarOpacity = $state(1);
-
     // Selection
     const scopeId = $derived(SelectionScopeNames.COLLECTIONS_MAIN);
     const selectionScope = $derived(selectionManager.getScope<Collection>(scopeId));
@@ -366,25 +363,7 @@
     </div>
 {/snippet}
 
-<VizViewContainer
-    bind:data={displayData}
-    hasMore={shouldUpdate}
-    name="Collections"
-    {paginate}
-    onscroll={(e) => {
-        const info = document.getElementById("viz-info-container")!;
-        if (!info) {
-            return;
-        }
-        const bottom = info.scrollHeight;
-
-        if (e.currentTarget.scrollTop < bottom) {
-            toolbarOpacity = e.currentTarget.scrollTop / bottom;
-        } else {
-            toolbarOpacity = 1;
-        }
-    }}
->
+<VizViewContainer bind:data={displayData} hasMore={shouldUpdate} name="Collections" {paginate}>
     <AssetsShell
         bind:grid
         {pagination}

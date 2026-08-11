@@ -62,7 +62,6 @@ export class PhotoGridVirtualizer {
 
     // Internal
     private groupCache = new Map<string, GroupCacheEntry>();
-    private previousGroups: ConsolidatedGroup[] = [];
 
     // Scroll State
     scrollTop = $state(0);
@@ -99,7 +98,6 @@ export class PhotoGridVirtualizer {
             return;
         }
         this.containerWidth = width;
-        this.previousGroups = groups; // Store for simple refreshes if needed
 
         let currentTop = 0;
         const allRows: GridRow[] = [];
@@ -408,28 +406,6 @@ export class PhotoGridVirtualizer {
         return Math.max(0, low);
     }
 
-    private findGroup(label: string): ConsolidatedGroup | undefined {
-        const groups = this.previousGroups;
-
-        let low = 0;
-        let high = groups.length - 1;
-
-        while (low <= high) {
-            const mid = Math.floor((high + low) / 2);
-            if (groups[mid].label === label) {
-                return groups[mid];
-            }
-            if (groups[mid].label < label) {
-                low = mid + 1;
-            } else {
-                high = mid - 1;
-            }
-        }
-
-        // Not found
-        return undefined;
-    }
-
     private computeGroup(group: ConsolidatedGroup, width: number): GroupCacheEntry {
         const rows: CachedRow[] = [];
         let cursorY = 0;
@@ -566,16 +542,12 @@ export class PhotoGridVirtualizer {
     getActiveHeader(scrollTop: number): GridRowHeader | null {
         let low = 0;
         let high = this.rows.length - 1;
-        let candidate: GridRowHeader | null = null;
 
         while (low <= high) {
             const mid = (low + high) >>> 1;
             const row = this.rows[mid];
 
             if (row.top <= scrollTop) {
-                if (row.type === "header") {
-                    candidate = row;
-                }
                 low = mid + 1;
             } else {
                 high = mid - 1;
@@ -599,12 +571,14 @@ export class PhotoGridVirtualizer {
     // Helper to get the NEXT header (for pushing effect)
     getNextHeader(scrollTop: number): GridRowHeader | null {
         const idx = this.findStartIndex(scrollTop);
+
         for (let i = idx; i < this.rows.length; i++) {
             const row = this.rows[i];
             if (row.type === "header" && row.top > scrollTop) {
-                return row as GridRowHeader;
+                return row;
             }
         }
+
         return null;
     }
 

@@ -1,9 +1,8 @@
 <script lang="ts" generics="T extends { uid: string } & Record<string, any>">
     import { dev } from "$app/environment";
     import { DateTime } from "luxon";
-    import { type Component, type ComponentProps, type Snippet } from "svelte";
+    import { type ComponentProps, type Snippet } from "svelte";
     import type { HTMLButtonAttributes } from "svelte/elements";
-    import type { MenuItem } from "$lib/context-menu/types";
     import { applySortSelection, currentSortId, sortOptions, toggleSortOrder } from "$lib/sort/sort";
     import { selectionManager } from "$lib/states/selection.svelte";
     import { type SortState, photosSort } from "$lib/states/sort.svelte";

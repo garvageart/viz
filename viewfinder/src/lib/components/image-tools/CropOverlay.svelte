@@ -46,19 +46,7 @@
         const dx = (e.clientX - startX) / scale;
         const dy = (e.clientY - startY) / scale;
 
-        crop = calculateCrop(
-            currentAction,
-            crop,
-            startCropState,
-            dx,
-            dy,
-            { width, height },
-            {
-                aspectRatio,
-                altKey: e.altKey,
-                shiftKey: e.shiftKey
-            }
-        );
+        crop = calculateCrop(currentAction, startCropState, dx, dy, { width, height }, { aspectRatio });
     }
 
     function handleEnd(e: PointerEvent) {

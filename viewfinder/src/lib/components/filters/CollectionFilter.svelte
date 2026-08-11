@@ -8,7 +8,7 @@
         save: () => void;
     }
 
-    let { criteria = $bindable(), facets, uiState = $bindable(), save }: Props = $props();
+    let { criteria = $bindable(), uiState = $bindable() }: Props = $props();
 </script>
 
 <div class="collection-filter-container">

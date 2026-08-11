@@ -1,5 +1,4 @@
 import { DragData } from "./data";
-import { dragState } from "./state.svelte";
 
 export interface MakeDraggableConfig {
     type: string;

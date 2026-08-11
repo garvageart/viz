@@ -1,6 +1,5 @@
 import { invalidateAll, preloadData } from "$app/navigation";
 import { type Component, untrack } from "svelte";
-import { DYNAMIC_ROUTE_REGEX } from "$lib/constants";
 import type { MenuItem } from "$lib/context-menu/types";
 import { debugMode } from "$lib/states/index.svelte";
 import { sleep } from "$lib/utils/misc";

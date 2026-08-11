@@ -32,12 +32,11 @@
         groupImagesByDate
     } from "$lib/photo-layout";
     import { paginateSearch, performSearch } from "$lib/search/execute";
-    import { isLayoutPage, search, viewSettings } from "$lib/states/index.svelte";
+    import { search, viewSettings } from "$lib/states/index.svelte";
     import { SelectionScopeNames, selectionManager } from "$lib/states/selection.svelte";
     import { toasts } from "$lib/toast-notifcations/toasts.svelte";
     import type { AssetGridView } from "$lib/types/asset";
     import type { CardVisualState } from "$lib/types/snippet";
-    import { downloadOriginalImageFile } from "$lib/utils/http";
     import { getImageLabel } from "$lib/utils/images";
     import { invalidateViz } from "$lib/views/views.svelte";
 
@@ -64,8 +63,6 @@
             selectionManager.setActive(imageScopeId);
         });
     });
-
-    let disableOutsideUnselect = $derived(isLayoutPage());
 
     // Modal state for collection selection
     let imageUidsForCollection = $state<string[]>([]);
@@ -95,7 +92,7 @@
     // Action Menus
     let imageActionMenuItems = $derived.by(() => {
         const baseMenuItems = createImageMenu(images, imageSelection, {
-            onUpdate: (image) => {
+            onUpdate: () => {
                 performSearch();
             },
             onDelete: (deletedUIDs) => {
@@ -290,32 +287,6 @@
         lightboxImage = allImagesFlat[nextIdx];
     }
 
-    async function performImageDownloads(uids: string[]) {
-        if (uids.length === 0) {
-            return;
-        }
-
-        // If single image, use direct download helper
-        if (uids.length === 1) {
-            const img = images.find((i) => i.uid === uids[0]);
-            if (img) {
-                await downloadOriginalImageFile(img);
-            }
-            return;
-        }
-
-        // Bulk download logic (placeholder if API doesn't support generic bulk download yet,
-        // but typically we'd use a token or loop. Reusing logic from photos page is best practice.)
-        // For now, we'll loop single downloads to ensure functionality
-        // A better approach would be to use the proper bulk endpoint if available.
-        for (const uid of uids) {
-            const img = images.find((i) => i.uid === uid);
-            if (img) {
-                await downloadOriginalImageFile(img);
-            }
-        }
-    }
-
     async function handleCollectionSelect(collection: Collection, newImageUids: string[]) {
         if (newImageUids.length === 0) {
             toasts.add({
@@ -390,10 +361,6 @@
         onImageUpdated={(image) => imageSelection.updateItem(image, images)}
     />
 {/if}
-
-{#snippet imageCard(asset: ImageAsset, cardState: { isSelected: boolean })}
-    <ImageCard {asset} isSelected={cardState.isSelected} />
-{/snippet}
 
 {#snippet collectionCard(collectionData: Collection, cardState: { isSelected: boolean })}
     <a

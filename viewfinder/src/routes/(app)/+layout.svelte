@@ -1,13 +1,10 @@
 <script lang="ts">
-    import { page } from "$app/state";
-    import { onMount } from "svelte";
     import "$lib/components/panels/viz-panel.scss";
     import Header from "$lib/components/ui/Header.svelte";
     import LoadingSpinner from "$lib/components/ui/LoadingSpinner.svelte";
     import DownloadPanel from "$lib/components/ui/panels/DownloadPanel.svelte";
     import UploadPanel from "$lib/components/ui/panels/UploadPanel.svelte";
-    import { debugMode, download, isMobile, upload } from "$lib/states/index.svelte";
-    import { registerReady } from "$lib/stores/appReady";
+    import { download, isMobile, upload } from "$lib/states/index.svelte";
 
     let { children } = $props();
 
