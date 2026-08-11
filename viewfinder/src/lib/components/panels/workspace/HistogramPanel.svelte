@@ -1,6 +1,5 @@
 <script lang="ts">
     import { type ImageAsset } from "$lib/api";
-    import LoadingContainer from "$lib/components/overlays/LoadingContainer.svelte";
     import Badge from "$lib/components/ui/Badge.svelte";
     import IconButton from "$lib/components/ui/IconButton.svelte";
     import HistogramChart, { type ChannelVisibility } from "$lib/components/ui/misc/HistogramChart.svelte";
@@ -35,21 +34,6 @@
     ];
 
     const dotClassFor = (key: keyof ChannelVisibility): string => (key === "luminance" ? "dot-luma" : `dot-${key}`);
-
-    // Purely derived: swaps to the right computation whenever the source changes.
-    // Only images (with image_paths) produce a histogram; a selected collection
-    // has no image source and falls through to the empty state.
-    let histogramPromise = $derived.by(() => {
-        if (src) {
-            return computeHistogram(src);
-        }
-
-        if (!isAssetImage(activeItem)) {
-            return null;
-        }
-
-        return computeForAsset(activeItem);
-    });
 
     const rgbEnabledCount = $derived([channels.red, channels.green, channels.blue].filter(Boolean).length);
 
@@ -110,13 +94,21 @@
         };
     }
 
-    function statsFor(data: HistogramData): RangeStats {
+    function statsFor(data: HistogramData | null): RangeStats | null {
+        if (!data) {
+            return null;
+        }
+
         const start = selection?.start ?? 0;
         const end = selection?.end ?? BINS - 1;
         return computeRangeStats(data.hist[activeChannel], data.count[activeChannel], start, end);
     }
 
-    function clippingFor(data: HistogramData) {
+    function clippingFor(data: HistogramData | null) {
+        if (!data) {
+            return null;
+        }
+
         const channel = data.hist[activeChannel];
         const total = data.count[activeChannel] || 1;
         return {
@@ -125,8 +117,8 @@
         };
     }
 
-    function hoverInfoFor(data: HistogramData) {
-        if (hoverBin == null) {
+    function hoverInfoFor(data: HistogramData | null) {
+        if (!data || hoverBin == null) {
             return null;
         }
         return {
@@ -140,6 +132,35 @@
         selection = null;
         hoverBin = null;
     }
+
+    // Purely derived: swaps to the right computation whenever the source changes.
+    // Only images (with image_paths) produce a histogram; a selected collection
+    // has no image source and falls through to the empty state.
+    let histogramPromise = $derived.by(async () => {
+        if (src) {
+            return computeHistogram(src);
+        }
+
+        if (!isAssetImage(activeItem)) {
+            return null;
+        }
+
+        return computeForAsset(activeItem);
+    });
+
+    let data = $derived(await histogramPromise);
+
+    let stats = $derived(statsFor(data));
+    let hover = $derived(hoverInfoFor(data));
+    let clipping = $derived(clippingFor(data));
+    let totalPixels = $derived(
+        data
+            ? activeItem?.width && activeItem?.height
+                ? activeItem.width * activeItem.height
+                : data.count[activeChannel]
+            : 0
+    );
+    let displayPixels = $derived(stats ? Math.round(totalPixels * (stats.percent / 100)) : 0);
 </script>
 
 <div class="histogram-container">
@@ -165,75 +186,59 @@
         />
     </div>
 
-    {#if histogramPromise}
-        {#await histogramPromise}
-            <div class="state-box">
-                <LoadingContainer />
+    <div class="chart-area">
+        {#if hover}
+            <div class="hover-readout">Tone {hover.tone} / {BINS - 1} · {hover.count.toLocaleString()} px</div>
+        {/if}
+        <HistogramChart hist={data?.hist} max={data?.max} {channels} bind:selection bind:hoverBin />
+    </div>
+
+    {#if stats}
+        <div class="pixels" title={`${displayPixels.toLocaleString()} pixels in range ${range}`}>
+            <span class="pixels-label">Pixels</span>
+            <span class="pixels-value">{formatMegapixels(displayPixels, 1)} MP ({stats.percent.toFixed(2)}%)</span>
+        </div>
+    {/if}
+
+    {#snippet statRow(label: string, value: string, tooltip?: string)}
+        <div class="stat-row" title={tooltip ?? value}>
+            <span class="stat-label">{label}</span>
+            <span class="stat-val">{value}</span>
+        </div>
+    {/snippet}
+
+    <div class="stats">
+        <div class="stat-group">
+            <h4 class="stat-group-title">Selection</h4>
+            <div class="stat-rows">
+                {@render statRow("Range", range)}
             </div>
-        {:then data}
-            {@const stats = statsFor(data)}
-            {@const hover = hoverInfoFor(data)}
-            {@const clipping = clippingFor(data)}
+        </div>
 
-            <div class="chart-area">
-                <HistogramChart hist={data.hist} max={data.max} {channels} bind:selection bind:hoverBin />
-                {#if hover}
-                    <div class="hover-readout">Tone {hover.tone} / 255 · {hover.count.toLocaleString()} px</div>
-                {/if}
-            </div>
-
-            <div class="pixels" title={`${stats.count.toLocaleString()} pixels in range ${range}`}>
-                <span class="pixels-label">Pixels</span>
-                <span class="pixels-value">{formatMegapixels(stats.count, 1)} MP ({stats.percent.toFixed(2)}%)</span>
-            </div>
-
-            {#snippet statRow(label: string, value: string, tooltip?: string)}
-                <div class="stat-row" title={tooltip ?? value}>
-                    <span class="stat-label">{label}</span>
-                    <span class="stat-val">{value}</span>
-                </div>
-            {/snippet}
-
-            <div class="stats">
-                <div class="stat-group">
-                    <h4 class="stat-group-title">Selection</h4>
-                    <div class="stat-rows">
-                        {@render statRow("Range", range)}
-                    </div>
-                </div>
-
-                <div class="stat-group">
-                    <h4 class="stat-group-title">Distribution</h4>
-                    <div class="stat-rows">
-                        {@render statRow("Mean", stats.mean.toFixed(2), `Mean: ${stats.mean.toFixed(2)}`)}
-                        {@render statRow("Median", stats.median.toString(), `Median: ${stats.median}`)}
-                        {@render statRow("Std Dev", stats.stddev.toFixed(2), `Std Dev: ${stats.stddev.toFixed(2)}`)}
-                    </div>
+        {#if stats}
+            <div class="stat-group">
+                <h4 class="stat-group-title">Distribution</h4>
+                <div class="stat-rows">
+                    {@render statRow("Mean", stats.mean.toFixed(2), `Mean: ${stats.mean.toFixed(2)}`)}
+                    {@render statRow("Median", stats.median.toString(), `Median: ${stats.median}`)}
+                    {@render statRow("Std Dev", stats.stddev.toFixed(2), `Std Dev: ${stats.stddev.toFixed(2)}`)}
                 </div>
             </div>
+        {/if}
+    </div>
 
-            {#if clipping.shadows > 0.1 || clipping.highlights > 0.1}
-                <div class="clipping-badges">
-                    {#if clipping.shadows > 0.1}
-                        <Badge variant="warning" title="Pixels fully black in this channel">
-                            <span>Shadows {clipping.shadows.toFixed(2)}%</span>
-                        </Badge>
-                    {/if}
-                    {#if clipping.highlights > 0.1}
-                        <Badge variant="warning" title="Pixels fully white in this channel">
-                            <span>Highlights {clipping.highlights.toFixed(2)}%</span>
-                        </Badge>
-                    {/if}
-                </div>
+    {#if clipping && (clipping.shadows > 0.1 || clipping.highlights > 0.1)}
+        <div class="clipping-badges">
+            {#if clipping.shadows > 0.1}
+                <Badge variant="warning" title="Pixels fully black in this channel">
+                    <span>Shadows {clipping.shadows.toFixed(2)}%</span>
+                </Badge>
             {/if}
-        {:catch error}
-            <div class="state-box error">
-                <span>Failed to load histogram: {(error as Error).message}</span>
-            </div>
-        {/await}
-    {:else}
-        <div class="chart-area">
-            <HistogramChart bind:selection bind:hoverBin />
+            {#if clipping.highlights > 0.1}
+                <Badge variant="warning" title="Pixels fully white in this channel">
+                    <span>Highlights {clipping.highlights.toFixed(2)}%</span>
+                </Badge>
+            {/if}
         </div>
     {/if}
 </div>

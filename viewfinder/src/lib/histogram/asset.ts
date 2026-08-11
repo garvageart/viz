@@ -19,9 +19,16 @@ function assetKey(asset: ImageAsset): string {
 }
 
 function histogramSourceUrl(asset: ImageAsset): string | null {
-    // Tally the original so pixel counts reflect the real image resolution.
-    const path = asset.image_paths?.original ?? asset.image_paths?.preview ?? null;
-    return path ? getFullImagePath(path) : null;
+    // Prefer preview, over original. Good middle ground. Original second, maybe slightly more time consuming
+    // TODO: Ideally, maybe this is a configurable user option
+    const path = asset.image_paths.preview ?? asset.image_paths.original ?? asset.image_paths.thumbnail ?? null;
+    if (!path) {
+        return null;
+    }
+
+    const checksum = asset.image_metadata?.checksum;
+    const versionedPath = checksum ? `${path}${path.includes("?") ? "&" : "?"}v=${checksum}` : path;
+    return getFullImagePath(versionedPath);
 }
 
 let workerInstance: Worker | null | undefined;
@@ -57,8 +64,12 @@ async function computeFallback(url: string): Promise<HistogramData> {
     img.src = url;
 
     await new Promise<void>((resolve, reject) => {
-        img.onload = () => resolve();
-        img.onerror = () => reject(new Error("Failed to load image for histogram"));
+        img.onload = () => {
+            resolve();
+        };
+        img.onerror = () => {
+            reject(new Error("Failed to load image for histogram"));
+        };
     });
 
     return computeHistogram(img);
@@ -77,7 +88,9 @@ export function computeForAsset(asset: ImageAsset): Promise<HistogramData> {
         if (!url) {
             pending = Promise.reject(new Error("Image has no histogram source"));
         } else {
-            pending = computeInWorker(url).catch(() => computeFallback(url));
+            pending = computeInWorker(url).catch(() => {
+                return computeFallback(url);
+            });
         }
         cache.set(key, pending);
 

@@ -1,4 +1,4 @@
-import * as util from "./util";
+import { tallyImageData } from "$lib/histogram/tally";
 
 export interface HistogramStat {
     red: number;
@@ -33,8 +33,9 @@ export class Histogram {
     _source: HTMLCanvasElement | HTMLImageElement;
     _canvas: HTMLCanvasElement;
     _ctx: CanvasRenderingContext2D;
-    _luminanceWeights: number[];
+    _luminanceWeights: [number, number, number];
     data: HistogramData;
+    private MAX_DIMENSION = 2048;
 
     /**
      * @param source - source element
@@ -47,7 +48,7 @@ export class Histogram {
         if (luminanceWeights.length !== 3) {
             throw new Error("luminance weights must have 3 values that sum to one");
         }
-        this._luminanceWeights = luminanceWeights.slice();
+        this._luminanceWeights = luminanceWeights.slice() as [number, number, number];
         this.data = this.calcData();
     }
 
@@ -96,88 +97,24 @@ export class Histogram {
     }
 
     private calcData(): HistogramData {
-        // draw image/canvas source to a new canvas and get pixel data
-        this._canvas.width = this._source.width;
-        this._canvas.height = this._source.height;
-        this._ctx.drawImage(this._source, 0, 0);
-        const imageData = this._ctx.getImageData(0, 0, this._canvas.width, this._canvas.height);
+        const MAX_DIM = this.MAX_DIMENSION;
+        let w = this._source.width || (this._source as HTMLImageElement).naturalWidth || 0;
+        let h = this._source.height || (this._source as HTMLImageElement).naturalHeight || 0;
 
-        // Initialize histogram arrays
-        const histograms = {
-            red: new Array(256).fill(0),
-            green: new Array(256).fill(0),
-            blue: new Array(256).fill(0),
-            luminance: new Array(256).fill(0),
-            rgb: new Array(256).fill(0)
-        };
-
-        // Tally each pixel into its bin where index = bin value
-        for (let i = 0; i < imageData.data.length; i += 4) {
-            const r = imageData.data[i];
-            const g = imageData.data[i + 1];
-            const b = imageData.data[i + 2];
-            const l = Math.floor(
-                this._luminanceWeights[0] * r + this._luminanceWeights[1] * g + this._luminanceWeights[2] * b
-            );
-
-            histograms.red[r] += 1;
-            histograms.green[g] += 1;
-            histograms.blue[b] += 1;
-            histograms.luminance[l] += 1;
-            histograms.rgb[r] += 1;
-            histograms.rgb[g] += 1;
-            histograms.rgb[b] += 1;
+        if (w > MAX_DIM || h > MAX_DIM) {
+            const scale = Math.min(MAX_DIM / w, MAX_DIM / h);
+            w = Math.round(w * scale);
+            h = Math.round(h * scale);
         }
 
-        // Find max values for each channel
-        const channels = ["red", "green", "blue", "luminance", "rgb"] as const;
-        const maxValues: HistogramStat = {
-            red: 0,
-            green: 0,
-            blue: 0,
-            luminance: 0,
-            rgb: 0
-        };
+        this._canvas.width = w;
+        this._canvas.height = h;
+        this._ctx.drawImage(this._source, 0, 0, w, h);
+        const imageData = this._ctx.getImageData(0, 0, w, h);
 
-        for (let i = 0; i < 256; i++) {
-            for (const channel of channels) {
-                maxValues[channel] = Math.max(maxValues[channel], histograms[channel][i]);
-            }
-        }
-
-        // Calculate statistics for each channel
-        const countRed = imageData.data.length / 4;
-        const countRGB = countRed * 3;
-
-        const stats = {
-            mean: {} as HistogramStat,
-            median: {} as HistogramStat,
-            mode: {} as HistogramStat,
-            stddev: {} as HistogramStat,
-            count: {} as HistogramStat
-        };
-
-        for (const channel of channels) {
-            const hist = histograms[channel];
-            stats.mean[channel] = util.mean(hist);
-            stats.median[channel] = util.median(hist);
-            stats.mode[channel] = util.mode(hist);
-            stats.stddev[channel] = util.std(hist);
-            stats.count[channel] = channel === "rgb" ? countRGB : countRed;
-        }
-
-        // can use average of averages since sizes are equal
-        stats.mean.rgb = (stats.mean.red + stats.mean.green + stats.mean.blue) / 3.0;
-
-        return {
-            hist: histograms,
-            count: stats.count,
-            max: maxValues,
-            mean: stats.mean,
-            median: stats.median,
-            mode: stats.mode,
-            stddev: stats.stddev
-        };
+        return tallyImageData(imageData, {
+            luminanceWeights: this._luminanceWeights
+        });
     }
 
     /**

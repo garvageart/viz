@@ -20,14 +20,24 @@ export const api: HistogramApi = {
         });
 
         const bitmap = await createImageBitmap(blob);
-        const canvas = new OffscreenCanvas(bitmap.width, bitmap.height);
+        const MAX_DIM = 2048;
+        let width = bitmap.width;
+        let height = bitmap.height;
+
+        if (width > MAX_DIM || height > MAX_DIM) {
+            const scale = Math.min(MAX_DIM / width, MAX_DIM / height);
+            width = Math.round(width * scale);
+            height = Math.round(height * scale);
+        }
+
+        const canvas = new OffscreenCanvas(width, height);
         const ctx = canvas.getContext("2d");
         if (!ctx) {
             throw new Error("OffscreenCanvas 2D context unavailable");
         }
 
-        ctx.drawImage(bitmap, 0, 0);
-        const imageData = ctx.getImageData(0, 0, bitmap.width, bitmap.height);
+        ctx.drawImage(bitmap, 0, 0, width, height);
+        const imageData = ctx.getImageData(0, 0, width, height);
         bitmap.close();
 
         return tallyImageData(imageData);
