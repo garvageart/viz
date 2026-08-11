@@ -125,16 +125,14 @@ if (typeof document !== "undefined" && "fonts" in document) {
     }
 }
 
-if (typeof window !== "undefined") {
-    const winLoad = new Promise<void>((res) => {
-        if (document.readyState === "complete") {
-            res();
-        } else {
-            window.addEventListener("load", () => res(), { once: true });
-        }
-    });
+const winLoad = new Promise<void>((res) => {
+    if (document.readyState === "complete") {
+        res();
+    } else {
+        window.addEventListener("load", () => res(), { once: true });
+    }
+});
 
-    registerReady(winLoad);
-}
+registerReady(winLoad);
 
 export default appReady;

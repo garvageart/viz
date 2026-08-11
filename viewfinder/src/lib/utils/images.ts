@@ -184,8 +184,7 @@ export function formatBytes(bytes?: number) {
         return null;
     }
 
-    const locale =
-        typeof window !== "undefined" ? window.navigator.languages?.[0] || window.navigator.language : undefined;
+    const locale = window.navigator.languages[0] || window.navigator.language;
     return getByteUnitString(bytes, locale, 1);
 }
 

@@ -13,11 +13,10 @@ export const IS_MOBILE =
         ? /iPhone|iPad|iPod|Android/i.test(navigator.userAgent) || screen.orientation?.type === "portrait-primary"
         : false;
 
-export const IS_MOBILE_VIEWPORT =
-    typeof window !== "undefined" ? window.matchMedia("(max-width: 40rem)").matches : false;
+export const IS_MOBILE_VIEWPORT = window.matchMedia("(max-width: 40rem)").matches;
 
 export const CLIENT_IS_PRODUCTION = IS_BROWSER_ENV?.production;
-export const BROWSER_BASE_URL = typeof window !== "undefined" ? window.location.hostname : "";
+export const BROWSER_BASE_URL = window.location.hostname;
 
 export const DEFAULT_THEME = "viz-theme";
 export const CAN_DEBUG =

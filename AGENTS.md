@@ -92,7 +92,7 @@ If refactoring changes logic significantly, update the comments to reflect the n
 - **Universal Load Functions**: Fetch page data inside client-side `+page.ts` or `+layout.ts` `load` functions. Do **NOT** use `+page.server.ts` files (Viz is a pure SPA).
 - **Styling**: SCSS (Sass) preprocessor. Scoped `<style lang="scss">` per component. Reference `var(--viz-spacing-*)` and `var(--viz-font-size-*)` tokens (defined in [UI_DESIGN_SYSTEM.md](/docs/development/UI_DESIGN_SYSTEM.md)).
   - ***Style Block Comments***: Single-line `//` SCSS comments are supported inside `<style lang="scss">` blocks. Avoid placing `//` comments immediately above multi-line property declarations (`background-image: ...`) to prevent Svelte preprocessor parsing errors; use standard `/* ... */` comments inside rule bodies or multi-line property lists.
-
+- **Unnecessary Type Guards (DOM APIs)**: Avoid writing unnecessary type guards on the frontend in relation to DOM APIs, such as `typeof window !== "undefined"`. This is a Single Page Application, running in the browser. Window is always defined. It is *the* global scope. Avoid it. It annoys me now.
 
 ## LLM Usage
 

@@ -16,9 +16,7 @@
     let prevFilesCount = $state(0);
 
     const prefersReducedMotion = () =>
-        typeof window !== "undefined" &&
-        window.matchMedia &&
-        window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+        window.matchMedia && window.matchMedia("(prefers-reduced-motion: reduce)").matches;
 
     $effect(() => {
         download.concurrency = Math.min(Math.max(download.concurrency || 1, 1), 10);

@@ -473,9 +473,7 @@ class FilterManager {
             new FilterScope("collections", DEFAULT_COLLECTION_FILTERS, DEFAULT_COLLECTION_UI_STATE)
         );
 
-        if (typeof window !== "undefined") {
-            this.init();
-        }
+        this.init();
     }
 
     async init() {

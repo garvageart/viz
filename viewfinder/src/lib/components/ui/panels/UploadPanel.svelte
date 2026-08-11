@@ -36,9 +36,7 @@
     );
 
     const prefersReducedMotion = () =>
-        typeof window !== "undefined" &&
-        window.matchMedia &&
-        window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+        window.matchMedia && window.matchMedia("(prefers-reduced-motion: reduce)").matches;
 
     $effect(() => {
         upload.concurrency = Math.min(Math.max(upload.concurrency || 1, 1), 10);
