@@ -194,7 +194,7 @@
 
         &:hover {
             background-color: var(--viz-surface-hover);
-            border-color: var(--viz-primary);
+            border-color: var(--viz-accent);
         }
 
         &.selected {

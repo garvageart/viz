@@ -85,6 +85,14 @@
         selectionManager.setActive(scopeId);
     }
 
+    // Sync data source and register active selection scope
+    $effect(() => {
+        if (data) {
+            selection.setSource(data);
+        }
+        selectionManager.setActive(scopeId);
+    });
+
     // HTML Elements & Virtualizer
     let assetGridDisplayEl: HTMLDivElement | undefined = $state();
     let containerWidth = $state(0);
