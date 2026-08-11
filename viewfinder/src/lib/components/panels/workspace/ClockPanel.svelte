@@ -43,7 +43,7 @@
     }
 
     .clock-time {
-        font-size: clamp(3rem, 9vw, 5.5rem);
+        font-size: 4rem;
         font-weight: 700;
         line-height: 1;
         font-variant-numeric: tabular-nums;
@@ -59,7 +59,7 @@
         display: flex;
         align-items: center;
         gap: var(--viz-spacing-xs);
-        font-weight: 450;
+        font-weight: 500;
         color: var(--viz-text-muted);
     }
 
