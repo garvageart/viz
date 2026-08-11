@@ -5,6 +5,16 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.30.1] - 2026-08-11
+
+* chore(viewfinder): document timezone and date-picker TODOs (890f3103)
+* chore(viewfinder): enable noUnusedLocals and remove unused code (38be1162)
+* refactor(viewfinder): clean up ImageLightbox and remove dead code (4bbbb196)
+* fix(viewfinder): stop double-advance in lightbox arrow navigation (c2577066)
+* fix(viewfinder): close websocket gracefully on page unload (e5b229cb)
+* fix: remove all `typeof window !== "undefined"` type guards. this is a SPA (1f6e8109)
+* fix: it was way too big (bd002026)
+
 ## [0.30.0] - 2026-08-11
 
 * style(ui): small visual tweaks to background, image card, and context menu (8d4ba5db)
