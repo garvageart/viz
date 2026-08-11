@@ -4,28 +4,47 @@
     import StarRating from "$lib/components/image-tools/StarRating.svelte";
     import Badge from "$lib/components/ui/Badge.svelte";
     import DatePicker from "$lib/components/ui/DatePicker.svelte";
+    import Favourite from "$lib/components/ui/Favourite.svelte";
     import IconButton from "$lib/components/ui/IconButton.svelte";
     import InputText from "$lib/components/ui/InputText.svelte";
     import MaterialIcon from "$lib/components/ui/MaterialIcon.svelte";
     import TextArea from "$lib/components/ui/TextArea.svelte";
+    import NoImageSelected from "$lib/components/ui/misc/NoImageSelected.svelte";
     import { LabelColours } from "$lib/images/constants";
     import { setRating } from "$lib/images/exif";
     import { SelectionScope, selectionManager } from "$lib/states/selection.svelte";
     import { toasts } from "$lib/toast-notifcations/toasts.svelte";
-    import { formatBytes, getFlashMode, getImageLabel, getTakenAt, getWhiteBalance } from "$lib/utils/images";
+    import {
+        formatBytes,
+        getFlashMode,
+        getImageLabel,
+        getImageMegapixels,
+        getTakenAt,
+        getWhiteBalance,
+        isAssetImage
+    } from "$lib/utils/images";
     import { copyToClipboard } from "$lib/utils/misc";
 
     interface Props {
         asset?: ImageAsset;
         show?: boolean;
         showCloseIcon?: boolean;
+        showTitle?: boolean;
         onImageUpdated?: (updatedAsset: ImageAsset) => void;
     }
 
-    let { asset, show = $bindable(false), showCloseIcon = $bindable(false), onImageUpdated }: Props = $props();
+    let {
+        asset,
+        show = $bindable(false),
+        showCloseIcon = $bindable(false),
+        showTitle = $bindable(true),
+        onImageUpdated
+    }: Props = $props();
 
     let activeScope = $derived(selectionManager.activeScope as SelectionScope<ImageAsset>);
-    let currentAsset = $derived(asset ?? activeScope?.active);
+    // Only actual images count as the current asset; a selected collection must
+    // not be rendered as image metadata (which caused a flicker).
+    let currentAsset = $derived(asset ?? (isAssetImage(activeScope?.active) ? activeScope.active : undefined));
 
     let editingState = $state({
         isEditing: false,
@@ -81,12 +100,16 @@
 </script>
 
 <div class="metadata-editor">
-    <div class="metadata-header">
-        <h3>Metadata</h3>
-        {#if showCloseIcon}
-            <IconButton iconName="close" class="metadata-close-btn" title="Close" onclick={() => (show = false)} />
-        {/if}
-    </div>
+    {#if showTitle || showCloseIcon}
+        <div class="metadata-header">
+            {#if showTitle}
+                <h3>Metadata</h3>
+            {/if}
+            {#if showCloseIcon}
+                <IconButton iconName="close" class="metadata-close-btn" title="Close" onclick={() => (show = false)} />
+            {/if}
+        </div>
+    {/if}
     {#if currentAsset}
         <div class="metadata-exif-box">
             <div class="exif-cards">
@@ -297,7 +320,7 @@
                             <MaterialIcon iconName="aspect_ratio" class="exif-material-icon" />
                             <div class="card-values">
                                 <div class="value-sub">
-                                    {Math.floor((currentAsset?.width! * currentAsset?.height!) / 1_000_000)} MP
+                                    {getImageMegapixels(currentAsset)} MP
                                 </div>
                                 <div class="value-sub">
                                     {formatBytes(currentAsset.image_metadata?.file_size) ?? "—"}
@@ -331,13 +354,13 @@
                     }}
                 />
                 <StarRating value={starRating} onChange={setImageRating} />
+                {#if currentAsset.favourited}
+                    <Favourite size="1.3rem" />
+                {/if}
             </div>
         </div>
     {:else}
-        <div class="metadata-empty">
-            <MaterialIcon iconName="image" opticalSize={48} size="3rem" />
-            <span class="metadata-empty-text">No image selected</span>
-        </div>
+        <NoImageSelected message="No image selected" />
     {/if}
 </div>
 
@@ -385,22 +408,6 @@
 
     .metadata-exif-box {
         display: block;
-    }
-
-    .metadata-empty {
-        display: flex;
-        flex-direction: column;
-        align-items: center;
-        justify-content: center;
-        gap: 0.5rem;
-        height: 100%;
-        min-height: 10rem;
-        color: var(--viz-text-secondary);
-        text-align: center;
-    }
-
-    .metadata-empty-text {
-        font-size: var(--viz-font-size-lg);
     }
 
     .exif-card-group {

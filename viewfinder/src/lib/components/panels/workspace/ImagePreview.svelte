@@ -4,14 +4,15 @@
     import AssetImage from "$lib/components/ui/AssetImage.svelte";
     import Favourite from "$lib/components/ui/Favourite.svelte";
     import MaterialIcon from "$lib/components/ui/MaterialIcon.svelte";
+    import NoImageSelected from "$lib/components/ui/misc/NoImageSelected.svelte";
     import ContextMenu from "$lib/context-menu/ContextMenu.svelte";
     import { createImageMenu } from "$lib/context-menu/menus/images";
     import { SelectionScope, selectionManager } from "$lib/states/selection.svelte";
-    import { getImageLabel } from "$lib/utils/images";
+    import { getImageLabel, isAssetImage } from "$lib/utils/images";
 
     let activeScope = $derived(selectionManager.activeScope as SelectionScope<ImageAsset> | undefined);
     let activeItem = $derived(activeScope?.active);
-    let isImage = $derived(!!activeItem?.image_paths);
+    let isImage = $derived(isAssetImage(activeItem));
 
     let selectionCount = $derived(activeScope?.size ?? 0);
 
@@ -74,10 +75,7 @@
             </div>
         {/if}
     {:else}
-        <div class="placeholder">
-            <MaterialIcon iconName="image" opticalSize={48} size="3rem" />
-            <span class="text">No image(s) selected</span>
-        </div>
+        <NoImageSelected />
     {/if}
 
     <ContextMenu bind:showMenu items={menuItems} anchor={menuAnchor} />
