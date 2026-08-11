@@ -5,6 +5,16 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.30.0] - 2026-08-11
+
+* style(ui): small visual tweaks to background, image card, and context menu (8d4ba5db)
+* chore(ui): restore lowercase sidebar components (6dbd7025)
+* refactor(ui): lowercase the Sidebar directory (06cd2e25)
+* feat(ui): add workspace metadata panel wrapper (484c8508)
+* test: add image utils coverage and harden icon generation spec (c20a3a84)
+* feat(ui): shared NoImageSelected empty state and image asset guard (1870074c)
+* feat(histogram): rework histogram with worker-accelerated computation and a declarative SVG panel (ff1f0da8)
+
 ## [0.29.4] - 2026-08-10
 
 * chore(icons): regenerate icons (4207f905)
