@@ -85,7 +85,7 @@ describe("ConfirmationModal", () => {
         await fireEvent.click(screen.getByRole("button", { name: "Cancel" }));
 
         expect(onCancel).toHaveBeenCalledTimes(1);
-        expect(modalsManager.dismiss).toHaveBeenCalledWith("delete-collection-modal", "cancel");
+        expect(modalsManager.dismiss).toHaveBeenCalledWith("delete-collection-modal");
     });
 
     it("applies the primary variant and background by default", () => {
