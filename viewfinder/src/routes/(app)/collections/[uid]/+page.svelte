@@ -312,9 +312,6 @@
         viewSettings.current === "grid" && viewSettings.simple ? "simple" : "full"
     );
 
-    // Toolbar stuff
-    let toolbarOpacity = $state(0);
-
     // Display Data
     let displayData = $derived(
         searchValue.trim()
@@ -672,7 +669,7 @@
     }
 
     function getDisplayArray(): ImageAsset[] {
-        return Array.isArray(displayData) ? displayData : (displayData ?? []);
+        return Array.isArray(displayData) ? displayData : [];
     }
 
     function prevLightboxImage() {
@@ -713,19 +710,9 @@
         lightboxImage = arr[next];
     }
 
-    hotkeys("left,right", (e, handler) => {
-        if (!show) {
-            return;
-        }
-
-        e.preventDefault();
-        if (handler.key === "left") {
-            prevLightboxImage();
-        } else if (handler.key === "right") {
-            nextLightboxImage();
-        }
-    });
-
+    // NOTE: left/right navigation is handled inside ImageLightbox (goToPrev/goToNext).
+    // Registering a duplicate "left,right" handler here caused double-advance on each
+    // keypress, skipping images (and never showing the last one before wrapping).
     hotkeys("escape", (e) => {
         if (lightboxImage) {
             return;
@@ -1047,16 +1034,6 @@
     style="font-size: {isLayoutPage() ? '0.9em' : 'inherit'};"
     {paginate}
     {focusScrollElement}
-    onscroll={(e) => {
-        const info = document.getElementById("viz-info-container")!;
-        const bottom = info.scrollHeight;
-
-        if (e.currentTarget.scrollTop < bottom) {
-            toolbarOpacity = e.currentTarget.scrollTop / bottom;
-        } else {
-            toolbarOpacity = 1;
-        }
-    }}
 >
     <AssetsShell
         bind:grid
