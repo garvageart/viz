@@ -52,11 +52,16 @@
     });
     let calendarOpen = $state(false);
 
+    // TODO(user-setting): Make timezone display configurable (IANA name vs abbreviation vs offset).
+    // `timeZoneName: "short"` varies by locale — some return the abbreviation (SAST),
+    // others return the offset (GMT+2). Let the user pick their preference.
     function getTimezoneAbbreviation(): string {
         const parts = new Intl.DateTimeFormat("en", { timeZoneName: "short" }).formatToParts();
         return parts.find((p) => p.type === "timeZoneName")?.value ?? "";
     }
 
+    // TODO(backend): Add taken_at / file_created_at to ImageUpdate so the
+    // calendar date+time picker can persist changes to the server.
     function handleDateChange(newDate: Date) {
         if (!currentAsset) {
             return;
