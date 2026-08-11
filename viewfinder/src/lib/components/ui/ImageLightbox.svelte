@@ -560,6 +560,20 @@
         }
     }
 
+    function handleContainerClick() {
+        if (isCropping) {
+            // Close floating crop menu if open, otherwise exit crop mode
+            if (cropMenuPosition) {
+                cropMenuPosition = undefined;
+            } else {
+                toggleCropMode();
+            }
+        } else if (zoomState.currentZoom === 1) {
+            // Close lightbox when not cropping and at default zoom
+            lightboxImage = undefined;
+        }
+    }
+
     function handleAspectRatioChange(ratio: number | "original" | undefined) {
         if (!imageEl || !currentCrop) {
             return;
@@ -865,20 +879,7 @@
         if (wasDragging) {
             return;
         }
-
-        if (!isCropping) {
-            if (zoomState.currentZoom === 1) {
-                lightboxImage = undefined;
-            }
-        } else {
-            // In crop mode, clicking overlay closes the floating crop menu if open,
-            // otherwise toggles crop mode
-            if (cropMenuPosition) {
-                cropMenuPosition = undefined;
-            } else {
-                toggleCropMode();
-            }
-        }
+        handleContainerClick();
     }}
 >
     <div class="image-lightbox-container">
@@ -891,20 +892,8 @@
                 }
 
                 // Only handle clicks on the container background (not on buttons or image)
-                if (e.currentTarget !== imageContainerEl) {
-                    return;
-                }
-
-                if (isCropping) {
-                    // Close floating crop menu if open, otherwise exit crop mode
-                    if (cropMenuPosition) {
-                        cropMenuPosition = undefined;
-                    } else {
-                        toggleCropMode();
-                    }
-                } else if (zoomState.currentZoom === 1) {
-                    // Close lightbox when not cropping and at default zoom
-                    lightboxImage = undefined;
+                if (e.currentTarget === imageContainerEl) {
+                    handleContainerClick();
                 }
             }}
             role="presentation"
@@ -1010,13 +999,7 @@
                     }
                     // Only close on clicking the wrapper background, not on children
                     if (e.target === e.currentTarget) {
-                        if (isCropping) {
-                            // Exit crop mode
-                            toggleCropMode();
-                        } else if (zoomState.currentZoom === 1) {
-                            // Close lightbox when not cropping and at default zoom
-                            lightboxImage = undefined;
-                        }
+                        handleContainerClick();
                     }
                 }}
             >
@@ -1048,14 +1031,7 @@
                         }
                         // Click on background
                         if (e.target === e.currentTarget) {
-                            if (isCropping) {
-                                // Exit crop mode and reset state
-                                toggleCropMode();
-                                return;
-                            }
-                            if (!isCropping && zoomState.currentZoom === 1) {
-                                lightboxImage = undefined;
-                            }
+                            handleContainerClick();
                         }
                     }}
                 >

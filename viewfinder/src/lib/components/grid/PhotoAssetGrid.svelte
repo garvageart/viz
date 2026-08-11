@@ -153,6 +153,16 @@
         return null;
     }
 
+    function findNearestEnabled(list: ImageAsset[], from: number, dir: "prev" | "next"): number {
+        const step = dir === "prev" ? -1 : 1;
+        for (let i = from + step; i >= 0 && i < list.length; i += step) {
+            if (!disabledUids.has(list[i].uid)) {
+                return i;
+            }
+        }
+        return -1;
+    }
+
     function handleKeyNav(e: KeyboardEvent, handler: HotkeysEvent) {
         if (selectionManager.activeScopeId !== scopeId) {
             return;
@@ -187,124 +197,93 @@
         }
 
         if (handler.key.endsWith("left") || handler.key.endsWith("right")) {
-            if (handler.key.endsWith("left")) {
-                let targetIndex = -1;
-                for (let i = globalIndex - 1; i >= 0; i--) {
-                    if (!disabledUids.has(searchList[i].uid)) {
-                        targetIndex = i;
-                        break;
-                    }
-                }
-                if (targetIndex !== -1) {
-                    // Boundary: Try to go to previous global item
-                    handleImageCardSelect(searchList[targetIndex], e);
-                }
-            } else {
-                let targetIndex = -1;
-                for (let i = globalIndex + 1; i < searchList.length; i++) {
-                    if (!disabledUids.has(searchList[i].uid)) {
-                        targetIndex = i;
-                        break;
-                    }
-                }
-                if (targetIndex !== -1) {
-                    // Boundary: Try to go to next global item
-                    handleImageCardSelect(searchList[targetIndex], e);
-                }
+            const targetIndex = findNearestEnabled(
+                searchList,
+                globalIndex,
+                handler.key.endsWith("left") ? "prev" : "next"
+            );
+            if (targetIndex !== -1) {
+                // Boundary: Try to go to previous/next global item
+                handleImageCardSelect(searchList[targetIndex], e);
             }
-        } else {
-            const pos = getAssetPosition(activeId);
-            if (!pos) {
-                return;
-            }
-
-            const rows = virtualizer.rows;
-
-            let targetRowIndex = pos.rowIndex + (handler.key.endsWith("up") ? -1 : 1);
-
-            // Skip header rows
-            while (targetRowIndex >= 0 && targetRowIndex < rows.length) {
-                const row = rows[targetRowIndex];
-                if (row.type === "header") {
-                    targetRowIndex += handler.key.endsWith("up") ? -1 : 1;
-                    continue;
-                }
-
-                const nonDisabledItems = row.items.filter((item) => !disabledUids.has(item.asset.uid));
-                if (nonDisabledItems.length > 0) {
-                    break;
-                }
-
-                targetRowIndex += handler.key.endsWith("up") ? -1 : 1;
-            }
-
-            // Vertical Boundary Checks
-            if (targetRowIndex < 0) {
-                // Moved UP past top
-                if (searchList) {
-                    // Fallback: Select previous global item (effectively wrapping to end of previous group)
-                    let targetIndex = -1;
-                    for (let i = globalIndex - 1; i >= 0; i--) {
-                        if (!disabledUids.has(searchList[i].uid)) {
-                            targetIndex = i;
-                            break;
-                        }
-                    }
-                    if (targetIndex !== -1) {
-                        handleImageCardSelect(searchList[targetIndex], e);
-                    }
-                }
-                return;
-            }
-
-            if (targetRowIndex >= rows.length) {
-                // Moved DOWN past bottom
-                if (searchList) {
-                    // Fallback: Select next global item (effectively wrapping to start of next group)
-                    let targetIndex = -1;
-                    for (let i = globalIndex + 1; i < searchList.length; i++) {
-                        if (!disabledUids.has(searchList[i].uid)) {
-                            targetIndex = i;
-                            break;
-                        }
-                    }
-                    if (targetIndex !== -1) {
-                        handleImageCardSelect(searchList[targetIndex], e);
-                    }
-                }
-                return;
-            }
-
-            // Local column navigation
-            const targetRow = rows[targetRowIndex];
-            if (targetRow.type === "header") {
-                return; // Should not happen due to skip loop
-            }
-
-            const nonDisabledItems = targetRow.items.filter((item) => !disabledUids.has(item.asset.uid));
-            if (nonDisabledItems.length === 0) {
-                return;
-            }
-
-            let closestItem = nonDisabledItems[0];
-            let minDiff = Number.MAX_VALUE;
-            let currentX = 0;
-
-            for (const item of targetRow.items) {
-                const itemCenterX = currentX + item.width / 2;
-                if (!disabledUids.has(item.asset.uid)) {
-                    const diff = Math.abs(itemCenterX - pos.centerX);
-
-                    if (diff < minDiff) {
-                        minDiff = diff;
-                        closestItem = item;
-                    }
-                }
-                currentX += item.width + virtualizer.gridGap;
-            }
-
-            handleImageCardSelect(closestItem.asset as ImageAsset, e);
+            return;
         }
+
+        const pos = getAssetPosition(activeId);
+        if (!pos) {
+            return;
+        }
+
+        const rows = virtualizer.rows;
+
+        let targetRowIndex = pos.rowIndex + (handler.key.endsWith("up") ? -1 : 1);
+
+        // Skip header rows
+        while (targetRowIndex >= 0 && targetRowIndex < rows.length) {
+            const row = rows[targetRowIndex];
+            if (row.type === "header") {
+                targetRowIndex += handler.key.endsWith("up") ? -1 : 1;
+                continue;
+            }
+
+            const nonDisabledItems = row.items.filter((item) => !disabledUids.has(item.asset.uid));
+            if (nonDisabledItems.length > 0) {
+                break;
+            }
+
+            targetRowIndex += handler.key.endsWith("up") ? -1 : 1;
+        }
+
+        // Vertical Boundary Checks
+        if (targetRowIndex < 0) {
+            // Moved UP past top
+            // Fallback: Select previous global item (effectively wrapping to end of previous group)
+            const targetIndex = findNearestEnabled(searchList, globalIndex, "prev");
+            if (targetIndex !== -1) {
+                handleImageCardSelect(searchList[targetIndex], e);
+            }
+            return;
+        }
+
+        if (targetRowIndex >= rows.length) {
+            // Moved DOWN past bottom
+            // Fallback: Select next global item (effectively wrapping to start of next group)
+            const targetIndex = findNearestEnabled(searchList, globalIndex, "next");
+            if (targetIndex !== -1) {
+                handleImageCardSelect(searchList[targetIndex], e);
+            }
+            return;
+        }
+
+        // Local column navigation
+        const targetRow = rows[targetRowIndex];
+        if (targetRow.type === "header") {
+            return; // Should not happen due to skip loop
+        }
+
+        const nonDisabledItems = targetRow.items.filter((item) => !disabledUids.has(item.asset.uid));
+        if (nonDisabledItems.length === 0) {
+            return;
+        }
+
+        let closestItem = nonDisabledItems[0];
+        let minDiff = Number.MAX_VALUE;
+        let currentX = 0;
+
+        for (const item of targetRow.items) {
+            const itemCenterX = currentX + item.width / 2;
+            if (!disabledUids.has(item.asset.uid)) {
+                const diff = Math.abs(itemCenterX - pos.centerX);
+
+                if (diff < minDiff) {
+                    minDiff = diff;
+                    closestItem = item;
+                }
+            }
+            currentX += item.width + virtualizer.gridGap;
+        }
+
+        handleImageCardSelect(closestItem.asset as ImageAsset, e);
     }
 
     onMount(() => {
@@ -439,43 +418,53 @@
                 selection.active = enabledImages[0];
             }
 
-            // If onLoadMore is provided and this group reaches the end of the currently loaded list,
-            // load more pages programmatically until the whole group is loaded.
-            if (onLoadMore) {
-                let currentImages = enabledImages;
-                let lastImage = currentImages[currentImages.length - 1];
-                let searchList = allData && allData.length > 0 ? allData : data;
+            await loadRemainingGroupImages(label, enabledImages);
+        }
+    }
 
-                while (lastImage && searchList.length > 0 && searchList[searchList.length - 1].uid === lastImage.uid) {
-                    const beforeLength = searchList.length;
-                    await onLoadMore();
+    // If the group reaches the end of the currently loaded list, load more pages
+    // programmatically until the whole group is loaded.
+    async function loadRemainingGroupImages(label: string, initialImages: ImageAsset[]) {
+        if (!onLoadMore) {
+            return;
+        }
 
-                    const afterList = allData && allData.length > 0 ? allData : data;
-                    if (afterList.length <= beforeLength) {
-                        break;
-                    }
-                    searchList = afterList;
+        const searchList = () => (allData && allData.length > 0 ? allData : data);
+        let currentImages = initialImages;
 
-                    const updatedImages = groupLookup.get(label) || [];
-                    const newlyLoadedInGroup = updatedImages.filter(
-                        (i) => !disabledUids.has(i.uid) && !selectedUIDs.has(i.uid)
-                    );
-
-                    if (newlyLoadedInGroup.length === 0) {
-                        break;
-                    }
-
-                    selection.addMultiple(newlyLoadedInGroup);
-                    currentImages = updatedImages.filter((i) => !disabledUids.has(i.uid));
-                    if (currentImages.length > 0) {
-                        suppressScrollOnce = true;
-                        selection.active = currentImages[0];
-                        lastImage = currentImages[currentImages.length - 1];
-                    } else {
-                        break;
-                    }
-                }
+        while (currentImages.length > 0) {
+            const lastImage = currentImages[currentImages.length - 1];
+            const list = searchList();
+            // The group's last known image must still be the last loaded item for the
+            // group to possibly continue past the current page.
+            if (list.length === 0 || list[list.length - 1].uid !== lastImage.uid) {
+                break;
             }
+
+            const beforeLength = list.length;
+            await onLoadMore();
+
+            if (searchList().length <= beforeLength) {
+                break;
+            }
+
+            const updatedImages = groupLookup.get(label) || [];
+            const newlyLoadedInGroup = updatedImages.filter(
+                (i) => !disabledUids.has(i.uid) && !selectedUIDs.has(i.uid)
+            );
+
+            if (newlyLoadedInGroup.length === 0) {
+                break;
+            }
+
+            selection.addMultiple(newlyLoadedInGroup);
+            currentImages = updatedImages.filter((i) => !disabledUids.has(i.uid));
+            if (currentImages.length === 0) {
+                break;
+            }
+
+            suppressScrollOnce = true;
+            selection.active = currentImages[0];
         }
     }
 

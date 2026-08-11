@@ -240,10 +240,21 @@
             virtualizer.updateScroll(scrollTop, viewportHeight);
         }
 
+        function onResize() {
+            recomputeOffset();
+            untrack(() => {
+                updateScrollPosition();
+                updateVirtualizerLayout();
+            });
+        }
+
         recomputeOffset();
         untrack(() => {
             updateScrollPosition();
         });
+
+        const ro = new ResizeObserver(onResize);
+        ro.observe(assetGridDisplayEl);
 
         if (parent !== assetGridDisplayEl && parent !== window) {
             usingExternalScroll = true;
@@ -251,15 +262,6 @@
 
             parent.addEventListener("scroll", updateScrollPosition, { passive: true });
             window.addEventListener("resize", updateScrollPosition, { passive: true });
-
-            const ro = new ResizeObserver(() => {
-                recomputeOffset();
-                untrack(() => {
-                    updateScrollPosition();
-                    updateVirtualizerLayout();
-                });
-            });
-            ro.observe(assetGridDisplayEl);
             if (parent instanceof HTMLElement) {
                 ro.observe(parent);
             }
@@ -281,15 +283,6 @@
         untrack(() => {
             updateVirtualizerLayout();
         });
-
-        const ro = new ResizeObserver(() => {
-            recomputeOffset();
-            untrack(() => {
-                updateScrollPosition();
-                updateVirtualizerLayout();
-            });
-        });
-        ro.observe(assetGridDisplayEl);
 
         return () => {
             ro.disconnect();
@@ -632,6 +625,24 @@
         assetClick?.();
     }
 
+    function nextImageRow(from: number): number {
+        for (let r = from + 1; r < virtualizer.rows.length; r++) {
+            if (virtualizer.rows[r].type === "images") {
+                return r;
+            }
+        }
+        return -1;
+    }
+
+    function prevImageRow(from: number): number {
+        for (let r = from - 1; r >= 0; r--) {
+            if (virtualizer.rows[r].type === "images") {
+                return r;
+            }
+        }
+        return -1;
+    }
+
     function handleKeydownCardSelect(asset: T, e: KeyboardEvent) {
         if (disabledUids.has(asset.uid)) {
             return;
@@ -682,33 +693,31 @@
         switch (e.key) {
             case "ArrowRight": {
                 const currentRow = virtualizer.rows[assetRowIdx];
-                targetColIdx++;
-                if (currentRow.type === "images" && targetColIdx >= currentRow.items.length) {
-                    targetRowIdx++;
-                    targetColIdx = 0;
-                    while (targetRowIdx < virtualizer.rows.length && virtualizer.rows[targetRowIdx].type !== "images") {
-                        targetRowIdx++;
-                    }
-                    if (targetRowIdx >= virtualizer.rows.length) {
+                if (currentRow.type === "images" && assetColIdx + 1 >= currentRow.items.length) {
+                    const nextRow = nextImageRow(assetRowIdx);
+                    if (nextRow === -1) {
                         return; // End of the grid; stay put
                     }
+                    targetRowIdx = nextRow;
+                    targetColIdx = 0;
+                } else {
+                    targetColIdx++;
                 }
                 break;
             }
             case "ArrowLeft": {
-                targetColIdx--;
-                if (targetColIdx < 0) {
-                    targetRowIdx--;
-                    while (targetRowIdx >= 0 && virtualizer.rows[targetRowIdx].type !== "images") {
-                        targetRowIdx--;
-                    }
-                    if (targetRowIdx < 0) {
+                if (assetColIdx - 1 < 0) {
+                    const prevRow = prevImageRow(assetRowIdx);
+                    if (prevRow === -1) {
                         return; // Start of the grid; stay put
                     }
-                    const prevRow = virtualizer.rows[targetRowIdx];
-                    if (prevRow.type === "images") {
-                        targetColIdx = prevRow.items.length - 1;
+                    const prevRowData = virtualizer.rows[prevRow];
+                    if (prevRowData.type === "images") {
+                        targetRowIdx = prevRow;
+                        targetColIdx = prevRowData.items.length - 1;
                     }
+                } else {
+                    targetColIdx--;
                 }
                 break;
             }

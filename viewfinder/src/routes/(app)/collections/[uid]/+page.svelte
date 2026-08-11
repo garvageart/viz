@@ -672,7 +672,7 @@
         return Array.isArray(displayData) ? displayData : [];
     }
 
-    function prevLightboxImage() {
+    function navigateLightbox(delta: -1 | 1) {
         if (!lightboxImage) {
             return;
         }
@@ -687,27 +687,16 @@
             return;
         }
 
-        const next = (idx - 1 + arr.length) % arr.length;
+        const next = (idx + delta + arr.length) % arr.length;
         lightboxImage = arr[next];
     }
 
+    function prevLightboxImage() {
+        navigateLightbox(-1);
+    }
+
     function nextLightboxImage() {
-        if (!lightboxImage) {
-            return;
-        }
-
-        const arr = getDisplayArray();
-        if (!arr.length) {
-            return;
-        }
-
-        const idx = arr.findIndex((i) => i.uid === lightboxImage!.uid);
-        if (idx === -1) {
-            return;
-        }
-
-        const next = (idx + 1) % arr.length;
-        lightboxImage = arr[next];
+        navigateLightbox(1);
     }
 
     // NOTE: left/right navigation is handled inside ImageLightbox (goToPrev/goToNext).
