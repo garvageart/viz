@@ -292,6 +292,7 @@
     // Re-run layout when data changes
     $effect(() => {
         if (assetGridDisplayEl) {
+            void allAssetsData;
             untrack(() => {
                 updateVirtualizerLayout();
             });
