@@ -653,17 +653,24 @@
 
     $effect(() => {
         const currentActive = selection.active;
-        if (currentActive && photoGridEl) {
-            const activeUid = currentActive.uid;
-            if (activeUid !== lastActiveUID) {
-                lastActiveUID = activeUid;
-                untrack(() => {
-                    scrollToAsset(currentActive, false);
-                });
-            }
-        } else if (!currentActive) {
+        if (!currentActive) {
             lastActiveUID = null;
+            return;
         }
+
+        if (!photoGridEl) {
+            return;
+        }
+
+        const activeUid = currentActive.uid;
+        if (activeUid === lastActiveUID) {
+            return;
+        }
+
+        lastActiveUID = activeUid;
+        untrack(() => {
+            scrollToAsset(currentActive, false);
+        });
     });
 
     // Action to initialize grid and setup observers

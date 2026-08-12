@@ -1,5 +1,4 @@
 <script lang="ts" generics="T extends { uid: string } & Record<string, any>">
-    import { dev } from "$app/environment";
     import hotkeys from "hotkeys-js";
     import { DateTime } from "luxon";
     import { type Snippet, untrack } from "svelte";
@@ -543,57 +542,120 @@
         $inspect("selected asset", selection.active);
     }
 
-    function scrollToAsset(asset: T) {
-        if (!assetGridDisplayEl || !virtualizer.rows.length) {
-            return;
-        }
+    let selectionAnchor = $state<T | null>(null);
 
-        // Find the row containing this asset
+    function getNavigableImages(): T[] {
+        const list: T[] = [];
         for (const row of virtualizer.rows) {
             if (row.type !== "images") {
                 continue;
             }
-            if (row.items.some((item) => item.asset.uid === asset.uid)) {
-                const scroller = usingExternalScroll ? scrollParent : assetGridDisplayEl;
-                if (!scroller) {
-                    return;
-                }
 
-                if (scroller instanceof HTMLElement) {
-                    const rowTop = row.top;
-                    const rowBottom = row.top + row.height;
-                    const viewportTop = usingExternalScroll ? scroller.scrollTop - gridOffsetTop : scroller.scrollTop;
-                    const viewportBottom = viewportTop + scroller.clientHeight;
-                    const scrollPaddingTop = 100;
-
-                    if (rowTop < viewportTop + scrollPaddingTop || rowBottom > viewportBottom) {
-                        if (usingExternalScroll) {
-                            scroller.scrollTop = Math.max(0, rowTop + gridOffsetTop - scrollPaddingTop);
-                        } else {
-                            scroller.scrollTop = Math.max(0, rowTop - scrollPaddingTop);
-                        }
-                    }
+            for (const item of row.items) {
+                const asset = item.asset as T;
+                if (disabledUids.has(asset.uid)) {
+                    continue;
                 }
-                break;
+                list.push(asset);
             }
         }
+
+        if (list.length > 0) {
+            return list;
+        }
+
+        return (allAssetsData || []).filter((img) => !disabledUids.has(img.uid));
+    }
+
+    function getAssetPosition(assetId: string | undefined) {
+        if (!assetId) {
+            return null;
+        }
+
+        const rows = virtualizer.rows;
+        for (let r = 0; r < rows.length; r++) {
+            const row = rows[r];
+            if (row.type !== "images") {
+                continue;
+            }
+
+            for (let i = 0; i < row.items.length; i++) {
+                const item = row.items[i];
+                if (item.asset.uid === assetId) {
+                    return {
+                        rowIndex: r,
+                        centerX: item.left + item.width / 2
+                    };
+                }
+            }
+        }
+
+        return null;
+    }
+
+    function scrollToAsset(asset: T, forceToTop = false) {
+        if (!assetGridDisplayEl || !asset?.uid || !virtualizer.rows.length) {
+            return;
+        }
+
+        const scroller = usingExternalScroll ? scrollParent : assetGridDisplayEl;
+        if (!scroller || !(scroller instanceof HTMLElement)) {
+            return;
+        }
+
+        const rowData = virtualizer.getRowForAsset(asset.uid);
+        if (!rowData) {
+            return;
+        }
+
+        const { rowTop, rowHeight } = rowData;
+        const rowBottom = rowTop + rowHeight;
+        const visualBuffer = 20;
+
+        const viewportTop = usingExternalScroll ? scroller.scrollTop - gridOffsetTop : scroller.scrollTop;
+        const viewportBottom = viewportTop + scroller.clientHeight;
+
+        const isAboveViewport = rowTop < viewportTop;
+        const isBelowViewport = rowBottom > viewportBottom - visualBuffer;
+        const shouldScroll = forceToTop || isAboveViewport || isBelowViewport;
+
+        if (!shouldScroll) {
+            return;
+        }
+
+        let targetScrollTop = viewportTop;
+        if (forceToTop || isAboveViewport) {
+            targetScrollTop = rowTop;
+        } else if (isBelowViewport) {
+            targetScrollTop = rowBottom - scroller.clientHeight + visualBuffer;
+        }
+
+        const targetOffset = usingExternalScroll ? targetScrollTop + gridOffsetTop : targetScrollTop;
+        scroller.scrollTop = Math.max(0, targetOffset);
     }
 
     let lastActiveUID: string | null = null;
 
     $effect(() => {
         const currentActive = selection.active;
-        if (currentActive && assetGridDisplayEl) {
-            const activeUid = currentActive.uid;
-            untrack(() => {
-                if (activeUid !== lastActiveUID) {
-                    lastActiveUID = activeUid;
-                    scrollToAsset(currentActive);
-                }
-            });
-        } else if (!currentActive) {
+        if (!currentActive) {
             lastActiveUID = null;
+            return;
         }
+
+        if (!assetGridDisplayEl) {
+            return;
+        }
+
+        const activeUid = currentActive.uid;
+        if (activeUid === lastActiveUID) {
+            return;
+        }
+
+        lastActiveUID = activeUid;
+        untrack(() => {
+            scrollToAsset(currentActive, false);
+        });
     });
 
     function handleImageCardSelect(asset: T, e: MouseEvent) {
@@ -608,48 +670,20 @@
                 selection.select(asset);
                 return;
             }
-
-            selection.selected.clear();
-
-            const ids = allAssetsData.map((i: T) => i.uid);
-            let startIndex = 0;
-            const endIndex = ids.indexOf(asset.uid);
-
-            if (selection.active) {
-                startIndex = ids.indexOf(selection.active.uid);
-            }
-
-            const start = Math.min(startIndex, endIndex);
-            const end = Math.max(startIndex, endIndex);
-
-            for (let i = start; i <= end; i++) {
-                selection.add(allAssetsData[i]);
-            }
+            selection.selectRange(asset, selectionAnchor, (img) => !disabledUids.has(img.uid));
         } else if (e.ctrlKey) {
             selection.toggle(asset);
+            if (selection.has(asset)) {
+                selectionAnchor = asset;
+            } else if (selectionAnchor?.uid === asset.uid) {
+                selectionAnchor = selection.active || null;
+            }
         } else {
             selection.select(asset);
+            selectionAnchor = asset;
         }
 
         assetClick?.();
-    }
-
-    function nextImageRow(from: number): number {
-        for (let r = from + 1; r < virtualizer.rows.length; r++) {
-            if (virtualizer.rows[r].type === "images") {
-                return r;
-            }
-        }
-        return -1;
-    }
-
-    function prevImageRow(from: number): number {
-        for (let r = from - 1; r >= 0; r--) {
-            if (virtualizer.rows[r].type === "images") {
-                return r;
-            }
-        }
-        return -1;
     }
 
     function handleKeydownCardSelect(asset: T, e: KeyboardEvent) {
@@ -657,131 +691,119 @@
             return;
         }
 
-        if (e.key === "Escape" || e.key === "Esc") {
+        const key = e.key;
+        const isEsc = key === "Escape" || key === "Esc";
+        if (isEsc) {
             e.preventDefault();
             selection.clear();
             return;
         }
 
-        const validKeys = ["ArrowLeft", "ArrowRight", "ArrowUp", "ArrowDown", "Tab"];
-        if (!validKeys.includes(e.key) && !e.shiftKey && !e.metaKey) {
+        const isLeft = key === "ArrowLeft" || (key === "Tab" && e.shiftKey);
+        const isRight = key === "ArrowRight" || (key === "Tab" && !e.shiftKey);
+        const isUp = key === "ArrowUp";
+        const isDown = key === "ArrowDown";
+        const isNavKey = isLeft || isRight || isUp || isDown;
+
+        if (!isNavKey) {
             return;
         }
 
-        // Find the asset in virtualizer rows
-        let assetRowIdx = -1;
-        let assetColIdx = -1;
+        e.preventDefault();
 
-        for (let r = 0; r < virtualizer.rows.length; r++) {
-            const row = virtualizer.rows[r];
+        const navList = getNavigableImages();
+        if (!navList.length) {
+            return;
+        }
+
+        onFocus();
+
+        const activeId = asset.uid || selection.active?.uid;
+        const currentIndex = activeId ? navList.findIndex((a) => a.uid === activeId) : -1;
+
+        const isHorizontal = isLeft || isRight;
+        if (isHorizontal) {
+            const targetIndex = isLeft ? currentIndex - 1 : currentIndex + 1;
+            const isValidIndex = targetIndex >= 0 && targetIndex < navList.length;
+            if (!isValidIndex) {
+                return;
+            }
+
+            const targetAsset = navList[targetIndex];
+
+            handleImageCardSelect(targetAsset, e as unknown as MouseEvent);
+            scrollToAsset(targetAsset, false);
+            return;
+        }
+
+        const pos = getAssetPosition(activeId);
+        if (!pos) {
+            const fallbackIndex = isUp ? Math.max(0, currentIndex - 1) : Math.min(navList.length - 1, currentIndex + 1);
+            const targetAsset = navList[fallbackIndex];
+
+            handleImageCardSelect(targetAsset, e as unknown as MouseEvent);
+            scrollToAsset(targetAsset, false);
+            return;
+        }
+
+        const rows = virtualizer.rows;
+        const step = isUp ? -1 : 1;
+        let targetRowIndex = pos.rowIndex + step;
+
+        while (targetRowIndex >= 0 && targetRowIndex < rows.length) {
+            const row = rows[targetRowIndex];
             if (row.type !== "images") {
+                targetRowIndex += step;
                 continue;
             }
-            for (let c = 0; c < row.items.length; c++) {
-                if (row.items[c].asset.uid === asset.uid) {
-                    assetRowIdx = r;
-                    assetColIdx = c;
-                    break;
-                }
-            }
-            if (assetRowIdx !== -1) {
+
+            const hasRealAsset = row.items.some((item) => !disabledUids.has(item.asset.uid));
+            if (hasRealAsset) {
                 break;
             }
+
+            targetRowIndex += step;
         }
 
-        if (assetRowIdx === -1) {
-            if (dev) {
-                console.warn(`Can't find asset ${asset.uid} in virtualizer rows`);
-            }
+        if (targetRowIndex < 0) {
+            const firstNav = navList[0];
+            handleImageCardSelect(firstNav, e as unknown as MouseEvent);
+            scrollToAsset(firstNav, false);
             return;
         }
 
-        let targetRowIdx = assetRowIdx;
-        let targetColIdx = assetColIdx;
-
-        switch (e.key) {
-            case "ArrowRight": {
-                const currentRow = virtualizer.rows[assetRowIdx];
-                if (currentRow.type === "images" && assetColIdx + 1 >= currentRow.items.length) {
-                    const nextRow = nextImageRow(assetRowIdx);
-                    if (nextRow === -1) {
-                        return; // End of the grid; stay put
-                    }
-                    targetRowIdx = nextRow;
-                    targetColIdx = 0;
-                } else {
-                    targetColIdx++;
-                }
-                break;
-            }
-            case "ArrowLeft": {
-                if (assetColIdx - 1 < 0) {
-                    const prevRow = prevImageRow(assetRowIdx);
-                    if (prevRow === -1) {
-                        return; // Start of the grid; stay put
-                    }
-                    const prevRowData = virtualizer.rows[prevRow];
-                    if (prevRowData.type === "images") {
-                        targetRowIdx = prevRow;
-                        targetColIdx = prevRowData.items.length - 1;
-                    }
-                } else {
-                    targetColIdx--;
-                }
-                break;
-            }
-            case "ArrowUp":
-                targetRowIdx--;
-                break;
-            case "ArrowDown":
-                targetRowIdx++;
-                break;
-            case "Tab":
-                if (e.shiftKey) {
-                    targetColIdx--;
-                    if (targetColIdx < 0) {
-                        targetRowIdx--;
-                        const prevRow = virtualizer.rows[targetRowIdx];
-                        if (prevRow && prevRow.type === "images") {
-                            targetColIdx = prevRow.items.length - 1;
-                        } else if (e.shiftKey && targetRowIdx < 0) {
-                            return; // Let browser handle tab out
-                        }
-                    }
-                } else {
-                    targetColIdx++;
-                    const currentRow = virtualizer.rows[assetRowIdx];
-                    if (currentRow && currentRow.type === "images" && targetColIdx >= currentRow.items.length) {
-                        targetRowIdx++;
-                        targetColIdx = 0;
-                        const nextRow = virtualizer.rows[targetRowIdx];
-                        if (!nextRow || nextRow.type !== "images") {
-                            return; // Let browser handle tab out
-                        }
-                    }
-                }
-                break;
-        }
-
-        // Clamp to valid range
-        targetRowIdx = Math.max(0, Math.min(virtualizer.rows.length - 1, targetRowIdx));
-        const targetRow = virtualizer.rows[targetRowIdx];
-        if (!targetRow || targetRow.type !== "images") {
-            return;
-        }
-        targetColIdx = Math.max(0, Math.min(targetRow.items.length - 1, targetColIdx));
-
-        const targetItem = targetRow.items[targetColIdx];
-        if (!targetItem) {
+        if (targetRowIndex >= rows.length) {
+            const lastNav = navList[navList.length - 1];
+            handleImageCardSelect(lastNav, e as unknown as MouseEvent);
+            scrollToAsset(lastNav, false);
             return;
         }
 
-        // Find and focus the DOM element
-        const el = assetGridDisplayEl?.querySelector(`[data-asset-id="${targetItem.asset.uid}"]`) as HTMLElement;
-        if (el) {
-            el.focus();
-            handleImageCardSelect(targetItem.asset as T, e as unknown as MouseEvent);
+        const targetRow = rows[targetRowIndex];
+        if (targetRow.type !== "images") {
+            return;
         }
+
+        const realItems = targetRow.items.filter((item) => !disabledUids.has(item.asset.uid));
+        if (realItems.length === 0) {
+            return;
+        }
+
+        let closestItem = realItems[0];
+        let minDiff = Number.MAX_VALUE;
+
+        for (const item of realItems) {
+            const itemCenterX = item.left + item.width / 2;
+            const diff = Math.abs(itemCenterX - pos.centerX);
+            if (diff < minDiff) {
+                minDiff = diff;
+                closestItem = item;
+            }
+        }
+
+        const targetAsset = closestItem.asset as T;
+        handleImageCardSelect(targetAsset, e as unknown as MouseEvent);
+        scrollToAsset(targetAsset, false);
     }
 
     function shouldKeepSelection(target: HTMLElement | null): boolean {
@@ -896,6 +918,9 @@
         class:selected-card={isSelected}
         role="button"
         tabindex={isDisabled ? -1 : 0}
+        onfocus={() => {
+            onFocus();
+        }}
         onclick={(e) => {
             if (isDisabled) {
                 return;
@@ -984,6 +1009,9 @@
         class:selected-card={isSelected}
         role="button"
         tabindex={isDisabled ? -1 : 0}
+        onfocus={() => {
+            onFocus();
+        }}
         onclick={(e) => {
             if (isDisabled) {
                 return;
