@@ -229,4 +229,54 @@ test.describe("Workspace Layout & Persistence", () => {
         await expect(page.locator('button[role="tab"]').nth(1)).toBeVisible({ timeout: 10000 });
         await expect(page.locator('button[role="tab"]').nth(2)).toBeVisible({ timeout: 10000 });
     });
+
+    test("should ensure drop overlays are absent before and after drag operations", async ({ page }) => {
+        // 1. Verify no drop overlays exist initially
+        await expect(page.locator(".drop-overlay")).toHaveCount(0);
+        await expect(page.locator(".edge-drop-overlay")).toHaveCount(0);
+
+        // 2. Perform a split so we have 2 groups
+        const firstTab = page.locator('button[role="tab"]').first();
+        await expect(firstTab).toBeVisible();
+        await firstTab.click({ button: "right" });
+        await page.locator('#split-right, [id="split-right"]').first().click();
+
+        // Wait for split to settle
+        await expect(page.locator(".tab-group-panel")).toHaveCount(2);
+
+        // 3. Move a tab between groups using realistic coordinate path mouse movement
+        const group1Tab = page.locator(".tab-group-panel").first().locator('button[role="tab"]').first();
+        const group2Header = page.locator(".tab-group-panel").nth(1).locator(".tab-group-header");
+
+        const startBox = await group1Tab.boundingBox();
+        const targetBox = await group2Header.boundingBox();
+
+        expect(startBox).toBeTruthy();
+        expect(targetBox).toBeTruthy();
+
+        if (startBox && targetBox) {
+            const startX = startBox.x + startBox.width / 2;
+            const startY = startBox.y + startBox.height / 2;
+            const targetX = targetBox.x + targetBox.width / 2;
+            const targetY = targetBox.y + targetBox.height / 2;
+
+            const midX = (startX + targetX) / 2;
+            const midY = (startY + targetY) / 2 - 20;
+
+            // Move to start & press down
+            await page.mouse.move(startX, startY);
+            await page.mouse.down();
+
+            // Move through intermediate trajectory steps to simulate human mouse drag
+            await page.mouse.move(midX, midY, { steps: 10 });
+            await page.mouse.move(targetX, targetY, { steps: 10 });
+
+            // Release mouse button to drop
+            await page.mouse.up();
+        }
+
+        // 4. Assert that no residual drop overlays remain anywhere in the DOM after drag completes
+        await expect(page.locator(".drop-overlay")).toHaveCount(0);
+        await expect(page.locator(".edge-drop-overlay")).toHaveCount(0);
+    });
 });
