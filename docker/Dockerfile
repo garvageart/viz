@@ -104,19 +104,11 @@ FROM ${FRONTEND_BUILDER_IMAGE} AS frontend-build-stage
 # Stage 6: Final Production Image
 FROM debian:bookworm-slim AS server
 
-# Install runtime dependencies for libvips with BuildKit apt caching
-RUN --mount=type=cache,id=apt-cache,target=/var/cache/apt,sharing=locked \
-    --mount=type=cache,id=apt-lib,target=/var/lib/apt,sharing=locked \
-    rm -f /etc/apt/apt.conf.d/docker-clean && \
-    echo 'Binary::apt::APT::Keep-Downloaded-Packages "true";' > /etc/apt/apt.conf.d/keep-cache && \
-    apt-get update && \
-    apt-get install -y --no-install-recommends \
-    libglib2.0-0 libexpat1 libjpeg62-turbo libpng16-16 libtiff6 \
-    libwebp7 libheif1 libopenexr-3-1-30 liborc-0.4-0 libgirepository-1.0-1 \
-    libxml2 libexif12 libpoppler-glib8 libgsf-1-114 libopenjp2-7 \
-    libjxl0.7 libimagequant0 libarchive13 librsvg2-2 libopenslide0 libmatio11 \
-    libcfitsio10 libcgif0 libmagickwand-6.q16-6 libraw20 libnifti2-2 \
-    ca-certificates gosu
+# Runtime libraries are baked into viz-base (see docker/Dockerfile.base), so
+# release builds don't re-download them from Debian mirrors on every build.
+COPY --from=backend-builder /runtime/usr/lib/ /usr/lib/
+COPY --from=backend-builder /runtime/usr/sbin/gosu /usr/sbin/gosu
+COPY --from=backend-builder /runtime/etc/ssl/certs/ /etc/ssl/certs/
 
 # Copy libvips from base image
 COPY --from=backend-builder /vips-libs/ /usr/lib/
