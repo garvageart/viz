@@ -601,4 +601,27 @@ export class PhotoGridVirtualizer {
         }
         return "";
     }
+
+    /**
+     * Finds the grid row containing an asset by UID and returns its top position, height, and group header top.
+     */
+    getRowForAsset(assetUid: string): { rowTop: number; rowHeight: number; groupHeaderTop: number } | null {
+        let currentGroupHeaderTop = 0;
+        for (const row of this.rows) {
+            if (row.type === "header") {
+                currentGroupHeaderTop = row.top;
+                continue;
+            }
+
+            const hasAsset = row.type === "images" && row.items.some((item) => item.asset.uid === assetUid);
+            if (hasAsset) {
+                return {
+                    rowTop: row.top,
+                    rowHeight: row.height,
+                    groupHeaderTop: currentGroupHeaderTop
+                };
+            }
+        }
+        return null;
+    }
 }
