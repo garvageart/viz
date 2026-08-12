@@ -5,6 +5,13 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.30.5] - 2026-08-12
+
+* docs: update DOM querying guidelines in AGENTS.md (9a29b861)
+* style(viewfinder): update asset grid container queries, image preview styles, and context menu separator (21c1bd8d)
+* test(viewfinder): add unit and e2e test coverage for tab operations and overlay cleanup (9908cb15)
+* feat(viewfinder): refactor tab drag-and-drop spatial drop zones and debug overlays (a1a2734d)
+
 ## [0.30.4] - 2026-08-11
 
 * fix(viewfinder): update selection scope sync in grid and card hover styling (3480f95a)
