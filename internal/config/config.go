@@ -89,7 +89,7 @@ func ReadConfig() (viper.Viper, error) {
 	v.SetDefault("libvips.cache_max_operations", 0)
 	v.SetDefault("libvips.concurrency", 1)
 
-	v.SetDefault("storage.storage_path_template", "{{y}}/{{y}}-{{MM}}-{{dd}}/{{filename}}")
+	v.SetDefault("storage.storage_path_template", "{{assetUid}}/{{filename}}")
 	v.SetDefault("storage_metrics.enabled", true)
 	v.SetDefault("storage_metrics.interval_seconds", 300)
 

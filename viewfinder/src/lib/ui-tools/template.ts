@@ -66,7 +66,7 @@ export const DEFAULT_TEMPLATE_EXAMPLE = {
     make: "Fujifilm",
     model: "X-T5",
     lensModel: "XF 35mm f/2.0",
-    assetUid: "nIiGNClg0dx0MSC1gHgQa5ST",
+    assetUid: "a1B2c3D4e5F6g7h8I9j0klmn",
     exampleDateStr: "2025-03-01T14:05:07.456Z"
 };
 

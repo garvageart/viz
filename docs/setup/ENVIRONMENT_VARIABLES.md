@@ -201,7 +201,7 @@ All settings below can be set via environment variables (see sections above) or 
         "concurrency": 1
     },
     "storage": {
-        "storage_path_template": "{{y}}/{{y}}-{{MM}}-{{dd}}/{{filename}}"
+        "storage_path_template": "{{assetUid}}/{{filename}}"
     },
     "storage_metrics": {
         "enabled": true,

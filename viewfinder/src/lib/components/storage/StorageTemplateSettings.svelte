@@ -22,7 +22,7 @@
 
     let { config }: Props = $props();
 
-    let defaultTemplate = "{{y}}/{{y}}-{{MM}}-{{dd}}/{{filename}}";
+    let defaultTemplate = "{{assetUid}}/{{filename}}";
     let activeTemplate = $derived(config?.storage?.storage_path_template || defaultTemplate);
     let template = $state("");
 
@@ -97,7 +97,7 @@
     });
 
     const storagePresets = [
-        { name: "Default (Daily Partition)", value: defaultTemplate },
+        { name: "Daily Partition (Year/Date)", value: "{{y}}/{{y}}-{{MM}}-{{dd}}/{{filename}}" },
         { name: "Standard (Year/Month/Day)", value: "{{y}}/{{MM}}/{{dd}}/{{filename}}" },
         { name: "Year/Month Name/Day", value: "{{y}}/{{MMMM}}/{{dd}}/{{filename}}" },
         { name: "Flat (Year-Month-Day)", value: "{{y}}-{{MM}}-{{dd}}/{{filename}}" },
@@ -116,7 +116,8 @@
             name: "By Collection & Year (with fallback)",
             value: "{{#if collection}}{{collection-startDate-y}}/{{collection}}{{else}}{{y}}/Other/{{MM}}{{/if}}/{{filename}}"
         },
-        { name: "Unique Asset ID (No collision)", value: "{{y}}/{{y}}-{{MM}}-{{dd}}/{{assetUid}}" }
+        { name: "Flat Asset UID (Default)", value: defaultTemplate },
+        { name: "Daily Partitioned Asset UID", value: "{{y}}/{{y}}-{{MM}}-{{dd}}/{{assetUid}}" }
     ];
 
     const selectOptions = $derived(
@@ -189,9 +190,9 @@
 
         // Reset focus and cursor position after render
         setTimeout(() => {
-            inputEl?.focus();
+            inputEl.focus();
             const newCursorPos = start + tokenStr.length;
-            inputEl?.setSelectionRange(newCursorPos, newCursorPos);
+            inputEl.setSelectionRange(newCursorPos, newCursorPos);
         }, 0);
     }
 
@@ -430,7 +431,7 @@
                                         <span class="token-val-desc">{desc}</span>
                                     </div>
                                     <span class="token-example-val">
-                                        "{context[token as keyof typeof context] || "Unknown"}"
+                                        {context[token as keyof typeof context] || "Unknown"}
                                     </span>
                                 </button>
                             {/if}
@@ -460,11 +461,11 @@
                                     </div>
                                     <span class="token-example-val">
                                         {#if context[token === "collectionStartDateY" ? "collection-startDate-y" : (token as keyof typeof context)]}
-                                            "{context[
+                                            {context[
                                                 token === "collectionStartDateY"
                                                     ? "collection-startDate-y"
                                                     : (token as keyof typeof context)
-                                            ]}"
+                                            ]}
                                         {:else}
                                             <span class="null-val">null</span>
                                         {/if}
