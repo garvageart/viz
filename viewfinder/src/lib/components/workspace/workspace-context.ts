@@ -137,6 +137,10 @@ export function buildLayoutContextMenu(): MenuItem[] {
                 }
             },
             iconName: isLayoutLocked ? "lock_open" : "lock"
+        },
+        {
+            id: "lock-layout-separator",
+            separator: true
         }
     ];
 }

@@ -47,7 +47,7 @@
 <div class="preview-container" role="presentation" oncontextmenu={handleContextMenu}>
     {#if isImage}
         {#if activeItem}
-            <div class="image-wrapper">
+            <div class="image-container">
                 <AssetImage
                     asset={activeItem}
                     resolution="preview"
@@ -92,15 +92,15 @@
         box-sizing: border-box;
         justify-content: space-between;
         align-items: stretch;
+        gap: var(--viz-spacing-sm);
     }
 
-    .image-wrapper {
+    .image-container {
         display: flex;
         align-items: center;
         justify-content: center;
-        overflow: hidden;
-        padding: 0.5rem;
         height: 100%;
+        background-color: var(--viz-surface-card);
     }
 
     .info {
@@ -109,7 +109,7 @@
         border-top: 1px solid var(--viz-surface-hover);
         display: flex;
         flex-direction: column;
-        gap: 0.25rem;
+        gap: var(--viz-spacing-xs);
         max-width: 100%;
         box-sizing: border-box;
 

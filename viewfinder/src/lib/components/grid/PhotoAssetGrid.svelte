@@ -1670,13 +1670,11 @@
 
         /* Inline tile width is 100 */
         /* See PhotoGridVirtualizer.svelte.ts */
-        @container (max-width: 100px) {
-            padding: var(--viz-spacing-xl);
+        @container (max-width: 8rem) {
             font-size: var(--viz-font-size-std);
             line-height: 1.15;
 
             &::before {
-                border-left: 2px solid var(--viz-accent);
                 top: var(--viz-spacing-xl);
                 bottom: var(--viz-spacing-xl);
             }
