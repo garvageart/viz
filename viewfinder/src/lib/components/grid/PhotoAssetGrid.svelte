@@ -131,6 +131,27 @@
         selection.clear();
     }
 
+    function getNavigableImages(): ImageAsset[] {
+        const list: ImageAsset[] = [];
+        for (const row of virtualizer.rows) {
+            if (row.type !== "images") {
+                continue;
+            }
+            for (const item of row.items) {
+                const asset = item.asset as ImageWithDateLabel;
+                if (asset.isHeaderItem || disabledUids.has(asset.uid)) {
+                    continue;
+                }
+                list.push(asset as ImageAsset);
+            }
+        }
+        if (list.length > 0) {
+            return list;
+        }
+        const source = allData && allData.length > 0 ? allData : filteredData;
+        return source.filter((img) => !disabledUids.has(img.uid));
+    }
+
     function getAssetPosition(assetId: string) {
         const rows = virtualizer.rows;
         for (let r = 0; r < rows.length; r++) {
@@ -138,29 +159,19 @@
             if (row.type === "header") {
                 continue;
             }
-            let currentX = 0;
+
             for (let i = 0; i < row.items.length; i++) {
                 const item = row.items[i];
                 if (item.asset.uid === assetId) {
                     return {
                         rowIndex: r,
-                        centerX: currentX + item.width / 2
+                        centerX: item.left + item.width / 2
                     };
                 }
-                currentX += item.width + virtualizer.gridGap;
             }
         }
-        return null;
-    }
 
-    function findNearestEnabled(list: ImageAsset[], from: number, dir: "prev" | "next"): number {
-        const step = dir === "prev" ? -1 : 1;
-        for (let i = from + step; i >= 0 && i < list.length; i += step) {
-            if (!disabledUids.has(list[i].uid)) {
-                return i;
-            }
-        }
-        return -1;
+        return null;
     }
 
     function handleKeyNav(e: KeyboardEvent, handler: HotkeysEvent) {
@@ -170,120 +181,112 @@
 
         e.preventDefault();
 
-        if (!filteredData.length) {
+        const navList = getNavigableImages();
+        if (!navList.length) {
             return;
         }
 
         onFocus();
 
-        suppressScrollOnce = false; // Reset scroll suppression so keyboard moves scroll targeted item into view
-        scrollToTopOnNext = true; // Keyboard nav always scrolls the selected row to the top of the viewport
+        const activeId = selection.active?.uid;
+        const currentIndex = activeId ? navList.findIndex((a) => a.uid === activeId) : -1;
 
-        if (!selection.active) {
-            const searchList = allData && allData.length > 0 ? allData : filteredData;
-            const firstEnabled = searchList.find((img) => !disabledUids.has(img.uid));
-            if (firstEnabled) {
-                handleImageCardSelect(firstEnabled, e);
-            }
+        if (!activeId || currentIndex === -1) {
+            const firstEnabled = navList[0];
+            handleImageCardSelect(firstEnabled, e);
+            scrollToAsset(firstEnabled, false);
             return;
         }
 
-        const activeId = selection.active.uid;
-        const searchList = allData && allData.length > 0 ? allData : filteredData;
-        const globalIndex = searchList.findIndex((a) => a.uid === activeId);
+        const key = handler.key;
+        const isLeft = key.endsWith("left");
+        const isRight = key.endsWith("right");
+        const isUp = key.endsWith("up");
+        const isHorizontal = isLeft || isRight;
 
-        if (globalIndex === -1) {
-            return;
-        }
-
-        if (handler.key.endsWith("left") || handler.key.endsWith("right")) {
-            const targetIndex = findNearestEnabled(
-                searchList,
-                globalIndex,
-                handler.key.endsWith("left") ? "prev" : "next"
-            );
-            if (targetIndex !== -1) {
-                // Boundary: Try to go to previous/next global item
-                handleImageCardSelect(searchList[targetIndex], e);
+        if (isHorizontal) {
+            const targetIndex = isLeft ? currentIndex - 1 : currentIndex + 1;
+            const isValidIndex = targetIndex >= 0 && targetIndex < navList.length;
+            if (!isValidIndex) {
+                return;
             }
+            const targetAsset = navList[targetIndex];
+            handleImageCardSelect(targetAsset, e);
+            scrollToAsset(targetAsset, false);
             return;
         }
 
         const pos = getAssetPosition(activeId);
         if (!pos) {
+            const fallbackIndex = isUp ? Math.max(0, currentIndex - 1) : Math.min(navList.length - 1, currentIndex + 1);
+            const targetAsset = navList[fallbackIndex];
+            handleImageCardSelect(targetAsset, e);
+            scrollToAsset(targetAsset, false);
             return;
         }
 
         const rows = virtualizer.rows;
+        const step = isUp ? -1 : 1;
+        let targetRowIndex = pos.rowIndex + step;
 
-        let targetRowIndex = pos.rowIndex + (handler.key.endsWith("up") ? -1 : 1);
-
-        // Skip header rows
         while (targetRowIndex >= 0 && targetRowIndex < rows.length) {
             const row = rows[targetRowIndex];
             if (row.type === "header") {
-                targetRowIndex += handler.key.endsWith("up") ? -1 : 1;
+                targetRowIndex += step;
                 continue;
             }
 
-            const nonDisabledItems = row.items.filter((item) => !disabledUids.has(item.asset.uid));
-            if (nonDisabledItems.length > 0) {
+            const hasRealAsset = row.items.some(
+                (item) => !(item.asset as ImageWithDateLabel).isHeaderItem && !disabledUids.has(item.asset.uid)
+            );
+            if (hasRealAsset) {
                 break;
             }
 
-            targetRowIndex += handler.key.endsWith("up") ? -1 : 1;
+            targetRowIndex += step;
         }
 
-        // Vertical Boundary Checks
         if (targetRowIndex < 0) {
-            // Moved UP past top
-            // Fallback: Select previous global item (effectively wrapping to end of previous group)
-            const targetIndex = findNearestEnabled(searchList, globalIndex, "prev");
-            if (targetIndex !== -1) {
-                handleImageCardSelect(searchList[targetIndex], e);
-            }
+            const firstNav = navList[0];
+            handleImageCardSelect(firstNav, e);
+            scrollToAsset(firstNav, false);
             return;
         }
 
         if (targetRowIndex >= rows.length) {
-            // Moved DOWN past bottom
-            // Fallback: Select next global item (effectively wrapping to start of next group)
-            const targetIndex = findNearestEnabled(searchList, globalIndex, "next");
-            if (targetIndex !== -1) {
-                handleImageCardSelect(searchList[targetIndex], e);
-            }
+            const lastNav = navList[navList.length - 1];
+            handleImageCardSelect(lastNav, e);
+            scrollToAsset(lastNav, false);
             return;
         }
 
-        // Local column navigation
         const targetRow = rows[targetRowIndex];
         if (targetRow.type === "header") {
-            return; // Should not happen due to skip loop
-        }
-
-        const nonDisabledItems = targetRow.items.filter((item) => !disabledUids.has(item.asset.uid));
-        if (nonDisabledItems.length === 0) {
             return;
         }
 
-        let closestItem = nonDisabledItems[0];
-        let minDiff = Number.MAX_VALUE;
-        let currentX = 0;
-
-        for (const item of targetRow.items) {
-            const itemCenterX = currentX + item.width / 2;
-            if (!disabledUids.has(item.asset.uid)) {
-                const diff = Math.abs(itemCenterX - pos.centerX);
-
-                if (diff < minDiff) {
-                    minDiff = diff;
-                    closestItem = item;
-                }
-            }
-            currentX += item.width + virtualizer.gridGap;
+        const realItems = targetRow.items.filter(
+            (item) => !(item.asset as ImageWithDateLabel).isHeaderItem && !disabledUids.has(item.asset.uid)
+        );
+        if (realItems.length === 0) {
+            return;
         }
 
-        handleImageCardSelect(closestItem.asset as ImageAsset, e);
+        let closestItem = realItems[0];
+        let minDiff = Number.MAX_VALUE;
+
+        for (const item of realItems) {
+            const itemCenterX = item.left + item.width / 2;
+            const diff = Math.abs(itemCenterX - pos.centerX);
+            if (diff < minDiff) {
+                minDiff = diff;
+                closestItem = item;
+            }
+        }
+
+        const targetAsset = closestItem.asset as ImageAsset;
+        handleImageCardSelect(targetAsset, e);
+        scrollToAsset(targetAsset, false);
     }
 
     onMount(() => {
@@ -414,7 +417,6 @@
             selection.addMultiple(enabledImages);
             // Set anchor to first item of group for shift-selection without auto-scrolling to bottom
             if (enabledImages.length > 0) {
-                suppressScrollOnce = true;
                 selection.active = enabledImages[0];
             }
 
@@ -463,7 +465,6 @@
                 break;
             }
 
-            suppressScrollOnce = true;
             selection.active = currentImages[0];
         }
     }
@@ -481,8 +482,6 @@
     let scrollParent: HTMLElement | Window | undefined = $state();
     let isSyncingScroll = false; // Flag to prevent loop
     let isScrubbing = $state(false);
-    let suppressScrollOnce = false;
-    let scrollToTopOnNext = false; // When true, keyboard nav scrolls selected row to the top of the viewport
 
     let photoGridEl: HTMLDivElement | undefined = $state();
     let gridContainerEl: HTMLDivElement | undefined = $state();
@@ -512,23 +511,25 @@
     let scrubberScrollTopState = $derived(scrubberScrollTop);
 
     $effect(() => {
-        if (isScrubbing) {
-            if (usingExternalScroll && scrollParent instanceof HTMLElement) {
-                isSyncingScroll = true;
-                const pageScroll = Math.max(0, scrubberScrollTopState + gridOffsetTop);
-                scrollParent.scrollTop = pageScroll;
-                // Derived containerScrollTop will update via scroll event,
-                // but we force update for virtualizer responsiveness.
-                containerScrollTop = pageScroll;
-                scrollTop = Math.max(0, pageScroll - gridOffsetTop);
-                virtualizer.updateScroll(scrollTop, containerViewportHeight);
-                requestAnimationFrame(() => {
-                    isSyncingScroll = false;
-                });
-            } else {
-                scrollTop = scrubberScrollTopState;
-                virtualizer.updateScroll(scrollTop, virtualizer.viewportHeight);
-            }
+        if (!isScrubbing) {
+            return;
+        }
+
+        if (usingExternalScroll && scrollParent instanceof HTMLElement) {
+            isSyncingScroll = true;
+            const pageScroll = Math.max(0, scrubberScrollTopState + gridOffsetTop);
+            scrollParent.scrollTop = pageScroll;
+            // Derived containerScrollTop will update via scroll event,
+            // but we force update for virtualizer responsiveness.
+            containerScrollTop = pageScroll;
+            scrollTop = Math.max(0, pageScroll - gridOffsetTop);
+            virtualizer.updateScroll(scrollTop, containerViewportHeight);
+            requestAnimationFrame(() => {
+                isSyncingScroll = false;
+            });
+        } else {
+            scrollTop = scrubberScrollTopState;
+            virtualizer.updateScroll(scrollTop, virtualizer.viewportHeight);
         }
     });
 
@@ -601,51 +602,51 @@
     }
 
     function scrollToAsset(asset: ImageAsset, forceToTop = false) {
-        if (!photoGridEl || !virtualizer.rows.length) {
+        if (!photoGridEl || !asset?.uid) {
             return;
         }
 
-        // Find the scroll container
         const scroller = usingExternalScroll ? scrollParent : photoGridEl;
-        if (!scroller) {
+        if (!scroller || !(scroller instanceof HTMLElement)) {
             return;
         }
 
-        for (const row of virtualizer.rows) {
-            if (row.type === "header") {
-                continue;
-            }
-            if (row.items.some((i) => i.asset.uid === asset.uid)) {
-                // If using external scroll we know offsets
-                if (usingExternalScroll && scroller instanceof HTMLElement) {
-                    const rowTop = row.top;
-                    const rowBottom = row.top + row.height;
-                    const viewportTop = scroller.scrollTop - gridOffsetTop;
-                    const viewportBottom = viewportTop + scroller.clientHeight;
-                    const scrollPaddingTop = 100; // Offset for sticky header/toolbar
-
-                    if (forceToTop || rowTop < viewportTop + scrollPaddingTop || rowBottom > viewportBottom) {
-                        // Scroll so that the selected row is at the top of the viewport
-                        scroller.scrollTop = Math.max(0, rowTop + gridOffsetTop - scrollPaddingTop);
-                    }
-                    return;
-                }
-
-                // Default (internal scroll within photoGridEl)
-                if (scroller instanceof HTMLElement) {
-                    const rowTop = row.top;
-                    const rowBottom = row.top + row.height;
-                    const viewportTop = scroller.scrollTop;
-                    const viewportBottom = scroller.scrollTop + scroller.clientHeight;
-                    const scrollPaddingTop = 100; // Offset for sticky header/toolbar
-
-                    if (forceToTop || rowTop < viewportTop + scrollPaddingTop || rowBottom > viewportBottom) {
-                        scroller.scrollTop = Math.max(0, rowTop - scrollPaddingTop);
-                    }
-                }
-                break;
-            }
+        const rowData = virtualizer.getRowForAsset(asset.uid);
+        if (!rowData) {
+            return;
         }
+
+        const { rowTop, rowHeight, groupHeaderTop } = rowData;
+        const rowBottom = rowTop + rowHeight;
+        const visualBuffer = 20;
+        const scrollPaddingTop = (stickyHeaderHeight ?? 0) + visualBuffer;
+
+        const viewportTop = usingExternalScroll ? scroller.scrollTop - gridOffsetTop : scroller.scrollTop;
+        const viewportBottom = viewportTop + scroller.clientHeight;
+
+        const isAboveViewport = rowTop < viewportTop + scrollPaddingTop;
+        const isBelowViewport = rowBottom > viewportBottom - visualBuffer;
+        const shouldScroll = forceToTop || isAboveViewport || isBelowViewport;
+
+        if (!shouldScroll) {
+            return;
+        }
+
+        let idealScrollTop = rowTop - scrollPaddingTop;
+        const isNearGroupHeader = rowTop - groupHeaderTop < 100;
+        if (isNearGroupHeader) {
+            idealScrollTop = groupHeaderTop;
+        }
+
+        let targetScrollTop = viewportTop;
+        if (forceToTop || isAboveViewport) {
+            targetScrollTop = idealScrollTop;
+        } else if (isBelowViewport) {
+            targetScrollTop = rowBottom - scroller.clientHeight + visualBuffer;
+        }
+
+        const targetOffset = usingExternalScroll ? targetScrollTop + gridOffsetTop : targetScrollTop;
+        scroller.scrollTop = Math.max(0, targetOffset);
     }
 
     let lastActiveUID: string | null = null;
@@ -654,20 +655,14 @@
         const currentActive = selection.active;
         if (currentActive && photoGridEl) {
             const activeUid = currentActive.uid;
-            untrack(() => {
-                if (activeUid !== lastActiveUID) {
-                    lastActiveUID = activeUid;
-                    if (!suppressScrollOnce) {
-                        scrollToAsset(currentActive, scrollToTopOnNext);
-                    }
-                }
-                suppressScrollOnce = false;
-                scrollToTopOnNext = false;
-            });
+            if (activeUid !== lastActiveUID) {
+                lastActiveUID = activeUid;
+                untrack(() => {
+                    scrollToAsset(currentActive, false);
+                });
+            }
         } else if (!currentActive) {
             lastActiveUID = null;
-            suppressScrollOnce = false;
-            scrollToTopOnNext = false;
         }
     });
 
@@ -725,14 +720,20 @@
             }
 
             // Attach listener
+            let scrollRafId: number | null = null;
             const onExternalScroll = () => {
-                if (!photoGridEl) {
+                if (!photoGridEl || isSyncingScroll || isScrubbing) {
                     return;
                 }
-                if (isSyncingScroll || isScrubbing) {
+
+                if (scrollRafId !== null) {
                     return;
                 }
-                updateMetrics();
+
+                scrollRafId = requestAnimationFrame(() => {
+                    scrollRafId = null;
+                    updateMetrics();
+                });
             };
 
             parent.addEventListener("scroll", onExternalScroll, { passive: true });
@@ -776,16 +777,20 @@
         const debouncedUpdate = debounce(() => requestAnimationFrame(() => untrack(() => updateVirtualGrid())), 100);
         resizeObserver = new ResizeObserver((entries) => {
             for (const entry of entries) {
-                if (entry.target === node) {
-                    if (!usingExternalScroll) {
-                        virtualizer.viewportHeight = entry.contentRect.height;
-                    } else if (scrollParent instanceof HTMLElement) {
-                        virtualizer.viewportHeight = scrollParent.clientHeight;
-                    }
+                if (entry.target !== node) {
+                    continue;
+                }
+
+                if (!usingExternalScroll) {
+                    virtualizer.viewportHeight = entry.contentRect.height;
+                } else if (scrollParent instanceof HTMLElement) {
+                    virtualizer.viewportHeight = scrollParent.clientHeight;
                 }
             }
+
             debouncedUpdate();
         });
+
         resizeObserver.observe(node);
 
         return {
@@ -867,35 +872,8 @@
         }
         onFocus(); // Ensure this grid is active on click
 
-        // Only suppress scroll for mouse clicks — keyboard nav explicitly manages
-        // suppressScrollOnce and scrollToTopOnNext in handleKeyNav, and we must not override those.
-        if (e instanceof MouseEvent) {
-            suppressScrollOnce = true;
-        }
-
         if (e.shiftKey) {
-            const selectionData = allData && allData.length > 0 ? allData : filteredData;
-            const ids = selectionData.map((i: ImageAsset) => i.uid);
-            const endIndex = ids.indexOf(asset.uid);
-            const anchor = selectionAnchor || selection.active;
-            const startIndex = anchor ? ids.indexOf(anchor.uid) : -1;
-
-            // If both start and end are found, do range selection
-            if (startIndex !== -1 && endIndex !== -1) {
-                selection.selected.clear();
-
-                const start = Math.min(startIndex, endIndex);
-                const end = Math.max(startIndex, endIndex);
-
-                for (let i = start; i <= end; i++) {
-                    selection.add(selectionData[i]);
-                }
-                selection.active = asset;
-            } else {
-                selection.add(asset);
-                selection.active = asset;
-                selectionAnchor = asset;
-            }
+            selection.selectRange(asset, selectionAnchor, (img) => !disabledUids.has(img.uid));
         } else if (e.ctrlKey) {
             selection.toggle(asset);
             if (selection.has(asset)) {
@@ -1019,12 +997,25 @@
     {@const groupImages = groupLookup.get(label) || []}
     {@const allSelected = groupImages.length > 0 && groupImages.every((i) => selectedUIDs.has(i.uid))}
     <div class="inline-grid-header">
-        <div class="header-content">
+        <button
+            type="button"
+            class="header-content"
+            aria-label="Select group {label}"
+            onclick={(e) => {
+                e.stopPropagation();
+                onFocus();
+                handleGroupSelect(label);
+            }}
+            onfocus={() => {
+                onFocus();
+            }}
+        >
             <Checkbox
                 class={!allSelected ? "header-select-btn" : ""}
                 variant="round"
                 size="large"
                 checked={allSelected}
+                tabindex={-1}
                 onclick={(e) => {
                     e.stopPropagation();
                 }}
@@ -1036,7 +1027,7 @@
             />
 
             <h3>{label}</h3>
-        </div>
+        </button>
     </div>
 {/snippet}
 
@@ -1050,6 +1041,7 @@
     {@const isSelected = selectedUIDs.has(asset.uid) || selection.active?.uid === asset.uid}
     {@const isCached = loadedImageUIDs.has(asset.uid)}
     {@const isDisabled = disabledUids.has(asset.uid)}
+    <!-- {@const isFocusedAsset = selection.active ? selection.active.uid === asset.uid : data[0]?.uid === asset.uid} -->
     <div
         class="asset-photo"
         class:is-cached={isCached}
@@ -1088,8 +1080,11 @@
         class:selected-photo={isSelected}
         class:multi-selected-photo={isSelected && isMultiSelecting}
         role="button"
-        tabindex="0"
-        onfocus={() => prefetchLightboxImage(asset)}
+        tabindex={0}
+        onfocus={() => {
+            prefetchLightboxImage(asset);
+            onFocus();
+        }}
         onclick={(e) => {
             if ((e.currentTarget as HTMLElement).dataset.longPressHandled === "true") {
                 return;
@@ -1150,7 +1145,6 @@
 
             e.preventDefault();
             e.stopPropagation();
-            suppressScrollOnce = true;
             if (!selectedUIDs.has(asset.uid) || selection.size <= 1) {
                 selection.select(asset);
             }
@@ -1255,7 +1249,7 @@
         onkeydown={onFocus}
         role="grid"
         aria-label="Photo Grid"
-        tabindex="0"
+        tabindex="-1"
     >
         <div style={`height: ${virtualizer.totalHeight}px; position: relative; width: 100%;`}>
             {#each virtualizer.visibleRows as row (row.id)}
@@ -1340,6 +1334,10 @@
         height: 100%;
         scrollbar-gutter: stable;
 
+        &:focus-visible {
+            outline: 2px solid var(--viz-primary);
+        }
+
         &.use-external-scroll {
             height: auto;
             overflow-y: visible;
@@ -1394,14 +1392,26 @@
         box-sizing: border-box;
         justify-content: center;
 
-        .header-content {
+        button.header-content {
+            background: transparent;
+            border: none;
+            cursor: pointer;
             width: fit-content;
             max-width: 100%;
             display: flex;
             align-items: center;
             gap: var(--viz-spacing-xs);
+            outline: none;
 
-            &:hover :global(.header-select-btn) {
+            &:focus-visible {
+                outline: 2px solid var(--viz-primary);
+                outline-offset: 2px;
+                padding: var(--viz-spacing-xxs) var(--viz-spacing-xs);
+            }
+
+            &:hover :global(.header-select-btn),
+            &:focus-visible :global(.header-select-btn),
+            &:focus-within :global(.header-select-btn) {
                 width: 1.5rem;
                 opacity: 1;
             }
@@ -1409,7 +1419,9 @@
             @media (max-width: 768px) {
                 gap: var(--viz-spacing-sm);
 
-                &:hover :global(.header-select-btn) {
+                &:hover :global(.header-select-btn),
+                &:focus-visible :global(.header-select-btn),
+                &:focus-within :global(.header-select-btn) {
                     margin-right: 0;
                 }
             }
