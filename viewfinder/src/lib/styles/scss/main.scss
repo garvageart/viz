@@ -168,6 +168,7 @@ html {
 /* Layout coordinates */
 :root {
     --viz-header-height: #{v.$viz-header-height};
+    --viz-panel-header-height: #{v.$viz-panel-header-height};
     --viz-sidebar-width-expanded: #{v.$viz-sidebar-width-expanded};
     --viz-sidebar-width-collapsed: #{v.$viz-sidebar-width-collapsed};
 }

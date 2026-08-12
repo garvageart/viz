@@ -2,6 +2,7 @@
     import { dev } from "$app/environment";
     import { setContext, untrack } from "svelte";
     import tippy, { type Instance } from "tippy.js";
+    import TabGroupDebugOverlay from "$lib/components/workspace/debug/TabGroupDebugOverlay.svelte";
     import { VizMimeTypes } from "$lib/constants";
     import ContextMenu from "$lib/context-menu/ContextMenu.svelte";
     import type { MenuItem } from "$lib/context-menu/types";
@@ -47,6 +48,7 @@
     let scrollWidth = $state(0);
     let isHoveringHeader = $state(false);
     let isDraggingScrollbar = $state(false);
+    let showDebugOverlay = $state(false);
     let dragScrollInterval: ReturnType<typeof setInterval> | null = null;
     const SCROLL_SPEED = 10;
     const SCROLL_THRESHOLD = 50;
@@ -386,6 +388,9 @@
     {#if isFocused}
         <div class="viz-panel-active-overlay"></div>
     {/if}
+    {#if showDebugOverlay}
+        <TabGroupDebugOverlay />
+    {/if}
     <div
         class="tab-group-header"
         role="toolbar"
@@ -460,6 +465,15 @@
 
         <div class="header-actions">
             {#if dev}
+                <button
+                    class="header-action-button"
+                    class:active={showDebugOverlay}
+                    aria-label="Toggle Debug Overlay Zones"
+                    title="Toggle Debug Overlay Zones"
+                    onclick={() => (showDebugOverlay = !showDebugOverlay)}
+                >
+                    <MaterialIcon iconName="window" />
+                </button>
                 <button
                     class="header-action-button"
                     aria-label="Reset and Reload"
@@ -544,11 +558,11 @@
         width: 100%;
         min-width: 0;
         flex-shrink: 0;
-        height: 1.8rem;
+        height: var(--viz-panel-header-height);
         transition: background-color 0.2s;
 
         &:global(.drop-active) {
-            background-color: var(--viz-surface-panel);
+            background-color: var(--viz-surface-popover);
         }
     }
 
@@ -664,6 +678,12 @@
         padding: 0 0.5em;
         cursor: pointer;
         height: 100%;
+        color: var(--viz-text-muted);
+
+        &:hover,
+        &.active {
+            color: var(--viz-primary);
+        }
     }
 
     .loading-overlay,

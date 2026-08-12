@@ -117,19 +117,41 @@
     z-index: 1000;
     transition: all 0.15s ease;
 
+    &[data-position="header"] {
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: var(--viz-panel-header-height);
+    }
     &[data-position="left"] {
+        top: var(--viz-panel-header-height);
+        left: 0;
         width: 40%;
+        height: calc(100% - var(--viz-panel-header-height));
     }
     &[data-position="right"] {
+        top: var(--viz-panel-header-height);
         left: 60%;
         width: 40%;
+        height: calc(100% - var(--viz-panel-header-height));
     }
     &[data-position="top"] {
+        top: var(--viz-panel-header-height);
+        left: 0;
+        width: 100%;
         height: 40%;
     }
     &[data-position="bottom"] {
-        top: 60%;
-        height: 40%;
+        top: calc(60% + var(--viz-panel-header-height) * 0.4);
+        left: 0;
+        width: 100%;
+        height: calc(40% - var(--viz-panel-header-height) * 0.4);
+    }
+    &[data-position="center"] {
+        top: var(--viz-panel-header-height);
+        left: 0;
+        width: 100%;
+        height: calc(100% - var(--viz-panel-header-height));
     }
 }
 
@@ -143,19 +165,19 @@
     transition: all 0.15s ease;
 
     &[data-edge="left"] {
-        top: 0;
+        top: var(--viz-panel-header-height);
         left: 0;
         width: 34%;
-        height: 100%;
+        height: calc(100% - var(--viz-panel-header-height));
     }
     &[data-edge="right"] {
-        top: 0;
+        top: var(--viz-panel-header-height);
         right: 0;
         width: 34%;
-        height: 100%;
+        height: calc(100% - var(--viz-panel-header-height));
     }
     &[data-edge="top"] {
-        top: 0;
+        top: var(--viz-panel-header-height);
         left: 0;
         width: 100%;
         height: 34%;

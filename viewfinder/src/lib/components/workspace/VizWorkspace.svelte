@@ -3,8 +3,9 @@
     import hotkeys from "hotkeys-js";
     import { DateTime } from "luxon";
     import { onMount } from "svelte";
+    import RootDebugOverlay from "$lib/components/workspace/debug/RootDebugOverlay.svelte";
     import { type SerializedWorkspace, Workspace } from "$lib/layouts/model.svelte";
-    import { tabOps } from "$lib/layouts/tab-ops.svelte";
+    import { showRootDebugOverlay, tabOps } from "$lib/layouts/tab-ops.svelte";
     import { views } from "$lib/layouts/views";
     import { debugMode, isMobile } from "$lib/states/index.svelte";
     import { workspaceState } from "$lib/states/workspace.svelte";
@@ -19,7 +20,6 @@
     let { id }: Props = $props();
 
     const storage = new VizLocalStorage<SerializedWorkspace>("workspaceLayout");
-    let initialized = $state(false);
 
     function initWorkspace() {
         if (!workspaceState.workspace) {
@@ -39,13 +39,10 @@
                 workspaceState.workspace = isMobile ? createMobileDefaultLayout() : createDefaultLayout();
             }
         }
-        initialized = true;
     }
 
     onMount(() => {
-        if (!initialized) {
-            initWorkspace();
-        }
+        initWorkspace();
     });
 
     if (dev) {
@@ -58,7 +55,7 @@
     }
 
     $effect(() => {
-        if (initialized && workspaceState.workspace) {
+        if (workspaceState.workspace) {
             // toJSON() reads every reactive field of the workspace tree, so its
             // call here registers the deep dependencies; only the two ids that
             // it does not serialize need explicit reads.
@@ -73,10 +70,6 @@
     });
 
     onMount(() => {
-        if (!initialized) {
-            return;
-        }
-
         hotkeys("`", (e) => {
             // Prevent default behavior (e.g. typing ` in an input, if filter logic fails)
             e.preventDefault();
@@ -96,7 +89,10 @@
 </script>
 
 <div {id} class="viz-workspace" use:tabOps.edgeDropTarget>
-    {#if initialized && workspaceState.workspace}
+    {#if showRootDebugOverlay.value}
+        <RootDebugOverlay />
+    {/if}
+    {#if workspaceState.workspace}
         <LayoutNode node={workspaceState.workspace.root} />
     {:else}
         <div class="loading">Initializing Workspace...</div>

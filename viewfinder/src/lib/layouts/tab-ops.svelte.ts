@@ -9,15 +9,48 @@ export interface TabDragData {
     sourceGroupId: string;
 }
 
-export type DropPosition = "left" | "right" | "top" | "bottom" | "center";
+export type DropPosition = "left" | "right" | "top" | "bottom" | "center" | "header";
+
+export const DROP_ZONE_THRESHOLDS = {
+    topRatio: 0.2,
+    bottomRatio: 0.2,
+    leftRatio: 0.2,
+    rightRatio: 0.2
+} as const;
+
+export const EDGE_BAND_THRESHOLDS = {
+    enter: 45,
+    exit: 85
+} as const;
+
+export let showRootDebugOverlay = $state({ value: false });
 
 // Shared reactive state for root-level edge drops. Set by the workspace edge
 // drop target (capture phase); consulted by per-group drop targets so they
 // suppress their overlays/handlers while an edge zone is active.
-export const edgeDrag = $state({
+export let edgeDrag = $state({
     active: false,
     edge: null as RootEdge | null
 });
+
+export function cleanupAllDragOverlays() {
+    if (edgeDrag.active) {
+        edgeDrag.active = false;
+    }
+    if (edgeDrag.edge !== null) {
+        edgeDrag.edge = null;
+    }
+
+    const overlays = document.querySelectorAll(".drop-overlay, .edge-drop-overlay");
+    for (const overlay of overlays) {
+        overlay.remove();
+    }
+
+    const activeClasses = document.querySelectorAll(".drop-active, .drop-target-active");
+    for (const el of activeClasses) {
+        el.classList.remove("drop-active", "drop-target-active");
+    }
+}
 
 export class TabOps {
     draggable = (node: HTMLElement, data: TabDragData) => {
@@ -34,7 +67,7 @@ export class TabOps {
         };
 
         const onDragEnd = () => {
-            DragData.clear();
+            cleanupAllDragOverlays();
         };
 
         node.addEventListener("dragstart", onDragStart);
@@ -174,28 +207,46 @@ export class TabOps {
         const x = e.clientX - rect.left;
         const y = e.clientY - rect.top;
 
+        const headerEl = node.querySelector(".tab-group-header");
+        const headerHeight = headerEl ? headerEl.getBoundingClientRect().height : 36;
+
+        if (y <= headerHeight) {
+            return "header";
+        }
+
+        const contentHeight = rect.height - headerHeight;
+        if (contentHeight <= 0) {
+            return "center";
+        }
+
+        const relY = y - headerHeight;
         const xPct = x / rect.width;
-        const yPct = y / rect.height;
+        const yPct = relY / contentHeight;
 
-        const threshold = 0.2;
-
-        if (xPct < threshold) {
-            return "left";
-        }
-        if (xPct > 1 - threshold) {
-            return "right";
-        }
-        if (yPct < threshold) {
+        if (yPct < DROP_ZONE_THRESHOLDS.topRatio) {
             return "top";
         }
-        if (yPct > 1 - threshold) {
+        if (yPct > 1 - DROP_ZONE_THRESHOLDS.bottomRatio) {
             return "bottom";
+        }
+        if (xPct < DROP_ZONE_THRESHOLDS.leftRatio) {
+            return "left";
+        }
+        if (xPct > 1 - DROP_ZONE_THRESHOLDS.rightRatio) {
+            return "right";
         }
 
         return "center";
     }
 
     private updateOverlay(node: HTMLElement, e: DragEvent) {
+        const allOverlays = document.querySelectorAll(".drop-overlay");
+        for (const ov of allOverlays) {
+            if (ov.parentElement !== node) {
+                ov.remove();
+            }
+        }
+
         let overlay = node.querySelector(".drop-overlay") as HTMLElement;
         if (!overlay) {
             overlay = document.createElement("div");
@@ -226,7 +277,7 @@ export class TabOps {
             return;
         }
 
-        if (position === "center") {
+        if (position === "center" || position === "header") {
             workspace.moveTabToGroup(viewId, targetGroupId);
         } else {
             workspace.splitGroup(targetGroupId, view, position);
@@ -240,7 +291,8 @@ export class TabOps {
      * it takes precedence over the nested per-group drop targets.
      */
     edgeDropTarget = (node: HTMLElement) => {
-        const EDGE_BAND = 70; // px from the workspace edge that triggers the zone
+        const EDGE_BAND_ENTER = EDGE_BAND_THRESHOLDS.enter; // px threshold to arm/enter the edge zone
+        const EDGE_BAND_EXIT = EDGE_BAND_THRESHOLDS.exit; // px threshold to disarm/exit the edge zone (hysteresis band)
         // Safety net: clear a stale overlay shortly after the last in-band
         // dragover in case a drag ends or is cancelled without a dragend/mouseup
         // reaching us (e.g. dropped outside the window or focus lost mid-drag).
@@ -285,18 +337,28 @@ export class TabOps {
             }
 
             const rect = node.getBoundingClientRect();
+            const headerEl = node.querySelector(".tab-group-header");
+            const headerHeight = headerEl ? headerEl.getBoundingClientRect().height : 0;
+
             const distLeft = e.clientX - rect.left;
             const distRight = rect.right - e.clientX;
-            const distTop = e.clientY - rect.top;
+            const rawTop = e.clientY - rect.top - headerHeight;
+            const distTop = rawTop < 0 ? Infinity : rawTop;
             const distBottom = rect.bottom - e.clientY;
 
             const minDist = Math.min(distLeft, distRight, distTop, distBottom);
-            const inBand = minDist <= EDGE_BAND;
 
-            if (!inBand) {
-                hasBeenInterior = true;
-                this.clearEdge(node);
-                return;
+            if (edgeDrag.active) {
+                if (minDist > EDGE_BAND_EXIT) {
+                    hasBeenInterior = true;
+                    this.clearEdge(node);
+                    return;
+                }
+            } else {
+                if (minDist > EDGE_BAND_ENTER) {
+                    hasBeenInterior = true;
+                    return;
+                }
             }
 
             // Only arm the edge zone when the cursor entered the band from the
@@ -341,21 +403,23 @@ export class TabOps {
             }
 
             const edge = edgeDrag.edge;
-            clear();
-            e.preventDefault();
-            e.stopPropagation();
-
             if (!edge || !e.dataTransfer) {
+                clear();
                 return;
             }
 
+            e.preventDefault();
+            e.stopPropagation();
+
             const workspace = workspaceState.workspace;
             if (!workspace) {
+                clear();
                 return;
             }
 
             if (DragData.isType(e.dataTransfer, VizMimeTypes.TAB_VIEW)) {
                 const dragData = DragData.getData<TabDragData>(e.dataTransfer, VizMimeTypes.TAB_VIEW);
+                clear();
                 if (!dragData) {
                     return;
                 }
@@ -368,26 +432,23 @@ export class TabOps {
                     e.dataTransfer,
                     VizMimeTypes.COLLECTION_UIDS
                 );
+                clear();
                 if (!data) {
                     return;
                 }
+
                 const collectionView = createCollectionView(data.payload.uid, data.payload.name);
                 const group = new TabGroup({ views: [collectionView] });
                 group.setActive(collectionView.id);
                 workspace.addRootGroup(group, edge);
+                return;
             }
+
+            clear();
         };
 
         const onDragEnd = () => {
             clear();
-        };
-
-        // Fallback for browsers/scenarios where dragend is not delivered: a
-        // mouseup fires once the drag operation completes, so clear then too.
-        const onMouseUp = () => {
-            if (edgeDrag.active) {
-                clear();
-            }
         };
 
         // Capture phase so edge zones resolve before any nested group handler.
@@ -395,7 +456,6 @@ export class TabOps {
         node.addEventListener("dragleave", onDragLeave, true);
         node.addEventListener("drop", onDrop, true);
         document.addEventListener("dragend", onDragEnd);
-        window.addEventListener("mouseup", onMouseUp);
 
         return {
             destroy: () => {
@@ -403,23 +463,13 @@ export class TabOps {
                 node.removeEventListener("dragleave", onDragLeave, true);
                 node.removeEventListener("drop", onDrop, true);
                 document.removeEventListener("dragend", onDragEnd);
-                window.removeEventListener("mouseup", onMouseUp);
                 clear();
             }
         };
     };
 
-    private clearEdge(node: HTMLElement) {
-        if (edgeDrag.active) {
-            edgeDrag.active = false;
-        }
-        if (edgeDrag.edge !== null) {
-            edgeDrag.edge = null;
-        }
-        const overlay = node.querySelector(".edge-drop-overlay");
-        if (overlay) {
-            overlay.remove();
-        }
+    private clearEdge(_node?: HTMLElement) {
+        cleanupAllDragOverlays();
     }
 
     private updateEdgeOverlay(node: HTMLElement, edge: RootEdge) {

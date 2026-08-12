@@ -9,6 +9,7 @@
     import { CLIENT_IS_PRODUCTION } from "$lib/constants";
     import { createWorkspaceViewsMenu } from "$lib/context-menu/menus/workspaceViews";
     import type { MenuItem } from "$lib/context-menu/types";
+    import { showRootDebugOverlay } from "$lib/layouts/tab-ops.svelte";
     import { performSearch } from "$lib/search/execute";
     import { eventsState } from "$lib/states/events.svelte";
     import { historyState } from "$lib/states/history.svelte";
@@ -226,6 +227,16 @@
             hideTitle={isMobile}
         />
         {#if dev || !CLIENT_IS_PRODUCTION}
+            {#if page.url.pathname === "/"}
+                <IconButton
+                    iconName="border_outer"
+                    id="root-debug-button"
+                    class="header-button"
+                    aria-label="Toggle Root Workspace Drop Zones"
+                    onclick={() => (showRootDebugOverlay.value = !showRootDebugOverlay.value)}
+                    title="Toggle Root Workspace Drop Zones"
+                />
+            {/if}
             <IconButton
                 iconName="bug_report"
                 id="debug-button"
