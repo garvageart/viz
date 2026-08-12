@@ -118,6 +118,33 @@ export class SelectionScope<T extends { uid: string } = any> {
     }
 
     /**
+     * Selects a contiguous range of items between target and anchor (or current active item),
+     * optionally filtered by filterFn.
+     */
+    selectRange(target: T, anchor?: T | null, filterFn?: (item: T) => boolean) {
+        if (!target || !target.uid) {
+            return;
+        }
+
+        const sourceList = filterFn ? this.source.filter(filterFn) : this.source;
+        const targetIdx = sourceList.findIndex((i) => i.uid === target.uid);
+        const anchorItem = anchor || this.active;
+        const anchorIdx = anchorItem ? sourceList.findIndex((i) => i.uid === anchorItem.uid) : -1;
+
+        if (targetIdx !== -1 && anchorIdx !== -1) {
+            this.selected.clear();
+            const start = Math.min(anchorIdx, targetIdx);
+            const end = Math.max(anchorIdx, targetIdx);
+            for (let i = start; i <= end; i++) {
+                this.add(sourceList[i]);
+            }
+            this.active = target;
+        } else {
+            this.select(target);
+        }
+    }
+
+    /**
      * Selects multiple items, clearing previous selection.
      */
     selectMultiple(items: Iterable<T>) {
