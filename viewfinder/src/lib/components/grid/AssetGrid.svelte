@@ -686,6 +686,13 @@
         assetClick?.();
     }
 
+    function focusAssetElement(uid: string) {
+        const el = assetGridDisplayEl?.querySelector(`[data-asset-id="${uid}"]`) as HTMLElement | null;
+        if (el) {
+            el.focus();
+        }
+    }
+
     function handleKeydownCardSelect(asset: T, e: KeyboardEvent) {
         if (disabledUids.has(asset.uid)) {
             return;
@@ -699,10 +706,10 @@
             return;
         }
 
-        const isLeft = key === "ArrowLeft" || (key === "Tab" && e.shiftKey);
-        const isRight = key === "ArrowRight" || (key === "Tab" && !e.shiftKey);
-        const isUp = key === "ArrowUp";
-        const isDown = key === "ArrowDown";
+        const isLeft = key === "ArrowLeft" || key === "Left" || (key === "Tab" && e.shiftKey);
+        const isRight = key === "ArrowRight" || key === "Right" || (key === "Tab" && !e.shiftKey);
+        const isUp = key === "ArrowUp" || key === "Up";
+        const isDown = key === "ArrowDown" || key === "Down";
         const isNavKey = isLeft || isRight || isUp || isDown;
 
         if (!isNavKey) {
@@ -733,6 +740,7 @@
 
             handleImageCardSelect(targetAsset, e as unknown as MouseEvent);
             scrollToAsset(targetAsset, false);
+            focusAssetElement(targetAsset.uid);
             return;
         }
 
@@ -743,6 +751,7 @@
 
             handleImageCardSelect(targetAsset, e as unknown as MouseEvent);
             scrollToAsset(targetAsset, false);
+            focusAssetElement(targetAsset.uid);
             return;
         }
 
@@ -769,6 +778,7 @@
             const firstNav = navList[0];
             handleImageCardSelect(firstNav, e as unknown as MouseEvent);
             scrollToAsset(firstNav, false);
+            focusAssetElement(firstNav.uid);
             return;
         }
 
@@ -776,6 +786,7 @@
             const lastNav = navList[navList.length - 1];
             handleImageCardSelect(lastNav, e as unknown as MouseEvent);
             scrollToAsset(lastNav, false);
+            focusAssetElement(lastNav.uid);
             return;
         }
 
@@ -804,6 +815,7 @@
         const targetAsset = closestItem.asset as T;
         handleImageCardSelect(targetAsset, e as unknown as MouseEvent);
         scrollToAsset(targetAsset, false);
+        focusAssetElement(targetAsset.uid);
     }
 
     function shouldKeepSelection(target: HTMLElement | null): boolean {

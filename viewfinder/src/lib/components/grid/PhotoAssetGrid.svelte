@@ -123,6 +123,7 @@
         if (selectionManager.activeScopeId !== scopeId) {
             return;
         }
+
         if (selection.selected.size === 0 && !selection.active) {
             return;
         }
@@ -137,6 +138,7 @@
             if (row.type !== "images") {
                 continue;
             }
+
             for (const item of row.items) {
                 const asset = item.asset as ImageWithDateLabel;
                 if (asset.isHeaderItem || disabledUids.has(asset.uid)) {
@@ -145,9 +147,11 @@
                 list.push(asset as ImageAsset);
             }
         }
+
         if (list.length > 0) {
             return list;
         }
+
         const source = allData && allData.length > 0 ? allData : filteredData;
         return source.filter((img) => !disabledUids.has(img.uid));
     }
@@ -174,7 +178,14 @@
         return null;
     }
 
-    function handleKeyNav(e: KeyboardEvent, handler: HotkeysEvent) {
+    function focusAssetElement(uid: string) {
+        const el = (photoGridEl || gridContainerEl)?.querySelector(`[data-asset-id="${uid}"]`) as HTMLElement | null;
+        if (el) {
+            el.focus();
+        }
+    }
+
+    function handleKeyNav(e: KeyboardEvent, _handler: HotkeysEvent) {
         if (selectionManager.activeScopeId !== scopeId) {
             return;
         }
@@ -193,15 +204,24 @@
 
         if (!activeId || currentIndex === -1) {
             const firstEnabled = navList[0];
+
             handleImageCardSelect(firstEnabled, e);
             scrollToAsset(firstEnabled, false);
+            focusAssetElement(firstEnabled.uid);
             return;
         }
 
-        const key = handler.key;
-        const isLeft = key.endsWith("left");
-        const isRight = key.endsWith("right");
-        const isUp = key.endsWith("up");
+        const key = e.key;
+        const isLeft = key === "ArrowLeft" || key === "Left";
+        const isRight = key === "ArrowRight" || key === "Right";
+        const isUp = key === "ArrowUp" || key === "Up";
+        const isDown = key === "ArrowDown" || key === "Down";
+        const isNavKey = isLeft || isRight || isUp || isDown;
+
+        if (!isNavKey) {
+            return;
+        }
+
         const isHorizontal = isLeft || isRight;
 
         if (isHorizontal) {
@@ -210,9 +230,11 @@
             if (!isValidIndex) {
                 return;
             }
+
             const targetAsset = navList[targetIndex];
             handleImageCardSelect(targetAsset, e);
             scrollToAsset(targetAsset, false);
+            focusAssetElement(targetAsset.uid);
             return;
         }
 
@@ -220,8 +242,11 @@
         if (!pos) {
             const fallbackIndex = isUp ? Math.max(0, currentIndex - 1) : Math.min(navList.length - 1, currentIndex + 1);
             const targetAsset = navList[fallbackIndex];
+
             handleImageCardSelect(targetAsset, e);
             scrollToAsset(targetAsset, false);
+            focusAssetElement(targetAsset.uid);
+
             return;
         }
 
@@ -248,15 +273,21 @@
 
         if (targetRowIndex < 0) {
             const firstNav = navList[0];
+
             handleImageCardSelect(firstNav, e);
             scrollToAsset(firstNav, false);
+            focusAssetElement(firstNav.uid);
+
             return;
         }
 
         if (targetRowIndex >= rows.length) {
             const lastNav = navList[navList.length - 1];
+
             handleImageCardSelect(lastNav, e);
             scrollToAsset(lastNav, false);
+            focusAssetElement(lastNav.uid);
+
             return;
         }
 
@@ -268,6 +299,7 @@
         const realItems = targetRow.items.filter(
             (item) => !(item.asset as ImageWithDateLabel).isHeaderItem && !disabledUids.has(item.asset.uid)
         );
+
         if (realItems.length === 0) {
             return;
         }
@@ -284,9 +316,10 @@
             }
         }
 
-        const targetAsset = closestItem.asset as ImageAsset;
+        const targetAsset = closestItem.asset as ImageWithDateLabel;
         handleImageCardSelect(targetAsset, e);
         scrollToAsset(targetAsset, false);
+        focusAssetElement(targetAsset.uid);
     }
 
     onMount(() => {
