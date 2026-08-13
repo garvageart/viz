@@ -1,7 +1,7 @@
 {
     "name": "viz-monorepo",
     "private": true,
-    "version": "0.30.8",
+    "version": "0.30.9",
     "license": "AGPL-3.0",
     "scripts": {
         "dev": "pnpm -r --filter \"@viz/*\" dev",
