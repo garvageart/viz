@@ -464,6 +464,10 @@ func ImagesRouter(db *gorm.DB, logger *slog.Logger, wsBroker *libhttp.WSBroker) 
 				if !ok || (img.OwnerID != nil && *img.OwnerID != authUser.Uid) {
 					return ErrImageUnauthorised
 				}
+				// Non-admin users cannot reassign ownership
+				if isOwnerReassignmentAttempt(update) {
+					update.OwnerUid = nil
+				}
 			}
 
 			updateImageFromDTO(&img, update)
@@ -877,13 +881,22 @@ func ImagesRouter(db *gorm.DB, logger *slog.Logger, wsBroker *libhttp.WSBroker) 
 			var deleted bool
 			var errMsg *string
 
-			// Check ownership before deleting
+			// Check ownership before deleting (within a transaction to prevent TOCTOU races)
 			var img entities.ImageAsset
-			query := db.Select("owner_id")
-			query = queries.ApplyImageAccessControlFilter(query, req)
-			if err := query.First(&img, "uid = ?", id).Error; err != nil {
-				if err != gorm.ErrRecordNotFound {
-					logger.Error("failed to check ownership", slog.String("uid", id), slog.Any("error", err))
+			var ownershipErr error
+			if txErr := db.Transaction(func(tx *gorm.DB) error {
+				// Use plain query (SELECT ... FOR UPDATE not supported by SQLite;
+				// GORM handles locking for Postgres automatically with transactions)
+				query := tx.Select("owner_id").Where("uid = ?", id)
+				query = queries.ApplyImageAccessControlFilter(query, req)
+				return query.First(&img).Error
+			}); txErr != nil {
+				ownershipErr = txErr
+			}
+
+			if ownershipErr != nil {
+				if ownershipErr != gorm.ErrRecordNotFound {
+					logger.Error("failed to check ownership", slog.String("uid", id), slog.Any("error", ownershipErr))
 					e := "failed to check ownership"
 					errMsg = &e
 				}
@@ -1064,8 +1077,9 @@ func serveOriginalImage(res http.ResponseWriter, req *http.Request, logger *slog
 	res.Header().Set("Content-Security-Policy", "sandbox")
 
 	if isDownload {
+		safeName := libhttp.SanitizeFilename(imgEnt.ImageMetadata.FileName)
 		res.Header().Set("Cache-Control", "private, no-cache, no-store, must-revalidate")
-		res.Header().Set("Content-Disposition", fmt.Sprintf(`attachment; filename="%s"`, imgEnt.ImageMetadata.FileName))
+		res.Header().Set("Content-Disposition", fmt.Sprintf(`attachment; filename="%s"`, safeName))
 	} else {
 		res.Header().Set("Cache-Control", fmt.Sprintf("public, max-age=%d, immutable", config.AppConfig.Cache.Images.HTTPPermanentMaxAgeSeconds))
 	}
@@ -1126,8 +1140,9 @@ func serveTransformedImage(res http.ResponseWriter, req *http.Request, logger *s
 		res.Header().Set("Content-Security-Policy", "sandbox")
 
 		if isDownload {
+			safeName := libhttp.SanitizeFilename(imgEnt.ImageMetadata.FileName)
 			res.Header().Set("Cache-Control", "private, no-cache, no-store, must-revalidate")
-			res.Header().Set("Content-Disposition", fmt.Sprintf(`attachment; filename="%s"`, imgEnt.ImageMetadata.FileName))
+			res.Header().Set("Content-Disposition", fmt.Sprintf(`attachment; filename="%s"`, safeName))
 		} else if isPermanent || hasVersionParam {
 			// If it's a permanent path or has a version parameter, it's immutable
 			res.Header().Set("Cache-Control", fmt.Sprintf("public, max-age=%d, immutable", config.AppConfig.Cache.Images.HTTPPermanentMaxAgeSeconds))
@@ -1194,8 +1209,9 @@ func serveTransformedImage(res http.ResponseWriter, req *http.Request, logger *s
 	res.Header().Set("Content-Security-Policy", "sandbox")
 
 	if isDownload {
+		safeName := libhttp.SanitizeFilename(imgEnt.ImageMetadata.FileName)
 		res.Header().Set("Cache-Control", "private, no-cache, no-store, must-revalidate")
-		res.Header().Set("Content-Disposition", fmt.Sprintf(`attachment; filename="%s"`, imgEnt.ImageMetadata.FileName))
+		res.Header().Set("Content-Disposition", fmt.Sprintf(`attachment; filename="%s"`, safeName))
 	} else if isPermanent || hasVersionParam {
 		res.Header().Set("Cache-Control", fmt.Sprintf("public, max-age=%d, immutable", config.AppConfig.Cache.Images.HTTPPermanentMaxAgeSeconds))
 	} else {
@@ -1209,7 +1225,12 @@ func serveTransformedImage(res http.ResponseWriter, req *http.Request, logger *s
 
 func validateDownloadRequest(res http.ResponseWriter, req *http.Request, db *gorm.DB, uid string) bool {
 	token := req.URL.Query().Get("token")
-	password := req.URL.Query().Get("password")
+
+	// Accept password from header (preferred) or query param (backward compatible)
+	password := req.Header.Get("X-Download-Password")
+	if password == "" {
+		password = req.URL.Query().Get("password")
+	}
 
 	if token == "" {
 		render.Status(req, http.StatusBadRequest)
@@ -1312,4 +1333,10 @@ func updateImageFromDTO(image *entities.ImageAsset, update dto.ImageUpdate) {
 	if update.TakenAt != nil {
 		image.TakenAt = update.TakenAt
 	}
+}
+
+// isOwnerReassignmentAttempt checks if the PATCH update contains an owner_uid change.
+// Owner reassignment is admin-only; non-admin callers have this field silently stripped.
+func isOwnerReassignmentAttempt(update dto.ImageUpdate) bool {
+	return update.OwnerUid != nil
 }
