@@ -39,14 +39,15 @@ func ClearCookie(name string, w http.ResponseWriter) {
 		cookie.Secure = true
 	}
 
-	// Allow configuring SameSite via VIZ_COOKIE_SAMESITE
+	// Default to Strict for maximum CSRF protection.
+	// Lax or None can be opted into via VIZ_COOKIE_SAMESITE env var.
 	switch os.Getenv("VIZ_COOKIE_SAMESITE") {
 	case "None":
 		cookie.SameSite = http.SameSiteNoneMode
-	case "Strict":
-		cookie.SameSite = http.SameSiteStrictMode
-	default:
+	case "Lax":
 		cookie.SameSite = http.SameSiteLaxMode
+	default:
+		cookie.SameSite = http.SameSiteStrictMode
 	}
 
 	http.SetCookie(w, cookie)
@@ -71,14 +72,15 @@ func CreateAuthTokenCookie(expireTime time.Time, token string) *http.Cookie {
 		cookie.Secure = true
 	}
 
-	// Allow configuring SameSite via VIZ_COOKIE_SAMESITE
+	// Default to Strict for maximum CSRF protection.
+	// Lax or None can be opted into via VIZ_COOKIE_SAMESITE env var.
 	switch os.Getenv("VIZ_COOKIE_SAMESITE") {
 	case "None":
 		cookie.SameSite = http.SameSiteNoneMode
-	case "Strict":
-		cookie.SameSite = http.SameSiteStrictMode
-	default:
+	case "Lax":
 		cookie.SameSite = http.SameSiteLaxMode
+	default:
+		cookie.SameSite = http.SameSiteStrictMode
 	}
 
 	return cookie
