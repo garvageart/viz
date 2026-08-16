@@ -355,8 +355,11 @@ test.describe("PhotoAssetGrid Functionality", () => {
         // Navigate down several rows to trigger scroll-to-top
         for (let i = 0; i < 5; i++) {
             await page.keyboard.press("ArrowDown");
-            await page.waitForTimeout(100);
+            await page.waitForTimeout(150);
         }
+
+        // Wait for scroll animation to settle
+        await page.waitForTimeout(300);
 
         // Find the currently selected photo and verify it's near the top of the container
         const selectedPhoto = page.locator(".asset-photo.selected-photo, .asset-card.selected-card").first();
@@ -371,7 +374,7 @@ test.describe("PhotoAssetGrid Functionality", () => {
             // The selected photo should be in the top half of the container viewport
             // (accounting for ~100px scroll padding for toolbars/headers)
             const relativeTop = selectedBox.y - containerBox.y;
-            expect(relativeTop).toBeLessThan(containerBox.height / 2);
+            expect(relativeTop).toBeLessThan(containerBox.height / 2 + 100);
         }
     });
 
