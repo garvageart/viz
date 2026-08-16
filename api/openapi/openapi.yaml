@@ -84,6 +84,38 @@ paths:
                             schema:
                                 $ref: "#/components/schemas/ErrorResponse"
 
+    /accounts/{uid}:
+        get:
+            summary: Get user by UID
+            operationId: getUserByUid
+            security:
+                - bearerAuth: []
+            parameters:
+                - name: uid
+                  in: path
+                  required: true
+                  schema:
+                      type: string
+            responses:
+                "200":
+                    description: User found
+                    content:
+                        application/json:
+                            schema:
+                                $ref: "#/components/schemas/User"
+                "401":
+                    description: Unauthorized
+                    content:
+                        application/json:
+                            schema:
+                                $ref: "#/components/schemas/ErrorResponse"
+                "404":
+                    description: User not found
+                    content:
+                        application/json:
+                            schema:
+                                $ref: "#/components/schemas/ErrorResponse"
+
     /auth/apikey:
         get:
             summary: Generate an API key
@@ -4441,13 +4473,9 @@ components:
                     description: Response message
                 user:
                     $ref: "#/components/schemas/User"
-                sessionToken:
-                    type: string
-                    description: Session token for the newly created superadmin
             required:
                 - message
                 - user
-                - sessionToken
 
         UserSettingUpdateRequest:
             type: object

@@ -973,8 +973,6 @@ export type SuperadminSetupResponse = {
     /** Response message */
     message: string;
     user: User;
-    /** Session token for the newly created superadmin */
-    sessionToken: string;
 };
 /**
  * System details and version information
@@ -1019,6 +1017,23 @@ export function registerUser(userCreate: UserCreate, opts?: Oazapfts.RequestOpts
         method: "POST",
         body: userCreate
     }));
+}
+/**
+ * Get user by UID
+ */
+export function getUserByUid(uid: string, opts?: Oazapfts.RequestOpts) {
+    return oazapfts.fetchJson<{
+        status: 200;
+        data: User;
+    } | {
+        status: 401;
+        data: ErrorResponse;
+    } | {
+        status: 404;
+        data: ErrorResponse;
+    }>(`/accounts/${encodeURIComponent(uid)}`, {
+        ...opts
+    });
 }
 /**
  * Generate an API key

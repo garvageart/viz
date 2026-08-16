@@ -201,6 +201,11 @@ type ClientInterface interface {
 	// Corresponds with PUT /accounts/me/settings (the `UpdateUserSettingsBatch` operationId).
 	UpdateUserSettingsBatch(ctx context.Context, body UpdateUserSettingsBatchJSONRequestBody, reqEditors ...RequestEditorFn) (*http.Response, error)
 
+	// GetUserByUid Get user by UID
+	//
+	// Corresponds with GET /accounts/{uid} (the `GetUserByUid` operationId).
+	GetUserByUid(ctx context.Context, uid string, reqEditors ...RequestEditorFn) (*http.Response, error)
+
 	// ClearImageCache Clear the image cache
 	//
 	// Corresponds with DELETE /admin/cache (the `ClearImageCache` operationId).
@@ -1095,6 +1100,21 @@ func (c *Client) UpdateUserSettingsBatchWithBody(ctx context.Context, contentTyp
 // Corresponds with PUT /accounts/me/settings (the `UpdateUserSettingsBatch` operationId).
 func (c *Client) UpdateUserSettingsBatch(ctx context.Context, body UpdateUserSettingsBatchJSONRequestBody, reqEditors ...RequestEditorFn) (*http.Response, error) {
 	req, err := NewUpdateUserSettingsBatchRequest(c.Server, body)
+	if err != nil {
+		return nil, err
+	}
+	req = req.WithContext(ctx)
+	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
+		return nil, err
+	}
+	return c.Client.Do(req)
+}
+
+// GetUserByUid Get user by UID
+//
+// Corresponds with GET /accounts/{uid} (the `GetUserByUid` operationId).
+func (c *Client) GetUserByUid(ctx context.Context, uid string, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewGetUserByUidRequest(c.Server, uid)
 	if err != nil {
 		return nil, err
 	}
@@ -3112,6 +3132,40 @@ func NewUpdateUserSettingsBatchRequestWithBody(server string, contentType string
 	}
 
 	req.Header.Add("Content-Type", contentType)
+
+	return req, nil
+}
+
+// NewGetUserByUidRequest constructs an http.Request for the GetUserByUid method
+func NewGetUserByUidRequest(server string, uid string) (*http.Request, error) {
+	var err error
+
+	var pathParam0 string
+
+	pathParam0, err = runtime.StyleParamWithOptions("simple", false, "uid", uid, runtime.StyleParamOptions{ParamLocation: runtime.ParamLocationPath, Type: "string", Format: ""})
+	if err != nil {
+		return nil, err
+	}
+
+	serverURL, err := url.Parse(server)
+	if err != nil {
+		return nil, err
+	}
+
+	operationPath := fmt.Sprintf("/accounts/%s", pathParam0)
+	if operationPath[0] == '/' {
+		operationPath = "." + operationPath
+	}
+
+	queryURL, err := serverURL.Parse(operationPath)
+	if err != nil {
+		return nil, err
+	}
+
+	req, err := http.NewRequest(http.MethodGet, queryURL.String(), nil)
+	if err != nil {
+		return nil, err
+	}
 
 	return req, nil
 }
@@ -6712,6 +6766,13 @@ type ClientWithResponsesInterface interface {
 	// Corresponds with PUT /accounts/me/settings (the `UpdateUserSettingsBatch` operationId).
 	UpdateUserSettingsBatchWithResponse(ctx context.Context, body UpdateUserSettingsBatchJSONRequestBody, reqEditors ...RequestEditorFn) (*UpdateUserSettingsBatchResponse, error)
 
+	// GetUserByUidWithResponse Get user by UID
+	//
+	// Returns a wrapper object for the known response body format(s).
+	//
+	// Corresponds with GET /accounts/{uid} (the `GetUserByUid` operationId).
+	GetUserByUidWithResponse(ctx context.Context, uid string, reqEditors ...RequestEditorFn) (*GetUserByUidResponse, error)
+
 	// ClearImageCacheWithResponse Clear the image cache
 	//
 	// Returns a wrapper object for the known response body format(s).
@@ -7992,6 +8053,61 @@ func (r UpdateUserSettingsBatchResponse) StatusCode() int {
 
 // ContentType is a convenience method to retrieve the Content-Type value from the HTTP response headers
 func (r UpdateUserSettingsBatchResponse) ContentType() string {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.Header.Get("Content-Type")
+	}
+	return ""
+}
+
+type GetUserByUidResponse struct {
+	Body         []byte
+	HTTPResponse *http.Response
+	// JSON200 the response for an HTTP 200 `application/json` response
+	JSON200 *User
+	// JSON401 the response for an HTTP 401 `application/json` response
+	JSON401 *ErrorResponse
+	// JSON404 the response for an HTTP 404 `application/json` response
+	JSON404 *ErrorResponse
+}
+
+// GetJSON200 returns the response for an HTTP 200 `application/json` response
+func (r GetUserByUidResponse) GetJSON200() *User {
+	return r.JSON200
+}
+
+// GetJSON401 returns the response for an HTTP 401 `application/json` response
+func (r GetUserByUidResponse) GetJSON401() *ErrorResponse {
+	return r.JSON401
+}
+
+// GetJSON404 returns the response for an HTTP 404 `application/json` response
+func (r GetUserByUidResponse) GetJSON404() *ErrorResponse {
+	return r.JSON404
+}
+
+// GetBody returns the raw response body bytes
+func (r GetUserByUidResponse) GetBody() []byte {
+	return r.Body
+}
+
+// Status returns HTTPResponse.Status
+func (r GetUserByUidResponse) Status() string {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.Status
+	}
+	return http.StatusText(0)
+}
+
+// StatusCode returns HTTPResponse.StatusCode
+func (r GetUserByUidResponse) StatusCode() int {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.StatusCode
+	}
+	return 0
+}
+
+// ContentType is a convenience method to retrieve the Content-Type value from the HTTP response headers
+func (r GetUserByUidResponse) ContentType() string {
 	if r.HTTPResponse != nil {
 		return r.HTTPResponse.Header.Get("Content-Type")
 	}
@@ -12406,6 +12522,19 @@ func (c *ClientWithResponses) UpdateUserSettingsBatchWithResponse(ctx context.Co
 	return ParseUpdateUserSettingsBatchResponse(rsp)
 }
 
+// GetUserByUidWithResponse Get user by UID
+//
+// Returns a wrapper object for the known response body format(s).
+//
+// Corresponds with GET /accounts/{uid} (the `GetUserByUid` operationId).
+func (c *ClientWithResponses) GetUserByUidWithResponse(ctx context.Context, uid string, reqEditors ...RequestEditorFn) (*GetUserByUidResponse, error) {
+	rsp, err := c.GetUserByUid(ctx, uid, reqEditors...)
+	if err != nil {
+		return nil, err
+	}
+	return ParseGetUserByUidResponse(rsp)
+}
+
 // ClearImageCacheWithResponse Clear the image cache
 //
 // Returns a wrapper object for the known response body format(s).
@@ -14152,6 +14281,46 @@ func ParseUpdateUserSettingsBatchResponse(rsp *http.Response) (*UpdateUserSettin
 			return nil, err
 		}
 		response.JSON500 = &dest
+
+	}
+
+	return response, nil
+}
+
+// ParseGetUserByUidResponse parses an HTTP response from a GetUserByUidWithResponse call
+func ParseGetUserByUidResponse(rsp *http.Response) (*GetUserByUidResponse, error) {
+	bodyBytes, err := io.ReadAll(rsp.Body)
+	defer func() { _ = rsp.Body.Close() }()
+	if err != nil {
+		return nil, err
+	}
+
+	response := &GetUserByUidResponse{
+		Body:         bodyBytes,
+		HTTPResponse: rsp,
+	}
+
+	switch {
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 200:
+		var dest User
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON200 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 401:
+		var dest ErrorResponse
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON401 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 404:
+		var dest ErrorResponse
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON404 = &dest
 
 	}
 

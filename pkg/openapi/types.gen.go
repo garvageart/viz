@@ -1739,10 +1739,7 @@ type SuperadminSetupRequest struct {
 type SuperadminSetupResponse struct {
 	// Message Response message
 	Message string `json:"message"`
-
-	// SessionToken Session token for the newly created superadmin
-	SessionToken string `json:"sessionToken"`
-	User         User   `json:"user"`
+	User    User   `json:"user"`
 }
 
 // SystemStatsResponse defines model for SystemStatsResponse.

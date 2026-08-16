@@ -182,9 +182,8 @@ func (h *setupHandlers) SetupSuperadmin(w http.ResponseWriter, req *http.Request
 
 	render.Status(req, http.StatusCreated)
 	render.JSON(w, req, dto.SuperadminSetupResponse{
-		Message:      "Superadmin setup complete and logged in.",
-		User:         uwp.User.DTO(),
-		SessionToken: authToken, // Return the generated authToken
+		Message: "Superadmin setup complete and logged in.",
+		User:    uwp.User.DTO(),
 	})
 }
 
