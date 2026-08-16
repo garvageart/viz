@@ -1,11 +1,11 @@
 <script lang="ts">
-    import { onMount, setContext } from "svelte";
     import type { Snippet } from "svelte";
+    import { onMount, setContext } from "svelte";
     import type { SvelteHTMLElements } from "svelte/elements";
+    import Button from "$lib/components/ui/Button.svelte";
     import MaterialIcon from "$lib/components/ui/MaterialIcon.svelte";
     import { ContextKeys } from "$lib/context-keys";
     import type { MaterialSymbol } from "$lib/types/MaterialSymbol";
-    import IconButton from "../ui/IconButton.svelte";
 
     type Props = {
         children: Snippet;
@@ -118,7 +118,7 @@
             {#if heading}
                 <h1>{heading}</h1>
             {/if}
-            <IconButton iconName="close" onclick={() => onclickClose?.()} title="Close Modal" />
+            <Button iconName="close" onclick={() => onclickClose?.()} title="Close Modal" />
         {/if}
     </div>
     <div class="modal-content" class:padding={applyPadding}>

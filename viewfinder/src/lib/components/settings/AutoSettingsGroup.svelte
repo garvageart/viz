@@ -96,7 +96,7 @@
         {#if hasChanges || saveStatus === "success"}
             <div class="actions" transition:fade>
                 {#if hasChanges}
-                    <Button variant="small" class="btn-save" disabled={saving} onclick={saveChanges}>
+                    <Button size="small" class="btn-save" disabled={saving} onclick={saveChanges}>
                         {saving ? "Saving..." : "Save Changes"}
                     </Button>
                 {/if}

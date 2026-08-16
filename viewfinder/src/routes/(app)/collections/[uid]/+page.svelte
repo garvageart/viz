@@ -48,7 +48,6 @@
     import Button from "$lib/components/ui/Button.svelte";
     import Checkbox from "$lib/components/ui/Checkbox.svelte";
     import DragAndDropUpload from "$lib/components/ui/DragAndDropUpload.svelte";
-    import IconButton from "$lib/components/ui/IconButton.svelte";
     import ImageCard, { type ImageVariant } from "$lib/components/ui/ImageCard.svelte";
     import ImageLightbox from "$lib/components/ui/ImageLightbox.svelte";
     import InputText from "$lib/components/ui/InputText.svelte";
@@ -870,7 +869,7 @@
 	/> -->
     <div id="coll-tools">
         {#if !isLayoutPage()}
-            <IconButton
+            <Button
                 iconName="filter_list"
                 class="toolbar-button"
                 tooltipParams={{ component: ActiveFiltersTooltip, placement: "bottom-start" }}
@@ -878,9 +877,9 @@
                 onclick={openFilterModal}
             >
                 <span>Filter</span>
-            </IconButton>
+            </Button>
         {/if}
-        <IconButton
+        <Button
             id="add-photos"
             iconName="add_photo_alternate"
             class="toolbar-button"
@@ -889,8 +888,8 @@
             onclick={openAddPhotosModal}
         >
             <span>Add Photos</span>
-        </IconButton>
-        <IconButton
+        </Button>
+        <Button
             iconName="upload"
             id="upload_to_collection"
             class="toolbar-button"
@@ -901,8 +900,8 @@
             }}
         >
             <span>Upload</span>
-        </IconButton>
-        <IconButton
+        </Button>
+        <Button
             iconName="edit"
             id="upload_to_collection"
             class="toolbar-button"
@@ -911,12 +910,12 @@
             onclick={openEditCollectionModal}
         >
             <span>Edit</span>
-        </IconButton>
+        </Button>
         <Dropdown title="Options" class="toolbar-button" items={gridCtxMenu} showSelectionIndicator={false}>
             {#snippet trigger({ toggle, showMenu, title })}
-                <IconButton iconName="settings" onclick={toggle} class="toolbar-button {showMenu ? 'active' : ''}">
+                <Button iconName="settings" onclick={toggle} class="toolbar-button {showMenu ? 'active' : ''}">
                     {title}
-                </IconButton>
+                </Button>
             {/snippet}
         </Dropdown>
         <Dropdown

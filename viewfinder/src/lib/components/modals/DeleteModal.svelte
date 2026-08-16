@@ -46,7 +46,7 @@
     </span>
 
     <div class="delete-actions">
-        <Button variant="small" onclick={handleCancel} class="cancel-btn">Cancel</Button>
+        <Button size="small" onclick={handleCancel} class="cancel-btn"><span>Cancel</span></Button>
 
         <div class="confirm-group">
             {#if deletePermanently}
@@ -60,12 +60,12 @@
                 </Button>
             {:else}
                 <Button
-                    variant="small"
+                    size="small"
                     onclick={handleSoftDelete}
                     class="soft-delete-btn"
                     style="background-color: var(--viz-primary); color: var(--viz-text-primary);"
                 >
-                    Delete
+                    <span>Delete</span>
                 </Button>
             {/if}
         </div>

@@ -1,6 +1,5 @@
 <script lang="ts">
     import Button from "$lib/components/ui/Button.svelte";
-    import IconButton from "../ui/IconButton.svelte";
 
     interface Props {
         onApply: () => void;
@@ -62,15 +61,15 @@
     </div>
 
     <div class="crop-actions">
-        <IconButton iconName="restart_alt" variant="secondary" class="action-btn" onclick={onReset} title="Reset Crop">
+        <Button iconName="restart_alt" variant="secondary" class="action-btn" onclick={onReset} title="Reset Crop">
             <span>Reset</span>
-        </IconButton>
-        <IconButton iconName="close" variant="danger" class="action-btn" onclick={onCancel} title="Cancel Crop">
+        </Button>
+        <Button iconName="close" variant="danger" class="action-btn" onclick={onCancel} title="Cancel Crop">
             <span>Cancel</span>
-        </IconButton>
-        <IconButton iconName="check" variant="success" class="action-btn" onclick={onApply} title="Apply Crop">
+        </Button>
+        <Button iconName="check" variant="success" class="action-btn" onclick={onApply} title="Apply Crop">
             <span>Apply</span>
-        </IconButton>
+        </Button>
     </div>
 </div>
 

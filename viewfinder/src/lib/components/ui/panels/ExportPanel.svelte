@@ -541,8 +541,8 @@
     </div>
 
     <div class="export-footer">
-        <Button variant="small" onclick={handleCancel}>Cancel</Button>
-        <Button id="perform-export" variant="small" onclick={handleExport} class="export-btn">
+        <Button size="small" onclick={handleCancel}>Cancel</Button>
+        <Button id="perform-export" size="small" onclick={handleExport} class="export-btn">
             Export {assets.length} Item{assets.length === 1 ? "" : "s"}
         </Button>
     </div>

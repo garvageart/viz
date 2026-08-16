@@ -1,5 +1,5 @@
 <script lang="ts">
-    import IconButton from "$lib/components/ui/IconButton.svelte";
+    import Button from "$lib/components/ui/Button.svelte";
     import { getTheme, toggleTheme } from "$lib/states/index.svelte";
     import { toggleFullscreen } from "$lib/utils/misc";
 
@@ -7,7 +7,7 @@
 </script>
 
 <div class="fullscreen-toggle-wrapper">
-    <IconButton
+    <Button
         iconName="fullscreen"
         hoverColor="var(--viz-70-light)"
         onclick={() => toggleFullscreen()}
@@ -17,7 +17,7 @@
 </div>
 
 <div class="theme-toggle-wrapper">
-    <IconButton
+    <Button
         iconName={getTheme() === "dark" ? "dark_mode" : "light_mode"}
         hoverColor="var(--viz-70-light)"
         onclick={() => toggleTheme()}

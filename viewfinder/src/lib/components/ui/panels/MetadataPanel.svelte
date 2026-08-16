@@ -3,9 +3,9 @@
     import ImageLabelViewer from "$lib/components/image-tools/ImageLabelViewer.svelte";
     import StarRating from "$lib/components/image-tools/StarRating.svelte";
     import Badge from "$lib/components/ui/Badge.svelte";
+    import Button from "$lib/components/ui/Button.svelte";
     import DatePicker from "$lib/components/ui/DatePicker.svelte";
     import Favourite from "$lib/components/ui/Favourite.svelte";
-    import IconButton from "$lib/components/ui/IconButton.svelte";
     import InputText from "$lib/components/ui/InputText.svelte";
     import MaterialIcon from "$lib/components/ui/MaterialIcon.svelte";
     import TextArea from "$lib/components/ui/TextArea.svelte";
@@ -111,7 +111,7 @@
                 <h3>Metadata</h3>
             {/if}
             {#if showCloseIcon}
-                <IconButton iconName="close" class="metadata-close-btn" title="Close" onclick={() => (show = false)} />
+                <Button iconName="close" class="metadata-close-btn" title="Close" onclick={() => (show = false)} />
             {/if}
         </div>
     {/if}

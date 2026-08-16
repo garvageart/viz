@@ -93,7 +93,7 @@
             </div>
             {#if dirty}
                 <div class="actions">
-                    <Button variant="small" class="btn-save" onclick={saveAccountChanges} disabled={savingAccount}>
+                    <Button size="small" class="btn-save" onclick={saveAccountChanges} disabled={savingAccount}>
                         {savingAccount ? "Saving..." : "Save Changes"}
                     </Button>
                 </div>

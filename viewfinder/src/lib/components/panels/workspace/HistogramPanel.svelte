@@ -1,7 +1,7 @@
 <script lang="ts">
     import { type ImageAsset } from "$lib/api";
     import Badge from "$lib/components/ui/Badge.svelte";
-    import IconButton from "$lib/components/ui/IconButton.svelte";
+    import Button from "$lib/components/ui/Button.svelte";
     import HistogramChart, { type ChannelVisibility } from "$lib/components/ui/misc/HistogramChart.svelte";
     import { computeForAsset, computeHistogram } from "$lib/histogram";
     import type { HistogramChannels } from "$lib/histogram/types";
@@ -177,13 +177,7 @@
             </button>
         {/each}
 
-        <IconButton
-            iconName="refresh"
-            onclick={resetCanvas}
-            title="Reset Histogram"
-            variant="small"
-            class="reset-btn"
-        />
+        <Button iconName="refresh" onclick={resetCanvas} title="Reset Histogram" size="small" class="reset-btn" />
     </div>
 
     <div class="chart-area">

@@ -12,8 +12,8 @@
     import CollectionSelectionModal from "$lib/components/modals/CollectionSelectionModal.svelte";
     import { modalsManager } from "$lib/components/modals/manager/ModalManager.svelte";
     import VizViewContainer from "$lib/components/panels/VizViewContainer.svelte";
+    import Button from "$lib/components/ui/Button.svelte";
     import CollectionCard from "$lib/components/ui/CollectionCard.svelte";
-    import IconButton from "$lib/components/ui/IconButton.svelte";
     import ImageCard from "$lib/components/ui/ImageCard.svelte";
     import ImageLightbox from "$lib/components/ui/ImageLightbox.svelte";
     import LoadingSpinner from "$lib/components/ui/LoadingSpinner.svelte";
@@ -373,7 +373,7 @@
             <AssetToolbar class="asset-toolbar" style="justify-content: space-between;">
                 <div class="toolbar-content">
                     <div class="selection-info">
-                        <IconButton
+                        <Button
                             iconName="close"
                             class="toolbar-button"
                             title="Clear selection"
@@ -384,7 +384,7 @@
                         <span style="font-weight: 600;">{imageSelection.size} selected</span>
                     </div>
                     <div class="selection-actions">
-                        <IconButton
+                        <Button
                             iconName="collections_bookmark"
                             class="action"
                             role="tooltip"
@@ -432,8 +432,8 @@
                                 );
                             }}
                         >
-                            Add to Collection
-                        </IconButton>
+                            <span>Add to Collection</span>
+                        </Button>
                         {#if firstSelectedImage}
                             <ImageLabelViewer
                                 variant="expanded"
@@ -492,7 +492,7 @@
             <AssetToolbar class="asset-toolbar">
                 <div class="toolbar-content">
                     <div class="selection-info">
-                        <IconButton
+                        <Button
                             iconName="close"
                             class="toolbar-button"
                             title="Clear selection"
@@ -531,7 +531,7 @@
                     </div>
                 </div>
                 <div class="toolbar-right">
-                    <IconButton
+                    <Button
                         iconName="filter_list"
                         class="toolbar-button"
                         title="Filter"
@@ -547,7 +547,7 @@
                         }}
                     >
                         Filter
-                    </IconButton>
+                    </Button>
                 </div>
             </AssetToolbar>
         {/if}

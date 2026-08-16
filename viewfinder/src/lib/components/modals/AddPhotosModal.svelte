@@ -23,7 +23,6 @@
     import VizViewContainer from "../panels/VizViewContainer.svelte";
     import Button from "../ui/Button.svelte";
     import Checkbox from "../ui/Checkbox.svelte";
-    import IconButton from "../ui/IconButton.svelte";
     import AssetToolbar from "../ui/toolbars/AssetToolbar.svelte";
     import { type ModalOptions, modalsManager } from "./manager/ModalManager.svelte";
 
@@ -242,7 +241,7 @@
                             paginate();
                         }}
                     />
-                    <IconButton
+                    <Button
                         iconName={photosSort.value.order === "ASC" ? "arrow_upward" : "arrow_downward"}
                         class="toolbar-button"
                         title={`Toggle Sort Order (${photosSort.value.order})`}

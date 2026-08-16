@@ -4,7 +4,6 @@
     import type { MenuItem } from "$lib/context-menu/types";
     import type { MaterialSymbol } from "$lib/types/MaterialSymbol";
     import Button, { type ButtonVariant } from "../ui/Button.svelte";
-    import IconButton from "../ui/IconButton.svelte";
 
     interface Props {
         id?: string;
@@ -127,24 +126,11 @@
 <div class="viz-dropdown-container" bind:this={containerEl}>
     {#if trigger}
         {@render trigger({ toggle: toggleMenu, showMenu, title })}
-    {:else if currentIcon}
-        <IconButton
-            {id}
-            {variant}
-            class="viz-dropdown-button {className}"
-            iconName={currentIcon}
-            {title}
-            bind:element={buttonEl}
-            onclick={toggleMenu}
-        >
-            {#if !hideTitleState}
-                {@render buttonContent()}
-            {/if}
-        </IconButton>
     {:else}
         <Button
             {id}
             {variant}
+            iconName={currentIcon}
             class="viz-dropdown-button {className}"
             {title}
             bind:element={buttonEl}

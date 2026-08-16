@@ -20,7 +20,7 @@
     import OpenAccountPanel from "../context-menus/AccountPanel.svelte";
     import AppMenu from "../context-menus/AppMenu.svelte";
     import AvatarBadge from "./AvatarBadge.svelte";
-    import IconButton from "./IconButton.svelte";
+    import Button from "./Button.svelte";
     import MaterialIcon from "./MaterialIcon.svelte";
     import SearchInput from "./SearchInput.svelte";
 
@@ -145,7 +145,7 @@
             aria-label="App Menu"
             title="App Menu"
         >
-            viz
+            <span>viz</span>
             <MaterialIcon iconName="expand_more" weight={300} size="1em" style="margin-left: 0.15em;" />
         </button>
         <AppMenu bind:isOpen={openAppMenu} bind:anchor={appMenuButton} />
@@ -153,7 +153,8 @@
         {#if isLayoutPage()}
             <Dropdown iconName="view_quilt" items={createWorkspaceViewsMenu()} showSelectionIndicator={false} />
         {:else}
-            <IconButton
+            <Button
+                variant="ghost"
                 class="header-button"
                 iconName="space_dashboard"
                 title="Go to Workspace"
@@ -162,24 +163,27 @@
         {/if}
         <div class="header-separator"></div>
         <div class="icon-group-container">
-            <!-- FIXME: This is bad and invalid HTML. Maybe create a Link button instead? -->
-            <a class="page-nav-btn" href="/photos">
-                <IconButton class="header-button" iconName="imagesmode" title="Go to Photos" />
-            </a>
-            <a class="page-nav-btn" href="/collections">
-                <IconButton class="header-button" iconName="photo_album" title="Go to Collections" />
-            </a>
+            <Button variant="ghost" class="header-button" iconName="imagesmode" title="Go to Photos" href="/photos" />
+            <Button
+                variant="ghost"
+                class="header-button"
+                iconName="photo_album"
+                title="Go to Collections"
+                href="/collections"
+            />
         </div>
     </div>
     <div class="center-container">
-        <IconButton
+        <Button
+            variant="ghost"
             class="header-button"
             iconName="arrow_back"
             title="Go Back"
             disabled={!historyState.canGoBack}
             onclick={() => history.back()}
         />
-        <IconButton
+        <Button
+            variant="ghost"
             class="header-button"
             iconName="arrow_forward"
             title="Go Forward"
@@ -205,8 +209,8 @@
                 <span>Offline</span>
             </div>
         {/if}
-        <IconButton
-            weight={300}
+        <Button
+            variant="ghost"
             iconName={getTheme() === "dark" ? "dark_mode" : "light_mode"}
             id="theme-toggle"
             class="header-button theme-toggle"
@@ -228,7 +232,8 @@
         />
         {#if dev || !CLIENT_IS_PRODUCTION}
             {#if page.url.pathname === "/"}
-                <IconButton
+                <Button
+                    variant="ghost"
                     iconName="border_outer"
                     id="root-debug-button"
                     class="header-button"
@@ -237,7 +242,8 @@
                     title="Toggle Root Workspace Drop Zones"
                 />
             {/if}
-            <IconButton
+            <Button
+                variant="ghost"
                 iconName="bug_report"
                 id="debug-button"
                 class="header-button"
@@ -246,7 +252,7 @@
                 title="Toggle Debug Mode"
             >
                 <span class="debug-mode-text">{debugState.value ? "ON" : "OFF"}</span>
-            </IconButton>
+            </Button>
         {/if}
         <div id="account-container">
             <button
@@ -326,18 +332,6 @@
         gap: var(--viz-spacing-xs);
         display: flex;
         flex-direction: row;
-    }
-
-    .page-nav-btn {
-        display: flex;
-        justify-content: center;
-        align-items: center;
-        text-decoration: none;
-
-        &:focus,
-        &:focus-visible {
-            outline: 1px solid var(--viz-primary);
-        }
     }
 
     .center-container {

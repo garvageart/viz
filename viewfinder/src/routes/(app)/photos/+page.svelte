@@ -24,7 +24,6 @@
     import Button from "$lib/components/ui/Button.svelte";
     import Checkbox from "$lib/components/ui/Checkbox.svelte";
     import DragAndDropUpload from "$lib/components/ui/DragAndDropUpload.svelte";
-    import IconButton from "$lib/components/ui/IconButton.svelte";
     import ImageCard, { type ImageVariant } from "$lib/components/ui/ImageCard.svelte";
     import ImageLightbox from "$lib/components/ui/ImageLightbox.svelte";
     import MaterialIcon from "$lib/components/ui/MaterialIcon.svelte";
@@ -461,7 +460,7 @@
         {#if selectionScope.selected.size > 0}
             <AssetToolbar class="selection-toolbar" stickyToolbar={true}>
                 <div class="selection-info">
-                    <IconButton
+                    <Button
                         iconName="close"
                         class="toolbar-button clear-selection-btn"
                         title="Clear selection"
@@ -471,7 +470,7 @@
                     <span class="selection-count">{selectionScope.selected.size} selected</span>
                 </div>
                 <div class="selection-actions">
-                    <IconButton
+                    <Button
                         iconName={(() => {
                             const icon = actionMenuItems.find((it) => it.id === "act-add-to-collection")?.iconName;
                             return typeof icon === "string" ? icon : (icon?.iconName ?? "collections_bookmark");
@@ -529,7 +528,7 @@
                         }}
                     >
                         <span>Add to Collection</span>
-                    </IconButton>
+                    </Button>
                     <ImageLabelViewer
                         variant="expanded"
                         label={getImageLabel(selectionFirstImage)}
@@ -620,7 +619,7 @@
                             paginate();
                         }}
                     />
-                    <IconButton
+                    <Button
                         iconName={photosSort.value.order === "ASC" ? "arrow_upward" : "arrow_downward"}
                         class="toolbar-button"
                         title={`Toggle Sort Order (${photosSort.value.order})`}
@@ -634,7 +633,7 @@
                     />
                 </div>
                 <div class="toolbar-group">
-                    <IconButton
+                    <Button
                         iconName="filter_list"
                         class="toolbar-button"
                         tooltipParams={{ component: ActiveFiltersTooltip, placement: "bottom-start" }}
@@ -644,7 +643,7 @@
                         }}
                     >
                         <span>Filter</span>
-                    </IconButton>
+                    </Button>
                     <Dropdown
                         title="Display"
                         class="toolbar-button"

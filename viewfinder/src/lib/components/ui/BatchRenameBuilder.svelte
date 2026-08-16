@@ -5,6 +5,7 @@
 <script lang="ts">
     import { DateTime } from "luxon";
     import type { ImageAsset } from "$lib/api";
+    import Button from "$lib/components/ui/Button.svelte";
     import { safeRenderRenameTemplate } from "$lib/ui-tools/renamer";
     import {
         DATE_FORMAT_OPTIONS,
@@ -18,7 +19,6 @@
     import { decodeHtmlEntities } from "$lib/utils/dom";
     import type { ExportFormats } from "$lib/utils/images";
     import { generateRandomString } from "$lib/utils/misc";
-    import IconButton from "./IconButton.svelte";
     import InputSelect from "./InputSelect.svelte";
     import InputText from "./InputText.svelte";
     import MaterialIcon from "./MaterialIcon.svelte";
@@ -212,16 +212,16 @@
                     <div class="rule-row">
                         <!-- Ordering Buttons -->
                         <div class="order-actions">
-                            <IconButton
+                            <Button
                                 iconName="expand_less"
-                                variant="mini"
+                                size="mini"
                                 disabled={index === 0}
                                 onclick={() => moveRowUp(index)}
                                 title="Move up"
                             />
-                            <IconButton
+                            <Button
                                 iconName="expand_more"
-                                variant="mini"
+                                size="mini"
                                 disabled={index === settings.builderRows.length - 1}
                                 onclick={() => moveRowDown(index)}
                                 title="Move down"
@@ -262,9 +262,9 @@
                         </div>
 
                         <!-- Delete Button -->
-                        <IconButton
+                        <Button
                             iconName="delete"
-                            variant="small"
+                            size="small"
                             disabled={settings.builderRows.length <= 1}
                             onclick={() => removeRow(row.id)}
                             title="Remove element"
@@ -276,14 +276,14 @@
 
             <!-- Add Row Button -->
             <div class="builder-actions">
-                <IconButton
+                <Button
                     iconName="add"
-                    variant="small"
+                    size="small"
                     onclick={addRow}
                     style="border: 1px solid var(--viz-border-subtle);"
                 >
                     Add Element
-                </IconButton>
+                </Button>
             </div>
         </div>
     {/if}

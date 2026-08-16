@@ -1,7 +1,7 @@
 <script lang="ts">
     import { type Snippet, onMount } from "svelte";
+    import Button from "$lib/components/ui/Button.svelte";
     import { isMobile } from "$lib/states/index.svelte";
-    import IconButton from "../IconButton.svelte";
 
     interface Props {
         open?: boolean;
@@ -34,12 +34,12 @@
     style:max-width={sidebarWidthState}
 >
     <div class="sidebar-header" class:closed={!open}>
-        <IconButton
+        <Button
             weight={300}
             iconName={open ? "keyboard_double_arrow_left" : "keyboard_double_arrow_right"}
             title={open ? "Collapse Sidebar" : "Expand Sidebar"}
             onclick={() => (open = !open)}
-            variant="small"
+            size="small"
         />
         {#if open && title}
             <h3 class="sidebar-heading">{title}</h3>

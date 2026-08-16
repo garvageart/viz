@@ -1,7 +1,6 @@
 <script lang="ts">
     import { untrack } from "svelte";
     import { scale } from "svelte/transition";
-    import IconButton from "$lib/components/ui/IconButton.svelte";
     import { download } from "$lib/states/index.svelte";
     import { DownloadState } from "$lib/upload/asset.svelte";
     import { processDownloadQueue, waitForDownloadCompletion } from "$lib/upload/manager.svelte";
@@ -121,7 +120,7 @@
     <div transition:scale={{ duration: 250 }} id="viz-download-panel">
         <div id="viz-download-panel-header">
             <div id="download-panel-header-info">
-                <IconButton
+                <Button
                     iconName="arrow_downward_alt"
                     title="Minimize Download Panel"
                     onclick={() => {
@@ -137,7 +136,7 @@
                     ).length}/{download.files.length})
                 </span>
             </div>
-            <IconButton
+            <Button
                 iconName="cancel"
                 style="background-color: transparent; padding: 0em;"
                 hoverColor="var(--viz-surface-hover)"

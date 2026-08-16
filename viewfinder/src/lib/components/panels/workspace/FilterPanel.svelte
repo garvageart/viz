@@ -1,7 +1,7 @@
 <script lang="ts">
     import CollectionFilter from "$lib/components/filters/CollectionFilter.svelte";
     import ImageFilter from "$lib/components/filters/ImageFilter.svelte";
-    import IconButton from "$lib/components/ui/IconButton.svelte";
+    import Button from "$lib/components/ui/Button.svelte";
     import { filterManager } from "$lib/states/filter.svelte";
 
     const imageScope = filterManager.getScope("images");
@@ -28,16 +28,16 @@
     </div>
     <div class="filter-panel-footer">
         <div class="filter-actions">
-            <IconButton
+            <Button
                 iconName={filterManager.keepFilters ? "keep" : "keep_off"}
-                variant="mini"
+                size="mini"
                 title="Keep filters while browsing"
                 style={filterManager.keepFilters ? "background-color: var(--viz-surface-hover);" : ""}
                 onclick={() => filterManager.toggleKeepFilters()}
             />
-            <IconButton
+            <Button
                 iconName="layers_clear"
-                variant="mini"
+                size="mini"
                 onclick={() => filterManager.resetActiveScope(true)}
                 title="Clear all active filters"
             />

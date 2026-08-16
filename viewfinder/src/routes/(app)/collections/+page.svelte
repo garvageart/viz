@@ -19,7 +19,6 @@
     import Button from "$lib/components/ui/Button.svelte";
     import CollectionCard, { openCollection } from "$lib/components/ui/CollectionCard.svelte";
     import DragAndDropUpload from "$lib/components/ui/DragAndDropUpload.svelte";
-    import IconButton from "$lib/components/ui/IconButton.svelte";
     import MaterialIcon from "$lib/components/ui/MaterialIcon.svelte";
     import { VizMimeTypes } from "$lib/constants";
     import ContextMenu from "$lib/context-menu/ContextMenu.svelte";
@@ -311,7 +310,7 @@
 
 {#snippet toolbarSnippet()}
     <div id="coll-tools">
-        <IconButton
+        <Button
             iconName="filter_list"
             class="toolbar-button"
             title="Filter"
@@ -319,8 +318,8 @@
             onclick={openFilterModal}
         >
             Filter
-        </IconButton>
-        <IconButton
+        </Button>
+        <Button
             iconName="add"
             id="create-collection"
             class="toolbar-button"
@@ -335,7 +334,7 @@
             ondrop={handleCreateDrop}
         >
             Create
-        </IconButton>
+        </Button>
     </div>
 {/snippet}
 

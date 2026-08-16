@@ -13,7 +13,7 @@
     import ConfirmationModal from "$lib/components/modals/ConfirmationModal.svelte";
     import CreatedApiKeyModal from "$lib/components/modals/CreatedApiKeyModal.svelte";
     import Badge from "$lib/components/ui/Badge.svelte";
-    import IconButton from "$lib/components/ui/IconButton.svelte";
+    import Button from "$lib/components/ui/Button.svelte";
     import MaterialIcon from "$lib/components/ui/MaterialIcon.svelte";
     import Table, { type TableColumn } from "$lib/components/ui/Table.svelte";
     import { toasts } from "$lib/toast-notifcations/toasts.svelte";
@@ -350,7 +350,7 @@
                 <h3>API Keys</h3>
                 <span>Personal access tokens for API access.</span>
             </div>
-            <IconButton variant="info" iconName="add" onclick={openApiKeyModal}><span>Create New Key</span></IconButton>
+            <Button variant="info" iconName="add" onclick={openApiKeyModal}><span>Create New Key</span></Button>
         </div>
 
         <div class="keys-list">

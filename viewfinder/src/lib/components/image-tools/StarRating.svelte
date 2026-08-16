@@ -1,6 +1,6 @@
 <script lang="ts">
+    import Button from "$lib/components/ui/Button.svelte";
     import MaterialIcon from "$lib/components/ui/MaterialIcon.svelte";
-    import IconButton from "../ui/IconButton.svelte";
 
     interface Props {
         /**
@@ -95,9 +95,9 @@
     {/each}
 
     {#if !isReadonly && value !== null && value !== 0}
-        <IconButton
+        <Button
             iconName="close"
-            variant="mini"
+            size="mini"
             aria-label="Clear rating"
             onclick={handleClear}
             class="clear-rating-btn"

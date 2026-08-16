@@ -3,6 +3,7 @@
     import { DateTime } from "luxon";
     import { type ComponentProps, type Snippet } from "svelte";
     import type { HTMLButtonAttributes } from "svelte/elements";
+    import Button from "$lib/components/ui/Button.svelte";
     import { applySortSelection, currentSortId, sortOptions, toggleSortOrder } from "$lib/sort/sort";
     import { selectionManager } from "$lib/states/selection.svelte";
     import { type SortState, photosSort } from "$lib/states/sort.svelte";
@@ -10,7 +11,6 @@
     import type { IPagination } from "$lib/types/asset";
     import Dropdown from "../context-menus/Dropdown.svelte";
     import AssetGrid from "../grid/AssetGrid.svelte";
-    import IconButton from "./IconButton.svelte";
     import AssetToolbar from "./toolbars/AssetToolbar.svelte";
 
     type Props = {
@@ -91,17 +91,11 @@
     {#if opts.dropdown}
         <Dropdown class="toolbar-button" {...opts.dropdown} title={opts.text} iconName={opts.iconName} />
     {:else}
-        <IconButton
-            {...opts}
-            iconName={opts.iconName}
-            iconStyle={opts.iconStyle}
-            class="toolbar-button"
-            title={opts.text}
-        >
+        <Button {...opts} iconName={opts.iconName} iconStyle={opts.iconStyle} class="toolbar-button" title={opts.text}>
             {#if opts.text.trim()}
                 <span style="margin: 0em 0.2em;">{opts.text}</span>
             {/if}
-        </IconButton>
+        </Button>
     {/if}
 {/snippet}
 
@@ -109,7 +103,7 @@
     {#if selectionScope && selectionScope.size > 0}
         <AssetToolbar class="selection-toolbar" {...selectionToolbarProps}>
             <div class="selection-info">
-                <IconButton
+                <Button
                     iconName="close"
                     class="toolbar-button"
                     title="Clear selection"
@@ -136,7 +130,7 @@
                         }
                     }
                 })}
-                <IconButton
+                <Button
                     iconName={sortState.value.order === "ASC" ? "arrow_upward" : "arrow_downward"}
                     class="toolbar-button"
                     title="Toggle Sort Order ({sortState.value.order})"

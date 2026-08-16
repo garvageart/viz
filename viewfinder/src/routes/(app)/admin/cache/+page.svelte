@@ -5,9 +5,9 @@
     import AdminRouteShell from "$lib/components/admin/AdminRouteShell.svelte";
     import ConfirmationModal from "$lib/components/modals/ConfirmationModal.svelte";
     import { modalsManager } from "$lib/components/modals/manager/ModalManager.svelte";
+    import Button from "$lib/components/ui/Button.svelte";
     import Checkbox from "$lib/components/ui/Checkbox.svelte";
     import IconBadge from "$lib/components/ui/IconBadge.svelte";
-    import IconButton from "$lib/components/ui/IconButton.svelte";
     import MaterialIcon from "$lib/components/ui/MaterialIcon.svelte";
     import ProgressBar from "$lib/components/ui/ProgressBar.svelte";
     import { type Toast, toasts } from "$lib/toast-notifcations/toasts.svelte.js";
@@ -127,7 +127,7 @@
 
 <AdminRouteShell heading="Cache Management" description="Monitor and manage the image processing cache">
     {#snippet actions()}
-        <IconButton
+        <Button
             iconName="refresh"
             variant="secondary"
             onclick={handleRefresh}
@@ -135,19 +135,14 @@
             title="Refresh Statistics"
         >
             Refresh
-        </IconButton>
-        <IconButton
-            iconName="delete_sweep"
-            onclick={openClearConfirm}
-            disabled={refreshing || loading}
-            variant="danger"
-        >
+        </Button>
+        <Button iconName="delete_sweep" onclick={openClearConfirm} disabled={refreshing || loading} variant="danger">
             {#if loading}
                 Clearing...
             {:else}
                 Clear Cache
             {/if}
-        </IconButton>
+        </Button>
     {/snippet}
 
     <div class="cache-container">

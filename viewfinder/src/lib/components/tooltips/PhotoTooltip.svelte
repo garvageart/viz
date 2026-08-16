@@ -3,7 +3,7 @@
     import type { MouseEventHandler } from "svelte/elements";
     import type { ImageAsset } from "$lib/api";
     import Badge from "$lib/components/ui/Badge.svelte";
-    import IconButton from "$lib/components/ui/IconButton.svelte";
+    import Button from "$lib/components/ui/Button.svelte";
     import MaterialIcon from "$lib/components/ui/MaterialIcon.svelte";
     import { formatBytes, getImageLabel, getImageMegapixels, getTakenAt } from "$lib/utils/images";
     import ImageLabelViewer from "../image-tools/ImageLabelViewer.svelte";
@@ -125,11 +125,11 @@
         <span class="tooltip-label name" title={displayName}>{displayName}</span>
 
         {#if clickHandler}
-            <IconButton
+            <Button
                 iconName="open_in_full"
                 title="Open"
                 class="info-button"
-                size="1.25rem"
+                iconSize="1.25rem"
                 onclick={(e) => {
                     clickHandler?.(e);
                 }}

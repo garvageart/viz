@@ -1,7 +1,7 @@
 <script lang="ts">
     import DOMPurify from "dompurify";
     import { fly } from "svelte/transition";
-    import IconButton from "$lib/components/ui/IconButton.svelte";
+    import Button from "$lib/components/ui/Button.svelte";
     import MaterialIcon from "$lib/components/ui/MaterialIcon.svelte";
     import { type NotifcationType, toasts } from "./toasts.svelte";
 
@@ -80,12 +80,12 @@
                     <span class="viz-toast-type-label">{formatCategoryLabel(toast.type || "info")}</span>
                 </div>
                 {#if toast.dismissible}
-                    <IconButton
+                    <Button
                         class="viz-toast-close"
                         iconName="close"
                         title="Dismiss"
                         aria-label="Dismiss notification"
-                        variant="mini"
+                        size="mini"
                         onclick={() => toasts.dismiss(toast.id)}
                     />
                 {/if}

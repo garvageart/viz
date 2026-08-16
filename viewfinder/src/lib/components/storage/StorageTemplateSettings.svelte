@@ -5,8 +5,8 @@
     import { type Snippet } from "svelte";
     import type { VizConfig } from "$lib/api";
     import { api } from "$lib/api";
+    import Button from "$lib/components/ui/Button.svelte";
     import Checkbox from "$lib/components/ui/Checkbox.svelte";
-    import IconButton from "$lib/components/ui/IconButton.svelte";
     import InputSelect from "$lib/components/ui/InputSelect.svelte";
     import InputText from "$lib/components/ui/InputText.svelte";
     import MaterialIcon from "$lib/components/ui/MaterialIcon.svelte";
@@ -262,16 +262,16 @@
                     </div>
 
                     <div class="action-buttons">
-                        <IconButton
-                            variant="small"
+                        <Button
+                            size="small"
                             iconName="settings_backup_restore"
                             onclick={resetTemplate}
                             disabled={template === activeTemplate || saving}
                         >
                             Reset
-                        </IconButton>
-                        <IconButton
-                            variant="small"
+                        </Button>
+                        <Button
+                            size="small"
                             weight={300}
                             iconName={saving ? "sync" : "save"}
                             class="{saving ? 'spinning' : ''} save-sptemplate-btn"
@@ -279,7 +279,7 @@
                             disabled={template === activeTemplate || saving || !!templateCompileResult.error}
                         >
                             {saving ? "Saving..." : "Save Template"}
-                        </IconButton>
+                        </Button>
                     </div>
                 </div>
             </div>
@@ -308,7 +308,7 @@
             <div class="preview-panel" class:has-error={!!templateCompileResult.error}>
                 <div class="preview-header">
                     <span class="preview-title">Preview</span>
-                    <IconButton
+                    <Button
                         variant="primary"
                         class="preview-copy-btn"
                         iconName={copied ? "check" : "content_copy"}
@@ -316,7 +316,7 @@
                         title="Copy template string"
                     >
                         {copied ? "Copied" : "Copy"}
-                    </IconButton>
+                    </Button>
                 </div>
                 <div class="preview-body">
                     {#if templateCompileResult.error}

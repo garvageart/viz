@@ -1,7 +1,6 @@
 <script lang="ts">
     import { untrack } from "svelte";
     import { scale } from "svelte/transition";
-    import IconButton from "$lib/components/ui/IconButton.svelte";
     import { upload } from "$lib/states/index.svelte";
     import { UploadState } from "$lib/upload/asset.svelte";
     import { processGlobalQueue, waitForUploadCompletion } from "$lib/upload/manager.svelte";
@@ -179,7 +178,7 @@
             </div>
         </div>
         <div id="viz-upload-panel-sub_header">
-            <IconButton
+            <Button
                 iconName="cancel"
                 style="background-color: transparent; padding: 0em;"
                 hoverColor="var(--viz-surface-hover)"
@@ -192,7 +191,7 @@
                     });
                     upload.files = [];
                 }}
-            ></IconButton>
+            ></Button>
             <span class="viz-upload-progress-text">
                 {upload.files.filter(
                     (f) =>

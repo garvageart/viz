@@ -2,7 +2,7 @@
     import { CalendarDateTime, type DateValue } from "@internationalized/date";
     import { DatePicker, TimeField } from "bits-ui";
     import { type Snippet, getContext } from "svelte";
-    import IconButton from "$lib/components/ui/IconButton.svelte";
+    import Button from "$lib/components/ui/Button.svelte";
     import InputSelect from "$lib/components/ui/InputSelect.svelte";
     import MaterialIcon from "$lib/components/ui/MaterialIcon.svelte";
     import { ContextKeys } from "$lib/context-keys";
@@ -202,7 +202,7 @@
                     <MaterialIcon iconName="edit_calendar" />
                     <span class="popover-title">{showTime ? "Select Date & Time" : "Select Date"}</span>
                 </div>
-                <IconButton
+                <Button
                     iconName="close"
                     type="button"
                     class="popover-close-btn"

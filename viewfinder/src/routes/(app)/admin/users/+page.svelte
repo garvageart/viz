@@ -9,7 +9,7 @@
     import { modalsManager } from "$lib/components/modals/manager/ModalManager.svelte";
     import AvatarBadge from "$lib/components/ui/AvatarBadge.svelte";
     import Badge from "$lib/components/ui/Badge.svelte";
-    import IconButton from "$lib/components/ui/IconButton.svelte";
+    import Button from "$lib/components/ui/Button.svelte";
     import MaterialIcon from "$lib/components/ui/MaterialIcon.svelte";
     import SliderToggle from "$lib/components/ui/SliderToggle.svelte";
     import Table, { type TableColumn } from "$lib/components/ui/Table.svelte";
@@ -221,18 +221,18 @@
         <td>{formatDate(user.created_at)}</td>
         <td>
             <div class="actions-cell">
-                <IconButton
+                <Button
                     iconName="person_edit"
                     grade={-25}
-                    variant="small"
+                    size="small"
                     class="action-btn edit"
                     onclick={() => openEditModal(user)}
                     title="Edit User"
                 />
-                <IconButton
+                <Button
                     iconName="person_remove"
                     grade={-25}
-                    variant="small"
+                    size="small"
                     class="action-btn delete"
                     onclick={() => openDeleteConfirm(user)}
                     title="Delete User"
@@ -244,9 +244,9 @@
 
 <AdminRouteShell heading="User Management" description="Manage user accounts, roles, and permissions.">
     {#snippet actions()}
-        <IconButton iconName="add" variant="info" onclick={openCreateModal}>
+        <Button iconName="add" variant="info" onclick={openCreateModal}>
             <span>Create User</span>
-        </IconButton>
+        </Button>
     {/snippet}
 
     <section class="content-section">

@@ -6,7 +6,6 @@
     import Badge from "$lib/components/ui/Badge.svelte";
     import Button from "$lib/components/ui/Button.svelte";
     import IconBadge from "$lib/components/ui/IconBadge.svelte";
-    import IconButton from "$lib/components/ui/IconButton.svelte";
     import MaterialIcon from "$lib/components/ui/MaterialIcon.svelte";
     import { jobsState } from "$lib/states/jobs.svelte";
     import type { MaterialSymbol } from "$lib/types/MaterialSymbol.js";
@@ -137,24 +136,24 @@
         </div>
 
         <div class="worker-actions">
-            <IconButton
+            <Button
                 iconName="refresh"
-                variant="small"
+                size="small"
                 class="worker-icon-btn"
                 onclick={() => {
                     jobsState.rescanAll(job.name);
                 }}
                 title="Rescan All"
-            ></IconButton>
-            <IconButton
+            ></Button>
+            <Button
                 iconName="search"
-                variant="small"
+                size="small"
                 class="worker-icon-btn"
                 onclick={() => {
                     jobsState.rescanMissing(job.name);
                 }}
                 title="Rescan Missing"
-            ></IconButton>
+            ></Button>
         </div>
 
         <div class="concurrency-row">
@@ -423,15 +422,15 @@
                 <section class="dashboard-section workers-section">
                     <div class="section-header-compact">
                         <h3>Available Workers</h3>
-                        <IconButton
+                        <Button
                             iconName="refresh"
-                            variant="small"
+                            size="small"
                             class="worker-icon-btn"
                             onclick={() => {
                                 jobsState.fetchJobTypes();
                             }}
                             disabled={jobsState.workers.loading}
-                        ></IconButton>
+                        ></Button>
                     </div>
 
                     {#if jobsState.workers.loading}

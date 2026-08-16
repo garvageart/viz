@@ -55,7 +55,7 @@
     </div>
 
     {#if filteredItems.length > 5}
-        <Button variant="mini" class="more-btn" onclick={() => (isExpanded = !isExpanded)}>
+        <Button size="mini" class="more-btn" onclick={() => (isExpanded = !isExpanded)}>
             {isExpanded ? "Show Less" : `Show All (${filteredItems.length})`}
         </Button>
     {/if}

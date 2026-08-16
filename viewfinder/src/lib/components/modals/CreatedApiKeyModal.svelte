@@ -3,7 +3,6 @@
     import { Scope, scopes } from "$lib/auth/scopes.gen";
     import Button from "$lib/components/ui/Button.svelte";
     import Checkbox from "$lib/components/ui/Checkbox.svelte";
-    import IconButton from "$lib/components/ui/IconButton.svelte";
     import InputText from "$lib/components/ui/InputText.svelte";
     import { toasts } from "$lib/toast-notifcations/toasts.svelte";
     import { copyToClipboard } from "$lib/utils/misc";
@@ -105,10 +104,10 @@
         <span class="warning-text">Please copy your new API Key. You won't be able to see it again!</span>
         <div class="key-display">
             <code>{createdToken}</code>
-            <IconButton iconName="content_copy" onclick={handleCopy} variant="small">Copy</IconButton>
+            <Button iconName="content_copy" onclick={handleCopy} size="small"><span>Copy</span></Button>
         </div>
         <div class="modal-actions">
-            <IconButton iconName="close" onclick={handleClose} variant="small">Close</IconButton>
+            <Button iconName="close" onclick={handleClose} size="small"><span>Close</span></Button>
         </div>
     {:else}
         <div class="form-content">

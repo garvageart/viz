@@ -7,6 +7,7 @@
     import { hideAll } from "tippy.js";
     import { type ImageAsset, getFullImagePath } from "$lib/api";
     import { modalsManager } from "$lib/components/modals/manager/ModalManager.svelte";
+    import Button from "$lib/components/ui/Button.svelte";
     import ExportPanel, { modalOptions as exportModalOptions } from "$lib/components/ui/panels/ExportPanel.svelte";
     import MetadataPanel from "$lib/components/ui/panels/MetadataPanel.svelte";
     import { ImageLoader } from "$lib/images/loader/image-loader.svelte";
@@ -17,7 +18,6 @@
     import { type CropCoords, getThumbhashURL } from "$lib/utils/images";
     import CropOverlay from "../image-tools/CropOverlay.svelte";
     import CropTools from "../image-tools/CropTools.svelte";
-    import IconButton from "./IconButton.svelte";
     import Lightbox from "./Lightbox.svelte";
 
     interface Props {
@@ -898,7 +898,7 @@
             }}
             role="presentation"
         >
-            <IconButton
+            <Button
                 id="lightbox-icon-close"
                 class="lightbox-button-icon"
                 hoverColor="transparent"
@@ -915,7 +915,7 @@
             {#if !isCropping}
                 <div class="image-icon-buttons">
                     {#if dev}
-                        <IconButton
+                        <Button
                             class="lightbox-button-icon"
                             hoverColor="transparent"
                             title="Toggle Placeholder"
@@ -924,7 +924,7 @@
                                 loader.initialImageLoaded = !loader.initialImageLoaded;
                             }}
                         />
-                        <IconButton
+                        <Button
                             class="lightbox-button-icon"
                             hoverColor="transparent"
                             title="Toggle Zoom & Image State Debug"
@@ -934,7 +934,7 @@
                             }}
                         />
                     {/if}
-                    <IconButton
+                    <Button
                         id="act-crop"
                         class="lightbox-button-icon"
                         hoverColor="transparent"
@@ -942,7 +942,7 @@
                         iconName="crop"
                         onclick={toggleCropMode}
                     />
-                    <IconButton
+                    <Button
                         class="lightbox-button-icon"
                         hoverColor="transparent"
                         title="Download Original"
@@ -951,7 +951,7 @@
                             downloadOriginalImageFile(lightboxImage!);
                         }}
                     />
-                    <IconButton
+                    <Button
                         class="lightbox-button-icon"
                         hoverColor="transparent"
                         title="Export"
@@ -972,7 +972,7 @@
                                 });
                         }}
                     />
-                    <IconButton
+                    <Button
                         id="lightbox-toggle-info"
                         class="lightbox-button-icon"
                         hoverColor="transparent"
@@ -1107,7 +1107,7 @@
 
             {#if prevLightboxImage && nextLightboxImage && !isCropping}
                 <div class="lightbox-nav">
-                    <IconButton
+                    <Button
                         iconName="arrow_back"
                         class="lightbox-nav-btn prev lightbox-button-icon"
                         style={lightboxMaterialIconColour}
@@ -1117,7 +1117,7 @@
                             goToPrev();
                         }}
                     />
-                    <IconButton
+                    <Button
                         iconName="arrow_forward"
                         class="lightbox-nav-btn next lightbox-button-icon"
                         style={lightboxMaterialIconColour}
