@@ -5,6 +5,25 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.31.0] - 2026-08-16
+
+* fix(ui): add selector classes to header nav buttons (c795455b)
+* fix(e2e): update selectors for unified Button migration (160f4306)
+* fix(e2e): configure API client base URL in security tests and teardown (1c68ced7)
+* chore: rename stock photo ingest script (591436a8)
+* refactor(ui): migrate all consumers from IconButton to Button (2e842a61)
+* refactor(ui): unify Button component with link and icon support (f7df0c6f)
+* test(e2e): add security E2E and unit tests (150bf871)
+* test: add guard tests for security fixes (325ad2e4)
+* fix(docker): require explicit database credentials (26910e6d)
+* fix(setup): remove sessionToken from superadmin setup response (356b274e)
+* fix(cors): add X-Download-Password to allowed headers (10db2771)
+* fix(security): default SameSite cookies to Strict (cac650a2)
+* fix(websocket): restrict origins to localhost in dev mode (8ec5fee2)
+* fix(accounts): require auth on user profile endpoint (136552d2)
+* fix(auth): uniform login errors and OAuth state validation (69f4742e)
+* fix(images): address multiple security findings in image handling (4dfd7270)
+
 ## [0.30.9] - 2026-08-13
 
 * fix(viewfinder): fix hotkey key-direction evaluation and DOM element focus in grid keyboard navigation (b05f754e)
