@@ -24,7 +24,7 @@ func GetDefaults() cors.Options {
 			return MatchOrigin(origin, allowedHosts)
 		},
 		AllowedMethods:   []string{"GET", "POST", "PUT", "PATCH", "OPTIONS", "DELETE"},
-		AllowedHeaders:   []string{"Accept", "Authorization", "Bearer", "Content-Type", "X-CSRF-Token", APIKeyName, "If-None-Match", "If-Modified-Since"},
+		AllowedHeaders:   []string{"Accept", "Authorization", "Bearer", "Content-Type", "X-CSRF-Token", "X-Download-Password", APIKeyName, "If-None-Match", "If-Modified-Since"},
 		ExposedHeaders:   []string{"Set-Cookie", "Content-Disposition"},
 		AllowCredentials: true,
 		MaxAge:           300,
