@@ -192,6 +192,8 @@ export async function cleanupTestPhotos(request: APIRequestContext, uids: string
     }
 
     try {
+        configureApiClient();
+
         // Extract session cookies from Playwright to authenticate native fetch calls
         const state = await request.storageState();
         const cookieHeader = state.cookies.map((c) => `${c.name}=${c.value}`).join("; ");

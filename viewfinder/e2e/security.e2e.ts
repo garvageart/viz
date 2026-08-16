@@ -1,5 +1,8 @@
 import { expect, test } from "@playwright/test";
 import { getSystemStatus, getUserByUid, login } from "$lib/api";
+import { configureApiClient } from "./helpers";
+
+configureApiClient();
 
 const apiOpts = { credentials: "omit" as const };
 
