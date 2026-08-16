@@ -4,6 +4,16 @@ import path from "path";
 import { defaults, deleteImagesBulk } from "$lib/api";
 
 /**
+ * Configures the generated API client's base URL to match the Playwright test server.
+ * Called once from auth.setup.ts before all tests run.
+ */
+export function configureApiClient() {
+    const port = process.env.PLAYWRIGHT_PREVIEW ? 7778 : 7777;
+    const baseUrl = process.env.PLAYWRIGHT_TEST_BASE_URL || `http://localhost:${port}`;
+    defaults.baseUrl = `${baseUrl}/api`;
+}
+
+/**
  * Reads the cached user admin status from e2e/.auth/user_info.json saved during auth setup.
  */
 export function isUserAdmin(): boolean {
@@ -185,11 +195,6 @@ export async function cleanupTestPhotos(request: APIRequestContext, uids: string
         // Extract session cookies from Playwright to authenticate native fetch calls
         const state = await request.storageState();
         const cookieHeader = state.cookies.map((c) => `${c.name}=${c.value}`).join("; ");
-
-        // Playwright test runner might use a different base URL
-        const port = process.env.PLAYWRIGHT_PREVIEW ? 7778 : 7777;
-        const baseUrl = process.env.PLAYWRIGHT_TEST_BASE_URL || `http://localhost:${port}`;
-        defaults.baseUrl = `${baseUrl}/api`;
 
         const authOpts = {
             headers: { Cookie: cookieHeader }

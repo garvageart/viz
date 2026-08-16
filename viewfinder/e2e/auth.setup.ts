@@ -1,7 +1,7 @@
 import { type Page, expect, test as setup } from "@playwright/test";
 import * as fs from "fs";
 import * as path from "path";
-import { performDragAndDrop, trackUploadedImages } from "./helpers";
+import { configureApiClient, performDragAndDrop, trackUploadedImages } from "./helpers";
 
 const authFile = "e2e/.auth/user.json";
 
@@ -98,6 +98,10 @@ async function registerTestUser(page: Page, email: string, name: string, pass: s
     }
 }
 
+function getTestImageFilePath(filename: string) {
+    return path.join("../resources/test/samples", filename);
+}
+
 setup("authenticate", async ({ page }) => {
     setup.setTimeout(120000);
     const email = process.env.E2E_TEST_EMAIL;
@@ -109,6 +113,8 @@ setup("authenticate", async ({ page }) => {
             "Missing E2E test credentials. Please set E2E_TEST_EMAIL, E2E_TEST_PASSWORD, and E2E_TEST_USERNAME environment variables."
         );
     }
+
+    configureApiClient();
 
     console.log("Navigating to login page...");
     await page.goto("/auth/login");
@@ -160,7 +166,7 @@ setup("authenticate", async ({ page }) => {
     });
 
     // 1. Upload 2 photos via Drag & Drop
-    const dndFiles = ["../resources/test/samples/Fujifilm_XT5_01.jpg", "../resources/test/samples/Canon_R5_01.jpg"];
+    const dndFiles = [getTestImageFilePath("Fujifilm_XT5_01.jpg"), getTestImageFilePath("Canon_R5_01.jpg")];
 
     for (const relPath of dndFiles) {
         const fullPath = path.join(process.cwd(), relPath);
@@ -173,7 +179,7 @@ setup("authenticate", async ({ page }) => {
     }
 
     // 2. Upload 2 photos via Header Upload Button
-    const buttonFiles = ["../resources/test/samples/Sony_A7IV_01.jpg", "../resources/test/samples/Canon_40D.jpg"];
+    const buttonFiles = [getTestImageFilePath("Sony_A7IV_01.jpg"), getTestImageFilePath("Canon_40D.jpg")];
 
     for (const filePath of buttonFiles) {
         const fullPath = path.join(process.cwd(), filePath);
