@@ -70,11 +70,9 @@ func AuthRouter(db *gorm.DB, logger *slog.Logger) *chi.Mux {
 
 		tx := db.Model(&entities.User{}).Select("uid, password").Where("email = ?", login.Email).Scan(&row)
 		if tx.Error != nil || row.Password == "" {
-			if tx.Error == gorm.ErrRecordNotFound || row.Password == "" {
-				render.Status(req, http.StatusNotFound)
-				render.JSON(res, req, dto.ErrorResponse{Error: "Cannot find user with provided email"})
-				return
-			}
+			// Uniform error for both "user not found" and "empty password" to prevent user enumeration
+			render.Status(req, http.StatusUnauthorized)
+			render.JSON(res, req, dto.ErrorResponse{Error: "Invalid email or password"})
 			return
 		}
 
@@ -93,7 +91,7 @@ func AuthRouter(db *gorm.DB, logger *slog.Logger) *chi.Mux {
 
 		if !isValidPass {
 			render.Status(req, http.StatusUnauthorized)
-			render.JSON(res, req, dto.ErrorResponse{Error: "Invalid password"})
+			render.JSON(res, req, dto.ErrorResponse{Error: "Invalid email or password"})
 			return
 		}
 
@@ -263,6 +261,23 @@ func AuthRouter(db *gorm.DB, logger *slog.Logger) *chi.Mux {
 	router.Post("/oauth/{provider}", func(res http.ResponseWriter, req *http.Request) {
 		provider := strings.ToLower(chi.URLParam(req, "provider"))
 		state := req.FormValue("state")
+
+		// Validate state against the hash stored in the redirect_state cookie
+		redirectCookie, cookieErr := req.Cookie(libhttp.RedirectCookie)
+		if cookieErr != nil || redirectCookie.Value == "" {
+			render.Status(req, http.StatusBadRequest)
+			render.JSON(res, req, dto.ErrorResponse{Error: "Missing or invalid OAuth state"})
+			return
+		}
+
+		stateHash := crypto.CreateHash([]byte(state))
+		expectedHash, decodeErr := base64.URLEncoding.DecodeString(redirectCookie.Value)
+		if decodeErr != nil || !crypto.VerifyHash(stateHash, expectedHash) {
+			render.Status(req, http.StatusBadRequest)
+			render.JSON(res, req, dto.ErrorResponse{Error: "OAuth state validation failed"})
+			return
+		}
+
 		var actualUserData struct {
 			Email   string `json:"email"`
 			Name    string `json:"name"`
@@ -280,8 +295,7 @@ func AuthRouter(db *gorm.DB, logger *slog.Logger) *chi.Mux {
 
 		tokenString := auth.GenerateAuthToken()
 
-		// at this point, the state has been validated to be correct
-		// and unmodified to use that
+		// Store the state value in a cookie for the client session
 		http.SetCookie(res, &http.Cookie{
 			Name:     libhttp.StateCookie,
 			Value:    state,
