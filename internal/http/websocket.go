@@ -15,6 +15,20 @@ import (
 	"github.com/gorilla/websocket"
 )
 
+const (
+	// Time allowed to write a message to the peer
+	writeWait = 10 * time.Second
+
+	// Time allowed to read the next pong message from the peer
+	pongWait = 60 * time.Second
+
+	// Send pings to peer with this period (must be less than pongWait)
+	pingPeriod = (pongWait * 9) / 10
+
+	// Maximum message size allowed from peer
+	maxMessageSize = 512 * 1024 // 512KB
+)
+
 // WSClient represents a connected WebSocket client
 type WSClient struct {
 	ID     string
@@ -72,15 +86,11 @@ func NewWSBroker(logger *slog.Logger) *WSBroker {
 			ReadBufferSize:  1024,
 			WriteBufferSize: 1024,
 			CheckOrigin: func(r *http.Request) bool {
-				// In development, allow any origin
-				if !utils.IsProduction {
-					return true
-				}
-
-				// In production, check against allowed origins
 				origin := r.Header.Get("Origin")
+
+				// Allow non-browser clients (no Origin header)
 				if origin == "" {
-					return true // Allow non-browser clients (like mobile apps)
+					return true
 				}
 
 				// Allow same-origin connections (Origin matches Request Host)
@@ -90,6 +100,16 @@ func NewWSBroker(logger *slog.Logger) *WSBroker {
 				}
 				if strings.EqualFold(originWithoutScheme, r.Host) {
 					return true
+				}
+
+				// In development, allow localhost/127.0.0.1 origins
+				if !utils.IsProduction {
+					allowedDevHosts := []string{"localhost", "127.0.0.1"}
+					for _, host := range allowedDevHosts {
+						if strings.HasPrefix(originWithoutScheme, host) {
+							return true
+						}
+					}
 				}
 
 				allowedOrigins := config.AppConfig.AllowedHosts
@@ -288,20 +308,6 @@ func (b *WSBroker) ServeWS(w http.ResponseWriter, r *http.Request) {
 	go client.writePump()
 	go client.readPump()
 }
-
-const (
-	// Time allowed to write a message to the peer
-	writeWait = 10 * time.Second
-
-	// Time allowed to read the next pong message from the peer
-	pongWait = 60 * time.Second
-
-	// Send pings to peer with this period (must be less than pongWait)
-	pingPeriod = (pongWait * 9) / 10
-
-	// Maximum message size allowed from peer
-	maxMessageSize = 512 * 1024 // 512KB
-)
 
 // readPump pumps messages from the WebSocket connection to the broker
 func (c *WSClient) readPump() {
