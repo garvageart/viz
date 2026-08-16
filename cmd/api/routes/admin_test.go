@@ -13,6 +13,7 @@ import (
 
 	"github.com/go-chi/chi/v5"
 	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 	"gorm.io/gorm"
 
 	"viz/api/routes"
@@ -215,4 +216,28 @@ func TestHardDeleteUserEdgeCases(t *testing.T) {
 	assert.NoError(t, db.Unscoped().Where("uid = ?", image.Uid).First(&updatedImg).Error)
 	assert.Nil(t, updatedImg.OwnerID)
 	assert.Nil(t, updatedImg.UploadedByID)
+}
+
+func TestImageOwnershipIntegrity(t *testing.T) {
+	db := tests.NewTestDB(t)
+
+	owner := entities.User{
+		Uid:   "owner-delete-test",
+		Email: "owner@test.com",
+		Role:  dto.UserRoleUser,
+	}
+	require.NoError(t, db.Create(&owner).Error)
+
+	img := entities.ImageAsset{
+		Uid:          "img-delete-test",
+		Name:         "test.jpg",
+		OwnerID:      &owner.Uid,
+		UploadedByID: &owner.Uid,
+	}
+	require.NoError(t, db.Create(&img).Error)
+
+	var fetched entities.ImageAsset
+	require.NoError(t, db.Where("uid = ?", img.Uid).First(&fetched).Error)
+	require.NotNil(t, fetched.OwnerID)
+	assert.Equal(t, owner.Uid, *fetched.OwnerID)
 }

@@ -42,7 +42,7 @@ func createTestUserSession(t *testing.T, db *gorm.DB) (string, entities.User) {
 	return session.Token, user
 }
 
-func setupUserSettingsRouter(t *testing.T, db *gorm.DB) chi.Router {
+func setupUserSettingsRouter(db *gorm.DB) chi.Router {
 	logger := newTestLogger()
 	router := chi.NewRouter()
 	router.Use(libhttp.AuthMiddleware(db, logger))
@@ -52,7 +52,7 @@ func setupUserSettingsRouter(t *testing.T, db *gorm.DB) chi.Router {
 
 func TestUserSettings(t *testing.T) {
 	db := tests.NewTestDB(t)
-	router := setupUserSettingsRouter(t, db)
+	router := setupUserSettingsRouter(db)
 	token, _ := createTestUserSession(t, db)
 
 	// Seed defaults
@@ -133,4 +133,34 @@ func TestUserSettings(t *testing.T) {
 		db.Model(&entities.SettingOverride{}).Where("name = ?", "test_bool").Count(&count)
 		assert.Equal(t, int64(0), count)
 	})
+}
+
+func TestUserProfileRequiresAuth(t *testing.T) {
+	db := tests.NewTestDB(t)
+	logger := newTestLogger()
+
+	user := entities.User{
+		Uid:   "profile-test-user",
+		Email: "profile@test.com",
+		Name:  "Test User",
+		Role:  dto.UserRoleUser,
+	}
+	require.NoError(t, db.Create(&user).Error)
+
+	router := chi.NewRouter()
+	router.Use(libhttp.AuthMiddleware(db, logger))
+	router.Mount("/accounts", routes.AccountsRouter(db, logger))
+
+	ts := httptest.NewServer(router)
+	defer ts.Close()
+
+	req, err := http.NewRequest("GET", ts.URL+"/accounts/"+user.Uid, nil)
+	require.NoError(t, err)
+
+	resp, err := ts.Client().Do(req)
+	require.NoError(t, err)
+	defer resp.Body.Close()
+
+	assert.Equal(t, http.StatusUnauthorized, resp.StatusCode,
+		"unauthenticated request to /accounts/{uid} must return 401")
 }
