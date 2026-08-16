@@ -142,31 +142,31 @@ func AccountsRouter(db *gorm.DB, logger *slog.Logger) *chi.Mux {
 		render.JSON(res, req, uwp.User.DTO())
 	})
 
-	router.Get("/{uid}", func(res http.ResponseWriter, req *http.Request) {
-		userID := chi.URLParam(req, "uid")
-		var user entities.User
-
-		err := db.Where("uid = ?", userID).First(&user).Error
-		if err != nil {
-			if err == gorm.ErrRecordNotFound {
-				render.Status(req, http.StatusNotFound)
-				render.JSON(res, req, dto.ErrorResponse{Error: "User not found"})
-				return
-			}
-
-			libhttp.ServerError(res, req, err, logger, nil,
-				"Failed to get user",
-				"Something went wrong, please try again later",
-			)
-			return
-		}
-
-		render.JSON(res, req, user.DTO())
-	})
-
 	// Authenticated routes
 	router.Group(func(r chi.Router) {
 		r.Use(libhttp.AuthMiddleware(db, logger))
+
+		r.Get("/{uid}", func(res http.ResponseWriter, req *http.Request) {
+			userID := chi.URLParam(req, "uid")
+			var user entities.User
+
+			err := db.Where("uid = ?", userID).First(&user).Error
+			if err != nil {
+				if err == gorm.ErrRecordNotFound {
+					render.Status(req, http.StatusNotFound)
+					render.JSON(res, req, dto.ErrorResponse{Error: "User not found"})
+					return
+				}
+
+				libhttp.ServerError(res, req, err, logger, nil,
+					"Failed to get user",
+					"Something went wrong, please try again later",
+				)
+				return
+			}
+
+			render.JSON(res, req, user.DTO())
+		})
 
 		r.Route("/me", func(r chi.Router) {
 			r.Use(libhttp.UserAuthMiddleware)
