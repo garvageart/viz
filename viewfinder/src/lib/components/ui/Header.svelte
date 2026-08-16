@@ -163,10 +163,16 @@
         {/if}
         <div class="header-separator"></div>
         <div class="icon-group-container">
-            <Button variant="ghost" class="header-button" iconName="imagesmode" title="Go to Photos" href="/photos" />
             <Button
                 variant="ghost"
-                class="header-button"
+                class="page-nav-btn header-button"
+                iconName="imagesmode"
+                title="Go to Photos"
+                href="/photos"
+            />
+            <Button
+                variant="ghost"
+                class="page-nav-btn header-button"
                 iconName="photo_album"
                 title="Go to Collections"
                 href="/collections"
@@ -176,7 +182,7 @@
     <div class="center-container">
         <Button
             variant="ghost"
-            class="header-button"
+            class="go-back-btn header-button"
             iconName="arrow_back"
             title="Go Back"
             disabled={!historyState.canGoBack}
@@ -184,7 +190,7 @@
         />
         <Button
             variant="ghost"
-            class="header-button"
+            class="go-forward-btn header-button"
             iconName="arrow_forward"
             title="Go Forward"
             disabled={!historyState.canGoForward}
