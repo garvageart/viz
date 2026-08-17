@@ -217,12 +217,10 @@ export async function generateTransform(input: TransformInput): Promise<Transfor
     // to the original filename extension. (Keep logic simple like the Go backend.)
     let ext = params.format ?? "";
     if (!ext) {
-        const orig = asset.image_paths?.original ?? asset.image_paths.original;
-        if (orig) {
-            const maybe = orig.split("?")[0].split(".").pop();
-            if (maybe) {
-                ext = maybe.toLowerCase();
-            }
+        const orig = asset.image_paths.original;
+        const maybe = orig.split(".").pop();
+        if (maybe) {
+            ext = maybe.toLowerCase();
         }
     }
 
