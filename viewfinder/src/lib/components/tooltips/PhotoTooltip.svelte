@@ -157,38 +157,42 @@
     </div>
 
     {#if asset.description}
-        <div class="tooltip-description">{asset.description}</div>
+        <div class="tooltip-description" title={asset.description}>{asset.description}</div>
     {/if}
 
     <div class="divider"></div>
 
-    <div class="metadata-grid">
-        {#if takenAt}
-            <div class="metadata-item">
-                <span class="meta-label">Captured</span>
-                <span class="meta-value font-mono">{DateTime.fromJSDate(takenAt).toFormat("dd LLL yyyy • HH:mm")}</span>
-            </div>
-        {/if}
+    <!-- Capture & Attribution Context -->
+    {#if takenAt || asset.owner?.name}
+        <div class="capture-attribution-bar">
+            {#if takenAt}
+                <div class="capture-time" title="Date & Time Captured">
+                    <MaterialIcon iconName="schedule" />
+                    <span class="font-mono">{DateTime.fromJSDate(takenAt).toFormat("dd LLL yyyy • HH:mm")}</span>
+                </div>
+            {/if}
 
-        <div class="metadata-item">
-            <span class="meta-label">Dimensions</span>
-            <span class="meta-value font-mono">
+            {#if asset.owner?.name}
+                <div class="owner-byline" title="Asset Owner">
+                    <MaterialIcon iconName="person" />
+                    <span class="owner-name">{asset.owner.name}</span>
+                </div>
+            {/if}
+        </div>
+    {/if}
+
+    <!-- Technical File Specifications -->
+    <div class="asset-specs-bar">
+        <div class="spec-item resolution" title="Image Dimensions & Megapixels">
+            <span class="spec-value">
                 {asset.width} × {asset.height}
-                <span class="meta-sub">({megapixel} MP)</span>
+                <span class="spec-sub">({megapixel} MP)</span>
             </span>
         </div>
 
         {#if fileSizeStr}
-            <div class="metadata-item">
-                <span class="meta-label">File Size</span>
-                <span class="meta-value font-mono">{fileSizeStr}</span>
-            </div>
-        {/if}
-
-        {#if asset.owner?.name}
-            <div class="metadata-item">
-                <span class="meta-label">Owner</span>
-                <span class="meta-value">{asset.owner.name}</span>
+            <div class="spec-item size" title="File Size">
+                <span class="spec-value">{fileSizeStr}</span>
             </div>
         {/if}
     </div>
@@ -196,16 +200,20 @@
     {#if hasExif}
         <div class="divider"></div>
         <div class="exif-section">
-            {#if cameraModel}
-                <div class="exif-camera-model" title={cameraModel}>
-                    <MaterialIcon iconName="photo_camera" size="1.1rem" />
-                    <span class="camera-text">{cameraModel}</span>
-                </div>
-            {/if}
-            {#if asset.exif?.lens_model}
-                <div class="exif-lens-model" title={asset.exif.lens_model}>
-                    <MaterialIcon iconName="adjust" size="1.1rem" />
-                    <span class="lens-text">{asset.exif.lens_model}</span>
+            {#if cameraModel || asset.exif?.lens_model}
+                <div class="equipment-list">
+                    {#if cameraModel}
+                        <div class="equipment-item" title={cameraModel}>
+                            <MaterialIcon iconName="photo_camera" size="0.95rem" />
+                            <span class="camera-text font-mono">{cameraModel}</span>
+                        </div>
+                    {/if}
+                    {#if asset.exif?.lens_model}
+                        <div class="equipment-item" title={asset.exif.lens_model}>
+                            <MaterialIcon iconName="adjust" size="0.95rem" />
+                            <span class="lens-text font-mono">{asset.exif.lens_model}</span>
+                        </div>
+                    {/if}
                 </div>
             {/if}
 
@@ -300,6 +308,8 @@
         line-height: 1.4;
         word-break: break-word;
         margin-top: calc(-1 * var(--viz-spacing-xs));
+        max-height: 6rem;
+        overflow-y: auto;
     }
 
     .divider {
@@ -308,40 +318,90 @@
         margin: 0;
     }
 
-    .metadata-grid {
+    .capture-attribution-bar {
         display: flex;
-        flex-direction: column;
-        gap: var(--viz-spacing-sm);
-    }
-
-    .metadata-item {
-        display: flex;
-        justify-content: space-between;
         align-items: center;
-        gap: var(--viz-spacing-md);
+        justify-content: space-between;
+        gap: var(--viz-spacing-sm);
+        flex-wrap: wrap;
     }
 
-    .meta-label {
+    .capture-time {
+        display: flex;
+        align-items: center;
+        gap: var(--viz-spacing-xs);
         color: var(--viz-text-secondary);
-        font-family: var(--viz-display-font);
         font-weight: 500;
-    }
 
-    .meta-value {
-        color: var(--viz-text-primary);
-        font-family: var(--viz-display-font);
-        font-weight: 500;
-        text-align: right;
+        :global(.viz-material-icon) {
+            flex-shrink: 0;
+            color: var(--viz-text-muted);
+        }
 
-        &.font-mono {
-            font-family: var(--viz-mono-font);
-            letter-spacing: -0.02em;
+        span {
+            letter-spacing: -0.01em;
         }
     }
 
-    .meta-sub {
+    .owner-byline {
+        display: flex;
+        align-items: center;
+        gap: var(--viz-spacing-xs);
         color: var(--viz-text-secondary);
-        margin-left: var(--viz-spacing-xs);
+        font-size: var(--viz-font-size-xs);
+        background-color: var(--viz-surface-popover);
+        padding: 2px var(--viz-spacing-xs);
+        border-radius: var(--viz-border-radius-sm);
+        border: 1px solid var(--viz-border-subtle);
+
+        :global(.viz-material-icon) {
+            flex-shrink: 0;
+            color: var(--viz-text-muted);
+        }
+
+        .owner-name {
+            color: var(--viz-text-primary);
+            font-weight: 600;
+        }
+    }
+
+    .asset-specs-bar {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        background-color: var(--viz-surface-popover);
+        border: 1px solid var(--viz-border-subtle);
+        border-radius: var(--viz-border-radius-md);
+        padding: var(--viz-spacing-xs) var(--viz-spacing-sm);
+        gap: var(--viz-spacing-md);
+        box-sizing: border-box;
+    }
+
+    .spec-item {
+        display: flex;
+        align-items: center;
+        gap: var(--viz-spacing-xs);
+        min-width: 0;
+
+        :global(.viz-material-icon) {
+            flex-shrink: 0;
+            color: var(--viz-text-secondary);
+        }
+    }
+
+    .spec-value {
+        color: var(--viz-text-primary);
+        font-weight: 600;
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+    }
+
+    .spec-sub {
+        color: var(--viz-text-muted);
+        font-weight: 400;
+        font-size: var(--viz-font-size-xs);
+        margin-left: 2px;
     }
 
     .exif-section {
@@ -350,8 +410,13 @@
         gap: var(--viz-spacing-sm);
     }
 
-    .exif-camera-model,
-    .exif-lens-model {
+    .equipment-list {
+        display: flex;
+        flex-direction: column;
+        gap: var(--viz-spacing-xs);
+    }
+
+    .equipment-item {
         display: flex;
         align-items: center;
         gap: var(--viz-spacing-xs);
@@ -362,6 +427,7 @@
 
         :global(.viz-material-icon) {
             flex-shrink: 0;
+            color: var(--viz-text-secondary);
         }
     }
 

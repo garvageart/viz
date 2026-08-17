@@ -5,7 +5,9 @@
     import type { SvelteHTMLElements } from "svelte/elements";
     import { type Instance, type Props as TippyProps, delegate, followCursor } from "tippy.js";
     import "tippy.js/dist/tippy.css";
-    import { type ImageAsset, getFullImagePath } from "$lib/api";
+    import { type ImageAsset } from "$lib/api";
+    import AssetImage from "$lib/components/ui/AssetImage.svelte";
+    import Button from "$lib/components/ui/Button.svelte";
     import { PhotoGridVirtualizer } from "$lib/components/virtualizer/PhotoGridVirtualizer.svelte.js";
     import { debugMode, isLayoutPage, isMobile, tableColumnSettings } from "$lib/states/index.svelte";
     import { selectionManager } from "$lib/states/selection.svelte";
@@ -1058,18 +1060,14 @@
         <td class="asset-snippet-cell">
             <div class="asset-snippet-inner" title={formatValueForKey(asset, "name")}>
                 {#if getNestedValue(asset, table?.thumbnail_key) || asset.image_paths}
-                    <img
-                        class="asset-table-thumb"
-                        src={getFullImagePath(
-                            getNestedValue(asset, table?.thumbnail_key) ??
-                                asset.image_paths?.thumbnail ??
-                                asset.image_paths?.preview ??
-                                ""
-                        )}
-                        alt={asset.name ?? asset.image_metadata?.file_name ?? ""}
-                        loading="lazy"
-                        crossorigin="use-credentials"
-                    />
+                    <div class="asset-table-thumb-wrapper">
+                        <AssetImage
+                            asset={asset as unknown as ImageAsset}
+                            resolution="thumbnail"
+                            class="asset-table-thumb"
+                            alt={asset.name}
+                        />
+                    </div>
                 {:else}
                     <div class="asset-table-thumb-fallback">
                         <MaterialIcon iconName="image" />
@@ -1077,7 +1075,7 @@
                 {/if}
                 <div class="asset-snippet-meta">
                     <div class="asset-snippet-name">
-                        {asset.image_metadata?.file_name ?? asset.name}
+                        {asset.name}
                     </div>
                     <div class="asset-snippet-sub">
                         {formatValueForKey(asset, "created_at") ||
@@ -1098,6 +1096,7 @@
     {#each visibleKeys as key}
         <th style={`width: ${tableColumnWidths[key]};`}>
             <button
+                class="header-sort-btn"
                 onclick={() => {
                     if (sortState.value.by === key) {
                         sortState.value.order = sortState.value.order === "ASC" ? "DESC" : "ASC";
@@ -1118,9 +1117,13 @@
         </th>
     {/each}
     <th class="settings-header">
-        <button class="column-selector-btn" onclick={openColumnSelector} title="Select columns">
-            <MaterialIcon iconName="view_column" />
-        </button>
+        <Button
+            class="column-selector-btn"
+            iconName="view_column"
+            onclick={openColumnSelector}
+            title="Select columns"
+            variant="primary"
+        />
     </th>
 {/snippet}
 
@@ -1163,7 +1166,7 @@
 {#if allAssetsData.length === 0}
     {#if searchValue}
         <div class="no-results">
-            <p>No results found for "{searchValue}"</p>
+            <span>No results found for "{searchValue}"</span>
         </div>
     {:else}
         <div>
@@ -1308,176 +1311,153 @@
         box-sizing: border-box;
         overflow-x: auto;
 
-        :global(.viz-table-container) {
-            width: 100%;
-            border: none;
-            border-radius: 0;
-            background: transparent;
-            overflow: visible;
+        :global {
+            .viz-table-container {
+                width: 100%;
+                border: none;
+                border-radius: 0;
+                background: transparent;
+                overflow: visible;
+            }
+
+            .viz-table {
+                width: 100%;
+                table-layout: fixed;
+                border-spacing: 0;
+                color: var(--viz-text-primary);
+                display: table;
+
+                thead,
+                tbody {
+                    display: table-row-group;
+                }
+
+                tr {
+                    display: table-row;
+                }
+
+                th,
+                td {
+                    display: table-cell;
+                }
+
+                thead {
+                    th {
+                        position: sticky;
+                        top: 0px;
+                        z-index: 2;
+                        color: var(--viz-text-primary);
+                        background-color: color-mix(in srgb, var(--viz-surface-base) 72%, transparent);
+                        backdrop-filter: blur(8px);
+                        -webkit-backdrop-filter: blur(8px);
+                        text-align: left;
+                        font-weight: 600;
+                        padding: var(--viz-spacing-sm) var(--viz-spacing-md);
+                        vertical-align: middle;
+                        border-bottom: 2px solid var(--viz-border-subtle);
+
+                        &.settings-header {
+                            width: 3.5rem;
+                            min-width: 3.5rem;
+                            text-align: right;
+                            padding-right: var(--viz-spacing-md);
+                        }
+
+                        .header-sort-btn {
+                            display: inline-flex;
+                            align-items: center;
+                            gap: var(--viz-spacing-xs);
+                            background: transparent;
+                            border-bottom: 2px solid transparent;
+                            padding: var(--viz-spacing-std) initial;
+                            color: inherit;
+                            cursor: pointer;
+                            font: inherit;
+
+                            &:hover {
+                                border-bottom-color: var(--viz-primary);
+
+                                .sort-icon {
+                                    opacity: 0.5;
+
+                                    &.active {
+                                        opacity: 1;
+                                    }
+                                }
+                            }
+
+                            .sort-icon {
+                                display: inline-flex;
+                                align-items: center;
+                                font-size: var(--viz-font-size-std);
+                                opacity: 0;
+                                transition: opacity 0.2s;
+
+                                &.active {
+                                    opacity: 1;
+                                    color: var(--viz-primary);
+                                }
+                            }
+                        }
+                    }
+                }
+
+                tbody {
+                    tr {
+                        transition: background-color 120ms ease-in-out;
+                        background-color: transparent;
+
+                        &:hover {
+                            background-color: var(--viz-surface-hover);
+                        }
+
+                        &.selected-card {
+                            background-color: color-mix(in srgb, var(--viz-primary) 12%, transparent);
+
+                            td {
+                                border-bottom-color: color-mix(
+                                    in srgb,
+                                    var(--viz-border-subtle) 50%,
+                                    var(--viz-primary) 50%
+                                );
+                            }
+                        }
+
+                        /* Table row selection accent: show a left indicator inside the preview cell */
+                        &.selected-card td:first-child,
+                        &:focus-visible td:first-child {
+                            position: relative;
+
+                            &::before {
+                                content: "";
+                                position: absolute;
+                                left: 4px;
+                                top: var(--viz-spacing-sm);
+                                bottom: var(--viz-spacing-sm);
+                                width: 3px;
+                                border-radius: var(--viz-border-radius-pill);
+                                background: var(--viz-primary);
+                            }
+                        }
+                    }
+
+                    td {
+                        padding: var(--viz-spacing-sm) var(--viz-spacing-md);
+                        vertical-align: middle;
+                        border-bottom: 1px solid var(--viz-border-subtle);
+                        white-space: nowrap;
+                        overflow: hidden;
+                        text-overflow: ellipsis;
+
+                        &.actions-cell {
+                            width: 3.5rem;
+                            min-width: 3.5rem;
+                            padding: 0;
+                        }
+                    }
+                }
+            }
         }
-
-        :global(.viz-table) {
-            width: 100%;
-            table-layout: fixed;
-            border-collapse: separate;
-            border-spacing: 0;
-            font-size: var(--viz-font-size-lg);
-            color: var(--viz-text-primary);
-            display: table;
-        }
-    }
-
-    .viz-asset-table-container :global(.viz-table thead),
-    .viz-asset-table-container :global(.viz-table tbody) {
-        display: table-row-group;
-    }
-
-    .viz-asset-table-container :global(.viz-table tr) {
-        display: table-row;
-    }
-
-    .viz-asset-table-container :global(.viz-table th),
-    .viz-asset-table-container :global(.viz-table td) {
-        display: table-cell;
-    }
-
-    .viz-asset-table-container :global(.viz-table thead th) {
-        position: sticky;
-        top: 0px;
-        z-index: 2;
-        color: var(--viz-text-primary);
-        background-color: color-mix(in srgb, var(--viz-surface-base) 72%, transparent);
-        backdrop-filter: blur(8px);
-        -webkit-backdrop-filter: blur(8px);
-        text-align: left;
-        font-weight: 600;
-        padding: var(--viz-spacing-sm) var(--viz-spacing-md);
-        vertical-align: middle;
-        border-bottom: 2px solid var(--viz-border-subtle);
-    }
-
-    .viz-asset-table-container :global(.viz-table thead th.settings-header) {
-        width: 3.5rem;
-        min-width: 3.5rem;
-        text-align: right;
-        padding-right: var(--viz-spacing-md);
-    }
-
-    .viz-asset-table-container :global(.viz-table thead th.settings-header .column-selector-btn) {
-        background: transparent;
-        border: none;
-        color: var(--viz-text-secondary);
-        cursor: pointer;
-        padding: var(--viz-spacing-xxs);
-        border-radius: var(--viz-border-radius-pill);
-        display: inline-flex;
-        align-items: center;
-        justify-content: center;
-        transition:
-            background-color 0.2s,
-            color 0.2s;
-    }
-
-    .viz-asset-table-container :global(.viz-table thead th.settings-header .column-selector-btn:hover) {
-        background-color: var(--viz-surface-hover);
-        color: var(--viz-text-primary);
-    }
-
-    .viz-asset-table-container
-        :global(.viz-table thead th.settings-header .column-selector-btn .material-symbols-outlined) {
-        font-size: 1.125rem;
-    }
-
-    .viz-asset-table-container :global(.viz-table thead th button) {
-        display: inline-flex;
-        align-items: center;
-        gap: var(--viz-spacing-xs);
-        background: transparent;
-        border: none;
-        color: inherit;
-        cursor: pointer;
-        font: inherit;
-        padding: var(--viz-spacing-xs) var(--viz-spacing-sm);
-        border-radius: var(--viz-border-radius-pill);
-        transition:
-            background-color 0.2s,
-            color 0.2s;
-    }
-
-    .viz-asset-table-container :global(.viz-table thead th button:hover) {
-        background-color: var(--viz-surface-hover);
-        color: var(--viz-text-primary);
-    }
-
-    .viz-asset-table-container :global(.viz-table thead th button .sort-icon) {
-        display: inline-flex;
-        align-items: center;
-        font-size: var(--viz-font-size-std);
-        opacity: 0;
-        transition: opacity 0.2s;
-    }
-
-    .viz-asset-table-container :global(.viz-table thead th button .sort-icon.active) {
-        opacity: 1;
-        color: var(--viz-primary);
-    }
-
-    .viz-asset-table-container :global(.viz-table thead th button:hover .sort-icon) {
-        opacity: 0.5;
-    }
-
-    .viz-asset-table-container :global(.viz-table thead th button:hover .sort-icon.active) {
-        opacity: 1;
-    }
-
-    .viz-asset-table-container :global(.viz-table tbody tr) {
-        transition: background-color 120ms ease-in-out;
-        background-color: transparent;
-    }
-
-    .viz-asset-table-container :global(.viz-table tbody tr:hover) {
-        background-color: var(--viz-surface-hover);
-    }
-
-    .viz-asset-table-container :global(.viz-table tbody tr.selected-card) {
-        background-color: color-mix(in srgb, var(--viz-primary) 12%, transparent);
-    }
-
-    .viz-asset-table-container :global(.viz-table tbody tr.selected-card td) {
-        border-bottom-color: color-mix(in srgb, var(--viz-border-subtle) 50%, var(--viz-primary) 50%);
-    }
-
-    /* Table row selection accent: show a left indicator inside the preview cell */
-    .viz-asset-table-container :global(.viz-table tbody tr.selected-card td:first-child),
-    .viz-asset-table-container :global(.viz-table tbody tr:focus-visible td:first-child) {
-        position: relative;
-    }
-
-    .viz-asset-table-container :global(.viz-table tbody tr.selected-card td:first-child::before),
-    .viz-asset-table-container :global(.viz-table tbody tr:focus-visible td:first-child::before) {
-        content: "";
-        position: absolute;
-        left: 4px;
-        top: var(--viz-spacing-sm);
-        bottom: var(--viz-spacing-sm);
-        width: 3px;
-        border-radius: var(--viz-border-radius-pill);
-        background: var(--viz-primary);
-    }
-
-    .viz-asset-table-container :global(.viz-table tbody td) {
-        padding: var(--viz-spacing-sm) var(--viz-spacing-md);
-        vertical-align: middle;
-        border-bottom: 1px solid var(--viz-border-subtle);
-        white-space: nowrap;
-        overflow: hidden;
-        text-overflow: ellipsis;
-    }
-
-    .viz-asset-table-container :global(.viz-table tbody td.actions-cell) {
-        width: 3.5rem;
-        min-width: 3.5rem;
-        padding: 0;
     }
 
     /* Preview column: thumbnail + meta stacked */
@@ -1486,9 +1466,6 @@
         min-width: 220px;
         padding: var(--viz-spacing-xs) var(--viz-spacing-sm);
         vertical-align: middle;
-        display: flex;
-        align-items: center;
-        gap: var(--viz-spacing-md);
 
         .asset-snippet-inner {
             display: flex;
@@ -1498,12 +1475,30 @@
             width: 100%;
         }
 
-        .asset-table-thumb,
-        img {
+        .asset-table-thumb-wrapper {
             width: 5.5em;
             height: 3.6em;
+            max-height: 3.6em;
+            flex-shrink: 0;
+            border: var(--viz-border-thin);
+            background: var(--viz-surface-panel);
+            overflow: hidden;
+
+            :global(.asset-image-container),
+            :global(.asset-table-thumb),
+            :global(img) {
+                width: 100%;
+                height: 100%;
+                max-height: 3.6em;
+                object-fit: cover;
+            }
+        }
+
+        .asset-table-thumb {
+            width: 5.5em;
+            height: 3.6em;
+            max-height: 3.6em;
             object-fit: cover;
-            border-radius: var(--viz-border-radius-md);
             flex-shrink: 0;
             background: var(--viz-surface-panel);
             border: var(--viz-border-thin);
