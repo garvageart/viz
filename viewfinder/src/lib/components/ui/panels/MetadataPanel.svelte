@@ -1,5 +1,6 @@
 <script lang="ts">
     import type { ImageAsset, Label } from "$lib/api";
+    import { updateImage } from "$lib/api";
     import ImageLabelViewer from "$lib/components/image-tools/ImageLabelViewer.svelte";
     import StarRating from "$lib/components/image-tools/StarRating.svelte";
     import Badge from "$lib/components/ui/Badge.svelte";
@@ -46,11 +47,83 @@
     // not be rendered as image metadata (which caused a flicker).
     let currentAsset = $derived(asset ?? (isAssetImage(activeScope?.active) ? activeScope.active : undefined));
 
-    let editingState = $state({
-        isEditing: false,
+    let displayName = $derived(currentAsset?.name || currentAsset?.image_metadata?.file_name || "");
+
+    let editState = $state({
+        isEditingName: false,
         name: ""
     });
     let calendarOpen = $state(false);
+
+    function startEditingName() {
+        if (!currentAsset) {
+            return;
+        }
+
+        editState.name = displayName;
+        editState.isEditingName = true;
+    }
+
+    async function saveName() {
+        if (!editState.isEditingName || !currentAsset) {
+            return;
+        }
+
+        editState.isEditingName = false;
+        const trimmed = editState.name.trim();
+
+        if (trimmed !== (currentAsset.name ?? "")) {
+            currentAsset.name = trimmed;
+            onImageUpdated?.(currentAsset);
+
+            try {
+                await updateImage(currentAsset.uid, { name: trimmed });
+            } catch (err) {
+                const nameErr = err as Error;
+                toasts.add({
+                    type: "error",
+                    title: "Failed to update name",
+                    message: nameErr.message
+                });
+            }
+        }
+    }
+
+    function cancelEditingName() {
+        editState.isEditingName = false;
+    }
+
+    function copyFilename() {
+        if (displayName) {
+            copyToClipboard(displayName);
+            toasts.add({
+                type: "success",
+                title: displayName,
+                message: "Filename copied to clipboard",
+                timeout: 2000
+            });
+        }
+    }
+
+    async function saveDescription() {
+        if (!currentAsset) {
+            return;
+        }
+
+        const trimmed = (currentAsset.description ?? "").trim();
+        onImageUpdated?.(currentAsset);
+
+        try {
+            await updateImage(currentAsset.uid, { description: trimmed });
+        } catch (err) {
+            const descErr = err as Error;
+            toasts.add({
+                type: "error",
+                title: "Failed to update description",
+                message: descErr.message
+            });
+        }
+    }
 
     // TODO(user-setting): Make timezone display configurable (IANA name vs abbreviation vs offset).
     // `timeZoneName: "short"` varies by locale — some return the abbreviation (SAST),
@@ -123,67 +196,45 @@
                         <MaterialIcon iconName="image" class="exif-material-icon" />
                         <div class="card-values">
                             <div class="name-row">
-                                {#if editingState.isEditing}
+                                {#if editState.isEditingName}
                                     <InputText
-                                        bind:value={editingState.name}
+                                        bind:value={editState.name}
                                         class="value-big"
                                         spellcheck="false"
                                         autofocus={true}
                                         onblur={() => {
-                                            if (editingState.isEditing && currentAsset) {
-                                                currentAsset.name = editingState.name.trim();
-                                                editingState.isEditing = false;
-                                            }
+                                            saveName();
                                         }}
                                         onkeydown={(e) => {
                                             if (e.key === "Enter") {
                                                 e.currentTarget.blur();
                                             } else if (e.key === "Escape") {
-                                                editingState.isEditing = false;
+                                                cancelEditingName();
                                             }
                                         }}
                                     />
                                 {:else}
                                     <div
+                                        class="value-big"
                                         role="button"
                                         tabindex="0"
-                                        title={currentAsset?.name ||
-                                            currentAsset?.image_metadata?.file_name ||
-                                            "Untitled"}
-                                        onclick={() => {
-                                            editingState.name =
-                                                currentAsset?.name || currentAsset?.image_metadata?.file_name || "";
-                                            editingState.isEditing = true;
-                                        }}
-                                        onkeydown={() => {
-                                            editingState.name =
-                                                currentAsset?.name || currentAsset?.image_metadata?.file_name || "";
-                                            editingState.isEditing = true;
-                                        }}
-                                        class="value-big"
-                                    >
-                                        {currentAsset?.name || currentAsset?.image_metadata?.file_name || "Untitled"}
-                                    </div>
-                                    <button
-                                        class="copy-filename-btn"
-                                        title="Copy filename"
-                                        onclick={() => {
-                                            const nameToCopy =
-                                                currentAsset?.name || currentAsset?.image_metadata?.file_name;
-                                            if (nameToCopy) {
-                                                copyToClipboard(nameToCopy);
-                                                toasts.add({
-                                                    type: "success",
-                                                    title: nameToCopy,
-                                                    message: "Filename copied to clipboard",
-                                                    timeout: 2000
-                                                });
+                                        title={displayName}
+                                        onclick={startEditingName}
+                                        onkeydown={(e) => {
+                                            if (e.key === "Enter" || e.key === " ") {
+                                                startEditingName();
                                             }
                                         }}
                                     >
-                                        <MaterialIcon iconName="content_copy" class="exif-material-icon" />
-                                    </button>
+                                        {displayName}
+                                    </div>
                                 {/if}
+                                <Button
+                                    class="copy-filename-btn"
+                                    title="Copy filename"
+                                    iconName="content_copy"
+                                    onclick={copyFilename}
+                                />
                                 {#if currentAsset?.image_metadata?.file_type}
                                     <Badge variant="default" class="file-type-badge">
                                         {currentAsset.image_metadata.file_type.replace("image/", "").toUpperCase()}
@@ -225,9 +276,13 @@
                     <TextArea
                         class="exif-description"
                         placeholder="Add a description"
-                        rows={3}
-                        maxHeight="2rem"
+                        title={currentAsset.description}
+                        rows={5}
+                        minHeight="5rem"
+                        maxHeight="16rem"
                         resize="none"
+                        bind:value={currentAsset.description}
+                        onblur={saveDescription}
                     />
                 </div>
                 <!-- Camera/Exposure card -->
@@ -500,43 +555,22 @@
         flex: 1 1 auto;
         min-width: 0;
         padding: 0;
-        width: auto;
+        width: 100%;
     }
 
     .name-row :global(input.value-big) {
-        width: auto;
-        max-width: 100%;
-        field-sizing: content;
+        width: 100%;
+        min-width: 0;
         min-height: 0;
         height: auto;
         padding: 0.25rem 0;
-        background-color: var(--viz-surface-panel);
+        background-color: transparent;
         box-shadow: inset 0 -1px 0 0 var(--viz-primary);
         border: none;
-    }
-
-    .copy-filename-btn {
-        display: inline-flex;
-        align-items: center;
-        justify-content: center;
-        background: none;
-        border: none;
-        cursor: pointer;
-        padding: 0.15em;
-        border-radius: var(--viz-border-radius-sm);
-        opacity: 0;
-        transition: opacity 120ms ease;
-        flex-shrink: 0;
-        color: var(--viz-text-muted);
-    }
-
-    .card-row:hover .copy-filename-btn {
-        opacity: 1;
-    }
-
-    .copy-filename-btn:hover {
+        font-size: var(--viz-font-size-std);
+        font-weight: 600;
+        letter-spacing: -0.01em;
         color: var(--viz-text-primary);
-        background: var(--viz-surface-hover);
     }
 
     :global(.file-type-badge) {
