@@ -29,7 +29,9 @@
     },
     "dependencies": {
         "dotenv": "^17.4.2",
+        "libexif-wasm": "^0.5.3",
+        "pexels": "^1.4.0",
         "semver": "^7.8.5",
-        "unsplash-js": "^8.0.0"
+        "unsplash-js": "^8.0.1"
     }
 }
