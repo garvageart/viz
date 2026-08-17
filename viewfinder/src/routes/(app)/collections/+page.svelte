@@ -317,7 +317,7 @@
             aria-label="Filter"
             onclick={openFilterModal}
         >
-            Filter
+            <span>Filter</span>
         </Button>
         <Button
             iconName="add"
@@ -333,7 +333,7 @@
             ondragleave={handleCreateDragLeave}
             ondrop={handleCreateDrop}
         >
-            Create
+            <span>Create</span>
         </Button>
     </div>
 {/snippet}
@@ -356,7 +356,7 @@
             ondragleave={handleCreateDragLeave}
             ondrop={handleCreateDrop}
         >
-            Create Collection
+            <span>Create Collection</span>
             <MaterialIcon iconName="add" style="font-size: 2em;" />
         </Button>
     </div>

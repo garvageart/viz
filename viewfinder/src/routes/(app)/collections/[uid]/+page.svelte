@@ -1077,7 +1077,6 @@
                             <span id="coll-name-display" title="Click to edit name">
                                 {name}
                             </span>
-                            <MaterialIcon iconName="edit" class="title-edit-icon" size="1.5rem" />
                         </div>
                     {/if}
                 </div>
@@ -1181,6 +1180,7 @@
         display: inline-flex;
         align-items: center;
         gap: var(--viz-spacing-sm);
+        width: 100%;
         cursor: pointer;
         outline: none;
 
@@ -1193,6 +1193,7 @@
             text-wrap: nowrap;
             overflow: hidden;
             text-overflow: ellipsis;
+            width: 100%;
             max-width: 100%;
             padding: 0.25rem 0.5rem;
 
