@@ -261,7 +261,11 @@ func GetTakenAt(img entities.ImageAsset) time.Time {
 		}
 	}
 
-	return img.CreatedAt
+	if !img.CreatedAt.IsZero() {
+		return img.CreatedAt
+	}
+
+	return time.Now()
 }
 
 // LessByTakenAtDesc returns true if image `a` should sort before image `b` when
