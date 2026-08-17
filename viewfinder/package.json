@@ -57,6 +57,7 @@
         "vitest": "^4.1.10"
     },
     "dependencies": {
+        "@viz/api": "workspace:*",
         "@immich/justified-layout-wasm": "^0.4.3",
         "@internationalized/date": "^3.12.3",
         "@oazapfts/runtime": "^1.2.0",

@@ -1,0 +1,19 @@
+{
+    "name": "@viz/api",
+    "private": true,
+    "version": "0.31.0",
+    "type": "module",
+    "main": "./index.ts",
+    "types": "./index.ts",
+    "exports": {
+        ".": {
+            "types": "./index.ts",
+            "import": "./index.ts",
+            "default": "./index.ts"
+        }
+    },
+    "license": "AGPL-3.0",
+    "dependencies": {
+        "@oazapfts/runtime": "^1.2.0"
+    }
+}
