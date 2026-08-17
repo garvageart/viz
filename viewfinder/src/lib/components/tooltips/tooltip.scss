@@ -9,26 +9,10 @@
     font-family: var(--viz-display-font);
     font-size: var(--viz-font-size-sm);
     font-weight: 500;
-    line-height: 1.25;
-    pointer-events: none;
-    user-select: none;
-    max-width: 20rem;
 
     .tippy-content {
         padding: var(--viz-spacing-xs) var(--viz-spacing-sm);
         white-space: nowrap;
-    }
-}
-
-.tippy-box[data-theme~="viz"][data-interactive="true"],
-.tippy-box[data-theme~="viz"].is-interactive {
-    pointer-events: auto;
-    user-select: auto;
-    max-width: none;
-
-    .tippy-content {
-        padding: var(--viz-spacing-sm);
-        white-space: normal;
     }
 }
 

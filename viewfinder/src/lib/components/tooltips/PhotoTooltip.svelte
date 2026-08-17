@@ -18,16 +18,15 @@
     let displayName = $derived(asset.name || asset.image_metadata?.file_name);
 
     let fileExtension = $derived.by(() => {
-        if (!displayName) {
+        const ft = asset.image_metadata?.file_type?.trim().toUpperCase();
+        if (!ft) {
             return "";
         }
-
-        const parts = displayName.split(".");
-        if (parts.length > 1) {
-            return parts.pop()?.toUpperCase() || "";
+        if (ft === "JPEG") {
+            return "JPG";
         }
 
-        return "";
+        return ft;
     });
 
     let megapixel = $derived(getImageMegapixels(asset));
@@ -137,8 +136,8 @@
         {/if}
     </div>
 
-    <div class="metadata-row">
-        {#if asset.private || asset.favourited || fileExtension}
+    {#if asset.private || asset.favourited || fileExtension || getImageLabel(asset) !== null}
+        <div class="metadata-row">
             {#if asset.private}
                 <Badge variant="error" iconName="lock" iconSize="0.8rem" title="Private"></Badge>
             {/if}
@@ -150,14 +149,19 @@
                     <span>{fileExtension}</span>
                 </Badge>
             {/if}
-        {/if}
-        <span class="label">
-            <ImageLabelViewer label={getImageLabel(asset)} variant="compact" enableSelection={false} />
-        </span>
-    </div>
+            {#if getImageLabel(asset) !== null}
+                <span class="label">
+                    <ImageLabelViewer label={getImageLabel(asset)} variant="compact" enableSelection={false} />
+                </span>
+            {/if}
+        </div>
+    {/if}
 
-    {#if asset.description}
-        <div class="tooltip-description" title={asset.description}>{asset.description}</div>
+    {#if asset.description?.trim()}
+        <div class="divider"></div>
+        <div class="tooltip-description">
+            <span title={asset.description}>{asset.description}</span>
+        </div>
     {/if}
 
     <div class="divider"></div>
@@ -165,17 +169,13 @@
     <!-- Capture & Attribution Context -->
     {#if takenAt || asset.owner?.name}
         <div class="capture-attribution-bar">
+            {#if asset.owner?.name}
+                <Badge variant="info" iconName="person"><span class="owner-name">{asset.owner.name}</span></Badge>
+            {/if}
             {#if takenAt}
                 <div class="capture-time" title="Date & Time Captured">
                     <MaterialIcon iconName="schedule" />
                     <span class="font-mono">{DateTime.fromJSDate(takenAt).toFormat("dd LLL yyyy • HH:mm")}</span>
-                </div>
-            {/if}
-
-            {#if asset.owner?.name}
-                <div class="owner-byline" title="Asset Owner">
-                    <MaterialIcon iconName="person" />
-                    <span class="owner-name">{asset.owner.name}</span>
                 </div>
             {/if}
         </div>
@@ -265,6 +265,7 @@
         padding: var(--viz-spacing-std);
         gap: var(--viz-spacing-md);
         overflow: hidden;
+        white-space: normal;
     }
 
     .metadata-row {
@@ -305,11 +306,17 @@
     }
 
     .tooltip-description {
-        line-height: 1.4;
+        font-size: var(--viz-font-size-sm);
+        color: var(--viz-text-secondary);
+        line-height: 1.45;
+        white-space: normal;
         word-break: break-word;
         margin-top: calc(-1 * var(--viz-spacing-xs));
-        max-height: 6rem;
-        overflow-y: auto;
+        display: -webkit-box;
+        line-clamp: 3;
+        -webkit-line-clamp: 3;
+        -webkit-box-orient: vertical;
+        overflow: hidden;
     }
 
     .divider {
@@ -340,28 +347,6 @@
 
         span {
             letter-spacing: -0.01em;
-        }
-    }
-
-    .owner-byline {
-        display: flex;
-        align-items: center;
-        gap: var(--viz-spacing-xs);
-        color: var(--viz-text-secondary);
-        font-size: var(--viz-font-size-xs);
-        background-color: var(--viz-surface-popover);
-        padding: 2px var(--viz-spacing-xs);
-        border-radius: var(--viz-border-radius-sm);
-        border: 1px solid var(--viz-border-subtle);
-
-        :global(.viz-material-icon) {
-            flex-shrink: 0;
-            color: var(--viz-text-muted);
-        }
-
-        .owner-name {
-            color: var(--viz-text-primary);
-            font-weight: 600;
         }
     }
 

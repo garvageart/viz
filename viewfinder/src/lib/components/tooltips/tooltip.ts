@@ -66,34 +66,13 @@ export function tooltip(node: HTMLElement, params?: TooltipParams | string | nul
             destroyComponent = mounted.destroy;
         }
 
-        const isInteractive = !!comp || !!tippyOptions.interactive;
-
         instance = tippy(node, {
             theme,
-            placement: "bottom",
-            delay: [400, 0],
-            duration: [120, 100],
-            interactive: isInteractive,
+            delay: [350, 0],
+            interactive: !!comp,
             arrow: false,
             content: contentNode,
-            appendTo: () => document.body,
-            popperOptions: {
-                modifiers: [
-                    {
-                        name: "preventOverflow",
-                        options: {
-                            boundary: "viewport",
-                            padding: 8
-                        }
-                    },
-                    {
-                        name: "flip",
-                        options: {
-                            fallbackPlacements: ["top", "bottom", "right", "left"]
-                        }
-                    }
-                ]
-            },
+            appendTo: "parent",
             ...tippyOptions,
             onDestroy(inst) {
                 if (destroyComponent) {
