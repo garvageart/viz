@@ -25,6 +25,7 @@ RUN --mount=type=cache,id=npm-cache,target=/root/.npm \
 COPY pnpm-lock.yaml pnpm-workspace.yaml package.json .npmrc .prettierrc .prettierignore .gitignore Makefile ./
 COPY viewfinder/package.json ./viewfinder/
 COPY scripts/js/package.json ./scripts/js/
+COPY packages/api/package.json ./packages/api/
 
 # Set pnpm store directory
 ENV NPM_CONFIG_STORE_DIR=/root/.local/share/pnpm/store
@@ -41,6 +42,7 @@ WORKDIR /app
 # Copy the rest of the source files AFTER installing dependencies
 COPY viewfinder ./viewfinder
 COPY scripts/js ./scripts/js
+COPY packages/api ./packages/api
 COPY resources/test ./resources/test
 
 # Build frontend
