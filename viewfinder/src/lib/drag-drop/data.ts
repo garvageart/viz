@@ -1,5 +1,5 @@
 import { generateRandomString } from "$lib/utils/misc";
-import { clearDragState, setDragState } from "./state.svelte";
+import { clearDragState, dragState, setDragState } from "./state.svelte";
 
 const REF_MIME_TYPE = "application/x-viz-viz-ref";
 
@@ -97,6 +97,18 @@ export class DragData<T> {
 
     static isType(dataTransfer: DataTransfer, type: string): boolean {
         return dataTransfer.types.includes(type);
+    }
+
+    /**
+     * Inspect active drag payload during dragover/dragenter events
+     * (when DataTransfer.getData is locked by browser security policy).
+     */
+    static getActivePayload<T>(type: string): T | undefined {
+        if (dragState.isActive && dragState.type === type) {
+            return dragState.payload as T;
+        }
+
+        return undefined;
     }
 
     /**

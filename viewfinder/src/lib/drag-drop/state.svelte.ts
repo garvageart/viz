@@ -17,4 +17,6 @@ export function setDragState(type: string, payload: unknown, source?: string) {
     dragState.type = type;
     dragState.payload = payload;
     dragState.source = source ?? null;
+
+    window.addEventListener("dragend", clearDragState, { once: true });
 }

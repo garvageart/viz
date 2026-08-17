@@ -33,6 +33,10 @@
         }
     }
 
+    function handleDragEnd() {
+        DragData.clear();
+    }
+
     function formatDate(dateString: string) {
         if (!dateString) {
             return "-";
@@ -52,7 +56,7 @@
     });
 </script>
 
-<div class="compact-item" draggable="true" ondragstart={handleDragStart} role="listitem">
+<div class="compact-item" draggable="true" ondragstart={handleDragStart} ondragend={handleDragEnd} role="listitem">
     <div
         class="header"
         onclick={() => (expanded = !expanded)}

@@ -124,9 +124,7 @@
         }
 
         try {
-            // Ignore internal image drops on the background - they must be dropped on the specific box
-            // checking types is enough, getData works too but let's just skip if we see the key
-            if (e.dataTransfer && DragData.isType(e.dataTransfer, VizMimeTypes.IMAGE_UIDS)) {
+            if (!isRelevantFileDrop(e)) {
                 return;
             }
 

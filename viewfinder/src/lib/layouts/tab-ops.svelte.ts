@@ -68,6 +68,7 @@ export class TabOps {
 
         const onDragEnd = () => {
             cleanupAllDragOverlays();
+            DragData.clear();
         };
 
         node.addEventListener("dragstart", onDragStart);

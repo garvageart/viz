@@ -53,9 +53,21 @@ export interface MakeDropTargetConfig {
 
 export function makeDropTarget(node: HTMLElement, config: MakeDropTargetConfig) {
     const types = Array.isArray(config.type) ? config.type : [config.type];
+    let depth = 0;
 
     function matchesAnyType(dt: DataTransfer): boolean {
         return types.some((t) => DragData.isType(dt, t));
+    }
+
+    function onDragEnter(e: DragEvent) {
+        if (!e.dataTransfer || !matchesAnyType(e.dataTransfer)) {
+            return;
+        }
+
+        depth++;
+        if (depth === 1 && config.activeClass) {
+            node.classList.add(config.activeClass);
+        }
     }
 
     function onDragOver(e: DragEvent) {
@@ -65,19 +77,20 @@ export function makeDropTarget(node: HTMLElement, config: MakeDropTargetConfig) 
 
         e.preventDefault();
         e.dataTransfer.dropEffect = config.dropEffect || "copy";
-
-        if (config.activeClass) {
-            node.classList.add(config.activeClass);
-        }
     }
 
     function onDragLeave() {
-        if (config.activeClass) {
-            node.classList.remove(config.activeClass);
+        depth--;
+        if (depth <= 0) {
+            depth = 0;
+            if (config.activeClass) {
+                node.classList.remove(config.activeClass);
+            }
         }
     }
 
     async function onDrop(e: DragEvent) {
+        depth = 0;
         if (config.activeClass) {
             node.classList.remove(config.activeClass);
         }
@@ -100,12 +113,14 @@ export function makeDropTarget(node: HTMLElement, config: MakeDropTargetConfig) 
         }
     }
 
+    node.addEventListener("dragenter", onDragEnter);
     node.addEventListener("dragover", onDragOver);
     node.addEventListener("dragleave", onDragLeave);
     node.addEventListener("drop", onDrop);
 
     return {
         destroy() {
+            node.removeEventListener("dragenter", onDragEnter);
             node.removeEventListener("dragover", onDragOver);
             node.removeEventListener("dragleave", onDragLeave);
             node.removeEventListener("drop", onDrop);
