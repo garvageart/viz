@@ -5,6 +5,18 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.31.1] - 2026-08-17
+
+* refactor(scripts): update ingest script to consume @viz/api (382c8577)
+* refactor(viewfinder): update api imports to @viz/api workspace package (27967f03)
+* feat(api): extract @viz/api into standalone workspace package (8c42545d)
+* refactor(scripts): resolve typescript types and enforce control flow formatting in stock photo script (b0a234ca)
+* feat(viewfinder): redesign PhotoTooltip metadata layout and integrate AssetImage in AssetGrid (ae2b9ac8)
+* feat(viewfinder): refactor inline editing and description save in MetadataPanel (e595d820)
+* feat(scripts): enhance stock photo ingestion script with platform CLI flags and EXIF writing (51463edb)
+* refactor(viewfinder): simplify original image extension parsing in vips transform (cea4230f)
+* fix(api): fallback GetTakenAt to time.Now() when CreatedAt is zero (16b1ddf1)
+
 ## [0.31.0] - 2026-08-16
 
 * fix(ui): add selector classes to header nav buttons (c795455b)
