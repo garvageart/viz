@@ -144,9 +144,14 @@ func createNewImageEntity(logger *slog.Logger, fileName string, libvipsImg *libv
 		Preview:   previewPath,
 	}
 
+	imageName := strings.TrimSuffix(fileName, filepath.Ext(fileName))
+	if imageName == "" {
+		imageName = fileName
+	}
+
 	allImageData := entities.ImageAsset{
 		Uid:           id,
-		Name:          fileName,
+		Name:          imageName,
 		Private:       false,
 		Processed:     false,
 		Exif:          &exif,
