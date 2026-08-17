@@ -9,12 +9,12 @@
 </script>
 
 <script lang="ts">
+    import { API_BASE_URL, type ImageAsset, getImageFileBlob } from "@viz/api";
     import * as Comlink from "comlink";
     import JSZip from "jszip";
     import { DateTime } from "luxon";
     import { type Snippet } from "svelte";
     import { slide } from "svelte/transition";
-    import { API_BASE_URL, type ImageAsset, getImageFileBlob } from "$lib/api";
     import { DbSettings } from "$lib/db/settings";
     import type { TransformInput } from "$lib/images/vips/vips";
     import { download } from "$lib/states/index.svelte";

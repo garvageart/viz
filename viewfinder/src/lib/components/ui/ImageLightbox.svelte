@@ -1,11 +1,11 @@
 <script lang="ts">
     import { dev } from "$app/environment";
+    import { type ImageAsset, getFullImagePath } from "@viz/api";
     import hotkeys, { type HotkeysEvent } from "hotkeys-js";
     import { onMount, untrack } from "svelte";
     import type { MouseEventHandler, PointerEventHandler, WheelEventHandler } from "svelte/elements";
     import { slide } from "svelte/transition";
     import { hideAll } from "tippy.js";
-    import { type ImageAsset, getFullImagePath } from "$lib/api";
     import { modalsManager } from "$lib/components/modals/manager/ModalManager.svelte";
     import Button from "$lib/components/ui/Button.svelte";
     import ExportPanel, { modalOptions as exportModalOptions } from "$lib/components/ui/panels/ExportPanel.svelte";

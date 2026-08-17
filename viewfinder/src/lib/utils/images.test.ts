@@ -1,7 +1,7 @@
+import { type ImageAsset, Label } from "@viz/api";
 import { Settings } from "luxon";
 import { rgbaToThumbHash } from "thumbhash";
 import { describe, expect, it, vi } from "vitest";
-import { type ImageAsset, Label } from "$lib/api";
 import { LabelColours } from "$lib/images/constants";
 import {
     ByteUnit,

@@ -1,6 +1,6 @@
+import type { ImageAsset } from "@viz/api";
 import { ExifData } from "libexif-wasm";
 import Vips from "wasm-vips";
-import type { ImageAsset } from "$lib/api";
 import { SUPPORTED_IMAGE_TYPES, type SupportedImageTypes } from "$lib/types/images";
 import { type ColorSpace, type MetadataPolicy, type TransformParams, createTransformEtag } from "$lib/utils/images";
 

@@ -1,7 +1,7 @@
 <script lang="ts">
+    import type { Setting } from "@viz/api";
+    import { updateUserSettingsBatch } from "@viz/api";
     import { fade } from "svelte/transition";
-    import type { Setting } from "$lib/api";
-    import { updateUserSettingsBatch } from "$lib/api";
     import Button from "$lib/components/ui/Button.svelte";
     import { toasts } from "$lib/toast-notifcations/toasts.svelte";
     import SettingItemsList from "./SettingItemsList.svelte";

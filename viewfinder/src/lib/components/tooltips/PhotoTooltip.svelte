@@ -1,7 +1,7 @@
 <script lang="ts">
+    import type { ImageAsset } from "@viz/api";
     import { DateTime } from "luxon";
     import type { MouseEventHandler } from "svelte/elements";
-    import type { ImageAsset } from "$lib/api";
     import Badge from "$lib/components/ui/Badge.svelte";
     import Button from "$lib/components/ui/Button.svelte";
     import MaterialIcon from "$lib/components/ui/MaterialIcon.svelte";

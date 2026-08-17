@@ -1,4 +1,4 @@
-import type { ImageAsset, ImageMetadata, ImagePaths } from "$lib/api";
+import type { ImageAsset, ImageMetadata, ImagePaths } from "@viz/api";
 
 export class ImageObjectData {
     uid: string;

@@ -1,7 +1,7 @@
 <script lang="ts">
+    import { type Collection, type ImageAsset, api, executeSearch } from "@viz/api";
     import { onMount } from "svelte";
     import { fade, slide } from "svelte/transition";
-    import { type Collection, type ImageAsset, api, executeSearch } from "$lib/api";
     import MaterialIcon from "$lib/components/ui/MaterialIcon.svelte";
     import { VizMimeTypes } from "$lib/constants";
     import { initDB } from "$lib/db/client";

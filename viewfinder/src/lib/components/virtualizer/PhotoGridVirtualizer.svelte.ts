@@ -1,6 +1,6 @@
 import { JustifiedLayout } from "@immich/justified-layout-wasm";
+import type { ImageAsset } from "@viz/api";
 import { DateTime } from "luxon";
-import type { ImageAsset } from "$lib/api";
 import type { ConsolidatedGroup, ImageWithDateLabel } from "$lib/photo-layout";
 import { getTakenAt } from "$lib/utils/images";
 

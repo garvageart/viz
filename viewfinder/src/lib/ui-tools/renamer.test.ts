@@ -1,6 +1,6 @@
+import type { ImageAsset } from "@viz/api";
 import { DateTime } from "luxon";
 import { describe, expect, it } from "vitest";
-import type { ImageAsset } from "$lib/api";
 import {
     buildRenameContext,
     getFilenameBasenameAndExtension,

@@ -1,5 +1,5 @@
 <script lang="ts">
-    import { createApiKey } from "$lib/api";
+    import { createApiKey } from "@viz/api";
     import { Scope, scopes } from "$lib/auth/scopes.gen";
     import Button from "$lib/components/ui/Button.svelte";
     import Checkbox from "$lib/components/ui/Checkbox.svelte";

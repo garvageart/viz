@@ -1,6 +1,6 @@
 import { goto } from "$app/navigation";
-import { addCollectionImages } from "$lib/api";
-import type { CollectionDetailResponse } from "$lib/api";
+import type { CollectionDetailResponse } from "@viz/api";
+import { addCollectionImages } from "@viz/api";
 import { VizMimeTypes } from "$lib/constants";
 import type { MenuItem } from "$lib/context-menu/types";
 import type { TabGroup } from "$lib/layouts/model.svelte";

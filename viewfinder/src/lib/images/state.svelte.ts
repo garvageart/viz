@@ -1,4 +1,4 @@
-import type { ImageAsset, ImagesListResponse } from "$lib/api";
+import type { ImageAsset, ImagesListResponse } from "@viz/api";
 
 // Helper class for managing gallery state
 // This ensures we can mutate state (append images) while still initializing from data

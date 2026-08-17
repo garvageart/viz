@@ -1,6 +1,6 @@
 <script lang="ts">
-    import type { Setting } from "$lib/api";
-    import { resetUserSetting } from "$lib/api";
+    import type { Setting } from "@viz/api";
+    import { resetUserSetting } from "@viz/api";
     import { formatLabel } from "$lib/settings/utils";
     import { toasts } from "$lib/toast-notifcations/toasts.svelte";
     import JsonInput from "./inputs/JsonInput.svelte";

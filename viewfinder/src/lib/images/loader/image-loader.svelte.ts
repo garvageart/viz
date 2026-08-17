@@ -1,4 +1,4 @@
-import type { ImageAsset } from "$lib/api";
+import type { ImageAsset } from "@viz/api";
 
 export interface ImageLoaderDeps {
     get lightboxImage(): ImageAsset | undefined;

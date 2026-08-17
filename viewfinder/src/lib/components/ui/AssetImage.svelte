@@ -1,6 +1,6 @@
 <script lang="ts">
+    import { type ImageAsset, getFullImagePath } from "@viz/api";
     import type { HTMLImgAttributes } from "svelte/elements";
-    import { type ImageAsset, getFullImagePath } from "$lib/api";
     import { getThumbhashURL } from "$lib/utils/images";
 
     export type ImageResolution = "thumbnail" | "preview" | "original";

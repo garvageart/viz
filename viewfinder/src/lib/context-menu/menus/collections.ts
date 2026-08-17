@@ -7,7 +7,7 @@ import {
     listCollectionImageUiDs,
     signDownload,
     updateCollection
-} from "$lib/api";
+} from "@viz/api";
 import ConfirmationModal from "$lib/components/modals/ConfirmationModal.svelte";
 import { modalsManager } from "$lib/components/modals/manager/ModalManager.svelte";
 import { download } from "$lib/states/index.svelte";

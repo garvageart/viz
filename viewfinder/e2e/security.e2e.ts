@@ -1,5 +1,5 @@
 import { expect, test } from "@playwright/test";
-import { getSystemStatus, getUserByUid, login } from "$lib/api";
+import { getSystemStatus, getUserByUid, login } from "@viz/api";
 import { configureApiClient } from "./helpers";
 
 configureApiClient();

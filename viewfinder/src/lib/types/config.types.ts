@@ -1,4 +1,4 @@
-import type { SystemStatusResponse } from "$lib/api/client.gen";
+import type { SystemStatusResponse } from "@viz/api";
 
 export interface ViewfinderConfig {
     environment: "dev" | "prod";

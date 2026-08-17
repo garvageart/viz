@@ -1,5 +1,5 @@
 <script lang="ts">
-    import type { User } from "$lib/api";
+    import type { User } from "@viz/api";
     import { user as userState } from "$lib/states/index.svelte";
 
     interface Props {

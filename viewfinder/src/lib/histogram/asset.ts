@@ -1,5 +1,5 @@
+import { type ImageAsset, getFullImagePath } from "@viz/api";
 import * as Comlink from "comlink";
-import { type ImageAsset, getFullImagePath } from "$lib/api";
 import { computeHistogram } from "$lib/histogram";
 import type { HistogramApi } from "$lib/histogram/worker";
 import HistogramWorker from "$lib/histogram/worker?worker";

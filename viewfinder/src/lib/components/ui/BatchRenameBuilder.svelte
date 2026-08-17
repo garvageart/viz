@@ -3,8 +3,8 @@
 </script>
 
 <script lang="ts">
+    import type { ImageAsset } from "@viz/api";
     import { DateTime } from "luxon";
-    import type { ImageAsset } from "$lib/api";
     import Button from "$lib/components/ui/Button.svelte";
     import { safeRenderRenameTemplate } from "$lib/ui-tools/renamer";
     import {

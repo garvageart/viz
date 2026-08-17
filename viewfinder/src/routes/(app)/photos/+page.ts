@@ -1,4 +1,4 @@
-import { listImages } from "$lib/api";
+import { listImages } from "@viz/api";
 import { DataKeys } from "$lib/dependency-keys";
 import { photosSort } from "$lib/states/sort.svelte";
 import { sendVizAPIRequest } from "$lib/utils/http";

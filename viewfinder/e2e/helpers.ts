@@ -1,7 +1,7 @@
 import { type APIRequestContext, type Page } from "@playwright/test";
+import { defaults, deleteImagesBulk } from "@viz/api";
 import fs from "fs";
 import path from "path";
-import { defaults, deleteImagesBulk } from "$lib/api";
 
 /**
  * Configures the generated API client's base URL to match the Playwright test server.

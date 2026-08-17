@@ -1,5 +1,5 @@
 <script lang="ts">
-    import { type ImageAsset } from "$lib/api";
+    import { type ImageAsset } from "@viz/api";
     import Badge from "$lib/components/ui/Badge.svelte";
     import Button from "$lib/components/ui/Button.svelte";
     import HistogramChart, { type ChannelVisibility } from "$lib/components/ui/misc/HistogramChart.svelte";

@@ -1,6 +1,6 @@
 <script lang="ts">
     import { page } from "$app/state";
-    import { type Collection, type CollectionDetailResponse, type ImageAsset } from "$lib/api";
+    import { type Collection, type CollectionDetailResponse, type ImageAsset } from "@viz/api";
     import ImageCard from "$lib/components/ui/ImageCard.svelte";
     import ImageLightbox from "$lib/components/ui/ImageLightbox.svelte";
     import MaterialIcon from "$lib/components/ui/MaterialIcon.svelte";

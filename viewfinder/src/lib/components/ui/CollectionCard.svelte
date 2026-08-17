@@ -51,9 +51,9 @@
 <script lang="ts">
     import { goto } from "$app/navigation";
     import { page } from "$app/state";
+    import { type Collection, addCollectionImages, getImage } from "@viz/api";
     import { DateTime } from "luxon";
     import type { SvelteHTMLElements } from "svelte/elements";
-    import { type Collection, addCollectionImages, getImage } from "$lib/api";
     import { VizMimeTypes } from "$lib/constants";
     import { DragData } from "$lib/drag-drop/data";
     import { toasts } from "$lib/toast-notifcations/toasts.svelte";

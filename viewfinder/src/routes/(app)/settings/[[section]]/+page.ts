@@ -1,5 +1,5 @@
 import { redirect } from "@sveltejs/kit";
-import { getUserSettings } from "$lib/api";
+import { getUserSettings } from "@viz/api";
 import { sendVizAPIRequest } from "$lib/utils/http";
 import type { PageLoad } from "./$types";
 

@@ -1,5 +1,5 @@
-import type { EventRecord, WsMetricsResponse, WsStatsResponse } from "$lib/api";
-import { getEventsSince, getWsMetrics, getWsStats } from "$lib/api";
+import type { EventRecord, WsMetricsResponse, WsStatsResponse } from "@viz/api";
+import { getEventsSince, getWsMetrics, getWsStats } from "@viz/api";
 import { sendVizAPIRequest } from "$lib/utils/http";
 import type { PageLoad } from "./$types";
 

@@ -1,5 +1,5 @@
+import type { ImageAsset } from "@viz/api";
 import { DateTime } from "luxon";
-import type { ImageAsset } from "$lib/api";
 import { getTakenAt } from "$lib/utils/images";
 
 export type ImageWithDateLabel = ImageAsset & {

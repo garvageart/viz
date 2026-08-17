@@ -1,9 +1,9 @@
 <script lang="ts">
     import { goto } from "$app/navigation";
+    import type { Collection, ImageAsset } from "@viz/api";
+    import { Label as ImageLabel, addCollectionImages, updateImage } from "@viz/api";
     import hotkeys from "hotkeys-js";
     import { type ComponentProps, onMount, untrack } from "svelte";
-    import type { Collection, ImageAsset } from "$lib/api";
-    import { Label as ImageLabel, addCollectionImages, updateImage } from "$lib/api";
     import Dropdown from "$lib/components/context-menus/Dropdown.svelte";
     import AssetGrid from "$lib/components/grid/AssetGrid.svelte";
     import PhotoAssetGrid from "$lib/components/grid/PhotoAssetGrid.svelte";

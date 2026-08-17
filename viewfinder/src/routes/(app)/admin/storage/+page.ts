@@ -1,4 +1,4 @@
-import { getSystemConfig } from "$lib/api";
+import { getSystemConfig } from "@viz/api";
 import { sendVizAPIRequest } from "$lib/utils/http";
 import type { PageLoad } from "./$types";
 

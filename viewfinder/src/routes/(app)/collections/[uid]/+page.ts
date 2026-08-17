@@ -1,4 +1,4 @@
-import { getCollection } from "$lib/api";
+import { getCollection } from "@viz/api";
 import { DataKeys } from "$lib/dependency-keys";
 import { collectionDetailSort } from "$lib/states/sort.svelte";
 import { sendVizAPIRequest } from "$lib/utils/http";

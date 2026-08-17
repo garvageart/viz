@@ -1,5 +1,5 @@
 <script lang="ts">
-    import { type ImageAsset, getFullImagePath } from "$lib/api";
+    import { type ImageAsset, getFullImagePath } from "@viz/api";
 
     interface Props {
         asset: ImageAsset;

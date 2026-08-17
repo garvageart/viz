@@ -1,6 +1,6 @@
 import { goto } from "$app/navigation";
 import type { RequestOpts } from "@oazapfts/runtime";
-import { type User, defaults, getCurrentUser, getUserSettings, logout } from "$lib/api";
+import { type User, defaults, getCurrentUser, getUserSettings, logout } from "@viz/api";
 import { user } from "$lib/states/index.svelte";
 import { cookieMethods } from "$lib/utils/cookie";
 import { sleep } from "$lib/utils/misc";

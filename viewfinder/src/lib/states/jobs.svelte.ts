@@ -8,8 +8,8 @@ import {
     getJobsSnapshot,
     listAvailableWorkers,
     listJobs
-} from "$lib/api";
-import { type WSClient, createWSConnection } from "$lib/api/websocket";
+} from "@viz/api";
+import { type WSClient, createWSConnection } from "@viz/api";
 import { toasts } from "$lib/toast-notifcations/toasts.svelte";
 
 export type UiJob = WorkerJob & {

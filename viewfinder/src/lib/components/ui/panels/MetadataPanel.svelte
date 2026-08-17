@@ -1,6 +1,6 @@
 <script lang="ts">
-    import type { ImageAsset, Label } from "$lib/api";
-    import { updateImage } from "$lib/api";
+    import type { ImageAsset, Label } from "@viz/api";
+    import { updateImage } from "@viz/api";
     import ImageLabelViewer from "$lib/components/image-tools/ImageLabelViewer.svelte";
     import StarRating from "$lib/components/image-tools/StarRating.svelte";
     import Badge from "$lib/components/ui/Badge.svelte";

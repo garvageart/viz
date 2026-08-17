@@ -1,9 +1,9 @@
 <script lang="ts">
     import { goto } from "$app/navigation";
     import { page } from "$app/state";
+    import { type Setting, doUserOnboarding, getUserSettings, setupSuperadmin } from "@viz/api";
     import { onMount } from "svelte";
     import { fade } from "svelte/transition";
-    import { type Setting, doUserOnboarding, getUserSettings, setupSuperadmin } from "$lib/api";
     import Button from "$lib/components/ui/Button.svelte";
     import InputPassword from "$lib/components/ui/InputPassword.svelte";
     import InputSelect from "$lib/components/ui/InputSelect.svelte";

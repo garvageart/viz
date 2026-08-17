@@ -1,4 +1,4 @@
-import { ImageUploadStatus, checkDuplicates } from "$lib/api";
+import { ImageUploadStatus, checkDuplicates } from "@viz/api";
 import { download, upload } from "$lib/states/index.svelte";
 import type { DirectoryInputElement } from "$lib/types/dom";
 import type { SupportedImageTypes, SupportedRAWFiles } from "$lib/types/images";

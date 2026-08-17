@@ -1,6 +1,6 @@
 <script lang="ts">
+    import { Role, type User } from "@viz/api";
     import { untrack } from "svelte";
-    import { Role, type User } from "$lib/api";
     import Button from "$lib/components/ui/Button.svelte";
     import InputSelect from "$lib/components/ui/InputSelect.svelte";
     import InputText from "$lib/components/ui/InputText.svelte";

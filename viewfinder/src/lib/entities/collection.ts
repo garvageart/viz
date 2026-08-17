@@ -1,4 +1,4 @@
-import type { Collection } from "$lib/api";
+import type { Collection } from "@viz/api";
 import type { ImageObjectData } from "./image";
 
 class CollectionData {

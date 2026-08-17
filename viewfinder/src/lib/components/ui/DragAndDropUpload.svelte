@@ -1,6 +1,6 @@
 <script lang="ts">
     import { goto } from "$app/navigation";
-    import { type Collection, type ImageAsset, addCollectionImages, createCollection } from "$lib/api";
+    import { type Collection, type ImageAsset, addCollectionImages, createCollection } from "@viz/api";
     import { VizMimeTypes } from "$lib/constants";
     import { DragData } from "$lib/drag-drop/data";
     import { dragState } from "$lib/drag-drop/state.svelte";

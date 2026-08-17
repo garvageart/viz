@@ -1,5 +1,5 @@
+import type { Collection, ImageAsset } from "@viz/api";
 import { orderBy } from "lodash-es";
-import type { Collection, ImageAsset } from "$lib/api";
 import type { MenuItem } from "$lib/context-menu/types";
 import type { SortState } from "$lib/states/sort.svelte";
 import type { AssetSort, AssetSortBy } from "$lib/types/asset";

@@ -1,7 +1,7 @@
 <script lang="ts">
     import { goto } from "$app/navigation";
     import { page } from "$app/state";
-    import { registerUser } from "$lib/api";
+    import { registerUser } from "@viz/api";
     import Button from "$lib/components/ui/Button.svelte";
     import InputPassword from "$lib/components/ui/InputPassword.svelte";
     import InputText from "$lib/components/ui/InputText.svelte";

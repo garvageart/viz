@@ -1,4 +1,4 @@
-import { type ImageUploadResponse, downloadRequestWithProgress, uploadImageWithProgress } from "$lib/api";
+import { type ImageUploadResponse, downloadRequestWithProgress, uploadImageWithProgress } from "@viz/api";
 import type { ImageUploadFileData } from "./manager.svelte";
 
 export enum UploadState {

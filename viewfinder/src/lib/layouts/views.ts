@@ -1,4 +1,4 @@
-import type { CollectionDetailResponse } from "$lib/api/client.gen";
+import type { CollectionDetailResponse } from "@viz/api";
 import DevWelcomeText from "$lib/components/misc/DevWelcomeText.svelte";
 import ClockPanel from "$lib/components/panels/workspace/ClockPanel.svelte";
 import FavouritesPanel from "$lib/components/panels/workspace/FavouritesPanel.svelte";

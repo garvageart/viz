@@ -13,8 +13,8 @@ Stuff to finish:
 - Custom settings (Security, API Keys, Profile, Change Password etc etc)
 -->
 <script lang="ts">
+    import type { Setting } from "@viz/api";
     import { SvelteSet } from "svelte/reactivity";
-    import type { Setting } from "$lib/api";
     import NavSidebar, { type NavItem } from "$lib/components/ui/sidebar/NavSidebar.svelte";
     import { formatSectionTitle, slugifyGroup } from "$lib/settings/utils";
     import { type MaterialSymbol } from "$lib/types/MaterialSymbol";

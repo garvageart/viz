@@ -1,6 +1,6 @@
+import { type CollectionDetailResponse, type ImageAsset, downloadImagesZipBlob, signDownload } from "@viz/api";
 import { DateTime, Duration } from "luxon";
 import { thumbHashToDataURL } from "thumbhash";
-import { type CollectionDetailResponse, type ImageAsset, downloadImagesZipBlob, signDownload } from "$lib/api";
 import { LabelColours, flashModes } from "$lib/images/constants";
 
 /**

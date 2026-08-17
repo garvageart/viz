@@ -1,6 +1,6 @@
 <script lang="ts">
+    import { type ImageAsset, addCollectionImages, listCollectionImageUiDs, listImages } from "@viz/api";
     import { onDestroy, onMount } from "svelte";
-    import { type ImageAsset, addCollectionImages, listCollectionImageUiDs, listImages } from "$lib/api";
     import LoadingSpinner from "$lib/components/ui/LoadingSpinner.svelte";
     import { getImageGridDisplay } from "$lib/context-menu/menus/image-grid-display";
     import type { MenuItem } from "$lib/context-menu/types";

@@ -1,4 +1,3 @@
-import { DateTime } from "luxon";
 import {
     type Collection,
     type CollectionDetailResponse,
@@ -10,7 +9,8 @@ import {
     signDownload,
     updateCollection,
     updateImage
-} from "$lib/api";
+} from "@viz/api";
+import { DateTime } from "luxon";
 import DeleteModal from "$lib/components/modals/DeleteModal.svelte";
 import { modalsManager } from "$lib/components/modals/manager/ModalManager.svelte";
 import ExportPanel, { modalOptions as exportModalOptions } from "$lib/components/ui/panels/ExportPanel.svelte";

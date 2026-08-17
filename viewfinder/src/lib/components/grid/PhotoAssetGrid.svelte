@@ -1,4 +1,5 @@
 <script lang="ts" generics>
+    import { type ImageAsset, getFullImagePath } from "@viz/api";
     import hotkeys, { type HotkeysEvent } from "hotkeys-js";
     import { DateTime } from "luxon";
     import { type Snippet, onMount, untrack } from "svelte";
@@ -6,7 +7,6 @@
     import { fade } from "svelte/transition";
     import { type Instance, type Props as TippyProps, delegate, followCursor } from "tippy.js";
     import "tippy.js/dist/tippy.css";
-    import { type ImageAsset, getFullImagePath } from "$lib/api";
     import ImageLabelViewer from "$lib/components/image-tools/ImageLabelViewer.svelte";
     import StarRating from "$lib/components/image-tools/StarRating.svelte";
     import PhotoTooltip from "$lib/components/tooltips/PhotoTooltip.svelte";

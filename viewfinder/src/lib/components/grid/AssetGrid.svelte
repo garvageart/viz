@@ -1,11 +1,11 @@
 <script lang="ts" generics="T extends { uid: string } & Record<string, any>">
+    import { type ImageAsset } from "@viz/api";
     import hotkeys from "hotkeys-js";
     import { DateTime } from "luxon";
     import { type Snippet, untrack } from "svelte";
     import type { SvelteHTMLElements } from "svelte/elements";
     import { type Instance, type Props as TippyProps, delegate, followCursor } from "tippy.js";
     import "tippy.js/dist/tippy.css";
-    import { type ImageAsset } from "$lib/api";
     import AssetImage from "$lib/components/ui/AssetImage.svelte";
     import Button from "$lib/components/ui/Button.svelte";
     import { PhotoGridVirtualizer } from "$lib/components/virtualizer/PhotoGridVirtualizer.svelte.js";

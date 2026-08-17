@@ -1,6 +1,6 @@
+import { type Collection, type ImageAsset } from "@viz/api";
 import { type IDBPDatabase } from "idb";
 import { DateTime } from "luxon";
-import { type Collection, type ImageAsset } from "$lib/api";
 import { initDB } from "$lib/db/client";
 import { SelectionScopeNames, selectionManager } from "$lib/states/selection.svelte";
 import { getImageLabel } from "$lib/utils/images";

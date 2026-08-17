@@ -1,6 +1,6 @@
 import { browser } from "$app/environment";
 import { error, redirect } from "@sveltejs/kit";
-import { api, getSystemStatus } from "$lib/api";
+import { api, getSystemStatus } from "@viz/api";
 import { fetchCurrentUser } from "$lib/auth/auth_methods";
 import { system, user } from "$lib/states/index.svelte.js";
 import { collectionDetailSort, collectionsSort, photosSort } from "$lib/states/sort.svelte";

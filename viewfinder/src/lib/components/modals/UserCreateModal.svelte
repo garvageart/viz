@@ -1,5 +1,5 @@
 <script lang="ts">
-    import { Role } from "$lib/api";
+    import { Role } from "@viz/api";
     import Button from "$lib/components/ui/Button.svelte";
     import InputPassword from "$lib/components/ui/InputPassword.svelte";
     import InputSelect from "$lib/components/ui/InputSelect.svelte";

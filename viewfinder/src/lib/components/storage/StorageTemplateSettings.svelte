@@ -1,10 +1,10 @@
 <script lang="ts">
     import { invalidateAll } from "$app/navigation";
+    import type { VizConfig } from "@viz/api";
+    import { api } from "@viz/api";
     import Handlebars from "handlebars";
     import { DateTime } from "luxon";
     import { type Snippet } from "svelte";
-    import type { VizConfig } from "$lib/api";
-    import { api } from "$lib/api";
     import Button from "$lib/components/ui/Button.svelte";
     import Checkbox from "$lib/components/ui/Checkbox.svelte";
     import InputSelect from "$lib/components/ui/InputSelect.svelte";

@@ -1,5 +1,4 @@
 import { page } from "$app/state";
-import { MediaQuery } from "svelte/reactivity";
 import {
     type Collection,
     type ImageAsset,
@@ -7,7 +6,8 @@ import {
     type SystemStatusResponse,
     type User,
     updateUserSetting
-} from "$lib/api";
+} from "@viz/api";
+import { MediaQuery } from "svelte/reactivity";
 import type { MenuItem } from "$lib/context-menu/types";
 import { DbSettings } from "$lib/db/settings";
 import type { AssetGridView } from "$lib/types/asset";

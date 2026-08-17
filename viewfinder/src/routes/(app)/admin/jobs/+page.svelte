@@ -1,7 +1,7 @@
 <script lang="ts">
+    import { type WorkerInfo } from "@viz/api";
     import { onMount } from "svelte";
     import { fade } from "svelte/transition";
-    import { type WorkerInfo } from "$lib/api";
     import AdminRouteShell from "$lib/components/admin/AdminRouteShell.svelte";
     import Badge from "$lib/components/ui/Badge.svelte";
     import Button from "$lib/components/ui/Button.svelte";

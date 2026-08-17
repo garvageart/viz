@@ -1,5 +1,5 @@
 <script lang="ts">
-    import type { EventRecord, WsMetricsResponse, WsStatsResponse } from "$lib/api";
+    import type { EventRecord, WsMetricsResponse, WsStatsResponse } from "@viz/api";
     import AdminRouteShell from "$lib/components/admin/AdminRouteShell.svelte";
     import ConfirmationModal from "$lib/components/modals/ConfirmationModal.svelte";
     import { modalsManager } from "$lib/components/modals/manager/ModalManager.svelte";

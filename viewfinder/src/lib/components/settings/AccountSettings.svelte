@@ -1,6 +1,6 @@
 <script lang="ts">
-    import type { Setting, UserUpdate } from "$lib/api";
-    import { updateCurrentUser } from "$lib/api";
+    import type { Setting, UserUpdate } from "@viz/api";
+    import { updateCurrentUser } from "@viz/api";
     import Button from "$lib/components/ui/Button.svelte";
     import InputText from "$lib/components/ui/InputText.svelte";
     import { user } from "$lib/states/index.svelte";

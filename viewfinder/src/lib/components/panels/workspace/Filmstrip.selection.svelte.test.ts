@@ -1,6 +1,6 @@
 import { fireEvent, render, screen } from "@testing-library/svelte";
+import type { ImageAsset } from "@viz/api";
 import { describe, expect, it, vi } from "vitest";
-import type { ImageAsset } from "$lib/api";
 import Filmstrip from "$lib/components/panels/workspace/Filmstrip.svelte";
 import MetadataPanel from "$lib/components/ui/panels/MetadataPanel.svelte";
 import { SelectionScopeNames, selectionManager } from "$lib/states/selection.svelte";

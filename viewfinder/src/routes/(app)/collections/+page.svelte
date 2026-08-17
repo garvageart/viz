@@ -1,6 +1,5 @@
 <script lang="ts">
     import { goto } from "$app/navigation";
-    import { type ComponentProps, untrack } from "svelte";
     import {
         type Collection,
         type ImageAsset,
@@ -8,7 +7,8 @@
         createCollection,
         listCollectionImages,
         updateCollection
-    } from "$lib/api";
+    } from "@viz/api";
+    import { type ComponentProps, untrack } from "svelte";
     import AssetGrid from "$lib/components/grid/AssetGrid.svelte";
     import CollectionModal from "$lib/components/modals/CollectionModal.svelte";
     import FilterModal, { FilterModalOptions } from "$lib/components/modals/FilterModal.svelte";

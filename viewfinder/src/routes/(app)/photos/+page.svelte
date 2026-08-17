@@ -1,7 +1,5 @@
 <script lang="ts">
     import { goto } from "$app/navigation";
-    import hotkeys from "hotkeys-js";
-    import { onDestroy, untrack } from "svelte";
     import {
         type Collection,
         type ImageAsset,
@@ -10,7 +8,9 @@
         getImage,
         listImages,
         updateImage
-    } from "$lib/api";
+    } from "@viz/api";
+    import hotkeys from "hotkeys-js";
+    import { onDestroy, untrack } from "svelte";
     import Dropdown from "$lib/components/context-menus/Dropdown.svelte";
     import AssetGrid from "$lib/components/grid/AssetGrid.svelte";
     import PhotoAssetGrid from "$lib/components/grid/PhotoAssetGrid.svelte";

@@ -1,5 +1,5 @@
+import type { Collection, CollectionDetailResponse } from "@viz/api";
 import { SvelteMap, SvelteSet } from "svelte/reactivity";
-import type { Collection, CollectionDetailResponse } from "$lib/api";
 
 export enum SelectionScopeNames {
     DEFAULT = "default",

@@ -1,7 +1,7 @@
 import { dev } from "$app/environment";
 import { goto } from "$app/navigation";
 import { page } from "$app/state";
-import { executeSearch } from "$lib/api";
+import { executeSearch } from "@viz/api";
 import { search } from "$lib/states/index.svelte";
 import { sleep } from "$lib/utils/misc";
 import { updateURLParameter } from "$lib/utils/url";

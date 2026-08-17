@@ -1,6 +1,6 @@
 import { invalidate } from "$app/navigation";
 import { page } from "$app/state";
-import { WSClient } from "$lib/api/websocket";
+import { WSClient } from "@viz/api";
 import { DataKeys } from "$lib/dependency-keys";
 import { performSearch } from "$lib/search/execute";
 import { invalidateViz } from "$lib/views/views.svelte";

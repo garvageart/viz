@@ -14,9 +14,6 @@
 <script lang="ts">
     import { dev } from "$app/environment";
     import { goto } from "$app/navigation";
-    import hotkeys from "hotkeys-js";
-    import { DateTime } from "luxon";
-    import { type ComponentProps, onDestroy, untrack } from "svelte";
     import {
         type CollectionUpdate,
         type ImageAsset,
@@ -30,7 +27,10 @@
         listCollectionImages,
         updateCollection,
         updateImage
-    } from "$lib/api";
+    } from "@viz/api";
+    import hotkeys from "hotkeys-js";
+    import { DateTime } from "luxon";
+    import { type ComponentProps, onDestroy, untrack } from "svelte";
     import Dropdown from "$lib/components/context-menus/Dropdown.svelte";
     import AssetGrid from "$lib/components/grid/AssetGrid.svelte";
     import PhotoAssetGrid from "$lib/components/grid/PhotoAssetGrid.svelte";

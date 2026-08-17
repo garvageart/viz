@@ -1,7 +1,7 @@
 <script lang="ts">
     import { invalidateAll } from "$app/navigation";
+    import { type User, adminCreateUser, adminDeleteUser, adminUpdateUser } from "@viz/api";
     import { DateTime } from "luxon";
-    import { type User, adminCreateUser, adminDeleteUser, adminUpdateUser } from "$lib/api";
     import AdminRouteShell from "$lib/components/admin/AdminRouteShell.svelte";
     import ConfirmationModal from "$lib/components/modals/ConfirmationModal.svelte";
     import UserCreateModal from "$lib/components/modals/UserCreateModal.svelte";

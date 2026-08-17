@@ -1,5 +1,5 @@
 import { error } from "@sveltejs/kit";
-import { API_BASE_URL, type ImageAsset, downloadImagesZipBlob, getImageFileBlob, signDownload } from "$lib/api";
+import { API_BASE_URL, type ImageAsset, downloadImagesZipBlob, getImageFileBlob, signDownload } from "@viz/api";
 import { debugMode } from "$lib/states/index.svelte";
 import type { ImageUploadFileData } from "$lib/upload/manager.svelte";
 

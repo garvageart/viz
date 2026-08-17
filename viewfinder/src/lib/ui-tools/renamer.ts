@@ -1,6 +1,6 @@
+import type { ImageAsset } from "@viz/api";
 import Handlebars from "handlebars";
 import { DateTime } from "luxon";
-import type { ImageAsset } from "$lib/api";
 import { buildDateTokens, cleanFilenameSegment } from "./template";
 
 export function getFilenameBasenameAndExtension(filename: string): { basename: string; ext: string } {

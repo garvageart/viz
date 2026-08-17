@@ -1,5 +1,5 @@
 <script lang="ts">
-    import { type ImageAsset } from "$lib/api";
+    import { type ImageAsset } from "@viz/api";
     import ImageLabelViewer from "$lib/components/image-tools/ImageLabelViewer.svelte";
     import Favourite from "$lib/components/ui/Favourite.svelte";
     import { VizMimeTypes } from "$lib/constants";

@@ -1,4 +1,4 @@
-import { getCacheStatus } from "$lib/api";
+import { getCacheStatus } from "@viz/api";
 import { sendVizAPIRequest } from "$lib/utils/http";
 
 export async function load() {

@@ -1,6 +1,6 @@
 <script lang="ts">
+    import type { Collection, ImageAsset } from "@viz/api";
     import { slide } from "svelte/transition";
-    import type { Collection, ImageAsset } from "$lib/api";
     import AssetImage from "$lib/components/ui/AssetImage.svelte";
     import MaterialIcon from "$lib/components/ui/MaterialIcon.svelte";
     import { VizMimeTypes } from "$lib/constants";

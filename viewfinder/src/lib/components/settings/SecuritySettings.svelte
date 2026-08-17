@@ -1,5 +1,4 @@
 <script lang="ts">
-    import { DateTime } from "luxon";
     import {
         type ApiKey,
         type Session,
@@ -9,7 +8,8 @@
         getSessions,
         listApiKeys,
         updateSession
-    } from "$lib/api";
+    } from "@viz/api";
+    import { DateTime } from "luxon";
     import ConfirmationModal from "$lib/components/modals/ConfirmationModal.svelte";
     import CreatedApiKeyModal from "$lib/components/modals/CreatedApiKeyModal.svelte";
     import Badge from "$lib/components/ui/Badge.svelte";

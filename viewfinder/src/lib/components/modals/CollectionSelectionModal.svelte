@@ -1,13 +1,13 @@
 <script lang="ts">
     import { goto } from "$app/navigation";
-    import { onMount } from "svelte";
     import {
         type Collection,
         type CollectionListResponse,
         addCollectionImages,
         createCollection,
         listCollections
-    } from "$lib/api";
+    } from "@viz/api";
+    import { onMount } from "svelte";
     import { selectionManager } from "$lib/states/selection.svelte";
     import { toasts } from "$lib/toast-notifcations/toasts.svelte";
     import type { CardVisualState } from "$lib/types/snippet";

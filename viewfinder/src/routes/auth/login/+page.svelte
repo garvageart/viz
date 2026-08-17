@@ -1,6 +1,6 @@
 <script lang="ts">
     import { goto } from "$app/navigation";
-    import { login } from "$lib/api";
+    import { login } from "@viz/api";
     import { fetchCurrentUser } from "$lib/auth/auth_methods";
     import Button from "$lib/components/ui/Button.svelte";
     import InputPassword from "$lib/components/ui/InputPassword.svelte";

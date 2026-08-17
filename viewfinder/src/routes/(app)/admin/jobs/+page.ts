@@ -1,4 +1,4 @@
-import { listAvailableWorkers } from "$lib/api";
+import { listAvailableWorkers } from "@viz/api";
 import { sendVizAPIRequest } from "$lib/utils/http";
 import type { PageLoad } from "./$types";
 

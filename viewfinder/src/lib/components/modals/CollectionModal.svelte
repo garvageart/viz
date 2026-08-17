@@ -1,6 +1,6 @@
 <script lang="ts">
+    import type { Collection } from "@viz/api";
     import { untrack } from "svelte";
-    import type { Collection } from "$lib/api";
     import Button from "../ui/Button.svelte";
     import InputText from "../ui/InputText.svelte";
     import SliderToggle from "../ui/SliderToggle.svelte";
