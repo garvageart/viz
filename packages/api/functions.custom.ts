@@ -1,8 +1,12 @@
 import type * as Oazapfts from "@oazapfts/runtime";
 import * as QS from "@oazapfts/runtime/query";
-import { type DownloadRequest, type ErrorResponse, type ImageUploadResponse, type WorkerJob, defaults } from "./client.gen.js";
-
-export const API_BASE_URL = defaults.baseUrl;
+import {
+    type DownloadRequest,
+    type ErrorResponse,
+    type ImageUploadResponse,
+    type WorkerJob,
+    defaults
+} from "./client.gen";
 
 export interface ImageUploadFileData {
     data: File | Blob;
@@ -64,7 +68,7 @@ export async function uploadImageWithProgress(
             }
         }
 
-        const base = API_BASE_URL; // Use the exported API_BASE_URL
+        const base = defaults.baseUrl || "";
         xhr.open("POST", `${base}/images`);
         xhr.withCredentials = true;
         xhr.responseType = "json";
@@ -139,7 +143,7 @@ export function getFullImagePath(path: string): string {
     if (path.startsWith("http://") || path.startsWith("https://")) {
         return path;
     }
-    const base = API_BASE_URL; // Use the exported API_BASE_URL
+    const base = defaults.baseUrl || "";
     return `${base}${path}`;
 }
 
@@ -153,7 +157,7 @@ export async function getJobsSnapshot(): Promise<{
     data: JobSnapshotResponse;
     status: number;
 }> {
-    const base = API_BASE_URL; // Use the exported API_BASE_URL
+    const base = defaults.baseUrl || "";
     // TODO: Document in OpenAPI yaml
     const res = await fetch(`${base}/jobs/snapshot`, {
         credentials: "include"
@@ -277,7 +281,7 @@ export async function getImageFileBlob(
     | { status: 403; data: ErrorResponse }
     | { status: 500; data: ErrorResponse }
 > {
-    const baseUrl = API_BASE_URL;
+    const baseUrl = defaults.baseUrl || "";
     const queryParams = QS.query(QS.explode(params));
     const url = `${baseUrl}/images/${encodeURIComponent(uid)}/file${queryParams}`;
     const fetchToUse = opts?.fetch ?? fetch;

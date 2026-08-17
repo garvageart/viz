@@ -1,6 +1,6 @@
 import { browser } from "$app/environment";
 import { error, redirect } from "@sveltejs/kit";
-import { api, getSystemStatus } from "@viz/api";
+import { api, getSystemStatus, initApi } from "@viz/api";
 import { fetchCurrentUser } from "$lib/auth/auth_methods";
 import { system, user } from "$lib/states/index.svelte.js";
 import { collectionDetailSort, collectionsSort, photosSort } from "$lib/states/sort.svelte";
@@ -10,6 +10,7 @@ export const ssr = false;
 export const csr = true;
 
 export async function load({ url, fetch }) {
+    initApi();
     api.defaults.fetch = fetch;
 
     // Hydrate persisted sort settings once for the app so page loads read the

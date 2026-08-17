@@ -1,5 +1,5 @@
 // WebSocket Events API helpers
-import { API_BASE_URL } from ".";
+import { defaults, servers } from "./client.gen";
 
 /**
  * WebSocket message structure from server
@@ -43,7 +43,7 @@ export class WSClient {
     private isClosed = false;
 
     constructor(options: WSConnectionOptions) {
-        let base = API_BASE_URL;
+        let base = defaults.baseUrl || servers.productionApi;
 
         // If the base URL is relative (e.g., "/api"), resolve it to an absolute URL
         // using the current window location. WebSockets require absolute URLs.
