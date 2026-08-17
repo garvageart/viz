@@ -5,6 +5,12 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.31.4] - 2026-08-17
+
+* style(viewfinder): polish collection action buttons and title display (abaf2dce)
+* style(viewfinder): refine photo tooltip description clamping and metadata rendering (77408c6f)
+* fix(api): trim file extensions from image asset names (ca1cb957)
+
 ## [0.31.3] - 2026-08-17
 
 * fix(docker): copy packages/api manifest and source files in Dockerfile (0b99bbd0)
