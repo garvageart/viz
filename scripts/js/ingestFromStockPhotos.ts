@@ -1,16 +1,10 @@
+import { addCollectionImages, createCollection, defaults, updateImage, uploadImage } from "@viz/api";
 import dotenv from "dotenv";
 import type { Tag } from "libexif-wasm";
 import path from "path";
 import { createClient } from "pexels";
 import { type AssetFull, createApi } from "unsplash-js";
 import { fileURLToPath } from "url";
-import {
-    addCollectionImages,
-    createCollection,
-    defaults,
-    updateImage,
-    uploadImage
-} from "../../viewfinder/src/lib/api";
 
 let libexif: typeof import("libexif-wasm") | null = null;
 

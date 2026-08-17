@@ -28,6 +28,7 @@
         "tsx": "^4.23.12"
     },
     "dependencies": {
+        "@viz/api": "workspace:*",
         "dotenv": "^17.4.2",
         "libexif-wasm": "^0.5.3",
         "pexels": "^1.4.0",
