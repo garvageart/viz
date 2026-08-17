@@ -1,4 +1,5 @@
 import dotenv from "dotenv";
+import type { Tag } from "libexif-wasm";
 import path from "path";
 import { createClient } from "pexels";
 import { type AssetFull, createApi } from "unsplash-js";
@@ -39,6 +40,43 @@ interface IngestPhoto {
     description?: string;
 }
 
+interface WikimediaSearchResult {
+    title: string;
+}
+
+interface WikimediaSearchResponse {
+    query?: {
+        search?: WikimediaSearchResult[];
+    };
+}
+
+interface WikimediaImageMetadataEntry {
+    name?: string;
+    value?: string;
+}
+
+interface WikimediaExtMetadataItem {
+    value?: string;
+    content?: string;
+}
+
+interface WikimediaImageInfo {
+    url?: string;
+    metadata?: WikimediaImageMetadataEntry[];
+    extmetadata?: Record<string, WikimediaExtMetadataItem>;
+    user?: string;
+}
+
+interface WikimediaPage {
+    imageinfo?: WikimediaImageInfo[];
+}
+
+interface WikimediaImageInfoResponse {
+    query?: {
+        pages?: Record<string, WikimediaPage>;
+    };
+}
+
 async function downloadFile(url: string, retries = 5): Promise<{ blob: Blob; ext: string }> {
     for (let attempt = 0; attempt <= retries; attempt++) {
         const res = await fetch(url, { headers: { "User-Agent": USER_AGENT } });
@@ -75,53 +113,75 @@ async function writeExifToJpeg(jpegBytes: Uint8Array, exifData: Record<string, s
         const exif = ExifData.newFromData(jpegBytes);
 
         try {
-            function setAsciiEntry(ifdIndex: number, tagName: string, value: string) {
+            function setAsciiEntry(ifdIndex: number, tagName: Tag, value: string) {
                 const ifd = exif.ifd[ifdIndex];
-                if (!ifd) return;
-                const existing = ifd.getEntry(tagName as any);
-                if (existing) ifd.removeEntry(existing);
+                if (!ifd) {
+                    return;
+                }
+                const existing = ifd.getEntry(tagName);
+                if (existing) {
+                    ifd.removeEntry(existing);
+                }
                 const entry = ExifEntry.new();
-                entry.tag = tagName as any;
+                entry.tag = tagName;
                 entry.format = "ASCII";
                 entry.fromTypedArray(new TextEncoder().encode(value + "\0"));
                 ifd.addEntry(entry);
             }
 
-            function setShortEntry(ifdIndex: number, tagName: string, value: number) {
+            function setShortEntry(ifdIndex: number, tagName: Tag, value: number) {
                 const ifd = exif.ifd[ifdIndex];
-                if (!ifd) return;
-                const existing = ifd.getEntry(tagName as any);
-                if (existing) ifd.removeEntry(existing);
+                if (!ifd) {
+                    return;
+                }
+                const existing = ifd.getEntry(tagName);
+                if (existing) {
+                    ifd.removeEntry(existing);
+                }
                 const entry = ExifEntry.new();
-                entry.tag = tagName as any;
+                entry.tag = tagName;
                 entry.format = "SHORT";
                 entry.fromTypedArray(new Uint16Array([value]));
                 ifd.addEntry(entry);
             }
 
-            function setRationalEntry(ifdIndex: number, tagName: string, num: number, den: number) {
+            function setRationalEntry(ifdIndex: number, tagName: Tag, num: number, den: number) {
                 const ifd = exif.ifd[ifdIndex];
-                if (!ifd) return;
-                const existing = ifd.getEntry(tagName as any);
-                if (existing) ifd.removeEntry(existing);
+                if (!ifd) {
+                    return;
+                }
+                const existing = ifd.getEntry(tagName);
+                if (existing) {
+                    ifd.removeEntry(existing);
+                }
                 const entry = ExifEntry.new();
-                entry.tag = tagName as any;
+                entry.tag = tagName;
                 entry.format = "RATIONAL";
                 entry.fromTypedArray(new Uint32Array([num, den]));
                 ifd.addEntry(entry);
             }
 
             // Camera info (IFD 0)
-            if (exifData["Make"]) setAsciiEntry(0, "MAKE", exifData["Make"]);
-            if (exifData["Model"]) setAsciiEntry(0, "MODEL", exifData["Model"]);
-            if (exifData["description"]) setAsciiEntry(0, "IMAGE_DESCRIPTION", exifData["description"]);
+            if (exifData["Make"]) {
+                setAsciiEntry(0, "MAKE", exifData["Make"]);
+            }
+            if (exifData["Model"]) {
+                setAsciiEntry(0, "MODEL", exifData["Model"]);
+            }
+            if (exifData["description"]) {
+                setAsciiEntry(0, "IMAGE_DESCRIPTION", exifData["description"]);
+            }
             if (exifData["author"] || exifData["photographer"]) {
                 setAsciiEntry(0, "ARTIST", exifData["author"] || exifData["photographer"]);
             }
 
             // Lens info (IFD 0)
-            if (exifData["LensModel"]) setAsciiEntry(0, "LENS_MODEL", exifData["LensModel"]);
-            if (exifData["LensMake"]) setAsciiEntry(0, "LENS_MAKE", exifData["LensMake"]);
+            if (exifData["LensModel"]) {
+                setAsciiEntry(0, "LENS_MODEL", exifData["LensModel"]);
+            }
+            if (exifData["LensMake"]) {
+                setAsciiEntry(0, "LENS_MAKE", exifData["LensMake"]);
+            }
 
             // Date (IFD 0 + IFD 2)
             const dateStr = exifData["DateTime"] || exifData["created_at"];
@@ -139,18 +199,26 @@ async function writeExifToJpeg(jpegBytes: Uint8Array, exifData: Record<string, s
             }
 
             // Camera settings (IFD 2)
-            if (exifData["ISO"]) setShortEntry(2, "ISO_SPEED_RATINGS", parseInt(exifData["ISO"]) || 100);
+            if (exifData["ISO"]) {
+                setShortEntry(2, "ISO_SPEED_RATINGS", parseInt(exifData["ISO"], 10) || 100);
+            }
             if (exifData["Aperture"] || exifData["aperture"]) {
                 const f = parseFloat(exifData["Aperture"] || exifData["aperture"]);
-                if (!isNaN(f)) setRationalEntry(2, "FNUMBER", Math.round(f * 100), 100);
+                if (!isNaN(f)) {
+                    setRationalEntry(2, "FNUMBER", Math.round(f * 100), 100);
+                }
             }
             if (exifData["Focal Length"] || exifData["focal_length"]) {
                 const fl = parseFloat(exifData["Focal Length"] || exifData["focal_length"]);
-                if (!isNaN(fl)) setRationalEntry(2, "FOCAL_LENGTH", Math.round(fl * 100), 100);
+                if (!isNaN(fl)) {
+                    setRationalEntry(2, "FOCAL_LENGTH", Math.round(fl * 100), 100);
+                }
             }
             if (exifData["Exposure Time"] || exifData["exposure_time"]) {
                 const exp = parseFloat(exifData["Exposure Time"] || exifData["exposure_time"]);
-                if (!isNaN(exp) && exp > 0) setRationalEntry(2, "EXPOSURE_TIME", 1, Math.round(1 / exp));
+                if (!isNaN(exp) && exp > 0) {
+                    setRationalEntry(2, "EXPOSURE_TIME", 1, Math.round(1 / exp));
+                }
             }
 
             exif.fix();
@@ -268,12 +336,24 @@ async function fetchUnsplash(count: number, query: string): Promise<IngestPhoto[
 
         const exif: Record<string, string> = {};
         if (photo.exif) {
-            if (photo.exif.make) exif["Make"] = photo.exif.make;
-            if (photo.exif.model) exif["Model"] = photo.exif.model;
-            if (photo.exif.exposure_time) exif["Exposure Time"] = photo.exif.exposure_time;
-            if (photo.exif.aperture) exif["Aperture"] = photo.exif.aperture;
-            if (photo.exif.focal_length) exif["Focal Length"] = photo.exif.focal_length;
-            if (photo.exif.iso) exif["ISO"] = String(photo.exif.iso);
+            if (photo.exif.make) {
+                exif["Make"] = photo.exif.make;
+            }
+            if (photo.exif.model) {
+                exif["Model"] = photo.exif.model;
+            }
+            if (photo.exif.exposure_time) {
+                exif["Exposure Time"] = photo.exif.exposure_time;
+            }
+            if (photo.exif.aperture) {
+                exif["Aperture"] = photo.exif.aperture;
+            }
+            if (photo.exif.focal_length) {
+                exif["Focal Length"] = photo.exif.focal_length;
+            }
+            if (photo.exif.iso) {
+                exif["ISO"] = String(photo.exif.iso);
+            }
         }
 
         return {
@@ -288,7 +368,7 @@ async function fetchUnsplash(count: number, query: string): Promise<IngestPhoto[
 }
 
 async function fetchWikimedia(count: number, query: string): Promise<IngestPhoto[]> {
-    const searchRes = await wikimediaFetch<any>({
+    const searchRes = await wikimediaFetch<WikimediaSearchResponse>({
         action: "query",
         list: "search",
         srsearch: query,
@@ -303,15 +383,15 @@ async function fetchWikimedia(count: number, query: string): Promise<IngestPhoto
     }
 
     const titles = results
-        .filter((r: any) => /\.(jpg|jpeg)$/i.test(r.title))
+        .filter((r) => /\.(jpg|jpeg)$/i.test(r.title))
         .slice(0, count * 3)
-        .map((r: any) => r.title);
+        .map((r) => r.title);
 
     if (titles.length === 0) {
         throw new Error("No suitable image files found");
     }
 
-    const imageInfoRes = await wikimediaFetch<any>({
+    const imageInfoRes = await wikimediaFetch<WikimediaImageInfoResponse>({
         action: "query",
         prop: "imageinfo",
         titles: titles.join("|"),
@@ -322,7 +402,7 @@ async function fetchWikimedia(count: number, query: string): Promise<IngestPhoto
     const pages = imageInfoRes.query?.pages ?? {};
     const photos: IngestPhoto[] = [];
 
-    for (const page of Object.values(pages) as any[]) {
+    for (const page of Object.values(pages)) {
         const info = page.imageinfo?.[0];
         if (!info?.url) {
             continue;
@@ -345,22 +425,38 @@ async function fetchWikimedia(count: number, query: string): Promise<IngestPhoto
         const normalized: Record<string, string> = {};
         normalized["Make"] = exif["Make"];
         normalized["Model"] = exif["Model"];
-        if (exif["LensModel"]) normalized["LensModel"] = exif["LensModel"];
-        if (exif["LensMake"]) normalized["LensMake"] = exif["LensMake"];
-        if (exif["DateTime"]) normalized["DateTime"] = exif["DateTime"];
-        if (exif["DateTimeOriginal"]) normalized["DateTimeOriginal"] = exif["DateTimeOriginal"];
-        if (exif["ISOSpeedRatings"]) normalized["ISO"] = exif["ISOSpeedRatings"];
-        if (exif["FNumber"]) normalized["Aperture"] = exif["FNumber"];
-        if (exif["FocalLength"]) normalized["Focal Length"] = exif["FocalLength"];
-        if (exif["ExposureTime"]) normalized["Exposure Time"] = exif["ExposureTime"];
+        if (exif["LensModel"]) {
+            normalized["LensModel"] = exif["LensModel"];
+        }
+        if (exif["LensMake"]) {
+            normalized["LensMake"] = exif["LensMake"];
+        }
+        if (exif["DateTime"]) {
+            normalized["DateTime"] = exif["DateTime"];
+        }
+        if (exif["DateTimeOriginal"]) {
+            normalized["DateTimeOriginal"] = exif["DateTimeOriginal"];
+        }
+        if (exif["ISOSpeedRatings"]) {
+            normalized["ISO"] = exif["ISOSpeedRatings"];
+        }
+        if (exif["FNumber"]) {
+            normalized["Aperture"] = exif["FNumber"];
+        }
+        if (exif["FocalLength"]) {
+            normalized["Focal Length"] = exif["FocalLength"];
+        }
+        if (exif["ExposureTime"]) {
+            normalized["Exposure Time"] = exif["ExposureTime"];
+        }
 
         const fileName = info.url.split("/").pop()?.split("?")[0] || "unknown.jpg";
 
         const description =
             exif["ObjectName"] ||
             exif["ImageDescription"] ||
-            (info.extmetadata?.ImageDescription as any)?._content ||
-            (info.extmetadata?.ImageDescription as any)?.value ||
+            info.extmetadata?.ImageDescription?.content ||
+            info.extmetadata?.ImageDescription?.value ||
             undefined;
 
         const cleanDescription = description
@@ -396,16 +492,24 @@ function parseArgs() {
         const arg = args[i];
         if (arg === "--collection" || arg === "-c") {
             collectionName = args[++i] || "";
-        } else if (arg === "--no-collection") {
+            continue;
+        }
+
+        if (arg === "--no-collection") {
             createCollection = false;
-        } else if (!arg.startsWith("-")) {
-            if (["pexels", "wikimedia", "unsplash"].includes(arg)) {
-                platform = arg;
-            } else if (!isNaN(parseInt(arg))) {
-                count = parseInt(arg);
-            } else {
-                query = arg;
-            }
+            continue;
+        }
+
+        if (arg.startsWith("-")) {
+            continue;
+        }
+
+        if (["pexels", "wikimedia", "unsplash"].includes(arg)) {
+            platform = arg;
+        } else if (!isNaN(parseInt(arg, 10))) {
+            count = parseInt(arg, 10);
+        } else {
+            query = arg;
         }
     }
 
@@ -508,42 +612,52 @@ async function main() {
             const status = res.status === 201 ? "created" : res.status === 200 ? "duplicate" : `error (${res.status})`;
             console.log(`[${status}] ${photo.photographer} - ${photo.fileName}${photo.exif ? " [EXIF]" : ""}`);
 
-            if (res.status === 201 || res.status === 200) {
-                uploadedUids.push(res.data.uid);
-                if (photo.description) {
-                    try {
-                        const updateRes = await updateImage(res.data.uid, { description: photo.description });
-                        if (updateRes.status !== 200) {
-                            console.warn(`Failed to set description for ${photo.fileName}: status ${updateRes.status}`);
-                        }
-                    } catch (err) {
-                        console.warn(`Failed to set description for ${photo.fileName}:`, err);
-                    }
+            if (res.status !== 201 && res.status !== 200) {
+                continue;
+            }
+
+            uploadedUids.push(res.data.uid);
+
+            if (!photo.description) {
+                continue;
+            }
+
+            try {
+                const updateRes = await updateImage(res.data.uid, { description: photo.description });
+                if (updateRes.status !== 200) {
+                    console.warn(`Failed to set description for ${photo.fileName}: status ${updateRes.status}`);
                 }
+            } catch (err) {
+                console.warn(`Failed to set description for ${photo.fileName}:`, err);
             }
         } catch (err) {
             console.error(`Error ingesting ${photo.fileName}:`, err);
         }
     }
 
-    if (uploadedUids.length > 0) {
-        console.log(`\nCreating collection "${collectionName}" with ${uploadedUids.length} images...`);
-        try {
-            const colRes = await createCollection({
-                name: collectionName,
-                description: `Auto-generated from ${platform} ingest (${query})`
-            });
+    if (uploadedUids.length === 0) {
+        console.log("Done");
+        return;
+    }
 
-            if (colRes.status === 201) {
-                const colUid = colRes.data.uid;
-                await addCollectionImages(colUid, { uids: uploadedUids });
-                console.log(`Collection created: ${colRes.data.name} (${colUid})`);
-            } else {
-                console.error(`Failed to create collection: ${colRes.status}`);
-            }
-        } catch (err) {
-            console.error("Error creating collection:", err);
+    console.log(`\nCreating collection "${collectionName}" with ${uploadedUids.length} images...`);
+    try {
+        const colRes = await createCollection({
+            name: collectionName,
+            description: `Auto-generated from ${platform} ingest (${query})`
+        });
+
+        if (colRes.status !== 201) {
+            console.error(`Failed to create collection: ${colRes.status}`);
+            console.log("Done");
+            return;
         }
+
+        const colUid = colRes.data.uid;
+        await addCollectionImages(colUid, { uids: uploadedUids });
+        console.log(`Collection created: ${colRes.data.name} (${colUid})`);
+    } catch (err) {
+        console.error("Error creating collection:", err);
     }
 
     console.log("Done");
