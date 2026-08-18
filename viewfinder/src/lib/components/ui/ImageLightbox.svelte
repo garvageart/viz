@@ -14,7 +14,7 @@
 -->
 <script lang="ts">
     import { dev } from "$app/environment";
-    import { type ImageAsset, getFullImagePath } from "@viz/api";
+    import { type ImageAsset, getFullImagePath, updateImage } from "@viz/api";
     import hotkeys, { type HotkeysEvent } from "hotkeys-js";
     import { onMount, untrack } from "svelte";
     import type { MouseEventHandler, PointerEventHandler, WheelEventHandler } from "svelte/elements";
@@ -907,101 +907,118 @@
             }}
             role="presentation"
         >
-            <div class="lightbox-header-left">
-                <Button
-                    id="lightbox-icon-close"
-                    class="lightbox-button-icon"
-                    hoverColor="transparent"
-                    title="Close"
-                    iconName="close"
-                    onclick={() => {
-                        if (isCropping) {
-                            toggleCropMode();
-                        } else {
-                            lightboxImage = undefined;
-                        }
-                    }}
-                />
-                {#if lightboxImage}
-                    <span class="lightbox-image-name" title={lightboxImage.name}>
-                        {lightboxImage.name}
-                    </span>
+            <div class="lightbox-header-bar">
+                <div class="lightbox-header-left">
+                    <Button
+                        id="lightbox-icon-close"
+                        class="lightbox-button-icon"
+                        hoverColor="transparent"
+                        title="Close"
+                        iconName="close"
+                        onclick={() => {
+                            if (isCropping) {
+                                toggleCropMode();
+                            } else {
+                                lightboxImage = undefined;
+                            }
+                        }}
+                    />
+                    {#if lightboxImage}
+                        <span class="lightbox-image-name" title={lightboxImage.name}>
+                            {lightboxImage.name}
+                        </span>
+                    {/if}
+                </div>
+                {#if !isCropping}
+                    <div class="image-icon-buttons">
+                        {#if dev}
+                            <Button
+                                class="lightbox-button-icon"
+                                hoverColor="transparent"
+                                title="Toggle Zoom & Image State Debug"
+                                iconName="report"
+                                onclick={() => {
+                                    showImageStateDebugPanel = !showImageStateDebugPanel;
+                                }}
+                            />
+                        {/if}
+                        <Button
+                            class="lightbox-button-icon {lightboxImage?.favourited ? 'favourited' : ''}"
+                            hoverColor="transparent"
+                            title={lightboxImage?.favourited ? "Unfavourite" : "Favourite"}
+                            iconName="star"
+                            fill={lightboxImage?.favourited}
+                            onclick={async () => {
+                                if (!lightboxImage) {
+                                    return;
+                                }
+
+                                const newFav = !lightboxImage.favourited;
+                                lightboxImage.favourited = newFav;
+                                try {
+                                    await updateImage(lightboxImage.uid, { favourited: newFav });
+                                } catch (err) {
+                                    lightboxImage.favourited = !newFav;
+                                    toasts.add({
+                                        type: "error",
+                                        message: `Failed to update favourite status: ${err}`
+                                    });
+                                }
+                            }}
+                        />
+                        <Button
+                            id="act-crop"
+                            class="lightbox-button-icon"
+                            hoverColor="transparent"
+                            title="Crop"
+                            iconName="crop"
+                            onclick={toggleCropMode}
+                        />
+                        <Button
+                            class="lightbox-button-icon"
+                            hoverColor="transparent"
+                            title="Download Original"
+                            iconName="download"
+                            onclick={() => {
+                                downloadOriginalImageFile(lightboxImage!);
+                            }}
+                        />
+                        <Button
+                            class="lightbox-button-icon"
+                            hoverColor="transparent"
+                            title="Export"
+                            iconName="ios_share"
+                            onclick={(e) => {
+                                e.stopPropagation();
+
+                                modalsManager
+                                    .open(
+                                        ExportPanel,
+                                        {
+                                            assets: [lightboxImage!]
+                                        },
+                                        exportModalOptions
+                                    )
+                                    .then(() => {
+                                        lightboxImage = undefined;
+                                    });
+                            }}
+                        />
+                        <Button
+                            id="lightbox-toggle-info"
+                            class="lightbox-button-icon"
+                            hoverColor="transparent"
+                            // TODO: Make i18n safe
+                            title={`${showSidePanel ? "Hide" : "Show"} Info`}
+                            onclick={(e) => {
+                                e.stopPropagation();
+                                showSidePanel = !showSidePanel;
+                            }}
+                            iconName="info"
+                        />
+                    </div>
                 {/if}
             </div>
-            {#if !isCropping}
-                <div class="image-icon-buttons">
-                    {#if dev}
-                        <Button
-                            class="lightbox-button-icon"
-                            hoverColor="transparent"
-                            title="Toggle Placeholder"
-                            iconName="blur_linear"
-                            onclick={() => {
-                                loader.initialImageLoaded = !loader.initialImageLoaded;
-                            }}
-                        />
-                        <Button
-                            class="lightbox-button-icon"
-                            hoverColor="transparent"
-                            title="Toggle Zoom & Image State Debug"
-                            iconName="report"
-                            onclick={() => {
-                                showImageStateDebugPanel = !showImageStateDebugPanel;
-                            }}
-                        />
-                    {/if}
-                    <Button
-                        id="act-crop"
-                        class="lightbox-button-icon"
-                        hoverColor="transparent"
-                        title="Crop"
-                        iconName="crop"
-                        onclick={toggleCropMode}
-                    />
-                    <Button
-                        class="lightbox-button-icon"
-                        hoverColor="transparent"
-                        title="Download Original"
-                        iconName="download"
-                        onclick={() => {
-                            downloadOriginalImageFile(lightboxImage!);
-                        }}
-                    />
-                    <Button
-                        class="lightbox-button-icon"
-                        hoverColor="transparent"
-                        title="Export"
-                        iconName="ios_share"
-                        onclick={(e) => {
-                            e.stopPropagation();
-
-                            modalsManager
-                                .open(
-                                    ExportPanel,
-                                    {
-                                        assets: [lightboxImage!]
-                                    },
-                                    exportModalOptions
-                                )
-                                .then(() => {
-                                    lightboxImage = undefined;
-                                });
-                        }}
-                    />
-                    <Button
-                        id="lightbox-toggle-info"
-                        class="lightbox-button-icon"
-                        hoverColor="transparent"
-                        // TODO: Make i18n safe
-                        title={`${showSidePanel ? "Hide" : "Show"} Info`}
-                        onclick={(e) => {
-                            e.stopPropagation();
-                            showSidePanel = !showSidePanel;
-                        }}
-                        iconName="info"
-                    />
-                </div>
-            {/if}
 
             <div
                 class="image-wrapper"
@@ -1057,6 +1074,7 @@
                         asset={lightboxImage!}
                         objectFit="contain"
                         priority={true}
+                        placeholder="none"
                         src={loader.displayURL}
                         class="lightbox-image main {isCropping ? 'is-crop' : ''}"
                         style={cropStyle}
@@ -1173,24 +1191,25 @@
         pointer-events: auto;
     }
 
-    :global(.image-icon-buttons) {
-        position: absolute;
-        top: 1em;
-        right: 1em;
-        z-index: 200;
-        pointer-events: auto;
-        display: flex;
-        gap: 0.5em;
-    }
-
-    .lightbox-header-left {
+    .lightbox-header-bar {
         position: absolute;
         top: 1em;
         left: 1em;
+        right: 1em;
         z-index: 200;
         display: flex;
         align-items: center;
+        justify-content: space-between;
+        gap: var(--viz-spacing-md);
+        pointer-events: none;
+    }
+
+    .lightbox-header-left {
+        display: flex;
+        align-items: center;
         gap: var(--viz-spacing-sm);
+        min-width: 0;
+        flex: 0 1 auto;
         pointer-events: auto;
     }
 
@@ -1210,10 +1229,19 @@
         overflow: hidden;
         text-overflow: ellipsis;
         min-width: 0;
-        flex-shrink: 1;
+        flex: 0 1 auto;
         filter: drop-shadow(0 2px 6px rgba(0, 0, 0, 0.9));
         -webkit-filter: drop-shadow(0 2px 6px rgba(0, 0, 0, 0.9));
         user-select: text;
+    }
+
+    :global(.image-icon-buttons) {
+        display: flex;
+        align-items: center;
+        gap: 0.5em;
+        flex-shrink: 0;
+        margin-left: auto;
+        pointer-events: auto;
     }
 
     :global(.lightbox-button-icon) {
@@ -1289,46 +1317,53 @@
         }
     }
 
-    :global(.lightbox-image) {
-        display: block;
-        max-width: 100%;
-        max-height: 100%;
-        width: auto;
-        height: auto;
-        object-fit: contain;
-        pointer-events: auto;
-    }
+    :global {
+        .lightbox-image {
+            display: block;
+            max-width: 100% !important;
+            max-height: 100% !important;
+            width: auto !important;
+            height: auto !important;
+            object-fit: contain !important;
+            pointer-events: auto;
 
-    :global(.lightbox-image.placeholder) {
-        position: absolute;
-        z-index: 1;
-        opacity: 1;
-        transition: opacity 0.3s ease-in-out;
-        image-rendering: auto;
-        max-width: 100%;
-        max-height: 100%;
-        width: auto;
-        height: auto;
-        object-fit: contain;
-    }
+            &.placeholder {
+                position: absolute;
+                z-index: 1;
+                opacity: 1;
+                transition: opacity 0.3s ease-in-out;
+                image-rendering: auto;
 
-    :global(.lightbox-image.placeholder.loaded) {
-        opacity: 0;
-    }
+                &.loaded,
+                &.hidden {
+                    opacity: 0;
+                    pointer-events: none;
+                }
+            }
 
-    :global(.lightbox-image.main) {
-        position: relative;
-        z-index: 2;
-        transition: opacity 0.3s ease-in-out;
-        max-width: 100% !important;
-        max-height: 100% !important;
-        width: auto !important;
-        height: auto !important;
-        object-fit: contain !important;
-    }
+            &.main {
+                position: relative;
+                z-index: 2;
+                transition: opacity 0.3s ease-in-out;
+                max-width: 100% !important;
+                max-height: 100% !important;
+                width: auto !important;
+                height: auto !important;
+                object-fit: contain !important;
 
-    :global(.lightbox-image.main.hidden-main) {
-        opacity: 0;
+                &.is-crop {
+                    width: 100% !important;
+                    height: 100% !important;
+                    max-width: 100% !important;
+                    max-height: 100% !important;
+                    object-fit: fill !important;
+                }
+
+                &.hidden-main {
+                    opacity: 0;
+                }
+            }
+        }
     }
 
     .lightbox-nav {
