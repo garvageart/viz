@@ -1,3 +1,17 @@
+<!--
+  @component ImageLightbox
+  
+  Core reminder for myself and everyone:
+  At the fundamental core of this component, its primary role is to load and display an image's data and 
+  the image itself cleanly, immediately, and accurately within the viewport.
+  
+  All additional features and behaviors—such as zoom, panning, crop mode, photo editing, metadata sidebars, 
+  or action overlays—are secondary layers built strictly ON TOP of this base display. This idea is the foundation. 
+  
+  No future feature, edit tool, state calculation, or overlay logic must interfere with, delay, 
+  or distort the underlying core principle of displaying the base image cleanly and instantly upon loading 
+  or navigation. Base 1x viewing relies on clean native CSS bounds (max-width: 100%, max-height: 100%, object-fit: contain).
+-->
 <script lang="ts">
     import { dev } from "$app/environment";
     import { type ImageAsset, getFullImagePath } from "@viz/api";
@@ -15,9 +29,10 @@
     import { isMobile } from "$lib/states/index.svelte";
     import { toasts } from "$lib/toast-notifcations/toasts.svelte";
     import { downloadOriginalImageFile } from "$lib/utils/http";
-    import { type CropCoords, getThumbhashURL } from "$lib/utils/images";
+    import { type CropCoords } from "$lib/utils/images";
     import CropOverlay from "../image-tools/CropOverlay.svelte";
     import CropTools from "../image-tools/CropTools.svelte";
+    import AssetImage from "./AssetImage.svelte";
     import Lightbox from "./Lightbox.svelte";
 
     interface Props {
@@ -416,13 +431,11 @@
         }
     };
 
-    let thumbhashURL = $derived(lightboxImage ? getThumbhashURL(lightboxImage) : undefined);
-
     // Helper to get render dimensions
     let imageDimensions = $state<{ width: number; height: number } | null>(null);
 
     function updateImageDimensions() {
-        if (!imageEl || !imageContainerEl) {
+        if (!imageContainerEl || !lightboxImage) {
             return;
         }
 
@@ -438,8 +451,8 @@
         const containerWidth = Math.max(1, rawContainerWidth - paddingOffset);
         const containerHeight = Math.max(1, rawContainerHeight - paddingOffset);
 
-        let targetWidth = lightboxImage?.width || imageEl.naturalWidth;
-        let targetHeight = lightboxImage?.height || imageEl.naturalHeight;
+        let targetWidth = lightboxImage.width || imageEl?.naturalWidth;
+        let targetHeight = lightboxImage.height || imageEl?.naturalHeight;
 
         if (!isCropping && activeCrop && activeCrop.width > 0 && activeCrop.height > 0) {
             targetWidth = activeCrop.width;
@@ -486,17 +499,16 @@
     // Reactively track image dimension changes (window resize, crop layout changes)
     // and update imageDimensions, scaling currentCrop proportionally to keep it in sync.
     $effect(() => {
-        if (show && imageEl) {
+        if (show && imageContainerEl) {
             updateImageDimensions();
 
             const observer = new ResizeObserver(() => {
                 updateImageDimensions();
             });
-            observer.observe(imageEl);
+            observer.observe(imageContainerEl);
 
             return () => {
                 observer.disconnect();
-                imageDimensions = null;
             };
         }
     });
@@ -1018,7 +1030,7 @@
                     oncontextmenu={handleContextMenu}
                     role="presentation"
                     bind:this={zoomTargetEl}
-                    style="{imageDimensions
+                    style="{isCropping && imageDimensions
                         ? `width: ${imageDimensions.width}px; height: ${imageDimensions.height}px;`
                         : ''} transform: translate({zoomState.currentPositionX}px, {zoomState.currentPositionY}px) scale({zoomState.currentZoom}); transform-origin: 0 0;"
                     onwheel={handleWheel}
@@ -1039,37 +1051,27 @@
                         }
                     }}
                 >
-                    <img
-                        bind:this={imageEl}
+                    <AssetImage
+                        naked={true}
+                        bind:imageElement={imageEl}
+                        asset={lightboxImage!}
+                        objectFit="contain"
+                        priority={true}
                         src={loader.displayURL}
                         class="lightbox-image main {isCropping ? 'is-crop' : ''}"
-                        class:hidden-main={!loader.initialImageLoaded}
                         style={cropStyle}
-                        alt={lightboxImage!.name}
-                        title={lightboxImage!.name}
-                        loading="eager"
                         crossorigin="use-credentials"
                         data-image-id={lightboxImage!.uid}
                         onload={() => {
-                            updateImageDimensions();
+                            if (isCropping) {
+                                updateImageDimensions();
+                            }
                             loader.handleLoad();
                         }}
                         onerror={() => loader.handleError()}
                         ondragstart={(e) => e.preventDefault()}
                         oncontextmenu={handleContextMenu}
                     />
-
-                    {#if thumbhashURL}
-                        <img
-                            src={thumbhashURL}
-                            class="lightbox-image placeholder"
-                            class:loaded={loader.initialImageLoaded}
-                            alt="Placeholder for {lightboxImage!.name}"
-                            aria-hidden="true"
-                            data-thumbhash={lightboxImage!.image_metadata?.thumbhash}
-                            style={`aspect-ratio: ${lightboxImage!.width} / ${lightboxImage!.height};`}
-                        />
-                    {/if}
 
                     {#if isCropping && imageDimensions && currentCrop}
                         <CropOverlay
@@ -1262,38 +1264,52 @@
 
     .zoom-target {
         position: relative;
-        display: grid;
-        grid-template-columns: 100%;
-        grid-template-rows: 100%;
-        justify-items: center;
+        display: flex;
+        justify-content: center;
         align-items: center;
         max-width: 100%;
         max-height: 100%;
+        width: 100%;
+        height: 100%;
         pointer-events: auto;
-    }
 
-    .zoom-target.is-crop {
-        overflow: visible !important;
-    }
+        &.is-crop {
+            display: grid;
+            grid-template-columns: 100%;
+            grid-template-rows: 100%;
+            justify-items: center;
+            align-items: center;
+            overflow: visible !important;
+            width: auto;
+            height: auto;
+        }
 
-    .zoom-target > * {
-        grid-area: 1 / 1;
+        &.is-crop > * {
+            grid-area: 1 / 1;
+        }
     }
 
     :global(.lightbox-image) {
         display: block;
-        width: 100%;
-        height: 100%;
+        max-width: 100%;
+        max-height: 100%;
+        width: auto;
+        height: auto;
+        object-fit: contain;
         pointer-events: auto;
     }
 
     :global(.lightbox-image.placeholder) {
+        position: absolute;
         z-index: 1;
         opacity: 1;
         transition: opacity 0.3s ease-in-out;
         image-rendering: auto;
-        width: 100%;
-        height: 100%;
+        max-width: 100%;
+        max-height: 100%;
+        width: auto;
+        height: auto;
+        object-fit: contain;
     }
 
     :global(.lightbox-image.placeholder.loaded) {
@@ -1301,10 +1317,14 @@
     }
 
     :global(.lightbox-image.main) {
+        position: relative;
         z-index: 2;
         transition: opacity 0.3s ease-in-out;
-        width: 100%;
-        height: 100%;
+        max-width: 100% !important;
+        max-height: 100% !important;
+        width: auto !important;
+        height: auto !important;
+        object-fit: contain !important;
     }
 
     :global(.lightbox-image.main.hidden-main) {
