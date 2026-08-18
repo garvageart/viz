@@ -4,6 +4,7 @@ import {
     type DownloadRequest,
     type ErrorResponse,
     type ImageAsset,
+    type ImagePaths,
     type ImageUploadResponse,
     type WorkerJob,
     defaults
@@ -153,19 +154,28 @@ export function getFullImagePath(path: string): string {
  */
 export function getAssetImagePath(
     asset: ImageAsset,
-    variant: "preview" | "thumbnail" | "original" = "preview",
+    variant: keyof ImagePaths = "preview",
     extraParams?: string
-): string {
-    const path = asset.image_paths[variant] || asset.image_paths.preview || asset.image_paths.original;
-    const checksum = asset.image_metadata?.checksum;
+): string | undefined {
+    // not sure why this brought up a type error since we are keying with
+    // the same expected type but TS was complaining so i just put the `!` there
+    const path = asset.image_paths[variant]!;
 
     const fullPath = extraParams ? `${path}${extraParams}` : path;
-    const versioned =
-        checksum && !fullPath.includes("v=")
-            ? `${fullPath}${fullPath.includes("?") ? "&" : "?"}v=${checksum}`
-            : fullPath;
+    const resolvedPath = getFullImagePath(fullPath);
+    const checksum = asset.image_metadata?.checksum;
 
-    return getFullImagePath(versioned);
+    if (!checksum) {
+        return resolvedPath;
+    }
+
+    // ?
+    const [pathname, search] = resolvedPath.split("?");
+    const params = new URLSearchParams(search || "");
+    if (!params.has("v")) {
+        params.set("v", checksum);
+    }
+    return `${pathname}?${params.toString()}`;
 }
 
 export type JobSnapshotResponse = {
