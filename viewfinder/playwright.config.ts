@@ -8,6 +8,7 @@ dotenv.config({ path: "../.env", override: true });
  */
 const isPreview = !!process.env.PLAYWRIGHT_PREVIEW;
 const port = isPreview ? 7778 : 7777;
+const standardViewport = { width: 1920, height: 1080 };
 
 export default defineConfig({
     testDir: "e2e",
@@ -36,7 +37,7 @@ export default defineConfig({
         baseURL: `http://localhost:${port}`,
 
         /* Fixed Full HD viewport size for rendering consistency across environments */
-        viewport: { width: 1920, height: 1080 },
+        viewport: standardViewport,
 
         /* Collect trace when retrying the failed test. See https://playwright.dev/docs/trace-viewer */
         trace: "on-first-retry"
@@ -57,6 +58,7 @@ export default defineConfig({
             name: "chromium",
             use: {
                 ...devices["Desktop Chrome"],
+                viewport: standardViewport,
                 // Use prepared auth state.
                 storageState: "e2e/.auth/user.json"
             },

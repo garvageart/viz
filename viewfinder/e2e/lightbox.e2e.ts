@@ -54,8 +54,9 @@ test.describe("ImageLightbox Interactions", () => {
         const lightbox = await openLightbox(page);
         test.skip(!lightbox, "No photos available to test");
 
-        // Click on the backdrop area (below top header)
-        await lightbox!.click({ position: { x: 20, y: 80 } });
+        // Click on the empty background area of the image wrapper
+        const wrapper = lightbox!.locator(".image-wrapper");
+        await wrapper.click({ position: { x: 5, y: 5 } });
 
         await expect(lightbox!).not.toBeVisible();
     });
