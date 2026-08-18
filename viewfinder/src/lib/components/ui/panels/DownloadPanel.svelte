@@ -173,6 +173,8 @@
                     <div class="panel-file-right">
                         {#if file.state === DownloadState.DOWNLOADED}
                             <span class="status-text success">Done</span>
+                        {:else if file.state === DownloadState.PROCESSING}
+                            <span class="status-text processing">Processing</span>
                         {:else if file.state === DownloadState.ERROR || file.state === DownloadState.CANCELED}
                             <span class="status-text error">Error</span>
                         {:else}

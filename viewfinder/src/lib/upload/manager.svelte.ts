@@ -88,6 +88,7 @@ export function waitForDownloadCompletion(tasks: DownloadFile[]): Promise<void> 
             const allDone = tasks.every(
                 (t) =>
                     t.state === DownloadState.DOWNLOADED ||
+                    t.state === DownloadState.PROCESSING ||
                     t.state === DownloadState.ERROR ||
                     t.state === DownloadState.CANCELED
             );

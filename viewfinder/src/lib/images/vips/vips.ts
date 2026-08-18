@@ -210,7 +210,292 @@ export async function applyMetadataPolicy(img: Vips.Image, metadataPolicy: Metad
     }
 }
 
-export async function generateTransform(input: TransformInput): Promise<TransformResult> {
+export type TransformStepName =
+    "decode" | "autorotate" | "colorSpace" | "rotateAndFlip" | "resize" | "metadata" | "writeOptions" | "encode";
+
+export interface TransformStepContext {
+    v: ExtendedVipsModule;
+    params: TransformParams;
+    asset: ImageAsset;
+    inputBuffer: Uint8Array;
+    img?: Vips.Image;
+    stripAll?: boolean;
+    writeOptions?: Record<string, any>;
+    outExt?: string;
+    finalExt?: SupportedImageTypes;
+    transformEtag?: string;
+    outputBuffer?: SharedArrayBuffer;
+}
+
+export type TransformStepFn = (ctx: TransformStepContext) => Promise<void> | void;
+
+async function stepDecodeInput(ctx: TransformStepContext) {
+    // Decode into wasm-vips image
+    try {
+        ctx.img = ctx.v.Image.newFromBuffer(ctx.inputBuffer);
+    } catch (e) {
+        console.error(
+            "[Worker] Vips.Image.newFromBuffer failed! Buffer size:",
+            ctx.inputBuffer.length,
+            "bytes. Error details:",
+            e
+        );
+        throw e;
+    }
+}
+
+function stepAutoRotate(ctx: TransformStepContext) {
+    if (!ctx.img) {
+        return;
+    }
+
+    // Autorotate based on EXIF
+    try {
+        ctx.img = ctx.img.autorot();
+    } catch (e) {
+        // if autorot not supported for this image, continue
+    }
+}
+
+async function stepColorSpaceTransform(ctx: TransformStepContext) {
+    if (!ctx.img) {
+        return;
+    }
+    // Color space transformation
+    try {
+        const cs = ctx.params.colorSpace ?? "sRGB";
+        const profilePath = await ensureIccProfile(ctx.v, cs);
+        if (profilePath) {
+            try {
+                ctx.img = ctx.img.iccTransform(profilePath);
+            } catch (_) {
+                ctx.img = ctx.img.colourspace(ctx.v.Interpretation.srgb);
+            }
+        } else {
+            try {
+                ctx.img = ctx.img.iccTransform("srgb");
+            } catch (_) {
+                ctx.img = ctx.img.colourspace(ctx.v.Interpretation.srgb);
+            }
+        }
+    } catch (_) {
+        // ignore color transform failures; continue
+    }
+}
+
+function stepRotationAndFlip(ctx: TransformStepContext) {
+    if (!ctx.img) {
+        return;
+    }
+
+    // Explicit rotate/flip from params (apply after autorotate)
+    const requestedRotate = (((ctx.params.rotate ?? 0) % 360) + 360) % 360;
+    if (requestedRotate === 90) {
+        ctx.img = ctx.img.rot90();
+    } else if (requestedRotate === 180) {
+        ctx.img = ctx.img.rot180();
+    } else if (requestedRotate === 270) {
+        ctx.img = ctx.img.rot270();
+    }
+
+    if (ctx.params.flip === "horizontal") {
+        ctx.img = ctx.img.flipHor();
+    } else if (ctx.params.flip === "vertical") {
+        ctx.img = ctx.img.flipVer();
+    }
+}
+
+function stepResizeImage(ctx: TransformStepContext) {
+    if (!ctx.img) {
+        return;
+    }
+
+    // Resize
+    const srcW = ctx.img.width;
+    const srcH = ctx.img.height;
+    const resizeMode = ctx.params.resizeMode ?? "none";
+    let scale = 1;
+
+    if (resizeMode !== "none") {
+        const targetW = ctx.params.width ?? 0;
+        const targetH = ctx.params.height ?? 0;
+
+        if (resizeMode === "width" && targetW > 0) {
+            scale = targetW / srcW;
+        } else if (resizeMode === "height" && targetH > 0) {
+            scale = targetH / srcH;
+        } else if (resizeMode === "long-edge") {
+            const edge = targetW > 0 ? targetW : targetH;
+            if (edge > 0) {
+                const longest = Math.max(srcW, srcH);
+                scale = edge / longest;
+            }
+        } else if (resizeMode === "short-edge") {
+            const edge = targetW > 0 ? targetW : targetH;
+            if (edge > 0) {
+                const shortest = Math.min(srcW, srcH);
+                scale = edge / shortest;
+            }
+        } else if (resizeMode === "dimensions" && targetW > 0 && targetH > 0) {
+            scale = Math.min(targetW / srcW, targetH / srcH);
+        }
+    }
+
+    if (scale !== 1 && scale > 0) {
+        const kernel = ctx.params.kernel ?? "";
+        let kernelVal: number | undefined = undefined;
+        try {
+            if (ctx.v.Kernel) {
+                switch (kernel) {
+                    case "nearest":
+                        kernelVal = ctx.v.Kernel.nearest;
+                        break;
+                    case "linear":
+                        kernelVal = ctx.v.Kernel.linear;
+                        break;
+                    case "cubic":
+                        kernelVal = ctx.v.Kernel.cubic;
+                        break;
+                    case "mitchell":
+                        kernelVal = ctx.v.Kernel.mitchell;
+                        break;
+                    default:
+                        kernelVal = ctx.v.Kernel.lanczos3;
+                }
+            }
+        } catch (_) {
+            kernelVal = ctx.v.Kernel.lanczos3;
+        }
+
+        if (kernelVal !== undefined) {
+            ctx.img = ctx.img.resize(scale, { kernel: kernelVal });
+        } else {
+            ctx.img = ctx.img.resize(scale);
+        }
+    }
+}
+
+async function stepFilterMetadata(ctx: TransformStepContext) {
+    if (!ctx.img) {
+        return;
+    }
+
+    const actualPolicy = ctx.params.metadata === undefined ? "all" : ctx.params.metadata || "none";
+    const removeLocation = !!ctx.params.removeLocation;
+    ctx.stripAll = await applyMetadataPolicy(ctx.img, actualPolicy, removeLocation);
+}
+
+function stepPrepareWriteOptions(ctx: TransformStepContext) {
+    if (!ctx.img) {
+        return;
+    }
+
+    // Encode
+    const finalExt = ctx.finalExt ?? "jpg";
+    const quality = Math.max(0, Math.min(100, ctx.params.quality ?? 85));
+
+    // JPEGs cannot have an alpha channel. If the image has transparency,
+    // not sure whether to keep this yet or not
+    // since libvips doesn't seem to crash when you take it out
+    // but it is technically wrong
+
+    // if (finalExt === "jpg" || finalExt === "jpeg") {
+    //     if (img.hasAlpha()) {
+    //         const flatImg = img.flatten({ background: [255, 255, 255] });
+    //         img.delete();
+    //         img = flatImg;
+    //     }
+    // }
+
+    const writeOptions: Record<string, any> = { Q: quality, strip: ctx.stripAll ?? false };
+
+    // JPEG-specific: match the encoding efficiency of camera/editor output
+    // Note: for fuck's sake. Think about reasonable defaults (these are fine)
+    // but also advanced settings if users choose
+    if (finalExt === "jpg" || finalExt === "jpeg") {
+        writeOptions.optimize_coding = true;
+
+        // mhmmmm, not sure about this right now
+        writeOptions.interlace = true;
+        writeOptions.trellis_quant = true;
+        writeOptions.optimize_scans = true;
+        // "auto" switches to 4:4:4 above Q=90, which inflates files
+        // dramatically vs the 4:2:0 originals most cameras produce.
+        // Force 4:2:0 always — visually lossless for photos and
+        // keeps file sizes reasonable even at Q=100.
+        writeOptions.subsample_mode = "on";
+    }
+
+    // Passing 'bitdepth' to jpegsave or webpsave
+    // causes an immediate fatal crash obviously
+    const supportsBitDepth = SUPPORTED_IMAGE_TYPES.filter((v) => !v.startsWith("jp") || v === "webp").includes(
+        finalExt
+    );
+
+    if (ctx.params.bitDepth && ctx.params.bitDepth > 0 && supportsBitDepth) {
+        writeOptions.bitdepth = ctx.params.bitDepth;
+    }
+
+    ctx.writeOptions = writeOptions;
+}
+
+async function stepEncodeToBuffer(ctx: TransformStepContext) {
+    if (!ctx.img || !ctx.outExt) {
+        return;
+    }
+
+    let outBufRaw: Uint8Array<ArrayBufferLike>;
+    try {
+        outBufRaw = ctx.img.writeToBuffer(ctx.outExt, ctx.writeOptions || {});
+        if (outBufRaw instanceof Promise) {
+            outBufRaw = await outBufRaw;
+        }
+
+        const view =
+            outBufRaw instanceof ArrayBuffer
+                ? new Uint8Array(outBufRaw)
+                : new Uint8Array(outBufRaw.buffer, outBufRaw.byteOffset, outBufRaw.byteLength);
+
+        ctx.outputBuffer = new SharedArrayBuffer(view.byteLength);
+        new Uint8Array(ctx.outputBuffer).set(view);
+    } catch (saveErr) {
+        console.error("[Worker vips.ts] Write To Buffer Error:", saveErr);
+        if (saveErr instanceof Error) {
+            console.error("[Worker vips.ts] Error message:", saveErr.message);
+            console.error("[Worker vips.ts] Error stack:", saveErr.stack);
+        }
+
+        throw saveErr;
+    }
+}
+
+export function buildTransformPipelineMap(input: TransformInput): Map<TransformStepName, TransformStepFn> {
+    const { params } = input;
+    const activeMap = new Map<TransformStepName, TransformStepFn>();
+
+    activeMap.set("decode", stepDecodeInput);
+    activeMap.set("autorotate", stepAutoRotate);
+    activeMap.set("colorSpace", stepColorSpaceTransform);
+
+    if (params.rotate || params.flip) {
+        activeMap.set("rotateAndFlip", stepRotationAndFlip);
+    }
+
+    if (params.resizeMode && params.resizeMode !== "none") {
+        activeMap.set("resize", stepResizeImage);
+    }
+
+    activeMap.set("metadata", stepFilterMetadata);
+    activeMap.set("writeOptions", stepPrepareWriteOptions);
+    activeMap.set("encode", stepEncodeToBuffer);
+
+    return activeMap;
+}
+
+export async function generateTransform(
+    input: TransformInput,
+    onProgress?: (percent: number) => void
+): Promise<TransformResult> {
     const { params, asset, originalData } = input;
 
     // Determine output extension: prefer `params.format`, otherwise fall back
@@ -254,210 +539,45 @@ export async function generateTransform(input: TransformInput): Promise<Transfor
 
     const v = await getVipsRuntime();
 
-    // Decode into wasm-vips image
-    let img;
+    const ctx: TransformStepContext = {
+        v,
+        params,
+        asset,
+        inputBuffer,
+        outExt: "." + finalExt,
+        finalExt,
+        transformEtag
+    };
+
+    const activePipelineMap = buildTransformPipelineMap(input);
+    const totalSteps = activePipelineMap.size;
+
+    let completedSteps = 0;
     try {
-        img = v.Image.newFromBuffer(inputBuffer);
-    } catch (e) {
-        console.error(
-            "[Worker] Vips.Image.newFromBuffer failed! Buffer size:",
-            inputBuffer.length,
-            "bytes. Error details:",
-            e
-        );
-        throw e;
-    }
+        for (const [stepName, stepFn] of activePipelineMap.entries()) {
+            await stepFn(ctx);
+            completedSteps++;
 
-    // Autorotate based on EXIF
-    try {
-        img = img.autorot();
-    } catch (e) {
-        // if autorot not supported for this image, continue
-    }
-
-    // Color space transformation
-    try {
-        const cs = params.colorSpace ?? "sRGB";
-        const profilePath = await ensureIccProfile(v, cs);
-        if (profilePath) {
-            try {
-                img = img.iccTransform(profilePath);
-            } catch (_) {
-                img = img.colourspace(v.Interpretation.srgb);
-            }
-        } else {
-            try {
-                img = img.iccTransform("srgb");
-            } catch (_) {
-                img = img.colourspace(v.Interpretation.srgb);
-            }
+            console.debug(`[Worker vips.ts] Step '${stepName}' completed (${completedSteps}/${totalSteps})`);
+            const progressPercent = Math.round((completedSteps / totalSteps) * 100);
+            onProgress?.(progressPercent);
         }
-    } catch (_) {
-        // ignore color transform failures; continue
-    }
-
-    // Explicit rotate/flip from params (apply after autorotate)
-    const requestedRotate = (((params.rotate ?? 0) % 360) + 360) % 360;
-    if (requestedRotate === 90) {
-        img = img.rot90();
-    } else if (requestedRotate === 180) {
-        img = img.rot180();
-    } else if (requestedRotate === 270) {
-        img = img.rot270();
-    }
-
-    if (params.flip === "horizontal") {
-        img = img.flipHor();
-    } else if (params.flip === "vertical") {
-        img = img.flipVer();
-    }
-
-    // Resize
-    const srcW = img.width;
-    const srcH = img.height;
-    const resizeMode = params.resizeMode ?? "none";
-    let scale = 1;
-
-    if (resizeMode !== "none") {
-        const targetW = params.width ?? 0;
-        const targetH = params.height ?? 0;
-
-        if (resizeMode === "width" && targetW > 0) {
-            scale = targetW / srcW;
-        } else if (resizeMode === "height" && targetH > 0) {
-            scale = targetH / srcH;
-        } else if (resizeMode === "long-edge") {
-            const edge = targetW > 0 ? targetW : targetH;
-            if (edge > 0) {
-                const longest = Math.max(srcW, srcH);
-                scale = edge / longest;
-            }
-        } else if (resizeMode === "short-edge") {
-            const edge = targetW > 0 ? targetW : targetH;
-            if (edge > 0) {
-                const shortest = Math.min(srcW, srcH);
-                scale = edge / shortest;
-            }
-        } else if (resizeMode === "dimensions" && targetW > 0 && targetH > 0) {
-            scale = Math.min(targetW / srcW, targetH / srcH);
-        }
-    }
-
-    if (scale !== 1 && scale > 0) {
-        const kernel = params.kernel ?? "";
-        let kernelVal: number | undefined = undefined;
-        try {
-            if (v.Kernel) {
-                switch (kernel) {
-                    case "nearest":
-                        kernelVal = v.Kernel.nearest;
-                        break;
-                    case "linear":
-                        kernelVal = v.Kernel.linear;
-                        break;
-                    case "cubic":
-                        kernelVal = v.Kernel.cubic;
-                        break;
-                    case "mitchell":
-                        kernelVal = v.Kernel.mitchell;
-                        break;
-                    default:
-                        kernelVal = v.Kernel.lanczos3;
-                }
-            }
-        } catch (_) {
-            kernelVal = v.Kernel.lanczos3;
-        }
-
-        if (kernelVal !== undefined) {
-            img = img.resize(scale, { kernel: kernelVal });
-        } else {
-            img = img.resize(scale);
-        }
-    }
-
-    // Encode
-    const outExt = "." + finalExt;
-    const quality = Math.max(0, Math.min(100, params.quality ?? 85));
-    const actualPolicy = params.metadata === undefined ? "all" : params.metadata || "none";
-    const removeLocation = !!params.removeLocation;
-    const stripAll = await applyMetadataPolicy(img, actualPolicy, removeLocation);
-
-    // JPEGs cannot have an alpha channel. If the image has transparency,
-    // not sure whether to keep this yet or not
-    // since libvips doesn't seem to crash when you take it out
-    // but it is technically wrong
-
-    // if (finalExt === "jpg" || finalExt === "jpeg") {
-    //     if (img.hasAlpha()) {
-    //         const flatImg = img.flatten({ background: [255, 255, 255] });
-    //         img.delete();
-    //         img = flatImg;
-    //     }
-    // }
-
-    const writeOptions: Record<string, any> = { Q: quality, strip: stripAll };
-
-    // JPEG-specific: match the encoding efficiency of camera/editor output
-    // Note: for fuck's sake. Think about reasonable defaults (these are fine)
-    // but also advanced settings if users choose
-    if (finalExt === "jpg" || finalExt === "jpeg") {
-        writeOptions.optimize_coding = true;
-
-        // mhmmmm, not sure about this right now
-        writeOptions.interlace = true;
-        writeOptions.trellis_quant = true;
-        writeOptions.optimize_scans = true;
-        // "auto" switches to 4:4:4 above Q=90, which inflates files
-        // dramatically vs the 4:2:0 originals most cameras produce.
-        // Force 4:2:0 always — visually lossless for photos and
-        // keeps file sizes reasonable even at Q=100.
-        writeOptions.subsample_mode = "on";
-    }
-
-    // Passing 'bitdepth' to jpegsave or webpsave
-    // causes an immediate fatal crash obviously
-    const supportsBitDepth = SUPPORTED_IMAGE_TYPES.filter((v) => !v.startsWith("jp") || v === "webp").includes(
-        finalExt
-    );
-
-    if (params.bitDepth && params.bitDepth > 0 && supportsBitDepth) {
-        writeOptions.bitdepth = params.bitDepth;
-    }
-
-    let outBufRaw: Uint8Array<ArrayBufferLike>;
-    let sharedBuffer: SharedArrayBuffer;
-    try {
-        outBufRaw = img.writeToBuffer(outExt, writeOptions);
-        if (outBufRaw instanceof Promise) {
-            outBufRaw = await outBufRaw;
-        }
-
-        const view =
-            outBufRaw instanceof ArrayBuffer
-                ? new Uint8Array(outBufRaw)
-                : new Uint8Array(outBufRaw.buffer, outBufRaw.byteOffset, outBufRaw.byteLength);
-
-        sharedBuffer = new SharedArrayBuffer(view.byteLength);
-        new Uint8Array(sharedBuffer).set(view);
-    } catch (saveErr) {
-        console.error("[Worker vips.ts] Write To Buffer Error:", saveErr);
-        if (saveErr instanceof Error) {
-            console.error("[Worker vips.ts] Error message:", saveErr.message);
-            console.error("[Worker vips.ts] Error stack:", saveErr.stack);
-        }
-
-        throw saveErr;
     } finally {
-        // free wasm-vips resources
-        // do not switch to `using` keyword, not supported
-        // in Safari yet and neither is it ubiquitus
-        // https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Statements/using
-        img.delete();
+        if (ctx.img) {
+            // free wasm-vips resources
+            // do not switch to `using` keyword, not supported
+            // in Safari yet and neither is it ubiquitus
+            // https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Statements/using
+            ctx.img.delete();
+        }
+    }
+
+    if (!ctx.outputBuffer) {
+        throw new Error("Failed to encode transform output buffer");
     }
 
     return {
-        imageData: sharedBuffer,
+        imageData: ctx.outputBuffer,
         transformHash: transformEtag,
         ext: finalExt
     };

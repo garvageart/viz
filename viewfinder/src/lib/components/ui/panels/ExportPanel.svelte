@@ -231,6 +231,9 @@
 
             if (!originalData) {
                 // Try falling back to cached getImageFileBlob
+                console.debug(
+                    `[ExportPanel] Initial download task data missing for asset ${asset.uid} (${task.filename}). Falling back to server fetch via getImageFileBlob.`
+                );
                 const response = await getImageFileBlob(asset.uid, {}, { cache: "force-cache" });
                 if (response.status === 200) {
                     originalData = response.data;
@@ -270,11 +273,27 @@
 
         const transformFn = Comlink.wrap<typeof exportImagesParallel>(exportWorker);
 
+        const onWorkerProgress = Comlink.proxy((index: number, percent: number) => {
+            const task = downloadTasks[index];
+            if (task) {
+                task.state = DownloadState.PROCESSING;
+                task.progress = percent;
+            }
+        });
+
         const flatResults: Awaited<ReturnType<typeof exportImagesParallel>> = [];
         try {
             // Process the transforms sequentially inside the single background worker
             for (let index = 0; index < transformInputs.length; index++) {
-                const res = await transformFn(transformInputs, null, index);
+                const task = downloadTasks[index];
+                if (task) {
+                    task.state = DownloadState.PROCESSING;
+                }
+                const res = await transformFn(transformInputs, null, index, onWorkerProgress);
+                if (task) {
+                    task.state = DownloadState.DOWNLOADED;
+                    task.progress = 100;
+                }
                 flatResults.push(...res);
             }
 

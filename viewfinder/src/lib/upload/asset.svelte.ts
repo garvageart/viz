@@ -22,6 +22,7 @@ export enum DownloadState {
     PENDING,
     DOWNLOADING,
     DOWNLOADED,
+    PROCESSING,
     ERROR,
     CANCELED
 }
