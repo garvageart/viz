@@ -8,6 +8,7 @@ import { LabelColours, flashModes } from "$lib/images/constants";
  * for other selectable entities such as collections.
  */
 export function isAssetImage(value: unknown): value is ImageAsset {
+    // ew man
     return typeof value === "object" && value !== null && "image_paths" in value;
 }
 
@@ -15,13 +16,16 @@ export function isAssetImage(value: unknown): value is ImageAsset {
  * Helper to add version/checksum to path for immutable browser caching
  */
 export function withVersion(path: string, checksum?: string): string {
-    if (!path) {
-        return "";
-    }
     if (!checksum) {
         return path;
     }
-    return path + (path.includes("?") ? "&" : "?") + `v=${checksum}`;
+
+    const [pathname, search] = path.split("?");
+    const params = new URLSearchParams(search || "");
+    if (!params.has("v")) {
+        params.set("v", checksum);
+    }
+    return `${pathname}?${params.toString()}`;
 }
 
 /**
