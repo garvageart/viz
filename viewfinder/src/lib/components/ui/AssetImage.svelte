@@ -1,5 +1,5 @@
 <script lang="ts">
-    import { type ImageAsset, getFullImagePath } from "@viz/api";
+    import { type ImageAsset, getAssetImagePath } from "@viz/api";
     import type { HTMLImgAttributes } from "svelte/elements";
     import { getThumbhashURL } from "$lib/utils/images";
 
@@ -68,17 +68,6 @@
     let loaded = $derived(initialLoaded);
 
     /**
-     * Helper to add version/checksum to path for immutable caching
-     */
-    const withVersion = (path: string) => {
-        const checksum = asset.image_metadata?.checksum;
-        if (!checksum) {
-            return path;
-        }
-        return path + (path.includes("?") ? "&" : "?") + `v=${checksum}`;
-    };
-
-    /**
      * Construct srcset using the three standard variants
      * thumbnail: ~400px
      * preview: ~1920px
@@ -92,21 +81,25 @@
 
         const paths = asset.image_paths;
         if (!paths) {
-            return "";
+            return undefined;
         }
 
         const set = [];
-        if (paths.thumbnail) {
-            set.push(`${getFullImagePath(withVersion(paths.thumbnail))} 400w`);
+        const thumbUrl = getAssetImagePath(asset, "thumbnail");
+        const prevUrl = getAssetImagePath(asset, "preview");
+        const origUrl = getAssetImagePath(asset, "original");
+
+        if (thumbUrl) {
+            set.push(`${thumbUrl} 400w`);
         }
-        if (paths.preview) {
-            set.push(`${getFullImagePath(withVersion(paths.preview))} 1920w`);
+        if (prevUrl) {
+            set.push(`${prevUrl} 1920w`);
         }
-        if (paths.original) {
-            set.push(`${getFullImagePath(withVersion(paths.original))} ${asset.width}w`);
+        if (origUrl) {
+            set.push(`${origUrl} ${asset.width}w`);
         }
 
-        return set.join(", ");
+        return set.length > 0 ? set.join(", ") : undefined;
     });
 
     /**
@@ -118,17 +111,16 @@
             return srcOverride;
         }
 
-        let path = "";
-
-        if (resolution && asset.image_paths?.[resolution]) {
-            path = asset.image_paths[resolution]!;
-        } else {
-            // Fallback logic: prefer preview -> thumbnail -> original if no specific variant forced
-            // OR if the requested variant is missing
-            path = asset.image_paths?.preview || asset.image_paths?.thumbnail || asset.image_paths?.original || "";
+        if (resolution) {
+            return getAssetImagePath(asset, resolution);
         }
 
-        return path ? getFullImagePath(withVersion(path)) : "";
+        // Fallback logic: prefer preview -> thumbnail -> original if no specific variant forced
+        return (
+            getAssetImagePath(asset, "preview") ||
+            getAssetImagePath(asset, "thumbnail") ||
+            getAssetImagePath(asset, "original")
+        );
     });
 
     /**
@@ -142,11 +134,7 @@
      * while a higher-resolution variant loads.
      */
     const thumbPlaceholder = $derived.by(() => {
-        const path = asset.image_paths?.thumbnail;
-        if (!path) {
-            return "";
-        }
-        return getFullImagePath(withVersion(path));
+        return getAssetImagePath(asset, "thumbnail");
     });
 </script>
 

@@ -14,7 +14,7 @@
 -->
 <script lang="ts">
     import { dev } from "$app/environment";
-    import { type ImageAsset, getFullImagePath, updateImage } from "@viz/api";
+    import { type ImageAsset, getAssetImagePath, updateImage } from "@viz/api";
     import hotkeys, { type HotkeysEvent } from "hotkeys-js";
     import { onMount, untrack } from "svelte";
     import type { MouseEventHandler, PointerEventHandler, WheelEventHandler } from "svelte/elements";
@@ -52,9 +52,7 @@
         }
     });
 
-    let imageToLoad = $derived(
-        lightboxImage ? getFullImagePath(lightboxImage.image_paths?.preview || lightboxImage.image_paths?.original) : ""
-    );
+    let imageToLoad = $derived(lightboxImage ? getAssetImagePath(lightboxImage, "preview") : "");
 
     // Element Bindings
     let imageEl = $state<HTMLImageElement>();
@@ -247,7 +245,8 @@
         const currentZoom = zoomState.currentZoom;
         const originalPath = currentImage.image_paths?.original;
 
-        if (currentZoom <= 1 || !originalPath) {
+        // Only trigger high-resolution zoom upgrade when actively zoomed to a considerable level (>= 2.0x)
+        if (currentZoom < 2.0 || !originalPath) {
             return;
         }
 
@@ -269,9 +268,15 @@
             const originalLongestEdge = Math.max(currentImage.width || 0, currentImage.height || 0);
             const size = Math.min(originalLongestEdge, snappedSize);
 
+            // Do NOT fetch high-res upgrade if target size is <= current loaded image natural resolution
+            const loadedPreviewLongestEdge = Math.max(imageEl?.naturalWidth || 0, imageEl?.naturalHeight || 0);
+            if (loadedPreviewLongestEdge > 0 && size <= loadedPreviewLongestEdge) {
+                return;
+            }
+
             // Request both w and h to let the backend scale the longest edge to `size`
             const transformParams = `?w=${size}&h=${size}&quality=90&format=webp`;
-            const fullURL = getFullImagePath(originalPath + transformParams);
+            const fullURL = getAssetImagePath(currentImage, "original", transformParams) || "";
 
             if (loader.zoomedImageURL === fullURL) {
                 return;

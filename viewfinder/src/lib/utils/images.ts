@@ -12,6 +12,19 @@ export function isAssetImage(value: unknown): value is ImageAsset {
 }
 
 /**
+ * Helper to add version/checksum to path for immutable browser caching
+ */
+export function withVersion(path: string, checksum?: string): string {
+    if (!path) {
+        return "";
+    }
+    if (!checksum) {
+        return path;
+    }
+    return path + (path.includes("?") ? "&" : "?") + `v=${checksum}`;
+}
+
+/**
  * Converts a date in EXIF format to a format that
  * can be parsed by the native ````Date```` object.
  *

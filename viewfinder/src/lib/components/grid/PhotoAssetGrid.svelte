@@ -1,5 +1,5 @@
 <script lang="ts" generics>
-    import { type ImageAsset, getFullImagePath } from "@viz/api";
+    import { type ImageAsset, getAssetImagePath } from "@viz/api";
     import hotkeys, { type HotkeysEvent } from "hotkeys-js";
     import { DateTime } from "luxon";
     import { type Snippet, onMount, untrack } from "svelte";
@@ -916,9 +916,14 @@
             return;
         }
 
+        const src = getAssetImagePath(asset, "preview");
+        if (!src) {
+            return;
+        }
+
         lightboxPrefetchCache.add(asset.uid);
         const img = new Image();
-        img.src = getFullImagePath(asset.image_paths.preview);
+        img.src = src;
         img.onload = () => {
             // loaded & cached by browser; keep UID in cache to avoid re-fetching
         };

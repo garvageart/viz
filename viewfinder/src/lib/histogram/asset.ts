@@ -1,4 +1,4 @@
-import { type ImageAsset, getFullImagePath } from "@viz/api";
+import { type ImageAsset, getAssetImagePath } from "@viz/api";
 import * as Comlink from "comlink";
 import { computeHistogram } from "$lib/histogram";
 import type { HistogramApi } from "$lib/histogram/worker";
@@ -21,14 +21,7 @@ function assetKey(asset: ImageAsset): string {
 function histogramSourceUrl(asset: ImageAsset): string | null {
     // Prefer preview, over original. Good middle ground. Original second, maybe slightly more time consuming
     // TODO: Ideally, maybe this is a configurable user option
-    const path = asset.image_paths.preview ?? asset.image_paths.original ?? asset.image_paths.thumbnail ?? null;
-    if (!path) {
-        return null;
-    }
-
-    const checksum = asset.image_metadata?.checksum;
-    const versionedPath = checksum ? `${path}${path.includes("?") ? "&" : "?"}v=${checksum}` : path;
-    return getFullImagePath(versionedPath);
+    return getAssetImagePath(asset, "preview") ?? null;
 }
 
 let workerInstance: Worker | null | undefined;

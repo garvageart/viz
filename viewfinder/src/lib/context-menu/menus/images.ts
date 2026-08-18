@@ -4,6 +4,7 @@ import {
     type ImageAsset,
     deleteCollectionImages,
     deleteImagesBulk,
+    getAssetImagePath,
     getDownloadUrl,
     getFullImagePath,
     signDownload,
@@ -92,7 +93,9 @@ export function createImageMenu(
             disabled: selectionScope.size === 0,
             action: () => {
                 const items = selectionScope.selectedItems;
-                const paths = items.map((img) => getFullImagePath(img.image_paths.original)).join("\n");
+                const paths = items
+                    .map((img) => getAssetImagePath(img, "original") || getFullImagePath(img.image_paths.original))
+                    .join("\n");
                 copyToClipboard(paths);
                 toasts.add({
                     type: "info",
@@ -121,7 +124,7 @@ export function createImageMenu(
                         });
 
                         const img = items[0];
-                        const url = getFullImagePath(img.image_paths.original);
+                        const url = getAssetImagePath(img, "original") || getFullImagePath(img.image_paths.original);
                         const filename = img.image_metadata?.file_name
                             ? img.image_metadata.file_name.split("/").pop()!
                             : `${img.name || img.uid}.jpg`;

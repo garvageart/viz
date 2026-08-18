@@ -3,6 +3,7 @@ import * as QS from "@oazapfts/runtime/query";
 import {
     type DownloadRequest,
     type ErrorResponse,
+    type ImageAsset,
     type ImageUploadResponse,
     type WorkerJob,
     defaults
@@ -145,6 +146,26 @@ export function getFullImagePath(path: string): string {
     }
     const base = defaults.baseUrl || "";
     return `${base}${path}`;
+}
+
+/**
+ * Helper to build full versioned image URLs with checksum cache-busting.
+ */
+export function getAssetImagePath(
+    asset: ImageAsset,
+    variant: "preview" | "thumbnail" | "original" = "preview",
+    extraParams?: string
+): string {
+    const path = asset.image_paths[variant] || asset.image_paths.preview || asset.image_paths.original;
+    const checksum = asset.image_metadata?.checksum;
+
+    const fullPath = extraParams ? `${path}${extraParams}` : path;
+    const versioned =
+        checksum && !fullPath.includes("v=")
+            ? `${fullPath}${fullPath.includes("?") ? "&" : "?"}v=${checksum}`
+            : fullPath;
+
+    return getFullImagePath(versioned);
 }
 
 export type JobSnapshotResponse = {

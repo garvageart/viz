@@ -1,5 +1,5 @@
 <script lang="ts">
-    import { type ImageAsset, getFullImagePath } from "@viz/api";
+    import { type ImageAsset, getAssetImagePath } from "@viz/api";
 
     interface Props {
         asset: ImageAsset;
@@ -8,7 +8,7 @@
 
     let { asset, disabled = false }: Props = $props();
 
-    let imgSrc = $derived(getFullImagePath(asset.image_paths?.thumbnail ?? asset.image_paths?.preview ?? ""));
+    let imgSrc = $derived(getAssetImagePath(asset, "thumbnail"));
     let altText = $derived(asset.name ?? asset.image_metadata?.file_name ?? "");
 </script>
 
