@@ -251,8 +251,8 @@ func TestDHash_JPEGReencodeResilience(t *testing.T) {
 	// JPEG at two different quality levels should be close.
 	w, h := 128, 128
 	img := image.NewRGBA(image.Rect(0, 0, w, h))
-	for y := 0; y < h; y++ {
-		for x := 0; x < w; x++ {
+	for y := range h {
+		for x := range w {
 			img.Set(x, y, color.RGBA{
 				R: uint8((x * 2) % 256),
 				G: uint8((y * 3) % 256),
@@ -277,8 +277,8 @@ func BenchmarkCalculateDHash(b *testing.B) {
 	data := encodeTestPNG(800, 600, func(x, y int) color.Color {
 		return color.RGBA{uint8(x), uint8(y), 128, 255}
 	})
-	b.ResetTimer()
-	for i := 0; i < b.N; i++ {
+
+	for b.Loop() {
 		_, _ = CalculateDHash(data)
 	}
 }
@@ -289,8 +289,8 @@ func BenchmarkHammingDistance(b *testing.B) {
 	for i := range hashes {
 		hashes[i] = rng.Uint64()
 	}
-	b.ResetTimer()
-	for i := 0; i < b.N; i++ {
+
+	for i := 0; b.Loop(); i++ {
 		_ = HammingDistance(hashes[i%1000], hashes[(i+1)%1000])
 	}
 }
