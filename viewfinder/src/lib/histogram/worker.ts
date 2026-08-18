@@ -4,22 +4,14 @@ import { tallyImageData } from "./tally";
 
 export interface HistogramApi {
     /**
-     * Fetches, decodes, and tallies an image. The URL must be same-origin or
-     * CORS-enabled so the OffscreenCanvas is not tainted.
+     * Accepts an ImageBitmap or Blob, tallies the histogram on an OffscreenCanvas.
      */
-    compute(url: string): Promise<HistogramData>;
+    compute(source: ImageBitmap | Blob): Promise<HistogramData>;
 }
 
 export const api: HistogramApi = {
-    async compute(url) {
-        const blob = await fetch(url).then((r) => {
-            if (!r.ok) {
-                throw new Error(`Failed to fetch image (${r.status})`);
-            }
-            return r.blob();
-        });
-
-        const bitmap = await createImageBitmap(blob);
+    async compute(source) {
+        const bitmap = source instanceof ImageBitmap ? source : await createImageBitmap(source);
         const MAX_DIM = 2048;
         let width = bitmap.width;
         let height = bitmap.height;

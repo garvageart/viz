@@ -40,33 +40,32 @@ function getWorkerProxy(): Comlink.Remote<HistogramApi> | null {
     return workerProxy;
 }
 
-function computeInWorker(url: string): Promise<HistogramData> {
-    const proxy = getWorkerProxy();
-    if (!proxy) {
-        return Promise.reject(new Error("Histogram worker unavailable"));
-    }
-    return proxy.compute(url);
-}
+// function computeInWorker(url: string): Promise<HistogramData> {
+//     const proxy = getWorkerProxy();
+//     if (!proxy) {
+//         return Promise.reject(new Error("Histogram worker unavailable"));
+//     }
+//     return proxy.compute(url);
+// }
 
-/**
- * Main-thread fallback that reuses the existing photo-histogram core.
- */
-async function computeFallback(url: string): Promise<HistogramData> {
-    const img = new Image();
-    img.crossOrigin = "anonymous";
-    img.src = url;
+// /**
+//  * Main-thread fallback that reuses the existing photo-histogram core.
+//  */
+// async function computeFallback(url: string): Promise<HistogramData> {
+//     const img = new Image();
+//     img.src = url;
 
-    await new Promise<void>((resolve, reject) => {
-        img.onload = () => {
-            resolve();
-        };
-        img.onerror = () => {
-            reject(new Error("Failed to load image for histogram"));
-        };
-    });
+//     await new Promise<void>((resolve, reject) => {
+//         img.onload = () => {
+//             resolve();
+//         };
+//         img.onerror = () => {
+//             reject(new Error("Failed to load image for histogram"));
+//         };
+//     });
 
-    return computeHistogram(img);
-}
+//     return computeHistogram(img);
+// }
 
 /**
  * Computes (and caches) the histogram for an asset. Never throws synchronously;
@@ -77,14 +76,36 @@ export function computeForAsset(asset: ImageAsset): Promise<HistogramData> {
     let pending = cache.get(key);
 
     if (!pending) {
-        const url = histogramSourceUrl(asset);
-        if (!url) {
-            pending = Promise.reject(new Error("Image has no histogram source"));
-        } else {
-            pending = computeInWorker(url).catch(() => {
-                return computeFallback(url);
-            });
-        }
+        pending = new Promise<HistogramData>((resolve, reject) => {
+            const url = histogramSourceUrl(asset);
+            if (!url) {
+                reject(new Error("Image has no histogram source"));
+                return;
+            }
+
+            const img = new Image();
+            img.src = url;
+
+            img.onload = async () => {
+                try {
+                    const bitmap = await createImageBitmap(img);
+                    const proxy = getWorkerProxy();
+                    if (proxy) {
+                        const data = await proxy.compute(Comlink.transfer(bitmap, [bitmap]));
+                        resolve(data);
+                    } else {
+                        resolve(computeHistogram(img));
+                    }
+                } catch (err) {
+                    reject(err);
+                }
+            };
+
+            img.onerror = () => {
+                reject(new Error("Failed to load image for histogram"));
+            };
+        });
+
         cache.set(key, pending);
 
         pending.catch(() => {
