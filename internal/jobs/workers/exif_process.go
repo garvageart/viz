@@ -11,6 +11,7 @@ import (
 
 	"github.com/ThreeDotsLabs/watermill/message"
 	"github.com/trimmer-io/go-xmp/models/dc"
+	"github.com/trimmer-io/go-xmp/models/ps"
 	xmpbase "github.com/trimmer-io/go-xmp/models/xmp_base"
 	"github.com/trimmer-io/go-xmp/xmp"
 
@@ -165,7 +166,8 @@ func ExifProcess(ctx context.Context, db *gorm.DB, imgEnt entities.ImageAsset, o
 		xmpBase := &xmpbase.XmpBase{}
 		dcModel := &dc.DublinCore{}
 		crsModel := &customxmp.CameraRawSettings{}
-		psModel := &customxmp.PhotoshopInfo{}
+		psModel := &ps.PhotoshopInfo{}
+		lrModel := &customxmp.LrInfo{}
 
 		// Register models on the document directly
 		// This should trigger SyncFromXMP to populate the structs from the parsed DOM
@@ -173,6 +175,7 @@ func ExifProcess(ctx context.Context, db *gorm.DB, imgEnt entities.ImageAsset, o
 		doc.AddModel(dcModel)
 		doc.AddModel(crsModel)
 		doc.AddModel(psModel)
+		doc.AddModel(lrModel)
 
 		// 1. Rating
 		// Prioritize existing rating
@@ -234,6 +237,10 @@ func ExifProcess(ctx context.Context, db *gorm.DB, imgEnt entities.ImageAsset, o
 			if len(dcModel.Subject) > 0 {
 				// Convert xmp.StringArray to []string
 				keywords := []string(dcModel.Subject)
+				imgEnt.ImageMetadata.Keywords = &keywords
+			} else if len(lrModel.HierarchicalSubject) > 0 {
+				// Fallback to Lightroom hierarchical subject
+				keywords := []string(lrModel.HierarchicalSubject)
 				imgEnt.ImageMetadata.Keywords = &keywords
 			}
 		}

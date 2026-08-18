@@ -13,6 +13,7 @@ import (
 	"github.com/ThreeDotsLabs/watermill/message"
 	"github.com/trimmer-io/go-xmp/models/dc"
 	"github.com/trimmer-io/go-xmp/models/exif"
+	"github.com/trimmer-io/go-xmp/models/ps"
 	"github.com/trimmer-io/go-xmp/models/tiff"
 	xmpbase "github.com/trimmer-io/go-xmp/models/xmp_base"
 	"github.com/trimmer-io/go-xmp/xmp"
@@ -23,6 +24,7 @@ import (
 	"viz/internal/images"
 	imageops "viz/internal/images/ops"
 	"viz/internal/jobs"
+	"viz/internal/utils"
 	customxmp "viz/internal/xmp"
 )
 
@@ -132,10 +134,17 @@ func generateXMPSidecar(img entities.ImageAsset, onProgress func(step string, pr
 	dcModel := &dc.DublinCore{}
 	exifModel := &exif.ExifInfo{}
 	tiffModel := &tiff.TiffInfo{}
-	psModel := &customxmp.PhotoshopInfo{}
+	psModel := &ps.PhotoshopInfo{}
+	crsSettings := &customxmp.CameraRawSettings{
+		RawFileName:    filepath.Base(originalPath),
+		Version:        "16.0",
+		ProcessVersion: "15.0",
+		HasSettings:    xmp.Bool(false),
+	}
+	lrModel := &customxmp.LrInfo{}
 
-	// Set SidecarForExtension to match original file extension (without dot)
-	ext := strings.TrimPrefix(filepath.Ext(originalPath), ".")
+	// Set SidecarForExtension to match original file extension (uppercase, without dot)
+	ext := strings.ToUpper(strings.TrimPrefix(filepath.Ext(originalPath), "."))
 	if ext != "" {
 		psModel.SidecarForExtension = ext
 	}
@@ -147,17 +156,22 @@ func generateXMPSidecar(img entities.ImageAsset, onProgress func(step string, pr
 	// 1. Basic Metadata (Rating, Label, Title)
 	if img.ImageMetadata != nil {
 		if img.ImageMetadata.Rating != nil {
-			xmpBase.Rating = xmpbase.Rating(*img.ImageMetadata.Rating)
+			ratingVal := *img.ImageMetadata.Rating
+			xmpBase.Rating = xmpbase.Rating(ratingVal)
+			crsSettings.Rating = &ratingVal
 		}
 
 		if img.ImageMetadata.Label != nil {
-			label := string(*img.ImageMetadata.Label)
-			xmpBase.Label = label
+			rawLabel := string(*img.ImageMetadata.Label)
+			normalizedLabel := utils.Capitalize(strings.ToLower(rawLabel))
+
+			xmpBase.Label = normalizedLabel
+			crsSettings.Label = &normalizedLabel
 
 			// Map standard color labels to Photoshop Urgency for broader compatibility
 			// (e.g. Capture One older versions, Photo Mechanic, etc.)
 			// 1=Red, 2=Orange, 3=Yellow, 4=Green, 5=Blue, 6=Purple, 7=Grey
-			switch strings.ToLower(label) {
+			switch strings.ToLower(rawLabel) {
 			case "red":
 				psModel.Urgency = 1
 			case "orange":
@@ -176,7 +190,9 @@ func generateXMPSidecar(img entities.ImageAsset, onProgress func(step string, pr
 		}
 
 		if img.ImageMetadata.Keywords != nil && len(*img.ImageMetadata.Keywords) > 0 {
-			dcModel.Subject = *img.ImageMetadata.Keywords
+			keywords := *img.ImageMetadata.Keywords
+			dcModel.Subject = keywords
+			lrModel.HierarchicalSubject = xmp.StringArray(keywords)
 		}
 	}
 
@@ -207,6 +223,7 @@ func generateXMPSidecar(img entities.ImageAsset, onProgress func(step string, pr
 			year = img.TakenAt.Year()
 		}
 		dcModel.Rights = xmp.NewAltString(fmt.Sprintf("Copyright (c) %d %s", year, copyrightOwner))
+		dcModel.Creator = xmp.StringList{copyrightOwner}
 
 		// photoshop:Credit - often used for "Provider" or "Credit Line"
 		psModel.Credit = copyrightOwner
@@ -366,6 +383,8 @@ func generateXMPSidecar(img entities.ImageAsset, onProgress func(step string, pr
 	doc.AddModel(exifModel)
 	doc.AddModel(tiffModel)
 	doc.AddModel(psModel)
+	doc.AddModel(crsSettings)
+	doc.AddModel(lrModel)
 
 	if onProgress != nil {
 		onProgress("Marshalling XMP", 80)
