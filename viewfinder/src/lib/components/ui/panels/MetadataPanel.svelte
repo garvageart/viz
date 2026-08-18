@@ -94,15 +94,13 @@
     }
 
     function copyFilename() {
-        if (displayName) {
-            copyToClipboard(displayName);
-            toasts.add({
-                type: "success",
-                title: displayName,
-                message: "Filename copied to clipboard",
-                timeout: 2000
-            });
-        }
+        copyToClipboard(displayName);
+        toasts.add({
+            type: "success",
+            title: displayName,
+            message: "Name copied to clipboard",
+            timeout: 2000
+        });
     }
 
     async function saveDescription() {
@@ -122,6 +120,14 @@
                 title: "Failed to update description",
                 message: descErr.message
             });
+        }
+    }
+
+    function handleDescriptionKeydown(e: KeyboardEvent) {
+        if ((e.ctrlKey || e.metaKey) && e.key === "Enter") {
+            e.preventDefault();
+            (e.currentTarget as HTMLTextAreaElement)?.blur();
+            saveDescription();
         }
     }
 
@@ -277,12 +283,14 @@
                         class="exif-description"
                         placeholder="Add a description"
                         title={currentAsset.description}
+                        bind:value={currentAsset.description}
+                        spellcheck="false"
                         rows={5}
                         minHeight="5rem"
                         maxHeight="16rem"
                         resize="none"
-                        bind:value={currentAsset.description}
                         onblur={saveDescription}
+                        onkeydown={handleDescriptionKeydown}
                     />
                 </div>
                 <!-- Camera/Exposure card -->
