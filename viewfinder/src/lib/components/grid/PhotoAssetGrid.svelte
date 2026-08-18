@@ -1,5 +1,5 @@
 <script lang="ts" generics>
-    import { type ImageAsset, getAssetImagePath } from "@viz/api";
+    import { type ImageAsset } from "@viz/api";
     import hotkeys, { type HotkeysEvent } from "hotkeys-js";
     import { DateTime } from "luxon";
     import { type Snippet, onMount, untrack } from "svelte";
@@ -902,37 +902,7 @@
         }
     });
 
-    // Lightbox prefetch helpers
-    // Simple in-memory cache to avoid repeated prefetches for the same asset UID
-    const lightboxPrefetchCache = new SvelteSet<string>();
     const loadedImageUIDs = new SvelteSet<string>();
-
-    function prefetchLightboxImage(asset: ImageAsset) {
-        if (!asset.uid) {
-            return;
-        }
-
-        if (lightboxPrefetchCache.has(asset.uid)) {
-            return;
-        }
-
-        const src = getAssetImagePath(asset, "preview");
-        if (!src) {
-            return;
-        }
-
-        lightboxPrefetchCache.add(asset.uid);
-        const img = new Image();
-        img.src = src;
-        img.onload = () => {
-            // loaded & cached by browser; keep UID in cache to avoid re-fetching
-        };
-
-        img.onerror = () => {
-            // If loading fails, allow future retries
-            lightboxPrefetchCache.delete(asset.uid);
-        };
-    }
 
     function handleImageCardSelect(asset: ImageAsset, e: MouseEvent | KeyboardEvent) {
         if (disabledUids.has(asset.uid)) {
@@ -1142,10 +1112,7 @@
         class:multi-selected-photo={isSelected && isMultiSelecting}
         role="button"
         tabindex={0}
-        onfocus={() => {
-            prefetchLightboxImage(asset);
-            onFocus();
-        }}
+        onfocus={onFocus}
         onclick={(e) => {
             if ((e.currentTarget as HTMLElement).dataset.longPressHandled === "true") {
                 return;
