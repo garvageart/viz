@@ -96,14 +96,16 @@
     }
 
     .image-container {
+        flex: 1;
+        min-height: 15%;
         display: flex;
         align-items: center;
         justify-content: center;
-        height: 100%;
         background-color: var(--viz-surface-card);
     }
 
     .info {
+        flex-shrink: 0;
         padding: var(--viz-spacing-std);
         background-color: var(--viz-surface-base);
         border-top: 1px solid var(--viz-surface-hover);
