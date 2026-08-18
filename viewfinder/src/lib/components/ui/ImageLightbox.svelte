@@ -173,8 +173,7 @@
         cropMenuPosition = undefined;
         zoomState.currentZoom = 1;
         zoomState.currentPositionX = 0;
-        zoomState.currentPositionY = 0;
-        imageDimensions = null;
+        updateImageDimensions();
     }
 
     function handleCropReset() {
@@ -934,8 +933,8 @@
                         </span>
                     {/if}
                 </div>
-                {#if !isCropping}
-                    <div class="image-icon-buttons">
+                <div class="image-icon-buttons">
+                    {#if !isCropping}
                         {#if dev}
                             <Button
                                 class="lightbox-button-icon"
@@ -1009,20 +1008,20 @@
                                     });
                             }}
                         />
-                        <Button
-                            id="lightbox-toggle-info"
-                            class="lightbox-button-icon"
-                            hoverColor="transparent"
-                            // TODO: Make i18n safe
-                            title={`${showSidePanel ? "Hide" : "Show"} Info`}
-                            onclick={(e) => {
-                                e.stopPropagation();
-                                showSidePanel = !showSidePanel;
-                            }}
-                            iconName="info"
-                        />
-                    </div>
-                {/if}
+                    {/if}
+                    <Button
+                        id="lightbox-toggle-info"
+                        class="lightbox-button-icon"
+                        hoverColor="transparent"
+                        // TODO: Make i18n safe
+                        title={`${showSidePanel ? "Hide" : "Show"} Info`}
+                        onclick={(e) => {
+                            e.stopPropagation();
+                            showSidePanel = !showSidePanel;
+                        }}
+                        iconName="info"
+                    />
+                </div>
             </div>
 
             <div
@@ -1047,12 +1046,13 @@
                 <div
                     class="zoom-target"
                     class:is-crop={isCropping}
+                    class:has-crop={!!activeCrop}
                     class:can-pan={zoomState.currentZoom > 1}
                     class:is-panning={isDragging}
                     oncontextmenu={handleContextMenu}
                     role="presentation"
                     bind:this={zoomTargetEl}
-                    style="{isCropping && imageDimensions
+                    style="{(isCropping || activeCrop) && imageDimensions
                         ? `width: ${imageDimensions.width}px; height: ${imageDimensions.height}px;`
                         : ''} transform: translate({zoomState.currentPositionX}px, {zoomState.currentPositionY}px) scale({zoomState.currentZoom}); transform-origin: 0 0;"
                     onwheel={handleWheel}
@@ -1305,6 +1305,11 @@
         width: 100%;
         height: 100%;
         pointer-events: auto;
+
+        &.has-crop {
+            overflow: hidden !important;
+            position: relative !important;
+        }
 
         &.is-crop {
             display: grid;
