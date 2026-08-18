@@ -471,4 +471,54 @@ test.describe("PhotoAssetGrid Functionality", () => {
         style = await zoomTarget.getAttribute("style");
         expect(style).toContain("scale(1)");
     });
+
+    test("shouldKeepSelection: clicking empty space clears selection while interactive controls preserve it", async ({
+        page
+    }) => {
+        const photos = page.locator(".asset-photo, .asset-card");
+
+        await expect(async () => {
+            const count = await photos.count();
+            expect(count).toBeGreaterThan(0);
+        }).toPass({ timeout: 10000 });
+
+        const count = await photos.count();
+        if (count === 0) {
+            return;
+        }
+
+        const firstPhoto = photos.first();
+
+        // 1. Select the initial photo
+        await firstPhoto.click();
+        await expect(firstPhoto).toHaveClass(classRegex);
+
+        const toolbar = page.locator(".selection-toolbar");
+        await expect(toolbar).toBeVisible();
+
+        // 2. Interactive toolbar controls (e.g. selection count) preserve selection
+        const selectionCount = toolbar.locator(".selection-count").first();
+        if (await selectionCount.isVisible()) {
+            await selectionCount.click();
+            await expect(firstPhoto).toHaveClass(classRegex);
+            await expect(toolbar).toBeVisible();
+        }
+
+        // 3. Interactive input controls (e.g. header search input) preserve selection
+        const searchInput = page.locator("#header-search, input[type='search']").first();
+        if (await searchInput.isVisible()) {
+            await searchInput.click();
+            await expect(firstPhoto).toHaveClass(classRegex);
+            await expect(toolbar).toBeVisible();
+        }
+
+        // 4. Clicking empty non-interactive space (e.g. header background outside grid) clears selection
+        const nonInteractiveSpace = page.locator("header#viz-header, header").first();
+        await expect(nonInteractiveSpace).toBeVisible();
+        await nonInteractiveSpace.click({ position: { x: 50, y: 10 } });
+
+        // Selection should now be cleared
+        await expect(firstPhoto).not.toHaveClass(classRegex);
+        await expect(toolbar).not.toBeVisible();
+    });
 });

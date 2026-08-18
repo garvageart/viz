@@ -825,30 +825,23 @@
             return false;
         }
 
-        // 1. Keep if clicking an image card/photo
-        if (target.closest(".asset-photo, .asset-card")) {
+        // 1. Interactive inputs, textareas, dropdowns, and editable fields keep selection
+        if (target.closest("input, textarea, select, [contenteditable]")) {
             return true;
         }
 
-        // 2. Keep if clicking interactive elements (buttons, links, form controls)
-        if (
-            target.closest(
-                "button, a, input, select, textarea, [role='button'], [role='menuitem'], [role='tab'], [role='checkbox']"
-            )
-        ) {
+        // 2. Modals, dialogs, popover menus, and floating overlay containers keep selection
+        if (target.closest("dialog, [role='dialog'], [role='menu'], [role='listbox'], .viz-modal")) {
             return true;
         }
 
-        // 3. Keep if clicking custom interactive components (rating, label dropdowns, menus, modals, scrubber)
-        if (
-            target.closest(
-                ".star-rating, .label-selector, .context-menu, .dropdown-content, .dropdown-menu, .timeline-scrubber, [role='dialog'], .viz-modal"
-            )
-        ) {
+        // 3. Selection toolbar & explicit selection-preserving controls keep selection
+        if (target.closest(".selection-toolbar, [data-keep-selection]")) {
             return true;
         }
 
-        return false;
+        // 4. Asset cards keep selection
+        return Boolean(target.closest("[data-asset-id]"));
     }
 
     function handleContainerClick(e: MouseEvent) {

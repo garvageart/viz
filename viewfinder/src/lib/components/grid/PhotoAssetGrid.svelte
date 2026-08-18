@@ -58,6 +58,7 @@
         onLoadMore?: () => Promise<void> | void;
         onselectAll?: () => void;
         disableOutsideUnselect?: boolean;
+        disableTooltips?: boolean;
     }
 
     let {
@@ -75,7 +76,8 @@
         onassetcontext,
         onLoadMore,
         onselectAll,
-        disableOutsideUnselect = false
+        disableOutsideUnselect = false,
+        disableTooltips = false
     }: PhotoSpecificProps = $props();
 
     // Selection Management
@@ -102,9 +104,21 @@
         selectionManager.setActive(scopeId);
     }
 
+    function isHotkeyBlocked() {
+        const activeEl = document.activeElement;
+        const isInputFocused =
+            activeEl &&
+            (activeEl.tagName === "INPUT" ||
+                activeEl.tagName === "TEXTAREA" ||
+                activeEl.tagName === "SELECT" ||
+                activeEl.getAttribute("contenteditable") === "true");
+
+        return Boolean(isInputFocused);
+    }
+
     // Short-cuts / hotkeys handling
     function handleSelectAll(e: KeyboardEvent) {
-        if (selectionManager.activeScopeId !== scopeId) {
+        if (selectionManager.activeScopeId !== scopeId || isHotkeyBlocked()) {
             return;
         }
 
@@ -120,7 +134,7 @@
     }
 
     function handleEscape(e: KeyboardEvent) {
-        if (selectionManager.activeScopeId !== scopeId) {
+        if (selectionManager.activeScopeId !== scopeId || isHotkeyBlocked()) {
             return;
         }
 
@@ -186,7 +200,7 @@
     }
 
     function handleKeyNav(e: KeyboardEvent, _handler: HotkeysEvent) {
-        if (selectionManager.activeScopeId !== scopeId) {
+        if (selectionManager.activeScopeId !== scopeId || isHotkeyBlocked()) {
             return;
         }
 
@@ -361,6 +375,15 @@
             delay: [600, 0],
             interactive: true,
             onShow(instance: Instance<TippyProps>) {
+                const scope = hotkeys.getScope();
+                if (scope !== "all" && scope !== "default") {
+                    return false;
+                }
+
+                if (disableTooltips) {
+                    return false;
+                }
+
                 const assetEl = instance.reference as HTMLElement;
                 const asset = getAssetFromElement(assetEl);
                 if (!asset) {
@@ -934,30 +957,23 @@
             return false;
         }
 
-        // 1. Keep if clicking an image card/photo
-        if (target.closest(".asset-photo, .asset-card")) {
+        // 1. Interactive inputs, textareas, dropdowns, and editable fields keep selection
+        if (target.closest("input, textarea, select, [contenteditable]")) {
             return true;
         }
 
-        // 2. Keep if clicking interactive elements (buttons, links, form controls)
-        if (
-            target.closest(
-                "button, a, input, select, textarea, label, .checkbox-wrapper, [role='button'], [role='menuitem'], [role='tab'], [role='checkbox']"
-            )
-        ) {
+        // 2. Modals, dialogs, popover menus, and floating overlay containers keep selection
+        if (target.closest("dialog, [role='dialog'], [role='menu'], [role='listbox'], .viz-modal")) {
             return true;
         }
 
-        // 3. Keep if clicking custom interactive components (rating, label dropdowns, menus, modals, scrubber)
-        if (
-            target.closest(
-                ".star-rating, .label-selector, .context-menu, .dropdown-content, .dropdown-menu, .timeline-scrubber, [role='dialog'], .viz-modal"
-            )
-        ) {
+        // 3. Selection toolbar & explicit selection-preserving controls keep selection
+        if (target.closest(".selection-toolbar, [data-keep-selection]")) {
             return true;
         }
 
-        return false;
+        // 4. Asset cards keep selection
+        return Boolean(target.closest("[data-asset-id]"));
     }
 
     function handleContainerClick(e: MouseEvent) {
