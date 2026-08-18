@@ -1,6 +1,8 @@
 import * as generated from "./client.gen";
 import { defaults, servers } from "./client.gen";
 
+defaults.baseUrl = servers.productionApi;
+
 export const API_BASE_URL = defaults.baseUrl;
 
 export interface InitApiOptions {

@@ -13,6 +13,7 @@ const rootDir = path.resolve(__dirname, "../..");
 const versionFile = path.join(rootDir, "version.txt");
 const rootPkgFile = path.join(rootDir, "package.json");
 const viewfinderPkgFile = path.join(rootDir, "viewfinder/package.json");
+const apiPkgFile = path.join(rootDir, "packages/api/package.json");
 const scriptsPkgFile = path.join(rootDir, "scripts/js/package.json");
 const changelogFile = path.join(rootDir, "CHANGELOG.md");
 
@@ -78,6 +79,7 @@ async function main() {
     const originalVersionTxt = await fs.readFile(versionFile, "utf8").catch(() => null);
     const originalRootPkg = await fs.readFile(rootPkgFile, "utf8").catch(() => null);
     const originalViewfinderPkg = await fs.readFile(viewfinderPkgFile, "utf8").catch(() => null);
+    const originalApiPkg = await fs.readFile(apiPkgFile, "utf8").catch(() => null);
     const originalChangelog = await fs.readFile(changelogFile, "utf8").catch(() => null);
 
     let isReleaseFinalized = false;
@@ -98,6 +100,10 @@ async function main() {
 
                 if (originalViewfinderPkg !== null) {
                     fsSync.writeFileSync(viewfinderPkgFile, originalViewfinderPkg, "utf8");
+                }
+
+                if (originalApiPkg !== null) {
+                    fsSync.writeFileSync(apiPkgFile, originalApiPkg, "utf8");
                 }
 
                 if (originalChangelog !== null) {
@@ -173,6 +179,7 @@ async function main() {
         // 4. Update package.json files
         await updatePackageJson(rootPkgFile, nextVersion);
         await updatePackageJson(viewfinderPkgFile, nextVersion);
+        await updatePackageJson(apiPkgFile, nextVersion);
         await updatePackageJson(scriptsPkgFile, nextVersion);
 
         // 5. Generate CHANGELOG.md updates
@@ -236,7 +243,9 @@ async function main() {
 
         // 6. Stage and commit
         console.log("Staging and committing files...\n");
-        execSync(`git add ${versionFile} ${rootPkgFile} ${viewfinderPkgFile} ${scriptsPkgFile} ${changelogFile}`);
+        execSync(
+            `git add ${versionFile} ${rootPkgFile} ${viewfinderPkgFile} ${apiPkgFile} ${scriptsPkgFile} ${changelogFile}`
+        );
         execSync(`git commit -S -m "chore(release): bump version to ${nextVersion}"`);
         execSync(`git tag -s -m "Release v${nextVersion}" "v${nextVersion}"`);
 
