@@ -5,6 +5,14 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.31.5] - 2026-08-18
+
+* feat(workers): enhance XMP sidecar generation and EXIF reading for Lightroom and Capture One (830cea57)
+* feat(xmp): add Lightroom namespace model and enhance Camera Raw settings (e7c8681f)
+* refactor(viewfinder): decouple grid shouldKeepSelection logic and isolate tooltips during hotkey scope shifts (283584fd)
+* feat(viewfinder): add Ctrl+Enter shortcut for saving description in metadata panel (98d5028c)
+* refactor(viewfinder): refine lightbox aspect scaling, crop overlay alignment and hotkey scope isolation (4f7af35a)
+
 ## [0.31.4] - 2026-08-17
 
 * style(viewfinder): polish collection action buttons and title display (abaf2dce)
