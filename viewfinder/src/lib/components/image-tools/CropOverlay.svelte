@@ -153,11 +153,10 @@
 
     .crop-box {
         position: absolute;
-        /* Use a massive box-shadow to create the dimmed overlay effect */
-        /* Inner white border (1px), Outer black semi-transparent border (1px), then the dimmer */
+        /* Use a massive box-shadow to create the dimmed overlay effect with viz-primary outline */
         box-shadow:
-            inset 0 0 0 1px rgba(255, 255, 255, 0.7),
-            0 0 0 1px rgba(0, 0, 0, 0.3),
+            inset 0 0 0 1.5px var(--viz-primary),
+            0 0 0 1px rgba(0, 0, 0, 0.4),
             0 0 0 9999px rgba(0, 0, 0, 0.6);
         outline: none;
         pointer-events: auto;
@@ -187,8 +186,8 @@
         position: absolute;
         width: 8px;
         height: 8px;
-        background-color: white;
-        border: 1px solid rgba(0, 0, 0, 0.2);
+        background-color: var(--viz-primary);
+        border: 1px solid #ffffff;
         z-index: 10;
         touch-action: none;
     }

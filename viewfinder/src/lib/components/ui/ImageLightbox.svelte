@@ -43,7 +43,6 @@
 
     // Element Bindings
     let imageEl = $state<HTMLImageElement>();
-    let canvasEl = $state<HTMLCanvasElement>();
     let imageContainerEl = $state<HTMLDivElement>();
     let zoomTargetEl = $state<HTMLDivElement>();
     let showImageStateDebugPanel = $state(false);
@@ -98,6 +97,87 @@
     // Store crop edits (original/natural coordinates) to restore them when re-entering crop mode
     let cropEdits = $state<Record<string, CropCoords>>({});
 
+    let activeCrop = $derived.by(() => {
+        if (!lightboxImage?.uid || isCropping) {
+            return null;
+        }
+
+        return cropEdits[lightboxImage.uid] || null;
+    });
+
+    let cropStyle = $derived.by(() => {
+        if (!activeCrop || !lightboxImage || !imageEl) {
+            return undefined;
+        }
+
+        const imgW = lightboxImage.width || imageEl.naturalWidth || 1;
+        const imgH = lightboxImage.height || imageEl.naturalHeight || 1;
+
+        if (imgW <= 0 || imgH <= 0 || activeCrop.width <= 0 || activeCrop.height <= 0) {
+            return undefined;
+        }
+
+        const scaleX = ((imgW / activeCrop.width) * 100).toFixed(4);
+        const scaleY = ((imgH / activeCrop.height) * 100).toFixed(4);
+        const offsetX = ((activeCrop.x / activeCrop.width) * 100).toFixed(4);
+        const offsetY = ((activeCrop.y / activeCrop.height) * 100).toFixed(4);
+
+        return `width: ${scaleX}% !important; height: ${scaleY}% !important; position: absolute !important; left: -${offsetX}% !important; top: -${offsetY}% !important; max-width: none !important; max-height: none !important;`;
+    });
+
+    function handleCropApply() {
+        if (!currentCrop || !imageEl || !lightboxImage) {
+            return;
+        }
+
+        // Calculate crop relative to the ORIGINAL image
+        const originalWidth = lightboxImage.width || imageEl.naturalWidth;
+        const originalHeight = lightboxImage.height || imageEl.naturalHeight;
+
+        const scaleToOriginalX = originalWidth / imageEl.clientWidth;
+        const scaleToOriginalY = originalHeight / imageEl.clientHeight;
+
+        const originalCrop = {
+            x: Math.round(currentCrop.x * scaleToOriginalX),
+            y: Math.round(currentCrop.y * scaleToOriginalY),
+            width: Math.round(currentCrop.width * scaleToOriginalX),
+            height: Math.round(currentCrop.height * scaleToOriginalY)
+        };
+
+        // Save the crop to state
+        cropEdits[lightboxImage.uid] = originalCrop;
+
+        toasts.add({
+            type: "success",
+            title: "Crop Applied",
+            message: "Crop applied to view.",
+            timeout: 4000
+        });
+
+        // Exit mode
+        isCropping = false;
+        currentCrop = undefined;
+        cropMenuPosition = undefined;
+        zoomState.currentZoom = 1;
+        zoomState.currentPositionX = 0;
+        zoomState.currentPositionY = 0;
+        imageDimensions = null;
+    }
+
+    function handleCropReset() {
+        if (!lightboxImage || !imageEl) {
+            return;
+        }
+
+        delete cropEdits[lightboxImage.uid];
+        currentCrop = {
+            x: 0,
+            y: 0,
+            width: imageEl.clientWidth,
+            height: imageEl.clientHeight
+        };
+    }
+
     let overriddenImages = $state<Record<string, string>>({});
 
     const loader = new ImageLoader({
@@ -137,7 +217,7 @@
         if (uid !== lastLoaderImageUid) {
             untrack(() => {
                 loader.reset(uid);
-                imageDimensions = null;
+                updateImageDimensions();
             });
             lastLoaderImageUid = uid;
         }
@@ -346,59 +426,59 @@
             return;
         }
 
-        const displayWidth = imageEl.clientWidth;
-        const displayHeight = imageEl.clientHeight;
+        const rawContainerWidth = imageContainerEl.clientWidth;
+        const rawContainerHeight = imageContainerEl.clientHeight;
 
-        if (displayWidth > 0 && displayHeight > 0) {
-            // Image has rendered — use its actual CSS-constrained dimensions.
-            // This reflects all constraints (padding on .image-wrapper in crop mode, etc.)
-            // and is always correct regardless of layout changes.
-            untrack(() => {
-                if (imageDimensions && currentCrop) {
-                    const oldWidth = imageDimensions.width;
-                    const oldHeight = imageDimensions.height;
-
-                    if (oldWidth > 0 && oldHeight > 0 && (oldWidth !== displayWidth || oldHeight !== displayHeight)) {
-                        const scaleX = displayWidth / oldWidth;
-                        const scaleY = displayHeight / oldHeight;
-
-                        currentCrop = {
-                            x: currentCrop.x * scaleX,
-                            y: currentCrop.y * scaleY,
-                            width: currentCrop.width * scaleX,
-                            height: currentCrop.height * scaleY
-                        };
-                    }
-                }
-
-                imageDimensions = {
-                    width: displayWidth,
-                    height: displayHeight
-                };
-            });
+        if (rawContainerWidth <= 0 || rawContainerHeight <= 0) {
             return;
         }
 
-        // Image not yet rendered — compute fallback from API metadata so .zoom-target
-        // gets explicit dimensions early. The placeholder will then scale correctly.
-        if (!lightboxImage?.width || !lightboxImage?.height) {
+        // Account for .image-wrapper.is-crop padding (var(--viz-spacing-xxl) = ~4rem total = 64px)
+        const paddingOffset = isCropping ? 64 : 0;
+        const containerWidth = Math.max(1, rawContainerWidth - paddingOffset);
+        const containerHeight = Math.max(1, rawContainerHeight - paddingOffset);
+
+        let targetWidth = lightboxImage?.width || imageEl.naturalWidth;
+        let targetHeight = lightboxImage?.height || imageEl.naturalHeight;
+
+        if (!isCropping && activeCrop && activeCrop.width > 0 && activeCrop.height > 0) {
+            targetWidth = activeCrop.width;
+            targetHeight = activeCrop.height;
+        }
+
+        if (!targetWidth || !targetHeight) {
             return;
         }
 
-        const containerWidth = imageContainerEl.clientWidth;
-        const containerHeight = imageContainerEl.clientHeight;
-        const scale = Math.min(1, containerWidth / lightboxImage.width, containerHeight / lightboxImage.height);
-        const fallbackWidth = Math.round(lightboxImage.width * scale);
-        const fallbackHeight = Math.round(lightboxImage.height * scale);
+        const scale = Math.min(containerWidth / targetWidth, containerHeight / targetHeight);
+        const calcWidth = Math.round(targetWidth * scale);
+        const calcHeight = Math.round(targetHeight * scale);
 
-        if (fallbackWidth <= 0 || fallbackHeight <= 0) {
+        if (calcWidth <= 0 || calcHeight <= 0) {
             return;
         }
 
         untrack(() => {
+            if (imageDimensions && currentCrop) {
+                const oldWidth = imageDimensions.width;
+                const oldHeight = imageDimensions.height;
+
+                if (oldWidth > 0 && oldHeight > 0 && (oldWidth !== calcWidth || oldHeight !== calcHeight)) {
+                    const scaleX = calcWidth / oldWidth;
+                    const scaleY = calcHeight / oldHeight;
+
+                    currentCrop = {
+                        x: currentCrop.x * scaleX,
+                        y: currentCrop.y * scaleY,
+                        width: currentCrop.width * scaleX,
+                        height: currentCrop.height * scaleY
+                    };
+                }
+            }
+
             imageDimensions = {
-                width: fallbackWidth,
-                height: fallbackHeight
+                width: calcWidth,
+                height: calcHeight
             };
         });
     }
@@ -615,103 +695,6 @@
         }
     }
 
-    function handleCropApply() {
-        if (!currentCrop || !imageEl || !lightboxImage) {
-            console.warn("Missing requirements for crop apply", {
-                currentCrop,
-                imageEl,
-                lightboxImage,
-                canvasEl
-            });
-            return;
-        }
-
-        // Calculate crop relative to the ORIGINAL image (for backend/storage)
-        const originalWidth = lightboxImage.width || imageEl.naturalWidth;
-        const originalHeight = lightboxImage.height || imageEl.naturalHeight;
-
-        const scaleToOriginalX = originalWidth / imageEl.clientWidth;
-        const scaleToOriginalY = originalHeight / imageEl.clientHeight;
-
-        const originalCrop = {
-            x: Math.round(currentCrop.x * scaleToOriginalX),
-            y: Math.round(currentCrop.y * scaleToOriginalY),
-            width: Math.round(currentCrop.width * scaleToOriginalX),
-            height: Math.round(currentCrop.height * scaleToOriginalY)
-        };
-
-        // Save the crop to state
-        cropEdits[lightboxImage.uid] = originalCrop;
-
-        // Client-side visual apply
-        const scaleToPreviewX = imageEl.naturalWidth / imageEl.clientWidth;
-        const scaleToPreviewY = imageEl.naturalHeight / imageEl.clientHeight;
-
-        const previewCrop = {
-            x: Math.round(currentCrop.x * scaleToPreviewX),
-            y: Math.round(currentCrop.y * scaleToPreviewY),
-            width: Math.round(currentCrop.width * scaleToPreviewX),
-            height: Math.round(currentCrop.height * scaleToPreviewY)
-        };
-
-        let canvas = canvasEl;
-        if (!canvas) {
-            canvas = document.createElement("canvas");
-        }
-
-        canvas.width = previewCrop.width;
-        canvas.height = previewCrop.height;
-        const ctx = canvas.getContext("2d");
-        if (ctx) {
-            ctx.drawImage(
-                imageEl,
-                previewCrop.x,
-                previewCrop.y,
-                previewCrop.width,
-                previewCrop.height,
-                0,
-                0,
-                previewCrop.width,
-                previewCrop.height
-            );
-            const dataURL = canvas.toDataURL("image/jpeg", 0.9);
-            overriddenImages[lightboxImage.uid] = dataURL;
-        }
-
-        toasts.add({
-            type: "success",
-            title: "Crop Applied (Client-side)",
-            message: `Image updated in view.`,
-            timeout: 4000
-        });
-
-        // Exit mode
-        isCropping = false;
-        currentCrop = undefined;
-        cropMenuPosition = undefined;
-        zoomState.currentZoom = 1;
-        zoomState.currentPositionX = 0;
-        zoomState.currentPositionY = 0;
-        // Remove explicit image dimensions so the cropped (or overridden) image
-        // reflows to fill the container. The new image onload will fire
-        // handleLoad() -> updateImageDimensions() to set correct dimensions.
-        imageDimensions = null;
-    }
-
-    function handleCropReset() {
-        if (!lightboxImage || !imageEl) {
-            return;
-        }
-
-        delete cropEdits[lightboxImage.uid];
-        currentCrop = {
-            x: 0,
-            y: 0,
-            width: imageEl.clientWidth,
-            height: imageEl.clientHeight
-        };
-    }
-
     const handleContextMenu: MouseEventHandler<HTMLElement> = (e) => {
         e.preventDefault();
         if (isCropping) {
@@ -778,15 +761,29 @@
             lightboxImage = undefined;
         };
 
-        hotkeys("left,right", handleLeftRight);
-        hotkeys("enter", handleEnter);
-        hotkeys("esc", handleEsc);
+        hotkeys("left,right", "lightbox", handleLeftRight);
+        hotkeys("enter", "lightbox", handleEnter);
+        hotkeys("esc", "lightbox", handleEsc);
 
         return () => {
-            hotkeys.unbind("left,right", handleLeftRight);
-            hotkeys.unbind("enter", handleEnter);
-            hotkeys.unbind("esc", handleEsc);
+            hotkeys.unbind("left,right", "lightbox", handleLeftRight);
+            hotkeys.unbind("enter", "lightbox", handleEnter);
+            hotkeys.unbind("esc", "lightbox", handleEsc);
+            if (hotkeys.getScope() === "lightbox") {
+                hotkeys.setScope("all");
+            }
         };
+    });
+
+    $effect(() => {
+        if (show) {
+            hotkeys.setScope("lightbox");
+            return () => {
+                if (hotkeys.getScope() === "lightbox") {
+                    hotkeys.setScope("all");
+                }
+            };
+        }
     });
 
     const lightboxMaterialIconColour = "color: var(--viz-10-dark); fill: var(--viz-10-dark);";
@@ -898,20 +895,27 @@
             }}
             role="presentation"
         >
-            <Button
-                id="lightbox-icon-close"
-                class="lightbox-button-icon"
-                hoverColor="transparent"
-                title="Close"
-                iconName="close"
-                onclick={() => {
-                    if (isCropping) {
-                        toggleCropMode();
-                    } else {
-                        lightboxImage = undefined;
-                    }
-                }}
-            />
+            <div class="lightbox-header-left">
+                <Button
+                    id="lightbox-icon-close"
+                    class="lightbox-button-icon"
+                    hoverColor="transparent"
+                    title="Close"
+                    iconName="close"
+                    onclick={() => {
+                        if (isCropping) {
+                            toggleCropMode();
+                        } else {
+                            lightboxImage = undefined;
+                        }
+                    }}
+                />
+                {#if lightboxImage}
+                    <span class="lightbox-image-name" title={lightboxImage.name}>
+                        {lightboxImage.name}
+                    </span>
+                {/if}
+            </div>
             {#if !isCropping}
                 <div class="image-icon-buttons">
                     {#if dev}
@@ -1040,20 +1044,15 @@
                         src={loader.displayURL}
                         class="lightbox-image main {isCropping ? 'is-crop' : ''}"
                         class:hidden-main={!loader.initialImageLoaded}
+                        style={cropStyle}
                         alt={lightboxImage!.name}
                         title={lightboxImage!.name}
                         loading="eager"
                         crossorigin="use-credentials"
                         data-image-id={lightboxImage!.uid}
                         onload={() => {
-                            // Clear explicit zoom-target dimensions so the image can
-                            // reflow to its natural CSS size (undoing any early constraint
-                            // from the fallback in updateImageDimensions). Then capture
-                            // the correct dimensions after layout.
-                            imageDimensions = null;
-                            requestAnimationFrame(() => {
-                                loader.handleLoad();
-                            });
+                            updateImageDimensions();
+                            loader.handleLoad();
                         }}
                         onerror={() => loader.handleError()}
                         ondragstart={(e) => e.preventDefault()}
@@ -1182,12 +1181,37 @@
         gap: 0.5em;
     }
 
-    :global(#lightbox-icon-close) {
+    .lightbox-header-left {
         position: absolute;
         top: 1em;
         left: 1em;
         z-index: 200;
+        display: flex;
+        align-items: center;
+        gap: var(--viz-spacing-sm);
         pointer-events: auto;
+    }
+
+    :global(#lightbox-icon-close) {
+        position: relative;
+        top: auto;
+        left: auto;
+        flex-shrink: 0;
+    }
+
+    .lightbox-image-name {
+        font-family: var(--viz-display-font);
+        font-size: var(--viz-font-size-xl);
+        font-weight: 600;
+        color: var(--viz-10-dark);
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        min-width: 0;
+        flex-shrink: 1;
+        filter: drop-shadow(0 2px 6px rgba(0, 0, 0, 0.9));
+        -webkit-filter: drop-shadow(0 2px 6px rgba(0, 0, 0, 0.9));
+        user-select: text;
     }
 
     :global(.lightbox-button-icon) {
@@ -1258,10 +1282,8 @@
 
     :global(.lightbox-image) {
         display: block;
-        max-width: 100%;
-        max-height: 100%;
-        width: auto;
-        height: auto;
+        width: 100%;
+        height: 100%;
         pointer-events: auto;
     }
 
@@ -1270,11 +1292,8 @@
         opacity: 1;
         transition: opacity 0.3s ease-in-out;
         image-rendering: auto;
-        /* Force fill parent so the placeholder matches the image display area.
-           .zoom-target gets explicit dimensions from imageDimensions early via the
-           API data fallback, so min-height: 100% resolves to the correct size. */
         width: 100%;
-        min-height: 100%;
+        height: 100%;
     }
 
     :global(.lightbox-image.placeholder.loaded) {
@@ -1284,6 +1303,8 @@
     :global(.lightbox-image.main) {
         z-index: 2;
         transition: opacity 0.3s ease-in-out;
+        width: 100%;
+        height: 100%;
     }
 
     :global(.lightbox-image.main.hidden-main) {
