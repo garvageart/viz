@@ -225,6 +225,7 @@ export interface TransformStepContext {
     finalExt?: SupportedImageTypes;
     transformEtag?: string;
     outputBuffer?: SharedArrayBuffer;
+    onProgress?: (percent: number) => void;
 }
 
 export type TransformStepFn = (ctx: TransformStepContext) => Promise<void> | void;
@@ -233,6 +234,11 @@ async function stepDecodeInput(ctx: TransformStepContext) {
     // Decode into wasm-vips image
     try {
         ctx.img = ctx.v.Image.newFromBuffer(ctx.inputBuffer);
+        if (ctx.onProgress && ctx.img) {
+            ctx.img.onProgress = (percent: number) => {
+                ctx.onProgress?.(percent);
+            };
+        }
     } catch (e) {
         console.error(
             "[Worker] Vips.Image.newFromBuffer failed! Buffer size:",
@@ -546,7 +552,8 @@ export async function generateTransform(
         inputBuffer,
         outExt: "." + finalExt,
         finalExt,
-        transformEtag
+        transformEtag,
+        onProgress
     };
 
     const activePipelineMap = buildTransformPipelineMap(input);
