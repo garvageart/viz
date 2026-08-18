@@ -5,6 +5,17 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.31.12] - 2026-08-18
+
+* fix(ui): add 15 percent min-height to ImagePreview container (3814de7f)
+* chore(ui): remove redundant lightbox preloader from PhotoAssetGrid (4365ecac)
+* fix(histogram): transfer ImageBitmap to worker without worker fetch (bedf80cc)
+* fix(ui): return undefined for empty lightbox URLs to prevent ETag pollution (2a5078bb)
+* fix(ui): position src before rest props in AssetImage to prevent re-triggers (af62f492)
+* fix(viewfinder): use URLSearchParams without base URL in withVersion helper (8117ed3b)
+* feat(api): use URLSearchParams without base URL in getAssetImagePath (1e3591f3)
+* fix(api): align HTTP caching headers and sanitize URI checks (7d444935)
+
 ## [0.31.11] - 2026-08-18
 
 * feat(api): add getAssetImagePath helper and unify versioned image caching (90a17418)
