@@ -353,7 +353,7 @@ test.describe("PhotoAssetGrid Functionality", () => {
         await expect(photos.first()).toHaveClass(classRegex);
 
         // Navigate down several rows to trigger scroll-to-top
-        for (let i = 0; i < 5; i++) {
+        for (let i = 0; i < 8; i++) {
             await page.keyboard.press("ArrowDown");
             await page.waitForTimeout(150);
         }

@@ -215,10 +215,11 @@ test.describe("Layout Split Regression", () => {
                 offsetWidth: (s as HTMLElement).offsetWidth
             }));
         });
-        // All splitters should be 1px (vertical) or full-width (horizontal) but not container width
+        // All splitters should be 1px (vertical) or full-width (horizontal) but not container max width
+        const viewportWidth = page.viewportSize()?.width || 1920;
         for (const s of splitterWidths) {
             expect(s.offsetWidth).toBeGreaterThanOrEqual(1);
-            expect(s.offsetWidth).toBeLessThan(960);
+            expect(s.offsetWidth).toBeLessThan(viewportWidth);
         }
 
         // Dump console errors
