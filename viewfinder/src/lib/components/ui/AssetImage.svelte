@@ -140,10 +140,10 @@
 
 {#if naked}
     <img
-        {...rest}
         bind:this={imageElement}
         {srcset}
-        {src}
+        src={srcset ? undefined : src}
+        {...rest}
         loading={priority ? "eager" : "lazy"}
         fetchpriority={priority ? "high" : "auto"}
         class="{rest.class} main-image"
@@ -179,10 +179,10 @@
         {/if}
 
         <img
-            {...rest}
             bind:this={imageElement}
             {srcset}
-            {src}
+            src={srcset ? undefined : src}
+            {...rest}
             loading={priority ? "eager" : "lazy"}
             fetchpriority={priority ? "high" : "auto"}
             class="main-image"
