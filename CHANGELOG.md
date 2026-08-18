@@ -5,6 +5,11 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.31.11] - 2026-08-18
+
+* feat(api): add getAssetImagePath helper and unify versioned image caching (90a17418)
+* feat(viewfinder): attach native WASM progress feedback and implement step-map pipeline (72686df8)
+
 ## [0.31.10] - 2026-08-18
 
 * feat(viewfinder): implement dynamic step-map WASM image processing, progress tracking, and e2e tests (2e8b5c0a)
