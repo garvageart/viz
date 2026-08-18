@@ -20,7 +20,11 @@ const makeImage = (uid: string, name: string): ImageAsset =>
         taken_at: "2024-01-02T03:04:05.000Z",
         created_at: "2024-01-01T00:00:00.000Z",
         image_metadata: {},
-        image_paths: { preview: `/preview/${uid}` },
+        image_paths: {
+            preview: `/preview/${uid}`,
+            thumbnail: `/thumbnail/${uid}`,
+            original: `/original/${uid}`
+        },
         exif: {},
         width: 100,
         height: 100
