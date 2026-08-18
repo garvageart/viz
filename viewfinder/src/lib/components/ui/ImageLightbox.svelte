@@ -52,7 +52,7 @@
         }
     });
 
-    let imageToLoad = $derived(lightboxImage ? getAssetImagePath(lightboxImage, "preview") : "");
+    let imageToLoad = $derived(lightboxImage ? getAssetImagePath(lightboxImage, "preview") : undefined);
 
     // Element Bindings
     let imageEl = $state<HTMLImageElement>();

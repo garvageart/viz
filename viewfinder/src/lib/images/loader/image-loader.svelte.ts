@@ -5,7 +5,7 @@ export interface ImageLoaderDeps {
     get overriddenImages(): Record<string, string>;
     get isCropping(): boolean;
     get currentZoom(): number;
-    get imageToLoad(): string;
+    get imageToLoad(): string | undefined;
     resetZoom(): void;
     updateImageDimensions(): void;
     restoreCrop(): void;
@@ -30,7 +30,7 @@ export class ImageLoader {
         this.deps = deps;
     }
 
-    get displayURL() {
+    get displayURL(): string | undefined {
         const uid = this.deps.lightboxImage?.uid;
         const isCropping = this.deps.isCropping;
         const overriddenImages = this.deps.overriddenImages;
@@ -43,7 +43,7 @@ export class ImageLoader {
             return this.zoomedImageURL;
         }
 
-        return this.deps.imageToLoad;
+        return this.deps.imageToLoad || undefined;
     }
 
     reset(uid: string | undefined) {
@@ -56,7 +56,7 @@ export class ImageLoader {
         this.fetchEndTime = null;
         this.fetchDuration = null;
         this.fetchType = uid ? "initial" : "none";
-        this.currentFetchURL = uid ? this.deps.imageToLoad : "";
+        this.currentFetchURL = (uid ? this.deps.imageToLoad : "") ?? "";
 
         if (!uid) {
             this.lastLoadedImageUid = "";
