@@ -1093,9 +1093,16 @@ func serveOriginalImage(res http.ResponseWriter, req *http.Request, logger *slog
 }
 
 func serveTransformedImage(res http.ResponseWriter, req *http.Request, logger *slog.Logger, imgEnt *entities.ImageAsset, params *transform.TransformParams, isDownload bool) {
-	// 1. Determine if this is a "permanent" transform path
+	// 1. Determine if this is a "permanent" transform path (ignore cache-busting 'v' query param)
 	reqURI := req.URL.String()
-	isPermanent := imgEnt.ImagePaths.Thumbnail == reqURI || imgEnt.ImagePaths.Preview == reqURI
+	q := req.URL.Query()
+	q.Del("v")
+	cleanQuery := q.Encode()
+	cleanURI := req.URL.Path
+	if cleanQuery != "" {
+		cleanURI += "?" + cleanQuery
+	}
+	isPermanent := imgEnt.ImagePaths.Thumbnail == cleanURI || imgEnt.ImagePaths.Preview == cleanURI
 
 	// Check if a 'v' (version/checksum) query parameter is present
 	hasVersionParam := req.URL.Query().Get("v") != ""
@@ -1139,7 +1146,7 @@ func serveTransformedImage(res http.ResponseWriter, req *http.Request, logger *s
 		// Cache HIT: Serve the cached file
 		images.IncrementCacheHits()
 		logger.Debug("server-side cache hit", slog.String("key", cacheKey))
-		res.Header().Set("Etag", transformETag)
+		res.Header().Set("Etag", fmt.Sprintf(`"%s"`, transformETag))
 		res.Header().Set("Last-Modified", imgEnt.UpdatedAt.UTC().Format(http.TimeFormat))
 		// Prevent XSS if the image is an SVG or other dangerous type
 		res.Header().Set("Content-Security-Policy", "sandbox")
@@ -1208,7 +1215,7 @@ func serveTransformedImage(res http.ResponseWriter, req *http.Request, logger *s
 	}()
 
 	// Serve the newly generated image
-	res.Header().Set("Etag", transformETag)
+	res.Header().Set("Etag", fmt.Sprintf(`"%s"`, transformETag))
 	res.Header().Set("Last-Modified", imgEnt.UpdatedAt.UTC().Format(http.TimeFormat))
 	// Prevent XSS if the image is an SVG or other dangerous type
 	res.Header().Set("Content-Security-Policy", "sandbox")

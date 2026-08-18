@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"log/slog"
 	"net/http"
+	"strings"
 	"sync"
 	"time"
 
@@ -280,7 +281,7 @@ func AuthMiddleware(db *gorm.DB, logger *slog.Logger) func(next http.Handler) ht
 			// automatic 304 here because many endpoints don't return the user
 			// representation; handlers that do want to perform conditional
 			// responses can compare If-None-Match themselves.
-			if r.Method == http.MethodGet {
+			if r.Method == http.MethodGet && !strings.Contains(r.URL.Path, "/images/") {
 				if u, ok := UserFromContext(r); ok && u != nil {
 					etag := fmt.Sprintf("W/\"%d-%s\"", u.UpdatedAt.UnixNano(), u.Uid)
 					w.Header().Set("Cache-Control", "no-cache, no-store, must-revalidate")
