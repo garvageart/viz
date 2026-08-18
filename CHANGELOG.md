@@ -5,6 +5,11 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.31.10] - 2026-08-18
+
+* feat(viewfinder): implement dynamic step-map WASM image processing, progress tracking, and e2e tests (2e8b5c0a)
+* fix(api): default API base URL to relative /api and include @viz/api in release script (8bcff98b)
+
 ## [0.31.9] - 2026-08-18
 
 * fix(viewfinder): refine lightbox header layout, title ellipsis, and crop canvas alignment (0f7beb93)
