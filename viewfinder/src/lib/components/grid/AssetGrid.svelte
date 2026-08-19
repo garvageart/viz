@@ -4,7 +4,7 @@
     import { DateTime } from "luxon";
     import { type Snippet, untrack } from "svelte";
     import type { SvelteHTMLElements } from "svelte/elements";
-    import { type Instance, type Props as TippyProps, delegate, followCursor } from "tippy.js";
+    import { type Instance, type Props as TippyProps, delegate, followCursor, hideAll } from "tippy.js";
     import "tippy.js/dist/tippy.css";
     import AssetImage from "$lib/components/ui/AssetImage.svelte";
     import Button from "$lib/components/ui/Button.svelte";
@@ -16,6 +16,7 @@
     import type { CardVisualState } from "$lib/types/snippet";
     import { tryParseDate } from "$lib/utils/dates";
     import { getScrollParent } from "$lib/utils/dom";
+    import { isAssetImage } from "$lib/utils/images";
     import { snakeToTitle } from "$lib/utils/strings";
     import TableColumnSelectorModal from "../modals/TableColumnSelectorModal.svelte";
     import { modalsManager } from "../modals/manager/ModalManager.svelte";
@@ -340,12 +341,12 @@
 
     // Tippy tooltip delegation
     $effect(() => {
-        if (!assetGridDisplayEl || view !== "custom" || isMobile) {
+        if (!assetGridDisplayEl || isListView || isMobile) {
             return;
         }
 
         const delegatedTippy = delegate(assetGridDisplayEl, {
-            target: ".basic-grid-card",
+            target: ".asset-card, .basic-grid-card",
             theme: "viz no-padding",
             followCursor: "initial",
             plugins: [followCursor],
@@ -353,14 +354,16 @@
             delay: [600, 0],
             interactive: true,
             onShow(instance: Instance<TippyProps>) {
+                hideAll({ duration: 0, exclude: instance });
+
                 const cardEl = instance.reference as HTMLElement;
                 const assetId = cardEl.getAttribute("data-asset-id");
                 const asset = allAssetsData.find((a) => a.uid === assetId);
-                if (!asset || !("image_paths" in asset) || !("image_metadata" in asset)) {
+                if (!isAssetImage(asset)) {
                     return false;
                 }
 
-                const imageAsset = asset as unknown as ImageAsset;
+                const imageAsset = asset;
 
                 const { node, destroy } = mountTooltipComponent(PhotoTooltip, {
                     asset: imageAsset,
@@ -701,6 +704,15 @@
         }
 
         const key = e.key;
+        if (key === "Enter") {
+            e.preventDefault();
+            assetDblClick?.(
+                e as unknown as MouseEvent & { currentTarget: EventTarget & (HTMLDivElement | HTMLTableRowElement) },
+                asset
+            );
+            return;
+        }
+
         const isEsc = key === "Escape" || key === "Esc";
         if (isEsc) {
             e.preventDefault();
@@ -717,6 +729,8 @@
         if (!isNavKey) {
             return;
         }
+
+        hideAll({ duration: 0 });
 
         e.preventDefault();
 
@@ -903,6 +917,21 @@
         selection.clear();
     });
 
+    hotkeys("enter", (e) => {
+        if (selectionManager.activeScopeId !== scopeId) {
+            return;
+        }
+        const activeAsset = selection.active ?? (selection.size > 0 ? selection.selectedItems[0] : null);
+        if (!activeAsset) {
+            return;
+        }
+        e.preventDefault();
+        assetDblClick?.(
+            e as unknown as MouseEvent & { currentTarget: EventTarget & (HTMLDivElement | HTMLTableRowElement) },
+            activeAsset
+        );
+    });
+
     function openColumnSelector() {
         modalsManager.open(
             TableColumnSelectorModal,
@@ -989,6 +1018,7 @@
                 return;
             }
             e.preventDefault();
+            e.stopPropagation();
             if (!selection.has(assetData) || selection.size <= 1) {
                 selection.select(assetData);
             }
@@ -1038,6 +1068,7 @@
         }}
         oncontextmenu={(e: MouseEvent & { currentTarget: HTMLElement }) => {
             e.preventDefault();
+            e.stopPropagation();
             if (isDisabled) {
                 return;
             }

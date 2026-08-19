@@ -52,19 +52,12 @@
 </script>
 
 {#if variant === "mini"}
-    <div title={asset.name || asset.image_metadata?.file_name} class="mini-card">
+    <div title={asset.name} class="mini-card">
         <div class="mini-image-wrapper">
-            <AssetImage
-                {resolution}
-                {asset}
-                {objectFit}
-                {priority}
-                alt={asset.name || asset.image_metadata?.file_name}
-                loading="lazy"
-            />
+            <AssetImage {resolution} {asset} {objectFit} {priority} alt={asset.name} loading="lazy" />
         </div>
         <div class="mini-footer">
-            <span class="mini-filename">{asset.name || asset.image_metadata?.file_name}</span>
+            <span class="mini-filename">{asset.name}</span>
             <div class="mini-meta">
                 <div class="mini-left">
                     <div class="mini-rating">
@@ -90,7 +83,6 @@
         class="image-card simple"
         class:selected={isSelected}
         draggable="true"
-        title={asset.name || asset.image_metadata?.file_name}
         role="button"
         tabindex="0"
         data-asset-id={asset.uid}
@@ -106,7 +98,7 @@
                 {resolution}
                 {objectFit}
                 {priority}
-                alt={(asset.name || asset.image_metadata?.file_name) ?? ""}
+                alt={asset.name ?? ""}
                 loading="lazy"
                 crossorigin="use-credentials"
                 onload={() => (imageLoaded = true)}
@@ -118,7 +110,7 @@
         class="image-card"
         class:selected={isSelected}
         draggable="true"
-        title={asset.name || asset.image_metadata?.file_name}
+        title={asset.name}
         role="button"
         tabindex="0"
         data-asset-id={asset.uid}
@@ -135,17 +127,15 @@
                 {resolution}
                 {objectFit}
                 {priority}
-                alt={`${(asset.name || asset.image_metadata?.file_name) ?? ""}${asset.uploaded_by ? ` by ${asset.uploaded_by.name}` : ""}`}
-                title={`${(asset.name || asset.image_metadata?.file_name) ?? ""}${asset.uploaded_by ? ` by ${asset.uploaded_by.name}` : ""}`}
+                alt={`${asset.name ?? ""}${asset.uploaded_by ? ` by ${asset.uploaded_by.name}` : ""}`}
+                title={`${asset.name ?? ""}${asset.uploaded_by ? ` by ${asset.uploaded_by.name}` : ""}`}
                 loading="lazy"
                 crossorigin="use-credentials"
             />
         </div>
         {#if showMetadata}
             <div class="image-card-meta">
-                <span class="image-card-name" title={asset.name || asset.image_metadata?.file_name}
-                    >{asset.name || asset.image_metadata?.file_name}</span
-                >
+                <span class="image-card-name" title={asset.name}>{asset.name}</span>
                 <div class="image-card-details" title="Photo taken at {imageDate.toLocaleString()}">
                     <div class="image-card-date-group">
                         <span class="image-card-date">{imageDate.toLocaleDateString()}</span>

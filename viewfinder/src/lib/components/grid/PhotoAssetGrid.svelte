@@ -5,7 +5,7 @@
     import { type Snippet, onMount, untrack } from "svelte";
     import { SvelteSet } from "svelte/reactivity";
     import { fade } from "svelte/transition";
-    import { type Instance, type Props as TippyProps, delegate, followCursor } from "tippy.js";
+    import { type Instance, type Props as TippyProps, delegate, followCursor, hideAll } from "tippy.js";
     import "tippy.js/dist/tippy.css";
     import ImageLabelViewer from "$lib/components/image-tools/ImageLabelViewer.svelte";
     import StarRating from "$lib/components/image-tools/StarRating.svelte";
@@ -236,6 +236,8 @@
             return;
         }
 
+        hideAll({ duration: 0 });
+
         const isHorizontal = isLeft || isRight;
 
         if (isHorizontal) {
@@ -336,15 +338,34 @@
         focusAssetElement(targetAsset.uid);
     }
 
+    function handleEnter(e: KeyboardEvent, _handler: HotkeysEvent) {
+        if (selectionManager.activeScopeId !== scopeId || isHotkeyBlocked()) {
+            return;
+        }
+
+        const activeAsset = selection.active ?? (selection.size > 0 ? selection.selectedItems[0] : null);
+        if (!activeAsset) {
+            return;
+        }
+
+        e.preventDefault();
+        assetDblClick?.(
+            e as unknown as MouseEvent & { currentTarget: EventTarget & (HTMLDivElement | HTMLTableRowElement) },
+            activeAsset
+        );
+    }
+
     onMount(() => {
         hotkeys("ctrl+a", handleSelectAll);
         hotkeys("escape", handleEscape);
         hotkeys("left,right,up,down,shift+left,shift+right,shift+up,shift+down", handleKeyNav);
+        hotkeys("enter", handleEnter);
 
         return () => {
             hotkeys.unbind("ctrl+a", handleSelectAll);
             hotkeys.unbind("escape", handleEscape);
             hotkeys.unbind("left,right,up,down,shift+left,shift+right,shift+up,shift+down", handleKeyNav);
+            hotkeys.unbind("enter", handleEnter);
         };
     });
 
@@ -375,6 +396,8 @@
             delay: [600, 0],
             interactive: true,
             onShow(instance: Instance<TippyProps>) {
+                hideAll({ duration: 0, exclude: instance });
+
                 const scope = hotkeys.getScope();
                 if (scope !== "all" && scope !== "default") {
                     return false;
@@ -1122,7 +1145,15 @@
             handleImageCardSelect(asset, e);
         }}
         onkeydown={(e) => {
-            if (e.key === "Enter" || e.key === " ") {
+            if (e.key === "Enter") {
+                e.preventDefault();
+                assetDblClick?.(
+                    e as unknown as MouseEvent & {
+                        currentTarget: EventTarget & (HTMLDivElement | HTMLTableRowElement);
+                    },
+                    asset
+                );
+            } else if (e.key === " ") {
                 e.preventDefault();
                 handleImageCardSelect(asset, e);
             }
@@ -1187,60 +1218,64 @@
             assetDblClick?.(e, asset);
         }}
     >
-        <div class="image-metadata-display">
-            {#if asset.image_metadata?.rating}
-                <div class="left-side">
-                    <StarRating static={true} value={asset.image_metadata?.rating} />
+        <div class="photo-card-content">
+            <div class="image-metadata-display">
+                {#if asset.image_metadata?.rating}
+                    <div class="left-side">
+                        <StarRating static={true} value={asset.image_metadata?.rating} />
+                    </div>
+                {/if}
+                {#if asset.image_metadata?.label || asset.favourited}
+                    <div class="right-side">
+                        {#if asset.image_metadata?.label}
+                            <ImageLabelViewer variant="compact" enableSelection={false} label={getImageLabel(asset)} />
+                        {/if}
+                        {#if asset.favourited}
+                            <Favourite />
+                        {/if}
+                    </div>
+                {/if}
+            </div>
+            {#if asset.image_paths}
+                <div class="tile-image-container" style={`height: 100%;`}>
+                    <AssetImage
+                        {asset}
+                        resolution="thumbnail"
+                        draggable="false"
+                        class="tile-image"
+                        alt={asset?.name ?? asset?.image_metadata?.file_name ?? ""}
+                        loading="lazy"
+                        initialLoaded={isCached}
+                        onload={() => {
+                            loadedImageUIDs.add(asset.uid);
+                        }}
+                    />
+                </div>
+                {#if isSelected && isMultiSelecting}
+                    <div class="multi-select-ring" transition:fade={{ duration: 120 }}></div>
+                {/if}
+            {:else}
+                <div class="tile-image-fallback">
+                    <MaterialIcon iconName="image" size="2.5rem" />
+                    <span class="fallback-filename"
+                        >{asset?.name ?? asset?.image_metadata?.file_name ?? asset?.uid}</span
+                    >
                 </div>
             {/if}
-            {#if asset.image_metadata?.label || asset.favourited}
-                <div class="right-side">
-                    {#if asset.image_metadata?.label}
-                        <ImageLabelViewer variant="compact" enableSelection={false} label={getImageLabel(asset)} />
-                    {/if}
-                    {#if asset.favourited}
-                        <Favourite />
-                    {/if}
-                </div>
-            {/if}
-        </div>
-        {#if asset.image_paths}
-            <div class="tile-image-container" style={`height: 100%;`}>
-                <AssetImage
-                    {asset}
-                    resolution="thumbnail"
-                    draggable="false"
-                    class="tile-image"
-                    alt={asset?.name ?? asset?.image_metadata?.file_name ?? ""}
-                    loading="lazy"
-                    initialLoaded={isCached}
-                    onload={() => {
-                        loadedImageUIDs.add(asset.uid);
-                    }}
-                />
-            </div>
-            {#if isSelected && isMultiSelecting}
-                <div class="multi-select-ring" transition:fade={{ duration: 120 }}></div>
-            {/if}
-        {:else}
-            <div class="tile-image-fallback">
-                <MaterialIcon iconName="image" size="2.5rem" />
-                <span class="fallback-filename">{asset?.name ?? asset?.image_metadata?.file_name ?? asset?.uid}</span>
-            </div>
-        {/if}
 
-        {#if !isMobile}
-            <div class="photo-overlay">
-                <div class="photo-overlay-inner">
-                    <div class="photo-name">{asset?.name}</div>
-                    <div class="photo-meta">
-                        <div class="photo-date">
-                            {DateTime.fromJSDate(getTakenAt(asset)).toFormat("dd LLL yyyy • HH:mm")}
+            {#if !isMobile}
+                <div class="photo-overlay">
+                    <div class="photo-overlay-inner">
+                        <div class="photo-name">{asset?.name}</div>
+                        <div class="photo-meta">
+                            <div class="photo-date">
+                                {DateTime.fromJSDate(getTakenAt(asset)).toFormat("dd LLL yyyy • HH:mm")}
+                            </div>
                         </div>
                     </div>
                 </div>
-            </div>
-        {/if}
+            {/if}
+        </div>
 
         {#if isDisabled}
             <div class="disabled-overlay"></div>
@@ -1538,7 +1573,11 @@
 
     .asset-photo.multi-selected-photo {
         outline: 2px solid var(--viz-primary);
-        background: var(--viz-surface-base);
+        /* idk i can't decide rn but i'm fine with it like this */
+        background: color-mix(in srgb, var(--viz-primary) 30%, transparent);
+
+        /* background: var(--viz-primary);
+        background: var(--viz-surface-card); */
     }
 
     .viz-photo-grid-container.is-active .asset-photo.multi-selected-photo {
@@ -1562,13 +1601,16 @@
             inset 0 0 18px 6px rgba(0, 0, 0, 0.55);
     }
 
-    .asset-photo .tile-image-container {
+    .photo-card-content {
+        position: relative;
+        width: 100%;
+        height: 100%;
         transform: scale(1);
         transition: transform 0.18s ease;
         will-change: transform;
     }
 
-    .asset-photo.multi-selected-photo .tile-image-container {
+    .asset-photo.multi-selected-photo .photo-card-content {
         transform: scale(0.98);
     }
 
