@@ -74,8 +74,8 @@ export const DEFAULT_TEMPLATE_EXAMPLE = {
 export const NAMING_OPTIONS: NormalizedOption[] = [
     { label: "Presets", type: "label" },
     { value: "original", label: "Original Name" },
-    { value: "custom", label: "Custom Name Only" },
-    { value: "sequence", label: "Sequence Only" },
+    { value: "custom", label: "Custom Name" },
+    { value: "sequence", label: "Sequence" },
     { value: "original-sequence", label: "Original Name + Sequence" },
     { type: "separator" },
     { value: "builder", label: "Batch Rename" },

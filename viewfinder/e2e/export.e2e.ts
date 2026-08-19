@@ -160,4 +160,48 @@ test.describe("Export Pipeline", () => {
             }
         }
     });
+
+    test("should prevent export submission when custom name is blank", async ({ page }) => {
+        test.slow();
+
+        // 1. Go to Photos page
+        await page.goto("/photos");
+        await expect(page.locator("main, .viz-photo-grid-container").first()).toBeVisible({ timeout: 20000 });
+
+        // 2. Select first photo and open Export panel
+        const photoGridItems = page.locator(".asset-photo, .asset-card");
+        await expect(photoGridItems.first()).toBeVisible({ timeout: 20000 });
+        await photoGridItems.first().click({ button: "right" });
+
+        const exportMenuItem = page.locator("#act-export");
+        await expect(exportMenuItem).toBeVisible();
+        await exportMenuItem.click();
+
+        const exportPanel = page.locator("#viz-export-panel, .export-panel").first();
+        await expect(exportPanel).toBeVisible({ timeout: 15000 });
+
+        // 3. Switch naming mode preset to "custom"
+        const namingSelect = page.locator("#batch-rename-mode-select");
+        await expect(namingSelect).toBeVisible();
+        await namingSelect.click();
+
+        const customOption = page.locator('[data-value="custom"]').first();
+        await expect(customOption).toBeVisible();
+        await customOption.click();
+
+        // 4. Clear the Custom Text input field
+        const customTextInput = page.locator("#batch-rename-custom-text");
+        await expect(customTextInput).toBeVisible();
+        await customTextInput.fill("");
+
+        // 5. Click perform export with blank text
+        const performExportBtn = page.locator("#perform-export");
+        await expect(performExportBtn).toBeVisible({ timeout: 10000 });
+        await performExportBtn.click();
+
+        // 6. Verify that the export modal remains open and download panel is not shown
+        await expect(exportPanel).toBeVisible();
+        const downloadPanel = page.locator("#viz-download-panel");
+        await expect(downloadPanel).not.toBeVisible();
+    });
 });

@@ -199,6 +199,51 @@
     ] as const;
 
     async function handleExport() {
+        if (renameSettings.namingMode === "custom" && !renameSettings.customName.trim()) {
+            toasts.add({
+                type: "warning",
+                title: "Custom text required",
+                message: "Custom text cannot be blank"
+            });
+
+            return;
+        }
+
+        if (renameSettings.namingMode === "builder") {
+            const hasBlankText = renameSettings.builderRows.some((r) => r.type === "text" && !r.textValue.trim());
+            if (hasBlankText) {
+                toasts.add({
+                    type: "warning",
+                    title: "Custom text required",
+                    message: "Custom text cannot be blank"
+                });
+
+                return;
+            }
+        }
+
+        if (renameSettings.namingMode === "template") {
+            if (!renameSettings.namingTemplate.trim()) {
+                toasts.add({
+                    type: "warning",
+                    title: "Template required",
+                    message: "Naming template cannot be blank"
+                });
+
+                return;
+            }
+
+            if (renameSettings.namingTemplate.includes("{{customName}}") && !renameSettings.customName.trim()) {
+                toasts.add({
+                    type: "warning",
+                    title: "Custom text required",
+                    message: "Custom text cannot be blank"
+                });
+
+                return;
+            }
+        }
+
         // Capture all needed state before closing the modal
         const exportSettings = $state.snapshot(settings);
         const exportRenameSettings = $state.snapshot(renameSettings);

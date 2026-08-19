@@ -101,6 +101,7 @@
     function moveRowUp(index: number) {
         if (index > 0) {
             const temp = settings.builderRows[index];
+
             settings.builderRows[index] = settings.builderRows[index - 1];
             settings.builderRows[index - 1] = temp;
         }
@@ -109,9 +110,16 @@
     function moveRowDown(index: number) {
         if (index < settings.builderRows.length - 1) {
             const temp = settings.builderRows[index];
+
             settings.builderRows[index] = settings.builderRows[index + 1];
             settings.builderRows[index + 1] = temp;
         }
+    }
+
+    function getRowTypeLabel(type: RuleRowType): string {
+        // gosh
+        const option = ROW_TYPES.find((opt) => "value" in opt && opt.value === type);
+        return option && "label" in option && option.label ? option.label : "";
     }
 
     // Dynamic Handlebars template derived from row builder
@@ -121,19 +129,24 @@
                 if (row.type === "original") {
                     return "{{basename}}";
                 }
+
                 if (row.type === "text") {
                     // Escape curly braces from text to prevent parsing issues
                     return row.textValue.replace(/[{}]/g, "");
                 }
+
                 if (row.type === "sequence") {
                     return "{{seq}}";
                 }
+
                 if (row.type === "date") {
                     return DATE_FORMAT_TEMPLATES[row.dateFormat] || "{{y}}-{{MM}}-{{dd}}";
                 }
+
                 if (row.type === "metadata") {
                     return `{{${row.metadataField}}}`;
                 }
+
                 return "";
             })
             .join("");
@@ -197,6 +210,7 @@
 <div class="batch-rename-builder">
     <div class="control-group">
         <InputSelect
+            id="batch-rename-mode-select"
             label="Preset / Naming Mode"
             options={Array.from(NAMING_OPTIONS)}
             bind:value={settings.namingMode}
@@ -213,6 +227,7 @@
                         <!-- Ordering Buttons -->
                         <div class="order-actions">
                             <Button
+                                class="order-btn"
                                 iconName="keyboard_arrow_up"
                                 size="mini"
                                 disabled={index === 0}
@@ -220,6 +235,7 @@
                                 title="Move up"
                             />
                             <Button
+                                class="order-btn"
                                 iconName="keyboard_arrow_down"
                                 size="mini"
                                 disabled={index === settings.builderRows.length - 1}
@@ -230,7 +246,11 @@
 
                         <!-- Rule Type Selector -->
                         <div class="type-select">
-                            <InputSelect options={Array.from(ROW_TYPES)} bind:value={row.type} />
+                            <InputSelect
+                                options={Array.from(ROW_TYPES)}
+                                bind:value={row.type}
+                                title={getRowTypeLabel(row.type)}
+                            />
                         </div>
 
                         <!-- Rule Parameter inputs -->
@@ -264,7 +284,6 @@
                         <!-- Delete Button -->
                         <Button
                             iconName="delete"
-                            size="small"
                             disabled={settings.builderRows.length <= 1}
                             onclick={() => removeRow(row.id)}
                             title="Remove element"
@@ -276,13 +295,8 @@
 
             <!-- Add Row Button -->
             <div class="builder-actions">
-                <Button
-                    iconName="add"
-                    size="small"
-                    onclick={addRow}
-                    style="border: 1px solid var(--viz-border-subtle);"
-                >
-                    Add Element
+                <Button variant="info" iconName="add" onclick={addRow}>
+                    <span>Add Element</span>
                 </Button>
             </div>
         </div>
@@ -291,7 +305,12 @@
     <!-- Custom Text Field -->
     {#if settings.namingMode === "custom" || settings.namingMode === "template" || (settings.namingMode === "builder" && computedActiveTemplate.includes("{{customName}}"))}
         <div class="control-group">
-            <InputText label="Custom Text" bind:value={settings.customName} placeholder="Untitled" />
+            <InputText
+                id="batch-rename-custom-text"
+                label="Custom Text"
+                bind:value={settings.customName}
+                placeholder="Untitled"
+            />
         </div>
     {/if}
 
@@ -329,25 +348,27 @@
     {/if}
 
     <!-- Live Preview Panel -->
-    <div class="rename-preview-box">
-        <span class="preview-title">Rename Preview</span>
-        <div class="preview-list">
-            {#each previewItems as item}
-                <div class="preview-row">
-                    <span class="preview-orig" title={item.original}>{item.original}</span>
-                    {#if item.preview.trim() !== item.original.trim()}
-                        <MaterialIcon iconName="arrow_forward" weight={500} class="preview-arrow" />
-                        <span class="preview-new" title={item.preview}>{item.preview}</span>
-                    {/if}
-                </div>
-            {/each}
-            {#if assets.length > 3}
-                <div class="preview-more">
-                    and {assets.length - 3} more item(s)...
-                </div>
-            {/if}
+    {#if settings.namingMode !== "original"}
+        <div class="rename-preview-box">
+            <span class="preview-title">Rename Preview</span>
+            <div class="preview-list">
+                {#each previewItems as item}
+                    <div class="preview-row">
+                        <span class="preview-orig" title={item.original}>{item.original}</span>
+                        {#if item.preview.trim() !== item.original.trim()}
+                            <MaterialIcon iconName="arrow_forward" weight={500} class="preview-arrow" />
+                            <span class="preview-new" title={item.preview}>{item.preview}</span>
+                        {/if}
+                    </div>
+                {/each}
+                {#if assets.length > 3}
+                    <div class="preview-more">
+                        and {assets.length - 3} more item(s)...
+                    </div>
+                {/if}
+            </div>
         </div>
-    </div>
+    {/if}
 </div>
 
 <style lang="scss">
@@ -361,7 +382,7 @@
     .control-group {
         display: flex;
         flex-direction: column;
-        gap: var(--viz-spacing-xs);
+        gap: var(--viz-spacing-sm);
         width: 100%;
     }
 
@@ -400,10 +421,10 @@
         .rule-row {
             display: flex;
             align-items: center;
-            gap: var(--viz-spacing-xs);
+            gap: var(--viz-spacing-sm);
             width: 100%;
             padding: var(--viz-spacing-xxs) 0;
-            border-bottom: 1px solid var(--viz-surface-panel);
+            border-bottom: var(--viz-border-thin);
 
             &:last-child {
                 border-bottom: none;
@@ -412,11 +433,15 @@
             .order-actions {
                 display: flex;
                 flex-direction: column;
-                gap: 1px;
+                gap: var(--viz-spacing-xs);
+
+                :global(.order-btn:not(:disabled) .viz-material-icon) {
+                    color: var(--viz-primary);
+                }
             }
 
             .type-select {
-                width: 8.5rem;
+                width: 10rem;
                 flex-shrink: 0;
             }
 
