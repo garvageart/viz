@@ -5,6 +5,13 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.31.16] - 2026-08-19
+
+* fix(viewfinder): prevent lightbox side-panel squishing on smaller viewports (db2a97f8)
+* feat(viewfinder): enhance batch rename builder UI, export validation, and test coverage (da8ede5c)
+* feat(viewfinder): create reusable EditableText component and integrate into MetadataPanel (12a2a73d)
+* feat(viewfinder): improve grid keyboard navigation, multi-select UI, and tooltip handling (4496a0b2)
+
 ## [0.31.15] - 2026-08-19
 
 * chore(viewfinder): regenerate icon components and MaterialSymbol type definitions (d19f6ee9)
