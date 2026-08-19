@@ -6,8 +6,8 @@
     import Badge from "$lib/components/ui/Badge.svelte";
     import Button from "$lib/components/ui/Button.svelte";
     import DatePicker from "$lib/components/ui/DatePicker.svelte";
+    import EditableText from "$lib/components/ui/EditableText.svelte";
     import Favourite from "$lib/components/ui/Favourite.svelte";
-    import InputText from "$lib/components/ui/InputText.svelte";
     import MaterialIcon from "$lib/components/ui/MaterialIcon.svelte";
     import TextArea from "$lib/components/ui/TextArea.svelte";
     import NoImageSelected from "$lib/components/ui/misc/NoImageSelected.svelte";
@@ -48,29 +48,14 @@
     let currentAsset = $derived(asset ?? (isAssetImage(activeScope?.active) ? activeScope.active : undefined));
 
     let displayName = $derived(currentAsset?.name || currentAsset?.image_metadata?.file_name || "");
-
-    let editState = $state({
-        isEditingName: false,
-        name: ""
-    });
     let calendarOpen = $state(false);
 
-    function startEditingName() {
+    async function saveName(newName: string) {
         if (!currentAsset) {
             return;
         }
 
-        editState.name = displayName;
-        editState.isEditingName = true;
-    }
-
-    async function saveName() {
-        if (!editState.isEditingName || !currentAsset) {
-            return;
-        }
-
-        editState.isEditingName = false;
-        const trimmed = editState.name.trim();
+        const trimmed = newName.trim();
 
         if (trimmed !== (currentAsset.name ?? "")) {
             currentAsset.name = trimmed;
@@ -87,10 +72,6 @@
                 });
             }
         }
-    }
-
-    function cancelEditingName() {
-        editState.isEditingName = false;
     }
 
     function copyFilename() {
@@ -202,39 +183,13 @@
                         <MaterialIcon iconName="image" class="exif-material-icon" />
                         <div class="card-values">
                             <div class="name-row">
-                                {#if editState.isEditingName}
-                                    <InputText
-                                        bind:value={editState.name}
-                                        class="value-big"
-                                        spellcheck="false"
-                                        autofocus={true}
-                                        onblur={() => {
-                                            saveName();
-                                        }}
-                                        onkeydown={(e) => {
-                                            if (e.key === "Enter") {
-                                                e.currentTarget.blur();
-                                            } else if (e.key === "Escape") {
-                                                cancelEditingName();
-                                            }
-                                        }}
-                                    />
-                                {:else}
-                                    <div
-                                        class="value-big"
-                                        role="button"
-                                        tabindex="0"
-                                        title={displayName}
-                                        onclick={startEditingName}
-                                        onkeydown={(e) => {
-                                            if (e.key === "Enter" || e.key === " ") {
-                                                startEditingName();
-                                            }
-                                        }}
-                                    >
-                                        {displayName}
-                                    </div>
-                                {/if}
+                                <EditableText
+                                    value={displayName}
+                                    class="value-big-wrapper"
+                                    inputClass="value-big"
+                                    textClass="value-big"
+                                    onsave={saveName}
+                                />
                                 <Button
                                     class="copy-filename-btn"
                                     title="Copy filename"
@@ -553,32 +508,11 @@
         min-width: 0;
     }
 
+    .name-row > :global(.value-big-wrapper),
     .name-row > :global(.value-big) {
         flex: 1 1 auto;
         min-width: 0;
         padding: 0.25rem 0;
-    }
-
-    .name-row > :global(.input-container) {
-        flex: 1 1 auto;
-        min-width: 0;
-        padding: 0;
-        width: 100%;
-    }
-
-    .name-row :global(input.value-big) {
-        width: 100%;
-        min-width: 0;
-        min-height: 0;
-        height: auto;
-        padding: 0.25rem 0;
-        background-color: transparent;
-        box-shadow: inset 0 -1px 0 0 var(--viz-primary);
-        border: none;
-        font-size: var(--viz-font-size-std);
-        font-weight: 600;
-        letter-spacing: -0.01em;
-        color: var(--viz-text-primary);
     }
 
     :global(.file-type-badge) {
