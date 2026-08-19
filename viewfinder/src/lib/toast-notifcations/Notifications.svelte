@@ -74,7 +74,7 @@
                 <div class="viz-toast-type-container">
                     <MaterialIcon
                         iconName={getToastIcon(toast.type || "info")}
-                        size="1.25rem"
+                        size="1.1rem"
                         class="viz-toast-header-icon"
                     />
                     <span class="viz-toast-type-label">{formatCategoryLabel(toast.type || "info")}</span>
@@ -119,18 +119,18 @@
         position: fixed;
         right: var(--viz-spacing-lg);
         bottom: var(--viz-spacing-lg);
-        width: 28rem;
+        width: 25rem;
         max-width: calc(100vw - var(--viz-spacing-lg) * 2);
         display: flex;
         flex-direction: column;
-        gap: var(--viz-spacing-sm);
+        gap: var(--viz-spacing-xs);
         z-index: 99999;
         pointer-events: none;
         box-sizing: border-box;
     }
 
     .viz-toast {
-        font-size: var(--viz-font-size-lg);
+        font-size: var(--viz-font-size-std);
         width: 100%;
         display: flex;
         flex-direction: column;
@@ -172,7 +172,7 @@
             left: 0;
             top: 0;
             bottom: 0;
-            width: 5px;
+            width: 4px;
             z-index: 2;
             background-color: var(--toast-accent-color);
         }
@@ -182,8 +182,8 @@
         display: flex;
         align-items: center;
         justify-content: space-between;
-        padding: var(--viz-spacing-sm) var(--viz-spacing-std);
-        padding-left: calc(var(--viz-spacing-std) + 5px); // Account for left vertical strip
+        padding: var(--viz-spacing-xs) var(--viz-spacing-md);
+        padding-left: calc(var(--viz-spacing-md) + 4px); // Account for left vertical strip
         background-color: color-mix(in srgb, var(--toast-accent-color) 35%, var(--viz-surface-panel));
         border-bottom: 1px solid color-mix(in srgb, var(--toast-accent-color) 40%, var(--viz-border-subtle));
         box-sizing: border-box;
@@ -198,7 +198,7 @@
     }
 
     .viz-toast-type-label {
-        font-size: var(--viz-font-size-lg);
+        font-size: var(--viz-font-size-sm);
         font-family: var(--viz-mono-font);
         font-weight: 700;
         line-height: 1;
@@ -213,25 +213,25 @@
     }
 
     .viz-toast-body {
-        padding: var(--viz-spacing-std);
-        padding-left: calc(var(--viz-spacing-std) + 5px);
+        padding: var(--viz-spacing-md);
+        padding-left: calc(var(--viz-spacing-md) + 4px);
         display: flex;
         flex-direction: column;
-        gap: var(--viz-spacing-sm);
+        gap: var(--viz-spacing-xs);
         box-sizing: border-box;
     }
 
     .viz-toast-title {
         font-weight: 700;
-        font-size: var(--viz-font-size-xl);
+        font-size: var(--viz-font-size-lg);
         line-height: 1.2;
         margin: 0;
         color: var(--viz-text-primary);
     }
 
     .viz-toast-message {
-        font-size: var(--viz-font-size-lg);
-        line-height: 1.5;
+        font-size: var(--viz-font-size-std);
+        line-height: 1.4;
         overflow-wrap: break-word;
         word-break: break-word;
     }
@@ -269,9 +269,9 @@
         background-color: var(--viz-surface-panel);
         border: var(--viz-border-thin);
         color: var(--viz-text-primary);
-        padding: var(--viz-spacing-xs) var(--viz-spacing-md);
+        padding: var(--viz-spacing-xs) var(--viz-spacing-sm);
         border-radius: var(--viz-border-radius-pill); // Pill shape strictly for interactive actions
-        font-size: var(--viz-font-size-lg);
+        font-size: var(--viz-font-size-sm);
         cursor: pointer;
         font-weight: 600;
         font-family: var(--viz-display-font);
