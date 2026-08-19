@@ -76,7 +76,7 @@
             return "photo_camera";
         }
         if (k === "iso") {
-            return "iso";
+            return "tune";
         }
         if (k.includes("exposure") || k.includes("shutter")) {
             return "shutter_speed";
@@ -88,7 +88,7 @@
             return "zoom_in";
         }
         if (k.includes("orientation")) {
-            return "screen_rotation";
+            return "screen_rotation_up";
         }
 
         // Date / Time

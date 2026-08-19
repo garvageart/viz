@@ -146,7 +146,7 @@
             title="App Menu"
         >
             <span>viz</span>
-            <MaterialIcon iconName="expand_more" weight={300} size="1em" style="margin-left: 0.15em;" />
+            <MaterialIcon iconName="keyboard_arrow_down" weight={300} size="1em" style="margin-left: 0.15em;" />
         </button>
         <AppMenu bind:isOpen={openAppMenu} bind:anchor={appMenuButton} />
         <div class="header-separator"></div>
@@ -335,7 +335,7 @@
     }
 
     .icon-group-container {
-        gap: var(--viz-spacing-xs);
+        gap: var(--viz-spacing-sm);
         display: flex;
         flex-direction: row;
     }

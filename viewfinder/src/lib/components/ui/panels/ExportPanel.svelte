@@ -439,7 +439,7 @@
     {#snippet panelSection(name: SectionName, label: string, children: Snippet)}
         <div class="section" class:expanded={sections[name]}>
             <button class="section-header" onclick={() => toggleSection(name)}>
-                <MaterialIcon iconName={sections[name] ? "expand_more" : "chevron_right"} />
+                <MaterialIcon iconName={sections[name] ? "keyboard_arrow_down" : "chevron_right"} />
                 <span>{label}</span>
             </button>
             {#if sections[name]}

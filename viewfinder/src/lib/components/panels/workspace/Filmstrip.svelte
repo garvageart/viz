@@ -289,7 +289,7 @@
     {#if filmstripImages.length === 0}
         <div class="empty-state">
             <div class="empty-icon-wrapper">
-                <MaterialIcon iconName="image_not_supported" size="2rem" />
+                <MaterialIcon iconName="broken_image" size="2rem" />
             </div>
             <div class="empty-text-wrapper">
                 <span class="empty-title">No assets in this view</span>

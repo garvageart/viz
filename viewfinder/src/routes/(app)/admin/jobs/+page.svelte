@@ -282,7 +282,7 @@
 
                         {#if jobsState.activeJobs.length === 0}
                             <div class="empty-state-placeholder">
-                                <MaterialIcon iconName="magic_button" class="empty-icon" />
+                                <MaterialIcon iconName="work_history" class="empty-icon" />
                                 <p>No active jobs at the moment</p>
                             </div>
                         {/if}

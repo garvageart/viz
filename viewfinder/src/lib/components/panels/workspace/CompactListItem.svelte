@@ -77,7 +77,7 @@
             <span class="name" title={item.name}>{item.name}</span>
         </div>
         <button class="expand-btn" aria-label={expanded ? "Collapse" : "Expand"}>
-            <MaterialIcon iconName={expanded ? "expand_less" : "expand_more"} size="1.2rem" />
+            <MaterialIcon iconName={expanded ? "keyboard_arrow_up" : "keyboard_arrow_down"} size="1.2rem" />
         </button>
     </div>
 

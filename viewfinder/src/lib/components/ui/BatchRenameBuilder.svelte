@@ -213,14 +213,14 @@
                         <!-- Ordering Buttons -->
                         <div class="order-actions">
                             <Button
-                                iconName="expand_less"
+                                iconName="keyboard_arrow_up"
                                 size="mini"
                                 disabled={index === 0}
                                 onclick={() => moveRowUp(index)}
                                 title="Move up"
                             />
                             <Button
-                                iconName="expand_more"
+                                iconName="keyboard_arrow_down"
                                 size="mini"
                                 disabled={index === settings.builderRows.length - 1}
                                 onclick={() => moveRowDown(index)}
