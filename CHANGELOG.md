@@ -5,6 +5,13 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.31.15] - 2026-08-19
+
+* chore(viewfinder): regenerate icon components and MaterialSymbol type definitions (d19f6ee9)
+* refactor(viewfinder): update icon names to standard Material Symbols (dd70b3bb)
+* feat(viewfinder): implement shared AST icon scanner and update MaterialIcon unit tests (f78fb3cb)
+* style(viewfinder): reduce toast notification dimensions and font sizing (5f2a74e4)
+
 ## [0.31.14] - 2026-08-18
 
 * fix(ui): preserve cropped container bounds and keep Info toggle visible in lightbox (eaf6667e)
