@@ -1430,8 +1430,8 @@
         background-color: var(--viz-surface-panel);
         height: 100%;
         width: auto;
-        max-width: 20vw;
-        min-width: 20vw;
+        max-width: 28vw;
+        min-width: 25rem;
         pointer-events: auto;
         box-sizing: border-box;
         overflow-y: auto;
