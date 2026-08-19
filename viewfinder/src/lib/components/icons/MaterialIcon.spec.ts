@@ -1,33 +1,12 @@
 import * as fs from "fs";
 import * as path from "path";
 import { describe, expect, it } from "vitest";
+import { pascalCase, scanIconUsages } from "../../../../tools/icon-gen/scan-icons.js";
 
 const rootDir = path.resolve(__dirname, "../../../../");
 const generatedDir = path.join(rootDir, "src/lib/components/icons/generated");
 const indexPath = path.join(generatedDir, "index.ts");
 const failedIconsPath = path.join(rootDir, "tools/icon-gen/failed-icons.json");
-
-/** Mirrors MaterialIcon.normalizeName so resolution matches runtime behaviour. */
-function normalizeIconName(name: string): string {
-    return String(name)
-        .replace(/[^a-z0-9]+/gi, " ")
-        .trim()
-        .split(/\s+/)
-        .filter(Boolean)
-        .map((p) => p[0].toUpperCase() + p.slice(1))
-        .join("");
-}
-
-/** Loads the valid Material Symbol names from the generated type definition. */
-function loadValidSymbols(): Set<string> {
-    const typePath = path.join(rootDir, "src/lib/types/MaterialSymbol.ts");
-    if (!fs.existsSync(typePath)) {
-        return new Set();
-    }
-    const content = fs.readFileSync(typePath, "utf-8");
-    const matches = content.match(/"([^"]+)"/g) ?? [];
-    return new Set(matches.map((m) => m.slice(1, -1)));
-}
 
 function generatedIconNames(): Set<string> {
     return new Set(
@@ -40,37 +19,18 @@ function generatedIconNames(): Set<string> {
 }
 
 /**
- * Collects every literal `iconName="..."` / `iconName: "..."` used in source
- * files, normalised to the generated component name (e.g. `IconSomeName`).
- * Names are validated against the MaterialSymbol type, mirroring how
- * tools/icon-gen/generate-icons.js filters candidates, so stray matches (e.g.
- * this spec's own docstrings) are ignored.
+ * Collects every icon used in source files using the generator AST scanner,
+ * normalised to the generated component name (e.g. `IconSomeName`).
  */
-function collectUsedIconNames(validSymbols: Set<string>): Set<string> {
+function collectUsedIconNames(): Set<string> {
+    const usagesMap = scanIconUsages({
+        srcDir: path.join(rootDir, "src"),
+        rootDir
+    });
     const used = new Set<string>();
-
-    function walk(dir: string): void {
-        for (const entry of fs.readdirSync(dir, { withFileTypes: true })) {
-            if (entry.name === "node_modules" || entry.name === ".svelte-kit" || entry.name === "generated") {
-                continue;
-            }
-            const full = path.join(dir, entry.name);
-            if (entry.isDirectory()) {
-                walk(full);
-            } else if (entry.name.endsWith(".svelte") || entry.name.endsWith(".ts")) {
-                const content = fs.readFileSync(full, "utf-8");
-                const matches = content.matchAll(/iconName(?:\s*=\s*|\s*:\s*)["']([^"']+)["']/g);
-                for (const m of matches) {
-                    const raw = m[1].trim();
-                    if (raw && validSymbols.has(raw)) {
-                        used.add(`Icon${normalizeIconName(raw)}`);
-                    }
-                }
-            }
-        }
+    for (const name of usagesMap.keys()) {
+        used.add(`Icon${pascalCase(name)}`);
     }
-
-    walk(path.join(rootDir, "src"));
     return used;
 }
 
@@ -109,9 +69,9 @@ describe("MaterialIcon Generation Validation", () => {
         }
     });
 
-    it("should have a generated component for every icon name used in the codebase", () => {
+    it("should have a generated component for every icon name used in the codebase", { timeout: 15000 }, () => {
         const iconFiles = generatedIconNames();
-        const used = collectUsedIconNames(loadValidSymbols());
+        const used = collectUsedIconNames();
 
         expect(used.size, "no iconName usages found to validate").toBeGreaterThan(0);
 
@@ -121,12 +81,37 @@ describe("MaterialIcon Generation Validation", () => {
         );
     });
 
-    it("should produce a renderable SVG for every used icon", () => {
-        const used = collectUsedIconNames(loadValidSymbols());
+    it("should produce a renderable SVG for every used icon", { timeout: 15000 }, () => {
+        const used = collectUsedIconNames();
 
         for (const name of used) {
             const content = fs.readFileSync(path.join(generatedDir, `${name}.svelte`), "utf-8");
             expect(content.includes("<svg"), `${name}.svelte does not contain an <svg> element`).toBe(true);
         }
+    });
+
+    it("should have no unreferenced/stale icon components on disk", { timeout: 15000 }, () => {
+        const iconFiles = generatedIconNames();
+        const usagesMap = scanIconUsages({
+            srcDir: path.join(rootDir, "src"),
+            rootDir
+        });
+
+        const activeBases = new Set<string>();
+        for (const [name, entry] of usagesMap.entries()) {
+            const baseName = `Icon${pascalCase(name)}`;
+            activeBases.add(baseName);
+            for (const style of entry.styles) {
+                if (style !== "sharp" && style !== "filled") {
+                    activeBases.add(`Icon${pascalCase(name)}${pascalCase(style)}`);
+                }
+            }
+        }
+
+        const stale = [...iconFiles].filter((file) => !activeBases.has(file));
+        expect(
+            stale,
+            `Unused icon components found on disk that should be removed by the generator: ${stale.join(", ")}`
+        ).toEqual([]);
     });
 });
