@@ -157,7 +157,7 @@
         box-shadow:
             inset 0 0 0 1.5px var(--viz-primary),
             0 0 0 1px rgba(0, 0, 0, 0.4),
-            0 0 0 9999px rgba(0, 0, 0, 0.6);
+            0 0 0 9999px var(--viz-crop-mask, rgba(0, 0, 0, 0.6));
         outline: none;
         pointer-events: auto;
         cursor: move;

@@ -443,17 +443,16 @@
             return;
         }
 
-        const rawContainerWidth = imageContainerEl.clientWidth;
-        const rawContainerHeight = imageContainerEl.clientHeight;
+        const computedStyle = getComputedStyle(imageContainerEl);
+        const paddingX = (parseFloat(computedStyle.paddingLeft) || 0) + (parseFloat(computedStyle.paddingRight) || 0);
+        const paddingY = (parseFloat(computedStyle.paddingTop) || 0) + (parseFloat(computedStyle.paddingBottom) || 0);
 
-        if (rawContainerWidth <= 0 || rawContainerHeight <= 0) {
+        const containerWidth = Math.max(1, imageContainerEl.clientWidth - paddingX);
+        const containerHeight = Math.max(1, imageContainerEl.clientHeight - paddingY);
+
+        if (containerWidth <= 0 || containerHeight <= 0) {
             return;
         }
-
-        // Account for .image-wrapper.is-crop padding (var(--viz-spacing-xxl) = ~4rem total = 64px)
-        const paddingOffset = isCropping ? 64 : 0;
-        const containerWidth = Math.max(1, rawContainerWidth - paddingOffset);
-        const containerHeight = Math.max(1, rawContainerHeight - paddingOffset);
 
         let targetWidth = lightboxImage.width || imageEl?.naturalWidth;
         let targetHeight = lightboxImage.height || imageEl?.naturalHeight;
@@ -504,6 +503,7 @@
     // and update imageDimensions, scaling currentCrop proportionally to keep it in sync.
     $effect(() => {
         if (show && imageContainerEl) {
+            void isCropping;
             updateImageDimensions();
 
             const observer = new ResizeObserver(() => {
@@ -886,7 +886,7 @@
 
 <Lightbox
     bind:show
-    backgroundOpacity={0.95}
+    backgroundOpacity={1}
     closeOnEsc={!isCropping}
     onclick={() => {
         if (wasDragging) {
@@ -927,9 +927,9 @@
                             }
                         }}
                     />
-                    {#if lightboxImage}
-                        <span class="lightbox-image-name" title={lightboxImage.name}>
-                            {lightboxImage.name}
+                    {#if !isCropping}
+                        <span class="lightbox-image-name" title={lightboxImage!.name}>
+                            {lightboxImage!.name}
                         </span>
                     {/if}
                 </div>
@@ -1292,7 +1292,7 @@
     }
 
     .image-wrapper.is-crop {
-        padding: var(--viz-spacing-xxl);
+        padding: var(--viz-spacing-xl);
     }
 
     .zoom-target {
