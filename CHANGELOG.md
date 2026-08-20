@@ -5,6 +5,13 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.31.18] - 2026-08-20
+
+* fix(viewfinder): improve lightbox background customizability and dynamic crop padding (272dae4c)
+* docs(ui): add guideline against fallback values in design system CSS variables (57fa84eb)
+* refactor(api): move TypeScript API client and scopes generation to packages/api (a4dfe63b)
+* feat(genentities): support read-only property tags and add dedicated original_file_name column (d2312129)
+
 ## [0.31.17] - 2026-08-20
 
 * fix: have a fixed width for ImageLightbox side panel (b1b91280)
