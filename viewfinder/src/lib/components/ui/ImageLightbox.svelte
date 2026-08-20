@@ -1430,7 +1430,7 @@
         background-color: var(--viz-surface-panel);
         height: 100%;
         width: auto;
-        max-width: 28vw;
+        max-width: 25rem;
         min-width: 25rem;
         pointer-events: auto;
         box-sizing: border-box;
