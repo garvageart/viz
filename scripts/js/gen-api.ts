@@ -25,7 +25,9 @@ const options: Options = {
 const root = join(__dirname, "..", "..");
 const specPath = join(root, "api", "openapi", "openapi.yaml");
 const dtoOutPath = join(root, "internal", "dto", "types.gen.go");
-const vizDir = join(root, "viewfinder");
+const packagesApiDir = join(root, "packages", "api");
+const tsClientOutPath = join(packagesApiDir, "client.gen.ts");
+const scopesGenPath = join(packagesApiDir, "scopes.gen.ts");
 
 console.log("Repo root:", root);
 
@@ -87,9 +89,9 @@ if (options.installTools) {
     }
 
     console.log("Ensuring pnpm dev dep openapi-typescript is installed...");
-    if (existsSync(vizDir) && commandExists("pnpm")) {
-        console.log("Adding openapi-typescript to viz...");
-        run("pnpm", ["add", "-D", "openapi-typescript@^7.5.0"], vizDir, true);
+    if (existsSync(packagesApiDir) && commandExists("pnpm")) {
+        console.log("Adding openapi-typescript to packages/api...");
+        run("pnpm", ["add", "-D", "openapi-typescript@^7.5.0"], packagesApiDir, true);
     } else if (!commandExists("pnpm")) {
         console.warn("pnpm not found. Skipping TS generator install; assuming it's available in PATH.");
     }
@@ -205,56 +207,58 @@ if (!genEntitiesSuccess) {
 }
 
 // Generate TS API client with oazapfts
-if (existsSync(vizDir)) {
-    console.log("Generating TypeScript API client with oazapfts...");
-    const pkgJsonPath = join(vizDir, "package.json");
+console.log(`Generating TypeScript API client with oazapfts -> ${tsClientOutPath}`);
+try {
+    mkdirSync(packagesApiDir, { recursive: true });
+} catch (e) {
+    /* ignore */
+}
 
-    if (existsSync(pkgJsonPath)) {
-        if (commandExists("pnpm")) {
-            const tsGenSuccess = run("pnpm", ["run", "gen:api"], vizDir);
-            if (!tsGenSuccess) {
-                console.warn("pnpm run gen:api failed; trying npx fallback...");
-                run("npx", ["oazapfts", specPath, join("src", "lib", "api", "client.gen.ts")], vizDir);
-            }
-        } else {
-            console.warn("pnpm not found; trying npx oazapfts...");
-            run("npx", ["oazapfts", specPath, join("src", "lib", "api", "client.gen.ts")], vizDir);
-        }
+if (commandExists("pnpm")) {
+    const tsGenSuccess = run("pnpm", ["dlx", "oazapfts", specPath, tsClientOutPath, "--useEnumType"], root);
+    if (!tsGenSuccess) {
+        console.warn("pnpm dlx oazapfts failed; trying npx fallback...");
+        run("npx", ["-y", "oazapfts", specPath, tsClientOutPath, "--useEnumType"], root);
     }
+} else {
+    console.warn("pnpm not found; trying npx oazapfts...");
+    run("npx", ["-y", "oazapfts", specPath, tsClientOutPath, "--useEnumType"], root);
+}
 
-    // Generate scopes from BearerAuth security scheme
-    try {
-        console.log("Generating scopes.gen.ts from OpenAPI x-scopes...");
-        const specContent = readFileSync(specPath, "utf-8");
-        const doc = yaml.load(specContent) as any;
-        const scopesMap = doc?.components?.securitySchemes?.BearerAuth?.["x-scopes"];
+// Generate scopes from BearerAuth security scheme
+try {
+    console.log("Generating scopes.gen.ts from OpenAPI x-scopes...");
+    const specContent = readFileSync(specPath, "utf-8");
+    const doc = yaml.load(specContent) as Record<string, any>;
+    const scopesMap = doc?.components?.securitySchemes?.BearerAuth?.["x-scopes"];
 
-        if (scopesMap) {
-            const scopeKeys: string[] = [];
-            const scopeItems: { value: string; label: string }[] = [];
+    if (scopesMap) {
+        const scopeKeys: string[] = [];
+        const scopeItems: { value: string; label: string }[] = [];
 
-            const scopeToKey = (scope: string): string => {
-                if (scope === "*") {
-                    return "FullAccess";
-                }
-                const parts = scope.split(/[:\-]/);
-                return parts
-                    .map((part) => {
-                        if (part === "api") {
-                            return "API";
-                        }
-                        return part.charAt(0).toUpperCase() + part.slice(1);
-                    })
-                    .join("");
-            };
-
-            for (const [value, label] of Object.entries(scopesMap)) {
-                const key = scopeToKey(value);
-                scopeKeys.push(`    ${key} = "${value}"`);
-                scopeItems.push({ value, label: label as string });
+        const scopeToKey = (scope: string): string => {
+            if (scope === "*") {
+                return "FullAccess";
             }
 
-            const scopesGenContent = `/**
+            const parts = scope.split(/[:\-]/);
+            return parts
+                .map((part) => {
+                    if (part === "api") {
+                        return "API";
+                    }
+                    return part.charAt(0).toUpperCase() + part.slice(1);
+                })
+                .join("");
+        };
+
+        for (const [value, label] of Object.entries(scopesMap)) {
+            const key = scopeToKey(value);
+            scopeKeys.push(`    ${key} = "${value}"`);
+            scopeItems.push({ value, label: label as string });
+        }
+
+        const scopesGenContent = `/**
  * DO NOT MODIFY - This file has been generated from OpenAPI spec.
  * See scripts/js/gen-api.ts
  */
@@ -272,38 +276,37 @@ export const scopes: ScopeItem[] = [
 ${scopeItems.map((item) => `    { value: Scope.${scopeToKey(item.value)}, label: "${item.label}" }`).join(",\n")}
 ];
 `;
-            const scopesGenPath = join(vizDir, "src", "lib", "auth", "scopes.gen.ts");
-            writeFileSync(scopesGenPath, scopesGenContent, "utf-8");
-            console.log(`Successfully generated scopes to ${scopesGenPath}`);
+        writeFileSync(scopesGenPath, scopesGenContent, "utf-8");
+        console.log(`Successfully generated scopes to ${scopesGenPath}`);
 
-            // Generate Go scopes
-            const scopeKeysGo: string[] = [];
-            const scopeItemsGo: string[] = [];
+        // Generate Go scopes
+        const scopeKeysGo: string[] = [];
+        const scopeItemsGo: string[] = [];
 
-            const scopeToGoKey = (scope: string): string => {
-                if (scope === "*") {
-                    return "AllScope";
-                }
-                const cleaned = scope.replace("api-keys", "APIKeys");
-                const parts = cleaned.split(/[:\-]/);
-                const pascal = parts
-                    .map((part) => {
-                        if (part === "APIKeys") {
-                            return "APIKeys";
-                        }
-                        return part.charAt(0).toUpperCase() + part.slice(1);
-                    })
-                    .join("");
-                return pascal + "Scope";
-            };
-
-            for (const [value, label] of Object.entries(scopesMap)) {
-                const goKey = scopeToGoKey(value);
-                scopeKeysGo.push(`\t// ${goKey} grants permission for ${value}.\n\t${goKey} Scope = "${value}"`);
-                scopeItemsGo.push(`\t{Value: ${goKey}, Label: "${label}"}`);
+        const scopeToGoKey = (scope: string): string => {
+            if (scope === "*") {
+                return "AllScope";
             }
+            const cleaned = scope.replace("api-keys", "APIKeys");
+            const parts = cleaned.split(/[:\-]/);
+            const pascal = parts
+                .map((part) => {
+                    if (part === "APIKeys") {
+                        return "APIKeys";
+                    }
+                    return part.charAt(0).toUpperCase() + part.slice(1);
+                })
+                .join("");
+            return pascal + "Scope";
+        };
 
-            const goGenContent = `// Code generated by scripts/js/gen-api.ts. DO NOT EDIT.
+        for (const [value, label] of Object.entries(scopesMap)) {
+            const goKey = scopeToGoKey(value);
+            scopeKeysGo.push(`\t// ${goKey} grants permission for ${value}.\n\t${goKey} Scope = "${value}"`);
+            scopeItemsGo.push(`\t{Value: ${goKey}, Label: "${label}"}`);
+        }
+
+        const goGenContent = `// Code generated by scripts/js/gen-api.ts. DO NOT EDIT.
 package auth
 
 const (
@@ -315,15 +318,14 @@ var AllScopes = []ScopeItem{
 ${scopeItemsGo.join(",\n")},
 }
 `;
-            const goGenPath = join(root, "internal", "auth", "scopes.gen.go");
-            writeFileSync(goGenPath, goGenContent, "utf-8");
-            console.log(`Successfully generated Go scopes to ${goGenPath}`);
-        } else {
-            console.warn("No x-scopes found in BearerAuth security scheme.");
-        }
-    } catch (err) {
-        console.error("Failed to generate scopes.gen.ts:", err);
+        const goGenPath = join(root, "internal", "auth", "scopes.gen.go");
+        writeFileSync(goGenPath, goGenContent, "utf-8");
+        console.log(`Successfully generated Go scopes to ${goGenPath}`);
+    } else {
+        console.warn("No x-scopes found in BearerAuth security scheme.");
     }
+} catch (err) {
+    console.error("Failed to generate scopes.gen.ts:", err);
 }
 
 // Optional build checks
@@ -334,11 +336,11 @@ if (options.build) {
         console.warn("Go build failed.");
     }
 
-    if (existsSync(vizDir) && commandExists("pnpm")) {
-        console.log("Running Svelte/TS check...");
-        const checkSuccess = run("pnpm", ["run", "check"], vizDir);
+    if (commandExists("pnpm")) {
+        console.log("Running pnpm check...");
+        const checkSuccess = run("pnpm", ["run", "check"], root);
         if (!checkSuccess) {
-            console.warn("viz check failed (this may be unrelated to API types).");
+            console.warn("pnpm check failed (this may be unrelated to API types).");
         }
     }
 }

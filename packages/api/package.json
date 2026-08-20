@@ -12,8 +12,14 @@
             "default": "./index.ts"
         }
     },
+    "scripts": {
+        "gen:api": "oazapfts ../../api/openapi/openapi.yaml client.gen.ts --useEnumType"
+    },
     "license": "AGPL-3.0",
     "dependencies": {
         "@oazapfts/runtime": "^1.2.0"
+    },
+    "devDependencies": {
+        "oazapfts": "^7.5.0"
     }
 }

@@ -1,5 +1,5 @@
 import { faker } from "@faker-js/faker";
-import { type Collection, type ImageAsset, Role, type User } from "$lib/api";
+import { type Collection, type ImageAsset, Role, type User } from "@viz/api";
 import { generateRandomString } from "$lib/utils/misc";
 
 /**
