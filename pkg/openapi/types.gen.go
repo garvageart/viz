@@ -999,8 +999,11 @@ type ImageAsset struct {
 	ImagePaths    ImagePaths     `json:"image_paths"`
 
 	// Name Image name
-	Name  string `json:"name"`
-	Owner *User  `json:"owner,omitempty"`
+	Name string `json:"name"`
+
+	// OriginalFileName Original uploaded file name
+	OriginalFileName *string `json:"original_file_name,omitempty"`
+	Owner            *User   `json:"owner,omitempty"`
 
 	// Private Is private
 	Private bool `json:"private"`

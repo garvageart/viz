@@ -4084,6 +4084,10 @@ components:
             properties:
                 uid: { type: string, description: Image UID }
                 name: { type: string, description: Image name }
+                original_file_name:
+                    type: string
+                    readOnly: true
+                    description: "Original uploaded file name"
                 uploaded_by:
                     $ref: "#/components/schemas/User"
                 owner:

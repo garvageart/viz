@@ -25,6 +25,7 @@ type EntityConfig struct {
 	Indexes       []string          // Fields to index
 	UniqueIndexes []string          // Fields with unique indexes
 	GormIndexes   []GormIndexConfig // Custom GORM indexes parsed from OpenAPI x-go-gorm-index
+	FieldTags     map[string]string // Custom GORM tags parsed from OpenAPI (e.g. readOnly -> <-:create, x-gorm-tag)
 	Fields        []FieldConfig
 	// Flag indicating whether the original DTO contains CreatedAt and UpdatedAt
 	DtoHasDates bool
@@ -196,9 +197,17 @@ func main() {
 
 		for name, openapiConf := range openapiIncludes {
 			if existing, found := discoveredMap[name]; found {
-				// Merge existing with openapiConf, giving openapiConf precedence for GormIndexes
+				// Merge existing with openapiConf, giving openapiConf precedence for GormIndexes and FieldTags
 				if len(openapiConf.GormIndexes) > 0 {
 					existing.GormIndexes = openapiConf.GormIndexes
+				}
+				if len(openapiConf.FieldTags) > 0 {
+					if existing.FieldTags == nil {
+						existing.FieldTags = make(map[string]string)
+					}
+					for k, v := range openapiConf.FieldTags {
+						existing.FieldTags[k] = v
+					}
 				}
 				// Other fields can also be merged/overwritten if necessary
 				mergedDiscovered = append(mergedDiscovered, existing)
@@ -595,6 +604,51 @@ func populateEntityFields(dtoPath string, entities []EntityConfig) ([]EntityConf
 		}
 
 		for j, f := range fields {
+			var tagParts []string
+
+			// If the field already has a GORM tag (e.g. from foreignKey relation), preserve it
+			if f.GormTag != "" {
+				raw := f.GormTag
+				if after, ok := strings.CutPrefix(raw, "gorm:\""); ok {
+					raw = strings.TrimSuffix(after, "\"")
+				}
+				for _, p := range strings.Split(raw, ";") {
+					p = strings.TrimSpace(p)
+					if p != "" && !slices.Contains(tagParts, p) {
+						tagParts = append(tagParts, p)
+					}
+				}
+			}
+
+			// Check if custom field tag or readOnly was defined in OpenAPI schema
+			if e.FieldTags != nil {
+				customTag := ""
+				if tag, exists := e.FieldTags[f.Name]; exists {
+					customTag = tag
+				} else if f.JsonName != "" {
+					if tag, exists := e.FieldTags[f.JsonName]; exists {
+						customTag = tag
+					}
+				} else {
+					lowerName := strings.ToLower(f.Name)
+					for k, v := range e.FieldTags {
+						if strings.ToLower(k) == lowerName || strings.ReplaceAll(strings.ToLower(k), "_", "") == lowerName {
+							customTag = v
+							break
+						}
+					}
+				}
+
+				if customTag != "" {
+					for _, p := range strings.Split(customTag, ";") {
+						p = strings.TrimSpace(p)
+						if p != "" && !slices.Contains(tagParts, p) {
+							tagParts = append(tagParts, p)
+						}
+					}
+				}
+			}
+
 			// Check if this field needs an index tag
 			tags, exists := gormIndexFieldTags[f.Name]
 			if !exists && f.JsonName != "" {
@@ -602,25 +656,44 @@ func populateEntityFields(dtoPath string, entities []EntityConfig) ([]EntityConf
 			}
 
 			if exists {
-				tag := fmt.Sprintf("gorm:\"%s\"", strings.Join(tags, ";"))
-				fields[j].GormTag = tag
+				for _, t := range tags {
+					if !slices.Contains(tagParts, t) {
+						tagParts = append(tagParts, t)
+					}
+				}
 			} else if slices.Contains(e.UniqueIndexes, f.Name) {
-				// Fallback for simple unique indexes (e.g., "uid" uniqueIndex)
-				if fields[j].GormTag == "" {
-					fields[j].GormTag = "gorm:\"uniqueIndex\""
+				if !slices.Contains(tagParts, "uniqueIndex") {
+					tagParts = append(tagParts, "uniqueIndex")
 				}
 			}
 
 			// Final simple-type cleanup: if it's an alias to string, ensure it's treated as text
-			if fields[j].GormTag == "" {
-				// We need to check if the original type was a string alias
-				// The field type might be "dto.UserRole"
-				rawType := f.TypeExpr
-				if after, ok := strings.CutPrefix(rawType, "dto."); ok {
-					if base, ok := aliasMap[after]; ok && base == "string" {
-						fields[j].GormTag = "gorm:\"type:text\""
+			rawType := f.TypeExpr
+			if after, ok := strings.CutPrefix(rawType, "dto."); ok {
+				if base, ok := aliasMap[after]; ok && base == "string" {
+					if !slices.Contains(tagParts, "type:text") {
+						tagParts = append(tagParts, "type:text")
 					}
 				}
+			}
+
+			// If the field is non-simple, not an entity relation, and has other tags (e.g. <-:create),
+			// make sure it retains serializer:json;type:JSONB
+			if !f.IsSimple && !f.IsEntityRef && !f.IsEntitySlice && len(tagParts) > 0 {
+				hasSerializer := false
+				for _, p := range tagParts {
+					if strings.Contains(p, "serializer:") {
+						hasSerializer = true
+						break
+					}
+				}
+				if !hasSerializer {
+					tagParts = append(tagParts, "serializer:json", "type:JSONB")
+				}
+			}
+
+			if len(tagParts) > 0 {
+				fields[j].GormTag = fmt.Sprintf("gorm:\"%s\"", strings.Join(tagParts, ";"))
 			}
 		}
 
@@ -660,6 +733,7 @@ func extractOpenAPIEntities(doc map[string]any) map[string]EntityConfig {
 			Name:       name,
 			SoftDelete: true, // Default to true if not specified otherwise
 			PKField:    "ID",
+			FieldTags:  make(map[string]string),
 		}
 
 		// Extract x-go-gorm-index if present
@@ -676,6 +750,24 @@ func extractOpenAPIEntities(doc map[string]any) map[string]EntityConfig {
 			}
 			config.GormIndexes = indexes
 		}
+
+		// Extract property-level tags (e.g. readOnly, x-gorm-tag, x-go-gorm-tag)
+		if props, exists := schemaMap["properties"].(map[string]any); exists {
+			for propName, propRaw := range props {
+				propMap, ok := propRaw.(map[string]any)
+				if !ok {
+					continue
+				}
+				if tag, exists := propMap["x-gorm-tag"].(string); exists && tag != "" {
+					config.FieldTags[propName] = tag
+				} else if tag, exists := propMap["x-go-gorm-tag"].(string); exists && tag != "" {
+					config.FieldTags[propName] = tag
+				} else if readOnly, exists := propMap["readOnly"].(bool); exists && readOnly {
+					config.FieldTags[propName] = "<-:create"
+				}
+			}
+		}
+
 		entities[name] = config
 	}
 	return entities
