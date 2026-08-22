@@ -64,13 +64,13 @@ func (server Server) ConnectToDatabase(dst ...any) *gorm.DB {
 		}
 	}
 
-	// Manual migrations after AutoMigrate
-	db.MigrateCollectionImages(client, logger)
-
 	if err := db.RunGooseMigrations(client, logger); err != nil {
 		logger.Error("error running Goose migrations", slog.Any("error", err))
 		panic("error running Goose migrations: " + err.Error())
 	}
+
+	// Run centralized data backfills
+	db.RunBackfills(client, logger)
 
 	// Run cleanup for setting defaults after auto-migration
 	settings.CleanupSettingDefaults(client, logger)
@@ -78,9 +78,6 @@ func (server Server) ConnectToDatabase(dst ...any) *gorm.DB {
 
 	// Seed default settings after migration
 	settings.SeedDefaultSettings(client, logger)
-
-	// Run backfill for ownership
-	db.BackfillOwnership(client, logger)
 
 	return client
 }

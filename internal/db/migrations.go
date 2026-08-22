@@ -2,11 +2,27 @@ package db
 
 import (
 	"log/slog"
+	"path/filepath"
+	"strings"
 
 	"gorm.io/gorm"
+
+	"viz/internal/entities"
 )
 
-// MigrateUsersTable handles manual migrations for the users table.
+// RunBackfills executes all data backfills and post-migration data transformations sequentially.
+func RunBackfills(client *gorm.DB, logger *slog.Logger) {
+	logger.Info("Running database backfills and data migrations...")
+
+	MigrateCollectionImages(client, logger)
+	BackfillOwnership(client, logger)
+	BackfillOriginalFileName(client, logger)
+	TrimImageNameExtensions(client, logger)
+
+	logger.Info("Database backfills and data migrations completed.")
+}
+
+// MigrateUsersTable handles manual pre-migration adjustments for the users table.
 func MigrateUsersTable(db *gorm.DB, logger *slog.Logger) {
 	migrator := db.Migrator()
 
@@ -45,21 +61,6 @@ func MigrateCollectionImages(db *gorm.DB, logger *slog.Logger) {
 					continue
 				}
 
-				// We'll use a raw query to insert into the new table to avoid entity dependency issues during migration
-				// The new table 'collection_images' should have been created by AutoMigrate already
-				// but we'll be safe.
-
-				/*
-				   The JSON structure was []dto.CollectionImage:
-				   [{"uid": "...", "added_at": "...", "added_by": {...}}]
-				*/
-
-				// Instead of complex JSON parsing in Go, we can use Postgres JSON functions if we want,
-				// but let's do it in Go for better cross-DB compatibility (though we are mostly Postgres).
-
-				// Actually, since we're using GORM's JSON serializer usually, we can just use a slice of maps or a temp struct.
-				// But wait, the easiest way is to just let Postgres do it if it's Postgres.
-
 				query := `
 					INSERT INTO collection_images (collection_id, uid, added_at, added_by_id, created_at, updated_at)
 					SELECT ?, (obj->>'uid'), (obj->>'added_at')::timestamp, (obj->'added_by'->>'uid'), NOW(), NOW()
@@ -81,5 +82,79 @@ func MigrateCollectionImages(db *gorm.DB, logger *slog.Logger) {
 		} else {
 			logger.Info("Successfully migrated collection images")
 		}
+	}
+}
+
+// BackfillOwnership ensures owner_id is set on image assets and collections.
+func BackfillOwnership(client *gorm.DB, logger *slog.Logger) {
+	logger.Info("Backfilling ownership for images and collections...")
+
+	if err := client.Model(&entities.ImageAsset{}).Exec("UPDATE images SET owner_id = uploaded_by_id WHERE owner_id IS NULL AND uploaded_by_id IS NOT NULL").Error; err != nil {
+		logger.Error("Failed to backfill image ownership", slog.Any("error", err))
+	}
+
+	if err := client.Model(&entities.Collection{}).Exec("UPDATE collections SET owner_id = created_by_id WHERE owner_id IS NULL AND created_by_id IS NOT NULL").Error; err != nil {
+		logger.Error("Failed to backfill collection ownership", slog.Any("error", err))
+	}
+}
+
+// BackfillOriginalFileName copies the original file name from image_metadata to the new dedicated original_file_name column.
+func BackfillOriginalFileName(client *gorm.DB, logger *slog.Logger) {
+	logger.Info("Backfilling original_file_name from image_metadata...")
+
+	query := `
+		UPDATE images
+		SET original_file_name = COALESCE(
+			image_metadata->>'original_file_name',
+			image_metadata->>'file_name'
+		)
+		WHERE original_file_name IS NULL
+		  AND image_metadata IS NOT NULL
+		  AND (
+			  image_metadata->>'original_file_name' IS NOT NULL
+			  OR image_metadata->>'file_name' IS NOT NULL
+		  )
+	`
+	if err := client.Exec(query).Error; err != nil {
+		logger.Error("Failed to backfill original_file_name", slog.Any("error", err))
+	}
+}
+
+// TrimImageNameExtensions strips file extensions from existing image names.
+func TrimImageNameExtensions(client *gorm.DB, logger *slog.Logger) {
+	logger.Info("Trimming file extensions from existing image names...")
+
+	var images []struct {
+		Uid  string `gorm:"column:uid"`
+		Name string `gorm:"column:name"`
+	}
+
+	if err := client.Model(&entities.ImageAsset{}).Select("uid, name").Where("name LIKE '%.%' AND deleted_at IS NULL").Scan(&images).Error; err != nil {
+		logger.Error("Failed to query images for extension trimming", slog.Any("error", err))
+		return
+	}
+
+	updatedCount := 0
+	for _, img := range images {
+		ext := filepath.Ext(img.Name)
+		if ext == "" {
+			continue
+		}
+
+		trimmed := strings.TrimSuffix(img.Name, ext)
+		if trimmed == "" || trimmed == img.Name {
+			continue
+		}
+
+		if err := client.Model(&entities.ImageAsset{}).Where("uid = ?", img.Uid).Update("name", trimmed).Error; err != nil {
+			logger.Error("Failed to update image name", slog.String("uid", img.Uid), slog.Any("error", err))
+			continue
+		}
+
+		updatedCount++
+	}
+
+	if updatedCount > 0 {
+		logger.Info("Trimmed extensions from existing image names", slog.Int("count", updatedCount))
 	}
 }

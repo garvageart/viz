@@ -3,15 +3,12 @@ package db
 import (
 	"fmt"
 	"log/slog"
-	"path/filepath"
-	"strings"
 	"time"
 
 	slogGorm "github.com/orandin/slog-gorm"
 	"gorm.io/driver/postgres"
 	"gorm.io/gorm"
 
-	"viz/internal/entities"
 	imalog "viz/internal/logger"
 )
 
@@ -135,57 +132,4 @@ func SetupDatabaseLogger(logLevel slog.Level) *slog.Logger {
 	consoleHandler := imalog.NewColourHandler(&slog.HandlerOptions{Level: slog.LevelDebug, ReplaceAttr: nil})
 
 	return imalog.CreateLogger([]slog.Handler{fileHandler, consoleHandler})
-}
-
-func BackfillOwnership(client *gorm.DB, logger *slog.Logger) {
-	logger.Info("Backfilling ownership for images and collections...")
-
-	// Use model to ensure correct table name, then Exec raw SQL for performance
-	if err := client.Model(&entities.ImageAsset{}).Exec("UPDATE images SET owner_id = uploaded_by_id WHERE owner_id IS NULL AND uploaded_by_id IS NOT NULL").Error; err != nil {
-		logger.Error("Failed to backfill image ownership", slog.Any("error", err))
-	}
-
-	if err := client.Model(&entities.Collection{}).Exec("UPDATE collections SET owner_id = created_by_id WHERE owner_id IS NULL AND created_by_id IS NOT NULL").Error; err != nil {
-		logger.Error("Failed to backfill collection ownership", slog.Any("error", err))
-	}
-
-	TrimImageNameExtensions(client, logger)
-}
-
-func TrimImageNameExtensions(client *gorm.DB, logger *slog.Logger) {
-	logger.Info("Trimming file extensions from existing image names...")
-
-	var images []struct {
-		Uid  string `gorm:"column:uid"`
-		Name string `gorm:"column:name"`
-	}
-
-	if err := client.Model(&entities.ImageAsset{}).Select("uid, name").Where("name LIKE '%.%' AND deleted_at IS NULL").Scan(&images).Error; err != nil {
-		logger.Error("Failed to query images for extension trimming", slog.Any("error", err))
-		return
-	}
-
-	updatedCount := 0
-	for _, img := range images {
-		ext := filepath.Ext(img.Name)
-		if ext == "" {
-			continue
-		}
-
-		trimmed := strings.TrimSuffix(img.Name, ext)
-		if trimmed == "" || trimmed == img.Name {
-			continue
-		}
-
-		if err := client.Model(&entities.ImageAsset{}).Where("uid = ?", img.Uid).Update("name", trimmed).Error; err != nil {
-			logger.Error("Failed to update image name", slog.String("uid", img.Uid), slog.Any("error", err))
-			continue
-		}
-
-		updatedCount++
-	}
-
-	if updatedCount > 0 {
-		logger.Info("Trimmed extensions from existing image names", slog.Int("count", updatedCount))
-	}
 }
