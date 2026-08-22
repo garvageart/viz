@@ -30,7 +30,7 @@ func TestTrimImageNameExtensions(t *testing.T) {
 		require.NoError(t, gdb.Create(&entities.ImageAsset{Uid: tc.uid, Name: tc.input}).Error)
 	}
 
-	db.TrimImageNameExtensions(gdb, slog.New(slog.NewTextHandler(io.Discard, nil)))
+	require.NoError(t, db.TrimImageNameExtensions(gdb, slog.New(slog.NewTextHandler(io.Discard, nil))))
 
 	for _, tc := range testCases {
 		var img entities.ImageAsset

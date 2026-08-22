@@ -1,8 +1,11 @@
 package db
 
 import (
+	"fmt"
 	"log/slog"
 	"path/filepath"
+	"reflect"
+	"runtime"
 	"strings"
 
 	"gorm.io/gorm"
@@ -10,16 +13,49 @@ import (
 	"viz/internal/entities"
 )
 
-// RunBackfills executes all data backfills and post-migration data transformations sequentially.
-func RunBackfills(client *gorm.DB, logger *slog.Logger) {
-	logger.Info("Running database backfills and data migrations...")
+// backfillFn is the signature for all transactional database backfills.
+type backfillFn func(tx *gorm.DB, logger *slog.Logger) error
 
-	MigrateCollectionImages(client, logger)
-	BackfillOwnership(client, logger)
-	BackfillOriginalFileName(client, logger)
-	TrimImageNameExtensions(client, logger)
+func getFunctionName(fn backfillFn) string {
+	// looool
+	fullName := runtime.FuncForPC(reflect.ValueOf(fn).Pointer()).Name()
+	parts := strings.Split(fullName, ".")
 
-	logger.Info("Database backfills and data migrations completed.")
+	return parts[len(parts)-1]
+}
+
+// RunBackfills executes all data backfills and post-migration data transformations sequentially inside a transaction.
+func RunBackfills(client *gorm.DB, logger *slog.Logger) error {
+	logger.Info("Running database backfills and data migrations inside transaction...")
+
+	backfills := []backfillFn{
+		MigrateCollectionImages,
+		BackfillOwnership,
+		BackfillOriginalFileName,
+		TrimImageNameExtensions,
+	}
+
+	err := client.Transaction(func(tx *gorm.DB) error {
+		for _, fn := range backfills {
+			if err := fn(tx, logger); err != nil {
+				name := getFunctionName(fn)
+				logger.Error("Backfill step failed", slog.String("step", name), slog.Any("error", err))
+
+				return fmt.Errorf("backfill step %s: %w", name, err)
+			}
+		}
+
+		return nil
+	})
+
+	if err != nil {
+		logger.Error("Database backfills failed, transaction rolled back", slog.Any("error", err))
+		return err
+	}
+
+	logger.Info("Database backfills and data migrations completed successfully.")
+
+	return nil
 }
 
 // MigrateUsersTable handles manual pre-migration adjustments for the users table.
@@ -37,69 +73,74 @@ func MigrateUsersTable(db *gorm.DB, logger *slog.Logger) {
 
 // MigrateCollectionImages moves data from the old JSONB 'images' column in 'collections'
 // to the new 'collection_images' join table.
-func MigrateCollectionImages(db *gorm.DB, logger *slog.Logger) {
-	migrator := db.Migrator()
+func MigrateCollectionImages(tx *gorm.DB, logger *slog.Logger) error {
+	migrator := tx.Migrator()
 
 	// If the 'images' column exists in 'collections', we need to migrate it.
-	if migrator.HasColumn("collections", "images") {
-		logger.Info("Starting migration of collection images from JSONB to join table")
+	if !migrator.HasColumn("collections", "images") {
+		return nil
+	}
 
-		type OldCollection struct {
-			ID     uint
-			Images []byte `gorm:"type:jsonb"`
+	logger.Info("Starting migration of collection images from JSONB to join table")
+
+	type OldCollection struct {
+		ID     uint
+		Images []byte `gorm:"type:jsonb"`
+	}
+
+	var collections []OldCollection
+	if err := tx.Table("collections").Select("id", "images").Find(&collections).Error; err != nil {
+		logger.Error("Failed to fetch old collections for migration", slog.Any("error", err))
+		return err
+	}
+
+	for _, col := range collections {
+		if len(col.Images) == 0 || string(col.Images) == "null" || string(col.Images) == "[]" {
+			continue
 		}
 
-		var collections []OldCollection
-		if err := db.Table("collections").Select("id", "images").Find(&collections).Error; err != nil {
-			logger.Error("Failed to fetch old collections for migration", slog.Any("error", err))
-			return
-		}
-
-		err := db.Transaction(func(tx *gorm.DB) error {
-			for _, col := range collections {
-				if len(col.Images) == 0 || string(col.Images) == "null" || string(col.Images) == "[]" {
-					continue
-				}
-
-				query := `
-					INSERT INTO collection_images (collection_id, uid, added_at, added_by_id, created_at, updated_at)
-					SELECT ?, (obj->>'uid'), (obj->>'added_at')::timestamp, (obj->'added_by'->>'uid'), NOW(), NOW()
-					FROM jsonb_array_elements(?) AS obj
-					ON CONFLICT DO NOTHING
-				`
-				if err := tx.Exec(query, col.ID, col.Images).Error; err != nil {
-					return err
-				}
-			}
-
-			// Rename the old column to avoid confusion
-			logger.Info("Renaming 'collections.images' to 'collections.images_old'")
-			return tx.Migrator().RenameColumn("collections", "images", "images_old")
-		})
-
-		if err != nil {
-			logger.Error("Failed to migrate collection images", slog.Any("error", err))
-		} else {
-			logger.Info("Successfully migrated collection images")
+		query := `
+			INSERT INTO collection_images (collection_id, uid, added_at, added_by_id, created_at, updated_at)
+			SELECT ?, (obj->>'uid'), (obj->>'added_at')::timestamp, (obj->'added_by'->>'uid'), NOW(), NOW()
+			FROM jsonb_array_elements(?) AS obj
+			ON CONFLICT DO NOTHING
+		`
+		if err := tx.Exec(query, col.ID, col.Images).Error; err != nil {
+			logger.Error("Failed to insert collection images from JSONB", slog.Any("error", err))
+			return err
 		}
 	}
+
+	// Rename the old column to avoid confusion
+	logger.Info("Renaming 'collections.images' to 'collections.images_old'")
+	if err := tx.Migrator().RenameColumn("collections", "images", "images_old"); err != nil {
+		logger.Error("Failed to rename collections.images to collections.images_old", slog.Any("error", err))
+		return err
+	}
+
+	logger.Info("Successfully migrated collection images")
+	return nil
 }
 
 // BackfillOwnership ensures owner_id is set on image assets and collections.
-func BackfillOwnership(client *gorm.DB, logger *slog.Logger) {
+func BackfillOwnership(tx *gorm.DB, logger *slog.Logger) error {
 	logger.Info("Backfilling ownership for images and collections...")
 
-	if err := client.Model(&entities.ImageAsset{}).Exec("UPDATE images SET owner_id = uploaded_by_id WHERE owner_id IS NULL AND uploaded_by_id IS NOT NULL").Error; err != nil {
+	if err := tx.Model(&entities.ImageAsset{}).Exec("UPDATE images SET owner_id = uploaded_by_id WHERE owner_id IS NULL AND uploaded_by_id IS NOT NULL").Error; err != nil {
 		logger.Error("Failed to backfill image ownership", slog.Any("error", err))
+		return err
 	}
 
-	if err := client.Model(&entities.Collection{}).Exec("UPDATE collections SET owner_id = created_by_id WHERE owner_id IS NULL AND created_by_id IS NOT NULL").Error; err != nil {
+	if err := tx.Model(&entities.Collection{}).Exec("UPDATE collections SET owner_id = created_by_id WHERE owner_id IS NULL AND created_by_id IS NOT NULL").Error; err != nil {
 		logger.Error("Failed to backfill collection ownership", slog.Any("error", err))
+		return err
 	}
+
+	return nil
 }
 
 // BackfillOriginalFileName copies the original file name from image_metadata to the new dedicated original_file_name column.
-func BackfillOriginalFileName(client *gorm.DB, logger *slog.Logger) {
+func BackfillOriginalFileName(tx *gorm.DB, logger *slog.Logger) error {
 	logger.Info("Backfilling original_file_name from image_metadata...")
 
 	query := `
@@ -115,13 +156,16 @@ func BackfillOriginalFileName(client *gorm.DB, logger *slog.Logger) {
 			  OR image_metadata->>'file_name' IS NOT NULL
 		  )
 	`
-	if err := client.Exec(query).Error; err != nil {
+	if err := tx.Exec(query).Error; err != nil {
 		logger.Error("Failed to backfill original_file_name", slog.Any("error", err))
+		return err
 	}
+
+	return nil
 }
 
 // TrimImageNameExtensions strips file extensions from existing image names.
-func TrimImageNameExtensions(client *gorm.DB, logger *slog.Logger) {
+func TrimImageNameExtensions(tx *gorm.DB, logger *slog.Logger) error {
 	logger.Info("Trimming file extensions from existing image names...")
 
 	var images []struct {
@@ -129,9 +173,9 @@ func TrimImageNameExtensions(client *gorm.DB, logger *slog.Logger) {
 		Name string `gorm:"column:name"`
 	}
 
-	if err := client.Model(&entities.ImageAsset{}).Select("uid, name").Where("name LIKE '%.%' AND deleted_at IS NULL").Scan(&images).Error; err != nil {
+	if err := tx.Model(&entities.ImageAsset{}).Select("uid, name").Where("name LIKE '%.%' AND deleted_at IS NULL").Scan(&images).Error; err != nil {
 		logger.Error("Failed to query images for extension trimming", slog.Any("error", err))
-		return
+		return err
 	}
 
 	updatedCount := 0
@@ -146,9 +190,9 @@ func TrimImageNameExtensions(client *gorm.DB, logger *slog.Logger) {
 			continue
 		}
 
-		if err := client.Model(&entities.ImageAsset{}).Where("uid = ?", img.Uid).Update("name", trimmed).Error; err != nil {
+		if err := tx.Model(&entities.ImageAsset{}).Where("uid = ?", img.Uid).Update("name", trimmed).Error; err != nil {
 			logger.Error("Failed to update image name", slog.String("uid", img.Uid), slog.Any("error", err))
-			continue
+			return err
 		}
 
 		updatedCount++
@@ -157,4 +201,6 @@ func TrimImageNameExtensions(client *gorm.DB, logger *slog.Logger) {
 	if updatedCount > 0 {
 		logger.Info("Trimmed extensions from existing image names", slog.Int("count", updatedCount))
 	}
+
+	return nil
 }

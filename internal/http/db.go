@@ -69,8 +69,11 @@ func (server Server) ConnectToDatabase(dst ...any) *gorm.DB {
 		panic("error running Goose migrations: " + err.Error())
 	}
 
-	// Run centralized data backfills
-	db.RunBackfills(client, logger)
+	// Run centralized data backfills in transaction
+	if err := db.RunBackfills(client, logger); err != nil {
+		logger.Error("error running database backfills", slog.Any("error", err))
+		panic("error running database backfills: " + err.Error())
+	}
 
 	// Run cleanup for setting defaults after auto-migration
 	settings.CleanupSettingDefaults(client, logger)
