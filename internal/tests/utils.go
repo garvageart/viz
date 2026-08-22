@@ -18,20 +18,7 @@ func NewTestDB(t *testing.T) *gorm.DB {
 	db, err := gorm.Open(sqlite.Open(dbName), &gorm.Config{})
 	assert.NoError(t, err)
 
-	err = db.AutoMigrate(
-		entities.ImageAsset{},
-		entities.Collection{},
-		entities.CollectionImage{},
-		entities.Session{},
-		entities.APIKey{},
-		entities.User{},
-		entities.DownloadToken{},
-		entities.WorkerJob{},
-		entities.UserWithPassword{},
-		entities.SettingDefault{},
-		entities.SettingOverride{},
-		entities.ImageTransform{},
-	)
+	err = db.AutoMigrate(entities.Models()...)
 
 	assert.NoError(t, err)
 	return db

@@ -272,21 +272,7 @@ func main() {
 		ConnMaxLifetimeMinutes: appConfig.Database.ConnMaxLifetimeMinutes,
 	}
 
-	// Lmao I hate this
-	client := apiServer.ConnectToDatabase(
-		entities.ImageAsset{},
-		entities.Collection{},
-		entities.CollectionImage{},
-		entities.Session{},
-		entities.APIKey{},
-		entities.User{},
-		entities.DownloadToken{},
-		entities.WorkerJob{},
-		entities.UserWithPassword{},
-		entities.SettingDefault{},
-		entities.SettingOverride{},
-		entities.ImageTransform{},
-	)
+	client := apiServer.ConnectToDatabase(entities.Models()...)
 	apiServer.Database.Client = client
 
 	settings.SeedDefaultSettings(client, logger)
