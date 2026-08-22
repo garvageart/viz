@@ -3,7 +3,7 @@ SHELL := /usr/bin/env bash
 # even though make spawns bash subshells (not zsh where nvm is normally sourced).
 export PATH := $(HOME)/.nvm/versions/node/$(shell cat $(CURDIR)/.nvmrc 2>/dev/null || echo "node")/bin:$(PATH)
 SCRIPTS_DIR := scripts/js
-.PHONY: help build build-api build-frontend generate-icons generate-types generate-types-install fmt fmt-check fmt-check-go lint test test-go docker-build docker-push docker-up docker-down migrate initdb clean image-server image-viz dev run check-go buildx-server buildx-build
+.PHONY: help build build-api build-frontend generate-icons generate-types generate-types-install fmt fmt-check fmt-check-go lint test test-go docker-build docker-push docker-up docker-down migrate migrate-gen initdb clean image-server image-viz dev run check-go buildx-server buildx-build
 
 # Simple Makefile for common tasks across the viz repository.
 # Targets included:
@@ -85,6 +85,7 @@ help:
 	@printf "  docker-up                 Start services via docker compose\n"
 	@printf "  docker-down               Stop services\n"
 	@printf "  migrate                   Run migrations (best-effort helper)\n"
+	@printf "  migrate-gen name=...      Generate timestamped Goose SQL migration from entities\n"
 	@printf "  initdb                    Run DB init script (best-effort)\n"
 	@printf "  clean                     Remove build artifacts and generated icons\n"
 	@printf "  bump-version VERSION=x.y.z  Update project version (uses scripts/js/updateProjectVersion.js)\n"
@@ -256,7 +257,14 @@ docker-push-base: image-base
 	@docker push $(REGISTRY)/viz-base:latest
 	@docker push $(REGISTRY)/viz-base:$(TAG)
 
-### Database / Migrations (best-effort)
+### Database / Migrations
+migrate-gen:
+	@if [ -z "$(name)" ]; then \
+		echo "[ERROR] Migration name is required. Usage: make migrate-gen name=your_migration_name"; \
+		exit 1; \
+	fi
+	@go run ./tools/migrations/cmd -name "$(name)"
+
 migrate:
 	@echo "Migrations helper: uses your local migrate tool or docker-compose migration service if configured."
 	@if command -v migrate >/dev/null 2>&1; then \
