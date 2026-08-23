@@ -1,6 +1,7 @@
 package http
 
 import (
+	"io/fs"
 	"log/slog"
 	"os"
 	"strconv"
@@ -11,7 +12,7 @@ import (
 	"gorm.io/gorm"
 )
 
-func (server Server) ConnectToDatabase(dst ...any) *gorm.DB {
+func (server Server) ConnectToDatabase(migrationFS fs.FS, dst ...any) *gorm.DB {
 	logger := server.Logger
 	database := server.Database
 
@@ -64,9 +65,11 @@ func (server Server) ConnectToDatabase(dst ...any) *gorm.DB {
 		}
 	}
 
-	if err := db.RunGooseMigrations(client, logger); err != nil {
-		logger.Error("error running Goose migrations", slog.Any("error", err))
-		panic("error running Goose migrations: " + err.Error())
+	if migrationFS != nil {
+		if err := db.RunGooseMigrations(client, logger, migrationFS); err != nil {
+			logger.Error("error running Goose migrations", slog.Any("error", err))
+			panic("error running Goose migrations: " + err.Error())
+		}
 	}
 
 	// Run centralized data backfills in transaction

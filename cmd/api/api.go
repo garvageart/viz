@@ -33,6 +33,7 @@ import (
 	libos "viz/internal/os"
 	"viz/internal/settings"
 	"viz/internal/utils"
+	toolsMigrations "viz/tools/migrations"
 )
 
 var (
@@ -272,7 +273,7 @@ func main() {
 		ConnMaxLifetimeMinutes: appConfig.Database.ConnMaxLifetimeMinutes,
 	}
 
-	client := apiServer.ConnectToDatabase(entities.Models()...)
+	client := apiServer.ConnectToDatabase(toolsMigrations.EmbedFS, entities.Models()...)
 	apiServer.Database.Client = client
 
 	settings.SeedDefaultSettings(client, logger)

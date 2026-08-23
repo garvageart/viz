@@ -7,41 +7,80 @@ import (
 	"reflect"
 	"runtime"
 	"strings"
+	"time"
 
 	"gorm.io/gorm"
 
 	"viz/internal/entities"
 )
 
-// backfillFn is the signature for all transactional database backfills.
-type backfillFn func(tx *gorm.DB, logger *slog.Logger) error
+// BackfillRecord tracks executed database backfills to ensure run-once semantics.
+type BackfillRecord struct {
+	Name      string    `gorm:"primaryKey;column:name"`
+	AppliedAt time.Time `gorm:"column:applied_at"`
+}
 
-func getFunctionName(fn backfillFn) string {
-	// looool
+func (BackfillRecord) TableName() string {
+	return "db_backfills"
+}
+
+// BackfillFn is the signature for all transactional database backfills.
+type BackfillFn func(tx *gorm.DB, logger *slog.Logger) error
+
+func getFunctionName(fn BackfillFn) string {
 	fullName := runtime.FuncForPC(reflect.ValueOf(fn).Pointer()).Name()
 	parts := strings.Split(fullName, ".")
-
 	return parts[len(parts)-1]
+}
+
+// DefaultBackfills contains all registered backfills in sequential execution order.
+var DefaultBackfills = []BackfillFn{
+	MigrateCollectionImages,
+	BackfillOwnership,
+	BackfillOriginalFileName,
+	TrimImageNameExtensions,
 }
 
 // RunBackfills executes all data backfills and post-migration data transformations sequentially inside a transaction.
 func RunBackfills(client *gorm.DB, logger *slog.Logger) error {
+	return RunBackfillSteps(client, logger, DefaultBackfills)
+}
+
+// RunBackfillSteps runs the given backfill functions with run-once tracking inside a transaction.
+func RunBackfillSteps(client *gorm.DB, logger *slog.Logger, backfills []BackfillFn) error {
 	logger.Info("Running database backfills and data migrations inside transaction...")
 
-	backfills := []backfillFn{
-		MigrateCollectionImages,
-		BackfillOwnership,
-		BackfillOriginalFileName,
-		TrimImageNameExtensions,
-	}
-
 	err := client.Transaction(func(tx *gorm.DB) error {
-		for _, fn := range backfills {
-			if err := fn(tx, logger); err != nil {
-				name := getFunctionName(fn)
-				logger.Error("Backfill step failed", slog.String("step", name), slog.Any("error", err))
+		if err := tx.AutoMigrate(&BackfillRecord{}); err != nil {
+			return fmt.Errorf("failed to auto-migrate backfill tracking table: %w", err)
+		}
 
+		var records []BackfillRecord
+		if err := tx.Find(&records).Error; err != nil {
+			return fmt.Errorf("failed to query applied backfills: %w", err)
+		}
+
+		applied := make(map[string]bool, len(records))
+		for _, r := range records {
+			applied[r.Name] = true
+		}
+
+		for _, fn := range backfills {
+			name := getFunctionName(fn)
+			if applied[name] {
+				logger.Debug("Backfill already applied, skipping", slog.String("step", name))
+				continue
+			}
+
+			logger.Info("Executing backfill step", slog.String("step", name))
+			if err := fn(tx, logger); err != nil {
+				logger.Error("Backfill step failed", slog.String("step", name), slog.Any("error", err))
 				return fmt.Errorf("backfill step %s: %w", name, err)
+			}
+
+			if err := tx.Create(&BackfillRecord{Name: name, AppliedAt: time.Now()}).Error; err != nil {
+				logger.Error("Failed to record backfill completion", slog.String("step", name), slog.Any("error", err))
+				return fmt.Errorf("failed to record backfill step %s: %w", name, err)
 			}
 		}
 
@@ -54,7 +93,6 @@ func RunBackfills(client *gorm.DB, logger *slog.Logger) error {
 	}
 
 	logger.Info("Database backfills and data migrations completed successfully.")
-
 	return nil
 }
 

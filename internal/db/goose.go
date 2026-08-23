@@ -3,13 +3,13 @@ package db
 import (
 	"context"
 	"fmt"
+	"io/fs"
 	"log/slog"
 
 	"github.com/pressly/goose/v3"
 	"gorm.io/gorm"
 
 	"viz/internal/logger"
-	"viz/tools/migrations"
 )
 
 type gooseLogger struct {
@@ -36,7 +36,7 @@ func (g *gooseLogger) Printf(format string, v ...any) {
 	g.logger.Info(fmt.Sprintf(format, v...))
 }
 
-func RunGooseMigrations(gormDB *gorm.DB, logger *slog.Logger) error {
+func RunGooseMigrations(gormDB *gorm.DB, logger *slog.Logger, migrationFS fs.FS) error {
 	logger.Info("Starting Goose database migrations...")
 
 	sqlDB, err := gormDB.DB()
@@ -44,7 +44,7 @@ func RunGooseMigrations(gormDB *gorm.DB, logger *slog.Logger) error {
 		return fmt.Errorf("failed to get standard sql.DB connection: %w", err)
 	}
 
-	goose.SetBaseFS(migrations.EmbedFS)
+	goose.SetBaseFS(migrationFS)
 
 	if err := goose.SetDialect("postgres"); err != nil {
 		return fmt.Errorf("failed to set goose dialect: %w", err)
