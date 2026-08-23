@@ -215,18 +215,15 @@ export default class UploadManager {
     }
 
     /**
-     * Open picker, add files, and start upload in one call.
-     * Convenience method for backward compatibility.
-     * Waits for all selected files to be uploaded (or failed) before returning.
+     * Add files, start upload, and return completed/duplicate image results.
      */
-    async openPickerAndUpload(): Promise<ImageUploadSuccess[]> {
-        const files = await this.openPicker();
+    async addFilesAndUpload(files: File[]): Promise<ImageUploadSuccess[]> {
         if (files.length === 0) {
             return [];
         }
 
         const tasks = this.addFiles(files);
-        await this.start();
+        await this.start(tasks);
 
         await waitForUploadCompletion(tasks);
 
@@ -236,6 +233,16 @@ export default class UploadManager {
             metadata: t.imageData
         }));
         return success;
+    }
+
+    /**
+     * Open picker, add files, and start upload in one call.
+     * Convenience method for backward compatibility.
+     * Waits for all selected files to be uploaded (or failed) before returning.
+     */
+    async openPickerAndUpload(): Promise<ImageUploadSuccess[]> {
+        const files = await this.openPicker();
+        return this.addFilesAndUpload(files);
     }
 
     /**
@@ -265,20 +272,6 @@ export default class UploadManager {
      */
     async openFolderPickerAndUpload(): Promise<ImageUploadSuccess[]> {
         const files = await this.openFolderPicker();
-        if (files.length === 0) {
-            return [];
-        }
-
-        const tasks = this.addFiles(files);
-        await this.start();
-
-        await waitForUploadCompletion(tasks);
-
-        const success = tasks.filter(isUploadSuccessful).map((t) => ({
-            uid: t.imageData!.uid,
-            status: t.imageData!.status,
-            metadata: t.imageData
-        }));
-        return success;
+        return this.addFilesAndUpload(files);
     }
 }
