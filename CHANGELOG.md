@@ -5,6 +5,27 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.32.0] - 2026-08-23
+
+* docs: document standardized z-index elevation scale in design system (ccac5a9f)
+* feat(ui): standardize elevation and z-index design tokens across frontend (9b93854b)
+* fix(viewfinder): fix z-index stacking for upload and download panels over splitters (8fae7a7f)
+* fix(viewfinder): correct conditional check for superadmin onboarding flow (118ff012)
+* test(e2e): add login fallback check after onboarding in auth setup (d8bdda66)
+* refactor: remove 200 delay from invalidateViz (361d0fab)
+* chore: add updated generated files (4f0370e6)
+* fix(api): use selective revalidation in system cache middleware and update user state on setup (b0d59836)
+* docs: remove `IconButton` reference and document formatting (01268864)
+* style(viewfinder): polish workspace drop zone debug overlays (7b95a83a)
+* style(viewfinder): refine onboarding route styling and button hierarchy (e95c7d90)
+* feat(config): inject public config into window and broadcast live updates (83855b0c)
+* fix(scripts): add scripts package.json to release cleanup routine (34d8d88a)
+* refactor(db): decouple goose runner with fs.FS and add run-once tracked backfills (5ccaaa29)
+* refactor(db): execute backfills inside transactional step runner with dynamic reflection (ef4e6364)
+* feat(migrations): add pure-Go migration generator and original_file_name migration (93b14583)
+* refactor(db): centralize data backfills and manual migrations (638444cd)
+* refactor(entities): centralize entity models registry (e97cfa54)
+
 ## [0.31.18] - 2026-08-20
 
 * fix(viewfinder): improve lightbox background customizability and dynamic crop padding (272dae4c)
