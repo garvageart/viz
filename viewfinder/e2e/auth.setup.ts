@@ -142,6 +142,13 @@ setup("authenticate", async ({ page }) => {
         await page.waitForLoadState("domcontentloaded");
     }
 
+    if (page.url().includes("/auth/login")) {
+        console.log("Login page active after onboarding, performing login...");
+        await performLogin(page, email, password);
+        await page.goto("/");
+        await page.waitForLoadState("domcontentloaded");
+    }
+
     const workspace = page.locator(".viz-workspace, main").first();
     await expect(workspace)
         .toBeVisible({ timeout: 20000 })
