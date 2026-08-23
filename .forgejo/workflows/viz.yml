@@ -288,11 +288,33 @@ jobs:
                     -e ENV=production \
                     "${{ env.IMAGE_PREFIX }}/viz-server:${{ needs.build-images.outputs.sha }}"
 
-                  echo "⏳ Waiting for API readiness on http://localhost:${E2E_PORT}/api/health..."
+                  # Connect runner container to the network if running in containerised runner
+                  CURRENT_CONTAINER=$(hostname)
+                  docker network connect "$NETWORK_NAME" "$CURRENT_CONTAINER" 2>/dev/null || true
+
+                  echo "⏳ Waiting for API readiness..."
                   HEALTHY=false
+                  VIZ_TARGET_HOST="localhost"
+                  VIZ_TARGET_PORT="${E2E_PORT}"
+
                   for i in $(seq 1 30); do
-                    if curl -sf "http://localhost:${E2E_PORT}/api/health" > /dev/null 2>&1; then
-                      echo "✅ Viz API server is up and ready!"
+                    SERVER_IP=$(docker inspect -f '{{range .NetworkSettings.Networks}}{{.IPAddress}}{{end}}' "viz-ci-server-${{ github.run_id }}" 2>/dev/null | head -n1 || true)
+                    if [ -n "$SERVER_IP" ] && curl -sf "http://${SERVER_IP}:7770/api/health" > /dev/null 2>&1; then
+                      echo "✅ Viz API server is up and ready at http://${SERVER_IP}:7770!"
+                      VIZ_TARGET_HOST="${SERVER_IP}"
+                      VIZ_TARGET_PORT="7770"
+                      HEALTHY=true
+                      break
+                    elif curl -sf "http://viz-ci-server-${{ github.run_id }}:7770/api/health" > /dev/null 2>&1; then
+                      echo "✅ Viz API server is up and ready at http://viz-ci-server-${{ github.run_id }}:7770!"
+                      VIZ_TARGET_HOST="viz-ci-server-${{ github.run_id }}"
+                      VIZ_TARGET_PORT="7770"
+                      HEALTHY=true
+                      break
+                    elif curl -sf "http://localhost:${E2E_PORT}/api/health" > /dev/null 2>&1; then
+                      echo "✅ Viz API server is up and ready at http://localhost:${E2E_PORT}!"
+                      VIZ_TARGET_HOST="localhost"
+                      VIZ_TARGET_PORT="${E2E_PORT}"
                       HEALTHY=true
                       break
                     fi
@@ -310,7 +332,8 @@ jobs:
 
                   echo "Running frontend E2E tests (Playwright)..."
                   export CI=1
-                  export VIZ_API_SERVER_PORT="$E2E_PORT"
+                  export VIZ_API_SERVER_HOST="$VIZ_TARGET_HOST"
+                  export VIZ_API_SERVER_PORT="$VIZ_TARGET_PORT"
                   pnpm --filter @viz/viewfinder test:e2e:prod || E2E_STATUS=$?
 
                   echo "🧹 Cleaning up test containers..."
