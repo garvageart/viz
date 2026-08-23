@@ -17,6 +17,10 @@ on:
         required: false
         default: true
 
+concurrency:
+  group: ${{ github.workflow }}-${{ github.sha }}
+  cancel-in-progress: true
+
 env:
   REGISTRY: ${{ vars.REGISTRY_URL || 'forgejo' }}
   REPOSITORY: ${{ github.repository }}
@@ -325,3 +329,50 @@ jobs:
             echo "❌ E2E tests failed with exit code $E2E_STATUS"
             exit $E2E_STATUS
           fi
+
+  release:
+    name: "Create Forgejo Release"
+    if: startsWith(github.ref, 'refs/tags/v')
+    needs: [build-images, test-frontend, test-backend, test-e2e]
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Extract Release Notes from CHANGELOG
+        id: release-notes
+        run: |
+          TAG_NAME="${GITHUB_REF#refs/tags/}"
+          VERSION="${TAG_NAME#v}"
+
+          NOTES=""
+          if [ -f CHANGELOG.md ]; then
+            NOTES=$(awk -v ver="[${VERSION}]" '
+              $0 ~ "## \\[" ver "\\]" { flag=1; next }
+              flag && /^## \\[/ { flag=0 }
+              flag { print }
+            ' CHANGELOG.md | sed -e '/^[[:space:]]*$/d')
+          fi
+
+          if [ -z "$NOTES" ]; then
+            NOTES="Release $TAG_NAME"
+          fi
+
+          echo "tag_name=$TAG_NAME" >> "$GITHUB_OUTPUT"
+          {
+            echo "notes<<EOF"
+            echo "$NOTES"
+            echo "EOF"
+          } >> "$GITHUB_OUTPUT"
+
+      - name: Create Release
+        uses: softprops/action-gh-release@v2
+        with:
+          name: ${{ github.ref_name }}
+          body: ${{ steps.release-notes.outputs.notes }}
+          draft: false
+          prerelease: false
+        env:
+          GITHUB_TOKEN: ${{ secrets.REGISTRY_TOKEN || secrets.GITHUB_TOKEN }}
