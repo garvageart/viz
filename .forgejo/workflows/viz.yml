@@ -1,4 +1,5 @@
 name: Viz CI
+run-name: ${{ inputs.run_name || github.event.head_commit.message || format('Manual run on {0}', github.ref_name) }}
 
 on:
   push:
@@ -11,6 +12,10 @@ on:
       - main
   workflow_dispatch:
     inputs:
+      run_name:
+        type: string
+        description: "Custom run title (leave blank for commit message)"
+        required: false
       publish_images:
         type: boolean
         description: "Publish Docker images to container registry"
