@@ -2,37 +2,21 @@
     import { untrack } from "svelte";
     import { scale } from "svelte/transition";
     import { upload } from "$lib/states/index.svelte";
-    import { UploadState } from "$lib/upload/asset.svelte";
+    import { UploadState, isUploadActive, isUploadCompleted, isUploadRunning } from "$lib/upload/asset.svelte";
     import { processGlobalQueue, waitForUploadCompletion } from "$lib/upload/manager.svelte";
     import { invalidateViz } from "$lib/views/views.svelte";
     import Button from "../Button.svelte";
-    import MaterialIcon from "../MaterialIcon.svelte";
+    import InputNumber from "../InputNumber.svelte";
 
     let minimized = $state(false);
 
-    const isUploading = $derived(
-        upload.files.some(
-            (f) =>
-                f.state !== UploadState.DONE &&
-                f.state !== UploadState.ERROR &&
-                f.state !== UploadState.CANCELED &&
-                f.state !== UploadState.DUPLICATE
-        )
-    );
+    const isUploading = $derived(upload.files.some(isUploadActive));
 
     let listEl: HTMLDivElement | null = $state(null);
 
     let prevCompletedCount = $state(0);
     let prevFilesCount = $state(0);
-    let completedFiles = $derived(
-        upload.files.filter(
-            (f) =>
-                f.state === UploadState.DONE ||
-                f.state === UploadState.ERROR ||
-                f.state === UploadState.CANCELED ||
-                f.state === UploadState.DUPLICATE
-        ).length
-    );
+    let completedFiles = $derived(upload.files.filter(isUploadCompleted).length);
 
     const prefersReducedMotion = () =>
         window.matchMedia && window.matchMedia("(prefers-reduced-motion: reduce)").matches;
@@ -58,13 +42,7 @@
             waitForUploadCompletion(upload.files).then(() => {
                 setTimeout(() => {
                     // Double check that we are still done (user might have added more files during the 3s wait)
-                    const allDone = upload.files.every(
-                        (f) =>
-                            f.state === UploadState.DONE ||
-                            f.state === UploadState.ERROR ||
-                            f.state === UploadState.CANCELED ||
-                            f.state === UploadState.DUPLICATE
-                    );
+                    const allDone = upload.files.every(isUploadCompleted);
 
                     if (allDone) {
                         upload.files = [];
@@ -92,7 +70,7 @@
                 // Find the last active upload (the one furthest down the list that is actually uploading)
                 let targetIndex = -1;
                 for (let i = upload.files.length - 1; i >= 0; i--) {
-                    if (upload.files[i].state === UploadState.STARTED) {
+                    if (isUploadRunning(upload.files[i])) {
                         targetIndex = i;
                         break;
                     }
@@ -129,19 +107,18 @@
     <div id="viz-upload-panel-minimized" in:scale={{ duration: 250 }} out:scale={{ duration: 250 }}>
         {#if isUploading}
             <svg class="upload-stroke-container">
-                <rect class="upload-stroke-rect" rx="20" ry="20" pathLength="100" />
+                <rect class="upload-stroke-rect" rx="26" ry="26" pathLength="100" />
             </svg>
         {/if}
         <Button
             id="viz-upload-panel-minimized-button"
+            variant="info"
+            iconName="upload"
             onclick={() => {
                 minimized = false;
             }}
             title="Show Upload Panel"
-            style="background-color: var(--viz-primary); color: white;"
-            hoverColor="var(--viz-primary)"
         >
-            <MaterialIcon iconName="upload" style="font-size: 1.5rem;" />
             <span>{completedFiles}/{upload.files.length} uploading file{upload.files.length === 1 ? "" : "s"}</span>
         </Button>
     </div>
@@ -150,62 +127,50 @@
         <div id="viz-upload-panel-header">
             <div id="upload-panel-header-info">
                 <Button
-                    style="background-color: transparent; padding: 0em;"
-                    hoverColor="var(--viz-surface-hover)"
+                    iconName="arrow_downward_alt"
                     title="Minimize Upload Panel"
                     onclick={() => {
                         minimized = true;
                     }}
-                >
-                    <MaterialIcon iconName="arrow_downward_alt" />
-                </Button>
-                <p>
+                />
+                <span>
                     Uploading {upload.files.length} file{upload.files.length === 1 ? "" : "s"}
-                </p>
+                </span>
             </div>
             <div class="concurrency-control">
-                <label for="concurrency-input" title="Maximum simultaneous uploads">
-                    Concurrent:
-                    <input
-                        id="concurrency-input"
-                        type="number"
-                        min="1"
-                        max="10"
-                        bind:value={upload.concurrency}
-                        style="width: 3em; margin-left: 0.25em;"
-                    />
-                </label>
+                <span class="concurrency-label" title="Maximum simultaneous uploads">Concurrent:</span>
+                <InputNumber
+                    id="concurrency-input"
+                    aria-label="Maximum simultaneous uploads"
+                    min={1}
+                    max={10}
+                    step={1}
+                    compact={true}
+                    bind:value={upload.concurrency}
+                />
             </div>
         </div>
         <div id="viz-upload-panel-sub_header">
             <Button
                 iconName="cancel"
-                style="background-color: transparent; padding: 0em;"
-                hoverColor="var(--viz-surface-hover)"
                 title="Cancel All Uploads"
                 onclick={() => {
                     upload.files.forEach((file) => {
-                        if (file.state === UploadState.STARTED) {
+                        if (isUploadRunning(file)) {
                             file.cancelRequest();
                         }
                     });
                     upload.files = [];
                 }}
-            ></Button>
+            />
             <span class="viz-upload-progress-text">
-                {upload.files.filter(
-                    (f) =>
-                        f.state === UploadState.DONE ||
-                        f.state === UploadState.ERROR ||
-                        f.state === UploadState.CANCELED ||
-                        f.state === UploadState.DUPLICATE
-                ).length}/{upload.files.length} completed
+                {completedFiles}/{upload.files.length} completed
             </span>
         </div>
         <div id="viz-upload-panel-list" bind:this={listEl}>
             {#each upload.files as file}
                 <div class="panel-file-info" data-checksum={file.data.checksum}>
-                    {#if file.state === UploadState.STARTED}
+                    {#if isUploadRunning(file)}
                         <Button
                             iconName="close"
                             title="Cancel Upload"
@@ -242,8 +207,8 @@
 
 <style lang="scss">
     #viz-upload-panel {
-        width: 30%;
-        max-width: 30%;
+        width: 25%;
+        max-width: 25%;
         display: flex;
         flex-direction: column;
         position: absolute;
@@ -263,7 +228,17 @@
         left: var(--viz-spacing-xxl);
         z-index: var(--viz-z-floating-panel);
         display: flex;
-        position: absolute;
+        align-items: center;
+
+        :global(#viz-upload-panel-minimized-button) {
+            height: 3.2rem;
+            padding: 0 var(--viz-spacing-md);
+            font-size: var(--viz-font-size-lg);
+            font-weight: 600;
+            border-radius: var(--viz-border-radius-pill);
+            box-shadow: 0 4px 16px rgba(0, 0, 0, 0.25);
+            gap: var(--viz-spacing-sm);
+        }
     }
 
     .upload-stroke-container {
@@ -341,28 +316,12 @@
     .concurrency-control {
         display: flex;
         align-items: center;
-        font-size: var(--viz-font-size-std);
+        gap: var(--viz-spacing-xs);
+        font-size: var(--viz-font-size-sm);
         font-weight: 500;
 
-        label {
-            display: flex;
-            align-items: center;
-            cursor: pointer;
-        }
-
-        input[type="number"] {
-            background-color: var(--viz-surface-hover);
-            border: var(--viz-border-thin);
-            border-radius: var(--viz-border-radius-md);
-            color: var(--viz-text-primary);
-            padding: var(--viz-spacing-xs);
-            text-align: center;
-            font-family: var(--viz-mono-font);
-
-            &:focus {
-                outline: none;
-                border-color: var(--viz-text-secondary);
-            }
+        .concurrency-label {
+            color: var(--viz-text-secondary);
         }
     }
 
