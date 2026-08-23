@@ -5,6 +5,12 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.32.2] - 2026-08-23
+
+* ci: dynamic workflow run-name defaulting to commit message (d75d2bb9)
+* ci: add workflow concurrency group and native forgejo release action (066753be)
+* ci: replace buildx --push with explicit docker push commands (ed76d235)
+
 ## [0.32.1] - 2026-08-23
 
 * refactor(viewfinder): streamline DragAndDropUpload actions and include duplicate uploads in collections (a6327bec)
