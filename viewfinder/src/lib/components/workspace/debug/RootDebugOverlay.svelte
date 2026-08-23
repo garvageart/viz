@@ -40,7 +40,6 @@
             text-transform: uppercase;
             background: rgba(33, 150, 243, 0.3);
             border: 2px dashed #2196f3;
-            color: white;
             pointer-events: none;
         }
 

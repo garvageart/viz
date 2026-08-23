@@ -3,10 +3,10 @@
 </script>
 
 <div class="debug-overlay-zones">
-    <div class="debug-zone debug-header">Green: Header</div>
+    <div class="debug-zone debug-header"><span class="debug-text"> Green: Header </span></div>
     <div class="debug-zone debug-top" style:height="{DROP_ZONE_THRESHOLDS.topRatio * 100}%">Yellow: Top Row</div>
     <div class="debug-zone debug-bottom" style:height="{DROP_ZONE_THRESHOLDS.bottomRatio * 100}%">
-        Yellow: Bottom Row
+        <span class="debug-text">Yellow: Bottom Row</span>
     </div>
     <div
         class="debug-zone debug-left"
@@ -14,7 +14,7 @@
         style:width="{DROP_ZONE_THRESHOLDS.leftRatio * 100}%"
         style:height="{(1 - DROP_ZONE_THRESHOLDS.topRatio - DROP_ZONE_THRESHOLDS.bottomRatio) * 100}%"
     >
-        Red: Left Col
+        <span class="debug-text">Red: Left Column</span>
     </div>
     <div
         class="debug-zone debug-right"
@@ -22,7 +22,7 @@
         style:width="{DROP_ZONE_THRESHOLDS.rightRatio * 100}%"
         style:height="{(1 - DROP_ZONE_THRESHOLDS.topRatio - DROP_ZONE_THRESHOLDS.bottomRatio) * 100}%"
     >
-        Red: Right Col
+        <span class="debug-text">Red: Right Column</span>
     </div>
     <div
         class="debug-zone debug-center"
@@ -31,7 +31,7 @@
         style:width="{(1 - DROP_ZONE_THRESHOLDS.leftRatio - DROP_ZONE_THRESHOLDS.rightRatio) * 100}%"
         style:height="{(1 - DROP_ZONE_THRESHOLDS.topRatio - DROP_ZONE_THRESHOLDS.bottomRatio) * 100}%"
     >
-        Purple: Center
+        <span class="debug-text">Purple: Center</span>
     </div>
 </div>
 
@@ -44,7 +44,6 @@
         height: 100%;
         pointer-events: none;
         z-index: 1002;
-        color: white;
 
         .debug-zone {
             position: absolute;
@@ -52,11 +51,16 @@
             display: flex;
             align-items: center;
             justify-content: center;
-            font-size: 0.9rem;
-            font-weight: 600;
-            font-family: var(--viz-mono-font);
             text-transform: uppercase;
             pointer-events: none;
+
+            .debug-text {
+                font-size: 0.9rem;
+                font-weight: 600;
+                font-family: var(--viz-mono-font);
+                padding: var(--viz-spacing-sm);
+                background-color: var(--viz-surface-base);
+            }
         }
 
         .debug-header {
