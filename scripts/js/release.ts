@@ -80,6 +80,7 @@ async function main() {
     const originalRootPkg = await fs.readFile(rootPkgFile, "utf8").catch(() => null);
     const originalViewfinderPkg = await fs.readFile(viewfinderPkgFile, "utf8").catch(() => null);
     const originalApiPkg = await fs.readFile(apiPkgFile, "utf8").catch(() => null);
+    const originalScriptsPkg = await fs.readFile(scriptsPkgFile, "utf8").catch(() => null);
     const originalChangelog = await fs.readFile(changelogFile, "utf8").catch(() => null);
 
     let isReleaseFinalized = false;
@@ -104,6 +105,10 @@ async function main() {
 
                 if (originalApiPkg !== null) {
                     fsSync.writeFileSync(apiPkgFile, originalApiPkg, "utf8");
+                }
+
+                if (originalScriptsPkg !== null) {
+                    fsSync.writeFileSync(scriptsPkgFile, originalScriptsPkg, "utf8");
                 }
 
                 if (originalChangelog !== null) {
