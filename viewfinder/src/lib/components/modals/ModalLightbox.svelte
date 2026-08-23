@@ -4,6 +4,7 @@
     import type { SvelteHTMLElements } from "svelte/elements";
     import Button from "$lib/components/ui/Button.svelte";
     import MaterialIcon from "$lib/components/ui/MaterialIcon.svelte";
+    import { ZIndex } from "$lib/constants/z-index";
     import { ContextKeys } from "$lib/context-keys";
     import type { MaterialSymbol } from "$lib/types/MaterialSymbol";
 
@@ -28,7 +29,7 @@
         width = "50%",
         height,
         applyPadding = false,
-        zIndex = 9999,
+        zIndex = ZIndex.Modal,
         iconName: icon,
         onclickClose,
         ...props

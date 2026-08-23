@@ -12,7 +12,7 @@
 
 .splitpanes__splitter {
     position: relative;
-    z-index: 10;
+    z-index: var(--viz-z-workspace-layout);
     background-color: var(--viz-border-subtle);
     box-sizing: border-box;
     flex-shrink: 0;
@@ -100,7 +100,7 @@
     outline-color: var(--viz-primary);
     border-radius: 0.25rem;
     background-color: color-mix(in srgb, var(--viz-primary) 20%, transparent);
-    z-index: 899;
+    z-index: var(--viz-z-dropzone);
     transition: all 0.2s ease-in-out;
 }
 
@@ -114,7 +114,7 @@
     background-color: color-mix(in srgb, var(--viz-primary) 20%, transparent);
     border: 2px solid var(--viz-primary);
     pointer-events: none;
-    z-index: 1000;
+    z-index: var(--viz-z-dropzone);
     transition: all 0.15s ease;
 
     &[data-position="header"] {
@@ -159,7 +159,7 @@
     box-sizing: border-box;
     position: absolute;
     pointer-events: none;
-    z-index: 1001;
+    z-index: calc(var(--viz-z-dropzone) + 1);
     background-color: color-mix(in srgb, var(--viz-primary) 25%, transparent);
     border: 2px solid var(--viz-primary);
     transition: all 0.15s ease;

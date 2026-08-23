@@ -664,7 +664,7 @@
             } else {
                 toggleCropMode();
             }
-        } else if (zoomState.currentZoom === 1) {
+        } else if (zoomState.currentZoom <= 1.05) {
             // Close lightbox when not cropping and at default zoom
             lightboxImage = undefined;
         }
@@ -1034,8 +1034,12 @@
                         e.stopPropagation();
                         return;
                     }
-                    // Only close on clicking the wrapper background, not on children
-                    if (e.target === e.currentTarget) {
+                    // Only close on clicking the wrapper background or canvas target, not on image or buttons
+                    if (
+                        e.target === e.currentTarget ||
+                        (e.target as HTMLElement)?.classList.contains("image-wrapper") ||
+                        (e.target as HTMLElement)?.classList.contains("zoom-target")
+                    ) {
                         handleContainerClick();
                     }
                 }}

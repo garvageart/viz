@@ -183,6 +183,21 @@ html {
     --viz-border-thick: 2px solid var(--viz-primary);
 }
 
+/* Z-Index Elevation Scale */
+:root {
+    --viz-z-base: #{v.$viz-z-base};
+    --viz-z-local: #{v.$viz-z-local};
+    --viz-z-workspace-layout: #{v.$viz-z-workspace-layout};
+    --viz-z-dropzone: #{v.$viz-z-dropzone};
+    --viz-z-chrome: #{v.$viz-z-chrome};
+    --viz-z-popover: #{v.$viz-z-popover};
+    --viz-z-floating-panel: #{v.$viz-z-floating-panel};
+    --viz-z-modal: #{v.$viz-z-modal};
+    --viz-z-lightbox: #{v.$viz-z-lightbox};
+    --viz-z-toast: #{v.$viz-z-toast};
+    --viz-z-tooltip: #{v.$viz-z-tooltip};
+}
+
 /* Scrollbar Settings */
 :root {
     /* Dimensions */

@@ -56,3 +56,16 @@ $viz-border-radius-sm: 2px;
 $viz-border-radius-md: 4px;
 $viz-border-radius-lg: 8px;
 $viz-border-radius-pill: 9999px;
+
+// Z-Index Elevation Scale
+$viz-z-base: 0;
+$viz-z-local: 10;
+$viz-z-workspace-layout: 20;
+$viz-z-dropzone: 100;
+$viz-z-chrome: 500;
+$viz-z-popover: 1000;
+$viz-z-floating-panel: 2000;
+$viz-z-modal: 5000;
+$viz-z-lightbox: 8000;
+$viz-z-toast: 9000;
+$viz-z-tooltip: 10000;

@@ -1,5 +1,6 @@
 <script lang="ts">
     import { type Snippet } from "svelte";
+    import { ZIndex } from "$lib/constants/z-index";
     import { debugMode } from "$lib/states/index.svelte";
 
     interface Props {
@@ -24,7 +25,7 @@
         lightboxElement = $bindable(),
         backgroundColour = "#000000",
         backgroundOpacity = 0.65,
-        zIndex = 9998,
+        zIndex = ZIndex.Lightbox,
         closeOnEsc = true
     }: Props = $props();
 
