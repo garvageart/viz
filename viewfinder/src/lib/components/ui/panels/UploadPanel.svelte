@@ -207,20 +207,19 @@
                 <div class="panel-file-info" data-checksum={file.data.checksum}>
                     {#if file.state === UploadState.STARTED}
                         <Button
-                            style="background-color: transparent; padding: 0em;"
-                            hoverColor="var(--viz-surface-hover)"
+                            iconName="close"
                             title="Cancel Upload"
                             onclick={() => {
                                 file.cancelRequest();
                             }}
-                        >
-                            <MaterialIcon iconName="close" />
-                        </Button>
+                        />
                     {/if}
                     <div class="panel-file-info-data_container">
                         <div class="panel-file-info-metadata">
                             <div class="panel-file">
-                                <span class="viz-upload-file-name">{file.data.file_name}</span>
+                                <span class="viz-upload-file-name" title={file.data.file_name}
+                                    >{file.data.file_name}</span
+                                >
                             </div>
                             <span class="viz-upload-progress-text">{Math.round(file.progress)}%</span>
                         </div>
@@ -251,7 +250,7 @@
         bottom: var(--viz-spacing-xxl);
         left: var(--viz-spacing-xxl);
         background-color: var(--viz-surface-panel);
-        z-index: 900;
+        z-index: 9900;
         border: var(--viz-border-thin);
         border-radius: var(--viz-border-radius-lg);
         max-height: 60vh;
@@ -262,7 +261,7 @@
         position: absolute;
         bottom: var(--viz-spacing-xxl);
         left: var(--viz-spacing-xxl);
-        z-index: 900;
+        z-index: 9900;
         display: flex;
         position: absolute;
     }
@@ -328,6 +327,7 @@
     .viz-upload-progress-text {
         font-style: italic;
         font-weight: 300;
+        font-family: var(--viz-mono-font);
     }
 
     #upload-panel-header-info {
@@ -371,7 +371,6 @@
         display: flex;
         flex-direction: column;
         justify-content: flex-start;
-        font-family: var(--viz-mono-font);
         overflow-y: auto;
         flex: 1;
         min-height: 0;

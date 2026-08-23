@@ -12,7 +12,7 @@
 
 .splitpanes__splitter {
     position: relative;
-    z-index: 999; // this overlaying on stuff like the lightbox. it's not that serious, it shouldn't be this high
+    z-index: 10;
     background-color: var(--viz-border-subtle);
     box-sizing: border-box;
     flex-shrink: 0;
@@ -28,7 +28,7 @@
         transform: translate(-50%, -50%);
         background: transparent;
         pointer-events: auto;
-        z-index: 99999;
+        z-index: 1;
         transition:
             background-color 0.2s,
             opacity 0.2s;

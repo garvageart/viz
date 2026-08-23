@@ -93,15 +93,15 @@
             <LoadingSpinner color="var(--viz-accent)" size="standard" />
         </div>
     {/if}
+    <main id="main" class="viz-content" tabindex="-1">
+        {@render children()}
+    </main>
     {#if upload.files.length > 0}
         <UploadPanel />
     {/if}
     {#if download.files.length > 0}
         <DownloadPanel />
     {/if}
-    <main id="main" class="viz-content" tabindex="-1">
-        {@render children()}
-    </main>
 </div>
 
 <style lang="scss">

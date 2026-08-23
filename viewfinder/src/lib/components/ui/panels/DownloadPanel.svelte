@@ -217,7 +217,7 @@
         position: absolute;
         bottom: var(--viz-spacing-xxl);
         right: var(--viz-spacing-xxl);
-        z-index: 900;
+        z-index: 9900;
     }
 
     #viz-download-panel-header {
