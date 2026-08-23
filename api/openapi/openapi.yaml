@@ -4158,7 +4158,7 @@ components:
             type: object
             properties:
                 name: { type: string, description: Collection name }
-                private: { type: boolean, nullable: true, description: Is private }
+                private: { type: boolean, default: false, description: Is private }
                 description: { type: string, description: Collection description }
             required: [name]
 
@@ -4222,7 +4222,7 @@ components:
                 uid: { type: string, description: Collection UID }
                 name: { type: string, description: Collection name }
                 image_count: { type: integer, description: Number of images }
-                private: { type: boolean, nullable: true, description: Is private }
+                private: { type: boolean, default: false, description: Is private }
                 images:
                     $ref: "#/components/schemas/ImagesListResponse"
                 created_by:

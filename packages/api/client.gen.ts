@@ -672,7 +672,7 @@ export type CollectionCreate = {
     /** Collection name */
     name: string;
     /** Is private */
-    "private"?: boolean | null;
+    "private"?: boolean;
     /** Collection description */
     description?: string;
 };
@@ -684,7 +684,7 @@ export type CollectionDetailResponse = {
     /** Number of images */
     image_count?: number;
     /** Is private */
-    "private"?: boolean | null;
+    "private"?: boolean;
     images: ImagesListResponse;
     created_by?: User;
     owner?: User;
@@ -704,7 +704,7 @@ export type CollectionDetailResponseRead = {
     /** Number of images */
     image_count?: number;
     /** Is private */
-    "private"?: boolean | null;
+    "private"?: boolean;
     images: ImagesListResponseRead;
     created_by?: User;
     owner?: User;
