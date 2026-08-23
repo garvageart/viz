@@ -195,7 +195,27 @@ Smooth colour transitions are enabled via CSS `@property` declarations for key s
 
 ---
 
-## 6. Build-Time Accessibility Audit
+## 6. Z-Index & Elevation Scale
+
+All stacking contexts and `z-index` elevations are standardized into discrete semantic layers declared as CSS custom properties (`--viz-z-*`) and mirrored 1:1 in TypeScript via `enum ZIndex` (`$lib/constants/z-index`):
+
+| Layer | Token | Value | `ZIndex` Enum | Application | Typical Components |
+| :--- | :--- | :--- | :--- | :--- | :--- |
+| **Base** | `--viz-z-base` | `0` | `ZIndex.Base` | Standard in-flow content | Photo grid cards, document canvas |
+| **Local** | `--viz-z-local` | `10` | `ZIndex.Local` | Intra-component visual layers | Timeline scrubber, selection checkmarks |
+| **Workspace** | `--viz-z-workspace-layout` | `20` | `ZIndex.WorkspaceLayout` | Panel dividers & layout controls | Splitter bars, resize handles |
+| **Dropzone** | `--viz-z-dropzone` | `100` | `ZIndex.Dropzone` | Drag & Drop visual feedback targets | Workspace drop overlays, edge drop targets |
+| **Chrome** | `--viz-z-chrome` | `500` | `ZIndex.Chrome` | Fixed application shell navigation | Top header bar, docked sidebar |
+| **Popover** | `--viz-z-popover` | `1000` | `ZIndex.Popover` | In-page transient popup menus | Context menus, account dropdown, date pickers |
+| **Floating Panel** | `--viz-z-floating-panel` | `2000` | `ZIndex.FloatingPanel` | Long-running task dock overlays | Upload panel, download panel |
+| **Modal** | `--viz-z-modal` | `5000` | `ZIndex.Modal` | Blocking modal dialog windows | Confirmation dialogs, metadata edit modals |
+| **Lightbox** | `--viz-z-lightbox` | `8000` | `ZIndex.Lightbox` | Fullscreen inspection view | Image/video lightbox overlay |
+| **Toast** | `--viz-z-toast` | `9000` | `ZIndex.Toast` | User alert notifications | Toast notifications, alert badges |
+| **Tooltip** | `--viz-z-tooltip` | `10000` | `ZIndex.Tooltip` | Hover micro-interactions | Tooltips |
+
+---
+
+## 7. Build-Time Accessibility Audit
 
 `viewfinder/tools/build-themes.js` compiles all `viz-*.scss` theme files and runs a **WCAG 2.1 contrast audit** on the compiled CSS output. The audit checks:
 
@@ -206,7 +226,7 @@ Failing pairs emit build-time warnings. The tool supports hex, RGB, and OKLCH co
 
 ---
 
-## 7. Standard Component Guidelines
+## 8. Standard Component Guidelines
 
 ### Input Fields (`InputText`, `InputSelect`, `InputPassword`)
 
