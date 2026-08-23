@@ -2,382 +2,377 @@ name: Viz CI
 run-name: ${{ inputs.run_name || github.event.head_commit.message || format('Manual run on {0}', github.ref_name) }}
 
 on:
-  push:
-    branches:
-      - main
-  pull_request:
-    branches:
-      - main
-  workflow_dispatch:
-    inputs:
-      run_name:
-        type: string
-        description: "Custom run title (leave blank for commit message)"
-        required: false
-      publish_images:
-        type: boolean
-        description: "Publish Docker images to container registry"
-        required: false
-        default: true
+    push:
+        branches:
+            - main
+    pull_request:
+        branches:
+            - main
+    workflow_dispatch:
+        inputs:
+            run_name:
+                type: string
+                description: "Custom run title (leave blank for commit message)"
+                required: false
+            publish_images:
+                type: boolean
+                description: "Publish Docker images to container registry"
+                required: false
+                default: true
 
 concurrency:
-  group: ${{ github.workflow }}-${{ github.sha }}
-  cancel-in-progress: true
+    group: ${{ github.workflow }}-${{ github.sha }}
+    cancel-in-progress: true
 
 env:
-  REGISTRY: ${{ vars.REGISTRY_URL || 'forgejo' }}
-  REPOSITORY: ${{ github.repository }}
-  IMAGE_PREFIX: ${{ vars.REGISTRY_URL && format('{0}/{1}', vars.REGISTRY_URL, github.repository) || github.repository }}
-  IMAGE_NAME: ${{ env.IMAGE_PREFIX }}/viz-server
-  IMAGE_NAME_BASE: ${{ env.IMAGE_PREFIX }}/viz-base
-  IMAGE_NAME_DB: ${{ env.IMAGE_PREFIX }}/viz-db
-  IMAGE_NAME_FRONTEND_DEPS: ${{ env.IMAGE_PREFIX }}/viz-frontend-deps
-  IMAGE_NAME_FRONTEND_BUILDER: ${{ env.IMAGE_PREFIX }}/viz-frontend-builder
-  IMAGE_NAME_BACKEND_BUILDER: ${{ env.IMAGE_PREFIX }}/viz-backend-builder
+    REGISTRY: ${{ vars.REGISTRY_URL || 'forgejo' }}
+    REPOSITORY: ${{ github.repository }}
+    IMAGE_PREFIX: ${{ vars.REGISTRY_URL && format('{0}/{1}', vars.REGISTRY_URL, github.repository) || github.repository }}
 
 jobs:
-  build-images:
-    name: "Build & Package Docker Images"
-    runs-on: ubuntu-latest
-    outputs:
-      sha: ${{ steps.set-sha.outputs.sha }}
-      short_sha: ${{ steps.set-sha.outputs.short_sha }}
-    steps:
-      - name: Checkout Code
-        uses: actions/checkout@v4
-        with:
-          fetch-depth: 0
-          submodules: recursive
+    build-images:
+        name: "Build & Package Docker Images"
+        runs-on: ubuntu-latest
+        outputs:
+            sha: ${{ steps.set-sha.outputs.sha }}
+            short_sha: ${{ steps.set-sha.outputs.short_sha }}
+        steps:
+            - name: Checkout Code
+              uses: actions/checkout@v4
+              with:
+                  fetch-depth: 0
+                  submodules: recursive
 
-      - name: Set Commit SHA Output
-        id: set-sha
-        run: |
-          COMMIT_HASH=$(git rev-parse HEAD)
-          SHORT_HASH=$(git rev-parse --short HEAD)
-          echo "sha=${COMMIT_HASH}" >> "$GITHUB_OUTPUT"
-          echo "short_sha=${SHORT_HASH}" >> "$GITHUB_OUTPUT"
+            - name: Set Commit SHA Output
+              id: set-sha
+              run: |
+                  COMMIT_HASH=$(git rev-parse HEAD)
+                  SHORT_HASH=$(git rev-parse --short HEAD)
+                  echo "sha=${COMMIT_HASH}" >> "$GITHUB_OUTPUT"
+                  echo "short_sha=${SHORT_HASH}" >> "$GITHUB_OUTPUT"
 
-      - name: Set up Docker Buildx
-        uses: docker/setup-buildx-action@v3
-        with:
-          driver: docker
+            - name: Set up Docker Buildx
+              uses: docker/setup-buildx-action@v3
+              with:
+                  driver: docker
 
-      - name: Registry Login
-        if: ${{ (secrets.REGISTRY_TOKEN || secrets.GITHUB_TOKEN) && (github.event_name != 'pull_request') }}
-        run: |
-          TOKEN="${{ secrets.REGISTRY_TOKEN || secrets.GITHUB_TOKEN }}"
-          USER="${{ vars.REGISTRY_USER || github.actor }}"
-          REG="${{ vars.REGISTRY_URL }}"
-          if [ -n "$REG" ] && [ -n "$TOKEN" ]; then
-            echo "$TOKEN" | docker login "$REG" -u "$USER" --password-stdin
-          fi
+            - name: Registry Login
+              if: github.event_name != 'pull_request'
+              run: |
+                  TOKEN="${{ secrets.REGISTRY_TOKEN || secrets.GITHUB_TOKEN }}"
+                  USER="${{ vars.REGISTRY_USER || github.actor }}"
+                  REG="${{ vars.REGISTRY_URL }}"
+                  if [ -n "$REG" ] && [ -n "$TOKEN" ]; then
+                    echo "$TOKEN" | docker login "$REG" -u "$USER" --password-stdin
+                  fi
 
-      - name: Auto-Detect & Build Base Image
-        id: detect-base
-        run: |
-          export DOCKER_BUILDKIT=1
-          DEPS_SHA=$(git log -1 --format=%H -- docker/Dockerfile.base .libvips-version go.mod go.sum go.work go.work.sum cmd/api/go.mod cmd/api/go.sum 2>/dev/null || true)
-          if [ -z "$DEPS_SHA" ]; then
-            DEPS_SHA=$(git rev-parse HEAD)
-          fi
-          echo "base_sha=$DEPS_SHA" >> "$GITHUB_OUTPUT"
+            - name: Auto-Detect & Build Base Image
+              id: detect-base
+              run: |
+                  export DOCKER_BUILDKIT=1
+                  DEPS_SHA=$(git log -1 --format=%H -- docker/Dockerfile.base .libvips-version go.mod go.sum go.work go.work.sum cmd/api/go.mod cmd/api/go.sum 2>/dev/null || true)
+                  if [ -z "$DEPS_SHA" ]; then
+                    DEPS_SHA=$(git rev-parse HEAD)
+                  fi
+                  echo "base_sha=$DEPS_SHA" >> "$GITHUB_OUTPUT"
 
-          if ! docker manifest inspect ${{ env.IMAGE_NAME_BASE }}:${DEPS_SHA} >/dev/null 2>&1; then
-            echo "viz-base:${DEPS_SHA} missing from registry. Rebuilding..."
-            docker buildx build -f docker/Dockerfile.base \
-              -t ${{ env.IMAGE_NAME_BASE }}:latest \
-              -t ${{ env.IMAGE_NAME_BASE }}:${DEPS_SHA} \
-              -t ${{ env.IMAGE_NAME_BASE }}:${{ steps.set-sha.outputs.short_sha }} .
-            docker push ${{ env.IMAGE_NAME_BASE }}:latest || true
-            docker push ${{ env.IMAGE_NAME_BASE }}:${DEPS_SHA} || true
-            docker push ${{ env.IMAGE_NAME_BASE }}:${{ steps.set-sha.outputs.short_sha }} || true
-          else
-            echo "✅ viz-base:${DEPS_SHA} exists in registry. Using existing image."
-          fi
+                  if ! docker manifest inspect ${{ env.IMAGE_PREFIX }}/viz-base:${DEPS_SHA} >/dev/null 2>&1; then
+                    echo "viz-base:${DEPS_SHA} missing from registry. Rebuilding..."
+                    docker buildx build -f docker/Dockerfile.base \
+                      -t ${{ env.IMAGE_PREFIX }}/viz-base:latest \
+                      -t ${{ env.IMAGE_PREFIX }}/viz-base:${DEPS_SHA} \
+                      -t ${{ env.IMAGE_PREFIX }}/viz-base:${{ steps.set-sha.outputs.short_sha }} .
+                    docker push ${{ env.IMAGE_PREFIX }}/viz-base:latest || true
+                    docker push ${{ env.IMAGE_PREFIX }}/viz-base:${DEPS_SHA} || true
+                    docker push ${{ env.IMAGE_PREFIX }}/viz-base:${{ steps.set-sha.outputs.short_sha }} || true
+                  else
+                    echo "✅ viz-base:${DEPS_SHA} exists in registry. Using existing image."
+                  fi
 
-      - name: Auto-Detect & Build Frontend Deps Image
-        id: detect-frontend-deps
-        run: |
-          export DOCKER_BUILDKIT=1
-          DEPS_SHA=$(git log -1 --format=%H -- docker/Dockerfile pnpm-lock.yaml pnpm-workspace.yaml package.json .npmrc viewfinder/package.json scripts/js/package.json packages/api/package.json 2>/dev/null || true)
-          if [ -z "$DEPS_SHA" ]; then
-            DEPS_SHA=$(git rev-parse HEAD)
-          fi
-          echo "frontend_deps_sha=$DEPS_SHA" >> "$GITHUB_OUTPUT"
+            - name: Auto-Detect & Build Frontend Deps Image
+              id: detect-frontend-deps
+              run: |
+                  export DOCKER_BUILDKIT=1
+                  DEPS_SHA=$(git log -1 --format=%H -- docker/Dockerfile pnpm-lock.yaml pnpm-workspace.yaml package.json .npmrc viewfinder/package.json scripts/js/package.json packages/api/package.json 2>/dev/null || true)
+                  if [ -z "$DEPS_SHA" ]; then
+                    DEPS_SHA=$(git rev-parse HEAD)
+                  fi
+                  echo "frontend_deps_sha=$DEPS_SHA" >> "$GITHUB_OUTPUT"
 
-          if ! docker manifest inspect ${{ env.IMAGE_NAME_FRONTEND_DEPS }}:${DEPS_SHA} >/dev/null 2>&1; then
-            echo "viz-frontend-deps:${DEPS_SHA} missing from registry. Rebuilding..."
-            docker buildx build -f docker/Dockerfile --target frontend-deps \
-              --build-arg REGISTRY_URL=${{ vars.REGISTRY_URL }} \
-              --build-arg REPOSITORY=${{ github.repository }} \
-              -t ${{ env.IMAGE_NAME_FRONTEND_DEPS }}:latest \
-              -t ${{ env.IMAGE_NAME_FRONTEND_DEPS }}:${DEPS_SHA} \
-              -t ${{ env.IMAGE_NAME_FRONTEND_DEPS }}:${{ steps.set-sha.outputs.short_sha }} .
-            docker push ${{ env.IMAGE_NAME_FRONTEND_DEPS }}:latest || true
-            docker push ${{ env.IMAGE_NAME_FRONTEND_DEPS }}:${DEPS_SHA} || true
-            docker push ${{ env.IMAGE_NAME_FRONTEND_DEPS }}:${{ steps.set-sha.outputs.short_sha }} || true
-          else
-            echo "✅ viz-frontend-deps:${DEPS_SHA} exists in registry. Using existing image."
-          fi
+                  if ! docker manifest inspect ${{ env.IMAGE_PREFIX }}/viz-frontend-deps:${DEPS_SHA} >/dev/null 2>&1; then
+                    echo "viz-frontend-deps:${DEPS_SHA} missing from registry. Rebuilding..."
+                    docker buildx build -f docker/Dockerfile --target frontend-deps \
+                      --build-arg REGISTRY_URL=${{ vars.REGISTRY_URL }} \
+                      --build-arg REPOSITORY=${{ github.repository }} \
+                      -t ${{ env.IMAGE_PREFIX }}/viz-frontend-deps:latest \
+                      -t ${{ env.IMAGE_PREFIX }}/viz-frontend-deps:${DEPS_SHA} \
+                      -t ${{ env.IMAGE_PREFIX }}/viz-frontend-deps:${{ steps.set-sha.outputs.short_sha }} .
+                    docker push ${{ env.IMAGE_PREFIX }}/viz-frontend-deps:latest || true
+                    docker push ${{ env.IMAGE_PREFIX }}/viz-frontend-deps:${DEPS_SHA} || true
+                    docker push ${{ env.IMAGE_PREFIX }}/viz-frontend-deps:${{ steps.set-sha.outputs.short_sha }} || true
+                  else
+                    echo "✅ viz-frontend-deps:${DEPS_SHA} exists in registry. Using existing image."
+                  fi
 
-      - name: Build and Push Frontend Builder Image
-        run: |
-          COMMIT_HASH=${{ steps.set-sha.outputs.sha }}
-          FRONTEND_DEPS_SHA=${{ steps.detect-frontend-deps.outputs.frontend_deps_sha }}
-          export DOCKER_BUILDKIT=1
-          echo "Building and pushing frontend builder stage..."
-          docker buildx build -f docker/Dockerfile --target frontend-builder \
-            --build-arg FRONTEND_DEPS_IMAGE=${{ env.IMAGE_NAME_FRONTEND_DEPS }}:$FRONTEND_DEPS_SHA \
-            --build-arg REGISTRY_URL=${{ vars.REGISTRY_URL }} \
-            --build-arg REPOSITORY=${{ github.repository }} \
-            -t ${{ env.IMAGE_NAME_FRONTEND_BUILDER }}:latest \
-            -t ${{ env.IMAGE_NAME_FRONTEND_BUILDER }}:$COMMIT_HASH .
-          docker push ${{ env.IMAGE_NAME_FRONTEND_BUILDER }}:latest || true
-          docker push ${{ env.IMAGE_NAME_FRONTEND_BUILDER }}:$COMMIT_HASH || true
+            - name: Build and Push Frontend Builder Image
+              run: |
+                  COMMIT_HASH=${{ steps.set-sha.outputs.sha }}
+                  FRONTEND_DEPS_SHA=${{ steps.detect-frontend-deps.outputs.frontend_deps_sha }}
+                  export DOCKER_BUILDKIT=1
+                  echo "Building and pushing frontend builder stage..."
+                  docker buildx build -f docker/Dockerfile --target frontend-builder \
+                    --build-arg FRONTEND_DEPS_IMAGE=${{ env.IMAGE_PREFIX }}/viz-frontend-deps:$FRONTEND_DEPS_SHA \
+                    --build-arg REGISTRY_URL=${{ vars.REGISTRY_URL }} \
+                    --build-arg REPOSITORY=${{ github.repository }} \
+                    -t ${{ env.IMAGE_PREFIX }}/viz-frontend-builder:latest \
+                    -t ${{ env.IMAGE_PREFIX }}/viz-frontend-builder:$COMMIT_HASH .
+                  docker push ${{ env.IMAGE_PREFIX }}/viz-frontend-builder:latest || true
+                  docker push ${{ env.IMAGE_PREFIX }}/viz-frontend-builder:$COMMIT_HASH || true
 
-      - name: Build and Push Backend Builder Image
-        run: |
-          COMMIT_HASH=${{ steps.set-sha.outputs.sha }}
-          BASE_SHA=${{ steps.detect-base.outputs.base_sha }}
-          export DOCKER_BUILDKIT=1
-          echo "Building and pushing backend builder stage..."
-          docker buildx build -f docker/Dockerfile --target backend-builder \
-            --build-arg BASE_IMAGE=${{ env.IMAGE_NAME_BASE }}:$BASE_SHA \
-            --build-arg REGISTRY_URL=${{ vars.REGISTRY_URL }} \
-            --build-arg REPOSITORY=${{ github.repository }} \
-            -t ${{ env.IMAGE_NAME_BACKEND_BUILDER }}:latest \
-            -t ${{ env.IMAGE_NAME_BACKEND_BUILDER }}:$COMMIT_HASH .
-          docker push ${{ env.IMAGE_NAME_BACKEND_BUILDER }}:latest || true
-          docker push ${{ env.IMAGE_NAME_BACKEND_BUILDER }}:$COMMIT_HASH || true
+            - name: Build and Push Backend Builder Image
+              run: |
+                  COMMIT_HASH=${{ steps.set-sha.outputs.sha }}
+                  BASE_SHA=${{ steps.detect-base.outputs.base_sha }}
+                  export DOCKER_BUILDKIT=1
+                  echo "Building and pushing backend builder stage..."
+                  docker buildx build -f docker/Dockerfile --target backend-builder \
+                    --build-arg BASE_IMAGE=${{ env.IMAGE_PREFIX }}/viz-base:$BASE_SHA \
+                    --build-arg REGISTRY_URL=${{ vars.REGISTRY_URL }} \
+                    --build-arg REPOSITORY=${{ github.repository }} \
+                    -t ${{ env.IMAGE_PREFIX }}/viz-backend-builder:latest \
+                    -t ${{ env.IMAGE_PREFIX }}/viz-backend-builder:$COMMIT_HASH .
+                  docker push ${{ env.IMAGE_PREFIX }}/viz-backend-builder:latest || true
+                  docker push ${{ env.IMAGE_PREFIX }}/viz-backend-builder:$COMMIT_HASH || true
 
-      - name: Build and Push Final Production Image
-        run: |
-          COMMIT_HASH=${{ steps.set-sha.outputs.sha }}
-          COMMIT_REF=$(git describe --tags --exact-match 2>/dev/null || git rev-parse --abbrev-ref HEAD)
-          BASE_SHA=${{ steps.detect-base.outputs.base_sha }}
+            - name: Build and Push Final Production Image
+              run: |
+                  COMMIT_HASH=${{ steps.set-sha.outputs.sha }}
+                  COMMIT_REF=$(git describe --tags --exact-match 2>/dev/null || git rev-parse --abbrev-ref HEAD)
+                  BASE_SHA=${{ steps.detect-base.outputs.base_sha }}
 
-          export DOCKER_BUILDKIT=1
-          docker buildx build -f docker/Dockerfile --target server \
-            --build-arg BASE_IMAGE=${{ env.IMAGE_NAME_BASE }}:$BASE_SHA \
-            --build-arg FRONTEND_BUILDER_IMAGE=${{ env.IMAGE_NAME_FRONTEND_BUILDER }}:$COMMIT_HASH \
-            --build-arg REGISTRY_URL=${{ vars.REGISTRY_URL }} \
-            --build-arg REPOSITORY=${{ github.repository }} \
-            --build-arg BUILD_ID=${{ github.run_id }} \
-            --build-arg SOURCE_COMMIT=$COMMIT_HASH \
-            --build-arg SOURCE_REF=$COMMIT_REF \
-            --build-arg REPOSITORY_URL=${{ github.server_url }}/${{ github.repository }} \
-            -t ${{ env.IMAGE_NAME }}:latest \
-            -t ${{ env.IMAGE_NAME }}:$COMMIT_HASH \
-            -t ${{ env.IMAGE_NAME }}:${{ steps.set-sha.outputs.short_sha }} .
-          docker push ${{ env.IMAGE_NAME }}:latest || true
-          docker push ${{ env.IMAGE_NAME }}:$COMMIT_HASH || true
-          docker push ${{ env.IMAGE_NAME }}:${{ steps.set-sha.outputs.short_sha }} || true
+                  export DOCKER_BUILDKIT=1
+                  docker buildx build -f docker/Dockerfile --target server \
+                    --build-arg BASE_IMAGE=${{ env.IMAGE_PREFIX }}/viz-base:$BASE_SHA \
+                    --build-arg FRONTEND_BUILDER_IMAGE=${{ env.IMAGE_PREFIX }}/viz-frontend-builder:$COMMIT_HASH \
+                    --build-arg REGISTRY_URL=${{ vars.REGISTRY_URL }} \
+                    --build-arg REPOSITORY=${{ github.repository }} \
+                    --build-arg BUILD_ID=${{ github.run_id }} \
+                    --build-arg SOURCE_COMMIT=$COMMIT_HASH \
+                    --build-arg SOURCE_REF=$COMMIT_REF \
+                    --build-arg REPOSITORY_URL=${{ github.server_url }}/${{ github.repository }} \
+                    -t ${{ env.IMAGE_PREFIX }}/viz-server:latest \
+                    -t ${{ env.IMAGE_PREFIX }}/viz-server:$COMMIT_HASH \
+                    -t ${{ env.IMAGE_PREFIX }}/viz-server:${{ steps.set-sha.outputs.short_sha }} .
+                  docker push ${{ env.IMAGE_PREFIX }}/viz-server:latest || true
+                  docker push ${{ env.IMAGE_PREFIX }}/viz-server:$COMMIT_HASH || true
+                  docker push ${{ env.IMAGE_PREFIX }}/viz-server:${{ steps.set-sha.outputs.short_sha }} || true
 
-      - name: Build and Push Database Image
-        run: |
-          COMMIT_HASH=${{ steps.set-sha.outputs.sha }}
-          docker buildx build -f docker/Dockerfile --target db \
-            --build-arg REGISTRY_URL=${{ vars.REGISTRY_URL }} \
-            --build-arg REPOSITORY=${{ github.repository }} \
-            -t ${{ env.IMAGE_NAME_DB }}:latest \
-            -t ${{ env.IMAGE_NAME_DB }}:$COMMIT_HASH \
-            -t ${{ env.IMAGE_NAME_DB }}:${{ steps.set-sha.outputs.short_sha }} .
-          docker push ${{ env.IMAGE_NAME_DB }}:latest || true
-          docker push ${{ env.IMAGE_NAME_DB }}:$COMMIT_HASH || true
-          docker push ${{ env.IMAGE_NAME_DB }}:${{ steps.set-sha.outputs.short_sha }} || true
+            - name: Build and Push Database Image
+              run: |
+                  COMMIT_HASH=${{ steps.set-sha.outputs.sha }}
+                  docker buildx build -f docker/Dockerfile --target db \
+                    --build-arg REGISTRY_URL=${{ vars.REGISTRY_URL }} \
+                    --build-arg REPOSITORY=${{ github.repository }} \
+                    -t ${{ env.IMAGE_PREFIX }}/viz-db:latest \
+                    -t ${{ env.IMAGE_PREFIX }}/viz-db:$COMMIT_HASH \
+                    -t ${{ env.IMAGE_PREFIX }}/viz-db:${{ steps.set-sha.outputs.short_sha }} .
+                  docker push ${{ env.IMAGE_PREFIX }}/viz-db:latest || true
+                  docker push ${{ env.IMAGE_PREFIX }}/viz-db:$COMMIT_HASH || true
+                  docker push ${{ env.IMAGE_PREFIX }}/viz-db:${{ steps.set-sha.outputs.short_sha }} || true
 
-  test-frontend:
-    name: "Test Frontend (Unit, Types & Format)"
-    needs: [build-images]
-    runs-on: ubuntu-latest
-    steps:
-      - name: Test Frontend (Dockerized)
-        run: |
-          TARGET_IMAGE="${{ env.IMAGE_NAME_FRONTEND_BUILDER }}:${{ needs.build-images.outputs.sha }}"
-          echo "Running frontend unit tests on $TARGET_IMAGE..."
-          docker run --rm "$TARGET_IMAGE" pnpm --filter @viz/viewfinder test:unit
-          echo "Running frontend type checks on $TARGET_IMAGE..."
-          docker run --rm "$TARGET_IMAGE" pnpm --filter @viz/viewfinder check
-          echo "Checking frontend code formatting and import order..."
-          docker run --rm "$TARGET_IMAGE" pnpm --filter @viz/viewfinder format:check
+    test-frontend:
+        name: "Test Frontend (Unit, Types & Format)"
+        needs: [build-images]
+        runs-on: ubuntu-latest
+        steps:
+            - name: Test Frontend (Dockerized)
+              run: |
+                  TARGET_IMAGE="${{ env.IMAGE_PREFIX }}/viz-frontend-builder:${{ needs.build-images.outputs.sha }}"
+                  echo "Running frontend unit tests on $TARGET_IMAGE..."
+                  docker run --rm "$TARGET_IMAGE" pnpm --filter @viz/viewfinder test:unit
+                  echo "Running frontend type checks on $TARGET_IMAGE..."
+                  docker run --rm "$TARGET_IMAGE" pnpm --filter @viz/viewfinder check
+                  echo "Checking frontend code formatting and import order..."
+                  docker run --rm "$TARGET_IMAGE" pnpm --filter @viz/viewfinder format:check
 
-  test-backend:
-    name: "Test Backend (Go Unit & Integration)"
-    needs: [build-images]
-    runs-on: ubuntu-latest
-    steps:
-      - name: Test Backend (Dockerized)
-        run: |
-          TARGET_IMAGE="${{ env.IMAGE_NAME_BACKEND_BUILDER }}:${{ needs.build-images.outputs.sha }}"
-          echo "Checking backend code formatting on $TARGET_IMAGE..."
-          docker run --rm "$TARGET_IMAGE" make fmt-check-go
-          echo "Running backend tests on $TARGET_IMAGE..."
-          docker run --rm \
-            -e BASE_DIRECTORY=/tmp/viz_base \
-            -e UPLOAD_LOCATION=uploads \
-            "$TARGET_IMAGE" make test-go
+    test-backend:
+        name: "Test Backend (Go Unit & Integration)"
+        needs: [build-images]
+        runs-on: ubuntu-latest
+        steps:
+            - name: Test Backend (Dockerized)
+              run: |
+                  TARGET_IMAGE="${{ env.IMAGE_PREFIX }}/viz-backend-builder:${{ needs.build-images.outputs.sha }}"
+                  echo "Checking backend code formatting on $TARGET_IMAGE..."
+                  docker run --rm "$TARGET_IMAGE" make fmt-check-go
+                  echo "Running backend tests on $TARGET_IMAGE..."
+                  docker run --rm \
+                    -e BASE_DIRECTORY=/tmp/viz_base \
+                    -e UPLOAD_LOCATION=uploads \
+                    "$TARGET_IMAGE" make test-go
 
-  test-e2e:
-    name: "Frontend E2E Tests (Playwright)"
-    needs: [build-images, test-frontend, test-backend]
-    runs-on: ubuntu-latest
-    steps:
-      - name: Extract Workspace Files from Frontend Builder
-        run: |
-          TARGET_IMAGE="${{ env.IMAGE_NAME_FRONTEND_BUILDER }}:${{ needs.build-images.outputs.sha }}"
-          CID=$(docker create "$TARGET_IMAGE")
-          docker cp "$CID:/app/." .
-          docker rm "$CID"
+    test-e2e:
+        name: "Frontend E2E Tests (Playwright)"
+        needs: [build-images, test-frontend, test-backend]
+        runs-on: ubuntu-latest
+        steps:
+            - name: Extract Workspace Files from Frontend Builder
+              run: |
+                  TARGET_IMAGE="${{ env.IMAGE_PREFIX }}/viz-frontend-builder:${{ needs.build-images.outputs.sha }}"
+                  CID=$(docker create "$TARGET_IMAGE")
+                  docker cp "$CID:/app/." .
+                  docker rm "$CID"
 
-      - name: Setup Node.js & pnpm
-        uses: actions/setup-node@v4
-        with:
-          node-version: '26.5.0'
-          cache: 'pnpm'
+            - name: Setup Node.js & pnpm
+              uses: actions/setup-node@v4
+              with:
+                  node-version: "26.5.0"
+                  cache: "pnpm"
 
-      - name: Get Playwright version
-        run: |
-          PW_VERSION=$(node -p "require('./viewfinder/package.json').devDependencies['@playwright/test'].replace(/[\^~]/g, '')")
-          echo "PLAYWRIGHT_VERSION=$PW_VERSION" >> "$GITHUB_ENV"
+            - name: Get Playwright version
+              id: pw-version
+              run: |
+                  PW_VERSION=$(node -p "require('./viewfinder/package.json').devDependencies['@playwright/test'].replace(/[\^~]/g, '')")
+                  echo "version=$PW_VERSION" >> "$GITHUB_OUTPUT"
 
-      - name: Cache Playwright browsers
-        id: playwright-cache
-        uses: actions/cache@v4
-        with:
-          path: ~/.cache/ms-playwright
-          key: ${{ runner.os }}-playwright-${{ env.PLAYWRIGHT_VERSION }}
+            - name: Cache Playwright browsers
+              id: playwright-cache
+              uses: actions/cache@v4
+              with:
+                  path: ~/.cache/ms-playwright
+                  key: ${{ runner.os }}-playwright-${{ steps.pw-version.outputs.version }}
 
-      - name: Install Playwright Chromium
-        if: steps.playwright-cache.outputs.cache-hit != 'true'
-        run: pnpm --filter @viz/viewfinder exec playwright install --with-deps chromium
+            - name: Install Playwright Chromium
+              if: steps.playwright-cache.outputs.cache-hit != 'true'
+              run: pnpm --filter @viz/viewfinder exec playwright install --with-deps chromium
 
-      - name: Install Playwright system dependencies
-        if: steps.playwright-cache.outputs.cache-hit == 'true'
-        run: pnpm --filter @viz/viewfinder exec playwright install-deps chromium
+            - name: Install Playwright system dependencies
+              if: steps.playwright-cache.outputs.cache-hit == 'true'
+              run: pnpm --filter @viz/viewfinder exec playwright install-deps chromium
 
-      - name: Run E2E Test Suite (Containerised)
-        run: |
-          E2E_PORT="7779"
-          NETWORK_NAME="viz-ci-net-${{ github.run_id }}"
+            - name: Run E2E Test Suite (Containerised)
+              run: |
+                  E2E_PORT="7779"
+                  NETWORK_NAME="viz-ci-net-${{ github.run_id }}"
 
-          docker network create "$NETWORK_NAME"
+                  docker network create "$NETWORK_NAME"
 
-          # 1. Start ephemeral Postgres database
-          docker run -d \
-            --name "viz-ci-db-${{ github.run_id }}" \
-            --network "$NETWORK_NAME" \
-            -e POSTGRES_USER=postgres \
-            -e POSTGRES_PASSWORD=postgres \
-            -e POSTGRES_DB=viz_e2e \
-            "${{ env.IMAGE_NAME_DB }}:${{ needs.build-images.outputs.sha }}"
+                  # 1. Start ephemeral Postgres database
+                  docker run -d \
+                    --name "viz-ci-db-${{ github.run_id }}" \
+                    --network "$NETWORK_NAME" \
+                    -e POSTGRES_USER=postgres \
+                    -e POSTGRES_PASSWORD=postgres \
+                    -e POSTGRES_DB=viz_e2e \
+                    "${{ env.IMAGE_PREFIX }}/viz-db:${{ needs.build-images.outputs.sha }}"
 
-          # 2. Start ephemeral Redis
-          docker run -d \
-            --name "viz-ci-redis-${{ github.run_id }}" \
-            --network "$NETWORK_NAME" \
-            redis:8-alpine
+                  # 2. Start ephemeral Redis
+                  docker run -d \
+                    --name "viz-ci-redis-${{ github.run_id }}" \
+                    --network "$NETWORK_NAME" \
+                    redis:8-alpine
 
-          # 3. Start pre-built Viz Server
-          docker run -d \
-            --name "viz-ci-server-${{ github.run_id }}" \
-            --network "$NETWORK_NAME" \
-            -p "${E2E_PORT}:7770" \
-            -e DB_HOST="viz-ci-db-${{ github.run_id }}" \
-            -e DB_PORT=5432 \
-            -e DB_USER=postgres \
-            -e DB_PASSWORD=postgres \
-            -e DB_NAME=viz_e2e \
-            -e REDIS_HOST="viz-ci-redis-${{ github.run_id }}" \
-            -e REDIS_PORT=6379 \
-            -e PORT=7770 \
-            -e ENV=production \
-            "${{ env.IMAGE_NAME }}:${{ needs.build-images.outputs.sha }}"
+                  # 3. Start pre-built Viz Server
+                  docker run -d \
+                    --name "viz-ci-server-${{ github.run_id }}" \
+                    --network "$NETWORK_NAME" \
+                    -p "${E2E_PORT}:7770" \
+                    -e DB_HOST="viz-ci-db-${{ github.run_id }}" \
+                    -e DB_PORT=5432 \
+                    -e DB_USER=postgres \
+                    -e DB_PASSWORD=postgres \
+                    -e DB_NAME=viz_e2e \
+                    -e REDIS_HOST="viz-ci-redis-${{ github.run_id }}" \
+                    -e REDIS_PORT=6379 \
+                    -e PORT=7770 \
+                    -e ENV=production \
+                    "${{ env.IMAGE_PREFIX }}/viz-server:${{ needs.build-images.outputs.sha }}"
 
-          echo "⏳ Waiting for API readiness on http://localhost:${E2E_PORT}/api/health..."
-          HEALTHY=false
-          for i in $(seq 1 30); do
-            if curl -sf "http://localhost:${E2E_PORT}/api/health" > /dev/null 2>&1; then
-              echo "✅ Viz API server is up and ready!"
-              HEALTHY=true
-              break
-            fi
-            echo "Waiting for API server... ($i/30)"
-            sleep 2
-          done
+                  echo "⏳ Waiting for API readiness on http://localhost:${E2E_PORT}/api/health..."
+                  HEALTHY=false
+                  for i in $(seq 1 30); do
+                    if curl -sf "http://localhost:${E2E_PORT}/api/health" > /dev/null 2>&1; then
+                      echo "✅ Viz API server is up and ready!"
+                      HEALTHY=true
+                      break
+                    fi
+                    echo "Waiting for API server... ($i/30)"
+                    sleep 2
+                  done
 
-          if [ "$HEALTHY" != "true" ]; then
-            echo "❌ Viz API server failed to become healthy within 60s."
-            docker logs "viz-ci-server-${{ github.run_id }}" --tail 50
-            docker rm -f "viz-ci-server-${{ github.run_id }}" "viz-ci-redis-${{ github.run_id }}" "viz-ci-db-${{ github.run_id }}" || true
-            docker network rm "$NETWORK_NAME" || true
-            exit 1
-          fi
+                  if [ "$HEALTHY" != "true" ]; then
+                    echo "❌ Viz API server failed to become healthy within 60s."
+                    docker logs "viz-ci-server-${{ github.run_id }}" --tail 50
+                    docker rm -f "viz-ci-server-${{ github.run_id }}" "viz-ci-redis-${{ github.run_id }}" "viz-ci-db-${{ github.run_id }}" || true
+                    docker network rm "$NETWORK_NAME" || true
+                    exit 1
+                  fi
 
-          echo "Running frontend E2E tests (Playwright)..."
-          export CI=1
-          export VIZ_API_SERVER_PORT="$E2E_PORT"
-          pnpm --filter @viz/viewfinder test:e2e:prod || E2E_STATUS=$?
+                  echo "Running frontend E2E tests (Playwright)..."
+                  export CI=1
+                  export VIZ_API_SERVER_PORT="$E2E_PORT"
+                  pnpm --filter @viz/viewfinder test:e2e:prod || E2E_STATUS=$?
 
-          echo "🧹 Cleaning up test containers..."
-          docker rm -f "viz-ci-server-${{ github.run_id }}" "viz-ci-redis-${{ github.run_id }}" "viz-ci-db-${{ github.run_id }}" || true
-          docker network rm "$NETWORK_NAME" || true
+                  echo "🧹 Cleaning up test containers..."
+                  docker rm -f "viz-ci-server-${{ github.run_id }}" "viz-ci-redis-${{ github.run_id }}" "viz-ci-db-${{ github.run_id }}" || true
+                  docker network rm "$NETWORK_NAME" || true
 
-          if [ -n "$E2E_STATUS" ] && [ "$E2E_STATUS" -ne 0 ]; then
-            echo "❌ E2E tests failed with exit code $E2E_STATUS"
-            exit $E2E_STATUS
-          fi
+                  if [ -n "$E2E_STATUS" ] && [ "$E2E_STATUS" -ne 0 ]; then
+                    echo "❌ E2E tests failed with exit code $E2E_STATUS"
+                    exit $E2E_STATUS
+                  fi
 
-  release:
-    name: "Create Forgejo Release"
-    needs: [build-images, test-frontend, test-backend, test-e2e]
-    runs-on: ubuntu-latest
-    steps:
-      - name: Checkout Code
-        uses: actions/checkout@v4
-        with:
-          fetch-depth: 0
+    release:
+        name: "Create Forgejo Release"
+        needs: [build-images, test-frontend, test-backend, test-e2e]
+        runs-on: ubuntu-latest
+        steps:
+            - name: Checkout Code
+              uses: actions/checkout@v4
+              with:
+                  fetch-depth: 0
 
-      - name: Detect Tag & Extract Release Notes
-        id: release-notes
-        run: |
-          TAG_NAME=$(git describe --tags --exact-match 2>/dev/null || true)
-          if [ -z "$TAG_NAME" ] || [[ ! "$TAG_NAME" =~ ^v[0-9] ]]; then
-            echo "No version tag found on current commit. Skipping release creation."
-            echo "has_tag=false" >> "$GITHUB_OUTPUT"
-            exit 0
-          fi
+            - name: Detect Tag & Extract Release Notes
+              id: release-notes
+              run: |
+                  TAG_NAME=$(git describe --tags --exact-match 2>/dev/null || true)
+                  if [ -z "$TAG_NAME" ] || [[ ! "$TAG_NAME" =~ ^v[0-9] ]]; then
+                    echo "No version tag found on current commit. Skipping release creation."
+                    echo "has_tag=false" >> "$GITHUB_OUTPUT"
+                    exit 0
+                  fi
 
-          echo "has_tag=true" >> "$GITHUB_OUTPUT"
-          echo "tag_name=$TAG_NAME" >> "$GITHUB_OUTPUT"
+                  echo "has_tag=true" >> "$GITHUB_OUTPUT"
+                  echo "tag_name=$TAG_NAME" >> "$GITHUB_OUTPUT"
 
-          VERSION="${TAG_NAME#v}"
-          NOTES=""
-          if [ -f CHANGELOG.md ]; then
-            NOTES=$(awk -v ver="[${VERSION}]" '
-              $0 ~ "## \\[" ver "\\]" { flag=1; next }
-              flag && /^## \\[/ { flag=0 }
-              flag { print }
-            ' CHANGELOG.md | sed -e '/^[[:space:]]*$/d')
-          fi
+                  VERSION="${TAG_NAME#v}"
+                  NOTES=""
+                  if [ -f CHANGELOG.md ]; then
+                    NOTES=$(awk -v ver="[${VERSION}]" '
+                      $0 ~ "## \\[" ver "\\]" { flag=1; next }
+                      flag && /^## \\[/ { flag=0 }
+                      flag { print }
+                    ' CHANGELOG.md | sed -e '/^[[:space:]]*$/d')
+                  fi
 
-          if [ -z "$NOTES" ]; then
-            NOTES="Release $TAG_NAME"
-          fi
+                  if [ -z "$NOTES" ]; then
+                    NOTES="Release $TAG_NAME"
+                  fi
 
-          {
-            echo "notes<<EOF"
-            echo "$NOTES"
-            echo "EOF"
-          } >> "$GITHUB_OUTPUT"
+                  {
+                    echo "notes<<EOF"
+                    echo "$NOTES"
+                    echo "EOF"
+                  } >> "$GITHUB_OUTPUT"
 
-      - name: Create Release
-        if: steps.release-notes.outputs.has_tag == 'true'
-        uses: softprops/action-gh-release@v2
-        with:
-          tag_name: ${{ steps.release-notes.outputs.tag_name }}
-          name: ${{ steps.release-notes.outputs.tag_name }}
-          body: ${{ steps.release-notes.outputs.notes }}
-          draft: false
-          prerelease: false
-        env:
-          GITHUB_TOKEN: ${{ secrets.REGISTRY_TOKEN || secrets.GITHUB_TOKEN }}
+            - name: Create Release
+              if: steps.release-notes.outputs.has_tag == 'true'
+              uses: softprops/action-gh-release@v2
+              with:
+                  tag_name: ${{ steps.release-notes.outputs.tag_name }}
+                  name: ${{ steps.release-notes.outputs.tag_name }}
+                  body: ${{ steps.release-notes.outputs.notes }}
+                  draft: false
+                  prerelease: false
+              env:
+                  GITHUB_TOKEN: ${{ secrets.REGISTRY_TOKEN || secrets.GITHUB_TOKEN }}
