@@ -12,10 +12,10 @@
     import { API_BASE_URL, type ImageAsset, getImageFileBlob } from "@viz/api";
     import * as Comlink from "comlink";
     import JSZip from "jszip";
-    import { DateTime } from "luxon";
     import { type Snippet } from "svelte";
     import { slide } from "svelte/transition";
     import { DbSettings } from "$lib/db/settings";
+    import { createZipExportName } from "$lib/download/utils";
     import type { TransformInput } from "$lib/images/vips/vips";
     import { download } from "$lib/states/index.svelte";
     import { toasts } from "$lib/toast-notifcations/toasts.svelte";
@@ -415,8 +415,7 @@
                     }
                 }
 
-                // TODO: Consider whether this can be a setting of its own
-                let zipName = `viz-bulk_export-${DateTime.now().toFormat("yyyyLLdd_HHmmss")}.zip`;
+                let zipName = createZipExportName(window.vizConfig?.download?.zip_export_name!);
 
                 // Create a virtual DownloadFile task for zip compilation
                 const zipTask = new DownloadFile("", zipName);

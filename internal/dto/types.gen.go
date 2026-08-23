@@ -891,6 +891,12 @@ type DeleteImagesResponse struct {
 	Error *string `json:"error,omitempty"`
 }
 
+// DownloadConfig defines model for DownloadConfig.
+type DownloadConfig struct {
+	// ZipExportName Default name for user exported zip files
+	ZipExportName *string `json:"zip_export_name,omitempty"`
+}
+
 // DownloadRequest defines model for DownloadRequest.
 type DownloadRequest struct {
 	// FileName Desired filename for the archive
@@ -1910,6 +1916,7 @@ type VizConfig struct {
 	BaseUrl        *string               `json:"base_url,omitempty"`
 	Cache          *CacheConfig          `json:"cache,omitempty"`
 	Database       *DatabaseConfig       `json:"database,omitempty"`
+	Download       *DownloadConfig       `json:"download,omitempty"`
 	Libvips        *LibvipsConfig        `json:"libvips,omitempty"`
 	Logging        *LoggingConfig        `json:"logging,omitempty"`
 	Redis          *QueueConfig          `json:"redis,omitempty"`

@@ -205,7 +205,7 @@
         bottom: var(--viz-spacing-xxl);
         right: var(--viz-spacing-xxl);
         background-color: var(--viz-surface-panel);
-        z-index: 900;
+        z-index: 9900;
         border: var(--viz-border-thin);
         border-radius: var(--viz-border-radius-lg);
         max-height: 50vh;

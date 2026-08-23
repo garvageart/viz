@@ -54,6 +54,7 @@ func ReadConfig() (viper.Viper, error) {
 	v.SetDefault("base_url", "localhost")
 	v.SetDefault("base_directory", DefaultDataDirectory)
 	v.SetDefault("upload.location", "library")
+	v.SetDefault("download.zip_export_name", "viz-bulk_export")
 	v.SetDefault("timezone", "utc")
 	v.SetDefault("allowed_hosts", []string{})
 	v.SetDefault("server.port", 7770)

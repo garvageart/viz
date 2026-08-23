@@ -796,6 +796,10 @@ export type UploadConfig = {
     /** Upload location */
     location?: string;
 };
+export type DownloadConfig = {
+    /** Default name for user exported zip files */
+    zip_export_name?: string;
+};
 export type DatabaseConfig = {
     /** Database location/host */
     location?: string;
@@ -875,6 +879,7 @@ export type VizConfig = {
     /** Base directory path */
     base_directory?: string;
     upload?: UploadConfig;
+    download?: DownloadConfig;
     database?: DatabaseConfig;
     redis?: QueueConfig;
     libvips?: LibvipsConfig;

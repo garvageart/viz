@@ -108,6 +108,16 @@ class EventsState {
                 this.invalidateApp(DataKeys.Photos);
                 break;
 
+            case "config-updated":
+                console.debug("[Events] Config updated, updating window.vizConfig:", data);
+                if (data) {
+                    window.vizConfig = {
+                        ...window.vizConfig,
+                        ...data
+                    };
+                }
+                break;
+
             case "server-online":
                 console.debug("[Events] Server came back online, wasDisconnected:", this.wasDisconnected);
                 if (this.wasDisconnected) {

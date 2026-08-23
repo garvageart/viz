@@ -4587,6 +4587,8 @@ components:
                     description: Base directory path
                 upload:
                     $ref: "#/components/schemas/UploadConfig"
+                download:
+                    $ref: "#/components/schemas/DownloadConfig"
                 database:
                     $ref: "#/components/schemas/DatabaseConfig"
                 redis:
@@ -4622,6 +4624,14 @@ components:
                 location:
                     type: string
                     description: Upload location
+
+        DownloadConfig:
+            type: object
+            properties:
+                zip_export_name:
+                    type: string
+                    default: viz-bulk_export
+                    description: "Default name for user exported zip files"
 
         DatabaseConfig:
             type: object

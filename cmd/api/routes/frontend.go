@@ -2,6 +2,7 @@ package routes
 
 import (
 	"bytes"
+	"encoding/json"
 	"fmt"
 	"log/slog"
 	"net/http"
@@ -11,6 +12,7 @@ import (
 	"sync"
 
 	"gorm.io/gorm"
+	"viz/internal/config"
 	"viz/internal/frontend"
 )
 
@@ -151,11 +153,22 @@ func (h *FrontendHandler) serveIndex(w http.ResponseWriter, r *http.Request) {
 
 	themeAttr := fmt.Sprintf("data-theme=\"%s\"", modeTheme)
 
+	// Build sanitized public config script for window.vizConfig
+	configJSON, err := json.Marshal(config.AppConfig.Public())
+	configScript := ""
+	if err != nil {
+		h.Logger.Warn("failed to marshal public config", slog.Any("error", err))
+		configScript = "<script id=\"viz-config\">window.vizConfig = {};</script>"
+	} else {
+		configScript = fmt.Sprintf("<script id=\"viz-config\">window.vizConfig = %s;</script>", string(configJSON))
+	}
+
 	// Replace placeholders
 	// Note: Doing string replacement on every request might be slow for high load,
 	// but fine for this scale. For optimization, use bytes.Replace.
 	responseHtml := bytes.Replace(indexData, []byte(frontend.ThemeStylePlaceholder), []byte(criticalCss), 1)
 	responseHtml = bytes.Replace(responseHtml, []byte(frontend.ThemeAttrPlaceholder), []byte(themeAttr), 1)
+	responseHtml = bytes.Replace(responseHtml, []byte(frontend.ConfigScriptPlaceholder), []byte(configScript), 1)
 
 	w.Header().Set("Cache-Control", "no-cache, no-store, must-revalidate")
 	w.Header().Set("Pragma", "no-cache")

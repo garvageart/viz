@@ -63,6 +63,11 @@ type UploadConfig struct {
 	Location string `json:"location" mapstructure:"location"`
 }
 
+// DownloadConfig holds the configuration for downloads.
+type DownloadConfig struct {
+	ZipExportName string `json:"zip_export_name" mapstructure:"zip_export_name"`
+}
+
 // LibvipsConfig holds the configuration for libvips.
 type LibvipsConfig struct {
 	MatchSystemLogging bool `json:"match_system_logging" mapstructure:"match_system_logging"`
@@ -119,6 +124,7 @@ type VizConfig struct {
 	Logging        LoggingConfig        `json:"logging" mapstructure:"logging"`
 	BaseDir        string               `json:"base_directory" mapstructure:"base_directory"`
 	Upload         UploadConfig         `json:"upload" mapstructure:"upload"`
+	Download       DownloadConfig       `json:"download" mapstructure:"download"`
 	Database       DatabaseConfig       `json:"database" mapstructure:"database"`
 	Queue          QueueConfig          `json:"redis" mapstructure:"redis"`
 	Libvips        LibvipsConfig        `json:"libvips" mapstructure:"libvips"`
@@ -127,4 +133,24 @@ type VizConfig struct {
 	StorageMetrics StorageMetricsConfig `json:"storage_metrics" mapstructure:"storage_metrics"`
 	Storage        StorageConfig        `json:"storage" mapstructure:"storage"`
 	Security       SecurityConfig       `json:"security" mapstructure:"security"`
+}
+
+// PublicVizConfig is the sanitized public configuration safe to expose to frontend / clients.
+type PublicVizConfig struct {
+	BaseURL      string         `json:"base_url"`
+	AllowedHosts []string       `json:"allowed_hosts"`
+	Timezone     string         `json:"timezone"`
+	Download     DownloadConfig `json:"download"`
+	Storage      StorageConfig  `json:"storage"`
+}
+
+// Public returns a sanitized copy of VizConfig safe for public client injection and broadcast.
+func (c VizConfig) Public() PublicVizConfig {
+	return PublicVizConfig{
+		BaseURL:      c.BaseURL,
+		AllowedHosts: c.AllowedHosts,
+		Timezone:     c.Logging.Timezone,
+		Download:     c.Download,
+		Storage:      c.Storage,
+	}
 }

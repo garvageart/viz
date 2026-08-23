@@ -75,7 +75,7 @@ func (server APIServer) Launch(router *chi.Mux) *http.Server {
 		// Public routes (no auth required)
 		r.Mount("/auth", routes.AuthRouter(dbClient, logger))
 		r.Mount("/accounts", routes.AccountsRouter(dbClient, logger)) // auth middleware added internally
-		r.Mount("/system", routes.SystemRouter(dbClient, logger))
+		r.Mount("/system", routes.SystemRouter(dbClient, logger, server.WSBroker))
 		r.Mount("/setup", routes.SetupRouter(dbClient, logger)) // superadmin setup
 		r.Get("/health", func(res http.ResponseWriter, req *http.Request) {
 			render.JSON(res, req, healthService.Check(req.Context()))
