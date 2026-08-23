@@ -126,8 +126,9 @@ jobs:
             --build-arg REGISTRY_URL=${{ vars.REGISTRY_URL }} \
             --build-arg REPOSITORY=${{ github.repository }} \
             -t ${{ env.IMAGE_NAME_FRONTEND_BUILDER }}:latest \
-            -t ${{ env.IMAGE_NAME_FRONTEND_BUILDER }}:$COMMIT_HASH \
-            --push .
+            -t ${{ env.IMAGE_NAME_FRONTEND_BUILDER }}:$COMMIT_HASH .
+          docker push ${{ env.IMAGE_NAME_FRONTEND_BUILDER }}:latest || true
+          docker push ${{ env.IMAGE_NAME_FRONTEND_BUILDER }}:$COMMIT_HASH || true
 
       - name: Build and Push Backend Builder Image
         run: |
@@ -140,8 +141,9 @@ jobs:
             --build-arg REGISTRY_URL=${{ vars.REGISTRY_URL }} \
             --build-arg REPOSITORY=${{ github.repository }} \
             -t ${{ env.IMAGE_NAME_BACKEND_BUILDER }}:latest \
-            -t ${{ env.IMAGE_NAME_BACKEND_BUILDER }}:$COMMIT_HASH \
-            --push .
+            -t ${{ env.IMAGE_NAME_BACKEND_BUILDER }}:$COMMIT_HASH .
+          docker push ${{ env.IMAGE_NAME_BACKEND_BUILDER }}:latest || true
+          docker push ${{ env.IMAGE_NAME_BACKEND_BUILDER }}:$COMMIT_HASH || true
 
       - name: Build and Push Final Production Image
         run: |
@@ -163,8 +165,10 @@ jobs:
             --build-arg REPOSITORY_URL=${{ github.server_url }}/${{ github.repository }} \
             -t ${{ env.IMAGE_NAME }}:latest \
             -t ${{ env.IMAGE_NAME }}:$COMMIT_HASH \
-            -t ${{ env.IMAGE_NAME }}:${{ steps.set-sha.outputs.short_sha }} \
-            --push .
+            -t ${{ env.IMAGE_NAME }}:${{ steps.set-sha.outputs.short_sha }} .
+          docker push ${{ env.IMAGE_NAME }}:latest || true
+          docker push ${{ env.IMAGE_NAME }}:$COMMIT_HASH || true
+          docker push ${{ env.IMAGE_NAME }}:${{ steps.set-sha.outputs.short_sha }} || true
 
       - name: Build and Push Database Image
         run: |
@@ -176,8 +180,10 @@ jobs:
             --build-arg REPOSITORY=${{ github.repository }} \
             -t ${{ env.IMAGE_NAME_DB }}:latest \
             -t ${{ env.IMAGE_NAME_DB }}:$COMMIT_HASH \
-            -t ${{ env.IMAGE_NAME_DB }}:${{ steps.set-sha.outputs.short_sha }} \
-            --push .
+            -t ${{ env.IMAGE_NAME_DB }}:${{ steps.set-sha.outputs.short_sha }} .
+          docker push ${{ env.IMAGE_NAME_DB }}:latest || true
+          docker push ${{ env.IMAGE_NAME_DB }}:$COMMIT_HASH || true
+          docker push ${{ env.IMAGE_NAME_DB }}:${{ steps.set-sha.outputs.short_sha }} || true
 
   test-frontend:
     name: "Test Frontend (Unit, Types & Format)"
