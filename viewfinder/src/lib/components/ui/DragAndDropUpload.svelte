@@ -75,7 +75,7 @@
             });
 
             try {
-                await invalidateViz({ delay: 200 });
+                await invalidateViz();
             } catch (err) {
                 console.error("Failed to fetch uploaded images:", err);
             }

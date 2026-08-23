@@ -312,7 +312,7 @@
                 });
 
                 // Trigger refresh
-                await invalidateViz({ delay: 200 });
+                await invalidateViz();
             } else {
                 toasts.add({
                     type: "error",

@@ -37,10 +37,12 @@ export async function invalidateViz(opts?: { delay?: number; skipInvalidateAll?:
     if (opts?.delay) {
         await sleep(opts.delay);
     }
+
     invalidationState.version += 1;
     if (opts?.skipInvalidateAll) {
         return;
     }
+
     await invalidateAll();
 }
 

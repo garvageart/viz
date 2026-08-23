@@ -216,7 +216,7 @@ export function createImageMenu(
                         });
                         onDelete?.(uids);
                         selectionScope.clear();
-                        await invalidateViz({ delay: 200 });
+                        await invalidateViz();
                     }
                 } catch (err) {
                     toasts.add({
@@ -244,7 +244,7 @@ export function createImageMenu(
                             message: "Collection thumbnail updated",
                             timeout: 3000
                         });
-                        await invalidateViz({ delay: 200 });
+                        await invalidateViz();
                     }
                 } catch (err) {
                     toasts.add({
@@ -295,7 +295,7 @@ export function createImageMenu(
                     });
                     onDelete?.(uids);
                     selectionScope.clear();
-                    await invalidateViz({ delay: 200 });
+                    await invalidateViz();
                 }
             } catch (err) {
                 toasts.add({

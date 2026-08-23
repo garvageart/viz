@@ -121,7 +121,7 @@
                             message: `Collection created with ${imageUidsToAdd.length} image(s)`,
                             timeout: 4000
                         });
-                        await invalidateViz({ delay: 200 });
+                        await invalidateViz();
                         modalsManager.pop(); // Close Create Modal
                         modalsManager.close(id); // Close Selection Modal
                         goto(`/collections/${collectionUid}`);

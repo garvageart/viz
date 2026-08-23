@@ -157,7 +157,7 @@
                 message: `Added ${newUIDs.length} image(s) to **${collection.name}**`,
                 timeout: 3000
             });
-            await invalidateViz({ delay: 200 });
+            await invalidateViz();
         } else {
             toasts.add({
                 type: "error",

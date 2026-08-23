@@ -174,7 +174,7 @@
                     message: `Added ${selectedUids.length} image(s) to collection **${collectionName}**`,
                     timeout: 3000
                 });
-                await invalidateViz({ delay: 200 });
+                await invalidateViz();
                 modalsManager.close(id, true);
             } else {
                 toasts.add({
