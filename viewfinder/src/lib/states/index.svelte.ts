@@ -10,8 +10,9 @@ import {
 import { MediaQuery } from "svelte/reactivity";
 import type { MenuItem } from "$lib/context-menu/types";
 import { DbSettings } from "$lib/db/settings";
+import type { DownloadFile } from "$lib/download/asset.svelte";
 import type { AssetGridView } from "$lib/types/asset";
-import type { DownloadFile, UploadImage } from "$lib/upload/asset.svelte";
+import type { UploadImage } from "$lib/upload/asset.svelte";
 import { VizCookieStorage, VizLocalStorage } from "$lib/utils/misc";
 
 // Types
@@ -173,6 +174,7 @@ class UploadState {
 
     files: UploadImage[] = $state([]);
     concurrency: number = $state(2);
+    activeCount: number = $state(0);
     stats = $state({
         errors: 0,
         duplicates: 0,
@@ -211,16 +213,48 @@ class UploadState {
 export const uploadState = new UploadState();
 export let upload = uploadState;
 
-export let download = $state({
-    files: [] as DownloadFile[],
-    concurrency: 2,
-    stats: {
+class DownloadState {
+    private storage = new DbSettings<number>("download.concurrency");
+    private readyPromise: Promise<void>;
+    private loaded = $state(false);
+
+    files: DownloadFile[] = $state([]);
+    concurrency: number = $state(2);
+    activeCount: number = $state(0);
+    stats = $state({
         errors: 0,
         duplicates: 0,
         success: 0,
         total: 0
+    });
+
+    constructor() {
+        this.readyPromise = this.init();
+
+        $effect.root(() => {
+            $effect(() => {
+                if (this.loaded) {
+                    this.storage.save(this.concurrency);
+                }
+            });
+        });
     }
-});
+
+    ready(): Promise<void> {
+        return this.readyPromise;
+    }
+
+    private async init() {
+        const stored = await this.storage.load();
+        if (stored !== undefined) {
+            this.concurrency = stored;
+        }
+        this.loaded = true;
+    }
+}
+
+export const downloadState = new DownloadState();
+export let download = downloadState;
 
 export let continuePath = $state<string | null>(null);
 

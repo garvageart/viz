@@ -15,13 +15,13 @@
     import { type Snippet } from "svelte";
     import { slide } from "svelte/transition";
     import { DbSettings } from "$lib/db/settings";
+    import { DownloadFile, DownloadState } from "$lib/download/asset.svelte";
+    import { processDownloadQueue, waitForDownloadCompletion } from "$lib/download/manager.svelte";
     import { createZipExportName } from "$lib/download/utils";
     import type { TransformInput } from "$lib/images/vips/vips";
     import { download } from "$lib/states/index.svelte";
     import { toasts } from "$lib/toast-notifcations/toasts.svelte";
     import { safeRenderRenameTemplate } from "$lib/ui-tools/renamer";
-    import { DownloadFile, DownloadState } from "$lib/upload/asset.svelte";
-    import { processDownloadQueue, waitForDownloadCompletion } from "$lib/upload/manager.svelte";
     import { downloadToFilesystem } from "$lib/utils/files";
     import {
         type BitDepths,

@@ -10,10 +10,10 @@ import {
 } from "@viz/api";
 import ConfirmationModal from "$lib/components/modals/ConfirmationModal.svelte";
 import { modalsManager } from "$lib/components/modals/manager/ModalManager.svelte";
+import { DownloadFile, DownloadState } from "$lib/download/asset.svelte";
+import { processDownloadQueue, waitForDownloadCompletion } from "$lib/download/manager.svelte";
 import { download } from "$lib/states/index.svelte";
 import { toasts } from "$lib/toast-notifcations/toasts.svelte";
-import { DownloadFile, DownloadState } from "$lib/upload/asset.svelte";
-import { processDownloadQueue, waitForDownloadCompletion } from "$lib/upload/manager.svelte";
 import { downloadToFilesystem } from "$lib/utils/files";
 import { copyToClipboard } from "$lib/utils/misc";
 import { invalidateViz } from "$lib/views/views.svelte";

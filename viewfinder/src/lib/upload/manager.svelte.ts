@@ -1,9 +1,9 @@
 import { ImageUploadStatus, checkDuplicates } from "@viz/api";
-import { download, upload } from "$lib/states/index.svelte";
+import { upload } from "$lib/states/index.svelte";
 import type { DirectoryInputElement } from "$lib/types/dom";
 import type { SupportedImageTypes, SupportedRAWFiles } from "$lib/types/images";
 import { calculateSHA1 } from "$lib/utils/crypto";
-import { DownloadFile, DownloadState, UploadImage, UploadState } from "./asset.svelte";
+import { UploadImage, UploadState, isUploadCompleted, isUploadPending, isUploadSuccessful } from "./asset.svelte";
 
 export interface ImageUploadFileData {
     file_name: string;
@@ -17,22 +17,13 @@ export interface ImageUploadSuccess {
     metadata?: Record<string, unknown>;
 }
 
-// Module-level state to be shared across all UploadManager instances
-let activeCount = $state(0);
-
 /**
  * Waits for a list of upload tasks to complete (success, error, cancel, or duplicate).
  */
 export function waitForUploadCompletion(tasks: UploadImage[]): Promise<void> {
     return new Promise((resolve) => {
         const check = () => {
-            const allDone = tasks.every(
-                (t) =>
-                    t.state === UploadState.DONE ||
-                    t.state === UploadState.ERROR ||
-                    t.state === UploadState.CANCELED ||
-                    t.state === UploadState.DUPLICATE
-            );
+            const allDone = tasks.every(isUploadCompleted);
 
             if (allDone) {
                 resolve();
@@ -49,87 +40,29 @@ export function waitForUploadCompletion(tasks: UploadImage[]): Promise<void> {
  * Can be called repeatedly to fill available slots.
  */
 export function processGlobalQueue() {
-    if (activeCount >= upload.concurrency) {
+    if (upload.activeCount >= upload.concurrency) {
         return;
     }
 
-    const pendingTasks = upload.files.filter((t) => t.state === UploadState.PENDING);
+    const pendingTasks = upload.files.filter(isUploadPending);
 
     if (pendingTasks.length === 0) {
         return;
     }
 
-    const slotsAvailable = upload.concurrency - activeCount;
+    const slotsAvailable = upload.concurrency - upload.activeCount;
     const tasksToStart = pendingTasks.slice(0, slotsAvailable);
 
     for (const task of tasksToStart) {
-        activeCount++;
+        upload.activeCount++;
 
         task.upload()
             .catch((error) => {
                 console.error(`[UploadManager] Upload failed for file: ${task.data.file_name}`, error);
             })
             .finally(() => {
-                activeCount--;
+                upload.activeCount--;
                 processGlobalQueue();
-            });
-    }
-}
-
-// Module-level state for download queue management
-let activeDownloadCount = $state(0);
-
-/**
- * Waits for a list of download tasks to complete (success, error, or cancel).
- */
-export function waitForDownloadCompletion(tasks: DownloadFile[]): Promise<void> {
-    return new Promise((resolve) => {
-        const check = () => {
-            const allDone = tasks.every(
-                (t) =>
-                    t.state === DownloadState.DOWNLOADED ||
-                    t.state === DownloadState.PROCESSING ||
-                    t.state === DownloadState.ERROR ||
-                    t.state === DownloadState.CANCELED
-            );
-
-            if (allDone) {
-                resolve();
-            } else {
-                setTimeout(check, 200);
-            }
-        };
-        check();
-    });
-}
-
-/**
- * Dynamic queue processor for downloads that respects global concurrency.
- */
-export function processDownloadQueue() {
-    if (activeDownloadCount >= download.concurrency) {
-        return;
-    }
-
-    const pendingTasks = download.files.filter((t) => t.state === DownloadState.PENDING);
-
-    if (pendingTasks.length === 0) {
-        return;
-    }
-
-    const slotsAvailable = download.concurrency - activeDownloadCount;
-    const tasksToStart = pendingTasks.slice(0, slotsAvailable);
-
-    for (const task of tasksToStart) {
-        activeDownloadCount++;
-
-        task.download()
-            .catch((error) => {
-                console.error(`[DownloadManager] Download failed for URL: ${task.url}`, error);
-            })
-            .finally(() => {
-                activeDownloadCount--;
-                processDownloadQueue();
             });
     }
 }
@@ -207,7 +140,7 @@ export default class UploadManager {
         );
 
         // Filter tasks that have checksums and are still pending
-        const validTasks = tasks.filter((t) => t.checksum && t.state === UploadState.PENDING);
+        const validTasks = tasks.filter((t) => t.checksum && isUploadPending(t));
         if (validTasks.length === 0) {
             return;
         }
@@ -245,7 +178,7 @@ export default class UploadManager {
      * If no tasks provided, uploads all pending tasks in the global store.
      */
     async start(tasks?: UploadImage[]): Promise<void> {
-        const tasksToCheck = tasks || upload.files.filter((t) => t.state === UploadState.PENDING);
+        const tasksToCheck = tasks || upload.files.filter(isUploadPending);
         if (tasksToCheck.length > 0) {
             await this.precheckDuplicates(tasksToCheck);
         }
@@ -297,13 +230,11 @@ export default class UploadManager {
 
         await waitForUploadCompletion(tasks);
 
-        const success = tasks
-            .filter((t) => (t.state === UploadState.DONE || t.state === UploadState.DUPLICATE) && t.imageData)
-            .map((t) => ({
-                uid: t.imageData!.uid,
-                status: t.imageData!.status,
-                metadata: t.imageData
-            }));
+        const success = tasks.filter(isUploadSuccessful).map((t) => ({
+            uid: t.imageData!.uid,
+            status: t.imageData!.status,
+            metadata: t.imageData
+        }));
         return success;
     }
 
@@ -343,13 +274,11 @@ export default class UploadManager {
 
         await waitForUploadCompletion(tasks);
 
-        const success = tasks
-            .filter((t) => (t.state === UploadState.DONE || t.state === UploadState.DUPLICATE) && t.imageData)
-            .map((t) => ({
-                uid: t.imageData!.uid,
-                status: t.imageData!.status,
-                metadata: t.imageData
-            }));
+        const success = tasks.filter(isUploadSuccessful).map((t) => ({
+            uid: t.imageData!.uid,
+            status: t.imageData!.status,
+            metadata: t.imageData
+        }));
         return success;
     }
 }
