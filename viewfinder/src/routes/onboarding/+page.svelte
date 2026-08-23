@@ -227,7 +227,7 @@
     <div class="card">
         {#if system.loading}
             <div class="loading">Loading...</div>
-        {:else if !system.data?.needs_superadmin}
+        {:else if system.data?.needs_superadmin}
             <!-- SUPERADMIN FLOW -->
             <ProgressBar bind:width={superadminProgressBarWidth} />
 
