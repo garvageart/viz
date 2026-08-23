@@ -141,9 +141,11 @@
                     type: "success"
                 });
 
-                // Invalidate system state to force re-fetch of status flags
+                // Invalidate system and user state to force re-fetch of status flags
                 system.fetched = false;
                 system.data = null;
+                user.fetched = false;
+                user.data = res.data.user;
 
                 goto("/");
             } else {

@@ -7,6 +7,7 @@ import (
 	"net/http"
 	"runtime"
 	"strconv"
+	"strings"
 	"time"
 
 	"github.com/go-chi/chi/v5"
@@ -252,8 +253,13 @@ func GetSystemStatus(db *gorm.DB, logger *slog.Logger, req *http.Request) (*dto.
 func systemCacheMiddleware(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		if r.Method == http.MethodGet {
-			w.Header().Set("Cache-Control", "private, max-age=300")
 			w.Header().Add("Vary", "Cookie")
+
+			if strings.HasSuffix(r.URL.Path, "/about") {
+				w.Header().Set("Cache-Control", "private, max-age=300")
+			} else {
+				w.Header().Set("Cache-Control", "private, no-cache, must-revalidate")
+			}
 		}
 		next.ServeHTTP(w, r)
 	})
