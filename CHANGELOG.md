@@ -5,6 +5,15 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.32.1] - 2026-08-23
+
+* refactor(viewfinder): streamline DragAndDropUpload actions and include duplicate uploads in collections (a6327bec)
+* refactor(api): align collection private properties to non-nullable boolean (d6ab7670)
+* feat(viewfinder/panels): align upload and download panels and enlarge minimized state (444ce466)
+* refactor(viewfinder/download): separate download domain state and standardize predicates (ccf55c77)
+* feat(viewfinder/ui): add accessible InputNumber component (3d3391da)
+* ci: add Forgejo Actions workflow for building, testing, and container packaging (f2c36347)
+
 ## [0.32.0] - 2026-08-23
 
 * docs: document standardized z-index elevation scale in design system (ccac5a9f)
