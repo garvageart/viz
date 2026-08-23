@@ -103,6 +103,7 @@ export { default as IconBorderOuter } from './IconBorderOuter.svelte';
 export { default as IconBugReport } from './IconBugReport.svelte';
 export { default as IconReport } from './IconReport.svelte';
 export { default as IconCrop } from './IconCrop.svelte';
+export { default as IconRemove } from './IconRemove.svelte';
 export { default as IconKeyboardDoubleArrowLeft } from './IconKeyboardDoubleArrowLeft.svelte';
 export { default as IconKeyboardDoubleArrowRight } from './IconKeyboardDoubleArrowRight.svelte';
 export { default as IconArrowDownwardAlt } from './IconArrowDownwardAlt.svelte';
