@@ -34,11 +34,6 @@ env:
   IMAGE_NAME_FRONTEND_DEPS: ${{ env.IMAGE_PREFIX }}/viz-frontend-deps
   IMAGE_NAME_FRONTEND_BUILDER: ${{ env.IMAGE_PREFIX }}/viz-frontend-builder
   IMAGE_NAME_BACKEND_BUILDER: ${{ env.IMAGE_PREFIX }}/viz-backend-builder
-  CACHE_IMAGE_BASE: ${{ env.IMAGE_PREFIX }}/viz-base-cache
-  CACHE_IMAGE_FRONTEND: ${{ env.IMAGE_PREFIX }}/viz-frontend-cache
-  CACHE_IMAGE_BACKEND: ${{ env.IMAGE_PREFIX }}/viz-backend-cache
-  CACHE_IMAGE_SERVER: ${{ env.IMAGE_PREFIX }}/viz-server-cache
-  CACHE_IMAGE_DB: ${{ env.IMAGE_PREFIX }}/viz-db-cache
 
 jobs:
   build-images:
@@ -52,6 +47,7 @@ jobs:
         uses: actions/checkout@v4
         with:
           fetch-depth: 0
+          submodules: recursive
 
       - name: Set Commit SHA Output
         id: set-sha
@@ -77,18 +73,18 @@ jobs:
           fi
 
       - name: Auto-Detect & Build Base Image
+        id: detect-base
         run: |
           export DOCKER_BUILDKIT=1
           DEPS_SHA=$(git log -1 --format=%H -- docker/Dockerfile.base .libvips-version go.mod go.sum go.work go.work.sum cmd/api/go.mod cmd/api/go.sum 2>/dev/null || true)
           if [ -z "$DEPS_SHA" ]; then
             DEPS_SHA=$(git rev-parse HEAD)
           fi
+          echo "base_sha=$DEPS_SHA" >> "$GITHUB_OUTPUT"
 
           if ! docker manifest inspect ${{ env.IMAGE_NAME_BASE }}:${DEPS_SHA} >/dev/null 2>&1; then
             echo "viz-base:${DEPS_SHA} missing from registry. Rebuilding..."
             docker buildx build -f docker/Dockerfile.base \
-              --cache-from=type=registry,ref=${{ env.CACHE_IMAGE_BASE }} \
-              --cache-to=type=registry,ref=${{ env.CACHE_IMAGE_BASE }},mode=max,ignore-error=true \
               -t ${{ env.IMAGE_NAME_BASE }}:latest \
               -t ${{ env.IMAGE_NAME_BASE }}:${DEPS_SHA} \
               -t ${{ env.IMAGE_NAME_BASE }}:${{ steps.set-sha.outputs.short_sha }} .
@@ -100,18 +96,18 @@ jobs:
           fi
 
       - name: Auto-Detect & Build Frontend Deps Image
+        id: detect-frontend-deps
         run: |
           export DOCKER_BUILDKIT=1
-          DEPS_SHA=$(git log -1 --format=%H -- docker/Dockerfile pnpm-lock.yaml pnpm-workspace.yaml 2>/dev/null || true)
+          DEPS_SHA=$(git log -1 --format=%H -- docker/Dockerfile pnpm-lock.yaml pnpm-workspace.yaml package.json .npmrc viewfinder/package.json scripts/js/package.json packages/api/package.json 2>/dev/null || true)
           if [ -z "$DEPS_SHA" ]; then
             DEPS_SHA=$(git rev-parse HEAD)
           fi
+          echo "frontend_deps_sha=$DEPS_SHA" >> "$GITHUB_OUTPUT"
 
           if ! docker manifest inspect ${{ env.IMAGE_NAME_FRONTEND_DEPS }}:${DEPS_SHA} >/dev/null 2>&1; then
             echo "viz-frontend-deps:${DEPS_SHA} missing from registry. Rebuilding..."
             docker buildx build -f docker/Dockerfile --target frontend-deps \
-              --cache-from=type=registry,ref=${{ env.CACHE_IMAGE_FRONTEND }} \
-              --cache-to=type=registry,ref=${{ env.CACHE_IMAGE_FRONTEND }},mode=max,ignore-error=true \
               --build-arg REGISTRY_URL=${{ vars.REGISTRY_URL }} \
               --build-arg REPOSITORY=${{ github.repository }} \
               -t ${{ env.IMAGE_NAME_FRONTEND_DEPS }}:latest \
@@ -127,11 +123,11 @@ jobs:
       - name: Build and Push Frontend Builder Image
         run: |
           COMMIT_HASH=${{ steps.set-sha.outputs.sha }}
+          FRONTEND_DEPS_SHA=${{ steps.detect-frontend-deps.outputs.frontend_deps_sha }}
           export DOCKER_BUILDKIT=1
           echo "Building and pushing frontend builder stage..."
           docker buildx build -f docker/Dockerfile --target frontend-builder \
-            --cache-from=type=registry,ref=${{ env.CACHE_IMAGE_FRONTEND }} \
-            --cache-to=type=registry,ref=${{ env.CACHE_IMAGE_FRONTEND }},mode=max,ignore-error=true \
+            --build-arg FRONTEND_DEPS_IMAGE=${{ env.IMAGE_NAME_FRONTEND_DEPS }}:$FRONTEND_DEPS_SHA \
             --build-arg REGISTRY_URL=${{ vars.REGISTRY_URL }} \
             --build-arg REPOSITORY=${{ github.repository }} \
             -t ${{ env.IMAGE_NAME_FRONTEND_BUILDER }}:latest \
@@ -142,11 +138,11 @@ jobs:
       - name: Build and Push Backend Builder Image
         run: |
           COMMIT_HASH=${{ steps.set-sha.outputs.sha }}
+          BASE_SHA=${{ steps.detect-base.outputs.base_sha }}
           export DOCKER_BUILDKIT=1
           echo "Building and pushing backend builder stage..."
           docker buildx build -f docker/Dockerfile --target backend-builder \
-            --cache-from=type=registry,ref=${{ env.CACHE_IMAGE_BACKEND }} \
-            --cache-to=type=registry,ref=${{ env.CACHE_IMAGE_BACKEND }},mode=max,ignore-error=true \
+            --build-arg BASE_IMAGE=${{ env.IMAGE_NAME_BASE }}:$BASE_SHA \
             --build-arg REGISTRY_URL=${{ vars.REGISTRY_URL }} \
             --build-arg REPOSITORY=${{ github.repository }} \
             -t ${{ env.IMAGE_NAME_BACKEND_BUILDER }}:latest \
@@ -158,13 +154,11 @@ jobs:
         run: |
           COMMIT_HASH=${{ steps.set-sha.outputs.sha }}
           COMMIT_REF=$(git describe --tags --exact-match 2>/dev/null || git rev-parse --abbrev-ref HEAD)
+          BASE_SHA=${{ steps.detect-base.outputs.base_sha }}
 
           export DOCKER_BUILDKIT=1
           docker buildx build -f docker/Dockerfile --target server \
-            --cache-from=type=registry,ref=${{ env.CACHE_IMAGE_SERVER }} \
-            --cache-from=type=registry,ref=${{ env.CACHE_IMAGE_FRONTEND }} \
-            --cache-from=type=registry,ref=${{ env.CACHE_IMAGE_BACKEND }} \
-            --cache-to=type=registry,ref=${{ env.CACHE_IMAGE_SERVER }},mode=max,ignore-error=true \
+            --build-arg BASE_IMAGE=${{ env.IMAGE_NAME_BASE }}:$BASE_SHA \
             --build-arg FRONTEND_BUILDER_IMAGE=${{ env.IMAGE_NAME_FRONTEND_BUILDER }}:$COMMIT_HASH \
             --build-arg REGISTRY_URL=${{ vars.REGISTRY_URL }} \
             --build-arg REPOSITORY=${{ github.repository }} \
@@ -183,8 +177,6 @@ jobs:
         run: |
           COMMIT_HASH=${{ steps.set-sha.outputs.sha }}
           docker buildx build -f docker/Dockerfile --target db \
-            --cache-from=type=registry,ref=${{ env.CACHE_IMAGE_DB }} \
-            --cache-to=type=registry,ref=${{ env.CACHE_IMAGE_DB }},mode=max,ignore-error=true \
             --build-arg REGISTRY_URL=${{ vars.REGISTRY_URL }} \
             --build-arg REPOSITORY=${{ github.repository }} \
             -t ${{ env.IMAGE_NAME_DB }}:latest \
