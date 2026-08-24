@@ -1,10 +1,9 @@
 <script lang="ts">
     import { dev } from "$app/environment";
     import { page } from "$app/state";
-    import { type Snippet, onDestroy, untrack } from "svelte";
+    import { type Snippet, onDestroy } from "svelte";
     import type { SvelteHTMLElements } from "svelte/elements";
     import { isLayoutPage } from "$lib/states/index.svelte";
-    import { isElementScrollable } from "$lib/utils/dom";
     import LoadingContainer from "../overlays/LoadingContainer.svelte";
 
     interface Props {
@@ -14,7 +13,7 @@
         style?: string;
         data?: typeof page.data;
         hasMore?: boolean;
-        paginate?: () => void;
+        paginate?: () => Promise<void> | void;
         randomLatency?: boolean;
         focusScrollElement?: HTMLElement | null;
         /** Disables overflow properties and sets height to auto, allowing the parent to handle scrolling natively */
@@ -73,22 +72,33 @@
     });
 
     // Scroll handling
-    let scrollThreshold = 2000;
+    let scrollThreshold = 500;
     let observer: IntersectionObserver | undefined;
-    let isSentinelIntersecting = $state(false);
+    let isLoadingMore = $state(false);
 
-    function loadMore() {
-        paginate?.();
+    async function loadMore() {
+        if (isLoadingMore || !hasMore || !paginate) {
+            return;
+        }
+
+        isLoadingMore = true;
+        try {
+            await paginate();
+        } finally {
+            isLoadingMore = false;
+        }
     }
 
     function setupObserver(node: HTMLElement) {
         observer = new IntersectionObserver(
             (entries) => {
                 const entry = entries[0];
-                isSentinelIntersecting = entry.isIntersecting;
+                if (entry.isIntersecting && hasMore) {
+                    loadMore();
+                }
             },
             {
-                root: viewContainer,
+                root: disableScroll ? null : viewContainer,
                 rootMargin: `0px 0px ${scrollThreshold}px 0px`,
                 threshold: 0
             }
@@ -103,23 +113,6 @@
         };
     }
 
-    // Proactive pagination effect: triggers if sentinel is intersecting
-    $effect(() => {
-        // Depend on data length to re-trigger if we're still intersecting after a load
-        void data?.length;
-        if (hasMore && isSentinelIntersecting) {
-            untrack(() => loadMore());
-        }
-    });
-
-    // Fill screen effect: ensures we have enough content to scroll
-    $effect(() => {
-        void data?.length;
-        if (hasMore && viewContainer && !isElementScrollable(viewContainer)) {
-            untrack(() => loadMore());
-        }
-    });
-
     function onScroll(e: UIEvent & { currentTarget: EventTarget & HTMLDivElement }) {
         const target = e.currentTarget;
         if (!target) {
@@ -127,11 +120,9 @@
         }
 
         // Robust fallback: if we are near the bottom, try to load more.
-        // This handles cases where IntersectionObserver might get stuck or not fire correctly.
         const remaining = target.scrollHeight - target.scrollTop - target.clientHeight;
         if (remaining < scrollThreshold && hasMore) {
-            // Use untrack to avoid reactive loops if this function were reactive (it isn't, but safe practice)
-            untrack(() => loadMore());
+            loadMore();
         }
 
         props.onscroll?.(e);
@@ -166,9 +157,11 @@
         {#if hasMore}
             <div
                 use:setupObserver
-                style="width: 100%; height: 60px; padding: 20px 0; display: flex; align-items: center; justify-content: center;"
+                style="width: 100%; min-height: 40px; display: flex; align-items: center; justify-content: center;"
             >
-                <LoadingContainer />
+                {#if isLoadingMore}
+                    <LoadingContainer />
+                {/if}
             </div>
         {/if}
     {:else}
@@ -182,13 +175,15 @@
                 {#if hasMore}
                     <div
                         use:setupObserver
-                        style="width: 100%; height: 60px; padding: 20px 0; display: flex; align-items: center; justify-content: center;"
+                        style="width: 100%; min-height: 40px; display: flex; align-items: center; justify-content: center;"
                     >
-                        <LoadingContainer />
+                        {#if isLoadingMore}
+                            <LoadingContainer />
+                        {/if}
                     </div>
                 {/if}
             {:else}
-                <p>No data available</p>
+                <span>No data available</span>
             {/if}
         {:catch error}
             <p>Error loading data: {error.message}</p>

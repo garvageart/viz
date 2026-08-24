@@ -889,11 +889,15 @@
 
     // Re-run layout when data changes
     $effect(() => {
-        // Explicitly depend on data sources to ensure layout updates
-        // Update: Mhmmmm???? idk
-        void data;
-        void groupedData;
-        void filteredData;
+        void data?.length;
+        void allData?.length;
+        void filteredData?.length;
+        void groupedData?.length;
+        if (groupedData) {
+            for (const group of groupedData) {
+                void group.allImages?.length;
+            }
+        }
 
         if (photoGridEl) {
             untrack(() => {
@@ -1618,6 +1622,7 @@
         position: relative;
         width: 100%;
         height: 100%;
+        background-color: var(--viz-surface-card);
     }
 
     :global(.tile-image) {
