@@ -14,7 +14,6 @@
     import AssetImage, { type ImageResolution } from "$lib/components/ui/AssetImage.svelte";
     import Checkbox from "$lib/components/ui/Checkbox.svelte";
     import Favourite from "$lib/components/ui/Favourite.svelte";
-    import MaterialIcon from "$lib/components/ui/MaterialIcon.svelte";
     import {
         type PhotoGridConfig,
         PhotoGridVirtualizer
@@ -1240,31 +1239,23 @@
                     </div>
                 {/if}
             </div>
-            {#if asset.image_paths}
-                <div class="tile-image-container" style={`height: 100%;`}>
-                    <AssetImage
-                        {asset}
-                        resolution="thumbnail"
-                        draggable="false"
-                        class="tile-image"
-                        alt={asset?.name ?? asset?.image_metadata?.file_name ?? ""}
-                        loading="lazy"
-                        initialLoaded={isCached}
-                        onload={() => {
-                            loadedImageUIDs.add(asset.uid);
-                        }}
-                    />
-                </div>
-                {#if isSelected && isMultiSelecting}
-                    <div class="multi-select-ring" transition:fade={{ duration: 120 }}></div>
-                {/if}
-            {:else}
-                <div class="tile-image-fallback">
-                    <MaterialIcon iconName="image" size="2.5rem" />
-                    <span class="fallback-filename"
-                        >{asset?.name ?? asset?.image_metadata?.file_name ?? asset?.uid}</span
-                    >
-                </div>
+
+            <div class="tile-image-container">
+                <AssetImage
+                    {asset}
+                    resolution="thumbnail"
+                    draggable="false"
+                    class="tile-image"
+                    alt={asset?.name ?? asset?.image_metadata?.file_name ?? ""}
+                    loading="lazy"
+                    initialLoaded={isCached}
+                    onload={() => {
+                        loadedImageUIDs.add(asset.uid);
+                    }}
+                />
+            </div>
+            {#if isSelected && isMultiSelecting}
+                <div class="multi-select-ring" transition:fade={{ duration: 120 }}></div>
             {/if}
 
             {#if !isMobile}
@@ -1667,38 +1658,6 @@
         flex-direction: row;
         align-items: center;
         gap: 0.5rem;
-    }
-
-    .tile-image-fallback {
-        position: absolute;
-        inset: 0;
-        display: flex;
-        flex-direction: column;
-        align-items: center;
-        justify-content: center;
-        background-color: var(--viz-surface-panel);
-        color: var(--viz-text-secondary);
-        border: var(--viz-border-thin);
-        border-radius: var(--viz-border-radius-md);
-        padding: var(--viz-spacing-sm);
-        gap: var(--viz-spacing-xs);
-        box-sizing: border-box;
-        text-align: center;
-        overflow: hidden;
-
-        :global(.material-symbols-outlined) {
-            opacity: 0.6;
-        }
-
-        .fallback-filename {
-            font-size: var(--viz-font-size-std);
-            color: var(--viz-text-muted);
-            max-width: 90%;
-            white-space: nowrap;
-            overflow: hidden;
-            text-overflow: ellipsis;
-            font-weight: 500;
-        }
     }
 
     .justified-item {
