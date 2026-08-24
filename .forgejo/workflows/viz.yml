@@ -352,7 +352,7 @@ jobs:
                   fi
 
     release:
-        name: "Create Forgejo Release"
+        name: "Create Release"
         needs: [build-images, test-frontend, test-backend, test-e2e]
         runs-on: ubuntu-latest
         steps:
@@ -396,12 +396,33 @@ jobs:
 
             - name: Create Release
               if: steps.release-notes.outputs.has_tag == 'true'
-              uses: softprops/action-gh-release@v2
-              with:
-                  tag_name: ${{ steps.release-notes.outputs.tag_name }}
-                  name: ${{ steps.release-notes.outputs.tag_name }}
-                  body: ${{ steps.release-notes.outputs.notes }}
-                  draft: false
-                  prerelease: false
               env:
-                  GITHUB_TOKEN: ${{ secrets.REGISTRY_TOKEN || secrets.GITHUB_TOKEN }}
+                TOKEN: ${{ secrets.REGISTRY_TOKEN || secrets.GITHUB_TOKEN }}
+                TAG_NAME: ${{ steps.release-notes.outputs.tag_name }}
+                NOTES: ${{ steps.release-notes.outputs.notes }}
+              run: |
+                SERVER_URL="${{ github.server_url }}"
+                REPO="${{ github.repository }}"
+
+                if [[ "$SERVER_URL" == *"github.com"* ]]; then
+                  ENDPOINT="https://api.github.com/repos/${REPO}/releases"
+                else
+                  ENDPOINT="${SERVER_URL}/api/v1/repos/${REPO}/releases"
+                fi
+
+                echo "Creating release $TAG_NAME via $ENDPOINT..."
+                HTTP_CODE=$(curl -s -o /tmp/rel_resp.json -w "%{http_code}" \
+                  -X POST "$ENDPOINT" \
+                  -H "Authorization: token $TOKEN" \
+                  -H "Content-Type: application/json" \
+                  -d "{\"tag_name\":\"$TAG_NAME\",\"name\":\"$TAG_NAME\",\"body\":$(echo "$NOTES" | jq -Rs .),\"draft\":false,\"prerelease\":false}")
+
+                if [ "$HTTP_CODE" -ge 200 ] && [ "$HTTP_CODE" -lt 300 ]; then
+                  echo "✅ Release $TAG_NAME created successfully!"
+                elif [ "$HTTP_CODE" -eq 409 ]; then
+                  echo "⚠️ Release $TAG_NAME already exists."
+                else
+                  echo "❌ Failed to create release. HTTP $HTTP_CODE:"
+                  cat /tmp/rel_resp.json
+                  exit 1
+                fi
