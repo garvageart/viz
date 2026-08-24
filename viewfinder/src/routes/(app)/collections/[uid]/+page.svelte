@@ -409,7 +409,7 @@
                 }
             }
 
-            await invalidateViz({ delay: 200 });
+            await invalidateViz();
         }
     }
 
@@ -453,13 +453,13 @@
                     }
                 }
 
-                await invalidateViz({ delay: 200 });
+                await invalidateViz();
             } else {
                 toasts.add({
                     type: "warning",
                     message: `Uploaded but failed to add to collection: ${res.status}`
                 });
-                await invalidateViz({ delay: 200 });
+                await invalidateViz();
             }
         } catch (err) {
             console.error("handleDropUploadSuccess error", err);
@@ -489,7 +489,7 @@
             return;
         }
 
-        await invalidateViz({ delay: 200 });
+        await invalidateViz();
 
         toasts.add({
             title: response.data.name,
@@ -580,7 +580,7 @@
 
                 if (count > 100) {
                     // If a lot were deleted, just refresh everything
-                    await invalidateViz({ delay: 200 });
+                    await invalidateViz();
                 } else {
                     // Optimistic local update
                     const removedUIDs = new Set(
@@ -591,11 +591,11 @@
 
                     if (selectionScope.isSelectAll) {
                         // Simplest is to refresh
-                        await invalidateViz({ delay: 200 });
+                        await invalidateViz();
                     } else {
                         collectionState.images = collectionState.images.filter((i) => !removedUIDs.has(i.uid));
                         collectionState.totalCount -= count;
-                        await invalidateViz({ delay: 200 });
+                        await invalidateViz();
                     }
                 }
             } else {
@@ -633,7 +633,7 @@
                             type: "success"
                         });
 
-                        await invalidateViz({ delay: 200 });
+                        await invalidateViz();
                         goto(`/collections/${newCollectionUid}`);
                     } else {
                         toasts.add({
@@ -648,7 +648,7 @@
                         message: "Collection duplicated (no images to copy)",
                         type: "success"
                     });
-                    await invalidateViz({ delay: 200 });
+                    await invalidateViz();
                     goto(`/collections/${newCollectionUid}`);
                 }
             } else {
