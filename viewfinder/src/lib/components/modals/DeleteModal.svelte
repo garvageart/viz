@@ -52,11 +52,12 @@
             {#if deletePermanently}
                 <Button
                     variant="danger"
+                    size="small"
                     onclick={handlePermanentDelete}
                     class="permanent-delete-btn"
                     style="background-color: var(--viz-error-color, #ef4444); color: white;"
                 >
-                    Delete Permanently
+                    <span>Delete Permanently</span>
                 </Button>
             {:else}
                 <Button
