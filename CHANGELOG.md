@@ -5,6 +5,15 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.32.5] - 2026-08-24
+
+* fix: remove fallback tile (c073dedb)
+* ci: inject e2e test secrets and disconnect runner on cleanup (ed5e35a1)
+* docs(project): add user and admin settings planning notes (ce932279)
+* fix(viewfinder): resolve runaway scroll pagination and grid layout reactivity (2c07972e)
+* fix(viewfinder): prevent UI layout shift in delete confirmation modal (812c99b7)
+* ci: dynamically connect runner to test network and resolve api host for e2e tests (f622f467)
+
 ## [0.32.4] - 2026-08-23
 
 * ci: refactor workflow image prefix and add github/gitlab integration (51784bdf)
