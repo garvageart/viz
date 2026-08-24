@@ -351,6 +351,7 @@ jobs:
                     exit $E2E_STATUS
                   fi
 
+    # NOTE: Future consideration — replace shell/curl release step with GoReleaser (.goreleaser.yaml)
     release:
         name: "Create Release"
         needs: [build-images, test-frontend, test-backend, test-e2e]
@@ -410,12 +411,35 @@ jobs:
                   ENDPOINT="${SERVER_URL}/api/v1/repos/${REPO}/releases"
                 fi
 
+                # Escape body for JSON using standard POSIX awk
+                BODY_ESCAPED=$(printf '%s' "$NOTES" | awk '
+                  BEGIN { RS="\n"; ORS="" }
+                  {
+                    gsub(/\\/, "\\\\");
+                    gsub(/"/, "\\\"");
+                    gsub(/\r/, "\\r");
+                    gsub(/\t/, "\\t");
+                    if (NR > 1) { printf "\\n" }
+                    printf "%s", $0
+                  }
+                ')
+
+                cat << EOF > /tmp/payload.json
+                {
+                  "tag_name": "$TAG_NAME",
+                  "name": "$TAG_NAME",
+                  "body": "$BODY_ESCAPED",
+                  "draft": false,
+                  "prerelease": false
+                }
+                EOF
+
                 echo "Creating release $TAG_NAME via $ENDPOINT..."
                 HTTP_CODE=$(curl -s -o /tmp/rel_resp.json -w "%{http_code}" \
                   -X POST "$ENDPOINT" \
                   -H "Authorization: token $TOKEN" \
                   -H "Content-Type: application/json" \
-                  -d "{\"tag_name\":\"$TAG_NAME\",\"name\":\"$TAG_NAME\",\"body\":$(echo "$NOTES" | jq -Rs .),\"draft\":false,\"prerelease\":false}")
+                  --data-binary @/tmp/payload.json)
 
                 if [ "$HTTP_CODE" -ge 200 ] && [ "$HTTP_CODE" -lt 300 ]; then
                   echo "✅ Release $TAG_NAME created successfully!"
