@@ -377,9 +377,9 @@ jobs:
                   VERSION="${TAG_NAME#v}"
                   NOTES=""
                   if [ -f CHANGELOG.md ]; then
-                    NOTES=$(awk -v ver="[${VERSION}]" '
-                      $0 ~ "## \\[" ver "\\]" { flag=1; next }
-                      flag && /^## \\[/ { flag=0 }
+                    NOTES=$(awk -v ver="$VERSION" '
+                      $0 ~ ("## \\[" ver "\\]") { flag=1; next }
+                      flag && /^## / { flag=0 }
                       flag { print }
                     ' CHANGELOG.md | sed -e '/^[[:space:]]*$/d')
                   fi
