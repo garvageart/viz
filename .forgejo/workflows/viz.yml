@@ -149,8 +149,21 @@ jobs:
             - name: Build and Push Final Production Image
               run: |
                   COMMIT_HASH=${{ steps.set-sha.outputs.sha }}
+                  SHORT_SHA=${{ steps.set-sha.outputs.short_sha }}
                   COMMIT_REF=$(git describe --tags --exact-match 2>/dev/null || git rev-parse --abbrev-ref HEAD)
                   BASE_SHA=${{ steps.detect-base.outputs.base_sha }}
+
+                  SERVER_TAGS="-t ${{ env.IMAGE_PREFIX }}/viz-server:$COMMIT_HASH -t ${{ env.IMAGE_PREFIX }}/viz-server:$SHORT_SHA"
+                  PUSH_TAGS="${{ env.IMAGE_PREFIX }}/viz-server:$COMMIT_HASH ${{ env.IMAGE_PREFIX }}/viz-server:$SHORT_SHA"
+
+                  if [[ "${{ github.ref }}" =~ ^refs/tags/(v[0-9].*) ]]; then
+                    VERSION_TAG="${BASH_REMATCH[1]}"
+                    SERVER_TAGS="$SERVER_TAGS -t ${{ env.IMAGE_PREFIX }}/viz-server:$VERSION_TAG -t ${{ env.IMAGE_PREFIX }}/viz-server:stable"
+                    PUSH_TAGS="$PUSH_TAGS ${{ env.IMAGE_PREFIX }}/viz-server:$VERSION_TAG ${{ env.IMAGE_PREFIX }}/viz-server:stable"
+                  else
+                    SERVER_TAGS="$SERVER_TAGS -t ${{ env.IMAGE_PREFIX }}/viz-server:latest"
+                    PUSH_TAGS="$PUSH_TAGS ${{ env.IMAGE_PREFIX }}/viz-server:latest"
+                  fi
 
                   export DOCKER_BUILDKIT=1
                   docker buildx build -f docker/Dockerfile --target server \
@@ -162,25 +175,37 @@ jobs:
                     --build-arg SOURCE_COMMIT=$COMMIT_HASH \
                     --build-arg SOURCE_REF=$COMMIT_REF \
                     --build-arg REPOSITORY_URL=${{ github.server_url }}/${{ github.repository }} \
-                    -t ${{ env.IMAGE_PREFIX }}/viz-server:latest \
-                    -t ${{ env.IMAGE_PREFIX }}/viz-server:$COMMIT_HASH \
-                    -t ${{ env.IMAGE_PREFIX }}/viz-server:${{ steps.set-sha.outputs.short_sha }} .
-                  docker push ${{ env.IMAGE_PREFIX }}/viz-server:latest || true
-                  docker push ${{ env.IMAGE_PREFIX }}/viz-server:$COMMIT_HASH || true
-                  docker push ${{ env.IMAGE_PREFIX }}/viz-server:${{ steps.set-sha.outputs.short_sha }} || true
+                    $SERVER_TAGS .
+
+                  for tag in $PUSH_TAGS; do
+                    docker push "$tag" || true
+                  done
 
             - name: Build and Push Database Image
               run: |
                   COMMIT_HASH=${{ steps.set-sha.outputs.sha }}
+                  SHORT_SHA=${{ steps.set-sha.outputs.short_sha }}
+
+                  DB_TAGS="-t ${{ env.IMAGE_PREFIX }}/viz-db:$COMMIT_HASH -t ${{ env.IMAGE_PREFIX }}/viz-db:$SHORT_SHA"
+                  PUSH_DB_TAGS="${{ env.IMAGE_PREFIX }}/viz-db:$COMMIT_HASH ${{ env.IMAGE_PREFIX }}/viz-db:$SHORT_SHA"
+
+                  if [[ "${{ github.ref }}" =~ ^refs/tags/(v[0-9].*) ]]; then
+                    VERSION_TAG="${BASH_REMATCH[1]}"
+                    DB_TAGS="$DB_TAGS -t ${{ env.IMAGE_PREFIX }}/viz-db:$VERSION_TAG -t ${{ env.IMAGE_PREFIX }}/viz-db:stable"
+                    PUSH_DB_TAGS="$PUSH_DB_TAGS ${{ env.IMAGE_PREFIX }}/viz-db:$VERSION_TAG ${{ env.IMAGE_PREFIX }}/viz-db:stable"
+                  else
+                    DB_TAGS="$DB_TAGS -t ${{ env.IMAGE_PREFIX }}/viz-db:latest"
+                    PUSH_DB_TAGS="$PUSH_DB_TAGS ${{ env.IMAGE_PREFIX }}/viz-db:latest"
+                  fi
+
                   docker buildx build -f docker/Dockerfile --target db \
                     --build-arg REGISTRY_URL=${{ vars.REGISTRY_URL }} \
                     --build-arg REPOSITORY=${{ github.repository }} \
-                    -t ${{ env.IMAGE_PREFIX }}/viz-db:latest \
-                    -t ${{ env.IMAGE_PREFIX }}/viz-db:$COMMIT_HASH \
-                    -t ${{ env.IMAGE_PREFIX }}/viz-db:${{ steps.set-sha.outputs.short_sha }} .
-                  docker push ${{ env.IMAGE_PREFIX }}/viz-db:latest || true
-                  docker push ${{ env.IMAGE_PREFIX }}/viz-db:$COMMIT_HASH || true
-                  docker push ${{ env.IMAGE_PREFIX }}/viz-db:${{ steps.set-sha.outputs.short_sha }} || true
+                    $DB_TAGS .
+
+                  for tag in $PUSH_DB_TAGS; do
+                    docker push "$tag" || true
+                  done
 
     test-frontend:
         name: "Test Frontend (Unit, Types & Format)"
@@ -254,9 +279,9 @@ jobs:
 
             - name: Run E2E Test Suite (Containerised)
               env:
-                E2E_TEST_EMAIL: ${{ secrets.E2E_TEST_EMAIL || vars.E2E_TEST_EMAIL }}
-                E2E_TEST_PASSWORD: ${{ secrets.E2E_TEST_PASSWORD || vars.E2E_TEST_PASSWORD }}
-                E2E_TEST_USERNAME: ${{ secrets.E2E_TEST_USERNAME || vars.E2E_TEST_USERNAME }}
+                  E2E_TEST_EMAIL: ${{ secrets.E2E_TEST_EMAIL || vars.E2E_TEST_EMAIL }}
+                  E2E_TEST_PASSWORD: ${{ secrets.E2E_TEST_PASSWORD || vars.E2E_TEST_PASSWORD }}
+                  E2E_TEST_USERNAME: ${{ secrets.E2E_TEST_USERNAME || vars.E2E_TEST_USERNAME }}
               run: |
                   E2E_PORT="7779"
                   NETWORK_NAME="viz-ci-net-${{ github.run_id }}"
@@ -401,55 +426,55 @@ jobs:
             - name: Create Release
               if: steps.release-notes.outputs.has_tag == 'true'
               env:
-                TOKEN: ${{ secrets.REGISTRY_TOKEN || secrets.GITHUB_TOKEN }}
-                TAG_NAME: ${{ steps.release-notes.outputs.tag_name }}
-                NOTES: ${{ steps.release-notes.outputs.notes }}
+                  TOKEN: ${{ secrets.REGISTRY_TOKEN || secrets.GITHUB_TOKEN }}
+                  TAG_NAME: ${{ steps.release-notes.outputs.tag_name }}
+                  NOTES: ${{ steps.release-notes.outputs.notes }}
               run: |
-                SERVER_URL="${{ github.server_url }}"
-                REPO="${{ github.repository }}"
+                  SERVER_URL="${{ github.server_url }}"
+                  REPO="${{ github.repository }}"
 
-                if [[ "$SERVER_URL" == *"github.com"* ]]; then
-                  ENDPOINT="https://api.github.com/repos/${REPO}/releases"
-                else
-                  ENDPOINT="${SERVER_URL}/api/v1/repos/${REPO}/releases"
-                fi
+                  if [[ "$SERVER_URL" == *"github.com"* ]]; then
+                    ENDPOINT="https://api.github.com/repos/${REPO}/releases"
+                  else
+                    ENDPOINT="${SERVER_URL}/api/v1/repos/${REPO}/releases"
+                  fi
 
-                # Escape body for JSON using standard POSIX awk
-                BODY_ESCAPED=$(printf '%s' "$NOTES" | awk '
-                  BEGIN { RS="\n"; ORS="" }
+                  # Escape body for JSON using standard POSIX awk
+                  BODY_ESCAPED=$(printf '%s' "$NOTES" | awk '
+                    BEGIN { RS="\n"; ORS="" }
+                    {
+                      gsub(/\\/, "\\\\");
+                      gsub(/"/, "\\\"");
+                      gsub(/\r/, "\\r");
+                      gsub(/\t/, "\\t");
+                      if (NR > 1) { printf "\\n" }
+                      printf "%s", $0
+                    }
+                  ')
+
+                  cat << EOF > /tmp/payload.json
                   {
-                    gsub(/\\/, "\\\\");
-                    gsub(/"/, "\\\"");
-                    gsub(/\r/, "\\r");
-                    gsub(/\t/, "\\t");
-                    if (NR > 1) { printf "\\n" }
-                    printf "%s", $0
+                    "tag_name": "$TAG_NAME",
+                    "name": "$TAG_NAME",
+                    "body": "$BODY_ESCAPED",
+                    "draft": false,
+                    "prerelease": false
                   }
-                ')
+                  EOF
 
-                cat << EOF > /tmp/payload.json
-                {
-                  "tag_name": "$TAG_NAME",
-                  "name": "$TAG_NAME",
-                  "body": "$BODY_ESCAPED",
-                  "draft": false,
-                  "prerelease": false
-                }
-                EOF
+                  echo "Creating release $TAG_NAME via $ENDPOINT..."
+                  HTTP_CODE=$(curl -s -o /tmp/rel_resp.json -w "%{http_code}" \
+                    -X POST "$ENDPOINT" \
+                    -H "Authorization: token $TOKEN" \
+                    -H "Content-Type: application/json" \
+                    --data-binary @/tmp/payload.json)
 
-                echo "Creating release $TAG_NAME via $ENDPOINT..."
-                HTTP_CODE=$(curl -s -o /tmp/rel_resp.json -w "%{http_code}" \
-                  -X POST "$ENDPOINT" \
-                  -H "Authorization: token $TOKEN" \
-                  -H "Content-Type: application/json" \
-                  --data-binary @/tmp/payload.json)
-
-                if [ "$HTTP_CODE" -ge 200 ] && [ "$HTTP_CODE" -lt 300 ]; then
-                  echo "✅ Release $TAG_NAME created successfully!"
-                elif [ "$HTTP_CODE" -eq 409 ]; then
-                  echo "⚠️ Release $TAG_NAME already exists."
-                else
-                  echo "❌ Failed to create release. HTTP $HTTP_CODE:"
-                  cat /tmp/rel_resp.json
-                  exit 1
-                fi
+                  if [ "$HTTP_CODE" -ge 200 ] && [ "$HTTP_CODE" -lt 300 ]; then
+                    echo "✅ Release $TAG_NAME created successfully!"
+                  elif [ "$HTTP_CODE" -eq 409 ]; then
+                    echo "⚠️ Release $TAG_NAME already exists."
+                  else
+                    echo "❌ Failed to create release. HTTP $HTTP_CODE:"
+                    cat /tmp/rel_resp.json
+                    exit 1
+                  fi
