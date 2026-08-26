@@ -791,6 +791,10 @@ export type DownloadToken = {
 export type LoggingConfig = {
     /** Logging level */
     level?: string;
+    /** Timezone to format timestamps ("local" or "utc") */
+    timezone?: string;
+    /** Enable pretty colorized console logging */
+    pretty?: boolean;
 };
 export type UploadConfig = {
     /** Upload location */

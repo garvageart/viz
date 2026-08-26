@@ -56,6 +56,7 @@ type DatabaseConfig struct {
 type LoggingConfig struct {
 	Level    string `json:"level" mapstructure:"level"`
 	Timezone string `json:"timezone" mapstructure:"timezone"` // "local" or "utc"
+	Pretty   bool   `json:"pretty" mapstructure:"pretty"`
 }
 
 // UploadConfig holds the configuration for uploads.

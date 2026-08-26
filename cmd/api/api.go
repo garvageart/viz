@@ -202,7 +202,8 @@ func main() {
 	// setup logging stuff
 	logLevel := imalog.GetLevelFromString(config.AppConfig.Logging.Level)
 	useLocal := config.AppConfig.Logging.Timezone == "local"
-	logger := libhttp.SetupChiLogger("api", logLevel, useLocal)
+	pretty := config.AppConfig.Logging.Pretty
+	logger := libhttp.SetupChiLogger("api", logLevel, useLocal, pretty)
 
 	// looool?
 	apiServer := APIServer{Server: &libhttp.Server{ServerConfig: &config.ServerConfig{

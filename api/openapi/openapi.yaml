@@ -4617,6 +4617,12 @@ components:
                 level:
                     type: string
                     description: Logging level
+                timezone:
+                    type: string
+                    description: Timezone to format timestamps ("local" or "utc")
+                pretty:
+                    type: boolean
+                    description: Enable pretty colorized console logging
 
         UploadConfig:
             type: object

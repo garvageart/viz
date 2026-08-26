@@ -7,14 +7,12 @@ import (
 	"strings"
 
 	imalog "viz/internal/logger"
-	"viz/internal/utils"
 )
 
-func setupChiLogHandler(name string, logLevel slog.Level, useLocal bool) []slog.Handler {
+func setupChiLogHandler(name string, logLevel slog.Level, useLocal bool, pretty bool) []slog.Handler {
 	httpLogFileDefaults := imalog.LogFileDefaults
 	logShowRecordEnv := os.Getenv("LOG_SHOW_RECORD")
 	shouldAddSource := logShowRecordEnv == "true"
-	isProduction := utils.IsProduction
 
 	httpLogFileWriter := imalog.FileLog{
 		Directory: httpLogFileDefaults.Directory + "/http",
@@ -66,12 +64,12 @@ func setupChiLogHandler(name string, logLevel slog.Level, useLocal bool) []slog.
 	}
 
 	var consoleLogger slog.Handler
-	if isProduction {
-		// Production logger with no colour
-		consoleLogger = slog.NewTextHandler(os.Stderr, fileHandlerOpts)
-	} else {
-		// Setups up colour logger
+	if pretty {
+		// Sets up colour pretty logger
 		consoleLogger = imalog.NewColourHandler(&consoleHandlerOpts, imalog.WithDestinationWriter(os.Stderr), imalog.WithColor())
+	} else {
+		// Standard flat single-line JSON logging
+		consoleLogger = slog.NewJSONHandler(os.Stderr, &consoleHandlerOpts)
 	}
 
 	return []slog.Handler{
@@ -81,8 +79,8 @@ func setupChiLogHandler(name string, logLevel slog.Level, useLocal bool) []slog.
 	}
 }
 
-func SetupChiLogger(name string, logLevel slog.Level, useLocal bool) *slog.Logger {
-	handlers := setupChiLogHandler(name, logLevel, useLocal)
+func SetupChiLogger(name string, logLevel slog.Level, useLocal bool, pretty bool) *slog.Logger {
+	handlers := setupChiLogHandler(name, logLevel, useLocal, pretty)
 
 	logger := imalog.CreateLogger(handlers)
 	return logger

@@ -5,8 +5,6 @@ import (
 	"log/slog"
 	"os"
 
-	"viz/internal/utils"
-
 	slogmulti "github.com/samber/slog-multi"
 )
 
@@ -33,10 +31,9 @@ func GetLevelFromString(level string) slog.Level {
 	}
 }
 
-func SetupDefaultLogHandlers(logLevel slog.Level, useLocal bool) []slog.Handler {
+func SetupDefaultLogHandlers(logLevel slog.Level, useLocal bool, pretty bool) []slog.Handler {
 	logShowRecordEnv := os.Getenv("LOG_SHOW_RECORD")
 	shouldAddSource := logShowRecordEnv == "true"
-	isProduction := utils.IsProduction
 
 	logFileJSON := FileLog{
 		Directory: LogDirectoryDefault,
@@ -56,12 +53,12 @@ func SetupDefaultLogHandlers(logLevel slog.Level, useLocal bool) []slog.Handler 
 	}
 
 	var consoleLogger slog.Handler
-	if isProduction {
-		// Production logger with no colour
-		consoleLogger = slog.NewTextHandler(os.Stderr, &fileHandlerOpts)
-	} else {
-		// Setups up colour logger
+	if pretty {
+		// Sets up colour pretty logger
 		consoleLogger = NewColourHandler(&consoleHandlerOpts, WithDestinationWriter(os.Stderr), WithColor())
+	} else {
+		// Standard flat single-line JSON logging for log aggregators and Dokploy
+		consoleLogger = slog.NewJSONHandler(os.Stderr, &consoleHandlerOpts)
 	}
 
 	return []slog.Handler{
@@ -74,6 +71,6 @@ func CreateLogger(handlers []slog.Handler) *slog.Logger {
 	return slog.New(slogmulti.Fanout(handlers...))
 }
 
-func CreateDefaultLogger(logLevel slog.Level, useLocal bool) *slog.Logger {
-	return CreateLogger(SetupDefaultLogHandlers(logLevel, useLocal))
+func CreateDefaultLogger(logLevel slog.Level, useLocal bool, pretty bool) *slog.Logger {
+	return CreateLogger(SetupDefaultLogHandlers(logLevel, useLocal, pretty))
 }

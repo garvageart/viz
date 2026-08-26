@@ -1401,6 +1401,12 @@ type LibvipsConfig struct {
 type LoggingConfig struct {
 	// Level Logging level
 	Level *string `json:"level,omitempty"`
+
+	// Pretty Enable pretty colorized console logging
+	Pretty *bool `json:"pretty,omitempty"`
+
+	// Timezone Timezone to format timestamps ("local" or "utc")
+	Timezone *string `json:"timezone,omitempty"`
 }
 
 // MessageResponse defines model for MessageResponse.

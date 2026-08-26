@@ -65,6 +65,8 @@ func ReadConfig() (viper.Viper, error) {
 	}
 
 	v.SetDefault("logging.level", "debug")
+	v.SetDefault("logging.timezone", "utc")
+	v.SetDefault("logging.pretty", false)
 
 	v.SetDefault("database.location", "database")
 	v.SetDefault("database.port", 5432)

@@ -3,6 +3,7 @@ package db
 import (
 	"fmt"
 	"log/slog"
+	"os"
 	"time"
 
 	slogGorm "github.com/orandin/slog-gorm"
@@ -14,7 +15,7 @@ import (
 
 func (db *DB) Connect() (*gorm.DB, error) {
 	if db.Logger == nil {
-		db.Logger = SetupDatabaseLogger(db.LogLevel)
+		db.Logger = SetupDatabaseLogger(db.LogLevel, false)
 	}
 
 	logger := db.Logger
@@ -112,7 +113,7 @@ func (db *DB) Exists(dest any, conds ...any) (bool, error) {
 	return true, nil
 }
 
-func SetupDatabaseLogger(logLevel slog.Level) *slog.Logger {
+func SetupDatabaseLogger(logLevel slog.Level, pretty bool) *slog.Logger {
 	httpLogFileDefaults := imalog.LogFileDefaults
 
 	// Setup file logger
@@ -129,7 +130,12 @@ func SetupDatabaseLogger(logLevel slog.Level) *slog.Logger {
 		},
 	})
 
-	consoleHandler := imalog.NewColourHandler(&slog.HandlerOptions{Level: slog.LevelDebug, ReplaceAttr: nil})
+	var consoleHandler slog.Handler
+	if pretty {
+		consoleHandler = imalog.NewColourHandler(&slog.HandlerOptions{Level: logLevel, ReplaceAttr: nil})
+	} else {
+		consoleHandler = slog.NewJSONHandler(os.Stderr, &slog.HandlerOptions{Level: logLevel, ReplaceAttr: nil})
+	}
 
 	return imalog.CreateLogger([]slog.Handler{fileHandler, consoleHandler})
 }
