@@ -457,7 +457,7 @@ jobs:
                   } >> "$GITHUB_OUTPUT"
 
             - name: Create Release
-              uses: softprops/action-gh-release@v2
+              uses: https://github.com/softprops/action-gh-release@v2
               if: steps.release-notes.outputs.has_tag == 'true'
               with:
                   tag_name: ${{ steps.release-notes.outputs.tag_name }}
