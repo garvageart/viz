@@ -345,7 +345,7 @@ jobs:
                   fi
 
     publish-images:
-        name: "Publish Production & Staging Images"
+        name: "Publish Images"
         needs: [build-images, test-frontend, test-backend, test-e2e]
         if: github.event_name != 'pull_request'
         runs-on: ubuntu-latest
@@ -369,23 +369,26 @@ jobs:
                   SRC_DB="${{ env.IMAGE_PREFIX }}/viz-db:$COMMIT_HASH"
 
                   if [ "$IS_RELEASE" = "true" ]; then
-                    echo "Publishing release images ($VERSION_TAG, :stable, and commit SHAs)..."
+                    echo "Publishing release images ($VERSION_TAG and commit SHAs)..."
                     docker tag "$SRC_SERVER" "${{ env.IMAGE_PREFIX }}/viz-server:$VERSION_TAG"
-                    docker tag "$SRC_SERVER" "${{ env.IMAGE_PREFIX }}/viz-server:stable"
                     docker tag "$SRC_SERVER" "${{ env.IMAGE_PREFIX }}/viz-server:$SHORT_SHA"
-                    docker tag "$SRC_DB" "${{ env.IMAGE_PREFIX }}/viz-db:$VERSION_TAG"
-                    docker tag "$SRC_DB" "${{ env.IMAGE_PREFIX }}/viz-db:stable"
-                    docker tag "$SRC_DB" "${{ env.IMAGE_PREFIX }}/viz-db:$SHORT_SHA"
-
                     docker push "$SRC_SERVER" || true
                     docker push "${{ env.IMAGE_PREFIX }}/viz-server:$SHORT_SHA" || true
                     docker push "${{ env.IMAGE_PREFIX }}/viz-server:$VERSION_TAG" || true
-                    docker push "${{ env.IMAGE_PREFIX }}/viz-server:stable" || true
 
+                    docker tag "$SRC_DB" "${{ env.IMAGE_PREFIX }}/viz-db:$VERSION_TAG"
+                    docker tag "$SRC_DB" "${{ env.IMAGE_PREFIX }}/viz-db:$SHORT_SHA"
                     docker push "$SRC_DB" || true
                     docker push "${{ env.IMAGE_PREFIX }}/viz-db:$SHORT_SHA" || true
                     docker push "${{ env.IMAGE_PREFIX }}/viz-db:$VERSION_TAG" || true
-                    docker push "${{ env.IMAGE_PREFIX }}/viz-db:stable" || true
+
+                    if [[ "$VERSION_TAG" != *"-rc"* ]]; then
+                      echo "Stable release detected. Publishing :stable tag..."
+                      docker tag "$SRC_SERVER" "${{ env.IMAGE_PREFIX }}/viz-server:stable"
+                      docker tag "$SRC_DB" "${{ env.IMAGE_PREFIX }}/viz-db:stable"
+                      docker push "${{ env.IMAGE_PREFIX }}/viz-server:stable" || true
+                      docker push "${{ env.IMAGE_PREFIX }}/viz-db:stable" || true
+                    fi
                   else
                     echo "Publishing :latest and commit SHA tags for main branch..."
                     docker tag "$SRC_SERVER" "${{ env.IMAGE_PREFIX }}/viz-server:latest"
@@ -441,6 +444,12 @@ jobs:
                     NOTES="Release $TAG_NAME"
                   fi
 
+                  if [[ "$TAG_NAME" == *"-rc"* ]]; then
+                    echo "is_prerelease=true" >> "$GITHUB_OUTPUT"
+                  else
+                    echo "is_prerelease=false" >> "$GITHUB_OUTPUT"
+                  fi
+
                   {
                     echo "notes<<EOF"
                     echo "$NOTES"
@@ -448,57 +457,12 @@ jobs:
                   } >> "$GITHUB_OUTPUT"
 
             - name: Create Release
+              uses: softprops/action-gh-release@v2
               if: steps.release-notes.outputs.has_tag == 'true'
-              env:
-                  TOKEN: ${{ secrets.REGISTRY_TOKEN || secrets.GITHUB_TOKEN }}
-                  TAG_NAME: ${{ steps.release-notes.outputs.tag_name }}
-                  NOTES: ${{ steps.release-notes.outputs.notes }}
-              run: |
-                  SERVER_URL="${{ github.server_url }}"
-                  REPO="${{ github.repository }}"
-
-                  if [[ "$SERVER_URL" == *"github.com"* ]]; then
-                    ENDPOINT="https://api.github.com/repos/${REPO}/releases"
-                  else
-                    ENDPOINT="${SERVER_URL}/api/v1/repos/${REPO}/releases"
-                  fi
-
-                  # Escape body for JSON using standard POSIX awk
-                  BODY_ESCAPED=$(printf '%s' "$NOTES" | awk '
-                    BEGIN { RS="\n"; ORS="" }
-                    {
-                      gsub(/\\/, "\\\\");
-                      gsub(/"/, "\\\"");
-                      gsub(/\r/, "\\r");
-                      gsub(/\t/, "\\t");
-                      if (NR > 1) { printf "\\n" }
-                      printf "%s", $0
-                    }
-                  ')
-
-                  cat << EOF > /tmp/payload.json
-                  {
-                    "tag_name": "$TAG_NAME",
-                    "name": "$TAG_NAME",
-                    "body": "$BODY_ESCAPED",
-                    "draft": false,
-                    "prerelease": false
-                  }
-                  EOF
-
-                  echo "Creating release $TAG_NAME via $ENDPOINT..."
-                  HTTP_CODE=$(curl -s -o /tmp/rel_resp.json -w "%{http_code}" \
-                    -X POST "$ENDPOINT" \
-                    -H "Authorization: token $TOKEN" \
-                    -H "Content-Type: application/json" \
-                    --data-binary @/tmp/payload.json)
-
-                  if [ "$HTTP_CODE" -ge 200 ] && [ "$HTTP_CODE" -lt 300 ]; then
-                    echo "✅ Release $TAG_NAME created successfully!"
-                  elif [ "$HTTP_CODE" -eq 409 ]; then
-                    echo "⚠️ Release $TAG_NAME already exists."
-                  else
-                    echo "❌ Failed to create release. HTTP $HTTP_CODE:"
-                    cat /tmp/rel_resp.json
-                    exit 1
-                  fi
+              with:
+                  tag_name: ${{ steps.release-notes.outputs.tag_name }}
+                  name: ${{ steps.release-notes.outputs.tag_name }}
+                  body: ${{ steps.release-notes.outputs.notes }}
+                  draft: false
+                  prerelease: ${{ steps.release-notes.outputs.is_prerelease == 'true' }}
+                  token: ${{ secrets.REGISTRY_TOKEN || secrets.GITHUB_TOKEN }}
