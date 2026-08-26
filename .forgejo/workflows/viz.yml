@@ -5,6 +5,8 @@ on:
     push:
         branches:
             - main
+        tags:
+            - "v*"
     pull_request:
         branches:
             - main
@@ -354,6 +356,7 @@ jobs:
     # NOTE: Future consideration — replace shell/curl release step with GoReleaser (.goreleaser.yaml)
     release:
         name: "Create Release"
+        if: startsWith(github.ref, 'refs/tags/v')
         needs: [build-images, test-frontend, test-backend, test-e2e]
         runs-on: ubuntu-latest
         steps:
