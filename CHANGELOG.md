@@ -5,6 +5,14 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.32.9] - 2026-08-26
+
+* fix(viewfinder): fix zoom translation and viewport boundaries for portrait images (a4f9fce9)
+* feat(logger): add pretty logging config option and default to flat json logging (0fbbc77e)
+* ci(workflow): skip release job on non-tag runs and enable tag push triggers (ad877532)
+* chore(workspace): streamline root scripts and consolidate code generation (afa4e7d8)
+* chore: format collections page (b8871c95)
+
 ## [0.32.8] - 2026-08-24
 
 * ci: use pure awk json escaping for release step and add goreleaser note (9c40f6a2)
