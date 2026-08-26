@@ -7,9 +7,6 @@ on:
             - main
         tags:
             - "v*"
-    pull_request:
-        branches:
-            - main
     workflow_dispatch:
         inputs:
             run_name:
@@ -23,7 +20,7 @@ on:
                 default: true
 
 concurrency:
-    group: ${{ github.workflow }}-${{ github.sha }}
+    group: ${{ github.workflow }}-${{ github.ref }}
     cancel-in-progress: true
 
 env:
