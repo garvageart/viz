@@ -5,8 +5,6 @@ on:
     push:
         branches:
             - main
-        tags:
-            - "v*"
     workflow_dispatch:
         inputs:
             run_name:
@@ -20,7 +18,7 @@ on:
                 default: true
 
 concurrency:
-    group: ${{ github.workflow }}-${{ github.ref }}
+    group: ${{ github.workflow }}-${{ github.sha }}
     cancel-in-progress: true
 
 env:
@@ -35,6 +33,8 @@ jobs:
         outputs:
             sha: ${{ steps.set-sha.outputs.sha }}
             short_sha: ${{ steps.set-sha.outputs.short_sha }}
+            tag_name: ${{ steps.set-sha.outputs.tag_name }}
+            is_release: ${{ steps.set-sha.outputs.is_release }}
         steps:
             - name: Checkout Code
               uses: actions/checkout@v4
@@ -42,13 +42,22 @@ jobs:
                   fetch-depth: 0
                   submodules: recursive
 
-            - name: Set Commit SHA Output
+            - name: Set Commit SHA and Tag Outputs
               id: set-sha
               run: |
                   COMMIT_HASH=$(git rev-parse HEAD)
                   SHORT_HASH=$(git rev-parse --short HEAD)
+                  TAG_NAME=$(git describe --tags --exact-match 2>/dev/null || true)
+
                   echo "sha=${COMMIT_HASH}" >> "$GITHUB_OUTPUT"
                   echo "short_sha=${SHORT_HASH}" >> "$GITHUB_OUTPUT"
+                  echo "tag_name=${TAG_NAME}" >> "$GITHUB_OUTPUT"
+
+                  if [ -n "$TAG_NAME" ] && [[ "$TAG_NAME" =~ ^v[0-9] ]]; then
+                    echo "is_release=true" >> "$GITHUB_OUTPUT"
+                  else
+                    echo "is_release=false" >> "$GITHUB_OUTPUT"
+                  fi
 
             - name: Set up Docker Buildx
               uses: docker/setup-buildx-action@v3
@@ -354,11 +363,12 @@ jobs:
               run: |
                   COMMIT_HASH="${{ needs.build-images.outputs.sha }}"
                   SHORT_SHA=$(echo "$COMMIT_HASH" | cut -c1-8)
+                  IS_RELEASE="${{ needs.build-images.outputs.is_release }}"
+                  VERSION_TAG="${{ needs.build-images.outputs.tag_name }}"
                   SRC_SERVER="${{ env.IMAGE_PREFIX }}/viz-server:$COMMIT_HASH"
                   SRC_DB="${{ env.IMAGE_PREFIX }}/viz-db:$COMMIT_HASH"
 
-                  if [[ "${{ github.ref }}" =~ ^refs/tags/(v[0-9].*) ]]; then
-                    VERSION_TAG="${BASH_REMATCH[1]}"
+                  if [ "$IS_RELEASE" = "true" ]; then
                     echo "Publishing release images ($VERSION_TAG, :stable, and commit SHAs)..."
                     docker tag "$SRC_SERVER" "${{ env.IMAGE_PREFIX }}/viz-server:$VERSION_TAG"
                     docker tag "$SRC_SERVER" "${{ env.IMAGE_PREFIX }}/viz-server:stable"
@@ -395,7 +405,7 @@ jobs:
     # NOTE: Future consideration — replace shell/curl release step with GoReleaser (.goreleaser.yaml)
     release:
         name: "Create Release"
-        if: startsWith(github.ref, 'refs/tags/v')
+        if: needs.build-images.outputs.is_release == 'true'
         needs: [build-images, test-frontend, test-backend, test-e2e, publish-images]
         runs-on: ubuntu-latest
         steps:
