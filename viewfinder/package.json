@@ -23,8 +23,7 @@
         "test:e2e:prod": "PLAYWRIGHT_PREVIEW=1 playwright test --reporter=list",
         "test:e2e:prod-build": "pnpm build && PLAYWRIGHT_PREVIEW=1 playwright test --reporter=list",
         "format": "prettier --cache --log-level warn --config .prettierrc --ignore-path .prettierignore --write .",
-        "format:check": "prettier --cache --log-level warn --config .prettierrc --ignore-path .prettierignore --check .",
-        "gen:api": "oazapfts ../api/openapi/openapi.yaml ../packages/api/client.gen.ts --useEnumType"
+        "format:check": "prettier --cache --log-level warn --config .prettierrc --ignore-path .prettierignore --check ."
     },
     "devDependencies": {
         "@faker-js/faker": "^10.5.0",

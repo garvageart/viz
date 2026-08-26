@@ -2,19 +2,25 @@
     "name": "viz-monorepo",
     "private": true,
     "version": "0.32.8",
+    "type": "module",
     "license": "AGPL-3.0",
+    "engines": {
+        "node": ">=26.5.0"
+    },
+    "packageManager": "pnpm@11.23.0",
     "scripts": {
-        "dev": "pnpm -r --filter \"@viz/*\" dev",
-        "build": "pnpm -r --filter \"@viz/*\" build",
-        "test": "pnpm -r --filter \"@viz/*\" test",
-        "test:unit": "pnpm -r --filter \"@viz/*\" test:unit",
-        "check": "pnpm -r --filter \"@viz/*\" check",
-        "lint": "pnpm -r --filter \"@viz/*\" lint",
-        "format": "pnpm -r --filter \"@viz/*\" format",
-        "format:check": "pnpm -r --filter \"@viz/*\" format:check",
+        "dev": "pnpm --filter @viz/viewfinder dev",
+        "build": "pnpm --filter @viz/viewfinder build",
+        "check": "pnpm --filter @viz/viewfinder check",
+        "check:watch": "pnpm --filter @viz/viewfinder check:watch",
+        "test": "pnpm --filter @viz/viewfinder test",
+        "test:unit": "pnpm --filter @viz/viewfinder test:unit",
+        "test:e2e": "pnpm --filter @viz/viewfinder test:e2e",
+        "format": "prettier --cache --log-level warn --write .",
+        "format:check": "prettier --cache --log-level warn --check .",
         "gen:api": "pnpm --filter @viz/scripts gen:api",
         "setup:https": "pnpm --filter @viz/scripts setup:https",
-        "release": "pnpm --filter @viz/scripts run release"
+        "release": "pnpm --filter @viz/scripts release"
     },
     "keywords": [],
     "devDependencies": {
