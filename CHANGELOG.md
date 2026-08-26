@@ -5,6 +5,11 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.32.13] - 2026-08-26
+
+* ci(workflow): use softprops action-gh-release with dynamic prerelease detection (d6b6d825)
+* ci(workflow): restore single main branch trigger with dynamic release tag detection (6ddb435e)
+
 ## [0.32.12] - 2026-08-26
 
 * ci(workflow): scope concurrency by ref and remove pull_request trigger (a0b3dd4d)
