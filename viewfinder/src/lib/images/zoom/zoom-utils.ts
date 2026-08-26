@@ -32,27 +32,27 @@ export function constrainTranslation(
 
     // Constrain X translation
     const zoomedW = Iw * zoom;
-    const imageLeftScreen = (Vw - Iw) / 2;
+    const offsetX = (Vw - Iw) / 2;
     if (zoomedW <= Vw) {
         // Center horizontally
-        nextTx = (-Iw * (zoom - 1)) / 2;
+        nextTx = (-Vw * (zoom - 1)) / 2;
     } else {
         // Clip to viewport boundaries
-        const minTx = Vw - imageLeftScreen - zoomedW;
-        const maxTx = -imageLeftScreen;
+        const minTx = Vw - offsetX * zoom - zoomedW;
+        const maxTx = -offsetX * zoom;
         nextTx = Math.max(minTx, Math.min(nextTx, maxTx));
     }
 
     // Constrain Y translation
     const zoomedH = Ih * zoom;
-    const imageTopScreen = (Vh - Ih) / 2;
+    const offsetY = (Vh - Ih) / 2;
     if (zoomedH <= Vh) {
         // Center vertically
-        nextTy = (-Ih * (zoom - 1)) / 2;
+        nextTy = (-Vh * (zoom - 1)) / 2;
     } else {
         // Clip to viewport boundaries
-        const minTy = Vh - imageTopScreen - zoomedH;
-        const maxTy = -imageTopScreen;
+        const minTy = Vh - offsetY * zoom - zoomedH;
+        const maxTy = -offsetY * zoom;
         nextTy = Math.max(minTy, Math.min(nextTy, maxTy));
     }
 
