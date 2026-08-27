@@ -1,13 +1,36 @@
 export interface ZoomState {
-    currentZoom: number;
-    currentPositionX: number;
-    currentPositionY: number;
-    currentRotation: number;
+    value: number;
+    posX: number;
+    posY: number;
+    rotation?: number;
 }
 
 export interface Dimensions {
     width: number;
     height: number;
+}
+
+export type ZoomOptions = ZoomState & {
+    newZoom: number;
+    clientX: number;
+    clientY: number;
+    zoomTargetRect: { left: number; top: number };
+    viewport: Dimensions;
+    image: Dimensions;
+};
+
+export class ImageZoomState {
+    value = $state(1);
+    posX = $state(0);
+    posY = $state(0);
+    rotation = $state(0);
+
+    reset() {
+        this.value = 1;
+        this.posX = 0;
+        this.posY = 0;
+        this.rotation = 0;
+    }
 }
 
 /**
@@ -63,28 +86,8 @@ export function constrainTranslation(
  * Calculates the next zoom level and the translated coordinates required to focus
  * the zoom precisely on the cursor coordinate.
  */
-export function calculateZoomTo(options: {
-    currentZoom: number;
-    currentPositionX: number;
-    currentPositionY: number;
-    newZoom: number;
-    clientX: number;
-    clientY: number;
-    zoomTargetRect: { left: number; top: number };
-    viewport: Dimensions;
-    image: Dimensions;
-}): { zoom: number; x: number; y: number } {
-    const {
-        currentZoom,
-        currentPositionX,
-        currentPositionY,
-        newZoom,
-        clientX,
-        clientY,
-        zoomTargetRect,
-        viewport,
-        image
-    } = options;
+export function calculateZoomTo(options: ZoomOptions): ZoomState {
+    const { value, posX, posY, newZoom, clientX, clientY, zoomTargetRect, viewport, image } = options;
 
     const mx = clientX - zoomTargetRect.left;
     const my = clientY - zoomTargetRect.top;
@@ -92,23 +95,23 @@ export function calculateZoomTo(options: {
     // Map screen coordinate to the unscaled layout coordinate of the image.
     // Since zoomTargetRect moves with currentPosition, mx/my are already relative
     // to the translated position.
-    const px = mx / currentZoom;
-    const py = my / currentZoom;
+    const px = mx / value;
+    const py = my / value;
 
     // Clamp zoom factor between 1.0 and 16.0
     const nextZoom = Math.max(1, Math.min(newZoom, 16));
 
     // Calculate translations targeting the mapped coordinate under the new zoom.
     // We add the current translation to offset the movement of the zoomTargetRect.
-    const nextTx = mx + currentPositionX - px * nextZoom;
-    const nextTy = my + currentPositionY - py * nextZoom;
+    const nextTx = mx + posX - px * nextZoom;
+    const nextTy = my + posY - py * nextZoom;
 
     // Apply viewport boundaries
     const constrained = constrainTranslation(nextTx, nextTy, nextZoom, viewport, image);
 
     return {
-        zoom: nextZoom,
-        x: constrained.x,
-        y: constrained.y
+        value: nextZoom,
+        posX: constrained.x,
+        posY: constrained.y
     };
 }

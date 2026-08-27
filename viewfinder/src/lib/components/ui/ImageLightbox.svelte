@@ -25,7 +25,7 @@
     import ExportPanel, { modalOptions as exportModalOptions } from "$lib/components/ui/panels/ExportPanel.svelte";
     import MetadataPanel from "$lib/components/ui/panels/MetadataPanel.svelte";
     import { ImageLoader } from "$lib/images/loader/image-loader.svelte";
-    import { calculateZoomTo, constrainTranslation } from "$lib/images/zoom/zoom-utils";
+    import { ImageZoomState, calculateZoomTo, constrainTranslation } from "$lib/images/zoom/zoom-utils.svelte";
     import { isMobile } from "$lib/states/index.svelte";
     import { toasts } from "$lib/toast-notifcations/toasts.svelte";
     import { downloadOriginalImageFile } from "$lib/utils/http";
@@ -61,20 +61,6 @@
     let showImageStateDebugPanel = $state(false);
     let currentPreloadImg = $state<HTMLImageElement | null>(null);
 
-    class ImageZoomState {
-        currentZoom = $state(1);
-        currentPositionX = $state(0);
-        currentPositionY = $state(0);
-        currentRotation = $state(0);
-
-        reset() {
-            this.currentZoom = 1;
-            this.currentPositionX = 0;
-            this.currentPositionY = 0;
-            this.currentRotation = 0;
-        }
-    }
-
     const zoomState = new ImageZoomState();
     let lastImageUid = $state<string | undefined>(undefined);
 
@@ -87,9 +73,9 @@
     });
 
     let transformState = $derived({
-        scale: zoomState.currentZoom,
-        x: zoomState.currentPositionX,
-        y: zoomState.currentPositionY
+        scale: zoomState.value,
+        x: zoomState.posX,
+        y: zoomState.posY
     });
 
     let isDragging = $state(false);
@@ -171,8 +157,8 @@
         isCropping = false;
         currentCrop = undefined;
         cropMenuPosition = undefined;
-        zoomState.currentZoom = 1;
-        zoomState.currentPositionX = 0;
+        zoomState.value = 1;
+        zoomState.posX = 0;
         updateImageDimensions();
     }
 
@@ -203,15 +189,15 @@
             return isCropping;
         },
         get currentZoom() {
-            return zoomState.currentZoom;
+            return zoomState.value;
         },
         get imageToLoad() {
             return imageToLoad;
         },
         resetZoom() {
-            zoomState.currentZoom = 1;
-            zoomState.currentPositionX = 0;
-            zoomState.currentPositionY = 0;
+            zoomState.value = 1;
+            zoomState.posX = 0;
+            zoomState.posY = 0;
         },
         updateImageDimensions() {
             updateImageDimensions();
@@ -241,7 +227,7 @@
             return;
         }
 
-        const currentZoom = zoomState.currentZoom;
+        const currentZoom = zoomState.value;
         const originalPath = currentImage.image_paths?.original;
 
         // Only trigger high-resolution zoom upgrade when actively zoomed to a considerable level (>= 2.0x)
@@ -314,9 +300,9 @@
         }
 
         const result = calculateZoomTo({
-            currentZoom: zoomState.currentZoom,
-            currentPositionX: zoomState.currentPositionX,
-            currentPositionY: zoomState.currentPositionY,
+            value: zoomState.value,
+            posX: zoomState.posX,
+            posY: zoomState.posY,
             newZoom,
             clientX,
             clientY,
@@ -328,9 +314,9 @@
             image: imageDimensions
         });
 
-        zoomState.currentZoom = result.zoom;
-        zoomState.currentPositionX = result.x;
-        zoomState.currentPositionY = result.y;
+        zoomState.value = result.value;
+        zoomState.posX = result.posX;
+        zoomState.posY = result.posY;
     }
 
     const handleWheel: WheelEventHandler<HTMLDivElement> = (event) => {
@@ -356,7 +342,7 @@
         const isPinch = event.ctrlKey;
         const zoomIntensity = isPinch ? 0.015 : 0.0022;
         const factor = Math.exp(-dy * zoomIntensity);
-        const newZoom = zoomState.currentZoom * factor;
+        const newZoom = zoomState.value * factor;
 
         zoomTo(newZoom, event.clientX, event.clientY);
     };
@@ -367,11 +353,11 @@
             return;
         }
 
-        if (zoomState.currentZoom > 1) {
+        if (zoomState.value > 1) {
             // Zoom out to 1
-            zoomState.currentZoom = 1;
-            zoomState.currentPositionX = 0;
-            zoomState.currentPositionY = 0;
+            zoomState.value = 1;
+            zoomState.posX = 0;
+            zoomState.posY = 0;
         } else {
             // Zoom in to 2.5 (100% style) at cursor position
             zoomTo(2.5, event.clientX, event.clientY);
@@ -379,7 +365,7 @@
     };
 
     const handlePointerDown: PointerEventHandler<HTMLDivElement> = (event) => {
-        if (event.button !== 0 || zoomState.currentZoom <= 1) {
+        if (event.button !== 0 || zoomState.value <= 1) {
             return;
         }
 
@@ -387,8 +373,8 @@
         wasDragging = false;
         dragStart.mouseX = event.clientX;
         dragStart.mouseY = event.clientY;
-        dragStart.tx = zoomState.currentPositionX;
-        dragStart.ty = zoomState.currentPositionY;
+        dragStart.tx = zoomState.posX;
+        dragStart.ty = zoomState.posY;
 
         event.currentTarget.setPointerCapture(event.pointerId);
     };
@@ -408,7 +394,7 @@
         const constrained = constrainTranslation(
             dragStart.tx + dx,
             dragStart.ty + dy,
-            zoomState.currentZoom,
+            zoomState.value,
             {
                 width: imageContainerEl.clientWidth,
                 height: imageContainerEl.clientHeight
@@ -416,8 +402,8 @@
             imageDimensions
         );
 
-        zoomState.currentPositionX = constrained.x;
-        zoomState.currentPositionY = constrained.y;
+        zoomState.posX = constrained.x;
+        zoomState.posY = constrained.y;
     };
 
     const handlePointerUp: PointerEventHandler<HTMLDivElement> = (event) => {
@@ -664,7 +650,7 @@
             } else {
                 toggleCropMode();
             }
-        } else if (zoomState.currentZoom <= 1.05) {
+        } else if (zoomState.value <= 1.05) {
             // Close lightbox when not cropping and at default zoom
             lightboxImage = undefined;
         }
@@ -836,12 +822,12 @@
 
             <span class="debug-label">Current Zoom:</span>
             <span class="debug-val">
-                {zoomState.currentZoom.toFixed(4)}x ({Math.round(zoomState.currentZoom * 100)}%)
+                {zoomState.value.toFixed(4)}x ({Math.round(zoomState.value * 100)}%)
             </span>
 
             <span class="debug-label">Coords:</span>
             <span class="debug-val mono">
-                X: {Math.round(zoomState.currentPositionX)}px, Y: {Math.round(zoomState.currentPositionY)}px
+                X: {Math.round(zoomState.posX)}px, Y: {Math.round(zoomState.posY)}px
             </span>
 
             <span class="debug-label">Display URL:</span>
@@ -1051,14 +1037,14 @@
                     class="zoom-target"
                     class:is-crop={isCropping}
                     class:has-crop={!!activeCrop}
-                    class:can-pan={zoomState.currentZoom > 1}
+                    class:can-pan={zoomState.value > 1}
                     class:is-panning={isDragging}
                     oncontextmenu={handleContextMenu}
                     role="presentation"
                     bind:this={zoomTargetEl}
                     style="{(isCropping || activeCrop) && imageDimensions
                         ? `width: ${imageDimensions.width}px; height: ${imageDimensions.height}px;`
-                        : ''} transform: translate({zoomState.currentPositionX}px, {zoomState.currentPositionY}px) scale({zoomState.currentZoom}); transform-origin: 0 0;"
+                        : ''} transform: translate({zoomState.posX}px, {zoomState.posY}px) scale({zoomState.value}); transform-origin: 0 0;"
                     onwheel={handleWheel}
                     ondblclick={handleDoubleClick}
                     onpointerdown={handlePointerDown}
@@ -1113,9 +1099,9 @@
 
                 <!-- TODO: Change this to a general action status indicator to support all actions -->
                 <!-- e.g. "Date Change: 11-06-2026, 20:42:01" -->
-                {#if zoomState.currentZoom > 1}
+                {#if zoomState.value > 1}
                     <div class="zoom-indicator-badge" role="status" aria-live="polite">
-                        Zoom: {Math.round(zoomState.currentZoom * 100)}%
+                        Zoom: {Math.round(zoomState.value * 100)}%
                     </div>
                 {/if}
 
