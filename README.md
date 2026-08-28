@@ -1,33 +1,33 @@
-# Viz
+# viz
 
 <a href="https://opensource.org/license/agpl-v3"><img src="https://img.shields.io/badge/License-AGPL_v3-blue.svg?color=0F1726&style=for-the-badge&label=License&logoColor=000000&labelColor=eee" alt="License: AGPLv3"></a>
 
-**Viz** is a self-hosted image management and processing platform designed for photographers and media teams. It provides a modern API-driven backend (Go) and a web interface (SvelteKit) for organizing, searching, and sharing image collection
+**viz** is a self-hosted image management and processing platform designed for photographers and media teams. It organizes large photo libraries, extracts deep camera metadata, and processes high-resolution imagery with instant responsiveness.
 
-![Home Page Screenshot](./docs/assets/collections-images-screenshot.png)
+![Home Page Screenshot](docs/assets/image_grid-screenshot.png)
 
 > [!WARNING]
-> 
 > This project is in active development. Features and APIs may change frequently. Feedback and contributions are welcome!
 
 ---
 
-## Features
+## Capabilities & Highlights
 
-- **Image Upload & Organization**: Upload and automatically process images with thumbnails, EXIF extraction.
-- **Collections**: Group images into collections for better organization.
-- **Search**: Fast semantic and keyword search.
-- **Background Processing**: Robust job queue (Watermill + Redis) for non-blocking image operations.
-- **Modern UI**: Built with SvelteKit 5, featuring a responsive image grid, metadata view and editing, and drag-and-drop uploads.
-- **Deployment**: Docker Compose support for easy set up (API, Frontend, Postgres, Redis).
+- **High-Performance Image Engine**: Fast image transformations, smart resizing, RAW/DNG preview extraction, and instant multi-resolution thumbnail generation.
+- **Asynchronous Processing Queue**: Heavy media tasks (generation, conversions, and metadata indexing) are offloaded to an asynchronous background worker queue so uploads and UI browsing remain fast and responsive.
+- **Real-Time Live Updates**: Instant UI state synchronization as background jobs finish processing your files.
+- **Deep EXIF & Camera Intelligence**: Automatic extraction of exposure stats, camera bodies, lenses, focal lengths, color profiles, and timestamps.
+- **Smart Collections & Search**: Organize your library into curated collections with fast token-based search across tags, filenames, and camera metadata.
+- **viewfinder Interface**: A clean, responsive workspace featuring fluid image grids, dynamic zoom scaling, batch operations, and drag-and-drop uploads.
+- **Self-Hosted & Private**: Total ownership of your data, however and wherever you want.
 
 ---
 
-## Quick Start (Docker)
+## Quick Start
 
 Get started quickly using [Docker Compose](https://docs.docker.com/compose/).
 
-#### Clone & Configure:
+### 1. Clone & Configure:
 ```bash
 git clone https://github.com/garvageart/viz.git
 cd viz
@@ -36,45 +36,33 @@ cd viz
 cp .env.example .env
 ```
 
-#### Run:
+### 2. Run:
 ```bash
 docker compose -f docker/docker-compose.yml up --build -d
 ```
 
-#### Use:
-    - Frontend & API: `http://localhost:7770`
+### 3. Open:
+Visit **`http://localhost:7770`** in your browser.
 
-See [**docs/BUILDING.md**](./docs/BUILDING.md) for detailed setup instructions, including **Manual/Non-Docker** development guides (Windows/Linux/macOS).
+For complete setup guides and manual development instructions, see [**BUILDING.md**](./docs/setup/BUILDING.md).
 
 ---
 
-## Architecture
+## Documentation
 
-### Backend
-- **Framework**: go-chi Router
-- **Database**: PostgreSQL (via GORM)
-- **Queue**: In-Memory or Redis (via Watermill)
-- **Search**: Full-Text Token-Based Search
-- **Image Processing**: libvips
+- [**Building & Setup Guide**](./docs/setup/BUILDING.md): Detailed local development setup and prerequisites.
+- [**UI Design System**](./docs/development/UI_DESIGN_SYSTEM.md): Visual design tokens, spacing, and styling rules.
+- [**API Specification**](./api/openapi/openapi.yaml): Full OpenAPI documentation.
 
-### [Frontend](./viewfinder/README.md)
-- **Framework**: Svelte 5
-- **Styling**: SCSS
-- **Icons**: Material Design
-
-### Monorepo Structure
-- **Go Workspace**: Managed via `go.work` for the backend.
-- **PNPM Workspaces**: Frontend (`viz/`) and internal tools (`scripts/js/`) are managed as pnpm workspaces.
 ---
 
 ## License
 
-This project is licensed under the GNU Affero General Public License v3.0 (AGPL-3.0).
-See `LICENSE` for details.
+This project is licensed under the GNU Affero General Public License v3.0 (AGPL-3.0). See [LICENSE](./LICENSE) for details.
 
 ---
 
-## Questions or Feedback?
+## Questions & Feedback?
 
 We welcome questions, feedback, and contributions! Here is how you can get in touch:
 
