@@ -5,6 +5,10 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.32.22] - 2026-08-28
+
+* ci(workflow): adopt docker login action to streamline registry authentication (6949fb53)
+
 ## [0.32.21] - 2026-08-28
 
 * ci(workflow): ensure staging receives all builds while protecting production releases (206284d0)
