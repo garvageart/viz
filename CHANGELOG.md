@@ -5,6 +5,11 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.32.23] - 2026-08-28
+
+* fix(viewfinder): sync month/year dropdowns on calendar navigation (dc743c4f)
+* docs: updated settings document about image previews and file name extensions (a6a556f8)
+
 ## [0.32.22] - 2026-08-28
 
 * ci(workflow): adopt docker login action to streamline registry authentication (6949fb53)
