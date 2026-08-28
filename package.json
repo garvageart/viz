@@ -1,7 +1,7 @@
 {
     "name": "viz-monorepo",
     "private": true,
-    "version": "0.32.17",
+    "version": "0.32.18",
     "type": "module",
     "license": "AGPL-3.0",
     "engines": {

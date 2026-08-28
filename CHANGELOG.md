@@ -5,6 +5,11 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.32.18] - 2026-08-28
+
+* ci(workflow): extract changelog notes on release only and streamline release job (ed1f4278)
+* ci(workflow): scope deps cache detection to lockfiles and base configs (9e9ae545)
+
 ## [0.32.17] - 2026-08-28
 
 * ci(workflow): fetch all tags and detect tag using git tag --points-at HEAD (0df5046b)
