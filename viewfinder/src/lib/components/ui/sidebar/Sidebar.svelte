@@ -81,9 +81,6 @@
     .sidebar-heading {
         font-family: var(--viz-display-font);
         font-size: var(--viz-font-size-lg);
-        font-weight: 600;
-        letter-spacing: 0.05em;
-        text-transform: uppercase;
         margin: 0;
         white-space: nowrap;
         overflow: hidden;

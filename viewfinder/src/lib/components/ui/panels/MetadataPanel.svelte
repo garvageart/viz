@@ -176,6 +176,11 @@
         </div>
     {/if}
     {#if currentAsset}
+        <!-- 
+            NOTE (Table Option 4): In the future, for comprehensive technical EXIF / IPTC / XMP raw inspection tabs, 
+            consider rendering key-value technical metadata using <Table name="asset-exif-metadata" density="compact"> 
+            with sortable tags, search filtering, and copy-to-clipboard actions.
+        -->
         <div class="metadata-exif-box">
             <div class="exif-cards">
                 <div class="exif-card">

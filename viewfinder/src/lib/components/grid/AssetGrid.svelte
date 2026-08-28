@@ -1173,7 +1173,9 @@
             <div class="virtual-spacer" style="height: {tableTopSpacerHeight}px;"></div>
         {/if}
         <Table
+            name="asset-grid"
             data={allAssetsData}
+            bordered={false}
             header={assetTableHeader}
             body={assetTableBody}
             onheadercontextmenu={(e) => {
@@ -1336,6 +1338,7 @@
         overflow-x: auto;
 
         :global {
+            .viz-table-wrapper,
             .viz-table-container {
                 width: 100%;
                 border: none;
