@@ -400,45 +400,23 @@ jobs:
                   SHORT_SHA=$(echo "$COMMIT_HASH" | cut -c1-8)
                   IS_RELEASE="${{ needs.build-images.outputs.is_release }}"
                   VERSION_TAG="${{ needs.build-images.outputs.tag_name }}"
-                  SRC_SERVER="${{ env.IMAGE_PREFIX }}/viz-server:$COMMIT_HASH"
-                  SRC_DB="${{ env.IMAGE_PREFIX }}/viz-db:$COMMIT_HASH"
 
+                  TAGS=("$SHORT_SHA" "latest")
                   if [ "$IS_RELEASE" = "true" ]; then
-                    echo "Publishing release images ($VERSION_TAG and commit SHAs)..."
-                    docker tag "$SRC_SERVER" "${{ env.IMAGE_PREFIX }}/viz-server:$VERSION_TAG"
-                    docker tag "$SRC_SERVER" "${{ env.IMAGE_PREFIX }}/viz-server:$SHORT_SHA"
-                    docker push "$SRC_SERVER" || true
-                    docker push "${{ env.IMAGE_PREFIX }}/viz-server:$SHORT_SHA" || true
-                    docker push "${{ env.IMAGE_PREFIX }}/viz-server:$VERSION_TAG" || true
-
-                    docker tag "$SRC_DB" "${{ env.IMAGE_PREFIX }}/viz-db:$VERSION_TAG"
-                    docker tag "$SRC_DB" "${{ env.IMAGE_PREFIX }}/viz-db:$SHORT_SHA"
-                    docker push "$SRC_DB" || true
-                    docker push "${{ env.IMAGE_PREFIX }}/viz-db:$SHORT_SHA" || true
-                    docker push "${{ env.IMAGE_PREFIX }}/viz-db:$VERSION_TAG" || true
-
+                    TAGS+=("$VERSION_TAG")
                     if [[ "$VERSION_TAG" != *"-rc"* ]]; then
-                      echo "Stable release detected. Publishing :stable tag..."
-                      docker tag "$SRC_SERVER" "${{ env.IMAGE_PREFIX }}/viz-server:stable"
-                      docker tag "$SRC_DB" "${{ env.IMAGE_PREFIX }}/viz-db:stable"
-                      docker push "${{ env.IMAGE_PREFIX }}/viz-server:stable" || true
-                      docker push "${{ env.IMAGE_PREFIX }}/viz-db:stable" || true
+                      TAGS+=("stable")
                     fi
-                  else
-                    echo "Publishing :latest and commit SHA tags for main branch..."
-                    docker tag "$SRC_SERVER" "${{ env.IMAGE_PREFIX }}/viz-server:latest"
-                    docker tag "$SRC_SERVER" "${{ env.IMAGE_PREFIX }}/viz-server:$SHORT_SHA"
-                    docker tag "$SRC_DB" "${{ env.IMAGE_PREFIX }}/viz-db:latest"
-                    docker tag "$SRC_DB" "${{ env.IMAGE_PREFIX }}/viz-db:$SHORT_SHA"
-
-                    docker push "$SRC_SERVER" || true
-                    docker push "${{ env.IMAGE_PREFIX }}/viz-server:$SHORT_SHA" || true
-                    docker push "${{ env.IMAGE_PREFIX }}/viz-server:latest" || true
-
-                    docker push "$SRC_DB" || true
-                    docker push "${{ env.IMAGE_PREFIX }}/viz-db:$SHORT_SHA" || true
-                    docker push "${{ env.IMAGE_PREFIX }}/viz-db:latest" || true
                   fi
+
+                  echo "Publishing tags: ${TAGS[*]}"
+                  for IMG in viz-server viz-db; do
+                    SRC="${{ env.IMAGE_PREFIX }}/${IMG}:${COMMIT_HASH}"
+                    for TAG in "${TAGS[@]}"; do
+                      docker tag "$SRC" "${{ env.IMAGE_PREFIX }}/${IMG}:${TAG}"
+                      docker push "${{ env.IMAGE_PREFIX }}/${IMG}:${TAG}" || true
+                    done
+                  done
 
     # NOTE: Future consideration — replace shell/curl release step with GoReleaser (.goreleaser.yaml)
     release:
