@@ -4,6 +4,7 @@
 
     interface Props {
         checked: boolean;
+        indeterminate?: boolean;
         label?: string;
         id?: string;
         disabled?: boolean;
@@ -14,6 +15,7 @@
 
     let {
         checked = $bindable(),
+        indeterminate = false,
         label,
         id,
         disabled = false,
@@ -57,8 +59,17 @@
     class:disabled
     class:small={size === "small"}
     class:large={size === "large"}
+    class:is-indeterminate={indeterminate && !checked}
 >
-    <input type="checkbox" id={uniqueId} {checked} {disabled} onchange={handleChange} onkeydown={handleKeydown} />
+    <input
+        type="checkbox"
+        id={uniqueId}
+        {checked}
+        {indeterminate}
+        {disabled}
+        onchange={handleChange}
+        onkeydown={handleKeydown}
+    />
     <label for={uniqueId}>
         <span
             class="viz-checkbox"
@@ -67,16 +78,29 @@
             class:round={variant === "round"}
             aria-hidden="true"
         >
-            <svg
-                viewBox="0 0 24 24"
-                fill="none"
-                stroke="currentColor"
-                stroke-width="3.5"
-                stroke-linecap="round"
-                stroke-linejoin="round"
-            >
-                <polyline points="4 12 9 17 20 6"></polyline>
-            </svg>
+            {#if indeterminate && !checked}
+                <svg
+                    viewBox="0 0 24 24"
+                    fill="none"
+                    stroke="currentColor"
+                    stroke-width="3.5"
+                    stroke-linecap="square"
+                    stroke-linejoin="miter"
+                >
+                    <line x1="5" y1="12" x2="19" y2="12"></line>
+                </svg>
+            {:else}
+                <svg
+                    viewBox="0 0 24 24"
+                    fill="none"
+                    stroke="currentColor"
+                    stroke-width="3.5"
+                    stroke-linecap="square"
+                    stroke-linejoin="miter"
+                >
+                    <polyline points="4 12 9 17 20 6"></polyline>
+                </svg>
+            {/if}
         </span>
         {#if label}
             <span class="label-text">{label}</span>
@@ -132,10 +156,6 @@
         border-radius: var(--viz-border-radius-sm);
         background-color: var(--viz-surface-card);
         color: transparent;
-        transition:
-            background-color 0.12s ease,
-            border-color 0.12s ease,
-            box-shadow 0.12s ease;
         flex-shrink: 0;
         cursor: pointer;
 
@@ -159,29 +179,20 @@
         }
     }
 
-    /* Checkmark SVG styling & self-drawing polyline */
+    /* Checkmark & Line SVG styling */
     svg {
         width: 0.7rem;
         height: 0.7rem;
         display: block;
-
-        polyline {
-            stroke-dasharray: 24;
-            stroke-dashoffset: 24;
-            transition: stroke-dashoffset 0.18s cubic-bezier(0.16, 1, 0.3, 1);
-        }
     }
 
-    /* Checked state */
-    input[type="checkbox"]:checked + label {
+    /* Checked & Indeterminate states */
+    input[type="checkbox"]:checked + label,
+    .is-indeterminate input[type="checkbox"] + label {
         .viz-checkbox {
             background-color: var(--viz-primary);
             border-color: var(--viz-primary);
             color: #ffffff;
-
-            polyline {
-                stroke-dashoffset: 0;
-            }
         }
 
         .label-text {
@@ -211,7 +222,6 @@
     .label-text {
         font-size: var(--viz-font-size-lg);
         color: var(--viz-text-secondary);
-        transition: color 0.12s ease;
     }
 
     .checkbox-wrapper.small {
