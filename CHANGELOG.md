@@ -5,6 +5,11 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.32.16] - 2026-08-28
+
+* fix(viewfinder): resolve type issues in DatePicker and TimeInputField (b4389878)
+* refactor: combine zoom classes and types (480477b2)
+
 ## [0.32.15] - 2026-08-26
 
 * ci(workflow): enable fetch-tags on checkout to detect release tags (8e977384)
