@@ -100,14 +100,12 @@ jobs:
                   driver: docker
 
             - name: Registry Login
-              if: github.event_name != 'pull_request'
-              run: |
-                  TOKEN="${{ secrets.REGISTRY_TOKEN || secrets.GITHUB_TOKEN }}"
-                  USER="${{ vars.REGISTRY_USER || github.actor }}"
-                  REG="${{ vars.REGISTRY_URL }}"
-                  if [ -n "$REG" ] && [ -n "$TOKEN" ]; then
-                    echo "$TOKEN" | docker login "$REG" -u "$USER" --password-stdin
-                  fi
+              if: github.event_name != 'pull_request' && vars.REGISTRY_URL != ''
+              uses: https://github.com/docker/login-action@v3
+              with:
+                  registry: ${{ vars.REGISTRY_URL }}
+                  username: ${{ vars.REGISTRY_USER || github.actor }}
+                  password: ${{ secrets.REGISTRY_TOKEN || secrets.GITHUB_TOKEN }}
 
             - name: Auto-Detect & Build Base Image
               id: detect-base
@@ -386,13 +384,12 @@ jobs:
         runs-on: ubuntu-latest
         steps:
             - name: Registry Login
-              run: |
-                  TOKEN="${{ secrets.REGISTRY_TOKEN || secrets.GITHUB_TOKEN }}"
-                  USER="${{ vars.REGISTRY_USER || github.actor }}"
-                  REG="${{ vars.REGISTRY_URL }}"
-                  if [ -n "$REG" ] && [ -n "$TOKEN" ]; then
-                    echo "$TOKEN" | docker login "$REG" -u "$USER" --password-stdin
-                  fi
+              if: vars.REGISTRY_URL != ''
+              uses: https://github.com/docker/login-action@v3
+              with:
+                  registry: ${{ vars.REGISTRY_URL }}
+                  username: ${{ vars.REGISTRY_USER || github.actor }}
+                  password: ${{ secrets.REGISTRY_TOKEN || secrets.GITHUB_TOKEN }}
 
             - name: Tag & Publish Verified Images
               run: |
