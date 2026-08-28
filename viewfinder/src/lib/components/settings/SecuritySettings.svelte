@@ -256,16 +256,14 @@
     }
 
     const apiKeysColumns: TableColumn<ApiKey>[] = [
-        { key: "name", header: "Name" },
-        { key: "created_at", header: "Created" },
-        { key: "last_used_at", header: "Last Used" },
-        { key: "actions", header: "Actions", align: "right" }
+        { key: "name", header: "Name", cell: apiKeyCellSnippet, sortable: true },
+        { key: "created_at", header: "Created", mono: true, cell: apiKeyCreatedSnippet, sortable: true },
+        { key: "last_used_at", header: "Last Used", mono: true, cell: apiKeyLastUsedSnippet, sortable: true }
     ];
 
     const sessionsColumns: TableColumn<ExtendedSession>[] = [
-        { key: "device", header: "Device / Browser" },
-        { key: "last_active", header: "Last Active" },
-        { key: "actions", header: "Actions", align: "right" }
+        { key: "device", header: "Device / Browser", cell: sessionDeviceSnippet, sortable: true },
+        { key: "last_active", header: "Last Active", mono: true, cell: sessionLastActiveSnippet, sortable: true }
     ];
 </script>
 
@@ -282,65 +280,64 @@
     <span> Are you sure you want to revoke this session? You will be logged out on that device. </span>
 {/snippet}
 
-{#snippet apiKeysRow(key: ApiKey)}
-    <tr>
-        <td>
-            <div class="key-info">
-                <span class="name">{key.name}</span>
-                {#if key.description}
-                    <span class="description">{key.description}</span>
-                {/if}
-            </div>
-        </td>
-        <td class="mono-text" title={new Date(key.created_at).toLocaleString()}>{formatRelativeDate(key.created_at)}</td
-        >
-        <td class="mono-text" title={key.last_used_at ? new Date(key.last_used_at).toLocaleString() : "Never"}
-            >{key.last_used_at ? formatRelativeDate(key.last_used_at) : "Never"}</td
-        >
-        <td>
-            <div class="actions-cell">
-                <button class="action-btn delete" onclick={() => openDeleteKeyConfirm(key)} title="Delete Key">
-                    <MaterialIcon iconName="delete" />
-                </button>
-            </div>
-        </td>
-    </tr>
+{#snippet apiKeyCellSnippet(key: ApiKey)}
+    <div class="key-info">
+        <span class="name">{key.name}</span>
+        {#if key.description}
+            <span class="description">{key.description}</span>
+        {/if}
+    </div>
 {/snippet}
 
-{#snippet sessionsRow(session: ExtendedSession)}
-    <tr>
-        <td>
-            <div class="session-info">
-                <div class="session-main">
-                    <span class="name">{session.client_name || `${session.browser} on ${session.os}`}</span>
-                    {#if session.is_current}
-                        <Badge variant="success" size="small" weight="regular"><span>Current</span></Badge>
-                    {/if}
-                </div>
-                <span class="details">
-                    <span class="mono-text">{session.ip_address}</span>
-                </span>
-            </div>
-        </td>
-        <td
-            class="mono-text"
-            title={session.last_active_at ? new Date(session.last_active_at).toLocaleString() : "Never"}
-            >{formatRelativeDate(session.last_active_at)}</td
-        >
-        <td>
-            <div class="actions-cell">
-                <!-- TODO: Replace these with IconButton -->
-                <button class="action-btn" onclick={() => openRenameSessionModal(session)} title="Rename Session">
-                    <MaterialIcon iconName="edit" />
-                </button>
-                {#if !session.is_current}
-                    <button class="action-btn revoke" onclick={() => openRevokeConfirm(session)} title="Revoke Session">
-                        <MaterialIcon iconName="logout" />
-                    </button>
-                {/if}
-            </div>
-        </td>
-    </tr>
+{#snippet apiKeyCreatedSnippet(key: ApiKey)}
+    <span title={new Date(key.created_at).toLocaleString()}>{formatRelativeDate(key.created_at)}</span>
+{/snippet}
+
+{#snippet apiKeyLastUsedSnippet(key: ApiKey)}
+    <span title={key.last_used_at ? new Date(key.last_used_at).toLocaleString() : "Never"}>
+        {key.last_used_at ? formatRelativeDate(key.last_used_at) : "Never"}
+    </span>
+{/snippet}
+
+{#snippet apiKeyActionsSnippet(key: ApiKey)}
+    <div class="actions-cell">
+        <button class="action-btn delete" onclick={() => openDeleteKeyConfirm(key)} title="Delete Key">
+            <MaterialIcon iconName="delete" />
+        </button>
+    </div>
+{/snippet}
+
+{#snippet sessionDeviceSnippet(session: ExtendedSession)}
+    <div class="session-info">
+        <div class="session-main">
+            <span class="name">{session.client_name || `${session.browser} on ${session.os}`}</span>
+            {#if session.is_current}
+                <Badge variant="success" size="small" weight="regular"><span>Current</span></Badge>
+            {/if}
+        </div>
+        <span class="details">
+            <span class="mono-text">{session.ip_address}</span>
+        </span>
+    </div>
+{/snippet}
+
+{#snippet sessionLastActiveSnippet(session: ExtendedSession)}
+    <span title={session.last_active_at ? new Date(session.last_active_at).toLocaleString() : "Never"}>
+        {formatRelativeDate(session.last_active_at)}
+    </span>
+{/snippet}
+
+{#snippet sessionActionsSnippet(session: ExtendedSession)}
+    <div class="actions-cell">
+        <button class="action-btn" onclick={() => openRenameSessionModal(session)} title="Rename Session">
+            <MaterialIcon iconName="edit" />
+        </button>
+        {#if !session.is_current}
+            <button class="action-btn revoke" onclick={() => openRevokeConfirm(session)} title="Revoke Session">
+                <MaterialIcon iconName="logout" />
+            </button>
+        {/if}
+    </div>
 {/snippet}
 
 <div class="security-settings">
@@ -358,9 +355,10 @@
                 <div class="loading-state">Loading...</div>
             {:else}
                 <Table
+                    name="security-api-keys"
                     data={apiKeys}
                     columns={apiKeysColumns}
-                    rows={apiKeysRow}
+                    rowActions={apiKeyActionsSnippet}
                     emptyMessage="No API keys created yet."
                 />
             {/if}
@@ -380,9 +378,10 @@
                 <div class="loading-state">Loading...</div>
             {:else}
                 <Table
+                    name="security-active-sessions"
                     data={sessions}
                     columns={sessionsColumns}
-                    rows={sessionsRow}
+                    rowActions={sessionActionsSnippet}
                     emptyMessage="No active sessions."
                 />
             {/if}
@@ -427,45 +426,6 @@
                 color: var(--viz-text-secondary);
             }
         }
-    }
-
-    .security-settings :global(.viz-table) {
-        width: 100%;
-        border-collapse: collapse;
-        font-size: var(--viz-font-size-lg);
-    }
-
-    .security-settings :global(.viz-table thead th) {
-        text-align: left;
-        padding: var(--viz-spacing-md) var(--viz-spacing-std);
-        font-weight: 600;
-        font-size: var(--viz-font-size-lg);
-        border-bottom: var(--viz-border-thin);
-        background-color: var(--viz-surface-panel);
-    }
-
-    .security-settings :global(.viz-table thead th.align-right) {
-        text-align: right;
-    }
-
-    .security-settings :global(td) {
-        padding: var(--viz-spacing-std);
-        border-bottom: var(--viz-border-thin);
-        vertical-align: middle;
-        color: var(--viz-text-primary);
-    }
-
-    .security-settings :global(tr:last-child td) {
-        border-bottom: none;
-    }
-
-    .security-settings :global(.empty-state) {
-        font-style: italic;
-        position: static;
-    }
-
-    .security-settings :global(.empty-state::after) {
-        display: none;
     }
 
     .mono-text {

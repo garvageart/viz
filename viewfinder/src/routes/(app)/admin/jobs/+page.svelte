@@ -4,9 +4,12 @@
     import { fade } from "svelte/transition";
     import AdminRouteShell from "$lib/components/admin/AdminRouteShell.svelte";
     import Badge from "$lib/components/ui/Badge.svelte";
+    import Banner from "$lib/components/ui/Banner.svelte";
     import Button from "$lib/components/ui/Button.svelte";
     import IconBadge from "$lib/components/ui/IconBadge.svelte";
     import MaterialIcon from "$lib/components/ui/MaterialIcon.svelte";
+    import SearchInput from "$lib/components/ui/SearchInput.svelte";
+    import Table, { type TableColumn } from "$lib/components/ui/Table.svelte";
     import { jobsState } from "$lib/states/jobs.svelte";
     import type { MaterialSymbol } from "$lib/types/MaterialSymbol.js";
 
@@ -84,6 +87,14 @@
         }
         return `${Math.floor(ms / 60000)}m ${Math.floor((ms % 60000) / 1000)}s`;
     }
+
+    const historyColumns: TableColumn<any>[] = [
+        { key: "status", header: "Status", cell: statusCell, width: "6rem", sortable: true },
+        { key: "target", header: "Target", cell: targetCell, mono: true, sortable: true },
+        { key: "type", header: "Type", cell: typeCell, sortable: true },
+        { key: "duration", header: "Duration", cell: durationCell, mono: true, sortable: true },
+        { key: "endTime", header: "Completed At", cell: endTimeCell, mono: true, sortable: true }
+    ];
 
     onMount(() => {
         void jobsState.init();
@@ -180,6 +191,108 @@
                 >
             </div>
         </div>
+    </div>
+{/snippet}
+
+{#snippet statusCell(job: any)}
+    <IconBadge
+        iconName={job.status === "completed" ? "check" : "error"}
+        variant={job.status === "completed" ? "success" : "error"}
+        shape="circle"
+        size="1rem"
+        padding="0.35rem"
+    />
+{/snippet}
+
+{#snippet targetCell(job: any)}
+    <span class="job-title-text" title={job.filename || job.image_uid || job.uid}>
+        {job.filename || job.image_uid || job.uid}
+    </span>
+{/snippet}
+
+{#snippet typeCell(job: any)}
+    <Badge variant="neutral" size="std">{(job.type || job.topic).toUpperCase()}</Badge>
+{/snippet}
+
+{#snippet durationCell(job: any)}
+    {#if job.status === "completed"}
+        <span>{formatDuration(getStartTimeDate(job), getEndTimeDate(job))}</span>
+    {:else}
+        <span class="job-error-duration">Failed</span>
+    {/if}
+{/snippet}
+
+{#snippet endTimeCell(job: any)}
+    <span class="job-time-cell">{getEndTimeDate(job).toLocaleString()}</span>
+{/snippet}
+
+{#snippet jobExpandedRow(job: any)}
+    <div class="job-expanded-details">
+        {#if job.error}
+            <Banner variant="error" title="Execution Error" message={job.error} />
+        {/if}
+        <div class="job-meta-grid">
+            <div class="meta-item">
+                <span class="meta-label">ID</span>
+                <span class="meta-value font-mono">{job.uid || "N/A"}</span>
+            </div>
+            <div class="meta-item">
+                <span class="meta-label">Image UID</span>
+                <span class="meta-value font-mono">{job.image_uid || "N/A"}</span>
+            </div>
+            <div class="meta-item">
+                <span class="meta-label">Filename</span>
+                <span class="meta-value font-mono">{job.filename || "N/A"}</span>
+            </div>
+            <div class="meta-item">
+                <span class="meta-label">Start Time</span>
+                <span class="meta-value font-mono">{getStartTimeDate(job).toLocaleString()}</span>
+            </div>
+        </div>
+    </div>
+{/snippet}
+
+{#snippet historyToolbar()}
+    <div class="table-history-toolbar">
+        <div class="history-tabs">
+            <button
+                type="button"
+                class="history-tab"
+                class:active={activeTab === "all"}
+                onclick={() => {
+                    activeTab = "all";
+                }}
+            >
+                All <span class="tab-badge">{jobsState.completedJobs.length + jobsState.failedJobs.length}</span>
+            </button>
+            <button
+                type="button"
+                class="history-tab success"
+                class:active={activeTab === "success"}
+                onclick={() => {
+                    activeTab = "success";
+                }}
+            >
+                Success <span class="tab-badge">{jobsState.completedJobs.length}</span>
+            </button>
+            <button
+                type="button"
+                class="history-tab failed"
+                class:active={activeTab === "failed"}
+                onclick={() => {
+                    activeTab = "failed";
+                }}
+            >
+                Failed <span class="tab-badge">{jobsState.failedJobs.length}</span>
+            </button>
+        </div>
+
+        <SearchInput
+            inputId="history-search"
+            placeholder="Search..."
+            bind:value={searchQuery}
+            style="flex: 1; min-width: 20rem;"
+        />
     </div>
 {/snippet}
 
@@ -290,129 +403,26 @@
                 </section>
 
                 <!-- Unified Job History Section -->
-                <section class="dashboard-section history-unified-section">
+                <section class="dashboard-section history-table-section">
                     <div class="section-header-history">
                         <div class="header-title">
                             <MaterialIcon iconName="history" class="title-icon" />
                             <h2>Job History</h2>
                         </div>
-
-                        <!-- Filter Tabs -->
-                        <div class="history-tabs">
-                            <button
-                                type="button"
-                                class="history-tab"
-                                class:active={activeTab === "all"}
-                                onclick={() => {
-                                    activeTab = "all";
-                                }}
-                            >
-                                All <span class="tab-badge"
-                                    >{jobsState.completedJobs.length + jobsState.failedJobs.length}</span
-                                >
-                            </button>
-                            <button
-                                type="button"
-                                class="history-tab success"
-                                class:active={activeTab === "success"}
-                                onclick={() => {
-                                    activeTab = "success";
-                                }}
-                            >
-                                Success <span class="tab-badge">{jobsState.completedJobs.length}</span>
-                            </button>
-                            <button
-                                type="button"
-                                class="history-tab failed"
-                                class:active={activeTab === "failed"}
-                                onclick={() => {
-                                    activeTab = "failed";
-                                }}
-                            >
-                                Failed <span class="tab-badge">{jobsState.failedJobs.length}</span>
-                            </button>
-                        </div>
                     </div>
 
-                    <!-- Search Input -->
-                    <div class="history-search-container">
-                        <span class="search-icon">
-                            <MaterialIcon iconName="search" />
-                        </span>
-                        <input
-                            type="text"
-                            id="history-search"
-                            class="history-search-field"
-                            placeholder="Search by filename, image UID, job UID, type, or error..."
-                            bind:value={searchQuery}
-                        />
-                        {#if searchQuery}
-                            <button
-                                type="button"
-                                class="clear-search-btn"
-                                onclick={() => {
-                                    searchQuery = "";
-                                }}
-                                title="Clear search"
-                            >
-                                <MaterialIcon iconName="close" />
-                            </button>
-                        {/if}
-                    </div>
-
-                    <!-- Unified Jobs List -->
-                    <div class="jobs-list history-list">
-                        {#each filteredHistory as job (job.uid)}
-                            <div
-                                class="history-job-card"
-                                class:success={job.status === "completed"}
-                                class:failure={job.status === "failed"}
-                            >
-                                <IconBadge
-                                    iconName={job.status === "completed" ? "check" : "error"}
-                                    variant={job.status === "completed" ? "success" : "error"}
-                                    shape="circle"
-                                    size="1.1rem"
-                                    padding="0.45rem"
-                                />
-                                <div class="job-body">
-                                    <div class="job-title-row">
-                                        <span class="job-title-text" title={job.filename || job.image_uid || job.uid}>
-                                            {job.filename || job.image_uid || job.uid}
-                                        </span>
-                                        <Badge variant="neutral" size="std"
-                                            >{(job.type || job.topic).toUpperCase()}</Badge
-                                        >
-                                    </div>
-                                    <div class="job-meta-row">
-                                        {#if job.status === "completed"}
-                                            <span class="job-duration">
-                                                Completed in {formatDuration(
-                                                    getStartTimeDate(job),
-                                                    getEndTimeDate(job)
-                                                )}
-                                            </span>
-                                        {:else}
-                                            <span class="job-error-text" title={job.error}>
-                                                Error: {job.error || "Unknown error"}
-                                            </span>
-                                        {/if}
-                                        <span class="separator">•</span>
-                                        <span class="job-time">
-                                            {getEndTimeDate(job).toLocaleString()}
-                                        </span>
-                                    </div>
-                                </div>
-                            </div>
-                        {:else}
-                            <div class="empty-state-placeholder history-empty">
-                                <MaterialIcon iconName="history" class="empty-icon" />
-                                <p>
-                                    {searchQuery ? "No history matches your search" : "No job history yet"}
-                                </p>
-                            </div>
-                        {/each}
-                    </div>
+                    <Table
+                        name="admin-job-history"
+                        data={filteredHistory}
+                        columns={historyColumns}
+                        toolbar={historyToolbar}
+                        expandable
+                        expandedRow={jobExpandedRow}
+                        columnLines
+                        resizable
+                        columnsEditable
+                        emptyMessage={searchQuery ? "No history matches your search" : "No job history yet"}
+                    />
                 </section>
             </div>
 
@@ -505,8 +515,8 @@
             flex-direction: column;
         }
 
-        &.history-unified-section {
-            height: 35rem;
+        &.history-table-section {
+            min-height: 25rem;
             display: flex;
             flex-direction: column;
         }
@@ -608,13 +618,11 @@
         padding: var(--viz-spacing-xs) var(--viz-spacing-md);
         font-size: var(--viz-font-size-std);
         font-weight: 600;
-        text-transform: uppercase;
-        letter-spacing: 0.05em;
         color: var(--viz-text-secondary);
         cursor: pointer;
         display: flex;
         align-items: center;
-        gap: var(--viz-spacing-xs);
+        gap: var(--viz-spacing-sm);
         transition:
             color 0.15s ease,
             border-color 0.15s ease;
@@ -668,58 +676,12 @@
         }
     }
 
-    .history-search-container {
-        position: relative;
+    .table-history-toolbar {
         display: flex;
         align-items: center;
+        gap: var(--viz-spacing-md);
+        flex-wrap: wrap;
         width: 100%;
-        min-height: 2.5rem;
-        background-color: var(--viz-surface-panel);
-        box-shadow: 0 -1px 0 var(--viz-border-subtle) inset;
-        transition: box-shadow 0.2s ease;
-
-        &:focus-within {
-            box-shadow: 0 -2px 0 var(--viz-primary) inset;
-        }
-
-        .search-icon {
-            display: flex;
-            align-items: center;
-            padding-left: var(--viz-spacing-md);
-            color: var(--viz-text-secondary);
-            pointer-events: none;
-        }
-
-        .history-search-field {
-            flex: 1;
-            border: none;
-            background: transparent;
-            padding: var(--viz-spacing-sm) var(--viz-spacing-md);
-            font-size: var(--viz-font-size-lg);
-            color: var(--viz-text-primary);
-            font-family: var(--viz-display-font);
-            outline: none;
-
-            &::placeholder {
-                color: var(--viz-text-secondary);
-            }
-        }
-
-        .clear-search-btn {
-            border: none;
-            background: transparent;
-            color: var(--viz-text-secondary);
-            cursor: pointer;
-            padding: 0 var(--viz-spacing-md);
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            transition: color 0.15s ease;
-
-            &:hover {
-                color: var(--viz-text-primary);
-            }
-        }
     }
 
     .section-header-compact {
@@ -989,75 +951,44 @@
         overflow: hidden;
     }
 
-    .history-job-card {
+    .job-error-duration {
+        color: var(--viz-error-color);
+        font-weight: 600;
+    }
+
+    .job-time-cell {
+        color: var(--viz-text-muted);
+    }
+
+    .job-expanded-details {
         display: flex;
-        align-items: center;
+        flex-direction: column;
         gap: var(--viz-spacing-md);
-        padding: var(--viz-spacing-md) var(--viz-spacing-lg);
-        background-color: var(--viz-surface-panel);
-        border: var(--viz-border-thin);
-        border-radius: var(--viz-border-radius-md);
-        flex-shrink: 0;
-        transition:
-            border-color 0.2s ease,
-            background-color 0.2s ease;
+        padding: var(--viz-spacing-sm) 0;
 
-        &:hover {
-            border-color: var(--viz-border-subtle);
-            background-color: var(--viz-surface-hover);
-        }
-
-        &.success {
-            border-left: 4px solid var(--viz-success-color);
-        }
-
-        &.failure {
-            border-left: 4px solid var(--viz-error-color);
-        }
-
-        .job-body {
-            flex: 1;
-            min-width: 0;
-            display: flex;
-            flex-direction: column;
-            gap: var(--viz-spacing-xxs);
-        }
-
-        .job-title-row {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
+        .job-meta-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
             gap: var(--viz-spacing-md);
+            padding: var(--viz-spacing-md);
+            background-color: var(--viz-surface-panel);
+            border: var(--viz-border-thin);
+            border-radius: var(--viz-border-radius-md);
 
-            .job-title-text {
-                font-size: var(--viz-font-size-lg);
-                font-weight: 600;
-                color: var(--viz-text-primary);
-                white-space: nowrap;
-                overflow: hidden;
-                text-overflow: ellipsis;
-            }
-        }
+            .meta-item {
+                display: flex;
+                flex-direction: column;
+                gap: var(--viz-spacing-xxs);
 
-        .job-meta-row {
-            display: flex;
-            align-items: center;
-            gap: var(--viz-spacing-xs);
-            font-size: var(--viz-font-size-std);
-            color: var(--viz-text-secondary);
+                .meta-label {
+                    color: var(--viz-text-secondary);
+                }
 
-            .job-duration,
-            .job-time {
-                font-family: var(--viz-mono-font);
-            }
-
-            .job-error-text {
-                color: var(--viz-text-primary);
-                font-family: var(--viz-mono-font);
-                white-space: nowrap;
-                overflow: hidden;
-                text-overflow: ellipsis;
-                max-width: 80%;
+                .meta-value {
+                    font-size: var(--viz-font-size-std);
+                    color: var(--viz-text-primary);
+                    word-break: break-all;
+                }
             }
         }
     }

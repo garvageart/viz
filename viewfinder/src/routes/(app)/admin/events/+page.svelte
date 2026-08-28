@@ -9,6 +9,7 @@
     import InputSelect from "$lib/components/ui/InputSelect.svelte";
     import MaterialIcon from "$lib/components/ui/MaterialIcon.svelte";
     import SearchInput from "$lib/components/ui/SearchInput.svelte";
+    import Table, { type TableColumn } from "$lib/components/ui/Table.svelte";
     import { toasts } from "$lib/toast-notifcations/toasts.svelte";
     import type { PageData } from "./$types";
 
@@ -53,17 +54,20 @@
 
         // filter by event name (server returns `event` per OpenAPI schema)
         if (historyFilter !== "all") {
-            filtered = filtered.filter((e) => e.event === historyFilter);
+            filtered = filtered.filter((e) => {
+                return e.event === historyFilter;
+            });
         }
 
         if (historySearch) {
             const search = historySearch.toLowerCase();
-            filtered = filtered.filter(
-                (e) =>
+            filtered = filtered.filter((e) => {
+                return (
                     String(e.event || "")
                         .toLowerCase()
                         .includes(search) || JSON.stringify(e.data).toLowerCase().includes(search)
-            );
+                );
+            });
         }
 
         return filtered;
@@ -81,7 +85,9 @@
 
     let filterOptions = $derived([
         { value: "all", label: "All Events" },
-        ...eventTypes.map((type) => ({ value: type, label: type }))
+        ...eventTypes.map((type) => {
+            return { value: type, label: type };
+        })
     ]);
 
     function formatTimestamp(ts: string): string {
@@ -91,7 +97,9 @@
     function getMaxEventCount(): number {
         const eventsByType = metrics.eventsByType as Record<string, number>;
         const values = Object.values(eventsByType || {});
-        const nums = values.map((v) => (typeof v === "number" ? v : Number(v) || 0));
+        const nums = values.map((v) => {
+            return typeof v === "number" ? v : Number(v) || 0;
+        });
         return nums.length ? Math.max(...nums) : 0;
     }
 
@@ -104,7 +112,54 @@
     function formatJSON(data: any): string {
         return JSON.stringify(data, null, 2);
     }
+
+    const eventColumns: TableColumn<EventHistoryItem>[] = [
+        { key: "event", header: "Event", cell: eventNameCell, sortable: true },
+        { key: "clientId", header: "Client", cell: clientCell, mono: true, sortable: true },
+        { key: "timestamp", header: "Timestamp", cell: timestampCell, mono: true, sortable: true }
+    ];
 </script>
+
+{#snippet eventNameCell(event: EventHistoryItem)}
+    <Badge variant="outline" size="std">{event.event}</Badge>
+{/snippet}
+
+{#snippet clientCell(event: EventHistoryItem)}
+    <span class="client-tag font-mono">
+        <MaterialIcon iconName="devices" size="0.85rem" />
+        {event?.data?.clientId ?? "system"}
+    </span>
+{/snippet}
+
+{#snippet timestampCell(event: EventHistoryItem)}
+    <span class="timestamp-cell">{formatTimestamp(event.timestamp)}</span>
+{/snippet}
+
+{#snippet eventExpandedPayload(event: EventHistoryItem)}
+    <div class="stream-payload">
+        <div class="payload-title">JSON Payload</div>
+        <pre class="json-box">{formatJSON(event.data)}</pre>
+    </div>
+{/snippet}
+
+{#snippet tableToolbar()}
+    <div class="console-controls">
+        <SearchInput
+            inputId="event-history-search"
+            placeholder="Search event type, client ID, or payload..."
+            bind:value={historySearch}
+            style="flex: 1; min-width: 280px; height: 2.5rem;"
+        />
+        <div class="filter-group">
+            <InputSelect bind:value={historyFilter} aria-label="Filter by event type" options={filterOptions} />
+        </div>
+        <Badge variant="neutral" size="std">{filteredHistory.length} / {history.length} Logs</Badge>
+        <Button variant="danger" onclick={requestClearHistory}>
+            <MaterialIcon iconName="delete_sweep" size="1.1rem" />
+            <span>Clear Logs</span>
+        </Button>
+    </div>
+{/snippet}
 
 <AdminRouteShell heading="Event Monitor" description="WebSocket metrics and event history">
     <div class="admin-page-content">
@@ -194,71 +249,17 @@
             </div>
         {/if}
 
-        <!-- 4. Direct Stream Console Controls & Log Feed -->
-        <div class="console-controls">
-            <SearchInput
-                inputId="event-history-search"
-                placeholder="Search event type, client ID, or payload..."
-                bind:value={historySearch}
-                style="flex: 1; min-width: 280px; height: 2.5rem;"
-            />
-            <div class="filter-group">
-                <InputSelect bind:value={historyFilter} aria-label="Filter by event type" options={filterOptions} />
-            </div>
-            <Button variant="danger" onclick={requestClearHistory}>
-                <MaterialIcon iconName="delete_sweep" size="1.1rem" />
-                <span>Clear Logs</span>
-            </Button>
-        </div>
-
-        <div class="stream-console-container">
-            <div class="console-header">
-                <div class="console-title">
-                    <IconBadge iconName="history" bgColor="#f43f5e" color="#ffffff" size="1rem" padding="0.3rem" />
-                    <span>Real-time Stream Console</span>
-                </div>
-                <Badge variant="neutral" size="std">{filteredHistory.length} / {history.length} Logs</Badge>
-            </div>
-
-            {#if filteredHistory.length === 0}
-                <div class="empty-state">
-                    <IconBadge
-                        iconName="inbox"
-                        bgColor="var(--viz-surface-hover)"
-                        color="var(--viz-text-secondary)"
-                        size="2rem"
-                        padding="0.75rem"
-                    />
-                    <p>No event records found</p>
-                    <span class="empty-subtext">Try clearing search filters or wait for incoming WebSocket streams</span
-                    >
-                </div>
-            {:else}
-                <div class="stream-feed">
-                    {#each filteredHistory as event}
-                        <details class="stream-card">
-                            <summary class="stream-summary">
-                                <div class="stream-main">
-                                    <Badge variant="outline" size="std">{event.event}</Badge>
-                                    <span class="client-tag font-mono">
-                                        <MaterialIcon iconName="devices" size="0.85rem" />
-                                        {event?.data?.clientId ?? "system"}
-                                    </span>
-                                </div>
-                                <div class="stream-right">
-                                    <span class="timestamp font-mono">{formatTimestamp(event.timestamp)}</span>
-                                    <MaterialIcon iconName="chevron_right" class="expand-icon" size="1.2rem" />
-                                </div>
-                            </summary>
-                            <div class="stream-payload">
-                                <div class="payload-title">JSON Payload</div>
-                                <pre class="json-box">{formatJSON(event.data)}</pre>
-                            </div>
-                        </details>
-                    {/each}
-                </div>
-            {/if}
-        </div>
+        <!-- 4. Real-time Stream Table -->
+        <Table
+            name="admin-events-stream"
+            data={filteredHistory}
+            columns={eventColumns}
+            toolbar={tableToolbar}
+            expandable
+            expandedRow={eventExpandedPayload}
+            resizable
+            emptyMessage="No event records found"
+        />
     </div>
 </AdminRouteShell>
 
@@ -427,147 +428,26 @@
         align-items: center;
         gap: var(--viz-spacing-md);
         flex-wrap: wrap;
+        width: 100%;
 
         .filter-group {
             width: 12.5rem;
         }
     }
 
-    .stream-console-container {
-        background-color: var(--viz-surface-card);
-        border: var(--viz-border-thin);
-        border-radius: var(--viz-border-radius-md);
-        overflow: hidden;
-    }
-
-    .console-header {
-        display: flex;
-        justify-content: space-between;
+    .client-tag {
+        display: inline-flex;
         align-items: center;
-        padding: var(--viz-spacing-sm) var(--viz-spacing-lg);
-        background-color: var(--viz-surface-panel);
-        border-bottom: var(--viz-border-thin);
-
-        .console-title {
-            display: flex;
-            align-items: center;
-            gap: var(--viz-spacing-sm);
-            font-weight: 600;
-            font-size: var(--viz-font-size-std);
-            color: var(--viz-text-primary);
-        }
-    }
-
-    .empty-state {
-        display: flex;
-        flex-direction: column;
-        align-items: center;
-        justify-content: center;
-        padding: var(--viz-spacing-xxl) var(--viz-spacing-std);
+        gap: var(--viz-spacing-xs);
         color: var(--viz-text-secondary);
-        text-align: center;
-
-        p {
-            margin: var(--viz-spacing-xs) 0 0 0;
-            font-size: var(--viz-font-size-lg);
-            font-weight: 600;
-            color: var(--viz-text-primary);
-        }
-
-        .empty-subtext {
-            color: var(--viz-text-muted);
-            margin-top: var(--viz-spacing-xxs);
-        }
     }
 
-    .stream-feed {
-        display: flex;
-        flex-direction: column;
-        max-height: 60vh;
-        overflow-y: auto;
-
-        &::-webkit-scrollbar {
-            width: 6px;
-        }
-        &::-webkit-scrollbar-track {
-            background: transparent;
-        }
-        &::-webkit-scrollbar-thumb {
-            background: var(--viz-surface-hover);
-            border-radius: var(--viz-border-radius-pill);
-        }
-    }
-
-    .stream-card {
-        border-bottom: var(--viz-border-thin);
-        transition: background-color 0.15s ease;
-
-        &:last-child {
-            border-bottom: none;
-        }
-
-        &[open] {
-            .stream-summary {
-                background-color: var(--viz-surface-hover);
-
-                :global(.expand-icon) {
-                    transform: rotate(90deg);
-                }
-            }
-        }
-    }
-
-    .stream-summary {
-        display: flex;
-        justify-content: space-between;
-        align-items: center;
-        padding: var(--viz-spacing-md) var(--viz-spacing-lg);
-        cursor: pointer;
-        list-style: none;
-        user-select: none;
-        transition: background-color 0.15s ease;
-
-        &::marker {
-            display: none;
-        }
-
-        &:hover {
-            background-color: var(--viz-surface-hover);
-        }
-
-        .stream-main {
-            display: flex;
-            align-items: center;
-            gap: var(--viz-spacing-md);
-        }
-
-        .client-tag {
-            display: inline-flex;
-            align-items: center;
-            gap: var(--viz-spacing-xs);
-            color: var(--viz-text-secondary);
-        }
-
-        .stream-right {
-            display: flex;
-            align-items: center;
-            gap: var(--viz-spacing-md);
-        }
-
-        .timestamp {
-            color: var(--viz-text-muted);
-        }
-
-        :global(.expand-icon) {
-            color: var(--viz-text-secondary);
-            transition: transform 0.2s ease;
-        }
+    .timestamp-cell {
+        color: var(--viz-text-muted);
     }
 
     .stream-payload {
-        padding: var(--viz-spacing-md) var(--viz-spacing-lg);
-        background-color: var(--viz-surface-base);
-        border-top: var(--viz-border-thin);
+        padding: var(--viz-spacing-sm) 0;
 
         .payload-title {
             color: var(--viz-text-muted);

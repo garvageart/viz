@@ -160,11 +160,11 @@
     }
 
     const userColumns: TableColumn<User>[] = [
-        { key: "user", header: "User" },
-        { key: "email", header: "Email" },
-        { key: "role", header: "Role" },
-        { key: "created_at", header: "Joined" },
-        { key: "actions", header: "Actions", align: "right" }
+        { key: "uid", header: "UID", mono: true, sortable: true },
+        { key: "name", header: "User", cell: userCellSnippet, sortable: true },
+        { key: "email", header: "Email", sortable: true },
+        { key: "role", header: "Role", cell: roleCellSnippet, sortable: true },
+        { key: "created_at", header: "Joined", cell: joinedCellSnippet, sortable: true }
     ];
 </script>
 
@@ -200,46 +200,43 @@
     {/if}
 {/snippet}
 
-{#snippet usersRow(user: User)}
-    <tr>
-        <td>
-            <div class="user-cell">
-                <AvatarBadge {user} showCurrentUser={true} />
-                <div class="user-info">
-                    <span class="name"
-                        >{user.name || "No Name"}
-                        {user.uid === currentUserState.data?.uid ? "(You)" : ""}</span
-                    >
-                    <span class="uid" title={user.uid}>{user.uid}</span>
-                </div>
-            </div>
-        </td>
-        <td>{user.email}</td>
-        <td>
-            <Badge variant="info"><span>{user.role.toLocaleUpperCase()}</span></Badge>
-        </td>
-        <td>{formatDate(user.created_at)}</td>
-        <td>
-            <div class="actions-cell">
-                <Button
-                    iconName="person_edit"
-                    grade={-25}
-                    size="small"
-                    class="action-btn edit"
-                    onclick={() => openEditModal(user)}
-                    title="Edit User"
-                />
-                <Button
-                    iconName="person_remove"
-                    grade={-25}
-                    size="small"
-                    class="action-btn delete"
-                    onclick={() => openDeleteConfirm(user)}
-                    title="Delete User"
-                />
-            </div>
-        </td>
-    </tr>
+{#snippet userCellSnippet(user: User)}
+    <div class="user-cell">
+        <AvatarBadge {user} showCurrentUser={true} />
+        <span class="name">
+            {user.name || "No Name"}
+            {user.uid === currentUserState.data?.uid ? "(You)" : ""}
+        </span>
+    </div>
+{/snippet}
+
+{#snippet roleCellSnippet(user: User)}
+    <Badge variant="info"><span>{user.role.toLocaleUpperCase()}</span></Badge>
+{/snippet}
+
+{#snippet joinedCellSnippet(user: User)}
+    <span>{formatDate(user.created_at)}</span>
+{/snippet}
+
+{#snippet userActionsSnippet(user: User)}
+    <div class="actions-cell">
+        <Button
+            iconName="person_edit"
+            grade={-25}
+            size="small"
+            class="action-btn edit"
+            onclick={() => openEditModal(user)}
+            title="Edit User"
+        />
+        <Button
+            iconName="person_remove"
+            grade={-25}
+            size="small"
+            class="action-btn delete"
+            onclick={() => openDeleteConfirm(user)}
+            title="Delete User"
+        />
+    </div>
 {/snippet}
 
 <AdminRouteShell heading="User Management" description="Manage user accounts, roles, and permissions.">
@@ -249,93 +246,26 @@
         </Button>
     {/snippet}
 
-    <section class="content-section">
-        <div class="users-table-container">
-            <Table data={users} columns={userColumns} rows={usersRow} emptyMessage="No users found." />
-        </div>
-    </section>
+    <Table
+        name="admin-users"
+        data={users}
+        columns={userColumns}
+        rowActions={userActionsSnippet}
+        resizable
+        emptyMessage="No users found."
+    />
 </AdminRouteShell>
 
 <style lang="scss">
-    .content-section {
-        background-color: var(--viz-surface-panel);
-        border: var(--viz-border-thin);
-        border-radius: var(--viz-border-radius-md);
-        padding: var(--viz-spacing-xl);
-    }
-
-    .users-table-container {
-        overflow-x: auto;
-    }
-
-    .users-table-container :global(.viz-table-container) {
-        width: 100%;
-        border: none;
-        border-radius: 0;
-        background: transparent;
-        overflow: visible;
-    }
-
-    .users-table-container :global(.viz-table) {
-        width: 100%;
-        border-collapse: collapse;
-        font-size: var(--viz-font-size-lg);
-    }
-
-    .users-table-container :global(.viz-table tr) {
-        transition: background-color 0.15s ease;
-    }
-
-    .users-table-container :global(.viz-table tr:hover) {
-        background-color: var(--viz-surface-panel);
-    }
-
-    .users-table-container :global(.viz-table thead th) {
-        text-align: left;
-        padding: var(--viz-spacing-md) var(--viz-spacing-sm);
-        color: var(--viz-text-secondary);
-        font-weight: 600;
-        font-size: var(--viz-font-size-std);
-        text-transform: uppercase;
-        letter-spacing: 0.05em;
-        border-bottom: var(--viz-border-thin);
-    }
-
-    .users-table-container :global(.viz-table thead th.align-right) {
-        text-align: right;
-    }
-
-    .users-table-container :global(.viz-table td) {
-        padding: var(--viz-spacing-md) var(--viz-spacing-sm);
-        border-bottom: var(--viz-border-thin);
-        vertical-align: middle;
-    }
-
-    .users-table-container :global(.viz-table tr:last-child td) {
-        border-bottom: none;
-    }
-
     .user-cell {
         display: flex;
         align-items: center;
         gap: var(--viz-spacing-std);
     }
 
-    .user-info {
-        display: flex;
-        flex-direction: column;
-        gap: var(--viz-spacing-xxs);
-    }
-
     .name {
         font-weight: 500;
         color: var(--viz-text-primary);
-    }
-
-    .uid {
-        font-size: var(--viz-font-size-std);
-        color: var(--viz-text-secondary);
-        font-family: var(--viz-mono-font);
     }
 
     .actions-cell {
