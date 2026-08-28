@@ -35,6 +35,8 @@ jobs:
             short_sha: ${{ steps.set-sha.outputs.short_sha }}
             tag_name: ${{ steps.set-sha.outputs.tag_name }}
             is_release: ${{ steps.set-sha.outputs.is_release }}
+            is_prerelease: ${{ steps.set-sha.outputs.is_prerelease }}
+            notes: ${{ steps.set-sha.outputs.notes }}
         steps:
             - name: Checkout Code
               uses: actions/checkout@v4
@@ -43,7 +45,7 @@ jobs:
                   fetch-tags: true
                   submodules: recursive
 
-            - name: Set Commit SHA and Tag Outputs
+            - name: Set Commit SHA and Release Outputs
               id: set-sha
               run: |
                   git fetch --tags --force origin 2>/dev/null || git fetch --tags --force 2>/dev/null || true
@@ -60,8 +62,36 @@ jobs:
 
                   if [ -n "$TAG_NAME" ] && [[ "$TAG_NAME" =~ ^v[0-9] ]]; then
                     echo "is_release=true" >> "$GITHUB_OUTPUT"
+
+                    VERSION="${TAG_NAME#v}"
+                    NOTES=""
+                    if [ -f CHANGELOG.md ]; then
+                      NOTES=$(awk -v ver="$VERSION" '
+                        $0 ~ ("## \\[" ver "\\]") { flag=1; next }
+                        flag && /^## / { flag=0 }
+                        flag { print }
+                      ' CHANGELOG.md | sed -e '/^[[:space:]]*$/d')
+                    fi
+
+                    if [ -z "$NOTES" ]; then
+                      NOTES="Release $TAG_NAME"
+                    fi
+
+                    if [[ "$TAG_NAME" == *"-rc"* ]]; then
+                      echo "is_prerelease=true" >> "$GITHUB_OUTPUT"
+                    else
+                      echo "is_prerelease=false" >> "$GITHUB_OUTPUT"
+                    fi
+
+                    {
+                      echo "notes<<EOF"
+                      echo "$NOTES"
+                      echo "EOF"
+                    } >> "$GITHUB_OUTPUT"
                   else
                     echo "is_release=false" >> "$GITHUB_OUTPUT"
+                    echo "is_prerelease=false" >> "$GITHUB_OUTPUT"
+                    echo "notes=" >> "$GITHUB_OUTPUT"
                   fi
 
             - name: Set up Docker Buildx
@@ -417,65 +447,12 @@ jobs:
         needs: [build-images, test-frontend, test-backend, test-e2e, publish-images]
         runs-on: ubuntu-latest
         steps:
-            - name: Checkout Code
-              uses: actions/checkout@v4
-              with:
-                  fetch-depth: 0
-                  fetch-tags: true
-
-            - name: Detect Tag & Extract Release Notes
-              id: release-notes
-              run: |
-                  git fetch --tags --force origin 2>/dev/null || git fetch --tags --force 2>/dev/null || true
-                  TAG_NAME=$(git tag --points-at HEAD | grep -E '^v[0-9]' | head -n 1)
-                  if [ -z "$TAG_NAME" ]; then
-                    TAG_NAME=$(git describe --tags --exact-match 2>/dev/null || true)
-                  fi
-                  if [ -z "$TAG_NAME" ] && [ -n "${{ needs.build-images.outputs.tag_name }}" ]; then
-                    TAG_NAME="${{ needs.build-images.outputs.tag_name }}"
-                  fi
-                  if [ -z "$TAG_NAME" ] || [[ ! "$TAG_NAME" =~ ^v[0-9] ]]; then
-                    echo "No version tag found on current commit. Skipping release creation."
-                    echo "has_tag=false" >> "$GITHUB_OUTPUT"
-                    exit 0
-                  fi
-
-                  echo "has_tag=true" >> "$GITHUB_OUTPUT"
-                  echo "tag_name=$TAG_NAME" >> "$GITHUB_OUTPUT"
-
-                  VERSION="${TAG_NAME#v}"
-                  NOTES=""
-                  if [ -f CHANGELOG.md ]; then
-                    NOTES=$(awk -v ver="$VERSION" '
-                      $0 ~ ("## \\[" ver "\\]") { flag=1; next }
-                      flag && /^## / { flag=0 }
-                      flag { print }
-                    ' CHANGELOG.md | sed -e '/^[[:space:]]*$/d')
-                  fi
-
-                  if [ -z "$NOTES" ]; then
-                    NOTES="Release $TAG_NAME"
-                  fi
-
-                  if [[ "$TAG_NAME" == *"-rc"* ]]; then
-                    echo "is_prerelease=true" >> "$GITHUB_OUTPUT"
-                  else
-                    echo "is_prerelease=false" >> "$GITHUB_OUTPUT"
-                  fi
-
-                  {
-                    echo "notes<<EOF"
-                    echo "$NOTES"
-                    echo "EOF"
-                  } >> "$GITHUB_OUTPUT"
-
             - name: Create Release
               uses: https://github.com/softprops/action-gh-release@v2
-              if: steps.release-notes.outputs.has_tag == 'true'
               with:
-                  tag_name: ${{ steps.release-notes.outputs.tag_name }}
-                  name: ${{ steps.release-notes.outputs.tag_name }}
-                  body: ${{ steps.release-notes.outputs.notes }}
+                  tag_name: ${{ needs.build-images.outputs.tag_name }}
+                  name: ${{ needs.build-images.outputs.tag_name }}
+                  body: ${{ needs.build-images.outputs.notes }}
                   draft: false
-                  prerelease: ${{ steps.release-notes.outputs.is_prerelease == 'true' }}
+                  prerelease: ${{ needs.build-images.outputs.is_prerelease == 'true' }}
                   token: ${{ secrets.REGISTRY_TOKEN || secrets.GITHUB_TOKEN }}
