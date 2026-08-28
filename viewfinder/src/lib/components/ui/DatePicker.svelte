@@ -1,10 +1,12 @@
 <script lang="ts">
     import { CalendarDateTime, type DateValue } from "@internationalized/date";
-    import { DatePicker, TimeField } from "bits-ui";
-    import { type Snippet, getContext } from "svelte";
+    import { DatePicker } from "bits-ui";
+    import hotkeys from "hotkeys-js";
+    import { type Snippet, getContext, onMount } from "svelte";
     import Button from "$lib/components/ui/Button.svelte";
     import InputSelect from "$lib/components/ui/InputSelect.svelte";
     import MaterialIcon from "$lib/components/ui/MaterialIcon.svelte";
+    import TimeInputField from "$lib/components/ui/TimeInputField.svelte";
     import { ContextKeys } from "$lib/context-keys";
     import { localeState } from "$lib/states/locale.svelte";
     import { calendarDateTimeToDate, toCalendarDateTime } from "$lib/utils/dates";
@@ -63,7 +65,11 @@
 
         isDateSelecting = true;
 
-        selected = v as CalendarDateTime;
+        if ("hour" in v) {
+            selected = v as CalendarDateTime;
+        } else {
+            selected = new CalendarDateTime(v.year, v.month, v.day, selected.hour, selected.minute, selected.second);
+        }
         lastMs = calendarDateTimeToDate(selected).getTime();
 
         emitDate();
@@ -73,11 +79,11 @@
         }, 0);
     }
 
-    function handleTimeSelect(v: DateValue | undefined) {
+    function handleTimeSelect(v: CalendarDateTime | undefined) {
         if (!v) {
             return;
         }
-        selected = v as CalendarDateTime;
+        selected = v;
         lastMs = calendarDateTimeToDate(selected).getTime();
         emitDate();
     }
@@ -93,6 +99,24 @@
         onclose?.();
     }
 
+    onMount(() => {
+        const handleEsc = (e: KeyboardEvent) => {
+            if (!open) {
+                return;
+            }
+
+            e.preventDefault();
+            e.stopPropagation();
+            closeCalendar();
+        };
+
+        hotkeys("esc, escape", "*", handleEsc);
+
+        return () => {
+            hotkeys.unbind("esc, escape", "*", handleEsc);
+        };
+    });
+
     function handleOpenChange(o: boolean) {
         if (!o && isDateSelecting && showTime) {
             open = true;
@@ -102,6 +126,7 @@
         if (open && !o) {
             onclose?.();
         }
+
         open = o;
     }
 
@@ -167,9 +192,9 @@
     {#if children}
         <DatePicker.Input class="cal-hidden-input">
             {#snippet children({ segments })}
-                {#each segments as { part, value }, i (part + i)}
+                {#each segments as { part, value: segmentValue }, i (part + i)}
                     <DatePicker.Segment {part}>
-                        {value}
+                        {segmentValue}
                     </DatePicker.Segment>
                 {/each}
             {/snippet}
@@ -191,6 +216,13 @@
                 e.preventDefault();
             }}
             onkeydown={(e) => {
+                if (e.key === "Escape") {
+                    e.preventDefault();
+                    e.stopPropagation();
+                    closeCalendar();
+                    return;
+                }
+
                 e.stopPropagation();
             }}
             style={popoverZIndex ? `z-index: ${popoverZIndex}` : undefined}
@@ -270,27 +302,7 @@
             </DatePicker.Calendar>
             {#if showTime}
                 <div class="time-picker-section">
-                    <TimeField.Root
-                        value={selected}
-                        onValueChange={handleTimeSelect}
-                        granularity="second"
-                        locale={localeState}
-                    >
-                        <TimeField.Label class="time-label">Time</TimeField.Label>
-                        <TimeField.Input class="time-input">
-                            {#snippet children({ segments })}
-                                {#each segments as { part, value }, i (part + i)}
-                                    {#if part === "literal"}
-                                        <span class="time-separator">{value}</span>
-                                    {:else}
-                                        <TimeField.Segment {part} class="time-segment">
-                                            {value}
-                                        </TimeField.Segment>
-                                    {/if}
-                                {/each}
-                            {/snippet}
-                        </TimeField.Input>
-                    </TimeField.Root>
+                    <TimeInputField value={selected} onValueChange={handleTimeSelect} />
                 </div>
             {/if}
         </DatePicker.Content>
@@ -514,47 +526,6 @@
         transition: all 120ms ease;
     }
 
-    :global(.time-picker-section) {
-        border-top: 1px solid var(--viz-surface-hover);
-        padding-top: var(--viz-spacing-sm);
-    }
-
-    :global(.time-label) {
-        display: block;
-        font-weight: 600;
-        color: var(--viz-text-secondary);
-        margin-bottom: 0.35rem;
-    }
-
-    :global(.time-input) {
-        display: flex;
-        align-items: center;
-        padding: var(--viz-spacing-xs) var(--viz-spacing-xs);
-        background: var(--viz-surface-panel);
-        border: 1px solid var(--viz-surface-hover);
-        border-radius: var(--viz-border-radius-sm);
-        font-size: var(--viz-font-size-lg);
-        font-weight: 400;
-        color: var(--viz-text-secondary);
-        font-family: var(--viz-mono-font);
-    }
-
-    :global(.time-separator) {
-        color: var(--viz-text-secondary);
-    }
-
-    :global(.time-segment) {
-        padding: var(--viz-spacing-xxs) var(--viz-spacing-xs);
-        border-radius: var(--viz-border-radius-sm);
-        color: var(--viz-text-secondary);
-
-        &:focus-visible {
-            outline: 1px solid var(--viz-primary);
-            background: var(--viz-surface-hover) !important;
-            outline: 1px solid var(--viz-primary) !important;
-        }
-    }
-
     :global(.calendar-trigger-slot) {
         display: inline-flex;
         align-items: center;
@@ -565,6 +536,12 @@
         color: inherit;
         width: 100%;
         text-align: left;
+        border-radius: var(--viz-border-radius-sm);
+
+        &:focus-visible {
+            outline: 2px solid var(--viz-primary);
+            outline-offset: 2px;
+        }
     }
 
     :global(.calendar-trigger) {
@@ -578,6 +555,11 @@
         padding: 0.2rem;
         border-radius: var(--viz-border-radius-sm);
         transition: all 120ms ease;
+
+        &:focus-visible {
+            outline: 2px solid var(--viz-primary);
+            outline-offset: 1px;
+        }
     }
 
     :global(.calendar-trigger:hover) {
