@@ -45,7 +45,7 @@
             data-index={index}
             tabindex={active ? 0 : -1}
         >
-            {@render item.content()}
+            {@render item.content(item, index)}
         </div>
     {:else}
         <button
