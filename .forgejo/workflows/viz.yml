@@ -46,9 +46,13 @@ jobs:
             - name: Set Commit SHA and Tag Outputs
               id: set-sha
               run: |
+                  git fetch --tags --force origin 2>/dev/null || git fetch --tags --force 2>/dev/null || true
                   COMMIT_HASH=$(git rev-parse HEAD)
                   SHORT_HASH=$(git rev-parse --short HEAD)
-                  TAG_NAME=$(git describe --tags --exact-match 2>/dev/null || true)
+                  TAG_NAME=$(git tag --points-at HEAD | grep -E '^v[0-9]' | head -n 1)
+                  if [ -z "$TAG_NAME" ]; then
+                    TAG_NAME=$(git describe --tags --exact-match 2>/dev/null || true)
+                  fi
 
                   echo "sha=${COMMIT_HASH}" >> "$GITHUB_OUTPUT"
                   echo "short_sha=${SHORT_HASH}" >> "$GITHUB_OUTPUT"
@@ -422,7 +426,11 @@ jobs:
             - name: Detect Tag & Extract Release Notes
               id: release-notes
               run: |
-                  TAG_NAME=$(git describe --tags --exact-match 2>/dev/null || true)
+                  git fetch --tags --force origin 2>/dev/null || git fetch --tags --force 2>/dev/null || true
+                  TAG_NAME=$(git tag --points-at HEAD | grep -E '^v[0-9]' | head -n 1)
+                  if [ -z "$TAG_NAME" ]; then
+                    TAG_NAME=$(git describe --tags --exact-match 2>/dev/null || true)
+                  fi
                   if [ -z "$TAG_NAME" ] && [ -n "${{ needs.build-images.outputs.tag_name }}" ]; then
                     TAG_NAME="${{ needs.build-images.outputs.tag_name }}"
                   fi
