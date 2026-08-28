@@ -5,6 +5,11 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.32.20] - 2026-08-28
+
+* fix(ui): lower navigation progress bar z-index to chrome level (4cfc5633)
+* test(fixtures): replace oversized sample images with lightweight EXIF-preserved fixtures (fb2359fb)
+
 ## [0.32.19] - 2026-08-28
 
 * docs: update overview and feature highlights in readme (94164a3a)

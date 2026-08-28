@@ -1,7 +1,7 @@
 {
     "name": "@viz/viewfinder",
     "private": true,
-    "version": "0.32.19",
+    "version": "0.32.20",
     "type": "module",
     "license": "AGPL-3.0",
     "engines": {
