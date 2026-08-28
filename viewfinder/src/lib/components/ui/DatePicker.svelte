@@ -45,6 +45,7 @@
     }
 
     let selected = $state<CalendarDateTime>(toCalendarDateTime(value));
+    let placeholder = $state<DateValue>(toCalendarDateTime(value));
     let lastMs = getMsWithoutMs(value);
     let isDateSelecting = false;
 
@@ -54,6 +55,7 @@
         const currentMs = getMsWithoutMs(value);
         if (currentMs !== lastMs) {
             selected = toCalendarDateTime(value);
+            placeholder = selected;
             lastMs = currentMs;
         }
     });
@@ -70,6 +72,7 @@
         } else {
             selected = new CalendarDateTime(v.year, v.month, v.day, selected.hour, selected.minute, selected.second);
         }
+        placeholder = selected;
         lastMs = calendarDateTimeToDate(selected).getTime();
 
         emitDate();
@@ -84,6 +87,7 @@
             return;
         }
         selected = v;
+        placeholder = selected;
         lastMs = calendarDateTimeToDate(selected).getTime();
         emitDate();
     }
@@ -127,6 +131,10 @@
             onclose?.();
         }
 
+        if (o) {
+            placeholder = selected;
+        }
+
         open = o;
     }
 
@@ -141,12 +149,12 @@
         return { value: String(yr), label: String(yr) };
     });
 
-    // Bind selected month/year to calendar date
-    let selectedMonth = $derived(String(selected.month));
-    let selectedYear = $derived(String(selected.year));
+    // Bind selected month/year to calendar view (placeholder)
+    let selectedMonth = $derived(String(placeholder.month));
+    let selectedYear = $derived(String(placeholder.year));
 
-    let selectedMonthLabel = $derived(monthsOptions.find((opt) => opt.value === selectedMonth)!.label);
-    let selectedYearLabel = $derived(yearsOptions.find((opt) => opt.value === selectedYear)!.label);
+    let selectedMonthLabel = $derived(monthsOptions.find((opt) => opt.value === selectedMonth)?.label ?? "");
+    let selectedYearLabel = $derived(yearsOptions.find((opt) => opt.value === selectedYear)?.label ?? "");
 
     // Returns the number of days in the given month of the given year.
     function daysInMonth(year: number, month: number): number {
@@ -157,25 +165,19 @@
         const month = Number(val);
         // Clamp the day to the max valid day for the new month to avoid invalid dates
         // (e.g. selecting March when day is 30 or 31).
-        const maxDay = daysInMonth(selected.year, month);
-        const day = Math.min(selected.day, maxDay);
+        const maxDay = daysInMonth(placeholder.year, month);
+        const day = Math.min(placeholder.day, maxDay);
 
-        selected = new CalendarDateTime(selected.year, month, day, selected.hour, selected.minute, selected.second);
-        lastMs = calendarDateTimeToDate(selected).getTime();
-
-        emitDate();
+        placeholder = placeholder.set({ month, day });
     }
 
     function handleYearChange(val: string) {
         const year = Number(val);
         // Clamp day for leap-year edge cases (e.g. Feb 29 in a non-leap year).
-        const maxDay = daysInMonth(year, selected.month);
-        const day = Math.min(selected.day, maxDay);
+        const maxDay = daysInMonth(year, placeholder.month);
+        const day = Math.min(placeholder.day, maxDay);
 
-        selected = new CalendarDateTime(year, selected.month, day, selected.hour, selected.minute, selected.second);
-        lastMs = calendarDateTimeToDate(selected).getTime();
-
-        emitDate();
+        placeholder = placeholder.set({ year, day });
     }
 </script>
 
@@ -183,6 +185,7 @@
     weekdayFormat="short"
     fixedWeeks={true}
     value={selected}
+    bind:placeholder
     onValueChange={handleDateSelect}
     bind:open
     onOpenChange={handleOpenChange}
@@ -416,7 +419,7 @@
         justify-content: space-between !important;
         min-height: 1.75rem !important;
         height: 1.75rem !important;
-        padding: 0 var(--viz-spacing-xs) !important;
+        padding: 0 1.25rem 0 var(--viz-spacing-xs) !important;
         font-size: var(--viz-font-size-std) !important;
         font-weight: 600 !important;
         color: var(--viz-text-primary) !important;
@@ -436,7 +439,7 @@
     }
 
     :global(.calendar-select-trigger.month) {
-        width: 6.2rem !important;
+        width: 7.2rem !important;
     }
 
     :global(.calendar-select-trigger.year) {
@@ -595,10 +598,11 @@
             min-height: 2.25rem !important;
             height: 2.25rem !important;
             font-size: var(--viz-font-size-lg) !important;
+            padding: 0 1.5rem 0 var(--viz-spacing-sm) !important;
         }
 
         :global(.calendar-select-trigger.month) {
-            width: 7.5rem !important;
+            width: 8.5rem !important;
         }
 
         :global(.calendar-select-trigger.year) {
