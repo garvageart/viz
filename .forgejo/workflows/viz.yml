@@ -83,7 +83,7 @@ jobs:
               id: detect-base
               run: |
                   export DOCKER_BUILDKIT=1
-                  DEPS_SHA=$(git log -1 --format=%H -- docker/Dockerfile.base .libvips-version go.mod go.sum go.work go.work.sum cmd/api/go.mod cmd/api/go.sum 2>/dev/null || true)
+                  DEPS_SHA=$(git log -1 --format=%H -- docker/Dockerfile.base .libvips-version go.sum go.work.sum cmd/api/go.sum 2>/dev/null || true)
                   if [ -z "$DEPS_SHA" ]; then
                     DEPS_SHA=$(git rev-parse HEAD)
                   fi
@@ -103,7 +103,7 @@ jobs:
               id: detect-frontend-deps
               run: |
                   export DOCKER_BUILDKIT=1
-                  DEPS_SHA=$(git log -1 --format=%H -- docker/Dockerfile pnpm-lock.yaml pnpm-workspace.yaml package.json .npmrc viewfinder/package.json scripts/js/package.json packages/api/package.json 2>/dev/null || true)
+                  DEPS_SHA=$(git log -1 --format=%H -- pnpm-lock.yaml pnpm-workspace.yaml .npmrc 2>/dev/null || true)
                   if [ -z "$DEPS_SHA" ]; then
                     DEPS_SHA=$(git rev-parse HEAD)
                   fi
