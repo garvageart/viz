@@ -43,6 +43,7 @@
     import { modalsManager } from "$lib/components/modals/manager/ModalManager.svelte";
     import VizViewContainer from "$lib/components/panels/VizViewContainer.svelte";
     import ActiveFiltersTooltip from "$lib/components/tooltips/ActiveFiltersTooltip.svelte";
+    import AssetImage from "$lib/components/ui/AssetImage.svelte";
     import AssetsShell from "$lib/components/ui/AssetsShell.svelte";
     import Badge from "$lib/components/ui/Badge.svelte";
     import Button from "$lib/components/ui/Button.svelte";
@@ -52,11 +53,12 @@
     import ImageLightbox from "$lib/components/ui/ImageLightbox.svelte";
     import InputText from "$lib/components/ui/InputText.svelte";
     import MaterialIcon from "$lib/components/ui/MaterialIcon.svelte";
+    import type { TableColumn } from "$lib/components/ui/Table.svelte";
     import ContextMenu from "$lib/context-menu/ContextMenu.svelte";
     import { getImageGridDisplay } from "$lib/context-menu/menus/image-grid-display";
     import { createImageMenu } from "$lib/context-menu/menus/images";
     import type { MenuItem } from "$lib/context-menu/types";
-    import { LabelColours } from "$lib/images/constants";
+    import { DEFAULT_IMAGE_COLUMNS, LabelColours } from "$lib/images/constants";
     import { ImagePaginationState } from "$lib/images/state.svelte";
     import {
         type ConsolidatedGroup,
@@ -318,6 +320,17 @@
             : sortCollectionImages(filterManager.apply(collectionState.images), collectionDetailSort.value)
     );
 
+    let imageTableColumns: TableColumn<ImageAsset>[] = $derived([
+        {
+            key: "preview",
+            header: "Preview",
+            width: "6.5rem",
+            sortable: false,
+            cell: previewCell
+        },
+        ...DEFAULT_IMAGE_COLUMNS
+    ]);
+
     // Grid props
     let grid: ComponentProps<typeof AssetGrid<ImageAsset>> = $derived({
         assetSnippet: imageCard,
@@ -329,6 +342,7 @@
         assetGridDisplayProps: {
             style: `padding: 2em ${isLayoutPage() ? "1em" : "2em"};`
         },
+        columns: imageTableColumns,
         assetDblClick: (_e, asset: ImageAsset) => {
             lightboxImage = asset;
         },
@@ -834,6 +848,14 @@
     {/if}
 {/snippet}
 
+{#snippet previewCell(asset: ImageAsset)}
+    <div class="asset-table-thumb-cell">
+        <div class="asset-table-thumb-wrapper">
+            <AssetImage {asset} class="asset-table-thumb" alt={asset.name} />
+        </div>
+    </div>
+{/snippet}
+
 {#snippet justifiedGrid()}
     <div class="viz-justified-grid" style="padding: 2em {isLayoutPage() ? '1em' : '2em'};">
         <PhotoAssetGrid
@@ -911,13 +933,13 @@
         >
             <span>Edit</span>
         </Button>
-        <Dropdown title="Options" class="toolbar-button" items={gridCtxMenu} showSelectionIndicator={false}>
-            {#snippet trigger({ toggle, showMenu, title })}
-                <Button iconName="settings" onclick={toggle} class="toolbar-button {showMenu ? 'active' : ''}">
-                    {title}
-                </Button>
-            {/snippet}
-        </Dropdown>
+        <Dropdown
+            iconName="grid_view"
+            title="View"
+            class="toolbar-button"
+            items={gridCtxMenu}
+            showSelectionIndicator={false}
+        ></Dropdown>
         <Dropdown
             class="toolbar-button"
             iconName="more_horiz"
@@ -928,12 +950,12 @@
 {/snippet}
 
 {#snippet noAssetsSnippet()}
-    <div id="add_to_collection-container">
+    <div id="add-to-collection-container">
         <span style="margin: 1em; color: var(--viz-text-secondary); font-size: 1.2rem;"
             >Add images to this collection</span
         >
         <Button
-            id="add_to_collection-button"
+            id="add-to-collection-button"
             style="padding: 2em 8em; display: flex; align-items: center; justify-content: center;"
             title="Select Photos"
             aria-label="Select Photos"
@@ -1127,7 +1149,7 @@
 </VizViewContainer>
 
 <style lang="scss">
-    #add_to_collection-container {
+    #add-to-collection-container {
         display: flex;
         flex-direction: column;
         justify-content: left;
@@ -1281,6 +1303,18 @@
         #coll-name-container :global(input:not([type="submit"])) {
             min-height: auto;
             padding: 0.25rem 0.5rem;
+        }
+    }
+
+    .asset-table-thumb-cell {
+        display: flex;
+        align-items: center;
+
+        .asset-table-thumb-wrapper {
+            width: 6rem;
+            height: 3.5rem;
+            border: var(--viz-border-thin);
+            background: var(--viz-surface-panel);
         }
     }
 </style>

@@ -1,3 +1,7 @@
+import type { ImageAsset } from "@viz/api";
+import { DateTime } from "luxon";
+import type { TableColumn } from "$lib/components/ui/Table.svelte";
+
 export enum LabelColours {
     Red = "#eb1717",
     Orange = "#f17a18",
@@ -7,6 +11,51 @@ export enum LabelColours {
     Green = "#19dd61",
     Blue = "#106ea5"
 }
+
+export const DEFAULT_IMAGE_COLUMNS: TableColumn<ImageAsset>[] = [
+    { key: "name", header: "Name" },
+    {
+        key: "created_at",
+        header: "Created At",
+        formatter: (r) => {
+            const dt = DateTime.fromISO(r.created_at);
+            return dt.setZone("local").toLocaleString(DateTime.DATETIME_SHORT);
+        }
+    },
+    {
+        key: "updated_at",
+        header: "Updated At",
+        formatter: (r) => {
+            const dt = DateTime.fromISO(r.updated_at);
+            return dt.setZone("local").toLocaleString(DateTime.DATETIME_SHORT);
+        }
+    },
+    {
+        key: "taken_at",
+        header: "Taken At",
+        formatter: (r) => {
+            const dt = DateTime.fromISO(r.taken_at);
+            return dt.setZone("local").toLocaleString(DateTime.DATETIME_SHORT);
+        }
+    },
+    { key: "width", header: "Width" },
+    { key: "height", header: "Height" },
+    { key: "description", header: "Description" },
+    {
+        key: "camera",
+        header: "Camera",
+        getValue: (row) =>
+            row.exif?.make && row.exif?.model
+                ? `${row.exif.make} ${row.exif.model}`
+                : (row.exif?.model ?? row.exif?.make)
+    },
+    { key: "lens", header: "Lens", getValue: (row) => row.exif?.lens_model },
+    { key: "focal_length", header: "Focal Length", getValue: (row) => row.exif?.focal_length },
+    { key: "iso", header: "ISO", getValue: (row) => row.exif?.iso },
+    { key: "aperture", header: "Aperture", getValue: (row) => row.exif?.aperture },
+    { key: "shutter_speed", header: "Shutter Speed", getValue: (row) => row.exif?.exposure_time },
+    { key: "rating", header: "Rating", getValue: (row) => row.image_metadata?.rating }
+];
 
 export const flashModes: Record<number, string> = {
     0x0: "Did not fire",

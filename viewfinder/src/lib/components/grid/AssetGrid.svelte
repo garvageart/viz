@@ -1,29 +1,20 @@
 <script lang="ts" generics="T extends { uid: string } & Record<string, any>">
-    import { type ImageAsset } from "@viz/api";
     import hotkeys from "hotkeys-js";
-    import { DateTime } from "luxon";
     import { type Snippet, untrack } from "svelte";
-    import type { SvelteHTMLElements } from "svelte/elements";
+    import type { MouseEventHandler, SvelteHTMLElements } from "svelte/elements";
     import { type Instance, type Props as TippyProps, delegate, followCursor, hideAll } from "tippy.js";
     import "tippy.js/dist/tippy.css";
-    import AssetImage from "$lib/components/ui/AssetImage.svelte";
-    import Button from "$lib/components/ui/Button.svelte";
     import { PhotoGridVirtualizer } from "$lib/components/virtualizer/PhotoGridVirtualizer.svelte.js";
-    import { debugMode, isLayoutPage, isMobile, tableColumnSettings } from "$lib/states/index.svelte";
+    import { debugMode, isLayoutPage, isMobile } from "$lib/states/index.svelte";
     import { selectionManager } from "$lib/states/selection.svelte";
     import { type SortState, photosSort } from "$lib/states/sort.svelte";
     import type { AssetGridArray, AssetGridView, AssetSortBy } from "$lib/types/asset";
     import type { CardVisualState } from "$lib/types/snippet";
-    import { tryParseDate } from "$lib/utils/dates";
     import { getScrollParent } from "$lib/utils/dom";
     import { isAssetImage } from "$lib/utils/images";
-    import { snakeToTitle } from "$lib/utils/strings";
-    import TableColumnSelectorModal from "../modals/TableColumnSelectorModal.svelte";
-    import { modalsManager } from "../modals/manager/ModalManager.svelte";
     import PhotoTooltip from "../tooltips/PhotoTooltip.svelte";
     import { mountTooltipComponent } from "../tooltips/tooltip";
-    import MaterialIcon from "../ui/MaterialIcon.svelte";
-    import Table from "../ui/Table.svelte";
+    import Table, { type TableColumn } from "../ui/Table.svelte";
 
     export interface AssetGridProps<T extends { uid: string } & Record<string, any>> {
         data: T[];
@@ -37,19 +28,12 @@
         noAssetsMessage?: string;
         disableMultiSelection?: boolean;
         assetClick?: () => void;
-        assetDblClick?: (
-            e: MouseEvent & {
-                currentTarget: EventTarget & (HTMLDivElement | HTMLTableRowElement);
-            },
-            asset: T
-        ) => void;
+        assetDblClick?: (e: Parameters<MouseEventHandler<HTMLDivElement | HTMLTableRowElement>>[0], asset: T) => void;
         /** Disable clearing selection when clicking in other grids (useful when multiple grids share one selection set) */
         disableOutsideUnselect?: boolean;
         onassetcontext?: (detail: { asset: T; anchor: { x: number; y: number } | HTMLElement }) => void;
-        /** optional explicit column list for table view (order matters). If omitted, inferred from data. */
-        columns?: string[];
-        /** table config: thumbnail_key is dot-path to thumbnail in each asset, columns overrides visible keys */
-        table?: { thumbnail_key?: string; columns?: string[] };
+        /** Optional explicit column definitions or property keys for table view */
+        columns?: TableColumn<T>[];
         /** Unique identifier for selection state management */
         scopeId?: string;
         disabledUids?: Set<string>;
@@ -73,7 +57,6 @@
         view = $bindable("grid"),
         assetGridDisplayProps = $bindable({}),
         columns = $bindable(),
-        table = $bindable(),
         scopeId = "default",
         disabledUids = new Set(),
         sortState = photosSort
@@ -346,7 +329,7 @@
         }
 
         const delegatedTippy = delegate(assetGridDisplayEl, {
-            target: ".asset-card, .basic-grid-card",
+            target: ".asset-card",
             theme: "viz no-padding",
             followCursor: "initial",
             plugins: [followCursor],
@@ -410,137 +393,9 @@
         };
     });
 
-    // Table column keys (safe: only primitive values)
-    let tableKeys: string[] = $state([] as string[]);
-
-    $effect(() => {
-        if (allAssetsData.length === 0) {
-            tableKeys = [];
-            return;
-        }
-
-        const sample = allAssetsData[0];
-        tableKeys = Object.keys(sample).filter((k) => {
-            const v = sample[k];
-            return (
-                v === null ||
-                v === undefined ||
-                typeof v === "string" ||
-                typeof v === "number" ||
-                typeof v === "boolean"
-            );
-        });
-    });
-
-    // Visible keys in table: prefer explicit `columns` prop, otherwise inferred from settings
-    let visibleKeys = $derived.by(() => {
-        if (Array.isArray(table?.columns) && table!.columns!.length > 0) {
-            return table!.columns!;
-        } else if (Array.isArray(columns) && columns.length > 0) {
-            return columns;
-        } else {
-            return tableColumnSettings.value.filter((key) => tableKeys.includes(key));
-        }
-    });
-
-    // Virtual scroll offset spacers rendered OUTSIDE the table so they never
-    // influence column-width layout (a colspan cell inside the table caused the
-    // columns to shift a few px when a spacer appeared/disappeared while scrolling).
-    let tableTopSpacerHeight = $derived.by(() => {
-        const firstImage = virtualizer.visibleRows.find((r) => r.type === "images");
-        if (!firstImage || firstImage.top <= 0) {
-            return 0;
-        }
-        return firstImage.top;
-    });
-
-    let tableBottomSpacerHeight = $derived.by(() => {
-        const images = virtualizer.visibleRows.filter((r) => r.type === "images");
-        if (images.length === 0) {
-            return 0;
-        }
-        const last = images[images.length - 1];
-        return Math.max(0, virtualizer.totalHeight - last.top - last.height);
-    });
-
-    // helper: get nested value by dot path
-    function getNestedValue(obj: Record<string, any> | undefined, path?: string) {
-        if (!obj || !path) {
-            return undefined;
-        }
-
-        const parts = path.split(".");
-        let cur: any = obj;
-        for (const p of parts) {
-            if (cur == null) {
-                return undefined;
-            }
-
-            cur = cur[p];
-        }
-
-        return cur;
-    }
-
     interface ExtendedTippyInstance extends Instance<TippyProps> {
         _destroyComponent?: () => void;
     }
-
-    // Format a value for display: dates are formatted with Luxon, objects stringified, null/undefined -> ''
-    function formatValueForKey(obj: Record<string, any> | undefined, key?: string) {
-        let v: any = undefined;
-        if (key) {
-            v = getNestedValue(obj, key);
-            if (v === undefined && obj) {
-                v = obj[key];
-            }
-        } else {
-            v = obj;
-        }
-
-        const dt = tryParseDate(v);
-        if (dt) {
-            return dt.setZone("local").toLocaleString(DateTime.DATETIME_FULL);
-        }
-
-        if (v === null || v === undefined) {
-            return "";
-        }
-
-        if (typeof v === "object") {
-            try {
-                return JSON.stringify(v);
-            } catch {
-                return String(v);
-            }
-        }
-
-        return String(v);
-    }
-
-    // The table uses table-layout: fixed so columns don't shift as virtualized rows
-    // change, but we still want content-appropriate widths. Derive each column's
-    // width from the widest displayed value so e.g. a short "created_at" column
-    // doesn't stretch to fill half the table.
-    const PREVIEW_COLUMN_WIDTH = "calc(2 * var(--viz-spacing-sm) + 5.5em + var(--viz-spacing-md) + 14rem)";
-
-    let tableColumnWidths = $derived.by(() => {
-        const widths: Record<string, string> = {};
-        for (const key of visibleKeys) {
-            let maxChars = key.length;
-            for (let i = 0; i < allAssetsData.length; i++) {
-                const text = formatValueForKey(allAssetsData[i], key);
-                if (text.length > maxChars) {
-                    maxChars = text.length;
-                }
-            }
-            // ~0.6em average glyph width at the table font-size, plus horizontal
-            // cell padding; cap so a single huge value doesn't blow the column up.
-            const chars = Math.min(maxChars + 1, 40);
-            widths[key] = `calc(${chars} * 0.6em + 2 * var(--viz-spacing-md))`;
-        }
-        return widths;
-    });
 
     // Inspecting/Debugging
     if (debugMode) {
@@ -931,16 +786,6 @@
             activeAsset
         );
     });
-
-    function openColumnSelector() {
-        modalsManager.open(
-            TableColumnSelectorModal,
-            {
-                availableKeys: tableKeys
-            },
-            { heading: "Table Columns" }
-        );
-    }
 </script>
 
 {#snippet assetComponentCard(assetData: T)}
@@ -1035,130 +880,6 @@
     </div>
 {/snippet}
 
-{#snippet assetComponentListOption(assetData: T)}
-    {@const isSelected = selection.has(assetData) || selection.active?.uid === assetData.uid}
-    {@const isDisabled = disabledUids.has(assetData.uid)}
-    {@const asset = assetData}
-    <tr
-        class="asset-card"
-        class:disabled-asset={isDisabled}
-        data-asset-id={assetData.uid}
-        class:selected-card={isSelected}
-        role="button"
-        tabindex={isDisabled ? -1 : 0}
-        onfocus={() => {
-            onFocus();
-        }}
-        onclick={(e) => {
-            if (isDisabled) {
-                return;
-            }
-            handleImageCardSelect(assetData, e);
-        }}
-        onkeydown={(e) => {
-            handleKeydownCardSelect(assetData, e);
-        }}
-        ondblclick={(e) => {
-            if (e.ctrlKey) {
-                e.preventDefault();
-                return;
-            }
-
-            assetDblClick?.(e, assetData);
-        }}
-        oncontextmenu={(e: MouseEvent & { currentTarget: HTMLElement }) => {
-            e.preventDefault();
-            e.stopPropagation();
-            if (isDisabled) {
-                return;
-            }
-            if (!selection.has(assetData) || selection.size <= 1) {
-                selection.select(assetData);
-            }
-            onassetcontext?.({
-                asset: assetData,
-                anchor: { x: e.clientX, y: e.clientY }
-            });
-        }}
-    >
-        <td class="asset-snippet-cell">
-            <div class="asset-snippet-inner" title={formatValueForKey(asset, "name")}>
-                {#if getNestedValue(asset, table?.thumbnail_key) || asset.image_paths}
-                    <div class="asset-table-thumb-wrapper">
-                        <AssetImage
-                            asset={asset as unknown as ImageAsset}
-                            resolution="thumbnail"
-                            class="asset-table-thumb"
-                            alt={asset.name}
-                        />
-                    </div>
-                {:else}
-                    <div class="asset-table-thumb-fallback">
-                        <MaterialIcon iconName="image" />
-                    </div>
-                {/if}
-                <div class="asset-snippet-meta">
-                    <div class="asset-snippet-name">
-                        {asset.name}
-                    </div>
-                    <div class="asset-snippet-sub">
-                        {formatValueForKey(asset, "created_at") ||
-                            formatValueForKey(asset, "image_metadata.file_created_at")}
-                    </div>
-                </div>
-            </div>
-        </td>
-        {#each visibleKeys as key}
-            <td>{formatValueForKey(asset, key)}</td>
-        {/each}
-        <td class="actions-cell"></td>
-    </tr>
-{/snippet}
-
-{#snippet assetTableHeader()}
-    <th class="preview-header" style={`width: ${PREVIEW_COLUMN_WIDTH};`}> Preview </th>
-    {#each visibleKeys as key}
-        <th style={`width: ${tableColumnWidths[key]};`}>
-            <button
-                class="header-sort-btn"
-                onclick={() => {
-                    if (sortState.value.by === key) {
-                        sortState.value.order = sortState.value.order === "ASC" ? "DESC" : "ASC";
-                    } else {
-                        sortState.value.by = key as AssetSortBy;
-                    }
-                }}
-            >
-                <span>{snakeToTitle(key)}</span>
-                <span class="sort-icon" class:active={sortState.value.by === key}>
-                    <MaterialIcon
-                        iconName={sortState.value.by === key && sortState.value.order === "ASC"
-                            ? "arrow_upward"
-                            : "arrow_downward"}
-                    />
-                </span>
-            </button>
-        </th>
-    {/each}
-    <th class="settings-header">
-        <Button
-            class="column-selector-btn"
-            iconName="view_column"
-            onclick={openColumnSelector}
-            title="Select columns"
-            variant="primary"
-        />
-    </th>
-{/snippet}
-
-{#snippet assetTableBody()}
-    {#each virtualizer.visibleRows as row (row.id)}
-        {#if row.type === "images"}
-            {@render assetComponentListOption(row.items[0].asset as T)}
-        {/if}
-    {/each}
-{/snippet}
-
 {#snippet assetTable()}
     <div
         bind:this={assetGridDisplayEl}
@@ -1169,23 +890,39 @@
         onclick={handleContainerClick}
         onscroll={handleGridScroll}
     >
-        {#if tableTopSpacerHeight > 0}
-            <div class="virtual-spacer" style="height: {tableTopSpacerHeight}px;"></div>
-        {/if}
         <Table
             name="asset-grid"
             data={allAssetsData}
-            bordered={false}
-            header={assetTableHeader}
-            body={assetTableBody}
-            onheadercontextmenu={(e) => {
-                e.preventDefault();
-                openColumnSelector();
+            {columns}
+            selectable={true}
+            selectedKeys={Array.from(selectedUIDs)}
+            columnsEditable={true}
+            resizable={true}
+            onrowdblclick={(e, asset) => {
+                if (assetDblClick) {
+                    assetDblClick(e, asset);
+                }
+            }}
+            onselectionchange={(keys, rows) => {
+                if (keys.length === 0) {
+                    selection.clear();
+                } else if (keys.length >= allAssetsData.length) {
+                    selection.selectAll();
+                } else {
+                    selection.selectMultiple(rows);
+                }
+            }}
+            sort={{
+                key: sortState.value.by,
+                order: sortState.value.order === "ASC" ? "asc" : "desc"
+            }}
+            onsort={(s) => {
+                if (s.key) {
+                    sortState.value.by = s.key as AssetSortBy;
+                    sortState.value.order = s.order === "asc" ? "ASC" : "DESC";
+                }
             }}
         />
-        {#if tableBottomSpacerHeight > 0}
-            <div class="virtual-spacer" style="height: {tableBottomSpacerHeight}px;"></div>
-        {/if}
     </div>
 {/snippet}
 
@@ -1244,10 +981,15 @@
         max-width: 100%;
         text-overflow: clip;
         position: relative;
+    }
 
-        &.is-basic-view {
-            gap: var(--viz-spacing-sm);
-        }
+    .viz-asset-table-container {
+        box-sizing: border-box;
+        width: 100%;
+        max-width: 100%;
+        padding: 0 var(--viz-spacing-xl);
+        margin: var(--viz-spacing-md) 0;
+        position: relative;
     }
 
     .grid-virtual-content {
@@ -1271,30 +1013,6 @@
 
     .max-width-column {
         max-width: 100%;
-    }
-
-    .basic-grid-card {
-        background-color: var(--viz-surface-panel);
-        border: 1px solid transparent;
-        cursor: pointer;
-        width: 100%;
-        height: 100%;
-
-        &:hover {
-            border-color: var(--viz-primary);
-        }
-
-        &.selected-card {
-            border-color: var(--viz-primary);
-            box-shadow: 0 0 0 2px var(--viz-primary);
-        }
-
-        .basic-thumb-img {
-            width: 100%;
-            height: 100%;
-            object-fit: cover;
-            display: block;
-        }
     }
 
     .asset-card {
@@ -1329,247 +1047,4 @@
             pointer-events: none;
         }
     }
-
-    .viz-asset-table-container {
-        width: 100%;
-        margin: var(--viz-spacing-md) 0;
-        background: transparent;
-        box-sizing: border-box;
-        overflow-x: auto;
-
-        :global {
-            .viz-table-wrapper,
-            .viz-table-container {
-                width: 100%;
-                border: none;
-                border-radius: 0;
-                background: transparent;
-                overflow: visible;
-            }
-
-            .viz-table {
-                width: 100%;
-                table-layout: fixed;
-                border-spacing: 0;
-                color: var(--viz-text-primary);
-                display: table;
-
-                thead,
-                tbody {
-                    display: table-row-group;
-                }
-
-                tr {
-                    display: table-row;
-                }
-
-                th,
-                td {
-                    display: table-cell;
-                }
-
-                thead {
-                    th {
-                        position: sticky;
-                        top: 0px;
-                        z-index: 2;
-                        color: var(--viz-text-primary);
-                        background-color: color-mix(in srgb, var(--viz-surface-base) 72%, transparent);
-                        backdrop-filter: blur(8px);
-                        -webkit-backdrop-filter: blur(8px);
-                        text-align: left;
-                        font-weight: 600;
-                        padding: var(--viz-spacing-sm) var(--viz-spacing-md);
-                        vertical-align: middle;
-                        border-bottom: 2px solid var(--viz-border-subtle);
-
-                        &.settings-header {
-                            width: 3.5rem;
-                            min-width: 3.5rem;
-                            text-align: right;
-                            padding-right: var(--viz-spacing-md);
-                        }
-
-                        .header-sort-btn {
-                            display: inline-flex;
-                            align-items: center;
-                            gap: var(--viz-spacing-xs);
-                            background: transparent;
-                            border-bottom: 2px solid transparent;
-                            padding: var(--viz-spacing-std) initial;
-                            color: inherit;
-                            cursor: pointer;
-                            font: inherit;
-
-                            &:hover {
-                                border-bottom-color: var(--viz-primary);
-
-                                .sort-icon {
-                                    opacity: 0.5;
-
-                                    &.active {
-                                        opacity: 1;
-                                    }
-                                }
-                            }
-
-                            .sort-icon {
-                                display: inline-flex;
-                                align-items: center;
-                                font-size: var(--viz-font-size-std);
-                                opacity: 0;
-                                transition: opacity 0.2s;
-
-                                &.active {
-                                    opacity: 1;
-                                    color: var(--viz-primary);
-                                }
-                            }
-                        }
-                    }
-                }
-
-                tbody {
-                    tr {
-                        transition: background-color 120ms ease-in-out;
-                        background-color: transparent;
-
-                        &:hover {
-                            background-color: var(--viz-surface-hover);
-                        }
-
-                        &.selected-card {
-                            background-color: color-mix(in srgb, var(--viz-primary) 12%, transparent);
-
-                            td {
-                                border-bottom-color: color-mix(
-                                    in srgb,
-                                    var(--viz-border-subtle) 50%,
-                                    var(--viz-primary) 50%
-                                );
-                            }
-                        }
-
-                        /* Table row selection accent: show a left indicator inside the preview cell */
-                        &.selected-card td:first-child,
-                        &:focus-visible td:first-child {
-                            position: relative;
-
-                            &::before {
-                                content: "";
-                                position: absolute;
-                                left: 4px;
-                                top: var(--viz-spacing-sm);
-                                bottom: var(--viz-spacing-sm);
-                                width: 3px;
-                                border-radius: var(--viz-border-radius-pill);
-                                background: var(--viz-primary);
-                            }
-                        }
-                    }
-
-                    td {
-                        padding: var(--viz-spacing-sm) var(--viz-spacing-md);
-                        vertical-align: middle;
-                        border-bottom: 1px solid var(--viz-border-subtle);
-                        white-space: nowrap;
-                        overflow: hidden;
-                        text-overflow: ellipsis;
-
-                        &.actions-cell {
-                            width: 3.5rem;
-                            min-width: 3.5rem;
-                            padding: 0;
-                        }
-                    }
-                }
-            }
-        }
-    }
-
-    /* Preview column: thumbnail + meta stacked */
-    .asset-snippet-cell {
-        /* idk about this hardcoded value but it makes sense based on the virtualisation */
-        min-width: 220px;
-        padding: var(--viz-spacing-xs) var(--viz-spacing-sm);
-        vertical-align: middle;
-
-        .asset-snippet-inner {
-            display: flex;
-            align-items: center;
-            gap: var(--viz-spacing-md);
-            overflow: hidden;
-            width: 100%;
-        }
-
-        .asset-table-thumb-wrapper {
-            width: 5.5em;
-            height: 3.6em;
-            max-height: 3.6em;
-            flex-shrink: 0;
-            border: var(--viz-border-thin);
-            background: var(--viz-surface-panel);
-            overflow: hidden;
-
-            :global(.asset-image-container),
-            :global(.asset-table-thumb),
-            :global(img) {
-                width: 100%;
-                height: 100%;
-                max-height: 3.6em;
-                object-fit: cover;
-            }
-        }
-
-        .asset-table-thumb {
-            width: 5.5em;
-            height: 3.6em;
-            max-height: 3.6em;
-            object-fit: cover;
-            flex-shrink: 0;
-            background: var(--viz-surface-panel);
-            border: var(--viz-border-thin);
-        }
-
-        .asset-table-thumb-fallback {
-            width: 5.5em;
-            height: 3.6em;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            background-color: var(--viz-surface-panel);
-            border-radius: var(--viz-border-radius-md);
-            color: var(--viz-text-secondary);
-            border: var(--viz-border-thin);
-            flex-shrink: 0;
-
-            :global(.material-symbols-outlined) {
-                font-size: 1.25rem;
-            }
-        }
-
-        .asset-snippet-meta {
-            display: flex;
-            flex-direction: column;
-            gap: var(--viz-spacing-xxs);
-            overflow: hidden;
-        }
-
-        .asset-snippet-name {
-            font-weight: 600;
-            white-space: nowrap;
-            overflow: hidden;
-            text-overflow: ellipsis;
-            max-width: 14rem;
-        }
-
-        .asset-snippet-sub {
-            font-size: var(--viz-font-size-std);
-            color: var(--viz-text-secondary);
-        }
-    }
-
-    /* With table-layout: fixed, columns are sized from the header row, so value
-       cells clip/ellipsize instead of driving column widths (prevents jitter
-       as virtualized rows change). */
 </style>
