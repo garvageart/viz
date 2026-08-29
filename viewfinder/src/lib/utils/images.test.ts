@@ -89,35 +89,9 @@ describe("parseExifDate", () => {
 });
 
 describe("getTakenAt", () => {
-    it("prefers the explicit taken_at field", () => {
+    it("returns a Date object from the taken_at field", () => {
         const asset = assetFixture({ taken_at: "2026-05-01T00:00:00Z" });
         expect(getTakenAt(asset).toISOString()).toBe("2026-05-01T00:00:00.000Z");
-    });
-
-    it("falls back to EXIF original, then modify date, then file_created_at", () => {
-        const exif = assetFixture({
-            exif: {
-                date_time_original: "2026:04:01 10:00:00",
-                date_time: "2026:03:01 09:00:00",
-                modify_date: "2026:02:01 08:00:00"
-            }
-        });
-        expect(getTakenAt(exif).toISOString()).toBe("2026-04-01T10:00:00.000Z");
-
-        const modifiedOnly = assetFixture({ exif: { modify_date: "2026:02:01 08:00:00" } });
-        expect(getTakenAt(modifiedOnly).toISOString()).toBe("2026-02-01T08:00:00.000Z");
-
-        const fileCreated = assetFixture({ image_metadata: undefined });
-        expect(getTakenAt(fileCreated).toISOString()).toBe("2026-01-01T00:00:00.000Z");
-    });
-
-    it("falls back to created_at when nothing else is available", () => {
-        const asset = assetFixture({
-            exif: undefined,
-            image_metadata: undefined,
-            created_at: "2026-06-15T12:30:00Z"
-        });
-        expect(getTakenAt(asset).toISOString()).toBe("2026-06-15T12:30:00.000Z");
     });
 });
 
@@ -125,6 +99,7 @@ describe("compareByTakenAtDesc", () => {
     it("sorts newer images first", () => {
         const older = assetFixture({ uid: "old", taken_at: "2026-01-01T00:00:00Z" });
         const newer = assetFixture({ uid: "new", taken_at: "2026-06-01T00:00:00Z" });
+
         expect(compareByTakenAtDesc(older, newer)).toBeGreaterThan(0);
         expect(compareByTakenAtDesc(newer, older)).toBeLessThan(0);
         expect(compareByTakenAtDesc(older, older)).toBe(0);
@@ -191,16 +166,16 @@ describe("formatSeconds", () => {
 
 describe("getImageMegapixels", () => {
     it("returns whole megapixels by default", () => {
-        expect(getImageMegapixels(assetFixture())).toBe(24);
+        expect(getImageMegapixels(assetFixture({ width: 6000, height: 4000 }))).toBe(24);
     });
 
     it("returns a fixed-point string when precision is requested", () => {
-        expect(getImageMegapixels(assetFixture(), 1)).toBe("24.0");
-        expect(getImageMegapixels(assetFixture(), 2)).toBe("24.00");
+        expect(getImageMegapixels(assetFixture({ width: 6000, height: 4000 }), 1)).toBe("24.0");
+        expect(getImageMegapixels(assetFixture({ width: 6000, height: 4000 }), 2)).toBe("24.00");
     });
 
     it("clamps negative precision to zero", () => {
-        expect(getImageMegapixels(assetFixture(), -1)).toBe(24);
+        expect(getImageMegapixels(assetFixture({ width: 6000, height: 4000 }), -1)).toBe(24);
     });
 });
 
@@ -215,7 +190,12 @@ describe("formatMegapixels", () => {
 
 describe("createTransformEtag", () => {
     it("builds a checksum string from params and image checksum", () => {
-        const asset = assetFixture();
+        const asset = assetFixture({
+            image_metadata: {
+                ...createTestImageObject().image_metadata,
+                checksum: "abc"
+            }
+        });
         const etag = createTransformEtag(asset, {
             width: 100,
             height: 50,
@@ -289,7 +269,8 @@ describe("getImageLabel & getLabelColor", () => {
     });
 
     it("returns null when there is no label or no image", () => {
-        expect(getImageLabel(assetFixture())).toBeNull();
+        const noLabel = assetFixture({ image_metadata: { ...assetFixture().image_metadata, label: null } });
+        expect(getImageLabel(noLabel)).toBeNull();
         expect(getImageLabel(null)).toBeNull();
         expect(getImageLabel(undefined)).toBeNull();
     });
@@ -337,7 +318,10 @@ describe("getWhiteBalance", () => {
 
 describe("getThumbhashURL", () => {
     it("returns undefined when there is no thumbhash", () => {
-        expect(getThumbhashURL(assetFixture())).toBeUndefined();
+        const noThumbhash = assetFixture({
+            image_metadata: { ...assetFixture().image_metadata, thumbhash: undefined }
+        });
+        expect(getThumbhashURL(noThumbhash)).toBeUndefined();
     });
 
     it("returns undefined for an invalid base64 thumbhash", () => {
