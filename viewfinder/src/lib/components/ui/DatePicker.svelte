@@ -73,7 +73,7 @@
             selected = new CalendarDateTime(v.year, v.month, v.day, selected.hour, selected.minute, selected.second);
         }
         placeholder = selected;
-        lastMs = calendarDateTimeToDate(selected).getTime();
+        lastMs = getMsWithoutMs(calendarDateTimeToDate(selected));
 
         emitDate();
 
@@ -88,13 +88,14 @@
         }
         selected = v;
         placeholder = selected;
-        lastMs = calendarDateTimeToDate(selected).getTime();
+        lastMs = getMsWithoutMs(calendarDateTimeToDate(selected));
         emitDate();
     }
 
     function emitDate() {
         const jsDate = calendarDateTimeToDate(selected);
         jsDate.setMilliseconds(value.getMilliseconds());
+        value = jsDate;
         onchange?.(jsDate);
     }
 
