@@ -70,17 +70,20 @@
         icon ?? (selectedItem?.iconName as MaterialSymbol | undefined)
     );
 
-    let menuItems: MenuItem[] = $state([]);
     let hideTitleState = $derived(hideTitle || (!title && !(selectedItem && selectedItem.label)));
 
-    function buildMenuItems(): MenuItem[] {
-        return items.map((it) => ({
-            ...it,
-            iconName: it.iconName ?? (showSelectionIndicator && selectedItemId === it.id ? "check" : undefined),
-            // wrap existing action so dropdown selection handling runs first
-            action: (e) => handleItemSelect(it, e)
-        }));
-    }
+    let menuItems: MenuItem[] = $derived.by(() => {
+        return (items ?? []).map((it) => {
+            return {
+                ...it,
+                iconName: it.iconName ?? (showSelectionIndicator && selectedItemId === it.id ? "check" : undefined),
+                // wrap existing action so dropdown selection handling runs first
+                action: (e) => {
+                    handleItemSelect(it, e);
+                }
+            };
+        });
+    });
 
     function handleItemSelect(item: MenuItem, e: MouseEvent | KeyboardEvent) {
         onSelect?.(item);
@@ -94,7 +97,6 @@
     }
 
     function toggleMenu() {
-        menuItems = buildMenuItems();
         showMenu = !showMenu;
     }
 </script>

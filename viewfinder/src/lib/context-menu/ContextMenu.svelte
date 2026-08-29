@@ -350,7 +350,7 @@
     >
         <div class="context-menu-options">
             <ul role="menu" aria-orientation="vertical">
-                {#each items as item, i}
+                {#each items as item, i (item.id ?? i)}
                     {#if item.separator}
                         <li class="ctx-separator" role="separator" aria-hidden="true"></li>
                     {:else}
