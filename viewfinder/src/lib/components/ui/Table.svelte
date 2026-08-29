@@ -1,7 +1,8 @@
 <script lang="ts" generics="T extends Record<string, any>">
-    import { DateTime } from "luxon";
     import { type Snippet } from "svelte";
+    import type { MouseEventHandler } from "svelte/elements";
     import Dropdown from "$lib/components/context-menus/Dropdown.svelte";
+    import ContextMenu from "$lib/context-menu/ContextMenu.svelte";
     import type { MenuItem } from "$lib/context-menu/types";
     import { tryParseDate } from "$lib/utils/dates";
     import { VizLocalStorage } from "$lib/utils/misc";
@@ -15,7 +16,7 @@
         width?: number | string;
     }
 
-    export interface TableColumn<T> {
+    export interface TableColumn<T, V = unknown> {
         key: string;
         header?: string;
         align?: "left" | "center" | "right";
@@ -27,8 +28,10 @@
         resizable?: boolean;
         visible?: boolean;
         mono?: boolean;
-        cell?: Snippet<[T, { value: any; index: number }]> | Snippet<[T]>;
-        headerCell?: Snippet<[{ column: TableColumn<T> }]>;
+        getValue?: (row: T) => V;
+        formatter?: (row: T, value: V, index: number) => string | number;
+        cell?: Snippet<[T, { value: V; index: number }]> | Snippet<[T]>;
+        headerCell?: Snippet<[{ column: TableColumn<T, V> }]>;
     }
 
     export interface TableSort {
@@ -53,7 +56,7 @@
         columnsEditable?: boolean;
         availableKeys?: string[];
         columnSelectorOpen?: boolean;
-        onheadercontextmenu?: (e: MouseEvent) => void;
+        onheadercontextmenu?: (e: Parameters<MouseEventHandler<HTMLElement>>[0]) => void;
 
         // Selection
         selectable?: boolean;
@@ -71,11 +74,13 @@
         columnWidths?: Record<string, number>;
         oncolumnresize?: (key: string, width: number) => void;
 
-        // Row Actions
+        // Row Actions & Events
         rowActions?: Snippet<[T, { index: number }]>;
         actionsHeader?: string;
         actionsAlign?: "left" | "center" | "right";
         actionsWidth?: string;
+        onrowclick?: (e: Parameters<MouseEventHandler<HTMLTableRowElement>>[0], row: T, index: number) => void;
+        onrowdblclick?: (e: Parameters<MouseEventHandler<HTMLTableRowElement>>[0], row: T, index: number) => void;
 
         // Display Modifiers
         density?: "compact" | "normal" | "spacious";
@@ -98,7 +103,7 @@
         footer,
         emptyState,
         emptyMessage = "Nothing to show",
-        sortable = false,
+        sortable = true,
         sort = $bindable({ key: "", order: "asc" }),
         onsort,
         columnsEditable = false,
@@ -119,6 +124,8 @@
         actionsHeader = "Actions",
         actionsAlign = "right",
         actionsWidth,
+        onrowclick,
+        onrowdblclick,
         density = "normal",
         stickyHeader = false,
         striped = false,
@@ -321,7 +328,10 @@
         return items;
     });
 
-    function handleHeaderContextMenu(e: MouseEvent) {
+    let headerContextMenuOpen = $state(false);
+    let headerContextMenuAnchor = $state<{ x: number; y: number } | null>(null);
+
+    function handleHeaderContextMenu(e: Parameters<MouseEventHandler<HTMLElement>>[0]) {
         if (onheadercontextmenu) {
             onheadercontextmenu(e);
             return;
@@ -329,11 +339,13 @@
 
         if (columnsEditable) {
             e.preventDefault();
-            columnSelectorOpen = true;
+            e.stopPropagation();
+            headerContextMenuAnchor = { x: e.clientX, y: e.clientY };
+            headerContextMenuOpen = true;
         }
     }
 
-    let sortedData = $derived.by(() => {
+    let displayData = $derived.by(() => {
         if (!sort.key) {
             return data;
         }
@@ -348,8 +360,8 @@
                 return col.sortComparator(a, b, sort.order);
             }
 
-            const valA = getNestedValue(a, sort.key);
-            const valB = getNestedValue(b, sort.key);
+            const valA = col ? getCellValue(a, col) : (a as Record<string, unknown>)[sort.key];
+            const valB = col ? getCellValue(b, col) : (b as Record<string, unknown>)[sort.key];
 
             if (valA === valB) {
                 return 0;
@@ -381,14 +393,14 @@
     let expandedSet = $derived(new Set(expandedKeys));
 
     let isAllSelected = $derived(
-        sortedData.length > 0 &&
-            sortedData.every((row, i) => {
+        displayData.length > 0 &&
+            displayData.every((row, i) => {
                 return selectedSet.has(getRowKey(row, i));
             })
     );
 
     let isSomeSelected = $derived(
-        sortedData.some((row, i) => {
+        displayData.some((row, i) => {
             return selectedSet.has(getRowKey(row, i));
         })
     );
@@ -396,41 +408,23 @@
     let isPartiallySelected = $derived(isSomeSelected && !isAllSelected);
 
     let totalColSpan = $derived(
-        effectiveColumns.length + (selectable ? 1 : 0) + (expandable ? 1 : 0) + (rowActions ? 1 : 0)
+        effectiveColumns.length +
+            (selectable ? 1 : 0) +
+            (expandable ? 1 : 0) +
+            (rowActions ? 1 : 0) +
+            (!toolbar && columnsEditable && !rowActions ? 1 : 0)
     );
 
     function getRowKey(row: T, index: number): string | number {
         return row.uid ?? row.id ?? index;
     }
 
-    function getNestedValue(obj: Record<string, any> | undefined, path: string): any {
-        let current: any = obj;
-        for (const part of path.split(".")) {
-            if (current == null) {
-                return undefined;
-            }
-            current = current[part];
-        }
-        return current;
-    }
-
-    function formatValue(value: any): string {
-        if (value === null || value === undefined) {
-            return "";
-        }
-        const date = tryParseDate(value);
-        if (date) {
-            return date.setZone("local").toLocaleString(DateTime.DATETIME_FULL);
+    function getCellValue(row: T, col: TableColumn<T, any>): unknown {
+        if (col.getValue) {
+            return col.getValue(row);
         }
 
-        if (typeof value === "object") {
-            try {
-                return JSON.stringify(value);
-            } catch {
-                return String(value);
-            }
-        }
-        return String(value);
+        return (row as Record<string, unknown>)[col.key];
     }
 
     function canSort(col: TableColumn<T>): boolean {
@@ -528,10 +522,10 @@
         let nextRows: T[];
 
         if (willSelectAll) {
-            nextSelected = sortedData.map((row, i) => {
+            nextSelected = displayData.map((row, i) => {
                 return getRowKey(row, i);
             });
-            nextRows = [...sortedData];
+            nextRows = [...displayData];
         } else {
             nextSelected = [];
             nextRows = [];
@@ -555,7 +549,7 @@
         }
 
         const nextSet = new Set(nextSelected);
-        const nextRows = sortedData.filter((item, i) => {
+        const nextRows = displayData.filter((item, i) => {
             return nextSet.has(getRowKey(item, i));
         });
 
@@ -601,19 +595,23 @@
     </div>
 {/snippet}
 
-{#snippet columnItemSnippet(item: MenuItem<TableColumn<T>>, index?: number)}
+{#snippet columnItemSnippet(item: MenuItem<TableColumn<T>>)}
     {@const col = item.data!}
-    {@const colIndex = (index ?? 2) - 2}
+    {@const colIndex = allSelectableColumns.findIndex((c) => {
+        return c.key === col.key;
+    })}
     <div class="ctx-column-row">
         <div class="reorder-arrows">
             <Button
                 variant="ghost"
                 iconName="keyboard_arrow_up"
                 class="arrow-btn"
-                disabled={colIndex === 0}
+                disabled={colIndex <= 0}
                 onclick={(e) => {
                     e.stopPropagation();
-                    moveColumnOrder(colIndex, -1);
+                    if (colIndex > 0) {
+                        moveColumnOrder(colIndex, -1);
+                    }
                 }}
                 aria-label="Move column up"
             />
@@ -622,10 +620,12 @@
                 size="mini"
                 iconName="keyboard_arrow_down"
                 class="arrow-btn"
-                disabled={colIndex === allSelectableColumns.length - 1}
+                disabled={colIndex === -1 || colIndex >= allSelectableColumns.length - 1}
                 onclick={(e) => {
                     e.stopPropagation();
-                    moveColumnOrder(colIndex, 1);
+                    if (colIndex !== -1 && colIndex < allSelectableColumns.length - 1) {
+                        moveColumnOrder(colIndex, 1);
+                    }
                 }}
                 aria-label="Move column down"
             />
@@ -635,10 +635,14 @@
             onchange={() => {
                 toggleColumnVisibility(col.key);
             }}
-            label={col.header}
+            label={col.header ?? col.key}
         />
     </div>
 {/snippet}
+
+{#if columnsEditable}
+    <ContextMenu bind:showMenu={headerContextMenuOpen} anchor={headerContextMenuAnchor} items={columnMenuItems} />
+{/if}
 
 <div
     class="viz-table-wrapper {customClass}"
@@ -647,10 +651,10 @@
     class:density-normal={density === "normal"}
     class:has-border={bordered}
 >
-    {#if toolbar || columnsEditable}
+    {#if toolbar}
         <div class="viz-table-toolbar">
             <div class="viz-table-toolbar-content">
-                {@render toolbar?.()}
+                {@render toolbar()}
             </div>
 
             {#if columnsEditable}
@@ -711,7 +715,7 @@
                                     {@render col.headerCell({ column: col })}
                                 {:else if canSort(col)}
                                     <button class="header-sort-btn" onclick={() => handleSort(col.key)}>
-                                        <span>{col.header}</span>
+                                        <span>{col.header ?? col.key}</span>
                                         <span class="sort-icon" class:active={sort.key === col.key}>
                                             <MaterialIcon
                                                 iconName={sort.key === col.key
@@ -724,7 +728,7 @@
                                         </span>
                                     </button>
                                 {:else}
-                                    <span class="header-label">{col.header}</span>
+                                    <span class="header-label">{col.header ?? col.key}</span>
                                 {/if}
 
                                 {#if canResize(col)}
@@ -748,7 +752,32 @@
 
                     {#if rowActions}
                         <th class="col-actions align-{actionsAlign}" style:width={actionsWidth}>
-                            <span class="header-label">{actionsHeader}</span>
+                            {#if !toolbar && columnsEditable}
+                                <div class="actions-header-wrap">
+                                    <span class="header-label">{actionsHeader}</span>
+                                    <Dropdown
+                                        variant="ghost"
+                                        iconName="view_column"
+                                        class="col-selector-btn"
+                                        items={columnMenuItems}
+                                        bind:showMenu={columnSelectorOpen}
+                                        align="right"
+                                    />
+                                </div>
+                            {:else}
+                                <span class="header-label">{actionsHeader}</span>
+                            {/if}
+                        </th>
+                    {:else if !toolbar && columnsEditable}
+                        <th class="col-control col-settings">
+                            <Dropdown
+                                variant="ghost"
+                                iconName="view_column"
+                                class="col-selector-btn"
+                                items={columnMenuItems}
+                                bind:showMenu={columnSelectorOpen}
+                                align="right"
+                            />
                         </th>
                     {/if}
                 </tr>
@@ -757,14 +786,35 @@
                 {#if body}
                     {@render body()}
                 {:else}
-                    {#each sortedData as row, index (getRowKey(row, index))}
+                    {#each displayData as row, index (getRowKey(row, index))}
                         {@const rowKey = getRowKey(row, index)}
                         {@const rowSelected = selectedSet.has(rowKey)}
                         {@const rowExpanded = expandedSet.has(rowKey)}
                         {#if rows}
                             {@render rows(row)}
                         {:else}
-                            <tr class:row-selected={rowSelected} class:row-expanded={rowExpanded}>
+                            <tr
+                                class:row-selected={rowSelected}
+                                class:row-expanded={rowExpanded}
+                                onclick={(e) => {
+                                    if (
+                                        selectable &&
+                                        !(e.target as HTMLElement).closest(
+                                            "button, input, a, .col-control, .col-actions, [data-prevent-row-select]"
+                                        )
+                                    ) {
+                                        toggleSelectRow(row, index);
+                                    }
+                                    if (onrowclick) {
+                                        onrowclick(e, row, index);
+                                    }
+                                }}
+                                ondblclick={(e) => {
+                                    if (onrowdblclick) {
+                                        onrowdblclick(e, row, index);
+                                    }
+                                }}
+                            >
                                 {#if selectable}
                                     <td class="col-control col-select">
                                         <Checkbox
@@ -790,7 +840,7 @@
                                 {/if}
 
                                 {#each effectiveColumns as col (col.key)}
-                                    {@const cellValue = getNestedValue(row, col.key)}
+                                    {@const cellValue = getCellValue(row, col)}
                                     <td
                                         class="align-{col.align ?? 'left'} {col.class ?? ''}"
                                         class:font-mono={col.mono}
@@ -799,8 +849,10 @@
                                     >
                                         {#if col.cell}
                                             {@render col.cell(row, { value: cellValue, index })}
+                                        {:else if col.formatter}
+                                            {col.formatter(row, cellValue, index)}
                                         {:else}
-                                            {formatValue(cellValue)}
+                                            {cellValue ?? ""}
                                         {/if}
                                     </td>
                                 {/each}
@@ -809,6 +861,8 @@
                                     <td class="col-actions align-{actionsAlign}">
                                         {@render rowActions(row, { index })}
                                     </td>
+                                {:else if !toolbar && columnsEditable}
+                                    <td class="col-control col-settings"></td>
                                 {/if}
                             </tr>
                         {/if}
@@ -827,7 +881,7 @@
             </tbody>
         </table>
 
-        {#if sortedData.length === 0}
+        {#if displayData.length === 0}
             <div class="empty-state-wrapper">
                 {#if emptyState}
                     {@render emptyState()}
@@ -850,9 +904,11 @@
         display: flex;
         flex-direction: column;
         width: 100%;
+        max-width: 100%;
         background-color: var(--viz-surface-panel);
         border-radius: var(--viz-border-radius-md);
         overflow: hidden;
+        box-sizing: border-box;
 
         &.has-border {
             border: var(--viz-border-thin);
@@ -867,6 +923,7 @@
         padding: var(--viz-spacing-sm) var(--viz-spacing-md);
         border-bottom: var(--viz-border-thin);
         background-color: var(--viz-surface-panel);
+        box-sizing: border-box;
 
         .viz-table-toolbar-content {
             display: flex;
@@ -961,8 +1018,11 @@
 
     .viz-table-container {
         width: 100%;
+        max-width: 100%;
         overflow-x: auto;
+        overflow-y: visible;
         position: relative;
+        box-sizing: border-box;
     }
 
     .viz-table {
@@ -999,7 +1059,7 @@
                 .header-sort-btn {
                     display: inline-flex;
                     align-items: center;
-                    gap: var(--viz-spacing-xxs);
+                    gap: var(--viz-spacing-xs);
                     padding: 0;
                     background: transparent;
                     border: none;
@@ -1017,9 +1077,6 @@
                         display: inline-flex;
                         opacity: 0;
                         color: var(--viz-text-secondary);
-                        transition:
-                            opacity 0.15s ease,
-                            color 0.15s ease;
 
                         &.active {
                             opacity: 1;
@@ -1133,6 +1190,20 @@
         padding-left: var(--viz-spacing-sm) !important;
         padding-right: var(--viz-spacing-xs) !important;
         text-align: center !important;
+
+        &.col-settings {
+            width: 2.75rem;
+            min-width: 2.75rem;
+            text-align: right !important;
+            padding-right: var(--viz-spacing-sm) !important;
+        }
+    }
+
+    .actions-header-wrap {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: var(--viz-spacing-xs);
     }
 
     .expand-toggle-btn {

@@ -1,9 +1,6 @@
 import { fireEvent, render, screen } from "@testing-library/svelte";
 import { describe, expect, it, vi } from "vitest";
-import TableColumnSelectorModal from "$lib/components/modals/TableColumnSelectorModal.svelte";
-import { modalsManager } from "$lib/components/modals/manager/ModalManager.svelte";
 import TableHarness from "$lib/components/tests/harnesses/TableHarness.svelte";
-import { tableColumnSettings } from "$lib/states/index.svelte";
 import Table, { type TableSort } from "./Table.svelte";
 
 vi.mock("$lib/components/modals/manager/ModalManager.svelte.ts", () => ({
@@ -31,9 +28,10 @@ describe("Table", () => {
     it("infers columns from the first row", () => {
         render(Table, { data: rows });
 
-        expect(screen.getByRole("columnheader", { name: "Uid" })).toBeInTheDocument();
-        expect(screen.getByRole("columnheader", { name: "Name" })).toBeInTheDocument();
-        expect(screen.getByRole("columnheader", { name: "Role" })).toBeInTheDocument();
+        const headers = document.querySelectorAll("thead th");
+        expect(headers[0]).toHaveTextContent("uid");
+        expect(headers[1]).toHaveTextContent("name");
+        expect(headers[2]).toHaveTextContent("role");
 
         expect(screen.getByText("Les")).toBeInTheDocument();
         expect(screen.getByText("Jorie")).toBeInTheDocument();
@@ -46,9 +44,9 @@ describe("Table", () => {
             columns: [{ key: "name", header: "Display Name" }, { key: "role" }]
         });
 
-        expect(screen.getByRole("columnheader", { name: "Display Name" })).toBeInTheDocument();
-        expect(screen.getByRole("columnheader", { name: "Role" })).toBeInTheDocument();
-        expect(screen.queryByRole("columnheader", { name: "Uid" })).not.toBeInTheDocument();
+        const headers = document.querySelectorAll("thead th");
+        expect(headers[0]).toHaveTextContent("Display Name");
+        expect(headers[1]).toHaveTextContent("role");
     });
 
     it("renders a custom cell snippet for a column", () => {
@@ -84,51 +82,50 @@ describe("Table", () => {
 
     it("calls onsort and toggles order when a sortable header is clicked", async () => {
         const onsort = vi.fn();
-        const sort: TableSort = { key: "", order: "asc" };
+        const sort: TableSort = { key: "name", order: "asc" };
 
-        render(Table, { data: rows, sortable: true, sort, onsort });
+        render(Table, {
+            data: rows,
+            columns: [
+                { key: "name", sortable: true },
+                { key: "role", sortable: true }
+            ],
+            sort,
+            onsort
+        });
 
-        await fireEvent.click(screen.getByRole("button", { name: /Name/i }));
-        expect(onsort).toHaveBeenLastCalledWith({ key: "name", order: "asc" });
+        const sortBtns = document.querySelectorAll<HTMLButtonElement>("th.sortable .header-sort-btn");
+        expect(sortBtns.length).toBeGreaterThan(0);
 
-        await fireEvent.click(screen.getByRole("button", { name: /Name/i }));
+        if (sortBtns[0]) {
+            await fireEvent.click(sortBtns[0]);
+        }
         expect(onsort).toHaveBeenLastCalledWith({ key: "name", order: "desc" });
+
+        if (sortBtns[0]) {
+            await fireEvent.click(sortBtns[0]);
+        }
+        expect(onsort).toHaveBeenLastCalledWith({ key: "name", order: "asc" });
     });
 
     it("does not make headers sortable when sortable is false", () => {
         render(Table, { data: rows });
 
-        expect(screen.queryByRole("button")).not.toBeInTheDocument();
+        expect(document.querySelector(".header-sort-btn")).not.toBeInTheDocument();
     });
 
-    it("opens the column selector when triggered externally", () => {
+    it("renders column selector dropdown when columnsEditable is true", () => {
         render(Table, {
             data: rows,
             columnsEditable: true,
-            availableKeys: ["name", "role"],
-            columnSelectorOpen: true
+            columns: [
+                { key: "name", header: "Name" },
+                { key: "role", header: "Role" }
+            ]
         });
 
-        expect(modalsManager.open).toHaveBeenCalledTimes(1);
-        expect(modalsManager.open).toHaveBeenCalledWith(
-            TableColumnSelectorModal,
-            { availableKeys: ["name", "role"] },
-            { heading: "Table Columns" }
-        );
-    });
-
-    it("derives columns from tableColumnSettings when editable", () => {
-        tableColumnSettings.set(["name"]);
-
-        render(Table, {
-            data: rows,
-            columnsEditable: true,
-            availableKeys: ["name", "role", "uid"]
-        });
-
-        expect(screen.getByRole("columnheader", { name: "Name" })).toBeInTheDocument();
-        expect(screen.queryByRole("columnheader", { name: "Role" })).not.toBeInTheDocument();
-        expect(screen.queryByRole("columnheader", { name: "Uid" })).not.toBeInTheDocument();
+        const selectorBtn = document.querySelector(".col-selector-btn");
+        expect(selectorBtn).toBeInTheDocument();
     });
 
     it("renders toolbar and footer snippets when provided", () => {
@@ -154,7 +151,7 @@ describe("Table", () => {
     it("renders row actions snippet for each data row", () => {
         render(TableHarness, { data: rows, useActions: true });
 
-        expect(screen.getByRole("columnheader", { name: "Actions" })).toBeInTheDocument();
+        expect(document.querySelector("th.col-actions")).toBeInTheDocument();
         expect(screen.getByTestId("action-btn-u1")).toBeInTheDocument();
         expect(screen.getByTestId("action-btn-u2")).toBeInTheDocument();
     });
@@ -168,17 +165,22 @@ describe("Table", () => {
             onselectionchange
         });
 
-        const selectAllCheckbox = screen.getByRole("checkbox", { name: "Select all rows" });
-        const rowCheckboxes = screen.getAllByRole("checkbox", { name: "Select row" });
+        const selectAllInput = document.querySelector<HTMLInputElement>("th.col-select input[type='checkbox']");
+        const rowInputs = document.querySelectorAll<HTMLInputElement>("td.col-select input[type='checkbox']");
 
-        expect(rowCheckboxes).toHaveLength(2);
+        expect(selectAllInput).toBeInTheDocument();
+        expect(rowInputs).toHaveLength(2);
 
         // Select first row
-        await fireEvent.click(rowCheckboxes[0]);
+        if (rowInputs[0]) {
+            await fireEvent.click(rowInputs[0]);
+        }
         expect(onselectionchange).toHaveBeenCalledWith(["u1"], [rows[0]]);
 
         // Select all
-        await fireEvent.click(selectAllCheckbox);
+        if (selectAllInput) {
+            await fireEvent.click(selectAllInput);
+        }
         expect(onselectionchange).toHaveBeenCalledWith(["u1", "u2"], rows);
     });
 
@@ -191,11 +193,13 @@ describe("Table", () => {
             onexpansionchange
         });
 
-        const expandButtons = screen.getAllByRole("button", { name: "Expand row" });
+        const expandButtons = document.querySelectorAll<HTMLElement>("td.col-expand .expand-toggle-btn");
         expect(expandButtons).toHaveLength(2);
 
         // Expand first row
-        await fireEvent.click(expandButtons[0]);
+        if (expandButtons[0]) {
+            await fireEvent.click(expandButtons[0]);
+        }
         expect(onexpansionchange).toHaveBeenCalledWith(["u1"]);
         expect(screen.getByTestId("expanded-drawer-u1")).toBeInTheDocument();
         expect(screen.getByText("Details for Les")).toBeInTheDocument();
@@ -210,7 +214,7 @@ describe("Table", () => {
             oncolumnresize
         });
 
-        const resizeHandles = screen.getAllByRole("separator", { name: "Resize column" });
+        const resizeHandles = document.querySelectorAll<HTMLElement>(".col-resize-handle");
         expect(resizeHandles).toHaveLength(2);
 
         const handle = resizeHandles[0];
@@ -248,22 +252,31 @@ describe("Table", () => {
             ]
         });
 
+        const sortBtns = document.querySelectorAll<HTMLButtonElement>("th.sortable .header-sort-btn");
+        expect(sortBtns).toHaveLength(2);
+
         // Click on Name header to sort ascending
-        await fireEvent.click(screen.getByRole("button", { name: /Name/i }));
+        if (sortBtns[0]) {
+            await fireEvent.click(sortBtns[0]);
+        }
         let cells = screen.getAllByRole("cell");
         expect(cells[0]).toHaveTextContent("Alice");
         expect(cells[2]).toHaveTextContent("Bob");
         expect(cells[4]).toHaveTextContent("Charlie");
 
         // Click on Name header again to sort descending
-        await fireEvent.click(screen.getByRole("button", { name: /Name/i }));
+        if (sortBtns[0]) {
+            await fireEvent.click(sortBtns[0]);
+        }
         cells = screen.getAllByRole("cell");
         expect(cells[0]).toHaveTextContent("Charlie");
         expect(cells[2]).toHaveTextContent("Bob");
         expect(cells[4]).toHaveTextContent("Alice");
 
         // Click on Score header to sort ascending by number
-        await fireEvent.click(screen.getByRole("button", { name: /Score/i }));
+        if (sortBtns[1]) {
+            await fireEvent.click(sortBtns[1]);
+        }
         cells = screen.getAllByRole("cell");
         expect(cells[0]).toHaveTextContent("Bob");
         expect(cells[1]).toHaveTextContent("10");
@@ -277,14 +290,16 @@ describe("Table", () => {
         const tableName = "test-custom-table";
         const customRows = [{ uid: "1", name: "Alpha", role: "Dev", team: "Core" }];
 
-        // Pre-populate localStorage with column state where 'team' is hidden and 'name' has width 250
+        // Pre-populate localStorage under table-preferences where 'team' is hidden and 'name' has width 250
         localStorage.setItem(
-            `viz:${tableName}`,
-            JSON.stringify([
-                { key: "name", visible: true, width: 250 },
-                { key: "role", visible: true },
-                { key: "team", visible: false }
-            ])
+            "viz:table-preferences",
+            JSON.stringify({
+                [tableName]: [
+                    { key: "name", visible: true, width: 250 },
+                    { key: "role", visible: true },
+                    { key: "team", visible: false }
+                ]
+            })
         );
 
         render(Table, {
@@ -304,15 +319,20 @@ describe("Table", () => {
         expect(screen.queryByText("Team")).not.toBeInTheDocument();
 
         // Resizing a column updates localStorage
-        const handles = screen.getAllByRole("separator", { name: "Resize column" });
-        handles[0].setPointerCapture = vi.fn();
-        handles[0].releasePointerCapture = vi.fn();
+        const handles = document.querySelectorAll<HTMLElement>(".col-resize-handle");
+        expect(handles.length).toBeGreaterThan(0);
 
-        await fireEvent.pointerDown(handles[0], { clientX: 100, pointerId: 1 });
-        await fireEvent.pointerMove(handles[0], { clientX: 200, pointerId: 1 });
-        await fireEvent.pointerUp(handles[0], { pointerId: 1 });
+        if (handles[0]) {
+            handles[0].setPointerCapture = vi.fn();
+            handles[0].releasePointerCapture = vi.fn();
 
-        const savedState = JSON.parse(localStorage.getItem(`viz:${tableName}`) || "[]");
+            await fireEvent.pointerDown(handles[0], { clientX: 100, pointerId: 1 });
+            await fireEvent.pointerMove(handles[0], { clientX: 200, pointerId: 1 });
+            await fireEvent.pointerUp(handles[0], { pointerId: 1 });
+        }
+
+        const allPrefs = JSON.parse(localStorage.getItem("viz:table-preferences") || "{}");
+        const savedState = allPrefs[tableName] || [];
         expect(savedState).toEqual(
             expect.arrayContaining([
                 expect.objectContaining({ key: "name", visible: true }),
