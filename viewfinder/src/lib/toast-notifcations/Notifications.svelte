@@ -199,7 +199,6 @@
 
     .viz-toast-type-label {
         font-size: var(--viz-font-size-sm);
-        font-family: var(--viz-mono-font);
         font-weight: 700;
         line-height: 1;
     }
