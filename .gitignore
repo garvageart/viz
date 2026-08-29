@@ -1,12 +1,12 @@
 # Misc folders
 archive
-references
-logs
-data
-resources/test
-resources/internal
-security
-tmp
+/references
+/logs
+/data
+/resources/test
+/resources/internal
+/security
+/tmp
 
 # Misc files
 auth/*.json
