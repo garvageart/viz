@@ -252,13 +252,11 @@ func GetTakenAt(img entities.ImageAsset) time.Time {
 		}
 	}
 
-	if img.ImageMetadata != nil {
-		if !img.ImageMetadata.FileCreatedAt.IsZero() {
-			return img.ImageMetadata.FileCreatedAt
-		}
-		if !img.ImageMetadata.FileModifiedAt.IsZero() {
-			return img.ImageMetadata.FileModifiedAt
-		}
+	if !img.ImageMetadata.FileCreatedAt.IsZero() {
+		return img.ImageMetadata.FileCreatedAt
+	}
+	if !img.ImageMetadata.FileModifiedAt.IsZero() {
+		return img.ImageMetadata.FileModifiedAt
 	}
 
 	if !img.CreatedAt.IsZero() {

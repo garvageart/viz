@@ -82,7 +82,7 @@ func CalculateZipSize(imgs []entities.ImageAsset, uids []string, checkDisk bool)
 		if !ok {
 			continue
 		}
-		if imageEntity.ImageMetadata == nil || imageEntity.ImageMetadata.FileSize == nil {
+		if imageEntity.ImageMetadata.FileSize == nil {
 			continue
 		}
 		if checkDisk {

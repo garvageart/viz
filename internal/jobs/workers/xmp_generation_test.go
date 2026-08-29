@@ -53,7 +53,7 @@ func TestGenerateXMPSidecar(t *testing.T) {
 			FirstName: "Jack",
 			LastName:  "Brigland",
 		},
-		ImageMetadata: &dto.ImageMetadata{
+		ImageMetadata: dto.ImageMetadata{
 			FileName: filename,
 			Rating:   &rating,
 			Label:    &label,

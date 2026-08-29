@@ -100,7 +100,7 @@ func TestBackfillOriginalFileName(t *testing.T) {
 
 	img := entities.ImageAsset{
 		Uid: "test-orig-name-img",
-		ImageMetadata: &dto.ImageMetadata{
+		ImageMetadata: dto.ImageMetadata{
 			FileName: "original_photo.raw",
 		},
 	}

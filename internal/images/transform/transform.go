@@ -52,9 +52,9 @@ func (p *TransformParams) ToQueryString() string {
 
 // CreateTransformEtag creates a unique ETag for a given image and transform.
 func CreateTransformEtag(imgEnt entities.ImageAsset, params *TransformParams) *string {
-	checksum := "unknown"
-	if imgEnt.ImageMetadata != nil {
-		checksum = imgEnt.ImageMetadata.Checksum
+	checksum := imgEnt.ImageMetadata.Checksum
+	if checksum == "" {
+		checksum = "unknown"
 	}
 
 	base := fmt.Sprintf("%s-%dx%d", checksum, params.Width, params.Height)

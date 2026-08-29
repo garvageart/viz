@@ -1000,9 +1000,9 @@ type ImageAsset struct {
 	Favourited *bool `json:"favourited,omitempty"`
 
 	// Height Image height
-	Height        int32          `json:"height"`
-	ImageMetadata *ImageMetadata `json:"image_metadata,omitempty"`
-	ImagePaths    ImagePaths     `json:"image_paths"`
+	Height        int32         `json:"height"`
+	ImageMetadata ImageMetadata `json:"image_metadata"`
+	ImagePaths    ImagePaths    `json:"image_paths"`
 
 	// Name Image name
 	Name string `json:"name"`
@@ -1018,7 +1018,7 @@ type ImageAsset struct {
 	Processed bool `json:"processed"`
 
 	// TakenAt The most appropriate taken/creation timestamp for an image. Priority will be: EXIF Original -> EXIF Modify -> metadata file_created_at -> image.created_at
-	TakenAt *time.Time `json:"taken_at,omitempty"`
+	TakenAt time.Time `json:"taken_at"`
 
 	// Uid Image UID
 	Uid string `json:"uid"`

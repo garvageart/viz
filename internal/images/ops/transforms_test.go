@@ -58,7 +58,7 @@ func TestGenerateTransform_ModernSamples(t *testing.T) {
 
 			// Mock entity
 			imgEnt := entities.ImageAsset{
-				ImageMetadata: &dto.ImageMetadata{
+				ImageMetadata: dto.ImageMetadata{
 					FileType: strings.TrimPrefix(filepath.Ext(file.Name()), "."),
 					Checksum: "mock-checksum-" + file.Name(),
 				},
@@ -191,7 +191,7 @@ func TestPermanentTransforms(t *testing.T) {
 			}
 
 			imgEnt := entities.ImageAsset{
-				ImageMetadata: &dto.ImageMetadata{
+				ImageMetadata: dto.ImageMetadata{
 					FileType: strings.TrimPrefix(filepath.Ext(file.Name()), "."),
 					Checksum: "mock-checksum-" + file.Name(),
 				},

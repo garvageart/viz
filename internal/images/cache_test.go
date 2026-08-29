@@ -208,7 +208,7 @@ func TestCacheFileName(t *testing.T) {
 func TestETagReconstruction(t *testing.T) {
 	// Dummy Image
 	img := entities.ImageAsset{
-		ImageMetadata: &dto.ImageMetadata{
+		ImageMetadata: dto.ImageMetadata{
 			Checksum: "checksum123",
 		},
 	}

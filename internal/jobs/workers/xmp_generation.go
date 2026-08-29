@@ -46,12 +46,6 @@ func NewXMPWorker(db *gorm.DB, wsBroker *libhttp.WSBroker) *jobs.Worker {
 			return fmt.Errorf("%s: %w", JobTypeXMPGeneration, err)
 		}
 
-		if job.Image.ImageMetadata == nil {
-			err = fmt.Errorf("job %s failed: image metadata is nil for image %s", JobTypeXMPGeneration, job.Image.Uid)
-			_ = jobs.UpdateWorkerJobStatus(db, msg.UUID, jobs.WorkerJobStatusFailed, new("worker_error"), new(jobs.Truncate(err.Error(), 1024)), nil, nil)
-			return nil // Return nil to avoid retry loop
-		}
-
 		if wsBroker != nil {
 			wsBroker.Broadcast("job-started", map[string]any{
 				"uid":       msg.UUID,
@@ -154,46 +148,45 @@ func generateXMPSidecar(img entities.ImageAsset, onProgress func(step string, pr
 	}
 
 	// 1. Basic Metadata (Rating, Label, Title)
-	if img.ImageMetadata != nil {
-		if img.ImageMetadata.Rating != nil {
-			ratingVal := *img.ImageMetadata.Rating
-			xmpBase.Rating = xmpbase.Rating(ratingVal)
-			crsSettings.Rating = &ratingVal
+
+	if img.ImageMetadata.Rating != nil {
+		ratingVal := *img.ImageMetadata.Rating
+		xmpBase.Rating = xmpbase.Rating(ratingVal)
+		crsSettings.Rating = &ratingVal
+	}
+
+	if img.ImageMetadata.Label != nil {
+		rawLabel := string(*img.ImageMetadata.Label)
+		normalizedLabel := utils.Capitalize(strings.ToLower(rawLabel))
+
+		xmpBase.Label = normalizedLabel
+		crsSettings.Label = &normalizedLabel
+
+		// Map standard color labels to Photoshop Urgency for broader compatibility
+		// (e.g. Capture One older versions, Photo Mechanic, etc.)
+		// 1=Red, 2=Orange, 3=Yellow, 4=Green, 5=Blue, 6=Purple, 7=Grey
+		switch strings.ToLower(rawLabel) {
+		case "red":
+			psModel.Urgency = 1
+		case "orange":
+			psModel.Urgency = 2
+		case "yellow":
+			psModel.Urgency = 3
+		case "green":
+			psModel.Urgency = 4
+		case "blue":
+			psModel.Urgency = 5
+		case "purple":
+			psModel.Urgency = 6
+		case "grey", "gray":
+			psModel.Urgency = 7
 		}
+	}
 
-		if img.ImageMetadata.Label != nil {
-			rawLabel := string(*img.ImageMetadata.Label)
-			normalizedLabel := utils.Capitalize(strings.ToLower(rawLabel))
-
-			xmpBase.Label = normalizedLabel
-			crsSettings.Label = &normalizedLabel
-
-			// Map standard color labels to Photoshop Urgency for broader compatibility
-			// (e.g. Capture One older versions, Photo Mechanic, etc.)
-			// 1=Red, 2=Orange, 3=Yellow, 4=Green, 5=Blue, 6=Purple, 7=Grey
-			switch strings.ToLower(rawLabel) {
-			case "red":
-				psModel.Urgency = 1
-			case "orange":
-				psModel.Urgency = 2
-			case "yellow":
-				psModel.Urgency = 3
-			case "green":
-				psModel.Urgency = 4
-			case "blue":
-				psModel.Urgency = 5
-			case "purple":
-				psModel.Urgency = 6
-			case "grey", "gray":
-				psModel.Urgency = 7
-			}
-		}
-
-		if img.ImageMetadata.Keywords != nil && len(*img.ImageMetadata.Keywords) > 0 {
-			keywords := *img.ImageMetadata.Keywords
-			dcModel.Subject = keywords
-			lrModel.HierarchicalSubject = xmp.StringArray(keywords)
-		}
+	if img.ImageMetadata.Keywords != nil && len(*img.ImageMetadata.Keywords) > 0 {
+		keywords := *img.ImageMetadata.Keywords
+		dcModel.Subject = keywords
+		lrModel.HierarchicalSubject = xmp.StringArray(keywords)
 	}
 
 	// 2. Descriptive Metadata
@@ -208,29 +201,25 @@ func generateXMPSidecar(img entities.ImageAsset, onProgress func(step string, pr
 		dcModel.Description = xmp.NewAltString(*img.Description)
 	}
 
-	// 2.1 Copyright / Creator
-	var copyrightOwner string
+	// 2.1 Creator / Credit
+	var creator string
 	if img.Owner != nil && img.Owner.FirstName != "" && img.Owner.LastName != "" {
-		copyrightOwner = fmt.Sprintf("%s %s", img.Owner.FirstName, img.Owner.LastName)
+		creator = fmt.Sprintf("%s %s", img.Owner.FirstName, img.Owner.LastName)
 	} else if img.UploadedBy != nil && img.UploadedBy.FirstName != "" && img.UploadedBy.LastName != "" {
-		copyrightOwner = fmt.Sprintf("%s %s", img.UploadedBy.FirstName, img.UploadedBy.LastName)
+		creator = fmt.Sprintf("%s %s", img.UploadedBy.FirstName, img.UploadedBy.LastName)
 	}
 
-	if copyrightOwner != "" {
-		// dc:rights - "Copyright (c) 2023 John Doe"
-		year := time.Now().Year()
-		if img.TakenAt != nil {
-			year = img.TakenAt.Year()
-		}
-		dcModel.Rights = xmp.NewAltString(fmt.Sprintf("Copyright (c) %d %s", year, copyrightOwner))
-		dcModel.Creator = xmp.StringList{copyrightOwner}
-
-		// photoshop:Credit - often used for "Provider" or "Credit Line"
-		psModel.Credit = copyrightOwner
+	if creator != "" {
+		dcModel.Creator = xmp.StringList{creator}
+		psModel.Credit = creator
 	}
 
 	// 3. EXIF / Technical Metadata
 	if img.Exif != nil {
+		// Copyright
+		if img.Exif.Copyright != nil && *img.Exif.Copyright != "" {
+			dcModel.Rights = xmp.NewAltString(*img.Exif.Copyright)
+		}
 		// Dates
 		if img.Exif.DateTimeOriginal != nil {
 			if t, err := xmp.ParseDate(*img.Exif.DateTimeOriginal); err == nil {

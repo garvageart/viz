@@ -155,7 +155,7 @@ func createNewImageEntity(logger *slog.Logger, fileName string, libvipsImg *libv
 		Private:       false,
 		Processed:     false,
 		Exif:          &exif,
-		ImageMetadata: &metadata,
+		ImageMetadata: metadata,
 		ImagePaths:    paths,
 		Width:         int32(libvipsImg.Width()),
 		Height:        int32(libvipsImg.Height()),
@@ -163,7 +163,7 @@ func createNewImageEntity(logger *slog.Logger, fileName string, libvipsImg *libv
 	}
 
 	ta := imageops.GetTakenAt(allImageData)
-	allImageData.TakenAt = &ta
+	allImageData.TakenAt = ta
 
 	return &allImageData, nil
 }
@@ -341,13 +341,6 @@ func ImagesRouter(db *gorm.DB, logger *slog.Logger, wsBroker *libhttp.WSBroker) 
 			return
 		}
 
-		if imgEnt.ImageMetadata == nil {
-			logger.Error("Image metadata is missing", slog.String("uid", uid))
-			render.Status(req, http.StatusInternalServerError)
-			render.JSON(res, req, dto.ErrorResponse{Error: "Image is corrupted (missing metadata)"})
-			return
-		}
-
 		isDownload := req.URL.Query().Get("download") == "1"
 		if isDownload {
 			if !validateDownloadRequest(res, req, db, uid) {
@@ -394,12 +387,6 @@ func ImagesRouter(db *gorm.DB, logger *slog.Logger, wsBroker *libhttp.WSBroker) 
 
 			render.Status(req, http.StatusOK)
 			render.JSON(res, req, imgEnt.Exif)
-			return
-		}
-
-		if imgEnt.ImageMetadata == nil {
-			render.Status(req, http.StatusInternalServerError)
-			render.JSON(res, req, dto.ErrorResponse{Error: "Image metadata missing"})
 			return
 		}
 
@@ -1306,9 +1293,7 @@ func updateImageFromDTO(image *entities.ImageAsset, update dto.ImageUpdate) {
 	}
 
 	if update.ImageMetadata != nil {
-		if image.ImageMetadata == nil {
-			image.ImageMetadata = &dto.ImageMetadata{}
-		}
+		image.ImageMetadata = dto.ImageMetadata{}
 
 		if update.ImageMetadata.Rating != nil {
 			// Clamp rating 0..5
@@ -1343,7 +1328,7 @@ func updateImageFromDTO(image *entities.ImageAsset, update dto.ImageUpdate) {
 	}
 
 	if update.TakenAt != nil {
-		image.TakenAt = update.TakenAt
+		image.TakenAt = *update.TakenAt
 	}
 }
 

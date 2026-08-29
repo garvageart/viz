@@ -74,7 +74,7 @@ func TestZipSizeCalculationAndWriting(t *testing.T) {
 		size := int64(len(tf.content))
 		img := entities.ImageAsset{
 			Uid: tf.uid,
-			ImageMetadata: &dto.ImageMetadata{
+			ImageMetadata: dto.ImageMetadata{
 				FileName: tf.filename,
 				FileSize: &size,
 			},

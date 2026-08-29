@@ -386,14 +386,14 @@ export type ImageAsset = {
     height: number;
     /** Is processed */
     processed: boolean;
-    image_metadata?: ImageMetadata;
+    image_metadata: ImageMetadata;
     image_paths: ImagePaths;
     /** Creation time */
     created_at: string;
     /** Update time */
     updated_at: string;
     /** The most appropriate taken/creation timestamp for an image. Priority will be: EXIF Original -> EXIF Modify -> metadata file_created_at -> image.created_at */
-    taken_at?: string | null;
+    taken_at: string;
 };
 export type ImageAssetRead = {
     /** Image UID */
@@ -417,14 +417,14 @@ export type ImageAssetRead = {
     height: number;
     /** Is processed */
     processed: boolean;
-    image_metadata?: ImageMetadata;
+    image_metadata: ImageMetadata;
     image_paths: ImagePaths;
     /** Creation time */
     created_at: string;
     /** Update time */
     updated_at: string;
     /** The most appropriate taken/creation timestamp for an image. Priority will be: EXIF Original -> EXIF Modify -> metadata file_created_at -> image.created_at */
-    taken_at?: string | null;
+    taken_at: string;
 };
 export type CollectionImage = {
     /** Image UID */

@@ -46,12 +46,6 @@ func NewExifWorker(db *gorm.DB, wsBroker *libhttp.WSBroker) *jobs.Worker {
 			return fmt.Errorf("%s: %w", JobTypeExifProcess, err)
 		}
 
-		if job.Image.ImageMetadata == nil {
-			err = fmt.Errorf("job %s failed: image metadata is nil for image %s", JobTypeExifProcess, job.Image.Uid)
-			_ = jobs.UpdateWorkerJobStatus(db, msg.UUID, jobs.WorkerJobStatusFailed, new("worker_error"), new(jobs.Truncate(err.Error(), 1024)), nil, nil)
-			return nil // Return nil to avoid retry loop
-		}
-
 		if wsBroker != nil {
 			wsBroker.Broadcast("job-started", map[string]any{
 				"uid":       msg.UUID,
@@ -137,10 +131,6 @@ func ExifProcess(ctx context.Context, db *gorm.DB, imgEnt entities.ImageAsset, o
 	exifData, fileCreatedAt, fileModifiedAt := imageops.BuildImageEXIF(rawExif)
 	imageops.HandleExifQuirks(&exifData, originalData)
 	imgEnt.Exif = &exifData
-
-	if imgEnt.ImageMetadata == nil {
-		imgEnt.ImageMetadata = &dto.ImageMetadata{}
-	}
 
 	if !fileCreatedAt.IsZero() {
 		imgEnt.ImageMetadata.FileCreatedAt = fileCreatedAt
@@ -256,11 +246,6 @@ func ExifProcess(ctx context.Context, db *gorm.DB, imgEnt entities.ImageAsset, o
 		return fmt.Errorf("failed to fetch image for update: %w", err)
 	}
 
-	// Ensure metadata struct exists
-	if dbImage.ImageMetadata == nil {
-		dbImage.ImageMetadata = &dto.ImageMetadata{}
-	}
-
 	// Merge extracted data
 	dbImage.ImageMetadata.ColorSpace = imgEnt.ImageMetadata.ColorSpace
 	dbImage.ImageMetadata.HasIccProfile = imgEnt.ImageMetadata.HasIccProfile
@@ -281,9 +266,9 @@ func ExifProcess(ctx context.Context, db *gorm.DB, imgEnt entities.ImageAsset, o
 	// Only overwrite the database taken_at if the file has actual EXIF date/time data
 	// or if the database taken_at is currently nil/zero.
 	finalTakenAt := takenAt
-	if dbImage.TakenAt != nil && !dbImage.TakenAt.IsZero() {
+	if !dbImage.TakenAt.IsZero() {
 		if !imageops.HasExifDateTime(imgEnt.Exif) {
-			finalTakenAt = *dbImage.TakenAt
+			finalTakenAt = dbImage.TakenAt
 		}
 	}
 

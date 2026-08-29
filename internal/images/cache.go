@@ -508,7 +508,7 @@ func GetPermanentTransformHashes(db *gorm.DB) (map[string]bool, error) {
 	// Process images in batches to avoid loading everything into memory
 	err := db.Model(&entities.ImageAsset{}).Where("deleted_at IS NULL").FindInBatches(&images, 1000, func(tx *gorm.DB, batch int) error {
 		for _, img := range images {
-			if img.ImageMetadata == nil {
+			if img.ImageMetadata.Checksum == "" {
 				continue
 			}
 			// Recalculate etag for each permanent transform and add its hash to the set

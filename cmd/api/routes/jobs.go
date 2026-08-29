@@ -400,7 +400,7 @@ func checkMissingTransforms(img entities.ImageAsset, transformPath string, missi
 		return nil // No path to check
 	}
 
-	if img.ImageMetadata == nil || img.ImageMetadata.Checksum == "" || img.ImageMetadata.FileType == "" {
+	if img.ImageMetadata.Checksum == "" || img.ImageMetadata.FileType == "" {
 		logger.Debug("skipping transform check due to incomplete metadata", slog.String("uid", img.Uid), slog.String("path", transformPath))
 		return nil // Cannot check without complete metadata
 	}

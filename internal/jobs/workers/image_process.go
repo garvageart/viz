@@ -37,12 +37,6 @@ func NewImageWorker(db *gorm.DB, wsBroker *libhttp.WSBroker) *jobs.Worker {
 			return fmt.Errorf("%s: %w", JobTypeImageProcess, err)
 		}
 
-		if job.Image.ImageMetadata == nil {
-			err = fmt.Errorf("job %s failed: image metadata is nil for image %s", JobTypeImageProcess, job.Image.Uid)
-			_ = jobs.UpdateWorkerJobStatus(db, msg.UUID, jobs.WorkerJobStatusFailed, new("worker_error"), new(jobs.Truncate(err.Error(), 1024)), nil, nil)
-			return nil // Return nil to avoid retry loop for unrecoverable error
-		}
-
 		if wsBroker != nil {
 			wsBroker.Broadcast("job-started", map[string]any{
 				"uid":       msg.UUID,

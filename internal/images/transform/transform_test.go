@@ -9,7 +9,7 @@ import (
 func TestCreateTransformEtag(t *testing.T) {
 	img := entities.ImageAsset{
 		Uid: "test-uid",
-		ImageMetadata: &dto.ImageMetadata{
+		ImageMetadata: dto.ImageMetadata{
 			Checksum: "abc123hash",
 		},
 	}

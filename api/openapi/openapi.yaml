@@ -4109,10 +4109,9 @@ components:
                 taken_at:
                     type: string
                     format: date-time
-                    nullable: true
                     description: "The most appropriate taken/creation timestamp for an image. Priority will be: EXIF Original -> EXIF Modify -> metadata file_created_at -> image.created_at"
 
-            required: [uid, name, private, width, height, processed, created_at, updated_at, image_paths]
+            required: [uid, name, private, width, height, processed, created_at, updated_at, taken_at, image_metadata, image_paths]
 
         CollectionImage:
             x-entity: true

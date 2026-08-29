@@ -76,7 +76,7 @@ func ParseTransformParams(pathStr string) (*transform.TransformParams, error) {
 func GenerateTransform(params *transform.TransformParams, imgEnt entities.ImageAsset, originalData []byte) (result *TransformResult, err error) {
 	ext := params.Format
 	if ext == "" {
-		if imgEnt.ImageMetadata == nil {
+		if imgEnt.ImageMetadata.FileType == "" {
 			return nil, fmt.Errorf("missing image metadata to determine file type")
 		}
 		ext = imgEnt.ImageMetadata.FileType
