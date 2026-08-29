@@ -12,7 +12,7 @@
     import { toasts } from "$lib/toast-notifcations/toasts.svelte";
     import type { CardVisualState } from "$lib/types/snippet";
     import { invalidateViz } from "$lib/views/views.svelte";
-    import AssetGrid from "../grid/AssetGrid.svelte";
+    import AssetGrid from "../grid/AssetView.svelte";
     import VizViewContainer from "../panels/VizViewContainer.svelte";
     import Button from "../ui/Button.svelte";
     import CollectionCard from "../ui/CollectionCard.svelte";

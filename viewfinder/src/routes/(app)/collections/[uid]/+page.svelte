@@ -32,7 +32,7 @@
     import { DateTime } from "luxon";
     import { type ComponentProps, onDestroy, untrack } from "svelte";
     import Dropdown from "$lib/components/context-menus/Dropdown.svelte";
-    import AssetGrid from "$lib/components/grid/AssetGrid.svelte";
+    import AssetGrid from "$lib/components/grid/AssetView.svelte";
     import PhotoAssetGrid from "$lib/components/grid/PhotoAssetGrid.svelte";
     import ImageLabelViewer from "$lib/components/image-tools/ImageLabelViewer.svelte";
     import StarRating from "$lib/components/image-tools/StarRating.svelte";

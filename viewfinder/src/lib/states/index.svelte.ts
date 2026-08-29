@@ -11,7 +11,7 @@ import { MediaQuery } from "svelte/reactivity";
 import type { MenuItem } from "$lib/context-menu/types";
 import { DbSettings } from "$lib/db/settings";
 import type { DownloadFile } from "$lib/download/asset.svelte";
-import type { AssetGridView } from "$lib/types/asset";
+import type { AssetViewType } from "$lib/types/asset";
 import type { UploadImage } from "$lib/upload/asset.svelte";
 import { VizCookieStorage, VizLocalStorage } from "$lib/utils/misc";
 
@@ -135,11 +135,11 @@ export class TableColumnSettings {
 export const tableColumnSettings = new TableColumnSettings();
 
 class ViewSettingsState {
-    storage = new VizLocalStorage<AssetGridView>("viewSettings");
+    storage = new VizLocalStorage<AssetViewType>("viewSettings");
     showDatesStorage = new VizLocalStorage<boolean>("showGridDates");
     showSimpleStorage = new VizLocalStorage<boolean>("showGridSimple");
 
-    current: AssetGridView = $state(this.storage.get() ?? "grid");
+    current: AssetViewType = $state(this.storage.get() ?? "grid");
     showDates: boolean = $state(this.showDatesStorage.get() ?? false);
     simple: boolean = $state(this.showSimpleStorage.get() ?? false);
 
@@ -149,7 +149,7 @@ class ViewSettingsState {
         { id: "view-custom", label: "Custom" }
     ];
 
-    setView(view: AssetGridView) {
+    setView(view: AssetViewType) {
         this.current = view;
         this.storage.set(view);
     }

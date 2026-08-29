@@ -10,7 +10,7 @@
     import type { MaterialSymbol } from "$lib/types/MaterialSymbol";
     import type { IPagination } from "$lib/types/asset";
     import Dropdown from "../context-menus/Dropdown.svelte";
-    import AssetGrid from "../grid/AssetGrid.svelte";
+    import AssetGrid from "../grid/AssetView.svelte";
     import AssetToolbar from "./toolbars/AssetToolbar.svelte";
 
     type Props = {
@@ -136,7 +136,7 @@
                     title="Toggle Sort Order ({sortState.value.order})"
                     onclick={() => toggleSortOrder(sortState)}
                 />
-                {#if dev && grid.view === "grid"}
+                {#if dev && grid.type === "grid"}
                     {@render toolbarButton({
                         iconName: "grid_view",
                         text: "Print Grid",

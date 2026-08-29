@@ -20,7 +20,7 @@ export type AssetGroupBy = "none" | "year" | "month" | "day";
 
 export type AssetDisplay = "list" | "cover";
 
-export type AssetGridView = "grid" | "list" | "custom";
+export type AssetViewType = "grid" | "list" | "custom";
 
 export interface AssetSort {
     order: AssetSortOrder;

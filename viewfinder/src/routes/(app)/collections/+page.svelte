@@ -9,7 +9,7 @@
         updateCollection
     } from "@viz/api";
     import { type ComponentProps, untrack } from "svelte";
-    import AssetGrid from "$lib/components/grid/AssetGrid.svelte";
+    import AssetGrid from "$lib/components/grid/AssetView.svelte";
     import CollectionModal from "$lib/components/modals/CollectionModal.svelte";
     import FilterModal, { FilterModalOptions } from "$lib/components/modals/FilterModal.svelte";
     import { modalsManager } from "$lib/components/modals/manager/ModalManager.svelte";

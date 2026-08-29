@@ -8,7 +8,7 @@
     import { debugMode, isLayoutPage, isMobile } from "$lib/states/index.svelte";
     import { selectionManager } from "$lib/states/selection.svelte";
     import { type SortState, photosSort } from "$lib/states/sort.svelte";
-    import type { AssetGridArray, AssetGridView, AssetSortBy } from "$lib/types/asset";
+    import type { AssetGridArray, AssetSortBy, AssetViewType } from "$lib/types/asset";
     import type { CardVisualState } from "$lib/types/snippet";
     import { getScrollParent } from "$lib/utils/dom";
     import { isAssetImage } from "$lib/utils/images";
@@ -16,12 +16,12 @@
     import { mountTooltipComponent } from "../tooltips/tooltip";
     import Table, { type TableColumn } from "../ui/Table.svelte";
 
-    export interface AssetGridProps<T extends { uid: string } & Record<string, any>> {
+    export interface AssetViewProps<T extends { uid: string } & Record<string, any>> {
         data: T[];
         assetSnippet: Snippet<[T, CardVisualState]>;
         customSnippet?: Snippet;
         assetGridArray?: AssetGridArray<T>;
-        view?: AssetGridView;
+        type?: AssetViewType;
         assetGridDisplayProps?: SvelteHTMLElements["div"];
         columnCount?: number;
         searchValue?: string;
@@ -54,13 +54,13 @@
         disableOutsideUnselect = $bindable(false),
         disableMultiSelection = $bindable(false),
         onassetcontext,
-        view = $bindable("grid"),
+        type = $bindable("grid"),
         assetGridDisplayProps = $bindable({}),
         columns = $bindable(),
         scopeId = "default",
         disabledUids = new Set(),
         sortState = photosSort
-    }: AssetGridProps<T> = $props();
+    }: AssetViewProps<T> = $props();
 
     // Selection Management
     let selection = $derived(selectionManager.getScope<T>(scopeId));
@@ -88,12 +88,12 @@
     let allAssetsData = $derived(data);
 
     // Compute grid layout parameters
-    let isListView = $derived(view === "list" || sortState.value.display === "list");
+    let isListView = $derived(type === "list" || sortState.value.display === "list");
 
     // TODO: pass this in as configuration perhaps?
-    let gridItemWidth = $derived(view === "custom" ? 352 : 270);
+    let gridItemWidth = $derived(type === "custom" ? 352 : 270);
     let gridGap = $state(8);
-    let gridRowHeight = $derived(view === "custom" ? 264 : 260);
+    let gridRowHeight = $derived(type === "custom" ? 264 : 260);
 
     // Column count: use explicit prop if set, otherwise compute
     let computedColumnCount = $derived.by(() => {
@@ -181,7 +181,7 @@
                 columns: columnCount && columnCount > 0 ? columnCount : undefined,
                 itemWidth: gridItemWidth,
                 rowHeight: gridRowHeight,
-                aspectRatio: view === "custom" ? 3 / 4 : undefined,
+                aspectRatio: type === "custom" ? 3 / 4 : undefined,
                 gap: gridGap
             });
         }
@@ -938,7 +938,7 @@
     {/if}
 {:else if isListView}
     {@render assetTable()}
-{:else if view === "custom"}
+{:else if type === "custom"}
     {#if customSnippet}
         {@render customSnippet()}
     {/if}

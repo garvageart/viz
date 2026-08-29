@@ -5,7 +5,7 @@
     import hotkeys from "hotkeys-js";
     import { type ComponentProps, onMount, untrack } from "svelte";
     import Dropdown from "$lib/components/context-menus/Dropdown.svelte";
-    import AssetGrid from "$lib/components/grid/AssetGrid.svelte";
+    import AssetGrid from "$lib/components/grid/AssetView.svelte";
     import PhotoAssetGrid from "$lib/components/grid/PhotoAssetGrid.svelte";
     import ImageLabelViewer from "$lib/components/image-tools/ImageLabelViewer.svelte";
     import StarRating from "$lib/components/image-tools/StarRating.svelte";
@@ -35,7 +35,7 @@
     import { search, viewSettings } from "$lib/states/index.svelte";
     import { SelectionScopeNames, selectionManager } from "$lib/states/selection.svelte";
     import { toasts } from "$lib/toast-notifcations/toasts.svelte";
-    import type { AssetGridView } from "$lib/types/asset";
+    import type { AssetViewType } from "$lib/types/asset";
     import type { CardVisualState } from "$lib/types/snippet";
     import { getImageLabel } from "$lib/utils/images";
     import { invalidateViz } from "$lib/views/views.svelte";
@@ -155,8 +155,8 @@
     });
 
     // View Modes
-    let imageViewMode = $state<AssetGridView>(viewSettings.current);
-    let collectionViewMode = $state<AssetGridView>(viewSettings.current);
+    let imageViewMode = $state<AssetViewType>(viewSettings.current);
+    let collectionViewMode = $state<AssetViewType>(viewSettings.current);
 
     // Display options for Images
     let imageDisplayMenuItems: MenuItem[] = $derived([
@@ -660,7 +660,7 @@
                                 <div class="photo-group-container">
                                     <AssetGrid
                                         data={images}
-                                        view={imageViewMode}
+                                        type={imageViewMode}
                                         assetSnippet={imageCard}
                                         customSnippet={justifiedGrid}
                                         scopeId={imageScopeId}

@@ -12,7 +12,7 @@
     import hotkeys from "hotkeys-js";
     import { onDestroy, untrack } from "svelte";
     import Dropdown from "$lib/components/context-menus/Dropdown.svelte";
-    import AssetGrid from "$lib/components/grid/AssetGrid.svelte";
+    import AssetGrid from "$lib/components/grid/AssetView.svelte";
     import PhotoAssetGrid from "$lib/components/grid/PhotoAssetGrid.svelte";
     import ImageLabelViewer from "$lib/components/image-tools/ImageLabelViewer.svelte";
     import StarRating from "$lib/components/image-tools/StarRating.svelte";
@@ -693,7 +693,7 @@
         <div class="photo-group-container">
             <AssetGrid
                 data={galleryState.images}
-                view={viewSettings.current}
+                type={viewSettings.current}
                 assetSnippet={imageCard}
                 sortState={photosSort}
                 customSnippet={justifiedGrid}
