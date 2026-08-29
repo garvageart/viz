@@ -2,6 +2,7 @@ import { type ImageAsset, Label } from "@viz/api";
 import { Settings } from "luxon";
 import { rgbaToThumbHash } from "thumbhash";
 import { describe, expect, it, vi } from "vitest";
+import { createTestImageObject } from "$lib/data/test";
 import { LabelColours } from "$lib/images/constants";
 import {
     ByteUnit,
@@ -29,23 +30,7 @@ Settings.defaultLocale = "en-ZA";
 
 function assetFixture(overrides: Partial<ImageAsset> = {}): ImageAsset {
     return {
-        uid: "uid-1",
-        name: "image",
-        private: false,
-        width: 6000,
-        height: 4000,
-        processed: true,
-        image_metadata: {
-            file_name: "amazing_banger_image.jpg",
-            file_type: "image/jpeg",
-            color_space: "sRGB",
-            file_created_at: "2026-01-01T00:00:00Z",
-            file_modified_at: "2026-01-01T00:00:00Z",
-            checksum: "abc"
-        },
-        image_paths: { original: "/original.jpg", thumbnail: "/thumbnail.jpg", preview: "/preview.jpg" },
-        created_at: "2026-01-01T00:00:00Z",
-        updated_at: "2026-01-01T00:00:00Z",
+        ...createTestImageObject(),
         ...overrides
     };
 }

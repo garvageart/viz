@@ -38,8 +38,11 @@ export function createTestImageObject(): ImageAsset {
         private: false,
         width: Math.floor(Math.random() * 1920) + 800,
         height: Math.floor(Math.random() * 1080) + 600,
-        processed: true,
+        processed: faker.datatype.boolean(),
+        description: faker.lorem.sentence(),
+        favourited: faker.datatype.boolean(),
         created_at: faker.date.past({ years: 2 }).toISOString(),
+        taken_at: faker.date.past({ years: 2 }).toISOString(),
         updated_at: faker.date.recent({ days: 30 }).toISOString(),
         image_metadata: {
             file_name: `${name.replace(/\s/g, "_")}.jpg`,
@@ -83,6 +86,7 @@ export function createTestCollection(): Collection {
         created_at: faker.date.past({ years: 1 }).toISOString(),
         updated_at: faker.date.recent({ days: 30 }).toISOString(),
         image_count: Math.floor(Math.random() * 400) + 50,
-        thumbnail: createTestImageObject()
+        thumbnail: createTestImageObject(),
+        favourited: faker.datatype.boolean()
     };
 }
