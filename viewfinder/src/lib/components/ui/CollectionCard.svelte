@@ -85,18 +85,26 @@
     let thumbnail = $derived(collection.thumbnail);
     let isDropTarget = $state(false);
 
-    $effect(() => {
-        if (collection.thumbnail) {
-            thumbnail = collection.thumbnail;
-        } else if (collection.images && collection.images.length > 0) {
-            getImage(collection.images[0].uid).then((res) => {
-                if (res.status === 200) {
-                    thumbnail = res.data;
-                }
-            });
-        } else {
-            thumbnail = undefined;
+    async function loadThumbnail(col: Collection) {
+        if (col.thumbnail) {
+            thumbnail = col.thumbnail;
+            return;
         }
+
+        if (col.images && col.images.length > 0) {
+            console.debug("Fetching collection thumbnail data", collection.uid, collection.name);
+            const res = await getImage(col.images[0].uid);
+            if (res.status === 200) {
+                thumbnail = res.data;
+                return;
+            }
+        }
+
+        thumbnail = undefined;
+    }
+
+    $effect(() => {
+        loadThumbnail(collection);
     });
 
     function handleCardDragEnter(e: DragEvent) {

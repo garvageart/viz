@@ -53,7 +53,7 @@
         assetClick,
         disableOutsideUnselect = $bindable(false),
         disableMultiSelection = $bindable(false),
-        onassetcontext = $bindable(),
+        onassetcontext,
         view = $bindable("grid"),
         assetGridDisplayProps = $bindable({}),
         columns = $bindable(),

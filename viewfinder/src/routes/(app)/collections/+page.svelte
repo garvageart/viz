@@ -32,6 +32,7 @@
     import { collectionsSort } from "$lib/states/sort.svelte";
     import { toasts } from "$lib/toast-notifcations/toasts.svelte";
     import type { AssetGridArray } from "$lib/types/asset";
+    import { invalidateViz } from "$lib/views/views.svelte";
     import type { PageProps } from "./$types";
 
     let { data }: PageProps = $props();
@@ -65,8 +66,7 @@
 
     // When a collection is selected, fetch its images and populate a scope
     // that the Filmstrip panel reads from (via activeScope.source)
-    $effect(() => {
-        const collection = firstSelectedCollection;
+    async function syncFilmstripScope(collection: Collection | undefined) {
         const uid = collection?.uid ?? null;
 
         // Capture previous UID before overwriting
@@ -82,24 +82,23 @@
         }
 
         const imageScopeId = `${SelectionScopeNames.FILMSTRIP_COLLECTION_PREFIX}${uid}`;
+        const res = await listCollectionImages(uid, { limit: 200 });
+        if (activeFilmstripUid !== uid) {
+            return; // stale response — user selected a different collection
+        }
 
-        listCollectionImages(uid, { limit: 200 }).then((res) => {
-            if (activeFilmstripUid !== uid) {
-                return; // stale response — user selected a different collection
-            }
+        if (res.status === 200) {
+            const images = res.data.items.map((i) => i.image);
+            const scope = selectionManager.getScope<ImageAsset>(imageScopeId);
+            scope.setSource(images);
+            scope.clear();
+            // Make the populated scope active so the Filmstrip reads it.
+            selectionManager.setActive(imageScopeId);
+        }
+    }
 
-            if (res.status === 200) {
-                const images = (res.data.items ?? []).map((i) => i.image);
-                const scope = selectionManager.getScope<ImageAsset>(imageScopeId);
-                scope.setSource(images);
-                scope.clear();
-                // Make the populated scope active so the Filmstrip reads it.
-                // Safe: the filter derivation treats filmstrip-collection-*
-                // scopes as "collections" mode, so this won't switch the
-                // filter panel to image filters while on the collections page.
-                selectionManager.setActive(imageScopeId);
-            }
-        });
+    $effect(() => {
+        syncFilmstripScope(firstSelectedCollection);
     });
 
     // Modal data for create/edit
@@ -165,16 +164,13 @@
                         });
 
                         if (res.status === 200) {
-                            listOfCollectionsData = listOfCollectionsData.map((c) =>
-                                c.uid === modalData!.uid ? res.data : c
-                            );
-
                             toasts.add({
                                 message: `Updated collection ${res.data.name}`,
                                 type: "success"
                             });
 
                             modalsManager.pop();
+                            await invalidateViz();
                         } else {
                             toasts.add({
                                 message: `Failed to update collection: ${res.data.error || "Unknown error"}`,
@@ -196,26 +192,24 @@
             editCollection: (col) => {
                 openCollectionModal("edit", col);
             },
-            onCollectionDuplicated: (newCol) => {
-                listOfCollectionsData = [newCol, ...listOfCollectionsData];
+            onCollectionDuplicated: async (newCol) => {
                 toasts.add({
                     message: `Duplicated collection ${newCol.name}`,
                     type: "success"
                 });
+                await invalidateViz();
             },
-            onCollectionUpdated: (updatedCol) => {
-                listOfCollectionsData = listOfCollectionsData.map((c) => (c.uid === updatedCol.uid ? updatedCol : c));
+            onCollectionUpdated: async () => {
+                await invalidateViz();
             },
-            onCollectionDeleted: (deletedCol) => {
-                listOfCollectionsData = listOfCollectionsData.filter((c) => c.uid !== deletedCol.uid);
+            onCollectionDeleted: async (deletedCol) => {
                 toasts.add({
                     message: `Deleted collection ${deletedCol.name}`,
                     type: "success"
                 });
+                await invalidateViz();
             },
-            onCollectionsDeleted: (deletedCols) => {
-                const deletedUids = new Set(deletedCols.map((c) => c.uid));
-                listOfCollectionsData = listOfCollectionsData.filter((c) => !deletedUids.has(c.uid));
+            onCollectionsDeleted: async (deletedCols) => {
                 selectionScope.clear();
                 toasts.add({
                     message:
@@ -224,6 +218,7 @@
                             : `Deleted collection **${deletedCols[0].name}**`,
                     type: "success"
                 });
+                await invalidateViz();
             }
         })
     );
