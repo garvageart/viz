@@ -287,9 +287,9 @@
                                     </DatePicker.GridRow>
                                 </DatePicker.GridHead>
                                 <DatePicker.GridBody>
-                                    {#each month.weeks as weekDates (weekDates)}
+                                    {#each month.weeks as weekDates}
                                         <DatePicker.GridRow class="calendar-grid-row">
-                                            {#each weekDates as date (date)}
+                                            {#each weekDates as date}
                                                 <DatePicker.Cell {date} month={month.value} class="calendar-cell">
                                                     <DatePicker.Day class="calendar-day">
                                                         <span class="calendar-day-val">{date.day}</span>

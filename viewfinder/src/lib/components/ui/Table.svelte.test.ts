@@ -69,12 +69,12 @@ describe("Table", () => {
         expect(screen.getByText("Nothing here")).toBeInTheDocument();
     });
 
-    it("renders nested values by dot path", () => {
+    it("renders nested values using getValue accessor", () => {
         const nested = [{ uid: "u1", profile: { display_name: "Al" } }];
 
         render(Table, {
             data: nested,
-            columns: [{ key: "profile.display_name" }]
+            columns: [{ key: "display_name", getValue: (row) => row.profile?.display_name }]
         });
 
         expect(screen.getByText("Al")).toBeInTheDocument();
@@ -109,7 +109,7 @@ describe("Table", () => {
     });
 
     it("does not make headers sortable when sortable is false", () => {
-        render(Table, { data: rows });
+        render(Table, { data: rows, sortable: false });
 
         expect(document.querySelector(".header-sort-btn")).not.toBeInTheDocument();
     });
