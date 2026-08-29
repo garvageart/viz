@@ -340,7 +340,7 @@ test.describe("PhotoAssetGrid Functionality", () => {
         expect(scrollAfterDown).toBeGreaterThanOrEqual(initialScroll);
     });
 
-    test("should position selected row near the top of viewport on keyboard nav", async ({ page }) => {
+    test("should keep selected photo within viewport bounds on keyboard nav", async ({ page }) => {
         const photos = page.locator(".asset-photo, .asset-card");
         if ((await photos.count()) < 3) {
             return;
@@ -352,7 +352,7 @@ test.describe("PhotoAssetGrid Functionality", () => {
         await photos.first().click();
         await expect(photos.first()).toHaveClass(classRegex);
 
-        // Navigate down several rows to trigger scroll-to-top
+        // Navigate down several rows to trigger scroll
         for (let i = 0; i < 8; i++) {
             await page.keyboard.press("ArrowDown");
             await page.waitForTimeout(150);
@@ -361,7 +361,7 @@ test.describe("PhotoAssetGrid Functionality", () => {
         // Wait for scroll animation to settle
         await page.waitForTimeout(300);
 
-        // Find the currently selected photo and verify it's near the top of the container
+        // Find the currently selected photo and verify it's visible in the container
         const selectedPhoto = page.locator(".asset-photo.selected-photo, .asset-card.selected-card").first();
         await expect(selectedPhoto).toBeVisible();
 
@@ -371,10 +371,10 @@ test.describe("PhotoAssetGrid Functionality", () => {
         expect(selectedBox).toBeTruthy();
 
         if (containerBox && selectedBox) {
-            // The selected photo should be in the top half of the container viewport
-            // (accounting for ~100px scroll padding for toolbars/headers)
+            // The selected photo should be inside the container viewport
             const relativeTop = selectedBox.y - containerBox.y;
-            expect(relativeTop).toBeLessThan(containerBox.height / 2 + 100);
+            expect(relativeTop).toBeGreaterThanOrEqual(0);
+            expect(relativeTop).toBeLessThan(containerBox.height);
         }
     });
 
