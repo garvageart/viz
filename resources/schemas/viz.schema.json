@@ -1,0 +1,400 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$defs": {
+    "CacheConfig": {
+      "properties": {
+        "gc_enabled": {
+          "type": "boolean",
+          "description": "Enable background garbage collection for cached derivatives.",
+          "default": true
+        },
+        "clear_permanent_transforms": {
+          "type": "boolean",
+          "description": "Allow eviction of permanent transforms during cache pruning.",
+          "default": false
+        },
+        "max_size_bytes": {
+          "type": "integer",
+          "description": "Maximum cache disk budget in bytes (default 10 GB).",
+          "default": 10737418240
+        },
+        "max_age_days": {
+          "type": "integer",
+          "description": "Max age in days for unaccessed cache entries before cleanup.",
+          "default": 30
+        },
+        "cleanup_interval_minutes": {
+          "type": "integer",
+          "description": "Interval in minutes between automatic cache garbage collection sweeps.",
+          "default": 1440
+        },
+        "trash_max_age_days": {
+          "type": "integer",
+          "description": "Retention period in days for soft-deleted items in trash before purge.",
+          "default": 30
+        },
+        "images": {
+          "$ref": "#/$defs/ImageCacheConfig",
+          "description": "HTTP caching header parameters for image responses."
+        }
+      },
+      "additionalProperties": false,
+      "type": "object"
+    },
+    "DatabaseConfig": {
+      "properties": {
+        "location": {
+          "type": "string",
+          "description": "Database host name or connection location.",
+          "default": "database"
+        },
+        "user": {
+          "type": "string",
+          "description": "Database username.",
+          "default": "postgres"
+        },
+        "password": {
+          "type": "string",
+          "description": "Database password (prefer using DB_PASSWORD environment variable)."
+        },
+        "name": {
+          "type": "string",
+          "description": "Database name.",
+          "default": "viz"
+        },
+        "port": {
+          "type": "integer",
+          "maximum": 65535,
+          "minimum": 1,
+          "description": "PostgreSQL database port.",
+          "default": 5432
+        },
+        "max_open_conns": {
+          "type": "integer",
+          "description": "MaxOpenConns is the maximum number of open connections to the database.\nDefault: 25. Set to 0 for unlimited (not recommended in production).",
+          "default": 25
+        },
+        "max_idle_conns": {
+          "type": "integer",
+          "description": "MaxIdleConns is the maximum number of idle connections kept in the pool.\nDefault: 25. Should be ≤ MaxOpenConns.",
+          "default": 25
+        },
+        "conn_max_lifetime_minutes": {
+          "type": "integer",
+          "description": "ConnMaxLifetimeMinutes is how long (in minutes) a connection may be reused\nbefore being recycled. Default: 5. Prevents stale connections from being\nheld open past server-side or load-balancer timeouts.",
+          "default": 5
+        }
+      },
+      "additionalProperties": false,
+      "type": "object"
+    },
+    "DownloadConfig": {
+      "properties": {
+        "zip_export_name": {
+          "type": "string",
+          "description": "Default base filename for downloaded ZIP archives.",
+          "default": "viz-bulk_export"
+        }
+      },
+      "additionalProperties": false,
+      "type": "object"
+    },
+    "ImageCacheConfig": {
+      "properties": {
+        "http_max_age_seconds": {
+          "type": "integer",
+          "description": "Cache-Control max-age header in seconds for standard derivative images (default 7 days).",
+          "default": 604800
+        },
+        "http_permanent_max_age_seconds": {
+          "type": "integer",
+          "description": "Cache-Control max-age header in seconds for immutable permanent assets (default 1 year).",
+          "default": 31536000
+        }
+      },
+      "additionalProperties": false,
+      "type": "object"
+    },
+    "LibvipsConfig": {
+      "properties": {
+        "match_system_logging": {
+          "type": "boolean",
+          "description": "Route libvips internal logs through application structured logging.",
+          "default": false
+        },
+        "cache_max_memory_mb": {
+          "type": "integer",
+          "description": "Maximum memory limit in MB for libvips operation cache (0 disables cache).",
+          "default": 0
+        },
+        "cache_max_files": {
+          "type": "integer",
+          "description": "Maximum open files tracked in libvips operation cache (0 disables cache).",
+          "default": 0
+        },
+        "cache_max_operations": {
+          "type": "integer",
+          "description": "Maximum operations retained in libvips cache (0 disables cache).",
+          "default": 0
+        },
+        "concurrency": {
+          "type": "integer",
+          "description": "libvips worker thread concurrency count.",
+          "default": 1
+        },
+        "vector_enabled": {
+          "type": "boolean",
+          "description": "Enable SIMD vectorization in libvips image transformations.",
+          "default": false
+        }
+      },
+      "additionalProperties": false,
+      "type": "object"
+    },
+    "LoggingConfig": {
+      "properties": {
+        "level": {
+          "type": "string",
+          "enum": [
+            "debug",
+            "info",
+            "warn",
+            "error"
+          ],
+          "description": "Minimum log level threshold.",
+          "default": "debug"
+        },
+        "timezone": {
+          "type": "string",
+          "enum": [
+            "utc",
+            "local"
+          ],
+          "description": "Timezone for log timestamps (\"local\" or \"utc\").",
+          "default": "utc"
+        },
+        "pretty": {
+          "type": "boolean",
+          "description": "Enable colorized human-readable console logging instead of structured JSON.",
+          "default": false
+        }
+      },
+      "additionalProperties": false,
+      "type": "object"
+    },
+    "QueueConfig": {
+      "properties": {
+        "enabled": {
+          "type": "boolean"
+        },
+        "host": {
+          "type": "string"
+        },
+        "port": {
+          "type": "integer",
+          "maximum": 65535,
+          "minimum": 1
+        },
+        "username": {
+          "type": "string"
+        },
+        "password": {
+          "type": "string"
+        },
+        "db": {
+          "type": "integer"
+        },
+        "use_tls": {
+          "type": "boolean"
+        },
+        "pool_size": {
+          "type": "integer"
+        },
+        "dial_timeout_seconds": {
+          "type": "integer"
+        },
+        "read_timeout_seconds": {
+          "type": "integer"
+        },
+        "write_timeout_seconds": {
+          "type": "integer"
+        }
+      },
+      "additionalProperties": false,
+      "type": "object"
+    },
+    "SecurityConfig": {
+      "properties": {
+        "argon2_memory_mb": {
+          "type": "integer",
+          "description": "Memory cost parameter in MB for Argon2id password hashing (RFC 9106 recommended: 64MB).",
+          "default": 64
+        },
+        "argon2_time": {
+          "type": "integer",
+          "description": "Time cost (iterations) for Argon2id password hashing (RFC 9106 recommended: 3).",
+          "default": 3
+        },
+        "argon2_threads": {
+          "type": "integer",
+          "description": "Parallelism threads for Argon2id password hashing (RFC 9106 recommended: 4).",
+          "default": 4
+        }
+      },
+      "additionalProperties": false,
+      "type": "object"
+    },
+    "ServerConfig": {
+      "properties": {
+        "host": {
+          "type": "string",
+          "description": "Host or IP the HTTP server binds to (e.g. 'localhost' or '0.0.0.0').",
+          "default": "localhost"
+        },
+        "port": {
+          "type": "integer",
+          "maximum": 65535,
+          "minimum": 1,
+          "description": "TCP port the API server listens on.",
+          "default": 7770
+        },
+        "key": {
+          "type": "string",
+          "description": "Server identification key or authentication secret."
+        }
+      },
+      "additionalProperties": false,
+      "type": "object"
+    },
+    "StorageConfig": {
+      "properties": {
+        "storage_path_template": {
+          "type": "string",
+          "description": "Template format for organizing asset storage paths.",
+          "default": "{{assetUid}}/{{filename}}"
+        }
+      },
+      "additionalProperties": false,
+      "type": "object"
+    },
+    "StorageMetricsConfig": {
+      "properties": {
+        "enabled": {
+          "type": "boolean",
+          "description": "Enable periodic disk storage calculations.",
+          "default": true
+        },
+        "interval_seconds": {
+          "type": "integer",
+          "description": "Interval in seconds between storage metrics calculation runs.",
+          "default": 300
+        }
+      },
+      "additionalProperties": false,
+      "type": "object"
+    },
+    "UploadConfig": {
+      "properties": {
+        "location": {
+          "type": "string",
+          "description": "Directory name or path where uploaded files are placed.",
+          "default": "library"
+        }
+      },
+      "additionalProperties": false,
+      "type": "object"
+    },
+    "UserManagementConfig": {
+      "properties": {
+        "allow_manual_registration": {
+          "type": "boolean",
+          "description": "Allow new users to sign up manually from the UI.",
+          "default": true
+        }
+      },
+      "additionalProperties": false,
+      "type": "object"
+    }
+  },
+  "properties": {
+    "server": {
+      "$ref": "#/$defs/ServerConfig",
+      "description": "HTTP server host and port settings."
+    },
+    "base_url": {
+      "type": "string",
+      "description": "Base URL of the application instance (e.g. 'localhost' or 'https://photos.example.com').",
+      "default": "localhost"
+    },
+    "allowed_hosts": {
+      "items": {
+        "type": "string"
+      },
+      "type": "array",
+      "description": "Hostnames and IP addresses the server is allowed to respond to.",
+      "default": []
+    },
+    "timezone": {
+      "type": "string",
+      "description": "Application timezone identifier (e.g. 'utc', 'local').",
+      "default": "utc"
+    },
+    "logging": {
+      "$ref": "#/$defs/LoggingConfig",
+      "description": "Application logging configuration."
+    },
+    "base_directory": {
+      "type": "string",
+      "description": "Base filesystem directory path for storing application data, assets, and caches.",
+      "default": "./data"
+    },
+    "upload": {
+      "$ref": "#/$defs/UploadConfig",
+      "description": "Asset upload settings."
+    },
+    "download": {
+      "$ref": "#/$defs/DownloadConfig",
+      "description": "Asset download and bulk export settings."
+    },
+    "database": {
+      "$ref": "#/$defs/DatabaseConfig",
+      "description": "PostgreSQL database connection and pool settings."
+    },
+    "redis": {
+      "$ref": "#/$defs/QueueConfig",
+      "description": "Redis connection settings for background task queues and caching."
+    },
+    "libvips": {
+      "$ref": "#/$defs/LibvipsConfig",
+      "description": "libvips image processing engine configuration."
+    },
+    "cache": {
+      "$ref": "#/$defs/CacheConfig",
+      "description": "Derivative asset caching and garbage collection settings."
+    },
+    "users": {
+      "$ref": "#/$defs/UserManagementConfig",
+      "description": "User registration and authentication policies."
+    },
+    "storage_metrics": {
+      "$ref": "#/$defs/StorageMetricsConfig",
+      "description": "Background storage metrics calculation settings."
+    },
+    "storage": {
+      "$ref": "#/$defs/StorageConfig",
+      "description": "Image filesystem layout configuration."
+    },
+    "security": {
+      "$ref": "#/$defs/SecurityConfig",
+      "description": "Security and password hashing configuration."
+    },
+    "$schema": {
+      "type": "string",
+      "description": "Path or URI to the JSON Schema for editor validation and autocompletion."
+    }
+  },
+  "additionalProperties": false,
+  "type": "object",
+  "title": "Viz Configuration Schema",
+  "description": "JSON Schema specification for viz.json runtime configuration file."
+}

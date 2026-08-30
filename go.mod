@@ -22,14 +22,22 @@ require (
 	github.com/go-co-op/gocron/v2 v2.22.0
 	github.com/go-errors/errors v1.5.1
 	github.com/gorilla/websocket v1.5.3
+	github.com/invopop/jsonschema v0.14.0
 	github.com/jfberry/raymond v1.1.0
 	github.com/oapi-codegen/runtime v1.6.0
 	github.com/orandin/slog-gorm v1.4.0
+	github.com/pb33f/ordered-map/v2 v2.3.1
 	github.com/pressly/goose/v3 v3.27.3
 	github.com/samber/slog-multi v1.8.0
 	github.com/spf13/viper v1.21.0
 	github.com/stretchr/testify v1.11.1
 	gorm.io/driver/sqlite v1.6.0
+)
+
+require (
+	github.com/bahlo/generic-list-go v0.2.0 // indirect
+	github.com/buger/jsonparser v1.1.2 // indirect
+	go.yaml.in/yaml/v4 v4.0.0-rc.2 // indirect
 )
 
 require (

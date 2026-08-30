@@ -3,7 +3,7 @@ SHELL := /usr/bin/env bash
 # even though make spawns bash subshells (not zsh where nvm is normally sourced).
 export PATH := $(HOME)/.nvm/versions/node/$(shell cat $(CURDIR)/.nvmrc 2>/dev/null || echo "node")/bin:$(PATH)
 SCRIPTS_DIR := scripts/js
-.PHONY: help build build-api build-frontend generate-icons generate-types generate-types-install fmt fmt-check fmt-check-go lint test test-go docker-build docker-push docker-up docker-down migrate migrate-gen initdb clean image-server image-viz dev run check-go buildx-server buildx-build
+.PHONY: help build build-api build-frontend generate-icons generate-types generate-types-install generate-schema fmt fmt-check fmt-check-go lint test test-go docker-build docker-push docker-up docker-down migrate migrate-gen initdb clean image-server image-viz dev run check-go buildx-server buildx-build
 
 # Simple Makefile for common tasks across the viz repository.
 # Targets included:
@@ -77,6 +77,7 @@ help:
 	@printf "  generate-icons            Run icon generator in $(VIEWFINDER_DIR)\n"
 	@printf "  generate-types            Generate API types (Go DTOs + TS client)\n"
 	@printf "  generate-types-install    Install type generation tools and run generation\n"
+	@printf "  generate-schema           Generate JSON Schema for viz.json from Go backend types\n"
 	@printf "  fmt                       Run formatting (Go and frontend if available)\n"
 	@printf "  lint                      Run linters (if available)\n"
 	@printf "  test                      Run Go tests and frontend tests if present\n"
@@ -158,6 +159,10 @@ generate-types-install:
 	else \
 		echo "No scripts found at $(SCRIPTS_DIR)"; \
 	fi
+
+generate-schema:
+	@echo "Generating viz.json schema from Go backend types..."
+	@go run ./tools/genschema -o resources/schemas/viz.schema.json
 
 ### Code hygiene
 fmt:
