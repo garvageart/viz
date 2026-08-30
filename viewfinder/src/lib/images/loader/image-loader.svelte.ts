@@ -15,6 +15,7 @@ export class ImageLoader {
     private deps: ImageLoaderDeps;
 
     zoomedImageURL = $state("");
+    highestLoadedSize = $state(0);
     lastLoadedImageUid = $state("");
     initialImageLoaded = $state(false);
     loadState = $state<"loading" | "loaded" | "error">("loading");
@@ -39,7 +40,7 @@ export class ImageLoader {
             return overriddenImages[uid];
         }
 
-        if (this.zoomedImageURL && this.deps.currentZoom > 1 && !isCropping) {
+        if (this.zoomedImageURL && !isCropping) {
             return this.zoomedImageURL;
         }
 
@@ -48,6 +49,7 @@ export class ImageLoader {
 
     reset(uid: string | undefined) {
         this.zoomedImageURL = "";
+        this.highestLoadedSize = 0;
         this.initialImageLoaded = false;
         this.loadState = "loading";
 
@@ -63,7 +65,7 @@ export class ImageLoader {
         }
     }
 
-    handleLoad() {
+    handleLoad(naturalWidth?: number, naturalHeight?: number) {
         const uid = this.deps.lightboxImage?.uid;
         if (this.lastLoadedImageUid !== uid) {
             this.deps.resetZoom();
@@ -75,6 +77,13 @@ export class ImageLoader {
             this.fetchEndTime = Date.now();
             if (this.fetchStartTime) {
                 this.fetchDuration = this.fetchEndTime - this.fetchStartTime;
+            }
+        }
+
+        if (naturalWidth && naturalHeight) {
+            const naturalLongest = Math.max(naturalWidth, naturalHeight);
+            if (naturalLongest > this.highestLoadedSize) {
+                this.highestLoadedSize = naturalLongest;
             }
         }
 
@@ -99,15 +108,16 @@ export class ImageLoader {
         this.currentFetchURL = url;
     }
 
-    completeZoomUpgrade(url: string) {
+    completeZoomUpgrade(url: string, loadedSize?: number) {
         if (this.currentFetchURL === url && this.fetchType === "zoom_change") {
             this.fetchEndTime = Date.now();
             if (this.fetchStartTime) {
                 this.fetchDuration = this.fetchEndTime - this.fetchStartTime;
             }
 
-            if (this.deps.currentZoom > 1) {
-                this.zoomedImageURL = url;
+            this.zoomedImageURL = url;
+            if (loadedSize && loadedSize > this.highestLoadedSize) {
+                this.highestLoadedSize = loadedSize;
             }
         }
     }

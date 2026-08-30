@@ -253,9 +253,14 @@
             const originalLongestEdge = Math.max(currentImage.width || 0, currentImage.height || 0);
             const size = Math.min(originalLongestEdge, snappedSize);
 
-            // Do NOT fetch high-res upgrade if target size is <= current loaded image natural resolution
-            const loadedPreviewLongestEdge = Math.max(imageEl?.naturalWidth || 0, imageEl?.naturalHeight || 0);
-            if (loadedPreviewLongestEdge > 0 && size <= loadedPreviewLongestEdge) {
+            // Clamp to highest loaded resolution: do NOT fetch if target size is <= currently loaded resolution
+            const loadedLongestEdge = Math.max(
+                loader.highestLoadedSize,
+                imageEl?.naturalWidth || 0,
+                imageEl?.naturalHeight || 0
+            );
+
+            if (loadedLongestEdge > 0 && size <= loadedLongestEdge) {
                 return;
             }
 
@@ -273,7 +278,8 @@
             const preloadImg = new Image();
             currentPreloadImg = preloadImg;
             preloadImg.onload = () => {
-                loader.completeZoomUpgrade(fullURL);
+                const loadedSize = Math.max(preloadImg.naturalWidth || 0, preloadImg.naturalHeight || 0) || size;
+                loader.completeZoomUpgrade(fullURL, loadedSize);
                 currentPreloadImg = null;
             };
             preloadImg.onerror = () => {
@@ -842,6 +848,11 @@
                     : "none"}
             </span>
 
+            <span class="debug-label">Highest Loaded:</span>
+            <span class="debug-val mono">
+                {loader.highestLoadedSize > 0 ? `${loader.highestLoadedSize}px` : "none"}
+            </span>
+
             <span class="debug-label">Fetch Type:</span>
             <span class="debug-val mono">
                 {loader.fetchType}
@@ -1079,7 +1090,7 @@
                             if (isCropping) {
                                 updateImageDimensions();
                             }
-                            loader.handleLoad();
+                            loader.handleLoad(imageEl?.naturalWidth, imageEl?.naturalHeight);
                         }}
                         onerror={() => loader.handleError()}
                         ondragstart={(e) => e.preventDefault()}
