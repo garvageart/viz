@@ -88,6 +88,21 @@ function recordTestImageUid(uid: string) {
 }
 
 /**
+ * Returns the list of test-uploaded image UIDs saved during setup.
+ */
+export function getTestUploadedImageUids(): string[] {
+    const filePath = path.join(process.cwd(), "e2e/.auth/test_images.json");
+    if (fs.existsSync(filePath)) {
+        try {
+            return JSON.parse(fs.readFileSync(filePath, "utf-8"));
+        } catch {
+            return [];
+        }
+    }
+    return [];
+}
+
+/**
  * Cleans up any test-created collections from the database.
  * Destroys all collections starting with the "E2E-" prefix.
  */

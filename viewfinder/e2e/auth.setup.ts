@@ -1,7 +1,7 @@
 import { type Page, expect, test as setup } from "@playwright/test";
 import * as fs from "fs";
 import * as path from "path";
-import { configureApiClient, performDragAndDrop, trackUploadedImages } from "./helpers";
+import { configureApiClient, getTestUploadedImageUids, performDragAndDrop, trackUploadedImages } from "./helpers";
 
 const authFile = "e2e/.auth/user.json";
 
@@ -20,15 +20,17 @@ async function handleOnboarding(page: Page) {
             const input = inputs.nth(i);
             if ((await input.isVisible().catch(() => false)) && (await input.isEditable().catch(() => false))) {
                 const val = await input.inputValue().catch(() => "");
-                if (!val) {
-                    const type = await input.getAttribute("type").catch(() => "text");
-                    if (type === "email") {
-                        await input.fill(process.env.E2E_TEST_EMAIL!);
-                    } else if (type === "password") {
-                        await input.fill(process.env.E2E_TEST_PASSWORD!);
-                    } else {
-                        await input.fill(process.env.E2E_TEST_USERNAME!);
-                    }
+                if (val) {
+                    return;
+                }
+
+                const type = await input.getAttribute("type").catch(() => "text");
+                if (type === "email") {
+                    await input.fill(process.env.E2E_TEST_EMAIL!);
+                } else if (type === "password") {
+                    await input.fill(process.env.E2E_TEST_PASSWORD!);
+                } else {
+                    await input.fill(process.env.E2E_TEST_USERNAME!);
                 }
             }
         }
@@ -206,16 +208,26 @@ setup("authenticate", async ({ page }) => {
     // Wait for uploads to be processed
     await page.waitForTimeout(1500);
 
-    // Seed sample collection for downstream grid & layout E2E tests
+    // Seed sample collection with photos for downstream grid & layout E2E tests
     console.log("Seeding sample collection...");
-    await page.request
+    const sampleCollRes = await page.request
         .post("/api/collections", {
             data: {
                 name: "E2E-Sample-Collection",
                 description: "Seeded sample collection for E2E grid testing"
             }
         })
+        .then(async (r) => (r.ok() ? ((await r.json()) as { uid?: string }) : null))
         .catch(() => null);
+
+    const seededImageUids = getTestUploadedImageUids();
+    if (sampleCollRes?.uid && seededImageUids.length > 0) {
+        await page.request
+            .put(`/api/collections/${sampleCollRes.uid}/images`, {
+                data: { uids: seededImageUids }
+            })
+            .catch(() => null);
+    }
 
     // Warm up routes to avoid lazy compilation timeouts in Vite dev mode
     console.log("Warming up routes...");
