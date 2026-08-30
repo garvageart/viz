@@ -645,8 +645,9 @@
                         <span>Filter</span>
                     </Button>
                     <Dropdown
+                        id="photos-display-dropdown"
                         title="Display"
-                        class="toolbar-button"
+                        class="toolbar-button display-dropdown-btn"
                         iconName="list_alt"
                         items={displayMenuItems}
                         selectedItemId={getDisplaySelectedId()}

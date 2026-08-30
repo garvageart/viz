@@ -335,7 +335,7 @@
     let grid: ComponentProps<typeof AssetGrid<ImageAsset>> = $derived({
         assetSnippet: imageCard,
         customSnippet: justifiedGrid,
-        view: viewSettings.current,
+        type: viewSettings.current,
         assetGridArray: imageGridArray,
         data: displayData,
         scopeId: scopeId,
@@ -934,9 +934,10 @@
             <span>Edit</span>
         </Button>
         <Dropdown
+            id="coll-view-dropdown"
             iconName="grid_view"
             title="View"
-            class="toolbar-button"
+            class="toolbar-button display-dropdown-btn"
             items={gridCtxMenu}
             showSelectionIndicator={false}
         ></Dropdown>
@@ -1046,7 +1047,7 @@
     {focusScrollElement}
 >
     <AssetsShell
-        bind:grid
+        {grid}
         pagination={collectionState.pagination}
         {noAssetsSnippet}
         {selectionToolbarSnippet}

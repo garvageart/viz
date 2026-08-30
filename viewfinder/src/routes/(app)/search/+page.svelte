@@ -230,7 +230,7 @@
         data: collections,
         assetSnippet: collectionCard,
         searchValue: search.value,
-        view: collectionViewMode,
+        type: collectionViewMode,
         scopeId: collectionScopeId,
         onassetcontext: (detail) => {
             const { asset } = detail;
@@ -582,8 +582,9 @@
                                     {#if collectionSelection.size <= 1}
                                         <div style="display: flex; align-items: center; gap: 0.5rem;">
                                             <Dropdown
+                                                id="search-collection-display-dropdown"
                                                 title="Display"
-                                                class="toolbar-button"
+                                                class="toolbar-button display-dropdown-btn"
                                                 iconName="list_alt"
                                                 items={collectionDisplayMenuItems}
                                                 selectedItemId={collectionDisplaySelectedId}
@@ -616,8 +617,9 @@
                                     {#if imageSelection.size <= 1}
                                         <div style="display: flex; align-items: center; gap: 0.5rem;">
                                             <Dropdown
+                                                id="search-image-display-dropdown"
                                                 title="Display"
-                                                class="toolbar-button"
+                                                class="toolbar-button display-dropdown-btn"
                                                 iconName="list_alt"
                                                 items={imageDisplayMenuItems}
                                                 selectedItemId={imageDisplaySelectedId}
