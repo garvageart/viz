@@ -60,5 +60,11 @@
     "js/ts.preferences.importModuleSpecifier": "non-relative",
     "js/ts.experimental.useTsgo": false,
     "prettier.configPath": ".prettierrc",
-    "prettier.ignorePath": ".prettierignore"
+    "prettier.ignorePath": ".prettierignore",
+    "json.schemas": [
+        {
+            "fileMatch": ["/viz.json", "viz.json"],
+            "url": "./resources/schemas/viz.schema.json"
+        }
+    ]
 }
