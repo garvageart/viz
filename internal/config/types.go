@@ -3,24 +3,38 @@ package config
 var AppConfig VizConfig
 
 type ServerConfig struct {
-	Host string `json:"host" mapstructure:"host"`
-	Port int    `json:"port" mapstructure:"port"`
-	Key  string `json:"key" mapstructure:"key"`
+	// Host or IP the HTTP server binds to (e.g. 'localhost' or '0.0.0.0').
+	Host string `json:"host,omitempty" mapstructure:"host"`
+	// TCP port the API server listens on.
+	Port int `json:"port,omitempty" mapstructure:"port" jsonschema:"minimum=1,maximum=65535"`
+	// Server identification key or authentication secret.
+	Key string `json:"key,omitempty" mapstructure:"key"`
 }
 
 // RedisConfig holds the configuration for a Redis connection.
 type RedisConfig struct {
-	Enabled             bool   `json:"enabled" mapstructure:"enabled"`
-	Host                string `json:"host" mapstructure:"host"`
-	Port                int    `json:"port" mapstructure:"port"`
-	Username            string `json:"username" mapstructure:"name"`
-	Password            string `json:"password,omitempty" mapstructure:"password"`
-	DB                  int    `json:"db" mapstructure:"db"`
-	UseTLS              bool   `json:"use_tls" mapstructure:"use_tls"`
-	PoolSize            int    `json:"pool_size" mapstructure:"pool_size"`
-	DialTimeoutSeconds  int    `json:"dial_timeout_seconds" mapstructure:"dial_timeout_seconds"`
-	ReadTimeoutSeconds  int    `json:"read_timeout_seconds" mapstructure:"read_timeout_seconds"`
-	WriteTimeoutSeconds int    `json:"write_timeout_seconds" mapstructure:"write_timeout_seconds"`
+	// Enable Redis connection for async job processing and caching.
+	Enabled bool `json:"enabled,omitempty" mapstructure:"enabled"`
+	// Redis server host.
+	Host string `json:"host,omitempty" mapstructure:"host"`
+	// Redis server port.
+	Port int `json:"port,omitempty" mapstructure:"port" jsonschema:"minimum=1,maximum=65535"`
+	// Redis username for ACL authentication.
+	Username string `json:"username,omitempty" mapstructure:"name"`
+	// Redis password (prefer using REDIS_PASSWORD environment variable).
+	Password string `json:"password,omitempty" mapstructure:"password"`
+	// Redis database index.
+	DB int `json:"db,omitempty" mapstructure:"db"`
+	// Enable TLS encryption for Redis connection.
+	UseTLS bool `json:"use_tls,omitempty" mapstructure:"use_tls"`
+	// Redis client connection pool size.
+	PoolSize int `json:"pool_size,omitempty" mapstructure:"pool_size"`
+	// Redis connection dial timeout in seconds.
+	DialTimeoutSeconds int `json:"dial_timeout_seconds,omitempty" mapstructure:"dial_timeout_seconds"`
+	// Redis socket read timeout in seconds.
+	ReadTimeoutSeconds int `json:"read_timeout_seconds,omitempty" mapstructure:"read_timeout_seconds"`
+	// Redis socket write timeout in seconds.
+	WriteTimeoutSeconds int `json:"write_timeout_seconds,omitempty" mapstructure:"write_timeout_seconds"`
 }
 
 // QueueConfig holds the configuration for the job queue.
@@ -30,110 +44,161 @@ type QueueConfig struct {
 
 // DatabaseConfig holds the configuration for the database connection.
 // Connection pool limits are applied at startup via sql.DB setters.
-// Defaults are set in config.go. See docs/architecture/IMAGE_PROCESSING_MEMORY.md.
+// Defaults are set in defaults.go. See docs/architecture/IMAGE_PROCESSING_MEMORY.md.
 type DatabaseConfig struct {
-	Location string `json:"location" mapstructure:"location"`
-	User     string `json:"user" mapstructure:"user"`
+	// Database host name or connection location.
+	Location string `json:"location,omitempty" mapstructure:"location"`
+	// Database username.
+	User string `json:"user,omitempty" mapstructure:"user"`
+	// Database password (prefer using DB_PASSWORD environment variable).
 	Password string `json:"password,omitempty" mapstructure:"password"`
-	Name     string `json:"name" mapstructure:"name"`
-	Port     int    `json:"port" mapstructure:"port"`
+	// Database name.
+	Name string `json:"name,omitempty" mapstructure:"name"`
+	// PostgreSQL database port.
+	Port int `json:"port,omitempty" mapstructure:"port" jsonschema:"minimum=1,maximum=65535"`
 
 	// MaxOpenConns is the maximum number of open connections to the database.
 	// Default: 25. Set to 0 for unlimited (not recommended in production).
-	MaxOpenConns int `json:"max_open_conns" mapstructure:"max_open_conns"`
+	MaxOpenConns int `json:"max_open_conns,omitempty" mapstructure:"max_open_conns"`
 
 	// MaxIdleConns is the maximum number of idle connections kept in the pool.
 	// Default: 25. Should be ≤ MaxOpenConns.
-	MaxIdleConns int `json:"max_idle_conns" mapstructure:"max_idle_conns"`
+	MaxIdleConns int `json:"max_idle_conns,omitempty" mapstructure:"max_idle_conns"`
 
 	// ConnMaxLifetimeMinutes is how long (in minutes) a connection may be reused
 	// before being recycled. Default: 5. Prevents stale connections from being
 	// held open past server-side or load-balancer timeouts.
-	ConnMaxLifetimeMinutes int `json:"conn_max_lifetime_minutes" mapstructure:"conn_max_lifetime_minutes"`
+	ConnMaxLifetimeMinutes int `json:"conn_max_lifetime_minutes,omitempty" mapstructure:"conn_max_lifetime_minutes"`
 }
 
 // LoggingConfig holds the configuration for logging.
 type LoggingConfig struct {
-	Level    string `json:"level" mapstructure:"level"`
-	Timezone string `json:"timezone" mapstructure:"timezone"` // "local" or "utc"
-	Pretty   bool   `json:"pretty" mapstructure:"pretty"`
+	// Minimum log level threshold.
+	Level string `json:"level,omitempty" mapstructure:"level" jsonschema:"enum=debug,enum=info,enum=warn,enum=error"`
+	// Timezone for log timestamps ("local" or "utc").
+	Timezone string `json:"timezone,omitempty" mapstructure:"timezone" jsonschema:"enum=utc,enum=local"`
+	// Enable colorized human-readable console logging instead of structured JSON.
+	Pretty bool `json:"pretty,omitempty" mapstructure:"pretty"`
 }
 
 // UploadConfig holds the configuration for uploads.
 type UploadConfig struct {
-	Location string `json:"location" mapstructure:"location"`
+	// Directory name or path where uploaded files are placed.
+	Location string `json:"location,omitempty" mapstructure:"location"`
 }
 
 // DownloadConfig holds the configuration for downloads.
 type DownloadConfig struct {
-	ZipExportName string `json:"zip_export_name" mapstructure:"zip_export_name"`
+	// Default base filename for downloaded ZIP archives.
+	ZipExportName string `json:"zip_export_name,omitempty" mapstructure:"zip_export_name"`
 }
 
 // LibvipsConfig holds the configuration for libvips.
 type LibvipsConfig struct {
-	MatchSystemLogging bool `json:"match_system_logging" mapstructure:"match_system_logging"`
-	CacheMaxMemoryMB   int  `json:"cache_max_memory_mb" mapstructure:"cache_max_memory_mb"`
-	CacheMaxFiles      int  `json:"cache_max_files" mapstructure:"cache_max_files"`
-	CacheMaxOperations int  `json:"cache_max_operations" mapstructure:"cache_max_operations"`
-	Concurrency        int  `json:"concurrency" mapstructure:"concurrency"`
-	VectorEnabled      bool `json:"vector_enabled" mapstructure:"vector_enabled"`
+	// Route libvips internal logs through application structured logging.
+	MatchSystemLogging bool `json:"match_system_logging,omitempty" mapstructure:"match_system_logging"`
+	// Maximum memory limit in MB for libvips operation cache (0 disables cache).
+	CacheMaxMemoryMB int `json:"cache_max_memory_mb,omitempty" mapstructure:"cache_max_memory_mb"`
+	// Maximum open files tracked in libvips operation cache (0 disables cache).
+	CacheMaxFiles int `json:"cache_max_files,omitempty" mapstructure:"cache_max_files"`
+	// Maximum operations retained in libvips cache (0 disables cache).
+	CacheMaxOperations int `json:"cache_max_operations,omitempty" mapstructure:"cache_max_operations"`
+	// libvips worker thread concurrency count.
+	Concurrency int `json:"concurrency,omitempty" mapstructure:"concurrency"`
+	// Enable SIMD vectorization in libvips image transformations.
+	VectorEnabled bool `json:"vector_enabled,omitempty" mapstructure:"vector_enabled"`
 }
 
 // StorageMetricsConfig holds configuration for background storage calculation.
 type StorageMetricsConfig struct {
-	Enabled         bool `json:"enabled" mapstructure:"enabled"`
-	IntervalSeconds int  `json:"interval_seconds" mapstructure:"interval_seconds"`
+	// Enable periodic disk storage calculations.
+	Enabled bool `json:"enabled,omitempty" mapstructure:"enabled"`
+	// Interval in seconds between storage metrics calculation runs.
+	IntervalSeconds int `json:"interval_seconds,omitempty" mapstructure:"interval_seconds"`
 }
 
 // ImageCacheConfig holds caching configuration specific to images.
 type ImageCacheConfig struct {
-	HTTPMaxAgeSeconds          int `json:"http_max_age_seconds" mapstructure:"http_max_age_seconds"`
-	HTTPPermanentMaxAgeSeconds int `json:"http_permanent_max_age_seconds" mapstructure:"http_permanent_max_age_seconds"`
+	// Cache-Control max-age header in seconds for standard derivative images (default 7 days).
+	HTTPMaxAgeSeconds int `json:"http_max_age_seconds,omitempty" mapstructure:"http_max_age_seconds"`
+	// Cache-Control max-age header in seconds for immutable permanent assets (default 1 year).
+	HTTPPermanentMaxAgeSeconds int `json:"http_permanent_max_age_seconds,omitempty" mapstructure:"http_permanent_max_age_seconds"`
 }
 
 // CacheConfig holds the configuration for caching.
 type CacheConfig struct {
-	GCEnabled                bool             `json:"gc_enabled" mapstructure:"gc_enabled"`
-	ClearPermanentTransforms bool             `json:"clear_permanent_transforms" mapstructure:"clear_permanent_transforms"`
-	MaxSizeBytes             int64            `json:"max_size_bytes" mapstructure:"max_size_bytes"`
-	MaxAgeDays               int              `json:"max_age_days" mapstructure:"max_age_days"`
-	CleanupIntervalMinutes   int              `json:"cleanup_interval_minutes" mapstructure:"cleanup_interval_minutes"`
-	TrashMaxAgeDays          int              `json:"trash_max_age_days" mapstructure:"trash_max_age_days"`
-	Images                   ImageCacheConfig `json:"images" mapstructure:"images"`
+	// Enable background garbage collection for cached derivatives.
+	GCEnabled bool `json:"gc_enabled,omitempty" mapstructure:"gc_enabled"`
+	// Allow eviction of permanent transforms during cache pruning.
+	ClearPermanentTransforms bool `json:"clear_permanent_transforms,omitempty" mapstructure:"clear_permanent_transforms"`
+	// Maximum cache disk budget in bytes (default 10 GB).
+	MaxSizeBytes int64 `json:"max_size_bytes,omitempty" mapstructure:"max_size_bytes"`
+	// Max age in days for unaccessed cache entries before cleanup.
+	MaxAgeDays int `json:"max_age_days,omitempty" mapstructure:"max_age_days"`
+	// Interval in minutes between automatic cache garbage collection sweeps.
+	CleanupIntervalMinutes int `json:"cleanup_interval_minutes,omitempty" mapstructure:"cleanup_interval_minutes"`
+	// Retention period in days for soft-deleted items in trash before purge.
+	TrashMaxAgeDays int `json:"trash_max_age_days,omitempty" mapstructure:"trash_max_age_days"`
+	// HTTP caching header parameters for image responses.
+	Images ImageCacheConfig `json:"images,omitempty" mapstructure:"images"`
 }
 
 type UserManagementConfig struct {
-	AllowManualRegistration bool `json:"allow_manual_registration" mapstructure:"allow_manual_registration"`
+	// Allow new users to sign up manually from the UI.
+	AllowManualRegistration bool `json:"allow_manual_registration,omitempty" mapstructure:"allow_manual_registration"`
 }
 
 type SecurityConfig struct {
-	Argon2MemoryMB int `json:"argon2_memory_mb" mapstructure:"argon2_memory_mb"`
-	Argon2Time     int `json:"argon2_time" mapstructure:"argon2_time"`
-	Argon2Threads  int `json:"argon2_threads" mapstructure:"argon2_threads"`
+	// Memory cost parameter in MB for Argon2id password hashing (RFC 9106 recommended: 64MB).
+	Argon2MemoryMB int `json:"argon2_memory_mb,omitempty" mapstructure:"argon2_memory_mb"`
+	// Time cost (iterations) for Argon2id password hashing (RFC 9106 recommended: 3).
+	Argon2Time int `json:"argon2_time,omitempty" mapstructure:"argon2_time"`
+	// Parallelism threads for Argon2id password hashing (RFC 9106 recommended: 4).
+	Argon2Threads int `json:"argon2_threads,omitempty" mapstructure:"argon2_threads"`
 }
 
 // StorageConfig holds the configuration for image storage paths.
 type StorageConfig struct {
-	StoragePathTemplate string `json:"storage_path_template" mapstructure:"storage_path_template"`
+	// Template format for organizing asset storage paths.
+	StoragePathTemplate string `json:"storage_path_template,omitempty" mapstructure:"storage_path_template"`
 }
 
-// VizConfig is the root configuration structure.
+// VizConfig is the root configuration structure for viz.json.
+//
+//go:generate go run ../../tools/genschema -o ../../resources/schemas/viz.schema.json
 type VizConfig struct {
-	Server         ServerConfig         `json:"server" mapstructure:"server"`
-	BaseURL        string               `json:"base_url" mapstructure:"base_url"`
-	AllowedHosts   []string             `json:"allowed_hosts" mapstructure:"allowed_hosts"`
-	Logging        LoggingConfig        `json:"logging" mapstructure:"logging"`
-	BaseDir        string               `json:"base_directory" mapstructure:"base_directory"`
-	Upload         UploadConfig         `json:"upload" mapstructure:"upload"`
-	Download       DownloadConfig       `json:"download" mapstructure:"download"`
-	Database       DatabaseConfig       `json:"database" mapstructure:"database"`
-	Queue          QueueConfig          `json:"redis" mapstructure:"redis"`
-	Libvips        LibvipsConfig        `json:"libvips" mapstructure:"libvips"`
-	Cache          CacheConfig          `json:"cache" mapstructure:"cache"`
-	Users          UserManagementConfig `json:"users" mapstructure:"users"`
-	StorageMetrics StorageMetricsConfig `json:"storage_metrics" mapstructure:"storage_metrics"`
-	Storage        StorageConfig        `json:"storage" mapstructure:"storage"`
-	Security       SecurityConfig       `json:"security" mapstructure:"security"`
+	// HTTP server host and port settings.
+	Server ServerConfig `json:"server,omitempty" mapstructure:"server"`
+	// Base URL of the application instance (e.g. 'localhost' or 'https://photos.example.com').
+	BaseURL string `json:"base_url,omitempty" mapstructure:"base_url"`
+	// Hostnames and IP addresses the server is allowed to respond to.
+	AllowedHosts []string `json:"allowed_hosts,omitempty" mapstructure:"allowed_hosts"`
+	// Application timezone identifier (e.g. 'utc', 'local').
+	Timezone string `json:"timezone,omitempty" mapstructure:"timezone"`
+	// Application logging configuration.
+	Logging LoggingConfig `json:"logging,omitempty" mapstructure:"logging"`
+	// Base filesystem directory path for storing application data, assets, and caches.
+	BaseDir string `json:"base_directory,omitempty" mapstructure:"base_directory"`
+	// Asset upload settings.
+	Upload UploadConfig `json:"upload,omitempty" mapstructure:"upload"`
+	// Asset download and bulk export settings.
+	Download DownloadConfig `json:"download,omitempty" mapstructure:"download"`
+	// PostgreSQL database connection and pool settings.
+	Database DatabaseConfig `json:"database,omitempty" mapstructure:"database"`
+	// Redis connection settings for background task queues and caching.
+	Queue QueueConfig `json:"redis,omitempty" mapstructure:"redis"`
+	// libvips image processing engine configuration.
+	Libvips LibvipsConfig `json:"libvips,omitempty" mapstructure:"libvips"`
+	// Derivative asset caching and garbage collection settings.
+	Cache CacheConfig `json:"cache,omitempty" mapstructure:"cache"`
+	// User registration and authentication policies.
+	Users UserManagementConfig `json:"users,omitempty" mapstructure:"users"`
+	// Background storage metrics calculation settings.
+	StorageMetrics StorageMetricsConfig `json:"storage_metrics,omitempty" mapstructure:"storage_metrics"`
+	// Image filesystem layout configuration.
+	Storage StorageConfig `json:"storage,omitempty" mapstructure:"storage"`
+	// Security and password hashing configuration.
+	Security SecurityConfig `json:"security,omitempty" mapstructure:"security"`
 }
 
 // PublicVizConfig is the sanitized public configuration safe to expose to frontend / clients.

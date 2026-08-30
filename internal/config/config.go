@@ -50,68 +50,8 @@ func ReadConfig() (viper.Viper, error) {
 	_ = v.BindEnv("base_directory", "BASE_DIRECTORY")
 	_ = v.BindEnv("upload.location", "UPLOAD_LOCATION")
 
-	// Set Defaults
-	v.SetDefault("base_url", "localhost")
-	v.SetDefault("base_directory", DefaultDataDirectory)
-	v.SetDefault("upload.location", "library")
-	v.SetDefault("download.zip_export_name", "viz-bulk_export")
-	v.SetDefault("timezone", "utc")
-	v.SetDefault("allowed_hosts", []string{})
-	v.SetDefault("server.port", 7770)
-	if utils.IsProduction {
-		v.SetDefault("server.host", "0.0.0.0")
-	} else {
-		v.SetDefault("server.host", "localhost")
-	}
-
-	v.SetDefault("logging.level", "debug")
-	v.SetDefault("logging.timezone", "utc")
-	v.SetDefault("logging.pretty", false)
-
-	v.SetDefault("database.location", "database")
-	v.SetDefault("database.port", 5432)
-	v.SetDefault("database.name", "viz")
-	v.SetDefault("database.user", "postgres")
-	v.SetDefault("database.max_open_conns", 25)
-	v.SetDefault("database.max_idle_conns", 25)
-	v.SetDefault("database.conn_max_lifetime_minutes", 5)
-
-	v.SetDefault("redis.enabled", false)
-	v.SetDefault("redis.host", "localhost")
-	v.SetDefault("redis.port", 6379)
-	v.SetDefault("redis.db", 0)
-	v.SetDefault("redis.use_tls", false)
-	v.SetDefault("redis.pool_size", 10)
-	v.SetDefault("redis.dial_timeout_seconds", 5)
-	v.SetDefault("redis.read_timeout_seconds", 3)
-	v.SetDefault("redis.write_timeout_seconds", 3)
-
-	v.SetDefault("libvips.match_system_logging", false)
-	v.SetDefault("libvips.cache_max_memory_mb", 0)
-	v.SetDefault("libvips.cache_max_files", 0)
-	v.SetDefault("libvips.cache_max_operations", 0)
-	v.SetDefault("libvips.concurrency", 1)
-
-	v.SetDefault("storage.storage_path_template", "{{assetUid}}/{{filename}}")
-	v.SetDefault("storage_metrics.enabled", true)
-	v.SetDefault("storage_metrics.interval_seconds", 300)
-
-	v.SetDefault("users.allow_manual_registration", true)
-
-	// Cache defaults
-	v.SetDefault("cache.gc_enabled", true)
-	v.SetDefault("cache.images.http_max_age_seconds", 604800)             // 1 week
-	v.SetDefault("cache.images.http_permanent_max_age_seconds", 31536000) // 1 year
-	v.SetDefault("cache.cleanup_interval_minutes", 1440)                  // 24 hours
-	v.SetDefault("cache.max_size_bytes", 10*1024*1024*1024)               // 10 GB
-	v.SetDefault("cache.max_age_days", 30)
-	v.SetDefault("cache.clear_permanent_transforms", false)
-	v.SetDefault("cache.trash_max_age_days", 30) // 30 days
-
-	// Security defaults (RFC 9106)
-	v.SetDefault("security.argon2_memory_mb", 64)
-	v.SetDefault("security.argon2_time", 3)
-	v.SetDefault("security.argon2_threads", 4)
+	// Bind Defaults from DefaultConfig()
+	bindConfigDefaults(v, DefaultConfig())
 
 	err := v.ReadInConfig()
 	if err != nil {
@@ -158,6 +98,22 @@ func WriteConfig(cfg VizConfig) error {
 	return nil
 }
 
+func bindConfigDefaults(v *viper.Viper, defaults VizConfig) {
+	data, err := json.Marshal(defaults)
+	if err != nil {
+		return
+	}
+
+	var m map[string]any
+	if err := json.Unmarshal(data, &m); err != nil {
+		return
+	}
+
+	for k, val := range m {
+		v.SetDefault(k, val)
+	}
+}
+
 var (
 	BaseDirectory string
 )
@@ -168,6 +124,7 @@ func init() {
 		panic(err)
 	}
 
+	AppConfig = DefaultConfig()
 	if err := cfg.Unmarshal(&AppConfig); err != nil {
 		panic(fmt.Errorf("failed to unmarshal config into AppConfig: %w", err))
 	}
