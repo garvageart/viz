@@ -285,6 +285,13 @@ jobs:
                   E2E_PORT="7779"
                   NETWORK_NAME="viz-ci-net-${{ github.run_id }}"
 
+                  # Remove any lingering container bound to the static port
+                  docker ps -q --filter "publish=${E2E_PORT}" | xargs -r docker rm -f 2>/dev/null || true
+
+                  # Clean up any leftover state from prior aborted or retried runs
+                  docker rm -f "viz-ci-server-${{ github.run_id }}" "viz-ci-redis-${{ github.run_id }}" "viz-ci-db-${{ github.run_id }}" 2>/dev/null || true
+                  docker network rm "$NETWORK_NAME" 2>/dev/null || true
+
                   docker network create "$NETWORK_NAME"
 
                   # 1. Start ephemeral Postgres database
@@ -355,9 +362,6 @@ jobs:
                   if [ "$HEALTHY" != "true" ]; then
                     echo "❌ Viz API server failed to become healthy within 60s."
                     docker logs "viz-ci-server-${{ github.run_id }}" --tail 50
-                    docker rm -f "viz-ci-server-${{ github.run_id }}" "viz-ci-redis-${{ github.run_id }}" "viz-ci-db-${{ github.run_id }}" || true
-                    docker network disconnect -f "$NETWORK_NAME" "$CURRENT_CONTAINER" 2>/dev/null || true
-                    docker network rm "$NETWORK_NAME" || true
                     exit 1
                   fi
 
@@ -367,15 +371,20 @@ jobs:
                   export VIZ_API_SERVER_PORT="$VIZ_TARGET_PORT"
                   pnpm --filter @viz/viewfinder test:e2e:prod || E2E_STATUS=$?
 
-                  echo "🧹 Cleaning up test containers..."
-                  docker rm -f "viz-ci-server-${{ github.run_id }}" "viz-ci-redis-${{ github.run_id }}" "viz-ci-db-${{ github.run_id }}" || true
-                  docker network disconnect -f "$NETWORK_NAME" "$CURRENT_CONTAINER" 2>/dev/null || true
-                  docker network rm "$NETWORK_NAME" || true
-
                   if [ -n "$E2E_STATUS" ] && [ "$E2E_STATUS" -ne 0 ]; then
                     echo "❌ E2E tests failed with exit code $E2E_STATUS"
                     exit $E2E_STATUS
                   fi
+
+            - name: Cleanup E2E Containers
+              if: always()
+              run: |
+                  NETWORK_NAME="viz-ci-net-${{ github.run_id }}"
+                  CURRENT_CONTAINER=$(hostname)
+                  echo "🧹 Cleaning up E2E test containers and network..."
+                  docker rm -f "viz-ci-server-${{ github.run_id }}" "viz-ci-redis-${{ github.run_id }}" "viz-ci-db-${{ github.run_id }}" 2>/dev/null || true
+                  docker network disconnect -f "$NETWORK_NAME" "$CURRENT_CONTAINER" 2>/dev/null || true
+                  docker network rm "$NETWORK_NAME" 2>/dev/null || true
 
     publish-images:
         name: "Publish Images"
