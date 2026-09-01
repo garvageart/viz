@@ -5,6 +5,42 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.33.0] - 2026-09-01
+
+* feat(viewfinder): support full TimeField props and label position in TimeInputField (c9a1f590)
+* chore(docker): standardize runtime storage directory to data/ (41fb16fa)
+* docs(architecture): add sync engine specification (8b691286)
+* fix(viewfinder): refresh collections on image websocket events (77c8e703)
+* fix(viewfinder): clamp lightbox image to highest loaded resolution during zoom (9f0545d9)
+* chore(vscode): associate viz.json with generated schema (d8d6a1d5)
+* feat(tools): add JSON schema generator tool and generate viz.json schema (f1339c2d)
+* refactor(config): centralize default configuration values in DefaultConfig constructor (6fb67404)
+* test(viewfinder): update E2E setup and view switching locators (3ca75d99)
+* test(viewfinder): add unit tests for AssetView type prop switching (1f06fc76)
+* fix(viewfinder): update AssetGrid props to use type and restore prop reactivity (b818cd3d)
+* chore: rename AssetGrid to AssetView (ad58942a)
+* test(viewfinder): assert viewport bounds on photo grid keyboard navigation (1b46cc19)
+* refactor(viewfinder): streamline collection view invalidation and card thumbnail loading (bd055dcc)
+* fix(viewfinder): make context menu separator IDs unique (4e3b48d3)
+* test(viewfinder): enrich mock data generators with full schema properties (cfa51edb)
+* chore: anchor root-level data directory in .gitignore (041bf161)
+* test: use test data fixtures for assets (3a2fc81c)
+* test(viewfinder): update Table unit tests and refine DatePicker grid keys (86b5af6e)
+* refactor(viewfinder): decouple preview logic from AssetGrid and add explicit collection columns (5f0ca212)
+* ui: remove mono from notification title (61af4de5)
+* feat(viewfinder): enhance Table with custom formatters, accessors, and row events (7a8a5fe9)
+* fix(viewfinder): make context menu and dropdown items reactive to order changes (3b41627f)
+* chore(viewfinder): remove unused icon components and obsolete column selector modal (1240463d)
+* refactor(api): update ImageMetadata to non-nullable value type and enforce strict XMP copyright (18057aff)
+* fix(ci): prevent pipefail failure when extracting tag name in release outputs step (d8e783bd)
+* feat(admin): integrate redesigned Table component into admin views and security settings (bb3ce30d)
+* feat(viewfinder): implement advanced Table component features, column management, and unit tests (f2cd7591)
+* refactor(ui): minor styling adjustments and metadata panel documentation (bf840cfa)
+* feat(context-menu): pass item and index parameters to content snippets (c3d14a08)
+* feat(ui): enhance Checkbox component with indeterminate support and sharp icons (a1054da4)
+* feat(ui): add IconSwapVert icon component (006eeb25)
+* feat(ui): add Banner component with multi-variant support (def2e50e)
+
 ## [0.32.23] - 2026-08-28
 
 * fix(viewfinder): sync month/year dropdowns on calendar navigation (dc743c4f)
