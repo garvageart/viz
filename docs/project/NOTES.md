@@ -10,7 +10,7 @@ A document of general notes and random sporadic stuff that myself (Les) and mayb
 
 Implement a "Show Missing Files" diagnostic tool in the Admin UI (Settings / Storage) that:
 
-1. Compares PostgreSQL `images` table entries against expected physical file paths in `/app/var/library/<UID>/<name>`.
+1. Compares PostgreSQL `images` table entries against expected physical file paths in `/app/data/library/<UID>/<name>`.
 2. Identifies and highlights orphaned DB records where original media files are missing on disk.
 3. Provides quick admin actions to purge orphaned metadata rows or trigger targeted re-uploads.
 

@@ -1,6 +1,6 @@
 # Viz Repository Guidelines
 
-**Last Updated:** July 21, 2026
+**Last Updated:** September 1, 2026
 
 ## Purpose
 
@@ -28,7 +28,7 @@ Entry point for agents and humans working on the `viz` codebase.
 - **Frontend directory**: `viewfinder/` — not `src/`, `frontend/`, or `web/`.
 - **Lockfile**: `pnpm-lock.yaml` at repository root (not inside `viewfinder/`).
 - **Go workspace**: `go.work` at root (Go 1.26) with two modules: root (`.`) and `./cmd/api`.
-- **Runtime data**: `var/` directory for local library, logs, trash, and cache — gitignored.
+- **Runtime data**: `data/` directory for local library, logs, trash, and cache — gitignored.
 - **Resource identifiers**: All API entities use `uid` (string) as the primary identifier, not numeric IDs or UUIDs.
 - **Docker services**: `make docker-up` starts Postgres 18, Redis 8, and the Viz server on port 7770. See [docker-compose.yml](/docker/docker-compose.yml).
 - **Common Make targets**: `make dev-api` (backend dev server), `make fmt` / `make lint`, `make test-go` / `make test`, `make check-go`, `make docker-up` / `make docker-down`.

@@ -11,6 +11,8 @@ bin
 build
 dist
 *.log
+data
+data/**
 var
 var/**
 *.local
