@@ -106,6 +106,8 @@ class EventsState {
             case "image-deleted":
                 console.debug(`[Events] Image event: ${event}`);
                 this.invalidateApp(DataKeys.Photos);
+                this.invalidateApp(DataKeys.Collections);
+                this.invalidateApp(DataKeys.Collection);
                 break;
 
             case "config-updated":
