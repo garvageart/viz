@@ -285,12 +285,9 @@ jobs:
                   E2E_PORT="7779"
                   NETWORK_NAME="viz-ci-net-${{ github.run_id }}"
 
-                  # Remove any lingering container bound to the static port
-                  docker ps -q --filter "publish=${E2E_PORT}" | xargs -r docker rm -f 2>/dev/null || true
-
-                  # Clean up any leftover state from prior aborted or retried runs
-                  docker rm -f "viz-ci-server-${{ github.run_id }}" "viz-ci-redis-${{ github.run_id }}" "viz-ci-db-${{ github.run_id }}" 2>/dev/null || true
-                  docker network rm "$NETWORK_NAME" 2>/dev/null || true
+                  # Remove any lingering viz-ci test containers & networks across all previous runs
+                  docker ps -a --filter "name=viz-ci-" -q | xargs -r docker rm -f 2>/dev/null || true
+                  docker network ls --filter "name=viz-ci-net" -q | xargs -r docker network rm 2>/dev/null || true
 
                   docker network create "$NETWORK_NAME"
 
