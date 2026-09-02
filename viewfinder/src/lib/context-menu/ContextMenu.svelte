@@ -332,18 +332,6 @@
         list-style: none;
     }
 
-    ul > :global(li:first-child > button),
-    ul > :global(li:first-child > .ctx-content) {
-        border-top-left-radius: 0.5rem;
-        border-top-right-radius: 0.5rem;
-    }
-
-    ul > :global(li:last-child > button),
-    ul > :global(li:last-child > .ctx-content) {
-        border-bottom-left-radius: 0.5rem;
-        border-bottom-right-radius: 0.5rem;
-    }
-
     .ctx-separator {
         height: 0 !important;
         background: transparent !important;

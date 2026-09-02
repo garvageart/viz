@@ -181,9 +181,9 @@
         >
             {#if item.iconName}
                 {#if typeof item.iconName === "string"}
-                    <MaterialIcon class="ctx-icon" iconName={item.iconName} weight={300} />
+                    <MaterialIcon class="ctx-icon" iconName={item.iconName} />
                 {:else}
-                    <MaterialIcon class="ctx-icon" weight={300} {...item.iconName} />
+                    <MaterialIcon class="ctx-icon" {...item.iconName} />
                 {/if}
             {/if}
             <span class="label">{item.label}</span>
@@ -230,14 +230,14 @@
         list-style: none;
     }
 
-    ul > :global(li:first-child > button),
-    ul > :global(li:first-child > .ctx-content) {
+    li:first-child > .ctx-button,
+    li:first-child > .ctx-content {
         border-top-left-radius: 0.5rem;
         border-top-right-radius: 0.5rem;
     }
 
-    ul > :global(li:last-child > button),
-    ul > :global(li:last-child > .ctx-content) {
+    li:last-child > .ctx-button,
+    li:last-child > .ctx-content {
         border-bottom-left-radius: 0.5rem;
         border-bottom-right-radius: 0.5rem;
     }
