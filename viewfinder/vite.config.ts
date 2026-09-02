@@ -5,9 +5,8 @@ import fs from "fs";
 import { createRequire } from "module";
 import path from "path";
 import { fileURLToPath } from "url";
-import { type ProxyOptions } from "vite";
+import { type Plugin, type ProxyOptions, defineConfig } from "vite";
 import devtoolsJson from "vite-plugin-devtools-json";
-import { defineConfig } from "vitest/config";
 
 const file = fileURLToPath(new URL("package.json", import.meta.url));
 const pkg = JSON.parse(fs.readFileSync(file, "utf8"));
@@ -46,7 +45,23 @@ const apiServer: ProxyOptions = {
     target: `http://${apiHost}:${apiPort}`,
     secure: true,
     changeOrigin: true,
-    ws: true
+    ws: true,
+    configure: (proxy) => {
+        proxy.on("error", (err) => {
+            const code = (err as NodeJS.ErrnoException).code;
+            if (code === "EPIPE" || code === "ECONNRESET") {
+                return;
+            }
+            console.error("[vite] proxy error:", err);
+        });
+        proxy.on("proxyReqWs", (_proxyReq, _req, socket) => {
+            socket.on("error", (err: NodeJS.ErrnoException) => {
+                if (err.code === "EPIPE" || err.code === "ECONNRESET") {
+                    return;
+                }
+            });
+        });
+    }
 };
 
 const viteProxy: Record<string, string | ProxyOptions> = {
@@ -97,49 +112,55 @@ function copyImageProcessWasmFiles() {
     }
 }
 
+const imageProcessWasmCopyPlugin: Plugin = {
+    name: "image-process-wasm-copy",
+    buildStart() {
+        copyImageProcessWasmFiles();
+    }
+};
+
+const isolatePlugin: Plugin = {
+    name: "isolate",
+    configureServer(server) {
+        server.middlewares.use((_req, res, next) => {
+            res.setHeader("Cross-Origin-Opener-Policy", "same-origin");
+            res.setHeader("Cross-Origin-Embedder-Policy", "require-corp");
+            next();
+        });
+    },
+    configurePreviewServer(server) {
+        server.middlewares.use((_req, res, next) => {
+            res.setHeader("Cross-Origin-Opener-Policy", "same-origin");
+            res.setHeader("Cross-Origin-Embedder-Policy", "require-corp");
+            next();
+        });
+    }
+};
+
+const vizConfigInjectionPlugin: Plugin = {
+    name: "viz-config-injection",
+    transformIndexHtml(html) {
+        const publicConfig = {
+            base_url: config.base_url,
+            allowed_hosts: config.allowed_hosts,
+            timezone: config.timezone,
+            download: {
+                zip_export_name: config.download?.zip_export_name
+            },
+            storage: {
+                storage_path_template: config.storage?.storage_path_template
+            }
+        };
+        const scriptTag = `<script id="viz-config">window.vizConfig = ${JSON.stringify(publicConfig)};</script>`;
+        return html.replace("%VIZ_CONFIG_SCRIPT%", scriptTag);
+    }
+};
+
 export default defineConfig({
     plugins: [
-        {
-            name: "image-process-wasm-copy",
-            buildStart() {
-                copyImageProcessWasmFiles();
-            }
-        },
-        {
-            name: "isolate",
-            configureServer(server) {
-                server.middlewares.use((_req, res, next) => {
-                    res.setHeader("Cross-Origin-Opener-Policy", "same-origin");
-                    res.setHeader("Cross-Origin-Embedder-Policy", "require-corp");
-                    next();
-                });
-            },
-            configurePreviewServer(server) {
-                server.middlewares.use((_req, res, next) => {
-                    res.setHeader("Cross-Origin-Opener-Policy", "same-origin");
-                    res.setHeader("Cross-Origin-Embedder-Policy", "require-corp");
-                    next();
-                });
-            }
-        },
-        {
-            name: "viz-config-injection",
-            transformIndexHtml(html) {
-                const publicConfig = {
-                    base_url: config.base_url || "localhost",
-                    allowed_hosts: config.allowed_hosts || [],
-                    timezone: config.timezone || "utc",
-                    download: {
-                        zip_export_name: config.download?.zip_export_name || "viz-bulk_export"
-                    },
-                    storage: {
-                        storage_path_template: config.storage?.storage_path_template || ""
-                    }
-                };
-                const scriptTag = `<script id="viz-config">window.vizConfig = ${JSON.stringify(publicConfig)};</script>`;
-                return html.replace("%VIZ_CONFIG_SCRIPT%", scriptTag);
-            }
-        },
+        imageProcessWasmCopyPlugin,
+        isolatePlugin,
+        vizConfigInjectionPlugin,
         devtoolsJson(),
         svelteTesting(),
         sveltekit()
