@@ -5,6 +5,23 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.33.1] - 2026-09-02
+
+* refactor(config): fetch configuration directly via API instead of HTML injection (3ed3177a)
+* refactor(viewfinder): simplify dev theme loading and prevent path traversal (CWE-22) (96a3951a)
+* fix(api): secure frontend theme loading against path traversal (CWE-22) (adcc7de8)
+* feat(histogram): improve chart curve rendering, theme styling, and reactivity (e4277b55)
+* refactor(histogram): offload image fetch and decoding to web worker with unified API (2235cfb1)
+* ci: sweep all stale test containers and networks across all runs (bef7f77c)
+* Update README.md (bf30a832)
+* chore(viewfinder): silence EPIPE proxy socket errors and type vite config plugins (5b075c0e)
+* style(viewfinder): fix context menu corner radius scoping and destructive item text styling (b17cca2e)
+* refactor(viewfinder): migrate views and workspace components to programmatic context menu (9291c106)
+* feat(viewfinder): rewrite context menu system with programmatic manager and z-index integration (0b39766e)
+* chore(deps): update frontend dependencies and generated icon symbols (f936e8a5)
+* chore: sync repository size (0555680f)
+* ci: add port cleanup and guaranteed teardown for e2e tests (1f8724a9)
+
 ## [0.33.0] - 2026-09-01
 
 * feat(viewfinder): support full TimeField props and label position in TimeInputField (c9a1f590)
