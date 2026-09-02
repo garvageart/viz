@@ -25,8 +25,6 @@
         showSelectionIndicator?: boolean;
         /** Horizontal alignment of the menu relative to the button: 'left' or 'right' */
         align?: "left" | "right";
-        /** Debug: forward to ContextMenu to render overlays and logs */
-        debug?: boolean;
         /** Custom trigger button snippet. Receives toggle function, open state, and title. */
         trigger?: Snippet<
             [
@@ -52,7 +50,6 @@
         onSelect,
         showSelectionIndicator = true,
         align = "left",
-        debug = false,
         class: className,
         trigger,
         hideTitle = false
@@ -151,7 +148,6 @@
         anchor={(buttonEl ?? containerEl) as HTMLElement}
         offsetY={0}
         {align}
-        {debug}
     />
 </div>
 

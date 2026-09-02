@@ -15,3 +15,14 @@ export type MenuItem<T = any> = {
     content?: Snippet<[item: MenuItem<T>, index?: number]>; // optional custom content rendered instead of the icon/label row
     data?: T;
 };
+
+export type ContextMenuAnchor = MouseEvent | HTMLElement | { x: number; y: number } | null;
+
+export interface ActiveContextMenuState {
+    show: boolean;
+    items: MenuItem[];
+    anchor: HTMLElement | { x: number; y: number } | null;
+    align: "left" | "right";
+    offsetX: number;
+    offsetY: number;
+}

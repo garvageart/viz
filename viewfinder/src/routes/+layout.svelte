@@ -10,6 +10,7 @@
     import { modalsManager } from "$lib/components/modals/manager/ModalManager.svelte";
     import "$lib/components/tooltips/tooltip.scss";
     import NavigationProgressBar from "$lib/components/ui/NavigationProgressBar.svelte";
+    import ContextMenu from "$lib/context-menu/ContextMenu.svelte";
     import { eventsState } from "$lib/states/events.svelte";
     import { historyState } from "$lib/states/history.svelte";
     import { debugState, themeState, upload, user } from "$lib/states/index.svelte";
@@ -101,6 +102,7 @@
 {@render children()}
 <Notifications />
 <ModalRenderer />
+<ContextMenu />
 
 {#if loadingState.isNavigating}
     <div
