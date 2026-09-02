@@ -118,10 +118,17 @@ html {
     --viz-color-tag-green: #{v.$viz-color-tag-green};
     --viz-color-tag-blue: #{v.$viz-color-tag-blue};
 
-    --viz-histogram-red: #d94b4b;
-    --viz-histogram-green: #2bbf59;
-    --viz-histogram-blue: #2b7bd3;
-    --viz-histogram-luma: #dcdcdc;
+    --viz-histogram-red: transparent;
+    --viz-histogram-red-stroke: #ee4444;
+    --viz-histogram-green: transparent;
+    --viz-histogram-green-stroke: #4cd964;
+    --viz-histogram-blue: transparent;
+    --viz-histogram-blue-stroke: #4c8bf5;
+    --viz-histogram-luma: rgba(255, 255, 255, 0.05);
+    --viz-histogram-luma-stroke: #e0e0e0;
+    --viz-histogram-bg: #222222;
+    --viz-histogram-border: #333333;
+    --viz-histogram-grid: rgba(255, 255, 255, 0.07);
 }
 
 /* Sizing */

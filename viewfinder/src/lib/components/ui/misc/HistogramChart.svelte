@@ -28,36 +28,91 @@
 
     const VIEW_W = 1000;
     const VIEW_H = 600;
+    const PADDING_TOP = 8;
+    const BASELINE_Y = VIEW_H - 1;
+    const USABLE_HEIGHT = BASELINE_Y - PADDING_TOP;
 
     let svgEl: SVGSVGElement | undefined = $state();
     let isSelecting = $state(false);
 
-    const enabledRgb = $derived([channels.red, channels.green, channels.blue].filter(Boolean).length);
-    // A lone RGB channel (no luminance) reads better filled; otherwise RGB curves over a luminance backdrop.
-    const rgbAsFill = $derived(enabledRgb === 1 && !channels.luminance);
+    const sqrtMax = $derived(max ? Math.sqrt(Math.max(max.red, max.green, max.blue, max.luminance, 1)) * 1.04 : 1);
 
-    const sqrtMax = $derived(max ? Math.sqrt(Math.max(max.red, max.green, max.blue, max.luminance, 1)) : 1);
+    interface Point {
+        x: number;
+        y: number;
+    }
 
-    function areaPath(arr: number[]): string {
-        let d = `M 0 ${VIEW_H}`;
+    function getPoints(arr: number[]): Point[] {
+        const pts: Point[] = [];
+        const smoothed = new Array(bins);
+
+        // 3-point weighted kernel to smooth bin quantization
+        for (let i = 0; i < bins; i++) {
+            const prev = arr[Math.max(0, i - 1)] ?? 0;
+            const curr = arr[i] ?? 0;
+            const next = arr[Math.min(bins - 1, i + 1)] ?? 0;
+            smoothed[i] = prev * 0.2 + curr * 0.6 + next * 0.2;
+        }
+
         for (let i = 0; i < bins; i++) {
             const x = (i / (bins - 1)) * VIEW_W;
-            const y = VIEW_H - (Math.sqrt(arr[i] ?? 0) / sqrtMax) * VIEW_H;
-            d += ` L ${x} ${y}`;
+            const val = smoothed[i] ?? 0;
+            const y = BASELINE_Y - (Math.sqrt(val) / sqrtMax) * USABLE_HEIGHT;
+            pts.push({
+                x,
+                y: Math.max(PADDING_TOP, Math.min(BASELINE_Y, y))
+            });
         }
-        d += ` L ${VIEW_W} ${VIEW_H} Z`;
+        return pts;
+    }
+
+    function smoothLinePath(pts: Point[]): string {
+        if (pts.length === 0) {
+            return "";
+        }
+
+        if (pts.length === 1) {
+            return `M ${pts[0].x} ${pts[0].y}`;
+        }
+
+        let d = `M ${pts[0].x.toFixed(1)} ${pts[0].y.toFixed(1)}`;
+        for (let i = 0; i < pts.length - 1; i++) {
+            const p0 = pts[Math.max(0, i - 1)];
+            const p1 = pts[i];
+            const p2 = pts[i + 1];
+            const p3 = pts[Math.min(pts.length - 1, i + 2)];
+
+            const cp1x = p1.x + (p2.x - p0.x) / 6;
+            const cp1y = Math.max(PADDING_TOP, Math.min(BASELINE_Y, p1.y + (p2.y - p0.y) / 6));
+            const cp2x = p2.x - (p3.x - p1.x) / 6;
+            const cp2y = Math.max(PADDING_TOP, Math.min(BASELINE_Y, p2.y - (p3.y - p1.y) / 6));
+
+            d += ` C ${cp1x.toFixed(1)} ${cp1y.toFixed(1)}, ${cp2x.toFixed(1)} ${cp2y.toFixed(1)}, ${p2.x.toFixed(1)} ${p2.y.toFixed(1)}`;
+        }
         return d;
     }
 
-    function linePath(arr: number[]): string {
-        let d = "";
-        for (let i = 0; i < bins; i++) {
-            const x = (i / (bins - 1)) * VIEW_W;
-            const y = VIEW_H - (Math.sqrt(arr[i] ?? 0) / sqrtMax) * VIEW_H;
-            d += i === 0 ? `M ${x} ${y}` : ` L ${x} ${y}`;
+    function smoothAreaPath(pts: Point[]): string {
+        if (pts.length === 0) {
+            return "";
         }
-        return d;
+
+        const lineD = smoothLinePath(pts);
+        const lastX = pts[pts.length - 1].x.toFixed(1);
+        const firstX = pts[0].x.toFixed(1);
+        return `${lineD} L ${lastX} ${BASELINE_Y} L ${firstX} ${BASELINE_Y} Z`;
     }
+
+    let redPoints = $derived(hist?.red ? getPoints(hist.red) : []);
+    let greenPoints = $derived(hist?.green ? getPoints(hist.green) : []);
+    let bluePoints = $derived(hist?.blue ? getPoints(hist.blue) : []);
+    let lumaPoints = $derived(hist?.luminance ? getPoints(hist.luminance) : []);
+
+    let redLine = $derived(smoothLinePath(redPoints));
+    let greenLine = $derived(smoothLinePath(greenPoints));
+    let blueLine = $derived(smoothLinePath(bluePoints));
+    let lumaLine = $derived(smoothLinePath(lumaPoints));
+    let lumaArea = $derived(smoothAreaPath(lumaPoints));
 
     function binFromPointer(e: PointerEvent): number {
         if (!svgEl) {
@@ -117,28 +172,26 @@
         {/each}
 
         {#if hist}
-            {#if channels.luminance}
-                <path class="hist-fill hist-luma" d={areaPath(hist.luminance)} />
-            {/if}
+            <g class="hist-channels">
+                {#if channels.luminance && lumaArea}
+                    <path class="hist-area hist-luma-fill" d={lumaArea} />
+                {/if}
+            </g>
 
-            {#if channels.red}
-                <path
-                    class="hist-red {rgbAsFill ? 'hist-fill' : 'hist-stroke'}"
-                    d={rgbAsFill ? areaPath(hist.red) : linePath(hist.red)}
-                />
-            {/if}
-            {#if channels.green}
-                <path
-                    class="hist-green {rgbAsFill ? 'hist-fill' : 'hist-stroke'}"
-                    d={rgbAsFill ? areaPath(hist.green) : linePath(hist.green)}
-                />
-            {/if}
-            {#if channels.blue}
-                <path
-                    class="hist-blue {rgbAsFill ? 'hist-fill' : 'hist-stroke'}"
-                    d={rgbAsFill ? areaPath(hist.blue) : linePath(hist.blue)}
-                />
-            {/if}
+            <g class="hist-lines">
+                {#if channels.luminance && lumaLine}
+                    <path class="hist-line hist-line-luma" d={lumaLine} />
+                {/if}
+                {#if channels.blue && blueLine}
+                    <path class="hist-line hist-line-blue" d={blueLine} />
+                {/if}
+                {#if channels.green && greenLine}
+                    <path class="hist-line hist-line-green" d={greenLine} />
+                {/if}
+                {#if channels.red && redLine}
+                    <path class="hist-line hist-line-red" d={redLine} />
+                {/if}
+            </g>
         {/if}
 
         {#if selection && selection.end > selection.start}
@@ -182,66 +235,75 @@
         display: block;
         width: 100%;
         height: 100%;
-        background-color: var(--viz-surface-card);
-        border: 1px solid var(--viz-border-subtle);
-        border-radius: var(--viz-border-radius-sm);
+        background-color: var(--viz-histogram-bg);
+        border: 1px solid var(--viz-histogram-border);
+        border-radius: 2px;
         overflow: hidden;
         user-select: none;
         touch-action: none;
     }
 
     .grid {
-        stroke: var(--viz-border-subtle);
+        stroke: var(--viz-histogram-grid);
         stroke-width: 1;
         vector-effect: non-scaling-stroke;
     }
 
-    .hist-fill {
-        opacity: 0.55;
+    .hist-channels {
+        pointer-events: none;
     }
 
-    .hist-luma {
-        fill: var(--viz-histogram-luma);
-        opacity: 0.18;
-    }
-
-    .hist-red {
-        fill: var(--viz-histogram-red);
-        stroke: var(--viz-histogram-red);
-    }
-
-    .hist-green {
-        fill: var(--viz-histogram-green);
-        stroke: var(--viz-histogram-green);
-    }
-
-    .hist-blue {
-        fill: var(--viz-histogram-blue);
-        stroke: var(--viz-histogram-blue);
-    }
-
-    .hist-stroke {
-        fill: none;
-        stroke-width: 1.5;
+    .hist-area {
         vector-effect: non-scaling-stroke;
-        opacity: 0.95;
+    }
+
+    .hist-luma-fill {
+        fill: var(--viz-histogram-luma);
+    }
+
+    .hist-lines {
+        pointer-events: none;
+    }
+
+    .hist-line {
+        fill: none;
+        stroke-width: 1.25;
+        stroke-linecap: round;
+        stroke-linejoin: round;
+        vector-effect: non-scaling-stroke;
+
+        &-red {
+            stroke: var(--viz-histogram-red-stroke);
+        }
+
+        &-green {
+            stroke: var(--viz-histogram-green-stroke);
+        }
+
+        &-blue {
+            stroke: var(--viz-histogram-blue-stroke);
+        }
+
+        &-luma {
+            stroke: var(--viz-histogram-luma-stroke);
+            opacity: 0.85;
+        }
     }
 
     .hist-selection {
-        fill: color-mix(in srgb, var(--viz-primary) 15%, transparent);
+        fill: rgba(255, 255, 255, 0.08);
         vector-effect: non-scaling-stroke;
     }
 
     .hist-selection-edge {
-        stroke: var(--viz-accent);
+        stroke: rgba(255, 255, 255, 0.25);
         stroke-width: 1;
         vector-effect: non-scaling-stroke;
     }
 
     .hover {
-        stroke: var(--viz-text-muted);
+        stroke: rgba(255, 255, 255, 0.6);
         stroke-width: 1;
         vector-effect: non-scaling-stroke;
-        opacity: 0.7;
     }
 </style>

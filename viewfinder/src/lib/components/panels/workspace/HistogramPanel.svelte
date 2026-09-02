@@ -3,7 +3,7 @@
     import Badge from "$lib/components/ui/Badge.svelte";
     import Button from "$lib/components/ui/Button.svelte";
     import HistogramChart, { type ChannelVisibility } from "$lib/components/ui/misc/HistogramChart.svelte";
-    import { computeForAsset, computeHistogram } from "$lib/histogram";
+    import { computeHistogram } from "$lib/histogram";
     import type { HistogramChannels } from "$lib/histogram/types";
     import { selectionManager } from "$lib/states/selection.svelte";
     import type { HistogramData } from "$lib/third-party/photo-histogram/js/histogram";
@@ -133,22 +133,33 @@
         hoverBin = null;
     }
 
-    // Purely derived: swaps to the right computation whenever the source changes.
-    // Only images (with image_paths) produce a histogram; a selected collection
-    // has no image source and falls through to the empty state.
-    let histogramPromise = $derived.by(async () => {
-        if (src) {
-            return computeHistogram(src);
+    let data = $state<HistogramData | null>(null);
+
+    $effect(() => {
+        let cancelled = false;
+        const target = src ?? (isAssetImage(activeItem) ? activeItem : null);
+
+        if (!target) {
+            data = null;
+            return;
         }
 
-        if (!isAssetImage(activeItem)) {
-            return null;
-        }
+        computeHistogram(target)
+            .then((res) => {
+                if (!cancelled) {
+                    data = res;
+                }
+            })
+            .catch(() => {
+                if (!cancelled) {
+                    data = null;
+                }
+            });
 
-        return computeForAsset(activeItem);
+        return () => {
+            cancelled = true;
+        };
     });
-
-    let data = $derived(await histogramPromise);
 
     let stats = $derived(statsFor(data));
     let hover = $derived(hoverInfoFor(data));
@@ -286,6 +297,7 @@
 
         &.active {
             border-color: var(--viz-primary);
+            background-color: var(--viz-surface-card);
             color: var(--viz-text-primary);
         }
     }
@@ -297,19 +309,27 @@
         flex-shrink: 0;
 
         &-red {
-            background-color: var(--viz-histogram-red);
+            background-color: var(--viz-histogram-red-stroke);
         }
 
         &-green {
-            background-color: var(--viz-histogram-green);
+            background-color: var(--viz-histogram-green-stroke);
         }
 
         &-blue {
-            background-color: var(--viz-histogram-blue);
+            background-color: var(--viz-histogram-blue-stroke);
         }
 
         &-luma {
-            background-color: var(--viz-histogram-luma);
+            background-color: var(--viz-histogram-luma-stroke);
+
+            @media (prefers-color-scheme: light) {
+                :root:not([data-theme="dark"]) & {
+                    background-color: var(--viz-histogram-bg);
+                    border: 1px solid var(--viz-histogram-border);
+                    box-sizing: border-box;
+                }
+            }
         }
     }
 
