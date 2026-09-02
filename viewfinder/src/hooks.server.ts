@@ -24,14 +24,14 @@ function getDevPublicConfigScript(): string {
     }
 
     const publicConfig = {
-        base_url: config.base_url || "localhost",
-        allowed_hosts: config.allowed_hosts || [],
-        timezone: config.timezone || "utc",
+        base_url: config.base_url,
+        allowed_hosts: config.allowed_hosts,
+        timezone: config.timezone,
         download: {
-            zip_export_name: config.download?.zip_export_name || "viz-bulk_export"
+            zip_export_name: config.download?.zip_export_name
         },
         storage: {
-            storage_path_template: config.storage?.storage_path_template || ""
+            storage_path_template: config.storage?.storage_path_template
         }
     };
 
@@ -46,10 +46,43 @@ function handleFonts(html: string) {
 }
 
 // uses vite to import the compiled CSS
-const themeImporters = import.meta.glob("$lib/styles/scss/themes/viz-*.scss", {
+const themeImporters = import.meta.glob("$lib/styles/scss/themes/*.scss", {
     query: "?inline",
     import: "default"
 });
+
+async function getDevCriticalCss(themeName: string): Promise<string> {
+    if (themeName.includes("/") || themeName.includes("\\") || themeName === ".." || themeName === ".") {
+        return "";
+    }
+
+    if (criticalCssCache.has(themeName)) {
+        return criticalCssCache.get(themeName)!;
+    }
+
+    const themePath = `/${themeName}.scss`;
+    const importedThemePath = Object.keys(themeImporters).find((key) => {
+        return key.endsWith(themePath);
+    });
+
+    if (!importedThemePath || !themeImporters[importedThemePath]) {
+        return "";
+    }
+
+    try {
+        const cssContent = (await themeImporters[importedThemePath]()) as string;
+        if (!cssContent) {
+            return "";
+        }
+
+        const criticalCss = `<style id="generated-theme">${cssContent}</style>`;
+        criticalCssCache.set(themeName, criticalCss);
+        return criticalCss;
+    } catch (error) {
+        console.error(`Failed to load or process theme "${themeName}":`, error);
+        return "";
+    }
+}
 
 /**
  * This is only for dev, in built environments the compiled CSS
@@ -57,51 +90,9 @@ const themeImporters = import.meta.glob("$lib/styles/scss/themes/viz-*.scss", {
  */
 export const handle: Handle = async ({ event, resolve }) => {
     const themeCookieStore = new VizCookieStorage("theme", event.cookies);
-    const themeCookie = themeCookieStore.get() || DEFAULT_THEME;
-
-    // TODO: eventually will come from user settings
-    let colorTheme = DEFAULT_THEME;
-    let modeTheme = "light";
-
-    // FIXME: This is basically wrong now
-    // Colour theme is just a name like "viz-black"
-    // Theme is either light mode, dark mode or system
-    if (themeCookie.startsWith("viz-")) {
-        const parts = themeCookie.split("-");
-        colorTheme = `${parts[0]}-${parts[1]}`; // e.g. viz-blue
-        if (parts.length > 2 && (parts[2] === "light" || parts[2] === "dark")) {
-            modeTheme = parts[2];
-        }
-    } else if (themeCookie === "light" || themeCookie === "dark") {
-        const defaultColorTheme = DEFAULT_THEME.split("-").slice(0, 2).join("-");
-        colorTheme = defaultColorTheme;
-        modeTheme = themeCookie;
-    }
-
-    const themeFile = colorTheme;
-    const themePath = `${themeFile}.scss`;
-    const importedThemePath = Object.keys(themeImporters).filter((key) => key.endsWith(themePath))[0];
-    const cacheKey = `${colorTheme}`;
-    let criticalCss = "";
-
-    if (criticalCssCache.has(cacheKey)) {
-        criticalCss = criticalCssCache.get(cacheKey)!;
-    } else if (themeImporters[importedThemePath]) {
-        try {
-            // Load the entire CSS content, as it contains both light and dark modes
-            const cssContent = (await themeImporters[importedThemePath]()) as string;
-            if (cssContent) {
-                criticalCss = `<style id="generated-theme">${cssContent}</style>`;
-                criticalCssCache.set(cacheKey, criticalCss);
-            }
-        } catch (error) {
-            console.error(`Failed to load or process theme "${cacheKey}":`, error);
-        }
-    } else {
-        console.warn(`Theme file not found for theme "${cacheKey}". Path checked: ${themePath}`);
-    }
-
-    const themeAttribute = `data-theme="${modeTheme}"`;
+    const themeName = themeCookieStore.get() || DEFAULT_THEME;
+    const criticalCss = await getDevCriticalCss(themeName);
+    const themeAttribute = `data-theme="light"`;
 
     return resolve(event, {
         transformPageChunk: ({ html }) =>
