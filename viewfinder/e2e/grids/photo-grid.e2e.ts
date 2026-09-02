@@ -287,7 +287,7 @@ test.describe("PhotoAssetGrid Functionality", () => {
             expect(await photos.count()).toBeGreaterThan(0);
         }).toPass({ timeout: 10000 });
 
-        const container = page.locator(".viz-view-container");
+        const container = page.locator(".viz-view-container").first();
 
         // Record starting scroll position
         const initialScroll = await container.evaluate((el) => el.scrollTop);

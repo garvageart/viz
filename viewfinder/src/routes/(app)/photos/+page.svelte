@@ -29,7 +29,7 @@
     import MaterialIcon from "$lib/components/ui/MaterialIcon.svelte";
     import AssetToolbar from "$lib/components/ui/toolbars/AssetToolbar.svelte";
     import { VizMimeTypes } from "$lib/constants.js";
-    import ContextMenu from "$lib/context-menu/ContextMenu.svelte";
+    import { contextMenu } from "$lib/context-menu";
     import { getImageGridDisplay } from "$lib/context-menu/menus/image-grid-display.js";
     import { createImageMenu } from "$lib/context-menu/menus/images.js";
     import type { MenuItem } from "$lib/context-menu/types";
@@ -184,11 +184,6 @@
 
         return [...pageMenuItems, ...baseMenuItems];
     });
-
-    // Context menu state for right-click on assets
-    let ctxShowMenu = $state(false);
-    let ctxItems: MenuItem[] = $derived(actionMenuItems);
-    let ctxAnchor: { x: number; y: number } | HTMLElement | null = $state(null);
 
     async function paginate() {
         if (isPaginating || !galleryState.hasMore) {
@@ -685,8 +680,7 @@
                     openLightbox(asset);
                 }}
                 onassetcontext={(detail) => {
-                    ctxAnchor = detail.anchor;
-                    ctxShowMenu = true;
+                    contextMenu.open(actionMenuItems, detail.anchor, { offsetY: 0 });
                 }}
             />
         {/snippet}
@@ -706,16 +700,12 @@
                     openLightbox(asset);
                 }}
                 onassetcontext={(detail) => {
-                    ctxAnchor = detail.anchor;
-                    ctxShowMenu = true;
+                    contextMenu.open(actionMenuItems, detail.anchor, { offsetY: 0 });
                 }}
             />
         </div>
     {/if}
 </VizViewContainer>
-
-<!-- Context menu for right-click on assets -->
-<ContextMenu bind:showMenu={ctxShowMenu} items={ctxItems} anchor={ctxAnchor} offsetY={0} />
 
 <style lang="scss">
     .photo-group-container {

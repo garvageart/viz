@@ -5,7 +5,7 @@
     import Favourite from "$lib/components/ui/Favourite.svelte";
     import MaterialIcon from "$lib/components/ui/MaterialIcon.svelte";
     import NoImageSelected from "$lib/components/ui/misc/NoImageSelected.svelte";
-    import ContextMenu from "$lib/context-menu/ContextMenu.svelte";
+    import { contextMenu } from "$lib/context-menu";
     import { createImageMenu } from "$lib/context-menu/menus/images";
     import { SelectionScope, selectionManager } from "$lib/states/selection.svelte";
     import { getImageLabel, isAssetImage } from "$lib/utils/images";
@@ -16,14 +16,12 @@
 
     let selectionCount = $derived(activeScope?.size ?? 0);
 
-    let showMenu = $state(false);
-    let menuAnchor = $state<{ x: number; y: number } | HTMLElement | null>(null);
-    let menuItems = $derived.by(() => {
+    function handleContextMenu(e: MouseEvent) {
         if (!activeItem || !activeScope) {
-            return [];
+            return;
         }
 
-        return createImageMenu([activeItem], activeScope, {
+        const items = createImageMenu([activeItem], activeScope, {
             onDelete(deletedUIDs) {
                 activeScope.removeUids(deletedUIDs);
             },
@@ -31,16 +29,8 @@
                 activeScope.updateItem(updated, activeScope.source);
             }
         });
-    });
 
-    function handleContextMenu(e: MouseEvent) {
-        if (!activeItem) {
-            return;
-        }
-
-        e.preventDefault();
-        menuAnchor = { x: e.clientX, y: e.clientY };
-        showMenu = true;
+        contextMenu.open(items, e);
     }
 </script>
 
@@ -77,8 +67,6 @@
     {:else}
         <NoImageSelected />
     {/if}
-
-    <ContextMenu bind:showMenu items={menuItems} anchor={menuAnchor} />
 </div>
 
 <style lang="scss">

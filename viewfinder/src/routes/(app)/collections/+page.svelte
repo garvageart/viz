@@ -21,9 +21,8 @@
     import DragAndDropUpload from "$lib/components/ui/DragAndDropUpload.svelte";
     import MaterialIcon from "$lib/components/ui/MaterialIcon.svelte";
     import { VizMimeTypes } from "$lib/constants";
-    import ContextMenu from "$lib/context-menu/ContextMenu.svelte";
+    import { contextMenu } from "$lib/context-menu";
     import { createCollectionMenu } from "$lib/context-menu/menus/collections";
-    import type { MenuItem } from "$lib/context-menu/types";
     import { DragData } from "$lib/drag-drop/data";
     import { sortCollections } from "$lib/sort/sort";
     import { filterManager } from "$lib/states/filter.svelte";
@@ -184,46 +183,6 @@
         );
     }
 
-    // Context menu state for right-click on collections
-    let ctxShowMenu = $state(false);
-    let ctxItems: MenuItem[] = $derived(
-        createCollectionMenu(firstSelectedCollection, {
-            selectedCollections: selectionScope.selectedItems,
-            editCollection: (col) => {
-                openCollectionModal("edit", col);
-            },
-            onCollectionDuplicated: async (newCol) => {
-                toasts.add({
-                    message: `Duplicated collection ${newCol.name}`,
-                    type: "success"
-                });
-                await invalidateViz();
-            },
-            onCollectionUpdated: async () => {
-                await invalidateViz();
-            },
-            onCollectionDeleted: async (deletedCol) => {
-                toasts.add({
-                    message: `Deleted collection ${deletedCol.name}`,
-                    type: "success"
-                });
-                await invalidateViz();
-            },
-            onCollectionsDeleted: async (deletedCols) => {
-                selectionScope.clear();
-                toasts.add({
-                    message:
-                        deletedCols.length > 1
-                            ? `Deleted **${deletedCols.length} collections**`
-                            : `Deleted collection **${deletedCols[0].name}**`,
-                    type: "success"
-                });
-                await invalidateViz();
-            }
-        })
-    );
-    let ctxAnchor: { x: number; y: number } | HTMLElement | null = $state(null);
-
     let collectionGridArray: AssetGridArray<Collection> | undefined = $state();
 
     let grid: ComponentProps<typeof AssetGrid<Collection>> = $derived({
@@ -243,8 +202,41 @@
             if (!selectionScope.has(asset) || selectionScope.size <= 1) {
                 selectionScope.select(asset);
             }
-            ctxAnchor = anchor;
-            ctxShowMenu = true;
+            const items = createCollectionMenu(firstSelectedCollection, {
+                selectedCollections: selectionScope.selectedItems,
+                editCollection: (col) => {
+                    openCollectionModal("edit", col);
+                },
+                onCollectionDuplicated: async (newCol) => {
+                    toasts.add({
+                        message: `Duplicated collection ${newCol.name}`,
+                        type: "success"
+                    });
+                    await invalidateViz();
+                },
+                onCollectionUpdated: async () => {
+                    await invalidateViz();
+                },
+                onCollectionDeleted: async (deletedCol) => {
+                    toasts.add({
+                        message: `Deleted collection ${deletedCol.name}`,
+                        type: "success"
+                    });
+                    await invalidateViz();
+                },
+                onCollectionsDeleted: async (deletedCols) => {
+                    selectionScope.clear();
+                    toasts.add({
+                        message:
+                            deletedCols.length > 1
+                                ? `Deleted **${deletedCols.length} collections**`
+                                : `Deleted collection **${deletedCols[0].name}**`,
+                        type: "success"
+                    });
+                    await invalidateViz();
+                }
+            });
+            contextMenu.open(items, anchor, { offsetY: 4 });
         }
     });
 
@@ -388,9 +380,6 @@
             </div>
         </div>
     </AssetsShell>
-
-    <!-- Context menu for right-click on collections -->
-    <ContextMenu bind:showMenu={ctxShowMenu} items={ctxItems} anchor={ctxAnchor} offsetY={4} />
 
     <DragAndDropUpload showCollectionCreateBox={true} />
 </VizViewContainer>

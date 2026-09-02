@@ -1,18 +1,17 @@
 <script lang="ts">
     import { slide } from "svelte/transition";
     import { logoutUser } from "$lib/auth/auth_methods";
+    import { contextMenu } from "$lib/context-menu";
+    import { themeContextMenu } from "$lib/context-menu/menus/theme";
     import { getTheme, toggleTheme, user } from "$lib/states/index.svelte";
     import AvatarBadge from "../ui/AvatarBadge.svelte";
     import Badge from "../ui/Badge.svelte";
     import Button from "../ui/Button.svelte";
     import MaterialIcon from "../ui/MaterialIcon.svelte";
-    import ThemeContextMenu from "./ThemeContextMenu.svelte";
 
     let { openAccPanel = $bindable(false) }: { openAccPanel: boolean } = $props();
 
     let panelEl = $state<HTMLElement | null>(null);
-    let themeCtxShowMenu = $state(false);
-    let themeCtxAnchor = $state<{ x: number; y: number } | null>(null);
 
     function handleClickOutside(event: MouseEvent) {
         if (panelEl && !panelEl.contains(event.target as Node)) {
@@ -25,9 +24,7 @@
     }
 
     function handleThemeContext(e: MouseEvent) {
-        e.preventDefault();
-        themeCtxAnchor = { x: e.clientX, y: e.clientY };
-        themeCtxShowMenu = true;
+        contextMenu.open(themeContextMenu(), e, { align: "right", offsetY: 4 });
     }
 </script>
 
@@ -92,18 +89,16 @@
         <Button
             variant="danger"
             class="logout-btn"
+            iconName="logout"
             onclick={() => {
                 openAccPanel = false;
                 logoutUser();
             }}
         >
-            <MaterialIcon iconName="logout" size="1.2rem" />
             <span>Log Out</span>
         </Button>
     </div>
 </div>
-
-<ThemeContextMenu bind:showMenu={themeCtxShowMenu} bind:anchor={themeCtxAnchor} />
 
 <style lang="scss">
     #account-details-panel {

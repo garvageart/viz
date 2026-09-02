@@ -2,7 +2,7 @@
     import { type Snippet } from "svelte";
     import type { MouseEventHandler } from "svelte/elements";
     import Dropdown from "$lib/components/context-menus/Dropdown.svelte";
-    import ContextMenu from "$lib/context-menu/ContextMenu.svelte";
+    import { contextMenu } from "$lib/context-menu";
     import type { MenuItem } from "$lib/context-menu/types";
     import { tryParseDate } from "$lib/utils/dates";
     import { VizLocalStorage } from "$lib/utils/misc";
@@ -328,9 +328,6 @@
         return items;
     });
 
-    let headerContextMenuOpen = $state(false);
-    let headerContextMenuAnchor = $state<{ x: number; y: number } | null>(null);
-
     function handleHeaderContextMenu(e: Parameters<MouseEventHandler<HTMLElement>>[0]) {
         if (onheadercontextmenu) {
             onheadercontextmenu(e);
@@ -338,10 +335,7 @@
         }
 
         if (columnsEditable) {
-            e.preventDefault();
-            e.stopPropagation();
-            headerContextMenuAnchor = { x: e.clientX, y: e.clientY };
-            headerContextMenuOpen = true;
+            contextMenu.open(columnMenuItems, e);
         }
     }
 
@@ -639,10 +633,6 @@
         />
     </div>
 {/snippet}
-
-{#if columnsEditable}
-    <ContextMenu bind:showMenu={headerContextMenuOpen} anchor={headerContextMenuAnchor} items={columnMenuItems} />
-{/if}
 
 <div
     class="viz-table-wrapper {customClass}"

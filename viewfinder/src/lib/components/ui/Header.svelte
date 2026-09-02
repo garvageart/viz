@@ -5,8 +5,9 @@
     import hotkeys from "hotkeys-js";
     import { untrack } from "svelte";
     import Dropdown from "$lib/components/context-menus/Dropdown.svelte";
-    import ThemeContextMenu from "$lib/components/context-menus/ThemeContextMenu.svelte";
     import { CLIENT_IS_PRODUCTION } from "$lib/constants";
+    import { contextMenu } from "$lib/context-menu";
+    import { themeContextMenu } from "$lib/context-menu/menus/theme";
     import { createWorkspaceViewsMenu } from "$lib/context-menu/menus/workspaceViews";
     import type { MenuItem } from "$lib/context-menu/types";
     import { showRootDebugOverlay } from "$lib/layouts/tab-ops.svelte";
@@ -98,14 +99,8 @@
     let openAppMenu = $state(false);
     let appMenuButton: HTMLButtonElement | undefined = $state();
 
-    // Context Menu for Theme
-    let themeCtxShowMenu = $state(false);
-    let themeCtxAnchor = $state<{ x: number; y: number } | null>(null);
-
     function handleThemeContext(e: MouseEvent) {
-        e.preventDefault();
-        themeCtxAnchor = { x: e.clientX, y: e.clientY };
-        themeCtxShowMenu = true;
+        contextMenu.open(themeContextMenu(), e, { align: "right", offsetY: 4 });
     }
 </script>
 
@@ -275,7 +270,6 @@
         </div>
     </div>
 </header>
-<ThemeContextMenu bind:showMenu={themeCtxShowMenu} bind:anchor={themeCtxAnchor} />
 
 <style lang="scss">
     header {

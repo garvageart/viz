@@ -54,7 +54,7 @@
     import InputText from "$lib/components/ui/InputText.svelte";
     import MaterialIcon from "$lib/components/ui/MaterialIcon.svelte";
     import type { TableColumn } from "$lib/components/ui/Table.svelte";
-    import ContextMenu from "$lib/context-menu/ContextMenu.svelte";
+    import { contextMenu } from "$lib/context-menu";
     import { getImageGridDisplay } from "$lib/context-menu/menus/image-grid-display";
     import { createImageMenu } from "$lib/context-menu/menus/images";
     import type { MenuItem } from "$lib/context-menu/types";
@@ -233,14 +233,17 @@
         return selectionScope.selectedItems[0];
     });
 
-    // Context menu state
-    let ctxShowMenu = $state(false);
-    let ctxItems = $derived(
+    let imageMenuItems: MenuItem[] = $derived(
         createImageMenu(collectionState.images, selectionScope, {
             collection: data,
             onUpdate: (image: ImageAsset) => {
                 selectionScope.updateItem(image, collectionState.images);
-                collectionState.images = collectionState.images.map((i) => (i.uid === image.uid ? image : i));
+                collectionState.images = collectionState.images.map((i) => {
+                    if (i.uid === image.uid) {
+                        return image;
+                    }
+                    return i;
+                });
             },
             onDelete: (uids: string[]) => {
                 selectionScope.clear();
@@ -249,7 +252,10 @@
             }
         })
     );
-    let ctxAnchor: { x: number; y: number } | HTMLElement | null = $state(null);
+
+    function openImageContextMenu(anchor: { x: number; y: number } | HTMLElement) {
+        contextMenu.open(imageMenuItems, anchor, { offsetY: 4 });
+    }
 
     let focusScrollElement = $derived.by(() => {
         const activeUid = selectionScope.active?.uid;
@@ -357,8 +363,7 @@
                 console.log("asset", $state.snapshot(asset));
             }
 
-            ctxAnchor = anchor;
-            ctxShowMenu = true;
+            openImageContextMenu(anchor);
         },
         onselectAll: async () => {
             selectionScope.selectAll();
@@ -749,7 +754,7 @@
     // Create a list for the selection toolbar Dropdown
     // This mirrors ctxItems but overrides/adds the bulk delete action
     let selectionToolbarItems: MenuItem[] = $derived.by(() => {
-        const list = [...ctxItems];
+        const list = [...imageMenuItems];
         // Override "remove-" action with the bulk handler if present, or add it
         const removeIdx = list.findIndex((i) => i.id.startsWith("remove-"));
         const removeAction: MenuItem = {
@@ -874,8 +879,7 @@
                     selectionScope.select(asset);
                 }
                 selectionScope.active = asset;
-                ctxAnchor = anchor;
-                ctxShowMenu = true;
+                openImageContextMenu(anchor);
             }}
         />
     </div>
@@ -1145,8 +1149,6 @@
             </div>
         </div>
     </AssetsShell>
-    <!-- Context menu for right-click on assets -->
-    <ContextMenu bind:showMenu={ctxShowMenu} items={ctxItems} anchor={ctxAnchor} offsetY={4} />
 </VizViewContainer>
 
 <style lang="scss">

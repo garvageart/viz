@@ -19,7 +19,7 @@
     import LoadingSpinner from "$lib/components/ui/LoadingSpinner.svelte";
     import AssetToolbar from "$lib/components/ui/toolbars/AssetToolbar.svelte";
     import { VizMimeTypes } from "$lib/constants";
-    import ContextMenu from "$lib/context-menu/ContextMenu.svelte";
+    import { contextMenu } from "$lib/context-menu";
     import { createCollectionMenu } from "$lib/context-menu/menus/collections";
     import { createImageMenu } from "$lib/context-menu/menus/images";
     import type { MenuItem } from "$lib/context-menu/types";
@@ -83,11 +83,6 @@
         return imageSelection.selectedItems[0];
     });
     let firstSelectedCollection = $derived(collectionSelection.selectedItems[0]);
-
-    // Context Menu State
-    let ctxShowMenu = $state(false);
-    let ctxAnchor: { x: number; y: number } | HTMLElement | null = $state(null);
-    let ctxItems: MenuItem[] = $state([]);
 
     // Action Menus
     let imageActionMenuItems = $derived.by(() => {
@@ -237,9 +232,7 @@
             if (!collectionSelection.has(asset) || collectionSelection.selected.size <= 1) {
                 collectionSelection.select(asset);
             }
-            ctxAnchor = detail.anchor;
-            ctxItems = collectionActionMenuItems;
-            ctxShowMenu = true;
+            contextMenu.open(collectionActionMenuItems, detail.anchor, { offsetY: 0 });
         },
         assetDblClick: (_e, asset: Collection) => {
             goto(`/collections/${asset.uid}`);
@@ -602,9 +595,7 @@
                                             if (!collectionSelection.has(asset) || collectionSelection.size <= 1) {
                                                 collectionSelection.select(asset);
                                             }
-                                            ctxAnchor = detail.anchor;
-                                            ctxItems = collectionActionMenuItems;
-                                            ctxShowMenu = true;
+                                            contextMenu.open(collectionActionMenuItems, detail.anchor, { offsetY: 0 });
                                         }}
                                     />
                                 </div>
@@ -652,9 +643,7 @@
                                                 imageSelection.select(asset);
                                             }
 
-                                            ctxAnchor = detail.anchor;
-                                            ctxItems = imageActionMenuItems;
-                                            ctxShowMenu = true;
+                                            contextMenu.open(imageActionMenuItems, detail.anchor, { offsetY: 0 });
                                         }}
                                     />
                                 {/snippet}
@@ -675,9 +664,7 @@
                                                 imageSelection.select(asset);
                                             }
 
-                                            ctxAnchor = detail.anchor;
-                                            ctxItems = imageActionMenuItems;
-                                            ctxShowMenu = true;
+                                            contextMenu.open(imageActionMenuItems, detail.anchor, { offsetY: 0 });
                                         }}
                                     />
                                 </div>
@@ -689,9 +676,6 @@
         {/if}
     </div>
 </div>
-
-<!-- Context menu for right-click on assets -->
-<ContextMenu bind:showMenu={ctxShowMenu} items={ctxItems} anchor={ctxAnchor} offsetY={0} />
 
 <style lang="scss">
     #search {

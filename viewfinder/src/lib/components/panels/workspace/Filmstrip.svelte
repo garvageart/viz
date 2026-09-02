@@ -5,7 +5,7 @@
     import ImageLightbox from "$lib/components/ui/ImageLightbox.svelte";
     import MaterialIcon from "$lib/components/ui/MaterialIcon.svelte";
     import { VizMimeTypes } from "$lib/constants";
-    import ContextMenu from "$lib/context-menu/ContextMenu.svelte";
+    import { contextMenu } from "$lib/context-menu";
     import { createImageMenu } from "$lib/context-menu/menus/images";
     import { DragData } from "$lib/drag-drop/data";
     import { SelectionScope, SelectionScopeNames, selectionManager } from "$lib/states/selection.svelte";
@@ -64,27 +64,6 @@
 
         return undefined;
     });
-
-    // Context menu state
-    let ctxShowMenu = $state(false);
-    let ctxItems = $derived(
-        createImageMenu(filmstripImages, filmstripScope ?? selectionManager.activeScope, {
-            collection,
-            onUpdate: (image: ImageAsset) => {
-                if (filmstripScope) {
-                    filmstripScope.updateItem(image, filmstripImages);
-                    filmstripImages = filmstripImages.map((i) => (i.uid === image.uid ? image : i));
-                }
-            },
-            onDelete: (uids: string[]) => {
-                if (filmstripScope) {
-                    filmstripScope.clear();
-                    filmstripImages = filmstripImages.filter((i) => !uids.includes(i.uid));
-                }
-            }
-        })
-    );
-    let ctxAnchor: { x: number; y: number } | HTMLElement | null = $state(null);
 
     function handleImageClick(image: ImageAsset, e: MouseEvent | KeyboardEvent) {
         if (!filmstripScope) {
@@ -181,15 +160,11 @@
         }
     }
 
-    let ctxOffsetY = $state(4);
-
     function handleContextMenu(e: MouseEvent, image: ImageAsset) {
         const scope = filmstripScope;
         if (!scope) {
             return;
         }
-
-        e.preventDefault();
 
         // If the right-clicked image is not already selected, select it as the active item
         if (!scope.has(image)) {
@@ -197,17 +172,24 @@
             selectionAnchor = image;
         }
 
-        const spaceBelow = window.innerHeight - e.clientY;
-        ctxAnchor = { x: e.clientX, y: e.clientY };
+        const items = createImageMenu(filmstripImages, scope, {
+            collection,
+            onUpdate: (updated: ImageAsset) => {
+                scope.updateItem(updated, filmstripImages);
+                filmstripImages = filmstripImages.map((i) => {
+                    if (i.uid === updated.uid) {
+                        return updated;
+                    }
+                    return i;
+                });
+            },
+            onDelete: (uids: string[]) => {
+                scope.clear();
+                filmstripImages = filmstripImages.filter((i) => !uids.includes(i.uid));
+            }
+        });
 
-        if (spaceBelow < 320) {
-            // Offset upwards to prevent overlapping/clamping issues near the bottom
-            ctxOffsetY = -200;
-        } else {
-            ctxOffsetY = 4;
-        }
-
-        ctxShowMenu = true;
+        contextMenu.open(items, e);
     }
 
     let containerRef = $state<HTMLElement>();
@@ -352,8 +334,6 @@
             </div>
         {/each}
     {/if}
-    <!-- Context menu for right-click on assets -->
-    <ContextMenu bind:showMenu={ctxShowMenu} items={ctxItems} anchor={ctxAnchor} offsetY={ctxOffsetY} />
 </nav>
 
 <ImageLightbox

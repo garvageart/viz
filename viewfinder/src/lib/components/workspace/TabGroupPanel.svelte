@@ -4,8 +4,7 @@
     import tippy, { type Instance } from "tippy.js";
     import TabGroupDebugOverlay from "$lib/components/workspace/debug/TabGroupDebugOverlay.svelte";
     import { VizMimeTypes } from "$lib/constants";
-    import ContextMenu from "$lib/context-menu/ContextMenu.svelte";
-    import type { MenuItem } from "$lib/context-menu/types";
+    import { contextMenu } from "$lib/context-menu";
     import { resetAndReloadLayout } from "$lib/dev/components.svelte";
     import { DragData } from "$lib/drag-drop/data";
     import type { TabGroup } from "$lib/layouts/model.svelte";
@@ -184,24 +183,6 @@
         }
     }
 
-    // Context Menus
-    interface HeaderMenuState {
-        show: boolean;
-        items: MenuItem[];
-        anchor: any;
-    }
-
-    let tabCtxMenu = $state<HeaderMenuState>({
-        show: false,
-        items: [],
-        anchor: null
-    });
-    let headerCtxMenu = $state<HeaderMenuState>({
-        show: false,
-        items: [],
-        anchor: null
-    });
-
     const menuHandlers: TabHandlers = {
         moveTab: (v, direction) => {
             workspaceState.workspace?.moveTab(v.id, direction);
@@ -239,21 +220,17 @@
     };
 
     function triggerTabContextMenu(event: MouseEvent, view: VizView) {
-        event.preventDefault();
         event.stopPropagation();
 
-        tabCtxMenu.anchor = { x: event.clientX, y: event.clientY };
-        tabCtxMenu.items = buildTabContextMenu(view, group, menuHandlers);
-        tabCtxMenu.show = true;
+        const items = buildTabContextMenu(view, group, menuHandlers);
+        contextMenu.open(items, event, { offsetY: 4 });
     }
 
     function triggerHeaderContextMenu(event: MouseEvent) {
-        event.preventDefault();
         event.stopPropagation();
 
-        headerCtxMenu.anchor = { x: event.clientX, y: event.clientY };
-        headerCtxMenu.items = [...buildLayoutContextMenu(), ...buildPanelContextMenu(group, menuHandlers)];
-        headerCtxMenu.show = true;
+        const items = [...buildLayoutContextMenu(), ...buildPanelContextMenu(group, menuHandlers)];
+        contextMenu.open(items, event, { offsetY: 4 });
     }
 
     // Tab Drag and Drop
@@ -508,20 +485,17 @@
                 {:catch error}
                     <div class="error-container">
                         <h3>Error loading data</h3>
-                        <p>{error.message}</p>
+                        <span>{error.message}</span>
                     </div>
                 {/await}
             {/if}
         {:else}
             <div class="empty-group">
-                <p>No active view</p>
+                <span>No active view</span>
             </div>
         {/if}
     </div>
 </div>
-
-<ContextMenu bind:showMenu={tabCtxMenu.show} items={tabCtxMenu.items} anchor={tabCtxMenu.anchor} offsetY={4} />
-<ContextMenu bind:showMenu={headerCtxMenu.show} items={headerCtxMenu.items} anchor={headerCtxMenu.anchor} offsetY={4} />
 
 <style lang="scss">
     .tab-group-panel {
