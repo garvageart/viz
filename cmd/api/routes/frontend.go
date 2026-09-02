@@ -99,6 +99,27 @@ func (h *FrontendHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	h.serveIndex(w, r)
 }
 
+func (h *FrontendHandler) getThemeCSS(themeName string) string {
+	if strings.ContainsAny(themeName, "/\\") || themeName == ".." || themeName == "." {
+		return ""
+	}
+
+	themesDir := filepath.Clean(filepath.Join(h.BuildPath, "themes"))
+	cssPath := filepath.Clean(filepath.Join(themesDir, themeName+".css"))
+
+	rel, err := filepath.Rel(themesDir, cssPath)
+	if err != nil || strings.HasPrefix(rel, "..") || rel == "." {
+		return ""
+	}
+
+	cssContent, err := os.ReadFile(cssPath)
+	if err != nil {
+		return ""
+	}
+
+	return fmt.Sprintf("<style id=\"generated-theme\">%s</style>", string(cssContent))
+}
+
 func (h *FrontendHandler) serveIndex(w http.ResponseWriter, r *http.Request) {
 	// Don't serve index.html for missing API routes
 	if strings.HasPrefix(r.URL.Path, "/api") {
@@ -120,38 +141,16 @@ func (h *FrontendHandler) serveIndex(w http.ResponseWriter, r *http.Request) {
 	}
 
 	// Theme logic
-	cookie, err := r.Cookie("viz:theme")
-	themeValue := frontend.DefaultTheme
-	if err == nil {
-		themeValue = cookie.Value
-	}
-
-	colorTheme := "viz-black"
-	modeTheme := "light"
-
-	if strings.HasPrefix(themeValue, "viz-") {
-		parts := strings.Split(themeValue, "-")
-		if len(parts) >= 2 {
-			colorTheme = fmt.Sprintf("%s-%s", parts[0], parts[1])
+	themeName := frontend.DefaultTheme
+	for _, cookieName := range []string{"viz-theme", "viz_theme", "theme"} {
+		if c, err := r.Cookie(cookieName); err == nil && c.Value != "" {
+			themeName = c.Value
+			break
 		}
-		if len(parts) > 2 && (parts[2] == "light" || parts[2] == "dark") {
-			modeTheme = parts[2]
-		}
-	} else if themeValue == "light" || themeValue == "dark" {
-		modeTheme = themeValue
 	}
 
-	// Read CSS file
-	cssPath := filepath.Join(h.BuildPath, "themes", colorTheme+".css")
-	cssContent, err := os.ReadFile(cssPath)
-	criticalCss := ""
-	if err != nil {
-		h.Logger.Warn("theme file not found", slog.String("theme", colorTheme), slog.String("path", cssPath))
-	} else {
-		criticalCss = fmt.Sprintf("<style id=\"generated-theme\">%s</style>", string(cssContent))
-	}
-
-	themeAttr := fmt.Sprintf("data-theme=\"%s\"", modeTheme)
+	criticalCss := h.getThemeCSS(themeName)
+	themeAttr := "data-theme=\"light\""
 
 	// Build sanitized public config script for window.vizConfig
 	configJSON, err := json.Marshal(config.AppConfig.Public())
