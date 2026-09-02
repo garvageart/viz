@@ -1,10 +1,17 @@
-import type { HistogramData, HistogramStat } from "$lib/third-party/photo-histogram/js/histogram";
-import { Histogram as PHHistogram } from "$lib/third-party/photo-histogram/js/histogram";
+import type { ImageAsset } from "@viz/api";
+import * as Comlink from "comlink";
+import {
+    type HistogramData,
+    type HistogramStat,
+    Histogram as PHHistogram
+} from "$lib/third-party/photo-histogram/js/histogram";
 import * as HistogramUtils from "$lib/third-party/photo-histogram/js/util";
+import { isAssetImage } from "$lib/utils/images";
+import { clearHistogramCache, computeFallback, computeForAsset, getWorkerProxy } from "./asset";
 
 export { HistogramUtils, PHHistogram as PhotoHistogram };
 export type { HistogramData, HistogramStat };
-export { clearHistogramCache, computeForAsset } from "./asset";
+export { clearHistogramCache, computeForAsset };
 
 /**
  * Ensures an HTMLImageElement is loaded before using it as a source for drawing.
@@ -36,19 +43,46 @@ export function ensureImageLoaded(img: HTMLImageElement): Promise<void> {
 }
 
 /**
- * Compute histogram data for an image or canvas source using the existing photo-histogram core.
- * Waits for image load if necessary.
+ * Unified histogram computation supporting ImageAsset, HTMLImageElement, HTMLCanvasElement, Blob, or URL string.
+ * Offloads decoding and tallying to a Web Worker whenever possible.
  */
 export async function computeHistogram(
-    source: HTMLImageElement | HTMLCanvasElement,
-    luminanceWeights?: number[]
+    source: ImageAsset | HTMLImageElement | HTMLCanvasElement | Blob | string
 ): Promise<HistogramData> {
-    if (source instanceof HTMLImageElement) {
-        await ensureImageLoaded(source);
+    if (isAssetImage(source)) {
+        return computeForAsset(source);
     }
 
-    const h = new PHHistogram(source as HTMLImageElement | HTMLCanvasElement, luminanceWeights);
-    return h.data;
+    if (typeof source === "string") {
+        const proxy = getWorkerProxy();
+        if (proxy) {
+            return proxy.compute(source);
+        }
+        return computeFallback(source);
+    }
+
+    if (source instanceof HTMLImageElement) {
+        await ensureImageLoaded(source);
+        const bitmap = await createImageBitmap(source);
+        const proxy = getWorkerProxy();
+        if (proxy) {
+            return proxy.compute(Comlink.transfer(bitmap, [bitmap]));
+        }
+        const h = new PHHistogram(source);
+        return h.data;
+    }
+
+    if (source instanceof HTMLCanvasElement || source instanceof Blob) {
+        const bitmap = await createImageBitmap(source);
+        const proxy = getWorkerProxy();
+        if (proxy) {
+            return proxy.compute(Comlink.transfer(bitmap, [bitmap]));
+        }
+        const h = new PHHistogram(source as HTMLCanvasElement);
+        return h.data;
+    }
+
+    throw new Error("Unsupported histogram source");
 }
 
 /**

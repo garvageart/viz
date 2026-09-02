@@ -4,14 +4,28 @@ import { tallyImageData } from "./tally";
 
 export interface HistogramApi {
     /**
-     * Accepts an ImageBitmap or Blob, tallies the histogram on an OffscreenCanvas.
+     * Accepts an ImageBitmap, Blob, or URL string, tallies the histogram on an OffscreenCanvas.
      */
-    compute(source: ImageBitmap | Blob): Promise<HistogramData>;
+    compute(source: ImageBitmap | Blob | string): Promise<HistogramData>;
 }
 
 export const api: HistogramApi = {
     async compute(source) {
-        const bitmap = source instanceof ImageBitmap ? source : await createImageBitmap(source);
+        let bitmap: ImageBitmap;
+
+        if (typeof source === "string") {
+            const res = await fetch(source, { credentials: "include" });
+            if (!res.ok) {
+                throw new Error(`Failed to fetch image for histogram: ${res.statusText}`);
+            }
+            const blob = await res.blob();
+            bitmap = await createImageBitmap(blob);
+        } else if (source instanceof ImageBitmap) {
+            bitmap = source;
+        } else {
+            bitmap = await createImageBitmap(source);
+        }
+
         const MAX_DIM = 2048;
         let width = bitmap.width;
         let height = bitmap.height;
@@ -25,6 +39,7 @@ export const api: HistogramApi = {
         const canvas = new OffscreenCanvas(width, height);
         const ctx = canvas.getContext("2d");
         if (!ctx) {
+            bitmap.close();
             throw new Error("OffscreenCanvas 2D context unavailable");
         }
 

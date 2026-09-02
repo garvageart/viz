@@ -1,9 +1,8 @@
 import { type ImageAsset, getAssetImagePath } from "@viz/api";
 import * as Comlink from "comlink";
-import { computeHistogram } from "$lib/histogram";
 import type { HistogramApi } from "$lib/histogram/worker";
 import HistogramWorker from "$lib/histogram/worker?worker";
-import { type HistogramData } from "$lib/third-party/photo-histogram/js/histogram";
+import { type HistogramData, Histogram as PHHistogram } from "$lib/third-party/photo-histogram/js/histogram";
 
 /**
  * Memoized, worker-accelerated histogram computation for an image asset.
@@ -19,15 +18,15 @@ function assetKey(asset: ImageAsset): string {
 }
 
 function histogramSourceUrl(asset: ImageAsset): string | null {
-    // Prefer preview, over original. Good middle ground. Original second, maybe slightly more time consuming
+    // Use original, smoother lines and the computation issue is fixed
     // TODO: Ideally, maybe this is a configurable user option
-    return getAssetImagePath(asset, "preview") ?? null;
+    return getAssetImagePath(asset, "original") ?? null;
 }
 
 let workerInstance: Worker | null | undefined;
 let workerProxy: Comlink.Remote<HistogramApi> | null | undefined;
 
-function getWorkerProxy(): Comlink.Remote<HistogramApi> | null {
+export function getWorkerProxy(): Comlink.Remote<HistogramApi> | null {
     if (workerProxy === undefined) {
         try {
             workerInstance = new HistogramWorker();
@@ -40,32 +39,22 @@ function getWorkerProxy(): Comlink.Remote<HistogramApi> | null {
     return workerProxy;
 }
 
-// function computeInWorker(url: string): Promise<HistogramData> {
-//     const proxy = getWorkerProxy();
-//     if (!proxy) {
-//         return Promise.reject(new Error("Histogram worker unavailable"));
-//     }
-//     return proxy.compute(url);
-// }
+export async function computeFallback(url: string): Promise<HistogramData> {
+    const img = new Image();
+    img.src = url;
 
-// /**
-//  * Main-thread fallback that reuses the existing photo-histogram core.
-//  */
-// async function computeFallback(url: string): Promise<HistogramData> {
-//     const img = new Image();
-//     img.src = url;
+    await new Promise<void>((resolve, reject) => {
+        img.onload = () => {
+            resolve();
+        };
+        img.onerror = () => {
+            reject(new Error("Failed to load image for histogram"));
+        };
+    });
 
-//     await new Promise<void>((resolve, reject) => {
-//         img.onload = () => {
-//             resolve();
-//         };
-//         img.onerror = () => {
-//             reject(new Error("Failed to load image for histogram"));
-//         };
-//     });
-
-//     return computeHistogram(img);
-// }
+    const h = new PHHistogram(img);
+    return h.data;
+}
 
 /**
  * Computes (and caches) the histogram for an asset. Never throws synchronously;
@@ -76,35 +65,19 @@ export function computeForAsset(asset: ImageAsset): Promise<HistogramData> {
     let pending = cache.get(key);
 
     if (!pending) {
-        pending = new Promise<HistogramData>((resolve, reject) => {
+        pending = (async () => {
             const url = histogramSourceUrl(asset);
             if (!url) {
-                reject(new Error("Image has no histogram source"));
-                return;
+                throw new Error("Image has no histogram source");
             }
 
-            const img = new Image();
-            img.src = url;
+            const proxy = getWorkerProxy();
+            if (proxy) {
+                return proxy.compute(url);
+            }
 
-            img.onload = async () => {
-                try {
-                    const bitmap = await createImageBitmap(img);
-                    const proxy = getWorkerProxy();
-                    if (proxy) {
-                        const data = await proxy.compute(Comlink.transfer(bitmap, [bitmap]));
-                        resolve(data);
-                    } else {
-                        resolve(computeHistogram(img));
-                    }
-                } catch (err) {
-                    reject(err);
-                }
-            };
-
-            img.onerror = () => {
-                reject(new Error("Failed to load image for histogram"));
-            };
-        });
+            return computeFallback(url);
+        })();
 
         cache.set(key, pending);
 
