@@ -9,7 +9,6 @@
 > [!WARNING]
 > This project is in active development. Features and APIs may change frequently. Feedback and contributions are welcome!
 
----
 
 ## Capabilities & Highlights
 
@@ -21,7 +20,6 @@
 - **viewfinder Interface**: A clean, responsive workspace featuring fluid image grids, dynamic zoom scaling, batch operations, and drag-and-drop uploads.
 - **Self-Hosted & Private**: Total ownership of your data, however and wherever you want.
 
----
 
 ## Quick Start
 
@@ -46,7 +44,6 @@ Visit **`http://localhost:7770`** in your browser.
 
 For complete setup guides and manual development instructions, see [**BUILDING.md**](./docs/setup/BUILDING.md).
 
----
 
 ## Documentation
 
@@ -54,7 +51,6 @@ For complete setup guides and manual development instructions, see [**BUILDING.m
 - [**UI Design System**](./docs/development/UI_DESIGN_SYSTEM.md): Visual design tokens, spacing, and styling rules.
 - [**API Specification**](./api/openapi/openapi.yaml): Full OpenAPI documentation.
 
----
 
 ## License
 
