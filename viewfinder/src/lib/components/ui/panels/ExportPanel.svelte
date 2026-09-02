@@ -19,7 +19,7 @@
     import { processDownloadQueue, waitForDownloadCompletion } from "$lib/download/manager.svelte";
     import { createZipExportName } from "$lib/download/utils";
     import type { TransformInput } from "$lib/images/vips/vips";
-    import { download } from "$lib/states/index.svelte";
+    import { config, download } from "$lib/states/index.svelte";
     import { toasts } from "$lib/toast-notifcations/toasts.svelte";
     import { safeRenderRenameTemplate } from "$lib/ui-tools/renamer";
     import { downloadToFilesystem } from "$lib/utils/files";
@@ -415,7 +415,7 @@
                     }
                 }
 
-                let zipName = createZipExportName(window.vizConfig?.download?.zip_export_name!);
+                let zipName = createZipExportName(config.data?.download?.zip_export_name || "viz_export_{date}");
 
                 // Create a virtual DownloadFile task for zip compilation
                 const zipTask = new DownloadFile("", zipName);

@@ -152,13 +152,6 @@ func SystemRouter(db *gorm.DB, logger *slog.Logger, wsBroker *libhttp.WSBroker) 
 			sanitizedConfig.Database.Password = sanitizedPasswordPlaceholder
 			sanitizedConfig.Queue.Password = sanitizedPasswordPlaceholder
 
-			// Broadcast sanitized public config to connected clients
-			if wsBroker != nil {
-				if err := wsBroker.Broadcast("config-updated", updatedConfig.Public()); err != nil {
-					logger.Warn("failed to broadcast config-updated event", slog.Any("error", err))
-				}
-			}
-
 			render.Status(req, http.StatusOK)
 			render.JSON(res, req, sanitizedConfig)
 		})

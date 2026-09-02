@@ -6,11 +6,10 @@ import (
 )
 
 const (
-	DefaultTheme            = "viz-black"
-	ThemeStylePlaceholder   = "%viz.css.theme_style%"
-	ThemeAttrPlaceholder    = "%THEME_ATTR%"
-	ConfigScriptPlaceholder = "%VIZ_CONFIG_SCRIPT%"
-	IndexHtml               = "index.html"
+	DefaultTheme          = "viz-black"
+	ThemeStylePlaceholder = "%viz.css.theme_style%"
+	ThemeAttrPlaceholder  = "%THEME_ATTR%"
+	IndexHtml             = "index.html"
 )
 
 var (

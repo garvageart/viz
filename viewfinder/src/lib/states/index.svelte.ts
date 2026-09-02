@@ -5,6 +5,8 @@ import {
     type Setting,
     type SystemStatusResponse,
     type User,
+    type VizConfig,
+    getSystemConfig,
     updateUserSetting
 } from "@viz/api";
 import { MediaQuery } from "svelte/reactivity";
@@ -38,8 +40,42 @@ export let system = $state<{
     error: null
 });
 
+export let config = $state<{
+    data: VizConfig | null;
+    loading: boolean;
+    fetched: boolean;
+    error: string | null;
+}>({
+    data: null,
+    loading: false,
+    fetched: false,
+    error: null
+});
+
+export async function fetchSystemConfig(opts?: { fetch?: typeof window.fetch }) {
+    if (config.fetched) {
+        return;
+    }
+
+    config.loading = true;
+    try {
+        const res = await getSystemConfig(opts);
+        if (res.status === 200) {
+            config.data = res.data;
+            config.fetched = true;
+            config.error = null;
+        } else {
+            config.error = "Failed to load system config";
+        }
+    } catch (e: any) {
+        config.error = e?.message || "Failed to load system config";
+    } finally {
+        config.loading = false;
+    }
+}
+
 class LoginState {
-    storage: VizCookieStorage<string>;
+    private storage: VizCookieStorage<string>;
     value: string | null = $state(null);
     constructor() {
         // shitty hack

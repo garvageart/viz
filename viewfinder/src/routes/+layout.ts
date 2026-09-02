@@ -2,7 +2,7 @@ import { browser } from "$app/environment";
 import { error, redirect } from "@sveltejs/kit";
 import { api, getSystemStatus, initApi } from "@viz/api";
 import { fetchCurrentUser } from "$lib/auth/auth_methods";
-import { system, user } from "$lib/states/index.svelte.js";
+import { config, fetchSystemConfig, system, user } from "$lib/states/index.svelte.js";
 import { collectionDetailSort, collectionsSort, photosSort } from "$lib/states/sort.svelte";
 import { getSafeRedirectUrl } from "$lib/utils/url";
 
@@ -54,6 +54,10 @@ export async function load({ url, fetch }) {
     // 2. Ensure we have the user state
     if (!user.fetched) {
         await fetchCurrentUser({ fetch });
+    }
+
+    if (user.isAdmin && !config.fetched) {
+        await fetchSystemConfig({ fetch });
     }
 
     const isConnectionError = !!user.connectionError;

@@ -1,7 +1,6 @@
 import geist from "@fontsource-variable/geist/files/geist-latin-wght-normal.woff2?url";
 import robotoMono from "@fontsource-variable/roboto-mono/files/roboto-mono-latin-wght-normal.woff2?url";
 import type { Handle } from "@sveltejs/kit";
-import fs from "fs";
 import { VizCookieStorage } from "$lib/utils/misc";
 
 const criticalCssCache = new Map<string, string>();
@@ -10,33 +9,6 @@ const THEME_STYLE_PLACEHOLDER = "%viz.css.theme_style%";
 const DISPLAY_FONT_PLACEHOLDER = "%viz.css.display_font%";
 const MONO_FONT_PLACEHOLDER = "%viz.css.mono_font%";
 const THEME_ATTR_PLACEHOLDER = "%THEME_ATTR%";
-const CONFIG_SCRIPT_PLACEHOLDER = "%VIZ_CONFIG_SCRIPT%";
-
-function getDevPublicConfigScript(): string {
-    const configPath = process.env.VIZ_CONFIG_PATH || "../viz.json";
-    let config: any = {};
-    try {
-        if (fs.existsSync(configPath)) {
-            config = JSON.parse(fs.readFileSync(configPath, "utf8"));
-        }
-    } catch (e) {
-        console.warn("[hooks.server] Failed to read viz.json:", e);
-    }
-
-    const publicConfig = {
-        base_url: config.base_url,
-        allowed_hosts: config.allowed_hosts,
-        timezone: config.timezone,
-        download: {
-            zip_export_name: config.download?.zip_export_name
-        },
-        storage: {
-            storage_path_template: config.storage?.storage_path_template
-        }
-    };
-
-    return `<script id="viz-config">window.vizConfig = ${JSON.stringify(publicConfig)};</script>`;
-}
 
 // TODO: add theme selection from user settings
 const DEFAULT_THEME = "viz-black";
@@ -99,6 +71,5 @@ export const handle: Handle = async ({ event, resolve }) => {
             handleFonts(html)
                 .replace(THEME_STYLE_PLACEHOLDER, criticalCss)
                 .replace(THEME_ATTR_PLACEHOLDER, themeAttribute)
-                .replace(CONFIG_SCRIPT_PLACEHOLDER, getDevPublicConfigScript())
     });
 };

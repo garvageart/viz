@@ -1,4 +1,3 @@
-import type { VizConfig } from "@viz/api";
 import type { ViewfinderConfig, VizBootstrapConfig } from "$lib/types/config.types";
 
 declare global {
@@ -19,7 +18,6 @@ declare global {
             [key: string]: string;
         };
         __VIZ_CONFIG__?: VizBootstrapConfig;
-        vizConfig?: VizConfig;
     }
 }
 

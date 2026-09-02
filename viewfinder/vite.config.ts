@@ -137,34 +137,8 @@ const isolatePlugin: Plugin = {
     }
 };
 
-const vizConfigInjectionPlugin: Plugin = {
-    name: "viz-config-injection",
-    transformIndexHtml(html) {
-        const publicConfig = {
-            base_url: config.base_url,
-            allowed_hosts: config.allowed_hosts,
-            timezone: config.timezone,
-            download: {
-                zip_export_name: config.download?.zip_export_name
-            },
-            storage: {
-                storage_path_template: config.storage?.storage_path_template
-            }
-        };
-        const scriptTag = `<script id="viz-config">window.vizConfig = ${JSON.stringify(publicConfig)};</script>`;
-        return html.replace("%VIZ_CONFIG_SCRIPT%", scriptTag);
-    }
-};
-
 export default defineConfig({
-    plugins: [
-        imageProcessWasmCopyPlugin,
-        isolatePlugin,
-        vizConfigInjectionPlugin,
-        devtoolsJson(),
-        svelteTesting(),
-        sveltekit()
-    ],
+    plugins: [imageProcessWasmCopyPlugin, isolatePlugin, devtoolsJson(), svelteTesting(), sveltekit()],
     define: define,
     optimizeDeps: {
         exclude: ["wasm-vips", "libexif-wasm"],
