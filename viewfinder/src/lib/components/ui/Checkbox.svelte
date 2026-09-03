@@ -200,6 +200,17 @@
         }
     }
 
+    /* Checked & Indeterminate hover states */
+    .checkbox-wrapper:hover:not(.disabled) {
+        input[type="checkbox"]:checked + label,
+        &.is-indeterminate input[type="checkbox"] + label {
+            .viz-checkbox {
+                background-color: var(--viz-primary-hover);
+                border-color: var(--viz-primary-hover);
+            }
+        }
+    }
+
     /* Keyboard Focus Ring (focus-visible) */
     input[type="checkbox"]:focus-visible + label {
         .viz-checkbox {
