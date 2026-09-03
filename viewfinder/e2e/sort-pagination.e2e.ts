@@ -69,7 +69,8 @@ test.describe("photos sort persistence across pagination", () => {
 
         // The very first fetch (page 0) must already use the persisted sort.
         await expect.poll(() => imageRequests.length).toBeGreaterThan(0);
-        expect(imageRequests[0].sortBy).toBeTruthy();
+        expect(imageRequests[0].sortBy).toBe("recently_added");
+        expect(imageRequests[0].order).toBe("DESC");
 
         // Scroll to the bottom to trigger pagination.
         await container1.evaluate((el) => {
@@ -81,7 +82,7 @@ test.describe("photos sort persistence across pagination", () => {
         // Assert all captured image API requests use the persisted sort preference.
         await page.waitForTimeout(500);
         for (const r of imageRequests) {
-            expect(r.sortBy).toBeTruthy();
+            expect(r.sortBy).toBe("recently_added");
             expect(r.order).toBe("DESC");
         }
     });
