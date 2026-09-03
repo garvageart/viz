@@ -1,7 +1,6 @@
 <script lang="ts">
     import { type WorkerInfo } from "@viz/api";
     import { onMount } from "svelte";
-    import { fade } from "svelte/transition";
     import AdminRouteShell from "$lib/components/admin/AdminRouteShell.svelte";
     import Badge from "$lib/components/ui/Badge.svelte";
     import Banner from "$lib/components/ui/Banner.svelte";
@@ -105,16 +104,14 @@
     iconName: icon,
     value,
     label,
-    cardClass,
-    delay
+    cardClass
 }: {
     iconName: MaterialSymbol;
     value: string | number;
     label: string;
     cardClass: string;
-    delay: number;
 })}
-    <div class={["stat-card", cardClass]} in:fade={{ delay }}>
+    <div class={["stat-card", cardClass]}>
         <div class="stat-icon">
             <MaterialIcon iconName={icon} />
         </div>
@@ -314,32 +311,28 @@
                     iconName: "pending",
                     value: jobsState.stats.activeCount,
                     label: "Active Jobs",
-                    cardClass: "active",
-                    delay: 0
+                    cardClass: "active"
                 })}
 
                 {@render statCard({
                     iconName: "check_circle",
                     value: jobsState.stats.completedCount,
                     label: "Completed",
-                    cardClass: "completed",
-                    delay: 100
+                    cardClass: "completed"
                 })}
 
                 {@render statCard({
                     iconName: "error",
                     value: jobsState.stats.failedCount,
                     label: "Failed",
-                    cardClass: "failed",
-                    delay: 200
+                    cardClass: "failed"
                 })}
 
                 {@render statCard({
                     iconName: "analytics",
                     value: jobsState.stats.totalProcessed,
                     label: "Total Processed",
-                    cardClass: "total",
-                    delay: 300
+                    cardClass: "total"
                 })}
             </div>
         </section>
