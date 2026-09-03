@@ -9,19 +9,26 @@
     import PhotoAssetGrid from "$lib/components/grid/PhotoAssetGrid.svelte";
     import ImageLabelViewer from "$lib/components/image-tools/ImageLabelViewer.svelte";
     import StarRating from "$lib/components/image-tools/StarRating.svelte";
-    import CollectionSelectionModal from "$lib/components/modals/CollectionSelectionModal.svelte";
-    import { modalsManager } from "$lib/components/modals/manager/ModalManager.svelte";
     import VizViewContainer from "$lib/components/panels/VizViewContainer.svelte";
     import Button from "$lib/components/ui/Button.svelte";
     import CollectionCard from "$lib/components/ui/CollectionCard.svelte";
     import ImageCard from "$lib/components/ui/ImageCard.svelte";
     import ImageLightbox from "$lib/components/ui/ImageLightbox.svelte";
     import LoadingSpinner from "$lib/components/ui/LoadingSpinner.svelte";
-    import AssetToolbar from "$lib/components/ui/toolbars/AssetToolbar.svelte";
+    import VizToolbar from "$lib/components/ui/toolbars/VizToolbar.svelte";
     import { VizMimeTypes } from "$lib/constants";
     import { contextMenu } from "$lib/context-menu";
-    import { createCollectionMenu } from "$lib/context-menu/menus/collections";
-    import { createImageMenu } from "$lib/context-menu/menus/images";
+    import {
+        createCollectionMenu,
+        deleteSelectedCollections,
+        downloadCollectionZip,
+        duplicateCollection,
+        toggleFavouriteCollections
+    } from "$lib/context-menu/menus/collections";
+    import {
+        createImageMenu,
+        openAddToCollectionModal as openAddToCollectionModalCore
+    } from "$lib/context-menu/menus/images";
     import type { MenuItem } from "$lib/context-menu/types";
     import { DragData } from "$lib/drag-drop/data";
     import { LabelColours } from "$lib/images/constants";
@@ -64,9 +71,6 @@
         });
     });
 
-    // Modal state for collection selection
-    let imageUidsForCollection = $state<string[]>([]);
-
     // Derived selection helpers
     let firstSelectedImage = $derived.by(() => {
         if (imageSelection.size === 0) {
@@ -84,57 +88,55 @@
     });
     let firstSelectedCollection = $derived(collectionSelection.selectedItems[0]);
 
+    let activeSelectionScope = $derived(
+        imageSelection.size > 0 ? imageSelection : collectionSelection.size > 0 ? collectionSelection : null
+    );
+
+    let areAllSelectedCollectionsFavourited = $derived(
+        collectionSelection.size > 0 &&
+            collectionSelection.selectedItems.every((c) => {
+                return c.favourited;
+            })
+    );
+
     // Action Menus
-    let imageActionMenuItems = $derived.by(() => {
-        const baseMenuItems = createImageMenu(images, imageSelection, {
+    let imageActionMenuItems = $derived(
+        createImageMenu(images, imageSelection, {
             onUpdate: () => {
                 performSearch();
             },
             onDelete: (deletedUIDs) => {
-                // For search, we might just want to remove them from the view or re-search
-                // Ideally, we'd remove them from the local 'images' array if it were mutable in this context
-                // Since 'images' is derived from search.data, we might need to trigger a re-search or just let it be.
-                // For now, we'll just toast.
                 toasts.add({
                     type: "success",
                     message: `${deletedUIDs.length} image(s) deleted.`
                 });
                 performSearch();
-            }
-        });
-
-        const pageMenuItems: MenuItem[] = [
-            {
-                id: "act-add-to-collection",
-                label: "Add to Collection",
-                iconName: "collections_bookmark",
-                action: () => {
-                    openAddToCollectionModal();
-                }
-            }
-        ];
-
-        return [...pageMenuItems, ...baseMenuItems];
-    });
-
-    function openAddToCollectionModal() {
-        imageUidsForCollection = imageSelection.selectedItems.map((img) => img.uid);
-        modalsManager.open(
-            CollectionSelectionModal,
-            {
-                imageUidsToAdd: imageUidsForCollection,
-                onSelect: handleCollectionSelect
             },
-            { heading: "Select a Collection" }
-        );
+            onAddToCollection: handleCollectionSelect
+        })
+    );
+
+    function openAddToCollectionModal(uids?: string[]) {
+        const uidsToAdd =
+            uids ??
+            imageSelection.selectedItems.map((img) => {
+                return img.uid;
+            });
+        openAddToCollectionModalCore(uidsToAdd, handleCollectionSelect);
     }
 
-    let collectionActionMenuItems = $derived.by(() => {
-        return createCollectionMenu(firstSelectedCollection, {
+    let collectionActionMenuItems = $derived(
+        createCollectionMenu(firstSelectedCollection, {
             selectedCollections: collectionSelection.selectedItems,
-            onCollectionDeleted: () => performSearch(),
-            onCollectionDuplicated: () => performSearch(),
-            onCollectionUpdated: () => performSearch(),
+            onCollectionDeleted: () => {
+                performSearch();
+            },
+            onCollectionDuplicated: () => {
+                performSearch();
+            },
+            onCollectionUpdated: () => {
+                performSearch();
+            },
             onCollectionsDeleted: (deletedCols) => {
                 collectionSelection.clear();
                 toasts.add({
@@ -146,8 +148,8 @@
                 });
                 performSearch();
             }
-        });
-    });
+        })
+    );
 
     // View Modes
     let imageViewMode = $state<AssetViewType>(viewSettings.current);
@@ -321,7 +323,6 @@
             });
         } finally {
             imageSelection.clear();
-            imageUidsForCollection = [];
         }
     }
 
@@ -362,26 +363,91 @@
 
 <div id="search">
     <div id="search-info-container" class="selection-container">
-        {#if imageSelection.size > 0}
-            <AssetToolbar class="asset-toolbar" style="justify-content: space-between;">
-                <div class="toolbar-content">
-                    <div class="selection-info">
-                        <Button
-                            iconName="close"
-                            class="toolbar-button"
-                            title="Clear selection"
-                            aria-label="Clear selection"
-                            style="margin-right: 1em;"
-                            onclick={() => imageSelection.clear()}
-                        />
-                        <span style="font-weight: 600;">{imageSelection.size} selected</span>
-                    </div>
-                    <div class="selection-actions">
+        {#if !search.loading}
+            <VizToolbar stickyToolbar={true} selectionScope={activeSelectionScope}>
+                {#snippet leading()}
+                    <Button
+                        iconName="filter_list"
+                        class="toolbar-button"
+                        title="Filter"
+                        aria-label="Filter"
+                        onclick={() => {
+                            toasts.add({
+                                type: "info",
+                                message: "Filtering search results is coming soon",
+                                timeout: 3000
+                            });
+                        }}
+                    >
+                        <span>Filter</span>
+                    </Button>
+                    {#if !activeSelectionScope || activeSelectionScope.size === 0}
+                        <div class="search-stats">
+                            <span>
+                                {search.pagination.count} results found in
+                                <strong>{(timeFound / 1000).toFixed(2)}s</strong>
+                            </span>
+                            <span class="search-info-details">
+                                ({collections.length}
+                                {collections.length === 1 ? "collection" : "collections"}, {search.pagination.count}
+                                {search.pagination.count === 1 ? "image" : "images"})
+                            </span>
+                        </div>
+                    {/if}
+                {/snippet}
+
+                {#snippet selectionActions()}
+                    {#if imageSelection.size > 0}
+                        {#if firstSelectedImage}
+                            <div class="triage-group">
+                                <StarRating
+                                    value={firstSelectedImage.image_metadata?.rating ?? 0}
+                                    onChange={async (rating) => {
+                                        if (!firstSelectedImage) {
+                                            return;
+                                        }
+
+                                        const updatePromises = imageSelection.selectedItems.map((img) => {
+                                            return updateImage(img.uid, {
+                                                image_metadata: { rating }
+                                            });
+                                        });
+
+                                        await Promise.all(updatePromises);
+                                    }}
+                                />
+                                <ImageLabelViewer
+                                    variant="compact"
+                                    label={getImageLabel(firstSelectedImage)}
+                                    onSelect={async (selectedLabel) => {
+                                        if (!firstSelectedImage) {
+                                            return;
+                                        }
+
+                                        const entry = Object.entries(LabelColours).find(([_, colour]) => {
+                                            return colour === selectedLabel;
+                                        });
+                                        const labelName = entry ? entry[0] : null;
+                                        const labelToSend = labelName as ImageLabel | null;
+
+                                        const updatePromises = imageSelection.selectedItems.map((img) => {
+                                            return updateImage(img.uid, {
+                                                image_metadata: { label: labelToSend }
+                                            });
+                                        });
+
+                                        await Promise.all(updatePromises);
+                                    }}
+                                />
+                            </div>
+                            <div class="toolbar-separator"></div>
+                        {/if}
                         <Button
                             iconName="collections_bookmark"
-                            class="action"
+                            class="action toolbar-button"
                             role="tooltip"
                             title="Add to Collection"
+                            aria-label="Add to Collection"
                             onclick={() => {
                                 openAddToCollectionModal();
                             }}
@@ -413,136 +479,86 @@
                                 }
 
                                 e.currentTarget.classList.remove("on-enter");
-
-                                imageUidsForCollection = uidsData;
-                                modalsManager.open(
-                                    CollectionSelectionModal,
-                                    {
-                                        imageUidsToAdd: imageUidsForCollection,
-                                        onSelect: handleCollectionSelect
-                                    },
-                                    { heading: "Select a Collection" }
+                                openAddToCollectionModal(uidsData);
+                            }}
+                        />
+                        <Dropdown
+                            class="toolbar-button"
+                            iconName="more_horiz"
+                            items={imageActionMenuItems}
+                            showSelectionIndicator={false}
+                            align="right"
+                        />
+                    {:else if collectionSelection.size > 0}
+                        <Button
+                            iconName="star"
+                            fill={areAllSelectedCollectionsFavourited}
+                            class="toolbar-button"
+                            title={areAllSelectedCollectionsFavourited ? "Unfavourite" : "Favourite"}
+                            aria-label={areAllSelectedCollectionsFavourited ? "Unfavourite" : "Favourite"}
+                            onclick={() => {
+                                toggleFavouriteCollections(
+                                    collectionSelection.selectedItems,
+                                    collectionSelection,
+                                    collections,
+                                    () => {
+                                        performSearch();
+                                    }
                                 );
                             }}
-                        >
-                            <span>Add to Collection</span>
-                        </Button>
-                        {#if firstSelectedImage}
-                            <ImageLabelViewer
-                                variant="expanded"
-                                label={getImageLabel(firstSelectedImage)}
-                                onSelect={async (selectedLabel) => {
-                                    if (!firstSelectedImage) {
-                                        return;
-                                    }
-
-                                    // Reverse lookup: find the key (Name) for the selected color (Value)
-                                    const entry = Object.entries(LabelColours).find(
-                                        ([_, colour]) => colour === selectedLabel
-                                    );
-                                    const labelName = entry ? entry[0] : null;
-                                    const labelToSend = labelName as ImageLabel | null;
-
-                                    const updatePromises = imageSelection.selectedItems.map((img) =>
-                                        updateImage(img.uid, {
-                                            image_metadata: { label: labelToSend }
-                                        })
-                                    );
-
-                                    await Promise.all(updatePromises);
-                                }}
-                            />
-                            <StarRating
-                                value={firstSelectedImage.image_metadata?.rating ?? 0}
-                                onChange={async (rating) => {
-                                    if (!firstSelectedImage) {
-                                        return;
-                                    }
-
-                                    const updatePromises = imageSelection.selectedItems.map((img) =>
-                                        updateImage(img.uid, {
-                                            image_metadata: { rating }
-                                        })
-                                    );
-
-                                    await Promise.all(updatePromises);
-                                }}
-                            />
-                        {/if}
-                    </div>
-                </div>
-                <div class="toolbar-right">
-                    <Dropdown
-                        class="toolbar-button"
-                        iconName="more_horiz"
-                        items={imageActionMenuItems}
-                        showSelectionIndicator={false}
-                        align="right"
-                    />
-                </div>
-            </AssetToolbar>
-        {:else if collectionSelection.size > 0}
-            <AssetToolbar class="asset-toolbar">
-                <div class="toolbar-content">
-                    <div class="selection-info">
-                        <Button
-                            iconName="close"
-                            class="toolbar-button"
-                            title="Clear selection"
-                            aria-label="Clear selection"
-                            style="margin-right: 1em;"
-                            onclick={() => collectionSelection.clear()}
                         />
-                        <span style="font-weight: 600;">{collectionSelection.size} selected</span>
-                    </div>
-                </div>
-                <div class="toolbar-right">
-                    <Dropdown
-                        class="toolbar-button"
-                        iconName="more_horiz"
-                        items={collectionActionMenuItems}
-                        showSelectionIndicator={false}
-                        align="right"
-                    />
-                </div>
-            </AssetToolbar>
-        {:else if !search.loading}
-            <AssetToolbar style="position: sticky; top: 0px;" class="asset-toolbar">
-                <div class="toolbar-content">
-                    <div class="selection-info">
-                        <span>
-                            {search.pagination.count} results found in
-                            <strong>{(timeFound / 1000).toFixed(2)} seconds</strong>
-                        </span>
-                        <div class="search-info-details" style="margin-left: 1rem;">
-                            <span>
-                                {collections.length} collection{collections.length === 1 ? "" : "s"}, {search.pagination
-                                    .count}
-                                image{search.pagination.count === 1 ? "" : "s"}
-                            </span>
-                        </div>
-                    </div>
-                </div>
-                <div class="toolbar-right">
-                    <Button
-                        iconName="filter_list"
-                        class="toolbar-button"
-                        title="Filter"
-                        aria-label="Filter"
-                        onclick={() => {
-                            // Placeholder for now as filter modal isn't fully integrated into search logic
-                            // But we keep the button for consistency and future wiring
-                            toasts.add({
-                                type: "info",
-                                message: "Filtering search results is coming soon",
-                                timeout: 3000
-                            });
-                        }}
-                    >
-                        Filter
-                    </Button>
-                </div>
-            </AssetToolbar>
+                        <Button
+                            iconName="folder_copy"
+                            class="toolbar-button"
+                            title="Duplicate"
+                            aria-label="Duplicate"
+                            onclick={() => {
+                                if (!firstSelectedCollection) {
+                                    return;
+                                }
+                                duplicateCollection(firstSelectedCollection, () => {
+                                    performSearch();
+                                });
+                            }}
+                        />
+                        <Button
+                            iconName="download"
+                            class="toolbar-button"
+                            title="Download ZIP"
+                            disabled={(firstSelectedCollection.image_count ??
+                                firstSelectedCollection.images?.length ??
+                                0) === 0}
+                            onclick={() => {
+                                downloadCollectionZip(firstSelectedCollection);
+                            }}
+                        />
+                        <Button
+                            iconName="delete"
+                            class="toolbar-button"
+                            title="Delete"
+                            onclick={() => {
+                                deleteSelectedCollections(
+                                    collectionSelection.selectedItems,
+                                    () => {
+                                        performSearch();
+                                    },
+                                    () => {
+                                        collectionSelection.clear();
+                                        performSearch();
+                                    }
+                                );
+                            }}
+                        />
+                        <Dropdown
+                            class="toolbar-button"
+                            iconName="more_horiz"
+                            items={collectionActionMenuItems}
+                            showSelectionIndicator={false}
+                            align="right"
+                        />
+                    {/if}
+                {/snippet}
+            </VizToolbar>
         {/if}
     </div>
 
@@ -688,50 +704,27 @@
     }
 
     #search-info-container {
-        z-index: 1;
+        z-index: var(--viz-z-local);
         width: 100%;
         position: sticky;
         top: 0;
-        background-color: var(--viz-surface-panel);
     }
 
-    .selection-info {
+    .search-stats {
         display: flex;
         align-items: center;
+        gap: var(--viz-spacing-xs);
+        font-size: var(--viz-font-size-sm);
         white-space: nowrap;
-        flex-shrink: 0;
 
-        span {
-            white-space: nowrap;
+        .search-info-details {
+            color: var(--viz-text-secondary);
         }
-    }
-
-    .selection-actions {
-        display: flex;
-        align-items: center;
-        gap: 1rem;
-    }
-
-    .toolbar-content {
-        display: flex;
-        align-items: center;
-        width: 100%;
-        gap: 2rem;
-    }
-
-    .toolbar-right {
-        display: flex;
-        align-items: center;
-        gap: 0.5rem;
     }
 
     :global(.on-enter) {
         background-color: var(--viz-surface-hover) !important;
         outline: 2px solid var(--viz-primary) !important;
-    }
-
-    :global(.asset-toolbar) {
-        gap: 1rem;
     }
 
     .search-container {
@@ -752,6 +745,12 @@
             font-family: var(--viz-display-font);
             color: var(--viz-text-primary);
         }
+    }
+
+    .triage-group {
+        display: flex;
+        align-items: center;
+        gap: var(--viz-spacing-std);
     }
 
     .loading-container,
@@ -797,20 +796,5 @@
         width: 100%;
         height: auto;
         min-height: 100%; /* Important for virtualization filling container */
-    }
-
-    @media (max-width: 40rem) {
-        .toolbar-content {
-            gap: var(--viz-spacing-sm);
-            flex-wrap: wrap;
-        }
-
-        .selection-info span {
-            font-size: var(--viz-font-size-sm);
-        }
-
-        :global(.asset-toolbar .toolbar-button span:not(.viz-material-icon)) {
-            display: none;
-        }
     }
 </style>

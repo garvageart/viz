@@ -23,7 +23,7 @@
     import VizViewContainer from "../panels/VizViewContainer.svelte";
     import Button from "../ui/Button.svelte";
     import Checkbox from "../ui/Checkbox.svelte";
-    import AssetToolbar from "../ui/toolbars/AssetToolbar.svelte";
+    import VizToolbar from "../ui/toolbars/VizToolbar.svelte";
     import { type ModalOptions, modalsManager } from "./manager/ModalManager.svelte";
 
     interface Props {
@@ -225,46 +225,51 @@
         </div>
     {:else}
         <div class="modal-body">
-            <AssetToolbar class="main-asset-toolbar" stickyToolbar={true}>
-                <div class="toolbar-group">
-                    <Dropdown
-                        title="Sort"
-                        class="toolbar-button"
-                        iconName="sort"
-                        items={sortOptions}
-                        selectedItemId={currentSortId(photosSort)}
-                        onSelect={(item) => {
-                            applySortSelection(photosSort, item.id);
-                            galleryState.images = [];
-                            galleryState.pagination.page = -1;
-                            galleryState.hasMore = true;
-                            paginate();
-                        }}
-                    />
-                    <Button
-                        iconName={photosSort.value.order === "ASC" ? "arrow_upward" : "arrow_downward"}
-                        class="toolbar-button"
-                        title={`Toggle Sort Order (${photosSort.value.order})`}
-                        onclick={() => {
-                            toggleSortOrder(photosSort);
-                            galleryState.images = [];
-                            galleryState.pagination.page = -1;
-                            galleryState.hasMore = true;
-                            paginate();
-                        }}
-                    />
-                </div>
-                <div class="toolbar-group">
-                    <Dropdown
-                        title="Display"
-                        class="toolbar-button"
-                        iconName="list_alt"
-                        items={displayMenuItems}
-                        selectedItemId={getDisplaySelectedId()}
-                        showSelectionIndicator={false}
-                    />
-                </div>
-            </AssetToolbar>
+            <VizToolbar stickyToolbar={true}>
+                {#snippet leading()}
+                    <div class="toolbar-group">
+                        <Dropdown
+                            title="Sort"
+                            class="toolbar-button"
+                            iconName="sort"
+                            items={sortOptions}
+                            selectedItemId={currentSortId(photosSort)}
+                            onSelect={(item) => {
+                                applySortSelection(photosSort, item.id);
+                                galleryState.images = [];
+                                galleryState.pagination.page = -1;
+                                galleryState.hasMore = true;
+                                paginate();
+                            }}
+                        />
+                        <Button
+                            iconName={photosSort.value.order === "ASC" ? "arrow_upward" : "arrow_downward"}
+                            class="toolbar-button"
+                            title={`Toggle Sort Order (${photosSort.value.order})`}
+                            onclick={() => {
+                                toggleSortOrder(photosSort);
+                                galleryState.images = [];
+                                galleryState.pagination.page = -1;
+                                galleryState.hasMore = true;
+                                paginate();
+                            }}
+                        />
+                    </div>
+                {/snippet}
+
+                {#snippet trailing()}
+                    <div class="toolbar-group">
+                        <Dropdown
+                            title="Display"
+                            class="toolbar-button"
+                            iconName="list_alt"
+                            items={displayMenuItems}
+                            selectedItemId={getDisplaySelectedId()}
+                            showSelectionIndicator={false}
+                        />
+                    </div>
+                {/snippet}
+            </VizToolbar>
 
             <div class="grid-wrapper">
                 <VizViewContainer
@@ -290,28 +295,28 @@
                     {/if}
                 </VizViewContainer>
             </div>
-        </div>
 
-        <div class="modal-footer">
-            <div class="selection-status">
-                {#if selectionScope.size > 0}
-                    <span class="selection-count">{selectionScope.size} selected</span>
-                {:else}
-                    <span class="no-selection">Select photos to add</span>
-                {/if}
-            </div>
-            <div class="footer-actions modal-actions">
-                <Button id="add-photos-cancel" variant="primary" onclick={handleCancel} disabled={isLoading}
-                    ><span>Cancel</span></Button
-                >
-                <Button
-                    id="add-photos-submit"
-                    variant="info"
-                    disabled={selectionScope.size === 0 || isLoading}
-                    onclick={handleAdd}
-                >
-                    <span>Add to Collection</span>
-                </Button>
+            <div class="modal-footer">
+                <div class="selection-status">
+                    {#if selectionScope.size > 0}
+                        <span class="selection-count">{selectionScope.size} selected</span>
+                    {:else}
+                        <span class="no-selection">Select photos to add</span>
+                    {/if}
+                </div>
+                <div class="footer-actions modal-actions">
+                    <Button id="add-photos-cancel" variant="primary" onclick={handleCancel} disabled={isLoading}
+                        ><span>Cancel</span></Button
+                    >
+                    <Button
+                        id="add-photos-submit"
+                        variant="info"
+                        disabled={selectionScope.size === 0 || isLoading}
+                        onclick={handleAdd}
+                    >
+                        <span>Add to Collection</span>
+                    </Button>
+                </div>
             </div>
         </div>
     {/if}

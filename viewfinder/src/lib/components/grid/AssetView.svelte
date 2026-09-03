@@ -705,7 +705,7 @@
         }
 
         // 3. Selection toolbar & explicit selection-preserving controls keep selection
-        if (target.closest(".selection-toolbar, [data-keep-selection]")) {
+        if (target.closest(".viz-toolbar-container, .selection-toolbar, [data-keep-selection]")) {
             return true;
         }
 

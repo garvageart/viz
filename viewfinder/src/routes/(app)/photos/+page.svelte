@@ -16,7 +16,6 @@
     import PhotoAssetGrid from "$lib/components/grid/PhotoAssetGrid.svelte";
     import ImageLabelViewer from "$lib/components/image-tools/ImageLabelViewer.svelte";
     import StarRating from "$lib/components/image-tools/StarRating.svelte";
-    import CollectionSelectionModal from "$lib/components/modals/CollectionSelectionModal.svelte";
     import FilterModal, { FilterModalOptions } from "$lib/components/modals/FilterModal.svelte";
     import { modalsManager } from "$lib/components/modals/manager/ModalManager.svelte";
     import VizViewContainer from "$lib/components/panels/VizViewContainer.svelte";
@@ -27,11 +26,11 @@
     import ImageCard, { type ImageVariant } from "$lib/components/ui/ImageCard.svelte";
     import ImageLightbox from "$lib/components/ui/ImageLightbox.svelte";
     import MaterialIcon from "$lib/components/ui/MaterialIcon.svelte";
-    import AssetToolbar from "$lib/components/ui/toolbars/AssetToolbar.svelte";
+    import VizToolbar from "$lib/components/ui/toolbars/VizToolbar.svelte";
     import { VizMimeTypes } from "$lib/constants.js";
     import { contextMenu } from "$lib/context-menu";
     import { getImageGridDisplay } from "$lib/context-menu/menus/image-grid-display.js";
-    import { createImageMenu } from "$lib/context-menu/menus/images.js";
+    import { createImageMenu, deleteSelectedImages, openAddToCollectionModal } from "$lib/context-menu/menus/images.js";
     import type { MenuItem } from "$lib/context-menu/types";
     import { DragData } from "$lib/drag-drop/data.js";
     import { LabelColours } from "$lib/images/constants.js";
@@ -52,6 +51,8 @@
     import UploadManager, { type ImageUploadSuccess } from "$lib/upload/manager.svelte";
     import { getImageLabel } from "$lib/utils/images.js";
 
+    let { data } = $props();
+
     // Display options as MenuItem[] for Dropdown
     let displayMenuItems: MenuItem[] = $derived(
         getImageGridDisplay({
@@ -59,17 +60,6 @@
             showSimple: showSimpleContent
         })
     );
-
-    function getDisplaySelectedId(): string | undefined {
-        const map: Record<string, string> = {
-            grid: "display-grid",
-            list: "display-list",
-            custom: "display-custom"
-        };
-        return map[(viewSettings.current as string) ?? ""];
-    }
-
-    let { data } = $props();
 
     $effect(() => {
         untrack(() => {
@@ -152,38 +142,22 @@
     });
 
     // Action menu items for selected images
-    let actionMenuItems: MenuItem[] = $derived.by(() => {
-        const baseMenuItems = createImageMenu(galleryState.images, selectionScope, {
+    let actionMenuItems: MenuItem[] = $derived(
+        createImageMenu(galleryState.images, selectionScope, {
             onUpdate: (updatedImage) => {
-                galleryState.images = galleryState.images.map((img) =>
-                    img.uid === updatedImage.uid ? updatedImage : img
-                );
+                galleryState.images = galleryState.images.map((img) => {
+                    return img.uid === updatedImage.uid ? updatedImage : img;
+                });
             },
             onDelete: (deletedUIDs) => {
-                galleryState.images = galleryState.images.filter((img) => !deletedUIDs.includes(img.uid));
+                galleryState.images = galleryState.images.filter((img) => {
+                    return !deletedUIDs.includes(img.uid);
+                });
                 galleryState.totalCount -= deletedUIDs.length;
-            }
-        });
-        const pageMenuItems: MenuItem[] = [
-            {
-                id: "act-add-to-collection",
-                label: "Add to Collection",
-                iconName: "collections_bookmark",
-                action: () => {
-                    modalsManager.open(
-                        CollectionSelectionModal,
-                        {
-                            imageUidsToAdd: selectionScope.selectedItems.map((img) => img.uid),
-                            onSelect: handleCollectionSelect
-                        },
-                        { heading: "Select a Collection" }
-                    );
-                }
-            }
-        ];
-
-        return [...pageMenuItems, ...baseMenuItems];
-    });
+            },
+            onAddToCollection: handleCollectionSelect
+        })
+    );
 
     async function paginate() {
         if (isPaginating || !galleryState.hasMore) {
@@ -452,78 +426,9 @@
     paginate={() => paginate()}
 >
     {#if galleryState.images.length > 0}
-        {#if selectionScope.selected.size > 0}
-            <AssetToolbar class="selection-toolbar" stickyToolbar={true}>
-                <div class="selection-info">
-                    <Button
-                        iconName="close"
-                        class="toolbar-button clear-selection-btn"
-                        title="Clear selection"
-                        aria-label="Clear selection"
-                        onclick={() => selectionScope.clear()}
-                    />
-                    <span class="selection-count">{selectionScope.selected.size} selected</span>
-                </div>
-                <div class="selection-actions">
-                    <Button
-                        iconName={(() => {
-                            const icon = actionMenuItems.find((it) => it.id === "act-add-to-collection")?.iconName;
-                            return typeof icon === "string" ? icon : (icon?.iconName ?? "collections_bookmark");
-                        })()}
-                        class="action"
-                        role="tooltip"
-                        title="Add to Collection"
-                        onclick={() => {
-                            modalsManager.open(
-                                CollectionSelectionModal,
-                                {
-                                    imageUidsToAdd: selectionScope.selectedItems.map((img) => img.uid),
-                                    onSelect: handleCollectionSelect
-                                },
-                                { heading: "Select a Collection" }
-                            );
-                        }}
-                        ondragenter={(e) => {
-                            e.currentTarget.classList.add("on-enter");
-                        }}
-                        ondragleave={(e) => {
-                            const related = e.relatedTarget;
-                            if (related instanceof Node && e.currentTarget.contains(related)) {
-                                return;
-                            }
-                            e.currentTarget.classList.remove("on-enter");
-                        }}
-                        ondragover={(e) => {
-                            e.preventDefault();
-                        }}
-                        ondrop={(e) => {
-                            if (!e.dataTransfer?.types.includes(VizMimeTypes.IMAGE_UIDS)) {
-                                return;
-                            }
-
-                            const uidsData = DragData.getData<string[]>(
-                                e.dataTransfer!,
-                                VizMimeTypes.IMAGE_UIDS
-                            )?.payload;
-
-                            if (!uidsData) {
-                                return;
-                            }
-
-                            e.currentTarget.classList.remove("on-enter");
-
-                            modalsManager.open(
-                                CollectionSelectionModal,
-                                {
-                                    imageUidsToAdd: uidsData,
-                                    onSelect: handleCollectionSelect
-                                },
-                                { heading: "Select a Collection" }
-                            );
-                        }}
-                    >
-                        <span>Add to Collection</span>
-                    </Button>
+        <VizToolbar stickyToolbar={true} {selectionScope}>
+            {#snippet selectionActions()}
+                <div class="triage-group">
                     <ImageLabelViewer
                         variant="expanded"
                         label={getImageLabel(selectionFirstImage)}
@@ -533,19 +438,25 @@
                             }
 
                             // Reverse lookup: find the key (Name) for the selected color (Value)
-                            const entry = Object.entries(LabelColours).find(([_, colour]) => colour === selectedLabel);
+                            const entry = Object.entries(LabelColours).find(([_, colour]) => {
+                                return colour === selectedLabel;
+                            });
                             const labelName = entry ? entry[0] : null;
                             const labelToSend = labelName as ImageLabel | null;
 
-                            const updatePromises = selectionScope.selectedItems.map((img) =>
-                                updateImage(img.uid, {
+                            const updatePromises = selectionScope.selectedItems.map((img) => {
+                                return updateImage(img.uid, {
                                     image_metadata: { label: labelToSend }
-                                })
-                            );
+                                });
+                            });
 
                             const res = await Promise.all(updatePromises);
 
-                            const successCount = res.filter((r) => r.status === 200).length;
+                            const successCount = res.filter((r) => {
+                                return r.status === 200;
+                            }).length;
+
+                            // gosh
                             if (successCount > 0) {
                                 res.forEach((r) => {
                                     if (r.status === 200) {
@@ -565,15 +476,17 @@
                                 return;
                             }
 
-                            const updatePromises = selectionScope.selectedItems.map((img) =>
-                                updateImage(img.uid, {
+                            const updatePromises = selectionScope.selectedItems.map((img) => {
+                                return updateImage(img.uid, {
                                     image_metadata: { rating }
-                                })
-                            );
+                                });
+                            });
 
                             const res = await Promise.all(updatePromises);
 
-                            const successCount = res.filter((r) => r.status === 200).length;
+                            const successCount = res.filter((r) => {
+                                return r.status === 200;
+                            }).length;
                             if (successCount > 0) {
                                 res.forEach((r) => {
                                     if (r.status === 200) {
@@ -587,18 +500,74 @@
                         }}
                     />
                 </div>
-                <div class="selection-menu-wrapper">
-                    <Dropdown
-                        class="toolbar-button"
-                        iconName="more_horiz"
-                        items={actionMenuItems}
-                        showSelectionIndicator={false}
-                        align="right"
-                    />
-                </div>
-            </AssetToolbar>
-        {:else}
-            <AssetToolbar class="main-asset-toolbar" stickyToolbar={true}>
+                <div class="toolbar-separator"></div>
+                <Button
+                    iconName="collections_bookmark"
+                    class="action toolbar-button"
+                    role="tooltip"
+                    title="Add to Collection"
+                    aria-label="Add to Collection"
+                    onclick={() => {
+                        openAddToCollectionModal(
+                            selectionScope.selectedItems.map((img) => {
+                                return img.uid;
+                            }),
+                            handleCollectionSelect
+                        );
+                    }}
+                    ondragenter={(e) => {
+                        e.currentTarget.classList.add("on-enter");
+                    }}
+                    ondragleave={(e) => {
+                        const related = e.relatedTarget;
+                        if (related instanceof Node && e.currentTarget.contains(related)) {
+                            return;
+                        }
+                        e.currentTarget.classList.remove("on-enter");
+                    }}
+                    ondragover={(e) => {
+                        e.preventDefault();
+                    }}
+                    ondrop={(e) => {
+                        if (!e.dataTransfer?.types.includes(VizMimeTypes.IMAGE_UIDS)) {
+                            return;
+                        }
+
+                        const uidsData = DragData.getData<string[]>(e.dataTransfer!, VizMimeTypes.IMAGE_UIDS)?.payload;
+
+                        if (!uidsData) {
+                            return;
+                        }
+
+                        e.currentTarget.classList.remove("on-enter");
+
+                        openAddToCollectionModal(uidsData, handleCollectionSelect);
+                    }}
+                />
+                <Button
+                    iconName="delete"
+                    class="toolbar-button"
+                    title="Delete"
+                    aria-label="Delete selected images"
+                    onclick={() => {
+                        deleteSelectedImages(selectionScope, (deletedUIDs) => {
+                            galleryState.images = galleryState.images.filter((img) => {
+                                return !deletedUIDs.includes(img.uid);
+                            });
+                            galleryState.totalCount -= deletedUIDs.length;
+                        });
+                    }}
+                />
+                <Dropdown
+                    class="toolbar-button"
+                    iconName="more_horiz"
+                    items={actionMenuItems}
+                    showSelectionIndicator={false}
+                    align="right"
+                />
+            {/snippet}
+
+            {#snippet leading()}
                 <div class="toolbar-group">
                     <Dropdown
                         title="Sort"
@@ -617,6 +586,7 @@
                     <Button
                         iconName={photosSort.value.order === "ASC" ? "arrow_upward" : "arrow_downward"}
                         class="toolbar-button"
+                        // FIXME: Not i18n safe
                         title={`Toggle Sort Order (${photosSort.value.order})`}
                         onclick={() => {
                             photosSort.value.order = photosSort.value.order === "ASC" ? "DESC" : "ASC";
@@ -641,16 +611,15 @@
                     </Button>
                     <Dropdown
                         id="photos-display-dropdown"
-                        title="Display"
+                        title="View"
                         class="toolbar-button display-dropdown-btn"
                         iconName="list_alt"
                         items={displayMenuItems}
-                        selectedItemId={getDisplaySelectedId()}
                         showSelectionIndicator={false}
                     />
                 </div>
-            </AssetToolbar>
-        {/if}
+            {/snippet}
+        </VizToolbar>
     {/if}
     {#if galleryState.images.length === 0}
         <div id="viz-no_assets">
@@ -719,43 +688,10 @@
         padding: var(--viz-spacing-xxl);
     }
 
-    .selection-info {
+    .triage-group {
         display: flex;
         align-items: center;
-        white-space: nowrap;
-        flex-shrink: 0;
-
-        span {
-            white-space: nowrap;
-        }
-    }
-
-    :global(.selection-toolbar) {
         gap: var(--viz-spacing-std);
-        border-bottom: var(--viz-border-thin);
-    }
-
-    :global(.clear-selection-btn) {
-        margin-right: var(--viz-spacing-sm);
-    }
-
-    .selection-count {
-        font-weight: 600;
-    }
-
-    .selection-menu-wrapper {
-        margin-left: auto;
-        display: flex;
-        gap: var(--viz-spacing-sm);
-        align-items: center;
-    }
-
-    :global(.main-asset-toolbar) {
-        position: sticky;
-        top: 0;
-        display: flex;
-        justify-content: space-between;
-        border-bottom: var(--viz-border-thin);
     }
 
     .toolbar-group {
@@ -767,12 +703,6 @@
     :global(.on-enter) {
         background-color: var(--viz-surface-hover) !important;
         outline: 2px solid var(--viz-primary) !important;
-    }
-
-    .selection-actions {
-        display: flex;
-        align-items: center;
-        gap: var(--viz-spacing-std);
     }
 
     #add_to_viz-container {
@@ -808,30 +738,6 @@
     }
 
     @media (max-width: 40rem) {
-        .selection-actions {
-            gap: var(--viz-spacing-sm);
-        }
-
-        .selection-actions :global(.action span:not(.viz-material-icon)) {
-            display: none;
-        }
-
-        .selection-actions :global(.star-rating) {
-            display: none;
-        }
-
-        .selection-info {
-            gap: 0;
-        }
-
-        :global(.clear-selection-btn) {
-            margin-right: var(--viz-spacing-xs) !important;
-        }
-
-        .selection-count {
-            font-size: var(--viz-font-size-std);
-        }
-
         .toolbar-group {
             gap: var(--viz-spacing-xs);
         }

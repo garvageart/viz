@@ -319,7 +319,6 @@
         background-color: var(--viz-surface-popover);
         color: var(--viz-text-primary);
         border: 1px solid var(--viz-border-subtle);
-        box-shadow: 0 12px 36px rgba(0, 0, 0, 0.4);
         flex-direction: column;
         border-radius: 0.5rem;
         width: 100%;

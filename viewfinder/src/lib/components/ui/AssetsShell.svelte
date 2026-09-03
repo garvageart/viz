@@ -11,18 +11,18 @@
     import type { IPagination } from "$lib/types/asset";
     import Dropdown from "../context-menus/Dropdown.svelte";
     import AssetGrid from "../grid/AssetView.svelte";
-    import AssetToolbar from "./toolbars/AssetToolbar.svelte";
+    import VizToolbar from "./toolbars/VizToolbar.svelte";
 
     type Props = {
         grid: ComponentProps<typeof AssetGrid<T>>;
         pagination?: IPagination;
         children?: Snippet;
+        leadingSnippet?: Snippet;
         selectionToolbarSnippet?: Snippet;
         toolbarSnippet?: Snippet;
         noAssetsSnippet?: Snippet;
         showToolbars?: boolean;
-        toolbarProps?: Omit<ComponentProps<typeof AssetToolbar>, "children">;
-        selectionToolbarProps?: Omit<ComponentProps<typeof AssetToolbar>, "children">;
+        toolbarProps?: Omit<ComponentProps<typeof VizToolbar>, "children">;
         sortState?: SortState;
     };
 
@@ -40,12 +40,12 @@
             page: 0
         }),
         children,
+        leadingSnippet,
         toolbarSnippet,
         noAssetsSnippet,
         showToolbars = $bindable(true),
         toolbarProps,
         selectionToolbarSnippet,
-        selectionToolbarProps,
         sortState = photosSort
     }: Props = $props();
 
@@ -83,45 +83,43 @@
             `%cGrid Array at ${DateTime.now().toFormat("dd.MM.yyyy HH:mm:ss")}`,
             "font-weight: bold; color: var(--viz-surface-panel); font-size: 18px;"
         );
-        console.table(assetGridArray?.map((i) => i.map((j) => j.asset?.name ?? j.asset?.uid)));
+        console.table(
+            assetGridArray?.map((i) => {
+                return i.map((j) => {
+                    return j.asset?.name ?? j.asset?.uid;
+                });
+            })
+        );
     }
 </script>
 
 {#snippet toolbarButton(opts: ToolbarButtonProps)}
     {#if opts.dropdown}
-        <Dropdown class="toolbar-button" {...opts.dropdown} title={opts.text} iconName={opts.iconName} />
+        <Dropdown class="toolbar-button" iconName={opts.iconName} title={opts.text} {...opts.dropdown} />
     {:else}
-        <Button {...opts} iconName={opts.iconName} iconStyle={opts.iconStyle} class="toolbar-button" title={opts.text}>
+        <Button
+            {...opts}
+            class="toolbar-button"
+            iconName={opts.iconName}
+            onclick={(e) => {
+                opts?.onclick?.(e);
+            }}
+        >
             {#if opts.text.trim()}
-                <span style="margin: 0em 0.2em;">{opts.text}</span>
+                <span style="margin: 0 var(--viz-spacing-xxs);">{opts.text}</span>
             {/if}
         </Button>
     {/if}
 {/snippet}
 
 {#if showToolbars}
-    {#if selectionScope && selectionScope.size > 0}
-        <AssetToolbar class="selection-toolbar" {...selectionToolbarProps}>
-            <div class="selection-info">
-                <Button
-                    iconName="close"
-                    class="toolbar-button"
-                    title="Clear selection"
-                    aria-label="Clear selection"
-                    style="margin-right: 1em;"
-                    onclick={() => selectionScope.clear()}
-                />
-                <span style="font-weight: 600;">{selectionScope.size} selected</span>
-            </div>
-            {@render selectionToolbarSnippet?.()}
-        </AssetToolbar>
-    {:else}
-        <AssetToolbar {...toolbarProps}>
-            <div id="asset-tools">
+    <VizToolbar stickyToolbar={true} {selectionScope} {...toolbarProps}>
+        {#snippet leading()}
+            <div class="toolbar-group">
                 {@render toolbarButton({
                     iconName: "sort",
-                    text: "Sort by",
-                    title: "Sort by",
+                    text: "Sort",
+                    title: "Sort",
                     dropdown: {
                         items: sortOptions,
                         selectedItemId: currentSortId(sortState),
@@ -134,7 +132,9 @@
                     iconName={sortState.value.order === "ASC" ? "arrow_upward" : "arrow_downward"}
                     class="toolbar-button"
                     title="Toggle Sort Order ({sortState.value.order})"
-                    onclick={() => toggleSortOrder(sortState)}
+                    onclick={() => {
+                        toggleSortOrder(sortState);
+                    }}
                 />
                 {#if dev && grid.type === "grid"}
                     {@render toolbarButton({
@@ -145,9 +145,21 @@
                     })}
                 {/if}
             </div>
-            {@render toolbarSnippet?.()}
-        </AssetToolbar>
-    {/if}
+            {#if leadingSnippet}
+                {@render leadingSnippet()}
+            {/if}
+        {/snippet}
+
+        {#snippet selectionActions()}
+            {@render selectionToolbarSnippet?.()}
+        {/snippet}
+
+        {#snippet trailing()}
+            {#if toolbarSnippet}
+                {@render toolbarSnippet()}
+            {/if}
+        {/snippet}
+    </VizToolbar>
 {/if}
 
 {@render children?.()}
@@ -157,7 +169,9 @@
         {#if noAssetsSnippet}
             {@render noAssetsSnippet()}
         {:else}
-            <p style="text-align: center; margin: 2em; color: var(--viz-text-primary);">No assets to display.</p>
+            <p style="text-align: center; margin: var(--viz-spacing-lg); color: var(--viz-text-primary);">
+                No assets to display.
+            </p>
         {/if}
     </div>
 {:else}
@@ -165,25 +179,14 @@
 {/if}
 
 <style lang="scss">
-    #asset-tools {
+    .toolbar-group {
         display: flex;
         align-items: center;
-        gap: 0.5rem;
-    }
-
-    .selection-info {
-        display: flex;
-        align-items: center;
-        white-space: nowrap;
-        flex-shrink: 0; /* Prevent container from shrinking and squeezing children */
-
-        span {
-            white-space: nowrap; /* Force text to stay on a single line */
-        }
+        gap: var(--viz-spacing-sm);
     }
 
     :global(.toolbar-button) {
-        border-radius: 10em;
+        border-radius: var(--viz-border-radius-pill);
         display: flex;
         align-items: center;
         justify-content: center;
@@ -207,7 +210,7 @@
     }
 
     @media (max-width: 40rem) {
-        #asset-tools {
+        .toolbar-group {
             gap: var(--viz-spacing-xs);
         }
 

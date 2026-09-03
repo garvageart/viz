@@ -9,6 +9,7 @@
         updateCollection
     } from "@viz/api";
     import { type ComponentProps, untrack } from "svelte";
+    import Dropdown from "$lib/components/context-menus/Dropdown.svelte";
     import AssetGrid from "$lib/components/grid/AssetView.svelte";
     import CollectionModal from "$lib/components/modals/CollectionModal.svelte";
     import FilterModal, { FilterModalOptions } from "$lib/components/modals/FilterModal.svelte";
@@ -22,7 +23,13 @@
     import MaterialIcon from "$lib/components/ui/MaterialIcon.svelte";
     import { VizMimeTypes } from "$lib/constants";
     import { contextMenu } from "$lib/context-menu";
-    import { createCollectionMenu } from "$lib/context-menu/menus/collections";
+    import {
+        createCollectionMenu,
+        deleteSelectedCollections,
+        downloadCollectionZip,
+        duplicateCollection,
+        toggleFavouriteCollections
+    } from "$lib/context-menu/menus/collections";
     import { DragData } from "$lib/drag-drop/data";
     import { sortCollections } from "$lib/sort/sort";
     import { filterManager } from "$lib/states/filter.svelte";
@@ -56,9 +63,15 @@
     let displayData = $derived(sortCollections(listOfCollectionsData, collectionsSort.value));
 
     // Selection
-    const scopeId = $derived(SelectionScopeNames.COLLECTIONS_MAIN);
-    const selectionScope = $derived(selectionManager.getScope<Collection>(scopeId));
-    const firstSelectedCollection = $derived(selectionScope.selectedItems[0]);
+    let scopeId = $derived(SelectionScopeNames.COLLECTIONS_MAIN);
+    let selectionScope = $derived(selectionManager.getScope<Collection>(scopeId));
+    let firstSelectedCollection = $derived(selectionScope.selectedItems[0]);
+    let areAllSelectedFavourited = $derived(
+        selectionScope.selectedItems.length > 0 &&
+            selectionScope.selectedItems.every((c) => {
+                return c.favourited;
+            })
+    );
 
     // Track to discard stale responses when selection changes rapidly
     let activeFilmstripUid = $state<string | null>(null);
@@ -185,6 +198,44 @@
 
     let collectionGridArray: AssetGridArray<Collection> | undefined = $state();
 
+    let collectionMenuOpts = $derived({
+        selectedCollections: selectionScope.selectedItems,
+        editCollection: (col: Collection) => {
+            openCollectionModal("edit", col);
+        },
+        onCollectionDuplicated: async (newCol: Collection) => {
+            toasts.add({
+                message: `Duplicated collection ${newCol.name}`,
+                type: "success"
+            });
+            await invalidateViz();
+        },
+        onCollectionUpdated: async (updatedCol: Collection) => {
+            selectionScope.updateItem(updatedCol, displayData);
+            await invalidateViz();
+        },
+        onCollectionDeleted: async (deletedCol: Collection) => {
+            toasts.add({
+                message: `Deleted collection ${deletedCol.name}`,
+                type: "success"
+            });
+            await invalidateViz();
+        },
+        onCollectionsDeleted: async (deletedCols: Collection[]) => {
+            selectionScope.clear();
+            toasts.add({
+                message:
+                    deletedCols.length > 1
+                        ? `Deleted **${deletedCols.length} collections**`
+                        : `Deleted collection **${deletedCols[0].name}**`,
+                type: "success"
+            });
+            await invalidateViz();
+        }
+    });
+
+    let collectionActionMenuItems = $derived(createCollectionMenu(firstSelectedCollection, collectionMenuOpts));
+
     let grid: ComponentProps<typeof AssetGrid<Collection>> = $derived({
         assetSnippet: collectionSnippet,
         type: "grid",
@@ -202,41 +253,7 @@
             if (!selectionScope.has(asset) || selectionScope.size <= 1) {
                 selectionScope.select(asset);
             }
-            const items = createCollectionMenu(firstSelectedCollection, {
-                selectedCollections: selectionScope.selectedItems,
-                editCollection: (col) => {
-                    openCollectionModal("edit", col);
-                },
-                onCollectionDuplicated: async (newCol) => {
-                    toasts.add({
-                        message: `Duplicated collection ${newCol.name}`,
-                        type: "success"
-                    });
-                    await invalidateViz();
-                },
-                onCollectionUpdated: async () => {
-                    await invalidateViz();
-                },
-                onCollectionDeleted: async (deletedCol) => {
-                    toasts.add({
-                        message: `Deleted collection ${deletedCol.name}`,
-                        type: "success"
-                    });
-                    await invalidateViz();
-                },
-                onCollectionsDeleted: async (deletedCols) => {
-                    selectionScope.clear();
-                    toasts.add({
-                        message:
-                            deletedCols.length > 1
-                                ? `Deleted **${deletedCols.length} collections**`
-                                : `Deleted collection **${deletedCols[0].name}**`,
-                        type: "success"
-                    });
-                    await invalidateViz();
-                }
-            });
-            contextMenu.open(items, anchor, { offsetY: 4 });
+            contextMenu.open(collectionActionMenuItems, anchor, { offsetY: 4 });
         }
     });
 
@@ -295,34 +312,111 @@
     <CollectionCard {collection} isSelected={cardState.isSelected} />
 {/snippet}
 
+{#snippet leadingSnippet()}
+    <Button iconName="filter_list" class="toolbar-button" title="Filter" aria-label="Filter" onclick={openFilterModal}>
+        <span>Filter</span>
+    </Button>
+{/snippet}
+
 {#snippet toolbarSnippet()}
-    <div id="coll-tools">
+    <Button
+        iconName="add"
+        id="create-collection"
+        class="toolbar-button"
+        title="Create Collection"
+        aria-label="Create Collection"
+        onclick={() => {
+            openCollectionModal("create");
+        }}
+        ondragenter={handleCreateDragEnter}
+        ondragover={handleCreateDragOver}
+        ondragleave={handleCreateDragLeave}
+        ondrop={handleCreateDrop}
+    >
+        <span>Create Collection</span>
+    </Button>
+{/snippet}
+
+{#snippet selectionToolbarSnippet()}
+    {#if selectionScope.selectedItems.length > 0}
         <Button
-            iconName="filter_list"
+            iconName="star"
+            fill={areAllSelectedFavourited}
             class="toolbar-button"
-            title="Filter"
-            aria-label="Filter"
-            onclick={openFilterModal}
-        >
-            <span>Filter</span>
-        </Button>
-        <Button
-            iconName="add"
-            id="create-collection"
-            class="toolbar-button"
-            title="Create Collection"
-            aria-label="Create Collection"
+            title={areAllSelectedFavourited ? "Unfavourite" : "Favourite"}
+            aria-label={areAllSelectedFavourited ? "Unfavourite" : "Favourite"}
             onclick={() => {
-                openCollectionModal("create");
+                toggleFavouriteCollections(selectionScope.selectedItems, selectionScope, displayData);
             }}
-            ondragenter={handleCreateDragEnter}
-            ondragover={handleCreateDragOver}
-            ondragleave={handleCreateDragLeave}
-            ondrop={handleCreateDrop}
-        >
-            <span>Create</span>
-        </Button>
-    </div>
+        />
+        <Button
+            iconName="folder_copy"
+            class="toolbar-button"
+            title="Duplicate"
+            aria-label="Duplicate"
+            onclick={() => {
+                if (!firstSelectedCollection) {
+                    return;
+                }
+                duplicateCollection(firstSelectedCollection, async (newCol) => {
+                    toasts.add({
+                        message: `Duplicated collection ${newCol.name}`,
+                        type: "success"
+                    });
+                    await invalidateViz();
+                });
+            }}
+        />
+        <Button
+            iconName="download"
+            class="toolbar-button"
+            title="Download ZIP"
+            aria-label="Download ZIP"
+            disabled={!firstSelectedCollection ||
+                (firstSelectedCollection.image_count ?? firstSelectedCollection.images?.length ?? 0) === 0}
+            onclick={() => {
+                if (firstSelectedCollection) {
+                    downloadCollectionZip(firstSelectedCollection);
+                }
+            }}
+        />
+        <Button
+            iconName="delete"
+            class="toolbar-button"
+            title="Delete"
+            aria-label="Delete"
+            onclick={() => {
+                deleteSelectedCollections(
+                    selectionScope.selectedItems,
+                    async (deletedCol) => {
+                        toasts.add({
+                            message: `Deleted collection ${deletedCol.name}`,
+                            type: "success"
+                        });
+                        await invalidateViz();
+                    },
+                    async (deletedCols) => {
+                        selectionScope.clear();
+                        toasts.add({
+                            message:
+                                deletedCols.length > 1
+                                    ? `Deleted **${deletedCols.length} collections**`
+                                    : `Deleted collection **${deletedCols[0].name}**`,
+                            type: "success"
+                        });
+                        await invalidateViz();
+                    }
+                );
+            }}
+        />
+        <Dropdown
+            class="toolbar-button"
+            iconName="more_horiz"
+            showSelectionIndicator={false}
+            items={collectionActionMenuItems}
+            align="right"
+        />
+    {/if}
 {/snippet}
 
 {#snippet noAssetsSnippet()}
@@ -354,6 +448,8 @@
         bind:grid
         {pagination}
         {noAssetsSnippet}
+        {leadingSnippet}
+        {selectionToolbarSnippet}
         {toolbarSnippet}
         sortState={collectionsSort}
         toolbarProps={{
@@ -450,14 +546,6 @@
         }
     }
 
-    #coll-tools {
-        display: flex;
-        align-items: center;
-        font-size: inherit;
-        height: 100%;
-        gap: 0.75rem;
-    }
-
     :global(.toolbar-button.drop-target) {
         background-color: var(--viz-surface-hover);
         outline: 2px solid var(--viz-primary);
@@ -466,11 +554,5 @@
     :global(#create_collection-button.drop-target) {
         outline: 2px solid var(--viz-primary);
         outline-offset: 2px;
-    }
-
-    @media (max-width: 40rem) {
-        #coll-tools :global(.toolbar-button span:not(.viz-material-icon)) {
-            display: none;
-        }
     }
 </style>
