@@ -136,6 +136,14 @@
                         toggleSortOrder(sortState);
                     }}
                 />
+                {#if dev && grid.type === "grid"}
+                    {@render toolbarButton({
+                        iconName: "grid_view",
+                        text: "Print Grid",
+                        title: "Print Grid to Console",
+                        onclick: printGridAsTable
+                    })}
+                {/if}
             </div>
             {#if leadingSnippet}
                 {@render leadingSnippet()}
@@ -147,14 +155,6 @@
         {/snippet}
 
         {#snippet trailing()}
-            {#if dev && grid.type === "grid"}
-                {@render toolbarButton({
-                    iconName: "grid_view",
-                    text: "Print Grid",
-                    title: "Print Grid to Console",
-                    onclick: printGridAsTable
-                })}
-            {/if}
             {#if toolbarSnippet}
                 {@render toolbarSnippet()}
             {/if}

@@ -51,6 +51,8 @@
     import UploadManager, { type ImageUploadSuccess } from "$lib/upload/manager.svelte";
     import { getImageLabel } from "$lib/utils/images.js";
 
+    let { data } = $props();
+
     // Display options as MenuItem[] for Dropdown
     let displayMenuItems: MenuItem[] = $derived(
         getImageGridDisplay({
@@ -58,17 +60,6 @@
             showSimple: showSimpleContent
         })
     );
-
-    function getDisplaySelectedId(): string | undefined {
-        const map: Record<string, string> = {
-            grid: "display-grid",
-            list: "display-list",
-            custom: "display-custom"
-        };
-        return map[(viewSettings.current as string) ?? ""];
-    }
-
-    let { data } = $props();
 
     $effect(() => {
         untrack(() => {
@@ -620,11 +611,10 @@
                     </Button>
                     <Dropdown
                         id="photos-display-dropdown"
-                        title="Display"
+                        title="View"
                         class="toolbar-button display-dropdown-btn"
                         iconName="list_alt"
                         items={displayMenuItems}
-                        selectedItemId={getDisplaySelectedId()}
                         showSelectionIndicator={false}
                     />
                 </div>

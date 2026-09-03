@@ -44,26 +44,6 @@
         {#if leading}
             {@render leading()}
         {/if}
-
-        {#if leading && hasSelection}
-            <div class="toolbar-separator"></div>
-        {/if}
-
-        {#if hasSelection && selectionScope}
-            <div class="selection-info">
-                <Button
-                    variant="ghost"
-                    iconName="close"
-                    class="toolbar-button clear-selection-btn"
-                    title="Clear selection"
-                    aria-label="Clear selection"
-                    onclick={() => {
-                        selectionScope.clear();
-                    }}
-                />
-                <span class="selection-count">{selectionScope.size} selected</span>
-            </div>
-        {/if}
     </div>
 
     <div class="viz-toolbar-section trailing">
@@ -71,6 +51,25 @@
             <div class="selection-actions">
                 {@render selectionActions()}
             </div>
+            {#if trailing && hasSelection}
+                <div class="toolbar-separator"></div>
+            {/if}
+
+            {#if hasSelection && selectionScope}
+                <div class="selection-info">
+                    <Button
+                        variant="ghost"
+                        iconName="close"
+                        class="toolbar-button clear-selection-btn"
+                        title="Clear selection"
+                        aria-label="Clear selection"
+                        onclick={() => {
+                            selectionScope.clear();
+                        }}
+                    />
+                    <span class="selection-count">{selectionScope.size} selected</span>
+                </div>
+            {/if}
             {#if trailing}
                 <div class="toolbar-separator"></div>
             {/if}
