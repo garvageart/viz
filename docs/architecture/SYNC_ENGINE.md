@@ -22,7 +22,7 @@ flowchart TB
     subgraph UI_Client ["Frontend Client (viewfinder / Browser)"]
         UI["Svelte 5 Reactive Components"]
         LiveQ["Live Query / Runes Store Layer"]
-        LocalEngine["Local Core Engine (SQLite-WASM + OPFS / IndexedDB)"]
+        LocalEngine["Local Core Engine (IndexedDB)"]
         MutQueue["Optimistic Local Mutation Log and Outbox"]
         BlobStore["Tiered Blob Storage (OPFS / Cache API)"]
         SyncWorker["Client Sync Worker (SharedWorker / Web Worker)"]
@@ -110,7 +110,7 @@ The synchronization engine uses a **Replicated State Machine** model with **Hybr
 
 | Classification Tier                | Storage & Replication Model                                                    | Included Assets and Entities                                                                                                                                    |
 | :--------------------------------- | :----------------------------------------------------------------------------- | :-------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| **Tier 1: Metadata State**         | **Fully Replicated**<br>Stored in client SQLite-WASM and backend PostgreSQL.   | • `ImageAsset` and EXIF metadata<br>• `Collection` and collection links<br>• Tags, ratings, user settings, and tombstones                                       |
+| **Tier 1: Metadata State**         | **Fully Replicated**<br>Stored in client IndexedDB and backend PostgreSQL.     | • `ImageAsset` and EXIF metadata<br>• `Collection` and collection links<br>• Tags, ratings, user settings, and tombstones                                       |
 | **Tier 2: Binary Blobs and Media** | **Layered Progressive Cache**<br>Cached in browser OPFS / Cache Storage API.   | • Level 0: BlurHash string (in metadata)<br>• Level 1: 300px WebP grid thumbnails<br>• Level 2: 2048px preview images<br>• Level 3: RAW and JPEG original files |
 | **Tier 3: Ephemeral Presence**     | **In-Memory Pub/Sub**<br>Sent over WebSocket channels; not stored in database. | • Active users and viewers<br>• Focus and selection sets<br>• Background worker telemetry                                                                       |
 
@@ -143,68 +143,47 @@ To prevent manual schema duplication without adding extra configuration files or
 
 #### Code Generation Pipeline
 
-When a developer runs `make generate-types`, `tools/genentities` parses canonical entities from `openapi.yaml`. It outputs both backend entities and frontend sync structures:
+1. **`api/openapi/openapi.yaml`:** Serves as the single source of truth for DTO schemas.
+2. **`tools/genentities/main.go`:** Generates backend GORM models (`internal/entities/generated.go`).
+3. **`scripts/js/gen-api.ts`:** Generates TypeScript client interfaces (`packages/api/`).
 
-```
-                             api/openapi/openapi.yaml
-                                        │
-                         ┌──────────────┴──────────────┐
-                         ▼                             ▼
-                  oapi-codegen & oazapfts       tools/genentities
-                         │                             │
-             ┌───────────┴───────────┐        ┌────────┴────────┐
-             ▼                       ▼        ▼                 ▼
-      Go Backend DTOs      TypeScript DTOs  Backend GORM     viewfinder
-      (internal/dto)       (@viz/api)       Entities         Sync Tables
-                                            (generated.go)   (schema.gen.ts)
-```
+### 4.2 Client Storage Model (IndexedDB — Illustrative Candidate Approach)
 
-#### Generated Sync Components
-
-1. **Type-Safe Sync Models (`viewfinder/src/lib/sync/schema.gen.ts`):**
-    - Combines `@viz/api` DTOs with sync fields (`hlc_timestamp`, `sync_version`, `is_pending_sync`, `deleted_at`).
-2. **Client Database Definitions:**
-    - Translates OpenAPI property types to SQLite and IndexedDB column types automatically.
-3. **Automated Serializers:**
-    - Creates mapping functions between network DTOs and local storage rows without manual JSON code.
-
-### 4.2 Client-Side Embedded Storage Engine
-
-The client storage engine uses **SQLite-WASM with Origin Private File System (OPFS)** in modern browsers. It uses **IndexedDB** when OPFS is not available.
+The client engine uses native browser **IndexedDB** (`idb`).
 
 ```mermaid
 flowchart LR
     subgraph Svelte_App ["viewfinder SvelteKit App"]
         Runes["Svelte 5 Runes ($state / $derived)"]
-        LiveQuery["liveQuery(sql, params)"]
+        LiveQuery["createLiveQuery(fetcher)"]
     end
 
     subgraph Client_Engine ["Local Core Engine"]
-        EngineRouter["Engine Router and Transaction Mgr"]
-        SQLiteWASM["SQLite WASM (VFS: OPFS)"]
-        MutationOutbox["Mutation Outbox Table"]
-        SyncState["Sync Checkpoint Table"]
+        EngineRouter["Local Storage Engine"]
+        IndexedDB["IndexedDB (idb wrapper)"]
+        MutationOutbox["mutation_outbox Object Store"]
+        SyncState["sync_checkpoints Object Store"]
     end
 
     Runes <--> LiveQuery
     LiveQuery <--> EngineRouter
-    EngineRouter <--> SQLiteWASM
+    EngineRouter <--> IndexedDB
     EngineRouter --> MutationOutbox
     EngineRouter <--> SyncState
 ```
 
 #### 1-to-1 Entity Mirroring Model
 
-Client storage directly mirrors backend entities with a 1-to-1 relationship. The client does not define separate table structures or custom column mappings.
+Client object stores mirror backend relational entities with a 1-to-1 relationship:
 
 ```
-    BACKEND (PostgreSQL / GORM)                     CLIENT (SQLite-WASM / OPFS)
+    BACKEND (PostgreSQL / GORM)                     CLIENT (IndexedDB Object Stores)
    ┌────────────────────────────┐                  ┌────────────────────────────┐
-   │ images                     │ ◄── 1:1 Mirror ──► │ images                     │
-   │ collections                │ ◄── 1:1 Mirror ──► │ collections                │
-   │ collection_images          │ ◄── 1:1 Mirror ──► │ collection_images          │
-   │ setting_overrides          │ ◄── 1:1 Mirror ──► │ setting_overrides          │
-   │ worker_jobs                │ ◄── 1:1 Mirror ──► │ worker_jobs                │
+   │ images                     │ ◄── 1:1 Mirror ──► │ images (Object Store)      │
+   │ collections                │ ◄── 1:1 Mirror ──► │ collections (Object Store)  │
+   │ collection_images          │ ◄── 1:1 Mirror ──► │ collection_images (Store)  │
+   │ setting_overrides          │ ◄── 1:1 Mirror ──► │ setting_overrides (Store)  │
+   │ worker_jobs                │ ◄── 1:1 Mirror ──► │ worker_jobs (Store)        │
    └────────────────────────────┘                  └────────────────────────────┘
                  ▲                                               ▲
                  └─────────────── Both Derived From ─────────────┘
@@ -213,7 +192,7 @@ Client storage directly mirrors backend entities with a 1-to-1 relationship. The
 
 ##### 1. Universal Sync Envelope
 
-Every mirrored entity on the client uses a shared sync metadata envelope:
+Every mirrored record stored on the client includes shared synchronization metadata:
 
 ```typescript
 // Shared sync envelope for all mirrored entities
@@ -233,9 +212,61 @@ export type CollectionImageEntity = Mirrored<CollectionImage>;
 export type SettingOverrideEntity = Mirrored<SettingOverride>;
 ```
 
-##### 2. Client System Tables
+##### 2. Illustrative IndexedDB Object Stores (`viewfinder/src/lib/sync/db.ts`)
 
-The client maintains only two generic system tables:
+```typescript
+import type { Collection, CollectionImage, ImageAsset, SettingOverride } from "@viz/api";
+import { type DBSchema, openDB } from "idb";
+
+export interface VizClientDBSchema extends DBSchema {
+    images: {
+        key: string; // uid
+        value: Mirrored<ImageAsset>;
+        indexes: {
+            "by-taken-at": string;
+            "by-rating": number;
+        };
+    };
+    collections: {
+        key: string; // uid
+        value: Mirrored<Collection>;
+        indexes: { "by-name": string };
+    };
+    collection_images: {
+        key: string; // collection_uid:image_uid
+        value: Mirrored<CollectionImage>;
+        indexes: {
+            "by-collection": string;
+            "by-image": string;
+        };
+    };
+    mutation_outbox: {
+        key: string; // mutation_id
+        value: {
+            mutation_id: string;
+            entity_table: string;
+            row_identity: Record<string, unknown>;
+            operation: "INSERT" | "UPDATE" | "DELETE";
+            patch_json: Record<string, unknown>;
+            hlc_timestamp: string;
+            retry_count: number;
+        };
+    };
+    sync_checkpoints: {
+        key: string; // client_id
+        value: {
+            client_id: string;
+            last_server_lsn: string;
+            last_sync_hlc: string;
+            last_synced_at: string;
+        };
+    };
+}
+```
+
+##### 3. Client System Stores
+
+The client maintains two generic system stores:
 
 ###### `mutation_outbox` (Pending Client Mutations)
 
@@ -260,24 +291,24 @@ The client maintains only two generic system tables:
 
 #### Reactive Svelte 5 Live Queries
 
-The user interface subscribes directly to the local database:
+The user interface subscribes directly to IndexedDB object stores through Svelte 5:
 
 ```typescript
 // viewfinder/src/lib/sync/live-query.svelte.ts
-import { localEngine } from "$lib/sync/engine";
+import { syncEvents } from "$lib/sync/events";
 
-export function createLiveQuery<T>(sql: string, params: any[] = []) {
+export function createLiveQuery<T>(fetcher: () => Promise<T[]>) {
     let data = $state<T[]>([]);
     let loading = $state<boolean>(true);
 
     const refresh = async () => {
-        data = await localEngine.query<T>(sql, params);
+        data = await fetcher();
         loading = false;
     };
 
     $effect(() => {
         refresh();
-        const unsubscribe = localEngine.onMutation(() => {
+        const unsubscribe = syncEvents.onMutation(() => {
             refresh();
         });
         return () => {
@@ -357,7 +388,7 @@ The WAL stream identifies modified rows by their native table keys:
 sequenceDiagram
     autonumber
     participant UI as viewfinder UI
-    participant LE as Local SQLite (OPFS)
+    participant LE as IndexedDB
     participant CW as Sync Worker
     participant API as viz Go API
     participant PG as PostgreSQL (Primary DB)
@@ -395,67 +426,50 @@ An HLC timestamp contains three components:
 [ physical_time_ms ] : [ logical_counter ] : [ client_id ]
 ```
 
-| Component          | Type             | Description                                                      |
-| :----------------- | :--------------- | :--------------------------------------------------------------- |
-| `physical_time_ms` | Integer (64-bit) | Milliseconds elapsed since the Unix epoch (UTC).                 |
-| `logical_counter`  | Integer (32-bit) | Incremental counter to order events within the same millisecond. |
-| `client_id`        | String           | Unique identifier of the originating client or server.           |
+| Component          | Type             | Description                                                   |
+| :----------------- | :--------------- | :------------------------------------------------------------ |
+| `physical_time_ms` | Integer (64-bit) | Milliseconds since Unix epoch (`Date.now()`).                 |
+| `logical_counter`  | Integer (16-bit) | Incremented for events occurring within the same millisecond. |
+| `client_id`        | String (32-char) | Unique node identifier preventing collisions across devices.  |
 
-**Example:** `1740837600000:0001:usr_01J8ABC45D67E89F`
+#### HLC State Operations
 
-#### Clock Update Rules
+1. **Local Mutation:** Increment `logical_counter` if physical time has not advanced. Reset to `0` when physical time advances.
+2. **Receive Delta:** Set local physical time to `max(local_time, incoming_time, wall_clock)`. Update counter accordingly.
 
-The engine updates the clock state on two conditions:
+---
 
-1. **Local Event:**
-    ```
-    HLC_local = max(HLC_local.physical, PhysicalTime) + 1
-    ```
-2. **Received Remote Event:**
-    ```
-    HLC_local = max(HLC_local.physical, HLC_remote.physical, PhysicalTime) + 1
-    ```
+### 5.2 Deterministic Conflict Resolution Rules
 
-These rules guarantee causality and strict event ordering across all connected devices.
+The system resolves edit conflicts deterministically without requiring interactive user prompts.
 
-### 5.2 Conflict Resolution Rules
+#### Rule 1: Column-Level Last-Write-Wins (LWW)
 
-#### 1. Column-Level Last-Write-Wins
+- Mutations compare HLC timestamps at the field level, not the row level.
+- If Client A edits `name` at $T_1$ and Client B edits `rating` at $T_2$, both edits merge successfully into the database.
+- If Client A and Client B edit `rating` simultaneously, the edit with the higher HLC timestamp wins.
 
-Full-row updates can overwrite unrelated attributes. The engine resolves conflicts at the column level:
+#### Rule 2: Add-Wins Set CRDT for Join Tables
 
-- **Scenario:**
-    - Client A updates `name` to `"Sunset in Tokyo"` at timestamp `HLC_1`.
-    - Client B (offline) updates `rating` to `5` and `favourited` to `true` at timestamp `HLC_2`.
-- **Resolution:**
-    - The engine compares HLC timestamps for each column independently.
-- **Result:**
-    - `name = "Sunset in Tokyo"`, `rating = 5`, and `favourited = true`.
+- Link entities (`collection_images`) use Observed-Remove Set (OR-Set) semantics.
+- Adding an image to a collection always wins over a concurrent removal.
 
-#### 2. Observed-Remove Set for Collections and Tags
+#### Rule 3: Soft-Delete Tombstones
 
-The engine uses an Observed-Remove Set (OR-Set) for relationship tables:
-
-- **Scenario 1:** Client A adds an image to a collection offline. Client B adds a different image to the same collection online.
-    - **Result:** Both images remain in the collection.
-- **Scenario 2:** Client A removes an image from a collection. Client B adds a tag to the same image.
-    - **Result:** The image is removed from the collection and the tag is added.
-
-#### 3. Soft-Delete Tombstones and Garbage Collection
-
-- When a user deletes a record, the engine writes a `deleted_at` timestamp with an HLC tombstone.
-- The engine replicates tombstones to all clients to prevent old data from reappearing.
+- Deletions update `deleted_at` with an HLC timestamp instead of immediately removing rows.
 - The system permanently purges records after the 30-day retention period defined in `viz` Trash (`internal/jobs/trash.go`).
 
-## 6. Media Derivative Caching
+---
 
-The application uses a progressive caching pipeline to load image assets instantly. Components such as [`ImageLightbox.svelte`](viewfinder/src/lib/components/ui/ImageLightbox.svelte) and [`AssetImage.svelte`](viewfinder/src/lib/components/ui/AssetImage.svelte) use this pipeline.
+## 6. Media Derivative Caching Pipeline
+
+The application uses a progressive caching pipeline to load image assets instantly. Components such as `ImageLightbox.svelte` (`viewfinder/src/lib/components/ui/ImageLightbox.svelte`) and `AssetImage.svelte` (`viewfinder/src/lib/components/ui/AssetImage.svelte`) use this pipeline.
 
 ### 6.1 Progressive Loading in `ImageLightbox` and `AssetImage`
 
 When a component renders an `ImageAsset` record:
 
-```bash
+```
 ┌────────────────────────────────────────────────────────────────────────┐
 │               AssetImage or ImageLightbox Requests Image               │
 └──────────────────────────────────┬─────────────────────────────────────┘
@@ -504,7 +518,7 @@ When a component renders an `ImageAsset` record:
 
 #### 1. ThumbHash and BlurHash Placeholder
 
-- The local SQLite `images` table stores the `blurhash` string in the metadata record.
+- The IndexedDB `images` store contains the `blurhash` attribute in the metadata record.
 - `AssetImage.svelte` calls `getThumbhashURL()` from `viewfinder/src/lib/utils/images.ts`.
 - This function creates an in-memory Data URI.
 - The browser shows the blur placeholder in zero milliseconds without a network request.
@@ -534,11 +548,9 @@ When a component renders an `ImageAsset` record:
     - The `SharedWorker` holds the single WebSocket connection to the `viz` backend.
     - It sends incoming deltas to all open tabs through `MessagePort`.
 2. **Web Locks API (`navigator.locks`):**
-    - Makes sure only one tab writes to SQLite OPFS at a time.
+    - Makes sure only one tab writes to IndexedDB at a time.
 3. **Delta Compression:**
     - WebSocket and HTTP delta payloads use compact JSON or MessagePack with gzip or `zstd` compression.
-4. **Local Database Compaction:**
-    - The client SQLite database executes `PRAGMA incremental_vacuum` periodically to clean unused storage space.
 
 ## 8. Performance and Scaling Architecture
 
@@ -546,8 +558,8 @@ When a component renders an `ImageAsset` record:
 
 | Dimension                        | Current Network Model                                 | Local-First Replicated Model                                               |
 | :------------------------------- | :---------------------------------------------------- | :------------------------------------------------------------------------- |
-| **Metadata Reads**               | Network-bound HTTP request with roundtrip latency.    | Local in-memory or OPFS B-Tree index scan with zero network dependency.    |
-| **Search and Filtering**         | Remote database query over network connection.        | Local SQL query with indexed columns.                                      |
+| **Metadata Reads**               | Network-bound HTTP request with roundtrip latency.    | Local in-memory or IndexedDB index scan with zero network dependency.      |
+| **Search and Filtering**         | Remote database query over network connection.        | IndexedDB query with indexed attributes.                                   |
 | **User Interface Mutations**     | Blocking server request before user interface update. | Immediate optimistic local state update with asynchronous background push. |
 | **Network Payload per Mutation** | Full entity list refetch through route invalidation.  | Targeted column-level delta containing only modified fields.               |
 | **Offline Operation**            | Unavailable (network requests fail).                  | Fully functional for reads, searches, and edits.                           |
@@ -555,12 +567,11 @@ When a component renders an `ImageAsset` record:
 ### 8.2 Resource and Storage Management
 
 - **Storage Efficiency:**
-    - Replicated metadata stores structured text and numerical attributes locally.
+    - Replicated metadata stores structured text and numerical attributes locally in IndexedDB.
     - Large binary assets (RAW originals and high-resolution previews) remain tiered on the server and load on demand.
-    - The local database runs `PRAGMA incremental_vacuum` to reclaim disk space after record deletions.
 - **Memory Management:**
     - The Svelte 5 user interface renders only the visible viewport through virtualized lists, keeping DOM memory low.
-    - The SQLite-WASM runtime operates inside a bounded WebAssembly memory heap.
+    - Native browser IndexedDB operates with zero WebAssembly memory overhead.
 - **Bandwidth Optimization:**
     - Real-time synchronization sends only modified fields in delta payloads instead of full entity snapshots.
     - When reconnecting after being offline, the client requests changes from its saved sequence watermark (`GET /sync/deltas?since_lsn=<lsn>`), preventing redundant data transfer.
@@ -569,10 +580,10 @@ When a component renders an `ImageAsset` record:
 
 ### Client Storage and Reactivity (`viewfinder`)
 
-- Embed `@sqlite.org/sqlite-wasm` with OPFS support in `viewfinder/src/lib/sync/`.
-- Generate local SQLite tables that mirror backend GORM entity models (`images`, `collections`, `setting_overrides`).
-- Add the `mutation_outbox` and `sync_checkpoints` system tables.
-- Implement `createLiveQuery(sql, params)` with Svelte 5 runes (`$state`, `$effect`).
+- Embed IndexedDB client storage with the `idb` wrapper in `viewfinder/src/lib/sync/db.ts`.
+- Create IndexedDB object stores that mirror backend GORM entity models (`images`, `collections`, `setting_overrides`).
+- Add the `mutation_outbox` and `sync_checkpoints` system stores.
+- Implement `createLiveQuery(fetcher)` with Svelte 5 runes (`$state`, `$effect`).
 - Replace REST calls in `viewfinder` view states (`photos`, `collections`, `search`) with live queries.
 - Connect local optimistic user mutations to the `mutation_outbox`.
 
@@ -597,7 +608,7 @@ When a component renders an `ImageAsset` record:
 - Store downloaded 300px WebP thumbnails in browser `Cache Storage` or OPFS.
 - Connect thumbnail cache fallbacks to `AssetImage.svelte` and `ImageLightbox.svelte`.
 - Implement a `SharedWorker` in `viewfinder` to coordinate a single WebSocket connection across open browser tabs.
-- Protect SQLite OPFS write operations with the Web Locks API (`navigator.locks`).
+- Protect IndexedDB write operations with the Web Locks API (`navigator.locks`).
 
 ## 10. Verification, Testing, and Failure Scenarios
 
