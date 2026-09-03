@@ -738,7 +738,7 @@
         {
             id: "duplicate-collection",
             label: "Duplicate Collection",
-            iconName: "content_copy",
+            iconName: "folder_copy",
             action: handleDuplicateCollection
         },
         {
@@ -750,28 +750,6 @@
     ];
 
     let collectionMenuItems: MenuItem[] = $derived([...collectionActions]);
-
-    // Create a list for the selection toolbar Dropdown
-    // This mirrors ctxItems but overrides/adds the bulk delete action
-    let selectionToolbarItems: MenuItem[] = $derived.by(() => {
-        const list = [...imageMenuItems];
-        // Override "remove-" action with the bulk handler if present, or add it
-        const removeIdx = list.findIndex((i) => i.id.startsWith("remove-"));
-        const removeAction: MenuItem = {
-            id: "remove-selected",
-            label: "Remove from Collection",
-            iconName: "cancel",
-            disabled: selectionScope.size === 0,
-            action: handleDeleteSelected
-        };
-
-        if (removeIdx >= 0) {
-            list[removeIdx] = removeAction;
-        } else {
-            list.push(removeAction);
-        }
-        return list;
-    });
 
     function openFilterModal() {
         modalsManager.open(FilterModal, {}, FilterModalOptions);
@@ -885,73 +863,62 @@
     </div>
 {/snippet}
 
+{#snippet leadingSnippet()}
+    {#if !isLayoutPage()}
+        <Button
+            iconName="filter_list"
+            class="toolbar-button"
+            tooltipParams={{ component: ActiveFiltersTooltip, placement: "bottom-start" }}
+            aria-label="Filter"
+            onclick={openFilterModal}
+        >
+            <span>Filter</span>
+        </Button>
+    {/if}
+    <Dropdown
+        id="coll-view-dropdown"
+        iconName="grid_view"
+        title="View"
+        class="toolbar-button display-dropdown-btn"
+        items={gridCtxMenu}
+        showSelectionIndicator={false}
+    />
+{/snippet}
+
 {#snippet toolbarSnippet()}
-    <!-- This looks like ass -->
-    <!-- <SearchInput
-		inputId="collection-search"
-		bind:value={searchValue}
-		placeholder="Search images"
-		style="font-size: 1.1em;"
-	/> -->
-    <div id="coll-tools">
-        {#if !isLayoutPage()}
-            <Button
-                iconName="filter_list"
-                class="toolbar-button"
-                tooltipParams={{ component: ActiveFiltersTooltip, placement: "bottom-start" }}
-                aria-label="Filter"
-                onclick={openFilterModal}
-            >
-                <span>Filter</span>
-            </Button>
-        {/if}
-        <Button
-            id="add-photos"
-            iconName="add_photo_alternate"
-            class="toolbar-button"
-            title="Add Photos"
-            aria-label="Add Photos"
-            onclick={openAddPhotosModal}
-        >
-            <span>Add Photos</span>
-        </Button>
-        <Button
-            iconName="upload"
-            id="upload_to_collection"
-            class="toolbar-button"
-            title="Upload to Collection"
-            aria-label="Upload to Collection"
-            onclick={() => {
-                handleCollectionUpload();
-            }}
-        >
-            <span>Upload</span>
-        </Button>
-        <Button
-            iconName="edit"
-            id="upload_to_collection"
-            class="toolbar-button"
-            title="Edit Collection"
-            aria-label="Edit Collection"
-            onclick={openEditCollectionModal}
-        >
-            <span>Edit</span>
-        </Button>
-        <Dropdown
-            id="coll-view-dropdown"
-            iconName="grid_view"
-            title="View"
-            class="toolbar-button display-dropdown-btn"
-            items={gridCtxMenu}
-            showSelectionIndicator={false}
-        ></Dropdown>
-        <Dropdown
-            class="toolbar-button"
-            iconName="more_horiz"
-            showSelectionIndicator={false}
-            items={collectionMenuItems}
-        />
-    </div>
+    <Button
+        id="add-photos"
+        iconName="add_photo_alternate"
+        class="toolbar-button"
+        title="Add Photos"
+        aria-label="Add Photos"
+        onclick={openAddPhotosModal}
+    >
+        <span>Add Photos</span>
+    </Button>
+    <Button
+        iconName="upload"
+        id="upload_to_collection"
+        class="toolbar-button"
+        title="Upload to Collection"
+        aria-label="Upload to Collection"
+        onclick={() => {
+            handleCollectionUpload();
+        }}
+    >
+        <span>Upload</span>
+    </Button>
+    <Button
+        iconName="edit"
+        id="edit_collection"
+        class="toolbar-button"
+        title="Edit Collection"
+        aria-label="Edit Collection"
+        onclick={openEditCollectionModal}
+    >
+        <span>Edit</span>
+    </Button>
+    <Dropdown class="toolbar-button" iconName="more_horiz" showSelectionIndicator={false} items={collectionMenuItems} />
 {/snippet}
 
 {#snippet noAssetsSnippet()}
@@ -973,7 +940,7 @@
 {/snippet}
 
 {#snippet selectionToolbarSnippet()}
-    <div class="selection-actions">
+    <div class="triage-group">
         <ImageLabelViewer
             variant="expanded"
             label={getImageLabel(selectionFirstImage)}
@@ -983,18 +950,24 @@
                 }
 
                 // Reverse lookup: find the key (Name) for the selected color (Value)
-                const entry = Object.entries(LabelColours).find(([_, colour]) => colour === selectedLabel);
+                const entry = Object.entries(LabelColours).find(([_, colour]) => {
+                    return colour === selectedLabel;
+                });
                 const labelName = entry ? entry[0] : null;
                 const labelToSend = labelName as ImageLabel | null;
 
-                const updatePromises = selectionScope.selectedItems.map((img) =>
-                    updateImage(img.uid, {
+                const updatePromises = selectionScope.selectedItems.map((img) => {
+                    return updateImage(img.uid, {
                         image_metadata: { label: labelToSend }
-                    })
-                );
+                    });
+                });
                 const res = await Promise.all(updatePromises);
 
-                const successCount = res.filter((r) => r.status === 200).length;
+                const successCount = res.filter((r) => {
+                    return r.status === 200;
+                }).length;
+
+                // goshhhhh
                 if (successCount > 0) {
                     res.forEach((r) => {
                         if (r.status === 200) {
@@ -1011,15 +984,17 @@
                     return;
                 }
 
-                const updatePromises = selectionScope.selectedItems.map((img) =>
-                    updateImage(img.uid, {
+                const updatePromises = selectionScope.selectedItems.map((img) => {
+                    return updateImage(img.uid, {
                         image_metadata: { rating }
-                    })
-                );
+                    });
+                });
 
                 const res = await Promise.all(updatePromises);
 
-                const successCount = res.filter((r) => r.status === 200).length;
+                const successCount = res.filter((r) => {
+                    return r.status === 200;
+                }).length;
                 if (successCount > 0) {
                     res.forEach((r) => {
                         if (r.status === 200) {
@@ -1030,16 +1005,21 @@
             }}
         />
     </div>
-
-    <div style="margin-left: auto; display: flex; gap: 0.5rem; align-items: center;">
-        <Dropdown
-            class="toolbar-button"
-            iconName="more_horiz"
-            showSelectionIndicator={false}
-            items={selectionToolbarItems}
-            align="right"
-        />
-    </div>
+    <div class="toolbar-separator"></div>
+    <Button
+        iconName="layers_clear"
+        class="toolbar-button"
+        title="Remove from Collection"
+        aria-label="Remove from Collection"
+        onclick={handleDeleteSelected}
+    />
+    <Dropdown
+        class="toolbar-button"
+        iconName="more_horiz"
+        showSelectionIndicator={false}
+        items={imageMenuItems}
+        align="right"
+    />
 {/snippet}
 
 <VizViewContainer
@@ -1054,6 +1034,7 @@
         {grid}
         pagination={collectionState.pagination}
         {noAssetsSnippet}
+        {leadingSnippet}
         {selectionToolbarSnippet}
         {toolbarSnippet}
         sortState={collectionDetailSort}
@@ -1258,6 +1239,12 @@
         }
     }
 
+    .triage-group {
+        display: flex;
+        align-items: center;
+        gap: var(--viz-spacing-std);
+    }
+
     #coll-meta-chips {
         display: flex;
         flex-direction: row;
@@ -1270,34 +1257,7 @@
         }
     }
 
-    .selection-actions {
-        display: flex;
-        align-items: center;
-        gap: 1rem;
-        margin: auto 1rem;
-    }
-
-    #coll-tools {
-        display: flex;
-        align-items: center;
-        font-size: inherit;
-        height: 100%;
-        gap: 0.75rem;
-    }
-
     @media (max-width: 40rem) {
-        #coll-tools :global(.toolbar-button span:not(.viz-material-icon)) {
-            display: none;
-        }
-
-        .selection-actions {
-            gap: var(--viz-spacing-sm);
-        }
-
-        .selection-actions :global(.star-rating) {
-            display: none;
-        }
-
         #coll-name-container :global(#coll-name-input),
         #coll-name-display-wrapper #coll-name-display {
             font-size: var(--viz-font-size-3xl);
