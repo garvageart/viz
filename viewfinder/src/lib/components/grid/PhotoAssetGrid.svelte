@@ -936,7 +936,7 @@
         }
         onFocus(); // Ensure this grid is active on click
 
-        if (e.shiftKey) {
+        if (e.shiftKey && (e as KeyboardEvent).key !== "Tab") {
             selection.selectRange(asset, selectionAnchor, (img) => !disabledUids.has(img.uid));
         } else if (e.ctrlKey) {
             selection.toggle(asset);

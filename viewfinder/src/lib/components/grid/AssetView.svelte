@@ -518,14 +518,14 @@
         });
     });
 
-    function handleImageCardSelect(asset: T, e: MouseEvent) {
+    function handleImageCardSelect(asset: T, e: MouseEvent | KeyboardEvent) {
         if (disabledUids.has(asset.uid)) {
             return;
         }
 
         onFocus(); // Ensure this grid is active on click
 
-        if (e.shiftKey) {
+        if (e.shiftKey && (e as KeyboardEvent).key !== "Tab") {
             if (disableMultiSelection) {
                 selection.select(asset);
                 return;
