@@ -384,15 +384,6 @@
         text-align: center;
     }
 
-    :global(.main-asset-toolbar) {
-        display: flex;
-        justify-content: space-between;
-        border-bottom: var(--viz-border-thin);
-        padding: var(--viz-spacing-sm) var(--viz-spacing-std);
-        background-color: var(--viz-surface-card);
-        z-index: 10;
-    }
-
     .toolbar-group {
         display: flex;
         align-items: center;

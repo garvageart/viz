@@ -204,7 +204,7 @@ test.describe("PhotoAssetGrid Functionality", () => {
             await expect(firstPhoto).toHaveClass(classRegex);
 
             // Search route has its own toolbar
-            await expect(page.locator(".asset-toolbar")).toBeVisible();
+            await expect(page.locator(".viz-toolbar")).toBeVisible();
 
             // Double click to navigate to collection (if it's a collection card)
             // But we are testing PhotoAssetGrid here specifically.

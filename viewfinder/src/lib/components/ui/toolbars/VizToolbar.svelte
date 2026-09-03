@@ -38,6 +38,7 @@
     {...props}
     data-keep-selection="true"
     class="viz-toolbar-container viz-toolbar {className}"
+    class:selection-toolbar={hasSelection}
     style="{stickyToolbar ? 'position: sticky; top: 0;' : 'position: relative;'} {customStyle}"
 >
     <div class="viz-toolbar-section leading">
