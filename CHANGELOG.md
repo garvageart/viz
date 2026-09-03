@@ -5,6 +5,19 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.33.2] - 2026-09-03
+
+* fix(viewfinder): add selection-toolbar class toggle and update e2e toolbar locators (271e218b)
+* fix(viewfinder): prevent Shift+Tab from triggering range selection in asset grid (02981b54)
+* Merge branch 'redesign/ui' (57363f09)
+* docs(architecture): update sync engine client storage specification to IndexedDB (119e2b36)
+* Merge pull request 'refactor toolbar' (#1) from redesign/ui into main (e4c92b7a)
+* refactor(viewfinder): adjust toolbar layout, context menu styling, and photos page dropdown (17edea03)
+* fix(viewfinder): preserve primary colour on checkbox hover when checked (619cc50f)
+* fix(admin): remove redundant animation delays from worker job stat cards (73aa4c6f)
+* refactor(viewfinder): restructure toolbar layout and star rating triage spacing (ec6f26ad)
+* feat(viewfinder): differentiate duplicate collection icon and streamline context menu actions (9971616e)
+
 ## [0.33.1] - 2026-09-02
 
 * refactor(config): fetch configuration directly via API instead of HTML injection (3ed3177a)
