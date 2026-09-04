@@ -43,7 +43,7 @@ describe("ImageZoomState Controller", () => {
 
         const state = new ImageZoomState({
             getImageEl: () => mockImg,
-            getContainerEl: () => ({ clientWidth: 1200, clientHeight: 800 } as HTMLElement),
+            getContainerEl: () => ({ clientWidth: 1200, clientHeight: 800 }) as HTMLElement,
             getEffectiveWidthFraction: () => cropFraction
         });
 

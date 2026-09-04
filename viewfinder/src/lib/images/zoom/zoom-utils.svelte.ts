@@ -83,9 +83,7 @@ export class ImageZoomState {
     get nativeZoomPercentage(): number {
         const img = this.deps?.getImageEl();
         if (img && img.clientWidth > 0 && img.naturalWidth > 0) {
-            return Math.round(
-                this.value * (img.clientWidth / (img.naturalWidth * this.effectiveWidthFraction)) * 100
-            );
+            return Math.round(this.value * (img.clientWidth / (img.naturalWidth * this.effectiveWidthFraction)) * 100);
         }
         return Math.round(this.value * 100);
     }

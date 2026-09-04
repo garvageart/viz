@@ -1,17 +1,19 @@
-import { describe, expect, it, vi } from "vitest";
 import type { ImageAsset } from "@viz/api";
+import { describe, expect, it, vi } from "vitest";
 import { ImageLoader } from "./image-loader.svelte";
 
 describe("ImageLoader", () => {
-    function createMockDeps(overrides: Partial<{
-        lightboxImage: ImageAsset | undefined;
-        overriddenImages: Record<string, string>;
-        isCropping: boolean;
-        currentZoom: number;
-        imageToLoad: string | undefined;
-        resetZoom: () => void;
-        updateImageDimensions: () => void;
-    }> = {}) {
+    function createMockDeps(
+        overrides: Partial<{
+            lightboxImage: ImageAsset | undefined;
+            overriddenImages: Record<string, string>;
+            isCropping: boolean;
+            currentZoom: number;
+            imageToLoad: string | undefined;
+            resetZoom: () => void;
+            updateImageDimensions: () => void;
+        }> = {}
+    ) {
         const resetZoom = overrides.resetZoom || vi.fn();
         const updateImageDimensions = overrides.updateImageDimensions || vi.fn();
 
