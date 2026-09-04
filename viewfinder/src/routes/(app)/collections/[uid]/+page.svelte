@@ -349,8 +349,8 @@
             style: `padding: 2em ${isLayoutPage() ? "1em" : "2em"};`
         },
         columns: imageTableColumns,
-        assetDblClick: (_e, asset: ImageAsset) => {
-            lightboxImage = asset;
+        assetDblClick: (_e, asset?: ImageAsset) => {
+            lightboxImage = asset ?? selectionFirstImage;
         },
         onassetcontext: (detail: { asset: ImageAsset; anchor: { x: number; y: number } | HTMLElement }) => {
             const { asset, anchor } = detail;
@@ -808,12 +808,17 @@
 
 <svelte:window onclick={handleWindowClick} />
 
-<ImageLightbox
-    bind:lightboxImage
-    {prevLightboxImage}
-    {nextLightboxImage}
-    onImageUpdated={(image) => selectionScope.updateItem(image, collectionState.images)}
-/>
+{#if lightboxImage}
+    <ImageLightbox
+        {lightboxImage}
+        onClose={() => {
+            lightboxImage = undefined;
+        }}
+        {prevLightboxImage}
+        {nextLightboxImage}
+        onImageUpdated={(image) => selectionScope.updateItem(image, collectionState.images)}
+    />
+{/if}
 
 <DragAndDropUpload
     {scopeId}
@@ -849,7 +854,7 @@
             {scopeId}
             onLoadMore={() => paginate()}
             assetDblClick={(_e, asset) => {
-                lightboxImage = asset;
+                lightboxImage = asset ?? selectionFirstImage;
             }}
             onassetcontext={(detail) => {
                 const { asset, anchor } = detail;

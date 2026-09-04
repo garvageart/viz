@@ -240,8 +240,10 @@
     });
 
     let lightboxImage = $state<ImageAsset>();
-    function openLightbox(asset: ImageAsset) {
-        lightboxImage = asset;
+    let firstSelectedImage = $derived(filmstripScope?.active ?? filmstripScope?.selectedItems[0]);
+
+    function openLightbox(asset?: ImageAsset) {
+        lightboxImage = asset ?? firstSelectedImage;
     }
 
     function navigateLightbox(delta: -1 | 1) {
@@ -336,12 +338,17 @@
     {/if}
 </nav>
 
-<ImageLightbox
-    bind:lightboxImage
-    {nextLightboxImage}
-    {prevLightboxImage}
-    onImageUpdated={(image) => filmstripScope?.updateItem(image, filmstripImages)}
-/>
+{#if lightboxImage}
+    <ImageLightbox
+        {lightboxImage}
+        onClose={() => {
+            lightboxImage = undefined;
+        }}
+        {nextLightboxImage}
+        {prevLightboxImage}
+        onImageUpdated={(image) => filmstripScope?.updateItem(image, filmstripImages)}
+    />
+{/if}
 
 <style lang="scss">
     .filmstrip-container {

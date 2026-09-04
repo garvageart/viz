@@ -26,6 +26,7 @@
     import ImageCard, { type ImageVariant } from "$lib/components/ui/ImageCard.svelte";
     import ImageLightbox from "$lib/components/ui/ImageLightbox.svelte";
     import MaterialIcon from "$lib/components/ui/MaterialIcon.svelte";
+    import { ImageLightboxState } from "$lib/components/ui/state/image-lightbox.svelte";
     import VizToolbar from "$lib/components/ui/toolbars/VizToolbar.svelte";
     import { VizMimeTypes } from "$lib/constants.js";
     import { contextMenu } from "$lib/context-menu";
@@ -118,9 +119,6 @@
         viewSettings.current === "grid" && viewSettings.simple ? "simple" : "full"
     );
 
-    // Lightbox
-    let lightboxImage: ImageAsset | undefined = $state();
-
     // Selection (shared across groups)
     const scopeId = SelectionScopeNames.PHOTOS_MAIN;
     const selectionScope = selectionManager.getScope<ImageAsset>(scopeId);
@@ -159,6 +157,9 @@
         })
     );
 
+    // Lightbox
+    const lightbox = new ImageLightboxState();
+
     async function paginate() {
         if (isPaginating || !galleryState.hasMore) {
             return;
@@ -190,19 +191,22 @@
         isPaginating = false;
     }
 
-    function openLightbox(asset: ImageAsset) {
-        lightboxImage = asset;
+    function openLightbox(asset?: ImageAsset) {
+        const target = asset ?? selectionFirstImage;
+        if (target) {
+            lightbox.open(target);
+        }
     }
 
     // When hitting the end of loaded images, paginate and auto-advance
     let pendingNextUid = $state<string | null>(null);
 
     function navigateLightbox(delta: -1 | 1) {
-        if (!lightboxImage || sortedFilteredImages.length === 0) {
+        if (!lightbox.activeImage || sortedFilteredImages.length === 0) {
             return;
         }
 
-        const idx = sortedFilteredImages.findIndex((i) => i.uid === lightboxImage!.uid);
+        const idx = sortedFilteredImages.findIndex((i) => i.uid === lightbox.activeImage!.uid);
         if (idx === -1) {
             return;
         }
@@ -214,13 +218,13 @@
 
         if (nextIdx >= sortedFilteredImages.length) {
             if (galleryState.hasMore && delta === 1) {
-                pendingNextUid = lightboxImage.uid;
+                pendingNextUid = lightbox.activeImage.uid;
                 paginate();
             }
             return;
         }
 
-        lightboxImage = sortedFilteredImages[nextIdx];
+        lightbox.image = sortedFilteredImages[nextIdx];
     }
 
     function prevLightboxImage() {
@@ -239,7 +243,7 @@
         const idx = sortedFilteredImages.findIndex((i) => i.uid === pendingNextUid);
         if (idx !== -1 && idx + 1 < sortedFilteredImages.length) {
             pendingNextUid = null;
-            lightboxImage = sortedFilteredImages[idx + 1];
+            lightbox.image = sortedFilteredImages[idx + 1];
         }
     });
 
@@ -362,7 +366,7 @@
     }
 
     hotkeys("escape", (e) => {
-        if (lightboxImage) {
+        if (lightbox.show) {
             return;
         }
         e.preventDefault();
@@ -394,12 +398,17 @@
 
 <DragAndDropUpload {scopeId} {selectionScope} showCollectionCreateBox={true} />
 
-{#if lightboxImage}
+{#if lightbox.activeImage}
     <ImageLightbox
-        bind:lightboxImage
+        lightboxImage={lightbox.activeImage}
+        show={lightbox.show}
+        onClose={() => lightbox.close()}
         {prevLightboxImage}
         {nextLightboxImage}
-        onImageUpdated={(image) => selectionScope.updateItem(image, galleryState.images)}
+        onImageUpdated={(image) => {
+            lightbox.image = image;
+            selectionScope.updateItem(image, galleryState.images);
+        }}
     />
 {/if}
 
@@ -463,8 +472,8 @@
                                 res.forEach((r) => {
                                     if (r.status === 200) {
                                         selectionScope.updateItem(r.data, galleryState.images);
-                                        if (lightboxImage && lightboxImage.uid === r.data.uid) {
-                                            lightboxImage = r.data;
+                                        if (lightbox.image && lightbox.image.uid === r.data.uid) {
+                                            lightbox.image = r.data;
                                         }
                                     }
                                 });
@@ -493,8 +502,8 @@
                                 res.forEach((r) => {
                                     if (r.status === 200) {
                                         selectionScope.updateItem(r.data, galleryState.images);
-                                        if (lightboxImage && lightboxImage.uid === r.data.uid) {
-                                            lightboxImage = r.data;
+                                        if (lightbox.image && lightbox.image.uid === r.data.uid) {
+                                            lightbox.image = r.data;
                                         }
                                     }
                                 });

@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { calculateZoomTo, constrainTranslation, ImageZoomState } from "./zoom-utils.svelte";
+import { ImageZoomState, calculateZoomTo, constrainTranslation } from "./zoom-utils.svelte";
 
 describe("ImageZoomState", () => {
     it("initializes with default 1.0 zoom and centers", () => {

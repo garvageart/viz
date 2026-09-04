@@ -250,8 +250,8 @@
         collectionSelection.clear();
     });
 
-    function openLightbox(asset: ImageAsset) {
-        lightboxImage = asset;
+    function openLightbox(asset?: ImageAsset) {
+        lightboxImage = asset ?? firstSelectedImage;
     }
 
     function navigateLightbox(delta: -1 | 1) {
@@ -343,7 +343,10 @@
 
 {#if lightboxImage}
     <ImageLightbox
-        bind:lightboxImage
+        {lightboxImage}
+        onClose={() => {
+            lightboxImage = undefined;
+        }}
         {nextLightboxImage}
         {prevLightboxImage}
         onImageUpdated={(image) => imageSelection.updateItem(image, images)}
