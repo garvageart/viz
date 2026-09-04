@@ -8,7 +8,6 @@ export interface ImageLoaderDeps {
     get imageToLoad(): string | undefined;
     resetZoom(): void;
     updateImageDimensions(): void;
-    restoreCrop(): void;
 }
 
 export class ImageLoader {
@@ -40,7 +39,7 @@ export class ImageLoader {
             return overriddenImages[uid];
         }
 
-        if (this.zoomedImageURL && !isCropping) {
+        if (this.zoomedImageURL) {
             return this.zoomedImageURL;
         }
 
@@ -90,10 +89,6 @@ export class ImageLoader {
         this.initialImageLoaded = true;
         this.loadState = "loaded";
         this.deps.updateImageDimensions();
-
-        if (this.deps.isCropping) {
-            this.deps.restoreCrop();
-        }
     }
 
     handleError() {
