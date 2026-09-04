@@ -359,8 +359,8 @@
             return;
         }
 
-        if (zoomState.value > 1) {
-            // Zoom out to 1
+        if (Math.abs(zoomState.value - 1) > 0.01) {
+            // Reset to 1 (100% / fit)
             zoomState.value = 1;
             zoomState.posX = 0;
             zoomState.posY = 0;
@@ -1110,7 +1110,7 @@
 
                 <!-- TODO: Change this to a general action status indicator to support all actions -->
                 <!-- e.g. "Date Change: 11-06-2026, 20:42:01" -->
-                {#if zoomState.value > 1}
+                {#if Math.abs(zoomState.value - 1) > 0.01}
                     <div class="zoom-indicator-badge" role="status" aria-live="polite">
                         Zoom: {Math.round(zoomState.value * 100)}%
                     </div>

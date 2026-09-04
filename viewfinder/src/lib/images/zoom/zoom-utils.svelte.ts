@@ -58,7 +58,7 @@ export function constrainTranslation(
     const offsetX = (Vw - Iw) / 2;
     if (zoomedW <= Vw) {
         // Center horizontally
-        nextTx = (-Vw * (zoom - 1)) / 2;
+        nextTx = (Vw * (1 - zoom)) / 2 || 0;
     } else {
         // Clip to viewport boundaries
         const minTx = Vw - offsetX * zoom - zoomedW;
@@ -71,7 +71,7 @@ export function constrainTranslation(
     const offsetY = (Vh - Ih) / 2;
     if (zoomedH <= Vh) {
         // Center vertically
-        nextTy = (-Vh * (zoom - 1)) / 2;
+        nextTy = (Vh * (1 - zoom)) / 2 || 0;
     } else {
         // Clip to viewport boundaries
         const minTy = Vh - offsetY * zoom - zoomedH;
@@ -98,8 +98,8 @@ export function calculateZoomTo(options: ZoomOptions): ZoomState {
     const px = mx / value;
     const py = my / value;
 
-    // Clamp zoom factor between 1.0 and 16.0
-    const nextZoom = Math.max(1, Math.min(newZoom, 16));
+    // Clamp zoom factor between 0.1 (10%) and 16.0 (1600%)
+    const nextZoom = Math.max(0.1, Math.min(newZoom, 16));
 
     // Calculate translations targeting the mapped coordinate under the new zoom.
     // We add the current translation to offset the movement of the zoomTargetRect.
