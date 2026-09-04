@@ -403,6 +403,7 @@
     />
 {/if}
 
+<!-- TODO: Replace with graphic -->
 {#snippet noAssetsSnippet()}
     <div id="add_to_viz-container">
         <span class="no-assets-title">Add your first images</span>
@@ -411,9 +412,10 @@
             class="add-photos-btn"
             title="Select Photos"
             aria-label="Select Photos"
+            variant="info"
             onclick={async () => addImagesToViz()}
         >
-            Select Photos
+            <span>Select Photos</span>
             <MaterialIcon iconName="add" class="add-icon" />
         </Button>
     </div>
