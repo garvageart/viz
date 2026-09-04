@@ -17,9 +17,9 @@
     import { dev } from "$app/environment";
     import { type ImageAsset, getAssetImagePath, updateImage } from "@viz/api";
     import hotkeys, { type HotkeysEvent } from "hotkeys-js";
-    import { onMount, untrack } from "svelte";
-    import type { MouseEventHandler, PointerEventHandler, WheelEventHandler } from "svelte/elements";
-    import { slide } from "svelte/transition";
+    import { onDestroy, onMount, untrack } from "svelte";
+    import type { MouseEventHandler } from "svelte/elements";
+    import { fade, slide } from "svelte/transition";
     import { hideAll } from "tippy.js";
     import CropOverlay from "$lib/components/image-tools/CropOverlay.svelte";
     import CropTools from "$lib/components/image-tools/CropTools.svelte";
@@ -29,7 +29,7 @@
     import MetadataPanel from "$lib/components/ui/panels/MetadataPanel.svelte";
     import { ImageLoader } from "$lib/images/loader/image-loader.svelte";
     import type { CropCoords } from "$lib/images/zoom/crop-utils";
-    import { ImageZoomState, calculateZoomTo, constrainTranslation } from "$lib/images/zoom/zoom-utils.svelte";
+    import { ImageZoomState } from "$lib/images/zoom/zoom-utils.svelte";
     import { isMobile } from "$lib/states/index.svelte";
     import { toasts } from "$lib/toast-notifcations/toasts.svelte";
     import { downloadOriginalImageFile } from "$lib/utils/http";
@@ -56,6 +56,11 @@
     }: Props = $props();
 
     function closeLightbox() {
+        if (statusIndicator.timeoutId) {
+            clearTimeout(statusIndicator.timeoutId);
+            statusIndicator.timeoutId = undefined;
+        }
+        statusIndicator.show = false;
         show = false;
         onClose?.();
     }
@@ -71,12 +76,16 @@
 
     // Element Bindings
     let imageEl = $state<HTMLImageElement>();
-    let imageContainerEl = $state<HTMLDivElement>();
-    let zoomTargetEl = $state<HTMLDivElement>();
+    let viewportEl = $state<HTMLDivElement>();
     let showImageStateDebugPanel = $state(false);
     let currentPreloadImg = $state<HTMLImageElement | null>(null);
 
-    const zoomState = new ImageZoomState();
+    const zoomState = new ImageZoomState({
+        getImageEl: () => imageEl,
+        getContainerEl: () => viewportEl,
+        getActiveCropDimensions: () => activeCropDimensions,
+        getEffectiveWidthFraction: () => (activeCrop && activeCrop.width > 0 ? activeCrop.width : 1)
+    });
     let lastImageUid = $state<string | undefined>(undefined);
 
     $effect(() => {
@@ -87,41 +96,31 @@
         }
     });
 
-    let isDragging = $state(false);
-    let wasDragging = $state(false);
-    let dragStart = {
-        mouseX: 0,
-        mouseY: 0,
-        tx: 0,
-        ty: 0
-    };
-
     // Crop State
     let isCropping = $state(false);
     let cropAspectRatio = $state<number>();
     let currentCrop = $state<CropCoords>({ x: 0, y: 0, width: 1, height: 1 });
     let cropMenuPosition = $state<{ x: number; y: number }>();
 
-    let containerDimensions = $state<{ width: number; height: number }>({ width: 0, height: 0 });
+    let viewportDimensions = $state<{ width: number; height: number }>({ width: 0, height: 0 });
+    const imageObserver = new ResizeObserver((entries) => {
+        for (const entry of entries) {
+            viewportDimensions = {
+                width: entry.contentRect.width,
+                height: entry.contentRect.height
+            };
+        }
+    });
 
     $effect(() => {
-        if (!imageContainerEl) {
+        if (!viewportEl) {
             return;
         }
 
-        const observer = new ResizeObserver((entries) => {
-            for (const entry of entries) {
-                containerDimensions = {
-                    width: entry.contentRect.width,
-                    height: entry.contentRect.height
-                };
-            }
-        });
-
-        observer.observe(imageContainerEl);
+        imageObserver.observe(viewportEl);
 
         return () => {
-            observer.disconnect();
+            imageObserver.disconnect();
         };
     });
 
@@ -132,8 +131,8 @@
 
         const nw = imageEl.naturalWidth;
         const nh = imageEl.naturalHeight;
-        const cw = containerDimensions.width;
-        const ch = containerDimensions.height;
+        const cw = viewportDimensions.width;
+        const ch = viewportDimensions.height;
 
         if (nw <= 0 || nh <= 0 || cw <= 0 || ch <= 0) {
             return { width: 0, height: 0 };
@@ -173,8 +172,8 @@
 
         const nw = imageEl.naturalWidth;
         const nh = imageEl.naturalHeight;
-        const cw = containerDimensions.width;
-        const ch = containerDimensions.height;
+        const cw = viewportDimensions.width;
+        const ch = viewportDimensions.height;
 
         if (nw <= 0 || nh <= 0 || cw <= 0 || ch <= 0) {
             return undefined;
@@ -243,9 +242,6 @@
         isCropping = false;
         currentCrop = { x: 0, y: 0, width: 1, height: 1 };
         cropMenuPosition = undefined;
-        zoomState.value = 1;
-        zoomState.posX = 0;
-        zoomState.posY = 0;
     }
 
     function handleCropReset() {
@@ -286,10 +282,7 @@
             zoomState.posX = 0;
             zoomState.posY = 0;
         },
-        updateImageDimensions() {},
-        restoreCrop() {
-            restoreCrop();
-        }
+        updateImageDimensions() {}
     });
 
     // Reset zoomed URL and load states when image changes or is closed
@@ -321,9 +314,13 @@
 
         // Debounce the resolution upgrade so we don't spam requests during active zooming
         const timeoutId = setTimeout(() => {
-            const containerWidth = imageContainerEl?.clientWidth || 1920;
-            const containerHeight = imageContainerEl?.clientHeight || 1080;
-            const containerLongestEdge = Math.max(containerWidth, containerHeight);
+            const viewportWidth = viewportDimensions.width || viewportEl?.clientWidth || 0;
+            const viewportHeight = viewportDimensions.height || viewportEl?.clientHeight || 0;
+            if (viewportWidth <= 0 || viewportHeight <= 0) {
+                return;
+            }
+
+            const containerLongestEdge = Math.max(viewportWidth, viewportHeight);
 
             // Snap the zoom factor to discrete steps to prevent intermediate spammed requests during pinch/scroll
             const snappedZoom = currentZoom > 10.0 ? 16.0 : currentZoom > 5.0 ? 8.0 : currentZoom > 2.5 ? 4.0 : 2.0;
@@ -384,163 +381,6 @@
 
     let showSidePanel = $state(!isMobile);
 
-    const handleDoubleClick: MouseEventHandler<HTMLDivElement> = (event) => {
-        event.stopPropagation();
-        if (isCropping) {
-            return;
-        }
-
-        if (isAtOneToOne) {
-            // Already at 1:1 actual size, reset back to Fit
-            zoomState.value = 1;
-            zoomState.posX = 0;
-            zoomState.posY = 0;
-        } else if (!isAtFit) {
-            // From any other zoom level, reset back to Fit
-            zoomState.value = 1;
-            zoomState.posX = 0;
-            zoomState.posY = 0;
-        } else {
-            // From Fit, zoom directly into 100% (1:1 actual pixels) at cursor position
-            zoomTo(oneToOneZoom, event.clientX, event.clientY);
-        }
-    };
-
-    const handlePointerDown: PointerEventHandler<HTMLDivElement> = (event) => {
-        if (event.button !== 0 || zoomState.value <= 1) {
-            return;
-        }
-
-        isDragging = true;
-        wasDragging = false;
-        dragStart.mouseX = event.clientX;
-        dragStart.mouseY = event.clientY;
-        dragStart.tx = zoomState.posX;
-        dragStart.ty = zoomState.posY;
-
-        event.currentTarget.setPointerCapture(event.pointerId);
-    };
-
-    const handlePointerMove: PointerEventHandler<HTMLDivElement> = (event) => {
-        if (!isDragging || !imageEl || !imageContainerEl) {
-            return;
-        }
-
-        const dx = event.clientX - dragStart.mouseX;
-        const dy = event.clientY - dragStart.mouseY;
-
-        if (Math.abs(dx) > 3 || Math.abs(dy) > 3) {
-            wasDragging = true;
-        }
-
-        const constrained = constrainTranslation(
-            dragStart.tx + dx,
-            dragStart.ty + dy,
-            zoomState.value,
-            {
-                width: imageContainerEl.clientWidth,
-                height: imageContainerEl.clientHeight
-            },
-            {
-                width: imageEl.clientWidth,
-                height: imageEl.clientHeight
-            }
-        );
-
-        zoomState.posX = constrained.x;
-        zoomState.posY = constrained.y;
-    };
-
-    const handlePointerUp: PointerEventHandler<HTMLDivElement> = (event) => {
-        if (isDragging) {
-            isDragging = false;
-            try {
-                event.currentTarget.releasePointerCapture(event.pointerId);
-            } catch (e) {}
-
-            if (wasDragging) {
-                setTimeout(() => {
-                    wasDragging = false;
-                }, 50);
-            }
-        }
-    };
-
-    function zoomTo(newZoom: number, clientX: number, clientY: number) {
-        if (!imageEl || !imageContainerEl || !zoomTargetEl) {
-            return;
-        }
-
-        const result = calculateZoomTo({
-            value: zoomState.value,
-            posX: zoomState.posX,
-            posY: zoomState.posY,
-            newZoom,
-            clientX,
-            clientY,
-            zoomTargetRect: zoomTargetEl.getBoundingClientRect(),
-            viewport: {
-                width: imageContainerEl.clientWidth,
-                height: imageContainerEl.clientHeight
-            },
-            image: {
-                width: imageEl.clientWidth,
-                height: imageEl.clientHeight
-            }
-        });
-
-        zoomState.value = result.value;
-        zoomState.posX = result.posX;
-        zoomState.posY = result.posY;
-    }
-
-    const handleWheel: WheelEventHandler<HTMLDivElement> = (event) => {
-        event.preventDefault();
-
-        // Normalize deltaY to pixels across different browsers and devices
-        let dy = event.deltaY;
-        if (event.deltaMode === 1) {
-            // DOM_DELTA_LINE
-            dy *= 33.3;
-        } else if (event.deltaMode === 2) {
-            // DOM_DELTA_PAGE
-            dy *= 800;
-        }
-
-        // Limit the maximum delta per event to prevent huge jumps from fast scrolling
-        dy = Math.max(-150, Math.min(dy, 150));
-
-        // scroll zoom feel: Zoom ratio proportional to current zoom. Similar to Capture One/Lightroom
-        // We use exponential zoom scaling to make trackpad and smooth scrolling feel natural and controllable.
-        // Touchpad two-finger pinch-to-zoom has event.ctrlKey === true and uses a different zoom intensity
-        // than standard scroll wheel zooming.
-        const isPinch = event.ctrlKey;
-        const zoomIntensity = isPinch ? 0.015 : 0.0022;
-        const factor = Math.exp(-dy * zoomIntensity);
-        const newZoom = zoomState.value * factor;
-
-        zoomTo(newZoom, event.clientX, event.clientY);
-    };
-
-    let effectiveWidthFraction = $derived(activeCrop && activeCrop.width > 0 ? activeCrop.width : 1);
-
-    let oneToOneZoom = $derived(
-        imageEl && imageEl.clientWidth > 0 && imageEl.naturalWidth > 0
-            ? Math.max(1, (imageEl.naturalWidth * effectiveWidthFraction) / imageEl.clientWidth)
-            : 1
-    );
-
-    let nativeZoomPercentage = $derived(
-        imageEl && imageEl.clientWidth > 0 && imageEl.naturalWidth > 0
-            ? Math.round(
-                  zoomState.value * (imageEl.clientWidth / (imageEl.naturalWidth * effectiveWidthFraction)) * 100
-              )
-            : Math.round(zoomState.value * 100)
-    );
-
-    let isAtFit = $derived(Math.abs(zoomState.value - 1) < 0.01);
-    let isAtOneToOne = $derived(Math.abs(zoomState.value - oneToOneZoom) < 0.05);
-
     function goToPrev() {
         if (isCropping) {
             return;
@@ -582,16 +422,9 @@
     }
 
     function handleContainerClick() {
-        if (isCropping) {
-            // Close floating crop menu if open, otherwise exit crop mode
-            if (cropMenuPosition) {
-                cropMenuPosition = undefined;
-            } else {
-                toggleCropMode();
-            }
-        } else if (zoomState.value <= 1.05) {
-            // Close lightbox when not cropping and at default zoom
-            closeLightbox();
+        if (isCropping && cropMenuPosition) {
+            // Close floating crop menu if open, otherwise do not exit crop mode
+            cropMenuPosition = undefined;
         }
     }
 
@@ -644,6 +477,47 @@
             cropMenuPosition = { x: e.clientX, y: e.clientY };
         }
     };
+
+    let statusIndicator = $state({
+        text: "",
+        show: false,
+        timeoutId: undefined as number | undefined
+    });
+
+    function showStatusIndicator(text: string) {
+        if (statusIndicator.timeoutId) {
+            clearTimeout(statusIndicator.timeoutId);
+        }
+
+        statusIndicator.text = text;
+        statusIndicator.show = true;
+
+        statusIndicator.timeoutId = window.setTimeout(() => {
+            statusIndicator.show = false;
+            statusIndicator.timeoutId = undefined;
+        }, 3000);
+    }
+
+    function handleWheel(event: WheelEvent) {
+        zoomState.handleWheel(event);
+        if (!zoomState.isAtFit) {
+            showStatusIndicator(`Zoom: ${zoomState.nativeZoomPercentage}%`);
+        }
+    }
+
+    function handleDoubleClick(event: MouseEvent) {
+        zoomState.handleDoubleClick(event);
+        if (!zoomState.isAtFit) {
+            showStatusIndicator(`Zoom: ${zoomState.nativeZoomPercentage}%`);
+        }
+    }
+
+    onDestroy(() => {
+        if (statusIndicator.timeoutId) {
+            clearTimeout(statusIndicator.timeoutId);
+            statusIndicator.timeoutId = undefined;
+        }
+    });
 
     onMount(() => {
         function isHotkeyBlocked() {
@@ -820,23 +694,23 @@
     backgroundOpacity={1}
     closeOnEsc={!isCropping}
     onclick={() => {
-        if (wasDragging) {
+        if (zoomState.wasDragging) {
             return;
         }
         handleContainerClick();
     }}
 >
-    <div class="image-lightbox-container">
+    <div class="lightbox-layout">
         <div
-            class="image-container"
+            class="lightbox-main"
             onclick={(e) => {
-                if (wasDragging) {
+                if (zoomState.wasDragging) {
                     e.stopPropagation();
                     return;
                 }
 
                 // Only handle clicks on the container background (not on buttons or image)
-                if (e.currentTarget === imageContainerEl) {
+                if (e.currentTarget === viewportEl) {
                     handleContainerClick();
                 }
             }}
@@ -956,28 +830,27 @@
             </div>
 
             <div
-                class="image-wrapper"
-                class:is-crop={isCropping}
-                class:can-pan={zoomState.value > 1}
-                class:is-panning={isDragging}
-                bind:this={imageContainerEl}
+                class="image-viewport"
+                class:can-pan={zoomState.canPan}
+                class:is-panning={zoomState.isDragging}
+                bind:this={viewportEl}
                 role="presentation"
                 onwheel={handleWheel}
                 ondblclick={handleDoubleClick}
-                onpointerdown={handlePointerDown}
-                onpointermove={handlePointerMove}
-                onpointerup={handlePointerUp}
-                onpointercancel={handlePointerUp}
+                onpointerdown={zoomState.handlePointerDown}
+                onpointermove={zoomState.handlePointerMove}
+                onpointerup={zoomState.handlePointerUp}
+                onpointercancel={zoomState.handlePointerUp}
                 onclick={(e) => {
-                    if (wasDragging) {
+                    if (zoomState.wasDragging) {
                         e.stopPropagation();
                         return;
                     }
-                    // Only close on clicking the wrapper background or canvas target, not on image or buttons
+                    // Only close on clicking the viewport background or stage target, not on image or buttons
                     if (
                         e.target === e.currentTarget ||
-                        (e.target as HTMLElement)?.classList.contains("image-wrapper") ||
-                        (e.target as HTMLElement)?.classList.contains("zoom-target")
+                        (e.target as HTMLElement)?.classList.contains("image-viewport") ||
+                        (e.target as HTMLElement)?.classList.contains("image-stage")
                     ) {
                         handleContainerClick();
                     }
@@ -987,13 +860,15 @@
                     {@render zoomStateDebug()}
                 {/if}
                 <div
-                    class="zoom-target"
+                    class="image-stage"
                     class:has-crop={!!activeCrop}
-                    class:can-pan={zoomState.value > 1}
-                    class:is-panning={isDragging}
+                    class:can-pan={zoomState.canPan}
+                    class:is-panning={zoomState.isDragging}
+                    data-zoom={zoomState.value}
+                    data-pos-x={zoomState.posX}
+                    data-pos-y={zoomState.posY}
                     oncontextmenu={handleContextMenu}
                     role="presentation"
-                    bind:this={zoomTargetEl}
                     style="{activeCropDimensions
                         ? `width: ${activeCropDimensions.frameWidth.toFixed(2)}px; height: ${activeCropDimensions.frameHeight.toFixed(2)}px;`
                         : ''} transform: translate({zoomState.posX}px, {zoomState.posY}px) scale({zoomState.value}); transform-origin: 0 0;"
@@ -1031,13 +906,9 @@
 
                 <!-- TODO: Change this to a general action status indicator to support all actions -->
                 <!-- e.g. "Date Change: 11-06-2026, 20:42:01" -->
-                {#if !isAtFit}
-                    <div class="zoom-indicator-badge" role="status" aria-live="polite">
-                        {#if isAtOneToOne || nativeZoomPercentage === 100}
-                            100% (1:1)
-                        {:else}
-                            Zoom: {nativeZoomPercentage}%
-                        {/if}
+                {#if statusIndicator.show}
+                    <div class="zoom-indicator-badge" role="status" aria-live="polite" transition:fade>
+                        {statusIndicator.text}
                     </div>
                 {/if}
 
@@ -1099,7 +970,7 @@
 </Lightbox>
 
 <style lang="scss">
-    .image-lightbox-container {
+    .lightbox-layout {
         position: relative;
         display: flex;
         align-items: center;
@@ -1108,7 +979,7 @@
         pointer-events: auto;
     }
 
-    .image-container {
+    .lightbox-main {
         position: relative;
         display: flex;
         justify-content: center;
@@ -1202,7 +1073,7 @@
         opacity: 0.75 !important;
     }
 
-    .image-wrapper {
+    .image-viewport {
         position: relative;
         display: flex;
         justify-content: center;
@@ -1220,13 +1091,9 @@
         &.is-panning {
             cursor: grabbing;
         }
-
-        &.is-crop {
-            padding: var(--viz-spacing-xl);
-        }
     }
 
-    .zoom-target {
+    .image-stage {
         position: relative;
         display: flex;
         justify-content: center;
