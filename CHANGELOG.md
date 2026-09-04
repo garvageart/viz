@@ -5,6 +5,20 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.33.4] - 2026-09-04
+
+* style(viewfinder): format test files and zoom utilities (0b12ac05)
+* test(viewfinder): modernize e2e assertions with deterministic attributes (b5f964ad)
+* refactor(viewfinder): standardize ImageLightboxState across app routes (98c4ad51)
+* feat(viewfinder): update lightbox zoom indicator and viewport interaction (772b0a7a)
+* refactor(viewfinder): isolate image loader state management and lifecycle (fbf810fe)
+* refactor(viewfinder): modernize zoom and pan controller architecture (2f1e032f)
+* refactor(viewfinder): integrate ImageLightbox onClose and selection fallback across pages (63b8c31b)
+* refactor(viewfinder): refactor ImageLightbox lifecycle and state architecture (02425853)
+* refactor(viewfinder): normalize crop overlay geometry and decouple crop tools (12357a4f)
+* style(viewfinder): update select photos button styling in empty state (6e54da70)
+* feat(viewfinder): allow zooming out below 100% down to 10% in lightbox (a71e71ca)
+
 ## [0.33.3] - 2026-09-03
 
 * fix(viewfinder): hydrate persisted sort settings in client init hook (0f9df8de)
