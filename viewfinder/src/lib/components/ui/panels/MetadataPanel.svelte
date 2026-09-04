@@ -181,7 +181,7 @@
             consider rendering key-value technical metadata using <Table name="asset-exif-metadata" density="compact"> 
             with sortable tags, search filtering, and copy-to-clipboard actions.
         -->
-        <div class="metadata-exif-box">
+        <div class="metadata-exif-container">
             <div class="exif-cards">
                 <div class="exif-card">
                     <div class="card-row main-row">
@@ -236,22 +236,6 @@
                             </div>
                         {/snippet}
                     </DatePicker>
-                </div>
-                <!-- Description -->
-                <div class="exif-card description">
-                    <TextArea
-                        class="exif-description"
-                        placeholder="Add a description"
-                        title={currentAsset.description}
-                        bind:value={currentAsset.description}
-                        spellcheck="false"
-                        rows={5}
-                        minHeight="5rem"
-                        maxHeight="16rem"
-                        resize="none"
-                        onblur={saveDescription}
-                        onkeydown={handleDescriptionKeydown}
-                    />
                 </div>
                 <!-- Camera/Exposure card -->
                 <div class="exif-card">
@@ -386,6 +370,22 @@
                     <Favourite size="1.3rem" />
                 {/if}
             </div>
+            <!-- Description -->
+            <div class="exif-card description">
+                <TextArea
+                    class="exif-description"
+                    placeholder="Add a description"
+                    title={currentAsset.description}
+                    bind:value={currentAsset.description}
+                    spellcheck="false"
+                    rows={5}
+                    minHeight="5rem"
+                    maxHeight="16rem"
+                    resize="none"
+                    onblur={saveDescription}
+                    onkeydown={handleDescriptionKeydown}
+                />
+            </div>
         </div>
     {:else}
         <NoImageSelected message="No image selected" />
@@ -394,6 +394,9 @@
 
 <style lang="scss">
     .metadata-editor {
+        display: flex;
+        flex-direction: column;
+        gap: var(--viz-spacing-sm);
         padding: var(--viz-spacing-std);
         color: var(--viz-text-primary);
         height: 100%;
@@ -428,14 +431,15 @@
         display: flex;
         align-items: center;
         justify-content: space-between;
-        margin-bottom: var(--viz-spacing-sm);
         padding-bottom: var(--viz-spacing-sm);
         border-bottom: 1px solid var(--viz-border-subtle);
         gap: 0.5em;
     }
 
-    .metadata-exif-box {
-        display: block;
+    .metadata-exif-container {
+        display: flex;
+        flex-direction: column;
+        gap: var(--viz-spacing-sm);
     }
 
     .exif-card-group {
@@ -552,7 +556,6 @@
     }
 
     .rating-container {
-        margin-top: var(--viz-spacing-std);
         padding: var(--viz-spacing-sm) var(--viz-spacing-std) var(--viz-spacing-sm) var(--viz-spacing-std);
         background: var(--viz-surface-card);
         border-radius: var(--viz-border-radius-md);

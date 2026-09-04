@@ -10,6 +10,7 @@
                 currentTarget: EventTarget & Window;
             }
         ) => void;
+        onclose?: () => void;
         show: boolean;
         lightboxElement?: HTMLElement | undefined;
         backgroundColour?: string;
@@ -21,6 +22,7 @@
     let {
         children,
         onclick,
+        onclose,
         show = $bindable(false),
         lightboxElement = $bindable(),
         backgroundColour = "#000000",
@@ -57,6 +59,7 @@
 
         if (e.key === "Escape" && closeOnEsc) {
             show = false;
+            onclose?.();
         }
     }}
     onclick={(e) => {

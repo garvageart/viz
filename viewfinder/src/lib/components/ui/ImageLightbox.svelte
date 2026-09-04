@@ -12,6 +12,7 @@
   or distort the underlying core principle of displaying the base image cleanly and instantly upon loading 
   or navigation. Base 1x viewing relies on clean native CSS bounds (max-width: 100%, max-height: 100%, object-fit: contain).
 -->
+
 <script lang="ts">
     import { dev } from "$app/environment";
     import { type ImageAsset, getAssetImagePath, updateImage } from "@viz/api";
@@ -20,31 +21,44 @@
     import type { MouseEventHandler, PointerEventHandler, WheelEventHandler } from "svelte/elements";
     import { slide } from "svelte/transition";
     import { hideAll } from "tippy.js";
+    import CropOverlay from "$lib/components/image-tools/CropOverlay.svelte";
+    import CropTools from "$lib/components/image-tools/CropTools.svelte";
     import { modalsManager } from "$lib/components/modals/manager/ModalManager.svelte";
     import Button from "$lib/components/ui/Button.svelte";
     import ExportPanel, { modalOptions as exportModalOptions } from "$lib/components/ui/panels/ExportPanel.svelte";
     import MetadataPanel from "$lib/components/ui/panels/MetadataPanel.svelte";
     import { ImageLoader } from "$lib/images/loader/image-loader.svelte";
+    import type { CropCoords } from "$lib/images/zoom/crop-utils";
     import { ImageZoomState, calculateZoomTo, constrainTranslation } from "$lib/images/zoom/zoom-utils.svelte";
     import { isMobile } from "$lib/states/index.svelte";
     import { toasts } from "$lib/toast-notifcations/toasts.svelte";
     import { downloadOriginalImageFile } from "$lib/utils/http";
-    import { type CropCoords } from "$lib/utils/images";
-    import CropOverlay from "../image-tools/CropOverlay.svelte";
-    import CropTools from "../image-tools/CropTools.svelte";
     import AssetImage from "./AssetImage.svelte";
+    import FloatingPanel from "./FloatingPanel.svelte";
     import Lightbox from "./Lightbox.svelte";
 
     interface Props {
-        lightboxImage: ImageAsset | undefined;
+        lightboxImage: ImageAsset;
+        show?: boolean;
+        onClose?: () => void;
         prevLightboxImage?: () => void;
         nextLightboxImage?: () => void;
         onImageUpdated?: (image: ImageAsset) => void;
     }
 
-    let { lightboxImage = $bindable(), prevLightboxImage, nextLightboxImage, onImageUpdated }: Props = $props();
+    let {
+        lightboxImage = $bindable(),
+        show = $bindable(false),
+        onClose,
+        prevLightboxImage,
+        nextLightboxImage,
+        onImageUpdated
+    }: Props = $props();
 
-    let show = $derived(lightboxImage !== undefined);
+    function closeLightbox() {
+        show = false;
+        onClose?.();
+    }
 
     $effect(() => {
         if (show) {
@@ -53,6 +67,7 @@
     });
 
     let imageToLoad = $derived(lightboxImage ? getAssetImagePath(lightboxImage, "preview") : undefined);
+    $inspect("lightbox show", show);
 
     // Element Bindings
     let imageEl = $state<HTMLImageElement>();
@@ -65,17 +80,11 @@
     let lastImageUid = $state<string | undefined>(undefined);
 
     $effect(() => {
-        const currentUid = lightboxImage?.uid;
+        const currentUid = lightboxImage.uid;
         if (currentUid !== lastImageUid) {
             zoomState.reset();
             lastImageUid = currentUid;
         }
-    });
-
-    let transformState = $derived({
-        scale: zoomState.value,
-        x: zoomState.posX,
-        y: zoomState.posY
     });
 
     let isDragging = $state(false);
@@ -90,61 +99,138 @@
     // Crop State
     let isCropping = $state(false);
     let cropAspectRatio = $state<number>();
-    let currentCrop = $state<CropCoords>();
+    let currentCrop = $state<CropCoords>({ x: 0, y: 0, width: 1, height: 1 });
     let cropMenuPosition = $state<{ x: number; y: number }>();
 
-    // Store crop edits (original/natural coordinates) to restore them when re-entering crop mode
+    let containerDimensions = $state<{ width: number; height: number }>({ width: 0, height: 0 });
+
+    $effect(() => {
+        if (!imageContainerEl) {
+            return;
+        }
+
+        const observer = new ResizeObserver((entries) => {
+            for (const entry of entries) {
+                containerDimensions = {
+                    width: entry.contentRect.width,
+                    height: entry.contentRect.height
+                };
+            }
+        });
+
+        observer.observe(imageContainerEl);
+
+        return () => {
+            observer.disconnect();
+        };
+    });
+
+    let renderedImageDimensions = $derived.by(() => {
+        if (!imageEl) {
+            return { width: 0, height: 0 };
+        }
+
+        const nw = imageEl.naturalWidth;
+        const nh = imageEl.naturalHeight;
+        const cw = containerDimensions.width;
+        const ch = containerDimensions.height;
+
+        if (nw <= 0 || nh <= 0 || cw <= 0 || ch <= 0) {
+            return { width: 0, height: 0 };
+        }
+
+        const imageAspect = nw / nh;
+        const containerAspect = cw / ch;
+
+        if (containerAspect > imageAspect) {
+            return {
+                width: ch * imageAspect,
+                height: ch
+            };
+        } else {
+            return {
+                width: cw,
+                height: cw / imageAspect
+            };
+        }
+    });
+
+    // Store crop edits (normalized 0..1 coordinates) to restore them when re-entering crop mode
     let cropEdits = $state<Record<string, CropCoords>>({});
 
     let activeCrop = $derived.by(() => {
-        if (!lightboxImage?.uid || isCropping) {
+        if (!lightboxImage.uid || isCropping) {
             return null;
         }
 
         return cropEdits[lightboxImage.uid] || null;
     });
 
+    let activeCropDimensions = $derived.by(() => {
+        if (!activeCrop || !imageEl) {
+            return undefined;
+        }
+
+        const nw = imageEl.naturalWidth;
+        const nh = imageEl.naturalHeight;
+        const cw = containerDimensions.width;
+        const ch = containerDimensions.height;
+
+        if (nw <= 0 || nh <= 0 || cw <= 0 || ch <= 0) {
+            return undefined;
+        }
+
+        if (activeCrop.width <= 0 || activeCrop.height <= 0) {
+            return undefined;
+        }
+
+        const cropPixelWidth = nw * activeCrop.width;
+        const cropPixelHeight = nh * activeCrop.height;
+        const cropAspect = cropPixelWidth / cropPixelHeight;
+        const containerAspect = cw / ch;
+
+        let frameWidth: number;
+        let frameHeight: number;
+
+        if (containerAspect > cropAspect) {
+            frameHeight = ch;
+            frameWidth = ch * cropAspect;
+        } else {
+            frameWidth = cw;
+            frameHeight = cw / cropAspect;
+        }
+
+        const imgWidth = frameWidth / activeCrop.width;
+        const imgHeight = frameHeight / activeCrop.height;
+        const imgLeft = -(frameWidth * activeCrop.x) / activeCrop.width;
+        const imgTop = -(frameHeight * activeCrop.y) / activeCrop.height;
+
+        return {
+            frameWidth,
+            frameHeight,
+            imgWidth,
+            imgHeight,
+            imgLeft,
+            imgTop
+        };
+    });
+
     let cropStyle = $derived.by(() => {
-        if (!activeCrop || !lightboxImage || !imageEl) {
+        if (!activeCropDimensions) {
             return undefined;
         }
 
-        const imgW = lightboxImage.width || imageEl.naturalWidth || 1;
-        const imgH = lightboxImage.height || imageEl.naturalHeight || 1;
-
-        if (imgW <= 0 || imgH <= 0 || activeCrop.width <= 0 || activeCrop.height <= 0) {
-            return undefined;
-        }
-
-        const scaleX = ((imgW / activeCrop.width) * 100).toFixed(4);
-        const scaleY = ((imgH / activeCrop.height) * 100).toFixed(4);
-        const offsetX = ((activeCrop.x / activeCrop.width) * 100).toFixed(4);
-        const offsetY = ((activeCrop.y / activeCrop.height) * 100).toFixed(4);
-
-        return `width: ${scaleX}% !important; height: ${scaleY}% !important; position: absolute !important; left: -${offsetX}% !important; top: -${offsetY}% !important; max-width: none !important; max-height: none !important;`;
+        const { imgWidth, imgHeight, imgLeft, imgTop } = activeCropDimensions;
+        return `width: ${imgWidth.toFixed(2)}px !important; height: ${imgHeight.toFixed(2)}px !important; position: absolute !important; left: ${imgLeft.toFixed(2)}px !important; top: ${imgTop.toFixed(2)}px !important; max-width: none !important; max-height: none !important;`;
     });
 
     function handleCropApply() {
-        if (!currentCrop || !imageEl || !lightboxImage) {
+        if (!currentCrop || !lightboxImage.uid) {
             return;
         }
 
-        // Calculate crop relative to the ORIGINAL image
-        const originalWidth = lightboxImage.width || imageEl.naturalWidth;
-        const originalHeight = lightboxImage.height || imageEl.naturalHeight;
-
-        const scaleToOriginalX = originalWidth / imageEl.clientWidth;
-        const scaleToOriginalY = originalHeight / imageEl.clientHeight;
-
-        const originalCrop = {
-            x: Math.round(currentCrop.x * scaleToOriginalX),
-            y: Math.round(currentCrop.y * scaleToOriginalY),
-            width: Math.round(currentCrop.width * scaleToOriginalX),
-            height: Math.round(currentCrop.height * scaleToOriginalY)
-        };
-
-        // Save the crop to state
-        cropEdits[lightboxImage.uid] = originalCrop;
+        // TODO: replace once backend cropping is implemented
+        cropEdits[lightboxImage.uid] = { ...currentCrop };
 
         toasts.add({
             type: "success",
@@ -155,15 +241,15 @@
 
         // Exit mode
         isCropping = false;
-        currentCrop = undefined;
+        currentCrop = { x: 0, y: 0, width: 1, height: 1 };
         cropMenuPosition = undefined;
         zoomState.value = 1;
         zoomState.posX = 0;
-        updateImageDimensions();
+        zoomState.posY = 0;
     }
 
     function handleCropReset() {
-        if (!lightboxImage || !imageEl) {
+        if (!lightboxImage.uid) {
             return;
         }
 
@@ -171,9 +257,10 @@
         currentCrop = {
             x: 0,
             y: 0,
-            width: imageEl.clientWidth,
-            height: imageEl.clientHeight
+            width: 1,
+            height: 1
         };
+        cropAspectRatio = undefined;
     }
 
     let overriddenImages = $state<Record<string, string>>({});
@@ -199,9 +286,7 @@
             zoomState.posX = 0;
             zoomState.posY = 0;
         },
-        updateImageDimensions() {
-            updateImageDimensions();
-        },
+        updateImageDimensions() {},
         restoreCrop() {
             restoreCrop();
         }
@@ -211,11 +296,10 @@
     let lastLoaderImageUid = $state<string | undefined>(undefined);
 
     $effect(() => {
-        const uid = lightboxImage?.uid;
+        const uid = lightboxImage.uid;
         if (uid !== lastLoaderImageUid) {
             untrack(() => {
                 loader.reset(uid);
-                updateImageDimensions();
             });
             lastLoaderImageUid = uid;
         }
@@ -300,8 +384,90 @@
 
     let showSidePanel = $state(!isMobile);
 
+    const handleDoubleClick: MouseEventHandler<HTMLDivElement> = (event) => {
+        event.stopPropagation();
+        if (isCropping) {
+            return;
+        }
+
+        if (isAtOneToOne) {
+            // Already at 1:1 actual size, reset back to Fit
+            zoomState.value = 1;
+            zoomState.posX = 0;
+            zoomState.posY = 0;
+        } else if (!isAtFit) {
+            // From any other zoom level, reset back to Fit
+            zoomState.value = 1;
+            zoomState.posX = 0;
+            zoomState.posY = 0;
+        } else {
+            // From Fit, zoom directly into 100% (1:1 actual pixels) at cursor position
+            zoomTo(oneToOneZoom, event.clientX, event.clientY);
+        }
+    };
+
+    const handlePointerDown: PointerEventHandler<HTMLDivElement> = (event) => {
+        if (event.button !== 0 || zoomState.value <= 1) {
+            return;
+        }
+
+        isDragging = true;
+        wasDragging = false;
+        dragStart.mouseX = event.clientX;
+        dragStart.mouseY = event.clientY;
+        dragStart.tx = zoomState.posX;
+        dragStart.ty = zoomState.posY;
+
+        event.currentTarget.setPointerCapture(event.pointerId);
+    };
+
+    const handlePointerMove: PointerEventHandler<HTMLDivElement> = (event) => {
+        if (!isDragging || !imageEl || !imageContainerEl) {
+            return;
+        }
+
+        const dx = event.clientX - dragStart.mouseX;
+        const dy = event.clientY - dragStart.mouseY;
+
+        if (Math.abs(dx) > 3 || Math.abs(dy) > 3) {
+            wasDragging = true;
+        }
+
+        const constrained = constrainTranslation(
+            dragStart.tx + dx,
+            dragStart.ty + dy,
+            zoomState.value,
+            {
+                width: imageContainerEl.clientWidth,
+                height: imageContainerEl.clientHeight
+            },
+            {
+                width: imageEl.clientWidth,
+                height: imageEl.clientHeight
+            }
+        );
+
+        zoomState.posX = constrained.x;
+        zoomState.posY = constrained.y;
+    };
+
+    const handlePointerUp: PointerEventHandler<HTMLDivElement> = (event) => {
+        if (isDragging) {
+            isDragging = false;
+            try {
+                event.currentTarget.releasePointerCapture(event.pointerId);
+            } catch (e) {}
+
+            if (wasDragging) {
+                setTimeout(() => {
+                    wasDragging = false;
+                }, 50);
+            }
+        }
+    };
+
     function zoomTo(newZoom: number, clientX: number, clientY: number) {
-        if (!imageDimensions || !imageContainerEl || !zoomTargetEl) {
+        if (!imageEl || !imageContainerEl || !zoomTargetEl) {
             return;
         }
 
@@ -317,7 +483,10 @@
                 width: imageContainerEl.clientWidth,
                 height: imageContainerEl.clientHeight
             },
-            image: imageDimensions
+            image: {
+                width: imageEl.clientWidth,
+                height: imageEl.clientHeight
+            }
         });
 
         zoomState.value = result.value;
@@ -353,161 +522,24 @@
         zoomTo(newZoom, event.clientX, event.clientY);
     };
 
-    const handleDoubleClick: MouseEventHandler<HTMLDivElement> = (event) => {
-        event.stopPropagation();
-        if (isCropping) {
-            return;
-        }
+    let effectiveWidthFraction = $derived(activeCrop && activeCrop.width > 0 ? activeCrop.width : 1);
 
-        if (Math.abs(zoomState.value - 1) > 0.01) {
-            // Reset to 1 (100% / fit)
-            zoomState.value = 1;
-            zoomState.posX = 0;
-            zoomState.posY = 0;
-        } else {
-            // Zoom in to 2.5 (100% style) at cursor position
-            zoomTo(2.5, event.clientX, event.clientY);
-        }
-    };
+    let oneToOneZoom = $derived(
+        imageEl && imageEl.clientWidth > 0 && imageEl.naturalWidth > 0
+            ? Math.max(1, (imageEl.naturalWidth * effectiveWidthFraction) / imageEl.clientWidth)
+            : 1
+    );
 
-    const handlePointerDown: PointerEventHandler<HTMLDivElement> = (event) => {
-        if (event.button !== 0 || zoomState.value <= 1) {
-            return;
-        }
+    let nativeZoomPercentage = $derived(
+        imageEl && imageEl.clientWidth > 0 && imageEl.naturalWidth > 0
+            ? Math.round(
+                  zoomState.value * (imageEl.clientWidth / (imageEl.naturalWidth * effectiveWidthFraction)) * 100
+              )
+            : Math.round(zoomState.value * 100)
+    );
 
-        isDragging = true;
-        wasDragging = false;
-        dragStart.mouseX = event.clientX;
-        dragStart.mouseY = event.clientY;
-        dragStart.tx = zoomState.posX;
-        dragStart.ty = zoomState.posY;
-
-        event.currentTarget.setPointerCapture(event.pointerId);
-    };
-
-    const handlePointerMove: PointerEventHandler<HTMLDivElement> = (event) => {
-        if (!isDragging || !imageDimensions || !imageContainerEl) {
-            return;
-        }
-
-        const dx = event.clientX - dragStart.mouseX;
-        const dy = event.clientY - dragStart.mouseY;
-
-        if (Math.abs(dx) > 3 || Math.abs(dy) > 3) {
-            wasDragging = true;
-        }
-
-        const constrained = constrainTranslation(
-            dragStart.tx + dx,
-            dragStart.ty + dy,
-            zoomState.value,
-            {
-                width: imageContainerEl.clientWidth,
-                height: imageContainerEl.clientHeight
-            },
-            imageDimensions
-        );
-
-        zoomState.posX = constrained.x;
-        zoomState.posY = constrained.y;
-    };
-
-    const handlePointerUp: PointerEventHandler<HTMLDivElement> = (event) => {
-        if (isDragging) {
-            isDragging = false;
-            try {
-                event.currentTarget.releasePointerCapture(event.pointerId);
-            } catch (e) {}
-
-            if (wasDragging) {
-                setTimeout(() => {
-                    wasDragging = false;
-                }, 50);
-            }
-        }
-    };
-
-    // Helper to get render dimensions
-    let imageDimensions = $state<{ width: number; height: number } | null>(null);
-
-    function updateImageDimensions() {
-        if (!imageContainerEl || !lightboxImage) {
-            return;
-        }
-
-        const computedStyle = getComputedStyle(imageContainerEl);
-        const paddingX = (parseFloat(computedStyle.paddingLeft) || 0) + (parseFloat(computedStyle.paddingRight) || 0);
-        const paddingY = (parseFloat(computedStyle.paddingTop) || 0) + (parseFloat(computedStyle.paddingBottom) || 0);
-
-        const containerWidth = Math.max(1, imageContainerEl.clientWidth - paddingX);
-        const containerHeight = Math.max(1, imageContainerEl.clientHeight - paddingY);
-
-        if (containerWidth <= 0 || containerHeight <= 0) {
-            return;
-        }
-
-        let targetWidth = lightboxImage.width || imageEl?.naturalWidth;
-        let targetHeight = lightboxImage.height || imageEl?.naturalHeight;
-
-        if (!isCropping && activeCrop && activeCrop.width > 0 && activeCrop.height > 0) {
-            targetWidth = activeCrop.width;
-            targetHeight = activeCrop.height;
-        }
-
-        if (!targetWidth || !targetHeight) {
-            return;
-        }
-
-        const scale = Math.min(containerWidth / targetWidth, containerHeight / targetHeight);
-        const calcWidth = Math.round(targetWidth * scale);
-        const calcHeight = Math.round(targetHeight * scale);
-
-        if (calcWidth <= 0 || calcHeight <= 0) {
-            return;
-        }
-
-        untrack(() => {
-            if (imageDimensions && currentCrop) {
-                const oldWidth = imageDimensions.width;
-                const oldHeight = imageDimensions.height;
-
-                if (oldWidth > 0 && oldHeight > 0 && (oldWidth !== calcWidth || oldHeight !== calcHeight)) {
-                    const scaleX = calcWidth / oldWidth;
-                    const scaleY = calcHeight / oldHeight;
-
-                    currentCrop = {
-                        x: currentCrop.x * scaleX,
-                        y: currentCrop.y * scaleY,
-                        width: currentCrop.width * scaleX,
-                        height: currentCrop.height * scaleY
-                    };
-                }
-            }
-
-            imageDimensions = {
-                width: calcWidth,
-                height: calcHeight
-            };
-        });
-    }
-
-    // Reactively track image dimension changes (window resize, crop layout changes)
-    // and update imageDimensions, scaling currentCrop proportionally to keep it in sync.
-    $effect(() => {
-        if (show && imageContainerEl) {
-            void isCropping;
-            updateImageDimensions();
-
-            const observer = new ResizeObserver(() => {
-                updateImageDimensions();
-            });
-            observer.observe(imageContainerEl);
-
-            return () => {
-                observer.disconnect();
-            };
-        }
-    });
+    let isAtFit = $derived(Math.abs(zoomState.value - 1) < 0.01);
+    let isAtOneToOne = $derived(Math.abs(zoomState.value - oneToOneZoom) < 0.05);
 
     function goToPrev() {
         if (isCropping) {
@@ -525,126 +557,27 @@
         nextLightboxImage?.();
     }
 
-    // TODO: See if this needs to be reimplemeted, leave commented out for now
-    // -------
-    // Swipe state
-    // let swipeStartX = 0;
-    // let swipeStartY = 0;
-    // let isSwiping = false;
-    // const SWIPE_THRESHOLD = 50;
-    // function handleSwipeStart(e: TouchEvent) {
-    //     if (zoomState.currentZoom > 1 || isCropping) {
-    //         return;
-    //     }
-    //     swipeStartX = e.touches[0].clientX;
-    //     swipeStartY = e.touches[0].clientY;
-    //     isSwiping = true;
-    // }
-
-    // function handleSwipeMove(e: TouchEvent) {
-    //     if (!isSwiping) {
-    //         return;
-    //     }
-    //     const dx = e.touches[0].clientX - swipeStartX;
-    //     const dy = e.touches[0].clientY - swipeStartY;
-    //     if (Math.abs(dy) > Math.abs(dx)) {
-    //         isSwiping = false;
-    //     }
-    // }
-
-    // function handleSwipeEnd(e: TouchEvent) {
-    //     if (!isSwiping) {
-    //         return;
-    //     }
-    //     isSwiping = false;
-    //     const dx = e.changedTouches[0].clientX - swipeStartX;
-    //     if (Math.abs(dx) >= SWIPE_THRESHOLD) {
-    //         if (dx > 0) {
-    //             goToPrev();
-    //         } else {
-    //             goToNext();
-    //         }
-    //     }
-    // }
-
     function restoreCrop() {
-        if (!imageEl || !lightboxImage) {
-            return;
-        }
-
-        // Ensure we capture dimensions for overlay
-        if (imageEl.clientWidth > 0 && imageEl.clientHeight > 0) {
-            imageDimensions = {
-                width: imageEl.clientWidth,
-                height: imageEl.clientHeight
-            };
-        }
-
-        const saved = cropEdits[lightboxImage.uid];
-        let initialCrop = null;
-
-        // If we have a saved crop (in original coordinates), scale it to current render dimensions
-        if (saved && lightboxImage.width && lightboxImage.height) {
-            const scaleX = imageEl.clientWidth / lightboxImage.width;
-            const scaleY = imageEl.clientHeight / lightboxImage.height;
-
-            initialCrop = {
-                x: saved.x * scaleX,
-                y: saved.y * scaleY,
-                width: saved.width * scaleX,
-                height: saved.height * scaleY
-            };
-        } else if (saved && imageEl.naturalWidth > 0) {
-            // Fallback to naturalWidth if original dimensions missing (shouldn't happen often)
-            const scaleX = imageEl.clientWidth / imageEl.naturalWidth;
-            const scaleY = imageEl.clientHeight / imageEl.naturalHeight;
-
-            initialCrop = {
-                x: saved.x * scaleX,
-                y: saved.y * scaleY,
-                width: saved.width * scaleX,
-                height: saved.height * scaleY
-            };
-        }
-
-        if (initialCrop) {
-            currentCrop = { ...initialCrop };
+        const saved = lightboxImage.uid ? cropEdits[lightboxImage.uid] : undefined;
+        if (saved) {
+            currentCrop = { ...saved };
         } else {
             currentCrop = {
                 x: 0,
                 y: 0,
-                width: imageEl.clientWidth,
-                height: imageEl.clientHeight
+                width: 1,
+                height: 1
             };
         }
     }
 
     function toggleCropMode() {
-        if (!imageEl) {
-            return;
-        }
-
         if (!isCropping) {
-            // Enter crop mode
             isCropping = true;
-            // Preserve current zoom and position for cropping
-            // Ensure crop area reflects current view
-            if (imageEl.complete) {
-                restoreCrop();
-                updateImageDimensions();
-            }
+            restoreCrop();
         } else {
-            // Exit crop mode (cancel)
             isCropping = false;
-            currentCrop = undefined;
             cropMenuPosition = undefined;
-            // Remove explicit image dimensions so .zoom-target loses its explicit
-            // width/height constraint. This breaks the circular dependency where
-            // imageDimensions -> .zoom-target explicit size -> <img> constrained ->
-            // updateImageDimensions reads constrained size -> writes it back.
-            // The ResizeObserver on imageEl will fire after reflow and set the
-            // correct full-container dimensions.
-            imageDimensions = null;
         }
     }
 
@@ -658,23 +591,22 @@
             }
         } else if (zoomState.value <= 1.05) {
             // Close lightbox when not cropping and at default zoom
-            lightboxImage = undefined;
+            closeLightbox();
         }
     }
 
     function handleAspectRatioChange(ratio: number | "original" | undefined) {
-        if (!imageEl || !currentCrop) {
+        if (!imageEl) {
             return;
         }
 
-        let targetRatio: number | undefined;
+        const naturalW = imageEl.naturalWidth || 1;
+        const naturalH = imageEl.naturalHeight || 1;
+        const imageAspect = naturalW / naturalH;
 
+        let targetRatio: number | undefined;
         if (ratio === "original") {
-            if (lightboxImage?.width && lightboxImage?.height) {
-                targetRatio = lightboxImage.width / lightboxImage.height;
-            } else if (imageEl.naturalWidth && imageEl.naturalHeight) {
-                targetRatio = imageEl.naturalWidth / imageEl.naturalHeight;
-            }
+            targetRatio = imageAspect;
         } else {
             targetRatio = ratio;
         }
@@ -682,27 +614,30 @@
         cropAspectRatio = targetRatio;
 
         if (targetRatio) {
+            const normRatio = targetRatio / imageAspect;
             let newWidth = currentCrop.width;
-            let newHeight = newWidth / targetRatio;
+            let newHeight = newWidth / normRatio;
 
-            if (newHeight > imageEl.clientHeight) {
-                newHeight = imageEl.clientHeight;
-                newWidth = newHeight * targetRatio;
+            if (newHeight > 1) {
+                newHeight = 1;
+                newWidth = newHeight * normRatio;
+            }
+            if (newWidth > 1) {
+                newWidth = 1;
+                newHeight = newWidth / normRatio;
             }
 
-            // Center the new crop box
             const dx = (currentCrop.width - newWidth) / 2;
             const dy = (currentCrop.height - newHeight) / 2;
 
             currentCrop = {
-                x: Math.max(0, currentCrop.x + dx),
-                y: Math.max(0, currentCrop.y + dy),
+                x: Math.max(0, Math.min(1 - newWidth, currentCrop.x + dx)),
+                y: Math.max(0, Math.min(1 - newHeight, currentCrop.y + dy)),
                 width: newWidth,
                 height: newHeight
             };
         }
     }
-
     const handleContextMenu: MouseEventHandler<HTMLElement> = (e) => {
         e.preventDefault();
         if (isCropping) {
@@ -766,7 +701,7 @@
 
             // If not cropping, close the lightbox
             e.preventDefault();
-            lightboxImage = undefined;
+            closeLightbox();
         };
 
         hotkeys("left,right", "lightbox", handleLeftRight);
@@ -793,8 +728,6 @@
             };
         }
     });
-
-    const lightboxMaterialIconColour = "color: var(--viz-10-dark); fill: var(--viz-10-dark);";
 </script>
 
 {#snippet zoomStateDebug()}
@@ -818,7 +751,7 @@
 
             <span class="debug-label">UID:</span>
             <span class="debug-val mono">
-                {lightboxImage?.uid || "none"}
+                {lightboxImage.uid || "none"}
             </span>
 
             <span class="debug-label">Last UID:</span>
@@ -883,6 +816,7 @@
 
 <Lightbox
     bind:show
+    onclose={closeLightbox}
     backgroundOpacity={1}
     closeOnEsc={!isCropping}
     onclick={() => {
@@ -920,13 +854,13 @@
                             if (isCropping) {
                                 toggleCropMode();
                             } else {
-                                lightboxImage = undefined;
+                                closeLightbox();
                             }
                         }}
                     />
                     {#if !isCropping}
-                        <span class="lightbox-image-name" title={lightboxImage!.name}>
-                            {lightboxImage!.name}
+                        <span class="lightbox-image-name" title={lightboxImage.name}>
+                            {lightboxImage.name}
                         </span>
                     {/if}
                 </div>
@@ -944,11 +878,11 @@
                             />
                         {/if}
                         <Button
-                            class="lightbox-button-icon {lightboxImage?.favourited ? 'favourited' : ''}"
+                            class="lightbox-button-icon {lightboxImage.favourited ? 'favourited' : ''}"
                             hoverColor="transparent"
-                            title={lightboxImage?.favourited ? "Unfavourite" : "Favourite"}
+                            title={lightboxImage.favourited ? "Unfavourite" : "Favourite"}
                             iconName="star"
-                            fill={lightboxImage?.favourited}
+                            fill={lightboxImage.favourited}
                             onclick={async () => {
                                 if (!lightboxImage) {
                                     return;
@@ -981,7 +915,7 @@
                             title="Download Original"
                             iconName="download"
                             onclick={() => {
-                                downloadOriginalImageFile(lightboxImage!);
+                                downloadOriginalImageFile(lightboxImage);
                             }}
                         />
                         <Button
@@ -996,12 +930,12 @@
                                     .open(
                                         ExportPanel,
                                         {
-                                            assets: [lightboxImage!]
+                                            assets: [lightboxImage]
                                         },
                                         exportModalOptions
                                     )
                                     .then(() => {
-                                        lightboxImage = undefined;
+                                        closeLightbox();
                                     });
                             }}
                         />
@@ -1024,8 +958,16 @@
             <div
                 class="image-wrapper"
                 class:is-crop={isCropping}
+                class:can-pan={zoomState.value > 1}
+                class:is-panning={isDragging}
                 bind:this={imageContainerEl}
                 role="presentation"
+                onwheel={handleWheel}
+                ondblclick={handleDoubleClick}
+                onpointerdown={handlePointerDown}
+                onpointermove={handlePointerMove}
+                onpointerup={handlePointerUp}
+                onpointercancel={handlePointerUp}
                 onclick={(e) => {
                     if (wasDragging) {
                         e.stopPropagation();
@@ -1046,38 +988,20 @@
                 {/if}
                 <div
                     class="zoom-target"
-                    class:is-crop={isCropping}
                     class:has-crop={!!activeCrop}
                     class:can-pan={zoomState.value > 1}
                     class:is-panning={isDragging}
                     oncontextmenu={handleContextMenu}
                     role="presentation"
                     bind:this={zoomTargetEl}
-                    style="{(isCropping || activeCrop) && imageDimensions
-                        ? `width: ${imageDimensions.width}px; height: ${imageDimensions.height}px;`
+                    style="{activeCropDimensions
+                        ? `width: ${activeCropDimensions.frameWidth.toFixed(2)}px; height: ${activeCropDimensions.frameHeight.toFixed(2)}px;`
                         : ''} transform: translate({zoomState.posX}px, {zoomState.posY}px) scale({zoomState.value}); transform-origin: 0 0;"
-                    onwheel={handleWheel}
-                    ondblclick={handleDoubleClick}
-                    onpointerdown={handlePointerDown}
-                    onpointermove={handlePointerMove}
-                    onpointerup={handlePointerUp}
-                    onpointercancel={handlePointerUp}
-                    onclick={(e) => {
-                        // If dragging was in progress, ignore
-                        if (wasDragging) {
-                            e.stopPropagation();
-                            return;
-                        }
-                        // Click on background
-                        if (e.target === e.currentTarget) {
-                            handleContainerClick();
-                        }
-                    }}
                 >
                     <AssetImage
                         naked={true}
                         bind:imageElement={imageEl}
-                        asset={lightboxImage!}
+                        asset={lightboxImage}
                         objectFit="contain"
                         priority={true}
                         placeholder="none"
@@ -1085,11 +1009,8 @@
                         class="lightbox-image main {isCropping ? 'is-crop' : ''}"
                         style={cropStyle}
                         crossorigin="use-credentials"
-                        data-image-id={lightboxImage!.uid}
+                        data-image-id={lightboxImage.uid}
                         onload={() => {
-                            if (isCropping) {
-                                updateImageDimensions();
-                            }
                             loader.handleLoad(imageEl?.naturalWidth, imageEl?.naturalHeight);
                         }}
                         onerror={() => loader.handleError()}
@@ -1097,12 +1018,12 @@
                         oncontextmenu={handleContextMenu}
                     />
 
-                    {#if isCropping && imageDimensions && currentCrop}
+                    {#if isCropping && renderedImageDimensions.width > 0 && renderedImageDimensions.height > 0}
                         <CropOverlay
-                            width={imageDimensions.width}
-                            height={imageDimensions.height}
+                            width={renderedImageDimensions.width}
+                            height={renderedImageDimensions.height}
                             bind:crop={currentCrop}
-                            scale={transformState.scale}
+                            scale={zoomState.value}
                             aspectRatio={cropAspectRatio}
                         />
                     {/if}
@@ -1110,23 +1031,27 @@
 
                 <!-- TODO: Change this to a general action status indicator to support all actions -->
                 <!-- e.g. "Date Change: 11-06-2026, 20:42:01" -->
-                {#if Math.abs(zoomState.value - 1) > 0.01}
+                {#if !isAtFit}
                     <div class="zoom-indicator-badge" role="status" aria-live="polite">
-                        Zoom: {Math.round(zoomState.value * 100)}%
+                        {#if isAtOneToOne || nativeZoomPercentage === 100}
+                            100% (1:1)
+                        {:else}
+                            Zoom: {nativeZoomPercentage}%
+                        {/if}
                     </div>
                 {/if}
 
                 {#if isCropping && cropMenuPosition}
-                    <CropTools
-                        x={cropMenuPosition.x}
-                        y={cropMenuPosition.y}
-                        onApply={handleCropApply}
-                        onReset={handleCropReset}
-                        onCancel={() => {
-                            cropMenuPosition = undefined;
-                        }}
-                        onAspectRatioChange={handleAspectRatioChange}
-                    />
+                    <FloatingPanel x={cropMenuPosition.x} y={cropMenuPosition.y}>
+                        <CropTools
+                            onApply={handleCropApply}
+                            onReset={handleCropReset}
+                            onCancel={() => {
+                                cropMenuPosition = undefined;
+                            }}
+                            onAspectRatioChange={handleAspectRatioChange}
+                        />
+                    </FloatingPanel>
                 {/if}
             </div>
 
@@ -1135,7 +1060,6 @@
                     <Button
                         iconName="arrow_back"
                         class="lightbox-nav-btn prev lightbox-button-icon"
-                        style={lightboxMaterialIconColour}
                         title="Previous image"
                         onclick={(e) => {
                             e.stopPropagation();
@@ -1145,7 +1069,6 @@
                     <Button
                         iconName="arrow_forward"
                         class="lightbox-nav-btn next lightbox-button-icon"
-                        style={lightboxMaterialIconColour}
                         title="Next image"
                         onclick={(e) => {
                             e.stopPropagation();
@@ -1160,7 +1083,6 @@
             <div class="side-panel" class:crop-mode={isCropping} transition:slide={{ axis: "x" }}>
                 {#if isCropping}
                     <CropTools
-                        variant="placed"
                         onApply={handleCropApply}
                         onReset={handleCropReset}
                         onCancel={() => {
@@ -1169,7 +1091,7 @@
                         onAspectRatioChange={handleAspectRatioChange}
                     />
                 {:else}
-                    <MetadataPanel asset={lightboxImage!} showCloseIcon={isMobile} {onImageUpdated} />
+                    <MetadataPanel asset={lightboxImage} showCloseIcon={isMobile} {onImageUpdated} />
                 {/if}
             </div>
         {/if}
@@ -1290,10 +1212,18 @@
         overflow: hidden;
         pointer-events: auto;
         box-sizing: border-box;
-    }
 
-    .image-wrapper.is-crop {
-        padding: var(--viz-spacing-xl);
+        &.can-pan {
+            cursor: grab;
+        }
+
+        &.is-panning {
+            cursor: grabbing;
+        }
+
+        &.is-crop {
+            padding: var(--viz-spacing-xl);
+        }
     }
 
     .zoom-target {
@@ -1310,21 +1240,6 @@
         &.has-crop {
             overflow: hidden !important;
             position: relative !important;
-        }
-
-        &.is-crop {
-            display: grid;
-            grid-template-columns: 100%;
-            grid-template-rows: 100%;
-            justify-items: center;
-            align-items: center;
-            overflow: visible !important;
-            width: auto;
-            height: auto;
-        }
-
-        &.is-crop > * {
-            grid-area: 1 / 1;
         }
     }
 
@@ -1362,14 +1277,6 @@
                 height: auto !important;
                 object-fit: contain !important;
 
-                &.is-crop {
-                    width: 100% !important;
-                    height: 100% !important;
-                    max-width: 100% !important;
-                    max-height: 100% !important;
-                    object-fit: fill !important;
-                }
-
                 &.hidden-main {
                     opacity: 0;
                 }
@@ -1405,14 +1312,6 @@
         line-height: 1;
         vertical-align: middle;
         font-size: 1.5em;
-    }
-
-    .zoom-target.can-pan {
-        cursor: grab;
-    }
-
-    .zoom-target.is-panning {
-        cursor: grabbing;
     }
 
     .zoom-indicator-badge {
