@@ -6,12 +6,10 @@
         onCancel: () => void;
         onReset: () => void;
         onAspectRatioChange: (ratio: number | "original" | undefined) => void;
-        x?: number;
-        y?: number;
-        variant?: "floating" | "placed";
+        class?: string;
     }
 
-    let { onApply, onCancel, onReset, onAspectRatioChange, x = 0, y = 0, variant = "floating" }: Props = $props();
+    let { onApply, onCancel, onReset, onAspectRatioChange, class: className = "" }: Props = $props();
 
     let selectedRatioLabel = $state<string>("Free");
 
@@ -29,24 +27,12 @@
         selectedRatioLabel = label;
         onAspectRatioChange(value);
     }
-
-    let style = $derived(variant === "floating" ? `left: ${x}px; top: ${y}px;` : "");
 </script>
 
-<div
-    class="crop-tools-menu {variant}"
-    {style}
-    onclick={(e) => e.stopPropagation()}
-    onkeydown={(e) => {
-        if (e.key === "Enter") {
-            onApply();
-        }
-        e.stopPropagation();
-    }}
-    role="menu"
-    tabindex="0"
->
-    <h3 class="menu-header">Crop Tools</h3>
+<div class="crop-tools {className}">
+    <div class="menu-header">
+        <h3>Crop Tools</h3>
+    </div>
 
     <div class="crop-presets">
         {#each ratios as ratio}
@@ -74,31 +60,26 @@
 </div>
 
 <style lang="scss">
-    .crop-tools-menu {
+    .crop-tools {
+        color: var(--viz-text-primary);
+        width: 100%;
         display: flex;
         flex-direction: column;
         gap: var(--viz-spacing-md);
-        background-color: var(--viz-surface-panel);
-        padding: var(--viz-spacing-md);
-        border-radius: var(--viz-border-radius-lg);
-        z-index: 9999;
-        pointer-events: auto;
-        min-width: 20rem;
         box-sizing: border-box;
         font-family: var(--viz-display-font);
-
-        &.floating {
-            position: fixed;
-            background-color: var(--viz-surface-card);
-            border: var(--viz-border-thin);
-            box-shadow: var(--viz-shadow-lg, 0 10px 25px -5px rgba(0, 0, 0, 0.3), 0 8px 10px -6px rgba(0, 0, 0, 0.3));
-            transform: translate(0, 0);
-        }
     }
 
     .menu-header {
-        font-weight: 600;
-        margin-bottom: var(--viz-spacing-xxs);
+        font-size: var(--viz-font-size-lg);
+        font-weight: 700;
+        color: var(--viz-text-primary);
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        margin-bottom: var(--viz-spacing-sm);
+        padding-bottom: var(--viz-spacing-sm);
+        border-bottom: 1px solid var(--viz-border-subtle);
     }
 
     .crop-presets {
@@ -122,14 +103,7 @@
         margin-top: var(--viz-spacing-xxs);
 
         :global(.action-btn) {
-            display: inline-flex;
-            align-items: center;
-            justify-content: center;
-            font-size: var(--viz-font-size-std);
             flex: 1;
-            padding: 0.4rem 0.6rem;
-            border-radius: var(--viz-border-radius-pill);
-            height: 2rem;
         }
 
         :global(.action-btn span) {

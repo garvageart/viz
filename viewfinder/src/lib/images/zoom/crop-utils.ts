@@ -1,5 +1,11 @@
 export type CropRect = { x: number; y: number; width: number; height: number };
 export type DragAction = "move" | "nw" | "ne" | "sw" | "se" | "n" | "e" | "s" | "w" | null;
+export interface CropCoords {
+    x: number;
+    y: number;
+    width: number;
+    height: number;
+}
 
 function calculateCandidateBounds(
     action: DragAction,

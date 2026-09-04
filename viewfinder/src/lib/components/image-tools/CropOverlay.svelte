@@ -15,10 +15,10 @@
     let currentAction = $state<DragAction>(null);
     let startX = 0;
     let startY = 0;
-    let startCropState: CropRect = { x: 0, y: 0, width: 0, height: 0 };
+    let startCropState: CropRect = { x: 0, y: 0, width: 1, height: 1 };
 
     function handleStart(action: DragAction, e: PointerEvent) {
-        if (e.button !== 0) {
+        if (e.button !== 0 || width <= 0 || height <= 0) {
             return;
         }
 
@@ -36,7 +36,7 @@
     }
 
     function handleMove(e: PointerEvent) {
-        if (!isDragging || !currentAction) {
+        if (!isDragging || !currentAction || width <= 0 || height <= 0) {
             return;
         }
 
@@ -46,14 +46,22 @@
         const dx = (e.clientX - startX) / scale;
         const dy = (e.clientY - startY) / scale;
 
+        const normDx = dx / width;
+        const normDy = dy / height;
+
+        const imageAspect = width / height;
+        const normAspectRatio = aspectRatio ? aspectRatio / imageAspect : null;
+        const minNormSize = Math.max(0.02, 20 / Math.min(width, height));
+
         crop = calculateCrop(
             currentAction,
             startCropState,
-            dx,
-            dy,
-            { width, height },
+            normDx,
+            normDy,
+            { width: 1, height: 1 },
             {
-                aspectRatio,
+                aspectRatio: normAspectRatio,
+                minSize: minNormSize,
                 altKey: e.altKey,
                 shiftKey: e.shiftKey
             }
@@ -82,13 +90,12 @@
         }
     }
 
-    // Since we are inside the transformed container, we use image-relative coordinates directly.
-    let tStyle = $derived(`left: ${crop.x}px; top: ${crop.y}px; width: ${crop.width}px; height: ${crop.height}px;`);
+    let tStyle = $derived(
+        `left: ${(crop.x * 100).toFixed(4)}%; top: ${(crop.y * 100).toFixed(4)}%; width: ${(crop.width * 100).toFixed(4)}%; height: ${(crop.height * 100).toFixed(4)}%;`
+    );
 
-    // Inverse scale for UI elements to keep them constant visual size.
     let invScale = $derived(1 / scale);
     let handleStyle = $derived(`transform: translate(-50%, -50%) scale(${invScale});`);
-    // Ensure minimum border width visibility (at least 1px)
     let borderWidth = $derived(Math.max(1, invScale));
     let outlineStyle = $derived(`outline-width: ${borderWidth}px;`);
 </script>
@@ -126,11 +133,8 @@
     >
         <!-- Grid lines (Rule of thirds) -->
         <div class="grid-line v v1" style="width: {borderWidth}px; left: 33.33%;"></div>
-
         <div class="grid-line v v2" style="width: {borderWidth}px; left: 66.66%;"></div>
-
         <div class="grid-line h h1" style="height: {borderWidth}px; top: 33.33%;"></div>
-
         <div class="grid-line h h2" style="height: {borderWidth}px; top: 66.66%;"></div>
 
         <!-- Handles -->
@@ -140,20 +144,20 @@
     </div>
 </div>
 
-<style>
+<style lang="scss">
     .crop-overlay-container {
         position: absolute;
-        justify-self: center;
-        align-self: center;
+        top: 50%;
+        left: 50%;
+        transform: translate(-50%, -50%);
         overflow: visible;
-        pointer-events: none; /* Let clicks pass through to image if not hitting crop box */
+        pointer-events: none;
         touch-action: none;
         z-index: 5;
     }
 
     .crop-box {
         position: absolute;
-        /* Use a massive box-shadow to create the dimmed overlay effect with viz-primary outline */
         box-shadow:
             inset 0 0 0 1.5px var(--viz-primary),
             0 0 0 1px rgba(0, 0, 0, 0.4),
@@ -162,6 +166,7 @@
         pointer-events: auto;
         cursor: move;
         touch-action: none;
+        box-sizing: border-box;
     }
 
     .grid-line {
@@ -190,6 +195,7 @@
         border: 1px solid #ffffff;
         z-index: 10;
         touch-action: none;
+        box-sizing: border-box;
     }
 
     /* For bigger grab area */
