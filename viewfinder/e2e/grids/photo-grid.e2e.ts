@@ -430,12 +430,12 @@ test.describe("PhotoAssetGrid Functionality", () => {
         await expect(lightbox).toBeVisible();
         await page.waitForTimeout(500);
 
-        const zoomTarget = lightbox.locator(".zoom-target");
+        const zoomTarget = lightbox.locator(".image-stage");
         await expect(zoomTarget).toBeVisible();
 
         // 1. Initial scale should be 1.0 (unzoomed)
-        let style = await zoomTarget.getAttribute("style");
-        expect(style).toContain("scale(1)");
+        let initialZoom = Number(await zoomTarget.getAttribute("data-zoom"));
+        expect(initialZoom).toBe(1);
 
         // 2. Zoom in using mouse wheel (deltaY: -120, ctrlKey: false)
         await zoomTarget.dispatchEvent("wheel", {
@@ -446,11 +446,8 @@ test.describe("PhotoAssetGrid Functionality", () => {
         });
 
         // Verify scale increases above 1.0
-        style = await zoomTarget.getAttribute("style");
-        let scaleMatch = style?.match(/scale\(([\d.]+)\)/);
-        let scaleVal = scaleMatch ? parseFloat(scaleMatch[1]) : 1.0;
-        expect(scaleVal).toBeGreaterThan(1.0);
-        const mouseWheelZoomScale = scaleVal;
+        let mouseWheelZoom = Number(await zoomTarget.getAttribute("data-zoom"));
+        expect(mouseWheelZoom).toBeGreaterThan(1.0);
 
         // 3. Zoom in further using trackpad pinch (deltaY: -10, ctrlKey: true)
         await zoomTarget.dispatchEvent("wheel", {
@@ -461,15 +458,13 @@ test.describe("PhotoAssetGrid Functionality", () => {
         });
 
         // Verify scale increases further
-        style = await zoomTarget.getAttribute("style");
-        scaleMatch = style?.match(/scale\(([\d.]+)\)/);
-        scaleVal = scaleMatch ? parseFloat(scaleMatch[1]) : 1.0;
-        expect(scaleVal).toBeGreaterThan(mouseWheelZoomScale);
+        let pinchZoom = Number(await zoomTarget.getAttribute("data-zoom"));
+        expect(pinchZoom).toBeGreaterThan(mouseWheelZoom);
 
         // 4. Double click to zoom out / reset
         await lightbox.locator(".lightbox-image.main").dblclick({ force: true });
-        style = await zoomTarget.getAttribute("style");
-        expect(style).toContain("scale(1)");
+        let resetZoom = Number(await zoomTarget.getAttribute("data-zoom"));
+        expect(resetZoom).toBe(1);
     });
 
     test("shouldKeepSelection: clicking empty space clears selection while interactive controls preserve it", async ({
