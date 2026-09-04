@@ -54,6 +54,7 @@
     import InputText from "$lib/components/ui/InputText.svelte";
     import MaterialIcon from "$lib/components/ui/MaterialIcon.svelte";
     import type { TableColumn } from "$lib/components/ui/Table.svelte";
+    import { ImageLightboxState } from "$lib/components/ui/state/image-lightbox.svelte";
     import { contextMenu } from "$lib/context-menu";
     import { getImageGridDisplay } from "$lib/context-menu/menus/image-grid-display";
     import { createImageMenu } from "$lib/context-menu/menus/images";
@@ -201,8 +202,7 @@
     });
 
     // Lightbox
-    let lightboxImage = $state<ImageAsset>();
-    let show = $derived(lightboxImage !== undefined);
+    const lightbox = new ImageLightboxState();
 
     // Search stuff
     let searchValue = $state("");
@@ -350,7 +350,10 @@
         },
         columns: imageTableColumns,
         assetDblClick: (_e, asset?: ImageAsset) => {
-            lightboxImage = asset ?? selectionFirstImage;
+            const target = asset ?? selectionFirstImage;
+            if (target) {
+                lightbox.open(target);
+            }
         },
         onassetcontext: (detail: { asset: ImageAsset; anchor: { x: number; y: number } | HTMLElement }) => {
             const { asset, anchor } = detail;
@@ -691,7 +694,7 @@
     }
 
     function navigateLightbox(delta: -1 | 1) {
-        if (!lightboxImage) {
+        if (!lightbox.activeImage) {
             return;
         }
 
@@ -700,13 +703,13 @@
             return;
         }
 
-        const idx = arr.findIndex((i) => i.uid === lightboxImage!.uid);
+        const idx = arr.findIndex((i) => i.uid === lightbox.activeImage!.uid);
         if (idx === -1) {
             return;
         }
 
         const next = (idx + delta + arr.length) % arr.length;
-        lightboxImage = arr[next];
+        lightbox.image = arr[next];
     }
 
     function prevLightboxImage() {
@@ -721,10 +724,10 @@
     // Registering a duplicate "left,right" handler here caused double-advance on each
     // keypress, skipping images (and never showing the last one before wrapping).
     hotkeys("escape", (e) => {
-        if (lightboxImage) {
+        if (lightbox.show) {
             return;
         }
-        if (!show || selectionScope.size === 0) {
+        if (selectionScope.size === 0) {
             return;
         }
 
@@ -808,15 +811,17 @@
 
 <svelte:window onclick={handleWindowClick} />
 
-{#if lightboxImage}
+{#if lightbox.activeImage}
     <ImageLightbox
-        {lightboxImage}
-        onClose={() => {
-            lightboxImage = undefined;
-        }}
+        lightboxImage={lightbox.activeImage}
+        show={lightbox.show}
+        onClose={() => lightbox.close()}
         {prevLightboxImage}
         {nextLightboxImage}
-        onImageUpdated={(image) => selectionScope.updateItem(image, collectionState.images)}
+        onImageUpdated={(image) => {
+            lightbox.image = image;
+            selectionScope.updateItem(image, collectionState.images);
+        }}
     />
 {/if}
 
@@ -854,7 +859,10 @@
             {scopeId}
             onLoadMore={() => paginate()}
             assetDblClick={(_e, asset) => {
-                lightboxImage = asset ?? selectionFirstImage;
+                const target = asset ?? selectionFirstImage;
+                if (target) {
+                    lightbox.open(target);
+                }
             }}
             onassetcontext={(detail) => {
                 const { asset, anchor } = detail;

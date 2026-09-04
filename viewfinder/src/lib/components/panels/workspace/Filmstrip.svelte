@@ -4,6 +4,7 @@
     import ImageCard from "$lib/components/ui/ImageCard.svelte";
     import ImageLightbox from "$lib/components/ui/ImageLightbox.svelte";
     import MaterialIcon from "$lib/components/ui/MaterialIcon.svelte";
+    import { ImageLightboxState } from "$lib/components/ui/state/image-lightbox.svelte";
     import { VizMimeTypes } from "$lib/constants";
     import { contextMenu } from "$lib/context-menu";
     import { createImageMenu } from "$lib/context-menu/menus/images";
@@ -239,25 +240,28 @@
         }
     });
 
-    let lightboxImage = $state<ImageAsset>();
+    const lightbox = new ImageLightboxState();
     let firstSelectedImage = $derived(filmstripScope?.active ?? filmstripScope?.selectedItems[0]);
 
     function openLightbox(asset?: ImageAsset) {
-        lightboxImage = asset ?? firstSelectedImage;
+        const target = asset ?? firstSelectedImage;
+        if (target) {
+            lightbox.open(target);
+        }
     }
 
     function navigateLightbox(delta: -1 | 1) {
-        if (!lightboxImage || filmstripImages.length === 0) {
+        if (!lightbox.activeImage || filmstripImages.length === 0) {
             return;
         }
 
-        const idx = filmstripImages.findIndex((i) => i.uid === lightboxImage!.uid);
+        const idx = filmstripImages.findIndex((i) => i.uid === lightbox.activeImage!.uid);
         if (idx === -1) {
             return;
         }
 
         const nextIdx = (idx + delta + filmstripImages.length) % filmstripImages.length;
-        lightboxImage = filmstripImages[nextIdx];
+        lightbox.image = filmstripImages[nextIdx];
     }
 
     function prevLightboxImage() {
@@ -338,15 +342,17 @@
     {/if}
 </nav>
 
-{#if lightboxImage}
+{#if lightbox.activeImage}
     <ImageLightbox
-        {lightboxImage}
-        onClose={() => {
-            lightboxImage = undefined;
-        }}
+        lightboxImage={lightbox.activeImage}
+        show={lightbox.show}
+        onClose={() => lightbox.close()}
         {nextLightboxImage}
         {prevLightboxImage}
-        onImageUpdated={(image) => filmstripScope?.updateItem(image, filmstripImages)}
+        onImageUpdated={(image) => {
+            lightbox.image = image;
+            filmstripScope?.updateItem(image, filmstripImages);
+        }}
     />
 {/if}
 

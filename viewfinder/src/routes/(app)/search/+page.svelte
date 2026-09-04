@@ -15,6 +15,7 @@
     import ImageCard from "$lib/components/ui/ImageCard.svelte";
     import ImageLightbox from "$lib/components/ui/ImageLightbox.svelte";
     import LoadingSpinner from "$lib/components/ui/LoadingSpinner.svelte";
+    import { ImageLightboxState } from "$lib/components/ui/state/image-lightbox.svelte";
     import VizToolbar from "$lib/components/ui/toolbars/VizToolbar.svelte";
     import { VizMimeTypes } from "$lib/constants";
     import { contextMenu } from "$lib/context-menu";
@@ -56,7 +57,7 @@
     let timeFound = $state(0);
 
     // Lightbox
-    let lightboxImage: ImageAsset | undefined = $state();
+    const lightbox = new ImageLightboxState();
 
     // Selection Scopes
     const imageScopeId = SelectionScopeNames.SEARCH_IMAGES;
@@ -242,7 +243,7 @@
     });
 
     hotkeys("escape", (e) => {
-        if (lightboxImage) {
+        if (lightbox.show) {
             return;
         }
         e.preventDefault();
@@ -251,21 +252,24 @@
     });
 
     function openLightbox(asset?: ImageAsset) {
-        lightboxImage = asset ?? firstSelectedImage;
+        const target = asset ?? firstSelectedImage;
+        if (target) {
+            lightbox.open(target);
+        }
     }
 
     function navigateLightbox(delta: -1 | 1) {
-        if (!lightboxImage || allImagesFlat.length === 0) {
+        if (!lightbox.activeImage || allImagesFlat.length === 0) {
             return;
         }
 
-        const idx = allImagesFlat.findIndex((i) => i.uid === lightboxImage!.uid);
+        const idx = allImagesFlat.findIndex((i) => i.uid === lightbox.activeImage!.uid);
         if (idx === -1) {
             return;
         }
 
         const nextIdx = (idx + delta + allImagesFlat.length) % allImagesFlat.length;
-        lightboxImage = allImagesFlat[nextIdx];
+        lightbox.image = allImagesFlat[nextIdx];
     }
 
     function prevLightboxImage() {
@@ -341,15 +345,17 @@
     <title>Search{search.value ? ` - ${search.value}` : ""}</title>
 </svelte:head>
 
-{#if lightboxImage}
+{#if lightbox.activeImage}
     <ImageLightbox
-        {lightboxImage}
-        onClose={() => {
-            lightboxImage = undefined;
-        }}
+        lightboxImage={lightbox.activeImage}
+        show={lightbox.show}
+        onClose={() => lightbox.close()}
         {nextLightboxImage}
         {prevLightboxImage}
-        onImageUpdated={(image) => imageSelection.updateItem(image, images)}
+        onImageUpdated={(image) => {
+            lightbox.image = image;
+            imageSelection.updateItem(image, images);
+        }}
     />
 {/if}
 
