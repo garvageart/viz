@@ -907,7 +907,7 @@
                 <!-- TODO: Change this to a general action status indicator to support all actions -->
                 <!-- e.g. "Date Change: 11-06-2026, 20:42:01" -->
                 {#if statusIndicator.show}
-                    <div class="zoom-indicator-badge" role="status" aria-live="polite" transition:fade>
+                    <div class="status-indicator" role="status" aria-live="polite" transition:fade>
                         {statusIndicator.text}
                     </div>
                 {/if}
@@ -1181,7 +1181,7 @@
         font-size: 1.5em;
     }
 
-    .zoom-indicator-badge {
+    .status-indicator {
         position: absolute;
         bottom: 5%;
         background-color: color-mix(in srgb, var(--viz-100-dark) 90%, transparent);
@@ -1197,8 +1197,8 @@
         background-color: var(--viz-surface-panel);
         height: 100%;
         width: auto;
-        max-width: 25rem;
-        min-width: 25rem;
+        max-width: 20%;
+        min-width: 27rem;
         pointer-events: auto;
         box-sizing: border-box;
         overflow-y: auto;
