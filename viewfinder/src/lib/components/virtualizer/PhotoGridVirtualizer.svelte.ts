@@ -443,6 +443,54 @@ export class PhotoGridVirtualizer {
         };
     }
 
+    /**
+     * Scales an image row proportionally to span the full container width if it has leftover space.
+     * Returns the difference in row height caused by scaling.
+     */
+    private stretchRowToFitWidth(row: CachedRow, containerWidth: number): number {
+        if (row.type !== "images" || row.items.length === 0) {
+            return 0;
+        }
+
+        const lastItem = row.items[row.items.length - 1];
+        const rowFilledWidth = lastItem.left + lastItem.width;
+        const remainingSpace = containerWidth - rowFilledWidth;
+
+        // Skip if row already fills the container
+        if (remainingSpace <= 10) {
+            return 0;
+        }
+
+        const totalSpacing = (row.items.length - 1) * this.gridGap;
+        const availableImageWidth = containerWidth - totalSpacing;
+        const currentImageWidth = row.items.reduce((sum, item) => sum + item.width, 0);
+
+        if (currentImageWidth <= 0) {
+            return 0;
+        }
+
+        const scale = availableImageWidth / currentImageWidth;
+        const newHeight = Math.round(row.height * scale);
+        const heightDiff = newHeight - row.height;
+
+        let currentLeft = 0;
+        for (const item of row.items) {
+            const newW = Math.round(item.width * scale);
+
+            item.left = currentLeft;
+            item.width = newW;
+            item.height = newHeight;
+
+            currentLeft += newW + this.gridGap;
+        }
+
+        const last = row.items[row.items.length - 1];
+        last.width = Math.max(0, containerWidth - last.left);
+        row.height = newHeight;
+
+        return heightDiff;
+    }
+
     private computeImages(items: ImageWithDateLabel[], width: number, groupId: string) {
         if (items.length === 0) {
             return { rows: [], height: 0 };
@@ -460,11 +508,14 @@ export class PhotoGridVirtualizer {
             }
         }
 
+        const isMobileWidth = width < 600;
+        const tolerance = isMobileWidth ? 0.35 : 0.15;
+
         const layout = new JustifiedLayout(aspectRatios, {
             rowHeight: this.targetRowHeight,
             rowWidth: width,
             spacing: this.gridGap,
-            heightTolerance: 0.15
+            heightTolerance: tolerance
         });
 
         const rows: CachedRow[] = [];
@@ -516,22 +567,26 @@ export class PhotoGridVirtualizer {
             });
         }
 
-        // Post-process rows to add gap above rows with header items
+        // On mobile/narrow viewports, scale incomplete rows to fill container width
         let cummulativeOffset = 0;
         const GAP_ABOVE_HEADER = this.gridGap;
 
-        for (let i = 0; i < rows.length; i++) {
-            const row = rows[i];
-
+        for (const row of rows) {
             row.relativeTop += cummulativeOffset;
 
-            if (row.type === "images") {
-                const hasHeader = row.items.some((item) => (item.asset as ImageWithDateLabel).isHeaderItem);
+            if (row.type !== "images") {
+                continue;
+            }
 
-                if (hasHeader) {
-                    row.relativeTop += GAP_ABOVE_HEADER;
-                    cummulativeOffset += GAP_ABOVE_HEADER;
-                }
+            if (isMobileWidth) {
+                const heightDiff = this.stretchRowToFitWidth(row, width);
+                cummulativeOffset += heightDiff;
+            }
+
+            const hasHeader = row.items.some((item) => (item.asset as ImageWithDateLabel).isHeaderItem);
+            if (hasHeader) {
+                row.relativeTop += GAP_ABOVE_HEADER;
+                cummulativeOffset += GAP_ABOVE_HEADER;
             }
         }
 
