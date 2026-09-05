@@ -264,7 +264,7 @@ test.describe("ImageLightbox Interactions", () => {
         expect(zoomedVal).toBeGreaterThan(1.0);
 
         // Zoom indicator badge should appear
-        await expect(lightbox!.locator(".zoom-indicator-badge")).toBeVisible();
+        await expect(lightbox!.locator(".status-indicator")).toBeVisible();
 
         // Double-click again to reset back to fit
         await image.dblclick();
