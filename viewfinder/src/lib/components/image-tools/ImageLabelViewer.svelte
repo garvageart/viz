@@ -14,7 +14,7 @@
     let dropdownContainer = $state<HTMLElement>();
 
     const nullNoneLabelStyle = $derived(
-        `background-color: transparent;${enableSelection === false ? " border: none;" : ""}`
+        `background-color: var(--viz-surface-base);${enableSelection === false ? " border: none;" : ""}`
     );
 
     function handleSelect(newLabel: LabelColours | null) {
