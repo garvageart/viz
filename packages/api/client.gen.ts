@@ -293,6 +293,8 @@ export type ImageExif = {
     focal_plane_y_resolution?: string;
     /** Focal plane resolution unit */
     focal_plane_resolution_unit?: string;
+    /** Artist or creator */
+    artist?: string;
     /** Copyright */
     copyright?: string;
     /** Modify date */

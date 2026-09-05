@@ -159,7 +159,7 @@ func createNewImageEntity(logger *slog.Logger, fileName string, libvipsImg *libv
 		ImagePaths:    paths,
 		Width:         int32(libvipsImg.Width()),
 		Height:        int32(libvipsImg.Height()),
-		Description:   nil, // TODO: evaluate if necessary, blank for now
+		Description:   imageops.GetExifDescription(exifData),
 	}
 
 	ta := imageops.GetTakenAt(allImageData)

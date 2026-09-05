@@ -97,6 +97,37 @@ func CleanExifVal(s string) string {
 	return s
 }
 
+// CleanDescription removes common encoding artifacts (such as ASCII headers in UserComment)
+func CleanDescription(s string) string {
+	s = strings.TrimSpace(s)
+	lower := strings.ToLower(s)
+	if strings.HasPrefix(lower, "charset=ascii ") {
+		s = strings.TrimSpace(s[14:])
+	} else if strings.HasPrefix(lower, "ascii") {
+		s = strings.TrimSpace(strings.TrimPrefix(s, "ASCII"))
+		s = strings.Trim(s, "\x00 \t\n\r")
+	} else if strings.HasPrefix(lower, "unicode") {
+		s = strings.TrimSpace(strings.TrimPrefix(s, "UNICODE"))
+		s = strings.Trim(s, "\x00 \t\n\r")
+	}
+	return s
+}
+
+// GetExifDescription searches and cleans description/comment tags from EXIF map
+func GetExifDescription(exifData map[string]string) *string {
+	descPtr := FindExif(exifData, "ImageDescription", "UserComment", "Description", "Comment", "Caption-Abstract", "XPComment")
+	if descPtr == nil {
+		return nil
+	}
+
+	cleaned := CleanDescription(*descPtr)
+	if cleaned == "" {
+		return nil
+	}
+
+	return &cleaned
+}
+
 // CleanRawExifMap produces a clean map of all raw EXIF tags with human-readable keys
 func CleanRawExifMap(exifData map[string]string) *map[string]string {
 	if len(exifData) == 0 {
@@ -236,7 +267,8 @@ func BuildImageEXIF(exifData map[string]string) (dto.ImageEXIF, time.Time, time.
 		Rating:                   FindExif(exifData, "Rating"),
 		Orientation:              FindExif(exifData, "Orientation"),
 		Software:                 FindExif(exifData, "Software"),
-		Copyright:                FindExif(exifData, "Copyright", "Artist"),
+		Artist:                   FindExif(exifData, "Artist", "Author", "Creator", "By-line"),
+		Copyright:                FindExif(exifData, "Copyright", "Rights", "CopyrightNotice"),
 		Longitude:                FindExif(exifData, "GPSLongitude", "Longitude"),
 		Latitude:                 FindExif(exifData, "GPSLatitude", "Latitude"),
 		GpsAltitude:              FindExif(exifData, "GPSAltitude"),

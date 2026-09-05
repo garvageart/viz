@@ -4018,6 +4018,7 @@ components:
                 focal_plane_x_resolution: { type: string, description: Focal plane X resolution }
                 focal_plane_y_resolution: { type: string, description: Focal plane Y resolution }
                 focal_plane_resolution_unit: { type: string, description: Focal plane resolution unit }
+                artist: { type: string, description: Artist or creator }
                 copyright: { type: string, description: Copyright }
                 modify_date: { type: string, description: Modify date }
                 rating: { type: string, description: Rating }

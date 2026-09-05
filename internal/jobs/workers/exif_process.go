@@ -131,6 +131,7 @@ func ExifProcess(ctx context.Context, db *gorm.DB, imgEnt entities.ImageAsset, o
 	exifData, fileCreatedAt, fileModifiedAt := imageops.BuildImageEXIF(rawExif)
 	imageops.HandleExifQuirks(&exifData, originalData)
 	imgEnt.Exif = &exifData
+	imgEnt.Description = imageops.GetExifDescription(rawExif)
 
 	if !fileCreatedAt.IsZero() {
 		imgEnt.ImageMetadata.FileCreatedAt = fileCreatedAt
@@ -234,6 +235,30 @@ func ExifProcess(ctx context.Context, db *gorm.DB, imgEnt entities.ImageAsset, o
 				imgEnt.ImageMetadata.Keywords = &keywords
 			}
 		}
+
+		// 4. Artist fallback from XMP Creator
+		if imgEnt.Exif != nil && imgEnt.Exif.Artist == nil && len(dcModel.Creator) > 0 {
+			artist := strings.TrimSpace(dcModel.Creator[0])
+			if artist != "" {
+				imgEnt.Exif.Artist = &artist
+			}
+		}
+
+		// 5. Copyright fallback from XMP Rights
+		if imgEnt.Exif != nil && imgEnt.Exif.Copyright == nil && dcModel.Rights != nil {
+			rights := strings.TrimSpace(dcModel.Rights.Default())
+			if rights != "" {
+				imgEnt.Exif.Copyright = &rights
+			}
+		}
+
+		// 6. Description / Caption fallback from XMP Description
+		if imgEnt.Description == nil && dcModel.Description != nil {
+			desc := strings.TrimSpace(dcModel.Description.Default())
+			if desc != "" {
+				imgEnt.Description = &desc
+			}
+		}
 	}
 
 	if onProgress != nil {
@@ -262,6 +287,9 @@ func ExifProcess(ctx context.Context, db *gorm.DB, imgEnt entities.ImageAsset, o
 	if (dbImage.ImageMetadata.Keywords == nil || len(*dbImage.ImageMetadata.Keywords) == 0) && imgEnt.ImageMetadata.Keywords != nil {
 		dbImage.ImageMetadata.Keywords = imgEnt.ImageMetadata.Keywords
 	}
+	if (dbImage.Description == nil || *dbImage.Description == "") && imgEnt.Description != nil {
+		dbImage.Description = imgEnt.Description
+	}
 
 	// Only overwrite the database taken_at if the file has actual EXIF date/time data
 	// or if the database taken_at is currently nil/zero.
@@ -277,6 +305,7 @@ func ExifProcess(ctx context.Context, db *gorm.DB, imgEnt entities.ImageAsset, o
 		Update("exif", imgEnt.Exif).
 		Update("taken_at", finalTakenAt).
 		Update("image_metadata", dbImage.ImageMetadata).
+		Update("description", dbImage.Description).
 		Error; err != nil {
 		return fmt.Errorf("failed to update db image exif: %w", err)
 	}

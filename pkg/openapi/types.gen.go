@@ -1042,6 +1042,9 @@ type ImageEXIF struct {
 	// Aperture Aperture
 	Aperture *string `json:"aperture,omitempty"`
 
+	// Artist Artist or creator
+	Artist *string `json:"artist,omitempty"`
+
 	// ColorTemperature Color temperature in Kelvin
 	ColorTemperature *string `json:"color_temperature,omitempty"`
 
