@@ -5,6 +5,11 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.33.5] - 2026-09-05
+
+* fix(viewfinder): improve mobile toolbar layout and triage actions (ccbaebc5)
+* fix(viewfinder): remove empty space in mobile photo grid (d302d5f6)
+
 ## [0.33.4] - 2026-09-04
 
 * style(viewfinder): format test files and zoom utilities (0b12ac05)
