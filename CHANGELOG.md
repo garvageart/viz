@@ -5,6 +5,14 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.33.6] - 2026-09-05
+
+* feat(viewfinder): redesign metadata panel with dedicated visual rows and EXIF overlay (8f236606)
+* style(viewfinder): use theme surface base token for unassigned label pill (edf67add)
+* refactor(viewfinder): generalize lightbox status indicator and adjust panel dimensions (b3079727)
+* fix(viewfinder): center image along viewport axes when fitting within bounds (4fa9d5fe)
+* feat(api): add raw EXIF map and normalize photographic metadata (ca88a55e)
+
 ## [0.33.5] - 2026-09-05
 
 * fix(viewfinder): improve mobile toolbar layout and triage actions (ccbaebc5)
