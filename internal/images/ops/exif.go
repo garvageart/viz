@@ -97,6 +97,32 @@ func CleanExifVal(s string) string {
 	return s
 }
 
+// CleanRawExifMap produces a clean map of all raw EXIF tags with human-readable keys
+func CleanRawExifMap(exifData map[string]string) *map[string]string {
+	if len(exifData) == 0 {
+		return nil
+	}
+
+	out := make(map[string]string, len(exifData))
+	for k, v := range exifData {
+		cleanedVal := CleanExifVal(v)
+		if cleanedVal == "" {
+			continue
+		}
+
+		key := strings.TrimPrefix(k, "exif-")
+		for _, ifd := range []string{"ifd0-", "ifd1-", "ifd2-", "ifd3-", "ifd4-"} {
+			key = strings.TrimPrefix(key, ifd)
+		}
+		out[key] = cleanedVal
+	}
+
+	if len(out) == 0 {
+		return nil
+	}
+	return &out
+}
+
 func FindExif(exifData map[string]string, keys ...string) *string {
 	if len(exifData) == 0 {
 		return nil
@@ -177,30 +203,51 @@ func BuildImageEXIF(exifData map[string]string) (dto.ImageEXIF, time.Time, time.
 	}
 
 	out = dto.ImageEXIF{
-		Aperture:            FindExif(exifData, "ApertureValue", "FNumber", "Aperture"),
-		FNumber:             FindExif(exifData, "FNumber"),
-		ExposureValue:       FindExif(exifData, "ExposureValue", "ExposureBiasValue"),
-		Model:               FindExif(exifData, "Model"),
-		Make:                FindExif(exifData, "Make"),
-		ExifVersion:         FindExif(exifData, "ExifVersion"),
-		DateTime:            FindExif(exifData, "DateTime", "ModifyDate"),
-		DateTimeOriginal:    FindExif(exifData, "DateTimeOriginal"),
-		ModifyDate:          FindExif(exifData, "ModifyDate", "DateTime"),
-		Iso:                 FindExif(exifData, "ISO", "ISOSpeedRatings"),
-		FocalLength:         FindExif(exifData, "FocalLength"),
-		ExposureTime:        FindExif(exifData, "ExposureTime"),
-		Flash:               FindExifInt(exifData, "Flash"),
-		WhiteBalance:        FindExif(exifData, "WhiteBalance"),
-		ColorTemperature:    FindExif(exifData, "ColorTemperature", "ColorTemp", "Kelvin", "Temperature"),
-		LensModel:           FindExif(exifData, "LensModel"),
-		Rating:              FindExif(exifData, "Rating"),
-		Orientation:         FindExif(exifData, "Orientation"),
-		Software:            FindExif(exifData, "Software"),
-		Longitude:           FindExif(exifData, "GPSLongitude", "Longitude"),
-		Latitude:            FindExif(exifData, "GPSLatitude", "Latitude"),
-		OffsetTime:          FindExif(exifData, "OffsetTime"),
-		OffsetTimeOriginal:  FindExif(exifData, "OffsetTimeOriginal"),
-		OffsetTimeDigitized: FindExif(exifData, "OffsetTimeDigitized"),
+		Aperture:                 FindExif(exifData, "ApertureValue", "FNumber", "Aperture"),
+		FNumber:                  FindExif(exifData, "FNumber"),
+		ExposureValue:            FindExif(exifData, "ExposureValue", "ExposureBiasValue"),
+		ExposureBiasValue:        FindExif(exifData, "ExposureBiasValue", "ExposureCompensation"),
+		ExposureMode:             FindExif(exifData, "ExposureMode"),
+		ExposureProgram:          FindExif(exifData, "ExposureProgram"),
+		MeteringMode:             FindExif(exifData, "MeteringMode"),
+		SceneCaptureType:         FindExif(exifData, "SceneCaptureType", "SceneType"),
+		LightSource:              FindExif(exifData, "LightSource"),
+		MaxApertureValue:         FindExif(exifData, "MaxApertureValue"),
+		DigitalZoomRatio:         FindExif(exifData, "DigitalZoomRatio"),
+		SensingMethod:            FindExif(exifData, "SensingMethod"),
+		Model:                    FindExif(exifData, "Model"),
+		Make:                     FindExif(exifData, "Make"),
+		LensMake:                 FindExif(exifData, "LensMake"),
+		LensModel:                FindExif(exifData, "LensModel"),
+		FocalLength:              FindExif(exifData, "FocalLength"),
+		FocalLengthIn35mmFormat:  FindExif(exifData, "FocalLengthIn35mmFilm", "FocalLengthIn35mmFormat", "FocalLength35efl", "FocalLengthIn35mm"),
+		FocalPlaneXResolution:    FindExif(exifData, "FocalPlaneXResolution"),
+		FocalPlaneYResolution:    FindExif(exifData, "FocalPlaneYResolution"),
+		FocalPlaneResolutionUnit: FindExif(exifData, "FocalPlaneResolutionUnit"),
+		ExifVersion:              FindExif(exifData, "ExifVersion"),
+		DateTime:                 FindExif(exifData, "DateTime", "ModifyDate"),
+		DateTimeOriginal:         FindExif(exifData, "DateTimeOriginal"),
+		ModifyDate:               FindExif(exifData, "ModifyDate", "DateTime"),
+		Iso:                      FindExif(exifData, "ISO", "ISOSpeedRatings"),
+		ExposureTime:             FindExif(exifData, "ExposureTime"),
+		Flash:                    FindExifInt(exifData, "Flash"),
+		WhiteBalance:             FindExif(exifData, "WhiteBalance"),
+		ColorTemperature:         FindExif(exifData, "ColorTemperature", "ColorTemp", "Kelvin", "Temperature"),
+		Rating:                   FindExif(exifData, "Rating"),
+		Orientation:              FindExif(exifData, "Orientation"),
+		Software:                 FindExif(exifData, "Software"),
+		Copyright:                FindExif(exifData, "Copyright", "Artist"),
+		Longitude:                FindExif(exifData, "GPSLongitude", "Longitude"),
+		Latitude:                 FindExif(exifData, "GPSLatitude", "Latitude"),
+		GpsAltitude:              FindExif(exifData, "GPSAltitude"),
+		GpsImgDirection:          FindExif(exifData, "GPSImgDirection"),
+		GpsImgDirectionRef:       FindExif(exifData, "GPSImgDirectionRef"),
+		GpsSpeed:                 FindExif(exifData, "GPSSpeed"),
+		GpsSpeedRef:              FindExif(exifData, "GPSSpeedRef"),
+		OffsetTime:               FindExif(exifData, "OffsetTime"),
+		OffsetTimeOriginal:       FindExif(exifData, "OffsetTimeOriginal"),
+		OffsetTimeDigitized:      FindExif(exifData, "OffsetTimeDigitized"),
+		Raw:                      CleanRawExifMap(exifData),
 	}
 
 	// Handle quirks
@@ -274,6 +321,42 @@ func BuildImageEXIF(exifData map[string]string) (dto.ImageEXIF, time.Time, time.
 	if xRes != nil && yRes != nil {
 		resStr := fmt.Sprintf("%sx%s DPI", *xRes, *yRes)
 		out.Resolution = &resStr
+	}
+
+	// Normalize MaxApertureValue (e.g. "3.60 EV (f/3.5)" -> "f/3.5", "3.5" -> "f/3.5")
+	if out.MaxApertureValue != nil {
+		s := strings.TrimSpace(*out.MaxApertureValue)
+		reF := regexp.MustCompile(`f/(\d+(?:\.\d+)?)`)
+		if m := reF.FindStringSubmatch(s); len(m) > 1 {
+			v := "f/" + m[1]
+			out.MaxApertureValue = &v
+		} else if _, err := strconv.ParseFloat(s, 64); err == nil {
+			v := "f/" + s
+			out.MaxApertureValue = &v
+		} else {
+			cleaned := strings.Trim(s, "() \t\n\r")
+			out.MaxApertureValue = &cleaned
+		}
+	}
+
+	// Normalize ExposureBiasValue (e.g. "+0.67" -> "+0.67 EV")
+	if out.ExposureBiasValue != nil {
+		s := strings.TrimSpace(*out.ExposureBiasValue)
+		if s != "" && !strings.HasSuffix(s, "EV") && !strings.HasSuffix(s, "ev") {
+			v := s + " EV"
+			out.ExposureBiasValue = &v
+		}
+	}
+
+	// Normalize FocalLengthIn35mmFormat (e.g. "52" -> "52 mm")
+	if out.FocalLengthIn35mmFormat != nil {
+		s := strings.TrimSpace(*out.FocalLengthIn35mmFormat)
+		if s != "" && !strings.HasSuffix(s, "mm") && !strings.HasSuffix(s, " mm") {
+			if _, err := strconv.ParseFloat(s, 64); err == nil {
+				v := s + " mm"
+				out.FocalLengthIn35mmFormat = &v
+			}
+		}
 	}
 
 	// Parse dates with fallback logic

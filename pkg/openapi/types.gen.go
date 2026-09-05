@@ -1159,6 +1159,9 @@ type ImageEXIF struct {
 	// Rating Rating
 	Rating *string `json:"rating,omitempty"`
 
+	// Raw Raw extracted EXIF tags map
+	Raw *map[string]string `json:"raw,omitempty"`
+
 	// Resolution Resolution
 	Resolution *string `json:"resolution,omitempty"`
 

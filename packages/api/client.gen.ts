@@ -325,6 +325,10 @@ export type ImageExif = {
     offset_time_original?: string;
     /** Offset time digitized */
     offset_time_digitized?: string;
+    /** Raw extracted EXIF tags map */
+    raw?: {
+        [key: string]: string;
+    };
 };
 export type ImageMetadata = {
     /** Original file name */

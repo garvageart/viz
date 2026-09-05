@@ -4034,6 +4034,11 @@ components:
                 offset_time: { type: string, description: Offset time }
                 offset_time_original: { type: string, description: Offset time original }
                 offset_time_digitized: { type: string, description: Offset time digitized }
+                raw:
+                    type: object
+                    additionalProperties:
+                        type: string
+                    description: Raw extracted EXIF tags map
 
         ImagePaths:
             type: object
