@@ -75,16 +75,6 @@
             .sort((a, b) => a.label.localeCompare(b.label));
     });
 
-    function copyExtendedValue(label: string, value: string) {
-        copyToClipboard(value);
-        toasts.add({
-            type: "success",
-            title: label,
-            message: "Copied to clipboard",
-            timeout: 2000
-        });
-    }
-
     async function saveName(newName: string) {
         if (!currentAsset) {
             return;
@@ -109,43 +99,58 @@
         }
     }
 
-    function copyFilename() {
-        copyToClipboard(displayName);
-        toasts.add({
-            type: "success",
-            title: displayName,
-            message: "Name copied to clipboard",
-            timeout: 2000
-        });
-    }
-
-    function copyCoordinates() {
-        if (!currentAsset?.exif?.latitude || !currentAsset?.exif?.longitude) {
+    async function saveArtist(newArtist: string) {
+        if (!currentAsset) {
             return;
         }
 
-        const coords = `${currentAsset.exif.latitude}, ${currentAsset.exif.longitude}`;
-        copyToClipboard(coords);
-        toasts.add({
-            type: "success",
-            title: coords,
-            message: "Coordinates copied to clipboard",
-            timeout: 2000
-        });
+        const trimmed = newArtist.trim();
+        if (!currentAsset.exif) {
+            currentAsset.exif = {};
+        }
+
+        if (trimmed !== (currentAsset.exif.artist ?? "")) {
+            currentAsset.exif.artist = trimmed;
+            onImageUpdated?.(currentAsset);
+
+            try {
+                await updateImage(currentAsset.uid, { exif: currentAsset.exif });
+            } catch (err) {
+                const artistErr = err as Error;
+                toasts.add({
+                    type: "error",
+                    title: "Failed to update artist",
+                    message: artistErr.message
+                });
+            }
+        }
     }
 
-    function copyChecksum() {
-        if (!currentAsset?.image_metadata?.checksum) {
+    async function saveCopyright(newCopyright: string) {
+        if (!currentAsset) {
             return;
         }
 
-        copyToClipboard(currentAsset.image_metadata.checksum);
-        toasts.add({
-            type: "success",
-            title: "Checksum",
-            message: "Checksum copied to clipboard",
-            timeout: 2000
-        });
+        const trimmed = newCopyright.trim();
+        if (!currentAsset.exif) {
+            currentAsset.exif = {};
+        }
+
+        if (trimmed !== (currentAsset.exif.copyright ?? "")) {
+            currentAsset.exif.copyright = trimmed;
+            onImageUpdated?.(currentAsset);
+
+            try {
+                await updateImage(currentAsset.uid, { exif: currentAsset.exif });
+            } catch (err) {
+                const copyErr = err as Error;
+                toasts.add({
+                    type: "error",
+                    title: "Failed to update copyright",
+                    message: copyErr.message
+                });
+            }
+        }
     }
 
     async function saveDescription() {
@@ -266,7 +271,15 @@
                                     class="copy-filename-btn"
                                     title="Copy filename"
                                     iconName="content_copy"
-                                    onclick={copyFilename}
+                                    onclick={() => {
+                                        copyToClipboard(displayName);
+                                        toasts.add({
+                                            type: "success",
+                                            title: displayName,
+                                            message: "Name copied to clipboard",
+                                            timeout: 2000
+                                        });
+                                    }}
                                 />
                                 {#if currentAsset?.image_metadata?.file_type}
                                     <Badge variant="default" class="file-type-badge">
@@ -474,7 +487,20 @@
                                         class="copy-filename-btn"
                                         title="Copy coordinates"
                                         iconName="content_copy"
-                                        onclick={copyCoordinates}
+                                        onclick={() => {
+                                            if (!currentAsset?.exif?.latitude || !currentAsset?.exif?.longitude) {
+                                                return;
+                                            }
+
+                                            const coords = `${currentAsset.exif.latitude}, ${currentAsset.exif.longitude}`;
+                                            copyToClipboard(coords);
+                                            toasts.add({
+                                                type: "success",
+                                                title: coords,
+                                                message: "Coordinates copied to clipboard",
+                                                timeout: 2000
+                                            });
+                                        }}
                                     />
                                 </div>
                                 {#if currentAsset.exif.gps_altitude || currentAsset.exif.gps_img_direction || currentAsset.exif.gps_speed}
@@ -513,8 +539,8 @@
                     </div>
                 {/if}
 
-                <!-- Software, Copyright & Integrity Card -->
-                {#if currentAsset?.exif?.software || currentAsset?.exif?.copyright || currentAsset?.exif?.exif_version || currentAsset?.image_metadata?.checksum}
+                <!-- Software & Integrity Card -->
+                {#if currentAsset?.exif?.software || currentAsset?.exif?.exif_version || currentAsset?.image_metadata?.checksum}
                     <div class="exif-card">
                         {#if currentAsset.exif?.software || currentAsset.exif?.exif_version}
                             <div class="card-row meta-row">
@@ -531,23 +557,13 @@
                                 </div>
                             </div>
                         {/if}
-                        {#if currentAsset.exif?.copyright}
-                            <div class="card-row meta-row">
-                                <MaterialIcon iconName="copyright" class="exif-material-icon" />
-                                <div class="card-values">
-                                    <div class="value-sub" title={currentAsset.exif.copyright}>
-                                        {currentAsset.exif.copyright}
-                                    </div>
-                                </div>
-                            </div>
-                        {/if}
                         {#if currentAsset.image_metadata?.checksum}
                             <div class="card-row meta-row">
                                 <MaterialIcon iconName="tag" class="exif-material-icon" />
                                 <div class="card-values">
                                     <div class="name-row">
                                         <div class="value-sub mono-text" title={currentAsset.image_metadata.checksum}>
-                                            {currentAsset.image_metadata.checksum.slice(0, 16)}…
+                                            {currentAsset.image_metadata.checksum}
                                         </div>
                                         <Button
                                             variant="ghost"
@@ -555,7 +571,19 @@
                                             class="copy-filename-btn"
                                             title="Copy checksum"
                                             iconName="content_copy"
-                                            onclick={copyChecksum}
+                                            onclick={() => {
+                                                if (!currentAsset?.image_metadata?.checksum) {
+                                                    return;
+                                                }
+
+                                                copyToClipboard(currentAsset.image_metadata.checksum);
+                                                toasts.add({
+                                                    type: "success",
+                                                    title: "Checksum",
+                                                    message: "Checksum copied to clipboard",
+                                                    timeout: 2000
+                                                });
+                                            }}
                                         />
                                     </div>
                                 </div>
@@ -564,21 +592,58 @@
                     </div>
                 {/if}
 
-                <!-- Description Card -->
-                <div class="exif-card description">
-                    <TextArea
-                        class="exif-description"
-                        placeholder="Add a description"
-                        title={currentAsset.description}
-                        bind:value={currentAsset.description}
-                        spellcheck="false"
-                        rows={5}
-                        minHeight="5rem"
-                        maxHeight="16rem"
-                        resize="none"
-                        onblur={saveDescription}
-                        onkeydown={handleDescriptionKeydown}
-                    />
+                <!-- Artist, Copyright & Description / Comments Card -->
+                <div class="exif-card">
+                    <div class="card-row main-row">
+                        <MaterialIcon iconName="person" class="exif-material-icon" />
+                        <div class="card-values">
+                            <div class="name-row">
+                                <EditableText
+                                    value={currentAsset?.exif?.artist ?? ""}
+                                    placeholder="Add artist"
+                                    class="value-big-wrapper"
+                                    inputClass="value-big"
+                                    textClass="value-big"
+                                    onsave={saveArtist}
+                                />
+                            </div>
+                        </div>
+                    </div>
+                    <div class="card-row main-row">
+                        <MaterialIcon iconName="copyright" class="exif-material-icon" />
+                        <div class="card-values">
+                            <div class="name-row">
+                                <EditableText
+                                    value={currentAsset?.exif?.copyright ?? ""}
+                                    placeholder="Add copyright"
+                                    class="value-big-wrapper"
+                                    inputClass="value-big"
+                                    textClass="value-big"
+                                    onsave={saveCopyright}
+                                />
+                            </div>
+                        </div>
+                    </div>
+                    <div class="card-row main-row">
+                        <MaterialIcon iconName="description" class="exif-material-icon" />
+                        <div class="card-values">
+                            <div class="name-row">
+                                <TextArea
+                                    class="exif-description"
+                                    placeholder="Add a description"
+                                    title={currentAsset.description}
+                                    bind:value={currentAsset.description}
+                                    spellcheck="false"
+                                    rows={3}
+                                    minHeight="3.5rem"
+                                    maxHeight="16rem"
+                                    resize="none"
+                                    onblur={saveDescription}
+                                    onkeydown={handleDescriptionKeydown}
+                                />
+                            </div>
+                        </div>
+                    </div>
                 </div>
                 <!-- Extended EXIF Card (if raw map present) -->
                 {#if rawExifEntries.length > 0}
@@ -596,11 +661,25 @@
                                     role="button"
                                     tabindex="0"
                                     title="Click to copy"
-                                    onclick={() => copyExtendedValue(item.label, item.value)}
+                                    onclick={() => {
+                                        copyToClipboard(item.value);
+                                        toasts.add({
+                                            type: "success",
+                                            title: item.label,
+                                            message: "Copied to clipboard",
+                                            timeout: 2000
+                                        });
+                                    }}
                                     onkeydown={(e) => {
                                         if (e.key === "Enter" || e.key === " ") {
                                             e.preventDefault();
-                                            copyExtendedValue(item.label, item.value);
+                                            copyToClipboard(item.value);
+                                            toasts.add({
+                                                type: "success",
+                                                title: item.label,
+                                                message: "Copied to clipboard",
+                                                timeout: 2000
+                                            });
                                         }
                                     }}
                                 >
