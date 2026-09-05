@@ -289,16 +289,33 @@ export function calculateZoomTo(options: ZoomOptions): ZoomState {
     const cursorX = clientX - viewportRect.left;
     const cursorY = clientY - viewportRect.top;
 
+    // Clamp zoom factor between 0.1 (10%) and 16.0 (1600%)
+    const nextZoom = Math.max(0.1, Math.min(newZoom, 16));
+
+    const Vw = viewport.width;
+    const Vh = viewport.height;
+    const Iw = image.width;
+    const Ih = image.height;
+
+    const zoomedW = Iw * nextZoom;
+    const zoomedH = Ih * nextZoom;
+
     // Map screen coordinate to the unscaled layout coordinate of the image.
     const px = (cursorX - posX) / value;
     const py = (cursorY - posY) / value;
 
-    // Clamp zoom factor between 0.1 (10%) and 16.0 (1600%)
-    const nextZoom = Math.max(0.1, Math.min(newZoom, 16));
+    // Calculate translations targeting the mapped coordinate under the new zoom,
+    // or keep centered along an axis if the image fits within the viewport.
+    let nextTx = cursorX - px * nextZoom;
+    let nextTy = cursorY - py * nextZoom;
 
-    // Calculate translations targeting the mapped coordinate under the new zoom.
-    const nextTx = cursorX - px * nextZoom;
-    const nextTy = cursorY - py * nextZoom;
+    if (zoomedW <= Vw) {
+        nextTx = (Vw * (1 - nextZoom)) / 2;
+    }
+
+    if (zoomedH <= Vh) {
+        nextTy = (Vh * (1 - nextZoom)) / 2;
+    }
 
     // Apply viewport boundaries
     const constrained = constrainTranslation(nextTx, nextTy, nextZoom, viewport, image);
