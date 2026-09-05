@@ -175,4 +175,10 @@
         box-shadow: 0 4px 6px -1px rgb(0 0 0 / 0.1);
         border-radius: 0.25rem;
     }
+
+    @media (max-width: 40rem) {
+        .label-selector-container {
+            gap: 0.25em;
+        }
+    }
 </style>

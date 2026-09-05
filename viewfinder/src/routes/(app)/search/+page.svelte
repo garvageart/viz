@@ -806,4 +806,10 @@
         height: auto;
         min-height: 100%; /* Important for virtualization filling container */
     }
+
+    @media (max-width: 40rem) {
+        .triage-group {
+            gap: var(--viz-spacing-xs);
+        }
+    }
 </style>

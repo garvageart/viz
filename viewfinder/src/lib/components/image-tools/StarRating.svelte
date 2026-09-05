@@ -95,14 +95,7 @@
     {/each}
 
     {#if !isReadonly && value !== null && value !== 0}
-        <Button
-            iconName="close"
-            size="mini"
-            aria-label="Clear rating"
-            onclick={handleClear}
-            class="clear-rating-btn"
-            style="margin-left: 0.5rem;"
-        />
+        <Button iconName="close" size="mini" aria-label="Clear rating" onclick={handleClear} class="clear-rating-btn" />
     {/if}
 </div>
 
@@ -116,6 +109,10 @@
         &.readonly {
             pointer-events: none;
         }
+    }
+
+    :global(.clear-rating-btn) {
+        margin-left: var(--viz-spacing-sm);
     }
 
     .star-item {
@@ -145,6 +142,12 @@
 
         &:focus-visible {
             color: var(--viz-text-primary);
+        }
+    }
+
+    @media (max-width: 40rem) {
+        :global(.clear-rating-btn) {
+            margin-left: var(--viz-spacing-xs);
         }
     }
 </style>

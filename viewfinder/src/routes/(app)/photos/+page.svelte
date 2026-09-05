@@ -749,6 +749,10 @@
     }
 
     @media (max-width: 40rem) {
+        .triage-group {
+            gap: var(--viz-spacing-xs);
+        }
+
         .toolbar-group {
             gap: var(--viz-spacing-xs);
         }

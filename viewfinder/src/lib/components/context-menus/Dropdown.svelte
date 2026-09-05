@@ -179,4 +179,10 @@
             background-color: var(--viz-surface-panel);
         }
     }
+
+    @media (max-width: 40rem) {
+        .viz-dropdown-title {
+            margin: 0;
+        }
+    }
 </style>

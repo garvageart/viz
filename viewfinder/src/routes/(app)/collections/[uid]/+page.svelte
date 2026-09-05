@@ -1271,6 +1271,10 @@
     }
 
     @media (max-width: 40rem) {
+        .triage-group {
+            gap: var(--viz-spacing-xs);
+        }
+
         #coll-name-container :global(#coll-name-input),
         #coll-name-display-wrapper #coll-name-display {
             font-size: var(--viz-font-size-3xl);
