@@ -17,11 +17,20 @@
     import { toasts } from "$lib/toast-notifcations/toasts.svelte";
     import {
         formatBytes,
-        getFlashMode,
+        formatExifTag,
+        formatExifVersion,
+        formatFocalLengthInfo,
+        formatMeteringMode,
+        formatOrientation,
+        getCameraName,
+        getFlashInfo,
         getImageLabel,
         getImageMegapixels,
+        getLensName,
+        getLightSourceDescription,
+        getShootingMode,
         getTakenAt,
-        getWhiteBalance,
+        getWhiteBalanceInfo,
         isAssetImage
     } from "$lib/utils/images";
     import { copyToClipboard } from "$lib/utils/misc";
@@ -49,6 +58,32 @@
 
     let displayName = $derived(currentAsset?.name || currentAsset?.image_metadata?.file_name || "");
     let calendarOpen = $state(false);
+
+    let rawExifEntries = $derived.by(() => {
+        const raw = currentAsset?.exif?.raw;
+        if (!raw) {
+            return [];
+        }
+
+        return Object.entries(raw)
+            .map(([key, value]) => ({
+                key,
+                label: formatExifTag(key),
+                value: String(value).trim()
+            }))
+            .filter((entry) => entry.value !== "")
+            .sort((a, b) => a.label.localeCompare(b.label));
+    });
+
+    function copyExtendedValue(label: string, value: string) {
+        copyToClipboard(value);
+        toasts.add({
+            type: "success",
+            title: label,
+            message: "Copied to clipboard",
+            timeout: 2000
+        });
+    }
 
     async function saveName(newName: string) {
         if (!currentAsset) {
@@ -84,6 +119,35 @@
         });
     }
 
+    function copyCoordinates() {
+        if (!currentAsset?.exif?.latitude || !currentAsset?.exif?.longitude) {
+            return;
+        }
+
+        const coords = `${currentAsset.exif.latitude}, ${currentAsset.exif.longitude}`;
+        copyToClipboard(coords);
+        toasts.add({
+            type: "success",
+            title: coords,
+            message: "Coordinates copied to clipboard",
+            timeout: 2000
+        });
+    }
+
+    function copyChecksum() {
+        if (!currentAsset?.image_metadata?.checksum) {
+            return;
+        }
+
+        copyToClipboard(currentAsset.image_metadata.checksum);
+        toasts.add({
+            type: "success",
+            title: "Checksum",
+            message: "Checksum copied to clipboard",
+            timeout: 2000
+        });
+    }
+
     async function saveDescription() {
         if (!currentAsset) {
             return;
@@ -114,7 +178,7 @@
 
     // TODO(user-setting): Make timezone display configurable (IANA name vs abbreviation vs offset).
     // `timeZoneName: "short"` varies by locale — some return the abbreviation (SAST),
-    // others return the offset (GMT+2). Let the user pick their preference.
+    // others return the offset (GMT+2Let the user pick their preference.
     function getTimezoneAbbreviation(): string {
         const parts = new Intl.DateTimeFormat("en", { timeZoneName: "short" }).formatToParts();
         return parts.find((p) => p.type === "timeZoneName")?.value ?? "";
@@ -183,6 +247,7 @@
         -->
         <div class="metadata-exif-container">
             <div class="exif-cards">
+                <!-- File Name & Date Card -->
                 <div class="exif-card">
                     <div class="card-row main-row">
                         <MaterialIcon iconName="image" class="exif-material-icon" />
@@ -196,6 +261,8 @@
                                     onsave={saveName}
                                 />
                                 <Button
+                                    variant="ghost"
+                                    size="mini"
                                     class="copy-filename-btn"
                                     title="Copy filename"
                                     iconName="content_copy"
@@ -237,154 +304,316 @@
                         {/snippet}
                     </DatePicker>
                 </div>
-                <!-- Camera/Exposure card -->
+
+                <!-- Camera & Optics Card -->
                 <div class="exif-card">
                     <div class="card-row main-row">
+                        <MaterialIcon iconName="photo_camera" class="exif-material-icon" />
                         <div class="card-values">
-                            {#if currentAsset?.exif?.model && currentAsset?.exif?.make}
-                                <div class="value-big">
-                                    {currentAsset.exif.make}
-                                    {currentAsset.exif.model.replace(new RegExp(`^${currentAsset.exif.make} `), "")}
-                                </div>
-                            {:else}
-                                <div class="value-big">Unknown Camera</div>
+                            <div class="value-big">{getCameraName(currentAsset)}</div>
+                            {#if getLensName(currentAsset)}
+                                <div class="value-sub">{getLensName(currentAsset)}</div>
                             {/if}
-
-                            {#if currentAsset?.exif?.lens_model}
-                                <div class="value-sub">
-                                    {currentAsset.exif.lens_model}
+                            {#if formatFocalLengthInfo(currentAsset).focalLength}
+                                <div class="value-sub" title={formatFocalLengthInfo(currentAsset).focalLength}>
+                                    {formatFocalLengthInfo(currentAsset).focalLength}
                                 </div>
-                            {:else}
-                                <div class="value-sub">Unknown Lens Make</div>
-                            {/if}
-
-                            {#if currentAsset?.exif?.focal_length}
-                                <div class="value-sub">
-                                    {currentAsset.exif.focal_length}
-                                </div>
-                            {:else}
-                                <div class="value-sub">Unknown Focal Length</div>
                             {/if}
                         </div>
                     </div>
                 </div>
-                <div class="exif-card-group">
-                    <div class="exif-card">
-                        <div class="card-row main-row">
-                            <MaterialIcon iconName="camera" class="exif-material-icon" />
-                            <div class="card-values">
-                                <div class="value-sub">
-                                    {currentAsset?.exif?.f_number ?? currentAsset?.exif?.aperture ?? "—"}
-                                </div>
-                                <div class="value-sub">
-                                    {currentAsset?.exif?.exposure_time ?? "—"}
-                                </div>
+
+                <!-- Exposure & Lighting Card -->
+                <div class="exif-card">
+                    <div class="card-row main-row">
+                        <MaterialIcon iconName="camera" class="exif-material-icon" />
+                        <div class="card-values">
+                            <div class="value-big">
+                                {[
+                                    currentAsset.exif?.f_number ?? currentAsset.exif?.aperture,
+                                    currentAsset.exif?.exposure_time,
+                                    currentAsset.exif?.iso ? `ISO ${currentAsset.exif.iso}` : null,
+                                    currentAsset.exif?.exposure_bias_value ?? currentAsset.exif?.exposure_value
+                                ]
+                                    .filter(Boolean)
+                                    .join("  ·  ")}
                             </div>
                         </div>
+                    </div>
+                    {#if getShootingMode(currentAsset)}
                         <div class="card-row meta-row">
-                            <MaterialIcon iconName="tune" class="exif-material-icon" />
+                            <MaterialIcon iconName="settings_photo_camera" class="exif-material-icon" />
                             <div class="card-values">
                                 <div class="value-sub">
-                                    ISO {currentAsset?.exif?.iso ?? "—"}
-                                </div>
-                                <div class="value-sub">
-                                    {currentAsset?.exif?.exposure_value ?? "—"}
+                                    {getShootingMode(currentAsset)}
                                 </div>
                             </div>
                         </div>
+                    {/if}
+                    {#if formatMeteringMode(currentAsset.exif?.metering_mode)}
                         <div class="card-row meta-row">
-                            <MaterialIcon
-                                iconName="flash_on"
-                                fill={true}
-                                style="color: #FFC107; fill: #FFC107;"
-                                class="exif-material-icon"
-                            />
+                            <MaterialIcon iconName="hdr_auto" class="exif-material-icon" />
                             <div class="card-values">
                                 <div class="value-sub">
-                                    Flash {getFlashMode(currentAsset?.exif?.flash) ?? "—"}
+                                    {formatMeteringMode(currentAsset.exif?.metering_mode)}
                                 </div>
                             </div>
                         </div>
-                        {#if currentAsset?.exif?.white_balance}
+                    {/if}
+                    {#if getFlashInfo(currentAsset)}
+                        {@const flash = getFlashInfo(currentAsset)}
+                        {#if flash}
                             <div class="card-row meta-row">
-                                <MaterialIcon iconName="light_mode" class="exif-material-icon" />
+                                <MaterialIcon
+                                    iconName={flash.fired ? "flash_on" : "flash_off"}
+                                    class="exif-material-icon"
+                                />
                                 <div class="card-values">
                                     <div class="value-sub">
-                                        {getWhiteBalance(currentAsset.exif.white_balance)}
-                                        {#if currentAsset?.exif?.color_temperature}
-                                            &nbsp;· {currentAsset.exif.color_temperature}K
-                                        {/if}
+                                        {flash.label}
+                                    </div>
+                                </div>
+                            </div>
+                        {/if}
+                    {/if}
+                    {#if getWhiteBalanceInfo(currentAsset)}
+                        {@const wb = getWhiteBalanceInfo(currentAsset)}
+                        {#if wb}
+                            <div class="card-row meta-row">
+                                <MaterialIcon
+                                    iconName={wb.isAuto ? "wb_auto" : "wb_sunny"}
+                                    class="exif-material-icon"
+                                />
+                                <div class="card-values">
+                                    <div class="value-sub">
+                                        {wb.label}
+                                    </div>
+                                </div>
+                            </div>
+                        {/if}
+                    {/if}
+                    {#if getLightSourceDescription(currentAsset)}
+                        <div class="card-row meta-row">
+                            <MaterialIcon iconName="light_mode" class="exif-material-icon" />
+                            <div class="card-values">
+                                <div class="value-sub">
+                                    {getLightSourceDescription(currentAsset)}
+                                </div>
+                            </div>
+                        </div>
+                    {/if}
+                </div>
+
+                <!-- Image & File Specifications Card -->
+                <div class="exif-card">
+                    <div class="card-row main-row">
+                        <MaterialIcon iconName="aspect_ratio" class="exif-material-icon" />
+                        <div class="card-values">
+                            <div class="value-big">
+                                {currentAsset?.width} × {currentAsset?.height}
+                                &nbsp;· {getImageMegapixels(currentAsset)} MP &nbsp;· {formatBytes(
+                                    currentAsset.image_metadata?.file_size
+                                ) ?? "—"}
+                            </div>
+                        </div>
+                    </div>
+                    <div class="card-row meta-row">
+                        <MaterialIcon iconName="palette" class="exif-material-icon" />
+                        <div class="card-values">
+                            <div class="value-sub">
+                                {currentAsset?.image_metadata?.color_space ?? "sRGB"}
+                                {#if currentAsset?.image_metadata?.has_icc_profile}
+                                    &nbsp;(ICC Profile)
+                                {/if}
+                                {#if currentAsset?.exif?.resolution}
+                                    &nbsp;· {currentAsset.exif.resolution}
+                                {/if}
+                                {#if currentAsset?.exif?.orientation}
+                                    &nbsp;· {formatOrientation(currentAsset.exif.orientation)}
+                                {/if}
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Ratings & Labels Toolbar -->
+                <div class="rating-container">
+                    <ImageLabelViewer
+                        variant="compact"
+                        label={getImageLabel(currentAsset)}
+                        onSelect={(selectedLabel) => {
+                            const entry = Object.entries(LabelColours).find(([_, colour]) => colour === selectedLabel);
+                            const labelToSend = entry ? (entry[0] as Label) : null;
+                            if (currentAsset.image_metadata) {
+                                currentAsset.image_metadata = {
+                                    ...currentAsset.image_metadata,
+                                    label: labelToSend
+                                };
+                            }
+                        }}
+                    />
+                    <StarRating value={starRating} onChange={setImageRating} />
+                    {#if currentAsset.favourited}
+                        <Favourite size="1.3rem" />
+                    {/if}
+                </div>
+
+                <!-- GPS / Geolocation Card (if present) -->
+                {#if currentAsset?.exif?.latitude && currentAsset?.exif?.longitude}
+                    <div class="exif-card">
+                        <div class="card-row main-row">
+                            <MaterialIcon iconName="location_on" class="exif-material-icon" />
+                            <div class="card-values">
+                                <div class="name-row">
+                                    <div class="value-big">
+                                        {currentAsset.exif.latitude}, {currentAsset.exif.longitude}
+                                    </div>
+                                    <Button
+                                        variant="ghost"
+                                        size="mini"
+                                        class="copy-filename-btn"
+                                        title="Copy coordinates"
+                                        iconName="content_copy"
+                                        onclick={copyCoordinates}
+                                    />
+                                </div>
+                                {#if currentAsset.exif.gps_altitude || currentAsset.exif.gps_img_direction || currentAsset.exif.gps_speed}
+                                    <div class="value-sub">
+                                        {[
+                                            currentAsset.exif.gps_altitude
+                                                ? `Altitude: ${currentAsset.exif.gps_altitude}`
+                                                : null,
+                                            currentAsset.exif.gps_img_direction
+                                                ? `Direction: ${currentAsset.exif.gps_img_direction}° ${currentAsset.exif.gps_img_direction_ref ?? ""}`.trim()
+                                                : null,
+                                            currentAsset.exif.gps_speed
+                                                ? `Speed: ${currentAsset.exif.gps_speed} ${currentAsset.exif.gps_speed_ref ?? "km/h"}`.trim()
+                                                : null
+                                        ]
+                                            .filter(Boolean)
+                                            .join("  ·  ")}
+                                    </div>
+                                {/if}
+                            </div>
+                        </div>
+                    </div>
+                {/if}
+
+                <!-- Keywords / Tags (if present) -->
+                {#if currentAsset?.image_metadata?.keywords && currentAsset.image_metadata.keywords.length > 0}
+                    <div class="exif-card keywords-card">
+                        <div class="card-row main-row">
+                            <MaterialIcon iconName="sell" class="exif-material-icon" />
+                            <div class="keywords-list">
+                                {#each currentAsset.image_metadata.keywords as keyword}
+                                    <Badge variant="neutral" size="small" class="keyword-badge">{keyword}</Badge>
+                                {/each}
+                            </div>
+                        </div>
+                    </div>
+                {/if}
+
+                <!-- Software, Copyright & Integrity Card -->
+                {#if currentAsset?.exif?.software || currentAsset?.exif?.copyright || currentAsset?.exif?.exif_version || currentAsset?.image_metadata?.checksum}
+                    <div class="exif-card">
+                        {#if currentAsset.exif?.software || currentAsset.exif?.exif_version}
+                            <div class="card-row meta-row">
+                                <MaterialIcon iconName="desktop_landscape" class="exif-material-icon" />
+                                <div class="card-values">
+                                    <div class="value-sub" title={currentAsset.exif?.software}>
+                                        {[
+                                            currentAsset.exif?.software,
+                                            formatExifVersion(currentAsset.exif?.exif_version)
+                                        ]
+                                            .filter(Boolean)
+                                            .join("  ·  ")}
+                                    </div>
+                                </div>
+                            </div>
+                        {/if}
+                        {#if currentAsset.exif?.copyright}
+                            <div class="card-row meta-row">
+                                <MaterialIcon iconName="copyright" class="exif-material-icon" />
+                                <div class="card-values">
+                                    <div class="value-sub" title={currentAsset.exif.copyright}>
+                                        {currentAsset.exif.copyright}
+                                    </div>
+                                </div>
+                            </div>
+                        {/if}
+                        {#if currentAsset.image_metadata?.checksum}
+                            <div class="card-row meta-row">
+                                <MaterialIcon iconName="tag" class="exif-material-icon" />
+                                <div class="card-values">
+                                    <div class="name-row">
+                                        <div class="value-sub mono-text" title={currentAsset.image_metadata.checksum}>
+                                            {currentAsset.image_metadata.checksum.slice(0, 16)}…
+                                        </div>
+                                        <Button
+                                            variant="ghost"
+                                            size="mini"
+                                            class="copy-filename-btn"
+                                            title="Copy checksum"
+                                            iconName="content_copy"
+                                            onclick={copyChecksum}
+                                        />
                                     </div>
                                 </div>
                             </div>
                         {/if}
                     </div>
+                {/if}
 
-                    <div class="exif-card">
+                <!-- Description Card -->
+                <div class="exif-card description">
+                    <TextArea
+                        class="exif-description"
+                        placeholder="Add a description"
+                        title={currentAsset.description}
+                        bind:value={currentAsset.description}
+                        spellcheck="false"
+                        rows={5}
+                        minHeight="5rem"
+                        maxHeight="16rem"
+                        resize="none"
+                        onblur={saveDescription}
+                        onkeydown={handleDescriptionKeydown}
+                    />
+                </div>
+                <!-- Extended EXIF Card (if raw map present) -->
+                {#if rawExifEntries.length > 0}
+                    <div class="exif-card extended-exif-card">
                         <div class="card-row main-row">
+                            <MaterialIcon iconName="list_alt" class="exif-material-icon" />
                             <div class="card-values">
-                                <div class="value-sub">
-                                    {currentAsset?.width} x {currentAsset?.height}
-                                </div>
+                                <div class="value-big">EXIF</div>
                             </div>
                         </div>
-                        <div class="card-row main-row">
-                            <MaterialIcon iconName="aspect_ratio" class="exif-material-icon" />
-                            <div class="card-values">
-                                <div class="value-sub">
-                                    {getImageMegapixels(currentAsset)} MP
+                        <div class="extended-exif-list">
+                            {#each rawExifEntries as item (item.key)}
+                                <div
+                                    class="extended-exif-row"
+                                    role="button"
+                                    tabindex="0"
+                                    title="Click to copy"
+                                    onclick={() => copyExtendedValue(item.label, item.value)}
+                                    onkeydown={(e) => {
+                                        if (e.key === "Enter" || e.key === " ") {
+                                            e.preventDefault();
+                                            copyExtendedValue(item.label, item.value);
+                                        }
+                                    }}
+                                >
+                                    <span class="extended-label" title={item.label}>{item.label}</span>
+                                    <div class="extended-value-wrapper">
+                                        <span class="extended-value">{item.value}</span>
+                                        <span class="copy-overlay">Copy</span>
+                                    </div>
                                 </div>
-                                <div class="value-sub">
-                                    {formatBytes(currentAsset.image_metadata?.file_size) ?? "—"}
-                                </div>
-                            </div>
-                        </div>
-                        <div class="card-row meta-row">
-                            <MaterialIcon iconName="palette" class="exif-material-icon" />
-                            <div class="card-values">
-                                <div class="value-sub">
-                                    {currentAsset?.image_metadata?.color_space ?? "—"}
-                                </div>
-                            </div>
+                            {/each}
                         </div>
                     </div>
-                </div>
-            </div>
-            <div class="rating-container">
-                <ImageLabelViewer
-                    variant="compact"
-                    label={getImageLabel(currentAsset)}
-                    onSelect={(selectedLabel) => {
-                        const entry = Object.entries(LabelColours).find(([_, colour]) => colour === selectedLabel);
-                        const labelToSend = entry ? (entry[0] as Label) : null;
-                        if (currentAsset.image_metadata) {
-                            currentAsset.image_metadata = {
-                                ...currentAsset.image_metadata,
-                                label: labelToSend
-                            };
-                        }
-                    }}
-                />
-                <StarRating value={starRating} onChange={setImageRating} />
-                {#if currentAsset.favourited}
-                    <Favourite size="1.3rem" />
                 {/if}
-            </div>
-            <!-- Description -->
-            <div class="exif-card description">
-                <TextArea
-                    class="exif-description"
-                    placeholder="Add a description"
-                    title={currentAsset.description}
-                    bind:value={currentAsset.description}
-                    spellcheck="false"
-                    rows={5}
-                    minHeight="5rem"
-                    maxHeight="16rem"
-                    resize="none"
-                    onblur={saveDescription}
-                    onkeydown={handleDescriptionKeydown}
-                />
             </div>
         </div>
     {:else}
@@ -442,20 +671,6 @@
         gap: var(--viz-spacing-sm);
     }
 
-    .exif-card-group {
-        display: flex;
-        gap: 0;
-    }
-
-    .exif-card-group > .exif-card:first-child {
-        border-right: none;
-        border-radius: var(--viz-border-radius-md) 0 0 var(--viz-border-radius-md);
-    }
-
-    .exif-card-group > .exif-card:last-child {
-        border-radius: 0 var(--viz-border-radius-md) var(--viz-border-radius-md) 0;
-    }
-
     .exif-cards {
         display: flex;
         flex-direction: column;
@@ -483,7 +698,7 @@
 
     .card-row {
         display: flex;
-        align-items: center;
+        align-items: flex-start;
         gap: 0.6em;
         /* Allow nested flex children to shrink when content is long */
         min-width: 0;
@@ -496,6 +711,7 @@
         line-height: 1;
         vertical-align: middle;
         font-size: 1.5em;
+        flex-shrink: 0;
     }
 
     .card-values {
@@ -563,5 +779,111 @@
         align-items: center;
         gap: 0.5em;
         border: 1px solid var(--viz-border-subtle);
+    }
+
+    .keywords-list {
+        display: flex;
+        flex-wrap: wrap;
+        gap: var(--viz-spacing-xs);
+        align-items: center;
+        min-width: 0;
+    }
+
+    :global(.keyword-badge) {
+        font-size: var(--viz-font-size-sm);
+        padding: 0.15em 0.5em;
+    }
+
+    .mono-text {
+        font-family: var(--viz-mono-font);
+    }
+
+    .extended-exif-list {
+        display: flex;
+        flex-direction: column;
+        gap: 0.35em;
+        padding-top: 0.4em;
+        border-top: 1px solid var(--viz-border-subtle);
+        margin-top: 0.2em;
+    }
+
+    .extended-exif-row {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 0.75em;
+        padding: 0.25em 0.4em;
+        border-radius: var(--viz-border-radius-sm);
+        cursor: pointer;
+        user-select: none;
+        transition:
+            background-color 0.15s ease,
+            transform 0.05s ease;
+
+        &:hover {
+            background-color: var(--viz-surface-hover);
+
+            .copy-overlay {
+                opacity: 1;
+            }
+
+            .extended-value {
+                opacity: 0;
+            }
+        }
+
+        &:focus-visible {
+            outline: 1px solid var(--viz-border-strong, var(--viz-text-primary));
+        }
+
+        &:active {
+            transform: scale(0.99);
+        }
+    }
+
+    .extended-label {
+        color: var(--viz-text-secondary);
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        flex-shrink: 0;
+        max-width: 45%;
+    }
+
+    .extended-value-wrapper {
+        position: relative;
+        display: flex;
+        align-items: center;
+        justify-content: flex-end;
+        gap: 0.35em;
+        min-width: 0;
+        flex: 1 1 auto;
+    }
+
+    .extended-value {
+        font-weight: 500;
+        color: var(--viz-text-primary);
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        text-align: right;
+        transition: opacity 0.15s ease;
+    }
+
+    .copy-overlay {
+        position: absolute;
+        right: 0;
+        top: 50%;
+        transform: translateY(-50%);
+        font-size: var(--viz-font-size-xs);
+        font-weight: 600;
+        color: var(--viz-text-primary);
+        background: var(--viz-surface-card);
+        padding: 0.1em 0.5em;
+        border-radius: var(--viz-border-radius-xs);
+        border: 1px solid var(--viz-border-subtle);
+        opacity: 0;
+        pointer-events: none;
+        transition: opacity 0.15s ease;
     }
 </style>

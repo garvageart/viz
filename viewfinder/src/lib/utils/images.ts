@@ -475,3 +475,392 @@ export function getWhiteBalance(wb?: string | null): string | null {
     // (some cameras or tools may store descriptive strings)
     return trimmed;
 }
+
+const EXPOSURE_PROGRAM_MAP: Record<string, string> = {
+    "0": "Not defined",
+    "1": "Manual",
+    "2": "Normal program",
+    "3": "Aperture priority",
+    "4": "Shutter priority",
+    "5": "Creative program",
+    "6": "Action program",
+    "7": "Portrait mode",
+    "8": "Landscape mode"
+};
+
+export function getExposureProgram(ep?: string | null): string | null {
+    if (!ep) {
+        return null;
+    }
+
+    const trimmed = ep.trim();
+    if (trimmed in EXPOSURE_PROGRAM_MAP) {
+        return EXPOSURE_PROGRAM_MAP[trimmed];
+    }
+
+    return trimmed;
+}
+
+const METERING_MODE_MAP: Record<string, string> = {
+    "0": "Unknown",
+    "1": "Average",
+    "2": "Center-weighted average",
+    "3": "Spot",
+    "4": "Multi-spot",
+    "5": "Multi-segment",
+    "6": "Partial"
+};
+
+export function getMeteringMode(mm?: string | null): string | null {
+    if (!mm) {
+        return null;
+    }
+
+    const trimmed = mm.trim();
+    if (trimmed in METERING_MODE_MAP) {
+        return METERING_MODE_MAP[trimmed];
+    }
+
+    return trimmed;
+}
+
+const EXPOSURE_MODE_MAP: Record<string, string> = {
+    "0": "Auto",
+    "1": "Manual",
+    "2": "Auto bracket"
+};
+
+export function getExposureMode(em?: string | null): string | null {
+    if (!em) {
+        return null;
+    }
+
+    const trimmed = em.trim();
+    if (trimmed in EXPOSURE_MODE_MAP) {
+        return EXPOSURE_MODE_MAP[trimmed];
+    }
+
+    return trimmed;
+}
+
+const SCENE_CAPTURE_MAP: Record<string, string> = {
+    "0": "Standard",
+    "1": "Landscape",
+    "2": "Portrait",
+    "3": "Night scene"
+};
+
+export function getSceneCaptureType(sc?: string | null): string | null {
+    if (!sc) {
+        return null;
+    }
+
+    const trimmed = sc.trim();
+    if (trimmed in SCENE_CAPTURE_MAP) {
+        return SCENE_CAPTURE_MAP[trimmed];
+    }
+
+    return trimmed;
+}
+
+export function formatExifVersion(v?: string | null): string | null {
+    if (!v) {
+        return null;
+    }
+
+    const cleaned = v.replace(/^(exif\s*version\s*|v)/i, "").trim();
+    if (!cleaned) {
+        return null;
+    }
+
+    if (/^0\d{3}$/.test(cleaned)) {
+        return `EXIF ${parseInt(cleaned.slice(0, 2), 10)}.${cleaned.slice(2)}`;
+    }
+
+    return `EXIF ${cleaned}`;
+}
+
+const ORIENTATION_MAP: Record<string, string> = {
+    "1": "Horizontal",
+    "2": "Mirror horizontal",
+    "3": "Rotate 180°",
+    "4": "Mirror vertical",
+    "5": "Mirror horizontal & rotate 270° CW",
+    "6": "Rotate 90° CW",
+    "7": "Mirror horizontal & rotate 90° CW",
+    "8": "Rotate 270° CW",
+    "Top-left": "Horizontal",
+    "Right-top": "Rotate 90° CW",
+    "Bottom-right": "Rotate 180°",
+    "Left-bottom": "Rotate 270° CW"
+};
+
+export function formatOrientation(o?: string | null): string | null {
+    if (!o) {
+        return null;
+    }
+
+    const trimmed = o.trim();
+    if (trimmed in ORIENTATION_MAP) {
+        return ORIENTATION_MAP[trimmed];
+    }
+
+    return trimmed;
+}
+
+export function getCameraName(asset?: ImageAsset): string {
+    if (!asset?.exif) {
+        return "Unknown Camera";
+    }
+
+    const make = asset.exif.make?.trim();
+    const model = asset.exif.model?.trim();
+
+    if (make && model) {
+        if (model.toLowerCase().startsWith(make.toLowerCase())) {
+            return model;
+        }
+        return `${make} ${model}`;
+    }
+
+    return model || make || "Unknown Camera";
+}
+
+export function getLensName(asset?: ImageAsset): string | null {
+    if (!asset?.exif) {
+        return null;
+    }
+
+    const lensMake = asset.exif.lens_make?.trim();
+    const lensModel = asset.exif.lens_model?.trim();
+
+    if (lensMake && lensModel) {
+        if (lensModel.toLowerCase().startsWith(lensMake.toLowerCase())) {
+            return lensModel;
+        }
+        return `${lensMake} ${lensModel}`;
+    }
+
+    return lensModel || lensMake || null;
+}
+
+export function getShootingMode(asset?: ImageAsset): string | null {
+    if (!asset?.exif) {
+        return null;
+    }
+
+    const prog = getExposureProgram(asset.exif.exposure_program);
+    const mode = getExposureMode(asset.exif.exposure_mode);
+    const scene = getSceneCaptureType(asset.exif.scene_capture_type);
+
+    const parts: string[] = [];
+
+    if (prog && prog !== "Not defined") {
+        parts.push(prog);
+    } else if (mode) {
+        parts.push(mode);
+    }
+
+    if (mode === "Auto bracket" && !parts.includes("Auto bracket")) {
+        parts.push("(Bracketed)");
+    }
+
+    if (scene && scene !== "Standard") {
+        parts.push(`· ${scene} scene`);
+    }
+
+    if (parts.length === 0) {
+        return null;
+    }
+
+    return parts.join(" ");
+}
+
+export function formatMeteringMode(mm?: string | null): string | null {
+    const mode = getMeteringMode(mm);
+    if (!mode || mode === "Unknown") {
+        return null;
+    }
+
+    if (mode.toLowerCase().endsWith("metering")) {
+        return mode;
+    }
+
+    return `${mode} metering`;
+}
+
+export interface FlashInfo {
+    fired: boolean;
+    label: string;
+}
+
+export function getFlashInfo(asset?: ImageAsset): FlashInfo | null {
+    if (!asset?.exif || asset.exif.flash === undefined || asset.exif.flash === null) {
+        return null;
+    }
+
+    const flashVal = asset.exif.flash;
+    const fired = Boolean(flashVal & 1);
+    const mode = getFlashMode(flashVal);
+
+    if (!mode) {
+        return {
+            fired,
+            label: fired ? "Flash fired" : "Flash did not fire"
+        };
+    }
+
+    let label = mode;
+    if (mode === "Fired") {
+        label = "Flash fired";
+    } else if (mode === "Did not fire") {
+        label = "Flash did not fire";
+    } else if (mode.startsWith("Auto, fired")) {
+        label = mode.replace("Auto, fired", "Flash fired (Auto)");
+    } else if (mode.startsWith("Auto, did not fire")) {
+        label = mode.replace("Auto, did not fire", "Flash did not fire (Auto)");
+    } else if (mode.startsWith("Off, did not fire")) {
+        label = mode.replace("Off, did not fire", "Flash off");
+    } else if (mode.startsWith("On, fired")) {
+        label = mode.replace("On, fired", "Flash fired (Compulsory)");
+    } else if (mode.startsWith("On, did not fire")) {
+        label = mode.replace("On, did not fire", "Flash did not fire");
+    }
+
+    return {
+        fired,
+        label
+    };
+}
+
+export function getFlashDescription(asset?: ImageAsset): string | null {
+    const info = getFlashInfo(asset);
+    return info?.label ?? null;
+}
+
+export interface WhiteBalanceInfo {
+    isAuto: boolean;
+    label: string;
+}
+
+export function getWhiteBalanceInfo(asset?: ImageAsset): WhiteBalanceInfo | null {
+    if (!asset?.exif) {
+        return null;
+    }
+
+    const wb = getWhiteBalance(asset.exif.white_balance);
+    const temp = asset.exif.color_temperature;
+
+    if (!wb && !temp) {
+        return null;
+    }
+
+    const isAuto = wb?.toLowerCase() === "auto";
+
+    if (wb && temp) {
+        const modeLabel = isAuto ? "Auto WB" : `${wb} WB`;
+        return {
+            isAuto,
+            label: `${modeLabel} (${temp}K)`
+        };
+    }
+
+    if (wb) {
+        const modeLabel = isAuto ? "Auto white balance" : `${wb} white balance`;
+        return {
+            isAuto,
+            label: modeLabel
+        };
+    }
+
+    return {
+        isAuto: false,
+        label: `${temp}K`
+    };
+}
+
+export function getWhiteBalanceDescription(asset?: ImageAsset): string | null {
+    const info = getWhiteBalanceInfo(asset);
+    return info?.label ?? null;
+}
+
+export function getLightSourceDescription(asset?: ImageAsset): string | null {
+    if (!asset?.exif?.light_source) {
+        return null;
+    }
+
+    const ls = asset.exif.light_source.trim();
+    if (!ls || ls === "0" || ls.toLowerCase() === "unknown") {
+        return null;
+    }
+
+    return ls;
+}
+
+export function formatMaxAperture(val?: string | null): string | null {
+    if (!val) {
+        return null;
+    }
+
+    const trimmed = val.trim();
+    const match = trimmed.match(/f\/(\d+(?:\.\d+)?)/i);
+    if (match) {
+        return `f/${match[1]}`;
+    }
+
+    if (/^\d+(?:\.\d+)?$/.test(trimmed)) {
+        return `f/${trimmed}`;
+    }
+
+    const cleaned = trimmed
+        .replace(/\s*\([^)]*$/, "")
+        .replace(/[()]/g, "")
+        .trim();
+    if (/^\d+(?:\.\d+)?$/.test(cleaned)) {
+        return `f/${cleaned}`;
+    }
+
+    return cleaned || trimmed;
+}
+
+export function formatFocalLengthInfo(asset?: ImageAsset): { focalLength?: string; focalLength35mm?: string } {
+    if (!asset?.exif) {
+        return {};
+    }
+
+    const fl = asset.exif.focal_length?.trim();
+    const fl35 = asset.exif.focal_length_in_35mm_format?.trim();
+
+    if (fl && fl35 && fl !== fl35) {
+        return {
+            focalLength: `${fl}`
+        };
+    }
+
+    if (fl) {
+        return {
+            focalLength: fl
+        };
+    }
+
+    if (fl35) {
+        return {
+            focalLength: `${fl35}`
+        };
+    }
+
+    return {};
+}
+
+export function formatExifTag(str: string): string {
+    if (!str) {
+        return "";
+    }
+
+    return str
+        .replace(/_/g, " ")
+        .replace(/([a-z])([A-Z])/g, "$1 $2")
+        .replace(/([A-Z])([A-Z][a-z])/g, "$1 $2")
+        .replace(/\b\w/g, (c) => c.toUpperCase())
+        .trim();
+}
