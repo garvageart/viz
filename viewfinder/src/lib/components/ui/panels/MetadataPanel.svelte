@@ -895,9 +895,6 @@
         border-radius: var(--viz-border-radius-sm);
         cursor: pointer;
         user-select: none;
-        transition:
-            background-color 0.15s ease,
-            transform 0.05s ease;
 
         &:hover {
             background-color: var(--viz-surface-hover);
@@ -913,10 +910,6 @@
 
         &:focus-visible {
             outline: 1px solid var(--viz-border-strong, var(--viz-text-primary));
-        }
-
-        &:active {
-            transform: scale(0.99);
         }
     }
 
@@ -952,8 +945,10 @@
     .copy-overlay {
         position: absolute;
         right: 0;
-        top: 50%;
-        transform: translateY(-50%);
+        top: 0;
+        bottom: 0;
+        margin: auto 0;
+        height: fit-content;
         font-size: var(--viz-font-size-xs);
         font-weight: 600;
         color: var(--viz-text-primary);

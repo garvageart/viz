@@ -35,13 +35,11 @@
     }: SvelteHTMLElements["div"] & Props = $props();
 
     $effect(() => {
-        if (focusScrollElement) {
-            focusScrollElement.scrollIntoView({
-                behavior: "instant",
-                block: "nearest",
-                inline: "center"
-            });
-        }
+        focusScrollElement?.scrollIntoView({
+            behavior: "instant",
+            block: "nearest",
+            inline: "center"
+        });
     });
 
     let viewContainer: HTMLElement | undefined = $state();
