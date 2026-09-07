@@ -5,6 +5,15 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.33.8] - 2026-09-07
+
+* fix(viewfinder): add accessible inset focus-visible indicator to VizViewContainer (1fefb825)
+* refactor(viewfinder): reposition VizToolbar to bottom with sticky fixed positioning (a4132b84)
+* fix: remove custom pull to refresh (aa92f6f6)
+* fix: change zoom-indicator class name in e2e test (6b681bf8)
+* refactor(viewfinder): unify attribution fields in metadata panel and inline copy actions (ce67da58)
+* feat(api): map EXIF artist and description across ingestion and workers (223c88f2)
+
 ## [0.33.7] - 2026-09-05
 
 * refactor(viewfinder): unify attribution fields in metadata panel and inline copy actions (ce67da58)
