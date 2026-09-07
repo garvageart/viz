@@ -43,9 +43,17 @@ test.describe("Security: Setup response omits session token", () => {
 
         if (response.status() === 201) {
             const body = await response.json();
-            expect(body).not.toHaveProperty("sessionToken");
-            expect(body).toHaveProperty("user");
-            expect(body).toHaveProperty("message");
+            try {
+                expect(body).not.toHaveProperty("sessionToken");
+                expect(body).toHaveProperty("user");
+                expect(body).toHaveProperty("message");
+            } finally {
+                if (body?.user?.uid) {
+                    await request.delete(`/api/admin/users/${body.user.uid}`, {
+                        data: { force: true }
+                    });
+                }
+            }
         }
     });
 });
