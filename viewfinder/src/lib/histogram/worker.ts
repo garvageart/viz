@@ -14,7 +14,10 @@ export const api: HistogramApi = {
         let bitmap: ImageBitmap;
 
         if (typeof source === "string") {
-            const res = await fetch(source, { credentials: "include" });
+            const res = await fetch(source, {
+                credentials: "include",
+                cache: "force-cache"
+            });
             if (!res.ok) {
                 throw new Error(`Failed to fetch image for histogram: ${res.statusText}`);
             }

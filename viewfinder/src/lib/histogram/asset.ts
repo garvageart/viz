@@ -18,9 +18,13 @@ function assetKey(asset: ImageAsset): string {
 }
 
 function histogramSourceUrl(asset: ImageAsset): string | null {
-    // Use original, smoother lines and the computation issue is fixed
     // TODO: Ideally, maybe this is a configurable user option
-    return getAssetImagePath(asset, "original") ?? null;
+    return (
+        getAssetImagePath(asset, "preview") ??
+        getAssetImagePath(asset, "original") ??
+        getAssetImagePath(asset, "thumbnail") ??
+        null
+    );
 }
 
 let workerInstance: Worker | null | undefined;
