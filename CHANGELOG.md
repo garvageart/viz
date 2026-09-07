@@ -5,6 +5,11 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.33.9] - 2026-09-07
+
+* chore: simplify some stuff (f7a78524)
+* chore: remove package manager property from package.json (60a72575)
+
 ## [0.33.8] - 2026-09-07
 
 * fix(viewfinder): add accessible inset focus-visible indicator to VizViewContainer (1fefb825)
