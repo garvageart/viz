@@ -187,7 +187,7 @@ func BackfillOriginalFileName(tx *gorm.DB, logger *slog.Logger) error {
 			image_metadata->>'original_file_name',
 			image_metadata->>'file_name'
 		)
-		WHERE original_file_name IS NULL
+		WHERE (original_file_name IS NULL OR original_file_name = '')
 		  AND image_metadata IS NOT NULL
 		  AND (
 			  image_metadata->>'original_file_name' IS NOT NULL

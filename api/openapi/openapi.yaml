@@ -4092,7 +4092,7 @@ components:
                 name: { type: string, description: Image name }
                 original_file_name:
                     type: string
-                    readOnly: true
+                    x-gorm-tag: "<-:create"
                     description: "Original uploaded file name"
                 uploaded_by:
                     $ref: "#/components/schemas/User"
@@ -4117,7 +4117,21 @@ components:
                     format: date-time
                     description: "The most appropriate taken/creation timestamp for an image. Priority will be: EXIF Original -> EXIF Modify -> metadata file_created_at -> image.created_at"
 
-            required: [uid, name, private, width, height, processed, created_at, updated_at, taken_at, image_metadata, image_paths]
+            required:
+                [
+                    uid,
+                    name,
+                    original_file_name,
+                    private,
+                    width,
+                    height,
+                    processed,
+                    created_at,
+                    updated_at,
+                    taken_at,
+                    image_metadata,
+                    image_paths
+                ]
 
         CollectionImage:
             x-entity: true
@@ -4608,6 +4622,23 @@ components:
                     $ref: "#/components/schemas/StorageMetricsConfig"
                 storage:
                     $ref: "#/components/schemas/StorageConfig"
+            required:
+                [
+                    base_url,
+                    allowed_hosts,
+                    timezone,
+                    logging,
+                    base_directory,
+                    upload,
+                    download,
+                    database,
+                    redis,
+                    libvips,
+                    cache,
+                    users,
+                    storage_metrics,
+                    storage
+                ]
 
         StorageConfig:
             type: object
@@ -4615,6 +4646,8 @@ components:
                 storage_path_template:
                     type: string
                     description: Template for the directory structure of stored images
+            required:
+                [storage_path_template]
 
         LoggingConfig:
             type: object
@@ -4628,6 +4661,8 @@ components:
                 pretty:
                     type: boolean
                     description: Enable pretty colorized console logging
+            required:
+                [level, timezone, pretty]
 
         UploadConfig:
             type: object
@@ -4635,6 +4670,8 @@ components:
                 location:
                     type: string
                     description: Upload location
+            required:
+                [location]
 
         DownloadConfig:
             type: object
@@ -4643,6 +4680,8 @@ components:
                     type: string
                     default: viz-bulk_export
                     description: "Default name for user exported zip files"
+            required:
+                [zip_export_name]
 
         DatabaseConfig:
             type: object
@@ -4662,6 +4701,8 @@ components:
                 port:
                     type: integer
                     description: Database port
+            required:
+                [location, user, password, name, port]
 
         QueueConfig:
             type: object
@@ -4699,6 +4740,20 @@ components:
                 write_timeout_seconds:
                     type: integer
                     description: Write timeout
+            required:
+                [
+                    enabled,
+                    host,
+                    port,
+                    username,
+                    password,
+                    db,
+                    use_tls,
+                    pool_size,
+                    dial_timeout_seconds,
+                    read_timeout_seconds,
+                    write_timeout_seconds
+                ]
 
         LibvipsConfig:
             type: object
@@ -4721,6 +4776,15 @@ components:
                 vector_enabled:
                     type: boolean
                     description: Vector enabled
+            required:
+                [
+                    match_system_logging,
+                    cache_max_memory_mb,
+                    cache_max_files,
+                    cache_max_operations,
+                    concurrency,
+                    vector_enabled
+                ]
 
         CacheConfig:
             type: object
@@ -4728,6 +4792,8 @@ components:
                 gc_enabled:
                     type: boolean
                     description: GC enabled
+            required:
+                [gc_enabled]
 
         UserManagementConfig:
             type: object
@@ -4735,6 +4801,8 @@ components:
                 allow_manual_registration:
                     type: boolean
                     description: Allow manual registration
+            required:
+                [allow_manual_registration]
 
         StorageMetricsConfig:
             type: object
@@ -4745,6 +4813,8 @@ components:
                 interval_seconds:
                     type: integer
                     description: Interval in seconds
+            required:
+                [enabled, interval_seconds]
 
         SearchListResponse:
             type: object

@@ -377,37 +377,8 @@ export type ImageAsset = {
     uid: string;
     /** Image name */
     name: string;
-    uploaded_by?: User;
-    owner?: User;
-    /** Image description */
-    description?: string;
-    exif?: ImageExif;
-    /** Is private */
-    "private": boolean;
-    /** Is favourited */
-    favourited?: boolean;
-    /** Image width */
-    width: number;
-    /** Image height */
-    height: number;
-    /** Is processed */
-    processed: boolean;
-    image_metadata: ImageMetadata;
-    image_paths: ImagePaths;
-    /** Creation time */
-    created_at: string;
-    /** Update time */
-    updated_at: string;
-    /** The most appropriate taken/creation timestamp for an image. Priority will be: EXIF Original -> EXIF Modify -> metadata file_created_at -> image.created_at */
-    taken_at: string;
-};
-export type ImageAssetRead = {
-    /** Image UID */
-    uid: string;
-    /** Image name */
-    name: string;
     /** Original uploaded file name */
-    original_file_name?: string;
+    original_file_name: string;
     uploaded_by?: User;
     owner?: User;
     /** Image description */
@@ -464,31 +435,6 @@ export type Collection = {
     /** Update time */
     updated_at: string;
 };
-export type CollectionRead = {
-    /** Collection UID */
-    uid: string;
-    /** Collection name */
-    name: string;
-    /** Number of images */
-    image_count: number;
-    /** Is private */
-    "private"?: boolean;
-    /** Is archived */
-    archived?: boolean;
-    /** Is favourited */
-    favourited?: boolean;
-    /** List of images */
-    images?: CollectionImage[];
-    created_by?: User;
-    owner?: User;
-    /** Collection description */
-    description?: string;
-    thumbnail?: ImageAssetRead;
-    /** Creation time */
-    created_at: string;
-    /** Update time */
-    updated_at: string;
-};
 export type SearchListResponse = {
     /** List of images found */
     images: ImageAsset[];
@@ -505,33 +451,11 @@ export type SearchListResponse = {
     /** Previous page link */
     prev?: string;
 };
-export type SearchListResponseRead = {
-    /** List of images found */
-    images: ImageAssetRead[];
-    /** List of collections found */
-    collections: CollectionRead[];
-    /** Current page */
-    page: number;
-    /** Items per page */
-    limit: number;
-    /** Total count of images found */
-    count?: number;
-    /** Next page link */
-    next?: string;
-    /** Previous page link */
-    prev?: string;
-};
 export type ImagesResponse = {
     /** Added timestamp */
     added_at: string;
     added_by?: User;
     image: ImageAsset;
-};
-export type ImagesResponseRead = {
-    /** Added timestamp */
-    added_at: string;
-    added_by?: User;
-    image: ImageAssetRead;
 };
 export type TimelineBucket = {
     /** Start of the day, month, or year bucket (UTC) */
@@ -554,22 +478,6 @@ export type ImagesListResponse = {
     count?: number;
     /** List of items */
     items: ImagesResponse[];
-};
-export type ImagesListResponseRead = {
-    /** Self link */
-    href?: string;
-    /** Previous page link */
-    prev?: string;
-    /** Next page link */
-    next?: string;
-    /** Items per page */
-    limit: number;
-    /** Current page */
-    page: number;
-    /** Total count */
-    count?: number;
-    /** List of items */
-    items: ImagesResponseRead[];
 };
 export type ImageUploadRequest = {
     /** Image file data */
@@ -658,22 +566,6 @@ export type CollectionListResponse = {
     /** List of collections */
     items: Collection[];
 };
-export type CollectionListResponseRead = {
-    /** Self link */
-    href?: string;
-    /** Previous page link */
-    prev?: string;
-    /** Next page link */
-    next?: string;
-    /** Items per page */
-    limit: number;
-    /** Current page */
-    page: number;
-    /** Total count */
-    count?: number;
-    /** List of collections */
-    items: CollectionRead[];
-};
 export type CollectionCreate = {
     /** Collection name */
     name: string;
@@ -697,26 +589,6 @@ export type CollectionDetailResponse = {
     /** Collection description */
     description?: string;
     thumbnail?: ImageAsset;
-    /** Creation time */
-    created_at: string;
-    /** Update time */
-    updated_at: string;
-};
-export type CollectionDetailResponseRead = {
-    /** Collection UID */
-    uid: string;
-    /** Collection name */
-    name: string;
-    /** Number of images */
-    image_count?: number;
-    /** Is private */
-    "private"?: boolean;
-    images: ImagesListResponseRead;
-    created_by?: User;
-    owner?: User;
-    /** Collection description */
-    description?: string;
-    thumbnail?: ImageAssetRead;
     /** Creation time */
     created_at: string;
     /** Update time */
@@ -796,107 +668,107 @@ export type DownloadToken = {
 };
 export type LoggingConfig = {
     /** Logging level */
-    level?: string;
+    level: string;
     /** Timezone to format timestamps ("local" or "utc") */
-    timezone?: string;
+    timezone: string;
     /** Enable pretty colorized console logging */
-    pretty?: boolean;
+    pretty: boolean;
 };
 export type UploadConfig = {
     /** Upload location */
-    location?: string;
+    location: string;
 };
 export type DownloadConfig = {
     /** Default name for user exported zip files */
-    zip_export_name?: string;
+    zip_export_name: string;
 };
 export type DatabaseConfig = {
     /** Database location/host */
-    location?: string;
+    location: string;
     /** Database user */
-    user?: string;
+    user: string;
     /** Masked password */
-    password?: string;
+    password: string;
     /** Database name */
-    name?: string;
+    name: string;
     /** Database port */
-    port?: number;
+    port: number;
 };
 export type QueueConfig = {
     /** Is queue enabled */
-    enabled?: boolean;
+    enabled: boolean;
     /** Queue host */
-    host?: string;
+    host: string;
     /** Queue port */
-    port?: number;
+    port: number;
     /** Queue username */
-    username?: string;
+    username: string;
     /** Masked password */
-    password?: string;
+    password: string;
     /** Redis DB index */
-    db?: number;
+    db: number;
     /** Use TLS */
-    use_tls?: boolean;
+    use_tls: boolean;
     /** Connection pool size */
-    pool_size?: number;
+    pool_size: number;
     /** Dial timeout */
-    dial_timeout_seconds?: number;
+    dial_timeout_seconds: number;
     /** Read timeout */
-    read_timeout_seconds?: number;
+    read_timeout_seconds: number;
     /** Write timeout */
-    write_timeout_seconds?: number;
+    write_timeout_seconds: number;
 };
 export type LibvipsConfig = {
     /** Match system logging level */
-    match_system_logging?: boolean;
+    match_system_logging: boolean;
     /** Cache max memory MB */
-    cache_max_memory_mb?: number;
+    cache_max_memory_mb: number;
     /** Cache max files */
-    cache_max_files?: number;
+    cache_max_files: number;
     /** Cache max operations */
-    cache_max_operations?: number;
+    cache_max_operations: number;
     /** Concurrency level */
-    concurrency?: number;
+    concurrency: number;
     /** Vector enabled */
-    vector_enabled?: boolean;
+    vector_enabled: boolean;
 };
 export type CacheConfig = {
     /** GC enabled */
-    gc_enabled?: boolean;
+    gc_enabled: boolean;
 };
 export type UserManagementConfig = {
     /** Allow manual registration */
-    allow_manual_registration?: boolean;
+    allow_manual_registration: boolean;
 };
 export type StorageMetricsConfig = {
     /** Metrics enabled */
-    enabled?: boolean;
+    enabled: boolean;
     /** Interval in seconds */
-    interval_seconds?: number;
+    interval_seconds: number;
 };
 export type StorageConfig = {
     /** Template for the directory structure of stored images */
-    storage_path_template?: string;
+    storage_path_template: string;
 };
 export type VizConfig = {
     /** Base URL of the application */
-    base_url?: string;
+    base_url: string;
     /** Hostnames and IPs server is allowed to respond to */
-    allowed_hosts?: string[];
+    allowed_hosts: string[];
     /** Timezone of the application (default UTC) */
-    timezone?: string;
-    logging?: LoggingConfig;
+    timezone: string;
+    logging: LoggingConfig;
     /** Base directory path */
-    base_directory?: string;
-    upload?: UploadConfig;
-    download?: DownloadConfig;
-    database?: DatabaseConfig;
-    redis?: QueueConfig;
-    libvips?: LibvipsConfig;
-    cache?: CacheConfig;
-    users?: UserManagementConfig;
-    storage_metrics?: StorageMetricsConfig;
-    storage?: StorageConfig;
+    base_directory: string;
+    upload: UploadConfig;
+    download: DownloadConfig;
+    database: DatabaseConfig;
+    redis: QueueConfig;
+    libvips: LibvipsConfig;
+    cache: CacheConfig;
+    users: UserManagementConfig;
+    storage_metrics: StorageMetricsConfig;
+    storage: StorageConfig;
 };
 export type SystemStatsResponse = {
     /** System uptime in seconds */
@@ -1645,7 +1517,7 @@ export function executeSearch(q: string, { limit, page }: {
 } = {}, opts?: Oazapfts.RequestOpts) {
     return oazapfts.fetchJson<{
         status: 200;
-        data: SearchListResponseRead;
+        data: SearchListResponse;
     } | {
         status: 500;
         data: ErrorResponse;
@@ -1667,7 +1539,7 @@ export function listTrash({ limit, page }: {
     return oazapfts.fetchJson<{
         status: 200;
         data: {
-            items: ImagesResponseRead[];
+            items: ImagesResponse[];
             page: number;
             limit: number;
             count: number;
@@ -1762,7 +1634,7 @@ export function listImages({ limit, page, sortBy, order }: {
 } = {}, opts?: Oazapfts.RequestOpts) {
     return oazapfts.fetchJson<{
         status: 200;
-        data: ImagesListResponseRead;
+        data: ImagesListResponse;
     } | {
         status: 500;
         data: ErrorResponse;
@@ -1939,7 +1811,7 @@ export function getImageExif(uid: string, { simple }: {
 export function getImage(uid: string, opts?: Oazapfts.RequestOpts) {
     return oazapfts.fetchJson<{
         status: 200;
-        data: ImageAssetRead;
+        data: ImageAsset;
     } | {
         status: 400;
         data: ErrorResponse;
@@ -1959,7 +1831,7 @@ export function getImage(uid: string, opts?: Oazapfts.RequestOpts) {
 export function updateImage(uid: string, imageUpdate: ImageUpdate, opts?: Oazapfts.RequestOpts) {
     return oazapfts.fetchJson<{
         status: 200;
-        data: ImageAssetRead;
+        data: ImageAsset;
     } | {
         status: 400;
         data: ErrorResponse;
@@ -2042,7 +1914,7 @@ export function listCollections({ limit, page, sortBy, order }: {
 } = {}, opts?: Oazapfts.RequestOpts) {
     return oazapfts.fetchJson<{
         status: 200;
-        data: CollectionListResponseRead;
+        data: CollectionListResponse;
     } | {
         status: 400;
         data: ErrorResponse;
@@ -2064,7 +1936,7 @@ export function listCollections({ limit, page, sortBy, order }: {
 export function createCollection(collectionCreate: CollectionCreate, opts?: Oazapfts.RequestOpts) {
     return oazapfts.fetchJson<{
         status: 201;
-        data: CollectionRead;
+        data: Collection;
     } | {
         status: 400;
         data: ErrorResponse;
@@ -2086,7 +1958,7 @@ export function getCollection(uid: string, { sortBy, order }: {
 } = {}, opts?: Oazapfts.RequestOpts) {
     return oazapfts.fetchJson<{
         status: 200;
-        data: CollectionDetailResponseRead;
+        data: CollectionDetailResponse;
     } | {
         status: 404;
         data: ErrorResponse;
@@ -2106,7 +1978,7 @@ export function getCollection(uid: string, { sortBy, order }: {
 export function updateCollection(uid: string, collectionUpdate: CollectionUpdate, opts?: Oazapfts.RequestOpts) {
     return oazapfts.fetchJson<{
         status: 200;
-        data: CollectionRead;
+        data: Collection;
     } | {
         status: 400;
         data: ErrorResponse;
@@ -2167,7 +2039,7 @@ export function listCollectionImages(uid: string, { limit, page, sortBy, order }
 } = {}, opts?: Oazapfts.RequestOpts) {
     return oazapfts.fetchJson<{
         status: 200;
-        data: ImagesListResponseRead;
+        data: ImagesListResponse;
     } | {
         status: 404;
         data: ErrorResponse;

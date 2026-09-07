@@ -670,7 +670,7 @@ type BuildData struct {
 // CacheConfig defines model for CacheConfig.
 type CacheConfig struct {
 	// GcEnabled GC enabled
-	GcEnabled *bool `json:"gc_enabled,omitempty"`
+	GcEnabled bool `json:"gc_enabled"`
 }
 
 // CacheStatusResponse defines model for CacheStatusResponse.
@@ -828,19 +828,19 @@ type CollectionUpdate struct {
 // DatabaseConfig defines model for DatabaseConfig.
 type DatabaseConfig struct {
 	// Location Database location/host
-	Location *string `json:"location,omitempty"`
+	Location string `json:"location"`
 
 	// Name Database name
-	Name *string `json:"name,omitempty"`
+	Name string `json:"name"`
 
 	// Password Masked password
-	Password *string `json:"password,omitempty"`
+	Password string `json:"password"`
 
 	// Port Database port
-	Port *int `json:"port,omitempty"`
+	Port int `json:"port"`
 
 	// User Database user
-	User *string `json:"user,omitempty"`
+	User string `json:"user"`
 }
 
 // DatabaseStatsResponse defines model for DatabaseStatsResponse.
@@ -894,7 +894,7 @@ type DeleteImagesResponse struct {
 // DownloadConfig defines model for DownloadConfig.
 type DownloadConfig struct {
 	// ZipExportName Default name for user exported zip files
-	ZipExportName *string `json:"zip_export_name,omitempty"`
+	ZipExportName string `json:"zip_export_name"`
 }
 
 // DownloadRequest defines model for DownloadRequest.
@@ -1008,8 +1008,8 @@ type ImageAsset struct {
 	Name string `json:"name"`
 
 	// OriginalFileName Original uploaded file name
-	OriginalFileName *string `json:"original_file_name,omitempty"`
-	Owner            *User   `json:"owner,omitempty"`
+	OriginalFileName string `json:"original_file_name"`
+	Owner            *User  `json:"owner,omitempty"`
 
 	// Private Is private
 	Private bool `json:"private"`
@@ -1385,34 +1385,34 @@ type Label string
 // LibvipsConfig defines model for LibvipsConfig.
 type LibvipsConfig struct {
 	// CacheMaxFiles Cache max files
-	CacheMaxFiles *int `json:"cache_max_files,omitempty"`
+	CacheMaxFiles int `json:"cache_max_files"`
 
 	// CacheMaxMemoryMb Cache max memory MB
-	CacheMaxMemoryMb *int `json:"cache_max_memory_mb,omitempty"`
+	CacheMaxMemoryMb int `json:"cache_max_memory_mb"`
 
 	// CacheMaxOperations Cache max operations
-	CacheMaxOperations *int `json:"cache_max_operations,omitempty"`
+	CacheMaxOperations int `json:"cache_max_operations"`
 
 	// Concurrency Concurrency level
-	Concurrency *int `json:"concurrency,omitempty"`
+	Concurrency int `json:"concurrency"`
 
 	// MatchSystemLogging Match system logging level
-	MatchSystemLogging *bool `json:"match_system_logging,omitempty"`
+	MatchSystemLogging bool `json:"match_system_logging"`
 
 	// VectorEnabled Vector enabled
-	VectorEnabled *bool `json:"vector_enabled,omitempty"`
+	VectorEnabled bool `json:"vector_enabled"`
 }
 
 // LoggingConfig defines model for LoggingConfig.
 type LoggingConfig struct {
 	// Level Logging level
-	Level *string `json:"level,omitempty"`
+	Level string `json:"level"`
 
 	// Pretty Enable pretty colorized console logging
-	Pretty *bool `json:"pretty,omitempty"`
+	Pretty bool `json:"pretty"`
 
 	// Timezone Timezone to format timestamps ("local" or "utc")
-	Timezone *string `json:"timezone,omitempty"`
+	Timezone string `json:"timezone"`
 }
 
 // MessageResponse defines model for MessageResponse.
@@ -1457,37 +1457,37 @@ type Pagination struct {
 // QueueConfig defines model for QueueConfig.
 type QueueConfig struct {
 	// Db Redis DB index
-	Db *int `json:"db,omitempty"`
+	Db int `json:"db"`
 
 	// DialTimeoutSeconds Dial timeout
-	DialTimeoutSeconds *int `json:"dial_timeout_seconds,omitempty"`
+	DialTimeoutSeconds int `json:"dial_timeout_seconds"`
 
 	// Enabled Is queue enabled
-	Enabled *bool `json:"enabled,omitempty"`
+	Enabled bool `json:"enabled"`
 
 	// Host Queue host
-	Host *string `json:"host,omitempty"`
+	Host string `json:"host"`
 
 	// Password Masked password
-	Password *string `json:"password,omitempty"`
+	Password string `json:"password"`
 
 	// PoolSize Connection pool size
-	PoolSize *int `json:"pool_size,omitempty"`
+	PoolSize int `json:"pool_size"`
 
 	// Port Queue port
-	Port *int `json:"port,omitempty"`
+	Port int `json:"port"`
 
 	// ReadTimeoutSeconds Read timeout
-	ReadTimeoutSeconds *int `json:"read_timeout_seconds,omitempty"`
+	ReadTimeoutSeconds int `json:"read_timeout_seconds"`
 
 	// UseTls Use TLS
-	UseTls *bool `json:"use_tls,omitempty"`
+	UseTls bool `json:"use_tls"`
 
 	// Username Queue username
-	Username *string `json:"username,omitempty"`
+	Username string `json:"username"`
 
 	// WriteTimeoutSeconds Write timeout
-	WriteTimeoutSeconds *int `json:"write_timeout_seconds,omitempty"`
+	WriteTimeoutSeconds int `json:"write_timeout_seconds"`
 }
 
 // SearchListResponse defines model for SearchListResponse.
@@ -1726,16 +1726,16 @@ type SignedExportResponse struct {
 // StorageConfig defines model for StorageConfig.
 type StorageConfig struct {
 	// StoragePathTemplate Template for the directory structure of stored images
-	StoragePathTemplate *string `json:"storage_path_template,omitempty"`
+	StoragePathTemplate string `json:"storage_path_template"`
 }
 
 // StorageMetricsConfig defines model for StorageMetricsConfig.
 type StorageMetricsConfig struct {
 	// Enabled Metrics enabled
-	Enabled *bool `json:"enabled,omitempty"`
+	Enabled bool `json:"enabled"`
 
 	// IntervalSeconds Interval in seconds
-	IntervalSeconds *int `json:"interval_seconds,omitempty"`
+	IntervalSeconds int `json:"interval_seconds"`
 }
 
 // SuperadminSetupRequest defines model for SuperadminSetupRequest.
@@ -1817,7 +1817,7 @@ type TimelineBucket struct {
 // UploadConfig defines model for UploadConfig.
 type UploadConfig struct {
 	// Location Upload location
-	Location *string `json:"location,omitempty"`
+	Location string `json:"location"`
 }
 
 // User defines model for User.
@@ -1865,7 +1865,7 @@ type UserCreate struct {
 // UserManagementConfig defines model for UserManagementConfig.
 type UserManagementConfig struct {
 	// AllowManualRegistration Allow manual registration
-	AllowManualRegistration *bool `json:"allow_manual_registration,omitempty"`
+	AllowManualRegistration bool `json:"allow_manual_registration"`
 }
 
 // UserOnboardingBody defines model for UserOnboardingBody.
@@ -1919,26 +1919,26 @@ type UserUpdate struct {
 // VizConfig defines model for VizConfig.
 type VizConfig struct {
 	// AllowedHosts Hostnames and IPs server is allowed to respond to
-	AllowedHosts *[]string `json:"allowed_hosts,omitempty"`
+	AllowedHosts []string `json:"allowed_hosts"`
 
 	// BaseDirectory Base directory path
-	BaseDirectory *string `json:"base_directory,omitempty"`
+	BaseDirectory string `json:"base_directory"`
 
 	// BaseUrl Base URL of the application
-	BaseUrl        *string               `json:"base_url,omitempty"`
-	Cache          *CacheConfig          `json:"cache,omitempty"`
-	Database       *DatabaseConfig       `json:"database,omitempty"`
-	Download       *DownloadConfig       `json:"download,omitempty"`
-	Libvips        *LibvipsConfig        `json:"libvips,omitempty"`
-	Logging        *LoggingConfig        `json:"logging,omitempty"`
-	Redis          *QueueConfig          `json:"redis,omitempty"`
-	Storage        *StorageConfig        `json:"storage,omitempty"`
-	StorageMetrics *StorageMetricsConfig `json:"storage_metrics,omitempty"`
+	BaseUrl        string               `json:"base_url"`
+	Cache          CacheConfig          `json:"cache"`
+	Database       DatabaseConfig       `json:"database"`
+	Download       DownloadConfig       `json:"download"`
+	Libvips        LibvipsConfig        `json:"libvips"`
+	Logging        LoggingConfig        `json:"logging"`
+	Redis          QueueConfig          `json:"redis"`
+	Storage        StorageConfig        `json:"storage"`
+	StorageMetrics StorageMetricsConfig `json:"storage_metrics"`
 
 	// Timezone Timezone of the application (default UTC)
-	Timezone *string               `json:"timezone,omitempty"`
-	Upload   *UploadConfig         `json:"upload,omitempty"`
-	Users    *UserManagementConfig `json:"users,omitempty"`
+	Timezone string               `json:"timezone"`
+	Upload   UploadConfig         `json:"upload"`
+	Users    UserManagementConfig `json:"users"`
 }
 
 // WSBroadcastRequest defines model for WSBroadcastRequest.

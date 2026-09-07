@@ -111,5 +111,5 @@ func TestBackfillOriginalFileName(t *testing.T) {
 	var updated entities.ImageAsset
 	require.NoError(t, gdb.First(&updated, "uid = ?", "test-orig-name-img").Error)
 	assert.NotNil(t, updated.OriginalFileName)
-	assert.Equal(t, "original_photo.raw", *updated.OriginalFileName)
+	assert.Equal(t, "original_photo.raw", updated.OriginalFileName)
 }
