@@ -373,7 +373,7 @@
 <div id="search">
     <div id="search-info-container" class="selection-container">
         {#if !search.loading}
-            <VizToolbar stickyToolbar={true} selectionScope={activeSelectionScope}>
+            <VizToolbar selectionScope={activeSelectionScope}>
                 {#snippet leading()}
                     <Button
                         iconName="filter_list"

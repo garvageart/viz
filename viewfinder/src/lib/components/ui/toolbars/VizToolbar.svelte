@@ -6,7 +6,7 @@
 
     interface Props extends HTMLAttributes<HTMLDivElement> {
         /** Whether the toolbar sticks to the top of its scrolling container */
-        stickyToolbar?: boolean;
+        fixed?: boolean;
         /** Selection scope to monitor for selection count and clear operations */
         selectionScope?: SelectionScope | null;
         /** Leading content (left side: e.g. intake buttons, context title) */
@@ -20,14 +20,13 @@
     }
 
     let {
-        stickyToolbar = true,
+        fixed = true,
         selectionScope = null,
         leading,
         selectionActions,
         trailing,
         children,
         class: className = "",
-        style: customStyle = "",
         ...props
     }: Props = $props();
 
@@ -39,7 +38,7 @@
     data-keep-selection="true"
     class="viz-toolbar-container viz-toolbar {className}"
     class:selection-toolbar={hasSelection}
-    style="{stickyToolbar ? 'position: sticky; top: 0;' : 'position: relative;'} {customStyle}"
+    class:fixed
 >
     <div class="viz-toolbar-section leading">
         {#if leading}
@@ -96,7 +95,7 @@
         height: var(--viz-toolbar-height);
         background-color: var(--viz-surface-panel);
         backdrop-filter: blur(var(--viz-spacing-xs));
-        border-bottom: var(--viz-border-thin);
+        border-top: var(--viz-border-thin);
         font-size: var(--viz-font-size-std);
         width: 100%;
         max-width: 100%;
@@ -107,6 +106,11 @@
         box-sizing: border-box;
         padding: 0 var(--viz-spacing-md);
         gap: var(--viz-spacing-sm);
+
+        &.fixed {
+            position: sticky;
+            bottom: 0;
+        }
     }
 
     .viz-toolbar-section {

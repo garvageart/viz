@@ -436,8 +436,60 @@
     hasMore={galleryState.hasMore}
     paginate={() => paginate()}
 >
-    {#if galleryState.images.length > 0}
-        <VizToolbar stickyToolbar={true} {selectionScope}>
+    {#if galleryState.images.length === 0}
+        <div id="viz-no_assets">
+            {@render noAssetsSnippet()}
+        </div>
+    {:else}
+        {#snippet imageCard(asset: ImageAsset, state: { isSelected: boolean })}
+            {#if imageThumbnailVariant === "simple"}
+                <ImageCard {asset} variant={"simple"} isSelected={state.isSelected} />
+            {:else}
+                <ImageCard {asset} isSelected={state.isSelected} />
+            {/if}
+        {/snippet}
+
+        {#snippet justifiedGrid()}
+            <PhotoAssetGrid
+                bind:allData={sortedFilteredImages}
+                data={galleryState.images}
+                groupedData={viewSettings.showDates ? consolidatedGroups : undefined}
+                gridConfig={{
+                    headerHeight: 40
+                }}
+                showDateHeaders={viewSettings.showDates}
+                {scopeId}
+                onLoadMore={() => paginate()}
+                assetDblClick={(_e, asset) => {
+                    openLightbox(asset);
+                }}
+                onassetcontext={(detail) => {
+                    contextMenu.open(actionMenuItems, detail.anchor, { offsetY: 0 });
+                }}
+            />
+        {/snippet}
+
+        <div class="photo-group-container">
+            <AssetGrid
+                data={galleryState.images}
+                type={viewSettings.current}
+                assetSnippet={imageCard}
+                sortState={photosSort}
+                customSnippet={justifiedGrid}
+                {scopeId}
+                assetDblClick={(
+                    _e: MouseEvent & { currentTarget: EventTarget & (HTMLDivElement | HTMLTableRowElement) },
+                    asset: ImageAsset
+                ) => {
+                    openLightbox(asset);
+                }}
+                onassetcontext={(detail) => {
+                    contextMenu.open(actionMenuItems, detail.anchor, { offsetY: 0 });
+                }}
+            />
+        </div>
+
+        <VizToolbar {selectionScope}>
             {#snippet selectionActions()}
                 <div class="triage-group">
                     <ImageLabelViewer
@@ -631,59 +683,6 @@
                 </div>
             {/snippet}
         </VizToolbar>
-    {/if}
-    {#if galleryState.images.length === 0}
-        <div id="viz-no_assets">
-            {@render noAssetsSnippet()}
-        </div>
-    {:else}
-        {#snippet imageCard(asset: ImageAsset, state: { isSelected: boolean })}
-            {#if imageThumbnailVariant === "simple"}
-                <ImageCard {asset} variant={"simple"} isSelected={state.isSelected} />
-            {:else}
-                <ImageCard {asset} isSelected={state.isSelected} />
-            {/if}
-        {/snippet}
-
-        {#snippet justifiedGrid()}
-            <PhotoAssetGrid
-                bind:allData={sortedFilteredImages}
-                data={galleryState.images}
-                groupedData={viewSettings.showDates ? consolidatedGroups : undefined}
-                gridConfig={{
-                    headerHeight: 40
-                }}
-                showDateHeaders={viewSettings.showDates}
-                {scopeId}
-                onLoadMore={() => paginate()}
-                assetDblClick={(_e, asset) => {
-                    openLightbox(asset);
-                }}
-                onassetcontext={(detail) => {
-                    contextMenu.open(actionMenuItems, detail.anchor, { offsetY: 0 });
-                }}
-            />
-        {/snippet}
-
-        <div class="photo-group-container">
-            <AssetGrid
-                data={galleryState.images}
-                type={viewSettings.current}
-                assetSnippet={imageCard}
-                sortState={photosSort}
-                customSnippet={justifiedGrid}
-                {scopeId}
-                assetDblClick={(
-                    _e: MouseEvent & { currentTarget: EventTarget & (HTMLDivElement | HTMLTableRowElement) },
-                    asset: ImageAsset
-                ) => {
-                    openLightbox(asset);
-                }}
-                onassetcontext={(detail) => {
-                    contextMenu.open(actionMenuItems, detail.anchor, { offsetY: 0 });
-                }}
-            />
-        </div>
     {/if}
 </VizViewContainer>
 

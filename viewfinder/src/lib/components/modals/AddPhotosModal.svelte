@@ -221,11 +221,10 @@
     {#if isLoading && !initialDataLoaded}
         <div class="loading-state">
             <LoadingSpinner />
-            <span class="loading-text">Loading library timeline...</span>
         </div>
     {:else}
         <div class="modal-body">
-            <VizToolbar stickyToolbar={true}>
+            <VizToolbar style="border-top: none; ;border-bottom: var(--viz-border-thin);">
                 {#snippet leading()}
                     <div class="toolbar-group">
                         <Dropdown
@@ -341,11 +340,6 @@
         flex: 1;
         gap: var(--viz-spacing-std);
         color: var(--viz-text-secondary);
-
-        .loading-text {
-            font-family: var(--viz-mono-font);
-            font-size: var(--viz-font-size-std);
-        }
     }
 
     .modal-body {

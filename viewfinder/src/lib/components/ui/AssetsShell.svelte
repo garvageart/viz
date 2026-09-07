@@ -112,8 +112,24 @@
     {/if}
 {/snippet}
 
+{@render children?.()}
+
+{#if gridData.length === 0}
+    <div id="viz-no_assets">
+        {#if noAssetsSnippet}
+            {@render noAssetsSnippet()}
+        {:else}
+            <p style="text-align: center; margin: var(--viz-spacing-lg); color: var(--viz-text-primary);">
+                No assets to display.
+            </p>
+        {/if}
+    </div>
+{:else}
+    <AssetGrid {...grid} {sortState} bind:assetGridArray bind:data={gridData} bind:columnCount />
+{/if}
+
 {#if showToolbars}
-    <VizToolbar stickyToolbar={true} {selectionScope} {...toolbarProps}>
+    <VizToolbar {selectionScope} {...toolbarProps}>
         {#snippet leading()}
             <div class="toolbar-group">
                 {@render toolbarButton({
@@ -160,22 +176,6 @@
             {/if}
         {/snippet}
     </VizToolbar>
-{/if}
-
-{@render children?.()}
-
-{#if gridData.length === 0}
-    <div id="viz-no_assets">
-        {#if noAssetsSnippet}
-            {@render noAssetsSnippet()}
-        {:else}
-            <p style="text-align: center; margin: var(--viz-spacing-lg); color: var(--viz-text-primary);">
-                No assets to display.
-            </p>
-        {/if}
-    </div>
-{:else}
-    <AssetGrid {...grid} {sortState} bind:assetGridArray bind:data={gridData} bind:columnCount />
 {/if}
 
 <style lang="scss">
