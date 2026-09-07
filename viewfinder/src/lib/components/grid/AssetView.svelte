@@ -15,6 +15,7 @@
     import PhotoTooltip from "../tooltips/PhotoTooltip.svelte";
     import { mountTooltipComponent } from "../tooltips/tooltip";
     import Table, { type TableColumn } from "../ui/Table.svelte";
+    import { touchSelectionAction } from "./actions";
 
     export interface AssetViewProps<T extends { uid: string } & Record<string, any>> {
         data: T[];
@@ -546,6 +547,42 @@
         assetClick?.();
     }
 
+    const handleMobileCardTap = (asset: T): MouseEventHandler<HTMLDivElement> => {
+        return (e) => {
+            if (disabledUids.has(asset.uid)) {
+                return;
+            }
+            onFocus();
+
+            if (selection.size > 0) {
+                selection.toggle(asset);
+                if (selection.has(asset)) {
+                    selectionAnchor = asset;
+                } else if (selectionAnchor?.uid === asset.uid) {
+                    selectionAnchor = selection.active || null;
+                }
+                assetClick?.();
+                return;
+            }
+
+            assetDblClick?.(e, asset);
+        };
+    };
+
+    function handleMobileLongPress(asset: T) {
+        if (disabledUids.has(asset.uid)) {
+            return;
+        }
+        onFocus();
+        selection.toggle(asset);
+        if (selection.has(asset)) {
+            selectionAnchor = asset;
+        } else if (selectionAnchor?.uid === asset.uid) {
+            selectionAnchor = selection.active || null;
+        }
+        assetClick?.();
+    }
+
     function focusAssetElement(uid: string) {
         const el = assetGridDisplayEl?.querySelector(`[data-asset-id="${uid}"]`) as HTMLElement | null;
         if (el) {
@@ -802,50 +839,26 @@
         onfocus={() => {
             onFocus();
         }}
+        use:touchSelectionAction={{
+            disabled: isDisabled,
+            onLongPress: () => {
+                handleMobileLongPress(assetData);
+            }
+        }}
         onclick={(e) => {
             if (isDisabled) {
                 return;
             }
-            if ((e.currentTarget as HTMLElement).dataset.longPressHandled === "true") {
+            e.preventDefault();
+            if (isMobile) {
+                handleMobileCardTap(assetData)(e);
                 return;
             }
-            e.preventDefault();
             handleImageCardSelect(assetData, e);
         }}
         onkeydown={(e) => {
             e.preventDefault();
             handleKeydownCardSelect(assetData, e);
-        }}
-        ontouchstart={(e: TouchEvent) => {
-            if (isMobile && !isDisabled) {
-                const target = e.currentTarget as HTMLElement;
-                const timer = setTimeout(() => {
-                    e.preventDefault();
-                    e.stopPropagation();
-                    selection.toggle(assetData);
-                    target.dataset.longPressHandled = "true";
-                    setTimeout(() => {
-                        delete target.dataset.longPressHandled;
-                    }, 150);
-                }, 500);
-                target.dataset.longPressTimer = String(timer);
-            }
-        }}
-        ontouchend={(e: TouchEvent) => {
-            const target = e.currentTarget as HTMLElement;
-            const timer = target.dataset.longPressTimer;
-            if (timer) {
-                clearTimeout(Number(timer));
-                delete target.dataset.longPressTimer;
-            }
-        }}
-        ontouchcancel={(e: TouchEvent) => {
-            const target = e.currentTarget as HTMLElement;
-            const timer = target.dataset.longPressTimer;
-            if (timer) {
-                clearTimeout(Number(timer));
-                delete target.dataset.longPressTimer;
-            }
         }}
         ondblclick={(e) => {
             if (e.ctrlKey) {
@@ -856,10 +869,9 @@
             assetDblClick?.(e, assetData);
         }}
         oncontextmenu={(e: MouseEvent & { currentTarget: HTMLElement }) => {
-            if (isMobile && e.currentTarget.dataset.longPressHandled === "true") {
+            if (isMobile) {
                 e.preventDefault();
                 e.stopPropagation();
-                delete e.currentTarget.dataset.longPressHandled;
                 return;
             }
             e.preventDefault();

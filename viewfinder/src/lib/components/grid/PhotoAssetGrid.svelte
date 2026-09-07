@@ -3,6 +3,7 @@
     import hotkeys, { type HotkeysEvent } from "hotkeys-js";
     import { DateTime } from "luxon";
     import { type Snippet, onMount, untrack } from "svelte";
+    import type { MouseEventHandler } from "svelte/elements";
     import { SvelteSet } from "svelte/reactivity";
     import { fade } from "svelte/transition";
     import { type Instance, type Props as TippyProps, delegate, followCursor, hideAll } from "tippy.js";
@@ -29,6 +30,7 @@
     import { getImageLabel, getTakenAt } from "$lib/utils/images";
     import { debounce } from "$lib/utils/misc";
     import TimelineScrubber from "./TimelineScrubber.svelte";
+    import { touchSelectionAction } from "./actions";
 
     interface ExtendedTippyInstance extends Instance<TippyProps> {
         _destroyComponent?: () => void;
@@ -48,9 +50,7 @@
         stickyHeaderHeight?: number;
         assetClick?: () => void;
         assetDblClick?: (
-            e: MouseEvent & {
-                currentTarget: EventTarget & (HTMLDivElement | HTMLTableRowElement);
-            },
+            e: Parameters<MouseEventHandler<HTMLDivElement | HTMLTableRowElement>>[0],
             asset: ImageAsset
         ) => void;
         onassetcontext?: (detail: { asset: ImageAsset; anchor: { x: number; y: number } | HTMLElement }) => void;
@@ -458,7 +458,7 @@
 
     // ALL GRID IMAGE RENDERING STUFF
     // ----------------------------
-    let isMultiSelecting = $derived(selection.size > 1);
+    let isMultiSelecting = $derived(isMobile ? selection.size > 0 : selection.size > 1);
 
     const groupLookup = $derived.by(() => {
         const map = new Map<string, ImageAsset[]>();
@@ -953,6 +953,44 @@
         assetClick?.();
     }
 
+    const handleMobileCardTap = (asset: ImageAsset): MouseEventHandler<HTMLDivElement> => {
+        return (e) => {
+            if (disabledUids.has(asset.uid)) {
+                return;
+            }
+            onFocus();
+
+            if (selection.size > 0) {
+                selection.toggle(asset);
+                if (selection.has(asset)) {
+                    selectionAnchor = asset;
+                } else if (selectionAnchor?.uid === asset.uid) {
+                    selectionAnchor = selection.active || null;
+                }
+                assetClick?.();
+                return;
+            }
+
+            assetDblClick?.(e, asset);
+        };
+    };
+
+    function handleMobileLongPress(asset: ImageAsset) {
+        if (disabledUids.has(asset.uid)) {
+            return;
+        }
+
+        onFocus();
+        selection.toggle(asset);
+
+        if (selection.has(asset)) {
+            selectionAnchor = asset;
+        } else if (selectionAnchor?.uid === asset.uid) {
+            selectionAnchor = selection.active || null;
+        }
+        assetClick?.();
+    }
+
     function shouldKeepSelection(target: HTMLElement | null): boolean {
         if (!target) {
             return false;
@@ -1139,21 +1177,28 @@
         role="button"
         tabindex={0}
         onfocus={onFocus}
-        onclick={(e) => {
-            if ((e.currentTarget as HTMLElement).dataset.longPressHandled === "true") {
-                return;
+        use:touchSelectionAction={{
+            disabled: disabledUids.has(asset.uid),
+            onLongPress: () => {
+                handleMobileLongPress(asset);
             }
+        }}
+        onclick={(e) => {
             e.preventDefault();
             e.stopPropagation();
+
+            if (isMobile) {
+                handleMobileCardTap(asset)(e);
+                return;
+            }
+
             handleImageCardSelect(asset, e);
         }}
         onkeydown={(e) => {
             if (e.key === "Enter") {
                 e.preventDefault();
                 assetDblClick?.(
-                    e as unknown as MouseEvent & {
-                        currentTarget: EventTarget & (HTMLDivElement | HTMLTableRowElement);
-                    },
+                    e as unknown as Parameters<MouseEventHandler<HTMLDivElement | HTMLTableRowElement>>[0],
                     asset
                 );
             } else if (e.key === " ") {
@@ -1161,47 +1206,10 @@
                 handleImageCardSelect(asset, e);
             }
         }}
-        // this is fucking shocking gosh
-        // i think using an action here would be better
-        // something like use:handleTouch
-        ontouchstart={(e: TouchEvent) => {
-            if (isMobile && !isDisabled) {
-                const target = e.currentTarget as HTMLElement;
-                const timer = setTimeout(() => {
-                    e.preventDefault();
-                    e.stopPropagation();
-
-                    selection.toggle(asset);
-                    target.dataset.longPressHandled = "true";
-
-                    setTimeout(() => {
-                        delete target.dataset.longPressHandled;
-                    }, 150);
-                }, 500);
-                target.dataset.longPressTimer = String(timer);
-            }
-        }}
-        ontouchend={(e: TouchEvent) => {
-            const target = e.currentTarget as HTMLElement;
-            const timer = target.dataset.longPressTimer;
-            if (timer) {
-                clearTimeout(Number(timer));
-                delete target.dataset.longPressTimer;
-            }
-        }}
-        ontouchcancel={(e: TouchEvent) => {
-            const target = e.currentTarget as HTMLElement;
-            const timer = target.dataset.longPressTimer;
-            if (timer) {
-                clearTimeout(Number(timer));
-                delete target.dataset.longPressTimer;
-            }
-        }}
         oncontextmenu={(e: MouseEvent & { currentTarget: HTMLElement }) => {
-            if (isMobile && e.currentTarget.dataset.longPressHandled === "true") {
+            if (isMobile) {
                 e.preventDefault();
                 e.stopPropagation();
-                delete e.currentTarget.dataset.longPressHandled;
                 return;
             }
 
@@ -1264,7 +1272,7 @@
                         <div class="photo-name">{asset?.name}</div>
                         <div class="photo-meta">
                             <div class="photo-date">
-                                {DateTime.fromJSDate(getTakenAt(asset)).toFormat("dd LLL yyyy • HH:mm")}
+                                {DateTime.fromJSDate(getTakenAt(asset)).toLocaleString(DateTime.DATETIME_MED)}
                             </div>
                         </div>
                     </div>
