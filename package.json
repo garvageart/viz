@@ -7,7 +7,6 @@
     "engines": {
         "node": ">=26.5.0"
     },
-    "packageManager": "pnpm@11.23.0",
     "scripts": {
         "dev": "pnpm --filter @viz/viewfinder dev",
         "build": "pnpm --filter @viz/viewfinder build",
