@@ -9,16 +9,15 @@
 </script>
 
 <script lang="ts">
-    import { API_BASE_URL, type ImageAsset, getImageFileBlob } from "@viz/api";
+    import { type ImageAsset, getImageFileBlob } from "@viz/api";
     import * as Comlink from "comlink";
     import JSZip from "jszip";
     import { type Snippet } from "svelte";
     import { slide } from "svelte/transition";
     import { DbSettings } from "$lib/db/settings";
     import { DownloadFile, DownloadState } from "$lib/download/asset.svelte";
-    import { processDownloadQueue, waitForDownloadCompletion } from "$lib/download/manager.svelte";
     import { createZipExportName } from "$lib/download/utils";
-    import type { TransformInput } from "$lib/images/vips/vips";
+    import type { TransformInput, TransformResult } from "$lib/images/vips/vips";
     import { config, download } from "$lib/states/index.svelte";
     import { toasts } from "$lib/toast-notifcations/toasts.svelte";
     import { safeRenderRenameTemplate } from "$lib/ui-tools/renamer";
@@ -32,7 +31,7 @@
         type ResizeMode
     } from "$lib/utils/images";
     import { generateRandomString } from "$lib/utils/misc";
-    import type { exportImagesParallel } from "$lib/workers/image_export";
+    import type { ImageExportWorkerApi, exportImagesParallel } from "$lib/workers/image_export";
     import ImageExportWorker from "$lib/workers/image_export?worker";
     import { modalsManager } from "../../modals/manager/ModalManager.svelte";
     import BatchRenameBuilder, { type SavedRenameSettings, defaultTemplate } from "../BatchRenameBuilder.svelte";
@@ -247,212 +246,238 @@
         // Capture all needed state before closing the modal
         const exportSettings = $state.snapshot(settings);
         const exportRenameSettings = $state.snapshot(renameSettings);
-        const exportTemplate = activeTemplate;
+        const exportTemplate = $state.snapshot(activeTemplate);
         const exportAssets = $state.snapshot(assets);
 
         modalsManager.close(id);
 
-        const downloadTasks: DownloadFile[] = [];
-        for (const asset of exportAssets) {
-            const url = `${API_BASE_URL}/images/${encodeURIComponent(asset.uid)}/file`;
-            const filename =
-                asset.image_metadata?.original_file_name || asset.image_metadata?.file_name || asset.name || "image";
-            const task = new DownloadFile(url, filename);
-
-            downloadTasks.push(task);
-        }
-
-        download.files.push(...downloadTasks);
-        download.stats.total += downloadTasks.length;
-
-        processDownloadQueue();
-        await waitForDownloadCompletion(downloadTasks);
-
-        const transformInputs: TransformInput[] = [];
-        for (let i = 0; i < downloadTasks.length; i++) {
-            const task = downloadTasks[i];
-            const asset = exportAssets[i];
-            let originalData = task.data;
-
-            if (!originalData) {
-                // Try falling back to cached getImageFileBlob
-                console.debug(
-                    `[ExportPanel] Initial download task data missing for asset ${asset.uid} (${task.filename}). Falling back to server fetch via getImageFileBlob.`
-                );
-                const response = await getImageFileBlob(asset.uid, {}, { cache: "force-cache" });
-                if (response.status === 200) {
-                    originalData = response.data;
-                } else {
-                    throw new Error(`Failed to download image: ${task.filename}`);
-                }
+        function resolveExportFilename(asset: ImageAsset, index: number, ext: string): string {
+            let basename = "";
+            if (exportRenameSettings.namingMode === "original") {
+                const imageExportName =
+                    asset.name || asset.image_metadata.file_name || asset.original_file_name || "image";
+                const lastDot = imageExportName.lastIndexOf(".");
+                basename = lastDot === -1 ? imageExportName : imageExportName.substring(0, lastDot);
+            } else {
+                const { name: renderedName } = safeRenderRenameTemplate(exportTemplate, asset, index, {
+                    sequenceStart: exportRenameSettings.sequenceStart,
+                    sequencePadding: exportRenameSettings.sequencePadding,
+                    customName: exportRenameSettings.customName
+                });
+                basename = renderedName;
             }
 
-            transformInputs.push({
-                asset: $state.snapshot(asset),
-                params: $state.snapshot({
-                    format: exportSettings.format,
-                    quality: exportSettings.quality,
-                    width: exportSettings.resizeMode !== "none" ? exportSettings.resizeWidth : undefined,
-                    height: exportSettings.resizeMode !== "none" ? exportSettings.resizeHeight : undefined,
-                    resizeMode: exportSettings.resizeMode,
-                    colorSpace: exportSettings.colorSpace,
-                    metadata: exportSettings.includeMetadata ? exportSettings.metadata : "none",
-                    removeLocation: exportSettings.removeLocation,
-                    bitDepth: exportSettings.bitDepth ? exportSettings.bitDepth : undefined
-                }),
-                originalData
-            });
+            return `${basename}.${ext}`;
         }
 
-        let exportWorker;
+        const isSingle = exportAssets.length === 1;
+
+        // Create individual download tasks so live per-image progress can be tracked in the UI
+        const imageTasks: DownloadFile[] = [];
+        for (const asset of exportAssets) {
+            const filename = resolveExportFilename(asset, imageTasks.length, exportSettings.format);
+            const task = new DownloadFile("", filename);
+
+            imageTasks.push(task);
+        }
+
+        download.files.push(...imageTasks);
+        download.stats.total += imageTasks.length;
+
+        let exportWorker: Worker | undefined;
+        const flatResults: { result?: TransformResult; error?: string; index: number }[] = [];
+
         try {
             exportWorker = new ImageExportWorker();
-            exportWorker.addEventListener("error", (e) => {
-                console.error("[ExportPanel] Worker error event:", e.message, e.filename, e.lineno, e);
-                throw e;
-            });
-        } catch (workerErr) {
-            console.error("[ExportPanel] Failed to create web worker:", workerErr);
-            throw workerErr;
-        }
+            const workerApi = Comlink.wrap<ImageExportWorkerApi>(exportWorker);
 
-        const transformFn = Comlink.wrap<typeof exportImagesParallel>(exportWorker);
+            if (isSingle) {
+                const asset = exportAssets[0];
+                const task = imageTasks[0];
 
-        const onWorkerProgress = Comlink.proxy((index: number, percent: number) => {
-            const task = downloadTasks[index];
-            if (task) {
+                task.state = DownloadState.DOWNLOADING;
+                const response = await getImageFileBlob(asset.uid, {}, { cache: "force-cache" });
+                if (response.status !== 200) {
+                    task.state = DownloadState.ERROR;
+                    throw new Error(`Failed to download image: ${task.filename || asset.uid}`);
+                }
+
                 task.state = DownloadState.PROCESSING;
-                task.progress = percent;
-            }
-        });
+                const transformInput: TransformInput = {
+                    asset,
+                    params: {
+                        format: exportSettings.format,
+                        quality: exportSettings.quality,
+                        width: exportSettings.resizeMode !== "none" ? exportSettings.resizeWidth : undefined,
+                        height: exportSettings.resizeMode !== "none" ? exportSettings.resizeHeight : undefined,
+                        resizeMode: exportSettings.resizeMode,
+                        colorSpace: exportSettings.colorSpace,
+                        metadata: exportSettings.includeMetadata ? exportSettings.metadata : "none",
+                        removeLocation: exportSettings.removeLocation,
+                        bitDepth: exportSettings.bitDepth ? exportSettings.bitDepth : undefined
+                    },
+                    originalData: response.data
+                };
 
-        const flatResults: Awaited<ReturnType<typeof exportImagesParallel>> = [];
-        try {
-            // Process the transforms sequentially inside the single background worker
-            for (let index = 0; index < transformInputs.length; index++) {
-                const task = downloadTasks[index];
-                if (task) {
-                    task.state = DownloadState.PROCESSING;
-                }
-                const res = await transformFn(transformInputs, null, index, onWorkerProgress);
-                if (task) {
-                    task.state = DownloadState.DOWNLOADED;
-                    task.progress = 100;
-                }
-                flatResults.push(...res);
-            }
+                const res = await workerApi.transformSingleImage(
+                    transformInput,
+                    Comlink.proxy((percent: number) => {
+                        task.progress = percent;
+                    })
+                );
 
-            const r = flatResults[0];
-            if (flatResults.length === 1 && r && r.result) {
-                const result = r.result;
-                const imageBuf = result.imageData;
-                const asset = transformInputs[r.index].asset;
-                const ext = result.ext || asset.image_metadata?.file_type?.toLowerCase() || "jpg";
+                flatResults.push({ ...res, index: 0 });
 
-                let filename = "";
-                if (exportRenameSettings.namingMode === "original") {
-                    const origFull =
-                        asset.name ||
-                        asset.image_metadata?.original_file_name ||
-                        asset.image_metadata?.file_name ||
-                        "image";
-                    const lastDot = origFull.lastIndexOf(".");
-                    filename = lastDot === -1 ? origFull : origFull.substring(0, lastDot);
-                } else {
-                    const { name: renderedName } = safeRenderRenameTemplate(exportTemplate, asset, r.index, {
-                        sequenceStart: exportRenameSettings.sequenceStart,
-                        sequencePadding: exportRenameSettings.sequencePadding,
-                        customName: exportRenameSettings.customName
-                    });
-
-                    filename = renderedName || asset.name;
+                if (!res.result) {
+                    task.state = DownloadState.ERROR;
+                    throw new Error(res.error || "Failed to transform image");
                 }
 
-                const fullFilename = `${filename}.${ext}`;
+                task.state = DownloadState.DOWNLOADED;
+                task.progress = 100;
+                task.endTime = new Date();
 
-                const standardBuf = new Uint8Array(imageBuf.byteLength);
-                standardBuf.set(new Uint8Array(imageBuf));
-                const blob = new Blob([standardBuf as BlobPart], { type: `image/${ext === "jpg" ? "jpeg" : ext}` });
+                const ext = res.result.ext || asset.image_metadata.file_type?.toLowerCase() || "jpg";
+                const fullFilename = resolveExportFilename(asset, 0, ext);
+                const standardBuf = new Uint8Array(res.result.imageData.byteLength);
+                standardBuf.set(new Uint8Array(res.result.imageData));
+                const blob = new Blob([standardBuf as BlobPart], {
+                    type: `image/${ext === "jpg" ? "jpeg" : ext}`
+                });
+
+                task.data = blob;
+                task.filename = fullFilename;
+
                 await downloadToFilesystem(fullFilename, blob);
-
                 toasts.add({
                     message: `Successfully exported **${fullFilename}**`,
                     type: "success"
                 });
-            } else {
-                const zip = new JSZip();
 
-                for (const r of flatResults) {
-                    console.debug("Processing worker result item:", r);
-                    if (r.result) {
-                        const imageBuf = r.result.imageData;
-                        const asset = transformInputs[r.index].asset;
-                        const ext = r.result.ext || asset.image_metadata?.file_type?.toLowerCase() || "jpg";
+                return;
+            }
 
-                        let filename = "";
-                        if (exportRenameSettings.namingMode === "original") {
-                            const origFull =
-                                asset.name ||
-                                asset.image_metadata?.original_file_name ||
-                                asset.image_metadata?.file_name ||
-                                "image";
-                            const lastDot = origFull.lastIndexOf(".");
-                            filename = lastDot === -1 ? origFull : origFull.substring(0, lastDot);
-                        } else {
-                            const { name: renderedName } = safeRenderRenameTemplate(exportTemplate, asset, r.index, {
-                                sequenceStart: exportRenameSettings.sequenceStart,
-                                sequencePadding: exportRenameSettings.sequencePadding,
-                                customName: exportRenameSettings.customName
-                            });
+            // Multi-image ZIP export
+            const zip = new JSZip();
 
-                            filename = renderedName || asset.name;
-                        }
-
-                        console.debug("Adding file to zip:", filename + "." + ext, "bytes:", imageBuf.byteLength);
-                        zip.file(filename + "." + ext, new Uint8Array(imageBuf));
-                    } else if (r.error) {
-                        console.error("Image transform failed inside worker:", r.error);
-                    }
+            for (let index = 0; index < exportAssets.length; index++) {
+                const task = imageTasks[index];
+                if (task.state === DownloadState.CANCELED) {
+                    break;
                 }
 
-                let zipName = createZipExportName(config.data?.download?.zip_export_name || "viz_export_{date}");
+                const asset = exportAssets[index];
 
-                // Create a virtual DownloadFile task for zip compilation
-                const zipTask = new DownloadFile("", zipName);
-                zipTask.state = DownloadState.DOWNLOADING;
-                download.files.push(zipTask);
-                download.stats.total += 1;
-
-                console.debug("Generating zip file:", zipName);
-                try {
-                    const zipData = await zip.generateAsync({ type: "blob", streamFiles: true }, (metadata) => {
-                        zipTask.progress = metadata.percent;
-                    });
-                    zipTask.progress = 100;
-                    zipTask.state = DownloadState.DOWNLOADED;
-                    zipTask.data = zipData;
-                    zipTask.endTime = new Date();
-
-                    console.debug("ZIP blob generated. Size:", zipData.size);
-
-                    await downloadToFilesystem(zipName, zipData);
-
-                    toasts.add({
-                        title: zipName,
-                        message: "Download Started",
-                        type: "success"
-                    });
-                } catch (err) {
-                    zipTask.state = DownloadState.ERROR;
-                    console.error("ZIP generation failed:", err);
-                    toasts.add({
-                        title: zipName,
-                        message: "Download Failed",
-                        type: "error"
-                    });
-
-                    throw err;
+                task.state = DownloadState.DOWNLOADING;
+                const response = await getImageFileBlob(asset.uid, {}, { cache: "force-cache" });
+                if (response.status !== 200) {
+                    task.state = DownloadState.ERROR;
+                    flatResults.push({ error: `Failed to download ${task.filename || asset.uid}`, index });
+                    continue;
                 }
+
+                task.state = DownloadState.PROCESSING;
+                const transformInput: TransformInput = {
+                    asset,
+                    params: {
+                        format: exportSettings.format,
+                        quality: exportSettings.quality,
+                        width: exportSettings.resizeMode !== "none" ? exportSettings.resizeWidth : undefined,
+                        height: exportSettings.resizeMode !== "none" ? exportSettings.resizeHeight : undefined,
+                        resizeMode: exportSettings.resizeMode,
+                        colorSpace: exportSettings.colorSpace,
+                        metadata: exportSettings.includeMetadata ? exportSettings.metadata : "none",
+                        removeLocation: exportSettings.removeLocation,
+                        bitDepth: exportSettings.bitDepth ? exportSettings.bitDepth : undefined
+                    },
+                    originalData: response.data
+                };
+
+                const res = await workerApi.transformSingleImage(
+                    transformInput,
+                    Comlink.proxy((percent: number) => {
+                        task.progress = percent;
+                    })
+                );
+
+                if (res.error) {
+                    task.state = DownloadState.ERROR;
+                } else {
+                    task.state = DownloadState.DOWNLOADED;
+                    task.progress = 100;
+                    task.endTime = new Date();
+                }
+
+                flatResults.push({ ...res, index });
+
+                if (res.result) {
+                    const ext = res.result.ext || asset.image_metadata.file_type?.toLowerCase() || "jpg";
+                    const fullFilename = resolveExportFilename(asset, index, ext);
+                    zip.file(fullFilename, new Uint8Array(res.result.imageData));
+                }
+            }
+
+            const successfulResults = flatResults.filter((r) => Boolean(r.result));
+            const failedResults = flatResults.filter((r) => Boolean(r.error));
+
+            if (successfulResults.length === 0) {
+                const firstError = failedResults[0]?.error || "Unknown error";
+                toasts.add({
+                    title: "Export Failed",
+                    message: `Failed to transform images: ${firstError}`,
+                    type: "error"
+                });
+
+                return;
+            }
+
+            if (failedResults.length > 0) {
+                toasts.add({
+                    title: "Images Failed to Process",
+                    message: `${failedResults.length} of ${flatResults.length} images failed to process. Exporting ${successfulResults.length} succeeded images.`,
+                    type: "warning"
+                });
+            }
+
+            // Clean up per-image tasks and create single ZIP task
+            download.files = download.files.filter((f) => !imageTasks.includes(f));
+            download.stats.total = Math.max(0, download.stats.total - imageTasks.length);
+
+            const zipName = createZipExportName(config.data?.download.zip_export_name);
+            const zipTask = new DownloadFile("", zipName);
+            zipTask.state = DownloadState.PROCESSING;
+            zipTask.progress = 0;
+
+            download.files.push(zipTask);
+            download.stats.total += 1;
+
+            console.debug("Generating zip file:", zipName);
+            try {
+                const zipData = await zip.generateAsync({ type: "blob", streamFiles: true }, (metadata) => {
+                    zipTask.progress = metadata.percent;
+                });
+                zipTask.state = DownloadState.DOWNLOADED;
+                zipTask.data = zipData;
+                zipTask.progress = 100;
+                zipTask.endTime = new Date();
+
+                console.debug("ZIP blob generated. Size:", zipData.size);
+                await downloadToFilesystem(zipName, zipData);
+
+                toasts.add({
+                    title: zipName,
+                    message: "Download Started",
+                    type: "success"
+                });
+            } catch (err) {
+                zipTask.state = DownloadState.ERROR;
+                console.error("ZIP generation failed:", err);
+                toasts.add({
+                    title: zipName,
+                    message: "Download Failed",
+                    type: "error"
+                });
+                throw err;
             }
         } catch (execErr) {
             console.error("[ExportPanel] Fatal error during worker execution:", execErr);
@@ -463,9 +488,8 @@
             });
         } finally {
             exportWorker?.terminate();
+            onExport?.(flatResults);
         }
-
-        onExport?.(flatResults);
     }
 
     function handleCancel() {
@@ -474,12 +498,6 @@
 </script>
 
 <div id="viz-export-panel" class="export-panel">
-    <div class="export-header">
-        <div class="asset-summary">
-            {assets.length} item(s) selected
-        </div>
-    </div>
-
     {#snippet panelSection(name: SectionName, label: string, children: Snippet)}
         <div class="section" class:expanded={sections[name]}>
             <button class="section-header" onclick={() => toggleSection(name)}>
@@ -604,10 +622,15 @@
     </div>
 
     <div class="export-footer">
-        <Button size="small" onclick={handleCancel}>Cancel</Button>
-        <Button id="perform-export" size="small" onclick={handleExport} class="export-btn">
-            Export {assets.length} Item{assets.length === 1 ? "" : "s"}
-        </Button>
+        <div class="asset-summary">
+            {assets.length} item(s) selected
+        </div>
+        <div class="footer-actions">
+            <Button size="small" onclick={handleCancel}><span>Cancel</span></Button>
+            <Button id="perform-export" size="small" onclick={handleExport} class="export-btn">
+                <span>Export</span>
+            </Button>
+        </div>
     </div>
 </div>
 
@@ -666,19 +689,6 @@
     :global(.export-panel .export-btn) {
         background-color: var(--viz-primary) !important;
         color: var(--viz-10-dark) !important;
-    }
-
-    .export-header {
-        padding: var(--viz-spacing-sm) var(--viz-spacing-md);
-        border-bottom: 1px solid var(--viz-surface-hover);
-        background-color: var(--viz-surface-base);
-
-        .asset-summary {
-            font-size: var(--viz-font-size-lg);
-            font-style: italic;
-            color: var(--viz-text-secondary);
-            margin: var(--viz-spacing-xxs) 0;
-        }
     }
 
     .export-body {
@@ -777,8 +787,19 @@
         border-top: 1px solid var(--viz-surface-hover);
         background-color: var(--viz-surface-panel);
         display: flex;
-        justify-content: flex-end;
         gap: var(--viz-spacing-sm);
+        justify-content: space-between;
+        align-items: center;
+
+        .asset-summary {
+            font-size: var(--viz-font-size-lg);
+            color: var(--viz-text-secondary);
+        }
+
+        .footer-actions {
+            display: flex;
+            gap: var(--viz-spacing-sm);
+        }
     }
 
     .metadata-settings {

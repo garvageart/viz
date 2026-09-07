@@ -1,6 +1,22 @@
 import * as Comlink from "comlink";
 import type { TransformInput, TransformResult } from "$lib/images/vips/vips";
 
+export async function transformSingleImage(
+    input: TransformInput,
+    onProgress?: (percent: number) => void
+): Promise<{ result?: TransformResult; error?: string }> {
+    const { generateTransform } = await import("$lib/images/vips/vips");
+
+    try {
+        const result = await generateTransform(input, onProgress);
+        return { result };
+    } catch (error) {
+        console.error("[Worker] Image transform failed:", error);
+        const errorMsg = error instanceof Error ? error.message : String(error);
+        return { error: errorMsg };
+    }
+}
+
 export async function exportImagesParallel(
     images: TransformInput[],
     sharedCounter?: Int32Array | null,
@@ -22,7 +38,9 @@ export async function exportImagesParallel(
             }
 
             try {
-                const result = await generateTransform(images[index], (percent) => onProgress?.(index, percent));
+                const result = await generateTransform(images[index], (percent) => {
+                    onProgress?.(index, percent);
+                });
                 results.push({ result, index });
             } catch (error) {
                 console.error("[Worker] Image transform failed at index", index, ":", error);
@@ -33,9 +51,9 @@ export async function exportImagesParallel(
     } else if (staticIndex !== undefined && staticIndex < images.length) {
         // Fallback: process the single image specified by staticIndex
         try {
-            const result = await generateTransform(images[staticIndex], (percent) =>
-                onProgress?.(staticIndex, percent)
-            );
+            const result = await generateTransform(images[staticIndex], (percent) => {
+                onProgress?.(staticIndex, percent);
+            });
             results.push({ result, index: staticIndex });
         } catch (error) {
             console.error("[Worker] Image transform failed at static index", staticIndex, ":", error);
@@ -47,4 +65,11 @@ export async function exportImagesParallel(
     return results;
 }
 
-Comlink.expose(exportImagesParallel);
+const workerApi = {
+    exportImagesParallel,
+    transformSingleImage
+};
+
+export type ImageExportWorkerApi = typeof workerApi;
+
+Comlink.expose(workerApi);

@@ -1,5 +1,6 @@
 import { expect, test } from "@playwright/test";
 import * as fs from "fs";
+import JSZip from "jszip";
 import { cleanupSpecificCollections, cleanupTestPhotos, trackCreatedCollections } from "./helpers";
 
 test.describe("Export Pipeline", () => {
@@ -20,7 +21,9 @@ test.describe("Export Pipeline", () => {
             }
             console.log("EXPORT PAGE LOG:", text);
         });
-        page.on("pageerror", (err) => console.log("EXPORT PAGE ERROR:", err));
+        page.on("pageerror", (err) => {
+            console.log("EXPORT PAGE ERROR:", err);
+        });
 
         // Transparently capture the UIDs of any images uploaded during this test run
         page.on("response", async (response) => {
@@ -89,7 +92,7 @@ test.describe("Export Pipeline", () => {
 
         try {
             expect(downloadPath).toBeTruthy();
-            expect(download.suggestedFilename()).toMatch(/\.(jpg|jpeg|png|webp)$/i);
+            expect(download.suggestedFilename()).toMatch(/\.(jpg|jpeg|png|webp|avif)$/i);
 
             const stat = fs.statSync(downloadPath!);
             expect(stat.size).toBeGreaterThan(1000);
@@ -97,7 +100,7 @@ test.describe("Export Pipeline", () => {
         } finally {
             if (downloadPath && fs.existsSync(downloadPath)) {
                 fs.unlinkSync(downloadPath);
-                console.log("Cleaned up downloaded ZIP file.");
+                console.log("Cleaned up downloaded single export file.");
             }
         }
 
@@ -106,7 +109,9 @@ test.describe("Export Pipeline", () => {
         console.log(`Verified ${executedWorkerSteps.length} WASM worker step logs.`);
     });
 
-    test("should successfully bulk export an image via Web Worker without crashing", async ({ page }) => {
+    test("should successfully bulk export images as a valid ZIP with task cleanup in Download Panel", async ({
+        page
+    }) => {
         test.slow();
 
         // 1. Go to Photos page
@@ -118,10 +123,12 @@ test.describe("Export Pipeline", () => {
         await expect(photoGridItems.first()).toBeVisible({ timeout: 20000 });
         const photoCount = await photoGridItems.count();
 
+        let selectedCount = 1;
         if (photoCount >= 2) {
             await photoGridItems.first().click();
             await photoGridItems.nth(1).click({ modifiers: ["Shift"] });
             await photoGridItems.nth(1).click({ button: "right" });
+            selectedCount = 2;
         } else {
             await photoGridItems.first().click({ button: "right" });
         }
@@ -148,15 +155,33 @@ test.describe("Export Pipeline", () => {
 
         try {
             expect(downloadPath).toBeTruthy();
-            expect(download.suggestedFilename()).toMatch(/\.(zip|jpg|jpeg|png|webp)$/i);
 
-            const stat = fs.statSync(downloadPath!);
-            expect(stat.size).toBeGreaterThan(1000);
-            console.log(`Bulk export verified: ${download.suggestedFilename()}. Size: ${stat.size} bytes`);
+            if (selectedCount > 1) {
+                expect(download.suggestedFilename()).toMatch(/\.zip$/i);
+
+                const zipBuffer = fs.readFileSync(downloadPath!);
+                expect(zipBuffer.length).toBeGreaterThan(1000);
+
+                // 7. Verify ZIP contents using JSZip
+                const zip = await JSZip.loadAsync(zipBuffer);
+                const files = Object.keys(zip.files).filter((name) => !zip.files[name].dir);
+
+                expect(files.length).toBe(selectedCount);
+                for (const filename of files) {
+                    const content = await zip.files[filename].async("nodebuffer");
+                    expect(content.length).toBeGreaterThan(100);
+                }
+
+                console.log(
+                    `Bulk export ZIP verified: ${download.suggestedFilename()} containing [${files.join(", ")}]. Size: ${zipBuffer.length} bytes`
+                );
+            } else {
+                expect(download.suggestedFilename()).toMatch(/\.(jpg|jpeg|png|webp|avif)$/i);
+            }
         } finally {
             if (downloadPath && fs.existsSync(downloadPath)) {
                 fs.unlinkSync(downloadPath);
-                console.log("Cleaned up downloaded ZIP file.");
+                console.log("Cleaned up downloaded export file.");
             }
         }
     });
@@ -200,6 +225,53 @@ test.describe("Export Pipeline", () => {
         await performExportBtn.click();
 
         // 6. Verify that the export modal remains open and download panel is not shown
+        await expect(exportPanel).toBeVisible();
+        const downloadPanel = page.locator("#viz-download-panel");
+        await expect(downloadPanel).not.toBeVisible();
+    });
+
+    test("should prevent export submission when builder mode has blank custom text", async ({ page }) => {
+        test.slow();
+
+        await page.goto("/photos");
+        await expect(page.locator("main, .viz-photo-grid-container").first()).toBeVisible({ timeout: 20000 });
+
+        const photoGridItems = page.locator(".asset-photo, .asset-card");
+        await expect(photoGridItems.first()).toBeVisible({ timeout: 20000 });
+        await photoGridItems.first().click({ button: "right" });
+
+        const exportMenuItem = page.locator("#act-export");
+        await expect(exportMenuItem).toBeVisible();
+        await exportMenuItem.click();
+
+        const exportPanel = page.locator("#viz-export-panel, .export-panel").first();
+        await expect(exportPanel).toBeVisible({ timeout: 15000 });
+
+        // Switch to "builder" mode
+        const namingSelect = page.locator("#batch-rename-mode-select");
+        await expect(namingSelect).toBeVisible();
+        await namingSelect.click();
+
+        const builderOption = page.locator('[data-value="builder"]').first();
+        await expect(builderOption).toBeVisible();
+        await builderOption.click();
+
+        // Add a text rule row using class selector
+        const addElementBtn = page.locator(".add-element-btn").first();
+        await expect(addElementBtn).toBeVisible({ timeout: 5000 });
+        await addElementBtn.click();
+
+        // Clear the text input in the added text rule row
+        const textInputs = page.locator(".rule-row input[type='text']");
+        await expect(textInputs.first()).toBeVisible({ timeout: 5000 });
+        await textInputs.first().fill("");
+
+        // Attempt export
+        const performExportBtn = page.locator("#perform-export");
+        await expect(performExportBtn).toBeVisible({ timeout: 10000 });
+        await performExportBtn.click();
+
+        // Modal should remain open
         await expect(exportPanel).toBeVisible();
         const downloadPanel = page.locator("#viz-download-panel");
         await expect(downloadPanel).not.toBeVisible();

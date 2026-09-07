@@ -35,7 +35,10 @@ let _vipsInitPromise: Promise<ExtendedVipsModule> | null = null;
 // either directly by importing code here
 // or linking users to https://wasm-vips.kleisauke.nl/test/
 async function getVipsRuntime(): Promise<ExtendedVipsModule> {
-    if (_vipsRuntime) return _vipsRuntime;
+    if (_vipsRuntime) {
+        return _vipsRuntime;
+    }
+
     if (!_vipsInitPromise) {
         // Vips is the default export from wasm-vips and returns an initialized module when called
         _vipsInitPromise = (
@@ -49,6 +52,15 @@ async function getVipsRuntime(): Promise<ExtendedVipsModule> {
         });
     }
     _vipsRuntime = await _vipsInitPromise;
+    try {
+        if (_vipsRuntime.Cache) {
+            _vipsRuntime.Cache.max(0);
+            _vipsRuntime.Cache.maxMem(0);
+            _vipsRuntime.Cache.maxFiles(0);
+        }
+    } catch (_) {
+        // ignore if Cache configuration is unavailable
+    }
     return _vipsRuntime;
 }
 
@@ -234,11 +246,6 @@ async function stepDecodeInput(ctx: TransformStepContext) {
     // Decode into wasm-vips image
     try {
         ctx.img = ctx.v.Image.newFromBuffer(ctx.inputBuffer);
-        if (ctx.onProgress && ctx.img) {
-            ctx.img.onProgress = (percent: number) => {
-                ctx.onProgress?.(percent);
-            };
-        }
     } catch (e) {
         console.error(
             "[Worker] Vips.Image.newFromBuffer failed! Buffer size:",
@@ -250,6 +257,19 @@ async function stepDecodeInput(ctx: TransformStepContext) {
     }
 }
 
+function updateContextImage(ctx: TransformStepContext, newImg: Vips.Image | null | undefined) {
+    if (!newImg) {
+        return;
+    }
+
+    const oldImg = ctx.img;
+    ctx.img = newImg;
+
+    if (oldImg && oldImg !== newImg) {
+        oldImg.delete();
+    }
+}
+
 function stepAutoRotate(ctx: TransformStepContext) {
     if (!ctx.img) {
         return;
@@ -257,7 +277,7 @@ function stepAutoRotate(ctx: TransformStepContext) {
 
     // Autorotate based on EXIF
     try {
-        ctx.img = ctx.img.autorot();
+        updateContextImage(ctx, ctx.img.autorot());
     } catch (e) {
         // if autorot not supported for this image, continue
     }
@@ -273,15 +293,15 @@ async function stepColorSpaceTransform(ctx: TransformStepContext) {
         const profilePath = await ensureIccProfile(ctx.v, cs);
         if (profilePath) {
             try {
-                ctx.img = ctx.img.iccTransform(profilePath);
+                updateContextImage(ctx, ctx.img.iccTransform(profilePath));
             } catch (_) {
-                ctx.img = ctx.img.colourspace(ctx.v.Interpretation.srgb);
+                updateContextImage(ctx, ctx.img.colourspace(ctx.v.Interpretation.srgb));
             }
         } else {
             try {
-                ctx.img = ctx.img.iccTransform("srgb");
+                updateContextImage(ctx, ctx.img.iccTransform("srgb"));
             } catch (_) {
-                ctx.img = ctx.img.colourspace(ctx.v.Interpretation.srgb);
+                updateContextImage(ctx, ctx.img.colourspace(ctx.v.Interpretation.srgb));
             }
         }
     } catch (_) {
@@ -297,17 +317,17 @@ function stepRotationAndFlip(ctx: TransformStepContext) {
     // Explicit rotate/flip from params (apply after autorotate)
     const requestedRotate = (((ctx.params.rotate ?? 0) % 360) + 360) % 360;
     if (requestedRotate === 90) {
-        ctx.img = ctx.img.rot90();
+        updateContextImage(ctx, ctx.img.rot90());
     } else if (requestedRotate === 180) {
-        ctx.img = ctx.img.rot180();
+        updateContextImage(ctx, ctx.img.rot180());
     } else if (requestedRotate === 270) {
-        ctx.img = ctx.img.rot270();
+        updateContextImage(ctx, ctx.img.rot270());
     }
 
     if (ctx.params.flip === "horizontal") {
-        ctx.img = ctx.img.flipHor();
+        updateContextImage(ctx, ctx.img.flipHor());
     } else if (ctx.params.flip === "vertical") {
-        ctx.img = ctx.img.flipVer();
+        updateContextImage(ctx, ctx.img.flipVer());
     }
 }
 
@@ -374,9 +394,9 @@ function stepResizeImage(ctx: TransformStepContext) {
         }
 
         if (kernelVal !== undefined) {
-            ctx.img = ctx.img.resize(scale, { kernel: kernelVal });
+            updateContextImage(ctx, ctx.img.resize(scale, { kernel: kernelVal }));
         } else {
-            ctx.img = ctx.img.resize(scale);
+            updateContextImage(ctx, ctx.img.resize(scale));
         }
     }
 }
@@ -448,6 +468,12 @@ function stepPrepareWriteOptions(ctx: TransformStepContext) {
 async function stepEncodeToBuffer(ctx: TransformStepContext) {
     if (!ctx.img || !ctx.outExt) {
         return;
+    }
+
+    if (ctx.onProgress) {
+        ctx.img.onProgress = (percent: number) => {
+            ctx.onProgress?.(percent);
+        };
     }
 
     let outBufRaw: Uint8Array<ArrayBufferLike>;

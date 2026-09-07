@@ -75,6 +75,7 @@ export function createTestImageObject(): ImageAsset {
     return {
         uid: generateRandomString(16),
         name,
+        original_file_name: `${name.replace(/\s/g, "_")}.jpg`,
         uploaded_by: testUser,
         owner: testUser,
         private: false,

@@ -184,6 +184,7 @@
     let previewItems = $derived.by(() => {
         return assets.slice(0, 3).map((asset, index) => {
             const originalName =
+                asset.original_file_name ||
                 asset.image_metadata?.original_file_name ||
                 asset.image_metadata?.file_name ||
                 asset.name ||
@@ -295,7 +296,7 @@
 
             <!-- Add Row Button -->
             <div class="builder-actions">
-                <Button variant="info" iconName="add" onclick={addRow}>
+                <Button class="add-element-btn" variant="info" iconName="add" onclick={addRow}>
                     <span>Add Element</span>
                 </Button>
             </div>
