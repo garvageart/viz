@@ -186,12 +186,12 @@
                 <span>No data available</span>
             {/if}
         {:catch error}
-            <p>Error loading data: {error.message}</p>
+            <span>Error loading data: {error.message}</span>
         {/await}
     {/if}
 </div>
 
-<style>
+<style lang="scss">
     .viz-view-container {
         white-space: normal;
         display: flex;
@@ -201,18 +201,24 @@
         max-width: 100%;
         height: 100%;
         position: relative;
-    }
+        outline: none;
 
-    .viz-view-container.scrollable {
-        overflow: auto;
-    }
+        &:focus-visible {
+            outline: 2px solid var(--viz-primary);
+            outline-offset: -2px;
+        }
 
-    .viz-view-container.disable-scroll {
-        overflow: visible;
-        height: auto;
-    }
+        &.scrollable {
+            overflow: auto;
+        }
 
-    .viz-view-container > :global(*) {
-        flex-shrink: 0;
+        &.disable-scroll {
+            overflow: visible;
+            height: auto;
+        }
+
+        > :global(*) {
+            flex-shrink: 0;
+        }
     }
 </style>
