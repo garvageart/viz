@@ -229,6 +229,23 @@ export function formatSeconds(totalSeconds?: number): string | null {
         .trim();
 }
 
+/**
+ * Formats a numeric shutter speed in seconds to a photography standard display string
+ * (e.g., 0.002 -> "1/500s", 0.00625 -> "1/160s", 0.5 -> "1/2s", 2 -> "2s").
+ */
+export function formatShutterSpeed(seconds: number | undefined): string {
+    if (seconds === undefined || isNaN(seconds)) {
+        return "";
+    }
+    if (seconds <= 0) {
+        return "0s";
+    }
+    if (seconds < 1) {
+        return `1/${Math.round(1 / seconds)}s`;
+    }
+    return `${Number(seconds.toFixed(2))}s`;
+}
+
 export function getImageMegapixels(image: ImageAsset, precision = 0) {
     const megapixels = (image.width * image.height) / 1_000_000;
     precision = Math.max(0, precision);

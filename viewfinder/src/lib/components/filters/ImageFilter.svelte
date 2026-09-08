@@ -13,6 +13,7 @@
     import { slide } from "svelte/transition";
     import Calendar from "$lib/components/ui/DatePicker.svelte";
     import type { ImageFacets, ImageFilters } from "$lib/states/filter.svelte";
+    import { formatShutterSpeed } from "$lib/utils/images";
     import StarRating from "../image-tools/StarRating.svelte";
     import MaterialIcon from "../ui/MaterialIcon.svelte";
     import ChecklistFacet from "./ChecklistFacet.svelte";
@@ -238,11 +239,12 @@
             />
             <RangeInput
                 label="Shutter Speed"
-                min={parseFloat(facets.shutterSpeed.min.toFixed(4))}
-                max={parseFloat(facets.shutterSpeed.max.toFixed(4))}
+                min={facets.shutterSpeed.min}
+                max={facets.shutterSpeed.max}
                 value={criteria.shutterSpeed}
                 step={0.001}
-                unit="s"
+                formatValue={formatShutterSpeed}
+                invertDisplay={true}
                 onChange={(v) => {
                     criteria.shutterSpeed = v;
                     save();

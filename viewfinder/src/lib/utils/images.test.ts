@@ -12,6 +12,7 @@ import {
     formatBytes,
     formatMegapixels,
     formatSeconds,
+    formatShutterSpeed,
     getByteUnitString,
     getBytesWithUnit,
     getFlashMode,
@@ -340,5 +341,26 @@ describe("getThumbhashURL", () => {
         const b64 = btoa(String.fromCharCode(...hash));
         const asset = assetFixture({ image_metadata: { ...assetFixture().image_metadata!, thumbhash: b64 } });
         expect(getThumbhashURL(asset)).toMatch(/^data:image\//);
+    });
+});
+
+describe("formatShutterSpeed", () => {
+    it("formats sub-second shutter speeds as fractions", () => {
+        expect(formatShutterSpeed(0.002)).toBe("1/500s");
+        expect(formatShutterSpeed(0.00625)).toBe("1/160s");
+        expect(formatShutterSpeed(0.5)).toBe("1/2s");
+        expect(formatShutterSpeed(0.25)).toBe("1/4s");
+    });
+
+    it("formats whole and multi-second shutter speeds", () => {
+        expect(formatShutterSpeed(1)).toBe("1s");
+        expect(formatShutterSpeed(2.5)).toBe("2.5s");
+        expect(formatShutterSpeed(30)).toBe("30s");
+    });
+
+    it("handles zero and undefined values safely", () => {
+        expect(formatShutterSpeed(0)).toBe("0s");
+        expect(formatShutterSpeed(undefined)).toBe("");
+        expect(formatShutterSpeed(NaN)).toBe("");
     });
 });
