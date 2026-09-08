@@ -341,4 +341,30 @@ describe("Table", () => {
             ])
         );
     });
+
+    it("applies overflow classes (truncate, clip, wrap) and tooltip titles to columns", () => {
+        render(Table, {
+            data: [{ uid: "1234567890abcdef", note: "Very long note text", description: "Detailed summary text" }],
+            columns: [
+                { key: "uid", header: "UID", overflow: "truncate" },
+                { key: "note", header: "Note", overflow: "clip" },
+                { key: "description", header: "Description", overflow: "wrap" }
+            ]
+        });
+
+        const headers = document.querySelectorAll("thead th");
+        expect(headers[0]).toHaveClass("overflow", "truncate");
+        expect(headers[1]).toHaveClass("overflow", "clip");
+        expect(headers[2]).toHaveClass("overflow", "wrap");
+
+        const cells = screen.getAllByRole("cell");
+        expect(cells[0]).toHaveClass("overflow", "truncate");
+        expect(cells[0]).toHaveAttribute("title", "1234567890abcdef");
+
+        expect(cells[1]).toHaveClass("overflow", "clip");
+        expect(cells[1]).toHaveAttribute("title", "Very long note text");
+
+        expect(cells[2]).toHaveClass("overflow", "wrap");
+        expect(cells[2]).not.toHaveAttribute("title");
+    });
 });

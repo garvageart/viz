@@ -16,6 +16,8 @@
         width?: number | string;
     }
 
+    export type TableColumnOverflow = "truncate" | "wrap" | "clip";
+
     export interface TableColumn<T, V = unknown> {
         key: string;
         header?: string;
@@ -28,6 +30,7 @@
         resizable?: boolean;
         visible?: boolean;
         mono?: boolean;
+        overflow?: TableColumnOverflow;
         getValue?: (row: T) => V;
         formatter?: (row: T, value: V, index: number) => string | number;
         cell?: Snippet<[T, { value: V; index: number }]> | Snippet<[T]>;
@@ -505,6 +508,17 @@
         return col.minWidth;
     }
 
+    function getColClass(col: TableColumn<T>): string {
+        const classes = [`align-${col.align ?? "left"}`];
+        if (col.class) {
+            classes.push(col.class);
+        }
+        if (col.overflow) {
+            classes.push("overflow", col.overflow);
+        }
+        return classes.join(" ");
+    }
+
     function handleSort(key: string) {
         sort = sort.key === key ? { key, order: sort.order === "asc" ? "desc" : "asc" } : { key, order: "asc" };
         onsort?.(sort);
@@ -690,7 +704,7 @@
                     {:else}
                         {#each effectiveColumns as col (col.key)}
                             <th
-                                class="align-{col.align ?? 'left'} {col.class ?? ''}"
+                                class={getColClass(col)}
                                 class:sortable={canSort(col)}
                                 class:is-resizable={canResize(col)}
                                 style:width={getColWidth(col)}
@@ -832,10 +846,15 @@
                                 {#each effectiveColumns as col (col.key)}
                                     {@const cellValue = getCellValue(row, col)}
                                     <td
-                                        class="align-{col.align ?? 'left'} {col.class ?? ''}"
+                                        class={getColClass(col)}
                                         class:font-mono={col.mono}
                                         style:width={getColWidth(col)}
                                         style:min-width={getColMinWidth(col)}
+                                        title={col.overflow === "truncate" || col.overflow === "clip"
+                                            ? typeof cellValue === "string" || typeof cellValue === "number"
+                                                ? String(cellValue)
+                                                : undefined
+                                            : undefined}
                                     >
                                         {#if col.cell}
                                             {@render col.cell(row, { value: cellValue, index })}
@@ -1143,6 +1162,76 @@
 
             tbody td:not(:last-child) {
                 border-right: var(--viz-border-thin);
+            }
+        }
+
+        .overflow {
+            &.truncate {
+                overflow: hidden;
+                text-overflow: ellipsis;
+                white-space: nowrap;
+                max-width: 0;
+
+                .header-label {
+                    overflow: hidden;
+                    text-overflow: ellipsis;
+                    white-space: nowrap;
+                    max-width: 100%;
+                    vertical-align: bottom;
+                }
+
+                .header-sort-btn {
+                    max-width: 100%;
+                    min-width: 0;
+
+                    > span:first-child {
+                        overflow: hidden;
+                        text-overflow: ellipsis;
+                        white-space: nowrap;
+                        min-width: 0;
+                    }
+
+                    .sort-icon {
+                        flex-shrink: 0;
+                    }
+                }
+            }
+
+            &.clip {
+                overflow: hidden;
+                text-overflow: clip;
+                white-space: nowrap;
+                max-width: 0;
+
+                .header-label {
+                    overflow: hidden;
+                    text-overflow: clip;
+                    white-space: nowrap;
+                    max-width: 100%;
+                    vertical-align: bottom;
+                }
+
+                .header-sort-btn {
+                    max-width: 100%;
+                    min-width: 0;
+
+                    > span:first-child {
+                        overflow: hidden;
+                        text-overflow: clip;
+                        white-space: nowrap;
+                        min-width: 0;
+                    }
+
+                    .sort-icon {
+                        flex-shrink: 0;
+                    }
+                }
+            }
+
+            &.wrap {
+                white-space: normal;
+                word-break: break-word;
+                overflow-wrap: break-word;
             }
         }
     }
