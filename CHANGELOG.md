@@ -5,6 +5,14 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.33.12] - 2026-09-08
+
+* refactor(viewfinder): display aperture with focal length in lens card (78fb69d9)
+* fix(viewfinder): set sticky bottom positioning on VizToolbar (881cbed1)
+* test(viewfinder): add drag and drop test suite and dispatchDrag helper (b81ec1b8)
+* refactor(viewfinder): use drag and drop coordinator across views and panels (08dcb718)
+* feat(viewfinder): add drag and drop coordinator and directives (1a45fc8a)
+
 ## [0.33.11] - 2026-09-08
 
 * feat(viewfinder/admin): enable text truncation for UID and Email columns (3626f8e1)
