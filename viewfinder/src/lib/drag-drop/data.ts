@@ -1,7 +1,7 @@
 import { generateRandomString } from "$lib/utils/misc";
 import { clearDragState, dragState, setDragState } from "./state.svelte";
 
-const REF_MIME_TYPE = "application/x-viz-viz-ref";
+const REF_MIME_TYPE = "application/x-viz-ref";
 
 export class DragData<T> {
     private static localPayload: any = null;

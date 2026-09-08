@@ -25,4 +25,4 @@ export const CAN_DEBUG =
     localStorage.getItem("viz:debugMode") === "true";
 export const DYNAMIC_ROUTE_REGEX = /\[.*\].*$/;
 
-export { VizMimeTypes } from "./mime";
+export { VizMimeTypes, StandardMimeTypes, VendorMimeTypes, type DragMimeType } from "./mime";
