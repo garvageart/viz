@@ -1,10 +1,10 @@
 <script lang="ts">
-    import type { Collection, ImageAsset } from "@viz/api";
+    import { type Collection, type ImageAsset, getAssetImagePath } from "@viz/api";
     import { slide } from "svelte/transition";
     import AssetImage from "$lib/components/ui/AssetImage.svelte";
     import MaterialIcon from "$lib/components/ui/MaterialIcon.svelte";
     import { VizMimeTypes } from "$lib/constants";
-    import { DragData } from "$lib/drag-drop/data";
+    import { draggable } from "$lib/drag-drop/directives.svelte";
     import { formatBytes } from "$lib/utils/images";
 
     interface Props {
@@ -15,32 +15,11 @@
     let { item, type }: Props = $props();
     let expanded = $state(false);
 
-    function handleDragStart(e: DragEvent) {
-        if (!e.dataTransfer) {
-            return;
-        }
-
-        const mimeType = type === "image" ? VizMimeTypes.IMAGE_UIDS : VizMimeTypes.COLLECTION_UIDS;
-
-        const dragData = new DragData(mimeType, [item.uid]);
-        dragData.setData(e.dataTransfer);
-        e.dataTransfer.effectAllowed = "copy";
-
-        // Set drag image if possible
-        const imgEl = (e.target as HTMLElement).querySelector("img");
-        if (imgEl) {
-            e.dataTransfer.setDragImage(imgEl, 10, 10);
-        }
-    }
-
-    function handleDragEnd() {
-        DragData.clear();
-    }
-
     function formatDate(dateString: string) {
         if (!dateString) {
             return "-";
         }
+
         return new Date(dateString).toLocaleDateString(undefined, {
             year: "numeric",
             month: "short",
@@ -52,11 +31,32 @@
         if (type === "image") {
             return item as ImageAsset;
         }
+
         return (item as Collection).thumbnail;
     });
 </script>
 
-<div class="compact-item" draggable="true" ondragstart={handleDragStart} ondragend={handleDragEnd} role="listitem">
+<div
+    class="compact-item"
+    role="listitem"
+    use:draggable={{
+        items: [
+            type === "image"
+                ? {
+                      mimeType: VizMimeTypes.IMAGE_UIDS,
+                      payload: [item.uid],
+                      label: item.name ?? "1 photo",
+                      thumbnailUrl: thumbnailAsset ? getAssetImagePath(thumbnailAsset, "thumbnail") : null
+                  }
+                : {
+                      mimeType: VizMimeTypes.COLLECTION_UIDS,
+                      payload: { uid: item.uid, name: item.name },
+                      label: `Collection "${item.name}"`,
+                      thumbnailUrl: thumbnailAsset ? getAssetImagePath(thumbnailAsset, "thumbnail") : null
+                  }
+        ]
+    }}
+>
     <div
         class="header"
         onclick={() => (expanded = !expanded)}

@@ -51,11 +51,11 @@
 <script lang="ts">
     import { goto } from "$app/navigation";
     import { page } from "$app/state";
-    import { type Collection, addCollectionImages, getImage } from "@viz/api";
+    import { type Collection, addCollectionImages, getAssetImagePath, getImage } from "@viz/api";
     import { DateTime } from "luxon";
     import type { SvelteHTMLElements } from "svelte/elements";
     import { VizMimeTypes } from "$lib/constants";
-    import { DragData } from "$lib/drag-drop/data";
+    import { draggable, dropZone } from "$lib/drag-drop/directives.svelte";
     import { toasts } from "$lib/toast-notifcations/toasts.svelte";
     import { invalidateViz } from "$lib/views/views.svelte";
     import AssetImage from "./AssetImage.svelte";
@@ -83,7 +83,6 @@
     );
 
     let thumbnail = $derived(collection.thumbnail);
-    let isDropTarget = $state(false);
 
     async function loadThumbnail(col: Collection) {
         if (col.thumbnail) {
@@ -107,44 +106,10 @@
         loadThumbnail(collection);
     });
 
-    function handleCardDragEnter(e: DragEvent) {
-        if (!e.dataTransfer || !DragData.isType(e.dataTransfer, VizMimeTypes.IMAGE_UIDS)) {
-            return;
-        }
-        e.preventDefault();
-        isDropTarget = true;
-    }
-
-    function handleCardDragOver(e: DragEvent) {
-        if (!e.dataTransfer || !DragData.isType(e.dataTransfer, VizMimeTypes.IMAGE_UIDS)) {
-            return;
-        }
-        e.preventDefault();
-        e.dataTransfer.dropEffect = "copy";
-    }
-
-    function handleCardDragLeave(e: DragEvent) {
-        const related = e.relatedTarget as HTMLElement | null;
-        if (related && (e.currentTarget as HTMLElement).contains(related)) {
-            return;
-        }
-        isDropTarget = false;
-    }
-
-    async function handleCardDrop(e: DragEvent) {
-        isDropTarget = false;
-
-        if (!e.dataTransfer) {
-            return;
-        }
-
-        const uidsData = DragData.getData<string[]>(e.dataTransfer, VizMimeTypes.IMAGE_UIDS)?.payload;
+    async function handleImagesDrop(uidsData: string[]) {
         if (!uidsData || uidsData.length === 0) {
             return;
         }
-
-        e.preventDefault();
-        e.stopPropagation();
 
         const existingUIDs = new Set(collection.images?.map((i) => i.uid) ?? []);
         const newUIDs = uidsData.filter((uid) => !existingUIDs.has(uid));
@@ -180,33 +145,29 @@
     {...props}
     class="coll-card"
     class:selected={isSelected}
-    class:drop-target={isDropTarget}
     data-asset-id={collection.uid}
     title={collection.name}
-    draggable={true}
-    ondragstart={(e: DragEvent) => {
-        if (!e.dataTransfer) {
-            return;
-        }
-
-        const payload = { uid: collection.uid, name: collection.name };
-        const dragData = new DragData(VizMimeTypes.COLLECTION_UIDS, payload);
-        dragData.setData(e.dataTransfer, "collection-grid");
-        e.dataTransfer.effectAllowed = "copy";
-
-        const target = e.currentTarget as HTMLElement;
-        const img = target.querySelector("img");
-        if (img) {
-            e.dataTransfer.setDragImage(img, 0, 0);
+    use:draggable={{
+        items: [
+            {
+                mimeType: VizMimeTypes.COLLECTION_UIDS,
+                payload: { uid: collection.uid, name: collection.name },
+                label: `Collection "${collection.name}"`,
+                thumbnailUrl: thumbnail ? getAssetImagePath(thumbnail, "thumbnail") : null
+            }
+        ]
+    }}
+    use:dropZone={{
+        id: `collection-${collection.uid}`,
+        types: [VizMimeTypes.IMAGE_UIDS],
+        onDragOver: ({ modifiers }) => ({
+            intent: modifiers.altKey ? "copy" : "move",
+            label: `Add to "${collection.name}"`
+        }),
+        onDrop: async (data) => {
+            await handleImagesDrop(data.payload as string[]);
         }
     }}
-    ondragend={() => {
-        DragData.clear();
-    }}
-    ondragenter={handleCardDragEnter}
-    ondragover={handleCardDragOver}
-    ondragleave={handleCardDragLeave}
-    ondrop={handleCardDrop}
 >
     <div class="image-container">
         {#if thumbnail}
@@ -274,12 +235,14 @@
         pointer-events: none;
     }
 
-    .coll-card.drop-target {
+    .coll-card.drop-target,
+    .coll-card.drop-active {
         background-color: color-mix(in srgb, var(--viz-primary) 12%, var(--viz-surface-panel));
         border-color: var(--viz-primary);
     }
 
-    .coll-card.drop-target::after {
+    .coll-card.drop-target::after,
+    .coll-card.drop-active::after {
         content: "";
         position: absolute;
         inset: 0;

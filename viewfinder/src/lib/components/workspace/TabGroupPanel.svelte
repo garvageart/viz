@@ -1,11 +1,11 @@
 <script lang="ts">
     import { dev } from "$app/environment";
     import { setContext, untrack } from "svelte";
-    import tippy, { type Instance } from "tippy.js";
     import TabGroupDebugOverlay from "$lib/components/workspace/debug/TabGroupDebugOverlay.svelte";
     import { VizMimeTypes } from "$lib/constants";
     import { contextMenu } from "$lib/context-menu";
     import { resetAndReloadLayout } from "$lib/dev/components.svelte";
+    import { dragCoordinator } from "$lib/drag-drop/coordinator.svelte";
     import { DragData } from "$lib/drag-drop/data";
     import type { TabGroup } from "$lib/layouts/model.svelte";
     import { edgeDrag, tabOps } from "$lib/layouts/tab-ops.svelte";
@@ -234,8 +234,6 @@
     }
 
     // Tab Drag and Drop
-    let dragTooltip: Instance | null = $state(null);
-
     function handleTabDragOver(e: DragEvent, view: VizView) {
         if (!e.dataTransfer || edgeDrag.active) {
             return;
@@ -252,18 +250,8 @@
                 const target = e.currentTarget as HTMLElement;
                 target.classList.add("drop-target-active");
 
-                if (!dragTooltip) {
-                    dragTooltip = tippy(target, {
-                        content: tabActions.label,
-                        trigger: "manual",
-                        theme: "viz-theme",
-                        followCursor: "initial",
-                        animation: "shift-away",
-                        offset: [0, 0],
-                        delay: [200, 0],
-                        arrow: false
-                    });
-                    dragTooltip.show();
+                if (dragCoordinator.session) {
+                    dragCoordinator.session.actionLabel = tabActions.label;
                 }
                 return;
             }
@@ -272,19 +260,10 @@
 
     function handleTabDragLeave(event: DragEvent) {
         const target = event.currentTarget as HTMLElement;
-        const rect = target.getBoundingClientRect();
-        if (
-            event.clientX < rect.left ||
-            event.clientX >= rect.right ||
-            event.clientY < rect.top ||
-            event.clientY >= rect.bottom
-        ) {
-            target.classList.remove("drop-target-active");
+        target.classList.remove("drop-target-active");
 
-            if (dragTooltip) {
-                dragTooltip.destroy();
-                dragTooltip = null;
-            }
+        if (dragCoordinator.session) {
+            dragCoordinator.session.actionLabel = null;
         }
     }
 
@@ -296,6 +275,7 @@
         if (e.dataTransfer.types.includes(VizMimeTypes.COLLECTION_UIDS)) {
             e.preventDefault();
             e.dataTransfer.dropEffect = "copy";
+
             const target = e.currentTarget as HTMLElement;
             target.classList.add("drop-active");
         }
@@ -304,11 +284,13 @@
     function handleHeaderDragLeave(e: DragEvent) {
         const target = e.currentTarget as HTMLElement;
         const rect = target.getBoundingClientRect();
+
         if (e.clientX < rect.left || e.clientX >= rect.right || e.clientY < rect.top || e.clientY >= rect.bottom) {
             target.classList.remove("drop-active");
         }
     }
 
+    // TODO: Change to generalized drop handler
     async function handleHeaderDrop(e: DragEvent) {
         const target = e.currentTarget as HTMLElement;
         target.classList.remove("drop-active");
@@ -333,7 +315,9 @@
         const target = e.currentTarget as HTMLElement;
         target.classList.remove("drop-target-active");
 
-        handleTabDragLeave(e);
+        if (dragCoordinator.session) {
+            dragCoordinator.session.actionLabel = null;
+        }
 
         for (const type of e.dataTransfer.types) {
             const handler = view.getTabDropHandler(type);
@@ -576,6 +560,10 @@
         background: transparent;
         color: inherit;
         transition: background-color 0.15s ease;
+
+        * {
+            pointer-events: none;
+        }
 
         &:hover {
             background-color: var(--viz-surface-hover);

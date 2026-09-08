@@ -1,9 +1,9 @@
 <script lang="ts">
-    import { type ImageAsset } from "@viz/api";
+    import { type ImageAsset, getAssetImagePath } from "@viz/api";
     import ImageLabelViewer from "$lib/components/image-tools/ImageLabelViewer.svelte";
     import Favourite from "$lib/components/ui/Favourite.svelte";
     import { VizMimeTypes } from "$lib/constants";
-    import { DragData } from "$lib/drag-drop/data";
+    import { draggable } from "$lib/drag-drop/directives.svelte";
     import { getImageLabel, getTakenAt } from "$lib/utils/images";
     import AssetImage, { type AssetImageProps } from "./AssetImage.svelte";
 
@@ -30,25 +30,6 @@
 
     let imageDate = $derived(getTakenAt(asset));
     let imageLoaded = $state(false);
-
-    function handleDragStart(e: DragEvent) {
-        if (variant === "mini") {
-            return;
-        }
-
-        if (!e.dataTransfer) {
-            return;
-        }
-
-        const dragData = new DragData(VizMimeTypes.IMAGE_UIDS, [asset.uid]);
-        dragData.setData(e.dataTransfer);
-        e.dataTransfer.effectAllowed = "copy";
-
-        const img = (e.currentTarget as HTMLElement).querySelector(".image-card-image") as HTMLImageElement;
-        if (img) {
-            e.dataTransfer.setDragImage(img, 0, 0);
-        }
-    }
 </script>
 
 {#if variant === "mini"}
@@ -82,13 +63,18 @@
     <div
         class="image-card simple"
         class:selected={isSelected}
-        draggable="true"
         role="button"
         tabindex="0"
         data-asset-id={asset.uid}
-        ondragstart={handleDragStart}
-        ondragend={() => {
-            DragData.clear();
+        use:draggable={{
+            items: [
+                {
+                    mimeType: VizMimeTypes.IMAGE_UIDS,
+                    payload: [asset.uid],
+                    label: asset.name ?? "1 photo",
+                    thumbnailUrl: getAssetImagePath(asset, "thumbnail")
+                }
+            ]
         }}
     >
         <div class="image-container">
@@ -109,14 +95,19 @@
     <div
         class="image-card"
         class:selected={isSelected}
-        draggable="true"
         title={asset.name}
         role="button"
         tabindex="0"
         data-asset-id={asset.uid}
-        ondragstart={handleDragStart}
-        ondragend={() => {
-            DragData.clear();
+        use:draggable={{
+            items: [
+                {
+                    mimeType: VizMimeTypes.IMAGE_UIDS,
+                    payload: [asset.uid],
+                    label: asset.name ?? "1 photo",
+                    thumbnailUrl: getAssetImagePath(asset, "thumbnail")
+                }
+            ]
         }}
     >
         <div class="image-container">

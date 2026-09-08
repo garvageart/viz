@@ -1,5 +1,5 @@
 <script lang="ts" generics>
-    import { type ImageAsset } from "@viz/api";
+    import { type ImageAsset, getAssetImagePath } from "@viz/api";
     import hotkeys, { type HotkeysEvent } from "hotkeys-js";
     import { DateTime } from "luxon";
     import { type Snippet, onMount, untrack } from "svelte";
@@ -20,7 +20,7 @@
         PhotoGridVirtualizer
     } from "$lib/components/virtualizer/PhotoGridVirtualizer.svelte.js";
     import { VizMimeTypes } from "$lib/constants";
-    import { DragData } from "$lib/drag-drop/data";
+    import { draggable } from "$lib/drag-drop/directives.svelte";
     import type { ConsolidatedGroup, ImageWithDateLabel } from "$lib/photo-layout";
     import { filterManager } from "$lib/states/filter.svelte";
     import { debugMode, isLayoutPage, isMobile } from "$lib/states/index.svelte";
@@ -1141,42 +1141,30 @@
         class="asset-photo"
         class:is-cached={isCached}
         class:disabled-asset={isDisabled}
-        draggable={!isDisabled}
-        ondragstart={(e: DragEvent) => {
-            if (isDisabled) {
-                return;
-            }
-
-            if (!selectedUIDs.has(asset.uid)) {
-                selection.select(asset);
-            }
-            // When dragging, if multiple selected use that set, otherwise drag the single asset
-            const uids = selection.size > 1 ? selection.selectedItems.map((i) => i.uid) : [asset.uid];
-            try {
-                if (e.dataTransfer) {
-                    const dragData = new DragData(VizMimeTypes.IMAGE_UIDS, uids);
-                    dragData.setData(e.dataTransfer);
-                    e.dataTransfer.effectAllowed = "copy";
-                    const target = e.currentTarget as HTMLElement;
-                    const img = target.querySelector(".tile-image") as HTMLImageElement;
-                    if (img) {
-                        // Set the drag image to the visible thumbnail
-                        e.dataTransfer.setDragImage(img, 0, 0);
-                    }
-                }
-            } catch (err) {
-                // ignore
-            }
-        }}
-        ondragend={() => {
-            DragData.clear();
-        }}
         data-asset-id={asset.uid}
         class:selected-photo={isSelected}
         class:multi-selected-photo={isSelected && isMultiSelecting}
         role="button"
         tabindex={0}
         onfocus={onFocus}
+        use:draggable={{
+            disabled: isDisabled,
+            items: () => {
+                if (!selectedUIDs.has(asset.uid)) {
+                    selection.select(asset);
+                }
+                const count = selection.size > 1 ? selection.size : 1;
+                const uids = selection.size > 1 ? selection.selectedItems.map((i) => i.uid) : [asset.uid];
+                return [
+                    {
+                        mimeType: VizMimeTypes.IMAGE_UIDS,
+                        payload: uids,
+                        label: count > 1 ? `${count} photos` : "1 photo",
+                        thumbnailUrl: getAssetImagePath(asset, "thumbnail")
+                    }
+                ];
+            }
+        }}
         use:touchSelectionAction={{
             disabled: disabledUids.has(asset.uid),
             onLongPress: () => {

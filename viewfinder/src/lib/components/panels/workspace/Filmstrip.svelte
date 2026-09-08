@@ -1,6 +1,6 @@
 <script lang="ts">
     import { page } from "$app/state";
-    import { type Collection, type CollectionDetailResponse, type ImageAsset } from "@viz/api";
+    import { type Collection, type CollectionDetailResponse, type ImageAsset, getAssetImagePath } from "@viz/api";
     import ImageCard from "$lib/components/ui/ImageCard.svelte";
     import ImageLightbox from "$lib/components/ui/ImageLightbox.svelte";
     import MaterialIcon from "$lib/components/ui/MaterialIcon.svelte";
@@ -8,7 +8,7 @@
     import { VizMimeTypes } from "$lib/constants";
     import { contextMenu } from "$lib/context-menu";
     import { createImageMenu } from "$lib/context-menu/menus/images";
-    import { DragData } from "$lib/drag-drop/data";
+    import { draggable } from "$lib/drag-drop/directives.svelte";
     import { SelectionScope, SelectionScopeNames, selectionManager } from "$lib/states/selection.svelte";
     import { workspaceState } from "$lib/states/workspace.svelte";
     import { isAssetImage } from "$lib/utils/images";
@@ -288,56 +288,43 @@
         {#each filmstripImages as image, i (image.uid)}
             {@const isActive = activeItem?.uid === image.uid}
             {@const isSelected = filmstripScope?.has(image) ?? false}
-            <div
+            <button
                 class="filmstrip-item"
                 class:active={isActive}
                 class:selected={isSelected}
-                draggable={true}
-                ondragstart={(e: DragEvent) => {
-                    if (!e.dataTransfer) {
-                        return;
-                    }
-
-                    // Select this image if not already in the selection
-                    if (!filmstripScope?.has(image)) {
-                        if (filmstripScope) {
-                            selectionManager.setActive(filmstripScope.id);
+                use:draggable={{
+                    items: () => {
+                        if (!filmstripScope) {
+                            return [];
                         }
-                        if (e.shiftKey || e.ctrlKey || e.metaKey) {
-                            filmstripScope?.add(image);
-                        } else {
+
+                        if (!filmstripScope.has(image)) {
+                            selectionManager.setActive(filmstripScope.id);
                             filmstripScope?.select(image);
                         }
+
+                        const uids = selectedItems?.map((i) => i.uid) ?? [image.uid];
+                        const count = uids.length;
+                        return [
+                            {
+                                mimeType: VizMimeTypes.IMAGE_UIDS,
+                                payload: uids,
+                                label: count > 1 ? `${count} photos` : (image.name ?? "1 photo"),
+                                thumbnailUrl: getAssetImagePath(image, "thumbnail")
+                            }
+                        ];
                     }
-
-                    // Use the full selection set for drag
-                    const uids = selectedItems?.map((i) => i.uid ?? undefined) ?? [image.uid];
-
-                    const dragData = new DragData(VizMimeTypes.IMAGE_UIDS, uids);
-                    dragData.setData(e.dataTransfer, "filmstrip");
-                    e.dataTransfer.effectAllowed = "copy";
-
-                    const target = e.currentTarget as HTMLElement;
-                    const img = target.querySelector("img");
-                    if (img) {
-                        e.dataTransfer.setDragImage(img, 0, 0);
-                    }
-                }}
-                ondragend={() => {
-                    DragData.clear();
                 }}
                 oncontextmenu={(e) => handleContextMenu(e, image)}
                 onclick={(e) => handleImageClick(image, e)}
                 ondblclick={() => openLightbox(image)}
                 onkeydown={(e) => handleItemKeydown(e, image)}
-                role="button"
-                tabindex="0"
                 aria-pressed={isActive}
                 aria-label={`Select image ${image.name}`}
                 bind:this={itemRefs[i]}
             >
                 <ImageCard asset={image} variant="mini" objectFit="contain" resolution="thumbnail" />
-            </div>
+            </button>
         {/each}
     {/if}
 </nav>

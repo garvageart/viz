@@ -8,6 +8,7 @@
         createCollection
     } from "@viz/api";
     import { VizMimeTypes } from "$lib/constants";
+    import { dragCoordinator } from "$lib/drag-drop/coordinator.svelte";
     import { DragData } from "$lib/drag-drop/data";
     import { dragState } from "$lib/drag-drop/state.svelte";
     import { SelectionScope } from "$lib/states/selection.svelte";
@@ -351,7 +352,7 @@
         }
 
         // Skip if an internal app drag is active - we only want OS file drops here
-        if (dragState.isActive) {
+        if (dragCoordinator.isDragging || dragState.isActive) {
             return false;
         }
 
@@ -389,7 +390,11 @@
         e.preventDefault();
         dragCounter++;
         if (dragCounter === 1) {
-            if (internalDragActive || (e.dataTransfer && DragData.isType(e.dataTransfer, VizMimeTypes.IMAGE_UIDS))) {
+            if (
+                dragCoordinator.isDragging ||
+                internalDragActive ||
+                (e.dataTransfer && DragData.isType(e.dataTransfer, VizMimeTypes.IMAGE_UIDS))
+            ) {
                 isInternalDrag = true;
             } else {
                 isInternalDrag = false;
@@ -651,7 +656,7 @@
     ondragend={handleDragEnd}
 />
 
-{#if isDragging && !isInternalDrag}
+{#if isDragging && !isInternalDrag && !dragCoordinator.isDragging}
     <div class="drop-overlay">
         <div class="drop-overlay-content">
             <MaterialIcon iconName="upload" class="upload-icon" />
