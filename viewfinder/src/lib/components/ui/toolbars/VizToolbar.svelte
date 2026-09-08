@@ -35,10 +35,10 @@
 
 <div
     {...props}
-    data-keep-selection="true"
     class="viz-toolbar-container viz-toolbar {className}"
     class:selection-toolbar={hasSelection}
     class:fixed
+    data-keep-selection="true"
 >
     <div class="viz-toolbar-section leading">
         {#if leading}
@@ -110,6 +110,8 @@
         &.fixed {
             position: sticky;
             bottom: 0;
+            margin-top: auto;
+            z-index: var(--viz-z-workspace-layout);
         }
     }
 

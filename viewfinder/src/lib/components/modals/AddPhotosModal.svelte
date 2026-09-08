@@ -224,7 +224,7 @@
         </div>
     {:else}
         <div class="modal-body">
-            <VizToolbar style="border-top: none; ;border-bottom: var(--viz-border-thin);">
+            <VizToolbar fixed={false} style="border-top: none; border-bottom: var(--viz-border-thin);">
                 {#snippet leading()}
                     <div class="toolbar-group">
                         <Dropdown
