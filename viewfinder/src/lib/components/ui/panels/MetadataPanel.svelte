@@ -327,11 +327,14 @@
                             {#if getLensName(currentAsset)}
                                 <div class="value-sub">{getLensName(currentAsset)}</div>
                             {/if}
-                            {#if formatFocalLengthInfo(currentAsset).focalLength}
-                                <div class="value-sub" title={formatFocalLengthInfo(currentAsset).focalLength}>
-                                    {formatFocalLengthInfo(currentAsset).focalLength}
-                                </div>
-                            {/if}
+                            <div class="value-big">
+                                {[
+                                    currentAsset.exif?.f_number ?? currentAsset.exif?.aperture,
+                                    formatFocalLengthInfo(currentAsset).focalLength
+                                ]
+                                    .filter(Boolean)
+                                    .join("  ·  ")}
+                            </div>
                         </div>
                     </div>
                 </div>
@@ -343,7 +346,6 @@
                         <div class="card-values">
                             <div class="value-big">
                                 {[
-                                    currentAsset.exif?.f_number ?? currentAsset.exif?.aperture,
                                     currentAsset.exif?.exposure_time,
                                     currentAsset.exif?.iso ? `ISO ${currentAsset.exif.iso}` : null,
                                     currentAsset.exif?.exposure_bias_value ?? currentAsset.exif?.exposure_value
