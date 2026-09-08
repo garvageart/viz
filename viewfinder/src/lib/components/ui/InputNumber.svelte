@@ -16,14 +16,14 @@
         placeholder?: string;
         id?: string;
         name?: string;
-        onchange?: (value: number) => void;
-        oninput?: (value: number) => void;
+        onchange?: (value: number | undefined) => void;
+        oninput?: (value: number | undefined) => void;
     }
 
     let {
-        value = $bindable(1),
-        min = 1,
-        max = 100,
+        value = $bindable(),
+        min,
+        max,
         step = 1,
         label,
         description,
@@ -39,14 +39,30 @@
     }: Props & Omit<SvelteHTMLElements["div"], "onchange" | "oninput"> = $props();
 
     const inputId = $derived(id ?? generateRandomString(6));
-    let textValue = $state(String(value ?? 1));
+    let textValue = $state(value !== undefined ? String(value) : "");
 
     // Synchronize text representation when value prop is updated externally
     $effect(() => {
         if (value !== undefined && Number(textValue) !== value) {
             textValue = String(value);
+        } else if (value === undefined && textValue !== "") {
+            textValue = "";
         }
     });
+
+    function getPrecision(num: number): number {
+        const str = num.toString();
+        if (str.includes(".")) {
+            return str.split(".")[1].length;
+        }
+        return 0;
+    }
+
+    function roundToPrecision(val: number, precision: number): number {
+        return parseFloat(val.toFixed(precision));
+    }
+
+    const precision = $derived(Math.max(getPrecision(step), min !== undefined ? getPrecision(min) : 0));
 
     function clamp(val: number): number {
         let clamped = val;
@@ -59,8 +75,18 @@
         return clamped;
     }
 
-    function setValue(newVal: number) {
-        const clamped = clamp(newVal);
+    function setValue(newVal: number | undefined) {
+        if (newVal === undefined) {
+            value = undefined;
+            textValue = "";
+
+            oninput?.(undefined);
+            onchange?.(undefined);
+            return;
+        }
+
+        const normalized = roundToPrecision(newVal, precision);
+        const clamped = clamp(normalized);
         value = clamped;
         textValue = String(clamped);
 
@@ -73,7 +99,8 @@
             return;
         }
 
-        setValue((value ?? 0) + amount);
+        const base = value ?? (min !== undefined ? min - amount : 0);
+        setValue(roundToPrecision(base + amount, precision));
     }
 
     function decrement(amount: number = step) {
@@ -81,7 +108,13 @@
             return;
         }
 
-        setValue((value ?? 0) - amount);
+        if (value !== undefined && min !== undefined && value <= min) {
+            setValue(undefined);
+            return;
+        }
+
+        const base = value ?? (max !== undefined ? max + amount : 0);
+        setValue(roundToPrecision(base - amount, precision));
     }
 
     // Continuous button hold logic
@@ -159,6 +192,8 @@
         textValue = raw;
 
         if (raw === "" || raw === "-") {
+            value = undefined;
+            oninput?.(undefined);
             return;
         }
 
@@ -170,15 +205,27 @@
     }
 
     function handleBlur() {
-        if (textValue === "" || isNaN(Number(textValue))) {
-            textValue = String(value ?? min ?? 1);
+        if (textValue === "") {
+            value = undefined;
+            oninput?.(undefined);
+            onchange?.(undefined);
+        } else if (isNaN(Number(textValue))) {
+            textValue = value !== undefined ? String(value) : "";
         } else {
             setValue(Number(textValue));
         }
     }
 
-    const canIncrement = $derived(!disabled && !readonly && (max === undefined || (value ?? 0) < max));
-    const canDecrement = $derived(!disabled && !readonly && (min === undefined || (value ?? 0) > min));
+    const canIncrement = $derived(
+        !disabled &&
+            !readonly &&
+            (max === undefined || (value !== undefined ? value < max : min === undefined || min < max))
+    );
+    const canDecrement = $derived(
+        !disabled &&
+            !readonly &&
+            (min === undefined || (value !== undefined ? value >= min : max === undefined || max > min))
+    );
 </script>
 
 <div class="viz-input-number-wrapper" class:disabled class:compact {...props}>
