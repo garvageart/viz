@@ -1,7 +1,8 @@
 import { expect, test } from "@playwright/test";
 import * as fs from "fs";
 import * as path from "path";
-import { cleanupSpecificCollections, performDragAndDrop, trackCreatedCollections } from "./helpers";
+import { VizMimeTypes } from "$lib/mime";
+import { cleanupSpecificCollections, dispatchDrag, performDragAndDrop, trackCreatedCollections } from "./helpers";
 
 test.describe("Drag & Drop File Upload Flow", () => {
     let createdUids: string[] = [];
@@ -136,27 +137,10 @@ test.describe("Drag & Drop File Upload Flow", () => {
         await expect(page.locator(".viz-workspace, main").first()).toBeVisible({ timeout: 20000 });
 
         // Simulate dragging and dropping a non-file, internal type (like VizMimeTypes.TAB_VIEW)
-        await page.evaluate(() => {
-            const dt = new DataTransfer();
-            dt.setData("application/x-viz.tab.view", "test-tab-data");
-
-            const target = document.querySelector(".viz-view-container") || document.body;
-
-            // Dispatch dragenter
-            const dragEnterEvt = new DragEvent("dragenter", { bubbles: true, cancelable: true });
-            Object.defineProperty(dragEnterEvt, "dataTransfer", { value: dt, configurable: true });
-            target.dispatchEvent(dragEnterEvt);
-
-            // Dispatch dragover
-            const dragOverEvt = new DragEvent("dragover", { bubbles: true, cancelable: true });
-            Object.defineProperty(dragOverEvt, "dataTransfer", { value: dt, configurable: true });
-            target.dispatchEvent(dragOverEvt);
-
-            // Dispatch drop
-            const dropEvt = new DragEvent("drop", { bubbles: true, cancelable: true });
-            Object.defineProperty(dropEvt, "dataTransfer", { value: dt, configurable: true });
-            target.dispatchEvent(dropEvt);
-        });
+        const container = page.locator(".viz-view-container").first();
+        await dispatchDrag(container, "dragenter", VizMimeTypes.TAB_VIEW, "test-tab-data");
+        await dispatchDrag(container, "dragover", VizMimeTypes.TAB_VIEW, "test-tab-data");
+        await dispatchDrag(container, "drop", VizMimeTypes.TAB_VIEW, "test-tab-data");
 
         // Verify that the drop overlay is NOT visible/present
         await expect(page.locator(".drop-overlay")).not.toBeVisible({ timeout: 3000 });
@@ -164,5 +148,19 @@ test.describe("Drag & Drop File Upload Flow", () => {
         // Verify that no info toast is shown
         const infoToast = page.locator(".viz-toast-info");
         await expect(infoToast).not.toBeVisible({ timeout: 3000 });
+    });
+
+    test("should ignore internal image drag and not show upload overlay", async ({ page }) => {
+        await page.goto("/photos");
+        await page.waitForLoadState("domcontentloaded");
+        await expect(page.locator(".viz-workspace, main").first()).toBeVisible({ timeout: 20000 });
+
+        // Simulate dragging internal VizMimeTypes.IMAGE_UIDS
+        const container = page.locator(".viz-view-container").first();
+        await dispatchDrag(container, "dragenter", VizMimeTypes.IMAGE_UIDS, ["test-uid-1"]);
+        await dispatchDrag(container, "dragover", VizMimeTypes.IMAGE_UIDS, ["test-uid-1"]);
+
+        // Verify that the file upload drop overlay is NOT displayed
+        await expect(page.locator(".drop-overlay")).not.toBeVisible({ timeout: 3000 });
     });
 });

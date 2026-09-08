@@ -1,4 +1,4 @@
-import { type APIRequestContext, type Page } from "@playwright/test";
+import { type APIRequestContext, type Locator, type Page } from "@playwright/test";
 import { defaults, deleteImagesBulk } from "@viz/api";
 import fs from "fs";
 import path from "path";
@@ -181,20 +181,34 @@ export async function performDragAndDrop(page: Page, fileBuffer: Buffer, fileNam
             // Target Svelte-managed DOM node to ensure event delegation captures bubble path
             const target = document.querySelector(".viz-view-container") || document.body;
 
-            // Create and dispatch events synchronously on target with explicitly defined dataTransfer properties
-            const dragEnterEvt = new DragEvent("dragenter", { bubbles: true, cancelable: true });
-            Object.defineProperty(dragEnterEvt, "dataTransfer", { value: dt, configurable: true });
-            target.dispatchEvent(dragEnterEvt);
-
-            const dragOverEvt = new DragEvent("dragover", { bubbles: true, cancelable: true });
-            Object.defineProperty(dragOverEvt, "dataTransfer", { value: dt, configurable: true });
-            target.dispatchEvent(dragOverEvt);
-
-            const dropEvt = new DragEvent("drop", { bubbles: true, cancelable: true });
-            Object.defineProperty(dropEvt, "dataTransfer", { value: dt, configurable: true });
-            target.dispatchEvent(dropEvt);
+            // Create and dispatch events synchronously on target with dataTransfer
+            target.dispatchEvent(new DragEvent("dragenter", { bubbles: true, cancelable: true, dataTransfer: dt }));
+            target.dispatchEvent(new DragEvent("dragover", { bubbles: true, cancelable: true, dataTransfer: dt }));
+            target.dispatchEvent(new DragEvent("drop", { bubbles: true, cancelable: true, dataTransfer: dt }));
         },
         [fileBuffer.toString("base64"), fileName]
+    );
+}
+
+/**
+ * Dispatches a synthetic DragEvent (dragenter, dragover, dragleave, drop)
+ * to a target locator with a populated DataTransfer.
+ */
+export async function dispatchDrag(
+    locator: Locator,
+    type: "dragenter" | "dragover" | "dragleave" | "drop",
+    mimeType: string,
+    payload: unknown
+) {
+    await locator.evaluate(
+        (target, { type, mimeType, payload }) => {
+            const dt = new DataTransfer();
+            dt.setData(mimeType, typeof payload === "string" ? payload : JSON.stringify(payload));
+
+            const event = new DragEvent(type, { bubbles: true, cancelable: true, dataTransfer: dt });
+            target.dispatchEvent(event);
+        },
+        { type, mimeType, payload }
     );
 }
 
