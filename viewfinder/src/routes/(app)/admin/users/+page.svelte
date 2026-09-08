@@ -160,9 +160,9 @@
     }
 
     const userColumns: TableColumn<User>[] = [
-        { key: "uid", header: "UID", mono: true, sortable: true },
+        { key: "uid", header: "UID", mono: true, sortable: true, overflow: "truncate" },
         { key: "name", header: "User", cell: userCellSnippet, sortable: true },
-        { key: "email", header: "Email", sortable: true },
+        { key: "email", header: "Email", sortable: true, overflow: "truncate" },
         { key: "role", header: "Role", cell: roleCellSnippet, sortable: true },
         { key: "created_at", header: "Joined", cell: joinedCellSnippet, sortable: true }
     ];
