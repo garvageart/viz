@@ -1,640 +1,509 @@
-# Local-First Replicated Sync Engine Architecture
+# VizSync Engine Architecture
 
-**Last Updated:** September 1, 2026
+**Last Updated:** September 8, 2026
 
 ## Purpose
 
-This document describes the architecture for the `viz` local-first synchronization engine (**VizSync**). It defines how the `viz` Go backend and the `viewfinder` SvelteKit frontend keep the same state. It also describes how the system operates when the network is online or offline.
+This document defines the architecture for the `viz` synchronization engine (**VizSync**). It specifies how the `viz` Go backend and the `viewfinder` SvelteKit frontend keep state in sync across online and offline states.
 
-## 1. Executive Summary and Vision
+## 1. Summary and Vision
 
-The goal is to change `viz` from a standard client-server system into a **replicated state engine**.
+VizSync changes `viz` from a standard client-server system into an **event-driven replicated state machine**. The system provides full **Postgres-to-Postgres parity**.
 
-In this architecture:
+### Core Architecture Pillars
 
-1. **The Core Engine stores all metadata on the client and backend:** The client stores a complete, indexed local copy of all metadata (images, collections, tags, ratings, transforms, settings, users, and jobs).
-2. **Zero-latency reactive user interface:** The system reads and writes data in the local embedded engine at high speed. Svelte 5 runes (`$state`, `$derived`) update the user interface immediately without network requests.
-3. **Continuous offline and online operation:** The user can browse, search, tag, rate, and organize collections when offline. When the network connects, a bidirectional synchronization pipeline resolves changes without data loss.
-4. **Layered media caching:** The system manages grid thumbnails, preview images, and BlurHash strings through a layered caching pipeline.
+1. **Postgres-to-Postgres Parity:**
+    - The backend runs PostgreSQL 18 with native Write-Ahead Log (WAL) logical replication.
+    - The frontend runs PGlite (WebAssembly PostgreSQL) managed by the `@viz/engine` package.
+    - Both environments share identical relational schemas, column data types, constraints, and JSONB operations.
+2. **Clean Domain Schemas:**
+    - Business tables (`images`, `collections`, `users`) contain domain data only.
+    - Business tables contain no synchronization columns.
+    - All synchronization data lives in a single event log table (`sync_events`).
+3. **Decoupled System Layers:**
+    - The user interface writes no SQL and no ORM queries.
+    - The frontend user interface calls a JavaScript domain API (`engine.images.update()`, `engine.images.query()`).
+    - Svelte 5 runes (`$state`, `$derived`) react to local database state with zero delay.
+    - Backend route handlers process clean data transfer objects using GORM.
+    - The sync engine coordinates data replication in the background.
+4. **Single Event Log with RFC 6902 JSON Patches:**
+    - The system records every change as an atomic event in an append-only log.
+    - Target entities are embedded in the patch path (such as `/images/img_123/name`).
+    - Mutations use RFC 6902 JSON Patches with forward and inverse diffs.
+    - The inverse patch enables local undo, redo, event replay, and optimistic rebasing.
+    - The event log links directly to the user session and PostgreSQL native `pg_lsn`.
+5. **In-Process Go Backend:**
+    - The sync coordinator runs inside the single `viz` Go process.
+    - It requires no external daemons and no Docker containers during local development.
+    - A background Go goroutine reads PostgreSQL commits using `pglogrepl`.
+6. **SharedWorker Transport:**
+    - A SharedWorker manages one local PGlite database instance and one persistent WebSocket connection.
+    - All open browser tabs communicate through this worker.
+    - The server streams committed database events to clients.
+    - The client pushes uncommitted local events to the server.
+    - Ephemeral collaborative data travels out of band.
 
 ```mermaid
 flowchart TB
     subgraph UI_Client ["Frontend Client (viewfinder / Browser)"]
-        UI["Svelte 5 Reactive Components"]
-        LiveQ["Live Query / Runes Store Layer"]
-        LocalEngine["Local Core Engine (IndexedDB)"]
-        MutQueue["Optimistic Local Mutation Log and Outbox"]
-        BlobStore["Tiered Blob Storage (OPFS / Cache API)"]
-        SyncWorker["Client Sync Worker (SharedWorker / Web Worker)"]
+        UI["UI Components"]
+        subgraph EnginePkg ["Local Sync Engine (@viz/engine — packages/engine)"]
+            DomainAPI["Domain Facade (engine.images / engine.collections)"]
+            LocalEngine["PGlite WASM (OPFS / opfs-ahp)"]
+            EventLog["Local Outbox & Undo Stack (RFC 6902 Patches)"]
+            SharedWorkerClient["SharedWorker (PGliteWorker Singleton)"]
+        end
     end
 
-    subgraph Sync_Protocol ["Bidirectional Sync Protocol (Multiplexed WebSocket + HTTP Delta)"]
-        HLC["Hybrid Logical Clocks (HLC) and Sequence Vectors"]
+    subgraph Sync_Protocol ["Bidirectional Sync Highway (WebSocket + HTTP Catch-Up)"]
         WSChannel["Real-Time Bidirectional Event Stream (/events)"]
-        DeltaSync["Chunked Delta Sync Catch-Up (/sync/deltas)"]
+        EventCatchup["Stream Replay Catch-Up (/sync/events?since_lsn)"]
+        HLC["Hybrid Logical Clocks (HLC)"]
     end
 
-    subgraph Backend_Server ["Backend Server (Go + Chi + GORM)"]
-        ServerEngine["Server Sync Coordinator and Ingestion Pipeline"]
-        WAL["PostgreSQL Native Logical WAL Stream (pgoutput)"]
-        ConflictResolver["Deterministic CRDT / LWW Attribute Merging"]
+    subgraph Backend_Server ["Backend Server (Go + Chi + GORM — Single Process)"]
+        SyncCoordinator["Sync Coordinator & Ingestion Pipeline"]
+        WALSub["PostgreSQL Logical WAL Subscriber (pgoutput / pglogrepl)"]
         PG["Primary Database (PostgreSQL 18)"]
-        WorkerPool["Watermill Worker Pool (Libvips, EXIF, DHash)"]
-        DiskStore["Server Storage (Library and Cache Directory)"]
+        ServerEventLog["Server Event Log (sync_events with pg_lsn & Session FK)"]
+        DomainService["Backend Domain Handlers (GORM)"]
     end
 
-    UI <--> LiveQ
-    LiveQ <--> LocalEngine
-    UI --> MutQueue
-    MutQueue --> LocalEngine
-    LocalEngine <--> SyncWorker
-    BlobStore <--> SyncWorker
+    UI <--> DomainAPI
+    DomainAPI <--> LocalEngine
+    DomainAPI --> EventLog
+    LocalEngine <--> SharedWorkerClient
+    EventLog <--> SharedWorkerClient
 
-    SyncWorker <==> WSChannel
-    SyncWorker <==> DeltaSync
+    SharedWorkerClient <==> WSChannel
+    SharedWorkerClient <==> EventCatchup
 
-    WSChannel <==> ServerEngine
-    DeltaSync <==> ServerEngine
+    WSChannel <==> SyncCoordinator
+    EventCatchup <==> SyncCoordinator
 
-    ServerEngine <--> ConflictResolver
-    ConflictResolver <--> WAL
-    WAL <--> PG
-    ServerEngine <--> DiskStore
-    ServerEngine <--> WorkerPool
+    SyncCoordinator <--> DomainService
+    SyncCoordinator <--> ServerEventLog
+    DomainService <--> PG
+    PG <--> WALSub
+    WALSub --> SyncCoordinator
 ```
 
-## 2. Existing Codebase
+## 2. Existing Baseline and Limitations
 
 The current `viz` implementation shows the following technical baselines and limitations:
 
 ### 2.1 Backend Data and Persistence Layer
 
-- **Relational entities (`internal/entities/generated.go`):**
+- **Relational entities ([internal/entities/generated.go](../../internal/entities/generated.go)):**
     - Primary entities: `ImageAsset`, `Collection`, `CollectionImage`, `SettingDefault`, `SettingOverride`, `User`, `WorkerJob`, and `ImageTransform`.
-    - All primary keys use string identifiers (`Uid`) created by `internal/uid`. This design supports client-side identifier generation.
-    - Complex metadata is stored in JSONB columns (`Exif`, `ImageMetadata`, `ImagePaths`, `AllowedValues`, and `Scopes`).
-- **Database operations (`internal/db/operations.go`):**
-    - PostgreSQL 18 with connection pool limits (`MaxOpenConns`, `MaxIdleConns`, and `ConnMaxLifetime`).
-    - GORM ORM without change-tracking, Change Data Capture (CDC), or replication triggers.
-- **WebSocket broker (`internal/http/websocket.go`):**
-    - Memory circular buffer history (`WSRecord` ring buffer of 512 items).
-    - Broadcasts simple event strings: `"image-created"`, `"image-updated"`, `"image-deleted"`, and `"collection-created"`.
-    - Endpoints: `/events` (WebSocket upgrade), `/events/since` (memory cursor), and `/events/broadcast`.
-    - **Limitation:** The history is lost when the server restarts. The cursor is not stored in PostgreSQL. Event payloads do not contain causality data or field diffs.
+    - Primary keys use string identifiers (`Uid`) generated by [internal/uid](../../internal/uid).
+    - Metadata lives in JSONB columns (`Exif`, `ImageMetadata`, `ImagePaths`, `AllowedValues`, `Scopes`).
+- **Database operations ([internal/db/operations.go](../../internal/db/operations.go)):**
+    - PostgreSQL 18 accessed through GORM without change tracking or replication triggers.
+- **WebSocket broker ([internal/http/websocket.go](../../internal/http/websocket.go)):**
+    - Uses an in-memory ring buffer of 512 items.
+    - Broadcasts simple string events: `"image-created"`, `"image-updated"`, `"image-deleted"`.
+    - Server restarts clear the buffer history.
+    - Event payloads do not contain causal metadata or field diffs.
+    - Clients must refetch full datasets when they receive events.
 
 ### 2.2 Frontend State and Lifecycle Layer
 
-- **SvelteKit load functions (`viewfinder/src/routes/(app)/photos/+page.ts`):**
-    - Pages fetch data over HTTP GET using `sendVizAPIRequest(listImages({...}))`.
-- **Global event invalidation (`viewfinder/src/lib/states/events.svelte.ts`):**
-    - The WebSocket client receives events and calls `invalidateApp(DataKeys.Photos)`. This action runs `invalidateAll()` or `preloadData()`.
-    - **Limitation:** This causes full-page network refetches for minor edits. It increases latency and removes optimistic user interface state.
-- **Client storage (`viewfinder/src/lib/db/client.ts`):**
-    - The client uses `idb` only for `preferences` and `settings`. It does not store images or collections offline.
+- **SvelteKit load functions ([viewfinder/src/routes/(app)/photos/+page.ts](../../viewfinder/src/routes/(app)/photos/+page.ts)):**
+    - Fetches data over HTTP GET using `sendVizAPIRequest(listImages({...}))`.
+- **Global event invalidation ([viewfinder/src/lib/states/events.svelte.ts](../../viewfinder/src/lib/states/events.svelte.ts)):**
+    - Receives WebSocket events and executes `invalidateApp(DataKeys.Photos)` or `invalidateAll()`.
+    - Causes full-page network refetches for small edits.
+    - Increases latency and removes optimistic user interface state.
+- **Client storage ([viewfinder/src/lib/db/client.ts](../../viewfinder/src/lib/db/client.ts)):**
+    - Uses `idb` only for user preferences.
+    - Does not store images or collections offline.
 
-### 2.3 System Deficiencies and Requirements
+## 3. Data Classification and Schema Architecture
 
-| Area                   | Current Implementation                        | Sync Engine Requirement                                            |
-| :--------------------- | :-------------------------------------------- | :----------------------------------------------------------------- |
-| **Offline capability** | None. Only cached `app.html` shows            | Full offline browse, search, and edit for metadata and thumbnails. |
-| **Mutation latency**   | High. Network roundtrip and full page reload. | Zero milliseconds. Optimistic local write with background sync.    |
-| **Conflict handling**  | Row-level last-write-wins (overwrites data).  | Column-level last-write-wins CRDT and set CRDTs.                   |
-| **Media caching**      | Standard browser HTTP cache (temporary).      | Persistent OPFS or IndexedDB blob storage with Service Worker.     |
-| **Multi-tab sync**     | Each browser tab opens a separate WebSocket.  | `SharedWorker` and `BroadcastChannel` with shared local database.  |
+### 3.1 Data Classification
 
-## 3. Replicated Core Engine Design
+The sync engine distinguishes between persistent database records and transient pub/sub messages:
 
-The synchronization engine uses a **Replicated State Machine** model with **Hybrid Logical Clocks (HLC)** and a **Log-Structured Delta Replication Protocol**.
+| Classification                | Storage and Replication Model                                                        | Included Entities and Data                                                                                       |
+| :---------------------------- | :----------------------------------------------------------------------------------- | :--------------------------------------------------------------------------------------------------------------- |
+| **Replicated Database State** | **Event-Sourced Replicated Model**<br>Client PGlite (WASM) and Server PostgreSQL 18. | • Domain tables: `images`, `collections`, `collection_images`, `setting_overrides`<br>• Log: `sync_events`       |
+| **Ephemeral Presence**        | **In-Memory Pub/Sub**<br>Sent over WebSocket channels. Bypasses the database log.    | • Active users and viewers<br>• Selection and focus sets<br>• Background worker telemetry (`WorkerJob` progress) |
 
-### VizSync Data Classification
+### 3.2 Clean Domain Models vs. Single Sync Event Log
 
-| Classification Tier                | Storage & Replication Model                                                    | Included Assets and Entities                                                                                                                                    |
-| :--------------------------------- | :----------------------------------------------------------------------------- | :-------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| **Tier 1: Metadata State**         | **Fully Replicated**<br>Stored in client IndexedDB and backend PostgreSQL.     | • `ImageAsset` and EXIF metadata<br>• `Collection` and collection links<br>• Tags, ratings, user settings, and tombstones                                       |
-| **Tier 2: Binary Blobs and Media** | **Layered Progressive Cache**<br>Cached in browser OPFS / Cache Storage API.   | • Level 0: BlurHash string (in metadata)<br>• Level 1: 300px WebP grid thumbnails<br>• Level 2: 2048px preview images<br>• Level 3: RAW and JPEG original files |
-| **Tier 3: Ephemeral Presence**     | **In-Memory Pub/Sub**<br>Sent over WebSocket channels; not stored in database. | • Active users and viewers<br>• Focus and selection sets<br>• Background worker telemetry                                                                       |
+Domain models maintain clean Go structs matching [openapi.yaml](../../api/openapi/openapi.yaml). The synchronization engine maintains its own single event log table. All models register with GORM `AutoMigrate` on startup.
 
-### 3.1 Layered Data Architecture
+#### A. Pure Domain GORM Models ([internal/entities/generated.go](../../internal/entities/generated.go))
 
-#### Layer 1: Structured Metadata State (Fully Replicated)
+Domain models contain business fields only. They contain no synchronization primitives:
 
-- The client database and the backend database store identical copies of all metadata records.
-- The engine replicates records through transactional change sets (`ChangeSet`).
-- The user interface queries local records with zero network delay.
+#### B. The Single Sync Event Log Model (`sync_events`)
 
-#### Layer 2: Binary Blobs and Media Derivatives (Layered Progressive Cache)
+The backend sync engine defines one event log table. It ties directly to the user session and the PostgreSQL WAL:
 
-Storage-limited devices cannot store all original media. The system uses a four-level cache:
+```go
+package sync
 
-1. **Level 0 (Inline metadata):** BlurHash string (32 bytes) stored in the metadata record. Shows immediately during grid layout.
-2. **Level 1 (Grid thumbnails - 300px WebP):** Saved in browser OPFS (Origin Private File System) or Cache Storage for fast offline scrolling.
-3. **Level 2 (High-resolution previews - 2048px WebP/AVIF):** Downloaded and saved in an LRU cache when the user opens the image view.
-4. **Level 3 (Original RAW/JPEG files):** Stored on the server disk in the library directory. Fetched on demand when online.
+import (
+    "time"
+    "viz/internal/entities"
+)
 
-#### Layer 3: Ephemeral Collaborative State (Not Persisted)
+type SyncEvent struct {
+    ID             string            `gorm:"primaryKey" json:"id"`
+    SessionUID     string            `gorm:"not null;index" json:"session_uid"`
+    Session        *entities.Session `gorm:"foreignKey:SessionUID;references:Uid" json:"-"`
 
-- The server broadcasts active users, live selections, and job progress through WebSocket channels. This data is not written to the database log.
-
-## 4. Subsystems and Components
-
-### 4.1 Schema Automation from OpenAPI (Candidate Approach — Subject to Final Review)
-
-To prevent manual schema duplication without adding extra configuration files or bloating `api/openapi/openapi.yaml`, the proposed design extends the existing `tools/genentities` tool.
-
-#### Code Generation Pipeline
-
-1. **`api/openapi/openapi.yaml`:** Serves as the single source of truth for DTO schemas.
-2. **`tools/genentities/main.go`:** Generates backend GORM models (`internal/entities/generated.go`).
-3. **`scripts/js/gen-api.ts`:** Generates TypeScript client interfaces (`packages/api/`).
-
-### 4.2 Client Storage Model (IndexedDB — Illustrative Candidate Approach)
-
-The client engine uses native browser **IndexedDB** (`idb`).
-
-```mermaid
-flowchart LR
-    subgraph Svelte_App ["viewfinder SvelteKit App"]
-        Runes["Svelte 5 Runes ($state / $derived)"]
-        LiveQuery["createLiveQuery(fetcher)"]
-    end
-
-    subgraph Client_Engine ["Local Core Engine"]
-        EngineRouter["Local Storage Engine"]
-        IndexedDB["IndexedDB (idb wrapper)"]
-        MutationOutbox["mutation_outbox Object Store"]
-        SyncState["sync_checkpoints Object Store"]
-    end
-
-    Runes <--> LiveQuery
-    LiveQuery <--> EngineRouter
-    EngineRouter <--> IndexedDB
-    EngineRouter --> MutationOutbox
-    EngineRouter <--> SyncState
-```
-
-#### 1-to-1 Entity Mirroring Model
-
-Client object stores mirror backend relational entities with a 1-to-1 relationship:
-
-```
-    BACKEND (PostgreSQL / GORM)                     CLIENT (IndexedDB Object Stores)
-   ┌────────────────────────────┐                  ┌────────────────────────────┐
-   │ images                     │ ◄── 1:1 Mirror ──► │ images (Object Store)      │
-   │ collections                │ ◄── 1:1 Mirror ──► │ collections (Object Store)  │
-   │ collection_images          │ ◄── 1:1 Mirror ──► │ collection_images (Store)  │
-   │ setting_overrides          │ ◄── 1:1 Mirror ──► │ setting_overrides (Store)  │
-   │ worker_jobs                │ ◄── 1:1 Mirror ──► │ worker_jobs (Store)        │
-   └────────────────────────────┘                  └────────────────────────────┘
-                 ▲                                               ▲
-                 └─────────────── Both Derived From ─────────────┘
-                             api/openapi/openapi.yaml
-```
-
-##### 1. Universal Sync Envelope
-
-Every mirrored record stored on the client includes shared synchronization metadata:
-
-```typescript
-// Shared sync envelope for all mirrored entities
-export interface SyncEnvelope {
-    hlc_timestamp: string;
-    sync_version: number;
-    is_pending_sync: boolean;
-    deleted_at: string | null;
+    Patch          string            `gorm:"type:jsonb;not null" json:"patch"`
+    Inverse        string            `gorm:"type:jsonb;not null" json:"inverse"`
+    HLC            string            `gorm:"not null;index" json:"hlc"`
+    ServerLSN      string            `gorm:"type:pg_lsn;not null;index" json:"server_lsn"`
+    Status         SyncStatus        `gorm:"not null;index" json:"status"` // APPLIED, SUPERSEDED, REJECTED
+    WinningEventID *string           `json:"winning_event_id,omitempty"`
+    CreatedAt      time.Time         `gorm:"not null;index" json:"created_at"`
 }
-
-// Client types directly extend @viz/api models
-export type Mirrored<T> = T & SyncEnvelope;
-
-export type ImageAssetEntity = Mirrored<ImageAsset>;
-export type CollectionEntity = Mirrored<Collection>;
-export type CollectionImageEntity = Mirrored<CollectionImage>;
-export type SettingOverrideEntity = Mirrored<SettingOverride>;
 ```
 
-##### 2. Illustrative IndexedDB Object Stores (`viewfinder/src/lib/sync/db.ts`)
+Registered with GORM `AutoMigrate` inside [`internal/entities/models.go`](../../internal/entities/models.go):
+
+```go
+func Models() []any {
+    return []any{
+        ImageAsset{},
+        Collection{},
+        CollectionImage{},
+        Session{},
+        SyncEvent{}, // Single event log table
+    }
+}
+```
+
+## 4. RFC 6902 Event Specification and Patch Engine
+
+### 4.1 Event Structure
+
+The system models every mutation as a self-contained event. The patch path identifies the target entity:
 
 ```typescript
-import type { Collection, CollectionImage, ImageAsset, SettingOverride } from "@viz/api";
-import { type DBSchema, openDB } from "idb";
+export interface SyncEvent {
+    id: string;
+    session_uid: string;
+    patch: Operation[]; // RFC 6902 forward patch
+    inverse: Operation[]; // RFC 6902 inverse patch for undo
+    hlc: string; // Hybrid Logical Clock
+    server_lsn?: string; // PostgreSQL WAL position
+    status: "PENDING" | "APPLIED" | "SUPERSEDED";
+    winning_event_id?: string;
+    created_at: string;
+}
+```
 
-export interface VizClientDBSchema extends DBSchema {
-    images: {
-        key: string; // uid
-        value: Mirrored<ImageAsset>;
-        indexes: {
-            "by-taken-at": string;
-            "by-rating": number;
-        };
-    };
-    collections: {
-        key: string; // uid
-        value: Mirrored<Collection>;
-        indexes: { "by-name": string };
-    };
-    collection_images: {
-        key: string; // collection_uid:image_uid
-        value: Mirrored<CollectionImage>;
-        indexes: {
-            "by-collection": string;
-            "by-image": string;
-        };
-    };
-    mutation_outbox: {
-        key: string; // mutation_id
-        value: {
-            mutation_id: string;
-            entity_table: string;
-            row_identity: Record<string, unknown>;
-            operation: "INSERT" | "UPDATE" | "DELETE";
-            patch_json: Record<string, unknown>;
-            hlc_timestamp: string;
-            retry_count: number;
-        };
-    };
-    sync_checkpoints: {
-        key: string; // client_id
-        value: {
-            client_id: string;
-            last_server_lsn: string;
-            last_sync_hlc: string;
-            last_synced_at: string;
-        };
+### 4.2 Automatic Patch Generation
+
+Developers never write JSON pointer strings by hand. The frontend sync client generates forward and inverse patches when a domain method executes:
+
+```typescript
+import { compare } from "fast-json-patch";
+
+export function createMutationEvent<T extends { uid: string }>(
+    entityPath: string,
+    currentEntity: T,
+    partialUpdate: Partial<T>
+): SyncEvent {
+    const nextEntity = structuredClone(currentEntity);
+    deepMerge(nextEntity, partialUpdate);
+
+    // Forward patch: [{ op: "replace", path: "/images/img_123/exif/artist", value: "Jane" }]
+    const forwardPatch = compare(currentEntity, nextEntity);
+
+    // Inverse patch: [{ op: "replace", path: "/images/img_123/exif/artist", value: "Old Artist" }]
+    const inversePatch = compare(nextEntity, currentEntity);
+
+    return {
+        id: generateUID(),
+        session_uid: currentSession.uid,
+        patch: forwardPatch,
+        inverse: inversePatch,
+        hlc: hlcClock.now(),
+        status: "PENDING",
+        created_at: new Date().toISOString()
     };
 }
 ```
 
-##### 3. Client System Stores
+### 4.3 Relational Actions as Discrete Operations
 
-The client maintains two generic system stores:
+The system does not record relational associations as array modifications inside a parent JSON document. Instead, associations use independent row events on `collection_images`:
 
-###### `mutation_outbox` (Pending Client Mutations)
+- **Add image to collection:** `action: "INSERT", path: "/collection_images/col_1:img_2"`
+- **Remove image from collection:** `action: "DELETE", path: "/collection_images/col_1:img_2"`
 
-| Field           | Type             | Description                                                                                 |
-| :-------------- | :--------------- | :------------------------------------------------------------------------------------------ |
-| `mutation_id`   | String (PK)      | Unique identifier for the local change.                                                     |
-| `entity_table`  | String           | Name of the target table (`images`, `collections`, `setting_overrides`).                    |
-| `row_identity`  | Key Tuple (JSON) | Primary key values of the record (`{"uid": "..."}` or `{"user_id": "...", "name": "..."}`). |
-| `operation`     | Enum             | `INSERT`, `UPDATE`, or `DELETE`.                                                            |
-| `patch_json`    | JSON Object      | Field-level modification delta.                                                             |
-| `hlc_timestamp` | String           | Hybrid Logical Clock timestamp of the local edit.                                           |
-| `retry_count`   | Integer          | Count of push attempts.                                                                     |
+Independent row operations prevent concurrent user modifications from overwriting the collection membership.
 
-###### `sync_checkpoints` (Sequence Watermarks)
+## 5. Subsystem Architecture
 
-| Field             | Type        | Description                                                          |
-| :---------------- | :---------- | :------------------------------------------------------------------- |
-| `client_id`       | String (PK) | Unique client instance identifier.                                   |
-| `last_server_lsn` | String      | Highest PostgreSQL Log Sequence Number (LSN) applied by this client. |
-| `last_sync_hlc`   | String      | Most recent confirmed HLC timestamp.                                 |
-| `last_synced_at`  | Timestamp   | Time of the last completed sync cycle.                               |
+### 5.1 Frontend Subsystem (viewfinder & @viz/engine)
 
-#### Reactive Svelte 5 Live Queries
+The frontend separates user interface view logic from storage and replication mechanics. The local database, outbox, and reactive queries live in `@viz/engine` (`packages/engine`).
 
-The user interface subscribes directly to IndexedDB object stores through Svelte 5:
+`@viz/engine` declares `@viz/api` (`packages/api`) as an internal workspace dependency (`"workspace:*"`). It relies on `@viz/api` for:
+
+- Generated TypeScript DTO interfaces (`ImageAsset`, `Collection`, `User`, `Setting`, `SyncEvent`).
+- HTTP catch-up requests (`GET /sync/events?since_lsn=...`).
+- HTTP outbox ingestion requests (`POST /sync/push`).
+- Base client configuration, base URL, and session authentication credentials.
+
+`viewfinder` consumes `@viz/engine` for local reactive queries and mutations. `viewfinder` continues to use `@viz/api` directly for non-synchronized RPC operations (such as authentication).
+
+```
+[ Svelte 5 UI Components ]
+      │ Calls domain methods (e.g. engine.images.update)
+      ▼
+[ Frontend Domain Facade (@viz/engine) ]
+      │ Generates RFC 6902 forward and inverse patches
+      ▼
+[ Local Outbox & Projection ]  ◄── (Undo / Redo / Rebase)
+      │ Applies patches to local PGlite optimistically
+      ▼
+[ SharedWorker Client (PGliteWorker) ]
+      │ Multiplexes single WebSocket connection across tabs
+      ▼
+[ Network Highway to Backend ]
+```
+
+#### A. Universal Load Functions and Domain User Interface
+
+Per project guidelines, route data queries execute inside client-side `+page.ts` universal load functions. Components receive reactive state via `$props()`.
+
+In photo route loaders ([viewfinder/src/routes/(app)/photos/+page.ts](../../viewfinder/src/routes/(app)/photos/+page.ts)):
 
 ```typescript
-// viewfinder/src/lib/sync/live-query.svelte.ts
-import { syncEvents } from "$lib/sync/events";
+import { engine } from "@viz/engine";
+import { photosSort } from "$lib/states/sort.svelte";
+import type { PageLoad } from "./$types";
 
-export function createLiveQuery<T>(fetcher: () => Promise<T[]>) {
-    let data = $state<T[]>([]);
-    let loading = $state<boolean>(true);
-
-    const refresh = async () => {
-        data = await fetcher();
-        loading = false;
-    };
-
-    $effect(() => {
-        refresh();
-        const unsubscribe = syncEvents.onMutation(() => {
-            refresh();
-        });
-        return () => {
-            unsubscribe();
-        };
+export const load: PageLoad = async () => {
+    const photos = engine.images.query({
+        sortBy: photosSort.value.by,
+        order: photosSort.value.order,
+        limit: 100
     });
 
     return {
-        get value() {
-            return data;
-        },
-        get isLoading() {
-            return loading;
-        }
+        photos
     };
+};
+```
+
+In grid view components ([viewfinder/src/routes/(app)/photos/+page.svelte](../../viewfinder/src/routes/(app)/photos/+page.svelte)):
+
+```svelte
+<script lang="ts">
+    import ImageCard from "$lib/components/ui/ImageCard.svelte";
+    import type { PageProps } from "./$types";
+
+    let { data }: PageProps = $props();
+</script>
+
+{#each data.photos.data as photo (photo.uid)}
+    <ImageCard asset={photo} />
+{/each}
+```
+
+In metadata editor components ([viewfinder/src/lib/components/ui/panels/MetadataPanel.svelte](../../viewfinder/src/lib/components/ui/panels/MetadataPanel.svelte)):
+
+```svelte
+<script lang="ts">
+    import { engine } from "@viz/engine";
+    import StarRating from "$lib/components/image-tools/StarRating.svelte";
+
+    let { asset }: Props = $props();
+    let starRating = $derived<number | null>(asset?.image_metadata?.rating ?? null);
+
+    async function setImageRating(newRating: number | null) {
+        if (!asset) {
+            return;
+        }
+
+        await engine.images.update(asset.uid, {
+            image_metadata: { rating: newRating }
+        });
+    }
+</script>
+
+<StarRating value={starRating} onChange={setImageRating} />
+```
+
+#### B. Instant Undo and Redo
+
+Every local event stores an inverse patch. The engine provides universal undo and redo operations:
+
+```typescript
+export async function undo() {
+    const lastEvent = outbox.popRecentLocalEvent();
+    if (!lastEvent) {
+        return;
+    }
+
+    await applyPatchToPGlite(lastEvent.inverse);
+    syncTransport.pushEvent(createInvertedEvent(lastEvent));
 }
 ```
 
-### 4.3 Backend Sync Coordinator and Native PostgreSQL WAL (Logical Replication)
+#### C. Multi-Tab Coordination
 
-The backend uses native **PostgreSQL 18 Logical Replication (CDC)** to stream database changes directly from the Write-Ahead Log (WAL).
+A singleton SharedWorker hosts the PGlite instance and the single WebSocket connection:
 
-```
-                  POSTGRESQL 18 ENGINE                         BACKEND SYNC SERVICE
-        ┌──────────────────────────────────────┐             ┌──────────────────────┐
-        │ Database Transactions (ACID)         │             │                      │
-        │ • images                             │             │  PostgreSQL Logical  │
-        │ • collections                        │  WAL Stream │  Replication Client  │
-        │ • setting_overrides                  │────────────►│  (pglogrepl / pgx)   │
-        │ • collection_images                  │  (pgoutput) │                      │
-        │                                      │             └──────────┬───────────┘
-        │ Native Write-Ahead Log (WAL)         │                        │
-        │ Commit LSN (Log Sequence Number)     │                        ▼
-        └──────────────────────────────────────┘             ┌──────────────────────┐
-                                                             │ WebSocket Broadcast  │
-                                                             │ to Connected Tabs    │
-                                                             └──────────────────────┘
-```
+- All open browser tabs communicate with this worker through a `MessagePort`.
+- An edit in Tab 1 updates PGlite in the worker.
+- The worker broadcasts the patch to all connected tabs with zero network roundtrips.
 
-#### 1. Logical Replication Publication
+#### D. Storage Engine and WASM Resource Budget
 
-The backend creates a PostgreSQL logical replication publication for all mirrored tables:
+The local database uses PGlite backed by the Origin Private System (`opfs-ahp://`):
 
-```sql
-CREATE PUBLICATION viz_sync_publication FOR ALL TABLES;
-```
+- **Low-Latency Storage:** Synchronous Access Handles in OPFS avoid IndexedDB transaction flush delays.
+- **Worker Isolation:** PGlite runs exclusively inside the `SharedWorker`. The main user interface thread performs no WebAssembly compilation and allocates no linear memory.
+- **WASM Asset Coexistence:** `viewfinder` hosts three WebAssembly modules (`libexif-wasm`, `wasm-vips`, and `pglite.wasm`). The application loads each module lazily in dedicated worker contexts.
+- **Bytecode Caching:** Browsers cache compiled WebAssembly bytecode across sessions. Subsequent visits bypass compilation delays.
 
-#### 2. Native Row-Identity and Change Event Format
+### 5.2 Backend Subsystem (`viz` Go API & PostgreSQL 18)
 
-PostgreSQL `pgoutput` decodes WAL commits and produces structured change events:
+The backend handles business logic through standard GORM entities. PostgreSQL native WAL handles event capture. Everything runs in-process inside the `viz` binary.
 
-| Field          | Type              | Description                                                                      |
-| :------------- | :---------------- | :------------------------------------------------------------------------------- |
-| `lsn`          | String            | Monotonically increasing Log Sequence Number (e.g., `0/16B3748`).                |
-| `table`        | String            | Target database table name (`images`, `setting_overrides`, `collection_images`). |
-| `action`       | Enum              | `INSERT`, `UPDATE`, or `DELETE`.                                                 |
-| `row_identity` | Key Tuple (JSON)  | Primary key values. Supports single UIDs, composite keys, and natural keys.      |
-| `patch`        | Column Map (JSON) | Modified columns with their new values.                                          |
-| `committed_at` | Timestamp (UTC)   | Exact server transaction commit timestamp.                                       |
+#### A. Pure Domain Handlers
 
-#### 3. Automatic Primary Key Handling
+Route handlers in [cmd/api/routes/images.go](../../cmd/api/routes/images.go) process standard data transfer objects using GORM:
 
-The WAL stream identifies modified rows by their native table keys:
+```go
+func (h *ImageHandler) UpdateImage(w http.ResponseWriter, r *http.Request) {
+    var update dto.ImageUpdate
+    if err := render.DecodeJSON(r.Body, &update); err != nil {
+        render.Error(w, err)
+        return
+    }
 
-- **Single UID (`images`):** `row_identity = { "uid": "img_01J8ABC45D67E89F" }`
-- **Composite Key (`collection_images`):** `row_identity = { "collection_uid": "col_123", "image_uid": "img_456" }`
-- **Composite Key (`setting_overrides`):** `row_identity = { "user_id": "usr_789", "name": "theme.mode" }`
+    updatedImage, err := h.imageService.Update(r.Context(), uid, update)
+    if err != nil {
+        render.Error(w, err)
+        return
+    }
 
-#### 4. Server Pipeline Flow
-
-1. When a transaction commits, PostgreSQL appends the modification to its WAL.
-2. The Go backend replication subscriber (`internal/sync/subscriber.go`) receives the decoded WAL change event.
-3. The server `WSBroker` broadcasts the change event to all connected WebSocket clients.
-4. When a disconnected client reconnects, it calls `GET /sync/deltas?since_lsn=0/16B3748` to receive missed transactions.
-
-```mermaid
-sequenceDiagram
-    autonumber
-    participant UI as viewfinder UI
-    participant LE as IndexedDB
-    participant CW as Sync Worker
-    participant API as viz Go API
-    participant PG as PostgreSQL (Primary DB)
-    participant WAL as PostgreSQL WAL (pgoutput)
-    participant OTab as Other Clients / Tabs
-
-    UI->>LE: 1. User updates image rating (0ms)
-    LE->>LE: 2. Write to images and mutation_outbox
-    UI-->>UI: 3. Svelte 5 LiveQuery updates UI immediately
-
-    CW->>LE: 4. Read mutation_outbox
-    CW->>API: 5. Send mutation batch through WebSocket
-
-    API->>PG: 6. Run transaction and conflict check
-    PG->>WAL: 7. Commit transaction to WAL (generates LSN=0/16B3748)
-    API-->>CW: 8. Confirm mutation (lsn=0/16B3748)
-
-    CW->>LE: 9. Delete from mutation_outbox and update checkpoint
-    WAL->>API: 10. Stream decoded WAL event to replication subscriber
-    API->>OTab: 11. Broadcast delta (lsn=0/16B3748, table='images', patch={rating: 5})
-    OTab->>OTab: 12. Write delta to local DB and update LiveQuery
+    render.JSON(w, http.StatusOK, updatedImage)
+}
 ```
 
-## 5. Bidirectional Sync Protocol and Conflict Resolution
+#### B. PostgreSQL Native Logical Replication
 
-### 5.1 Hybrid Logical Clocks
+1. PostgreSQL defines a replication publication:
+    ```sql
+    CREATE PUBLICATION viz_sync_publication FOR ALL TABLES;
+    ```
+2. The Go WAL subscriber ([internal/sync/subscriber.go](../../internal/sync/subscriber.go)) connects through `pglogrepl` and `pgx` using the `pgoutput` plugin.
+3. Every committed transaction generates commit events containing the server LSN, table relation, and column patches.
+4. The Go sync service ingests the WAL event, records it in `sync_events`, and streams the event to clients through the WebSocket broker ([internal/http/websocket.go](../../internal/http/websocket.go)).
 
-Physical hardware clocks drift across client and server machines. The `viz` sync engine uses **Hybrid Logical Clocks (HLC)** to create a total order of all events.
+## 6. Bidirectional Sync Protocol and Transport
 
-#### Clock Structure
+### 6.1 WebSocket Real-Time Highway
 
-An HLC timestamp contains three components:
+The WebSocket connection (`/events`) in the client SharedWorker handles three data flows:
+
+1. **Downstream WAL Stream (Server to Client):**
+    - Transmits committed PostgreSQL change events containing `{ server_lsn, patch }`.
+    - The client applies patches to PGlite and updates active Svelte live queries immediately.
+2. **Upstream Fast-Path Push (Client to Server):**
+    - When online, the client pushes uncommitted `SyncEvent` payloads directly over the WebSocket.
+    - The server validates and commits the mutation in a database transaction.
+    - The server returns an acknowledgment with the assigned `server_lsn`.
+3. **Ephemeral Collaborative Presence (Tier 3 Data):**
+    - User focus, active selections, and background worker progress ([WorkerJob](../../internal/entities/generated.go)) stream out of band without database logging.
+
+### 6.2 Stream Replay Catch-Up (No Checkpoint Table)
+
+- The client stores its own applied LSN locally in PGlite (`SELECT MAX(server_lsn) FROM _sync_events`).
+- When reconnecting, `@viz/engine` calls `GET /sync/events?since_lsn=<lsn>` through `@viz/api`.
+- The Go backend queries `sync_events WHERE server_lsn > ? ORDER BY server_lsn ASC`.
+- The client replays missing events directly into PGlite. No server-side checkpoint table is needed.
+
+## 7. Reconciliation, Rebasing, and Conflict Resolution
+
+### 7.1 Hybrid Logical Clocks
+
+Physical clocks drift across devices. VizSync uses Hybrid Logical Clocks (HLC) with the structure:
 
 ```
 [ physical_time_ms ] : [ logical_counter ] : [ client_id ]
 ```
 
-| Component          | Type             | Description                                                   |
-| :----------------- | :--------------- | :------------------------------------------------------------ |
-| `physical_time_ms` | Integer (64-bit) | Milliseconds since Unix epoch (`Date.now()`).                 |
-| `logical_counter`  | Integer (16-bit) | Incremented for events occurring within the same millisecond. |
-| `client_id`        | String (32-char) | Unique node identifier preventing collisions across devices.  |
+- Provides causal ordering across distributed nodes.
+- Preserves causality across offline edits and network reconnections.
 
-#### HLC State Operations
+### 7.2 Optimistic Reconciliation
 
-1. **Local Mutation:** Increment `logical_counter` if physical time has not advanced. Reset to `0` when physical time advances.
-2. **Receive Delta:** Set local physical time to `max(local_time, incoming_time, wall_clock)`. Update counter accordingly.
-
----
-
-### 5.2 Deterministic Conflict Resolution Rules
-
-The system resolves edit conflicts deterministically without requiring interactive user prompts.
-
-#### Rule 1: Column-Level Last-Write-Wins (LWW)
-
-- Mutations compare HLC timestamps at the field level, not the row level.
-- If Client A edits `name` at $T_1$ and Client B edits `rating` at $T_2$, both edits merge successfully into the database.
-- If Client A and Client B edit `rating` simultaneously, the edit with the higher HLC timestamp wins.
-
-#### Rule 2: Add-Wins Set CRDT for Join Tables
-
-- Link entities (`collection_images`) use Observed-Remove Set (OR-Set) semantics.
-- Adding an image to a collection always wins over a concurrent removal.
-
-#### Rule 3: Soft-Delete Tombstones
-
-- Deletions update `deleted_at` with an HLC timestamp instead of immediately removing rows.
-- The system permanently purges records after the 30-day retention period defined in `viz` Trash (`internal/jobs/trash.go`).
-
----
-
-## 6. Media Derivative Caching Pipeline
-
-The application uses a progressive caching pipeline to load image assets instantly. Components such as `ImageLightbox.svelte` (`viewfinder/src/lib/components/ui/ImageLightbox.svelte`) and `AssetImage.svelte` (`viewfinder/src/lib/components/ui/AssetImage.svelte`) use this pipeline.
-
-### 6.1 Progressive Loading in `ImageLightbox` and `AssetImage`
-
-When a component renders an `ImageAsset` record:
+When a client makes offline edits while the server accepts remote transactions, the client reconciles state:
 
 ```
-┌────────────────────────────────────────────────────────────────────────┐
-│               AssetImage or ImageLightbox Requests Image               │
-└──────────────────────────────────┬─────────────────────────────────────┘
-                                   │
-                   1. Read inline metadata blurhash
-                                   │
-                         ┌─────────┴─────────┐
-                        Yes                  No
-                         │                   │
-               Render Instant Blur           Render Solid Color
-               via getThumbhashURL()         Placeholder
-               (0ms latency)                 (0ms latency)
-                         │                   │
-                         └─────────┬─────────┘
-                                   │
-                   2. Check Service Worker Cache API or OPFS
-                      for /images/{uid}/file?width=400 (Thumbnail)
-                                   │
-                         ┌─────────┴─────────┐
-                       Found             Not Found
-                         │                   │
-               Display Thumbnail          Online?
-               in ImageLoader (0ms)          │
-                         │             ┌─────┴─────┐
-                         │            Yes          No
-                         │             │           │
-                         │      Fetch from API     Show Offline
-                         │      and cache locally  Warning Icon
-                         │             │
-                         └─────────────┤
-                                       ▼
-                   3. If in ImageLightbox (resolution="preview"):
-                      Request /images/{uid}/file?width=1920 (Preview)
-                                       │
-                             ┌─────────┴─────────┐
-                           Cached             Online?
-                             │                   │
-                      Upgrade Display      ┌─────┴─────┐
-                      to 1920px Preview   Yes          No
-                                           │           │
-                                    Stream and cache   Retain
-                                    1920px WebP        Thumbnail View
+Local uncommitted events: [Event A] ──► [Event B]
+Incoming server commit:   [Server Event X]
+
+Rebase Sequence:
+1. Unwind: Roll back Event B then Event A using their inverse patches.
+2. Apply:  Apply authoritative Server Event X to local PGlite.
+3. Rebase: Reapply Event A then Event B on top of the new base state.
+4. Commit: Mark events as confirmed once acknowledged with server_lsn.
 ```
 
-### 6.2 Component Integration Details
+### 7.3 Conflict Resolution and Winner Tracking
 
-#### 1. ThumbHash and BlurHash Placeholder
+- **Field-Level Last-Write-Wins:** RFC 6902 path granularity allows edits to disjoint paths (such as `/exif/artist` and `/image_metadata/rating`) to merge without conflict.
+- **Colliding Paths:** If two clients edit the exact same path concurrently, the server stores both events in `sync_events`.
+    - The higher HLC event receives `status: "APPLIED"`.
+    - The lower HLC event receives `status: "SUPERSEDED"` and sets `winning_event_id`.
+- **Relational Add-Wins:** Adding an image to a collection always wins over a concurrent removal.
+- **Soft-Delete Tombstones:** Record deletions assign a timestamp to `deleted_at` on the entity. Records purge permanently after a retention window defined in either in the Trash ([internal/jobs/trash.go](../../internal/jobs/trash.go)) or Config ([internal/config/config.go](../../internal/config/config.go)).
 
-- The IndexedDB `images` store contains the `blurhash` attribute in the metadata record.
-- `AssetImage.svelte` calls `getThumbhashURL()` from `viewfinder/src/lib/utils/images.ts`.
-- This function creates an in-memory Data URI.
-- The browser shows the blur placeholder in zero milliseconds without a network request.
+## 8. System Implementation Tracks
 
-#### 2. Thumbnail Cache Interception
+The system organizes work into concurrent functional tracks:
 
-- `AssetImage.svelte` requests the thumbnail URL from `getAssetImagePath(asset, 'thumbnail')`.
-- This helper builds the endpoint `/images/{uid}/file?format=webp&width=400`.
-- The browser Service Worker (`viewfinder/src/service-worker.ts`) intercepts the HTTP request.
-- If the thumbnail exists in `Cache Storage` or OPFS, the worker returns the cached WebP blob.
-- When the device is online, the worker downloads the image from `cmd/api/routes/images.go` and updates the local cache.
+### Data and Event Contract
 
-#### 3. Lightbox Preview Transition
+- Maintain pure domain schemas from [openapi.yaml](../../api/openapi/openapi.yaml).
+- Define the single `SyncEvent` GORM model in `internal/entities/sync.go`.
+- Link `SyncEvent` to `Session` via foreign key `SessionUID`.
+- Implement RFC 6902 event generation with forward and inverse operations.
 
-- When the user opens `ImageLightbox.svelte`, the component requests the 1920px preview.
-- `ImageLightbox.svelte` configures `AssetImage.svelte` with `placeholder='thumbnail'`.
-- The cached 400px thumbnail displays immediately.
-- This prevents layout shift and avoids loading spinners.
-- [`ImageLoader`](viewfinder/src/lib/images/loader/image-loader.svelte.ts) loads the 1920px WebP image in the background.
-- When the download finishes, [`ImageLoader`](viewfinder/src/lib/images/loader/image-loader.svelte.ts) transitions cleanly to the high-resolution image.
-- If the device is offline and the preview is not in cache, the lightbox keeps the thumbnail view.
+### Frontend Engine (`@viz/engine` in `packages/engine`)
 
-## 7. Multi-Tab Coordination and Resource Efficiency
+- Establish `packages/engine` as a dedicated workspace package depending on `@viz/api`.
+- Connect `@viz/engine` to `@viz/api` for HTTP catch-up requests (`GET /sync/events`) and outbox push (`POST /sync/push`).
+- Embed PGlite in a SharedWorker (`PGliteWorker`) backed by OPFS (`opfs-ahp://`).
+- Build the `engine.images` and `engine.collections` domain facade with Svelte 5 query subscriptions.
+- Implement automatic RFC 6902 forward and inverse patch generation using `fast-json-patch`.
+- Implement client-side `engine.undo()` and `engine.redo()` stacks.
+- Implement the optimistic reconciliation and rebasing state machine.
 
-1. **`SharedWorker` Singleton:**
-    - All browser tabs connect to one background `SharedWorker`.
-    - The `SharedWorker` holds the single WebSocket connection to the `viz` backend.
-    - It sends incoming deltas to all open tabs through `MessagePort`.
-2. **Web Locks API (`navigator.locks`):**
-    - Makes sure only one tab writes to IndexedDB at a time.
-3. **Delta Compression:**
-    - WebSocket and HTTP delta payloads use compact JSON or MessagePack with gzip or `zstd` compression.
+### Backend Engine (`viz` Go API)
 
-## 8. Performance and Scaling Architecture
+- Configure the PostgreSQL 18 logical replication publication (`viz_sync_publication`).
+- Implement the Go WAL subscriber using `pglogrepl` and `pgx` in [internal/sync/subscriber.go](../../internal/sync/subscriber.go).
+- Connect the WAL subscriber to the WebSocket broker in [internal/http/websocket.go](../../internal/http/websocket.go).
+- Implement `POST /sync/push` for outbox ingestion and `GET /sync/events` for LSN catch-up.
 
-### 8.1 Data Access Characteristics
+### Protocol and Transport
 
-| Dimension                        | Current Network Model                                 | Local-First Replicated Model                                               |
-| :------------------------------- | :---------------------------------------------------- | :------------------------------------------------------------------------- |
-| **Metadata Reads**               | Network-bound HTTP request with roundtrip latency.    | Local in-memory or IndexedDB index scan with zero network dependency.      |
-| **Search and Filtering**         | Remote database query over network connection.        | IndexedDB query with indexed attributes.                                   |
-| **User Interface Mutations**     | Blocking server request before user interface update. | Immediate optimistic local state update with asynchronous background push. |
-| **Network Payload per Mutation** | Full entity list refetch through route invalidation.  | Targeted column-level delta containing only modified fields.               |
-| **Offline Operation**            | Unavailable (network requests fail).                  | Fully functional for reads, searches, and edits.                           |
+- Maintain one persistent WebSocket connection per client in the SharedWorker.
+- Implement Hybrid Logical Clock causality trackers in TypeScript and Go.
+- Stream out-of-band ephemeral messages for worker job telemetry and user presence.
 
-### 8.2 Resource and Storage Management
+## 9. Verification, Testing, and Failure Scenarios
 
-- **Storage Efficiency:**
-    - Replicated metadata stores structured text and numerical attributes locally in IndexedDB.
-    - Large binary assets (RAW originals and high-resolution previews) remain tiered on the server and load on demand.
-- **Memory Management:**
-    - The Svelte 5 user interface renders only the visible viewport through virtualized lists, keeping DOM memory low.
-    - Native browser IndexedDB operates with zero WebAssembly memory overhead.
-- **Bandwidth Optimization:**
-    - Real-time synchronization sends only modified fields in delta payloads instead of full entity snapshots.
-    - When reconnecting after being offline, the client requests changes from its saved sequence watermark (`GET /sync/deltas?since_lsn=<lsn>`), preventing redundant data transfer.
-
-## 9. Implementation Tasks
-
-### Client Storage and Reactivity (`viewfinder`)
-
-- Embed IndexedDB client storage with the `idb` wrapper in `viewfinder/src/lib/sync/db.ts`.
-- Create IndexedDB object stores that mirror backend GORM entity models (`images`, `collections`, `setting_overrides`).
-- Add the `mutation_outbox` and `sync_checkpoints` system stores.
-- Implement `createLiveQuery(fetcher)` with Svelte 5 runes (`$state`, `$effect`).
-- Replace REST calls in `viewfinder` view states (`photos`, `collections`, `search`) with live queries.
-- Connect local optimistic user mutations to the `mutation_outbox`.
-
-### PostgreSQL Logical Replication and Change Data Capture
-
-- Configure the PostgreSQL logical replication publication (`CREATE PUBLICATION viz_sync_publication FOR ALL TABLES`).
-- Implement the Go WAL replication subscriber in `internal/sync/subscriber.go` using `pglogrepl` and `pgx`.
-- Stream decoded change events from `pgoutput` to `WSBroker` in `internal/http/websocket.go`.
-- Add `POST /sync/push` in `cmd/api/routes/sync.go` for client outbox ingestion.
-- Add `GET /sync/deltas?since_lsn=<lsn>` for client catch-up streams.
-
-### Conflict Resolution and Causality
-
-- Implement Hybrid Logical Clock (HLC) generation and tracking in Go and TypeScript.
-- Implement column-level Last-Write-Wins (LWW) attribute merging.
-- Implement Observed-Remove Set (OR-Set) rules for collections and tags.
-- Replicate soft-delete tombstones across devices.
-
-### Media Caching and Multi-Tab Coordination
-
-- Configure the Service Worker (`viewfinder/src/service-worker.ts`) to intercept thumbnail requests (`/images/{uid}/file?format=webp&width=400`).
-- Store downloaded 300px WebP thumbnails in browser `Cache Storage` or OPFS.
-- Connect thumbnail cache fallbacks to `AssetImage.svelte` and `ImageLightbox.svelte`.
-- Implement a `SharedWorker` in `viewfinder` to coordinate a single WebSocket connection across open browser tabs.
-- Protect IndexedDB write operations with the Web Locks API (`navigator.locks`).
-
-## 10. Verification, Testing, and Failure Scenarios
-
-| Failure Condition                             | Preventive Action                                                                                                  | Verification Method                                                                           |
-| :-------------------------------------------- | :----------------------------------------------------------------------------------------------------------------- | :-------------------------------------------------------------------------------------------- |
-| **Server stops during mutation batch**        | Client outbox keeps records until server confirms with `lsn`. Client resends on reconnect.                         | Stop `viz` server process during active batch and verify data safety.                         |
-| **Simultaneous offline edits on two devices** | Column-level LWW with HLC merges disjoint columns. Set CRDT preserves collection items.                            | Disconnect two clients, perform conflicting edits, reconnect, and verify matching final data. |
-| **Network interruption during sync catch-up** | Client sync worker resumes delta stream using last applied sequence watermark (`last_server_lsn`).                 | Interrupt network during catch-up and verify resume from exact checkpoint.                    |
-| **Browser storage limit reached**             | Tiered eviction: delete Level 2 previews first, then Level 1 thumbnails. Keep Level 0 metadata and outbox records. | Simulate storage limit in browser developer tools and verify metadata remains intact.         |
-
-## 11. Future Considerations
-
-### Offline Upload Staging Pipeline
-
-Offline media upload adds substantial complexity (local chunk storage, client-side EXIF parsing, quota management, and resumable transfer protocols). This can be implemented in a future iteration after the core synchronization engine is stable.
-
-#### Conceptual Workflow
-
-1. **Client-side staging:**
-    - The client stores binary files in OPFS under `pending_blobs/{uid}.bin`.
-    - The client creates a 300px WebP thumbnail with HTML Canvas or WebAssembly libvips.
-    - The client inserts the `ImageAsset` row into local storage with `is_pending_sync = 1` and `processed = 0`.
-2. **Immediate user interface display:**
-    - The photos appear in the grid and albums with a "Pending Sync" badge.
-    - The user can favorite, tag, describe, and organize photos before they upload.
-3. **Background upload synchronization:**
-    - When network connectivity returns, the background worker uploads binary files using resumable chunk requests.
-    - The server processes permanent transforms with `Watermill` (`internal/jobs/queue.go`) and confirms completion.
-    - The client removes the temporary file `pending_blobs/{uid}.bin`.
+| Failure Condition                                   | Preventive Architecture                                                                                                           | Verification Method                                                                                                                        |
+| :-------------------------------------------------- | :-------------------------------------------------------------------------------------------------------------------------------- | :----------------------------------------------------------------------------------------------------------------------------------------- |
+| **Server process restarts during mutation batch**   | Client retains uncommitted events in `_sync_outbox` until the server confirms with `server_lsn`. The client retries on reconnect. | Terminate the `viz` API process mid-transaction. Confirm zero data loss when the process restarts.                                         |
+| **Conflicting concurrent edits on disjoint fields** | RFC 6902 path granularity allows edits to `/exif/artist` and `/image_metadata/rating` to merge without conflict.                  | Execute simultaneous offline edits across two clients. Reconnect and verify a clean merge.                                                 |
+| **Conflicting concurrent edits on the same field**  | Deterministic HLC comparison marks the higher clock as `APPLIED` and the lower clock as `SUPERSEDED`.                             | Mutate the identical field on two disconnected clients. Verify that the winner is applied and the superseded event records the winning ID. |
+| **Network drops during delta catch-up**             | The client resumes delta streaming from its last confirmed `server_lsn` stored in PGlite.                                         | Interrupt the network connection during catch-up. Verify that streaming resumes from the exact checkpoint without duplicates.              |
+| **Browser storage quota reached**                   | Compact local PGlite database and prune old applied events from the local event log while retaining uncommitted outbox events.    | Simulate storage exhaustion in browser devtools. Verify event log and database integrity.                                                  |
