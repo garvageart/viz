@@ -5,6 +5,13 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.33.13] - 2026-09-08
+
+* feat(viewfinder/filters): replace native number inputs and format shutter speeds in RangeInput (e0a80fe4)
+* feat(viewfinder/ui): add precision scaling and blank state support to InputNumber (1f34a808)
+* style(viewfinder): update display font to Radio Canada Big Variable (39806250)
+* docs(architecture): redesign sync engine architecture with PGlite, OPFS, and WAL replication (7618cd10)
+
 ## [0.33.12] - 2026-09-08
 
 * refactor(viewfinder): display aperture with focal length in lens card (78fb69d9)
