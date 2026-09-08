@@ -5,6 +5,17 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.33.11] - 2026-09-08
+
+* feat(viewfinder/admin): enable text truncation for UID and Email columns (3626f8e1)
+* feat(viewfinder/ui): support column overflow modes in Table component (41f1c638)
+* test(e2e): clean up dormant superadmin test accounts in security suite (197d92ed)
+* feat(viewfinder): stream export pipeline and add comprehensive e2e tests (3b7cd323)
+* feat(viewfinder): implement touch selection action for mobile photo grid (8db55da6)
+* perf(viewfinder): optimize histogram caching and preview fallbacks (8e5fb5bd)
+* docs(agents): clarify DOM node querying conventions (98919cc3)
+* feat(api): enforce create-only original_file_name and update migrations (43b16e53)
+
 ## [0.33.10] - 2026-09-07
 
 * style(viewfinder): support dynamic viewport height on root app layout and body (6bb8b614)
