@@ -625,7 +625,6 @@
             />
             <Button
                 variant="ghost"
-                size="mini"
                 iconName="keyboard_arrow_down"
                 class="arrow-btn"
                 disabled={colIndex === -1 || colIndex >= allSelectableColumns.length - 1}

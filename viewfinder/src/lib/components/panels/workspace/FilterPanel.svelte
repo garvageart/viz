@@ -30,14 +30,14 @@
         <div class="filter-actions">
             <Button
                 iconName={filterManager.keepFilters ? "keep" : "keep_off"}
-                size="mini"
+                size="small"
                 title="Keep filters while browsing"
                 style={filterManager.keepFilters ? "background-color: var(--viz-surface-hover);" : ""}
                 onclick={() => filterManager.toggleKeepFilters()}
             />
             <Button
                 iconName="layers_clear"
-                size="mini"
+                size="small"
                 onclick={() => filterManager.resetActiveScope(true)}
                 title="Clear all active filters"
             />

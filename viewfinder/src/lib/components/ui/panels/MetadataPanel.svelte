@@ -267,7 +267,6 @@
                                 />
                                 <Button
                                     variant="ghost"
-                                    size="mini"
                                     class="copy-filename-btn"
                                     title="Copy filename"
                                     iconName="content_copy"
@@ -436,10 +435,7 @@
                         <MaterialIcon iconName="palette" class="exif-material-icon" />
                         <div class="card-values">
                             <div class="value-sub">
-                                {currentAsset?.image_metadata?.color_space ?? "sRGB"}
-                                {#if currentAsset?.image_metadata?.has_icc_profile}
-                                    &nbsp;(ICC Profile)
-                                {/if}
+                                {currentAsset?.image_metadata?.color_space}
                                 {#if currentAsset?.exif?.resolution}
                                     &nbsp;· {currentAsset.exif.resolution}
                                 {/if}
@@ -485,7 +481,6 @@
                                     </div>
                                     <Button
                                         variant="ghost"
-                                        size="mini"
                                         class="copy-filename-btn"
                                         title="Copy coordinates"
                                         iconName="content_copy"
@@ -569,7 +564,6 @@
                                         </div>
                                         <Button
                                             variant="ghost"
-                                            size="mini"
                                             class="copy-filename-btn"
                                             title="Copy checksum"
                                             iconName="content_copy"

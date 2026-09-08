@@ -1,6 +1,12 @@
 <script module lang="ts">
     export type ButtonVariant = "primary" | "secondary" | "danger" | "warning" | "success" | "info" | "ghost";
     export type ButtonSize = "big" | "small" | "mini";
+
+    const sizeToIconSize: Record<ButtonSize, string> = {
+        mini: "1rem",
+        small: "1.2rem",
+        big: "1.5rem"
+    };
 </script>
 
 <script lang="ts">
@@ -55,11 +61,13 @@
     );
 
     let classList = $derived(`${variant ?? ""} ${size ?? ""} ${props.class ?? ""}`.trim());
+
+    let resolvedIconSize = $derived(iconSize ?? (size ? sizeToIconSize[size] : undefined));
 </script>
 
 {#snippet internalButtonContent()}
     {#if iconName}
-        <MaterialIcon {iconName} {iconStyle} {fill} {weight} {grade} {opticalSize} size={iconSize} />
+        <MaterialIcon {iconName} {iconStyle} {fill} {weight} {grade} {opticalSize} size={resolvedIconSize} />
     {/if}
     <span class="button-content" bind:this={childrenEl}>
         {@render children?.()}
