@@ -255,6 +255,7 @@
                 <span class="debug-mode-text">{debugState.value ? "ON" : "OFF"}</span>
             </Button>
         {/if}
+        <div class="header-separator"></div>
         <div id="account-container">
             <button
                 id="account-button"
@@ -377,7 +378,9 @@
 
     .header-button-container {
         display: flex;
+        flex-direction: row;
         align-items: center;
+        height: 100%;
         gap: var(--viz-spacing-std);
     }
 
