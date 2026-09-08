@@ -319,7 +319,7 @@
                 onclick={(e) => handleImageClick(image, e)}
                 ondblclick={() => openLightbox(image)}
                 onkeydown={(e) => handleItemKeydown(e, image)}
-                aria-pressed={isActive}
+                aria-pressed={isSelected}
                 aria-label={`Select image ${image.name}`}
                 bind:this={itemRefs[i]}
             >
@@ -473,13 +473,16 @@
         &.active {
             border-color: var(--viz-primary);
             background-color: #1a1a1a;
-            box-shadow: 0 0 0 1px var(--viz-primary);
-            z-index: 1;
+            box-shadow: 0 0 0 2px var(--viz-primary);
+            z-index: 2;
             outline: none;
         }
 
         &.selected:not(.active) {
             border-color: var(--viz-primary);
+            background-color: #1a1a1a;
+            box-shadow: 0 0 0 1px var(--viz-primary);
+            z-index: 1;
         }
     }
 </style>

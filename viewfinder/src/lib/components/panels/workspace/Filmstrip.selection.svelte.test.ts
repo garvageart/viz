@@ -73,4 +73,31 @@ describe("filmstrip selection -> metadata panel", () => {
 
         expect(metadata?.textContent).not.toContain("Stale A");
     });
+
+    it("renders all multi-selected items with selected class and marks lead item as active", async () => {
+        const scopeId = `${SelectionScopeNames.COLLECTION_PREFIX}colMulti`;
+        selectionManager.setActive(scopeId);
+        const scope = selectionManager.getScope<ImageAsset>(scopeId);
+        const img1 = makeImage("1", "Image 1");
+        const img2 = makeImage("2", "Image 2");
+        const img3 = makeImage("3", "Image 3");
+        scope.setSource([img1, img2, img3]);
+
+        // Select all 3 items, with img3 as the active (lead) item
+        scope.selectRange(img3, img1);
+
+        const { container } = render(Filmstrip, {});
+
+        const items = container.querySelectorAll<HTMLButtonElement>(".filmstrip-item");
+        expect(items.length).toBe(3);
+
+        for (const item of items) {
+            expect(item.classList.contains("selected")).toBe(true);
+            expect(item.getAttribute("aria-pressed")).toBe("true");
+        }
+
+        expect(items[0].classList.contains("active")).toBe(false);
+        expect(items[1].classList.contains("active")).toBe(false);
+        expect(items[2].classList.contains("active")).toBe(true);
+    });
 });
