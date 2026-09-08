@@ -4,7 +4,9 @@
     import { page, updated } from "$app/state";
     import "@fontsource-variable/geist/index.css";
     import "@fontsource-variable/manrope/index.css";
+    import "@fontsource-variable/radio-canada-big/index.css";
     import "@fontsource-variable/roboto-mono/index.css";
+    import "@fontsource-variable/zalando-sans/index.css";
     import hotkeys from "hotkeys-js";
     import ModalRenderer from "$lib/components/modals/ModalContainer.svelte";
     import { modalsManager } from "$lib/components/modals/manager/ModalManager.svelte";

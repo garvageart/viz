@@ -3,7 +3,7 @@
 
 /* Fonts */
 :root {
-    --viz-display-font: "Geist Variable", sans-serif;
+    --viz-display-font: "Radio Canada Big Variable", sans-serif;
     --viz-mono-font:
         "Roboto Mono Variable", ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New",
         monospace;
@@ -95,7 +95,7 @@
 *::before,
 *::after {
     transition-duration: 0.2s;
-    transition-property: background-color, background, box-shadow;
+    transition-property: background-color, box-shadow;
     transition-timing-function: ease;
 }
 
