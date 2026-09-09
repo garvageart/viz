@@ -1,5 +1,5 @@
 <script lang="ts">
-    import InputNumber from "../ui/InputNumber.svelte";
+    import InputNumber from "$lib/components/ui/InputNumber.svelte";
 
     interface Props {
         label: string;

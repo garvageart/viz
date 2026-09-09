@@ -168,7 +168,7 @@
     {#if uiState.expanded.camera}
         <div class="section-content" transition:slide={{ duration: 200 }}>
             <ChecklistFacet
-                title=""
+                title="Cameras"
                 items={facets.cameras}
                 selected={criteria.camera}
                 onChange={(sel) => {
@@ -192,7 +192,7 @@
     {#if uiState.expanded.lens}
         <div class="section-content" transition:slide={{ duration: 200 }}>
             <ChecklistFacet
-                title=""
+                title="Lenses"
                 items={facets.lenses}
                 selected={criteria.lens}
                 onChange={(sel) => {
@@ -231,7 +231,7 @@
                 max={facets.fStop.max}
                 value={criteria.fStop}
                 step={0.1}
-                unit="ƒ"
+                unit="f"
                 onChange={(v) => {
                     criteria.fStop = v;
                     save();
