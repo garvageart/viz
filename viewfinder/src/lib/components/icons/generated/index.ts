@@ -65,6 +65,7 @@ export { default as IconBarChart } from './IconBarChart.svelte';
 export { default as IconFolderSpecial } from './IconFolderSpecial.svelte';
 export { default as IconPhotoLibrary } from './IconPhotoLibrary.svelte';
 export { default as IconClose } from './IconClose.svelte';
+export { default as IconArrowRight } from './IconArrowRight.svelte';
 export { default as IconLink } from './IconLink.svelte';
 export { default as IconIosShare } from './IconIosShare.svelte';
 export { default as IconContentCopy } from './IconContentCopy.svelte';
