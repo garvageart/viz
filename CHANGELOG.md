@@ -5,6 +5,17 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.33.15] - 2026-09-09
+
+* chore(release): bump version to 0.33.14 (921315e3)
+* chore: generate arrow right icon (65e682a4)
+* style(viewfinder/ui): refine InputSelect typography and indicator styling (98a781bb)
+* refactor(viewfinder/context-menu): render ContextMenu inside submenu wrapper (fc249dc7)
+* fix(viewfinder/export): use DownloadFile directly and use pure libvips progress (2bc2e4ac)
+* fix(viewfinder): display multi-selection outline in filmstrip and add unit test (407aa8f0)
+* refactor(viewfinder): scale button icon size with button size and adjust UI usages (c41bab66)
+* style(header): add seperator to account section (4ccdbf38)
+
 ## [0.33.14] - 2026-09-09
 
 * chore: generate arrow right icon (65e682a4)
