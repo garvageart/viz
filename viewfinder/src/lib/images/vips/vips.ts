@@ -498,6 +498,14 @@ async function stepEncodeToBuffer(ctx: TransformStepContext) {
         }
 
         throw saveErr;
+    } finally {
+        if (ctx.img) {
+            try {
+                ctx.img.onProgress = () => {};
+            } catch (_) {
+                // Ignore if image was already disposed
+            }
+        }
     }
 }
 
@@ -592,8 +600,6 @@ export async function generateTransform(
             completedSteps++;
 
             console.debug(`[Worker vips.ts] Step '${stepName}' completed (${completedSteps}/${totalSteps})`);
-            const progressPercent = Math.round((completedSteps / totalSteps) * 100);
-            onProgress?.(progressPercent);
         }
     } finally {
         if (ctx.img) {

@@ -9,7 +9,7 @@
 </script>
 
 <script lang="ts">
-    import { type ImageAsset, getImageFileBlob } from "@viz/api";
+    import { type ImageAsset, getAssetImagePath, getFullImagePath } from "@viz/api";
     import * as Comlink from "comlink";
     import JSZip from "jszip";
     import { type Snippet } from "svelte";
@@ -276,7 +276,10 @@
         const imageTasks: DownloadFile[] = [];
         for (const asset of exportAssets) {
             const filename = resolveExportFilename(asset, imageTasks.length, exportSettings.format);
-            const task = new DownloadFile("", filename);
+            const url =
+                getAssetImagePath(asset, "original") ||
+                getFullImagePath(`/images/${encodeURIComponent(asset.uid)}/file`);
+            const task = new DownloadFile(url, filename, "GET");
 
             imageTasks.push(task);
         }
@@ -295,14 +298,19 @@
                 const asset = exportAssets[0];
                 const task = imageTasks[0];
 
-                task.state = DownloadState.DOWNLOADING;
-                const response = await getImageFileBlob(asset.uid, {}, { cache: "force-cache" });
-                if (response.status !== 200) {
+                let originalData: Blob;
+                try {
+                    originalData = await task.download();
+                } catch (err) {
+                    if ((task.state as DownloadState) === DownloadState.CANCELED) {
+                        return;
+                    }
                     task.state = DownloadState.ERROR;
                     throw new Error(`Failed to download image: ${task.filename || asset.uid}`);
                 }
 
                 task.state = DownloadState.PROCESSING;
+                task.progress = 0;
                 const transformInput: TransformInput = {
                     asset,
                     params: {
@@ -316,7 +324,7 @@
                         removeLocation: exportSettings.removeLocation,
                         bitDepth: exportSettings.bitDepth ? exportSettings.bitDepth : undefined
                     },
-                    originalData: response.data
+                    originalData
                 };
 
                 const res = await workerApi.transformSingleImage(
@@ -334,11 +342,11 @@
                 }
 
                 task.state = DownloadState.DOWNLOADED;
-                task.progress = 100;
                 task.endTime = new Date();
 
-                const ext = res.result.ext || asset.image_metadata.file_type?.toLowerCase() || "jpg";
+                const ext = res.result.ext || asset.image_metadata.file_type?.toLowerCase();
                 const fullFilename = resolveExportFilename(asset, 0, ext);
+
                 const standardBuf = new Uint8Array(res.result.imageData.byteLength);
                 standardBuf.set(new Uint8Array(res.result.imageData));
                 const blob = new Blob([standardBuf as BlobPart], {
@@ -350,7 +358,8 @@
 
                 await downloadToFilesystem(fullFilename, blob);
                 toasts.add({
-                    message: `Successfully exported **${fullFilename}**`,
+                    title: fullFilename,
+                    message: `Successfully exported`,
                     type: "success"
                 });
 
@@ -368,15 +377,20 @@
 
                 const asset = exportAssets[index];
 
-                task.state = DownloadState.DOWNLOADING;
-                const response = await getImageFileBlob(asset.uid, {}, { cache: "force-cache" });
-                if (response.status !== 200) {
+                let originalData: Blob;
+                try {
+                    originalData = await task.download();
+                } catch (err) {
+                    if ((task.state as DownloadState) === DownloadState.CANCELED) {
+                        break;
+                    }
                     task.state = DownloadState.ERROR;
                     flatResults.push({ error: `Failed to download ${task.filename || asset.uid}`, index });
                     continue;
                 }
 
                 task.state = DownloadState.PROCESSING;
+                task.progress = 0;
                 const transformInput: TransformInput = {
                     asset,
                     params: {
@@ -390,7 +404,7 @@
                         removeLocation: exportSettings.removeLocation,
                         bitDepth: exportSettings.bitDepth ? exportSettings.bitDepth : undefined
                     },
-                    originalData: response.data
+                    originalData
                 };
 
                 const res = await workerApi.transformSingleImage(
@@ -404,15 +418,15 @@
                     task.state = DownloadState.ERROR;
                 } else {
                     task.state = DownloadState.DOWNLOADED;
-                    task.progress = 100;
                     task.endTime = new Date();
                 }
 
                 flatResults.push({ ...res, index });
 
                 if (res.result) {
-                    const ext = res.result.ext || asset.image_metadata.file_type?.toLowerCase() || "jpg";
+                    const ext = res.result.ext || asset.image_metadata.file_type?.toLowerCase();
                     const fullFilename = resolveExportFilename(asset, index, ext);
+
                     zip.file(fullFilename, new Uint8Array(res.result.imageData));
                 }
             }
@@ -458,7 +472,6 @@
                 });
                 zipTask.state = DownloadState.DOWNLOADED;
                 zipTask.data = zipData;
-                zipTask.progress = 100;
                 zipTask.endTime = new Date();
 
                 console.debug("ZIP blob generated. Size:", zipData.size);
@@ -563,13 +576,12 @@
         {@render panelSection("metadata", "Metadata", metadataSnippet)}
         {#snippet metadataSnippet()}
             <div class="metadata-settings">
-                <Checkbox label="Include Original Metadata" bind:checked={settings.includeMetadata} />
                 <Checkbox label="Remove Location Information" bind:checked={settings.removeLocation} />
+                <Checkbox label="Include Original Metadata" bind:checked={settings.includeMetadata} />
 
                 {#if settings.includeMetadata}
                     <div class="metadata-policy-select">
                         <InputSelect
-                            label=""
                             options={[
                                 { value: "all", label: "All" },
                                 { value: "except-camera", label: "All Except Camera And Camera Raw Info" },
