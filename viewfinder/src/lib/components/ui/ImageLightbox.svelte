@@ -658,7 +658,7 @@
     bind:show
     onclose={closeLightbox}
     backgroundOpacity={1}
-    closeOnEsc={!isCropping}
+    closeOnEsc={false}
     onclick={() => {
         if (zoomState.wasDragging) {
             return;

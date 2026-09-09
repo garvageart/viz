@@ -237,6 +237,20 @@ describe("KeyboardManager", () => {
 
             expect(closeMenu).not.toHaveBeenCalled();
         });
+
+        it("triggers escape via hotkeys-js while a scoped context is active", () => {
+            km.init();
+            const closeOverlay = vi.fn();
+            km.registerEscape({ tier: KbdShortcutTier.Overlay, handler: closeOverlay });
+
+            km.pushScope("lightbox");
+            expect(km.currentScope).toBe("lightbox");
+
+            hotkeys.trigger("escape", "all");
+            expect(closeOverlay).toHaveBeenCalledTimes(1);
+
+            km.popScope("lightbox");
+        });
     });
 
     describe("Scope API & Teardown", () => {

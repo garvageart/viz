@@ -126,7 +126,7 @@ export interface ShortcutDefinition {
     section?: KeybindSection;
     scope?: string | string[]; // default: "all"
     allowInInputs?: boolean;
-    preventDefault?: boolean; // default: true
+    preventDefault?: boolean; // default: false
     handler: (e: KeyboardEvent, event: HotkeysEvent) => void;
 }
 
@@ -378,7 +378,7 @@ export class KeyboardManager {
             }
 
             const handler = (e: KeyboardEvent, h: HotkeysEvent) => {
-                if (shortcut.preventDefault !== false && !e.defaultPrevented) {
+                if (shortcut.preventDefault && !e.defaultPrevented) {
                     e.preventDefault?.();
                 }
                 shortcut.handler(e, h);
@@ -526,8 +526,8 @@ export class KeyboardManager {
     }
 
     private initEscape() {
-        // Bind to wildcard "*" scope so Escape is captured across all hotkeys-js scopes
-        hotkeys("esc, escape", "*", (e: KeyboardEvent) => {
+        // Bind to "all" scope so Escape is captured across all hotkeys-js scopes
+        hotkeys("escape", "all", (e: KeyboardEvent) => {
             this.handleEscape(e);
         });
     }
@@ -548,13 +548,17 @@ export class KeyboardManager {
     }
 
     handleEscape(e: KeyboardEvent): boolean {
+        if (e.defaultPrevented) {
+            return false;
+        }
+
         for (const tier of [KbdShortcutTier.Transient, KbdShortcutTier.Overlay, KbdShortcutTier.Canvas]) {
             const handlers = this.escapeHandlers.filter((d) => d.tier === tier);
             if (handlers.length === 0) {
                 continue;
             }
 
-            e.preventDefault();
+            e.preventDefault?.();
 
             // Overlay (Tier 2) dismisses topmost only; Transient & Canvas dismiss all
             if (tier === KbdShortcutTier.Overlay) {
