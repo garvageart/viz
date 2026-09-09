@@ -5,6 +5,15 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.34.0] - 2026-09-09
+
+* fix(viewfinder/keyboard): prevent double escape execution and preserve native enter navigation (d877beee)
+* refactor(viewfinder/ui): integrate centralized KeyboardManager across components and views (8c0097d5)
+* feat(viewfinder/keyboard): centralize shortcut manager with scoped escape and custom remapping (9f4ce7c7)
+* style(viewfinder/metadata): refine layout spacing and alignment in MetadataPanel (d9dba1ed)
+* fix(viewfinder/filters): update facet labels and path alias in filter controls (f91afc1c)
+* refactor(viewfinder/menus): remove obsolete danger property from menu items (8b9d8eca)
+
 ## [0.33.15] - 2026-09-09
 
 * chore(release): bump version to 0.33.14 (921315e3)
