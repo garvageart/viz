@@ -1,7 +1,7 @@
 <script lang="ts">
     import { tick } from "svelte";
     import MaterialIcon from "../components/ui/MaterialIcon.svelte";
-    import ContextMenuItem from "./ContextMenuItem.svelte";
+    import ContextMenu from "./ContextMenu.svelte";
     import type { MenuItem } from "./types";
 
     interface Props {
@@ -42,11 +42,7 @@
     }
 
     $effect(() => {
-        if (showSubmenu) {
-            tick().then(() => {
-                checkSubmenuPosition();
-            });
-        }
+        showSubmenu && tick().then(() => checkSubmenuPosition());
     });
 
     function onClick(e: MouseEvent) {
@@ -154,7 +150,6 @@
             role="menuitem"
             class="ctx-content"
             class:disabled={!!item.disabled}
-            class:danger={!!item.danger}
             data-index={index}
             tabindex={active ? 0 : -1}
             bind:this={itemEl}
@@ -171,7 +166,6 @@
             aria-expanded={item.children && item.children.length > 0 ? showSubmenu : undefined}
             class="ctx-button"
             class:disabled={!!item.disabled}
-            class:danger={!!item.danger}
             class:active-parent={showSubmenu}
             data-index={index}
             tabindex={active ? 0 : -1}
@@ -191,57 +185,25 @@
                 <span class="shortcut" aria-hidden="true">{item.shortcut}</span>
             {/if}
             {#if item.children && item.children.length > 0}
-                <span class="submenu-arrow" aria-hidden="true">▸</span>
+                <MaterialIcon class="submenu-arrow" iconName="arrow_right" aria-hidden="true" />
             {/if}
         </button>
     {/if}
 
     {#if item.children && item.children.length > 0 && showSubmenu}
-        <div
-            class="viz-context-menu-submenu"
-            class:flip-left={flipLeft}
-            class:flip-up={flipUp}
-            role="menu"
-            bind:this={submenuEl}
-        >
-            <ul role="menu" aria-orientation="vertical">
-                {#each item.children as child, ci (child.id ?? ci)}
-                    {#if child.separator}
-                        <li class="ctx-separator" role="separator" aria-hidden="true"></li>
-                    {:else}
-                        <ContextMenuItem
-                            item={child}
-                            index={ci}
-                            active={false}
-                            onselect={onChildSelect}
-                            oncloseparent={closeSubmenu}
-                        />
-                    {/if}
-                {/each}
-            </ul>
+        <div class="viz-context-menu-submenu" class:flip-left={flipLeft} class:flip-up={flipUp} bind:this={submenuEl}>
+            <ContextMenu
+                showMenu={true}
+                items={item.children}
+                portal={false}
+                onselect={onChildSelect}
+                onclose={closeSubmenu}
+            />
         </div>
     {/if}
 </li>
 
 <style lang="scss">
-    ul {
-        margin: 0;
-        padding: 0;
-        list-style: none;
-    }
-
-    li:first-child > .ctx-button,
-    li:first-child > .ctx-content {
-        border-top-left-radius: 0.5rem;
-        border-top-right-radius: 0.5rem;
-    }
-
-    li:last-child > .ctx-button,
-    li:last-child > .ctx-content {
-        border-bottom-left-radius: 0.5rem;
-        border-bottom-right-radius: 0.5rem;
-    }
-
     li {
         display: flex;
         list-style-type: none;
@@ -255,17 +217,13 @@
         gap: var(--viz-spacing-xs);
         align-items: center;
         font-size: 1rem;
-        font-weight: 500;
         padding: var(--viz-spacing-xs) var(--viz-spacing-sm);
-        text-align: left;
+        text-align: start;
         width: 100%;
-        border: 0px;
+        border-radius: var(--viz-border-radius-sm);
         color: var(--viz-text-primary);
         background-color: var(--viz-surface-popover);
-        cursor: pointer;
         transition: background-color 0.1s ease;
-        outline: none;
-        box-sizing: border-box;
 
         &:hover,
         &:focus-visible,
@@ -302,10 +260,9 @@
         margin-left: auto;
     }
 
-    .submenu-arrow {
+    :global(.submenu-arrow) {
         opacity: 0.7;
         margin-left: 0.5rem;
-        font-size: 0.9em;
     }
 
     .ctx-content {
@@ -333,15 +290,7 @@
         /* overlap slightly with parent to avoid hover gap */
         left: calc(100% - 6px);
         top: 0.15rem;
-        background: var(--viz-surface-popover);
-        border: 1px solid var(--viz-border-subtle);
-        box-shadow:
-            0 12px 36px rgba(0, 0, 0, 0.4),
-            0 2px 8px rgba(0, 0, 0, 0.3);
-        border-radius: 0.5rem;
         z-index: calc(var(--viz-z-popover) + 1);
-        box-sizing: border-box;
-        min-width: 15rem;
 
         &.flip-left {
             left: auto;
@@ -352,16 +301,5 @@
             top: auto;
             bottom: 0.15rem;
         }
-    }
-
-    .ctx-separator {
-        height: 0;
-        background: transparent;
-        border: none;
-        border-top: 1px solid color-mix(in srgb, var(--viz-surface-hover) 70%, transparent);
-        margin: var(--viz-spacing-xs) 0;
-        width: 100%;
-        list-style: none;
-        box-sizing: border-box;
     }
 </style>

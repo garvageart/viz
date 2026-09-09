@@ -16,6 +16,7 @@
         offsetX?: number;
         offsetY?: number;
         align?: "left" | "right";
+        portal?: boolean;
         onopen?: () => void;
         onclose?: () => void;
         onselect?: (detail: { item: MenuItem; index: number; event: MouseEvent | KeyboardEvent }) => void;
@@ -29,6 +30,7 @@
         offsetX = 0,
         offsetY = 0,
         align = "left",
+        portal: enablePortal = true,
         onopen,
         onclose,
         onselect,
@@ -156,13 +158,18 @@
                 return;
             }
 
-            position = computePosition(menuEl, activeState.anchor, {
-                align: activeState.align,
-                offsetX: activeState.offsetX,
-                offsetY: activeState.offsetY
-            });
+            if (enablePortal) {
+                position = computePosition(menuEl, activeState.anchor, {
+                    align: activeState.align,
+                    offsetX: activeState.offsetX,
+                    offsetY: activeState.offsetY
+                });
 
-            isPositioned = true;
+                isPositioned = true;
+            } else {
+                isPositioned = true;
+            }
+
             setInitialFocus();
             onopen?.();
         } else {
@@ -173,6 +180,10 @@
     });
 
     function portal(node: HTMLElement) {
+        if (!enablePortal) {
+            return;
+        }
+
         document.body.appendChild(node);
         return {
             destroy() {
@@ -184,7 +195,7 @@
     }
 
     function onWindowPointerDown(e: PointerEvent) {
-        if (!activeState.show) {
+        if (!activeState.show || !enablePortal) {
             return;
         }
 
@@ -198,6 +209,16 @@
 
     function onWindowKeyDown(e: KeyboardEvent) {
         if (!activeState.show) {
+            return;
+        }
+
+        // If this is a root menu (enablePortal) and focus is inside a submenu, let the submenu handle it
+        if (enablePortal && document.activeElement?.closest(".viz-context-menu-submenu")) {
+            return;
+        }
+
+        // If this is a submenu (!enablePortal) and focus is NOT inside it, ignore
+        if (!enablePortal && menuEl && !menuEl.contains(document.activeElement)) {
             return;
         }
 
@@ -281,9 +302,9 @@
         bind:this={menuEl}
         use:portal
         onclick={(e) => e.stopPropagation()}
-        style="position: fixed; top: {position.top}px; left: {position.left}px; z-index: {computedZIndex}; visibility: {isPositioned
-            ? 'visible'
-            : 'hidden'}; {htmlProps?.style ?? ''}"
+        style={enablePortal
+            ? `position: fixed; top: ${position.top}px; left: ${position.left}px; z-index: ${computedZIndex}; visibility: ${isPositioned ? "visible" : "hidden"}; ${htmlProps?.style ?? ""}`
+            : (htmlProps?.style ?? "")}
     >
         <div class="context-menu-options">
             <ul role="menu" aria-orientation="vertical">
@@ -321,6 +342,8 @@
         border: 1px solid var(--viz-border-subtle);
         flex-direction: column;
         border-radius: 0.5rem;
+        padding: var(--viz-spacing-xs);
+        gap: var(--viz-spacing-xxs);
         width: 100%;
         max-width: inherit;
     }

@@ -7,7 +7,6 @@ export type MenuItem<T = any> = {
     label?: string;
     action?: (event: MouseEvent | KeyboardEvent) => void;
     disabled?: boolean;
-    danger?: boolean;
     separator?: boolean;
     iconName?: MaterialSymbol | IconProps; // optional icon name/class or icon props
     shortcut?: string; // optional keyboard shortcut label
