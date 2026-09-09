@@ -365,7 +365,6 @@ export function createCollectionMenu(collection: Collection | undefined, opts: C
                     ? `Delete ${opts.selectedCollections.length} collections`
                     : "Delete",
             iconName: "delete",
-            danger: true,
             action: () => {
                 const targets =
                     opts.selectedCollections && opts.selectedCollections.length > 1

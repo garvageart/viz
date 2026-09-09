@@ -499,7 +499,6 @@ export function createImageMenu(
         id: "act-delete",
         label: "Delete",
         iconName: "delete",
-        danger: true,
         disabled: selectionScope.size === 0,
         action: () => {
             return deleteSelectedImages(selectionScope, onDelete);

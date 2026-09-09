@@ -27,8 +27,7 @@ export function buildTabContextMenu(view: VizView, group: TabGroup, handlers: Ta
             id: view.locked ? "unlock-tab" : "lock-tab",
             label: view.locked ? "Unlock Tab" : "Lock Tab",
             action: () => handlers.toggleTabLock(view),
-            iconName: view.locked ? "lock_open" : "lock",
-            danger: false
+            iconName: view.locked ? "lock_open" : "lock"
         },
         { id: "separator-move", separator: true },
         {
@@ -101,7 +100,6 @@ export function buildTabContextMenu(view: VizView, group: TabGroup, handlers: Ta
             label: "Close All Tabs in this Group",
             action: () => handlers.closeAllTabs(),
             iconName: "cancel_presentation",
-            danger: true,
             disabled: group.locked
         }
     );
@@ -211,8 +209,7 @@ export function buildPanelContextMenu(group: TabGroup, handlers?: TabHandlers): 
             id: `close-panel-${group.id}`,
             label: "Close Panel",
             action: () => handlers.closePanel(),
-            iconName: "cancel_presentation",
-            danger: true
+            iconName: "cancel_presentation"
         });
     }
 
