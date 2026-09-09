@@ -135,10 +135,7 @@
                                         <span class="item-label">{item.label}</span>
                                         {#if selected}
                                             <span class="item-indicator">
-                                                <MaterialIcon
-                                                    iconName="check"
-                                                    style="font-size: 1rem; color: var(--viz-primary);"
-                                                />
+                                                <MaterialIcon iconName="check" style="color: var(--viz-primary);" />
                                             </span>
                                         {/if}
                                     {/snippet}
@@ -281,7 +278,6 @@
         justify-content: space-between;
         padding: var(--viz-spacing-xs) var(--viz-spacing-sm);
         font-family: var(--viz-display-font);
-        font-size: 1rem;
         color: var(--viz-text-primary);
         border-radius: var(--viz-border-radius-sm);
         cursor: pointer;
@@ -316,10 +312,7 @@
 
     :global(.select-group-label) {
         font-size: var(--viz-font-size-std);
-        font-weight: 700;
         color: var(--viz-text-secondary);
         padding: var(--viz-spacing-xs) var(--viz-spacing-sm);
-        text-transform: uppercase;
-        letter-spacing: 0.05em;
     }
 </style>
