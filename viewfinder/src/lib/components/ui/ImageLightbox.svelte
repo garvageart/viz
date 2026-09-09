@@ -16,8 +16,7 @@
 <script lang="ts">
     import { dev } from "$app/environment";
     import { type ImageAsset, getAssetImagePath, updateImage } from "@viz/api";
-    import hotkeys, { type HotkeysEvent } from "hotkeys-js";
-    import { onDestroy, onMount, untrack } from "svelte";
+    import { onDestroy, untrack } from "svelte";
     import type { MouseEventHandler } from "svelte/elements";
     import { fade, slide } from "svelte/transition";
     import { hideAll } from "tippy.js";
@@ -30,6 +29,7 @@
     import { ImageLoader } from "$lib/images/loader/image-loader.svelte";
     import type { CropCoords } from "$lib/images/zoom/crop-utils";
     import { ImageZoomState } from "$lib/images/zoom/zoom-utils.svelte";
+    import { KbdShortcutTier, KeybindAction, keyboardManager } from "$lib/keyboard/keyboard.svelte";
     import { isMobile } from "$lib/states/index.svelte";
     import { toasts } from "$lib/toast-notifcations/toasts.svelte";
     import { downloadOriginalImageFile } from "$lib/utils/http";
@@ -519,88 +519,54 @@
         }
     });
 
-    onMount(() => {
-        function isHotkeyBlocked() {
-            if (!show) {
-                return true;
-            }
-
-            if (document.querySelector(".calendar-popover")) {
-                return true;
-            }
-
-            const activeEl = document.activeElement;
-            const isInputFocused =
-                activeEl &&
-                (activeEl.tagName === "INPUT" ||
-                    activeEl.tagName === "TEXTAREA" ||
-                    activeEl.tagName === "SELECT" ||
-                    activeEl.getAttribute("contenteditable") === "true");
-
-            return isInputFocused;
-        }
-
-        const handleLeftRight = (e: KeyboardEvent, handler: HotkeysEvent) => {
-            if (isHotkeyBlocked() || isCropping) {
-                return;
-            }
-
-            e.preventDefault();
-            if (handler.key === "left") {
-                goToPrev();
-            } else if (handler.key === "right") {
-                goToNext();
-            }
-        };
-
-        const handleEnter = (e: KeyboardEvent) => {
-            if (isHotkeyBlocked() || !isCropping) {
-                return;
-            }
-
-            e.preventDefault();
-            handleCropApply();
-        };
-
-        const handleEsc = (e: KeyboardEvent) => {
-            if (isHotkeyBlocked()) {
-                return;
-            }
-
-            if (isCropping) {
-                e.preventDefault();
-                toggleCropMode();
-                return;
-            }
-
-            // If not cropping, close the lightbox
-            e.preventDefault();
-            closeLightbox();
-        };
-
-        hotkeys("left,right", "lightbox", handleLeftRight);
-        hotkeys("enter", "lightbox", handleEnter);
-        hotkeys("esc", "lightbox", handleEsc);
-
-        return () => {
-            hotkeys.unbind("left,right", "lightbox", handleLeftRight);
-            hotkeys.unbind("enter", "lightbox", handleEnter);
-            hotkeys.unbind("esc", "lightbox", handleEsc);
-            if (hotkeys.getScope() === "lightbox") {
-                hotkeys.setScope("all");
-            }
-        };
-    });
-
     $effect(() => {
-        if (show) {
-            hotkeys.setScope("lightbox");
-            return () => {
-                if (hotkeys.getScope() === "lightbox") {
-                    hotkeys.setScope("all");
-                }
-            };
+        if (!show) {
+            return;
         }
+
+        const scope = keyboardManager.scope("lightbox");
+
+        scope.register([
+            {
+                action: KeybindAction.LightboxNavigate,
+                handler: (_e, handler) => {
+                    if (isCropping) {
+                        return;
+                    }
+
+                    if (handler.key === "left") {
+                        goToPrev();
+                    } else if (handler.key === "right") {
+                        goToNext();
+                    }
+                }
+            },
+            {
+                action: KeybindAction.ApplyCrop,
+                handler: () => {
+                    if (!isCropping) {
+                        return;
+                    }
+
+                    handleCropApply();
+                }
+            }
+        ]);
+
+        scope.registerEscape({
+            action: KeybindAction.LightboxClose,
+            tier: KbdShortcutTier.Overlay,
+            handler: () => {
+                if (isCropping) {
+                    toggleCropMode();
+                    return;
+                }
+
+                closeLightbox();
+            }
+        });
+
+        return scope.destroy;
     });
 </script>
 

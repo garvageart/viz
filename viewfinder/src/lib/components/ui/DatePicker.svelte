@@ -1,13 +1,13 @@
 <script lang="ts">
     import { CalendarDateTime, type DateValue } from "@internationalized/date";
     import { DatePicker } from "bits-ui";
-    import hotkeys from "hotkeys-js";
-    import { type Snippet, getContext, onMount } from "svelte";
+    import { type Snippet, getContext } from "svelte";
     import Button from "$lib/components/ui/Button.svelte";
     import InputSelect from "$lib/components/ui/InputSelect.svelte";
     import MaterialIcon from "$lib/components/ui/MaterialIcon.svelte";
     import TimeInputField from "$lib/components/ui/TimeInputField.svelte";
     import { ContextKeys } from "$lib/context-keys";
+    import { KbdShortcutTier, keyboardManager } from "$lib/keyboard/keyboard.svelte";
     import { localeState } from "$lib/states/locale.svelte";
     import { calendarDateTimeToDate, toCalendarDateTime } from "$lib/utils/dates";
 
@@ -104,22 +104,15 @@
         onclose?.();
     }
 
-    onMount(() => {
-        const handleEsc = (e: KeyboardEvent) => {
-            if (!open) {
-                return;
-            }
-
-            e.preventDefault();
-            e.stopPropagation();
-            closeCalendar();
-        };
-
-        hotkeys("esc, escape", "*", handleEsc);
-
-        return () => {
-            hotkeys.unbind("esc, escape", "*", handleEsc);
-        };
+    $effect(() => {
+        if (open) {
+            return keyboardManager.registerEscape({
+                tier: KbdShortcutTier.Transient,
+                handler: () => {
+                    closeCalendar();
+                }
+            });
+        }
     });
 
     function handleOpenChange(o: boolean) {

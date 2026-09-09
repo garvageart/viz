@@ -2,7 +2,6 @@
     import { goto } from "$app/navigation";
     import type { Collection, ImageAsset } from "@viz/api";
     import { Label as ImageLabel, addCollectionImages, updateImage } from "@viz/api";
-    import hotkeys from "hotkeys-js";
     import { type ComponentProps, onMount, untrack } from "svelte";
     import Dropdown from "$lib/components/context-menus/Dropdown.svelte";
     import AssetGrid from "$lib/components/grid/AssetView.svelte";
@@ -33,6 +32,7 @@
     import type { MenuItem } from "$lib/context-menu/types";
     import { DragData } from "$lib/drag-drop/data";
     import { LabelColours } from "$lib/images/constants";
+    import { KbdShortcutTier, keyboardManager } from "$lib/keyboard/keyboard.svelte";
     import {
         type ConsolidatedGroup,
         type DateGroup,
@@ -242,13 +242,16 @@
         }
     });
 
-    hotkeys("escape", (e) => {
-        if (lightbox.show) {
-            return;
-        }
-        e.preventDefault();
-        imageSelection.clear();
-        collectionSelection.clear();
+    $effect(() => {
+        return keyboardManager.registerEscape({
+            tier: KbdShortcutTier.Canvas,
+            handler: () => {
+                if (imageSelection.size > 0 || collectionSelection.size > 0) {
+                    imageSelection.clear();
+                    collectionSelection.clear();
+                }
+            }
+        });
     });
 
     function openLightbox(asset?: ImageAsset) {

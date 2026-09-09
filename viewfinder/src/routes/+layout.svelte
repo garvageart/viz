@@ -7,12 +7,13 @@
     import "@fontsource-variable/radio-canada-big/index.css";
     import "@fontsource-variable/roboto-mono/index.css";
     import "@fontsource-variable/zalando-sans/index.css";
-    import hotkeys from "hotkeys-js";
+    import { onMount } from "svelte";
     import ModalRenderer from "$lib/components/modals/ModalContainer.svelte";
     import { modalsManager } from "$lib/components/modals/manager/ModalManager.svelte";
     import "$lib/components/tooltips/tooltip.scss";
     import NavigationProgressBar from "$lib/components/ui/NavigationProgressBar.svelte";
     import ContextMenu from "$lib/context-menu/ContextMenu.svelte";
+    import { KeybindAction, keyboardManager } from "$lib/keyboard/keyboard.svelte";
     import { eventsState } from "$lib/states/events.svelte";
     import { historyState } from "$lib/states/history.svelte";
     import { debugState, themeState, upload, user } from "$lib/states/index.svelte";
@@ -27,7 +28,17 @@
         import("material-symbols/index.css");
     }
 
-    historyState.init();
+    onMount(() => {
+        historyState.init();
+        keyboardManager.init();
+
+        return keyboardManager.register({
+            action: KeybindAction.ToggleFullscreen,
+            handler: () => {
+                toggleFullscreen();
+            }
+        });
+    });
 
     $effect(() => {
         if (user.data) {
@@ -79,12 +90,6 @@
         themeState.ls.set(themeState.value);
         document.documentElement.setAttribute("data-theme", themeState.resolved);
     });
-
-    hotkeys("shift+f", (e) => {
-        e.preventDefault();
-        toggleFullscreen();
-    });
-
     beforeNavigate(({ to, willUnload }) => {
         loadingState.startNavigation();
         if (updated.current && !willUnload && to) {

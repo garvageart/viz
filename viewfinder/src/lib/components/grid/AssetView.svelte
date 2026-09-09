@@ -1,10 +1,10 @@
 <script lang="ts" generics="T extends { uid: string } & Record<string, any>">
-    import hotkeys from "hotkeys-js";
     import { type Snippet, untrack } from "svelte";
     import type { MouseEventHandler, SvelteHTMLElements } from "svelte/elements";
     import { type Instance, type Props as TippyProps, delegate, followCursor, hideAll } from "tippy.js";
     import "tippy.js/dist/tippy.css";
     import { PhotoGridVirtualizer } from "$lib/components/virtualizer/PhotoGridVirtualizer.svelte.js";
+    import { KbdShortcutTier, KeybindAction, keyboardManager } from "$lib/keyboard/keyboard.svelte";
     import { debugMode, isLayoutPage, isMobile } from "$lib/states/index.svelte";
     import { selectionManager } from "$lib/states/selection.svelte";
     import { type SortState, photosSort } from "$lib/states/sort.svelte";
@@ -794,34 +794,53 @@
         });
     }
 
-    hotkeys("ctrl+a", (e) => {
-        if (selectionManager.activeScopeId !== scopeId) {
-            return;
-        }
-        e.preventDefault();
-        selection.selectMultiple(allAssetsData);
-    });
+    $effect(() => {
+        const unregisterShortcuts = keyboardManager.register([
+            {
+                action: KeybindAction.SelectAll,
+                handler: (e) => {
+                    if (selectionManager.activeScopeId !== scopeId) {
+                        return;
+                    }
+                    e.preventDefault();
+                    selection.selectMultiple(allAssetsData);
+                }
+            },
+            {
+                action: KeybindAction.OpenImage,
+                handler: (e) => {
+                    if (selectionManager.activeScopeId !== scopeId) {
+                        return;
+                    }
+                    const activeAsset = selection.active ?? (selection.size > 0 ? selection.selectedItems[0] : null);
+                    if (!activeAsset) {
+                        return;
+                    }
+                    e.preventDefault();
+                    assetDblClick?.(
+                        e as unknown as MouseEvent & {
+                            currentTarget: EventTarget & (HTMLDivElement | HTMLTableRowElement);
+                        },
+                        activeAsset
+                    );
+                }
+            }
+        ]);
 
-    hotkeys("escape", () => {
-        if (selection.size === 0 && !selection.active) {
-            return;
-        }
-        selection.clear();
-    });
+        const unregisterEscape = keyboardManager.registerEscape({
+            tier: KbdShortcutTier.Canvas,
+            handler: () => {
+                if (selection.size === 0 && !selection.active) {
+                    return;
+                }
+                selection.clear();
+            }
+        });
 
-    hotkeys("enter", (e) => {
-        if (selectionManager.activeScopeId !== scopeId) {
-            return;
-        }
-        const activeAsset = selection.active ?? (selection.size > 0 ? selection.selectedItems[0] : null);
-        if (!activeAsset) {
-            return;
-        }
-        e.preventDefault();
-        assetDblClick?.(
-            e as unknown as MouseEvent & { currentTarget: EventTarget & (HTMLDivElement | HTMLTableRowElement) },
-            activeAsset
-        );
+        return () => {
+            unregisterShortcuts();
+            unregisterEscape();
+        };
     });
 </script>
 

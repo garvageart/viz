@@ -9,7 +9,6 @@
         listImages,
         updateImage
     } from "@viz/api";
-    import hotkeys from "hotkeys-js";
     import { onDestroy, untrack } from "svelte";
     import Dropdown from "$lib/components/context-menus/Dropdown.svelte";
     import AssetGrid from "$lib/components/grid/AssetView.svelte";
@@ -36,6 +35,7 @@
     import { DragData } from "$lib/drag-drop/data.js";
     import { LabelColours } from "$lib/images/constants.js";
     import { ImagePaginationState } from "$lib/images/state.svelte.js";
+    import { KbdShortcutTier, keyboardManager } from "$lib/keyboard/keyboard.svelte";
     import {
         type ConsolidatedGroup,
         type DateGroup,
@@ -365,12 +365,15 @@
         scheduleAddImages(uploadedImages);
     }
 
-    hotkeys("escape", (e) => {
-        if (lightbox.show) {
-            return;
-        }
-        e.preventDefault();
-        selectionScope.clear();
+    $effect(() => {
+        return keyboardManager.registerEscape({
+            tier: KbdShortcutTier.Canvas,
+            handler: () => {
+                if (selectionScope.size > 0) {
+                    selectionScope.clear();
+                }
+            }
+        });
     });
 </script>
 

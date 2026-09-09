@@ -1,9 +1,9 @@
 <script lang="ts">
     import { dev } from "$app/environment";
-    import hotkeys from "hotkeys-js";
     import { DateTime } from "luxon";
     import { onMount } from "svelte";
     import RootDebugOverlay from "$lib/components/workspace/debug/RootDebugOverlay.svelte";
+    import { KeybindAction, keyboardManager } from "$lib/keyboard/keyboard.svelte";
     import { type SerializedWorkspace, Workspace } from "$lib/layouts/model.svelte";
     import { showRootDebugOverlay, tabOps } from "$lib/layouts/tab-ops.svelte";
     import { views } from "$lib/layouts/views";
@@ -70,21 +70,20 @@
     });
 
     onMount(() => {
-        hotkeys("`", (e) => {
-            // Prevent default behavior (e.g. typing ` in an input, if filter logic fails)
-            e.preventDefault();
-            const ws = workspaceState.workspace;
-            if (ws && ws.activeGroupId) {
-                ws.toggleMaximize(ws.activeGroupId);
-                // The maximize re-render can bounce focus onto the focusable
-                // <main> wrapper, drawing a huge native ring. Drop it.
-                (document.activeElement as HTMLElement | null)?.blur();
+        return keyboardManager.register({
+            action: KeybindAction.MaximizePane,
+            handler: (e) => {
+                // Prevent default behavior (e.g. typing ` in an input, if filter logic fails)
+                e.preventDefault();
+                const ws = workspaceState.workspace;
+                if (ws && ws.activeGroupId) {
+                    ws.toggleMaximize(ws.activeGroupId);
+                    // The maximize re-render can bounce focus onto the focusable
+                    // <main> wrapper, drawing a huge native ring. Drop it.
+                    (document.activeElement as HTMLElement | null)?.blur();
+                }
             }
         });
-
-        return () => {
-            hotkeys.unbind("`");
-        };
     });
 </script>
 

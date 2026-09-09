@@ -28,7 +28,6 @@
         updateCollection,
         updateImage
     } from "@viz/api";
-    import hotkeys from "hotkeys-js";
     import { DateTime } from "luxon";
     import { type ComponentProps, onDestroy, untrack } from "svelte";
     import Dropdown from "$lib/components/context-menus/Dropdown.svelte";
@@ -61,6 +60,7 @@
     import type { MenuItem } from "$lib/context-menu/types";
     import { DEFAULT_IMAGE_COLUMNS, LabelColours } from "$lib/images/constants";
     import { ImagePaginationState } from "$lib/images/state.svelte";
+    import { KbdShortcutTier, keyboardManager } from "$lib/keyboard/keyboard.svelte";
     import {
         type ConsolidatedGroup,
         type DateGroup,
@@ -723,17 +723,18 @@
     // NOTE: left/right navigation is handled inside ImageLightbox (goToPrev/goToNext).
     // Registering a duplicate "left,right" handler here caused double-advance on each
     // keypress, skipping images (and never showing the last one before wrapping).
-    hotkeys("escape", (e) => {
-        if (lightbox.show) {
-            return;
-        }
-        if (selectionScope.size === 0) {
-            return;
-        }
-
-        e.preventDefault();
-        selectionScope.clear();
-        showCollNameInput = false;
+    $effect(() => {
+        return keyboardManager.registerEscape({
+            tier: KbdShortcutTier.Canvas,
+            handler: () => {
+                if (showCollNameInput) {
+                    showCollNameInput = false;
+                }
+                if (selectionScope.size > 0) {
+                    selectionScope.clear();
+                }
+            }
+        });
     });
 
     // Menu items for collection actions

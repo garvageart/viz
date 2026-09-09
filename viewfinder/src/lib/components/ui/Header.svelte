@@ -2,14 +2,14 @@
     import { dev } from "$app/environment";
     import { goto } from "$app/navigation";
     import { page } from "$app/state";
-    import hotkeys from "hotkeys-js";
-    import { untrack } from "svelte";
+    import { onMount, untrack } from "svelte";
     import Dropdown from "$lib/components/context-menus/Dropdown.svelte";
     import { CLIENT_IS_PRODUCTION } from "$lib/constants";
     import { contextMenu } from "$lib/context-menu";
     import { themeContextMenu } from "$lib/context-menu/menus/theme";
     import { createWorkspaceViewsMenu } from "$lib/context-menu/menus/workspaceViews";
     import type { MenuItem } from "$lib/context-menu/types";
+    import { KbdShortcutTier, KeybindAction, keyboardManager } from "$lib/keyboard/keyboard.svelte";
     import { showRootDebugOverlay } from "$lib/layouts/tab-ops.svelte";
     import { performSearch } from "$lib/search/execute";
     import { eventsState } from "$lib/states/events.svelte";
@@ -39,20 +39,26 @@
         }
     });
 
-    // Ctrl/Cmd+I toggles dev mode
-    hotkeys("ctrl+i, command+i", (e) => {
-        e.preventDefault();
-        debugState.toggle();
-    });
-
-    // Ctrl/Cmd+K toggles focus on the search input.
-    hotkeys("ctrl+k, command+k", (e) => {
-        e.preventDefault();
-        if (!searchInputHasFocus) {
-            searchElement?.focus();
-        } else {
-            searchElement?.blur();
-        }
+    // Mod+I toggles dev mode, Mod+K toggles focus on the search input
+    onMount(() => {
+        return keyboardManager.register([
+            {
+                action: KeybindAction.ToggleInspector,
+                handler: () => {
+                    debugState.toggle();
+                }
+            },
+            {
+                action: KeybindAction.Search,
+                handler: () => {
+                    if (!searchInputHasFocus) {
+                        searchElement?.focus();
+                    } else {
+                        searchElement?.blur();
+                    }
+                }
+            }
+        ]);
     });
 
     const uploadMenuItems: MenuItem[] = [
@@ -99,31 +105,37 @@
     let openAppMenu = $state(false);
     let appMenuButton: HTMLButtonElement | undefined = $state();
 
+    // Dismiss open header menus on Escape (Tier 1: Transient)
+    $effect(() => {
+        if (openAccPanel || openAppMenu) {
+            return keyboardManager.registerEscape({
+                tier: KbdShortcutTier.Transient,
+                handler: () => {
+                    openAccPanel = false;
+                    openAppMenu = false;
+                }
+            });
+        }
+    });
+
+    // Blur search input on Escape (Tier 3: Canvas)
+    $effect(() => {
+        if (searchInputHasFocus) {
+            return keyboardManager.registerEscape({
+                tier: KbdShortcutTier.Canvas,
+                handler: () => {
+                    searchElement?.blur();
+                }
+            });
+        }
+    });
+
     function handleThemeContext(e: MouseEvent) {
         contextMenu.open(themeContextMenu(), e, { align: "right", offsetY: 4 });
     }
 </script>
 
 <svelte:window
-    onkeydown={(e) => {
-        if (e.key !== "Escape") {
-            return;
-        }
-
-        if (searchInputHasFocus) {
-            console.log("Escape key pressed, blurring search input");
-            searchElement?.blur();
-            return;
-        }
-
-        if (openAccPanel) {
-            openAccPanel = false;
-        }
-
-        if (openAppMenu) {
-            openAppMenu = false;
-        }
-    }}
     onclick={(e) => {
         if (openAccPanel && !(e.target as HTMLElement).closest("#account-container")) {
             openAccPanel = false;

@@ -1,6 +1,5 @@
 <script lang="ts" generics>
     import { type ImageAsset, getAssetImagePath } from "@viz/api";
-    import hotkeys, { type HotkeysEvent } from "hotkeys-js";
     import { DateTime } from "luxon";
     import { type Snippet, onMount, untrack } from "svelte";
     import type { MouseEventHandler } from "svelte/elements";
@@ -21,6 +20,7 @@
     } from "$lib/components/virtualizer/PhotoGridVirtualizer.svelte.js";
     import { VizMimeTypes } from "$lib/constants";
     import { draggable } from "$lib/drag-drop/directives.svelte";
+    import { type HotkeysEvent, KbdShortcutTier, KeybindAction, keyboardManager } from "$lib/keyboard/keyboard.svelte";
     import type { ConsolidatedGroup, ImageWithDateLabel } from "$lib/photo-layout";
     import { filterManager } from "$lib/states/filter.svelte";
     import { debugMode, isLayoutPage, isMobile } from "$lib/states/index.svelte";
@@ -103,21 +103,9 @@
         selectionManager.setActive(scopeId);
     }
 
-    function isHotkeyBlocked() {
-        const activeEl = document.activeElement;
-        const isInputFocused =
-            activeEl &&
-            (activeEl.tagName === "INPUT" ||
-                activeEl.tagName === "TEXTAREA" ||
-                activeEl.tagName === "SELECT" ||
-                activeEl.getAttribute("contenteditable") === "true");
-
-        return Boolean(isInputFocused);
-    }
-
     // Short-cuts / hotkeys handling
     function handleSelectAll(e: KeyboardEvent) {
-        if (selectionManager.activeScopeId !== scopeId || isHotkeyBlocked()) {
+        if (selectionManager.activeScopeId !== scopeId) {
             return;
         }
 
@@ -132,8 +120,8 @@
         }
     }
 
-    function handleEscape(e: KeyboardEvent) {
-        if (selectionManager.activeScopeId !== scopeId || isHotkeyBlocked()) {
+    function handleEscape() {
+        if (selectionManager.activeScopeId !== scopeId) {
             return;
         }
 
@@ -141,7 +129,6 @@
             return;
         }
 
-        e.preventDefault();
         selection.clear();
     }
 
@@ -199,7 +186,7 @@
     }
 
     function handleKeyNav(e: KeyboardEvent, _handler: HotkeysEvent) {
-        if (selectionManager.activeScopeId !== scopeId || isHotkeyBlocked()) {
+        if (selectionManager.activeScopeId !== scopeId) {
             return;
         }
 
@@ -338,7 +325,7 @@
     }
 
     function handleEnter(e: KeyboardEvent, _handler: HotkeysEvent) {
-        if (selectionManager.activeScopeId !== scopeId || isHotkeyBlocked()) {
+        if (selectionManager.activeScopeId !== scopeId) {
             return;
         }
 
@@ -355,16 +342,29 @@
     }
 
     onMount(() => {
-        hotkeys("ctrl+a", handleSelectAll);
-        hotkeys("escape", handleEscape);
-        hotkeys("left,right,up,down,shift+left,shift+right,shift+up,shift+down", handleKeyNav);
-        hotkeys("enter", handleEnter);
+        const unregisterShortcuts = keyboardManager.register([
+            {
+                action: KeybindAction.SelectAll,
+                handler: handleSelectAll
+            },
+            {
+                action: KeybindAction.NavigateLibrary,
+                handler: handleKeyNav
+            },
+            {
+                action: KeybindAction.OpenImage,
+                handler: handleEnter
+            }
+        ]);
+
+        const unregisterEscape = keyboardManager.registerEscape({
+            tier: KbdShortcutTier.Canvas,
+            handler: handleEscape
+        });
 
         return () => {
-            hotkeys.unbind("ctrl+a", handleSelectAll);
-            hotkeys.unbind("escape", handleEscape);
-            hotkeys.unbind("left,right,up,down,shift+left,shift+right,shift+up,shift+down", handleKeyNav);
-            hotkeys.unbind("enter", handleEnter);
+            unregisterShortcuts();
+            unregisterEscape();
         };
     });
 
@@ -397,7 +397,7 @@
             onShow(instance: Instance<TippyProps>) {
                 hideAll({ duration: 0, exclude: instance });
 
-                const scope = hotkeys.getScope();
+                const scope = keyboardManager.currentScope;
                 if (scope !== "all" && scope !== "default") {
                     return false;
                 }
