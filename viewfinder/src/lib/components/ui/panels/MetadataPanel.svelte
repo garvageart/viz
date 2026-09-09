@@ -425,7 +425,7 @@
                         <div class="card-values">
                             <div class="value-big">
                                 {currentAsset?.width} × {currentAsset?.height}
-                                &nbsp;· {getImageMegapixels(currentAsset)} MP &nbsp;· {formatBytes(
+                                {" "}· {getImageMegapixels(currentAsset)} MP {" "}· {formatBytes(
                                     currentAsset.image_metadata?.file_size
                                 ) ?? "—"}
                             </div>
@@ -437,10 +437,10 @@
                             <div class="value-sub">
                                 {currentAsset?.image_metadata?.color_space}
                                 {#if currentAsset?.exif?.resolution}
-                                    &nbsp;· {currentAsset.exif.resolution}
+                                    {" "}· {currentAsset.exif.resolution}
                                 {/if}
                                 {#if currentAsset?.exif?.orientation}
-                                    &nbsp;· {formatOrientation(currentAsset.exif.orientation)}
+                                    {" "}· {formatOrientation(currentAsset.exif.orientation)}
                                 {/if}
                             </div>
                         </div>
@@ -555,7 +555,7 @@
                             </div>
                         {/if}
                         {#if currentAsset.image_metadata?.checksum}
-                            <div class="card-row meta-row">
+                            <div class="card-row center meta-row">
                                 <MaterialIcon iconName="tag" class="exif-material-icon" />
                                 <div class="card-values">
                                     <div class="name-row">
@@ -777,6 +777,10 @@
         gap: 0.6em;
         /* Allow nested flex children to shrink when content is long */
         min-width: 0;
+
+        &.center {
+            align-items: center;
+        }
     }
 
     :global(.exif-material-icon) {
