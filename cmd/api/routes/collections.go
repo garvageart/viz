@@ -38,11 +38,14 @@ func isAuthorizedToModifyCollection(user *entities.User, collection entities.Col
 func findCollectionImages(db *gorm.DB, collection entities.Collection, limit, offset int, sortBy, order string) ([]dto.ImagesResponse, error) {
 	var images []entities.ImageAsset
 
+	subquery := db.Model(&entities.CollectionImage{}).
+		Select("uid").
+		Where("collection_id = ?", collection.ID)
+
 	query := db.Model(&entities.ImageAsset{}).
 		Preload("Owner").
 		Preload("UploadedBy").
-		Joins("JOIN collection_images ON collection_images.uid = images.uid").
-		Where("collection_images.collection_id = ?", collection.ID)
+		Where("uid IN (?)", subquery)
 
 	allowedSortBy := []string{"taken_at", "recently_added", "updated_at", "name"}
 	validSortBy := slices.Contains(allowedSortBy, sortBy)
@@ -458,7 +461,7 @@ func CollectionsRouter(db *gorm.DB, logger *slog.Logger, wsBroker *libhttp.WSBro
 
 			// Remove any collection image join rows first to avoid foreign key
 			// conflicts or other DB-level constraints when deleting the collection.
-			if err := tx.Where("collection_id = ?", collection.ID).Delete(&entities.CollectionImage{}).Error; err != nil {
+			if err := tx.Unscoped().Where("collection_id = ?", collection.ID).Delete(&entities.CollectionImage{}).Error; err != nil {
 				return err
 			}
 
@@ -781,7 +784,7 @@ func CollectionsRouter(db *gorm.DB, logger *slog.Logger, wsBroker *libhttp.WSBro
 				return ErrCollectionUnauthorised
 			}
 
-			query := tx.Model(&entities.CollectionImage{}).Where("collection_id = ?", collection.ID)
+			query := tx.Unscoped().Model(&entities.CollectionImage{}).Where("collection_id = ?", collection.ID)
 
 			if body.All {
 				if len(body.Exclusions) > 0 {
