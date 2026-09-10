@@ -907,7 +907,9 @@
         }
     });
 
-    function handleGridScroll(_e: Event) {
+    let isInternalLoadingMore = $state(false);
+
+    async function handleGridScroll(_e: Event) {
         if (usingExternalScroll) {
             return;
         }
@@ -915,6 +917,18 @@
         if (photoGridEl) {
             scrollTop = photoGridEl.scrollTop;
             virtualizer.updateScroll(scrollTop, virtualizer.viewportHeight);
+
+            if (onLoadMore && !isInternalLoadingMore) {
+                const remaining = photoGridEl.scrollHeight - photoGridEl.scrollTop - photoGridEl.clientHeight;
+                if (remaining < 300) {
+                    isInternalLoadingMore = true;
+                    try {
+                        await onLoadMore();
+                    } finally {
+                        isInternalLoadingMore = false;
+                    }
+                }
+            }
         }
     }
 
@@ -1388,6 +1402,7 @@
         overflow-y: scroll;
         height: 100%;
         scrollbar-gutter: stable;
+        padding: var(--viz-spacing-xs);
 
         &:focus-visible {
             outline: 2px solid var(--viz-primary);
@@ -1397,6 +1412,7 @@
             height: auto;
             overflow-y: visible;
             margin-bottom: 0;
+            padding: 0;
         }
     }
 

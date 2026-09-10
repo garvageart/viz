@@ -3,14 +3,15 @@
     import { DateTime } from "luxon";
     import { type ComponentProps, type Snippet } from "svelte";
     import type { HTMLButtonAttributes } from "svelte/elements";
+    import Dropdown from "$lib/components/context-menus/Dropdown.svelte";
+    import AssetGrid from "$lib/components/grid/AssetView.svelte";
+    import LoadingContainer from "$lib/components/overlays/LoadingContainer.svelte";
     import Button from "$lib/components/ui/Button.svelte";
     import { applySortSelection, currentSortId, sortOptions, toggleSortOrder } from "$lib/sort/sort";
     import { selectionManager } from "$lib/states/selection.svelte";
     import { type SortState, photosSort } from "$lib/states/sort.svelte";
     import type { MaterialSymbol } from "$lib/types/MaterialSymbol";
     import type { IPagination } from "$lib/types/asset";
-    import Dropdown from "../context-menus/Dropdown.svelte";
-    import AssetGrid from "../grid/AssetView.svelte";
     import VizToolbar from "./toolbars/VizToolbar.svelte";
 
     type Props = {
@@ -24,6 +25,8 @@
         showToolbars?: boolean;
         toolbarProps?: Omit<ComponentProps<typeof VizToolbar>, "children">;
         sortState?: SortState;
+        hasMore?: boolean;
+        paginate?: () => Promise<void> | void;
     };
 
     type ToolbarButtonProps = {
@@ -46,8 +49,38 @@
         showToolbars = $bindable(true),
         toolbarProps,
         selectionToolbarSnippet,
-        sortState = photosSort
+        sortState = photosSort,
+        hasMore = false,
+        paginate
     }: Props = $props();
+
+    const scrollThreshold = 300;
+    let isLoadingMore = $state(false);
+
+    async function loadMore() {
+        if (isLoadingMore || !hasMore || !paginate) {
+            return;
+        }
+
+        isLoadingMore = true;
+        try {
+            await paginate();
+        } finally {
+            isLoadingMore = false;
+        }
+    }
+
+    function onScroll(e: UIEvent & { currentTarget: EventTarget & HTMLDivElement }) {
+        const target = e.currentTarget;
+        if (!target) {
+            return;
+        }
+
+        const remaining = target.scrollHeight - target.scrollTop - target.clientHeight;
+        if (remaining < scrollThreshold && hasMore) {
+            loadMore();
+        }
+    }
 
     let assetGridArray: typeof grid.assetGridArray = $state();
     let columnCount = $state<number | undefined>(undefined);
@@ -113,7 +146,7 @@
 {/snippet}
 
 <div class="assets-shell-container">
-    <div class="assets-shell-content">
+    <div class="assets-shell-content" onscroll={onScroll}>
         {@render children?.()}
 
         {#if gridData.length === 0}
@@ -128,6 +161,14 @@
             </div>
         {:else}
             <AssetGrid {...grid} {sortState} bind:assetGridArray bind:data={gridData} bind:columnCount />
+        {/if}
+
+        {#if hasMore && isLoadingMore}
+            <div
+                style="width: 100%; min-height: 40px; display: flex; align-items: center; justify-content: center; padding: var(--viz-spacing-md) 0;"
+            >
+                <LoadingContainer />
+            </div>
         {/if}
     </div>
 

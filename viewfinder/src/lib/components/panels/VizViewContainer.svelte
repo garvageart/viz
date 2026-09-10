@@ -158,10 +158,7 @@
     {:else if data && !randomLatency}
         {@render children()}
         {#if hasMore}
-            <div
-                use:setupObserver
-                style="width: 100%; min-height: 40px; display: flex; align-items: center; justify-content: center;"
-            >
+            <div use:setupObserver style="width: 100%; display: flex; align-items: center; justify-content: center;">
                 {#if isLoadingMore}
                     <LoadingContainer />
                 {/if}
@@ -178,7 +175,7 @@
                 {#if hasMore}
                     <div
                         use:setupObserver
-                        style="width: 100%; min-height: 40px; display: flex; align-items: center; justify-content: center;"
+                        style="width: 100%; display: flex; align-items: center; justify-content: center;"
                     >
                         {#if isLoadingMore}
                             <LoadingContainer />

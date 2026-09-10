@@ -839,7 +839,7 @@
 {/snippet}
 
 {#snippet justifiedGrid()}
-    <div class="viz-justified-grid" style="padding: 2em {isLayoutPage() ? '1em' : '2em'};">
+    <div class="viz-justified-grid">
         <PhotoAssetGrid
             data={displayData}
             allData={viewSettings.showDates ? allImagesFlat : undefined}
@@ -1036,6 +1036,8 @@
     <AssetsShell
         {grid}
         pagination={collectionState.pagination}
+        hasMore={collectionState.hasMore}
+        {paginate}
         {noAssetsSnippet}
         {leadingSnippet}
         {selectionToolbarSnippet}
@@ -1075,11 +1077,14 @@
                             }}
                         />
                     {:else}
-                        <!-- svelte-ignore a11y_click_events_have_key_events -->
                         <div
                             id="coll-name-display-wrapper"
                             role="button"
                             tabindex="0"
+                            onkeydown={(e) => {
+                                e.stopPropagation();
+                                showCollNameInput = true;
+                            }}
                             onclick={(e) => {
                                 e.stopPropagation();
                                 showCollNameInput = true;
@@ -1285,6 +1290,16 @@
             height: 3.5rem;
             border: var(--viz-border-thin);
             background: var(--viz-surface-panel);
+        }
+    }
+
+    .viz-justified-grid {
+        box-sizing: border-box;
+        width: 100%;
+        padding: 2em;
+
+        @media (max-width: 40rem) {
+            padding: 0.5rem;
         }
     }
 </style>
