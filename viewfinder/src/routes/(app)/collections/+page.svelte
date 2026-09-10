@@ -152,12 +152,20 @@
                             }
 
                             toasts.add({
-                                message: `Created collection ${res.data.name}`,
-                                type: "success"
+                                title: res.data.name,
+                                message: "Created collection",
+                                type: "success",
+                                actions: [
+                                    {
+                                        label: "Open Collection",
+                                        onClick() {
+                                            goto(`/collections/${collectionUid}`);
+                                        }
+                                    }
+                                ]
                             });
 
                             modalsManager.pop();
-                            goto(`/collections/${collectionUid}`);
                         } else {
                             toasts.add({
                                 message: `Failed to create collection: ${res.data.error || "Unknown error"}`,
