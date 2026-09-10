@@ -52,12 +52,7 @@
         }
 
         // compute completed items
-        const completed = download.files.filter(
-            (f) =>
-                f.state === DownloadState.DOWNLOADED ||
-                f.state === DownloadState.ERROR ||
-                f.state === DownloadState.CANCELED
-        ).length;
+        const completed = download.files.filter(isDownloadCompleted).length;
 
         const filesCount = download.files.length;
 

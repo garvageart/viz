@@ -18,13 +18,14 @@ export interface DownloadFileStats {
 
 /**
  * Returns true if a download task has reached a terminal/completed state
- * (DOWNLOADED, ERROR, or CANCELED).
+ * (DOWNLOADED, ERROR, CANCELED, or 100% progress).
  */
-export function isDownloadCompleted(task: DownloadFile | { state: DownloadState }): boolean {
+export function isDownloadCompleted(task: DownloadFileStats): boolean {
     return (
         task.state === DownloadState.DOWNLOADED ||
         task.state === DownloadState.ERROR ||
-        task.state === DownloadState.CANCELED
+        task.state === DownloadState.CANCELED ||
+        (task.progress >= 100 && task.state !== DownloadState.PENDING)
     );
 }
 
@@ -32,35 +33,35 @@ export function isDownloadCompleted(task: DownloadFile | { state: DownloadState 
  * Returns true if a download task is currently active or in-progress
  * (DOWNLOADING, PROCESSING, or PENDING).
  */
-export function isDownloadActive(task: DownloadFile | { state: DownloadState }): boolean {
+export function isDownloadActive(task: DownloadFileStats): boolean {
     return !isDownloadCompleted(task);
 }
 
 /**
  * Returns true if a download task is pending execution.
  */
-export function isDownloadPending(task: DownloadFile | { state: DownloadState }): boolean {
+export function isDownloadPending(task: DownloadFileStats): boolean {
     return task.state === DownloadState.PENDING;
 }
 
 /**
  * Returns true if a download task is currently running/downloading or processing.
  */
-export function isDownloadRunning(task: DownloadFile | { state: DownloadState }): boolean {
+export function isDownloadRunning(task: DownloadFileStats): boolean {
     return task.state === DownloadState.DOWNLOADING || task.state === DownloadState.PROCESSING;
 }
 
 /**
  * Returns true if a download succeeded (DOWNLOADED).
  */
-export function isDownloadSuccessful(task: DownloadFile | { state: DownloadState }): boolean {
+export function isDownloadSuccessful(task: DownloadFileStats): boolean {
     return task.state === DownloadState.DOWNLOADED;
 }
 
 /**
  * Returns true if a download task failed or was cancelled.
  */
-export function isDownloadFailed(task: DownloadFile | { state: DownloadState }): boolean {
+export function isDownloadFailed(task: DownloadFileStats): boolean {
     return task.state === DownloadState.ERROR || task.state === DownloadState.CANCELED;
 }
 
