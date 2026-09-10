@@ -51,7 +51,9 @@ test.describe("Drag & Drop File Upload Flow", () => {
         await page.goto("/collections");
         await page.waitForLoadState("domcontentloaded");
         await expect(
-            page.locator(".viz-workspace, main#main, .viz-collections-container, .route-scroll, .tab-group-content").first()
+            page
+                .locator(".viz-workspace, main#main, .viz-collections-container, .route-scroll, .tab-group-content")
+                .first()
         ).toBeVisible({ timeout: 20000 });
         await page.waitForTimeout(1000);
 
@@ -75,7 +77,9 @@ test.describe("Drag & Drop File Upload Flow", () => {
         await expect(modal).not.toBeVisible();
 
         // 3. Verify we are on the newly created collection detail page
-        await expect(page.locator("#coll-name-display, .collection-header, .route-scroll, .tab-group-content").first()).toBeVisible({
+        await expect(
+            page.locator("#coll-name-display, .collection-header, .route-scroll, .tab-group-content").first()
+        ).toBeVisible({
             timeout: 15000
         });
 

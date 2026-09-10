@@ -7,7 +7,9 @@ test.describe("PhotoAssetGrid Functionality", () => {
         // Navigate to /photos as a baseline
         await page.goto("/photos");
 
-        await expect(page.locator(".route-scroll, .tab-group-content, .viz-photo-grid-container, main").first()).toBeVisible({
+        await expect(
+            page.locator(".route-scroll, .tab-group-content, .viz-photo-grid-container, main").first()
+        ).toBeVisible({
             timeout: 25000
         });
     });
