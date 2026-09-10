@@ -257,18 +257,6 @@
         contextMenu.open(imageMenuItems, anchor, { offsetY: 4 });
     }
 
-    let focusScrollElement = $derived.by(() => {
-        const activeUid = selectionScope.active?.uid;
-        if (activeUid) {
-            const el = document.querySelector(`[data-asset-id="${activeUid}"]`);
-            if (el instanceof HTMLElement) {
-                return el;
-            }
-        }
-
-        return null;
-    });
-
     // UI Stuff
     let showCollNameInput = $state(false);
     let collNameContainer: HTMLElement | undefined = $state();
@@ -858,6 +846,7 @@
             groupedData={viewSettings.showDates ? consolidatedGroups : undefined}
             showDateHeaders={viewSettings.showDates}
             {scopeId}
+            disableExternalScroll={true}
             onLoadMore={() => paginate()}
             assetDblClick={(_e, asset) => {
                 const target = asset ?? selectionFirstImage;
@@ -1042,7 +1031,6 @@
     name="{name} - Collection"
     style="font-size: {isLayoutPage() ? '0.9em' : 'inherit'};"
     {paginate}
-    {focusScrollElement}
 >
     <AssetsShell
         {grid}

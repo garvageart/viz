@@ -38,7 +38,7 @@
         focusScrollElement?.scrollIntoView({
             behavior: "instant",
             block: "nearest",
-            inline: "center"
+            inline: "nearest"
         });
     });
 
