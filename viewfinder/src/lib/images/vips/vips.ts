@@ -125,8 +125,8 @@ async function ensureIccProfile(v: ExtendedVipsModule, cs: ColorSpace): Promise<
     return null;
 }
 
-export async function applyMetadataPolicy(img: Vips.Image, metadataPolicy: MetadataPolicy, removeLocation: boolean) {
-    if (metadataPolicy === "all" && !removeLocation) {
+export async function applyMetadataPolicy(img: Vips.Image, metadataPolicy: MetadataPolicy, includeLocation: boolean) {
+    if (metadataPolicy === "all" && includeLocation) {
         return false;
     }
 
@@ -150,7 +150,7 @@ export async function applyMetadataPolicy(img: Vips.Image, metadataPolicy: Metad
 
         const exif = ExifData.newFromData(exifBlob);
 
-        if (removeLocation) {
+        if (!includeLocation) {
             exif.ifd[3].entries.forEach((e) => {
                 exif.ifd[3].removeEntry(e);
             });
@@ -160,7 +160,8 @@ export async function applyMetadataPolicy(img: Vips.Image, metadataPolicy: Metad
             exif.ifd[2].entries.forEach((e) => {
                 exif.ifd[2].removeEntry(e);
             });
-            if (!removeLocation) {
+
+            if (includeLocation) {
                 exif.ifd[3].entries.forEach((e) => {
                     exif.ifd[3].removeEntry(e);
                 });
@@ -187,7 +188,8 @@ export async function applyMetadataPolicy(img: Vips.Image, metadataPolicy: Metad
             exif.ifd[2].entries.forEach((e) => {
                 exif.ifd[2].removeEntry(e);
             });
-            if (!removeLocation) {
+
+            if (!includeLocation) {
                 exif.ifd[3].entries.forEach((e) => {
                     exif.ifd[3].removeEntry(e);
                 });
@@ -407,8 +409,8 @@ async function stepFilterMetadata(ctx: TransformStepContext) {
     }
 
     const actualPolicy = ctx.params.metadata === undefined ? "all" : ctx.params.metadata || "none";
-    const removeLocation = !!ctx.params.removeLocation;
-    ctx.stripAll = await applyMetadataPolicy(ctx.img, actualPolicy, removeLocation);
+    const includeLocation = !!ctx.params.includeLocation;
+    ctx.stripAll = await applyMetadataPolicy(ctx.img, actualPolicy, includeLocation);
 }
 
 function stepPrepareWriteOptions(ctx: TransformStepContext) {

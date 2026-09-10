@@ -276,7 +276,7 @@ export interface TransformParams {
     resizeMode?: ResizeMode;
     colorSpace?: ColorSpace;
     metadata?: MetadataPolicy;
-    removeLocation?: boolean;
+    includeLocation?: boolean;
     bitDepth?: number;
 }
 
@@ -301,9 +301,9 @@ export function parseTransformParams(pathStr: string): TransformParams {
         params.metadata = metadata as MetadataPolicy;
     }
 
-    const removeLocation = q.get("removeLocation");
-    if (removeLocation) {
-        params.removeLocation = removeLocation === "true";
+    const includeLocation = q.get("includeLocation");
+    if (includeLocation) {
+        params.includeLocation = includeLocation === "true";
     }
 
     const flip = q.get("flip");

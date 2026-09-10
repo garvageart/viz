@@ -221,15 +221,15 @@ describe("parseTransformParams", () => {
         expect(parseTransformParams("/images/abc/file")).toEqual({});
     });
 
-    it("parses format, colorSpace, metadata, and removeLocation", () => {
+    it("parses format, colorSpace, metadata, and includeLocation", () => {
         const params = parseTransformParams(
-            "/images/abc/file?format=webp&colorSpace=sRGB&metadata=all&removeLocation=true"
+            "/images/abc/file?format=webp&colorSpace=sRGB&metadata=all&includeLocation=false"
         );
         expect(params).toEqual({
             format: "webp",
             colorSpace: "sRGB",
             metadata: "all",
-            removeLocation: true
+            includeLocation: false
         });
     });
 
@@ -254,8 +254,8 @@ describe("parseTransformParams", () => {
         expect(parseTransformParams("?width=abc&quality=xyz")).toEqual({});
     });
 
-    it("parses removeLocation=false as false", () => {
-        expect(parseTransformParams("?removeLocation=false")).toEqual({ removeLocation: false });
+    it("parses includeLocation=false as false", () => {
+        expect(parseTransformParams("?includeLocation=false")).toEqual({ includeLocation: false });
     });
 });
 

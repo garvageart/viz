@@ -51,7 +51,7 @@
         colorSpace: ColorSpace;
         includeMetadata: boolean;
         metadata: MetadataPolicy;
-        removeLocation: boolean;
+        includeLocation: boolean;
         destinationMode: DestinationMode;
         bitDepth: BitDepths;
         sections?: {
@@ -107,9 +107,9 @@
         resizeWidth: 2048,
         resizeHeight: 2048,
         colorSpace: "sRGB",
+        includeLocation: true,
         includeMetadata: true,
         metadata: "all",
-        removeLocation: false,
         destinationMode: "zip",
         bitDepth: 8,
         ...savedExport
@@ -321,7 +321,7 @@
                         resizeMode: exportSettings.resizeMode,
                         colorSpace: exportSettings.colorSpace,
                         metadata: exportSettings.includeMetadata ? exportSettings.metadata : "none",
-                        removeLocation: exportSettings.removeLocation,
+                        includeLocation: exportSettings.includeLocation,
                         bitDepth: exportSettings.bitDepth ? exportSettings.bitDepth : undefined
                     },
                     originalData
@@ -401,7 +401,7 @@
                         resizeMode: exportSettings.resizeMode,
                         colorSpace: exportSettings.colorSpace,
                         metadata: exportSettings.includeMetadata ? exportSettings.metadata : "none",
-                        removeLocation: exportSettings.removeLocation,
+                        includeLocation: exportSettings.includeLocation,
                         bitDepth: exportSettings.bitDepth ? exportSettings.bitDepth : undefined
                     },
                     originalData
@@ -576,7 +576,7 @@
         {@render panelSection("metadata", "Metadata", metadataSnippet)}
         {#snippet metadataSnippet()}
             <div class="metadata-settings">
-                <Checkbox label="Remove Location Information" bind:checked={settings.removeLocation} />
+                <Checkbox label="Include Location Information" bind:checked={settings.includeLocation} />
                 <Checkbox label="Include Original Metadata" bind:checked={settings.includeMetadata} />
 
                 {#if settings.includeMetadata}
