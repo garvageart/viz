@@ -85,6 +85,7 @@ export { default as IconCancelPresentation } from './IconCancelPresentation.svel
 export { default as IconOpenInFull } from './IconOpenInFull.svelte';
 export { default as IconChecklist } from './IconChecklist.svelte';
 export { default as IconChecklistRtl } from './IconChecklistRtl.svelte';
+export { default as IconTableChart } from './IconTableChart.svelte';
 export { default as IconKeyboardArrowUp } from './IconKeyboardArrowUp.svelte';
 export { default as IconKeyboardArrowDown } from './IconKeyboardArrowDown.svelte';
 export { default as IconFolderOpen } from './IconFolderOpen.svelte';
