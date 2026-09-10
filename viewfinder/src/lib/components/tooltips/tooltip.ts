@@ -72,7 +72,7 @@ export function tooltip(node: HTMLElement, params?: TooltipParams | string | nul
             interactive: !!comp,
             arrow: false,
             content: contentNode,
-            appendTo: "parent",
+            appendTo: () => document.body,
             ...tippyOptions,
             onDestroy(inst) {
                 if (destroyComponent) {
