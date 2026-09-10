@@ -62,7 +62,7 @@ class DragCoordinator {
             intent: "none"
         };
 
-        window.addEventListener("dragover", this.handleGlobalDragOver);
+        window.addEventListener("dragover", this.handleGlobalDragOver, true);
         window.addEventListener("dragend", this.endDrag, { once: true });
         window.addEventListener("keydown", this.handleKeyModifier);
         window.addEventListener("keyup", this.handleKeyModifier);
@@ -109,7 +109,7 @@ class DragCoordinator {
         this.session = null;
 
         DragData.clear();
-        window.removeEventListener("dragover", this.handleGlobalDragOver);
+        window.removeEventListener("dragover", this.handleGlobalDragOver, true);
         window.removeEventListener("keydown", this.handleKeyModifier);
         window.removeEventListener("keyup", this.handleKeyModifier);
     };

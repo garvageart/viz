@@ -244,7 +244,6 @@
             const tabActions = view.getTabDropHandler(type);
             if (tabActions) {
                 e.preventDefault();
-                e.stopPropagation();
                 e.dataTransfer.dropEffect = "copy";
 
                 const target = e.currentTarget as HTMLElement;
@@ -265,6 +264,81 @@
         if (dragCoordinator.session) {
             dragCoordinator.session.actionLabel = null;
         }
+    }
+
+    let isInternalDrag = $state(false);
+    let isDropTargetActive = $state(false);
+
+    function handleContentDragStart() {
+        isInternalDrag = true;
+    }
+
+    function handleContentDragEnd() {
+        isInternalDrag = false;
+        isDropTargetActive = false;
+    }
+
+    function handleContentDragEnter(e: DragEvent) {
+        if (isInternalDrag || !e.dataTransfer || edgeDrag.active || !activeView) {
+            return;
+        }
+
+        for (const type of e.dataTransfer.types) {
+            const tabActions = activeView.getTabDropHandler(type);
+            if (tabActions) {
+                isDropTargetActive = true;
+
+                if (dragCoordinator.session) {
+                    dragCoordinator.session.actionLabel = tabActions.label;
+                }
+                return;
+            }
+        }
+    }
+
+    function handleContentDragOver(e: DragEvent) {
+        if (isInternalDrag || !activeView || !e.dataTransfer || edgeDrag.active) {
+            return;
+        }
+
+        for (const type of e.dataTransfer.types) {
+            const tabActions = activeView.getTabDropHandler(type);
+            if (tabActions) {
+                e.preventDefault();
+                e.dataTransfer.dropEffect = "copy";
+                return;
+            }
+        }
+    }
+
+    function handleContentDragLeave(e: DragEvent) {
+        if (isInternalDrag) {
+            return;
+        }
+
+        const target = e.currentTarget as HTMLElement;
+        const rect = target.getBoundingClientRect();
+        if (e.clientX < rect.left || e.clientX >= rect.right || e.clientY < rect.top || e.clientY >= rect.bottom) {
+            isDropTargetActive = false;
+
+            if (dragCoordinator.session) {
+                dragCoordinator.session.actionLabel = null;
+            }
+        }
+    }
+
+    function handleContentDrop(e: DragEvent) {
+        isDropTargetActive = false;
+
+        if (dragCoordinator.session) {
+            dragCoordinator.session.actionLabel = null;
+        }
+
+        if (isInternalDrag || !activeView) {
+            return;
+        }
+
+        handleTabDrop(e, activeView);
     }
 
     function handleHeaderDragOver(e: DragEvent) {
@@ -447,32 +521,48 @@
         </div>
     </div>
 
-    <div class="tab-group-content">
+    <div
+        class="tab-group-content"
+        role="tabpanel"
+        tabindex="0"
+        aria-label={activeView?.name ?? "Tab content"}
+        ondragstart={handleContentDragStart}
+        ondragend={handleContentDragEnd}
+        ondragenter={handleContentDragEnter}
+        ondragover={handleContentDragOver}
+        ondragleave={handleContentDragLeave}
+        ondrop={handleContentDrop}
+    >
+        {#if isDropTargetActive}
+            <div class="drop-target-overlay"></div>
+        {/if}
         {#if activeView}
-            {#if activeView.viewData}
-                {#if Comp}
-                    <Comp data={activeView.viewData?.data} view={activeView} />
-                {/if}
-            {:else}
-                {#await activeView.derivedViewData}
+            {#await activeView.derivedViewData}
+                {#if activeView.viewData}
+                    {#if Comp}
+                        <Comp data={activeView.viewData?.data} view={activeView} />
+                    {/if}
+                {:else}
                     <div class="loading-overlay">
                         <LoadingContainer />
                     </div>
-                {:then loadedData}
-                    {#if Comp}
-                        {#if loadedData}
-                            <Comp data={loadedData?.data} view={activeView} />
-                        {:else}
-                            <Comp view={activeView} />
-                        {/if}
+                {/if}
+            {:then loadedData}
+                {#if Comp}
+                    {#if loadedData}
+                        <Comp data={loadedData?.data} view={activeView} />
+                    {:else if activeView.viewData}
+                        <Comp data={activeView.viewData?.data} view={activeView} />
+                    {:else}
+                        <Comp view={activeView} />
                     {/if}
-                {:catch error}
-                    <div class="error-container">
-                        <h3>Error loading data</h3>
-                        <span>{error.message}</span>
-                    </div>
-                {/await}
-            {/if}
+                {/if}
+            {:catch error}
+                <div class="error-container">
+                    <h3>Error loading data</h3>
+                    <span>{error.message}</span>
+                </div>
+            {/await}
         {:else}
             <div class="empty-group">
                 <span>No active view</span>
@@ -594,6 +684,16 @@
         display: flex;
         flex-direction: column;
         background-color: var(--viz-surface-base);
+    }
+
+    .drop-target-overlay {
+        position: absolute;
+        inset: 0;
+        pointer-events: none;
+        outline: 2px dashed var(--viz-primary);
+        outline-offset: -2px;
+        background-color: color-mix(in srgb, var(--viz-primary) 30%, transparent);
+        z-index: var(--viz-z-dropzone);
     }
 
     .viz-custom-scrollbar {

@@ -11,7 +11,7 @@ import type CollectionPage from "../../../routes/(app)/collections/[uid]/+page.s
 
 export const collectionRoutePath = "/collections/[uid]";
 
-function extractCollectionUid(path: string | undefined): string | null {
+export function extractCollectionUid(path: string | undefined): string | null {
     if (!path) {
         return null;
     }
@@ -62,13 +62,15 @@ export const collectionTabDropHandlers: Map<
                     return;
                 }
 
-                const existingUIDs = v.viewData?.data.images.items.map((i) => i.image.uid);
-                const newUIDs = data.filter((uid) => !existingUIDs?.includes(uid));
+                const existingUIDs = v.viewData?.data?.images?.items?.map((i) => i.image.uid);
+                console.log(v.viewData?.data);
+                const newUIDs = existingUIDs ? data.filter((uid) => !existingUIDs.includes(uid)) : data;
 
                 if (newUIDs.length === 0) {
                     toasts.add({
                         type: "success",
-                        message: `No new images to add to **${v.name}**`,
+                        title: v.name,
+                        message: `No new images to add`,
                         actions: [{ label: "Open Collection", onClick: () => openCollectionView(v) }]
                     });
                     return;
@@ -86,12 +88,11 @@ export const collectionTabDropHandlers: Map<
                 }
 
                 const skippedMessage = skippedUidLength ? `Skipped ${skippedUidLength} images.` : "";
-                const toastMessage = [`Added ${newUIDs.length} image(s) to **${v.name}**`, skippedMessage]
-                    .filter(Boolean)
-                    .join(". ");
+                const toastMessage = [`Added ${newUIDs.length} image(s)`, skippedMessage].filter(Boolean).join(". ");
 
                 toasts.add({
                     type: "success",
+                    title: v.name,
                     message: toastMessage,
                     actions: [{ label: "Open Collection", onClick: () => openCollectionView(v) }]
                 });
