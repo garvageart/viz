@@ -18,6 +18,8 @@
         focusScrollElement?: HTMLElement | null;
         /** Disables overflow properties and sets height to auto, allowing the parent to handle scrolling natively */
         disableScroll?: boolean;
+        /** Controls whether this container creates a scrollable viewport (overflow-y: auto). Defaults to true */
+        scrollable?: boolean;
     }
 
     let {
@@ -31,6 +33,7 @@
         randomLatency = $bindable(false),
         focusScrollElement,
         disableScroll = false,
+        scrollable = true,
         ...props
     }: SvelteHTMLElements["div"] & Props = $props();
 
@@ -45,7 +48,9 @@
     let viewContainer: HTMLElement | undefined = $state();
     let isLoading = $state(true);
 
-    const shouldEnableScroll = $derived(!disableScroll && (isLayoutPage() || hasMore || (data && data.length > 0)));
+    const shouldEnableScroll = $derived(
+        scrollable && !disableScroll && (isLayoutPage() || hasMore || (data && data.length > 0))
+    );
 
     const initStyle = $derived(`${isLoading && !disableScroll ? "height: 100%;" : ""} ${style}`);
     let pageData = $derived.by(() => {

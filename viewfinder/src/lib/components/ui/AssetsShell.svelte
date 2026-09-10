@@ -112,73 +112,97 @@
     {/if}
 {/snippet}
 
-{@render children?.()}
+<div class="assets-shell-container">
+    <div class="assets-shell-content">
+        {@render children?.()}
 
-{#if gridData.length === 0}
-    <div id="viz-no_assets">
-        {#if noAssetsSnippet}
-            {@render noAssetsSnippet()}
-        {:else}
-            <p style="text-align: center; margin: var(--viz-spacing-lg); color: var(--viz-text-primary);">
-                No assets to display.
-            </p>
-        {/if}
-    </div>
-{:else}
-    <AssetGrid {...grid} {sortState} bind:assetGridArray bind:data={gridData} bind:columnCount />
-{/if}
-
-{#if showToolbars}
-    <VizToolbar {selectionScope} {...toolbarProps}>
-        {#snippet leading()}
-            <div class="toolbar-group">
-                {@render toolbarButton({
-                    iconName: "sort",
-                    text: "Sort",
-                    title: "Sort",
-                    dropdown: {
-                        items: sortOptions,
-                        selectedItemId: currentSortId(sortState),
-                        onSelect: (item) => {
-                            applySortSelection(sortState, item.id);
-                        }
-                    }
-                })}
-                <Button
-                    iconName={sortState.value.order === "ASC" ? "arrow_upward" : "arrow_downward"}
-                    class="toolbar-button"
-                    title="Toggle Sort Order ({sortState.value.order})"
-                    onclick={() => {
-                        toggleSortOrder(sortState);
-                    }}
-                />
-                {#if dev && grid.type === "grid"}
-                    {@render toolbarButton({
-                        iconName: "grid_view",
-                        text: "Print Grid",
-                        title: "Print Grid to Console",
-                        onclick: printGridAsTable
-                    })}
+        {#if gridData.length === 0}
+            <div id="viz-no_assets">
+                {#if noAssetsSnippet}
+                    {@render noAssetsSnippet()}
+                {:else}
+                    <span style="text-align: center; margin: var(--viz-spacing-lg); color: var(--viz-text-primary);">
+                        No assets to display.
+                    </span>
                 {/if}
             </div>
-            {#if leadingSnippet}
-                {@render leadingSnippet()}
-            {/if}
-        {/snippet}
+        {:else}
+            <AssetGrid {...grid} {sortState} bind:assetGridArray bind:data={gridData} bind:columnCount />
+        {/if}
+    </div>
 
-        {#snippet selectionActions()}
-            {@render selectionToolbarSnippet?.()}
-        {/snippet}
+    {#if showToolbars}
+        <VizToolbar {selectionScope} {...toolbarProps} fixed={false}>
+            {#snippet leading()}
+                <div class="toolbar-group">
+                    {@render toolbarButton({
+                        iconName: "sort",
+                        text: "Sort",
+                        title: "Sort",
+                        dropdown: {
+                            items: sortOptions,
+                            selectedItemId: currentSortId(sortState),
+                            onSelect: (item) => {
+                                applySortSelection(sortState, item.id);
+                            }
+                        }
+                    })}
+                    <Button
+                        iconName={sortState.value.order === "ASC" ? "arrow_upward" : "arrow_downward"}
+                        class="toolbar-button"
+                        title="Toggle Sort Order ({sortState.value.order})"
+                        onclick={() => {
+                            toggleSortOrder(sortState);
+                        }}
+                    />
+                    {#if dev && grid.type === "grid"}
+                        {@render toolbarButton({
+                            iconName: "grid_view",
+                            text: "Print Grid",
+                            title: "Print Grid to Console",
+                            onclick: printGridAsTable
+                        })}
+                    {/if}
+                </div>
+                {#if leadingSnippet}
+                    {@render leadingSnippet()}
+                {/if}
+            {/snippet}
 
-        {#snippet trailing()}
-            {#if toolbarSnippet}
-                {@render toolbarSnippet()}
-            {/if}
-        {/snippet}
-    </VizToolbar>
-{/if}
+            {#snippet selectionActions()}
+                {@render selectionToolbarSnippet?.()}
+            {/snippet}
+
+            {#snippet trailing()}
+                {#if toolbarSnippet}
+                    {@render toolbarSnippet()}
+                {/if}
+            {/snippet}
+        </VizToolbar>
+    {/if}
+</div>
 
 <style lang="scss">
+    .assets-shell-container {
+        display: flex;
+        flex-direction: column;
+        width: 100%;
+        height: 100%;
+        flex: 1;
+        min-height: 0;
+        overflow: hidden;
+    }
+
+    .assets-shell-content {
+        flex: 1;
+        min-height: 0;
+        width: 100%;
+        overflow-y: auto;
+        overflow-x: hidden;
+        display: flex;
+        flex-direction: column;
+    }
+
     .toolbar-group {
         display: flex;
         align-items: center;

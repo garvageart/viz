@@ -1030,6 +1030,7 @@
     hasMore={collectionState.hasMore}
     name="{name} - Collection"
     style="font-size: {isLayoutPage() ? '0.9em' : 'inherit'};"
+    scrollable={false}
     {paginate}
 >
     <AssetsShell

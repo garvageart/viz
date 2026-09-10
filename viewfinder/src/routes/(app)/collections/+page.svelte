@@ -451,7 +451,7 @@
     </div>
 {/snippet}
 
-<VizViewContainer bind:data={displayData} hasMore={shouldUpdate} name="Collections" {paginate}>
+<VizViewContainer bind:data={displayData} hasMore={shouldUpdate} name="Collections" scrollable={false} {paginate}>
     <AssetsShell
         bind:grid
         {pagination}
