@@ -48,7 +48,7 @@ class EventsState {
         console.debug("[Events] Initializing global WebSocket connection");
 
         this.client = new WSClient({
-            onEvent: (event, data) => this.handleEvent(event, data),
+            onEvent: (event, _data) => this.handleEvent(event),
             onError: () => {
                 console.debug("[Events] onError callback, current connected state:", this.connected);
                 if (this.connected) {
@@ -90,8 +90,8 @@ class EventsState {
         }
     }
 
-    private handleEvent(event: string, data: any) {
-        console.debug("[Events] received event:", event, "data:", data, "disconnected state:", this.wasDisconnected);
+    private handleEvent(event: string) {
+        console.debug("[Events] received event:", event, "disconnected state:", this.wasDisconnected);
         switch (event) {
             case "collection-created":
             case "collection-updated":
@@ -114,7 +114,9 @@ class EventsState {
                 console.debug("[Events] Server came back online, wasDisconnected:", this.wasDisconnected);
                 if (this.wasDisconnected) {
                     console.debug("[Events] Reloading page after server came back online...");
-                    window.location.reload();
+                    // FIXME: When the app is updated on a server, it should not trigger an automatic change,
+                    // someone might still be doing something. Just show a small reload notification
+                    // window.location.reload();
                 }
 
                 break;

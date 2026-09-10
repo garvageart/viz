@@ -2,7 +2,6 @@ import { invalidateAll, preloadData } from "$app/navigation";
 import { type Component, untrack } from "svelte";
 import type { MenuItem } from "$lib/context-menu/types";
 import { debugMode } from "$lib/states/index.svelte";
-import { sleep } from "$lib/utils/misc";
 
 export type TabDropHandler<T extends any, V = VizView<any, any>> = (data: T, view: V) => Promise<void>;
 export type TabActions<
@@ -24,26 +23,29 @@ let idCount = 1;
  */
 export const invalidationState = $state({ version: 0 });
 
+let timer: ReturnType<typeof setTimeout> | null = null;
+
 /**
  * Triggers a global invalidation of all VizView instances and SvelteKit load functions.
  * Use this instead of `invalidateAll()` when you want to ensure background panels
  * also refresh their data (e.g., after uploading images or modifying collections).
  */
 export async function invalidateViz(opts?: { delay?: number; skipInvalidateAll?: boolean }) {
-    if (typeof window === "undefined") {
-        return;
+    if (timer) {
+        clearTimeout(timer);
     }
 
-    if (opts?.delay) {
-        await sleep(opts.delay);
-    }
+    await new Promise((resolve) => {
+        timer = setTimeout(async () => {
+            timer = null;
+            invalidationState.version += 1;
+            if (!opts?.skipInvalidateAll) {
+                await invalidateAll();
+            }
 
-    invalidationState.version += 1;
-    if (opts?.skipInvalidateAll) {
-        return;
-    }
-
-    await invalidateAll();
+            resolve(undefined);
+        }, opts?.delay ?? 50);
+    });
 }
 
 export interface SerializedVizView {
