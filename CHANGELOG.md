@@ -5,6 +5,16 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.34.4] - 2026-09-10
+
+* chore: generate table chart icon (fb4faf4d)
+* fix(viewfinder): make the Material Symbols dev font fallback render (13099115)
+* feat(viewfinder): paginate the collections list and split modal actions (73060eaf)
+* refactor(viewfinder): centralize scroll and pagination ownership in grids (3db864eb)
+* fix(viewfinder): add pagination to assets shell and fix collection grid padding (6483c3c2)
+* feat(viewfinder): improve download task status helpers and completion detection (ef9485dc)
+* refactor(viewfinder): invert location metadata option from remove to include (da5c10fd)
+
 ## [0.34.3] - 2026-09-10
 
 * fix: change overlay z-index to dropzone (bf38f678)
