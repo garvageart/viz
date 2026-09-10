@@ -5,6 +5,13 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.34.1] - 2026-09-10
+
+* fix(viewfinder): prevent horizontal layout shift in split views and update toolbar styling (e097a92c)
+* fix(viewfinder): debounce and coalesce view invalidations to prevent duplicate fetches (a5fb19c3)
+* fix(viewfinder): fix inter-collection image drag-and-drop and add dedicated drop overlay (d45e7db2)
+* fix(api): ensure deleted collection images are excluded from queries and hard-delete join records (8a25ad7e)
+
 ## [0.34.0] - 2026-09-09
 
 * fix(viewfinder/keyboard): prevent double escape execution and preserve native enter navigation (d877beee)
