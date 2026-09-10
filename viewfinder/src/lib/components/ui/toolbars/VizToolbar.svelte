@@ -104,8 +104,9 @@
         justify-content: space-between;
         flex-direction: row;
         box-sizing: border-box;
-        padding: 0 var(--viz-spacing-md);
+        padding: var(--viz-spacing-md);
         gap: var(--viz-spacing-sm);
+        container-type: inline-size;
 
         &.fixed {
             position: sticky;
@@ -184,7 +185,7 @@
             gap: var(--viz-spacing-std);
         }
 
-        :global(.toolbar-button span:not(.viz-material-icon)) {
+        :global(.toolbar-button span:not(.viz-material-icon):not([class^="material-symbols-"])) {
             display: none;
         }
 
@@ -198,11 +199,11 @@
         }
     }
 
-    @media (max-width: 1024px) {
+    @media (max-width: 768px) {
         @include compact-toolbar;
     }
 
-    @container (max-width: 1024px) {
+    @container (max-width: 768px) {
         @include compact-toolbar;
     }
 </style>

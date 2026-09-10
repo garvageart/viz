@@ -678,7 +678,8 @@
     .tab-group-content {
         flex: 1;
         position: relative;
-        overflow: hidden;
+        overflow-x: hidden;
+        overflow-y: auto;
         display: flex;
         flex-direction: column;
         background-color: var(--viz-surface-base);

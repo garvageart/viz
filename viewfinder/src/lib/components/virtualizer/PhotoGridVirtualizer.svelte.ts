@@ -53,6 +53,7 @@ export class PhotoGridVirtualizer {
     rows = $state<GridRow[]>([]);
     visibleRows = $state<GridRow[]>([]);
     totalHeight = $state(0);
+    loadedHeight = $state(0);
 
     // Configuration
     containerWidth = $state(0);
@@ -67,6 +68,13 @@ export class PhotoGridVirtualizer {
     scrollTop = $state(0);
     viewportHeight = $state(1000);
     bufferPx = $state(2000);
+
+    // Sliding Window — stable upfront height estimation
+    // totalItemCount: total number of items known from API (e.g. data.count)
+    // estimatedTotalHeight: fixed container height based on totalItemCount,
+    //   prevents scrollbar jumping when new pages load
+    totalItemCount = $state(0);
+    private estimatedRowHeight = 0; // average height per item, computed from laid-out rows
 
     constructor(config: PhotoGridConfig = {}) {
         this.updateConfig(config);
@@ -88,6 +96,41 @@ export class PhotoGridVirtualizer {
 
         // Clear cache if critical metrics change
         this.groupCache.clear();
+    }
+
+    /**
+     * Sets the total number of items known from the API response.
+     * This enables stable upfront height estimation to prevent scrollbar
+     * jumping when new pages of items load during scroll.
+     */
+    setTotalItemCount(count: number) {
+        this.totalItemCount = count;
+    }
+
+    /**
+     * Computes a stable total height for the scroll container.
+     * Uses the actual laid-out height for loaded items, plus an estimated
+     * height for unloaded items based on the average height per item.
+     * This keeps the scrollbar thumb stable as new pages load.
+     */
+    private computeStableTotalHeight(layoutHeight: number, loadedCount: number): number {
+        this.loadedHeight = layoutHeight;
+
+        if (loadedCount <= 0 || this.totalItemCount <= 0) {
+            return layoutHeight;
+        }
+
+        // Compute average height per item from the laid-out content
+        this.estimatedRowHeight = layoutHeight / loadedCount;
+
+        const remainingItems = Math.max(0, this.totalItemCount - loadedCount);
+        if (remainingItems === 0) {
+            // All items loaded, use exact height
+            return layoutHeight;
+        }
+
+        // Estimate the height of unloaded items
+        return layoutHeight + remainingItems * this.estimatedRowHeight;
     }
 
     /**
@@ -185,8 +228,14 @@ export class PhotoGridVirtualizer {
 
         flushBatch();
 
+        // Count total loaded images across all groups for height estimation
+        let totalLoadedImages = 0;
+        for (const group of groups) {
+            totalLoadedImages += group.allImages.length;
+        }
+
         this.rows = allRows;
-        this.totalHeight = currentTop;
+        this.totalHeight = this.computeStableTotalHeight(currentTop, totalLoadedImages);
 
         this.updateVisible();
     }
@@ -209,7 +258,7 @@ export class PhotoGridVirtualizer {
         })) as unknown as GridRow[];
 
         this.rows = finalRows;
-        this.totalHeight = height;
+        this.totalHeight = this.computeStableTotalHeight(height, images.length);
         this.updateVisible();
     }
 
@@ -293,7 +342,8 @@ export class PhotoGridVirtualizer {
         }
 
         this.rows = allRows;
-        this.totalHeight = items.length > 0 ? currentTop - gap : 0;
+        const layoutHeight = items.length > 0 ? currentTop - gap : 0;
+        this.totalHeight = this.computeStableTotalHeight(layoutHeight, items.length);
         this.updateVisible();
     }
 
@@ -332,7 +382,7 @@ export class PhotoGridVirtualizer {
         }
 
         this.rows = allRows;
-        this.totalHeight = currentTop;
+        this.totalHeight = this.computeStableTotalHeight(currentTop, items.length);
         this.updateVisible();
     }
 

@@ -32,6 +32,8 @@
         assetDblClick?: (e: Parameters<MouseEventHandler<HTMLDivElement | HTMLTableRowElement>>[0], asset: T) => void;
         /** Disable clearing selection when clicking in other grids (useful when multiple grids share one selection set) */
         disableOutsideUnselect?: boolean;
+        /** Fetches the next page of data; triggered when the viewport nears the bottom of loaded content */
+        onLoadMore?: () => Promise<void> | void;
         onassetcontext?: (detail: { asset: T; anchor: { x: number; y: number } | HTMLElement }) => void;
         /** Optional explicit column definitions or property keys for table view */
         columns?: TableColumn<T>[];
@@ -54,6 +56,7 @@
         assetClick,
         disableOutsideUnselect = $bindable(false),
         disableMultiSelection = $bindable(false),
+        onLoadMore,
         onassetcontext,
         type = $bindable("grid"),
         assetGridDisplayProps = $bindable({}),
@@ -156,6 +159,27 @@
     const LIST_ROW_HEIGHT_FALLBACK = 54;
     let listRowHeight = $state(LIST_ROW_HEIGHT_FALLBACK);
 
+    // Load-more is owned by the visible "view": fire when the viewport nears
+    // the bottom of the *loaded* content (loadedHeight), not the estimated
+    // total height (totalHeight).
+    let isLoadingMore = false;
+    const loadMoreThreshold = 600;
+
+    function loadMoreIfNearBottom(scrollPos: number, viewportHeight: number, contentOffsetTop = 0) {
+        if (!onLoadMore || isLoadingMore) {
+            return;
+        }
+
+        const loadedBottom = contentOffsetTop + virtualizer.loadedHeight;
+        const viewportBottom = scrollPos + viewportHeight;
+        if (loadedBottom - viewportBottom < loadMoreThreshold) {
+            isLoadingMore = true;
+            Promise.resolve(onLoadMore()).finally(() => {
+                isLoadingMore = false;
+            });
+        }
+    }
+
     function computeContentWidth(el: HTMLElement): number {
         const style = window.getComputedStyle(el);
         const pl = parseFloat(style.paddingLeft) || 0;
@@ -225,10 +249,14 @@
             if (parent instanceof HTMLElement) {
                 viewportHeight = parent.clientHeight;
                 scrollTop = Math.max(0, parent.scrollTop - gridOffsetTop);
+
+                loadMoreIfNearBottom(parent.scrollTop, parent.clientHeight, gridOffsetTop);
             } else {
                 const rect = assetGridDisplayEl.getBoundingClientRect();
                 viewportHeight = window.innerHeight;
                 scrollTop = Math.max(0, -rect.top);
+
+                loadMoreIfNearBottom(scrollTop, window.innerHeight, rect.top + scrollTop);
             }
 
             virtualizer.updateScroll(scrollTop, viewportHeight);
@@ -264,6 +292,9 @@
                 untrack(() => {
                     updateVirtualizerLayout();
                 });
+                if (assetGridDisplayEl && parent instanceof HTMLElement) {
+                    loadMoreIfNearBottom(parent.scrollTop, parent.clientHeight, gridOffsetTop);
+                }
             });
 
             return () => {
@@ -321,6 +352,8 @@
         }
         scrollTop = assetGridDisplayEl.scrollTop;
         virtualizer.updateScroll(scrollTop, viewportHeight);
+
+        loadMoreIfNearBottom(scrollTop, viewportHeight);
     }
 
     // Tippy tooltip delegation

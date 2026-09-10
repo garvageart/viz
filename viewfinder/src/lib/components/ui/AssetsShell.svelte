@@ -5,18 +5,15 @@
     import type { HTMLButtonAttributes } from "svelte/elements";
     import Dropdown from "$lib/components/context-menus/Dropdown.svelte";
     import AssetGrid from "$lib/components/grid/AssetView.svelte";
-    import LoadingContainer from "$lib/components/overlays/LoadingContainer.svelte";
     import Button from "$lib/components/ui/Button.svelte";
     import { applySortSelection, currentSortId, sortOptions, toggleSortOrder } from "$lib/sort/sort";
     import { selectionManager } from "$lib/states/selection.svelte";
     import { type SortState, photosSort } from "$lib/states/sort.svelte";
     import type { MaterialSymbol } from "$lib/types/MaterialSymbol";
-    import type { IPagination } from "$lib/types/asset";
     import VizToolbar from "./toolbars/VizToolbar.svelte";
 
     type Props = {
         grid: ComponentProps<typeof AssetGrid<T>>;
-        pagination?: IPagination;
         children?: Snippet;
         leadingSnippet?: Snippet;
         selectionToolbarSnippet?: Snippet;
@@ -25,8 +22,6 @@
         showToolbars?: boolean;
         toolbarProps?: Omit<ComponentProps<typeof VizToolbar>, "children">;
         sortState?: SortState;
-        hasMore?: boolean;
-        paginate?: () => Promise<void> | void;
     };
 
     type ToolbarButtonProps = {
@@ -38,10 +33,6 @@
 
     let {
         grid = $bindable(),
-        pagination = $bindable({
-            limit: 25,
-            page: 0
-        }),
         children,
         leadingSnippet,
         toolbarSnippet,
@@ -49,67 +40,15 @@
         showToolbars = $bindable(true),
         toolbarProps,
         selectionToolbarSnippet,
-        sortState = photosSort,
-        hasMore = false,
-        paginate
+        sortState = photosSort
     }: Props = $props();
-
-    const scrollThreshold = 300;
-    let isLoadingMore = $state(false);
-
-    async function loadMore() {
-        if (isLoadingMore || !hasMore || !paginate) {
-            return;
-        }
-
-        isLoadingMore = true;
-        try {
-            await paginate();
-        } finally {
-            isLoadingMore = false;
-        }
-    }
-
-    function onScroll(e: UIEvent & { currentTarget: EventTarget & HTMLDivElement }) {
-        const target = e.currentTarget;
-        if (!target) {
-            return;
-        }
-
-        const remaining = target.scrollHeight - target.scrollTop - target.clientHeight;
-        if (remaining < scrollThreshold && hasMore) {
-            loadMore();
-        }
-    }
 
     let assetGridArray: typeof grid.assetGridArray = $state();
     let columnCount = $state<number | undefined>(undefined);
 
     let selectionScope = $derived(grid.scopeId ? selectionManager.getScope(grid.scopeId) : null);
 
-    let gridData = $derived.by(() => {
-        const allData = grid.data;
-
-        if (columnCount === undefined) {
-            return allData;
-        }
-
-        // NOTE: in future this might be an option in the settings
-        // fill available space in the last row
-        const currentRowImageCount = allData.length % columnCount;
-        if (currentRowImageCount === 0) {
-            return allData;
-        }
-
-        // For paginated views, only fill if we have loaded all data
-        const hasLoadedAll = !pagination || pagination.page > 0 || allData.length <= pagination.limit;
-        if (!hasLoadedAll) {
-            return allData;
-        }
-
-        const fillItems = grid.data.slice(allData.length, allData.length + (columnCount - currentRowImageCount));
-        return [...allData, ...fillItems] as typeof allData;
-    });
+    let gridData = $derived(grid.data);
 
     function printGridAsTable() {
         console.log(
@@ -146,7 +85,7 @@
 {/snippet}
 
 <div class="assets-shell-container">
-    <div class="assets-shell-content" onscroll={onScroll}>
+    <div class="assets-shell-content">
         {@render children?.()}
 
         {#if gridData.length === 0}
@@ -162,18 +101,10 @@
         {:else}
             <AssetGrid {...grid} {sortState} bind:assetGridArray bind:data={gridData} bind:columnCount />
         {/if}
-
-        {#if hasMore && isLoadingMore}
-            <div
-                style="width: 100%; min-height: 40px; display: flex; align-items: center; justify-content: center; padding: var(--viz-spacing-md) 0;"
-            >
-                <LoadingContainer />
-            </div>
-        {/if}
     </div>
 
     {#if showToolbars}
-        <VizToolbar {selectionScope} {...toolbarProps} fixed={false}>
+        <VizToolbar {selectionScope} {...toolbarProps} fixed={true}>
             {#snippet leading()}
                 <div class="toolbar-group">
                     {@render toolbarButton({
@@ -198,7 +129,7 @@
                     />
                     {#if dev && grid.type === "grid"}
                         {@render toolbarButton({
-                            iconName: "grid_view",
+                            iconName: "table_chart",
                             text: "Print Grid",
                             title: "Print Grid to Console",
                             onclick: printGridAsTable
@@ -228,18 +159,13 @@
         display: flex;
         flex-direction: column;
         width: 100%;
-        height: 100%;
-        flex: 1;
-        min-height: 0;
-        overflow: hidden;
+        flex: 1 0 auto;
+        min-height: 100%;
     }
 
     .assets-shell-content {
-        flex: 1;
-        min-height: 0;
+        flex: 1 0 auto;
         width: 100%;
-        overflow-y: auto;
-        overflow-x: hidden;
         display: flex;
         flex-direction: column;
     }
@@ -279,7 +205,7 @@
             gap: var(--viz-spacing-xs);
         }
 
-        :global(.toolbar-button span:not(.viz-material-icon)) {
+        :global(.toolbar-button span:not(.viz-material-icon):not([class^="material-symbols-"])) {
             display: none;
         }
     }

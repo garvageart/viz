@@ -17,7 +17,6 @@
     import StarRating from "$lib/components/image-tools/StarRating.svelte";
     import FilterModal, { FilterModalOptions } from "$lib/components/modals/FilterModal.svelte";
     import { modalsManager } from "$lib/components/modals/manager/ModalManager.svelte";
-    import VizViewContainer from "$lib/components/panels/VizViewContainer.svelte";
     import ActiveFiltersTooltip from "$lib/components/tooltips/ActiveFiltersTooltip.svelte";
     import Button from "$lib/components/ui/Button.svelte";
     import Checkbox from "$lib/components/ui/Checkbox.svelte";
@@ -433,12 +432,7 @@
     </div>
 {/snippet}
 
-<VizViewContainer
-    name="Photos"
-    bind:data={galleryState.images}
-    hasMore={galleryState.hasMore}
-    paginate={() => paginate()}
->
+<div class="photo-page">
     {#if galleryState.images.length === 0}
         <div id="viz-no_assets">
             {@render noAssetsSnippet()}
@@ -462,6 +456,7 @@
                 }}
                 showDateHeaders={viewSettings.showDates}
                 {scopeId}
+                totalItemCount={galleryState.totalCount}
                 onLoadMore={() => paginate()}
                 assetDblClick={(_e, asset) => {
                     openLightbox(asset);
@@ -479,6 +474,7 @@
                 assetSnippet={imageCard}
                 sortState={photosSort}
                 customSnippet={justifiedGrid}
+                onLoadMore={() => paginate()}
                 {scopeId}
                 assetDblClick={(
                     _e: MouseEvent & { currentTarget: EventTarget & (HTMLDivElement | HTMLTableRowElement) },
@@ -687,9 +683,17 @@
             {/snippet}
         </VizToolbar>
     {/if}
-</VizViewContainer>
+</div>
 
 <style lang="scss">
+    .photo-page {
+        display: flex;
+        flex-direction: column;
+        flex: 1 0 auto;
+        min-height: 100%;
+        width: 100%;
+    }
+
     .photo-group-container {
         display: flex;
         flex-direction: column;
@@ -759,7 +763,7 @@
             gap: var(--viz-spacing-xs);
         }
 
-        .toolbar-group :global(.toolbar-button span:not(.viz-material-icon)) {
+        .toolbar-group :global(.toolbar-button span:not(.viz-material-icon):not([class^="material-symbols-"])) {
             display: none;
         }
     }

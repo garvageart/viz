@@ -23,13 +23,11 @@
     import { type HotkeysEvent, KbdShortcutTier, KeybindAction, keyboardManager } from "$lib/keyboard/keyboard.svelte";
     import type { ConsolidatedGroup, ImageWithDateLabel } from "$lib/photo-layout";
     import { filterManager } from "$lib/states/filter.svelte";
-    import { debugMode, isLayoutPage, isMobile } from "$lib/states/index.svelte";
+    import { isLayoutPage, isMobile } from "$lib/states/index.svelte";
     import { selectionManager } from "$lib/states/selection.svelte";
     import type { CardVisualState } from "$lib/types/snippet";
     import { getScrollParent } from "$lib/utils/dom";
     import { getImageLabel, getTakenAt } from "$lib/utils/images";
-    import { debounce } from "$lib/utils/misc";
-    import TimelineScrubber from "./TimelineScrubber.svelte";
     import { touchSelectionAction } from "./actions";
 
     interface ExtendedTippyInstance extends Instance<TippyProps> {
@@ -55,6 +53,7 @@
         ) => void;
         onassetcontext?: (detail: { asset: ImageAsset; anchor: { x: number; y: number } | HTMLElement }) => void;
         onLoadMore?: () => Promise<void> | void;
+        totalItemCount?: number;
         onselectAll?: () => void;
         disableOutsideUnselect?: boolean;
         disableTooltips?: boolean;
@@ -70,11 +69,11 @@
         scopeId = "default",
         searchValue = $bindable(""),
         disabledUids = new Set(),
-        stickyHeaderHeight,
         assetClick,
         assetDblClick,
         onassetcontext,
         onLoadMore,
+        totalItemCount = 0,
         onselectAll,
         disableOutsideUnselect = false,
         disableTooltips = false,
@@ -181,7 +180,7 @@
     }
 
     function focusAssetElement(uid: string) {
-        const el = (photoGridEl || gridContainerEl)?.querySelector(`[data-asset-id="${uid}"]`) as HTMLElement | null;
+        const el = photoGridEl?.querySelector(`[data-asset-id="${uid}"]`) as HTMLElement | null;
         if (el) {
             el.focus();
         }
@@ -557,61 +556,16 @@
         virtualizer.updateConfig(gridConfig);
     });
 
+    // Sync totalItemCount to virtualizer for stable upfront height estimation
+    $effect(() => {
+        virtualizer.setTotalItemCount(totalItemCount);
+    });
+
     let scrollTop: number = $state(0);
     let usingExternalScroll = $state(false);
     let scrollParent: HTMLElement | Window | undefined = $state();
-    let isSyncingScroll = false; // Flag to prevent loop
-    let isScrubbing = $state(false);
-
     let photoGridEl: HTMLDivElement | undefined = $state();
-    let gridContainerEl: HTMLDivElement | undefined = $state();
-
-    // absolute container metrics for the scrubber
-    let containerScrollTop = $state(0);
-    let containerScrollHeight = $state(0);
-    let containerViewportHeight = $state(0);
     let gridOffsetTop = $state(0);
-    let gridContentHeight = $state(0);
-    let gridRightInset = $state(0);
-
-    let scrubberTopOffset = $derived(stickyHeaderHeight !== undefined ? stickyHeaderHeight : gridOffsetTop);
-
-    const dateLabel = $derived(virtualizer.getDateLabel(scrollTop));
-
-    // For the scrubber, we want it to represent the entire scrollable area of the grid-container.
-    // We pass values that make its internal ratio calculation match the container's.
-    // Scrubber track will be positioned below the sticky toolbar.
-    const scrubberTotalHeight = $derived(
-        usingExternalScroll ? Math.max(0, gridContentHeight - scrubberTopOffset) : virtualizer.totalHeight
-    );
-    const scrubberViewportHeight = $derived(
-        usingExternalScroll ? containerViewportHeight - scrubberTopOffset : virtualizer.viewportHeight
-    );
-    let scrubberScrollTop = $derived(usingExternalScroll ? Math.max(0, containerScrollTop - gridOffsetTop) : scrollTop);
-    let scrubberScrollTopState = $derived(scrubberScrollTop);
-
-    $effect(() => {
-        if (!isScrubbing) {
-            return;
-        }
-
-        if (usingExternalScroll && scrollParent instanceof HTMLElement) {
-            isSyncingScroll = true;
-            const pageScroll = Math.max(0, scrubberScrollTopState + gridOffsetTop);
-            scrollParent.scrollTop = pageScroll;
-            // Derived containerScrollTop will update via scroll event,
-            // but we force update for virtualizer responsiveness.
-            containerScrollTop = pageScroll;
-            scrollTop = Math.max(0, pageScroll - gridOffsetTop);
-            virtualizer.updateScroll(scrollTop, containerViewportHeight);
-            requestAnimationFrame(() => {
-                isSyncingScroll = false;
-            });
-        } else {
-            scrollTop = scrubberScrollTopState;
-            virtualizer.updateScroll(scrollTop, virtualizer.viewportHeight);
-        }
-    });
 
     // Bounded retry counter to handle initial mount timing without infinite loops
     // Build justified rows layout and compute visible rows based on scroll.
@@ -681,6 +635,7 @@
         virtualizer.updateScroll(scrollTop, vH);
     }
 
+    // Scroll the host (or the grid when self-scrolling) so an asset becomes visible.
     function scrollToAsset(asset: ImageAsset, forceToTop = false) {
         if (!photoGridEl || !asset?.uid) {
             return;
@@ -699,12 +654,11 @@
         const { rowTop, rowHeight, groupHeaderTop } = rowData;
         const rowBottom = rowTop + rowHeight;
         const visualBuffer = 20;
-        const scrollPaddingTop = (stickyHeaderHeight ?? 0) + visualBuffer;
 
         const viewportTop = usingExternalScroll ? scroller.scrollTop - gridOffsetTop : scroller.scrollTop;
         const viewportBottom = viewportTop + scroller.clientHeight;
 
-        const isAboveViewport = rowTop < viewportTop + scrollPaddingTop;
+        const isAboveViewport = rowTop < viewportTop + visualBuffer;
         const isBelowViewport = rowBottom > viewportBottom - visualBuffer;
         const shouldScroll = forceToTop || isAboveViewport || isBelowViewport;
 
@@ -712,7 +666,7 @@
             return;
         }
 
-        let idealScrollTop = rowTop - scrollPaddingTop;
+        let idealScrollTop = rowTop - visualBuffer;
         const isNearGroupHeader = rowTop - groupHeaderTop < 100;
         if (isNearGroupHeader) {
             idealScrollTop = groupHeaderTop;
@@ -729,159 +683,64 @@
         scroller.scrollTop = Math.max(0, targetOffset);
     }
 
-    let lastActiveUID: string | null = null;
-
-    $effect(() => {
-        const currentActive = selection.active;
-        if (!currentActive) {
-            lastActiveUID = null;
-            return;
-        }
-
-        if (!photoGridEl) {
-            return;
-        }
-
-        const activeUid = currentActive.uid;
-        if (activeUid === lastActiveUID) {
-            return;
-        }
-
-        lastActiveUID = activeUid;
-        untrack(() => {
-            scrollToAsset(currentActive, false);
-        });
-    });
-
-    // Action to initialize grid and setup observers
+    // Action to initialize scroll tracking against the host scroll parent.
     function initGrid(node: HTMLDivElement) {
         photoGridEl = node;
         let resizeObserver: ResizeObserver | undefined;
 
-        // Detect external scroll parent
         const parent = getScrollParent(node);
+        const hasExternalScroll = !disableExternalScroll && parent !== node && parent !== window;
 
-        const updateMetrics = () => {
-            if (!photoGridEl || !gridContainerEl || !scrollParent || !(scrollParent instanceof HTMLElement)) return;
-
-            const parentRect = scrollParent.getBoundingClientRect();
-            const gridRect = gridContainerEl.getBoundingClientRect();
-
-            // Accurate offset calculation relative to scrollable content start.
-            // The scrubber is anchored to the grid-container (not the inner
-            // viz-photo-grid-container), so measure that element.
-            gridOffsetTop = Math.max(0, gridRect.top - parentRect.top + scrollParent.scrollTop);
-            containerViewportHeight = scrollParent.clientHeight;
-            containerScrollHeight = scrollParent.scrollHeight;
-            containerScrollTop = scrollParent.scrollTop;
-            gridContentHeight = gridContainerEl.scrollHeight;
-            // Overhang so the scrubber hugs the right edge of the scroll container
-            // even when the grid is inset by ancestor padding.
-            gridRightInset = Math.max(0, parentRect.left + scrollParent.clientWidth - gridRect.right);
-
-            // Update virtualizer's view of things
-            virtualizer.viewportHeight = containerViewportHeight;
-            scrollTop = Math.max(0, containerScrollTop - gridOffsetTop);
-            virtualizer.updateScroll(scrollTop, containerViewportHeight);
-
-            if (debugMode) {
-                console.log("[PhotoGrid Scroller] Metrics updated:", {
-                    gridOffsetTop,
-                    gridContentHeight,
-                    containerScrollTop,
-                    containerScrollHeight,
-                    containerViewportHeight,
-                    relativeScrollTop: scrollTop,
-                    totalImagesHeight: virtualizer.totalHeight
-                });
-            }
-        };
-
-        if (!disableExternalScroll && parent !== node && parent !== window) {
-            usingExternalScroll = true;
-            scrollParent = parent;
-
-            // Hide native scrollbar on parent
-            if (scrollParent instanceof HTMLElement) {
-                scrollParent.classList.add("scrollbar-hidden");
-            }
-
-            // Attach listener
-            let scrollRafId: number | null = null;
-            const onExternalScroll = () => {
-                if (!photoGridEl || isSyncingScroll || isScrubbing) {
-                    return;
-                }
-
-                if (scrollRafId !== null) {
-                    return;
-                }
-
-                scrollRafId = requestAnimationFrame(() => {
-                    scrollRafId = null;
-                    updateMetrics();
-                });
-            };
-
-            parent.addEventListener("scroll", onExternalScroll, { passive: true });
-
-            // Initial check
-            updateMetrics();
-
-            resizeObserver = new ResizeObserver(() => {
-                updateMetrics();
-                updateVirtualGrid();
-            });
-            resizeObserver.observe(node);
-            resizeObserver.observe(parent as HTMLElement);
-
-            // Defer initial layout to after the browser has painted so clientWidth
-            // reflects the actual pane dimensions. The ResizeObserver provides further
-            // updates if the size changes after this.
-            requestAnimationFrame(() => {
-                if (photoGridEl) {
-                    updateVirtualGrid();
-                }
-            });
-
+        if (!hasExternalScroll) {
             return {
                 destroy() {
-                    if (scrollParent instanceof HTMLElement) {
-                        scrollParent.classList.remove("scrollbar-hidden");
-                    }
-                    parent.removeEventListener("scroll", onExternalScroll);
-                    resizeObserver?.disconnect();
                     photoGridEl = undefined;
                 }
             };
         }
 
-        // Initial synchronous layout to prevent flash
-        if (filteredData.length > 0) {
-            updateVirtualGrid();
-        }
+        usingExternalScroll = true;
+        scrollParent = parent;
 
-        const debouncedUpdate = debounce(() => requestAnimationFrame(() => untrack(() => updateVirtualGrid())), 100);
-        resizeObserver = new ResizeObserver((entries) => {
-            for (const entry of entries) {
-                if (entry.target !== node) {
-                    continue;
-                }
+        const measureOffset = () => {
+            if (!photoGridEl || !(scrollParent instanceof HTMLElement)) {
+                return;
+            }
+            const parentRect = scrollParent.getBoundingClientRect();
+            const gridRect = photoGridEl.getBoundingClientRect();
+            gridOffsetTop = Math.max(0, gridRect.top - parentRect.top + scrollParent.scrollTop);
+        };
 
-                if (!usingExternalScroll) {
-                    virtualizer.viewportHeight = entry.contentRect.height;
-                } else if (scrollParent instanceof HTMLElement) {
-                    virtualizer.viewportHeight = scrollParent.clientHeight;
-                }
+        const onScroll = () => {
+            if (!photoGridEl || !(scrollParent instanceof HTMLElement)) {
+                return;
             }
 
-            debouncedUpdate();
-        });
+            const parentScrollTop = scrollParent.scrollTop;
+            scrollTop = Math.max(0, parentScrollTop - gridOffsetTop);
+            virtualizer.updateScroll(scrollTop, scrollParent.clientHeight);
+            loadMoreIfNearBottom(parentScrollTop, scrollParent.clientHeight, gridOffsetTop);
+        };
 
-        resizeObserver.observe(node);
+        const refreshLayout = () => {
+            measureOffset();
+            updateVirtualGrid();
+            if (scrollParent instanceof HTMLElement) {
+                loadMoreIfNearBottom(scrollParent.scrollTop, scrollParent.clientHeight, gridOffsetTop);
+            }
+        };
+
+        parent.addEventListener("scroll", onScroll, { passive: true });
+
+        // The ResizeObserver fires an initial observation on observe(), which
+        // covers the first measure + layout; updateVirtualGrid() also re-runs
+        // whenever data changes.
+        resizeObserver = new ResizeObserver(refreshLayout);
+        resizeObserver.observe(parent as HTMLElement);
 
         return {
             destroy() {
+                parent.removeEventListener("scroll", onScroll);
                 resizeObserver?.disconnect();
                 photoGridEl = undefined;
             }
@@ -907,7 +766,26 @@
         }
     });
 
-    let isInternalLoadingMore = $state(false);
+    // Load-more is owned by the "view" the user is looking at: fire when the
+    // viewport is near the bottom of the *loaded* content (loadedHeight), not
+    // the estimated total height (totalHeight).
+    let isLoadingMore = false;
+    const LOAD_MORE_THRESHOLD = 600;
+
+    function loadMoreIfNearBottom(scrollPos: number, viewportHeight: number, contentOffsetTop = 0) {
+        if (!onLoadMore || isLoadingMore) {
+            return;
+        }
+
+        const loadedBottom = contentOffsetTop + virtualizer.loadedHeight;
+        const viewportBottom = scrollPos + viewportHeight;
+        if (loadedBottom - viewportBottom < LOAD_MORE_THRESHOLD) {
+            isLoadingMore = true;
+            Promise.resolve(onLoadMore()).finally(() => {
+                isLoadingMore = false;
+            });
+        }
+    }
 
     async function handleGridScroll(_e: Event) {
         if (usingExternalScroll) {
@@ -917,32 +795,9 @@
         if (photoGridEl) {
             scrollTop = photoGridEl.scrollTop;
             virtualizer.updateScroll(scrollTop, virtualizer.viewportHeight);
-
-            if (onLoadMore && !isInternalLoadingMore) {
-                const remaining = photoGridEl.scrollHeight - photoGridEl.scrollTop - photoGridEl.clientHeight;
-                if (remaining < 300) {
-                    isInternalLoadingMore = true;
-                    try {
-                        await onLoadMore();
-                    } finally {
-                        isInternalLoadingMore = false;
-                    }
-                }
-            }
+            loadMoreIfNearBottom(scrollTop, virtualizer.viewportHeight || photoGridEl.clientHeight);
         }
     }
-
-    // Sync scrollTop to internal scroll
-    $effect(() => {
-        if (!usingExternalScroll && photoGridEl && Math.abs(photoGridEl.scrollTop - scrollTop) > 1) {
-            photoGridEl.scrollTop = scrollTop;
-        }
-        // No explicit update call here needed because the virtualizer is updated via bindings or events
-        // But if scrollTop is changed programmatically (scrubber), we need to ensure virtualizer knows.
-        if (!usingExternalScroll) {
-            virtualizer.updateScroll(scrollTop, virtualizer.viewportHeight);
-        }
-    });
 
     const loadedImageUIDs = new SvelteSet<string>();
 
@@ -1257,6 +1112,7 @@
                     {asset}
                     draggable="false"
                     class="tile-image"
+                    resolution="thumbnail"
                     alt={asset?.name ?? asset?.image_metadata?.file_name ?? ""}
                     loading="lazy"
                     initialLoaded={isCached}
@@ -1290,25 +1146,14 @@
 {/snippet}
 
 <div
-    bind:this={gridContainerEl}
     class="grid-container"
     class:use-external-scroll={usingExternalScroll}
     onclick={handleOuterContainerClick}
     role="presentation"
 >
-    {#if debugMode}
-        <div
-            style="position: sticky; top: 0; left: 0; z-index: 9999; background: rgba(0,0,0,0.8); color: lime; padding: 0.5rem; pointer-events: none; font-size: 11px; white-space: pre-wrap; line-height: 1.3;"
-        >
-            Data: {data?.length} | Filtered: {filteredData?.length} | Rows: {virtualizer.rows?.length} | Visible: {virtualizer
-                .visibleRows?.length} | TotalH: {virtualizer.totalHeight}
-            | Scroll: {scrollTop} | Ext: {usingExternalScroll}
-        </div>
-    {/if}
-
     <div
         use:initGrid
-        class="viz-photo-grid-container no-select scrollbar-hidden"
+        class="viz-photo-grid-container no-select"
         class:is-active={selectionManager.activeScopeId === scopeId}
         class:use-external-scroll={usingExternalScroll}
         onscroll={handleGridScroll}
@@ -1349,23 +1194,6 @@
                     </div>
                 {/if}
             {/each}
-        </div>
-    </div>
-
-    <div class="scrubber-wrapper" style={usingExternalScroll ? `right: -${gridRightInset}px;` : undefined}>
-        <div
-            class="scrubber-sticky-container"
-            style={usingExternalScroll
-                ? `position: sticky; top: ${scrubberTopOffset}px; height: ${scrubberViewportHeight}px;`
-                : "height: 100%;"}
-        >
-            <TimelineScrubber
-                bind:scrollTop={scrubberScrollTopState}
-                totalHeight={scrubberTotalHeight}
-                viewportHeight={scrubberViewportHeight}
-                {dateLabel}
-                bind:isDragging={isScrubbing}
-            />
         </div>
     </div>
 </div>
@@ -1414,40 +1242,6 @@
             margin-bottom: 0;
             padding: 0;
         }
-    }
-
-    .scrubber-wrapper {
-        position: absolute;
-        top: 0;
-        right: 0;
-        bottom: 0;
-        width: 2.5rem; /* Width of scrubber area */
-        pointer-events: none;
-        z-index: 10;
-
-        @media (max-width: 768px) {
-            opacity: 0;
-            transition: opacity 0.2s ease;
-
-            &:active,
-            &:hover {
-                opacity: 1;
-                pointer-events: auto;
-            }
-        }
-    }
-
-    .scrubber-sticky-container {
-        width: 100%;
-        position: relative;
-        pointer-events: auto;
-    }
-
-    :global(.scrollbar-hidden)::-webkit-scrollbar {
-        display: none;
-    }
-    :global(.scrollbar-hidden) {
-        scrollbar-width: none;
     }
 
     .justified-row .asset-photo {

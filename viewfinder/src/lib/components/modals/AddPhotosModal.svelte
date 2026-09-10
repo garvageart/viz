@@ -20,7 +20,6 @@
     import { invalidateViz } from "$lib/views/views.svelte";
     import Dropdown from "../context-menus/Dropdown.svelte";
     import PhotoAssetGrid from "../grid/PhotoAssetGrid.svelte";
-    import VizViewContainer from "../panels/VizViewContainer.svelte";
     import Button from "../ui/Button.svelte";
     import Checkbox from "../ui/Checkbox.svelte";
     import VizToolbar from "../ui/toolbars/VizToolbar.svelte";
@@ -115,11 +114,8 @@
 
     // Show all images in the timeline, but pass existingUids to disable already-added ones
     let filteredImages = $derived(galleryState.images);
-
     let groups: DateGroup[] = $derived(groupImagesByDate(filterManager.apply(filteredImages)) ?? []);
-
     let consolidatedGroups: ConsolidatedGroup[] = $derived(getConsolidatedGroups(groups));
-
     let allImagesFlat = $derived(consolidatedGroups.flatMap((g) => g.allImages));
 
     async function paginate() {
@@ -170,12 +166,13 @@
 
             if (res.status === 200) {
                 toasts.add({
-                    type: "success",
-                    message: `Added ${selectedUids.length} image(s) to collection **${collectionName}**`,
-                    timeout: 3000
+                    title: collectionName,
+                    message: `Added ${selectedUids.length} image(s) to collection`,
+                    type: "success"
                 });
+
                 await invalidateViz();
-                modalsManager.close(id, true);
+                modalsManager.close(id);
             } else {
                 toasts.add({
                     type: "error",
@@ -271,28 +268,22 @@
             </VizToolbar>
 
             <div class="grid-wrapper">
-                <VizViewContainer
-                    name="AddPhotosTimeline"
-                    disableNameInTitle={true}
-                    bind:data={galleryState.images}
-                    hasMore={galleryState.hasMore}
-                    paginate={() => paginate()}
-                >
-                    {#if filteredImages.length === 0}
-                        <div class="no-photos">No photos found in your library.</div>
-                    {:else}
-                        <div class="photo-group-container">
-                            <PhotoAssetGrid
-                                bind:allData={allImagesFlat}
-                                data={filteredImages}
-                                groupedData={consolidatedGroups}
-                                showDateHeaders={true}
-                                {scopeId}
-                                disabledUids={existingUids}
-                            />
-                        </div>
-                    {/if}
-                </VizViewContainer>
+                {#if filteredImages.length === 0}
+                    <div class="no-photos">No photos found in your library.</div>
+                {:else}
+                    <div class="photo-group-container">
+                        <PhotoAssetGrid
+                            bind:allData={allImagesFlat}
+                            data={filteredImages}
+                            groupedData={consolidatedGroups}
+                            showDateHeaders={true}
+                            {scopeId}
+                            disabledUids={existingUids}
+                            totalItemCount={galleryState.totalCount}
+                            onLoadMore={() => paginate()}
+                        />
+                    </div>
+                {/if}
             </div>
 
             <div class="modal-footer">
@@ -353,7 +344,10 @@
     .grid-wrapper {
         flex: 1;
         min-height: 0;
-        overflow: hidden;
+        overflow-y: auto;
+        overflow-x: hidden;
+        display: flex;
+        flex-direction: column;
         position: relative;
     }
 

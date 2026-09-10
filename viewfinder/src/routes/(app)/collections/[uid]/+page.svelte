@@ -40,7 +40,6 @@
     import ConfirmationModal from "$lib/components/modals/ConfirmationModal.svelte";
     import FilterModal, { FilterModalOptions } from "$lib/components/modals/FilterModal.svelte";
     import { modalsManager } from "$lib/components/modals/manager/ModalManager.svelte";
-    import VizViewContainer from "$lib/components/panels/VizViewContainer.svelte";
     import ActiveFiltersTooltip from "$lib/components/tooltips/ActiveFiltersTooltip.svelte";
     import AssetImage from "$lib/components/ui/AssetImage.svelte";
     import AssetsShell from "$lib/components/ui/AssetsShell.svelte";
@@ -332,6 +331,7 @@
         type: viewSettings.current,
         assetGridArray: imageGridArray,
         data: displayData,
+        onLoadMore: () => paginate(),
         scopeId: scopeId,
         assetGridDisplayProps: {
             style: `padding: 2em ${isLayoutPage() ? "1em" : "2em"};`
@@ -513,7 +513,7 @@
             ConfirmationModal,
             {
                 title: "Delete Collection",
-                message: `Delete collection "${data.name}"? This will remove the collection record. This action cannot be undone.`,
+                children: deleteCollectionSnippet,
                 confirmText: "Delete",
                 buttonVariant: "danger",
                 onConfirm: executeDeleteCollection
@@ -527,8 +527,9 @@
             const res = await deleteCollection(data.uid);
             if (res.status === 204) {
                 toasts.add({
+                    title: data.name,
+                    message: `Deleted collection`,
                     type: "success",
-                    message: `Deleted collection ${data.name}`,
                     timeout: 3000
                 });
 
@@ -780,6 +781,11 @@
     }
 </script>
 
+{#snippet deleteCollectionSnippet()}
+    <span>Are you sure you want to delete the collection <strong>{data.name}</strong>?</span>
+    <span>This action cannot be undone.</span>
+{/snippet}
+
 {#snippet showDatesContent()}
     <Checkbox
         checked={viewSettings.showDates}
@@ -846,7 +852,7 @@
             groupedData={viewSettings.showDates ? consolidatedGroups : undefined}
             showDateHeaders={viewSettings.showDates}
             {scopeId}
-            disableExternalScroll={true}
+            totalItemCount={collectionState.totalCount}
             onLoadMore={() => paginate()}
             assetDblClick={(_e, asset) => {
                 const target = asset ?? selectionFirstImage;
@@ -1025,19 +1031,15 @@
     />
 {/snippet}
 
-<VizViewContainer
-    bind:data={displayData}
-    hasMore={collectionState.hasMore}
-    name="{name} - Collection"
-    style="font-size: {isLayoutPage() ? '0.9em' : 'inherit'};"
-    scrollable={false}
-    {paginate}
->
+<svelte:head>
+    {#if !isLayoutPage()}
+        <title>{name} - Collection</title>
+    {/if}
+</svelte:head>
+
+<div class="collection-detail-page" style="font-size: {isLayoutPage() ? '0.9em' : 'inherit'};">
     <AssetsShell
         {grid}
-        pagination={collectionState.pagination}
-        hasMore={collectionState.hasMore}
-        {paginate}
         {noAssetsSnippet}
         {leadingSnippet}
         {selectionToolbarSnippet}
@@ -1138,9 +1140,17 @@
             </div>
         </div>
     </AssetsShell>
-</VizViewContainer>
+</div>
 
 <style lang="scss">
+    .collection-detail-page {
+        display: flex;
+        flex-direction: column;
+        flex: 1 0 auto;
+        min-height: 100%;
+        width: 100%;
+    }
+
     #add-to-collection-container {
         display: flex;
         flex-direction: column;
@@ -1183,6 +1193,7 @@
         min-height: 2.5rem;
         flex: 1;
         min-width: 0;
+        width: 100%;
         overflow: hidden;
 
         :global(.input-container) {

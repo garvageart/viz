@@ -8,7 +8,6 @@
     import PhotoAssetGrid from "$lib/components/grid/PhotoAssetGrid.svelte";
     import ImageLabelViewer from "$lib/components/image-tools/ImageLabelViewer.svelte";
     import StarRating from "$lib/components/image-tools/StarRating.svelte";
-    import VizViewContainer from "$lib/components/panels/VizViewContainer.svelte";
     import Button from "$lib/components/ui/Button.svelte";
     import CollectionCard from "$lib/components/ui/CollectionCard.svelte";
     import ImageCard from "$lib/components/ui/ImageCard.svelte";
@@ -574,132 +573,123 @@
         {/if}
     </div>
 
-    <div class="search-container no-select">
+    <div class="search-container">
         {#if search.loading && !search.executed}
             <div class="loading-container">
-                <p id="search-loading-text">Searching for "{search.value}"...</p>
+                <span id="search-loading-text">Searching for <strong>"{search.value}"...</strong></span>
                 <LoadingSpinner />
             </div>
         {:else if search.executed}
             <div class="results">
-                <VizViewContainer
-                    name="Search Results"
-                    data={images}
-                    hasMore={search.pagination.hasMore}
-                    paginate={paginateSearch}
-                    disableNameInTitle={true}
-                    disableScroll={true}
-                    style="background: transparent;"
-                >
-                    {#if totalResults === 0}
-                        <div class="no-results">
-                            <span>No results found for "{staticSearchValue}"</span>
-                        </div>
-                    {:else}
-                        {#if collections.length > 0}
-                            <section class="collections-section">
-                                <div class="search-section-header">
-                                    <h2>Collections ({collections.length})</h2>
-                                    {#if collectionSelection.size <= 1}
-                                        <div style="display: flex; align-items: center; gap: 0.5rem;">
-                                            <Dropdown
-                                                id="search-collection-display-dropdown"
-                                                title="Display"
-                                                class="toolbar-button display-dropdown-btn"
-                                                iconName="list_alt"
-                                                items={collectionDisplayMenuItems}
-                                                selectedItemId={collectionDisplaySelectedId}
-                                                showSelectionIndicator={false}
-                                                onSelect={(item) => item.action?.(new MouseEvent("click"))}
-                                            />
-                                        </div>
-                                    {/if}
-                                </div>
-                                <div class="collection-group-container">
-                                    <AssetGrid
-                                        {...collectionsGrid}
-                                        onassetcontext={(detail) => {
-                                            const { asset } = detail;
-                                            if (!collectionSelection.has(asset) || collectionSelection.size <= 1) {
-                                                collectionSelection.select(asset);
-                                            }
-                                            contextMenu.open(collectionActionMenuItems, detail.anchor, { offsetY: 0 });
-                                        }}
-                                    />
-                                </div>
-                            </section>
-                        {/if}
-                        {#if images.length > 0}
-                            <section class="images-section">
-                                <div class="search-section-header">
-                                    <h2>Images ({images.length} of {search.pagination.count})</h2>
-                                    {#if imageSelection.size <= 1}
-                                        <div style="display: flex; align-items: center; gap: 0.5rem;">
-                                            <Dropdown
-                                                id="search-image-display-dropdown"
-                                                title="Display"
-                                                class="toolbar-button display-dropdown-btn"
-                                                iconName="list_alt"
-                                                items={imageDisplayMenuItems}
-                                                selectedItemId={imageDisplaySelectedId}
-                                                showSelectionIndicator={false}
-                                                // i hate this
-                                                onSelect={(item) => item.action?.(new MouseEvent("click"))}
-                                            />
-                                        </div>
-                                    {/if}
-                                </div>
-
-                                {#snippet imageCard(asset: ImageAsset, visualState: CardVisualState)}
-                                    <ImageCard {asset} isSelected={visualState.isSelected} />
-                                {/snippet}
-
-                                {#snippet justifiedGrid()}
-                                    <PhotoAssetGrid
-                                        bind:allData={allImagesFlat}
-                                        data={images}
-                                        groupedData={consolidatedGroups}
-                                        showDateHeaders={true}
-                                        scopeId={imageScopeId}
-                                        onLoadMore={() => paginateSearch()}
-                                        assetDblClick={(_e, asset) => {
-                                            openLightbox(asset);
-                                        }}
-                                        onassetcontext={(detail) => {
-                                            const { asset } = detail;
-                                            if (!imageSelection.has(asset) || imageSelection.size <= 1) {
-                                                imageSelection.select(asset);
-                                            }
-
-                                            contextMenu.open(imageActionMenuItems, detail.anchor, { offsetY: 0 });
-                                        }}
-                                    />
-                                {/snippet}
-
-                                <div class="photo-group-container">
-                                    <AssetGrid
-                                        data={images}
-                                        type={imageViewMode}
-                                        assetSnippet={imageCard}
-                                        customSnippet={justifiedGrid}
-                                        scopeId={imageScopeId}
-                                        assetDblClick={(_e, asset) => {
-                                            openLightbox(asset);
-                                        }}
-                                        onassetcontext={(detail) => {
-                                            const { asset } = detail;
-                                            if (!imageSelection.has(asset) || imageSelection.size <= 1) {
-                                                imageSelection.select(asset);
-                                            }
-
-                                            contextMenu.open(imageActionMenuItems, detail.anchor, { offsetY: 0 });
-                                        }}
-                                    />
-                                </div>
-                            </section>
-                        {/if}
+                {#if totalResults === 0}
+                    <div class="no-results">
+                        <span>No results found for "{staticSearchValue}"</span>
+                    </div>
+                {:else}
+                    {#if collections.length > 0}
+                        <section class="collections-section">
+                            <div class="search-section-header">
+                                <h2>Collections ({collections.length})</h2>
+                                {#if collectionSelection.size <= 1}
+                                    <div style="display: flex; align-items: center; gap: 0.5rem;">
+                                        <Dropdown
+                                            id="search-collection-display-dropdown"
+                                            title="Display"
+                                            class="toolbar-button display-dropdown-btn"
+                                            iconName="list_alt"
+                                            items={collectionDisplayMenuItems}
+                                            selectedItemId={collectionDisplaySelectedId}
+                                            showSelectionIndicator={false}
+                                            onSelect={(item) => item.action?.(new MouseEvent("click"))}
+                                        />
+                                    </div>
+                                {/if}
+                            </div>
+                            <div class="collection-group-container">
+                                <AssetGrid
+                                    {...collectionsGrid}
+                                    onassetcontext={(detail) => {
+                                        const { asset } = detail;
+                                        if (!collectionSelection.has(asset) || collectionSelection.size <= 1) {
+                                            collectionSelection.select(asset);
+                                        }
+                                        contextMenu.open(collectionActionMenuItems, detail.anchor, { offsetY: 0 });
+                                    }}
+                                />
+                            </div>
+                        </section>
                     {/if}
-                </VizViewContainer>
+                    {#if images.length > 0}
+                        <section class="images-section">
+                            <div class="search-section-header">
+                                <h2>Images ({images.length} of {search.pagination.count})</h2>
+                                {#if imageSelection.size <= 1}
+                                    <div style="display: flex; align-items: center; gap: 0.5rem;">
+                                        <Dropdown
+                                            id="search-image-display-dropdown"
+                                            title="Display"
+                                            class="toolbar-button display-dropdown-btn"
+                                            iconName="list_alt"
+                                            items={imageDisplayMenuItems}
+                                            selectedItemId={imageDisplaySelectedId}
+                                            showSelectionIndicator={false}
+                                            // i hate this
+                                            onSelect={(item) => item.action?.(new MouseEvent("click"))}
+                                        />
+                                    </div>
+                                {/if}
+                            </div>
+
+                            {#snippet imageCard(asset: ImageAsset, visualState: CardVisualState)}
+                                <ImageCard {asset} isSelected={visualState.isSelected} />
+                            {/snippet}
+
+                            {#snippet justifiedGrid()}
+                                <PhotoAssetGrid
+                                    bind:allData={allImagesFlat}
+                                    data={images}
+                                    groupedData={consolidatedGroups}
+                                    showDateHeaders={true}
+                                    scopeId={imageScopeId}
+                                    onLoadMore={() => paginateSearch()}
+                                    assetDblClick={(_e, asset) => {
+                                        openLightbox(asset);
+                                    }}
+                                    onassetcontext={(detail) => {
+                                        const { asset } = detail;
+                                        if (!imageSelection.has(asset) || imageSelection.size <= 1) {
+                                            imageSelection.select(asset);
+                                        }
+
+                                        contextMenu.open(imageActionMenuItems, detail.anchor, { offsetY: 0 });
+                                    }}
+                                />
+                            {/snippet}
+
+                            <div class="photo-group-container">
+                                <AssetGrid
+                                    data={images}
+                                    type={imageViewMode}
+                                    assetSnippet={imageCard}
+                                    customSnippet={justifiedGrid}
+                                    onLoadMore={() => paginateSearch()}
+                                    scopeId={imageScopeId}
+                                    assetDblClick={(_e, asset) => {
+                                        openLightbox(asset);
+                                    }}
+                                    onassetcontext={(detail) => {
+                                        const { asset } = detail;
+                                        if (!imageSelection.has(asset) || imageSelection.size <= 1) {
+                                            imageSelection.select(asset);
+                                        }
+
+                                        contextMenu.open(imageActionMenuItems, detail.anchor, { offsetY: 0 });
+                                    }}
+                                />
+                            </div>
+                        </section>
+                    {/if}
+                {/if}
             </div>
         {/if}
     </div>
@@ -707,11 +697,11 @@
 
 <style lang="scss">
     #search {
-        overflow-y: auto;
         display: flex;
         flex-direction: column;
-        flex: 1;
-        min-height: 0;
+        flex: 1 0 auto;
+        min-height: 100%;
+        width: 100%;
         align-items: center;
     }
 

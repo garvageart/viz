@@ -1,19 +1,12 @@
 <script lang="ts">
     import { goto } from "$app/navigation";
-    import {
-        type Collection,
-        type CollectionListResponse,
-        addCollectionImages,
-        createCollection,
-        listCollections
-    } from "@viz/api";
+    import { type Collection, addCollectionImages, createCollection, listCollections } from "@viz/api";
     import { onMount } from "svelte";
     import { selectionManager } from "$lib/states/selection.svelte";
     import { toasts } from "$lib/toast-notifcations/toasts.svelte";
     import type { CardVisualState } from "$lib/types/snippet";
     import { invalidateViz } from "$lib/views/views.svelte";
     import AssetGrid from "../grid/AssetView.svelte";
-    import VizViewContainer from "../panels/VizViewContainer.svelte";
     import Button from "../ui/Button.svelte";
     import CollectionCard from "../ui/CollectionCard.svelte";
     import CollectionModal from "./CollectionModal.svelte";
@@ -41,18 +34,14 @@
 
     const scopeId = "collection-selection-modal";
 
-    let data: CollectionListResponse | undefined = $state();
     let collections = $state<AugmentedCollection[]>([]);
     let selection = $derived(selectionManager.getScope<AugmentedCollection>(scopeId));
     let selectedCollection = $derived(selection.selectedItems[0] as AugmentedCollection);
-
-    let shouldUpdate = $derived(!!data?.next);
 
     onMount(async () => {
         try {
             const res = await listCollections();
             if (res.status === 200) {
-                data = res.data;
                 const collectionItems = res.data.items ?? [];
                 const augmentedCollections: AugmentedCollection[] = [];
 
@@ -164,20 +153,13 @@
 
 <div class="collection-selection-modal-container" role="dialog" aria-modal="true" tabindex="-1">
     <div class="modal-body">
-        <VizViewContainer
-            class="asset-container"
-            bind:data={collections}
-            bind:hasMore={shouldUpdate}
-            name="Collections"
-        >
-            <AssetGrid
-                data={collections}
-                assetSnippet={collectionSnippet}
-                {scopeId}
-                disableMultiSelection={true}
-                disableOutsideUnselect={true}
-            />
-        </VizViewContainer>
+        <AssetGrid
+            data={collections}
+            assetSnippet={collectionSnippet}
+            {scopeId}
+            disableMultiSelection={true}
+            disableOutsideUnselect={true}
+        />
     </div>
 
     <div class="modal-footer">
@@ -216,12 +198,10 @@
         flex-direction: column;
         flex: 1;
         min-height: 0;
+        overflow-y: auto;
+        overflow-x: hidden;
+        padding: var(--viz-spacing-std);
         position: relative;
-
-        :global(.asset-container) {
-            padding: var(--viz-spacing-std);
-            box-sizing: border-box;
-        }
     }
 
     .modal-footer {

@@ -1,4 +1,5 @@
 <script lang="ts">
+    import { page } from "$app/state";
     import "$lib/components/panels/viz-panel.scss";
     import Header from "$lib/components/ui/Header.svelte";
     import DownloadPanel from "$lib/components/ui/panels/DownloadPanel.svelte";
@@ -27,7 +28,13 @@
 <div class="viz-app-layout" role="presentation">
     <Header />
     <main id="main" class="viz-content" tabindex="-1">
-        {@render children()}
+        {#if page.url.pathname === "/"}
+            {@render children()}
+        {:else}
+            <div class="route-scroll">
+                {@render children()}
+            </div>
+        {/if}
     </main>
     {#if upload.files.length > 0}
         <UploadPanel />
@@ -57,5 +64,15 @@
         overflow: hidden;
         width: 100%;
         position: relative;
+    }
+
+    .route-scroll {
+        display: flex;
+        flex-direction: column;
+        flex: 1;
+        min-height: 0;
+        width: 100%;
+        overflow-y: auto;
+        overflow-x: hidden;
     }
 </style>
