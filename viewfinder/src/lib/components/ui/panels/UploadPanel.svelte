@@ -22,7 +22,7 @@
         window.matchMedia && window.matchMedia("(prefers-reduced-motion: reduce)").matches;
 
     $effect(() => {
-        upload.concurrency = Math.min(Math.max(upload.concurrency || 1, 1), 10);
+        upload.concurrency = Math.min(Math.max(upload.concurrency, 1), 10);
         untrack(() => {
             processGlobalQueue();
         });

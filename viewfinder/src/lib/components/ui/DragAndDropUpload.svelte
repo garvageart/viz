@@ -763,7 +763,7 @@
         height: 100%;
         width: 100%;
         inset: 0;
-        z-index: 1000;
+        z-index: var(--viz-z-overlay);
         color: var(--viz-text-primary);
         background: color-mix(in srgb, var(--viz-surface-panel) 90%, transparent);
         backdrop-filter: blur(6px);

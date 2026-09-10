@@ -200,6 +200,7 @@
         height: 100%;
         position: relative;
         outline: none;
+        container-type: inline-size;
 
         &:focus-visible {
             outline: 2px solid var(--viz-primary);
@@ -207,7 +208,8 @@
         }
 
         &.scrollable {
-            overflow: auto;
+            overflow-y: auto;
+            overflow-x: hidden;
         }
 
         &.disable-scroll {

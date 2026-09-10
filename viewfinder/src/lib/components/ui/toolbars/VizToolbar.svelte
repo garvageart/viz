@@ -159,7 +159,7 @@
         gap: var(--viz-spacing-xs);
     }
 
-    @media (max-width: 40rem) {
+    @mixin compact-toolbar {
         .viz-toolbar-container {
             padding: 0 var(--viz-spacing-sm);
             gap: var(--viz-spacing-std);
@@ -196,5 +196,13 @@
         .toolbar-separator {
             margin: 0 2px;
         }
+    }
+
+    @media (max-width: 1024px) {
+        @include compact-toolbar;
+    }
+
+    @container (max-width: 1024px) {
+        @include compact-toolbar;
     }
 </style>
