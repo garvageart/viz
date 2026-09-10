@@ -1,5 +1,5 @@
 import { invalidateAll, preloadData } from "$app/navigation";
-import { type Component, untrack } from "svelte";
+import type { Component } from "svelte";
 import type { MenuItem } from "$lib/context-menu/types";
 import { debugMode } from "$lib/states/index.svelte";
 
@@ -78,6 +78,8 @@ class VizView<
     path = $state<string | undefined>(undefined);
     menuItems?: MenuItem[];
     tabDropHandlers = new Map<string, TabActions<Data, C>>();
+    error = $state<string | null>(null);
+    isLoading = $state<boolean>(false);
 
     constructor(opts: {
         name: string;
@@ -123,6 +125,7 @@ class VizView<
      */
     reset(newName?: string) {
         this.viewData = undefined;
+        this.error = null;
         if (newName) {
             this.name = newName;
         }
@@ -142,22 +145,29 @@ class VizView<
         const sep = this.path.includes("?") ? "&" : "?";
         const urlWithCacheBust = `${this.path}${sep}invalidation=${version}`;
 
-        const result = await preloadData(urlWithCacheBust);
-        if (result.type === "loaded" && result.status === 200) {
-            this.viewData = {
-                type: "loaded",
-                status: result.status,
-                data: result.data as Data
-            };
-            return result;
+        this.isLoading = true;
+        this.error = null;
+
+        try {
+            const result = await preloadData(urlWithCacheBust);
+            if (result.type === "loaded") {
+                if (result.status === 200) {
+                    this.viewData = {
+                        type: "loaded",
+                        status: result.status,
+                        data: result.data as Data
+                    };
+                    return result;
+                } else {
+                    this.error = `Failed to load view data: status ${result.status}`;
+                }
+            }
+        } catch (err: any) {
+            this.error = err?.message ?? "An unexpected error occurred";
+        } finally {
+            this.isLoading = false;
         }
     }
-
-    derivedViewData = $derived.by(() => {
-        void invalidationState.version;
-        void this.path;
-        return untrack(() => this.getComponentData());
-    });
 
     /**
      * Serializes the view state for persistence

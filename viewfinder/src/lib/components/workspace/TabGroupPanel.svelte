@@ -11,7 +11,7 @@
     import { edgeDrag, tabOps } from "$lib/layouts/tab-ops.svelte";
     import { openCollectionTab } from "$lib/layouts/tabs/collection";
     import { workspaceState } from "$lib/states/workspace.svelte";
-    import VizView from "$lib/views/views.svelte";
+    import VizView, { invalidationState } from "$lib/views/views.svelte";
     import LoadingContainer from "../overlays/LoadingContainer.svelte";
     import MaterialIcon from "../ui/MaterialIcon.svelte";
     import {
@@ -35,6 +35,16 @@
     let activeView = $derived(group.activeView);
     let Comp = $derived(activeView?.component);
     let isFocused = $derived(workspaceState.workspace?.activeGroupId === group.id);
+
+    $effect(() => {
+        const view = activeView;
+        void invalidationState.version;
+        if (view?.path) {
+            untrack(() => {
+                view.getComponentData();
+            });
+        }
+    });
 
     function handleFocus() {
         workspaceState.workspace?.setActiveGroup(group.id);
@@ -537,32 +547,20 @@
             <div class="drop-target-overlay"></div>
         {/if}
         {#if activeView}
-            {#await activeView.derivedViewData}
-                {#if activeView.viewData}
-                    {#if Comp}
-                        <Comp data={activeView.viewData?.data} view={activeView} />
-                    {/if}
-                {:else}
-                    <div class="loading-overlay">
-                        <LoadingContainer />
-                    </div>
-                {/if}
-            {:then loadedData}
-                {#if Comp}
-                    {#if loadedData}
-                        <Comp data={loadedData?.data} view={activeView} />
-                    {:else if activeView.viewData}
-                        <Comp data={activeView.viewData?.data} view={activeView} />
-                    {:else}
-                        <Comp view={activeView} />
-                    {/if}
-                {/if}
-            {:catch error}
+            {#if activeView.error}
                 <div class="error-container">
                     <h3>Error loading data</h3>
-                    <span>{error.message}</span>
+                    <span>{activeView.error}</span>
                 </div>
-            {/await}
+            {:else if activeView.path && !activeView.viewData}
+                <div class="loading-overlay">
+                    <LoadingContainer />
+                </div>
+            {:else if Comp}
+                {#key `${activeView.id}-${activeView.path}`}
+                    <Comp data={activeView.viewData?.data} view={activeView} />
+                {/key}
+            {/if}
         {:else}
             <div class="empty-group">
                 <span>No active view</span>
