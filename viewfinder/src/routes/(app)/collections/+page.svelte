@@ -6,15 +6,16 @@
         addCollectionImages,
         createCollection,
         listCollectionImages,
+        listCollections,
         updateCollection
     } from "@viz/api";
     import { type ComponentProps, untrack } from "svelte";
+    import { CollectionsPaginationState } from "$lib/collections/state.svelte";
     import Dropdown from "$lib/components/context-menus/Dropdown.svelte";
     import AssetGrid from "$lib/components/grid/AssetView.svelte";
     import CollectionModal from "$lib/components/modals/CollectionModal.svelte";
     import FilterModal, { FilterModalOptions } from "$lib/components/modals/FilterModal.svelte";
     import { modalsManager } from "$lib/components/modals/manager/ModalManager.svelte";
-    import VizViewContainer from "$lib/components/panels/VizViewContainer.svelte";
     import AssetsShell from "$lib/components/ui/AssetsShell.svelte";
     import Badge from "$lib/components/ui/Badge.svelte";
     import Button from "$lib/components/ui/Button.svelte";
@@ -52,15 +53,37 @@
         });
     });
 
-    const pagination = $derived({
-        limit: data?.limit ?? 50,
-        page: data?.page ?? 0
-    });
+    let collectionsState = $derived(new CollectionsPaginationState(data));
+    let displayData = $derived(sortCollections(collectionsState.items, collectionsSort.value));
+    let isPaginating = false;
 
-    let listOfCollectionsData = $derived(data?.items ?? []);
+    async function paginate() {
+        if (isPaginating || !collectionsState.hasMore) {
+            return;
+        }
 
-    let shouldUpdate = $derived(!!data?.next);
-    let displayData = $derived(sortCollections(listOfCollectionsData, collectionsSort.value));
+        isPaginating = true;
+        try {
+            const res = await listCollections({
+                limit: collectionsState.pagination.limit,
+                page: collectionsState.pagination.page + 1,
+                sortBy: collectionsSort.value.by as "name" | "recently_added" | "updated_at",
+                order: collectionsSort.value.order
+            });
+
+            if (res.status === 200) {
+                collectionsState.items.push(...res.data.items);
+                collectionsState.pagination.page = res.data.page;
+                collectionsState.totalCount = res.data.count ?? collectionsState.totalCount;
+                collectionsState.hasMore = !!res.data.next;
+            } else {
+                console.error("paginate: request failed", res);
+                collectionsState.hasMore = false;
+            }
+        } finally {
+            isPaginating = false;
+        }
+    }
 
     // Selection
     let scopeId = $derived(SelectionScopeNames.COLLECTIONS_MAIN);
@@ -114,15 +137,92 @@
     });
 
     // Modal data for create/edit
+    type ModalMode = "create" | "edit";
     let modalData: Collection | undefined = $state();
-    let modalMode: "create" | "edit" = $state("create");
-    let pendingDropUids: string[] | null = $state(null);
+    let modalMode: ModalMode = $state("create");
+    let droppedImageUIDs: string[] | null = $state(null);
 
     function openFilterModal() {
         modalsManager.open(FilterModal, {}, FilterModalOptions);
     }
 
-    function openCollectionModal(mode: "create" | "edit", initialData?: Collection) {
+    type CollectionFormData = {
+        name: string;
+        description: string;
+        private: boolean;
+    };
+
+    async function createCollectionAction(newData: CollectionFormData) {
+        const { name, description, private: isPrivate } = newData;
+
+        const res = await createCollection({
+            name,
+            description,
+            private: isPrivate
+        });
+
+        if (res.status === 201) {
+            const collectionUid = res.data.uid;
+
+            // Add any dropped image UIDs to the new collection
+            if (droppedImageUIDs && droppedImageUIDs.length > 0) {
+                await addCollectionImages(collectionUid, { uids: droppedImageUIDs });
+                droppedImageUIDs = null;
+            }
+
+            toasts.add({
+                title: res.data.name,
+                message: "Created collection",
+                type: "success",
+                actions: [
+                    {
+                        label: "Open Collection",
+                        onClick() {
+                            goto(`/collections/${collectionUid}`);
+                        }
+                    }
+                ]
+            });
+
+            modalsManager.pop();
+        } else {
+            toasts.add({
+                message: `Failed to create collection: ${res.data.error || "Unknown error"}`,
+                type: "error"
+            });
+        }
+    }
+
+    async function editCollectionAction(newData: CollectionFormData) {
+        if (!modalData || !modalData.uid) {
+            return;
+        }
+
+        const { name, description, private: isPrivate } = newData;
+
+        const res = await updateCollection(modalData.uid, {
+            name,
+            description,
+            private: isPrivate
+        });
+
+        if (res.status === 200) {
+            toasts.add({
+                message: `Updated collection ${res.data.name}`,
+                type: "success"
+            });
+
+            modalsManager.pop();
+            await invalidateViz();
+        } else {
+            toasts.add({
+                message: `Failed to update collection: ${res.data.error || "Unknown error"}`,
+                type: "error"
+            });
+        }
+    }
+
+    function openCollectionModal(mode: ModalMode, initialData?: Collection) {
         modalMode = mode;
         modalData = initialData ? { ...initialData } : undefined;
 
@@ -132,72 +232,11 @@
                 heading: mode === "create" ? "Create Collection" : "Edit Collection",
                 buttonText: mode === "create" ? "Create" : "Save",
                 data: modalData,
-                modalAction: async (newData) => {
-                    const { name, description, private: isPrivate } = newData;
-
+                modalAction: (newData) => {
                     if (modalMode === "create") {
-                        const res = await createCollection({
-                            name,
-                            description,
-                            private: isPrivate
-                        });
-
-                        if (res.status === 201) {
-                            const collectionUid = res.data.uid;
-
-                            // Add any dropped image UIDs to the new collection
-                            if (pendingDropUids && pendingDropUids.length > 0) {
-                                await addCollectionImages(collectionUid, { uids: pendingDropUids });
-                                pendingDropUids = null;
-                            }
-
-                            toasts.add({
-                                title: res.data.name,
-                                message: "Created collection",
-                                type: "success",
-                                actions: [
-                                    {
-                                        label: "Open Collection",
-                                        onClick() {
-                                            goto(`/collections/${collectionUid}`);
-                                        }
-                                    }
-                                ]
-                            });
-
-                            modalsManager.pop();
-                        } else {
-                            toasts.add({
-                                message: `Failed to create collection: ${res.data.error || "Unknown error"}`,
-                                type: "error"
-                            });
-                        }
-                    } else {
-                        if (!modalData || !modalData.uid) {
-                            return;
-                        }
-
-                        const res = await updateCollection(modalData.uid, {
-                            name,
-                            description,
-                            private: isPrivate
-                        });
-
-                        if (res.status === 200) {
-                            toasts.add({
-                                message: `Updated collection ${res.data.name}`,
-                                type: "success"
-                            });
-
-                            modalsManager.pop();
-                            await invalidateViz();
-                        } else {
-                            toasts.add({
-                                message: `Failed to update collection: ${res.data.error || "Unknown error"}`,
-                                type: "error"
-                            });
-                        }
+                        return createCollectionAction(newData);
                     }
+                    return editCollectionAction(newData);
                 }
             },
             { heading: mode === "create" ? "Create Collection" : "Edit Collection" }
@@ -213,7 +252,8 @@
         },
         onCollectionDuplicated: async (newCol: Collection) => {
             toasts.add({
-                message: `Duplicated collection ${newCol.name}`,
+                title: newCol.name,
+                message: `Duplicated collection`,
                 type: "success"
             });
             await invalidateViz();
@@ -224,20 +264,14 @@
         },
         onCollectionDeleted: async (deletedCol: Collection) => {
             toasts.add({
-                message: `Deleted collection ${deletedCol.name}`,
+                title: deletedCol.name,
+                message: `Deleted collection`,
                 type: "success"
             });
             await invalidateViz();
         },
-        onCollectionsDeleted: async (deletedCols: Collection[]) => {
+        onCollectionsDeleted: async () => {
             selectionScope.clear();
-            toasts.add({
-                message:
-                    deletedCols.length > 1
-                        ? `Deleted **${deletedCols.length} collections**`
-                        : `Deleted collection **${deletedCols[0].name}**`,
-                type: "success"
-            });
             await invalidateViz();
         }
     });
@@ -249,6 +283,7 @@
         type: "grid",
         assetGridArray: collectionGridArray,
         data: displayData,
+        onLoadMore: () => paginate(),
         scopeId: scopeId,
         assetGridDisplayProps: {
             style: `padding: 1em ${isLayoutPage() ? "1em" : "2em"};`
@@ -281,7 +316,7 @@
         e.preventDefault();
         e.stopPropagation();
 
-        pendingDropUids = uidsData;
+        droppedImageUIDs = uidsData;
         openCollectionModal("create");
     }
 
@@ -309,10 +344,6 @@
             return;
         }
         current.classList.remove("drop-target");
-    }
-
-    async function paginate() {
-        pagination.page++;
     }
 </script>
 
@@ -451,10 +482,15 @@
     </div>
 {/snippet}
 
-<VizViewContainer bind:data={displayData} hasMore={shouldUpdate} name="Collections" scrollable={false} {paginate}>
+<svelte:head>
+    {#if !isLayoutPage()}
+        <title>Collections</title>
+    {/if}
+</svelte:head>
+
+<div class="collections-page">
     <AssetsShell
         bind:grid
-        {pagination}
         {noAssetsSnippet}
         {leadingSnippet}
         {selectionToolbarSnippet}
@@ -478,7 +514,10 @@
                         iconName="folder"
                         iconSize="1.5rem"
                     >
-                        <span>{displayData.length} {displayData.length === 1 ? "collection" : "collections"}</span>
+                        <span
+                            >{collectionsState.totalCount}
+                            {collectionsState.totalCount === 1 ? "collection" : "collections"}</span
+                        >
                     </Badge>
                 </div>
             </div>
@@ -486,9 +525,17 @@
     </AssetsShell>
 
     <DragAndDropUpload showCollectionCreateBox={true} />
-</VizViewContainer>
+</div>
 
 <style lang="scss">
+    .collections-page {
+        display: flex;
+        flex-direction: column;
+        flex: 1 0 auto;
+        min-height: 100%;
+        width: 100%;
+    }
+
     #create_collection-container {
         display: flex;
         flex-direction: column;
