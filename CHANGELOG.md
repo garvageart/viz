@@ -5,6 +5,14 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.34.2] - 2026-09-10
+
+* fix(viewfinder): add open collection action to creation toast (a45af525)
+* fix(viewfinder): append tooltips to document body to prevent toolbar overflow clipping (1d515a0a)
+* feat(viewfinder): add disableExternalScroll prop to PhotoAssetGrid and preserve file extensions in tooltip (94e63bde)
+* fix(viewfinder): prevent horizontal layout shift on image selection and disable external scroll (1c1769f8)
+* fix(viewfinder): prevent scroll reset and image flash on view refresh (a131776c)
+
 ## [0.34.1] - 2026-09-10
 
 * fix(viewfinder): prevent horizontal layout shift in split views and update toolbar styling (e097a92c)
