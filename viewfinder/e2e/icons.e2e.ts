@@ -60,7 +60,7 @@ test.describe("Material Icon E2E Tests", () => {
         // Navigate to /photos
         await page.goto("/photos");
         await page.waitForLoadState("networkidle");
-        await expect(page.locator(".viz-view-container")).toBeVisible({ timeout: 20000 });
+        await expect(page.locator(".route-scroll, .tab-group-content")).toBeVisible({ timeout: 20000 });
 
         await assertNoFallbackIcons(page, "Photos page");
     });
@@ -168,7 +168,7 @@ test.describe("Material Icon E2E Tests", () => {
         // Go to collections page
         await page.goto("/collections");
         await page.waitForLoadState("networkidle");
-        await expect(page.locator(".viz-view-container")).toBeVisible({ timeout: 20000 });
+        await expect(page.locator(".route-scroll, .tab-group-content")).toBeVisible({ timeout: 20000 });
 
         // Click "Create Collection" to open modal
         const createBtn = page
@@ -193,7 +193,7 @@ test.describe("Material Icon E2E Tests", () => {
         // Go to photos page
         await page.goto("/photos");
         await page.waitForLoadState("networkidle");
-        await expect(page.locator(".viz-view-container")).toBeVisible({ timeout: 20000 });
+        await expect(page.locator(".route-scroll, .tab-group-content")).toBeVisible({ timeout: 20000 });
 
         // Get test image
         const imagePath = path.join(process.cwd(), "../resources/test/samples/DSCF0355.jpg");

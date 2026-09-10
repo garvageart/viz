@@ -74,7 +74,7 @@ test.describe("View Switching Functionality", () => {
 
         // 2. Verify we are in the collection
         await page.waitForLoadState("networkidle");
-        await expect(page.locator(".viz-view-container")).toBeVisible({ timeout: 20000 });
+        await expect(page.locator(".route-scroll, .tab-group-content")).toBeVisible({ timeout: 20000 });
 
         // 3. Open Display dropdown via ID selector
         const displayDropdown = page.locator("#coll-view-dropdown").first();

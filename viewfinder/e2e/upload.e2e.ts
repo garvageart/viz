@@ -51,7 +51,7 @@ test.describe("Drag & Drop File Upload Flow", () => {
         await page.goto("/collections");
         await page.waitForLoadState("domcontentloaded");
         await expect(
-            page.locator(".viz-workspace, main#main, .viz-collections-container, .viz-view-container").first()
+            page.locator(".viz-workspace, main#main, .viz-collections-container, .route-scroll, .tab-group-content").first()
         ).toBeVisible({ timeout: 20000 });
         await page.waitForTimeout(1000);
 
@@ -75,7 +75,7 @@ test.describe("Drag & Drop File Upload Flow", () => {
         await expect(modal).not.toBeVisible();
 
         // 3. Verify we are on the newly created collection detail page
-        await expect(page.locator("#coll-name-display, .collection-header, .viz-view-container").first()).toBeVisible({
+        await expect(page.locator("#coll-name-display, .collection-header, .route-scroll, .tab-group-content").first()).toBeVisible({
             timeout: 15000
         });
 
@@ -137,7 +137,7 @@ test.describe("Drag & Drop File Upload Flow", () => {
         await expect(page.locator(".viz-workspace, main").first()).toBeVisible({ timeout: 20000 });
 
         // Simulate dragging and dropping a non-file, internal type (like VizMimeTypes.TAB_VIEW)
-        const container = page.locator(".viz-view-container").first();
+        const container = page.locator(".route-scroll, .tab-group-content").first();
         await dispatchDrag(container, "dragenter", VizMimeTypes.TAB_VIEW, "test-tab-data");
         await dispatchDrag(container, "dragover", VizMimeTypes.TAB_VIEW, "test-tab-data");
         await dispatchDrag(container, "drop", VizMimeTypes.TAB_VIEW, "test-tab-data");
@@ -156,7 +156,7 @@ test.describe("Drag & Drop File Upload Flow", () => {
         await expect(page.locator(".viz-workspace, main").first()).toBeVisible({ timeout: 20000 });
 
         // Simulate dragging internal VizMimeTypes.IMAGE_UIDS
-        const container = page.locator(".viz-view-container").first();
+        const container = page.locator(".route-scroll, .tab-group-content").first();
         await dispatchDrag(container, "dragenter", VizMimeTypes.IMAGE_UIDS, ["test-uid-1"]);
         await dispatchDrag(container, "dragover", VizMimeTypes.IMAGE_UIDS, ["test-uid-1"]);
 

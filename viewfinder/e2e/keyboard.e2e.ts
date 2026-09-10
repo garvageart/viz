@@ -59,7 +59,7 @@ test.describe("Keyboard Shortcuts & Accessibility Workspace", () => {
         // Go to photos
         await page.goto("/photos");
         await page.waitForLoadState("networkidle");
-        await expect(page.locator(".viz-view-container")).toBeVisible({ timeout: 20000 });
+        await expect(page.locator(".route-scroll, .tab-group-content")).toBeVisible({ timeout: 20000 });
 
         // Wait for grid loading
         const grid = page.locator(".viz-photo-grid-container, .photo-grid").first();

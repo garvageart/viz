@@ -6,7 +6,7 @@ test.describe("ImageLightbox Interactions", () => {
         await page.goto("/photos");
         await page.waitForLoadState("domcontentloaded");
         await expect(
-            page.locator(".viz-workspace, main#main, .viz-photo-grid-container, .viz-view-container").first()
+            page.locator(".viz-workspace, main#main, .viz-photo-grid-container, .route-scroll, .tab-group-content").first()
         ).toBeVisible({ timeout: 20000 });
     });
 

@@ -32,7 +32,7 @@ test("skip-to-main link is attached and functional across all main pages", async
     for (const route of routes) {
         await page.goto(route);
         await page.waitForLoadState("domcontentloaded");
-        await expect(page.locator(".viz-view-container, .viz-workspace, main").first()).toBeVisible({ timeout: 20000 });
+        await expect(page.locator(".route-scroll, .tab-group-content, .viz-workspace, main").first()).toBeVisible({ timeout: 20000 });
 
         const skipLink = page.locator("a.skip-to-main");
         await expect(skipLink).toBeAttached();

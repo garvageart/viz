@@ -64,7 +64,7 @@ test.describe("photos sort persistence across pagination", () => {
 
         await page.goto("/photos");
         await page.waitForLoadState("domcontentloaded");
-        const container1 = page.locator(".viz-view-container, .viz-photo-grid-container, main").first();
+        const container1 = page.locator(".route-scroll, .tab-group-content, .viz-photo-grid-container, main").first();
         await expect(container1).toBeVisible({ timeout: 20000 });
 
         // The very first fetch (page 0) must already use the persisted sort.
@@ -102,7 +102,7 @@ test.describe("photos sort persistence across pagination", () => {
 
         await page.goto("/photos");
         await page.waitForLoadState("domcontentloaded");
-        const container2 = page.locator(".viz-view-container, .viz-photo-grid-container, main").first();
+        const container2 = page.locator(".route-scroll, .tab-group-content, .viz-photo-grid-container, main").first();
         await expect(container2).toBeVisible({ timeout: 20000 });
 
         await expect.poll(() => imageRequests.length).toBeGreaterThan(0);

@@ -7,7 +7,7 @@ test.describe("PhotoAssetGrid Functionality", () => {
         // Navigate to /photos as a baseline
         await page.goto("/photos");
 
-        await expect(page.locator(".viz-view-container, .viz-photo-grid-container, main").first()).toBeVisible({
+        await expect(page.locator(".route-scroll, .tab-group-content, .viz-photo-grid-container, main").first()).toBeVisible({
             timeout: 25000
         });
     });
@@ -185,7 +185,7 @@ test.describe("PhotoAssetGrid Functionality", () => {
         // Navigate to search with a generic query
         await page.goto("/search?q=a");
         await page.waitForLoadState("networkidle");
-        await expect(page.locator("main, .viz-view-container").first()).toBeVisible({ timeout: 15000 });
+        await expect(page.locator("main, .route-scroll, .tab-group-content").first()).toBeVisible({ timeout: 15000 });
 
         const photos = page.locator(".asset-photo, .asset-card");
         // Wait for search results
@@ -221,7 +221,7 @@ test.describe("PhotoAssetGrid Functionality", () => {
         // First find a collection to go to
         await page.goto("/collections");
         await page.waitForLoadState("networkidle");
-        await expect(page.locator("main, .viz-view-container").first()).toBeVisible();
+        await expect(page.locator("main, .route-scroll, .tab-group-content").first()).toBeVisible();
 
         const collectionCard = page.locator(".coll-card, .asset-card").first();
 
@@ -287,7 +287,7 @@ test.describe("PhotoAssetGrid Functionality", () => {
             expect(await photos.count()).toBeGreaterThan(0);
         }).toPass({ timeout: 10000 });
 
-        const container = page.locator(".viz-view-container").first();
+        const container = page.locator(".route-scroll, .tab-group-content").first();
 
         // Record starting scroll position
         const initialScroll = await container.evaluate((el) => el.scrollTop);
@@ -320,7 +320,7 @@ test.describe("PhotoAssetGrid Functionality", () => {
             return;
         }
 
-        const container = page.locator(".viz-view-container, main").first();
+        const container = page.locator(".route-scroll, .tab-group-content, main").first();
 
         // Click the first photo to establish selection
         await photos.first().click();
@@ -346,7 +346,7 @@ test.describe("PhotoAssetGrid Functionality", () => {
             return;
         }
 
-        const container = page.locator(".viz-view-container, main").first();
+        const container = page.locator(".route-scroll, .tab-group-content, main").first();
 
         // Click the first photo to select it
         await photos.first().click();
@@ -384,7 +384,7 @@ test.describe("PhotoAssetGrid Functionality", () => {
             return;
         }
 
-        const container = page.locator(".viz-view-container");
+        const container = page.locator(".route-scroll, .tab-group-content");
 
         // Click the first photo to establish selection
         const firstPhoto = photos.first();

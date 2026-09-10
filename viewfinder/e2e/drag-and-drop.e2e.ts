@@ -110,7 +110,7 @@ test.describe("Drag and Drop System", () => {
         await page.waitForLoadState("domcontentloaded");
         await expect(page.locator(".viz-workspace, main").first()).toBeVisible({ timeout: 20000 });
 
-        const container = page.locator(".viz-view-container").first();
+        const container = page.locator(".route-scroll, .tab-group-content").first();
 
         // Simulate internal drag across the view container
         await dispatchDrag(container, "dragenter", VizMimeTypes.IMAGE_UIDS, ["test-uid-789"]);
