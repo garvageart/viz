@@ -58,6 +58,7 @@
         onselectAll?: () => void;
         disableOutsideUnselect?: boolean;
         disableTooltips?: boolean;
+        disableExternalScroll?: boolean;
     }
 
     let {
@@ -76,7 +77,8 @@
         onLoadMore,
         onselectAll,
         disableOutsideUnselect = false,
-        disableTooltips = false
+        disableTooltips = false,
+        disableExternalScroll = false
     }: PhotoSpecificProps = $props();
 
     // Selection Management
@@ -795,7 +797,7 @@
             }
         };
 
-        if (parent !== node && parent !== window) {
+        if (!disableExternalScroll && parent !== node && parent !== window) {
             usingExternalScroll = true;
             scrollParent = parent;
 
@@ -1239,7 +1241,6 @@
             <div class="tile-image-container">
                 <AssetImage
                     {asset}
-                    resolution="thumbnail"
                     draggable="false"
                     class="tile-image"
                     alt={asset?.name ?? asset?.image_metadata?.file_name ?? ""}

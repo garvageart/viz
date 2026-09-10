@@ -22,9 +22,6 @@
         if (!ft) {
             return "";
         }
-        if (ft === "JPEG") {
-            return "JPG";
-        }
 
         return ft;
     });
