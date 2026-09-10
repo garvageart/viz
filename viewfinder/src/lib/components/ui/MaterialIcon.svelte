@@ -4,18 +4,25 @@
  generated SVG components (for performance and consistency) and 
  font ligatures (as a fallback).
 -->
-<script lang="ts">
+<script module lang="ts">
     import { dev } from "$app/environment";
+
+    // Eagerly loads the Material Symbols stylesheet in dev so its @font-face is
+    // registered before the ligature fallback requests the font. In production
+    // this resolves immediately -- only generated SVGs render there, by design.
+    export const materialSymbolsReady = dev ? import("material-symbols/index.css") : Promise.resolve();
+</script>
+
+<script lang="ts">
     import type { Component } from "svelte";
     import type { SvelteHTMLElements } from "svelte/elements";
-    import { SvelteMap, SvelteSet } from "svelte/reactivity";
+    import { SvelteSet } from "svelte/reactivity";
     import { tooltip } from "$lib/components/tooltips/tooltip";
     import { registerReady } from "$lib/stores/appReady";
     import type { MaterialSymbol } from "$lib/types/MaterialSymbol";
 
     // Global Font Loading State
     // We keep this global so we don't try to load the same font multiple times.
-    const fontLoadMap = new SvelteMap<string, Promise<any>>();
     const warnedMissing = new SvelteSet<string>();
 
     // Icon Modules (Vite Glob Imports)
@@ -54,7 +61,7 @@
         iconName,
         iconStyle = "sharp",
         fill = false,
-        weight = 400,
+        weight = 300,
         grade = 0,
         opticalSize = 24,
         size = "1.5em",
@@ -72,16 +79,19 @@
     }
 
     function ensureFontLoaded(family: string) {
-        if (typeof document === "undefined" || !("fonts" in document)) {
+        if (!("fonts" in document)) {
             return;
         }
 
-        if (!fontLoadMap.has(family)) {
-            const p = document.fonts.load(`1em "${family}"`).catch(() => null);
-            fontLoadMap.set(family, p);
-            registerReady(p);
-        }
-        return fontLoadMap.get(family);
+        // Wait for the Material Symbols stylesheet so the @font-face is
+        // registered, then let the font engine settle before requesting the
+        // ligature font. Never cache a failed/empty load: the browser loads the
+        // face on demand once the stylesheet is injected.
+        const loadPromise = materialSymbolsReady
+            .then(() => document.fonts.ready)
+            .then(() => document.fonts.load(`1rem "${family}"`))
+            .catch(() => null);
+        registerReady(loadPromise);
     }
 
     // Synchronous Eager Icon Lookup
@@ -165,7 +175,7 @@
         line-height: 1;
         font-variation-settings:
             "FILL" 0,
-            "wght" 400,
+            "wght" 300,
             "GRAD" 0,
             "opsz" 48;
         font-size: 1.5em;

@@ -24,10 +24,6 @@
     import { UploadState } from "$lib/upload/asset.svelte";
     import { toggleFullscreen } from "$lib/utils/misc";
 
-    if (dev) {
-        import("material-symbols/index.css");
-    }
-
     onMount(() => {
         historyState.init();
         keyboardManager.init();
