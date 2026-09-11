@@ -486,21 +486,26 @@
             return;
         }
 
-        const mimeType = dragCoordinator.session?.primaryMimeType;
-        if (!mimeType || mimeType === VizMimeTypes.TAB_VIEW) {
+        if (dragCoordinator.session?.primaryMimeType === VizMimeTypes.TAB_VIEW) {
             return;
         }
 
-        const tabActions = view.getTabDropHandler(mimeType);
-        if (tabActions) {
-            e.preventDefault();
-            e.dataTransfer.dropEffect = "copy";
+        for (const type of e.dataTransfer.types) {
+            if (type === VizMimeTypes.TAB_VIEW) {
+                continue;
+            }
+            const tabActions = view.getTabDropHandler(type);
+            if (tabActions) {
+                e.preventDefault();
+                e.dataTransfer.dropEffect = "copy";
 
-            const target = e.currentTarget as HTMLElement;
-            target.classList.add("drop-target-active");
+                const target = e.currentTarget as HTMLElement;
+                target.classList.add("drop-target-active");
 
-            if (dragCoordinator.session) {
-                dragCoordinator.session.actionLabel = tabActions.label;
+                if (dragCoordinator.session) {
+                    dragCoordinator.session.actionLabel = tabActions.label;
+                }
+                return;
             }
         }
     }
@@ -517,24 +522,21 @@
             dragCoordinator.session.actionLabel = null;
         }
 
-        const mimeType = dragCoordinator.session?.primaryMimeType;
-        if (!mimeType) {
-            return;
-        }
+        for (const type of e.dataTransfer.types) {
+            const handler = view.getTabDropHandler(type);
+            if (handler) {
+                e.preventDefault();
+                e.stopPropagation();
 
-        const handler = view.getTabDropHandler(mimeType);
-        if (handler) {
-            e.preventDefault();
-            e.stopPropagation();
-
-            const data = DragData.getData(e.dataTransfer, mimeType);
-            if (data) {
-                await handler.dropHandler(data.payload, view);
+                const data = DragData.getData(e.dataTransfer, type);
+                if (data) {
+                    await handler.dropHandler(data.payload, view);
+                }
+                return;
             }
-            return;
         }
 
-        if (mimeType === VizMimeTypes.COLLECTION_UIDS) {
+        if (e.dataTransfer.types.includes(VizMimeTypes.COLLECTION_UIDS)) {
             const data = DragData.getData<{ uid: string; name: string }>(e.dataTransfer, VizMimeTypes.COLLECTION_UIDS);
             if (data) {
                 e.preventDefault();
