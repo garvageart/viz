@@ -49,9 +49,9 @@
     function handleFocus() {
         workspaceState.workspace?.setActiveGroup(group.id);
     }
-    
+
     let showDebugOverlay = $state(false);
-    
+
     // Scrollbar and Dragging
     let headerEl: HTMLElement | undefined = $state();
     let scrollLeft = $state(0);
@@ -63,7 +63,7 @@
     let tabDropIndex: number | null = $state(null);
     let dropIndicatorLeft = $state(0);
     let dragScrollInterval: ReturnType<typeof setInterval> | null = null;
-    
+
     const SCROLL_SPEED = 10;
     const SCROLL_THRESHOLD = 50;
 
