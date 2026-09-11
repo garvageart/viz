@@ -481,18 +481,24 @@ export class Workspace {
         }
 
         const view = sourceGroup.views.find((v) => v.id === viewId);
-        if (!view || view.locked) return; // Cannot move a locked view
+        if (!view || view.locked) {
+            return;
+        }
 
-        // Check if the tab is already in the target group at the desired position
-        if (targetGroup === sourceGroup) {
+        let insertIndex = index;
+        if (targetGroup === sourceGroup && insertIndex !== undefined) {
             const currentIdx = targetGroup.views.indexOf(view);
-            if (index !== undefined && currentIdx === index) {
-                return; // Already in place
+            if (currentIdx === insertIndex || currentIdx === insertIndex - 1) {
+                targetGroup.setActive(view.id);
+                return;
+            }
+            if (currentIdx < insertIndex) {
+                insertIndex = insertIndex - 1;
             }
         }
 
         sourceGroup.removeTab(viewId);
-        targetGroup.addTab(view, index);
+        targetGroup.addTab(view, insertIndex);
 
         this.cleanupNode(sourceGroup); // Cleanup source group if it becomes empty
     }

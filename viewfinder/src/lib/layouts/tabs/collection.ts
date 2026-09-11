@@ -115,14 +115,18 @@ export function createCollectionView(uid: string, name: string) {
     });
 }
 
-export function openCollectionTab(group: TabGroup, uid: string, name: string) {
+export function openCollectionTab(group: TabGroup, uid: string, name: string, index?: number) {
     const collectionPath = `/collections/${uid}`;
 
     const existingView = group.views.find((v) => v.path === collectionPath);
     if (existingView) {
-        group.setActive(existingView.id);
+        if (index !== undefined) {
+            workspaceState.workspace?.moveTabToGroup(existingView.id, group.id, index);
+        } else {
+            group.setActive(existingView.id);
+        }
         return;
     }
 
-    group.addTab(createCollectionView(uid, name));
+    group.addTab(createCollectionView(uid, name), index);
 }
