@@ -1,4 +1,5 @@
 import { VizMimeTypes } from "$lib/constants";
+import { dragCoordinator } from "$lib/drag-drop/coordinator.svelte";
 import { DragData } from "$lib/drag-drop/data";
 import { workspaceState } from "$lib/states/workspace.svelte";
 import { type RootEdge, TabGroup } from "./model.svelte";
@@ -7,6 +8,8 @@ import { createCollectionView } from "./tabs/collection";
 export interface TabDragData {
     viewId: number;
     sourceGroupId: string;
+    label?: string;
+    thumbnailUrl?: string;
 }
 
 export type DropPosition = "left" | "right" | "top" | "bottom" | "center" | "header";
@@ -55,18 +58,31 @@ export function cleanupAllDragOverlays() {
 export class TabOps {
     draggable = (node: HTMLElement, data: TabDragData) => {
         node.draggable = true;
+        let currentData = data;
 
         const onDragStart = (e: DragEvent) => {
             if (!e.dataTransfer) {
                 return;
             }
 
-            const dragData = new DragData(VizMimeTypes.TAB_VIEW, data);
-            dragData.setData(e.dataTransfer);
+            const label = currentData.label?.trim() || "Tab";
+
+            dragCoordinator.startDrag(
+                [
+                    {
+                        mimeType: VizMimeTypes.TAB_VIEW,
+                        payload: { viewId: currentData.viewId, sourceGroupId: currentData.sourceGroupId },
+                        label,
+                        thumbnailUrl: currentData.thumbnailUrl
+                    }
+                ],
+                e
+            );
             e.dataTransfer.effectAllowed = "move";
         };
 
         const onDragEnd = () => {
+            dragCoordinator.endDrag();
             cleanupAllDragOverlays();
             DragData.clear();
         };
@@ -75,6 +91,9 @@ export class TabOps {
         node.addEventListener("dragend", onDragEnd);
 
         return {
+            update(newData: TabDragData) {
+                currentData = newData;
+            },
             destroy() {
                 node.removeEventListener("dragstart", onDragStart);
                 node.removeEventListener("dragend", onDragEnd);

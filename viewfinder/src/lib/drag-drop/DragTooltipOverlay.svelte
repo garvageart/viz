@@ -51,8 +51,8 @@
         color: var(--viz-text-primary);
         font-family: var(--viz-display-font);
         line-height: 1;
-        margin-top: var(--viz-spacing-sm);
-        margin-left: var(--viz-spacing-sm);
+        margin-top: var(--viz-spacing-md);
+        margin-left: var(--viz-spacing-md);
         transition: transform 0.04s linear;
         will-change: transform;
     }
