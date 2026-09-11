@@ -8,7 +8,7 @@
     import { dragCoordinator } from "$lib/drag-drop/coordinator.svelte";
     import { DragData } from "$lib/drag-drop/data";
     import type { TabGroup } from "$lib/layouts/model.svelte";
-    import { edgeDrag, tabOps } from "$lib/layouts/tab-ops.svelte";
+    import { type TabDragData, edgeDrag, tabOps } from "$lib/layouts/tab-ops.svelte";
     import { openCollectionTab } from "$lib/layouts/tabs/collection";
     import { workspaceState } from "$lib/states/workspace.svelte";
     import VizView, { invalidationState } from "$lib/views/views.svelte";
@@ -49,7 +49,9 @@
     function handleFocus() {
         workspaceState.workspace?.setActiveGroup(group.id);
     }
-
+    
+    let showDebugOverlay = $state(false);
+    
     // Scrollbar and Dragging
     let headerEl: HTMLElement | undefined = $state();
     let scrollLeft = $state(0);
@@ -57,15 +59,45 @@
     let scrollWidth = $state(0);
     let isHoveringHeader = $state(false);
     let isDraggingScrollbar = $state(false);
-    let showDebugOverlay = $state(false);
+
+    let tabDropIndex: number | null = $state(null);
+    let dropIndicatorLeft = $state(0);
     let dragScrollInterval: ReturnType<typeof setInterval> | null = null;
+    
     const SCROLL_SPEED = 10;
     const SCROLL_THRESHOLD = 50;
+
+    function ensureActiveTabVisible() {
+        if (!headerEl) {
+            return;
+        }
+
+        const activeTab = headerEl.querySelector<HTMLElement>(".tab-button.active");
+        if (!activeTab) {
+            return;
+        }
+
+        const containerRect = headerEl.getBoundingClientRect();
+        const tabRect = activeTab.getBoundingClientRect();
+
+        if (containerRect.width === 0 || tabRect.width === 0) {
+            return;
+        }
+
+        if (tabRect.left < containerRect.left) {
+            headerEl.scrollLeft -= containerRect.left - tabRect.left;
+        } else if (tabRect.right > containerRect.right) {
+            headerEl.scrollLeft += tabRect.right - containerRect.right;
+        }
+    }
 
     $effect(() => {
         if (!headerEl) {
             return;
         }
+
+        const currentActiveId = group.activeViewId;
+        void currentActiveId;
 
         const updateMetrics = () => {
             if (headerEl) {
@@ -75,9 +107,13 @@
             }
         };
 
+        ensureActiveTabVisible();
         updateMetrics();
 
-        const resizeObserver = new ResizeObserver(updateMetrics);
+        const resizeObserver = new ResizeObserver(() => {
+            ensureActiveTabVisible();
+            updateMetrics();
+        });
         resizeObserver.observe(headerEl);
 
         headerEl.addEventListener("scroll", updateMetrics);
@@ -244,28 +280,6 @@
     }
 
     // Tab Drag and Drop
-    function handleTabDragOver(e: DragEvent, view: VizView) {
-        if (!e.dataTransfer || edgeDrag.active) {
-            return;
-        }
-
-        // Check if the view has a handler for any of the dragged types
-        for (const type of e.dataTransfer.types) {
-            const tabActions = view.getTabDropHandler(type);
-            if (tabActions) {
-                e.preventDefault();
-                e.dataTransfer.dropEffect = "copy";
-
-                const target = e.currentTarget as HTMLElement;
-                target.classList.add("drop-target-active");
-
-                if (dragCoordinator.session) {
-                    dragCoordinator.session.actionLabel = tabActions.label;
-                }
-                return;
-            }
-        }
-    }
 
     function handleTabDragLeave(event: DragEvent) {
         const target = event.currentTarget as HTMLElement;
@@ -351,17 +365,65 @@
         handleTabDrop(e, activeView);
     }
 
+    function calculateTabDropIndex(clientX: number): { index: number; left: number } {
+        if (!headerEl) {
+            return { index: 0, left: 0 };
+        }
+
+        const tabButtons = Array.from(headerEl.querySelectorAll<HTMLElement>(".tab-button"));
+        if (tabButtons.length === 0) {
+            return { index: 0, left: 0 };
+        }
+
+        for (let i = 0; i < tabButtons.length; i++) {
+            const btn = tabButtons[i];
+            const rect = btn.getBoundingClientRect();
+            const midX = rect.left + rect.width / 2;
+
+            if (clientX < midX) {
+                return { index: i, left: btn.offsetLeft };
+            }
+        }
+
+        const lastBtn = tabButtons[tabButtons.length - 1];
+        return {
+            index: tabButtons.length,
+            left: lastBtn.offsetLeft + lastBtn.offsetWidth
+        };
+    }
+
+    $effect(() => {
+        const onDragEnd = () => {
+            tabDropIndex = null;
+            stopDragScroll();
+        };
+
+        window.addEventListener("dragend", onDragEnd);
+        return () => {
+            window.removeEventListener("dragend", onDragEnd);
+        };
+    });
+
     function handleHeaderDragOver(e: DragEvent) {
         if (!e.dataTransfer || edgeDrag.active) {
+            tabDropIndex = null;
             return;
         }
 
-        if (e.dataTransfer.types.includes(VizMimeTypes.COLLECTION_UIDS)) {
-            e.preventDefault();
-            e.dataTransfer.dropEffect = "copy";
+        const mimeType = dragCoordinator.session?.primaryMimeType;
+        const isTab = mimeType === VizMimeTypes.TAB_VIEW;
+        const isCollection = mimeType === VizMimeTypes.COLLECTION_UIDS;
 
-            const target = e.currentTarget as HTMLElement;
-            target.classList.add("drop-active");
+        if (isTab || isCollection) {
+            e.preventDefault();
+            e.stopPropagation();
+            e.dataTransfer.dropEffect = isTab ? "move" : "copy";
+
+            const { index, left } = calculateTabDropIndex(e.clientX);
+            tabDropIndex = index;
+            dropIndicatorLeft = left;
+
+            handleDragOver(e);
         }
     }
 
@@ -370,24 +432,76 @@
         const rect = target.getBoundingClientRect();
 
         if (e.clientX < rect.left || e.clientX >= rect.right || e.clientY < rect.top || e.clientY >= rect.bottom) {
-            target.classList.remove("drop-active");
+            tabDropIndex = null;
+            stopDragScroll();
         }
     }
 
     // TODO: Change to generalized drop handler
     async function handleHeaderDrop(e: DragEvent) {
-        const target = e.currentTarget as HTMLElement;
-        target.classList.remove("drop-active");
+        const dropIndex = tabDropIndex;
+        tabDropIndex = null;
+        stopDragScroll();
 
         if (!e.dataTransfer || edgeDrag.active) {
             return;
         }
 
-        const data = DragData.getData<{ uid: string; name: string }>(e.dataTransfer, VizMimeTypes.COLLECTION_UIDS);
-        if (data) {
+        const mimeType = dragCoordinator.session?.primaryMimeType;
+
+        if (mimeType === VizMimeTypes.TAB_VIEW) {
+            const tabData = DragData.getData<TabDragData>(e.dataTransfer, VizMimeTypes.TAB_VIEW);
+            if (tabData) {
+                e.preventDefault();
+                e.stopPropagation();
+                const { viewId } = tabData.payload;
+                const workspace = workspaceState.workspace;
+                if (workspace) {
+                    workspace.moveTabToGroup(viewId, group.id, dropIndex ?? undefined);
+                }
+            }
+            return;
+        }
+
+        if (mimeType === VizMimeTypes.COLLECTION_UIDS) {
+            const collectionData = DragData.getData<{ uid: string; name: string }>(
+                e.dataTransfer,
+                VizMimeTypes.COLLECTION_UIDS
+            );
+            if (collectionData) {
+                e.preventDefault();
+                e.stopPropagation();
+                openCollectionTab(
+                    group,
+                    collectionData.payload.uid,
+                    collectionData.payload.name,
+                    dropIndex ?? undefined
+                );
+            }
+        }
+    }
+
+    function handleTabDragOver(e: DragEvent, view: VizView) {
+        if (!e.dataTransfer || edgeDrag.active) {
+            return;
+        }
+
+        const mimeType = dragCoordinator.session?.primaryMimeType;
+        if (!mimeType || mimeType === VizMimeTypes.TAB_VIEW) {
+            return;
+        }
+
+        const tabActions = view.getTabDropHandler(mimeType);
+        if (tabActions) {
             e.preventDefault();
-            e.stopPropagation();
-            openCollectionTab(group, data.payload.uid, data.payload.name);
+            e.dataTransfer.dropEffect = "copy";
+
+            const target = e.currentTarget as HTMLElement;
+            target.classList.add("drop-target-active");
+
+            if (dragCoordinator.session) {
+                dragCoordinator.session.actionLabel = tabActions.label;
+            }
         }
     }
 
@@ -403,22 +517,24 @@
             dragCoordinator.session.actionLabel = null;
         }
 
-        for (const type of e.dataTransfer.types) {
-            const handler = view.getTabDropHandler(type);
-            if (handler) {
-                e.preventDefault();
-                e.stopPropagation();
-
-                const data = DragData.getData(e.dataTransfer, type);
-                if (data) {
-                    await handler.dropHandler(data.payload, view);
-                }
-                return;
-            }
+        const mimeType = dragCoordinator.session?.primaryMimeType;
+        if (!mimeType) {
+            return;
         }
 
-        // Handle collection drop on any tab - open collection in this group
-        if (e.dataTransfer.types.includes(VizMimeTypes.COLLECTION_UIDS)) {
+        const handler = view.getTabDropHandler(mimeType);
+        if (handler) {
+            e.preventDefault();
+            e.stopPropagation();
+
+            const data = DragData.getData(e.dataTransfer, mimeType);
+            if (data) {
+                await handler.dropHandler(data.payload, view);
+            }
+            return;
+        }
+
+        if (mimeType === VizMimeTypes.COLLECTION_UIDS) {
             const data = DragData.getData<{ uid: string; name: string }>(e.dataTransfer, VizMimeTypes.COLLECTION_UIDS);
             if (data) {
                 e.preventDefault();
@@ -442,7 +558,6 @@
         tabindex="-1"
         onmouseenter={() => (isHoveringHeader = true)}
         onmouseleave={() => (isHoveringHeader = false)}
-        use:tabOps.addToGroup={group.id}
         oncontextmenu={triggerHeaderContextMenu}
         ondragover={handleHeaderDragOver}
         ondragleave={handleHeaderDragLeave}
@@ -455,9 +570,9 @@
             tabindex="0"
             onwheel={handleWheelScroll}
             onkeydown={handleKeyDown}
-            ondragover={handleDragOver}
-            ondragleave={stopDragScroll}
-            ondrop={stopDragScroll}
+            ondragover={handleHeaderDragOver}
+            ondragleave={handleHeaderDragLeave}
+            ondrop={handleHeaderDrop}
         >
             {#each group.views as view}
                 <button
@@ -471,7 +586,7 @@
                         group.setActive(view.id);
                     }}
                     oncontextmenu={(e) => triggerTabContextMenu(e, view)}
-                    use:tabOps.draggable={{ viewId: view.id, sourceGroupId: group.id }}
+                    use:tabOps.draggable={{ viewId: view.id, sourceGroupId: group.id, label: view.name }}
                     ondragover={(e) => handleTabDragOver(e, view)}
                     ondragleave={handleTabDragLeave}
                     ondrop={(e) => handleTabDrop(e, view)}
@@ -487,6 +602,10 @@
                     {/if}
                 </button>
             {/each}
+
+            {#if tabDropIndex !== null}
+                <div class="tab-drop-hairline" style:left="{dropIndicatorLeft}px"></div>
+            {/if}
         </div>
 
         {#if scrollWidth > clientWidth}
@@ -623,10 +742,23 @@
         white-space: nowrap;
         scrollbar-width: none;
         -ms-overflow-style: none;
+        position: relative;
 
         &::-webkit-scrollbar {
             display: none;
         }
+    }
+
+    .tab-drop-hairline {
+        position: absolute;
+        top: 0;
+        bottom: 0;
+        width: 2px;
+        background-color: var(--viz-accent);
+        z-index: var(--viz-z-dropzone);
+        pointer-events: none;
+        transform: translateX(-1px);
+        box-shadow: 0 0 4px var(--viz-accent);
     }
 
     .tab-button {
