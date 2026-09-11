@@ -581,7 +581,6 @@
         const availableWidth = photoGridEl.clientWidth - paddingLeft - paddingRight;
 
         if (availableWidth <= 0) {
-            requestAnimationFrame(() => updateVirtualGrid());
             return;
         }
 
@@ -687,13 +686,24 @@
     function initGrid(node: HTMLDivElement) {
         photoGridEl = node;
         let resizeObserver: ResizeObserver | undefined;
+        let scrollRafId: number | null = null;
 
         const parent = getScrollParent(node);
         const hasExternalScroll = !disableExternalScroll && parent !== node && parent !== window;
 
         if (!hasExternalScroll) {
+            resizeObserver = new ResizeObserver(() => {
+                updateVirtualGrid();
+            });
+            resizeObserver.observe(node);
+
             return {
                 destroy() {
+                    if (gridScrollRafId !== null) {
+                        cancelAnimationFrame(gridScrollRafId);
+                        gridScrollRafId = null;
+                    }
+                    resizeObserver?.disconnect();
                     photoGridEl = undefined;
                 }
             };
@@ -716,10 +726,21 @@
                 return;
             }
 
-            const parentScrollTop = scrollParent.scrollTop;
-            scrollTop = Math.max(0, parentScrollTop - gridOffsetTop);
-            virtualizer.updateScroll(scrollTop, scrollParent.clientHeight);
-            loadMoreIfNearBottom(parentScrollTop, scrollParent.clientHeight, gridOffsetTop);
+            if (scrollRafId !== null) {
+                return;
+            }
+
+            scrollRafId = requestAnimationFrame(() => {
+                scrollRafId = null;
+                if (!photoGridEl || !(scrollParent instanceof HTMLElement)) {
+                    return;
+                }
+
+                const parentScrollTop = scrollParent.scrollTop;
+                scrollTop = Math.max(0, parentScrollTop - gridOffsetTop);
+                virtualizer.updateScroll(scrollTop, scrollParent.clientHeight);
+                loadMoreIfNearBottom(parentScrollTop, scrollParent.clientHeight, gridOffsetTop);
+            });
         };
 
         const refreshLayout = () => {
@@ -737,9 +758,14 @@
         // whenever data changes.
         resizeObserver = new ResizeObserver(refreshLayout);
         resizeObserver.observe(parent as HTMLElement);
+        resizeObserver.observe(node);
 
         return {
             destroy() {
+                if (scrollRafId !== null) {
+                    cancelAnimationFrame(scrollRafId);
+                    scrollRafId = null;
+                }
                 parent.removeEventListener("scroll", onScroll);
                 resizeObserver?.disconnect();
                 photoGridEl = undefined;
@@ -787,16 +813,25 @@
         }
     }
 
-    async function handleGridScroll(_e: Event) {
-        if (usingExternalScroll) {
+    let gridScrollRafId: number | null = null;
+
+    function handleGridScroll(_e: Event) {
+        if (usingExternalScroll || !photoGridEl) {
             return;
         }
 
-        if (photoGridEl) {
-            scrollTop = photoGridEl.scrollTop;
-            virtualizer.updateScroll(scrollTop, virtualizer.viewportHeight);
-            loadMoreIfNearBottom(scrollTop, virtualizer.viewportHeight || photoGridEl.clientHeight);
+        if (gridScrollRafId !== null) {
+            return;
         }
+
+        gridScrollRafId = requestAnimationFrame(() => {
+            gridScrollRafId = null;
+            if (photoGridEl && !usingExternalScroll) {
+                scrollTop = photoGridEl.scrollTop;
+                virtualizer.updateScroll(scrollTop, virtualizer.viewportHeight);
+                loadMoreIfNearBottom(scrollTop, virtualizer.viewportHeight || photoGridEl.clientHeight);
+            }
+        });
     }
 
     const loadedImageUIDs = new SvelteSet<string>();

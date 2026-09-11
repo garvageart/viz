@@ -282,24 +282,38 @@
             usingExternalScroll = true;
             scrollParent = parent;
 
-            parent.addEventListener("scroll", updateScrollPosition, { passive: true });
-            window.addEventListener("resize", updateScrollPosition, { passive: true });
+            let scrollRafId: number | null = null;
+            const throttledScrollPosition = () => {
+                if (scrollRafId !== null) {
+                    return;
+                }
+
+                scrollRafId = requestAnimationFrame(() => {
+                    scrollRafId = null;
+                    updateScrollPosition();
+                });
+            };
+
+            parent.addEventListener("scroll", throttledScrollPosition, { passive: true });
+            window.addEventListener("resize", throttledScrollPosition, { passive: true });
             if (parent instanceof HTMLElement) {
                 ro.observe(parent);
             }
 
-            requestAnimationFrame(() => {
-                untrack(() => {
-                    updateVirtualizerLayout();
-                });
-                if (assetGridDisplayEl && parent instanceof HTMLElement) {
-                    loadMoreIfNearBottom(parent.scrollTop, parent.clientHeight, gridOffsetTop);
-                }
+            untrack(() => {
+                updateVirtualizerLayout();
             });
+            if (assetGridDisplayEl && parent instanceof HTMLElement) {
+                loadMoreIfNearBottom(parent.scrollTop, parent.clientHeight, gridOffsetTop);
+            }
 
             return () => {
-                parent.removeEventListener("scroll", updateScrollPosition);
-                window.removeEventListener("resize", updateScrollPosition);
+                if (scrollRafId !== null) {
+                    cancelAnimationFrame(scrollRafId);
+                    scrollRafId = null;
+                }
+                parent.removeEventListener("scroll", throttledScrollPosition);
+                window.removeEventListener("resize", throttledScrollPosition);
                 ro.disconnect();
             };
         }
