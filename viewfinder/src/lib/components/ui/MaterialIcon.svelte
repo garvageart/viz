@@ -4,16 +4,8 @@
  generated SVG components (for performance and consistency) and 
  font ligatures (as a fallback).
 -->
-<script module lang="ts">
-    import { dev } from "$app/environment";
-
-    // Eagerly loads the Material Symbols stylesheet in dev so its @font-face is
-    // registered before the ligature fallback requests the font. In production
-    // this resolves immediately -- only generated SVGs render there, by design.
-    export const materialSymbolsReady = dev ? import("material-symbols/index.css") : Promise.resolve();
-</script>
-
 <script lang="ts">
+    import { dev } from "$app/env";
     import type { Component } from "svelte";
     import type { SvelteHTMLElements } from "svelte/elements";
     import { SvelteSet } from "svelte/reactivity";
@@ -87,10 +79,7 @@
         // registered, then let the font engine settle before requesting the
         // ligature font. Never cache a failed/empty load: the browser loads the
         // face on demand once the stylesheet is injected.
-        const loadPromise = materialSymbolsReady
-            .then(() => document.fonts.ready)
-            .then(() => document.fonts.load(`1rem "${family}"`))
-            .catch(() => null);
+        const loadPromise = document.fonts.ready.then(() => document.fonts.load(`1rem "${family}"`)).catch(() => null);
         registerReady(loadPromise);
     }
 

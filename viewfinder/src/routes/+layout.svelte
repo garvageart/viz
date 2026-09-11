@@ -2,11 +2,8 @@
     import { dev } from "$app/environment";
     import { afterNavigate, beforeNavigate } from "$app/navigation";
     import { page, updated } from "$app/state";
-    import "@fontsource-variable/geist/index.css";
-    import "@fontsource-variable/manrope/index.css";
     import "@fontsource-variable/radio-canada-big/index.css";
     import "@fontsource-variable/roboto-mono/index.css";
-    import "@fontsource-variable/zalando-sans/index.css";
     import { onMount } from "svelte";
     import ModalRenderer from "$lib/components/modals/ModalContainer.svelte";
     import { modalsManager } from "$lib/components/modals/manager/ModalManager.svelte";
@@ -23,6 +20,10 @@
     import Notifications from "$lib/toast-notifcations/Notifications.svelte";
     import { UploadState } from "$lib/upload/asset.svelte";
     import { toggleFullscreen } from "$lib/utils/misc";
+
+    if (dev) {
+        import("material-symbols/index.css");
+    }
 
     onMount(() => {
         historyState.init();
