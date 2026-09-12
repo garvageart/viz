@@ -5,6 +5,24 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.34.7] - 2026-09-12
+
+* fix(viewfinder): update route and panel actions to primary and secondary variants (c80aa1d2)
+* fix(viewfinder): align modal and settings buttons with revised variant hierarchy (bab54aa5)
+* refactor(viewfinder): rework Button component variants and style hierarchy (7c336dc7)
+* style(viewfinder): update photos display dropdown toolbar icon to grid_view (05ecce34)
+* style(viewfinder): refine modal styling and upload confirmation buttons (2f282583)
+* fix(viewfinder): check dataTransfer types directly in tab drop handlers (868cf075)
+* chore(release): bump version to 0.34.6 (cbd41a92)
+* chore(deps): update pnpm-lock.yaml for removed font dependencies (0e04d026)
+* refactor(viewfinder): clean up font dependencies and streamline material symbols loading (7fba3397)
+* perf(viewfinder): optimize scroll handlers with rAF and remove zero-width polling (e3f439dc)
+* feat(viewfinder): add tab header scroll-into-view on load and hairline drop indicator (9f867044)
+* feat(viewfinder): integrate tab dragging with dragCoordinator and custom overlay (c9d275d5)
+* feat(viewfinder): support explicit index insertion in workspace tab operations (b0c6d139)
+* chore(release): bump version to 0.34.5 (9ed771fc)
+* test(viewfinder): update e2e scroll-container selectors post refactor (bde112d6)
+
 ## [0.34.6] - 2026-09-11
 
 * chore(deps): update pnpm-lock.yaml for removed font dependencies (0e04d026)
