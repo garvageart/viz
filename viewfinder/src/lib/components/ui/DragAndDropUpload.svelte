@@ -631,19 +631,16 @@
 </script>
 
 {#snippet uploadConfirmSnippet()}
-    <p>
-        You dropped folder <strong>"{suggestedCollectionName}"</strong> containing {uploadCandidates.length} file(s). How
-        would you like to upload them?
-    </p>
+    <span>
+        You dropped folder <strong>{suggestedCollectionName}</strong> containing {uploadCandidates.length} file(s). How would
+        you like to upload them?
+    </span>
 {/snippet}
 
 {#snippet uploadConfirmActions({ id }: { id: string })}
-    <Button onclick={() => handleConfirmUploadOnly(id)}>Upload Individually</Button>
-    <Button
-        onclick={() => handleConfirmUploadCollection(id)}
-        style="background-color: var(--viz-primary); color: white;"
-    >
-        Create Collection & Upload
+    <Button variant="secondary" onclick={() => handleConfirmUploadOnly(id)}><span>Upload Individually</span></Button>
+    <Button variant="info" onclick={() => handleConfirmUploadCollection(id)}>
+        <span>Create Collection & Upload</span>
     </Button>
 {/snippet}
 

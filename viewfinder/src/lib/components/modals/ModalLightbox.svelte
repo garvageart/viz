@@ -130,7 +130,7 @@
 <style lang="scss">
     .viz-modal {
         max-height: 100%;
-        background-color: var(--viz-card-bg, var(--viz-surface-base));
+        background-color: var(--viz-surface-panel);
         display: flex;
         flex-direction: column;
         justify-content: center;
