@@ -169,9 +169,9 @@
             {/if}
         </div>
         <div class="footer-actions">
-            <Button variant="info" onclick={openCreateCollectionModal}><span>Create Collection</span></Button>
+            <Button variant="secondary" onclick={openCreateCollectionModal}><span>Create Collection</span></Button>
             <Button
-                variant="success"
+                variant="primary"
                 disabled={!selectedCollection || selectedCollection.isFullyContained}
                 onclick={() => handleSelect(selectedCollection!)}
             >

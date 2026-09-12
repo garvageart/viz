@@ -140,7 +140,7 @@
         <div class="modal-actions">
             <Button variant="danger" onclick={handleCancel}>Cancel</Button>
             <Button
-                variant="info"
+                variant="primary"
                 onclick={handleCreate}
                 disabled={creating || !keyMeta.name || selectedScopes.length === 0}
             >

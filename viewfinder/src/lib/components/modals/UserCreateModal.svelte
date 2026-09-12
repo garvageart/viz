@@ -49,7 +49,7 @@
     />
     <div class="modal-actions">
         <Button variant="danger" onclick={handleCancel}><span>Cancel</span></Button>
-        <Button variant="info" onclick={handleSave} disabled={loading}>
+        <Button variant="primary" onclick={handleSave} disabled={loading}>
             <span>{loading ? "Creating..." : "Create User"}</span>
         </Button>
     </div>

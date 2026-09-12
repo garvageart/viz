@@ -347,7 +347,7 @@
                 <h3>API Keys</h3>
                 <span>Personal access tokens for API access.</span>
             </div>
-            <Button variant="info" iconName="add" onclick={openApiKeyModal}><span>Create New Key</span></Button>
+            <Button variant="primary" iconName="add" onclick={openApiKeyModal}><span>Create New Key</span></Button>
         </div>
 
         <div class="keys-list">

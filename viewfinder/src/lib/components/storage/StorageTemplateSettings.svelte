@@ -309,7 +309,7 @@
                 <div class="preview-header">
                     <span class="preview-title">Preview</span>
                     <Button
-                        variant="primary"
+                        variant="outline"
                         class="preview-copy-btn"
                         iconName={copied ? "check" : "content_copy"}
                         onclick={copyTemplate}

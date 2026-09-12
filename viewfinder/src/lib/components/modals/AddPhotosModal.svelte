@@ -295,12 +295,12 @@
                     {/if}
                 </div>
                 <div class="footer-actions modal-actions">
-                    <Button id="add-photos-cancel" variant="primary" onclick={handleCancel} disabled={isLoading}
+                    <Button id="add-photos-cancel" variant="danger" onclick={handleCancel} disabled={isLoading}
                         ><span>Cancel</span></Button
                     >
                     <Button
                         id="add-photos-submit"
-                        variant="info"
+                        variant="primary"
                         disabled={selectionScope.size === 0 || isLoading}
                         onclick={handleAdd}
                     >

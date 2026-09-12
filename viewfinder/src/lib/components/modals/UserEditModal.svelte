@@ -48,7 +48,7 @@
         options={Object.values(Role).map((r) => ({ value: r, label: toSentenceCase(r) }))}
     />
     <div class="modal-actions">
-        <Button hoverColor="var(--viz-surface-hover)" onclick={handleCancel}>Cancel</Button>
+        <Button onclick={handleCancel}>Cancel</Button>
         <Button onclick={handleSave}>Save Changes</Button>
     </div>
 </div>
