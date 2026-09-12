@@ -1,5 +1,6 @@
 <script module lang="ts">
-    export type ButtonVariant = "primary" | "secondary" | "danger" | "warning" | "success" | "info" | "ghost";
+    export type ButtonVariant =
+        "primary" | "secondary" | "outline" | "ghost" | "danger" | "warning" | "success" | "info";
     export type ButtonSize = "big" | "small" | "mini";
 
     const sizeToIconSize: Record<ButtonSize, string> = {
@@ -16,7 +17,6 @@
     import MaterialIcon from "./MaterialIcon.svelte";
 
     interface Props {
-        hoverColor?: string;
         variant?: ButtonVariant;
         size?: ButtonSize;
         href?: string;
@@ -34,8 +34,7 @@
     let {
         href,
         children,
-        hoverColor,
-        variant = "primary",
+        variant = "ghost",
         size,
         element = $bindable(),
         tooltipParams,
@@ -55,10 +54,6 @@
             return childrenEl.childNodes.length > 0 && childrenEl.textContent?.trim() !== "";
         }
     });
-
-    let buttonStyle = $derived(
-        hoverColor ? `${props.style ? `${props.style}; ` : ""}--button-hover-bg: ${hoverColor}` : props.style
-    );
 
     let classList = $derived(`${variant ?? ""} ${size ?? ""} ${props.class ?? ""}`.trim());
 
@@ -82,7 +77,6 @@
         class={classList}
         class:with-children={hasVisibleChildren}
         aria-label={props["aria-label"] ?? props.title}
-        style={buttonStyle}
         use:tooltip={tooltipParams ?? props.title}
     >
         {@render internalButtonContent()}
@@ -94,7 +88,6 @@
         class={classList}
         class:with-children={hasVisibleChildren}
         aria-label={props["aria-label"] ?? props.title}
-        style={buttonStyle}
         use:tooltip={tooltipParams ?? props.title}
     >
         {@render internalButtonContent()}
@@ -139,10 +132,6 @@
             padding: var(--viz-spacing-xs) var(--viz-spacing-sm);
         }
 
-        :global(.viz-material-icon) {
-            padding: -0.25em;
-        }
-
         &:focus-visible {
             box-shadow:
                 0 0 0 2px var(--viz-surface-base),
@@ -157,12 +146,16 @@
         }
 
         &:hover:not(:disabled) {
-            background-color: var(--button-hover-bg, var(--viz-surface-hover));
+            background-color: var(--viz-surface-hover);
             border-color: var(--viz-border-subtle);
         }
 
         &:active:not(:disabled) {
             background-color: var(--viz-surface-hover);
+        }
+
+        &.primary {
+            @include m.status-tint("primary", true);
         }
 
         &.danger {
@@ -181,14 +174,15 @@
             @include m.status-tint("info", true);
         }
 
+        &.outline,
         &.secondary {
-            background-color: var(--viz-surface-panel);
-            border-color: var(--viz-surface-hover);
+            background-color: transparent;
+            border-color: var(--viz-border-subtle);
             color: var(--viz-text-primary);
 
             &:hover:not(:disabled) {
                 background-color: var(--viz-surface-hover);
-                border-color: var(--viz-border-subtle);
+                border-color: var(--viz-border-strong);
             }
         }
 
@@ -199,6 +193,7 @@
 
             &:hover:not(:disabled) {
                 background-color: var(--viz-surface-hover);
+                border-color: var(--viz-border-subtle);
             }
         }
 

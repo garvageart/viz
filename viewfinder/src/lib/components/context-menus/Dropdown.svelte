@@ -46,7 +46,7 @@
         showMenu = $bindable(false),
         title,
         iconName: icon,
-        variant = "primary",
+        variant,
         onSelect,
         showSelectionIndicator = true,
         align = "left",
