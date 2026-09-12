@@ -675,7 +675,7 @@
                         id="photos-display-dropdown"
                         title="View"
                         class="toolbar-button display-dropdown-btn"
-                        iconName="list_alt"
+                        iconName="grid_view"
                         items={displayMenuItems}
                         showSelectionIndicator={false}
                     />
