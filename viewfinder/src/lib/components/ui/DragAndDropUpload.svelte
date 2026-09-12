@@ -639,7 +639,7 @@
 
 {#snippet uploadConfirmActions({ id }: { id: string })}
     <Button variant="secondary" onclick={() => handleConfirmUploadOnly(id)}><span>Upload Individually</span></Button>
-    <Button variant="info" onclick={() => handleConfirmUploadCollection(id)}>
+    <Button variant="primary" onclick={() => handleConfirmUploadCollection(id)}>
         <span>Create Collection & Upload</span>
     </Button>
 {/snippet}

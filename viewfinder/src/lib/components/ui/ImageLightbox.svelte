@@ -687,7 +687,6 @@
                     <Button
                         id="lightbox-icon-close"
                         class="lightbox-button-icon"
-                        hoverColor="transparent"
                         title="Close"
                         iconName="close"
                         onclick={() => {
@@ -709,7 +708,6 @@
                         {#if dev}
                             <Button
                                 class="lightbox-button-icon"
-                                hoverColor="transparent"
                                 title="Toggle Zoom & Image State Debug"
                                 iconName="report"
                                 onclick={() => {
@@ -719,7 +717,6 @@
                         {/if}
                         <Button
                             class="lightbox-button-icon {lightboxImage.favourited ? 'favourited' : ''}"
-                            hoverColor="transparent"
                             title={lightboxImage.favourited ? "Unfavourite" : "Favourite"}
                             iconName="star"
                             fill={lightboxImage.favourited}
@@ -744,14 +741,12 @@
                         <Button
                             id="act-crop"
                             class="lightbox-button-icon"
-                            hoverColor="transparent"
                             title="Crop"
                             iconName="crop"
                             onclick={toggleCropMode}
                         />
                         <Button
                             class="lightbox-button-icon"
-                            hoverColor="transparent"
                             title="Download Original"
                             iconName="download"
                             onclick={() => {
@@ -760,7 +755,6 @@
                         />
                         <Button
                             class="lightbox-button-icon"
-                            hoverColor="transparent"
                             title="Export"
                             iconName="ios_share"
                             onclick={(e) => {
@@ -783,7 +777,6 @@
                     <Button
                         id="lightbox-toggle-info"
                         class="lightbox-button-icon"
-                        hoverColor="transparent"
                         // TODO: Make i18n safe
                         title={`${showSidePanel ? "Hide" : "Show"} Info`}
                         onclick={(e) => {

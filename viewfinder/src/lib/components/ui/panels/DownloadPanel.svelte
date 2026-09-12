@@ -109,7 +109,7 @@
         {/if}
         <Button
             id="viz-download-panel-minimized-button"
-            variant="info"
+            variant="primary"
             iconName="download"
             onclick={() => {
                 minimized = false;

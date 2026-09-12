@@ -261,7 +261,7 @@
                             </div>
                         </div>
                         <div class="actions centered">
-                            <Button variant="info" type="submit" iconName="arrow_forward">
+                            <Button variant="primary" type="submit" iconName="arrow_forward">
                                 <span>Get Started</span>
                             </Button>
                         </div>

@@ -112,7 +112,7 @@
         {/if}
         <Button
             id="viz-upload-panel-minimized-button"
-            variant="info"
+            variant="primary"
             iconName="upload"
             onclick={() => {
                 minimized = false;

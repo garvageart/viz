@@ -423,7 +423,7 @@
             class="add-photos-btn"
             title="Select Photos"
             aria-label="Select Photos"
-            variant="info"
+            variant="primary"
             onclick={async () => addImagesToViz()}
         >
             <span>Select Photos</span>

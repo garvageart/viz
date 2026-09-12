@@ -241,7 +241,7 @@
 
 <AdminRouteShell heading="User Management" description="Manage user accounts, roles, and permissions.">
     {#snippet actions()}
-        <Button iconName="add" variant="info" onclick={openCreateModal}>
+        <Button iconName="add" variant="primary" onclick={openCreateModal}>
             <span>Create User</span>
         </Button>
     {/snippet}

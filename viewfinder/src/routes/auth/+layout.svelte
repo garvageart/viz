@@ -9,7 +9,6 @@
 <div class="fullscreen-toggle-wrapper">
     <Button
         iconName="fullscreen"
-        hoverColor="var(--viz-surface-hover)"
         onclick={() => toggleFullscreen()}
         title="Toggle Fullscreen"
         aria-label="Toggle Fullscreen"
@@ -19,7 +18,6 @@
 <div class="theme-toggle-wrapper">
     <Button
         iconName={getTheme() === "dark" ? "dark_mode" : "light_mode"}
-        hoverColor="var(--viz-surface-hover)"
         onclick={() => toggleTheme()}
         title="Toggle Theme"
         aria-label="Toggle Theme"

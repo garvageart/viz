@@ -296,7 +296,7 @@
 
             <!-- Add Row Button -->
             <div class="builder-actions">
-                <Button class="add-element-btn" variant="info" iconName="add" onclick={addRow}>
+                <Button class="add-element-btn" variant="secondary" iconName="add" onclick={addRow}>
                     <span>Add Element</span>
                 </Button>
             </div>
