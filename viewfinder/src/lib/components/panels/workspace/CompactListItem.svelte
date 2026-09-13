@@ -45,7 +45,7 @@
                 ? {
                       mimeType: VizMimeTypes.IMAGE_UIDS,
                       payload: [item.uid],
-                      label: item.name ?? "1 photo",
+                      label: item.name,
                       thumbnailUrl: thumbnailAsset ? getAssetImagePath(thumbnailAsset, "thumbnail") : null
                   }
                 : {

@@ -74,12 +74,11 @@
         selectionManager.setActive(scopeId);
     }
 
-    // Sync data source and register active selection scope
+    // Sync data source
     $effect(() => {
         if (data) {
             selection.setSource(data);
         }
-        selectionManager.setActive(scopeId);
     });
 
     // HTML Elements & Virtualizer

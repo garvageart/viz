@@ -438,11 +438,7 @@ class FilterManager {
             return "images";
         }
 
-        if (
-            scopeId === SelectionScopeNames.COLLECTIONS_MAIN ||
-            scopeId === SelectionScopeNames.SEARCH_COLLECTIONS ||
-            scopeId.startsWith(SelectionScopeNames.FILMSTRIP_COLLECTION_PREFIX)
-        ) {
+        if (scopeId === SelectionScopeNames.COLLECTIONS_MAIN || scopeId === SelectionScopeNames.SEARCH_COLLECTIONS) {
             return "collections";
         }
 
@@ -452,7 +448,6 @@ class FilterManager {
 
     private dbPromise: Promise<IDBPDatabase> | null = null;
     private initPromise: Promise<void> | null = null;
-    isInitialized: boolean = $state(false);
 
     constructor() {
         this.scopes.set("images", new FilterScope("images", DEFAULT_IMAGE_FILTERS, DEFAULT_IMAGE_UI_STATE));
@@ -465,10 +460,6 @@ class FilterManager {
     }
 
     async init() {
-        if (this.isInitialized) {
-            return;
-        }
-
         if (this.initPromise) {
             return this.initPromise;
         }
@@ -479,7 +470,6 @@ class FilterManager {
             const savedState = (await db.get(SETTINGS_STORE, DB_KEY)) as SavedFilterState | undefined;
 
             if (!savedState) {
-                this.isInitialized = true;
                 return;
             }
 
@@ -494,8 +484,6 @@ class FilterManager {
                 Object.assign(scope.criteria, scopeState.criteria);
                 Object.assign(scope.uiState, scopeState.uiState);
             }
-
-            this.isInitialized = true;
         })();
 
         return this.initPromise;

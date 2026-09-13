@@ -71,7 +71,7 @@
                 {
                     mimeType: VizMimeTypes.IMAGE_UIDS,
                     payload: [asset.uid],
-                    label: asset.name ?? "1 photo",
+                    label: asset.name,
                     thumbnailUrl: getAssetImagePath(asset, "thumbnail")
                 }
             ]
@@ -84,7 +84,7 @@
                 {resolution}
                 {objectFit}
                 {priority}
-                alt={asset.name ?? ""}
+                alt={asset.name}
                 loading="lazy"
                 crossorigin="use-credentials"
                 onload={() => (imageLoaded = true)}
@@ -104,7 +104,7 @@
                 {
                     mimeType: VizMimeTypes.IMAGE_UIDS,
                     payload: [asset.uid],
-                    label: asset.name ?? "1 photo",
+                    label: asset.name,
                     thumbnailUrl: getAssetImagePath(asset, "thumbnail")
                 }
             ]

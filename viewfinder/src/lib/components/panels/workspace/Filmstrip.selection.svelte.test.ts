@@ -32,7 +32,7 @@ const makeImage = (uid: string, name: string): ImageAsset =>
 
 describe("filmstrip selection -> metadata panel", () => {
     it("metadata updates when a filmstrip item is clicked", async () => {
-        const scopeId = `${SelectionScopeNames.FILMSTRIP_COLLECTION_PREFIX}colA`;
+        const scopeId = `${SelectionScopeNames.COLLECTION_PREFIX}colA`;
         selectionManager.setActive(scopeId);
         const scope = selectionManager.getScope<ImageAsset>(scopeId);
         const a = makeImage("a", "Strip A");
@@ -53,7 +53,7 @@ describe("filmstrip selection -> metadata panel", () => {
     });
 
     it("re-resolves the active scope when the active scope is removed (no stale cache)", async () => {
-        const scopeId = `${SelectionScopeNames.FILMSTRIP_COLLECTION_PREFIX}stale`;
+        const scopeId = `${SelectionScopeNames.COLLECTION_PREFIX}stale`;
         selectionManager.setActive(scopeId);
         const scope = selectionManager.getScope<ImageAsset>(scopeId);
         const a = makeImage("a", "Stale A");

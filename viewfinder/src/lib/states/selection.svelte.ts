@@ -1,4 +1,4 @@
-import type { Collection, CollectionDetailResponse } from "@viz/api";
+import type { Collection, ImageAsset } from "@viz/api";
 import { SvelteMap, SvelteSet } from "svelte/reactivity";
 
 export enum SelectionScopeNames {
@@ -7,13 +7,31 @@ export enum SelectionScopeNames {
     PHOTOS_MAIN = "photos-main",
     COLLECTIONS_MAIN = "collections-main",
     COLLECTION_PREFIX = "collection-",
-    FILMSTRIP_COLLECTION_PREFIX = "filmstrip-collection-",
     SEARCH_IMAGES = "search-images",
     SEARCH_COLLECTIONS = "search-collections",
     FILMSTRIP = "filmstrip"
 }
 
-export class SelectionScope<T extends { uid: string } = any> {
+export type SelectionScopeKind = "image" | "collection" | "generic";
+
+export interface ScopeTypeMap {
+    [SelectionScopeNames.DEFAULT]: ImageAsset;
+    [SelectionScopeNames.PHOTOS_DEFAULT]: ImageAsset;
+    [SelectionScopeNames.PHOTOS_MAIN]: ImageAsset;
+    [SelectionScopeNames.SEARCH_IMAGES]: ImageAsset;
+    [SelectionScopeNames.FILMSTRIP]: ImageAsset;
+    [SelectionScopeNames.COLLECTIONS_MAIN]: Collection;
+    [SelectionScopeNames.SEARCH_COLLECTIONS]: Collection;
+    [key: `collection-${string}`]: ImageAsset;
+}
+
+export type ImageSelectionScope = SelectionScope<ImageAsset, "image">;
+export type CollectionSelectionScope = SelectionScope<Collection, "collection">;
+export type GenericSelectionScope = SelectionScope<any, "generic">;
+export type AnySelectionScope = ImageSelectionScope | CollectionSelectionScope | GenericSelectionScope;
+
+export class SelectionScope<T extends { uid: string } = any, K extends SelectionScopeKind = SelectionScopeKind> {
+    readonly kind: K;
     selected = $state(new SvelteMap<string, T>());
     excluded = $state(new SvelteSet<string>()); // UIDs to exclude when isSelectAll is true
     isSelectAll = $state(false);
@@ -22,11 +40,10 @@ export class SelectionScope<T extends { uid: string } = any> {
     active = $state<T | undefined>(undefined);
     source = $state<T[]>([]); // All items available in this scope
     id: string;
-    /** Optional parent collection */
-    collection: Collection | CollectionDetailResponse | undefined = $state();
 
-    constructor(id: string = SelectionScopeNames.DEFAULT) {
+    constructor(id: string = SelectionScopeNames.DEFAULT, kind: K = "image" as K) {
         this.id = id;
+        this.kind = kind;
     }
 
     setSource(items: T[]) {
@@ -92,7 +109,6 @@ export class SelectionScope<T extends { uid: string } = any> {
         this.excluded.clear();
         this.isSelectAll = false;
         this.active = undefined;
-        this.collection = undefined;
     }
 
     toggle(item: T) {
