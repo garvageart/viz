@@ -5,6 +5,16 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.34.8] - 2026-09-13
+
+* test(e2e): include Photos view in test workspace layouts for filter panels (cb45473a)
+* feat(viewfinder): manage DOM focus on active workspace views (e3ca852d)
+* feat(viewfinder): refactor filter sections and enhance facet keyboard controls (8a31e557)
+* refactor(viewfinder): align registration notifications and modal tokens (22187869)
+* refactor(viewfinder): remove unsafe type assertions in Dropdown component (9972c0cb)
+* perf(viewfinder): port splitpanes drag caching and constant extractions (d481139c)
+* fix: correct button formatting (d940dea4)
+
 ## [0.34.7] - 2026-09-12
 
 * fix(viewfinder): update route and panel actions to primary and secondary variants (c80aa1d2)
