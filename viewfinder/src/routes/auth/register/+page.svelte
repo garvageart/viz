@@ -5,7 +5,7 @@
     import Button from "$lib/components/ui/Button.svelte";
     import InputPassword from "$lib/components/ui/InputPassword.svelte";
     import InputText from "$lib/components/ui/InputText.svelte";
-    import { system } from "$lib/states/index.svelte";
+    import { config, system } from "$lib/states/index.svelte";
     import { toasts } from "$lib/toast-notifcations/toasts.svelte";
 
     let pageState = page.state as typeof registerData;
@@ -18,13 +18,6 @@
     const bgImageIndex = Math.floor(Math.random() * 300);
     const bgImageUrl = `url('https://picsum.photos/1920/1080/?random=${bgImageIndex}')`;
 
-    function showRegNotif(message: string, level: "success" | "info" | "warning" | "error") {
-        toasts.add({
-            message,
-            type: level
-        });
-    }
-
     async function handleRegister(event: Event) {
         event.preventDefault();
         const formEl = document.getElementById("reg-form") as HTMLFormElement;
@@ -32,17 +25,27 @@
         const formObject = Object.fromEntries(data.entries());
 
         if (!formObject.email || !formObject.password || !formObject.name) {
-            showRegNotif("Please fill in all fields", "error");
+            toasts.add({
+                message: "Please fill in all fields",
+                type: "error"
+            });
             return;
         }
 
         if (!formObject.passwordConfirm) {
-            showRegNotif("Please confirm your password", "error");
+            toasts.add({
+                message: "Please confirm your password",
+                type: "error"
+            });
+
             return;
         }
 
         if (formObject.password !== formObject.passwordConfirm) {
-            showRegNotif("Passwords do not match", "error");
+            toasts.add({
+                message: "Passwords do not match",
+                type: "error"
+            });
             return;
         }
 
@@ -54,13 +57,25 @@
             });
 
             if (response.status === 201) {
-                goto("/auth/login").then(() => showRegNotif("Registration successful!", "success"));
+                goto("/auth/login").then(() =>
+                    toasts.add({
+                        message: "Registration successful!",
+                        type: "success"
+                    })
+                );
             } else {
                 const errMsg = response.data?.error || "Registration failed";
-                showRegNotif(errMsg, "error");
+                toasts.add({
+                    message: errMsg,
+                    type: "error"
+                });
             }
         } catch (error) {
-            showRegNotif("Registration failed. Please try again.", "error");
+            toasts.add({
+                message: "An error occurred during registration",
+                type: "error"
+            });
+
             console.error("Registration error:", error);
         }
     }
@@ -79,7 +94,7 @@
                     id="reg-email"
                     name="email"
                     label="Email"
-                    placeholder="photos@{location.hostname}"
+                    placeholder="photos@{config.data?.base_url ?? location.hostname}"
                     type="email"
                     required
                     disabled={pageState.email ? true : false}
@@ -113,9 +128,9 @@
                     <Button id="reg-submit" class="auth-submit-btn" type="submit">Create Account</Button>
                 </div>
             </form>
-            <p class="auth-footer">
+            <span class="auth-footer">
                 Already have an account? <a href="/auth/login">Login</a>
-            </p>
+            </span>
         {:else}
             <div class="auth-disabled-message">
                 User registration is disabled for this server. Please contact a server admin.
@@ -184,7 +199,6 @@
         font-weight: 700;
         font-size: var(--viz-font-size-5xl);
         color: var(--viz-text-primary);
-        letter-spacing: -0.05em;
     }
 
     .auth-subtitle {
@@ -217,21 +231,6 @@
     /* Target the inner button of our custom Button component */
     :global(.auth-submit-btn) {
         width: 100% !important;
-        background-color: var(--viz-primary) !important;
-        color: #ffffff !important;
-        border: none !important;
-        font-weight: 600 !important;
-        font-size: var(--viz-font-size-xl) !important;
-        padding: var(--viz-spacing-sm) var(--viz-spacing-std) !important;
-        border-radius: var(--viz-border-radius-pill) !important;
-        transition:
-            opacity 150ms ease,
-            background-color 150ms ease !important;
-
-        &:hover:not(:disabled) {
-            background-color: var(--viz-primary) !important;
-            opacity: 0.9;
-        }
     }
 
     .auth-footer {

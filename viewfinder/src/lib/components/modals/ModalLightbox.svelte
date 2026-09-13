@@ -146,8 +146,8 @@
         justify-content: flex-end;
         align-items: center;
         box-sizing: border-box;
-        border-bottom: 1px solid var(--viz-surface-hover);
-        padding: 0.25rem;
+        border-bottom: var(--viz-border-thin);
+        padding: var(--viz-spacing-sm);
 
         h1 {
             font-size: var(--viz-font-size-lg);
