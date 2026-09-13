@@ -35,9 +35,9 @@ describe("Dropdown", () => {
         const button = screen.getByRole("button", { name: "Sort" });
         await pointerClick(button);
 
-        const menu = document.querySelector(".context-menu") as HTMLElement;
+        const menu = document.querySelector<HTMLElement>(".context-menu");
         expect(menu).toBeInTheDocument();
-        expect(menu.style.zIndex).toBe("100002");
+        expect(menu?.style.zIndex).toBe("100002");
     });
 
     it("selects an item and closes the menu", async () => {

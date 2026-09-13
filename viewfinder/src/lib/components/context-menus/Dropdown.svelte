@@ -55,7 +55,7 @@
         hideTitle = false
     }: Props = $props();
 
-    let buttonEl: HTMLButtonElement | undefined = $state(undefined);
+    let buttonEl: HTMLButtonElement | HTMLAnchorElement | undefined = $state(undefined);
     let containerEl: HTMLElement | null = $state(null);
 
     // Derived selected item from items by id
@@ -64,7 +64,7 @@
     // Prefer an explicit dropdown icon prop for the button. If none is provided,
     // fall back to the selected item's icon.
     let currentIcon: MaterialSymbol | undefined = $derived(
-        icon ?? (selectedItem?.iconName as MaterialSymbol | undefined)
+        icon ?? (typeof selectedItem?.iconName === "string" ? selectedItem.iconName : undefined)
     );
 
     let hideTitleState = $derived(hideTitle || (!title && !(selectedItem && selectedItem.label)));
@@ -105,7 +105,7 @@
         }
     }}
     onclick={(e) => {
-        if (!containerEl?.contains(e.target as Node)) {
+        if (e.target instanceof Node && !containerEl?.contains(e.target)) {
             showMenu = false;
         }
     }}
@@ -142,13 +142,7 @@
     {/if}
 
     <!-- Render menu without a positioned wrapper; ContextMenu uses fixed coords anchored to button -->
-    <ContextMenu
-        bind:showMenu
-        items={menuItems}
-        anchor={(buttonEl ?? containerEl) as HTMLElement}
-        offsetY={0}
-        {align}
-    />
+    <ContextMenu bind:showMenu items={menuItems} anchor={buttonEl ?? containerEl} offsetY={0} {align} />
 </div>
 
 <style lang="scss">
