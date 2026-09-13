@@ -35,6 +35,7 @@
     let activeView = $derived(group.activeView);
     let Comp = $derived(activeView?.component);
     let isFocused = $derived(workspaceState.workspace?.activeGroupId === group.id);
+    let contentEl = $state<HTMLElement>();
 
     $effect(() => {
         const view = activeView;
@@ -43,6 +44,12 @@
             untrack(() => {
                 view.getComponentData();
             });
+        }
+    });
+
+    $effect(() => {
+        if (isFocused && group.activeViewId !== undefined && !contentEl?.contains(document.activeElement)) {
+            contentEl?.focus({ preventScroll: true });
         }
     });
 
@@ -653,6 +660,7 @@
     </div>
 
     <div
+        bind:this={contentEl}
         class="tab-group-content"
         role="tabpanel"
         tabindex="0"
@@ -817,6 +825,7 @@
         display: flex;
         flex-direction: column;
         background-color: var(--viz-surface-base);
+        outline: none;
     }
 
     .drop-target-overlay {
