@@ -81,8 +81,10 @@
     }
 
     .count {
-        font-size: 1rem;
-        margin-left: 8px;
+        margin: 0;
+        font-size: var(--viz-font-size-sm);
+        font-weight: bold;
+        flex-shrink: 0;
     }
 
     .empty {

@@ -1,15 +1,5 @@
-<script module>
-    export function toggleSection(
-        section: keyof typeof uiState.expanded,
-        uiState: { expanded: Record<string, boolean> },
-        save: () => void
-    ) {
-        uiState.expanded[section] = !uiState.expanded[section];
-        save();
-    }
-</script>
-
 <script lang="ts">
+    import { type Snippet } from "svelte";
     import { slide } from "svelte/transition";
     import Calendar from "$lib/components/ui/DatePicker.svelte";
     import type { ImageFacets, ImageFilters } from "$lib/states/filter.svelte";
@@ -28,6 +18,21 @@
     }
 
     let { criteria = $bindable(), facets, uiState = $bindable(), save }: Props = $props();
+
+    async function scrollSectionIntoView(sectionEl?: HTMLElement | null) {
+        if (sectionEl) {
+            sectionEl.scrollIntoView({ block: "nearest", behavior: "smooth" });
+        }
+    }
+
+    async function toggleSection(section: keyof typeof uiState.expanded, sectionEl?: HTMLElement | null) {
+        uiState.expanded[section] = !uiState.expanded[section];
+        save();
+
+        if (!uiState.expanded[section] && sectionEl) {
+            await scrollSectionIntoView(sectionEl);
+        }
+    }
 
     // Convert an ISO date string from criteria to a JS Date for the Calendar.
     // Falls back to today when absent.
@@ -81,189 +86,147 @@
     }
 </script>
 
-<!-- Rating -->
-<div class="filter-section">
-    <button class="section-header" onclick={() => toggleSection("rating", uiState, save)}>
-        <span>Rating</span>
-        <MaterialIcon
-            iconName={uiState.expanded.rating ? "keyboard_arrow_up" : "keyboard_arrow_down"}
-            class="arrow-icon"
-        />
-    </button>
-    {#if uiState.expanded.rating}
-        <div class="section-content" transition:slide={{ duration: 200 }}>
-            <div class="rating-row">
-                <span>≥</span>
-                <StarRating
-                    value={criteria.rating}
-                    onChange={(r) => {
-                        criteria.rating = r;
-                        save();
-                    }}
-                />
+{#snippet filterSection(key: keyof typeof uiState.expanded, title: string, content: Snippet)}
+    {@const isExpanded = uiState.expanded[key]}
+    <div class="filter-section">
+        <button class="section-header" onclick={(e) => toggleSection(key, e.currentTarget.closest(".filter-section"))}>
+            <span>{title}</span>
+            <MaterialIcon iconName={isExpanded ? "keyboard_arrow_up" : "keyboard_arrow_down"} class="arrow-icon" />
+        </button>
+        {#if isExpanded}
+            <div class="section-content" transition:slide={{ duration: 200 }}>
+                {@render content()}
             </div>
-        </div>
-    {/if}
-</div>
+        {/if}
+    </div>
+{/snippet}
+
+<!-- Rating -->
+{#snippet ratingContent()}
+    <div class="rating-row">
+        <span class="greater-than-symbol">≥</span>
+        <StarRating
+            value={criteria.rating}
+            onChange={(r) => {
+                criteria.rating = r;
+                save();
+            }}
+        />
+    </div>
+{/snippet}
+{@render filterSection("rating", "Rating", ratingContent)}
 
 <!-- Labels -->
-<div class="filter-section">
-    <button class="section-header" onclick={() => toggleSection("labels", uiState, save)}>
-        <span>Labels</span>
-        <MaterialIcon
-            iconName={uiState.expanded.labels ? "keyboard_arrow_up" : "keyboard_arrow_down"}
-            class="arrow-icon"
-        />
-    </button>
-    {#if uiState.expanded.labels}
-        <div class="section-content" transition:slide={{ duration: 200 }}>
-            <LabelFacet
-                {criteria}
-                {facets}
-                onChange={(label) => {
-                    if (criteria.label === label) {
-                        criteria.label = null;
-                    } else {
-                        criteria.label = label;
-                    }
-                }}
-            />
-        </div>
-    {/if}
-</div>
+{#snippet labelsContent()}
+    <LabelFacet
+        {criteria}
+        {facets}
+        onChange={(label) => {
+            if (criteria.label === label) {
+                criteria.label = null;
+            } else {
+                criteria.label = label;
+            }
+        }}
+    />
+{/snippet}
+{@render filterSection("labels", "Labels", labelsContent)}
 
 <!-- Tags -->
-<div class="filter-section">
-    <button class="section-header" onclick={() => toggleSection("tags", uiState, save)}>
-        <span>Keywords</span>
-        <MaterialIcon
-            iconName={uiState.expanded.tags ? "keyboard_arrow_up" : "keyboard_arrow_down"}
-            class="arrow-icon"
-        />
-    </button>
-    {#if uiState.expanded.tags}
-        <div class="section-content" transition:slide={{ duration: 200 }}>
-            <ChecklistFacet
-                title=""
-                items={facets.tags}
-                selected={criteria.tags}
-                onChange={(sel) => {
-                    criteria.tags = sel;
-                    save();
-                }}
-            />
-        </div>
-    {/if}
-</div>
+{#snippet tagsContent()}
+    <ChecklistFacet
+        title=""
+        items={facets.tags}
+        selected={criteria.tags}
+        ontoggle={(_, el) => scrollSectionIntoView(el?.closest(".filter-section"))}
+        onChange={(sel) => {
+            criteria.tags = sel;
+            save();
+        }}
+    />
+{/snippet}
+{@render filterSection("tags", "Keywords", tagsContent)}
 
 <!-- Camera -->
-<div class="filter-section">
-    <button class="section-header" onclick={() => toggleSection("camera", uiState, save)}>
-        <span>Camera</span>
-        <MaterialIcon
-            iconName={uiState.expanded.camera ? "keyboard_arrow_up" : "keyboard_arrow_down"}
-            class="arrow-icon"
-        />
-    </button>
-    {#if uiState.expanded.camera}
-        <div class="section-content" transition:slide={{ duration: 200 }}>
-            <ChecklistFacet
-                title="Cameras"
-                items={facets.cameras}
-                selected={criteria.camera}
-                onChange={(sel) => {
-                    criteria.camera = sel;
-                    save();
-                }}
-            />
-        </div>
-    {/if}
-</div>
+{#snippet cameraContent()}
+    <ChecklistFacet
+        title="Cameras"
+        items={facets.cameras}
+        selected={criteria.camera}
+        ontoggle={(_, el) => scrollSectionIntoView(el?.closest(".filter-section"))}
+        onChange={(sel) => {
+            criteria.camera = sel;
+            save();
+        }}
+    />
+{/snippet}
+{@render filterSection("camera", "Camera", cameraContent)}
 
 <!-- Lens -->
-<div class="filter-section">
-    <button class="section-header" onclick={() => toggleSection("lens", uiState, save)}>
-        <span>Lens</span>
-        <MaterialIcon
-            iconName={uiState.expanded.lens ? "keyboard_arrow_up" : "keyboard_arrow_down"}
-            class="arrow-icon"
-        />
-    </button>
-    {#if uiState.expanded.lens}
-        <div class="section-content" transition:slide={{ duration: 200 }}>
-            <ChecklistFacet
-                title="Lenses"
-                items={facets.lenses}
-                selected={criteria.lens}
-                onChange={(sel) => {
-                    criteria.lens = sel;
-                    save();
-                }}
-            />
-        </div>
-    {/if}
-</div>
+{#snippet lensContent()}
+    <ChecklistFacet
+        title="Lenses"
+        items={facets.lenses}
+        selected={criteria.lens}
+        ontoggle={(_, el) => scrollSectionIntoView(el?.closest(".filter-section"))}
+        onChange={(sel) => {
+            criteria.lens = sel;
+            save();
+        }}
+    />
+{/snippet}
+{@render filterSection("lens", "Lens", lensContent)}
 
 <!-- Technical -->
-<div class="filter-section">
-    <button class="section-header" onclick={() => toggleSection("tech", uiState, save)}>
-        <span>EXIF</span>
-        <MaterialIcon
-            iconName={uiState.expanded.tech ? "keyboard_arrow_up" : "keyboard_arrow_down"}
-            class="arrow-icon"
-        />
-    </button>
-    {#if uiState.expanded.tech}
-        <div class="section-content" transition:slide={{ duration: 200 }}>
-            <RangeInput
-                label="ISO"
-                min={facets.iso.min}
-                max={facets.iso.max}
-                value={criteria.iso}
-                onChange={(v) => {
-                    criteria.iso = v;
-                    save();
-                }}
-            />
-            <RangeInput
-                label="Aperture"
-                min={facets.fStop.min}
-                max={facets.fStop.max}
-                value={criteria.fStop}
-                step={0.1}
-                unit="f"
-                onChange={(v) => {
-                    criteria.fStop = v;
-                    save();
-                }}
-            />
-            <RangeInput
-                label="Shutter Speed"
-                min={facets.shutterSpeed.min}
-                max={facets.shutterSpeed.max}
-                value={criteria.shutterSpeed}
-                step={0.001}
-                formatValue={formatShutterSpeed}
-                invertDisplay={true}
-                onChange={(v) => {
-                    criteria.shutterSpeed = v;
-                    save();
-                }}
-            />
-            <RangeInput
-                label="Focal Length"
-                min={facets.focalLength.min}
-                max={facets.focalLength.max}
-                value={criteria.focalLength}
-                unit="mm"
-                onChange={(v) => {
-                    criteria.focalLength = v;
-                    save();
-                }}
-            />
-        </div>
-    {/if}
-</div>
+{#snippet techContent()}
+    <RangeInput
+        label="ISO"
+        min={facets.iso.min}
+        max={facets.iso.max}
+        value={criteria.iso}
+        onChange={(v) => {
+            criteria.iso = v;
+            save();
+        }}
+    />
+    <RangeInput
+        label="Aperture"
+        min={facets.fStop.min}
+        max={facets.fStop.max}
+        value={criteria.fStop}
+        step={0.1}
+        unit="f"
+        onChange={(v) => {
+            criteria.fStop = v;
+            save();
+        }}
+    />
+    <RangeInput
+        label="Shutter Speed"
+        min={facets.shutterSpeed.min}
+        max={facets.shutterSpeed.max}
+        value={criteria.shutterSpeed}
+        step={0.001}
+        formatValue={formatShutterSpeed}
+        invertDisplay={true}
+        onChange={(v) => {
+            criteria.shutterSpeed = v;
+            save();
+        }}
+    />
+    <RangeInput
+        label="Focal Length"
+        min={facets.focalLength.min}
+        max={facets.focalLength.max}
+        value={criteria.focalLength}
+        unit="mm"
+        onChange={(v) => {
+            criteria.focalLength = v;
+            save();
+        }}
+    />
+{/snippet}
+{@render filterSection("tech", "EXIF", techContent)}
 
 {#snippet dateField(label: string, value: string | undefined, onChange: (d: Date) => void, onClear: () => void)}
     <div class="date-field">
@@ -302,49 +265,39 @@
 {/snippet}
 
 <!-- Date -->
-<div class="filter-section">
-    <button class="section-header" onclick={() => toggleSection("date", uiState, save)}>
-        <span>Date Taken</span>
-        <MaterialIcon
-            iconName={uiState.expanded.date ? "keyboard_arrow_up" : "keyboard_arrow_down"}
-            class="arrow-icon"
-        />
-    </button>
-    {#if uiState.expanded.date}
-        <div class="section-content" transition:slide={{ duration: 200 }}>
-            <div class="date-inputs">
-                {@render dateField(
-                    "After",
-                    criteria.date.after,
-                    (d) => {
-                        criteria.date.after = dateToIso(d);
-                        save();
-                    },
-                    () => {
-                        criteria.date.after = undefined;
-                        save();
-                    }
-                )}
-                {@render dateField(
-                    "Before",
-                    criteria.date.before,
-                    (d) => {
-                        criteria.date.before = dateToIso(d);
-                        save();
-                    },
-                    () => {
-                        criteria.date.before = undefined;
-                        save();
-                    }
-                )}
-            </div>
-        </div>
-    {/if}
-</div>
+{#snippet dateContent()}
+    <div class="date-inputs">
+        {@render dateField(
+            "After",
+            criteria.date.after,
+            (d) => {
+                criteria.date.after = dateToIso(d);
+                save();
+            },
+            () => {
+                criteria.date.after = undefined;
+                save();
+            }
+        )}
+        {@render dateField(
+            "Before",
+            criteria.date.before,
+            (d) => {
+                criteria.date.before = dateToIso(d);
+                save();
+            },
+            () => {
+                criteria.date.before = undefined;
+                save();
+            }
+        )}
+    </div>
+{/snippet}
+{@render filterSection("date", "Date Taken", dateContent)}
 
 <style lang="scss">
     .filter-section {
-        border-bottom: 1px solid var(--viz-surface-hover);
+        border-bottom: var(--viz-border-thin);
 
         &:last-child {
             border-bottom: none;
@@ -358,7 +311,7 @@
         align-items: center;
         background: transparent;
         border: none;
-        padding: 0.2rem;
+        padding: var(--viz-spacing-xxs);
         cursor: pointer;
         color: var(--viz-text-primary);
         font-weight: 600;
@@ -384,6 +337,11 @@
         align-items: center;
         gap: var(--viz-spacing-sm);
         font-size: var(--viz-font-size-std);
+
+        .greater-than-symbol {
+            font-size: var(--viz-font-size-lg);
+            font-weight: bold;
+        }
     }
 
     .date-inputs {

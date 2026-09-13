@@ -143,18 +143,7 @@ export class FilterScope<F> {
         this.criteria = { ...defaultFilters };
         this.uiState = { ...defaultUiState };
 
-        if (type === "images") {
-            this.facets = {
-                cameras: new Map(),
-                lenses: new Map(),
-                tags: new Map(),
-                labels: new Map(),
-                iso: { min: 0, max: 0 },
-                fStop: { min: 0, max: 0 },
-                shutterSpeed: { min: 0, max: 0 },
-                focalLength: { min: 0, max: 0 }
-            };
-        } else {
+        if (type === "collections") {
             this.facets = {};
         }
     }
@@ -462,7 +451,8 @@ class FilterManager {
     keepFilters: boolean = $state(false);
 
     private dbPromise: Promise<IDBPDatabase> | null = null;
-    private isInitialized = false;
+    private initPromise: Promise<void> | null = null;
+    isInitialized: boolean = $state(false);
 
     constructor() {
         this.scopes.set("images", new FilterScope("images", DEFAULT_IMAGE_FILTERS, DEFAULT_IMAGE_UI_STATE));
@@ -479,24 +469,36 @@ class FilterManager {
             return;
         }
 
-        this.dbPromise = initDB();
-        const db = await this.dbPromise;
-        const savedState = (await db.get(SETTINGS_STORE, DB_KEY)) as SavedFilterState | undefined;
-
-        if (savedState) {
-            this.keepFilters = savedState.keepFilters ?? false;
-            if (savedState.scopes) {
-                for (const [key, scopeState] of Object.entries(savedState.scopes)) {
-                    const scope = this.scopes.get(key);
-                    if (scope) {
-                        Object.assign(scope.criteria, scopeState.criteria);
-                        Object.assign(scope.uiState, scopeState.uiState);
-                    }
-                }
-            }
+        if (this.initPromise) {
+            return this.initPromise;
         }
 
-        this.isInitialized = true;
+        this.initPromise = (async () => {
+            this.dbPromise = initDB();
+            const db = await this.dbPromise;
+            const savedState = (await db.get(SETTINGS_STORE, DB_KEY)) as SavedFilterState | undefined;
+
+            if (!savedState) {
+                this.isInitialized = true;
+                return;
+            }
+
+            this.keepFilters = savedState.keepFilters ?? false;
+
+            for (const [key, scopeState] of Object.entries(savedState.scopes ?? {})) {
+                const scope = this.scopes.get(key);
+                if (!scope) {
+                    continue;
+                }
+
+                Object.assign(scope.criteria, scopeState.criteria);
+                Object.assign(scope.uiState, scopeState.uiState);
+            }
+
+            this.isInitialized = true;
+        })();
+
+        return this.initPromise;
     }
 
     get activeScope(): FilterScope<ImageFilters> | FilterScope<CollectionFilters> | undefined {

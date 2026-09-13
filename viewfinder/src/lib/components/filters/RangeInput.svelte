@@ -72,11 +72,14 @@
         display: flex;
         justify-content: space-between;
         color: var(--viz-text-secondary);
-    }
 
-    .label {
-        font-weight: 500;
-        color: var(--viz-text-primary);
+        .label {
+            font-weight: 500;
+        }
+
+        .range-display {
+            font-weight: bold;
+        }
     }
 
     .inputs {

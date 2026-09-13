@@ -141,7 +141,7 @@
 
     // Compute image facet values (cameras, lenses, tags, labels, ranges) from the
     // full loaded image set so the filter panel always has values to offer.
-    $effect(() => {
+    $effect.pre(() => {
         const scope = filterManager.activeScope;
         if (!scope || !scope.isImageScope()) {
             return;

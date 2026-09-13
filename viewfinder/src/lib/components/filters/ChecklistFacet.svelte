@@ -7,9 +7,10 @@
         items: Map<string, number>; // Value -> Count
         selected: string[];
         onChange: (selected: string[]) => void;
+        ontoggle?: (isExpanded: boolean, el?: HTMLElement) => void;
     }
 
-    let { items, selected, onChange }: Props = $props();
+    let { items, selected, onChange, ontoggle }: Props = $props();
 
     let searchTerm = $state("");
     let isExpanded = $state(false);
@@ -34,6 +35,11 @@
             onChange([...selected, value]);
         }
     }
+
+    function handleToggleMore(el?: HTMLElement) {
+        isExpanded = !isExpanded;
+        ontoggle?.(isExpanded, el);
+    }
 </script>
 
 <div class="facet-container">
@@ -55,7 +61,7 @@
     </div>
 
     {#if filteredItems.length > 5}
-        <Button size="mini" class="more-btn" onclick={() => (isExpanded = !isExpanded)}>
+        <Button class="more-btn" variant="secondary" size="mini" onclick={(e) => handleToggleMore(e.currentTarget)}>
             {isExpanded ? "Show Less" : `Show All (${filteredItems.length})`}
         </Button>
     {/if}
@@ -65,20 +71,20 @@
     .facet-container {
         display: flex;
         flex-direction: column;
-        gap: 0.5rem;
+        gap: var(--viz-spacing-sm);
     }
 
     .facet-list {
         display: flex;
         flex-direction: column;
-        gap: 4px;
+        gap: var(--viz-spacing-xs);
     }
 
     .facet-item {
         display: flex;
         align-items: center;
         justify-content: space-between;
-        font-size: 1rem;
+        gap: var(--viz-spacing-xs);
         color: var(--viz-text-secondary);
 
         /* Align checkbox properly */
@@ -88,7 +94,7 @@
         }
 
         :global(.label-text) {
-            font-size: 1rem;
+            font-size: var(--viz-font-size-std);
             white-space: nowrap;
             overflow: hidden;
             text-overflow: ellipsis;
@@ -96,7 +102,10 @@
     }
 
     .count {
-        margin-left: 8px;
+        margin: 0;
+        font-size: var(--viz-font-size-sm);
+        font-weight: bold;
+        flex-shrink: 0;
     }
 
     .empty {
@@ -104,15 +113,7 @@
         color: var(--viz-text-secondary);
     }
 
-    /* Override Button styling to look like a link or simple toggle */
     :global(.more-btn) {
-        background-color: transparent !important;
-        color: var(--viz-info-color) !important;
-        padding: 0 !important;
-        align-self: flex-start;
-        height: auto !important;
-        margin-top: 4px;
-
         &:hover {
             text-decoration: underline;
         }

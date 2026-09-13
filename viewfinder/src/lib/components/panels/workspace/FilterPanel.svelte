@@ -17,7 +17,7 @@
                 bind:uiState={collectionScope.uiState}
                 save={() => filterManager.save()}
             />
-        {:else if filterManager.activeScopeType === "images" && imageScope}
+        {:else if filterManager.activeScopeType === "images" && imageScope && imageScope.facets}
             <ImageFilter
                 bind:criteria={imageScope.criteria}
                 facets={imageScope.facets}

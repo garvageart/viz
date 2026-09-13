@@ -150,6 +150,12 @@
         }
 
         switch (e.key) {
+            case "Enter":
+                e.preventDefault();
+                e.stopPropagation();
+                handleBlur();
+
+                break;
             case "ArrowUp":
                 e.preventDefault();
                 increment(step);
@@ -240,13 +246,25 @@
             type="button"
             class="stepper-btn decrement-btn"
             disabled={!canDecrement}
-            tabindex="-1"
+            title="Decrease value"
             aria-label="Decrease value"
             aria-controls={inputId}
             onpointerdown={() => startHold(() => decrement(step))}
             onpointerup={stopHold}
             onpointerleave={stopHold}
             onpointercancel={stopHold}
+            onkeydown={(e) => {
+                if (e.key === "Enter" || e.key === " ") {
+                    e.preventDefault();
+                    e.stopPropagation();
+                    decrement(step);
+                }
+            }}
+            onclick={(e) => {
+                if (e.detail === 0) {
+                    e.stopPropagation();
+                }
+            }}
         >
             <MaterialIcon iconName="remove" size={compact ? "1rem" : "1.2rem"} />
         </button>
@@ -276,13 +294,25 @@
             type="button"
             class="stepper-btn increment-btn"
             disabled={!canIncrement}
-            tabindex="-1"
+            title="Increase value"
             aria-label="Increase value"
             aria-controls={inputId}
             onpointerdown={() => startHold(() => increment(step))}
             onpointerup={stopHold}
             onpointerleave={stopHold}
             onpointercancel={stopHold}
+            onkeydown={(e) => {
+                if (e.key === "Enter" || e.key === " ") {
+                    e.preventDefault();
+                    e.stopPropagation();
+                    increment(step);
+                }
+            }}
+            onclick={(e) => {
+                if (e.detail === 0) {
+                    e.stopPropagation();
+                }
+            }}
         >
             <MaterialIcon iconName="add" size={compact ? "1rem" : "1.2rem"} />
         </button>
