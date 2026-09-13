@@ -116,7 +116,7 @@ func SearchRouter(db *gorm.DB, logger *slog.Logger) chi.Router {
 			Collections: collectionsDTO,
 			Page:        page,
 			Limit:       limit,
-			Count:       &count,
+			Count:       count,
 			Next:        nextLink,
 		})
 	})

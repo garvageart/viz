@@ -271,7 +271,7 @@ func CollectionsRouter(db *gorm.DB, logger *slog.Logger, wsBroker *libhttp.WSBro
 			Next:  next,
 			Limit: limit,
 			Page:  page,
-			Count: &count,
+			Count: count,
 			Items: items,
 		}
 
@@ -355,7 +355,7 @@ func CollectionsRouter(db *gorm.DB, logger *slog.Logger, wsBroker *libhttp.WSBro
 			Next:  next,
 			Limit: defaultImageLimit,
 			Page:  defaultImagePage,
-			Count: &totalImages,
+			Count: totalImages,
 			Items: imgResponse,
 		}
 
@@ -365,7 +365,7 @@ func CollectionsRouter(db *gorm.DB, logger *slog.Logger, wsBroker *libhttp.WSBro
 		result := dto.CollectionDetailResponse{
 			Uid:         collectionDTO.Uid,
 			Name:        collectionDTO.Name,
-			ImageCount:  &collectionDTO.ImageCount,
+			ImageCount:  collectionDTO.ImageCount,
 			Private:     collectionDTO.Private,
 			Images:      ImagesListResponse,
 			CreatedBy:   collectionDTO.CreatedBy,
@@ -638,7 +638,7 @@ func CollectionsRouter(db *gorm.DB, logger *slog.Logger, wsBroker *libhttp.WSBro
 			Next:  next,
 			Limit: limit,
 			Page:  page,
-			Count: &count,
+			Count: count,
 			Items: imgResponse,
 		}
 

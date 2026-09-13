@@ -296,7 +296,7 @@ func ImagesRouter(db *gorm.DB, logger *slog.Logger, wsBroker *libhttp.WSBroker) 
 			Next:  next,
 			Limit: limit,
 			Page:  page,
-			Count: &count,
+			Count: count,
 			Items: items,
 		}
 

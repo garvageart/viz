@@ -749,7 +749,7 @@ type CollectionDetailResponse struct {
 	Description *string `json:"description,omitempty"`
 
 	// ImageCount Number of images
-	ImageCount *int               `json:"image_count,omitempty"`
+	ImageCount int                `json:"image_count"`
 	Images     ImagesListResponse `json:"images"`
 
 	// Name Collection name
@@ -780,7 +780,7 @@ type CollectionImage struct {
 // CollectionListResponse defines model for CollectionListResponse.
 type CollectionListResponse struct {
 	// Count Total count
-	Count *int `json:"count,omitempty"`
+	Count int `json:"count"`
 
 	// Href Self link
 	Href *string `json:"href,omitempty"`
@@ -1350,7 +1350,7 @@ type ImageUploadStatus string
 // ImagesListResponse defines model for ImagesListResponse.
 type ImagesListResponse struct {
 	// Count Total count
-	Count *int `json:"count,omitempty"`
+	Count int `json:"count"`
 
 	// Href Self link
 	Href *string `json:"href,omitempty"`
@@ -1496,7 +1496,7 @@ type SearchListResponse struct {
 	Collections []Collection `json:"collections"`
 
 	// Count Total count of images found
-	Count *int `json:"count,omitempty"`
+	Count int `json:"count"`
 
 	// Images List of images found
 	Images []ImageAsset `json:"images"`

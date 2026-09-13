@@ -4216,7 +4216,7 @@ components:
                     items:
                         $ref: "#/components/schemas/ImagesResponse"
                     description: List of items
-            required: [limit, page, items]
+            required: [limit, page, items, count]
 
         CollectionListResponse:
             type: object
@@ -4232,7 +4232,7 @@ components:
                     items:
                         $ref: "#/components/schemas/Collection"
                     description: List of collections
-            required: [limit, page, items]
+            required: [limit, page, items, count]
 
         CollectionDetailResponse:
             x-entity: true
@@ -4253,7 +4253,7 @@ components:
                     $ref: "#/components/schemas/ImageAsset"
                 created_at: { type: string, format: date-time, description: Creation time }
                 updated_at: { type: string, format: date-time, description: Update time }
-            required: [uid, name, images, created_at, updated_at]
+            required: [uid, name, images, image_count, created_at, updated_at]
 
         User:
             x-entity: true
@@ -4844,7 +4844,7 @@ components:
                 prev:
                     type: string
                     description: Previous page link
-            required: [images, collections, page, limit]
+            required: [images, collections, page, limit, count]
 
         ImageTransform:
             x-entity: true

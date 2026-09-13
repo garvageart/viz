@@ -445,7 +445,7 @@ export type SearchListResponse = {
     /** Items per page */
     limit: number;
     /** Total count of images found */
-    count?: number;
+    count: number;
     /** Next page link */
     next?: string;
     /** Previous page link */
@@ -475,7 +475,7 @@ export type ImagesListResponse = {
     /** Current page */
     page: number;
     /** Total count */
-    count?: number;
+    count: number;
     /** List of items */
     items: ImagesResponse[];
 };
@@ -562,7 +562,7 @@ export type CollectionListResponse = {
     /** Current page */
     page: number;
     /** Total count */
-    count?: number;
+    count: number;
     /** List of collections */
     items: Collection[];
 };
@@ -580,7 +580,7 @@ export type CollectionDetailResponse = {
     /** Collection name */
     name: string;
     /** Number of images */
-    image_count?: number;
+    image_count: number;
     /** Is private */
     "private"?: boolean;
     images: ImagesListResponse;
