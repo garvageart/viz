@@ -4,7 +4,7 @@
     import LoadingSpinner from "$lib/components/ui/LoadingSpinner.svelte";
     import { getImageGridDisplay } from "$lib/context-menu/menus/image-grid-display";
     import type { MenuItem } from "$lib/context-menu/types";
-    import { ImagePaginationState } from "$lib/images/state.svelte";
+    import { ImagesPaginationState } from "$lib/images/state.svelte";
     import {
         type ConsolidatedGroup,
         type DateGroup,
@@ -61,16 +61,7 @@
         return map[(viewSettings.current as string) ?? ""];
     }
 
-    let galleryState = $state<ImagePaginationState>(
-        new ImagePaginationState({
-            items: [],
-            limit: 100,
-            page: 0,
-            count: 0
-        })
-    );
-
-    let isPaginating = $state(false);
+    let galleryState = $state(new ImagesPaginationState());
 
     // Fetch existing collection image UIDs and first page of images
     onMount(async () => {
@@ -89,7 +80,7 @@
             });
 
             if (imagesRes.status === 200) {
-                galleryState = new ImagePaginationState(imagesRes.data);
+                galleryState = new ImagesPaginationState(imagesRes.data);
                 initialDataLoaded = true;
             } else {
                 toasts.add({
@@ -117,40 +108,6 @@
     let groups: DateGroup[] = $derived(groupImagesByDate(filterManager.apply(filteredImages)) ?? []);
     let consolidatedGroups: ConsolidatedGroup[] = $derived(getConsolidatedGroups(groups));
     let allImagesFlat = $derived(consolidatedGroups.flatMap((g) => g.allImages));
-
-    async function paginate() {
-        if (isPaginating || !galleryState.hasMore) {
-            return;
-        }
-
-        isPaginating = true;
-        const nextPage = galleryState.pagination.page + 1;
-        try {
-            const res = await listImages({
-                limit: galleryState.pagination.limit,
-                page: nextPage,
-                sortBy: photosSort.value.by,
-                order: photosSort.value.order
-            });
-
-            if (res.status === 200) {
-                const nextItems = res.data.items?.map((i) => i.image) ?? [];
-                galleryState.images.push(...nextItems);
-
-                galleryState.pagination.page = res.data.page ?? nextPage;
-                galleryState.totalCount = res.data.count ?? galleryState.totalCount;
-                galleryState.hasMore = !!res.data.next;
-            } else {
-                console.error("paginate: request failed", res);
-                galleryState.hasMore = false;
-            }
-        } catch (error) {
-            console.error("Pagination error:", error);
-            galleryState.hasMore = false;
-        } finally {
-            isPaginating = false;
-        }
-    }
 
     async function handleAdd() {
         const selectedUids = selectionScope.selectedItems.map((img) => img.uid);
@@ -235,7 +192,7 @@
                                 galleryState.images = [];
                                 galleryState.pagination.page = -1;
                                 galleryState.hasMore = true;
-                                paginate();
+                                galleryState.paginate();
                             }}
                         />
                         <Button
@@ -247,7 +204,7 @@
                                 galleryState.images = [];
                                 galleryState.pagination.page = -1;
                                 galleryState.hasMore = true;
-                                paginate();
+                                galleryState.paginate();
                             }}
                         />
                     </div>
@@ -280,7 +237,7 @@
                             {scopeId}
                             disabledUids={existingUids}
                             totalItemCount={galleryState.totalCount}
-                            onLoadMore={() => paginate()}
+                            onLoadMore={() => galleryState.paginate()}
                         />
                     </div>
                 {/if}

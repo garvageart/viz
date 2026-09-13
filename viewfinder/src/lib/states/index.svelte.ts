@@ -369,3 +369,12 @@ export function toggleTheme() {
 }
 
 export let isMobile = new MediaQuery("(max-width: 40rem)").current;
+
+export abstract class PaginationState<T> {
+    items = $state<T[]>([]);
+    pagination = $state({ limit: 100, page: 0 });
+    totalCount = $state(0);
+    hasMore = $state(false);
+
+    abstract paginate(): Promise<void>;
+}

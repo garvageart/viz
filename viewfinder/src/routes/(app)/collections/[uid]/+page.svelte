@@ -24,7 +24,6 @@
         deleteCollectionImages,
         getImage,
         listCollectionImageUiDs,
-        listCollectionImages,
         updateCollection,
         updateImage
     } from "@viz/api";
@@ -58,7 +57,7 @@
     import { createImageMenu } from "$lib/context-menu/menus/images";
     import type { MenuItem } from "$lib/context-menu/types";
     import { DEFAULT_IMAGE_COLUMNS, LabelColours } from "$lib/images/constants";
-    import { ImagePaginationState } from "$lib/images/state.svelte";
+    import { ImagesPaginationState } from "$lib/images/state.svelte";
     import { KbdShortcutTier, keyboardManager } from "$lib/keyboard/keyboard.svelte";
     import {
         type ConsolidatedGroup,
@@ -113,8 +112,7 @@
     let isPrivate = $derived(data?.private ?? false);
 
     // Image pagination state
-    let collectionState = $derived(new ImagePaginationState(data?.images, data?.image_count));
-    let isPaginating = $state(false);
+    let collectionState = $derived(new ImagesPaginationState(data?.images));
 
     // Refetch from page 0 when the collection sort changes so pagination stays
     // consistent with the server-sorted continuation (skips the initial mount
@@ -135,7 +133,7 @@
             collectionState.images = [];
             collectionState.pagination.page = -1;
             collectionState.hasMore = true;
-            paginate();
+            collectionState.paginate(data.uid);
         });
     });
 
@@ -149,41 +147,6 @@
         void collectionState.images.length;
         scope.updateFacets(collectionState.images);
     });
-
-    async function paginate() {
-        if (isPaginating || !collectionState.hasMore) {
-            return;
-        }
-
-        isPaginating = true;
-        const nextPage = collectionState.pagination.page + 1;
-        const res = await listCollectionImages(data.uid, {
-            limit: collectionState.pagination.limit,
-            page: nextPage,
-            sortBy: collectionDetailSort.value.by,
-            order: collectionDetailSort.value.order
-        });
-
-        if (res.status === 200) {
-            const nextItems = res.data.items?.map((i) => i.image) ?? [];
-            collectionState.images.push(...nextItems);
-
-            // Update pagination state from response
-            collectionState.pagination.page = res.data.page ?? nextPage;
-            collectionState.totalCount = res.data.count ?? collectionState.totalCount;
-            collectionState.hasMore = !!res.data.next;
-        } else {
-            // Avoid infinite loop on failure
-            toasts.add({
-                type: "error",
-                title: `Image Load Failure: ${res.status}`,
-                message: `Failed to load more images for collection: ${res.data?.error ?? "Unknown error"}`
-            });
-            collectionState.hasMore = false;
-        }
-
-        isPaginating = false;
-    }
 
     // Sync tab name with collection name directly on the passed view instance
     $effect(() => {
@@ -331,7 +294,7 @@
         type: viewSettings.current,
         assetGridArray: imageGridArray,
         data: displayData,
-        onLoadMore: () => paginate(),
+        onLoadMore: () => collectionState.paginate(data.uid),
         scopeId: scopeId,
         assetGridDisplayProps: {
             style: `padding: 2em ${isLayoutPage() ? "1em" : "2em"};`
@@ -853,7 +816,7 @@
             showDateHeaders={viewSettings.showDates}
             {scopeId}
             totalItemCount={collectionState.totalCount}
-            onLoadMore={() => paginate()}
+            onLoadMore={() => collectionState.paginate(data.uid)}
             assetDblClick={(_e, asset) => {
                 const target = asset ?? selectionFirstImage;
                 if (target) {

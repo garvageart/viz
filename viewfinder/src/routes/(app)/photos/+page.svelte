@@ -6,7 +6,6 @@
         Label as ImageLabel,
         addCollectionImages,
         getImage,
-        listImages,
         updateImage
     } from "@viz/api";
     import { onDestroy, untrack } from "svelte";
@@ -33,7 +32,7 @@
     import type { MenuItem } from "$lib/context-menu/types";
     import { DragData } from "$lib/drag-drop/data.js";
     import { LabelColours } from "$lib/images/constants.js";
-    import { ImagePaginationState } from "$lib/images/state.svelte.js";
+    import { ImagesPaginationState } from "$lib/images/state.svelte";
     import { KbdShortcutTier, keyboardManager } from "$lib/keyboard/keyboard.svelte";
     import {
         type ConsolidatedGroup,
@@ -69,8 +68,7 @@
         });
     });
 
-    let galleryState = $derived(new ImagePaginationState(data));
-    let isPaginating = $state(false);
+    let galleryState = $derived(new ImagesPaginationState(data));
 
     $effect(() => {
         untrack(() => {
@@ -120,7 +118,7 @@
 
     // Selection (shared across groups)
     const scopeId = SelectionScopeNames.PHOTOS_MAIN;
-    const selectionScope = selectionManager.getScope<ImageAsset>(scopeId);
+    const selectionScope = selectionManager.getScope(scopeId);
 
     $effect(() => {
         selectionManager.setActive(scopeId);
@@ -159,37 +157,6 @@
     // Lightbox
     const lightbox = new ImageLightboxState();
 
-    async function paginate() {
-        if (isPaginating || !galleryState.hasMore) {
-            return;
-        }
-
-        isPaginating = true;
-        const nextPage = galleryState.pagination.page + 1;
-        const res = await listImages({
-            limit: galleryState.pagination.limit,
-            page: nextPage,
-            sortBy: photosSort.value.by,
-            order: photosSort.value.order
-        });
-
-        if (res.status === 200) {
-            const nextItems = res.data.items?.map((i) => i.image) ?? [];
-            galleryState.images.push(...nextItems);
-
-            // Update pagination state from response
-            galleryState.pagination.page = res.data.page ?? nextPage;
-            galleryState.totalCount = res.data.count ?? galleryState.totalCount;
-            galleryState.hasMore = !!res.data.next;
-        } else {
-            // On error, avoid tight loops; allow retry on next scroll
-            console.error("paginate: request failed", res);
-            galleryState.hasMore = false;
-        }
-
-        isPaginating = false;
-    }
-
     function openLightbox(asset?: ImageAsset) {
         const target = asset ?? selectionFirstImage;
         if (target) {
@@ -218,7 +185,7 @@
         if (nextIdx >= sortedFilteredImages.length) {
             if (galleryState.hasMore && delta === 1) {
                 pendingNextUid = lightbox.activeImage.uid;
-                paginate();
+                galleryState.paginate();
             }
             return;
         }
@@ -457,7 +424,7 @@
                 showDateHeaders={viewSettings.showDates}
                 {scopeId}
                 totalItemCount={galleryState.totalCount}
-                onLoadMore={() => paginate()}
+                onLoadMore={() => galleryState.paginate()}
                 assetDblClick={(_e, asset) => {
                     openLightbox(asset);
                 }}
@@ -474,7 +441,7 @@
                 assetSnippet={imageCard}
                 sortState={photosSort}
                 customSnippet={justifiedGrid}
-                onLoadMore={() => paginate()}
+                onLoadMore={() => galleryState.paginate()}
                 {scopeId}
                 assetDblClick={(
                     _e: MouseEvent & { currentTarget: EventTarget & (HTMLDivElement | HTMLTableRowElement) },
@@ -642,7 +609,7 @@
                             galleryState.images = [];
                             galleryState.pagination.page = -1;
                             galleryState.hasMore = true;
-                            paginate();
+                            galleryState.paginate();
                         }}
                     />
                     <Button
@@ -655,7 +622,7 @@
                             galleryState.images = [];
                             galleryState.pagination.page = -1;
                             galleryState.hasMore = true;
-                            paginate();
+                            galleryState.paginate();
                         }}
                     />
                 </div>

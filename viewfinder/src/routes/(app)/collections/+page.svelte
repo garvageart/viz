@@ -1,14 +1,6 @@
 <script lang="ts">
     import { goto } from "$app/navigation";
-    import {
-        type Collection,
-        type ImageAsset,
-        addCollectionImages,
-        createCollection,
-        listCollectionImages,
-        listCollections,
-        updateCollection
-    } from "@viz/api";
+    import { type Collection, addCollectionImages, createCollection, updateCollection } from "@viz/api";
     import { type ComponentProps, untrack } from "svelte";
     import { CollectionsPaginationState } from "$lib/collections/state.svelte";
     import Dropdown from "$lib/components/context-menus/Dropdown.svelte";
@@ -55,35 +47,6 @@
 
     let collectionsState = $derived(new CollectionsPaginationState(data));
     let displayData = $derived(sortCollections(collectionsState.items, collectionsSort.value));
-    let isPaginating = false;
-
-    async function paginate() {
-        if (isPaginating || !collectionsState.hasMore) {
-            return;
-        }
-
-        isPaginating = true;
-        try {
-            const res = await listCollections({
-                limit: collectionsState.pagination.limit,
-                page: collectionsState.pagination.page + 1,
-                sortBy: collectionsSort.value.by as "name" | "recently_added" | "updated_at",
-                order: collectionsSort.value.order
-            });
-
-            if (res.status === 200) {
-                collectionsState.items.push(...res.data.items);
-                collectionsState.pagination.page = res.data.page;
-                collectionsState.totalCount = res.data.count ?? collectionsState.totalCount;
-                collectionsState.hasMore = !!res.data.next;
-            } else {
-                console.error("paginate: request failed", res);
-                collectionsState.hasMore = false;
-            }
-        } finally {
-            isPaginating = false;
-        }
-    }
 
     // Selection
     let scopeId = $derived(SelectionScopeNames.COLLECTIONS_MAIN);
@@ -95,46 +58,6 @@
                 return c.favourited;
             })
     );
-
-    // Track to discard stale responses when selection changes rapidly
-    let activeFilmstripUid = $state<string | null>(null);
-
-    // When a collection is selected, fetch its images and populate a scope
-    // that the Filmstrip panel reads from (via activeScope.source)
-    async function syncFilmstripScope(collection: Collection | undefined) {
-        const uid = collection?.uid ?? null;
-
-        // Capture previous UID before overwriting
-        const prevUid = activeFilmstripUid;
-        activeFilmstripUid = uid;
-
-        // Clean up previous scope when selection changes or is cleared
-        if (prevUid && prevUid !== uid) {
-            selectionManager.removeScope(`${SelectionScopeNames.FILMSTRIP_COLLECTION_PREFIX}${prevUid}`);
-        }
-        if (!uid) {
-            return;
-        }
-
-        const imageScopeId = `${SelectionScopeNames.FILMSTRIP_COLLECTION_PREFIX}${uid}`;
-        const res = await listCollectionImages(uid, { limit: 200 });
-        if (activeFilmstripUid !== uid) {
-            return; // stale response — user selected a different collection
-        }
-
-        if (res.status === 200) {
-            const images = res.data.items.map((i) => i.image);
-            const scope = selectionManager.getScope<ImageAsset>(imageScopeId);
-            scope.setSource(images);
-            scope.clear();
-            // Make the populated scope active so the Filmstrip reads it.
-            selectionManager.setActive(imageScopeId);
-        }
-    }
-
-    $effect(() => {
-        syncFilmstripScope(firstSelectedCollection);
-    });
 
     // Modal data for create/edit
     type ModalMode = "create" | "edit";
@@ -283,7 +206,7 @@
         type: "grid",
         assetGridArray: collectionGridArray,
         data: displayData,
-        onLoadMore: () => paginate(),
+        onLoadMore: () => collectionsState.paginate(),
         scopeId: scopeId,
         assetGridDisplayProps: {
             style: `padding: 1em ${isLayoutPage() ? "1em" : "2em"};`
