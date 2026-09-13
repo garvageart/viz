@@ -6,24 +6,41 @@ test.describe("Advanced Search & Image Filtering", () => {
         // Go to main view to initialize layout
         await page.goto("/");
 
-        // Define default predictable workspace layout with a Filter panel
+        // Define default predictable workspace layout with a Filter panel and Photos view
         await page.evaluate(() => {
-            const singleLayout = {
+            const splitLayout = {
                 root: {
-                    type: "tab-group",
-                    id: "tg-main",
+                    type: "split",
+                    id: "sp-main",
+                    orientation: "horizontal",
                     size: 100,
                     locked: false,
-                    activeViewId: 2, // Activate filter view by default
-                    views: [
-                        { name: "Clock", id: 1, isActive: false },
-                        { name: "Filter", id: 2, isActive: true },
-                        { name: "Collections", id: 3, isActive: false, path: "/collections" }
+                    children: [
+                        {
+                            type: "tab-group",
+                            id: "tg-filter",
+                            size: 30,
+                            locked: false,
+                            activeViewId: 2,
+                            views: [
+                                { name: "Clock", id: 1, isActive: false },
+                                { name: "Filter", id: 2, isActive: true },
+                                { name: "Collections", id: 3, isActive: false, path: "/collections" }
+                            ]
+                        },
+                        {
+                            type: "tab-group",
+                            id: "tg-photos",
+                            size: 70,
+                            locked: false,
+                            activeViewId: 4,
+                            views: [{ name: "Photos", id: 4, isActive: true, path: "/photos" }]
+                        }
                     ]
                 },
-                activeGroupId: "tg-main"
+                activeGroupId: "tg-filter"
             };
-            localStorage.setItem("viz:workspaceLayout", JSON.stringify(singleLayout));
+            localStorage.setItem("viz:workspaceLayout", JSON.stringify(splitLayout));
         });
 
         await page.reload();
