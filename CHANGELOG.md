@@ -5,6 +5,16 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.34.9] - 2026-09-14
+
+* fix(viewfinder): update confirmation modal cancel button styling (ca57e90c)
+* fix(http): align websocket checkorigin with cors allowed hosts (c97aa270)
+* fix: change cancel button variant (f5e85670)
+* refactor(viewfinder): purify selection scope types and streamline state updates (05d909d0)
+* refactor(viewfinder): unify pagination states and streamline gallery pagination (5681d0b6)
+* refactor(viewfinder): simplify selection scopes and filmstrip collection binding (ed1e3386)
+* feat(api): make count and image_count required fields in list responses (d52895f8)
+
 ## [0.34.8] - 2026-09-13
 
 * test(e2e): include Photos view in test workspace layouts for filter panels (cb45473a)

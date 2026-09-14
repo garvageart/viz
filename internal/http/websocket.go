@@ -101,7 +101,7 @@ func NewWSBroker(logger *slog.Logger, customAllowedHosts ...string) *WSBroker {
 			if _, after, ok := strings.Cut(origin, "://"); ok {
 				originWithoutScheme = after
 			}
-			
+
 			if strings.EqualFold(originWithoutScheme, r.Host) {
 				return true
 			}
