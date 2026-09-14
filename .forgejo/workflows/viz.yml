@@ -39,7 +39,7 @@ jobs:
             notes: ${{ steps.set-sha.outputs.notes }}
         steps:
             - name: Checkout Code
-              uses: actions/checkout@v4
+              uses: actions/checkout@v7
               with:
                   fetch-depth: 0
                   fetch-tags: true
@@ -428,6 +428,14 @@ jobs:
         needs: [build-images, test-frontend, test-backend, test-e2e, publish-images]
         runs-on: ubuntu-latest
         steps:
+            - name: Checkout Release Files
+              uses: actions/checkout@v7
+              with:
+                  sparse-checkout: |
+                      .env.example
+                      docker/docker-compose.prod.yml
+                  sparse-checkout-cone-mode: false
+
             - name: Create Release
               uses: https://github.com/softprops/action-gh-release@v2
               with:
@@ -437,3 +445,6 @@ jobs:
                   draft: false
                   prerelease: ${{ needs.build-images.outputs.is_prerelease == 'true' }}
                   token: ${{ secrets.REGISTRY_TOKEN || secrets.GITHUB_TOKEN }}
+                  files: |
+                      .env.example
+                      docker/docker-compose.prod.yml

@@ -27,7 +27,7 @@ services:
       redis:
         condition: service_started
     env_file:
-      - ../.env
+      - .env
     environment:
       - DB_HOST=db
       - REDIS_HOST=redis
@@ -35,7 +35,7 @@ services:
       - API_HOST=0.0.0.0
     volumes:
       - data:/app/data
-      - ../viz.json:/app/viz.json
+      - viz.json:/app/viz.json
     ports:
       - 7780:7770
     networks:
@@ -48,7 +48,7 @@ services:
       target: db
     restart: unless-stopped
     env_file:
-      - ../.env
+      - .env
     environment:
       - POSTGRES_USER=${DB_USER:-postgres}
       - POSTGRES_PASSWORD=${DB_PASSWORD:-postgres}
