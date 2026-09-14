@@ -25,7 +25,6 @@ import type { SelectionScope } from "$lib/states/selection.svelte";
 import { toasts } from "$lib/toast-notifcations/toasts.svelte";
 import { downloadToFilesystem } from "$lib/utils/files";
 import { copyToClipboard } from "$lib/utils/misc";
-import { invalidateViz } from "$lib/views/views.svelte";
 import type { MenuItem } from "../types";
 
 export interface ImageMenuOptions {
@@ -139,7 +138,6 @@ export async function toggleFavouriteImages(
                     onUpdate(res.data);
                 }
             }
-            await invalidateViz();
         }
     } catch (err) {
         toasts.add({
@@ -367,7 +365,6 @@ export async function deleteSelectedImages(
                 onDelete(uids);
             }
             selectionScope.clear();
-            await invalidateViz();
         }
     } catch (err) {
         toasts.add({

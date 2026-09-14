@@ -31,7 +31,6 @@
     import { collectionsSort } from "$lib/states/sort.svelte";
     import { toasts } from "$lib/toast-notifcations/toasts.svelte";
     import type { AssetGridArray } from "$lib/types/asset";
-    import { invalidateViz } from "$lib/views/views.svelte";
     import type { PageProps } from "./$types";
 
     let { data }: PageProps = $props();
@@ -138,7 +137,6 @@
             });
 
             modalsManager.pop();
-            await invalidateViz();
         } else {
             toasts.add({
                 message: `Failed to update collection: ${res.data.error || "Unknown error"}`,
@@ -320,7 +318,6 @@
                         message: `Duplicated collection ${newCol.name}`,
                         type: "success"
                     });
-                    await invalidateViz();
                 });
             }}
         />
@@ -350,7 +347,6 @@
                             message: `Deleted collection ${deletedCol.name}`,
                             type: "success"
                         });
-                        await invalidateViz();
                     },
                     async (deletedCols) => {
                         selectionScope.clear();
@@ -361,7 +357,6 @@
                                     : `Deleted collection **${deletedCols[0].name}**`,
                             type: "success"
                         });
-                        await invalidateViz();
                     }
                 );
             }}

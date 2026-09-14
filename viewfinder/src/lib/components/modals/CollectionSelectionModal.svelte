@@ -5,7 +5,6 @@
     import { SelectionScopeNames, selectionManager } from "$lib/states/selection.svelte";
     import { toasts } from "$lib/toast-notifcations/toasts.svelte";
     import type { CardVisualState } from "$lib/types/snippet";
-    import { invalidateViz } from "$lib/views/views.svelte";
     import AssetGrid from "../grid/AssetView.svelte";
     import Button from "../ui/Button.svelte";
     import CollectionCard from "../ui/CollectionCard.svelte";
@@ -110,7 +109,7 @@
                             message: `Collection created with ${imageUidsToAdd.length} image(s)`,
                             timeout: 4000
                         });
-                        await invalidateViz();
+
                         modalsManager.pop(); // Close Create Modal
                         modalsManager.close(id); // Close Selection Modal
                         goto(`/collections/${collectionUid}`);

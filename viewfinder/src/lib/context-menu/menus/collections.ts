@@ -16,7 +16,6 @@ import { download } from "$lib/states/index.svelte";
 import { toasts } from "$lib/toast-notifcations/toasts.svelte";
 import { downloadToFilesystem } from "$lib/utils/files";
 import { copyToClipboard } from "$lib/utils/misc";
-import { invalidateViz } from "$lib/views/views.svelte";
 import type { MenuItem } from "../types";
 
 export interface CollectionMenuOptions {
@@ -67,8 +66,6 @@ export async function toggleFavouriteCollections(collections: Collection[], onUp
                 onUpdate(res.data);
             }
         }
-
-        await invalidateViz();
     } else {
         toasts.add({
             type: "error",

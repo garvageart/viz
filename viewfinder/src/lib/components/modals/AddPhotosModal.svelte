@@ -17,7 +17,6 @@
     import { SelectionScopeNames, selectionManager } from "$lib/states/selection.svelte";
     import { photosSort } from "$lib/states/sort.svelte";
     import { toasts } from "$lib/toast-notifcations/toasts.svelte";
-    import { invalidateViz } from "$lib/views/views.svelte";
     import Dropdown from "../context-menus/Dropdown.svelte";
     import PhotoAssetGrid from "../grid/PhotoAssetGrid.svelte";
     import Button from "../ui/Button.svelte";
@@ -128,7 +127,6 @@
                     type: "success"
                 });
 
-                await invalidateViz();
                 modalsManager.close(id);
             } else {
                 toasts.add({

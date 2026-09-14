@@ -6,7 +6,7 @@ import type { MenuItem } from "$lib/context-menu/types";
 import type { TabGroup } from "$lib/layouts/model.svelte";
 import { workspaceState } from "$lib/states/workspace.svelte";
 import { toasts } from "$lib/toast-notifcations/toasts.svelte";
-import VizView, { type TabActions, invalidateViz } from "$lib/views/views.svelte";
+import VizView, { type TabActions } from "$lib/views/views.svelte";
 import type CollectionPage from "../../../routes/(app)/collections/[uid]/+page.svelte";
 
 export const collectionRoutePath = "/collections/[uid]";
@@ -96,7 +96,6 @@ export const collectionTabDropHandlers: Map<
                     message: toastMessage,
                     actions: [{ label: "Open Collection", onClick: () => openCollectionView(v) }]
                 });
-                await invalidateViz();
             }
         }
     ]

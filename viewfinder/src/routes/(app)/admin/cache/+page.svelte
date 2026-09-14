@@ -13,7 +13,6 @@
     import { type Toast, toasts } from "$lib/toast-notifcations/toasts.svelte.js";
     import type { MaterialSymbol } from "$lib/types/MaterialSymbol.js";
     import { formatBytes } from "$lib/utils/images";
-    import { invalidateViz } from "$lib/views/views.svelte";
 
     let { data } = $props();
 
@@ -63,7 +62,6 @@
             }
 
             toasts.add(toastOptions);
-            await invalidateViz();
         } catch (e) {
             toasts.add({
                 type: "error",

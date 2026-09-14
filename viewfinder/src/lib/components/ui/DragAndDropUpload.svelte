@@ -21,7 +21,6 @@
     } from "$lib/types/images";
     import UploadManager, { type ImageUploadSuccess } from "$lib/upload/manager.svelte";
     import { extractFilesFromDataTransfer } from "$lib/utils/files";
-    import { invalidateViz } from "$lib/views/views.svelte";
     import CollectionModal from "../modals/CollectionModal.svelte";
     import CollectionSelectionModal from "../modals/CollectionSelectionModal.svelte";
     import ConfirmationModal from "../modals/ConfirmationModal.svelte";
@@ -71,7 +70,6 @@
             });
 
             try {
-                await invalidateViz();
             } catch (err) {
                 console.error("Failed to fetch uploaded images:", err);
             }
@@ -166,7 +164,6 @@
                     ]
                 });
 
-                await invalidateViz();
                 return true;
             }
 
