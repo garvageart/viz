@@ -15,9 +15,11 @@
     import { eventsState } from "$lib/states/events.svelte";
     import { historyState } from "$lib/states/history.svelte";
     import { debugState, getTheme, isLayoutPage, isMobile, search, toggleTheme, user } from "$lib/states/index.svelte";
+    import { workspaceState } from "$lib/states/workspace.svelte";
     import { toasts } from "$lib/toast-notifcations/toasts.svelte";
     import { SUPPORTED_IMAGE_TYPES, SUPPORTED_RAW_FILES, type SupportedImageTypes } from "$lib/types/images";
     import UploadManager from "$lib/upload/manager.svelte";
+    import { copyToClipboard } from "$lib/utils/misc";
     import OpenAccountPanel from "../context-menus/AccountPanel.svelte";
     import AppMenu from "../context-menus/AppMenu.svelte";
     import AvatarBadge from "./AvatarBadge.svelte";
@@ -247,11 +249,25 @@
             {#if page.url.pathname === "/"}
                 <Button
                     variant="ghost"
+                    iconName="data_object"
+                    id="copy-workspace-layout"
+                    class="header-button"
+                    onclick={() => {
+                        copyToClipboard(JSON.stringify(workspaceState.workspace?.toJSON(), null, 4));
+                        toasts.add({
+                            message: "Workspace copied to clipboard"
+                        });
+                    }}
+                    aria-label="Copy Workspace JSON"
+                    title="Copy Workspace JSON"
+                />
+                <Button
+                    variant="ghost"
                     iconName="border_outer"
                     id="root-debug-button"
                     class="header-button"
-                    aria-label="Toggle Root Workspace Drop Zones"
                     onclick={() => (showRootDebugOverlay.value = !showRootDebugOverlay.value)}
+                    aria-label="Toggle Root Workspace Drop Zones"
                     title="Toggle Root Workspace Drop Zones"
                 />
             {/if}
