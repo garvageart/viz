@@ -21,7 +21,6 @@ test.describe("Drag & Drop File Upload Flow", () => {
     test("should trigger drop overlay and perform mock file upload", async ({ page }) => {
         test.slow();
         await page.goto("/photos");
-        await page.waitForLoadState("networkidle");
         await expect(page.locator(".viz-workspace, main").first()).toBeVisible({ timeout: 20000 });
 
         // Log all browser console logs for E2E debugging
