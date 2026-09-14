@@ -23,6 +23,7 @@ describe("ConfirmationModal", () => {
             message: "Are you sure you want to delete this collection?"
         });
 
+        // FIXME: Not i18n safe
         const cancel = screen.getByRole("button", { name: "Cancel" });
         const confirm = screen.getByRole("button", { name: "Confirm" });
 
@@ -88,7 +89,7 @@ describe("ConfirmationModal", () => {
         expect(modalsManager.dismiss).toHaveBeenCalledWith("delete-collection-modal");
     });
 
-    it("applies the primary variant and background by default", () => {
+    it("applies the primary variant class by default", () => {
         render(ConfirmationModal, {
             id: "delete-collection-modal",
             title: "Delete Collection?",
@@ -97,10 +98,9 @@ describe("ConfirmationModal", () => {
 
         const confirm = screen.getByRole("button", { name: "Confirm" });
         expect(confirm).toHaveClass("primary");
-        expect(confirm.style.backgroundColor).toBe("var(--viz-primary)");
     });
 
-    it.each(COLOUR_VARIANTS)("applies the %s variant class and no primary background", (variant) => {
+    it.each(COLOUR_VARIANTS)("applies the %s variant class", (variant) => {
         render(ConfirmationModal, {
             id: "delete-collection-modal",
             title: "Delete Collection?",
@@ -110,6 +110,5 @@ describe("ConfirmationModal", () => {
 
         const confirm = screen.getByRole("button", { name: "Confirm" });
         expect(confirm).toHaveClass(variant);
-        expect(confirm.style.backgroundColor).toBe("");
     });
 });

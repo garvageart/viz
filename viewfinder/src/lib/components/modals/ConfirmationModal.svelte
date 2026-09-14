@@ -97,10 +97,6 @@
             display: flex;
             gap: var(--viz-spacing-std);
             justify-content: flex-end;
-
-            :global(#cancel-btn) {
-                color: var(--viz-10-dark);
-            }
         }
     }
 </style>
