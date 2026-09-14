@@ -92,7 +92,7 @@ test.describe("Collection Lifecycle & Context Menus", () => {
 
         // Click the confirm button in the modal
         const confirmBtn = confirmModal
-            .locator(".onconfirm-btn, .modal-actions button.viz-button-danger, .modal-actions button:last-child")
+            .locator("#confirm-btn, button[type='submit'], .confirm-actions button:last-child")
             .first();
         await expect(confirmBtn).toBeVisible();
         await confirmBtn.click();
