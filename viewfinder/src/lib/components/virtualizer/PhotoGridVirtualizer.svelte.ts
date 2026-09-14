@@ -58,7 +58,7 @@ export class PhotoGridVirtualizer {
     // Configuration
     containerWidth = $state(0);
     targetRowHeight = $state(280);
-    gridGap = $state(8);
+    gridGap = $state(4);
     headerHeight = $state(40);
 
     // Internal
