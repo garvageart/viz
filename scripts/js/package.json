@@ -1,6 +1,6 @@
 {
     "name": "@viz/scripts",
-    "version": "0.34.12",
+    "version": "0.34.13",
     "description": "Internal JavaScript scripts for the Viz project",
     "private": true,
     "type": "module",
