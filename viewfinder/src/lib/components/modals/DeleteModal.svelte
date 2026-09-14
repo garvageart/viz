@@ -46,26 +46,15 @@
     </span>
 
     <div class="delete-actions">
-        <Button size="small" onclick={handleCancel} class="cancel-btn"><span>Cancel</span></Button>
+        <Button variant="secondary" onclick={handleCancel} class="cancel-btn"><span>Cancel</span></Button>
 
         <div class="confirm-group">
             {#if deletePermanently}
-                <Button
-                    variant="danger"
-                    size="small"
-                    onclick={handlePermanentDelete}
-                    class="permanent-delete-btn"
-                    style="background-color: var(--viz-error-color, #ef4444); color: white;"
-                >
+                <Button variant="danger" onclick={handlePermanentDelete} class="permanent-delete-btn">
                     <span>Delete Permanently</span>
                 </Button>
             {:else}
-                <Button
-                    size="small"
-                    onclick={handleSoftDelete}
-                    class="soft-delete-btn"
-                    style="background-color: var(--viz-primary); color: var(--viz-text-primary);"
-                >
+                <Button variant="primary" onclick={handleSoftDelete} class="soft-delete-btn">
                     <span>Delete</span>
                 </Button>
             {/if}
@@ -97,7 +86,7 @@
             display: flex;
             justify-content: space-between;
             align-items: center;
-            gap: 1rem;
+            gap: var(--viz-spacing-sm);
             width: 100%;
         }
     }

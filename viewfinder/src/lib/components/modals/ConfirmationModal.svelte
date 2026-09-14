@@ -35,10 +35,6 @@
         width: "25%"
     };
 
-    let confirmButtonStyle = $derived(
-        buttonVariant === "primary" ? "background-color: var(--viz-primary); color: var(--viz-10-dark);" : undefined
-    );
-
     function handleConfirmSubmit(e: SubmitEvent) {
         e.preventDefault();
         handleConfirm();
@@ -74,8 +70,8 @@
             {#if actions}
                 {@render actions({ id })}
             {:else}
-                <Button type="button" variant="secondary" onclick={handleCancel}>{cancelText}</Button>
-                <Button type="submit" variant={buttonVariant} class="onconfirm-btn" style={confirmButtonStyle}>
+                <Button id="cancel-btn" type="button" variant="secondary" onclick={handleCancel}>{cancelText}</Button>
+                <Button id="confirm-btn" type="submit" variant={buttonVariant}>
                     {confirmText}
                 </Button>
             {/if}
@@ -93,15 +89,18 @@
         .confirmation-content {
             display: flex;
             flex-direction: column;
-            gap: 0.5rem;
+            gap: var(--viz-spacing-sm);
             font-size: var(--viz-font-size-lg);
         }
 
         .confirm-actions {
             display: flex;
-            gap: 1rem;
+            gap: var(--viz-spacing-std);
             justify-content: flex-end;
-            margin-top: 0.5rem;
+
+            :global(#cancel-btn) {
+                color: var(--viz-10-dark);
+            }
         }
     }
 </style>
