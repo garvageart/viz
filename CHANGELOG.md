@@ -5,6 +5,12 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.34.11] - 2026-09-14
+
+* test(viewfinder): update confirmation modal locator in collections e2e (fa4a588f)
+* test(viewfinder): fix ConfirmationModal variant assertions (226d271c)
+* ci: attach .env.example and docker compose template to releases (321d7ed5)
+
 ## [0.34.10] - 2026-09-14
 
 * fix(viewfinder): align modal action button variants and design system spacing (3279836f)
