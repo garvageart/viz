@@ -50,8 +50,10 @@
 
     // Selection
     let scopeId = $derived(SelectionScopeNames.COLLECTIONS_MAIN);
-    let selectionScope = $derived(selectionManager.getScope(scopeId));
+    const selectionScope = $derived(selectionManager.registerScope(scopeId));
+
     let firstSelectedCollection = $derived(selectionScope.selectedItems[0]);
+    // TODO: Support all different actions, not just favouriting
     let areAllSelectedFavourited = $derived(
         selectionScope.selectedItems.length > 0 &&
             selectionScope.selectedItems.every((c) => {

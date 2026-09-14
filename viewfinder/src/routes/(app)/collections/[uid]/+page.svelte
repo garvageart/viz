@@ -68,7 +68,7 @@
     import { sortCollectionImages } from "$lib/sort/sort.js";
     import { filterManager } from "$lib/states/filter.svelte";
     import { debugMode, isLayoutPage, viewSettings } from "$lib/states/index.svelte";
-    import { selectionManager } from "$lib/states/selection.svelte";
+    import { type CollectionUIDSelectionScope, selectionManager } from "$lib/states/selection.svelte";
     import { collectionDetailSort } from "$lib/states/sort.svelte";
     import { toasts } from "$lib/toast-notifcations/toasts.svelte.js";
     import type { AssetGridArray } from "$lib/types/asset.js";
@@ -92,6 +92,7 @@
 
     $effect(() => {
         untrack(() => {
+            selectionManager.registerScope(scopeId);
             selectionManager.setActive(scopeId);
             if (!filterManager.keepFilters) {
                 filterManager.resetActiveScope();
@@ -171,12 +172,8 @@
     let searchData = $derived(searchForData(searchValue, collectionState.images));
 
     // Selection
-    const scopeId = $derived<`collection-${string}`>(`collection-${data.uid}`);
+    const scopeId = $derived<CollectionUIDSelectionScope>(`collection-${data.uid}`);
     const selectionScope = $derived(selectionManager.getScope(scopeId));
-
-    $effect(() => {
-        selectionManager.setActive(scopeId);
-    });
 
     let selectionFirstImage = $derived.by(() => {
         if (selectionScope.size === 0) {

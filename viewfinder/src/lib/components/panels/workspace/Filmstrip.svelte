@@ -30,7 +30,7 @@
         }
 
         const scopeId: CollectionUIDSelectionScope = `collection-${activeEntity.uid}`;
-        const scope = selectionManager.getScope(scopeId);
+        const scope = selectionManager.registerScope(scopeId);
 
         if (scope.source.length === 0) {
             listCollectionImages(activeEntity.uid).then((res) => {
