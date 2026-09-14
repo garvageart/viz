@@ -68,7 +68,7 @@
     import { sortCollectionImages } from "$lib/sort/sort.js";
     import { filterManager } from "$lib/states/filter.svelte";
     import { debugMode, isLayoutPage, viewSettings } from "$lib/states/index.svelte";
-    import { SelectionScopeNames, selectionManager } from "$lib/states/selection.svelte";
+    import { selectionManager } from "$lib/states/selection.svelte";
     import { collectionDetailSort } from "$lib/states/sort.svelte";
     import { toasts } from "$lib/toast-notifcations/toasts.svelte.js";
     import type { AssetGridArray } from "$lib/types/asset.js";
@@ -171,8 +171,8 @@
     let searchData = $derived(searchForData(searchValue, collectionState.images));
 
     // Selection
-    const scopeId = $derived(SelectionScopeNames.COLLECTION_PREFIX + data.uid);
-    const selectionScope = $derived(selectionManager.getScope<ImageAsset>(scopeId));
+    const scopeId = $derived<`collection-${string}`>(`collection-${data.uid}`);
+    const selectionScope = $derived(selectionManager.getScope(scopeId));
 
     $effect(() => {
         selectionManager.setActive(scopeId);
@@ -196,10 +196,9 @@
     });
 
     let imageMenuItems: MenuItem[] = $derived(
-        createImageMenu(collectionState.images, selectionScope, {
+        createImageMenu(selectionScope, {
             collection: data,
             onUpdate: (image: ImageAsset) => {
-                selectionScope.updateItem(image, collectionState.images);
                 collectionState.images = collectionState.images.map((i) => {
                     if (i.uid === image.uid) {
                         return image;
@@ -525,7 +524,7 @@
             ConfirmationModal,
             {
                 title: "Remove Images",
-                message: `Remove ${count} selected image(s) from collection "${data.name}"?`,
+                message: `Remove ${count} selected image(s) from collection?`,
                 confirmText: "Remove",
                 onConfirm: executeDeleteSelected
             },
@@ -539,7 +538,9 @@
             const res = await deleteCollectionImages(data.uid, {
                 uids: selectionScope.isSelectAll ? undefined : selectionScope.selectedItems.map((i) => i.uid),
                 all: selectionScope.isSelectAll,
-                exclusions: selectionScope.isSelectAll ? Array.from(selectionScope.excluded) : undefined
+                exclusions: selectionScope.isSelectAll
+                    ? Array.from(selectionScope.excluded).map((i) => i.uid)
+                    : undefined
             });
 
             if (res.status === 200 && (res.data?.deleted ?? true)) {
@@ -778,7 +779,12 @@
         {nextLightboxImage}
         onImageUpdated={(image) => {
             lightbox.image = image;
-            selectionScope.updateItem(image, collectionState.images);
+            collectionState.images = collectionState.images.map((i) => {
+                if (i.uid === image.uid) {
+                    return image;
+                }
+                return i;
+            });
         }}
     />
 {/if}
@@ -941,10 +947,9 @@
 
                 // goshhhhh
                 if (successCount > 0) {
-                    res.forEach((r) => {
-                        if (r.status === 200) {
-                            selectionScope.updateItem(r.data, collectionState.images);
-                        }
+                    const updatedMap = new Map(res.filter((r) => r.status === 200).map((r) => [r.data.uid, r.data]));
+                    collectionState.images = collectionState.images.map((i) => {
+                        return updatedMap.get(i.uid) ?? i;
                     });
                 }
             }}
@@ -968,10 +973,9 @@
                     return r.status === 200;
                 }).length;
                 if (successCount > 0) {
-                    res.forEach((r) => {
-                        if (r.status === 200) {
-                            selectionScope.updateItem(r.data, collectionState.images);
-                        }
+                    const updatedMap = new Map(res.filter((r) => r.status === 200).map((r) => [r.data.uid, r.data]));
+                    collectionState.images = collectionState.images.map((i) => {
+                        return updatedMap.get(i.uid) ?? i;
                     });
                 }
             }}

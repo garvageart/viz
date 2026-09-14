@@ -9,10 +9,12 @@ export enum SelectionScopeNames {
     COLLECTION_PREFIX = "collection-",
     SEARCH_IMAGES = "search-images",
     SEARCH_COLLECTIONS = "search-collections",
-    FILMSTRIP = "filmstrip"
+    FILMSTRIP = "filmstrip",
+    ADD_PHOTOS_MODAL = "add-photos-modal",
+    COLLECTIONS_SELECTION_MODAL = "collections-selection-modal"
 }
 
-export type SelectionScopeKind = "image" | "collection" | "generic";
+export type CollectionUIDSelectionScope = `collection-${string}`;
 
 export interface ScopeTypeMap {
     [SelectionScopeNames.DEFAULT]: ImageAsset;
@@ -20,30 +22,46 @@ export interface ScopeTypeMap {
     [SelectionScopeNames.PHOTOS_MAIN]: ImageAsset;
     [SelectionScopeNames.SEARCH_IMAGES]: ImageAsset;
     [SelectionScopeNames.FILMSTRIP]: ImageAsset;
+    [SelectionScopeNames.ADD_PHOTOS_MODAL]: ImageAsset;
     [SelectionScopeNames.COLLECTIONS_MAIN]: Collection;
     [SelectionScopeNames.SEARCH_COLLECTIONS]: Collection;
-    [key: `collection-${string}`]: ImageAsset;
+    [SelectionScopeNames.COLLECTIONS_SELECTION_MODAL]: Collection;
+    [key: CollectionUIDSelectionScope]: ImageAsset;
 }
 
-export type ImageSelectionScope = SelectionScope<ImageAsset, "image">;
-export type CollectionSelectionScope = SelectionScope<Collection, "collection">;
-export type GenericSelectionScope = SelectionScope<any, "generic">;
-export type AnySelectionScope = ImageSelectionScope | CollectionSelectionScope | GenericSelectionScope;
+export type ImageScopeId =
+    | SelectionScopeNames.DEFAULT
+    | SelectionScopeNames.PHOTOS_DEFAULT
+    | SelectionScopeNames.PHOTOS_MAIN
+    | SelectionScopeNames.SEARCH_IMAGES
+    | SelectionScopeNames.FILMSTRIP
+    | SelectionScopeNames.ADD_PHOTOS_MODAL
+    | CollectionUIDSelectionScope;
 
-export class SelectionScope<T extends { uid: string } = any, K extends SelectionScopeKind = SelectionScopeKind> {
-    readonly kind: K;
-    selected = $state(new SvelteMap<string, T>());
-    excluded = $state(new SvelteSet<string>()); // UIDs to exclude when isSelectAll is true
+export type CollectionScopeId =
+    | SelectionScopeNames.COLLECTIONS_MAIN
+    | SelectionScopeNames.SEARCH_COLLECTIONS
+    | SelectionScopeNames.COLLECTIONS_SELECTION_MODAL;
+
+export type ScopeId = keyof ScopeTypeMap;
+export type ScopeItem = ScopeTypeMap[ScopeId];
+
+export type ScopeIdFor<T> = {
+    [K in keyof ScopeTypeMap]: T extends ScopeTypeMap[K] ? K : never;
+}[keyof ScopeTypeMap];
+
+export class SelectionScope<T> {
+    selected = new SvelteSet<T>();
+    excluded = new SvelteSet<T>(); // Items to exclude when isSelectAll is true
     isSelectAll = $state(false);
-    totalCount = $state(0);
+    totalCount = $state<number>();
 
-    active = $state<T | undefined>(undefined);
+    active = $state<T>();
     source = $state<T[]>([]); // All items available in this scope
     id: string;
 
-    constructor(id: string = SelectionScopeNames.DEFAULT, kind: K = "image" as K) {
+    constructor(id: string = SelectionScopeNames.DEFAULT) {
         this.id = id;
-        this.kind = kind;
     }
 
     setSource(items: T[]) {
@@ -55,53 +73,33 @@ export class SelectionScope<T extends { uid: string } = any, K extends Selection
     }
 
     add(item: T) {
-        if (!item || !item.uid) {
+        if (item == null) {
             return;
         }
         if (this.isSelectAll) {
-            this.excluded.delete(item.uid);
+            this.excluded.delete(item);
         }
-        this.selected.set(item.uid, item);
+        this.selected.add(item);
     }
 
     remove(item: T) {
-        if (!item || !item.uid) {
+        if (item == null) {
             return;
         }
         if (this.isSelectAll) {
-            this.excluded.add(item.uid);
+            this.excluded.add(item);
         }
-        this.selected.delete(item.uid);
+        this.selected.delete(item);
     }
 
-    /**
-     * Removes items by UID from the selection (and source), handling select-all mode.
-     */
-    removeUids(uids: Iterable<string>) {
-        const uidSet = new Set(uids);
-        for (const uid of uidSet) {
-            if (this.isSelectAll) {
-                this.excluded.add(uid);
-            } else {
-                this.selected.delete(uid);
-            }
-        }
-
-        this.source = this.source.filter((i) => !uidSet.has(i.uid));
-
-        if (this.active && uidSet.has(this.active.uid)) {
-            this.active = undefined;
-        }
-    }
-
-    has(item: T) {
-        if (!item || !item.uid) {
+    has(item: T): boolean {
+        if (item == null) {
             return false;
         }
         if (this.isSelectAll) {
-            return !this.excluded.has(item.uid);
+            return !this.excluded.has(item);
         }
-        return this.selected.has(item.uid);
+        return this.selected.has(item);
     }
 
     clear() {
@@ -114,7 +112,7 @@ export class SelectionScope<T extends { uid: string } = any, K extends Selection
     toggle(item: T) {
         if (this.has(item)) {
             this.remove(item);
-            if (this.active?.uid === item.uid) {
+            if (this.active === item) {
                 this.active = undefined;
             }
         } else {
@@ -138,22 +136,24 @@ export class SelectionScope<T extends { uid: string } = any, K extends Selection
      * optionally filtered by filterFn.
      */
     selectRange(target: T, anchor?: T | null, filterFn?: (item: T) => boolean) {
-        if (!target || !target.uid) {
+        if (target == null) {
             return;
         }
 
         const sourceList = filterFn ? this.source.filter(filterFn) : this.source;
-        const targetIdx = sourceList.findIndex((i) => i.uid === target.uid);
-        const anchorItem = anchor || this.active;
-        const anchorIdx = anchorItem ? sourceList.findIndex((i) => i.uid === anchorItem.uid) : -1;
+        const targetIdx = sourceList.indexOf(target);
+        const anchorItem = anchor ?? this.active;
+        const anchorIdx = anchorItem != null ? sourceList.indexOf(anchorItem) : -1;
 
         if (targetIdx !== -1 && anchorIdx !== -1) {
             this.selected.clear();
             const start = Math.min(anchorIdx, targetIdx);
             const end = Math.max(anchorIdx, targetIdx);
+
             for (let i = start; i <= end; i++) {
                 this.add(sourceList[i]);
             }
+
             this.active = target;
         } else {
             this.select(target);
@@ -191,11 +191,19 @@ export class SelectionScope<T extends { uid: string } = any, K extends Selection
     /**
      * Returns the effective number of selected items.
      */
-    get size() {
+    get size(): number {
         if (this.isSelectAll) {
-            return Math.max(0, this.totalCount - this.excluded.size);
+            const total = this.totalCount ?? this.source.length;
+            return Math.max(0, total - this.excluded.size);
         }
         return this.selected.size;
+    }
+
+    /**
+     * Alias for size: returns the effective number of selected items.
+     */
+    get count(): number {
+        return this.size;
     }
 
     /**
@@ -203,48 +211,19 @@ export class SelectionScope<T extends { uid: string } = any, K extends Selection
      */
     get selectedItems(): T[] {
         if (this.isSelectAll) {
-            return this.source.filter((i) => !this.excluded.has(i.uid));
+            return this.source.filter((i) => {
+                return !this.excluded.has(i);
+            });
         }
-        return Array.from(this.selected.values());
+
+        return Array.from(this.selected);
     }
 
-    /**
-     * Set of all selected UIDs
-     */
-    get selectedUids(): Set<string> {
-        if (this.isSelectAll) {
-            const uids = new Set(this.source.map((i) => i.uid));
-            for (const ex of this.excluded) {
-                uids.delete(ex);
-            }
-            return uids;
-        }
-        return new Set(this.selected.keys());
-    }
-
-    /**
-     * Updates an item in a given source array and also updates the selection if the item is selected.
-     */
-    updateItem(updatedItem: T, sourceArray: T[]) {
-        const idx = sourceArray.findIndex((i) => i.uid === updatedItem.uid);
-        if (idx !== -1) {
-            sourceArray[idx] = updatedItem;
-        }
-
-        if (this.selected.has(updatedItem.uid)) {
-            this.selected.set(updatedItem.uid, updatedItem);
-        }
-
-        if (this.active?.uid === updatedItem.uid) {
-            this.active = updatedItem;
-        }
-    }
-
-    selectNext() {
-        if (!this.active || this.source.length === 0) {
+    selectNext(): boolean {
+        if (this.active == null || this.source.length === 0) {
             return false;
         }
-        const idx = this.source.findIndex((i) => i.uid === this.active!.uid);
+        const idx = this.source.indexOf(this.active);
         if (idx === -1 || idx === this.source.length - 1) {
             return false;
         }
@@ -253,11 +232,11 @@ export class SelectionScope<T extends { uid: string } = any, K extends Selection
         return true;
     }
 
-    selectPrevious() {
-        if (!this.active || this.source.length === 0) {
+    selectPrevious(): boolean {
+        if (this.active == null || this.source.length === 0) {
             return false;
         }
-        const idx = this.source.findIndex((i) => i.uid === this.active!.uid);
+        const idx = this.source.indexOf(this.active);
         if (idx === -1 || idx === 0) {
             return false;
         }
@@ -268,37 +247,41 @@ export class SelectionScope<T extends { uid: string } = any, K extends Selection
 }
 
 export class SelectionManager {
-    // scopes is a plain (non-reactive) Map on purpose: getScope() both reads and
-    // mutates it from $derived contexts, so a reactive collection triggers
-    // Svelte's state_unsafe_mutation. The active scope is resolved from this map
-    // on demand (see activeScope getter); scope removal invalidates it by
-    // clearing activeScopeId so reactive consumers don't cache a removed scope.
-    scopes = new Map<string, SelectionScope>();
+    scopes = new SvelteMap<string, SelectionScope<ScopeItem>>();
     activeScopeId = $state<string | null>(null);
 
     // A default global scope for simple use cases
-    global = new SelectionScope("global");
+    global = new SelectionScope<ScopeItem>("global");
 
-    constructor() {}
+    constructor() {
+        for (const name of Object.values(SelectionScopeNames)) {
+            this.scopes.set(name, new SelectionScope<ScopeItem>(name));
+        }
+    }
 
-    get activeScope() {
+    get activeScope(): SelectionScope<ScopeItem> {
         if (!this.activeScopeId) {
             return this.global;
         }
+
         return this.scopes.get(this.activeScopeId) ?? this.global;
+    }
+
+    getActiveScope<K extends keyof ScopeTypeMap = SelectionScopeNames.DEFAULT>(): SelectionScope<ScopeTypeMap[K]> {
+        return this.activeScope as SelectionScope<ScopeTypeMap[K]>;
     }
 
     /**
      * The primary item focused in the active scope.
      */
-    get focusedItem() {
+    get focusedItem(): ScopeItem | undefined {
         return this.activeScope.active;
     }
 
     /**
      * All items selected in the active scope.
      */
-    get selectedItems() {
+    get selectedItems(): ScopeItem[] {
         return this.activeScope.selectedItems;
     }
 
@@ -306,12 +289,26 @@ export class SelectionManager {
         this.activeScopeId = scopeId;
     }
 
-    getScope<T extends { uid: string } = any>(scopeId: string): SelectionScope<T> {
-        if (!this.scopes.has(scopeId)) {
-            this.scopes.set(scopeId, new SelectionScope<T>(scopeId));
+    /**
+     * Retrieves a registered scope by ID. Falls back to global scope if unregistered.
+     *
+     * Remains a pure query method
+     */
+    getScope<K extends keyof ScopeTypeMap>(scopeId: K): SelectionScope<ScopeTypeMap[K]> {
+        return (this.scopes.get(scopeId) ?? this.global) as SelectionScope<ScopeTypeMap[K]>;
+    }
+
+    /**
+     * Explicitly registers a selection scope if it doesn't already exist, and returns it.
+     */
+    registerScope<K extends keyof ScopeTypeMap>(scopeId: K): SelectionScope<ScopeTypeMap[K]> {
+        let scope = this.scopes.get(scopeId);
+        if (!scope) {
+            scope = new SelectionScope<ScopeItem>(scopeId);
+            this.scopes.set(scopeId, scope);
         }
 
-        return this.scopes.get(scopeId) as SelectionScope<T>;
+        return scope as SelectionScope<ScopeTypeMap[K]>;
     }
 
     removeScope(scopeId: string) {
@@ -324,7 +321,7 @@ export class SelectionManager {
     /**
      * aggregated helper: get all selected items across all scopes
      */
-    getAllSelectedItems<T extends { uid: string } = any>(): T[] {
+    getAllSelectedItems<T>(): T[] {
         const all: T[] = [];
         all.push(...(this.global.selectedItems as unknown as T[]));
 

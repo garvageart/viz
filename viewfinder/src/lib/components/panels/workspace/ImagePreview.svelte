@@ -1,5 +1,5 @@
 <script lang="ts">
-    import { type ImageAsset } from "@viz/api";
+    import type { ImageAsset } from "@viz/api";
     import ImageLabelViewer from "$lib/components/image-tools/ImageLabelViewer.svelte";
     import AssetImage from "$lib/components/ui/AssetImage.svelte";
     import Favourite from "$lib/components/ui/Favourite.svelte";
@@ -7,12 +7,12 @@
     import NoImageSelected from "$lib/components/ui/misc/NoImageSelected.svelte";
     import { contextMenu } from "$lib/context-menu";
     import { createImageMenu } from "$lib/context-menu/menus/images";
-    import { SelectionScope, selectionManager } from "$lib/states/selection.svelte";
+    import { selectionManager } from "$lib/states/selection.svelte";
     import { getImageLabel, isAssetImage } from "$lib/utils/images";
 
-    let activeScope = $derived(selectionManager.activeScope as SelectionScope<ImageAsset> | undefined);
-    let activeItem = $derived(activeScope?.active);
-    let isImage = $derived(isAssetImage(activeItem));
+    let activeScope = $derived(selectionManager.getActiveScope());
+    let activeItem = $derived(isAssetImage(activeScope?.active) ? activeScope.active : undefined);
+    let isImage = $derived(Boolean(activeItem));
 
     let selectionCount = $derived(activeScope?.size ?? 0);
 
@@ -21,12 +21,14 @@
             return;
         }
 
-        const items = createImageMenu([activeItem], activeScope, {
-            onDelete(deletedUIDs) {
-                activeScope.removeUids(deletedUIDs);
+        const items = createImageMenu(activeScope, {
+            onDelete() {
+                if (activeItem) {
+                    activeScope.remove(activeItem);
+                }
             },
-            onUpdate(updated) {
-                activeScope.updateItem(updated, activeScope.source);
+            onUpdate(updated: ImageAsset) {
+                activeScope.select(updated);
             }
         });
 

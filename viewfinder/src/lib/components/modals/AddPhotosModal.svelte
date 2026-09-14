@@ -1,5 +1,5 @@
 <script lang="ts">
-    import { type ImageAsset, addCollectionImages, listCollectionImageUiDs, listImages } from "@viz/api";
+    import { addCollectionImages, listCollectionImageUiDs, listImages } from "@viz/api";
     import { onDestroy, onMount } from "svelte";
     import LoadingSpinner from "$lib/components/ui/LoadingSpinner.svelte";
     import { getImageGridDisplay } from "$lib/context-menu/menus/image-grid-display";
@@ -14,7 +14,7 @@
     import { applySortSelection, currentSortId, sortOptions, toggleSortOrder } from "$lib/sort/sort";
     import { filterManager } from "$lib/states/filter.svelte";
     import { viewSettings } from "$lib/states/index.svelte";
-    import { selectionManager } from "$lib/states/selection.svelte";
+    import { SelectionScopeNames, selectionManager } from "$lib/states/selection.svelte";
     import { photosSort } from "$lib/states/sort.svelte";
     import { toasts } from "$lib/toast-notifcations/toasts.svelte";
     import { invalidateViz } from "$lib/views/views.svelte";
@@ -33,8 +33,8 @@
 
     let { id, collectionUid, collectionName }: Props = $props();
 
-    const scopeId = "add-photos-modal";
-    const selectionScope = selectionManager.getScope<ImageAsset>(scopeId);
+    const scopeId = SelectionScopeNames.ADD_PHOTOS_MODAL;
+    const selectionScope = selectionManager.getScope(scopeId);
 
     export const modalOptions: ModalOptions = {
         width: "95%",

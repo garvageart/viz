@@ -2,7 +2,7 @@
     import { goto } from "$app/navigation";
     import { type Collection, addCollectionImages, createCollection, listCollections } from "@viz/api";
     import { onMount } from "svelte";
-    import { selectionManager } from "$lib/states/selection.svelte";
+    import { SelectionScopeNames, selectionManager } from "$lib/states/selection.svelte";
     import { toasts } from "$lib/toast-notifcations/toasts.svelte";
     import type { CardVisualState } from "$lib/types/snippet";
     import { invalidateViz } from "$lib/views/views.svelte";
@@ -32,11 +32,11 @@
         applyPadding: false
     });
 
-    const scopeId = "collection-selection-modal";
+    const scopeId = SelectionScopeNames.COLLECTIONS_SELECTION_MODAL;
 
     let collections = $state<AugmentedCollection[]>([]);
-    let selection = $derived(selectionManager.getScope<AugmentedCollection>(scopeId));
-    let selectedCollection = $derived(selection.selectedItems[0] as AugmentedCollection);
+    let selection = $derived(selectionManager.getScope(scopeId));
+    let selectedCollection = $derived(collections.find((c) => c.uid === selection.selectedItems[0]?.uid));
 
     onMount(async () => {
         try {

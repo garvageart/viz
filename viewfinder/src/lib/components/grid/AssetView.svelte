@@ -1,23 +1,29 @@
-<script lang="ts" generics="T extends { uid: string } & Record<string, any>">
+<script lang="ts" generics="T extends ScopeItem">
     import { type Snippet, untrack } from "svelte";
     import type { MouseEventHandler, SvelteHTMLElements } from "svelte/elements";
     import { type Instance, type Props as TippyProps, delegate, followCursor, hideAll } from "tippy.js";
     import "tippy.js/dist/tippy.css";
+    import PhotoTooltip from "$lib/components/tooltips/PhotoTooltip.svelte";
+    import { mountTooltipComponent } from "$lib/components/tooltips/tooltip";
+    import Table, { type TableColumn } from "$lib/components/ui/Table.svelte";
     import { PhotoGridVirtualizer } from "$lib/components/virtualizer/PhotoGridVirtualizer.svelte.js";
     import { KbdShortcutTier, KeybindAction, keyboardManager } from "$lib/keyboard/keyboard.svelte";
     import { debugMode, isLayoutPage, isMobile } from "$lib/states/index.svelte";
-    import { selectionManager } from "$lib/states/selection.svelte";
+    import {
+        type ScopeIdFor,
+        type ScopeItem,
+        SelectionScope,
+        SelectionScopeNames,
+        selectionManager
+    } from "$lib/states/selection.svelte";
     import { type SortState, photosSort } from "$lib/states/sort.svelte";
     import type { AssetGridArray, AssetSortBy, AssetViewType } from "$lib/types/asset";
     import type { CardVisualState } from "$lib/types/snippet";
     import { getScrollParent } from "$lib/utils/dom";
     import { isAssetImage } from "$lib/utils/images";
-    import PhotoTooltip from "../tooltips/PhotoTooltip.svelte";
-    import { mountTooltipComponent } from "../tooltips/tooltip";
-    import Table, { type TableColumn } from "../ui/Table.svelte";
     import { touchSelectionAction } from "./actions";
 
-    export interface AssetViewProps<T extends { uid: string } & Record<string, any>> {
+    export interface AssetViewProps<T extends ScopeItem> {
         data: T[];
         assetSnippet: Snippet<[T, CardVisualState]>;
         customSnippet?: Snippet;
@@ -38,7 +44,7 @@
         /** Optional explicit column definitions or property keys for table view */
         columns?: TableColumn<T>[];
         /** Unique identifier for selection state management */
-        scopeId?: string;
+        scopeId?: ScopeIdFor<T>;
         disabledUids?: Set<string>;
         /** Sort state that drives display mode and table-header sorting */
         sortState?: SortState;
@@ -49,26 +55,25 @@
         assetSnippet,
         customSnippet,
         assetGridArray = $bindable(),
-        columnCount = $bindable(),
-        searchValue = $bindable(""),
-        noAssetsMessage = "No assets found",
-        assetDblClick,
-        assetClick,
-        disableOutsideUnselect = $bindable(false),
-        disableMultiSelection = $bindable(false),
+        searchValue = "",
+        noAssetsMessage,
+        disableMultiSelection = false,
+        disableOutsideUnselect = false,
         onLoadMore,
+        columnCount = $bindable(),
+        assetClick,
+        assetDblClick,
         onassetcontext,
         type = $bindable("grid"),
         assetGridDisplayProps = $bindable({}),
         columns = $bindable(),
-        scopeId = "default",
+        scopeId = SelectionScopeNames.DEFAULT as ScopeIdFor<T>,
         disabledUids = new Set(),
         sortState = photosSort
     }: AssetViewProps<T> = $props();
 
     // Selection Management
-    let selection = $derived(selectionManager.getScope<T>(scopeId));
-    let selectedUIDs = $derived(selection.selectedUids);
+    let selection = $derived(selectionManager.getScope(scopeId) as SelectionScope<T>);
 
     function onFocus() {
         selectionManager.setActive(scopeId);
@@ -891,7 +896,7 @@
 </script>
 
 {#snippet assetComponentCard(assetData: T)}
-    {@const isSelected = selectedUIDs.has(assetData.uid) || selection.active?.uid === assetData.uid}
+    {@const isSelected = selection.has(assetData) || selection.active === assetData}
     {@const isDisabled = disabledUids.has(assetData.uid)}
     <div
         class="asset-card"
@@ -972,7 +977,7 @@
             data={allAssetsData}
             {columns}
             selectable={true}
-            selectedKeys={Array.from(selectedUIDs)}
+            selectedKeys={selection.selectedItems.map((item) => item.uid)}
             columnsEditable={true}
             resizable={true}
             onrowdblclick={(e, asset) => {

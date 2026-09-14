@@ -2,13 +2,13 @@
     import type { Snippet } from "svelte";
     import type { HTMLAttributes } from "svelte/elements";
     import Button from "$lib/components/ui/Button.svelte";
-    import type { SelectionScope } from "$lib/states/selection.svelte";
+    import type { ScopeItem, SelectionScope } from "$lib/states/selection.svelte";
 
     interface Props extends HTMLAttributes<HTMLDivElement> {
         /** Whether the toolbar sticks to the top of its scrolling container */
         fixed?: boolean;
         /** Selection scope to monitor for selection count and clear operations */
-        selectionScope?: SelectionScope | null;
+        selectionScope?: SelectionScope<ScopeItem> | null;
         /** Leading content (left side: e.g. intake buttons, context title) */
         leading?: Snippet;
         /** Selection actions content (appears immediately following the selection count on the left) */

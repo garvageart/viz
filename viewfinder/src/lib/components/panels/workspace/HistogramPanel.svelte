@@ -1,5 +1,4 @@
 <script lang="ts">
-    import { type ImageAsset } from "@viz/api";
     import Badge from "$lib/components/ui/Badge.svelte";
     import Button from "$lib/components/ui/Button.svelte";
     import HistogramChart, { type ChannelVisibility } from "$lib/components/ui/misc/HistogramChart.svelte";
@@ -18,8 +17,8 @@
 
     let { src, selection = $bindable(null) }: Props = $props();
 
-    let activeScope = $derived(selectionManager.activeScope);
-    let activeItem = $derived(activeScope?.active as ImageAsset | undefined);
+    let activeScope = $derived(selectionManager.getActiveScope());
+    let activeItem = $derived(isAssetImage(activeScope?.active) ? activeScope.active : undefined);
 
     let channels = $state<ChannelVisibility>({ red: true, green: true, blue: true, luminance: true });
     let hoverBin = $state<number | null>(null);

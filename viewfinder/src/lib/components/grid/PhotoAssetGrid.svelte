@@ -1,4 +1,4 @@
-<script lang="ts" generics>
+<script lang="ts">
     import { type ImageAsset, getAssetImagePath } from "@viz/api";
     import { DateTime } from "luxon";
     import { type Snippet, onMount, untrack } from "svelte";
@@ -24,7 +24,7 @@
     import type { ConsolidatedGroup, ImageWithDateLabel } from "$lib/photo-layout";
     import { filterManager } from "$lib/states/filter.svelte";
     import { isLayoutPage, isMobile } from "$lib/states/index.svelte";
-    import { selectionManager } from "$lib/states/selection.svelte";
+    import { type ImageScopeId, SelectionScopeNames, selectionManager } from "$lib/states/selection.svelte";
     import type { CardVisualState } from "$lib/types/snippet";
     import { getScrollParent } from "$lib/utils/dom";
     import { getImageLabel, getTakenAt } from "$lib/utils/images";
@@ -41,7 +41,7 @@
         photoCardSnippet?: Snippet<[ImageAsset, ImageResolution, CardVisualState]>;
         gridConfig?: PhotoGridConfig;
         showDateHeaders?: boolean;
-        scopeId?: string;
+        scopeId?: ImageScopeId;
         searchValue?: string;
         noAssetsMessage?: string;
         disabledUids?: Set<string>;
@@ -66,7 +66,7 @@
         groupedData,
         gridConfig = {},
         showDateHeaders = false,
-        scopeId = "default",
+        scopeId = SelectionScopeNames.PHOTOS_MAIN,
         searchValue = $bindable(""),
         disabledUids = new Set(),
         assetClick,
@@ -81,8 +81,7 @@
     }: PhotoSpecificProps = $props();
 
     // Selection Management
-    let selection = $derived(selectionManager.getScope<ImageAsset>(scopeId));
-    let selectedUIDs = $derived(selection.selectedUids);
+    let selection = $derived(selectionManager.getScope(scopeId));
     let selectionAnchor = $state<ImageAsset | null>(null);
 
     // Sync data source to selection scope so filters can access it
@@ -482,14 +481,14 @@
             return;
         }
 
-        const allSelected = enabledImages.every((i) => selectedUIDs.has(i.uid));
+        const allSelected = enabledImages.every((i) => selection.has(i));
 
         if (allSelected) {
             for (const img of enabledImages) {
                 selection.remove(img);
             }
             // Clear anchor if it was part of this group
-            if (selection.active && enabledImages.some((i) => i.uid === selection.active?.uid)) {
+            if (selection.active && enabledImages.includes(selection.active)) {
                 selection.active = undefined;
             }
         } else {
@@ -530,9 +529,7 @@
             }
 
             const updatedImages = groupLookup.get(label) || [];
-            const newlyLoadedInGroup = updatedImages.filter(
-                (i) => !disabledUids.has(i.uid) && !selectedUIDs.has(i.uid)
-            );
+            const newlyLoadedInGroup = updatedImages.filter((i) => !disabledUids.has(i.uid) && !selection.has(i));
 
             if (newlyLoadedInGroup.length === 0) {
                 break;
@@ -996,7 +993,7 @@
 
 {#snippet inlineHeader(label: string)}
     {@const groupImages = groupLookup.get(label) || []}
-    {@const allSelected = groupImages.length > 0 && groupImages.every((i) => selectedUIDs.has(i.uid))}
+    {@const allSelected = groupImages.length > 0 && groupImages.every((i) => selection.has(i))}
     <div class="inline-grid-header">
         <button
             type="button"
@@ -1039,7 +1036,7 @@
 {/snippet}
 
 {#snippet defaultPhotoCard(asset: ImageWithDateLabel)}
-    {@const isSelected = selectedUIDs.has(asset.uid) || selection.active?.uid === asset.uid}
+    {@const isSelected = selection.has(asset) || selection.active === asset}
     {@const isCached = loadedImageUIDs.has(asset.uid)}
     {@const isDisabled = disabledUids.has(asset.uid)}
     <!-- {@const isFocusedAsset = selection.active ? selection.active.uid === asset.uid : data[0]?.uid === asset.uid} -->
@@ -1056,7 +1053,7 @@
         use:draggable={{
             disabled: isDisabled,
             items: () => {
-                if (!selectedUIDs.has(asset.uid)) {
+                if (!selection.has(asset)) {
                     selection.select(asset);
                 }
                 const count = selection.size > 1 ? selection.size : 1;
@@ -1109,7 +1106,7 @@
 
             e.preventDefault();
             e.stopPropagation();
-            if (!selectedUIDs.has(asset.uid) || selection.size <= 1) {
+            if (!selection.has(asset) || selection.size <= 1) {
                 selection.select(asset);
             }
 

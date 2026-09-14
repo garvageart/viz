@@ -13,7 +13,6 @@ import { modalsManager } from "$lib/components/modals/manager/ModalManager.svelt
 import { DownloadFile, DownloadState } from "$lib/download/asset.svelte";
 import { processDownloadQueue, waitForDownloadCompletion } from "$lib/download/manager.svelte";
 import { download } from "$lib/states/index.svelte";
-import type { SelectionScope } from "$lib/states/selection.svelte";
 import { toasts } from "$lib/toast-notifcations/toasts.svelte";
 import { downloadToFilesystem } from "$lib/utils/files";
 import { copyToClipboard } from "$lib/utils/misc";
@@ -32,12 +31,7 @@ export interface CollectionMenuOptions {
 /**
  * Toggles favourite status of one or more collections.
  */
-export async function toggleFavouriteCollections(
-    collections: Collection[],
-    selectionScope?: SelectionScope<Collection>,
-    sourceArray?: Collection[],
-    onUpdate?: (updated: Collection) => void
-) {
+export async function toggleFavouriteCollections(collections: Collection[], onUpdate?: (updated: Collection) => void) {
     if (collections.length === 0) {
         return;
     }
@@ -69,9 +63,6 @@ export async function toggleFavouriteCollections(
             if (match) {
                 match.favourited = nextFavourited;
             }
-            if (selectionScope && sourceArray) {
-                selectionScope.updateItem(res.data, sourceArray);
-            }
             if (onUpdate) {
                 onUpdate(res.data);
             }
@@ -93,7 +84,7 @@ export async function toggleFavouriteCollection(
     collection: Collection,
     onCollectionUpdated?: (collection: Collection) => void
 ) {
-    return toggleFavouriteCollections([collection], undefined, undefined, onCollectionUpdated);
+    return toggleFavouriteCollections([collection], onCollectionUpdated);
 }
 
 /**
@@ -328,7 +319,7 @@ export function createCollectionMenu(collection: Collection | undefined, opts: C
                     opts.selectedCollections && opts.selectedCollections.length > 1
                         ? opts.selectedCollections
                         : [collection];
-                return toggleFavouriteCollections(targets, undefined, undefined, opts.onCollectionUpdated);
+                return toggleFavouriteCollections(targets, opts.onCollectionUpdated);
             }
         },
         {

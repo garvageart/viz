@@ -8,20 +8,17 @@
     import { contextMenu } from "$lib/context-menu";
     import { createImageMenu } from "$lib/context-menu/menus/images";
     import { draggable } from "$lib/drag-drop/directives.svelte";
-    import { SelectionScopeNames, selectionManager } from "$lib/states/selection.svelte";
+    import { type CollectionUIDSelectionScope, selectionManager } from "$lib/states/selection.svelte";
     import { isCollectionData } from "$lib/utils/collections";
     import { isAssetImage } from "$lib/utils/images";
 
-    let activeScope = $derived(selectionManager.activeScope);
+    let activeScope = $derived(selectionManager.getActiveScope());
     let activeEntity = $derived(activeScope?.selectedItems[0] ?? activeScope?.active);
 
     let targetScope = $derived.by(() => {
-        if (!activeScope) {
-            return undefined;
-        }
-
         if (isCollectionData(activeEntity)) {
-            return selectionManager.getScope(`${SelectionScopeNames.COLLECTION_PREFIX}${activeEntity.uid}`);
+            const scopeId: CollectionUIDSelectionScope = `collection-${activeEntity.uid}`;
+            return selectionManager.getScope(scopeId);
         }
 
         return activeScope;
@@ -32,12 +29,15 @@
             return;
         }
 
-        const scope = selectionManager.getScope(`${SelectionScopeNames.COLLECTION_PREFIX}${activeEntity.uid}`);
+        const scopeId: CollectionUIDSelectionScope = `collection-${activeEntity.uid}`;
+        const scope = selectionManager.getScope(scopeId);
 
         if (scope.source.length === 0) {
             listCollectionImages(activeEntity.uid).then((res) => {
                 if (res.status === 200) {
-                    const images = res.data.items.map((i) => i.image);
+                    const images = res.data.items.map((i) => {
+                        return i.image;
+                    });
                     scope.setSource(images);
                 }
             });
@@ -167,10 +167,9 @@
             selectionAnchor = image;
         }
 
-        const items = createImageMenu(filmstripImages, scope, {
+        const items = createImageMenu(scope, {
             collection,
             onUpdate: (updated: ImageAsset) => {
-                scope.updateItem(updated, filmstripImages);
                 filmstripImages = filmstripImages.map((i) => {
                     if (i.uid === updated.uid) {
                         return updated;
@@ -332,7 +331,12 @@
         {prevLightboxImage}
         onImageUpdated={(image) => {
             lightbox.image = image;
-            targetScope?.updateItem(image, filmstripImages);
+            filmstripImages = filmstripImages.map((i) => {
+                if (i.uid === image.uid) {
+                    return image;
+                }
+                return i;
+            });
         }}
     />
 {/if}

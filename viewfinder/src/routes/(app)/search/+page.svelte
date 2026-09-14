@@ -62,8 +62,8 @@
     const imageScopeId = SelectionScopeNames.SEARCH_IMAGES;
     const collectionScopeId = SelectionScopeNames.SEARCH_COLLECTIONS;
 
-    const imageSelection = selectionManager.getScope<ImageAsset>(imageScopeId);
-    const collectionSelection = selectionManager.getScope<Collection>(collectionScopeId);
+    const imageSelection = selectionManager.getScope(imageScopeId);
+    const collectionSelection = selectionManager.getScope(collectionScopeId);
 
     $effect(() => {
         untrack(() => {
@@ -101,7 +101,7 @@
 
     // Action Menus
     let imageActionMenuItems = $derived(
-        createImageMenu(images, imageSelection, {
+        createImageMenu(imageSelection, {
             onUpdate: () => {
                 performSearch();
             },
@@ -356,7 +356,12 @@
         {prevLightboxImage}
         onImageUpdated={(image) => {
             lightbox.image = image;
-            imageSelection.updateItem(image, images);
+            images = images.map((i) => {
+                if (i.uid === image.uid) {
+                    return image;
+                }
+                return i;
+            });
         }}
     />
 {/if}
@@ -508,14 +513,9 @@
                             title={areAllSelectedCollectionsFavourited ? "Unfavourite" : "Favourite"}
                             aria-label={areAllSelectedCollectionsFavourited ? "Unfavourite" : "Favourite"}
                             onclick={() => {
-                                toggleFavouriteCollections(
-                                    collectionSelection.selectedItems,
-                                    collectionSelection,
-                                    collections,
-                                    () => {
-                                        performSearch();
-                                    }
-                                );
+                                toggleFavouriteCollections(collectionSelection.selectedItems, () => {
+                                    performSearch();
+                                });
                             }}
                         />
                         <Button

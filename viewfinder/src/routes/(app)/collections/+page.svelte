@@ -50,7 +50,7 @@
 
     // Selection
     let scopeId = $derived(SelectionScopeNames.COLLECTIONS_MAIN);
-    let selectionScope = $derived(selectionManager.getScope<Collection>(scopeId));
+    let selectionScope = $derived(selectionManager.getScope(scopeId));
     let firstSelectedCollection = $derived(selectionScope.selectedItems[0]);
     let areAllSelectedFavourited = $derived(
         selectionScope.selectedItems.length > 0 &&
@@ -179,11 +179,6 @@
                 message: `Duplicated collection`,
                 type: "success"
             });
-            await invalidateViz();
-        },
-        onCollectionUpdated: async (updatedCol: Collection) => {
-            selectionScope.updateItem(updatedCol, displayData);
-            await invalidateViz();
         },
         onCollectionDeleted: async (deletedCol: Collection) => {
             toasts.add({
@@ -191,11 +186,9 @@
                 message: `Deleted collection`,
                 type: "success"
             });
-            await invalidateViz();
         },
         onCollectionsDeleted: async () => {
             selectionScope.clear();
-            await invalidateViz();
         }
     });
 
@@ -308,7 +301,7 @@
             title={areAllSelectedFavourited ? "Unfavourite" : "Favourite"}
             aria-label={areAllSelectedFavourited ? "Unfavourite" : "Favourite"}
             onclick={() => {
-                toggleFavouriteCollections(selectionScope.selectedItems, selectionScope, displayData);
+                toggleFavouriteCollections(selectionScope.selectedItems);
             }}
         />
         <Button

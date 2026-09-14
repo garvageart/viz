@@ -1,5 +1,6 @@
 import { fireEvent, render, screen } from "@testing-library/svelte";
 import type { ImageAsset } from "@viz/api";
+import { tick } from "svelte";
 import { describe, expect, it, vi } from "vitest";
 import Filmstrip from "$lib/components/panels/workspace/Filmstrip.svelte";
 import MetadataPanel from "$lib/components/ui/panels/MetadataPanel.svelte";
@@ -34,11 +35,11 @@ describe("filmstrip selection -> metadata panel", () => {
     it("metadata updates when a filmstrip item is clicked", async () => {
         const scopeId = `${SelectionScopeNames.COLLECTION_PREFIX}colA`;
         selectionManager.setActive(scopeId);
-        const scope = selectionManager.getScope<ImageAsset>(scopeId);
+        const scope = selectionManager.registerScope(scopeId);
         const a = makeImage("a", "Strip A");
         const b = makeImage("b", "Strip B");
         scope.setSource([a, b]);
-        scope.select(a);
+        scope.select(scope.source[0]);
 
         render(MetadataPanel, {});
         render(Filmstrip, {});
@@ -55,36 +56,36 @@ describe("filmstrip selection -> metadata panel", () => {
     it("re-resolves the active scope when the active scope is removed (no stale cache)", async () => {
         const scopeId = `${SelectionScopeNames.COLLECTION_PREFIX}stale`;
         selectionManager.setActive(scopeId);
-        const scope = selectionManager.getScope<ImageAsset>(scopeId);
+        const scope = selectionManager.registerScope(scopeId);
         const a = makeImage("a", "Stale A");
         scope.setSource([a]);
-        scope.select(a);
+        scope.select(scope.source[0]);
 
         render(MetadataPanel, {});
 
-        const metadata = document.querySelector(".metadata-editor");
-        expect(metadata?.textContent).toContain("Stale A");
+        expect(document.querySelector(".metadata-editor")?.textContent).toContain("Stale A");
 
         // Simulate the collections list page dropping the scope while it is
         // still the active one. The panel must fall back to the global scope
         // rather than keep rendering a removed scope's item.
         selectionManager.removeScope(scopeId);
-        await Promise.resolve();
+        await tick();
 
-        expect(metadata?.textContent).not.toContain("Stale A");
+        expect(document.querySelector(".metadata-editor")?.textContent).not.toContain("Stale A");
     });
 
     it("renders all multi-selected items with selected class and marks lead item as active", async () => {
         const scopeId = `${SelectionScopeNames.COLLECTION_PREFIX}colMulti`;
         selectionManager.setActive(scopeId);
-        const scope = selectionManager.getScope<ImageAsset>(scopeId);
+        const scope = selectionManager.registerScope(scopeId);
         const img1 = makeImage("1", "Image 1");
         const img2 = makeImage("2", "Image 2");
         const img3 = makeImage("3", "Image 3");
         scope.setSource([img1, img2, img3]);
 
         // Select all 3 items, with img3 as the active (lead) item
-        scope.selectRange(img3, img1);
+        const [item1, _, item3] = scope.source;
+        scope.selectRange(item3, item1);
 
         const { container } = render(Filmstrip, {});
 

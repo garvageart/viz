@@ -138,7 +138,7 @@
 
     // Action menu items for selected images
     let actionMenuItems: MenuItem[] = $derived(
-        createImageMenu(galleryState.images, selectionScope, {
+        createImageMenu(selectionScope, {
             onUpdate: (updatedImage) => {
                 galleryState.images = galleryState.images.map((img) => {
                     return img.uid === updatedImage.uid ? updatedImage : img;
@@ -376,7 +376,12 @@
         {nextLightboxImage}
         onImageUpdated={(image) => {
             lightbox.image = image;
-            selectionScope.updateItem(image, galleryState.images);
+            galleryState.images = galleryState.images.map((i) => {
+                if (i.uid === image.uid) {
+                    return image;
+                }
+                return i;
+            });
         }}
     />
 {/if}
@@ -487,14 +492,15 @@
 
                             // gosh
                             if (successCount > 0) {
-                                res.forEach((r) => {
-                                    if (r.status === 200) {
-                                        selectionScope.updateItem(r.data, galleryState.images);
-                                        if (lightbox.image && lightbox.image.uid === r.data.uid) {
-                                            lightbox.image = r.data;
-                                        }
-                                    }
+                                const updatedMap = new Map(
+                                    res.filter((r) => r.status === 200).map((r) => [r.data.uid, r.data])
+                                );
+                                galleryState.images = galleryState.images.map((i) => {
+                                    return updatedMap.get(i.uid) ?? i;
                                 });
+                                if (lightbox.image && updatedMap.has(lightbox.image.uid)) {
+                                    lightbox.image = updatedMap.get(lightbox.image.uid)!;
+                                }
                             }
                         }}
                     />
@@ -517,14 +523,15 @@
                                 return r.status === 200;
                             }).length;
                             if (successCount > 0) {
-                                res.forEach((r) => {
-                                    if (r.status === 200) {
-                                        selectionScope.updateItem(r.data, galleryState.images);
-                                        if (lightbox.image && lightbox.image.uid === r.data.uid) {
-                                            lightbox.image = r.data;
-                                        }
-                                    }
+                                const updatedMap = new Map(
+                                    res.filter((r) => r.status === 200).map((r) => [r.data.uid, r.data])
+                                );
+                                galleryState.images = galleryState.images.map((i) => {
+                                    return updatedMap.get(i.uid) ?? i;
                                 });
+                                if (lightbox.image && updatedMap.has(lightbox.image.uid)) {
+                                    lightbox.image = updatedMap.get(lightbox.image.uid)!;
+                                }
                             }
                         }}
                     />

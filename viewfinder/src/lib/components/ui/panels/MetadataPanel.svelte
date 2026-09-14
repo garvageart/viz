@@ -13,7 +13,7 @@
     import NoImageSelected from "$lib/components/ui/misc/NoImageSelected.svelte";
     import { LabelColours } from "$lib/images/constants";
     import { setRating } from "$lib/images/exif";
-    import { SelectionScope, selectionManager } from "$lib/states/selection.svelte";
+    import { selectionManager } from "$lib/states/selection.svelte";
     import { toasts } from "$lib/toast-notifcations/toasts.svelte";
     import {
         formatBytes,
@@ -51,7 +51,7 @@
         onImageUpdated
     }: Props = $props();
 
-    let activeScope = $derived(selectionManager.activeScope as SelectionScope<ImageAsset>);
+    let activeScope = $derived(selectionManager.getActiveScope());
     // Only actual images count as the current asset; a selected collection must
     // not be rendered as image metadata (which caused a flicker).
     let currentAsset = $derived(asset ?? (isAssetImage(activeScope?.active) ? activeScope.active : undefined));

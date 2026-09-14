@@ -3,20 +3,18 @@ import type { ImageAsset } from "@viz/api";
 import { createRawSnippet } from "svelte";
 import { describe, expect, it, vi } from "vitest";
 import { createTestImageObject } from "$lib/data/test";
+import type { ScopeItem } from "$lib/states/selection.svelte";
 import type { CardVisualState } from "$lib/types/snippet";
 import AssetView from "./AssetView.svelte";
 
 const testData: ImageAsset[] = [createTestImageObject(), createTestImageObject(), createTestImageObject()];
 
-const dummyAssetSnippet = createRawSnippet<[{ uid: string } & Record<string, ImageAsset>, CardVisualState]>(
-    (getArgs) => {
-        const args = getArgs();
-        const item = args[0];
-        return {
-            render: () => `<div data-testid="card">${item?.uid ?? ""}</div>`
-        };
-    }
-);
+const dummyAssetSnippet = createRawSnippet<[ScopeItem, CardVisualState]>((getItem) => {
+    const item = getItem();
+    return {
+        render: () => `<div data-testid="card">${item?.uid ?? ""}</div>`
+    };
+});
 
 describe("AssetView", () => {
     it("renders grid container when type is 'grid'", () => {

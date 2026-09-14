@@ -106,7 +106,6 @@ export function openAddToCollectionModal(
  */
 export async function toggleFavouriteImages(
     selectionScope: SelectionScope<ImageAsset>,
-    allImages?: ImageAsset[],
     onUpdate?: (updated: ImageAsset) => void
 ) {
     const itemsToUpdate = selectionScope.selectedItems;
@@ -127,16 +126,15 @@ export async function toggleFavouriteImages(
         const success = results.filter((r) => {
             return r.status === 200;
         });
+
         if (success.length > 0) {
             toasts.add({
                 type: "success",
                 message: `${setFavourited ? "Favourited" : "Unfavourited"} ${success.length} images`,
                 timeout: 3000
             });
+
             for (const res of success) {
-                if (allImages) {
-                    selectionScope.updateItem(res.data, allImages);
-                }
                 if (onUpdate) {
                     onUpdate(res.data);
                 }
@@ -201,9 +199,7 @@ export async function downloadSelectedImages(selectionScope: SelectionScope<Imag
 
             const img = items[0];
             const url = getAssetImagePath(img, "original") || getFullImagePath(img.image_paths.original);
-            const filename = img.image_metadata?.file_name
-                ? img.image_metadata.file_name.split("/").pop()!
-                : `${img.name || img.uid}.jpg`;
+            const filename = img.image_metadata.file_name ?? `${img.name || img.uid}.jpg`;
 
             const task = new DownloadFile(url, filename, "GET");
             download.files.push(task);
@@ -289,14 +285,14 @@ export async function removeImagesFromCollection(
         if (res.status === 200) {
             toasts.add({
                 type: "success",
-                message: `Removed ${uids.length} images from ${collection.name}`,
+                title: collection.name,
+                message: `Removed ${uids.length} images`,
                 timeout: 3000
             });
             if (onDelete) {
                 onDelete(uids);
             }
             selectionScope.clear();
-            await invalidateViz();
         }
     } catch (err) {
         toasts.add({
@@ -317,10 +313,10 @@ export async function setCollectionThumbnail(collection: Collection | Collection
         if (res.status === 200) {
             toasts.add({
                 type: "success",
+                title: res.data.name,
                 message: "Collection thumbnail updated",
                 timeout: 3000
             });
-            await invalidateViz();
         }
     } catch (err) {
         toasts.add({
@@ -385,7 +381,6 @@ export async function deleteSelectedImages(
  * Builds the canonical image context/toolbar menu items.
  */
 export function createImageMenu(
-    allImages: ImageAsset[],
     selectionScope: SelectionScope<ImageAsset>,
     options: ImageMenuOptions = {}
 ): MenuItem[] {
@@ -423,7 +418,7 @@ export function createImageMenu(
             iconName: allFavourited ? { iconName: "star", fill: true } : { iconName: "star", fill: false },
             disabled: selectionScope.size === 0,
             action: () => {
-                return toggleFavouriteImages(selectionScope, allImages, onUpdate);
+                return toggleFavouriteImages(selectionScope, onUpdate);
             }
         },
         {

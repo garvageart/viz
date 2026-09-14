@@ -1,4 +1,4 @@
-<script lang="ts" generics="T extends { uid: string } & Record<string, any>">
+<script lang="ts" generics="T extends ScopeItem">
     import { dev } from "$app/environment";
     import { DateTime } from "luxon";
     import { type ComponentProps, type Snippet } from "svelte";
@@ -7,7 +7,7 @@
     import AssetGrid from "$lib/components/grid/AssetView.svelte";
     import Button from "$lib/components/ui/Button.svelte";
     import { applySortSelection, currentSortId, sortOptions, toggleSortOrder } from "$lib/sort/sort";
-    import { selectionManager } from "$lib/states/selection.svelte";
+    import { type ScopeItem, selectionManager } from "$lib/states/selection.svelte";
     import { type SortState, photosSort } from "$lib/states/sort.svelte";
     import type { MaterialSymbol } from "$lib/types/MaterialSymbol";
     import VizToolbar from "./toolbars/VizToolbar.svelte";
