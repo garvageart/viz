@@ -5,6 +5,11 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.34.10] - 2026-09-14
+
+* fix(viewfinder): align modal action button variants and design system spacing (3279836f)
+* chore(release): trigger v0.34.9 release build (873acde2)
+
 ## [0.34.9] - 2026-09-14
 
 * fix(viewfinder): update confirmation modal cancel button styling (ca57e90c)
