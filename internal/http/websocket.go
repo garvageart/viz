@@ -10,7 +10,7 @@ import (
 	"sync/atomic"
 	"time"
 	"viz/internal/config"
-	"viz/internal/utils"
+	"viz/internal/http/cors"
 
 	"github.com/gorilla/websocket"
 )
@@ -72,8 +72,9 @@ type WSRecord struct {
 	Data      any       `json:"data"`
 }
 
-// NewWSBroker creates and starts a new WebSocket broker
-func NewWSBroker(logger *slog.Logger) *WSBroker {
+// NewWSBroker creates and starts a new WebSocket broker.
+// Optional customAllowedHosts can be supplied to configure allowed hosts per instance without mutating global state.
+func NewWSBroker(logger *slog.Logger, customAllowedHosts ...string) *WSBroker {
 	broker := &WSBroker{
 		clients:    make(map[string]*WSClient),
 		register:   make(chan *WSClient),
@@ -82,50 +83,38 @@ func NewWSBroker(logger *slog.Logger) *WSBroker {
 		history:    make([]WSRecord, 0, 512),
 		historyMax: 512,
 		logger:     logger,
-		upgrader: websocket.Upgrader{
-			ReadBufferSize:  1024,
-			WriteBufferSize: 1024,
-			CheckOrigin: func(r *http.Request) bool {
-				origin := r.Header.Get("Origin")
+	}
 
-				// Allow non-browser clients (no Origin header)
-				if origin == "" {
-					return true
-				}
+	broker.upgrader = websocket.Upgrader{
+		ReadBufferSize:  1024,
+		WriteBufferSize: 1024,
+		CheckOrigin: func(r *http.Request) bool {
+			origin := r.Header.Get("Origin")
 
-				// Allow same-origin connections (Origin matches Request Host)
-				originWithoutScheme := origin
-				if idx := strings.Index(origin, "://"); idx != -1 {
-					originWithoutScheme = origin[idx+3:]
-				}
-				if strings.EqualFold(originWithoutScheme, r.Host) {
-					return true
-				}
+			// Allow non-browser clients (no Origin header)
+			if origin == "" {
+				return true
+			}
 
-				// In development, allow localhost/127.0.0.1 origins
-				if !utils.IsProduction {
-					allowedDevHosts := []string{"localhost", "127.0.0.1"}
-					for _, host := range allowedDevHosts {
-						if strings.HasPrefix(originWithoutScheme, host) {
-							return true
-						}
-					}
-				}
+			// Allow same-origin connections (Origin matches Request Host)
+			originWithoutScheme := origin
+			if _, after, ok := strings.Cut(origin, "://"); ok {
+				originWithoutScheme = after
+			}
+			
+			if strings.EqualFold(originWithoutScheme, r.Host) {
+				return true
+			}
 
-				allowedOrigins := config.AppConfig.AllowedHosts
-				if len(allowedOrigins) == 0 {
-					return false // Fail safe if no origins configured
-				}
-
-				for _, allowed := range allowedOrigins {
-					if origin == strings.TrimSpace(allowed) {
-						return true
-					}
-				}
-				return false
-			},
+			// Check allowed hosts (including custom allowed hosts, config, and localhost/127.0.0.1 defaults)
+			var configured []string
+			configured = append(configured, customAllowedHosts...)
+			configured = append(configured, config.AppConfig.AllowedHosts...)
+			allowedHosts := append(configured, cors.DefaultAllowedHosts...)
+			return cors.MatchOrigin(origin, allowedHosts)
 		},
 	}
+
 	go broker.run()
 	return broker
 }
@@ -136,8 +125,10 @@ func (b *WSBroker) run() {
 		select {
 		case client := <-b.register:
 			b.mu.Lock()
+
 			b.clients[client.ID] = client
 			b.mu.Unlock()
+
 			b.logger.Info("WebSocket client connected", slog.String("clientId", client.ID), slog.Int("totalClients", len(b.clients)))
 
 		case client := <-b.unregister:
@@ -147,6 +138,7 @@ func (b *WSBroker) run() {
 				delete(b.clients, client.ID)
 				b.logger.Info("WebSocket client disconnected", slog.String("clientId", client.ID), slog.Int("totalClients", len(b.clients)))
 			}
+
 			b.mu.Unlock()
 
 		case message := <-b.broadcast:
