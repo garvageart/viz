@@ -77,7 +77,6 @@
     import UploadManager from "$lib/upload/manager.svelte.js";
     import { getImageLabel } from "$lib/utils/images";
     import type VizView from "$lib/views/views.svelte";
-    import { invalidateViz } from "$lib/views/views.svelte";
     import type { PageProps } from "./$types";
 
     let { data, view }: PageProps & { view?: VizView } = $props();
@@ -377,8 +376,6 @@
                     collectionState.totalCount += uniqueNewImages.length;
                 }
             }
-
-            await invalidateViz();
         }
     }
 
@@ -421,14 +418,11 @@
                         collectionState.totalCount += uniqueNewImages.length;
                     }
                 }
-
-                await invalidateViz();
             } else {
                 toasts.add({
                     type: "warning",
                     message: `Uploaded but failed to add to collection: ${res.status}`
                 });
-                await invalidateViz();
             }
         } catch (err) {
             console.error("handleDropUploadSuccess error", err);
@@ -457,8 +451,6 @@
 
             return;
         }
-
-        await invalidateViz();
 
         toasts.add({
             title: response.data.name,
@@ -552,7 +544,6 @@
 
                 if (count > 100) {
                     // If a lot were deleted, just refresh everything
-                    await invalidateViz();
                 } else {
                     // Optimistic local update
                     const removedUIDs = new Set(
@@ -563,11 +554,9 @@
 
                     if (selectionScope.isSelectAll) {
                         // Simplest is to refresh
-                        await invalidateViz();
                     } else {
                         collectionState.images = collectionState.images.filter((i) => !removedUIDs.has(i.uid));
                         collectionState.totalCount -= count;
-                        await invalidateViz();
                     }
                 }
             } else {
@@ -605,7 +594,6 @@
                             type: "success"
                         });
 
-                        await invalidateViz();
                         goto(`/collections/${newCollectionUid}`);
                     } else {
                         toasts.add({
@@ -620,7 +608,6 @@
                         message: "Collection duplicated (no images to copy)",
                         type: "success"
                     });
-                    await invalidateViz();
                     goto(`/collections/${newCollectionUid}`);
                 }
             } else {
@@ -821,7 +808,7 @@
             totalItemCount={collectionState.totalCount}
             onLoadMore={() => collectionState.paginate(data.uid)}
             assetDblClick={(_e, asset) => {
-                const target = asset ?? selectionFirstImage;
+                const target = asset;
                 if (target) {
                     lightbox.open(target);
                 }
@@ -831,6 +818,7 @@
                 if (!selectionScope.has(asset)) {
                     selectionScope.select(asset);
                 }
+
                 selectionScope.active = asset;
                 openImageContextMenu(anchor);
             }}

@@ -57,7 +57,6 @@
     import { VizMimeTypes } from "$lib/constants";
     import { draggable, dropZone } from "$lib/drag-drop/directives.svelte";
     import { toasts } from "$lib/toast-notifcations/toasts.svelte";
-    import { invalidateViz } from "$lib/views/views.svelte";
     import AssetImage from "./AssetImage.svelte";
     import Badge from "./Badge.svelte";
     import Favourite from "./Favourite.svelte";
@@ -117,7 +116,8 @@
         if (newUIDs.length === 0) {
             toasts.add({
                 type: "info",
-                message: `No new images to add to **${collection.name}**`,
+                title: collection.name,
+                message: `No new images to add`,
                 timeout: 3000
             });
             return;
@@ -127,10 +127,10 @@
         if (res.status === 200) {
             toasts.add({
                 type: "success",
-                message: `Added ${newUIDs.length} image(s) to **${collection.name}**`,
+                title: collection.name,
+                message: `Added ${newUIDs.length} image(s)`,
                 timeout: 3000
             });
-            await invalidateViz();
         } else {
             toasts.add({
                 type: "error",

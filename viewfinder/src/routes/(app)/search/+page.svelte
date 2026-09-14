@@ -45,7 +45,6 @@
     import type { AssetViewType } from "$lib/types/asset";
     import type { CardVisualState } from "$lib/types/snippet";
     import { getImageLabel } from "$lib/utils/images";
-    import { invalidateViz } from "$lib/views/views.svelte";
 
     let collections = $derived(search.data.collections.data);
     let images = $derived(search.data.images.data);
@@ -300,7 +299,8 @@
             if (res.status === 200) {
                 toasts.add({
                     type: "success",
-                    message: `Added ${newImageUids.length} image(s) to collection **${collection.name}**`,
+                    title: collection.name,
+                    message: `Added ${newImageUids.length} image(s) to collection`,
                     timeout: 3000,
                     actions: [
                         {
@@ -311,9 +311,6 @@
                         }
                     ]
                 });
-
-                // Trigger refresh
-                await invalidateViz();
             } else {
                 toasts.add({
                     type: "error",
