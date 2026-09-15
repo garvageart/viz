@@ -17,7 +17,7 @@ This document serves as the single source of truth for the **Viz** high-density,
 
 Viz utilizes two primary variable typography scales served through Google Fonts:
 
-- **Display/Sans-Serif Font** (`--viz-display-font`): `"Geist Variable", sans-serif` – Used for headings, labels, button text, and body copy.
+- **Display/Sans-Serif Font** (`--viz-display-font`): `"Radio Canada Big Variable", sans-serif` – Used for headings, labels, button text, and body copy.
 - **Monospace Font** (`--viz-mono-font`): `"Roboto Mono Variable", monospace` – Used for tags, metadata, status labels, developer settings, and tabular details.
 
 ### Font Sizing Tokens
@@ -26,15 +26,14 @@ All font sizes are declared as CSS custom properties under `:root`:
 
 | Token                 | Sizing (rem) | Equivalent (px) | Application                                     |
 | :-------------------- | :----------- | :-------------- | :---------------------------------------------- |
-| `--viz-font-size-xs`  | `0.8333rem`  | `10px`          | Small metadata, helper text, descriptions, tags |
-| `--viz-font-size-sm`  | `0.9167rem`  | `11px`          | Standard labels, text fields, menu buttons      |
+| `--viz-font-size-sm`  | `0.9167rem`  | `11px`          | Small metadata, helper text, tags, labels, menu buttons |
 | `--viz-font-size-std` | `1rem`       | `12px`          | Standard body text, document reading            |
 | `--viz-font-size-lg`  | `1.1667rem`  | `14px`          | Small headings, modal titles                    |
 | `--viz-font-size-xl`  | `1.3333rem`  | `16px`          | Mid-level section headings                      |
-| `--viz-font-size-2xl` | `1.5rem`     | `18px`          | Large titles                                    |
-| `--viz-font-size-3xl` | `1.6667rem`  | `20px`          | Page banner headers                             |
-| `--viz-font-size-4xl` | `2rem`       | `24px`          | Hero headings, section dividers                 |
-| `--viz-font-size-5xl` | `2.5rem`     | `30px`          | Display headlines, splash text                  |
+| `--viz-font-size-2xl` | `1.6667rem`  | `20px`          | Large titles                                    |
+| `--viz-font-size-3xl` | `2rem`       | `24px`          | Page banner headers                             |
+| `--viz-font-size-4xl` | `2.5rem`     | `30px`          | Hero headings, section dividers                 |
+| `--viz-font-size-5xl` | `3rem`       | `36px`          | Display headlines, splash text                  |
 
 ---
 

@@ -1,6 +1,12 @@
 # Font Size Migration Plan
 
-**Last Updated:** July 6, 2026
+**Last Updated:** September 15, 2026
+
+## Status
+
+- **Phase 1 (root base)** — Applied. `html { font-size: 12px; }` is live in `main.scss`.
+- **Phase 2 (token ratios)** — Applied and revised. The `xs` token was removed. The live scale is `11 / 12 / 14 / 16 / 20 / 24 / 30 / 36 px` (`sm`–`5xl`).
+- **Phase 3 (token codebase walk)** — **Superseded.** The keep-identical-size remapping and `tools/migrate-font-sizes.js` are obsolete. The design decision changed to a rescale: display sizes now grow to the new ladder (20/24/30/36) instead of staying visually identical.
 
 ## Purpose
 This document outlines the refactoring strategy to shift the `viz` workspace base font size from the browser default of `16px` to a high-density, desktop-app standard of `12px` (matching Adobe Bridge, Capture One, and Darktable). 
@@ -27,7 +33,6 @@ To prevent existing font styles from collapsing to illegible sizes, we adjust th
 
 | Token Name | Physical Pixel Target | Value (Relative to 12px Base) |
 | :--- | :--- | :--- |
-| `$viz-font-size-xs` | `10px` | `0.8333rem` |
 | `$viz-font-size-sm` | `11px` | `0.9167rem` |
 | `$viz-font-size-std` | `12px` | `1rem` |
 | `$viz-font-size-lg` | `14px` | `1.1667rem` |
