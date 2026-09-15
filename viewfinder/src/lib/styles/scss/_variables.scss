@@ -1,3 +1,5 @@
+@use "sass:math";
+
 // Colours
 $viz-error-color: #ef4444;
 $viz-success-color: #22c55e;
@@ -13,18 +15,23 @@ $viz-color-tag-green: #19dd61;
 $viz-color-tag-blue: #106ea5;
 
 // Sizing
-$viz-base-unit: 16px;
+// Root font size is 12px (1rem = 12px). See main.scss.
+$viz-base-unit: 12px;
 
-// Font sizes
-$viz-font-size-xs: 0.8333rem; // 10px
-$viz-font-size-sm: 0.9167rem; // 11px
-$viz-font-size-std: 1rem; // 12px
-$viz-font-size-lg: 1.1667rem; // 14px
-$viz-font-size-xl: 1.3333rem; // 16px
-$viz-font-size-2xl: 1.5rem; // 18px
-$viz-font-size-3xl: 1.6667rem; // 20px
-$viz-font-size-4xl: 2rem; // 24px
-$viz-font-size-5xl: 2.5rem; // 30px
+// Convert physical pixels to rem relative to the 12px base
+@function px-to-rem($px) {
+    @return math.div($px, $viz-base-unit) * 1rem;
+}
+
+// Font sizes (modular scale, 12px base)
+$viz-font-size-sm: px-to-rem(11px); // 11px
+$viz-font-size-std: px-to-rem(12px); // 12px
+$viz-font-size-lg: px-to-rem(14px); // 14px
+$viz-font-size-xl: px-to-rem(16px); // 16px
+$viz-font-size-2xl: px-to-rem(20px); // 20px
+$viz-font-size-3xl: px-to-rem(24px); // 24px
+$viz-font-size-4xl: px-to-rem(30px); // 30px
+$viz-font-size-5xl: px-to-rem(36px); // 36px
 
 // Padding sizes
 $viz-padding-xs: 0.25rem; // 4px

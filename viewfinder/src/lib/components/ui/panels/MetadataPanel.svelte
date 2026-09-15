@@ -949,7 +949,7 @@
         bottom: 0;
         margin: auto 0;
         height: fit-content;
-        font-size: var(--viz-font-size-xs);
+        font-size: var(--viz-font-size-sm);
         font-weight: 600;
         color: var(--viz-text-primary);
         background: var(--viz-surface-card);

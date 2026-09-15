@@ -129,7 +129,7 @@
         border: var(--viz-border-thin);
         border-top: none;
         font-weight: 600;
-        font-size: var(--viz-font-size-md);
+        font-size: var(--viz-font-size-std);
         z-index: 10000;
         text-decoration: none;
         transition: top 0.2s cubic-bezier(0, 0, 0.2, 1);

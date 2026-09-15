@@ -382,7 +382,7 @@
     .spec-sub {
         color: var(--viz-text-muted);
         font-weight: 400;
-        font-size: var(--viz-font-size-xs);
+        font-size: var(--viz-font-size-sm);
         margin-left: 2px;
     }
 
@@ -460,7 +460,7 @@
     }
 
     .dial-label {
-        font-size: var(--viz-font-size-xs);
+        font-size: var(--viz-font-size-sm);
         color: var(--viz-text-secondary);
         font-weight: 500;
         margin-top: 2px;

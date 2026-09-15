@@ -1241,7 +1241,7 @@
 
         thead th {
             padding: var(--viz-spacing-xs) var(--viz-spacing-sm);
-            // font-size: var(--viz-font-size-xs);
+            // font-size: var(--viz-font-size-sm);
         }
 
         tbody td {

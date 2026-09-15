@@ -108,7 +108,7 @@
         background: transparent;
         border: var(--viz-border-subtle, 1px solid rgba(255, 255, 255, 0.1));
         color: var(--viz-text-secondary);
-        font-size: var(--viz-font-size-xs, 0.75rem);
+        font-size: var(--viz-font-size-sm, 0.75rem);
         font-weight: 500;
         cursor: pointer;
         padding: 0.15rem 0.45rem;

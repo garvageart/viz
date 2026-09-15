@@ -138,7 +138,6 @@ html {
 
 /* Font sizes */
 :root {
-    --viz-font-size-xs: #{v.$viz-font-size-xs};
     --viz-font-size-sm: #{v.$viz-font-size-sm};
     --viz-font-size-std: #{v.$viz-font-size-std};
     --viz-font-size-lg: #{v.$viz-font-size-lg};
@@ -389,5 +388,5 @@ input[type="search"]::-webkit-search-results-decoration {
 }
 
 .app-menu {
-    font-size: var(--viz-font-size-md) !important;
+    font-size: var(--viz-font-size-sm);
 }

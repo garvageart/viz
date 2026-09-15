@@ -221,7 +221,7 @@
     }
 
     .subtitle {
-        font-size: var(--viz-font-size-xs);
+        font-size: var(--viz-font-size-sm);
         color: var(--viz-text-muted);
     }
 
