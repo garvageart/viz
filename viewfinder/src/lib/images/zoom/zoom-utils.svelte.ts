@@ -125,6 +125,31 @@ export class ImageZoomState {
         this.posY = result.posY;
     }
 
+    handleResize(newViewport: Dimensions, newImage?: Dimensions) {
+        if (newViewport.width <= 0 || newViewport.height <= 0) {
+            return;
+        }
+
+        if (this.isAtFit) {
+            this.posX = 0;
+            this.posY = 0;
+            return;
+        }
+
+        const activeCropDims = this.deps?.getActiveCropDimensions?.();
+        const imageBounds = activeCropDims
+            ? { width: activeCropDims.frameWidth, height: activeCropDims.frameHeight }
+            : newImage && newImage.width > 0 && newImage.height > 0
+              ? newImage
+              : this.deps?.getImageEl()
+                ? { width: this.deps.getImageEl()!.clientWidth, height: this.deps.getImageEl()!.clientHeight }
+                : { width: newViewport.width, height: newViewport.height };
+
+        const constrained = constrainTranslation(this.posX, this.posY, this.value, newViewport, imageBounds);
+        this.posX = constrained.x;
+        this.posY = constrained.y;
+    }
+
     handleDoubleClick = (event: MouseEvent) => {
         event.stopPropagation();
 
@@ -227,8 +252,8 @@ export const ImageZoomController = ImageZoomState;
 
 /**
  * Constrains translation offsets (X and Y) to ensure the image does not leave empty borders
- * relative to the viewport when zoomed in. Fits and centers the image when it is smaller
- * than or equal to the viewport.
+ * relative to the viewport when zoomed in. Centers the image when it is smaller than or equal
+ * to the viewport.
  */
 export function constrainTranslation(
     x: number,
@@ -245,23 +270,21 @@ export function constrainTranslation(
     let nextTx = x;
     let nextTy = y;
 
-    // Constrain X translation
     const zoomedW = Iw * zoom;
-    const offsetX = (Vw - Iw) / 2;
-    const boundX1 = -offsetX * zoom;
-    const boundX2 = Vw - offsetX * zoom - zoomedW;
-    const minTx = Math.min(boundX1, boundX2);
-    const maxTx = Math.max(boundX1, boundX2);
-    nextTx = Math.max(minTx, Math.min(nextTx, maxTx));
+    if (zoomedW <= Vw) {
+        nextTx = 0;
+    } else {
+        const maxPanX = (zoomedW - Vw) / 2;
+        nextTx = Math.max(-maxPanX, Math.min(nextTx, maxPanX));
+    }
 
-    // Constrain Y translation
     const zoomedH = Ih * zoom;
-    const offsetY = (Vh - Ih) / 2;
-    const boundY1 = -offsetY * zoom;
-    const boundY2 = Vh - offsetY * zoom - zoomedH;
-    const minTy = Math.min(boundY1, boundY2);
-    const maxTy = Math.max(boundY1, boundY2);
-    nextTy = Math.max(minTy, Math.min(nextTy, maxTy));
+    if (zoomedH <= Vh) {
+        nextTy = 0;
+    } else {
+        const maxPanY = (zoomedH - Vh) / 2;
+        nextTy = Math.max(-maxPanY, Math.min(nextTy, maxPanY));
+    }
 
     return {
         x: Object.is(nextTx, -0) ? 0 : nextTx,
@@ -286,36 +309,20 @@ export function calculateZoomTo(options: ZoomOptions): ZoomState {
         image
     } = options;
 
-    const cursorX = clientX - viewportRect.left;
-    const cursorY = clientY - viewportRect.top;
+    const Vw = viewport.width;
+    const Vh = viewport.height;
+
+    // Cursor position relative to viewport center
+    const cursorCenterX = clientX - viewportRect.left - Vw / 2;
+    const cursorCenterY = clientY - viewportRect.top - Vh / 2;
 
     // Clamp zoom factor between 0.1 (10%) and 16.0 (1600%)
     const nextZoom = Math.max(0.1, Math.min(newZoom, 16));
 
-    const Vw = viewport.width;
-    const Vh = viewport.height;
-    const Iw = image.width;
-    const Ih = image.height;
-
-    const zoomedW = Iw * nextZoom;
-    const zoomedH = Ih * nextZoom;
-
-    // Map screen coordinate to the unscaled layout coordinate of the image.
-    const px = (cursorX - posX) / value;
-    const py = (cursorY - posY) / value;
-
-    // Calculate translations targeting the mapped coordinate under the new zoom,
-    // or keep centered along an axis if the image fits within the viewport.
-    let nextTx = cursorX - px * nextZoom;
-    let nextTy = cursorY - py * nextZoom;
-
-    if (zoomedW <= Vw) {
-        nextTx = (Vw * (1 - nextZoom)) / 2;
-    }
-
-    if (zoomedH <= Vh) {
-        nextTy = (Vh * (1 - nextZoom)) / 2;
-    }
+    // Calculate translations targeting the mapped coordinate under the new zoom
+    const zoomRatio = nextZoom / value;
+    const nextTx = posX + (cursorCenterX - posX) * (1 - zoomRatio);
+    const nextTy = posY + (cursorCenterY - posY) * (1 - zoomRatio);
 
     // Apply viewport boundaries
     const constrained = constrainTranslation(nextTx, nextTy, nextZoom, viewport, image);

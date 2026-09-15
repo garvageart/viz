@@ -102,7 +102,7 @@
     let currentCrop = $state<CropCoords>({ x: 0, y: 0, width: 1, height: 1 });
     let cropMenuPosition = $state<{ x: number; y: number }>();
 
-    let viewportDimensions = $state<{ width: number; height: number }>({ width: 0, height: 0 });
+    let viewportDimensions = $state({ width: 0, height: 0 });
     const imageObserver = new ResizeObserver((entries) => {
         for (const entry of entries) {
             viewportDimensions = {
@@ -374,7 +374,7 @@
             // Abort any pending preload
             if (currentPreloadImg) {
                 currentPreloadImg.src = "";
-                currentPreloadImg = null;
+                currentPreloadImg.remove();
             }
         };
     });
@@ -472,8 +472,8 @@
         }
     }
     const handleContextMenu: MouseEventHandler<HTMLElement> = (e) => {
-        e.preventDefault();
         if (isCropping) {
+            e.preventDefault();
             cropMenuPosition = { x: e.clientX, y: e.clientY };
         }
     };
@@ -830,7 +830,7 @@
                     role="presentation"
                     style="{activeCropDimensions
                         ? `width: ${activeCropDimensions.frameWidth.toFixed(2)}px; height: ${activeCropDimensions.frameHeight.toFixed(2)}px;`
-                        : ''} transform: translate({zoomState.posX}px, {zoomState.posY}px) scale({zoomState.value}); transform-origin: 0 0;"
+                        : ''} transform: translate({zoomState.posX}px, {zoomState.posY}px) scale({zoomState.value}); transform-origin: center center;"
                 >
                     <AssetImage
                         naked={true}

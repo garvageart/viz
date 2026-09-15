@@ -197,8 +197,8 @@ describe("ImageZoomState Controller", () => {
 
         // 2. Set pointer down with primary button (button = 0)
         state.value = 2.0;
-        state.posX = -200;
-        state.posY = -200;
+        state.posX = -100;
+        state.posY = -100;
 
         state.handlePointerDown({
             button: 0,
@@ -218,8 +218,8 @@ describe("ImageZoomState Controller", () => {
         } as unknown as PointerEvent);
 
         expect(state.wasDragging).toBe(true);
-        expect(state.posX).toBe(-150); // -200 + (150 - 100) = -150
-        expect(state.posY).toBe(-170); // -200 + (130 - 100) = -170
+        expect(state.posX).toBe(-50); // -100 + (150 - 100) = -50
+        expect(state.posY).toBe(-70); // -100 + (130 - 100) = -70
 
         // 4. Pointer up
         state.handlePointerUp({
@@ -254,8 +254,35 @@ describe("ImageZoomState Controller", () => {
 
         expect(state.value).toBe(2.0);
         // Constrained translation ensures frame is clipped within container
-        expect(state.posX).toBeLessThanOrEqual(0);
-        expect(state.posY).toBeLessThanOrEqual(0);
+        expect(Math.abs(state.posX)).toBeLessThanOrEqual(300);
+        expect(Math.abs(state.posY)).toBeLessThanOrEqual(200);
+    });
+
+    it("adjusts translation during viewport resizing via handleResize", () => {
+        const mockImg = {
+            clientWidth: 1000,
+            clientHeight: 800
+        } as unknown as HTMLImageElement;
+
+        const state = new ImageZoomState({
+            getImageEl: () => mockImg,
+            getContainerEl: () => ({ clientWidth: 1000, clientHeight: 800 }) as HTMLElement
+        });
+
+        // At 1.0x fit, resizing keeps posX/posY at 0
+        state.handleResize({ width: 1400, height: 800 });
+        expect(state.posX).toBe(0);
+        expect(state.posY).toBe(0);
+
+        // When zoomed in 2.0x (maxPanX in 1000px = 500, in 1400px = 300)
+        state.value = 2.0;
+        state.posX = -400;
+        state.posY = -100;
+
+        // Resizing to 1400px clamps posX to maxPanX of 300
+        state.handleResize({ width: 1400, height: 800 }, { width: 1000, height: 800 });
+        expect(state.posX).toBe(-300);
+        expect(state.posY).toBe(-100);
     });
 });
 
@@ -269,33 +296,25 @@ describe("constrainTranslation", () => {
         expect(result.y).toBe(0);
     });
 
-    it("constrains the image within viewport bounds when zoom is less than 1.0 (e.g. 0.5)", () => {
-        const resultCentered = constrainTranslation(250, 200, 0.5, viewport, image);
-        expect(resultCentered.x).toBe(250);
-        expect(resultCentered.y).toBe(200);
-
-        const resultOvershoot = constrainTranslation(-100, 600, 0.5, viewport, image);
-        expect(resultOvershoot.x).toBe(0);
-        expect(resultOvershoot.y).toBe(400);
+    it("centers the image within viewport bounds when zoom is less than 1.0 (e.g. 0.5)", () => {
+        const result = constrainTranslation(250, 200, 0.5, viewport, image);
+        expect(result.x).toBe(0);
+        expect(result.y).toBe(0);
     });
 
     it("clamps boundaries at minimum zoom (0.1 / 10%)", () => {
-        const resultCentered = constrainTranslation(450, 360, 0.1, viewport, image);
-        expect(resultCentered.x).toBe(450);
-        expect(resultCentered.y).toBe(360);
-
-        const resultOvershoot = constrainTranslation(-50, 900, 0.1, viewport, image);
-        expect(resultOvershoot.x).toBe(0);
-        expect(resultOvershoot.y).toBe(720);
+        const result = constrainTranslation(450, 360, 0.1, viewport, image);
+        expect(result.x).toBe(0);
+        expect(result.y).toBe(0);
     });
 
     it("clamps horizontal and vertical boundaries when zoomed in (2.0x)", () => {
-        // At 2.0x zoom, zoomedW = 2000, offsetX = 0. minTx = 1000 - 2000 = -1000, maxTx = 0
-        const resultOvershootLeft = constrainTranslation(200, 0, 2.0, viewport, image);
-        expect(resultOvershootLeft.x).toBe(0);
+        // At 2.0x zoom, zoomedW = 2000, maxPanX = (2000 - 1000) / 2 = 500
+        const resultOvershootLeft = constrainTranslation(700, 0, 2.0, viewport, image);
+        expect(resultOvershootLeft.x).toBe(500);
 
-        const resultOvershootRight = constrainTranslation(-1500, 0, 2.0, viewport, image);
-        expect(resultOvershootRight.x).toBe(-1000);
+        const resultOvershootRight = constrainTranslation(-800, 0, 2.0, viewport, image);
+        expect(resultOvershootRight.x).toBe(-500);
     });
 });
 
@@ -304,7 +323,7 @@ describe("calculateZoomTo", () => {
     const image = { width: 1000, height: 800 };
     const viewportRect = { left: 0, top: 0 };
 
-    it("allows zooming out down to 0.1 (10%)", () => {
+    it("allows zooming out down to 0.1 (10%) and stays centered", () => {
         const result = calculateZoomTo({
             value: 1.0,
             posX: 0,
@@ -318,34 +337,35 @@ describe("calculateZoomTo", () => {
         });
 
         expect(result.value).toBe(0.5);
-        expect(result.posX).toBe(250);
-        expect(result.posY).toBe(200);
+        expect(result.posX).toBe(0);
+        expect(result.posY).toBe(0);
     });
 
     it("calculates zoom accurately with non-zero viewportRect offsets", () => {
         const offsetRect = { left: 100, top: 50 };
+        // Cursor at (700, 550) -> relative to container (600, 500) -> relative to center (100, 100)
         const result = calculateZoomTo({
             value: 1.0,
             posX: 0,
             posY: 0,
             newZoom: 2.0,
-            clientX: 600, // 500px relative to container
-            clientY: 450, // 400px relative to container
+            clientX: 700,
+            clientY: 550,
             viewportRect: offsetRect,
             viewport,
             image
         });
 
         expect(result.value).toBe(2.0);
-        expect(result.posX).toBe(-500);
-        expect(result.posY).toBe(-400);
+        expect(result.posX).toBe(-100);
+        expect(result.posY).toBe(-100);
     });
 
     it("clamps minimum zoom to 0.1", () => {
         const result = calculateZoomTo({
             value: 0.2,
-            posX: 400,
-            posY: 320,
+            posX: 0,
+            posY: 0,
             newZoom: 0.02,
             clientX: 500,
             clientY: 400,
@@ -355,8 +375,8 @@ describe("calculateZoomTo", () => {
         });
 
         expect(result.value).toBe(0.1);
-        expect(result.posX).toBe(450);
-        expect(result.posY).toBe(360);
+        expect(result.posX).toBe(0);
+        expect(result.posY).toBe(0);
     });
 
     it("clamps maximum zoom to 16.0", () => {
