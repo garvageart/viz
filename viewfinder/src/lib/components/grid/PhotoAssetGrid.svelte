@@ -82,7 +82,6 @@
 
     // Selection Management
     let selection = $derived(selectionManager.getScope(scopeId));
-    let selectionAnchor = $state<ImageAsset | null>(null);
 
     // Sync data source to selection scope so filters can access it
     $effect(() => {
@@ -196,8 +195,6 @@
         if (!navList.length) {
             return;
         }
-
-        onFocus();
 
         const activeId = selection.active?.uid;
         const currentIndex = activeId ? navList.findIndex((a) => a.uid === activeId) : -1;
@@ -837,22 +834,24 @@
         if (disabledUids.has(asset.uid)) {
             return;
         }
-        onFocus(); // Ensure this grid is active on click
 
         if (e.shiftKey && (e as KeyboardEvent).key !== "Tab") {
-            selection.selectRange(asset, selectionAnchor, (img) => !disabledUids.has(img.uid));
+            selection.selectRange(asset, (img) => !disabledUids.has(img.uid));
         } else if (e.ctrlKey) {
             selection.toggle(asset);
-            if (selection.has(asset)) {
-                selectionAnchor = asset;
-            } else if (selectionAnchor?.uid === asset.uid) {
-                selectionAnchor = selection.active || null;
-            }
         } else {
             selection.select(asset);
-            selectionAnchor = asset;
         }
 
+        assetClick?.();
+    }
+
+    function handleCheckboxToggle(asset: ImageAsset) {
+        if (disabledUids.has(asset.uid)) {
+            return;
+        }
+
+        selection.toggle(asset);
         assetClick?.();
     }
 
@@ -861,15 +860,9 @@
             if (disabledUids.has(asset.uid)) {
                 return;
             }
-            onFocus();
 
             if (selection.size > 0) {
                 selection.toggle(asset);
-                if (selection.has(asset)) {
-                    selectionAnchor = asset;
-                } else if (selectionAnchor?.uid === asset.uid) {
-                    selectionAnchor = selection.active || null;
-                }
                 assetClick?.();
                 return;
             }
@@ -883,14 +876,7 @@
             return;
         }
 
-        onFocus();
         selection.toggle(asset);
-
-        if (selection.has(asset)) {
-            selectionAnchor = asset;
-        } else if (selectionAnchor?.uid === asset.uid) {
-            selectionAnchor = selection.active || null;
-        }
         assetClick?.();
     }
 
@@ -949,7 +935,6 @@
     }
 
     function handleOuterContainerClick(e: MouseEvent) {
-        onFocus();
         const target = e.target as HTMLElement;
         if (shouldKeepSelection(target)) {
             return;
@@ -1001,11 +986,7 @@
             aria-label="Select group {label}"
             onclick={(e) => {
                 e.stopPropagation();
-                onFocus();
                 handleGroupSelect(label);
-            }}
-            onfocus={() => {
-                onFocus();
             }}
         >
             <Checkbox
@@ -1019,7 +1000,6 @@
                 }}
                 onchange={(e) => {
                     e.stopPropagation();
-                    onFocus();
                     handleGroupSelect(label);
                 }}
             />
@@ -1042,11 +1022,10 @@
     <!-- {@const isFocusedAsset = selection.active ? selection.active.uid === asset.uid : data[0]?.uid === asset.uid} -->
     <div
         class="asset-photo"
-        class:is-cached={isCached}
         class:disabled-asset={isDisabled}
-        data-asset-id={asset.uid}
         class:selected-photo={isSelected}
         class:multi-selected-photo={isSelected && isMultiSelecting}
+        data-asset-id={asset.uid}
         role="button"
         tabindex={0}
         onfocus={onFocus}
@@ -1122,11 +1101,36 @@
     >
         <div class="photo-card-content">
             <div class="image-metadata-display">
-                {#if asset.image_metadata?.rating}
-                    <div class="left-side">
-                        <StarRating static={true} value={asset.image_metadata?.rating} />
+                <div class="left-side">
+                    <div
+                        class="photo-select-checkbox"
+                        class:visible={isSelected}
+                        role="presentation"
+                        onclick={(e) => {
+                            e.stopPropagation();
+                        }}
+                    >
+                        <Checkbox
+                            id={`select-${asset.uid}`}
+                            variant="round"
+                            size="regular"
+                            checked={isSelected}
+                            disabled={isDisabled}
+                            tabindex={-1}
+                            aria-label="Select photo {asset.name || asset.uid}"
+                            onclick={(e) => {
+                                e.stopPropagation();
+                            }}
+                            onchange={(e) => {
+                                e.stopPropagation();
+                                handleCheckboxToggle(asset);
+                            }}
+                        />
                     </div>
-                {/if}
+                    {#if asset.image_metadata?.rating}
+                        <StarRating static={true} value={asset.image_metadata?.rating} />
+                    {/if}
+                </div>
                 {#if asset.image_metadata?.label || asset.favourited}
                     <div class="right-side">
                         {#if asset.image_metadata?.label}
@@ -1186,7 +1190,6 @@
     <div
         use:initGrid
         class="viz-photo-grid-container no-select"
-        class:is-active={selectionManager.activeScopeId === scopeId}
         class:use-external-scroll={usingExternalScroll}
         onscroll={handleGridScroll}
         use:unselectImagesOnClickOutsideAssetContainer
@@ -1374,21 +1377,56 @@
             display: flex;
             align-items: center;
             gap: 0.3rem;
+            pointer-events: auto;
         }
+    }
+
+    .photo-select-checkbox {
+        display: inline-flex;
+        align-items: center;
+        opacity: 0;
+        transition: opacity 0.15s ease-out;
+
+        &.visible {
+            opacity: 1;
+        }
+    }
+
+    .asset-photo:hover .photo-select-checkbox,
+    .asset-photo:focus-within .photo-select-checkbox {
+        opacity: 1;
     }
 
     .asset-photo {
         position: relative;
         overflow: hidden;
+        background: var(--viz-surface-panel);
 
         &:focus,
         &:focus-visible {
             outline: none;
             box-shadow: none;
         }
+
+        &.selected-photo {
+            outline: 2px solid var(--viz-primary);
+        }
+
+        &.multi-selected-photo {
+            outline-style: inset;
+            /* idk i can't decide rn but i'm fine with it like this */
+            // background: color-mix(in srgb, var(--viz-primary) 40%, transparent);
+
+            /* background: var(--viz-primary);
+               background: var(--viz-surface-card); */
+        }
+
+        &.multi-selected-photo .photo-card-content {
+            transform: scale(0.95);
+        }
     }
 
-    .asset-photo.disabled-asset {
+    .disabled-asset {
         cursor: not-allowed;
         pointer-events: none;
         opacity: 0.65;
@@ -1403,27 +1441,6 @@
             z-index: 5;
             pointer-events: none;
         }
-    }
-
-    .asset-photo.multi-selected-photo {
-        outline: 2px solid var(--viz-primary);
-        /* idk i can't decide rn but i'm fine with it like this */
-        background: color-mix(in srgb, var(--viz-primary) 30%, transparent);
-
-        /* background: var(--viz-primary);
-        background: var(--viz-surface-card); */
-    }
-
-    .viz-photo-grid-container.is-active .asset-photo.multi-selected-photo {
-        outline-color: var(--viz-primary);
-    }
-
-    .asset-photo.selected-photo {
-        outline: 2px solid var(--viz-border-subtle);
-    }
-
-    .viz-photo-grid-container.is-active .asset-photo.selected-photo {
-        outline-color: var(--viz-primary);
     }
 
     .multi-select-ring {
@@ -1442,10 +1459,6 @@
         transform: scale(1);
         transition: transform 0.18s ease;
         will-change: transform;
-    }
-
-    .asset-photo.multi-selected-photo .photo-card-content {
-        transform: scale(0.98);
     }
 
     .tile-image-container {

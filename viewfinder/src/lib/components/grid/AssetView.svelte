@@ -454,8 +454,6 @@
         $inspect("selected asset", selection.active);
     }
 
-    let selectionAnchor = $state<T | null>(null);
-
     function getNavigableImages(): T[] {
         const list: T[] = [];
         for (const row of virtualizer.rows) {
@@ -582,17 +580,11 @@
                 selection.select(asset);
                 return;
             }
-            selection.selectRange(asset, selectionAnchor, (img) => !disabledUids.has(img.uid));
+            selection.selectRange(asset, (img) => !disabledUids.has(img.uid));
         } else if (e.ctrlKey) {
             selection.toggle(asset);
-            if (selection.has(asset)) {
-                selectionAnchor = asset;
-            } else if (selectionAnchor?.uid === asset.uid) {
-                selectionAnchor = selection.active || null;
-            }
         } else {
             selection.select(asset);
-            selectionAnchor = asset;
         }
 
         assetClick?.();
@@ -607,11 +599,6 @@
 
             if (selection.size > 0) {
                 selection.toggle(asset);
-                if (selection.has(asset)) {
-                    selectionAnchor = asset;
-                } else if (selectionAnchor?.uid === asset.uid) {
-                    selectionAnchor = selection.active || null;
-                }
                 assetClick?.();
                 return;
             }
@@ -626,11 +613,6 @@
         }
         onFocus();
         selection.toggle(asset);
-        if (selection.has(asset)) {
-            selectionAnchor = asset;
-        } else if (selectionAnchor?.uid === asset.uid) {
-            selectionAnchor = selection.active || null;
-        }
         assetClick?.();
     }
 
