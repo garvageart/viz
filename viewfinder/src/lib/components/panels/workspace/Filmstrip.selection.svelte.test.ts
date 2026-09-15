@@ -83,9 +83,10 @@ describe("filmstrip selection -> metadata panel", () => {
         const img3 = makeImage("3", "Image 3");
         scope.setSource([img1, img2, img3]);
 
-        // Select all 3 items, with img3 as the active (lead) item
+        // Select all 3 items: select item1 first (sets anchor), then range to item3 (lead item)
         const [item1, _, item3] = scope.source;
-        scope.selectRange(item3, item1);
+        scope.select(item1);
+        scope.selectRange(item3);
 
         const { container } = render(Filmstrip, {});
 

@@ -57,6 +57,7 @@ export class SelectionScope<T> {
     totalCount = $state<number>();
 
     active = $state<T>();
+    anchor = $state<T>();
     source = $state<T[]>([]); // All items available in this scope
     id: string;
 
@@ -107,6 +108,7 @@ export class SelectionScope<T> {
         this.excluded.clear();
         this.isSelectAll = false;
         this.active = undefined;
+        this.anchor = undefined;
     }
 
     toggle(item: T) {
@@ -115,34 +117,40 @@ export class SelectionScope<T> {
             if (this.active === item) {
                 this.active = undefined;
             }
+            if (this.anchor === item) {
+                this.anchor = this.active;
+            }
         } else {
             this.add(item);
             this.active = item;
+            this.anchor = item;
         }
     }
 
     /**
      * Selects a single item, clearing previous selection.
-     * Sets it as the active (primary) selection.
+     * Sets it as the active (primary) selection and anchor.
      */
     select(item: T) {
         this.clear();
         this.add(item);
         this.active = item;
+        this.anchor = item;
     }
 
     /**
      * Selects a contiguous range of items between target and anchor (or current active item),
-     * optionally filtered by filterFn.
+     * optionally filtered by filterFn. Preserves the anchor so subsequent shift-selections
+     * expand or shrink relative to the original anchor.
      */
-    selectRange(target: T, anchor?: T | null, filterFn?: (item: T) => boolean) {
+    selectRange(target: T, filterFn?: (item: T) => boolean) {
         if (target == null) {
             return;
         }
 
         const sourceList = filterFn ? this.source.filter(filterFn) : this.source;
         const targetIdx = sourceList.indexOf(target);
-        const anchorItem = anchor ?? this.active;
+        const anchorItem = this.anchor ?? this.active ?? sourceList[0];
         const anchorIdx = anchorItem != null ? sourceList.indexOf(anchorItem) : -1;
 
         if (targetIdx !== -1 && anchorIdx !== -1) {
@@ -155,6 +163,7 @@ export class SelectionScope<T> {
             }
 
             this.active = target;
+            this.anchor = anchorItem;
         } else {
             this.select(target);
         }
