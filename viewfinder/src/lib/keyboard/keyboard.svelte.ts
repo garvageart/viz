@@ -48,6 +48,8 @@ export interface KeybindDefinition {
     allowInInputs?: boolean;
 }
 
+export type KeybindCustom = KeybindDefinition & { currentKey: string; isCustom: boolean };
+
 export const KEYBIND_DEFINITIONS: KeybindDefinition[] = [
     {
         action: KeybindAction.ToggleFullscreen,
@@ -189,7 +191,7 @@ export class KeyboardManager {
         }
     }
 
-    getAllBindings(): Array<KeybindDefinition & { currentKey: string; isCustom: boolean }> {
+    getAllBindings(): Array<KeybindCustom> {
         return KEYBIND_DEFINITIONS.map((def) => {
             const custom = this.customBindings[def.action];
             return {

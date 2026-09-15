@@ -52,6 +52,7 @@
             },
             {
                 action: KeybindAction.Search,
+                preventDefault: true,
                 handler: () => {
                     if (!searchInputHasFocus) {
                         searchElement?.focus();
