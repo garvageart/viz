@@ -5,6 +5,13 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.34.16] - 2026-09-16
+
+* fix(viewfinder): decouple zoom percentage from texture resolution and simplify crop layout (c06bc082)
+* feat(viewfinder): support additive range multi-selection in photo grid (d669726b)
+* docs: update font-size scale and migration plan status (b28fdb92)
+* feat(viewfinder): apply modular font-size scale on 12px base (677d5620)
+
 ## [0.34.15] - 2026-09-15
 
 * feat(viewfinder): add selection checkbox to photo cards and streamline grid selection (ce7abf17)
