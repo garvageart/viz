@@ -1,3 +1,5 @@
+import type { ActiveCropLayout } from "./crop-utils";
+
 export interface ZoomState {
     value: number;
     posX: number;
@@ -22,7 +24,7 @@ export type ZoomOptions = ZoomState & {
 export interface ZoomControllerDeps {
     getImageEl: () => HTMLImageElement | undefined;
     getContainerEl: () => HTMLElement | undefined;
-    getActiveCropDimensions?: () => { frameWidth: number; frameHeight: number } | undefined;
+    getActiveCropDimensions?: () => ActiveCropLayout | undefined;
     getEffectiveWidthFraction?: () => number;
 }
 
@@ -81,10 +83,10 @@ export class ImageZoomState {
     }
 
     get nativeZoomPercentage(): number {
-        const img = this.deps?.getImageEl();
-        if (img && img.clientWidth > 0 && img.naturalWidth > 0) {
-            return Math.round(this.value * (img.clientWidth / (img.naturalWidth * this.effectiveWidthFraction)) * 100);
-        }
+        return Math.round(this.value * 100);
+    }
+
+    get zoomPercentage(): number {
         return Math.round(this.value * 100);
     }
 
@@ -102,7 +104,7 @@ export class ImageZoomState {
 
         const activeCropDims = this.deps?.getActiveCropDimensions?.();
         const imageBounds = activeCropDims
-            ? { width: activeCropDims.frameWidth, height: activeCropDims.frameHeight }
+            ? { width: activeCropDims.frame.width, height: activeCropDims.frame.height }
             : { width: img.clientWidth, height: img.clientHeight };
 
         const result = calculateZoomTo({
@@ -138,7 +140,7 @@ export class ImageZoomState {
 
         const activeCropDims = this.deps?.getActiveCropDimensions?.();
         const imageBounds = activeCropDims
-            ? { width: activeCropDims.frameWidth, height: activeCropDims.frameHeight }
+            ? { width: activeCropDims.frame.width, height: activeCropDims.frame.height }
             : newImage && newImage.width > 0 && newImage.height > 0
               ? newImage
               : this.deps?.getImageEl()
@@ -194,7 +196,7 @@ export class ImageZoomState {
 
         const activeCropDims = this.deps?.getActiveCropDimensions?.();
         const imageBounds = activeCropDims
-            ? { width: activeCropDims.frameWidth, height: activeCropDims.frameHeight }
+            ? { width: activeCropDims.frame.width, height: activeCropDims.frame.height }
             : { width: img.clientWidth, height: img.clientHeight };
 
         const constrained = constrainTranslation(

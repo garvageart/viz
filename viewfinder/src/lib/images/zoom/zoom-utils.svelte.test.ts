@@ -50,14 +50,16 @@ describe("ImageZoomState Controller", () => {
         // 4000 * 1.0 / 1000 = 4.0x
         expect(state.oneToOneZoom).toBe(4.0);
 
-        // At 1.0x zoom, percentage is 1.0 * (1000 / 4000) * 100 = 25%
-        expect(state.nativeZoomPercentage).toBe(25);
+        // At 1.0x zoom, percentage is 100%
+        expect(state.nativeZoomPercentage).toBe(100);
+        expect(state.zoomPercentage).toBe(100);
         expect(state.isAtFit).toBe(true);
         expect(state.isAtOneToOne).toBe(false);
 
-        // At 4.0x zoom, percentage is 100%
+        // At 4.0x zoom, percentage is 400%
         state.value = 4.0;
-        expect(state.nativeZoomPercentage).toBe(100);
+        expect(state.nativeZoomPercentage).toBe(400);
+        expect(state.zoomPercentage).toBe(400);
         expect(state.isAtFit).toBe(false);
         expect(state.isAtOneToOne).toBe(true);
 
@@ -246,7 +248,10 @@ describe("ImageZoomState Controller", () => {
         const state = new ImageZoomState({
             getImageEl: () => mockImg,
             getContainerEl: () => mockContainer,
-            getActiveCropDimensions: () => ({ frameWidth: 800, frameHeight: 600 })
+            getActiveCropDimensions: () => ({
+                frame: { width: 800, height: 600 },
+                image: { width: 1600, height: 1200, offsetX: 0, offsetY: 0 }
+            })
         });
 
         // Zoom into 2.0x with crop frame active

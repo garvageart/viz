@@ -1,10 +1,17 @@
 export type CropRect = { x: number; y: number; width: number; height: number };
 export type DragAction = "move" | "nw" | "ne" | "sw" | "se" | "n" | "e" | "s" | "w" | null;
-export interface CropCoords {
-    x: number;
-    y: number;
-    width: number;
-    height: number;
+
+export interface ActiveCropLayout {
+    frame: {
+        width: number;
+        height: number;
+    };
+    image: {
+        width: number;
+        height: number;
+        offsetX: number;
+        offsetY: number;
+    };
 }
 
 function calculateCandidateBounds(
@@ -114,17 +121,22 @@ function applyAspectRatio(
     const startCy = startCrop.y + startCrop.height / 2;
 
     let { x, y, width, height } = crop;
-    const widthDriven = isEast || isWest || (!isNorth && !isSouth);
+    // Determine whether width or height controls the aspect ratio calculation
+    const controlledByWidth = isEast || isWest || (!isNorth && !isSouth);
 
-    if (widthDriven) {
+    if (controlledByWidth) {
+        // Calculate height from width to maintain aspect ratio
         const targetH = width / aspectRatio;
         if (altKey) {
+            // Resize symmetrically around original center point
             height = targetH;
             y = startCy - height / 2;
         } else if (!isNorth && !isSouth) {
+            // Horizontal edge drag: center height vertically
             y = startCrop.y + (startCrop.height - targetH) / 2;
             height = targetH;
         } else {
+            // Corner drag: anchor bottom edge when dragging north, keep top edge otherwise
             height = targetH;
             if (isNorth) {
                 const oldBottom = startCrop.y + startCrop.height;
@@ -132,11 +144,14 @@ function applyAspectRatio(
             }
         }
     } else {
+        // Vertical edge drag: calculate width from height
         const targetW = height * aspectRatio;
         if (altKey) {
+            // Resize symmetrically around original center point
             width = targetW;
             x = startCx - width / 2;
         } else {
+            // Center width horizontally around start position
             x = startCrop.x + (startCrop.width - targetW) / 2;
             width = targetW;
         }
@@ -159,9 +174,11 @@ function clampToBounds(
     let { x, y, width, height } = crop;
 
     if (altKey) {
+        // Calculate maximum symmetrical width and height allowed from center to boundaries
         const maxW = Math.min(startCx, boundW - startCx) * 2;
         const maxH = Math.min(startCy, boundH - startCy) * 2;
 
+        // Clamp symmetrical dimensions to boundary limits
         if (width > maxW) {
             width = maxW;
             x = startCx - width / 2;
@@ -172,11 +189,13 @@ function clampToBounds(
             y = startCy - height / 2;
         }
 
+        // Adjust dimensions to maintain aspect ratio while keeping crop centered
         if (aspectRatio) {
-            if (width / height > aspectRatio + 0.001) {
-                width = height * aspectRatio;
+            const targetWidth = height * aspectRatio;
+            if (targetWidth <= width) {
+                width = targetWidth;
                 x = startCx - width / 2;
-            } else if (width / height < aspectRatio - 0.001) {
+            } else {
                 height = width / aspectRatio;
                 y = startCy - height / 2;
             }
@@ -185,6 +204,7 @@ function clampToBounds(
         return { x, y, width, height };
     }
 
+    // Clamp horizontal boundaries (left and right edges)
     if (x < 0) {
         width += x;
         x = 0;
@@ -194,6 +214,7 @@ function clampToBounds(
         width = boundW - x;
     }
 
+    // Clamp vertical boundaries (top and bottom edges)
     if (y < 0) {
         height += y;
         y = 0;
@@ -203,10 +224,12 @@ function clampToBounds(
         height = boundH - y;
     }
 
+    // Re-enforce aspect ratio and re-clamp edges if ratio adjustment caused an overflow
     if (aspectRatio) {
-        if (width / height > aspectRatio) {
-            width = height * aspectRatio;
-        } else if (width / height < aspectRatio) {
+        const targetWidth = height * aspectRatio;
+        if (targetWidth <= width) {
+            width = targetWidth;
+        } else {
             height = width / aspectRatio;
         }
 

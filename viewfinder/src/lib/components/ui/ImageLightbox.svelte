@@ -27,7 +27,7 @@
     import ExportPanel, { modalOptions as exportModalOptions } from "$lib/components/ui/panels/ExportPanel.svelte";
     import MetadataPanel from "$lib/components/ui/panels/MetadataPanel.svelte";
     import { ImageLoader } from "$lib/images/loader/image-loader.svelte";
-    import type { CropCoords } from "$lib/images/zoom/crop-utils";
+    import type { ActiveCropLayout, CropRect } from "$lib/images/zoom/crop-utils";
     import { ImageZoomState } from "$lib/images/zoom/zoom-utils.svelte";
     import { KbdShortcutTier, KeybindAction, keyboardManager } from "$lib/keyboard/keyboard.svelte";
     import { isMobile } from "$lib/states/index.svelte";
@@ -60,7 +60,7 @@
             clearTimeout(statusIndicator.timeoutId);
             statusIndicator.timeoutId = undefined;
         }
-        statusIndicator.show = false;
+
         show = false;
         onClose?.();
     }
@@ -72,34 +72,18 @@
     });
 
     let imageToLoad = $derived(lightboxImage ? getAssetImagePath(lightboxImage, "preview") : undefined);
-    $inspect("lightbox show", show);
 
     // Element Bindings
     let imageEl = $state<HTMLImageElement>();
     let viewportEl = $state<HTMLDivElement>();
     let showImageStateDebugPanel = $state(false);
     let currentPreloadImg = $state<HTMLImageElement | null>(null);
-
-    const zoomState = new ImageZoomState({
-        getImageEl: () => imageEl,
-        getContainerEl: () => viewportEl,
-        getActiveCropDimensions: () => activeCropDimensions,
-        getEffectiveWidthFraction: () => (activeCrop && activeCrop.width > 0 ? activeCrop.width : 1)
-    });
     let lastImageUid = $state<string | undefined>(undefined);
-
-    $effect(() => {
-        const currentUid = lightboxImage.uid;
-        if (currentUid !== lastImageUid) {
-            zoomState.reset();
-            lastImageUid = currentUid;
-        }
-    });
 
     // Crop State
     let isCropping = $state(false);
     let cropAspectRatio = $state<number>();
-    let currentCrop = $state<CropCoords>({ x: 0, y: 0, width: 1, height: 1 });
+    let currentCrop = $state<CropRect>({ x: 0, y: 0, width: 1, height: 1 });
     let cropMenuPosition = $state<{ x: number; y: number }>();
 
     let viewportDimensions = $state({ width: 0, height: 0 });
@@ -109,6 +93,21 @@
                 width: entry.contentRect.width,
                 height: entry.contentRect.height
             };
+        }
+    });
+
+    const zoomState = new ImageZoomState({
+        getImageEl: () => imageEl,
+        getContainerEl: () => viewportEl,
+        getActiveCropDimensions: () => activeCropDimensions,
+        getEffectiveWidthFraction: () => (activeCrop && activeCrop.width > 0 ? activeCrop.width : 1)
+    });
+
+    $effect(() => {
+        const currentUid = lightboxImage.uid;
+        if (currentUid !== lastImageUid) {
+            zoomState.reset();
+            lastImageUid = currentUid;
         }
     });
 
@@ -155,7 +154,7 @@
     });
 
     // Store crop edits (normalized 0..1 coordinates) to restore them when re-entering crop mode
-    let cropEdits = $state<Record<string, CropCoords>>({});
+    let cropEdits = $state<Record<string, CropRect>>({});
 
     let activeCrop = $derived.by(() => {
         if (!lightboxImage.uid || isCropping) {
@@ -165,7 +164,7 @@
         return cropEdits[lightboxImage.uid] || null;
     });
 
-    let activeCropDimensions = $derived.by(() => {
+    let activeCropDimensions = $derived.by<ActiveCropLayout | undefined>(() => {
         if (!activeCrop || !imageEl) {
             return undefined;
         }
@@ -199,18 +198,22 @@
             frameHeight = cw / cropAspect;
         }
 
-        const imgWidth = frameWidth / activeCrop.width;
-        const imgHeight = frameHeight / activeCrop.height;
-        const imgLeft = -(frameWidth * activeCrop.x) / activeCrop.width;
-        const imgTop = -(frameHeight * activeCrop.y) / activeCrop.height;
+        const imageWidth = frameWidth / activeCrop.width;
+        const imageHeight = frameHeight / activeCrop.height;
+        const offsetX = -(frameWidth * activeCrop.x) / activeCrop.width;
+        const offsetY = -(frameHeight * activeCrop.y) / activeCrop.height;
 
         return {
-            frameWidth,
-            frameHeight,
-            imgWidth,
-            imgHeight,
-            imgLeft,
-            imgTop
+            frame: {
+                width: frameWidth,
+                height: frameHeight
+            },
+            image: {
+                width: imageWidth,
+                height: imageHeight,
+                offsetX,
+                offsetY
+            }
         };
     });
 
@@ -219,8 +222,8 @@
             return undefined;
         }
 
-        const { imgWidth, imgHeight, imgLeft, imgTop } = activeCropDimensions;
-        return `width: ${imgWidth.toFixed(2)}px !important; height: ${imgHeight.toFixed(2)}px !important; position: absolute !important; left: ${imgLeft.toFixed(2)}px !important; top: ${imgTop.toFixed(2)}px !important; max-width: none !important; max-height: none !important;`;
+        const { width, height, offsetX, offsetY } = activeCropDimensions.image;
+        return `width: ${width.toFixed(2)}px !important; height: ${height.toFixed(2)}px !important; position: absolute !important; left: ${offsetX.toFixed(2)}px !important; top: ${offsetY.toFixed(2)}px !important; max-width: none !important; max-height: none !important;`;
     });
 
     function handleCropApply() {
@@ -829,7 +832,7 @@
                     oncontextmenu={handleContextMenu}
                     role="presentation"
                     style="{activeCropDimensions
-                        ? `width: ${activeCropDimensions.frameWidth.toFixed(2)}px; height: ${activeCropDimensions.frameHeight.toFixed(2)}px;`
+                        ? `width: ${activeCropDimensions.frame.width.toFixed(2)}px; height: ${activeCropDimensions.frame.height.toFixed(2)}px;`
                         : ''} transform: translate({zoomState.posX}px, {zoomState.posY}px) scale({zoomState.value}); transform-origin: center center;"
                 >
                     <AssetImage
