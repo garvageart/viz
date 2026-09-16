@@ -1421,14 +1421,14 @@
 
         &.selected-photo {
             outline: 2px solid var(--viz-primary);
-            outline: 2px solid var(--viz-primary);
-            box-shadow:
-                inset 1px -1px 0 var(--viz-primary),
-                inset -1px 1px 0 var(--viz-primary);
         }
 
         &.multi-selected-photo {
-            outline-style: solid;
+            outline: none;
+            box-shadow:
+                inset 2px -2px 0 var(--viz-primary),
+                inset -2px 2px 0 var(--viz-primary);
+            border-radius: var(--viz-border-radius-md);
             /* idk i can't decide rn but i'm fine with it like this */
             // background: color-mix(in srgb, var(--viz-primary) 40%, transparent);
 

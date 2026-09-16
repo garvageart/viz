@@ -344,7 +344,6 @@
 
     #left-menu-container {
         border-radius: var(--viz-border-radius-sm);
-        z-index: 300;
         gap: var(--viz-spacing-sm);
         height: 100%;
         display: flex;
