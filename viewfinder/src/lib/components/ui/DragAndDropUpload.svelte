@@ -7,11 +7,9 @@
         addCollectionImages,
         createCollection
     } from "@viz/api";
-    import { VizMimeTypes } from "$lib/constants";
     import { dragCoordinator } from "$lib/drag-drop/coordinator.svelte";
-    import { DragData } from "$lib/drag-drop/data";
-    import { dragState } from "$lib/drag-drop/state.svelte";
-    import { SelectionScope } from "$lib/states/selection.svelte";
+    import { dropZone } from "$lib/drag-drop/directives.svelte";
+    import { type ScopeId, SelectionScope } from "$lib/states/selection.svelte";
     import { toasts } from "$lib/toast-notifcations/toasts.svelte";
     import {
         ALL_SUPPORTED_IMAGES,
@@ -29,7 +27,7 @@
     import MaterialIcon from "./MaterialIcon.svelte";
 
     interface Props {
-        scopeId?: string; // might be useful soon
+        scopeId?: ScopeId; // might be useful soon
         selectionScope?: SelectionScope<ImageAsset>;
         showCollectionCreateBox?: boolean;
         bypassConfirmation?: boolean;
@@ -39,19 +37,11 @@
 
     let { showCollectionCreateBox, bypassConfirmation = false, selectionScope, onUploadSuccess }: Props = $props();
 
-    // Drag and drop upload state
-    let isDragging = $state(false);
-    let dragCounter = $state(0);
-    let isInternalDrag = $state(false);
-    let internalDragActive = $state(false);
+    let dropActive = $state(false);
 
     // Upload candidates
     let uploadCandidates = $state<File[]>([]);
     let suggestedCollectionName = $state("");
-
-    // Small drop-target state for 'Add to Collection' boxes
-    let addBoxHover = $state(false);
-    let addExistingBoxHover = $state(false);
 
     async function processUploads(files: File[]) {
         const manager = new UploadManager([...SUPPORTED_RAW_FILES, ...SUPPORTED_IMAGE_TYPES] as SupportedImageTypes[]);
@@ -70,12 +60,6 @@
             });
 
             try {
-            } catch (err) {
-                console.error("Failed to fetch uploaded images:", err);
-            }
-
-            // optional upload success
-            try {
                 if (onUploadSuccess) {
                     await onUploadSuccess(uploadedImages);
                 }
@@ -87,19 +71,13 @@
         return uploadedImages;
     }
 
-    function resetDragState() {
-        isDragging = false;
-        dragCounter = 0;
-        isInternalDrag = false;
-    }
-
     function openCreateCollectionModal(options: {
         initialData?: Partial<CollectionCreate>;
         buttonText?: string;
         onSuccess: (createData: CollectionCreate) => Promise<void> | void;
     }) {
-        const collectionCreateData: Pick<Collection, "name" | "description" | "private"> = {
-            name: options.initialData?.name || `New collection ${new Date().toLocaleString()}`,
+        const collectionCreateData: CollectionCreate = {
+            name: options.initialData?.name ?? "",
             description: options.initialData?.description || "",
             private: options.initialData?.private
         };
@@ -149,13 +127,13 @@
             return false;
         }
 
-        const targetLabel = collectionName ? ` to **${collectionName}**` : "";
         try {
             const addRes = await addCollectionImages(collectionUid, { uids: uniqueUids });
             if (addRes.status === 200) {
                 toasts.add({
                     type: "success",
-                    message: `Added ${uniqueUids.length} image(s)${targetLabel}`,
+                    title: collectionName,
+                    message: `Added ${uniqueUids.length} image(s)`,
                     actions: [
                         {
                             label: "View Collection",
@@ -191,6 +169,7 @@
                     type: "error",
                     message: `Failed to create collection (${createRes.status})`
                 });
+
                 return;
             }
 
@@ -212,10 +191,10 @@
     ): Promise<boolean> {
         const manager = new UploadManager([...SUPPORTED_RAW_FILES, ...SUPPORTED_IMAGE_TYPES] as SupportedImageTypes[]);
 
-        const targetLabel = collectionName ? ` to **${collectionName}**` : "";
         toasts.add({
             type: "success",
-            message: `Uploading ${files.length} file(s) to add${targetLabel}...`
+            title: collectionName,
+            message: `Uploading ${files.length} file(s) to add...`
         });
 
         const uploadedImages = await manager.addFilesAndUpload(files);
@@ -265,10 +244,6 @@
         }
     }
 
-    /**
-     * Handle dropped files and folders.
-     * Supports single file, multiple files, and entire folders.
-     */
     function isSupportedFile(file: File): boolean {
         const supportedExtensions: readonly string[] = ALL_SUPPORTED_IMAGES;
         const mimeExt = file.type.split("/")[1] ?? "";
@@ -285,141 +260,37 @@
         return files.filter(isSupportedFile);
     }
 
-    async function getDroppedFilesAndFolder(
-        dt: DataTransfer
-    ): Promise<{ validFiles: File[]; folderName: string | null }> {
-        const { files, folderName } = await extractFilesFromDataTransfer(dt);
-        return { validFiles: filterSupportedFiles(files), folderName };
-    }
-
-    async function handleDrop(e: DragEvent) {
-        e.preventDefault();
-        resetDragState();
-
-        if (!e.dataTransfer) {
+    async function handleFileDrop(files: File[], e: DragEvent) {
+        const validFiles = filterSupportedFiles(files);
+        if (validFiles.length === 0) {
+            toasts.add({
+                type: "info",
+                message: "No supported image files found to upload"
+            });
             return;
         }
 
-        try {
-            if (!isRelevantFileDrop(e)) {
-                return;
-            }
+        const folderName = e.dataTransfer ? (await extractFilesFromDataTransfer(e.dataTransfer)).folderName : null;
 
-            const { validFiles, folderName: detectedFolderName } = await getDroppedFilesAndFolder(e.dataTransfer);
+        uploadCandidates = validFiles;
+        suggestedCollectionName = folderName ?? "";
 
-            if (validFiles.length === 0) {
-                toasts.add({
-                    type: "info",
-                    message: "No files to upload"
-                });
-                return;
-            }
-
-            uploadCandidates = validFiles;
-            suggestedCollectionName = detectedFolderName || `New Collection ${new Date().toLocaleDateString()}`;
-
-            if (!detectedFolderName || bypassConfirmation) {
-                await processUploads(validFiles);
-                uploadCandidates = [];
-                return;
-            }
-
-            // Open confirmation modal
-            modalsManager.open(
-                ConfirmationModal,
-                {
-                    title: "Upload Options",
-                    children: uploadConfirmSnippet,
-                    actions: uploadConfirmActions
-                },
-                { heading: "Upload Options" }
-            );
-        } catch (err) {
-            console.error("Drop upload error:", err);
-            toasts.add({
-                type: "error",
-                message: `Upload failed: ${err}`
-            });
-        }
-    }
-
-    function isRelevantFileDrop(e: DragEvent): boolean {
-        if (!e.dataTransfer?.types) {
-            return false;
+        if (!folderName || bypassConfirmation) {
+            await processUploads(validFiles);
+            uploadCandidates = [];
+            return;
         }
 
-        // Skip if an internal app drag is active - we only want OS file drops here
-        if (dragCoordinator.isDragging || dragState.isActive) {
-            return false;
-        }
-
-        // Skip if any app-internal MIME type is present
-        const appMimeTypes = [VizMimeTypes.IMAGE_UIDS, VizMimeTypes.COLLECTION_UIDS, VizMimeTypes.TAB_VIEW];
-        for (const t of appMimeTypes) {
-            if (e.dataTransfer.types.includes(t)) {
-                return false;
-            }
-        }
-
-        // Only handle drops that contain actual files
-        return e.dataTransfer.types.includes("Files");
+        modalsManager.open(
+            ConfirmationModal,
+            {
+                title: "Upload Options",
+                children: uploadConfirmSnippet,
+                actions: uploadConfirmActions
+            },
+            { heading: "Upload Options" }
+        );
     }
-
-    function withRelevantDrag(handler: (e: DragEvent) => void | Promise<void>) {
-        return (e: DragEvent) => {
-            if (isRelevantFileDrop(e)) {
-                return handler(e);
-            }
-        };
-    }
-
-    function handleDragStart() {
-        internalDragActive = true;
-    }
-
-    function handleDragEnd() {
-        internalDragActive = false;
-        isDragging = false;
-        dragCounter = 0;
-    }
-
-    function handleDragEnter(e: DragEvent) {
-        e.preventDefault();
-        dragCounter++;
-        if (dragCounter === 1) {
-            if (
-                dragCoordinator.isDragging ||
-                internalDragActive ||
-                (e.dataTransfer && DragData.isType(e.dataTransfer, VizMimeTypes.IMAGE_UIDS))
-            ) {
-                isInternalDrag = true;
-            } else {
-                isInternalDrag = false;
-            }
-            isDragging = true;
-        }
-    }
-
-    function handleDragLeave(e: DragEvent) {
-        e.preventDefault();
-        dragCounter--;
-        if (dragCounter === 0) {
-            isDragging = false;
-            isInternalDrag = false;
-        }
-    }
-
-    function handleDragOver(e: DragEvent) {
-        e.preventDefault();
-        if (e.dataTransfer) {
-            e.dataTransfer.dropEffect = "copy";
-        }
-    }
-
-    const onDragEnter = withRelevantDrag(handleDragEnter);
-    const onDragLeave = withRelevantDrag(handleDragLeave);
-    const onDragOver = withRelevantDrag(handleDragOver);
-    const onDrop = withRelevantDrag(handleDrop);
 
     async function handleConfirmUploadOnly(id: string) {
         modalsManager.close(id);
@@ -448,9 +319,6 @@
         }
     }
 
-    /**
-     * Create a collection from the currently selected images (keyboard/click path).
-     */
     async function createCollectionFromSelected() {
         const items = selectionScope?.selectedItems ?? [];
         if (items.length === 0) {
@@ -472,73 +340,25 @@
         });
     }
 
-    /**
-     * Handle drop specifically onto the "Add to Collection" box.
-     * This will upload any dropped files and create a new collection containing
-     * the resulting uploaded images.
-     */
-    async function handleDropCreateCollection(e: DragEvent) {
-        e.preventDefault();
-        e.stopPropagation();
-        resetDragState();
-
-        if (!e.dataTransfer) {
+    async function handleDropCreateCollection(files: File[]) {
+        const validFiles = filterSupportedFiles(files);
+        if (validFiles.length === 0) {
+            toasts.add({
+                type: "error",
+                message: "No supported image files found to add to collection"
+            });
             return;
         }
 
-        try {
-            // Check for internal drag of images first
-            const dragData = DragData.getData<string[]>(e.dataTransfer, VizMimeTypes.IMAGE_UIDS);
-            if (dragData?.payload) {
-                const uids = dragData.payload;
-                if (uids.length === 0) {
-                    toasts.add({
-                        type: "info",
-                        message: "No images to add to collection"
-                    });
-                    return;
-                }
-
-                openCreateCollectionModal({
-                    initialData: {
-                        name: `New collection ${new Date().toLocaleString()}`,
-                        description: "Created from dropped images"
-                    },
-                    buttonText: "Create",
-                    onSuccess: (newData) => createCollectionWithUids(newData, uids)
-                });
-                return;
-            }
-
-            const { validFiles, folderName } = await getDroppedFilesAndFolder(e.dataTransfer);
-            if (validFiles.length === 0) {
-                toasts.add({
-                    type: "error",
-                    message: "No supported image files found to add to collection"
-                });
-                return;
-            }
-
-            openCreateCollectionModal({
-                initialData: {
-                    name: folderName || `New collection ${new Date().toLocaleString()}`,
-                    description: "Created from dropped images"
-                },
-                buttonText: "Create & Upload",
-                onSuccess: (newData) => handleCreateCollectionWithFiles(newData, validFiles)
-            });
-        } catch (err) {
-            console.error("Add-to-collection drop error:", err);
-            toasts.add({
-                type: "error",
-                message: `Failed to create collection from dropped images: ${err}`
-            });
-        }
+        openCreateCollectionModal({
+            initialData: {
+                description: "Created from dropped images"
+            },
+            buttonText: "Create & Upload",
+            onSuccess: (newData) => handleCreateCollectionWithFiles(newData, validFiles)
+        });
     }
 
-    /**
-     * Add selected images to an existing collection via SelectionScope (click/keyboard path).
-     */
     async function addSelectedToExistingCollection() {
         const items = selectionScope?.selectedItems ?? [];
         if (items.length === 0) {
@@ -558,74 +378,39 @@
         });
     }
 
-    /**
-     * Handle drop specifically onto the "Existing Collection" box.
-     * Opens CollectionSelectionModal to let the user select a collection,
-     * then uploads dropped files (or adds internal dragged images) into it.
-     */
-    async function handleDropExistingCollection(e: DragEvent) {
-        e.preventDefault();
-        e.stopPropagation();
-        resetDragState();
-
-        if (!e.dataTransfer) {
+    async function handleDropExistingCollection(files: File[]) {
+        const validFiles = filterSupportedFiles(files);
+        if (validFiles.length === 0) {
+            toasts.add({
+                type: "error",
+                message: "No supported image files found to add to collection"
+            });
             return;
         }
 
-        try {
-            // Check for internal drag of images first
-            const dragData = DragData.getData<string[]>(e.dataTransfer, VizMimeTypes.IMAGE_UIDS);
-            if (dragData?.payload) {
-                const uids = dragData.payload;
-                if (uids.length === 0) {
+        openCollectionSelectionModal({
+            imageUidsToAdd: [],
+            onSelect: async (collection) => {
+                try {
+                    await uploadAndAddToCollection(validFiles, collection.uid, collection.name);
+                } catch (err) {
+                    console.error("Add to existing collection upload error:", err);
                     toasts.add({
-                        type: "info",
-                        message: "No images to add to collection"
+                        type: "error",
+                        message: `Failed to upload images for collection: ${err}`
                     });
-                    return;
                 }
-
-                openCollectionSelectionModal({
-                    imageUidsToAdd: uids,
-                    onSelect: async (collection, newImageUids) => {
-                        await addUidsToCollection(collection.uid, newImageUids, collection.name);
-                    }
-                });
-                return;
             }
-
-            const { validFiles } = await getDroppedFilesAndFolder(e.dataTransfer);
-            if (validFiles.length === 0) {
-                toasts.add({
-                    type: "error",
-                    message: "No supported image files found to add to collection"
-                });
-                return;
-            }
-
-            openCollectionSelectionModal({
-                imageUidsToAdd: [],
-                onSelect: async (collection) => {
-                    try {
-                        await uploadAndAddToCollection(validFiles, collection.uid, collection.name);
-                    } catch (err) {
-                        console.error("Add to existing collection upload error:", err);
-                        toasts.add({
-                            type: "error",
-                            message: `Failed to upload images for collection: ${err}`
-                        });
-                    }
-                }
-            });
-        } catch (err) {
-            console.error("Add to existing collection error:", err);
-            toasts.add({
-                type: "error",
-                message: `Failed to add to existing collection: ${err}`
-            });
+        });
+    }
+    function handleWindowDragEnter(e: DragEvent) {
+        if (!dragCoordinator.isDragging && e.dataTransfer?.types.includes("Files")) {
+            dropActive = true;
         }
     }
 </script>
+
+<svelte:window ondragenter={handleWindowDragEnter} />
 
 {#snippet uploadConfirmSnippet()}
     <span>
@@ -641,16 +426,22 @@
     </Button>
 {/snippet}
 
-<svelte:body
-    ondragenter={onDragEnter}
-    ondragleave={onDragLeave}
-    ondragover={onDragOver}
-    ondrop={onDrop}
-    ondragstart={handleDragStart}
-    ondragend={handleDragEnd}
-/>
-
-{#if isDragging && !isInternalDrag && !dragCoordinator.isDragging}
+<div
+    class="drag-upload-layer"
+    class:drop-active={dropActive}
+    use:dropZone={{
+        disabled: dragCoordinator.isDragging,
+        files: {
+            onDrop: async (files, e) => {
+                dropActive = false;
+                await handleFileDrop(files, e);
+            }
+        },
+        onDragLeave: () => {
+            dropActive = false;
+        }
+    }}
+>
     <div class="drop-overlay">
         <div class="drop-overlay-content">
             <MaterialIcon iconName="upload" class="upload-icon" />
@@ -658,7 +449,7 @@
             <span class="sub-text">Supports images, RAW files, and folders</span>
 
             <div class="supported-formats">
-                {#each SUPPORTED_IMAGE_TYPES.map( (ext) => (ext === "jpg" ? "jpeg" : ext) ).filter((v, i, a) => a.indexOf(v) === i) as ext}
+                {#each SUPPORTED_IMAGE_TYPES.filter((v, i, a) => a.indexOf(v) === i) as ext}
                     <span class="format-badge">{ext.toUpperCase()}</span>
                 {/each}
                 {#if SUPPORTED_RAW_FILES.length > 0}
@@ -670,9 +461,9 @@
                 <div class="collection-boxes-container">
                     <div
                         class="add-to-collection-box"
-                        class:hover={addBoxHover}
                         role="button"
                         tabindex="0"
+                        title="New Collection — drop images here or press Enter to create from selected images"
                         aria-label="New Collection — drop images here or press Enter to create from selected images"
                         onclick={async () => {
                             await createCollectionFromSelected?.();
@@ -683,24 +474,13 @@
                                 await createCollectionFromSelected?.();
                             }
                         }}
-                        ondragenter={(e) => {
-                            e.preventDefault();
-                            addBoxHover = true;
-                        }}
-                        ondragleave={(e) => {
-                            e.preventDefault();
-                            addBoxHover = false;
-                        }}
-                        ondragover={(e) => {
-                            e.preventDefault();
-                            if (e.dataTransfer) {
-                                e.dataTransfer.dropEffect = "copy";
+                        use:dropZone={{
+                            files: {
+                                onDrop: async (files) => {
+                                    dropActive = false;
+                                    await handleDropCreateCollection(files);
+                                }
                             }
-                            addBoxHover = true;
-                        }}
-                        ondrop={async (e) => {
-                            addBoxHover = false;
-                            await handleDropCreateCollection?.(e);
                         }}
                     >
                         <MaterialIcon iconName="library_add" class="collection-icon" />
@@ -709,7 +489,6 @@
 
                     <div
                         class="add-to-collection-box"
-                        class:hover={addExistingBoxHover}
                         role="button"
                         tabindex="0"
                         aria-label="Existing Collection — drop images here to add to an existing collection"
@@ -722,24 +501,13 @@
                                 await addSelectedToExistingCollection();
                             }
                         }}
-                        ondragenter={(e) => {
-                            e.preventDefault();
-                            addExistingBoxHover = true;
-                        }}
-                        ondragleave={(e) => {
-                            e.preventDefault();
-                            addExistingBoxHover = false;
-                        }}
-                        ondragover={(e) => {
-                            e.preventDefault();
-                            if (e.dataTransfer) {
-                                e.dataTransfer.dropEffect = "copy";
+                        use:dropZone={{
+                            files: {
+                                onDrop: async (files) => {
+                                    dropActive = false;
+                                    await handleDropExistingCollection(files);
+                                }
                             }
-                            addExistingBoxHover = true;
-                        }}
-                        ondrop={async (e) => {
-                            addExistingBoxHover = false;
-                            await handleDropExistingCollection(e);
                         }}
                     >
                         <MaterialIcon iconName="collections_bookmark" class="collection-icon" />
@@ -749,9 +517,25 @@
             {/if}
         </div>
     </div>
-{/if}
+</div>
 
 <style lang="scss">
+    .drag-upload-layer {
+        position: fixed;
+        inset: 0;
+        pointer-events: none;
+        z-index: var(--viz-z-dropzone);
+
+        &.drop-active {
+            pointer-events: auto;
+
+            > .drop-overlay {
+                display: flex;
+                pointer-events: auto;
+            }
+        }
+    }
+
     .drop-overlay {
         position: fixed;
         height: 100%;
@@ -761,7 +545,7 @@
         color: var(--viz-text-primary);
         background: color-mix(in srgb, var(--viz-surface-panel) 90%, transparent);
         backdrop-filter: blur(6px);
-        display: flex;
+        display: none;
         align-items: center;
         justify-content: center;
         pointer-events: none;
@@ -861,7 +645,7 @@
         }
 
         &:hover,
-        &.hover {
+        &:global(.drop-active) {
             border-color: var(--viz-border-subtle);
             background-color: color-mix(in srgb, var(--viz-primary) 10%, var(--viz-surface-panel));
         }
