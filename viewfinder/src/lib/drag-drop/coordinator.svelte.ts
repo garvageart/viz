@@ -63,7 +63,7 @@ class DragCoordinator {
         };
 
         window.addEventListener("dragover", this.handleGlobalDragOver, true);
-        window.addEventListener("dragend", this.endDrag, { once: true });
+        window.addEventListener("dragend", this.endDrag);
         window.addEventListener("keydown", this.handleKeyModifier);
         window.addEventListener("keyup", this.handleKeyModifier);
     }
@@ -73,6 +73,7 @@ class DragCoordinator {
             return;
         }
 
+        e.preventDefault();
         this.session.coords = { x: e.clientX, y: e.clientY };
         this.session.modifiers = {
             altKey: e.altKey,
@@ -110,6 +111,7 @@ class DragCoordinator {
 
         DragData.clear();
         window.removeEventListener("dragover", this.handleGlobalDragOver, true);
+        window.removeEventListener("dragend", this.endDrag);
         window.removeEventListener("keydown", this.handleKeyModifier);
         window.removeEventListener("keyup", this.handleKeyModifier);
     };

@@ -12,7 +12,7 @@
 
 <div class="viz-drag-tooltip" style="transform: translate3d({session?.coords.x}px, {session?.coords.y}px, 0);">
     {#if primaryItem?.thumbnailUrl}
-        <img src={primaryItem.thumbnailUrl} alt="" class="tooltip-thumbnail" />
+        <img src={primaryItem.thumbnailUrl} alt="Drag tooltip thumbnail" class="tooltip-thumbnail" />
     {/if}
 
     {#if count > 1}
@@ -49,11 +49,9 @@
         border-radius: var(--viz-border-radius-md);
         box-shadow: 0 4px 12px rgba(0, 0, 0, 0.25);
         color: var(--viz-text-primary);
-        font-family: var(--viz-display-font);
         line-height: 1;
         margin-top: var(--viz-spacing-md);
         margin-left: var(--viz-spacing-md);
-        transition: transform 0.04s linear;
         will-change: transform;
     }
 
