@@ -575,13 +575,25 @@
 
         onFocus(); // Ensure this grid is active on click
 
-        if (e.shiftKey && (e as KeyboardEvent).key !== "Tab") {
+        const isShift = e.shiftKey && (e as KeyboardEvent).key !== "Tab";
+        const isAlt = e.altKey;
+        const isCtrl = e.ctrlKey || (e as MouseEvent).metaKey;
+
+        if (isShift || isAlt) {
             if (disableMultiSelection) {
                 selection.select(asset);
                 return;
             }
-            selection.selectRange(asset, (img) => !disabledUids.has(img.uid));
-        } else if (e.ctrlKey) {
+
+            const additive = isAlt || isCtrl;
+            selection.selectRange(
+                asset,
+                (img) => {
+                    return !disabledUids.has(img.uid);
+                },
+                additive
+            );
+        } else if (isCtrl) {
             selection.toggle(asset);
         } else {
             selection.select(asset);

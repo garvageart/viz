@@ -58,6 +58,7 @@ export class SelectionScope<T> {
 
     active = $state<T>();
     anchor = $state<T>();
+    baseSelection = new Set<T>();
     source = $state<T[]>([]); // All items available in this scope
     id: string;
 
@@ -106,6 +107,7 @@ export class SelectionScope<T> {
     clear() {
         this.selected.clear();
         this.excluded.clear();
+        this.baseSelection.clear();
         this.isSelectAll = false;
         this.active = undefined;
         this.anchor = undefined;
@@ -125,6 +127,7 @@ export class SelectionScope<T> {
             this.active = item;
             this.anchor = item;
         }
+        this.baseSelection = new Set(this.selected);
     }
 
     /**
@@ -136,14 +139,16 @@ export class SelectionScope<T> {
         this.add(item);
         this.active = item;
         this.anchor = item;
+        this.baseSelection = new Set(this.selected);
     }
 
     /**
      * Selects a contiguous range of items between target and anchor (or current active item),
      * optionally filtered by filterFn. Preserves the anchor so subsequent shift-selections
      * expand or shrink relative to the original anchor.
+     * When additive is true, adds the range to the base selection snapshot instead of replacing it.
      */
-    selectRange(target: T, filterFn?: (item: T) => boolean) {
+    selectRange(target: T, filterFn?: (item: T) => boolean, additive = false) {
         if (target == null) {
             return;
         }
@@ -155,6 +160,13 @@ export class SelectionScope<T> {
 
         if (targetIdx !== -1 && anchorIdx !== -1) {
             this.selected.clear();
+
+            if (additive) {
+                for (const item of this.baseSelection) {
+                    this.add(item);
+                }
+            }
+
             const start = Math.min(anchorIdx, targetIdx);
             const end = Math.max(anchorIdx, targetIdx);
 
@@ -165,7 +177,14 @@ export class SelectionScope<T> {
             this.active = target;
             this.anchor = anchorItem;
         } else {
-            this.select(target);
+            if (additive) {
+                this.add(target);
+                this.active = target;
+                this.anchor = target;
+                this.baseSelection = new Set(this.selected);
+            } else {
+                this.select(target);
+            }
         }
     }
 
@@ -177,6 +196,7 @@ export class SelectionScope<T> {
         for (const item of items) {
             this.add(item);
         }
+        this.baseSelection = new Set(this.selected);
     }
 
     /**

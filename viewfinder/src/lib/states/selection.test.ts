@@ -80,6 +80,32 @@ describe("SelectionScope selection behaviour", () => {
         expect(Array.from(scope.selected)).toStrictEqual([items[5], items[6], items[7], items[8]]);
     });
 
+    it("additive range selection preserves prior selections and handles range shrinking", () => {
+        // 1. User selects item 0
+        scope.select(scope.source[0]);
+        expect(scope.has(scope.source[0])).toBe(true);
+
+        // 2. User ctrl-clicks item 3 -> establishes anchor at item 3 with base selection {0, 3}
+        scope.toggle(scope.source[3]);
+        expect(scope.anchor).toStrictEqual(items[3]);
+        expect(scope.selected.size).toBe(2);
+
+        // 3. User alt-clicks item 7 -> expands range [3..7] additively
+        scope.selectRange(scope.source[7], undefined, true);
+        expect(scope.anchor).toStrictEqual(items[3]);
+        expect(scope.active).toStrictEqual(items[7]);
+        expect(scope.selected.size).toBe(6);
+        expect(Array.from(scope.selected)).toStrictEqual([items[0], items[3], items[4], items[5], items[6], items[7]]);
+
+        // 4. User alt-clicks item 5 -> shrinks range to [3..5] additively
+        // items 6 and 7 should be removed, while item 0 from base selection remains
+        scope.selectRange(scope.source[5], undefined, true);
+        expect(scope.anchor).toStrictEqual(items[3]);
+        expect(scope.active).toStrictEqual(items[5]);
+        expect(scope.selected.size).toBe(4);
+        expect(Array.from(scope.selected)).toStrictEqual([items[0], items[3], items[4], items[5]]);
+    });
+
     it("clearing selection resets both active and anchor", () => {
         scope.select(items[4]);
         scope.clear();

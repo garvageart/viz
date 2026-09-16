@@ -835,9 +835,20 @@
             return;
         }
 
-        if (e.shiftKey && (e as KeyboardEvent).key !== "Tab") {
-            selection.selectRange(asset, (img) => !disabledUids.has(img.uid));
-        } else if (e.ctrlKey) {
+        const isShift = e.shiftKey && (e as KeyboardEvent).key !== "Tab";
+        const isAlt = e.altKey;
+        const isCtrl = e.ctrlKey || (e as MouseEvent).metaKey;
+
+        if (isShift || isAlt) {
+            const additive = isAlt || isCtrl;
+            selection.selectRange(
+                asset,
+                (img) => {
+                    return !disabledUids.has(img.uid);
+                },
+                additive
+            );
+        } else if (isCtrl) {
             selection.toggle(asset);
         } else {
             selection.select(asset);
@@ -1410,10 +1421,14 @@
 
         &.selected-photo {
             outline: 2px solid var(--viz-primary);
+            outline: 2px solid var(--viz-primary);
+            box-shadow:
+                inset 1px -1px 0 var(--viz-primary),
+                inset -1px 1px 0 var(--viz-primary);
         }
 
         &.multi-selected-photo {
-            outline-style: inset;
+            outline-style: solid;
             /* idk i can't decide rn but i'm fine with it like this */
             // background: color-mix(in srgb, var(--viz-primary) 40%, transparent);
 
