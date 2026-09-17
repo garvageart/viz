@@ -3,7 +3,7 @@
     import { createCollectionView } from "$lib/layouts/tabs/collection";
     import { workspaceState } from "$lib/states/workspace.svelte";
 
-    export function openCollection(collection: Collection, currentGroup: TabGroup | null) {
+    export function openCollection(collection: Collection, currentGroup?: TabGroup) {
         const collectionPath = `/collections/${collection.uid}`;
         if (page.url.pathname !== "/") {
             goto(collectionPath, { state: { from: page.url.pathname } });

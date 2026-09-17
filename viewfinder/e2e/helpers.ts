@@ -179,7 +179,10 @@ export async function performDragAndDrop(page: Page, fileBuffer: Buffer, fileNam
             }
 
             // Target Svelte-managed DOM node to ensure event delegation captures bubble path
-            const target = document.querySelector(".route-scroll, .tab-group-content") || document.body;
+            const target =
+                document.querySelector(".drag-upload-layer") ||
+                document.querySelector(".route-scroll, .tab-group-content") ||
+                document.body;
 
             // Create and dispatch events synchronously on target with dataTransfer
             target.dispatchEvent(new DragEvent("dragenter", { bubbles: true, cancelable: true, dataTransfer: dt }));

@@ -125,8 +125,7 @@
     }
 
     let collectionActionMenuItems = $derived(
-        createCollectionMenu(firstSelectedCollection, {
-            selectedCollections: collectionSelection.selectedItems,
+        createCollectionMenu(collectionSelection.selectedItems, {
             onCollectionDeleted: () => {
                 performSearch();
             },
@@ -364,14 +363,7 @@
 {/if}
 
 {#snippet collectionCard(collectionData: Collection, cardState: { isSelected: boolean })}
-    <a
-        data-sveltekit-preload-data
-        data-asset-id={collectionData.uid}
-        class="collection-card-link"
-        href="/collections/{collectionData.uid}"
-    >
-        <CollectionCard collection={collectionData} isSelected={cardState.isSelected} />
-    </a>
+    <CollectionCard collection={collectionData} isSelected={cardState.isSelected} />
 {/snippet}
 
 <div id="search">

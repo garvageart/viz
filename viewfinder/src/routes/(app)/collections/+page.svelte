@@ -205,7 +205,7 @@
             style: `padding: 1em ${isLayoutPage() ? "1em" : "2em"};`
         },
         assetDblClick: (_e, asset: Collection) => {
-            openCollection(asset, null);
+            openCollection(asset);
         },
         onassetcontext: (detail: { asset: Collection; anchor: { x: number; y: number } | HTMLElement }) => {
             const { asset, anchor } = detail;
