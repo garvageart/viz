@@ -11,15 +11,15 @@ import {
 } from "./client.gen";
 
 export interface ImageUploadFileData {
-    data: File | Blob;
-    file_name?: string;
+    fileData: File | Blob;
+    fileName?: string;
     description?: string;
     taken_at?: string;
     [key: string]: any;
 }
 
 export interface UploadImageOptions {
-    data: ImageUploadFileData;
+    metadata: ImageUploadFileData;
     onUploadProgress?: (event: ProgressEvent<XMLHttpRequestEventTarget>) => void;
     request?: XMLHttpRequest;
 }
@@ -33,7 +33,7 @@ export interface UploadImageOptions {
 export async function uploadImageWithProgress(
     options: UploadImageOptions
 ): Promise<{ data: ImageUploadResponse; status: number }> {
-    const { onUploadProgress, data } = options;
+    const { onUploadProgress, metadata } = options;
 
     const xhr = new XMLHttpRequest();
 
@@ -61,9 +61,14 @@ export async function uploadImageWithProgress(
         }
 
         const formData = new FormData();
-        for (const [key, value] of Object.entries(data)) {
-            // Map filename to file_name to match API expectation
-            if (key === "filename") {
+        for (const [key, value] of Object.entries(metadata)) {
+            if (value === undefined || value === null) {
+                continue;
+            }
+
+            if (key === "fileData") {
+                formData.append("data", value);
+            } else if (key === "fileName") {
                 formData.append("file_name", value);
             } else {
                 formData.append(key, value);
