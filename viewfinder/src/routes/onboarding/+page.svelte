@@ -244,7 +244,7 @@
                         <div class="step-content">
                             <div class="brand-header">
                                 <span class="viz-title">viz</span>
-                                <span class="brand-subtitle">digital asset manager</span>
+                                <span class="brand-subtitle">image management system</span>
                             </div>
 
                             <div class="info-box">
@@ -357,7 +357,7 @@
                         <div class="step-content center-text">
                             <div class="brand-header">
                                 <span class="viz-title">viz</span>
-                                <span class="brand-subtitle">digital asset manager</span>
+                                <span class="brand-subtitle">image-management system</span>
                             </div>
                             <h1 class="welcome-heading">
                                 Welcome, {user.data?.first_name || user.data?.name || "Traveler"}!

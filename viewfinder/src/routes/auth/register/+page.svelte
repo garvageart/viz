@@ -85,7 +85,7 @@
     <div class="auth-card">
         <div class="auth-header">
             <span class="viz-title">viz</span>
-            <span class="auth-subtitle">digital asset manager</span>
+            <span class="auth-subtitle">image management system</span>
         </div>
         {#if system.data?.allow_manual_registration}
             <h1 class="auth-heading">Register</h1>

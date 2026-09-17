@@ -65,7 +65,7 @@
     <div class="auth-card">
         <div class="auth-header">
             <span class="viz-title">viz</span>
-            <span class="auth-subtitle">digital asset manager</span>
+            <span class="auth-subtitle">image management system</span>
         </div>
         <h1 class="auth-heading">Login</h1>
         <form id="login-form" class="auth-form" onsubmit={handleLogin}>
