@@ -1,4 +1,4 @@
-export type NotifcationType = "error" | "info" | "success" | "warning";
+export type NotifcationType = "info" | "error" | "success" | "warning";
 
 export interface ToastAction {
     label: string;
@@ -12,7 +12,7 @@ export interface Toast {
     actions?: ToastAction[];
     dismissible?: boolean;
     timeout?: number;
-    type?: "success" | "info" | "warning" | "error";
+    type: NotifcationType;
 }
 
 class ToastState {

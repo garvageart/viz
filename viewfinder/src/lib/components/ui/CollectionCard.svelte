@@ -117,8 +117,7 @@
             toasts.add({
                 type: "info",
                 title: collection.name,
-                message: `No new images to add`,
-                timeout: 3000
+                message: `No new images to add`
             });
             return;
         }
@@ -128,14 +127,12 @@
             toasts.add({
                 type: "success",
                 title: collection.name,
-                message: `Added ${newUIDs.length} image(s)`,
-                timeout: 3000
+                message: `Added ${newUIDs.length} image(s)`
             });
         } else {
             toasts.add({
                 type: "error",
-                message: `Failed to add images: ${res.data?.error || "Unknown error"}`,
-                timeout: 3000
+                message: `Failed to add images: ${res.data?.error || "Unknown error"}`
             });
         }
     }

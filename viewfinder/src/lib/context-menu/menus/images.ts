@@ -50,8 +50,7 @@ export function openAddToCollectionModal(
         if (newImageUids.length === 0) {
             toasts.add({
                 type: "info",
-                message: "No new images to add.",
-                timeout: 3000
+                message: "No new images to add."
             });
             return;
         }
@@ -66,7 +65,6 @@ export function openAddToCollectionModal(
                 toasts.add({
                     type: "success",
                     message,
-                    timeout: 3000,
                     actions: [
                         {
                             label: "Open Collection",
@@ -129,8 +127,7 @@ export async function toggleFavouriteImages(
         if (success.length > 0) {
             toasts.add({
                 type: "success",
-                message: `${setFavourited ? "Favourited" : "Unfavourited"} ${success.length} images`,
-                timeout: 3000
+                message: `${setFavourited ? "Favourited" : "Unfavourited"} ${success.length} images`
             });
 
             for (const res of success) {
@@ -191,8 +188,7 @@ export async function downloadSelectedImages(selectionScope: SelectionScope<Imag
         if (items.length === 1) {
             toasts.add({
                 type: "info",
-                message: "Starting download...",
-                timeout: 3000
+                message: "Starting download..."
             });
 
             const img = items[0];
@@ -212,8 +208,7 @@ export async function downloadSelectedImages(selectionScope: SelectionScope<Imag
         } else {
             toasts.add({
                 type: "info",
-                message: `Zipping ${items.length} images for download`,
-                timeout: 3000
+                message: `Zipping ${items.length} images for download`
             });
 
             const uids = items.map((img) => {
@@ -284,8 +279,7 @@ export async function removeImagesFromCollection(
             toasts.add({
                 type: "success",
                 title: collection.name,
-                message: `Removed ${uids.length} images`,
-                timeout: 3000
+                message: `Removed ${uids.length} images`
             });
             if (onDelete) {
                 onDelete(uids);
@@ -312,8 +306,7 @@ export async function setCollectionThumbnail(collection: Collection | Collection
             toasts.add({
                 type: "success",
                 title: res.data.name,
-                message: "Collection thumbnail updated",
-                timeout: 3000
+                message: "Collection thumbnail updated"
             });
         }
     } catch (err) {
@@ -358,8 +351,7 @@ export async function deleteSelectedImages(
         if (res.status === 200) {
             toasts.add({
                 type: "success",
-                message: `${isPermanent ? "Permanently deleted" : "Moved to Trash"} ${uids.length} image${uids.length === 1 ? "" : "s"}`,
-                timeout: 3000
+                message: `${isPermanent ? "Permanently deleted" : "Moved to Trash"} ${uids.length} image${uids.length === 1 ? "" : "s"}`
             });
             if (onDelete) {
                 onDelete(uids);

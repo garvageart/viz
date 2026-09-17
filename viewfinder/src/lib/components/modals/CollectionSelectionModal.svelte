@@ -64,8 +64,7 @@
         if (collection.isFullyContained) {
             toasts.add({
                 type: "info",
-                message: "All images already exist in this collection.",
-                timeout: 3000
+                message: "All images already exist in this collection."
             });
             return;
         }

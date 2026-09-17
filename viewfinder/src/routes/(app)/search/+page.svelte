@@ -284,8 +284,7 @@
         if (newImageUids.length === 0) {
             toasts.add({
                 type: "info",
-                message: "No new images to add.",
-                timeout: 3000
+                message: "No new images to add."
             });
             return;
         }
@@ -300,7 +299,6 @@
                     type: "success",
                     title: collection.name,
                     message: `Added ${newImageUids.length} image(s) to collection`,
-                    timeout: 3000,
                     actions: [
                         {
                             label: "Open Collection",
@@ -313,15 +311,13 @@
             } else {
                 toasts.add({
                     type: "error",
-                    message: res.data?.error ?? "Failed to add images to collection",
-                    timeout: 3000
+                    message: res.data?.error ?? "Failed to add images to collection"
                 });
             }
         } catch (error) {
             toasts.add({
                 type: "error",
-                message: `Failed to add images to collection: ${(error as Error).message}`,
-                timeout: 3000
+                message: `Failed to add images to collection: ${(error as Error).message}`
             });
         } finally {
             imageSelection.clear();
@@ -379,8 +375,7 @@
                         onclick={() => {
                             toasts.add({
                                 type: "info",
-                                message: "Filtering search results is coming soon",
-                                timeout: 3000
+                                message: "Filtering search results is coming soon"
                             });
                         }}
                     >

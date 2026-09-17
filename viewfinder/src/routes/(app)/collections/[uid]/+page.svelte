@@ -389,8 +389,7 @@
                 toasts.add({
                     title: data.name,
                     message: `Added ${uids.length} photo(s) to collection`,
-                    type: "success",
-                    timeout: 3000
+                    type: "success"
                 });
 
                 const fetchPromises = uids.map(async (uid) => {
@@ -477,8 +476,7 @@
                 toasts.add({
                     title: data.name,
                     message: `Deleted collection`,
-                    type: "success",
-                    timeout: 3000
+                    type: "success"
                 });
 
                 goto("/collections");

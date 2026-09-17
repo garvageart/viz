@@ -3,7 +3,7 @@
     import { fly } from "svelte/transition";
     import Button from "$lib/components/ui/Button.svelte";
     import MaterialIcon from "$lib/components/ui/MaterialIcon.svelte";
-    import { type NotifcationType, toasts } from "./toasts.svelte";
+    import { type NotifcationType, type Toast, toasts } from "./toasts.svelte";
 
     function parseNotificationText(text: string) {
         if (!text) {
@@ -56,61 +56,60 @@
     }
 
     function formatCategoryLabel(type: NotifcationType) {
-        const label = type || "info";
-        return label.charAt(0).toUpperCase() + label.slice(1);
+        return type.charAt(0).toUpperCase() + type.slice(1);
     }
 </script>
 
+{#snippet toastSnippet(toast: Toast)}
+    <article
+        data-toast-id={toast.id}
+        class="viz-toast viz-toast-{toast.type}"
+        role="alert"
+        in:fly={{ duration: 250, x: 400, opacity: 0 }}
+        out:fly={{ duration: 200, x: 400, opacity: 0 }}
+    >
+        <header class="viz-toast-header">
+            <div class="viz-toast-type-container">
+                <MaterialIcon iconName={getToastIcon(toast.type)} size="1.1rem" class="viz-toast-header-icon" />
+                <span class="viz-toast-type-label">{formatCategoryLabel(toast.type || "info")}</span>
+            </div>
+            {#if toast.dismissible}
+                <Button
+                    class="viz-toast-close"
+                    iconName="close"
+                    title="Dismiss"
+                    aria-label="Dismiss notification"
+                    size="mini"
+                    onclick={() => toasts.dismiss(toast.id)}
+                />
+            {/if}
+        </header>
+
+        <div class="viz-toast-body">
+            {#if toast.title}
+                <h4 class="viz-toast-title">{toast.title}</h4>
+            {/if}
+
+            <div class="viz-toast-message">
+                {@html parseNotificationText(toast.message)}
+            </div>
+
+            {#if toast.actions && toast.actions.length > 0}
+                <div class="viz-toast-actions">
+                    {#each toast.actions as action}
+                        <button class="viz-toast-action-btn" onclick={action.onClick}>
+                            {action.label}
+                        </button>
+                    {/each}
+                </div>
+            {/if}
+        </div>
+    </article>
+{/snippet}
+
 <section id="viz-toast-section">
     {#each toasts.toasts as toast (toast.id)}
-        <article
-            data-toast-id={toast.id}
-            class="viz-toast viz-toast-{toast.type || 'info'}"
-            role="alert"
-            in:fly={{ duration: 250, x: 400, opacity: 0 }}
-            out:fly={{ duration: 200, x: 400, opacity: 0 }}
-        >
-            <header class="viz-toast-header">
-                <div class="viz-toast-type-container">
-                    <MaterialIcon
-                        iconName={getToastIcon(toast.type || "info")}
-                        size="1.1rem"
-                        class="viz-toast-header-icon"
-                    />
-                    <span class="viz-toast-type-label">{formatCategoryLabel(toast.type || "info")}</span>
-                </div>
-                {#if toast.dismissible}
-                    <Button
-                        class="viz-toast-close"
-                        iconName="close"
-                        title="Dismiss"
-                        aria-label="Dismiss notification"
-                        size="mini"
-                        onclick={() => toasts.dismiss(toast.id)}
-                    />
-                {/if}
-            </header>
-
-            <div class="viz-toast-body">
-                {#if toast.title}
-                    <h4 class="viz-toast-title">{toast.title}</h4>
-                {/if}
-
-                <div class="viz-toast-message">
-                    {@html parseNotificationText(toast.message)}
-                </div>
-
-                {#if toast.actions && toast.actions.length > 0}
-                    <div class="viz-toast-actions">
-                        {#each toast.actions as action}
-                            <button class="viz-toast-action-btn" onclick={action.onClick}>
-                                {action.label}
-                            </button>
-                        {/each}
-                    </div>
-                {/if}
-            </div>
-        </article>
+        {@render toastSnippet(toast)}
     {/each}
 </section>
 
