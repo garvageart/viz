@@ -1,5 +1,5 @@
-import { type ImageUploadResponse, uploadImageWithProgress } from "@viz/api";
-import type { ImageUploadFileData } from "./manager.svelte";
+import { type ImageUploadResponse, type UploadImageOptions, uploadImageWithProgress } from "@viz/api";
+import type { ImageUploadFileMetadata } from "./manager.svelte";
 
 export enum UploadState {
     PENDING,
@@ -22,7 +22,7 @@ export interface UploadImageStats {
  * Returns true if an upload task has reached a terminal/completed state
  * (DONE, ERROR, CANCELED, or DUPLICATE).
  */
-export function isUploadCompleted(task: UploadImage | { state: UploadState }): boolean {
+export function isUploadCompleted(task: UploadImage): boolean {
     return (
         task.state === UploadState.DONE ||
         task.state === UploadState.ERROR ||
@@ -35,50 +35,48 @@ export function isUploadCompleted(task: UploadImage | { state: UploadState }): b
  * Returns true if an upload task is currently active or in-progress
  * (STARTED or PENDING).
  */
-export function isUploadActive(task: UploadImage | { state: UploadState }): boolean {
+export function isUploadActive(task: UploadImage): boolean {
     return !isUploadCompleted(task);
 }
 
 /**
  * Returns true if an upload task is pending execution.
  */
-export function isUploadPending(task: UploadImage | { state: UploadState }): boolean {
+export function isUploadPending(task: UploadImage): boolean {
     return task.state === UploadState.PENDING;
 }
 
 /**
  * Returns true if an upload task is currently running/uploading (STARTED).
  */
-export function isUploadRunning(task: UploadImage | { state: UploadState }): boolean {
+export function isUploadRunning(task: UploadImage): boolean {
     return task.state === UploadState.STARTED;
 }
 
 /**
  * Returns true if an upload succeeded (DONE or DUPLICATE with imageData).
  */
-export function isUploadSuccessful(task: UploadImage | { state: UploadState; imageData?: unknown }): boolean {
-    return task.state === UploadState.DONE || (task.state === UploadState.DUPLICATE && Boolean(task.imageData));
+export function isUploadSuccessful(task: UploadImage): boolean {
+    return task.state === UploadState.DONE || (task.state === UploadState.DUPLICATE && Boolean(task.uploadResponse));
 }
 
 /**
  * Returns true if an upload task failed or was cancelled.
  */
-export function isUploadFailed(task: UploadImage | { state: UploadState }): boolean {
+export function isUploadFailed(task: UploadImage): boolean {
     return task.state === UploadState.ERROR || task.state === UploadState.CANCELED;
 }
 
-export class UploadImage implements UploadImageStats {
+export class UploadImage implements UploadImageStats, UploadImageOptions {
     progress: number = $state(0);
     state: UploadState = $state(UploadState.PENDING);
     startTime?: Date = $state(new Date());
-    checksum?: string;
-    imageData?: ImageUploadResponse;
-    data: ImageUploadFileData;
+    uploadResponse?: ImageUploadResponse;
+    metadata: ImageUploadFileMetadata;
     request: XMLHttpRequest | undefined = $state(undefined);
 
-    constructor(data: ImageUploadFileData) {
-        this.checksum = data.checksum;
-        this.data = data;
+    constructor(metadata: ImageUploadFileMetadata) {
+        this.metadata = metadata;
     }
 
     reset() {
@@ -93,12 +91,12 @@ export class UploadImage implements UploadImageStats {
         }
     }
 
-    private updateProgress = (event: ProgressEvent<XMLHttpRequestEventTarget>) => {
+    onUploadProgress = (event: ProgressEvent<XMLHttpRequestEventTarget>) => {
         // Some browsers don't provide total (lengthComputable=false). Fallback to file size when possible.
         if (event.lengthComputable && event.total > 0) {
             this.progress = Math.min(100, (event.loaded / event.total) * 100);
-        } else if (this.data?.data?.size) {
-            const total = this.data.data.size as number;
+        } else if (this.metadata?.fileData?.size) {
+            const total = this.metadata.fileData.size as number;
             this.progress = Math.min(100, (event.loaded / total) * 100);
         } else {
             // As a last resort, show indeterminate progress by nudging a bit until completion
@@ -107,29 +105,26 @@ export class UploadImage implements UploadImageStats {
     };
 
     async upload(): Promise<ImageUploadResponse> {
-        if (this.state === UploadState.DUPLICATE && this.imageData) {
+        if (this.state === UploadState.DUPLICATE && this.uploadResponse) {
             this.progress = 100;
-            return this.imageData;
+            return this.uploadResponse;
         }
 
         this.state = UploadState.STARTED;
         try {
-            const options = {
-                data: this.data,
-                onUploadProgress: this.updateProgress,
+            const responseData = await uploadImageWithProgress({
+                metadata: this.metadata,
+                onUploadProgress: this.onUploadProgress,
                 request: this.request
-            };
-            const uploadPromise = uploadImageWithProgress(options);
-            this.request = options.request;
-            const responseData = await uploadPromise;
+            });
 
             if (responseData.status !== 200 && responseData.status !== 201) {
                 throw new Error(`Upload failed with status ${responseData.status}`);
             }
 
-            this.imageData = responseData.data;
+            this.uploadResponse = responseData.data;
 
-            switch (this.imageData.status) {
+            switch (this.uploadResponse.status) {
                 case "duplicate":
                     this.state = UploadState.DUPLICATE;
                     break;

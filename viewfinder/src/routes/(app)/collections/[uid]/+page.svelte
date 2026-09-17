@@ -72,9 +72,7 @@
     import { collectionDetailSort } from "$lib/states/sort.svelte";
     import { toasts } from "$lib/toast-notifcations/toasts.svelte.js";
     import type { AssetGridArray } from "$lib/types/asset.js";
-    import { SUPPORTED_IMAGE_TYPES, SUPPORTED_RAW_FILES, type SupportedImageTypes } from "$lib/types/images";
-    import type { ImageUploadSuccess } from "$lib/upload/manager.svelte";
-    import UploadManager from "$lib/upload/manager.svelte.js";
+    import { type ImageUploadSuccess, uploadManager } from "$lib/upload/manager.svelte";
     import { getImageLabel } from "$lib/utils/images";
     import type VizView from "$lib/views/views.svelte";
     import type { PageProps } from "./$types";
@@ -334,10 +332,7 @@
     });
 
     async function handleCollectionUpload() {
-        // allowed image types will come from the config but for now just hardcode
-        const manager = new UploadManager([...SUPPORTED_RAW_FILES, ...SUPPORTED_IMAGE_TYPES] as SupportedImageTypes[]);
-
-        const uploadedImages = await manager.openPickerAndUpload();
+        const uploadedImages = await uploadManager.openPickerAndUpload();
 
         if (uploadedImages.length === 0) {
             return;
@@ -350,9 +345,9 @@
 
         if (response.data.added) {
             toasts.add({
+                title: data.name,
                 message: `Added ${uids.length} photo(s) to collection`,
-                type: "success",
-                timeout: 3000
+                type: "success"
             });
 
             const fetchPromises = uids.map(async (uid) => {
@@ -390,8 +385,9 @@
 
         try {
             const res = await addCollectionImages(data.uid, { uids });
-            if (res.status === 200 && (res.data?.added ?? true)) {
+            if (res.status === 200 && res.data.added) {
                 toasts.add({
+                    title: data.name,
                     message: `Added ${uids.length} photo(s) to collection`,
                     type: "success",
                     timeout: 3000
@@ -420,8 +416,9 @@
                 }
             } else {
                 toasts.add({
-                    type: "warning",
-                    message: `Uploaded but failed to add to collection: ${res.status}`
+                    title: data.name,
+                    message: `Uploaded but failed to add to collection: ${res.status}`,
+                    type: "warning"
                 });
             }
         } catch (err) {

@@ -17,8 +17,7 @@
     import { debugState, getTheme, isLayoutPage, isMobile, search, toggleTheme, user } from "$lib/states/index.svelte";
     import { workspaceState } from "$lib/states/workspace.svelte";
     import { toasts } from "$lib/toast-notifcations/toasts.svelte";
-    import { SUPPORTED_IMAGE_TYPES, SUPPORTED_RAW_FILES, type SupportedImageTypes } from "$lib/types/images";
-    import UploadManager from "$lib/upload/manager.svelte";
+    import { uploadManager } from "$lib/upload/manager.svelte";
     import { copyToClipboard } from "$lib/utils/misc";
     import OpenAccountPanel from "../context-menus/AccountPanel.svelte";
     import AppMenu from "../context-menus/AppMenu.svelte";
@@ -80,7 +79,7 @@
     ];
 
     async function triggerUpload(type: "photos" | "folder") {
-        const manager = new UploadManager([...SUPPORTED_RAW_FILES, ...SUPPORTED_IMAGE_TYPES] as SupportedImageTypes[]);
+        const manager = uploadManager;
 
         const uploadedImages =
             type === "photos" ? await manager.openPickerAndUpload() : await manager.openFolderPickerAndUpload();

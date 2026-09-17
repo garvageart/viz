@@ -46,8 +46,7 @@
     import { SelectionScopeNames, selectionManager } from "$lib/states/selection.svelte";
     import { photosSort } from "$lib/states/sort.svelte";
     import { toasts } from "$lib/toast-notifcations/toasts.svelte.js";
-    import { SUPPORTED_IMAGE_TYPES, SUPPORTED_RAW_FILES, type SupportedImageTypes } from "$lib/types/images";
-    import UploadManager, { type ImageUploadSuccess } from "$lib/upload/manager.svelte";
+    import { type ImageUploadSuccess, uploadManager } from "$lib/upload/manager.svelte";
     import { getImageLabel } from "$lib/utils/images.js";
 
     let { data } = $props();
@@ -231,11 +230,10 @@
             });
 
             if (res.status === 200) {
-                let message = `Added ${newImageUids.length} image(s) to collection **${collection.name}**`;
                 toasts.add({
                     type: "success",
-                    message: message,
-                    timeout: 3000,
+                    title: collection.name,
+                    message: `Added ${newImageUids.length} image(s) to collection`,
                     actions: [
                         {
                             label: "Open Collection",
@@ -321,8 +319,7 @@
     }
 
     async function addImagesToViz() {
-        const manager = new UploadManager([...SUPPORTED_RAW_FILES, ...SUPPORTED_IMAGE_TYPES] as SupportedImageTypes[]);
-        const uploadedImages = await manager.openPickerAndUpload();
+        const uploadedImages = await uploadManager.openPickerAndUpload();
 
         if (uploadedImages.length === 0) {
             return;

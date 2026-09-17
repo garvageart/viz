@@ -11,13 +11,8 @@
     import { dropZone } from "$lib/drag-drop/directives.svelte";
     import { type ScopeId, SelectionScope } from "$lib/states/selection.svelte";
     import { toasts } from "$lib/toast-notifcations/toasts.svelte";
-    import {
-        ALL_SUPPORTED_IMAGES,
-        SUPPORTED_IMAGE_TYPES,
-        SUPPORTED_RAW_FILES,
-        type SupportedImageTypes
-    } from "$lib/types/images";
-    import UploadManager, { type ImageUploadSuccess } from "$lib/upload/manager.svelte";
+    import { ALL_SUPPORTED_IMAGES, SUPPORTED_IMAGE_TYPES, SUPPORTED_RAW_FILES } from "$lib/types/images";
+    import { type ImageUploadSuccess, uploadManager } from "$lib/upload/manager.svelte";
     import { extractFilesFromDataTransfer } from "$lib/utils/files";
     import CollectionModal from "../modals/CollectionModal.svelte";
     import CollectionSelectionModal from "../modals/CollectionSelectionModal.svelte";
@@ -44,14 +39,12 @@
     let suggestedCollectionName = $state("");
 
     async function processUploads(files: File[]) {
-        const manager = new UploadManager([...SUPPORTED_RAW_FILES, ...SUPPORTED_IMAGE_TYPES] as SupportedImageTypes[]);
-
         toasts.add({
             type: "success",
             message: `Starting upload of ${files.length} file(s)...`
         });
 
-        const uploadedImages = await manager.addFilesAndUpload(files);
+        const uploadedImages = await uploadManager.addFilesAndUpload(files);
 
         if (uploadedImages.length > 0) {
             toasts.add({
@@ -189,15 +182,13 @@
         collectionUid: string,
         collectionName?: string
     ): Promise<boolean> {
-        const manager = new UploadManager([...SUPPORTED_RAW_FILES, ...SUPPORTED_IMAGE_TYPES] as SupportedImageTypes[]);
-
         toasts.add({
             type: "success",
             title: collectionName,
             message: `Uploading ${files.length} file(s) to add...`
         });
 
-        const uploadedImages = await manager.addFilesAndUpload(files);
+        const uploadedImages = await uploadManager.addFilesAndUpload(files);
 
         if (uploadedImages.length === 0) {
             toasts.add({

@@ -1,9 +1,8 @@
 <script lang="ts">
-    import { untrack } from "svelte";
     import { scale } from "svelte/transition";
     import { upload } from "$lib/states/index.svelte";
     import { UploadState, isUploadActive, isUploadCompleted, isUploadRunning } from "$lib/upload/asset.svelte";
-    import { processGlobalQueue, waitForUploadCompletion } from "$lib/upload/manager.svelte";
+    import { waitForUploadCompletion } from "$lib/upload/manager.svelte";
     import { invalidateViz } from "$lib/views/views.svelte";
     import Button from "../Button.svelte";
     import InputNumber from "../InputNumber.svelte";
@@ -23,9 +22,6 @@
 
     $effect(() => {
         upload.concurrency = Math.min(Math.max(upload.concurrency, 1), 10);
-        untrack(() => {
-            processGlobalQueue();
-        });
     });
 
     $effect(() => {
@@ -169,7 +165,7 @@
         </div>
         <div id="viz-upload-panel-list" bind:this={listEl}>
             {#each upload.files as file}
-                <div class="panel-file-info" data-checksum={file.data.checksum}>
+                <div class="panel-file-info" data-checksum={file.metadata.checksum}>
                     {#if isUploadRunning(file)}
                         <Button
                             iconName="close"
@@ -182,9 +178,9 @@
                     <div class="panel-file-info-data_container">
                         <div class="panel-file-info-metadata">
                             <div class="panel-file">
-                                <span class="viz-upload-file-name" title={file.data.file_name}
-                                    >{file.data.file_name}</span
-                                >
+                                <span class="viz-upload-file-name" title={file.metadata.fileName}>
+                                    {file.metadata.fileName}
+                                </span>
                             </div>
                             <span class="viz-upload-progress-text">{Math.round(file.progress)}%</span>
                         </div>

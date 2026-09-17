@@ -1,7 +1,7 @@
 import { error } from "@sveltejs/kit";
 import { API_BASE_URL, type ImageAsset, downloadImagesZipBlob, getImageFileBlob, signDownload } from "@viz/api";
 import { debugMode } from "$lib/states/index.svelte";
-import type { ImageUploadFileData } from "$lib/upload/manager.svelte";
+import type { ImageUploadFileMetadata } from "$lib/upload/manager.svelte";
 
 type ExtractSuccessData<R> = [Extract<R, { status: 200 }>] extends [never]
     ? R extends { data: infer D }
@@ -29,7 +29,7 @@ export async function sendVizAPIRequest<R extends { data: any; status: number }>
 // From https://github.com/immich-app/immich/main/web/src/lib/utils.ts#L55
 export interface UploadRequestOptions {
     path?: string;
-    data: ImageUploadFileData;
+    data: ImageUploadFileMetadata;
     method?: "POST" | "PUT";
     onUploadProgress?: (event: ProgressEvent<XMLHttpRequestEventTarget>) => void;
 }

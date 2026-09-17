@@ -1,13 +1,18 @@
 import { ImageUploadStatus, checkDuplicates } from "@viz/api";
 import { upload } from "$lib/states/index.svelte";
 import type { DirectoryInputElement } from "$lib/types/dom";
-import type { SupportedImageTypes, SupportedRAWFiles } from "$lib/types/images";
+import {
+    SUPPORTED_IMAGE_TYPES,
+    SUPPORTED_RAW_FILES,
+    type SupportedImageTypes,
+    type SupportedRAWFiles
+} from "$lib/types/images";
 import { calculateSHA1 } from "$lib/utils/crypto";
 import { UploadImage, UploadState, isUploadCompleted, isUploadPending, isUploadSuccessful } from "./asset.svelte";
 
-export interface ImageUploadFileData {
-    file_name: string;
-    data: File;
+export interface ImageUploadFileMetadata {
+    fileName: string;
+    fileData: File;
     checksum?: string;
 }
 
@@ -36,38 +41,6 @@ export function waitForUploadCompletion(tasks: UploadImage[]): Promise<void> {
 }
 
 /**
- * dynamic queue processor that respects global concurrency.
- * Can be called repeatedly to fill available slots.
- */
-export function processGlobalQueue() {
-    if (upload.activeCount >= upload.concurrency) {
-        return;
-    }
-
-    const pendingTasks = upload.files.filter(isUploadPending);
-
-    if (pendingTasks.length === 0) {
-        return;
-    }
-
-    const slotsAvailable = upload.concurrency - upload.activeCount;
-    const tasksToStart = pendingTasks.slice(0, slotsAvailable);
-
-    for (const task of tasksToStart) {
-        upload.activeCount++;
-
-        task.upload()
-            .catch((error) => {
-                console.error(`[UploadManager] Upload failed for file: ${task.data.file_name}`, error);
-            })
-            .finally(() => {
-                upload.activeCount--;
-                processGlobalQueue();
-            });
-    }
-}
-
-/**
  * Complete rewrite: Clean upload manager for drag-and-drop and file picker.
  * Files are immediately added to global upload state so the panel shows right away.
  */
@@ -76,6 +49,15 @@ export default class UploadManager {
 
     constructor(allowedTypes: (SupportedImageTypes | SupportedRAWFiles)[]) {
         this.allowedTypes = allowedTypes;
+
+        $effect.root(() => {
+            $effect(() => {
+                void upload.files;
+                void upload.concurrency;
+
+                this.processGlobalQueue();
+            });
+        });
     }
 
     /**
@@ -97,8 +79,8 @@ export default class UploadManager {
 
             // Create upload task
             const task = new UploadImage({
-                file_name: file.name,
-                data: file
+                fileName: file.name,
+                fileData: file
             });
 
             tasks.push(task);
@@ -107,7 +89,6 @@ export default class UploadManager {
         // Immediately add to global state (panel shows when upload.files.length > 0)
         if (tasks.length > 0) {
             upload.files.push(...tasks);
-            upload.stats.total += tasks.length;
         }
 
         return tasks;
@@ -119,53 +100,34 @@ export default class UploadManager {
      */
     async precheckDuplicates(tasks: UploadImage[]): Promise<void> {
         if (typeof crypto === "undefined" || !crypto.subtle) {
-            console.warn(
-                "[Upload] Web Crypto API (crypto.subtle) is not available (requires HTTPS or localhost). Bypassing bulk duplicate pre-check."
-            );
             return;
         }
-        // Calculate checksum for all tasks that don't have it yet
-        await Promise.all(
-            tasks.map(async (task) => {
-                if (!task.checksum) {
-                    try {
-                        const checksum = await calculateSHA1(task.data.data);
-                        task.checksum = checksum;
-                        task.data.checksum = checksum;
-                    } catch (e) {
-                        console.error(`Failed to calculate checksum for ${task.data.file_name}:`, e);
-                    }
-                }
-            })
-        );
-
-        // Filter tasks that have checksums and are still pending
-        const validTasks = tasks.filter((t) => t.checksum && isUploadPending(t));
-        if (validTasks.length === 0) {
-            return;
-        }
-
-        const checksums = validTasks.map((t) => t.checksum as string);
 
         try {
-            // Call bulk duplicate check API
+            const checksums = await Promise.all(
+                tasks.map(async (task) => {
+                    const checksum = await calculateSHA1(task.metadata.fileData);
+                    task.metadata.checksum = checksum;
+
+                    return checksum;
+                })
+            );
+
             const response = await checkDuplicates({ checksums });
 
             if (response.status === 200 && response.data.duplicates && response.data.duplicates.length > 0) {
-                const dupMap = new Map<string, string>(); // checksum -> uid
-                for (const dup of response.data.duplicates) {
-                    dupMap.set(dup.checksum, dup.uid);
-                }
-
-                for (const task of validTasks) {
-                    if (task.checksum && dupMap.has(task.checksum)) {
-                        task.state = UploadState.DUPLICATE;
-                        task.progress = 100;
-                        task.imageData = {
-                            uid: dupMap.get(task.checksum)!,
-                            status: ImageUploadStatus.Duplicate
-                        };
+                for (const d of response.data.duplicates) {
+                    const task = tasks.find((t) => t.metadata.checksum === d.checksum);
+                    if (!task) {
+                        continue;
                     }
+
+                    task.state = UploadState.DUPLICATE;
+                    task.progress = 100;
+                    task.uploadResponse = {
+                        uid: d.uid,
+                        status: ImageUploadStatus.Duplicate
+                    };
                 }
             }
         } catch (err) {
@@ -178,21 +140,44 @@ export default class UploadManager {
      * If no tasks provided, uploads all pending tasks in the global store.
      */
     async start(tasks?: UploadImage[]): Promise<void> {
-        const tasksToCheck = tasks || upload.files.filter(isUploadPending);
-        if (tasksToCheck.length > 0) {
-            await this.precheckDuplicates(tasksToCheck);
+        if (tasks?.length) {
+            await this.precheckDuplicates(tasks);
         }
-        processGlobalQueue();
+
+        this.processGlobalQueue();
     }
 
     /**
      * dynamic queue processor that respects global concurrency.
      * Can be called repeatedly to fill available slots.
      */
-    processQueue() {
-        processGlobalQueue();
-    }
+    processGlobalQueue(): void {
+        if (upload.activeCount >= upload.concurrency) {
+            return;
+        }
 
+        const pendingTasks = upload.files.filter(isUploadPending);
+
+        if (pendingTasks.length === 0) {
+            return;
+        }
+
+        const slotsAvailable = upload.concurrency - upload.activeCount;
+        const tasksToStart = pendingTasks.slice(0, slotsAvailable);
+
+        for (const task of tasksToStart) {
+            upload.activeCount++;
+
+            task.upload()
+                .catch((error) => {
+                    console.error(`[UploadManager] Upload failed for file: ${task.metadata.fileName}`, error);
+                })
+                .finally(() => {
+                    upload.activeCount--;
+                    this.processGlobalQueue();
+                });
+        }
+    }
     /**
      * Open file picker dialog.
      * Creates a hidden input, triggers click, and returns selected files.
@@ -228,9 +213,9 @@ export default class UploadManager {
         await waitForUploadCompletion(tasks);
 
         const success = tasks.filter(isUploadSuccessful).map((t) => ({
-            uid: t.imageData!.uid,
-            status: t.imageData!.status,
-            metadata: t.imageData
+            uid: t.uploadResponse!.uid,
+            status: t.uploadResponse!.status,
+            metadata: t.uploadResponse
         }));
         return success;
     }
@@ -275,3 +260,9 @@ export default class UploadManager {
         return this.addFilesAndUpload(files);
     }
 }
+
+// allowed image types will come from the config but for now just hardcode
+export const uploadManager = new UploadManager([
+    ...SUPPORTED_RAW_FILES,
+    ...SUPPORTED_IMAGE_TYPES
+] as SupportedImageTypes[]);
