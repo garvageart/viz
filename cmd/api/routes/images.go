@@ -174,6 +174,61 @@ func moveDirWithFallback(src, dst string) error {
 	return libos.MoveDirWithFallback(src, dst)
 }
 
+// syncCollectionsAfterImageDeletion removes image associations and updates counts for affected collections.
+func syncCollectionsAfterImageDeletion(tx *gorm.DB, imageUID string, wsBroker *libhttp.WSBroker) error {
+	var collectionIDs []uint
+	err := tx.Model(&entities.CollectionImage{}).
+		Where("uid = ?", imageUID).
+		Pluck("DISTINCT collection_id", &collectionIDs).Error
+	if err != nil || len(collectionIDs) == 0 {
+		return err
+	}
+
+	if err := tx.Unscoped().Where("uid = ?", imageUID).Delete(&entities.CollectionImage{}).Error; err != nil {
+		return err
+	}
+
+	for _, collID := range collectionIDs {
+		var totalCount int64
+		subquery := tx.Model(&entities.CollectionImage{}).Select("uid").Where("collection_id = ?", collID)
+		if err := tx.Model(&entities.ImageAsset{}).Where("uid IN (?)", subquery).Count(&totalCount).Error; err != nil {
+			continue
+		}
+
+		var coll entities.Collection
+		if err := tx.First(&coll, collID).Error; err != nil {
+			continue
+		}
+
+		coll.ImageCount = int(totalCount)
+		coll.UpdatedAt = time.Now()
+
+		if coll.ThumbnailID != nil && *coll.ThumbnailID == imageUID {
+			var remaining []entities.CollectionImage
+			if err := tx.Where("collection_id = ?", collID).Order("added_at ASC, id ASC").Limit(1).Find(&remaining).Error; err == nil {
+				if len(remaining) > 0 {
+					coll.ThumbnailID = &remaining[0].Uid
+				} else {
+					coll.ThumbnailID = nil
+				}
+			}
+		}
+
+		if err := tx.Save(&coll).Error; err != nil {
+			continue
+		}
+
+		if wsBroker != nil {
+			_ = wsBroker.Broadcast("collection-updated", map[string]any{
+				"uid":   coll.Uid,
+				"count": int(totalCount),
+			})
+		}
+	}
+
+	return nil
+}
+
 func ImagesRouter(db *gorm.DB, logger *slog.Logger, wsBroker *libhttp.WSBroker) *chi.Mux {
 	router := chi.NewRouter()
 
@@ -919,6 +974,10 @@ func ImagesRouter(db *gorm.DB, logger *slog.Logger, wsBroker *libhttp.WSBroker) 
 						return fmt.Errorf("failed to nullify collection thumbnails: %w", err)
 					}
 
+					if err := syncCollectionsAfterImageDeletion(tx, id, wsBroker); err != nil {
+						return fmt.Errorf("failed to sync collections: %w", err)
+					}
+
 					// Remove from DB permanently
 					if err := tx.Unscoped().Where("uid = ?", id).Delete(&entities.ImageAsset{}).Error; err != nil {
 						return fmt.Errorf("failed to hard delete from DB: %w", err)
@@ -943,7 +1002,15 @@ func ImagesRouter(db *gorm.DB, logger *slog.Logger, wsBroker *libhttp.WSBroker) 
 				}
 			} else {
 				// Soft delete: Set DeletedAt in DB and move files to trash
-				if err := db.Where("uid = ?", id).Delete(&entities.ImageAsset{}).Error; err != nil {
+				err := db.Transaction(func(tx *gorm.DB) error {
+					if err := syncCollectionsAfterImageDeletion(tx, id, wsBroker); err != nil {
+						return err
+					}
+
+					return tx.Where("uid = ?", id).Delete(&entities.ImageAsset{}).Error
+				})
+
+				if err != nil {
 					logger.Error("failed to soft delete from DB", slog.String("uid", id), slog.Any("error", err))
 					e := err.Error()
 					errMsg = &e

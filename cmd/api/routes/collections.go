@@ -416,8 +416,7 @@ func CollectionsRouter(db *gorm.DB, logger *slog.Logger, wsBroker *libhttp.WSBro
 
 		if err == nil {
 			_ = wsBroker.Broadcast("collection-updated", map[string]any{
-				"uid":    collection.Uid,
-				"action": "updated",
+				"uid": collection.Uid,
 			})
 		}
 
@@ -708,28 +707,26 @@ func CollectionsRouter(db *gorm.DB, logger *slog.Logger, wsBroker *libhttp.WSBro
 
 			// Update image count and timestamp
 			var totalCount int64
-			if err := tx.Model(&entities.CollectionImage{}).Where("collection_id = ?", collection.ID).Count(&totalCount).Error; err != nil {
+			subquery := tx.Model(&entities.CollectionImage{}).Select("uid").Where("collection_id = ?", collection.ID)
+			if err := tx.Model(&entities.ImageAsset{}).Where("uid IN (?)", subquery).Count(&totalCount).Error; err != nil {
 				return err
 			}
 
 			collection.ImageCount = int(totalCount)
 			collection.UpdatedAt = now
 
-			selectFields := []string{"ImageCount", "UpdatedAt"}
 			if collection.ThumbnailID == nil || *collection.ThumbnailID == "" {
 				firstImgUID := existingUIDs[0]
 				collection.ThumbnailID = &firstImgUID
-				selectFields = append(selectFields, "ThumbnailID")
 			}
 
-			if err := tx.Model(&collection).Select(selectFields).Updates(&collection).Error; err != nil {
+			if err := tx.Save(&collection).Error; err != nil {
 				return err
 			}
 
 			_ = wsBroker.Broadcast("collection-updated", map[string]any{
-				"uid":    collection.Uid,
-				"action": "images-added",
-				"count":  int(totalCount),
+				"uid":   collection.Uid,
+				"count": int(totalCount),
 			})
 
 			return nil
@@ -804,14 +801,14 @@ func CollectionsRouter(db *gorm.DB, logger *slog.Logger, wsBroker *libhttp.WSBro
 
 			// Update image count and timestamp
 			var totalCount int64
-			if err := tx.Model(&entities.CollectionImage{}).Where("collection_id = ?", collection.ID).Count(&totalCount).Error; err != nil {
+			subquery := tx.Model(&entities.CollectionImage{}).Select("uid").Where("collection_id = ?", collection.ID)
+			if err := tx.Model(&entities.ImageAsset{}).Where("uid IN (?)", subquery).Count(&totalCount).Error; err != nil {
 				return err
 			}
 
 			collection.ImageCount = int(totalCount)
 			collection.UpdatedAt = time.Now()
 
-			selectFields := []string{"ImageCount", "UpdatedAt"}
 			if collection.ThumbnailID != nil && *collection.ThumbnailID != "" {
 				var count int64
 				if err := tx.Model(&entities.CollectionImage{}).
@@ -833,17 +830,16 @@ func CollectionsRouter(db *gorm.DB, logger *slog.Logger, wsBroker *libhttp.WSBro
 					} else {
 						collection.ThumbnailID = nil
 					}
-					selectFields = append(selectFields, "ThumbnailID")
 				}
 			}
 
-			if err := tx.Model(&collection).Select(selectFields).Updates(&collection).Error; err != nil {
+			if err := tx.Save(&collection).Error; err != nil {
 				return err
 			}
 
 			_ = wsBroker.Broadcast("collection-updated", map[string]any{
-				"uid":    collection.Uid,
-				"action": "images-removed",
+				"uid":   collection.Uid,
+				"count": int(totalCount),
 			})
 
 			return nil
