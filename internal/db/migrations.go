@@ -39,6 +39,7 @@ var DefaultBackfills = []BackfillFn{
 	BackfillOwnership,
 	BackfillOriginalFileName,
 	TrimImageNameExtensions,
+	BackfillCollectionImageCounts,
 }
 
 // RunBackfills executes all data backfills and post-migration data transformations sequentially inside a transaction.
@@ -240,5 +241,46 @@ func TrimImageNameExtensions(tx *gorm.DB, logger *slog.Logger) error {
 		logger.Info("Trimmed extensions from existing image names", slog.Int("count", updatedCount))
 	}
 
+	return nil
+}
+
+// BackfillCollectionImageCounts recalculates and updates image_count for all collections in batches based on active images.
+func BackfillCollectionImageCounts(tx *gorm.DB, logger *slog.Logger) error {
+	logger.Info("Backfilling collection image counts in batches...")
+
+	var collections []entities.Collection
+	batchSize := 200
+	totalUpdated := 0
+
+	err := tx.Model(&entities.Collection{}).
+		FindInBatches(&collections, batchSize, func(batchTx *gorm.DB, batch int) error {
+			for _, coll := range collections {
+				var activeCount int64
+				subquery := batchTx.Model(&entities.CollectionImage{}).Select("uid").Where("collection_id = ?", coll.ID)
+				if err := batchTx.Model(&entities.ImageAsset{}).Where("uid IN (?)", subquery).Count(&activeCount).Error; err != nil {
+					logger.Error("Failed to count active images for collection", slog.String("uid", coll.Uid), slog.Any("error", err))
+					return err
+				}
+
+				if coll.ImageCount != int(activeCount) {
+					logger.Info("Updating collection image count", slog.String("name", coll.Name), slog.String("uid", coll.Uid))
+					coll.ImageCount = int(activeCount)
+					if err := batchTx.Save(&coll).Error; err != nil {
+						logger.Error("Failed to update collection image count", slog.String("uid", coll.Uid), slog.Any("error", err))
+						return err
+					}
+					totalUpdated++
+				}
+			}
+
+			return nil
+		}).Error
+
+	if err != nil {
+		logger.Error("Failed to backfill collection image counts", slog.Any("error", err))
+		return err
+	}
+
+	logger.Info("Successfully backfilled collection image counts", slog.Int("updated", totalUpdated))
 	return nil
 }
