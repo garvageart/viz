@@ -1,6 +1,6 @@
 # Viz UI Design System
 
-This document serves as the single source of truth for the **Viz** high-density, accessible digital asset management (DAM) design system. It is designed to combine compact, highly functional, and structurally dense layouts with clean, modular grids, vertical hairline divisions, and clear typographic hierarchies.
+This document serves as the single source of truth for the **Viz** high-density, accessible image management system (IMS) design system. It is designed to combine compact, highly functional, and structurally dense layouts with clean, modular grids, vertical hairline divisions, and clear typographic hierarchies.
 
 ---
 
@@ -24,16 +24,16 @@ Viz utilizes two primary variable typography scales served through Google Fonts:
 
 All font sizes are declared as CSS custom properties under `:root`:
 
-| Token                 | Sizing (rem) | Equivalent (px) | Application                                     |
-| :-------------------- | :----------- | :-------------- | :---------------------------------------------- |
+| Token                 | Sizing (rem) | Equivalent (px) | Application                                             |
+| :-------------------- | :----------- | :-------------- | :------------------------------------------------------ |
 | `--viz-font-size-sm`  | `0.9167rem`  | `11px`          | Small metadata, helper text, tags, labels, menu buttons |
-| `--viz-font-size-std` | `1rem`       | `12px`          | Standard body text, document reading            |
-| `--viz-font-size-lg`  | `1.1667rem`  | `14px`          | Small headings, modal titles                    |
-| `--viz-font-size-xl`  | `1.3333rem`  | `16px`          | Mid-level section headings                      |
-| `--viz-font-size-2xl` | `1.6667rem`  | `20px`          | Large titles                                    |
-| `--viz-font-size-3xl` | `2rem`       | `24px`          | Page banner headers                             |
-| `--viz-font-size-4xl` | `2.5rem`     | `30px`          | Hero headings, section dividers                 |
-| `--viz-font-size-5xl` | `3rem`       | `36px`          | Display headlines, splash text                  |
+| `--viz-font-size-std` | `1rem`       | `12px`          | Standard body text, document reading                    |
+| `--viz-font-size-lg`  | `1.1667rem`  | `14px`          | Small headings, modal titles                            |
+| `--viz-font-size-xl`  | `1.3333rem`  | `16px`          | Mid-level section headings                              |
+| `--viz-font-size-2xl` | `1.6667rem`  | `20px`          | Large titles                                            |
+| `--viz-font-size-3xl` | `2rem`       | `24px`          | Page banner headers                                     |
+| `--viz-font-size-4xl` | `2.5rem`     | `30px`          | Hero headings, section dividers                         |
+| `--viz-font-size-5xl` | `3rem`       | `36px`          | Display headlines, splash text                          |
 
 ---
 
@@ -198,19 +198,19 @@ Smooth colour transitions are enabled via CSS `@property` declarations for key s
 
 All stacking contexts and `z-index` elevations are standardized into discrete semantic layers declared as CSS custom properties (`--viz-z-*`) and mirrored 1:1 in TypeScript via `enum ZIndex` (`$lib/constants/z-index`):
 
-| Layer | Token | Value | `ZIndex` Enum | Application | Typical Components |
-| :--- | :--- | :--- | :--- | :--- | :--- |
-| **Base** | `--viz-z-base` | `0` | `ZIndex.Base` | Standard in-flow content | Photo grid cards, document canvas |
-| **Local** | `--viz-z-local` | `10` | `ZIndex.Local` | Intra-component visual layers | Timeline scrubber, selection checkmarks |
-| **Workspace** | `--viz-z-workspace-layout` | `20` | `ZIndex.WorkspaceLayout` | Panel dividers & layout controls | Splitter bars, resize handles |
-| **Dropzone** | `--viz-z-dropzone` | `100` | `ZIndex.Dropzone` | Drag & Drop visual feedback targets | Workspace drop overlays, edge drop targets |
-| **Chrome** | `--viz-z-chrome` | `500` | `ZIndex.Chrome` | Fixed application shell navigation | Top header bar, docked sidebar |
-| **Popover** | `--viz-z-popover` | `1000` | `ZIndex.Popover` | In-page transient popup menus | Context menus, account dropdown, date pickers |
-| **Floating Panel** | `--viz-z-floating-panel` | `2000` | `ZIndex.FloatingPanel` | Long-running task dock overlays | Upload panel, download panel |
-| **Modal** | `--viz-z-modal` | `5000` | `ZIndex.Modal` | Blocking modal dialog windows | Confirmation dialogs, metadata edit modals |
-| **Lightbox** | `--viz-z-lightbox` | `8000` | `ZIndex.Lightbox` | Fullscreen inspection view | Image/video lightbox overlay |
-| **Toast** | `--viz-z-toast` | `9000` | `ZIndex.Toast` | User alert notifications | Toast notifications, alert badges |
-| **Tooltip** | `--viz-z-tooltip` | `10000` | `ZIndex.Tooltip` | Hover micro-interactions | Tooltips |
+| Layer              | Token                      | Value   | `ZIndex` Enum            | Application                         | Typical Components                            |
+| :----------------- | :------------------------- | :------ | :----------------------- | :---------------------------------- | :-------------------------------------------- |
+| **Base**           | `--viz-z-base`             | `0`     | `ZIndex.Base`            | Standard in-flow content            | Photo grid cards, document canvas             |
+| **Local**          | `--viz-z-local`            | `10`    | `ZIndex.Local`           | Intra-component visual layers       | Timeline scrubber, selection checkmarks       |
+| **Workspace**      | `--viz-z-workspace-layout` | `20`    | `ZIndex.WorkspaceLayout` | Panel dividers & layout controls    | Splitter bars, resize handles                 |
+| **Dropzone**       | `--viz-z-dropzone`         | `100`   | `ZIndex.Dropzone`        | Drag & Drop visual feedback targets | Workspace drop overlays, edge drop targets    |
+| **Chrome**         | `--viz-z-chrome`           | `500`   | `ZIndex.Chrome`          | Fixed application shell navigation  | Top header bar, docked sidebar                |
+| **Popover**        | `--viz-z-popover`          | `1000`  | `ZIndex.Popover`         | In-page transient popup menus       | Context menus, account dropdown, date pickers |
+| **Floating Panel** | `--viz-z-floating-panel`   | `2000`  | `ZIndex.FloatingPanel`   | Long-running task dock overlays     | Upload panel, download panel                  |
+| **Modal**          | `--viz-z-modal`            | `5000`  | `ZIndex.Modal`           | Blocking modal dialog windows       | Confirmation dialogs, metadata edit modals    |
+| **Lightbox**       | `--viz-z-lightbox`         | `8000`  | `ZIndex.Lightbox`        | Fullscreen inspection view          | Image/video lightbox overlay                  |
+| **Toast**          | `--viz-z-toast`            | `9000`  | `ZIndex.Toast`           | User alert notifications            | Toast notifications, alert badges             |
+| **Tooltip**        | `--viz-z-tooltip`          | `10000` | `ZIndex.Tooltip`         | Hover micro-interactions            | Tooltips                                      |
 
 ---
 
