@@ -17,13 +17,14 @@
     import { VizMimeTypes } from "$lib/constants";
     import { contextMenu } from "$lib/context-menu";
     import {
+        type CollectionMenuOptions,
         createCollectionMenu,
         deleteSelectedCollections,
         downloadCollectionZip,
         duplicateCollection,
         toggleFavouriteCollections
     } from "$lib/context-menu/menus/collections";
-    import { DragData } from "$lib/drag-drop/data";
+    import { dropZone } from "$lib/drag-drop/directives.svelte";
     import { sortCollections } from "$lib/sort/sort";
     import { filterManager } from "$lib/states/filter.svelte";
     import { isLayoutPage } from "$lib/states/index.svelte";
@@ -168,8 +169,7 @@
 
     let collectionGridArray: AssetGridArray<Collection> | undefined = $state();
 
-    let collectionMenuOpts = $derived({
-        selectedCollections: selectionScope.selectedItems,
+    let collectionMenuOpts = $derived<CollectionMenuOptions>({
         editCollection: (col: Collection) => {
             openCollectionModal("edit", col);
         },
@@ -192,7 +192,7 @@
         }
     });
 
-    let collectionActionMenuItems = $derived(createCollectionMenu(firstSelectedCollection, collectionMenuOpts));
+    let collectionActionMenuItems = $derived(createCollectionMenu(selectionScope.selectedItems, collectionMenuOpts));
 
     let grid: ComponentProps<typeof AssetGrid<Collection>> = $derived({
         assetSnippet: collectionSnippet,
@@ -216,50 +216,13 @@
         }
     });
 
-    async function handleCreateDrop(e: DragEvent) {
-        const target = e.currentTarget as HTMLElement;
-        target.classList.remove("drop-target");
-
-        if (!e.dataTransfer) {
-            return;
-        }
-
-        const uidsData = DragData.getData<string[]>(e.dataTransfer, VizMimeTypes.IMAGE_UIDS)?.payload;
+    function handleImagesDroppedOnCreate(uidsData: string[]) {
         if (!uidsData || uidsData.length === 0) {
             return;
         }
 
-        e.preventDefault();
-        e.stopPropagation();
-
         droppedImageUIDs = uidsData;
         openCollectionModal("create");
-    }
-
-    function handleCreateDragEnter(e: DragEvent) {
-        if (!e.dataTransfer || !DragData.isType(e.dataTransfer, VizMimeTypes.IMAGE_UIDS)) {
-            return;
-        }
-        e.preventDefault();
-        (e.currentTarget as HTMLElement).classList.add("drop-target");
-    }
-
-    function handleCreateDragOver(e: DragEvent) {
-        if (!e.dataTransfer || !DragData.isType(e.dataTransfer, VizMimeTypes.IMAGE_UIDS)) {
-            return;
-        }
-        e.preventDefault();
-        e.dataTransfer.dropEffect = "copy";
-        (e.currentTarget as HTMLElement).classList.add("drop-target");
-    }
-
-    function handleCreateDragLeave(e: DragEvent) {
-        const related = e.relatedTarget as HTMLElement | null;
-        const current = e.currentTarget as HTMLElement;
-        if (related && current.contains(related)) {
-            return;
-        }
-        current.classList.remove("drop-target");
     }
 </script>
 
@@ -274,22 +237,36 @@
 {/snippet}
 
 {#snippet toolbarSnippet()}
-    <Button
-        iconName="add"
-        id="create-collection"
-        class="toolbar-button"
-        title="Create Collection"
-        aria-label="Create Collection"
-        onclick={() => {
-            openCollectionModal("create");
+    <div
+        class="create-collection-dropzone"
+        use:dropZone={{
+            id: "create-collection",
+            types: [VizMimeTypes.IMAGE_UIDS],
+            onDragOver: () => {
+                return {
+                    intent: "copy",
+                    label: "Create collection with photos"
+                };
+            },
+            onDrop: (data) => {
+                handleImagesDroppedOnCreate(data.payload as string[]);
+            }
         }}
-        ondragenter={handleCreateDragEnter}
-        ondragover={handleCreateDragOver}
-        ondragleave={handleCreateDragLeave}
-        ondrop={handleCreateDrop}
     >
-        <span>Create Collection</span>
-    </Button>
+        <Button
+            iconName="add"
+            id="create-collection"
+            class="toolbar-button"
+            variant="primary"
+            title="Create Collection"
+            aria-label="Create Collection"
+            onclick={() => {
+                openCollectionModal("create");
+            }}
+        >
+            <span>Create Collection</span>
+        </Button>
+    </div>
 {/snippet}
 
 {#snippet selectionToolbarSnippet()}
@@ -376,22 +353,35 @@
         <span style="margin: 1em; color: var(--viz-text-secondary); font-size: 1.2rem;"
             >Create your first collection</span
         >
-        <Button
-            id="create_collection-button"
-            style="padding: 2em 8em; display: flex; align-items: center; justify-content: center;"
-            title="Create Collection"
-            aria-label="Create Collection"
-            onclick={() => {
-                openCollectionModal("create");
+        <div
+            class="create-collection-empty-dropzone"
+            use:dropZone={{
+                id: "create-collection-empty",
+                types: [VizMimeTypes.IMAGE_UIDS],
+                onDragOver: () => {
+                    return {
+                        intent: "copy",
+                        label: "Create collection with photos"
+                    };
+                },
+                onDrop: (data) => {
+                    handleImagesDroppedOnCreate(data.payload as string[]);
+                }
             }}
-            ondragenter={handleCreateDragEnter}
-            ondragover={handleCreateDragOver}
-            ondragleave={handleCreateDragLeave}
-            ondrop={handleCreateDrop}
         >
-            <span>Create Collection</span>
-            <MaterialIcon iconName="add" style="font-size: 2em;" />
-        </Button>
+            <Button
+                id="create_collection-button"
+                variant="primary"
+                title="Create Collection"
+                aria-label="Create Collection"
+                onclick={() => {
+                    openCollectionModal("create");
+                }}
+            >
+                <span>Create Collection</span>
+                <MaterialIcon iconName="add" style="font-size: 2em;" />
+            </Button>
+        </div>
     </div>
 {/snippet}
 
@@ -410,7 +400,7 @@
         {toolbarSnippet}
         sortState={collectionsSort}
         toolbarProps={{
-            style: "justify-content: space-between; gap: 0.5rem;"
+            style: "justify-content: space-between;"
         }}
     >
         <div id="viz-info-container" class:std-route={!isLayoutPage()}>
@@ -453,6 +443,14 @@
         display: flex;
         flex-direction: column;
         justify-content: left;
+    }
+
+    :global(#create_collection-button) {
+        padding: 2rem 8rem;
+        font-size: var(--viz-font-size-xl);
+        display: flex;
+        align-items: center;
+        justify-content: center;
     }
 
     #viz-info-container {
@@ -514,13 +512,23 @@
         }
     }
 
-    :global(.toolbar-button.drop-target) {
-        background-color: var(--viz-surface-hover);
-        outline: 2px solid var(--viz-primary);
+    .create-collection-dropzone {
+        display: inline-flex;
+        border-radius: var(--viz-radius-pill, 9999px);
+
+        &:global(.drop-active) :global(.toolbar-button) {
+            background-color: var(--viz-surface-hover);
+            outline: 2px solid var(--viz-primary);
+        }
     }
 
-    :global(#create_collection-button.drop-target) {
-        outline: 2px solid var(--viz-primary);
-        outline-offset: 2px;
+    .create-collection-empty-dropzone {
+        display: inline-flex;
+        border-radius: var(--viz-radius-sm, 4px);
+
+        &:global(.drop-active) :global(#create_collection-button) {
+            outline: 2px solid var(--viz-primary);
+            outline-offset: 2px;
+        }
     }
 </style>
