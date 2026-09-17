@@ -5,11 +5,13 @@ import {
     deleteCollection,
     getDownloadUrl,
     listCollectionImageUiDs,
+    listCollectionImages,
     signDownload,
     updateCollection
 } from "@viz/api";
 import ConfirmationModal from "$lib/components/modals/ConfirmationModal.svelte";
 import { modalsManager } from "$lib/components/modals/manager/ModalManager.svelte";
+import ExportPanel from "$lib/components/ui/panels/ExportPanel.svelte";
 import { DownloadFile, DownloadState } from "$lib/download/asset.svelte";
 import { processDownloadQueue, waitForDownloadCompletion } from "$lib/download/manager.svelte";
 import { download } from "$lib/states/index.svelte";
@@ -24,7 +26,6 @@ export interface CollectionMenuOptions {
     onCollectionsDeleted?: (collections: Collection[]) => void;
     onCollectionUpdated?: (collection: Collection) => void;
     editCollection?: (collection: Collection) => void;
-    selectedCollections?: Collection[];
 }
 
 /**
@@ -174,7 +175,8 @@ export async function downloadCollectionZip(collection: Collection) {
         if (task.state === DownloadState.DOWNLOADED && task.data) {
             await downloadToFilesystem(zipName, task.data);
             toasts.add({
-                message: `Successfully downloaded **${collection.name}**`,
+                title: collection.name,
+                message: `Successfully downloaded`,
                 type: "success"
             });
         } else if (task.state === DownloadState.ERROR) {
@@ -281,83 +283,125 @@ export function deleteSelectedCollections(
 }
 
 /**
+ * Opens the Export modal for all images in a collection.
+ */
+export async function exportCollection(collection: Collection) {
+    if (collection.images?.length === 0) {
+        toasts.add({
+            message: "Collection has no images",
+            type: "warning"
+        });
+
+        return;
+    }
+
+    try {
+        const res = await listCollectionImages(collection.uid, {
+            limit: collection.image_count
+        });
+
+        if (res.status !== 200) {
+            throw new Error(`Failed to load collection images (${res.status})`);
+        }
+
+        const items = res.data.items.map((item) => item.image);
+
+        if (items.length === 0) {
+            toasts.add({
+                message: "Collection has no images",
+                type: "warning"
+            });
+
+            return;
+        }
+
+        modalsManager.open(ExportPanel, { assets: items });
+    } catch (err) {
+        toasts.add({
+            message: `Failed to export collection: ${(err as Error).message}`,
+            type: "error"
+        });
+    }
+}
+
+/**
  * Builds the canonical collection context menu items.
  */
-export function createCollectionMenu(collection: Collection | undefined, opts: CollectionMenuOptions): MenuItem[] {
-    if (!collection) {
+export function createCollectionMenu(collections: Collection[] | undefined, opts: CollectionMenuOptions): MenuItem[] {
+    if (!collections) {
         return [];
     }
 
+    const firstCollection = collections[0];
+
     const items: MenuItem[] = [
         {
-            id: `open-${collection.uid}`,
+            id: `open-${firstCollection.uid}`,
             label: "Open",
             iconName: "open_in_new",
             action: () => {
-                goto(`/collections/${collection.uid}`);
+                goto(`/collections/${firstCollection.uid}`);
             }
         },
         {
-            id: `edit-${collection.uid}`,
+            id: `edit-${firstCollection.uid}`,
             label: "Edit",
             iconName: "edit",
             action: () => {
-                if (opts.editCollection) {
-                    opts.editCollection(collection);
-                }
+                opts.editCollection?.(firstCollection);
             }
         },
         {
-            id: `favourite-${collection.uid}`,
-            label: collection.favourited ? "Unfavourite" : "Favourite",
+            id: `favourite-${firstCollection.uid}`,
+            label: firstCollection.favourited ? "Unfavourite" : "Favourite",
             iconName: "star",
             action: () => {
-                const targets =
-                    opts.selectedCollections && opts.selectedCollections.length > 1
-                        ? opts.selectedCollections
-                        : [collection];
+                const targets = collections;
                 return toggleFavouriteCollections(targets, opts.onCollectionUpdated);
             }
         },
         {
-            id: `duplicate-${collection.uid}`,
+            id: `export-${firstCollection.uid}`,
+            label: "Export",
+            iconName: "ios_share",
+            disabled: firstCollection.images?.length === 0,
+            action: () => {
+                return exportCollection(firstCollection);
+            }
+        },
+        {
+            id: `duplicate-${firstCollection.uid}`,
             label: "Duplicate",
             iconName: "folder_copy",
             action: () => {
-                return duplicateCollection(collection, opts.onCollectionDuplicated);
+                return duplicateCollection(firstCollection, opts.onCollectionDuplicated);
             }
         },
-        { separator: true, id: `sep-1-${collection.uid}` },
+        { separator: true, id: `sep-1-${firstCollection.uid}` },
         {
-            id: `download-collection-${collection.uid}`,
+            id: `download-collection-${firstCollection.uid}`,
             label: "Download",
             iconName: "download",
-            disabled: (collection.image_count ?? collection.images?.length ?? 0) === 0,
+            disabled: firstCollection.images?.length === 0,
             action: () => {
-                return downloadCollectionZip(collection);
+                return downloadCollectionZip(firstCollection);
             }
         },
-        { separator: true, id: `sep-2-${collection.uid}` },
+        { separator: true, id: `sep-2-${firstCollection.uid}` },
         {
-            id: `copylink-${collection.uid}`,
+            id: `copylink-${firstCollection.uid}`,
             label: "Copy link",
             iconName: "link",
             action: () => {
-                copyCollectionLink(collection);
+                copyCollectionLink(firstCollection);
             }
         },
         {
-            id: `delete-${collection.uid}`,
-            label:
-                opts.selectedCollections && opts.selectedCollections.length > 1
-                    ? `Delete ${opts.selectedCollections.length} collections`
-                    : "Delete",
+            id: `delete-${firstCollection.uid}`,
+            label: collections.length > 1 ? `Delete ${collections.length} collections` : "Delete",
             iconName: "delete",
             action: () => {
-                const targets =
-                    opts.selectedCollections && opts.selectedCollections.length > 1
-                        ? opts.selectedCollections
-                        : [collection];
+                const targets = collections;
                 deleteSelectedCollections(targets, opts.onCollectionDeleted, opts.onCollectionsDeleted);
             }
         }
