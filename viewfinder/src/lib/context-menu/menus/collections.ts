@@ -223,9 +223,7 @@ export function deleteSelectedCollections(
 
     const title = targets.length > 1 ? "Delete Collections" : "Delete Collection";
     const message =
-        targets.length > 1
-            ? `Delete ${targets.length} collections? This cannot be undone.`
-            : `Delete collection "${targets[0].name}"? This cannot be undone.`;
+        targets.length > 1 ? `Delete ${targets.length} collections?` : `Delete collection "${targets[0].name}"?`;
 
     modalsManager.open(
         ConfirmationModal,
