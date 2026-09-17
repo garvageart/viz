@@ -5,6 +5,15 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.34.18] - 2026-09-17
+
+* fix(viewfinder): simplify collection delete confirmation message (8e1f7020)
+* refactor(viewfinder): streamline upload manager workflow and singleton instance (7bdb78b4)
+* fix(api): map multipart form fields for image upload progress (b381f6ae)
+* feat(db): add batched backfill migration for collection image counts (d41bdadf)
+* fix(api): synchronize collection image counts on image add and delete (f44a6c0f)
+* refactor(http): use atomic.Uint64 and EventType alias in WSBroker (6580efe1)
+
 ## [0.34.17] - 2026-09-17
 
 * refactor(viewfinder): simplify openCollection helper signature (83806f37)
