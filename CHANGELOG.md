@@ -5,6 +5,17 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.34.17] - 2026-09-17
+
+* refactor(viewfinder): simplify openCollection helper signature (83806f37)
+* docs: update ui design system terminology (a31f2eb6)
+* chore(viewfinder): update product description subtitle to image management system (b1354f41)
+* refactor(viewfinder): migrate collection creation to drag coordinator (80f49da3)
+* feat(viewfinder): add export action to collection context menu (8c1b3954)
+* style(viewfinder): refine photo card selection styling and remove redundant header z-index (db3980c8)
+* fix(viewfinder): refine drag coordinator listeners and drag tooltip styling (a9fca3ba)
+* refactor(viewfinder): refactor DragAndDropUpload to use dropZone directive (9ff364af)
+
 ## [0.34.16] - 2026-09-16
 
 * fix(viewfinder): decouple zoom percentage from texture resolution and simplify crop layout (c06bc082)
