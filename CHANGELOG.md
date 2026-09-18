@@ -5,6 +5,13 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.34.19] - 2026-09-18
+
+* feat(db): add RecoverImageNameExtensions migration and test suite (a926eef7)
+* feat(config): add trim_file_extensions option for image imports (fd24556a)
+* refactor(viewfinder): extract StatusIndicator component for lightbox status messages (2aa1fef3)
+* refactor(viewfinder): simplify toast notification components and calls (b5f7d112)
+
 ## [0.34.18] - 2026-09-17
 
 * fix(viewfinder): simplify collection delete confirmation message (8e1f7020)
