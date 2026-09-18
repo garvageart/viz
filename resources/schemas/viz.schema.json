@@ -388,6 +388,11 @@
       "$ref": "#/$defs/SecurityConfig",
       "description": "Security and password hashing configuration."
     },
+    "trim_file_extensions": {
+      "type": "boolean",
+      "description": "Strip file extensions from image names during import.",
+      "default": true
+    },
     "$schema": {
       "type": "string",
       "description": "Path or URI to the JSON Schema for editor validation and autocompletion."

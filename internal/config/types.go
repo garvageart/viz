@@ -199,24 +199,28 @@ type VizConfig struct {
 	Storage StorageConfig `json:"storage,omitempty" mapstructure:"storage"`
 	// Security and password hashing configuration.
 	Security SecurityConfig `json:"security,omitempty" mapstructure:"security"`
+	// Strip file extensions from image names during import.
+	TrimFileExtensions bool `json:"trim_file_extensions,omitempty" mapstructure:"trim_file_extensions"`
 }
 
 // PublicVizConfig is the sanitized public configuration safe to expose to frontend / clients.
 type PublicVizConfig struct {
-	BaseURL      string         `json:"base_url"`
-	AllowedHosts []string       `json:"allowed_hosts"`
-	Timezone     string         `json:"timezone"`
-	Download     DownloadConfig `json:"download"`
-	Storage      StorageConfig  `json:"storage"`
+	BaseURL            string         `json:"base_url"`
+	AllowedHosts       []string       `json:"allowed_hosts"`
+	Timezone           string         `json:"timezone"`
+	Download           DownloadConfig `json:"download"`
+	Storage            StorageConfig  `json:"storage"`
+	TrimFileExtensions bool           `json:"trim_file_extensions"`
 }
 
 // Public returns a sanitized copy of VizConfig safe for public client injection and broadcast.
 func (c VizConfig) Public() PublicVizConfig {
 	return PublicVizConfig{
-		BaseURL:      c.BaseURL,
-		AllowedHosts: c.AllowedHosts,
-		Timezone:     c.Logging.Timezone,
-		Download:     c.Download,
-		Storage:      c.Storage,
+		BaseURL:            c.BaseURL,
+		AllowedHosts:       c.AllowedHosts,
+		Timezone:           c.Logging.Timezone,
+		Download:           c.Download,
+		Storage:            c.Storage,
+		TrimFileExtensions: c.TrimFileExtensions,
 	}
 }

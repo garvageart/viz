@@ -1936,9 +1936,12 @@ type VizConfig struct {
 	StorageMetrics StorageMetricsConfig `json:"storage_metrics"`
 
 	// Timezone Timezone of the application (default UTC)
-	Timezone string               `json:"timezone"`
-	Upload   UploadConfig         `json:"upload"`
-	Users    UserManagementConfig `json:"users"`
+	Timezone string `json:"timezone"`
+
+	// TrimFileExtensions Strip file extensions from image names on import
+	TrimFileExtensions *bool                `json:"trim_file_extensions,omitempty"`
+	Upload             UploadConfig         `json:"upload"`
+	Users              UserManagementConfig `json:"users"`
 }
 
 // WSBroadcastRequest defines model for WSBroadcastRequest.

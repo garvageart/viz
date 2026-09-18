@@ -13,10 +13,11 @@ func DefaultConfig() VizConfig {
 	}
 
 	return VizConfig{
-		BaseURL:      "localhost",
-		BaseDir:      DefaultDataDirectory,
-		AllowedHosts: []string{},
-		Timezone:     "utc",
+		BaseURL:            "localhost",
+		BaseDir:            DefaultDataDirectory,
+		AllowedHosts:       []string{},
+		Timezone:           "utc",
+		TrimFileExtensions: true,
 		Server: ServerConfig{
 			Host: serverHost,
 			Port: 7770,

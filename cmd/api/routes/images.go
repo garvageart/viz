@@ -144,9 +144,13 @@ func createNewImageEntity(logger *slog.Logger, fileName string, libvipsImg *libv
 		Preview:   previewPath,
 	}
 
-	imageName := strings.TrimSuffix(fileName, filepath.Ext(fileName))
-	if imageName == "" {
-		imageName = fileName
+	// TODO: Add a Watermill job to recover original file extensions from original_file_name when trim_file_extensions is disabled
+	imageName := fileName
+	if config.GetConfig().TrimFileExtensions {
+		imageName = strings.TrimSuffix(fileName, filepath.Ext(fileName))
+		if imageName == "" {
+			imageName = fileName
+		}
 	}
 
 	allImageData := entities.ImageAsset{

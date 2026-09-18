@@ -4622,6 +4622,9 @@ components:
                     $ref: "#/components/schemas/StorageMetricsConfig"
                 storage:
                     $ref: "#/components/schemas/StorageConfig"
+                trim_file_extensions:
+                    type: boolean
+                    description: Strip file extensions from image names on import
             required:
                 [
                     base_url,

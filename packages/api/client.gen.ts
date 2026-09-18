@@ -769,6 +769,8 @@ export type VizConfig = {
     users: UserManagementConfig;
     storage_metrics: StorageMetricsConfig;
     storage: StorageConfig;
+    /** Strip file extensions from image names on import */
+    trim_file_extensions?: boolean;
 };
 export type SystemStatsResponse = {
     /** System uptime in seconds */
