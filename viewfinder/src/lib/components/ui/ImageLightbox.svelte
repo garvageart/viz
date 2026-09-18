@@ -16,14 +16,15 @@
 <script lang="ts">
     import { dev } from "$app/environment";
     import { type ImageAsset, getAssetImagePath, updateImage } from "@viz/api";
-    import { onDestroy, untrack } from "svelte";
+    import { untrack } from "svelte";
     import type { MouseEventHandler } from "svelte/elements";
-    import { fade, slide } from "svelte/transition";
+    import { slide } from "svelte/transition";
     import { hideAll } from "tippy.js";
     import CropOverlay from "$lib/components/image-tools/CropOverlay.svelte";
     import CropTools from "$lib/components/image-tools/CropTools.svelte";
     import { modalsManager } from "$lib/components/modals/manager/ModalManager.svelte";
     import Button from "$lib/components/ui/Button.svelte";
+    import StatusIndicator from "$lib/components/ui/StatusIndicator.svelte";
     import ExportPanel, { modalOptions as exportModalOptions } from "$lib/components/ui/panels/ExportPanel.svelte";
     import MetadataPanel from "$lib/components/ui/panels/MetadataPanel.svelte";
     import { ImageLoader } from "$lib/images/loader/image-loader.svelte";
@@ -56,11 +57,6 @@
     }: Props = $props();
 
     function closeLightbox() {
-        if (statusIndicator.timeoutId) {
-            clearTimeout(statusIndicator.timeoutId);
-            statusIndicator.timeoutId = undefined;
-        }
-
         show = false;
         onClose?.();
     }
@@ -481,46 +477,21 @@
         }
     };
 
-    let statusIndicator = $state({
-        text: "",
-        show: false,
-        timeoutId: undefined as number | undefined
-    });
-
-    function showStatusIndicator(text: string) {
-        if (statusIndicator.timeoutId) {
-            clearTimeout(statusIndicator.timeoutId);
-        }
-
-        statusIndicator.text = text;
-        statusIndicator.show = true;
-
-        statusIndicator.timeoutId = window.setTimeout(() => {
-            statusIndicator.show = false;
-            statusIndicator.timeoutId = undefined;
-        }, 3000);
-    }
+    let statusIndicator: ReturnType<typeof StatusIndicator> | undefined = $state();
 
     function handleWheel(event: WheelEvent) {
         zoomState.handleWheel(event);
         if (!zoomState.isAtFit) {
-            showStatusIndicator(`Zoom: ${zoomState.nativeZoomPercentage}%`);
+            statusIndicator?.showStatusIndicator(`Zoom: ${zoomState.nativeZoomPercentage}%`);
         }
     }
 
     function handleDoubleClick(event: MouseEvent) {
         zoomState.handleDoubleClick(event);
         if (!zoomState.isAtFit) {
-            showStatusIndicator(`Zoom: ${zoomState.nativeZoomPercentage}%`);
+            statusIndicator?.showStatusIndicator(`Zoom: ${zoomState.nativeZoomPercentage}%`);
         }
     }
-
-    onDestroy(() => {
-        if (statusIndicator.timeoutId) {
-            clearTimeout(statusIndicator.timeoutId);
-            statusIndicator.timeoutId = undefined;
-        }
-    });
 
     $effect(() => {
         if (!show) {
@@ -868,11 +839,9 @@
 
                 <!-- TODO: Change this to a general action status indicator to support all actions -->
                 <!-- e.g. "Date Change: 11-06-2026, 20:42:01" -->
-                {#if statusIndicator.show}
-                    <div class="status-indicator" role="status" aria-live="polite" transition:fade>
-                        {statusIndicator.text}
-                    </div>
-                {/if}
+                <div class="status-indicator-container">
+                    <StatusIndicator bind:this={statusIndicator} />
+                </div>
 
                 {#if isCropping && cropMenuPosition}
                     <FloatingPanel x={cropMenuPosition.x} y={cropMenuPosition.y}>
@@ -1143,16 +1112,9 @@
         font-size: 1.5em;
     }
 
-    .status-indicator {
+    .status-indicator-container {
         position: absolute;
-        bottom: 5%;
-        background-color: color-mix(in srgb, var(--viz-100-dark) 90%, transparent);
-        color: var(--viz-10-dark);
-        padding: var(--viz-spacing-sm) var(--viz-spacing-lg);
-        font-size: var(--viz-font-size-lg);
-        font-weight: 600;
-        z-index: 10;
-        pointer-events: none;
+        bottom: 10%;
     }
 
     .side-panel {
