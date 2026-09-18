@@ -115,8 +115,18 @@ func MigrateUsersTable(db *gorm.DB, logger *slog.Logger) {
 func MigrateCollectionImages(tx *gorm.DB, logger *slog.Logger) error {
 	migrator := tx.Migrator()
 
+	hasImagesCol := false
+	if cols, err := migrator.ColumnTypes("collections"); err == nil {
+		for _, col := range cols {
+			if col.Name() == "images" {
+				hasImagesCol = true
+				break
+			}
+		}
+	}
+
 	// If the 'images' column exists in 'collections', we need to migrate it.
-	if !migrator.HasColumn("collections", "images") {
+	if !hasImagesCol {
 		return nil
 	}
 
@@ -282,5 +292,50 @@ func BackfillCollectionImageCounts(tx *gorm.DB, logger *slog.Logger) error {
 	}
 
 	logger.Info("Successfully backfilled collection image counts", slog.Int("updated", totalUpdated))
+	return nil
+}
+
+// RecoverImageNameExtensions restores file extensions to image names from original_file_name.
+func RecoverImageNameExtensions(tx *gorm.DB, logger *slog.Logger) error {
+	logger.Info("Recovering file extensions for image names from original_file_name...")
+
+	var images []struct {
+		Uid              string `gorm:"column:uid"`
+		Name             string `gorm:"column:name"`
+		OriginalFileName string `gorm:"column:original_file_name"`
+	}
+
+	if err := tx.Model(&entities.ImageAsset{}).
+		Select("uid, name, original_file_name").
+		Where("original_file_name IS NOT NULL AND original_file_name != '' AND deleted_at IS NULL").
+		Scan(&images).Error; err != nil {
+		logger.Error("Failed to query images for extension recovery", slog.Any("error", err))
+		return err
+	}
+
+	updatedCount := 0
+	for _, img := range images {
+		ext := filepath.Ext(img.OriginalFileName)
+		if ext == "" {
+			continue
+		}
+
+		if filepath.Ext(img.Name) != "" || strings.HasSuffix(strings.ToLower(img.Name), strings.ToLower(ext)) {
+			continue
+		}
+
+		recoveredName := img.Name + ext
+		if err := tx.Model(&entities.ImageAsset{}).Where("uid = ?", img.Uid).Update("name", recoveredName).Error; err != nil {
+			logger.Error("Failed to update recovered image name", slog.String("uid", img.Uid), slog.Any("error", err))
+			return err
+		}
+
+		updatedCount++
+	}
+
+	if updatedCount > 0 {
+		logger.Info("Recovered extensions for existing image names", slog.Int("count", updatedCount))
+	}
+
 	return nil
 }
