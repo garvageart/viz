@@ -314,7 +314,6 @@
         },
         onselectAll: async () => {
             selectionScope.selectAll();
-            selectionScope.setTotalCount(collectionState.totalCount);
 
             // Strategy 1: Fetch all UIDs for actions that require them (Export, Download, etc.)
             try {

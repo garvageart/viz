@@ -54,7 +54,6 @@ export class SelectionScope<T> {
     selected = new SvelteSet<T>();
     excluded = new SvelteSet<T>(); // Items to exclude when isSelectAll is true
     isSelectAll = $state(false);
-    totalCount = $state<number>();
 
     active = $state<T>();
     anchor = $state<T>();
@@ -68,10 +67,6 @@ export class SelectionScope<T> {
 
     setSource(items: T[]) {
         this.source = items;
-    }
-
-    setTotalCount(count: number) {
-        this.totalCount = count;
     }
 
     add(item: T) {
@@ -222,7 +217,7 @@ export class SelectionScope<T> {
      */
     get size(): number {
         if (this.isSelectAll) {
-            const total = this.totalCount ?? this.source.length;
+            const total = this.source.length;
             return Math.max(0, total - this.excluded.size);
         }
         return this.selected.size;
