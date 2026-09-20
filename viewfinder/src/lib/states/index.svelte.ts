@@ -374,3 +374,5 @@ export abstract class PaginationState<T> {
 
     abstract paginate(): Promise<void>;
 }
+
+export { bootState } from "./boot.svelte";

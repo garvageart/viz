@@ -13,13 +13,14 @@
     import { KeybindAction, keyboardManager } from "$lib/keyboard/keyboard.svelte";
     import { eventsState } from "$lib/states/events.svelte";
     import { historyState } from "$lib/states/history.svelte";
-    import { debugState, themeState, upload, user } from "$lib/states/index.svelte";
+    import { bootState, debugState, themeState, upload, user } from "$lib/states/index.svelte";
     import { loadingState } from "$lib/states/loading.svelte";
-    import "$lib/stores/appReady";
     import "$lib/styles/scss/main.scss";
     import Notifications from "$lib/toast-notifcations/Notifications.svelte";
     import { UploadState } from "$lib/upload/asset.svelte";
     import { toggleFullscreen } from "$lib/utils/misc";
+
+    bootState.init();
 
     if (dev) {
         import("material-symbols/index.css");
@@ -29,12 +30,16 @@
         historyState.init();
         keyboardManager.init();
 
-        return keyboardManager.register({
+        const unregisterFullscreen = keyboardManager.register({
             action: KeybindAction.ToggleFullscreen,
             handler: () => {
                 toggleFullscreen();
             }
         });
+
+        bootState.dismiss();
+
+        return unregisterFullscreen;
     });
 
     $effect(() => {

@@ -10,7 +10,7 @@
     import type { SvelteHTMLElements } from "svelte/elements";
     import { SvelteSet } from "svelte/reactivity";
     import { tooltip } from "$lib/components/tooltips/tooltip";
-    import { registerReady } from "$lib/stores/appReady";
+    import { bootState } from "$lib/states/index.svelte";
     import type { MaterialSymbol } from "$lib/types/MaterialSymbol";
 
     // Global Font Loading State
@@ -79,8 +79,14 @@
         // registered, then let the font engine settle before requesting the
         // ligature font. Never cache a failed/empty load: the browser loads the
         // face on demand once the stylesheet is injected.
-        const loadPromise = document.fonts.ready.then(() => document.fonts.load(`1rem "${family}"`)).catch(() => null);
-        registerReady(loadPromise);
+        const loadPromise = document.fonts.ready
+            .then(() => {
+                return document.fonts.load(`1rem "${family}"`);
+            })
+            .catch(() => {
+                return null;
+            });
+        bootState.wait(loadPromise);
     }
 
     // Synchronous Eager Icon Lookup
@@ -120,7 +126,7 @@
     });
 
     // Styles (for fallback)
-    let fontSettings = $derived(`'FILL' ${fill ? 1 : 0}, 'wght' ${weight}, 'GRAD' ${grade}, 'opsz' ${opticalSize}`);
+    let fontSettings = $derived(`"FILL" ${fill ? 1 : 0}, "wght" ${weight}, "GRAD" ${grade}, "opsz" ${opticalSize}`);
 
     const fallbackClass = $derived(
         (props.class ? props.class + " " : "") + "material-symbols-" + iconStyle.toLowerCase()
