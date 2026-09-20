@@ -1046,13 +1046,15 @@
                 if (!selection.has(asset)) {
                     selection.select(asset);
                 }
+
                 const count = selection.size > 1 ? selection.size : 1;
                 const uids = selection.size > 1 ? selection.selectedItems.map((i) => i.uid) : [asset.uid];
+
                 return [
                     {
                         mimeType: VizMimeTypes.IMAGE_UIDS,
                         payload: uids,
-                        label: count > 1 ? `${count} photos` : "1 photo",
+                        label: count > 1 ? `${count} photos` : asset.name,
                         thumbnailUrl: getAssetImagePath(asset, "thumbnail")
                     }
                 ];

@@ -19,6 +19,22 @@ export interface DragSession {
     intent: DropIntent;
 }
 
+const BLANK_IMAGE_SRC = "data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7";
+let blankDragImage: HTMLImageElement | null = null;
+
+function getBlankDragImage(): HTMLImageElement | null {
+    if (typeof Image === "undefined") {
+        return null;
+    }
+
+    if (!blankDragImage) {
+        blankDragImage = new Image();
+        blankDragImage.src = BLANK_IMAGE_SRC;
+    }
+
+    return blankDragImage;
+}
+
 class DragCoordinator {
     session = $state<DragSession | null>(null);
 
@@ -39,10 +55,10 @@ class DragCoordinator {
         e.dataTransfer.effectAllowed = "all";
 
         // Hide default browser drag ghost for custom tooltip overlay
-        const blank = document.createElement("canvas");
-        blank.width = 1;
-        blank.height = 1;
-        e.dataTransfer.setDragImage(blank, 0, 0);
+        const blank = getBlankDragImage();
+        if (blank) {
+            e.dataTransfer.setDragImage(blank, 0, 0);
+        }
 
         const primary = items[0];
         this.session = {

@@ -43,8 +43,6 @@ export function draggable(node: HTMLElement, options: DragSourceOptions) {
 }
 
 export function dropZone(node: HTMLElement, options: DropZoneOptions) {
-    let enterCounter = 0;
-
     function acceptsType(dataTransfer: DataTransfer): boolean {
         if (!options.types) {
             return false;
@@ -73,11 +71,13 @@ export function dropZone(node: HTMLElement, options: DropZoneOptions) {
             return;
         }
 
-        enterCounter++;
-        if (enterCounter === 1) {
-            node.classList.add("drop-active");
-            options.onDragEnter?.(e);
+        const related = e.relatedTarget as Node | null;
+        if (related && node.contains(related)) {
+            return;
         }
+
+        node.classList.add("drop-active");
+        options.onDragEnter?.(e);
     }
 
     function handleDragOver(e: DragEvent) {
@@ -117,17 +117,17 @@ export function dropZone(node: HTMLElement, options: DropZoneOptions) {
             return;
         }
 
-        enterCounter--;
-        if (enterCounter <= 0) {
-            enterCounter = 0;
-            node.classList.remove("drop-active");
-            dragCoordinator.setHoverTarget(null, "none");
-            options.onDragLeave?.(e);
+        const related = e.relatedTarget as Node | null;
+        if (related && node.contains(related)) {
+            return;
         }
+
+        node.classList.remove("drop-active");
+        dragCoordinator.setHoverTarget(null, "none");
+        options.onDragLeave?.(e);
     }
 
     async function handleDrop(e: DragEvent) {
-        enterCounter = 0;
         node.classList.remove("drop-active");
         dragCoordinator.setHoverTarget(null, "none");
 

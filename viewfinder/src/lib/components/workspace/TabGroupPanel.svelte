@@ -290,6 +290,11 @@
 
     function handleTabDragLeave(event: DragEvent) {
         const target = event.currentTarget as HTMLElement;
+        const related = event.relatedTarget as Node | null;
+        if (related && target.contains(related)) {
+            return;
+        }
+
         target.classList.remove("drop-target-active");
 
         if (dragCoordinator.session) {
@@ -348,13 +353,15 @@
         }
 
         const target = e.currentTarget as HTMLElement;
-        const rect = target.getBoundingClientRect();
-        if (e.clientX < rect.left || e.clientX >= rect.right || e.clientY < rect.top || e.clientY >= rect.bottom) {
-            isDropTargetActive = false;
+        const related = e.relatedTarget as Node | null;
+        if (related && target.contains(related)) {
+            return;
+        }
 
-            if (dragCoordinator.session) {
-                dragCoordinator.session.actionLabel = null;
-            }
+        isDropTargetActive = false;
+
+        if (dragCoordinator.session) {
+            dragCoordinator.session.actionLabel = null;
         }
     }
 
@@ -436,12 +443,13 @@
 
     function handleHeaderDragLeave(e: DragEvent) {
         const target = e.currentTarget as HTMLElement;
-        const rect = target.getBoundingClientRect();
-
-        if (e.clientX < rect.left || e.clientX >= rect.right || e.clientY < rect.top || e.clientY >= rect.bottom) {
-            tabDropIndex = null;
-            stopDragScroll();
+        const related = e.relatedTarget as Node | null;
+        if (related && target.contains(related)) {
+            return;
         }
+
+        tabDropIndex = null;
+        stopDragScroll();
     }
 
     // TODO: Change to generalized drop handler

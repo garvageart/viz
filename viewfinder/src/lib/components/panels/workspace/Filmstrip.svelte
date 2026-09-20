@@ -357,13 +357,16 @@
             box-shadow: none;
         }
 
+        .filmstrip-item {
+            height: 100%;
+        }
+
         &.horizontal {
             flex-direction: row;
             overflow-x: auto;
             overflow-y: hidden;
 
             .filmstrip-item {
-                height: 100%;
                 min-width: 12rem;
                 max-width: 12rem;
             }
@@ -385,7 +388,6 @@
             overflow-y: auto;
 
             .filmstrip-item {
-                height: 100%;
                 min-height: 12rem;
                 max-height: 12rem;
             }

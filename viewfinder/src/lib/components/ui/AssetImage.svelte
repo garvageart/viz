@@ -143,6 +143,7 @@
         bind:this={imageElement}
         {srcset}
         src={srcset ? undefined : src}
+        draggable="false"
         {...rest}
         loading={priority ? "eager" : "lazy"}
         fetchpriority={priority ? "high" : "auto"}
@@ -161,6 +162,7 @@
         {#if placeholder === "thumbhash" && thumbhash}
             <img
                 src={thumbhash}
+                draggable="false"
                 class="placeholder"
                 class:hidden={loaded}
                 style:object-fit={objectFit}
@@ -170,6 +172,7 @@
         {:else if placeholder === "thumbnail" && thumbPlaceholder}
             <img
                 src={thumbPlaceholder}
+                draggable="false"
                 class="placeholder placeholder-thumb"
                 class:hidden={loaded}
                 style:object-fit={objectFit}
@@ -182,6 +185,7 @@
             bind:this={imageElement}
             {srcset}
             src={srcset ? undefined : src}
+            draggable="false"
             {...rest}
             loading={priority ? "eager" : "lazy"}
             fetchpriority={priority ? "high" : "auto"}

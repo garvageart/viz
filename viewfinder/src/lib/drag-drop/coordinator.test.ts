@@ -2,20 +2,14 @@ import { beforeEach, describe, expect, it } from "vitest";
 import { VizMimeTypes } from "$lib/mime";
 import { dragCoordinator } from "./coordinator.svelte";
 
-function createDragEvent(overrides: Partial<DragEvent> = {}): DragEvent {
-    const dataTransfer = new DataTransfer();
+function createDragEvent(init: DragEventInit = {}): DragEvent {
+    const dataTransfer = init.dataTransfer ?? new DataTransfer();
     dataTransfer.setDragImage = () => {};
 
-    return {
-        dataTransfer,
-        clientX: 0,
-        clientY: 0,
-        shiftKey: false,
-        altKey: false,
-        ctrlKey: false,
-        metaKey: false,
-        ...overrides
-    } as unknown as DragEvent;
+    const event = new DragEvent("dragstart", { bubbles: true, cancelable: true, ...init });
+    Object.assign(event, { dataTransfer, ...init });
+
+    return event;
 }
 
 describe("DragCoordinator", () => {

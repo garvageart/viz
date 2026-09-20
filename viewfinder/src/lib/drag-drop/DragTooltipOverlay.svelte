@@ -50,8 +50,7 @@
         box-shadow: 0 4px 12px rgba(0, 0, 0, 0.25);
         color: var(--viz-text-primary);
         line-height: 1;
-        margin-top: var(--viz-spacing-md);
-        margin-left: var(--viz-spacing-md);
+        max-width: 20rem;
         will-change: transform;
     }
 
@@ -65,6 +64,9 @@
     .entity-desc {
         font-weight: 600;
         color: var(--viz-text-primary);
+        overflow: hidden;
+        text-overflow: ellipsis;
+        white-space: nowrap;
     }
 
     .action-segment {
