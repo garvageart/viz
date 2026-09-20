@@ -1,29 +1,58 @@
-import radioCanadaBig from "@fontsource-variable/radio-canada-big/files/radio-canada-big-latin-wght-normal.woff2?url";
-import robotoMono from "@fontsource-variable/roboto-mono/files/roboto-mono-latin-wght-normal.woff2?url";
 import type { Handle } from "@sveltejs/kit";
 import { VizCookieStorage } from "$lib/utils/misc";
 
 const criticalCssCache = new Map<string, string>();
 
 const THEME_STYLE_PLACEHOLDER = "%viz.css.theme_style%";
-const DISPLAY_FONT_PLACEHOLDER = "%viz.css.display_font%";
-const MONO_FONT_PLACEHOLDER = "%viz.css.mono_font%";
 const THEME_ATTR_PLACEHOLDER = "%THEME_ATTR%";
-
-// TODO: add theme selection from user settings
 const DEFAULT_THEME = "viz-black";
 
-function handleFonts(html: string) {
-    return html.replace(DISPLAY_FONT_PLACEHOLDER, radioCanadaBig).replace(MONO_FONT_PLACEHOLDER, robotoMono);
-}
+const fontConfigs = [
+    {
+        placeholder: "%viz.css.display_font%",
+        loadUrl: () =>
+            import("@fontsource-variable/radio-canada-big/files/radio-canada-big-latin-wght-normal.woff2?url"),
+        loadCss: () => import("@fontsource-variable/radio-canada-big/index.css?inline")
+    },
+    {
+        placeholder: "%viz.css.mono_font%",
+        loadUrl: () => import("@fontsource-variable/roboto-mono/files/roboto-mono-latin-wght-normal.woff2?url"),
+        loadCss: () => import("@fontsource-variable/roboto-mono/index.css?inline")
+    }
+];
 
-// uses vite to import the compiled CSS
-const themeImporters = import.meta.glob("$lib/styles/scss/themes/*.scss", {
+const themeImporters = import.meta.glob<string>("$lib/styles/scss/themes/*.scss", {
     query: "?inline",
     import: "default"
 });
 
-async function getDevCriticalCss(themeName: string): Promise<string> {
+let cachedBaseStyles = "";
+
+async function getBaseStyles() {
+    if (cachedBaseStyles) {
+        return cachedBaseStyles;
+    }
+
+    const [mainModule, ...fontModules] = await Promise.all([
+        import("$lib/styles/scss/main.scss?inline"),
+        ...fontConfigs.map((f) => f.loadCss())
+    ]);
+
+    const fontCss = fontModules.map((m) => m.default).join("\n");
+    cachedBaseStyles = `<style id="critical-fonts">${fontCss}</style>\n<style id="critical-main">${mainModule.default}</style>`;
+    return cachedBaseStyles;
+}
+
+async function handleFonts(html: string) {
+    let result = html;
+    for (const font of fontConfigs) {
+        const mod = await font.loadUrl();
+        result = result.replace(font.placeholder, mod.default);
+    }
+    return result;
+}
+
+async function getDevCriticalCss(themeName: string) {
     if (themeName.includes("/") || themeName.includes("\\") || themeName === ".." || themeName === ".") {
         return "";
     }
@@ -33,33 +62,23 @@ async function getDevCriticalCss(themeName: string): Promise<string> {
     }
 
     const themePath = `/${themeName}.scss`;
-    const importedThemePath = Object.keys(themeImporters).find((key) => {
-        return key.endsWith(themePath);
-    });
+    const importerKey = Object.keys(themeImporters).find((key) => key.endsWith(themePath));
 
-    if (!importedThemePath || !themeImporters[importedThemePath]) {
-        return "";
-    }
-
-    try {
-        const cssContent = (await themeImporters[importedThemePath]()) as string;
-        if (!cssContent) {
-            return "";
+    let themeCss = "";
+    if (importerKey && themeImporters[importerKey]) {
+        try {
+            themeCss = await themeImporters[importerKey]();
+        } catch (error) {
+            console.error(`Failed to load or process theme "${themeName}":`, error);
         }
-
-        const criticalCss = `<style id="generated-theme">${cssContent}</style>`;
-        criticalCssCache.set(themeName, criticalCss);
-        return criticalCss;
-    } catch (error) {
-        console.error(`Failed to load or process theme "${themeName}":`, error);
-        return "";
     }
+
+    const baseStyles = await getBaseStyles();
+    const criticalCss = `${baseStyles}\n<style id="generated-theme">${themeCss}</style>`;
+    criticalCssCache.set(themeName, criticalCss);
+    return criticalCss;
 }
 
-/**
- * This is only for dev, in built environments the compiled CSS
- * is read directly from the file system's frontend build
- */
 export const handle: Handle = async ({ event, resolve }) => {
     const themeCookieStore = new VizCookieStorage("theme", event.cookies);
     const themeName = themeCookieStore.get() || DEFAULT_THEME;
@@ -67,9 +86,11 @@ export const handle: Handle = async ({ event, resolve }) => {
     const themeAttribute = `data-theme="light"`;
 
     return resolve(event, {
-        transformPageChunk: ({ html }) =>
-            handleFonts(html)
+        transformPageChunk: async ({ html }) => {
+            const withFonts = await handleFonts(html);
+            return withFonts
                 .replace(THEME_STYLE_PLACEHOLDER, criticalCss)
-                .replace(THEME_ATTR_PLACEHOLDER, themeAttribute)
+                .replace(THEME_ATTR_PLACEHOLDER, themeAttribute);
+        }
     });
 };
