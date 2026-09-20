@@ -1,5 +1,5 @@
 <script lang="ts">
-    import type { SvelteHTMLElements } from "svelte/elements";
+    import type { EventHandler, SvelteHTMLElements } from "svelte/elements";
     import { generateRandomString } from "$lib/utils/misc";
 
     interface Props {
@@ -10,7 +10,7 @@
         disabled?: boolean;
         variant?: "square" | "round";
         size?: "small" | "regular" | "large";
-        onchange?: (e: Event & { currentTarget: HTMLInputElement }) => void;
+        onchange?: EventHandler<Event, HTMLInputElement>;
     }
 
     let {
@@ -45,12 +45,12 @@
         }
     }
 
-    function handleChange(e: Event & { currentTarget: HTMLInputElement }) {
+    const handleChange: EventHandler<Event, HTMLInputElement> = (e) => {
         checked = e.currentTarget.checked;
         if (onchange) {
             onchange(e);
         }
-    }
+    };
 </script>
 
 <div
