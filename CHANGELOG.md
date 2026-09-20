@@ -5,6 +5,11 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.34.20] - 2026-09-20
+
+* feat(viewfinder): update splash screen design and inject critical styles (5f2d3106)
+* fix(viewfinder): improve drag-and-drop ghost suppression and target leave handling (3ef75f80)
+
 ## [0.34.19] - 2026-09-18
 
 * feat(db): add RecoverImageNameExtensions migration and test suite (a926eef7)
