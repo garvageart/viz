@@ -1,22 +1,14 @@
 <script lang="ts">
     const variants: Record<string, string> = {
-        "300": '<path d="M266.31-457.31 512-212l-32 32-300-300 300-300 32 32-245.69 245.31H780v45.38z" />',
-        "400": '<path d="m313-440 224 224-57 56-320-320 320-320 57 56-224 224h487v80z" />'
-    };
+    "300": "<path d=\"M266.31-457.31 512-212l-32 32-300-300 300-300 32 32-245.69 245.31H780v45.38z\" />",
+    "400": "<path d=\"m313-440 224 224-57 56-320-320 320-320 57 56-224 224h487v80z\" />"
+};
     const filledVariants: Record<string, string> = {
-        "300": '<path d="M266.31-457.31 512-212l-32 32-300-300 300-300 32 32-245.69 245.31H780v45.38z" />',
-        "400": '<path d="m274-450 248 248-42 42-320-320 320-320 42 42-248 248h526v60z" />'
-    };
-    let {
-        size = "1.5em",
-        className = "",
-        title = "arrow_back",
-        viewBox = "0 -960 960 960",
-        weight = "400",
-        fill = false,
-        ...rest
-    } = $props();
-
+    "300": "<path d=\"M266.31-457.31 512-212l-32 32-300-300 300-300 32 32-245.69 245.31H780v45.38z\" />",
+    "400": "<path d=\"m274-450 248 248-42 42-320-320 320-320 42 42-248 248h526v60z\" />"
+};
+    let { size = "1.5em", className = "", title = "arrow_back", viewBox = "0 -960 960 960", weight = "400", fill = false, ...rest } = $props();
+    
     const activeMap = $derived(fill ? filledVariants : variants);
     const inner = $derived(activeMap[String(weight)] || activeMap["400"] || Object.values(activeMap)[0]);
 </script>

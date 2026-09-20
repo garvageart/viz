@@ -399,14 +399,14 @@ Options:
     let { size = "1.5em", className = "", title = "${name}", viewBox = "${finalViewBox}", weight = "400", fill = false, ...rest } = $props();
     
     const activeMap = $derived(fill ? filledVariants : variants);
-    const inner = $derived(activeMap[String(weight)] || activeMap["400"] || Object.values(activeMap)[0]);
+    const inner = $derived(activeMap[String(weight)] || Object.values(activeMap)[0]);
 </script>
 
 <svg
     class={className}
     width={size}
     height={size}
-    viewBox={viewBox}
+    {viewBox}
     fill="currentColor"
     xmlns="http://www.w3.org/2000/svg"
     aria-label={title}
@@ -425,7 +425,7 @@ Options:
 `;
 
             writeFileSync(outFile, svelte.trimStart(), "utf8");
-            console.log("Wrote", outFile);
+            console.log("Wrote", outFile, "\n");
             generated.push({ name, compName, style, isDefault: isDefaultStyle });
         }
     }

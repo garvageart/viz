@@ -1,20 +1,12 @@
 <script lang="ts">
     const variants: Record<string, string> = {
-        "400": '<path d="M440-160v-487L216-423l-56-57 320-320 320 320-56 57-224-224v487z" />'
-    };
+    "400": "<path d=\"M440-160v-487L216-423l-56-57 320-320 320 320-56 57-224-224v487z\" />"
+};
     const filledVariants: Record<string, string> = {
-        "400": '<path d="M450-160v-526L202-438l-42-42 320-320 320 320-42 42-248-248v526z" />'
-    };
-    let {
-        size = "1.5em",
-        className = "",
-        title = "arrow_upward",
-        viewBox = "0 -960 960 960",
-        weight = "400",
-        fill = false,
-        ...rest
-    } = $props();
-
+    "400": "<path d=\"M450-160v-526L202-438l-42-42 320-320 320 320-42 42-248-248v526z\" />"
+};
+    let { size = "1.5em", className = "", title = "arrow_upward", viewBox = "0 -960 960 960", weight = "400", fill = false, ...rest } = $props();
+    
     const activeMap = $derived(fill ? filledVariants : variants);
     const inner = $derived(activeMap[String(weight)] || activeMap["400"] || Object.values(activeMap)[0]);
 </script>
