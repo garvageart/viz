@@ -128,6 +128,7 @@
             return;
         }
 
+        isMultiSelecting = false;
         selection.clear();
     }
 
@@ -849,8 +850,12 @@
                 additive
             );
         } else if (isCtrl) {
+            isMultiSelecting = true;
+            selection.toggle(asset);
+        } else if (isMultiSelecting && selection.size > 0) {
             selection.toggle(asset);
         } else {
+            isMultiSelecting = false;
             selection.select(asset);
         }
 
@@ -862,6 +867,7 @@
             return;
         }
 
+        isMultiSelecting = true;
         selection.toggle(asset);
         assetClick?.();
     }
@@ -1430,7 +1436,6 @@
             box-shadow:
                 inset 2px -2px 0 var(--viz-primary),
                 inset -2px 2px 0 var(--viz-primary);
-            border-radius: var(--viz-border-radius-md);
             /* idk i can't decide rn but i'm fine with it like this */
             // background: color-mix(in srgb, var(--viz-primary) 40%, transparent);
 

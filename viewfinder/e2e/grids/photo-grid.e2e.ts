@@ -518,4 +518,97 @@ test.describe("PhotoAssetGrid Functionality", () => {
         await expect(firstPhoto).not.toHaveClass(classRegex);
         await expect(toolbar).not.toBeVisible();
     });
+
+    test("clicking photo checkbox enters multiselect mode and allows single-click selection of subsequent photos", async ({
+        page
+    }) => {
+        // Ensure PhotoAssetGrid view (.viz-photo-grid-container) is active
+        const displayDropdown = page.locator("#photos-display-dropdown").first();
+        if (await displayDropdown.isVisible()) {
+            const isPhotoGrid = await page.locator(".viz-photo-grid-container").isVisible();
+            if (!isPhotoGrid) {
+                await displayDropdown.click();
+                await page.locator('#display-custom, [id="display-custom"]').first().click();
+                await expect(page.locator(".viz-photo-grid-container")).toBeVisible();
+            }
+        }
+
+        const photos = page.locator(".asset-photo");
+        const selectedPhotos = page.locator(".asset-photo.selected-photo");
+        const toolbar = page.locator(".selection-toolbar");
+
+        await expect(async () => {
+            const count = await photos.count();
+            expect(count).toBeGreaterThan(1);
+        }).toPass({ timeout: 15000 });
+
+        const count = await photos.count();
+        if (count < 2) {
+            return;
+        }
+
+        const firstPhoto = photos.first();
+        const secondPhoto = photos.nth(1);
+
+        // 1. Hover first photo to reveal its checkbox, then click the checkbox
+        await firstPhoto.hover();
+        const firstCheckbox = firstPhoto.locator(".photo-select-checkbox label").first();
+        await expect(firstCheckbox).toBeVisible();
+        await firstCheckbox.click({ force: true });
+
+        // First photo is selected and selection toolbar is visible
+        await expect(firstPhoto).toHaveClass(classRegex);
+        await expect(selectedPhotos).toHaveCount(1);
+        await expect(toolbar).toBeVisible();
+
+        // 2. Hover second photo and click its checkbox to select multiple photos
+        await secondPhoto.hover();
+        const secondCheckbox = secondPhoto.locator(".photo-select-checkbox label").first();
+        await expect(secondCheckbox).toBeVisible();
+        await secondCheckbox.click({ force: true });
+
+        // Both photos are now selected
+        await expect(firstPhoto).toHaveClass(classRegex);
+        await expect(secondPhoto).toHaveClass(classRegex);
+        await expect(selectedPhotos).toHaveCount(2);
+        await expect(toolbar).toBeVisible();
+
+        // 3. Click the third photo directly (single click in multi-select mode)
+        if (count > 2) {
+            const thirdPhoto = photos.nth(2);
+            await thirdPhoto.click();
+            await expect(firstPhoto).toHaveClass(classRegex);
+            await expect(secondPhoto).toHaveClass(classRegex);
+            await expect(thirdPhoto).toHaveClass(classRegex);
+            await expect(selectedPhotos).toHaveCount(3);
+            await expect(toolbar).toBeVisible();
+
+            // 4. Click second photo again to toggle it out of selection
+            await secondPhoto.click();
+            await expect(firstPhoto).toHaveClass(classRegex);
+            await expect(secondPhoto).not.toHaveClass(classRegex);
+            await expect(thirdPhoto).toHaveClass(classRegex);
+            await expect(selectedPhotos).toHaveCount(2);
+            await expect(toolbar).toBeVisible();
+        }
+
+        // 5. Clear selection with Escape
+        await page.keyboard.press("Escape");
+        await expect(firstPhoto).not.toHaveClass(classRegex);
+        await expect(secondPhoto).not.toHaveClass(classRegex);
+        await expect(selectedPhotos).toHaveCount(0);
+        await expect(toolbar).not.toBeVisible();
+
+        // 6. Verify single click without checkbox mode replaces selection normally
+        await firstPhoto.click();
+        await expect(firstPhoto).toHaveClass(classRegex);
+        await expect(selectedPhotos).toHaveCount(1);
+        await expect(toolbar).toBeVisible();
+
+        await secondPhoto.click();
+        await expect(firstPhoto).not.toHaveClass(classRegex);
+        await expect(secondPhoto).toHaveClass(classRegex);
+        await expect(selectedPhotos).toHaveCount(1);
+        await expect(toolbar).toBeVisible();
+    });
 });
