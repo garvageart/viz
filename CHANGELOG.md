@@ -5,6 +5,14 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.34.21] - 2026-09-20
+
+* fix(viewfinder): update photo grid multi-select and test assertions (703a1aea)
+* fix(viewfinder): update Checkbox event handler typing (3f497d83)
+* fix(viewfinder): simplify selection size computation and remove totalCount (2adc90d6)
+* refactor(viewfinder): use new application bootstrap (7193ffb0)
+* chore: regenerate Material Icons (68d9b83b)
+
 ## [0.34.20] - 2026-09-20
 
 * feat(viewfinder): update splash screen design and inject critical styles (5f2d3106)
