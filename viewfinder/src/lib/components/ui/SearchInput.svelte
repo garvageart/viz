@@ -1,6 +1,6 @@
 <script lang="ts">
     import type { SvelteHTMLElements } from "svelte/elements";
-    import MaterialIcon from "./MaterialIcon.svelte";
+    import Button from "$lib/components/ui/Button.svelte";
 
     interface Props {
         inputId: string;
@@ -28,8 +28,11 @@
     }
 </script>
 
-<div class="search-input" class:has-focus={searchInputHasFocus} {...props}>
-    <button
+<div class="search-input" class:has-focus={searchInputHasFocus} class:has-value={value} {...props}>
+    <Button
+        iconName="search"
+        variant="primary"
+        iconSize="1rem"
         class="search-button"
         aria-label="Search"
         aria-disabled={loading}
@@ -38,9 +41,7 @@
         onclick={performSearch}
         onkeydown={handleSearch}
         disabled={loading}
-    >
-        <MaterialIcon iconName="search" size="1.2rem" />
-    </button>
+    />
     <input
         id={inputId}
         type="search"
@@ -56,7 +57,9 @@
         bind:this={element}
     />
     {#if value}
-        <button
+        <Button
+            iconName="close"
+            iconSize="1rem"
             class="clear-search-button"
             type="button"
             aria-label="Clear Search"
@@ -65,9 +68,7 @@
             aria-pressed={loading}
             disabled={loading}
             onclick={() => (value = "")}
-        >
-            <MaterialIcon iconName="close" size="0.95rem" />
-        </button>
+        />
     {/if}
 </div>
 
@@ -76,56 +77,65 @@
         display: flex;
         align-items: center;
         width: 20%;
-        height: 1.8rem;
-        border: 1px solid var(--viz-border-subtle);
-        border-radius: var(--viz-border-radius-pill);
-        background-color: var(--viz-surface-base);
+        background-color: transparent;
         overflow: hidden;
         box-sizing: border-box;
+        padding: var(--viz-spacing-xs);
+        box-shadow: var(--viz-border-subtle) 0px 1px;
+
+        &:focus {
+            border-radius: var(--viz-border-radius-pill);
+            outline: 1.5px solid var(--viz-primary);
+        }
+
+        &.has-focus {
+            box-shadow: var(--viz-primary) 0px 1px;
+        }
+
+        &.has-value {
+            box-shadow: var(--viz-primary) 0px 2px;
+        }
     }
 
     .search-button {
         background-color: var(--viz-primary);
         border: none;
         border-radius: var(--viz-border-radius-pill);
-        border-top-right-radius: 0;
-        border-bottom-right-radius: 0;
         height: 100%;
         padding: 0 var(--viz-spacing-sm);
         display: flex;
         align-items: center;
         justify-content: center;
-        color: #ffffff;
-        cursor: pointer;
         transition: background-color 150ms ease;
 
         &:focus {
-            box-shadow: 0px 0px 0px 1.5px inset var(--viz-border-subtle);
             outline: none;
-            background-color: var(--viz-primary-hover, var(--viz-primary));
+            background-color: var(--viz-primary-hover);
         }
 
         &:hover {
-            background-color: var(--viz-primary-hover, var(--viz-primary));
+            background-color: var(--viz-primary-hover);
         }
 
         &:active {
-            background-color: var(--viz-primary-active, var(--viz-primary));
+            background-color: var(--viz-primary-active);
         }
     }
 
     .search-input__field {
-        font-size: var(--viz-font-size-std);
-        background-color: var(--viz-surface-base);
+        background-color: transparent;
         color: var(--viz-text-primary);
         outline: none;
         border: none;
         width: 100%;
         height: 100%;
-        border-top-left-radius: 0;
-        border-bottom-left-radius: 0;
         padding: 0 var(--viz-spacing-sm);
+        font-size: var(--viz-font-size-std);
         font-family: var(--viz-display-font);
+
+        &:focus {
+            font-weight: 500;
+        }
 
         &::placeholder {
             color: var(--viz-text-secondary);
@@ -137,18 +147,13 @@
         }
     }
 
-    .has-focus {
-        outline: 1.5px solid var(--viz-primary);
-        outline-offset: -1px;
-    }
-
     @media (max-width: 40rem) {
         .search-input {
             width: 100%;
         }
     }
 
-    .clear-search-button {
+    :global(.clear-search-button) {
         border: none;
         outline: none;
         height: 100%;

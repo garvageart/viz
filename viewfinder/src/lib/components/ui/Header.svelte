@@ -303,8 +303,7 @@
 <style lang="scss">
     header {
         background-color: var(--viz-surface-base);
-        height: var(--viz-header-height);
-        padding: 0 var(--viz-spacing-md);
+        padding: var(--viz-spacing-xs) var(--viz-spacing-md);
         display: flex;
         align-items: center;
         border-bottom: var(--viz-border-thin);

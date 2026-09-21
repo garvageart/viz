@@ -6,8 +6,9 @@
 
     interface Props extends HTMLAttributes<HTMLDivElement> {
         variant?: "default" | "warning" | "error" | "info" | "success" | "neutral" | "outline";
-        size?: "small" | "std" | "lg";
+        size?: "small" | "standard" | "large";
         weight?: "regular" | "bold";
+        font?: "display" | "mono";
         pill?: boolean;
         iconName?: MaterialSymbol;
         iconFill?: boolean;
@@ -17,8 +18,9 @@
 
     let {
         variant = "default",
-        size = "std",
+        size = "standard",
         weight = "bold",
+        font = "display",
         pill = false,
         iconName,
         iconFill = false,
@@ -29,7 +31,13 @@
     }: Props = $props();
 </script>
 
-<div class="viz-badge {variant} size-{size} {className}" class:bold={weight === "bold"} class:is-pill={pill} {...props}>
+<div
+    class="viz-badge {variant} size-{size} {className}"
+    class:bold={weight === "bold"}
+    class:is-pill={pill}
+    class:mono={font === "mono"}
+    {...props}
+>
     {#if iconName}
         <span class="viz-badge-icon">
             <MaterialIcon {iconName} fill={iconFill} size={iconSize} />
@@ -47,9 +55,8 @@
         justify-content: center;
         gap: var(--viz-spacing-xs);
         padding: var(--viz-spacing-xxs) var(--viz-spacing-xs);
-        border-radius: var(--viz-border-radius-sm);
+        border-radius: var(--viz-border-radius-md);
         font-size: var(--viz-font-size-sm);
-        font-family: var(--viz-mono-font);
         line-height: 1;
         width: max-content;
         box-sizing: border-box;
@@ -64,14 +71,18 @@
             padding: 0.15rem 0.35rem;
         }
 
-        &.size-std {
+        &.size-standard {
             font-size: var(--viz-font-size-std);
             padding: 0.2rem 0.5rem;
         }
 
-        &.size-lg {
+        &.size-large {
             font-size: var(--viz-font-size-lg);
             padding: 0.3rem 0.65rem;
+        }
+
+        &.mono {
+            font-family: var(--viz-mono-font);
         }
 
         &.is-pill {
@@ -92,7 +103,7 @@
         }
 
         &.default {
-            background-color: var(--viz-surface-hover);
+            background-color: var(--viz-surface-input);
             color: var(--viz-text-primary);
             border-color: var(--viz-border-strong);
         }
@@ -121,7 +132,6 @@
 
         &.outline {
             background-color: transparent;
-            border-color: var(--viz-border-subtle);
             color: var(--viz-text-primary);
         }
     }

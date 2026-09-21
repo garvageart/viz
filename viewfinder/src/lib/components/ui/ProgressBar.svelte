@@ -24,11 +24,11 @@
         label,
         valueLabel,
         variant = "medium",
-        colour = "var(--viz-secondary)",
-        trackColour = "var(--viz-primary)"
+        colour = "var(--viz-accent)",
+        trackColour = "var(--viz-secondary)"
     }: Props = $props();
 
-    let height = $derived(variantMappings.get(variant) ?? 6);
+    let height = $derived(variantMappings.get(variant)!);
 </script>
 
 <div class="progress-bar-container">
@@ -40,7 +40,7 @@
     {/if}
     <div
         class="progress-bar-track"
-        style="background-color: {trackColour}"
+        style="background-color: {trackColour};"
         class:has-border={height >= 6}
         style:height="{height}px"
     >
