@@ -59,7 +59,8 @@
     $flip-text-color: null,
     $flip-text-pct: 0%,
     $suffix: "",
-    $direct-light: false
+    $direct-light: false,
+    $input-bg: null
 ) {
     $bg: $bg-color;
     $base: $base-color;
@@ -89,13 +90,13 @@
         $border-color: engine.oklch-lighten($base, 10);
         $hover-color: engine.oklch-lighten($base, 14);
         $popover-color: engine.oklch-lighten($bg, 6);
-        $input-color: engine.oklch-lighten($bg, 2);
+        $input-color: if($input-bg != null, $input-bg, engine.oklch-lighten($bg, 6));
         $border-strong-color: engine.oklch-lighten($base, 20);
         @if $is-light-theme or $direct-light {
             $border-color: engine.oklch-darken($base, 20);
             $hover-color: engine.oklch-darken($bg, 18);
             $popover-color: engine.oklch-darken($bg, 8);
-            $input-color: engine.oklch-darken($bg, 3);
+            $input-color: if($input-bg != null, $input-bg, engine.oklch-darken($bg, 5));
             $border-strong-color: engine.oklch-darken($base, 30);
         }
         --viz-text-color: #{$text};
@@ -207,6 +208,7 @@
     $header-bg: null,
     $sidebar-bg: null,
     $card-bg: null,
+    $input-bg: null,
     $flip-bg-color: null,
     $flip-bg-pct: 0%,
     $flip-text-color: null,
@@ -219,7 +221,8 @@
     $light-accent: null,
     $light-header-bg: null,
     $light-sidebar-bg: null,
-    $light-card-bg: null
+    $light-card-bg: null,
+    $light-input-bg: null
 ) {
     $sec: $secondary-color;
     @if $sec == null {
@@ -240,6 +243,10 @@
     $crd: $card-bg;
     @if $crd == null {
         $crd: color.mix($base-color, $bg-color, 90%);
+    }
+    $inp: $input-bg;
+    @if $inp == null {
+        $inp: engine.oklch-lighten($bg-color, 6);
     }
 
     $has-light-override: $light-bg != null;
@@ -291,6 +298,15 @@
         $l-crd: invert-lightness($crd);
     }
 
+    $l-inp: $light-input-bg;
+    @if $l-inp == null {
+        @if $input-bg != null {
+            $l-inp: invert-lightness($input-bg);
+        } @else {
+            $l-inp: invert-lightness($inp);
+        }
+    }
+
     :root {
         --viz-bg-color: #{$bg-color};
         --viz-text-color: #{$text-color};
@@ -312,7 +328,7 @@
         --viz-surface-card: #{$crd};
         --viz-surface-hover: #{engine.oklch-lighten($base-color, 8)};
         --viz-surface-popover: #{engine.oklch-lighten($bg-color, 6)};
-        --viz-surface-input: #{engine.oklch-lighten($bg-color, 2)};
+        --viz-surface-input: #{$inp};
         --viz-border-subtle: #{engine.oklch-lighten($base-color, 10)};
         --viz-border-strong: #{engine.oklch-lighten($base-color, 20)};
         --viz-text-primary: #{$text-color};
@@ -333,7 +349,8 @@
             $flip-bg-pct: $flip-bg-pct,
             $flip-text-color: $flip-text-color,
             $flip-text-pct: $flip-text-pct,
-            $suffix: "-light"
+            $suffix: "-light",
+            $input-bg: $inp
         );
 
         @include generate-viz-colors(
@@ -341,7 +358,8 @@
             $text-color: $text-color,
             $base-color: $base-color,
             $is-light-theme: false,
-            $suffix: "-dark"
+            $suffix: "-dark",
+            $input-bg: $inp
         );
     }
 
@@ -351,6 +369,7 @@
         --viz-header-bg: #{$l-hdr};
         --viz-sidebar-bg: #{$l-sdb};
         --viz-card-bg: #{$l-crd};
+        --viz-surface-input: #{$l-inp};
 
         @if $has-light-override {
             @include generate-viz-colors(
@@ -358,7 +377,8 @@
                 $text-color: $l-text,
                 $base-color: $l-base,
                 $is-light-theme: false,
-                $direct-light: true
+                $direct-light: true,
+                $input-bg: $l-inp
             );
             --viz-primary: #{$l-primary};
             --viz-secondary: #{$l-sec};
@@ -372,7 +392,8 @@
                 $flip-bg-color: $flip-bg-color,
                 $flip-bg-pct: $flip-bg-pct,
                 $flip-text-color: $flip-text-color,
-                $flip-text-pct: $flip-text-pct
+                $flip-text-pct: $flip-text-pct,
+                $input-bg: $l-inp
             );
         }
     }
@@ -382,12 +403,14 @@
         --viz-header-bg: #{$hdr};
         --viz-sidebar-bg: #{$sdb};
         --viz-card-bg: #{$crd};
+        --viz-surface-input: #{$inp};
 
         @include generate-viz-colors(
             $bg-color: $bg-color,
             $text-color: $text-color,
             $base-color: $base-color,
-            $is-light-theme: false
+            $is-light-theme: false,
+            $input-bg: $inp
         );
     }
 
@@ -396,12 +419,14 @@
             --viz-header-bg: #{$hdr};
             --viz-sidebar-bg: #{$sdb};
             --viz-card-bg: #{$crd};
+            --viz-surface-input: #{$inp};
 
             @include generate-viz-colors(
                 $bg-color: $bg-color,
                 $text-color: $text-color,
                 $base-color: $base-color,
-                $is-light-theme: false
+                $is-light-theme: false,
+                $input-bg: $inp
             );
         }
     }
@@ -411,6 +436,7 @@
             --viz-header-bg: #{$l-hdr};
             --viz-sidebar-bg: #{$l-sdb};
             --viz-card-bg: #{$l-crd};
+            --viz-surface-input: #{$l-inp};
 
             @if $has-light-override {
                 @include generate-viz-colors(
@@ -418,7 +444,8 @@
                     $text-color: $l-text,
                     $base-color: $l-base,
                     $is-light-theme: false,
-                    $direct-light: true
+                    $direct-light: true,
+                    $input-bg: $l-inp
                 );
                 --viz-primary: #{$l-primary};
                 --viz-secondary: #{$l-sec};
@@ -432,7 +459,8 @@
                     $flip-bg-color: $flip-bg-color,
                     $flip-bg-pct: $flip-bg-pct,
                     $flip-text-color: $flip-text-color,
-                    $flip-text-pct: $flip-text-pct
+                    $flip-text-pct: $flip-text-pct,
+                    $input-bg: $l-inp
                 );
             }
         }

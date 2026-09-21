@@ -2,15 +2,16 @@
 @use "../viz-mixins" as m;
 
 // Viz Black (Obsidian & Electric Violet)
-$bg-color: #09090b;
-$base-color: #18181b;
+$bg-color: #09090c;
+$base-color: #1a1a22;
 $text-color: #f4f4f5;
 $primary-color: #3b82f6;
 $secondary-color: #a855f7;
 $accent-color: #06d410;
-$header-bg: #121216;
-$sidebar-bg: #0c0c0e;
-$card-bg: #1a1a1e;
+$header-bg: #141419;
+$sidebar-bg: #0e0e12;
+$card-bg: #1b1b22;
+$input-bg: #121217;
 
 @include m.register-theme-core(
     $bg-color: $bg-color,
@@ -22,6 +23,7 @@ $card-bg: #1a1a1e;
     $header-bg: $header-bg,
     $sidebar-bg: $sidebar-bg,
     $card-bg: $card-bg,
+    $input-bg: $input-bg,
     $flip-bg-color: white,
     $flip-bg-pct: 0%,
     $flip-text-color: black,
