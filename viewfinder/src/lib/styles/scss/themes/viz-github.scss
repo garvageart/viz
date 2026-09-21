@@ -1,25 +1,17 @@
 @use "sass:color";
 @use "../viz-mixins" as m;
 
-// GitHub-inspired palette
-// - Primary: #0969da (GitHub blue)
-// - Secondary: #8250df (GitHub purple)
-// - Accent: #1a7f37 (GitHub green)
-// - Background: #0d1117 (GitHub dark canvas)
-// - Base: #161b22 (GitHub dark surface)
-// - Header BG: #161b22 (GitHub dark header)
-// - Sidebar BG: #0d1117 (GitHub dark sidebar)
-// - Card BG: #21262d (GitHub dark card)
-
-$bg-color: #0d1117;
-$base-color: #161b22;
-$text-color: #c9d1d9;
-$primary-color: #58a6ff;
-$secondary-color: #bc8cff;
-$accent-color: #3fb950;
-$header-bg: #161b22;
-$sidebar-bg: #0d1117;
-$card-bg: #21262d;
+// Official GitHub Primer Palette
+$bg-color: #0d1117; // canvas.default
+$base-color: #21262d; // border.muted (derives #30363d border & #2b313a hover)
+$text-color: #e6edf3; // fg.default
+$primary-color: #2f81f7; // accent.fg
+$secondary-color: #a371f7; // done.fg
+$accent-color: #3fb950; // success.fg
+$header-bg: #161b22; // canvas.subtle
+$sidebar-bg: #161b22; // canvas.subtle
+$card-bg: #161b22; // canvas.overlay
+$input-bg: #010409; // canvas.inset
 
 @include m.register-theme-core(
     $bg-color: $bg-color,
@@ -31,23 +23,19 @@ $card-bg: #21262d;
     $header-bg: $header-bg,
     $sidebar-bg: $sidebar-bg,
     $card-bg: $card-bg,
+    $input-bg: $input-bg,
     $flip-bg-color: white,
     $flip-bg-pct: 0%,
     $flip-text-color: black,
     $flip-text-pct: 15%,
     $light-bg: #ffffff,
     $light-text: #1f2328,
-    $light-base: #afb8c1,
+    $light-base: #f6f8fa,
     $light-primary: #0969da,
     $light-secondary: #8250df,
     $light-accent: #1a7f37,
-    $light-header-bg: #e8eaed,
+    $light-header-bg: #f6f8fa,
     $light-sidebar-bg: #f6f8fa,
-    $light-card-bg: #ffffff
+    $light-card-bg: #ffffff,
+    $light-input-bg: #f6f8fa
 );
-
-:root[data-theme="dark"],
-[data-theme="dark"] {
-    --viz-border-subtle: #30363d;
-    --viz-surface-hover: #2a313b;
-}

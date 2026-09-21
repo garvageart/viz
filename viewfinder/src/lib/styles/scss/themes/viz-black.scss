@@ -1,17 +1,17 @@
 @use "sass:color";
 @use "../viz-mixins" as m;
 
-// Viz Black (Obsidian & Electric Violet)
+// Viz Black
 $bg-color: #09090c;
-$base-color: #1a1a22;
-$text-color: #f4f4f5;
+$base-color: #1a1a20;
+$text-color: #f4f4f6;
 $primary-color: #3b82f6;
-$secondary-color: #a855f7;
-$accent-color: #06d410;
-$header-bg: #141419;
-$sidebar-bg: #0e0e12;
-$card-bg: #1b1b22;
-$input-bg: #121217;
+$secondary-color: #6366f1;
+$accent-color: #38bdf8;
+$header-bg: #121216;
+$sidebar-bg: #0d0d10;
+$card-bg: #18181d;
+$input-bg: #0f0f13;
 
 @include m.register-theme-core(
     $bg-color: $bg-color,
