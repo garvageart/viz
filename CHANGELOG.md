@@ -5,6 +5,19 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.35.1] - 2026-09-28
+
+* fix: change Badge type implementations to variant sizing (c5be9c15)
+* fix: change Badge type implementations to variant sizing (8dcc7afe)
+* refactor(viewfinder): refine UI components, layout styles, and metadata rendering (841c2359)
+* refactor(viewfinder): replace deprecated ternary if function in theme mixins (0176e22e)
+* fix(viewfinder): simplify zoom pan calculation and remove boundary constraint (9372cb27)
+* chore(viewfinder): remove unused IconTag component (9023d644)
+* refactor(api): streamline logger context in image creation (5e05a3ce)
+* refactor(ui): update badge, search input, header, and progress bar (7a4ac8b1)
+* fix(themes): update viz-black and viz-github theme palettes (ea730155)
+* fix(styles): improve surface contrast and input styling for viz-black theme (dc043f69)
+
 ## [0.35.0] - 2026-09-28
 
 * refactor(viewfinder): refine UI components, layout styles, and metadata rendering (841c2359)
