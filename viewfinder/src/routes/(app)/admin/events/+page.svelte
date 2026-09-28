@@ -121,7 +121,7 @@
 </script>
 
 {#snippet eventNameCell(event: EventHistoryItem)}
-    <Badge variant="outline" size="std">{event.event}</Badge>
+    <Badge variant="outline" size="standard">{event.event}</Badge>
 {/snippet}
 
 {#snippet clientCell(event: EventHistoryItem)}
@@ -153,7 +153,7 @@
         <div class="filter-group">
             <InputSelect bind:value={historyFilter} aria-label="Filter by event type" options={filterOptions} />
         </div>
-        <Badge variant="neutral" size="std">{filteredHistory.length} / {history.length} Logs</Badge>
+        <Badge variant="neutral" size="standard">{filteredHistory.length} / {history.length} Logs</Badge>
         <Button variant="danger" onclick={requestClearHistory}>
             <MaterialIcon iconName="delete_sweep" size="1.1rem" />
             <span>Clear Logs</span>
@@ -171,7 +171,7 @@
                     <h2>Live Connections</h2>
                     <span class="header-subtitle">Real-time WebSocket client connection status</span>
                 </div>
-                <Badge variant="success" size="lg">{stats.connectedClients} Connected</Badge>
+                <Badge variant="success" size="large">{stats.connectedClients} Connected</Badge>
             </div>
             <div class="connection-metric-grid">
                 <div class="metric-block">

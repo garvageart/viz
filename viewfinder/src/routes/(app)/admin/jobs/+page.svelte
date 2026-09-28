@@ -208,7 +208,7 @@
 {/snippet}
 
 {#snippet typeCell(job: any)}
-    <Badge variant="neutral" size="std">{(job.type || job.topic).toUpperCase()}</Badge>
+    <Badge variant="neutral" size="standard">{(job.type || job.topic).toUpperCase()}</Badge>
 {/snippet}
 
 {#snippet durationCell(job: any)}
