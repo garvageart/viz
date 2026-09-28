@@ -94,9 +94,7 @@
         z-index: var(--viz-z-local);
         height: var(--viz-toolbar-height);
         background-color: var(--viz-surface-panel);
-        backdrop-filter: blur(var(--viz-spacing-xs));
         border-top: var(--viz-border-thin);
-        font-size: var(--viz-font-size-std);
         width: 100%;
         max-width: 100%;
         display: flex;
@@ -112,7 +110,6 @@
             position: sticky;
             bottom: 0;
             margin-top: auto;
-            z-index: var(--viz-z-workspace-layout);
         }
     }
 
@@ -120,6 +117,7 @@
         display: flex;
         align-items: center;
         gap: var(--viz-spacing-sm);
+        height: 100%;
 
         &.leading {
             flex-shrink: 1;
@@ -134,7 +132,7 @@
 
     :global(.toolbar-separator),
     .toolbar-separator {
-        height: 1.25rem;
+        height: 90%;
         width: 1px;
         background-color: var(--viz-border-subtle);
         margin: 0 var(--viz-spacing-xxs);

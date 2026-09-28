@@ -42,8 +42,8 @@ export interface DropZoneOverResult {
 export interface DropZoneOptions<T = unknown> {
     id?: string;
     types?: DragMimeType | DragMimeType[] | ((mimeType: string) => boolean);
-    onDrop?: (data: DragData<T>, event: DragEvent) => void | Promise<void>;
     files?: DropZoneFileOptions;
+    onDrop?: (data: DragData<T>, event: DragEvent) => void | Promise<void>;
     onDragOver?: (context: DropZoneOverContext) => DropZoneOverResult | void;
     onDragEnter?: (event: DragEvent) => void;
     onDragLeave?: (event: DragEvent) => void;

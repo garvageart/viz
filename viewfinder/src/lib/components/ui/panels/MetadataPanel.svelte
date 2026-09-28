@@ -56,7 +56,7 @@
     // not be rendered as image metadata (which caused a flicker).
     let currentAsset = $derived(asset ?? (isAssetImage(activeScope?.active) ? activeScope.active : undefined));
 
-    let displayName = $derived(currentAsset?.name || currentAsset?.image_metadata?.file_name || "");
+    let displayName = $derived(currentAsset?.name || currentAsset?.image_metadata.file_name || "");
     let calendarOpen = $state(false);
 
     let rawExifEntries = $derived.by(() => {
@@ -199,7 +199,7 @@
         currentAsset.taken_at = newDate.toISOString();
     }
 
-    let starRating = $derived<number | null>(currentAsset?.image_metadata?.rating ?? null);
+    let starRating = $derived<number | null>(currentAsset?.image_metadata.rating ?? null);
     let updatingRating = $state(false);
 
     async function setImageRating(newRating: number | null) {
@@ -280,7 +280,7 @@
                                         });
                                     }}
                                 />
-                                {#if currentAsset?.image_metadata?.file_type}
+                                {#if currentAsset?.image_metadata.file_type}
                                     <Badge variant="default" class="file-type-badge">
                                         {currentAsset.image_metadata.file_type.replace("image/", "").toUpperCase()}
                                     </Badge>
@@ -426,7 +426,7 @@
                             <div class="value-big">
                                 {currentAsset?.width} × {currentAsset?.height}
                                 {" "}· {getImageMegapixels(currentAsset)} MP {" "}· {formatBytes(
-                                    currentAsset.image_metadata?.file_size
+                                    currentAsset.image_metadata.file_size
                                 ) ?? "—"}
                             </div>
                         </div>
@@ -435,7 +435,7 @@
                         <MaterialIcon iconName="palette" class="exif-material-icon" />
                         <div class="card-values">
                             <div class="value-sub">
-                                {currentAsset?.image_metadata?.color_space}
+                                {currentAsset?.image_metadata.color_space}
                                 {#if currentAsset?.exif?.resolution}
                                     {" "}· {currentAsset.exif.resolution}
                                 {/if}
@@ -472,7 +472,7 @@
                 <!-- GPS / Geolocation Card (if present) -->
                 {#if currentAsset?.exif?.latitude && currentAsset?.exif?.longitude}
                     <div class="exif-card">
-                        <div class="card-row main-row">
+                        <div class="card-row main-row center">
                             <MaterialIcon iconName="location_on" class="exif-material-icon" />
                             <div class="card-values">
                                 <div class="name-row">
@@ -523,7 +523,7 @@
                 {/if}
 
                 <!-- Keywords / Tags (if present) -->
-                {#if currentAsset?.image_metadata?.keywords && currentAsset.image_metadata.keywords.length > 0}
+                {#if currentAsset?.image_metadata.keywords && currentAsset.image_metadata.keywords.length > 0}
                     <div class="exif-card keywords-card">
                         <div class="card-row main-row">
                             <MaterialIcon iconName="sell" class="exif-material-icon" />
@@ -537,10 +537,10 @@
                 {/if}
 
                 <!-- Software & Integrity Card -->
-                {#if currentAsset?.exif?.software || currentAsset?.exif?.exif_version || currentAsset?.image_metadata?.checksum}
-                    <div class="exif-card">
+                {#if currentAsset?.exif?.software || currentAsset?.exif?.exif_version || currentAsset?.image_metadata.checksum}
+                    <div class="exif-card horizontal">
                         {#if currentAsset.exif?.software || currentAsset.exif?.exif_version}
-                            <div class="card-row meta-row">
+                            <div class="card-row meta-row center">
                                 <MaterialIcon iconName="desktop_landscape" class="exif-material-icon" />
                                 <div class="card-values">
                                     <div class="value-sub" title={currentAsset.exif?.software}>
@@ -550,37 +550,6 @@
                                         ]
                                             .filter(Boolean)
                                             .join("  ·  ")}
-                                    </div>
-                                </div>
-                            </div>
-                        {/if}
-                        {#if currentAsset.image_metadata?.checksum}
-                            <div class="card-row center meta-row">
-                                <MaterialIcon iconName="tag" class="exif-material-icon" />
-                                <div class="card-values">
-                                    <div class="name-row">
-                                        <div class="value-sub mono-text" title={currentAsset.image_metadata.checksum}>
-                                            {currentAsset.image_metadata.checksum}
-                                        </div>
-                                        <Button
-                                            variant="ghost"
-                                            class="copy-filename-btn"
-                                            title="Copy checksum"
-                                            iconName="content_copy"
-                                            onclick={() => {
-                                                if (!currentAsset?.image_metadata?.checksum) {
-                                                    return;
-                                                }
-
-                                                copyToClipboard(currentAsset.image_metadata.checksum);
-                                                toasts.add({
-                                                    type: "success",
-                                                    title: "Checksum",
-                                                    message: "Checksum copied to clipboard",
-                                                    timeout: 2000
-                                                });
-                                            }}
-                                        />
                                     </div>
                                 </div>
                             </div>
@@ -641,6 +610,42 @@
                         </div>
                     </div>
                 </div>
+
+                {#snippet extendedMetadataItem(item: { key: string; label: string; value: string })}
+                    <div
+                        class="extended-exif-row"
+                        role="button"
+                        tabindex="0"
+                        title="Click to copy"
+                        onclick={() => {
+                            copyToClipboard(item.value);
+                            toasts.add({
+                                type: "success",
+                                title: item.label,
+                                message: "Copied to clipboard",
+                                timeout: 2000
+                            });
+                        }}
+                        onkeydown={(e) => {
+                            if (e.key === "Enter" || e.key === " ") {
+                                e.preventDefault();
+                                copyToClipboard(item.value);
+                                toasts.add({
+                                    type: "success",
+                                    title: item.label,
+                                    message: "Copied to clipboard",
+                                    timeout: 2000
+                                });
+                            }
+                        }}
+                    >
+                        <span class="extended-label" title={item.label}>{item.label}</span>
+                        <div class="extended-value-wrapper">
+                            <span class="extended-value">{item.value}</span>
+                            <span class="copy-overlay">Copy</span>
+                        </div>
+                    </div>
+                {/snippet}
                 <!-- Extended EXIF Card (if raw map present) -->
                 {#if rawExifEntries.length > 0}
                     <div class="exif-card extended-exif-card">
@@ -652,43 +657,19 @@
                         </div>
                         <div class="extended-exif-list">
                             {#each rawExifEntries as item (item.key)}
-                                <div
-                                    class="extended-exif-row"
-                                    role="button"
-                                    tabindex="0"
-                                    title="Click to copy"
-                                    onclick={() => {
-                                        copyToClipboard(item.value);
-                                        toasts.add({
-                                            type: "success",
-                                            title: item.label,
-                                            message: "Copied to clipboard",
-                                            timeout: 2000
-                                        });
-                                    }}
-                                    onkeydown={(e) => {
-                                        if (e.key === "Enter" || e.key === " ") {
-                                            e.preventDefault();
-                                            copyToClipboard(item.value);
-                                            toasts.add({
-                                                type: "success",
-                                                title: item.label,
-                                                message: "Copied to clipboard",
-                                                timeout: 2000
-                                            });
-                                        }
-                                    }}
-                                >
-                                    <span class="extended-label" title={item.label}>{item.label}</span>
-                                    <div class="extended-value-wrapper">
-                                        <span class="extended-value">{item.value}</span>
-                                        <span class="copy-overlay">Copy</span>
-                                    </div>
-                                </div>
+                                {@render extendedMetadataItem(item)}
                             {/each}
                         </div>
                     </div>
                 {/if}
+
+                <div class="exif-card">
+                    {@render extendedMetadataItem({
+                        key: "checksum",
+                        value: currentAsset?.image_metadata.checksum,
+                        label: "Checksum"
+                    })}
+                </div>
             </div>
         </div>
     {:else}
@@ -764,6 +745,11 @@
         flex-direction: column;
         justify-content: center;
         gap: 0.35em;
+
+        &.horizontal {
+            flex-direction: row;
+            align-items: center;
+        }
 
         :global(.exif-description) {
             background-color: var(--viz-surface-card);
@@ -871,10 +857,6 @@
     :global(.keyword-badge) {
         font-size: var(--viz-font-size-sm);
         padding: 0.15em 0.5em;
-    }
-
-    .mono-text {
-        font-family: var(--viz-mono-font);
     }
 
     .extended-exif-list {

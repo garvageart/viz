@@ -155,9 +155,5 @@
         width: 100%;
         z-index: var(--viz-z-chrome);
         pointer-events: none;
-
-        &.app {
-            top: var(--viz-header-height, 2rem);
-        }
     }
 </style>

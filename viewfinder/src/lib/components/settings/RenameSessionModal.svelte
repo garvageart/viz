@@ -34,9 +34,9 @@
     <span>Enter a new name for this session to help you identify it later.</span>
     <InputText label="Session Name" bind:value={newName} placeholder="e.g. Chrome on MacBook" />
     <div class="modal-actions">
-        <Button size="small" onclick={handleCancel}>Cancel</Button>
-        <Button size="small" onclick={handleRename} disabled={loading}>
-            {loading ? "Renaming..." : "Rename Session"}
+        <Button size="small" onclick={handleCancel}><span>Cancel</span></Button>
+        <Button variant="primary" size="small" onclick={handleRename} disabled={loading}>
+            <span>{loading ? "Renaming..." : "Rename Session"}</span>
         </Button>
     </div>
 </div>
@@ -45,7 +45,7 @@
     .rename-modal {
         display: flex;
         flex-direction: column;
-        gap: 1.25rem;
+        gap: var(--viz-spacing-std);
         color: var(--viz-text-primary);
         width: 100%;
 

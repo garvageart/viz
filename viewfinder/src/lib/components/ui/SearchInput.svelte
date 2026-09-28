@@ -78,7 +78,6 @@
         align-items: center;
         width: 20%;
         background-color: transparent;
-        overflow: hidden;
         box-sizing: border-box;
         padding: var(--viz-spacing-xs);
         box-shadow: var(--viz-border-subtle) 0px 1px;

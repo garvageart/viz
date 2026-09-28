@@ -132,33 +132,8 @@
         hoverBin = null;
     }
 
-    let data = $state<HistogramData | null>(null);
-
-    $effect(() => {
-        let cancelled = false;
-        const target = src ?? (isAssetImage(activeItem) ? activeItem : null);
-
-        if (!target) {
-            data = null;
-            return;
-        }
-
-        computeHistogram(target)
-            .then((res) => {
-                if (!cancelled) {
-                    data = res;
-                }
-            })
-            .catch(() => {
-                if (!cancelled) {
-                    data = null;
-                }
-            });
-
-        return () => {
-            cancelled = true;
-        };
-    });
+    let target = $derived(src ?? (isAssetImage(activeItem) ? activeItem : null));
+    let data = $derived(await (target ? computeHistogram(target).catch(() => null) : null));
 
     let stats = $derived(statsFor(data));
     let hover = $derived(hoverInfoFor(data));
@@ -176,15 +151,14 @@
 <div class="histogram-container">
     <div class="channel-chips" role="group" aria-label="Channels">
         {#each CHANNEL_OPTIONS as opt (opt.key)}
-            <button
-                type="button"
+            <Button
+                variant="outline"
                 class="chip"
-                class:active={channels[opt.key]}
                 aria-pressed={channels[opt.key]}
                 onclick={() => (channels[opt.key] = !channels[opt.key])}
             >
                 <span class="dot {dotClassFor(opt.key)}"></span>{opt.label}
-            </button>
+            </Button>
         {/each}
 
         <Button iconName="refresh" onclick={resetCanvas} title="Reset Histogram" size="small" class="reset-btn" />
@@ -266,38 +240,23 @@
         display: flex;
         align-items: center;
         gap: var(--viz-spacing-xs);
-        flex-shrink: 0;
 
         :global(.reset-btn) {
             margin-left: auto;
         }
-    }
 
-    .chip {
-        display: inline-flex;
-        align-items: center;
-        gap: var(--viz-spacing-xs);
-        padding: var(--viz-spacing-xs) var(--viz-spacing-sm);
-        border: 1px solid var(--viz-border-subtle);
-        border-radius: var(--viz-border-radius-pill);
-        background-color: var(--viz-surface-panel);
-        color: var(--viz-text-secondary);
-        font-size: var(--viz-font-size-sm);
-        font-weight: 600;
-        cursor: pointer;
-        transition:
-            background-color 0.15s ease,
-            border-color 0.15s ease,
-            color 0.15s ease;
-
-        &:hover {
-            background-color: var(--viz-surface-hover);
+        :global(.chip) {
+            display: inline-flex;
+            align-items: center;
+            gap: var(--viz-spacing-sm);
+            background-color: var(--viz-surface-input);
+            font-size: var(--viz-font-size-sm);
+            font-weight: 600;
+            border: var(--viz-border-thin);
         }
 
-        &.active {
+        :global(.chip[aria-pressed="true"]) {
             border-color: var(--viz-primary);
-            background-color: var(--viz-surface-card);
-            color: var(--viz-text-primary);
         }
     }
 
@@ -424,11 +383,12 @@
                     white-space: nowrap;
 
                     .stat-label {
-                        color: var(--viz-text-secondary);
+                        font-family: var(--viz-display-font);
+                        color: var(--viz-text-primary);
                     }
 
                     .stat-val {
-                        color: var(--viz-text-primary);
+                        color: var(--viz-text-secondary);
                     }
                 }
             }

@@ -149,7 +149,7 @@
             {
                 mimeType: VizMimeTypes.COLLECTION_UIDS,
                 payload: { uid: collection.uid, name: collection.name },
-                label: `Collection "${collection.name}"`,
+                label: collection.name,
                 thumbnailUrl: thumbnail ? getAssetImagePath(thumbnail, "thumbnail") : null
             }
         ]
@@ -177,8 +177,8 @@
 
         {#if collection.private}
             <div class="card-overlays">
-                <div class="overlay-badge private-badge" title="Private Collection">
-                    <MaterialIcon iconName="lock" size="1rem" />
+                <div class="private-badge" title="Private Collection">
+                    <Badge iconName="visibility_off" size="small" iconFill={true} variant="default" pill={true} />
                 </div>
             </div>
         {/if}
@@ -295,24 +295,6 @@
         z-index: 2;
     }
 
-    .overlay-badge {
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        border-radius: var(--viz-border-radius-pill);
-        backdrop-filter: blur(4px);
-        box-shadow: 0 2px 4px rgba(0, 0, 0, 0.15);
-        border: 1px solid rgba(255, 255, 255, 0.12);
-        box-sizing: border-box;
-
-        &.private-badge {
-            background-color: rgba(0, 0, 0, 0.55);
-            color: var(--viz-error-color);
-            width: 1.5rem;
-            height: 1.5rem;
-        }
-    }
-
     .metadata {
         display: flex;
         flex-direction: column;
@@ -331,7 +313,6 @@
     .coll-name {
         font-size: var(--viz-font-size-lg);
         font-weight: 600;
-        font-family: var(--viz-display-font);
         color: var(--viz-text-primary);
         white-space: nowrap;
         overflow: hidden;
@@ -348,7 +329,6 @@
     .coll-created_at,
     .coll-updated_at {
         font-family: var(--viz-mono-font);
-        font-size: var(--viz-font-size-std);
         color: var(--viz-text-secondary);
         white-space: nowrap;
         overflow: hidden;
@@ -356,7 +336,9 @@
     }
 
     .coll-created_at {
-        font-weight: 500;
+        font-size: var(--viz-font-size-std);
+        font-family: var(--viz-display-font);
+        font-weight: 600;
         color: var(--viz-text-muted);
     }
 

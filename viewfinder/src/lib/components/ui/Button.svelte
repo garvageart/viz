@@ -124,10 +124,6 @@
         border-radius: var(--viz-border-radius-pill);
         outline: none;
 
-        :global(.viz-material-icon) {
-            padding: -0.25em;
-        }
-
         &.with-children {
             padding: var(--viz-spacing-xs) var(--viz-spacing-sm);
         }

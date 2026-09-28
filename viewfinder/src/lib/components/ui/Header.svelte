@@ -133,7 +133,7 @@
     });
 
     function handleThemeContext(e: MouseEvent) {
-        contextMenu.open(themeContextMenu(), e, { align: "right", offsetY: 4 });
+        contextMenu.open(themeContextMenu(), e, { align: "right" });
     }
 </script>
 
@@ -154,8 +154,13 @@
             aria-label="App Menu"
             title="App Menu"
         >
-            <span>viz</span>
-            <MaterialIcon iconName="keyboard_arrow_down" weight={300} size="1em" style="margin-left: 0.15em;" />
+            <span>viewfinder</span>
+            <MaterialIcon
+                iconName="keyboard_arrow_down"
+                weight={300}
+                size="1em"
+                style="margin-left: var(--viz-spacing-xxs);"
+            />
         </button>
         <AppMenu bind:isOpen={openAppMenu} bind:anchor={appMenuButton} />
         <div class="header-separator"></div>
@@ -303,7 +308,7 @@
 <style lang="scss">
     header {
         background-color: var(--viz-surface-base);
-        padding: var(--viz-spacing-xs) var(--viz-spacing-md);
+        padding: var(--viz-spacing-sm) var(--viz-spacing-md);
         display: flex;
         align-items: center;
         border-bottom: var(--viz-border-thin);
@@ -314,7 +319,6 @@
     }
 
     #viz-title {
-        font-family: var(--viz-mono-font);
         font-weight: 700;
         font-size: var(--viz-font-size-xl);
         display: flex;
@@ -326,7 +330,6 @@
         color: var(--viz-text-primary);
         cursor: pointer;
         padding: var(--viz-spacing-xxs) 0;
-        border-radius: 0;
         transition: border-color 150ms ease;
 
         &:hover {
