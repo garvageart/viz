@@ -53,9 +53,10 @@ type ImageUploadError struct {
 var ErrImageUnauthorised = errors.New("unauthorized")
 
 func createNewImageEntity(logger *slog.Logger, fileName string, libvipsImg *libvips.Image, rawData []byte) (*entities.ImageAsset, error) {
-	logger.Info("Generating ID", slog.String("file", fileName))
-	id, err := uid.Generate()
+	logger = logger.With(slog.String("file", fileName))
+	logger.Info("Generating ID")
 
+	id, err := uid.Generate()
 	if err != nil {
 		return nil, fmt.Errorf("failed to generate ID: %w", err)
 	}
@@ -65,7 +66,6 @@ func createNewImageEntity(logger *slog.Logger, fileName string, libvipsImg *libv
 	}
 
 	logger = logger.With(
-		slog.String("name", fileName),
 		slog.String("id", id),
 	)
 
