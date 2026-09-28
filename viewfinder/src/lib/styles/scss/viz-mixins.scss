@@ -90,13 +90,22 @@
         $border-color: engine.oklch-lighten($base, 10);
         $hover-color: engine.oklch-lighten($base, 14);
         $popover-color: engine.oklch-lighten($bg, 6);
-        $input-color: if($input-bg != null, $input-bg, engine.oklch-lighten($bg, 6));
+        $input-color: null;
+        @if $input-bg != null {
+            $input-color: $input-bg;
+        } @else {
+            $input-color: engine.oklch-lighten($bg, 6);
+        }
         $border-strong-color: engine.oklch-lighten($base, 20);
         @if $is-light-theme or $direct-light {
             $border-color: engine.oklch-darken($base, 20);
             $hover-color: engine.oklch-darken($bg, 18);
             $popover-color: engine.oklch-darken($bg, 8);
-            $input-color: if($input-bg != null, $input-bg, engine.oklch-darken($bg, 5));
+            @if $input-bg != null {
+                $input-color: $input-bg;
+            } @else {
+                $input-color: engine.oklch-darken($bg, 5);
+            }
             $border-strong-color: engine.oklch-darken($base, 30);
         }
         --viz-text-color: #{$text};
