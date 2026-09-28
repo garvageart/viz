@@ -127,7 +127,7 @@ export class ImageZoomState {
         this.posY = result.posY;
     }
 
-    handleResize(newViewport: Dimensions, newImage?: Dimensions) {
+    handleResize(newViewport: Dimensions, _newImage?: Dimensions) {
         if (newViewport.width <= 0 || newViewport.height <= 0) {
             return;
         }
@@ -137,19 +137,6 @@ export class ImageZoomState {
             this.posY = 0;
             return;
         }
-
-        const activeCropDims = this.deps?.getActiveCropDimensions?.();
-        const imageBounds = activeCropDims
-            ? { width: activeCropDims.frame.width, height: activeCropDims.frame.height }
-            : newImage && newImage.width > 0 && newImage.height > 0
-              ? newImage
-              : this.deps?.getImageEl()
-                ? { width: this.deps.getImageEl()!.clientWidth, height: this.deps.getImageEl()!.clientHeight }
-                : { width: newViewport.width, height: newViewport.height };
-
-        const constrained = constrainTranslation(this.posX, this.posY, this.value, newViewport, imageBounds);
-        this.posX = constrained.x;
-        this.posY = constrained.y;
     }
 
     handleDoubleClick = (event: MouseEvent) => {
@@ -194,24 +181,8 @@ export class ImageZoomState {
             this.wasDragging = true;
         }
 
-        const activeCropDims = this.deps?.getActiveCropDimensions?.();
-        const imageBounds = activeCropDims
-            ? { width: activeCropDims.frame.width, height: activeCropDims.frame.height }
-            : { width: img.clientWidth, height: img.clientHeight };
-
-        const constrained = constrainTranslation(
-            this.dragStart.tx + dx,
-            this.dragStart.ty + dy,
-            this.value,
-            {
-                width: container.clientWidth,
-                height: container.clientHeight
-            },
-            imageBounds
-        );
-
-        this.posX = constrained.x;
-        this.posY = constrained.y;
+        this.posX = this.dragStart.tx + dx;
+        this.posY = this.dragStart.ty + dy;
     };
 
     handlePointerUp = (event: PointerEvent) => {
@@ -253,48 +224,6 @@ export class ImageZoomState {
 export const ImageZoomController = ImageZoomState;
 
 /**
- * Constrains translation offsets (X and Y) to ensure the image does not leave empty borders
- * relative to the viewport when zoomed in. Centers the image when it is smaller than or equal
- * to the viewport.
- */
-export function constrainTranslation(
-    x: number,
-    y: number,
-    zoom: number,
-    viewport: Dimensions,
-    image: Dimensions
-): { x: number; y: number } {
-    const Vw = viewport.width;
-    const Vh = viewport.height;
-    const Iw = image.width;
-    const Ih = image.height;
-
-    let nextTx = x;
-    let nextTy = y;
-
-    const zoomedW = Iw * zoom;
-    if (zoomedW <= Vw) {
-        nextTx = 0;
-    } else {
-        const maxPanX = (zoomedW - Vw) / 2;
-        nextTx = Math.max(-maxPanX, Math.min(nextTx, maxPanX));
-    }
-
-    const zoomedH = Ih * zoom;
-    if (zoomedH <= Vh) {
-        nextTy = 0;
-    } else {
-        const maxPanY = (zoomedH - Vh) / 2;
-        nextTy = Math.max(-maxPanY, Math.min(nextTy, maxPanY));
-    }
-
-    return {
-        x: Object.is(nextTx, -0) ? 0 : nextTx,
-        y: Object.is(nextTy, -0) ? 0 : nextTy
-    };
-}
-
-/**
  * Calculates the next zoom level and the translated coordinates required to focus
  * the zoom precisely on the cursor coordinate.
  */
@@ -307,8 +236,7 @@ export function calculateZoomTo(options: ZoomOptions): ZoomState {
         clientX,
         clientY,
         viewportRect = { left: 0, top: 0 },
-        viewport,
-        image
+        viewport
     } = options;
 
     const Vw = viewport.width;
@@ -326,12 +254,9 @@ export function calculateZoomTo(options: ZoomOptions): ZoomState {
     const nextTx = posX + (cursorCenterX - posX) * (1 - zoomRatio);
     const nextTy = posY + (cursorCenterY - posY) * (1 - zoomRatio);
 
-    // Apply viewport boundaries
-    const constrained = constrainTranslation(nextTx, nextTy, nextZoom, viewport, image);
-
     return {
         value: nextZoom,
-        posX: constrained.x,
-        posY: constrained.y
+        posX: Object.is(nextTx, -0) ? 0 : nextTx,
+        posY: Object.is(nextTy, -0) ? 0 : nextTy
     };
 }

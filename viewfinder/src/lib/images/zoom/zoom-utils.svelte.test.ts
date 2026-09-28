@@ -1,5 +1,5 @@
 import { describe, expect, it, vi } from "vitest";
-import { ImageZoomState, calculateZoomTo, constrainTranslation } from "./zoom-utils.svelte";
+import { ImageZoomState, calculateZoomTo } from "./zoom-utils.svelte";
 
 describe("ImageZoomState Controller", () => {
     it("initializes with default 1.0 zoom and zero offsets", () => {
@@ -161,7 +161,7 @@ describe("ImageZoomState Controller", () => {
         expect(state.value).toBeGreaterThan(prePinchZoom);
     });
 
-    it("handles pointer drag and panning with viewport translation constraints", () => {
+    it("handles pointer drag and panning regardless of zoom level", () => {
         const mockImg = {
             clientWidth: 1000,
             clientHeight: 800
@@ -233,37 +233,7 @@ describe("ImageZoomState Controller", () => {
         expect(releasePointerCapture).toHaveBeenCalledWith(1);
     });
 
-    it("applies active crop dimensions when constraining translations during zoom and pan", () => {
-        const mockImg = {
-            clientWidth: 2000,
-            clientHeight: 1200
-        } as unknown as HTMLImageElement;
-
-        const mockContainer = {
-            clientWidth: 1000,
-            clientHeight: 800,
-            getBoundingClientRect: () => ({ left: 0, top: 0, width: 1000, height: 800 })
-        } as unknown as HTMLElement;
-
-        const state = new ImageZoomState({
-            getImageEl: () => mockImg,
-            getContainerEl: () => mockContainer,
-            getActiveCropDimensions: () => ({
-                frame: { width: 800, height: 600 },
-                image: { width: 1600, height: 1200, offsetX: 0, offsetY: 0 }
-            })
-        });
-
-        // Zoom into 2.0x with crop frame active
-        state.zoomTo(2.0, 500, 400);
-
-        expect(state.value).toBe(2.0);
-        // Constrained translation ensures frame is clipped within container
-        expect(Math.abs(state.posX)).toBeLessThanOrEqual(300);
-        expect(Math.abs(state.posY)).toBeLessThanOrEqual(200);
-    });
-
-    it("adjusts translation during viewport resizing via handleResize", () => {
+    it("resets translation during viewport resizing when at fit", () => {
         const mockImg = {
             clientWidth: 1000,
             clientHeight: 800
@@ -278,48 +248,6 @@ describe("ImageZoomState Controller", () => {
         state.handleResize({ width: 1400, height: 800 });
         expect(state.posX).toBe(0);
         expect(state.posY).toBe(0);
-
-        // When zoomed in 2.0x (maxPanX in 1000px = 500, in 1400px = 300)
-        state.value = 2.0;
-        state.posX = -400;
-        state.posY = -100;
-
-        // Resizing to 1400px clamps posX to maxPanX of 300
-        state.handleResize({ width: 1400, height: 800 }, { width: 1000, height: 800 });
-        expect(state.posX).toBe(-300);
-        expect(state.posY).toBe(-100);
-    });
-});
-
-describe("constrainTranslation", () => {
-    const viewport = { width: 1000, height: 800 };
-    const image = { width: 1000, height: 800 };
-
-    it("centers the image when zoom is 1.0", () => {
-        const result = constrainTranslation(0, 0, 1.0, viewport, image);
-        expect(result.x).toBe(0);
-        expect(result.y).toBe(0);
-    });
-
-    it("centers the image within viewport bounds when zoom is less than 1.0 (e.g. 0.5)", () => {
-        const result = constrainTranslation(250, 200, 0.5, viewport, image);
-        expect(result.x).toBe(0);
-        expect(result.y).toBe(0);
-    });
-
-    it("clamps boundaries at minimum zoom (0.1 / 10%)", () => {
-        const result = constrainTranslation(450, 360, 0.1, viewport, image);
-        expect(result.x).toBe(0);
-        expect(result.y).toBe(0);
-    });
-
-    it("clamps horizontal and vertical boundaries when zoomed in (2.0x)", () => {
-        // At 2.0x zoom, zoomedW = 2000, maxPanX = (2000 - 1000) / 2 = 500
-        const resultOvershootLeft = constrainTranslation(700, 0, 2.0, viewport, image);
-        expect(resultOvershootLeft.x).toBe(500);
-
-        const resultOvershootRight = constrainTranslation(-800, 0, 2.0, viewport, image);
-        expect(resultOvershootRight.x).toBe(-500);
     });
 });
 
@@ -328,7 +256,7 @@ describe("calculateZoomTo", () => {
     const image = { width: 1000, height: 800 };
     const viewportRect = { left: 0, top: 0 };
 
-    it("allows zooming out down to 0.1 (10%) and stays centered", () => {
+    it("allows zooming out down to 0.1 (10%) and scales around cursor", () => {
         const result = calculateZoomTo({
             value: 1.0,
             posX: 0,
