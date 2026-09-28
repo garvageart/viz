@@ -124,7 +124,6 @@ export { default as IconAspectRatio } from './IconAspectRatio.svelte';
 export { default as IconPalette } from './IconPalette.svelte';
 export { default as IconLocationOn } from './IconLocationOn.svelte';
 export { default as IconDesktopLandscape } from './IconDesktopLandscape.svelte';
-export { default as IconTag } from './IconTag.svelte';
 export { default as IconPerson } from './IconPerson.svelte';
 export { default as IconCopyright } from './IconCopyright.svelte';
 export { default as IconDescription } from './IconDescription.svelte';
