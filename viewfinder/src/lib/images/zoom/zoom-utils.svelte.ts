@@ -228,16 +228,7 @@ export const ImageZoomController = ImageZoomState;
  * the zoom precisely on the cursor coordinate.
  */
 export function calculateZoomTo(options: ZoomOptions): ZoomState {
-    const {
-        value,
-        posX,
-        posY,
-        newZoom,
-        clientX,
-        clientY,
-        viewportRect = { left: 0, top: 0 },
-        viewport
-    } = options;
+    const { value, posX, posY, newZoom, clientX, clientY, viewportRect = { left: 0, top: 0 }, viewport } = options;
 
     const Vw = viewport.width;
     const Vh = viewport.height;
