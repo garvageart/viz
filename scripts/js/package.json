@@ -19,16 +19,16 @@
     "author": "Les <hello@lesis.online>",
     "devDependencies": {
         "@types/js-yaml": "^4.0.9",
-        "@types/node": "^26.2.0",
+        "@types/node": "^26.6.3",
         "@types/semver": "^7.8.0",
-        "js-yaml": "^5.2.3",
+        "js-yaml": "^5.4.2",
         "oazapfts": "^7.5.0",
-        "tsx": "^4.23.12"
+        "tsx": "^4.23.15"
     },
     "dependencies": {
         "@viz/api": "workspace:*",
-        "dotenv": "^17.4.2",
-        "libexif-wasm": "^0.5.3",
+        "dotenv": "^18.0.4",
+        "libexif-wasm": "^0.5.5",
         "pexels": "^1.4.0",
         "semver": "^7.8.5",
         "unsplash-js": "^8.0.1"
