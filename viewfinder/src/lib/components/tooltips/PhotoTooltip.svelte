@@ -172,7 +172,7 @@
             {#if takenAt}
                 <div class="capture-time" title="Date & Time Captured">
                     <MaterialIcon iconName="schedule" />
-                    <span class="font-mono">{DateTime.fromJSDate(takenAt).toFormat("dd LLL yyyy • HH:mm")}</span>
+                    <span>{DateTime.fromJSDate(takenAt).toFormat("dd LLL yyyy • HH:mm")}</span>
                 </div>
             {/if}
         </div>
@@ -335,15 +335,11 @@
         align-items: center;
         gap: var(--viz-spacing-xs);
         color: var(--viz-text-secondary);
-        font-weight: 500;
+        font-weight: 600;
 
         :global(.viz-material-icon) {
             flex-shrink: 0;
             color: var(--viz-text-muted);
-        }
-
-        span {
-            letter-spacing: -0.01em;
         }
     }
 
@@ -351,9 +347,7 @@
         display: flex;
         align-items: center;
         justify-content: space-between;
-        background-color: var(--viz-surface-popover);
-        border: 1px solid var(--viz-border-subtle);
-        border-radius: var(--viz-border-radius-md);
+        border-left: var(--viz-border-thick);
         padding: var(--viz-spacing-xs) var(--viz-spacing-sm);
         gap: var(--viz-spacing-md);
         box-sizing: border-box;
@@ -377,13 +371,13 @@
         white-space: nowrap;
         overflow: hidden;
         text-overflow: ellipsis;
+        gap: var(--viz-spacing-xxs);
     }
 
     .spec-sub {
         color: var(--viz-text-muted);
         font-weight: 400;
         font-size: var(--viz-font-size-sm);
-        margin-left: 2px;
     }
 
     .exif-section {
@@ -415,7 +409,7 @@
 
     .camera-text,
     .lens-text {
-        font-family: var(--viz-mono-font);
+        // font-family: var(--viz-mono-font);
         overflow: hidden;
         text-overflow: ellipsis;
     }
