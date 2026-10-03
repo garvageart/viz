@@ -4,7 +4,6 @@
     import { page } from "$app/state";
     import { onMount, untrack } from "svelte";
     import Dropdown from "$lib/components/context-menus/Dropdown.svelte";
-    import { CLIENT_IS_PRODUCTION } from "$lib/constants";
     import { contextMenu } from "$lib/context-menu";
     import { themeContextMenu } from "$lib/context-menu/menus/theme";
     import { createWorkspaceViewsMenu } from "$lib/context-menu/menus/workspaceViews";
@@ -250,7 +249,7 @@
             align="right"
             hideTitle={isMobile}
         />
-        {#if dev || !CLIENT_IS_PRODUCTION}
+        {#if dev}
             {#if page.url.pathname === "/"}
                 <Button
                     variant="ghost"
