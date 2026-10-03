@@ -8,30 +8,30 @@ This document lists every environment variable recognised by the Viz API server,
 
 ## Quick Reference
 
-| Variable | Required | Default | Used By |
-| :--- | :---: | :--- | :--- |
-| `ENV` | No | `development` | API server |
-| `API_PORT` | No | `7770` | API server, Vite proxy |
-| `API_HOST` | No | `localhost` | API server |
-| `DB_HOST` | No | `localhost` | API server |
-| `DB_PORT` | No | `5432` | API server |
-| `DB_USER` | No | `postgres` | API server |
-| `DB_PASSWORD` | **Yes** | — | API server |
-| `DB_NAME` | No | `viz` | API server |
-| `BASE_DIRECTORY` | No | `./data` | API server |
-| `UPLOAD_LOCATION` | No | `library` | API server |
+| Variable          | Required | Default       | Used By                |
+| :---------------- | :------: | :------------ | :--------------------- |
+| `ENV`             |    No    | `development` | API server             |
+| `API_PORT`        |    No    | `7770`        | API server, Vite proxy |
+| `API_HOST`        |    No    | `localhost`   | API server             |
+| `DB_HOST`         |    No    | `localhost`   | API server             |
+| `DB_PORT`         |    No    | `5432`        | API server             |
+| `DB_USER`         |    No    | `postgres`    | API server             |
+| `DB_PASSWORD`     | **Yes**  | —             | API server             |
+| `DB_NAME`         |    No    | `viz`         | API server             |
+| `BASE_DIRECTORY`  |    No    | `./data`      | API server             |
+| `UPLOAD_LOCATION` |    No    | `library`     | API server             |
 
 ---
 
 ## 1. Server Configuration
 
-| Variable | Default | Description |
-| :--- | :--- | :--- |
-| `ENV` | `development` | Runtime environment. Set to `production` in Docker. Controls log verbosity, host binding defaults, and feature flags. Also accepts `environment` or `env` (case-insensitive). |
-| `API_PORT` | `7770` | Port the Go API server listens on. |
-| `API_HOST` | `localhost` (`0.0.0.0` when `ENV=production`) | Bind address for the API server. |
-| `ALLOWED_ORIGINS` | — | Comma-separated list of allowed CORS origins. When unset, defaults to the server's own origin. |
-| `VIZ_FRONTEND_BUILD_PATH` | — | Custom filesystem path to a pre-built frontend. When unset, serves the embedded SPA from the binary. |
+| Variable                  | Default                                       | Description                                                                                                                                                                   |
+| :------------------------ | :-------------------------------------------- | :---------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `ENV`                     | `development`                                 | Runtime environment. Set to `production` in Docker. Controls log verbosity, host binding defaults, and feature flags. Also accepts `environment` or `env` (case-insensitive). |
+| `API_PORT`                | `7770`                                        | Port the Go API server listens on.                                                                                                                                            |
+| `API_HOST`                | `localhost` (`0.0.0.0` when `ENV=production`) | Bind address for the API server.                                                                                                                                              |
+| `ALLOWED_ORIGINS`         | —                                             | Comma-separated list of allowed CORS origins. When unset, defaults to the server's own origin.                                                                                |
+| `VIZ_FRONTEND_BUILD_PATH` | —                                             | Custom filesystem path to a pre-built frontend. When unset, serves the embedded SPA from the binary.                                                                          |
 
 ---
 
@@ -39,14 +39,14 @@ This document lists every environment variable recognised by the Viz API server,
 
 These variables are read by Viper and mapped to the `database.*` config keys. They can also be set in `viz.json` under `database`.
 
-| Variable | Config Key | Default | Description |
-| :--- | :--- | :--- | :--- |
-| `DB_HOST` | `database.host` | `localhost` | PostgreSQL host. Set to `db` in Docker Compose. |
-| `DB_PORT` | `database.port` | `5432` | PostgreSQL port. |
-| `DB_USER` | `database.user` | `postgres` | PostgreSQL username. |
-| `DB_PASSWORD` | `database.password` | — | PostgreSQL password. **Required for production.** |
-| `DB_NAME` | `database.name` | `viz` | PostgreSQL database name. |
-| `DB_CONNECT_TIMEOUT` | — | — | Database connection timeout duration (e.g. `5s`, `10s`). |
+| Variable             | Config Key          | Default     | Description                                              |
+| :------------------- | :------------------ | :---------- | :------------------------------------------------------- |
+| `DB_HOST`            | `database.host`     | `localhost` | PostgreSQL host. Set to `db` in Docker Compose.          |
+| `DB_PORT`            | `database.port`     | `5432`      | PostgreSQL port.                                         |
+| `DB_USER`            | `database.user`     | `postgres`  | PostgreSQL username.                                     |
+| `DB_PASSWORD`        | `database.password` | —           | PostgreSQL password. **Required for production.**        |
+| `DB_NAME`            | `database.name`     | `viz`       | PostgreSQL database name.                                |
+| `DB_CONNECT_TIMEOUT` | —                   | —           | Database connection timeout duration (e.g. `5s`, `10s`). |
 
 > **Note:** `POSTGRES_PASSWORD` and `POSTGRES_USER` are also accepted as direct overrides in `cmd/api/api.go` (used by Docker). If set, they take precedence over the Viper-bound values.
 
@@ -56,9 +56,9 @@ These variables are read by Viper and mapped to the `database.*` config keys. Th
 
 Configured via `viz.json` under `redis`. No environment variables are bound directly, but `REDIS_PASSWORD` is bound via Viper.
 
-| Variable | Config Key | Default | Description |
-| :--- | :--- | :--- | :--- |
-| `REDIS_PASSWORD` | `redis.password` | — | Redis authentication password. Only required when `redis.enabled` is `true`. |
+| Variable         | Config Key       | Default | Description                                                                  |
+| :--------------- | :--------------- | :------ | :--------------------------------------------------------------------------- |
+| `REDIS_PASSWORD` | `redis.password` | —       | Redis authentication password. Only required when `redis.enabled` is `true`. |
 
 Additional Redis settings are available in `viz.json`: `redis.host` (default `localhost`), `redis.port` (default `6379`), `redis.db`, `redis.enabled`, `redis.use_tls`, `redis.pool_size`, `redis.dial_timeout_seconds`, `redis.read_timeout_seconds`, `redis.write_timeout_seconds`.
 
@@ -66,10 +66,10 @@ Additional Redis settings are available in `viz.json`: `redis.host` (default `lo
 
 ## 4. Storage
 
-| Variable | Config Key | Default | Description |
-| :--- | :--- | :--- | :--- |
-| `BASE_DIRECTORY` | `base_directory` | `./data` | Root directory for the library, database, cache, and trash. |
-| `UPLOAD_LOCATION` | `upload.location` | `library` | Sub-directory or storage mode for uploaded images. |
+| Variable          | Config Key        | Default   | Description                                                 |
+| :---------------- | :---------------- | :-------- | :---------------------------------------------------------- |
+| `BASE_DIRECTORY`  | `base_directory`  | `./data`  | Root directory for the library, database, cache, and trash. |
+| `UPLOAD_LOCATION` | `upload.location` | `library` | Sub-directory or storage mode for uploaded images.          |
 
 ---
 
@@ -77,18 +77,18 @@ Additional Redis settings are available in `viz.json`: `redis.host` (default `lo
 
 These control the authentication cookie behaviour, primarily useful when running behind a reverse proxy or on a custom domain.
 
-| Variable | Default | Description |
-| :--- | :--- | :--- |
-| `VIZ_COOKIE_DOMAIN` | — | Set the `Domain` attribute on auth cookies. Use for cross-subdomain SSO (e.g. `.example.com`). |
-| `VIZ_COOKIE_SECURE` | `false` | Set to `true` to mark cookies as `Secure` (HTTPS-only). **Required when `VIZ_COOKIE_SAMESITE=None`.** |
-| `VIZ_COOKIE_SAMESITE` | `Lax` | SameSite cookie policy. Accepts `Lax`, `Strict`, or `None`. |
+| Variable              | Default | Description                                                                                           |
+| :-------------------- | :------ | :---------------------------------------------------------------------------------------------------- |
+| `VIZ_COOKIE_DOMAIN`   | —       | Set the `Domain` attribute on auth cookies. Use for cross-subdomain SSO (e.g. `.example.com`).        |
+| `VIZ_COOKIE_SECURE`   | `false` | Set to `true` to mark cookies as `Secure` (HTTPS-only). **Required when `VIZ_COOKIE_SAMESITE=None`.** |
+| `VIZ_COOKIE_SAMESITE` | `Lax`   | SameSite cookie policy. Accepts `Lax`, `Strict`, or `None`.                                           |
 
 ---
 
 ## 6. Logging
 
-| Variable | Default | Description |
-| :--- | :--- | :--- |
+| Variable          | Default | Description                                                         |
+| :---------------- | :------ | :------------------------------------------------------------------ |
 | `LOG_SHOW_RECORD` | `false` | Set to `true` to print individual structured log records to stdout. |
 
 Additional logging settings are in `viz.json`: `logging.level` (default `debug`). Timezone is a top-level config key (`timezone`, default `utc`).
@@ -97,9 +97,9 @@ Additional logging settings are in `viz.json`: `logging.level` (default `debug`)
 
 ## 7. Feature Flags
 
-| Variable | Default | Description |
-| :--- | :--- | :--- |
-| `ENABLE_URL_UPLOAD` | `false` | Set to `true` to allow uploading images from a URL (not just file uploads). |
+| Variable                | Default | Description                                                                 |
+| :---------------------- | :------ | :-------------------------------------------------------------------------- |
+| `VIZ_ENABLE_URL_UPLOAD` | `false` | Set to `true` to allow uploading images from a URL (not just file uploads). |
 
 ---
 
@@ -107,13 +107,13 @@ Additional logging settings are in `viz.json`: `logging.level` (default `debug`)
 
 These are read by `viewfinder/vite.config.ts` at build/dev time.
 
-| Variable | Default | Description |
-| :--- | :--- | :--- |
-| `VIZ_CONFIG_PATH` | `../viz.json` | Path to the `viz.json` config file. Override when running from a different working directory (e.g. Docker: `/app/viz.json`). |
-| `VITE_VIZ_PORT` | `7777` | Port for the Vite dev/preview server. |
-| `VIZ_API_SERVER_HOST` | from `viz.json` | API host for the Vite dev proxy target. |
-| `VIZ_API_SERVER_PORT` | from `viz.json` | API port for the Vite dev proxy target. |
-| `API_PORT` | `7770` | Also read by Vite as a fallback for the API proxy port. |
+| Variable              | Default         | Description                                                                                                                  |
+| :-------------------- | :-------------- | :--------------------------------------------------------------------------------------------------------------------------- |
+| `VIZ_CONFIG_PATH`     | `../viz.json`   | Path to the `viz.json` config file. Override when running from a different working directory (e.g. Docker: `/app/viz.json`). |
+| `VITE_VIZ_PORT`       | `7777`          | Port for the Vite dev/preview server.                                                                                        |
+| `VIZ_API_SERVER_HOST` | from `viz.json` | API host for the Vite dev proxy target.                                                                                      |
+| `VIZ_API_SERVER_PORT` | from `viz.json` | API port for the Vite dev proxy target.                                                                                      |
+| `API_PORT`            | `7770`          | Also read by Vite as a fallback for the API proxy port.                                                                      |
 
 ---
 
@@ -121,15 +121,15 @@ These are read by `viewfinder/vite.config.ts` at build/dev time.
 
 Used by `viewfinder/e2e/` and `viewfinder/playwright.config.ts`.
 
-| Variable | Default | Description |
-| :--- | :--- | :--- |
-| `E2E_TEST_EMAIL` | — | Email for the test user account. |
-| `E2E_TEST_PASSWORD` | — | Password for the test user account. |
-| `E2E_TEST_USERNAME` | — | Display name for the test user account. |
-| `PLAYWRIGHT_TEST_BASE_URL` | `http://localhost:7777` | Base URL for Playwright tests. |
-| `PLAYWRIGHT_WORKERS` | `2` (or `1` in CI) | Number of parallel test workers. |
-| `PLAYWRIGHT_PREVIEW` | `false` | Run tests against `vite preview` instead of `vite dev`. |
-| `CI` | `false` | CI environment flag. Sets `forbidOnly`, single worker, and preview mode. |
+| Variable                   | Default                 | Description                                                              |
+| :------------------------- | :---------------------- | :----------------------------------------------------------------------- |
+| `E2E_TEST_EMAIL`           | —                       | Email for the test user account.                                         |
+| `E2E_TEST_PASSWORD`        | —                       | Password for the test user account.                                      |
+| `E2E_TEST_USERNAME`        | —                       | Display name for the test user account.                                  |
+| `PLAYWRIGHT_TEST_BASE_URL` | `http://localhost:7777` | Base URL for Playwright tests.                                           |
+| `PLAYWRIGHT_WORKERS`       | `2` (or `1` in CI)      | Number of parallel test workers.                                         |
+| `PLAYWRIGHT_PREVIEW`       | `false`                 | Run tests against `vite preview` instead of `vite dev`.                  |
+| `CI`                       | `false`                 | CI environment flag. Sets `forbidOnly`, single worker, and preview mode. |
 
 ---
 
@@ -137,25 +137,25 @@ Used by `viewfinder/e2e/` and `viewfinder/playwright.config.ts`.
 
 The `docker/docker-compose.yml` passes these to the `server` and `db` services:
 
-| Variable | Service | Default | Description |
-| :--- | :--- | :--- | :--- |
-| `ENV` | server | `production` | Set automatically by the compose file. |
-| `DB_HOST` | server | `db` | Overridden to point to the Docker Postgres service. |
-| `REDIS_HOST` | server | `redis` | Set automatically by the compose file. |
-| `POSTGRES_USER` | db | `postgres` | PostgreSQL username for the container. |
-| `POSTGRES_PASSWORD` | db | `postgres` | PostgreSQL password for the container. |
-| `POSTGRES_DB` | db | `viz` | PostgreSQL database name for the container. |
+| Variable            | Service | Default      | Description                                         |
+| :------------------ | :------ | :----------- | :-------------------------------------------------- |
+| `ENV`               | server  | `production` | Set automatically by the compose file.              |
+| `DB_HOST`           | server  | `db`         | Overridden to point to the Docker Postgres service. |
+| `REDIS_HOST`        | server  | `redis`      | Set automatically by the compose file.              |
+| `POSTGRES_USER`     | db      | `postgres`   | PostgreSQL username for the container.              |
+| `POSTGRES_PASSWORD` | db      | `postgres`   | PostgreSQL password for the container.              |
+| `POSTGRES_DB`       | db      | `viz`        | PostgreSQL database name for the container.         |
 
 ### `docker/docker-compose.prod.yml` (self-hosting template)
 
 Interpolated by Docker Compose at deploy time. Set these in the shell or the root `.env`:
 
-| Variable | Required | Default | Description |
-| :--- | :---: | :--- | :--- |
-| `REPO_HOST` | **Yes** | — | Container registry host holding the `viz-server` image. |
-| `REPOSITORY` | **Yes** | — | Registry owner/repo containing the `viz-server` image. |
-| `DATABASE_LOCATION` | **Yes** | — | Host path for the PostgreSQL data directory. |
-| `IMAGE_TAG` | No | `latest` | `viz-server` image tag to deploy. |
+| Variable            | Required | Default  | Description                                             |
+| :------------------ | :------: | :------- | :------------------------------------------------------ |
+| `REPO_HOST`         | **Yes**  | —        | Container registry host holding the `viz-server` image. |
+| `REPOSITORY`        | **Yes**  | —        | Registry owner/repo containing the `viz-server` image.  |
+| `DATABASE_LOCATION` | **Yes**  | —        | Host path for the PostgreSQL data directory.            |
+| `IMAGE_TAG`         |    No    | `latest` | `viz-server` image tag to deploy.                       |
 
 ---
 

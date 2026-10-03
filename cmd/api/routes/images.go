@@ -750,7 +750,7 @@ func ImagesRouter(db *gorm.DB, logger *slog.Logger, wsBroker *libhttp.WSBroker) 
 	// it's possible that URL uploads could be a security problem.
 	// cool idea in theory i guess tho
 	router.Post("/url", func(res http.ResponseWriter, req *http.Request) {
-		if os.Getenv("ENABLE_URL_UPLOAD") != "true" {
+		if os.Getenv("VIZ_ENABLE_URL_UPLOAD") != "true" {
 			render.Status(req, http.StatusForbidden)
 			render.JSON(res, req, dto.ErrorResponse{Error: "URL uploads are disabled"})
 			return
