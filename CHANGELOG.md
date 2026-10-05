@@ -5,6 +5,18 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.36.0] - 2026-10-05
+
+* refactor(viewfinder): migrate route imports to subpath alias #lib and $app/env (7146637b)
+* refactor(viewfinder): migrate library module imports to subpath alias #lib and $app/env (e71b6063)
+* refactor(viewfinder): modernize svelte-splitpanes with svelte 5 runes and tests (fbf622d8)
+* refactor(viewfinder): update navigation hooks and history state for sveltekit 3 (95c4412d)
+* chore(viewfinder): upgrade to sveltekit 3 and update build configuration (31fb9fa5)
+* style(viewfinder): refine PhotoTooltip layout and typography (750bf204)
+* refactor(viewfinder): remove redundant browser checks and constants (764edccf)
+* refactor(api): use VIZ_ENABLE_URL_UPLOAD environment variable (0dbbebbc)
+* chore: update javascript packages (2d82e52b)
+
 ## [0.35.1] - 2026-09-28
 
 * fix: change Badge type implementations to variant sizing (c5be9c15)
