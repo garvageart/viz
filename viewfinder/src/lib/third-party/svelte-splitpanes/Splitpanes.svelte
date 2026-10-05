@@ -39,12 +39,10 @@
     })();
 </script>
 
-<!-- svelte-ignore state_referenced_locally -->
 <script lang="ts">
-    import { browser } from "$app/environment";
+    import { generateKeyId } from "#lib/utils/layout.js";
+    import { browser } from "$app/env";
     import { type Snippet, createEventDispatcher, onDestroy, onMount, setContext, tick } from "svelte";
-    import { writable } from "svelte/store";
-    import { generateKeyId } from "$lib/utils/layout";
     import type { ClientCallbacks, IPane, IPaneSizingEvent, PaneInitFunction, SplitContext } from "./index.js";
     import GatheringRound from "./internal/GatheringRound.svelte";
     import { forEachPartial, sumPartial } from "./internal/utils/array.js";
@@ -119,10 +117,8 @@
         children
     }: Props = $props();
 
-    const usedKeyId = keyId || generateKeyId(16);
-    if (!id || id.trim() === "") {
-        id = `splitpanes-${usedKeyId}`;
-    }
+    const usedKeyId = $derived(keyId || generateKeyId(16));
+    const effectiveId = $derived(id && id.trim() !== "" ? id : `splitpanes-${usedKeyId}`);
 
     // VARIABLES ----------------
 
@@ -149,11 +145,11 @@
     let timeoutId: NodeJS.Timeout | null;
     // panes per insertion order (pane.index is the order index)
     let panes = new Array<IPane>();
-    // passed to the children via the context - writable to ensure proper reactivity
-    const isHorizontal = writable<boolean>(horizontal);
-    const showFirstSplitter = writable<boolean>(firstSplitter);
+    // passed to the children via the context - derived values for Svelte 5 reactivity
+    let isHorizontal = $derived<boolean>(horizontal);
+    let showFirstSplitter = $derived<boolean>(firstSplitter);
     // tells the key of the very first pane, or undefined if not recieved yet
-    const veryFirstPaneKey = writable<unknown>(undefined);
+    let veryFirstPaneKey = $state.raw<unknown>(undefined);
 
     let activeSplitterElement: HTMLElement;
     let activeSplitterDrag: number;
@@ -164,13 +160,6 @@
     let cachedContainerStyle: CSSStyleDeclaration | null = null;
     let cachedContainerRect: ReturnType<typeof elementRectWithoutBorder> | null = null;
     let cachedIsRTL = false;
-
-    // REACTIVE ----------------
-
-    $effect(() => {
-        $isHorizontal = horizontal;
-        $showFirstSplitter = firstSplitter;
-    });
 
     function isSplitpanes(element: Element): boolean {
         return element.classList.contains("splitpanes");
@@ -209,8 +198,8 @@
     }
 
     const onPaneInit: PaneInitFunction = (_key) => {
-        if ($veryFirstPaneKey === undefined) {
-            $veryFirstPaneKey = _key;
+        if (veryFirstPaneKey === undefined) {
+            veryFirstPaneKey = _key;
         }
 
         return {
@@ -219,10 +208,18 @@
     };
 
     setContext<SplitContext>(KEY, {
-        keyId: usedKeyId,
-        showFirstSplitter,
-        veryFirstPaneKey,
-        isHorizontal,
+        get keyId() {
+            return usedKeyId;
+        },
+        get showFirstSplitter() {
+            return showFirstSplitter;
+        },
+        get veryFirstPaneKey() {
+            return veryFirstPaneKey;
+        },
+        get isHorizontal() {
+            return isHorizontal;
+        },
         ssrRegisterPaneSize: browser ? undefined : ssrRegisterPaneSize,
         onPaneInit,
         clientOnly: browser
@@ -248,7 +245,7 @@
 
         if (index === 0) {
             // Need to update the first pane key, because the first pane can be changed in runtime.
-            $veryFirstPaneKey = pane.key;
+            veryFirstPaneKey = pane.key;
         }
 
         // inserts pane at proper array index
@@ -304,7 +301,7 @@
             }
 
             if (index === 0) {
-                $veryFirstPaneKey = panes.length > 0 ? panes[0].key : undefined;
+                veryFirstPaneKey = panes.length > 0 ? panes[0].key : undefined;
             }
 
             if (isReady) {
@@ -344,7 +341,7 @@
         }
 
         if (!isSplitpanesRoot(container!)) {
-            id += `-${usedKeyId}`;
+            id = `${effectiveId}-${usedKeyId}`;
         }
 
         isReady = true;
@@ -1111,13 +1108,13 @@
             }
 
             panes = newPanes;
-            $veryFirstPaneKey = panes.length > 0 ? panes[0].key : undefined;
+            veryFirstPaneKey = panes.length > 0 ? panes[0].key : undefined;
         }
     }
 </script>
 
 <div
-    {id}
+    id={effectiveId}
     data-viz-sp-id={usedKeyId}
     bind:this={container}
     class={`splitpanes ${theme || ""} ${clazz || ""}`}

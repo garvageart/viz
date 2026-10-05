@@ -1,5 +1,3 @@
-import type { Readable } from "svelte/store";
-
 export { default as Pane } from "./Pane.svelte";
 export { default as Splitpanes } from "./Splitpanes.svelte";
 
@@ -20,9 +18,9 @@ export interface ClientCallbacks {
 export interface SplitContext {
     keyId: string;
     /** Tells the key of the very first pane, or undefined if not recieved yet. */
-    veryFirstPaneKey: Readable<any>;
-    isHorizontal: Readable<boolean>;
-    showFirstSplitter: Readable<boolean>;
+    veryFirstPaneKey: unknown;
+    isHorizontal: boolean;
+    showFirstSplitter: boolean;
     ssrRegisterPaneSize?: (size: number | null) => void;
     onPaneInit: PaneInitFunction;
     clientOnly?: {

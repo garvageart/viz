@@ -1,22 +1,18 @@
 <script lang="ts">
-    import { browser } from "$app/environment";
+    import { generateRandomString } from "#lib/utils/misc.js";
+    import { browser } from "$app/env";
     import { type Snippet, getContext, hasContext, onDestroy, onMount } from "svelte";
-    import { generateRandomString } from "$lib/utils/misc";
     import { KEY } from "./Splitpanes.svelte";
     import type { ClientCallbacks, IPane, PaneInitFunction, SplitContext } from "./index.js";
     import { gatheringKey } from "./internal/GatheringRound.svelte";
     import { carefullCallbackSource } from "./internal/utils/functions";
     import { getDimensionName } from "./internal/utils/sizing.js";
 
-    const {
-        ssrRegisterPaneSize,
-        onPaneInit,
-        clientOnly: clientOnlyContext,
-        isHorizontal,
-        showFirstSplitter,
-        veryFirstPaneKey,
-        keyId
-    } = getContext<SplitContext>(KEY);
+    const splitContext = getContext<SplitContext>(KEY);
+    const { ssrRegisterPaneSize, onPaneInit, clientOnly: clientOnlyContext, keyId } = splitContext;
+    const isHorizontal = $derived(splitContext.isHorizontal);
+    const showFirstSplitter = $derived(splitContext.showFirstSplitter);
+    const veryFirstPaneKey = $derived(splitContext.veryFirstPaneKey);
 
     interface Props {
         size?: number | null;
@@ -86,9 +82,9 @@
     });
 
     let transitionClass = $derived(
-        smoothExpand ? `transition: ${$isHorizontal ? "height" : "width"} 0.2s ease-out;` : ""
+        smoothExpand ? `transition: ${isHorizontal ? "height" : "width"} 0.2s ease-out;` : ""
     );
-    let dimension = $derived(getDimensionName($isHorizontal));
+    let dimension = $derived(getDimensionName(isHorizontal));
     let style = $derived(`${dimension}: ${sz}%; ${transitionClass}`);
 
     if (gathering && ssrRegisterPaneSize) {
@@ -142,11 +138,11 @@
             isActive = false;
         }
     }}
-/>
+></svelte:document>
 
 {#if !gathering}
     <!-- Splitter -->
-    {#if $veryFirstPaneKey !== key || $showFirstSplitter}
+    {#if veryFirstPaneKey !== key || showFirstSplitter}
         <!-- this a11y issue is known, and will be taken care of as part of the a11y feature issue in #11 -->
         <!-- svelte-ignore a11y_click_events_have_key_events -->
         <!-- svelte-ignore a11y_no_noninteractive_element_interactions -->
