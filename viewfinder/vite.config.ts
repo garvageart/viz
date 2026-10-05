@@ -1,12 +1,15 @@
 /// <reference types="vitest/config" />
+import adapter from "@sveltejs/adapter-static";
 import { sveltekit } from "@sveltejs/kit/vite";
+import { vitePreprocess } from "@sveltejs/vite-plugin-svelte";
 import { svelteTesting } from "@testing-library/svelte/vite";
 import fs from "fs";
 import { createRequire } from "module";
 import path from "path";
 import { fileURLToPath } from "url";
-import { type Plugin, type ProxyOptions, defineConfig } from "vite";
+import { type Plugin, type ProxyOptions } from "vite";
 import devtoolsJson from "vite-plugin-devtools-json";
+import { defineConfig } from "vitest/config";
 
 const file = fileURLToPath(new URL("package.json", import.meta.url));
 const pkg = JSON.parse(fs.readFileSync(file, "utf8"));
@@ -137,9 +140,38 @@ const isolatePlugin: Plugin = {
     }
 };
 
+const isProd = process.env.NODE_ENV === "production";
+
 export default defineConfig({
-    plugins: [imageProcessWasmCopyPlugin, isolatePlugin, devtoolsJson(), svelteTesting(), sveltekit()],
-    define: define,
+    plugins: [
+        imageProcessWasmCopyPlugin,
+        isolatePlugin,
+        devtoolsJson(),
+        svelteTesting(),
+        sveltekit({
+            // Consult https://svelte.dev/docs/kit/integrations
+            // for more information about preprocessors
+            preprocess: vitePreprocess(),
+
+            compilerOptions: {
+                experimental: { async: true },
+                ...(isProd
+                    ? {
+                          cssHash: ({ css, hash }) => {
+                              // *branding yay*
+                              return `viz-css-${hash(css)}`;
+                          }
+                      }
+                    : {})
+            },
+            // adapter-auto only supports some environments, see https://svelte.dev/docs/kit/adapter-auto for a list.
+            // If your environment is not supported, or you settled on a specific environment, switch out the adapter.
+            // See https://svelte.dev/docs/kit/adapters for more information about adapters.
+            adapter: adapter({ pages: "../build/viewfinder", fallback: "index.html" }),
+            version: { pollInterval: 60000 }
+        })
+    ],
+    define,
     optimizeDeps: {
         exclude: ["wasm-vips", "libexif-wasm"],
         rolldownOptions: {
@@ -153,17 +185,16 @@ export default defineConfig({
     },
     build: {
         target: "es2023",
-        emptyOutDir: true,
         reportCompressedSize: false,
         rollupOptions: {
             external: ["material-symbols/index.css"]
         }
     },
     test: {
-        globals: true, // This enables global APIs like 'expect', 'vi'
-        environment: "happy-dom", // Full browser environment incl. IndexedDB (replaces jsdom)
+        globals: true /* This enables global APIs like 'expect', 'vi' */,
+        environment: "happy-dom" /* Full browser environment incl. IndexedDB (replaces jsdom) */,
         clearMocks: true,
-        setupFiles: ["./vitest-setup-client.ts"], // Apply this to all client tests
+        setupFiles: ["./vitest-setup-client.ts"] /* Apply this to all client tests */,
         // viz is a pure SPA — every test runs in the browser environment above.
         include: [
             "src/tests/**/*.spec.ts",
@@ -176,26 +207,30 @@ export default defineConfig({
             "src/lib/server/**",
             "src/lib/third-party/**",
             "src/lib/third-party/**/tests/**",
-            "e2e/**" // Exclude Playwright E2E tests
+            "e2e/**" /* Exclude Playwright E2E tests */
         ]
     },
     server: {
         host: "0.0.0.0",
         port: config.servers.viz.port,
-        cors: true,
+        cors: {
+            origin: true,
+            preflightContinue: true
+        },
         headers: {
             "Cross-Origin-Opener-Policy": "same-origin",
             "Cross-Origin-Embedder-Policy": "require-corp"
         },
         proxy: viteProxy,
         allowedHosts: Array.from(new Set(["*.localhost", "localhost", "127.0.0.1", ...(config.allowed_hosts || [])])),
-        watch: {
-            usePolling: false
-        }
+        watch: { usePolling: false }
     },
     preview: {
         port: config.servers.viz.port,
-        cors: true,
+        cors: {
+            origin: true,
+            preflightContinue: true
+        },
         headers: {
             "Cross-Origin-Opener-Policy": "same-origin",
             "Cross-Origin-Embedder-Policy": "require-corp"
