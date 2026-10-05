@@ -1,6 +1,6 @@
+import { sendVizAPIRequest } from "#lib/utils/http.js";
 import type { EventRecord, WsMetricsResponse, WsStatsResponse } from "@viz/api";
 import { getEventsSince, getWsMetrics, getWsStats } from "@viz/api";
-import { sendVizAPIRequest } from "$lib/utils/http";
 import type { PageLoad } from "./$types";
 
 interface PageLoadData {

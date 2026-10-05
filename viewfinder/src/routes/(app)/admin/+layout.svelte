@@ -1,8 +1,8 @@
 <script lang="ts">
+    import NavSidebar, { type NavItem } from "#lib/components/ui/sidebar/NavSidebar.svelte";
+    import { user } from "#lib/states/index.svelte.js";
+    import { toasts } from "#lib/toast-notifcations/toasts.svelte.js";
     import { goto } from "$app/navigation";
-    import NavSidebar, { type NavItem } from "$lib/components/ui/sidebar/NavSidebar.svelte";
-    import { user } from "$lib/states/index.svelte";
-    import { toasts } from "$lib/toast-notifcations/toasts.svelte";
 
     // FIXME: I hate this
     const adminNavItems: NavItem[] = [

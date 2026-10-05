@@ -1,7 +1,7 @@
+import { DataKeys } from "#lib/dependency-keys.js";
+import { photosSort } from "#lib/states/sort.svelte.js";
+import { sendVizAPIRequest } from "#lib/utils/http.js";
 import { listImages } from "@viz/api";
-import { DataKeys } from "$lib/dependency-keys";
-import { photosSort } from "$lib/states/sort.svelte";
-import { sendVizAPIRequest } from "$lib/utils/http";
 import type { PageLoad } from "./$types";
 
 export const load: PageLoad = async ({ depends }) => {

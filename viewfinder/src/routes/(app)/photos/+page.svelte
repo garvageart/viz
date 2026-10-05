@@ -1,4 +1,43 @@
 <script lang="ts">
+    import Dropdown from "#lib/components/context-menus/Dropdown.svelte";
+    import AssetGrid from "#lib/components/grid/AssetView.svelte";
+    import PhotoAssetGrid from "#lib/components/grid/PhotoAssetGrid.svelte";
+    import ImageLabelViewer from "#lib/components/image-tools/ImageLabelViewer.svelte";
+    import StarRating from "#lib/components/image-tools/StarRating.svelte";
+    import FilterModal, { FilterModalOptions } from "#lib/components/modals/FilterModal.svelte";
+    import { modalsManager } from "#lib/components/modals/manager/ModalManager.svelte.js";
+    import ActiveFiltersTooltip from "#lib/components/tooltips/ActiveFiltersTooltip.svelte";
+    import Button from "#lib/components/ui/Button.svelte";
+    import Checkbox from "#lib/components/ui/Checkbox.svelte";
+    import DragAndDropUpload from "#lib/components/ui/DragAndDropUpload.svelte";
+    import ImageCard, { type ImageVariant } from "#lib/components/ui/ImageCard.svelte";
+    import ImageLightbox from "#lib/components/ui/ImageLightbox.svelte";
+    import MaterialIcon from "#lib/components/ui/MaterialIcon.svelte";
+    import { ImageLightboxState } from "#lib/components/ui/state/image-lightbox.svelte.js";
+    import VizToolbar from "#lib/components/ui/toolbars/VizToolbar.svelte";
+    import { VizMimeTypes } from "#lib/constants.js";
+    import { contextMenu } from "#lib/context-menu/index.js";
+    import { getImageGridDisplay } from "#lib/context-menu/menus/image-grid-display.js";
+    import { createImageMenu, deleteSelectedImages, openAddToCollectionModal } from "#lib/context-menu/menus/images.js";
+    import type { MenuItem } from "#lib/context-menu/types.js";
+    import { DragData } from "#lib/drag-drop/data.js";
+    import { LabelColours } from "#lib/images/constants.js";
+    import { ImagesPaginationState } from "#lib/images/state.svelte.js";
+    import { KbdShortcutTier, keyboardManager } from "#lib/keyboard/keyboard.svelte.js";
+    import {
+        type ConsolidatedGroup,
+        type DateGroup,
+        getConsolidatedGroups,
+        groupImagesByDate
+    } from "#lib/photo-layout/index.js";
+    import { applySortSelection, currentSortId, sortCollectionImages, sortOptions } from "#lib/sort/sort.js";
+    import { filterManager } from "#lib/states/filter.svelte.js";
+    import { viewSettings } from "#lib/states/index.svelte.js";
+    import { SelectionScopeNames, selectionManager } from "#lib/states/selection.svelte.js";
+    import { photosSort } from "#lib/states/sort.svelte.js";
+    import { toasts } from "#lib/toast-notifcations/toasts.svelte.js";
+    import { type ImageUploadSuccess, uploadManager } from "#lib/upload/manager.svelte.js";
+    import { getImageLabel } from "#lib/utils/images.js";
     import { goto } from "$app/navigation";
     import {
         type Collection,
@@ -9,45 +48,6 @@
         updateImage
     } from "@viz/api";
     import { onDestroy, untrack } from "svelte";
-    import Dropdown from "$lib/components/context-menus/Dropdown.svelte";
-    import AssetGrid from "$lib/components/grid/AssetView.svelte";
-    import PhotoAssetGrid from "$lib/components/grid/PhotoAssetGrid.svelte";
-    import ImageLabelViewer from "$lib/components/image-tools/ImageLabelViewer.svelte";
-    import StarRating from "$lib/components/image-tools/StarRating.svelte";
-    import FilterModal, { FilterModalOptions } from "$lib/components/modals/FilterModal.svelte";
-    import { modalsManager } from "$lib/components/modals/manager/ModalManager.svelte";
-    import ActiveFiltersTooltip from "$lib/components/tooltips/ActiveFiltersTooltip.svelte";
-    import Button from "$lib/components/ui/Button.svelte";
-    import Checkbox from "$lib/components/ui/Checkbox.svelte";
-    import DragAndDropUpload from "$lib/components/ui/DragAndDropUpload.svelte";
-    import ImageCard, { type ImageVariant } from "$lib/components/ui/ImageCard.svelte";
-    import ImageLightbox from "$lib/components/ui/ImageLightbox.svelte";
-    import MaterialIcon from "$lib/components/ui/MaterialIcon.svelte";
-    import { ImageLightboxState } from "$lib/components/ui/state/image-lightbox.svelte";
-    import VizToolbar from "$lib/components/ui/toolbars/VizToolbar.svelte";
-    import { VizMimeTypes } from "$lib/constants.js";
-    import { contextMenu } from "$lib/context-menu";
-    import { getImageGridDisplay } from "$lib/context-menu/menus/image-grid-display.js";
-    import { createImageMenu, deleteSelectedImages, openAddToCollectionModal } from "$lib/context-menu/menus/images.js";
-    import type { MenuItem } from "$lib/context-menu/types";
-    import { DragData } from "$lib/drag-drop/data.js";
-    import { LabelColours } from "$lib/images/constants.js";
-    import { ImagesPaginationState } from "$lib/images/state.svelte";
-    import { KbdShortcutTier, keyboardManager } from "$lib/keyboard/keyboard.svelte";
-    import {
-        type ConsolidatedGroup,
-        type DateGroup,
-        getConsolidatedGroups,
-        groupImagesByDate
-    } from "$lib/photo-layout/index.js";
-    import { applySortSelection, currentSortId, sortCollectionImages, sortOptions } from "$lib/sort/sort.js";
-    import { filterManager } from "$lib/states/filter.svelte";
-    import { viewSettings } from "$lib/states/index.svelte";
-    import { SelectionScopeNames, selectionManager } from "$lib/states/selection.svelte";
-    import { photosSort } from "$lib/states/sort.svelte";
-    import { toasts } from "$lib/toast-notifcations/toasts.svelte.js";
-    import { type ImageUploadSuccess, uploadManager } from "$lib/upload/manager.svelte";
-    import { getImageLabel } from "$lib/utils/images.js";
 
     let { data } = $props();
 

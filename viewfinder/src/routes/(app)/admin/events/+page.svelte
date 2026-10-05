@@ -1,16 +1,16 @@
 <script lang="ts">
+    import AdminRouteShell from "#lib/components/admin/AdminRouteShell.svelte";
+    import ConfirmationModal from "#lib/components/modals/ConfirmationModal.svelte";
+    import { modalsManager } from "#lib/components/modals/manager/ModalManager.svelte.js";
+    import Badge from "#lib/components/ui/Badge.svelte";
+    import Button from "#lib/components/ui/Button.svelte";
+    import IconBadge from "#lib/components/ui/IconBadge.svelte";
+    import InputSelect from "#lib/components/ui/InputSelect.svelte";
+    import MaterialIcon from "#lib/components/ui/MaterialIcon.svelte";
+    import SearchInput from "#lib/components/ui/SearchInput.svelte";
+    import Table, { type TableColumn } from "#lib/components/ui/Table.svelte";
+    import { toasts } from "#lib/toast-notifcations/toasts.svelte.js";
     import type { EventRecord, WsMetricsResponse, WsStatsResponse } from "@viz/api";
-    import AdminRouteShell from "$lib/components/admin/AdminRouteShell.svelte";
-    import ConfirmationModal from "$lib/components/modals/ConfirmationModal.svelte";
-    import { modalsManager } from "$lib/components/modals/manager/ModalManager.svelte";
-    import Badge from "$lib/components/ui/Badge.svelte";
-    import Button from "$lib/components/ui/Button.svelte";
-    import IconBadge from "$lib/components/ui/IconBadge.svelte";
-    import InputSelect from "$lib/components/ui/InputSelect.svelte";
-    import MaterialIcon from "$lib/components/ui/MaterialIcon.svelte";
-    import SearchInput from "$lib/components/ui/SearchInput.svelte";
-    import Table, { type TableColumn } from "$lib/components/ui/Table.svelte";
-    import { toasts } from "$lib/toast-notifcations/toasts.svelte";
     import type { PageData } from "./$types";
 
     type EventHistoryItem = EventRecord;

@@ -1,50 +1,50 @@
 <script lang="ts">
-    import { goto } from "$app/navigation";
-    import type { Collection, ImageAsset } from "@viz/api";
-    import { Label as ImageLabel, addCollectionImages, updateImage } from "@viz/api";
-    import { type ComponentProps, onMount, untrack } from "svelte";
-    import Dropdown from "$lib/components/context-menus/Dropdown.svelte";
-    import AssetGrid from "$lib/components/grid/AssetView.svelte";
-    import PhotoAssetGrid from "$lib/components/grid/PhotoAssetGrid.svelte";
-    import ImageLabelViewer from "$lib/components/image-tools/ImageLabelViewer.svelte";
-    import StarRating from "$lib/components/image-tools/StarRating.svelte";
-    import Button from "$lib/components/ui/Button.svelte";
-    import CollectionCard from "$lib/components/ui/CollectionCard.svelte";
-    import ImageCard from "$lib/components/ui/ImageCard.svelte";
-    import ImageLightbox from "$lib/components/ui/ImageLightbox.svelte";
-    import LoadingSpinner from "$lib/components/ui/LoadingSpinner.svelte";
-    import { ImageLightboxState } from "$lib/components/ui/state/image-lightbox.svelte";
-    import VizToolbar from "$lib/components/ui/toolbars/VizToolbar.svelte";
-    import { VizMimeTypes } from "$lib/constants";
-    import { contextMenu } from "$lib/context-menu";
+    import Dropdown from "#lib/components/context-menus/Dropdown.svelte";
+    import AssetGrid from "#lib/components/grid/AssetView.svelte";
+    import PhotoAssetGrid from "#lib/components/grid/PhotoAssetGrid.svelte";
+    import ImageLabelViewer from "#lib/components/image-tools/ImageLabelViewer.svelte";
+    import StarRating from "#lib/components/image-tools/StarRating.svelte";
+    import Button from "#lib/components/ui/Button.svelte";
+    import CollectionCard from "#lib/components/ui/CollectionCard.svelte";
+    import ImageCard from "#lib/components/ui/ImageCard.svelte";
+    import ImageLightbox from "#lib/components/ui/ImageLightbox.svelte";
+    import LoadingSpinner from "#lib/components/ui/LoadingSpinner.svelte";
+    import { ImageLightboxState } from "#lib/components/ui/state/image-lightbox.svelte.js";
+    import VizToolbar from "#lib/components/ui/toolbars/VizToolbar.svelte";
+    import { VizMimeTypes } from "#lib/constants.js";
+    import { contextMenu } from "#lib/context-menu/index.js";
     import {
         createCollectionMenu,
         deleteSelectedCollections,
         downloadCollectionZip,
         duplicateCollection,
         toggleFavouriteCollections
-    } from "$lib/context-menu/menus/collections";
+    } from "#lib/context-menu/menus/collections.js";
     import {
         createImageMenu,
         openAddToCollectionModal as openAddToCollectionModalCore
-    } from "$lib/context-menu/menus/images";
-    import type { MenuItem } from "$lib/context-menu/types";
-    import { DragData } from "$lib/drag-drop/data";
-    import { LabelColours } from "$lib/images/constants";
-    import { KbdShortcutTier, keyboardManager } from "$lib/keyboard/keyboard.svelte";
+    } from "#lib/context-menu/menus/images.js";
+    import type { MenuItem } from "#lib/context-menu/types.js";
+    import { DragData } from "#lib/drag-drop/data.js";
+    import { LabelColours } from "#lib/images/constants.js";
+    import { KbdShortcutTier, keyboardManager } from "#lib/keyboard/keyboard.svelte.js";
     import {
         type ConsolidatedGroup,
         type DateGroup,
         getConsolidatedGroups,
         groupImagesByDate
-    } from "$lib/photo-layout";
-    import { paginateSearch, performSearch } from "$lib/search/execute";
-    import { search, viewSettings } from "$lib/states/index.svelte";
-    import { SelectionScopeNames, selectionManager } from "$lib/states/selection.svelte";
-    import { toasts } from "$lib/toast-notifcations/toasts.svelte";
-    import type { AssetViewType } from "$lib/types/asset";
-    import type { CardVisualState } from "$lib/types/snippet";
-    import { getImageLabel } from "$lib/utils/images";
+    } from "#lib/photo-layout/index.js";
+    import { paginateSearch, performSearch } from "#lib/search/execute.js";
+    import { search, viewSettings } from "#lib/states/index.svelte.js";
+    import { SelectionScopeNames, selectionManager } from "#lib/states/selection.svelte.js";
+    import { toasts } from "#lib/toast-notifcations/toasts.svelte.js";
+    import type { AssetViewType } from "#lib/types/asset.js";
+    import type { CardVisualState } from "#lib/types/snippet.js";
+    import { getImageLabel } from "#lib/utils/images.js";
+    import { goto } from "$app/navigation";
+    import type { Collection, ImageAsset } from "@viz/api";
+    import { Label as ImageLabel, addCollectionImages, updateImage } from "@viz/api";
+    import { type ComponentProps, onMount, untrack } from "svelte";
 
     let collections = $derived(search.data.collections.data);
     let images = $derived(search.data.images.data);

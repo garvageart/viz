@@ -1,6 +1,6 @@
 <script lang="ts">
+    import { sendOAuthParams } from "#lib/auth/auth_methods.js";
     import { goto } from "$app/navigation";
-    import { sendOAuthParams } from "$lib/auth/auth_methods";
 
     const provider: string | null = new URL(location.href).searchParams.get("provider");
 

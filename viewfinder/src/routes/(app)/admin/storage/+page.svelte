@@ -1,6 +1,6 @@
 <script lang="ts">
-    import AdminRouteShell from "$lib/components/admin/AdminRouteShell.svelte";
-    import StorageTemplate from "$lib/components/storage/StorageTemplateSettings.svelte";
+    import AdminRouteShell from "#lib/components/admin/AdminRouteShell.svelte";
+    import StorageTemplate from "#lib/components/storage/StorageTemplateSettings.svelte";
     import type { PageData } from "./$types";
 
     interface Props {

@@ -12,7 +12,53 @@
 </script>
 
 <script lang="ts">
-    import { dev } from "$app/environment";
+    import Dropdown from "#lib/components/context-menus/Dropdown.svelte";
+    import AssetGrid from "#lib/components/grid/AssetView.svelte";
+    import PhotoAssetGrid from "#lib/components/grid/PhotoAssetGrid.svelte";
+    import ImageLabelViewer from "#lib/components/image-tools/ImageLabelViewer.svelte";
+    import StarRating from "#lib/components/image-tools/StarRating.svelte";
+    import AddPhotosModal from "#lib/components/modals/AddPhotosModal.svelte";
+    import CollectionModal from "#lib/components/modals/CollectionModal.svelte";
+    import ConfirmationModal from "#lib/components/modals/ConfirmationModal.svelte";
+    import FilterModal, { FilterModalOptions } from "#lib/components/modals/FilterModal.svelte";
+    import { modalsManager } from "#lib/components/modals/manager/ModalManager.svelte.js";
+    import ActiveFiltersTooltip from "#lib/components/tooltips/ActiveFiltersTooltip.svelte";
+    import AssetImage from "#lib/components/ui/AssetImage.svelte";
+    import AssetsShell from "#lib/components/ui/AssetsShell.svelte";
+    import Badge from "#lib/components/ui/Badge.svelte";
+    import Button from "#lib/components/ui/Button.svelte";
+    import Checkbox from "#lib/components/ui/Checkbox.svelte";
+    import DragAndDropUpload from "#lib/components/ui/DragAndDropUpload.svelte";
+    import ImageCard, { type ImageVariant } from "#lib/components/ui/ImageCard.svelte";
+    import ImageLightbox from "#lib/components/ui/ImageLightbox.svelte";
+    import InputText from "#lib/components/ui/InputText.svelte";
+    import MaterialIcon from "#lib/components/ui/MaterialIcon.svelte";
+    import type { TableColumn } from "#lib/components/ui/Table.svelte";
+    import { ImageLightboxState } from "#lib/components/ui/state/image-lightbox.svelte.js";
+    import { contextMenu } from "#lib/context-menu/index.js";
+    import { getImageGridDisplay } from "#lib/context-menu/menus/image-grid-display.js";
+    import { createImageMenu } from "#lib/context-menu/menus/images.js";
+    import type { MenuItem } from "#lib/context-menu/types.js";
+    import { DEFAULT_IMAGE_COLUMNS, LabelColours } from "#lib/images/constants.js";
+    import { ImagesPaginationState } from "#lib/images/state.svelte.js";
+    import { KbdShortcutTier, keyboardManager } from "#lib/keyboard/keyboard.svelte.js";
+    import {
+        type ConsolidatedGroup,
+        type DateGroup,
+        getConsolidatedGroups,
+        groupImagesByDate
+    } from "#lib/photo-layout/index.js";
+    import { sortCollectionImages } from "#lib/sort/sort.js";
+    import { filterManager } from "#lib/states/filter.svelte.js";
+    import { debugMode, isLayoutPage, viewSettings } from "#lib/states/index.svelte.js";
+    import { type CollectionUIDSelectionScope, selectionManager } from "#lib/states/selection.svelte.js";
+    import { collectionDetailSort } from "#lib/states/sort.svelte.js";
+    import { toasts } from "#lib/toast-notifcations/toasts.svelte.js";
+    import type { AssetGridArray } from "#lib/types/asset.js";
+    import { type ImageUploadSuccess, uploadManager } from "#lib/upload/manager.svelte.js";
+    import { getImageLabel } from "#lib/utils/images.js";
+    import type VizView from "#lib/views/views.svelte.js";
+    import { dev } from "$app/env";
     import { goto } from "$app/navigation";
     import {
         type CollectionUpdate,
@@ -29,52 +75,6 @@
     } from "@viz/api";
     import { DateTime } from "luxon";
     import { type ComponentProps, onDestroy, untrack } from "svelte";
-    import Dropdown from "$lib/components/context-menus/Dropdown.svelte";
-    import AssetGrid from "$lib/components/grid/AssetView.svelte";
-    import PhotoAssetGrid from "$lib/components/grid/PhotoAssetGrid.svelte";
-    import ImageLabelViewer from "$lib/components/image-tools/ImageLabelViewer.svelte";
-    import StarRating from "$lib/components/image-tools/StarRating.svelte";
-    import AddPhotosModal from "$lib/components/modals/AddPhotosModal.svelte";
-    import CollectionModal from "$lib/components/modals/CollectionModal.svelte";
-    import ConfirmationModal from "$lib/components/modals/ConfirmationModal.svelte";
-    import FilterModal, { FilterModalOptions } from "$lib/components/modals/FilterModal.svelte";
-    import { modalsManager } from "$lib/components/modals/manager/ModalManager.svelte";
-    import ActiveFiltersTooltip from "$lib/components/tooltips/ActiveFiltersTooltip.svelte";
-    import AssetImage from "$lib/components/ui/AssetImage.svelte";
-    import AssetsShell from "$lib/components/ui/AssetsShell.svelte";
-    import Badge from "$lib/components/ui/Badge.svelte";
-    import Button from "$lib/components/ui/Button.svelte";
-    import Checkbox from "$lib/components/ui/Checkbox.svelte";
-    import DragAndDropUpload from "$lib/components/ui/DragAndDropUpload.svelte";
-    import ImageCard, { type ImageVariant } from "$lib/components/ui/ImageCard.svelte";
-    import ImageLightbox from "$lib/components/ui/ImageLightbox.svelte";
-    import InputText from "$lib/components/ui/InputText.svelte";
-    import MaterialIcon from "$lib/components/ui/MaterialIcon.svelte";
-    import type { TableColumn } from "$lib/components/ui/Table.svelte";
-    import { ImageLightboxState } from "$lib/components/ui/state/image-lightbox.svelte";
-    import { contextMenu } from "$lib/context-menu";
-    import { getImageGridDisplay } from "$lib/context-menu/menus/image-grid-display";
-    import { createImageMenu } from "$lib/context-menu/menus/images";
-    import type { MenuItem } from "$lib/context-menu/types";
-    import { DEFAULT_IMAGE_COLUMNS, LabelColours } from "$lib/images/constants";
-    import { ImagesPaginationState } from "$lib/images/state.svelte";
-    import { KbdShortcutTier, keyboardManager } from "$lib/keyboard/keyboard.svelte";
-    import {
-        type ConsolidatedGroup,
-        type DateGroup,
-        getConsolidatedGroups,
-        groupImagesByDate
-    } from "$lib/photo-layout/index.js";
-    import { sortCollectionImages } from "$lib/sort/sort.js";
-    import { filterManager } from "$lib/states/filter.svelte";
-    import { debugMode, isLayoutPage, viewSettings } from "$lib/states/index.svelte";
-    import { type CollectionUIDSelectionScope, selectionManager } from "$lib/states/selection.svelte";
-    import { collectionDetailSort } from "$lib/states/sort.svelte";
-    import { toasts } from "$lib/toast-notifcations/toasts.svelte.js";
-    import type { AssetGridArray } from "$lib/types/asset.js";
-    import { type ImageUploadSuccess, uploadManager } from "$lib/upload/manager.svelte";
-    import { getImageLabel } from "$lib/utils/images";
-    import type VizView from "$lib/views/views.svelte";
     import type { PageProps } from "./$types";
 
     let { data, view }: PageProps & { view?: VizView } = $props();
@@ -288,10 +288,8 @@
         assetGridArray: imageGridArray,
         data: displayData,
         onLoadMore: () => collectionState.paginate(data.uid),
-        scopeId: scopeId,
-        assetGridDisplayProps: {
-            style: `padding: 2em ${isLayoutPage() ? "1em" : "2em"};`
-        },
+        scopeId,
+        assetGridDisplayProps: { style: `padding: 2em ${isLayoutPage() ? "1em" : "2em"};` },
         columns: imageTableColumns,
         assetDblClick: (_e, asset?: ImageAsset) => {
             const target = asset ?? selectionFirstImage;
@@ -338,9 +336,7 @@
         }
 
         const uids = [...new Set(uploadedImages.map((img) => img.uid))];
-        const response = await addCollectionImages(data.uid, {
-            uids: uids
-        });
+        const response = await addCollectionImages(data.uid, { uids });
 
         if (response.data.added) {
             toasts.add({
@@ -542,8 +538,9 @@
                     // Optimistic local update
                     const removedUIDs = new Set(
                         selectionScope.isSelectAll
-                            ? [] // Hard to compute without full list
-                            : selectionScope.selectedItems.map((i) => i.uid)
+                            ? []
+                            : // Hard to compute without full list
+                              selectionScope.selectedItems.map((i) => i.uid)
                     );
 
                     if (selectionScope.isSelectAll) {

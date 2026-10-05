@@ -1,18 +1,18 @@
 <script lang="ts">
+    import AdminRouteShell from "#lib/components/admin/AdminRouteShell.svelte";
+    import ConfirmationModal from "#lib/components/modals/ConfirmationModal.svelte";
+    import { modalsManager } from "#lib/components/modals/manager/ModalManager.svelte.js";
+    import Button from "#lib/components/ui/Button.svelte";
+    import Checkbox from "#lib/components/ui/Checkbox.svelte";
+    import IconBadge from "#lib/components/ui/IconBadge.svelte";
+    import MaterialIcon from "#lib/components/ui/MaterialIcon.svelte";
+    import ProgressBar from "#lib/components/ui/ProgressBar.svelte";
+    import { type Toast, toasts } from "#lib/toast-notifcations/toasts.svelte.js";
+    import type { MaterialSymbol } from "#lib/types/MaterialSymbol.js";
+    import { formatBytes } from "#lib/utils/images.js";
     import { goto, invalidate } from "$app/navigation";
     import { page } from "$app/state";
     import { clearImageCache } from "@viz/api";
-    import AdminRouteShell from "$lib/components/admin/AdminRouteShell.svelte";
-    import ConfirmationModal from "$lib/components/modals/ConfirmationModal.svelte";
-    import { modalsManager } from "$lib/components/modals/manager/ModalManager.svelte";
-    import Button from "$lib/components/ui/Button.svelte";
-    import Checkbox from "$lib/components/ui/Checkbox.svelte";
-    import IconBadge from "$lib/components/ui/IconBadge.svelte";
-    import MaterialIcon from "$lib/components/ui/MaterialIcon.svelte";
-    import ProgressBar from "$lib/components/ui/ProgressBar.svelte";
-    import { type Toast, toasts } from "$lib/toast-notifcations/toasts.svelte.js";
-    import type { MaterialSymbol } from "$lib/types/MaterialSymbol.js";
-    import { formatBytes } from "$lib/utils/images";
 
     let { data } = $props();
 

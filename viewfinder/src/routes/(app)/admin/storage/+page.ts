@@ -1,5 +1,5 @@
+import { sendVizAPIRequest } from "#lib/utils/http.js";
 import { getSystemConfig } from "@viz/api";
-import { sendVizAPIRequest } from "$lib/utils/http";
 import type { PageLoad } from "./$types";
 
 export const load: PageLoad = async () => {

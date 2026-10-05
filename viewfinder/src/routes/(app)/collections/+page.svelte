@@ -1,21 +1,18 @@
 <script lang="ts">
-    import { goto } from "$app/navigation";
-    import { type Collection, addCollectionImages, createCollection, updateCollection } from "@viz/api";
-    import { type ComponentProps, untrack } from "svelte";
-    import { CollectionsPaginationState } from "$lib/collections/state.svelte";
-    import Dropdown from "$lib/components/context-menus/Dropdown.svelte";
-    import AssetGrid from "$lib/components/grid/AssetView.svelte";
-    import CollectionModal from "$lib/components/modals/CollectionModal.svelte";
-    import FilterModal, { FilterModalOptions } from "$lib/components/modals/FilterModal.svelte";
-    import { modalsManager } from "$lib/components/modals/manager/ModalManager.svelte";
-    import AssetsShell from "$lib/components/ui/AssetsShell.svelte";
-    import Badge from "$lib/components/ui/Badge.svelte";
-    import Button from "$lib/components/ui/Button.svelte";
-    import CollectionCard, { openCollection } from "$lib/components/ui/CollectionCard.svelte";
-    import DragAndDropUpload from "$lib/components/ui/DragAndDropUpload.svelte";
-    import MaterialIcon from "$lib/components/ui/MaterialIcon.svelte";
-    import { VizMimeTypes } from "$lib/constants";
-    import { contextMenu } from "$lib/context-menu";
+    import { CollectionsPaginationState } from "#lib/collections/state.svelte.js";
+    import Dropdown from "#lib/components/context-menus/Dropdown.svelte";
+    import AssetGrid from "#lib/components/grid/AssetView.svelte";
+    import CollectionModal from "#lib/components/modals/CollectionModal.svelte";
+    import FilterModal, { FilterModalOptions } from "#lib/components/modals/FilterModal.svelte";
+    import { modalsManager } from "#lib/components/modals/manager/ModalManager.svelte.js";
+    import AssetsShell from "#lib/components/ui/AssetsShell.svelte";
+    import Badge from "#lib/components/ui/Badge.svelte";
+    import Button from "#lib/components/ui/Button.svelte";
+    import CollectionCard, { openCollection } from "#lib/components/ui/CollectionCard.svelte";
+    import DragAndDropUpload from "#lib/components/ui/DragAndDropUpload.svelte";
+    import MaterialIcon from "#lib/components/ui/MaterialIcon.svelte";
+    import { VizMimeTypes } from "#lib/constants.js";
+    import { contextMenu } from "#lib/context-menu/index.js";
     import {
         type CollectionMenuOptions,
         createCollectionMenu,
@@ -23,15 +20,18 @@
         downloadCollectionZip,
         duplicateCollection,
         toggleFavouriteCollections
-    } from "$lib/context-menu/menus/collections";
-    import { dropZone } from "$lib/drag-drop/directives.svelte";
-    import { sortCollections } from "$lib/sort/sort";
-    import { filterManager } from "$lib/states/filter.svelte";
-    import { isLayoutPage } from "$lib/states/index.svelte";
-    import { SelectionScopeNames, selectionManager } from "$lib/states/selection.svelte";
-    import { collectionsSort } from "$lib/states/sort.svelte";
-    import { toasts } from "$lib/toast-notifcations/toasts.svelte";
-    import type { AssetGridArray } from "$lib/types/asset";
+    } from "#lib/context-menu/menus/collections.js";
+    import { dropZone } from "#lib/drag-drop/directives.svelte.js";
+    import { sortCollections } from "#lib/sort/sort.js";
+    import { filterManager } from "#lib/states/filter.svelte.js";
+    import { isLayoutPage } from "#lib/states/index.svelte.js";
+    import { SelectionScopeNames, selectionManager } from "#lib/states/selection.svelte.js";
+    import { collectionsSort } from "#lib/states/sort.svelte.js";
+    import { toasts } from "#lib/toast-notifcations/toasts.svelte.js";
+    import type { AssetGridArray } from "#lib/types/asset.js";
+    import { goto } from "$app/navigation";
+    import { type Collection, addCollectionImages, createCollection, updateCollection } from "@viz/api";
+    import { type ComponentProps, untrack } from "svelte";
     import type { PageProps } from "./$types";
 
     let { data }: PageProps = $props();

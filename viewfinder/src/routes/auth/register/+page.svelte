@@ -1,12 +1,12 @@
 <script lang="ts">
+    import Button from "#lib/components/ui/Button.svelte";
+    import InputPassword from "#lib/components/ui/InputPassword.svelte";
+    import InputText from "#lib/components/ui/InputText.svelte";
+    import { config, system } from "#lib/states/index.svelte.js";
+    import { toasts } from "#lib/toast-notifcations/toasts.svelte.js";
     import { goto } from "$app/navigation";
     import { page } from "$app/state";
     import { registerUser } from "@viz/api";
-    import Button from "$lib/components/ui/Button.svelte";
-    import InputPassword from "$lib/components/ui/InputPassword.svelte";
-    import InputText from "$lib/components/ui/InputText.svelte";
-    import { config, system } from "$lib/states/index.svelte";
-    import { toasts } from "$lib/toast-notifcations/toasts.svelte";
 
     let pageState = page.state as typeof registerData;
     let registerData = $state({

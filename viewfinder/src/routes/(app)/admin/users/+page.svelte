@@ -1,20 +1,20 @@
 <script lang="ts">
+    import AdminRouteShell from "#lib/components/admin/AdminRouteShell.svelte";
+    import ConfirmationModal from "#lib/components/modals/ConfirmationModal.svelte";
+    import UserCreateModal from "#lib/components/modals/UserCreateModal.svelte";
+    import UserEditModal from "#lib/components/modals/UserEditModal.svelte";
+    import { modalsManager } from "#lib/components/modals/manager/ModalManager.svelte.js";
+    import AvatarBadge from "#lib/components/ui/AvatarBadge.svelte";
+    import Badge from "#lib/components/ui/Badge.svelte";
+    import Button from "#lib/components/ui/Button.svelte";
+    import MaterialIcon from "#lib/components/ui/MaterialIcon.svelte";
+    import SliderToggle from "#lib/components/ui/SliderToggle.svelte";
+    import Table, { type TableColumn } from "#lib/components/ui/Table.svelte";
+    import { user as currentUserState } from "#lib/states/index.svelte.js";
+    import { toasts } from "#lib/toast-notifcations/toasts.svelte.js";
     import { invalidateAll } from "$app/navigation";
     import { type User, adminCreateUser, adminDeleteUser, adminUpdateUser } from "@viz/api";
     import { DateTime } from "luxon";
-    import AdminRouteShell from "$lib/components/admin/AdminRouteShell.svelte";
-    import ConfirmationModal from "$lib/components/modals/ConfirmationModal.svelte";
-    import UserCreateModal from "$lib/components/modals/UserCreateModal.svelte";
-    import UserEditModal from "$lib/components/modals/UserEditModal.svelte";
-    import { modalsManager } from "$lib/components/modals/manager/ModalManager.svelte";
-    import AvatarBadge from "$lib/components/ui/AvatarBadge.svelte";
-    import Badge from "$lib/components/ui/Badge.svelte";
-    import Button from "$lib/components/ui/Button.svelte";
-    import MaterialIcon from "$lib/components/ui/MaterialIcon.svelte";
-    import SliderToggle from "$lib/components/ui/SliderToggle.svelte";
-    import Table, { type TableColumn } from "$lib/components/ui/Table.svelte";
-    import { user as currentUserState } from "$lib/states/index.svelte";
-    import { toasts } from "$lib/toast-notifcations/toasts.svelte.js";
 
     let { data } = $props();
     let users = $derived(data.users);

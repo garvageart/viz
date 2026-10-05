@@ -1,17 +1,17 @@
 <script lang="ts">
+    import AdminRouteShell from "#lib/components/admin/AdminRouteShell.svelte";
+    import Badge from "#lib/components/ui/Badge.svelte";
+    import IconBadge from "#lib/components/ui/IconBadge.svelte";
+    import MaterialIcon from "#lib/components/ui/MaterialIcon.svelte";
+    import ProgressBar from "#lib/components/ui/ProgressBar.svelte";
+    import type { MaterialSymbol } from "#lib/types/MaterialSymbol.js";
+    import { tryParseDate } from "#lib/utils/dates.js";
+    import { formatBytes, formatSeconds } from "#lib/utils/images.js";
+    import { getGitBranchUrl, getGitCommitUrl, parseGitWebUrl } from "#lib/utils/url.js";
     import { invalidate } from "$app/navigation";
     import { page } from "$app/state";
     import { DateTime, Duration } from "luxon";
     import type { Snippet } from "svelte";
-    import AdminRouteShell from "$lib/components/admin/AdminRouteShell.svelte";
-    import Badge from "$lib/components/ui/Badge.svelte";
-    import IconBadge from "$lib/components/ui/IconBadge.svelte";
-    import MaterialIcon from "$lib/components/ui/MaterialIcon.svelte";
-    import ProgressBar from "$lib/components/ui/ProgressBar.svelte";
-    import type { MaterialSymbol } from "$lib/types/MaterialSymbol.js";
-    import { tryParseDate } from "$lib/utils/dates";
-    import { formatBytes, formatSeconds } from "$lib/utils/images";
-    import { getGitBranchUrl, getGitCommitUrl, parseGitWebUrl } from "$lib/utils/url";
 
     let { data } = $props();
 

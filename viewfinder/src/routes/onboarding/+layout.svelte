@@ -1,7 +1,7 @@
 <script lang="ts">
-    import Button from "$lib/components/ui/Button.svelte";
-    import { getTheme, toggleTheme } from "$lib/states/index.svelte";
-    import { toggleFullscreen } from "$lib/utils/misc";
+    import Button from "#lib/components/ui/Button.svelte";
+    import { getTheme, toggleTheme } from "#lib/states/index.svelte.js";
+    import { toggleFullscreen } from "#lib/utils/misc.js";
 
     let { children } = $props();
 </script>

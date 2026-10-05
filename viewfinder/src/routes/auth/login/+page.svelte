@@ -1,12 +1,12 @@
 <script lang="ts">
+    import { fetchCurrentUser } from "#lib/auth/auth_methods.js";
+    import Button from "#lib/components/ui/Button.svelte";
+    import InputPassword from "#lib/components/ui/InputPassword.svelte";
+    import InputText from "#lib/components/ui/InputText.svelte";
+    import { system } from "#lib/states/index.svelte.js";
+    import { toasts } from "#lib/toast-notifcations/toasts.svelte.js";
     import { goto } from "$app/navigation";
     import { login } from "@viz/api";
-    import { fetchCurrentUser } from "$lib/auth/auth_methods";
-    import Button from "$lib/components/ui/Button.svelte";
-    import InputPassword from "$lib/components/ui/InputPassword.svelte";
-    import InputText from "$lib/components/ui/InputText.svelte";
-    import { system } from "$lib/states/index.svelte";
-    import { toasts } from "$lib/toast-notifcations/toasts.svelte";
 
     let loginData = $state({
         email: "",

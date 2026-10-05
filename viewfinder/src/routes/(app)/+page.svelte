@@ -1,5 +1,5 @@
 <script lang="ts">
-    import VizWorkspace from "$lib/components/workspace/VizWorkspace.svelte";
+    import VizWorkspace from "#lib/components/workspace/VizWorkspace.svelte";
 </script>
 
 <svelte:head>
