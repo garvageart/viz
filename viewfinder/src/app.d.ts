@@ -1,4 +1,4 @@
-import type { ViewfinderConfig, VizBootstrapConfig } from "$lib/types/config.types";
+import type { ViewfinderConfig, VizBootstrapConfig } from "#lib/types/config.types.js";
 
 declare global {
     namespace App {

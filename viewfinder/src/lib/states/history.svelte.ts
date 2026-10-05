@@ -1,6 +1,6 @@
-import { afterNavigate } from "$app/navigation";
+import type { AfterNavigate } from "$app/navigation";
 
-export interface HistoryMetadata {
+export interface HistoryEntry {
     path: string;
     timestamp: number;
     title: string;
@@ -11,25 +11,19 @@ export interface HistoryMetadata {
 class HistoryState {
     canGoBack = $state(false);
     canGoForward = $state(false);
-    entries = $state<HistoryMetadata[]>([]);
+    entries = $state<HistoryEntry[]>([]);
 
     private initialIdx = 0;
     private currentIdx = 0;
     private maxIdx = 0;
-    private lastSvelteKitHistory = 0;
-    private initialized = false;
+    private replaceTo: string | undefined;
 
     constructor() {
         // No-op
     }
 
     init() {
-        if (typeof window === "undefined" || this.initialized) {
-            return;
-        }
-
-        const state = window.history.state || {};
-        const skHistoryId = state["sveltekit:history"];
+        const currentPath = window.location.pathname;
 
         // Recover entries from session storage if possible
         try {
@@ -47,10 +41,10 @@ class HistoryState {
             console.error("Failed to load history entries", e);
         }
 
-        // Try to match the current SvelteKit history ID
-        const matchingEntry = this.entries.find((e) => {
-            return e.metadata?.skHistoryId === skHistoryId;
-        });
+        // Restore the most recent tracked entry for this path.
+        const matchingEntry = this.entries
+            .filter((entry) => entry.path === currentPath)
+            .sort((a, b) => b.index - a.index)[0];
 
         if (matchingEntry) {
             this.currentIdx = matchingEntry.index;
@@ -60,117 +54,88 @@ class HistoryState {
             this.entries = [];
         }
 
-        this.initialIdx = 0;
-        this.maxIdx = this.currentIdx;
-
-        // If entries is empty, initialize start entry
+        // If entries is empty, initialize the current entry.
         if (this.entries.length === 0) {
-            const startEntry: HistoryMetadata = {
-                path: window.location.pathname,
+            const startEntry: HistoryEntry = {
+                path: currentPath,
                 timestamp: Date.now(),
                 title: document.title,
-                metadata: { skHistoryId },
                 index: this.currentIdx
             };
             this.entries = [startEntry];
-        } else {
-            // Calculate initial and max indexes from restored entries
-            const indexes = this.entries.map((e) => {
-                return e.index;
-            });
-            this.initialIdx = Math.min(...indexes);
-            this.maxIdx = Math.max(...indexes);
         }
 
-        if (typeof skHistoryId === "number") {
-            this.lastSvelteKitHistory = skHistoryId;
-        }
+        const indexes = this.entries.map((entry) => entry.index);
+        this.initialIdx = Math.min(...indexes);
+        this.maxIdx = Math.max(...indexes);
 
         this.updateDerived();
-        this.initialized = true;
+    }
 
-        afterNavigate((navigation) => {
-            const state = window.history.state || {};
-            const currentSkitHistory = state["sveltekit:history"];
-            const isReplace =
-                typeof currentSkitHistory === "number" && currentSkitHistory === this.lastSvelteKitHistory;
+    markReplace(url: string) {
+        this.replaceTo = url;
+    }
 
-            // Search for existing entry matching the history ID
-            const matching = this.entries.find((e) => {
-                return e.metadata?.skHistoryId === currentSkitHistory;
-            });
+    clearReplace(url: string) {
+        if (this.replaceTo === url) {
+            this.replaceTo = undefined;
+        }
+    }
 
-            let newIdx = this.currentIdx;
+    handleNavigation(navigation: AfterNavigate) {
+        if (navigation.shallow) {
+            return;
+        }
 
-            if (matching) {
-                // Popped to existing entry
-                newIdx = matching.index;
-            } else {
-                // New entry or replacement
-                if (isReplace) {
-                    newIdx = this.currentIdx;
-                } else if (navigation.type === "enter") {
-                    newIdx = this.currentIdx;
-                } else {
-                    newIdx = this.currentIdx + 1;
-                }
+        if (navigation.type === "enter") {
+            return;
+        }
 
-                // Update or push entry
-                if (isReplace) {
-                    const existingIdx = this.entries.findIndex((e) => {
-                        return e.index === newIdx;
-                    });
-                    if (existingIdx !== -1) {
-                        this.entries[existingIdx] = {
-                            ...this.entries[existingIdx],
-                            path: window.location.pathname,
-                            title: document.title,
-                            timestamp: Date.now(),
-                            metadata: {
-                                ...this.entries[existingIdx].metadata,
-                                skHistoryId: currentSkitHistory
-                            }
-                        };
-                    }
-                } else if (navigation.type === "enter") {
-                    const existingIdx = this.entries.findIndex((e) => {
-                        return e.index === newIdx;
-                    });
-                    if (existingIdx !== -1) {
-                        this.entries[existingIdx].metadata = {
-                            ...this.entries[existingIdx].metadata,
-                            skHistoryId: currentSkitHistory
-                        };
-                    }
-                } else {
-                    // PUSH: We branch out. Remove forward history.
-                    const sliceIdx = this.entries.findIndex((e) => {
-                        return e.index === this.currentIdx;
-                    });
+        if (navigation.type === "popstate") {
+            this.replaceTo = undefined;
+            this.currentIdx += navigation.delta;
+        } else if (this.replaceTo === navigation.to?.url.href) {
+            this.replaceTo = undefined;
+            this.replaceCurrent();
+        } else {
+            this.pushCurrent();
+        }
 
-                    if (sliceIdx !== -1) {
-                        this.entries = this.entries.slice(0, sliceIdx + 1);
-                    }
+        this.saveToSession();
+        this.updateDerived();
+    }
 
-                    this.entries.push({
-                        path: window.location.pathname,
-                        timestamp: Date.now(),
-                        title: document.title,
-                        metadata: { skHistoryId: currentSkitHistory },
-                        index: newIdx
-                    });
+    private pushCurrent() {
+        this.currentIdx += 1;
 
-                    this.maxIdx = newIdx;
-                }
-            }
-
-            this.currentIdx = newIdx;
-            if (typeof currentSkitHistory === "number") {
-                this.lastSvelteKitHistory = currentSkitHistory;
-            }
-            this.saveToSession();
-            this.updateDerived();
+        this.entries = this.entries.filter((entry) => entry.index < this.currentIdx);
+        this.entries.push({
+            path: window.location.pathname,
+            timestamp: Date.now(),
+            title: document.title,
+            index: this.currentIdx
         });
+
+        this.maxIdx = this.currentIdx;
+    }
+
+    private replaceCurrent() {
+        const currentEntryIndex = this.entries.findIndex((item) => item.index === this.currentIdx);
+        const entry: HistoryEntry = {
+            path: window.location.pathname,
+            timestamp: Date.now(),
+            title: document.title,
+            index: this.currentIdx
+        };
+
+        if (currentEntryIndex === -1) {
+            this.entries.push(entry);
+        } else {
+            this.entries[currentEntryIndex] = {
+                ...this.entries[currentEntryIndex],
+                ...entry
+            };
+        }
     }
 
     private updateDerived() {
@@ -179,9 +144,6 @@ class HistoryState {
     }
 
     private saveToSession() {
-        if (typeof window === "undefined") {
-            return;
-        }
         try {
             sessionStorage.setItem("viz_history_entries", JSON.stringify(this.entries));
         } catch (e) {

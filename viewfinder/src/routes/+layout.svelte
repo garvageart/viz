@@ -1,33 +1,33 @@
 <script lang="ts">
-    import { dev } from "$app/environment";
+    import ModalRenderer from "#lib/components/modals/ModalContainer.svelte";
+    import { modalsManager } from "#lib/components/modals/manager/ModalManager.svelte.js";
+    import "#lib/components/tooltips/tooltip.scss";
+    import NavigationProgressBar from "#lib/components/ui/NavigationProgressBar.svelte";
+    import ContextMenu from "#lib/context-menu/ContextMenu.svelte";
+    import { KeybindAction, keyboardManager } from "#lib/keyboard/keyboard.svelte.js";
+    import { eventsState } from "#lib/states/events.svelte.js";
+    import { historyState } from "#lib/states/history.svelte.js";
+    import { bootState, debugState, themeState, upload, user } from "#lib/states/index.svelte.js";
+    import { loadingState } from "#lib/states/loading.svelte.js";
+    import "#lib/styles/scss/main.scss";
+    import Notifications from "#lib/toast-notifcations/Notifications.svelte";
+    import { UploadState } from "#lib/upload/asset.svelte.js";
+    import { toggleFullscreen } from "#lib/utils/misc.js";
+    import { dev } from "$app/env";
     import { afterNavigate, beforeNavigate } from "$app/navigation";
     import { page, updated } from "$app/state";
     import "@fontsource-variable/radio-canada-big/index.css";
     import "@fontsource-variable/roboto-mono/index.css";
     import { onMount } from "svelte";
-    import ModalRenderer from "$lib/components/modals/ModalContainer.svelte";
-    import { modalsManager } from "$lib/components/modals/manager/ModalManager.svelte";
-    import "$lib/components/tooltips/tooltip.scss";
-    import NavigationProgressBar from "$lib/components/ui/NavigationProgressBar.svelte";
-    import ContextMenu from "$lib/context-menu/ContextMenu.svelte";
-    import { KeybindAction, keyboardManager } from "$lib/keyboard/keyboard.svelte";
-    import { eventsState } from "$lib/states/events.svelte";
-    import { historyState } from "$lib/states/history.svelte";
-    import { bootState, debugState, themeState, upload, user } from "$lib/states/index.svelte";
-    import { loadingState } from "$lib/states/loading.svelte";
-    import "$lib/styles/scss/main.scss";
-    import Notifications from "$lib/toast-notifcations/Notifications.svelte";
-    import { UploadState } from "$lib/upload/asset.svelte";
-    import { toggleFullscreen } from "$lib/utils/misc";
 
     bootState.init();
+    historyState.init();
 
     if (dev) {
         import("material-symbols/index.css");
     }
 
     onMount(() => {
-        historyState.init();
         keyboardManager.init();
 
         const unregisterFullscreen = keyboardManager.register({
@@ -92,14 +92,25 @@
         themeState.ls.set(themeState.value);
         document.documentElement.setAttribute("data-theme", themeState.resolved);
     });
-    beforeNavigate(({ to, willUnload }) => {
+
+    beforeNavigate(({ to, willUnload, shallow }) => {
+        if (shallow) {
+            return;
+        }
+
         loadingState.startNavigation();
         if (updated.current && !willUnload && to) {
             location.href = to.url.href;
         }
     });
 
-    afterNavigate(() => {
+    afterNavigate((navigation) => {
+        historyState.handleNavigation(navigation);
+
+        if (navigation.shallow) {
+            return;
+        }
+
         loadingState.endNavigation();
     });
 </script>

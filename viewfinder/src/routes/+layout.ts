@@ -1,9 +1,9 @@
-import { browser } from "$app/environment";
+import { fetchCurrentUser } from "#lib/auth/auth_methods.js";
+import { config, fetchSystemConfig, system, user } from "#lib/states/index.svelte.js";
+import { getSafeRedirectUrl } from "#lib/utils/url.js";
+import { browser } from "$app/env";
 import { error, redirect } from "@sveltejs/kit";
 import { api, getSystemStatus, initApi } from "@viz/api";
-import { fetchCurrentUser } from "$lib/auth/auth_methods";
-import { config, fetchSystemConfig, system, user } from "$lib/states/index.svelte.js";
-import { getSafeRedirectUrl } from "$lib/utils/url";
 
 export const ssr = false;
 export const csr = true;

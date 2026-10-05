@@ -1,13 +1,18 @@
+import { historyState } from "#lib/states/history.svelte.js";
 import { goto } from "$app/navigation";
 
-export function updateURLParameter(name: string, value: string, keepFocus = true) {
+export async function updateURLParameter(name: string, value: string, keepFocus = true) {
     const url = new URL(window.location.href);
     const searchParams = url.searchParams;
 
     searchParams.set(name, value);
     const newUrl = url.origin + url.pathname + "?" + searchParams.toString() + url.hash;
-
-    goto(newUrl, { replaceState: true, keepFocus, noScroll: true });
+    historyState.markReplace(newUrl);
+    try {
+        await goto(newUrl, { replace: true, reset: !keepFocus });
+    } finally {
+        historyState.clearReplace(newUrl);
+    }
 }
 
 /**

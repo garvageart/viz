@@ -1,5 +1,5 @@
-import type { Handle } from "@sveltejs/kit";
-import { VizCookieStorage } from "$lib/utils/misc";
+import { VizCookieStorage } from "#lib/utils/misc.js";
+import type { Handle } from "@sveltejs/kit/hooks";
 
 const criticalCssCache = new Map<string, string>();
 
@@ -21,7 +21,7 @@ const fontConfigs = [
     }
 ];
 
-const themeImporters = import.meta.glob<string>("$lib/styles/scss/themes/*.scss", {
+const themeImporters = import.meta.glob<string>("#lib/styles/scss/themes/*.scss", {
     query: "?inline",
     import: "default"
 });
@@ -34,7 +34,7 @@ async function getBaseStyles() {
     }
 
     const [mainModule, ...fontModules] = await Promise.all([
-        import("$lib/styles/scss/main.scss?inline"),
+        import("#lib/styles/scss/main.scss?inline"),
         ...fontConfigs.map((f) => f.loadCss())
     ]);
 

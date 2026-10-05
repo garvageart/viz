@@ -1,4 +1,4 @@
-import { collectionDetailSort, collectionsSort, photosSort } from "$lib/states/sort.svelte";
+import { collectionDetailSort, collectionsSort, photosSort } from "#lib/states/sort.svelte.js";
 
 /**
  * SvelteKit client init hook. Runs once on application startup
