@@ -1,5 +1,5 @@
-import { modalsManager } from "$lib/components/modals/manager/ModalManager.svelte";
-import { ZIndex } from "$lib/constants/z-index";
+import { modalsManager } from "#lib/components/modals/manager/ModalManager.svelte.js";
+import { ZIndex } from "#lib/constants/z-index.js";
 import type { MenuItem } from "./types";
 
 export type ContextMenuAnchor = MouseEvent | HTMLElement | { x: number; y: number } | null;

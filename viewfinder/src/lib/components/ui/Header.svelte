@@ -1,23 +1,31 @@
 <script lang="ts">
-    import { dev } from "$app/environment";
+    import Dropdown from "#lib/components/context-menus/Dropdown.svelte";
+    import { contextMenu } from "#lib/context-menu/index.js";
+    import { themeContextMenu } from "#lib/context-menu/menus/theme.js";
+    import { createWorkspaceViewsMenu } from "#lib/context-menu/menus/workspaceViews.js";
+    import type { MenuItem } from "#lib/context-menu/types.js";
+    import { KbdShortcutTier, KeybindAction, keyboardManager } from "#lib/keyboard/keyboard.svelte.js";
+    import { showRootDebugOverlay } from "#lib/layouts/tab-ops.svelte.js";
+    import { performSearch } from "#lib/search/execute.js";
+    import { eventsState } from "#lib/states/events.svelte.js";
+    import { historyState } from "#lib/states/history.svelte.js";
+    import {
+        debugState,
+        getTheme,
+        isLayoutPage,
+        isMobile,
+        search,
+        toggleTheme,
+        user
+    } from "#lib/states/index.svelte.js";
+    import { workspaceState } from "#lib/states/workspace.svelte.js";
+    import { toasts } from "#lib/toast-notifcations/toasts.svelte.js";
+    import { uploadManager } from "#lib/upload/manager.svelte.js";
+    import { copyToClipboard } from "#lib/utils/misc.js";
+    import { dev } from "$app/env";
     import { goto } from "$app/navigation";
     import { page } from "$app/state";
     import { onMount, untrack } from "svelte";
-    import Dropdown from "$lib/components/context-menus/Dropdown.svelte";
-    import { contextMenu } from "$lib/context-menu";
-    import { themeContextMenu } from "$lib/context-menu/menus/theme";
-    import { createWorkspaceViewsMenu } from "$lib/context-menu/menus/workspaceViews";
-    import type { MenuItem } from "$lib/context-menu/types";
-    import { KbdShortcutTier, KeybindAction, keyboardManager } from "$lib/keyboard/keyboard.svelte";
-    import { showRootDebugOverlay } from "$lib/layouts/tab-ops.svelte";
-    import { performSearch } from "$lib/search/execute";
-    import { eventsState } from "$lib/states/events.svelte";
-    import { historyState } from "$lib/states/history.svelte";
-    import { debugState, getTheme, isLayoutPage, isMobile, search, toggleTheme, user } from "$lib/states/index.svelte";
-    import { workspaceState } from "$lib/states/workspace.svelte";
-    import { toasts } from "$lib/toast-notifcations/toasts.svelte";
-    import { uploadManager } from "$lib/upload/manager.svelte";
-    import { copyToClipboard } from "$lib/utils/misc";
     import OpenAccountPanel from "../context-menus/AccountPanel.svelte";
     import AppMenu from "../context-menus/AppMenu.svelte";
     import AvatarBadge from "./AvatarBadge.svelte";

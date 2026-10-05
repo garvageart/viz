@@ -1,16 +1,16 @@
+import Filmstrip from "#lib/components/panels/workspace/Filmstrip.svelte";
+import MetadataPanel from "#lib/components/ui/panels/MetadataPanel.svelte";
+import { SelectionScopeNames, selectionManager } from "#lib/states/selection.svelte.js";
 import { fireEvent, render, screen } from "@testing-library/svelte";
 import type { ImageAsset } from "@viz/api";
 import { tick } from "svelte";
 import { describe, expect, it, vi } from "vitest";
-import Filmstrip from "$lib/components/panels/workspace/Filmstrip.svelte";
-import MetadataPanel from "$lib/components/ui/panels/MetadataPanel.svelte";
-import { SelectionScopeNames, selectionManager } from "$lib/states/selection.svelte";
 
 vi.mock("$app/state", () => ({
     page: { data: undefined, url: { pathname: "/" } }
 }));
 
-vi.mock("$lib/components/ui/ImageLightbox.svelte", () => ({
+vi.mock("#lib/components/ui/ImageLightbox.svelte", () => ({
     default: () => ({})
 }));
 

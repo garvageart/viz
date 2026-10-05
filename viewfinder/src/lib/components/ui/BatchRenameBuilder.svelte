@@ -3,10 +3,8 @@
 </script>
 
 <script lang="ts">
-    import type { ImageAsset } from "@viz/api";
-    import { DateTime } from "luxon";
-    import Button from "$lib/components/ui/Button.svelte";
-    import { safeRenderRenameTemplate } from "$lib/ui-tools/renamer";
+    import Button from "#lib/components/ui/Button.svelte";
+    import { safeRenderRenameTemplate } from "#lib/ui-tools/renamer.js";
     import {
         DATE_FORMAT_OPTIONS,
         DATE_FORMAT_TEMPLATES,
@@ -15,10 +13,12 @@
         NAMING_OPTIONS,
         ROW_TYPES,
         buildDateTokens
-    } from "$lib/ui-tools/template";
-    import { decodeHtmlEntities } from "$lib/utils/dom";
-    import type { ExportFormats } from "$lib/utils/images";
-    import { generateRandomString } from "$lib/utils/misc";
+    } from "#lib/ui-tools/template.js";
+    import { decodeHtmlEntities } from "#lib/utils/dom.js";
+    import type { ExportFormats } from "#lib/utils/images.js";
+    import { generateRandomString } from "#lib/utils/misc.js";
+    import type { ImageAsset } from "@viz/api";
+    import { DateTime } from "luxon";
     import InputSelect from "./InputSelect.svelte";
     import InputText from "./InputText.svelte";
     import MaterialIcon from "./MaterialIcon.svelte";

@@ -1,5 +1,5 @@
 <script lang="ts">
-    import { DROP_ZONE_THRESHOLDS } from "$lib/layouts/tab-ops.svelte";
+    import { DROP_ZONE_THRESHOLDS } from "#lib/layouts/tab-ops.svelte.js";
 </script>
 
 <div class="debug-overlay-zones">

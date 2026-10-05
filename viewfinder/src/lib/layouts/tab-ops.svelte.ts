@@ -1,7 +1,7 @@
-import { VizMimeTypes } from "$lib/constants";
-import { dragCoordinator } from "$lib/drag-drop/coordinator.svelte";
-import { DragData } from "$lib/drag-drop/data";
-import { workspaceState } from "$lib/states/workspace.svelte";
+import { VizMimeTypes } from "#lib/constants.js";
+import { dragCoordinator } from "#lib/drag-drop/coordinator.svelte.js";
+import { DragData } from "#lib/drag-drop/data.js";
+import { workspaceState } from "#lib/states/workspace.svelte.js";
 import { type RootEdge, TabGroup } from "./model.svelte";
 import { createCollectionView } from "./tabs/collection";
 

@@ -1,4 +1,30 @@
 <script lang="ts">
+    import ImageLabelViewer from "#lib/components/image-tools/ImageLabelViewer.svelte";
+    import StarRating from "#lib/components/image-tools/StarRating.svelte";
+    import PhotoTooltip from "#lib/components/tooltips/PhotoTooltip.svelte";
+    import { mountTooltipComponent } from "#lib/components/tooltips/tooltip.js";
+    import AssetImage, { type ImageResolution } from "#lib/components/ui/AssetImage.svelte";
+    import Checkbox from "#lib/components/ui/Checkbox.svelte";
+    import Favourite from "#lib/components/ui/Favourite.svelte";
+    import {
+        type PhotoGridConfig,
+        PhotoGridVirtualizer
+    } from "#lib/components/virtualizer/PhotoGridVirtualizer.svelte.js";
+    import { VizMimeTypes } from "#lib/constants.js";
+    import { draggable } from "#lib/drag-drop/directives.svelte.js";
+    import {
+        type HotkeysEvent,
+        KbdShortcutTier,
+        KeybindAction,
+        keyboardManager
+    } from "#lib/keyboard/keyboard.svelte.js";
+    import type { ConsolidatedGroup, ImageWithDateLabel } from "#lib/photo-layout/index.js";
+    import { filterManager } from "#lib/states/filter.svelte.js";
+    import { isLayoutPage, isMobile } from "#lib/states/index.svelte.js";
+    import { type ImageScopeId, SelectionScopeNames, selectionManager } from "#lib/states/selection.svelte.js";
+    import type { CardVisualState } from "#lib/types/snippet.js";
+    import { getScrollParent } from "#lib/utils/dom.js";
+    import { getImageLabel, getTakenAt } from "#lib/utils/images.js";
     import { type ImageAsset, getAssetImagePath } from "@viz/api";
     import { DateTime } from "luxon";
     import { type Snippet, onMount, untrack } from "svelte";
@@ -7,27 +33,6 @@
     import { fade } from "svelte/transition";
     import { type Instance, type Props as TippyProps, delegate, followCursor, hideAll } from "tippy.js";
     import "tippy.js/dist/tippy.css";
-    import ImageLabelViewer from "$lib/components/image-tools/ImageLabelViewer.svelte";
-    import StarRating from "$lib/components/image-tools/StarRating.svelte";
-    import PhotoTooltip from "$lib/components/tooltips/PhotoTooltip.svelte";
-    import { mountTooltipComponent } from "$lib/components/tooltips/tooltip";
-    import AssetImage, { type ImageResolution } from "$lib/components/ui/AssetImage.svelte";
-    import Checkbox from "$lib/components/ui/Checkbox.svelte";
-    import Favourite from "$lib/components/ui/Favourite.svelte";
-    import {
-        type PhotoGridConfig,
-        PhotoGridVirtualizer
-    } from "$lib/components/virtualizer/PhotoGridVirtualizer.svelte.js";
-    import { VizMimeTypes } from "$lib/constants";
-    import { draggable } from "$lib/drag-drop/directives.svelte";
-    import { type HotkeysEvent, KbdShortcutTier, KeybindAction, keyboardManager } from "$lib/keyboard/keyboard.svelte";
-    import type { ConsolidatedGroup, ImageWithDateLabel } from "$lib/photo-layout";
-    import { filterManager } from "$lib/states/filter.svelte";
-    import { isLayoutPage, isMobile } from "$lib/states/index.svelte";
-    import { type ImageScopeId, SelectionScopeNames, selectionManager } from "$lib/states/selection.svelte";
-    import type { CardVisualState } from "$lib/types/snippet";
-    import { getScrollParent } from "$lib/utils/dom";
-    import { getImageLabel, getTakenAt } from "$lib/utils/images";
     import { touchSelectionAction } from "./actions";
 
     interface ExtendedTippyInstance extends Instance<TippyProps> {

@@ -1,8 +1,8 @@
 <script lang="ts">
-    import Dropdown from "$lib/components/context-menus/Dropdown.svelte";
-    import Checkbox from "$lib/components/ui/Checkbox.svelte";
-    import { getImageGridDisplay } from "$lib/context-menu/menus/image-grid-display";
-    import { viewSettings } from "$lib/states/index.svelte";
+    import Dropdown from "#lib/components/context-menus/Dropdown.svelte";
+    import Checkbox from "#lib/components/ui/Checkbox.svelte";
+    import { getImageGridDisplay } from "#lib/context-menu/menus/image-grid-display.js";
+    import { viewSettings } from "#lib/states/index.svelte.js";
 
     let open = $state(false);
 

@@ -3,7 +3,7 @@ import { describe, expect, it, vi } from "vitest";
 import ConfirmationModal from "./ConfirmationModal.svelte";
 import { modalsManager } from "./manager/ModalManager.svelte";
 
-vi.mock("$lib/components/modals/manager/ModalManager.svelte.ts", () => ({
+vi.mock("#lib/components/modals/manager/ModalManager.svelte.ts", () => ({
     modalsManager: {
         open: vi.fn(),
         close: vi.fn(),

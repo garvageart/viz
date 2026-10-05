@@ -1,11 +1,11 @@
 <script lang="ts">
+    import Badge from "#lib/components/ui/Badge.svelte";
+    import Button from "#lib/components/ui/Button.svelte";
+    import MaterialIcon from "#lib/components/ui/MaterialIcon.svelte";
+    import { formatBytes, getImageLabel, getImageMegapixels, getTakenAt } from "#lib/utils/images.js";
     import type { ImageAsset } from "@viz/api";
     import { DateTime } from "luxon";
     import type { MouseEventHandler } from "svelte/elements";
-    import Badge from "$lib/components/ui/Badge.svelte";
-    import Button from "$lib/components/ui/Button.svelte";
-    import MaterialIcon from "$lib/components/ui/MaterialIcon.svelte";
-    import { formatBytes, getImageLabel, getImageMegapixels, getTakenAt } from "$lib/utils/images";
     import ImageLabelViewer from "../image-tools/ImageLabelViewer.svelte";
 
     interface Props {

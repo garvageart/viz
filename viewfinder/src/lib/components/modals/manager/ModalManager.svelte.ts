@@ -1,5 +1,5 @@
+import { generateRandomString } from "#lib/utils/misc.js";
 import type { Component } from "svelte";
-import { generateRandomString } from "$lib/utils/misc";
 
 export type ModalComponent<T extends Record<string, any> = Record<string, any>> = Component<T> & {
     modalOptions?: ModalOptions;

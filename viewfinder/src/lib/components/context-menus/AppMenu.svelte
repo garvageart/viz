@@ -1,9 +1,9 @@
 <script lang="ts">
+    import ContextMenu from "#lib/context-menu/ContextMenu.svelte";
+    import { createWorkspaceViewsMenu } from "#lib/context-menu/menus/workspaceViews.js";
+    import type { MenuItem } from "#lib/context-menu/types.js";
+    import { isMobile, user } from "#lib/states/index.svelte.js";
     import { goto } from "$app/navigation";
-    import ContextMenu from "$lib/context-menu/ContextMenu.svelte";
-    import { createWorkspaceViewsMenu } from "$lib/context-menu/menus/workspaceViews";
-    import type { MenuItem } from "$lib/context-menu/types";
-    import { isMobile, user } from "$lib/states/index.svelte";
 
     let { isOpen = $bindable(false), anchor = $bindable() } = $props<{
         isOpen?: boolean;

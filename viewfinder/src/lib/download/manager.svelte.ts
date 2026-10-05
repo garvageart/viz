@@ -1,4 +1,4 @@
-import { download } from "$lib/states/index.svelte";
+import { download } from "#lib/states/index.svelte.js";
 import { DownloadFile, isDownloadCompleted, isDownloadPending } from "./asset.svelte";
 
 /**

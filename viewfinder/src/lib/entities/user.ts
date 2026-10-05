@@ -1,4 +1,4 @@
-import type { UserRole } from "$lib/types/users";
+import type { UserRole } from "#lib/types/users.js";
 
 class UserData {
     uid: string;

@@ -1,9 +1,9 @@
+import TableHarness from "#lib/components/tests/harnesses/TableHarness.svelte";
 import { fireEvent, render, screen } from "@testing-library/svelte";
 import { describe, expect, it, vi } from "vitest";
-import TableHarness from "$lib/components/tests/harnesses/TableHarness.svelte";
 import Table, { type TableSort } from "./Table.svelte";
 
-vi.mock("$lib/components/modals/manager/ModalManager.svelte.ts", () => ({
+vi.mock("#lib/components/modals/manager/ModalManager.svelte.ts", () => ({
     modalsManager: {
         open: vi.fn(),
         close: vi.fn(),

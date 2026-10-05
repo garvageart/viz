@@ -1,20 +1,20 @@
 <script lang="ts">
+    import Button from "#lib/components/ui/Button.svelte";
+    import Checkbox from "#lib/components/ui/Checkbox.svelte";
+    import InputSelect from "#lib/components/ui/InputSelect.svelte";
+    import InputText from "#lib/components/ui/InputText.svelte";
+    import MaterialIcon from "#lib/components/ui/MaterialIcon.svelte";
+    import { toasts } from "#lib/toast-notifcations/toasts.svelte.js";
+    import { type MaterialSymbol } from "#lib/types/MaterialSymbol.js";
+    import { DEFAULT_TEMPLATE_EXAMPLE, buildDateTokens, cleanPathSegment } from "#lib/ui-tools/template.js";
+    import { copyToClipboard } from "#lib/utils/misc.js";
+    import { toSentenceCase } from "#lib/utils/strings.js";
     import { invalidateAll } from "$app/navigation";
     import type { VizConfig } from "@viz/api";
     import { api } from "@viz/api";
     import Handlebars from "handlebars";
     import { DateTime } from "luxon";
     import { type Snippet } from "svelte";
-    import Button from "$lib/components/ui/Button.svelte";
-    import Checkbox from "$lib/components/ui/Checkbox.svelte";
-    import InputSelect from "$lib/components/ui/InputSelect.svelte";
-    import InputText from "$lib/components/ui/InputText.svelte";
-    import MaterialIcon from "$lib/components/ui/MaterialIcon.svelte";
-    import { toasts } from "$lib/toast-notifcations/toasts.svelte";
-    import { type MaterialSymbol } from "$lib/types/MaterialSymbol";
-    import { DEFAULT_TEMPLATE_EXAMPLE, buildDateTokens, cleanPathSegment } from "$lib/ui-tools/template";
-    import { copyToClipboard } from "$lib/utils/misc";
-    import { toSentenceCase } from "$lib/utils/strings";
 
     interface Props {
         config: VizConfig;

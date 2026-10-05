@@ -1,10 +1,10 @@
 <script lang="ts">
+    import Button from "#lib/components/ui/Button.svelte";
+    import InputSelect from "#lib/components/ui/InputSelect.svelte";
+    import InputText from "#lib/components/ui/InputText.svelte";
+    import { toSentenceCase } from "#lib/utils/strings.js";
     import { Role, type User } from "@viz/api";
     import { untrack } from "svelte";
-    import Button from "$lib/components/ui/Button.svelte";
-    import InputSelect from "$lib/components/ui/InputSelect.svelte";
-    import InputText from "$lib/components/ui/InputText.svelte";
-    import { toSentenceCase } from "$lib/utils/strings";
     import { modalsManager } from "./manager/ModalManager.svelte";
 
     interface Props {

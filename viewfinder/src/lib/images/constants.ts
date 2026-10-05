@@ -1,6 +1,6 @@
+import type { TableColumn } from "#lib/components/ui/Table.svelte";
 import type { ImageAsset } from "@viz/api";
 import { DateTime } from "luxon";
-import type { TableColumn } from "$lib/components/ui/Table.svelte";
 
 export enum LabelColours {
     Red = "#eb1717",

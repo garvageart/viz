@@ -1,7 +1,7 @@
 <script lang="ts">
+    import Button from "#lib/components/ui/Button.svelte";
+    import { isMobile } from "#lib/states/index.svelte.js";
     import { type Snippet, onMount } from "svelte";
-    import Button from "$lib/components/ui/Button.svelte";
-    import { isMobile } from "$lib/states/index.svelte";
 
     interface Props {
         open?: boolean;

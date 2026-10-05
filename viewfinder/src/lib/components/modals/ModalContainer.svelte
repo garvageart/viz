@@ -1,5 +1,5 @@
 <script lang="ts">
-    import { KbdShortcutTier, keyboardManager } from "$lib/keyboard/keyboard.svelte";
+    import { KbdShortcutTier, keyboardManager } from "#lib/keyboard/keyboard.svelte.js";
     import Lightbox from "../ui/Lightbox.svelte";
     import ModalLightbox from "./ModalLightbox.svelte";
     import { modalsManager } from "./manager/ModalManager.svelte";

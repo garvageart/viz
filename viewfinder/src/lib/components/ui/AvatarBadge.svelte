@@ -1,6 +1,6 @@
 <script lang="ts">
+    import { user as userState } from "#lib/states/index.svelte.js";
     import type { User } from "@viz/api";
-    import { user as userState } from "$lib/states/index.svelte";
 
     interface Props {
         user?: User;

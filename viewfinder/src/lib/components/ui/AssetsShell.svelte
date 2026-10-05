@@ -1,15 +1,15 @@
 <script lang="ts" generics="T extends ScopeItem">
-    import { dev } from "$app/environment";
+    import Dropdown from "#lib/components/context-menus/Dropdown.svelte";
+    import AssetGrid from "#lib/components/grid/AssetView.svelte";
+    import Button from "#lib/components/ui/Button.svelte";
+    import { applySortSelection, currentSortId, sortOptions, toggleSortOrder } from "#lib/sort/sort.js";
+    import { type ScopeItem, selectionManager } from "#lib/states/selection.svelte.js";
+    import { type SortState, photosSort } from "#lib/states/sort.svelte.js";
+    import type { MaterialSymbol } from "#lib/types/MaterialSymbol.js";
+    import { dev } from "$app/env";
     import { DateTime } from "luxon";
     import { type ComponentProps, type Snippet } from "svelte";
     import type { HTMLButtonAttributes } from "svelte/elements";
-    import Dropdown from "$lib/components/context-menus/Dropdown.svelte";
-    import AssetGrid from "$lib/components/grid/AssetView.svelte";
-    import Button from "$lib/components/ui/Button.svelte";
-    import { applySortSelection, currentSortId, sortOptions, toggleSortOrder } from "$lib/sort/sort";
-    import { type ScopeItem, selectionManager } from "$lib/states/selection.svelte";
-    import { type SortState, photosSort } from "$lib/states/sort.svelte";
-    import type { MaterialSymbol } from "$lib/types/MaterialSymbol";
     import VizToolbar from "./toolbars/VizToolbar.svelte";
 
     type Props = {

@@ -1,7 +1,7 @@
+import DisplayMenuHarness from "#lib/components/tests/harnesses/DisplayMenuHarness.svelte";
+import { viewSettings } from "#lib/states/index.svelte.js";
 import { fireEvent, render, screen } from "@testing-library/svelte";
 import { beforeEach, describe, expect, it } from "vitest";
-import DisplayMenuHarness from "$lib/components/tests/harnesses/DisplayMenuHarness.svelte";
-import { viewSettings } from "$lib/states/index.svelte";
 
 describe("Display menu checkbox snippets", () => {
     beforeEach(() => {

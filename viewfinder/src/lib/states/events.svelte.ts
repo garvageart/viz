@@ -1,9 +1,9 @@
+import { DataKeys } from "#lib/dependency-keys.js";
+import { performSearch } from "#lib/search/execute.js";
+import { invalidateViz } from "#lib/views/views.svelte.js";
 import { invalidate } from "$app/navigation";
 import { page } from "$app/state";
 import { WSClient } from "@viz/api";
-import { DataKeys } from "$lib/dependency-keys";
-import { performSearch } from "$lib/search/execute";
-import { invalidateViz } from "$lib/views/views.svelte";
 
 /**
  * Global application events handler via WebSocket.

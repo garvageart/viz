@@ -1,5 +1,5 @@
 <script lang="ts">
-    import { LabelColours } from "$lib/images/constants";
+    import { LabelColours } from "#lib/images/constants.js";
 
     interface Props {
         label: LabelColours | null;

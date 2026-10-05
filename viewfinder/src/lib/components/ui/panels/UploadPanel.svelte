@@ -1,9 +1,9 @@
 <script lang="ts">
+    import { upload } from "#lib/states/index.svelte.js";
+    import { UploadState, isUploadActive, isUploadCompleted, isUploadRunning } from "#lib/upload/asset.svelte.js";
+    import { waitForUploadCompletion } from "#lib/upload/manager.svelte.js";
+    import { invalidateViz } from "#lib/views/views.svelte.js";
     import { scale } from "svelte/transition";
-    import { upload } from "$lib/states/index.svelte";
-    import { UploadState, isUploadActive, isUploadCompleted, isUploadRunning } from "$lib/upload/asset.svelte";
-    import { waitForUploadCompletion } from "$lib/upload/manager.svelte";
-    import { invalidateViz } from "$lib/views/views.svelte";
     import Button from "../Button.svelte";
     import InputNumber from "../InputNumber.svelte";
 

@@ -1,7 +1,7 @@
 <script lang="ts">
+    import Dropdown from "#lib/components/context-menus/Dropdown.svelte";
+    import { ContextKeys } from "#lib/context-keys.js";
     import { setContext } from "svelte";
-    import Dropdown from "$lib/components/context-menus/Dropdown.svelte";
-    import { ContextKeys } from "$lib/context-keys";
 
     let { zIndex = 100001 }: { zIndex?: number } = $props();
 

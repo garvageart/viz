@@ -1,12 +1,12 @@
+import { VizMimeTypes } from "#lib/constants.js";
+import type { MenuItem } from "#lib/context-menu/types.js";
+import type { TabGroup } from "#lib/layouts/model.svelte.js";
+import { workspaceState } from "#lib/states/workspace.svelte.js";
+import { toasts } from "#lib/toast-notifcations/toasts.svelte.js";
+import VizView, { type TabActions } from "#lib/views/views.svelte.js";
 import { goto } from "$app/navigation";
 import type { CollectionDetailResponse } from "@viz/api";
 import { addCollectionImages } from "@viz/api";
-import { VizMimeTypes } from "$lib/constants";
-import type { MenuItem } from "$lib/context-menu/types";
-import type { TabGroup } from "$lib/layouts/model.svelte";
-import { workspaceState } from "$lib/states/workspace.svelte";
-import { toasts } from "$lib/toast-notifcations/toasts.svelte";
-import VizView, { type TabActions } from "$lib/views/views.svelte";
 import type CollectionPage from "../../../routes/(app)/collections/[uid]/+page.svelte";
 
 export const collectionRoutePath = "/collections/[uid]";

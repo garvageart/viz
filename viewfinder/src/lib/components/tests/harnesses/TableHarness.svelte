@@ -1,5 +1,5 @@
 <script lang="ts">
-    import Table, { type TableColumn } from "$lib/components/ui/Table.svelte";
+    import Table, { type TableColumn } from "#lib/components/ui/Table.svelte";
 
     export interface HarnessRow {
         uid: string;

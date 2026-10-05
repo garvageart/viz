@@ -1,5 +1,5 @@
+import { download } from "#lib/states/index.svelte.js";
 import { onMount } from "svelte";
-import { download } from "$lib/states/index.svelte";
 import { DownloadFile, DownloadState } from "./asset.svelte";
 
 export function setupDummyDownloads() {

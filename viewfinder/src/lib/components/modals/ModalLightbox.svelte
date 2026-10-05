@@ -1,12 +1,12 @@
 <script lang="ts">
+    import Button from "#lib/components/ui/Button.svelte";
+    import MaterialIcon from "#lib/components/ui/MaterialIcon.svelte";
+    import { ZIndex } from "#lib/constants/z-index.js";
+    import { ContextKeys } from "#lib/context-keys.js";
+    import type { MaterialSymbol } from "#lib/types/MaterialSymbol.js";
     import type { Snippet } from "svelte";
     import { onMount, setContext } from "svelte";
     import type { SvelteHTMLElements } from "svelte/elements";
-    import Button from "$lib/components/ui/Button.svelte";
-    import MaterialIcon from "$lib/components/ui/MaterialIcon.svelte";
-    import { ZIndex } from "$lib/constants/z-index";
-    import { ContextKeys } from "$lib/context-keys";
-    import type { MaterialSymbol } from "$lib/types/MaterialSymbol";
 
     type Props = {
         children: Snippet;

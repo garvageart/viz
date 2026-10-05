@@ -1,10 +1,10 @@
 <script lang="ts">
+    import ImageLabelViewer from "#lib/components/image-tools/ImageLabelViewer.svelte";
+    import Favourite from "#lib/components/ui/Favourite.svelte";
+    import { VizMimeTypes } from "#lib/constants.js";
+    import { draggable } from "#lib/drag-drop/directives.svelte.js";
+    import { getImageLabel, getTakenAt } from "#lib/utils/images.js";
     import { type ImageAsset, getAssetImagePath } from "@viz/api";
-    import ImageLabelViewer from "$lib/components/image-tools/ImageLabelViewer.svelte";
-    import Favourite from "$lib/components/ui/Favourite.svelte";
-    import { VizMimeTypes } from "$lib/constants";
-    import { draggable } from "$lib/drag-drop/directives.svelte";
-    import { getImageLabel, getTakenAt } from "$lib/utils/images";
     import AssetImage, { type AssetImageProps } from "./AssetImage.svelte";
 
     export type ImageVariant = "mini" | "full" | "simple";

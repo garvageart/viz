@@ -1,7 +1,7 @@
-import type { MenuItem } from "$lib/context-menu/types";
-import { TabGroup } from "$lib/layouts/model.svelte";
-import { workspaceState } from "$lib/states/workspace.svelte";
-import type VizView from "$lib/views/views.svelte";
+import type { MenuItem } from "#lib/context-menu/types.js";
+import { TabGroup } from "#lib/layouts/model.svelte.js";
+import { workspaceState } from "#lib/states/workspace.svelte.js";
+import type VizView from "#lib/views/views.svelte.js";
 
 export type TabHandlers = {
     closeTab: (v: VizView) => void;

@@ -1,11 +1,11 @@
 <script lang="ts">
+    import { Scope, scopes } from "#lib/auth/scopes.gen.js";
+    import Button from "#lib/components/ui/Button.svelte";
+    import Checkbox from "#lib/components/ui/Checkbox.svelte";
+    import InputText from "#lib/components/ui/InputText.svelte";
+    import { toasts } from "#lib/toast-notifcations/toasts.svelte.js";
+    import { copyToClipboard } from "#lib/utils/misc.js";
     import { createApiKey } from "@viz/api";
-    import { Scope, scopes } from "$lib/auth/scopes.gen";
-    import Button from "$lib/components/ui/Button.svelte";
-    import Checkbox from "$lib/components/ui/Checkbox.svelte";
-    import InputText from "$lib/components/ui/InputText.svelte";
-    import { toasts } from "$lib/toast-notifcations/toasts.svelte";
-    import { copyToClipboard } from "$lib/utils/misc";
     import { modalsManager } from "./manager/ModalManager.svelte";
 
     let { id, onClose, onSuccess }: { id: string; onClose: () => void; onSuccess: () => void } = $props();

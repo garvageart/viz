@@ -1,5 +1,5 @@
 <script lang="ts">
-    import InputText from "$lib/components/ui/InputText.svelte";
+    import InputText from "#lib/components/ui/InputText.svelte";
 
     interface Props {
         value?: string;

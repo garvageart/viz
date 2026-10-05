@@ -11,9 +11,9 @@
 </script>
 
 <script lang="ts">
+    import { type TooltipParams, tooltip } from "#lib/components/tooltips/tooltip.js";
+    import type { MaterialSymbol } from "#lib/types/MaterialSymbol.js";
     import type { HTMLAnchorAttributes, HTMLButtonAttributes } from "svelte/elements";
-    import { type TooltipParams, tooltip } from "$lib/components/tooltips/tooltip";
-    import type { MaterialSymbol } from "$lib/types/MaterialSymbol";
     import MaterialIcon from "./MaterialIcon.svelte";
 
     interface Props {
@@ -95,7 +95,7 @@
 {/if}
 
 <style lang="scss">
-    @use "$lib/styles/scss/viz-mixins.scss" as m;
+    @use "../../styles/scss/viz-mixins.scss" as m;
 
     .button-content {
         display: contents;

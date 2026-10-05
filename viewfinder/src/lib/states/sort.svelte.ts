@@ -1,5 +1,5 @@
-import { DbSettings } from "$lib/db/settings";
-import type { AssetSort } from "$lib/types/asset";
+import { DbSettings } from "#lib/db/settings.js";
+import type { AssetSort } from "#lib/types/asset.js";
 
 export type SortSection = "photos" | "collections" | "collection-detail";
 

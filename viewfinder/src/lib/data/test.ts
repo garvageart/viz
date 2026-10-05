@@ -1,6 +1,6 @@
+import { generateRandomString } from "#lib/utils/misc.js";
 import { faker } from "@faker-js/faker";
 import { type Collection, type ImageAsset, type ImageExif, Label, Role, type User } from "@viz/api";
-import { generateRandomString } from "$lib/utils/misc";
 
 /**
  * Creates a random test user for testing purposes.

@@ -1,3 +1,12 @@
+import ConfirmationModal from "#lib/components/modals/ConfirmationModal.svelte";
+import { modalsManager } from "#lib/components/modals/manager/ModalManager.svelte.js";
+import ExportPanel from "#lib/components/ui/panels/ExportPanel.svelte";
+import { DownloadFile, DownloadState } from "#lib/download/asset.svelte.js";
+import { processDownloadQueue, waitForDownloadCompletion } from "#lib/download/manager.svelte.js";
+import { download } from "#lib/states/index.svelte.js";
+import { toasts } from "#lib/toast-notifcations/toasts.svelte.js";
+import { downloadToFilesystem } from "#lib/utils/files.js";
+import { copyToClipboard } from "#lib/utils/misc.js";
 import { goto } from "$app/navigation";
 import {
     type Collection,
@@ -9,15 +18,6 @@ import {
     signDownload,
     updateCollection
 } from "@viz/api";
-import ConfirmationModal from "$lib/components/modals/ConfirmationModal.svelte";
-import { modalsManager } from "$lib/components/modals/manager/ModalManager.svelte";
-import ExportPanel from "$lib/components/ui/panels/ExportPanel.svelte";
-import { DownloadFile, DownloadState } from "$lib/download/asset.svelte";
-import { processDownloadQueue, waitForDownloadCompletion } from "$lib/download/manager.svelte";
-import { download } from "$lib/states/index.svelte";
-import { toasts } from "$lib/toast-notifcations/toasts.svelte";
-import { downloadToFilesystem } from "$lib/utils/files";
-import { copyToClipboard } from "$lib/utils/misc";
 import type { MenuItem } from "../types";
 
 export interface CollectionMenuOptions {

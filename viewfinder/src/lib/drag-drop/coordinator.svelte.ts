@@ -1,4 +1,4 @@
-import type { DragMimeType } from "$lib/constants";
+import type { DragMimeType } from "#lib/constants.js";
 import { DragData } from "./data";
 import type { DragSourceItem, DropIntent } from "./types";
 

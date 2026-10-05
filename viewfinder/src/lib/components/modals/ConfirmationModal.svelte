@@ -1,6 +1,6 @@
 <script lang="ts">
+    import Button, { type ButtonVariant } from "#lib/components/ui/Button.svelte";
     import type { Snippet } from "svelte";
-    import Button, { type ButtonVariant } from "$lib/components/ui/Button.svelte";
     import { type ModalOptions, modalsManager } from "./manager/ModalManager.svelte";
 
     interface Props {

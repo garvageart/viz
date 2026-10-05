@@ -1,11 +1,11 @@
 <script lang="ts">
+    import AssetImage from "#lib/components/ui/AssetImage.svelte";
+    import MaterialIcon from "#lib/components/ui/MaterialIcon.svelte";
+    import { VizMimeTypes } from "#lib/constants.js";
+    import { draggable } from "#lib/drag-drop/directives.svelte.js";
+    import { formatBytes } from "#lib/utils/images.js";
     import { type Collection, type ImageAsset, getAssetImagePath } from "@viz/api";
     import { slide } from "svelte/transition";
-    import AssetImage from "$lib/components/ui/AssetImage.svelte";
-    import MaterialIcon from "$lib/components/ui/MaterialIcon.svelte";
-    import { VizMimeTypes } from "$lib/constants";
-    import { draggable } from "$lib/drag-drop/directives.svelte";
-    import { formatBytes } from "$lib/utils/images";
 
     interface Props {
         item: ImageAsset | Collection;

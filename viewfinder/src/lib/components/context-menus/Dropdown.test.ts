@@ -1,6 +1,6 @@
+import ModalZContextHarness from "#lib/components/tests/harnesses/ModalZContextHarness.svelte";
 import { fireEvent, render, screen } from "@testing-library/svelte";
 import { describe, expect, it, vi } from "vitest";
-import ModalZContextHarness from "$lib/components/tests/harnesses/ModalZContextHarness.svelte";
 import Dropdown from "./Dropdown.svelte";
 
 function pointerClick(target: Element) {

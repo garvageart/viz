@@ -1,9 +1,9 @@
+import { initDB } from "#lib/db/client.js";
+import { SelectionScopeNames, selectionManager } from "#lib/states/selection.svelte.js";
+import { getImageLabel } from "#lib/utils/images.js";
 import { type Collection, type ImageAsset } from "@viz/api";
 import { type IDBPDatabase } from "idb";
 import { DateTime } from "luxon";
-import { initDB } from "$lib/db/client";
-import { SelectionScopeNames, selectionManager } from "$lib/states/selection.svelte";
-import { getImageLabel } from "$lib/utils/images";
 
 export type Asset = ImageAsset | Collection;
 

@@ -1,9 +1,5 @@
-import { type ImageAsset, Label } from "@viz/api";
-import { Settings } from "luxon";
-import { rgbaToThumbHash } from "thumbhash";
-import { describe, expect, it, vi } from "vitest";
-import { createTestImageObject } from "$lib/data/test";
-import { LabelColours } from "$lib/images/constants";
+import { createTestImageObject } from "#lib/data/test.js";
+import { LabelColours } from "#lib/images/constants.js";
 import {
     ByteUnit,
     compareByTakenAtDesc,
@@ -25,7 +21,11 @@ import {
     isAssetImage,
     parseExifDate,
     parseTransformParams
-} from "$lib/utils/images";
+} from "#lib/utils/images.js";
+import { type ImageAsset, Label } from "@viz/api";
+import { Settings } from "luxon";
+import { rgbaToThumbHash } from "thumbhash";
+import { describe, expect, it, vi } from "vitest";
 
 Settings.defaultLocale = "en-ZA";
 

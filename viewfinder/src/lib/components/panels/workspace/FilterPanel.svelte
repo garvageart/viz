@@ -1,8 +1,8 @@
 <script lang="ts">
-    import CollectionFilter from "$lib/components/filters/CollectionFilter.svelte";
-    import ImageFilter from "$lib/components/filters/ImageFilter.svelte";
-    import Button from "$lib/components/ui/Button.svelte";
-    import { filterManager } from "$lib/states/filter.svelte";
+    import CollectionFilter from "#lib/components/filters/CollectionFilter.svelte";
+    import ImageFilter from "#lib/components/filters/ImageFilter.svelte";
+    import Button from "#lib/components/ui/Button.svelte";
+    import { filterManager } from "#lib/states/filter.svelte.js";
 
     const imageScope = filterManager.getScope("images");
     const collectionScope = filterManager.getScope("collections");

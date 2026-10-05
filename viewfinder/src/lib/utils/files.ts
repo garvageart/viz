@@ -1,4 +1,4 @@
-import { sleep } from "$lib/utils/misc";
+import { sleep } from "#lib/utils/misc.js";
 
 /**
  * Recursively traverse file system entries to collect all files,

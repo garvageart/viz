@@ -1,5 +1,5 @@
 <script lang="ts">
-    import ModalLightbox from "$lib/components/modals/ModalLightbox.svelte";
+    import ModalLightbox from "#lib/components/modals/ModalLightbox.svelte";
 
     interface Props {
         onFormSubmit?: () => void;

@@ -1,8 +1,8 @@
 <script lang="ts">
+    import { formatLabel } from "#lib/settings/utils.js";
+    import { toasts } from "#lib/toast-notifcations/toasts.svelte.js";
     import type { Setting } from "@viz/api";
     import { resetUserSetting } from "@viz/api";
-    import { formatLabel } from "$lib/settings/utils";
-    import { toasts } from "$lib/toast-notifcations/toasts.svelte";
     import JsonInput from "./inputs/JsonInput.svelte";
     import SelectInput from "./inputs/SelectInput.svelte";
     import SliderToggleInput from "./inputs/SliderToggleInput.svelte";

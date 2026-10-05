@@ -1,6 +1,6 @@
+import { isMacPlatform } from "#lib/utils/browser.js";
+import { VizLocalStorage } from "#lib/utils/misc.js";
 import hotkeys, { type HotkeysEvent } from "hotkeys-js";
-import { isMacPlatform } from "$lib/utils/browser";
-import { VizLocalStorage } from "$lib/utils/misc";
 
 export type { HotkeysEvent };
 

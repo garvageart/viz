@@ -1,7 +1,7 @@
+import { debugMode } from "#lib/states/index.svelte.js";
+import type { ImageUploadFileMetadata } from "#lib/upload/manager.svelte.js";
 import { error } from "@sveltejs/kit";
 import { API_BASE_URL, type ImageAsset, downloadImagesZipBlob, getImageFileBlob, signDownload } from "@viz/api";
-import { debugMode } from "$lib/states/index.svelte";
-import type { ImageUploadFileMetadata } from "$lib/upload/manager.svelte";
 
 type ExtractSuccessData<R> = [Extract<R, { status: 200 }>] extends [never]
     ? R extends { data: infer D }

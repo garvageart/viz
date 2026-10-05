@@ -1,12 +1,12 @@
 <script lang="ts">
-    import Badge from "$lib/components/ui/Badge.svelte";
-    import Button from "$lib/components/ui/Button.svelte";
-    import HistogramChart, { type ChannelVisibility } from "$lib/components/ui/misc/HistogramChart.svelte";
-    import { computeHistogram } from "$lib/histogram";
-    import type { HistogramChannels } from "$lib/histogram/types";
-    import { selectionManager } from "$lib/states/selection.svelte";
-    import type { HistogramData } from "$lib/third-party/photo-histogram/js/histogram";
-    import { formatMegapixels, isAssetImage } from "$lib/utils/images";
+    import Badge from "#lib/components/ui/Badge.svelte";
+    import Button from "#lib/components/ui/Button.svelte";
+    import HistogramChart, { type ChannelVisibility } from "#lib/components/ui/misc/HistogramChart.svelte";
+    import { computeHistogram } from "#lib/histogram/index.js";
+    import type { HistogramChannels } from "#lib/histogram/types.js";
+    import { selectionManager } from "#lib/states/selection.svelte.js";
+    import type { HistogramData } from "#lib/third-party/photo-histogram/js/histogram.js";
+    import { formatMegapixels, isAssetImage } from "#lib/utils/images.js";
 
     interface Props {
         /** Optional direct image element source */

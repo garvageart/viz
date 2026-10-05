@@ -1,7 +1,7 @@
+import { ImagesPaginationState } from "#lib/images/state.svelte.js";
+import { PaginationState } from "#lib/states/index.svelte.js";
+import { collectionsSort } from "#lib/states/sort.svelte.js";
 import { type Collection, type CollectionListResponse, listCollections } from "@viz/api";
-import { ImagesPaginationState } from "$lib/images/state.svelte";
-import { PaginationState } from "$lib/states/index.svelte";
-import { collectionsSort } from "$lib/states/sort.svelte";
 
 // Helper class for managing collection gallery state.
 // It initializes from the route-load response and appends pages via listCollections.

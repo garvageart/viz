@@ -1,16 +1,16 @@
 <script lang="ts">
+    import ImageCard from "#lib/components/ui/ImageCard.svelte";
+    import ImageLightbox from "#lib/components/ui/ImageLightbox.svelte";
+    import MaterialIcon from "#lib/components/ui/MaterialIcon.svelte";
+    import { ImageLightboxState } from "#lib/components/ui/state/image-lightbox.svelte.js";
+    import { VizMimeTypes } from "#lib/constants.js";
+    import { contextMenu } from "#lib/context-menu/index.js";
+    import { createImageMenu } from "#lib/context-menu/menus/images.js";
+    import { draggable } from "#lib/drag-drop/directives.svelte.js";
+    import { type CollectionUIDSelectionScope, selectionManager } from "#lib/states/selection.svelte.js";
+    import { isCollectionData } from "#lib/utils/collections.js";
+    import { isAssetImage } from "#lib/utils/images.js";
     import { type ImageAsset, getAssetImagePath, listCollectionImages } from "@viz/api";
-    import ImageCard from "$lib/components/ui/ImageCard.svelte";
-    import ImageLightbox from "$lib/components/ui/ImageLightbox.svelte";
-    import MaterialIcon from "$lib/components/ui/MaterialIcon.svelte";
-    import { ImageLightboxState } from "$lib/components/ui/state/image-lightbox.svelte";
-    import { VizMimeTypes } from "$lib/constants";
-    import { contextMenu } from "$lib/context-menu";
-    import { createImageMenu } from "$lib/context-menu/menus/images";
-    import { draggable } from "$lib/drag-drop/directives.svelte";
-    import { type CollectionUIDSelectionScope, selectionManager } from "$lib/states/selection.svelte";
-    import { isCollectionData } from "$lib/utils/collections";
-    import { isAssetImage } from "$lib/utils/images";
 
     let activeScope = $derived(selectionManager.getActiveScope());
     let activeEntity = $derived(activeScope?.selectedItems[0] ?? activeScope?.active);

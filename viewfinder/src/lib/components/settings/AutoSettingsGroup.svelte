@@ -1,9 +1,9 @@
 <script lang="ts">
+    import Button from "#lib/components/ui/Button.svelte";
+    import { toasts } from "#lib/toast-notifcations/toasts.svelte.js";
     import type { Setting } from "@viz/api";
     import { updateUserSettingsBatch } from "@viz/api";
     import { fade } from "svelte/transition";
-    import Button from "$lib/components/ui/Button.svelte";
-    import { toasts } from "$lib/toast-notifcations/toasts.svelte";
     import SettingItemsList from "./SettingItemsList.svelte";
 
     interface Props {

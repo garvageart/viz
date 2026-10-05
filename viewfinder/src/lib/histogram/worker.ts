@@ -1,5 +1,5 @@
+import type { HistogramData } from "#lib/third-party/photo-histogram/js/histogram.js";
 import { expose } from "comlink";
-import type { HistogramData } from "$lib/third-party/photo-histogram/js/histogram";
 import { tallyImageData } from "./tally";
 
 export interface HistogramApi {

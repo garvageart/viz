@@ -1,8 +1,8 @@
+import ToJsonTrackingHarness from "#lib/components/tests/harnesses/ToJsonTrackingHarness.svelte";
+import VizView from "#lib/views/views.svelte.js";
 import { render } from "@testing-library/svelte";
 import { tick } from "svelte";
 import { describe, expect, it, vi } from "vitest";
-import ToJsonTrackingHarness from "$lib/components/tests/harnesses/ToJsonTrackingHarness.svelte";
-import VizView from "$lib/views/views.svelte";
 import { SplitNode, TabGroup, Workspace } from "./model.svelte";
 
 describe("toJSON dependency tracking", () => {

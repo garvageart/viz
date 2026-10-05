@@ -1,7 +1,7 @@
+import { LabelColours, flashModes } from "#lib/images/constants.js";
 import { type CollectionDetailResponse, type ImageAsset, downloadImagesZipBlob, signDownload } from "@viz/api";
 import { DateTime, Duration } from "luxon";
 import { thumbHashToDataURL } from "thumbhash";
-import { LabelColours, flashModes } from "$lib/images/constants";
 
 /**
  * Type guard: true only for real image assets (which carry image_paths), not

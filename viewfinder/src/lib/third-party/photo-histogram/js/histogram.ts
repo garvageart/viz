@@ -1,4 +1,4 @@
-import { tallyImageData } from "$lib/histogram/tally";
+import { tallyImageData } from "#lib/histogram/tally.js";
 
 export interface HistogramStat {
     red: number;

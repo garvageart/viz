@@ -1,39 +1,24 @@
-<!--
-  @component ImageLightbox
-  
-  Core reminder for myself and everyone:
-  At the fundamental core of this component, its primary role is to load and display an image's data and 
-  the image itself cleanly, immediately, and accurately within the viewport.
-  
-  All additional features and behaviors—such as zoom, panning, crop mode, photo editing, metadata sidebars, 
-  or action overlays—are secondary layers built strictly ON TOP of this base display. This idea is the foundation. 
-  
-  No future feature, edit tool, state calculation, or overlay logic must interfere with, delay, 
-  or distort the underlying core principle of displaying the base image cleanly and instantly upon loading 
-  or navigation. Base 1x viewing relies on clean native CSS bounds (max-width: 100%, max-height: 100%, object-fit: contain).
--->
-
 <script lang="ts">
-    import { dev } from "$app/environment";
+    import CropOverlay from "#lib/components/image-tools/CropOverlay.svelte";
+    import CropTools from "#lib/components/image-tools/CropTools.svelte";
+    import { modalsManager } from "#lib/components/modals/manager/ModalManager.svelte.js";
+    import Button from "#lib/components/ui/Button.svelte";
+    import StatusIndicator from "#lib/components/ui/StatusIndicator.svelte";
+    import ExportPanel, { modalOptions as exportModalOptions } from "#lib/components/ui/panels/ExportPanel.svelte";
+    import MetadataPanel from "#lib/components/ui/panels/MetadataPanel.svelte";
+    import { ImageLoader } from "#lib/images/loader/image-loader.svelte.js";
+    import type { ActiveCropLayout, CropRect } from "#lib/images/zoom/crop-utils.js";
+    import { ImageZoomState } from "#lib/images/zoom/zoom-utils.svelte.js";
+    import { KbdShortcutTier, KeybindAction, keyboardManager } from "#lib/keyboard/keyboard.svelte.js";
+    import { isMobile } from "#lib/states/index.svelte.js";
+    import { toasts } from "#lib/toast-notifcations/toasts.svelte.js";
+    import { downloadOriginalImageFile } from "#lib/utils/http.js";
+    import { dev } from "$app/env";
     import { type ImageAsset, getAssetImagePath, updateImage } from "@viz/api";
     import { untrack } from "svelte";
     import type { MouseEventHandler } from "svelte/elements";
     import { slide } from "svelte/transition";
     import { hideAll } from "tippy.js";
-    import CropOverlay from "$lib/components/image-tools/CropOverlay.svelte";
-    import CropTools from "$lib/components/image-tools/CropTools.svelte";
-    import { modalsManager } from "$lib/components/modals/manager/ModalManager.svelte";
-    import Button from "$lib/components/ui/Button.svelte";
-    import StatusIndicator from "$lib/components/ui/StatusIndicator.svelte";
-    import ExportPanel, { modalOptions as exportModalOptions } from "$lib/components/ui/panels/ExportPanel.svelte";
-    import MetadataPanel from "$lib/components/ui/panels/MetadataPanel.svelte";
-    import { ImageLoader } from "$lib/images/loader/image-loader.svelte";
-    import type { ActiveCropLayout, CropRect } from "$lib/images/zoom/crop-utils";
-    import { ImageZoomState } from "$lib/images/zoom/zoom-utils.svelte";
-    import { KbdShortcutTier, KeybindAction, keyboardManager } from "$lib/keyboard/keyboard.svelte";
-    import { isMobile } from "$lib/states/index.svelte";
-    import { toasts } from "$lib/toast-notifcations/toasts.svelte";
-    import { downloadOriginalImageFile } from "$lib/utils/http";
     import AssetImage from "./AssetImage.svelte";
     import FloatingPanel from "./FloatingPanel.svelte";
     import Lightbox from "./Lightbox.svelte";
@@ -544,6 +529,21 @@
     });
 </script>
 
+<!--
+  @component ImageLightbox
+  
+  Core reminder for myself and everyone:
+  At the fundamental core of this component, its primary role is to load and display an image's data and 
+  the image itself cleanly, immediately, and accurately within the viewport.
+  
+  All additional features and behaviors—such as zoom, panning, crop mode, photo editing, metadata sidebars, 
+  or action overlays—are secondary layers built strictly ON TOP of this base display. This idea is the foundation. 
+  
+  No future feature, edit tool, state calculation, or overlay logic must interfere with, delay, 
+  or distort the underlying core principle of displaying the base image cleanly and instantly upon loading 
+  or navigation. Base 1x viewing relies on clean native CSS bounds (max-width: 100%, max-height: 100%, object-fit: contain).
+-->
+
 {#snippet zoomStateDebug()}
     <div class="lightbox-debug-panel">
         <h3>Zoom & Loader State</h3>
@@ -752,7 +752,8 @@
                         id="lightbox-toggle-info"
                         class="lightbox-button-icon"
                         // TODO: Make i18n safe
-                        title={`${showSidePanel ? "Hide" : "Show"} Info`}
+                        title={// TODO: Make i18n safe
+                        `${showSidePanel ? "Hide" : "Show"} Info`}
                         onclick={(e) => {
                             e.stopPropagation();
                             showSidePanel = !showSidePanel;

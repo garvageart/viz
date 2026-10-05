@@ -1,10 +1,10 @@
 <script lang="ts">
+    import { SelectionScopeNames, selectionManager } from "#lib/states/selection.svelte.js";
+    import { toasts } from "#lib/toast-notifcations/toasts.svelte.js";
+    import type { CardVisualState } from "#lib/types/snippet.js";
     import { goto } from "$app/navigation";
     import { type Collection, addCollectionImages, createCollection, listCollections } from "@viz/api";
     import { onMount } from "svelte";
-    import { SelectionScopeNames, selectionManager } from "$lib/states/selection.svelte";
-    import { toasts } from "$lib/toast-notifcations/toasts.svelte";
-    import type { CardVisualState } from "$lib/types/snippet";
     import AssetGrid from "../grid/AssetView.svelte";
     import Button from "../ui/Button.svelte";
     import CollectionCard from "../ui/CollectionCard.svelte";

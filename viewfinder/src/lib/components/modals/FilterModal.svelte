@@ -1,5 +1,5 @@
 <script module>
-    import type { ModalOptions } from "$lib/components/modals/manager/ModalManager.svelte";
+    import type { ModalOptions } from "#lib/components/modals/manager/ModalManager.svelte.js";
 
     export const FilterModalOptions: ModalOptions = {
         heading: "Filter Images",

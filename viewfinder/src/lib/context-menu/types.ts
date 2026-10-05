@@ -1,6 +1,6 @@
+import type { IconProps } from "#lib/components/ui/MaterialIcon.svelte";
+import type { MaterialSymbol } from "#lib/types/MaterialSymbol.js";
 import type { Snippet } from "svelte";
-import type { IconProps } from "$lib/components/ui/MaterialIcon.svelte";
-import type { MaterialSymbol } from "$lib/types/MaterialSymbol";
 
 export type MenuItem<T = any> = {
     id: string;

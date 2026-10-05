@@ -1,7 +1,7 @@
+import type { AssetSort } from "#lib/types/asset.js";
 import { openDB } from "idb";
 import { flushSync } from "svelte";
 import { beforeEach, describe, expect, it } from "vitest";
-import type { AssetSort } from "$lib/types/asset";
 import { SortState } from "./sort.svelte";
 
 const DB_NAME = "viz";

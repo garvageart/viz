@@ -5,13 +5,13 @@
  font ligatures (as a fallback).
 -->
 <script lang="ts">
+    import { tooltip } from "#lib/components/tooltips/tooltip.js";
+    import { bootState } from "#lib/states/index.svelte.js";
+    import type { MaterialSymbol } from "#lib/types/MaterialSymbol.js";
     import { dev } from "$app/env";
     import type { Component } from "svelte";
     import type { SvelteHTMLElements } from "svelte/elements";
     import { SvelteSet } from "svelte/reactivity";
-    import { tooltip } from "$lib/components/tooltips/tooltip";
-    import { bootState } from "$lib/states/index.svelte";
-    import type { MaterialSymbol } from "$lib/types/MaterialSymbol";
 
     // Global Font Loading State
     // We keep this global so we don't try to load the same font multiple times.
@@ -19,7 +19,7 @@
 
     // Icon Modules (Vite Glob Imports)
     // Eager: Available synchronously during build/prerender.
-    const ICON_MODULES_EAGER = import.meta.glob("$lib/components/icons/generated/**/*.svelte", {
+    const ICON_MODULES_EAGER = import.meta.glob("#lib/components/icons/generated/**/*.svelte", {
         eager: true
     });
 

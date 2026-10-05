@@ -1,4 +1,4 @@
-import { isMobile } from "$lib/states/index.svelte";
+import { isMobile } from "#lib/states/index.svelte.js";
 
 export interface LongPressActionParams {
     disabled?: boolean;

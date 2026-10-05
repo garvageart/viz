@@ -1,10 +1,10 @@
-import { dev } from "$app/environment";
+import { search } from "#lib/states/index.svelte.js";
+import { sleep } from "#lib/utils/misc.js";
+import { updateURLParameter } from "#lib/utils/url.js";
+import { dev } from "$app/env";
 import { goto } from "$app/navigation";
 import { page } from "$app/state";
 import { executeSearch } from "@viz/api";
-import { search } from "$lib/states/index.svelte";
-import { sleep } from "$lib/utils/misc";
-import { updateURLParameter } from "$lib/utils/url";
 
 export function transformQueryString(queryStr: string) {
     return queryStr.replace(/\s/g, "+");

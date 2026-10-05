@@ -1,9 +1,9 @@
 <script lang="ts">
+    import Calendar from "#lib/components/ui/DatePicker.svelte";
+    import type { ImageFacets, ImageFilters } from "#lib/states/filter.svelte.js";
+    import { formatShutterSpeed } from "#lib/utils/images.js";
     import { type Snippet } from "svelte";
     import { slide } from "svelte/transition";
-    import Calendar from "$lib/components/ui/DatePicker.svelte";
-    import type { ImageFacets, ImageFilters } from "$lib/states/filter.svelte";
-    import { formatShutterSpeed } from "$lib/utils/images";
     import StarRating from "../image-tools/StarRating.svelte";
     import MaterialIcon from "../ui/MaterialIcon.svelte";
     import ChecklistFacet from "./ChecklistFacet.svelte";

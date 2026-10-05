@@ -1,5 +1,5 @@
 <script lang="ts">
-    import type { CollectionFacets, CollectionFilters } from "$lib/states/filter.svelte";
+    import type { CollectionFacets, CollectionFilters } from "#lib/states/filter.svelte.js";
 
     interface Props {
         criteria: CollectionFilters;

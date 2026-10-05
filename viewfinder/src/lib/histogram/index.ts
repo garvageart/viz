@@ -1,12 +1,12 @@
-import type { ImageAsset } from "@viz/api";
-import * as Comlink from "comlink";
 import {
     type HistogramData,
     type HistogramStat,
     Histogram as PHHistogram
-} from "$lib/third-party/photo-histogram/js/histogram";
-import * as HistogramUtils from "$lib/third-party/photo-histogram/js/util";
-import { isAssetImage } from "$lib/utils/images";
+} from "#lib/third-party/photo-histogram/js/histogram.js";
+import * as HistogramUtils from "#lib/third-party/photo-histogram/js/util.js";
+import { isAssetImage } from "#lib/utils/images.js";
+import type { ImageAsset } from "@viz/api";
+import * as Comlink from "comlink";
 import { clearHistogramCache, computeFallback, computeForAsset, getWorkerProxy } from "./asset";
 
 export { HistogramUtils, PHHistogram as PhotoHistogram };

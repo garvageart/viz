@@ -1,22 +1,22 @@
 <script lang="ts">
-    import { addCollectionImages, listCollectionImageUiDs, listImages } from "@viz/api";
-    import { onDestroy, onMount } from "svelte";
-    import LoadingSpinner from "$lib/components/ui/LoadingSpinner.svelte";
-    import { getImageGridDisplay } from "$lib/context-menu/menus/image-grid-display";
-    import type { MenuItem } from "$lib/context-menu/types";
-    import { ImagesPaginationState } from "$lib/images/state.svelte";
+    import LoadingSpinner from "#lib/components/ui/LoadingSpinner.svelte";
+    import { getImageGridDisplay } from "#lib/context-menu/menus/image-grid-display.js";
+    import type { MenuItem } from "#lib/context-menu/types.js";
+    import { ImagesPaginationState } from "#lib/images/state.svelte.js";
     import {
         type ConsolidatedGroup,
         type DateGroup,
         getConsolidatedGroups,
         groupImagesByDate
-    } from "$lib/photo-layout";
-    import { applySortSelection, currentSortId, sortOptions, toggleSortOrder } from "$lib/sort/sort";
-    import { filterManager } from "$lib/states/filter.svelte";
-    import { viewSettings } from "$lib/states/index.svelte";
-    import { SelectionScopeNames, selectionManager } from "$lib/states/selection.svelte";
-    import { photosSort } from "$lib/states/sort.svelte";
-    import { toasts } from "$lib/toast-notifcations/toasts.svelte";
+    } from "#lib/photo-layout/index.js";
+    import { applySortSelection, currentSortId, sortOptions, toggleSortOrder } from "#lib/sort/sort.js";
+    import { filterManager } from "#lib/states/filter.svelte.js";
+    import { viewSettings } from "#lib/states/index.svelte.js";
+    import { SelectionScopeNames, selectionManager } from "#lib/states/selection.svelte.js";
+    import { photosSort } from "#lib/states/sort.svelte.js";
+    import { toasts } from "#lib/toast-notifcations/toasts.svelte.js";
+    import { addCollectionImages, listCollectionImageUiDs, listImages } from "@viz/api";
+    import { onDestroy, onMount } from "svelte";
     import Dropdown from "../context-menus/Dropdown.svelte";
     import PhotoAssetGrid from "../grid/PhotoAssetGrid.svelte";
     import Button from "../ui/Button.svelte";

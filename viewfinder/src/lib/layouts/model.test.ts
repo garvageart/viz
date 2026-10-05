@@ -1,6 +1,6 @@
+import DevWelcomeText from "#lib/components/misc/DevWelcomeText.svelte";
+import VizView from "#lib/views/views.svelte.js";
 import { describe, expect, it } from "vitest";
-import DevWelcomeText from "$lib/components/misc/DevWelcomeText.svelte";
-import VizView from "$lib/views/views.svelte";
 import { type SerializedWorkspace, SplitNode, TabGroup, Workspace } from "./model.svelte";
 
 describe("Workspace Layout System", () => {

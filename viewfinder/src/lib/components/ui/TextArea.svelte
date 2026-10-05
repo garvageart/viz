@@ -1,6 +1,6 @@
 <script lang="ts">
+    import { generateRandomString } from "#lib/utils/misc.js";
     import type { FormEventHandler, SvelteHTMLElements } from "svelte/elements";
-    import { generateRandomString } from "$lib/utils/misc";
 
     type TextAreaResize = "none" | "both" | "horizontal" | "vertical";
 

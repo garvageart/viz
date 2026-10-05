@@ -1,8 +1,8 @@
+import type { HistogramApi } from "#lib/histogram/worker.js";
+import HistogramWorker from "#lib/histogram/worker?worker";
+import { type HistogramData, Histogram as PHHistogram } from "#lib/third-party/photo-histogram/js/histogram.js";
 import { type ImageAsset, getAssetImagePath } from "@viz/api";
 import * as Comlink from "comlink";
-import type { HistogramApi } from "$lib/histogram/worker";
-import HistogramWorker from "$lib/histogram/worker?worker";
-import { type HistogramData, Histogram as PHHistogram } from "$lib/third-party/photo-histogram/js/histogram";
 
 /**
  * Memoized, worker-accelerated histogram computation for an image asset.

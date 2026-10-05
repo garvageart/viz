@@ -1,3 +1,9 @@
+import type { MenuItem } from "#lib/context-menu/types.js";
+import { DbSettings } from "#lib/db/settings.js";
+import type { DownloadFile } from "#lib/download/asset.svelte.js";
+import type { AssetViewType } from "#lib/types/asset.js";
+import type { UploadImage } from "#lib/upload/asset.svelte.js";
+import { VizCookieStorage, VizLocalStorage } from "#lib/utils/misc.js";
 import { page } from "$app/state";
 import {
     type Collection,
@@ -10,12 +16,6 @@ import {
     updateUserSetting
 } from "@viz/api";
 import { MediaQuery } from "svelte/reactivity";
-import type { MenuItem } from "$lib/context-menu/types";
-import { DbSettings } from "$lib/db/settings";
-import type { DownloadFile } from "$lib/download/asset.svelte";
-import type { AssetViewType } from "$lib/types/asset";
-import type { UploadImage } from "$lib/upload/asset.svelte";
-import { VizCookieStorage, VizLocalStorage } from "$lib/utils/misc";
 
 // Types
 interface UserState {

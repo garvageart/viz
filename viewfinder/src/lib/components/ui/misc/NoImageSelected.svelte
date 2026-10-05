@@ -1,5 +1,5 @@
 <script lang="ts">
-    import MaterialIcon from "$lib/components/ui/MaterialIcon.svelte";
+    import MaterialIcon from "#lib/components/ui/MaterialIcon.svelte";
 
     interface Props {
         message?: string;

@@ -1,17 +1,17 @@
 <script lang="ts">
-    import { dev } from "$app/environment";
+    import TabGroupDebugOverlay from "#lib/components/workspace/debug/TabGroupDebugOverlay.svelte";
+    import { VizMimeTypes } from "#lib/constants.js";
+    import { contextMenu } from "#lib/context-menu/index.js";
+    import { resetAndReloadLayout } from "#lib/dev/components.svelte.js";
+    import { dragCoordinator } from "#lib/drag-drop/coordinator.svelte.js";
+    import { DragData } from "#lib/drag-drop/data.js";
+    import type { TabGroup } from "#lib/layouts/model.svelte.js";
+    import { type TabDragData, edgeDrag, tabOps } from "#lib/layouts/tab-ops.svelte.js";
+    import { openCollectionTab } from "#lib/layouts/tabs/collection.js";
+    import { workspaceState } from "#lib/states/workspace.svelte.js";
+    import VizView, { invalidationState } from "#lib/views/views.svelte.js";
+    import { dev } from "$app/env";
     import { setContext, untrack } from "svelte";
-    import TabGroupDebugOverlay from "$lib/components/workspace/debug/TabGroupDebugOverlay.svelte";
-    import { VizMimeTypes } from "$lib/constants";
-    import { contextMenu } from "$lib/context-menu";
-    import { resetAndReloadLayout } from "$lib/dev/components.svelte";
-    import { dragCoordinator } from "$lib/drag-drop/coordinator.svelte";
-    import { DragData } from "$lib/drag-drop/data";
-    import type { TabGroup } from "$lib/layouts/model.svelte";
-    import { type TabDragData, edgeDrag, tabOps } from "$lib/layouts/tab-ops.svelte";
-    import { openCollectionTab } from "$lib/layouts/tabs/collection";
-    import { workspaceState } from "$lib/states/workspace.svelte";
-    import VizView, { invalidationState } from "$lib/views/views.svelte";
     import LoadingContainer from "../overlays/LoadingContainer.svelte";
     import MaterialIcon from "../ui/MaterialIcon.svelte";
     import {
@@ -651,10 +651,9 @@
                     class:active={showDebugOverlay}
                     aria-label="Toggle Debug Overlay Zones"
                     title="Toggle Debug Overlay Zones"
-                    onclick={() => (showDebugOverlay = !showDebugOverlay)}
+                    onclick={() => (showDebugOverlay = !showDebugOverlay)}><MaterialIcon iconName="window" /></button
                 >
-                    <MaterialIcon iconName="window" />
-                </button>
+
                 <button
                     class="header-action-button"
                     aria-label="Reset and Reload"

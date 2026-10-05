@@ -4,9 +4,9 @@ Toggle switch built on bits-ui's Switch.
 Docs: https://www.bits-ui.com/docs/components/switch
 -->
 <script lang="ts">
+    import { generateRandomString } from "#lib/utils/misc.js";
     import { Switch } from "bits-ui";
     import type { SvelteHTMLElements } from "svelte/elements";
-    import { generateRandomString } from "$lib/utils/misc";
 
     interface Props {
         label: string;

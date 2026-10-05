@@ -1,8 +1,8 @@
 <script lang="ts">
+    import Button from "#lib/components/ui/Button.svelte";
+    import type { ScopeItem, SelectionScope } from "#lib/states/selection.svelte.js";
     import type { Snippet } from "svelte";
     import type { HTMLAttributes } from "svelte/elements";
-    import Button from "$lib/components/ui/Button.svelte";
-    import type { ScopeItem, SelectionScope } from "$lib/states/selection.svelte";
 
     interface Props extends HTMLAttributes<HTMLDivElement> {
         /** Whether the toolbar sticks to the top of its scrolling container */

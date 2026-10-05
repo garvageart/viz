@@ -1,5 +1,5 @@
 <script lang="ts" module>
-    import type { MaterialSymbol } from "$lib/types/MaterialSymbol";
+    import type { MaterialSymbol } from "#lib/types/MaterialSymbol.js";
 
     export interface NavItem {
         label: string;

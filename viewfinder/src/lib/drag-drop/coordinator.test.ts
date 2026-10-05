@@ -1,5 +1,5 @@
+import { VizMimeTypes } from "#lib/mime.js";
 import { beforeEach, describe, expect, it } from "vitest";
-import { VizMimeTypes } from "$lib/mime";
 import { dragCoordinator } from "./coordinator.svelte";
 
 function createDragEvent(init: DragEventInit = {}): DragEvent {

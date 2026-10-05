@@ -1,26 +1,26 @@
 <script lang="ts" generics="T extends ScopeItem">
-    import { type Snippet, untrack } from "svelte";
-    import type { MouseEventHandler, SvelteHTMLElements } from "svelte/elements";
-    import { type Instance, type Props as TippyProps, delegate, followCursor, hideAll } from "tippy.js";
-    import "tippy.js/dist/tippy.css";
-    import PhotoTooltip from "$lib/components/tooltips/PhotoTooltip.svelte";
-    import { mountTooltipComponent } from "$lib/components/tooltips/tooltip";
-    import Table, { type TableColumn } from "$lib/components/ui/Table.svelte";
-    import { PhotoGridVirtualizer } from "$lib/components/virtualizer/PhotoGridVirtualizer.svelte.js";
-    import { KbdShortcutTier, KeybindAction, keyboardManager } from "$lib/keyboard/keyboard.svelte";
-    import { debugMode, isLayoutPage, isMobile } from "$lib/states/index.svelte";
+    import PhotoTooltip from "#lib/components/tooltips/PhotoTooltip.svelte";
+    import { mountTooltipComponent } from "#lib/components/tooltips/tooltip.js";
+    import Table, { type TableColumn } from "#lib/components/ui/Table.svelte";
+    import { PhotoGridVirtualizer } from "#lib/components/virtualizer/PhotoGridVirtualizer.svelte.js";
+    import { KbdShortcutTier, KeybindAction, keyboardManager } from "#lib/keyboard/keyboard.svelte.js";
+    import { debugMode, isLayoutPage, isMobile } from "#lib/states/index.svelte.js";
     import {
         type ScopeIdFor,
         type ScopeItem,
         SelectionScope,
         SelectionScopeNames,
         selectionManager
-    } from "$lib/states/selection.svelte";
-    import { type SortState, photosSort } from "$lib/states/sort.svelte";
-    import type { AssetGridArray, AssetSortBy, AssetViewType } from "$lib/types/asset";
-    import type { CardVisualState } from "$lib/types/snippet";
-    import { getScrollParent } from "$lib/utils/dom";
-    import { isAssetImage } from "$lib/utils/images";
+    } from "#lib/states/selection.svelte.js";
+    import { type SortState, photosSort } from "#lib/states/sort.svelte.js";
+    import type { AssetGridArray, AssetSortBy, AssetViewType } from "#lib/types/asset.js";
+    import type { CardVisualState } from "#lib/types/snippet.js";
+    import { getScrollParent } from "#lib/utils/dom.js";
+    import { isAssetImage } from "#lib/utils/images.js";
+    import { type Snippet, untrack } from "svelte";
+    import type { MouseEventHandler, SvelteHTMLElements } from "svelte/elements";
+    import { type Instance, type Props as TippyProps, delegate, followCursor, hideAll } from "tippy.js";
+    import "tippy.js/dist/tippy.css";
     import { touchSelectionAction } from "./actions";
 
     export interface AssetViewProps<T extends ScopeItem> {

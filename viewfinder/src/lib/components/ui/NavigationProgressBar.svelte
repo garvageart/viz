@@ -7,7 +7,7 @@
  The layout controls visibility via transition:fade — this component has no state.
 -->
 <script lang="ts">
-    import { loadingState } from "$lib/states/loading.svelte";
+    import { loadingState } from "#lib/states/loading.svelte.js";
     import ProgressBar from "./ProgressBar.svelte";
 </script>
 

@@ -1,15 +1,15 @@
 <script lang="ts">
-    import { dev } from "$app/environment";
+    import RootDebugOverlay from "#lib/components/workspace/debug/RootDebugOverlay.svelte";
+    import { KeybindAction, keyboardManager } from "#lib/keyboard/keyboard.svelte.js";
+    import { type SerializedWorkspace, Workspace } from "#lib/layouts/model.svelte.js";
+    import { showRootDebugOverlay, tabOps } from "#lib/layouts/tab-ops.svelte.js";
+    import { views } from "#lib/layouts/views.js";
+    import { debugMode, isMobile } from "#lib/states/index.svelte.js";
+    import { workspaceState } from "#lib/states/workspace.svelte.js";
+    import { VizLocalStorage } from "#lib/utils/misc.js";
+    import { dev } from "$app/env";
     import { DateTime } from "luxon";
     import { onMount } from "svelte";
-    import RootDebugOverlay from "$lib/components/workspace/debug/RootDebugOverlay.svelte";
-    import { KeybindAction, keyboardManager } from "$lib/keyboard/keyboard.svelte";
-    import { type SerializedWorkspace, Workspace } from "$lib/layouts/model.svelte";
-    import { showRootDebugOverlay, tabOps } from "$lib/layouts/tab-ops.svelte";
-    import { views } from "$lib/layouts/views";
-    import { debugMode, isMobile } from "$lib/states/index.svelte";
-    import { workspaceState } from "$lib/states/workspace.svelte";
-    import { VizLocalStorage } from "$lib/utils/misc";
     import LayoutNode from "./LayoutNode.svelte";
     import { createDefaultLayout, createMobileDefaultLayout } from "./layouts/registry";
 

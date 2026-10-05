@@ -1,8 +1,8 @@
 <script lang="ts">
+    import Button from "#lib/components/ui/Button.svelte";
+    import MaterialIcon from "#lib/components/ui/MaterialIcon.svelte";
     import DOMPurify from "dompurify";
     import { fly } from "svelte/transition";
-    import Button from "$lib/components/ui/Button.svelte";
-    import MaterialIcon from "$lib/components/ui/MaterialIcon.svelte";
     import { type NotifcationType, type Toast, toasts } from "./toasts.svelte";
 
     function parseNotificationText(text: string) {

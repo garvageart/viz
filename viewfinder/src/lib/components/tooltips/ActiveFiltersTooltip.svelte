@@ -1,7 +1,7 @@
 <script lang="ts">
-    import { LabelColours } from "$lib/images/constants";
-    import { filterManager } from "$lib/states/filter.svelte";
-    import type { ImageFilters } from "$lib/states/filter.svelte";
+    import { LabelColours } from "#lib/images/constants.js";
+    import { filterManager } from "#lib/states/filter.svelte.js";
+    import type { ImageFilters } from "#lib/states/filter.svelte.js";
 
     const scope = $derived(filterManager.activeScope);
     const criteria = $derived(scope && scope.type === "images" ? (scope.criteria as ImageFilters) : null);

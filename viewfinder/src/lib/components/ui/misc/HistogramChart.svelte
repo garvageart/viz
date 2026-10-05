@@ -1,5 +1,5 @@
 <script lang="ts">
-    import type { HistogramChannelData, HistogramStat } from "$lib/third-party/photo-histogram/js/histogram";
+    import type { HistogramChannelData, HistogramStat } from "#lib/third-party/photo-histogram/js/histogram.js";
 
     export interface ChannelVisibility {
         red: boolean;

@@ -1,7 +1,7 @@
+import type { MenuItem } from "#lib/context-menu/types.js";
+import { debugMode } from "#lib/states/index.svelte.js";
 import { invalidateAll, preloadData } from "$app/navigation";
 import type { Component } from "svelte";
-import type { MenuItem } from "$lib/context-menu/types";
-import { debugMode } from "$lib/states/index.svelte";
 
 export type TabDropHandler<T extends any, V = VizView<any, any>> = (data: T, view: V) => Promise<void>;
 export type TabActions<

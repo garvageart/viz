@@ -1,6 +1,6 @@
+import type { MenuItem } from "#lib/context-menu/types.js";
+import { viewSettings } from "#lib/states/index.svelte.js";
 import type { Snippet } from "svelte";
-import type { MenuItem } from "$lib/context-menu/types";
-import { viewSettings } from "$lib/states/index.svelte";
 
 export interface ImageGridDisplayRenderers {
     showDates?: Snippet<[]>;

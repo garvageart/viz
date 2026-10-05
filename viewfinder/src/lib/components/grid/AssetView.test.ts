@@ -1,10 +1,10 @@
+import { createTestImageObject } from "#lib/data/test.js";
+import type { ScopeItem } from "#lib/states/selection.svelte.js";
+import type { CardVisualState } from "#lib/types/snippet.js";
 import { fireEvent, render } from "@testing-library/svelte";
 import type { ImageAsset } from "@viz/api";
 import { createRawSnippet } from "svelte";
 import { describe, expect, it, vi } from "vitest";
-import { createTestImageObject } from "$lib/data/test";
-import type { ScopeItem } from "$lib/states/selection.svelte";
-import type { CardVisualState } from "$lib/types/snippet";
 import AssetView from "./AssetView.svelte";
 
 const testData: ImageAsset[] = [createTestImageObject(), createTestImageObject(), createTestImageObject()];

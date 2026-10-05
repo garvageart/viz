@@ -1,5 +1,5 @@
 <script module lang="ts">
-    import type { ModalOptions } from "$lib/components/modals/manager/ModalManager.svelte";
+    import type { ModalOptions } from "#lib/components/modals/manager/ModalManager.svelte.js";
 
     export let modalOptions: ModalOptions = $state({
         height: "80%",
@@ -9,19 +9,14 @@
 </script>
 
 <script lang="ts">
-    import { type ImageAsset, getAssetImagePath, getFullImagePath } from "@viz/api";
-    import * as Comlink from "comlink";
-    import JSZip from "jszip";
-    import { type Snippet } from "svelte";
-    import { slide } from "svelte/transition";
-    import { DbSettings } from "$lib/db/settings";
-    import { DownloadFile, DownloadState } from "$lib/download/asset.svelte";
-    import { createZipExportName } from "$lib/download/utils";
-    import type { TransformInput, TransformResult } from "$lib/images/vips/vips";
-    import { config, download } from "$lib/states/index.svelte";
-    import { toasts } from "$lib/toast-notifcations/toasts.svelte";
-    import { safeRenderRenameTemplate } from "$lib/ui-tools/renamer";
-    import { downloadToFilesystem } from "$lib/utils/files";
+    import { DbSettings } from "#lib/db/settings.js";
+    import { DownloadFile, DownloadState } from "#lib/download/asset.svelte.js";
+    import { createZipExportName } from "#lib/download/utils.js";
+    import type { TransformInput, TransformResult } from "#lib/images/vips/vips.js";
+    import { config, download } from "#lib/states/index.svelte.js";
+    import { toasts } from "#lib/toast-notifcations/toasts.svelte.js";
+    import { safeRenderRenameTemplate } from "#lib/ui-tools/renamer.js";
+    import { downloadToFilesystem } from "#lib/utils/files.js";
     import {
         type BitDepths,
         type ColorSpace,
@@ -29,10 +24,15 @@
         type ExportFormats,
         type MetadataPolicy,
         type ResizeMode
-    } from "$lib/utils/images";
-    import { generateRandomString } from "$lib/utils/misc";
-    import type { ImageExportWorkerApi, exportImagesParallel } from "$lib/workers/image_export";
-    import ImageExportWorker from "$lib/workers/image_export?worker";
+    } from "#lib/utils/images.js";
+    import { generateRandomString } from "#lib/utils/misc.js";
+    import type { ImageExportWorkerApi, exportImagesParallel } from "#lib/workers/image_export.js";
+    import ImageExportWorker from "#lib/workers/image_export?worker";
+    import { type ImageAsset, getAssetImagePath, getFullImagePath } from "@viz/api";
+    import * as Comlink from "comlink";
+    import JSZip from "jszip";
+    import { type Snippet } from "svelte";
+    import { slide } from "svelte/transition";
     import { modalsManager } from "../../modals/manager/ModalManager.svelte";
     import BatchRenameBuilder, { type SavedRenameSettings, defaultTemplate } from "../BatchRenameBuilder.svelte";
     import Button from "../Button.svelte";

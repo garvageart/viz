@@ -1,7 +1,7 @@
 <script lang="ts">
+    import type { MaterialSymbol } from "#lib/types/MaterialSymbol.js";
     import type { Snippet } from "svelte";
     import type { HTMLAttributes } from "svelte/elements";
-    import type { MaterialSymbol } from "$lib/types/MaterialSymbol";
     import MaterialIcon from "./MaterialIcon.svelte";
 
     interface Props extends HTMLAttributes<HTMLDivElement> {
@@ -47,7 +47,7 @@
 </div>
 
 <style lang="scss">
-    @use "$lib/styles/scss/viz-mixins.scss" as m;
+    @use "../../styles/scss/viz-mixins.scss" as m;
 
     .viz-badge {
         display: inline-flex;

@@ -1,5 +1,9 @@
-import type { HistogramChannelData, HistogramData, HistogramStat } from "$lib/third-party/photo-histogram/js/histogram";
-import { mean, median, mode, std } from "$lib/third-party/photo-histogram/js/util";
+import type {
+    HistogramChannelData,
+    HistogramData,
+    HistogramStat
+} from "#lib/third-party/photo-histogram/js/histogram.js";
+import { mean, median, mode, std } from "#lib/third-party/photo-histogram/js/util.js";
 
 /**
  * Default Rec. 709 luma weights used to derive a single luminance channel from RGB.

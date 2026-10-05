@@ -1,5 +1,5 @@
 <script lang="ts">
-    import SliderToggle from "$lib/components/ui/SliderToggle.svelte";
+    import SliderToggle from "#lib/components/ui/SliderToggle.svelte";
     import SettingRow from "../SettingRow.svelte";
 
     interface Props {

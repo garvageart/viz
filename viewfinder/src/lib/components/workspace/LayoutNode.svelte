@@ -1,7 +1,7 @@
 <script lang="ts">
-    import { SplitNode, TabGroup } from "$lib/layouts/model.svelte";
-    import { workspaceState } from "$lib/states/workspace.svelte";
-    import { Pane, Splitpanes } from "$lib/third-party/svelte-splitpanes";
+    import { SplitNode, TabGroup } from "#lib/layouts/model.svelte.js";
+    import { workspaceState } from "#lib/states/workspace.svelte.js";
+    import { Pane, Splitpanes } from "#lib/third-party/svelte-splitpanes/index.js";
     import LayoutNode from "./LayoutNode.svelte";
     import TabGroupPanel from "./TabGroupPanel.svelte";
 

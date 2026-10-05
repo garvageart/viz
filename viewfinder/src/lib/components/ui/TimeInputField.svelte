@@ -1,7 +1,7 @@
 <script lang="ts" generics="T extends TimeValue = Time">
+    import { localeState } from "#lib/states/locale.svelte.js";
     import type { Time } from "@internationalized/date";
     import { TimeField, type TimeFieldRootPropsWithoutHTML, type TimeValue } from "bits-ui";
-    import { localeState } from "$lib/states/locale.svelte";
 
     interface Props extends TimeFieldRootPropsWithoutHTML<T> {
         label?: string;

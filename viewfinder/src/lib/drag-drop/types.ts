@@ -1,4 +1,4 @@
-import type { DragMimeType } from "$lib/constants";
+import type { DragMimeType } from "#lib/constants.js";
 import type { DragData } from "./data";
 
 export type DropIntent = "copy" | "move" | "link" | "split" | "replace" | "none";

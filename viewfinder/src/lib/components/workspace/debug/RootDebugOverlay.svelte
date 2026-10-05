@@ -1,5 +1,5 @@
 <script lang="ts">
-    import { EDGE_BAND_THRESHOLDS } from "$lib/layouts/tab-ops.svelte";
+    import { EDGE_BAND_THRESHOLDS } from "#lib/layouts/tab-ops.svelte.js";
 </script>
 
 <div class="root-debug-overlay-zones">

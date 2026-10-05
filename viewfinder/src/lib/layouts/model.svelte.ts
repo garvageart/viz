@@ -1,6 +1,6 @@
-import type { DropPosition } from "$lib/layouts/tab-ops.svelte";
-import { generateKeyId } from "$lib/utils/layout";
-import VizView, { type SerializedVizView } from "$lib/views/views.svelte";
+import type { DropPosition } from "#lib/layouts/tab-ops.svelte.js";
+import { generateKeyId } from "#lib/utils/layout.js";
+import VizView, { type SerializedVizView } from "#lib/views/views.svelte.js";
 
 // Types
 export type Orientation = "horizontal" | "vertical";

@@ -1,11 +1,11 @@
 <script lang="ts" generics="T extends Record<string, any>">
+    import Dropdown from "#lib/components/context-menus/Dropdown.svelte";
+    import { contextMenu } from "#lib/context-menu/index.js";
+    import type { MenuItem } from "#lib/context-menu/types.js";
+    import { tryParseDate } from "#lib/utils/dates.js";
+    import { VizLocalStorage } from "#lib/utils/misc.js";
     import { type Snippet } from "svelte";
     import type { MouseEventHandler } from "svelte/elements";
-    import Dropdown from "$lib/components/context-menus/Dropdown.svelte";
-    import { contextMenu } from "$lib/context-menu";
-    import type { MenuItem } from "$lib/context-menu/types";
-    import { tryParseDate } from "$lib/utils/dates";
-    import { VizLocalStorage } from "$lib/utils/misc";
     import Button from "./Button.svelte";
     import Checkbox from "./Checkbox.svelte";
     import MaterialIcon from "./MaterialIcon.svelte";

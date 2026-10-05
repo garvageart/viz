@@ -1,9 +1,9 @@
-import { DYNAMIC_ROUTE_REGEX } from "$lib/constants";
-import type { MenuItem } from "$lib/context-menu/types";
-import { views } from "$lib/layouts/views";
-import { workspaceState } from "$lib/states/workspace.svelte";
-import { toasts } from "$lib/toast-notifcations/toasts.svelte";
-import VizView from "$lib/views/views.svelte";
+import { DYNAMIC_ROUTE_REGEX } from "#lib/constants.js";
+import type { MenuItem } from "#lib/context-menu/types.js";
+import { views } from "#lib/layouts/views.js";
+import { workspaceState } from "#lib/states/workspace.svelte.js";
+import { toasts } from "#lib/toast-notifcations/toasts.svelte.js";
+import VizView from "#lib/views/views.svelte.js";
 
 export function createWorkspaceViewsMenu() {
     const workspace = workspaceState.workspace;

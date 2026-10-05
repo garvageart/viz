@@ -1,7 +1,7 @@
 <script lang="ts">
+    import type { MaterialSymbol } from "#lib/types/MaterialSymbol.js";
     import type { Snippet } from "svelte";
     import type { HTMLAttributes } from "svelte/elements";
-    import type { MaterialSymbol } from "$lib/types/MaterialSymbol";
     import Button from "./Button.svelte";
     import MaterialIcon from "./MaterialIcon.svelte";
 

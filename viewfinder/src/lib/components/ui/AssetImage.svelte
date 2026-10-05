@@ -1,7 +1,7 @@
 <script lang="ts">
+    import { getThumbhashURL } from "#lib/utils/images.js";
     import { type ImageAsset, getAssetImagePath } from "@viz/api";
     import type { HTMLImgAttributes } from "svelte/elements";
-    import { getThumbhashURL } from "$lib/utils/images";
 
     export type ImageResolution = "thumbnail" | "preview" | "original";
 

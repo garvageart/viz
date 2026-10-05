@@ -1,11 +1,11 @@
+import type { TransformInput, TransformResult } from "#lib/images/vips/vips.js";
 import * as Comlink from "comlink";
-import type { TransformInput, TransformResult } from "$lib/images/vips/vips";
 
 export async function transformSingleImage(
     input: TransformInput,
     onProgress?: (percent: number) => void
 ): Promise<{ result?: TransformResult; error?: string }> {
-    const { generateTransform } = await import("$lib/images/vips/vips");
+    const { generateTransform } = await import("#lib/images/vips/vips.js");
 
     try {
         const result = await generateTransform(input, onProgress);
@@ -24,7 +24,7 @@ export async function exportImagesParallel(
     onProgress?: (index: number, percent: number) => void
 ) {
     // Dynamically import vips here to avoid top-level await blocking Comlink initialization
-    const { generateTransform } = await import("$lib/images/vips/vips");
+    const { generateTransform } = await import("#lib/images/vips/vips.js");
 
     const results: { result?: TransformResult; error?: string; index: number }[] = [];
 

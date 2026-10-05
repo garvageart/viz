@@ -13,11 +13,11 @@
 </script>
 
 <script lang="ts">
+    import { ContextKeys } from "#lib/context-keys.js";
+    import { generateKeyId } from "#lib/utils/layout.js";
     import { Select } from "bits-ui";
     import { getContext } from "svelte";
     import type { SvelteHTMLElements } from "svelte/elements";
-    import { ContextKeys } from "$lib/context-keys";
-    import { generateKeyId } from "$lib/utils/layout";
     import MaterialIcon from "./MaterialIcon.svelte";
 
     interface Props {

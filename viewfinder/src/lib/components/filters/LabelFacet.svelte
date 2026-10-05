@@ -1,6 +1,6 @@
 <script lang="ts">
-    import { LabelColours } from "$lib/images/constants";
-    import type { ImageFacets, ImageFilters } from "$lib/states/filter.svelte";
+    import { LabelColours } from "#lib/images/constants.js";
+    import type { ImageFacets, ImageFilters } from "#lib/states/filter.svelte.js";
     import Checkbox from "../ui/Checkbox.svelte";
 
     interface Props {

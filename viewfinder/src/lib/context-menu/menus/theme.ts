@@ -1,5 +1,5 @@
-import type { MenuItem } from "$lib/context-menu/types";
-import { themeState } from "$lib/states/index.svelte";
+import type { MenuItem } from "#lib/context-menu/types.js";
+import { themeState } from "#lib/states/index.svelte.js";
 
 export function themeContextMenu() {
     const menuItems: MenuItem[] = [

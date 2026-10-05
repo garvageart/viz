@@ -1,4 +1,4 @@
-import { browser } from "$app/environment";
+import { browser } from "$app/env";
 import type { Cookies } from "@sveltejs/kit";
 
 export const sleep = (time: number) => new Promise((resolve) => setTimeout(resolve, time));

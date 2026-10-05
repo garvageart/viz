@@ -1,6 +1,6 @@
 <script lang="ts">
+    import { generateRandomString } from "#lib/utils/misc.js";
     import type { EventHandler, SvelteHTMLElements } from "svelte/elements";
-    import { generateRandomString } from "$lib/utils/misc";
 
     interface Props {
         checked: boolean;

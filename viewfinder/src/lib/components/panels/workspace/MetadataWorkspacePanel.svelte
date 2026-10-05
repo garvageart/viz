@@ -1,5 +1,5 @@
 <script lang="ts">
-    import MetadataPanel from "$lib/components/ui/panels/MetadataPanel.svelte";
+    import MetadataPanel from "#lib/components/ui/panels/MetadataPanel.svelte";
 </script>
 
 <div class="metadata-workspace-panel">

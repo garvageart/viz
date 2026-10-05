@@ -1,16 +1,20 @@
+import DevWelcomeText from "#lib/components/misc/DevWelcomeText.svelte";
+import ClockPanel from "#lib/components/panels/workspace/ClockPanel.svelte";
+import FavouritesPanel from "#lib/components/panels/workspace/FavouritesPanel.svelte";
+import Filmstrip from "#lib/components/panels/workspace/Filmstrip.svelte";
+import FilterPanel from "#lib/components/panels/workspace/FilterPanel.svelte";
+import HistogramPanel from "#lib/components/panels/workspace/HistogramPanel.svelte";
+import ImagePreview from "#lib/components/panels/workspace/ImagePreview.svelte";
+import MetadataWorkspacePanel from "#lib/components/panels/workspace/MetadataWorkspacePanel.svelte";
+import Print from "#lib/components/panels/workspace/Print.svelte";
+import DifferentContent from "#lib/components/panels/workspace/generic/DifferentContent.svelte";
+import {
+    collectionRoutePath,
+    collectionTabDropHandlers,
+    collectionTabMenuItems
+} from "#lib/layouts/tabs/collection.js";
+import VizView from "#lib/views/views.svelte.js";
 import type { CollectionDetailResponse } from "@viz/api";
-import DevWelcomeText from "$lib/components/misc/DevWelcomeText.svelte";
-import ClockPanel from "$lib/components/panels/workspace/ClockPanel.svelte";
-import FavouritesPanel from "$lib/components/panels/workspace/FavouritesPanel.svelte";
-import Filmstrip from "$lib/components/panels/workspace/Filmstrip.svelte";
-import FilterPanel from "$lib/components/panels/workspace/FilterPanel.svelte";
-import HistogramPanel from "$lib/components/panels/workspace/HistogramPanel.svelte";
-import ImagePreview from "$lib/components/panels/workspace/ImagePreview.svelte";
-import MetadataWorkspacePanel from "$lib/components/panels/workspace/MetadataWorkspacePanel.svelte";
-import Print from "$lib/components/panels/workspace/Print.svelte";
-import DifferentContent from "$lib/components/panels/workspace/generic/DifferentContent.svelte";
-import { collectionRoutePath, collectionTabDropHandlers, collectionTabMenuItems } from "$lib/layouts/tabs/collection";
-import VizView from "$lib/views/views.svelte";
 import Collections from "../../routes/(app)/collections/+page.svelte";
 import CollectionPage from "../../routes/(app)/collections/[uid]/+page.svelte";
 import PhotosPage from "../../routes/(app)/photos/+page.svelte";

@@ -1,6 +1,6 @@
 <script lang="ts">
-    import ContextMenu from "$lib/context-menu/ContextMenu.svelte";
-    import { themeContextMenu } from "$lib/context-menu/menus/theme";
+    import ContextMenu from "#lib/context-menu/ContextMenu.svelte";
+    import { themeContextMenu } from "#lib/context-menu/menus/theme.js";
 
     let { showMenu = $bindable(false), anchor = $bindable() } = $props<{
         showMenu?: boolean;

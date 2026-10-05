@@ -1,7 +1,7 @@
 <script lang="ts">
+    import Button from "#lib/components/ui/Button.svelte";
+    import InputText from "#lib/components/ui/InputText.svelte";
     import { untrack } from "svelte";
-    import Button from "$lib/components/ui/Button.svelte";
-    import InputText from "$lib/components/ui/InputText.svelte";
     import { modalsManager } from "../modals/manager/ModalManager.svelte";
 
     interface Props {

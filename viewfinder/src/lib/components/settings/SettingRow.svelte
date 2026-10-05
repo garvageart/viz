@@ -1,6 +1,6 @@
 <script lang="ts">
+    import MaterialIcon from "#lib/components/ui/MaterialIcon.svelte";
     import type { Snippet } from "svelte";
-    import MaterialIcon from "$lib/components/ui/MaterialIcon.svelte";
 
     interface Props {
         label: string;

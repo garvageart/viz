@@ -1,9 +1,9 @@
 <script lang="ts">
+    import { logoutUser } from "#lib/auth/auth_methods.js";
+    import { contextMenu } from "#lib/context-menu/index.js";
+    import { themeContextMenu } from "#lib/context-menu/menus/theme.js";
+    import { getTheme, toggleTheme, user } from "#lib/states/index.svelte.js";
     import { slide } from "svelte/transition";
-    import { logoutUser } from "$lib/auth/auth_methods";
-    import { contextMenu } from "$lib/context-menu";
-    import { themeContextMenu } from "$lib/context-menu/menus/theme";
-    import { getTheme, toggleTheme, user } from "$lib/states/index.svelte";
     import AvatarBadge from "../ui/AvatarBadge.svelte";
     import Badge from "../ui/Badge.svelte";
     import Button from "../ui/Button.svelte";

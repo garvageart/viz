@@ -1,6 +1,6 @@
+import ModalLightboxHarness from "#lib/components/tests/harnesses/ModalLightboxHarness.svelte";
 import { render } from "@testing-library/svelte";
 import { describe, expect, it, vi } from "vitest";
-import ModalLightboxHarness from "$lib/components/tests/harnesses/ModalLightboxHarness.svelte";
 
 function dispatchKey(target: EventTarget, key: string, init: KeyboardEventInit = {}) {
     target.dispatchEvent(new KeyboardEvent("keydown", { key, bubbles: true, cancelable: true, ...init }));

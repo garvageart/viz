@@ -1,8 +1,8 @@
 <script lang="ts">
+    import ContextMenu from "#lib/context-menu/ContextMenu.svelte";
+    import type { MenuItem } from "#lib/context-menu/types.js";
+    import type { MaterialSymbol } from "#lib/types/MaterialSymbol.js";
     import type { Snippet } from "svelte";
-    import ContextMenu from "$lib/context-menu/ContextMenu.svelte";
-    import type { MenuItem } from "$lib/context-menu/types";
-    import type { MaterialSymbol } from "$lib/types/MaterialSymbol";
     import Button, { type ButtonVariant } from "../ui/Button.svelte";
 
     interface Props {

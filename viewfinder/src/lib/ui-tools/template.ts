@@ -1,5 +1,5 @@
+import type { NormalizedOption } from "#lib/components/ui/InputSelect.svelte";
 import { DateTime } from "luxon";
-import type { NormalizedOption } from "$lib/components/ui/InputSelect.svelte";
 
 export interface DateTokens {
     y: string;

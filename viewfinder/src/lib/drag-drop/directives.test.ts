@@ -1,5 +1,5 @@
+import { VizMimeTypes } from "#lib/mime.js";
 import { beforeEach, describe, expect, it, vi } from "vitest";
-import { VizMimeTypes } from "$lib/mime";
 import { dragCoordinator } from "./coordinator.svelte";
 import { draggable, dropZone } from "./directives.svelte";
 

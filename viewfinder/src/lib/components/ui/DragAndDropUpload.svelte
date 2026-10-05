@@ -1,4 +1,11 @@
 <script lang="ts">
+    import { dragCoordinator } from "#lib/drag-drop/coordinator.svelte.js";
+    import { dropZone } from "#lib/drag-drop/directives.svelte.js";
+    import { type ScopeId, SelectionScope } from "#lib/states/selection.svelte.js";
+    import { toasts } from "#lib/toast-notifcations/toasts.svelte.js";
+    import { ALL_SUPPORTED_IMAGES, SUPPORTED_IMAGE_TYPES, SUPPORTED_RAW_FILES } from "#lib/types/images.js";
+    import { type ImageUploadSuccess, uploadManager } from "#lib/upload/manager.svelte.js";
+    import { extractFilesFromDataTransfer } from "#lib/utils/files.js";
     import { goto } from "$app/navigation";
     import {
         type Collection,
@@ -7,13 +14,6 @@
         addCollectionImages,
         createCollection
     } from "@viz/api";
-    import { dragCoordinator } from "$lib/drag-drop/coordinator.svelte";
-    import { dropZone } from "$lib/drag-drop/directives.svelte";
-    import { type ScopeId, SelectionScope } from "$lib/states/selection.svelte";
-    import { toasts } from "$lib/toast-notifcations/toasts.svelte";
-    import { ALL_SUPPORTED_IMAGES, SUPPORTED_IMAGE_TYPES, SUPPORTED_RAW_FILES } from "$lib/types/images";
-    import { type ImageUploadSuccess, uploadManager } from "$lib/upload/manager.svelte";
-    import { extractFilesFromDataTransfer } from "$lib/utils/files";
     import CollectionModal from "../modals/CollectionModal.svelte";
     import CollectionSelectionModal from "../modals/CollectionSelectionModal.svelte";
     import ConfirmationModal from "../modals/ConfirmationModal.svelte";

@@ -1,5 +1,5 @@
 <script lang="ts">
-    import Badge from "$lib/components/ui/Badge.svelte";
+    import Badge from "#lib/components/ui/Badge.svelte";
     import { dragCoordinator } from "./coordinator.svelte";
 
     let session = $derived(dragCoordinator.session);

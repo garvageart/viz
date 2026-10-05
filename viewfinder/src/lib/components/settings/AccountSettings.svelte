@@ -1,10 +1,10 @@
 <script lang="ts">
+    import Button from "#lib/components/ui/Button.svelte";
+    import InputText from "#lib/components/ui/InputText.svelte";
+    import { user } from "#lib/states/index.svelte.js";
+    import { toasts } from "#lib/toast-notifcations/toasts.svelte.js";
     import type { Setting, UserUpdate } from "@viz/api";
     import { updateCurrentUser } from "@viz/api";
-    import Button from "$lib/components/ui/Button.svelte";
-    import InputText from "$lib/components/ui/InputText.svelte";
-    import { user } from "$lib/states/index.svelte";
-    import { toasts } from "$lib/toast-notifcations/toasts.svelte";
     import AutoSettingsGroup from "./AutoSettingsGroup.svelte";
 
     interface Props {

@@ -1,5 +1,5 @@
-import { SplitNode, TabGroup, Workspace } from "$lib/layouts/model.svelte";
-import { views as viewRegistry } from "$lib/layouts/views";
+import { SplitNode, TabGroup, Workspace } from "#lib/layouts/model.svelte.js";
+import { views as viewRegistry } from "#lib/layouts/views.js";
 
 export function createDefaultLayout(): Workspace {
     const collectionsView = viewRegistry.find((v) => v.path === "/collections");

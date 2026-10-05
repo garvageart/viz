@@ -1,8 +1,8 @@
 <script lang="ts">
+    import { ZIndex } from "#lib/constants/z-index.js";
+    import { ContextKeys } from "#lib/context-keys.js";
     import { getContext } from "svelte";
     import type { SvelteHTMLElements } from "svelte/elements";
-    import { ZIndex } from "$lib/constants/z-index";
-    import { ContextKeys } from "$lib/context-keys";
     import ContextMenuItem from "./ContextMenuItem.svelte";
     import { contextMenu } from "./context-menu.svelte";
     import type { ActiveContextMenuState, MenuItem } from "./types";

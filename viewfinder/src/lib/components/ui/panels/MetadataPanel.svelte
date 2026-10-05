@@ -1,20 +1,18 @@
 <script lang="ts">
-    import type { ImageAsset, Label } from "@viz/api";
-    import { updateImage } from "@viz/api";
-    import ImageLabelViewer from "$lib/components/image-tools/ImageLabelViewer.svelte";
-    import StarRating from "$lib/components/image-tools/StarRating.svelte";
-    import Badge from "$lib/components/ui/Badge.svelte";
-    import Button from "$lib/components/ui/Button.svelte";
-    import DatePicker from "$lib/components/ui/DatePicker.svelte";
-    import EditableText from "$lib/components/ui/EditableText.svelte";
-    import Favourite from "$lib/components/ui/Favourite.svelte";
-    import MaterialIcon from "$lib/components/ui/MaterialIcon.svelte";
-    import TextArea from "$lib/components/ui/TextArea.svelte";
-    import NoImageSelected from "$lib/components/ui/misc/NoImageSelected.svelte";
-    import { LabelColours } from "$lib/images/constants";
-    import { setRating } from "$lib/images/exif";
-    import { selectionManager } from "$lib/states/selection.svelte";
-    import { toasts } from "$lib/toast-notifcations/toasts.svelte";
+    import ImageLabelViewer from "#lib/components/image-tools/ImageLabelViewer.svelte";
+    import StarRating from "#lib/components/image-tools/StarRating.svelte";
+    import Badge from "#lib/components/ui/Badge.svelte";
+    import Button from "#lib/components/ui/Button.svelte";
+    import DatePicker from "#lib/components/ui/DatePicker.svelte";
+    import EditableText from "#lib/components/ui/EditableText.svelte";
+    import Favourite from "#lib/components/ui/Favourite.svelte";
+    import MaterialIcon from "#lib/components/ui/MaterialIcon.svelte";
+    import TextArea from "#lib/components/ui/TextArea.svelte";
+    import NoImageSelected from "#lib/components/ui/misc/NoImageSelected.svelte";
+    import { LabelColours } from "#lib/images/constants.js";
+    import { setRating } from "#lib/images/exif.js";
+    import { selectionManager } from "#lib/states/selection.svelte.js";
+    import { toasts } from "#lib/toast-notifcations/toasts.svelte.js";
     import {
         formatBytes,
         formatExifTag,
@@ -32,8 +30,10 @@
         getTakenAt,
         getWhiteBalanceInfo,
         isAssetImage
-    } from "$lib/utils/images";
-    import { copyToClipboard } from "$lib/utils/misc";
+    } from "#lib/utils/images.js";
+    import { copyToClipboard } from "#lib/utils/misc.js";
+    import type { ImageAsset, Label } from "@viz/api";
+    import { updateImage } from "@viz/api";
 
     interface Props {
         asset?: ImageAsset;

@@ -1,7 +1,7 @@
 <script lang="ts" module>
-    import type { TabGroup } from "$lib/layouts/model.svelte";
-    import { createCollectionView } from "$lib/layouts/tabs/collection";
-    import { workspaceState } from "$lib/states/workspace.svelte";
+    import type { TabGroup } from "#lib/layouts/model.svelte.js";
+    import { createCollectionView } from "#lib/layouts/tabs/collection.js";
+    import { workspaceState } from "#lib/states/workspace.svelte.js";
 
     export function openCollection(collection: Collection, currentGroup?: TabGroup) {
         const collectionPath = `/collections/${collection.uid}`;
@@ -49,14 +49,14 @@
 </script>
 
 <script lang="ts">
+    import { VizMimeTypes } from "#lib/constants.js";
+    import { draggable, dropZone } from "#lib/drag-drop/directives.svelte.js";
+    import { toasts } from "#lib/toast-notifcations/toasts.svelte.js";
     import { goto } from "$app/navigation";
     import { page } from "$app/state";
     import { type Collection, addCollectionImages, getAssetImagePath, getImage } from "@viz/api";
     import { DateTime } from "luxon";
     import type { SvelteHTMLElements } from "svelte/elements";
-    import { VizMimeTypes } from "$lib/constants";
-    import { draggable, dropZone } from "$lib/drag-drop/directives.svelte";
-    import { toasts } from "$lib/toast-notifcations/toasts.svelte";
     import AssetImage from "./AssetImage.svelte";
     import Badge from "./Badge.svelte";
     import Favourite from "./Favourite.svelte";

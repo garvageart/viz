@@ -1,13 +1,13 @@
-import { ImageUploadStatus, checkDuplicates } from "@viz/api";
-import { upload } from "$lib/states/index.svelte";
-import type { DirectoryInputElement } from "$lib/types/dom";
+import { upload } from "#lib/states/index.svelte.js";
+import type { DirectoryInputElement } from "#lib/types/dom.js";
 import {
     SUPPORTED_IMAGE_TYPES,
     SUPPORTED_RAW_FILES,
     type SupportedImageTypes,
     type SupportedRAWFiles
-} from "$lib/types/images";
-import { calculateSHA1 } from "$lib/utils/crypto";
+} from "#lib/types/images.js";
+import { calculateSHA1 } from "#lib/utils/crypto.js";
+import { ImageUploadStatus, checkDuplicates } from "@viz/api";
 import { UploadImage, UploadState, isUploadCompleted, isUploadPending, isUploadSuccessful } from "./asset.svelte";
 
 export interface ImageUploadFileMetadata {
