@@ -9,7 +9,8 @@ export enum StandardMimeTypes {
     TEXT_PLAIN = "text/plain",
     URI_LIST = "text/uri-list",
     HTML = "text/html",
-    FILES = "Files"
+    FILES = "Files",
+    DOWNLOAD_URL = "DownloadURL"
 }
 
 export enum VendorMimeTypes {

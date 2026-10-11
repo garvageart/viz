@@ -10,8 +10,7 @@
         type PhotoGridConfig,
         PhotoGridVirtualizer
     } from "#lib/components/virtualizer/PhotoGridVirtualizer.svelte.js";
-    import { VizMimeTypes } from "#lib/constants.js";
-    import { draggable } from "#lib/drag-drop/directives.svelte.js";
+    import { createImageDragItems, draggable } from "#lib/drag-drop/directives.svelte.js";
     import {
         type HotkeysEvent,
         KbdShortcutTier,
@@ -25,7 +24,7 @@
     import type { CardVisualState } from "#lib/types/snippet.js";
     import { getScrollParent } from "#lib/utils/dom.js";
     import { getImageLabel, getTakenAt } from "#lib/utils/images.js";
-    import { type ImageAsset, getAssetImagePath } from "@viz/api";
+    import { type ImageAsset } from "@viz/api";
     import { DateTime } from "luxon";
     import { type Snippet, onMount, untrack } from "svelte";
     import type { MouseEventHandler } from "svelte/elements";
@@ -1058,17 +1057,8 @@
                     selection.select(asset);
                 }
 
-                const count = selection.size > 1 ? selection.size : 1;
-                const uids = selection.size > 1 ? selection.selectedItems.map((i) => i.uid) : [asset.uid];
-
-                return [
-                    {
-                        mimeType: VizMimeTypes.IMAGE_UIDS,
-                        payload: uids,
-                        label: count > 1 ? `${count} photos` : asset.name,
-                        thumbnailUrl: getAssetImagePath(asset, "thumbnail")
-                    }
-                ];
+                const selected = selection.size > 1 ? selection.selectedItems : [asset];
+                return createImageDragItems(asset, selected);
             }
         }}
         use:touchSelectionAction={{

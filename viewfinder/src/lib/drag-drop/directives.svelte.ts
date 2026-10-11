@@ -1,6 +1,8 @@
+import { StandardMimeTypes, VizMimeTypes } from "#lib/constants.js";
+import { type ImageAsset, type ImagePaths, getAssetImagePath } from "@viz/api";
 import { dragCoordinator } from "./coordinator.svelte";
 import { DragData } from "./data";
-import type { DragSourceOptions, DropZoneOptions } from "./types";
+import type { DragSourceItem, DragSourceOptions, DropZoneOptions } from "./types";
 
 export function draggable(node: HTMLElement, options: DragSourceOptions) {
     function handleDragStart(e: DragEvent) {
@@ -180,4 +182,91 @@ export function dropZone(node: HTMLElement, options: DropZoneOptions) {
             node.removeEventListener("drop", handleDrop);
         }
     };
+}
+
+/**
+ * Returns an absolute URL for an asset image variant.
+ */
+export function getAbsoluteAssetUrl(asset: ImageAsset, variant: keyof ImagePaths = "original"): string | null {
+    const path = getAssetImagePath(asset, variant) ?? asset.image_paths[variant];
+    if (!path) {
+        return null;
+    }
+
+    if (path.startsWith("http://") || path.startsWith("https://")) {
+        return path;
+    }
+
+    return new URL(path, window.location.origin).href;
+}
+
+/**
+ * Creates drag items for an image asset including internal Viz types and standard OS/web formats.
+ */
+export function createImageDragItems(
+    primaryAsset: ImageAsset,
+    selectedAssets: ImageAsset[] = [primaryAsset]
+): DragSourceItem[] {
+    const assets = selectedAssets.length > 0 ? selectedAssets : [primaryAsset];
+    const uids = assets.map((a) => {
+        return a.uid;
+    });
+    const count = assets.length;
+    const label = count > 1 ? `${count} photos` : primaryAsset.name;
+    const thumbnailUrl = getAssetImagePath(primaryAsset, "thumbnail") ?? null;
+
+    const urls = assets
+        .map((a) => {
+            return getAbsoluteAssetUrl(a);
+        })
+        .filter((url): url is string => {
+            return url !== null;
+        });
+
+    const primaryUrl = getAbsoluteAssetUrl(primaryAsset);
+    const primaryFilename = primaryAsset.name || primaryAsset.image_metadata.file_name || `${primaryAsset.uid}.jpg`;
+    const primaryMime = primaryAsset.image_metadata.file_type;
+
+    const items: DragSourceItem[] = [
+        {
+            mimeType: VizMimeTypes.IMAGE_UIDS,
+            payload: uids,
+            label,
+            thumbnailUrl
+        }
+    ];
+
+    if (urls.length > 0) {
+        items.push(
+            {
+                mimeType: VizMimeTypes.IMAGE_URLS,
+                payload: urls,
+                label,
+                thumbnailUrl
+            },
+            {
+                mimeType: StandardMimeTypes.URI_LIST,
+                payload: urls.join("\r\n"),
+                label,
+                thumbnailUrl
+            },
+            {
+                mimeType: StandardMimeTypes.TEXT_PLAIN,
+                payload: urls.join("\n"),
+                label,
+                thumbnailUrl
+            }
+        );
+    }
+
+    if (primaryUrl) {
+        items.push({
+            mimeType: StandardMimeTypes.DOWNLOAD_URL,
+            payload: `${primaryMime}:${primaryFilename}:${primaryUrl}`,
+            label,
+            thumbnailUrl
+        });
+    }
+
+    return items;
 }

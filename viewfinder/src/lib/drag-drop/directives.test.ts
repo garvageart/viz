@@ -1,7 +1,9 @@
-import { VizMimeTypes } from "#lib/mime.js";
+import { StandardMimeTypes, VizMimeTypes } from "#lib/mime.js";
+import type { ImageAsset } from "@viz/api";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { dragCoordinator } from "./coordinator.svelte";
-import { draggable, dropZone } from "./directives.svelte";
+import { DragData } from "./data";
+import { createImageDragItems, draggable, dropZone } from "./directives.svelte";
 
 function createDragEvent(type: string, init: DragEventInit = {}): DragEvent {
     const dataTransfer = init.dataTransfer ?? new DataTransfer();
@@ -199,5 +201,59 @@ describe("draggable directive", () => {
         expect(dragCoordinator.isDragging).toBe(false);
 
         instance.destroy();
+    });
+});
+
+describe("createImageDragItems and standard formats", () => {
+    const mockAsset: ImageAsset = {
+        uid: "img-123",
+        name: "sunset.jpg",
+        image_paths: {
+            original: "/api/images/img-123/original",
+            preview: "/api/images/img-123/preview",
+            thumbnail: "/api/images/img-123/thumbnail"
+        },
+        image_metadata: {
+            file_type: "image/jpeg",
+            file_name: "sunset.jpg"
+        }
+    } as unknown as ImageAsset;
+
+    it("attaches internal and standard MIME formats for dragged assets", () => {
+        const items = createImageDragItems(mockAsset);
+        const mimeTypes = items.map((item) => {
+            return item.mimeType;
+        });
+
+        expect(mimeTypes).toContain(VizMimeTypes.IMAGE_UIDS);
+        expect(mimeTypes).toContain(VizMimeTypes.IMAGE_URLS);
+        expect(mimeTypes).toContain(StandardMimeTypes.URI_LIST);
+        expect(mimeTypes).toContain(StandardMimeTypes.TEXT_PLAIN);
+        expect(mimeTypes).toContain(StandardMimeTypes.DOWNLOAD_URL);
+
+        const uriItem = items.find((item) => {
+            return item.mimeType === StandardMimeTypes.URI_LIST;
+        });
+        expect(typeof uriItem?.payload).toBe("string");
+        expect((uriItem?.payload as string).length).toBeGreaterThan(0);
+        expect((uriItem?.payload as string).includes("/api/images/img-123/original")).toBe(true);
+
+        const downloadItem = items.find((item) => {
+            return item.mimeType === StandardMimeTypes.DOWNLOAD_URL;
+        });
+        expect((downloadItem?.payload as string).startsWith("image/jpeg:sunset.jpg:")).toBe(true);
+    });
+
+    it("serializes standard formats as plain strings instead of JSON", () => {
+        const dataTransfer = new DataTransfer();
+        const textData = new DragData(StandardMimeTypes.TEXT_PLAIN, "https://example.com/photo.jpg");
+        textData.setData(dataTransfer);
+
+        expect(dataTransfer.getData(StandardMimeTypes.TEXT_PLAIN)).toBe("https://example.com/photo.jpg");
+
+        const recovered = DragData.getData<string>(dataTransfer, StandardMimeTypes.TEXT_PLAIN);
+        expect(recovered?.payload).toBe("https://example.com/photo.jpg");
+
+        DragData.clear();
     });
 });

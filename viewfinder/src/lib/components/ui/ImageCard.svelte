@@ -1,10 +1,9 @@
 <script lang="ts">
     import ImageLabelViewer from "#lib/components/image-tools/ImageLabelViewer.svelte";
     import Favourite from "#lib/components/ui/Favourite.svelte";
-    import { VizMimeTypes } from "#lib/constants.js";
-    import { draggable } from "#lib/drag-drop/directives.svelte.js";
+    import { createImageDragItems, draggable } from "#lib/drag-drop/directives.svelte.js";
     import { getImageLabel, getTakenAt } from "#lib/utils/images.js";
-    import { type ImageAsset, getAssetImagePath } from "@viz/api";
+    import { type ImageAsset } from "@viz/api";
     import AssetImage, { type AssetImageProps } from "./AssetImage.svelte";
 
     export type ImageVariant = "mini" | "full" | "simple";
@@ -67,14 +66,9 @@
         tabindex="0"
         data-asset-id={asset.uid}
         use:draggable={{
-            items: [
-                {
-                    mimeType: VizMimeTypes.IMAGE_UIDS,
-                    payload: [asset.uid],
-                    label: asset.name,
-                    thumbnailUrl: getAssetImagePath(asset, "thumbnail")
-                }
-            ]
+            items: () => {
+                return createImageDragItems(asset);
+            }
         }}
     >
         <div class="image-container">
@@ -100,14 +94,9 @@
         tabindex="0"
         data-asset-id={asset.uid}
         use:draggable={{
-            items: [
-                {
-                    mimeType: VizMimeTypes.IMAGE_UIDS,
-                    payload: [asset.uid],
-                    label: asset.name,
-                    thumbnailUrl: getAssetImagePath(asset, "thumbnail")
-                }
-            ]
+            items: () => {
+                return createImageDragItems(asset);
+            }
         }}
     >
         <div class="image-container">

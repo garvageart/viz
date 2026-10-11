@@ -1,11 +1,11 @@
+import { StandardMimeTypes } from "#lib/mime.js";
 import { generateRandomString } from "#lib/utils/misc.js";
 import { clearDragState, dragState, setDragState } from "./state.svelte";
 
 const REF_MIME_TYPE = "application/x-viz-ref";
 
 export class DragData<T> {
-    private static localPayload: any = null;
-    private static localType: string | null = null;
+    private static localPayloads = new Map<string, any>();
     private static localRef: string | null = null;
 
     constructor(
@@ -14,6 +14,15 @@ export class DragData<T> {
     ) {}
 
     toString(): string {
+        if (
+            this.type === StandardMimeTypes.TEXT_PLAIN ||
+            this.type === StandardMimeTypes.URI_LIST ||
+            this.type === StandardMimeTypes.HTML ||
+            this.type === StandardMimeTypes.DOWNLOAD_URL
+        ) {
+            return typeof this.payload === "string" ? this.payload : JSON.stringify(this.payload);
+        }
+
         return JSON.stringify({ type: this.type, payload: this.payload });
     }
 
@@ -47,23 +56,29 @@ export class DragData<T> {
 
     setData(dataTransfer: DataTransfer, source?: string) {
         // 1. Store in-memory with a reference token
-        const ref = generateRandomString(16);
-        DragData.localRef = ref;
-        DragData.localType = this.type;
-        DragData.localPayload = this.payload;
+        if (!DragData.localRef) {
+            DragData.localRef = generateRandomString(16);
+        }
+        DragData.localPayloads.set(this.type, this.payload);
 
         // 2. Set the reference token in DataTransfer (so we can verify it later)
         try {
-            dataTransfer.setData(REF_MIME_TYPE, ref);
+            dataTransfer.setData(REF_MIME_TYPE, DragData.localRef);
         } catch (e) {
             console.warn("Failed to set drag reference", e);
         }
 
         // 3. Set the serialized data as fallback (for cross-window or if memory is cleared)
-        dataTransfer.setData(this.type, this.toString());
+        try {
+            dataTransfer.setData(this.type, this.toString());
+        } catch (e) {
+            console.warn("Failed to set drag data for", this.type, e);
+        }
 
         // 4. Update global drag state so components can reactively track drag operations
-        setDragState(this.type, this.payload, source);
+        if (!dragState.isActive) {
+            setDragState(this.type, this.payload, source);
+        }
     }
 
     static getData<T>(dataTransfer: DataTransfer, type: string): DragData<T> | undefined {
@@ -72,8 +87,8 @@ export class DragData<T> {
         try {
             // Note: getData is only available in 'drop' event
             const ref = dataTransfer.getData(REF_MIME_TYPE);
-            if (ref && ref === DragData.localRef && DragData.localType === type) {
-                return new DragData<T>(type, DragData.localPayload);
+            if (ref && ref === DragData.localRef && DragData.localPayloads.has(type)) {
+                return new DragData<T>(type, DragData.localPayloads.get(type));
             }
         } catch (e) {
             // ignore
@@ -82,7 +97,12 @@ export class DragData<T> {
         // 2. Fallback to standard serialized parsing
         const dataStr = dataTransfer.getData(type);
         if (dataStr) {
-            return DragData.fromString<T>(dataStr);
+            const parsed = DragData.fromString<T>(dataStr);
+            if (parsed) {
+                return parsed;
+            }
+
+            return new DragData<T>(type, dataStr as unknown as T);
         }
 
         return undefined;
@@ -90,8 +110,7 @@ export class DragData<T> {
 
     static clear() {
         DragData.localRef = null;
-        DragData.localType = null;
-        DragData.localPayload = null;
+        DragData.localPayloads.clear();
         clearDragState();
     }
 
@@ -106,6 +125,10 @@ export class DragData<T> {
     static getActivePayload<T>(type: string): T | undefined {
         if (dragState.isActive && dragState.type === type) {
             return dragState.payload as T;
+        }
+
+        if (DragData.localPayloads.has(type)) {
+            return DragData.localPayloads.get(type) as T;
         }
 
         return undefined;
