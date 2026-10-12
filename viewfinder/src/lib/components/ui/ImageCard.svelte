@@ -42,7 +42,7 @@
                 <div class="mini-left">
                     <div class="mini-rating">
                         {#each Array(5) as _, i (i)}
-                            <div class="dot" class:filled={i < (asset.image_metadata?.rating ?? 0)}></div>
+                            <div class="dot" class:filled={i < (asset.image_metadata.rating ?? 0)}></div>
                         {/each}
                     </div>
 
@@ -52,7 +52,7 @@
                         </div>
                     {/if}
                 </div>
-                {#if asset.image_metadata?.label}
+                {#if asset.image_metadata.label}
                     <div class="mini-label-indicator" style="background-color: {getImageLabel(asset)}"></div>
                 {/if}
             </div>
@@ -126,7 +126,7 @@
                         {#if asset.favourited}
                             <Favourite />
                         {/if}
-                        {#if asset.image_metadata?.label}
+                        {#if asset.image_metadata.label}
                             <div class="image-card-label" title={asset.image_metadata.label}>
                                 <ImageLabelViewer
                                     variant="compact"

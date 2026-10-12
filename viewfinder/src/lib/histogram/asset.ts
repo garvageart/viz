@@ -14,7 +14,7 @@ import * as Comlink from "comlink";
 const cache = new Map<string, Promise<HistogramData>>();
 
 function assetKey(asset: ImageAsset): string {
-    return `${asset.uid}:${asset.image_metadata?.checksum ?? ""}`;
+    return `${asset.uid}:${asset.image_metadata.checksum ?? ""}`;
 }
 
 function histogramSourceUrl(asset: ImageAsset): string | null {

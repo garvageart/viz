@@ -1141,13 +1141,13 @@
                             }}
                         />
                     </div>
-                    {#if asset.image_metadata?.rating}
-                        <StarRating static={true} value={asset.image_metadata?.rating} />
+                    {#if asset.image_metadata.rating}
+                        <StarRating static={true} value={asset.image_metadata.rating} />
                     {/if}
                 </div>
-                {#if asset.image_metadata?.label || asset.favourited}
+                {#if asset.image_metadata.label || asset.favourited}
                     <div class="right-side">
-                        {#if asset.image_metadata?.label}
+                        {#if asset.image_metadata.label}
                             <ImageLabelViewer variant="compact" enableSelection={false} label={getImageLabel(asset)} />
                         {/if}
                         {#if asset.favourited}
@@ -1163,7 +1163,7 @@
                     draggable="false"
                     class="tile-image"
                     resolution="thumbnail"
-                    alt={asset?.name ?? asset?.image_metadata?.file_name ?? ""}
+                    alt={asset?.name ?? asset?.image_metadata.file_name ?? ""}
                     loading="lazy"
                     initialLoaded={isCached}
                     onload={() => {

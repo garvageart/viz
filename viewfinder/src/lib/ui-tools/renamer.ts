@@ -29,12 +29,7 @@ export function buildRenameContext(asset: ImageAsset, index: number, options: Re
     const seqVal = seqStart + index;
     const seqStr = String(seqVal).padStart(seqPad, "0");
 
-    const fullFilename =
-        asset.original_file_name ||
-        asset.image_metadata?.original_file_name ||
-        asset.image_metadata?.file_name ||
-        asset.name ||
-        "unknown.jpg";
+    const fullFilename = asset.image_metadata.file_name || asset.original_file_name || asset.name || "unknown.jpg";
     const { basename, ext } = getFilenameBasenameAndExtension(fullFilename);
 
     const dateSource = asset.taken_at || asset.created_at;

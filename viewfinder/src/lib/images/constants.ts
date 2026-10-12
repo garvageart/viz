@@ -54,7 +54,7 @@ export const DEFAULT_IMAGE_COLUMNS: TableColumn<ImageAsset>[] = [
     { key: "iso", header: "ISO", getValue: (row) => row.exif?.iso },
     { key: "aperture", header: "Aperture", getValue: (row) => row.exif?.aperture },
     { key: "shutter_speed", header: "Shutter Speed", getValue: (row) => row.exif?.exposure_time },
-    { key: "rating", header: "Rating", getValue: (row) => row.image_metadata?.rating }
+    { key: "rating", header: "Rating", getValue: (row) => row.image_metadata.rating }
 ];
 
 export const flashModes: Record<number, string> = {

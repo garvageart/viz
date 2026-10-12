@@ -115,8 +115,8 @@ export function getTakenAt(image: ImageAsset): Date {
         exif?.date_time_original,
         exif?.date_time,
         exif?.modify_date,
-        image.image_metadata?.file_created_at,
-        image.image_metadata?.file_modified_at,
+        image.image_metadata.file_created_at,
+        image.image_metadata.file_modified_at,
         image.created_at
     ];
 
@@ -134,7 +134,7 @@ export function compareByTakenAtDesc(a: ImageAsset, b: ImageAsset): number {
 }
 
 export function getThumbhashURL(asset: ImageAsset): string | undefined {
-    if (!asset.image_metadata?.thumbhash) {
+    if (!asset.image_metadata.thumbhash) {
         return undefined;
     }
 
@@ -372,7 +372,7 @@ export function parseTransformParams(pathStr: string): TransformParams {
 export function createTransformEtag(imgEnt: ImageAsset, params: TransformParams): string {
     // TODO: "unknown" isn't necessarily something i would actually want in a checksum
     // it's a lazy fallback
-    const checksum = imgEnt.image_metadata?.checksum ?? "unknown";
+    const checksum = imgEnt.image_metadata.checksum ?? "unknown";
     const w = params.width ?? 0;
     const h = params.height ?? 0;
     const fmt = params.format ?? "";
@@ -436,7 +436,7 @@ export function getImageLabel(image: ImageAsset | undefined | null) {
     if (!image) {
         return null;
     }
-    const label = image.image_metadata?.label;
+    const label = image.image_metadata.label;
     switch (label) {
         case "Red":
             return LabelColours.Red;

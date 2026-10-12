@@ -401,7 +401,7 @@
                         {#if firstSelectedImage}
                             <div class="triage-group">
                                 <StarRating
-                                    value={firstSelectedImage.image_metadata?.rating ?? 0}
+                                    value={firstSelectedImage.image_metadata.rating ?? 0}
                                     onChange={async (rating) => {
                                         if (!firstSelectedImage) {
                                             return;

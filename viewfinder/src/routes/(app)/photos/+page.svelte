@@ -499,7 +499,7 @@
                         }}
                     />
                     <StarRating
-                        value={selectionFirstImage?.image_metadata?.rating ?? 0}
+                        value={selectionFirstImage?.image_metadata.rating ?? 0}
                         onChange={async (rating) => {
                             if (!selectionFirstImage) {
                                 return;
