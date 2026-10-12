@@ -168,7 +168,7 @@ export function getAssetImagePath(
 
     const fullPath = extraParams ? `${path}${extraParams}` : path;
     const resolvedPath = getFullImagePath(fullPath);
-    const checksum = asset.image_metadata?.checksum;
+    const checksum = asset.image_metadata.checksum;
 
     if (!checksum) {
         return resolvedPath;
