@@ -15,10 +15,10 @@
 
     let { asset, clickHandler }: Props = $props();
     let takenAt = $derived(getTakenAt(asset));
-    let displayName = $derived(asset.name || asset.image_metadata?.file_name);
+    let displayName = $derived(asset.name || asset.image_metadata.file_name);
 
     let fileExtension = $derived.by(() => {
-        const ft = asset.image_metadata?.file_type?.trim().toUpperCase();
+        const ft = asset.image_metadata.file_type?.trim().toUpperCase();
         if (!ft) {
             return "";
         }
@@ -29,7 +29,7 @@
     let megapixel = $derived(getImageMegapixels(asset));
 
     let fileSizeStr = $derived.by(() => {
-        const size = asset.image_metadata?.file_size;
+        const size = asset.image_metadata.file_size;
         if (size !== undefined && size !== null) {
             return formatBytes(size);
         }

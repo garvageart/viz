@@ -9,7 +9,7 @@
     let { asset, disabled = false }: Props = $props();
 
     let imgSrc = $derived(getAssetImagePath(asset, "thumbnail"));
-    let altText = $derived(asset.name ?? asset.image_metadata?.file_name ?? "");
+    let altText = $derived(asset.name ?? asset.image_metadata.file_name ?? "");
 </script>
 
 <div class="basic-grid-card" class:disabled>

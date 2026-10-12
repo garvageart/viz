@@ -211,7 +211,12 @@ describe("createTransformEtag", () => {
     });
 
     it("uses defaults for missing params and unknown checksum", () => {
-        const noChecksum = assetFixture({ image_metadata: undefined });
+        const noChecksum = assetFixture({
+            image_metadata: {
+                ...createTestImageObject().image_metadata,
+                checksum: undefined as unknown as string
+            }
+        });
         expect(createTransformEtag(noChecksum, {})).toBe("unknown-0x0--0-0---0");
     });
 });

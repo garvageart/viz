@@ -52,7 +52,7 @@
             <div class="info">
                 <span class="filename" title={activeItem.name}>{activeItem.name}</span>
                 <span class="meta">
-                    {activeItem.width}x{activeItem.height} • {activeItem.image_metadata?.file_type?.toUpperCase() ??
+                    {activeItem.width}x{activeItem.height} • {activeItem.image_metadata.file_type?.toUpperCase() ??
                         "IMG"}
                     <ImageLabelViewer label={getImageLabel(activeItem)} variant="compact" enableSelection={false} />
                     {#if activeItem.favourited}

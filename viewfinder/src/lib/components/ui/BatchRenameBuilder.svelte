@@ -185,8 +185,8 @@
         return assets.slice(0, 3).map((asset, index) => {
             const originalName =
                 asset.original_file_name ||
-                asset.image_metadata?.original_file_name ||
-                asset.image_metadata?.file_name ||
+                asset.image_metadata.original_file_name ||
+                asset.image_metadata.file_name ||
                 asset.name ||
                 "unknown.jpg";
 

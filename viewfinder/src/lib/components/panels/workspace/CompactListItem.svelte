@@ -93,16 +93,16 @@
                     <span class="value">{img.width} x {img.height}</span>
 
                     <span class="label">Size:</span>
-                    <span class="value">{formatBytes(img.image_metadata?.file_size) ?? "-"}</span>
+                    <span class="value">{formatBytes(img.image_metadata.file_size) ?? "-"}</span>
 
                     <span class="label">Type:</span>
-                    <span class="value">{img.image_metadata?.file_type?.toUpperCase() ?? "-"}</span>
+                    <span class="value">{img.image_metadata.file_type?.toUpperCase() ?? "-"}</span>
 
                     <span class="label">Created:</span>
                     <span class="value">{formatDate(img.created_at)}</span>
 
                     <span class="label">Rating:</span>
-                    <span class="value">{img.image_metadata?.rating ?? "-"}</span>
+                    <span class="value">{img.image_metadata.rating ?? "-"}</span>
                 </div>
             {:else}
                 {@const col = item as Collection}

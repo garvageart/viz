@@ -1,3 +1,4 @@
+import { createTestImageObject } from "#lib/data/test.js";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { PhotoGridVirtualizer } from "./PhotoGridVirtualizer.svelte";
 
@@ -44,12 +45,8 @@ vi.mock("@immich/justified-layout-wasm", () => {
 
     return { JustifiedLayout: MockJustifiedLayout };
 });
-function makeItems(count: number): { uid: string; width: number; height: number }[] {
-    return Array.from({ length: count }, (_, i) => ({
-        uid: `img-${i}`,
-        width: 400,
-        height: 300
-    }));
+function makeItems(count: number) {
+    return Array.from({ length: count }, () => createTestImageObject());
 }
 
 describe("PhotoGridVirtualizer", () => {
