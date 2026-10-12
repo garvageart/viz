@@ -109,7 +109,7 @@ The current `viz` implementation shows the following technical baselines and lim
 
 ### 2.2 Frontend State and Lifecycle Layer
 
-- **SvelteKit load functions ([viewfinder/src/routes/(app)/photos/+page.ts](../../viewfinder/src/routes/(app)/photos/+page.ts)):**
+- **SvelteKit load functions ([viewfinder/src/routes/(app)/photos/+page.ts](<../../viewfinder/src/routes/(app)/photos/+page.ts>)):**
     - Fetches data over HTTP GET using `sendVizAPIRequest(listImages({...}))`.
 - **Global event invalidation ([viewfinder/src/lib/states/events.svelte.ts](../../viewfinder/src/lib/states/events.svelte.ts)):**
     - Receives WebSocket events and executes `invalidateApp(DataKeys.Photos)` or `invalidateAll()`.
@@ -276,7 +276,7 @@ The frontend separates user interface view logic from storage and replication me
 
 Per project guidelines, route data queries execute inside client-side `+page.ts` universal load functions. Components receive reactive state via `$props()`.
 
-In photo route loaders ([viewfinder/src/routes/(app)/photos/+page.ts](../../viewfinder/src/routes/(app)/photos/+page.ts)):
+In photo route loaders ([viewfinder/src/routes/(app)/photos/+page.ts](<../../viewfinder/src/routes/(app)/photos/+page.ts>)):
 
 ```typescript
 import { engine } from "@viz/engine";
@@ -296,7 +296,7 @@ export const load: PageLoad = async () => {
 };
 ```
 
-In grid view components ([viewfinder/src/routes/(app)/photos/+page.svelte](../../viewfinder/src/routes/(app)/photos/+page.svelte)):
+In grid view components ([viewfinder/src/routes/(app)/photos/+page.svelte](<../../viewfinder/src/routes/(app)/photos/+page.svelte>)):
 
 ```svelte
 <script lang="ts">
@@ -319,7 +319,7 @@ In metadata editor components ([viewfinder/src/lib/components/ui/panels/Metadata
     import StarRating from "$lib/components/image-tools/StarRating.svelte";
 
     let { asset }: Props = $props();
-    let starRating = $derived<number | null>(asset?.image_metadata?.rating ?? null);
+    let starRating = $derived<number | null>(asset?.image_metadata.rating ?? null);
 
     async function setImageRating(newRating: number | null) {
         if (!asset) {
