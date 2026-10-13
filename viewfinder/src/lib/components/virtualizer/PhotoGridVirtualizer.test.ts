@@ -1,50 +1,7 @@
 import { createTestImageObject } from "#lib/data/test.js";
-import { beforeEach, describe, expect, it, vi } from "vitest";
+import { beforeEach, describe, expect, it } from "vitest";
 import { PhotoGridVirtualizer } from "./PhotoGridVirtualizer.svelte";
 
-// Mock the WASM justified layout module before importing the virtualizer
-vi.mock("@immich/justified-layout-wasm", () => {
-    class MockJustifiedLayout {
-        private positions: { top: number; left: number; width: number; height: number }[] = [];
-
-        constructor(aspectRatios: Float32Array, opts: { rowHeight: number; rowWidth: number; spacing: number }) {
-            let currentTop = 0;
-            let currentLeft = 0;
-            let rowHeight = opts.rowHeight;
-
-            for (let i = 0; i < aspectRatios.length; i++) {
-                const ar = aspectRatios[i];
-                const width = rowHeight * ar;
-
-                if (currentLeft + width > opts.rowWidth && currentLeft > 0) {
-                    currentTop += rowHeight + opts.spacing;
-                    currentLeft = 0;
-                }
-
-                this.positions.push({
-                    top: currentTop,
-                    left: currentLeft,
-                    width,
-                    height: rowHeight
-                });
-
-                currentLeft += width + opts.spacing;
-            }
-        }
-
-        getPosition(i: number) {
-            return this.positions[i];
-        }
-
-        get containerHeight() {
-            if (this.positions.length === 0) return 0;
-            const last = this.positions[this.positions.length - 1];
-            return last.top + last.height;
-        }
-    }
-
-    return { JustifiedLayout: MockJustifiedLayout };
-});
 function makeItems(count: number) {
     return Array.from({ length: count }, () => createTestImageObject());
 }
