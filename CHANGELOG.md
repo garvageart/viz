@@ -5,6 +5,15 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.36.1] - 2026-10-13
+
+* refactor(viewfinder): access image metadata directly in components (286c8a4f)
+* docs: update file links and property access in sync engine spec (50ce9267)
+* refactor(viewfinder): access image metadata properties directly on ImageAsset (662703ca)
+* refactor(viewfinder): remove obsolete entity type definitions (eafb7e01)
+* refactor(api): access image metadata checksum property directly (70518164)
+* feat(viewfinder): attach standard MIME formats to dragged images (ede15a6d)
+
 ## [0.36.0] - 2026-10-05
 
 * refactor(viewfinder): migrate route imports to subpath alias #lib and $app/env (7146637b)
