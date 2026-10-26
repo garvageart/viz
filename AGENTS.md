@@ -27,7 +27,7 @@ Entry point for agents and humans working on the `viz` codebase.
 - **Package manager**: `pnpm` (not npm or yarn).
 - **Frontend directory**: `viewfinder/` — not `src/`, `frontend/`, or `web/`.
 - **Lockfile**: `pnpm-lock.yaml` at repository root (not inside `viewfinder/`).
-- **Go workspace**: `go.work` at root (Go 1.26) with two modules: root (`.`) and `./cmd/api`.
+- **Go workspace**: `go.work` at root (Go 1.26.10) with two modules: root (`.`) and `./cmd/api`.
 - **Runtime data**: `data/` directory for local library, logs, trash, and cache — gitignored.
 - **Resource identifiers**: All API entities use `uid` (string) as the primary identifier, not numeric IDs or UUIDs.
 - **Docker services**: `make docker-up` starts Postgres 18, Redis 8, and the Viz server on port 7770. See [docker-compose.yml](/docker/docker-compose.yml).
@@ -40,7 +40,7 @@ Entry point for agents and humans working on the `viz` codebase.
 
 ## Environment & Toolchain
 
-- **Go**: 1.26 (per `go.mod` and `go.work`)
+- **Go**: 1.26.10 (per `go.mod` and `go.work`)
 - **Node**: >=26.12.1 (per `viewfinder/package.json` and `.nvmrc`)
 - **libvips**: 8.18.0 (see `.libvips-version` at root; used via CGO bindings in `internal/images/ops`)
 - **Package manager**: `pnpm` (not npm or yarn)
