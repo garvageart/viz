@@ -5,6 +5,12 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.36.2] - 2026-10-26
+
+* security: change minimum golang version to v1.26.10 due to comprised certs (7a87adcd)
+* security: change minimum node version to v26.12.1 due to comprised certs (50a3aa4a)
+* test(viewfinder): use real justified-layout-wasm module in tests (da6efd86)
+
 ## [0.36.1] - 2026-10-13
 
 * refactor(viewfinder): access image metadata directly in components (286c8a4f)
