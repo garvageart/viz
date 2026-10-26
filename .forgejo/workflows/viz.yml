@@ -252,7 +252,7 @@ jobs:
             - name: Setup Node.js & pnpm
               uses: actions/setup-node@v4
               with:
-                  node-version: "26.5.0"
+                  node-version: "26.12.1"
                   cache: "pnpm"
 
             - name: Get Playwright version

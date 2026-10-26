@@ -11,10 +11,10 @@ Entry point for agents and humans working on the `viz` codebase.
 - **Makefile**: [Makefile](/Makefile)
 - **OpenAPI Specification**: [openapi.yaml](/api/openapi/openapi.yaml) (The single source of truth for Go DTOs, GORM entities, and the Svelte TypeScript client)
 - **Developer Guides**:
-  - Setup & Building: [BUILDING.md](/docs/setup/BUILDING.md)
-  - UI Design System: [UI_DESIGN_SYSTEM.md](/docs/development/UI_DESIGN_SYSTEM.md)
+    - Setup & Building: [BUILDING.md](/docs/setup/BUILDING.md)
+    - UI Design System: [UI_DESIGN_SYSTEM.md](/docs/development/UI_DESIGN_SYSTEM.md)
 - **Code Maps & Guidelines**:
-  - Global Agent Guidelines: [AGENTS.md](/AGENTS.md)
+    - Global Agent Guidelines: [AGENTS.md](/AGENTS.md)
 
 ## Subtree Guides
 
@@ -41,7 +41,7 @@ Entry point for agents and humans working on the `viz` codebase.
 ## Environment & Toolchain
 
 - **Go**: 1.26 (per `go.mod` and `go.work`)
-- **Node**: >=26.5.0 (per `viewfinder/package.json` and `.nvmrc`)
+- **Node**: >=26.12.1 (per `viewfinder/package.json` and `.nvmrc`)
 - **libvips**: 8.18.0 (see `.libvips-version` at root; used via CGO bindings in `internal/images/ops`)
 - **Package manager**: `pnpm` (not npm or yarn)
 - **Docker**: Postgres 18-alpine + Redis 8-alpine + server + frontend (see `docker/docker-compose.yml`)
@@ -61,21 +61,25 @@ Entry point for agents and humans working on the `viz` codebase.
 ### General (All Languages)
 
 #### If-Statements & Loops
+
 All control flow blocks must **never** be inlined. Always use brackets and break to the next line.
 
-  - ***Rationale***: Consistency across backend (Go) and frontend (TypeScript) makes code easier to scan, simplifies setting breakpoints during debugging, and reduces errors during block updates.
+- _**Rationale**_: Consistency across backend (Go) and frontend (TypeScript) makes code easier to scan, simplifies setting breakpoints during debugging, and reduces errors during block updates.
 
 **Example**
-```typescript
-    // Correct:
-    if (isDisabled) {
-        return;
-    }
 
-    // Incorrect:
-    if (isDisabled) return;
+```typescript
+// Correct:
+if (isDisabled) {
+    return;
+}
+
+// Incorrect:
+if (isDisabled) return;
 ```
+
 #### Preserving Comments
+
 Do not delete comments you did not add unless explicitly told to do so.
 
 If refactoring changes logic significantly, update the comments to reflect the new logic rather than removing them.
@@ -91,9 +95,9 @@ If refactoring changes logic significantly, update the comments to reflect the n
 - **Props**: Define component props using a `Props` interface inside component script blocks.
 - **Universal Load Functions**: Fetch page data inside client-side `+page.ts` or `+layout.ts` `load` functions. Do **NOT** use `+page.server.ts` files (Viz is a pure SPA).
 - **Styling**: SCSS (Sass) preprocessor. Scoped `<style lang="scss">` per component. Reference `var(--viz-spacing-*)` and `var(--viz-font-size-*)` tokens (defined in [UI_DESIGN_SYSTEM.md](/docs/development/UI_DESIGN_SYSTEM.md)).
-  - ***Style Block Comments***: Single-line `//` SCSS comments are supported inside `<style lang="scss">` blocks. Avoid placing `//` comments immediately above multi-line property declarations (`background-image: ...`) to prevent Svelte preprocessor parsing errors; use standard `/* ... */` comments inside rule bodies or multi-line property lists.
-- **Unnecessary Type Guards (DOM APIs)**: Avoid writing unnecessary type guards on the frontend in relation to DOM APIs, such as `typeof window !== "undefined"`. This is a Single Page Application, running in the browser. Window is always defined. It is *the* global scope. Avoid it. It annoys me now.
-- **Querying DOM Nodes**: Avoid querying DOM nodes using plain English in either the `title` or `aria-label` attributes, or within the DOM node text content itself, as this does not support i18n (internationlisation) or a11y efforts and will fail in most cases. The standard practice would be to target them using the `id`, `class` selector or `data-` attributes.   
+    - _**Style Block Comments**_: Single-line `//` SCSS comments are supported inside `<style lang="scss">` blocks. Avoid placing `//` comments immediately above multi-line property declarations (`background-image: ...`) to prevent Svelte preprocessor parsing errors; use standard `/* ... */` comments inside rule bodies or multi-line property lists.
+- **Unnecessary Type Guards (DOM APIs)**: Avoid writing unnecessary type guards on the frontend in relation to DOM APIs, such as `typeof window !== "undefined"`. This is a Single Page Application, running in the browser. Window is always defined. It is _the_ global scope. Avoid it. It annoys me now.
+- **Querying DOM Nodes**: Avoid querying DOM nodes using plain English in either the `title` or `aria-label` attributes, or within the DOM node text content itself, as this does not support i18n (internationlisation) or a11y efforts and will fail in most cases. The standard practice would be to target them using the `id`, `class` selector or `data-` attributes.
 
 ## LLM Usage
 
@@ -137,7 +141,9 @@ Issue templates are available at `.github/ISSUE_TEMPLATE/` (bug report, feature 
 - Markdown headings use a Chicago-style title case (see rules below).
 - Always spell the product/application name as `viz`. Strictly in lowercase.
 - `viewfinder` is the name of the SvelteKit SPA frontend. Always spell it in lowercase.
+
 ---
+
 - Refresh `**Last Updated:**` when you change document contents, but leave it unchanged for whitespace-only or formatting-only edits.
 
 ## Safety & Data
