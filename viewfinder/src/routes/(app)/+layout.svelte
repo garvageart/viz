@@ -25,7 +25,7 @@
 
 <svelte:window ondragover={handleWindowDragOver} ondrop={handleWindowDrop} />
 
-<div class="viz-app-layout" role="presentation">
+<div class="viz-app-layout no-select" role="presentation">
     <Header />
     <main id="main" class="viz-content" tabindex="-1">
         {#if page.url.pathname === "/"}
