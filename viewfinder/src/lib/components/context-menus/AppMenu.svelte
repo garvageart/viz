@@ -5,10 +5,13 @@
     import { isMobile, user } from "#lib/states/index.svelte.js";
     import { goto } from "$app/navigation";
 
-    let { isOpen = $bindable(false), anchor = $bindable() } = $props<{
+    let {
+        isOpen = $bindable(false),
+        anchor = $bindable()
+    }: {
         isOpen?: boolean;
         anchor?: HTMLElement | null;
-    }>();
+    } = $props();
 
     const adminSettings: MenuItem = {
         id: "admin",
