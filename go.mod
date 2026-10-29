@@ -32,6 +32,7 @@ require (
 	github.com/spf13/viper v1.21.0
 	github.com/stretchr/testify v1.11.1
 	gorm.io/driver/sqlite v1.6.0
+	github.com/clerk/raymond v2.0.5+incompatible
 )
 
 require (
