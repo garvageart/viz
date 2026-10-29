@@ -103,6 +103,7 @@ class EventsState {
 
             case "image-created":
             case "image-updated":
+            case "images-updated":
             case "image-deleted":
                 console.debug(`[Events] Image event: ${event}`);
                 this.invalidateApp(DataKeys.Photos);

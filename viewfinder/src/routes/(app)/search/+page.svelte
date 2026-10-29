@@ -43,7 +43,7 @@
     import { getImageLabel } from "#lib/utils/images.js";
     import { goto } from "$app/navigation";
     import type { Collection, ImageAsset } from "@viz/api";
-    import { Label as ImageLabel, addCollectionImages, updateImage } from "@viz/api";
+    import { Label as ImageLabel, addCollectionImages, batchUpdateImages } from "@viz/api";
     import { type ComponentProps, onMount, untrack } from "svelte";
 
     let collections = $derived(search.data.collections.data);
@@ -407,13 +407,22 @@
                                             return;
                                         }
 
-                                        const updatePromises = imageSelection.selectedItems.map((img) => {
-                                            return updateImage(img.uid, {
-                                                image_metadata: { rating }
-                                            });
+                                        const uids = imageSelection.selectedItems.map((img) => {
+                                            return img.uid;
                                         });
 
-                                        await Promise.all(updatePromises);
+                                        await batchUpdateImages({
+                                            uids,
+                                            update: {
+                                                image_metadata: { rating }
+                                            }
+                                        });
+
+                                        for (const img of imageSelection.selectedItems) {
+                                            if (img.image_metadata) {
+                                                img.image_metadata.rating = rating;
+                                            }
+                                        }
                                     }}
                                 />
                                 <ImageLabelViewer
@@ -430,13 +439,22 @@
                                         const labelName = entry ? entry[0] : null;
                                         const labelToSend = labelName as ImageLabel | null;
 
-                                        const updatePromises = imageSelection.selectedItems.map((img) => {
-                                            return updateImage(img.uid, {
-                                                image_metadata: { label: labelToSend }
-                                            });
+                                        const uids = imageSelection.selectedItems.map((img) => {
+                                            return img.uid;
                                         });
 
-                                        await Promise.all(updatePromises);
+                                        await batchUpdateImages({
+                                            uids,
+                                            update: {
+                                                image_metadata: { label: labelToSend }
+                                            }
+                                        });
+
+                                        for (const img of imageSelection.selectedItems) {
+                                            if (img.image_metadata) {
+                                                img.image_metadata.label = labelToSend;
+                                            }
+                                        }
                                     }}
                                 />
                             </div>

@@ -510,20 +510,6 @@ export type DeleteAssetsResponse = {
     /** Summary message of the operation */
     message?: string;
 };
-export type DuplicateCheckRequest = {
-    /** List of SHA-1 checksums to check for duplicates */
-    checksums: string[];
-};
-export type DuplicateCheckResult = {
-    /** The checksum of the duplicate image */
-    checksum: string;
-    /** The UID of the existing image */
-    uid: string;
-};
-export type DuplicateCheckResponse = {
-    /** List of duplicates found */
-    duplicates: DuplicateCheckResult[];
-};
 export type ImageUpdate = {
     /** Image name */
     name?: string;
@@ -546,6 +532,33 @@ export type ImageUpdate = {
         /** Keywords */
         keywords?: string[];
     };
+};
+export type BatchImageUpdateRequest = {
+    /** List of target image UIDs */
+    uids: string[];
+    update: ImageUpdate;
+};
+export type BatchImageUpdateResponse = {
+    /** Total number of successfully updated images */
+    updated_count: number;
+    /** Array of updated image UIDs */
+    uids: string[];
+    /** Status message */
+    message?: string | null;
+};
+export type DuplicateCheckRequest = {
+    /** List of SHA-1 checksums to check for duplicates */
+    checksums: string[];
+};
+export type DuplicateCheckResult = {
+    /** The checksum of the duplicate image */
+    checksum: string;
+    /** The UID of the existing image */
+    uid: string;
+};
+export type DuplicateCheckResponse = {
+    /** List of duplicates found */
+    duplicates: DuplicateCheckResult[];
 };
 export type ImageExportRequest = {
     uids: string[];
@@ -1696,6 +1709,25 @@ export function deleteImagesBulk(body: {
         ...opts,
         method: "DELETE",
         body
+    }));
+}
+/**
+ * Update metadata for multiple images
+ */
+export function batchUpdateImages(batchImageUpdateRequest: BatchImageUpdateRequest, opts?: Oazapfts.RequestOpts) {
+    return oazapfts.fetchJson<{
+        status: 200;
+        data: BatchImageUpdateResponse;
+    } | {
+        status: 400;
+        data: ErrorResponse;
+    } | {
+        status: 500;
+        data: ErrorResponse;
+    }>("/images/batch", oazapfts.json({
+        ...opts,
+        method: "PATCH",
+        body: batchImageUpdateRequest
     }));
 }
 /**

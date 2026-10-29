@@ -44,8 +44,8 @@
         type ImageAsset,
         Label as ImageLabel,
         addCollectionImages,
-        getImage,
-        updateImage
+        batchUpdateImages,
+        getImage
     } from "@viz/api";
     import { onDestroy, untrack } from "svelte";
 
@@ -472,28 +472,40 @@
                             const labelName = entry ? entry[0] : null;
                             const labelToSend = labelName as ImageLabel | null;
 
-                            const updatePromises = selectionScope.selectedItems.map((img) => {
-                                return updateImage(img.uid, {
-                                    image_metadata: { label: labelToSend }
-                                });
+                            const uids = selectionScope.selectedItems.map((img) => {
+                                return img.uid;
                             });
 
-                            const res = await Promise.all(updatePromises);
+                            const res = await batchUpdateImages({
+                                uids,
+                                update: {
+                                    image_metadata: { label: labelToSend }
+                                }
+                            });
 
-                            const successCount = res.filter((r) => {
-                                return r.status === 200;
-                            }).length;
-
-                            // gosh
-                            if (successCount > 0) {
-                                const updatedMap = new Map(
-                                    res.filter((r) => r.status === 200).map((r) => [r.data.uid, r.data])
-                                );
+                            if (res.status === 200) {
+                                const uidSet = new Set(res.data.uids);
                                 galleryState.images = galleryState.images.map((i) => {
-                                    return updatedMap.get(i.uid) ?? i;
+                                    if (uidSet.has(i.uid)) {
+                                        return {
+                                            ...i,
+                                            image_metadata: {
+                                                ...i.image_metadata,
+                                                label: labelToSend
+                                            }
+                                        };
+                                    }
+                                    return i;
                                 });
-                                if (lightbox.image && updatedMap.has(lightbox.image.uid)) {
-                                    lightbox.image = updatedMap.get(lightbox.image.uid)!;
+
+                                if (lightbox.image && uidSet.has(lightbox.image.uid)) {
+                                    lightbox.image = {
+                                        ...lightbox.image,
+                                        image_metadata: {
+                                            ...lightbox.image.image_metadata,
+                                            label: labelToSend
+                                        }
+                                    };
                                 }
                             }
                         }}
@@ -505,26 +517,39 @@
                                 return;
                             }
 
-                            const updatePromises = selectionScope.selectedItems.map((img) => {
-                                return updateImage(img.uid, {
-                                    image_metadata: { rating }
-                                });
+                            const uids = selectionScope.selectedItems.map((img) => {
+                                return img.uid;
                             });
 
-                            const res = await Promise.all(updatePromises);
+                            const res = await batchUpdateImages({
+                                uids,
+                                update: {
+                                    image_metadata: { rating }
+                                }
+                            });
 
-                            const successCount = res.filter((r) => {
-                                return r.status === 200;
-                            }).length;
-                            if (successCount > 0) {
-                                const updatedMap = new Map(
-                                    res.filter((r) => r.status === 200).map((r) => [r.data.uid, r.data])
-                                );
+                            if (res.status === 200) {
+                                const uidSet = new Set(res.data.uids);
                                 galleryState.images = galleryState.images.map((i) => {
-                                    return updatedMap.get(i.uid) ?? i;
+                                    if (uidSet.has(i.uid)) {
+                                        return {
+                                            ...i,
+                                            image_metadata: {
+                                                ...i.image_metadata,
+                                                rating
+                                            }
+                                        };
+                                    }
+                                    return i;
                                 });
-                                if (lightbox.image && updatedMap.has(lightbox.image.uid)) {
-                                    lightbox.image = updatedMap.get(lightbox.image.uid)!;
+                                if (lightbox.image && uidSet.has(lightbox.image.uid)) {
+                                    lightbox.image = {
+                                        ...lightbox.image,
+                                        image_metadata: {
+                                            ...lightbox.image.image_metadata,
+                                            rating
+                                        }
+                                    };
                                 }
                             }
                         }}

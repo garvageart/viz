@@ -15,14 +15,14 @@ import {
     type CollectionDetailResponse,
     type ImageAsset,
     addCollectionImages,
+    batchUpdateImages,
     deleteCollectionImages,
     deleteImagesBulk,
     getAssetImagePath,
     getDownloadUrl,
     getFullImagePath,
     signDownload,
-    updateCollection,
-    updateImage
+    updateCollection
 } from "@viz/api";
 import { DateTime } from "luxon";
 import type { MenuItem } from "../types";
@@ -114,25 +114,26 @@ export async function toggleFavouriteImages(
         return img.favourited;
     });
     const setFavourited = !allFavourited;
-    const promises = itemsToUpdate.map((img) => {
-        return updateImage(img.uid, { favourited: setFavourited });
+    const uids = itemsToUpdate.map((img) => {
+        return img.uid;
     });
 
     try {
-        const results = await Promise.all(promises);
-        const success = results.filter((r) => {
-            return r.status === 200;
+        const res = await batchUpdateImages({
+            uids,
+            update: { favourited: setFavourited }
         });
 
-        if (success.length > 0) {
+        if (res.status === 200) {
             toasts.add({
                 type: "success",
-                message: `${setFavourited ? "Favourited" : "Unfavourited"} ${success.length} images`
+                message: `${setFavourited ? "Favourited" : "Unfavourited"} ${uids.length} image${uids.length === 1 ? "" : "s"}`
             });
 
-            for (const res of success) {
+            for (const img of itemsToUpdate) {
+                img.favourited = setFavourited;
                 if (onUpdate) {
-                    onUpdate(res.data);
+                    onUpdate(img);
                 }
             }
         }

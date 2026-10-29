@@ -491,6 +491,106 @@ func ImagesRouter(db *gorm.DB, logger *slog.Logger, wsBroker *libhttp.WSBroker) 
 		render.JSON(res, req, imgEnt.DTO())
 	})
 
+	router.Patch("/batch", func(res http.ResponseWriter, req *http.Request) {
+		var body dto.BatchImageUpdateRequest
+
+		if err := render.DecodeJSON(req.Body, &body); err != nil {
+			render.Status(req, http.StatusBadRequest)
+			render.JSON(res, req, dto.ErrorResponse{Error: "Invalid request body"})
+			return
+		}
+
+		if len(body.Uids) == 0 {
+			render.Status(req, http.StatusBadRequest)
+			render.JSON(res, req, dto.ErrorResponse{Error: "No image UIDs provided"})
+			return
+		}
+
+		isAdmin := libhttp.IsAdminFromRequest(req)
+		var authUserUid string
+		if !isAdmin {
+			authUser, ok := libhttp.UserFromContext(req)
+			if !ok {
+				render.Status(req, http.StatusForbidden)
+				render.JSON(res, req, dto.ErrorResponse{Error: "You do not have permission to update these images"})
+				return
+			}
+			authUserUid = authUser.Uid
+
+			if isOwnerReassignmentAttempt(body.Update) {
+				body.Update.OwnerUid = nil
+			}
+		}
+
+		var updatedUIDs []string
+		var updatedImages []entities.ImageAsset
+
+		err := db.Transaction(func(tx *gorm.DB) error {
+			query := tx.Model(&entities.ImageAsset{}).Where("uid IN ? AND deleted_at IS NULL", body.Uids)
+			query = queries.ApplyImageAccessControlFilter(query, req)
+
+			if err := query.Find(&updatedImages).Error; err != nil {
+				return err
+			}
+
+			if len(updatedImages) == 0 {
+				return gorm.ErrRecordNotFound
+			}
+
+			for i := range updatedImages {
+				if !isAdmin && updatedImages[i].OwnerID != nil && *updatedImages[i].OwnerID != authUserUid {
+					return ErrImageUnauthorised
+				}
+
+				updateImageFromDTO(&updatedImages[i], body.Update)
+
+				if err := tx.Save(&updatedImages[i]).Error; err != nil {
+					return err
+				}
+
+				updatedUIDs = append(updatedUIDs, updatedImages[i].Uid)
+			}
+
+			return nil
+		})
+
+		if err != nil {
+			if err == gorm.ErrRecordNotFound {
+				render.Status(req, http.StatusNotFound)
+				render.JSON(res, req, dto.ErrorResponse{Error: "Images not found"})
+				return
+			}
+
+			if err == ErrImageUnauthorised {
+				render.Status(req, http.StatusForbidden)
+				render.JSON(res, req, dto.ErrorResponse{Error: "You do not have permission to update these images"})
+				return
+			}
+
+			logger.Error("Failed to batch update images", slog.Any("error", err))
+			render.Status(req, http.StatusInternalServerError)
+			render.JSON(res, req, dto.ErrorResponse{Error: "Something went wrong, please try again later"})
+			return
+		}
+
+		for _, img := range updatedImages {
+			_, err = jobs.Enqueue(db, workers.TopicXMPGeneration, &workers.XMPGenerationJob{Image: img}, nil, &img.Uid)
+			if err != nil {
+				logger.Error("failed to enqueue xmp generation job", slog.String("uid", img.Uid), slog.Any("error", err))
+			}
+		}
+
+		response := dto.BatchImageUpdateResponse{
+			UpdatedCount: len(updatedUIDs),
+			Uids:         updatedUIDs,
+		}
+
+		_ = wsBroker.Broadcast("images-updated", response)
+
+		render.Status(req, http.StatusOK)
+		render.JSON(res, req, response)
+	})
+
 	router.Patch("/{uid}", func(res http.ResponseWriter, req *http.Request) {
 		uid := chi.URLParam(req, "uid")
 		var update dto.ImageUpdate

@@ -33,8 +33,7 @@
         isAssetImage
     } from "#lib/utils/images.js";
     import { copyToClipboard } from "#lib/utils/misc.js";
-    import type { ImageAsset, Label } from "@viz/api";
-    import { updateImage } from "@viz/api";
+    import { type ImageAsset, type Label, batchUpdateImages, updateImage } from "@viz/api";
 
     interface Props {
         asset?: ImageAsset;
@@ -53,11 +52,23 @@
     }: Props = $props();
 
     let activeScope = $derived(selectionManager.getActiveScope());
+    let selectedImages = $derived.by(() => {
+        if (asset) {
+            return [asset];
+        }
+        const items = activeScope?.selectedItems ?? [];
+        return items.filter(isAssetImage);
+    });
+    let isMultiSelection = $derived(selectedImages.length > 1);
     // Only actual images count as the current asset; a selected collection must
     // not be rendered as image metadata (which caused a flicker).
     let currentAsset = $derived(asset ?? (isAssetImage(activeScope?.active) ? activeScope.active : undefined));
 
-    let displayName = $derived(currentAsset?.name || currentAsset?.image_metadata.file_name || "");
+    let displayName = $derived(
+        isMultiSelection
+            ? `${selectedImages.length} images selected`
+            : currentAsset?.name || currentAsset?.image_metadata.file_name || ""
+    );
     let calendarOpen = $state(false);
 
     let rawExifEntries = $derived.by(() => {
@@ -106,6 +117,31 @@
         }
 
         const trimmed = newArtist.trim();
+        if (isMultiSelection) {
+            const uids = selectedImages.map((img) => img.uid);
+            try {
+                await batchUpdateImages({
+                    uids,
+                    update: { exif: { artist: trimmed } }
+                });
+                for (const img of selectedImages) {
+                    if (!img.exif) {
+                        img.exif = {};
+                    }
+                    img.exif.artist = trimmed;
+                    onImageUpdated?.(img);
+                }
+            } catch (err) {
+                const artistErr = err as Error;
+                toasts.add({
+                    type: "error",
+                    title: "Failed to update artist",
+                    message: artistErr.message
+                });
+            }
+            return;
+        }
+
         if (!currentAsset.exif) {
             currentAsset.exif = {};
         }
@@ -133,6 +169,31 @@
         }
 
         const trimmed = newCopyright.trim();
+        if (isMultiSelection) {
+            const uids = selectedImages.map((img) => img.uid);
+            try {
+                await batchUpdateImages({
+                    uids,
+                    update: { exif: { copyright: trimmed } }
+                });
+                for (const img of selectedImages) {
+                    if (!img.exif) {
+                        img.exif = {};
+                    }
+                    img.exif.copyright = trimmed;
+                    onImageUpdated?.(img);
+                }
+            } catch (err) {
+                const copyErr = err as Error;
+                toasts.add({
+                    type: "error",
+                    title: "Failed to update copyright",
+                    message: copyErr.message
+                });
+            }
+            return;
+        }
+
         if (!currentAsset.exif) {
             currentAsset.exif = {};
         }
@@ -160,6 +221,28 @@
         }
 
         const trimmed = (currentAsset.description ?? "").trim();
+        if (isMultiSelection) {
+            const uids = selectedImages.map((img) => img.uid);
+            try {
+                await batchUpdateImages({
+                    uids,
+                    update: { description: trimmed }
+                });
+                for (const img of selectedImages) {
+                    img.description = trimmed;
+                    onImageUpdated?.(img);
+                }
+            } catch (err) {
+                const descErr = err as Error;
+                toasts.add({
+                    type: "error",
+                    title: "Failed to update description",
+                    message: descErr.message
+                });
+            }
+            return;
+        }
+
         onImageUpdated?.(currentAsset);
 
         try {
@@ -206,7 +289,18 @@
     let isAddingKeyword = $state(false);
     let newKeywordInput = $state("");
 
-    let currentKeywords = $derived(currentAsset?.image_metadata?.keywords ?? []);
+    let currentKeywords = $derived.by(() => {
+        if (!isMultiSelection) {
+            return currentAsset?.image_metadata?.keywords ?? [];
+        }
+        const sets = selectedImages.map((img) => new Set(img.image_metadata?.keywords ?? []));
+        if (sets.length === 0) {
+            return [];
+        }
+        return Array.from(sets[0]).filter((k) => {
+            return sets.every((s) => s.has(k));
+        });
+    });
 
     $effect(() => {
         // Track current asset UID to reset keyword input state on image switch
@@ -217,6 +311,43 @@
 
     async function saveKeywords(newKeywords: string[]) {
         if (!currentAsset) {
+            return;
+        }
+
+        if (isMultiSelection) {
+            const uids = selectedImages.map((img) => img.uid);
+            const prevKeywordsMap = new Map(selectedImages.map((img) => [img.uid, img.image_metadata?.keywords ?? []]));
+
+            for (const img of selectedImages) {
+                if (img.image_metadata) {
+                    img.image_metadata.keywords = newKeywords;
+                    onImageUpdated?.(img);
+                }
+            }
+
+            try {
+                await batchUpdateImages({
+                    uids,
+                    update: {
+                        image_metadata: {
+                            keywords: newKeywords
+                        }
+                    }
+                });
+            } catch (err) {
+                for (const img of selectedImages) {
+                    if (img.image_metadata) {
+                        img.image_metadata.keywords = prevKeywordsMap.get(img.uid) ?? [];
+                        onImageUpdated?.(img);
+                    }
+                }
+                const keywordErr = err as Error;
+                toasts.add({
+                    type: "error",
+                    title: "Failed to update keywords",
+                    message: keywordErr.message
+                });
+            }
             return;
         }
 
@@ -271,7 +402,7 @@
             return;
         }
 
-        const existing = currentAsset.image_metadata?.keywords ?? [];
+        const existing = currentKeywords;
         const lowerExisting = new Set(
             existing.map((k) => {
                 return k.toLowerCase();
@@ -298,7 +429,7 @@
             return;
         }
 
-        const existing = currentAsset.image_metadata?.keywords ?? [];
+        const existing = currentKeywords;
         const updatedKeywords = existing.filter((k) => {
             return k !== keywordToRemove;
         });
@@ -324,6 +455,58 @@
         addKeywordsFromInput(false);
     }
 
+    async function saveLabel(labelToSend: Label | null) {
+        if (!currentAsset) {
+            return;
+        }
+
+        if (isMultiSelection) {
+            const uids = selectedImages.map((img) => img.uid);
+            try {
+                await batchUpdateImages({
+                    uids,
+                    update: { image_metadata: { label: labelToSend } }
+                });
+
+                for (const img of selectedImages) {
+                    if (img.image_metadata) {
+                        img.image_metadata.label = labelToSend;
+                        onImageUpdated?.(img);
+                    }
+                }
+            } catch (err) {
+                const labelErr = err as Error;
+                toasts.add({
+                    type: "error",
+                    title: "Failed to update label",
+                    message: labelErr.message
+                });
+            }
+            return;
+        }
+
+        if (currentAsset.image_metadata) {
+            currentAsset.image_metadata.label = labelToSend;
+            onImageUpdated?.(currentAsset);
+
+            try {
+                await updateImage(currentAsset.uid, {
+                    image_metadata: {
+                        label: labelToSend,
+                        keywords: currentAsset.image_metadata.keywords
+                    }
+                });
+            } catch (err) {
+                const labelErr = err as Error;
+                toasts.add({
+                    type: "error",
+                    title: "Failed to update label",
+                    message: labelErr.message
+                });
+            }
+        }
+    }
+
     async function setImageRating(newRating: number | null) {
         if (updatingRating || !currentAsset) {
             return;
@@ -331,16 +514,32 @@
 
         updatingRating = true;
         const prev = starRating;
+
         try {
-            const newSuccessfulRating = await setRating(currentAsset, prev, newRating);
+            if (isMultiSelection) {
+                const uids = selectedImages.map((img) => img.uid);
+                await batchUpdateImages({
+                    uids,
+                    update: { image_metadata: { rating: newRating } }
+                });
 
-            if (currentAsset.image_metadata) {
-                currentAsset.image_metadata = {
-                    ...currentAsset.image_metadata,
-                    rating: newSuccessfulRating
-                };
+                for (const img of selectedImages) {
+                    if (img.image_metadata) {
+                        img.image_metadata.rating = newRating;
+                        onImageUpdated?.(img);
+                    }
+                }
+            } else {
+                const newSuccessfulRating = await setRating(currentAsset, prev, newRating);
 
-                onImageUpdated?.(currentAsset);
+                if (currentAsset.image_metadata) {
+                    currentAsset.image_metadata = {
+                        ...currentAsset.image_metadata,
+                        rating: newSuccessfulRating
+                    };
+
+                    onImageUpdated?.(currentAsset);
+                }
             }
         } catch (err) {
             const ratingErr = err as Error;
@@ -359,7 +558,12 @@
     {#if showTitle || showCloseIcon}
         <div class="metadata-header">
             {#if showTitle}
-                <h3>Metadata</h3>
+                <h3>
+                    Metadata
+                    {#if isMultiSelection}
+                        <span class="selection-count">({selectedImages.length} selected)</span>
+                    {/if}
+                </h3>
             {/if}
             {#if showCloseIcon}
                 <Button iconName="close" class="metadata-close-btn" title="Close" onclick={() => (show = false)} />
@@ -575,14 +779,11 @@
                         variant="compact"
                         label={getImageLabel(currentAsset)}
                         onSelect={(selectedLabel) => {
-                            const entry = Object.entries(LabelColours).find(([_, colour]) => colour === selectedLabel);
+                            const entry = Object.entries(LabelColours).find(([_, colour]) => {
+                                return colour === selectedLabel;
+                            });
                             const labelToSend = entry ? (entry[0] as Label) : null;
-                            if (currentAsset.image_metadata) {
-                                currentAsset.image_metadata = {
-                                    ...currentAsset.image_metadata,
-                                    label: labelToSend
-                                };
-                            }
+                            saveLabel(labelToSend);
                         }}
                     />
                     <StarRating value={starRating} onChange={setImageRating} />
@@ -878,7 +1079,21 @@
         justify-content: space-between;
         padding-bottom: var(--viz-spacing-sm);
         border-bottom: 1px solid var(--viz-border-subtle);
-        gap: 0.5em;
+        gap: var(--viz-spacing-sm);
+
+        h3 {
+            display: inline-flex;
+            align-items: baseline;
+            gap: var(--viz-spacing-xs);
+            margin: 0;
+            padding: 0;
+        }
+
+        .selection-count {
+            font-size: var(--viz-font-size-sm);
+            font-weight: 400;
+            color: var(--viz-text-secondary);
+        }
     }
 
     .metadata-exif-container {
