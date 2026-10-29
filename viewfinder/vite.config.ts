@@ -107,7 +107,8 @@ function copyImageProcessWasmFiles() {
 
     try {
         const pkgPath = require.resolve("libexif-wasm/package.json");
-        const srcDir = path.join(path.dirname(pkgPath), "dist/output");
+        const wasmPkgPath = createRequire(pkgPath).resolve("@libexif-wasm/wasm/package.json");
+        const srcDir = path.join(path.dirname(wasmPkgPath), "dist");
         const destExifDir = path.resolve("static/wasm/libexif");
         copyFiles(srcDir, destExifDir, (file) => file.endsWith(".wasm") || file.endsWith(".js"));
     } catch (e) {

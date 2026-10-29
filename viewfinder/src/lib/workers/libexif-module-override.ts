@@ -1,8 +1,7 @@
-import libexifFactory from "libexif-wasm/output/libexif.js";
+import { libexifFactory } from "libexif-wasm/internal/module.js";
 
 const libexif = await libexifFactory({
-    locateFile: (fileName: string) => `/wasm/libexif/${fileName}`,
-    mainScriptUrlOrBlob: "/wasm/libexif/libexif.js"
+    locateFile: (fileName: string) => `/wasm/libexif/${fileName}`
 });
 
 export { libexifFactory, libexif };
