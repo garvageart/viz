@@ -6,6 +6,7 @@
     import DatePicker from "#lib/components/ui/DatePicker.svelte";
     import EditableText from "#lib/components/ui/EditableText.svelte";
     import Favourite from "#lib/components/ui/Favourite.svelte";
+    import InputText from "#lib/components/ui/InputText.svelte";
     import MaterialIcon from "#lib/components/ui/MaterialIcon.svelte";
     import TextArea from "#lib/components/ui/TextArea.svelte";
     import NoImageSelected from "#lib/components/ui/misc/NoImageSelected.svelte";
@@ -201,6 +202,127 @@
 
     let starRating = $derived<number | null>(currentAsset?.image_metadata.rating ?? null);
     let updatingRating = $state(false);
+
+    let isAddingKeyword = $state(false);
+    let newKeywordInput = $state("");
+
+    let currentKeywords = $derived(currentAsset?.image_metadata?.keywords ?? []);
+
+    $effect(() => {
+        // Track current asset UID to reset keyword input state on image switch
+        void currentAsset?.uid;
+        isAddingKeyword = false;
+        newKeywordInput = "";
+    });
+
+    async function saveKeywords(newKeywords: string[]) {
+        if (!currentAsset) {
+            return;
+        }
+
+        const previousKeywords = currentAsset.image_metadata.keywords ?? [];
+        currentAsset.image_metadata.keywords = newKeywords;
+        onImageUpdated?.(currentAsset);
+
+        try {
+            await updateImage(currentAsset.uid, {
+                image_metadata: {
+                    keywords: newKeywords,
+                    label: currentAsset.image_metadata.label
+                }
+            });
+        } catch (err) {
+            currentAsset.image_metadata.keywords = previousKeywords;
+            onImageUpdated?.(currentAsset);
+
+            const keywordErr = err as Error;
+            toasts.add({
+                type: "error",
+                title: "Failed to update keywords",
+                message: keywordErr.message
+            });
+        }
+    }
+
+    async function addKeywordsFromInput(keepOpen = false) {
+        if (!currentAsset) {
+            return;
+        }
+
+        const trimmed = newKeywordInput.trim();
+        if (!trimmed) {
+            newKeywordInput = "";
+            isAddingKeyword = false;
+            return;
+        }
+
+        const parts = trimmed
+            .split(",")
+            .map((k) => {
+                return k.trim();
+            })
+            .filter((k) => {
+                return k.length > 0;
+            });
+
+        if (parts.length === 0) {
+            newKeywordInput = "";
+            isAddingKeyword = false;
+            return;
+        }
+
+        const existing = currentAsset.image_metadata?.keywords ?? [];
+        const lowerExisting = new Set(
+            existing.map((k) => {
+                return k.toLowerCase();
+            })
+        );
+
+        const toAdd = parts.filter((k) => {
+            return !lowerExisting.has(k.toLowerCase());
+        });
+
+        newKeywordInput = "";
+        if (!keepOpen) {
+            isAddingKeyword = false;
+        }
+
+        if (toAdd.length > 0) {
+            const updatedKeywords = [...existing, ...toAdd];
+            await saveKeywords(updatedKeywords);
+        }
+    }
+
+    async function removeKeyword(keywordToRemove: string) {
+        if (!currentAsset) {
+            return;
+        }
+
+        const existing = currentAsset.image_metadata?.keywords ?? [];
+        const updatedKeywords = existing.filter((k) => {
+            return k !== keywordToRemove;
+        });
+
+        await saveKeywords(updatedKeywords);
+    }
+
+    function handleKeywordKeydown(e: KeyboardEvent) {
+        if (e.key === "Enter") {
+            e.preventDefault();
+            addKeywordsFromInput(true);
+        } else if (e.key === ",") {
+            e.preventDefault();
+            addKeywordsFromInput(true);
+        } else if (e.key === "Escape") {
+            e.preventDefault();
+            newKeywordInput = "";
+            isAddingKeyword = false;
+        }
+    }
+
+    function handleKeywordBlur() {
+        addKeywordsFromInput(false);
+    }
 
     async function setImageRating(newRating: number | null) {
         if (updatingRating || !currentAsset) {
@@ -522,19 +644,57 @@
                     </div>
                 {/if}
 
-                <!-- Keywords / Tags (if present) -->
-                {#if currentAsset?.image_metadata.keywords && currentAsset.image_metadata.keywords.length > 0}
-                    <div class="exif-card keywords-card">
-                        <div class="card-row main-row">
-                            <MaterialIcon iconName="sell" class="exif-material-icon" />
-                            <div class="keywords-list">
-                                {#each currentAsset.image_metadata.keywords as keyword}
-                                    <Badge variant="neutral" size="small" class="keyword-badge">{keyword}</Badge>
-                                {/each}
+                <!-- Keywords / Tags -->
+                <div class="exif-card keywords-card">
+                    <div class="card-row main-row center">
+                        <MaterialIcon iconName="sell" class="exif-material-icon" />
+                        <div class="keywords-list">
+                            {#each currentKeywords as keyword (keyword)}
+                                <Badge variant="neutral" size="small" class="keyword-badge">
+                                    <Button
+                                        variant="ghost"
+                                        size="mini"
+                                        iconName="close"
+                                        class="keyword-remove-btn"
+                                        title="Remove Keyword"
+                                        aria-label="Remove Keyword"
+                                        onclick={(e) => {
+                                            e.stopPropagation();
+                                            removeKeyword(keyword);
+                                        }}
+                                    />
+                                    <span class="keyword-text">{keyword}</span>
+                                </Badge>
+                            {/each}
+                            <div class="keyword-action-slot">
+                                {#if isAddingKeyword}
+                                    <InputText
+                                        bind:value={newKeywordInput}
+                                        focused={isAddingKeyword}
+                                        placeholder="Add keyword..."
+                                        class="keyword-input"
+                                        onkeydown={handleKeywordKeydown}
+                                        onblur={handleKeywordBlur}
+                                    />
+                                {:else}
+                                    <Button
+                                        variant="primary"
+                                        size="small"
+                                        iconName="add"
+                                        iconSize="1rem"
+                                        class="add-keyword-btn"
+                                        title="Add keyword"
+                                        onclick={() => {
+                                            isAddingKeyword = true;
+                                        }}
+                                    >
+                                        {currentKeywords.length === 0 ? "Add keyword" : "Add"}
+                                    </Button>
+                                {/if}
                             </div>
                         </div>
                     </div>
-                {/if}
+                </div>
 
                 <!-- Software & Integrity Card -->
                 {#if currentAsset?.exif?.software || currentAsset?.exif?.exif_version || currentAsset?.image_metadata.checksum}
@@ -842,21 +1002,58 @@
         border-radius: var(--viz-border-radius-md);
         display: flex;
         align-items: center;
-        gap: 0.5em;
+        gap: var(--viz-spacing-sm);
         border: 1px solid var(--viz-border-subtle);
     }
 
+    /* Not a big fan of these large ass overides but I can live with it for now */
     .keywords-list {
         display: flex;
         flex-wrap: wrap;
-        gap: var(--viz-spacing-xs);
+        gap: var(--viz-spacing-sm);
         align-items: center;
-        min-width: 0;
+
+        :global(.keyword-badge) {
+            display: inline-flex;
+            align-items: center;
+            flex-shrink: 0;
+        }
+
+        :global(.keyword-remove-btn) {
+            line-height: 1;
+        }
+
+        .keyword-action-slot {
+            display: inline-flex;
+            align-items: center;
+            flex: 1 1 40%;
+            min-width: 40%;
+
+            :global(.add-keyword-btn) {
+                font-size: var(--viz-font-size-sm);
+                line-height: 1;
+                border-radius: var(--viz-border-radius-md);
+                padding: var(--viz-spacing-xxs) var(--viz-spacing-xs);
+                gap: var(--viz-spacing-xs);
+                box-sizing: border-box;
+            }
+
+            :global(.input-container) {
+                width: 100%;
+            }
+
+            :global(.input-container input:not([type="submit"])) {
+                min-height: 0;
+                font-size: var(--viz-font-size-sm);
+                line-height: 1;
+                padding: var(--viz-spacing-xxs) var(--viz-spacing-xs);
+                box-sizing: border-box;
+            }
+        }
     }
 
-    :global(.keyword-badge) {
-        font-size: var(--viz-font-size-sm);
-        padding: 0.15em 0.5em;
+    .keyword-text {
+        user-select: text;
     }
 
     .extended-exif-list {

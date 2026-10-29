@@ -1127,6 +1127,7 @@ func ImagesRouter(db *gorm.DB, logger *slog.Logger, wsBroker *libhttp.WSBroker) 
 
 func serveOriginalImage(res http.ResponseWriter, req *http.Request, logger *slog.Logger, imgEnt *entities.ImageAsset, isDownload bool) {
 	imageData, err := images.ReadImage(imgEnt.Uid, imgEnt.ImageMetadata.FileName)
+
 	if err != nil {
 		logger.Error("failed to read original image", slog.Any("error", err))
 		render.Status(req, http.StatusInternalServerError)
@@ -1364,8 +1365,6 @@ func updateImageFromDTO(image *entities.ImageAsset, update dto.ImageUpdate) {
 	}
 
 	if update.ImageMetadata != nil {
-		image.ImageMetadata = dto.ImageMetadata{}
-
 		if update.ImageMetadata.Rating != nil {
 			// Clamp rating 0..5
 			// Treat 0 as "unrated" -> nil
