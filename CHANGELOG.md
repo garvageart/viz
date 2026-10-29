@@ -5,6 +5,11 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.36.4] - 2026-10-29
+
+* refactor(viewfinder): encapsulate grid layout metadata and genericize photo virtualizer (66472991)
+* feat(viewfinder): derive selection keywords and resolve active selection asset (71898759)
+
 ## [0.36.3] - 2026-10-29
 
 * feat(api,viewfinder): add batch image updates and multi-selection support (4968ea21)
