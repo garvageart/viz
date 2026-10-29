@@ -5,6 +5,17 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.36.3] - 2026-10-29
+
+* feat(api,viewfinder): add batch image updates and multi-selection support (4968ea21)
+* fix(viewfinder): correct props declaration syntax in context menus (6d94896a)
+* build(viewfinder): fix libexif-wasm import path and static asset build (37a7f641)
+* feat(metadata): add keyword management and fix metadata persistence (f986e77f)
+* style(viewfinder): add no-select class to app layout container (7e18a5e3)
+* refactor(api): extract getAuthenticatedUser helper in system status endpoint (b3ae7c5d)
+* chore(deps): update npm dependencies and lockfile (aa015455)
+* chore(deps): add clerk raymond dependency (39754c6d)
+
 ## [0.36.2] - 2026-10-26
 
 * security: change minimum golang version to v1.26.10 due to comprised certs (7a87adcd)
