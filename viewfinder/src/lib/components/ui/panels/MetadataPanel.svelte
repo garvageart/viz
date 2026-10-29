@@ -27,6 +27,7 @@
         getImageMegapixels,
         getLensName,
         getLightSourceDescription,
+        getSelectionKeywords,
         getShootingMode,
         getTakenAt,
         getWhiteBalanceInfo,
@@ -62,7 +63,16 @@
     let isMultiSelection = $derived(selectedImages.length > 1);
     // Only actual images count as the current asset; a selected collection must
     // not be rendered as image metadata (which caused a flicker).
-    let currentAsset = $derived(asset ?? (isAssetImage(activeScope?.active) ? activeScope.active : undefined));
+    //
+    // fucking hell
+    let currentAsset = $derived(
+        asset ??
+            (isAssetImage(activeScope?.anchor) && selectedImages.includes(activeScope.anchor)
+                ? activeScope.anchor
+                : isAssetImage(activeScope?.active) && selectedImages.includes(activeScope.active)
+                  ? activeScope.active
+                  : selectedImages[0])
+    );
 
     let displayName = $derived(
         isMultiSelection
@@ -291,15 +301,10 @@
 
     let currentKeywords = $derived.by(() => {
         if (!isMultiSelection) {
-            return currentAsset?.image_metadata?.keywords ?? [];
+            return currentAsset?.image_metadata.keywords ?? [];
         }
-        const sets = selectedImages.map((img) => new Set(img.image_metadata?.keywords ?? []));
-        if (sets.length === 0) {
-            return [];
-        }
-        return Array.from(sets[0]).filter((k) => {
-            return sets.every((s) => s.has(k));
-        });
+
+        return getSelectionKeywords(selectedImages, currentAsset);
     });
 
     $effect(() => {

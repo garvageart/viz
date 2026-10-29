@@ -15,6 +15,7 @@ import {
     getImageLabel,
     getImageMegapixels,
     getLabelColor,
+    getSelectionKeywords,
     getTakenAt,
     getThumbhashURL,
     getWhiteBalance,
@@ -267,7 +268,7 @@ describe("parseTransformParams", () => {
 describe("getImageLabel & getLabelColor", () => {
     it("maps label names to their colours", () => {
         const withLabel = (label: Label) =>
-            assetFixture({ image_metadata: { ...assetFixture().image_metadata!, label } });
+            assetFixture({ image_metadata: { ...assetFixture().image_metadata, label } });
 
         expect(getImageLabel(withLabel(Label.Red))).toBe(LabelColours.Red);
         expect(getImageLabel(withLabel(Label.Blue))).toBe(LabelColours.Blue);
@@ -333,7 +334,7 @@ describe("getThumbhashURL", () => {
     it("returns undefined for an invalid base64 thumbhash", () => {
         const warn = vi.spyOn(console, "warn").mockImplementation(() => {});
         try {
-            const asset = assetFixture({ image_metadata: { ...assetFixture().image_metadata!, thumbhash: "!!!" } });
+            const asset = assetFixture({ image_metadata: { ...assetFixture().image_metadata, thumbhash: "!!!" } });
             expect(getThumbhashURL(asset)).toBeUndefined();
         } finally {
             warn.mockRestore();
@@ -344,7 +345,7 @@ describe("getThumbhashURL", () => {
         const rgba = new Uint8Array(16 * 16 * 4).fill(255);
         const hash = rgbaToThumbHash(16, 16, rgba);
         const b64 = btoa(String.fromCharCode(...hash));
-        const asset = assetFixture({ image_metadata: { ...assetFixture().image_metadata!, thumbhash: b64 } });
+        const asset = assetFixture({ image_metadata: { ...assetFixture().image_metadata, thumbhash: b64 } });
         expect(getThumbhashURL(asset)).toMatch(/^data:image\//);
     });
 });
@@ -367,5 +368,92 @@ describe("formatShutterSpeed", () => {
         expect(formatShutterSpeed(0)).toBe("0s");
         expect(formatShutterSpeed(undefined)).toBe("");
         expect(formatShutterSpeed(NaN)).toBe("");
+    });
+});
+
+describe("getSelectionKeywords", () => {
+    it("returns empty array when images array is empty", () => {
+        expect(getSelectionKeywords([])).toEqual([]);
+    });
+
+    it("returns keywords of single image", () => {
+        const img = assetFixture({
+            image_metadata: { ...assetFixture().image_metadata, keywords: ["night", "joburg"] }
+        });
+        expect(getSelectionKeywords([img])).toEqual(["night", "joburg"]);
+    });
+
+    it("returns empty array for single image with no keywords", () => {
+        const img = assetFixture({
+            image_metadata: { ...assetFixture().image_metadata, keywords: [] }
+        });
+        expect(getSelectionKeywords([img])).toEqual([]);
+    });
+
+    it("returns all keywords from first selected image when other images have no keywords", () => {
+        const first = assetFixture({
+            uid: "img-1",
+            image_metadata: { ...assetFixture().image_metadata, keywords: ["a", "b", "c", "d"] }
+        });
+        const others = Array.from({ length: 7 }, (_, i) =>
+            assetFixture({
+                uid: `img-${i + 2}`,
+                image_metadata: { ...assetFixture().image_metadata, keywords: [] }
+            })
+        );
+
+        expect(getSelectionKeywords([first, ...others])).toEqual(["a", "b", "c", "d"]);
+    });
+
+    it("includes keywords from first image plus overlapping keywords from remaining images", () => {
+        const img1 = assetFixture({
+            uid: "img-1",
+            image_metadata: { ...assetFixture().image_metadata, keywords: ["mountain", "lake"] }
+        });
+        const img2 = assetFixture({
+            uid: "img-2",
+            image_metadata: { ...assetFixture().image_metadata, keywords: ["forest", "sunset"] }
+        });
+        const img3 = assetFixture({
+            uid: "img-3",
+            image_metadata: { ...assetFixture().image_metadata, keywords: ["sunset", "wildlife"] }
+        });
+
+        // "mountain" and "lake" from first image
+        // "sunset" appears in img2 and img3 (count = 2) -> included
+        // "forest" only in img2 (count = 1) -> not included
+        // "wildlife" only in img3 (count = 1) -> not included
+        expect(getSelectionKeywords([img1, img2, img3])).toEqual(["mountain", "lake", "sunset"]);
+    });
+
+    it("does not duplicate keywords that appear in first image and also overlap in others", () => {
+        const img1 = assetFixture({
+            uid: "img-1",
+            image_metadata: { ...assetFixture().image_metadata, keywords: ["nature", "landscape"] }
+        });
+        const img2 = assetFixture({
+            uid: "img-2",
+            image_metadata: { ...assetFixture().image_metadata, keywords: ["nature"] }
+        });
+        const img3 = assetFixture({
+            uid: "img-3",
+            image_metadata: { ...assetFixture().image_metadata, keywords: ["nature"] }
+        });
+
+        expect(getSelectionKeywords([img1, img2, img3])).toEqual(["nature", "landscape"]);
+    });
+
+    it("uses primaryImage keywords when primaryImage is not at index 0", () => {
+        const withoutKeywords = assetFixture({
+            uid: "img-empty",
+            image_metadata: { ...assetFixture().image_metadata, keywords: [] }
+        });
+        const withKeywords = assetFixture({
+            uid: "img-primary",
+            image_metadata: { ...assetFixture().image_metadata, keywords: ["forest", "fog"] }
+        });
+
+        // withoutKeywords is at index 0, but withKeywords is passed as primaryImage
+        expect(getSelectionKeywords([withoutKeywords, withKeywords], withKeywords)).toEqual(["forest", "fog"]);
     });
 });

@@ -881,3 +881,34 @@ export function formatExifTag(str: string): string {
         .replace(/\b\w/g, (c) => c.toUpperCase())
         .trim();
 }
+
+/**
+ * Derives the active keywords for a selection of images.
+ * Shows all keywords from the primary (or first) selected image, plus any keywords
+ * that appear on two or more images across the selection.
+ */
+export function getSelectionKeywords(images: ImageAsset[], primaryImage?: ImageAsset): string[] {
+    if (images.length === 0) {
+        return [];
+    }
+
+    const primary = primaryImage && images.includes(primaryImage) ? primaryImage : images[0];
+    const firstKeywords = primary.image_metadata?.keywords ?? [];
+    const resultSet = new Set(firstKeywords);
+
+    const counts = new Map<string, number>();
+    for (const img of images) {
+        const kws = new Set(img.image_metadata?.keywords ?? []);
+        for (const kw of kws) {
+            counts.set(kw, (counts.get(kw) ?? 0) + 1);
+        }
+    }
+
+    for (const [kw, count] of counts.entries()) {
+        if (count >= 2) {
+            resultSet.add(kw);
+        }
+    }
+
+    return Array.from(resultSet);
+}
